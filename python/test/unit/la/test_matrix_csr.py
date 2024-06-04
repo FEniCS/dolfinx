@@ -147,7 +147,15 @@ def test_distributed_csr(dtype):
     assert np.isclose(mat.data.sum(), pre_final_sum)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 def test_set_block_matrix(dtype):
     mesh_dtype = np.real(dtype(0)).dtype
     ghost_mode = GhostMode.shared_facet
@@ -160,7 +168,15 @@ def test_set_block_matrix(dtype):
     assert As.blocksize == (2, 2)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 def test_set_diagonal_distributed(dtype):
     mesh_dtype = np.real(dtype(0)).dtype
     ghost_mode = GhostMode.shared_facet

@@ -1,6 +1,6 @@
 # ------------------------------------------------------------------------------
 # Top level CMakeLists.txt file for DOLFINx
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.21)
 
 # ------------------------------------------------------------------------------
 # Set project name and version number
@@ -20,6 +20,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Do not enable compler-specific extensions
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+if(WIN32)
+  # Windows requires all symbols to be manually exported. This flag exports all
+  # symbols automatically, as in Unix.
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+endif()
 
 # ------------------------------------------------------------------------------
 # Get GIT changeset, if available
@@ -55,6 +61,17 @@ add_feature_info(
   BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build DOLFINx with shared libraries."
 )
 
+# If libdolfinx links to a symbol contained in an external dll, that dll will be
+# installed alongside libdolfinx. This excludes system dlls included with
+# Windows.
+option(INSTALL_RUNTIME_DEPENDENCIES
+       "Include runtime dependencies in install (Windows-only)" OFF
+)
+add_feature_info(
+  INSTALL_RUNTIME_DEPENDENCIES INSTALL_RUNTIME_DEPENDENCIES
+  "Include runtime dependencies in install (Windows-only)"
+)
+
 option(DOLFINX_SKIP_BUILD_TESTS
        "Skip build tests for testing usability of dependency packages." OFF
 )
@@ -72,16 +89,28 @@ add_feature_info(
   "Add paths to linker search and installed rpath."
 )
 
+# Control Basix discovery
+option(
+  DOLFINX_BASIX_PYTHON
+  "Ask Python basix module for hint where to find Basix C++ install using CONFIG mode."
+  ON
+)
+add_feature_info(
+  DOLFINX_BASIX_PYTHON
+  DOLFINX_BASIX_PYTHON
+  "Ask Python basix module for hint where to find Basix C++ install using CONFIG mode."
+)
+
 # Control UFCx discovery
 option(
   DOLFINX_UFCX_PYTHON
-  "Enable UFCx discovery using Python. Disable if UFCx should be found using CMake."
+  "Ask Python FFCx module where to find ufcx.h header using MODULE mode. Otherwise use CONFIG mode."
   ON
 )
 add_feature_info(
   DOLFINX_UFCX_PYTHON
   DOLFINX_UFCX_PYTHON
-  "Enable UFCx discovery using Python. Disable if UFCx should be found using a CMake config file."
+  "Ask Python FFCx module where to find ufcx.h header using MODULE mode. Otherwise use CONFIG mode."
 )
 
 # ------------------------------------------------------------------------------
@@ -257,10 +286,15 @@ if(HAVE_O2_OPTIMISATION)
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -O2)
 endif()
 
-# Turn off some checks in gcc12 and gcc13 due to false positives with the fmt library
-if(CMAKE_COMPILER_IS_GNUCXX AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
-  AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0")
-  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wno-array-bounds;-Wno-stringop-overflow)
+# Turn off some checks in gcc12 and gcc13 due to false positives with the fmt
+# library
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+   AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
+   AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
+)
+  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS
+       -Wno-array-bounds;-Wno-stringop-overflow
+  )
 endif()
 
 # ------------------------------------------------------------------------------
@@ -269,7 +303,7 @@ endif()
 # pugixml
 find_package(pugixml REQUIRED)
 
-# Note: When updating Boost version, also update DOLFINXCongif.cmake.in
+# Note: When updating Boost version, also update DOLFINXConfig.cmake.in
 if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
 endif()
@@ -284,33 +318,41 @@ set_package_properties(
   URL "http://www.boost.org"
 )
 
-# Use Python for detecting UFCx and Basix
-find_package(
-  Python3
-  COMPONENTS Interpreter
-  QUIET
-)
+# Basix C++ files can be installed as a standalone C++ library, or in the Basix
+# Python module tree.
 
-# Check for Basix Note: Basix may be installed as a standalone C++ library, or
-# in the Basix Python module tree
-if(Python3_Interpreter_FOUND)
-  message(STATUS "Checking for basix hints with ${Python3_EXECUTABLE}")
-  execute_process(
-    COMMAND
-      ${Python3_EXECUTABLE} -c
-      "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
-    OUTPUT_VARIABLE BASIX_PY_DIR
-    RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
-    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+# If requested (default), ask the Python interpreter for hints on where to find
+# Basix C++ library.
+if(DOLFINX_BASIX_PYTHON)
+  find_package(
+    Python3
+    COMPONENTS Interpreter
+    QUIET
   )
 
+  if(Python3_Interpreter_FOUND)
+    message(STATUS "Checking for Basix hints with ${Python3_EXECUTABLE}")
+    execute_process(
+      COMMAND
+        ${Python3_EXECUTABLE} -c
+        "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
+      OUTPUT_VARIABLE BASIX_PY_DIR
+      RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
+      ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+  endif()
+
   if(BASIX_PY_DIR)
+    # Converts os native to cmake native path
+    cmake_path(SET BASIX_PY_DIR "${BASIX_PY_DIR}")
     message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
 
-    # Basix installed from manylinux wheel
+    # Basix installed from manylinux wheel requires rpath set.
     if(IS_DIRECTORY ${BASIX_PY_DIR}/../fenics_basix.libs)
       set(CMAKE_INSTALL_RPATH ${BASIX_PY_DIR}/../fenics_basix.libs)
     endif()
+  else()
+    message(STATUS "No Basix hint was found.")
   endif()
 endif()
 
@@ -342,12 +384,12 @@ set_package_properties(
 )
 
 # Check for UFC Note: we use the case (ufcx vs UFCx) elsewhere to determine by
-# which method UFCx was found
+# which method UFCx was found.
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
   find_package(ufcx 0.9 REQUIRED CONFIG)
 else()
-  # Check in MODULE mode (using FindUFCX.cmake)
+  # Check in MODULE mode (using FindUFCX.cmake) using Python intepreter.
   find_package(
     Python3
     COMPONENTS Interpreter
@@ -434,16 +476,18 @@ endif()
 
 if(DOLFINX_ENABLE_SCOTCH)
   find_package(SCOTCH CONFIG) # Attempt to find in CONFIG mode
-  if (NOT SCOTCH_FOUND)
-    if (_REQUIRE_SCOTCH)  # If not found in CONFIG mode, try MODULE mode
+  if(NOT SCOTCH_FOUND)
+    if(_REQUIRE_SCOTCH) # If not found in CONFIG mode, try MODULE mode
       find_package(SCOTCH REQUIRED)
     else()
       find_package(SCOTCH)
     endif()
   endif()
 
-  if (TARGET SCOTCH::scotch AND NOT TARGET SCOTCH::ptscotch)
-    message(STATUS "SCOTCH found, but not PT-SCOTCH (parallel). Not enabling SCOTCH.")
+  if(TARGET SCOTCH::scotch AND NOT TARGET SCOTCH::ptscotch)
+    message(
+      STATUS "SCOTCH found, but not PT-SCOTCH (parallel). Not enabling SCOTCH."
+    )
     set(SCOTCH_FOUND FALSE)
   endif()
 endif()

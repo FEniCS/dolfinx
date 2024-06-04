@@ -36,6 +36,7 @@
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/map.h>
 #include <nanobind/stl/pair.h>
+#include <nanobind/stl/set.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/tuple.h>
@@ -706,7 +707,15 @@ void declare_form(nb::module_& m, std::string type)
       .def_prop_ro("mesh", &dolfinx::fem::Form<T, U>::mesh)
       .def_prop_ro("function_spaces",
                    &dolfinx::fem::Form<T, U>::function_spaces)
-      .def("integral_ids", &dolfinx::fem::Form<T, U>::integral_ids)
+      .def(
+          "integral_ids",
+          [](const dolfinx::fem::Form<T, U>& self,
+             dolfinx::fem::IntegralType type)
+          {
+            auto ids = self.integral_ids(type);
+            return dolfinx_wrappers::as_nbarray(std::move(ids));
+          },
+          nb::arg("type"))
       .def_prop_ro("integral_types", &dolfinx::fem::Form<T, U>::integral_types)
       .def_prop_ro("needs_facet_permutations",
                    &dolfinx::fem::Form<T, U>::needs_facet_permutations)
@@ -1114,13 +1123,17 @@ void fem(nb::module_& m)
   m.def(
       "compute_integration_domains",
       [](dolfinx::fem::IntegralType type,
-         const dolfinx::mesh::MeshTags<int>& meshtags)
+         const dolfinx::mesh::Topology& topology,
+         const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
+             entities,
+         int dim)
       {
-        return dolfinx::fem::compute_integration_domains(
-            type, *meshtags.topology(), meshtags.indices(), meshtags.dim(),
-            meshtags.values());
+        auto integration_entities = dolfinx::fem::compute_integration_domains(
+            type, topology, std::span(entities.data(), entities.size()), dim);
+        return dolfinx_wrappers::as_nbarray(std::move(integration_entities));
       },
-      nb::arg("integral_type"), nb::arg("meshtags"));
+      nb::arg("integral_type"), nb::arg("topology"), nb::arg("entities"),
+      nb::arg("dim"));
 
   // dolfinx::fem::ElementDofLayout
   nb::class_<dolfinx::fem::ElementDofLayout>(

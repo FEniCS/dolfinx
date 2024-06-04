@@ -1,6 +1,7 @@
 import gc
 import os
 import shutil
+import sys
 import time
 from collections import defaultdict
 
@@ -34,6 +35,9 @@ def pytest_runtest_setup(item):
     marker = item.get_closest_marker("skip_in_parallel")
     if marker and MPI.COMM_WORLD.size > 1:
         pytest.skip("This test should be run in serial only.")
+    marker = item.get_closest_marker("xfail_win32_complex")
+    if marker and sys.platform.startswith("win32"):
+        pytest.xfail("missing _Complex")
 
 
 @pytest.fixture(scope="module")

@@ -73,7 +73,15 @@ def test_nullspace_orthogonal(gdim, degree, dtype):
     assert la.is_orthonormal(nullspace, eps=1.0e-3)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 @pytest.mark.parametrize("gdim", [2, 3])
 @pytest.mark.parametrize("degree", [1, 2])
 def test_nullspace_check(gdim, degree, dtype):
