@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 project(dolfinx-tests)
 
 project(${PROJECT_NAME} LANGUAGES C CXX)
+set(CMAKE_C_STANDARD 17) # For FFCx generated .c files.
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -44,11 +45,27 @@ add_executable(
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )
 target_link_libraries(unittests PRIVATE Catch2::Catch2WithMain dolfinx)
+# UUID requires bcrypt to be linked on Windows, broken in vcpkg.
+# https://github.com/microsoft/vcpkg/issues/4481
+if(WIN32)
+  target_link_libraries(unittests PRIVATE bcrypt)
+endif()
 target_include_directories(
   unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
+
+# Add some strict compiler checks only on C++ part (Developer).
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
+
+if(HAVE_PEDANTIC)
+  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
+endif()
+
 target_compile_options(
-  unittests PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wall -Werror -Wextra -pedantic>
+  unittests
+  PRIVATE
+    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
 )
 
 # Enable testing
