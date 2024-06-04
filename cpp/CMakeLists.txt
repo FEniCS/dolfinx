@@ -288,7 +288,7 @@ endif()
 
 # Turn off some checks in gcc12 and gcc13 due to false positives with the fmt
 # library
-if(CMAKE_COMPILER_IS_GNUCXX
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
    AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
    AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
 )
