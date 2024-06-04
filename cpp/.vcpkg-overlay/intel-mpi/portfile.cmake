@@ -1,9 +1,9 @@
 set(INTELMPI_VERSION "2021.12")
 set(SOURCE_PATH "${CURRENT_BUILDTREES_DIR}/src/intel-mpi-${INTELMPI_VERSION}")
 
-file(TO_NATIVE_PATH "C:/Program Files (x86)/Intel/oneAPI" SDK_SOURCE_DIR)
+cmake_path(NATIVE_PATH "C:/Program Files (x86)/Intel/oneAPI" SDK_SOURCE_DIR)
 
-message(STATUS "IntelMPI source SDK = ${SDK_SOURCE_DIR}")
+message(STATUS "Using Intel MPI source SDK at ${SDK_SOURCE_DIR}")
 
 set(SDK_SOURCE_MPI_DIR "${SDK_SOURCE_DIR}/mpi/${INTELMPI_VERSION}")
 

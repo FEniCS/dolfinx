@@ -343,8 +343,7 @@ if(DOLFINX_BASIX_PYTHON)
   endif()
 
   if(BASIX_PY_DIR)
-    # TODO: CMake 3.20 has more modern cmake_path.
-    file(TO_CMAKE_PATH "${BASIX_PY_DIR}" BASIX_PY_DIR)
+    cmake_path(NATIVE_PATH "${BASIX_PY_DIR}" BASIX_PY_DIR)
     message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
 
     # Basix installed from manylinux wheel requires rpath set.
