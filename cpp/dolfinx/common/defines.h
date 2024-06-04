@@ -23,21 +23,63 @@ std::string git_commit_hash();
 
 /// Return true if DOLFINx is compiled in debugging mode,
 /// i.e., with assertions on
-bool has_debug();
+consteval bool has_debug()
+{
+#ifndef NDEBUG
+  return true;
+#else
+  return false;
+#endif
+}
 
 /// Return true if DOLFINx is compiled with PETSc
-bool has_petsc();
+consteval bool has_petsc()
+{
+#ifdef HAS_PETSC
+  return true;
+#else
+  return false;
+#endif
+}
 
 /// Return true if DOLFINx is compiled with SLEPc
-bool has_slepc();
+consteval bool has_slepc()
+{
+#ifdef HAS_SLEPC
+  return true;
+#else
+  return false;
+#endif
+}
 
 /// Return true if DOLFINx is compiled with ParMETIS
-bool has_parmetis();
+consteval bool has_parmetis()
+{
+#ifdef HAS_PARMETIS
+  return true;
+#else
+  return false;
+#endif
+}
 
 /// Return true if DOLFINx is compiled with KaHIP
-bool has_kahip();
+consteval bool has_kahip()
+{
+#ifdef HAS_KAHIP
+  return true;
+#else
+  return false;
+#endif
+}
 
 /// Return true if DOLFINX is compiled with ADIOS2
-bool has_adios2();
+consteval bool has_adios2()
+{
+#ifdef HAS_ADIOS2
+  return true;
+#else
+  return false;
+#endif
+}
 
 } // namespace dolfinx
