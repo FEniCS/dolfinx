@@ -84,4 +84,14 @@ consteval bool has_adios2()
 #endif
 }
 
+/// Return true if DOLFINX is compiled with PT-SCOTCH
+consteval bool has_ptscotch()
+{
+#ifdef HAS_PTSCOTCH
+  return true;
+#else
+  return false;
+#endif
+}
+
 } // namespace dolfinx
