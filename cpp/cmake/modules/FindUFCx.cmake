@@ -54,7 +54,8 @@ execute_process(
     "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_include_path())"
   OUTPUT_VARIABLE UFCX_INCLUDE_DIR
 )
-cmake_path(NATIVE_PATH "${UFCX_INCLUDE_DIR}" UFCX_INCLUDE_DIR)
+# Converts os native to cmake native path type
+cmake_path(SET UFCX_INCLUDE_DIR "${UFCX_INCLUDE_DIR}")
 
 # Get ufcx.h version
 if(UFCX_INCLUDE_DIR)

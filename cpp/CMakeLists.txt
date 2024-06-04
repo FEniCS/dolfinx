@@ -343,7 +343,8 @@ if(DOLFINX_BASIX_PYTHON)
   endif()
 
   if(BASIX_PY_DIR)
-    cmake_path(NATIVE_PATH "${BASIX_PY_DIR}" BASIX_PY_DIR)
+    # Converts os native to cmake native path
+    cmake_path(SET BASIX_PY_DIR "${BASIX_PY_DIR}")
     message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
 
     # Basix installed from manylinux wheel requires rpath set.
