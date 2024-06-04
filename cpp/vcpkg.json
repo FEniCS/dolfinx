@@ -1,0 +1,24 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "dependencies": [
+    "boost-algorithm",
+    "boost-functional",
+    "boost-lexical-cast",
+    "boost-timer",
+    "boost-unordered",
+    "boost-uuid",
+    "catch2",
+    { "name": "hdf5",
+      "features": [
+        "parallel"
+      ]
+    },
+    "mpi",
+    "parmetis",
+    "pugixml",
+    "pkgconf",
+    "spdlog",
+    "vcpkg-cmake",
+    "vcpkg-cmake-config"
+  ]
+}

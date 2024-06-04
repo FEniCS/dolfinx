@@ -1,0 +1,156 @@
+name: Windows build
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - main
+  merge_group:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  windows-build:
+    name: Windows vcpkg build
+    runs-on: windows-latest
+    env:
+      VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+
+    steps:
+      - name: Export GitHub Actions cache environment variables
+        uses: actions/github-script@v6
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install UFL
+        run: pip install git+https://github.com/FEniCS/ufl.git
+
+      - name: Checkout Basix
+        uses: actions/checkout@v4
+        with:
+          repository: "fenics/basix"
+          path: basix
+
+      - name: Insert add_dll_directory calls into Basix
+        working-directory: basix/python/basix
+        run: |
+          (Get-Content __init__.py).Replace('# WINDOWSDLL', 'import os; os.add_dll_directory("D:/a/dolfinx/basix-install/bin")') | Set-Content __init__.py
+          Get-Content __init__.py
+
+      - name: Install Basix (C++)
+        working-directory: basix
+        run: |
+          cd cpp
+          cmake -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -B build-dir -S .
+          cmake --build build-dir --config Release
+          cmake --install build-dir --config Release --prefix D:/a/dolfinx/basix-install
+          echo "D:/a/dolfinx/basix-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
+
+      - name: Install Basix (Python)
+        working-directory: basix
+        run: |
+          cd python
+          python -m pip -v install --no-cache-dir .[ci] --config-settings=cmake.args=-DBasix_DIR=D:/a/basix/install/lib/cmake/basix
+          cd ../
+
+      - name: Checkout FFCx
+        uses: actions/checkout@v4
+        with:
+          repository: "fenics/ffcx"
+          path: ffcx
+
+      - name: Install UFCx header
+        working-directory: ffcx
+        run: |
+          cmake -B build-dir -S cmake/
+          cmake --build build-dir --config Release
+          cmake --install build-dir --config Release --prefix D:/a/dolfinx/ufcx-install
+
+      - name: Install FFCx
+        working-directory: ffcx
+        run: |
+          pip install .
+
+      - name: Checkout DOLFINx
+        uses: actions/checkout@v4
+        with:
+          path: dolfinx
+
+      - name: Insert add_dll_directory calls into DOLFINx
+        working-directory: dolfinx/python/dolfinx
+        run: |
+          (Get-Content __init__.py).Replace('# WINDOWSDLL', 'import os; os.add_dll_directory("D:/a/dolfinx/dolfinx-install/bin"); os.add_dll_directory("C:/Program Files (x86)/Intel/oneAPI/mpi/2021.12/opt/mpi/libfabric/bin")') | Set-Content __init__.py
+          Get-Content __init__.py
+
+      - uses: mpi4py/setup-mpi@v1
+        with:
+          mpi: "intelmpi"
+
+      - name: Install DOLFINx (C++)
+        working-directory: dolfinx
+        run: |
+          cmake -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR=D:/a/dolfinx/basix-install/share/basix -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS="cpp/.vcpkg-overlay" -B build-dir -S cpp
+          cmake --build build-dir --config Release
+          cmake --install build-dir --config Release --prefix D:/a/dolfinx/dolfinx-install
+          echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
+
+      - name: Build unit tests (C++)
+        working-directory: dolfinx
+        run: |
+          cmake -DBasix_DIR=D:/a/dolfinx/basix-install/share/basix -Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS="cpp/.vcpkg-overlay" -B build/test/ -S cpp/test/
+          cmake --build build/test --config Release --parallel 3
+
+      - name: Run unit tests (C++, MPI, np=1)
+        working-directory: dolfinx
+        run: |
+          cd build/test
+          mpiexec -n 1 ctest -V --output-on-failure -R unittests
+      - name: Run C++ tests (C++, MPI, np=3)
+        working-directory: dolfinx
+        run: |
+          cd build/test
+          mpiexec -n 3 ctest -V --output-on-failure -R unittests
+
+      - name: Install build dependencies
+        working-directory: dolfinx
+        run: |
+          pip -v install --no-binary mpi4py -r python/build-requirements.txt
+
+      - name: Install DOLFINx (Python)
+        working-directory: dolfinx
+        run: |
+          cd python
+          pip -v install --check-build-dependencies --no-build-isolation .[test] --config-settings=cmake.args=-DBasix_DIR=D:/a/dolfinx/basix-install/lib/cmake/basix --config-settings=cmake.args=-Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake --config-settings=cmake.args=-DDOLFINX_DIR=D:/a/dolfinx/dolfinx-install/lib/cmake/dolfinx --config-settings=cmake.args=-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake --config-settings=cmake.args=-DVCPKG_OVERLAY_PORTS="../cpp/.vcpkg-overlay"
+
+      - name: Run units tests (Python, serial)
+        working-directory: dolfinx
+        run: |
+          python -m pytest -n auto -m "not petsc4py and not adios2" python/test/unit
+      - name: Run units tests (Python, MPI, np=3)
+        working-directory: dolfinx
+        run: |
+          mpiexec -n 3 python -m pytest -m "not petsc4py and not adios2" python/test/unit
+
+      - name: Run Python demos (serial)
+        working-directory: dolfinx
+        run: |
+          pip install pyamg matplotlib numba scipy # TO REMOVE
+          cd python/demo
+          python3 -m pytest -n auto -m serial --durations=10 test.py
+      - name: Run Python demos (MPI, np=3)
+        working-directory: dolfinx
+        run: |
+          cd python/demo
+          python3 -m pytest -m mpi --num-proc=3 test.py
