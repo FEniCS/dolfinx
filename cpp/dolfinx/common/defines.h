@@ -8,6 +8,8 @@
 
 #include <string>
 
+#include "version.h"
+
 namespace dolfinx
 {
 
