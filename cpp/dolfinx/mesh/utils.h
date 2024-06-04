@@ -166,18 +166,19 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 ///
 /// @param[in] comm MPI Communicator
 /// @param[in] nparts Number of partitions
-/// @param[in] cell_type Type of cell in mesh
-/// @param[in] cells Cells on this process. The ith entry in list
-/// contains the global indices for the cell vertices. Each cell can
-/// appear only once across all processes. The cell vertex indices are
-/// not necessarily contiguous globally, i.e. the maximum index across
-/// all processes can be greater than the number of vertices. High-order
-/// 'nodes', e.g. mid-side points, should not be included.
+/// @param[in] cell_types Cell types in the mesh
+/// @param[in] cells Lists of cells of each cell type. cells[i] is a flattened
+/// row major 2D array of shape (num_cells, num_cell_vertices) for cell_types[i]
+/// on this process, containing the global indices for the cell vertices. Each
+/// cell can appear only once across all processes. The cell vertex indices are
+/// not necessarily contiguous globally, i.e. the maximum index across all
+/// processes can be greater than the number of vertices. High-order 'nodes',
+/// e.g. mid-side points, should not be included.
 /// @return Destination ranks for each cell on this process
 /// @note Cells can have multiple destination ranks, when ghosted.
 using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
-    MPI_Comm comm, int nparts, CellType cell_type,
-    const graph::AdjacencyList<std::int64_t>& cells)>;
+    MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
+    const std::vector<std::span<const std::int64_t>>& cells)>;
 
 /// @brief Extract topology from cell data, i.e. extract cell vertices.
 /// @param[in] cell_type The cell shape
@@ -762,7 +763,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   const fem::ElementDofLayout doflayout = element.create_dof_layout();
 
   const int num_cell_vertices = mesh::num_cell_vertices(element.cell_shape());
-  const int num_cell_nodes = doflayout.num_dofs();
+  std::size_t num_cell_nodes = doflayout.num_dofs();
 
   // Note: `extract_topology` extracts topology data, i.e. just the
   // vertices. For P1 geometry this should just be the identity
@@ -772,44 +773,45 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // `extract_topology` could be skipped for 'P1 geometry' elements
 
   // -- Partition topology across ranks of comm
-  graph::AdjacencyList<std::int64_t> cells1(0);
-  // std::vector<std::int64_t> cells1;
+  std::vector<std::int64_t> cells1;
   std::vector<std::int64_t> original_idx1;
   std::vector<int> ghost_owners;
   if (partitioner)
   {
+    spdlog::info("Using partitioner with {} cell data", cells.size());
     graph::AdjacencyList<std::int32_t> dest(0);
     if (commt != MPI_COMM_NULL)
     {
       int size = dolfinx::MPI::size(comm);
-      auto t = graph::regular_adjacency_list(
-          extract_topology(element.cell_shape(), doflayout, cells),
-          num_cell_vertices);
-      dest = partitioner(commt, size, celltype, t);
+      auto t = extract_topology(element.cell_shape(), doflayout, cells);
+      dest = partitioner(commt, size, {celltype}, {t});
     }
 
     // Distribute cells (topology, includes higher-order 'nodes') to
     // destination rank
-    std::vector<int> src;
-    auto _cells = graph::regular_adjacency_list(
-        std::vector(cells.begin(), cells.end()), num_cell_nodes);
-    std::tie(cells1, src, original_idx1, ghost_owners)
-        = graph::build::distribute(comm, _cells, dest);
+    assert(cells.size() % num_cell_nodes == 0);
+    std::size_t num_cells = cells.size() / num_cell_nodes;
+    std::tie(cells1, original_idx1, ghost_owners) = graph::build::distribute(
+        comm, cells, {num_cells, num_cell_nodes}, dest);
+    spdlog::debug("Got {} cells from distribution", cells1.size());
   }
   else
   {
-    cells1 = graph::regular_adjacency_list(
-        std::vector(cells.begin(), cells.end()), num_cell_nodes);
-    std::int64_t offset(0), num_owned(cells1.num_nodes());
+    cells1 = std::vector<std::int64_t>(cells.begin(), cells.end());
+    assert(cells1.size() % num_cell_nodes == 0);
+    std::int64_t offset = 0;
+    std::int64_t num_owned = cells1.size() / num_cell_nodes;
     MPI_Exscan(&num_owned, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
-    original_idx1.resize(cells1.num_nodes());
+    original_idx1.resize(num_owned);
     std::iota(original_idx1.begin(), original_idx1.end(), offset);
   }
 
   // Extract cell 'topology', i.e. extract the vertices for each cell
   // and discard any 'higher-order' nodes
   std::vector<std::int64_t> cells1_v
-      = extract_topology(celltype, doflayout, cells1.array());
+      = extract_topology(celltype, doflayout, cells1);
+  spdlog::info("Extract basic topology: {}->{}", cells1.size(),
+               cells1_v.size());
 
   // Build local dual graph for owned cells to (i) get list of vertices
   // on the process boundary and (ii) apply re-ordering to cells for
@@ -821,10 +823,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     std::vector<std::int32_t> cell_offsets(num_owned_cells + 1, 0);
     for (std::size_t i = 1; i < cell_offsets.size(); ++i)
       cell_offsets[i] = cell_offsets[i - 1] + num_cell_vertices;
+    spdlog::info("Build local dual graph");
     auto [graph, unmatched_facets, max_v, facet_attached_cells]
         = build_local_dual_graph(
-            celltype,
-            std::span(cells1_v.data(), num_owned_cells * num_cell_vertices));
+            std::vector{celltype},
+            {std::span(cells1_v.data(), num_owned_cells * num_cell_vertices)});
     const std::vector<int> remap = graph::reorder_gps(graph);
 
     // Create re-ordered cell lists (leaves ghosts unchanged)
@@ -836,8 +839,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                 std::next(_original_idx.begin(), num_owned_cells));
     impl::reorder_list(
         std::span(cells1_v.data(), remap.size() * num_cell_vertices), remap);
-    impl::reorder_list(
-        std::span(cells1.array().data(), remap.size() * num_cell_nodes), remap);
+    impl::reorder_list(std::span(cells1.data(), remap.size() * num_cell_nodes),
+                       remap);
     original_idx1 = _original_idx;
 
     // Boundary vertices are marked as 'unknown'
@@ -866,15 +869,253 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
   // Build list of unique (global) node indices from cells1 and
   // distribute coordinate data
-  std::vector<std::int64_t> nodes1 = cells1.array();
+  std::vector<std::int64_t> nodes1 = cells1;
   dolfinx::radix_sort(std::span(nodes1));
   nodes1.erase(std::unique(nodes1.begin(), nodes1.end()), nodes1.end());
   std::vector coords
       = dolfinx::MPI::distribute_data(comm, nodes1, commg, x, xshape[1]);
 
   // Create geometry object
-  Geometry geometry = create_geometry(topology, element, nodes1, cells1.array(),
-                                      coords, xshape[1]);
+  Geometry geometry
+      = create_geometry(topology, element, nodes1, cells1, coords, xshape[1]);
+
+  return Mesh(comm, std::make_shared<Topology>(std::move(topology)),
+              std::move(geometry));
+}
+
+/// @brief Create a distributed mesh from mesh data using a provided
+/// graph partitioning function for determining the parallel
+/// distribution of the mesh.
+///
+/// From mesh input data that is distributed across processes, a
+/// distributed mesh::Mesh is created. If the partitioning function is
+/// not callable, i.e. it does not store a callable function, no
+/// re-distribution of cells is done.
+///
+/// @param[in] comm Communicator to build the mesh on.
+/// @param[in] commt Communicator that the topology data (`cells`) is
+/// distributed on. This should be `MPI_COMM_NULL` for ranks that should
+/// not participate in computing the topology partitioning.
+/// @param[in] cells Cells on the calling process. Each cell is defined by its
+/// 'nodes' (using global indices) following the Basix ordering. For lowest
+/// order cells this will be just the cell vertices. For higher-order cells,
+/// other cells 'nodes' will be included. See dolfinx::io::cells for examples of
+/// the Basix ordering.
+/// @param[in] elements Coordinate elements for the cells.
+/// @param[in] commg
+/// @param[in] x Geometry data ('node' coordinates). Row-major storage.
+/// The global index of the `i`th node (row) in `x` is taken as `i` plus
+/// the process offset  on`comm`, The offset  is the sum of `x` rows on
+/// all processed with a lower rank than the caller.
+/// @param[in] xshape Shape of the `x` data.
+/// @param[in] partitioner Graph partitioner that computes the owning
+/// rank for each cell. If not callable, cells are not redistributed.
+/// @return A mesh distributed on the communicator `comm`.
+template <typename U>
+Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
+    MPI_Comm comm, MPI_Comm commt,
+    std::vector<std::span<const std::int64_t>>& cells,
+    const std::vector<fem::CoordinateElement<
+        typename std::remove_reference_t<typename U::value_type>>>& elements,
+    MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
+    const CellPartitionFunction& partitioner)
+{
+  assert(cells.size() == elements.size());
+  std::int32_t num_cell_types = cells.size();
+  std::vector<CellType> celltypes;
+  std::transform(elements.cbegin(), elements.cend(),
+                 std::back_inserter(celltypes),
+                 [](auto e) { return e.cell_shape(); });
+  std::vector<fem::ElementDofLayout> doflayouts;
+  std::transform(elements.cbegin(), elements.cend(),
+                 std::back_inserter(doflayouts),
+                 [](auto e) { return e.create_dof_layout(); });
+
+  // Note: `extract_topology` extracts topology data, i.e. just the
+  // vertices. For P1 geometry this should just be the identity
+  // operator. For other elements the filtered lists may have 'gaps',
+  // i.e. the indices might not be contiguous.
+  //
+  // `extract_topology` could be skipped for 'P1 geometry' elements
+
+  // -- Partition topology across ranks of comm
+  std::vector<std::vector<std::int64_t>> cells1(num_cell_types);
+  std::vector<std::vector<std::int64_t>> original_idx1(num_cell_types);
+  std::vector<std::vector<int>> ghost_owners(num_cell_types);
+  if (partitioner)
+  {
+    spdlog::info("Using partitioner with cell data ({} cell types)",
+                 num_cell_types);
+    graph::AdjacencyList<std::int32_t> dest(0);
+    if (commt != MPI_COMM_NULL)
+    {
+      int size = dolfinx::MPI::size(comm);
+      std::vector<std::vector<std::int64_t>> t(num_cell_types);
+      std::vector<std::span<const std::int64_t>> tspan(num_cell_types);
+      for (std::int32_t i = 0; i < num_cell_types; ++i)
+      {
+        t[i] = extract_topology(celltypes[i], doflayouts[i], cells[i]);
+        tspan[i] = std::span(t[i]);
+      }
+      dest = partitioner(commt, size, celltypes, tspan);
+    }
+
+    std::int32_t cell_offset = 0;
+    for (std::int32_t i = 0; i < num_cell_types; ++i)
+    {
+      std::size_t num_cell_nodes = doflayouts[i].num_dofs();
+      assert(cells[i].size() % num_cell_nodes == 0);
+      std::size_t num_cells = cells[i].size() / num_cell_nodes;
+
+      // Extract destination AdjacencyList for this cell type
+      std::vector<std::int32_t> offsets_i(
+          std::next(dest.offsets().begin(), cell_offset),
+          std::next(dest.offsets().begin(), cell_offset + num_cells + 1));
+      std::vector<std::int32_t> data_i(
+          std::next(dest.array().begin(), offsets_i.front()),
+          std::next(dest.array().begin(), offsets_i.back()));
+      std::int32_t offset_0 = offsets_i.front();
+      std::for_each(offsets_i.begin(), offsets_i.end(),
+                    [&offset_0](std::int32_t& j) { j -= offset_0; });
+      graph::AdjacencyList<std::int32_t> dest_i(data_i, offsets_i);
+      cell_offset += num_cells;
+
+      // Distribute cells (topology, includes higher-order 'nodes') to
+      // destination rank
+      std::tie(cells1[i], original_idx1[i], ghost_owners[i])
+          = graph::build::distribute(comm, cells[i],
+                                     {num_cells, num_cell_nodes}, dest_i);
+      spdlog::debug("Got {} cells from distribution", cells1[i].size());
+    }
+  }
+  else
+  {
+    // No partitioning, construct a global index
+    std::int64_t num_owned = 0;
+    for (std::int32_t i = 0; i < num_cell_types; ++i)
+    {
+      cells1[i] = std::vector<std::int64_t>(cells[i].begin(), cells[i].end());
+      std::int32_t num_cell_nodes = doflayouts[i].num_dofs();
+      assert(cells1[i].size() % num_cell_nodes == 0);
+      original_idx1[i].resize(cells1[i].size() / num_cell_nodes);
+      num_owned += original_idx1[i].size();
+    }
+    // Add on global offset
+    std::int64_t global_offset = 0;
+    MPI_Exscan(&num_owned, &global_offset, 1, MPI_INT64_T, MPI_SUM, comm);
+    for (std::int32_t i = 0; i < num_cell_types; ++i)
+    {
+      std::iota(original_idx1[i].begin(), original_idx1[i].end(),
+                global_offset);
+      global_offset += original_idx1[i].size();
+    }
+  }
+
+  // Extract cell 'topology', i.e. extract the vertices for each cell
+  // and discard any 'higher-order' nodes
+  std::vector<std::vector<std::int64_t>> cells1_v(num_cell_types);
+  for (std::int32_t i = 0; i < num_cell_types; ++i)
+  {
+    cells1_v[i] = extract_topology(celltypes[i], doflayouts[i], cells1[i]);
+    spdlog::info("Extract basic topology: {}->{}", cells1[i].size(),
+                 cells1_v[i].size());
+  }
+
+  // Build local dual graph for owned cells to (i) get list of vertices
+  // on the process boundary and (ii) apply re-ordering to cells for
+  // locality
+  std::vector<std::int64_t> boundary_v;
+  {
+    std::vector<std::span<const std::int64_t>> cells1_v_local_cells;
+
+    for (std::int32_t i = 0; i < num_cell_types; ++i)
+    {
+      std::int32_t num_cell_vertices = mesh::num_cell_vertices(celltypes[i]);
+      std::int32_t num_owned_cells
+          = cells1_v[i].size() / num_cell_vertices - ghost_owners[i].size();
+      cells1_v_local_cells.push_back(
+          std::span(cells1_v[i].data(), num_owned_cells * num_cell_vertices));
+    }
+    spdlog::info("Build local dual graph");
+    auto [graph, unmatched_facets, max_v, facet_attached_cells]
+        = build_local_dual_graph(celltypes, cells1_v_local_cells);
+
+    // const std::vector<int> remap = graph::reorder_gps(graph);
+
+    // // Create re-ordered cell lists (leaves ghosts unchanged)
+    // std::vector<std::int64_t> _original_idx(original_idx1.size());
+    // for (std::size_t i = 0; i < remap.size(); ++i)
+    //   _original_idx[remap[i]] = original_idx1[i];
+    // std::copy_n(std::next(original_idx1.cbegin(), num_owned_cells),
+    //             ghost_owners.size(),
+    //             std::next(_original_idx.begin(), num_owned_cells));
+    // impl::reorder_list(
+    //     std::span(cells1_v.data(), remap.size() * num_cell_vertices),
+    //     remap);
+    // impl::reorder_list(
+    //     std::span(cells1.data(), remap.size() * num_cell_nodes), remap);
+    // original_idx1 = _original_idx;
+
+    // Boundary vertices are marked as 'unknown'
+    boundary_v = unmatched_facets;
+    std::sort(boundary_v.begin(), boundary_v.end());
+    boundary_v.erase(std::unique(boundary_v.begin(), boundary_v.end()),
+                     boundary_v.end());
+
+    // Remove -1 if it occurs in boundary vertices (may occur in mixed
+    // topology)
+    if (!boundary_v.empty() > 0 and boundary_v[0] == -1)
+      boundary_v.erase(boundary_v.begin());
+  }
+
+  spdlog::debug("Got {} boundary vertices", boundary_v.size());
+
+  // Create Topology
+
+  std::vector<std::span<const std::int64_t>> cells1_v_span;
+  std::transform(cells1_v.cbegin(), cells1_v.cend(),
+                 std::back_inserter(cells1_v_span),
+                 [](auto& c) { return std::span(c); });
+  std::vector<std::span<const std::int64_t>> original_idx1_span;
+  std::transform(original_idx1.cbegin(), original_idx1.cend(),
+                 std::back_inserter(original_idx1_span),
+                 [](auto& c) { return std::span(c); });
+  std::vector<std::span<const int>> ghost_owners_span;
+  std::transform(ghost_owners.cbegin(), ghost_owners.cend(),
+                 std::back_inserter(ghost_owners_span),
+                 [](auto& c) { return std::span(c); });
+
+  Topology topology
+      = create_topology(comm, celltypes, cells1_v_span, original_idx1_span,
+                        ghost_owners_span, boundary_v);
+
+  // Create connectivities required higher-order geometries for creating
+  // a Geometry object
+  for (int i = 0; i < num_cell_types; ++i)
+  {
+    for (int e = 1; e < topology.dim(); ++e)
+      if (doflayouts[i].num_entity_dofs(e) > 0)
+        topology.create_entities(e);
+    if (elements[i].needs_dof_permutations())
+      topology.create_entity_permutations();
+  }
+
+  // Build list of unique (global) node indices from cells1 and
+  // distribute coordinate data
+  std::vector<std::int64_t> nodes1, nodes2;
+  for (std::vector<std::int64_t>& c : cells1)
+    nodes1.insert(nodes1.end(), c.begin(), c.end());
+  for (std::vector<std::int64_t>& c : cells1)
+    nodes2.insert(nodes2.end(), c.begin(), c.end());
+
+  dolfinx::radix_sort(std::span(nodes1));
+  nodes1.erase(std::unique(nodes1.begin(), nodes1.end()), nodes1.end());
+  std::vector coords
+      = dolfinx::MPI::distribute_data(comm, nodes1, commg, x, xshape[1]);
+
+  // Create geometry object
+  Geometry geometry
+      = create_geometry(topology, elements, nodes1, nodes2, coords, xshape[1]);
 
   return Mesh(comm, std::make_shared<Topology>(std::move(topology)),
               std::move(geometry));
@@ -914,10 +1155,10 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
   }
 }
 
-/// @brief Create a sub-geometry from a mesh and a subset of mesh entities to be
-/// included. A sub-geometry is simply a `Geometry` object containing only the
-/// geometric information for the subset of entities. The entities may differ in
-/// topological dimension from the original mesh.
+/// @brief Create a sub-geometry from a mesh and a subset of mesh entities to
+/// be included. A sub-geometry is simply a `Geometry` object containing only
+/// the geometric information for the subset of entities. The entities may
+/// differ in topological dimension from the original mesh.
 ///
 /// @param[in] mesh The full mesh.
 /// @param[in] dim Topological dimension of the sub-topology.

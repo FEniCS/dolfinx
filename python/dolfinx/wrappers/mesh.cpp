@@ -56,25 +56,28 @@ template <typename Functor>
 auto create_cell_partitioner_py(Functor p)
 {
   return [p](dolfinx_wrappers::MPICommWrapper comm, int n,
-             dolfinx::mesh::CellType cell_type,
-             const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
-  { return p(comm.get(), n, cell_type, cells); };
+             const std::vector<dolfinx::mesh::CellType>& cell_types,
+             std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb)
+  {
+    std::vector<std::span<const std::int64_t>> cells;
+    std::transform(cells_nb.begin(), cells_nb.end(), std::back_inserter(cells),
+                   [](auto c) {
+                     return std::span<const std::int64_t>(c.data(), c.size());
+                   });
+    return p(comm.get(), n, cell_types, cells);
+  };
 }
-
-using PythonPartitioningFunction
-    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        dolfinx_wrappers::MPICommWrapper, int, dolfinx::mesh::CellType,
-        const dolfinx::graph::AdjacencyList<std::int64_t>&)>;
 
 using PythonCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        dolfinx_wrappers::MPICommWrapper, int, dolfinx::mesh::CellType,
-        const dolfinx::graph::AdjacencyList<std::int64_t>&)>;
+        dolfinx_wrappers::MPICommWrapper, int,
+        const std::vector<dolfinx::mesh::CellType>&,
+        std::vector<nb::ndarray<const std::int64_t, nb::numpy>>)>;
 
 using CppCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        MPI_Comm, int, dolfinx::mesh::CellType,
-        const dolfinx::graph::AdjacencyList<std::int64_t>&)>;
+        MPI_Comm, int, const std::vector<dolfinx::mesh::CellType>& q,
+        const std::vector<std::span<const std::int64_t>>&)>;
 
 /// Wrap a Python cell graph partitioning function as a C++ function
 CppCellPartitionFunction
@@ -82,9 +85,20 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
 {
   if (p)
   {
-    return [p](MPI_Comm comm, int n, dolfinx::mesh::CellType cell_type,
-               const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
-    { return p(dolfinx_wrappers::MPICommWrapper(comm), n, cell_type, cells); };
+    return [p](MPI_Comm comm, int n,
+               const std::vector<dolfinx::mesh::CellType>& cell_types,
+               const std::vector<std::span<const std::int64_t>>& cells)
+    {
+      std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
+      std::transform(cells.begin(), cells.end(), std::back_inserter(cells_nb),
+                     [](auto c)
+                     {
+                       return nb::ndarray<const std::int64_t, nb::numpy>(
+                           c.data(), {c.size()}, nb::handle());
+                     });
+
+      return p(dolfinx_wrappers::MPICommWrapper(comm), n, cell_types, cells_nb);
+    };
   }
   else
     return nullptr;
@@ -265,21 +279,76 @@ void declare_mesh(nb::module_& m, std::string type)
       },
       nb::arg("comm"), nb::arg("p"), nb::arg("n"), nb::arg("celltype"),
       nb::arg("partitioner").none());
+
+  m.def("create_mesh",
+        [](MPICommWrapper comm,
+           const std::vector<nb::ndarray<const std::int64_t, nb::ndim<1>,
+                                         nb::c_contig>>& cells_nb,
+           std::vector<dolfinx::fem::CoordinateElement<T>>& elements,
+           nb::ndarray<const T, nb::c_contig> x,
+           const PythonCellPartitionFunction& p)
+        {
+          std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
+
+          std::vector<std::span<const std::int64_t>> cells;
+          std::transform(
+              cells_nb.begin(), cells_nb.end(), std::back_inserter(cells),
+              [](auto c)
+              { return std::span<const std::int64_t>(c.data(), c.size()); });
+
+          if (p)
+          {
+            auto p_wrap
+                = [p](MPI_Comm comm, int n,
+                      const std::vector<dolfinx::mesh::CellType>& cell_types,
+                      const std::vector<std::span<const std::int64_t>>& cells)
+            {
+              std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
+              std::transform(
+                  cells.begin(), cells.end(), std::back_inserter(cells_nb),
+                  [](auto c)
+                  {
+                    return nb::ndarray<const std::int64_t, nb::numpy>(
+                        c.data(), {c.size()}, nb::handle());
+                  });
+              return p(MPICommWrapper(comm), n, cell_types, cells_nb);
+            };
+            return dolfinx::mesh::create_mesh(
+                comm.get(), comm.get(), cells, elements, comm.get(),
+                std::span(x.data(), x.size()), {x.shape(0), shape1}, p_wrap);
+          }
+          else
+            return dolfinx::mesh::create_mesh(
+                comm.get(), comm.get(), cells, elements, comm.get(),
+                std::span(x.data(), x.size()), {x.shape(0), shape1}, nullptr);
+        });
+
   m.def(
       "create_mesh",
       [](MPICommWrapper comm,
          nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> cells,
          const dolfinx::fem::CoordinateElement<T>& element,
          nb::ndarray<const T, nb::c_contig> x,
-         const PythonPartitioningFunction& p)
+         const PythonCellPartitionFunction& p)
       {
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
         if (p)
         {
           auto p_wrap
-              = [p](MPI_Comm comm, int n, dolfinx::mesh::CellType cell_type,
-                    const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
-          { return p(MPICommWrapper(comm), n, cell_type, cells); };
+              = [p](MPI_Comm comm, int n,
+                    const std::vector<dolfinx::mesh::CellType>& cell_types,
+                    const std::vector<std::span<const std::int64_t>>& cells)
+          {
+            std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
+            std::transform(cells.begin(), cells.end(),
+                           std::back_inserter(cells_nb),
+                           [](auto c)
+                           {
+                             return nb::ndarray<const std::int64_t, nb::numpy>(
+                                 c.data(), {c.size()}, nb::handle());
+                           });
+            return p(MPICommWrapper(comm), n, cell_types, cells_nb);
+          };
           return dolfinx::mesh::create_mesh(
               comm.get(), comm.get(), std::span(cells.data(), cells.size()),
               element, comm.get(), std::span(x.data(), x.size()),
@@ -290,7 +359,7 @@ void declare_mesh(nb::module_& m, std::string type)
           return dolfinx::mesh::create_mesh(
               comm.get(), comm.get(), std::span(cells.data(), cells.size()),
               element, comm.get(), std::span(x.data(), x.size()),
-              {x.shape(0), shape1}, p);
+              {x.shape(0), shape1}, nullptr);
         }
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("element"),
@@ -457,8 +526,31 @@ void mesh(nb::module_& m)
       "build_dual_graph",
       [](const MPICommWrapper comm, dolfinx::mesh::CellType cell_type,
          const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
-      { return dolfinx::mesh::build_dual_graph(comm.get(), cell_type, cells); },
+      {
+        std::vector<dolfinx::mesh::CellType> c = {cell_type};
+        return dolfinx::mesh::build_dual_graph(comm.get(), std::span{c},
+                                               {cells.array()});
+      },
       nb::arg("comm"), nb::arg("cell_type"), nb::arg("cells"),
+      "Build dual graph for cells");
+
+  m.def(
+      "build_dual_graph",
+      [](const MPICommWrapper comm,
+         std::vector<dolfinx::mesh::CellType>& cell_types,
+         const std::vector<
+             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>& cells)
+      {
+        std::vector<std::span<const std::int64_t>> cell_span(cells.size());
+        for (std::size_t i = 0; i < cells.size(); ++i)
+        {
+          cell_span[i]
+              = std::span<const std::int64_t>(cells[i].data(), cells[i].size());
+        }
+        return dolfinx::mesh::build_dual_graph(comm.get(), cell_types,
+                                               cell_span);
+      },
+      nb::arg("comm"), nb::arg("cell_types"), nb::arg("cells"),
       "Build dual graph for cells");
 
   // dolfinx::mesh::GhostMode enums
