@@ -92,6 +92,9 @@ Windows conda packages are currently in beta testing and can be installed using
 ```shell
 conda install -c minrk/label/fenics-windows -c conda-forge fenics-dolfinx=0.9.0.dev
 ```
+Because FEniCS uses just-in-time compilation it also necessary to install
+[Microsoft Visual Studio with
+C++](https://visualstudio.microsoft.com/vs/features/cplusplus/).
 
 conda is distributed with [Anaconda](https://www.anaconda.com/) and
 [Miniconda](https://docs.conda.io/en/latest/miniconda.html). The recipe
