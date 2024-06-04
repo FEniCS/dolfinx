@@ -1,17 +1,6 @@
 name: Windows build
 
 on:
-  push:
-    branches:
-      - main
-    tags:
-      - "v*"
-  pull_request:
-    branches:
-      - main
-  merge_group:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
@@ -23,7 +12,7 @@ jobs:
 
     steps:
       - name: Export GitHub Actions cache environment variables
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
