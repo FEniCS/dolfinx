@@ -71,9 +71,7 @@ comprehensive instructions.
   [docker](#docker-images) or [conda](#conda). See also [Spack](#spack).
 - Windows: [docker](#docker-images), or install
   [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install) and use
-  [Ubuntu](#ubuntu-packages). Native build (advanced) from source using
-  [vcpkg](https://learn.microsoft.com/en-gb/vcpkg/) following
-  `.github/workflows/windows.yml`.
+  [Ubuntu](#ubuntu-packages). [conda](#conda) packages in beta testing.
 - High performance computers: [Spack](#spack) or
   [from source](#from-source), both using system-provided MPI.
 
@@ -90,11 +88,12 @@ conda install -c conda-forge fenics-dolfinx mpich pyvista
 
 Windows conda packages are currently in beta testing and can be installed using
 ```shell
+conda create -n fenicsx-env
+conda activate fenicsx-env
 conda install -c minrk/label/fenics-windows -c conda-forge fenics-dolfinx=0.9.0.dev
 ```
 Because FEniCS uses just-in-time compilation it also necessary to install
-[Microsoft Visual Studio with
-C++](https://visualstudio.microsoft.com/vs/features/cplusplus/).
+[Microsoft Visual Studio](https://visualstudio.microsoft.com/downloads/).
 
 conda is distributed with [Anaconda](https://www.anaconda.com/) and
 [Miniconda](https://docs.conda.io/en/latest/miniconda.html). The recipe
