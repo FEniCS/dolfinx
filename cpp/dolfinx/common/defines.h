@@ -93,7 +93,7 @@ consteval bool has_ptscotch()
 }
 
 /// Return true if DOLFINx has complex kernels enabled
-consteval bool has_complex_kernels()
+consteval bool has_complex_ufcx_kernels()
 {
 #ifdef DOLFINX_STDC_NO_COMPLEX_KERNELS
   return true;
