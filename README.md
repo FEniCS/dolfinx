@@ -5,6 +5,7 @@
 [![Actions Spack build](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml)
 [![Actions Conda install](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml)
 [![Actions macOS/Homebrew install](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml)
+[![Actions Windows/vcpkg install](https://github.com/FEniCS/dolfinx/actions/workflows/windows.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/windows.yml)
 
 DOLFINx is the computational environment of
 [FEniCSx](https://fenicsproject.org) and implements the FEniCS Problem
@@ -71,7 +72,7 @@ comprehensive instructions.
   [docker](#docker-images) or [conda](#conda). See also [Spack](#spack).
 - Windows: [docker](#docker-images), or install
   [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install) and use
-  [Ubuntu](#ubuntu-packages).
+  [Ubuntu](#ubuntu-packages). [conda](#conda) packages in beta testing.
 - High performance computers: [Spack](#spack) or
   [from source](#from-source), both using system-provided MPI.
 
@@ -86,6 +87,15 @@ conda activate fenicsx-env
 conda install -c conda-forge fenics-dolfinx mpich pyvista
 ```
 
+Windows conda packages are currently in beta testing and can be installed using:
+```shell
+conda create -n fenicsx-env
+conda activate fenicsx-env
+conda install -c minrk/label/fenics-windows -c conda-forge fenics-dolfinx=0.9.0.dev
+```
+Because FEniCS uses just-in-time compilation it also necessary to install
+[Microsoft Visual Studio](https://visualstudio.microsoft.com/downloads/).
+
 conda is distributed with [Anaconda](https://www.anaconda.com/) and
 [Miniconda](https://docs.conda.io/en/latest/miniconda.html). The recipe
 is hosted on
@@ -94,10 +104,6 @@ is hosted on
 | Name | Downloads | Version | Platforms |
 | --- | --- | --- | --- |
 | [![Conda Recipe](https://img.shields.io/badge/recipe-fenics--dolfinx-green.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/fenics-dolfinx.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/fenics-dolfinx.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/fenics-dolfinx.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) |
-
-> **Note**
-> Windows packages are not available. This is due to some DOLFINx
-> dependencies not supporting Windows.
 
 #### Ubuntu packages
 
