@@ -434,7 +434,7 @@ def test_facet_expression(dtype):
     reference_midpoint, _ = basix.quadrature.make_quadrature(
         basix.cell.CellType.interval,
         1,
-        basix.quadrature.QuadratureType.Default,
+        basix.quadrature.QuadratureType.default,
         basix.quadrature.PolysetType.standard,
     )
     normal_expr = Expression(n, reference_midpoint, dtype=dtype)
