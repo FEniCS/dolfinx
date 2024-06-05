@@ -92,4 +92,14 @@ consteval bool has_ptscotch()
 #endif
 }
 
+/// Return true if DOLFINx has complex kernels enabled
+consteval bool has_complex_kernels()
+{
+#ifdef DOLFINX_STDC_NO_COMPLEX_KERNELS
+  return true;
+#else
+  return false;
+#endif
+}
+
 } // namespace dolfinx
