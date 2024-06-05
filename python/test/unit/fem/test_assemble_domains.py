@@ -120,13 +120,12 @@ def test_assembly_dx_domains(mode, meshtags_factory):
     L = form(w * (dx(1) + dx(2) + dx(3) + dx))
     s_sum = assemble_scalar(L)
     s_sum = mesh.comm.allreduce(s_sum, op=MPI.SUM)
-    assert s_sum == pytest.approx(s+s2, rel=1.0e-6)
+    assert s_sum == pytest.approx(s + s2, rel=1.0e-6)
 
     L2 = form(2 * w * dx)
     s2 = assemble_scalar(L2)
     s2 = mesh.comm.allreduce(s2, op=MPI.SUM)
     assert s_sum == pytest.approx(s2, rel=1.0e-6)
-
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])

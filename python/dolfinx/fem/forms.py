@@ -212,7 +212,7 @@ def form(
                         # If not tuple, but single integer id
                         ids = [integral.subdomain_id()]
                 else:
-                    ids = []                
+                    ids = []
                 subdomain_ids[integral.integral_type()].append(ids)
 
         # Chain and sort subdomain ids
