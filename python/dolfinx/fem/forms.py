@@ -204,10 +204,20 @@ def form(
         subdomain_ids = {type: [] for type in sd.get(domain).keys()}
         for integral in form.integrals():
             if integral.subdomain_data() is not None:
-                subdomain_ids[integral.integral_type()].append(integral.subdomain_id())
+                # Subdomain ids can be strings, its or tuples with strings and ints
+                if integral.subdomain_id() != "everywhere":
+                    try:
+                        ids = [sid for sid in integral.subdomain_id() if sid != "everywhere"]
+                    except TypeError:
+                        # If not tuple, but single integer id
+                        ids = [integral.subdomain_id()]
+                else:
+                    ids = []
+                subdomain_ids[integral.integral_type()].append(ids)
+
         # Chain and sort subdomain ids
         for itg_type, marker_ids in subdomain_ids.items():
-            flattened_ids = list(chain(marker_ids))
+            flattened_ids = list(chain.from_iterable(marker_ids))
             flattened_ids.sort()
             subdomain_ids[itg_type] = flattened_ids
 
@@ -225,18 +235,13 @@ def form(
                     # Compute integration domains only for each subdomain id in the integrals
                     # If a process has no integral entities, insert an empty array
                     for id in subdomain_ids:
-                        try:
-                            integration_entities = _cpp.fem.compute_integration_domains(
-                                integral_type,
-                                subdomain._cpp_object.topology,
-                                subdomain.find(id),
-                                subdomain.dim,
-                            )
-                            domains.append((id, integration_entities))
-
-                        except TypeError:
-                            pass  # If subdomain id is "everywhere"
-
+                        integration_entities = _cpp.fem.compute_integration_domains(
+                            integral_type,
+                            subdomain._cpp_object.topology,
+                            subdomain.find(id),
+                            subdomain.dim,
+                        )
+                        domains.append((id, integration_entities))
                     return [(s[0], np.array(s[1])) for s in domains]
                 except AttributeError:
                     return [(s[0], np.array(s[1])) for s in subdomain]
