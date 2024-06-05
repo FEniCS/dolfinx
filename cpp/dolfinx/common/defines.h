@@ -96,9 +96,9 @@ consteval bool has_ptscotch()
 consteval bool has_complex_ufcx_kernels()
 {
 #ifdef DOLFINX_STDC_NO_COMPLEX_KERNELS
-  return true;
-#else
   return false;
+#else
+  return true;
 #endif
 }
 
