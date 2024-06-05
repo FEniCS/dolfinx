@@ -36,9 +36,15 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
+find_package(
+  Python3
+  COMPONENTS Interpreter
+  REQUIRED
+)
+
 message(
   STATUS
-    "Asking Python module FFCx for location of UFC... (Python executable: ${Python3_EXECUTABLE})"
+    "Asking Python module FFCx for location of ufcx.h..."
 )
 
 # Get include path
@@ -48,6 +54,8 @@ execute_process(
     "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_include_path())"
   OUTPUT_VARIABLE UFCX_INCLUDE_DIR
 )
+# Converts os native to cmake native path type
+cmake_path(SET UFCX_INCLUDE_DIR "${UFCX_INCLUDE_DIR}")
 
 # Get ufcx.h version
 if(UFCX_INCLUDE_DIR)

@@ -8,6 +8,8 @@
 # flake8: noqa
 
 import sys
+# Template placeholder for injecting Windows dll directories in CI
+# WINDOWSDLL
 
 try:
     from petsc4py import PETSc as _PETSc
