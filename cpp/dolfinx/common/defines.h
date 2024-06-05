@@ -93,7 +93,9 @@ consteval bool has_ptscotch()
 }
 
 /// Return true if DOLFINx supports UFCx kernels with arguments of type C99
-/// _Complex. When DOLFINx was built with MSVC this returns false.
+/// _Complex. When DOLFINx was built with MSVC this returns false. This
+/// returning false does not preclude using DOLFINx with kernels accepting
+/// std::complex.
 consteval bool has_complex_ufcx_kernels()
 {
 #ifdef DOLFINX_STDC_NO_COMPLEX_KERNELS
