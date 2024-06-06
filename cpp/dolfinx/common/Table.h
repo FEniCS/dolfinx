@@ -15,7 +15,8 @@
 namespace dolfinx
 {
 
-/// This class provides storage and pretty-printing for tables.
+/// @brief This class provides storage and pretty-printing for tables.
+///
 /// Example usage:
 ///
 ///   Table table("Timings");
@@ -23,7 +24,6 @@ namespace dolfinx
 ///   table.set("Foo", "Solve", 0.020);
 ///   table.set("Bar", "Assemble", 0.011);
 ///   table.set("Bar", "Solve", 0.019);
-
 class Table
 {
 public:

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import collections
 import typing
+from itertools import chain
 
 import numpy as np
 import numpy.typing as npt
@@ -194,26 +195,53 @@ def form(
         # its C++ object.
         original_coeffs = form.coefficients()
         coeffs = [
-            original_coeffs[ufcx_form.original_coefficient_position[i]]._cpp_object
+            original_coeffs[ufcx_form.original_coefficient_positions[i]]._cpp_object
             for i in range(ufcx_form.num_coefficients)
         ]
         constants = [c._cpp_object for c in form.constants()]
 
-        # NOTE Could remove this and let the user convert meshtags by
-        # calling compute_integration_domains themselves
-        def get_integration_domains(integral_type, subdomain):
+        # Make map from integral_type to subdomain id
+        subdomain_ids = {type: [] for type in sd.get(domain).keys()}
+        for integral in form.integrals():
+            if integral.subdomain_data() is not None:
+                # Subdomain ids can be strings, its or tuples with strings and ints
+                if integral.subdomain_id() != "everywhere":
+                    try:
+                        ids = [sid for sid in integral.subdomain_id() if sid != "everywhere"]
+                    except TypeError:
+                        # If not tuple, but single integer id
+                        ids = [integral.subdomain_id()]
+                else:
+                    ids = []
+                subdomain_ids[integral.integral_type()].append(ids)
+
+        # Chain and sort subdomain ids
+        for itg_type, marker_ids in subdomain_ids.items():
+            flattened_ids = list(chain.from_iterable(marker_ids))
+            flattened_ids.sort()
+            subdomain_ids[itg_type] = flattened_ids
+
+        def get_integration_domains(integral_type, subdomain, subdomain_ids):
             """Get integration domains from subdomain data"""
             if subdomain is None:
                 return []
             else:
+                domains = []
                 try:
                     if integral_type in (IntegralType.exterior_facet, IntegralType.interior_facet):
                         tdim = subdomain.topology.dim
                         subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)
                         subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)
-                    domains = _cpp.fem.compute_integration_domains(
-                        integral_type, subdomain._cpp_object
-                    )
+                    # Compute integration domains only for each subdomain id in the integrals
+                    # If a process has no integral entities, insert an empty array
+                    for id in subdomain_ids:
+                        integration_entities = _cpp.fem.compute_integration_domains(
+                            integral_type,
+                            subdomain._cpp_object.topology,
+                            subdomain.find(id),
+                            subdomain.dim,
+                        )
+                        domains.append((id, integration_entities))
                     return [(s[0], np.array(s[1])) for s in domains]
                 except AttributeError:
                     return [(s[0], np.array(s[1])) for s in subdomain]
@@ -221,7 +249,7 @@ def form(
         # Subdomain markers (possibly empty list for some integral types)
         subdomains = {
             _ufl_to_dolfinx_domain[key]: get_integration_domains(
-                _ufl_to_dolfinx_domain[key], subdomain_data[0]
+                _ufl_to_dolfinx_domain[key], subdomain_data[0], subdomain_ids[key]
             )
             for (key, subdomain_data) in sd.get(domain).items()
         }

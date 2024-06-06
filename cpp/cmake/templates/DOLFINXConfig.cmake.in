@@ -10,7 +10,7 @@ include(CMakeFindDependencyMacro)
 
 find_dependency(MPI REQUIRED)
 find_dependency(spdlog REQUIRED)
-find_dependency(pugixml)
+find_dependency(pugixml REQUIRED)
 
 # Check for Boost
 if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
@@ -18,28 +18,42 @@ if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
 endif()
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_VERBOSE TRUE)
-find_dependency(Boost 1.70 REQUIRED COMPONENTS timer filesystem)
+find_dependency(Boost 1.70 REQUIRED COMPONENTS timer)
 
 if(@ufcx_FOUND@)
   find_dependency(ufcx)
 endif()
 
 # Basix
-find_package(Python3 COMPONENTS Interpreter)
-if(Python3_Interpreter_FOUND)
-  execute_process(
-    COMMAND
-      ${Python3_EXECUTABLE} -c
-      "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
-    OUTPUT_VARIABLE BASIX_PY_DIR
-    RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
-    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+if(@DOLFINX_BASIX_PYTHON@)
+  find_package(
+    Python3
+    COMPONENTS Interpreter
+    QUIET
   )
+
+  if(Python3_Interpreter_FOUND)
+    message(STATUS "Checking for Basix hints with ${Python3_EXECUTABLE}")
+    execute_process(
+      COMMAND
+        ${Python3_EXECUTABLE} -c
+        "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
+      OUTPUT_VARIABLE BASIX_PY_DIR
+      RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
+      ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+  endif()
+
+  if(BASIX_PY_DIR)
+    # TODO: CMake 3.20 has more modern cmake_path.
+    file(TO_CMAKE_PATH "${BASIX_PY_DIR}" BASIX_PY_DIR)
+    message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
+  else()
+    message(STATUS "No Basix hint was found.")
+  endif()
 endif()
-if(BASIX_PY_DIR)
-  message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
-endif()
-find_dependency(Basix CONFIG HINTS ${BASIX_PY_DIR})
+
+find_dependency(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 
 # HDF5
 if(NOT TARGET hdf5::hdf5)

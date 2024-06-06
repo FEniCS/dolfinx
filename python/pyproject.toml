@@ -7,7 +7,7 @@
 [build-system]
 requires = [
       "scikit-build-core[pyproject]>=0.5",
-      "nanobind>=1.8.0",
+      "nanobind>=2.0.0",
       "mpi4py",
 ]
 build-backend = "scikit_build_core.build"
@@ -37,7 +37,7 @@ docs = ["markdown", "pyyaml", "sphinx", "sphinx_rtd_theme"]
 lint = ["ruff"]
 optional = ["numba"]
 petsc4py = ["petsc4py"]
-test = ["pytest", "sympy", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
+test = ["pytest", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
 ci = [
       "mypy",
       "pytest-xdist",
@@ -62,7 +62,8 @@ junit_family = "xunit2"
 markers = [
             "skip_in_parallel: marks tests that should be run in serial only.",
             "petsc4py: tests that require PETSc/petsc4py (deselect with '-m \"not petsc4py\"').",
-            "adios2: tests that require Adios2 (deselect with '-m \"not adios2\"')."
+            "adios2: tests that require Adios2 (deselect with '-m \"not adios2\"').",
+            "xfail_win32_complex: expected failures for complex numbers in Win32."
 ]
 
 

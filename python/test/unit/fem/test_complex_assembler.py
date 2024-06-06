@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly in complex mode"""
 
+import sys
+
 from mpi4py import MPI
 
 import numpy as np
@@ -16,6 +18,9 @@ from basix.ufl import element
 from dolfinx.fem import Function, assemble_matrix, assemble_vector, form, functionspace
 from dolfinx.mesh import create_unit_square
 from ufl import dx, grad, inner
+
+if sys.platform.startswith("win32"):
+    pytest.skip("No Win32 _Complex support", allow_module_level=True)
 
 
 @pytest.mark.parametrize("complex_dtype", [np.complex64, np.complex128])
