@@ -24,7 +24,7 @@ jobs:
       - name: Update vcpkg
         shell: cmd
         run: |
-          cd %VCPKG_ROOT%
+          cd C:\vcpkg
           git pull
           .\bootstrap-vcpkg.bat
 
