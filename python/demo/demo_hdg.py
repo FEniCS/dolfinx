@@ -215,7 +215,15 @@ ksp.getPC().setFactorSolverType("superlu_dist")
 
 # Compute solution
 x = A.createVecRight()
-ksp.solve(b, x)
+try:
+    ksp.solve(b, x)
+except PETSc.Error as e:  # type: ignore
+    if e.ierr == 92:
+        print("The required PETSc solver/preconditioner is not available. Exiting.")
+        print(e)
+        exit(0)
+    else:
+        raise e
 
 # Create functions for the solution and update values
 u, ubar = fem.Function(V), fem.Function(Vbar)
