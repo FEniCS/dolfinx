@@ -167,7 +167,7 @@ a_00 = fem.form(
     inner(c * grad(u), grad(v)) * dx_c
     - (
         inner(c * u, dot(grad(v), n)) * ds_c(cell_boundaries)
-        + inner(c * v, dot(grad(u), n)) * ds_c(cell_boundaries)
+        + inner(dot(grad(u), n), c * v) * ds_c(cell_boundaries)
     )
     + gamma * inner(c * u, v) * ds_c(cell_boundaries)
 )
@@ -175,7 +175,7 @@ a_10 = fem.form(
     inner(dot(grad(u), n) - gamma * u, c * vbar) * ds_c(cell_boundaries), entity_maps=entity_maps
 )
 a_01 = fem.form(
-    inner(dot(grad(v), n) - gamma * v, c * ubar) * ds_c(cell_boundaries), entity_maps=entity_maps
+    inner(c * ubar, dot(grad(v), n) - gamma * v) * ds_c(cell_boundaries), entity_maps=entity_maps
 )
 a_11 = fem.form(gamma * inner(c * ubar, vbar) * ds_c(cell_boundaries), entity_maps=entity_maps)
 
