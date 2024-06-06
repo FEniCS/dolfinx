@@ -164,6 +164,16 @@ public:
                       const mesh::Geometry<T>& x, std::string geometry_xpath,
                       std::string xpath = "/Xdmf/Domain");
 
+  /// Read MeshTags by name
+  /// @param[in] mesh The Mesh that the data is defined on
+  /// @param[in] name
+  /// @param[in] attribute_name The name of the attribute to read
+  /// @param[in] xpath XPath where MeshTags Grid is stored in file
+  mesh::MeshTags<std::int32_t>
+  read_meshtags(const mesh::Mesh<double>& mesh, const std::string name,
+                const std::string attribute_name,
+                const std::string xpath = "/Xdmf/Domain");
+
   /// Read MeshTags
   /// @param[in] mesh The Mesh that the data is defined on
   /// @param[in] name
