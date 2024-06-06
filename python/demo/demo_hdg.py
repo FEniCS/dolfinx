@@ -39,7 +39,7 @@ from mpi4py import MPI
 import numpy as np
 
 import ufl
-from dolfinx import fem, mesh
+from dolfinx import fem, mesh, default_scalar_type
 from dolfinx.cpp.mesh import cell_num_entities
 from ufl import div, dot, grad, inner
 
@@ -101,6 +101,7 @@ def boundary(x):
 
 comm = MPI.COMM_WORLD
 rank = comm.rank
+dtype = PETSc.ScalarType
 
 # Number of elements in each direction
 n = 8
@@ -182,7 +183,7 @@ a_11 = fem.form(gamma * inner(c * ubar, vbar) * ds_c(cell_boundaries), entity_ma
 f = -div(c * grad(u_e(x)))
 
 L_0 = fem.form(inner(f, v) * dx_c)
-L_1 = fem.form(inner(fem.Constant(facet_mesh, 0.0), vbar) * dx_f)
+L_1 = fem.form(inner(fem.Constant(facet_mesh, dtype(0.0)), vbar) * dx_f)
 
 # Define block structure
 a = [[a_00, a_01], [a_10, a_11]]
@@ -198,7 +199,7 @@ facet_mesh_boundary_facets = mesh_to_facet_mesh[msh_boundary_facets]
 # Get the dofs and apply the bondary condition
 facet_mesh.topology.create_connectivity(fdim, fdim)
 dofs = fem.locate_dofs_topological(Vbar, fdim, facet_mesh_boundary_facets)
-bc = fem.dirichletbc(PETSc.ScalarType(0.0), dofs, Vbar)
+bc = fem.dirichletbc(dtype(0.0), dofs, Vbar)
 
 # Assemble the matrix and vector
 A = assemble_matrix_block(a, bcs=[bc])
