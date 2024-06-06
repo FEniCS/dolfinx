@@ -23,7 +23,7 @@ jobs:
 
       - name: Update vcpkg
         run: |
-          cd $Env:<VCPKG_ROOT>
+          cd $Env:VCPKG_ROOT
           git pull
           .\bootstrap-vcpkg.bat
 
