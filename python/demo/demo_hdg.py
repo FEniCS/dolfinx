@@ -39,7 +39,7 @@ from mpi4py import MPI
 import numpy as np
 
 import ufl
-from dolfinx import fem, io, mesh
+from dolfinx import fem, mesh
 from dolfinx.cpp.mesh import cell_num_entities
 from ufl import div, dot, grad, inner
 
@@ -225,10 +225,16 @@ u.x.scatter_forward()
 ubar.x.scatter_forward()
 
 # Write to file
-with io.VTXWriter(msh.comm, "u.bp", u, "bp4") as f:
-    f.write(0.0)
-with io.VTXWriter(msh.comm, "ubar.bp", ubar, "bp4") as f:
-    f.write(0.0)
+try:
+    from dolfinx.io import VTXWriter
+
+    with VTXWriter(msh.comm, "u.bp", u, "bp4") as f:
+        f.write(0.0)
+    with VTXWriter(msh.comm, "ubar.bp", ubar, "bp4") as f:
+        f.write(0.0)
+except ImportError:
+    print("ADIOS2 required for VTX output")
+
 
 # Compute errors
 x = ufl.SpatialCoordinate(msh)
