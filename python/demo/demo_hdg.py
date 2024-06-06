@@ -39,7 +39,7 @@ from mpi4py import MPI
 import numpy as np
 
 import ufl
-from dolfinx import fem, mesh, default_scalar_type
+from dolfinx import fem, mesh
 from dolfinx.cpp.mesh import cell_num_entities
 from ufl import div, dot, grad, inner
 
