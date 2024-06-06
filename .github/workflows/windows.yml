@@ -25,7 +25,7 @@ jobs:
         run: |
           cd $Env:VCPKG_ROOT
           git pull
-          .\bootstrap-vcpkg.bat
+          ./bootstrap-vcpkg.bat
 
       - name: Set up Python
         uses: actions/setup-python@v5
