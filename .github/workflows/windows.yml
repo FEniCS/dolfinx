@@ -22,10 +22,11 @@ jobs:
             core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
       - name: Update vcpkg
+        shell: cmd
         run: |
-          cd $Env:VCPKG_ROOT
+          cd %VCPKG_ROOT%
           git pull
-          ./bootstrap-vcpkg.bat
+          .\bootstrap-vcpkg.bat
 
       - name: Set up Python
         uses: actions/setup-python@v5
