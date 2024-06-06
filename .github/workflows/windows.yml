@@ -1,6 +1,9 @@
 name: Windows build
 
 on:
+  push:
+    branches:
+      - "**"
   workflow_dispatch:
 
 jobs:
@@ -17,6 +20,12 @@ jobs:
           script: |
             core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
             core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Update vcpkg
+        run: |
+          cd %VCPKG_ROOT%
+          git pull
+          .\bootstrap-vcpkg.bat
 
       - name: Set up Python
         uses: actions/setup-python@v5
