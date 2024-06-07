@@ -36,6 +36,7 @@ PDEs (advanced)
    demos/demo_types.md
    demos/demo_poisson_matrix_free.md
    demos/demo_pyamg.md
+   demos/demo_hdg.md
 
 
 Nonlinear problems
@@ -112,3 +113,4 @@ List of all demos
    demos/demo_navier-stokes.md
    demos/demo_mixed-poisson.md
    demos/demo_pyamg.md
+   demos/demo_hdg.md
