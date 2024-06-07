@@ -273,9 +273,9 @@ void io(nb::module_& m)
            nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
            nb::arg("mesh"), nb::arg("name"), nb::arg("xpath") = "/Xdmf/Domain")
-      .def("read_meshtags_by_name",
-           &dolfinx::io::XDMFFile::read_meshtags_by_name, nb::arg("mesh"),
-           nb::arg("name"), nb::arg("attribute_name"),
+      .def("read_meshtags_by_label",
+           &dolfinx::io::XDMFFile::read_meshtags_by_label, nb::arg("mesh"),
+           nb::arg("name"), nb::arg("attribute_label"),
            nb::arg("xpath") = "/Xdmf/Domain")
       .def("write_information", &dolfinx::io::XDMFFile::write_information,
            nb::arg("name"), nb::arg("value"), nb::arg("xpath") = "/Xdmf/Domain")
