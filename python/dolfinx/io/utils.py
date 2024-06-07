@@ -211,7 +211,9 @@ class XDMFFile(_cpp.io.XDMFFile):
         If `attribute_label` is not `None` but no attributes have the provided name,
         throw an error. If multiple attributes have the provided name, read the first
         one found."""
-        mt = super().read_meshtags_by_label(mesh._cpp_object, name, attribute_label, xpath)
+        mt = super().read_meshtags(
+            mesh._cpp_object, name, attribute_label if attribute_label is not None else "", xpath
+        )
         return MeshTags(mt)
 
 
