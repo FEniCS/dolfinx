@@ -648,6 +648,8 @@ Form<T, U> create_form_factory(
 /// @param[in] constants Spatial constants in the form (by name).
 /// @param[in] subdomains Subdomain markers.
 /// @pre Each value in `subdomains` must be sorted by domain id.
+/// @param[in] entity_maps The entity maps for the form. Empty for
+/// single domain problems.
 /// @param[in] mesh Mesh of the domain. This is required if the form has
 /// no arguments, e.g. a functional.
 /// @return A Form
@@ -662,6 +664,8 @@ Form<T, U> create_form(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
         subdomains,
+    const std::map<std::shared_ptr<const mesh::Mesh<U>>,
+                   std::span<const std::int32_t>>& entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   // Place coefficients in appropriate order
@@ -689,7 +693,7 @@ Form<T, U> create_form(
   }
 
   return create_form_factory(ufcx_form, spaces, coeff_map, const_map,
-                             subdomains, {}, mesh);
+                             subdomains, entity_maps, mesh);
 }
 
 /// @brief Create a Form using a factory function that returns a pointer
@@ -704,6 +708,8 @@ Form<T, U> create_form(
 /// @param[in] constants Spatial constants in the form (by name),
 /// @param[in] subdomains Subdomain markers.
 /// @pre Each value in `subdomains` must be sorted by domain id.
+/// @param[in] entity_maps The entity maps for the form. Empty for
+/// single domain problems.
 /// @param[in] mesh Mesh of the domain. This is required if the form has
 /// no arguments, e.g. a functional.
 /// @return A Form
@@ -718,11 +724,13 @@ Form<T, U> create_form(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
         subdomains,
+    const std::map<std::shared_ptr<const mesh::Mesh<U>>,
+                   std::span<const std::int32_t>>& entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   ufcx_form* form = fptr();
   Form<T, U> L = create_form<T, U>(*form, spaces, coefficients, constants,
-                                   subdomains, mesh);
+                                   subdomains, entity_maps, mesh);
   std::free(form);
   return L;
 }
