@@ -71,7 +71,7 @@ struct integral_data
   /// @param id Domain ID
   /// @param kernel Integration kernel.
   /// @param e Entities to integrate over.
-  /// @param enabled_coefficients Coefficients in form that are enabled in this
+  /// @param c Coefficients in form that are enabled in this
   /// integral
   template <typename K>
     requires std::is_convertible_v<
