@@ -100,7 +100,9 @@ class Form:
 
 
 def get_integration_domains(
-    integral_type: IntegralType, subdomain: typing.Optional[MeshTags], subdomain_ids: list[int]
+    integral_type: IntegralType,
+    subdomain: typing.Optional[typing.Union[MeshTags, list[tuple[int, np.ndarray]]]],
+    subdomain_ids: list[int],
 ) -> list[tuple[int, np.ndarray]]:
     """Get integration domains from subdomain data.
 
@@ -118,7 +120,7 @@ def get_integration_domains(
 
     Args:
         integral_type: The type of integral to pack integration entitites for
-        subdomain: A meshtag with markers
+        subdomain: A meshtag with markers or manually specified integration domains.
         subdomain_ids: List of ids to integrate over
     """
     if subdomain is None:
@@ -127,22 +129,22 @@ def get_integration_domains(
         domains = []
         try:
             if integral_type in (IntegralType.exterior_facet, IntegralType.interior_facet):
-                tdim = subdomain.topology.dim
-                subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)
-                subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)
+                tdim = subdomain.topology.dim  # type: ignore
+                subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)  # type: ignore
+                subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)  # type: ignore
             # Compute integration domains only for each subdomain id in the integrals
             # If a process has no integral entities, insert an empty array
             for id in subdomain_ids:
                 integration_entities = _cpp.fem.compute_integration_domains(
                     integral_type,
-                    subdomain._cpp_object.topology,
-                    subdomain.find(id),
-                    subdomain.dim,
+                    subdomain._cpp_object.topology,  # type: ignore
+                    subdomain.find(id),  # type: ignore
+                    subdomain.dim,  # type: ignore
                 )
                 domains.append((id, integration_entities))
             return [(s[0], np.array(s[1])) for s in domains]
         except AttributeError:
-            return [(s[0], np.array(s[1])) for s in subdomain]
+            return [(s[0], np.array(s[1])) for s in subdomain]  # type: ignore
 
 
 def form_cpp_class(
@@ -418,8 +420,8 @@ def form_cpp_creator(
 def create_form(
     form: CompiledForm,
     mesh: Mesh,
-    coefficient_map: dict[str, function.Function],
-    constant_map: dict[str, function.Constant],
+    coefficient_map: dict[ufl.Function, function.Function],
+    constant_map: dict[ufl.Constant, function.Constant],
     dtype: npt.DTypeLike = default_scalar_type,
 ) -> Form:
     """
@@ -436,7 +438,12 @@ def create_form(
     (domain,) = list(sd.keys())  # Assuming single domain
 
     # Make map from integral_type to subdomain id
-    subdomain_ids = {type: [] for type in sd.get(domain).keys()}
+    subdomain_ids: dict[IntegralType, list[list[int]]] = {
+        type: [] for type in sd.get(domain).keys()
+    }
+    flattened_subdomain_ids: dict[IntegralType, list[int]] = {
+        type: [] for type in sd.get(domain).keys()
+    }
     for integral in form.ufl_form.integrals():
         if integral.subdomain_data() is not None:
             # Subdomain ids can be strings, its or tuples with strings and ints
@@ -448,18 +455,18 @@ def create_form(
                     ids = [integral.subdomain_id()]
             else:
                 ids = []
-            subdomain_ids[integral.integral_type()].append(ids)
+            subdomain_ids[integral.integral_type()].append(ids)  # type: ignore
 
         # Chain and sort subdomain ids
         for itg_type, marker_ids in subdomain_ids.items():
-            flattened_ids = list(chain.from_iterable(marker_ids))
+            flattened_ids: list[int] = list(chain.from_iterable(marker_ids))
             flattened_ids.sort()
-            subdomain_ids[itg_type] = flattened_ids
+            flattened_subdomain_ids[itg_type] = flattened_ids
 
     # Subdomain markers (possibly empty list for some integral types)
     subdomains = {
         _ufl_to_dolfinx_domain[key]: get_integration_domains(
-            _ufl_to_dolfinx_domain[key], subdomain_data[0], subdomain_ids[key]
+            _ufl_to_dolfinx_domain[key], subdomain_data[0], flattened_subdomain_ids[key]
         )
         for (key, subdomain_data) in sd.get(domain).items()
     }
