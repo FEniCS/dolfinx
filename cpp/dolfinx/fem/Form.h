@@ -49,16 +49,21 @@ struct integral_data
   /// @param id Domain ID.
   /// @param kernel Integration kernel.
   /// @param entities Entities to integrate over.
-  template <typename K, typename V>
+  /// @param enabled_coefficients Coefficients in form that are enabled in this
+  /// integral
+  template <typename K, typename V, typename Q>
     requires std::is_convertible_v<
                  std::remove_cvref_t<K>,
                  std::function<void(T*, const T*, const T*, const U*,
                                     const int*, const uint8_t*)>>
                  and std::is_convertible_v<std::remove_cvref_t<V>,
                                            std::vector<std::int32_t>>
-  integral_data(int id, K&& kernel, V&& entities)
+                 and std::is_convertible_v<std::remove_cvref_t<Q>,
+                                           std::vector<std::int8_t>>
+  integral_data(int id, K&& kernel, V&& entities, Q&& enabled_coefficients)
       : id(id), kernel(std::forward<K>(kernel)),
-        entities(std::forward<V>(entities))
+        entities(std::forward<V>(entities)),
+        enabled_coefficients(std::move(enabled_coefficients))
   {
   }
 
@@ -71,8 +76,10 @@ struct integral_data
                  std::remove_cvref_t<K>,
                  std::function<void(T*, const T*, const T*, const U*,
                                     const int*, const uint8_t*)>>
-  integral_data(int id, K&& kernel, std::span<const std::int32_t> e)
-      : id(id), kernel(std::forward<K>(kernel)), entities(e.begin(), e.end())
+  integral_data(int id, K&& kernel, std::span<const std::int32_t> e,
+                std::span<const std::int8_t> c)
+      : id(id), kernel(std::forward<K>(kernel)), entities(e.begin(), e.end()),
+        enabled_coefficients(c.begin(), c.end())
   {
   }
 
@@ -86,6 +93,9 @@ struct integral_data
 
   /// The entities to integrate over
   std::vector<std::int32_t> entities;
+
+  /// Indicator of which coefficients (from the form) that is in this integral
+  std::vector<std::int8_t> enabled_coefficients;
 };
 
 /// @brief A representation of finite element variational forms.
@@ -200,8 +210,8 @@ public:
 
       std::vector<integral_data<scalar_type, geometry_type>>& itg
           = _integrals[static_cast<std::size_t>(domain_type)];
-      for (auto&& [id, kern, e] : data)
-        itg.emplace_back(id, kern, std::move(e));
+      for (auto&& [id, kern, e, c] : data)
+        itg.emplace_back(id, kern, std::move(e), std::move(c));
     }
 
     // Store entity maps
@@ -281,6 +291,19 @@ public:
     return _integrals[static_cast<std::size_t>(type)].size();
   }
 
+  /// @brief Indicator of which coefficient is enabled for a given integral
+  /// (kernel).
+  /// @param[in] type Integral type.
+  /// @param[in] i The index of the integral.
+  std::span<const std::int8_t> enabled_coefficients(IntegralType type,
+                                                    std::size_t i) const
+  {
+    assert(i < _integrals[static_cast<std::size_t>(type)].size());
+    const std::vector<std::int8_t>& enabled_coeffs
+        = _integrals[static_cast<std::size_t>(type)][i].enabled_coefficients;
+    return std::span<const std::int8_t>(enabled_coeffs.data(),
+                                        enabled_coeffs.size());
+  }
   /// @brief Get the IDs for integrals (kernels) for given integral type.
   ///
   /// The IDs correspond to the domain IDs which the integrals are

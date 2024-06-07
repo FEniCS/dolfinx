@@ -607,11 +607,13 @@ void declare_form(nb::module_& m, std::string type)
           [](dolfinx::fem::Form<T, U>* fp,
              const std::vector<
                  std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>>& spaces,
-             const std::map<dolfinx::fem::IntegralType,
-                            std::vector<std::tuple<
-                                int, std::uintptr_t,
-                                nb::ndarray<const std::int32_t, nb::ndim<1>,
-                                            nb::c_contig>>>>& integrals,
+             const std::map<
+                 dolfinx::fem::IntegralType,
+                 std::vector<std::tuple<
+                     int, std::uintptr_t,
+                     nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>,
+                     nb::ndarray<const std::int8_t, nb::ndim<1>,
+                                 nb::c_contig>>>>& integrals,
              const std::vector<std::shared_ptr<
                  const dolfinx::fem::Function<T, U>>>& coefficients,
              const std::vector<
@@ -629,7 +631,7 @@ void declare_form(nb::module_& m, std::string type)
             // Loop over kernel for each entity type
             for (auto& [type, kernels] : integrals)
             {
-              for (auto& [id, ptr, e] : kernels)
+              for (auto& [id, ptr, e, c] : kernels)
               {
                 auto kn_ptr
                     = (void (*)(T*, const T*, const T*,
@@ -637,7 +639,8 @@ void declare_form(nb::module_& m, std::string type)
                                 const int*, const std::uint8_t*))ptr;
                 _integrals[type].emplace_back(
                     id, kn_ptr,
-                    std::span<const std::int32_t>(e.data(), e.size()));
+                    std::span<const std::int32_t>(e.data(), e.size()),
+                    std::span<const std::int8_t>(c.data(), c.size()));
               }
             }
 

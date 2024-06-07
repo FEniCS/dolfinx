@@ -418,6 +418,11 @@ Form<T, U> create_form_factory(
       ufcx_integral* integral
           = ufcx_form.form_integrals[integral_offsets[cell] + i];
       assert(integral);
+      const bool* _enabled_coefficients = integral->enabled_coefficients;
+      // Get list of enabled coefficients
+      std::vector<std::int8_t> enabled_coefficients(ufcx_form.num_coefficients);
+      for (std::size_t i = 0; i < enabled_coefficients.size(); ++i)
+        enabled_coefficients[i] = _enabled_coefficients[i];
 
       kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
@@ -456,7 +461,8 @@ Form<T, U> create_form_factory(
         assert(topology->index_map(tdim));
         default_cells.resize(topology->index_map(tdim)->size_local(), 0);
         std::iota(default_cells.begin(), default_cells.end(), 0);
-        itg.first->second.emplace_back(id, k, default_cells);
+        itg.first->second.emplace_back(id, k, default_cells,
+                                       enabled_coefficients);
       }
       else if (sd != subdomains.end())
       {
@@ -465,7 +471,8 @@ Form<T, U> create_form_factory(
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
-          itg.first->second.emplace_back(id, k, it->second);
+          itg.first->second.emplace_back(id, k, it->second,
+                                         enabled_coefficients);
       }
 
       if (integral->needs_facet_permutations)
@@ -487,6 +494,11 @@ Form<T, U> create_form_factory(
       ufcx_integral* integral
           = ufcx_form.form_integrals[integral_offsets[exterior_facet] + i];
       assert(integral);
+
+      const bool* _enabled_coefficients = integral->enabled_coefficients;
+      std::vector<std::int8_t> enabled_coefficients(ufcx_form.num_coefficients);
+      for (std::size_t i = 0; i < enabled_coefficients.size(); ++i)
+        enabled_coefficients[i] = _enabled_coefficients[i];
 
       kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
@@ -531,7 +543,8 @@ Form<T, U> create_form_factory(
           default_facets_ext.insert(default_facets_ext.end(), pair.begin(),
                                     pair.end());
         }
-        itg.first->second.emplace_back(id, k, default_facets_ext);
+        itg.first->second.emplace_back(id, k, default_facets_ext,
+                                       enabled_coefficients);
       }
       else if (sd != subdomains.end())
       {
@@ -540,7 +553,8 @@ Form<T, U> create_form_factory(
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
-          itg.first->second.emplace_back(id, k, it->second);
+          itg.first->second.emplace_back(id, k, it->second,
+                                         enabled_coefficients);
       }
 
       if (integral->needs_facet_permutations)
@@ -562,6 +576,11 @@ Form<T, U> create_form_factory(
       ufcx_integral* integral
           = ufcx_form.form_integrals[integral_offsets[interior_facet] + i];
       assert(integral);
+
+      const bool* _enabled_coefficients = integral->enabled_coefficients;
+      std::vector<std::int8_t> enabled_coefficients(ufcx_form.num_coefficients);
+      for (std::size_t i = 0; i < enabled_coefficients.size(); ++i)
+        enabled_coefficients[i] = _enabled_coefficients[i];
 
       kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
@@ -609,7 +628,8 @@ Form<T, U> create_form_factory(
                                       pairs.end());
           }
         }
-        itg.first->second.emplace_back(id, k, default_facets_int);
+        itg.first->second.emplace_back(id, k, default_facets_int,
+                                       enabled_coefficients);
       }
       else if (sd != subdomains.end())
       {
@@ -617,7 +637,8 @@ Form<T, U> create_form_factory(
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
-          itg.first->second.emplace_back(id, k, it->second);
+          itg.first->second.emplace_back(id, k, it->second,
+                                         enabled_coefficients);
       }
 
       if (integral->needs_facet_permutations)
@@ -997,15 +1018,30 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
       = form.coefficients();
   const std::vector<int> offsets = form.coefficient_offsets();
 
+  // Indicator for packing coefficients
+  std::vector<std::int8_t> active_coefficients(coefficients.size(), 0);
   if (!coefficients.empty())
   {
     switch (integral_type)
     {
     case IntegralType::cell:
     {
+      // Get indicator for all coefficients that are active in cell integrals
+      for (std::size_t i = 0; i < form.num_integrals(IntegralType::cell); ++i)
+      {
+        std::span<const std::int8_t> enabled_coefficients
+            = form.enabled_coefficients(IntegralType::cell, i);
+        for (std::size_t j = 0; j < coefficients.size(); ++j)
+          if (enabled_coefficients[j])
+            active_coefficients[j] = 1;
+      }
+
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
+        if (!active_coefficients[coeff])
+          continue;
+
         auto mesh = coefficients[coeff]->function_space()->mesh();
         assert(mesh);
         std::vector<std::int32_t> cells
@@ -1020,9 +1056,23 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
     }
     case IntegralType::exterior_facet:
     {
+      // Get indicator for all coefficients that are active in exterior facet
+      // integrals
+      for (std::size_t i = 0;
+           i < form.num_integrals(IntegralType::exterior_facet); ++i)
+      {
+        std::span<const std::int8_t> enabled_coefficients
+            = form.enabled_coefficients(IntegralType::exterior_facet, i);
+        for (std::size_t j = 0; j < coefficients.size(); ++j)
+          if (enabled_coefficients[j])
+            active_coefficients[j] = 1;
+      }
+
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
+        if (!active_coefficients[coeff])
+          continue;
         auto mesh = coefficients[coeff]->function_space()->mesh();
         std::vector<std::int32_t> facets
             = form.domain(IntegralType::exterior_facet, id, *mesh);
@@ -1036,9 +1086,23 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
     }
     case IntegralType::interior_facet:
     {
+      // Get indicator for all coefficients that are active in interior
+      // facet integrals
+      for (std::size_t i = 0;
+           i < form.num_integrals(IntegralType::interior_facet); ++i)
+      {
+        std::span<const std::int8_t> enabled_coefficients
+            = form.enabled_coefficients(IntegralType::interior_facet, i);
+        for (std::size_t j = 0; j < coefficients.size(); ++j)
+          if (enabled_coefficients[j])
+            active_coefficients[j] = 1;
+      }
+
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
+        if (!active_coefficients[coeff])
+          continue;
         auto mesh = coefficients[coeff]->function_space()->mesh();
         std::vector<std::int32_t> facets
             = form.domain(IntegralType::interior_facet, id, *mesh);
