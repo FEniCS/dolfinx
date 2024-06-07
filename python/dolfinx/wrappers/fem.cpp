@@ -783,6 +783,42 @@ void declare_form(nb::module_& m, std::string type)
       nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
       nb::arg("constants"), nb::arg("subdomains"), nb::arg("mesh"),
       "Create Form from a pointer to ufcx_form.");
+  m.def(
+      pymethod_create_form.c_str(),
+      [](std::uintptr_t form,
+         const std::vector<
+             std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>>& spaces,
+         const std::map<std::string,
+                        std::shared_ptr<const dolfinx::fem::Function<T, U>>>&
+             coefficients,
+         const std::map<std::string,
+                        std::shared_ptr<const dolfinx::fem::Constant<T>>>&
+             constants,
+         const std::map<dolfinx::fem::IntegralType,
+                        std::vector<std::pair<std::int32_t,
+                                              std::span<const std::int32_t>>>>&
+             subdomains,
+         std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh = nullptr)
+      {
+        std::map<
+            dolfinx::fem::IntegralType,
+            std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>
+            sd;
+        for (auto& [itg, data] : subdomains)
+        {
+          std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>> x;
+          for (auto& [id, idx] : data)
+            x.emplace_back(id, std::span(idx.data(), idx.size()));
+          sd.insert({itg, std::move(x)});
+        }
+
+        ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
+        return dolfinx::fem::create_form<T, U>(*p, spaces, coefficients,
+                                               constants, sd, mesh);
+      },
+      nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
+      nb::arg("constants"), nb::arg("subdomains"), nb::arg("mesh"),
+      "Create Form from a pointer to ufcx_form.");
 
   m.def("create_sparsity_pattern",
         &dolfinx::fem ::create_sparsity_pattern<T, U>, nb::arg("a"),

@@ -31,7 +31,14 @@ from dolfinx.fem.bcs import (
 )
 from dolfinx.fem.dofmap import DofMap
 from dolfinx.fem.element import CoordinateElement, coordinate_element
-from dolfinx.fem.forms import Form, extract_function_spaces, form, form_cpp_class
+from dolfinx.fem.forms import (
+    Form,
+    extract_function_spaces,
+    form,
+    form_cpp_class,
+    create_form,
+    compile_form,
+)
 from dolfinx.fem.function import (
     Constant,
     ElementMetaData,
@@ -148,4 +155,6 @@ __all__ = [
     "CoordinateElement",
     "coordinate_element",
     "form_cpp_class",
+    "create_form",
+    "compiled_form",
 ]
