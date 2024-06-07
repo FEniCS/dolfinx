@@ -167,11 +167,11 @@ public:
   /// Read MeshTags by name
   /// @param[in] mesh The Mesh that the data is defined on
   /// @param[in] name
-  /// @param[in] attribute_name The name of the attribute to read
+  /// @param[in] attribute_label The name of the attribute to read
   /// @param[in] xpath XPath where MeshTags Grid is stored in file
   mesh::MeshTags<std::int32_t>
-  read_meshtags_by_name(const mesh::Mesh<double>& mesh, std::string name,
-                        std::string attribute_name,
+  read_meshtags_by_label(const mesh::Mesh<double>& mesh, std::string name,
+                        std::string attribute_label,
                         std::string xpath = "/Xdmf/Domain");
 
   /// Read MeshTags
