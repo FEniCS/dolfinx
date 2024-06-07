@@ -186,7 +186,7 @@ void assemble_cells(
 /// mesh
 /// @param cell_info1 The cell permutation information for the trial function
 /// mesh
-/// @param get_perm Function to get the facet permutations
+/// @param perms Function to get the facet permutations
 template <dolfinx::scalar T>
 void assemble_exterior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
@@ -200,7 +200,7 @@ void assemble_exterior_facets(
     std::span<const T> coeffs, int cstride, std::span<const T> constants,
     std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
-    const std::function<std::uint8_t(std::size_t)>& get_perm)
+    std::span<const std::uint8_t> perms)
 {
   if (facets.empty())
     return;
@@ -239,8 +239,8 @@ void assemble_exterior_facets(
     }
 
     // Permutations
-    const int perm_idx = cell * num_facets_per_cell + local_facet;
-    const std::uint8_t perm{get_perm(perm_idx)};
+    std::uint8_t perm
+        = perms.empty() ? 0 : perms[cell * num_facets_per_cell + local_facet];
 
     // Tabulate tensor
     std::fill(Ae.begin(), Ae.end(), 0);
@@ -320,7 +320,7 @@ void assemble_exterior_facets(
 /// mesh
 /// @param cell_info1 The cell permutation information for the trial function
 /// mesh
-/// @param get_perm Function to apply facet permutations
+/// @param perms Function to apply facet permutations
 template <dolfinx::scalar T>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
@@ -334,7 +334,7 @@ void assemble_interior_facets(
     std::span<const T> coeffs, int cstride, std::span<const int> offsets,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
-    const std::function<std::uint8_t(std::size_t)>& get_perm)
+    std::span<const std::uint8_t> perms)
 {
   if (facets.empty())
     return;
@@ -407,9 +407,12 @@ void assemble_interior_facets(
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
 
-    const std::array perm{
-        get_perm(cells[0] * num_facets_per_cell + local_facet[0]),
-        get_perm(cells[1] * num_facets_per_cell + local_facet[1])};
+    std::array perm
+        = perms.empty()
+              ? std::array<std::uint8_t, 2>{0, 0}
+              : std::array{
+                    perms[cells[0] * num_facets_per_cell + local_facet[0]],
+                    perms[cells[1] * num_facets_per_cell + local_facet[1]]};
     kernel(Ae.data(), coeffs.data() + index / 2 * cstride, constants.data(),
            coordinate_dofs.data(), local_facet.data(), perm.data());
 
@@ -541,16 +544,12 @@ void assemble_matrix(
         fn, coeffs, cstride, constants, cell_info0, cell_info1);
   }
 
-  std::function<std::uint8_t(std::size_t)> get_perm;
+  std::span<const std::uint8_t> perms;
   if (a.needs_facet_permutations())
   {
     mesh->topology_mutable()->create_entity_permutations();
-    const std::vector<std::uint8_t>& perms
-        = mesh->topology()->get_facet_permutations();
-    get_perm = [&perms](std::size_t i) { return perms[i]; };
+    perms = std::span(mesh->topology()->get_facet_permutations());
   }
-  else
-    get_perm = [](std::size_t) { return 0; };
 
   mesh::CellType cell_type = mesh->topology()->cell_type();
   int num_facets_per_cell
@@ -567,7 +566,7 @@ void assemble_matrix(
         {dofs0, bs0, a.domain(IntegralType::exterior_facet, i, *mesh0)}, P0,
         {dofs1, bs1, a.domain(IntegralType::exterior_facet, i, *mesh1)}, P1T,
         bc0, bc1, fn, coeffs, cstride, constants, cell_info0, cell_info1,
-        get_perm);
+        perms);
   }
 
   for (int i : a.integral_ids(IntegralType::interior_facet))
@@ -583,7 +582,7 @@ void assemble_matrix(
         {*dofmap0, bs0, a.domain(IntegralType::interior_facet, i, *mesh0)}, P0,
         {*dofmap1, bs1, a.domain(IntegralType::interior_facet, i, *mesh1)}, P1T,
         bc0, bc1, fn, coeffs, cstride, c_offsets, constants, cell_info0,
-        cell_info1, get_perm);
+        cell_info1, perms);
   }
 }
 
