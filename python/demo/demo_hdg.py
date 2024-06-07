@@ -57,37 +57,33 @@ def norm_L2(comm, v, measure=ufl.dx):
 
 
 def compute_cell_boundary_facets(msh):
-    """
-    Compute the integration entities for integrals around the
+    """Compute the integration entities for integrals around the
     boundaries of all cells in msh.
 
     Parameters:
-        msh: the mesh
+        msh: The mesh.
 
     Returns:
-        A list of facets to integrate over, identified by
-        (cell, local facet index) pairs
+        Facets to integrate over, identified by ``(cell, local facet
+        index)`` pairs.
     """
     tdim = msh.topology.dim
     fdim = tdim - 1
     n_f = cell_num_entities(msh.topology.cell_type, fdim)
     n_c = msh.topology.index_map(tdim).size_local
-    cell_boundary_facets = np.vstack(
-        (np.repeat(np.arange(n_c), n_f), np.tile(np.arange(n_f), n_c))
-    ).T.flatten()
-    return cell_boundary_facets
+    return np.vstack((np.repeat(np.arange(n_c), n_f), np.tile(np.arange(n_f), n_c))).T.flatten()
 
 
-# Exact solution
 def u_e(x):
+    """Exact solution."""
     u_e = 1
     for i in range(tdim):
         u_e *= ufl.sin(ufl.pi * x[i])
     return u_e
 
 
-# Boundary marker
 def boundary(x):
+    """Boundary marker."""
     lr = np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)
     tb = np.isclose(x[1], 0.0) | np.isclose(x[1], 1.0)
     lrtb = lr | tb
