@@ -364,7 +364,6 @@ public:
         const int tdim = _mesh->topology()->dim();
         const int codim = tdim - mesh.topology()->dim();
         assert(codim >= 0);
-
         if (codim == 0)
         {
           for (std::size_t i = 0; i < entities.size(); i += 2)
@@ -393,6 +392,7 @@ public:
         }
         else
           throw std::runtime_error("Codimension > 1 not supported.");
+
         break;
       }
       case IntegralType::interior_facet:
