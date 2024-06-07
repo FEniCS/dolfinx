@@ -33,11 +33,11 @@ from dolfinx.fem.dofmap import DofMap
 from dolfinx.fem.element import CoordinateElement, coordinate_element
 from dolfinx.fem.forms import (
     Form,
+    compile_form,
+    create_form,
     extract_function_spaces,
     form,
     form_cpp_class,
-    create_form,
-    compile_form,
 )
 from dolfinx.fem.function import (
     Constant,
@@ -156,5 +156,5 @@ __all__ = [
     "coordinate_element",
     "form_cpp_class",
     "create_form",
-    "compiled_form",
+    "compile_form",
 ]

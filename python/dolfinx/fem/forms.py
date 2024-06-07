@@ -5,9 +5,10 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 from __future__ import annotations
-from dataclasses import dataclass
+
 import collections
 import typing
+from dataclasses import dataclass
 from itertools import chain
 
 import numpy as np
@@ -20,9 +21,10 @@ from dolfinx.fem import IntegralType
 from dolfinx.fem.function import FunctionSpace
 
 if typing.TYPE_CHECKING:
+    from mpi4py import MPI
+
     from dolfinx.fem import function
     from dolfinx.mesh import Mesh, MeshTags
-    from mpi4py import MPI
 
 
 class Form:
@@ -98,7 +100,7 @@ class Form:
 
 
 def get_integration_domains(
-    integral_type: IntegralType, subdomain: MeshTags | None, subdomain_ids: list[int]
+    integral_type: IntegralType, subdomain: typing.Optional[MeshTags], subdomain_ids: list[int]
 ) -> list[tuple[int, np.ndarray]]:
     """Get integration domains from subdomain data.
 
@@ -107,10 +109,12 @@ def get_integration_domains(
     Integration domains is defined as a list of tuples, where each input `subdomain_ids`
     is mapped to an array of integration entities, where an integration entity for a cell
     integral is the list of cells.
-    For an exterior facet integral each integration entity is a tuple (cell_index, local_facet_index).
-    For an interior facet integral each integration entity is a tuple (cell_index0, local_facet_index0,
-    cell_index1, local_facet_index1). Where the first cell-facet pair is the '+' restriction, the
-    second the '-' restriction.
+    For an exterior facet integral each integration entity is a
+    tuple (cell_index, local_facet_index).
+    For an interior facet integral each integration entity is a
+    uple (cell_index0, local_facet_index0,
+    cell_index1, local_facet_index1). Where the first cell-facet pair is
+    the '+' restriction, the second the '-' restriction.
 
     Args:
         integral_type: The type of integral to pack integration entitites for
@@ -414,8 +418,8 @@ def form_cpp_creator(
 def create_form(
     form: CompiledForm,
     mesh: Mesh,
-    coefficient_map: typing.Dict[str, function.Function],
-    constant_map: typing.Dict[str, function.Constant],
+    coefficient_map: dict[str, function.Function],
+    constant_map: dict[str, function.Constant],
     dtype: npt.DTypeLike = default_scalar_type,
 ) -> Form:
     """
