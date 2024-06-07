@@ -1,6 +1,7 @@
 from mpi4py import MPI
-import pytest
+
 import numpy as np
+import pytest
 
 import basix.ufl
 import dolfinx
