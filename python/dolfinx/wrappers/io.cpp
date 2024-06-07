@@ -143,8 +143,9 @@ void declare_vtx_writer(nb::module_& m, std::string type)
             nb::arg("policy") = dolfinx::io::VTXMeshPolicy::update)
         .def("close", [](dolfinx::io::VTXWriter<T>& self) { self.close(); })
         .def(
-            "write", [](dolfinx::io::VTXWriter<T>& self, double t)
-            { self.write(t); }, nb::arg("t"));
+            "write",
+            [](dolfinx::io::VTXWriter<T>& self, double t) { self.write(t); },
+            nb::arg("t"));
   }
 #endif
 }
@@ -272,16 +273,19 @@ void io(nb::module_& m)
            nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
            nb::arg("mesh"), nb::arg("name"), nb::arg("xpath") = "/Xdmf/Domain")
-      .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
-           nb::arg("mesh"), nb::arg("name"), nb::arg("attribute_name"),
+      .def("read_meshtags_by_name",
+           &dolfinx::io::XDMFFile::read_meshtags_by_name, nb::arg("mesh"),
+           nb::arg("name"), nb::arg("attribute_name"),
            nb::arg("xpath") = "/Xdmf/Domain")
       .def("write_information", &dolfinx::io::XDMFFile::write_information,
            nb::arg("name"), nb::arg("value"), nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_information", &dolfinx::io::XDMFFile::read_information,
            nb::arg("name"), nb::arg("xpath") = "/Xdmf/Domain")
       .def_prop_ro(
-          "comm", [](dolfinx::io::XDMFFile& self)
-          { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>());
+          "comm",
+          [](dolfinx::io::XDMFFile& self)
+          { return MPICommWrapper(self.comm()); },
+          nb::keep_alive<0, 1>());
 
   xdmf_real_fn<float>(xdmf_file);
   xdmf_real_fn<double>(xdmf_file);
