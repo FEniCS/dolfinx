@@ -205,9 +205,12 @@ class XDMFFile(_cpp.io.XDMFFile):
         )
         return Mesh(msh, domain)
 
-    def read_meshtags(self, mesh, name, attribute_name="", xpath="/Xdmf/Domain"):
-        mt = super().read_meshtags(mesh._cpp_object, name, attribute_name, xpath)
+    def read_meshtags_by_name(self, mesh, name, attribute_name, xpath="/Xdmf/Domain"):
+        mt = super().read_meshtags_by_name(mesh._cpp_object, name, attribute_name, xpath)
         return MeshTags(mt)
+
+    def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
+        return self.read_meshtags_by_name(mesh, name, "", xpath)
 
 
 def distribute_entity_data(

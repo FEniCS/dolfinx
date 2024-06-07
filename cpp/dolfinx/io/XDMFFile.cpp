@@ -333,9 +333,10 @@ template void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>&,
                                        std::string, std::string);
 /// @endcond
 //-----------------------------------------------------------------------------
-mesh::MeshTags<std::int32_t> XDMFFile::read_meshtags_by_name(
-    const mesh::Mesh<double>& mesh, const std::string name,
-    const std::string attribute_name, const std::string xpath)
+mesh::MeshTags<std::int32_t>
+XDMFFile::read_meshtags_by_name(const mesh::Mesh<double>& mesh,
+                                std::string name, std::string attribute_name,
+                                std::string xpath)
 {
   spdlog::info("XDMF read meshtags ({})", name);
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
