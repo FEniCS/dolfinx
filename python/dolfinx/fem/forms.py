@@ -372,17 +372,20 @@ class CompiledForm:
     ufcx_form: typing.Any  # The compiled form
     module: typing.Any  #  The module
     code: str  # The source code
+    dtype: npt.DTypeLike  # data type of coefficients and constants
 
 
 def compile_form(
     comm: MPI.Intracomm,
     form: ufl.Form,
+    form_compiler_options: typing.Optional[dict] = None,
+    jit_options: typing.Optional[dict] = None,
 ) -> CompiledForm:
     """
-    Compile UFL form withtout associated DOLFINx data
+    Compile UFL form witthout associated DOLFINx data
     """
-    compiled_form = jit.ffcx_jit(comm, form)
-    return CompiledForm(form, *compiled_form)
+    compiled_form = jit.ffcx_jit(comm, form, form_compiler_options, jit_options)
+    return CompiledForm(form, *compiled_form, form_compiler_options["scalar_type"])
 
 
 def form_cpp_creator(
@@ -422,7 +425,6 @@ def create_form(
     mesh: Mesh,
     coefficient_map: dict[ufl.Function, function.Function],
     constant_map: dict[ufl.Constant, function.Constant],
-    dtype: npt.DTypeLike = default_scalar_type,
 ) -> Form:
     """
     Create a Form object from a data-independent compilde form
@@ -473,7 +475,7 @@ def create_form(
 
     coefficients = {f"w{u.count()}": uh._cpp_object for (u, uh) in coefficient_map.items()}
     constants = {f"c{c.count()}": ch._cpp_object for (c, ch) in constant_map.items()}
-    ftype = form_cpp_creator(dtype)
+    ftype = form_cpp_creator(form.dtype)
     f = ftype(
         form.module.ffi.cast("uintptr_t", form.module.ffi.addressof(form.ufcx_form)),
         [],
