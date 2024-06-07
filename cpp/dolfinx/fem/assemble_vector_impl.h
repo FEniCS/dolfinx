@@ -255,7 +255,7 @@ void _lift_bc_cells(
 /// applied
 /// @param x0 The vector used in the lifting
 /// @param scale The scaling to apply
-/// @param get_perm Function to get the facet permutations
+/// @param perms Function to get the facet permutations
 template <dolfinx::scalar T, int _bs = -1>
 void _lift_bc_exterior_facets(
     std::span<T> b, mdspan2_t x_dofmap,
@@ -269,7 +269,7 @@ void _lift_bc_exterior_facets(
     std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1, std::span<const T> bc_values1,
     std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T scale,
-    const std::function<std::uint8_t(std::size_t)>& get_perm)
+    std::span<const std::uint8_t> perms)
 {
   if (facets.empty())
     return;
@@ -333,8 +333,8 @@ void _lift_bc_exterior_facets(
     const int num_cols = bs1 * dofs1.size();
 
     // Permutations
-    const int perm_idx = cell * num_facets_per_cell + local_facet;
-    const std::uint8_t perm{get_perm(perm_idx)};
+    std::uint8_t perm
+        = perms.empty() ? 0 : perms[cell * num_facets_per_cell + local_facet];
 
     const T* coeff_array = coeffs.data() + index / 2 * cstride;
     Ae.resize(num_rows * num_cols);
@@ -396,7 +396,7 @@ void _lift_bc_exterior_facets(
 /// mesh
 /// @param cell_info1 The cell permutation information for the trial function
 /// mesh
-/// @param get_perm Function to apply facet permutations
+/// @param perms Function to apply facet permutations
 /// @param bc_values1 The value for entries with an applied boundary condition
 /// @param bc_markers1 Marker to identify which DOFs have boundary conditions
 /// applied
@@ -414,9 +414,8 @@ void _lift_bc_interior_facets(
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
-    const std::function<std::uint8_t(std::size_t)>& get_perm,
-    std::span<const T> bc_values1, std::span<const std::int8_t> bc_markers1,
-    std::span<const T> x0, T scale)
+    std::span<const std::uint8_t> perms, std::span<const T> bc_values1,
+    std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T scale)
 {
   if (facets.empty())
     return;
@@ -525,9 +524,12 @@ void _lift_bc_interior_facets(
     // Tabulate tensor
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
-    const std::array perm{
-        get_perm(cells[0] * num_facets_per_cell + local_facet[0]),
-        get_perm(cells[1] * num_facets_per_cell + local_facet[1])};
+    std::array perm
+        = perms.empty()
+              ? std::array<std::uint8_t, 2>{0, 0}
+              : std::array{
+                    perms[cells[0] * num_facets_per_cell + local_facet[0]],
+                    perms[cells[1] * num_facets_per_cell + local_facet[1]]};
     kernel(Ae.data(), coeffs.data() + index / 2 * cstride, constants.data(),
            coordinate_dofs.data(), local_facet.data(), perm.data());
 
@@ -706,7 +708,7 @@ void assemble_cells(
 /// @param cstride The coefficient stride
 /// @param cell_info0 The cell permutation information for the test function
 /// mesh
-/// @param get_perm Function to get the facet permutations
+/// @param perms Function to get the facet permutations
 template <dolfinx::scalar T, int _bs = -1>
 void assemble_exterior_facets(
     fem::DofTransformKernel<T> auto P0, std::span<T> b, mdspan2_t x_dofmap,
@@ -716,7 +718,7 @@ void assemble_exterior_facets(
     FEkernel<T> auto fn, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info0,
-    const std::function<std::uint8_t(std::size_t)>& get_perm)
+    std::span<const std::uint8_t> perms)
 {
   if (facets.empty())
     return;
@@ -750,8 +752,8 @@ void assemble_exterior_facets(
     }
 
     // Permutations
-    const int perm_idx = cell * num_facets_per_cell + local_facet;
-    const std::uint8_t perm{get_perm(perm_idx)};
+    std::uint8_t perm
+        = perms.empty() ? 0 : perms[cell * num_facets_per_cell + local_facet];
 
     // Tabulate element vector
     std::fill(be.begin(), be.end(), 0);
@@ -801,7 +803,7 @@ void assemble_exterior_facets(
 /// @param cstride The coefficient stride
 /// @param cell_info0 The cell permutation information for the test function
 /// mesh
-/// @param get_perm Function to apply facet permutations
+/// @param perms Function to apply facet permutations
 template <dolfinx::scalar T, int _bs = -1>
 void assemble_interior_facets(
     fem::DofTransformKernel<T> auto P0, std::span<T> b, mdspan2_t x_dofmap,
@@ -811,7 +813,7 @@ void assemble_interior_facets(
     FEkernel<T> auto fn, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info0,
-    const std::function<std::uint8_t(std::size_t)>& get_perm)
+    std::span<const std::uint8_t> perms)
 {
   if (facets.empty())
     return;
@@ -862,9 +864,12 @@ void assemble_interior_facets(
     // Tabulate element vector
     be.resize(bs * (dmap0.size() + dmap1.size()));
     std::fill(be.begin(), be.end(), 0);
-    const std::array perm{
-        get_perm(cells[0] * num_facets_per_cell + local_facet[0]),
-        get_perm(cells[1] * num_facets_per_cell + local_facet[1])};
+    std::array perm
+        = perms.empty()
+              ? std::array<std::uint8_t, 2>{0, 0}
+              : std::array{
+                    perms[cells[0] * num_facets_per_cell + local_facet[0]],
+                    perms[cells[1] * num_facets_per_cell + local_facet[1]]};
     fn(be.data(), coeffs.data() + index / 2 * cstride, constants.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data());
 
@@ -996,16 +1001,12 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
     }
   }
 
-  std::function<std::uint8_t(std::size_t)> get_perm;
+  std::span<const std::uint8_t> perms;
   if (a.needs_facet_permutations())
   {
     mesh->topology_mutable()->create_entity_permutations();
-    const std::vector<std::uint8_t>& perms
-        = mesh->topology()->get_facet_permutations();
-    get_perm = [&perms](std::size_t i) { return perms[i]; };
+    perms = std::span(mesh->topology()->get_facet_permutations());
   }
-  else
-    get_perm = [](std::size_t) { return 0; };
 
   mesh::CellType cell_type = mesh->topology()->cell_type();
   int num_facets_per_cell
@@ -1022,7 +1023,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
         {dofmap0, bs0, a.domain(IntegralType::exterior_facet, i, *mesh0)}, P0,
         {dofmap1, bs1, a.domain(IntegralType::exterior_facet, i, *mesh1)}, P1T,
         constants, coeffs, cstride, cell_info0, cell_info1, bc_values1,
-        bc_markers1, x0, scale, get_perm);
+        bc_markers1, x0, scale, perms);
   }
 
   for (int i : a.integral_ids(IntegralType::interior_facet))
@@ -1036,8 +1037,8 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
         a.domain(IntegralType::interior_facet, i),
         {dofmap0, bs0, a.domain(IntegralType::interior_facet, i, *mesh0)}, P0,
         {dofmap1, bs1, a.domain(IntegralType::interior_facet, i, *mesh1)}, P1T,
-        constants, coeffs, cstride, cell_info0, cell_info1, get_perm,
-        bc_values1, bc_markers1, x0, scale);
+        constants, coeffs, cstride, cell_info0, cell_info1, perms, bc_values1,
+        bc_markers1, x0, scale);
   }
 }
 
@@ -1193,16 +1194,12 @@ void assemble_vector(
     }
   }
 
-  std::function<std::uint8_t(std::size_t)> get_perm;
+  std::span<const std::uint8_t> perms;
   if (L.needs_facet_permutations())
   {
     mesh->topology_mutable()->create_entity_permutations();
-    const std::vector<std::uint8_t>& perms
-        = mesh->topology()->get_facet_permutations();
-    get_perm = [&perms](std::size_t i) { return perms[i]; };
+    perms = std::span(mesh->topology()->get_facet_permutations());
   }
-  else
-    get_perm = [](std::size_t) { return 0; };
 
   mesh::CellType cell_type = mesh->topology()->cell_type();
   int num_facets_per_cell
@@ -1220,21 +1217,21 @@ void assemble_vector(
       impl::assemble_exterior_facets<T, 1>(
           P0, b, x_dofmap, x, num_facets_per_cell, facets,
           {dofs, bs, L.domain(IntegralType::exterior_facet, i, *mesh0)}, fn,
-          constants, coeffs, cstride, cell_info0, get_perm);
+          constants, coeffs, cstride, cell_info0, perms);
     }
     else if (bs == 3)
     {
       impl::assemble_exterior_facets<T, 3>(
           P0, b, x_dofmap, x, num_facets_per_cell, facets,
           {dofs, bs, L.domain(IntegralType::exterior_facet, i, *mesh0)}, fn,
-          constants, coeffs, cstride, cell_info0, get_perm);
+          constants, coeffs, cstride, cell_info0, perms);
     }
     else
     {
       impl::assemble_exterior_facets(
           P0, b, x_dofmap, x, num_facets_per_cell, facets,
           {dofs, bs, L.domain(IntegralType::exterior_facet, i, *mesh0)}, fn,
-          constants, coeffs, cstride, cell_info0, get_perm);
+          constants, coeffs, cstride, cell_info0, perms);
     }
   }
 
@@ -1251,21 +1248,21 @@ void assemble_vector(
       impl::assemble_interior_facets<T, 1>(
           P0, b, x_dofmap, x, num_facets_per_cell, facets,
           {*dofmap, bs, L.domain(IntegralType::interior_facet, i, *mesh0)}, fn,
-          constants, coeffs, cstride, cell_info0, get_perm);
+          constants, coeffs, cstride, cell_info0, perms);
     }
     else if (bs == 3)
     {
       impl::assemble_interior_facets<T, 3>(
           P0, b, x_dofmap, x, num_facets_per_cell, facets,
           {*dofmap, bs, L.domain(IntegralType::interior_facet, i, *mesh0)}, fn,
-          constants, coeffs, cstride, cell_info0, get_perm);
+          constants, coeffs, cstride, cell_info0, perms);
     }
     else
     {
       impl::assemble_interior_facets(
           P0, b, x_dofmap, x, num_facets_per_cell, facets,
           {*dofmap, bs, L.domain(IntegralType::interior_facet, i, *mesh0)}, fn,
-          constants, coeffs, cstride, cell_info0, get_perm);
+          constants, coeffs, cstride, cell_info0, perms);
     }
   }
 }

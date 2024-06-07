@@ -93,7 +93,6 @@ T assemble_exterior_facets(mdspan2_t x_dofmap,
     // Permutations
     std::uint8_t _perm
         = perm.empty() ? 0 : perm[cell * num_facets_per_cell + local_facet];
-
     const T* coeff_cell = coeffs.data() + index / 2 * cstride;
     fn(&value, coeff_cell, constants.data(), coordinate_dofs.data(),
        &local_facet, &_perm);
@@ -190,9 +189,7 @@ T assemble_scalar(
   if (M.needs_facet_permutations())
   {
     mesh->topology_mutable()->create_entity_permutations();
-    const std::vector<std::uint8_t>& perms_data
-        = mesh->topology()->get_facet_permutations();
-    perms = std::span(perms_data.data(), perms_data.size());
+    perms = std::span(mesh->topology()->get_facet_permutations());
   }
 
   mesh::CellType cell_type = mesh->topology()->cell_type();
