@@ -90,7 +90,7 @@ def test_numba_assembly(dtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13, dtype=xdtype)
     V = functionspace(mesh, ("Lagrange", 1))
     cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
-    active_coeffs = np.array([],dtype=np.int8)
+    active_coeffs = np.array([], dtype=np.int8)
     integrals = {
         IntegralType.cell: [
             (-1, k2.address, cells, active_coeffs),
@@ -130,8 +130,9 @@ def test_coefficient(dtype):
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
     active_coeffs = np.array([1], dtype=np.int8)
-    integrals = {IntegralType.cell: [(1, k1.address, np.arange(num_cells, dtype=np.int32),
-                                      active_coeffs)]}
+    integrals = {
+        IntegralType.cell: [(1, k1.address, np.arange(num_cells, dtype=np.int32), active_coeffs)]
+    }
     formtype = form_cpp_class(dtype)
     L = Form(formtype([V._cpp_object], integrals, [vals._cpp_object], [], False, {}, None))
 
@@ -261,7 +262,7 @@ def test_cffi_assembly():
     cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
 
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
-    active_coeffs = np.array([],dtype=np.int8)
+    active_coeffs = np.array([], dtype=np.int8)
     integrals = {IntegralType.cell: [(-1, ptrA, cells, active_coeffs)]}
     a = Form(
         _cpp.fem.Form_float64([V._cpp_object, V._cpp_object], integrals, [], [], False, {}, None)
