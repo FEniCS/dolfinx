@@ -14,6 +14,7 @@ from itertools import chain
 import numpy as np
 import numpy.typing as npt
 
+import ffcx
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
@@ -384,8 +385,10 @@ def compile_form(
     """
     Compile UFL form witthout associated DOLFINx data
     """
-    compiled_form = jit.ffcx_jit(comm, form, form_compiler_options, jit_options)
-    return CompiledForm(form, *compiled_form, form_compiler_options["scalar_type"])
+    p_ffcx = ffcx.get_options(form_compiler_options)
+    p_jit = jit.get_options(jit_options)
+    ufcx_form, module, code = jit.ffcx_jit(comm, form, p_ffcx, p_jit)
+    return CompiledForm(form, ufcx_form, module, code, p_ffcx["scalar_type"])
 
 
 def form_cpp_creator(
