@@ -295,6 +295,12 @@ public:
 
   /// @brief Indicator of which coefficient is enabled for a given integral
   /// (kernel).
+  ///
+  /// A form is split into multipe integrals (kernels) and each integral might
+  /// container only a subset of all coefficients in the form. This function
+  /// returns an indicator array for a given integral kernel that signifies
+  /// which coefficients are present.
+  ///
   /// @param[in] type Integral type.
   /// @param[in] i The index of the integral.
   std::span<const std::int8_t> enabled_coefficients(IntegralType type,
