@@ -39,8 +39,8 @@ def test_compiled_form(dtype):
 
     def create_and_integrate(N, compiled_form):
         mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, N, N, dtype=real_type)
-        el_2 = basix.ufl.element("Lagrange", "triangle", 2, dtype=real_type)
-        Vh = dolfinx.fem.functionspace(mesh, el_2)
+        assert mesh.ufl_domain().ufl_coordinate_element() == c_el
+        Vh = dolfinx.fem.functionspace(mesh, u.ufl_element())
         uh = dolfinx.fem.Function(Vh, dtype=dtype)
         uh.interpolate(lambda x: x[0])
         wh = dolfinx.fem.Function(Vh, dtype=dtype)
