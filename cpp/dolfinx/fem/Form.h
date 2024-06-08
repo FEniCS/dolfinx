@@ -49,8 +49,8 @@ struct integral_data
   /// @param id Domain ID.
   /// @param kernel Integration kernel.
   /// @param entities Entities to integrate over.
-  /// @param enabled_coefficients Coefficients in form that are enabled in this
-  /// integral
+  /// @param enabled_coefficients An array of booleans that signifies which
+  /// coefficients that are present in the kernel.
   template <typename K, typename V, typename Q>
     requires std::is_convertible_v<
                  std::remove_cvref_t<K>,
@@ -63,7 +63,7 @@ struct integral_data
   integral_data(int id, K&& kernel, V&& entities, Q&& enabled_coefficients)
       : id(id), kernel(std::forward<K>(kernel)),
         entities(std::forward<V>(entities)),
-        enabled_coefficients(std::move(enabled_coefficients))
+        enabled_coefficients(std::forward<Q>(enabled_coefficients))
   {
   }
 
@@ -71,8 +71,8 @@ struct integral_data
   /// @param id Domain ID
   /// @param kernel Integration kernel.
   /// @param e Entities to integrate over.
-  /// @param c Coefficients in form that are enabled in this
-  /// integral
+  /// @param c An array of booleans that signifies which coefficients that are
+  /// present in the kernel.
   template <typename K>
     requires std::is_convertible_v<
                  std::remove_cvref_t<K>,
