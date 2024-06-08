@@ -420,10 +420,9 @@ Form<T, U> create_form_factory(
       assert(integral);
       const bool* _enabled_coefficients = integral->enabled_coefficients;
       // Get list of enabled coefficients
-      std::vector<std::int8_t> enabled_coefficients(ufcx_form.num_coefficients);
-      for (std::size_t i = 0; i < enabled_coefficients.size(); ++i)
-        enabled_coefficients[i] = _enabled_coefficients[i];
-
+      std::vector<std::int8_t> enabled_coefficients(
+          integral->enabled_coefficients,
+          integral->enabled_coefficients + ufcx_form.num_coefficients);
       kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
@@ -496,10 +495,9 @@ Form<T, U> create_form_factory(
       assert(integral);
 
       const bool* _enabled_coefficients = integral->enabled_coefficients;
-      std::vector<std::int8_t> enabled_coefficients(ufcx_form.num_coefficients);
-      for (std::size_t i = 0; i < enabled_coefficients.size(); ++i)
-        enabled_coefficients[i] = _enabled_coefficients[i];
-
+      std::vector<std::int8_t> enabled_coefficients(
+          integral->enabled_coefficients,
+          integral->enabled_coefficients + ufcx_form.num_coefficients);
       kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
@@ -578,10 +576,9 @@ Form<T, U> create_form_factory(
       assert(integral);
 
       const bool* _enabled_coefficients = integral->enabled_coefficients;
-      std::vector<std::int8_t> enabled_coefficients(ufcx_form.num_coefficients);
-      for (std::size_t i = 0; i < enabled_coefficients.size(); ++i)
-        enabled_coefficients[i] = _enabled_coefficients[i];
-
+      std::vector<std::int8_t> enabled_coefficients(
+          integral->enabled_coefficients,
+          integral->enabled_coefficients + ufcx_form.num_coefficients);
       kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
