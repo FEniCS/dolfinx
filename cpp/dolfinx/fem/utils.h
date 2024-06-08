@@ -418,7 +418,6 @@ Form<T, U> create_form_factory(
       ufcx_integral* integral
           = ufcx_form.form_integrals[integral_offsets[cell] + i];
       assert(integral);
-      const bool* _enabled_coefficients = integral->enabled_coefficients;
       // Get list of enabled coefficients
       std::vector<std::int8_t> enabled_coefficients(
           integral->enabled_coefficients,
@@ -494,7 +493,6 @@ Form<T, U> create_form_factory(
           = ufcx_form.form_integrals[integral_offsets[exterior_facet] + i];
       assert(integral);
 
-      const bool* _enabled_coefficients = integral->enabled_coefficients;
       std::vector<std::int8_t> enabled_coefficients(
           integral->enabled_coefficients,
           integral->enabled_coefficients + ufcx_form.num_coefficients);
@@ -575,7 +573,6 @@ Form<T, U> create_form_factory(
           = ufcx_form.form_integrals[integral_offsets[interior_facet] + i];
       assert(integral);
 
-      const bool* _enabled_coefficients = integral->enabled_coefficients;
       std::vector<std::int8_t> enabled_coefficients(
           integral->enabled_coefficients,
           integral->enabled_coefficients + ufcx_form.num_coefficients);
