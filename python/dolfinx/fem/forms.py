@@ -478,10 +478,12 @@ def create_form(
 
     # Extract name of ufl objects and map them to their corresponding C++ object
     ufl_coefficients = ufl.algorithms.extract_coefficients(form.ufl_form)
-    coefficients = {f"w{ufl_coefficients.index(u)}": uh._cpp_object for (u, uh) in coefficient_map.items()}
+    coefficients = {
+        f"w{ufl_coefficients.index(u)}": uh._cpp_object for (u, uh) in coefficient_map.items()
+    }
     ufl_constants = ufl.algorithms.analysis.extract_constants(form.ufl_form)
     constants = {f"c{ufl_constants.index(u)}": uh._cpp_object for (u, uh) in constant_map.items()}
-    
+
     ftype = form_cpp_creator(form.dtype)
     f = ftype(
         form.module.ffi.cast("uintptr_t", form.module.ffi.addressof(form.ufcx_form)),
