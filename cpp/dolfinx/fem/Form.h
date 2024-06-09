@@ -48,10 +48,8 @@ struct integral_data
   /// @param[in] id Domain ID.
   /// @param[in] kernel Integration kernel.
   /// @param[in] entities Indices of entities to integrate over.
-  /// @param[in] enabled_coefficients Indicator array for which
-  /// coefficients are present in the kernel. If
-  /// `enabled_coefficients[i] == 1` coefficient `i` is used in
-  /// `kernel`. Otherwise coefficient `i` is not used in `kernel`.
+  /// @param[in] coeffs Indicies of the coefficients are present in the
+  /// kernel.
   template <typename K, typename V, typename W>
     requires std::is_convertible_v<
                  std::remove_cvref_t<K>,
@@ -61,10 +59,9 @@ struct integral_data
                                            std::vector<std::int32_t>>
                  and std::is_convertible_v<std::remove_cvref_t<W>,
                                            std::vector<std::int8_t>>
-  integral_data(int id, K&& kernel, V&& entities, W&& enabled_coefficients)
+  integral_data(int id, K&& kernel, V&& entities, W&& coeffs)
       : id(id), kernel(std::forward<K>(kernel)),
-        entities(std::forward<V>(entities)),
-        enabled_coefficients(std::forward<W>(enabled_coefficients))
+        entities(std::forward<V>(entities)), coeffs(std::forward<W>(coeffs))
   {
   }
 
@@ -73,10 +70,8 @@ struct integral_data
   /// @param[in] id Domain ID.
   /// @param[in] kernel Integration kernel.
   /// @param[in] entities Indices of entities to integrate over.
-  /// @param[in] enabled_coefficients Indicator array for which
-  /// coefficients are present in the kernel. If
-  /// `enabled_coefficients[i] == 1` coefficient `i` is used in
-  /// `kernel`. Otherwise coefficient `i` is not used in `kernel`.
+  /// @param[in] coeffs Indicies of the coefficients are present in the
+  /// kernel.
   ///
   /// @note This version allows `entities` to be passed as a std::span,
   /// which is then copied.
@@ -88,10 +83,10 @@ struct integral_data
                  and std::is_convertible_v<std::remove_cvref_t<W>,
                                            std::vector<std::int8_t>>
   integral_data(int id, K&& kernel, std::span<const std::int32_t> entities,
-                W&& enabled_coefficients)
+                W&& coeffs)
       : id(id), kernel(std::forward<K>(kernel)),
         entities(entities.begin(), entities.end()),
-        enabled_coefficients(std::forward<W>(enabled_coefficients))
+        coeffs(std::forward<W>(coeffs))
   {
   }
 
@@ -106,12 +101,9 @@ struct integral_data
   /// @brief The entities to integrate over.
   std::vector<std::int32_t> entities;
 
-  /// @brief Indicator of which coefficients (from the form) that is in
-  /// this integral.
-  ///
-  /// If `enabled_coefficients[i] == 1`, coefficient `i` is used form
-  /// kernel. Otherwise coefficient `i` is not used in kernel.
-  std::vector<std::int8_t> enabled_coefficients;
+  /// @brief Indices of coefficients (from the form) that are in this
+  /// integral.
+  std::vector<std::int8_t> coeffs;
 };
 
 /// @brief A representation of finite element variational forms.
@@ -307,7 +299,7 @@ public:
     return _integrals[static_cast<std::size_t>(type)].size();
   }
 
-  /// @brief Indicator of which coefficient is enabled for a given
+  /// @brief Indices of coefficients that are active for a given
   /// integral (kernel).
   ///
   /// A form is split into multiple integrals (kernels) and each
@@ -321,7 +313,7 @@ public:
                                                 std::size_t i) const
   {
     assert(i < _integrals[static_cast<std::size_t>(type)].size());
-    return _integrals[static_cast<std::size_t>(type)][i].enabled_coefficients;
+    return _integrals[static_cast<std::size_t>(type)][i].coeffs;
   }
 
   /// @brief Get the IDs for integrals (kernels) for given integral type.

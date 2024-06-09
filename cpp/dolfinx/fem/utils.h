@@ -418,10 +418,19 @@ Form<T, U> create_form_factory(
       ufcx_integral* integral
           = ufcx_form.form_integrals[integral_offsets[cell] + i];
       assert(integral);
+
       // Get list of enabled coefficients
-      std::vector<std::int8_t> enabled_coefficients(
-          integral->enabled_coefficients,
-          integral->enabled_coefficients + ufcx_form.num_coefficients);
+      // std::vector<std::int8_t> enabled_coefficients(
+      //     integral->enabled_coefficients,
+      //     integral->enabled_coefficients + ufcx_form.num_coefficients);
+
+      std::vector<std::int8_t> enabled_coefficients;
+      for (int j = 0; j < ufcx_form.num_coefficients; ++j)
+      {
+        if (integral->enabled_coefficients[j] == 1)
+          enabled_coefficients.push_back(j);
+      }
+
       kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
@@ -493,9 +502,16 @@ Form<T, U> create_form_factory(
           = ufcx_form.form_integrals[integral_offsets[exterior_facet] + i];
       assert(integral);
 
-      std::vector<std::int8_t> enabled_coefficients(
-          integral->enabled_coefficients,
-          integral->enabled_coefficients + ufcx_form.num_coefficients);
+      // std::vector<std::int8_t> enabled_coefficients(
+      //     integral->enabled_coefficients,
+      //     integral->enabled_coefficients + ufcx_form.num_coefficients);
+      std::vector<std::int8_t> enabled_coefficients;
+      for (int j = 0; j < ufcx_form.num_coefficients; ++j)
+      {
+        if (integral->enabled_coefficients[j] == 1)
+          enabled_coefficients.push_back(j);
+      }
+
       kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
@@ -573,9 +589,16 @@ Form<T, U> create_form_factory(
           = ufcx_form.form_integrals[integral_offsets[interior_facet] + i];
       assert(integral);
 
-      std::vector<std::int8_t> enabled_coefficients(
-          integral->enabled_coefficients,
-          integral->enabled_coefficients + ufcx_form.num_coefficients);
+      // std::vector<std::int8_t> enabled_coefficients(
+      //     integral->enabled_coefficients,
+      //     integral->enabled_coefficients + ufcx_form.num_coefficients);
+      std::vector<std::int8_t> enabled_coefficients;
+      for (int j = 0; j < ufcx_form.num_coefficients; ++j)
+      {
+        if (integral->enabled_coefficients[j] == 1)
+          enabled_coefficients.push_back(j);
+      }
+
       kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
@@ -1024,13 +1047,8 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
       // integrals
       for (std::size_t i = 0; i < form.num_integrals(IntegralType::cell); ++i)
       {
-        std::vector<std::int8_t> enabled_coefficients
-            = form.enabled_coefficients(IntegralType::cell, i);
-        for (std::size_t j = 0; j < coefficients.size(); ++j)
-        {
-          if (enabled_coefficients[j])
-            active_coefficients[j] = 1;
-        }
+        for (auto idx : form.enabled_coefficients(IntegralType::cell, i))
+          active_coefficients[idx] = 1;
       }
 
       // Iterate over coefficients
@@ -1049,8 +1067,10 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
         if (const int codim
             = form.mesh()->topology()->dim() - mesh->topology()->dim();
             codim > 0)
+        {
           throw std::runtime_error("Should not be packing coefficients with "
                                    "codim>0 in a cell integral");
+        }
 
         std::vector<std::int32_t> cells
             = form.domain(IntegralType::cell, id, *mesh);
@@ -1069,11 +1089,9 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
       for (std::size_t i = 0;
            i < form.num_integrals(IntegralType::exterior_facet); ++i)
       {
-        const std::vector<std::int8_t> enabled_coefficients
-            = form.enabled_coefficients(IntegralType::exterior_facet, i);
-        for (std::size_t j = 0; j < coefficients.size(); ++j)
-          if (enabled_coefficients[j])
-            active_coefficients[j] = 1;
+        for (auto idx :
+             form.enabled_coefficients(IntegralType::exterior_facet, i))
+          active_coefficients[idx] = 1;
       }
 
       // Iterate over coefficients
@@ -1081,6 +1099,7 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
       {
         if (!active_coefficients[coeff])
           continue;
+
         auto mesh = coefficients[coeff]->function_space()->mesh();
         std::vector<std::int32_t> facets
             = form.domain(IntegralType::exterior_facet, id, *mesh);
@@ -1099,11 +1118,9 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
       for (std::size_t i = 0;
            i < form.num_integrals(IntegralType::interior_facet); ++i)
       {
-        const std::vector<std::int8_t> enabled_coefficients
-            = form.enabled_coefficients(IntegralType::interior_facet, i);
-        for (std::size_t j = 0; j < coefficients.size(); ++j)
-          if (enabled_coefficients[j])
-            active_coefficients[j] = 1;
+        for (auto idx :
+             form.enabled_coefficients(IntegralType::interior_facet, i))
+          active_coefficients[idx] = 1;
       }
 
       // Iterate over coefficients
@@ -1111,6 +1128,7 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
       {
         if (!active_coefficients[coeff])
           continue;
+
         auto mesh = coefficients[coeff]->function_space()->mesh();
         std::vector<std::int32_t> facets
             = form.domain(IntegralType::interior_facet, id, *mesh);
