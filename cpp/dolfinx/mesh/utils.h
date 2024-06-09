@@ -611,16 +611,17 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 /// @param[in] mesh The mesh.
 /// @param[in] dim Topological dimension of the entities of interest.
 /// @param[in] entities Entity indices (local to process).
-/// @param[in] permute If `true`, permute the DOFs such that they are consistent
-/// with the orientation of `dim`-dimensional mesh entities. This requires
-/// `create_entity_permutations` to be called first.
-/// @return The geometry DOFs associated with the closure of each
-/// entity in `entities`. The shape is `(num_entities, num_xdofs_per_entity)`
-/// and the storage is row-major. The index `indices[i, j]` is the position in
-/// the geometry array of the `j`-th vertex of the `entity[i]`.
+/// @param[in] permute If `true`, permute the DOFs such that they are
+/// consistent with the orientation of `dim`-dimensional mesh entities.
+/// This requires `create_entity_permutations` to be called first.
+/// @return The geometry DOFs associated with the closure of each entity
+/// in `entities`. The shape is `(num_entities, num_xdofs_per_entity)`
+/// and the storage is row-major. The index `indices[i, j]` is the
+/// position in the geometry array of the `j`-th vertex of the
+/// `entity[i]`.
 ///
 /// @pre The mesh connectivities `dim -> mesh.topology().dim()` and
-/// `mesh.topology().dim() -> dim` mesh have been computed. Otherwise an
+/// `mesh.topology().dim() -> dim` must have been computed. Otherwise an
 /// exception is thrown.
 template <std::floating_point T>
 std::vector<std::int32_t>
@@ -630,13 +631,11 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 {
   auto topology = mesh.topology();
   assert(topology);
-
   CellType cell_type = topology->cell_type();
   if (cell_type == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cells");
 
   const int tdim = topology->dim();
-
   const Geometry<T>& geometry = mesh.geometry();
   auto xdofs = geometry.dofmap();
   auto e_to_c = topology->connectivity(dim, tdim);
