@@ -129,7 +129,7 @@ def test_coefficient(dtype):
 
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
-    active_coeffs = np.array([1], dtype=np.int8)
+    active_coeffs = np.array([0], dtype=np.int8)
     integrals = {
         IntegralType.cell: [(1, k1.address, np.arange(num_cells, dtype=np.int32), active_coeffs)]
     }
