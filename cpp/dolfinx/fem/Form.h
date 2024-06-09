@@ -48,8 +48,8 @@ struct integral_data
   /// @param[in] id Domain ID.
   /// @param[in] kernel Integration kernel.
   /// @param[in] entities Indices of entities to integrate over.
-  /// @param[in] coeffs Indicies of the coefficients are present in the
-  /// kernel.
+  /// @param[in] coeffs Indicies of the coefficients are present
+  /// (active) in `kernel`.
   template <typename K, typename V, typename W>
     requires std::is_convertible_v<
                  std::remove_cvref_t<K>,
@@ -58,7 +58,7 @@ struct integral_data
                  and std::is_convertible_v<std::remove_cvref_t<V>,
                                            std::vector<std::int32_t>>
                  and std::is_convertible_v<std::remove_cvref_t<W>,
-                                           std::vector<std::int8_t>>
+                                           std::vector<int>>
   integral_data(int id, K&& kernel, V&& entities, W&& coeffs)
       : id(id), kernel(std::forward<K>(kernel)),
         entities(std::forward<V>(entities)), coeffs(std::forward<W>(coeffs))
@@ -71,7 +71,6 @@ struct integral_data
   /// @param[in] kernel Integration kernel.
   /// @param[in] entities Indices of entities to integrate over.
   /// @param[in] coeffs Indicies of the coefficients are present in the
-  /// kernel.
   ///
   /// @note This version allows `entities` to be passed as a std::span,
   /// which is then copied.
@@ -81,7 +80,7 @@ struct integral_data
                  std::function<void(T*, const T*, const T*, const U*,
                                     const int*, const uint8_t*)>>
                  and std::is_convertible_v<std::remove_cvref_t<W>,
-                                           std::vector<std::int8_t>>
+                                           std::vector<int>>
   integral_data(int id, K&& kernel, std::span<const std::int32_t> entities,
                 W&& coeffs)
       : id(id), kernel(std::forward<K>(kernel)),
@@ -103,7 +102,7 @@ struct integral_data
 
   /// @brief Indices of coefficients (from the form) that are in this
   /// integral.
-  std::vector<std::int8_t> coeffs;
+  std::vector<int> coeffs;
 };
 
 /// @brief A representation of finite element variational forms.
@@ -309,8 +308,7 @@ public:
   ///
   /// @param[in] type Integral type.
   /// @param[in] i Index of the integral.
-  std::vector<std::int8_t> enabled_coeffs(IntegralType type,
-                                          std::size_t i) const
+  std::vector<int> active_coeffs(IntegralType type, std::size_t i) const
   {
     assert(i < _integrals[static_cast<std::size_t>(type)].size());
     return _integrals[static_cast<std::size_t>(type)][i].coeffs;

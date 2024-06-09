@@ -640,7 +640,7 @@ void declare_form(nb::module_& m, std::string type)
                 _integrals[type].emplace_back(
                     id, kn_ptr,
                     std::span<const std::int32_t>(e.data(), e.size()),
-                    std::vector<std::int8_t>(c.data(), c.data() + c.size()));
+                    std::vector<int>(c.data(), c.data() + c.size()));
               }
             }
 
