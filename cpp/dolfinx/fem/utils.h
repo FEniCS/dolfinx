@@ -1020,14 +1020,17 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
     {
     case IntegralType::cell:
     {
-      // Get indicator for all coefficients that are active in cell integrals
+      // Get indicator for all coefficients that are active in cell
+      // integrals
       for (std::size_t i = 0; i < form.num_integrals(IntegralType::cell); ++i)
       {
-        const std::vector<std::int8_t> enabled_coefficients
+        std::vector<std::int8_t> enabled_coefficients
             = form.enabled_coefficients(IntegralType::cell, i);
         for (std::size_t j = 0; j < coefficients.size(); ++j)
+        {
           if (enabled_coefficients[j])
             active_coefficients[j] = 1;
+        }
       }
 
       // Iterate over coefficients

@@ -45,58 +45,72 @@ template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
 struct integral_data
 {
   /// @brief Create a structure to hold integral data.
-  /// @tparam U Entity indices type.
-  /// @param id Domain ID.
-  /// @param kernel Integration kernel.
-  /// @param entities Entities to integrate over.
-  /// @param enabled_coefficients An array of booleans that signifies which
-  /// coefficients that are present in the kernel.
-  template <typename K, typename V>
+  /// @param[in] id Domain ID.
+  /// @param[in] kernel Integration kernel.
+  /// @param[in] entities Indices of entities to integrate over.
+  /// @param[in] enabled_coefficients Indicator array for which
+  /// coefficients are present in the kernel. If
+  /// `enabled_coefficients[i] == 1` coefficient `i` is used in
+  /// `kernel`. Otherwise coefficient `i` is not used in `kernel`.
+  template <typename K, typename V, typename W>
     requires std::is_convertible_v<
                  std::remove_cvref_t<K>,
                  std::function<void(T*, const T*, const T*, const U*,
                                     const int*, const uint8_t*)>>
                  and std::is_convertible_v<std::remove_cvref_t<V>,
                                            std::vector<std::int32_t>>
-  integral_data(int id, K&& kernel, V&& entities,
-                const std::vector<std::int8_t>& enabled_coefficients)
+                 and std::is_convertible_v<std::remove_cvref_t<W>,
+                                           std::vector<std::int8_t>>
+  integral_data(int id, K&& kernel, V&& entities, W&& enabled_coefficients)
       : id(id), kernel(std::forward<K>(kernel)),
         entities(std::forward<V>(entities)),
-        enabled_coefficients(enabled_coefficients.begin(),
-                             enabled_coefficients.end())
+        enabled_coefficients(std::forward<W>(enabled_coefficients))
   {
   }
 
   /// @brief Create a structure to hold integral data.
-  /// @param id Domain ID
-  /// @param kernel Integration kernel.
-  /// @param e Entities to integrate over.
-  /// @param c An array of booleans that signifies which coefficients that are
-  /// present in the kernel.
-  template <typename K>
+  ///
+  /// @param[in] id Domain ID.
+  /// @param[in] kernel Integration kernel.
+  /// @param[in] entities Indices of entities to integrate over.
+  /// @param[in] enabled_coefficients Indicator array for which
+  /// coefficients are present in the kernel. If
+  /// `enabled_coefficients[i] == 1` coefficient `i` is used in
+  /// `kernel`. Otherwise coefficient `i` is not used in `kernel`.
+  ///
+  /// @note This version allows `entities` to be passed as a std::span,
+  /// which is then copied.
+  template <typename K, typename W>
     requires std::is_convertible_v<
                  std::remove_cvref_t<K>,
                  std::function<void(T*, const T*, const T*, const U*,
                                     const int*, const uint8_t*)>>
-  integral_data(int id, K&& kernel, std::span<const std::int32_t> e,
-                std::span<const std::int8_t> c)
-      : id(id), kernel(std::forward<K>(kernel)), entities(e.begin(), e.end()),
-        enabled_coefficients(c.begin(), c.end())
+                 and std::is_convertible_v<std::remove_cvref_t<W>,
+                                           std::vector<std::int8_t>>
+  integral_data(int id, K&& kernel, std::span<const std::int32_t> entities,
+                W&& enabled_coefficients)
+      : id(id), kernel(std::forward<K>(kernel)),
+        entities(entities.begin(), entities.end()),
+        enabled_coefficients(std::forward<W>(enabled_coefficients))
   {
   }
 
-  /// Integral ID
+  /// @brief Integral ID.
   int id;
 
-  /// The integration kernel
+  /// @brief The integration kernel.
   std::function<void(T*, const T*, const T*, const U*, const int*,
                      const uint8_t*)>
       kernel;
 
-  /// The entities to integrate over
+  /// @brief The entities to integrate over.
   std::vector<std::int32_t> entities;
 
-  /// Indicator of which coefficients (from the form) that is in this integral
+  /// @brief Indicator of which coefficients (from the form) that is in
+  /// this integral.
+  ///
+  /// If `enabled_coefficients[i] == 1`, coefficient `i` is used form
+  /// kernel. Otherwise coefficient `i` is not used in kernel.
   std::vector<std::int8_t> enabled_coefficients;
 };
 
@@ -293,25 +307,23 @@ public:
     return _integrals[static_cast<std::size_t>(type)].size();
   }
 
-  /// @brief Indicator of which coefficient is enabled for a given integral
-  /// (kernel).
+  /// @brief Indicator of which coefficient is enabled for a given
+  /// integral (kernel).
   ///
-  /// A form is split into multipe integrals (kernels) and each integral might
-  /// container only a subset of all coefficients in the form. This function
-  /// returns an indicator array for a given integral kernel that signifies
-  /// which coefficients are present.
+  /// A form is split into multiple integrals (kernels) and each
+  /// integral might container only a subset of all coefficients in the
+  /// form. This function returns an indicator array for a given
+  /// integral kernel that signifies which coefficients are present.
   ///
   /// @param[in] type Integral type.
-  /// @param[in] i The index of the integral.
+  /// @param[in] i Index of the integral.
   std::vector<std::int8_t> enabled_coefficients(IntegralType type,
                                                 std::size_t i) const
   {
     assert(i < _integrals[static_cast<std::size_t>(type)].size());
-    const std::vector<std::int8_t>& enabled_coeffs
-        = _integrals[static_cast<std::size_t>(type)][i].enabled_coefficients;
-    return std::vector<std::int8_t>(enabled_coeffs.begin(),
-                                    enabled_coeffs.end());
+    return _integrals[static_cast<std::size_t>(type)][i].enabled_coefficients;
   }
+
   /// @brief Get the IDs for integrals (kernels) for given integral type.
   ///
   /// The IDs correspond to the domain IDs which the integrals are
