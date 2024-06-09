@@ -1023,7 +1023,7 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
       // Get indicator for all coefficients that are active in cell integrals
       for (std::size_t i = 0; i < form.num_integrals(IntegralType::cell); ++i)
       {
-        std::span<const std::int8_t> enabled_coefficients
+        const std::vector<std::int8_t> enabled_coefficients
             = form.enabled_coefficients(IntegralType::cell, i);
         for (std::size_t j = 0; j < coefficients.size(); ++j)
           if (enabled_coefficients[j])
@@ -1066,7 +1066,7 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
       for (std::size_t i = 0;
            i < form.num_integrals(IntegralType::exterior_facet); ++i)
       {
-        std::span<const std::int8_t> enabled_coefficients
+        const std::vector<std::int8_t> enabled_coefficients
             = form.enabled_coefficients(IntegralType::exterior_facet, i);
         for (std::size_t j = 0; j < coefficients.size(); ++j)
           if (enabled_coefficients[j])
@@ -1096,7 +1096,7 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
       for (std::size_t i = 0;
            i < form.num_integrals(IntegralType::interior_facet); ++i)
       {
-        std::span<const std::int8_t> enabled_coefficients
+        const std::vector<std::int8_t> enabled_coefficients
             = form.enabled_coefficients(IntegralType::interior_facet, i);
         for (std::size_t j = 0; j < coefficients.size(); ++j)
           if (enabled_coefficients[j])

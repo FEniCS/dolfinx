@@ -51,19 +51,19 @@ struct integral_data
   /// @param entities Entities to integrate over.
   /// @param enabled_coefficients An array of booleans that signifies which
   /// coefficients that are present in the kernel.
-  template <typename K, typename V, typename Q>
+  template <typename K, typename V>
     requires std::is_convertible_v<
                  std::remove_cvref_t<K>,
                  std::function<void(T*, const T*, const T*, const U*,
                                     const int*, const uint8_t*)>>
                  and std::is_convertible_v<std::remove_cvref_t<V>,
                                            std::vector<std::int32_t>>
-                 and std::is_convertible_v<std::remove_cvref_t<Q>,
-                                           std::vector<std::int8_t>>
-  integral_data(int id, K&& kernel, V&& entities, Q&& enabled_coefficients)
+  integral_data(int id, K&& kernel, V&& entities,
+                const std::vector<std::int8_t>& enabled_coefficients)
       : id(id), kernel(std::forward<K>(kernel)),
         entities(std::forward<V>(entities)),
-        enabled_coefficients(std::forward<Q>(enabled_coefficients))
+        enabled_coefficients(enabled_coefficients.begin(),
+                             enabled_coefficients.end())
   {
   }
 
@@ -303,14 +303,14 @@ public:
   ///
   /// @param[in] type Integral type.
   /// @param[in] i The index of the integral.
-  std::span<const std::int8_t> enabled_coefficients(IntegralType type,
-                                                    std::size_t i) const
+  std::vector<std::int8_t> enabled_coefficients(IntegralType type,
+                                                std::size_t i) const
   {
     assert(i < _integrals[static_cast<std::size_t>(type)].size());
     const std::vector<std::int8_t>& enabled_coeffs
         = _integrals[static_cast<std::size_t>(type)][i].enabled_coefficients;
-    return std::span<const std::int8_t>(enabled_coeffs.data(),
-                                        enabled_coeffs.size());
+    return std::vector<std::int8_t>(enabled_coeffs.begin(),
+                                    enabled_coeffs.end());
   }
   /// @brief Get the IDs for integrals (kernels) for given integral type.
   ///
