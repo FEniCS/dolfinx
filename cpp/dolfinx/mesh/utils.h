@@ -618,6 +618,10 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 /// entity in `entities`. The shape is `(num_entities, num_xdofs_per_entity)`
 /// and the storage is row-major. The index `indices[i, j]` is the position in
 /// the geometry array of the `j`-th vertex of the `entity[i]`.
+///
+/// @pre The mesh connectivities `dim -> mesh.topology().dim()` and
+/// `mesh.topology().dim() -> dim` mesh have been computed. Otherwise an
+/// exception is thrown.
 template <std::floating_point T>
 std::vector<std::int32_t>
 entities_to_geometry(const Mesh<T>& mesh, int dim,
@@ -639,14 +643,16 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   if (!e_to_c)
   {
     throw std::runtime_error(
-        "Entity-to-cell connectivity has not been computed.");
+        "Entity-to-cell connectivity has not been computed. Missing dims "
+        + std::to_string(dim) + "->" + std::to_string(tdim));
   }
 
   auto c_to_e = topology->connectivity(tdim, dim);
   if (!c_to_e)
   {
     throw std::runtime_error(
-        "Cell-to-entity connectivity has not been computed.");
+        "Cell-to-entity connectivity has not been computed. Missing dims "
+        + std::to_string(tdim) + "->" + std::to_string(dim));
   }
 
   // Get the DOF layout and the number of DOFs per entity
