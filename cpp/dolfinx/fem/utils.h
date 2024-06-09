@@ -1008,7 +1008,7 @@ allocate_coefficient_storage(const Form<T, U>& form)
 /// @param[in] form The Form
 /// @param[in] integral_type Type of integral
 /// @param[in] id The id of the integration domain
-/// @param[in] c The coefficient array
+/// @param[in,out] c The coefficient array
 /// @param[in] cstride The coefficient stride
 template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
@@ -1020,7 +1020,7 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
   const std::vector<int> offsets = form.coefficient_offsets();
 
   // Indicator for packing coefficients
-  std::vector<int> active_coefficients(coefficients.size(), 0);
+  std::vector<int> active_coefficient(coefficients.size(), 0);
   if (!coefficients.empty())
   {
     switch (integral_type)
@@ -1032,13 +1032,13 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
       for (std::size_t i = 0; i < form.num_integrals(IntegralType::cell); ++i)
       {
         for (auto idx : form.active_coeffs(IntegralType::cell, i))
-          active_coefficients[idx] = 1;
+          active_coefficient[idx] = 1;
       }
 
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
-        if (!active_coefficients[coeff])
+        if (!active_coefficient[coeff])
           continue;
 
         // Get coefficient mesh
@@ -1068,19 +1068,19 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
     }
     case IntegralType::exterior_facet:
     {
-      // Get indicator for all coefficients that are active in exterior facet
-      // integrals
+      // Get indicator for all coefficients that are active in exterior
+      // facet integrals
       for (std::size_t i = 0;
            i < form.num_integrals(IntegralType::exterior_facet); ++i)
       {
         for (auto idx : form.active_coeffs(IntegralType::exterior_facet, i))
-          active_coefficients[idx] = 1;
+          active_coefficient[idx] = 1;
       }
 
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
-        if (!active_coefficients[coeff])
+        if (!active_coefficient[coeff])
           continue;
 
         auto mesh = coefficients[coeff]->function_space()->mesh();
@@ -1102,13 +1102,13 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
            i < form.num_integrals(IntegralType::interior_facet); ++i)
       {
         for (auto idx : form.active_coeffs(IntegralType::interior_facet, i))
-          active_coefficients[idx] = 1;
+          active_coefficient[idx] = 1;
       }
 
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
-        if (!active_coefficients[coeff])
+        if (!active_coefficient[coeff])
           continue;
 
         auto mesh = coefficients[coeff]->function_space()->mesh();
@@ -1121,6 +1121,7 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
         impl::pack_coefficient_entity(
             c, 2 * cstride, *coefficients[coeff], cell_info, facets, 4,
             [](auto entity) { return entity[0]; }, 2 * offsets[coeff]);
+
         // Pack coefficient ['-']
         impl::pack_coefficient_entity(
             c, 2 * cstride, *coefficients[coeff], cell_info, facets, 4,
