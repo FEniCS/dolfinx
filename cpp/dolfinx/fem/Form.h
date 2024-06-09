@@ -70,7 +70,8 @@ struct integral_data
   /// @param[in] id Domain ID.
   /// @param[in] kernel Integration kernel.
   /// @param[in] entities Indices of entities to integrate over.
-  /// @param[in] coeffs Indicies of the coefficients are present in the
+  /// @param[in] coeffs Indicies of the coefficients that are active in
+  /// the `kernel`.
   ///
   /// @note This version allows `entities` to be passed as a std::span,
   /// which is then copied.
