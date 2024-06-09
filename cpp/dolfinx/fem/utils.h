@@ -419,16 +419,12 @@ Form<T, U> create_form_factory(
           = ufcx_form.form_integrals[integral_offsets[cell] + i];
       assert(integral);
 
-      // Get list of enabled coefficients
-      // std::vector<std::int8_t> enabled_coefficients(
-      //     integral->enabled_coefficients,
-      //     integral->enabled_coefficients + ufcx_form.num_coefficients);
-
-      std::vector<std::int8_t> enabled_coefficients;
+      // Build list of enabled coefficients
+      std::vector<std::int8_t> enabled_coeffs;
       for (int j = 0; j < ufcx_form.num_coefficients; ++j)
       {
-        if (integral->enabled_coefficients[j] == 1)
-          enabled_coefficients.push_back(j);
+        if (integral->enabled_coefficients[j])
+          enabled_coeffs.push_back(j);
       }
 
       kern_t k = nullptr;
@@ -468,8 +464,7 @@ Form<T, U> create_form_factory(
         assert(topology->index_map(tdim));
         default_cells.resize(topology->index_map(tdim)->size_local(), 0);
         std::iota(default_cells.begin(), default_cells.end(), 0);
-        itg.first->second.emplace_back(id, k, default_cells,
-                                       enabled_coefficients);
+        itg.first->second.emplace_back(id, k, default_cells, enabled_coeffs);
       }
       else if (sd != subdomains.end())
       {
@@ -478,8 +473,7 @@ Form<T, U> create_form_factory(
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
-          itg.first->second.emplace_back(id, k, it->second,
-                                         enabled_coefficients);
+          itg.first->second.emplace_back(id, k, it->second, enabled_coeffs);
       }
 
       if (integral->needs_facet_permutations)
@@ -501,15 +495,11 @@ Form<T, U> create_form_factory(
       ufcx_integral* integral
           = ufcx_form.form_integrals[integral_offsets[exterior_facet] + i];
       assert(integral);
-
-      // std::vector<std::int8_t> enabled_coefficients(
-      //     integral->enabled_coefficients,
-      //     integral->enabled_coefficients + ufcx_form.num_coefficients);
-      std::vector<std::int8_t> enabled_coefficients;
+      std::vector<std::int8_t> enabled_coeffs;
       for (int j = 0; j < ufcx_form.num_coefficients; ++j)
       {
-        if (integral->enabled_coefficients[j] == 1)
-          enabled_coefficients.push_back(j);
+        if (integral->enabled_coefficients[j])
+          enabled_coeffs.push_back(j);
       }
 
       kern_t k = nullptr;
@@ -556,7 +546,7 @@ Form<T, U> create_form_factory(
                                     pair.end());
         }
         itg.first->second.emplace_back(id, k, default_facets_ext,
-                                       enabled_coefficients);
+                                       enabled_coeffs);
       }
       else if (sd != subdomains.end())
       {
@@ -565,8 +555,7 @@ Form<T, U> create_form_factory(
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
-          itg.first->second.emplace_back(id, k, it->second,
-                                         enabled_coefficients);
+          itg.first->second.emplace_back(id, k, it->second, enabled_coeffs);
       }
 
       if (integral->needs_facet_permutations)
@@ -588,15 +577,11 @@ Form<T, U> create_form_factory(
       ufcx_integral* integral
           = ufcx_form.form_integrals[integral_offsets[interior_facet] + i];
       assert(integral);
-
-      // std::vector<std::int8_t> enabled_coefficients(
-      //     integral->enabled_coefficients,
-      //     integral->enabled_coefficients + ufcx_form.num_coefficients);
-      std::vector<std::int8_t> enabled_coefficients;
+      std::vector<std::int8_t> enabled_coeffs;
       for (int j = 0; j < ufcx_form.num_coefficients; ++j)
       {
-        if (integral->enabled_coefficients[j] == 1)
-          enabled_coefficients.push_back(j);
+        if (integral->enabled_coefficients[j])
+          enabled_coeffs.push_back(j);
       }
 
       kern_t k = nullptr;
@@ -646,7 +631,7 @@ Form<T, U> create_form_factory(
           }
         }
         itg.first->second.emplace_back(id, k, default_facets_int,
-                                       enabled_coefficients);
+                                       enabled_coeffs);
       }
       else if (sd != subdomains.end())
       {
@@ -654,8 +639,7 @@ Form<T, U> create_form_factory(
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
-          itg.first->second.emplace_back(id, k, it->second,
-                                         enabled_coefficients);
+          itg.first->second.emplace_back(id, k, it->second, enabled_coeffs);
       }
 
       if (integral->needs_facet_permutations)
@@ -1047,7 +1031,7 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
       // integrals
       for (std::size_t i = 0; i < form.num_integrals(IntegralType::cell); ++i)
       {
-        for (auto idx : form.enabled_coefficients(IntegralType::cell, i))
+        for (auto idx : form.enabled_coeffs(IntegralType::cell, i))
           active_coefficients[idx] = 1;
       }
 
@@ -1089,8 +1073,7 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
       for (std::size_t i = 0;
            i < form.num_integrals(IntegralType::exterior_facet); ++i)
       {
-        for (auto idx :
-             form.enabled_coefficients(IntegralType::exterior_facet, i))
+        for (auto idx : form.enabled_coeffs(IntegralType::exterior_facet, i))
           active_coefficients[idx] = 1;
       }
 
@@ -1118,8 +1101,7 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
       for (std::size_t i = 0;
            i < form.num_integrals(IntegralType::interior_facet); ++i)
       {
-        for (auto idx :
-             form.enabled_coefficients(IntegralType::interior_facet, i))
+        for (auto idx : form.enabled_coeffs(IntegralType::interior_facet, i))
           active_coefficients[idx] = 1;
       }
 

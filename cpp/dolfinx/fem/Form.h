@@ -309,8 +309,8 @@ public:
   ///
   /// @param[in] type Integral type.
   /// @param[in] i Index of the integral.
-  std::vector<std::int8_t> enabled_coefficients(IntegralType type,
-                                                std::size_t i) const
+  std::vector<std::int8_t> enabled_coeffs(IntegralType type,
+                                          std::size_t i) const
   {
     assert(i < _integrals[static_cast<std::size_t>(type)].size());
     return _integrals[static_cast<std::size_t>(type)][i].coeffs;
