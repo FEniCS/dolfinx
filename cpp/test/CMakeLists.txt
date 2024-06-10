@@ -41,6 +41,7 @@ add_executable(
   common/index_map.cpp
   common/sort.cpp
   mesh/distributed_mesh.cpp
+  mesh/generation.cpp
   common/CIFailure.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )
