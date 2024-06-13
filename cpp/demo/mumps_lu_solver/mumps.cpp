@@ -111,6 +111,7 @@ int MUMPSLUSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
 
   // Size of local part of solution
   int lsol_loc = id.info[22];
+  spdlog::info("lsol_loc = {}", lsol_loc);
   // Indices of local part of solution (sorted)
   std::vector<int> isol_sort(lsol_loc);
   // Local part of solution (sorted into order)

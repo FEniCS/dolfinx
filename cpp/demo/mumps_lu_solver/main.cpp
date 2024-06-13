@@ -1,5 +1,5 @@
+#include "mumps.h"
 #include "poisson.h"
-#include "superlu.h"
 
 #include <cmath>
 #include <dolfinx.h>
@@ -115,12 +115,12 @@ int main(int argc, char* argv[])
     fem::set_bc<T, U>(b.mutable_array(), {bc});
 
     // Solver: A.u = b
-    dolfinx::common::Timer tfac("[SuperLU Factorize]");
-    SuperLUSolver<T> LU(mesh->comm(), true);
+    dolfinx::common::Timer tfac("[MUMPS Factorize]");
+    MUMPSLUSolver<T> LU(mesh->comm());
     LU.set_operator(A);
     tfac.stop();
 
-    dolfinx::common::Timer tsolve("[SuperLU Solve]");
+    dolfinx::common::Timer tsolve("[MUMPS Solve]");
     // superlu_solver(mesh->comm(), A, b, *u.x(), true);
     LU.solve(b, *u.x());
     tsolve.stop();
