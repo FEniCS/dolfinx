@@ -28,7 +28,7 @@ def test_distance_interval():
 @pytest.mark.skip_in_parallel
 def test_distance_triangle():
     shape, degree = "triangle", 1
-    domain = basix.create_element(basix.ElementFamily.P, basix.cell.string_to_type(shape), degree)
+    domain = basix.create_element(basix.ElementFamily.P, basix.CellType[shape], degree)
     x = np.array([[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0]], dtype=np.float64)
     cells = [[0, 1, 2]]
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
