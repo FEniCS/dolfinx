@@ -15,8 +15,8 @@ int superlu_solver(MPI_Comm comm, const la::MatrixCSR<T>& Amat,
 {
   int size = dolfinx::MPI::size(comm);
 
-  int nprow = size;
-  int npcol = 1;
+  int nprow = 1;
+  int npcol = size;
 
   gridinfo_t grid;
   superlu_gridinit(MPI_COMM_WORLD, nprow, npcol, &grid);

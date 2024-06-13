@@ -55,12 +55,12 @@ add_custom_command(
 find_package(PkgConfig REQUIRED)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-add_executable(${PROJECT_NAME} superlu.cpp main.cpp ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
+add_executable(${PROJECT_NAME} mumps.cpp main.cpp ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
 target_link_directories(${PROJECT_NAME} PUBLIC ${PETSC_LIBRARY_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${MPI_Fortran_LIBRARIES})
 
-# target_link_libraries(${PROJECT_NAME} PUBLIC dolfinx zmumps cmumps dmumps smumps mumps_common metis scalapack parmetis blas lapack pord)
-target_link_libraries(${PROJECT_NAME} PUBLIC dolfinx superlu_dist)
+target_link_libraries(${PROJECT_NAME} PUBLIC dolfinx zmumps cmumps dmumps smumps mumps_common metis scalapack parmetis blas lapack pord)
+# target_link_libraries(${PROJECT_NAME} PUBLIC dolfinx superlu_dist)
 
 # Do not throw error for 'multi-line comments' (these are typical in rst which
 # includes LaTeX)
@@ -70,6 +70,6 @@ check_cxx_compiler_flag("-Wno-comment" HAVE_NO_MULTLINE)
 set_source_files_properties(
   main.cpp
   PROPERTIES
-    COMPILE_FLAGS
-    "$<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment -Wall -Wextra -pedantic -Werror -g -O2>"
+  COMPILE_FLAGS
+  "$<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment -Wall -Wextra -pedantic -Werror -g -Ofast>"
 )

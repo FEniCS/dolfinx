@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
     // Create mesh and function space
     auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
     auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_box<U>(
-        MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {32, 32, 320},
+        MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {32, 32, 32},
         mesh::CellType::tetrahedron, part));
 
     int tdim = mesh->topology()->dim();
@@ -145,8 +145,8 @@ int main(int argc, char* argv[])
                 udouble.x()->mutable_array().begin());
       file.write<std::complex<double>>({udouble}, 0.0);
     }
-    else
-      file.write<T>({u}, 0.0);
+    // else
+    //   file.write<T>({u}, 0.0);
   }
 
   dolfinx::list_timings(MPI_COMM_WORLD, {TimingType::wall});
