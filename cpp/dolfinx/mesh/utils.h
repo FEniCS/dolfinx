@@ -747,7 +747,7 @@ compute_incident_entities(const Topology& topology,
 /// 'nodes' will be included. See dolfinx::io::cells for examples of the
 /// Basix ordering.
 /// @param[in] element Coordinate element for the cells.
-/// @param[in] commg
+/// @param[in] commg Communicator for geometry
 /// @param[in] x Geometry data ('node' coordinates). Row-major storage.
 /// The global index of the `i`th node (row) in `x` is taken as `i` plus
 /// the process offset  on`comm`, The offset  is the sum of `x` rows on
@@ -910,7 +910,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// other cells 'nodes' will be included. See dolfinx::io::cells for examples of
 /// the Basix ordering.
 /// @param[in] elements Coordinate elements for the cells.
-/// @param[in] commg
+/// @param[in] commg Communicator for geometry
 /// @param[in] x Geometry data ('node' coordinates). Row-major storage.
 /// The global index of the `i`th node (row) in `x` is taken as `i` plus
 /// the process offset  on`comm`, The offset  is the sum of `x` rows on
