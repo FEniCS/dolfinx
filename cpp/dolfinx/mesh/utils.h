@@ -888,14 +888,17 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
               std::move(geometry));
 }
 
-/// @brief Create a distributed mesh from mesh data using a provided
-/// graph partitioning function for determining the parallel
+/// @brief Create a distributed mixed-topology mesh from mesh data using a
+/// provided graph partitioning function for determining the parallel
 /// distribution of the mesh.
 ///
 /// From mesh input data that is distributed across processes, a
 /// distributed mesh::Mesh is created. If the partitioning function is
 /// not callable, i.e. it does not store a callable function, no
 /// re-distribution of cells is done.
+///
+/// @note This is an experimental specialised version of `create_mesh` for mixed
+/// topology meshes, and does not include cell reordering.
 ///
 /// @param[in] comm Communicator to build the mesh on.
 /// @param[in] commt Communicator that the topology data (`cells`) is
@@ -1045,21 +1048,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     auto [graph, unmatched_facets, max_v, facet_attached_cells]
         = build_local_dual_graph(celltypes, cells1_v_local_cells);
 
-    // const std::vector<int> remap = graph::reorder_gps(graph);
-
-    // // Create re-ordered cell lists (leaves ghosts unchanged)
-    // std::vector<std::int64_t> _original_idx(original_idx1.size());
-    // for (std::size_t i = 0; i < remap.size(); ++i)
-    //   _original_idx[remap[i]] = original_idx1[i];
-    // std::copy_n(std::next(original_idx1.cbegin(), num_owned_cells),
-    //             ghost_owners.size(),
-    //             std::next(_original_idx.begin(), num_owned_cells));
-    // impl::reorder_list(
-    //     std::span(cells1_v.data(), remap.size() * num_cell_vertices),
-    //     remap);
-    // impl::reorder_list(
-    //     std::span(cells1.data(), remap.size() * num_cell_nodes), remap);
-    // original_idx1 = _original_idx;
+    // TODO: in the original create_mesh(), cell reordering is done here.
+    // This needs reworking for mixed cell topology
 
     // Boundary vertices are marked as 'unknown'
     boundary_v = unmatched_facets;
