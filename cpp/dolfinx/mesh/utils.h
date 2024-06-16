@@ -904,11 +904,12 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// @param[in] commt Communicator that the topology data (`cells`) is
 /// distributed on. This should be `MPI_COMM_NULL` for ranks that should
 /// not participate in computing the topology partitioning.
-/// @param[in] cells Cells on the calling process. Each cell is defined by its
-/// 'nodes' (using global indices) following the Basix ordering. For lowest
-/// order cells this will be just the cell vertices. For higher-order cells,
-/// other cells 'nodes' will be included. See dolfinx::io::cells for examples of
-/// the Basix ordering.
+/// @param[in] cells Cells on the calling process, as a list of lists,
+/// one list for each cell type. The cells are defined by their
+/// 'nodes' (using global indices) following the Basix ordering, and
+/// concatenated to form a flattened list. For lowest order cells this will be
+/// just the cell vertices. For higher-order cells, other cells 'nodes' will be
+/// included. See dolfinx::io::cells for examples of the Basix ordering.
 /// @param[in] elements Coordinate elements for the cells.
 /// @param[in] commg Communicator for geometry
 /// @param[in] x Geometry data ('node' coordinates). Row-major storage.
@@ -922,7 +923,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt,
-    std::vector<std::span<const std::int64_t>>& cells,
+    const std::vector<std::span<const std::int64_t>>& cells,
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,

@@ -284,7 +284,7 @@ void declare_mesh(nb::module_& m, std::string type)
         [](MPICommWrapper comm,
            const std::vector<nb::ndarray<const std::int64_t, nb::ndim<1>,
                                          nb::c_contig>>& cells_nb,
-           std::vector<dolfinx::fem::CoordinateElement<T>>& elements,
+           const std::vector<dolfinx::fem::CoordinateElement<T>>& elements,
            nb::ndarray<const T, nb::c_contig> x,
            const PythonCellPartitionFunction& p)
         {
