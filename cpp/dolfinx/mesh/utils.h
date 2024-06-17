@@ -905,12 +905,14 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// distributed on. This should be `MPI_COMM_NULL` for ranks that should
 /// not participate in computing the topology partitioning.
 /// @param[in] cells Cells on the calling process, as a list of lists,
-/// one list for each cell type. The cells are defined by their
-/// 'nodes' (using global indices) following the Basix ordering, and
-/// concatenated to form a flattened list. For lowest order cells this will be
-/// just the cell vertices. For higher-order cells, other cells 'nodes' will be
-/// included. See dolfinx::io::cells for examples of the Basix ordering.
-/// @param[in] elements Coordinate elements for the cells.
+/// one list for each cell type (or an empty list if there are no cells of that
+/// type on this process). The cells are defined by their 'nodes' (using global
+/// indices) following the Basix ordering, and concatenated to form a flattened
+/// list.  For lowest order cells this will be just the cell vertices. For
+/// higher-order cells, other cells 'nodes' will be included. See
+/// dolfinx::io::cells for examples of the Basix ordering.
+/// @param[in] elements Coordinate elements for the cells, one for each cell
+/// type in the mesh. In parallel, these must be the same on all processes.
 /// @param[in] commg Communicator for geometry
 /// @param[in] x Geometry data ('node' coordinates). Row-major storage.
 /// The global index of the `i`th node (row) in `x` is taken as `i` plus
