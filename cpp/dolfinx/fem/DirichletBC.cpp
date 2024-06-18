@@ -41,14 +41,16 @@ find_local_entity_index(const mesh::Topology& topology,
   if (!e_to_c)
   {
     throw std::runtime_error(
-        "Entity-to-cell connectivity has not been computed.");
+        "Entity-to-cell connectivity has not been computed. Missing dims "
+        + std::to_string(dim) + "->" + std::to_string(tdim));
   }
 
   auto c_to_e = topology.connectivity(tdim, dim);
   if (!c_to_e)
   {
     throw std::runtime_error(
-        "Cell-to-entity connectivity has not been computed.");
+        "Cell-to-entity connectivity has not been computed. Missing dims "
+        + std::to_string(tdim) + "->" + std::to_string(dim));
   }
 
   std::vector<std::pair<std::int32_t, int>> entity_indices;
