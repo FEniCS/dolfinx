@@ -24,9 +24,6 @@ namespace
 
 void test_read_named_meshtags()
 {
-  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
-  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
-
   const std::string mesh_file = "Domain.xdmf";
 
   io::XDMFFile meshFile(MPI_COMM_WORLD, mesh_file, "r");
