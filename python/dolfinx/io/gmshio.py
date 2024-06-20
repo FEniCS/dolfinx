@@ -6,6 +6,7 @@
 """Tools to extract data from Gmsh models."""
 
 import typing
+from pathlib import Path
 
 from mpi4py import MPI as _MPI
 
@@ -332,7 +333,7 @@ def model_to_mesh(
 
 
 def read_from_msh(
-    filename: str,
+    filename: typing.Union[str, Path],
     comm: _MPI.Comm,
     rank: int = 0,
     gdim: int = 3,
@@ -369,7 +370,7 @@ def read_from_msh(
     if comm.rank == rank:
         gmsh.initialize()
         gmsh.model.add("Mesh from file")
-        gmsh.merge(filename)
+        gmsh.merge(str(filename))
         msh = model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
         gmsh.finalize()
         return msh

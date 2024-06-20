@@ -40,9 +40,11 @@ def get_petsc_lib() -> pathlib.Path:
             exists_paths.append(candidate_path)
 
     if len(exists_paths) == 0:
-        raise RuntimeError("Could not find a PETSc shared library.")
+        raise RuntimeError(
+            f"Could not find a PETSc shared library. Candidate paths: {candidate_paths}"
+        )
     elif len(exists_paths) > 1:
-        raise RuntimeError("More than one PETSc shared library found.")
+        raise RuntimeError(f"More than one PETSc shared library found. Paths: {exists_paths}")
 
     return pathlib.Path(exists_paths[0])
 

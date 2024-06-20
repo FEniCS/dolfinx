@@ -290,11 +290,9 @@ endif()
 # library
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
    AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
-   AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
-)
+   AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0")
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS
-       -Wno-array-bounds;-Wno-stringop-overflow
-  )
+       -Wno-array-bounds;-Wno-stringop-overflow)
 endif()
 
 # ------------------------------------------------------------------------------

@@ -21,6 +21,7 @@ from dolfinx.fem.function import FunctionSpace
 
 if typing.TYPE_CHECKING:
     from dolfinx.fem import function
+    from dolfinx.mesh import Mesh
 
 
 class Form:
@@ -137,7 +138,7 @@ def form(
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
-    entity_maps: dict[_cpp.mesh.Mesh, np.typing.NDArray[np.int32]] = {},
+    entity_maps: dict[Mesh, np.typing.NDArray[np.int32]] = {},
 ):
     """Create a Form or an array of Forms.
 
@@ -254,13 +255,15 @@ def form(
             for (key, subdomain_data) in sd.get(domain).items()
         }
 
+        _entity_maps = {msh._cpp_object: emap for (msh, emap) in entity_maps.items()}
+
         f = ftype(
             module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)),
             V,
             coeffs,
             constants,
             subdomains,
-            entity_maps,
+            _entity_maps,
             mesh,
         )
         return Form(f, ufcx_form, code)
