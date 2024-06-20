@@ -351,11 +351,10 @@ XDMFFile::read_meshtags_by_label(const mesh::Mesh<double>& mesh,
 
   pugi::xml_node attribute_node = grid_node.child("Attribute");
   pugi::xml_node values_data_node = attribute_node.child("DataItem");
-  if (not attribute_label.empty())
+  if (!attribute_label.empty())
   {
     bool found = false;
-    for (; attribute_node;
-         attribute_node = attribute_node.next_sibling("Attribute"))
+    while ((attribute_node = attribute_node.next_sibling("Attribute")))
     {
       pugi::xml_attribute hint;
       pugi::xml_attribute name = attribute_node.attribute("Name", hint);
@@ -366,7 +365,7 @@ XDMFFile::read_meshtags_by_label(const mesh::Mesh<double>& mesh,
         break;
       }
     }
-    if (not found)
+    if (!found)
     {
       throw std::runtime_error("Attribute with name '" + attribute_label
                                + "' not found.");
@@ -414,7 +413,7 @@ mesh::MeshTags<std::int32_t>
 XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
                         std::string xpath)
 {
-  return read_meshtags_by_label(mesh, name, "", xpath);
+  return read_meshtags_by_label(mesh, name, std::string(), xpath);
 }
 //-----------------------------------------------------------------------------
 std::pair<mesh::CellType, int> XDMFFile::read_cell_type(std::string grid_name,
