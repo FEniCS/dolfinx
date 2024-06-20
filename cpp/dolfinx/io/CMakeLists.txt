@@ -2,6 +2,7 @@ set(HEADERS_io
     ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_io.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ADIOS2Writers.h
     ${CMAKE_CURRENT_SOURCE_DIR}/cells.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/checkpointing.h
     ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Interface.h
     ${CMAKE_CURRENT_SOURCE_DIR}/vtk_utils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/VTKFile.h
