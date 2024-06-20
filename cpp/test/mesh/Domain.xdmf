@@ -1,0 +1,26 @@
+<Xdmf Version="3.0">
+    <Domain>
+        <Grid Name="Grid">
+            <Geometry GeometryType="XYZ">
+                <DataItem DataType="Float" Dimensions="262 3" Format="HDF" Precision="8">
+                Domain.h5:/data0</DataItem>
+            </Geometry>
+            <Topology TopologyType="Tetrahedron" NumberOfElements="813" NodesPerElement="4">
+                <DataItem DataType="Int" Dimensions="813 4" Format="HDF" Precision="8">
+                Domain.h5:/data1</DataItem>
+            </Topology>
+            <Attribute Name="point_tags" AttributeType="Scalar" Center="Node">
+                <DataItem DataType="Int" Dimensions="262" Format="HDF" Precision="8">
+                Domain.h5:/data2</DataItem>
+            </Attribute>
+            <Attribute Name="domain" AttributeType="Scalar" Center="Cell">
+                <DataItem DataType="Int" Dimensions="813" Format="HDF" Precision="8">
+                Domain.h5:/data3</DataItem>
+            </Attribute>
+            <Attribute Name="material" AttributeType="Scalar" Center="Cell">
+                <DataItem DataType="Int" Dimensions="813" Format="HDF" Precision="8">
+                Domain.h5:/data4</DataItem>
+            </Attribute>
+        </Grid>
+    </Domain>
+</Xdmf>

@@ -18,6 +18,13 @@ add_custom_command(
   COMMENT "Compile poisson.py using FFCx"
 )
 
+add_custom_target(test_mesh
+  COMMAND ln -s -f ${CMAKE_CURRENT_SOURCE_DIR}/mesh/Domain.xdmf .
+  COMMAND ln -s -f ${CMAKE_CURRENT_SOURCE_DIR}/mesh/Domain.h5 .
+  VERBATIM
+  COMMENT "Link mesh file for test"
+)
+
 find_package(Catch2 3)
 
 if(NOT Catch2_FOUND)
@@ -43,6 +50,7 @@ add_executable(
   fem/functionspace.cpp
   mesh/distributed_mesh.cpp
   mesh/generation.cpp
+  mesh/read_named_meshtags.cpp
   common/CIFailure.cpp
   mesh/refinement/interval.cpp
   mesh/refinement/option.cpp
@@ -58,6 +66,8 @@ endif()
 target_include_directories(
   unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
+
+add_dependencies(unittests test_mesh)
 
 # Add some strict compiler checks only on C++ part (Developer).
 include(CheckCXXCompilerFlag)
