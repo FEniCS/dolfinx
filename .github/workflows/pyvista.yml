@@ -22,6 +22,7 @@ jobs:
       PYVISTA_OFF_SCREEN: true
       PYVISTA_QT_VERSION: 0.11.0
       PYVISTA_VERSION: 0.43.10
+      QT_DEBUG_PLUGINS: 1
 
       PETSC_ARCH: ${{ matrix.petsc_arch }}
       OMPI_ALLOW_RUN_AS_ROOT: 1
