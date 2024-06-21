@@ -638,6 +638,35 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   const int tdim = topology->dim();
   const Geometry<T>& geometry = mesh.geometry();
   auto xdofs = geometry.dofmap();
+
+  // Get the DOF layout and the number of DOFs per entity
+  const fem::CoordinateElement<T>& coord_ele = geometry.cmap();
+  const fem::ElementDofLayout layout = coord_ele.create_dof_layout();
+  const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
+  std::vector<std::int32_t> entity_xdofs;
+  entity_xdofs.reserve(entities.size() * num_entity_dofs);
+
+  // Get the element's closure DOFs
+  const std::vector<std::vector<std::vector<int>>>& closure_dofs_all
+      = layout.entity_closure_dofs_all();
+
+  // Special case when dim == tdim (cells)
+  if (dim == tdim)
+  {
+    for (std::size_t i = 0; i < entities.size(); ++i)
+    {
+      const std::int32_t c = entities[i];
+      // Extract degrees of freedom
+      auto x_c = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+          xdofs, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      for (std::int32_t entity_dof : closure_dof_all[tdim][0])
+        entity_xdofs.push_back(x_c[entity_dof]);
+    }
+    return entity_xdofs;
+  }
+
+  assert(dim != tdim);
+
   auto e_to_c = topology->connectivity(dim, tdim);
   if (!e_to_c)
   {
@@ -654,20 +683,9 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
         + std::to_string(tdim) + "->" + std::to_string(dim));
   }
 
-  // Get the DOF layout and the number of DOFs per entity
-  const fem::CoordinateElement<T>& coord_ele = geometry.cmap();
-  const fem::ElementDofLayout layout = coord_ele.create_dof_layout();
-  const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
-  std::vector<std::int32_t> entity_xdofs;
-  entity_xdofs.reserve(entities.size() * num_entity_dofs);
-
-  // Get the element's closure DOFs
-  const std::vector<std::vector<std::vector<int>>>& closure_dofs_all
-      = layout.entity_closure_dofs_all();
-
   // Get the cell info, which is needed to permute the closure dofs
   std::span<const std::uint32_t> cell_info;
-  if (dim != topology->dim() and permute)
+  if (permute)
     cell_info = std::span(mesh.topology()->get_cell_permutation_info());
 
   for (std::size_t i = 0; i < entities.size(); ++i)
@@ -688,7 +706,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 
     // Cell sub-entities must be permuted so that their local orientation agrees
     // with their global orientation
-    if (dim != topology->dim() and permute)
+    if (permute)
     {
       mesh::CellType entity_type
           = mesh::cell_entity_type(cell_type, dim, local_entity);
