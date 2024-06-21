@@ -43,7 +43,7 @@ jobs:
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git
           apt-get update
           apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb  # pyvista
-          apt-get install -y --no-install-recommends libgl1 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 # pyvistaqt
+          apt-get install -y --no-install-recommends libgl1 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 # pyvistaqt
           python3 -m pip install pyvista==${PYVISTA_VERSION}
           python3 -m pip install pyqt5 pyvistaqt==${PYVISTA_QT_VERSION}
           python3 -m pip install matplotlib ipython nanobind scikit-build-core[pyproject] pytest pytest-xdist scipy numba
