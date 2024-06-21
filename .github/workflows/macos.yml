@@ -47,6 +47,7 @@ jobs:
             --download-metis \
             --download-parmetis \
             --download-ptscotch \
+            --download-scalapack \
             --download-mumps \
             --download-mumps-avoid-mpi-in-place
           make all
