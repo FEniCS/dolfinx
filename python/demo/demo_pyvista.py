@@ -119,6 +119,7 @@ def plot_meshtags():
     # Create cell tags - if midpoint is inside circle, it gets value 1,
     # otherwise 0
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
+    msh.topology.create_connectivity(2, 2)
     midpoints = compute_midpoints(msh, msh.topology.dim, np.arange(num_cells, dtype=np.int32))
     cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
@@ -173,6 +174,7 @@ def plot_higher_order():
     # Create mesh tags for all cells. If midpoint is inside the circle,
     # it gets value 1, otherwise 0.
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
+    msh.topology.create_connectivity(2, 2)
     midpoints = compute_midpoints(msh, msh.topology.dim, np.arange(num_cells, dtype=np.int32))
     cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
@@ -242,6 +244,7 @@ def plot_nedelec():
     )
 
     # Next, we create a pyvista.UnstructuredGrid based on the mesh
+    msh.topology.create_connectivity(3, 3)
     pyvista_cells, cell_types, x = plot.vtk_mesh(msh)
     grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, x)
 
