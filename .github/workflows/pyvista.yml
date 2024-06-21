@@ -45,7 +45,7 @@ jobs:
           apt-get install -y --no-install-recommends libgl1 # pyvistaqt
           # python3 -m pip install pyvista==${PYVISTA_VERSION}
           # python3 -m pip install pyvistaqt==${PYVISTA_QT_VERSION} pyqt5-tools
-          python3 -m pip install pyvista pyvistaqt pyqt5-tools matplotlib ipython nanobind scikit-build-core[pyproject] pytest pytest-xdist scipy numba
+          python3 -m pip install pyvista pyvistaqt pyqt5 matplotlib ipython nanobind scikit-build-core[pyproject] pytest pytest-xdist scipy numba
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
