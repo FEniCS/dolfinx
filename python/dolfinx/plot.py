@@ -56,8 +56,6 @@ def vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=None):
     if entities is None:
         entities = np.arange(msh.topology.index_map(dim).size_local, dtype=np.int32)
 
-    msh.topology.create_connectivity(dim, msh.topology.dim)
-    msh.topology.create_connectivity(msh.topology.dim, dim)
     geometry_entities = _cpp.mesh.entities_to_geometry(msh._cpp_object, dim, entities, False)
 
     num_nodes_per_cell = geometry_entities.shape[1]

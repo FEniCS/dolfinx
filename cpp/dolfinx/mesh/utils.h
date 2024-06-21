@@ -659,7 +659,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
       // Extract degrees of freedom
       auto x_c = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
           xdofs, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
-      for (std::int32_t entity_dof : closure_dof_all[tdim][0])
+      for (std::int32_t entity_dof : closure_dofs_all[tdim][0])
         entity_xdofs.push_back(x_c[entity_dof]);
     }
     return entity_xdofs;
