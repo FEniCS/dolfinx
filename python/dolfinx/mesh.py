@@ -496,7 +496,7 @@ def meshtags(
     """
 
     if isinstance(values, int):
-        assert np.can_cast(values, np.int32)
+        assert values >= np.iinfo(np.int32).min and values <= np.iinfo(np.int32).max
         values = np.full(entities.shape, values, dtype=np.int32)
     elif isinstance(values, float):
         values = np.full(entities.shape, values, dtype=np.double)
