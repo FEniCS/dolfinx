@@ -99,18 +99,14 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
 /// @param[in] topology Mesh topology
 /// @param[in] entities List of tagged mesh entities
 /// @param[in] dim Topological dimension of tagged entities
-/// @param[in] values Value associated with each entity
-/// @return List of `(integral id, entities)` pairs
-/// @pre The topological dimension of the integral entity type and the
-/// topological dimension of mesh tag data must be equal.
+/// @return List of integration entities
 /// @pre For facet integrals, the topology facet-to-cell and
 /// cell-to-facet connectivity must be computed before calling this
 /// function.
-std::vector<std::pair<int, std::vector<std::int32_t>>>
+std::vector<std::int32_t>
 compute_integration_domains(IntegralType integral_type,
                             const mesh::Topology& topology,
-                            std::span<const std::int32_t> entities, int dim,
-                            std::span<const int> values);
+                            std::span<const std::int32_t> entities, int dim);
 
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms.
@@ -423,9 +419,18 @@ Form<T, U> create_form_factory(
           = ufcx_form.form_integrals[integral_offsets[cell] + i];
       assert(integral);
 
+      // Build list of active coefficients
+      std::vector<int> active_coeffs;
+      for (int j = 0; j < ufcx_form.num_coefficients; ++j)
+      {
+        if (integral->enabled_coefficients[j])
+          active_coeffs.push_back(j);
+      }
+
       kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
       else if constexpr (std::is_same_v<T, std::complex<float>>)
       {
         k = reinterpret_cast<void (*)(
@@ -433,8 +438,10 @@ Form<T, U> create_form_factory(
             const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex64);
       }
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
       else if constexpr (std::is_same_v<T, double>)
         k = integral->tabulate_tensor_float64;
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
       else if constexpr (std::is_same_v<T, std::complex<double>>)
       {
         k = reinterpret_cast<void (*)(
@@ -442,6 +449,8 @@ Form<T, U> create_form_factory(
             const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex128);
       }
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
+
       if (!k)
       {
         throw std::runtime_error(
@@ -455,7 +464,7 @@ Form<T, U> create_form_factory(
         assert(topology->index_map(tdim));
         default_cells.resize(topology->index_map(tdim)->size_local(), 0);
         std::iota(default_cells.begin(), default_cells.end(), 0);
-        itg.first->second.emplace_back(id, k, default_cells);
+        itg.first->second.emplace_back(id, k, default_cells, active_coeffs);
       }
       else if (sd != subdomains.end())
       {
@@ -464,7 +473,7 @@ Form<T, U> create_form_factory(
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
-          itg.first->second.emplace_back(id, k, it->second);
+          itg.first->second.emplace_back(id, k, it->second, active_coeffs);
       }
 
       if (integral->needs_facet_permutations)
@@ -486,10 +495,17 @@ Form<T, U> create_form_factory(
       ufcx_integral* integral
           = ufcx_form.form_integrals[integral_offsets[exterior_facet] + i];
       assert(integral);
+      std::vector<int> active_coeffs;
+      for (int j = 0; j < ufcx_form.num_coefficients; ++j)
+      {
+        if (integral->enabled_coefficients[j])
+          active_coeffs.push_back(j);
+      }
 
       kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
       else if constexpr (std::is_same_v<T, std::complex<float>>)
       {
         k = reinterpret_cast<void (*)(
@@ -497,8 +513,10 @@ Form<T, U> create_form_factory(
             const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex64);
       }
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
       else if constexpr (std::is_same_v<T, double>)
         k = integral->tabulate_tensor_float64;
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
       else if constexpr (std::is_same_v<T, std::complex<double>>)
       {
         k = reinterpret_cast<void (*)(
@@ -506,6 +524,7 @@ Form<T, U> create_form_factory(
             const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex128);
       }
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
       assert(k);
 
       // Build list of entities to assembler over
@@ -526,7 +545,8 @@ Form<T, U> create_form_factory(
           default_facets_ext.insert(default_facets_ext.end(), pair.begin(),
                                     pair.end());
         }
-        itg.first->second.emplace_back(id, k, default_facets_ext);
+        itg.first->second.emplace_back(id, k, default_facets_ext,
+                                       active_coeffs);
       }
       else if (sd != subdomains.end())
       {
@@ -535,7 +555,7 @@ Form<T, U> create_form_factory(
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
-          itg.first->second.emplace_back(id, k, it->second);
+          itg.first->second.emplace_back(id, k, it->second, active_coeffs);
       }
 
       if (integral->needs_facet_permutations)
@@ -557,10 +577,17 @@ Form<T, U> create_form_factory(
       ufcx_integral* integral
           = ufcx_form.form_integrals[integral_offsets[interior_facet] + i];
       assert(integral);
+      std::vector<int> active_coeffs;
+      for (int j = 0; j < ufcx_form.num_coefficients; ++j)
+      {
+        if (integral->enabled_coefficients[j])
+          active_coeffs.push_back(j);
+      }
 
       kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
       else if constexpr (std::is_same_v<T, std::complex<float>>)
       {
         k = reinterpret_cast<void (*)(
@@ -568,8 +595,10 @@ Form<T, U> create_form_factory(
             const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex64);
       }
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
       else if constexpr (std::is_same_v<T, double>)
         k = integral->tabulate_tensor_float64;
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
       else if constexpr (std::is_same_v<T, std::complex<double>>)
       {
         k = reinterpret_cast<void (*)(
@@ -577,6 +606,7 @@ Form<T, U> create_form_factory(
             const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex128);
       }
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
       assert(k);
 
       // Build list of entities to assembler over
@@ -600,7 +630,8 @@ Form<T, U> create_form_factory(
                                       pairs.end());
           }
         }
-        itg.first->second.emplace_back(id, k, default_facets_int);
+        itg.first->second.emplace_back(id, k, default_facets_int,
+                                       active_coeffs);
       }
       else if (sd != subdomains.end())
       {
@@ -608,7 +639,7 @@ Form<T, U> create_form_factory(
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
-          itg.first->second.emplace_back(id, k, it->second);
+          itg.first->second.emplace_back(id, k, it->second, active_coeffs);
       }
 
       if (integral->needs_facet_permutations)
@@ -669,6 +700,7 @@ Form<T, U> create_form(
   }
 
   // Place constants in appropriate order
+
   std::vector<std::shared_ptr<const Constant<T>>> const_map;
   for (const std::string& name : get_constant_names(ufcx_form))
   {
@@ -976,7 +1008,7 @@ allocate_coefficient_storage(const Form<T, U>& form)
 /// @param[in] form The Form
 /// @param[in] integral_type Type of integral
 /// @param[in] id The id of the integration domain
-/// @param[in] c The coefficient array
+/// @param[in,out] c The coefficient array
 /// @param[in] cstride The coefficient stride
 template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
@@ -987,17 +1019,43 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
       = form.coefficients();
   const std::vector<int> offsets = form.coefficient_offsets();
 
+  // Indicator for packing coefficients
+  std::vector<int> active_coefficient(coefficients.size(), 0);
   if (!coefficients.empty())
   {
     switch (integral_type)
     {
     case IntegralType::cell:
     {
+      // Get indicator for all coefficients that are active in cell
+      // integrals
+      for (std::size_t i = 0; i < form.num_integrals(IntegralType::cell); ++i)
+      {
+        for (auto idx : form.active_coeffs(IntegralType::cell, i))
+          active_coefficient[idx] = 1;
+      }
+
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
+        if (!active_coefficient[coeff])
+          continue;
+
+        // Get coefficient mesh
         auto mesh = coefficients[coeff]->function_space()->mesh();
         assert(mesh);
+
+        // Other integrals in the form might have coefficients defined over
+        // entities of codim > 0, which don't make sense for cell integrals, so
+        // don't pack them.
+        if (const int codim
+            = form.mesh()->topology()->dim() - mesh->topology()->dim();
+            codim > 0)
+        {
+          throw std::runtime_error("Should not be packing coefficients with "
+                                   "codim>0 in a cell integral");
+        }
+
         std::vector<std::int32_t> cells
             = form.domain(IntegralType::cell, id, *mesh);
         std::span<const std::uint32_t> cell_info
@@ -1010,9 +1068,21 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
     }
     case IntegralType::exterior_facet:
     {
+      // Get indicator for all coefficients that are active in exterior
+      // facet integrals
+      for (std::size_t i = 0;
+           i < form.num_integrals(IntegralType::exterior_facet); ++i)
+      {
+        for (auto idx : form.active_coeffs(IntegralType::exterior_facet, i))
+          active_coefficient[idx] = 1;
+      }
+
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
+        if (!active_coefficient[coeff])
+          continue;
+
         auto mesh = coefficients[coeff]->function_space()->mesh();
         std::vector<std::int32_t> facets
             = form.domain(IntegralType::exterior_facet, id, *mesh);
@@ -1026,9 +1096,21 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
     }
     case IntegralType::interior_facet:
     {
+      // Get indicator for all coefficients that are active in interior
+      // facet integrals
+      for (std::size_t i = 0;
+           i < form.num_integrals(IntegralType::interior_facet); ++i)
+      {
+        for (auto idx : form.active_coeffs(IntegralType::interior_facet, i))
+          active_coefficient[idx] = 1;
+      }
+
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
+        if (!active_coefficient[coeff])
+          continue;
+
         auto mesh = coefficients[coeff]->function_space()->mesh();
         std::vector<std::int32_t> facets
             = form.domain(IntegralType::interior_facet, id, *mesh);
@@ -1039,6 +1121,7 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
         impl::pack_coefficient_entity(
             c, 2 * cstride, *coefficients[coeff], cell_info, facets, 4,
             [](auto entity) { return entity[0]; }, 2 * offsets[coeff]);
+
         // Pack coefficient ['-']
         impl::pack_coefficient_entity(
             c, 2 * cstride, *coefficients[coeff], cell_info, facets, 4,
@@ -1079,6 +1162,7 @@ Expression<T, U> create_expression(
       tabulate_tensor = nullptr;
   if constexpr (std::is_same_v<T, float>)
     tabulate_tensor = e.tabulate_tensor_float32;
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
   else if constexpr (std::is_same_v<T, std::complex<float>>)
   {
     tabulate_tensor = reinterpret_cast<void (*)(
@@ -1086,8 +1170,10 @@ Expression<T, U> create_expression(
         const typename scalar_value_type<T>::value_type*, const int*,
         const unsigned char*)>(e.tabulate_tensor_complex64);
   }
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
   else if constexpr (std::is_same_v<T, double>)
     tabulate_tensor = e.tabulate_tensor_float64;
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
     tabulate_tensor = reinterpret_cast<void (*)(
@@ -1095,6 +1181,7 @@ Expression<T, U> create_expression(
         const typename scalar_value_type<T>::value_type*, const int*,
         const unsigned char*)>(e.tabulate_tensor_complex128);
   }
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
   else
     throw std::runtime_error("Type not supported.");
 

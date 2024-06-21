@@ -5,13 +5,13 @@
 # docker run -ti -v docker.io/fenicsproject/test-env:current-redhat
 FROM rockylinux/rockylinux:9
 
-ARG BUILD_NP=3
+ARG BUILD_NP=4
 
 ARG HDF5_SERIES=1.14
 ARG HDF5_PATCH=3
 ARG HDF5_FIX=
-ARG PETSC_VERSION=3.21.0
-ARG MPICH_VERSION=4.1.3
+ARG PETSC_VERSION=3.21.2
+ARG MPICH_VERSION=4.2.1
 
 WORKDIR /tmp
 
@@ -22,7 +22,6 @@ RUN dnf -y update && \
     dnf -y install \
     bison \
     boost-devel \
-    boost-filesystem \
     boost-timer \
     boost-program-options \
     cmake \

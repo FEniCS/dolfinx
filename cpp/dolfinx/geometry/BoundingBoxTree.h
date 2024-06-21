@@ -405,7 +405,8 @@ private:
       for (std::size_t k = 0; k < 3; ++k)
         s << _bbox_coordinates[6 * i + j * 3 + k] << " ";
       if (j == 0)
-        s << "]->" << "[";
+        s << "]->"
+          << "[";
     }
     s << "]\n";
 

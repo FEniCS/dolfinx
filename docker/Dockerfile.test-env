@@ -12,16 +12,15 @@
 #    docker build --target dev-env --file dolfinx/docker/Dockerfile.test-env --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" .
 #
 
-ARG ADIOS2_VERSION=2.10.0
+ARG ADIOS2_VERSION=2.10.1
 ARG DOXYGEN_VERSION=1_11_0
-ARG GMSH_VERSION=4_12_2
+ARG GMSH_VERSION=4_13_1
 ARG HDF5_SERIES=1.14
 ARG HDF5_PATCH=3
 ARG HDF5_FIX=
 ARG KAHIP_VERSION=3.16
 ARG NUMPY_VERSION=1.26.4
-ARG NANOBIND_VERSION=2.0.0
-ARG PETSC_VERSION=3.21.1
+ARG PETSC_VERSION=3.21.2
 ARG SLEPC_VERSION=3.21.1
 
 ARG MPICH_VERSION=4.2.1
@@ -39,7 +38,6 @@ ARG GMSH_VERSION
 ARG HDF5_SERIES
 ARG HDF5_PATCH
 ARG HDF5_FIX
-ARG NANOBIND_VERSION
 ARG PETSC_VERSION
 ARG SLEPC_VERSION
 ARG ADIOS2_VERSION
@@ -82,7 +80,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     g++ \
     gfortran \
     libboost-dev \
-    libboost-filesystem-dev \
     libboost-timer-dev \
     liblapack-dev \
     libopenblas-dev \
@@ -92,7 +89,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     pkg-config \
     python3-dev \
     python3-pip \
-    python3-setuptools && \
+    python3-venv && \
     #
     apt-get -y install \
     catch2 \
@@ -146,17 +143,14 @@ RUN if [ "$MPI" = "mpich" ]; then \
     ldconfig && \
     rm -rf /tmp/*
 
+ENV VIRTUAL_ENV /dolfinx-env
+ENV PATH /dolfinx-env/bin:$PATH
+RUN python3 -m venv ${VIRTUAL_ENV}
+
 # Install Python packages (via pip)
-# - make sure pip/setuptoools are up-to-date before using them
-# - First set of packages are required to build and run DOLFINx Python.
-# - Second set of packages are recommended and/or required to build
-#   documentation or run tests.
-# - Final set of packages are required to build petsc4py
-RUN pip3 install --break-system-packages --no-cache-dir --upgrade setuptools pip && \
-    pip3 install --break-system-packages --no-cache-dir cffi numba numpy==${NUMPY_VERSION} scikit-build-core[pyproject] && \
-    pip3 install --break-system-packages --no-cache-dir --no-build-isolation mpi4py && \
-    pip3 install --break-system-packages --no-cache-dir breathe clang-format cmakelang jupytext matplotlib mypy myst-parser nanobind==${NANOBIND_VERSION} pytest pytest-xdist ruff scipy pyamg sphinx sphinx_rtd_theme types-setuptools && \
-    pip3 install --break-system-packages --no-cache-dir cython wheel
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir cffi numpy==${NUMPY_VERSION} setuptools wheel && \
+    pip install --no-cache-dir --no-build-isolation mpi4py
 
 # Install KaHIP
 RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
@@ -201,7 +195,7 @@ ENV PYTHONPATH=/usr/local/lib:$PYTHONPATH
 ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
 RUN apt-get -qq update && \
     apt-get -y install bison flex && \
-    git clone -b v${PETSC_VERSION}  https://gitlab.com/petsc/petsc.git ${PETSC_DIR} && \
+    git clone --depth=1 -b v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git ${PETSC_DIR} && \
     cd ${PETSC_DIR} && \
     # Real32, 32-bit int
     ./configure \
@@ -322,7 +316,9 @@ RUN apt-get -qq update && \
     make PETSC_ARCH=linux-gnu-complex128-64 ${MAKEFLAGS} all && \
     # Install petsc4py
     cd src/binding/petsc4py && \
-    PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip3 install --break-system-packages --no-cache-dir -v --no-build-isolation . && \
+    pip install --no-cache-dir cython wheel && \
+    PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip -v install --no-cache-dir --no-build-isolation . && \
+    # pip3 uninstall --yes cython wheel && \
     # Cleanup
     apt-get -y purge bison flex && \
     apt-get -y autoremove && \
@@ -341,7 +337,7 @@ RUN apt-get -qq update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install SLEPc
-RUN git clone -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git ${SLEPC_DIR} && \
+RUN git clone --depth=1 -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git ${SLEPC_DIR} && \
     cd ${SLEPC_DIR} && \
     export PETSC_ARCH=linux-gnu-real32-32 && \
     ./configure && \
@@ -363,7 +359,9 @@ RUN git clone -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git ${SLEPC_DI
     make && \
     # Install slepc4py
     cd src/binding/slepc4py && \
-    PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip3 install --break-system-packages --no-cache-dir --no-build-isolation . && \
+    # pip3 install --break-system-packages --no-cache-dir cython wheel && \
+    PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip -v install --no-cache-dir --no-build-isolation . && \
+    # pip3 uninstall --yes cython wheel && \
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*
 

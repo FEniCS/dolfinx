@@ -1,4 +1,3 @@
 nanobind>=2.0.0
-scikit-build-core[pyproject]
-petsc4py
+scikit-build-core[pyproject]>=0.5
 mpi4py

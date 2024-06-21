@@ -17,6 +17,8 @@
 # - Interfacing with [SciPy](https://scipy.org/) sparse linear algebra
 #   functionality
 
+import sys
+
 from mpi4py import MPI
 
 # +
@@ -221,14 +223,16 @@ def elasticity(dtype) -> fem.Function:
 
 uh = poisson(dtype=np.float32)
 uh = poisson(dtype=np.float64)
-uh = poisson(dtype=np.complex64)
-uh = poisson(dtype=np.complex128)
+if not sys.platform.startswith("win32"):
+    uh = poisson(dtype=np.complex64)
+    uh = poisson(dtype=np.complex128)
 display_scalar(uh, "poisson", np.real)
 display_scalar(uh, "poisson", np.imag)
 
 
 uh = elasticity(dtype=np.float32)
 uh = elasticity(dtype=np.float64)
-uh = elasticity(dtype=np.complex64)
-uh = elasticity(dtype=np.complex128)
+if not sys.platform.startswith("win32"):
+    uh = poisson(dtype=np.complex64)
+    uh = poisson(dtype=np.complex128)
 display_vector(uh, "elasticity", np.real)
