@@ -195,11 +195,11 @@ def test_mixed_topology_partitioning():
         v5 = v1 + (nx + 1) * (ny + 1)
         v6 = v2 + (nx + 1) * (ny + 1)
         v7 = v3 + (nx + 1) * (ny + 1)
-        if ix < nx // 2:
+        if iz < nz // 2:
             cells[0] += [v0, v1, v2, v3, v4, v5, v6, v7]
             orig_idx[0] += [idx]
             idx += 1
-        elif ix == nx // 2:
+        elif iz == nz // 2:
             # pyramid
             cells[1] += [v0, v1, v2, v3, v6]
             orig_idx[1] += [idx]
