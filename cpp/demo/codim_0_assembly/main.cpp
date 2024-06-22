@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
     A.scatter_rev();
 
     auto a_sub = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_mixed_codim0_a_sub, {V_sub, V_sub}, {}, {}, {}));
+        *form_mixed_codim0_a_sub, {V_sub, V_sub}, {}, {}, {}, {}));
     la::SparsityPattern sp_sub = fem::create_sparsity_pattern(*a);
     sp_sub.finalize();
 
