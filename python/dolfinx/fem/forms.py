@@ -373,7 +373,7 @@ class CompiledForm:
     ufcx_form: typing.Any  # The compiled form
     module: typing.Any  #  The module
     code: str  # The source code
-    dtype: npt.DTypeLike  # data type of coefficients and constants
+    dtype: npt.DTypeLike  # data type used for the `ufcx_form`
 
 
 def compile_form(
