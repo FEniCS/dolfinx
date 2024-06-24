@@ -109,7 +109,7 @@ def get_integration_domains(
 
     The subdomain data is a meshtags object consisting of markers, or a None object.
     If it is a None object we do not pack any integration entities.
-    Integration domains is defined as a list of tuples, where each input `subdomain_ids`
+    Integration domains are defined as a list of tuples, where each input `subdomain_ids`
     is mapped to an array of integration entities, where an integration entity for a cell
     integral is the list of cells.
     For an exterior facet integral each integration entity is a
