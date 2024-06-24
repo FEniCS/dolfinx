@@ -440,7 +440,6 @@ def create_form(
         mesh: Mesh to associate form with
         coefficient_map: Map from UFL coefficient to function with data
         constant_map: Map from UFL constant to constant with data
-        dtype: Scalar type of the returned form
     """
     sd = form.ufl_form.subdomain_data()
     (domain,) = list(sd.keys())  # Assuming single domain
