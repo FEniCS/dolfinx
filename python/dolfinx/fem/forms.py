@@ -399,7 +399,7 @@ def form_cpp_creator(
     _cpp.fem.Form_complex64,
     _cpp.fem.Form_complex128,
 ]:
-    """Return the wrapped C++ class of a variational form of a specific scalar type.
+    """Return the wrapped C++ constructor for creating a variational form of a specific scalar type.
 
     Args:
         dtype: Scalar type of the required form class.
