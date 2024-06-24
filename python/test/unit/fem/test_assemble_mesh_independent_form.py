@@ -47,7 +47,7 @@ def test_compiled_form(dtype):
         wh.interpolate(lambda x: x[1])
         eh = dolfinx.fem.Constant(mesh, dtype(3.0))
         ch = dolfinx.fem.Constant(mesh, dtype(2.0))
-        form = dolfinx.fem.create_form(compiled_form, mesh, {u: uh, w: wh}, {c: ch, e: eh})
+        form = dolfinx.fem.create_form(compiled_form, [], mesh, {u: uh, w: wh}, {c: ch, e: eh})
         assert np.isclose(mesh.comm.allreduce(dolfinx.fem.assemble_scalar(form), op=MPI.SUM), 1.5)
 
     # Create various meshes, that all uses this compiled form with a map from ufl

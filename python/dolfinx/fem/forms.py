@@ -425,6 +425,7 @@ def form_cpp_creator(
 
 def create_form(
     form: CompiledForm,
+    function_spaces: list[function.FunctionSpace],
     mesh: Mesh,
     coefficient_map: dict[ufl.Function, function.Function],
     constant_map: dict[ufl.Constant, function.Constant],
@@ -434,9 +435,11 @@ def create_form(
 
     Args:
         form: Compiled ufl form
+        function_spaces: List of function spaces associated with the form.
+            Should match the number of arguments in the form.
         mesh: Mesh to associate form with
-        coefficient_map: Map from name of function to function with data
-        constant_map: Map from name of cosntant to constant with data
+        coefficient_map: Map from UFL coefficient to function with data
+        constant_map: Map from UFL constant to constant with data
         dtype: Scalar type of the returned form
     """
     sd = form.ufl_form.subdomain_data()
@@ -487,7 +490,7 @@ def create_form(
     ftype = form_cpp_creator(form.dtype)
     f = ftype(
         form.module.ffi.cast("uintptr_t", form.module.ffi.addressof(form.ufcx_form)),
-        [],
+        [fs._cpp_object for fs in function_spaces],
         coefficients,
         constants,
         subdomains,
