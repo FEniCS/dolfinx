@@ -379,11 +379,16 @@ class CompiledForm:
 def compile_form(
     comm: MPI.Intracomm,
     form: ufl.Form,
-    form_compiler_options: typing.Optional[dict] = None,
+    form_compiler_options: typing.Optional[dict] = {"scalar_type": default_scalar_type},
     jit_options: typing.Optional[dict] = None,
 ) -> CompiledForm:
-    """
-    Compile UFL form without associated DOLFINx data
+    """Compile UFL form without associated DOLFINx data
+
+    Args:
+        comm: The MPI communicator used when compiling the form
+        form: The UFL form to compile
+        form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
+        jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
     """
     p_ffcx = ffcx.get_options(form_compiler_options)
     p_jit = jit.get_options(jit_options)
