@@ -317,7 +317,7 @@ std::vector<T> create_geom(MPI_Comm comm,
   {
     // lexiographic index to spacial index
     const std::int64_t p = v % sqxy;
-    std::array<std::int64_t, 3> idx{v / sqxy, p / (nx + 1), p % (nx + 1)};
+    std::array<std::int64_t, 3> idx{ p % (nx + 1), p / (nx + 1), v / sqxy};
 
     // vertex = p0 + idx * extents (elementwise)
     for (std::size_t i = 0; i < idx.size(); i++)
