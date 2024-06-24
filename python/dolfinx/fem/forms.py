@@ -383,7 +383,7 @@ def compile_form(
     jit_options: typing.Optional[dict] = None,
 ) -> CompiledForm:
     """
-    Compile UFL form witthout associated DOLFINx data
+    Compile UFL form without associated DOLFINx data
     """
     p_ffcx = ffcx.get_options(form_compiler_options)
     p_jit = jit.get_options(jit_options)
