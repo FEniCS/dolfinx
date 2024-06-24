@@ -59,14 +59,18 @@ int main(int argc, char* argv[])
           return marker;
         });
 
-    // With these cells, we can define a submesh
-    auto [submesh, sub_to_parent_cells, v_map, g_map]
-        = mesh::create_submesh(*domain, tdim, std::span<const int>(cells));
+    std::shared_ptr<mesh::Mesh<U>> submesh;
+    std::vector<std::int32_t> sub_to_parent_cells;
+    {
+      auto [_submesh, _submsh_to_msh, v_map, g_map]
+          = mesh::create_submesh(*domain, tdim, std::span<const int>(cells));
+      submesh = std::make_shared<mesh::Mesh<U>>(std::move(_submesh));
+      sub_to_parent_cells = std::move(_submsh_to_msh);
+    }
 
     // We create the function space used for the trial space
-    auto V_sub
-        = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace(
-            std::make_shared<mesh::Mesh<U>>(submesh), element, {}));
+    auto V_sub = std::make_shared<fem::FunctionSpace<U>>(
+        fem::create_functionspace(submesh, element, {}));
 
     // We need to invert the map from submesh cells to parent cells
     std::size_t num_cells_local
@@ -76,11 +80,12 @@ int main(int argc, char* argv[])
     for (std::size_t i = 0; i < sub_to_parent_cells.size(); ++i)
       parent_to_sub[sub_to_parent_cells[i]] = i;
 
+    std::shared_ptr<const mesh::Mesh<U>> const_ptr = submesh;
     std::map<std::shared_ptr<const mesh::Mesh<U>>,
              std::span<const std::int32_t>>
         entity_maps
-        = {{V_sub->mesh(), std::span<const std::int32_t>(
-                               parent_to_sub.data(), parent_to_sub.size())}};
+        = {{const_ptr, std::span<const std::int32_t>(parent_to_sub.data(),
+                                                     parent_to_sub.size())}};
     // Now we need to make a restriction of the cell integrals to those cells
     // that exist in the submesh
 
