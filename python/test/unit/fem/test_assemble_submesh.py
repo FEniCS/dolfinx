@@ -301,14 +301,7 @@ def test_mixed_dom_codim_1(n, k):
 
     # Create a submesh of the boundary
     tdim = msh.topology.dim
-    boundary_facets = locate_entities_boundary(
-        msh,
-        tdim - 1,
-        lambda x: np.isclose(x[0], 0.0)
-        | np.isclose(x[0], 1.0)
-        | np.isclose(x[1], 0.0)
-        | np.isclose(x[1], 1.0),
-    )
+    boundary_facets = locate_entities_boundary(msh, tdim - 1)
 
     smsh, smsh_to_msh = create_submesh(msh, tdim - 1, boundary_facets)[:2]
 

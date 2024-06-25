@@ -82,19 +82,6 @@ def u_e(x):
     return u_e
 
 
-def boundary(x):
-    """Boundary marker."""
-    lr = np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)
-    tb = np.isclose(x[1], 0.0) | np.isclose(x[1], 1.0)
-    lrtb = lr | tb
-    if tdim == 2:
-        return lrtb
-    else:
-        assert tdim == 3
-        fb = np.isclose(x[2], 0.0) | np.isclose(x[2], 1.0)
-        return lrtb | fb
-
-
 comm = MPI.COMM_WORLD
 rank = comm.rank
 dtype = PETSc.ScalarType
@@ -187,7 +174,7 @@ L = [L_0, L_1]
 
 # Apply Dirichlet boundary conditions
 # We begin by locating the boundary facets of msh
-msh_boundary_facets = mesh.locate_entities_boundary(msh, fdim, boundary)
+msh_boundary_facets = mesh.locate_entities_boundary(msh, fdim)
 # Since the boundary condition is enforced in the facet space, we must
 # use the mesh_to_facet_mesh map to get the corresponding facets in
 # facet_mesh

@@ -126,8 +126,6 @@ else:
 from mpi4py import MPI
 
 # +
-import numpy as np
-
 import dolfinx
 import ufl
 from dolfinx import fem, io, mesh, plot
@@ -165,14 +163,7 @@ V = fem.functionspace(msh, ("Lagrange", 2))
 # function that returns `True` for points `x` on the boundary and
 # `False` otherwise.
 
-facets = mesh.locate_entities_boundary(
-    msh,
-    dim=1,
-    marker=lambda x: np.isclose(x[0], 0.0)
-    | np.isclose(x[0], 1.0)
-    | np.isclose(x[1], 0.0)
-    | np.isclose(x[1], 1.0),
-)
+facets = mesh.locate_entities_boundary(msh, dim=1)
 
 # We now find the degrees-of-freedom that are associated with the
 # boundary facets using {py:func}`locate_dofs_topological
