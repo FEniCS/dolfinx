@@ -4,25 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "MPICommWrapper.h"
-#include "array.h"
-#include "caster_mpi.h"
-#include "numpy_dtype.h"
 #include <cfloat>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/fem/CoordinateElement.h>
-#include <dolfinx/fem/ElementDofLayout.h>
-#include <dolfinx/mesh/Geometry.h>
-#include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshTags.h>
-#include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/cell_types.h>
-#include <dolfinx/mesh/generation.h>
-#include <dolfinx/mesh/graphbuild.h>
-#include <dolfinx/mesh/topologycomputation.h>
-#include <dolfinx/mesh/utils.h>
-#include <iostream>
-#include <memory>
+
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
@@ -32,7 +15,25 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
-#include <span>
+#include <nanobind/stl/optional.h>
+
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/fem/CoordinateElement.h>
+#include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/generation.h>
+#include <dolfinx/mesh/Geometry.h>
+#include <dolfinx/mesh/graphbuild.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/MeshTags.h>
+#include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/topologycomputation.h>
+#include <dolfinx/mesh/utils.h>
+
+#include "MPICommWrapper.h"
+#include "array.h"
+#include "caster_mpi.h"
+#include "numpy_dtype.h"
 
 namespace nb = nanobind;
 
@@ -435,22 +436,30 @@ void declare_mesh(nb::module_& m, std::string type)
   m.def(
       "locate_entities_boundary",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
-         std::function<nb::ndarray<bool, nb::ndim<1>, nb::c_contig>(
-             nb::ndarray<const T, nb::ndim<2>, nb::numpy>)>
+         std::optional<
+             std::function<nb::ndarray<bool, nb::ndim<1>, nb::c_contig>(
+                 nb::ndarray<const T, nb::ndim<2>, nb::numpy>)>>
              marker)
       {
         auto cpp_marker = [&marker](auto x)
         {
+          assert(marker);
           nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
               x.data_handle(), {x.extent(0), x.extent(1)}, nb::handle());
-          auto marked = marker(x_view);
+          auto marked = marker.value()(x_view);
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
         };
-        return as_nbarray(
-            dolfinx::mesh::locate_entities_boundary(mesh, dim, cpp_marker));
+
+        if (!marker)
+          return as_nbarray(
+              dolfinx::mesh::locate_entities_boundary<T, decltype(cpp_marker)>(
+                  mesh, dim, std::nullopt));
+
+        return as_nbarray(dolfinx::mesh::locate_entities_boundary(
+            mesh, dim, std::make_optional(cpp_marker)));
       },
-      nb::arg("mesh"), nb::arg("dim"), nb::arg("marker"));
+      nb::arg("mesh"), nb::arg("dim"), nb::arg("marker") = nb::none());
 
   m.def(
       "entities_to_geometry",
