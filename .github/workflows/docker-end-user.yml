@@ -130,7 +130,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build dolfinx-onbuild
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           build-args: |
             DOLFINX_CMAKE_BUILD_TYPE=RelWithDebInfo
@@ -142,7 +142,7 @@ jobs:
           tags: docker.io/dolfinx/dolfinx-onbuild:${{ env.TAG }}
 
       - name: Build intermediate
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           build-args: |
             DOLFINX_CMAKE_BUILD_TYPE=RelWithDebInfo
@@ -152,7 +152,7 @@ jobs:
           target: intermediate
 
       - name: Build dolfinx
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           build-args: |
             BASEIMAGE=${{ env.BASEIMAGE }}
@@ -163,7 +163,7 @@ jobs:
           tags: docker.io/dolfinx/dolfinx:${{ env.TAG }}
 
       - name: Build lab
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           build-args: |
             BASEIMAGE=${{ env.BASEIMAGE }}

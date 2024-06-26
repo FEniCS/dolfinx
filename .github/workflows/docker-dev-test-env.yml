@@ -84,7 +84,7 @@ jobs:
           echo "PETSC_SLEPC_DEBUGGING=no" >> $GITHUB_ENV
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           build-args: |
             MPI=${{ matrix.mpi }}
