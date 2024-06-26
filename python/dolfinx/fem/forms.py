@@ -432,8 +432,10 @@ def create_form(
     form: CompiledForm,
     function_spaces: list[function.FunctionSpace],
     mesh: Mesh,
+    subdomains: dict[IntegralType, list[tuple[int, np.ndarray]]],
     coefficient_map: dict[ufl.Function, function.Function],
     constant_map: dict[ufl.Constant, function.Constant],
+    entity_maps: dict[Mesh, np.typing.NDArray[np.int32]]|None = None,
 ) -> Form:
     """
     Create a Form object from a data-independent compiled form
@@ -443,12 +445,19 @@ def create_form(
         function_spaces: List of function spaces associated with the form.
             Should match the number of arguments in the form.
         mesh: Mesh to associate form with
+        subdomains: A map from integral type to a list of pairs, where each pair corresponds to a
+            subdomain id and a set of integration entities.
         coefficient_map: Map from UFL coefficient to function with data
         constant_map: Map from UFL constant to constant with data
+        entity_map: A map where each key corresponds to a mesh different to the integration
+            domain `mesh`.
+        The value of the map is an array of integers, where the i-th entry is the entity in
+            the key mesh.
     """
+    _entity_maps = {} if entity_maps is None else entity_maps
+
     sd = form.ufl_form.subdomain_data()
     (domain,) = list(sd.keys())  # Assuming single domain
-
     # Make map from integral_type to subdomain id
     subdomain_ids: dict[IntegralType, list[list[int]]] = {
         type: [] for type in sd.get(domain).keys()
@@ -456,7 +465,9 @@ def create_form(
     flattened_subdomain_ids: dict[IntegralType, list[int]] = {
         type: [] for type in sd.get(domain).keys()
     }
+    breakpoint()
     for integral in form.ufl_form.integrals():
+        breakpoint()
         if integral.subdomain_data() is not None:
             # Subdomain ids can be strings, its or tuples with strings and ints
             if integral.subdomain_id() != "everywhere":
@@ -474,6 +485,7 @@ def create_form(
             flattened_ids: list[int] = list(chain.from_iterable(marker_ids))
             flattened_ids.sort()
             flattened_subdomain_ids[itg_type] = flattened_ids
+    breakpoint()
 
     # Subdomain markers (possibly empty list for some integral types)
     subdomains = {
@@ -498,6 +510,7 @@ def create_form(
         coefficients,
         constants,
         subdomains,
+        _entity_maps,
         mesh._cpp_object,
     )
     return Form(f, form.ufcx_form, form.code)
