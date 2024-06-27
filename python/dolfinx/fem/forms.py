@@ -435,7 +435,7 @@ def create_form(
     subdomains: dict[IntegralType, list[tuple[int, np.ndarray]]],
     coefficient_map: dict[ufl.Function, function.Function],
     constant_map: dict[ufl.Constant, function.Constant],
-    entity_maps: dict[Mesh, np.typing.NDArray[np.int32]]|None = None,
+    entity_maps: dict[Mesh, np.typing.NDArray[np.int32]] | None = None,
 ) -> Form:
     """
     Create a Form object from a data-independent compiled form
@@ -446,7 +446,7 @@ def create_form(
             Should match the number of arguments in the form.
         mesh: Mesh to associate form with
         subdomains: A map from integral type to a list of pairs, where each pair corresponds to a
-            subdomain id and a set of integration entities.
+            subdomain id and the set of entities to integrate over.
         coefficient_map: Map from UFL coefficient to function with data
         constant_map: Map from UFL constant to constant with data
         entity_map: A map where each key corresponds to a mesh different to the integration
@@ -454,40 +454,35 @@ def create_form(
         The value of the map is an array of integers, where the i-th entry is the entity in
             the key mesh.
     """
-    _entity_maps = {} if entity_maps is None else entity_maps
+    if entity_maps is None:
+        _entity_maps = {}
+    else:
+        _entity_maps = {m._cpp_object: emap for (m, emap) in entity_maps.items()}
 
-    sd = form.ufl_form.subdomain_data()
-    (domain,) = list(sd.keys())  # Assuming single domain
-    # Make map from integral_type to subdomain id
-    subdomain_ids: dict[IntegralType, list[list[int]]] = {
-        type: [] for type in sd.get(domain).keys()
+    itg_type_to_dim = {
+        IntegralType.cell: mesh.topology.dim,
+        IntegralType.exterior_facet: mesh.topology.dim - 1,
+        IntegralType.interior_facet: mesh.topology.dim - 1,
     }
-    flattened_subdomain_ids: dict[IntegralType, list[int]] = {
-        type: [] for type in sd.get(domain).keys()
-    }
-    for integral in form.ufl_form.integrals():
-        if integral.subdomain_id() != "everywhere":
-            try:
-                ids = [sid for sid in integral.subdomain_id() if sid != "everywhere"]
-            except TypeError:
-                # If not tuple, but single integer id
-                ids = [integral.subdomain_id()]
-            else:
-                ids = []
-            subdomain_ids[integral.integral_type()].append(ids)  # type: ignore
 
-        # Chain and sort subdomain ids
-        for itg_type, marker_ids in subdomain_ids.items():
-            flattened_ids: list[int] = list(chain.from_iterable(marker_ids))
-            flattened_ids.sort()
-            flattened_subdomain_ids[itg_type] = flattened_ids
-
-    _subdomain_data = {_ufl_to_dolfinx_domain[itype]:[] for itype in flattened_subdomain_ids.keys()}
-    for itype, ids in flattened_subdomain_ids.items():    
-        for i in ids:
-            for j in subdomains[_ufl_to_dolfinx_domain[itype]]:
-                if i == j[0]:
-                    _subdomain_data[_ufl_to_dolfinx_domain[itype]].append(j)
+    _subdomain_data = {}
+    for itype, idomain in subdomains.items():
+        # Pack integration entities
+        itg_entities = [
+            (
+                _id,
+                _cpp.fem.compute_integration_domains(
+                    itype,
+                    mesh._cpp_object.topology,  # type: ignore
+                    e,  # type: ignore
+                    itg_type_to_dim[itype],
+                ),
+            )
+            for (_id, e) in idomain
+        ]
+        # Sort by subdomain id
+        itg_entities.sort(key=lambda x: x[0])
+        _subdomain_data[itype] = itg_entities
 
     # Extract name of ufl objects and map them to their corresponding C++ object
     ufl_coefficients = ufl.algorithms.extract_coefficients(form.ufl_form)
