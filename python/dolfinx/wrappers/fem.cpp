@@ -801,6 +801,9 @@ void declare_form(nb::module_& m, std::string type)
                         std::vector<std::pair<std::int32_t,
                                               std::span<const std::int32_t>>>>&
              subdomains,
+         const std::map<std::shared_ptr<const dolfinx::mesh::Mesh<U>>,
+                        nb::ndarray<const std::int32_t, nb::c_contig>>&
+             entity_maps,
          std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh = nullptr)
       {
         std::map<
@@ -814,14 +817,18 @@ void declare_form(nb::module_& m, std::string type)
             x.emplace_back(id, std::span(idx.data(), idx.size()));
           sd.insert({itg, std::move(x)});
         }
-
+        std::map<std::shared_ptr<const dolfinx::mesh::Mesh<U>>,
+                 std::span<const int32_t>>
+            _entity_maps;
+        for (auto& [msh, map] : entity_maps)
+          _entity_maps.emplace(msh, std::span(map.data(), map.size()));
         ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
-        return dolfinx::fem::create_form<T, U>(*p, spaces, coefficients,
-                                               constants, sd, mesh);
+        return dolfinx::fem::create_form<T, U>(
+            *p, spaces, coefficients, constants, sd, _entity_maps, mesh);
       },
       nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
-      nb::arg("constants"), nb::arg("subdomains"), nb::arg("mesh"),
-      "Create Form from a pointer to ufcx_form.");
+      nb::arg("constants"), nb::arg("subdomains"), nb::arg("entity_maps"),
+      nb::arg("mesh"), "Create Form from a pointer to ufcx_form.");
 
   m.def("create_sparsity_pattern",
         &dolfinx::fem ::create_sparsity_pattern<T, U>, nb::arg("a"),
