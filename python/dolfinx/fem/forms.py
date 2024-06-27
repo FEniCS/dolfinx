@@ -488,6 +488,7 @@ def create_form(
             for j in subdomains[_ufl_to_dolfinx_domain[itype]]:
                 if i == j[0]:
                     _subdomain_data[_ufl_to_dolfinx_domain[itype]].append(j)
+
     # Extract name of ufl objects and map them to their corresponding C++ object
     ufl_coefficients = ufl.algorithms.extract_coefficients(form.ufl_form)
     coefficients = {

@@ -121,5 +121,3 @@ def test_submesh_assembly(dtype):
     # to dolfinx functions and constants
     for i in range(1, 4):
         create_and_integrate(i, compiled_form)
-
-
