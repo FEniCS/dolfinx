@@ -465,17 +465,13 @@ def create_form(
     flattened_subdomain_ids: dict[IntegralType, list[int]] = {
         type: [] for type in sd.get(domain).keys()
     }
-    breakpoint()
     for integral in form.ufl_form.integrals():
-        breakpoint()
-        if integral.subdomain_data() is not None:
-            # Subdomain ids can be strings, its or tuples with strings and ints
-            if integral.subdomain_id() != "everywhere":
-                try:
-                    ids = [sid for sid in integral.subdomain_id() if sid != "everywhere"]
-                except TypeError:
-                    # If not tuple, but single integer id
-                    ids = [integral.subdomain_id()]
+        if integral.subdomain_id() != "everywhere":
+            try:
+                ids = [sid for sid in integral.subdomain_id() if sid != "everywhere"]
+            except TypeError:
+                # If not tuple, but single integer id
+                ids = [integral.subdomain_id()]
             else:
                 ids = []
             subdomain_ids[integral.integral_type()].append(ids)  # type: ignore
@@ -485,16 +481,13 @@ def create_form(
             flattened_ids: list[int] = list(chain.from_iterable(marker_ids))
             flattened_ids.sort()
             flattened_subdomain_ids[itg_type] = flattened_ids
-    breakpoint()
 
-    # Subdomain markers (possibly empty list for some integral types)
-    subdomains = {
-        _ufl_to_dolfinx_domain[key]: get_integration_domains(
-            _ufl_to_dolfinx_domain[key], subdomain_data[0], flattened_subdomain_ids[key]
-        )
-        for (key, subdomain_data) in sd.get(domain).items()
-    }
-
+    _subdomain_data = {_ufl_to_dolfinx_domain[itype]:[] for itype in flattened_subdomain_ids.keys()}
+    for itype, ids in flattened_subdomain_ids.items():    
+        for i in ids:
+            for j in subdomains[_ufl_to_dolfinx_domain[itype]]:
+                if i == j[0]:
+                    _subdomain_data[_ufl_to_dolfinx_domain[itype]].append(j)
     # Extract name of ufl objects and map them to their corresponding C++ object
     ufl_coefficients = ufl.algorithms.extract_coefficients(form.ufl_form)
     coefficients = {
@@ -509,7 +502,7 @@ def create_form(
         [fs._cpp_object for fs in function_spaces],
         coefficients,
         constants,
-        subdomains,
+        _subdomain_data,
         _entity_maps,
         mesh._cpp_object,
     )

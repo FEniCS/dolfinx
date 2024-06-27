@@ -762,9 +762,9 @@ void declare_form(nb::module_& m, std::string type)
              constants,
          const std::map<
              dolfinx::fem::IntegralType,
-             std::vector<std::pair<
-                 std::int32_t, nb::ndarray<const std::int32_t, nb::c_contig>>>>&
-             subdomains,
+             std::vector<std::pair<std::int32_t,
+                                   nb::ndarray<const std::int32_t, nb::ndim<1>,
+                                               nb::c_contig>>>>& subdomains,
          std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh)
       {
         std::map<
@@ -797,10 +797,11 @@ void declare_form(nb::module_& m, std::string type)
          const std::map<std::string,
                         std::shared_ptr<const dolfinx::fem::Constant<T>>>&
              constants,
-         const std::map<dolfinx::fem::IntegralType,
-                        std::vector<std::pair<std::int32_t,
-                                              std::span<const std::int32_t>>>>&
-             subdomains,
+         const std::map<
+             dolfinx::fem::IntegralType,
+             std::vector<std::pair<std::int32_t,
+                                   nb::ndarray<const std::int32_t, nb::ndim<1>,
+                                               nb::c_contig>>>>& subdomains,
          const std::map<std::shared_ptr<const dolfinx::mesh::Mesh<U>>,
                         nb::ndarray<const std::int32_t, nb::ndim<1>,
                                     nb::c_contig>>& entity_maps,
