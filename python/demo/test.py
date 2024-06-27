@@ -23,8 +23,6 @@ for f in demo_files:
 @pytest.mark.serial
 @pytest.mark.parametrize("path,name", demos)
 def test_demos(path, name):
-    if "pyamg" in name:
-        pytest.xfail("pyamg needs updating for latest numpy and scipy")
     ret = subprocess.run([sys.executable, name], cwd=str(path), check=True)
     assert ret.returncode == 0
 
