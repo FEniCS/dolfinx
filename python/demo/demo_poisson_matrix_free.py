@@ -100,7 +100,11 @@ comm = MPI.COMM_WORLD
 
 # TODO: Update rectangle creation to use tensor product coordinate element
 mesh = dolfinx.mesh.create_rectangle(
-    comm, [[0.0, 0.0], [1.0, 1.0]], [10, 10], cell_type=dolfinx.mesh.CellType[shape], dtype=real_type
+    comm,
+    [[0.0, 0.0], [1.0, 1.0]],
+    [10, 10],
+    cell_type=dolfinx.mesh.CellType[shape],
+    dtype=real_type,
 )
 
 
