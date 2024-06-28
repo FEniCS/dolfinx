@@ -36,13 +36,6 @@ jobs:
           export PATH="$(brew --prefix bison)/bin:$PATH"
           git clone -b release https://gitlab.com/petsc/petsc.git petsc
           cd petsc
-          patch config/BuildSystem/config/packages/MUMPS.py << EOF
-          @@ -178,3 +178,4 @@ class Configure(config.package.Package):
-                 if self.avoid_mpi_in_place:
-                   g.write('CDEFS += -DAVOID_MPI_IN_PLACE') # only take effect since mumps-5.6.2
-          +        g.write('\nOPTF += -DAVOID_MPI_IN_PLACE\n')
-                   self.addDefine('HAVE_MUMPS_AVOID_MPI_IN_PLACE', 1)
-          EOF
           python ./configure \
             --with-64-bit-indices=no \
             --with-debugging=no \
