@@ -41,6 +41,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
 template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
                    std::array<std::int64_t, 2> n,
+                   const fem::CoordinateElement<T>& element,
                    const CellPartitionFunction& partitioner);
 
 template <std::floating_point T>
@@ -163,7 +164,10 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
   case CellType::triangle:
     return impl::build_tri<T>(comm, p, n, partitioner, diagonal);
   case CellType::quadrilateral:
-    return impl::build_quad<T>(comm, p, n, partitioner);
+  {
+    fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
+    return impl::build_quad<T>(comm, p, n, element, partitioner);
+  }
   default:
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
   }
@@ -646,9 +650,9 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
 template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
                    std::array<std::int64_t, 2> n,
+                   const fem::CoordinateElement<T>& element,
                    const CellPartitionFunction& partitioner)
 {
-  fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
   std::vector<std::int64_t> cells;
   std::vector<T> x;
   if (dolfinx::MPI::rank(comm) == 0)

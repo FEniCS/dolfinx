@@ -79,6 +79,7 @@ from mpi4py import MPI
 
 import numpy as np
 
+import basix
 import dolfinx
 import ufl
 from dolfinx import fem, la
@@ -90,14 +91,26 @@ from ufl import action, dx, grad, inner
 # finite element {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
 # on the mesh.
 
+form_compiler_options = {"sum_factorization": False}
+
+shape = "quadrilateral"
 dtype = dolfinx.default_scalar_type
 real_type = np.real(dtype(0.0)).dtype
 comm = MPI.COMM_WORLD
-mesh = dolfinx.mesh.create_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], [10, 10], dtype=real_type)
+
+# TODO: Update rectangle creation to use tensor product coordinate element
+mesh = dolfinx.mesh.create_rectangle(
+    comm, [[0.0, 0.0], [1.0, 1.0]], [10, 10], cell_type=dolfinx.mesh.CellType[shape], dtype=real_type
+)
+
+
+# Create tensor product element
+degree = 2
+basix_element = basix.create_tp_element(basix.ElementFamily.P, basix.CellType[shape], degree)
+element = basix.ufl._BasixElement(basix_element)  # Wrap basix element in UFL element
 
 # Create function space
-degree = 2
-V = fem.functionspace(mesh, ("Lagrange", degree))
+V = fem.functionspace(mesh, element)
 
 # The second argument to {py:class}`functionspace
 # <dolfinx.fem.functionspace>` is a tuple consisting of `(family,
@@ -139,7 +152,7 @@ v = ufl.TestFunction(V)
 f = fem.Constant(mesh, dtype(-6.0))
 a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx
-L_fem = fem.form(L, dtype=dtype)
+L_fem = fem.form(L, dtype=dtype, form_compiler_options=form_compiler_options)
 
 # For the matrix-free solvers we also define a second linear form `M` as
 # the {py:class}`action <ufl.action>` of the bilinear form $a$ on an
@@ -152,7 +165,7 @@ L_fem = fem.form(L, dtype=dtype)
 
 ui = fem.Function(V, dtype=dtype)
 M = action(a, ui)
-M_fem = fem.form(M, dtype=dtype)
+M_fem = fem.form(M, dtype=dtype, form_compiler_options=form_compiler_options)
 
 # ### Matrix-free conjugate gradient solver
 #
@@ -262,3 +275,12 @@ if mesh.comm.rank == 0:
     print("Matrix-free CG solver using DOLFINx vectors:")
     print(f"CG iterations until convergence:  {iter_cg1}")
     print(f"L2 approximation error:  {error_L2_cg1:.4e}")
+
+
+V_out = fem.functionspace(mesh, ("Lagrange", degree))
+u_out = fem.Function(V_out)
+u_out.interpolate(u)
+
+# Save the solution to file
+with dolfinx.io.VTXWriter(mesh.comm, "u.bp", u_out) as file:
+    file.write(0.0)
