@@ -282,7 +282,7 @@ if mesh.comm.rank == 0:
 
 
 V_out = fem.functionspace(mesh, ("Lagrange", degree))
-u_out = fem.Function(V_out)
+u_out = fem.Function(V_out, dtype=dtype)
 u_out.interpolate(u)
 
 
