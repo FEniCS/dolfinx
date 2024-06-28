@@ -82,7 +82,7 @@ import numpy as np
 import basix
 import dolfinx
 import ufl
-from dolfinx import fem, la, io
+from dolfinx import fem, io, la
 from ufl import action, dx, grad, inner
 
 # We begin by using {py:func}`create_rectangle
