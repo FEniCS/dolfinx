@@ -82,7 +82,7 @@ import numpy as np
 import basix
 import dolfinx
 import ufl
-from dolfinx import fem, la
+from dolfinx import fem, la, io
 from ufl import action, dx, grad, inner
 
 # We begin by using {py:func}`create_rectangle
@@ -285,6 +285,9 @@ V_out = fem.functionspace(mesh, ("Lagrange", degree))
 u_out = fem.Function(V_out)
 u_out.interpolate(u)
 
-# Save the solution to file
-with dolfinx.io.VTXWriter(mesh.comm, "u.bp", u_out) as file:
-    file.write(0.0)
+
+try:
+    with io.VTXWriter(mesh.comm, "u.bp", u_out) as file:
+        file.write(0.0)
+except AttributeError:
+    print("File output requires ADIOS2.")
