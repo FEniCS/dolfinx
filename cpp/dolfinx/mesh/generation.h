@@ -101,7 +101,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
                    CellPartitionFunction partitioner = nullptr)
 {
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
-    throw std::runtime_error("At least one element per dimension is required");
+    throw std::runtime_error("At least one cell per dimension is required");
 
   for (int32_t i = 0; i < 3; i++)
   {
@@ -172,7 +172,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
                          DiagonalType diagonal = DiagonalType::right)
 {
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
-    throw std::runtime_error("At least one element per dimension is required");
+    throw std::runtime_error("At least one cell per dimension is required");
 
   for (int32_t i = 0; i < 2; i++)
   {
