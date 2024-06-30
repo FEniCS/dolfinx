@@ -165,7 +165,7 @@ def test_constant_bc(mesh_factory):
     V = functionspace(mesh, ("Lagrange", 1))
     c = default_scalar_type(2)
     tdim = mesh.topology.dim
-    mesh.topology.create_connectivity(tdim-1, tdim)
+    mesh.topology.create_connectivity(tdim - 1, tdim)
     boundary_facets = exterior_facet_indices(mesh.topology)
     boundary_dofs = locate_dofs_topological(V, tdim - 1, boundary_facets)
 
@@ -202,7 +202,7 @@ def test_vector_constant_bc(mesh_factory):
     V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
     assert V.num_sub_spaces == gdim
     c = np.arange(1, mesh.geometry.dim + 1, dtype=default_scalar_type)
-    mesh.topology.create_connectivity(tdim-1, tdim)
+    mesh.topology.create_connectivity(tdim - 1, tdim)
     boundary_facets = exterior_facet_indices(mesh.topology)
 
     # Set using sub-functions
@@ -248,7 +248,7 @@ def test_sub_constant_bc(mesh_factory):
     V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
     c = Constant(mesh, default_scalar_type(3.14))
     tdim = mesh.topology.dim
-    mesh.topology.create_connectivity(tdim-1, tdim)
+    mesh.topology.create_connectivity(tdim - 1, tdim)
     boundary_facets = exterior_facet_indices(mesh.topology)
 
     for i in range(V.num_sub_spaces):
@@ -283,7 +283,7 @@ def test_mixed_constant_bc(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
     tdim = mesh.topology.dim
-    mesh.topology.create_connectivity(tdim-1, tdim)
+    mesh.topology.create_connectivity(tdim - 1, tdim)
     boundary_facets = exterior_facet_indices(mesh.topology)
     TH = mixed_element(
         [
@@ -324,7 +324,7 @@ def test_mixed_blocked_constant():
     Dirichlet BC based on a vector valued Constant."""
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
     tdim = mesh.topology.dim
-    mesh.topology.create_connectivity(tdim-1, tdim)
+    mesh.topology.create_connectivity(tdim - 1, tdim)
     boundary_facets = exterior_facet_indices(mesh.topology)
 
     TH = mixed_element(
