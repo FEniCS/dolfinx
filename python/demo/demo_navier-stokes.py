@@ -335,7 +335,7 @@ L_1 = inner(fem.Constant(msh, default_real_type(0.0)), q) * dx
 L = fem.form([L_0, L_1])
 
 # Boundary conditions
-boundary_facets = mesh.msh_boundary_facets(msh)
+boundary_facets = mesh.mesh_boundary_facets(msh)
 boundary_vel_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, boundary_facets)
 bc_u = fem.dirichletbc(u_D, boundary_vel_dofs)
 bcs = [bc_u]
