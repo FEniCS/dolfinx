@@ -238,9 +238,7 @@ def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray
     return _cpp.mesh.locate_entities(mesh._cpp_object, dim, marker)
 
 
-def locate_entities_boundary(
-    mesh: Mesh, dim: int, marker: typing.Optional[typing.Callable] = None
-) -> np.ndarray:
+def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
     """Compute mesh entities that are connected to an owned boundary
     facet and satisfy a geometric marking function.
 

@@ -27,7 +27,7 @@ from dolfinx.fem import (
     locate_dofs_topological,
     set_bc,
 )
-from dolfinx.mesh import CellType, create_unit_cube, create_unit_square, locate_entities_boundary
+from dolfinx.mesh import CellType, create_unit_cube, create_unit_square, exterior_facet_indices
 from ufl import dx, inner
 
 
@@ -119,7 +119,8 @@ def test_constant_bc_constructions():
     V2 = functionspace(msh, ("Lagrange", 1, (gdim, gdim)))
 
     tdim = msh.topology.dim
-    boundary_facets = locate_entities_boundary(msh, tdim - 1)
+    msh.topology.create_connectivity(1, 2)
+    boundary_facets = exterior_facet_indices(msh.topology)
     boundary_dofs0 = locate_dofs_topological(V0, tdim - 1, boundary_facets)
     boundary_dofs1 = locate_dofs_topological(V1, tdim - 1, boundary_facets)
     boundary_dofs2 = locate_dofs_topological(V2, tdim - 1, boundary_facets)
@@ -164,8 +165,8 @@ def test_constant_bc(mesh_factory):
     V = functionspace(mesh, ("Lagrange", 1))
     c = default_scalar_type(2)
     tdim = mesh.topology.dim
-    boundary_facets = locate_entities_boundary(mesh, tdim - 1)
-
+    mesh.topology.create_connectivity(tdim-1, tdim)
+    boundary_facets = exterior_facet_indices(mesh.topology)
     boundary_dofs = locate_dofs_topological(V, tdim - 1, boundary_facets)
 
     u_bc = Function(V)
@@ -201,7 +202,8 @@ def test_vector_constant_bc(mesh_factory):
     V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
     assert V.num_sub_spaces == gdim
     c = np.arange(1, mesh.geometry.dim + 1, dtype=default_scalar_type)
-    boundary_facets = locate_entities_boundary(mesh, tdim - 1)
+    mesh.topology.create_connectivity(tdim-1, tdim)
+    boundary_facets = exterior_facet_indices(mesh.topology)
 
     # Set using sub-functions
     Vs = [V.sub(i).collapse()[0] for i in range(V.num_sub_spaces)]
@@ -246,7 +248,8 @@ def test_sub_constant_bc(mesh_factory):
     V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
     c = Constant(mesh, default_scalar_type(3.14))
     tdim = mesh.topology.dim
-    boundary_facets = locate_entities_boundary(mesh, tdim - 1)
+    mesh.topology.create_connectivity(tdim-1, tdim)
+    boundary_facets = exterior_facet_indices(mesh.topology)
 
     for i in range(V.num_sub_spaces):
         Vi = V.sub(i).collapse()[0]
@@ -280,7 +283,8 @@ def test_mixed_constant_bc(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
     tdim = mesh.topology.dim
-    boundary_facets = locate_entities_boundary(mesh, tdim - 1)
+    mesh.topology.create_connectivity(tdim-1, tdim)
+    boundary_facets = exterior_facet_indices(mesh.topology)
     TH = mixed_element(
         [
             element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type),
@@ -320,7 +324,8 @@ def test_mixed_blocked_constant():
     Dirichlet BC based on a vector valued Constant."""
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
     tdim = mesh.topology.dim
-    boundary_facets = locate_entities_boundary(mesh, tdim - 1)
+    mesh.topology.create_connectivity(tdim-1, tdim)
+    boundary_facets = exterior_facet_indices(mesh.topology)
 
     TH = mixed_element(
         [

@@ -174,7 +174,7 @@ L = [L_0, L_1]
 
 # Apply Dirichlet boundary conditions
 # We begin by locating the boundary facets of msh
-msh_boundary_facets = mesh.locate_entities_boundary(msh, fdim)
+msh_boundary_facets = mesh.exterior_facet_indices(msh)
 # Since the boundary condition is enforced in the facet space, we must
 # use the mesh_to_facet_mesh map to get the corresponding facets in
 # facet_mesh

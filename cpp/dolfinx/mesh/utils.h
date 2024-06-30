@@ -16,7 +16,6 @@
 #include <dolfinx/graph/partition.h>
 #include <functional>
 #include <mpi.h>
-#include <optional>
 #include <span>
 
 /// @file utils.h
@@ -543,22 +542,13 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
 /// @param[in] mesh Mesh to mark entities on.
 /// @param[in] dim Topological dimension of the entities to be
 /// considered. Must be less than the topological dimension of the mesh.
-/// @param[in] marker Optional marking function, returns `true` for a point that
-/// is 'marked', and `false` otherwise. If no function is provided, i.e.
-/// optional not set the behavior is equivalent to being called with an all true
-/// marker.
+/// @param[in] marker Marking function, returns `true` for a point that
+/// is 'marked', and `false` otherwise.
 /// @returns List of marked entity indices (indices local to the
 /// process)
-template <
-    std::floating_point T,
-    MarkerFn<T> U = std::function<std::vector<std::int8_t>(
-        MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-            const T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-                         std::size_t, 3,
-                         MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>)>>
+template <std::floating_point T, MarkerFn<T> U>
 std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
-                                                   std::optional<U> marker
-                                                   = std::nullopt)
+                                                   U marker)
 {
   auto topology = mesh.topology();
   assert(topology);
@@ -584,11 +574,7 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
   const auto [facet_entities, xdata, vertex_to_pos]
       = impl::compute_vertex_coords_boundary(mesh, dim, boundary_facets);
   cmdspan3x_t x(xdata.data(), 3, xdata.size() / 3);
-
-  if (!marker)
-    return facet_entities;
-
-  const std::vector<std::int8_t> marked = marker.value()(x);
+  const std::vector<std::int8_t> marked = marker(x);
   if (marked.size() != x.extent(1))
     throw std::runtime_error("Length of array of markers is wrong.");
 
@@ -617,37 +603,6 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
   }
 
   return entities;
-}
-
-/// @brief Compute indices of all mesh entities that are attached to an
-/// owned boundary facet and evaluate to true for the provided geometric
-/// marking function.
-///
-/// An entity is considered marked if the marker function evaluates to
-/// true for all of its vertices.
-///
-/// @note For vertices and edges, in parallel this function will not
-/// necessarily mark all entities that are on the exterior boundary. For
-/// example, it is possible for a process to have a vertex that lies on
-/// the boundary without any of the attached facets being a boundary
-/// facet. When used to find degrees-of-freedom, e.g. using
-/// fem::locate_dofs_topological, the function that uses the data
-/// returned by this function must typically perform some parallel
-/// communication.
-///
-/// @param[in] mesh Mesh to mark entities on.
-/// @param[in] dim Topological dimension of the entities to be
-/// considered. Must be less than the topological dimension of the mesh.
-/// @param[in] marker Marking function, returns `true` for a point that
-/// is 'marked', and `false` otherwise.
-/// @returns List of marked entity indices (indices local to the
-/// process)
-template <std::floating_point T, MarkerFn<T> U>
-std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
-                                                   U marker)
-{
-  return locate_entities_boundary(mesh, dim,
-                                  std::make_optional(std::forward<U>(marker)));
 }
 
 /// @brief Compute the geometry degrees of freedom associated with
