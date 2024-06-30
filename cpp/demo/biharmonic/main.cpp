@@ -207,7 +207,7 @@ int main(int argc, char* argv[])
     //  follows:
 
     //  Define boundary condition
-    auto facets = mesh::exterior_facet_indices(*mesh);
+    auto facets = mesh::exterior_facet_indices(*mesh->topology());
     const auto bdofs = fem::locate_dofs_topological(
         *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
     auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
