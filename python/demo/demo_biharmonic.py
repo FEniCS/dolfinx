@@ -163,7 +163,8 @@ V = fem.functionspace(msh, ("Lagrange", 2))
 # function that returns `True` for points `x` on the boundary and
 # `False` otherwise.
 
-facets = mesh.exterior_facet_indices(msh)
+msh.topology.create_connectivity(1, 2)
+facets = mesh.exterior_facet_indices(msh.topology)
 
 # We now find the degrees-of-freedom that are associated with the
 # boundary facets using {py:func}`locate_dofs_topological
