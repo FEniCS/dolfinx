@@ -31,7 +31,7 @@ if MPI.COMM_WORLD.size > 1:
 
 try:
     import pyamg
-except ImportError:
+except (ImportError, AttributeError):
     print('This demo requires pyamg, install using "pip install pyamg"')
     exit(0)
 
