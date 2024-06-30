@@ -106,7 +106,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
   for (int32_t i = 0; i < 3; i++)
   {
     if (p[0][i] >= p[1][i])
-      throw std::runtime_error("It must hold p[0] < p[1]");
+      throw std::runtime_error("It must hold p[0] < p[1].");
   }
 
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
@@ -177,7 +177,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
   for (int32_t i = 0; i < 2; i++)
   {
     if (p[0][i] >= p[1][i])
-      throw std::runtime_error("It must hold p[0] < p[1]");
+      throw std::runtime_error("It must hold p[0] < p[1].");
   }
 
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
@@ -233,11 +233,11 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<double, 2> p,
                         CellPartitionFunction partitioner = nullptr)
 {
   if (n < 1)
-    throw std::runtime_error("At least one element is required");
+    throw std::runtime_error("At least one cell is required.");
 
   const auto [a, b] = p;
   if (a >= b)
-    throw std::runtime_error("It must hold p[0] < p[1]");
+    throw std::runtime_error("It must hold p[0] < p[1].");
 
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
     partitioner = create_cell_partitioner();
@@ -254,7 +254,7 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<double, 2> p,
 
   const T h = (b - a) / static_cast<T>(n);
 
-  if (std::abs(a - b) < std::numeric_limits<double>::epsilon())
+  if (std::abs(a - b) < std::numeric_limits<T>::epsilon())
   {
     throw std::runtime_error(
         "Length of interval is zero. Check your dimensions.");
@@ -282,7 +282,7 @@ std::vector<T> create_geom(MPI_Comm comm,
                            std::array<std::int64_t, 3> n)
 {
   // Extract data
-  auto& [p0, p1] = p;
+  auto [p0, p1] = p;
   const auto [nx, ny, nz] = n;
 
   assert(std::ranges::all_of(n, [](auto e) { return e >= 1; }));
@@ -297,10 +297,8 @@ std::vector<T> create_geom(MPI_Comm comm,
   };
 
   if (std::ranges::any_of(
-          extents,
-          [](auto e) {
-            return std::abs(e) < 2.0 * std::numeric_limits<double>::epsilon();
-          }))
+          extents, [](auto e)
+          { return std::abs(e) < 2.0 * std::numeric_limits<T>::epsilon(); }))
   {
     throw std::runtime_error(
         "Box seems to have zero width, height or depth. Check dimensions");
@@ -317,13 +315,11 @@ std::vector<T> create_geom(MPI_Comm comm,
   {
     // lexiographic index to spacial index
     const std::int64_t p = v % sqxy;
-    std::array<std::int64_t, 3> idx{ p % (nx + 1), p / (nx + 1), v / sqxy};
+    std::array<std::int64_t, 3> idx{p % (nx + 1), p / (nx + 1), v / sqxy};
 
     // vertex = p0 + idx * extents (elementwise)
     for (std::size_t i = 0; i < idx.size(); i++)
-    {
       geom.emplace_back(p0[i] + static_cast<T>(idx[i]) * extents[i]);
-    }
   }
 
   return geom;
@@ -489,15 +485,15 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
 
   const auto [p0, p1] = p;
   const auto [nx, ny] = n;
-  
+
   const auto [a, c] = p0;
   const auto [b, d] = p1;
 
   const T ab = (b - a) / static_cast<T>(nx);
   const T cd = (d - c) / static_cast<T>(ny);
 
-  if (std::abs(b - a) < std::numeric_limits<double>::epsilon()
-      or std::abs(d - c) < std::numeric_limits<double>::epsilon())
+  if (std::abs(b - a) < std::numeric_limits<T>::epsilon()
+      or std::abs(d - c) < std::numeric_limits<T>::epsilon())
   {
     throw std::runtime_error("Rectangle seems to have zero width, height or "
                              "depth. Check dimensions");
@@ -638,7 +634,7 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
   std::vector<std::int64_t> cells;
   std::vector<T> x;
 
-  if ((dolfinx::MPI::rank(comm) != 0))
+  if (dolfinx::MPI::rank(comm) != 0)
     return create_mesh(comm, MPI_COMM_NULL, cells, element, MPI_COMM_NULL, x,
                        {x.size() / 2, 2}, partitioner);
 
