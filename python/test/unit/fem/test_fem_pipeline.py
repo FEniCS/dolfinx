@@ -374,7 +374,7 @@ def test_biharmonic(family, dtype):
 
     # Strong (Dirichlet) boundary condition
     tdim = mesh.topology.dim
-    boundary_facets = exterior_facet_indices(mesh)
+    boundary_facets = exterior_facet_indices(mesh.topology)
     boundary_dofs = locate_dofs_topological((V.sub(1), V_1), tdim - 1, boundary_facets)
 
     bcs = [dirichletbc(zero_u, boundary_dofs, V.sub(1))]
