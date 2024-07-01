@@ -119,7 +119,7 @@ def test_constant_bc_constructions():
     V2 = functionspace(msh, ("Lagrange", 1, (gdim, gdim)))
 
     tdim = msh.topology.dim
-    msh.topology.create_connectivity(1, 2)
+    msh.topology.create_connectivity(tdim - 1, tdim)
     boundary_facets = exterior_facet_indices(msh.topology)
     boundary_dofs0 = locate_dofs_topological(V0, tdim - 1, boundary_facets)
     boundary_dofs1 = locate_dofs_topological(V1, tdim - 1, boundary_facets)

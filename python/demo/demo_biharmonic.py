@@ -163,7 +163,8 @@ V = fem.functionspace(msh, ("Lagrange", 2))
 # function that returns `True` for points `x` on the boundary and
 # `False` otherwise.
 
-msh.topology.create_connectivity(msh.topology.dim-1, msh.topology.dim)
+tdim = msh.topology.dim
+msh.topology.create_connectivity(tdim - 1, tdim)
 facets = mesh.exterior_facet_indices(msh.topology)
 
 # We now find the degrees-of-freedom that are associated with the

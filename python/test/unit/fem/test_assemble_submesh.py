@@ -302,7 +302,7 @@ def test_mixed_dom_codim_1(n, k):
 
     # Create a submesh of the boundary
     tdim = msh.topology.dim
-    msh.topology.create_connectivity(1, 2)
+    msh.topology.create_connectivity(tdim - 1, tdim)
     boundary_facets = exterior_facet_indices(msh.topology)
 
     smsh, smsh_to_msh = create_submesh(msh, tdim - 1, boundary_facets)[:2]
