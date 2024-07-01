@@ -249,6 +249,7 @@ def test_petsc_curl_curl_eigenvalue(family, order):
     a = inner(ufl.curl(u), ufl.curl(v)) * dx
     b = inner(u, v) * dx
 
+    mesh.topology.create_connectivity(1, 2)
     boundary_facets = exterior_facet_indices(mesh.topology)
     boundary_dofs = locate_dofs_topological(V, mesh.topology.dim - 1, boundary_facets)
 
