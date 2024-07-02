@@ -20,6 +20,7 @@ from dolfinx.mesh import (
     create_submesh,
     create_unit_cube,
     create_unit_square,
+    exterior_facet_indices,
     locate_entities,
     locate_entities_boundary,
     meshtags,
@@ -301,14 +302,8 @@ def test_mixed_dom_codim_1(n, k):
 
     # Create a submesh of the boundary
     tdim = msh.topology.dim
-    boundary_facets = locate_entities_boundary(
-        msh,
-        tdim - 1,
-        lambda x: np.isclose(x[0], 0.0)
-        | np.isclose(x[0], 1.0)
-        | np.isclose(x[1], 0.0)
-        | np.isclose(x[1], 1.0),
-    )
+    msh.topology.create_connectivity(tdim - 1, tdim)
+    boundary_facets = exterior_facet_indices(msh.topology)
 
     smsh, smsh_to_msh = create_submesh(msh, tdim - 1, boundary_facets)[:2]
 
