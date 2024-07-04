@@ -579,8 +579,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     global_old_new.reserve(disp_recv[d].back());
     for (std::size_t j = 0; j < all_dofs_received[d].size(); j += 2)
     {
-      const auto pos
-          = std::upper_bound(disp_recv[d].begin(), disp_recv[d].end(), j);
+      const auto pos = std::ranges::upper_bound(disp_recv[d], j);
       const int owner = std::distance(disp_recv[d].begin(), pos) - 1;
       global_old_new.push_back(
           {all_dofs_received[d][j], {all_dofs_received[d][j + 1], src[owner]}});
