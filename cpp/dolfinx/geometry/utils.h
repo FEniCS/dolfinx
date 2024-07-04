@@ -812,10 +812,10 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
   // but divide by three
   {
     auto rescale = [](auto& e) { return (e /= 3); };
-    std::for_each(recv_sizes, rescale);
-    std::for_each(recv_offsets, rescale);
-    std::for_each(send_sizes, rescale);
-    std::for_each(send_offsets, rescale);
+    std::ranges::for_each(recv_sizes, rescale);
+    std::ranges::for_each(recv_offsets, rescale);
+    std::ranges::for_each(send_sizes, rescale);
+    std::ranges::for_each(send_offsets, rescale);
 
     // The communication is reversed, so swap recv to send offsets
     std::swap(recv_sizes, send_sizes);
