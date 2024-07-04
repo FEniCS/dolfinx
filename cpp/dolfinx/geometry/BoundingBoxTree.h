@@ -164,9 +164,9 @@ _build_from_point(std::span<std::pair<std::array<T, 3>, std::int32_t>> points,
   }
 
   // Compute bounding box of all points
-  auto minmax = std::ranges::minmax_element(points);
-  std::array<T, 3> b0 = minmax.first->first;
-  std::array<T, 3> b1 = minmax.second->first;
+  auto [min, max] = std::ranges::minmax_element(points);
+  std::array<T, 3> b0 = min->first;
+  std::array<T, 3> b1 = max->first;
 
   // Sort bounding boxes along longest axis
   std::array<T, 3> b_diff;
