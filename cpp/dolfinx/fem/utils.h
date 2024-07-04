@@ -469,9 +469,9 @@ Form<T, U> create_form_factory(
       else if (sd != subdomains.end())
       {
         // NOTE: This requires that pairs are sorted
-        auto it
-            = std::ranges::lower_bound(sd->second, id, [](auto& pair, auto val)
-                                       { return pair.first < val; });
+        auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
+                                   [](auto& pair, auto val)
+                                   { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
           itg.first->second.emplace_back(id, k, it->second, active_coeffs);
       }
@@ -551,9 +551,9 @@ Form<T, U> create_form_factory(
       else if (sd != subdomains.end())
       {
         // NOTE: This requires that pairs are sorted
-        auto it
-            = std::ranges::lower_bound(sd->second, id, [](auto& pair, auto val)
-                                       { return pair.first < val; });
+        auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
+                                   [](auto& pair, auto val)
+                                   { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
           itg.first->second.emplace_back(id, k, it->second, active_coeffs);
       }
@@ -635,9 +635,9 @@ Form<T, U> create_form_factory(
       }
       else if (sd != subdomains.end())
       {
-        auto it
-            = std::ranges::lower_bound(sd->second, id, [](auto& pair, auto val)
-                                       { return pair.first < val; });
+        auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
+                                   [](auto& pair, auto val)
+                                   { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
           itg.first->second.emplace_back(id, k, it->second, active_coeffs);
       }

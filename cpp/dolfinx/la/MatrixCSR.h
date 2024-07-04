@@ -474,9 +474,8 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
     // Compute off-diagonal offset for each row (compact)
     std::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offsets();
     _off_diagonal_offset.reserve(num_diag_nnz.size());
-    std::ranges::transform(num_diag_nnz, _row_ptr.begin(),
-                           std::back_inserter(_off_diagonal_offset),
-                           std::plus{});
+    std::transform(num_diag_nnz.begin(), num_diag_nnz.end(), _row_ptr.begin(),
+                   std::back_inserter(_off_diagonal_offset), std::plus{});
   }
 
   // Some short-hand
