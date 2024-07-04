@@ -36,28 +36,23 @@ void checkpointing::write(MPI_Comm comm, std::string filename,
     const mesh::Geometry<T>& geometry = mesh->geometry();
     auto topology = mesh->topology();
 
-    const std::int16_t mesh_dim = geometry.dim();
+    std::int16_t mesh_dim = geometry.dim();
     const std::vector<int64_t> mesh_input_global_indices = geometry.input_global_indices();
     const std::span<const int64_t> mesh_input_global_indices_span(mesh_input_global_indices.begin(),
                                                             mesh_input_global_indices.end());
     const std::span<const T> mesh_x = geometry.x();
 
     auto imap = mesh->geometry().index_map();
-    const std::int64_t num_nodes_global = imap->size_global();
-    const std::int32_t num_nodes_local = imap->size_local();
-    const std::int64_t offset = imap->local_range()[0];
-
-    auto dmap = mesh->geometry().dofmap();
+    std::int64_t num_nodes_global = imap->size_global();
+    std::int32_t num_nodes_local = imap->size_local();
+    std::int64_t offset = imap->local_range()[0];
 
     const std::shared_ptr<const dolfinx::common::IndexMap> topo_imap = topology->index_map(mesh_dim);
-    const std::int64_t num_cells_global = topo_imap->size_global();
-    const std::int32_t num_cells_local = topo_imap->size_local();
-    const std::int64_t cell_offset = topo_imap->local_range()[0];
+    std::int64_t num_cells_global = topo_imap->size_global();
+    std::int32_t num_cells_local = topo_imap->size_local();
+    std::int64_t cell_offset = topo_imap->local_range()[0];
 
     auto cmap = mesh->geometry().cmap();
-    auto edegree = cmap.degree();
-    auto ecelltype = cmap.cell_shape();
-    auto elagrange_variant = cmap.variant();
     auto geom_layout = cmap.create_dof_layout();
     int num_dofs_per_cell = geom_layout.num_entity_closure_dofs(mesh_dim);
     
@@ -65,7 +60,7 @@ void checkpointing::write(MPI_Comm comm, std::string filename,
     io.DefineAttribute<std::int16_t>("dim", geometry.dim());
     io.DefineAttribute<std::string>("CellType", mesh::to_string(cmap.cell_shape()));
     io.DefineAttribute<std::int32_t>("Degree", cmap.degree());
-    io.DefineAttribute<std::string>("LagrangeVariant", lagrange_variants[elagrange_variant]);
+    io.DefineAttribute<std::string>("LagrangeVariant", lagrange_variants[cmap.variant()]);
 
     adios2::Variable<std::int64_t> n_nodes = io.DefineVariable<std::int64_t>("n_nodes");
     adios2::Variable<std::int64_t> n_cells = io.DefineVariable<std::int64_t>("n_cells");
