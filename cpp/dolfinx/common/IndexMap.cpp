@@ -186,8 +186,8 @@ compute_submap_indices(const IndexMap& imap,
   // Create lookup array to determine if an index is in the sub-map
   std::vector<std::uint8_t> is_in_submap(imap.size_local() + imap.num_ghosts(),
                                          0);
-  std::for_each(indices.begin(), indices.end(),
-                [&is_in_submap](auto i) { is_in_submap[i] = 1; });
+  std::ranges::for_each(indices,
+                        [&is_in_submap](auto i) { is_in_submap[i] = 1; });
 
   // --- Step 1 ---: Send ghost indices in `indices` to their owners
   // and receive indices owned by this process that are in `indices`
