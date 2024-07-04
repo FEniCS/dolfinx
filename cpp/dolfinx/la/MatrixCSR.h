@@ -502,7 +502,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
   _ghost_row_to_rank.reserve(_index_maps[0]->owners().size());
   for (int r : _index_maps[0]->owners())
   {
-    auto it = std::lower_bound(src_ranks.begin(), src_ranks.end(), r);
+    auto it = std::ranges::lower_bound(src_ranks, r);
     assert(it != src_ranks.end() and *it == r);
     int pos = std::distance(src_ranks.begin(), it);
     _ghost_row_to_rank.push_back(pos);
@@ -605,10 +605,9 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
     std::int32_t local_col = ghost_index_array[i + 1] - local_range[1][0];
     if (local_col < 0 or local_col >= local_size[1])
     {
-      auto it = std::lower_bound(global_to_local.begin(), global_to_local.end(),
-                                 std::pair(ghost_index_array[i + 1], -1),
-                                 [](auto& a, auto& b)
-                                 { return a.first < b.first; });
+      auto it = std::ranges::lower_bound(
+          global_to_local, std::pair(ghost_index_array[i + 1], -1),
+          [](auto& a, auto& b) { return a.first < b.first; });
       assert(it != global_to_local.end()
              and it->first == ghost_index_array[i + 1]);
       local_col = it->second;

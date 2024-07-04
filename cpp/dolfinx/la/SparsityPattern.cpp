@@ -250,7 +250,7 @@ void SparsityPattern::finalize()
   std::vector<int> send_sizes(src0.size(), 0);
   for (std::size_t i = 0; i < owners0.size(); ++i)
   {
-    auto it = std::lower_bound(src0.begin(), src0.end(), owners0[i]);
+    auto it = std::ranges::lower_bound(src0, owners0[i]);
     assert(it != src0.end() and *it == owners0[i]);
     const int neighbour_rank = std::distance(src0.begin(), it);
     send_sizes[neighbour_rank] += 3 * _row_cache[i + local_size0].size();
@@ -268,7 +268,7 @@ void SparsityPattern::finalize()
   const int rank = dolfinx::MPI::rank(_comm.comm());
   for (std::size_t i = 0; i < owners0.size(); ++i)
   {
-    auto it = std::lower_bound(src0.begin(), src0.end(), owners0[i]);
+    auto it = std::ranges::lower_bound(src0, owners0[i]);
     assert(it != src0.end() and *it == owners0[i]);
     const int neighbour_rank = std::distance(src0.begin(), it);
 

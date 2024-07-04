@@ -8,6 +8,7 @@
 #include "Topology.h"
 #include "cell_types.h"
 #include <algorithm>
+#include <bits/ranges_algo.h>
 #include <boost/unordered_map.hpp>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -188,7 +189,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
           // Only send entities that are not known to be ghosts
           if (ghost_status[*entity_idx] != 1)
           {
-            auto itr_local = std::lower_bound(ranks.begin(), ranks.end(), *it);
+            auto itr_local = std::ranges::lower_bound(ranks, *it);
             assert(itr_local != ranks.end() and *itr_local == *it);
             const int r = std::distance(ranks.begin(), itr_local);
 

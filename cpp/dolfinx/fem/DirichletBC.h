@@ -264,7 +264,7 @@ private:
     int bs = dofmap.index_map_bs();
     std::int32_t map_size = dofmap.index_map->size_local();
     std::int32_t owned_size = bs * map_size;
-    auto it = std::lower_bound(dofs.begin(), dofs.end(), owned_size);
+    auto it = std::ranges::lower_bound(dofs, owned_size);
     return std::distance(dofs.begin(), it);
   }
 

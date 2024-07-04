@@ -10,6 +10,7 @@
 #include "traits.h"
 #include <algorithm>
 #include <array>
+#include <bits/ranges_algo.h>
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -268,9 +269,8 @@ public:
   kernel(IntegralType type, int i) const
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
-    auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
-                               [](auto& itg_data, int i)
-                               { return itg_data.id < i; });
+    auto it = std::ranges::lower_bound(integrals, i, std::less<>{},
+                                       [](const auto& a) { return a.id; });
     if (it != integrals.end() and it->id == i)
       return it->kernel;
     else
@@ -351,9 +351,8 @@ public:
   std::span<const std::int32_t> domain(IntegralType type, int i) const
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
-    auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
-                               [](auto& itg_data, int i)
-                               { return itg_data.id < i; });
+    auto it = std::ranges::lower_bound(integrals, i, std::less<>{},
+                                       [](const auto& a) { return a.id; });
     if (it != integrals.end() and it->id == i)
       return it->entities;
     else
