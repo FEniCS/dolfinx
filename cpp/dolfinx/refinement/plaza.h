@@ -651,7 +651,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
 
   // Convert edge_ranks from global rank to to neighbourhood ranks
-  std::ranges::for_each(edge_ranks,
+  std::ranges::for_each(edge_ranks.array(),
                         [&ranks](auto& r)
                         {
                           auto it
