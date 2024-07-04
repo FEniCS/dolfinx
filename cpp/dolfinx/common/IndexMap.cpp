@@ -473,7 +473,7 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
                               const IndexMap& map)
 {
   // Assume that indices are sorted and unique
-  assert(std::ragnes::is_sorted(indices));
+  assert(std::ranges::is_sorted(indices));
 
   std::span ghosts = map.ghosts();
   std::vector<int> owners(map.owners().begin(), map.owners().end());
