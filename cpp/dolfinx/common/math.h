@@ -235,7 +235,7 @@ void pinv(U A, V P)
       for (std::size_t j = 0; j < AT.extent(1); ++j)
         AT(i, j) = A(j, i);
 
-    std::fill(ATAb.begin(), ATAb.end(), 0.0);
+    std::ranges::fill(ATAb, 0.0);
     for (std::size_t i = 0; i < P.extent(0); ++i)
       for (std::size_t j = 0; j < P.extent(1); ++j)
         P(i, j) = 0;

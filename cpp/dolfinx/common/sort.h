@@ -57,7 +57,7 @@ void radix_sort(std::span<T> array)
   for (int i = 0; i < its; i++)
   {
     // Zero counter array
-    std::fill(counter.begin(), counter.end(), 0);
+    std::ranges::fill(counter, 0);
 
     // Count number of elements per bucket
     for (T c : current_perm)
@@ -128,7 +128,7 @@ void argsort_radix(std::span<const T> array, std::span<std::int32_t> perm)
   for (int i = 0; i < its; i++)
   {
     // Zero counter
-    std::fill(counter.begin(), counter.end(), 0);
+    std::ranges::fill(counter, 0);
 
     // Count number of elements per bucket
     for (auto cp : current_perm)

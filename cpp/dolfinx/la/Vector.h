@@ -78,7 +78,7 @@ public:
 
   /// Set all entries (including ghosts)
   /// @param[in] v The value to set all entries to (on calling rank)
-  void set(value_type v) { std::fill(_x.begin(), _x.end(), v); }
+  void set(value_type v) { std::ranges::fill(_x, v); }
 
   /// Begin scatter of local data from owner to ghosts on other ranks
   /// @note Collective MPI operation
