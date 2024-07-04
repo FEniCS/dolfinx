@@ -66,9 +66,9 @@ residual_graph_components(const graph::AdjacencyList<int>& graph,
     it = std::find(it, labelled.end(), false);
   }
 
-  std::sort(rgc.begin(), rgc.end(),
-            [](const std::vector<int>& a, const std::vector<int>& b)
-            { return (a.size() > b.size()); });
+  std::ranges::sort(rgc,
+                    [](const std::vector<int>& a, const std::vector<int>& b)
+                    { return (a.size() > b.size()); });
 
   return rgc;
 }
@@ -317,13 +317,13 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
         }
 
         // Add nodes to rv in order of increasing degree
-        std::sort(nbr.begin(), nbr.end(), cmp_degree);
+        std::ranges::sort(nbr, cmp_degree);
         rv.insert(rv.end(), nbr.begin(), nbr.end());
         for (int w : nbr)
           labelled[w] = true;
 
         // Save nodes for next level to a separate list, rv_next
-        std::sort(nbr_next.begin(), nbr_next.end(), cmp_degree);
+        std::ranges::sort(nbr_next, cmp_degree);
         rv_next.insert(rv_next.end(), nbr_next.begin(), nbr_next.end());
         for (int w : nbr_next)
           labelled[w] = true;
@@ -341,7 +341,7 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
       if (nrem.size() == 0)
         break;
 
-      std::sort(nrem.begin(), nrem.end(), cmp_degree);
+      std::ranges::sort(nrem, cmp_degree);
       rv.push_back(nrem.front());
       labelled[nrem.front()] = true;
     }

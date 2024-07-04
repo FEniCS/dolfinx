@@ -705,12 +705,12 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
 
   // Get unique list of outgoing ranks
   std::vector<std::int32_t> out_ranks = collisions.array();
-  std::sort(out_ranks.begin(), out_ranks.end());
+  std::ranges::sort(out_ranks);
   out_ranks.erase(std::unique(out_ranks.begin(), out_ranks.end()),
                   out_ranks.end());
   // Compute incoming edges (source processes)
   std::vector in_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, out_ranks);
-  std::sort(in_ranks.begin(), in_ranks.end());
+  std::ranges::sort(in_ranks);
 
   // Create neighborhood communicator in forward direction
   MPI_Comm forward_comm;

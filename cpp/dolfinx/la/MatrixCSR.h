@@ -591,7 +591,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
   global_to_local.reserve(ghosts1.size());
   for (std::int64_t idx : ghosts1)
     global_to_local.push_back({idx, global_to_local.size() + local_size[1]});
-  std::sort(global_to_local.begin(), global_to_local.end());
+  std::ranges::sort(global_to_local);
 
   // Compute location in which data for each index should be stored
   // when received

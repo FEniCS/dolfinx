@@ -246,7 +246,7 @@ std::array<std::vector<std::int32_t>, 2> refinement::transfer_facet_meshtag(
     auto pclinks = p_to_c_facet.links(parent_index);
 
     // Eliminate duplicates
-    std::sort(pclinks.begin(), pclinks.end());
+    std::ranges::sort(pclinks);
     auto it_end = std::unique(pclinks.begin(), pclinks.end());
     facet_indices.insert(facet_indices.end(), pclinks.begin(), it_end);
     tag_values.insert(tag_values.end(), std::distance(pclinks.begin(), it_end),

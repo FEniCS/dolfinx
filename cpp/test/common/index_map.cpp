@@ -143,7 +143,7 @@ void test_consensus_exchange()
 
   // Create an IndexMap
   std::vector<int> src_ranks = global_ghost_owner;
-  std::sort(src_ranks.begin(), src_ranks.end());
+  std::ranges::sort(src_ranks);
   src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
                   src_ranks.end());
 
@@ -151,8 +151,8 @@ void test_consensus_exchange()
       = dolfinx::MPI::compute_graph_edges_nbx(MPI_COMM_WORLD, src_ranks);
   auto dest_ranks1
       = dolfinx::MPI::compute_graph_edges_pcx(MPI_COMM_WORLD, src_ranks);
-  std::sort(dest_ranks0.begin(), dest_ranks0.end());
-  std::sort(dest_ranks1.begin(), dest_ranks1.end());
+  std::ranges::sort(dest_ranks0);
+  std::ranges::sort(dest_ranks1);
 
   CHECK(dest_ranks0 == dest_ranks1);
 }

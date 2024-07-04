@@ -73,7 +73,7 @@ graph::build::distribute(MPI_Comm comm,
     for (auto d : di)
       dest_to_index.push_back({d, i, di[0]});
   }
-  std::sort(dest_to_index.begin(), dest_to_index.end());
+  std::ranges::sort(dest_to_index);
 
   // Build list of unique dest ranks and count number of rows to send to
   // each dest (by neighbourhood rank)
@@ -100,7 +100,7 @@ graph::build::distribute(MPI_Comm comm,
   // Determine source ranks. Sort ranks to make distribution
   // deterministic.
   std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
-  std::sort(src.begin(), src.end());
+  std::ranges::sort(src);
 
   // Create neighbourhood communicator
   MPI_Comm neigh_comm;
@@ -255,7 +255,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
     for (auto d : di)
       dest_to_index.push_back({d, i, di[0]});
   }
-  std::sort(dest_to_index.begin(), dest_to_index.end());
+  std::ranges::sort(dest_to_index);
 
   // Build list of unique dest ranks and count number of rows to send to
   // each dest (by neighbourhood rank)
@@ -282,7 +282,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   // Determine source ranks. Sort ranks to make distribution
   // deterministic.
   std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
-  std::sort(src.begin(), src.end());
+  std::ranges::sort(src);
 
   // Create neighbourhood communicator
   MPI_Comm neigh_comm;
@@ -493,7 +493,7 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
     old_to_new.push_back(
         {idx, static_cast<std::int64_t>(offset_local + old_to_new.size())});
   }
-  std::sort(old_to_new.begin(), old_to_new.end());
+  std::ranges::sort(old_to_new);
 
   // Replace values in recv_data with new_index and send back
   std::transform(recv_data.begin(), recv_data.end(), recv_data.begin(),
@@ -522,7 +522,7 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
                  [](auto idx_old, auto idx_new) ->
                  typename decltype(old_to_new1)::value_type
                  { return {idx_old, idx_new}; });
-  std::sort(old_to_new1.begin(), old_to_new1.end());
+  std::ranges::sort(old_to_new1);
 
   std::vector<std::int64_t> ghost_global_indices(ghost_indices.size());
   std::transform(
@@ -575,7 +575,7 @@ std::vector<std::int32_t> graph::build::compute_local_to_local(
   global_to_local1.reserve(local1_to_global.size());
   for (auto idx_global : local1_to_global)
     global_to_local1.push_back({idx_global, global_to_local1.size()});
-  std::sort(global_to_local1.begin(), global_to_local1.end());
+  std::ranges::sort(global_to_local1);
 
   // Compute inverse map for local0_to_local1
   std::vector<std::int32_t> local0_to_local1;
