@@ -81,7 +81,7 @@ graph::AdjacencyList<int> compute_destination_ranks(
     }
   }
   std::ranges::sort(node_to_dest);
-  node_to_dest.erase(std::ranges::unique(node_to_dest).end(),
+  node_to_dest.erase(std::ranges::unique(node_to_dest).begin(),
                      node_to_dest.end());
 
   // Build send data and buffer
@@ -164,7 +164,7 @@ graph::AdjacencyList<int> compute_destination_ranks(
     local_node_to_dest.push_back({idx_local, d});
   }
   std::ranges::sort(local_node_to_dest);
-  local_node_to_dest.erase(std::ranges::unique(local_node_to_dest).end(),
+  local_node_to_dest.erase(std::ranges::unique(local_node_to_dest).begin(),
                            local_node_to_dest.end());
 
   // Compute offsets

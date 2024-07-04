@@ -40,7 +40,7 @@ template <typename U>
 graph::AdjacencyList<int> create_adj_list(U& data, std::int32_t size)
 {
   std::ranges::sort(data);
-  data.erase(std::ranges::unique(data).end(), data.end());
+  data.erase(std::ranges::unique(data).begin(), data.end());
 
   std::vector<int> array;
   array.reserve(data.size());
@@ -130,7 +130,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   std::vector<int> ranks(vertex_ranks.array().begin(),
                          vertex_ranks.array().end());
   std::ranges::sort(ranks);
-  ranks.erase(std::ranges::unique(ranks).end(), ranks.end());
+  ranks.erase(std::ranges::unique(ranks).begin(), ranks.end());
 
   MPI_Comm neighbor_comm;
   MPI_Dist_graph_create_adjacent(

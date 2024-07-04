@@ -386,9 +386,9 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
       src.push_back(ranks.front());
   }
   std::ranges::sort(src);
-  src.erase(std::ranges::unique(src).end(), src.end());
+  src.erase(std::ranges::unique(src).begin(), src.end());
   std::ranges::sort(dest);
-  dest.erase(std::ranges::unique(dest).end(), dest.end());
+  dest.erase(std::ranges::unique(dest).begin(), dest.end());
 
   // Pack send data. Use std::vector<std::vector>> since size will be
   // modest (equal to number of neighbour ranks)
@@ -596,7 +596,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
       }
 
       std::ranges::sort(shared_vertices);
-      shared_vertices.erase(std::ranges::unique(shared_vertices).end(),
+      shared_vertices.erase(std::ranges::unique(shared_vertices).begin(),
                             shared_vertices.end());
     }
   }
@@ -665,7 +665,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
   for (std::size_t i = 0; i < recv_buffer.size(); i += 3)
     data.push_back({recv_buffer[i], recv_buffer[i + 1], recv_buffer[i + 2]});
   std::ranges::sort(data);
-  data.erase(std::ranges::unique(data).end(), data.end());
+  data.erase(std::ranges::unique(data).begin(), data.end());
 
   MPI_Comm_free(&comm);
 
@@ -1331,7 +1331,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
     // FIXME Make this an input requirement?
     std::vector<std::int32_t> _entities(entities.begin(), entities.end());
     std::ranges::sort(_entities);
-    _entities.erase(std::ranges::unique(_entities).end(), _entities.end());
+    _entities.erase(std::ranges::unique(_entities).begin(), _entities.end());
     auto [_submap, _subentities]
         = common::create_sub_index_map(*topology.index_map(dim), _entities);
     submap = std::make_shared<common::IndexMap>(std::move(_submap));

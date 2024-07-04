@@ -162,7 +162,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
   // Build unique set of the sorted src_ranks
   std::vector<std::int32_t> out_ranks(src_ranks.size());
   out_ranks.assign(src_ranks.begin(), src_ranks.end());
-  out_ranks.erase(std::ranges::unique(out_ranks).end(), out_ranks.end());
+  out_ranks.erase(std::ranges::unique(out_ranks).begin(), out_ranks.end());
   out_ranks.reserve(out_ranks.size() + 1);
 
   // Remove negative entries from dest_ranks
@@ -173,7 +173,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
 
   // Create unique set of sorted in-ranks
   std::ranges::sort(in_ranks);
-  in_ranks.erase(std::ranges::unique(in_ranks).end(), in_ranks.end());
+  in_ranks.erase(std::ranges::unique(in_ranks).begin(), in_ranks.end());
   in_ranks.reserve(in_ranks.size() + 1);
 
   // Create neighborhood communicator

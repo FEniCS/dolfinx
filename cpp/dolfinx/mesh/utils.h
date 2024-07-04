@@ -104,9 +104,9 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
 
     // Build vector of boundary vertices
     std::ranges::sort(vertices);
-    vertices.erase(std::ranges::unique(vertices).end(), vertices.end());
+    vertices.erase(std::ranges::unique(vertices).begin(), vertices.end());
     std::ranges::sort(entities);
-    entities.erase(std::ranges::unique(entities).end(), entities.end());
+    entities.erase(std::ranges::unique(entities).begin(), entities.end());
   }
 
   // Get geometry data
@@ -892,7 +892,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // distribute coordinate data
   std::vector<std::int64_t> nodes1 = cells1;
   dolfinx::radix_sort(std::span(nodes1));
-  nodes1.erase(std::ranges::unique(nodes1).end(), nodes1.end());
+  nodes1.erase(std::ranges::unique(nodes1).begin(), nodes1.end());
   std::vector coords
       = dolfinx::MPI::distribute_data(comm, nodes1, commg, x, xshape[1]);
 
@@ -1073,7 +1073,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     // Boundary vertices are marked as 'unknown'
     boundary_v = unmatched_facets;
     std::ranges::sort(boundary_v);
-    boundary_v.erase(std::ranges::unique(boundary_v).end(), boundary_v.end());
+    boundary_v.erase(std::ranges::unique(boundary_v).begin(), boundary_v.end());
 
     // Remove -1 if it occurs in boundary vertices (may occur in mixed
     // topology)
@@ -1122,7 +1122,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     nodes2.insert(nodes2.end(), c.begin(), c.end());
 
   dolfinx::radix_sort(std::span(nodes1));
-  nodes1.erase(std::ranges::unique(nodes1).end(), nodes1.end());
+  nodes1.erase(std::ranges::unique(nodes1).begin(), nodes1.end());
   std::vector coords
       = dolfinx::MPI::distribute_data(comm, nodes1, commg, x, xshape[1]);
 
@@ -1195,7 +1195,7 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
 
   std::vector<std::int32_t> sub_x_dofs = x_indices;
   std::ranges::sort(sub_x_dofs);
-  sub_x_dofs.erase(std::ranges::unique(sub_x_dofs).end(), sub_x_dofs.end());
+  sub_x_dofs.erase(std::ranges::unique(sub_x_dofs).begin(), sub_x_dofs.end());
 
   // Get the sub-geometry dofs owned by this process
   auto x_index_map = geometry.index_map();
