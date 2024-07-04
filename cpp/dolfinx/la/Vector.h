@@ -336,7 +336,7 @@ void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
       throw std::runtime_error(
           "Linear dependency detected. Cannot orthogonalize.");
     }
-    std::for_each(bi.mutable_array(), [norm](auto& x) { x /= norm; });
+    std::ranges::for_each(bi.mutable_array(), [norm](auto& x) { x /= norm; });
   }
 }
 
