@@ -75,12 +75,9 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
   }
 
   // Remove facets on internal inter-process boundary
-  const std::vector<std::int32_t>& interprocess_facets
-      = topology.interprocess_facets();
   std::vector<std::int32_t> ext_facets;
-  std::set_difference(facets.begin(), facets.end(), interprocess_facets.begin(),
-                      interprocess_facets.end(),
-                      std::back_inserter(ext_facets));
+  std::ranges::set_difference(facets, topology.interprocess_facets(),
+                              std::back_inserter(ext_facets));
   return ext_facets;
 }
 //------------------------------------------------------------------------------

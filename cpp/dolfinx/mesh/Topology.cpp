@@ -324,24 +324,21 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
   // Build difference 1: Vertices attached only to owned cells, and
   // therefore owned by this rank
   std::vector<std::int64_t> owned_vertices;
-  std::set_difference(local_vertex_set.begin(), local_vertex_set.end(),
-                      boundary_vertices.begin(), boundary_vertices.end(),
-                      std::back_inserter(owned_vertices));
+  std::ranges::set_difference(local_vertex_set, boundary_vertices,
+                              std::back_inserter(owned_vertices));
 
   // Build difference 2: Vertices attached only to ghost cells, and
   // therefore not owned by this rank
   std::vector<std::int64_t> unowned_vertices;
-  std::set_difference(ghost_vertex_set.begin(), ghost_vertex_set.end(),
-                      local_vertex_set.begin(), local_vertex_set.end(),
-                      std::back_inserter(unowned_vertices));
+  std::ranges::set_difference(ghost_vertex_set, local_vertex_set,
+                              std::back_inserter(unowned_vertices));
 
   // TODO Check this in debug mode only?
   // Sanity check
   // No vertices in unowned should also be in boundary...
   std::vector<std::int64_t> unowned_vertices_in_error;
-  std::set_intersection(unowned_vertices.begin(), unowned_vertices.end(),
-                        boundary_vertices.begin(), boundary_vertices.end(),
-                        std::back_inserter(unowned_vertices_in_error));
+  std::ranges::set_intersection(unowned_vertices, boundary_vertices,
+                                std::back_inserter(unowned_vertices_in_error));
 
   if (!unowned_vertices_in_error.empty())
   {
