@@ -148,13 +148,13 @@ nearest_simplex(std::span<const T> s)
           qnorm += v[k] * v[k];
         if (qnorm < qmin)
         {
-          std::copy(v.begin(), v.end(), vmin.begin());
+          std::ranges::copy(v, vmin.begin());
           qmin = qnorm;
           smin.resize(2 * 3);
           std::span<T, 3> smin0(smin.data(), 3);
-          std::copy(s0.begin(), s0.end(), smin0.begin());
+          std::ranges::copy(s0, smin0.begin());
           std::span<T, 3> smin1(smin.data() + 3, 3);
-          std::copy(s1.begin(), s1.end(), smin1.begin());
+          std::ranges::copy(s1, smin1.begin());
         }
       }
     }

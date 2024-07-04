@@ -243,8 +243,8 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
     {
       std::transform(ls.begin(), ls.end(), wn.begin(),
                      [](const std::vector<int>& vec) { return vec.size(); });
-      std::copy(wn.begin(), wn.end(), wh.begin());
-      std::copy(wn.begin(), wn.end(), wl.begin());
+      std::ranges::copy(wn, wh.begin());
+      std::ranges::copy(wn, wl.begin());
       for (int w : r)
       {
         ++wh[lvp[w][0]];

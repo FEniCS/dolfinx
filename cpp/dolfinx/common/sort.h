@@ -82,7 +82,7 @@ void radix_sort(std::span<T> array)
 
   // Copy data back to array
   if (its % 2 != 0)
-    std::copy(buffer.begin(), buffer.end(), array.begin());
+    std::ranges::copy(buffer, array.begin());
 }
 
 /// Returns the indices that would sort (lexicographic) a vector of
@@ -159,7 +159,7 @@ void argsort_radix(std::span<const T> array, std::span<std::int32_t> perm)
   }
 
   if (its % 2 == 1)
-    std::copy(perm2.begin(), perm2.end(), perm.begin());
+    std::ranges::copy(perm2, perm.begin());
 }
 
 /// @brief Compute the permutation array that sorts a 2D array by row.

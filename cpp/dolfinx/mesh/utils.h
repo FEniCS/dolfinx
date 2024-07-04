@@ -54,7 +54,7 @@ void reorder_list(std::span<T> list, std::span<const std::int32_t> nodemap)
   {
     auto links_old = std::span(orig.data() + n * degree, degree);
     auto links_new = list.subspan(nodemap[n] * degree, degree);
-    std::copy(links_old.begin(), links_old.end(), links_new.begin());
+    std::ranges::copy(links_old, links_new.begin());
   }
 }
 

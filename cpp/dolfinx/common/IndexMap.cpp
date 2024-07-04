@@ -932,8 +932,7 @@ std::vector<std::int64_t> IndexMap::global_indices() const
   std::vector<std::int64_t> global(local_size + num_ghosts);
   std::iota(global.begin(), std::next(global.begin(), local_size),
             global_offset);
-  std::copy(_ghosts.cbegin(), _ghosts.cend(),
-            std::next(global.begin(), local_size));
+  std::ranges::copy(_ghosts, std::next(global.begin(), local_size));
   return global;
 }
 //-----------------------------------------------------------------------------
