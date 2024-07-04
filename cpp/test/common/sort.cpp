@@ -28,7 +28,7 @@ TEMPLATE_TEST_CASE("Test radix sort", "[vector][template]", std::int32_t,
   dolfinx::radix_sort(std::span(vec));
 
   // Check if vector is sorted
-  REQUIRE(std::is_sorted(vec.begin(), vec.end()));
+  REQUIRE(std::ranges::is_sorted(vec));
 }
 
 TEST_CASE("Test argsort bitset")

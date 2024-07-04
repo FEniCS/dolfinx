@@ -473,7 +473,7 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
                               const IndexMap& map)
 {
   // Assume that indices are sorted and unique
-  assert(std::is_sorted(indices.begin(), indices.end()));
+  assert(std::ranges::is_sorted(indices));
 
   std::span ghosts = map.ghosts();
   std::vector<int> owners(map.owners().begin(), map.owners().end());
@@ -830,8 +830,8 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
       _dest(src_dest[1])
 {
   assert(ghosts.size() == owners.size());
-  assert(std::is_sorted(src_dest[0].begin(), src_dest[0].end()));
-  assert(std::is_sorted(src_dest[1].begin(), src_dest[1].end()));
+  assert(std::ranges::is_sorted(src_dest[0]));
+  assert(std::ranges::is_sorted(src_dest[1]));
 
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
