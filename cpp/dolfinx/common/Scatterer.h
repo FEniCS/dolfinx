@@ -525,7 +525,7 @@ public:
     assert(local_buffer.size() == _local_inds.size());
     if (!_local_inds.empty())
     {
-      assert(*std::max_element(_local_inds.begin(), _local_inds.end())
+      assert(*std::ranges::max_element(_local_inds)
              < std::int32_t(local_data.size()));
     }
     scatter_rev_end(request);

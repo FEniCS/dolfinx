@@ -31,7 +31,7 @@ void radix_sort(std::span<T> array)
   if (array.size() <= 1)
     return;
 
-  T max_value = *std::max_element(array.begin(), array.end());
+  T max_value = *std::ranges::max_element(array);
 
   // Sort N bits at a time
   constexpr int bucket_size = 1 << BITS;

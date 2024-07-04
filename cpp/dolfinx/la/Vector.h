@@ -288,8 +288,8 @@ auto norm(const V& x, Norm type = Norm::l2)
   {
     std::int32_t size_local = x.bs() * x.index_map()->size_local();
     std::span<const T> data = x.array().subspan(0, size_local);
-    auto max_pos = std::max_element(data.begin(), data.end(), [](T a, T b)
-                                    { return std::norm(a) < std::norm(b); });
+    auto max_pos = std::ranges::max_element(
+        data, [](T a, T b) { return std::norm(a) < std::norm(b); });
     auto local_linf = std::abs(*max_pos);
     decltype(local_linf) linf = 0;
     MPI_Allreduce(&local_linf, &linf, 1, MPI::mpi_type<decltype(linf)>(),

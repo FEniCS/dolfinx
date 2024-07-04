@@ -257,8 +257,8 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
                      [](int vl, int vn) { return (vl > vn) ? vl : 0; });
 
       // Find maximum of those that did increase
-      int h0 = *std::max_element(wh.begin(), wh.end());
-      int l0 = *std::max_element(wl.begin(), wl.end());
+      int h0 = *std::ranges::max_element(wh);
+      int l0 = *std::ranges::max_element(wl);
 
       // Choose which side to use
       int side = h0 < l0 ? 0 : 1;

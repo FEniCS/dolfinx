@@ -49,8 +49,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
   std::int64_t global_range = 0;
   {
     std::int64_t max_index
-        = indices.empty() ? 0
-                          : *std::max_element(indices.begin(), indices.end());
+        = indices.empty() ? 0 : *std::ranges::max_element(indices);
     MPI_Allreduce(&max_index, &global_range, 1, MPI_INT64_T, MPI_MAX, comm);
     global_range += 1;
   }
