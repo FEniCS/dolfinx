@@ -363,15 +363,13 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
     }
     num_local = c;
 
-    std::transform(local_index.cbegin(), local_index.cend(),
-                   local_index.begin(),
-                   [&c](auto index) { return index == -1 ? c++ : index; });
+    std::ranges::for_each(local_index, [&c](auto& index)
+                          { index = (index == -1) ? c++ : index; });
     assert(c == entity_count);
 
     // Convert interprocess entities to local_index
-    std::transform(interprocess_entities.cbegin(), interprocess_entities.cend(),
-                   interprocess_entities.begin(),
-                   [&local_index](std::int32_t i) { return local_index[i]; });
+    std::ranges::for_each(interprocess_entities,
+                          [&local_index](auto& i) { i = local_index[i]; });
   }
 
   //---------
@@ -403,11 +401,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
 
     // Transform send/receive sizes and displacements for scalar send
     for (auto x : {&send_sizes, &send_disp, &recv_sizes, &recv_disp})
-    {
-      std::transform(x->begin(), x->end(), x->begin(),
-                     [num_vertices_per_e](auto a)
-                     { return a / num_vertices_per_e; });
-    }
+      std::ranges::for_each(*x, [num_vertices_per_e](auto& a)
+                            { a /= num_vertices_per_e; });
 
     recv_data.resize(recv_disp.back());
     MPI_Neighbor_alltoallv(send_global_index_data.data(), send_sizes.data(),

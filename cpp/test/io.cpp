@@ -36,7 +36,7 @@ void test_fides_mesh()
   auto x = mesh->geometry().x();
 
   // Move all coordinates of the mesh geometry
-  std::transform(x.begin(), x.end(), x.begin(), [](auto x) { return x + 1; });
+  std::ranges::for_each(x, [](auto& x) { x += 1; });
   writer.write(0.2);
 
   // Only move x coordinate
