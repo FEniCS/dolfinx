@@ -47,8 +47,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
                                       dofs_view_md.data_handle()
                                           + dofs_view_md.size());
   dolfinx::radix_sort(std::span(dofs_view));
-  dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
-                  dofs_view.end());
+  dofs_view.erase(std::ranges::unique(dofs_view).end(), dofs_view.end());
 
   // Get block size
   int bs_view = dofmap_view.index_map_bs();
@@ -69,9 +68,8 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   {
     std::vector<std::int32_t> indices;
     indices.reserve(dofs_view.size());
-    std::transform(dofs_view.begin(), dofs_view.end(),
-                   std::back_inserter(indices),
-                   [bs_view](auto idx) { return idx / bs_view; });
+    std::ranges::transform(dofs_view, std::back_inserter(indices),
+                           [bs_view](auto idx) { return idx / bs_view; });
     auto [_index_map, _sub_imap_to_imap] = common::create_sub_index_map(
         *dofmap_view.index_map, indices, common::IndexMapOrder::preserve);
     index_map = std::make_shared<common::IndexMap>(std::move(_index_map));

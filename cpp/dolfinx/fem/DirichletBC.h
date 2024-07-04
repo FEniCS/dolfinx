@@ -125,7 +125,7 @@ std::vector<std::int32_t> locate_dofs_geometrical(const FunctionSpace<T>& V,
   const std::vector<std::int8_t> marked_dofs = marker_fn(x);
 
   std::vector<std::int32_t> dofs;
-  dofs.reserve(std::count(marked_dofs.begin(), marked_dofs.end(), true));
+  dofs.reserve(std::ranges::count(marked_dofs, true));
   for (std::size_t i = 0; i < marked_dofs.size(); ++i)
   {
     if (marked_dofs[i])
@@ -229,16 +229,16 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
   }
 
   // Remove duplicates
-  std::sort(bc_dofs.begin(), bc_dofs.end());
-  bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
+  std::ranges::sort(bc_dofs);
+  bc_dofs.erase(std::ranges::unique(bc_dofs).end(), bc_dofs.end());
 
   // Copy to separate array
   std::array dofs = {std::vector<std::int32_t>(bc_dofs.size()),
                      std::vector<std::int32_t>(bc_dofs.size())};
-  std::transform(bc_dofs.cbegin(), bc_dofs.cend(), dofs[0].begin(),
-                 [](auto dof) { return dof[0]; });
-  std::transform(bc_dofs.cbegin(), bc_dofs.cend(), dofs[1].begin(),
-                 [](auto dof) { return dof[1]; });
+  std::ranges::transform(bc_dofs, dofs[0].begin(),
+                         [](auto dof) { return dof[0]; });
+  std::ranges::transform(bc_dofs, dofs[1].begin(),
+                         [](auto dof) { return dof[1]; });
 
   return dofs;
 }
@@ -264,7 +264,7 @@ private:
     int bs = dofmap.index_map_bs();
     std::int32_t map_size = dofmap.index_map->size_local();
     std::int32_t owned_size = bs * map_size;
-    auto it = std::lower_bound(dofs.begin(), dofs.end(), owned_size);
+    auto it = std::ranges::lower_bound(dofs, owned_size);
     return std::distance(dofs.begin(), it);
   }
 
@@ -539,12 +539,12 @@ public:
       auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
       const std::vector<T>& value = g->value;
       std::int32_t bs = _function_space->dofmap()->bs();
-      std::for_each(_dofs0.begin(), _dofs0.end(),
-                    [&x, &x0, &value, scale, bs](auto dof)
-                    {
-                      if (dof < (std::int32_t)x.size())
-                        x[dof] = scale * (value[dof % bs] - x0[dof]);
-                    });
+      std::ranges::for_each(_dofs0,
+                            [&x, &x0, &value, scale, bs](auto dof)
+                            {
+                              if (dof < (std::int32_t)x.size())
+                                x[dof] = scale * (value[dof % bs] - x0[dof]);
+                            });
     }
   }
 

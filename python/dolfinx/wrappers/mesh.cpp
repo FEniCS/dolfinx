@@ -60,10 +60,9 @@ auto create_cell_partitioner_py(Functor p)
              std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb)
   {
     std::vector<std::span<const std::int64_t>> cells;
-    std::transform(cells_nb.begin(), cells_nb.end(), std::back_inserter(cells),
-                   [](auto c) {
-                     return std::span<const std::int64_t>(c.data(), c.size());
-                   });
+    std::ranges::transform(
+        cells_nb, std::back_inserter(cells), [](auto c)
+        { return std::span<const std::int64_t>(c.data(), c.size()); });
     return p(comm.get(), n, cell_types, cells);
   };
 }
@@ -90,12 +89,13 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
                const std::vector<std::span<const std::int64_t>>& cells)
     {
       std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
-      std::transform(cells.begin(), cells.end(), std::back_inserter(cells_nb),
-                     [](auto c)
-                     {
-                       return nb::ndarray<const std::int64_t, nb::numpy>(
-                           c.data(), {c.size()}, nb::handle());
-                     });
+      std::ranges::transform(
+          cells, std::back_inserter(cells_nb),
+          [](auto c)
+          {
+            return nb::ndarray<const std::int64_t, nb::numpy>(
+                c.data(), {c.size()}, nb::handle());
+          });
 
       return p(dolfinx_wrappers::MPICommWrapper(comm), n, cell_types, cells_nb);
     };
@@ -304,8 +304,8 @@ void declare_mesh(nb::module_& m, std::string type)
                       const std::vector<std::span<const std::int64_t>>& cells)
             {
               std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
-              std::transform(
-                  cells.begin(), cells.end(), std::back_inserter(cells_nb),
+              std::ranges::transform(
+                  cells, std::back_inserter(cells_nb),
                   [](auto c)
                   {
                     return nb::ndarray<const std::int64_t, nb::numpy>(
@@ -340,13 +340,13 @@ void declare_mesh(nb::module_& m, std::string type)
                     const std::vector<std::span<const std::int64_t>>& cells)
           {
             std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
-            std::transform(cells.begin(), cells.end(),
-                           std::back_inserter(cells_nb),
-                           [](auto c)
-                           {
-                             return nb::ndarray<const std::int64_t, nb::numpy>(
-                                 c.data(), {c.size()}, nb::handle());
-                           });
+            std::ranges::transform(
+                cells, std::back_inserter(cells_nb),
+                [](auto c)
+                {
+                  return nb::ndarray<const std::int64_t, nb::numpy>(
+                      c.data(), {c.size()}, nb::handle());
+                });
             return p(MPICommWrapper(comm), n, cell_types, cells_nb);
           };
           return dolfinx::mesh::create_mesh(

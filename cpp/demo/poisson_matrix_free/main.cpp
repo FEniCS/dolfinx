@@ -62,9 +62,8 @@ namespace linalg
 /// @param[in] y
 void axpy(auto&& r, auto alpha, auto&& x, auto&& y)
 {
-  std::transform(x.array().begin(), x.array().end(), y.array().begin(),
-                 r.mutable_array().begin(),
-                 [alpha](auto x, auto y) { return alpha * x + y; });
+  std::ranges::transform(x.array(), y.array(), r.mutable_array().begin(),
+                         [alpha](auto x, auto y) { return alpha * x + y; });
 }
 
 /// @brief Solve problem A.x = b using the conjugate gradient (CG)
@@ -203,8 +202,7 @@ void solver(MPI_Comm comm)
     y.set(0.0);
 
     // Update coefficient ui (just copy data from x to ui)
-    std::copy(x.array().begin(), x.array().end(),
-              ui->x()->mutable_array().begin());
+    std::ranges::copy(x.array(), ui->x()->mutable_array().begin());
 
     // Compute action of A on x
     fem::pack_coefficients(*M, coeff);

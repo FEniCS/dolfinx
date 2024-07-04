@@ -129,7 +129,7 @@ void discrete_gradient(mesh::Topology& topology,
   std::vector<T> Ae(Ab.size());
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
-    std::copy(Ab.cbegin(), Ab.cend(), Ae.begin());
+    std::ranges::copy(Ab, Ae.begin());
     apply_inverse_dof_transform(Ae, cell_info, c, ndofs0);
     mat_set(dofmap1.cell_dofs(c), dofmap0.cell_dofs(c), Ae);
   }
@@ -230,10 +230,9 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   e0->tabulate(basis_derivatives_reference0_b, X, Xshape, 0);
 
   // Clamp values
-  std::transform(basis_derivatives_reference0_b.begin(),
-                 basis_derivatives_reference0_b.end(),
-                 basis_derivatives_reference0_b.begin(), [atol = 1e-14](auto x)
-                 { return std::abs(x) < atol ? 0.0 : x; });
+  std::ranges::transform(
+      basis_derivatives_reference0_b, basis_derivatives_reference0_b.begin(),
+      [atol = 1e-14](auto x) { return std::abs(x) < atol ? 0.0 : x; });
 
   // Create working arrays
   std::vector<U> basis_reference0_b(Xshape[0] * dim0 * value_size_ref0);
@@ -302,7 +301,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
     }
 
     // Compute Jacobians and reference points for current cell
-    std::fill(J_b.begin(), J_b.end(), 0);
+    std::ranges::fill(J_b, 0);
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       auto dphi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(

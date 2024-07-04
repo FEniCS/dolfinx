@@ -57,7 +57,7 @@ la::petsc::create_vectors(MPI_Comm comm,
     VecCreateMPI(comm, x[i].size(), PETSC_DETERMINE, &v[i]);
     PetscScalar* data;
     VecGetArray(v[i], &data);
-    std::copy(x[i].begin(), x[i].end(), data);
+    std::ranges::copy(x[i], data);
     VecRestoreArray(v[i], &data);
   }
 

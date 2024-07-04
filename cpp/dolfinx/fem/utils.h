@@ -70,7 +70,7 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
     // Get local index of facet with respect to the cell
     std::int32_t cell = cells[c];
     auto cell_facets = c_to_f.links(cell);
-    auto facet_it = std::find(cell_facets.begin(), cell_facets.end(), f);
+    auto facet_it = std::ranges::find(cell_facets, f);
     assert(facet_it != cell_facets.end());
     int local_f = std::distance(cell_facets.begin(), facet_it);
     cell_local_facet_pairs[2 * c] = cell;
@@ -469,9 +469,9 @@ Form<T, U> create_form_factory(
       else if (sd != subdomains.end())
       {
         // NOTE: This requires that pairs are sorted
-        auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
-                                   [](auto& pair, auto val)
-                                   { return pair.first < val; });
+        auto it
+            = std::ranges::lower_bound(sd->second, id, [](auto& pair, auto val)
+                                       { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
           itg.first->second.emplace_back(id, k, it->second, active_coeffs);
       }
@@ -551,9 +551,9 @@ Form<T, U> create_form_factory(
       else if (sd != subdomains.end())
       {
         // NOTE: This requires that pairs are sorted
-        auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
-                                   [](auto& pair, auto val)
-                                   { return pair.first < val; });
+        auto it
+            = std::ranges::lower_bound(sd->second, id, [](auto& pair, auto val)
+                                       { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
           itg.first->second.emplace_back(id, k, it->second, active_coeffs);
       }
@@ -635,9 +635,9 @@ Form<T, U> create_form_factory(
       }
       else if (sd != subdomains.end())
       {
-        auto it = std::lower_bound(sd->second.begin(), sd->second.end(), id,
-                                   [](auto& pair, auto val)
-                                   { return pair.first < val; });
+        auto it
+            = std::ranges::lower_bound(sd->second, id, [](auto& pair, auto val)
+                                       { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
           itg.first->second.emplace_back(id, k, it->second, active_coeffs);
       }
@@ -1313,8 +1313,7 @@ std::vector<typename U::scalar_type> pack_constants(const U& u)
   for (auto& constant : constants)
   {
     const std::vector<T>& value = constant->value;
-    std::copy(value.begin(), value.end(),
-              std::next(constant_values.begin(), offset));
+    std::ranges::copy(value, std::next(constant_values.begin(), offset));
     offset += value.size();
   }
 

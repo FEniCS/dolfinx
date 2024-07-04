@@ -73,7 +73,7 @@ graph::build::distribute(MPI_Comm comm,
     for (auto d : di)
       dest_to_index.push_back({d, i, di[0]});
   }
-  std::sort(dest_to_index.begin(), dest_to_index.end());
+  std::ranges::sort(dest_to_index);
 
   // Build list of unique dest ranks and count number of rows to send to
   // each dest (by neighbourhood rank)
@@ -100,7 +100,7 @@ graph::build::distribute(MPI_Comm comm,
   // Determine source ranks. Sort ranks to make distribution
   // deterministic.
   std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
-  std::sort(src.begin(), src.end());
+  std::ranges::sort(src);
 
   // Create neighbourhood communicator
   MPI_Comm neigh_comm;
@@ -133,7 +133,7 @@ graph::build::distribute(MPI_Comm comm,
 
       std::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
       auto row = list.links(pos);
-      std::copy(row.begin(), row.end(), b.begin());
+      std::ranges::copy(row, b.begin());
 
       auto info = b.last(3);
       info[0] = row.size();          // Number of edges for node
@@ -206,8 +206,8 @@ graph::build::distribute(MPI_Comm comm,
     }
   }
 
-  std::transform(offsets1.begin(), offsets1.end(), offsets1.begin(),
-                 [off = offsets0.back()](auto x) { return x + off; });
+  std::ranges::transform(offsets1, offsets1.begin(),
+                         [off = offsets0.back()](auto x) { return x + off; });
   data0.insert(data0.end(), data1.begin(), data1.end());
   offsets0.insert(offsets0.end(), std::next(offsets1.begin()), offsets1.end());
   src_ranks0.insert(src_ranks0.end(), src_ranks1.begin(), src_ranks1.end());
@@ -255,7 +255,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
     for (auto d : di)
       dest_to_index.push_back({d, i, di[0]});
   }
-  std::sort(dest_to_index.begin(), dest_to_index.end());
+  std::ranges::sort(dest_to_index);
 
   // Build list of unique dest ranks and count number of rows to send to
   // each dest (by neighbourhood rank)
@@ -282,7 +282,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   // Determine source ranks. Sort ranks to make distribution
   // deterministic.
   std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
-  std::sort(src.begin(), src.end());
+  std::ranges::sort(src);
 
   // Create neighbourhood communicator
   MPI_Comm neigh_comm;
@@ -315,7 +315,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
 
       std::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
       std::span row(list.data() + pos * shape[1], shape[1]);
-      std::copy(row.begin(), row.end(), b.begin());
+      std::ranges::copy(row, b.begin());
 
       auto info = b.last(2);
       info[0] = dest_data[2];        // Owning rank
@@ -371,15 +371,14 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
     auto edges = row.first(shape[1]);
     if (owner == rank)
     {
-      std::copy(edges.begin(), edges.end(),
-                std::next(data.begin(), i_owned * shape[1]));
+      std::ranges::copy(edges, std::next(data.begin(), i_owned * shape[1]));
       global_indices[i_owned] = orig_global_index;
       ++i_owned;
     }
     else
     {
-      std::copy(edges.begin(), edges.end(),
-                std::next(data.begin(), (i_ghost + num_owned_r) * shape[1]));
+      std::ranges::copy(
+          edges, std::next(data.begin(), (i_ghost + num_owned_r) * shape[1]));
       global_indices[i_ghost + num_owned_r] = orig_global_index;
       ghost_index_owner[i_ghost] = owner;
       ++i_ghost;
@@ -517,16 +516,15 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
 
   // Build (old id,  new id) pairs
   std::vector<std::array<std::int64_t, 2>> old_to_new1(send_data.size());
-  std::transform(send_data.begin(), send_data.end(), new_recv.begin(),
-                 old_to_new1.begin(),
-                 [](auto idx_old, auto idx_new) ->
-                 typename decltype(old_to_new1)::value_type
-                 { return {idx_old, idx_new}; });
-  std::sort(old_to_new1.begin(), old_to_new1.end());
+  std::ranges::transform(send_data, new_recv, old_to_new1.begin(),
+                         [](auto idx_old, auto idx_new) ->
+                         typename decltype(old_to_new1)::value_type
+                         { return {idx_old, idx_new}; });
+  std::ranges::sort(old_to_new1);
 
   std::vector<std::int64_t> ghost_global_indices(ghost_indices.size());
-  std::transform(
-      ghost_indices.begin(), ghost_indices.end(), ghost_global_indices.begin(),
+  std::ranges::transform(
+      ghost_indices, ghost_global_indices.begin(),
       [&old_to_new1](auto q)
       {
         auto it
@@ -552,7 +550,7 @@ graph::build::compute_local_to_global(std::span<const std::int64_t> global,
   if (global.size() != local.size())
     throw std::runtime_error("Data size mismatch.");
 
-  std::int32_t max_local_idx = *std::max_element(local.begin(), local.end());
+  std::int32_t max_local_idx = *std::ranges::max_element(local);
   std::vector<std::int64_t> local_to_global_list(max_local_idx + 1, -1);
   for (std::size_t i = 0; i < local.size(); ++i)
   {
@@ -575,22 +573,22 @@ std::vector<std::int32_t> graph::build::compute_local_to_local(
   global_to_local1.reserve(local1_to_global.size());
   for (auto idx_global : local1_to_global)
     global_to_local1.push_back({idx_global, global_to_local1.size()});
-  std::sort(global_to_local1.begin(), global_to_local1.end());
+  std::ranges::sort(global_to_local1);
 
   // Compute inverse map for local0_to_local1
   std::vector<std::int32_t> local0_to_local1;
   local0_to_local1.reserve(local0_to_global.size());
-  std::transform(local0_to_global.begin(), local0_to_global.end(),
-                 std::back_inserter(local0_to_local1),
-                 [&global_to_local1](auto l2g)
-                 {
-                   auto it = std::lower_bound(
-                       global_to_local1.begin(), global_to_local1.end(),
-                       typename decltype(global_to_local1)::value_type(l2g, 0),
-                       [](auto& a, auto& b) { return a.first < b.first; });
-                   assert(it != global_to_local1.end() and it->first == l2g);
-                   return it->second;
-                 });
+  std::ranges::transform(
+      local0_to_global, std::back_inserter(local0_to_local1),
+      [&global_to_local1](auto l2g)
+      {
+        auto it = std::ranges::lower_bound(
+            global_to_local1,
+            typename decltype(global_to_local1)::value_type(l2g, 0),
+            [](auto& a, auto& b) { return a.first < b.first; });
+        assert(it != global_to_local1.end() and it->first == l2g);
+        return it->second;
+      });
 
   return local0_to_local1;
 }

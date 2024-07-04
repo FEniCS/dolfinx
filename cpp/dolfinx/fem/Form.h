@@ -210,8 +210,8 @@ public:
     // Store kernels, looping over integrals by domain type (dimension)
     for (auto&& [domain_type, data] : integrals)
     {
-      if (!std::is_sorted(data.begin(), data.end(),
-                          [](auto& a, auto& b) { return a.id < b.id; }))
+      if (!std::ranges::is_sorted(data,
+                                  [](auto& a, auto& b) { return a.id < b.id; }))
       {
         throw std::runtime_error("Integral IDs not sorted");
       }
@@ -268,9 +268,8 @@ public:
   kernel(IntegralType type, int i) const
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
-    auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
-                               [](auto& itg_data, int i)
-                               { return itg_data.id < i; });
+    auto it = std::ranges::lower_bound(integrals, i, [](auto& itg_data, int i)
+                                       { return itg_data.id < i; });
     if (it != integrals.end() and it->id == i)
       return it->kernel;
     else
@@ -351,9 +350,8 @@ public:
   std::span<const std::int32_t> domain(IntegralType type, int i) const
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
-    auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
-                               [](auto& itg_data, int i)
-                               { return itg_data.id < i; });
+    auto it = std::ranges::lower_bound(integrals, i, [](auto& itg_data, int i)
+                                       { return itg_data.id < i; });
     if (it != integrals.end() and it->id == i)
       return it->entities;
     else
@@ -387,9 +385,8 @@ public:
       {
       case IntegralType::cell:
       {
-        std::transform(entities.begin(), entities.end(),
-                       std::back_inserter(mapped_entities),
-                       [&entity_map](auto e) { return entity_map[e]; });
+        std::ranges::transform(entities, std::back_inserter(mapped_entities),
+                               [&entity_map](auto e) { return entity_map[e]; });
         break;
       }
       case IntegralType::exterior_facet:

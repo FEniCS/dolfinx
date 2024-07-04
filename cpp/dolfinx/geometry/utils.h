@@ -99,7 +99,7 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
 
       // Find local number of entity wrt cell
       auto cell_entities = c_to_e->links(c);
-      auto it0 = std::find(cell_entities.begin(), cell_entities.end(), index);
+      auto it0 = std::ranges::find(cell_entities, index);
       assert(it0 != cell_entities.end());
       const int local_cell_entity = std::distance(cell_entities.begin(), it0);
 
@@ -705,12 +705,11 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
 
   // Get unique list of outgoing ranks
   std::vector<std::int32_t> out_ranks = collisions.array();
-  std::sort(out_ranks.begin(), out_ranks.end());
-  out_ranks.erase(std::unique(out_ranks.begin(), out_ranks.end()),
-                  out_ranks.end());
+  std::ranges::sort(out_ranks);
+  out_ranks.erase(std::ranges::unique(out_ranks).end(), out_ranks.end());
   // Compute incoming edges (source processes)
   std::vector in_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, out_ranks);
-  std::sort(in_ranks.begin(), in_ranks.end());
+  std::ranges::sort(in_ranks);
 
   // Create neighborhood communicator in forward direction
   MPI_Comm forward_comm;
@@ -812,15 +811,11 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
   // Reuse sizes and offsets from first communication set
   // but divide by three
   {
-    auto rescale = [](auto& x)
-    {
-      std::transform(x.cbegin(), x.cend(), x.begin(),
-                     [](auto e) { return (e / 3); });
-    };
-    rescale(recv_sizes);
-    rescale(recv_offsets);
-    rescale(send_sizes);
-    rescale(send_offsets);
+    auto rescale = [](auto& e) { return (e /= 3); };
+    std::for_each(recv_sizes, rescale);
+    std::for_each(recv_offsets, rescale);
+    std::for_each(send_sizes, rescale);
+    std::for_each(send_offsets, rescale);
 
     // The communication is reversed, so swap recv to send offsets
     std::swap(recv_sizes, send_sizes);
@@ -934,7 +929,7 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
 
   // Pack ownership data
   std::vector<std::int32_t> send_owners(send_offsets.back());
-  std::fill(counter.begin(), counter.end(), 0);
+  std::ranges::fill(counter, 0);
   for (std::size_t i = 0; i < points.size() / 3; ++i)
   {
     for (auto p : collisions.links(i))

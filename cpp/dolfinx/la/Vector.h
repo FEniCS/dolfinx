@@ -78,7 +78,7 @@ public:
 
   /// Set all entries (including ghosts)
   /// @param[in] v The value to set all entries to (on calling rank)
-  void set(value_type v) { std::fill(_x.begin(), _x.end(), v); }
+  void set(value_type v) { std::ranges::fill(_x, v); }
 
   /// Begin scatter of local data from owner to ghosts on other ranks
   /// @note Collective MPI operation
@@ -324,9 +324,9 @@ void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
 
       // basis_i <- basis_i - dot_ij  basis_j
       auto dot_ij = inner_product(bi, bj);
-      std::transform(bj.array().begin(), bj.array().end(), bi.array().begin(),
-                     bi.mutable_array().begin(),
-                     [dot_ij](auto xj, auto xi) { return xi - dot_ij * xj; });
+      std::ranges::transform(bj.array(), bi.array(), bi.mutable_array().begin(),
+                             [dot_ij](auto xj, auto xi)
+                             { return xi - dot_ij * xj; });
     }
 
     // Normalise basis function
@@ -336,9 +336,8 @@ void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
       throw std::runtime_error(
           "Linear dependency detected. Cannot orthogonalize.");
     }
-    std::transform(bi.array().begin(), bi.array().end(),
-                   bi.mutable_array().begin(),
-                   [norm](auto x) { return x / norm; });
+    std::ranges::transform(bi.array(), bi.mutable_array().begin(),
+                           [norm](auto x) { return x / norm; });
   }
 }
 

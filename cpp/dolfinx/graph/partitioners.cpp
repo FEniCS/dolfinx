@@ -70,7 +70,7 @@ graph::AdjacencyList<int> compute_destination_ranks(
     {
       if (node1 < range0 or node1 >= range1)
       {
-        auto it = std::upper_bound(node_disp.begin(), node_disp.end(), node1);
+        auto it = std::ranges::upper_bound(node_disp, node1);
         int remote_rank = std::distance(node_disp.begin(), it) - 1;
         node_to_dest.push_back(
             {remote_rank, node1, static_cast<std::int64_t>(part[node0])});
@@ -80,8 +80,8 @@ graph::AdjacencyList<int> compute_destination_ranks(
             {rank, node1, static_cast<std::int64_t>(part[node0])});
     }
   }
-  std::sort(node_to_dest.begin(), node_to_dest.end());
-  node_to_dest.erase(std::unique(node_to_dest.begin(), node_to_dest.end()),
+  std::ranges::sort(node_to_dest);
+  node_to_dest.erase(std::ranges::unique(node_to_dest).end(),
                      node_to_dest.end());
 
   // Build send data and buffer
@@ -163,10 +163,9 @@ graph::AdjacencyList<int> compute_destination_ranks(
     std::int32_t idx_local = idx - range0;
     local_node_to_dest.push_back({idx_local, d});
   }
-  std::sort(local_node_to_dest.begin(), local_node_to_dest.end());
-  local_node_to_dest.erase(
-      std::unique(local_node_to_dest.begin(), local_node_to_dest.end()),
-      local_node_to_dest.end());
+  std::ranges::sort(local_node_to_dest);
+  local_node_to_dest.erase(std::ranges::unique(local_node_to_dest).end(),
+                           local_node_to_dest.end());
 
   // Compute offsets
   std::vector<std::int32_t> offsets(graph.num_nodes() + 1, 0);
@@ -192,7 +191,7 @@ graph::AdjacencyList<int> compute_destination_ranks(
   for (std::int32_t i = 0; i < g.num_nodes(); ++i)
   {
     auto d = g.links(i);
-    auto it = std::find(d.begin(), d.end(), part[i]);
+    auto it = std::ranges::find(d, part[i]);
     assert(it != d.end());
     std::iter_swap(d.begin(), it);
   }
@@ -410,12 +409,11 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       std::array<std::int64_t, 2> range
           = {offset_global, offset_global + num_owned};
       std::vector<std::int64_t> ghost_edges;
-      std::copy_if(graph.array().begin(), graph.array().end(),
-                   std::back_inserter(ghost_edges),
-                   [range](auto e) { return e < range[0] or e >= range[1]; });
-      std::sort(ghost_edges.begin(), ghost_edges.end());
-      auto it = std::unique(ghost_edges.begin(), ghost_edges.end());
-      num_ghost_nodes = std::distance(ghost_edges.begin(), it);
+      std::ranges::copy_if(graph.array(), std::back_inserter(ghost_edges),
+                           [range](auto e)
+                           { return e < range[0] or e >= range[1]; });
+      std::ranges::sort(ghost_edges);
+      num_ghost_nodes = std::ranges::distance(std::ranges::unique(ghost_edges));
     }
 
     // Resize vector to hold node partition indices with enough extra

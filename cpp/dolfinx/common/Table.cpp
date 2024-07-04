@@ -40,11 +40,11 @@ void Table::set(std::string row, std::string col,
                 std::variant<std::string, int, double> value)
 {
   // Add row
-  if (std::find(_rows.begin(), _rows.end(), row) == _rows.end())
+  if (std::ranges::find(_rows, row) == _rows.end())
     _rows.push_back(row);
 
   // Add column
-  if (std::find(_cols.begin(), _cols.end(), col) == _cols.end())
+  if (std::ranges::find(_cols, col) == _cols.end())
     _cols.push_back(col);
 
   // Store value

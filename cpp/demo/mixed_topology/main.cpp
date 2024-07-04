@@ -94,10 +94,9 @@ int main(int argc, char* argv[])
     boundary_vertices.push_back(ny + (ny + 1) * i);
   }
 
-  std::sort(boundary_vertices.begin(), boundary_vertices.end());
-  boundary_vertices.erase(
-      std::unique(boundary_vertices.begin(), boundary_vertices.end()),
-      boundary_vertices.end());
+  std::ranges::sort(boundary_vertices);
+  boundary_vertices.erase(std::ranges::unique(boundary_vertices).end(),
+                          boundary_vertices.end());
 
   std::vector<mesh::CellType> cell_types{mesh::CellType::quadrilateral,
                                          mesh::CellType::triangle};

@@ -170,10 +170,9 @@ _build_from_point(std::span<std::pair<std::array<T, 3>, std::int32_t>> points,
 
   // Sort bounding boxes along longest axis
   std::array<T, 3> b_diff;
-  std::transform(b1.begin(), b1.end(), b0.begin(), b_diff.begin(),
-                 std::minus<T>());
-  const std::size_t axis = std::distance(
-      b_diff.begin(), std::max_element(b_diff.begin(), b_diff.end()));
+  std::ranges::transform(b1, b0, b_diff.begin(), std::minus<T>());
+  const std::size_t axis
+      = std::distance(b_diff.begin(), std::ranges::max_element(b_diff));
 
   auto middle = std::next(points.begin(), points.size() / 2);
   std::nth_element(points.begin(), middle, points.end(),

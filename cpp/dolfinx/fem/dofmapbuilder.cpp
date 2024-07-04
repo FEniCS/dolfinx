@@ -191,14 +191,14 @@ build_basic_dofmaps(
         if (!entity_dofs_d[e].empty())
         {
           // There is a dof on this entity... find entity type index
-          auto et_it = std::find(entity_types[d].begin(), entity_types[d].end(),
-                                 mesh::cell_entity_type(cell_type, d, e));
+          auto et_it = std::ranges::find(
+              entity_types[d], mesh::cell_entity_type(cell_type, d, e));
           assert(et_it != entity_types[d].end());
           int et_index = std::distance(entity_types[d].begin(), et_it);
 
-          auto required_entity_it
-              = std::find(required_dim_et.begin(), required_dim_et.end(),
-                          std::pair<std::int8_t, std::int8_t>{d, et_index});
+          auto required_entity_it = std::ranges::find(
+              required_dim_et,
+              std::pair<std::int8_t, std::int8_t>{d, et_index});
           if (required_entity_it == required_dim_et.end())
           {
             // Save information for this (d, et) combination
@@ -390,8 +390,8 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 
   // Get mesh entity ownership offset for each IndexMap
   std::vector<std::int32_t> offset(index_maps.size(), -1);
-  std::transform(index_maps.begin(), index_maps.end(), offset.begin(),
-                 [](auto map) { return map->size_local(); });
+  std::ranges::transform(index_maps, offset.begin(),
+                         [](auto map) { return map->size_local(); });
 
   // Compute the number of dofs 'owned' by this process
   const std::int32_t owned_size = std::accumulate(
@@ -441,10 +441,10 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     // Apply graph reordering to owned dofs
     const std::vector<int> node_remap = reorder_owned(
         dofmaps, owned_size, original_to_contiguous, reorder_fn);
-    std::transform(original_to_contiguous.begin(), original_to_contiguous.end(),
-                   original_to_contiguous.begin(),
-                   [&node_remap, owned_size](auto index)
-                   { return index < owned_size ? node_remap[index] : index; });
+    std::ranges::transform(
+        original_to_contiguous, original_to_contiguous.begin(),
+        [&node_remap, owned_size](auto index)
+        { return index < owned_size ? node_remap[index] : index; });
   }
 
   return {std::move(original_to_contiguous), owned_size};
@@ -484,9 +484,9 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
     shared_entity[d] = std::vector<std::int8_t>(map->size_local(), false);
     const std::vector<std::int32_t> forward_indices = map->shared_indices();
-    std::for_each(forward_indices.begin(), forward_indices.end(),
-                  [&entities = shared_entity[d]](auto idx)
-                  { entities[idx] = true; });
+    std::ranges::for_each(forward_indices,
+                          [&entities = shared_entity[d]](auto idx)
+                          { entities[idx] = true; });
   }
 
   // Build list of (global old, global new) index pairs for dofs that
@@ -579,13 +579,12 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     global_old_new.reserve(disp_recv[d].back());
     for (std::size_t j = 0; j < all_dofs_received[d].size(); j += 2)
     {
-      const auto pos
-          = std::upper_bound(disp_recv[d].begin(), disp_recv[d].end(), j);
+      const auto pos = std::ranges::upper_bound(disp_recv[d], j);
       const int owner = std::distance(disp_recv[d].begin(), pos) - 1;
       global_old_new.push_back(
           {all_dofs_received[d][j], {all_dofs_received[d][j + 1], src[owner]}});
     }
-    std::sort(global_old_new.begin(), global_old_new.end());
+    std::ranges::sort(global_old_new);
 
     // Build the dimension d part of local_to_global_new vector
     for (std::size_t i = 0; i < local_new_to_global_old[d].size(); i += 2)
@@ -593,9 +592,9 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
       std::pair<std::int64_t, std::pair<int64_t, int>> idx_old
           = {local_new_to_global_old[d][i], {0, 0}};
 
-      auto it = std::lower_bound(global_old_new.begin(), global_old_new.end(),
-                                 idx_old, [](auto& a, auto& b)
-                                 { return a.first < b.first; });
+      auto it = std::ranges::lower_bound(global_old_new, idx_old,
+                                         [](auto& a, auto& b)
+                                         { return a.first < b.first; });
       assert(it != global_old_new.end() and it->first == idx_old.first);
 
       local_to_global_new[local_new_to_global_old[d][i + 1]] = it->second.first;

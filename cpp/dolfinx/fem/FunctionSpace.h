@@ -422,9 +422,9 @@ common_function_spaces(
   }
 
   // Check that there are no null entries
-  if (std::find(spaces0.begin(), spaces0.end(), nullptr) != spaces0.end())
+  if (std::ranges::find(spaces0, nullptr) != spaces0.end())
     throw std::runtime_error("Could not deduce all block test spaces.");
-  if (std::find(spaces1.begin(), spaces1.end(), nullptr) != spaces1.end())
+  if (std::ranges::find(spaces1, nullptr) != spaces1.end())
     throw std::runtime_error("Could not deduce all block trial spaces.");
 
   return {spaces0, spaces1};

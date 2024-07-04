@@ -162,20 +162,18 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
   // Build unique set of the sorted src_ranks
   std::vector<std::int32_t> out_ranks(src_ranks.size());
   out_ranks.assign(src_ranks.begin(), src_ranks.end());
-  out_ranks.erase(std::unique(out_ranks.begin(), out_ranks.end()),
-                  out_ranks.end());
+  out_ranks.erase(std::ranges::unique(out_ranks).end(), out_ranks.end());
   out_ranks.reserve(out_ranks.size() + 1);
 
   // Remove negative entries from dest_ranks
   std::vector<std::int32_t> in_ranks;
   in_ranks.reserve(dest_ranks.size());
-  std::copy_if(dest_ranks.begin(), dest_ranks.end(),
-               std::back_inserter(in_ranks),
-               [](auto rank) { return rank >= 0; });
+  std::ranges::copy_if(dest_ranks, std::back_inserter(in_ranks),
+                       [](auto rank) { return rank >= 0; });
 
   // Create unique set of sorted in-ranks
-  std::sort(in_ranks.begin(), in_ranks.end());
-  in_ranks.erase(std::unique(in_ranks.begin(), in_ranks.end()), in_ranks.end());
+  std::ranges::sort(in_ranks);
+  in_ranks.erase(std::ranges::unique(in_ranks).end(), in_ranks.end());
   in_ranks.reserve(in_ranks.size() + 1);
 
   // Create neighborhood communicator
@@ -195,8 +193,8 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
       rank_to_neighbor[in_ranks[i]] = i;
 
     // Compute receive sizes
-    std::for_each(
-        dest_ranks.begin(), dest_ranks.end(),
+    std::ranges::for_each(
+        dest_ranks,
         [&dest_ranks, &rank_to_neighbor, &recv_sizes, block_size](auto rank)
         {
           if (rank >= 0)
@@ -234,9 +232,9 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
       rank_to_neighbor[out_ranks[i]] = i;
 
     // Compute send sizes
-    std::for_each(src_ranks.begin(), src_ranks.end(),
-                  [&rank_to_neighbor, &send_sizes, block_size](auto rank)
-                  { send_sizes[rank_to_neighbor[rank]] += block_size; });
+    std::ranges::for_each(
+        src_ranks, [&rank_to_neighbor, &send_sizes, block_size](auto rank)
+        { send_sizes[rank_to_neighbor[rank]] += block_size; });
   }
 
   // Compute sending offsets
@@ -254,7 +252,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
   MPI_Comm_free(&reverse_comm);
 
   // Insert values received from neighborhood communicator in output span
-  std::fill(recv_values.begin(), recv_values.end(), T(0));
+  std::ranges::fill(recv_values, T(0));
   for (std::size_t i = 0; i < comm_to_output.size(); i++)
   {
     auto vals = std::next(recv_values.begin(), comm_to_output[i]);
@@ -399,7 +397,7 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
 
     // FIXME: Get compile-time ranges from Basix
     // Apply interpolation operator
-    std::fill(local1.begin(), local1.end(), 0);
+    std::ranges::fill(local1, 0);
     for (std::size_t i = 0; i < im_shape[0]; ++i)
       for (std::size_t j = 0; j < im_shape[1]; ++j)
         local1[i] += static_cast<X>(i_m[im_shape[1] * i + j]) * local0[j];
@@ -563,7 +561,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
     }
 
     // Compute Jacobians and reference points for current cell
-    std::fill(J_b.begin(), J_b.end(), 0);
+    std::ranges::fill(J_b, 0);
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       auto dphi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
@@ -964,7 +962,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
       }
 
       // Compute J, detJ and K
-      std::fill(J_b.begin(), J_b.end(), 0);
+      std::ranges::fill(J_b, 0);
       for (std::size_t p = 0; p < Xshape[0]; ++p)
       {
         auto _dphi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
@@ -1178,7 +1176,7 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
     // Same function spaces and on whole mesh
     std::span<T> u1_array = u1.x()->mutable_array();
     std::span<const T> u0_array = u0.x()->array();
-    std::copy(u0_array.begin(), u0_array.end(), u1_array.begin());
+    std::ranges::copy(u0_array, u1_array.begin());
   }
   else
   {

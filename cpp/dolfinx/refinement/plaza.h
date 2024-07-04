@@ -85,21 +85,19 @@ auto compute_parent_facets(std::span<const std::int32_t> simplex_set)
         {
           for (int j = 0; j < tdim; ++j)
             cf[j] = simplex_set[cc * 3 + facet_table_2d[fci][j]];
-          std::sort(cf.begin(), cf.end());
-          auto it = std::set_intersection(facet_table_2d[fpi].begin(),
-                                          facet_table_2d[fpi].end(), cf.begin(),
-                                          cf.end(), set_output.begin());
-          num_common_vertices = std::distance(set_output.begin(), it);
+          std::ranges::sort(cf);
+          auto [last1, last2, result_last] = std::ranges::set_intersection(
+              facet_table_2d[fpi], cf, set_output.begin());
+          num_common_vertices = std::distance(set_output.begin(), result_last);
         }
         else
         {
           for (int j = 0; j < tdim; ++j)
             cf[j] = simplex_set[cc * 4 + facet_table_3d[fci][j]];
-          std::sort(cf.begin(), cf.end());
-          auto it = std::set_intersection(facet_table_3d[fpi].begin(),
-                                          facet_table_3d[fpi].end(), cf.begin(),
-                                          cf.end(), set_output.begin());
-          num_common_vertices = std::distance(set_output.begin(), it);
+          std::ranges::sort(cf);
+          auto [last1, last2, result_last] = std::ranges::set_intersection(
+              facet_table_3d[fpi], cf, set_output.begin());
+          num_common_vertices = std::distance(set_output.begin(), result_last);
         }
 
         if (num_common_vertices == tdim)
@@ -199,12 +197,10 @@ face_long_edge(const mesh::Mesh<T>& mesh)
     auto edge_vertices = e_to_v->links(e);
 
     // Find local index of edge vertices in the cell geometry map
-    auto it0 = std::find(cell_vertices.begin(), cell_vertices.end(),
-                         edge_vertices[0]);
+    auto it0 = std::ranges::find(cell_vertices, edge_vertices[0]);
     assert(it0 != cell_vertices.end());
     const std::size_t local0 = std::distance(cell_vertices.begin(), it0);
-    auto it1 = std::find(cell_vertices.begin(), cell_vertices.end(),
-                         edge_vertices[1]);
+    auto it1 = std::ranges::find(cell_vertices, edge_vertices[1]);
     assert(it1 != cell_vertices.end());
     const std::size_t local1 = std::distance(cell_vertices.begin(), it1);
 
@@ -580,18 +576,17 @@ compute_refinement_data(const mesh::Mesh<T>& mesh, Option option)
   // Create unique list of ranks that share edges (owners of ghosts
   // plus ranks that ghost owned indices)
   std::vector<int> ranks(edge_ranks.array().begin(), edge_ranks.array().end());
-  std::sort(ranks.begin(), ranks.end());
-  ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+  std::ranges::sort(ranks);
+  ranks.erase(std::ranges::unique(ranks).end(), ranks.end());
 
   // Convert edge_ranks from global rank to to neighbourhood ranks
-  std::transform(edge_ranks.array().begin(), edge_ranks.array().end(),
-                 edge_ranks.array().begin(),
-                 [&ranks](auto r)
-                 {
-                   auto it = std::lower_bound(ranks.begin(), ranks.end(), r);
-                   assert(it != ranks.end() and *it == r);
-                   return std::distance(ranks.begin(), it);
-                 });
+  std::ranges::transform(edge_ranks.array(), edge_ranks.array().begin(),
+                         [&ranks](auto r)
+                         {
+                           auto it = std::ranges::lower_bound(ranks, r);
+                           assert(it != ranks.end() and *it == r);
+                           return std::distance(ranks.begin(), it);
+                         });
 
   MPI_Comm comm;
   MPI_Dist_graph_create_adjacent(mesh.comm(), ranks.size(), ranks.data(),
@@ -647,18 +642,18 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   // Create unique list of ranks that share edges (owners of ghosts plus
   // ranks that ghost owned indices)
   std::vector<int> ranks(edge_ranks.array().begin(), edge_ranks.array().end());
-  std::sort(ranks.begin(), ranks.end());
+  std::ranges::sort(ranks);
   ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
 
   // Convert edge_ranks from global rank to to neighbourhood ranks
-  std::transform(edge_ranks.array().begin(), edge_ranks.array().end(),
-                 edge_ranks.array().begin(),
-                 [&ranks](auto r)
-                 {
-                   auto it = std::lower_bound(ranks.begin(), ranks.end(), r);
-                   assert(it != ranks.end() and *it == r);
-                   return std::distance(ranks.begin(), it);
-                 });
+  std::ranges::transform(edge_ranks.array(), edge_ranks.array().begin(),
+                         [&ranks](auto r)
+                         {
+                           auto it = std::lower_bound(ranks.begin(),
+                                                      ranks.end(), r);
+                           assert(it != ranks.end() and *it == r);
+                           return std::distance(ranks.begin(), it);
+                         });
 
   // Get number of neighbors
   std::vector<std::int8_t> marked_edges(
