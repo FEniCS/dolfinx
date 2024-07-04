@@ -17,6 +17,7 @@ target_sources(
   dolfinx
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ADIOS2Writers.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/cells.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/checkpointing.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Interface.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/VTKFile.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/vtk_utils.cpp
