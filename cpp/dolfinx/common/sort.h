@@ -101,7 +101,7 @@ void argsort_radix(std::span<const T> array, std::span<std::int32_t> perm)
   if (array.size() <= 1)
     return;
 
-  const auto [min, max] = std::minmax_element(array.begin(), array.end());
+  const auto [min, max] = std::ranges::minmax_element(array);
   T range = *max - *min + 1;
 
   // Sort N bits at a time
