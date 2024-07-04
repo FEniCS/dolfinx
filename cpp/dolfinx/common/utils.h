@@ -46,9 +46,9 @@ sort_unique(const U& indices, const V& values)
   std::vector<typename V::value_type> values_new;
   indices_new.reserve(data.size());
   values_new.reserve(data.size());
-  std::transform(data.begin(), it.end(), std::back_inserter(indices_new),
+  std::transform(data.begin(), it.begin(), std::back_inserter(indices_new),
                  [](auto& d) { return d.first; });
-  std::transform(data.begin(), it.end(), std::back_inserter(values_new),
+  std::transform(data.begin(), it.begin(), std::back_inserter(values_new),
                  [](auto& d) { return d.second; });
 
   return {std::move(indices_new), std::move(values_new)};
