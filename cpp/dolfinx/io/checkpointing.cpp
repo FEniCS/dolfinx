@@ -56,7 +56,7 @@ void _write(MPI_Comm comm, std::string filename, std::string tag,
 
   auto cmap = mesh->geometry().cmap();
   auto geom_layout = cmap.create_dof_layout();
-  int num_dofs_per_cell = geom_layout.num_entity_closure_dofs(mesh_dim);
+  auto num_dofs_per_cell = geom_layout.num_entity_closure_dofs(mesh_dim);
 
   io.DefineAttribute<std::string>("name", mesh->name);
   io.DefineAttribute<std::int16_t>("dim", geometry.dim());
@@ -75,22 +75,27 @@ void _write(MPI_Comm comm, std::string filename, std::string tag,
 
   adios2::Variable<std::int64_t> input_global_indices
       = io.DefineVariable<std::int64_t>(
-          "input_global_indices", {num_nodes_global}, {offset},
-          {num_nodes_local}, adios2::ConstantDims);
+          "input_global_indices", {(long unsigned int)num_nodes_global},
+          {(long unsigned int)offset}, {(long unsigned int)num_nodes_local},
+          adios2::ConstantDims);
 
-  adios2::Variable<T> x
-      = io.DefineVariable<T>("Points", {num_nodes_global, 3}, {offset, 0},
-                             {num_nodes_local, 3}, adios2::ConstantDims);
+  adios2::Variable<T> x = io.DefineVariable<T>(
+      "Points", {(long unsigned int)num_nodes_global, 3},
+      {(long unsigned int)offset, 0}, {(long unsigned int)num_nodes_local, 3},
+      adios2::ConstantDims);
 
   adios2::Variable<std::int64_t> cell_indices = io.DefineVariable<std::int64_t>(
-      "cell_indices", {num_cells_global * num_dofs_per_cell},
-      {cell_offset * num_dofs_per_cell}, {num_cells_local * num_dofs_per_cell},
+      "cell_indices",
+      {(long unsigned int)(num_cells_global * num_dofs_per_cell)},
+      {(long unsigned int)(cell_offset * num_dofs_per_cell)},
+      {(long unsigned int)(num_cells_local * num_dofs_per_cell)},
       adios2::ConstantDims);
 
   adios2::Variable<std::int32_t> cell_indices_offsets
       = io.DefineVariable<std::int32_t>(
-          "cell_indices_offsets", {num_cells_global + 1}, {cell_offset},
-          {num_cells_local + 1}, adios2::ConstantDims);
+          "cell_indices_offsets", {(long unsigned int)(num_cells_global + 1)},
+          {(long unsigned int)(cell_offset)},
+          {(long unsigned int)(num_cells_local + 1)}, adios2::ConstantDims);
 
   auto connectivity = topology->connectivity(mesh_dim, 0);
   auto indices = connectivity->array();
@@ -130,6 +135,7 @@ void _write(MPI_Comm comm, std::string filename, std::string tag,
 
 using namespace dolfinx::io::checkpointing;
 
+//-----------------------------------------------------------------------------
 void dolfinx::io::checkpointing::write(
     MPI_Comm comm, std::string filename, std::string tag,
     std::shared_ptr<dolfinx::mesh::Mesh<float>> mesh)
@@ -139,5 +145,12 @@ void dolfinx::io::checkpointing::write(
 }
 
 //-----------------------------------------------------------------------------
+void dolfinx::io::checkpointing::write(
+    MPI_Comm comm, std::string filename, std::string tag,
+    std::shared_ptr<dolfinx::mesh::Mesh<double>> mesh)
+{
+
+  _write(comm, filename, tag, mesh);
+}
 
 #endif
