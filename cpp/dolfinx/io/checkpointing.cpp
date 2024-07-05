@@ -44,15 +44,15 @@ void _write(MPI_Comm comm, std::string filename, std::string tag,
   const std::span<const T> mesh_x = geometry.x();
 
   auto imap = mesh->geometry().index_map();
-  std::int64_t num_nodes_global = imap->size_global();
-  std::int32_t num_nodes_local = imap->size_local();
-  std::int64_t offset = imap->local_range()[0];
+  std::uint64_t num_nodes_global = imap->size_global();
+  std::uint32_t num_nodes_local = imap->size_local();
+  std::uint64_t offset = imap->local_range()[0];
 
   const std::shared_ptr<const dolfinx::common::IndexMap> topo_imap
       = topology->index_map(mesh_dim);
-  std::int64_t num_cells_global = topo_imap->size_global();
-  std::int32_t num_cells_local = topo_imap->size_local();
-  std::int64_t cell_offset = topo_imap->local_range()[0];
+  std::uint64_t num_cells_global = topo_imap->size_global();
+  std::uint32_t num_cells_local = topo_imap->size_local();
+  std::uint64_t cell_offset = topo_imap->local_range()[0];
 
   auto cmap = mesh->geometry().cmap();
   auto geom_layout = cmap.create_dof_layout();
@@ -66,36 +66,31 @@ void _write(MPI_Comm comm, std::string filename, std::string tag,
   io.DefineAttribute<std::string>("LagrangeVariant",
                                   lagrange_variants[cmap.variant()]);
 
-  adios2::Variable<std::int64_t> n_nodes
-      = io.DefineVariable<std::int64_t>("n_nodes");
-  adios2::Variable<std::int64_t> n_cells
-      = io.DefineVariable<std::int64_t>("n_cells");
-  adios2::Variable<std::int32_t> n_dofs_per_cell
-      = io.DefineVariable<std::int32_t>("n_dofs_per_cell");
+  adios2::Variable<std::uint64_t> n_nodes
+      = io.DefineVariable<std::uint64_t>("n_nodes");
+  adios2::Variable<std::uint64_t> n_cells
+      = io.DefineVariable<std::uint64_t>("n_cells");
+  adios2::Variable<std::uint32_t> n_dofs_per_cell
+      = io.DefineVariable<std::uint32_t>("n_dofs_per_cell");
 
   adios2::Variable<std::int64_t> input_global_indices
       = io.DefineVariable<std::int64_t>(
-          "input_global_indices", {(long unsigned int)num_nodes_global},
-          {(long unsigned int)offset}, {(long unsigned int)num_nodes_local},
-          adios2::ConstantDims);
+          "input_global_indices", {num_nodes_global}, {offset},
+          {num_nodes_local}, adios2::ConstantDims);
 
-  adios2::Variable<T> x = io.DefineVariable<T>(
-      "Points", {(long unsigned int)num_nodes_global, 3},
-      {(long unsigned int)offset, 0}, {(long unsigned int)num_nodes_local, 3},
-      adios2::ConstantDims);
+  adios2::Variable<T> x
+      = io.DefineVariable<T>("Points", {num_nodes_global, 3}, {offset, 0},
+                             {num_nodes_local, 3}, adios2::ConstantDims);
 
   adios2::Variable<std::int64_t> cell_indices = io.DefineVariable<std::int64_t>(
-      "cell_indices",
-      {(long unsigned int)(num_cells_global * num_dofs_per_cell)},
-      {(long unsigned int)(cell_offset * num_dofs_per_cell)},
-      {(long unsigned int)(num_cells_local * num_dofs_per_cell)},
+      "cell_indices", {num_cells_global * num_dofs_per_cell},
+      {cell_offset * num_dofs_per_cell}, {num_cells_local * num_dofs_per_cell},
       adios2::ConstantDims);
 
   adios2::Variable<std::int32_t> cell_indices_offsets
       = io.DefineVariable<std::int32_t>(
-          "cell_indices_offsets", {(long unsigned int)(num_cells_global + 1)},
-          {(long unsigned int)(cell_offset)},
-          {(long unsigned int)(num_cells_local + 1)}, adios2::ConstantDims);
+          "cell_indices_offsets", {num_cells_global + 1}, {cell_offset},
+          {num_cells_local + 1}, adios2::ConstantDims);
 
   auto connectivity = topology->connectivity(mesh_dim, 0);
   auto indices = connectivity->array();
