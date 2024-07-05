@@ -19,9 +19,10 @@
 namespace dolfinx::io::checkpointing
 {
 
-template <std::floating_point T>
+void test() { std::cout << "HELLO" << std::endl; };
+
 void write(MPI_Comm comm, std::string filename, std::string tag,
-           std::shared_ptr<mesh::Mesh<T>> mesh);
+           std::shared_ptr<dolfinx::mesh::Mesh<float>> mesh);
 
 } // namespace dolfinx::io::checkpointing
 

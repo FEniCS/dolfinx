@@ -12,28 +12,28 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <mpi.h>
 
+using namespace dolfinx;
+using namespace dolfinx::io;
+
 /// @file checkpointing.h
 /// @brief ADIOS2 based checkpointing
-
+namespace
+{
 std::map<basix::element::lagrange_variant, std::string> lagrange_variants{
     {basix::element::lagrange_variant::unset, "unset"},
     {basix::element::lagrange_variant::equispaced, "equispaced"},
     {basix::element::lagrange_variant::gll_warped, "gll_warped"},
 };
 
-using namespace dolfinx;
-using namespace dolfinx::io;
-
-//-----------------------------------------------------------------------------
 template <std::floating_point T>
-void checkpointing::write(MPI_Comm comm, std::string filename, std::string tag,
-                          std::shared_ptr<mesh::Mesh<T>> mesh)
+void _write(MPI_Comm comm, std::string filename, std::string tag,
+            std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh)
 {
   adios2::ADIOS adios(comm);
   adios2::IO io = adios.DeclareIO(tag);
   adios2::Engine writer = io.Open(filename, adios2::Mode::Write);
 
-  const mesh::Geometry<T>& geometry = mesh->geometry();
+  const dolfinx::mesh::Geometry<T>& geometry = mesh->geometry();
   auto topology = mesh->topology();
 
   std::int16_t mesh_dim = geometry.dim();
@@ -61,7 +61,7 @@ void checkpointing::write(MPI_Comm comm, std::string filename, std::string tag,
   io.DefineAttribute<std::string>("name", mesh->name);
   io.DefineAttribute<std::int16_t>("dim", geometry.dim());
   io.DefineAttribute<std::string>("CellType",
-                                  mesh::to_string(cmap.cell_shape()));
+                                  dolfinx::mesh::to_string(cmap.cell_shape()));
   io.DefineAttribute<std::int32_t>("Degree", cmap.degree());
   io.DefineAttribute<std::string>("LagrangeVariant",
                                   lagrange_variants[cmap.variant()]);
@@ -125,5 +125,19 @@ void checkpointing::write(MPI_Comm comm, std::string filename, std::string tag,
   writer.EndStep();
   writer.Close();
 }
+
+} // namespace
+
+using namespace dolfinx::io::checkpointing;
+
+void dolfinx::io::checkpointing::write(
+    MPI_Comm comm, std::string filename, std::string tag,
+    std::shared_ptr<dolfinx::mesh::Mesh<float>> mesh)
+{
+
+  _write(comm, filename, tag, mesh);
+}
+
+//-----------------------------------------------------------------------------
 
 #endif
