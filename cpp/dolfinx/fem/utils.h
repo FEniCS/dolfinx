@@ -82,11 +82,10 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
 
 } // namespace impl
 
-/// @brief Given an integral type and mesh tag data, compute the
+/// @brief Given an integral type and a set of entities, compute the
 /// entities that should be integrated over.
 ///
-/// This function returns as list `[(id, entities)]`, where `entities`
-/// are the entities in `meshtags` with tag value `id`. For cell
+/// This function returns as list `[(id, entities)]`. For cell
 /// integrals `entities` are the cell indices. For exterior facet
 /// integrals, `entities` is a list of `(cell_index, local_facet_index)`
 /// pairs. For interior facet integrals, `entities` is a list of
@@ -97,8 +96,8 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
 ///
 /// @param[in] integral_type Integral type
 /// @param[in] topology Mesh topology
-/// @param[in] entities List of tagged mesh entities
-/// @param[in] dim Topological dimension of tagged entities
+/// @param[in] entities List of mesh entities
+/// @param[in] dim Topological dimension of entities
 /// @return List of integration entities
 /// @pre For facet integrals, the topology facet-to-cell and
 /// cell-to-facet connectivity must be computed before calling this

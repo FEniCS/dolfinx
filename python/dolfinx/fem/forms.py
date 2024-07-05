@@ -446,7 +446,8 @@ def create_form(
             Should match the number of arguments in the form.
         mesh: Mesh to associate form with
         subdomains: A map from integral type to a list of pairs, where each pair corresponds to a
-            subdomain id and the set of entities to integrate over.
+            subdomain id and the set of of integration entities to integrate over.
+            Can be computed with {py:func}`dolfinx.fem.compute_integration_domains`.
         coefficient_map: Map from UFL coefficient to function with data
         constant_map: Map from UFL constant to constant with data
         entity_map: A map where each key corresponds to a mesh different to the integration
@@ -459,30 +460,9 @@ def create_form(
     else:
         _entity_maps = {m._cpp_object: emap for (m, emap) in entity_maps.items()}
 
-    itg_type_to_dim = {
-        IntegralType.cell: mesh.topology.dim,
-        IntegralType.exterior_facet: mesh.topology.dim - 1,
-        IntegralType.interior_facet: mesh.topology.dim - 1,
-    }
-
-    _subdomain_data = {}
-    for itype, idomain in subdomains.items():
-        # Pack integration entities
-        itg_entities = [
-            (
-                _id,
-                _cpp.fem.compute_integration_domains(
-                    itype,
-                    mesh._cpp_object.topology,  # type: ignore
-                    e,  # type: ignore
-                    itg_type_to_dim[itype],
-                ),
-            )
-            for (_id, e) in idomain
-        ]
-        # Sort by subdomain id
-        itg_entities.sort(key=lambda x: x[0])
-        _subdomain_data[itype] = itg_entities
+    _subdomain_data = subdomains.copy()
+    for _, idomain in _subdomain_data.items():
+        idomain.sort(key=lambda x: x[0])
 
     # Extract name of ufl objects and map them to their corresponding C++ object
     ufl_coefficients = ufl.algorithms.extract_coefficients(form.ufl_form)
