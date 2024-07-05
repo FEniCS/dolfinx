@@ -155,6 +155,10 @@ void apply_lifting(
         bcs1,
     const std::vector<std::span<const T>>& x0, T scale)
 {
+  // If all forms are null, there is nothing to do
+  if (std::all_of(a.begin(), a.end(), [](auto ptr) { return ptr == nullptr; }))
+    return;
+
   std::shared_ptr<const mesh::Mesh<U>> mesh;
   for (auto& a_i : a)
   {
