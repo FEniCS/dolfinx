@@ -529,8 +529,8 @@ refine(const mesh::Mesh<T>& mesh, std::span<const std::int32_t> edges,
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
     mesh::Mesh<T> refined_mesh = mesh::create_mesh(
-        mesh.comm(), cell_adj.array(), mesh.geometry().cmap(), new_coords,
-        xshape, mesh::GhostMode::none);
+        mesh.comm(), cell_adj.array(), mesh.geometry().cmap(),
+        new_vertex_coords, xshape, mesh::GhostMode::none);
 
     // Sort parent cell indices by reordered cell index
     const std::vector<std::vector<std::int64_t>>& input_cells
