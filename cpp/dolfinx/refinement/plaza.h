@@ -472,10 +472,19 @@ refine(const mesh::Mesh<T>& mesh, bool redistribute, Option option)
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return {mesh::create_mesh(mesh.comm(), cell_adj.array(),
-                              mesh.geometry().cmap(), new_coords, xshape,
-                              mesh::GhostMode::none),
-            std::move(parent_cell), std::move(parent_facet)};
+    mesh::Mesh<T> refined_mesh = mesh::create_mesh(
+        mesh.comm(), cell_adj.array(), mesh.geometry().cmap(), new_coords,
+        xshape, mesh::GhostMode::none);
+
+    // Sort parent cell indices by reordered cell index
+    const std::vector<std::vector<std::int64_t>>& input_cells
+        = refined_mesh.topology()->original_cell_index;
+    assert(input_cells.size() == 1);
+    std::vector<std::int32_t> parent_cell_local(parent_cell.size());
+    for (std::size_t i = 0; i < parent_cell.size(); ++i)
+      parent_cell_local[i] = parent_cell[input_cells[0][i]];
+    return {std::move(refined_mesh), std::move(parent_cell_local),
+            std::move(parent_facet)};
   }
   else
   {
@@ -519,10 +528,19 @@ refine(const mesh::Mesh<T>& mesh, std::span<const std::int32_t> edges,
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return {mesh::create_mesh(mesh.comm(), cell_adj.array(),
-                              mesh.geometry().cmap(), new_vertex_coords, xshape,
-                              mesh::GhostMode::none),
-            std::move(parent_cell), std::move(parent_facet)};
+    mesh::Mesh<T> refined_mesh = mesh::create_mesh(
+        mesh.comm(), cell_adj.array(), mesh.geometry().cmap(), new_coords,
+        xshape, mesh::GhostMode::none);
+
+    // Sort parent cell indices by reordered cell index
+    const std::vector<std::vector<std::int64_t>>& input_cells
+        = refined_mesh.topology()->original_cell_index;
+    assert(input_cells.size() == 1);
+    std::vector<std::int32_t> parent_cell_local(parent_cell.size());
+    for (std::size_t i = 0; i < parent_cell.size(); ++i)
+      parent_cell_local[i] = parent_cell[input_cells[0][i]];
+    return {std::move(refined_mesh), std::move(parent_cell_local),
+            std::move(parent_facet)};
   }
   else
   {
