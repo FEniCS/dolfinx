@@ -21,6 +21,7 @@ set(HEADERS_fem
     ${CMAKE_CURRENT_SOURCE_DIR}/petsc.h
     ${CMAKE_CURRENT_SOURCE_DIR}/traits.h
     ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Operator.h
     PARENT_SCOPE
 )
 

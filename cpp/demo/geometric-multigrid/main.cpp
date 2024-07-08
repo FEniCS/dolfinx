@@ -38,6 +38,13 @@ using namespace dolfinx;
 using T = PetscScalar;
 using U = typename dolfinx::scalar_value_type_t<T>;
 
+void interpolate(Mat /* shell */, Vec /*x*/, Vec /*y*/)
+{
+  std::cout << "alive" << std::endl;
+  
+  // MatMult(interpolation, x, y); 
+};
+
 struct PetscEnv
 {
   PetscEnv(int argc, char** argv) { PetscInitialize(&argc, &argv, NULL, NULL); }
@@ -177,7 +184,8 @@ int main(int argc, char** argv)
   PCSetFromOptions(pc);
 
   Mat interpolation;
-  {
+  Mat shell;
+  // {
     auto local_rows = V->dofmap()->index_map->size_local();
     auto local_cols = V_coarse->dofmap()->index_map->size_local();
     auto global_rows = V->dofmap()->index_map->size_global();
@@ -201,11 +209,24 @@ int main(int argc, char** argv)
     }
     MatAssemblyBegin(interpolation, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(interpolation, MAT_FINAL_ASSEMBLY);
-  }
+    
+    MatCreateShell(MPI_COMM_WORLD, local_rows, local_cols, global_rows, global_cols, NULL, &shell);
+    // void (*test)(void) = static_cast<void(*)(void)>(apply_interpolation.target<void(*)()>());
+    // void(*test)(void) = *apply_interpolation.target<void(*)()>();
+    // MatShellSetOperation(shell, MATOP_MULT, wrapCallable<void(Mat, Vec, Vec)>(apply_interpolation));
+    // void(*test)(void) = &apply_interpolation;
+    // MatShellSetOperation(shell, MATOP_MULT, (void(*)(void))apply_interpolation);
+    MatShellSetOperation(shell, MATOP_MULT, (void(*)(void)) wrapCallable<Mat, Vec, Vec>(apply_interpolation));
+
+  // }
+
+  // PetscMatrixTransferTuple<double> transfer(interpolation);
 
   // PETSc figures out to use transpose by dimensions!
-  PCMGSetInterpolation(pc, 1, interpolation);
-  PCMGSetRestriction(pc, 1, interpolation);
+  PCMGSetInterpolation(pc, 1, shell);
+  // PCMGSetRestriction(pc, 1, shell);
+  // PCMGSetInterpolation(pc, 1, interpolation);
+  PCMGSetRestriction(pc, 1, interpolation); // shell does not work with restriction for now
 
   // MatView(A.mat(), PETSC_VIEWER_STDOUT_SELF);
   KSPSetOperators(ksp, A.mat(), A.mat());
