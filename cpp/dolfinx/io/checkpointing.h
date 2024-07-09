@@ -8,6 +8,7 @@
 
 #ifdef HAS_ADIOS2
 
+#include "ADIOS2_utils.h"
 #include <adios2.h>
 #include <basix/finite-element.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -20,9 +21,11 @@ namespace dolfinx::io::checkpointing
 {
 
 void write(MPI_Comm comm, std::string filename, std::string tag,
+           //    adios2::IO io, adios2::Engine engine,
            std::shared_ptr<dolfinx::mesh::Mesh<float>> mesh);
 
 void write(MPI_Comm comm, std::string filename, std::string tag,
+           //    adios2::IO io, adios2::Engine engine,
            std::shared_ptr<dolfinx::mesh::Mesh<double>> mesh);
 
 } // namespace dolfinx::io::checkpointing

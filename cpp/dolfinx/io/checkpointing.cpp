@@ -27,6 +27,7 @@ std::map<basix::element::lagrange_variant, std::string> lagrange_variants{
 
 template <std::floating_point T>
 void _write(MPI_Comm comm, std::string filename, std::string tag,
+            // adios2::IO io, adios2::Engine engine,
             std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh)
 {
   adios2::ADIOS adios(comm);
@@ -51,7 +52,8 @@ void _write(MPI_Comm comm, std::string filename, std::string tag,
 
   auto cmap = mesh->geometry().cmap();
   auto geom_layout = cmap.create_dof_layout();
-  std::uint32_t num_dofs_per_cell = geom_layout.num_entity_closure_dofs(mesh_dim);
+  std::uint32_t num_dofs_per_cell
+      = geom_layout.num_entity_closure_dofs(mesh_dim);
 
   const std::vector<int64_t> mesh_input_global_indices
       = geometry.input_global_indices();
@@ -68,33 +70,36 @@ void _write(MPI_Comm comm, std::string filename, std::string tag,
   std::vector<std::int64_t> connectivity_nodes_global(
       indices_offsets[num_cells_local]);
 
-  std::iota(connectivity_nodes_global.begin(), connectivity_nodes_global.end(), 0);
+  std::iota(connectivity_nodes_global.begin(), connectivity_nodes_global.end(),
+            0);
 
   std::cout << indices.size() << "\n";
   std::cout << indices_offsets[num_cells_local] << "\n";
-  std::cout << indices_offsets[num_cells_local-1] << "\n";
+  std::cout << indices_offsets[num_cells_local - 1] << "\n";
 
-//   for (std::size_t i = 0; i < connectivity_nodes_global.size(); ++i)
-//     {
-//         std::cout << i << " ";
-//         std::cout << indices[i] << " ";
-//         std::cout << mesh_input_global_indices[indices[i]] << "\n";
-//         connectivity_nodes_global[i] = mesh_input_global_indices[indices[i]];
-//     }
+  //   for (std::size_t i = 0; i < connectivity_nodes_global.size(); ++i)
+  //     {
+  //         std::cout << i << " ";
+  //         std::cout << indices[i] << " ";
+  //         std::cout << mesh_input_global_indices[indices[i]] << "\n";
+  //         connectivity_nodes_global[i] =
+  //         mesh_input_global_indices[indices[i]];
+  //     }
 
-  std::cout << indices_span.subspan(0, indices_offsets[num_cells_local]).size() << std::endl;
+  std::cout << indices_span.subspan(0, indices_offsets[num_cells_local]).size()
+            << std::endl;
   std::cout << indices_offsets[num_cells_local] << std::endl;
   imap->local_to_global(
       indices_span.subspan(0, indices_offsets[num_cells_local]),
       connectivity_nodes_global);
 
   for (std::size_t i = 0; i < connectivity_nodes_global.size(); ++i)
-    {
-        std::cout << i << " ";
-        std::cout << indices[i] << " ";
-        std::cout << connectivity_nodes_global[i] << " ";
-        std::cout << mesh_input_global_indices[indices[i]] << "\n";
-    }
+  {
+    std::cout << i << " ";
+    std::cout << indices[i] << " ";
+    std::cout << connectivity_nodes_global[i] << " ";
+    std::cout << mesh_input_global_indices[indices[i]] << "\n";
+  }
 
   for (std::size_t i = 0; i < indices_offsets.size(); ++i)
   {
@@ -159,18 +164,22 @@ using namespace dolfinx::io::checkpointing;
 //-----------------------------------------------------------------------------
 void dolfinx::io::checkpointing::write(
     MPI_Comm comm, std::string filename, std::string tag,
+    // adios2::IO io, adios2::Engine engine,
     std::shared_ptr<dolfinx::mesh::Mesh<float>> mesh)
 {
 
+  //   _write(io, engine, mesh);
   _write(comm, filename, tag, mesh);
 }
 
 //-----------------------------------------------------------------------------
 void dolfinx::io::checkpointing::write(
     MPI_Comm comm, std::string filename, std::string tag,
+    // adios2::IO io, adios2::Engine engine,
     std::shared_ptr<dolfinx::mesh::Mesh<double>> mesh)
 {
 
+  //   _write(io, engine, mesh);
   _write(comm, filename, tag, mesh);
 }
 

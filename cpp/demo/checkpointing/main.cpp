@@ -23,6 +23,13 @@ int main(int argc, char* argv[])
       MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {4, 4},
       mesh::CellType::quadrilateral, part));
 
+  auto writer = io::ADIOS2Engine(mesh->comm(), "mesh.bp", "mesh-write", "BP5",
+                                 adios2::Mode::Write);
+
+  // auto io = writer.io();
+  // auto engine = writer.engine();
+
+  // io::checkpointing::write(io, engine, mesh);
   io::checkpointing::write(mesh->comm(), "mesh.bp", "mesh-write", mesh);
 
   MPI_Finalize();
