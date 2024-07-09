@@ -152,4 +152,47 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
   return pattern;
 }
 
+/// @brief Create sparsity pattern for interaction of two function spaces.
+/// @note This is not the appropiate function to be used for form assembly, as
+/// it disregards any interior facets.
+/// @param[in] V0 function space associated with the domain of the sparsity
+/// pattern
+/// @param[in] V1 function space associated with the range of the sparsity
+/// pattern
+/// @return sparsity pattern of a linear map from V0 to V1
+///
+template <typename U>
+dolfinx::la::SparsityPattern create_sparsity_pattern(const dolfinx::fem::FunctionSpace<U>& V0,
+                const dolfinx::fem::FunctionSpace<U>& V1)
+{
+  assert(V0.mesh());
+  auto mesh = V0.mesh();
+  assert(V1.mesh());
+  assert(mesh == V1.mesh());
+  MPI_Comm comm = mesh->comm();
+
+  auto dofmap0 = V0.dofmap();
+  assert(dofmap0);
+  auto dofmap1 = V1.dofmap();
+  assert(dofmap1);
+
+  // Create and build  sparsity pattern
+  assert(dofmap0->index_map);
+  assert(dofmap1->index_map);
+  dolfinx::la::SparsityPattern sp(
+      comm, {dofmap1->index_map, dofmap0->index_map},
+      {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
+
+  int tdim = mesh->topology()->dim();
+  auto map = mesh->topology()->index_map(tdim);
+  assert(map);
+  std::vector<std::int32_t> c(map->size_local(), 0);
+  std::iota(c.begin(), c.end(), 0);
+  dolfinx::fem::impl::sparsity_pattern_add_cells(sp, {c, c},
+                                                 {*dofmap1, *dofmap0});
+  sp.finalize();
+
+  return sp;
+}
+
 } // namespace dolfinx::fem
