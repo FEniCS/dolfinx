@@ -166,14 +166,17 @@ dolfinx::la::SparsityPattern create_sparsity_pattern(const dolfinx::fem::Functio
                 const dolfinx::fem::FunctionSpace<U>& V1)
 {
   assert(V0.mesh());
-  auto mesh = V0.mesh();
   assert(V1.mesh());
-  assert(mesh == V1.mesh());
+
+  auto mesh = V0.mesh();
+  if (mesh != V1.mesh())
+    throw std::runtime_error("Requies matching meshes.");
+
   MPI_Comm comm = mesh->comm();
 
   auto dofmap0 = V0.dofmap();
-  assert(dofmap0);
   auto dofmap1 = V1.dofmap();
+  assert(dofmap0);
   assert(dofmap1);
 
   // Create and build  sparsity pattern
