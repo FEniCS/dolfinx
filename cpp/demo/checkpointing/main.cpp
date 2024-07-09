@@ -1,6 +1,5 @@
 // # Checkpointing
 //
-#include <basix/finite-element.h>
 
 #include <dolfinx.h>
 #include <mpi.h>
@@ -11,6 +10,12 @@ int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);
   MPI_Init(&argc, &argv);
+
+  // {
+  //   int i=0;
+  //   while (i == 0)
+  //     sleep(5);
+  // }
 
   // Create mesh and function space
   auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
