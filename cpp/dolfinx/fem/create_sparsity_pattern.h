@@ -170,7 +170,7 @@ dolfinx::la::SparsityPattern create_sparsity_pattern(const dolfinx::fem::Functio
 
   auto mesh = V0.mesh();
   if (mesh != V1.mesh())
-    throw std::runtime_error("Requies matching meshes.");
+    throw std::runtime_error("Requires matching meshes.");
 
   MPI_Comm comm = mesh->comm();
 
