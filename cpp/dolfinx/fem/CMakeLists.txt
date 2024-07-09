@@ -19,7 +19,6 @@ set(HEADERS_fem
     ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_fem.h
     ${CMAKE_CURRENT_SOURCE_DIR}/interpolate.h
     ${CMAKE_CURRENT_SOURCE_DIR}/petsc.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/sparsitybuild.h
     ${CMAKE_CURRENT_SOURCE_DIR}/traits.h
     ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
     PARENT_SCOPE
@@ -29,11 +28,11 @@ target_sources(
   dolfinx
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/DirichletBC.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/CoordinateElement.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/create_sparsity_pattern.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/DofMap.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/ElementDofLayout.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElement.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/dofmapbuilder.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/petsc.cpp
-          ${CMAKE_CURRENT_SOURCE_DIR}/sparsitybuild.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
 )
