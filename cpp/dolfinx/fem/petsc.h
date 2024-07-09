@@ -21,6 +21,8 @@
 #include <utility>
 #include <vector>
 
+#include "create_sparsity_pattern.h"
+
 namespace dolfinx::common
 {
 class IndexMap;

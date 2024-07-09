@@ -1,6 +1,7 @@
 set(HEADERS_fem
     ${CMAKE_CURRENT_SOURCE_DIR}/Constant.h
     ${CMAKE_CURRENT_SOURCE_DIR}/CoordinateElement.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/create_sparsity_pattern.h
     ${CMAKE_CURRENT_SOURCE_DIR}/DirichletBC.h
     ${CMAKE_CURRENT_SOURCE_DIR}/DofMap.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ElementDofLayout.h
