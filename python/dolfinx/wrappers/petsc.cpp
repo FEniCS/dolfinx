@@ -17,9 +17,9 @@
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/assembler.h>
+#include <dolfinx/fem/create_sparsity_pattern.h>
 #include <dolfinx/fem/discreteoperators.h>
 #include <dolfinx/fem/petsc.h>
-#include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
@@ -72,7 +72,8 @@ void declare_petsc_discrete_operators(nb::module_& m)
         assert(map);
         std::vector<std::int32_t> c(map->size_local(), 0);
         std::iota(c.begin(), c.end(), 0);
-        dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
+        dolfinx::fem::impl::sparsity_pattern_add_cells(sp, {c, c},
+                                                       {*dofmap1, *dofmap0});
         sp.finalize();
 
         // Build operator
@@ -113,7 +114,9 @@ void declare_petsc_discrete_operators(nb::module_& m)
         assert(map);
         std::vector<std::int32_t> c(map->size_local(), 0);
         std::iota(c.begin(), c.end(), 0);
-        dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
+        dolfinx::fem::impl::sparsity_pattern_add_cells(sp, {c, c},
+                                                       {*dofmap1, *dofmap0});
+
         sp.finalize();
 
         // Build operator

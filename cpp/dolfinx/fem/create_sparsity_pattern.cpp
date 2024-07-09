@@ -4,15 +4,13 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "sparsitybuild.h"
-#include "DofMap.h"
-#include <dolfinx/la/SparsityPattern.h>
+#include "create_sparsity_pattern.h"
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
-void sparsitybuild::cells(
+void impl::sparsity_pattern_add_cells(
     la::SparsityPattern& pattern,
     std::array<std::span<const std::int32_t>, 2> cells,
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps)
@@ -23,8 +21,9 @@ void sparsitybuild::cells(
   for (std::size_t i = 0; i < cells[0].size(); ++i)
     pattern.insert(map0.cell_dofs(cells[0][i]), map1.cell_dofs(cells[1][i]));
 }
+
 //-----------------------------------------------------------------------------
-void sparsitybuild::interior_facets(
+void impl::sparsity_patter_add_interior_facets(
     la::SparsityPattern& pattern,
     std::array<std::span<const std::int32_t>, 2> cells,
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps)

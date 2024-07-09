@@ -8,10 +8,50 @@
 #include <dolfinx/la/SparsityPattern.h>
 
 #include "Form.h"
-#include "sparsitybuild.h"
 
 namespace dolfinx::fem
 {
+
+namespace impl
+{
+
+/// @brief Iterate over cells and insert entries into sparsity pattern.
+///
+/// Inserts the rectangular blocks of indices `dofmap[0][cells[0][i]] x
+/// dofmap[1][cells[1][i]]` into the sparsity pattern, i.e. entries
+/// `(dofmap[0][cells[0][i]][k0], dofmap[0][cells[0][i]][k1])` will
+/// appear in the sparsity pattern.
+///
+/// @param pattern Sparsity pattern to insert into.
+/// @param cells Lists of cells to iterate over. `cells[0]` and
+/// `cells[1]` must have the same size.
+/// @param dofmaps Dofmaps to used in building the sparsity pattern.
+/// @note The sparsity pattern is not finalised.
+void sparsity_pattern_add_cells(
+    la::SparsityPattern& pattern,
+    std::array<std::span<const std::int32_t>, 2> cells,
+    std::array<std::reference_wrapper<const DofMap>, 2> dofmaps);
+
+/// @brief Iterate over interior facets and insert entries into sparsity
+/// pattern.
+///
+/// Inserts the rectangular blocks of indices `[dofmap[0][cell0],
+/// dofmap[0][cell1]] x [dofmap[1][cell0] + dofmap[1][cell1]]` where
+/// `cell0` and `cell1` are the two cells attached to a facet.
+///
+/// @param[in,out] pattern Sparsity pattern to insert into.
+/// @param[in] cells Cells to index into each dofmap. `cells[i]` is a
+/// list of `(cell0, cell1)` pairs for each interior facet to index into
+/// `dofmap[i]`. `cells[0]` and `cells[1]` must have the same size.
+/// @param[in] dofmaps Dofmaps to use in building the sparsity pattern.
+///
+/// @note The sparsity pattern is not finalised.
+void sparsity_patter_add_interior_facets(
+    la::SparsityPattern& pattern,
+    std::array<std::span<const std::int32_t>, 2> cells,
+    std::array<std::reference_wrapper<const DofMap>, 2> dofmaps);
+
+} // namespace impl
 
 /// @brief Create a sparsity pattern for a given form.
 /// @note The pattern is not finalised, i.e. the caller is responsible
@@ -77,7 +117,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
     case IntegralType::cell:
       for (int id : ids)
       {
-        sparsitybuild::cells(
+        impl::sparsity_pattern_add_cells(
             pattern, {a.domain(type, id, *mesh0), a.domain(type, id, *mesh1)},
             {{dofmaps[0], dofmaps[1]}});
       }
@@ -85,7 +125,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
     case IntegralType::interior_facet:
       for (int id : ids)
       {
-        sparsitybuild::interior_facets(
+        impl::sparsity_patter_add_interior_facets(
             pattern,
             {extract_cells(a.domain(type, id, *mesh0)),
              extract_cells(a.domain(type, id, *mesh1))},
@@ -95,10 +135,11 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
     case IntegralType::exterior_facet:
       for (int id : ids)
       {
-        sparsitybuild::cells(pattern,
-                             {extract_cells(a.domain(type, id, *mesh0)),
-                              extract_cells(a.domain(type, id, *mesh1))},
-                             {{dofmaps[0], dofmaps[1]}});
+        impl::sparsity_pattern_add_cells(
+            pattern,
+            {extract_cells(a.domain(type, id, *mesh0)),
+             extract_cells(a.domain(type, id, *mesh1))},
+            {{dofmaps[0], dofmaps[1]}});
       }
       break;
     default:
@@ -111,4 +152,4 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
   return pattern;
 }
 
-} // dolfinx::fem
+} // namespace dolfinx::fem
