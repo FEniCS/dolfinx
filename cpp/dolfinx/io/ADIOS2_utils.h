@@ -18,6 +18,8 @@
 
 namespace dolfinx::io
 {
+
+/// ADIOS2-based writers/readers
 class ADIOS2Engine
 {
 public:
@@ -27,6 +29,7 @@ public:
   /// @param[in] tag The ADIOS2 object name
   /// @param[in] engine ADIOS2 engine type. See
   /// https://adios2.readthedocs.io/en/latest/engines/engines.html.
+  /// @param[in] mode ADIOS2 mode, default is Write or Read
   ADIOS2Engine(MPI_Comm comm, const std::filesystem::path& filename,
                std::string tag, std::string engine = "BP5",
                const adios2::Mode mode = adios2::Mode::Write);
