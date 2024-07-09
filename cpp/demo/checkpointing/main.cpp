@@ -1,10 +1,14 @@
 // # Checkpointing
 //
 
+#include <adios2.h>
 #include <dolfinx.h>
+#include <dolfinx/io/ADIOS2_utils.h>
+#include <dolfinx/io/checkpointing.h>
 #include <mpi.h>
 
 using namespace dolfinx;
+using namespace dolfinx::io::ADIOS2Engine;
 
 int main(int argc, char* argv[])
 {
@@ -23,7 +27,7 @@ int main(int argc, char* argv[])
       MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {4, 4},
       mesh::CellType::quadrilateral, part));
 
-  auto writer = io::ADIOS2Engine(mesh->comm(), "mesh.bp", "mesh-write", "BP5",
+  auto writer = ADIOS2Engine(mesh->comm(), "mesh.bp", "mesh-write", "BP5",
                                  adios2::Mode::Write);
 
   // auto io = writer.io();
