@@ -247,37 +247,38 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<double, 2> p, 
   std::vector<T> x;
   std::vector<std::int64_t> cells;
 
-  if (dolfinx::MPI::rank(comm) != 0)
+  if (dolfinx::MPI::rank(comm) == 0)
   {
-    return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL, x,
+    const T h = (b - a) / static_cast<T>(n);
+
+    if (std::abs(a - b) < std::numeric_limits<T>::epsilon())
+    {
+      throw std::runtime_error(
+          "Length of interval is zero. Check your dimensions.");
+    }
+
+    // Create vertices
+    x.resize(n + 1);
+    std::ranges::generate(x, [i = std::int64_t(0), a, h]() mutable
+                          { return a + h * static_cast<T>(i++); });
+
+    // Create intervals -> cells=[0,1,1,...,n-1,n-1,n]
+    cells.resize(n * 2);
+    std::ranges::generate(cells,
+                          [i = std::int64_t(0)]() mutable
+                          {
+                            auto [quot, rem]
+                                = std::div(i++, static_cast<std::int64_t>(2));
+                            return quot + rem;
+                          });
+
+    return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
                        {x.size(), 1}, partitioner);
   }
+  else
 
-  const T h = (b - a) / static_cast<T>(n);
-
-  if (std::abs(a - b) < std::numeric_limits<T>::epsilon())
-  {
-    throw std::runtime_error(
-        "Length of interval is zero. Check your dimensions.");
-  }
-
-  // Create vertices
-  x.resize(n + 1);
-  std::ranges::generate(x, [i = std::int64_t(0), a, h]() mutable
-                        { return a + h * static_cast<T>(i++); });
-
-  // Create intervals -> cells=[0,1,1,...,n-1,n-1,n]
-  cells.resize(n * 2);
-  std::ranges::generate(cells,
-                        [i = std::int64_t(0)]() mutable
-                        {
-                          auto [quot, rem]
-                              = std::div(i++, static_cast<std::int64_t>(2));
-                          return quot + rem;
-                        });
-
-  return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                     {x.size(), 1}, partitioner);
+    return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL, x,
+                       {x.size(), 1}, partitioner);
 }
 
 namespace impl
@@ -342,40 +343,39 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
   std::vector<std::int64_t> cells;
   fem::CoordinateElement<T> element(CellType::tetrahedron, 1);
 
-  if (subcomm == MPI_COMM_NULL)
-    return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                       {x.size() / 3, 3}, partitioner);
-
-  x = create_geom<T>(subcomm, p, n);
-
-  const auto [nx, ny, nz] = n;
-  const std::int64_t n_cells = nx * ny * nz;
-
-  std::array range_c = dolfinx::MPI::local_range(
-      dolfinx::MPI::rank(subcomm), n_cells, dolfinx::MPI::size(subcomm));
-  cells.reserve(6 * (range_c[1] - range_c[0]) * 4);
-
-  // Create tetrahedra
-  for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
+  if (subcomm != MPI_COMM_NULL)
   {
-    const std::int64_t iz = i / (nx * ny);
-    const std::int64_t j = i % (nx * ny);
-    const std::int64_t iy = j / nx;
-    const std::int64_t ix = j % nx;
-    const std::int64_t v0 = iz * (nx + 1) * (ny + 1) + iy * (nx + 1) + ix;
-    const std::int64_t v1 = v0 + 1;
-    const std::int64_t v2 = v0 + (nx + 1);
-    const std::int64_t v3 = v1 + (nx + 1);
-    const std::int64_t v4 = v0 + (nx + 1) * (ny + 1);
-    const std::int64_t v5 = v1 + (nx + 1) * (ny + 1);
-    const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
-    const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
+    x = create_geom<T>(subcomm, p, n);
 
-    // Note that v0 < v1 < v2 < v3 < vmid
-    cells.insert(cells.end(), {v0, v1, v3, v7, v0, v1, v7, v5, v0, v5, v7, v4,
-                               v0, v3, v2, v7, v0, v6, v4, v7, v0, v2, v6, v7});
+    const auto [nx, ny, nz] = n;
+    const std::int64_t n_cells = nx * ny * nz;
+
+    std::array range_c = dolfinx::MPI::local_range(
+        dolfinx::MPI::rank(subcomm), n_cells, dolfinx::MPI::size(subcomm));
+    cells.reserve(6 * (range_c[1] - range_c[0]) * 4);
+
+    // Create tetrahedra
+    for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
+    {
+      const std::int64_t iz = i / (nx * ny);
+      const std::int64_t j = i % (nx * ny);
+      const std::int64_t iy = j / nx;
+      const std::int64_t ix = j % nx;
+      const std::int64_t v0 = iz * (nx + 1) * (ny + 1) + iy * (nx + 1) + ix;
+      const std::int64_t v1 = v0 + 1;
+      const std::int64_t v2 = v0 + (nx + 1);
+      const std::int64_t v3 = v1 + (nx + 1);
+      const std::int64_t v4 = v0 + (nx + 1) * (ny + 1);
+      const std::int64_t v5 = v1 + (nx + 1) * (ny + 1);
+      const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
+      const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
+
+      // Note that v0 < v1 < v2 < v3 < vmid
+      cells.insert(cells.end(),
+                   {v0, v1, v3, v7, v0, v1, v7, v5, v0, v5, v7, v4,
+                    v0, v3, v2, v7, v0, v6, v4, v7, v0, v2, v6, v7});
+    }
   }
-
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
                      {x.size() / 3, 3}, partitioner);
 }
@@ -391,36 +391,34 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
   std::vector<std::int64_t> cells;
   fem::CoordinateElement<T> element(CellType::hexahedron, 1);
 
-  if (subcomm == MPI_COMM_NULL)
-    return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                       {x.size() / 3, 3}, partitioner);
-
-  x = create_geom<T>(subcomm, p, n);
-
-  // Create cuboids
-  const auto [nx, ny, nz] = n;
-  const std::int64_t n_cells = nx * ny * nz;
-  std::array range_c = dolfinx::MPI::local_range(
-      dolfinx::MPI::rank(subcomm), n_cells, dolfinx::MPI::size(subcomm));
-  cells.reserve((range_c[1] - range_c[0]) * 8);
-  for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
+  if (subcomm != MPI_COMM_NULL)
   {
-    const std::int64_t iz = i / (nx * ny);
-    const std::int64_t j = i % (nx * ny);
-    const std::int64_t iy = j / nx;
-    const std::int64_t ix = j % nx;
+    x = create_geom<T>(subcomm, p, n);
 
-    const std::int64_t v0 = (iz * (ny + 1) + iy) * (nx + 1) + ix;
-    const std::int64_t v1 = v0 + 1;
-    const std::int64_t v2 = v0 + (nx + 1);
-    const std::int64_t v3 = v1 + (nx + 1);
-    const std::int64_t v4 = v0 + (nx + 1) * (ny + 1);
-    const std::int64_t v5 = v1 + (nx + 1) * (ny + 1);
-    const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
-    const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
-    cells.insert(cells.end(), {v0, v1, v2, v3, v4, v5, v6, v7});
+    // Create cuboids
+    const auto [nx, ny, nz] = n;
+    const std::int64_t n_cells = nx * ny * nz;
+    std::array range_c = dolfinx::MPI::local_range(
+        dolfinx::MPI::rank(subcomm), n_cells, dolfinx::MPI::size(subcomm));
+    cells.reserve((range_c[1] - range_c[0]) * 8);
+    for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
+    {
+      const std::int64_t iz = i / (nx * ny);
+      const std::int64_t j = i % (nx * ny);
+      const std::int64_t iy = j / nx;
+      const std::int64_t ix = j % nx;
+
+      const std::int64_t v0 = (iz * (ny + 1) + iy) * (nx + 1) + ix;
+      const std::int64_t v1 = v0 + 1;
+      const std::int64_t v2 = v0 + (nx + 1);
+      const std::int64_t v3 = v1 + (nx + 1);
+      const std::int64_t v4 = v0 + (nx + 1) * (ny + 1);
+      const std::int64_t v5 = v1 + (nx + 1) * (ny + 1);
+      const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
+      const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
+      cells.insert(cells.end(), {v0, v1, v2, v3, v4, v5, v6, v7});
+    }
   }
-
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
                      {x.size() / 3, 3}, partitioner);
 }
@@ -435,42 +433,40 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
   std::vector<std::int64_t> cells;
   fem::CoordinateElement<T> element(CellType::prism, 1);
 
-  if (subcomm == MPI_COMM_NULL)
-    return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                       {x.size() / 3, 3}, partitioner);
-
-  x = create_geom<T>(subcomm, p, n);
-
-  const std::int64_t nx = n[0];
-  const std::int64_t ny = n[1];
-  const std::int64_t nz = n[2];
-  const std::int64_t n_cells = nx * ny * nz;
-  std::array range_c = dolfinx::MPI::local_range(
-      dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
-  const std::int64_t cell_range = range_c[1] - range_c[0];
-
-  // Create cuboids
-
-  cells.reserve(2 * cell_range * 6);
-  for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
+  if (subcomm != MPI_COMM_NULL)
   {
-    const std::int64_t iz = i / (nx * ny);
-    const std::int64_t j = i % (nx * ny);
-    const std::int64_t iy = j / nx;
-    const std::int64_t ix = j % nx;
+    x = create_geom<T>(subcomm, p, n);
 
-    const std::int64_t v0 = (iz * (ny + 1) + iy) * (nx + 1) + ix;
-    const std::int64_t v1 = v0 + 1;
-    const std::int64_t v2 = v0 + (nx + 1);
-    const std::int64_t v3 = v1 + (nx + 1);
-    const std::int64_t v4 = v0 + (nx + 1) * (ny + 1);
-    const std::int64_t v5 = v1 + (nx + 1) * (ny + 1);
-    const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
-    const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
-    cells.insert(cells.end(), {v0, v1, v2, v4, v5, v6});
-    cells.insert(cells.end(), {v1, v2, v3, v5, v6, v7});
+    const std::int64_t nx = n[0];
+    const std::int64_t ny = n[1];
+    const std::int64_t nz = n[2];
+    const std::int64_t n_cells = nx * ny * nz;
+    std::array range_c = dolfinx::MPI::local_range(
+        dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
+    const std::int64_t cell_range = range_c[1] - range_c[0];
+
+    // Create cuboids
+
+    cells.reserve(2 * cell_range * 6);
+    for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
+    {
+      const std::int64_t iz = i / (nx * ny);
+      const std::int64_t j = i % (nx * ny);
+      const std::int64_t iy = j / nx;
+      const std::int64_t ix = j % nx;
+
+      const std::int64_t v0 = (iz * (ny + 1) + iy) * (nx + 1) + ix;
+      const std::int64_t v1 = v0 + 1;
+      const std::int64_t v2 = v0 + (nx + 1);
+      const std::int64_t v3 = v1 + (nx + 1);
+      const std::int64_t v4 = v0 + (nx + 1) * (ny + 1);
+      const std::int64_t v5 = v1 + (nx + 1) * (ny + 1);
+      const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
+      const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
+      cells.insert(cells.end(), {v0, v1, v2, v4, v5, v6});
+      cells.insert(cells.end(), {v1, v2, v3, v5, v6, v7});
+    }
   }
-
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
                      {x.size() / 3, 3}, partitioner);
 }
@@ -485,148 +481,147 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
   std::vector<T> x;
   std::vector<std::int64_t> cells;
 
-  if (dolfinx::MPI::rank(comm) != 0)
-    return create_mesh(comm, MPI_COMM_NULL, cells, element, MPI_COMM_NULL, x,
-                       {x.size() / 2, 2}, partitioner);
-
-  const auto [p0, p1] = p;
-  const auto [nx, ny] = n;
-
-  const auto [a, c] = p0;
-  const auto [b, d] = p1;
-
-  const T ab = (b - a) / static_cast<T>(nx);
-  const T cd = (d - c) / static_cast<T>(ny);
-
-  if (std::abs(b - a) < std::numeric_limits<T>::epsilon()
-      or std::abs(d - c) < std::numeric_limits<T>::epsilon())
+  if (dolfinx::MPI::rank(comm) == 0)
   {
-    throw std::runtime_error("Rectangle seems to have zero width, height or "
-                             "depth. Check dimensions");
-  }
 
-  // Create vertices and cells
-  std::int64_t nv, nc;
-  switch (diagonal)
-  {
-  case DiagonalType::crossed:
-    nv = (nx + 1) * (ny + 1) + nx * ny;
-    nc = 4 * nx * ny;
-    break;
-  default:
-    nv = (nx + 1) * (ny + 1);
-    nc = 2 * nx * ny;
-  }
+    const auto [p0, p1] = p;
+    const auto [nx, ny] = n;
 
-  x.reserve(nv * 2);
-  cells.reserve(nc * 3);
+    const auto [a, c] = p0;
+    const auto [b, d] = p1;
 
-  // Create main vertices
-  std::int64_t vertex = 0;
-  for (std::int64_t iy = 0; iy <= ny; iy++)
-  {
-    const T x1 = c + cd * static_cast<T>(iy);
-    for (std::int64_t ix = 0; ix <= nx; ix++)
-      x.insert(x.end(), {a + ab * static_cast<T>(ix), x1});
-  }
+    const T ab = (b - a) / static_cast<T>(nx);
+    const T cd = (d - c) / static_cast<T>(ny);
 
-  // Create midpoint vertices if the mesh type is crossed
-  switch (diagonal)
-  {
-  case DiagonalType::crossed:
-    for (std::int64_t iy = 0; iy < ny; iy++)
+    if (std::abs(b - a) < std::numeric_limits<T>::epsilon()
+        or std::abs(d - c) < std::numeric_limits<T>::epsilon())
     {
-      const T x1 = c + cd * (static_cast<T>(iy) + 0.5);
-      for (std::int64_t ix = 0; ix < nx; ix++)
-      {
-        const T x0 = a + ab * (static_cast<T>(ix) + 0.5);
-        x.insert(x.end(), {x0, x1});
-      }
+      throw std::runtime_error("Rectangle seems to have zero width, height or "
+                               "depth. Check dimensions");
     }
-    break;
-  default:
-    break;
-  }
 
-  // Create triangles
-  switch (diagonal)
-  {
-  case DiagonalType::crossed:
-  {
-    for (std::int64_t iy = 0; iy < ny; iy++)
+    // Create vertices and cells
+    std::int64_t nv, nc;
+    switch (diagonal)
     {
-      for (std::int64_t ix = 0; ix < nx; ix++)
-      {
-        const std::int64_t v0 = iy * (nx + 1) + ix;
-        const std::int64_t v1 = v0 + 1;
-        const std::int64_t v2 = v0 + (nx + 1);
-        const std::int64_t v3 = v1 + (nx + 1);
-        const std::int64_t vmid = (nx + 1) * (ny + 1) + iy * nx + ix;
-
-        // Note that v0 < v1 < v2 < v3 < vmid
-        cells.insert(cells.end(),
-                     {v0, v1, vmid, v0, v2, vmid, v1, v3, vmid, v2, v3, vmid});
-      }
+    case DiagonalType::crossed:
+      nv = (nx + 1) * (ny + 1) + nx * ny;
+      nc = 4 * nx * ny;
+      break;
+    default:
+      nv = (nx + 1) * (ny + 1);
+      nc = 2 * nx * ny;
     }
-    break;
-  }
-  default:
-  {
-    DiagonalType local_diagonal = diagonal;
-    for (std::int64_t iy = 0; iy < ny; iy++)
-    {
-      // Set up alternating diagonal
-      switch (diagonal)
-      {
-      case DiagonalType::right_left:
-        if (iy % 2)
-          local_diagonal = DiagonalType::right;
-        else
-          local_diagonal = DiagonalType::left;
-        break;
-      case DiagonalType::left_right:
-        if (iy % 2)
-          local_diagonal = DiagonalType::left;
-        else
-          local_diagonal = DiagonalType::right;
-        break;
-      default:
-        break;
-      }
-      for (std::int64_t ix = 0; ix < nx; ix++)
-      {
-        const std::int64_t v0 = iy * (nx + 1) + ix;
-        const std::int64_t v1 = v0 + 1;
-        const std::int64_t v2 = v0 + (nx + 1);
-        const std::int64_t v3 = v1 + (nx + 1);
 
-        switch (local_diagonal)
+    x.reserve(nv * 2);
+    cells.reserve(nc * 3);
+
+    // Create main vertices
+    std::int64_t vertex = 0;
+    for (std::int64_t iy = 0; iy <= ny; iy++)
+    {
+      const T x1 = c + cd * static_cast<T>(iy);
+      for (std::int64_t ix = 0; ix <= nx; ix++)
+        x.insert(x.end(), {a + ab * static_cast<T>(ix), x1});
+    }
+
+    // Create midpoint vertices if the mesh type is crossed
+    switch (diagonal)
+    {
+    case DiagonalType::crossed:
+      for (std::int64_t iy = 0; iy < ny; iy++)
+      {
+        const T x1 = c + cd * (static_cast<T>(iy) + 0.5);
+        for (std::int64_t ix = 0; ix < nx; ix++)
         {
-        case DiagonalType::left:
+          const T x0 = a + ab * (static_cast<T>(ix) + 0.5);
+          x.insert(x.end(), {x0, x1});
+        }
+      }
+      break;
+    default:
+      break;
+    }
+
+    // Create triangles
+    switch (diagonal)
+    {
+    case DiagonalType::crossed:
+    {
+      for (std::int64_t iy = 0; iy < ny; iy++)
+      {
+        for (std::int64_t ix = 0; ix < nx; ix++)
         {
-          cells.insert(cells.end(), {v0, v1, v2, v1, v2, v3});
-          if (diagonal == DiagonalType::right_left
-              or diagonal == DiagonalType::left_right)
-          {
+          const std::int64_t v0 = iy * (nx + 1) + ix;
+          const std::int64_t v1 = v0 + 1;
+          const std::int64_t v2 = v0 + (nx + 1);
+          const std::int64_t v3 = v1 + (nx + 1);
+          const std::int64_t vmid = (nx + 1) * (ny + 1) + iy * nx + ix;
+
+          // Note that v0 < v1 < v2 < v3 < vmid
+          cells.insert(cells.end(), {v0, v1, vmid, v0, v2, vmid, v1, v3, vmid,
+                                     v2, v3, vmid});
+        }
+      }
+      break;
+    }
+    default:
+    {
+      DiagonalType local_diagonal = diagonal;
+      for (std::int64_t iy = 0; iy < ny; iy++)
+      {
+        // Set up alternating diagonal
+        switch (diagonal)
+        {
+        case DiagonalType::right_left:
+          if (iy % 2)
             local_diagonal = DiagonalType::right;
-          }
+          else
+            local_diagonal = DiagonalType::left;
+          break;
+        case DiagonalType::left_right:
+          if (iy % 2)
+            local_diagonal = DiagonalType::left;
+          else
+            local_diagonal = DiagonalType::right;
+          break;
+        default:
           break;
         }
-        default:
+        for (std::int64_t ix = 0; ix < nx; ix++)
         {
-          cells.insert(cells.end(), {v0, v1, v3, v0, v2, v3});
-          if (diagonal == DiagonalType::right_left
-              or diagonal == DiagonalType::left_right)
+          const std::int64_t v0 = iy * (nx + 1) + ix;
+          const std::int64_t v1 = v0 + 1;
+          const std::int64_t v2 = v0 + (nx + 1);
+          const std::int64_t v3 = v1 + (nx + 1);
+
+          switch (local_diagonal)
           {
-            local_diagonal = DiagonalType::left;
+          case DiagonalType::left:
+          {
+            cells.insert(cells.end(), {v0, v1, v2, v1, v2, v3});
+            if (diagonal == DiagonalType::right_left
+                or diagonal == DiagonalType::left_right)
+            {
+              local_diagonal = DiagonalType::right;
+            }
+            break;
           }
-        }
+          default:
+          {
+            cells.insert(cells.end(), {v0, v1, v3, v0, v2, v3});
+            if (diagonal == DiagonalType::right_left
+                or diagonal == DiagonalType::left_right)
+            {
+              local_diagonal = DiagonalType::left;
+            }
+          }
+          }
         }
       }
     }
+    }
   }
-  }
-
   return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
                      {x.size() / 2, 2}, partitioner);
 }
@@ -640,39 +635,37 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
   std::vector<std::int64_t> cells;
   std::vector<T> x;
 
-  if (dolfinx::MPI::rank(comm) != 0)
-    return create_mesh(comm, MPI_COMM_NULL, cells, element, MPI_COMM_NULL, x,
-                       {x.size() / 2, 2}, partitioner);
-
-  const auto [nx, ny] = n;
-  const auto [a, c] = p[0];
-  const auto [b, d] = p[1];
-
-  const T ab = (b - a) / static_cast<T>(nx);
-  const T cd = (d - c) / static_cast<T>(ny);
-
-  // Create vertices
-  x.reserve((nx + 1) * (ny + 1) * 2);
-  std::int64_t vertex = 0;
-  for (std::int64_t ix = 0; ix <= nx; ix++)
+  if (dolfinx::MPI::rank(comm) == 0)
   {
-    T x0 = a + ab * static_cast<T>(ix);
-    for (std::int64_t iy = 0; iy <= ny; iy++)
-      x.insert(x.end(), {x0, c + cd * static_cast<T>(iy)});
-  }
+    const auto [nx, ny] = n;
+    const auto [a, c] = p[0];
+    const auto [b, d] = p[1];
 
-  // Create rectangles
-  cells.reserve(nx * ny * 4);
-  for (std::int64_t ix = 0; ix < nx; ix++)
-  {
-    for (std::int64_t iy = 0; iy < ny; iy++)
+    const T ab = (b - a) / static_cast<T>(nx);
+    const T cd = (d - c) / static_cast<T>(ny);
+
+    // Create vertices
+    x.reserve((nx + 1) * (ny + 1) * 2);
+    std::int64_t vertex = 0;
+    for (std::int64_t ix = 0; ix <= nx; ix++)
     {
-      std::int64_t i0 = ix * (ny + 1);
-      cells.insert(cells.end(),
-                   {i0 + iy, i0 + iy + 1, i0 + iy + ny + 1, i0 + iy + ny + 2});
+      T x0 = a + ab * static_cast<T>(ix);
+      for (std::int64_t iy = 0; iy <= ny; iy++)
+        x.insert(x.end(), {x0, c + cd * static_cast<T>(iy)});
+    }
+
+    // Create rectangles
+    cells.reserve(nx * ny * 4);
+    for (std::int64_t ix = 0; ix < nx; ix++)
+    {
+      for (std::int64_t iy = 0; iy < ny; iy++)
+      {
+        std::int64_t i0 = ix * (ny + 1);
+        cells.insert(cells.end(), {i0 + iy, i0 + iy + 1, i0 + iy + ny + 1,
+                                   i0 + iy + ny + 2});
+      }
     }
   }
-
   return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
                      {x.size() / 2, 2}, partitioner);
 }
