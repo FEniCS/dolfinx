@@ -1,3 +1,9 @@
+// ```text
+// Copyright (C) 2024 Abdullah Mujahid
+// This file is part of DOLFINx (https://www.fenicsproject.org)
+// SPDX-License-Identifier:    LGPL-3.0-or-later
+// ```
+
 // # Checkpointing
 //
 

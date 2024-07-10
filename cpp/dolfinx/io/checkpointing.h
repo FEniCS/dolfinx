@@ -1,4 +1,4 @@
-// Copyright (C) year authors
+// Copyright (C) 2024 Abdullah Mujahid
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
