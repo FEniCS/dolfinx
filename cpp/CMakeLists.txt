@@ -12,15 +12,6 @@ set(DOXYGEN_DOLFINX_VERSION
 )
 
 # ------------------------------------------------------------------------------
-# Use C++20
-set(CMAKE_CXX_STANDARD 20)
-
-# Require C++20
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# Do not enable compler-specific extensions
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 if(WIN32)
   # Windows requires all symbols to be manually exported. This flag exports all
   # symbols automatically, as in Unix.
