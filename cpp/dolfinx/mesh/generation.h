@@ -621,9 +621,12 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
       }
     }
     }
+    return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
+                       {x.size() / 2, 2}, partitioner);
   }
-  return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                     {x.size() / 2, 2}, partitioner);
+  else
+    return create_mesh(comm, MPI_COMM_NULL, cells, element, MPI_COMM_NULL, x,
+                       {x.size() / 2, 2}, partitioner);
 }
 
 template <std::floating_point T>
@@ -665,9 +668,13 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
                                    i0 + iy + ny + 2});
       }
     }
+
+    return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
+                       {x.size() / 2, 2}, partitioner);
   }
-  return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                     {x.size() / 2, 2}, partitioner);
+  else
+    return create_mesh(comm, MPI_COMM_NULL, cells, element, MPI_COMM_NULL, x,
+                       {x.size() / 2, 2}, partitioner);
 }
 } // namespace impl
 } // namespace dolfinx::mesh
