@@ -264,12 +264,12 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<double, 2> p, 
   // Create vertices
   x.reserve(n + 1);
   for (std::int64_t idx = 0; idx < n + 1; idx++)
-    x.emplace_back(a + h * static_cast<T>(idx));
+    x.push_back(a + h * static_cast<T>(idx));
 
   // Create intervals -> cells=[0,1,1,...,n-1,n-1,n]
   cells.reserve(n * 2);
   for (std::int64_t idx = 0; idx < n * 2; idx++)
-    cells.emplace_back(std::floor(idx / 2) + idx % 2);
+    cells.push_back(std::floor(idx / 2) + idx % 2);
 
   return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
                      {x.size(), 1}, partitioner);
@@ -320,7 +320,7 @@ std::vector<T> create_geom(MPI_Comm comm,
 
     // vertex = p0 + idx * extents (elementwise)
     for (std::size_t i = 0; i < idx.size(); i++)
-      geom.emplace_back(p0[i] + static_cast<T>(idx[i]) * extents[i]);
+      geom.push_back(p0[i] + static_cast<T>(idx[i]) * extents[i]);
   }
 
   return geom;
