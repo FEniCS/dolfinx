@@ -268,8 +268,13 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<double, 2> p, 
 
   // Create intervals -> cells=[0,1,1,...,n-1,n-1,n]
   cells.resize(n * 2);
-  std::ranges::generate(cells, [i = std::int64_t(0)]() mutable
-                        { return i += (i % 2 == 0); });
+  std::ranges::generate(cells,
+                        [i = std::int64_t(0)]() mutable
+                        {
+                          auto [quot, rem]
+                              = std::div(i++, static_cast<std::int64_t>(2));
+                          return quot + rem;
+                        });
 
   return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
                      {x.size(), 1}, partitioner);
