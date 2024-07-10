@@ -262,7 +262,7 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<double, 2> p,
 
   // Create vertices
   x.resize(n + 1);
-  std::ranges::generate(x, [i = std::int64_t(0), a]() mutable
+  std::ranges::generate(x, [i = std::int64_t(0), a, h]() mutable
                         { return a + h * static_cast<T>(i++); });
 
   // Create intervals -> cells=[0,1,1,...,n-1,n-1,n]
