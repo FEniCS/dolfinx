@@ -723,7 +723,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
         io, u.name + impl_adios2::field_ext[0], {}, {}, {num_dofs, num_comp});
     engine.Put(output_real, data.data(), adios2::Mode::Sync);
 
-    std::fill(data.begin(), data.end(), 0);
+    std::ranges::fill(data, 0);
     for (std::size_t i = 0; i < num_dofs; ++i)
       for (int j = 0; j < index_map_bs; ++j)
         data[i * num_comp + j] = std::imag(u_vector[i * index_map_bs + j]);

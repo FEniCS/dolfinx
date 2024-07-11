@@ -85,7 +85,8 @@ auto compute_parent_facets(std::span<const std::int32_t> simplex_set)
         {
           for (int j = 0; j < tdim; ++j)
             cf[j] = simplex_set[cc * 3 + facet_table_2d[fci][j]];
-          std::sort(cf.begin(), cf.end());
+          
+          std::ranges::sort(cf);
           auto [last1, last2, it_last] = std::ranges::set_intersection(
               facet_table_2d[fpi], cf, set_output.begin());
           num_common_vertices = std::distance(set_output.begin(), it_last);
@@ -94,7 +95,8 @@ auto compute_parent_facets(std::span<const std::int32_t> simplex_set)
         {
           for (int j = 0; j < tdim; ++j)
             cf[j] = simplex_set[cc * 4 + facet_table_3d[fci][j]];
-          std::sort(cf.begin(), cf.end());
+
+          std::ranges::sort(cf);
           auto [last1, last2, it_last] = std::ranges::set_intersection(
               facet_table_3d[fpi], cf, set_output.begin());
           num_common_vertices = std::distance(set_output.begin(), it_last);
@@ -578,7 +580,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh, Option option)
   // Create unique list of ranks that share edges (owners of ghosts
   // plus ranks that ghost owned indices)
   std::vector<int> ranks(edge_ranks.array().begin(), edge_ranks.array().end());
-  std::sort(ranks.begin(), ranks.end());
+  std::ranges::sort(ranks);
   ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
 
   // Convert edge_ranks from global rank to to neighbourhood ranks
@@ -586,7 +588,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh, Option option)
                  edge_ranks.array().begin(),
                  [&ranks](auto r)
                  {
-                   auto it = std::lower_bound(ranks.begin(), ranks.end(), r);
+                   auto it = std::ranges::lower_bound(ranks, r);
                    assert(it != ranks.end() and *it == r);
                    return std::distance(ranks.begin(), it);
                  });
@@ -645,7 +647,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   // Create unique list of ranks that share edges (owners of ghosts plus
   // ranks that ghost owned indices)
   std::vector<int> ranks(edge_ranks.array().begin(), edge_ranks.array().end());
-  std::sort(ranks.begin(), ranks.end());
+  std::ranges::sort(ranks);
   ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
 
   // Convert edge_ranks from global rank to to neighbourhood ranks
@@ -653,7 +655,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
                  edge_ranks.array().begin(),
                  [&ranks](auto r)
                  {
-                   auto it = std::lower_bound(ranks.begin(), ranks.end(), r);
+                   auto it = std::ranges::lower_bound(ranks, r);
                    assert(it != ranks.end() and *it == r);
                    return std::distance(ranks.begin(), it);
                  });

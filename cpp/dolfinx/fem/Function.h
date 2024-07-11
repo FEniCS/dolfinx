@@ -520,7 +520,7 @@ public:
     impl::mdspan_t<geometry_type, 2> xp(xp_b.data(), 1, gdim);
 
     // Loop over points
-    std::fill(u.data(), u.data() + u.size(), 0.0);
+    std::ranges::fill(u, 0.0);
     std::span<const value_type> _v = _x->array();
 
     // Evaluate geometry basis at point (0, 0, 0) on the reference cell.

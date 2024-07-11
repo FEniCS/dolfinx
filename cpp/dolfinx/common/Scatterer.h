@@ -57,8 +57,8 @@ public:
       return;
 
     // Check that src and dest ranks are unique and sorted
-    assert(std::is_sorted(_src.begin(), _src.end()));
-    assert(std::is_sorted(_dest.begin(), _dest.end()));
+    assert(std::ranges::is_sorted(_src));
+    assert(std::ranges::is_sorted(_dest));
 
     // Create communicators with directed edges:
     // (0) owner -> ghost,
@@ -139,8 +139,8 @@ public:
     const std::array<std::int64_t, 2> range = map.local_range();
 #ifndef NDEBUG
     // Check that all received indice are within the owned range
-    std::for_each(recv_buffer.begin(), recv_buffer.end(), [range](auto idx)
-                  { assert(idx >= range[0] and idx < range[1]); });
+    std::ranges::for_each(recv_buffer, [range](auto idx)
+                          { assert(idx >= range[0] and idx < range[1]); });
 #endif
 
     // Scale sizes and displacements by block size
@@ -525,7 +525,7 @@ public:
     assert(local_buffer.size() == _local_inds.size());
     if (!_local_inds.empty())
     {
-      assert(*std::max_element(_local_inds.begin(), _local_inds.end())
+      assert(*std::ranges::max_element(_local_inds)
              < std::int32_t(local_data.size()));
     }
     scatter_rev_end(request);
