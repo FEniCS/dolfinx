@@ -57,8 +57,8 @@ public:
       return;
 
     // Check that src and dest ranks are unique and sorted
-    assert(std::is_sorted(_src.begin(), _src.end()));
-    assert(std::is_sorted(_dest.begin(), _dest.end()));
+    assert(std::ranges::is_sorted(_src));
+    assert(std::ranges::is_sorted(_dest));
 
     // Create communicators with directed edges:
     // (0) owner -> ghost,

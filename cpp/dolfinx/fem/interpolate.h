@@ -174,7 +174,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
                [](auto rank) { return rank >= 0; });
 
   // Create unique set of sorted in-ranks
-  std::sort(in_ranks.begin(), in_ranks.end());
+  std::ranges::sort(in_ranks);
   in_ranks.erase(std::unique(in_ranks.begin(), in_ranks.end()), in_ranks.end());
   in_ranks.reserve(in_ranks.size() + 1);
 

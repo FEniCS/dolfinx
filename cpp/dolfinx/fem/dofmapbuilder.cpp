@@ -585,7 +585,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
       global_old_new.push_back(
           {all_dofs_received[d][j], {all_dofs_received[d][j + 1], src[owner]}});
     }
-    std::sort(global_old_new.begin(), global_old_new.end());
+    std::ranges::sort(global_old_new);
 
     // Build the dimension d part of local_to_global_new vector
     for (std::size_t i = 0; i < local_new_to_global_old[d].size(); i += 2)

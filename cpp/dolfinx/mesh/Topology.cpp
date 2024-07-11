@@ -64,7 +64,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
       int dest = dolfinx::MPI::index_owner(size, idx, global_range);
       dest_to_index.push_back({dest, static_cast<int>(dest_to_index.size())});
     }
-    std::sort(dest_to_index.begin(), dest_to_index.end());
+    std::ranges::sort(dest_to_index);
   }
 
   // Build list of neighbour dest ranks and count number of indices to
@@ -92,7 +92,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
   // Determine src ranks. Sort ranks so that ownership determination is
   // deterministic for a given number of ranks.
   std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
-  std::sort(src.begin(), src.end());
+  std::ranges::sort(src);
 
   // Create neighbourhood communicator for sending data to post offices
   MPI_Comm neigh_comm0;
@@ -141,7 +141,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
     for (std::int32_t i = recv_disp0[p]; i < recv_disp0[p + 1]; ++i)
       indices_list.push_back({recv_buffer0[i], i, int(p)});
   }
-  std::sort(indices_list.begin(), indices_list.end());
+  std::ranges::sort(indices_list);
 
   // Find which ranks have each index
   std::vector<std::int32_t> num_items_per_dest1(recv_disp0.size() - 1, 0);
@@ -389,9 +389,9 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
     else
       src.push_back(ranks.front());
   }
-  std::sort(src.begin(), src.end());
+  std::ranges::sort(src);
   src.erase(std::unique(src.begin(), src.end()), src.end());
-  std::sort(dest.begin(), dest.end());
+  std::ranges::sort(dest);
   dest.erase(std::unique(dest.begin(), dest.end()), dest.end());
 
   // Pack send data. Use std::vector<std::vector>> since size will be
@@ -543,7 +543,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
                    map0.owners().begin(), std::back_inserter(owner_to_ghost),
                    [](auto idx, auto r) -> std::pair<int, std::int64_t>
                    { return {r, idx}; });
-    std::sort(owner_to_ghost.begin(), owner_to_ghost.end());
+    std::ranges::sort(owner_to_ghost);
 
     // Build send buffer (the second component of each pair in
     // owner_to_ghost) to send to rank that owns the index
@@ -602,7 +602,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
                                vertices.end());
       }
 
-      std::sort(shared_vertices.begin(), shared_vertices.end());
+      std::ranges::sort(shared_vertices);
       shared_vertices.erase(
           std::unique(shared_vertices.begin(), shared_vertices.end()),
           shared_vertices.end());
@@ -672,7 +672,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
   data.reserve(recv_buffer.size() / 3);
   for (std::size_t i = 0; i < recv_buffer.size(); i += 3)
     data.push_back({recv_buffer[i], recv_buffer[i + 1], recv_buffer[i + 2]});
-  std::sort(data.begin(), data.end());
+  std::ranges::sort(data);
   data.erase(std::unique(data.begin(), data.end()), data.end());
 
   MPI_Comm_free(&comm);
@@ -857,7 +857,7 @@ std::int32_t Topology::create_entities(int dim)
     // Store boundary facets
     if (dim == this->dim() - 1)
     {
-      std::sort(interprocess_entities.begin(), interprocess_entities.end());
+      std::ranges::sort(interprocess_entities);
       assert(index < _interprocess_facets.size());
       _interprocess_facets[index] = std::move(interprocess_entities);
     }
@@ -1189,8 +1189,7 @@ Topology mesh::create_topology(
                      [](auto idx0, auto idx1) {
                        return std::pair<std::int64_t, std::int32_t>(idx0, idx1);
                      });
-      std::sort(global_to_local_vertices.begin(),
-                global_to_local_vertices.end());
+      std::ranges::sort(global_to_local_vertices);
 
       // Send (from the ghost cell owner) and receive global indices for
       // ghost vertices that are not on the process boundary. Data is
@@ -1249,7 +1248,7 @@ Topology mesh::create_topology(
       std::back_inserter(global_to_local_vertices),
       [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t>
       { return {idx0, idx1}; });
-  std::sort(global_to_local_vertices.begin(), global_to_local_vertices.end());
+  std::ranges::sort(global_to_local_vertices);
 
   std::vector<std::vector<std::int32_t>> _cells_local_idx(cells.size());
   for (std::size_t i = 0; i < cell_type.size(); ++i)
@@ -1348,7 +1347,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
   {
     // FIXME Make this an input requirement?
     std::vector<std::int32_t> _entities(entities.begin(), entities.end());
-    std::sort(_entities.begin(), _entities.end());
+    std::ranges::sort(_entities);
     _entities.erase(std::unique(_entities.begin(), _entities.end()),
                     _entities.end());
     auto [_submap, _subentities]
@@ -1455,7 +1454,7 @@ mesh::entities_to_index(const Topology& topology, int dim,
   {
     auto vertices = e_to_v->links(e);
     std::copy(vertices.begin(), vertices.end(), key.begin());
-    std::sort(key.begin(), key.end());
+    std::ranges::sort(key);
     auto ins = entity_key_to_index.insert({key, e});
     if (!ins.second)
       throw std::runtime_error("Duplicate mesh entity detected.");
@@ -1471,7 +1470,7 @@ mesh::entities_to_index(const Topology& topology, int dim,
   {
     auto v = entities.subspan(e, num_vertices_per_entity);
     std::copy(v.begin(), v.end(), vertices.begin());
-    std::sort(vertices.begin(), vertices.end());
+    std::ranges::sort(vertices);
     if (auto it = entity_key_to_index.find(vertices);
         it != entity_key_to_index.end())
     {

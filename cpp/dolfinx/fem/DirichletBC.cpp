@@ -249,7 +249,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
 
   // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates
-  std::sort(dofs.begin(), dofs.end());
+  std::ranges::sort(dofs);
   dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
 
   if (remote)
@@ -285,7 +285,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     // Add received bc indices to dofs_local, sort, and remove
     // duplicates
     dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
-    std::sort(dofs.begin(), dofs.end());
+    std::ranges::sort(dofs);
     dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
   }
 

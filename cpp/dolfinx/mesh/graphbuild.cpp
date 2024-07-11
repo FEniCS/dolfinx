@@ -127,7 +127,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       dest_to_index.push_back({dolfinx::MPI::index_owner(num_ranks, v0, range),
                                static_cast<int>(i)});
     }
-    std::sort(dest_to_index.begin(), dest_to_index.end());
+    std::ranges::sort(dest_to_index);
 
     // Build list of dest ranks and count number of items (facets) to
     // send to each dest post office (by neighbourhood rank)
@@ -235,14 +235,15 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     // Compute sort permutation for received data
     std::vector<int> sort_order(recv_buffer.size() / buffer_shape1);
     std::iota(sort_order.begin(), sort_order.end(), 0);
-    std::sort(sort_order.begin(), sort_order.end(),
-              [&recv_buffer, buffer_shape1, fshape1](auto f0, auto f1)
-              {
-                auto it0 = std::next(recv_buffer.begin(), f0 * buffer_shape1);
-                auto it1 = std::next(recv_buffer.begin(), f1 * buffer_shape1);
-                return std::lexicographical_compare(
-                    it0, std::next(it0, fshape1), it1, std::next(it1, fshape1));
-              });
+    std::ranges::sort(
+        sort_order,
+        [&recv_buffer, buffer_shape1, fshape1](auto f0, auto f1)
+        {
+          auto it0 = std::next(recv_buffer.begin(), f0 * buffer_shape1);
+          auto it1 = std::next(recv_buffer.begin(), f1 * buffer_shape1);
+          return std::lexicographical_compare(it0, std::next(it0, fshape1), it1,
+                                              std::next(it1, fshape1));
+        });
 
     auto it = sort_order.begin();
     while (it != sort_order.end())

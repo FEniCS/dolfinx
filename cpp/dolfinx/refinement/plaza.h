@@ -85,7 +85,7 @@ auto compute_parent_facets(std::span<const std::int32_t> simplex_set)
         {
           for (int j = 0; j < tdim; ++j)
             cf[j] = simplex_set[cc * 3 + facet_table_2d[fci][j]];
-          std::sort(cf.begin(), cf.end());
+          std::ranges::sort(cf);
           auto it = std::set_intersection(facet_table_2d[fpi].begin(),
                                           facet_table_2d[fpi].end(), cf.begin(),
                                           cf.end(), set_output.begin());
@@ -95,7 +95,7 @@ auto compute_parent_facets(std::span<const std::int32_t> simplex_set)
         {
           for (int j = 0; j < tdim; ++j)
             cf[j] = simplex_set[cc * 4 + facet_table_3d[fci][j]];
-          std::sort(cf.begin(), cf.end());
+          std::ranges::sort(cf);
           auto it = std::set_intersection(facet_table_3d[fpi].begin(),
                                           facet_table_3d[fpi].end(), cf.begin(),
                                           cf.end(), set_output.begin());
@@ -580,7 +580,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh, Option option)
   // Create unique list of ranks that share edges (owners of ghosts
   // plus ranks that ghost owned indices)
   std::vector<int> ranks(edge_ranks.array().begin(), edge_ranks.array().end());
-  std::sort(ranks.begin(), ranks.end());
+  std::ranges::sort(ranks);
   ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
 
   // Convert edge_ranks from global rank to to neighbourhood ranks
@@ -647,7 +647,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   // Create unique list of ranks that share edges (owners of ghosts plus
   // ranks that ghost owned indices)
   std::vector<int> ranks(edge_ranks.array().begin(), edge_ranks.array().end());
-  std::sort(ranks.begin(), ranks.end());
+  std::ranges::sort(ranks);
   ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
 
   // Convert edge_ranks from global rank to to neighbourhood ranks

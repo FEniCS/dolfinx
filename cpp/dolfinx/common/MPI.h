@@ -339,7 +339,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
     if (int dest = MPI::index_owner(size, idx, shape[0]); dest != rank)
       dest_to_index.push_back({dest, i});
   }
-  std::sort(dest_to_index.begin(), dest_to_index.end());
+  std::ranges::sort(dest_to_index);
 
   // Build list of neighbour src ranks and count number of items (rows
   // of x) to receive from each src post office (by neighbourhood rank)
@@ -492,7 +492,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
     if (int src = dolfinx::MPI::index_owner(size, idx, shape[0]); src != rank)
       src_to_index.push_back({src, idx, i});
   }
-  std::sort(src_to_index.begin(), src_to_index.end());
+  std::ranges::sort(src_to_index);
 
   // Build list is neighbour src ranks and count number of items (rows
   // of x) to receive from each src post office (by neighbourhood rank)

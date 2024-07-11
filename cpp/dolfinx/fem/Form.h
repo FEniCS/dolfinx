@@ -210,8 +210,8 @@ public:
     // Store kernels, looping over integrals by domain type (dimension)
     for (auto&& [domain_type, data] : integrals)
     {
-      if (!std::is_sorted(data.begin(), data.end(),
-                          [](auto& a, auto& b) { return a.id < b.id; }))
+      if (!std::ranges::is_sorted(data,
+                                  [](auto& a, auto& b) { return a.id < b.id; }))
       {
         throw std::runtime_error("Integral IDs not sorted");
       }

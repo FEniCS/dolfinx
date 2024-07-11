@@ -36,11 +36,11 @@ std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
   }
 
   std::vector<int> src(owners.begin(), owners.end());
-  std::sort(src.begin(), src.end());
+  std::ranges::sort(src);
   src.erase(std::unique(src.begin(), src.end()), src.end());
   src.shrink_to_fit();
   std::vector<int> dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
-  std::sort(dest.begin(), dest.end());
+  std::ranges::sort(dest);
   return {std::move(src), std::move(dest)};
 }
 
@@ -246,8 +246,7 @@ compute_submap_indices(const IndexMap& imap,
         throw std::runtime_error("Index owner change detected!");
     }
 
-    std::sort(global_idx_to_possible_owner.begin(),
-              global_idx_to_possible_owner.end());
+    std::ranges::sort(global_idx_to_possible_owner);
 
     // Choose the submap owner for each index in `recv_indices`
     std::vector<int> send_owners;
@@ -333,13 +332,13 @@ compute_submap_indices(const IndexMap& imap,
         }
       }
     }
-    std::sort(submap_owned.begin(), submap_owned.end());
+    std::ranges::sort(submap_owned);
   }
 
   // Get submap source ranks
   std::vector<int> submap_src(submap_ghost_owners.begin(),
                               submap_ghost_owners.end());
-  std::sort(submap_src.begin(), submap_src.end());
+  std::ranges::sort(submap_src);
   submap_src.erase(std::unique(submap_src.begin(), submap_src.end()),
                    submap_src.end());
   submap_src.shrink_to_fit();
@@ -352,7 +351,7 @@ compute_submap_indices(const IndexMap& imap,
     pos.reserve(submap_ghost.size());
     for (std::int32_t idx : submap_ghost)
       pos.emplace_back(idx, pos.size());
-    std::sort(pos.begin(), pos.end());
+    std::ranges::sort(pos);
 
     // Order ghosts in the sub-map by their position in the parent map
     std::vector<int> submap_ghost_owners1;
@@ -373,7 +372,7 @@ compute_submap_indices(const IndexMap& imap,
   // FIXME Remove call to NBX
   std::vector<int> submap_dest
       = dolfinx::MPI::compute_graph_edges_nbx(imap.comm(), submap_src);
-  std::sort(submap_dest.begin(), submap_dest.end());
+  std::ranges::sort(submap_dest);
 
   return {std::move(submap_owned), std::move(submap_ghost),
           std::move(submap_ghost_owners), std::move(submap_src),
@@ -474,7 +473,7 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
                               const IndexMap& map)
 {
   // Assume that indices are sorted and unique
-  assert(std::is_sorted(indices.begin(), indices.end()));
+  assert(std::ranges::is_sorted(indices));
 
   std::span ghosts = map.ghosts();
   std::vector<int> owners(map.owners().begin(), map.owners().end());
@@ -498,8 +497,8 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   }
 
   // Sort indices and owners
-  std::sort(global_indices.begin(), global_indices.end());
-  std::sort(ghost_owners.begin(), ghost_owners.end());
+  std::ranges::sort(global_indices);
+  std::ranges::sort(ghost_owners);
 
   std::span dest = map.dest();
   std::span src = map.src();
@@ -554,7 +553,7 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   dolfinx::MPI::check_error(map.comm(), ierr);
 
   // Remove duplicates from received indices
-  std::sort(recv_buffer.begin(), recv_buffer.end());
+  std::ranges::sort(recv_buffer);
   recv_buffer.erase(std::unique(recv_buffer.begin(), recv_buffer.end()),
                     recv_buffer.end());
 
@@ -571,7 +570,7 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
                    return idx - range[0];
                  });
 
-  std::sort(owned.begin(), owned.end());
+  std::ranges::sort(owned);
   owned.erase(std::unique(owned.begin(), owned.end()), owned.end());
 
   return owned;
@@ -831,8 +830,8 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
       _dest(src_dest[1])
 {
   assert(ghosts.size() == owners.size());
-  assert(std::is_sorted(src_dest[0].begin(), src_dest[0].end()));
-  assert(std::is_sorted(src_dest[1].begin(), src_dest[1].end()));
+  assert(std::ranges::is_sorted(src_dest[0]));
+  assert(std::ranges::is_sorted(src_dest[1]));
 
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
@@ -905,7 +904,7 @@ void IndexMap::global_to_local(std::span<const std::int64_t> global,
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
     global_to_local[i] = {_ghosts[i], i + local_size};
 
-  std::sort(global_to_local.begin(), global_to_local.end());
+  std::ranges::sort(global_to_local);
   std::transform(global.begin(), global.end(), local.begin(),
                  [range = _local_range,
                   &global_to_local](std::int64_t index) -> std::int32_t
@@ -945,10 +944,10 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
 
   // Build lists of src and dest ranks
   std::vector<int> src = _owners;
-  std::sort(src.begin(), src.end());
+  std::ranges::sort(src);
   src.erase(std::unique(src.begin(), src.end()), src.end());
   auto dest = dolfinx::MPI::compute_graph_edges_nbx(_comm.comm(), src);
-  std::sort(dest.begin(), dest.end());
+  std::ranges::sort(dest);
 
   // Array (local idx, ghosting rank) pairs for owned indices
   std::vector<std::pair<std::int32_t, int>> idx_to_rank;
@@ -964,7 +963,7 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
                    std::back_inserter(owner_to_ghost),
                    [](auto idx, auto r) -> std::pair<int, std::int64_t>
                    { return {r, idx}; });
-    std::sort(owner_to_ghost.begin(), owner_to_ghost.end());
+    std::ranges::sort(owner_to_ghost);
 
     // Build send buffer (the second component of each pair in
     // owner_to_ghost) to send to rank that owns the index
@@ -1020,7 +1019,7 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
     for (std::size_t r = 0; r < recv_disp.size() - 1; ++r)
       for (int j = recv_disp[r]; j < recv_disp[r + 1]; ++j)
         idx_to_rank.push_back({recv_buffer[j] - offset, r});
-    std::sort(idx_to_rank.begin(), idx_to_rank.end());
+    std::ranges::sort(idx_to_rank);
 
     // -- Send to ranks that ghost my indices all the sharing ranks
 
@@ -1121,7 +1120,7 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
       std::vector<std::pair<std::int64_t, std::int32_t>> idx_to_pos;
       for (auto idx : _ghosts)
         idx_to_pos.push_back({idx, idx_to_pos.size()});
-      std::sort(idx_to_pos.begin(), idx_to_pos.end());
+      std::ranges::sort(idx_to_pos);
 
       // Build list of (local ghost position, sharing rank) pairs from
       // the received data, and sort
@@ -1138,7 +1137,7 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
         int rank = recv_indices[i + 1];
         idxpos_to_rank.push_back({it->second, rank});
       }
-      std::sort(idxpos_to_rank.begin(), idxpos_to_rank.end());
+      std::ranges::sort(idxpos_to_rank);
 
       // Add processed received data to adjacency list data array, and
       // extend offset array
@@ -1168,10 +1167,10 @@ std::vector<std::int32_t> IndexMap::shared_indices() const
   // Each process gets a chunk of consecutive indices (global indices)
   // Sorting the ghosts groups them by owner
   std::vector<std::int64_t> send_buffer(_ghosts);
-  std::sort(send_buffer.begin(), send_buffer.end());
+  std::ranges::sort(send_buffer);
 
   std::vector<int32_t> owners(_owners);
-  std::sort(owners.begin(), owners.end());
+  std::ranges::sort(owners);
   std::vector<int> send_sizes, send_disp{0};
 
   // Count number of ghost per destination
@@ -1228,7 +1227,7 @@ std::vector<std::int32_t> IndexMap::shared_indices() const
                  });
 
   // Sort and remove duplicates
-  std::sort(shared.begin(), shared.end());
+  std::ranges::sort(shared);
   shared.erase(std::unique(shared.begin(), shared.end()), shared.end());
 
   return shared;

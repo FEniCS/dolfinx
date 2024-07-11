@@ -229,7 +229,7 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
   }
 
   // Remove duplicates
-  std::sort(bc_dofs.begin(), bc_dofs.end());
+  std::ranges::sort(bc_dofs);
   bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
 
   // Copy to separate array
