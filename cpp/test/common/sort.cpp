@@ -28,7 +28,7 @@ TEMPLATE_TEST_CASE("Test radix sort", "[vector][template]", std::int32_t,
   dolfinx::radix_sort(std::span(vec));
 
   // Check if vector is sorted
-  REQUIRE(std::is_sorted(vec.begin(), vec.end()));
+  REQUIRE(std::ranges::is_sorted(vec));
 }
 
 TEST_CASE("Test argsort bitset")
@@ -51,14 +51,15 @@ TEST_CASE("Test argsort bitset")
   // Sort by perm using to std::lexicographical_compare
   std::vector<int> index(shape0);
   std::iota(index.begin(), index.end(), 0);
-  std::sort(index.begin(), index.end(),
-            [&arr](int a, int b)
-            {
-              auto it0 = std::next(arr.begin(), shape1 * a);
-              auto it1 = std::next(arr.begin(), shape1 * b);
-              return std::lexicographical_compare(it0, std::next(it0, shape1),
-                                                  it1, std::next(it1, shape1));
-            });
+  std::ranges::sort(index,
+                    [&arr](int a, int b)
+                    {
+                      auto it0 = std::next(arr.begin(), shape1 * a);
+                      auto it1 = std::next(arr.begin(), shape1 * b);
+                      return std::lexicographical_compare(
+                          it0, std::next(it0, shape1), it1,
+                          std::next(it1, shape1));
+                    });
 
   // Requiring equality of permutation vectors is not a good test, because
   // std::sort is not stable, so we compare the effect on the actual array.

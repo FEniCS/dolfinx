@@ -58,7 +58,7 @@ public:
           "Indices and values arrays must have same size.");
     }
 #ifndef NDEBUG
-    if (!std::is_sorted(_indices.begin(), _indices.end()))
+    if (!std::ranges::is_sorted(_indices))
       throw std::runtime_error("MeshTag data is not sorted");
     if (std::adjacent_find(_indices.begin(), _indices.end()) != _indices.end())
       throw std::runtime_error("MeshTag data has duplicates");
@@ -157,7 +157,7 @@ MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
   auto [indices_sorted, values_sorted] = common::sort_unique(indices, values);
 
   // Remove any entities that were not found (these have an index of -1)
-  auto it0 = std::lower_bound(indices_sorted.begin(), indices_sorted.end(), 0);
+  auto it0 = std::ranges::lower_bound(indices_sorted, 0);
   std::size_t pos0 = std::distance(indices_sorted.begin(), it0);
   indices_sorted.erase(indices_sorted.begin(), it0);
   values_sorted.erase(values_sorted.begin(),

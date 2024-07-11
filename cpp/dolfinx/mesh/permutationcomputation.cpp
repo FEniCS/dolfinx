@@ -30,8 +30,7 @@ compute_triangle_rot_reflect(const std::vector<std::int32_t>& e_vertices,
 
   // Number of rotations
   std::uint8_t min_v
-      = std::distance(e_vertices.begin(),
-                      std::min_element(e_vertices.begin(), e_vertices.end()));
+      = std::distance(e_vertices.begin(), std::ranges::min_element(e_vertices));
 
   // pre is the (local) number of the next vertex clockwise from the lowest
   // numbered vertex
@@ -41,8 +40,8 @@ compute_triangle_rot_reflect(const std::vector<std::int32_t>& e_vertices,
   // lowest numbered vertex
   const int post = e_vertices[(min_v + 1) % 3];
 
-  std::uint8_t g_min_v = std::distance(
-      vertices.begin(), std::min_element(vertices.begin(), vertices.end()));
+  std::uint8_t g_min_v
+      = std::distance(vertices.begin(), std::ranges::min_element(vertices));
 
   // g_pre is the (global) number of the next vertex clockwise from the lowest
   // numbered vertex
@@ -67,8 +66,7 @@ compute_quad_rot_reflect(const std::vector<std::int32_t>& e_vertices,
 {
   // Find minimum local cell vertex on facet
   std::uint8_t min_v
-      = std::distance(e_vertices.begin(),
-                      std::min_element(e_vertices.begin(), e_vertices.end()));
+      = std::distance(e_vertices.begin(), std::ranges::min_element(e_vertices));
 
   // Table of next and previous vertices
   // 0 - 2
@@ -95,8 +93,8 @@ compute_quad_rot_reflect(const std::vector<std::int32_t>& e_vertices,
     min_v = 5 - min_v;
 
   // Find minimum global vertex in facet
-  std::uint8_t g_min_v = std::distance(
-      vertices.begin(), std::min_element(vertices.begin(), vertices.end()));
+  std::uint8_t g_min_v
+      = std::distance(vertices.begin(), std::ranges::min_element(vertices));
 
   // rots is the number of rotations to get the lowest numbered
   // vertex to the origin
