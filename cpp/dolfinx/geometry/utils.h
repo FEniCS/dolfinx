@@ -934,7 +934,7 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
 
   // Pack ownership data
   std::vector<std::int32_t> send_owners(send_offsets.back());
-  std::fill(counter.begin(), counter.end(), 0);
+  std::ranges::fill(counter, 0);
   for (std::size_t i = 0; i < points.size() / 3; ++i)
   {
     for (auto p : collisions.links(i))

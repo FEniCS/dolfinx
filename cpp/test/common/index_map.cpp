@@ -50,7 +50,7 @@ void test_scatter_fwd(int n)
   std::vector<MPI_Request> requests
       = sct.create_request_vector(decltype(sct)::type::p2p);
 
-  std::fill(data_ghost.begin(), data_ghost.end(), 0);
+  std::ranges::fill(data_ghost, 0);
   sct.scatter_fwd_begin<std::int64_t>(data_local, data_ghost, requests,
                                       decltype(sct)::type::p2p);
   sct.scatter_fwd_end(requests);

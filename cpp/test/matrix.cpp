@@ -186,7 +186,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
   CHECK(x.array().size() == col_size);
 
   // Fill x vector with 1 (Constant)
-  std::fill(x.mutable_array().begin(), x.mutable_array().end(), 1);
+  std::ranges::fill(x.mutable_array(), 1);
 
   // Matrix A represents the action of the Laplace operator, so when
   // applied to a constant vector the result should be zero

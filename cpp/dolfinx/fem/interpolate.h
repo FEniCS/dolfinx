@@ -254,7 +254,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
   MPI_Comm_free(&reverse_comm);
 
   // Insert values received from neighborhood communicator in output span
-  std::fill(recv_values.begin(), recv_values.end(), T(0));
+  std::ranges::fill(recv_values, T(0));
   for (std::size_t i = 0; i < comm_to_output.size(); i++)
   {
     auto vals = std::next(recv_values.begin(), comm_to_output[i]);
@@ -399,7 +399,7 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
 
     // FIXME: Get compile-time ranges from Basix
     // Apply interpolation operator
-    std::fill(local1.begin(), local1.end(), 0);
+    std::ranges::fill(local1, 0);
     for (std::size_t i = 0; i < im_shape[0]; ++i)
       for (std::size_t j = 0; j < im_shape[1]; ++j)
         local1[i] += static_cast<X>(i_m[im_shape[1] * i + j]) * local0[j];
@@ -563,7 +563,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
     }
 
     // Compute Jacobians and reference points for current cell
-    std::fill(J_b.begin(), J_b.end(), 0);
+    std::ranges::fill(J_b, 0);
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       auto dphi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
@@ -964,7 +964,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
       }
 
       // Compute J, detJ and K
-      std::fill(J_b.begin(), J_b.end(), 0);
+      std::ranges::fill(J_b, 0);
       for (std::size_t p = 0; p < Xshape[0]; ++p)
       {
         auto _dphi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(

@@ -182,7 +182,7 @@ public:
   /// @brief Set all non-zero local entries to a value including entries
   /// in ghost rows.
   /// @param[in] x The value to set non-zero matrix entries to
-  void set(value_type x) { std::fill(_data.begin(), _data.end(), x); }
+  void set(value_type x) { std::ranges::fill(_data, x); }
 
   /// @brief Set values in the matrix.
   ///
