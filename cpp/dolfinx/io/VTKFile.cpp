@@ -274,9 +274,9 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   if (!cellmap.ghosts().empty())
   {
     std::span ghosts = cellmap.ghosts();
-    auto minmax = std::minmax_element(ghosts.begin(), ghosts.end());
-    min_idx = std::min(min_idx, *minmax.first);
-    max_idx = std::max(max_idx, *minmax.second);
+    auto [min, max] = std::ranges::minmax_element(ghosts);
+    min_idx = std::min(min_idx, *min);
+    max_idx = std::max(max_idx, *max);
   }
   cell_id_node.append_attribute("RangeMin") = min_idx;
   cell_id_node.append_attribute("RangeMax") = max_idx;
@@ -296,9 +296,9 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   }
   if (!x_id.empty())
   {
-    auto minmax = std::minmax_element(x_id.begin(), x_id.end());
-    point_id_node.append_attribute("RangeMin") = *minmax.first;
-    point_id_node.append_attribute("RangeMax") = *minmax.second;
+    auto [min, max] = std::ranges::minmax_element(x_id);
+    point_id_node.append_attribute("RangeMin") = *min;
+    point_id_node.append_attribute("RangeMax") = *max;
   }
 
   // Point ghosts
@@ -314,9 +314,9 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   }
   if (!x_ghost.empty())
   {
-    auto minmax = std::minmax_element(x_ghost.begin(), x_ghost.end());
-    point_ghost_node.append_attribute("RangeMin") = *minmax.first;
-    point_ghost_node.append_attribute("RangeMax") = *minmax.second;
+    auto [min, max] = std::ranges::minmax_element(x_ghost);
+    point_ghost_node.append_attribute("RangeMin") = *min;
+    point_ghost_node.append_attribute("RangeMax") = *max;
   }
 }
 //----------------------------------------------------------------------------

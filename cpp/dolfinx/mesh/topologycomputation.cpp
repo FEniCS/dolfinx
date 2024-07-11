@@ -115,7 +115,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
 
   // Find the maximum entity index, hence the number of entities
   std::int32_t entity_count = 0;
-  if (auto mx = std::max_element(entity_index.begin(), entity_index.end());
+  if (auto mx = std::ranges::max_element(entity_index);
       mx != entity_index.end())
   {
     entity_count = *mx + 1;
