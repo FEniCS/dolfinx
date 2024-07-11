@@ -70,7 +70,7 @@ graph::AdjacencyList<int> compute_destination_ranks(
     {
       if (node1 < range0 or node1 >= range1)
       {
-        auto it = std::upper_bound(node_disp.begin(), node_disp.end(), node1);
+        auto it = std::ranges::upper_bound(node_disp, node1);
         int remote_rank = std::distance(node_disp.begin(), it) - 1;
         node_to_dest.push_back(
             {remote_rank, node1, static_cast<std::int64_t>(part[node0])});

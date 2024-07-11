@@ -7,6 +7,7 @@
 #include "IndexMap.h"
 #include "sort.h"
 #include <algorithm>
+#include <bits/ranges_algo.h>
 #include <cstdint>
 #include <functional>
 #include <numeric>
@@ -96,7 +97,7 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
     std::vector<std::vector<std::size_t>> pos_to_ghost(src.size());
     for (std::size_t i = 0; i < ghosts.size(); ++i)
     {
-      auto it = std::lower_bound(src.begin(), src.end(), owners[i]);
+      auto it = std::ranges::lower_bound(src, owners[i]);
       assert(it != src.end() and *it == owners[i]);
       std::size_t r = std::distance(src.begin(), it);
       if (include_ghost[i])
@@ -259,9 +260,9 @@ compute_submap_indices(const IndexMap& imap,
       {
         // NOTE: Could choose new owner in a way that is is better for
         // load balancing, though the impact is probably only very small
-        auto it = std::lower_bound(global_idx_to_possible_owner.begin(),
-                                   global_idx_to_possible_owner.end(), idx,
-                                   [](auto a, auto b) { return a.first < b; });
+        auto it = std::ranges::lower_bound(global_idx_to_possible_owner, idx,
+                                           std::ranges::less(),
+                                           [](auto& e) { return e.first; });
         assert(it != global_idx_to_possible_owner.end() and it->first == idx);
         send_owners.push_back(it->second);
       }
@@ -427,7 +428,7 @@ compute_submap_ghost_indices(std::span<const int> submap_src,
     for (auto idx : recv_indices_local)
     {
       // Could avoid search by creating look-up array
-      auto it = std::lower_bound(submap_owned.begin(), submap_owned.end(), idx);
+      auto it = std::ranges::lower_bound(submap_owned, idx);
       assert(it != submap_owned.end() and *it == idx);
       std::size_t idx_local_submap = std::distance(submap_owned.begin(), it);
       send_gidx.push_back(idx_local_submap + submap_offset);
@@ -480,8 +481,7 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
 
   // Find first index that is not owned by this rank
   std::int32_t size_local = map.size_local();
-  const auto it_owned_end
-      = std::lower_bound(indices.begin(), indices.end(), size_local);
+  const auto it_owned_end = std::ranges::lower_bound(indices, size_local);
 
   // Get global indices and owners for ghost indices
   std::size_t first_ghost_index = std::distance(indices.begin(), it_owned_end);
@@ -650,7 +650,7 @@ common::stack_index_maps(
       std::vector<std::vector<std::size_t>> pos_to_ghost(src.size());
       for (std::size_t i = 0; i < ghosts.size(); ++i)
       {
-        auto it = std::lower_bound(src.begin(), src.end(), owners[i]);
+        auto it = std::ranges::lower_bound(src, owners[i]);
         assert(it != src.end() and *it == owners[i]);
         int r = std::distance(src.begin(), it);
         ghost_by_rank[r].push_back(ghosts[i]);
@@ -913,9 +913,9 @@ void IndexMap::global_to_local(std::span<const std::int64_t> global,
                      return index - range[0];
                    else
                    {
-                     auto it = std::lower_bound(
-                         global_to_local.begin(), global_to_local.end(), index,
-                         [](auto a, auto b) { return a.first < b; });
+                     auto it = std::ranges::lower_bound(
+                         global_to_local, index, std::ranges::less(),
+                         [](auto& e) { return e.first; });
                      return (it != global_to_local.end() and it->first == index)
                                 ? it->second
                                 : -1;
@@ -1128,9 +1128,8 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
       for (std::size_t i = 0; i < recv_indices.size(); i += 2)
       {
         std::int64_t idx = recv_indices[i];
-        auto it = std::lower_bound(
-            idx_to_pos.begin(), idx_to_pos.end(),
-            std::pair<std::int64_t, std::int32_t>{idx, 0},
+        auto it = std::ranges::lower_bound(
+            idx_to_pos, std::pair<std::int64_t, std::int32_t>{idx, 0},
             [](auto a, auto b) { return a.first < b.first; });
         assert(it != idx_to_pos.end() and it->first == idx);
 

@@ -10,6 +10,7 @@
 #include "topologycomputation.h"
 #include "utils.h"
 #include <algorithm>
+#include <bits/ranges_algo.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
@@ -406,8 +407,7 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
     {
       // Get local vertex index
       std::int64_t idx_old = indices[i];
-      auto local_it = std::lower_bound(global_indices.begin(),
-                                       global_indices.end(), idx_old);
+      auto local_it = std::ranges::lower_bound(global_indices, idx_old);
       assert(local_it != global_indices.end() and *local_it == idx_old);
       std::size_t pos = std::distance(global_indices.begin(), local_it);
       std::int64_t idx_new = local_indices[pos] + offset;
@@ -417,7 +417,7 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
       for (std::size_t j = 1; j < ranks.size(); ++j)
       {
         // Find rank on the neighborhood comm
-        auto it = std::lower_bound(dest.begin(), dest.end(), ranks[j]);
+        auto it = std::ranges::lower_bound(dest, ranks[j]);
         assert(it != dest.end() and *it == ranks[j]);
         int neighbor = std::distance(dest.begin(), it);
 
@@ -637,8 +637,8 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
       for (auto vertex_old : vertices_old)
       {
         // Find new vertex index and determine owning rank
-        auto it = std::lower_bound(
-            global_local_entities1.begin(), global_local_entities1.end(),
+        auto it = std::ranges::lower_bound(
+            global_local_entities1,
             std::pair<std::int64_t, std::int32_t>(vertex_old, 0),
             [](auto& a, auto& b) { return a.first < b.first; });
         assert(it != global_local_entities1.end());
@@ -697,10 +697,9 @@ std::vector<std::int32_t> convert_to_local_indexing(
   std::transform(g.begin(), std::next(g.begin(), data.size()), data.begin(),
                  [&global_to_local](auto i)
                  {
-                   auto it = std::lower_bound(
-                       global_to_local.begin(), global_to_local.end(),
-                       std::pair<std::int64_t, std::int32_t>(i, 0),
-                       [](auto& a, auto& b) { return a.first < b.first; });
+                   auto it = std::ranges::lower_bound(
+                       global_to_local, i, std::ranges::less(),
+                       [](auto& e) { return e.first; });
                    assert(it != global_to_local.end());
                    assert(it->first == i);
                    return it->second;
@@ -1108,8 +1107,7 @@ Topology mesh::create_topology(
     {
       for (auto vtx : cells[i])
       {
-        auto it = std::lower_bound(owned_vertices.begin(), owned_vertices.end(),
-                                   vtx);
+        auto it = std::ranges::lower_bound(owned_vertices, vtx);
         if (it != owned_vertices.end() and *it == vtx)
         {
           std::size_t pos = std::distance(owned_vertices.begin(), it);
@@ -1161,8 +1159,7 @@ Topology mesh::create_topology(
     for (std::size_t i = 0; i < unowned_vertex_data.size(); i += 3)
     {
       const std::int64_t idx_global = unowned_vertex_data[i];
-      auto it = std::lower_bound(unowned_vertices.begin(),
-                                 unowned_vertices.end(), idx_global);
+      auto it = std::ranges::lower_bound(unowned_vertices, idx_global);
       assert(it != unowned_vertices.end() and *it == idx_global);
       std::size_t pos = std::distance(unowned_vertices.begin(), it);
       assert(local_vertex_indices_unowned[pos] < 0);
@@ -1214,8 +1211,7 @@ Topology mesh::create_topology(
       for (auto& data : recv_data)
       {
         std::int64_t global_idx_old = data[0];
-        auto it0 = std::lower_bound(unowned_vertices.begin(),
-                                    unowned_vertices.end(), global_idx_old);
+        auto it0 = std::ranges::lower_bound(unowned_vertices, global_idx_old);
         if (it0 != unowned_vertices.end() and *it0 == global_idx_old)
         {
           if (std::size_t pos = std::distance(unowned_vertices.begin(), it0);

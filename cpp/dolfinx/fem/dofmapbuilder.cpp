@@ -579,8 +579,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     global_old_new.reserve(disp_recv[d].back());
     for (std::size_t j = 0; j < all_dofs_received[d].size(); j += 2)
     {
-      const auto pos
-          = std::upper_bound(disp_recv[d].begin(), disp_recv[d].end(), j);
+      const auto pos = std::ranges::upper_bound(disp_recv[d], j);
       const int owner = std::distance(disp_recv[d].begin(), pos) - 1;
       global_old_new.push_back(
           {all_dofs_received[d][j], {all_dofs_received[d][j + 1], src[owner]}});
@@ -593,9 +592,9 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
       std::pair<std::int64_t, std::pair<int64_t, int>> idx_old
           = {local_new_to_global_old[d][i], {0, 0}};
 
-      auto it = std::lower_bound(global_old_new.begin(), global_old_new.end(),
-                                 idx_old, [](auto& a, auto& b)
-                                 { return a.first < b.first; });
+      auto it = std::ranges::lower_bound(global_old_new, idx_old,
+                                         [](auto& a, auto& b)
+                                         { return a.first < b.first; });
       assert(it != global_old_new.end() and it->first == idx_old.first);
 
       local_to_global_new[local_new_to_global_old[d][i + 1]] = it->second.first;

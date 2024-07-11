@@ -8,6 +8,7 @@
 #include "AdjacencyList.h"
 #include "partitioners.h"
 #include <algorithm>
+#include <bits/ranges_algo.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
@@ -499,10 +500,9 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
   std::transform(recv_data.begin(), recv_data.end(), recv_data.begin(),
                  [&old_to_new](auto r)
                  {
-                   auto it = std::lower_bound(
-                       old_to_new.begin(), old_to_new.end(),
-                       std::array<std::int64_t, 2>{r, 0},
-                       [](auto& a, auto& b) { return a[0] < b[0]; });
+                   auto it = std::ranges::lower_bound(
+                       old_to_new, r, std::ranges::less(),
+                       [](auto& e) { return e[0]; });
                    assert(it != old_to_new.end() and (*it)[0] == r);
                    return (*it)[1];
                  });
@@ -525,17 +525,16 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
   std::ranges::sort(old_to_new1);
 
   std::vector<std::int64_t> ghost_global_indices(ghost_indices.size());
-  std::transform(
-      ghost_indices.begin(), ghost_indices.end(), ghost_global_indices.begin(),
-      [&old_to_new1](auto q)
-      {
-        auto it
-            = std::lower_bound(old_to_new1.begin(), old_to_new1.end(),
-                               std::array<std::int64_t, 2>{q, 0},
-                               [](auto& a, auto& b) { return a[0] < b[0]; });
-        assert(it != old_to_new1.end() and (*it)[0] == q);
-        return (*it)[1];
-      });
+  std::transform(ghost_indices.begin(), ghost_indices.end(),
+                 ghost_global_indices.begin(),
+                 [&old_to_new1](auto q)
+                 {
+                   auto it = std::ranges::lower_bound(
+                       old_to_new1, std::array<std::int64_t, 2>{q, 0},
+                       [](auto& a, auto& b) { return a[0] < b[0]; });
+                   assert(it != old_to_new1.end() and (*it)[0] == q);
+                   return (*it)[1];
+                 });
 
   return ghost_global_indices;
 }
@@ -584,10 +583,9 @@ std::vector<std::int32_t> graph::build::compute_local_to_local(
                  std::back_inserter(local0_to_local1),
                  [&global_to_local1](auto l2g)
                  {
-                   auto it = std::lower_bound(
-                       global_to_local1.begin(), global_to_local1.end(),
-                       typename decltype(global_to_local1)::value_type(l2g, 0),
-                       [](auto& a, auto& b) { return a.first < b.first; });
+                   auto it = std::ranges::lower_bound(
+                       global_to_local1, l2g, std::ranges::less(),
+                       [](auto& e) { return e.first; });
                    assert(it != global_to_local1.end() and it->first == l2g);
                    return it->second;
                  });

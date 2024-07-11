@@ -588,7 +588,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh, Option option)
                  edge_ranks.array().begin(),
                  [&ranks](auto r)
                  {
-                   auto it = std::lower_bound(ranks.begin(), ranks.end(), r);
+                   auto it = std::ranges::lower_bound(ranks, r);
                    assert(it != ranks.end() and *it == r);
                    return std::distance(ranks.begin(), it);
                  });
@@ -655,7 +655,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
                  edge_ranks.array().begin(),
                  [&ranks](auto r)
                  {
-                   auto it = std::lower_bound(ranks.begin(), ranks.end(), r);
+                   auto it = std::ranges::lower_bound(ranks, r);
                    assert(it != ranks.end() and *it == r);
                    return std::distance(ranks.begin(), it);
                  });
