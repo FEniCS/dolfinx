@@ -141,10 +141,9 @@ std::vector<std::int32_t> fem::compute_integration_domains(
 
   {
     assert(topology.index_map(dim));
-    auto it0 = entities.begin();
-    auto it1 = std::lower_bound(it0, entities.end(),
-                                topology.index_map(dim)->size_local());
-    entities = entities.first(std::distance(it0, it1));
+    auto it1 = std::ranges::lower_bound(entities,
+                                        topology.index_map(dim)->size_local());
+    entities = entities.first(std::distance(entities.begin(), it1));
   }
 
   std::vector<std::int32_t> entity_data;

@@ -272,7 +272,7 @@ create_geometry(
 {
   spdlog::info("Create Geometry (multiple)");
 
-  assert(std::is_sorted(nodes.begin(), nodes.end()));
+  assert(std::ranges::is_sorted(nodes));
   using T = typename std::remove_reference_t<typename U::value_type>;
 
   // Check elements match cell types in topology
@@ -388,7 +388,7 @@ create_geometry(
         reorder_fn
     = nullptr)
 {
-  assert(std::is_sorted(nodes.begin(), nodes.end()));
+  assert(std::ranges::is_sorted(nodes));
   using T = typename std::remove_reference_t<typename U::value_type>;
 
   fem::ElementDofLayout dof_layout = element.create_dof_layout();

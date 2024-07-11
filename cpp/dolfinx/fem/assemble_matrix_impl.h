@@ -107,7 +107,7 @@ void assemble_cells(
     }
 
     // Tabulate tensor
-    std::fill(Ae.begin(), Ae.end(), 0);
+    std::ranges::fill(Ae, 0);
     kernel(Ae.data(), coeffs.data() + index * cstride, constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
 
@@ -247,7 +247,7 @@ void assemble_exterior_facets(
         = perms.empty() ? 0 : perms[cell * num_facets_per_cell + local_facet];
 
     // Tabulate tensor
-    std::fill(Ae.begin(), Ae.end(), 0);
+    std::ranges::fill(Ae, 0);
     kernel(Ae.data(), coeffs.data() + index / 2 * cstride, constants.data(),
            coordinate_dofs.data(), &local_facet, &perm);
 
@@ -413,7 +413,7 @@ void assemble_interior_facets(
 
     // Tabulate tensor
     Ae.resize(num_rows * num_cols);
-    std::fill(Ae.begin(), Ae.end(), 0);
+    std::ranges::fill(Ae, 0);
 
     std::array perm
         = perms.empty()

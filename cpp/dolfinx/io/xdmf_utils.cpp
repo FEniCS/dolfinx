@@ -269,7 +269,7 @@ xdmf_utils::distribute_entity_data(
       std::span entity(entities_v.data() + e * num_vert_per_e, num_vert_per_e);
       for (std::size_t i = 0; i < num_vert_per_e; ++i)
         entity[i] = entities(e, entity_vertex_dofs[i]);
-      std::sort(entity.begin(), entity.end());
+      std::ranges::sort(entity);
     }
 
     std::array shape{entities.extent(0), num_vert_per_e};
@@ -300,8 +300,8 @@ xdmf_utils::distribute_entity_data(
     }
     std::vector<int> perm(dest0.size());
     std::iota(perm.begin(), perm.end(), 0);
-    std::sort(perm.begin(), perm.end(),
-              [&dest0](auto x0, auto x1) { return dest0[x0] < dest0[x1]; });
+    std::ranges::sort(perm, [&dest0](auto x0, auto x1)
+                      { return dest0[x0] < dest0[x1]; });
 
     // Note: dest[perm[i]] is ordered with increasing i
     // Build list of neighbour dest ranks and count number of entities to
@@ -329,7 +329,7 @@ xdmf_utils::distribute_entity_data(
     // Determine src ranks. Sort ranks so that ownership determination is
     // deterministic for a given number of ranks.
     std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
-    std::sort(src.begin(), src.end());
+    std::ranges::sort(src);
 
     // Create neighbourhood communicator for sending data to post
     // offices
@@ -403,7 +403,7 @@ xdmf_utils::distribute_entity_data(
         [size, num_nodes](auto n) {
           return std::pair(dolfinx::MPI::index_owner(size, n, num_nodes), n);
         });
-    std::sort(dest_to_index.begin(), dest_to_index.end());
+    std::ranges::sort(dest_to_index);
 
     // Build list of neighbour dest ranks and count number of indices to
     // send to each post office
@@ -430,7 +430,7 @@ xdmf_utils::distribute_entity_data(
     // Determine src ranks. Sort ranks so that ownership determination is
     // deterministic for a given number of ranks.
     std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
-    std::sort(src.begin(), src.end());
+    std::ranges::sort(src);
 
     // Create neighbourhood communicator for sending data to post offices
     MPI_Comm comm0;

@@ -103,10 +103,10 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
     }
 
     // Build vector of boundary vertices
-    std::sort(vertices.begin(), vertices.end());
+    std::ranges::sort(vertices);
     vertices.erase(std::unique(vertices.begin(), vertices.end()),
                    vertices.end());
-    std::sort(entities.begin(), entities.end());
+    std::ranges::sort(entities);
     entities.erase(std::unique(entities.begin(), entities.end()),
                    entities.end());
   }
@@ -868,7 +868,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
     // Boundary vertices are marked as 'unknown'
     boundary_v = unmatched_facets;
-    std::sort(boundary_v.begin(), boundary_v.end());
+    std::ranges::sort(boundary_v);
     boundary_v.erase(std::unique(boundary_v.begin(), boundary_v.end()),
                      boundary_v.end());
 
@@ -1004,8 +1004,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
           std::next(dest.array().begin(), offsets_i.front()),
           std::next(dest.array().begin(), offsets_i.back()));
       std::int32_t offset_0 = offsets_i.front();
-      std::for_each(offsets_i.begin(), offsets_i.end(),
-                    [&offset_0](std::int32_t& j) { j -= offset_0; });
+      std::ranges::for_each(offsets_i,
+                            [&offset_0](std::int32_t& j) { j -= offset_0; });
       graph::AdjacencyList<std::int32_t> dest_i(data_i, offsets_i);
       cell_offset += num_cells;
 
@@ -1074,7 +1074,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
     // Boundary vertices are marked as 'unknown'
     boundary_v = unmatched_facets;
-    std::sort(boundary_v.begin(), boundary_v.end());
+    std::ranges::sort(boundary_v);
     boundary_v.erase(std::unique(boundary_v.begin(), boundary_v.end()),
                      boundary_v.end());
 
@@ -1197,7 +1197,7 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
       = entities_to_geometry(mesh, dim, subentity_to_entity, true);
 
   std::vector<std::int32_t> sub_x_dofs = x_indices;
-  std::sort(sub_x_dofs.begin(), sub_x_dofs.end());
+  std::ranges::sort(sub_x_dofs);
   sub_x_dofs.erase(std::unique(sub_x_dofs.begin(), sub_x_dofs.end()),
                    sub_x_dofs.end());
 
