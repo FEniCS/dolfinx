@@ -62,7 +62,7 @@ std::stringstream container_to_string(const T& x, int precision)
 {
   std::stringstream s;
   s.precision(precision);
-  std::for_each(x.begin(), x.end(), [&s](auto e) { s << e << " "; });
+  std::ranges::for_each(x, [&s](auto e) { s << e << " "; });
   return s;
 }
 //----------------------------------------------------------------------------
@@ -206,8 +206,7 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   connectivity_node.append_attribute("format") = "ascii";
   {
     std::stringstream ss;
-    std::for_each(cells.begin(), cells.end(),
-                  [&ss](auto& v) { ss << v << " "; });
+    std::ranges::for_each(cells, [&ss](auto& v) { ss << v << " "; });
     connectivity_node.append_child(pugi::node_pcdata)
         .set_value(ss.str().c_str());
   }
@@ -265,8 +264,8 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
     const std::int64_t cell_offset = cellmap.local_range()[0];
     for (std::int32_t c = 0; c < cellmap.size_local(); ++c)
       ss << cell_offset + c << " ";
-    std::for_each(cellmap.ghosts().begin(), cellmap.ghosts().end(),
-                  [&ss](auto& idx) { ss << idx << " "; });
+    std::ranges::for_each(cellmap.ghosts(),
+                          [&ss](auto& idx) { ss << idx << " "; });
     cell_id_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
   }
 
@@ -292,8 +291,7 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   point_id_node.append_attribute("format") = "ascii";
   {
     std::stringstream ss;
-    std::for_each(x_id.begin(), x_id.end(),
-                  [&ss](auto idx) { ss << idx << " "; });
+    std::ranges::for_each(x_id, [&ss](auto idx) { ss << idx << " "; });
     point_id_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
   }
   if (!x_id.empty())
@@ -310,8 +308,7 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   point_ghost_node.append_attribute("format") = "ascii";
   {
     std::stringstream ss;
-    std::for_each(x_ghost.begin(), x_ghost.end(),
-                  [&ss](int ghost) { ss << ghost << " "; });
+    std::ranges::for_each(x_ghost, [&ss](int ghost) { ss << ghost << " "; });
     point_ghost_node.append_child(pugi::node_pcdata)
         .set_value(ss.str().c_str());
   }

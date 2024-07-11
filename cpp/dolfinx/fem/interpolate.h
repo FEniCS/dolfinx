@@ -195,8 +195,8 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
       rank_to_neighbor[in_ranks[i]] = i;
 
     // Compute receive sizes
-    std::for_each(
-        dest_ranks.begin(), dest_ranks.end(),
+    std::ranges::for_each(
+        dest_ranks,
         [&dest_ranks, &rank_to_neighbor, &recv_sizes, block_size](auto rank)
         {
           if (rank >= 0)
@@ -234,9 +234,9 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
       rank_to_neighbor[out_ranks[i]] = i;
 
     // Compute send sizes
-    std::for_each(src_ranks.begin(), src_ranks.end(),
-                  [&rank_to_neighbor, &send_sizes, block_size](auto rank)
-                  { send_sizes[rank_to_neighbor[rank]] += block_size; });
+    std::ranges::for_each(
+        src_ranks, [&rank_to_neighbor, &send_sizes, block_size](auto rank)
+        { send_sizes[rank_to_neighbor[rank]] += block_size; });
   }
 
   // Compute sending offsets

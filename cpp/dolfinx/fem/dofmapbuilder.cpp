@@ -484,9 +484,9 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
     shared_entity[d] = std::vector<std::int8_t>(map->size_local(), false);
     const std::vector<std::int32_t> forward_indices = map->shared_indices();
-    std::for_each(forward_indices.begin(), forward_indices.end(),
-                  [&entities = shared_entity[d]](auto idx)
-                  { entities[idx] = true; });
+    std::ranges::for_each(forward_indices,
+                          [&entities = shared_entity[d]](auto idx)
+                          { entities[idx] = true; });
   }
 
   // Build list of (global old, global new) index pairs for dofs that

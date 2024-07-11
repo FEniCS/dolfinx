@@ -192,8 +192,8 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
   // applied to a constant vector the result should be zero
   spmv(A, x, y);
 
-  std::for_each(y.array().begin(), y.array().end(),
-                [](auto a) { REQUIRE(std::abs(a) < 1e-13); });
+  std::ranges::for_each(y.array(),
+                        [](auto a) { REQUIRE(std::abs(a) < 1e-13); });
 }
 
 void test_matrix()

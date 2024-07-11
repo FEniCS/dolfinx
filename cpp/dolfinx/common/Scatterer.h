@@ -139,8 +139,8 @@ public:
     const std::array<std::int64_t, 2> range = map.local_range();
 #ifndef NDEBUG
     // Check that all received indice are within the owned range
-    std::for_each(recv_buffer.begin(), recv_buffer.end(), [range](auto idx)
-                  { assert(idx >= range[0] and idx < range[1]); });
+    std::ranges::for_each(recv_buffer, [range](auto idx)
+                          { assert(idx >= range[0] and idx < range[1]); });
 #endif
 
     // Scale sizes and displacements by block size

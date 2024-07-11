@@ -502,12 +502,12 @@ public:
       std::vector<T> value = g->value;
       int bs = _function_space->dofmap()->bs();
       std::int32_t x_size = x.size();
-      std::for_each(_dofs0.cbegin(), _dofs0.cend(),
-                    [x_size, bs, scale, &value, &x](auto dof)
-                    {
-                      if (dof < x_size)
-                        x[dof] = scale * value[dof % bs];
-                    });
+      std::ranges::for_each(_dofs0,
+                            [x_size, bs, scale, &value, &x](auto dof)
+                            {
+                              if (dof < x_size)
+                                x[dof] = scale * value[dof % bs];
+                            });
     }
   }
 
@@ -539,12 +539,12 @@ public:
       auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
       const std::vector<T>& value = g->value;
       std::int32_t bs = _function_space->dofmap()->bs();
-      std::for_each(_dofs0.begin(), _dofs0.end(),
-                    [&x, &x0, &value, scale, bs](auto dof)
-                    {
-                      if (dof < (std::int32_t)x.size())
-                        x[dof] = scale * (value[dof % bs] - x0[dof]);
-                    });
+      std::ranges::for_each(_dofs0,
+                            [&x, &x0, &value, scale, bs](auto dof)
+                            {
+                              if (dof < (std::int32_t)x.size())
+                                x[dof] = scale * (value[dof % bs] - x0[dof]);
+                            });
     }
   }
 
