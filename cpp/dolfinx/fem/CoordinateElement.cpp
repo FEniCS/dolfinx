@@ -147,8 +147,8 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
           dX[i] += K(i, j) * (x(p, j) - xk[j]);
 
       // Compute Xk += dX
-      std::transform(dX.begin(), dX.end(), Xk_b.begin(), Xk_b.begin(),
-                     [](auto a, auto b) { return a + b; });
+      std::ranges::transform(dX, Xk_b, Xk_b.begin(),
+                             [](auto a, auto b) { return a + b; });
 
       // Compute norm(dX)
       if (auto dX_squared

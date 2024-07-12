@@ -450,8 +450,8 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
   // Convert to local indices
   const std::int64_t r0 = MPI::local_range(rank, shape[0], size)[0];
   std::vector<std::int32_t> index_local(recv_buffer_index.size());
-  std::transform(recv_buffer_index.cbegin(), recv_buffer_index.cend(),
-                 index_local.begin(), [r0](auto idx) { return idx - r0; });
+  std::ranges::transform(recv_buffer_index, index_local.begin(),
+                         [r0](auto idx) { return idx - r0; });
 
   return {index_local, recv_buffer_data};
 }
@@ -549,9 +549,8 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   // post offices
   assert(send_disp.back() == (int)src_to_index.size());
   std::vector<std::int64_t> send_buffer_index(src_to_index.size());
-  std::transform(src_to_index.cbegin(), src_to_index.cend(),
-                 send_buffer_index.begin(),
-                 [](auto& x) { return std::get<1>(x); });
+  std::ranges::transform(src_to_index, send_buffer_index.begin(),
+                         [](auto& x) { return std::get<1>(x); });
 
   // Prepare the receive buffer
   std::vector<std::int64_t> recv_buffer_index(recv_disp.back());

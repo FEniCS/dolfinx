@@ -230,10 +230,9 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   e0->tabulate(basis_derivatives_reference0_b, X, Xshape, 0);
 
   // Clamp values
-  std::transform(basis_derivatives_reference0_b.begin(),
-                 basis_derivatives_reference0_b.end(),
-                 basis_derivatives_reference0_b.begin(), [atol = 1e-14](auto x)
-                 { return std::abs(x) < atol ? 0.0 : x; });
+  std::ranges::transform(
+      basis_derivatives_reference0_b, basis_derivatives_reference0_b.begin(),
+      [atol = 1e-14](auto x) { return std::abs(x) < atol ? 0.0 : x; });
 
   // Create working arrays
   std::vector<U> basis_reference0_b(Xshape[0] * dim0 * value_size_ref0);

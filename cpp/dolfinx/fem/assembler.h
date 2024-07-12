@@ -36,9 +36,10 @@ make_coefficients_span(const std::map<std::pair<IntegralType, int>,
 {
   using Key = typename std::remove_reference_t<decltype(coeffs)>::key_type;
   std::map<Key, std::pair<std::span<const T>, int>> c;
-  std::transform(coeffs.cbegin(), coeffs.cend(), std::inserter(c, c.end()),
-                 [](auto& e) -> typename decltype(c)::value_type
-                 { return {e.first, {e.second.first, e.second.second}}; });
+  std::ranges::transform(coeffs, std::inserter(c, c.end()),
+                         [](auto& e) -> typename decltype(c)::value_type {
+                           return {e.first, {e.second.first, e.second.second}};
+                         });
   return c;
 }
 
@@ -226,8 +227,8 @@ void apply_lifting(
   std::vector<std::map<std::pair<IntegralType, int>,
                        std::pair<std::span<const T>, int>>>
       _coeffs;
-  std::transform(coeffs.cbegin(), coeffs.cend(), std::back_inserter(_coeffs),
-                 [](auto& c) { return make_coefficients_span(c); });
+  std::ranges::transform(coeffs, std::back_inserter(_coeffs),
+                         [](auto& c) { return make_coefficients_span(c); });
 
   apply_lifting(b, a, _constants, _coeffs, bcs1, x0, scale);
 }

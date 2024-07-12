@@ -333,8 +333,8 @@ create_geometry(
 
   // Allocate space for input global indices and copy data
   std::vector<std::int64_t> igi(nodes.size());
-  std::transform(l2l.cbegin(), l2l.cend(), igi.begin(),
-                 [&nodes](auto index) { return nodes[index]; });
+  std::ranges::transform(l2l, igi.begin(),
+                         [&nodes](auto index) { return nodes[index]; });
 
   // Build coordinate dof array, copying coordinates to correct position
   assert(x.size() % dim == 0);
@@ -425,8 +425,8 @@ create_geometry(
 
   // Allocate space for input global indices and copy data
   std::vector<std::int64_t> igi(nodes.size());
-  std::transform(l2l.cbegin(), l2l.cend(), igi.begin(),
-                 [&nodes](auto index) { return nodes[index]; });
+  std::ranges::transform(l2l, igi.begin(),
+                         [&nodes](auto index) { return nodes[index]; });
 
   // Build coordinate dof array, copying coordinates to correct position
   assert(x.size() % dim == 0);

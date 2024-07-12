@@ -115,18 +115,17 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
     // Convert dofs indices to 'block' map indices
     std::vector<std::int32_t> dofs_local_m;
     dofs_local_m.reserve(dofs_local.size());
-    std::transform(dofs_local.begin(), dofs_local.end(),
-                   std::back_inserter(dofs_local_m),
-                   [bs_map](auto dof) { return dof / bs_map; });
+    std::ranges::transform(dofs_local, std::back_inserter(dofs_local_m),
+                           [bs_map](auto dof) { return dof / bs_map; });
 
     // Compute global index of each block
     map.local_to_global(dofs_local_m, dofs_global);
 
     // Add offset
-    std::transform(dofs_global.begin(), dofs_global.end(), dofs_local.begin(),
-                   dofs_global.begin(),
-                   [bs_map](auto global_block, auto local_dof)
-                   { return bs_map * global_block + (local_dof % bs_map); });
+    std::ranges::transform(
+        dofs_global, dofs_local, dofs_global.begin(),
+        [bs_map](auto global_block, auto local_dof)
+        { return bs_map * global_block + (local_dof % bs_map); });
   }
 
   MPI_Wait(&request, MPI_STATUS_IGNORE);
@@ -360,8 +359,9 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   std::array<std::vector<std::int32_t>, 2> sorted_bc_dofs = bc_dofs;
   for (std::size_t b = 0; b < 2; ++b)
   {
-    std::transform(perm.cbegin(), perm.cend(), sorted_bc_dofs[b].begin(),
-                   [&bc_dofs = bc_dofs[b]](auto p) { return bc_dofs[p]; });
+    std::ranges::transform(perm, sorted_bc_dofs[b].begin(),
+                           [&bc_dofs = bc_dofs[b]](auto p)
+                           { return bc_dofs[p]; });
     sorted_bc_dofs[b].erase(
         std::unique(sorted_bc_dofs[b].begin(), sorted_bc_dofs[b].end()),
         sorted_bc_dofs[b].end());
@@ -414,9 +414,9 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     std::array<std::vector<std::int32_t>, 2> out_dofs = sorted_bc_dofs;
     for (std::size_t b = 0; b < 2; ++b)
     {
-      std::transform(perm.cbegin(), perm.cend(), out_dofs[b].begin(),
-                     [&sorted_dofs = sorted_bc_dofs[b]](auto p)
-                     { return sorted_dofs[p]; });
+      std::ranges::transform(perm, out_dofs[b].begin(),
+                             [&sorted_dofs = sorted_bc_dofs[b]](auto p)
+                             { return sorted_dofs[p]; });
       out_dofs[b].erase(std::unique(out_dofs[b].begin(), out_dofs[b].end()),
                         out_dofs[b].end());
     }

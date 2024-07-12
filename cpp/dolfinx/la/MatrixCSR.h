@@ -474,8 +474,9 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
     // Compute off-diagonal offset for each row (compact)
     std::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offsets();
     _off_diagonal_offset.reserve(num_diag_nnz.size());
-    std::transform(num_diag_nnz.begin(), num_diag_nnz.end(), _row_ptr.begin(),
-                   std::back_inserter(_off_diagonal_offset), std::plus{});
+    std::ranges::transform(num_diag_nnz, _row_ptr,
+                           std::back_inserter(_off_diagonal_offset),
+                           std::plus{});
   }
 
   // Some short-hand
@@ -552,9 +553,8 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
   std::vector<int> recv_disp;
   {
     std::vector<int> send_sizes;
-    std::transform(data_per_proc.begin(), data_per_proc.end(),
-                   std::back_inserter(send_sizes),
-                   [](auto x) { return 2 * x; });
+    std::ranges::transform(data_per_proc, std::back_inserter(send_sizes),
+                           [](auto x) { return 2 * x; });
 
     std::vector<int> recv_sizes(dest_ranks.size());
     send_sizes.reserve(1);
@@ -581,8 +581,8 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
   // data values
   _val_recv_disp.resize(recv_disp.size());
   const int bs2 = _bs[0] * _bs[1];
-  std::transform(recv_disp.begin(), recv_disp.end(), _val_recv_disp.begin(),
-                 [&bs2](auto d) { return bs2 * d / 2; });
+  std::ranges::transform(recv_disp, _val_recv_disp.begin(),
+                         [&bs2](auto d) { return bs2 * d / 2; });
   std::ranges::transform(_val_send_disp, _val_send_disp.begin(),
                          [&bs2](auto d) { return d * bs2; });
 

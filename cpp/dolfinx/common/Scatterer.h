@@ -86,10 +86,10 @@ public:
     std::span ghosts = map.ghosts();
     std::vector<int> owners_sorted(owners.size());
     std::vector<std::int64_t> ghosts_sorted(owners.size());
-    std::transform(perm.begin(), perm.end(), owners_sorted.begin(),
-                   [&owners](auto idx) { return owners[idx]; });
-    std::transform(perm.begin(), perm.end(), ghosts_sorted.begin(),
-                   [&ghosts](auto idx) { return ghosts[idx]; });
+    std::ranges::transform(perm, owners_sorted.begin(),
+                           [&owners](auto idx) { return owners[idx]; });
+    std::ranges::transform(perm, ghosts_sorted.begin(),
+                           [&ghosts](auto idx) { return ghosts[idx]; });
 
     // For data associated with ghost indices, packed by owning
     // (neighbourhood) rank, compute sizes and displacements. I.e.,
@@ -145,10 +145,8 @@ public:
 
     // Scale sizes and displacements by block size
     {
-      auto rescale = [](auto& x, int bs)
-      {
-        std::transform(x.begin(), x.end(), x.begin(),
-                       [bs](auto e) { return e *= bs; });
+      auto rescale = [](auto& x, int bs) {
+        std::ranges::transform(x, x.begin(), [bs](auto e) { return e *= bs; });
       };
       rescale(_sizes_local, bs);
       rescale(_displs_local, bs);

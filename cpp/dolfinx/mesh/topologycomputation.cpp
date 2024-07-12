@@ -45,8 +45,8 @@ graph::AdjacencyList<int> create_adj_list(U& data, std::int32_t size)
 
   std::vector<int> array;
   array.reserve(data.size());
-  std::transform(data.begin(), data.end(), std::back_inserter(array),
-                 [](auto x) { return x.second; });
+  std::ranges::transform(data, std::back_inserter(array),
+                         [](auto x) { return x.second; });
 
   std::vector<std::int32_t> offsets{0};
   offsets.reserve(size + 1);
@@ -308,9 +308,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
           shared_entities_data.push_back({idx, ranks[r]});
           shared_entities_data.push_back({idx, mpi_rank});
           recv_index.push_back(idx);
-          std::transform(
-              entity.begin(), entity.end(),
-              std::back_inserter(shared_entity_to_global_vertices_data),
+          std::ranges::transform(
+              entity, std::back_inserter(shared_entity_to_global_vertices_data),
               [idx](auto v) -> std::pair<std::int32_t, std::int64_t>
               { return {idx, v}; });
         }
@@ -389,16 +388,14 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
     std::vector<std::int64_t> send_global_index_data;
     for (const auto& indices : send_index)
     {
-      std::transform(indices.cbegin(), indices.cend(),
-                     std::back_inserter(send_global_index_data),
-                     [&local_index, size = num_local,
-                      offset = local_offset](auto idx) -> std::int64_t
-                     {
-                       // If not in our local range, send -1.
-                       return local_index[idx] < size
-                                  ? offset + local_index[idx]
-                                  : -1;
-                     });
+      std::ranges::transform(
+          indices, std::back_inserter(send_global_index_data),
+          [&local_index, size = num_local,
+           offset = local_offset](auto idx) -> std::int64_t
+          {
+            // If not in our local range, send -1.
+            return local_index[idx] < size ? offset + local_index[idx] : -1;
+          });
     }
 
     // Transform send/receive sizes and displacements for scalar send
@@ -437,9 +434,9 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
 
   // Create map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());
-  std::transform(entity_index.begin(), entity_index.end(),
-                 new_entity_index.begin(),
-                 [&local_index](auto index) { return local_index[index]; });
+  std::ranges::transform(entity_index, new_entity_index.begin(),
+                         [&local_index](auto index)
+                         { return local_index[index]; });
 
   return {std::move(new_entity_index), std::move(index_map),
           std::move(interprocess_entities)};

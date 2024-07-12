@@ -390,8 +390,8 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 
   // Get mesh entity ownership offset for each IndexMap
   std::vector<std::int32_t> offset(index_maps.size(), -1);
-  std::transform(index_maps.begin(), index_maps.end(), offset.begin(),
-                 [](auto map) { return map->size_local(); });
+  std::ranges::transform(index_maps, offset.begin(),
+                         [](auto map) { return map->size_local(); });
 
   // Compute the number of dofs 'owned' by this process
   const std::int32_t owned_size = std::accumulate(
@@ -441,10 +441,10 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     // Apply graph reordering to owned dofs
     const std::vector<int> node_remap = reorder_owned(
         dofmaps, owned_size, original_to_contiguous, reorder_fn);
-    std::transform(original_to_contiguous.begin(), original_to_contiguous.end(),
-                   original_to_contiguous.begin(),
-                   [&node_remap, owned_size](auto index)
-                   { return index < owned_size ? node_remap[index] : index; });
+    std::ranges::transform(
+        original_to_contiguous, original_to_contiguous.begin(),
+        [&node_remap, owned_size](auto index)
+        { return index < owned_size ? node_remap[index] : index; });
   }
 
   return {std::move(original_to_contiguous), owned_size};

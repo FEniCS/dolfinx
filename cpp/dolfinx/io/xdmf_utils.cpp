@@ -399,8 +399,8 @@ xdmf_utils::distribute_entity_data(
   {
     int size = dolfinx::MPI::size(comm);
     std::vector<std::pair<int, std::int64_t>> dest_to_index;
-    std::transform(
-        indices.begin(), indices.end(), std::back_inserter(dest_to_index),
+    std::ranges::transform(
+        indices, std::back_inserter(dest_to_index),
         [size, num_nodes](auto n) {
           return std::pair(dolfinx::MPI::index_owner(size, n, num_nodes), n);
         });
@@ -457,9 +457,8 @@ xdmf_utils::distribute_entity_data(
     // Prepare send buffer
     std::vector<std::int64_t> send_buffer;
     send_buffer.reserve(indices.size());
-    std::transform(dest_to_index.begin(), dest_to_index.end(),
-                   std::back_inserter(send_buffer),
-                   [](auto x) { return x.second; });
+    std::ranges::transform(dest_to_index, std::back_inserter(send_buffer),
+                           [](auto x) { return x.second; });
 
     std::vector<std::int64_t> recv_buffer(recv_disp.back());
     err = MPI_Neighbor_alltoallv(send_buffer.data(), num_items_send.data(),

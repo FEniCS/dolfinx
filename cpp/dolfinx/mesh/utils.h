@@ -294,8 +294,8 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
 
       // Define normal by rotating tangent counter-clockwise
       std::array<T, 3> t;
-      std::transform(p[1].begin(), p[1].end(), p[0].begin(), t.begin(),
-                     [](auto x, auto y) { return x - y; });
+      std::ranges::transform(p[1], p[0], t.begin(),
+                             [](auto x, auto y) { return x - y; });
 
       T norm = std::sqrt(t[0] * t[0] + t[1] * t[1]);
       std::span<T, 3> ni(n.data() + 3 * i, 3);
@@ -319,16 +319,16 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
 
       // Compute (p1 - p0) and (p2 - p0)
       std::array<T, 3> dp1, dp2;
-      std::transform(p[1].begin(), p[1].end(), p[0].begin(), dp1.begin(),
-                     [](auto x, auto y) { return x - y; });
-      std::transform(p[2].begin(), p[2].end(), p[0].begin(), dp2.begin(),
-                     [](auto x, auto y) { return x - y; });
+      std::ranges::transform(p[1], p[0], dp1.begin(),
+                             [](auto x, auto y) { return x - y; });
+      std::ranges::transform(p[2], p[0], dp2.begin(),
+                             [](auto x, auto y) { return x - y; });
 
       // Define cell normal via cross product of first two edges
       std::array<T, 3> ni = math::cross(dp1, dp2);
       T norm = std::sqrt(ni[0] * ni[0] + ni[1] * ni[1] + ni[2] * ni[2]);
-      std::transform(ni.begin(), ni.end(), std::next(n.begin(), 3 * i),
-                     [norm](auto x) { return x / norm; });
+      std::ranges::transform(ni, std::next(n.begin(), 3 * i),
+                             [norm](auto x) { return x / norm; });
     }
 
     return n;
@@ -348,16 +348,16 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
 
       // Compute (p1 - p0) and (p2 - p0)
       std::array<T, 3> dp1, dp2;
-      std::transform(p[1].begin(), p[1].end(), p[0].begin(), dp1.begin(),
-                     [](auto x, auto y) { return x - y; });
-      std::transform(p[2].begin(), p[2].end(), p[0].begin(), dp2.begin(),
-                     [](auto x, auto y) { return x - y; });
+      std::ranges::transform(p[1], p[0], dp1.begin(),
+                             [](auto x, auto y) { return x - y; });
+      std::ranges::transform(p[2], p[0], dp2.begin(),
+                             [](auto x, auto y) { return x - y; });
 
       // Define cell normal via cross product of first two edges
       std::array<T, 3> ni = math::cross(dp1, dp2);
       T norm = std::sqrt(ni[0] * ni[0] + ni[1] * ni[1] + ni[2] * ni[2]);
-      std::transform(ni.begin(), ni.end(), std::next(n.begin(), 3 * i),
-                     [norm](auto x) { return x / norm; });
+      std::ranges::transform(ni, std::next(n.begin(), 3 * i),
+                             [norm](auto x) { return x / norm; });
     }
 
     return n;
@@ -394,9 +394,9 @@ std::vector<T> compute_midpoints(const Mesh<T>& mesh, int dim,
     for (auto row : rows)
     {
       std::span<const T, 3> xg(x.data() + 3 * row, 3);
-      std::transform(p.begin(), p.end(), xg.begin(), p.begin(),
-                     [size = rows.size()](auto x, auto y)
-                     { return x + y / size; });
+      std::ranges::transform(p, xg, p.begin(),
+                             [size = rows.size()](auto x, auto y)
+                             { return x + y / size; });
     }
   }
 
@@ -952,13 +952,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   assert(cells.size() == elements.size());
   std::int32_t num_cell_types = cells.size();
   std::vector<CellType> celltypes;
-  std::transform(elements.cbegin(), elements.cend(),
-                 std::back_inserter(celltypes),
-                 [](auto e) { return e.cell_shape(); });
+  std::ranges::transform(elements, std::back_inserter(celltypes),
+                         [](auto e) { return e.cell_shape(); });
   std::vector<fem::ElementDofLayout> doflayouts;
-  std::transform(elements.cbegin(), elements.cend(),
-                 std::back_inserter(doflayouts),
-                 [](auto e) { return e.create_dof_layout(); });
+  std::ranges::transform(elements, std::back_inserter(doflayouts),
+                         [](auto e) { return e.create_dof_layout(); });
 
   // Note: `extract_topology` extracts topology data, i.e. just the
   // vertices. For P1 geometry this should just be the identity
@@ -1089,17 +1087,14 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // Create Topology
 
   std::vector<std::span<const std::int64_t>> cells1_v_span;
-  std::transform(cells1_v.cbegin(), cells1_v.cend(),
-                 std::back_inserter(cells1_v_span),
-                 [](auto& c) { return std::span(c); });
+  std::ranges::transform(cells1_v, std::back_inserter(cells1_v_span),
+                         [](auto& c) { return std::span(c); });
   std::vector<std::span<const std::int64_t>> original_idx1_span;
-  std::transform(original_idx1.cbegin(), original_idx1.cend(),
-                 std::back_inserter(original_idx1_span),
-                 [](auto& c) { return std::span(c); });
+  std::ranges::transform(original_idx1, std::back_inserter(original_idx1_span),
+                         [](auto& c) { return std::span(c); });
   std::vector<std::span<const int>> ghost_owners_span;
-  std::transform(ghost_owners.cbegin(), ghost_owners.cend(),
-                 std::back_inserter(ghost_owners_span),
-                 [](auto& c) { return std::span(c); });
+  std::ranges::transform(ghost_owners, std::back_inserter(ghost_owners_span),
+                         [](auto& c) { return std::span(c); });
 
   Topology topology
       = create_topology(comm, celltypes, cells1_v_span, original_idx1_span,
@@ -1233,13 +1228,12 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
   // Create sub-geometry dofmap
   std::vector<std::int32_t> sub_x_dofmap;
   sub_x_dofmap.reserve(x_indices.size());
-  std::transform(x_indices.cbegin(), x_indices.cend(),
-                 std::back_inserter(sub_x_dofmap),
-                 [&x_to_subx_dof_map](auto x_dof)
-                 {
-                   assert(x_to_subx_dof_map[x_dof] != -1);
-                   return x_to_subx_dof_map[x_dof];
-                 });
+  std::ranges::transform(x_indices, std::back_inserter(sub_x_dofmap),
+                         [&x_to_subx_dof_map](auto x_dof)
+                         {
+                           assert(x_to_subx_dof_map[x_dof] != -1);
+                           return x_to_subx_dof_map[x_dof];
+                         });
 
   // Create sub-geometry coordinate element
   CellType sub_coord_cell
@@ -1251,9 +1245,9 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
   const std::vector<std::int64_t>& igi = geometry.input_global_indices();
   std::vector<std::int64_t> sub_igi;
   sub_igi.reserve(subx_to_x_dofmap.size());
-  std::transform(subx_to_x_dofmap.begin(), subx_to_x_dofmap.end(),
-                 std::back_inserter(sub_igi),
-                 [&igi](std::int32_t sub_x_dof) { return igi[sub_x_dof]; });
+  std::ranges::transform(subx_to_x_dofmap, std::back_inserter(sub_igi),
+                         [&igi](std::int32_t sub_x_dof)
+                         { return igi[sub_x_dof]; });
 
   // Create geometry
   return {Geometry(sub_x_dof_index_map, std::move(sub_x_dofmap), {sub_cmap},

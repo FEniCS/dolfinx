@@ -201,8 +201,8 @@ void initialize_function_attributes(adios2::IO& io,
       !assc)
   {
     std::vector<std::string> u_type;
-    std::transform(u_data.cbegin(), u_data.cend(), std::back_inserter(u_type),
-                   [](auto& f) { return f[1]; });
+    std::ranges::transform(u_data, std::back_inserter(u_type),
+                           [](auto& f) { return f[1]; });
     io.DefineAttribute<std::string>("Fides_Variable_Associations",
                                     u_type.data(), u_type.size());
   }
@@ -213,8 +213,8 @@ void initialize_function_attributes(adios2::IO& io,
       !fields)
   {
     std::vector<std::string> names;
-    std::transform(u_data.cbegin(), u_data.cend(), std::back_inserter(names),
-                   [](auto& f) { return f[0]; });
+    std::ranges::transform(u_data, std::back_inserter(names),
+                           [](auto& f) { return f[0]; });
     io.DefineAttribute<std::string>("Fides_Variable_List", names.data(),
                                     names.size());
   }
@@ -363,15 +363,15 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
     adios2::Variable local_output_r = impl_adios2::define_variable<X>(
         io, u.name + impl_adios2::field_ext[0], {}, {},
         {num_vertices, num_components});
-    std::transform(data.begin(), data.end(), data_real.begin(),
-                   [](auto x) -> X { return std::real(x); });
+    std::ranges::transform(data, data_real.begin(),
+                           [](auto x) -> X { return std::real(x); });
     engine.Put(local_output_r, data_real.data());
 
     adios2::Variable local_output_c = impl_adios2::define_variable<X>(
         io, u.name + impl_adios2::field_ext[1], {}, {},
         {num_vertices, num_components});
-    std::transform(data.begin(), data.end(), data_imag.begin(),
-                   [](auto x) -> X { return std::imag(x); });
+    std::ranges::transform(data, data_imag.begin(),
+                           [](auto x) -> X { return std::imag(x); });
     engine.Put(local_output_c, data_imag.data());
     engine.PerformPuts();
   }
