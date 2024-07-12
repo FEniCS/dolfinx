@@ -1445,7 +1445,7 @@ mesh::entities_to_index(const Topology& topology, int dim,
   for (int e = 0; e < num_entities_mesh; ++e)
   {
     auto vertices = e_to_v->links(e);
-    std::copy(vertices.begin(), vertices.end(), key.begin());
+    std::ranges::copy(vertices, key.begin());
     std::ranges::sort(key);
     auto ins = entity_key_to_index.insert({key, e});
     if (!ins.second)
@@ -1461,7 +1461,7 @@ mesh::entities_to_index(const Topology& topology, int dim,
   for (std::size_t e = 0; e < entities.size(); e += num_vertices_per_entity)
   {
     auto v = entities.subspan(e, num_vertices_per_entity);
-    std::copy(v.begin(), v.end(), vertices.begin());
+    std::ranges::copy(v, vertices.begin());
     std::ranges::sort(vertices);
     if (auto it = entity_key_to_index.find(vertices);
         it != entity_key_to_index.end())

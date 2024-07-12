@@ -134,7 +134,7 @@ graph::build::distribute(MPI_Comm comm,
 
       std::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
       auto row = list.links(pos);
-      std::copy(row.begin(), row.end(), b.begin());
+      std::ranges::copy(row, b.begin());
 
       auto info = b.last(3);
       info[0] = row.size();          // Number of edges for node
@@ -316,7 +316,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
 
       std::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
       std::span row(list.data() + pos * shape[1], shape[1]);
-      std::copy(row.begin(), row.end(), b.begin());
+      std::ranges::copy(row, b.begin());
 
       auto info = b.last(2);
       info[0] = dest_data[2];        // Owning rank
@@ -372,15 +372,14 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
     auto edges = row.first(shape[1]);
     if (owner == rank)
     {
-      std::copy(edges.begin(), edges.end(),
-                std::next(data.begin(), i_owned * shape[1]));
+      std::ranges::copy(edges, std::next(data.begin(), i_owned * shape[1]));
       global_indices[i_owned] = orig_global_index;
       ++i_owned;
     }
     else
     {
-      std::copy(edges.begin(), edges.end(),
-                std::next(data.begin(), (i_ghost + num_owned_r) * shape[1]));
+      std::ranges::copy(
+          edges, std::next(data.begin(), (i_ghost + num_owned_r) * shape[1]));
       global_indices[i_ghost + num_owned_r] = orig_global_index;
       ghost_index_owner[i_ghost] = owner;
       ++i_ghost;
