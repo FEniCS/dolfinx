@@ -249,7 +249,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
 
   // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates
-  std::sort(dofs.begin(), dofs.end());
+  std::ranges::sort(dofs);
   dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
 
   if (remote)
@@ -266,8 +266,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
       std::span src = map->src();
       std::span dest = map->dest();
       std::vector<int> ranks;
-      std::set_union(src.begin(), src.end(), dest.begin(), dest.end(),
-                     std::back_inserter(ranks));
+      std::ranges::set_union(src, dest, std::back_inserter(ranks));
       ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
       MPI_Dist_graph_create_adjacent(
           map->comm(), ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
@@ -285,7 +284,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     // Add received bc indices to dofs_local, sort, and remove
     // duplicates
     dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
-    std::sort(dofs.begin(), dofs.end());
+    std::ranges::sort(dofs);
     dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
   }
 
@@ -385,8 +384,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
       std::span src = map0->src();
       std::span dest = map0->dest();
       std::vector<int> ranks;
-      std::set_union(src.begin(), src.end(), dest.begin(), dest.end(),
-                     std::back_inserter(ranks));
+      std::ranges::set_union(src, dest, std::back_inserter(ranks));
       ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
       MPI_Dist_graph_create_adjacent(map0->comm(), ranks.size(), ranks.data(),
                                      MPI_UNWEIGHTED, ranks.size(), ranks.data(),

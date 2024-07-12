@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
+#include <bits/ranges_algo.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/sort.h>
@@ -140,7 +141,7 @@ refinement::adjust_indices(const common::IndexMap& map, std::int32_t n)
                  std::next(global_indices.begin(), local_size),
                  [&src, &offsets](auto idx, auto r)
                  {
-                   auto it = std::lower_bound(src.begin(), src.end(), r);
+                   auto it = std::ranges::lower_bound(src, r);
                    assert(it != src.end() and *it == r);
                    int rank = std::distance(src.begin(), it);
                    return idx + offsets[rank];
@@ -246,7 +247,7 @@ std::array<std::vector<std::int32_t>, 2> refinement::transfer_facet_meshtag(
     auto pclinks = p_to_c_facet.links(parent_index);
 
     // Eliminate duplicates
-    std::sort(pclinks.begin(), pclinks.end());
+    std::ranges::sort(pclinks);
     auto it_end = std::unique(pclinks.begin(), pclinks.end());
     facet_indices.insert(facet_indices.end(), pclinks.begin(), it_end);
     tag_values.insert(tag_values.end(), std::distance(pclinks.begin(), it_end),

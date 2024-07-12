@@ -24,7 +24,7 @@ auto as_nbarray_copy(const V& x, std::size_t ndim, const std::size_t* shape)
   using _V = std::decay_t<V>;
   using T = typename _V::value_type;
   T* ptr = new T[x.size()];
-  std::copy(x.begin(), x.end(), ptr);
+  std::ranges::copy(x, ptr);
   return nb::ndarray<T, nb::numpy>(
       ptr, ndim, shape,
       nb::capsule(ptr, [](void* p) noexcept { delete[] (T*)p; }));
