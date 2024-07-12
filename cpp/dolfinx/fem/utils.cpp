@@ -173,8 +173,8 @@ std::vector<std::int32_t> fem::compute_integration_domains(
       // Create list of tagged boundary facets
       const std::vector bfacets = mesh::exterior_facet_indices(topology);
       std::vector<std::int32_t> facets;
-      std::set_intersection(entities.begin(), entities.end(), bfacets.begin(),
-                            bfacets.end(), std::back_inserter(facets));
+      std::ranges::set_intersection(entities, bfacets,
+                                    std::back_inserter(facets));
       for (auto f : facets)
       {
         // Get the facet as a pair of (cell, local facet)

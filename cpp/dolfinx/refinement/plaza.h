@@ -85,21 +85,21 @@ auto compute_parent_facets(std::span<const std::int32_t> simplex_set)
         {
           for (int j = 0; j < tdim; ++j)
             cf[j] = simplex_set[cc * 3 + facet_table_2d[fci][j]];
+          
           std::ranges::sort(cf);
-          auto it = std::set_intersection(facet_table_2d[fpi].begin(),
-                                          facet_table_2d[fpi].end(), cf.begin(),
-                                          cf.end(), set_output.begin());
-          num_common_vertices = std::distance(set_output.begin(), it);
+          auto [last1, last2, it_last] = std::ranges::set_intersection(
+              facet_table_2d[fpi], cf, set_output.begin());
+          num_common_vertices = std::distance(set_output.begin(), it_last);
         }
         else
         {
           for (int j = 0; j < tdim; ++j)
             cf[j] = simplex_set[cc * 4 + facet_table_3d[fci][j]];
+
           std::ranges::sort(cf);
-          auto it = std::set_intersection(facet_table_3d[fpi].begin(),
-                                          facet_table_3d[fpi].end(), cf.begin(),
-                                          cf.end(), set_output.begin());
-          num_common_vertices = std::distance(set_output.begin(), it);
+          auto [last1, last2, it_last] = std::ranges::set_intersection(
+              facet_table_3d[fpi], cf, set_output.begin());
+          num_common_vertices = std::distance(set_output.begin(), it_last);
         }
 
         if (num_common_vertices == tdim)
