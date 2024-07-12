@@ -129,7 +129,7 @@ void discrete_gradient(mesh::Topology& topology,
   std::vector<T> Ae(Ab.size());
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
-    std::copy(Ab.cbegin(), Ab.cend(), Ae.begin());
+    std::ranges::copy(Ab, Ae.begin());
     apply_inverse_dof_transform(Ae, cell_info, c, ndofs0);
     mat_set(dofmap1.cell_dofs(c), dofmap0.cell_dofs(c), Ae);
   }

@@ -205,8 +205,7 @@ std::vector<std::int64_t> SparsityPattern::column_indices() const
   const std::int32_t num_ghosts = _col_ghosts.size();
   std::vector<std::int64_t> global(local_size + num_ghosts);
   std::iota(global.begin(), std::next(global.begin(), local_size), range[0]);
-  std::copy(_col_ghosts.begin(), _col_ghosts.end(),
-            global.begin() + local_size);
+  std::ranges::copy(_col_ghosts, global.begin() + local_size);
   return global;
 }
 //-----------------------------------------------------------------------------

@@ -779,7 +779,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   {
     std::span vtkcell(vtkcells.data() + c * shape[1], shape[1]);
     std::span cell(cells.data() + c * (shape[1] + 1), shape[1] + 1);
-    std::copy(vtkcell.begin(), vtkcell.end(), std::next(cell.begin()));
+    std::ranges::copy(vtkcell, std::next(cell.begin()));
   }
 
   // Put topology (nodes)
@@ -835,7 +835,7 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   {
     std::span vtkcell(vtk.data() + c * vtkshape[1], vtkshape[1]);
     std::span cell(cells.data() + c * (vtkshape[1] + 1), vtkshape[1] + 1);
-    std::copy(vtkcell.begin(), vtkcell.end(), std::next(cell.begin()));
+    std::ranges::copy(vtkcell, std::next(cell.begin()));
   }
 
   // Define ADIOS2 variables for geometry, topology, celltypes and

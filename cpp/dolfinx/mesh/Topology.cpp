@@ -324,24 +324,21 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
   // Build difference 1: Vertices attached only to owned cells, and
   // therefore owned by this rank
   std::vector<std::int64_t> owned_vertices;
-  std::set_difference(local_vertex_set.begin(), local_vertex_set.end(),
-                      boundary_vertices.begin(), boundary_vertices.end(),
-                      std::back_inserter(owned_vertices));
+  std::ranges::set_difference(local_vertex_set, boundary_vertices,
+                              std::back_inserter(owned_vertices));
 
   // Build difference 2: Vertices attached only to ghost cells, and
   // therefore not owned by this rank
   std::vector<std::int64_t> unowned_vertices;
-  std::set_difference(ghost_vertex_set.begin(), ghost_vertex_set.end(),
-                      local_vertex_set.begin(), local_vertex_set.end(),
-                      std::back_inserter(unowned_vertices));
+  std::ranges::set_difference(ghost_vertex_set, local_vertex_set,
+                              std::back_inserter(unowned_vertices));
 
   // TODO Check this in debug mode only?
   // Sanity check
   // No vertices in unowned should also be in boundary...
   std::vector<std::int64_t> unowned_vertices_in_error;
-  std::set_intersection(unowned_vertices.begin(), unowned_vertices.end(),
-                        boundary_vertices.begin(), boundary_vertices.end(),
-                        std::back_inserter(unowned_vertices_in_error));
+  std::ranges::set_intersection(unowned_vertices, boundary_vertices,
+                                std::back_inserter(unowned_vertices_in_error));
 
   if (!unowned_vertices_in_error.empty())
   {
@@ -1448,7 +1445,7 @@ mesh::entities_to_index(const Topology& topology, int dim,
   for (int e = 0; e < num_entities_mesh; ++e)
   {
     auto vertices = e_to_v->links(e);
-    std::copy(vertices.begin(), vertices.end(), key.begin());
+    std::ranges::copy(vertices, key.begin());
     std::ranges::sort(key);
     auto ins = entity_key_to_index.insert({key, e});
     if (!ins.second)
@@ -1464,7 +1461,7 @@ mesh::entities_to_index(const Topology& topology, int dim,
   for (std::size_t e = 0; e < entities.size(); e += num_vertices_per_entity)
   {
     auto v = entities.subspan(e, num_vertices_per_entity);
-    std::copy(v.begin(), v.end(), vertices.begin());
+    std::ranges::copy(v, vertices.begin());
     std::ranges::sort(vertices);
     if (auto it = entity_key_to_index.find(vertices);
         it != entity_key_to_index.end())

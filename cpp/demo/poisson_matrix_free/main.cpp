@@ -203,8 +203,7 @@ void solver(MPI_Comm comm)
     y.set(0.0);
 
     // Update coefficient ui (just copy data from x to ui)
-    std::copy(x.array().begin(), x.array().end(),
-              ui->x()->mutable_array().begin());
+    std::ranges::copy(x.array(), ui->x()->mutable_array().begin());
 
     // Compute action of A on x
     fem::pack_coefficients(*M, coeff);

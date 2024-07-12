@@ -43,17 +43,15 @@ void sparsitybuild::interior_facets(
     auto dofs00 = dofmap0.cell_dofs(cells0[f]);
     auto dofs01 = dofmap0.cell_dofs(cells0[f + 1]);
     macro_dofs0.resize(dofs00.size() + dofs01.size());
-    std::copy(dofs00.begin(), dofs00.end(), macro_dofs0.begin());
-    std::copy(dofs01.begin(), dofs01.end(),
-              std::next(macro_dofs0.begin(), dofs00.size()));
+    std::ranges::copy(dofs00, macro_dofs0.begin());
+    std::ranges::copy(dofs01, std::next(macro_dofs0.begin(), dofs00.size()));
 
     // Trial function dofs (sparsity pattern columns)
     auto dofs10 = dofmap1.cell_dofs(cells1[f]);
     auto dofs11 = dofmap1.cell_dofs(cells1[f + 1]);
     macro_dofs1.resize(dofs10.size() + dofs11.size());
-    std::copy(dofs10.begin(), dofs10.end(), macro_dofs1.begin());
-    std::copy(dofs11.begin(), dofs11.end(),
-              std::next(macro_dofs1.begin(), dofs10.size()));
+    std::ranges::copy(dofs10, macro_dofs1.begin());
+    std::ranges::copy(dofs11, std::next(macro_dofs1.begin(), dofs10.size()));
 
     pattern.insert(macro_dofs0, macro_dofs1);
   }

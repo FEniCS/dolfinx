@@ -1178,7 +1178,7 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
     // Same function spaces and on whole mesh
     std::span<T> u1_array = u1.x()->mutable_array();
     std::span<const T> u0_array = u0.x()->array();
-    std::copy(u0_array.begin(), u0_array.end(), u1_array.begin());
+    std::ranges::copy(u0_array, u1_array.begin());
   }
   else
   {

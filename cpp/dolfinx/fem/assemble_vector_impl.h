@@ -479,9 +479,9 @@ void _lift_bc_interior_facets(
         = std::span(dmap0.data_handle() + cells0[1] * num_dofs0, num_dofs0);
 
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
-    std::copy(dmap0_cell0.begin(), dmap0_cell0.end(), dmapjoint0.begin());
-    std::copy(dmap0_cell1.begin(), dmap0_cell1.end(),
-              std::next(dmapjoint0.begin(), dmap0_cell0.size()));
+    std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
+    std::ranges::copy(dmap0_cell1,
+                      std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
     auto dmap1_cell0
         = std::span(dmap1.data_handle() + cells1[0] * num_dofs1, num_dofs1);
@@ -489,9 +489,9 @@ void _lift_bc_interior_facets(
         = std::span(dmap1.data_handle() + cells1[1] * num_dofs1, num_dofs1);
 
     dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
-    std::copy(dmap1_cell0.begin(), dmap1_cell0.end(), dmapjoint1.begin());
-    std::copy(dmap1_cell1.begin(), dmap1_cell1.end(),
-              std::next(dmapjoint1.begin(), dmap1_cell0.size()));
+    std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
+    std::ranges::copy(dmap1_cell1,
+                      std::next(dmapjoint1.begin(), dmap1_cell0.size()));
 
     // Check if bc is applied to cell0
     bool has_bc = false;
