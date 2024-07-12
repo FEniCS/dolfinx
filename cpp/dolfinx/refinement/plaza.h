@@ -584,13 +584,13 @@ compute_refinement_data(const mesh::Mesh<T>& mesh, Option option)
   ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
 
   // Convert edge_ranks from global rank to to neighbourhood ranks
-  std::ranges::for_each(edge_ranks.array(),
-                        [&ranks](auto& r)
-                        {
-                          auto it = std::ranges::lower_bound(ranks, r);
-                          assert(it != ranks.end() and *it == r);
-                          r = std::distance(ranks.begin(), it);
-                        });
+  std::ranges::transform(edge_ranks.array(), edge_ranks.array().begin(),
+                         [&ranks](auto r)
+                         {
+                           auto it = std::ranges::lower_bound(ranks, r);
+                           assert(it != ranks.end() and *it == r);
+                           return std::distance(ranks.begin(), it);
+                         });
 
   MPI_Comm comm;
   MPI_Dist_graph_create_adjacent(mesh.comm(), ranks.size(), ranks.data(),
@@ -650,13 +650,13 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
 
   // Convert edge_ranks from global rank to to neighbourhood ranks
-  std::ranges::for_each(edge_ranks.array(),
-                        [&ranks](auto& r)
-                        {
-                          auto it = std::ranges::lower_bound(ranks, r);
-                          assert(it != ranks.end() and *it == r);
-                          r = std::distance(ranks.begin(), it);
-                        });
+  std::ranges::transform(edge_ranks.array(), edge_ranks.array().begin(),
+                         [&ranks](auto r)
+                         {
+                           auto it = std::ranges::lower_bound(ranks, r);
+                           assert(it != ranks.end() and *it == r);
+                           return std::distance(ranks.begin(), it);
+                         });
 
   // Get number of neighbors
   std::vector<std::int8_t> marked_edges(

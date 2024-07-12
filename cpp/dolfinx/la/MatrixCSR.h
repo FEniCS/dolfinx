@@ -583,7 +583,8 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
   const int bs2 = _bs[0] * _bs[1];
   std::transform(recv_disp.begin(), recv_disp.end(), _val_recv_disp.begin(),
                  [&bs2](auto d) { return bs2 * d / 2; });
-  std::ranges::for_each(_val_send_disp, [&bs2](auto& d) { d *= bs2; });
+  std::ranges::transform(_val_send_disp, _val_send_disp.begin(),
+                         [&bs2](auto d) { return d * bs2; });
 
   // Global-to-local map for ghost columns
   std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local;
