@@ -60,6 +60,7 @@ __all__ = [
     "create_unit_cube",
     "to_type",
     "to_string",
+    "refine_interval",
     "refine_plaza",
     "transfer_meshtag",
     "entities_to_geometry",
@@ -331,6 +332,30 @@ def refine(
     else:
         mesh1 = _cpp.refinement.refine(mesh._cpp_object, edges, redistribute)
     return Mesh(mesh1, mesh._ufl_domain)
+
+
+def refine_interval(
+    mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True
+) -> tuple[Mesh, npt.NDArray[np.int32]]:
+    """Refine a (topologically) one dimensional mesh.
+
+    Args:
+        mesh: Mesh to refine
+        edges: Indices of edges to split druing refinement. If ``None``, mesh refinement is uniform.
+        redistribute: Refined mesh is re-partitioned if ``True``.
+
+    Returns:
+        Refined mesh.
+    """
+
+    if edges is None:
+        refined_mesh, parent_edges = _cpp.refinement.refine_interval(mesh._cpp_object, redistribute)
+    else:
+        refined_mesh, parent_edges = _cpp.refinement.refine_interval(
+            mesh._cpp_object, edges, redistribute
+        )
+
+    return Mesh(refined_mesh, mesh._ufl_domain), parent_edges
 
 
 def refine_plaza(
