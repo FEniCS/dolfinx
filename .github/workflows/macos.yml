@@ -23,7 +23,7 @@ jobs:
       - name: Install Homebrew dependencies
         run: |
           brew install adios2 boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml spdlog # FEniCS
-          brew install bison flex gfortran # PETSc
+          brew install bison flex # PETSc
 
       - name: Install Python dependencies
         run: |
@@ -39,7 +39,6 @@ jobs:
           python ./configure \
             --with-64-bit-indices=no \
             --with-debugging=no \
-            --with-fortran-bindings=no \
             --with-scalar-type=real \
             --with-shared-libraries \
             --with-scalar-type=real \
