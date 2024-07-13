@@ -234,7 +234,7 @@ def model_to_mesh(
     Note:
         For performance, this function should only be called once for
         large problems. For re-use, it is recommended to save the mesh
-        and corresponding tags using :class:`dolfinxio.XDMFFile` after
+        and corresponding tags using :class:`dolfinx.io.XDMFFile` after
         creation for efficient access.
 
     """
