@@ -1139,6 +1139,17 @@ class TestPETScAssemblers:
 
         A0.destroy(), A1.destroy(), A2.destroy()
 
+    def test_block_null_lifting(self):
+        from dolfinx.fem.petsc import assemble_vector_block
+
+        comm = MPI.COMM_WORLD
+        msh = create_unit_square(comm, 2, 2)
+        V = functionspace(msh, ("Lagrange", 1))
+        W = functionspace(msh, ("Lagrange", 2))
+        v, w = ufl.TestFunction(V), ufl.TestFunction(W)
+        L = form([v * ufl.dx, w * ufl.dx])
+        assemble_vector_block(L, [[None, None], [None, None]])
+
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 @dtype_parametrize
