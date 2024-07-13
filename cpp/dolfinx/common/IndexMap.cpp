@@ -589,7 +589,7 @@ common::stack_index_maps(
 
   // Get local offset (into new map) for each index map
   std::vector<std::int32_t> local_sizes;
-  std::ranges::transform(maps, std::back_inserter(local_sizes), [](auto map)
+  std::ranges::transform(maps, std::back_inserter(local_sizes), [](auto& map)
                          { return map.second * map.first.get().size_local(); });
   std::vector<std::int32_t> local_offset(local_sizes.size() + 1, 0);
   std::partial_sum(local_sizes.begin(), local_sizes.end(),
