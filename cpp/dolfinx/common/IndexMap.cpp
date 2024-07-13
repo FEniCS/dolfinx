@@ -912,7 +912,7 @@ void IndexMap::global_to_local(std::span<const std::int64_t> global,
         {
           auto it = std::ranges::lower_bound(global_to_local, index,
                                              std::ranges::less(),
-                                             [](auto& e) { return e.first; });
+                                             [](auto e) { return e.first; });
           return (it != global_to_local.end() and it->first == index)
                      ? it->second
                      : -1;

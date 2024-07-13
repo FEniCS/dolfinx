@@ -391,7 +391,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   // Get mesh entity ownership offset for each IndexMap
   std::vector<std::int32_t> offset(index_maps.size(), -1);
   std::ranges::transform(index_maps, offset.begin(),
-                         [](auto map) { return map->size_local(); });
+                         [](auto& map) { return map->size_local(); });
 
   // Compute the number of dofs 'owned' by this process
   const std::int32_t owned_size = std::accumulate(

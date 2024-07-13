@@ -365,7 +365,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
     num_local = c;
 
     std::ranges::transform(local_index, local_index.begin(), [&c](auto index)
-                           { return (index == -1) ? c++ : index; });
+                           { return index == -1 ? c++ : index; });
     assert(c == entity_count);
 
     // Convert interprocess entities to local_index

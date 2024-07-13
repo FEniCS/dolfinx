@@ -550,7 +550,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   assert(send_disp.back() == (int)src_to_index.size());
   std::vector<std::int64_t> send_buffer_index(src_to_index.size());
   std::ranges::transform(src_to_index, send_buffer_index.begin(),
-                         [](auto& x) { return std::get<1>(x); });
+                         [](auto x) { return std::get<1>(x); });
 
   // Prepare the receive buffer
   std::vector<std::int64_t> recv_buffer_index(recv_disp.back());

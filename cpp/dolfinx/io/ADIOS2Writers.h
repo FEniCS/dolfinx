@@ -202,7 +202,7 @@ void initialize_function_attributes(adios2::IO& io,
   {
     std::vector<std::string> u_type;
     std::ranges::transform(u_data, std::back_inserter(u_type),
-                           [](auto& f) { return f[1]; });
+                           [](auto f) { return f[1]; });
     io.DefineAttribute<std::string>("Fides_Variable_Associations",
                                     u_type.data(), u_type.size());
   }
@@ -214,7 +214,7 @@ void initialize_function_attributes(adios2::IO& io,
   {
     std::vector<std::string> names;
     std::ranges::transform(u_data, std::back_inserter(names),
-                           [](auto& f) { return f[0]; });
+                           [](auto f) { return f[0]; });
     io.DefineAttribute<std::string>("Fides_Variable_List", names.data(),
                                     names.size());
   }

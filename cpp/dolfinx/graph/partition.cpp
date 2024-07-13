@@ -501,7 +501,7 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
                          {
                            auto it = std::ranges::lower_bound(
                                old_to_new, r, std::ranges::less(),
-                               [](auto& e) { return e[0]; });
+                               [](auto e) { return e[0]; });
                            assert(it != old_to_new.end() and (*it)[0] == r);
                            return (*it)[1];
                          });
@@ -528,7 +528,7 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
                          {
                            auto it = std::ranges::lower_bound(
                                old_to_new1, std::array<std::int64_t, 2>{q, 0},
-                               [](auto& a, auto& b) { return a[0] < b[0]; });
+                               [](auto a, auto b) { return a[0] < b[0]; });
                            assert(it != old_to_new1.end() and (*it)[0] == q);
                            return (*it)[1];
                          });
@@ -582,7 +582,7 @@ std::vector<std::int32_t> graph::build::compute_local_to_local(
       {
         auto it = std::ranges::lower_bound(global_to_local1, l2g,
                                            std::ranges::less(),
-                                           [](auto& e) { return e.first; });
+                                           [](auto e) { return e.first; });
         assert(it != global_to_local1.end() and it->first == l2g);
         return it->second;
       });
