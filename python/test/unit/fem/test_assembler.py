@@ -1147,7 +1147,7 @@ class TestPETScAssemblers:
         V = functionspace(msh, ("Lagrange", 1))
         W = functionspace(msh, ("Lagrange", 2))
         v, w = ufl.TestFunction(V), ufl.TestFunction(W)
-        L = form([v * ufl.dx, w * ufl.dx])
+        L = form([ufl.conj(v) * ufl.dx, ufl.conj(w) * ufl.dx])
         assemble_vector_block(L, [[None, None], [None, None]])
 
 
