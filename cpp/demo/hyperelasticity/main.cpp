@@ -15,6 +15,7 @@
 // ## C++ program
 
 #include "hyperelasticity.h"
+#include <algorithm>
 #include <basix/finite-element.h>
 #include <climits>
 #include <cmath>

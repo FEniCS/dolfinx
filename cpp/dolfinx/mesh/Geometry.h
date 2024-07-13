@@ -7,6 +7,7 @@
 #pragma once
 
 #include "Topology.h"
+#include <algorithm>
 #include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdint>

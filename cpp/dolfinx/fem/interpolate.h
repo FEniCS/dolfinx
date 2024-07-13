@@ -11,6 +11,7 @@
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
+#include <algorithm>
 #include <basix/mdspan.hpp>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>

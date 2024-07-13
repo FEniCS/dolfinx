@@ -317,7 +317,8 @@ void assemble_exterior_facets(
 /// applied.
 /// @param[in] bc1 Marker for columns with Dirichlet boundary conditions
 /// applied.
-/// @param[in] coeffs  The coefficient data array of shape (cells.size(), cstride),
+/// @param[in] coeffs  The coefficient data array of shape (cells.size(),
+/// cstride),
 /// @param[in] kernel Kernel function to execute over each cell.
 /// flattened into row-major format.
 /// @param[in] cstride Coefficient stride.

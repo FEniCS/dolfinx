@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
@@ -85,7 +86,7 @@ auto compute_parent_facets(std::span<const std::int32_t> simplex_set)
         {
           for (int j = 0; j < tdim; ++j)
             cf[j] = simplex_set[cc * 3 + facet_table_2d[fci][j]];
-          
+
           std::ranges::sort(cf);
           auto [last1, last2, it_last] = std::ranges::set_intersection(
               facet_table_2d[fpi], cf, set_output.begin());
