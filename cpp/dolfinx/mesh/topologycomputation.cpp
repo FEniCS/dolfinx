@@ -8,7 +8,6 @@
 #include "Topology.h"
 #include "cell_types.h"
 #include <algorithm>
-#include <bits/ranges_algo.h>
 #include <boost/unordered_map.hpp>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
