@@ -39,6 +39,8 @@ jobs:
           python ./configure \
             --with-64-bit-indices=no \
             --with-debugging=no \
+            --with-fortran-bindings=no \
+            --with-fc=gfortran \
             --with-scalar-type=real \
             --with-shared-libraries \
             --with-scalar-type=real \
