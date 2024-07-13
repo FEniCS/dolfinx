@@ -2,6 +2,8 @@
 # Top level CMakeLists.txt file for DOLFINx
 cmake_minimum_required(VERSION 3.21)
 
+cmake_policy(SET CMP0167 NEW)  # Boost CONFIG mode
+
 # ------------------------------------------------------------------------------
 # Set project name and version number
 project(DOLFINX VERSION "0.9.0.0")
