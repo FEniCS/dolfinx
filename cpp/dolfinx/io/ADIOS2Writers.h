@@ -10,6 +10,7 @@
 
 #include "vtk_utils.h"
 #include <adios2.h>
+#include <algorithm>
 #include <basix/mdspan.hpp>
 #include <cassert>
 #include <complex>
@@ -723,7 +724,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
         io, u.name + impl_adios2::field_ext[0], {}, {}, {num_dofs, num_comp});
     engine.Put(output_real, data.data(), adios2::Mode::Sync);
 
-    std::fill(data.begin(), data.end(), 0);
+    std::ranges::fill(data, 0);
     for (std::size_t i = 0; i < num_dofs; ++i)
       for (int j = 0; j < index_map_bs; ++j)
         data[i * num_comp + j] = std::imag(u_vector[i * index_map_bs + j]);
@@ -779,7 +780,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   {
     std::span vtkcell(vtkcells.data() + c * shape[1], shape[1]);
     std::span cell(cells.data() + c * (shape[1] + 1), shape[1] + 1);
-    std::copy(vtkcell.begin(), vtkcell.end(), std::next(cell.begin()));
+    std::ranges::copy(vtkcell, std::next(cell.begin()));
   }
 
   // Put topology (nodes)
@@ -835,7 +836,7 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   {
     std::span vtkcell(vtk.data() + c * vtkshape[1], vtkshape[1]);
     std::span cell(cells.data() + c * (vtkshape[1] + 1), vtkshape[1] + 1);
-    std::copy(vtkcell.begin(), vtkcell.end(), std::next(cell.begin()));
+    std::ranges::copy(vtkcell, std::next(cell.begin()));
   }
 
   // Define ADIOS2 variables for geometry, topology, celltypes and

@@ -107,7 +107,7 @@ void assemble_cells(
     }
 
     // Tabulate tensor
-    std::fill(Ae.begin(), Ae.end(), 0);
+    std::ranges::fill(Ae, 0);
     kernel(Ae.data(), coeffs.data() + index * cstride, constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
 
@@ -247,7 +247,7 @@ void assemble_exterior_facets(
         = perms.empty() ? 0 : perms[cell * num_facets_per_cell + local_facet];
 
     // Tabulate tensor
-    std::fill(Ae.begin(), Ae.end(), 0);
+    std::ranges::fill(Ae, 0);
     kernel(Ae.data(), coeffs.data() + index / 2 * cstride, constants.data(),
            coordinate_dofs.data(), &local_facet, &perm);
 
@@ -317,7 +317,8 @@ void assemble_exterior_facets(
 /// applied.
 /// @param[in] bc1 Marker for columns with Dirichlet boundary conditions
 /// applied.
-/// @param[in] coeffs  The coefficient data array of shape (cells.size(), cstride),
+/// @param[in] coeffs  The coefficient data array of shape (cells.size(),
+/// cstride),
 /// @param[in] kernel Kernel function to execute over each cell.
 /// flattened into row-major format.
 /// @param[in] cstride Coefficient stride.
@@ -397,23 +398,23 @@ void assemble_interior_facets(
     std::span<const std::int32_t> dmap0_cell0 = dmap0.cell_dofs(cells0[0]);
     std::span<const std::int32_t> dmap0_cell1 = dmap0.cell_dofs(cells0[1]);
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
-    std::copy(dmap0_cell0.begin(), dmap0_cell0.end(), dmapjoint0.begin());
-    std::copy(dmap0_cell1.begin(), dmap0_cell1.end(),
-              std::next(dmapjoint0.begin(), dmap0_cell0.size()));
+    std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
+    std::ranges::copy(dmap0_cell1,
+                      std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
     std::span<const std::int32_t> dmap1_cell0 = dmap1.cell_dofs(cells1[0]);
     std::span<const std::int32_t> dmap1_cell1 = dmap1.cell_dofs(cells1[1]);
     dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
-    std::copy(dmap1_cell0.begin(), dmap1_cell0.end(), dmapjoint1.begin());
-    std::copy(dmap1_cell1.begin(), dmap1_cell1.end(),
-              std::next(dmapjoint1.begin(), dmap1_cell0.size()));
+    std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
+    std::ranges::copy(dmap1_cell1,
+                      std::next(dmapjoint1.begin(), dmap1_cell0.size()));
 
     const int num_rows = bs0 * dmapjoint0.size();
     const int num_cols = bs1 * dmapjoint1.size();
 
     // Tabulate tensor
     Ae.resize(num_rows * num_cols);
-    std::fill(Ae.begin(), Ae.end(), 0);
+    std::ranges::fill(Ae, 0);
 
     std::array perm
         = perms.empty()

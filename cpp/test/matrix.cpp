@@ -7,6 +7,7 @@
 // Unit tests for Distributed la::MatrixCSR
 
 #include "poisson.h"
+#include <algorithm>
 #include <basix/mdspan.hpp>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -186,14 +187,14 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
   CHECK(x.array().size() == col_size);
 
   // Fill x vector with 1 (Constant)
-  std::fill(x.mutable_array().begin(), x.mutable_array().end(), 1);
+  std::ranges::fill(x.mutable_array(), 1);
 
   // Matrix A represents the action of the Laplace operator, so when
   // applied to a constant vector the result should be zero
   spmv(A, x, y);
 
-  std::for_each(y.array().begin(), y.array().end(),
-                [](auto a) { REQUIRE(std::abs(a) < 1e-13); });
+  std::ranges::for_each(y.array(),
+                        [](auto a) { REQUIRE(std::abs(a) < 1e-13); });
 }
 
 void test_matrix()

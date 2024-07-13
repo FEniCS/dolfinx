@@ -39,7 +39,7 @@ namespace
 template <typename U>
 graph::AdjacencyList<int> create_adj_list(U& data, std::int32_t size)
 {
-  std::sort(data.begin(), data.end());
+  std::ranges::sort(data);
   data.erase(std::unique(data.begin(), data.end()), data.end());
 
   std::vector<int> array;
@@ -114,7 +114,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
 
   // Find the maximum entity index, hence the number of entities
   std::int32_t entity_count = 0;
-  if (auto mx = std::max_element(entity_index.begin(), entity_index.end());
+  if (auto mx = std::ranges::max_element(entity_index);
       mx != entity_index.end())
   {
     entity_count = *mx + 1;
@@ -129,7 +129,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   // Create unique list of ranks that share vertices (owners of)
   std::vector<int> ranks(vertex_ranks.array().begin(),
                          vertex_ranks.array().end());
-  std::sort(ranks.begin(), ranks.end());
+  std::ranges::sort(ranks);
   ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
 
   MPI_Comm neighbor_comm;
@@ -168,7 +168,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
         entity_ranks.insert(entity_ranks.end(), vertex_ranks.links(v).begin(),
                             vertex_ranks.links(v).end());
       }
-      std::sort(entity_ranks.begin(), entity_ranks.end());
+      std::ranges::sort(entity_ranks);
 
       // If the number of vertices shared with a rank is
       // 'num_vertices_per_e', then add entity data to the send buffer
@@ -180,7 +180,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
         if (std::distance(it, it1) == num_vertices_per_e)
         {
           vertex_map.local_to_global(entity, vglobal);
-          std::sort(vglobal.begin(), vglobal.end());
+          std::ranges::sort(vglobal);
           entity_to_local_idx.insert(entity_to_local_idx.end(), vglobal.begin(),
                                      vglobal.end());
           entity_to_local_idx.push_back(*entity_idx);
@@ -188,7 +188,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
           // Only send entities that are not known to be ghosts
           if (ghost_status[*entity_idx] != 1)
           {
-            auto itr_local = std::lower_bound(ranks.begin(), ranks.end(), *it);
+            auto itr_local = std::ranges::lower_bound(ranks, *it);
             assert(itr_local != ranks.end() and *itr_local == *it);
             const int r = std::distance(ranks.begin(), itr_local);
 
@@ -205,15 +205,16 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
 
     perm.resize(entity_to_local_idx.size() / (num_vertices_per_e + 1));
     std::iota(perm.begin(), perm.end(), 0);
-    std::sort(perm.begin(), perm.end(),
-              [&entities = entity_to_local_idx,
-               shape = num_vertices_per_e + 1](auto e0, auto e1)
-              {
-                auto it0 = std::next(entities.begin(), e0 * shape);
-                auto it1 = std::next(entities.begin(), e1 * shape);
-                return std::lexicographical_compare(it0, std::next(it0, shape),
-                                                    it1, std::next(it1, shape));
-              });
+    std::ranges::sort(perm,
+                      [&entities = entity_to_local_idx,
+                       shape = num_vertices_per_e + 1](auto e0, auto e1)
+                      {
+                        auto it0 = std::next(entities.begin(), e0 * shape);
+                        auto it1 = std::next(entities.begin(), e1 * shape);
+                        return std::lexicographical_compare(
+                            it0, std::next(it0, shape), it1,
+                            std::next(it1, shape));
+                      });
     perm.erase(std::unique(perm.begin(), perm.end(),
                            [&entities = entity_to_local_idx,
                             shape = num_vertices_per_e + 1](auto e0, auto e1)
@@ -548,9 +549,10 @@ compute_entities_by_key_matching(
 
         std::vector<std::size_t> perm(global_vertices.size());
         std::iota(perm.begin(), perm.end(), 0);
-        std::sort(perm.begin(), perm.end(),
-                  [&global_vertices](std::size_t i0, std::size_t i1)
-                  { return global_vertices[i0] < global_vertices[i1]; });
+        std::ranges::sort(perm,
+                          [&global_vertices](std::size_t i0, std::size_t i1) {
+                            return global_vertices[i0] < global_vertices[i1];
+                          });
         // For quadrilaterals, the vertex opposite the lowest vertex should
         // be last
         if (entity_type == mesh::CellType::quadrilateral)
@@ -757,7 +759,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
       auto v = vref->links(i);
       for (int j = 0; j < 2; ++j)
         key[j] = e0[v[j]];
-      std::sort(key.begin(), key.end());
+      std::ranges::sort(key);
       auto it = edge_to_index.find(key);
       assert(it != edge_to_index.end());
       connections.push_back(it->second);

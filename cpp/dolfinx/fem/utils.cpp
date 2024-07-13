@@ -141,10 +141,9 @@ std::vector<std::int32_t> fem::compute_integration_domains(
 
   {
     assert(topology.index_map(dim));
-    auto it0 = entities.begin();
-    auto it1 = std::lower_bound(it0, entities.end(),
-                                topology.index_map(dim)->size_local());
-    entities = entities.first(std::distance(it0, it1));
+    auto it1 = std::ranges::lower_bound(entities,
+                                        topology.index_map(dim)->size_local());
+    entities = entities.first(std::distance(entities.begin(), it1));
   }
 
   std::vector<std::int32_t> entity_data;
@@ -174,8 +173,8 @@ std::vector<std::int32_t> fem::compute_integration_domains(
       // Create list of tagged boundary facets
       const std::vector bfacets = mesh::exterior_facet_indices(topology);
       std::vector<std::int32_t> facets;
-      std::set_intersection(entities.begin(), entities.end(), bfacets.begin(),
-                            bfacets.end(), std::back_inserter(facets));
+      std::ranges::set_intersection(entities, bfacets,
+                                    std::back_inserter(facets));
       for (auto f : facets)
       {
         // Get the facet as a pair of (cell, local facet)
