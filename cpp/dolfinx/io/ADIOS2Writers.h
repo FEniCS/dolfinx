@@ -10,6 +10,7 @@
 
 #include "vtk_utils.h"
 #include <adios2.h>
+#include <algorithm>
 #include <basix/mdspan.hpp>
 #include <cassert>
 #include <complex>

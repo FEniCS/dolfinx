@@ -7,6 +7,7 @@
 // Unit tests for Distributed la::MatrixCSR
 
 #include "poisson.h"
+#include <algorithm>
 #include <basix/mdspan.hpp>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>

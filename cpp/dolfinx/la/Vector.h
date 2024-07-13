@@ -7,6 +7,7 @@
 #pragma once
 
 #include "utils.h"
+#include <algorithm>
 #include <cmath>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
