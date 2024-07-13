@@ -7,6 +7,7 @@
 #pragma once
 
 #include "utils.h"
+#include <algorithm>
 #include <cmath>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
@@ -78,7 +79,7 @@ public:
 
   /// Set all entries (including ghosts)
   /// @param[in] v The value to set all entries to (on calling rank)
-  void set(value_type v) { std::fill(_x.begin(), _x.end(), v); }
+  void set(value_type v) { std::ranges::fill(_x, v); }
 
   /// Begin scatter of local data from owner to ghosts on other ranks
   /// @note Collective MPI operation
@@ -288,8 +289,8 @@ auto norm(const V& x, Norm type = Norm::l2)
   {
     std::int32_t size_local = x.bs() * x.index_map()->size_local();
     std::span<const T> data = x.array().subspan(0, size_local);
-    auto max_pos = std::max_element(data.begin(), data.end(), [](T a, T b)
-                                    { return std::norm(a) < std::norm(b); });
+    auto max_pos = std::ranges::max_element(
+        data, [](T a, T b) { return std::norm(a) < std::norm(b); });
     auto local_linf = std::abs(*max_pos);
     decltype(local_linf) linf = 0;
     MPI_Allreduce(&local_linf, &linf, 1, MPI::mpi_type<decltype(linf)>(),

@@ -2,8 +2,9 @@
 include(GNUInstallDirs)
 
 # ------------------------------------------------------------------------------
-# Declare the library (target)
+# Declare the library (target) and set C++ standard
 add_library(dolfinx)
+target_compile_features(dolfinx PUBLIC cxx_std_20)
 
 # ------------------------------------------------------------------------------
 # Add source files to the target

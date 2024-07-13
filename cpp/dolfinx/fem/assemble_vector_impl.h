@@ -161,7 +161,7 @@ void _lift_bc_cells(
 
     const T* coeff_array = coeffs.data() + index * cstride;
     Ae.resize(num_rows * num_cols);
-    std::fill(Ae.begin(), Ae.end(), 0);
+    std::ranges::fill(Ae, 0);
     kernel(Ae.data(), coeff_array, constants.data(), coordinate_dofs.data(),
            nullptr, nullptr);
     P0(Ae, cell_info0, c0, num_cols);
@@ -169,7 +169,7 @@ void _lift_bc_cells(
 
     // Size data structure for assembly
     be.resize(num_rows);
-    std::fill(be.begin(), be.end(), 0);
+    std::ranges::fill(be, 0);
     for (std::size_t j = 0; j < dofs1.size(); ++j)
     {
       if constexpr (_bs1 > 0)
@@ -340,7 +340,7 @@ void _lift_bc_exterior_facets(
 
     const T* coeff_array = coeffs.data() + index / 2 * cstride;
     Ae.resize(num_rows * num_cols);
-    std::fill(Ae.begin(), Ae.end(), 0);
+    std::ranges::fill(Ae, 0);
     kernel(Ae.data(), coeff_array, constants.data(), coordinate_dofs.data(),
            &local_facet, &perm);
     P0(Ae, cell_info0, cell0, num_cols);
@@ -348,7 +348,7 @@ void _lift_bc_exterior_facets(
 
     // Size data structure for assembly
     be.resize(num_rows);
-    std::fill(be.begin(), be.end(), 0);
+    std::ranges::fill(be, 0);
     for (std::size_t j = 0; j < dofs1.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
@@ -479,9 +479,9 @@ void _lift_bc_interior_facets(
         = std::span(dmap0.data_handle() + cells0[1] * num_dofs0, num_dofs0);
 
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
-    std::copy(dmap0_cell0.begin(), dmap0_cell0.end(), dmapjoint0.begin());
-    std::copy(dmap0_cell1.begin(), dmap0_cell1.end(),
-              std::next(dmapjoint0.begin(), dmap0_cell0.size()));
+    std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
+    std::ranges::copy(dmap0_cell1,
+                      std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
     auto dmap1_cell0
         = std::span(dmap1.data_handle() + cells1[0] * num_dofs1, num_dofs1);
@@ -489,9 +489,9 @@ void _lift_bc_interior_facets(
         = std::span(dmap1.data_handle() + cells1[1] * num_dofs1, num_dofs1);
 
     dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
-    std::copy(dmap1_cell0.begin(), dmap1_cell0.end(), dmapjoint1.begin());
-    std::copy(dmap1_cell1.begin(), dmap1_cell1.end(),
-              std::next(dmapjoint1.begin(), dmap1_cell0.size()));
+    std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
+    std::ranges::copy(dmap1_cell1,
+                      std::next(dmapjoint1.begin(), dmap1_cell0.size()));
 
     // Check if bc is applied to cell0
     bool has_bc = false;
@@ -528,7 +528,7 @@ void _lift_bc_interior_facets(
 
     // Tabulate tensor
     Ae.resize(num_rows * num_cols);
-    std::fill(Ae.begin(), Ae.end(), 0);
+    std::ranges::fill(Ae, 0);
     std::array perm
         = perms.empty()
               ? std::array<std::uint8_t, 2>{0, 0}
@@ -556,7 +556,7 @@ void _lift_bc_interior_facets(
     }
 
     be.resize(num_rows);
-    std::fill(be.begin(), be.end(), 0);
+    std::ranges::fill(be, 0);
 
     // Compute b = b - A*b for cell0
     for (std::size_t j = 0; j < dmap1_cell0.size(); ++j)
@@ -667,7 +667,7 @@ void assemble_cells(
     }
 
     // Tabulate vector for cell
-    std::fill(be.begin(), be.end(), 0);
+    std::ranges::fill(be, 0);
     kernel(be.data(), coeffs.data() + index * cstride, constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
     P0(_be, cell_info0, c0, 1);
@@ -762,7 +762,7 @@ void assemble_exterior_facets(
         = perms.empty() ? 0 : perms[cell * num_facets_per_cell + local_facet];
 
     // Tabulate element vector
-    std::fill(be.begin(), be.end(), 0);
+    std::ranges::fill(be, 0);
     fn(be.data(), coeffs.data() + index / 2 * cstride, constants.data(),
        coordinate_dofs.data(), &local_facet, &perm);
 
@@ -870,7 +870,7 @@ void assemble_interior_facets(
 
     // Tabulate element vector
     be.resize(bs * (dmap0.size() + dmap1.size()));
-    std::fill(be.begin(), be.end(), 0);
+    std::ranges::fill(be, 0);
     std::array perm
         = perms.empty()
               ? std::array<std::uint8_t, 2>{0, 0}

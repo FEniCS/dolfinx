@@ -7,6 +7,7 @@
 #pragma once
 
 #include "xdmf_utils.h"
+#include <algorithm>
 #include <array>
 #include <concepts>
 #include <cstdint>
@@ -110,8 +111,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   const std::int32_t num_local_entities = entity_map->size_local();
 
   // Find number of tagged entities in local range
-  auto it = std::lower_bound(meshtags.indices().begin(),
-                             meshtags.indices().end(), num_local_entities);
+  auto it = std::ranges::lower_bound(meshtags.indices(), num_local_entities);
   const int num_active_entities = std::distance(meshtags.indices().begin(), it);
 
   const std::string path_prefix = "/MeshTags/" + name;
