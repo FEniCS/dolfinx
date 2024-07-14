@@ -34,6 +34,9 @@ jobs:
       - name: Install minimal PETSc and petsc4py
         run: |
           export PATH="$(brew --prefix bison)/bin:$PATH"
+          gfortran --help
+          which gfortran
+          mpif90 -show
           git clone -b release https://gitlab.com/petsc/petsc.git petsc
           cd petsc
           python ./configure \
