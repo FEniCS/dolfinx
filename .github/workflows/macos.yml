@@ -23,7 +23,7 @@ jobs:
       - name: Install Homebrew dependencies
         run: |
           brew install adios2 boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml spdlog # FEniCS
-          brew install bison flex # PETSc
+          brew install bison flex gfortran # PETSc
 
       - name: Install Python dependencies
         run: |
@@ -34,6 +34,7 @@ jobs:
       - name: Install minimal PETSc and petsc4py
         run: |
           export PATH="$(brew --prefix bison)/bin:$PATH"
+          ls $(brew --prefix gfortran)/bin
           gfortran --help
           which gfortran
           mpif90 -show
