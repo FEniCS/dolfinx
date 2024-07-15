@@ -8,7 +8,7 @@
 #include "AdjacencyList.h"
 #include "partitioners.h"
 #include <algorithm>
-// #include <bits/ranges_algo.h>
+#include <bits/ranges_algo.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>

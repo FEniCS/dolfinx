@@ -10,7 +10,7 @@
 #include "topologycomputation.h"
 #include "utils.h"
 #include <algorithm>
-// #include <bits/ranges_algo.h>
+#include <bits/ranges_algo.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>

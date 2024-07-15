@@ -10,7 +10,7 @@
 #include "traits.h"
 #include <algorithm>
 #include <array>
-// #include <bits/ranges_algo.h>
+#include <bits/ranges_algo.h>
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
