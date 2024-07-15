@@ -8,7 +8,7 @@ using namespace dolfinx;
 
 TEST_CASE("Generation", "create_interval")
 {
-    auto mesh = mesh::create_interval(MPI_COMM_SELF, 4, {0., 1.});
+    mesh::Mesh<double> mesh = mesh::create_interval(MPI_COMM_SELF, 4, {0., 1.});
 
     // TODO: CHECK(mesh.comm() == MPI_COMM_SELF);
     CHECK(mesh.geometry().dim() == 1);
