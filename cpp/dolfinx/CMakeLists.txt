@@ -276,7 +276,7 @@ foreach(_target ${PKGCONFIG_DOLFINX_TARGET_LINK_LIBRARIES})
       list(APPEND PKGCONFIG_DOLFINX_LIBS ${_target})
     endif()
 
-    # Special handling to extacrt data for compiled Boost imported
+    # Special handling to extract data for compiled Boost imported
     # targets to use in generate pkg-config file
     if(("${_target}" MATCHES "^.*Boost::.*$") AND NOT "${_target}" STREQUAL
                                                   "Boost::headers"
