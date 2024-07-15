@@ -11,6 +11,7 @@
 #include "assemble_vector_impl.h"
 #include "traits.h"
 #include "utils.h"
+#include <algorithm>
 #include <cstdint>
 #include <dolfinx/common/types.h>
 #include <memory>
@@ -155,6 +156,10 @@ void apply_lifting(
         bcs1,
     const std::vector<std::span<const T>>& x0, T scale)
 {
+  // If all forms are null, there is nothing to do
+  if (std::ranges::all_of(a, [](auto ptr) { return ptr == nullptr; }))
+    return;
+
   std::shared_ptr<const mesh::Mesh<U>> mesh;
   for (auto& a_i : a)
   {
