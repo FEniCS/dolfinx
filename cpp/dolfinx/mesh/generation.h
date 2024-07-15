@@ -6,6 +6,9 @@
 
 #pragma once
 
+#include "Mesh.h"
+#include "cell_types.h"
+#include "utils.h"
 #include <algorithm>
 #include <array>
 #include <cfloat>
@@ -14,15 +17,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <mpi.h>
 #include <stdexcept>
 #include <utility>
 #include <vector>
-
-#include <mpi.h>
-
-#include "Mesh.h"
-#include "cell_types.h"
-#include "utils.h"
 
 namespace dolfinx::mesh
 {
