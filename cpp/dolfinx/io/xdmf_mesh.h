@@ -7,6 +7,7 @@
 #pragma once
 
 #include "xdmf_utils.h"
+#include <algorithm>
 #include <array>
 #include <concepts>
 #include <cstdint>

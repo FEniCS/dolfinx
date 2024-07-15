@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "xdmf_utils.h"
+#include <algorithm>
 #include <array>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>

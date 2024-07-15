@@ -9,6 +9,7 @@
 #include "Mesh.h"
 #include "Topology.h"
 #include "graphbuild.h"
+#include <algorithm>
 #include <basix/mdspan.hpp>
 #include <concepts>
 #include <dolfinx/graph/AdjacencyList.h>

@@ -8,6 +8,7 @@
 #include "cells.h"
 #include "vtk_utils.h"
 #include "xdmf_utils.h"
+#include <algorithm>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>

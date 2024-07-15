@@ -8,6 +8,7 @@
 
 #include "BoundingBoxTree.h"
 #include "gjk.h"
+#include <algorithm>
 #include <array>
 #include <concepts>
 #include <cstdint>

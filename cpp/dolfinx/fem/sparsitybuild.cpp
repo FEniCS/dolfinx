@@ -6,6 +6,7 @@
 
 #include "sparsitybuild.h"
 #include "DofMap.h"
+#include <algorithm>
 #include <dolfinx/la/SparsityPattern.h>
 
 using namespace dolfinx;
