@@ -165,7 +165,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install required Python packages (docs)
-        run: pip install breathe jupytext matplotlib myst_parser sphinx sphinx_rtd_theme
+        run: pip install breathe jupytext matplotlib myst_parser sphinx==7.3.7 sphinx_rtd_theme
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'

@@ -33,7 +33,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-docs = ["markdown", "pyyaml", "sphinx", "sphinx_rtd_theme"]
+docs = ["markdown", "pyyaml", "sphinx==7.3.7", "sphinx_rtd_theme"]
 lint = ["ruff>=0.2.0"]
 optional = ["numba"]
 petsc4py = ["petsc4py"]
