@@ -48,8 +48,8 @@ extensions = [
 templates_path = ["_templates"]
 
 source_suffix = {
-    '.rst': 'restructuredtext',
-    '.md': 'markdown',
+    ".rst": "restructuredtext",
+    ".md": "markdown",
 }
 
 # List of patterns, relative to source directory, that match files and
