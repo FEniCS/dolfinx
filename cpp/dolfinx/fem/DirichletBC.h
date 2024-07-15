@@ -236,10 +236,10 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
   // Copy to separate array
   std::array dofs = {std::vector<std::int32_t>(bc_dofs.size()),
                      std::vector<std::int32_t>(bc_dofs.size())};
-  std::transform(bc_dofs.cbegin(), bc_dofs.cend(), dofs[0].begin(),
-                 [](auto dof) { return dof[0]; });
-  std::transform(bc_dofs.cbegin(), bc_dofs.cend(), dofs[1].begin(),
-                 [](auto dof) { return dof[1]; });
+  std::ranges::transform(bc_dofs, dofs[0].begin(),
+                         [](auto dof) { return dof[0]; });
+  std::ranges::transform(bc_dofs, dofs[1].begin(),
+                         [](auto dof) { return dof[1]; });
 
   return dofs;
 }

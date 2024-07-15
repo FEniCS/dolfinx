@@ -44,8 +44,8 @@ graph::AdjacencyList<int> create_adj_list(U& data, std::int32_t size)
 
   std::vector<int> array;
   array.reserve(data.size());
-  std::transform(data.begin(), data.end(), std::back_inserter(array),
-                 [](auto x) { return x.second; });
+  std::ranges::transform(data, std::back_inserter(array),
+                         [](auto x) { return x.second; });
 
   std::vector<std::int32_t> offsets{0};
   offsets.reserve(size + 1);
@@ -307,9 +307,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
           shared_entities_data.push_back({idx, ranks[r]});
           shared_entities_data.push_back({idx, mpi_rank});
           recv_index.push_back(idx);
-          std::transform(
-              entity.begin(), entity.end(),
-              std::back_inserter(shared_entity_to_global_vertices_data),
+          std::ranges::transform(
+              entity, std::back_inserter(shared_entity_to_global_vertices_data),
               [idx](auto v) -> std::pair<std::int32_t, std::int64_t>
               { return {idx, v}; });
         }
@@ -364,15 +363,13 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
     }
     num_local = c;
 
-    std::transform(local_index.cbegin(), local_index.cend(),
-                   local_index.begin(),
-                   [&c](auto index) { return index == -1 ? c++ : index; });
+    std::ranges::transform(local_index, local_index.begin(), [&c](auto index)
+                           { return index == -1 ? c++ : index; });
     assert(c == entity_count);
 
     // Convert interprocess entities to local_index
-    std::transform(interprocess_entities.cbegin(), interprocess_entities.cend(),
-                   interprocess_entities.begin(),
-                   [&local_index](std::int32_t i) { return local_index[i]; });
+    std::ranges::transform(interprocess_entities, interprocess_entities.begin(),
+                           [&local_index](auto i) { return local_index[i]; });
   }
 
   //---------
@@ -390,25 +387,20 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
     std::vector<std::int64_t> send_global_index_data;
     for (const auto& indices : send_index)
     {
-      std::transform(indices.cbegin(), indices.cend(),
-                     std::back_inserter(send_global_index_data),
-                     [&local_index, size = num_local,
-                      offset = local_offset](auto idx) -> std::int64_t
-                     {
-                       // If not in our local range, send -1.
-                       return local_index[idx] < size
-                                  ? offset + local_index[idx]
-                                  : -1;
-                     });
+      std::ranges::transform(
+          indices, std::back_inserter(send_global_index_data),
+          [&local_index, size = num_local,
+           offset = local_offset](auto idx) -> std::int64_t
+          {
+            // If not in our local range, send -1.
+            return local_index[idx] < size ? offset + local_index[idx] : -1;
+          });
     }
 
     // Transform send/receive sizes and displacements for scalar send
     for (auto x : {&send_sizes, &send_disp, &recv_sizes, &recv_disp})
-    {
-      std::transform(x->begin(), x->end(), x->begin(),
-                     [num_vertices_per_e](auto a)
-                     { return a / num_vertices_per_e; });
-    }
+      std::ranges::transform(*x, x->begin(), [num_vertices_per_e](auto a)
+                             { return a / num_vertices_per_e; });
 
     recv_data.resize(recv_disp.back());
     MPI_Neighbor_alltoallv(send_global_index_data.data(), send_sizes.data(),
@@ -441,9 +433,9 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
 
   // Create map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());
-  std::transform(entity_index.begin(), entity_index.end(),
-                 new_entity_index.begin(),
-                 [&local_index](auto index) { return local_index[index]; });
+  std::ranges::transform(entity_index, new_entity_index.begin(),
+                         [&local_index](auto index)
+                         { return local_index[index]; });
 
   return {std::move(new_entity_index), std::move(index_map),
           std::move(interprocess_entities)};

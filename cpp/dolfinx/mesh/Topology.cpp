@@ -435,9 +435,8 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
     // Prepare send sizes and send displacements
     std::vector<int> send_sizes;
     send_sizes.reserve(dest.size());
-    std::transform(send_buffer.begin(), send_buffer.end(),
-                   std::back_inserter(send_sizes),
-                   [](auto& x) { return x.size(); });
+    std::ranges::transform(send_buffer, std::back_inserter(send_sizes),
+                           [](auto& x) { return x.size(); });
     std::vector<int> send_disp(dest.size() + 1, 0);
     std::partial_sum(send_sizes.begin(), send_sizes.end(),
                      std::next(send_disp.begin()));
@@ -534,19 +533,18 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
     // Build list of (owner rank, index) pairs for each ghost index, and
     // sort
     std::vector<std::pair<int, std::int64_t>> owner_to_ghost;
-    std::transform(map0.ghosts().begin(), map0.ghosts().end(),
-                   map0.owners().begin(), std::back_inserter(owner_to_ghost),
-                   [](auto idx, auto r) -> std::pair<int, std::int64_t>
-                   { return {r, idx}; });
+    std::ranges::transform(map0.ghosts(), map0.owners(),
+                           std::back_inserter(owner_to_ghost),
+                           [](auto idx, auto r) -> std::pair<int, std::int64_t>
+                           { return {r, idx}; });
     std::ranges::sort(owner_to_ghost);
 
     // Build send buffer (the second component of each pair in
     // owner_to_ghost) to send to rank that owns the index
     std::vector<std::int64_t> send_buffer;
     send_buffer.reserve(owner_to_ghost.size());
-    std::transform(owner_to_ghost.begin(), owner_to_ghost.end(),
-                   std::back_inserter(send_buffer),
-                   [](auto x) { return x.second; });
+    std::ranges::transform(owner_to_ghost, std::back_inserter(send_buffer),
+                           [](auto x) { return x.second; });
 
     // Compute send sizes and displacements
     std::vector<int> send_sizes, send_disp{0};
@@ -606,8 +604,8 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
 
   // Compute send sizes and offsets
   std::vector<int> send_sizes(dest.size());
-  std::transform(shared_vertices_fwd.begin(), shared_vertices_fwd.end(),
-                 send_sizes.begin(), [](auto& x) { return 3 * x.size(); });
+  std::ranges::transform(shared_vertices_fwd, send_sizes.begin(),
+                         [](auto& x) { return 3 * x.size(); });
   std::vector<int> send_disp(dest.size() + 1);
   std::partial_sum(send_sizes.begin(), send_sizes.end(),
                    std::next(send_disp.begin()));
@@ -1169,18 +1167,14 @@ Topology mesh::create_topology(
           global_to_local_vertices;
       global_to_local_vertices.reserve(owned_vertices.size()
                                        + unowned_vertices.size());
-      std::transform(owned_vertices.begin(), owned_vertices.end(),
-                     local_vertex_indices.begin(),
-                     std::back_inserter(global_to_local_vertices),
-                     [](auto idx0, auto idx1) {
-                       return std::pair<std::int64_t, std::int32_t>(idx0, idx1);
-                     });
-      std::transform(unowned_vertices.begin(), unowned_vertices.end(),
-                     local_vertex_indices_unowned.begin(),
-                     std::back_inserter(global_to_local_vertices),
-                     [](auto idx0, auto idx1) {
-                       return std::pair<std::int64_t, std::int32_t>(idx0, idx1);
-                     });
+      std::ranges::transform(
+          owned_vertices, local_vertex_indices,
+          std::back_inserter(global_to_local_vertices), [](auto idx0, auto idx1)
+          { return std::pair<std::int64_t, std::int32_t>(idx0, idx1); });
+      std::ranges::transform(
+          unowned_vertices, local_vertex_indices_unowned,
+          std::back_inserter(global_to_local_vertices), [](auto idx0, auto idx1)
+          { return std::pair<std::int64_t, std::int32_t>(idx0, idx1); });
       std::ranges::sort(global_to_local_vertices);
 
       // Send (from the ghost cell owner) and receive global indices for
@@ -1227,15 +1221,13 @@ Topology mesh::create_topology(
   std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local_vertices;
   global_to_local_vertices.reserve(owned_vertices.size()
                                    + unowned_vertices.size());
-  std::transform(
-      owned_vertices.begin(), owned_vertices.end(),
-      local_vertex_indices.begin(),
+  std::ranges::transform(
+      owned_vertices, local_vertex_indices,
       std::back_inserter(global_to_local_vertices),
       [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t>
       { return {idx0, idx1}; });
-  std::transform(
-      unowned_vertices.begin(), unowned_vertices.end(),
-      local_vertex_indices_unowned.begin(),
+  std::ranges::transform(
+      unowned_vertices, local_vertex_indices_unowned,
       std::back_inserter(global_to_local_vertices),
       [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t>
       { return {idx0, idx1}; });

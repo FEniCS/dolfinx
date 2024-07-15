@@ -814,10 +814,7 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
   // but divide by three
   {
     auto rescale = [](auto& x)
-    {
-      std::transform(x.cbegin(), x.cend(), x.begin(),
-                     [](auto e) { return (e / 3); });
-    };
+    { std::ranges::transform(x, x.begin(), [](auto e) { return (e / 3); }); };
     rescale(recv_sizes);
     rescale(recv_offsets);
     rescale(send_sizes);

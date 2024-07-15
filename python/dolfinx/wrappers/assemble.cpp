@@ -172,8 +172,8 @@ void declare_assembly_functions(nb::module_& m)
 
         // Move into NumPy data structures
         std::map<Key_t, nb::ndarray<T, nb::numpy>> c;
-        std::transform(
-            coeffs.begin(), coeffs.end(), std::inserter(c, c.end()),
+        std::ranges::transform(
+            coeffs, std::inserter(c, c.end()),
             [](auto& e) -> typename decltype(c)::value_type
             {
               std::size_t num_ents
@@ -396,16 +396,15 @@ void declare_assembly_functions(nb::module_& m)
           _x0.emplace_back(x.data(), x.size());
 
         std::vector<std::span<const T>> _constants;
-        std::transform(constants.begin(), constants.end(),
-                       std::back_inserter(_constants), [](auto& c)
-                       { return std::span<const T>(c.data(), c.size()); });
+        std::ranges::transform(
+            constants, std::back_inserter(_constants),
+            [](auto& c) { return std::span<const T>(c.data(), c.size()); });
 
         std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
                              std::pair<std::span<const T>, int>>>
             _coeffs;
-        std::transform(coeffs.begin(), coeffs.end(),
-                       std::back_inserter(_coeffs),
-                       [](auto& c) { return py_to_cpp_coeffs(c); });
+        std::ranges::transform(coeffs, std::back_inserter(_coeffs),
+                               [](auto& c) { return py_to_cpp_coeffs(c); });
 
         dolfinx::fem::apply_lifting<T>(std::span<T>(b.data(), b.size()), a,
                                        _constants, _coeffs, bcs1, _x0, scale);

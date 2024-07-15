@@ -325,8 +325,8 @@ public:
   {
     std::vector<int> ids;
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
-    std::transform(integrals.begin(), integrals.end(), std::back_inserter(ids),
-                   [](auto& integral) { return integral.id; });
+    std::ranges::transform(integrals, std::back_inserter(ids),
+                           [](auto& integral) { return integral.id; });
     return ids;
   }
 
@@ -385,9 +385,8 @@ public:
       {
       case IntegralType::cell:
       {
-        std::transform(entities.begin(), entities.end(),
-                       std::back_inserter(mapped_entities),
-                       [&entity_map](auto e) { return entity_map[e]; });
+        std::ranges::transform(entities, std::back_inserter(mapped_entities),
+                               [&entity_map](auto e) { return entity_map[e]; });
         break;
       }
       case IntegralType::exterior_facet:
