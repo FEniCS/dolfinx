@@ -10,7 +10,12 @@ TEST_CASE("Generation", "create_interval")
 {
     mesh::Mesh<double> mesh = mesh::create_interval(MPI_COMM_SELF, 4, {0., 1.});
 
-    // TODO: CHECK(mesh.comm() == MPI_COMM_SELF);
+    {
+        int comp_result;   
+        MPI_Comm_compare(mesh.comm(), MPI_COMM_SELF, &comp_result);
+        CHECK(comp_result == MPI_CONGRUENT);
+    }
+
     CHECK(mesh.geometry().dim() == 1);
     auto vertices = mesh.geometry().x();
     CHECK(vertices[0*3] == 0.0);
