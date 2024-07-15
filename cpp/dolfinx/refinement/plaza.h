@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
@@ -85,7 +86,7 @@ auto compute_parent_facets(std::span<const std::int32_t> simplex_set)
         {
           for (int j = 0; j < tdim; ++j)
             cf[j] = simplex_set[cc * 3 + facet_table_2d[fci][j]];
-          
+
           std::ranges::sort(cf);
           auto [last1, last2, it_last] = std::ranges::set_intersection(
               facet_table_2d[fpi], cf, set_output.begin());
@@ -584,14 +585,13 @@ compute_refinement_data(const mesh::Mesh<T>& mesh, Option option)
   ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
 
   // Convert edge_ranks from global rank to to neighbourhood ranks
-  std::transform(edge_ranks.array().begin(), edge_ranks.array().end(),
-                 edge_ranks.array().begin(),
-                 [&ranks](auto r)
-                 {
-                   auto it = std::ranges::lower_bound(ranks, r);
-                   assert(it != ranks.end() and *it == r);
-                   return std::distance(ranks.begin(), it);
-                 });
+  std::ranges::transform(edge_ranks.array(), edge_ranks.array().begin(),
+                         [&ranks](auto r)
+                         {
+                           auto it = std::ranges::lower_bound(ranks, r);
+                           assert(it != ranks.end() and *it == r);
+                           return std::distance(ranks.begin(), it);
+                         });
 
   MPI_Comm comm;
   MPI_Dist_graph_create_adjacent(mesh.comm(), ranks.size(), ranks.data(),
@@ -651,14 +651,13 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
 
   // Convert edge_ranks from global rank to to neighbourhood ranks
-  std::transform(edge_ranks.array().begin(), edge_ranks.array().end(),
-                 edge_ranks.array().begin(),
-                 [&ranks](auto r)
-                 {
-                   auto it = std::ranges::lower_bound(ranks, r);
-                   assert(it != ranks.end() and *it == r);
-                   return std::distance(ranks.begin(), it);
-                 });
+  std::ranges::transform(edge_ranks.array(), edge_ranks.array().begin(),
+                         [&ranks](auto r)
+                         {
+                           auto it = std::ranges::lower_bound(ranks, r);
+                           assert(it != ranks.end() and *it == r);
+                           return std::distance(ranks.begin(), it);
+                         });
 
   // Get number of neighbors
   std::vector<std::int8_t> marked_edges(

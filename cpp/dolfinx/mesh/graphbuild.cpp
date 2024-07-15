@@ -328,8 +328,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     {
       auto e = local_graph.links(i);
       disp[i] += e.size();
-      std::transform(e.begin(), e.end(), std::next(data.begin(), offsets[i]),
-                     [cell_offset](auto x) { return x + cell_offset; });
+      std::ranges::transform(e, std::next(data.begin(), offsets[i]),
+                             [cell_offset](auto x) { return x + cell_offset; });
     }
 
     // Add non-local data
@@ -421,9 +421,8 @@ mesh::build_local_dual_graph(
       for (int f = 0; f < cell_facets.num_nodes(); ++f)
       {
         auto facet_vertices = cell_facets.links(f);
-        std::transform(facet_vertices.begin(), facet_vertices.end(),
-                       std::back_inserter(facets),
-                       [v](auto idx) { return v[idx]; });
+        std::ranges::transform(facet_vertices, std::back_inserter(facets),
+                               [v](auto idx) { return v[idx]; });
         std::sort(std::prev(facets.end(), facet_vertices.size()), facets.end());
         facets.insert(facets.end(),
                       max_vertices_per_facet - facet_vertices.size(), -1);

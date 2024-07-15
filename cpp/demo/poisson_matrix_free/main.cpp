@@ -42,6 +42,7 @@
 // ## C++ program
 
 #include "poisson.h"
+#include <algorithm>
 #include <basix/finite-element.h>
 #include <cmath>
 #include <complex>
@@ -62,9 +63,8 @@ namespace linalg
 /// @param[in] y
 void axpy(auto&& r, auto alpha, auto&& x, auto&& y)
 {
-  std::transform(x.array().begin(), x.array().end(), y.array().begin(),
-                 r.mutable_array().begin(),
-                 [alpha](auto x, auto y) { return alpha * x + y; });
+  std::ranges::transform(x.array(), y.array(), r.mutable_array().begin(),
+                         [alpha](auto x, auto y) { return alpha * x + y; });
 }
 
 /// @brief Solve problem A.x = b using the conjugate gradient (CG)
