@@ -8,6 +8,7 @@
 
 #include "SparsityPattern.h"
 #include "matrix_csr_impl.h"
+#include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>

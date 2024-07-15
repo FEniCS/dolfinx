@@ -7,6 +7,7 @@
 #pragma once
 
 #include "types.h"
+#include <algorithm>
 #include <array>
 #include <basix/mdspan.hpp>
 #include <cmath>
