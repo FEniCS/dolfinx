@@ -197,10 +197,8 @@ refine_interval(const mesh::Mesh<T>& mesh,
   if (mesh.topology()->cell_type() != mesh::CellType::interval)
     throw std::runtime_error("Cell type not supported");
 
-  if (!mesh.topology()->index_map(1))
-    throw std::runtime_error("Edges must be initialised");
-
   assert(mesh.topology()->dim() == 1);
+  assert(mesh.topology()->index_map(1));
 
   auto [cell_adj, new_coords, xshape, parent_cell]
       = impl::compute_interval_refinement(mesh, edges);
