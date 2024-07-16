@@ -15,10 +15,16 @@ from dolfinx import mesh
 @pytest.mark.parametrize(
     "ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_vertex, mesh.GhostMode.shared_facet]
 )
+@pytest.mark.parametrize(
+    "ghost_mode_refined",
+    [mesh.GhostMode.none, mesh.GhostMode.shared_vertex, mesh.GhostMode.shared_facet],
+)
 @pytest.mark.parametrize("redistribute", [True, False])
-def test_refine_interval(ghost_mode, redistribute):
+def test_refine_interval(ghost_mode, redistribute, ghost_mode_refined):
     msh = mesh.create_interval(MPI.COMM_WORLD, 100, [0, 1], ghost_mode=ghost_mode)
-    msh_refined, edges = mesh.refine_interval(msh, redistribute=redistribute)
+    msh_refined, edges = mesh.refine_interval(
+        msh, redistribute=redistribute, ghost_mode=ghost_mode_refined
+    )
 
     # vertex count
     assert msh_refined.topology.index_map(0).size_global == 201
@@ -33,10 +39,16 @@ def test_refine_interval(ghost_mode, redistribute):
 @pytest.mark.parametrize(
     "ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_vertex, mesh.GhostMode.shared_facet]
 )
+@pytest.mark.parametrize(
+    "ghost_mode_refined",
+    [mesh.GhostMode.none, mesh.GhostMode.shared_vertex, mesh.GhostMode.shared_facet],
+)
 @pytest.mark.parametrize("redistribute", [True, False])
-def test_refine_interval_adaptive(ghost_mode, redistribute):
+def test_refine_interval_adaptive(ghost_mode, redistribute, ghost_mode_refined):
     msh = mesh.create_interval(MPI.COMM_WORLD, 100, [0, 1], ghost_mode=ghost_mode)
-    msh_refined, edges = mesh.refine_interval(msh, np.arange(10), redistribute=redistribute)
+    msh_refined, edges = mesh.refine_interval(
+        msh, np.arange(10), redistribute=redistribute, ghost_mode=ghost_mode_refined
+    )
 
     # vertex count
     assert msh_refined.topology.index_map(0).size_global == 101 + 10 * MPI.COMM_WORLD.size

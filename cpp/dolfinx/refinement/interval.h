@@ -184,6 +184,8 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
 /// i.e. a uniform refinement is performed.
 /// @param[in] redistribute Option to enable redistribution of the refined mesh
 /// across processes.
+/// @param[in] ghost_mode Ghost mode of the refined mesh, default is ghost mode
+/// none
 ///
 /// @return Refined mesh, and list of parent edges - for every new edge index
 /// this contains the associated edge index of the pre-refinement mesh.
@@ -191,7 +193,8 @@ template <std::floating_point T>
 std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>>
 refine_interval(const mesh::Mesh<T>& mesh,
                 std::optional<std::span<const std::int32_t>> edges,
-                bool redistribute)
+                bool redistribute,
+                mesh::GhostMode ghost_mode = mesh::GhostMode::none)
 {
 
   if (mesh.topology()->cell_type() != mesh::CellType::interval)
@@ -212,18 +215,6 @@ refine_interval(const mesh::Mesh<T>& mesh,
   }
   else
   {
-    // Check if mesh has ghost cells on any rank
-    // FIXME: this is not a robust test. Should be user option.
-    const int num_ghost_cells = mesh.topology()->index_map(1)->num_ghosts();
-    int max_ghost_cells = 0;
-    MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
-                  mesh.comm());
-
-    // Build mesh
-    const auto ghost_mode = max_ghost_cells == 0
-                                ? mesh::GhostMode::none
-                                : mesh::GhostMode::shared_facet;
-
     return {partition<T>(mesh, cell_adj, std::span(new_coords), xshape,
                          redistribute, ghost_mode),
             std::move(parent_cell)};

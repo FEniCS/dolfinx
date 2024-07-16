@@ -335,7 +335,10 @@ def refine(
 
 
 def refine_interval(
-    mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True
+    mesh: Mesh,
+    edges: typing.Optional[np.ndarray] = None,
+    redistribute: bool = True,
+    ghost_mode: GhostMode = GhostMode.none,
 ) -> tuple[Mesh, npt.NDArray[np.int32]]:
     """Refine a (topologically) one dimensional mesh.
 
@@ -343,16 +346,19 @@ def refine_interval(
         mesh: Mesh to refine
         edges: Indices of edges to split druing refinement. If ``None``, mesh refinement is uniform.
         redistribute: Refined mesh is re-partitioned if ``True``.
+        ghost_mode: ghost mode of the refined mesh
 
     Returns:
         Refined mesh.
     """
 
     if edges is None:
-        refined_mesh, parent_edges = _cpp.refinement.refine_interval(mesh._cpp_object, redistribute)
+        refined_mesh, parent_edges = _cpp.refinement.refine_interval(
+            mesh._cpp_object, redistribute, ghost_mode
+        )
     else:
         refined_mesh, parent_edges = _cpp.refinement.refine_interval(
-            mesh._cpp_object, edges, redistribute
+            mesh._cpp_object, edges, redistribute, ghost_mode
         )
 
     return Mesh(refined_mesh, mesh._ufl_domain), parent_edges
