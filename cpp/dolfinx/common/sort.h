@@ -8,6 +8,7 @@
 
 #include "Timer.h"
 #include <algorithm>
+#include <bits/ranges_algo.h>
 #include <bitset>
 #include <cstdint>
 #include <iterator>
@@ -24,68 +25,74 @@ namespace dolfinx
 /// @tparam T Integral type
 /// @tparam BITS The number of bits to sort at a time.
 /// @param[in, out] array The array to sort.
-template <std::ranges::random_access_range R, int BITS = 8>
-void radix_sort(R&& array)
+struct __radix_sort
 {
-  using T = std::iter_value_t<R>;
-  static_assert(std::is_integral<T>(), "This function only sorts integers.");
-
-  if (array.size() <= 1)
-    return;
-
-  T max_value = *std::ranges::max_element(array);
-
-  // Sort N bits at a time
-  constexpr int bucket_size = 1 << BITS;
-  T mask = (T(1) << BITS) - 1;
-
-  // Compute number of iterations, most significant digit (N bits) of
-  // maxvalue
-  int its = 0;
-  while (max_value)
+  template <std::ranges::random_access_range R, int BITS = 8>
+  constexpr void operator()(R&& array) const
   {
-    max_value >>= BITS;
-    its++;
-  }
+    using T = std::iter_value_t<R>;
+    static_assert(std::is_integral<T>(), "This function only sorts integers.");
 
-  // Adjacency list arrays for computing insertion position
-  std::array<std::int32_t, bucket_size> counter;
-  std::array<std::int32_t, bucket_size + 1> offset;
+    if (array.size() <= 1)
+      return;
 
-  std::int32_t mask_offset = 0;
-  std::vector<T> buffer(array.size());
-  std::span<T> current_perm = array;
-  std::span<T> next_perm = buffer;
-  for (int i = 0; i < its; i++)
-  {
-    // Zero counter array
-    std::ranges::fill(counter, 0);
+    T max_value = *std::ranges::max_element(array);
 
-    // Count number of elements per bucket
-    for (T c : current_perm)
-      counter[(c & mask) >> mask_offset]++;
+    // Sort N bits at a time
+    constexpr int bucket_size = 1 << BITS;
+    T mask = (T(1) << BITS) - 1;
 
-    // Prefix sum to get the inserting position
-    offset[0] = 0;
-    std::partial_sum(counter.begin(), counter.end(), std::next(offset.begin()));
-    for (T c : current_perm)
+    // Compute number of iterations, most significant digit (N bits) of
+    // maxvalue
+    int its = 0;
+    while (max_value)
     {
-      std::int32_t bucket = (c & mask) >> mask_offset;
-      std::int32_t new_pos = offset[bucket + 1] - counter[bucket];
-      next_perm[new_pos] = c;
-      counter[bucket]--;
+      max_value >>= BITS;
+      its++;
     }
 
-    mask = mask << BITS;
-    mask_offset += BITS;
+    // Adjacency list arrays for computing insertion position
+    std::array<std::int32_t, bucket_size> counter;
+    std::array<std::int32_t, bucket_size + 1> offset;
 
-    std::swap(current_perm, next_perm);
+    std::int32_t mask_offset = 0;
+    std::vector<T> buffer(array.size());
+    std::span<T> current_perm = array;
+    std::span<T> next_perm = buffer;
+    for (int i = 0; i < its; i++)
+    {
+      // Zero counter array
+      std::ranges::fill(counter, 0);
+
+      // Count number of elements per bucket
+      for (T c : current_perm)
+        counter[(c & mask) >> mask_offset]++;
+
+      // Prefix sum to get the inserting position
+      offset[0] = 0;
+      std::partial_sum(counter.begin(), counter.end(),
+                       std::next(offset.begin()));
+      for (T c : current_perm)
+      {
+        std::int32_t bucket = (c & mask) >> mask_offset;
+        std::int32_t new_pos = offset[bucket + 1] - counter[bucket];
+        next_perm[new_pos] = c;
+        counter[bucket]--;
+      }
+
+      mask = mask << BITS;
+      mask_offset += BITS;
+
+      std::swap(current_perm, next_perm);
+    }
+
+    // Copy data back to array
+    if (its % 2 != 0)
+      std::ranges::copy(buffer, array.begin());
   }
+};
 
-  // Copy data back to array
-  if (its % 2 != 0)
-    std::ranges::copy(buffer, array.begin());
-}
+inline constexpr __radix_sort radix_sort{};
 
 /// Returns the indices that would sort (lexicographic) a vector of
 /// bitsets.
