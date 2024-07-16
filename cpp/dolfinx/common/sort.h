@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <bitset>
 #include <cstdint>
+#include <iterator>
 #include <numeric>
 #include <span>
 #include <type_traits>
@@ -23,9 +24,10 @@ namespace dolfinx
 /// @tparam T Integral type
 /// @tparam BITS The number of bits to sort at a time.
 /// @param[in, out] array The array to sort.
-template <typename T, int BITS = 8>
-void radix_sort(std::span<T> array)
+template <std::ranges::random_access_range R, int BITS = 8>
+void radix_sort(R&& array)
 {
+  using T = std::iter_value_t<R>;
   static_assert(std::is_integral<T>(), "This function only sorts integers.");
 
   if (array.size() <= 1)
