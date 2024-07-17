@@ -26,7 +26,8 @@ void test_read_named_meshtags()
 {
   const std::string mesh_file = "Domain.xdmf";
 
-  io::XDMFFile meshFile(MPI_COMM_WORLD, mesh_file, "r");
+  io::XDMFFile meshFile(MPI_COMM_WORLD, mesh_file, "r",
+                        io::XDMFFile::Encoding::ASCII);
   auto mesh = std::make_shared<mesh::Mesh<double>>(meshFile.read_mesh(
       fem::CoordinateElement<double>(mesh::CellType::tetrahedron, 1),
       mesh::GhostMode::none, "Grid"));
