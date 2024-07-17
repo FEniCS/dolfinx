@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <algorithm>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 #include <dolfinx/common/IndexMap.h>
@@ -50,7 +51,7 @@ void test_scatter_fwd(int n)
   std::vector<MPI_Request> requests
       = sct.create_request_vector(decltype(sct)::type::p2p);
 
-  std::fill(data_ghost.begin(), data_ghost.end(), 0);
+  std::ranges::fill(data_ghost, 0);
   sct.scatter_fwd_begin<std::int64_t>(data_local, data_ghost, requests,
                                       decltype(sct)::type::p2p);
   sct.scatter_fwd_end(requests);
@@ -143,7 +144,7 @@ void test_consensus_exchange()
 
   // Create an IndexMap
   std::vector<int> src_ranks = global_ghost_owner;
-  std::sort(src_ranks.begin(), src_ranks.end());
+  std::ranges::sort(src_ranks);
   src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
                   src_ranks.end());
 
@@ -151,8 +152,8 @@ void test_consensus_exchange()
       = dolfinx::MPI::compute_graph_edges_nbx(MPI_COMM_WORLD, src_ranks);
   auto dest_ranks1
       = dolfinx::MPI::compute_graph_edges_pcx(MPI_COMM_WORLD, src_ranks);
-  std::sort(dest_ranks0.begin(), dest_ranks0.end());
-  std::sort(dest_ranks1.begin(), dest_ranks1.end());
+  std::ranges::sort(dest_ranks0);
+  std::ranges::sort(dest_ranks1);
 
   CHECK(dest_ranks0 == dest_ranks1);
 }

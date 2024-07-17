@@ -31,7 +31,7 @@ void radix_sort(std::span<T> array)
   if (array.size() <= 1)
     return;
 
-  T max_value = *std::max_element(array.begin(), array.end());
+  T max_value = *std::ranges::max_element(array);
 
   // Sort N bits at a time
   constexpr int bucket_size = 1 << BITS;
@@ -57,7 +57,7 @@ void radix_sort(std::span<T> array)
   for (int i = 0; i < its; i++)
   {
     // Zero counter array
-    std::fill(counter.begin(), counter.end(), 0);
+    std::ranges::fill(counter, 0);
 
     // Count number of elements per bucket
     for (T c : current_perm)
@@ -82,7 +82,7 @@ void radix_sort(std::span<T> array)
 
   // Copy data back to array
   if (its % 2 != 0)
-    std::copy(buffer.begin(), buffer.end(), array.begin());
+    std::ranges::copy(buffer, array.begin());
 }
 
 /// Returns the indices that would sort (lexicographic) a vector of
@@ -101,7 +101,7 @@ void argsort_radix(std::span<const T> array, std::span<std::int32_t> perm)
   if (array.size() <= 1)
     return;
 
-  const auto [min, max] = std::minmax_element(array.begin(), array.end());
+  const auto [min, max] = std::ranges::minmax_element(array);
   T range = *max - *min + 1;
 
   // Sort N bits at a time
@@ -128,7 +128,7 @@ void argsort_radix(std::span<const T> array, std::span<std::int32_t> perm)
   for (int i = 0; i < its; i++)
   {
     // Zero counter
-    std::fill(counter.begin(), counter.end(), 0);
+    std::ranges::fill(counter, 0);
 
     // Count number of elements per bucket
     for (auto cp : current_perm)
@@ -159,7 +159,7 @@ void argsort_radix(std::span<const T> array, std::span<std::int32_t> perm)
   }
 
   if (its % 2 == 1)
-    std::copy(perm2.begin(), perm2.end(), perm.begin());
+    std::ranges::copy(perm2, perm.begin());
 }
 
 /// @brief Compute the permutation array that sorts a 2D array by row.

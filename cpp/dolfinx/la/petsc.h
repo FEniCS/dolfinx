@@ -298,9 +298,8 @@ public:
       PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
       cache.resize(rows.size() + cols.size());
-      std::copy(rows.begin(), rows.end(), cache.begin());
-      std::copy(cols.begin(), cols.end(),
-                std::next(cache.begin(), rows.size()));
+      std::ranges::copy(rows, cache.begin());
+      std::ranges::copy(cols, std::next(cache.begin(), rows.size()));
       const PetscInt* _rows = cache.data();
       const PetscInt* _cols = cache.data() + rows.size();
       ierr = MatSetValuesLocal(A, rows.size(), _rows, cols.size(), _cols,
@@ -333,9 +332,8 @@ public:
       PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
       cache.resize(rows.size() + cols.size());
-      std::copy(rows.begin(), rows.end(), cache.begin());
-      std::copy(cols.begin(), cols.end(),
-                std::next(cache.begin(), rows.size()));
+      std::ranges::copy(rows, cache.begin());
+      std::ranges::copy(cols, std::next(cache.begin(), rows.size()));
       const PetscInt* _rows = cache.data();
       const PetscInt* _cols = cache.data() + rows.size();
       ierr = MatSetValuesBlockedLocal(A, rows.size(), _rows, cols.size(), _cols,

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "partitioners.h"
+#include <algorithm>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
@@ -70,7 +71,7 @@ graph::AdjacencyList<int> compute_destination_ranks(
     {
       if (node1 < range0 or node1 >= range1)
       {
-        auto it = std::upper_bound(node_disp.begin(), node_disp.end(), node1);
+        auto it = std::ranges::upper_bound(node_disp, node1);
         int remote_rank = std::distance(node_disp.begin(), it) - 1;
         node_to_dest.push_back(
             {remote_rank, node1, static_cast<std::int64_t>(part[node0])});
@@ -80,7 +81,7 @@ graph::AdjacencyList<int> compute_destination_ranks(
             {rank, node1, static_cast<std::int64_t>(part[node0])});
     }
   }
-  std::sort(node_to_dest.begin(), node_to_dest.end());
+  std::ranges::sort(node_to_dest);
   node_to_dest.erase(std::unique(node_to_dest.begin(), node_to_dest.end()),
                      node_to_dest.end());
 
@@ -163,7 +164,7 @@ graph::AdjacencyList<int> compute_destination_ranks(
     std::int32_t idx_local = idx - range0;
     local_node_to_dest.push_back({idx_local, d});
   }
-  std::sort(local_node_to_dest.begin(), local_node_to_dest.end());
+  std::ranges::sort(local_node_to_dest);
   local_node_to_dest.erase(
       std::unique(local_node_to_dest.begin(), local_node_to_dest.end()),
       local_node_to_dest.end());
@@ -413,7 +414,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       std::copy_if(graph.array().begin(), graph.array().end(),
                    std::back_inserter(ghost_edges),
                    [range](auto e) { return e < range[0] or e >= range[1]; });
-      std::sort(ghost_edges.begin(), ghost_edges.end());
+      std::ranges::sort(ghost_edges);
       auto it = std::unique(ghost_edges.begin(), ghost_edges.end());
       num_ghost_nodes = std::distance(ghost_edges.begin(), it);
     }

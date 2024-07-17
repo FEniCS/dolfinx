@@ -339,7 +339,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
     if (int dest = MPI::index_owner(size, idx, shape[0]); dest != rank)
       dest_to_index.push_back({dest, i});
   }
-  std::sort(dest_to_index.begin(), dest_to_index.end());
+  std::ranges::sort(dest_to_index);
 
   // Build list of neighbour src ranks and count number of items (rows
   // of x) to receive from each src post office (by neighbourhood rank)
@@ -450,8 +450,8 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
   // Convert to local indices
   const std::int64_t r0 = MPI::local_range(rank, shape[0], size)[0];
   std::vector<std::int32_t> index_local(recv_buffer_index.size());
-  std::transform(recv_buffer_index.cbegin(), recv_buffer_index.cend(),
-                 index_local.begin(), [r0](auto idx) { return idx - r0; });
+  std::ranges::transform(recv_buffer_index, index_local.begin(),
+                         [r0](auto idx) { return idx - r0; });
 
   return {index_local, recv_buffer_data};
 }
@@ -492,7 +492,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
     if (int src = dolfinx::MPI::index_owner(size, idx, shape[0]); src != rank)
       src_to_index.push_back({src, idx, i});
   }
-  std::sort(src_to_index.begin(), src_to_index.end());
+  std::ranges::sort(src_to_index);
 
   // Build list is neighbour src ranks and count number of items (rows
   // of x) to receive from each src post office (by neighbourhood rank)
@@ -549,9 +549,8 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   // post offices
   assert(send_disp.back() == (int)src_to_index.size());
   std::vector<std::int64_t> send_buffer_index(src_to_index.size());
-  std::transform(src_to_index.cbegin(), src_to_index.cend(),
-                 send_buffer_index.begin(),
-                 [](auto& x) { return std::get<1>(x); });
+  std::ranges::transform(src_to_index, send_buffer_index.begin(),
+                         [](auto x) { return std::get<1>(x); });
 
   // Prepare the receive buffer
   std::vector<std::int64_t> recv_buffer_index(recv_disp.back());

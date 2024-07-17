@@ -261,15 +261,6 @@ def f_expr(x):
     return np.vstack((np.zeros_like(x[0]), np.zeros_like(x[0])))
 
 
-def boundary_marker(x):
-    return (
-        np.isclose(x[0], 0.0)
-        | np.isclose(x[0], 1.0)
-        | np.isclose(x[1], 0.0)
-        | np.isclose(x[1], 1.0)
-    )
-
-
 # -
 
 # We define some simulation parameters
@@ -344,7 +335,7 @@ L_1 = inner(fem.Constant(msh, default_real_type(0.0)), q) * dx
 L = fem.form([L_0, L_1])
 
 # Boundary conditions
-boundary_facets = mesh.locate_entities_boundary(msh, msh.topology.dim - 1, boundary_marker)
+boundary_facets = mesh.exterior_facet_indices(msh.topology)
 boundary_vel_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, boundary_facets)
 bc_u = fem.dirichletbc(u_D, boundary_vel_dofs)
 bcs = [bc_u]

@@ -7,6 +7,7 @@
 #pragma once
 
 #include "Topology.h"
+#include <algorithm>
 #include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdint>
@@ -272,7 +273,7 @@ create_geometry(
 {
   spdlog::info("Create Geometry (multiple)");
 
-  assert(std::is_sorted(nodes.begin(), nodes.end()));
+  assert(std::ranges::is_sorted(nodes));
   using T = typename std::remove_reference_t<typename U::value_type>;
 
   // Check elements match cell types in topology
@@ -333,8 +334,8 @@ create_geometry(
 
   // Allocate space for input global indices and copy data
   std::vector<std::int64_t> igi(nodes.size());
-  std::transform(l2l.cbegin(), l2l.cend(), igi.begin(),
-                 [&nodes](auto index) { return nodes[index]; });
+  std::ranges::transform(l2l, igi.begin(),
+                         [&nodes](auto index) { return nodes[index]; });
 
   // Build coordinate dof array, copying coordinates to correct position
   assert(x.size() % dim == 0);
@@ -388,7 +389,7 @@ create_geometry(
         reorder_fn
     = nullptr)
 {
-  assert(std::is_sorted(nodes.begin(), nodes.end()));
+  assert(std::ranges::is_sorted(nodes));
   using T = typename std::remove_reference_t<typename U::value_type>;
 
   fem::ElementDofLayout dof_layout = element.create_dof_layout();
@@ -425,8 +426,8 @@ create_geometry(
 
   // Allocate space for input global indices and copy data
   std::vector<std::int64_t> igi(nodes.size());
-  std::transform(l2l.cbegin(), l2l.cend(), igi.begin(),
-                 [&nodes](auto index) { return nodes[index]; });
+  std::ranges::transform(l2l, igi.begin(),
+                         [&nodes](auto index) { return nodes[index]; });
 
   // Build coordinate dof array, copying coordinates to correct position
   assert(x.size() % dim == 0);
