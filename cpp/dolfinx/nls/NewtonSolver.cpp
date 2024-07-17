@@ -71,10 +71,10 @@ nls::petsc::NewtonSolver::NewtonSolver(MPI_Comm comm)
       _krylov_iterations(0), _iteration(0), _residual(0.0), _residual0(0.0),
       _solver(comm), _dx(nullptr), _comm(comm)
 {
-  // Create linear solver if not already created. Default to LU.
+  // Tune linear solver:  
+  //     Default to LU and let the user options change this default
   _solver.set_options_prefix("nls_solve_");
-  la::petsc::options::set("nls_solve_ksp_type", "preonly");
-  la::petsc::options::set("nls_solve_pc_type", "lu");
+  _solver.set_as_direct_solver();
   _solver.set_from_options();
 }
 //-----------------------------------------------------------------------------

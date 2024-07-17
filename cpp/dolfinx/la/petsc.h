@@ -496,6 +496,9 @@ public:
   /// Set options from PETSc options database
   void set_from_options() const;
 
+  /// Transform Krylov solver into a direct solver using LU factorization
+  void set_as_direct_solver();
+
   /// Return PETSc KSP pointer
   KSP ksp() const;
 
