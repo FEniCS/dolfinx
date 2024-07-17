@@ -241,7 +241,7 @@ public:
       const scalar_type* coeff_cell = coeffs.data() + e * cstride;
       const int* entity_index = get_entity_index(entities, e);
 
-      std::fill(values_local.begin(), values_local.end(), 0);
+      std::ranges::fill(values_local, 0);
       _fn(values_local.data(), coeff_cell, constant_data.data(),
           coord_dofs.data(), entity_index, nullptr);
 
