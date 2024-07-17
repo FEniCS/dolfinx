@@ -33,7 +33,7 @@ namespace impl
 /// @param[in] cells Indices of the cells that are marked for refinement
 ///
 /// @return New mesh data: cell topology, vertex coordinates and parent
-/// edge indices.
+/// cell indices.
 template <std::floating_point T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
            std::array<std::size_t, 2>, std::vector<std::int32_t>>
@@ -44,23 +44,23 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
   assert(topology);
   assert(topology->dim() == 1);
 
-  auto map_e = topology->index_map(1);
-  assert(map_e);
+  auto map_c = topology->index_map(1);
+  assert(map_c);
 
   // TODO: creation of sharing ranks in external function? Also same code in use
   // for plaza
-  // Get sharing ranks for each edge
-  graph::AdjacencyList<int> edge_ranks = map_e->index_to_dest_ranks();
+  // Get sharing ranks for each cell
+  graph::AdjacencyList<int> cell_ranks = map_c->index_to_dest_ranks();
 
   // Create unique list of ranks that share cells (owners of ghosts plus
   // ranks that ghost owned indices)
-  std::vector<int> ranks = edge_ranks.array();
+  std::vector<int> ranks = cell_ranks.array();
   std::ranges::sort(ranks);
   auto to_remove = std::ranges::unique(ranks);
   ranks.erase(to_remove.begin(), to_remove.end());
 
-  // Convert edge_ranks from global rank to to neighbourhood ranks
-  std::ranges::transform(edge_ranks.array(), edge_ranks.array().begin(),
+  // Convert cell_ranks from global rank to to neighbourhood ranks
+  std::ranges::transform(cell_ranks.array(), cell_ranks.array().begin(),
                          [&ranks](auto r)
                          {
                            auto it = std::lower_bound(ranks.begin(),
@@ -72,20 +72,20 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
   // create refinement flag for cells
   // TODO: vector of bools? -> make of use std specialization for type bool
   std::vector<std::int8_t> refinement_marker(
-      map_e->size_local() + map_e->num_ghosts(), !cells.has_value());
+      map_c->size_local() + map_c->num_ghosts(), !cells.has_value());
 
-  // mark edges for refinement
+  // mark cells for refinement
   std::vector<std::vector<std::int32_t>> marked_for_update(ranks.size());
   if (cells.has_value())
   {
     std::ranges::for_each(cells.value(),
-                          [&](auto edge)
+                          [&](auto cell)
                           {
-                            if (!refinement_marker[edge])
+                            if (!refinement_marker[cell])
                             {
-                              refinement_marker[edge] = true;
-                              for (int rank : edge_ranks.links(edge))
-                                marked_for_update[rank].push_back(edge);
+                              refinement_marker[cell] = true;
+                              for (int rank : cell_ranks.links(cell))
+                                marked_for_update[rank].push_back(cell);
                             }
                           });
   }
@@ -96,19 +96,19 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
       mesh.comm(), ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
       ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm);
 
-  // Communicate ghost edges that might have been marked. This is not necessary
+  // Communicate ghost cells that might have been marked. This is not necessary
   // for a uniform refinement.
   if (cells.has_value())
     update_logical_edgefunction(neighbor_comm, marked_for_update,
-                                refinement_marker, *map_e);
+                                refinement_marker, *map_c);
 
   // Construct the new vertices
   const auto [new_vertex_map, new_vertex_coords, xshape]
-      = create_new_vertices(neighbor_comm, edge_ranks, mesh, refinement_marker);
+      = create_new_vertices(neighbor_comm, cell_ranks, mesh, refinement_marker);
   MPI_Comm_free(&neighbor_comm);
 
-  auto e_to_v = mesh.topology()->connectivity(1, 0);
-  assert(e_to_v);
+  auto c_to_v = mesh.topology()->connectivity(1, 0);
+  assert(c_to_v);
 
   // get the count of cells to refine, note: we only consider non-ghost cells
   std::int32_t number_of_refined_cells
@@ -132,9 +132,9 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
   std::vector<std::int32_t> parent_cell;
   parent_cell.reserve(refined_cell_count);
 
-  for (std::int32_t cell = 0; cell < map_e->size_local(); ++cell)
+  for (std::int32_t cell = 0; cell < map_c->size_local(); ++cell)
   {
-    const auto& vertices = e_to_v->links(cell);
+    const auto& vertices = c_to_v->links(cell);
     assert(vertices.size() == 2);
 
     // we consider a (previous) cell, i.e. an edge of (global) vertices
@@ -176,7 +176,8 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
 
 } // namespace impl
 
-/// Refines a (topologically) one dimensional mesh by splitting cells, i.e. edges.
+/// Refines a (topologically) one dimensional mesh by splitting cells, i.e.
+/// edges.
 ///
 /// @param[in] mesh Mesh to be refined
 /// @param[in] cells Optional indices of the cells that should be split by this
