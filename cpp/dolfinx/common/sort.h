@@ -92,6 +92,7 @@ struct __radix_sort
   }
 };
 
+/// Radix sort
 inline constexpr __radix_sort radix_sort{};
 
 /// Returns the indices that would sort (lexicographic) a vector of

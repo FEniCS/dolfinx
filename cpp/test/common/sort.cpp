@@ -26,7 +26,7 @@ TEMPLATE_TEST_CASE("Test radix sort", "[vector][template]", std::int32_t,
   std::generate_n(std::back_inserter(vec), vec_size, generator);
 
   // Sort vector using radix sort
-  dolfinx::radix_sort(std::span(vec));
+  dolfinx::radix_sort(vec);
 
   // Check if vector is sorted
   REQUIRE(std::ranges::is_sorted(vec));
