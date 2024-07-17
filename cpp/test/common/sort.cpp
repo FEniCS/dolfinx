@@ -10,6 +10,7 @@
 #include <catch2/generators/catch_generators.hpp>
 #include <dolfinx/common/sort.h>
 #include <functional>
+#include <numeric>
 #include <random>
 
 TEMPLATE_TEST_CASE("Test radix sort", "[vector][template]", std::int32_t,
@@ -30,6 +31,17 @@ TEMPLATE_TEST_CASE("Test radix sort", "[vector][template]", std::int32_t,
 
   // Check if vector is sorted
   REQUIRE(std::ranges::is_sorted(vec));
+}
+
+TEST_CASE("Test radix sort (projection)", "[radix]")
+{
+  std::vector<int> vec = {3, 6, 2, 1, 5, 4, 0};
+  std::vector<int> indices(vec.size());
+  std::iota(indices.begin(), indices.end(), 0);
+
+  auto proj = [&](auto index) { return vec[index]; };
+  dolfinx::radix_sort(indices, proj);
+  CHECK(std::ranges::is_sorted(indices, std::less{}, proj));
 }
 
 TEST_CASE("Test argsort bitset")

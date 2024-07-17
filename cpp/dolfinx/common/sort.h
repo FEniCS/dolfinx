@@ -11,10 +11,12 @@
 #include <bits/ranges_algo.h>
 #include <bitset>
 #include <cstdint>
+#include <functional>
 #include <iterator>
 #include <numeric>
 #include <span>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace dolfinx
@@ -27,16 +29,22 @@ namespace dolfinx
 /// @param[in, out] array The array to sort.
 struct __radix_sort
 {
-  template <std::ranges::random_access_range R, int BITS = 8>
-  constexpr void operator()(R&& range) const
+  template <std::ranges::random_access_range R, typename P = std::identity,
+            int BITS = 8>
+  constexpr void operator()(R&& range, P proj = {}) const
   {
-    using T = std::iter_value_t<R>;
-    static_assert(std::is_integral<T>(), "This function only sorts integers.");
+    // index type
+    using I = std::iter_value_t<R>;
+
+    // value type (if no projection is provided it holds I == T)
+    using T = std::remove_cvref_t<std::result_of_t<P(I)>>;
+
+    static_assert(std::is_integral_v<T>, "This function only sorts integers.");
 
     if (range.size() <= 1)
       return;
 
-    T max_value = *std::ranges::max_element(range);
+    T max_value = proj(*std::ranges::max_element(range, std::less{}, proj));
 
     // Sort N bits at a time
     constexpr int bucket_size = 1 << BITS;
@@ -66,7 +74,7 @@ struct __radix_sort
 
       // Count number of elements per bucket
       for (T c : current_perm)
-        counter[(c & mask) >> mask_offset]++;
+        counter[(proj(c) & mask) >> mask_offset]++;
 
       // Prefix sum to get the inserting position
       offset[0] = 0;
@@ -74,7 +82,7 @@ struct __radix_sort
                        std::next(offset.begin()));
       for (T c : current_perm)
       {
-        std::int32_t bucket = (c & mask) >> mask_offset;
+        std::int32_t bucket = (proj(c) & mask) >> mask_offset;
         std::int32_t new_pos = offset[bucket + 1] - counter[bucket];
         next_perm[new_pos] = c;
         counter[bucket]--;
