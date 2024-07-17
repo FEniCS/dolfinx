@@ -354,7 +354,7 @@ XDMFFile::read_meshtags_by_label(const mesh::Mesh<double>& mesh,
   if (!attribute_label.empty())
   {
     bool found = false;
-    while ((attribute_node = attribute_node.next_sibling("Attribute")))
+    while (!found and attribute_node)
     {
       pugi::xml_attribute hint;
       pugi::xml_attribute name = attribute_node.attribute("Name", hint);
@@ -362,8 +362,8 @@ XDMFFile::read_meshtags_by_label(const mesh::Mesh<double>& mesh,
       {
         values_data_node = attribute_node.child("DataItem");
         found = true;
-        break;
       }
+      attribute_node = attribute_node.next_sibling("Attribute");
     }
     if (!found)
     {
