@@ -355,7 +355,8 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   // Remove duplicates
   std::vector<std::int32_t> perm(bc_dofs[0].size());
   std::iota(perm.begin(), perm.end(), 0);
-  dolfinx::argsort_radix<std::int32_t>(bc_dofs[0], perm);
+  dolfinx::radix_sort(perm, [&](auto index) { return bc_dofs[0][index]; });
+
   std::array<std::vector<std::int32_t>, 2> sorted_bc_dofs = bc_dofs;
   for (std::size_t b = 0; b < 2; ++b)
   {
@@ -410,7 +411,9 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     // Remove duplicates and sort
     perm.resize(sorted_bc_dofs[0].size());
     std::iota(perm.begin(), perm.end(), 0);
-    dolfinx::argsort_radix<std::int32_t>(sorted_bc_dofs[0], perm);
+    dolfinx::radix_sort(perm,
+                        [&](auto index) { return sorted_bc_dofs[0][index]; });
+
     std::array<std::vector<std::int32_t>, 2> out_dofs = sorted_bc_dofs;
     for (std::size_t b = 0; b < 2; ++b)
     {

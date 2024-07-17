@@ -207,7 +207,8 @@ std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1)
     int col = shape1 - 1 - i;
     for (std::size_t j = 0; j < shape0; ++j)
       column[j] = x[j * shape1 + col];
-    argsort_radix<T, BITS>(column, perm);
+
+    radix_sort(perm, [&](auto index) { return column[index]; });
   }
 
   return perm;
