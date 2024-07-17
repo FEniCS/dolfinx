@@ -207,24 +207,18 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
 
     perm.resize(entity_to_local_idx.size() / (num_vertices_per_e + 1));
     std::iota(perm.begin(), perm.end(), 0);
-    std::ranges::sort(perm,
-                      [&entities = entity_to_local_idx,
-                       shape = num_vertices_per_e + 1](auto e0, auto e1)
-                      {
-                        auto it0 = std::next(entities.begin(), e0 * shape);
-                        auto it1 = std::next(entities.begin(), e1 * shape);
-                        return std::lexicographical_compare(
-                            it0, std::next(it0, shape), it1,
-                            std::next(it1, shape));
-                      });
 
-    auto [unique_end, range_end] = std::ranges::unique(
-        perm, std::ranges::equal,
-        [&, shape = num_vertices_per_e + 1](auto e)
-        {
-          auto begin = std::next(entity_to_local_idx.begin(), e * shape);
-          return std::ranges::subrange(begin, std::next(begin, shape));
-        });
+    auto range_by_index = [&, shape = num_vertices_per_e + 1](auto e)
+    {
+      auto begin = std::next(entity_to_local_idx.begin(), e * shape);
+      return std::ranges::subrange(begin, std::next(begin, shape));
+    };
+
+    std::ranges::sort(perm, std::ranges::lexicographical_compare,
+                      range_by_index);
+
+    auto [unique_end, range_end]
+        = std::ranges::unique(perm, std::ranges::equal, range_by_index);
 
     perm.erase(unique_end, range_end);
   }
