@@ -163,7 +163,7 @@ build_basic_dofmaps(
   const std::size_t D = topology.dim();
   const std::size_t num_cell_types = topology.entity_types(D).size();
 
-  LOG(INFO) << "Checking required entities per dimension";
+  spdlog::info("Checking required entities per dimension");
 
   // Find which dimensions (d) and entity types (et) are required
   // and the number of dofs which are required for each (d, et) combination.
@@ -242,7 +242,7 @@ build_basic_dofmaps(
         << (int)required_dim_et[i].second << ")=" << num_entity_dofs_et[i]
         << " ";
     }
-    LOG(INFO) << s.str();
+    spdlog::info("{}", s.str());
   }
 #endif
 
@@ -261,8 +261,7 @@ build_basic_dofmaps(
     std::int32_t dofmap_width = element_dof_layouts[i].num_dofs();
     dofs[i].width = dofmap_width;
     dofs[i].array.resize(num_cells * dofmap_width);
-    LOG(INFO) << "Cell type:" << i << ", dofmap:" << num_cells << "x"
-              << dofmap_width;
+    spdlog::info("Cell type: {} dofmap: {}x{}", i, num_cells, dofmap_width);
 
     std::int32_t dofmap_offset = 0;
     for (std::int32_t c = 0; c < num_cells; ++c)
@@ -317,7 +316,7 @@ build_basic_dofmaps(
     }
   }
 
-  LOG(INFO) << "Global index computation";
+  spdlog::info("Global index computation");
 
   // TODO: Put Global index computations in separate function
   // Global index computations
@@ -391,8 +390,8 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 
   // Get mesh entity ownership offset for each IndexMap
   std::vector<std::int32_t> offset(index_maps.size(), -1);
-  std::transform(index_maps.begin(), index_maps.end(), offset.begin(),
-                 [](auto map) { return map->size_local(); });
+  std::ranges::transform(index_maps, offset.begin(),
+                         [](auto& map) { return map->size_local(); });
 
   // Compute the number of dofs 'owned' by this process
   const std::int32_t owned_size = std::accumulate(
@@ -442,10 +441,10 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     // Apply graph reordering to owned dofs
     const std::vector<int> node_remap = reorder_owned(
         dofmaps, owned_size, original_to_contiguous, reorder_fn);
-    std::transform(original_to_contiguous.begin(), original_to_contiguous.end(),
-                   original_to_contiguous.begin(),
-                   [&node_remap, owned_size](auto index)
-                   { return index < owned_size ? node_remap[index] : index; });
+    std::ranges::transform(
+        original_to_contiguous, original_to_contiguous.begin(),
+        [&node_remap, owned_size](auto index)
+        { return index < owned_size ? node_remap[index] : index; });
   }
 
   return {std::move(original_to_contiguous), owned_size};
@@ -485,9 +484,9 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
     shared_entity[d] = std::vector<std::int8_t>(map->size_local(), false);
     const std::vector<std::int32_t> forward_indices = map->shared_indices();
-    std::for_each(forward_indices.begin(), forward_indices.end(),
-                  [&entities = shared_entity[d]](auto idx)
-                  { entities[idx] = true; });
+    std::ranges::for_each(forward_indices,
+                          [&entities = shared_entity[d]](auto idx)
+                          { entities[idx] = true; });
   }
 
   // Build list of (global old, global new) index pairs for dofs that
@@ -580,13 +579,12 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     global_old_new.reserve(disp_recv[d].back());
     for (std::size_t j = 0; j < all_dofs_received[d].size(); j += 2)
     {
-      const auto pos
-          = std::upper_bound(disp_recv[d].begin(), disp_recv[d].end(), j);
+      const auto pos = std::ranges::upper_bound(disp_recv[d], j);
       const int owner = std::distance(disp_recv[d].begin(), pos) - 1;
       global_old_new.push_back(
           {all_dofs_received[d][j], {all_dofs_received[d][j + 1], src[owner]}});
     }
-    std::sort(global_old_new.begin(), global_old_new.end());
+    std::ranges::sort(global_old_new);
 
     // Build the dimension d part of local_to_global_new vector
     for (std::size_t i = 0; i < local_new_to_global_old[d].size(); i += 2)
@@ -594,9 +592,9 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
       std::pair<std::int64_t, std::pair<int64_t, int>> idx_old
           = {local_new_to_global_old[d][i], {0, 0}};
 
-      auto it = std::lower_bound(global_old_new.begin(), global_old_new.end(),
-                                 idx_old, [](auto& a, auto& b)
-                                 { return a.first < b.first; });
+      auto it = std::ranges::lower_bound(global_old_new, idx_old,
+                                         [](auto& a, auto& b)
+                                         { return a.first < b.first; });
       assert(it != global_old_new.end() and it->first == idx_old.first);
 
       local_to_global_new[local_new_to_global_old[d][i + 1]] = it->second.first;
@@ -634,14 +632,14 @@ fem::build_dofmap_data(
               offset]
       = build_basic_dofmaps(topology, element_dof_layouts);
 
-  LOG(INFO) << "Got " << topo_index_maps.size() << " index_maps";
+  spdlog::info("Got {} index_maps", topo_index_maps.size());
 
   // Build re-ordering map for data locality and get number of owned
   // nodes
   const auto [old_to_new, num_owned] = compute_reordering_map(
       node_graphs, dof_entity0, topo_index_maps, reorder_fn);
 
-  LOG(INFO) << "Get global indices";
+  spdlog::info("Get global indices");
 
   // Get global indices for unowned dofs
   const auto [local_to_global_unowned, local_to_global_owner]

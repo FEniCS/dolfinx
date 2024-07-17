@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <dolfinx/common/Table.h>
+#include "Table.h"
 #include <mpi.h>
 #include <set>
 #include <string>
@@ -14,38 +14,34 @@
 
 namespace dolfinx
 {
-
-/// Timing types:
-///   * ``TimingType::wall`` wall-clock time
-///   * ``TimingType::user`` user (cpu) time
-///   * ``TimingType::system`` system (kernel) time
+/// @brief Timing types.
 enum class TimingType : int
 {
-  wall = 0,
-  user = 1,
-  system = 2
+  wall = 0,  ///< Wall-clock time
+  user = 1,  ///< User (cpu) time
+  system = 2 ///< System (kernel) time
 };
 
-/// Return a summary of timings and tasks in a Table
-/// @param[in] type subset of { TimingType::wall, TimingType::user,
-///                 TimingType::system }
-/// @returns Table with timings
+/// @brief Return a summary of timings and tasks in a Table.
+/// @param[in] type Timing type.
+/// @return Table with timings.
 Table timings(std::set<TimingType> type);
 
-/// List a summary of timings and tasks. ``MPI_AVG`` reduction is
-/// printed.
-/// @param[in] comm MPI Communicator
-/// @param[in] type Subset of { TimingType::wall, TimingType::user,
-///                 TimingType::system }
-/// @param[in] reduction MPI Reduction to apply (min, max or average)
+/// @brief List a summary of timings and tasks.
+///
+/// ``MPI_AVG`` reduction is printed.
+///
+/// @param[in] comm MPI Communicator.
+/// @param[in] type Timing type.
+/// @param[in] reduction MPI Reduction to apply (min, max or average).
 void list_timings(MPI_Comm comm, std::set<TimingType> type,
                   Table::Reduction reduction = Table::Reduction::max);
 
-/// Return timing (count, total wall time, total user time, total system
-/// time) for given task.
+/// @brief Return timing (count, total wall time, total user time, total
+/// system time) for given task.
 /// @param[in] task Name of a task
-/// @returns The (count, total wall time, total user time, total system
-///          time) for the task
+/// @return The (count, total wall time, total user time, total system
+/// time) for the task.
 std::tuple<std::size_t, double, double, double> timing(std::string task);
 
 } // namespace dolfinx

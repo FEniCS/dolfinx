@@ -41,14 +41,16 @@ find_local_entity_index(const mesh::Topology& topology,
   if (!e_to_c)
   {
     throw std::runtime_error(
-        "Entity-to-cell connectivity has not been computed.");
+        "Entity-to-cell connectivity has not been computed. Missing dims "
+        + std::to_string(dim) + "->" + std::to_string(tdim));
   }
 
   auto c_to_e = topology.connectivity(tdim, dim);
   if (!c_to_e)
   {
     throw std::runtime_error(
-        "Cell-to-entity connectivity has not been computed.");
+        "Cell-to-entity connectivity has not been computed. Missing dims "
+        + std::to_string(tdim) + "->" + std::to_string(dim));
   }
 
   std::vector<std::pair<std::int32_t, int>> entity_indices;
@@ -113,18 +115,17 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
     // Convert dofs indices to 'block' map indices
     std::vector<std::int32_t> dofs_local_m;
     dofs_local_m.reserve(dofs_local.size());
-    std::transform(dofs_local.begin(), dofs_local.end(),
-                   std::back_inserter(dofs_local_m),
-                   [bs_map](auto dof) { return dof / bs_map; });
+    std::ranges::transform(dofs_local, std::back_inserter(dofs_local_m),
+                           [bs_map](auto dof) { return dof / bs_map; });
 
     // Compute global index of each block
     map.local_to_global(dofs_local_m, dofs_global);
 
     // Add offset
-    std::transform(dofs_global.begin(), dofs_global.end(), dofs_local.begin(),
-                   dofs_global.begin(),
-                   [bs_map](auto global_block, auto local_dof)
-                   { return bs_map * global_block + (local_dof % bs_map); });
+    std::ranges::transform(
+        dofs_global, dofs_local, dofs_global.begin(),
+        [bs_map](auto global_block, auto local_dof)
+        { return bs_map * global_block + (local_dof % bs_map); });
   }
 
   MPI_Wait(&request, MPI_STATUS_IGNORE);
@@ -247,7 +248,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
 
   // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates
-  std::sort(dofs.begin(), dofs.end());
+  std::ranges::sort(dofs);
   dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
 
   if (remote)
@@ -264,8 +265,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
       std::span src = map->src();
       std::span dest = map->dest();
       std::vector<int> ranks;
-      std::set_union(src.begin(), src.end(), dest.begin(), dest.end(),
-                     std::back_inserter(ranks));
+      std::ranges::set_union(src, dest, std::back_inserter(ranks));
       ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
       MPI_Dist_graph_create_adjacent(
           map->comm(), ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
@@ -283,7 +283,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     // Add received bc indices to dofs_local, sort, and remove
     // duplicates
     dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
-    std::sort(dofs.begin(), dofs.end());
+    std::ranges::sort(dofs);
     dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
   }
 
@@ -359,8 +359,9 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   std::array<std::vector<std::int32_t>, 2> sorted_bc_dofs = bc_dofs;
   for (std::size_t b = 0; b < 2; ++b)
   {
-    std::transform(perm.cbegin(), perm.cend(), sorted_bc_dofs[b].begin(),
-                   [&bc_dofs = bc_dofs[b]](auto p) { return bc_dofs[p]; });
+    std::ranges::transform(perm, sorted_bc_dofs[b].begin(),
+                           [&bc_dofs = bc_dofs[b]](auto p)
+                           { return bc_dofs[p]; });
     sorted_bc_dofs[b].erase(
         std::unique(sorted_bc_dofs[b].begin(), sorted_bc_dofs[b].end()),
         sorted_bc_dofs[b].end());
@@ -383,8 +384,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
       std::span src = map0->src();
       std::span dest = map0->dest();
       std::vector<int> ranks;
-      std::set_union(src.begin(), src.end(), dest.begin(), dest.end(),
-                     std::back_inserter(ranks));
+      std::ranges::set_union(src, dest, std::back_inserter(ranks));
       ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
       MPI_Dist_graph_create_adjacent(map0->comm(), ranks.size(), ranks.data(),
                                      MPI_UNWEIGHTED, ranks.size(), ranks.data(),
@@ -414,9 +414,9 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     std::array<std::vector<std::int32_t>, 2> out_dofs = sorted_bc_dofs;
     for (std::size_t b = 0; b < 2; ++b)
     {
-      std::transform(perm.cbegin(), perm.cend(), out_dofs[b].begin(),
-                     [&sorted_dofs = sorted_bc_dofs[b]](auto p)
-                     { return sorted_dofs[p]; });
+      std::ranges::transform(perm, out_dofs[b].begin(),
+                             [&sorted_dofs = sorted_bc_dofs[b]](auto p)
+                             { return sorted_dofs[p]; });
       out_dofs[b].erase(std::unique(out_dofs[b].begin(), out_dofs[b].end()),
                         out_dofs[b].end());
     }

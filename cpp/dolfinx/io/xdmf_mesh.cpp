@@ -26,7 +26,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                   const mesh::Geometry<U>& geometry, int dim,
                                   std::span<const std::int32_t> entities)
 {
-  LOG(INFO) << "Adding topology data to node \"" << xml_node.path('/') << "\"";
+  spdlog::info("Adding topology data to node {}", xml_node.path('/'));
 
   const int tdim = topology.dim();
 
@@ -161,7 +161,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                   hid_t h5_id, std::string path_prefix,
                                   const mesh::Geometry<U>& geometry)
 {
-  LOG(INFO) << "Adding geometry data to node \"" << xml_node.path('/') << "\"";
+  spdlog::info("Adding geometry data to node \"{}\"", xml_node.path('/'));
   auto map = geometry.index_map();
   assert(map);
 
@@ -214,7 +214,7 @@ template <std::floating_point U>
 void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
                          const mesh::Mesh<U>& mesh, const std::string& name)
 {
-  LOG(INFO) << "Adding mesh to node \"" << xml_node.path('/') << "\"";
+  spdlog::info("Adding mesh to node \"{}\"", xml_node.path('/'));
 
   // Add grid node and attributes
   pugi::xml_node grid_node = xml_node.append_child("Grid");

@@ -35,10 +35,10 @@ std::pair<double, bool> converged(const nls::petsc::NewtonSolver& solver,
   // Output iteration number and residual
   if (solver.report and dolfinx::MPI::rank(solver.comm()) == 0)
   {
-    LOG(INFO) << "Newton iteration " << solver.iteration()
-              << ": r (abs) = " << residual << " (tol = " << solver.atol
-              << ") r (rel) = " << relative_residual << "(tol = " << solver.rtol
-              << ")";
+    spdlog::info("Newton iteration {}"
+                 ": r (abs) = {} (tol = {}), r (rel) = {} (tol = {})",
+                 solver.iteration(), residual, solver.atol, relative_residual,
+                 solver.rtol);
   }
 
   // Return true if convergence criterion is met
@@ -249,9 +249,9 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
   {
     if (dolfinx::MPI::rank(_comm.comm()) == 0)
     {
-      LOG(INFO) << "Newton solver finished in " << _iteration
-                << " iterations and " << _krylov_iterations
-                << " linear solver iterations.";
+      spdlog::info("Newton solver finished in {} iterations and {} linear "
+                   "solver iterations.",
+                   _iteration, _krylov_iterations);
     }
   }
   else
@@ -267,7 +267,7 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
         throw std::runtime_error("Newton solver did not converge");
     }
     else
-      LOG(WARNING) << "Newton solver did not converge.";
+      spdlog::warn("Newton solver did not converge.");
   }
 
   return {_iteration, newton_converged};

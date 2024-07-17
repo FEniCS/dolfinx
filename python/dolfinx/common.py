@@ -16,6 +16,7 @@ from dolfinx.cpp.common import (
     has_debug,
     has_kahip,
     has_parmetis,
+    has_petsc,
 )
 
 __all__ = [
@@ -26,6 +27,7 @@ __all__ = [
     "has_adios2",
     "has_debug",
     "has_kahip",
+    "has_petsc",
     "has_parmetis",
 ]
 

@@ -3,17 +3,16 @@
 # interface.
 
 # docker run -ti -v docker.io/fenicsproject/test-env:current-oneapi
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
-ARG BUILD_NP=3
+ARG BUILD_NP=4
 
-ARG ADIOS2_VERSION=2.9.2
+ARG ADIOS2_VERSION=2.10.1
 ARG HDF5_SERIES=1.14
 ARG HDF5_PATCH=3
 ARG HDF5_FIX=
-ARG PETSC_VERSION=3.21.0
-ARG SLEPC_VERSION=3.21.0
-ARG NANOBIND_VERSION=1.9.2
+ARG PETSC_VERSION=3.21.2
+ARG SLEPC_VERSION=3.21.1
 ARG KAHIP_VERSION=3.16
 
 WORKDIR /tmp
@@ -27,9 +26,9 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     cmake \
     gnupg \
     libboost-dev \
-    libboost-filesystem-dev \
     libboost-timer-dev \
     libpugixml-dev \
+    libspdlog-dev \
     ninja-build \
     pkg-config \
     catch2 \
@@ -54,10 +53,6 @@ ENV CC=icx \
     CXX=icpx \
     I_MPI_CC=icx \
     I_MPI_CXX=icpx
-
-# Install Python packages (via pip)
-RUN . /opt/intel/oneapi/setvars.sh && \
-    pip install --no-cache-dir matplotlib mpi4py nanobind==${NANOBIND_VERSION} pytest pytest-xdist scikit-build-core[pyproject]
 
 # Install KaHIP
 RUN . /opt/intel/oneapi/setvars.sh && \

@@ -9,6 +9,7 @@
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
+#include <algorithm>
 #include <array>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
@@ -101,9 +102,8 @@ void discrete_gradient(mesh::Topology& topology,
       tdim * phi0.extent(1), phi0.extent(2));
 
   // Get inverse DOF transform function
-  auto apply_inverse_dof_transform
-      = e1.template get_pre_dof_transformation_function<T>(
-          FiniteElement<U>::doftransform::inverse_transpose, false);
+  auto apply_inverse_dof_transform = e1.template dof_transformation_fn<T>(
+      doftransform::inverse_transpose, false);
 
   // Generate cell permutations
   topology.create_entity_permutations();
@@ -130,7 +130,7 @@ void discrete_gradient(mesh::Topology& topology,
   std::vector<T> Ae(Ab.size());
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
-    std::copy(Ab.cbegin(), Ab.cend(), Ae.begin());
+    std::ranges::copy(Ab, Ae.begin());
     apply_inverse_dof_transform(Ae, cell_info, c, ndofs0);
     mat_set(dofmap1.cell_dofs(c), dofmap0.cell_dofs(c), Ae);
   }
@@ -186,11 +186,9 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   const int bs0 = e0->block_size();
   const int bs1 = e1->block_size();
   auto apply_dof_transformation0
-      = e0->template get_pre_dof_transformation_function<U>(
-          FiniteElement<U>::doftransform::standard, false);
-  auto apply_inverse_dof_transform1
-      = e1->template get_pre_dof_transformation_function<T>(
-          FiniteElement<U>::doftransform::inverse_transpose, false);
+      = e0->template dof_transformation_fn<U>(doftransform::standard, false);
+  auto apply_inverse_dof_transform1 = e1->template dof_transformation_fn<T>(
+      doftransform::inverse_transpose, false);
 
   // Get sizes of elements
   const std::size_t space_dim0 = e0->space_dimension();
@@ -233,10 +231,9 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   e0->tabulate(basis_derivatives_reference0_b, X, Xshape, 0);
 
   // Clamp values
-  std::transform(basis_derivatives_reference0_b.begin(),
-                 basis_derivatives_reference0_b.end(),
-                 basis_derivatives_reference0_b.begin(), [atol = 1e-14](auto x)
-                 { return std::abs(x) < atol ? 0.0 : x; });
+  std::ranges::transform(
+      basis_derivatives_reference0_b, basis_derivatives_reference0_b.begin(),
+      [atol = 1e-14](auto x) { return std::abs(x) < atol ? 0.0 : x; });
 
   // Create working arrays
   std::vector<U> basis_reference0_b(Xshape[0] * dim0 * value_size_ref0);
@@ -305,7 +302,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
     }
 
     // Compute Jacobians and reference points for current cell
-    std::fill(J_b.begin(), J_b.end(), 0);
+    std::ranges::fill(J_b, 0);
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       auto dphi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(

@@ -55,7 +55,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           [](dolfinx::la::Vector<T>& self)
           {
             return nb::ndarray<T, nb::numpy>(self.mutable_array().data(),
-                                             {self.array().size()});
+                                             {self.array().size()},
+                                             nb::handle());
           },
           nb::rv_policy::reference_internal)
       .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
@@ -144,8 +145,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           "data",
           [](dolfinx::la::MatrixCSR<T>& self)
           {
-            return nb::ndarray<T, nb::numpy>(self.values().data(),
-                                             {self.values().size()});
+            return nb::ndarray<T, nb::numpy>(
+                self.values().data(), {self.values().size()}, nb::handle());
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro(
@@ -153,7 +154,7 @@ void declare_objects(nb::module_& m, const std::string& type)
           [](dolfinx::la::MatrixCSR<T>& self)
           {
             return nb::ndarray<const std::int32_t, nb::numpy>(
-                self.cols().data(), {self.cols().size()});
+                self.cols().data(), {self.cols().size()}, nb::handle());
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro(
@@ -161,8 +162,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           [](dolfinx::la::MatrixCSR<T>& self)
           {
             std::span<const std::int64_t> array = self.row_ptr();
-            return nb::ndarray<const std::int64_t, nb::numpy>(array.data(),
-                                                              {array.size()});
+            return nb::ndarray<const std::int64_t, nb::numpy>(
+                array.data(), {array.size()}, nb::handle());
           },
           nb::rv_policy::reference_internal)
       .def("scatter_rev_begin", &dolfinx::la::MatrixCSR<T>::scatter_rev_begin)
@@ -192,15 +193,16 @@ void declare_functions(nb::module_& m)
       nb::arg("basis"));
   m.def(
       "is_orthonormal",
-      [](std::vector<const dolfinx::la::Vector<T>*> basis)
+      [](std::vector<const dolfinx::la::Vector<T>*> basis,
+         dolfinx::scalar_value_type_t<T> eps)
       {
         std::vector<std::reference_wrapper<const dolfinx::la::Vector<T>>>
             _basis;
         for (std::size_t i = 0; i < basis.size(); ++i)
           _basis.push_back(*basis[i]);
-        return dolfinx::la::is_orthonormal(_basis);
+        return dolfinx::la::is_orthonormal(_basis, eps);
       },
-      nb::arg("basis"));
+      nb::arg("basis"), nb::arg("eps"));
 }
 
 } // namespace
@@ -275,9 +277,9 @@ void la(nb::module_& m)
           {
             auto [edges, ptr] = self.graph();
             return std::pair(nb::ndarray<const std::int32_t, nb::numpy>(
-                                 edges.data(), {edges.size()}),
+                                 edges.data(), {edges.size()}, nb::handle()),
                              nb::ndarray<const std::int64_t, nb::numpy>(
-                                 ptr.data(), {ptr.size()}));
+                                 ptr.data(), {ptr.size()}, nb::handle()));
           },
           nb::rv_policy::reference_internal);
 

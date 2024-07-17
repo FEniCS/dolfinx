@@ -107,7 +107,7 @@ void assemble_cells(
     }
 
     // Tabulate tensor
-    std::fill(Ae.begin(), Ae.end(), 0);
+    std::ranges::fill(Ae, 0);
     kernel(Ae.data(), coeffs.data() + index * cstride, constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
 
@@ -159,36 +159,42 @@ void assemble_cells(
 /// @brief Execute kernel over exterior facets and accumulate result in
 /// a matrix.
 /// @tparam T Matrix/form scalar type.
-/// @param mat_set Function that accumulates computed entries into a
+/// @param[in] mat_set Function that accumulates computed entries into a
 /// matrix.
-/// @param x_dofmap Dofmap for the mesh geometry.
-/// @param x Mesh geometry (coordinates).
-/// @param facets Facet indices (in the integration domain mesh) to
+/// @param[in] x_dofmap Dofmap for the mesh geometry.
+/// @param[in] x Mesh geometry (coordinates).
+/// @param[in] num_facets_per_cell Number of cell facets
+/// @param[in] facets Facet indices (in the integration domain mesh) to
 /// execute the kernel over.
-/// @param dofmap0 Test function (row) degree-of-freedom data holding
-/// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
-/// @param P0 Function that applies transformation P0.A in-place to
-/// transform test degrees-of-freedom.
-/// @param dofmap1 Trial function (column) degree-of-freedom data
+/// @param[in] dofmap0 Test function (row) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
 /// indices.
-/// @param P1T Function that applies transformation A.P1^T in-place to
-/// transform trial degrees-of-freedom.
-/// @param bc0 Marker for rows with Dirichlet boundary conditions applied
-/// @param bc1 Marker for columns with Dirichlet boundary conditions applied
-/// @param kernel Kernel function to execute over each cell.
-/// @param coeffs The coefficient data array of shape (cells.size(), cstride),
-/// flattened into row-major format.
-/// @param cstride The coefficient stride
-/// @param constants The constant data
-/// @param cell_info0 The cell permutation information for the test function
-/// mesh
-/// @param cell_info1 The cell permutation information for the trial function
-/// mesh
+/// @param[in] P0 Function that applies transformation P0.A in-place to
+/// transform test degrees-of-freedom.
+/// @param[in] dofmap1 Trial function (column) degree-of-freedom data
+/// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
+/// indices.
+/// @param[in] P1T Function that applies transformation A.P1^T in-place
+/// to transform trial degrees-of-freedom.
+/// @param[in] bc0 Marker for rows with Dirichlet boundary conditions
+/// applied.
+/// @param[in] bc1 Marker for columns with Dirichlet boundary conditions
+/// applied.
+/// @param[in] kernel Kernel function to execute over each cell.
+/// @param[in] coeffs Coefficient data array of shape `(cells.size(),
+/// cstride)`, flattened into row-major format.
+/// @param[in] cstride Coefficient stride.
+/// @param[in] constants Constant data.
+/// @param[in] cell_info0 Cell permutation information for the test
+/// function mesh.
+/// @param[in] cell_info1 Cell permutation information for the trial
+/// function mesh.
+/// @param[in] perms Facet permutation integer. Empty if facet
+/// permutations are not required.
 template <dolfinx::scalar T>
 void assemble_exterior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
-    std::span<const scalar_value_type_t<T>> x,
+    std::span<const scalar_value_type_t<T>> x, int num_facets_per_cell,
     std::span<const std::int32_t> facets,
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
     fem::DofTransformKernel<T> auto P0,
@@ -197,7 +203,8 @@ void assemble_exterior_facets(
     std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
     std::span<const T> coeffs, int cstride, std::span<const T> constants,
     std::span<const std::uint32_t> cell_info0,
-    std::span<const std::uint32_t> cell_info1)
+    std::span<const std::uint32_t> cell_info1,
+    std::span<const std::uint8_t> perms)
 {
   if (facets.empty())
     return;
@@ -235,10 +242,14 @@ void assemble_exterior_facets(
                   std::next(coordinate_dofs.begin(), 3 * i));
     }
 
+    // Permutations
+    std::uint8_t perm
+        = perms.empty() ? 0 : perms[cell * num_facets_per_cell + local_facet];
+
     // Tabulate tensor
-    std::fill(Ae.begin(), Ae.end(), 0);
+    std::ranges::fill(Ae, 0);
     kernel(Ae.data(), coeffs.data() + index / 2 * cstride, constants.data(),
-           coordinate_dofs.data(), &local_facet, nullptr);
+           coordinate_dofs.data(), &local_facet, &perm);
 
     P0(_Ae, cell_info0, cell0, ndim1);
     P1T(_Ae, cell_info1, cell1, ndim0);
@@ -282,42 +293,47 @@ void assemble_exterior_facets(
   }
 }
 
-/// @brief Execute kernel over interior facets and accumulate result in a
-/// matrix.
+/// @brief Execute kernel over interior facets and accumulate result in
+/// a matrix.
 /// @tparam T Matrix/form scalar type.
 /// @param mat_set Function that accumulates computed entries into a
 /// matrix.
-/// @param x_dofmap Dofmap for the mesh geometry.
-/// @param x Mesh geometry (coordinates).
-/// @param num_cell_facets Number of facets of a cell
-/// @param facets Facet indices (in the integration domain mesh) to
+/// @param[in] x_dofmap Dofmap for the mesh geometry.
+/// @param[in] x Mesh geometry (coordinates).
+/// @param[in] num_facets_per_cell Number of facets of a cell
+/// @param[in] facets Facet indices (in the integration domain mesh) to
 /// execute the kernel over.
-/// @param dofmap0 Test function (row) degree-of-freedom data holding
-/// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
-/// @param P0 Function that applies transformation P0.A in-place to
-/// transform test degrees-of-freedom.
-/// @param dofmap1 Trial function (column) degree-of-freedom data
+/// @param[in] dofmap0 Test function (row) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
 /// indices.
-/// @param P1T Function that applies transformation A.P1^T in-place to
-/// transform trial degrees-of-freedom.
-/// @param bc0 Marker for rows with Dirichlet boundary conditions applied
-/// @param bc1 Marker for columns with Dirichlet boundary conditions applied
-/// @param kernel Kernel function to execute over each cell.
-/// @param coeffs  The coefficient data array of shape (cells.size(), cstride),
+/// @param[in] P0 Function that applies transformation P0.A in-place to
+/// transform test degrees-of-freedom.
+/// @param[in] dofmap1 Trial function (column) degree-of-freedom data
+/// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
+/// indices.
+/// @param[in] P1T Function that applies transformation A.P1^T in-place
+/// to transform trial degrees-of-freedom.
+/// @param[in] bc0 Marker for rows with Dirichlet boundary conditions
+/// applied.
+/// @param[in] bc1 Marker for columns with Dirichlet boundary conditions
+/// applied.
+/// @param[in] coeffs  The coefficient data array of shape (cells.size(),
+/// cstride),
+/// @param[in] kernel Kernel function to execute over each cell.
 /// flattened into row-major format.
-/// @param cstride The coefficient stride
-/// @param offsets The coefficient offsets
-/// @param constants The constant data
-/// @param cell_info0 The cell permutation information for the test function
-/// mesh
-/// @param cell_info1 The cell permutation information for the trial function
-/// mesh
-/// @param get_perm Function to apply facet permutations
+/// @param[in] cstride Coefficient stride.
+/// @param[in] offsets Coefficient offsets.
+/// @param[in] constants Constant data.
+/// @param[in] cell_info0 Cell permutation information for the test
+/// function mesh.
+/// @param[in] cell_info1 Cell permutation information for the trial
+/// function mesh.
+/// @param[in] perms Facet permutation integer. Empty if facet
+/// permutations are not required.
 template <dolfinx::scalar T>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
-    std::span<const scalar_value_type_t<T>> x, int num_cell_facets,
+    std::span<const scalar_value_type_t<T>> x, int num_facets_per_cell,
     std::span<const std::int32_t> facets,
     std::tuple<const DofMap&, int, std::span<const std::int32_t>> dofmap0,
     fem::DofTransformKernel<T> auto P0,
@@ -327,7 +343,7 @@ void assemble_interior_facets(
     std::span<const T> coeffs, int cstride, std::span<const int> offsets,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
-    const std::function<std::uint8_t(std::size_t)>& get_perm)
+    std::span<const std::uint8_t> perms)
 {
   if (facets.empty())
     return;
@@ -382,27 +398,30 @@ void assemble_interior_facets(
     std::span<const std::int32_t> dmap0_cell0 = dmap0.cell_dofs(cells0[0]);
     std::span<const std::int32_t> dmap0_cell1 = dmap0.cell_dofs(cells0[1]);
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
-    std::copy(dmap0_cell0.begin(), dmap0_cell0.end(), dmapjoint0.begin());
-    std::copy(dmap0_cell1.begin(), dmap0_cell1.end(),
-              std::next(dmapjoint0.begin(), dmap0_cell0.size()));
+    std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
+    std::ranges::copy(dmap0_cell1,
+                      std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
     std::span<const std::int32_t> dmap1_cell0 = dmap1.cell_dofs(cells1[0]);
     std::span<const std::int32_t> dmap1_cell1 = dmap1.cell_dofs(cells1[1]);
     dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
-    std::copy(dmap1_cell0.begin(), dmap1_cell0.end(), dmapjoint1.begin());
-    std::copy(dmap1_cell1.begin(), dmap1_cell1.end(),
-              std::next(dmapjoint1.begin(), dmap1_cell0.size()));
+    std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
+    std::ranges::copy(dmap1_cell1,
+                      std::next(dmapjoint1.begin(), dmap1_cell0.size()));
 
     const int num_rows = bs0 * dmapjoint0.size();
     const int num_cols = bs1 * dmapjoint1.size();
 
     // Tabulate tensor
     Ae.resize(num_rows * num_cols);
-    std::fill(Ae.begin(), Ae.end(), 0);
+    std::ranges::fill(Ae, 0);
 
-    const std::array perm{
-        get_perm(cells[0] * num_cell_facets + local_facet[0]),
-        get_perm(cells[1] * num_cell_facets + local_facet[1])};
+    std::array perm
+        = perms.empty()
+              ? std::array<std::uint8_t, 2>{0, 0}
+              : std::array{
+                    perms[cells[0] * num_facets_per_cell + local_facet[0]],
+                    perms[cells[1] * num_facets_per_cell + local_facet[1]]};
     kernel(Ae.data(), coeffs.data() + index / 2 * cstride, constants.data(),
            coordinate_dofs.data(), local_facet.data(), perm.data());
 
@@ -506,10 +525,10 @@ void assemble_matrix(
   auto element1 = a.function_spaces().at(1)->element();
   assert(element1);
   fem::DofTransformKernel<T> auto P0
-      = element0->template get_pre_dof_transformation_function<T>();
+      = element0->template dof_transformation_fn<T>(doftransform::standard);
   fem::DofTransformKernel<T> auto P1T
-      = element1->template get_post_dof_transformation_function<T>(
-          FiniteElement<U>::doftransform::transpose);
+      = element1->template dof_transformation_right_fn<T>(
+          doftransform::transpose);
 
   std::span<const std::uint32_t> cell_info0;
   std::span<const std::uint32_t> cell_info1;
@@ -534,6 +553,16 @@ void assemble_matrix(
         fn, coeffs, cstride, constants, cell_info0, cell_info1);
   }
 
+  std::span<const std::uint8_t> perms;
+  if (a.needs_facet_permutations())
+  {
+    mesh->topology_mutable()->create_entity_permutations();
+    perms = std::span(mesh->topology()->get_facet_permutations());
+  }
+
+  mesh::CellType cell_type = mesh->topology()->cell_type();
+  int num_facets_per_cell
+      = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
     auto fn = a.kernel(IntegralType::exterior_facet, i);
@@ -541,44 +570,28 @@ void assemble_matrix(
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     impl::assemble_exterior_facets(
-        mat_set, x_dofmap, x, a.domain(IntegralType::exterior_facet, i),
+        mat_set, x_dofmap, x, num_facets_per_cell,
+        a.domain(IntegralType::exterior_facet, i),
         {dofs0, bs0, a.domain(IntegralType::exterior_facet, i, *mesh0)}, P0,
         {dofs1, bs1, a.domain(IntegralType::exterior_facet, i, *mesh1)}, P1T,
-        bc0, bc1, fn, coeffs, cstride, constants, cell_info0, cell_info1);
+        bc0, bc1, fn, coeffs, cstride, constants, cell_info0, cell_info1,
+        perms);
   }
 
-  if (a.num_integrals(IntegralType::interior_facet) > 0)
+  for (int i : a.integral_ids(IntegralType::interior_facet))
   {
-    std::function<std::uint8_t(std::size_t)> get_perm;
-    if (a.needs_facet_permutations())
-    {
-      mesh->topology_mutable()->create_entity_permutations();
-      const std::vector<std::uint8_t>& perms
-          = mesh->topology()->get_facet_permutations();
-      get_perm = [&perms](std::size_t i) { return perms[i]; };
-    }
-    else
-      get_perm = [](std::size_t) { return 0; };
-
-    mesh::CellType cell_type = mesh->topology()->cell_type();
-    int num_cell_facets
-        = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
     const std::vector<int> c_offsets = a.coefficient_offsets();
-    for (int i : a.integral_ids(IntegralType::interior_facet))
-    {
-      auto fn = a.kernel(IntegralType::interior_facet, i);
-      assert(fn);
-      auto& [coeffs, cstride]
-          = coefficients.at({IntegralType::interior_facet, i});
-      impl::assemble_interior_facets(
-          mat_set, x_dofmap, x, num_cell_facets,
-          a.domain(IntegralType::interior_facet, i),
-          {*dofmap0, bs0, a.domain(IntegralType::interior_facet, i, *mesh0)},
-          P0,
-          {*dofmap1, bs1, a.domain(IntegralType::interior_facet, i, *mesh1)},
-          P1T, bc0, bc1, fn, coeffs, cstride, c_offsets, constants, cell_info0,
-          cell_info1, get_perm);
-    }
+    auto fn = a.kernel(IntegralType::interior_facet, i);
+    assert(fn);
+    auto& [coeffs, cstride]
+        = coefficients.at({IntegralType::interior_facet, i});
+    impl::assemble_interior_facets(
+        mat_set, x_dofmap, x, num_facets_per_cell,
+        a.domain(IntegralType::interior_facet, i),
+        {*dofmap0, bs0, a.domain(IntegralType::interior_facet, i, *mesh0)}, P0,
+        {*dofmap1, bs1, a.domain(IntegralType::interior_facet, i, *mesh1)}, P1T,
+        bc0, bc1, fn, coeffs, cstride, c_offsets, constants, cell_info0,
+        cell_info1, perms);
   }
 }
 

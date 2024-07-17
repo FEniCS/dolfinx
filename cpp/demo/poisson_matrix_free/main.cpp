@@ -42,6 +42,8 @@
 // ## C++ program
 
 #include "poisson.h"
+#include <algorithm>
+#include <basix/finite-element.h>
 #include <cmath>
 #include <complex>
 #include <concepts>
@@ -61,9 +63,8 @@ namespace linalg
 /// @param[in] y
 void axpy(auto&& r, auto alpha, auto&& x, auto&& y)
 {
-  std::transform(x.array().begin(), x.array().end(), y.array().begin(),
-                 r.mutable_array().begin(),
-                 [alpha](auto x, auto y) { return alpha * x + y; });
+  std::ranges::transform(x.array(), y.array(), r.mutable_array().begin(),
+                         [alpha](auto x, auto y) { return alpha * x + y; });
 }
 
 /// @brief Solve problem A.x = b using the conjugate gradient (CG)
@@ -137,8 +138,12 @@ void solver(MPI_Comm comm)
   auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_rectangle<U>(
       comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {10, 10}, mesh::CellType::triangle,
       mesh::create_cell_partitioner(mesh::GhostMode::none)));
+  auto element = basix::create_element<U>(
+      basix::element::family::P, basix::cell::type::triangle, 2,
+      basix::element::lagrange_variant::unset,
+      basix::element::dpc_variant::unset, false);
   auto V = std::make_shared<fem::FunctionSpace<U>>(
-      fem::create_functionspace(functionspace_form_poisson_M, "ui", mesh));
+      fem::create_functionspace(mesh, element, {}));
 
   // Prepare and set Constants for the bilinear form
   auto f = std::make_shared<fem::Constant<T>>(-6.0);
@@ -198,8 +203,7 @@ void solver(MPI_Comm comm)
     y.set(0.0);
 
     // Update coefficient ui (just copy data from x to ui)
-    std::copy(x.array().begin(), x.array().end(),
-              ui->x()->mutable_array().begin());
+    std::ranges::copy(x.array(), ui->x()->mutable_array().begin());
 
     // Compute action of A on x
     fem::pack_coefficients(*M, coeff);

@@ -667,7 +667,7 @@ io::cells::apply_permutation(std::span<const std::int64_t> cells,
   assert(cells.size() == shape[0] * shape[1]);
   assert(shape[1] == p.size());
 
-  LOG(INFO) << "IO permuting cells";
+  spdlog::info("IO permuting cells");
   std::vector<std::int64_t> cells_new(cells.size());
   for (std::size_t c = 0; c < shape[0]; ++c)
   {

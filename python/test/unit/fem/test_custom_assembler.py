@@ -11,10 +11,14 @@ import os
 import pathlib
 import time
 
-import petsc4py.lib
 from mpi4py import MPI
-from petsc4py import PETSc
-from petsc4py import get_config as PETSc_get_config
+
+try:
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import assemble_matrix
+except ImportError:
+    pass
 
 import numpy as np
 import pytest
@@ -23,7 +27,6 @@ import dolfinx
 import dolfinx.pkgconfig
 import ufl
 from dolfinx.fem import Function, form, functionspace
-from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import create_unit_square
 from dolfinx.utils import cffi_utils as petsc_cffi
 from dolfinx.utils import ctypes_utils as petsc_ctypes
@@ -34,9 +37,9 @@ cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
 numba = pytest.importorskip("numba")
 
 # Get PETSc MatSetValuesLocal interfaces
-MatSetValuesLocal = petsc_numba.MatSetValuesLocal
-MatSetValuesLocal_ctypes = petsc_ctypes.MatSetValuesLocal
 try:
+    MatSetValuesLocal = petsc_numba.MatSetValuesLocal
+    MatSetValuesLocal_ctypes = petsc_ctypes.MatSetValuesLocal
     MatSetValuesLocal_abi = petsc_cffi.MatSetValuesLocal
 except AttributeError:
     MatSetValuesLocal_abi = None
@@ -71,7 +74,10 @@ def get_matsetvalues_cffi_api():
     if dolfinx.pkgconfig.exists("dolfinx"):
         dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
     else:
-        raise RuntimeError("Could not find DOLFINx pkgconfig file")
+        raise RuntimeError("Could not find DOLFINx pkg-config file")
+
+    import petsc4py.lib
+    from petsc4py import get_config as PETSc_get_config
 
     cffi_support.register_type(ffi.typeof("float _Complex"), numba.types.complex64)
     cffi_support.register_type(ffi.typeof("double _Complex"), numba.types.complex128)
@@ -224,7 +230,15 @@ def assemble_petsc_matrix(A, mesh, dofmap, num_cells, set_vals, mode):
     sink(A_local, dofmap)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 def test_custom_mesh_loop_rank1(dtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 64, 64, dtype=dtype(0).real.dtype)
     V = functionspace(mesh, ("Lagrange", 1))
@@ -302,6 +316,7 @@ def test_custom_mesh_loop_rank1(dtype):
     assert np.linalg.norm(b3.x.array - b0.x.array) == pytest.approx(0.0, abs=1e-8)
 
 
+@pytest.mark.petsc4py
 @pytest.mark.parametrize(
     "set_vals,backend",
     [

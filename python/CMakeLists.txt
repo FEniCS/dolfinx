@@ -1,11 +1,12 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.21)
 
 project(dolfinx_nanobind)
 
-# Set C++ standard
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+if(WIN32)
+  # Windows requires all symbols to be manually exported. This flag exports all
+  # symbols automatically, as in Unix.
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+endif(WIN32)
 
 find_package(
   Python
@@ -21,21 +22,6 @@ execute_process(
 )
 list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
 find_package(nanobind CONFIG REQUIRED)
-
-execute_process(
-  COMMAND
-    ${Python3_EXECUTABLE} -c
-    "import os, sys, basix; sys.stdout.write(os.path.dirname(basix.__file__))"
-  OUTPUT_VARIABLE BASIX_PY_DIR
-  RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
-  ERROR_VARIABLE BASIX_ERROR_OUT
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
-
-if(Basix_FOUND)
-  message(STATUS "Found Basix at ${Basix_DIR}")
-endif()
 
 find_package(DOLFINX REQUIRED CONFIG)
 
@@ -61,15 +47,15 @@ nanobind_add_module(
   dolfinx/wrappers/petsc.cpp
   dolfinx/wrappers/refinement.cpp
 )
-
-# Add strict compiler flags include(CheckCXXCompilerFlag)
-# check_cxx_compiler_flag("-Wall -Werror -pedantic" HAVE_PEDANTIC)
-
-# if(HAVE_PEDANTIC) # target_compile_options(cpp PRIVATE
-# -Wall;-Werror;-pedantic) endif()
+target_compile_definitions(cpp PRIVATE cxx_std_20)
 
 # Add DOLFINx libraries
 target_link_libraries(cpp PRIVATE dolfinx)
+# UUID requires bcrypt to be linked on Windows, broken in vcpkg.
+# https://github.com/microsoft/vcpkg/issues/4481
+if(WIN32)
+  target_link_libraries(cpp PRIVATE bcrypt)
+endif()
 
 # Check for petsc4py
 execute_process(
@@ -83,8 +69,9 @@ execute_process(
 if(NOT PETSC4PY_COMMAND_RESULT)
   message(STATUS "Found petsc4py include directory at ${PETSC4PY_INCLUDE_DIR}")
   target_include_directories(cpp PRIVATE ${PETSC4PY_INCLUDE_DIR})
+  target_compile_definitions(cpp PRIVATE HAS_PETSC4PY)
 else()
-  message(FATAL_ERROR "petsc4py could not be found.")
+  message(STATUS "petsc4py not found.")
 endif()
 
 # Check for mpi4py

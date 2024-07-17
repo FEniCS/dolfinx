@@ -8,6 +8,7 @@
 
 #include "cells.h"
 #include "vtk_utils.h"
+#include <algorithm>
 #include <array>
 #include <basix/mdspan.hpp>
 #include <concepts>
@@ -98,8 +99,11 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
     mesh->topology_mutable()->create_entity_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
+
+  // Transformation from reference element basis function data to
+  // conforming element basis function function
   auto apply_dof_transformation
-      = element->template get_pre_dof_transformation_function<T>();
+      = element->template dof_transformation_fn<T>(fem::doftransform::standard);
 
   using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
@@ -156,7 +160,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   std::int32_t size_local = range[1] - range[0];
   std::iota(x_id.begin(), std::next(x_id.begin(), size_local), range[0]);
   std::span ghosts = map_dofs->ghosts();
-  std::copy(ghosts.begin(), ghosts.end(), std::next(x_id.begin(), size_local));
+  std::ranges::copy(ghosts, std::next(x_id.begin(), size_local));
 
   // Ghosts
   std::vector<std::uint8_t> id_ghost(num_nodes, 0);

@@ -8,6 +8,7 @@
 
 #include "SparsityPattern.h"
 #include "matrix_csr_impl.h"
+#include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -29,7 +30,7 @@ enum class BlockMode : int
                /// matrix has a block size of (1, 1).
 };
 
-/// Distributed sparse matrix
+/// @brief Distributed sparse matrix.
 ///
 /// The matrix storage format is compressed sparse row. The matrix is
 /// partitioned row-wise across MPI ranks.
@@ -182,9 +183,10 @@ public:
   /// @brief Set all non-zero local entries to a value including entries
   /// in ghost rows.
   /// @param[in] x The value to set non-zero matrix entries to
-  void set(value_type x) { std::fill(_data.begin(), _data.end(), x); }
+  void set(value_type x) { std::ranges::fill(_data, x); }
 
   /// @brief Set values in the matrix.
+  ///
   /// @note Only entries included in the sparsity pattern used to
   /// initialize the matrix can be set.
   /// @note All indices are local to the calling MPI rank and entries
@@ -473,8 +475,9 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
     // Compute off-diagonal offset for each row (compact)
     std::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offsets();
     _off_diagonal_offset.reserve(num_diag_nnz.size());
-    std::transform(num_diag_nnz.begin(), num_diag_nnz.end(), _row_ptr.begin(),
-                   std::back_inserter(_off_diagonal_offset), std::plus{});
+    std::ranges::transform(num_diag_nnz, _row_ptr,
+                           std::back_inserter(_off_diagonal_offset),
+                           std::plus{});
   }
 
   // Some short-hand
@@ -501,7 +504,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
   _ghost_row_to_rank.reserve(_index_maps[0]->owners().size());
   for (int r : _index_maps[0]->owners())
   {
-    auto it = std::lower_bound(src_ranks.begin(), src_ranks.end(), r);
+    auto it = std::ranges::lower_bound(src_ranks, r);
     assert(it != src_ranks.end() and *it == r);
     int pos = std::distance(src_ranks.begin(), it);
     _ghost_row_to_rank.push_back(pos);
@@ -551,9 +554,8 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
   std::vector<int> recv_disp;
   {
     std::vector<int> send_sizes;
-    std::transform(data_per_proc.begin(), data_per_proc.end(),
-                   std::back_inserter(send_sizes),
-                   [](auto x) { return 2 * x; });
+    std::ranges::transform(data_per_proc, std::back_inserter(send_sizes),
+                           [](auto x) { return 2 * x; });
 
     std::vector<int> recv_sizes(dest_ranks.size());
     send_sizes.reserve(1);
@@ -580,17 +582,17 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
   // data values
   _val_recv_disp.resize(recv_disp.size());
   const int bs2 = _bs[0] * _bs[1];
-  std::transform(recv_disp.begin(), recv_disp.end(), _val_recv_disp.begin(),
-                 [&bs2](auto d) { return bs2 * d / 2; });
-  std::transform(_val_send_disp.begin(), _val_send_disp.end(),
-                 _val_send_disp.begin(), [&bs2](auto d) { return d * bs2; });
+  std::ranges::transform(recv_disp, _val_recv_disp.begin(),
+                         [&bs2](auto d) { return bs2 * d / 2; });
+  std::ranges::transform(_val_send_disp, _val_send_disp.begin(),
+                         [&bs2](auto d) { return d * bs2; });
 
   // Global-to-local map for ghost columns
   std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local;
   global_to_local.reserve(ghosts1.size());
   for (std::int64_t idx : ghosts1)
     global_to_local.push_back({idx, global_to_local.size() + local_size[1]});
-  std::sort(global_to_local.begin(), global_to_local.end());
+  std::ranges::sort(global_to_local);
 
   // Compute location in which data for each index should be stored
   // when received
@@ -604,10 +606,9 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
     std::int32_t local_col = ghost_index_array[i + 1] - local_range[1][0];
     if (local_col < 0 or local_col >= local_size[1])
     {
-      auto it = std::lower_bound(global_to_local.begin(), global_to_local.end(),
-                                 std::pair(ghost_index_array[i + 1], -1),
-                                 [](auto& a, auto& b)
-                                 { return a.first < b.first; });
+      auto it = std::ranges::lower_bound(
+          global_to_local, std::pair(ghost_index_array[i + 1], -1),
+          [](auto& a, auto& b) { return a.first < b.first; });
       assert(it != global_to_local.end()
              and it->first == ghost_index_array[i + 1]);
       local_col = it->second;

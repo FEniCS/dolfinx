@@ -39,16 +39,34 @@
 # problem:
 
 # +
-import sys
-
 from mpi4py import MPI
 
 import numpy as np
-from analytical_modes import verify_mode
+
+try:
+    from petsc4py import PETSc
+
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+    if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
+        print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
+        # Note: when PETSc.IntType == np.int32, superlu_dist is used
+        # rather than MUMPS and does not trigger memory failures.
+        exit(0)
+
+    real_type = PETSc.RealType
+    scalar_type = PETSc.ScalarType
+
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
 
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import default_scalar_type, fem, io, plot
+from dolfinx import fem, io, plot
 from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import CellType, create_rectangle, exterior_facet_indices, locate_entities
 
@@ -64,8 +82,97 @@ try:
     from slepc4py import SLEPc
 except ModuleNotFoundError:
     print("slepc4py is required for this demo")
-    sys.exit(0)
+    exit(0)
 # -
+
+# ## Analytical solutions for the half-loaded waveguide
+#
+# The analytical solutions for the half-loaded waveguide with perfect
+# electric conducting walls are described in Harrington's *Time-harmonic
+# electromagnetic fields*. We will skip the full derivation, and we just
+# mention that the problem can be decoupled into $\mathrm{TE}_x$ and
+# $\mathrm{TM}_x$ modes, and the possible $k_z$ can be found by solving
+# a set of transcendental equations, which is shown here below:
+#
+#
+# $$
+# \textrm{For TE}_x \textrm{ modes}:
+# \begin{cases}
+# &k_{x d}^{2}+\left(\frac{n \pi}{w}\right)^{2}+k_{z}^{2}=k_0^{2}
+# \varepsilon_{d} \\
+# &k_{x v}^{2}+\left(\frac{n \pi}{w}\right)^{2}+k_{z}^{2}=k_0^{2}
+# \varepsilon_{v} \\
+# & k_{x d} \cot k_{x d} d + k_{x v} \cot \left[k_{x v}(h-d)\right] = 0
+# \end{cases}
+# $$
+#
+# $$
+# \textrm{For TM}_x \textrm{ modes}:
+# \begin{cases}
+# &k_{x d}^{2}+\left(\frac{n \pi}{w}\right)^{2}+k_{z}^{2}=
+# k_0^{2} \varepsilon_{d} \\
+# &k_{x v}^{2}+\left(\frac{n \pi}{w}\right)^{2}+k_{z}^{2}=
+# k_0^{2} \varepsilon_{v} \\
+# & \frac{k_{x d}}{\varepsilon_{d}} \tan k_{x d} d +
+# \frac{k_{x v}}{\varepsilon_{v}} \tan \left[k_{x v}(h-d)\right] = 0
+# \end{cases}
+# $$
+#
+# with:
+# - $\varepsilon_d\rightarrow$ dielectric permittivity
+# - $\varepsilon_v\rightarrow$ vacuum permittivity
+# - $w\rightarrow$ total width of the waveguide
+# - $h\rightarrow$ total height of the waveguide
+# - $d\rightarrow$ height of the dielectric fraction
+# - $k_0\rightarrow$ vacuum wavevector
+# - $k_{xd}\rightarrow$ $x$ component of the wavevector in the dielectric
+# - $k_{xv}\rightarrow$ $x$ component of the wavevector in the vacuum
+# - $\frac{n \pi}{w} = k_y\rightarrow$ $y$ component of the wavevector
+#   for different $n$ harmonic numbers (we assume $n=1$ for the sake of
+#   simplicity)
+#
+# Let's define the set of equations with the $\tan$ and $\cot$ function:
+
+
+def TMx_condition(
+    kx_d: complex, kx_v: complex, eps_d: complex, eps_v: complex, d: float, h: float
+) -> float:
+    return kx_d / eps_d * np.tan(kx_d * d) + kx_v / eps_v * np.tan(kx_v * (h - d))
+
+
+def TEx_condition(kx_d: complex, kx_v: complex, d: float, h: float) -> float:
+    return kx_d / np.tan(kx_d * d) + kx_v / np.tan(kx_v * (h - d))
+
+
+# Then, we can define the `verify_mode` function, to check whether a
+# certain $k_z$ satisfy the equations (below a certain threshold). In
+# other words, we provide a certain $k_z$, together with the geometrical
+# and optical parameters of the waveguide, and `verify_mode()` checks
+# whether the last equations for the $\mathrm{TE}_x$ or $\mathrm{TM}_x$
+# modes are close to $0$.
+
+
+def verify_mode(
+    kz: complex,
+    w: float,
+    h: float,
+    d: float,
+    lmbd0: float,
+    eps_d: complex,
+    eps_v: complex,
+    threshold: float,
+) -> np.bool_:
+    k0 = 2 * np.pi / lmbd0
+    ky = np.pi / w  # we assume n = 1
+    kx_d_target = np.sqrt(k0**2 * eps_d - ky**2 + -(kz**2) + 0j)
+    alpha = kx_d_target**2
+    beta = alpha - k0**2 * (eps_d - eps_v)
+    kx_v = np.sqrt(beta)
+    kx_d = np.sqrt(alpha)
+    f_tm = TMx_condition(kx_d, kx_v, eps_d, eps_v, d, h)
+    f_te = TEx_condition(kx_d, kx_v, d, h)
+    return np.isclose(f_tm, 0, atol=threshold) or np.isclose(f_te, 0, atol=threshold)
+
 
 # We now define the domain. It is a rectangular domain with width $w$
 # and height $h = 0.45w$, with the dielectric medium filling the
@@ -107,8 +214,8 @@ eps = fem.Function(D)
 cells_v = locate_entities(msh, msh.topology.dim, Omega_v)
 cells_d = locate_entities(msh, msh.topology.dim, Omega_d)
 
-eps.x.array[cells_d] = np.full_like(cells_d, eps_d, dtype=default_scalar_type)
-eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=default_scalar_type)
+eps.x.array[cells_d] = np.full_like(cells_d, eps_d, dtype=scalar_type)
+eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=scalar_type)
 # -
 
 # In order to find the weak form of our problem, the starting point are
@@ -193,8 +300,8 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=default_scalar_type)
 # `mixed_element`:
 
 degree = 1
-RTCE = element("RTCE", msh.basix_cell(), degree)
-Q = element("Lagrange", msh.basix_cell(), degree)
+RTCE = element("RTCE", msh.basix_cell(), degree, dtype=real_type)
+Q = element("Lagrange", msh.basix_cell(), degree, dtype=real_type)
 V = fem.functionspace(msh, mixed_element([RTCE, Q]))
 
 # Now we can define our weak form:

@@ -20,11 +20,23 @@
 # Solutions is used to produce the exact solution and source term.
 
 from mpi4py import MPI
-from petsc4py import PETSc
+
+try:
+    from petsc4py import PETSc
+
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
 
 # +
 import numpy as np
 
+import dolfinx
 import ufl
 from dolfinx.fem import Function, assemble_scalar, form, functionspace
 from dolfinx.fem.petsc import LinearProblem
@@ -39,7 +51,7 @@ k0 = 4 * np.pi
 deg = 1
 
 # Number of elements in each direction of the mesh
-n_elem = 128
+n_elem = 64
 
 msh = create_unit_square(MPI.COMM_WORLD, n_elem, n_elem)
 
@@ -62,7 +74,12 @@ L = inner(f, v) * dx
 # Compute solution
 uh = Function(V)
 uh.name = "u"
-problem = LinearProblem(a, L, u=uh, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(
+    a,
+    L,
+    u=uh,
+    petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
+)
 problem.solve()
 
 # Save solution in XDMF format (to be viewed in ParaView, for example)

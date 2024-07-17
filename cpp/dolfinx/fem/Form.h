@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <array>
 #include <concepts>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -44,47 +45,65 @@ template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
 struct integral_data
 {
   /// @brief Create a structure to hold integral data.
-  /// @tparam U Entity indices type.
-  /// @param id Domain ID.
-  /// @param kernel Integration kernel.
-  /// @param entities Entities to integrate over.
-  template <typename K, typename V>
+  /// @param[in] id Domain ID.
+  /// @param[in] kernel Integration kernel.
+  /// @param[in] entities Indices of entities to integrate over.
+  /// @param[in] coeffs Indicies of the coefficients are present
+  /// (active) in `kernel`.
+  template <typename K, typename V, typename W>
     requires std::is_convertible_v<
                  std::remove_cvref_t<K>,
                  std::function<void(T*, const T*, const T*, const U*,
                                     const int*, const uint8_t*)>>
                  and std::is_convertible_v<std::remove_cvref_t<V>,
                                            std::vector<std::int32_t>>
-  integral_data(int id, K&& kernel, V&& entities)
+                 and std::is_convertible_v<std::remove_cvref_t<W>,
+                                           std::vector<int>>
+  integral_data(int id, K&& kernel, V&& entities, W&& coeffs)
       : id(id), kernel(std::forward<K>(kernel)),
-        entities(std::forward<V>(entities))
+        entities(std::forward<V>(entities)), coeffs(std::forward<W>(coeffs))
   {
   }
 
   /// @brief Create a structure to hold integral data.
-  /// @param id Domain ID
-  /// @param kernel Integration kernel.
-  /// @param e Entities to integrate over.
-  template <typename K>
+  ///
+  /// @param[in] id Domain ID.
+  /// @param[in] kernel Integration kernel.
+  /// @param[in] entities Indices of entities to integrate over.
+  /// @param[in] coeffs Indicies of the coefficients that are active in
+  /// the `kernel`.
+  ///
+  /// @note This version allows `entities` to be passed as a std::span,
+  /// which is then copied.
+  template <typename K, typename W>
     requires std::is_convertible_v<
                  std::remove_cvref_t<K>,
                  std::function<void(T*, const T*, const T*, const U*,
                                     const int*, const uint8_t*)>>
-  integral_data(int id, K&& kernel, std::span<const std::int32_t> e)
-      : id(id), kernel(std::forward<K>(kernel)), entities(e.begin(), e.end())
+                 and std::is_convertible_v<std::remove_cvref_t<W>,
+                                           std::vector<int>>
+  integral_data(int id, K&& kernel, std::span<const std::int32_t> entities,
+                W&& coeffs)
+      : id(id), kernel(std::forward<K>(kernel)),
+        entities(entities.begin(), entities.end()),
+        coeffs(std::forward<W>(coeffs))
   {
   }
 
-  /// Integral ID
+  /// @brief Integral ID.
   int id;
 
-  /// The integration kernel
+  /// @brief The integration kernel.
   std::function<void(T*, const T*, const T*, const U*, const int*,
                      const uint8_t*)>
       kernel;
 
-  /// The entities to integrate over
+  /// @brief The entities to integrate over.
   std::vector<std::int32_t> entities;
+
+  /// @brief Indices of coefficients (from the form) that are in this
+  /// integral.
+  std::vector<int> coeffs;
 };
 
 /// @brief A representation of finite element variational forms.
@@ -122,6 +141,9 @@ public:
   /// Scalar type
   using scalar_type = T;
 
+  /// Geometry type
+  using geometry_type = U;
+
   /// @brief Create a finite element form.
   ///
   /// @note User applications will normally call a factory function
@@ -153,17 +175,20 @@ public:
   template <typename X>
     requires std::is_convertible_v<
                  std::remove_cvref_t<X>,
-                 std::map<IntegralType, std::vector<integral_data<T, U>>>>
-  Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
-       X&& integrals,
-       const std::vector<std::shared_ptr<const Function<scalar_type, U>>>&
-           coefficients,
-       const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
-           constants,
-       bool needs_facet_permutations,
-       const std::map<std::shared_ptr<const mesh::Mesh<U>>,
-                      std::span<const std::int32_t>>& entity_maps,
-       std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
+                 std::map<IntegralType, std::vector<integral_data<
+                                            scalar_type, geometry_type>>>>
+  Form(
+      const std::vector<std::shared_ptr<const FunctionSpace<geometry_type>>>& V,
+      X&& integrals,
+      const std::vector<
+          std::shared_ptr<const Function<scalar_type, geometry_type>>>&
+          coefficients,
+      const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
+          constants,
+      bool needs_facet_permutations,
+      const std::map<std::shared_ptr<const mesh::Mesh<geometry_type>>,
+                     std::span<const std::int32_t>>& entity_maps,
+      std::shared_ptr<const mesh::Mesh<geometry_type>> mesh = nullptr)
       : _function_spaces(V), _coefficients(coefficients), _constants(constants),
         _mesh(mesh), _needs_facet_permutations(needs_facet_permutations)
   {
@@ -185,16 +210,16 @@ public:
     // Store kernels, looping over integrals by domain type (dimension)
     for (auto&& [domain_type, data] : integrals)
     {
-      if (!std::is_sorted(data.begin(), data.end(),
-                          [](auto& a, auto& b) { return a.id < b.id; }))
+      if (!std::ranges::is_sorted(data,
+                                  [](auto& a, auto& b) { return a.id < b.id; }))
       {
         throw std::runtime_error("Integral IDs not sorted");
       }
 
-      std::vector<integral_data<T, U>>& itg
+      std::vector<integral_data<scalar_type, geometry_type>>& itg
           = _integrals[static_cast<std::size_t>(domain_type)];
-      for (auto&& [id, kern, e] : data)
-        itg.emplace_back(id, kern, std::move(e));
+      for (auto&& [id, kern, e, c] : data)
+        itg.emplace_back(id, kern, std::move(e), std::move(c));
     }
 
     // Store entity maps
@@ -220,11 +245,14 @@ public:
 
   /// @brief Extract common mesh for the form.
   /// @return The mesh.
-  std::shared_ptr<const mesh::Mesh<U>> mesh() const { return _mesh; }
+  std::shared_ptr<const mesh::Mesh<geometry_type>> mesh() const
+  {
+    return _mesh;
+  }
 
   /// @brief Function spaces for all arguments.
   /// @return Function spaces.
-  const std::vector<std::shared_ptr<const FunctionSpace<U>>>&
+  const std::vector<std::shared_ptr<const FunctionSpace<geometry_type>>>&
   function_spaces() const
   {
     return _function_spaces;
@@ -232,17 +260,16 @@ public:
 
   /// @brief Get the kernel function for integral `i` on given domain
   /// type.
-  /// @param[in] type Integral type
-  /// @param[in] i Domain identifier (index)
-  /// @return Function to call for tabulate_tensor
-  std::function<void(T*, const T*, const T*, const U*, const int*,
-                     const uint8_t*)>
+  /// @param[in] type Integral type.
+  /// @param[in] i Domain identifier (index).
+  /// @return Function to call for `tabulate_tensor`.
+  std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
+                     const geometry_type*, const int*, const uint8_t*)>
   kernel(IntegralType type, int i) const
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
-    auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
-                               [](auto& itg_data, int i)
-                               { return itg_data.id < i; });
+    auto it = std::ranges::lower_bound(integrals, i, std::less<>{},
+                                       [](const auto& a) { return a.id; });
     if (it != integrals.end() and it->id == i)
       return it->kernel;
     else
@@ -271,6 +298,22 @@ public:
     return _integrals[static_cast<std::size_t>(type)].size();
   }
 
+  /// @brief Indices of coefficients that are active for a given
+  /// integral (kernel).
+  ///
+  /// A form is split into multiple integrals (kernels) and each
+  /// integral might container only a subset of all coefficients in the
+  /// form. This function returns an indicator array for a given
+  /// integral kernel that signifies which coefficients are present.
+  ///
+  /// @param[in] type Integral type.
+  /// @param[in] i Index of the integral.
+  std::vector<int> active_coeffs(IntegralType type, std::size_t i) const
+  {
+    assert(i < _integrals[static_cast<std::size_t>(type)].size());
+    return _integrals[static_cast<std::size_t>(type)][i].coeffs;
+  }
+
   /// @brief Get the IDs for integrals (kernels) for given integral type.
   ///
   /// The IDs correspond to the domain IDs which the integrals are
@@ -282,8 +325,8 @@ public:
   {
     std::vector<int> ids;
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
-    std::transform(integrals.begin(), integrals.end(), std::back_inserter(ids),
-                   [](auto& integral) { return integral.id; });
+    std::ranges::transform(integrals, std::back_inserter(ids),
+                           [](auto& integral) { return integral.id; });
     return ids;
   }
 
@@ -307,9 +350,8 @@ public:
   std::span<const std::int32_t> domain(IntegralType type, int i) const
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
-    auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
-                               [](auto& itg_data, int i)
-                               { return itg_data.id < i; });
+    auto it = std::ranges::lower_bound(integrals, i, std::less<>{},
+                                       [](const auto& a) { return a.id; });
     if (it != integrals.end() and it->id == i)
       return it->entities;
     else
@@ -325,11 +367,11 @@ public:
   /// @param mesh The mesh the entities are numbered with respect to.
   /// @return List of active entities in `mesh` for the given integral.
   std::vector<std::int32_t> domain(IntegralType type, int i,
-                                   const mesh::Mesh<U>& mesh) const
+                                   const mesh::Mesh<geometry_type>& mesh) const
   {
     // Hack to avoid passing shared pointer to this function
-    std::shared_ptr<const mesh::Mesh<U>> msh_ptr(&mesh,
-                                                 [](const mesh::Mesh<U>*) {});
+    std::shared_ptr<const mesh::Mesh<geometry_type>> msh_ptr(
+        &mesh, [](const mesh::Mesh<geometry_type>*) {});
 
     std::span<const std::int32_t> entities = domain(type, i);
     if (msh_ptr == _mesh)
@@ -343,14 +385,47 @@ public:
       {
       case IntegralType::cell:
       {
-        std::transform(entities.begin(), entities.end(),
-                       std::back_inserter(mapped_entities),
-                       [&entity_map](auto e) { return entity_map[e]; });
+        std::ranges::transform(entities, std::back_inserter(mapped_entities),
+                               [&entity_map](auto e) { return entity_map[e]; });
         break;
       }
       case IntegralType::exterior_facet:
-        // Exterior and interior facets are treated the same
-        [[fallthrough]];
+      {
+        // Get the codimension of the mesh
+        const int tdim = _mesh->topology()->dim();
+        const int codim = tdim - mesh.topology()->dim();
+        assert(codim >= 0);
+        if (codim == 0)
+        {
+          for (std::size_t i = 0; i < entities.size(); i += 2)
+          {
+            // Add cell and the local facet index
+            mapped_entities.insert(mapped_entities.end(),
+                                   {entity_map[entities[i]], entities[i + 1]});
+          }
+        }
+        else if (codim == 1)
+        {
+          // In this case, the entity maps take facets in (`_mesh`) to cells in
+          // `mesh`, so we need to get the facet number from the (cell,
+          // local_facet pair) first.
+          auto c_to_f = _mesh->topology()->connectivity(tdim, tdim - 1);
+          assert(c_to_f);
+          for (std::size_t i = 0; i < entities.size(); i += 2)
+          {
+            // Get the facet index
+            const std::int32_t facet
+                = c_to_f->links(entities[i])[entities[i + 1]];
+            // Add cell and the local facet index
+            mapped_entities.insert(mapped_entities.end(),
+                                   {entity_map[facet], entities[i + 1]});
+          }
+        }
+        else
+          throw std::runtime_error("Codimension > 1 not supported.");
+
+        break;
+      }
       case IntegralType::interior_facet:
       {
         for (std::size_t i = 0; i < entities.size(); i += 2)
@@ -370,7 +445,9 @@ public:
   }
 
   /// @brief Access coefficients.
-  const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients() const
+  const std::vector<
+      std::shared_ptr<const Function<scalar_type, geometry_type>>>&
+  coefficients() const
   {
     return _coefficients;
   }
@@ -397,33 +474,38 @@ public:
   }
 
   /// @brief Access constants.
-  const std::vector<std::shared_ptr<const Constant<T>>>& constants() const
+  const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
+  constants() const
   {
     return _constants;
   }
 
 private:
   // Function spaces (one for each argument)
-  std::vector<std::shared_ptr<const FunctionSpace<U>>> _function_spaces;
+  std::vector<std::shared_ptr<const FunctionSpace<geometry_type>>>
+      _function_spaces;
 
   // Integrals. Array index is
   // static_cast<std::size_t(IntegralType::foo)
-  std::array<std::vector<integral_data<T, U>>, 4> _integrals;
+  std::array<std::vector<integral_data<scalar_type, geometry_type>>, 4>
+      _integrals;
 
   // Form coefficients
-  std::vector<std::shared_ptr<const Function<T, U>>> _coefficients;
+  std::vector<std::shared_ptr<const Function<scalar_type, geometry_type>>>
+      _coefficients;
 
   // Constants associated with the Form
-  std::vector<std::shared_ptr<const Constant<T>>> _constants;
+  std::vector<std::shared_ptr<const Constant<scalar_type>>> _constants;
 
   // The mesh
-  std::shared_ptr<const mesh::Mesh<U>> _mesh;
+  std::shared_ptr<const mesh::Mesh<geometry_type>> _mesh;
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
 
   // Entity maps (see Form documentation)
-  std::map<std::shared_ptr<const mesh::Mesh<U>>, std::vector<std::int32_t>>
+  std::map<std::shared_ptr<const mesh::Mesh<geometry_type>>,
+           std::vector<std::int32_t>>
       _entity_maps;
 }; // namespace dolfinx::fem
 } // namespace dolfinx::fem

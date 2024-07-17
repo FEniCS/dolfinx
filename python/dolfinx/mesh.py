@@ -40,6 +40,7 @@ __all__ = [
     "locate_entities_boundary",
     "refine",
     "create_mesh",
+    "create_submesh",
     "Mesh",
     "MeshTags",
     "meshtags",
@@ -439,7 +440,19 @@ def create_mesh(
     return Mesh(mesh, domain)
 
 
-def create_submesh(msh, dim, entities):
+def create_submesh(
+    msh: Mesh, dim: int, entities: npt.NDArray[np.int32]
+) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray[np.int32]]:
+    """Create a mesh with specified entities from another mesh.
+
+    Args:
+        mesh: Mesh to create the sub-mesh from.
+        dim: Topological dimension of the entities in ``msh`` to include in the sub-mesh.
+        entities: Indices of entities in ``msh`` to include in the sub-mesh.
+    Returns:
+        The (1) sub mesh, (2) entity map, (3) vertex map, and (4) node map (geometry).
+        Each of the maps a local index of the sub mesh to a local index of ``msh``.
+    """
     submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(
         msh._cpp_object, dim, entities
     )
@@ -483,7 +496,7 @@ def meshtags(
     """
 
     if isinstance(values, int):
-        assert np.can_cast(values, np.int32)
+        assert values >= np.iinfo(np.int32).min and values <= np.iinfo(np.int32).max
         values = np.full(entities.shape, values, dtype=np.int32)
     elif isinstance(values, float):
         values = np.full(entities.shape, values, dtype=np.double)
@@ -757,24 +770,19 @@ def create_unit_cube(
 
 
 def entities_to_geometry(
-    mesh: Mesh, dim: int, entities: npt.NDArray[np.int32], orient: bool = False
+    mesh: Mesh, dim: int, entities: npt.NDArray[np.int32], permute=False
 ) -> npt.NDArray[np.int32]:
-    """Indices in the geometry data for each vertex of the given mesh entities.
-
-    Warning:
-        This function should not be used unless there is no alternative.
-        It may be removed in the future.
+    """Compute the geometric DOFs associated with the closure of the given mesh entities.
 
     Args:
         mesh: The mesh.
         dim: Topological dimension of the entities of interest.
-        entities: Entity indices (local to the process) to determine the
-            vertex geometry indices for.
-        orient: If True, the triangular facets of a 3D mesh will be reordered
-            so that they have a consistent normal direction. This option is likely
-            to be removed in the future.
+        entities: Entity indices (local to the process).
+        permute: Permute the DOFs such that they are consistent with the orientation
+            of `dim`-dimensional mesh entities. This requires `create_entity_permutations` to
+            be called first.
 
     Returns:
-        Indices in the geometry array for the entity vertices.
+        The geometric DOFs associated with the closure of the entities in `entities`.
     """
-    return _cpp.mesh.entities_to_geometry(mesh._cpp_object, dim, entities, orient)
+    return _cpp.mesh.entities_to_geometry(mesh._cpp_object, dim, entities, permute)

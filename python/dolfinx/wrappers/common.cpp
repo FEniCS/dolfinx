@@ -4,19 +4,12 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "MPICommWrapper.h"
-#include "array.h"
-#include "caster_mpi.h"
 #include <complex>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/Scatterer.h>
-#include <dolfinx/common/Table.h>
-#include <dolfinx/common/Timer.h>
-#include <dolfinx/common/defines.h>
-#include <dolfinx/common/log.h>
-#include <dolfinx/common/timing.h>
-#include <dolfinx/common/utils.h>
 #include <memory>
+#include <span>
+#include <string>
+#include <vector>
+
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
@@ -24,9 +17,20 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
-#include <span>
-#include <string>
-#include <vector>
+
+#include <dolfinx/common/defines.h>
+#include <dolfinx/common/defines.h>
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
+#include <dolfinx/common/Scatterer.h>
+#include <dolfinx/common/Table.h>
+#include <dolfinx/common/Timer.h>
+#include <dolfinx/common/timing.h>
+#include <dolfinx/common/utils.h>
+
+#include "MPICommWrapper.h"
+#include "array.h"
+#include "caster_mpi.h"
 
 namespace nb = nanobind;
 
@@ -36,12 +40,17 @@ namespace dolfinx_wrappers
 void common(nb::module_& m)
 {
   // From dolfinx/common/defines.h
-  m.attr("has_debug") = dolfinx::has_debug();
-  m.attr("has_parmetis") = dolfinx::has_parmetis();
-  m.attr("has_kahip") = dolfinx::has_kahip();
-  m.attr("has_slepc") = dolfinx::has_slepc();
-  m.attr("has_adios2") = dolfinx::has_adios2();
   m.attr("git_commit_hash") = dolfinx::git_commit_hash();
+  m.attr("has_adios2") = dolfinx::has_adios2();
+  m.attr("has_complex_ufcx_kernels") = dolfinx::has_complex_ufcx_kernels();
+  m.attr("has_debug") = dolfinx::has_debug();
+  m.attr("has_kahip") = dolfinx::has_kahip();
+  m.attr("has_parmetis") = dolfinx::has_parmetis();
+  m.attr("has_petsc") = dolfinx::has_petsc();
+  m.attr("has_ptscotch") = dolfinx::has_ptscotch();
+  m.attr("has_slepc") = dolfinx::has_slepc();
+  m.attr("ufcx_signature") = dolfinx::ufcx_signature();
+  m.attr("version") = dolfinx::version();
 
   nb::enum_<dolfinx::Table::Reduction>(m, "Reduction")
       .value("max", dolfinx::Table::Reduction::max)
@@ -107,8 +116,8 @@ void common(nb::module_& m)
           [](const dolfinx::common::IndexMap& self)
           {
             std::span ghosts = self.ghosts();
-            return nb::ndarray<const std::int64_t, nb::numpy>(ghosts.data(),
-                                                              {ghosts.size()});
+            return nb::ndarray<const std::int64_t, nb::numpy>(
+                ghosts.data(), {ghosts.size()}, nb::handle());
           },
           nb::rv_policy::reference_internal, "Return list of ghost indices")
       .def_prop_ro(
@@ -117,7 +126,7 @@ void common(nb::module_& m)
           {
             std::span owners = self.owners();
             return nb::ndarray<nb::numpy, const int, nb::ndim<1>>(
-                owners.data(), {owners.size()});
+                owners.data(), {owners.size()}, nb::handle());
           },
           nb::rv_policy::reference_internal)
       .def(

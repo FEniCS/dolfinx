@@ -135,8 +135,8 @@ def test_mixed_element_form(cell_type, sign, order, dtype):
 
     U_el = mixed_element(
         [
-            element(basix.ElementFamily.P, cell_type.name, order),
-            element(basix.ElementFamily.N1E, cell_type.name, order),
+            element(basix.ElementFamily.P, cell_type.name, order, dtype=dtype),
+            element(basix.ElementFamily.N1E, cell_type.name, order, dtype=dtype),
         ]
     )
 
@@ -164,8 +164,14 @@ def test_mixed_element_vector_element_form(cell_type, sign, order, dtype):
 
     U_el = mixed_element(
         [
-            element(basix.ElementFamily.P, cell_type.name, order, shape=(mesh.geometry.dim,)),
-            element(basix.ElementFamily.N1E, cell_type.name, order),
+            element(
+                basix.ElementFamily.P,
+                cell_type.name,
+                order,
+                shape=(mesh.geometry.dim,),
+                dtype=dtype,
+            ),
+            element(basix.ElementFamily.N1E, cell_type.name, order, dtype=dtype),
         ]
     )
 

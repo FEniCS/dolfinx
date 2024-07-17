@@ -10,6 +10,7 @@
 
 #include "vtk_utils.h"
 #include <adios2.h>
+#include <algorithm>
 #include <basix/mdspan.hpp>
 #include <cassert>
 #include <complex>
@@ -201,8 +202,8 @@ void initialize_function_attributes(adios2::IO& io,
       !assc)
   {
     std::vector<std::string> u_type;
-    std::transform(u_data.cbegin(), u_data.cend(), std::back_inserter(u_type),
-                   [](auto& f) { return f[1]; });
+    std::ranges::transform(u_data, std::back_inserter(u_type),
+                           [](auto f) { return f[1]; });
     io.DefineAttribute<std::string>("Fides_Variable_Associations",
                                     u_type.data(), u_type.size());
   }
@@ -213,8 +214,8 @@ void initialize_function_attributes(adios2::IO& io,
       !fields)
   {
     std::vector<std::string> names;
-    std::transform(u_data.cbegin(), u_data.cend(), std::back_inserter(names),
-                   [](auto& f) { return f[0]; });
+    std::ranges::transform(u_data, std::back_inserter(names),
+                           [](auto f) { return f[0]; });
     io.DefineAttribute<std::string>("Fides_Variable_List", names.data(),
                                     names.size());
   }
@@ -249,8 +250,17 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
   std::uint32_t num_vertices
       = vertex_map->size_local() + vertex_map->num_ghosts();
 
-  int rank = V->value_shape().size();
-  std::uint32_t num_components = std::pow(3, rank);
+  std::span<const std::size_t> value_shape = u.function_space()->value_shape();
+  int rank = value_shape.size();
+  int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
+                                   std::multiplies{});
+  if (num_components < std::pow(3, rank))
+    num_components = std::pow(3, rank);
+  else if (num_components > std::pow(3, rank))
+  {
+    throw std::runtime_error(
+        "Fides does not support tensors larger than pow(3, rank)");
+  }
 
   // Get dof array and pack into array (padded where appropriate)
   auto dofmap_x = geometry.dofmap();
@@ -289,11 +299,24 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
   assert(dofmap);
   auto mesh = V->mesh();
   assert(mesh);
-  const int gdim = mesh->geometry().dim();
 
-  // Vectors and tensor need padding in gdim < 3
-  int rank = V->value_shape().size();
-  bool need_padding = rank > 0 and gdim != 3 ? true : false;
+  // Pad to 3D if vector/tensor is product of dimensions is smaller than
+  // 3**rank to ensure that we can visualize them correctly in Paraview
+  std::span<const std::size_t> value_shape = u.function_space()->value_shape();
+  int rank = value_shape.size();
+  int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
+                                   std::multiplies{});
+  bool need_padding = false;
+  if (num_components < std::pow(3, rank))
+  {
+    num_components = std::pow(3, rank);
+    need_padding = true;
+  }
+  else if (num_components > std::pow(3, rank))
+  {
+    throw std::runtime_error(
+        "Fides does not support tensors larger than pow(3, rank)");
+  }
 
   // Get vertex data. If the mesh and function dofmaps are the same we
   // can work directly with the dof array.
@@ -320,7 +343,6 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
       = vertex_map->size_local() + vertex_map->num_ghosts();
 
   // Write each real and imaginary part of the function
-  std::uint32_t num_components = std::pow(3, rank);
   assert(data.size() % num_components == 0);
   if constexpr (std::is_scalar_v<T>)
   {
@@ -342,15 +364,15 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
     adios2::Variable local_output_r = impl_adios2::define_variable<X>(
         io, u.name + impl_adios2::field_ext[0], {}, {},
         {num_vertices, num_components});
-    std::transform(data.begin(), data.end(), data_real.begin(),
-                   [](auto x) -> X { return std::real(x); });
+    std::ranges::transform(data, data_real.begin(),
+                           [](auto x) -> X { return std::real(x); });
     engine.Put(local_output_r, data_real.data());
 
     adios2::Variable local_output_c = impl_adios2::define_variable<X>(
         io, u.name + impl_adios2::field_ext[1], {}, {},
         {num_vertices, num_components});
-    std::transform(data.begin(), data.end(), data_imag.begin(),
-                   [](auto x) -> X { return std::imag(x); });
+    std::ranges::transform(data, data_imag.begin(),
+                           [](auto x) -> X { return std::imag(x); });
     engine.Put(local_output_c, data_imag.data());
     engine.PerformPuts();
   }
@@ -657,8 +679,16 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
   // Get function data array and information about layout
   assert(u.x());
   std::span<const T> u_vector = u.x()->array();
-  int rank = u.function_space()->value_shape().size();
-  std::uint32_t num_comp = std::pow(3, rank);
+
+  // Pad to 3D if vector/tensor is product of dimensions is smaller than
+  // 3**rank to ensure that we can visualize them correctly in Paraview
+  std::span<const std::size_t> value_shape = u.function_space()->value_shape();
+  int rank = value_shape.size();
+  int num_comp = std::reduce(value_shape.begin(), value_shape.end(), 1,
+                             std::multiplies{});
+  if (num_comp < std::pow(3, rank))
+    num_comp = std::pow(3, rank);
+
   std::shared_ptr<const fem::DofMap> dofmap = u.function_space()->dofmap();
   assert(dofmap);
   std::shared_ptr<const common::IndexMap> index_map = dofmap->index_map;
@@ -694,7 +724,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
         io, u.name + impl_adios2::field_ext[0], {}, {}, {num_dofs, num_comp});
     engine.Put(output_real, data.data(), adios2::Mode::Sync);
 
-    std::fill(data.begin(), data.end(), 0);
+    std::ranges::fill(data, 0);
     for (std::size_t i = 0; i < num_dofs; ++i)
       for (int j = 0; j < index_map_bs; ++j)
         data[i * num_comp + j] = std::imag(u_vector[i * index_map_bs + j]);
@@ -750,7 +780,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   {
     std::span vtkcell(vtkcells.data() + c * shape[1], shape[1]);
     std::span cell(cells.data() + c * (shape[1] + 1), shape[1] + 1);
-    std::copy(vtkcell.begin(), vtkcell.end(), std::next(cell.begin()));
+    std::ranges::copy(vtkcell, std::next(cell.begin()));
   }
 
   // Put topology (nodes)
@@ -806,7 +836,7 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   {
     std::span vtkcell(vtk.data() + c * vtkshape[1], vtkshape[1]);
     std::span cell(cells.data() + c * (vtkshape[1] + 1), vtkshape[1] + 1);
-    std::copy(vtkcell.begin(), vtkcell.end(), std::next(cell.begin()));
+    std::ranges::copy(vtkcell, std::next(cell.begin()));
   }
 
   // Define ADIOS2 variables for geometry, topology, celltypes and

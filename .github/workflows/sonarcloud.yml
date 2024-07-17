@@ -26,17 +26,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
-      - name: Install zip
+      - name: Install zip amd spdlog
         run: |
           apt-get -y update
-          apt-get install unzip
+          apt-get -y install libspdlog-dev unzip
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: 17
       - name: Cache SonarCloud packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
@@ -58,9 +58,9 @@ jobs:
           echo "$HOME/.sonar/build-wrapper-linux-x86" >> $GITHUB_PATH
       - name: Install FEniCS Python components
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+          python3 -m pip install --break-system-packages git+https://github.com/FEniCS/ufl.git
+          python3 -m pip install --break-system-packages git+https://github.com/FEniCS/basix.git
+          python3 -m pip install --break-system-packages git+https://github.com/FEniCS/ffcx.git
       - name: Run build-wrapper
         run: |
           mkdir build

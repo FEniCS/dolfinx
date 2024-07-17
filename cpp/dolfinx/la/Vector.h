@@ -7,6 +7,7 @@
 #pragma once
 
 #include "utils.h"
+#include <algorithm>
 #include <cmath>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
@@ -78,7 +79,7 @@ public:
 
   /// Set all entries (including ghosts)
   /// @param[in] v The value to set all entries to (on calling rank)
-  void set(value_type v) { std::fill(_x.begin(), _x.end(), v); }
+  void set(value_type v) { std::ranges::fill(_x, v); }
 
   /// Begin scatter of local data from owner to ghosts on other ranks
   /// @note Collective MPI operation
@@ -288,8 +289,8 @@ auto norm(const V& x, Norm type = Norm::l2)
   {
     std::int32_t size_local = x.bs() * x.index_map()->size_local();
     std::span<const T> data = x.array().subspan(0, size_local);
-    auto max_pos = std::max_element(data.begin(), data.end(), [](T a, T b)
-                                    { return std::norm(a) < std::norm(b); });
+    auto max_pos = std::ranges::max_element(
+        data, [](T a, T b) { return std::norm(a) < std::norm(b); });
     auto local_linf = std::abs(*max_pos);
     decltype(local_linf) linf = 0;
     MPI_Allreduce(&local_linf, &linf, 1, MPI::mpi_type<decltype(linf)>(),
@@ -324,9 +325,9 @@ void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
 
       // basis_i <- basis_i - dot_ij  basis_j
       auto dot_ij = inner_product(bi, bj);
-      std::transform(bj.array().begin(), bj.array().end(), bi.array().begin(),
-                     bi.mutable_array().begin(),
-                     [dot_ij](auto xj, auto xi) { return xi - dot_ij * xj; });
+      std::ranges::transform(bj.array(), bi.array(), bi.mutable_array().begin(),
+                             [dot_ij](auto xj, auto xi)
+                             { return xi - dot_ij * xj; });
     }
 
     // Normalise basis function
@@ -336,29 +337,34 @@ void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
       throw std::runtime_error(
           "Linear dependency detected. Cannot orthogonalize.");
     }
-    std::transform(bi.array().begin(), bi.array().end(),
-                   bi.mutable_array().begin(),
-                   [norm](auto x) { return x / norm; });
+    std::ranges::transform(bi.array(), bi.mutable_array().begin(),
+                           [norm](auto x) { return x / norm; });
   }
 }
 
 /// @brief Test if basis is orthonormal.
-/// @param[in] basis The set of vectors to check.
+///
+/// Returns true if ||x_i - x_j|| - delta_{ij} < eps fro all i, j, and
+/// otherwise false.
+///
+/// @param[in] basis Set of vectors to check.
+/// @param[in] eps Tolerance.
 /// @return True is basis is orthonormal, otherwise false.
 template <class V>
-bool is_orthonormal(std::vector<std::reference_wrapper<const V>> basis)
+bool is_orthonormal(
+    std::vector<std::reference_wrapper<const V>> basis,
+    dolfinx::scalar_value_type_t<typename V::value_type> eps
+    = std::numeric_limits<
+        dolfinx::scalar_value_type_t<typename V::value_type>>::epsilon())
 {
   using T = typename V::value_type;
-  using U = typename dolfinx::scalar_value_type_t<T>;
-
-  // auto tol = std::sqrt(T(std::numeric_limits<U>::epsilon()));
   for (std::size_t i = 0; i < basis.size(); i++)
   {
     for (std::size_t j = i; j < basis.size(); j++)
     {
       T delta_ij = (i == j) ? T(1) : T(0);
       auto dot_ij = inner_product(basis[i].get(), basis[j].get());
-      if (std::norm(delta_ij - dot_ij) > std::numeric_limits<U>::epsilon())
+      if (std::norm(delta_ij - dot_ij) > eps)
         return false;
     }
   }

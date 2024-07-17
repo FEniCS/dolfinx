@@ -1,19 +1,20 @@
-# The DOLFINx Python interface must be built without build isolation (PEP517)
-# due to its runtime and build time dependency on system built petsc4py and
-# mpi4py.
+# NOTE: The DOLFINx Python interface must be built without build
+# isolation (PEP517) due to its runtime and build time dependency on
+# system built petsc4py and mpi4py.
+# NOTE: petsc4py is an optional build dependency, therefore we don't
+# list it here.
 # pip install -r build-requirements.txt
 [build-system]
 requires = [
       "scikit-build-core[pyproject]>=0.5",
-      "nanobind>=1.8.0",
-      "petsc4py",
+      "nanobind>=2.0.0",
       "mpi4py",
 ]
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "fenics-dolfinx"
-version = "0.8.0.dev0"
+version = "0.9.0.dev0"
 description = "DOLFINx Python interface"
 readme = "../README.md"
 requires-python = ">=3.9.0"
@@ -25,18 +26,18 @@ authors = [
 dependencies = [
       "numpy>=1.21",
       "cffi",
-      "petsc4py",
       "mpi4py",
-      "fenics-basix>=0.8.0.dev0,<0.9.0",
-      "fenics-ffcx>=0.8.0.dev0,<0.9.0",
-      "fenics-ufl>=2023.3.0.dev0,<2023.4.0",
+      "fenics-basix>=0.9.0.dev0,<0.10.0",
+      "fenics-ffcx>=0.9.0.dev0,<0.10.0",
+      "fenics-ufl>=2024.2.0.dev0,<2024.3.0",
 ]
 
 [project.optional-dependencies]
 docs = ["markdown", "pyyaml", "sphinx", "sphinx_rtd_theme"]
-lint = ["ruff"]
+lint = ["ruff>=0.2.0"]
 optional = ["numba"]
-test = ["pytest", "sympy", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
+petsc4py = ["petsc4py"]
+test = ["pytest", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
 ci = [
       "mypy",
       "pytest-xdist",
@@ -58,7 +59,14 @@ wheel.license-files = ["../COPYING*"]
 junit_family = "xunit2"
 
 [tool.pytest.ini_options]
-markers = ["skip_in_parallel: marks tests that should be run in serial only."]
+markers = [
+            "skip_in_parallel: marks tests that should be run in serial only.",
+            "petsc4py: tests that require PETSc/petsc4py (deselect with '-m \"not petsc4py\"').",
+            "adios2: tests that require Adios2 (deselect with '-m \"not adios2\"').",
+            "xfail_win32_complex: expected failures for complex numbers in Win32."
+]
+
+
 
 [tool.mypy]
 # Suggested at https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
@@ -79,22 +87,23 @@ indent-width = 4
 
 [tool.ruff.lint]
 select = [
-      "E", # pycodestyle
-      "W", # pycodestyle
-      "F", # pyflakes
-      "I",   # isort - use standalone isort
-      "RUF", # Ruff-specific rules
-      "UP",  # pyupgrade
-      "ICN", # flake8-import-conventions
-      "NPY", # numpy-specific rules
-      "FLY", # use f-string not static joins
+      "E",      # pycodestyle
+      "W",      # pycodestyle
+      "F",      # pyflakes
+      "I",      # isort - use standalone isort
+      "RUF",    # Ruff-specific rules
+      "UP",     # pyupgrade
+      "ICN",    # flake8-import-conventions
+      "NPY",    # numpy-specific rules
+      "FLY",    # use f-string not static joins
+      "NPY201", # numpy 2.x ruleset
 ]
 ignore = ["UP007", "RUF012"]
 allowed-confusables = ["σ"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["basix", "dolfinx", "ffcx", "ufl"]
-known-third-party = ["gmsh", "numba", "numpy", "pytest", "pyvista"]
+known-third-party = ["gmsh", "numba", "numpy", "pytest", "pyvista", "pyamg"]
 section-order = [
       "future",
       "standard-library",

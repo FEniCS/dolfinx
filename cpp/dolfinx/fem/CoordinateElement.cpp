@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "CoordinateElement.h"
+#include <algorithm>
 #include <basix/finite-element.h>
 #include <cmath>
 #include <dolfinx/common/math.h>
@@ -60,6 +61,17 @@ void CoordinateElement<T>::tabulate(int nd, std::span<const T> X,
 }
 //--------------------------------------------------------------------------------
 template <std::floating_point T>
+void CoordinateElement<T>::permute_subentity_closure(std::span<std::int32_t> d,
+                                                     std::uint32_t cell_info,
+                                                     mesh::CellType entity_type,
+                                                     int entity_index) const
+{
+  assert(_element);
+  _element->permute_subentity_closure_inv(
+      d, cell_info, mesh::cell_type_to_basix_type(entity_type), entity_index);
+}
+//--------------------------------------------------------------------------------
+template <std::floating_point T>
 ElementDofLayout CoordinateElement<T>::create_dof_layout() const
 {
   assert(_element);
@@ -108,20 +120,20 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   std::vector<T> phi(basis.extent(2));
   for (std::size_t p = 0; p < num_points; ++p)
   {
-    std::fill(Xk_b.begin(), Xk_b.end(), 0.0);
+    std::ranges::fill(Xk_b, 0.0);
     int k;
     for (k = 0; k < maxit; ++k)
     {
       _element->tabulate(1, Xk_b, {1, tdim}, basis_b);
 
       // x = cell_geometry * phi
-      std::fill(xk.begin(), xk.end(), 0.0);
+      std::ranges::fill(xk, 0.0);
       for (std::size_t i = 0; i < cell_geometry.extent(0); ++i)
         for (std::size_t j = 0; j < cell_geometry.extent(1); ++j)
           xk[j] += cell_geometry(i, j) * basis(0, 0, i, 0);
 
       // Compute Jacobian, its inverse and determinant
-      std::fill(J_b.begin(), J_b.end(), 0.0);
+      std::ranges::fill(J_b, 0.0);
       for (std::size_t i = 0; i < tdim; ++i)
         for (std::size_t j = 0; j < basis.extent(2); ++j)
           dphi(i, j) = basis(i + 1, 0, j, 0);
@@ -130,14 +142,14 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
       compute_jacobian_inverse(J, K);
 
       // Compute dX = K * (x_p - x_k)
-      std::fill(dX.begin(), dX.end(), 0);
+      std::ranges::fill(dX, 0);
       for (std::size_t i = 0; i < K.extent(0); ++i)
         for (std::size_t j = 0; j < K.extent(1); ++j)
           dX[i] += K(i, j) * (x(p, j) - xk[j]);
 
       // Compute Xk += dX
-      std::transform(dX.begin(), dX.end(), Xk_b.begin(), Xk_b.begin(),
-                     [](auto a, auto b) { return a + b; });
+      std::ranges::transform(dX, Xk_b, Xk_b.begin(),
+                             [](auto a, auto b) { return a + b; });
 
       // Compute norm(dX)
       if (auto dX_squared
@@ -160,19 +172,19 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-void CoordinateElement<T>::permute_dofs(std::span<std::int32_t> dofs,
-                                        std::uint32_t cell_perm) const
+void CoordinateElement<T>::permute(std::span<std::int32_t> dofs,
+                                   std::uint32_t cell_perm) const
 {
   assert(_element);
-  _element->permute_dofs(dofs, cell_perm);
+  _element->permute(dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-void CoordinateElement<T>::unpermute_dofs(std::span<std::int32_t> dofs,
-                                          std::uint32_t cell_perm) const
+void CoordinateElement<T>::permute_inv(std::span<std::int32_t> dofs,
+                                       std::uint32_t cell_perm) const
 {
   assert(_element);
-  _element->unpermute_dofs(dofs, cell_perm);
+  _element->permute_inv(dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

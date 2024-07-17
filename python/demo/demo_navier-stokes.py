@@ -163,8 +163,19 @@
 #
 # We begin by importing the required modules and functions
 
+import importlib.util
+
+if importlib.util.find_spec("petsc4py") is not None:
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+else:
+    print("This demo requires petsc4py.")
+    exit(0)
+
 from mpi4py import MPI
-from petsc4py import PETSc
 
 # +
 import numpy as np
@@ -188,6 +199,19 @@ from ufl import (
     inner,
     outer,
 )
+
+try:
+    from petsc4py import PETSc
+
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
+
 
 if np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
     print("Demo should only be executed with DOLFINx real mode")
@@ -235,15 +259,6 @@ def p_e_expr(x):
 def f_expr(x):
     """Expression for the applied force"""
     return np.vstack((np.zeros_like(x[0]), np.zeros_like(x[0])))
-
-
-def boundary_marker(x):
-    return (
-        np.isclose(x[0], 0.0)
-        | np.isclose(x[0], 1.0)
-        | np.isclose(x[1], 0.0)
-        | np.isclose(x[1], 1.0)
-    )
 
 
 # -
@@ -320,7 +335,7 @@ L_1 = inner(fem.Constant(msh, default_real_type(0.0)), q) * dx
 L = fem.form([L_0, L_1])
 
 # Boundary conditions
-boundary_facets = mesh.locate_entities_boundary(msh, msh.topology.dim - 1, boundary_marker)
+boundary_facets = mesh.exterior_facet_indices(msh.topology)
 boundary_vel_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, boundary_facets)
 bc_u = fem.dirichletbc(u_D, boundary_vel_dofs)
 bcs = [bc_u]

@@ -128,6 +128,7 @@
 // convenience we also include the DOLFINx namespace.
 
 #include "biharmonic.h"
+#include <basix/finite-element.h>
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/common/types.h>
@@ -162,9 +163,14 @@ int main(int argc, char* argv[])
     //    A function space object, which is defined in the generated code,
     //    is created:
 
+    auto element = basix::create_element<U>(
+        basix::element::family::P, basix::cell::type::triangle, 2,
+        basix::element::lagrange_variant::unset,
+        basix::element::dpc_variant::unset, false);
+
     //  Create function space
     auto V = std::make_shared<fem::FunctionSpace<U>>(
-        fem::create_functionspace(functionspace_form_biharmonic_a, "u", mesh));
+        fem::create_functionspace(mesh, element));
 
     // The source function $f$ and the penalty term $\alpha$ are
     // declared:
@@ -201,23 +207,7 @@ int main(int argc, char* argv[])
     //  follows:
 
     //  Define boundary condition
-    auto facets = mesh::locate_entities_boundary(
-        *mesh, 1,
-        [](auto x)
-        {
-          constexpr U eps = 1.0e-6;
-          std::vector<std::int8_t> marker(x.extent(1), false);
-          for (std::size_t p = 0; p < x.extent(1); ++p)
-          {
-            U x0 = x(0, p);
-            U x1 = x(1, p);
-            if (std::abs(x0) < eps or std::abs(x0 - 1) < eps)
-              marker[p] = true;
-            if (std::abs(x1) < eps or std::abs(x1 - 1) < eps)
-              marker[p] = true;
-          }
-          return marker;
-        });
+    auto facets = mesh::exterior_facet_indices(*mesh->topology());
     const auto bdofs = fem::locate_dofs_topological(
         *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
     auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);

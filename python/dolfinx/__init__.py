@@ -8,6 +8,8 @@
 # flake8: noqa
 
 import sys
+# Template placeholder for injecting Windows dll directories in CI
+# WINDOWSDLL
 
 try:
     from petsc4py import PETSc as _PETSc
@@ -30,6 +32,7 @@ from dolfinx.common import (
     git_commit_hash,
     has_debug,
     has_kahip,
+    has_petsc,
     has_parmetis,
     list_timings,
     timing,

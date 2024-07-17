@@ -6,14 +6,14 @@
 
 #pragma once
 
+#include "Timer.h"
+#include "log.h"
+#include "types.h"
 #include <algorithm>
 #include <array>
 #include <cassert>
 #include <complex>
 #include <cstdint>
-#include <dolfinx/common/Timer.h>
-#include <dolfinx/common/log.h>
-#include <dolfinx/common/types.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <numeric>
 #include <set>
@@ -319,7 +319,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
   assert(x.size() % shape[1] == 0);
   const std::int32_t shape0_local = x.size() / shape[1];
 
-  LOG(2) << "Sending data to post offices (distribute_to_postoffice)";
+  spdlog::debug("Sending data to post offices (distribute_to_postoffice)");
 
   // Post office ranks will receive data from this rank
   std::vector<int> row_to_dest(shape0_local);
@@ -339,7 +339,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
     if (int dest = MPI::index_owner(size, idx, shape[0]); dest != rank)
       dest_to_index.push_back({dest, i});
   }
-  std::sort(dest_to_index.begin(), dest_to_index.end());
+  std::ranges::sort(dest_to_index);
 
   // Build list of neighbour src ranks and count number of items (rows
   // of x) to receive from each src post office (by neighbourhood rank)
@@ -374,9 +374,9 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
 
   // Determine source ranks
   const std::vector<int> src = MPI::compute_graph_edges_nbx(comm, dest);
-  LOG(INFO)
-      << "Number of neighbourhood source ranks in distribute_to_postoffice: "
-      << src.size();
+  spdlog::info(
+      "Number of neighbourhood source ranks in distribute_to_postoffice: {}",
+      static_cast<int>(src.size()));
 
   // Create neighbourhood communicator for sending data to post offices
   MPI_Comm neigh_comm;
@@ -445,13 +445,13 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
   err = MPI_Comm_free(&neigh_comm);
   dolfinx::MPI::check_error(comm, err);
 
-  LOG(2) << "Completed send data to post offices.";
+  spdlog::debug("Completed send data to post offices.");
 
   // Convert to local indices
   const std::int64_t r0 = MPI::local_range(rank, shape[0], size)[0];
   std::vector<std::int32_t> index_local(recv_buffer_index.size());
-  std::transform(recv_buffer_index.cbegin(), recv_buffer_index.cend(),
-                 index_local.begin(), [r0](auto idx) { return idx - r0; });
+  std::ranges::transform(recv_buffer_index, index_local.begin(),
+                         [r0](auto idx) { return idx - r0; });
 
   return {index_local, recv_buffer_data};
 }
@@ -492,7 +492,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
     if (int src = dolfinx::MPI::index_owner(size, idx, shape[0]); src != rank)
       src_to_index.push_back({src, idx, i});
   }
-  std::sort(src_to_index.begin(), src_to_index.end());
+  std::ranges::sort(src_to_index);
 
   // Build list is neighbour src ranks and count number of items (rows
   // of x) to receive from each src post office (by neighbourhood rank)
@@ -515,10 +515,11 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   // me)
   const std::vector<int> dest
       = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
-  LOG(INFO) << "Neighbourhood destination ranks from post office in "
-               "distribute_data (rank, num dests, num dests/mpi_size): "
-            << rank << ", " << dest.size() << ", "
-            << static_cast<double>(dest.size()) / size;
+  spdlog::info(
+      "Neighbourhood destination ranks from post office in "
+      "distribute_data (rank, num dests, num dests/mpi_size): {}, {}, {}",
+      rank, static_cast<int>(dest.size()),
+      static_cast<double>(dest.size()) / size);
 
   // Create neighbourhood communicator for sending data to post offices
   // (src), and receiving data form my send my post office
@@ -548,9 +549,8 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   // post offices
   assert(send_disp.back() == (int)src_to_index.size());
   std::vector<std::int64_t> send_buffer_index(src_to_index.size());
-  std::transform(src_to_index.cbegin(), src_to_index.cend(),
-                 send_buffer_index.begin(),
-                 [](auto& x) { return std::get<1>(x); });
+  std::ranges::transform(src_to_index, send_buffer_index.begin(),
+                         [](auto x) { return std::get<1>(x); });
 
   // Prepare the receive buffer
   std::vector<std::int64_t> recv_buffer_index(recv_disp.back());

@@ -7,6 +7,7 @@
 // Unit tests for Distributed la::MatrixCSR
 
 #include "poisson.h"
+#include <algorithm>
 #include <basix/mdspan.hpp>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -111,8 +112,13 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
   auto mesh = std::make_shared<mesh::Mesh<double>>(
       mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
                        mesh::CellType::tetrahedron, part));
+  auto element = basix::create_element<double>(
+      basix::element::family::P, basix::cell::type::tetrahedron, 2,
+      basix::element::lagrange_variant::unset,
+      basix::element::dpc_variant::unset, false);
+
   auto V = std::make_shared<fem::FunctionSpace<double>>(
-      fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
+      fem::create_functionspace(mesh, element, {}));
 
   // Prepare and set Constants for the bilinear form
   auto kappa = std::make_shared<fem::Constant<double>>(2.0);
@@ -144,8 +150,13 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
       mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
                        mesh::CellType::tetrahedron, part));
 
+  auto element = basix::create_element<double>(
+      basix::element::family::P, basix::cell::type::tetrahedron, 2,
+      basix::element::lagrange_variant::unset,
+      basix::element::dpc_variant::unset, false);
+
   auto V = std::make_shared<fem::FunctionSpace<double>>(
-      fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
+      fem::create_functionspace(mesh, element, {}));
 
   // Prepare and set Constants for the bilinear form
   auto kappa = std::make_shared<fem::Constant<double>>(2.0);
@@ -176,14 +187,14 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
   CHECK(x.array().size() == col_size);
 
   // Fill x vector with 1 (Constant)
-  std::fill(x.mutable_array().begin(), x.mutable_array().end(), 1);
+  std::ranges::fill(x.mutable_array(), 1);
 
   // Matrix A represents the action of the Laplace operator, so when
   // applied to a constant vector the result should be zero
   spmv(A, x, y);
 
-  std::for_each(y.array().begin(), y.array().end(),
-                [](auto a) { REQUIRE(std::abs(a) < 1e-13); });
+  std::ranges::for_each(y.array(),
+                        [](auto a) { REQUIRE(std::abs(a) < 1e-13); });
 }
 
 void test_matrix()

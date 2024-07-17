@@ -87,17 +87,18 @@ Vec create_vector_wrap(const la::Vector<V>& x)
   return create_vector_wrap(*x.index_map(), x.bs(), x.array());
 }
 
-/// @todo This function could take just the local sizes
+/// @brief Compute PETSc IndexSets (IS) for a stack of index maps.
 ///
-/// Compute PETSc IndexSets (IS) for a stack of index maps. E.g., if
-/// `map[0] = {0, 1, 2, 3, 4, 5, 6}` and `map[1] = {0, 1, 2, 4}` (in
-/// local indices) then `IS[0] = {0, 1, 2, 3, 4, 5, 6}` and `IS[1] = {7,
-/// 8, 9, 10}`.
+/// If `map[0] = {0, 1, 2, 3, 4, 5, 6}` and `map[1] = {0, 1, 2, 4}` (in
+/// local indices) then `IS[0] = {0, 1, 2, 3, 4, 5, 6}` and
+/// `IS[1] = {7, 8, 9, 10}`.
+///
+/// @todo This function could take just the local sizes.
 ///
 /// @note The caller is responsible for destruction of each IS.
 ///
 /// @param[in] maps Vector of IndexMaps and corresponding block sizes
-/// @returns Vector of PETSc Index Sets, created on` PETSC_COMM_SELF`
+/// @return Vector of PETSc Index Sets, created on` PETSC_COMM_SELF`
 std::vector<IS> create_index_sets(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
@@ -297,9 +298,8 @@ public:
       PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
       cache.resize(rows.size() + cols.size());
-      std::copy(rows.begin(), rows.end(), cache.begin());
-      std::copy(cols.begin(), cols.end(),
-                std::next(cache.begin(), rows.size()));
+      std::ranges::copy(rows, cache.begin());
+      std::ranges::copy(cols, std::next(cache.begin(), rows.size()));
       const PetscInt* _rows = cache.data();
       const PetscInt* _cols = cache.data() + rows.size();
       ierr = MatSetValuesLocal(A, rows.size(), _rows, cols.size(), _cols,
@@ -332,9 +332,8 @@ public:
       PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
       cache.resize(rows.size() + cols.size());
-      std::copy(rows.begin(), rows.end(), cache.begin());
-      std::copy(cols.begin(), cols.end(),
-                std::next(cache.begin(), rows.size()));
+      std::ranges::copy(rows, cache.begin());
+      std::ranges::copy(cols, std::next(cache.begin(), rows.size()));
       const PetscInt* _rows = cache.data();
       const PetscInt* _cols = cache.data() + rows.size();
       ierr = MatSetValuesBlockedLocal(A, rows.size(), _rows, cols.size(), _cols,
