@@ -47,25 +47,25 @@ void export_refinement_with_variable_mesh_type(nb::module_& m)
       [](const dolfinx::mesh::Mesh<T>& mesh, bool redistribute,
          dolfinx::mesh::GhostMode ghost_mode)
       {
-        auto [mesh_refined, edges] = dolfinx::refinement::refine_interval(
+        auto [mesh_refined, parent_cells] = dolfinx::refinement::refine_interval(
             mesh, std::nullopt, redistribute, ghost_mode);
         return std::tuple(std::move(mesh_refined),
-                          as_nbarray(std::move(edges)));
+                          as_nbarray(std::move(parent_cells)));
       },
       nb::arg("mesh"), nb::arg("redistribute"), nb::arg("ghost_mode"));
 
   m.def(
       "refine_interval",
       [](const dolfinx::mesh::Mesh<T>& mesh,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> edges,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
          bool redistribute, dolfinx::mesh::GhostMode ghost_mode)
       {
-        auto [mesh_refined, parent_edges]
+        auto [mesh_refined, parent_cells]
             = dolfinx::refinement::refine_interval(
-                mesh, std::make_optional(std::span(edges.data(), edges.size())),
+                mesh, std::make_optional(std::span(cells.data(), cells.size())),
                 redistribute, ghost_mode);
         return std::tuple(std::move(mesh_refined),
-                          as_nbarray(std::move(parent_edges)));
+                          as_nbarray(std::move(parent_cells)));
       },
       nb::arg("mesh"), nb::arg("edges"), nb::arg("redistribute"),
       nb::arg("ghost_mode"));

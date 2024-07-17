@@ -30,7 +30,7 @@ namespace impl
 /// Refine with markers returning new mesh data.
 ///
 /// @param[in] mesh Input mesh to be refined
-/// @param[in] edges Indices of the edges that are marked for refinement
+/// @param[in] cells Indices of the cells that are marked for refinement
 ///
 /// @return New mesh data: cell topology, vertex coordinates and parent
 /// edge indices.
@@ -38,7 +38,7 @@ template <std::floating_point T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
            std::array<std::size_t, 2>, std::vector<std::int32_t>>
 compute_interval_refinement(const mesh::Mesh<T>& mesh,
-                            std::optional<std::span<const std::int32_t>> edges)
+                            std::optional<std::span<const std::int32_t>> cells)
 {
   auto topology = mesh.topology();
   assert(topology);
@@ -52,7 +52,7 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
   // Get sharing ranks for each edge
   graph::AdjacencyList<int> edge_ranks = map_e->index_to_dest_ranks();
 
-  // Create unique list of ranks that share edges (owners of ghosts plus
+  // Create unique list of ranks that share cells (owners of ghosts plus
   // ranks that ghost owned indices)
   std::vector<int> ranks = edge_ranks.array();
   std::ranges::sort(ranks);
@@ -69,16 +69,16 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
                            return std::distance(ranks.begin(), it);
                          });
 
-  // create refinement flag for edges
+  // create refinement flag for cells
   // TODO: vector of bools? -> make of use std specialization for type bool
   std::vector<std::int8_t> refinement_marker(
-      map_e->size_local() + map_e->num_ghosts(), !edges.has_value());
+      map_e->size_local() + map_e->num_ghosts(), !cells.has_value());
 
   // mark edges for refinement
   std::vector<std::vector<std::int32_t>> marked_for_update(ranks.size());
-  if (edges.has_value())
+  if (cells.has_value())
   {
-    std::ranges::for_each(edges.value(),
+    std::ranges::for_each(cells.value(),
                           [&](auto edge)
                           {
                             if (!refinement_marker[edge])
@@ -98,7 +98,7 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
 
   // Communicate ghost edges that might have been marked. This is not necessary
   // for a uniform refinement.
-  if (edges.has_value())
+  if (cells.has_value())
     update_logical_edgefunction(neighbor_comm, marked_for_update,
                                 refinement_marker, *map_e);
 
@@ -110,8 +110,8 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
   auto e_to_v = mesh.topology()->connectivity(1, 0);
   assert(e_to_v);
 
-  // get the count of edges to refine, note: we only consider non-ghost edges
-  std::int32_t number_of_refined_edges
+  // get the count of cells to refine, note: we only consider non-ghost cells
+  std::int32_t number_of_refined_cells
       = std::count(refinement_marker.begin(),
                    std::next(refinement_marker.begin(),
                              mesh.topology()->index_map(1)->size_local()),
@@ -119,80 +119,80 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
 
   // Produce local global indices, by padding out the previous index map
   std::vector<std::int64_t> global_indices
-      = adjust_indices(*mesh.topology()->index_map(0), number_of_refined_edges);
+      = adjust_indices(*mesh.topology()->index_map(0), number_of_refined_cells);
 
   // Build the topology on the new vertices
   const auto refined_cell_count = mesh.topology()->index_map(1)->size_local()
                                   + mesh.topology()->index_map(1)->num_ghosts()
-                                  + number_of_refined_edges;
+                                  + number_of_refined_cells;
 
-  std::vector<std::int64_t> edge_topology;
-  edge_topology.reserve(refined_cell_count * 2);
+  std::vector<std::int64_t> cell_topology;
+  cell_topology.reserve(refined_cell_count * 2);
 
-  std::vector<std::int32_t> parent_edge;
-  parent_edge.reserve(refined_cell_count);
+  std::vector<std::int32_t> parent_cell;
+  parent_cell.reserve(refined_cell_count);
 
-  for (std::int32_t edge = 0; edge < map_e->size_local(); ++edge)
+  for (std::int32_t cell = 0; cell < map_e->size_local(); ++cell)
   {
-    const auto& vertices = e_to_v->links(edge);
+    const auto& vertices = e_to_v->links(cell);
     assert(vertices.size() == 2);
 
-    // we consider a (previous) edge of (global) vertices
+    // we consider a (previous) cell, i.e. an edge of (global) vertices
     // a ----------- b
     const std::int64_t a = global_indices[vertices[0]];
     const std::int64_t b = global_indices[vertices[1]];
 
-    if (refinement_marker[edge])
+    if (refinement_marker[cell])
     {
       // find (global) index of new midpoint vertex:
       // a --- c --- b
-      auto it = new_vertex_map.find(edge);
+      auto it = new_vertex_map.find(cell);
       assert(it != new_vertex_map.end());
       const std::int64_t c = it->second;
 
-      // add new edges to refined topology
-      edge_topology.insert(edge_topology.end(), {a, c, c, b});
-      parent_edge.insert(parent_edge.end(), {edge, edge});
+      // add new cells/edges to refined topology
+      cell_topology.insert(cell_topology.end(), {a, c, c, b});
+      parent_cell.insert(parent_cell.end(), {cell, cell});
     }
     else
     {
-      // copy the previous edge
-      edge_topology.insert(edge_topology.end(), {a, b});
-      parent_edge.push_back(edge);
+      // copy the previous cell
+      cell_topology.insert(cell_topology.end(), {a, b});
+      parent_cell.push_back(cell);
     }
   }
 
-  assert(edge_topology.size() == refined_cell_count * 2);
-  assert(parent_edge.size() == refined_cell_count);
+  assert(cell_topology.size() == refined_cell_count * 2);
+  assert(parent_cell.size() == refined_cell_count);
 
   std::vector<std::int32_t> offsets(refined_cell_count + 1);
   std::ranges::generate(offsets, [i = 0]() mutable { return 2 * i++; });
 
-  graph::AdjacencyList cell_adj(std::move(edge_topology), std::move(offsets));
+  graph::AdjacencyList cell_adj(std::move(cell_topology), std::move(offsets));
 
   return {std::move(cell_adj), std::move(new_vertex_coords), xshape,
-          std::move(parent_edge)};
+          std::move(parent_cell)};
 }
 
 } // namespace impl
 
-/// Refines a (topologically) one dimensional mesh by splitting edges.
+/// Refines a (topologically) one dimensional mesh by splitting cells, i.e. edges.
 ///
 /// @param[in] mesh Mesh to be refined
-/// @param[in] edges Optional indices of the edges that should be split by this
-/// refinement. If not provided, all edges are considered marked for refinement,
+/// @param[in] cells Optional indices of the cells that should be split by this
+/// refinement. If not provided, all cells are considered marked for refinement,
 /// i.e. a uniform refinement is performed.
 /// @param[in] redistribute Option to enable redistribution of the refined mesh
 /// across processes.
 /// @param[in] ghost_mode Ghost mode of the refined mesh, default is ghost mode
 /// none
 ///
-/// @return Refined mesh, and list of parent edges - for every new edge index
-/// this contains the associated edge index of the pre-refinement mesh.
+/// @return Refined mesh, and list of parent cells - for every new cell index
+/// this contains the associated cell index of the pre-refinement mesh.
 template <std::floating_point T>
 std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>>
 refine_interval(const mesh::Mesh<T>& mesh,
-                std::optional<std::span<const std::int32_t>> edges,
+                std::optional<std::span<const std::int32_t>> cells,
                 bool redistribute,
                 mesh::GhostMode ghost_mode = mesh::GhostMode::none)
 {
@@ -204,7 +204,7 @@ refine_interval(const mesh::Mesh<T>& mesh,
   assert(mesh.topology()->index_map(1));
 
   auto [cell_adj, new_coords, xshape, parent_cell]
-      = impl::compute_interval_refinement(mesh, edges);
+      = impl::compute_interval_refinement(mesh, cells);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {

@@ -336,7 +336,7 @@ def refine(
 
 def refine_interval(
     mesh: Mesh,
-    edges: typing.Optional[np.ndarray] = None,
+    cells: typing.Optional[np.ndarray] = None,
     redistribute: bool = True,
     ghost_mode: GhostMode = GhostMode.none,
 ) -> tuple[Mesh, npt.NDArray[np.int32]]:
@@ -344,24 +344,25 @@ def refine_interval(
 
     Args:
         mesh: Mesh to refine
-        edges: Indices of edges to split druing refinement. If ``None``, mesh refinement is uniform.
+        cells: Indices of cells, i.e. edges, to split druing refinement. If ``None``, mesh
+            refinement is uniform.
         redistribute: Refined mesh is re-partitioned if ``True``.
         ghost_mode: ghost mode of the refined mesh
 
     Returns:
-        Refined mesh.
+        Refined mesh and parent cells
     """
 
-    if edges is None:
-        refined_mesh, parent_edges = _cpp.refinement.refine_interval(
+    if cells is None:
+        refined_mesh, parent_cells = _cpp.refinement.refine_interval(
             mesh._cpp_object, redistribute, ghost_mode
         )
     else:
-        refined_mesh, parent_edges = _cpp.refinement.refine_interval(
-            mesh._cpp_object, edges, redistribute, ghost_mode
+        refined_mesh, parent_cells = _cpp.refinement.refine_interval(
+            mesh._cpp_object, cells, redistribute, ghost_mode
         )
 
-    return Mesh(refined_mesh, mesh._ufl_domain), parent_edges
+    return Mesh(refined_mesh, mesh._ufl_domain), parent_cells
 
 
 def refine_plaza(
