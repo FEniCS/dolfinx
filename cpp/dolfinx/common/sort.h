@@ -28,15 +28,15 @@ namespace dolfinx
 struct __radix_sort
 {
   template <std::ranges::random_access_range R, int BITS = 8>
-  constexpr void operator()(R&& array) const
+  constexpr void operator()(R&& range) const
   {
     using T = std::iter_value_t<R>;
     static_assert(std::is_integral<T>(), "This function only sorts integers.");
 
-    if (array.size() <= 1)
+    if (range.size() <= 1)
       return;
 
-    T max_value = *std::ranges::max_element(array);
+    T max_value = *std::ranges::max_element(range);
 
     // Sort N bits at a time
     constexpr int bucket_size = 1 << BITS;
@@ -56,8 +56,8 @@ struct __radix_sort
     std::array<std::int32_t, bucket_size + 1> offset;
 
     std::int32_t mask_offset = 0;
-    std::vector<T> buffer(array.size());
-    std::span<T> current_perm = array;
+    std::vector<T> buffer(range.size());
+    std::span<T> current_perm = range;
     std::span<T> next_perm = buffer;
     for (int i = 0; i < its; i++)
     {
@@ -88,7 +88,7 @@ struct __radix_sort
 
     // Copy data back to array
     if (its % 2 != 0)
-      std::ranges::copy(buffer, array.begin());
+      std::ranges::copy(buffer, range.begin());
   }
 };
 
