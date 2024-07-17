@@ -28,6 +28,9 @@ jobs:
         run: |
           # Workaround to provide additional free space for builds.
           # https://github.com/actions/virtual-environments/issues/2840
+          docker builder prune -f
+          docker system prune -a -f
+          sudo apt-get update
           sudo apt-get remove -y '^dotnet-.*'
           sudo apt-get remove -y 'php.*'
           sudo apt-get remove -y azure-cli google-chrome-stable firefox powershell mono-devel
