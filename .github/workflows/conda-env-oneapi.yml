@@ -8,6 +8,7 @@ dependencies:
   - python=3.10
   - dpcpp_linux-64
   - impi-devel
+  - hdf5=*=mpi*
   - pip
   - nanobind
   - scikit-build-core
