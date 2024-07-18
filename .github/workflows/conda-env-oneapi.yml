@@ -6,8 +6,10 @@ channels:
 dependencies:
   - intelpython3_core
   - python=3.10
-  - anaconda-client
-  - pip
+  - dpcpp_linux-64
+  - impi-devel
+  # - anaconda-client
+  # - pip
 
 # name: idp
 # channels:
