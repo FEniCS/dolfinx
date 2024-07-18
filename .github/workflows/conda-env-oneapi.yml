@@ -1,5 +1,10 @@
 name: idp
+channels:
+  - https://software.repos.intel.com/python/conda/
+  - conda-forge
+  - defaults
 dependencies:
   - intelpython3_core
   - python=3.10
   - dpcpp_linux-64
+  - impi-devel

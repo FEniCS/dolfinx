@@ -43,8 +43,9 @@ jobs:
           environment-file: .github/workflows/conda-env-oneapi.yml
           # allow-softlinks: true
           # channel-priority: flexible
-          show-channel-urls: true
+          # show-channel-urls: true
           # use-only-tar-bz2: true
+          auto-activate-base: false
       - run: |
           conda info
           conda list
