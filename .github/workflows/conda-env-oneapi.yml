@@ -16,6 +16,7 @@ dependencies:
   - petsc
   - cmake
   - ninja
+  - spdlog
 
 
   # - anaconda-client
