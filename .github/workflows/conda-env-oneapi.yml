@@ -1,3 +1,4 @@
 name: idp
 dependencies:
   - intelpython3_core
+  - python=3.10

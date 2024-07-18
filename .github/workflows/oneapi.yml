@@ -1,14 +1,19 @@
 name: oneAPI compilers
 
 on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "v*"
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - "main"
-    tags:
-      - "v*"
+  # push:
+  #   branches:
+  #     - "main"
+  #   tags:
+  #     - "v*"
   merge_group:
     branches:
       - main
@@ -33,7 +38,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: idp
-          python-version: 3.10
+          # python-version: 3.10
           channels: https://software.repos.intel.com/python/conda/,conda-forge
           environment-file: .github/workflows/conda-env-oneapi.yml
           # allow-softlinks: true
