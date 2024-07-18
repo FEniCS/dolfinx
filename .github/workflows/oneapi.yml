@@ -73,31 +73,27 @@ jobs:
           cmake --build ufcx-build-dir
           sudo cmake --install ufcx-build-dir
 
-    #   - name: Configure DOLFINx C++
-    #     run: |
-    #       . /opt/intel/oneapi/setvars.sh
-    #       cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_SCOTCH=on -DDOLFINX_ENABLE_KAHIP=on -DDOLFINX_UFCX_PYTHON=off -B build -S cpp/
+      - name: Configure DOLFINx C++
+        run: |
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_SCOTCH=on -DDOLFINX_ENABLE_KAHIP=on -DDOLFINX_UFCX_PYTHON=off -B build -S cpp/
 
-    #   - name: Build and install DOLFINx C++ library
-    #     run: |
-    #       . /opt/intel/oneapi/setvars.sh
-    #       cmake --build build
-    #       cmake --install build
+      - name: Build and install DOLFINx C++ library
+        run: |
+          cmake --build build
+          sudo cmake --install build
 
-    #   - name: Install UFL and FFCx modules
-    #     run: |
-    #       . /opt/intel/oneapi/setvars.sh
-    #       pip install --no-build-isolation git+https://github.com/FEniCS/ufl.git
-    #       pip install --no-build-isolation ffcx/
+      - name: Install UFL and FFCx modules
+        run: |
+          pip install --no-build-isolation git+https://github.com/FEniCS/ufl.git
+          pip install --no-build-isolation ffcx/
 
-    #   - name: Build and run DOLFINx C++ unit tests (serial and MPI)
-    #     run: |
-    #       . /opt/intel/oneapi/setvars.sh
-    #       cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
-    #       cmake --build build/test
-    #       cd build/test
-    #       ctest --output-on-failure -R unittests
-    #       mpiexec -n 2 ctest --output-on-failure -R unittests
+      - name: Build and run DOLFINx C++ unit tests (serial and MPI)
+        run: |
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake --build build/test
+          cd build/test
+          ctest --output-on-failure -R unittests
+          mpiexec -n 2 ctest --output-on-failure -R unittests
 
     #   - name: Build and run DOLFINx C++ regression tests (serial and MPI (np=2))
     #     run: |
