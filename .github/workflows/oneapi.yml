@@ -34,12 +34,12 @@ jobs:
       - name: Install Python dependencies
         run: |
           . /opt/intel/oneapi/setvars.sh
-          python3 -m pip install mpi4py nanobind scikit-build-core[pyproject] --upgrade
+          python3 -m pip install nanobind scikit-build-core[pyproject] --upgrade
 
       - name: Install Basix
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install git+https://github.com/FEniCS/basix.git
+          pip install --no-build-isolation git+https://github.com/FEniCS/basix.git
 
       - name: Clone FFCx
         uses: actions/checkout@v4
@@ -68,8 +68,8 @@ jobs:
       - name: Install UFL and FFCx modules
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install git+https://github.com/FEniCS/ufl.git
-          pip install ffcx/
+          pip install --no-build-isolation git+https://github.com/FEniCS/ufl.git
+          pip install --no-build-isolation ffcx/
 
       - name: Build and run DOLFINx C++ unit tests (serial and MPI)
         run: |
