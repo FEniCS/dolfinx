@@ -13,6 +13,7 @@ import pathlib
 import warnings
 
 import numpy as np
+from dolfinx.log import LogLevel, log
 
 __all__ = ["cffi_utils", "numba_utils", "ctypes_utils"]
 
@@ -207,7 +208,7 @@ class cffi_utils:
         _cffi_support.register_type(_ffi.typeof("double _Complex"), _numba.types.complex128)
 
     except ImportError:
-        warnings.warn("Could not import numba, so complex types are not registered!", ImportWarning)
+        log("Could not import numba, so complex types are not registered!", LogLevel.WARNING)
 
     try:
         from petsc4py import PETSc as _PETSc
@@ -246,6 +247,4 @@ class cffi_utils:
         <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
         documentation."""
     except ImportError:
-        warnings.warn(
-            "Could not import petsc4py, so numba petsc overloads are not available!", ImportWarning
-        )
+        log("Could not import petsc4py, so numba petsc overloads are not available!", LogLevel.WARNING)
