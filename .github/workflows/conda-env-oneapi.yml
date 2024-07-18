@@ -20,3 +20,7 @@ dependencies:
   - pugixml
   - boost
   - kahip
+  - catch2
+  - pytest
+  - pytest-xdist
+  - matplotlib
