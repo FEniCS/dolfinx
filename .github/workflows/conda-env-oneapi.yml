@@ -17,6 +17,7 @@ dependencies:
   - cmake
   - ninja
   - spdlog
+  - pugixml
 
 
   # - anaconda-client
