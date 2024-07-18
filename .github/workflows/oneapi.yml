@@ -27,6 +27,12 @@ jobs:
     # env:
     #   PETSC_ARCH: ${{ matrix.petsc_arch }}
 
+    env:
+      CC: icx
+      CXX: icpx
+      I_MPI_CC: icx
+      I_MPI_CXX: icpx
+
     # strategy:
     #   matrix:
     #     petsc_arch: [linux-gnu-real32-32, linux-gnu-real64-32, linux-gnu-complex128-32]
@@ -51,45 +57,22 @@ jobs:
           conda info
           conda list
 
-      # - uses: conda-incubator/setup-miniconda@v3
-      #   with:
-      #     activate-environment: idp
-      #     # python-version: 3.10
-      #     channels: https://software.repos.intel.com/python/conda/,conda-forge
-      #     environment-file: .github/workflows/conda-env-oneapi.yml
-      #     # allow-softlinks: true
-      #     # channel-priority: flexible
-      #     # show-channel-urls: true
-      #     # use-only-tar-bz2: true
-      #     auto-activate-base: false
-      # - run: |
-      #     conda info
-      #     conda list
-      #     # conda config --show-sources
-      #     # conda config --show
+      - name: Install Basix
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          pip install --no-build-isolation git+https://github.com/FEniCS/basix.git
 
-    #   - name: Install Python dependencies
-    #     run: |
-    #       . /opt/intel/oneapi/setvars.sh
-    #       python3 -m pip install nanobind scikit-build-core[pyproject] --upgrade
-
-    #   - name: Install Basix
-    #     run: |
-    #       . /opt/intel/oneapi/setvars.sh
-    #       pip install --no-build-isolation git+https://github.com/FEniCS/basix.git
-
-    #   - name: Clone FFCx
-    #     uses: actions/checkout@v4
-    #     with:
-    #       path: ./ffcx
-    #       repository: FEniCS/ffcx
-    #       ref: main
-    #   - name: Install FFCx C interface
-    #     run: |
-    #       . /opt/intel/oneapi/setvars.sh
-    #       cmake -B ufcx-build-dir -S ffcx/cmake/
-    #       cmake --build ufcx-build-dir
-    #       cmake --install ufcx-build-dir
+      - name: Clone FFCx
+        uses: actions/checkout@v4
+        with:
+          path: ./ffcx
+          repository: FEniCS/ffcx
+          ref: main
+      - name: Install FFCx C interface
+        run: |
+          cmake -B ufcx-build-dir -S ffcx/cmake/
+          cmake --build ufcx-build-dir
+          cmake --install ufcx-build-dir
 
     #   - name: Configure DOLFINx C++
     #     run: |

@@ -8,6 +8,13 @@ dependencies:
   - python=3.10
   - dpcpp_linux-64
   - impi-devel
+  - pip
+  - nanobind
+  - scikit-build-core
+  - pyproject
+  - mpi4py
+  - poetsc
+
   # - anaconda-client
   # - pip
 
