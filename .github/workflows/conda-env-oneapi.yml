@@ -15,6 +15,7 @@ dependencies:
   - mpi4py
   - petsc
   - cmake
+  - ninja
 
 
   # - anaconda-client
