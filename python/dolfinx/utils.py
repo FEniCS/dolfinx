@@ -10,6 +10,7 @@ from __future__ import annotations
 import ctypes as _ctypes
 import os
 import pathlib
+import warnings
 
 import numpy as np
 
@@ -193,17 +194,23 @@ class cffi_utils:
                                 ffi.from_buffer(rows(data), mode)
     """
 
-    try:
-        from petsc4py import PETSc as _PETSc
+    import cffi as _cffi
 
-        import cffi as _cffi
+    _ffi = _cffi.FFI()
+
+    try:
         import numba as _numba
         import numba.core.typing.cffi_utils as _cffi_support
 
         # Register complex types
-        _ffi = _cffi.FFI()
         _cffi_support.register_type(_ffi.typeof("float _Complex"), _numba.types.complex64)
         _cffi_support.register_type(_ffi.typeof("double _Complex"), _numba.types.complex128)
+
+    except ImportError:
+        warnings.warn("Could not import numba, so complex types are not registered!", ImportWarning)
+
+    try:
+        from petsc4py import PETSc as _PETSc
 
         _lib_cffi = _ffi.dlopen(str(get_petsc_lib()))
 
@@ -238,5 +245,7 @@ class cffi_utils:
         """See PETSc `MatSetValuesBlockedLocal
         <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
         documentation."""
-    except (ImportError, KeyError):
-        pass
+    except ImportError:
+        warnings.warn(
+            "Could not import petsc4py, so numba petsc overloads are not available!", ImportWarning
+        )
