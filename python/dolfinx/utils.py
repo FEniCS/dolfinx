@@ -208,7 +208,7 @@ class cffi_utils:
         _cffi_support.register_type(_ffi.typeof("double _Complex"), _numba.types.complex128)
 
     except ImportError:
-        log("Could not import numba, so complex types are not registered!", LogLevel.WARNING)
+        log(LogLevel.WARNING, "Could not import numba, so complex types are not registered!")
 
     try:
         from petsc4py import PETSc as _PETSc
@@ -248,6 +248,6 @@ class cffi_utils:
         documentation."""
     except ImportError:
         log(
-            "Could not import petsc4py, so numba petsc overloads are not available!",
             LogLevel.WARNING,
+            "Could not import petsc4py, so numba petsc overloads are not available!",
         )
