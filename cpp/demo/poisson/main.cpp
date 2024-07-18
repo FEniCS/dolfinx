@@ -85,6 +85,7 @@
 #include <dolfinx.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/petsc.h>
+#include <petscsystypes.h>
 #include <utility>
 #include <vector>
 
