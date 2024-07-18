@@ -1,5 +1,6 @@
 name: anaconda-client-env
 channels:
+  - https://software.repos.intel.com/python/conda/
   - conda-forge
   - defaults
 dependencies:
