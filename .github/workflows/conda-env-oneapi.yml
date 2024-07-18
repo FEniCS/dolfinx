@@ -1,0 +1,3 @@
+name: idp
+dependencies:
+  - intelpython3_core
