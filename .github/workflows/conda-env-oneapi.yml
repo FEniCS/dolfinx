@@ -24,3 +24,4 @@ dependencies:
   - pytest
   - pytest-xdist
   - matplotlib
+  - pkg-config
