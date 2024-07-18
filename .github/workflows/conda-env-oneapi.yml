@@ -4,6 +4,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - intelpython3_core
   - python=3.10
   - anaconda-client
   - pip
