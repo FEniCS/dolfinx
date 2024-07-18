@@ -33,24 +33,40 @@ jobs:
 
     # name: oneAPI build and test (${{ matrix.petsc_arch }})
 
+    defaults:
+      run:
+        shell: bash -el {0}
+
     steps:
       - uses: actions/checkout@v4
       - uses: conda-incubator/setup-miniconda@v3
         with:
-          activate-environment: idp
-          # python-version: 3.10
-          channels: https://software.repos.intel.com/python/conda/,conda-forge
+          activate-environment: anaconda-client-env
           environment-file: .github/workflows/conda-env-oneapi.yml
-          # allow-softlinks: true
-          # channel-priority: flexible
-          # show-channel-urls: true
-          # use-only-tar-bz2: true
+          # environment-file: etc/example-environment.yml
+          python-version: 3.5
+          # condarc-file: etc/example-condarc.yml
           auto-activate-base: false
       - run: |
           conda info
           conda list
-          conda config --show-sources
-          conda config --show
+
+      # - uses: conda-incubator/setup-miniconda@v3
+      #   with:
+      #     activate-environment: idp
+      #     # python-version: 3.10
+      #     channels: https://software.repos.intel.com/python/conda/,conda-forge
+      #     environment-file: .github/workflows/conda-env-oneapi.yml
+      #     # allow-softlinks: true
+      #     # channel-priority: flexible
+      #     # show-channel-urls: true
+      #     # use-only-tar-bz2: true
+      #     auto-activate-base: false
+      # - run: |
+      #     conda info
+      #     conda list
+      #     # conda config --show-sources
+      #     # conda config --show
 
     #   - name: Install Python dependencies
     #     run: |
