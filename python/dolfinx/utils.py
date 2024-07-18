@@ -10,9 +10,9 @@ from __future__ import annotations
 import ctypes as _ctypes
 import os
 import pathlib
-import warnings
 
 import numpy as np
+
 from dolfinx.log import LogLevel, log
 
 __all__ = ["cffi_utils", "numba_utils", "ctypes_utils"]
@@ -247,4 +247,7 @@ class cffi_utils:
         <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
         documentation."""
     except ImportError:
-        log("Could not import petsc4py, so numba petsc overloads are not available!", LogLevel.WARNING)
+        log(
+            "Could not import petsc4py, so numba petsc overloads are not available!",
+            LogLevel.WARNING,
+        )
