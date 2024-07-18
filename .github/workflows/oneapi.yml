@@ -44,7 +44,7 @@ jobs:
           activate-environment: anaconda-client-env
           environment-file: .github/workflows/conda-env-oneapi.yml
           # environment-file: etc/example-environment.yml
-          python-version: 3.5
+          # python-version: 3.10
           # condarc-file: etc/example-condarc.yml
           auto-activate-base: false
       - run: |
