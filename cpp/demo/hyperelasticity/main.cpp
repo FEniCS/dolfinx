@@ -28,6 +28,8 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/nls/NewtonSolver.h>
+#include <petscsys.h>
+#include <petscsystypes.h>
 
 using namespace dolfinx;
 using T = PetscScalar;
