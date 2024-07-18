@@ -11,9 +11,11 @@ dependencies:
   - pip
   - nanobind
   - scikit-build-core
-  - pyproject
+  # - pyproject
   - mpi4py
-  - poetsc
+  - petsc
+  - cmake
+
 
   # - anaconda-client
   # - pip
