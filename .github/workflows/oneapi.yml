@@ -106,10 +106,10 @@ jobs:
       - name: Build DOLFINx Python interface
         run: pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" python/
       - name: Run DOLFINx demos (Python, serial)
-        run: pytest -v -n=2 -m serial --durations=10 python/demo/test.py
+        run: python -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
       - name: Run DOLFINx demos (Python, MPI (np=2))
         run: pytest -m mpi --num-proc=2 python/demo/test.py
       - name: Run DOLFINx Python unit tests (serial)
-        run: pytest -n=auto --durations=50 python/test/unit
+        run: python -m pytest -n=auto --durations=50 python/test/unit
       - name: Run DOLFINx Python unit tests (MPI, np=2)
-        run: mpiexec -n 2 pytest python/test/unit
+        run: mpiexec -n 2 python -m pytest python/test/unit
