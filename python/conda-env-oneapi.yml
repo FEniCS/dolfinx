@@ -29,5 +29,5 @@ dependencies:
   - pkg-config
   - numba
   - git
-  - libstdcxx-ng
-  - ld_impl_linux-64
+  # - libstdcxx-ng
+  # - ld_impl_linux-64

@@ -47,9 +47,9 @@ jobs:
 
     steps:
 
-      # - run: |
-      #     apt-get -y update
-      #     apt-get -y install git
+      - run: |
+          apt-get -y update
+          apt-get -y install libstdc++-14-dev
 
       - uses: actions/checkout@v4
       - run: |
