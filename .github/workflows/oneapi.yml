@@ -80,7 +80,7 @@ jobs:
           ref: main
       - name: Install FFCx C interface
         run: |
-          cmake -B ufcx-build-dir -S ffcx/cmake/
+          cmake -G Ninja -B ufcx-build-dir -S ffcx/cmake/
           cmake --build ufcx-build-dir
           cmake --install ufcx-build-dir
 
