@@ -52,18 +52,16 @@ jobs:
       #     apt-get -y install git
 
       - uses: actions/checkout@v4
-        with:
-          filter: ''
       - run: |
           pwd
           echo $SHELL
           ls -alh
-          ls -alh docker/
+          ls -alh python/
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: anaconda-client-env
-          environment-file: docker/conda-env-oneapi.yml
+          environment-file: python/conda-env-oneapi.yml
           auto-activate-base: false
           # allow-softlinks: true
       - run: |
