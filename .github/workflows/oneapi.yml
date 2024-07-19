@@ -82,7 +82,7 @@ jobs:
         run: |
           cmake -B ufcx-build-dir -S ffcx/cmake/
           cmake --build ufcx-build-dir
-          sudo cmake --install ufcx-build-dir
+          cmake --install ufcx-build-dir
 
       - name: Configure DOLFINx C++
         run: |
@@ -91,7 +91,7 @@ jobs:
       - name: Build and install DOLFINx C++ library
         run: |
           cmake --build build
-          sudo cmake --install build
+          cmake --install build
 
       - name: Install UFL and FFCx modules
         run: |
