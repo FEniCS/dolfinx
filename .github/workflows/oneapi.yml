@@ -56,6 +56,9 @@ jobs:
           pwd
           echo $SHELL
           ls -alh
+          ls -alh .github/
+          ls -alh .github/workflows/
+          ls -alh .github/workflows/config
           ls -alh .github/workflows/config/conda-env-oneapi.yml
           # git branch
 
