@@ -30,4 +30,4 @@ dependencies:
   - numba
   - git
   - libstdcxx-ng
-  # - ld_impl_linux-64
+  - ld_impl_linux-64
