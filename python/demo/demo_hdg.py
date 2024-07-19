@@ -194,7 +194,7 @@ ksp = PETSc.KSP().create(msh.comm)
 ksp.setOperators(A)
 ksp.setType("preonly")
 ksp.getPC().setType("lu")
-ksp.getPC().setFactorSolverType("superlu_dist")
+ksp.getPC().setFactorSolverType("mumps")
 
 # Compute solution
 x = A.createVecRight()
