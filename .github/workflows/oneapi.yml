@@ -54,10 +54,10 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           pwd
-          git branch
           echo $SHELL
           ls -alh
           ls .github/workflows/config/conda-env-oneapi.yml
+          git branch
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
