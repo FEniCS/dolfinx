@@ -52,6 +52,8 @@ jobs:
       #     apt-get -y install git
 
       - uses: actions/checkout@v4
+        with:
+          filter: ''
       - run: |
           pwd
           echo $SHELL
