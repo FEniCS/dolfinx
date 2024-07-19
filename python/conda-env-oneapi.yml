@@ -7,7 +7,8 @@ dependencies:
   - intelpython3_core
   - python=3.10
   - dpcpp_linux-64
-  - impi-devel
+  # - impi-devel
+  - mpich
   - hdf5=*=mpi*
   - pip
   - nanobind
