@@ -29,6 +29,7 @@ jobs:
       CXX: icpx
       I_MPI_CC: icx
       I_MPI_CXX: icpx
+      OMP_NUM_THREADS: 1
       OPENBLAS_NUM_THREADS: 1
 
     name: oneAPI build and test
