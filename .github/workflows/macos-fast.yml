@@ -1,4 +1,4 @@
-name: DOLFINx CI (macOS)
+name: DOLFINx CI
 
 on:
   pull_request:
@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         with-petsc: [true, false]
-    name: Build and test (with-petsc=${{ matrix.with-petsc }})
+    name: Build and test (mac OS, with-petsc=${{ matrix.with-petsc }})
 
     steps:
       - name: Install Homebrew dependencies
