@@ -56,7 +56,7 @@ jobs:
           pwd
           echo $SHELL
           ls -alh
-          ls .github/workflows/config/conda-env-oneapi.yml
+          ls -alh .github/workflows/config/conda-env-oneapi.yml
           git branch
 
       - uses: conda-incubator/setup-miniconda@v3
