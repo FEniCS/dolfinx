@@ -19,15 +19,15 @@ jobs:
     runs-on: macos-14
     strategy:
       matrix:
-        with-petsc: [true, false]
-    name: Build and test (mac OS, with-petsc=${{ matrix.with-petsc }})
+        config: ['default', 'petsc']
+    name: Build and test (mac OS, ${{matrix.config}})
 
     steps:
       - name: Install Homebrew dependencies
         run: brew install adios2 boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml spdlog bison flex gfortran scotch
 
       - name: Install petsc
-        if: ${{ matrix.with-petsc }}
+        if: ${{ matrix.config == 'petsc' }}
         run: brew install petsc
 
       - name: Set up Python
@@ -72,18 +72,18 @@ jobs:
         run: mpiexec -np 3 ctest -V --output-on-failure -R unittests
 
       - name: Build and install DOLFINx Python interface
-        if: ${{ ! matrix.with-petsc }}
+        if: ${{ matrix.config == 'default' }}
         working-directory: dolfinx/python
         run: |
           python -m pip install -r ./build-requirements.txt
           python -m pip install --check-build-dependencies --no-build-isolation .
 
       - name: Run Python unit tests (serial)
-        if: ${{ ! matrix.with-petsc }}
+        if: ${{ matrix.config == 'default' }}
         working-directory: dolfinx/python/test/unit/
         run: python -m pytest -n auto -m "not petsc4py" .
 
       - name: Run Python unit tests (MPI, np=3)
-        if: ${{ ! matrix.with-petsc }}
+        if: ${{ matrix.config == 'default' }}
         working-directory: dolfinx/python/test/unit/
         run: mpirun -np 3 python -m pytest -m "not petsc4py" .
