@@ -27,3 +27,4 @@ dependencies:
   - pytest-xdist
   - matplotlib
   - pkg-config
+  - numba

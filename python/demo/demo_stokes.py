@@ -438,7 +438,7 @@ def block_direct_solver():
     # handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    pc.setFactorSolverType("superlu_dist")
+    pc.setFactorSolverType("mumps")
     try:
         pc.setFactorSetUpSolverType()
     except PETSc.Error as e:
@@ -448,8 +448,8 @@ def block_direct_solver():
             exit(0)
         else:
             raise e
-    # pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)  # For pressure nullspace
-    # pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)  # For pressure nullspace
+    pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)  # For pressure nullspace
+    pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)  # For pressure nullspace
 
     # Create a block vector (x) to store the full solution, and solve
     x = A.createVecLeft()
@@ -527,12 +527,10 @@ def mixed_direct():
     # Configure MUMPS to handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    # pc.setFactorSolverType("mumps")
-    # pc.setFactorSetUpSolverType()
-    # pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
-    # pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
-
-    pc.setFactorSolverType("superlu_dist")
+    pc.setFactorSolverType("mumps")
+    pc.setFactorSetUpSolverType()
+    pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
+    pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
 
     # Compute the solution
     U = Function(W)
