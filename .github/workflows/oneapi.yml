@@ -52,20 +52,20 @@ jobs:
       #     apt-get -y install git
 
       - uses: actions/checkout@v4
-      - run: |
-          pwd
-          echo $SHELL
-          ls -alh
-          ls -alh .github/
-          ls -alh .github/workflows/
-          ls -alh .github/workflows/config
-          ls -alh .github/workflows/config/conda-env-oneapi.yml
-          # git branch
+      # - run: |
+      #     pwd
+      #     echo $SHELL
+      #     ls -alh
+      #     ls -alh .github/
+      #     ls -alh .github/workflows/
+      #     ls -alh .github/workflows/config
+      #     ls -alh .github/workflows/config/conda-env-oneapi.yml
+      #     # git branch
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: anaconda-client-env
-          environment-file: .github/workflows/config/conda-env-oneapi.yml
+          environment-file: docker/conda-env-oneapi.yml
           auto-activate-base: false
           allow-softlinks: true
       - run: |
