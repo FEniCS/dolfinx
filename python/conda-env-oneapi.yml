@@ -28,3 +28,4 @@ dependencies:
   - matplotlib
   - pkg-config
   - numba
+  - git
