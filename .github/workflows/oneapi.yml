@@ -23,6 +23,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     # container: fenicsproject/test-env:current-oneapi
+    container: ubuntu:24.04
 
     # env:
     #   PETSC_ARCH: ${{ matrix.petsc_arch }}
