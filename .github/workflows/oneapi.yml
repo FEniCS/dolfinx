@@ -56,6 +56,7 @@ jobs:
           activate-environment: anaconda-client-env
           environment-file: .github/workflows/config/conda-env-oneapi.yml
           auto-activate-base: false
+          allow-softlinks: true
       - run: |
           conda info
           conda list
