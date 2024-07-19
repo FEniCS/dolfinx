@@ -47,9 +47,9 @@ jobs:
 
     steps:
 
-      - run: |
-          apt-get -y update
-          apt-get -y install git
+      # - run: |
+      #     apt-get -y update
+      #     apt-get -y install git
 
       - uses: actions/checkout@v4
       - run: |
@@ -57,7 +57,7 @@ jobs:
           echo $SHELL
           ls -alh
           ls -alh .github/workflows/config/conda-env-oneapi.yml
-          git branch
+          # git branch
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
