@@ -29,3 +29,4 @@ dependencies:
   - pkg-config
   - numba
   - git
+  - ld_impl_linux-64
