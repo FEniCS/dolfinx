@@ -22,11 +22,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # container: fenicsproject/test-env:current-oneapi
     container: ubuntu:24.04
-
-    # env:
-    #   PETSC_ARCH: ${{ matrix.petsc_arch }}
 
     env:
       CC: icx
@@ -35,35 +31,23 @@ jobs:
       I_MPI_CXX: icpx
       OPENBLAS_NUM_THREADS: 1
 
-    # strategy:
-    #   matrix:
-    #     petsc_arch: [linux-gnu-real32-32, linux-gnu-real64-32, linux-gnu-complex128-32]
-
-    # name: oneAPI build and test (${{ matrix.petsc_arch }})
+    name: oneAPI build and test
 
     defaults:
       run:
         shell: bash -el {0}
 
     steps:
-
       - run: |
           apt-get -y update
           apt-get -y install binutils libstdc++-14-dev
-
       - uses: actions/checkout@v4
-      - run: |
-          pwd
-          echo $SHELL
-          ls -alh
-          ls -alh python/
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: anaconda-client-env
           environment-file: python/conda-env-oneapi.yml
           auto-activate-base: false
-          # allow-softlinks: true
       - run: |
           conda info
           conda list
