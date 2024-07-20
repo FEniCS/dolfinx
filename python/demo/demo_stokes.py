@@ -434,11 +434,17 @@ def block_direct_solver():
     ksp.setOperators(A)
     ksp.setType("preonly")
 
+    opts = PETSc.Options()
+    opts['mat_superlu_dist_iterrefine'] = True
+    opts['mat_superlu_dist_printstat'] = True
+
     # Set the solver type to MUMPS (LU solver) and configure MUMPS to
     # handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
     pc.setFactorSolverType("superlu_dist")
+
+
     try:
         pc.setFactorSetUpSolverType()
     except PETSc.Error as e:
@@ -454,6 +460,7 @@ def block_direct_solver():
     # Create a block vector (x) to store the full solution, and solve
     x = A.createVecLeft()
     ksp.solve(b, x)
+    # solver.view()
 
     # Create Functions and scatter x solution
     u, p = Function(V), Function(Q)
@@ -569,9 +576,10 @@ np.testing.assert_allclose(norm_u_1, norm_u_0, rtol=1e-4)
 # Solve using PETSc block matrices and an LU solver
 norm_u_2, norm_p_2 = block_direct_solver()
 np.testing.assert_allclose(norm_u_2, norm_u_0, rtol=1e-4)
-np.testing.assert_allclose(norm_p_2, norm_p_0, rtol=1e-3)
+np.testing.assert_allclose(norm_p_2, norm_p_0, rtol=1e-4)
+print("Norms 1:", norm_p_2, norm_p_0)
 
 # Solve using a non-blocked matrix and an LU solver
 norm_u_3, norm_p_3 = mixed_direct()
-print("Norms", norm_u_3, norm_u_0)
-np.testing.assert_allclose(norm_u_3, norm_u_0, rtol=1e-1)
+print("Norms 2:", norm_u_3, norm_u_0)
+np.testing.assert_allclose(norm_u_3, norm_u_0, rtol=1e-3)
