@@ -284,7 +284,7 @@ TEST_CASE("Interval Refinement (parallel)", "refinement,interval,paralle")
 
       // and this edge is not shared
       CHECK(v_to_e->links((center_index + 1) % 3)[0]
-            != v_to_e->links((center_index + 1) % 3)[1]);
+            != v_to_e->links((center_index + 2) % 3)[0]);
     }
   }
 }
