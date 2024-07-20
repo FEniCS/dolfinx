@@ -435,15 +435,14 @@ def block_direct_solver():
     ksp.setType("preonly")
 
     opts = PETSc.Options()
-    opts['mat_superlu_dist_iterrefine'] = True
-    opts['mat_superlu_dist_printstat'] = True
+    opts["mat_superlu_dist_iterrefine"] = True
+    opts["mat_superlu_dist_printstat"] = True
 
     # Set the solver type to MUMPS (LU solver) and configure MUMPS to
     # handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
     pc.setFactorSolverType("superlu_dist")
-
 
     try:
         pc.setFactorSetUpSolverType()
