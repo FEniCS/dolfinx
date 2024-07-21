@@ -1,0 +1,32 @@
+name: anaconda-client-env
+channels:
+  - https://software.repos.intel.com/python/conda/
+  - conda-forge
+  - defaults
+dependencies:
+  - intelpython3_core
+  - python=3.10
+  - dpcpp_linux-64
+  - mkl
+  - libblas=*=*mkl
+  - mpich
+  - hdf5=*=mpi*
+  - pip
+  - nanobind
+  - scikit-build-core
+  - mpi4py
+  - petsc
+  - petsc4py
+  - cmake
+  - ninja
+  - spdlog
+  - pugixml
+  - boost
+  - kahip
+  - catch2
+  - pytest
+  - pytest-xdist
+  - matplotlib
+  - pkg-config
+  - numba
+  - git
