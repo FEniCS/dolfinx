@@ -39,14 +39,16 @@ jobs:
         shell: bash -el {0}
 
     steps:
-      - run: |
+      - name: Install compiler dependencies
+        run: |
           apt-get -y update
           apt-get -y install binutils libstdc++-14-dev
+
       - uses: actions/checkout@v4
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
-          activate-environment: anaconda-client-env
+          activate-environment: oneapi-test-env
           environment-file: python/conda-env-oneapi.yml
           auto-activate-base: false
       - run: |
@@ -54,8 +56,7 @@ jobs:
           conda list
 
       - name: Install Basix
-        run: |
-          pip install --no-build-isolation git+https://github.com/FEniCS/basix.git
+        run: pip install --no-build-isolation git+https://github.com/FEniCS/basix.git
 
       - name: Clone FFCx
         uses: actions/checkout@v4

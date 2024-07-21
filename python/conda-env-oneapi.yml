@@ -1,4 +1,5 @@
-name: anaconda-client-env
+# Test environment for oneAPI compilers and Intel Python
+name: oneapi-test-env
 channels:
   - https://software.repos.intel.com/python/conda/
   - conda-forge
@@ -10,23 +11,23 @@ dependencies:
   - mkl
   - libblas=*=*mkl
   - mpich
-  - hdf5=*=mpi*
-  - pip
-  - nanobind
-  - scikit-build-core
   - mpi4py
-  - petsc
-  - petsc4py
-  - cmake
-  - ninja
+  - hdf5=*=mpi*
   - spdlog
   - pugixml
-  - boost
+  - libboost
+  - nanobind
+  - scikit-build-core
+  - petsc
+  - petsc4py
   - kahip
   - catch2
   - pytest
   - pytest-xdist
   - matplotlib
-  - pkg-config
   - numba
+  - cmake
+  - ninja
+  - pkg-config
+  - pip
   - git
