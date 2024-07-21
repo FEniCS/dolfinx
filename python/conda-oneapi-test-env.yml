@@ -15,7 +15,7 @@ dependencies:
   - hdf5=*=mpi*
   - spdlog
   - pugixml
-  - libboost
+  - libboost-devel
   - nanobind
   - scikit-build-core
   - petsc
