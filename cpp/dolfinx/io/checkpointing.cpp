@@ -73,38 +73,12 @@ void _write(MPI_Comm comm, std::string filename, std::string tag,
   std::iota(connectivity_nodes_global.begin(), connectivity_nodes_global.end(),
             0);
 
-  std::cout << indices.size() << "\n";
-  std::cout << indices_offsets[num_cells_local] << "\n";
-  std::cout << indices_offsets[num_cells_local - 1] << "\n";
-
-  //   for (std::size_t i = 0; i < connectivity_nodes_global.size(); ++i)
-  //     {
-  //         std::cout << i << " ";
-  //         std::cout << indices[i] << " ";
-  //         std::cout << mesh_input_global_indices[indices[i]] << "\n";
-  //         connectivity_nodes_global[i] =
-  //         mesh_input_global_indices[indices[i]];
-  //     }
-
-  std::cout << indices_span.subspan(0, indices_offsets[num_cells_local]).size()
-            << std::endl;
-  std::cout << indices_offsets[num_cells_local] << std::endl;
   imap->local_to_global(
       indices_span.subspan(0, indices_offsets[num_cells_local]),
       connectivity_nodes_global);
 
-  for (std::size_t i = 0; i < connectivity_nodes_global.size(); ++i)
-  {
-    std::cout << i << " ";
-    std::cout << indices[i] << " ";
-    std::cout << connectivity_nodes_global[i] << " ";
-    std::cout << mesh_input_global_indices[indices[i]] << "\n";
-  }
-
   for (std::size_t i = 0; i < indices_offsets.size(); ++i)
-  {
     indices_offsets[i] += cell_offset * num_dofs_per_cell;
-  }
 
   const std::span<const int32_t> indices_offsets_span(indices_offsets.begin(),
                                                       indices_offsets.end());
