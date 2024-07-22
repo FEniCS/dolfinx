@@ -24,8 +24,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: dolfinx
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
@@ -48,39 +46,37 @@ jobs:
           python -m pip install git+https://github.com/FEniCS/ffcx.git
 
       - name: Build and install DOLFINx C++ library
-        working-directory: dolfinx
         run: |
           cmake -G Ninja -B build -S cpp/
           cmake --build build
           sudo cmake --install build
 
       - name: Build C++ unit tests
-        working-directory: dolfinx
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
           cmake --build build/test --parallel 3
 
       - name: Run C++ unit tests (serial)
-        working-directory: dolfinx/build/test
+        working-directory: build/test
         run: ctest -V --output-on-failure -R unittests
 
       - name: Run C++ unit tests (MPI)
-        working-directory: dolfinx/build/test
+        working-directory: build/test
         run: mpiexec -np 3 ctest -V --output-on-failure -R unittests
 
       - name: Build and install DOLFINx Python interface
         if: ${{ matrix.config == 'default' }}
-        working-directory: dolfinx/python
+        working-directory: python
         run: |
           python -m pip install -r ./build-requirements.txt
           python -m pip install --check-build-dependencies --no-build-isolation .
 
       - name: Run Python unit tests (serial)
         if: ${{ matrix.config == 'default' }}
-        working-directory: dolfinx/python/test/unit/
+        working-directory: python/test/unit/
         run: python -m pytest -n auto -m "not petsc4py" .
 
       - name: Run Python unit tests (MPI, np=3)
         if: ${{ matrix.config == 'default' }}
-        working-directory: dolfinx/python/test/unit/
+        working-directory: python/test/unit/
         run: mpirun -np 3 python -m pytest -m "not petsc4py" .
