@@ -12,8 +12,7 @@ dependencies:
   - libblas
   - libboost-devel
   - libcxx
-  # - llvm
-  - gcc
+  - clang_osx-arm64
   - matplotlib
   - mpi4py
   - mpich
