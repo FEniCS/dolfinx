@@ -444,7 +444,6 @@ def block_direct_solver():
     pc = ksp.getPC()
     pc.setType("lu")
     pc.setFactorSolverType("superlu_dist")
-
     try:
         pc.setFactorSetUpSolverType()
     except PETSc.Error as e:
