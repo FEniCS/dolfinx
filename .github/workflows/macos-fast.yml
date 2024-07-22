@@ -39,7 +39,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: oneapi-test-env
-          environment-file: python/conda-oneapi-test-env.yml
+          environment-file: python/conda-macos-test-env.yml
           auto-activate-base: false
       - run: |
           conda info
