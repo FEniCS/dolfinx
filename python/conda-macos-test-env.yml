@@ -11,6 +11,7 @@ dependencies:
   - kahip
   - libblas
   - libboost-devel
+  - libcxx
   - llvm
   - matplotlib
   - mpi4py
