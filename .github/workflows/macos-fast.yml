@@ -34,6 +34,7 @@ jobs:
       #   uses: actions/setup-python@v5
       #   with:
       #     python-version: "3.12"
+      - uses: actions/checkout@v4
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
@@ -55,9 +56,6 @@ jobs:
           python -m pip install git+https://github.com/FEniCS/ufl.git
           python -m pip install git+https://github.com/FEniCS/ffcx.git
 
-      - uses: actions/checkout@v4
-        with:
-          path: dolfinx
 
       - name: Build and install DOLFINx C++ library
         working-directory: dolfinx
