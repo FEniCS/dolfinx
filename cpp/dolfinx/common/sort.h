@@ -76,14 +76,14 @@ struct __radix_sort
       std::ranges::fill(counter, 0);
 
       // Count number of elements per bucket
-      for (T c : current_perm)
+      for (const auto& c : current_perm)
         counter[(proj(c) & mask) >> mask_offset]++;
 
       // Prefix sum to get the inserting position
       offset[0] = 0;
       std::partial_sum(counter.begin(), counter.end(),
                        std::next(offset.begin()));
-      for (T c : current_perm)
+      for (const auto& c : current_perm)
       {
         I bucket = (proj(c) & mask) >> mask_offset;
         I new_pos = offset[bucket + 1] - counter[bucket];
