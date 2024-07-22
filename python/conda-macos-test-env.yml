@@ -12,7 +12,8 @@ dependencies:
   - libblas
   - libboost-devel
   - libcxx
-  - llvm
+  # - llvm
+  - gcc
   - matplotlib
   - mpi4py
   - mpich
