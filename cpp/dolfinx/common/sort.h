@@ -35,7 +35,7 @@ struct __radix_sort
   template <std::ranges::random_access_range R, typename P = std::identity,
             int BITS = 8>
     requires std::integral<
-        std::remove_cvref_t<std::result_of_t<P(std::iter_value_t<R>)>>>
+        std::remove_cvref_t<std::invoke_result_t<P, std::iter_value_t<R>>>>
   constexpr void operator()(R&& range, P proj = {}) const
   {
     // value type
