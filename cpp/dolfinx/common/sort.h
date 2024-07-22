@@ -42,7 +42,7 @@ struct __radix_sort
     using T = std::iter_value_t<R>;
 
     // index type (if no projection is provided it holds I == T)
-    using I = std::remove_cvref_t<std::result_of_t<P(T)>>;
+    using I = std::remove_cvref_t<std::invoke_result_t<P, T>>;
 
     if (range.size() <= 1)
       return;
