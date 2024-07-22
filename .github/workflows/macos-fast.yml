@@ -21,6 +21,9 @@ jobs:
       matrix:
         config: ['default', 'petsc']
     name: Build and test (mac OS, ${{matrix.config}})
+    env:
+      CC: clang
+      CXX: clang
 
     steps:
       - uses: actions/checkout@v4
