@@ -38,11 +38,11 @@ struct __radix_sort
         std::remove_cvref_t<std::result_of_t<P(std::iter_value_t<R>)>>>
   constexpr void operator()(R&& range, P proj = {}) const
   {
-    // index type
-    using I = std::iter_value_t<R>;
+    // value type
+    using T = std::iter_value_t<R>;
 
-    // value type (if no projection is provided it holds I == T)
-    using T = std::remove_cvref_t<std::result_of_t<P(I)>>;
+    // index type (if no projection is provided it holds I == T)
+    using I = std::remove_cvref_t<std::result_of_t<P(T)>>;
 
     if (range.size() <= 1)
       return;
