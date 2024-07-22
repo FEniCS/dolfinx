@@ -17,6 +17,7 @@ dependencies:
   - mpich
   - nanobind
   - ninja
+  - ninja
   - numba
   - petsc
   - petsc4py
