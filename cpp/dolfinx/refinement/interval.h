@@ -69,11 +69,11 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
                            return std::distance(ranks.begin(), it);
                          });
 
-  // create refinement flag for cells
+  // Create refinement flag for cells
   std::vector<std::int8_t> refinement_marker(
       map_c->size_local() + map_c->num_ghosts(), !cells.has_value());
 
-  // mark cells for refinement
+  // Mark cells for refinement
   std::vector<std::vector<std::int32_t>> marked_for_update(ranks.size());
   if (cells.has_value())
   {
@@ -89,7 +89,7 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
                           });
   }
 
-  // create neighborhood communicator for vertex creation
+  // Create neighborhood communicator for vertex creation
   MPI_Comm neighbor_comm;
   MPI_Dist_graph_create_adjacent(
       mesh.comm(), ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
@@ -109,7 +109,7 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
   auto c_to_v = mesh.topology()->connectivity(1, 0);
   assert(c_to_v);
 
-  // get the count of cells to refine, note: we only consider non-ghost cells
+  // Get the count of cells to refine, note: we only consider non-ghost cells
   std::int32_t number_of_refined_cells
       = std::count(refinement_marker.begin(),
                    std::next(refinement_marker.begin(),
@@ -136,26 +136,26 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
     const auto& vertices = c_to_v->links(cell);
     assert(vertices.size() == 2);
 
-    // we consider a (previous) cell, i.e. an edge of (global) vertices
+    // We consider a (previous) cell, i.e. an edge of (global) vertices
     // a ----------- b
     const std::int64_t a = global_indices[vertices[0]];
     const std::int64_t b = global_indices[vertices[1]];
 
     if (refinement_marker[cell])
     {
-      // find (global) index of new midpoint vertex:
+      // Find (global) index of new midpoint vertex:
       // a --- c --- b
       auto it = new_vertex_map.find(cell);
       assert(it != new_vertex_map.end());
       const std::int64_t c = it->second;
 
-      // add new cells/edges to refined topology
+      // Add new cells/edges to refined topology
       cell_topology.insert(cell_topology.end(), {a, c, c, b});
       parent_cell.insert(parent_cell.end(), {cell, cell});
     }
     else
     {
-      // copy the previous cell
+      // Copy the previous cell
       cell_topology.insert(cell_topology.end(), {a, b});
       parent_cell.push_back(cell);
     }
