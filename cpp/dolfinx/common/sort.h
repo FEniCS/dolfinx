@@ -6,10 +6,9 @@
 
 #pragma once
 
-#include "Timer.h"
 #include <algorithm>
 #include <bits/ranges_algo.h>
-#include <bitset>
+#include <concepts>
 #include <cstdint>
 #include <functional>
 #include <iterator>
@@ -31,6 +30,8 @@ struct __radix_sort
 {
   template <std::ranges::random_access_range R, typename P = std::identity,
             int BITS = 8>
+    requires std::integral<
+        std::remove_cvref_t<std::result_of_t<P(std::iter_value_t<R>)>>>
   constexpr void operator()(R&& range, P proj = {}) const
   {
     // index type
@@ -38,8 +39,6 @@ struct __radix_sort
 
     // value type (if no projection is provided it holds I == T)
     using T = std::remove_cvref_t<std::result_of_t<P(I)>>;
-
-    static_assert(std::is_integral_v<T>, "This function only sorts integers.");
 
     if (range.size() <= 1)
       return;
