@@ -23,17 +23,26 @@ jobs:
     name: Build and test (mac OS, ${{matrix.config}})
 
     steps:
-      - name: Install Homebrew dependencies
-        run: brew install adios2 boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml spdlog bison flex gfortran scotch
+      # - name: Install Homebrew dependencies
+      #   run: brew install adios2 boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml spdlog bison flex gfortran scotch
 
-      - name: Install petsc
-        if: ${{ matrix.config == 'petsc' }}
-        run: brew install petsc
+      # - name: Install petsc
+      #   if: ${{ matrix.config == 'petsc' }}
+      #   run: brew install petsc
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      # - name: Set up Python
+      #   uses: actions/setup-python@v5
+      #   with:
+      #     python-version: "3.12"
+
+      - uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: "3.12"
+          activate-environment: oneapi-test-env
+          environment-file: python/conda-oneapi-test-env.yml
+          auto-activate-base: false
+      - run: |
+          conda info
+          conda list
 
       - name: Install Python dependencies
         run: |
