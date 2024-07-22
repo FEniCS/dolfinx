@@ -187,8 +187,9 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
 /// @param[in] ghost_mode Ghost mode of the refined mesh, default is ghost mode
 /// none
 ///
-/// @return Refined mesh, and list of parent cells - for every new cell index
-/// this contains the associated cell index of the pre-refinement mesh.
+/// @return Refined mesh, and list of parent cells and an array mapping the
+/// child cell index of the refined mesh to its parent cell index in the
+/// unrefined mesh.
 template <std::floating_point T>
 std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>>
 refine_interval(const mesh::Mesh<T>& mesh,
