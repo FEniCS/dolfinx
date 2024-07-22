@@ -63,10 +63,10 @@ struct __radix_sort
     }
 
     // Adjacency list arrays for computing insertion position
-    std::array<std::int32_t, bucket_size> counter;
-    std::array<std::int32_t, bucket_size + 1> offset;
+    std::array<I, bucket_size> counter;
+    std::array<I, bucket_size + 1> offset;
 
-    std::int32_t mask_offset = 0;
+    I mask_offset = 0;
     std::vector<T> buffer(range.size());
     std::span<T> current_perm = range;
     std::span<T> next_perm = buffer;
