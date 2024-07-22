@@ -1,30 +1,30 @@
-# Test environment for oneAPI compilers and Intel Python
+# Test environment for macOS system
 name: macos-test-env
 channels:
-  - https://software.repos.intel.com/python/conda/
   - conda-forge
   - defaults
 dependencies:
-  - python=3.12
-  - libblas
-  - mpich
-  - mpi4py
+  - catch2
+  - cmake
+  - git
   - hdf5=*=mpi*
-  - spdlog
-  - pugixml
+  - kahip
+  - libblas
   - libboost-devel
+  - llvm
+  - matplotlib
+  - mpi4py
+  - mpich
   - nanobind
-  - scikit-build-core
+  - ninja
+  - numba
   - petsc
   - petsc4py
-  - kahip
-  - catch2
+  - pip
+  - pkg-config
+  - pugixml
   - pytest
   - pytest-xdist
-  - matplotlib
-  - numba
-  - cmake
-  - ninja
-  - pkg-config
-  - pip
-  - git
+  - python=3.12
+  - scikit-build-core
+  - spdlog
