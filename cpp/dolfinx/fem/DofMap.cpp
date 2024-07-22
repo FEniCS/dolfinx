@@ -47,8 +47,8 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
                                       dofs_view_md.data_handle()
                                           + dofs_view_md.size());
   dolfinx::radix_sort(dofs_view);
-  dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
-                  dofs_view.end());
+  auto [unique_end, range_end] = std::ranges::unique(dofs_view);
+  dofs_view.erase(unique_end, range_end);
 
   // Get block size
   int bs_view = dofmap_view.index_map_bs();

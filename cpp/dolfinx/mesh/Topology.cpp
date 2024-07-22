@@ -303,11 +303,12 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
                       [](std::size_t s, auto& v) { return s + v.size(); }));
   for (auto c : cells_owned)
     local_vertex_set.insert(local_vertex_set.end(), c.begin(), c.end());
-  dolfinx::radix_sort(local_vertex_set);
-  local_vertex_set.erase(
-      std::unique(local_vertex_set.begin(), local_vertex_set.end()),
-      local_vertex_set.end());
-
+ 
+  {
+    dolfinx::radix_sort(local_vertex_set);
+    auto [unique_end, range_end] = std::ranges::unique(local_vertex_set);
+    local_vertex_set.erase(unique_end, range_end);
+  }
   // Build set of ghost cell vertices (attached to a ghost cell)
   std::vector<std::int64_t> ghost_vertex_set;
   ghost_vertex_set.reserve(
@@ -315,11 +316,12 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
                       [](std::size_t s, auto& v) { return s + v.size(); }));
   for (auto c : cells_ghost)
     ghost_vertex_set.insert(ghost_vertex_set.end(), c.begin(), c.end());
-  dolfinx::radix_sort(ghost_vertex_set);
-  ghost_vertex_set.erase(
-      std::unique(ghost_vertex_set.begin(), ghost_vertex_set.end()),
-      ghost_vertex_set.end());
 
+  {
+    dolfinx::radix_sort(ghost_vertex_set);
+    auto [unique_end, range_end] = std::ranges::unique(ghost_vertex_set);
+    ghost_vertex_set.erase(unique_end, range_end);
+  }
   // Build difference 1: Vertices attached only to owned cells, and
   // therefore owned by this rank
   std::vector<std::int64_t> owned_vertices;
@@ -385,10 +387,18 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
     else
       src.push_back(ranks.front());
   }
-  std::ranges::sort(src);
-  src.erase(std::unique(src.begin(), src.end()), src.end());
-  std::ranges::sort(dest);
-  dest.erase(std::unique(dest.begin(), dest.end()), dest.end());
+
+  {
+    std::ranges::sort(src);
+    auto [unique_end, range_end] = std::ranges::unique(src);
+    src.erase(unique_end, range_end);
+  }
+
+  {
+    std::ranges::sort(dest);
+    auto [unique_end, range_end] = std::ranges::unique(dest);
+    dest.erase(unique_end, range_end);
+  }
 
   // Pack send data. Use std::vector<std::vector>> since size will be
   // modest (equal to number of neighbour ranks)
@@ -596,9 +606,8 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
       }
 
       std::ranges::sort(shared_vertices);
-      shared_vertices.erase(
-          std::unique(shared_vertices.begin(), shared_vertices.end()),
-          shared_vertices.end());
+      auto [unique_end, range_end] = std::ranges::unique(shared_vertices);
+      shared_vertices.erase(unique_end, range_end);
     }
   }
 
@@ -666,7 +675,8 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
   for (std::size_t i = 0; i < recv_buffer.size(); i += 3)
     data.push_back({recv_buffer[i], recv_buffer[i + 1], recv_buffer[i + 2]});
   std::ranges::sort(data);
-  data.erase(std::unique(data.begin(), data.end()), data.end());
+  auto [unique_end, range_end] = std::ranges::unique(data);
+  data.erase(unique_end, range_end);
 
   MPI_Comm_free(&comm);
 
@@ -1264,7 +1274,9 @@ Topology mesh::create_topology(
     // rank (out edges)
     std::vector<int> src = ghost_vertex_owners;
     dolfinx::radix_sort(src);
-    src.erase(std::unique(src.begin(), src.end()), src.end());
+    auto [unique_end, range_end] = std::ranges::unique(src);
+    src.erase(unique_end, range_end);
+
     dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
   }
 
@@ -1331,8 +1343,9 @@ mesh::create_subtopology(const Topology& topology, int dim,
     // FIXME Make this an input requirement?
     std::vector<std::int32_t> _entities(entities.begin(), entities.end());
     std::ranges::sort(_entities);
-    _entities.erase(std::unique(_entities.begin(), _entities.end()),
-                    _entities.end());
+    auto [unique_end, range_end] = std::ranges::unique(_entities);
+    _entities.erase(unique_end, range_end);
+
     auto [_submap, _subentities]
         = common::create_sub_index_map(*topology.index_map(dim), _entities);
     submap = std::make_shared<common::IndexMap>(std::move(_submap));
