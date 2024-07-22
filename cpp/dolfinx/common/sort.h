@@ -7,7 +7,7 @@
 #pragma once
 
 #include <algorithm>
-#include <bits/ranges_algo.h>
+#include <cassert>
 #include <concepts>
 #include <cstdint>
 #include <functional>
