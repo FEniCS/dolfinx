@@ -85,8 +85,8 @@ struct __radix_sort
                        std::next(offset.begin()));
       for (T c : current_perm)
       {
-        std::int32_t bucket = (proj(c) & mask) >> mask_offset;
-        std::int32_t new_pos = offset[bucket + 1] - counter[bucket];
+        I bucket = (proj(c) & mask) >> mask_offset;
+        I new_pos = offset[bucket + 1] - counter[bucket];
         next_perm[new_pos] = c;
         counter[bucket]--;
       }
