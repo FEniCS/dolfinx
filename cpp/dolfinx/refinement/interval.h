@@ -70,7 +70,6 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
                          });
 
   // create refinement flag for cells
-  // TODO: vector of bools? -> make of use std specialization for type bool
   std::vector<std::int8_t> refinement_marker(
       map_c->size_local() + map_c->num_ghosts(), !cells.has_value());
 
