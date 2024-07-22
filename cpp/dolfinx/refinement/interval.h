@@ -179,9 +179,9 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
 /// edges.
 ///
 /// @param[in] mesh Mesh to be refined
-/// @param[in] cells Optional indices of the cells that should be split by this
-/// refinement. If not provided, all cells are considered marked for refinement,
-/// i.e. a uniform refinement is performed.
+/// @param[in] cells Optional indices of the cells that should be refined by
+/// this refinement. If not provided, all cells are considered marked for
+/// refinement, i.e. a uniform refinement is performed.
 /// @param[in] redistribute Option to enable redistribution of the refined mesh
 /// across processes.
 /// @param[in] ghost_mode Ghost mode of the refined mesh, default is ghost mode
