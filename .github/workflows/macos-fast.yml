@@ -24,6 +24,7 @@ jobs:
     env:
       CC: clang
       CXX: clang
+      CLANG_DEFAULT_CXX_STDLIB: libc++
 
     steps:
       - uses: actions/checkout@v4
