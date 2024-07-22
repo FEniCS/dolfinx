@@ -33,10 +33,11 @@ TEMPLATE_TEST_CASE("Test radix sort", "[vector][template]", std::int32_t,
   REQUIRE(std::ranges::is_sorted(vec));
 }
 
-TEST_CASE("Test radix sort (projection)", "[radix]")
+TEMPLATE_TEST_CASE("Test radix sort (projection)", "[radix]", std::int16_t,
+                   std::int32_t, std::int64_t)
 {
-  std::vector<int> vec = {3, 6, 2, 1, 5, 4, 0};
-  std::vector<int> indices(vec.size());
+  std::vector<TestType> vec = {3, 6, 2, 1, 5, 4, 0};
+  std::vector<TestType> indices(vec.size());
   std::iota(indices.begin(), indices.end(), 0);
 
   auto proj = [&](auto index) { return vec[index]; };
