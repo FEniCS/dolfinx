@@ -21,13 +21,17 @@
 namespace dolfinx
 {
 
-/// Sort a vector of integers with radix sorting algorithm. The bucket
-/// size is determined by the number of bits to sort at a time (2^BITS).
-/// @tparam T Integral type
-/// @tparam BITS The number of bits to sort at a time.
-/// @param[in, out] array The array to sort.
 struct __radix_sort
 {
+
+  /// Sort a range with radix sorting algorithm. The bucket
+  /// size is determined by the number of bits to sort at a time (2^BITS).
+  /// @tparam R Type of range to be sorted.
+  /// @tparam P Projection type to be applied on range elements to produce a
+  /// sorting index.
+  /// @tparam BITS The number of bits to sort at a time.
+  /// @param[in, out] range The range to sort.
+  /// @param[in] P Element projection.
   template <std::ranges::random_access_range R, typename P = std::identity,
             int BITS = 8>
     requires std::integral<
