@@ -120,7 +120,6 @@ from ufl import div, dx, grad, inner
 
 opts = PETSc.Options()
 opts["mat_superlu_dist_iterrefine"] = True
-opts["mat_superlu_dist_printstat"] = True
 
 
 # We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions for
