@@ -23,18 +23,9 @@ jobs:
     name: Build and test (mac OS, ${{matrix.config}})
 
     steps:
-      # - name: Install Homebrew dependencies
-      #   run: brew install adios2 boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml spdlog bison flex gfortran scotch
-
-      # - name: Install petsc
-      #   if: ${{ matrix.config == 'petsc' }}
-      #   run: brew install petsc
-
-      # - name: Set up Python
-      #   uses: actions/setup-python@v5
-      #   with:
-      #     python-version: "3.12"
       - uses: actions/checkout@v4
+        with:
+          path: dolfinx
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
@@ -55,7 +46,6 @@ jobs:
           python -m pip install git+https://github.com/FEniCS/basix.git
           python -m pip install git+https://github.com/FEniCS/ufl.git
           python -m pip install git+https://github.com/FEniCS/ffcx.git
-
 
       - name: Build and install DOLFINx C++ library
         working-directory: dolfinx
