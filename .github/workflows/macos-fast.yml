@@ -37,11 +37,6 @@ jobs:
           conda info
           conda list
 
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip setuptools wheel
-          python -m pip install cffi cppimport cython numba numpy pytest pytest-xdist scipy
-
       - name: Install FEniCSx dependencies
         run: |
           python -m pip install git+https://github.com/FEniCS/basix.git
