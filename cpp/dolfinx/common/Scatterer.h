@@ -79,7 +79,7 @@ public:
     std::span owners = map.owners();
     std::vector<std::int32_t> perm(owners.size());
     std::iota(perm.begin(), perm.end(), 0);
-    dolfinx::argsort_radix<std::int32_t>(owners, perm);
+    dolfinx::radix_sort(perm, [&owners](auto index) { return owners[index]; });
 
     // Sort (i) ghost indices and (ii) ghost index owners by rank
     // (using perm array)
