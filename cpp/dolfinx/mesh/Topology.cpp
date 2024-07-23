@@ -303,8 +303,9 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
                       [](std::size_t s, auto& v) { return s + v.size(); }));
   for (auto c : cells_owned)
     local_vertex_set.insert(local_vertex_set.end(), c.begin(), c.end());
+ 
   {
-    dolfinx::radix_sort(std::span(local_vertex_set));
+    dolfinx::radix_sort(local_vertex_set);
     auto [unique_end, range_end] = std::ranges::unique(local_vertex_set);
     local_vertex_set.erase(unique_end, range_end);
   }
@@ -317,7 +318,7 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
     ghost_vertex_set.insert(ghost_vertex_set.end(), c.begin(), c.end());
 
   {
-    dolfinx::radix_sort(std::span(ghost_vertex_set));
+    dolfinx::radix_sort(ghost_vertex_set);
     auto [unique_end, range_end] = std::ranges::unique(ghost_vertex_set);
     ghost_vertex_set.erase(unique_end, range_end);
   }
@@ -1093,12 +1094,12 @@ Topology mesh::create_topology(
       else
         unowned_vertices.push_back(global_index);
     }
-    dolfinx::radix_sort(std::span(unowned_vertices));
+    dolfinx::radix_sort(unowned_vertices);
 
     // Add owned but shared vertices to owned_vertices, and sort
     owned_vertices.insert(owned_vertices.end(), owned_shared_vertices.begin(),
                           owned_shared_vertices.end());
-    dolfinx::radix_sort(std::span(owned_vertices));
+    dolfinx::radix_sort(owned_vertices);
   }
 
   // Number all owned vertices, iterating over vertices cell-wise
@@ -1272,7 +1273,7 @@ Topology mesh::create_topology(
     // Build list of ranks that own vertices that are ghosted by this
     // rank (out edges)
     std::vector<int> src = ghost_vertex_owners;
-    dolfinx::radix_sort(std::span(src));
+    dolfinx::radix_sort(src);
     auto [unique_end, range_end] = std::ranges::unique(src);
     src.erase(unique_end, range_end);
 

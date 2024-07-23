@@ -899,7 +899,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // Build list of unique (global) node indices from cells1 and
   // distribute coordinate data
   std::vector<std::int64_t> nodes1 = cells1;
-  dolfinx::radix_sort(std::span(nodes1));
+  dolfinx::radix_sort(nodes1);
   auto [unique_end, range_end] = std::ranges::unique(nodes1);
   nodes1.erase(unique_end, range_end);
 
@@ -1127,7 +1127,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   for (std::vector<std::int64_t>& c : cells1)
     nodes2.insert(nodes2.end(), c.begin(), c.end());
 
-  dolfinx::radix_sort(std::span(nodes1));
+  dolfinx::radix_sort(nodes1);
   auto [unique_end, range_end] = std::ranges::unique(nodes1);
   nodes1.erase(unique_end, range_end);
 
