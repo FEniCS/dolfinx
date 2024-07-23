@@ -134,7 +134,7 @@ std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1)
     for (std::size_t j = 0; j < shape0; ++j)
       column[j] = x[j * shape1 + col];
 
-    radix_sort(perm, [&](auto index) { return column[index]; });
+    radix_sort(perm, [&column](auto index) { return column[index]; });
   }
 
   return perm;
