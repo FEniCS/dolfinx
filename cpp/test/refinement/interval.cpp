@@ -255,9 +255,11 @@ TEST_CASE("Interval Refinement (parallel)", "refinement,interval,paralle")
 
       REQUIRE_THAT(x[0], WithinAbs(rank_d / comm_size_d, EPS));
       REQUIRE_THAT(
-          x[1], WithinAbs(rank_d / comm_size_d + 1. / (2 * comm_size_d), EPS));
+          x[1],
+          WithinAbs(rank_d / comm_size_d + (1. / (2 * comm_size_d)), EPS));
       REQUIRE_THAT(
-          x[2], WithinAbs(rank_d / comm_size_d + 2. / (2 * comm_size_d), EPS));
+          x[2],
+          WithinAbs(rank_d / comm_size_d + (2. / (2 * comm_size_d)), EPS));
 
       REQUIRE_THAT(x[3], WithinAbs(rank_d + 1, EPS));
       REQUIRE_THAT(x[4], WithinAbs(rank_d + 1.5, EPS));
