@@ -136,7 +136,7 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
     const auto& vertices = c_to_v->links(cell);
     assert(vertices.size() == 2);
 
-    // We consider a (previous) cell, i.e. an edge of (global) vertices
+    // We consider a cell (defined by global vertices)
     // a ----------- b
     const std::int64_t a = global_indices[vertices[0]];
     const std::int64_t b = global_indices[vertices[1]];
