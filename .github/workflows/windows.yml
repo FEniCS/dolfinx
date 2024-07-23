@@ -22,6 +22,10 @@ jobs:
       VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
 
     steps:
+      - name: Disable Windows Defender
+        run: |
+          Set-MpPreference -DisableRealtimeMonitoring $true
+
       - name: Export GitHub Actions cache environment variables
         uses: actions/github-script@v7
         with:
