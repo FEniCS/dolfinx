@@ -193,7 +193,7 @@ TEST_CASE("Interval Refinement (parallel)", "refinement,interval,paralle")
 {
   /**
   Produces an interval with communicator size intervals. Every process is
-  assigned one intervall and we refine uniformly.
+  assigned one interval and we refine uniformly.
   */
 
   const auto comm_size = dolfinx::MPI::size(MPI_COMM_WORLD);
