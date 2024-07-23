@@ -4,11 +4,14 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <catch2/matchers/catch_matchers.hpp>
+#include <limits>
 #include <optional>
 
 #include <mpi.h>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -20,6 +23,9 @@
 #include <span>
 
 using namespace dolfinx;
+using namespace Catch::Matchers;
+
+constexpr auto EPS = std::numeric_limits<double>::epsilon();
 
 mesh::Mesh<double> create_3_vertex_interval_mesh()
 {
@@ -57,25 +63,25 @@ TEST_CASE("Interval uniform refinement", "refinement,interval,uniform")
 
     CHECK(x.size() == 15);
 
-    CHECK(x[0] == 0.0);
-    CHECK(x[1] == 0.0);
-    CHECK(x[2] == 0.0);
+    REQUIRE_THAT(x[0], WithinAbs(0.0, EPS));
+    REQUIRE_THAT(x[1], WithinAbs(0.0, EPS));
+    REQUIRE_THAT(x[2], WithinAbs(0.0, EPS));
 
-    CHECK(x[3] == 0.25);
-    CHECK(x[4] == 0.5);
-    CHECK(x[5] == 1.0);
+    REQUIRE_THAT(x[3], WithinAbs(0.25, EPS));
+    REQUIRE_THAT(x[4], WithinAbs(0.5, EPS));
+    REQUIRE_THAT(x[5], WithinAbs(1.0, EPS));
 
-    CHECK(x[6] == 0.5);
-    CHECK(x[7] == 1.0);
-    CHECK(x[8] == 2.0);
+    REQUIRE_THAT(x[6], WithinAbs(0.5, EPS));
+    REQUIRE_THAT(x[7], WithinAbs(1.0, EPS));
+    REQUIRE_THAT(x[8], WithinAbs(2.0, EPS));
 
-    CHECK(x[9] == 0.75);
-    CHECK(x[10] == 1.5);
-    CHECK(x[11] == 3.0);
+    REQUIRE_THAT(x[9], WithinAbs(0.75, EPS));
+    REQUIRE_THAT(x[10], WithinAbs(1.5, EPS));
+    REQUIRE_THAT(x[11], WithinAbs(3.0, EPS));
 
-    CHECK(x[12] == 1.0);
-    CHECK(x[13] == 2.0);
-    CHECK(x[14] == 4.0);
+    REQUIRE_THAT(x[12], WithinAbs(1.0, EPS));
+    REQUIRE_THAT(x[13], WithinAbs(2.0, EPS));
+    REQUIRE_THAT(x[14], WithinAbs(4.0, EPS));
   }
 
   // Check topology
@@ -133,21 +139,21 @@ TEST_CASE("Interval adaptive refinement", "refinement,interval,adaptive")
     const auto& x = refined_mesh.geometry().x();
 
     CHECK(x.size() == 12); // -> 5 vertices
-    CHECK(x[0] == 0.0);
-    CHECK(x[1] == 0.0);
-    CHECK(x[2] == 0.0);
+    REQUIRE_THAT(x[0], WithinAbs(0.0, EPS));
+    REQUIRE_THAT(x[1], WithinAbs(0.0, EPS));
+    REQUIRE_THAT(x[2], WithinAbs(0.0, EPS));
 
-    CHECK(x[3] == 0.5);
-    CHECK(x[4] == 1.0);
-    CHECK(x[5] == 2.0);
+    REQUIRE_THAT(x[3], WithinAbs(0.5, EPS));
+    REQUIRE_THAT(x[4], WithinAbs(1.0, EPS));
+    REQUIRE_THAT(x[5], WithinAbs(2.0, EPS));
 
-    CHECK(x[6] == 0.75);
-    CHECK(x[7] == 1.5);
-    CHECK(x[8] == 3.0);
+    REQUIRE_THAT(x[6], WithinAbs(0.75, EPS));
+    REQUIRE_THAT(x[7], WithinAbs(1.5, EPS));
+    REQUIRE_THAT(x[8], WithinAbs(3.0, EPS));
 
-    CHECK(x[9] == 1.0);
-    CHECK(x[10] == 2.0);
-    CHECK(x[11] == 4.0);
+    REQUIRE_THAT(x[9], WithinAbs(1.0, EPS));
+    REQUIRE_THAT(x[10], WithinAbs(2.0, EPS));
+    REQUIRE_THAT(x[11], WithinAbs(4.0, EPS));
   }
 
   // Check topology
@@ -244,19 +250,22 @@ TEST_CASE("Interval Refinement (parallel)", "refinement,interval,paralle")
 
       std::ranges::sort(x);
 
-      CHECK(x[0] == static_cast<double>(rank) / comm_size);
-      CHECK(x[1]
-            == static_cast<double>(rank) / comm_size + 1. / (2 * comm_size));
-      CHECK(x[2]
-            == static_cast<double>(rank) / comm_size + 2. / (2 * comm_size));
+      double rank_d = static_cast<double>(rank);
+      double comm_size_d = static_cast<double>(comm_size);
 
-      CHECK(x[3] == rank + 1);
-      CHECK(x[4] == rank + 1.5);
-      CHECK(x[5] == rank + 2);
+      REQUIRE_THAT(x[0], WithinAbs(rank_d / comm_size_d, EPS));
+      REQUIRE_THAT(
+          x[1], WithinAbs(rank_d / comm_size_d + 1. / (2 * comm_size_d), EPS));
+      REQUIRE_THAT(
+          x[2], WithinAbs(rank_d / comm_size_d + 2. / (2 * comm_size_d), EPS));
 
-      CHECK(x[6] == 2 * rank + comm_size);
-      CHECK(x[7] == 2 * (rank + .5) + comm_size);
-      CHECK(x[8] == 2 * (rank + 1) + comm_size);
+      REQUIRE_THAT(x[3], WithinAbs(rank_d + 1, EPS));
+      REQUIRE_THAT(x[4], WithinAbs(rank_d + 1.5, EPS));
+      REQUIRE_THAT(x[5], WithinAbs(rank_d + 2, EPS));
+
+      REQUIRE_THAT(x[6], WithinAbs(2 * rank_d + comm_size_d, EPS));
+      REQUIRE_THAT(x[7], WithinAbs(2 * (rank_d + .5) + comm_size_d, EPS));
+      REQUIRE_THAT(x[8], WithinAbs(2 * (rank_d + 1) + comm_size_d, EPS));
     }
 
     // Check topology
