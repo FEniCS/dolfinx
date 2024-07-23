@@ -24,8 +24,24 @@ namespace dolfinx
 struct __radix_sort
 {
 
-  /// Sort a range with radix sorting algorithm. The bucket
+  /// @brief Sort a range with radix sorting algorithm. The bucket
   /// size is determined by the number of bits to sort at a time (2^BITS).
+  ///
+  /// This allows usage with standard range containers of integral types, for
+  /// example
+  /// @code
+  /// std::array<std::int16_t, 3> a{2, 3, 1};
+  /// dolfixn::radix_sort(a); // a = {1, 2, 3}
+  /// @endcode
+  /// Additionally the projection based approach of the STL library is adpated,
+  /// which allows for versatile usage, for example the easy realization of an
+  /// argsort
+  /// @code
+  /// std::array<std::int16_t, 3> a{2, 3, 1};
+  /// std::array<std::int16_t, 3> i{0, 1, 2};
+  /// dolfixn::radix_sort(i, [&](auto i){ return a[i]; }); // yields i = {2, 0,
+  /// 1} and a[i] = {1, 2, 3};
+  /// @endcode
   /// @tparam R Type of range to be sorted.
   /// @tparam P Projection type to be applied on range elements to produce a
   /// sorting index.
