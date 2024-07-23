@@ -338,7 +338,7 @@ def refine_interval(
     mesh: Mesh,
     cells: typing.Optional[np.ndarray] = None,
     redistribute: bool = True,
-    ghost_mode: GhostMode = GhostMode.none,
+    ghost_mode: GhostMode = GhostMode.shared_facet,
 ) -> tuple[Mesh, npt.NDArray[np.int32]]:
     """Refine a (topologically) one dimensional mesh.
 

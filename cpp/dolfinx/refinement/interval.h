@@ -195,7 +195,7 @@ std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>>
 refine_interval(const mesh::Mesh<T>& mesh,
                 std::optional<std::span<const std::int32_t>> cells,
                 bool redistribute,
-                mesh::GhostMode ghost_mode = mesh::GhostMode::none)
+                mesh::GhostMode ghost_mode = mesh::GhostMode::shared_facet)
 {
 
   if (mesh.topology()->cell_type() != mesh::CellType::interval)
