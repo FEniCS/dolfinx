@@ -48,8 +48,10 @@ struct __radix_sort
   /// @tparam BITS The number of bits to sort at a time.
   /// @param[in, out] range The range to sort.
   /// @param[in] P Element projection.
-  template <std::ranges::random_access_range R, typename P = std::identity,
-            int BITS = 8>
+  template <
+      std::ranges::random_access_range R, typename P = std::identity,
+      std::remove_cvref_t<std::invoke_result_t<P, std::iter_value_t<R>>> BITS
+      = 8>
     requires std::integral<
         std::remove_cvref_t<std::invoke_result_t<P, std::iter_value_t<R>>>>
   constexpr void operator()(R&& range, P proj = {}) const
@@ -66,12 +68,12 @@ struct __radix_sort
     T max_value = proj(*std::ranges::max_element(range, std::less{}, proj));
 
     // Sort N bits at a time
-    constexpr int bucket_size = 1 << BITS;
+    constexpr I bucket_size = 1 << BITS;
     T mask = (T(1) << BITS) - 1;
 
     // Compute number of iterations, most significant digit (N bits) of
     // maxvalue
-    int its = 0;
+    I its = 0;
     while (max_value)
     {
       max_value >>= BITS;
@@ -86,7 +88,7 @@ struct __radix_sort
     std::vector<T> buffer(range.size());
     std::span<T> current_perm = range;
     std::span<T> next_perm = buffer;
-    for (int i = 0; i < its; i++)
+    for (I i = 0; i < its; i++)
     {
       // Zero counter array
       std::ranges::fill(counter, 0);
