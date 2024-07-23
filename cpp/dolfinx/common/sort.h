@@ -52,8 +52,7 @@ struct __radix_sort
       std::ranges::random_access_range R, typename P = std::identity,
       std::remove_cvref_t<std::invoke_result_t<P, std::iter_value_t<R>>> BITS
       = 8>
-    requires std::integral<
-        std::remove_cvref_t<std::invoke_result_t<P, std::iter_value_t<R>>>>
+    requires std::integral<decltype(BITS)>
   constexpr void operator()(R&& range, P proj = {}) const
   {
     // value type
