@@ -196,8 +196,8 @@ TEST_CASE("Interval Refinement (parallel)", "refinement,interval,paralle")
   assigned one interval and we refine uniformly.
   */
 
-  const auto comm_size = dolfinx::MPI::size(MPI_COMM_WORLD);
-  const auto rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  const int comm_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  const int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
 
   if (comm_size == 1)
     return;
@@ -229,7 +229,7 @@ TEST_CASE("Interval Refinement (parallel)", "refinement,interval,paralle")
           dolfinx::MPI::size(MPI_COMM_WORLD));
     };
 
-    auto commt = rank == 0 ? MPI_COMM_SELF : MPI_COMM_NULL;
+    MPI_Comm commt = rank == 0 ? MPI_COMM_SELF : MPI_COMM_NULL;
     return mesh::create_mesh(MPI_COMM_WORLD, commt, cells, element, commt, x,
                              {x.size() / 3, 3}, partitioner);
   };
