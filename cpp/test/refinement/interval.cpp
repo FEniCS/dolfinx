@@ -277,9 +277,9 @@ TEST_CASE("Interval Refinement (parallel)", "refinement,interval,paralle")
       auto v_to_e = topology->connectivity(0, 1);
 
       // find the center index, i.e. the one with two outgoing edges
-      int center_index = v_to_e->num_links(0) == 2   ? 0
-                         : v_to_e->num_links(1) == 2 ? 1
-                                                     : 2;
+      std::size_t center_index = v_to_e->num_links(0) == 2   ? 0
+                                 : v_to_e->num_links(1) == 2 ? 1
+                                                             : 2;
       CHECK(v_to_e->num_links(center_index) == 2);
       // check it's connected to both edge 0 and 1
       CHECK(std::ranges::find(v_to_e->links(center_index), 0)
