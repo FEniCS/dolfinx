@@ -44,6 +44,7 @@ add_executable(
   mesh/distributed_mesh.cpp
   common/CIFailure.cpp
   refinement/interval.cpp
+  refinement/option.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )
 target_link_libraries(unittests PRIVATE Catch2::Catch2WithMain dolfinx)
