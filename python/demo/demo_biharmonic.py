@@ -160,7 +160,7 @@ V = fem.functionspace(msh, ("Lagrange", 2))
 # $\Gamma_D = \partial\Omega$.
 # We do this using using {py:func}`exterior_facet_indices
 # <dolfinx.mesh.exterior_facet_indices>` which returns all mesh boundary facets
-# (Note: if we only want to consider a subset of those consider {py:func}`locate_entities_boundary
+# (Note: if we are only interested in a subset of those, consider {py:func}`locate_entities_boundary
 # <dolfinx.mesh.locate_entities_boundary>`).
 
 tdim = msh.topology.dim
