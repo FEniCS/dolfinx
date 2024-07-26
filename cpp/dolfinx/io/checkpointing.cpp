@@ -7,6 +7,7 @@
 #ifdef HAS_ADIOS2
 
 #include "checkpointing.h"
+#include "ADIOS2_utils.h"
 #include <adios2.h>
 #include <basix/finite-element.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -26,13 +27,12 @@ std::map<basix::element::lagrange_variant, std::string> lagrange_variants{
 };
 
 template <std::floating_point T>
-void _write(MPI_Comm comm, std::string filename, std::string tag,
-            // adios2::IO io, adios2::Engine engine,
+void _write(ADIOS2Engine& adios2engine,
             std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh)
 {
-  adios2::ADIOS adios(comm);
-  adios2::IO io = adios.DeclareIO(tag);
-  adios2::Engine writer = io.Open(filename, adios2::Mode::Write);
+
+  auto io = adios2engine.io();
+  auto writer = adios2engine.engine();
 
   const dolfinx::mesh::Geometry<T>& geometry = mesh->geometry();
   auto topology = mesh->topology();
@@ -80,51 +80,50 @@ void _write(MPI_Comm comm, std::string filename, std::string tag,
   const std::span<const int32_t> topology_offsets_span(topology_offsets.begin(),
                                                        num_cells_local + 1);
 
-  io.DefineAttribute<std::string>("name", mesh->name);
-  io.DefineAttribute<std::int16_t>("dim", geometry.dim());
-  io.DefineAttribute<std::string>("cell_type",
-                                  dolfinx::mesh::to_string(cmap.cell_shape()));
-  io.DefineAttribute<std::int32_t>("degree", cmap.degree());
-  io.DefineAttribute<std::string>("lagrange_variant",
-                                  lagrange_variants[cmap.variant()]);
+  io->DefineAttribute<std::string>("name", mesh->name);
+  io->DefineAttribute<std::int16_t>("dim", geometry.dim());
+  io->DefineAttribute<std::string>("cell_type",
+                                   dolfinx::mesh::to_string(cmap.cell_shape()));
+  io->DefineAttribute<std::int32_t>("degree", cmap.degree());
+  io->DefineAttribute<std::string>("lagrange_variant",
+                                   lagrange_variants[cmap.variant()]);
 
   adios2::Variable<std::uint64_t> var_num_nodes
-      = io.DefineVariable<std::uint64_t>("num_nodes");
+      = io->DefineVariable<std::uint64_t>("num_nodes");
   adios2::Variable<std::uint64_t> var_num_cells
-      = io.DefineVariable<std::uint64_t>("num_cells");
+      = io->DefineVariable<std::uint64_t>("num_cells");
   adios2::Variable<std::uint32_t> var_num_dofs_per_cell
-      = io.DefineVariable<std::uint32_t>("num_dofs_per_cell");
+      = io->DefineVariable<std::uint32_t>("num_dofs_per_cell");
 
   adios2::Variable<std::int64_t> var_input_global_indices
-      = io.DefineVariable<std::int64_t>(
+      = io->DefineVariable<std::int64_t>(
           "input_global_indices", {num_nodes_global}, {offset},
           {num_nodes_local}, adios2::ConstantDims);
 
   adios2::Variable<T> var_x
-      = io.DefineVariable<T>("x", {num_nodes_global, 3}, {offset, 0},
-                             {num_nodes_local, 3}, adios2::ConstantDims);
+      = io->DefineVariable<T>("x", {num_nodes_global, 3}, {offset, 0},
+                              {num_nodes_local, 3}, adios2::ConstantDims);
 
   adios2::Variable<std::int64_t> var_topology_array
-      = io.DefineVariable<std::int64_t>(
+      = io->DefineVariable<std::int64_t>(
           "topology_array", {num_cells_global * num_dofs_per_cell},
           {cell_offset * num_dofs_per_cell},
           {num_cells_local * num_dofs_per_cell}, adios2::ConstantDims);
 
   adios2::Variable<std::int32_t> var_topology_offsets
-      = io.DefineVariable<std::int32_t>(
+      = io->DefineVariable<std::int32_t>(
           "topology_offsets", {num_cells_global + 1}, {cell_offset},
           {num_cells_local + 1}, adios2::ConstantDims);
 
-  writer.BeginStep();
-  writer.Put(var_num_nodes, num_nodes_global);
-  writer.Put(var_num_cells, num_cells_global);
-  writer.Put(var_num_dofs_per_cell, num_dofs_per_cell);
-  writer.Put(var_input_global_indices, input_global_indices_span.data());
-  writer.Put(var_x, mesh_x.subspan(0, num_nodes_local * 3).data());
-  writer.Put(var_topology_array, topology_array_global.data());
-  writer.Put(var_topology_offsets, topology_offsets_span.data());
-  writer.EndStep();
-  writer.Close();
+  writer->BeginStep();
+  writer->Put(var_num_nodes, num_nodes_global);
+  writer->Put(var_num_cells, num_cells_global);
+  writer->Put(var_num_dofs_per_cell, num_dofs_per_cell);
+  writer->Put(var_input_global_indices, input_global_indices_span.data());
+  writer->Put(var_x, mesh_x.subspan(0, num_nodes_local * 3).data());
+  writer->Put(var_topology_array, topology_array_global.data());
+  writer->Put(var_topology_offsets, topology_offsets_span.data());
+  writer->EndStep();
 }
 
 } // namespace
@@ -133,24 +132,20 @@ using namespace dolfinx::io::checkpointing;
 
 //-----------------------------------------------------------------------------
 void dolfinx::io::checkpointing::write(
-    MPI_Comm comm, std::string filename, std::string tag,
-    // adios2::IO io, adios2::Engine engine,
+    ADIOS2Engine& adios2engine,
     std::shared_ptr<dolfinx::mesh::Mesh<float>> mesh)
 {
 
-  //   _write(io, engine, mesh);
-  _write(comm, filename, tag, mesh);
+  _write(adios2engine, mesh);
 }
 
 //-----------------------------------------------------------------------------
 void dolfinx::io::checkpointing::write(
-    MPI_Comm comm, std::string filename, std::string tag,
-    // adios2::IO io, adios2::Engine engine,
+    ADIOS2Engine& adios2engine,
     std::shared_ptr<dolfinx::mesh::Mesh<double>> mesh)
 {
 
-  //   _write(io, engine, mesh);
-  _write(comm, filename, tag, mesh);
+  _write(adios2engine, mesh);
 }
 
 #endif
