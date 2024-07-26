@@ -32,19 +32,5 @@ void ADIOS2Engine::close()
   if (*_engine)
     _engine->Close();
 }
-// //-----------------------------------------------------------------------------
-// std::unique_ptr<adios2::IO> ADIOS2Engine::io()
-// {
-//   assert(_io);
-//   if (*_io)
-//     return _io;
-// }
-// //-----------------------------------------------------------------------------
-// std::unique_ptr<adios2::Engine> ADIOS2Engine::engine()
-// {
-//   assert(_engine);
-//   if (*_engine)
-//     return _engine;
-// }
 
 #endif

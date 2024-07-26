@@ -52,16 +52,16 @@ public:
   /// @brief  Close the file
   void close();
 
-  // /// @brief  Get the IO object
-  // std::unique_ptr<adios2::IO> io();
+  /// @brief  Get the IO object
+  std::shared_ptr<adios2::IO> io() { return _io; }
 
-  // /// @brief  Close the Engine object
-  // std::unique_ptr<adios2::Engine> engine();
+  /// @brief  Close the Engine object
+  std::shared_ptr<adios2::Engine> engine() { return _engine; }
 
 protected:
-  std::unique_ptr<adios2::ADIOS> _adios;
-  std::unique_ptr<adios2::IO> _io;
-  std::unique_ptr<adios2::Engine> _engine;
+  std::shared_ptr<adios2::ADIOS> _adios;
+  std::shared_ptr<adios2::IO> _io;
+  std::shared_ptr<adios2::Engine> _engine;
 };
 
 } // namespace dolfinx::io
