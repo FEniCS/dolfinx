@@ -2,11 +2,6 @@ cmake_minimum_required(VERSION 3.21)
 
 project(dolfinx_nanobind)
 
-# Set C++ standard
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 if(WIN32)
   # Windows requires all symbols to be manually exported. This flag exports all
   # symbols automatically, as in Unix.
@@ -52,6 +47,7 @@ nanobind_add_module(
   dolfinx/wrappers/petsc.cpp
   dolfinx/wrappers/refinement.cpp
 )
+target_compile_definitions(cpp PRIVATE cxx_std_20)
 
 # Add DOLFINx libraries
 target_link_libraries(cpp PRIVATE dolfinx)

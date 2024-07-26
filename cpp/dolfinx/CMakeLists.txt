@@ -2,8 +2,9 @@
 include(GNUInstallDirs)
 
 # ------------------------------------------------------------------------------
-# Declare the library (target)
+# Declare the library (target) and set C++ standard
 add_library(dolfinx)
+target_compile_features(dolfinx PUBLIC cxx_std_20)
 
 # ------------------------------------------------------------------------------
 # Add source files to the target
@@ -275,7 +276,8 @@ foreach(_target ${PKGCONFIG_DOLFINX_TARGET_LINK_LIBRARIES})
       list(APPEND PKGCONFIG_DOLFINX_LIBS ${_target})
     endif()
 
-    # Special handling for compiled Boost imported targets
+    # Special handling to extract data for compiled Boost imported
+    # targets to use in generate pkg-config file
     if(("${_target}" MATCHES "^.*Boost::.*$") AND NOT "${_target}" STREQUAL
                                                   "Boost::headers"
     )

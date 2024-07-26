@@ -2,6 +2,10 @@
 # Top level CMakeLists.txt file for DOLFINx
 cmake_minimum_required(VERSION 3.21)
 
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)  # Boost CONFIG mode
+endif()
+
 # ------------------------------------------------------------------------------
 # Set project name and version number
 project(DOLFINX VERSION "0.9.0.0")
@@ -12,15 +16,6 @@ set(DOXYGEN_DOLFINX_VERSION
 )
 
 # ------------------------------------------------------------------------------
-# Use C++20
-set(CMAKE_CXX_STANDARD 20)
-
-# Require C++20
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# Do not enable compler-specific extensions
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 if(WIN32)
   # Windows requires all symbols to be manually exported. This flag exports all
   # symbols automatically, as in Unix.
