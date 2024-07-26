@@ -14,7 +14,7 @@
 #include <mpi.h>
 
 using namespace dolfinx;
-using namespace dolfinx::io::ADIOS2Engine;
+using namespace dolfinx::io;
 
 int main(int argc, char* argv[])
 {

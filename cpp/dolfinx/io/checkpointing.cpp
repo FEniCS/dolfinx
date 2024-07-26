@@ -55,78 +55,74 @@ void _write(MPI_Comm comm, std::string filename, std::string tag,
   std::uint32_t num_dofs_per_cell
       = geom_layout.num_entity_closure_dofs(mesh_dim);
 
-  const std::vector<int64_t> mesh_input_global_indices
+  const std::vector<int64_t> input_global_indices
       = geometry.input_global_indices();
-  const std::span<const int64_t> mesh_input_global_indices_span(
-      mesh_input_global_indices.begin(), mesh_input_global_indices.end());
+  const std::span<const int64_t> input_global_indices_span(
+      input_global_indices.begin(), num_nodes_local);
   const std::span<const T> mesh_x = geometry.x();
 
   auto connectivity = topology->connectivity(mesh_dim, 0);
-  auto indices = connectivity->array();
-  const std::span<const int32_t> indices_span(indices.begin(), indices.end());
+  auto topology_array = connectivity->array();
+  auto topology_offsets = connectivity->offsets();
 
-  auto indices_offsets = connectivity->offsets();
+  const std::span<const int32_t> topology_array_span(
+      topology_array.begin(), topology_offsets[num_cells_local]);
+  std::vector<std::int64_t> topology_array_global(
+      topology_offsets[num_cells_local]);
 
-  std::vector<std::int64_t> connectivity_nodes_global(
-      indices_offsets[num_cells_local]);
+  std::iota(topology_array_global.begin(), topology_array_global.end(), 0);
 
-  std::iota(connectivity_nodes_global.begin(), connectivity_nodes_global.end(),
-            0);
+  imap->local_to_global(topology_array_span, topology_array_global);
 
-  imap->local_to_global(
-      indices_span.subspan(0, indices_offsets[num_cells_local]),
-      connectivity_nodes_global);
+  for (std::size_t i = 0; i < num_cells_local + 1; ++i)
+    topology_offsets[i] += cell_offset * num_dofs_per_cell;
 
-  for (std::size_t i = 0; i < indices_offsets.size(); ++i)
-    indices_offsets[i] += cell_offset * num_dofs_per_cell;
-
-  const std::span<const int32_t> indices_offsets_span(indices_offsets.begin(),
-                                                      indices_offsets.end());
+  const std::span<const int32_t> topology_offsets_span(topology_offsets.begin(),
+                                                       num_cells_local + 1);
 
   io.DefineAttribute<std::string>("name", mesh->name);
   io.DefineAttribute<std::int16_t>("dim", geometry.dim());
-  io.DefineAttribute<std::string>("CellType",
+  io.DefineAttribute<std::string>("cell_type",
                                   dolfinx::mesh::to_string(cmap.cell_shape()));
-  io.DefineAttribute<std::int32_t>("Degree", cmap.degree());
-  io.DefineAttribute<std::string>("LagrangeVariant",
+  io.DefineAttribute<std::int32_t>("degree", cmap.degree());
+  io.DefineAttribute<std::string>("lagrange_variant",
                                   lagrange_variants[cmap.variant()]);
 
-  adios2::Variable<std::uint64_t> n_nodes
-      = io.DefineVariable<std::uint64_t>("n_nodes");
-  adios2::Variable<std::uint64_t> n_cells
-      = io.DefineVariable<std::uint64_t>("n_cells");
-  adios2::Variable<std::uint32_t> n_dofs_per_cell
-      = io.DefineVariable<std::uint32_t>("n_dofs_per_cell");
+  adios2::Variable<std::uint64_t> var_num_nodes
+      = io.DefineVariable<std::uint64_t>("num_nodes");
+  adios2::Variable<std::uint64_t> var_num_cells
+      = io.DefineVariable<std::uint64_t>("num_cells");
+  adios2::Variable<std::uint32_t> var_num_dofs_per_cell
+      = io.DefineVariable<std::uint32_t>("num_dofs_per_cell");
 
-  adios2::Variable<std::int64_t> input_global_indices
+  adios2::Variable<std::int64_t> var_input_global_indices
       = io.DefineVariable<std::int64_t>(
           "input_global_indices", {num_nodes_global}, {offset},
           {num_nodes_local}, adios2::ConstantDims);
 
-  adios2::Variable<T> x
-      = io.DefineVariable<T>("Points", {num_nodes_global, 3}, {offset, 0},
+  adios2::Variable<T> var_x
+      = io.DefineVariable<T>("x", {num_nodes_global, 3}, {offset, 0},
                              {num_nodes_local, 3}, adios2::ConstantDims);
 
-  adios2::Variable<std::int64_t> cell_indices = io.DefineVariable<std::int64_t>(
-      "cell_indices", {num_cells_global * num_dofs_per_cell},
-      {cell_offset * num_dofs_per_cell}, {num_cells_local * num_dofs_per_cell},
-      adios2::ConstantDims);
+  adios2::Variable<std::int64_t> var_topology_array
+      = io.DefineVariable<std::int64_t>(
+          "topology_array", {num_cells_global * num_dofs_per_cell},
+          {cell_offset * num_dofs_per_cell},
+          {num_cells_local * num_dofs_per_cell}, adios2::ConstantDims);
 
-  adios2::Variable<std::int32_t> cell_indices_offsets
+  adios2::Variable<std::int32_t> var_topology_offsets
       = io.DefineVariable<std::int32_t>(
-          "cell_indices_offsets", {num_cells_global + 1}, {cell_offset},
+          "topology_offsets", {num_cells_global + 1}, {cell_offset},
           {num_cells_local + 1}, adios2::ConstantDims);
 
   writer.BeginStep();
-  writer.Put(n_nodes, num_nodes_global);
-  writer.Put(n_cells, num_cells_global);
-  writer.Put(n_dofs_per_cell, num_dofs_per_cell);
-  writer.Put(input_global_indices,
-             mesh_input_global_indices_span.subspan(0, num_nodes_local).data());
-  writer.Put(x, mesh_x.subspan(0, num_nodes_local * 3).data());
-  writer.Put(cell_indices, connectivity_nodes_global.data());
-  writer.Put(cell_indices_offsets,
-             indices_offsets_span.subspan(0, num_cells_local + 1).data());
+  writer.Put(var_num_nodes, num_nodes_global);
+  writer.Put(var_num_cells, num_cells_global);
+  writer.Put(var_num_dofs_per_cell, num_dofs_per_cell);
+  writer.Put(var_input_global_indices, input_global_indices_span.data());
+  writer.Put(var_x, mesh_x.subspan(0, num_nodes_local * 3).data());
+  writer.Put(var_topology_array, topology_array_global.data());
+  writer.Put(var_topology_offsets, topology_offsets_span.data());
   writer.EndStep();
   writer.Close();
 }
