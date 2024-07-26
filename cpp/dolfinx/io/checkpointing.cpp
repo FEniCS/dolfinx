@@ -27,8 +27,8 @@ std::map<basix::element::lagrange_variant, std::string> lagrange_variants{
 };
 
 template <std::floating_point T>
-void _write(ADIOS2Engine& adios2engine,
-            std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh)
+void _write_mesh(ADIOS2Engine& adios2engine,
+                 std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh)
 {
 
   auto io = adios2engine.io();
@@ -126,26 +126,123 @@ void _write(ADIOS2Engine& adios2engine,
   writer->EndStep();
 }
 
+template <std::floating_point T>
+void _write_meshtags(ADIOS2Engine& adios2engine,
+                     std::shared_ptr<dolfinx::mesh::MeshTags<T>> meshtags)
+{
+  // meshtagsdata
+  auto tag_entities = meshtags->indices();
+  auto dim = meshtags->dim();
+  std::uint32_t num_tag_entities_local
+      = meshtags->topology()->index_map(dim)->size_local();
+
+  int num_tag_entities = tag_entities.size();
+
+  std::vector<std::int32_t> local_tag_entities;
+  local_tag_entities.reserve(num_tag_entities);
+
+  std::uint64_t num_saved_tag_entities = 0;
+  for (int i = 0; i < num_tag_entities; ++i)
+  {
+    if (tag_entities[i] < (int)num_tag_entities_local)
+    {
+      num_saved_tag_entities += 1;
+      local_tag_entities.push_back(tag_entities[i]);
+    }
+  }
+  local_tag_entities.resize(num_saved_tag_entities);
+
+  // Compute the global offset for owned (local) vertex indices
+  std::uint64_t local_start = 0;
+  {
+    MPI_Exscan(&num_saved_tag_entities, &local_start, 1, MPI_UINT64_T, MPI_SUM,
+               mesh->comm());
+  }
+
+  std::uint64_t num_tag_entities_global = 0;
+  MPI_Allreduce(&num_saved_tag_entities, &num_tag_entities_global, 1,
+                MPI_UINT64_T, MPI_SUM, mesh->comm());
+
+  auto values = meshtags->values();
+  const std::span<const double> local_values(values.begin(),
+                                             num_saved_tag_entities);
+
+  std::vector<std::int32_t> entities_to_geometry
+      = mesh::entities_to_geometry(*mesh, dim, tag_entities, false);
+
+  auto imap = mesh->geometry().index_map();
+  std::vector<std::int64_t> topology_array(entities_to_geometry.size());
+
+  std::iota(topology_array.begin(), topology_array.end(), 0);
+
+  imap->local_to_global(entities_to_geometry, topology_array);
+
+  std::string name = "meshtags_" + meshtags->name;
+
+  io->DefineAttribute<std::string>("meshtags_name", meshtags->name);
+  io->DefineAttribute<std::string>("meshtags_dim", dim);
+
+  adios2::Variable<std::uint64_t> var_num_tag_entities_global
+      = io->DefineVariable<std::uint64_t>("num_tag_entities_global");
+  adios2::Variable<std::uint32_t> var_num_dofs_per_entity
+      = io->DefineVariable<std::uint32_t>("num_dofs_per_entity");
+
+  adios2::Variable<std::int64_t> var_topology
+      = io->DefineVariable<std::int64_t>(
+          name + "_topology", {num_tag_entities_global, num_dofs_per_entity},
+          {local_start, 0}, {num_tag_entities_local, num_dofs_per_entity},
+          adios2::ConstantDims);
+
+  adios2::Variable<T> var_values = io->DefineVariable<T>(
+      name + "_values", {num_tag_entities_global}, {local_start},
+      {num_saved_tag_entities}, adios2::ConstantDims);
+
+  writer->BeginStep();
+  writer->Put(var_num_dofs_per_entity, num_dofs_per_entity);
+  writer->Put(var_num_tag_entities_global, num_tag_entities_global);
+  writer->Put(var_topology, topology_array.data());
+  writer->Put(var_values, local_values.data());
+  writer->EndStep();
+}
+
 } // namespace
 
 using namespace dolfinx::io::checkpointing;
 
 //-----------------------------------------------------------------------------
-void dolfinx::io::checkpointing::write(
+void dolfinx::io::checkpointing::write_mesh(
     ADIOS2Engine& adios2engine,
     std::shared_ptr<dolfinx::mesh::Mesh<float>> mesh)
 {
 
-  _write(adios2engine, mesh);
+  _write_mesh(adios2engine, mesh);
 }
 
 //-----------------------------------------------------------------------------
-void dolfinx::io::checkpointing::write(
+void dolfinx::io::checkpointing::write_mesh(
     ADIOS2Engine& adios2engine,
     std::shared_ptr<dolfinx::mesh::Mesh<double>> mesh)
 {
 
-  _write(adios2engine, mesh);
+  _write_mesh(adios2engine, mesh);
+}
+
+//-----------------------------------------------------------------------------
+void dolfinx::io::checkpointing::write_meshtags(
+    ADIOS2Engine& adios2engine,
+    std::shared_ptr<dolfinx::mesh::MeshTags<float>> meshtags)
+{
+
+  _write_meshtags(adios2engine, meshtags);
+}
+
+//-----------------------------------------------------------------------------
+void dolfinx::io::checkpointing::write_meshtags(
+    ADIOS2Engine& adios2engine,
+    std::shared_ptr<dolfinx::mesh::MeshTags<double>> meshtags)
+{
+
+  _write_meshtags(adios2engine, meshtags);
 }
 
 #endif
