@@ -11,6 +11,8 @@
 #include <adios2.h>
 #include <basix/finite-element.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/MeshTags.h>
+#include <dolfinx/mesh/utils.h>
 #include <mpi.h>
 
 using namespace dolfinx;
@@ -128,11 +130,23 @@ void _write_mesh(ADIOS2Engine& adios2engine,
 
 template <std::floating_point T>
 void _write_meshtags(ADIOS2Engine& adios2engine,
+                     std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh,
                      std::shared_ptr<dolfinx::mesh::MeshTags<T>> meshtags)
 {
+  auto io = adios2engine.io();
+  auto writer = adios2engine.engine();
+
+  auto geometry = mesh->geometry();
+  auto topology = mesh->topology();
+
   // meshtagsdata
   auto tag_entities = meshtags->indices();
   auto dim = meshtags->dim();
+
+  auto cmap = mesh->geometry().cmap();
+  auto geom_layout = cmap.create_dof_layout();
+  std::uint32_t num_dofs_per_entity = geom_layout.num_entity_closure_dofs(dim);
+
   std::uint32_t num_tag_entities_local
       = meshtags->topology()->index_map(dim)->size_local();
 
@@ -164,8 +178,7 @@ void _write_meshtags(ADIOS2Engine& adios2engine,
                 MPI_UINT64_T, MPI_SUM, mesh->comm());
 
   auto values = meshtags->values();
-  const std::span<const double> local_values(values.begin(),
-                                             num_saved_tag_entities);
+  const std::span<const T> local_values(values.begin(), num_saved_tag_entities);
 
   std::vector<std::int32_t> entities_to_geometry
       = mesh::entities_to_geometry(*mesh, dim, tag_entities, false);
@@ -177,10 +190,10 @@ void _write_meshtags(ADIOS2Engine& adios2engine,
 
   imap->local_to_global(entities_to_geometry, topology_array);
 
-  std::string name = "meshtags_" + meshtags->name;
+  std::string name = meshtags->name;
 
   io->DefineAttribute<std::string>("meshtags_name", meshtags->name);
-  io->DefineAttribute<std::string>("meshtags_dim", dim);
+  io->DefineAttribute<std::int16_t>("meshtags_dim", dim);
 
   adios2::Variable<std::uint64_t> var_num_tag_entities_global
       = io->DefineVariable<std::uint64_t>("num_tag_entities_global");
@@ -230,19 +243,21 @@ void dolfinx::io::checkpointing::write_mesh(
 //-----------------------------------------------------------------------------
 void dolfinx::io::checkpointing::write_meshtags(
     ADIOS2Engine& adios2engine,
+    std::shared_ptr<dolfinx::mesh::Mesh<float>> mesh,
     std::shared_ptr<dolfinx::mesh::MeshTags<float>> meshtags)
 {
 
-  _write_meshtags(adios2engine, meshtags);
+  _write_meshtags(adios2engine, mesh, meshtags);
 }
 
 //-----------------------------------------------------------------------------
 void dolfinx::io::checkpointing::write_meshtags(
     ADIOS2Engine& adios2engine,
+    std::shared_ptr<dolfinx::mesh::Mesh<double>> mesh,
     std::shared_ptr<dolfinx::mesh::MeshTags<double>> meshtags)
 {
 
-  _write_meshtags(adios2engine, meshtags);
+  _write_meshtags(adios2engine, mesh, meshtags);
 }
 
 #endif

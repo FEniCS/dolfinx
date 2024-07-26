@@ -28,6 +28,9 @@ int main(int argc, char* argv[])
       mesh::CellType::quadrilateral, part));
 
   // Create cell meshtags
+  auto geometry = mesh->geometry();
+  auto topology = mesh->topology();
+
   int dim = geometry.dim();
   topology->create_entities(dim);
   const std::shared_ptr<const dolfinx::common::IndexMap> topo_imap
@@ -42,14 +45,16 @@ int main(int argc, char* argv[])
   std::vector<int32_t> entities_array(num_entities * num_dofs_per_entity);
   std::vector<int32_t> entities_offsets(num_entities + 1);
   std::uint64_t offset = topo_imap->local_range()[0];
-  std::vector<double> values(num_entities);
+  std::vector<float> values(num_entities);
 
-  for (int i = 0; i < values.size(); ++i)
+  for (int i = 0; i < (int)num_entities; ++i)
   {
-    values[i] = (double)(i + offset);
+    values[i] = (float)(i + offset);
   }
 
-  for (int i = 0; i < values.size() + 1; ++i)
+  auto entities = topology->connectivity(dim, 0);
+
+  for (int i = 0; i < (int)num_entities + 1; ++i)
     entities_offsets[i] = entities->offsets()[i];
 
   for (int i = 0; i < (int)(num_entities * num_dofs_per_entity); ++i)
@@ -58,14 +63,14 @@ int main(int argc, char* argv[])
   graph::AdjacencyList<std::int32_t> entities_local(entities_array,
                                                     entities_offsets);
 
-  auto meshtags = std::make_shared<mesh::MeshTags<U>>(
-      mesh::create_meshtags<U>(topology, dim, entities_local, values));
+  auto meshtags = std::make_shared<mesh::MeshTags<float>>(
+      mesh::create_meshtags<float>(topology, dim, entities_local, values));
 
   auto writer = ADIOS2Engine(mesh->comm(), "mesh.bp", "mesh-write", "BP5",
                              adios2::Mode::Write);
 
-  io::checkpointing::write(writer, mesh);
-  io::checkpointing::write(writer, meshtags);
+  io::checkpointing::write_mesh(writer, mesh);
+  io::checkpointing::write_meshtags(writer, mesh, meshtags);
 
   MPI_Finalize();
   return 0;
