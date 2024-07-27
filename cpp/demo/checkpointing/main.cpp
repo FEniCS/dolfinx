@@ -27,18 +27,14 @@ int main(int argc, char* argv[])
       mesh::CellType::quadrilateral, part));
 
   // Set up ADIOS2 IO and Engine
-  std::shared_ptr<adios2::ADIOS> adios
-      = std::make_shared<adios2::ADIOS>(mesh->comm());
-  // adios2::ADIOS adios(mesh->comm());
-  std::shared_ptr<adios2::IO> io
-      = std::make_shared<adios2::IO>(adios->DeclareIO("mesh-write"));
-  io->SetEngine("BP5");
-  std::shared_ptr<adios2::Engine> engine = std::make_shared<adios2::Engine>(
-      io->Open("mesh.bp", adios2::Mode::Write));
+  adios2::ADIOS adios(mesh->comm());
+  adios2::IO io = adios.DeclareIO("mesh-write");
+  io.SetEngine("BP5");
+  adios2::Engine engine = io.Open("mesh.bp", adios2::Mode::Write);
 
   io::checkpointing::write_mesh(io, engine, mesh);
 
-  engine->Close();
+  engine.Close();
 
   MPI_Finalize();
   return 0;
