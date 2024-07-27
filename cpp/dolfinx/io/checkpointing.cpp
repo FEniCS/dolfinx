@@ -7,7 +7,6 @@
 #ifdef HAS_ADIOS2
 
 #include "checkpointing.h"
-#include "ADIOS2_utils.h"
 #include <adios2.h>
 #include <basix/finite-element.h>
 #include <dolfinx/fem/CoordinateElement.h>
@@ -31,12 +30,10 @@ std::map<basix::element::lagrange_variant, std::string> lagrange_variants{
 namespace dolfinx::io::checkpointing
 {
 template <std::floating_point T>
-void write(ADIOS2Engine& adios2engine,
-           std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh)
+void write_mesh(std::shared_ptr<adios2::IO> io,
+                std::shared_ptr<adios2::Engine> engine,
+                std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh)
 {
-
-  auto io = adios2engine.io();
-  auto writer = adios2engine.engine();
 
   const mesh::Geometry<T>& geometry = mesh->geometry();
   std::shared_ptr<const mesh::Topology> topology = mesh->topology();
@@ -118,22 +115,26 @@ void write(ADIOS2Engine& adios2engine,
           "topology_offsets", {num_cells_global + 1}, {cell_offset},
           {num_cells_local + 1}, adios2::ConstantDims);
 
-  writer->BeginStep();
-  writer->Put(var_num_nodes, num_nodes_global);
-  writer->Put(var_num_cells, num_cells_global);
-  writer->Put(var_num_dofs_per_cell, num_dofs_per_cell);
-  writer->Put(var_input_global_indices, input_global_indices_span.data());
-  writer->Put(var_x, mesh_x.subspan(0, num_nodes_local * 3).data());
-  writer->Put(var_topology_array, array_global.data());
-  writer->Put(var_topology_offsets, offsets_global.data());
-  writer->EndStep();
+  engine->BeginStep();
+  engine->Put(var_num_nodes, num_nodes_global);
+  engine->Put(var_num_cells, num_cells_global);
+  engine->Put(var_num_dofs_per_cell, num_dofs_per_cell);
+  engine->Put(var_input_global_indices, input_global_indices_span.data());
+  engine->Put(var_x, mesh_x.subspan(0, num_nodes_local * 3).data());
+  engine->Put(var_topology_array, array_global.data());
+  engine->Put(var_topology_offsets, offsets_global.data());
+  engine->EndStep();
 }
 
-template void write<float>(ADIOS2Engine& adios2engine,
-                           std::shared_ptr<dolfinx::mesh::Mesh<float>> mesh);
+template void
+write_mesh<float>(std::shared_ptr<adios2::IO> io,
+                  std::shared_ptr<adios2::Engine> engine,
+                  std::shared_ptr<dolfinx::mesh::Mesh<float>> mesh);
 
-template void write<double>(ADIOS2Engine& adios2engine,
-                            std::shared_ptr<dolfinx::mesh::Mesh<double>> mesh);
+template void
+write_mesh<double>(std::shared_ptr<adios2::IO> io,
+                   std::shared_ptr<adios2::Engine> engine,
+                   std::shared_ptr<dolfinx::mesh::Mesh<double>> mesh);
 
 } // namespace dolfinx::io::checkpointing
 

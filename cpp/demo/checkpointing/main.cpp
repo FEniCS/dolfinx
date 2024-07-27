@@ -9,7 +9,6 @@
 
 #include <adios2.h>
 #include <dolfinx.h>
-#include <dolfinx/io/ADIOS2_utils.h>
 #include <dolfinx/io/checkpointing.h>
 #include <mpi.h>
 
@@ -27,10 +26,19 @@ int main(int argc, char* argv[])
       MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {4, 4},
       mesh::CellType::quadrilateral, part));
 
-  auto writer = ADIOS2Engine(mesh->comm(), "mesh.bp", "mesh-write", "BP5",
-                             adios2::Mode::Write);
+  // Set up ADIOS2 IO and Engine
+  std::shared_ptr<adios2::ADIOS> adios
+      = std::make_shared<adios2::ADIOS>(mesh->comm());
+  // adios2::ADIOS adios(mesh->comm());
+  std::shared_ptr<adios2::IO> io
+      = std::make_shared<adios2::IO>(adios->DeclareIO("mesh-write"));
+  io->SetEngine("BP5");
+  std::shared_ptr<adios2::Engine> engine = std::make_shared<adios2::Engine>(
+      io->Open("mesh.bp", adios2::Mode::Write));
 
-  io::checkpointing::write(writer, mesh);
+  io::checkpointing::write_mesh(io, engine, mesh);
+
+  engine->Close();
 
   MPI_Finalize();
   return 0;
