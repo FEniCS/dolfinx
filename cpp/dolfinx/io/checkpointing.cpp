@@ -10,6 +10,7 @@
 #include "ADIOS2_utils.h"
 #include <adios2.h>
 #include <basix/finite-element.h>
+#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <mpi.h>
 
@@ -25,35 +26,38 @@ std::map<basix::element::lagrange_variant, std::string> lagrange_variants{
     {basix::element::lagrange_variant::equispaced, "equispaced"},
     {basix::element::lagrange_variant::gll_warped, "gll_warped"},
 };
+} // namespace
 
+namespace dolfinx::io::checkpointing
+{
 template <std::floating_point T>
-void _write(ADIOS2Engine& adios2engine,
-            std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh)
+void write(ADIOS2Engine& adios2engine,
+           std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh)
 {
 
   auto io = adios2engine.io();
   auto writer = adios2engine.engine();
 
-  const dolfinx::mesh::Geometry<T>& geometry = mesh->geometry();
-  auto topology = mesh->topology();
+  const mesh::Geometry<T>& geometry = mesh->geometry();
+  std::shared_ptr<const mesh::Topology> topology = mesh->topology();
 
-  std::int16_t mesh_dim = geometry.dim();
+  std::int32_t dim = geometry.dim();
 
-  auto imap = mesh->geometry().index_map();
-  std::uint64_t num_nodes_global = imap->size_global();
-  std::uint32_t num_nodes_local = imap->size_local();
-  std::uint64_t offset = imap->local_range()[0];
+  std::shared_ptr<const common::IndexMap> geom_imap
+      = mesh->geometry().index_map();
+  std::uint64_t num_nodes_global = geom_imap->size_global();
+  std::uint32_t num_nodes_local = geom_imap->size_local();
+  std::uint64_t offset = geom_imap->local_range()[0];
 
-  const std::shared_ptr<const dolfinx::common::IndexMap> topo_imap
-      = topology->index_map(mesh_dim);
+  const std::shared_ptr<const common::IndexMap> topo_imap
+      = topology->index_map(dim);
   std::uint64_t num_cells_global = topo_imap->size_global();
   std::uint32_t num_cells_local = topo_imap->size_local();
   std::uint64_t cell_offset = topo_imap->local_range()[0];
 
-  auto cmap = mesh->geometry().cmap();
-  auto geom_layout = cmap.create_dof_layout();
-  std::uint32_t num_dofs_per_cell
-      = geom_layout.num_entity_closure_dofs(mesh_dim);
+  const fem::CoordinateElement<T>& cmap = mesh->geometry().cmap();
+  fem::ElementDofLayout geom_layout = cmap.create_dof_layout();
+  std::uint32_t num_dofs_per_cell = geom_layout.num_entity_closure_dofs(dim);
 
   const std::vector<int64_t> input_global_indices
       = geometry.input_global_indices();
@@ -61,27 +65,26 @@ void _write(ADIOS2Engine& adios2engine,
       input_global_indices.begin(), num_nodes_local);
   const std::span<const T> mesh_x = geometry.x();
 
-  auto connectivity = topology->connectivity(mesh_dim, 0);
-  auto topology_array = connectivity->array();
-  auto topology_offsets = connectivity->offsets();
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
+      = topology->connectivity(dim, 0);
+  const std::vector<std::int32_t>& array = connectivity->array();
+  const std::vector<std::int32_t>& offsets = connectivity->offsets();
 
-  const std::span<const int32_t> topology_array_span(
-      topology_array.begin(), topology_offsets[num_cells_local]);
-  std::vector<std::int64_t> topology_array_global(
-      topology_offsets[num_cells_local]);
+  const std::span<const int32_t> array_span(array.begin(),
+                                            offsets[num_cells_local]);
+  std::vector<std::int64_t> array_global(offsets[num_cells_local]);
 
-  std::iota(topology_array_global.begin(), topology_array_global.end(), 0);
+  std::vector<std::int32_t> offsets_global(num_cells_local + 1);
 
-  imap->local_to_global(topology_array_span, topology_array_global);
+  std::iota(array_global.begin(), array_global.end(), 0);
+
+  geom_imap->local_to_global(array_span, array_global);
 
   for (std::size_t i = 0; i < num_cells_local + 1; ++i)
-    topology_offsets[i] += cell_offset * num_dofs_per_cell;
-
-  const std::span<const int32_t> topology_offsets_span(topology_offsets.begin(),
-                                                       num_cells_local + 1);
+    offsets_global[i] = offsets[i] + cell_offset * num_dofs_per_cell;
 
   io->DefineAttribute<std::string>("name", mesh->name);
-  io->DefineAttribute<std::int16_t>("dim", geometry.dim());
+  io->DefineAttribute<std::int32_t>("dim", geometry.dim());
   io->DefineAttribute<std::string>("cell_type",
                                    dolfinx::mesh::to_string(cmap.cell_shape()));
   io->DefineAttribute<std::int32_t>("degree", cmap.degree());
@@ -121,31 +124,17 @@ void _write(ADIOS2Engine& adios2engine,
   writer->Put(var_num_dofs_per_cell, num_dofs_per_cell);
   writer->Put(var_input_global_indices, input_global_indices_span.data());
   writer->Put(var_x, mesh_x.subspan(0, num_nodes_local * 3).data());
-  writer->Put(var_topology_array, topology_array_global.data());
-  writer->Put(var_topology_offsets, topology_offsets_span.data());
+  writer->Put(var_topology_array, array_global.data());
+  writer->Put(var_topology_offsets, offsets_global.data());
   writer->EndStep();
 }
 
-} // namespace
+template void write<float>(ADIOS2Engine& adios2engine,
+                           std::shared_ptr<dolfinx::mesh::Mesh<float>> mesh);
 
-using namespace dolfinx::io::checkpointing;
+template void write<double>(ADIOS2Engine& adios2engine,
+                            std::shared_ptr<dolfinx::mesh::Mesh<double>> mesh);
 
-//-----------------------------------------------------------------------------
-void dolfinx::io::checkpointing::write(
-    ADIOS2Engine& adios2engine,
-    std::shared_ptr<dolfinx::mesh::Mesh<float>> mesh)
-{
-
-  _write(adios2engine, mesh);
-}
-
-//-----------------------------------------------------------------------------
-void dolfinx::io::checkpointing::write(
-    ADIOS2Engine& adios2engine,
-    std::shared_ptr<dolfinx::mesh::Mesh<double>> mesh)
-{
-
-  _write(adios2engine, mesh);
-}
+} // namespace dolfinx::io::checkpointing
 
 #endif

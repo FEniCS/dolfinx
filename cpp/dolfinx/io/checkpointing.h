@@ -23,16 +23,10 @@ namespace dolfinx::io::checkpointing
 /// @brief Write mesh to a file.
 ///
 /// @param[in] adios2engine ADIOS2Engine
-/// @param[in] mesh Mesh of type float to write to the file
+/// @param[in] mesh Mesh of type float or double to write to the file
+template <std::floating_point T>
 void write(ADIOS2Engine& adios2engine,
-           std::shared_ptr<dolfinx::mesh::Mesh<float>> mesh);
-
-/// @brief Write mesh to a file.
-///
-/// @param[in] adios2engine ADIOS2Engine
-/// @param[in] mesh Mesh of type double to write to the file
-void write(ADIOS2Engine& adios2engine,
-           std::shared_ptr<dolfinx::mesh::Mesh<double>> mesh);
+           std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh);
 
 } // namespace dolfinx::io::checkpointing
 

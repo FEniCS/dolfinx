@@ -55,7 +55,7 @@ public:
   /// @brief  Get the IO object
   std::shared_ptr<adios2::IO> io() { return _io; }
 
-  /// @brief  Close the Engine object
+  /// @brief  Get the Engine object
   std::shared_ptr<adios2::Engine> engine() { return _engine; }
 
 protected:
