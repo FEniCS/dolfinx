@@ -31,16 +31,16 @@ namespace dolfinx::io::checkpointing
 {
 template <std::floating_point T>
 void write_mesh(adios2::IO io, adios2::Engine engine,
-                std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh)
+                dolfinx::mesh::Mesh<T> mesh)
 {
 
-  const mesh::Geometry<T>& geometry = mesh->geometry();
-  std::shared_ptr<const mesh::Topology> topology = mesh->topology();
+  const mesh::Geometry<T>& geometry = mesh.geometry();
+  std::shared_ptr<const mesh::Topology> topology = mesh.topology();
 
   std::int32_t dim = geometry.dim();
 
   std::shared_ptr<const common::IndexMap> geom_imap
-      = mesh->geometry().index_map();
+      = mesh.geometry().index_map();
   std::uint64_t num_nodes_global = geom_imap->size_global();
   std::uint32_t num_nodes_local = geom_imap->size_local();
   std::uint64_t offset = geom_imap->local_range()[0];
@@ -51,7 +51,7 @@ void write_mesh(adios2::IO io, adios2::Engine engine,
   std::uint32_t num_cells_local = topo_imap->size_local();
   std::uint64_t cell_offset = topo_imap->local_range()[0];
 
-  const fem::CoordinateElement<T>& cmap = mesh->geometry().cmap();
+  const fem::CoordinateElement<T>& cmap = mesh.geometry().cmap();
   fem::ElementDofLayout geom_layout = cmap.create_dof_layout();
   std::uint32_t num_dofs_per_cell = geom_layout.num_entity_closure_dofs(dim);
 
@@ -79,7 +79,7 @@ void write_mesh(adios2::IO io, adios2::Engine engine,
   for (std::size_t i = 0; i < num_cells_local + 1; ++i)
     offsets_global[i] = offsets[i] + cell_offset * num_dofs_per_cell;
 
-  io.DefineAttribute<std::string>("name", mesh->name);
+  io.DefineAttribute<std::string>("name", mesh.name);
   io.DefineAttribute<std::int32_t>("dim", geometry.dim());
   io.DefineAttribute<std::string>("cell_type",
                                   dolfinx::mesh::to_string(cmap.cell_shape()));
@@ -125,13 +125,11 @@ void write_mesh(adios2::IO io, adios2::Engine engine,
   engine.EndStep();
 }
 
-template void
-write_mesh<float>(adios2::IO io, adios2::Engine engine,
-                  std::shared_ptr<dolfinx::mesh::Mesh<float>> mesh);
+template void write_mesh<float>(adios2::IO io, adios2::Engine engine,
+                                dolfinx::mesh::Mesh<float> mesh);
 
-template void
-write_mesh<double>(adios2::IO io, adios2::Engine engine,
-                   std::shared_ptr<dolfinx::mesh::Mesh<double>> mesh);
+template void write_mesh<double>(adios2::IO io, adios2::Engine engine,
+                                 dolfinx::mesh::Mesh<double> mesh);
 
 } // namespace dolfinx::io::checkpointing
 

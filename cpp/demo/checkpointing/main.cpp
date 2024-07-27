@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
   io.SetEngine("BP5");
   adios2::Engine engine = io.Open("mesh.bp", adios2::Mode::Write);
 
-  io::checkpointing::write_mesh(io, engine, mesh);
+  io::checkpointing::write_mesh(io, engine, *mesh);
 
   engine.Close();
 
