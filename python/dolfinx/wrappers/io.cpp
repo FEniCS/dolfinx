@@ -11,6 +11,7 @@
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/ADIOS2Writers.h>
+#include <dolfinx/io/checkpointing.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
@@ -236,6 +237,14 @@ void declare_data_types(nb::module_& m)
 
 void io(nb::module_& m)
 {
+#ifdef HAS_ADIOS2
+  // dolfinx::io::checkpointing::write_mesh write mesh to file
+  m.def("write_mesh", &dolfinx::io::checkpointing::write_mesh<float>, nb::arg("io"),
+        nb::arg("engine"), nb::arg("mesh"), "Write mesh with float type to file using ADIOS2");
+  m.def("write_mesh", &dolfinx::io::checkpointing::write_mesh<double>, nb::arg("io"),
+        nb::arg("engine"), nb::arg("mesh"), "Write mesh with double type to file using ADIOS2");
+#endif
+
   // dolfinx::io::cell vtk cell type converter
   m.def("get_vtk_cell_type", &dolfinx::io::cells::get_vtk_cell_type,
         nb::arg("cell"), nb::arg("dim"), "Get VTK cell identifier");
