@@ -9,6 +9,7 @@
 
 #include <adios2.h>
 #include <dolfinx.h>
+#include <dolfinx/common/version.h>
 #include <dolfinx/io/checkpointing.h>
 #include <mpi.h>
 
@@ -31,6 +32,10 @@ int main(int argc, char* argv[])
   adios2::IO io = adios.DeclareIO("mesh-write");
   io.SetEngine("BP5");
   adios2::Engine engine = io.Open("mesh.bp", adios2::Mode::Write);
+
+  // TODO: Need to move this inside the checkpointing module
+  io.DefineAttribute<std::string>("version", DOLFINX_VERSION_STRING);
+  io.DefineAttribute<std::string>("git_hash", DOLFINX_VERSION_GIT);
 
   io::checkpointing::write_mesh(io, engine, *mesh);
 

@@ -11,6 +11,7 @@
 #include <basix/finite-element.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/utils.h>
 #include <mpi.h>
 
 /// @file checkpointing.h
@@ -164,9 +165,8 @@ template void write_mesh<double>(adios2::IO& io, adios2::Engine& engine,
 /// @endcond
 
 //-----------------------------------------------------------------------------
-dolfinx::mesh::Mesh<floating_point> read_mesh(adios2::IO& io,
-                                              adios2::Engine& engine,
-                                              MPI_Comm& comm = MPI_COMM_WORLD)
+dolfinx::mesh::Mesh<float> read_mesh(adios2::IO& io, adios2::Engine& engine,
+                                     MPI_Comm comm)
 {
 
   int rank, size;
@@ -222,20 +222,21 @@ dolfinx::mesh::Mesh<floating_point> read_mesh(adios2::IO& io,
   }
 
   // Compute local sizes, offsets
-  std::array<std::int64_t, 2> local_range
+  std::array<std::int64_t, 2> _local_range
       = dolfinx::MPI::local_range(rank, num_vertices_global, size);
-  int num_vertices_local = local_range[1] - local_range[0];
 
-  std::array<std::int64_t, 2> cell_range
+  std::array<std::uint64_t, 2> local_range{(std::uint64_t)_local_range[0],
+                                           (std::uint64_t)_local_range[1]};
+  std::uint64_t num_vertices_local = local_range[1] - local_range[0];
+
+  std::array<std::int64_t, 2> _cell_range
       = dolfinx::MPI::local_range(rank, num_cells_global, size);
-  int num_cells_local = cell_range[1] - cell_range[0];
 
-  if ("float" == io.VariableType("x"))
-    using T = float;
-  else if ("double" == io.VariableType("x"))
-    using T = double;
+  std::array<std::uint64_t, 2> cell_range{(std::uint64_t)_cell_range[0],
+                                          (std::uint64_t)_cell_range[1]};
+  std::uint64_t num_cells_local = cell_range[1] - cell_range[0];
 
-  std::cout << T << std::endl;
+  using T = float;
 
   std::vector<int64_t> input_global_indices(num_vertices_local);
   std::vector<T> mesh_x(num_vertices_local * 3);
@@ -284,8 +285,8 @@ dolfinx::mesh::Mesh<floating_point> read_mesh(adios2::IO& io,
   engine.Close();
 
   std::int32_t cell_offset = offsets[0];
-  for (int i = 0; i < offsets.size(); ++i)
-    offsets[i] -= cell_offset;
+  for (auto offset = offsets.begin(); offset != offsets.end(); ++offset)
+    *offset -= cell_offset;
 
   fem::CoordinateElement<T> element
       = fem::CoordinateElement<T>(cell_type, degree, lagrange_variant);
