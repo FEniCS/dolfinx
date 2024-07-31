@@ -31,8 +31,8 @@ namespace dolfinx::io::checkpointing
 {
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-void write_mesh(adios2::IO io, adios2::Engine engine,
-                dolfinx::mesh::Mesh<T> mesh)
+void write_mesh(adios2::IO& io, adios2::Engine& engine,
+                dolfinx::mesh::Mesh<T>& mesh)
 {
 
   const mesh::Geometry<T>& geometry = mesh.geometry();
@@ -149,11 +149,15 @@ void write_mesh(adios2::IO io, adios2::Engine engine,
   }
 }
 
-template void write_mesh<float>(adios2::IO io, adios2::Engine engine,
-                                dolfinx::mesh::Mesh<float> mesh);
+//-----------------------------------------------------------------------------
+/// @cond
+template void write_mesh<float>(adios2::IO& io, adios2::Engine& engine,
+                                dolfinx::mesh::Mesh<float>& mesh);
 
-template void write_mesh<double>(adios2::IO io, adios2::Engine engine,
-                                 dolfinx::mesh::Mesh<double> mesh);
+template void write_mesh<double>(adios2::IO& io, adios2::Engine& engine,
+                                 dolfinx::mesh::Mesh<double>& mesh);
+
+/// @endcond
 
 } // namespace dolfinx::io::checkpointing
 

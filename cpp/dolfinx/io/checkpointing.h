@@ -25,8 +25,8 @@ namespace dolfinx::io::checkpointing
 /// @param[in] engine ADIOS2 Engine
 /// @param[in] mesh Mesh of type float or double to write to the file
 template <std::floating_point T>
-void write_mesh(adios2::IO io, adios2::Engine engine,
-                dolfinx::mesh::Mesh<T> mesh);
+void write_mesh(adios2::IO& io, adios2::Engine& engine,
+                dolfinx::mesh::Mesh<T>& mesh);
 
 } // namespace dolfinx::io::checkpointing
 
