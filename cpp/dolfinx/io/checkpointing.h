@@ -8,6 +8,7 @@
 
 #ifdef HAS_ADIOS2
 
+#include "boost/variant.hpp"
 #include <adios2.h>
 #include <basix/finite-element.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -18,6 +19,8 @@
 
 namespace dolfinx::io::checkpointing
 {
+
+typedef boost::variant<float, double> floating_point;
 
 /// @brief Write mesh to a file.
 ///
