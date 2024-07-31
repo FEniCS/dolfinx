@@ -8,7 +8,6 @@
 
 #ifdef HAS_ADIOS2
 
-#include "ADIOS2_utils.h"
 #include <adios2.h>
 #include <basix/finite-element.h>
 #include <dolfinx/mesh/Mesh.h>
