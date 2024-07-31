@@ -39,8 +39,9 @@ sort_unique(const U& indices, const V& values)
 
   // Sort make unique
   std::ranges::sort(data);
-  auto it = std::unique(data.begin(), data.end(),
-                        [](auto& a, auto& b) { return a.first == b.first; });
+  auto it = std::ranges::unique(data, [](auto& a, auto& b)
+                                { return a.first == b.first; })
+                .begin();
 
   std::vector<typename U::value_type> indices_new;
   std::vector<typename V::value_type> values_new;

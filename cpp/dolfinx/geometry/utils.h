@@ -707,8 +707,9 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
   // Get unique list of outgoing ranks
   std::vector<std::int32_t> out_ranks = collisions.array();
   std::ranges::sort(out_ranks);
-  out_ranks.erase(std::unique(out_ranks.begin(), out_ranks.end()),
-                  out_ranks.end());
+  auto [unique_end, range_end] = std::ranges::unique(out_ranks);
+  out_ranks.erase(unique_end, range_end);
+
   // Compute incoming edges (source processes)
   std::vector in_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, out_ranks);
   std::ranges::sort(in_ranks);

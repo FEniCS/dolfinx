@@ -51,6 +51,7 @@
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/Constant.h>
 #include <memory>
+#include <petscsystypes.h>
 
 using namespace dolfinx;
 

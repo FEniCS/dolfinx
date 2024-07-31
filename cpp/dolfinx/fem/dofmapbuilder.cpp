@@ -116,16 +116,14 @@ reorder_owned(const std::vector<dofmap_t>& dofmaps, std::int32_t owned_size,
   std::int32_t current_offset = 0;
   for (std::size_t i = 0; i < num_edges.size(); ++i)
   {
-    std::sort(std::next(edges.begin(), current_offset),
-              std::next(edges.begin(), current_offset + num_edges[i]));
-    const auto it
-        = std::unique(std::next(edges.begin(), current_offset),
-                      std::next(edges.begin(), current_offset + num_edges[i]));
-    graph_data.insert(graph_data.end(),
-                      std::next(edges.begin(), current_offset), it);
-    graph_offsets[i + 1]
-        = graph_offsets[i]
-          + std::distance(std::next(edges.begin(), current_offset), it);
+    auto range_begin = std::next(edges.begin(), current_offset);
+    auto edge_range = std::ranges::subrange(
+        range_begin, std::next(range_begin, num_edges[i]));
+    std::ranges::sort(edge_range);
+    auto it = std::ranges::unique(edge_range).begin();
+
+    graph_data.insert(graph_data.end(), range_begin, it);
+    graph_offsets[i + 1] = graph_offsets[i] + std::distance(range_begin, it);
     current_offset += num_edges[i];
   }
 

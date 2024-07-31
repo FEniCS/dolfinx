@@ -40,7 +40,8 @@ template <typename U>
 graph::AdjacencyList<int> create_adj_list(U& data, std::int32_t size)
 {
   std::ranges::sort(data);
-  data.erase(std::unique(data.begin(), data.end()), data.end());
+  auto [unique_end, range_end] = std::ranges::unique(data);
+  data.erase(unique_end, range_end);
 
   std::vector<int> array;
   array.reserve(data.size());
@@ -130,7 +131,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   std::vector<int> ranks(vertex_ranks.array().begin(),
                          vertex_ranks.array().end());
   std::ranges::sort(ranks);
-  ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+  auto [unique_end, range_end] = std::ranges::unique(ranks);
+  ranks.erase(unique_end, range_end);
 
   MPI_Comm neighbor_comm;
   MPI_Dist_graph_create_adjacent(
@@ -205,25 +207,20 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
 
     perm.resize(entity_to_local_idx.size() / (num_vertices_per_e + 1));
     std::iota(perm.begin(), perm.end(), 0);
-    std::ranges::sort(perm,
-                      [&entities = entity_to_local_idx,
-                       shape = num_vertices_per_e + 1](auto e0, auto e1)
-                      {
-                        auto it0 = std::next(entities.begin(), e0 * shape);
-                        auto it1 = std::next(entities.begin(), e1 * shape);
-                        return std::lexicographical_compare(
-                            it0, std::next(it0, shape), it1,
-                            std::next(it1, shape));
-                      });
-    perm.erase(std::unique(perm.begin(), perm.end(),
-                           [&entities = entity_to_local_idx,
-                            shape = num_vertices_per_e + 1](auto e0, auto e1)
-                           {
-                             auto it0 = std::next(entities.begin(), e0 * shape);
-                             auto it1 = std::next(entities.begin(), e1 * shape);
-                             return std::equal(it0, std::next(it0, shape), it1);
-                           }),
-               perm.end());
+
+    auto range_by_index = [&, shape = num_vertices_per_e + 1](auto e)
+    {
+      auto begin = std::next(entity_to_local_idx.begin(), e * shape);
+      return std::ranges::subrange(begin, std::next(begin, shape));
+    };
+
+    std::ranges::sort(perm, std::ranges::lexicographical_compare,
+                      range_by_index);
+
+    auto [unique_end, range_end]
+        = std::ranges::unique(perm, std::ranges::equal, range_by_index);
+
+    perm.erase(unique_end, range_end);
   }
 
   // Get shared entities of this dimension, and also match up an index

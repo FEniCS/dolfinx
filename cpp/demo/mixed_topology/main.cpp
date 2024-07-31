@@ -99,9 +99,8 @@ int main(int argc, char* argv[])
   }
 
   std::ranges::sort(boundary_vertices);
-  boundary_vertices.erase(
-      std::unique(boundary_vertices.begin(), boundary_vertices.end()),
-      boundary_vertices.end());
+  auto [unique_end, range_end] = std::ranges::unique(boundary_vertices);
+  boundary_vertices.erase(unique_end, range_end);
 
   std::vector<mesh::CellType> cell_types{mesh::CellType::quadrilateral,
                                          mesh::CellType::triangle};

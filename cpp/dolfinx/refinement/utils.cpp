@@ -248,7 +248,7 @@ std::array<std::vector<std::int32_t>, 2> refinement::transfer_facet_meshtag(
 
     // Eliminate duplicates
     std::ranges::sort(pclinks);
-    auto it_end = std::unique(pclinks.begin(), pclinks.end());
+    auto it_end = std::ranges::unique(pclinks).begin();
     facet_indices.insert(facet_indices.end(), pclinks.begin(), it_end);
     tag_values.insert(tag_values.end(), std::distance(pclinks.begin(), it_end),
                       values[i]);
@@ -257,7 +257,8 @@ std::array<std::vector<std::int32_t>, 2> refinement::transfer_facet_meshtag(
   // Sort values into order, based on facet indices
   std::vector<std::int32_t> sort_order(tag_values.size());
   std::iota(sort_order.begin(), sort_order.end(), 0);
-  dolfinx::argsort_radix<std::int32_t>(facet_indices, sort_order);
+  dolfinx::radix_sort(sort_order, [&facet_indices](auto index)
+                      { return facet_indices[index]; });
   std::vector<std::int32_t> sorted_facet_indices(facet_indices.size());
   std::vector<std::int32_t> sorted_tag_values(tag_values.size());
   for (std::size_t i = 0; i < sort_order.size(); ++i)
@@ -351,7 +352,8 @@ refinement::transfer_cell_meshtag(const mesh::MeshTags<std::int32_t>& tags0,
   // Sort values into order, based on cell indices
   std::vector<std::int32_t> sort_order(tag_values.size());
   std::iota(sort_order.begin(), sort_order.end(), 0);
-  dolfinx::argsort_radix<std::int32_t>(cell_indices, sort_order);
+  dolfinx::radix_sort(sort_order, [&cell_indices](auto index)
+                      { return cell_indices[index]; });
   std::vector<std::int32_t> sorted_tag_values(tag_values.size());
   std::vector<std::int32_t> sorted_cell_indices(cell_indices.size());
   for (std::size_t i = 0; i < sort_order.size(); ++i)

@@ -582,7 +582,8 @@ compute_refinement_data(const mesh::Mesh<T>& mesh, Option option)
   // plus ranks that ghost owned indices)
   std::vector<int> ranks(edge_ranks.array().begin(), edge_ranks.array().end());
   std::ranges::sort(ranks);
-  ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+  auto [unique_end, range_end] = std::ranges::unique(ranks);
+  ranks.erase(unique_end, range_end);
 
   // Convert edge_ranks from global rank to to neighbourhood ranks
   std::ranges::transform(edge_ranks.array(), edge_ranks.array().begin(),
@@ -648,7 +649,8 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   // ranks that ghost owned indices)
   std::vector<int> ranks(edge_ranks.array().begin(), edge_ranks.array().end());
   std::ranges::sort(ranks);
-  ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+  auto [unique_end, range_end] = std::ranges::unique(ranks);
+  ranks.erase(unique_end, range_end);
 
   // Convert edge_ranks from global rank to to neighbourhood ranks
   std::ranges::transform(edge_ranks.array(), edge_ranks.array().begin(),
