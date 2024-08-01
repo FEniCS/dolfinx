@@ -29,7 +29,6 @@ __all__ = [
     "cell_perm_gmsh",
     "cell_perm_vtk",
     "distribute_entity_data",
-    "ADIOS2",
 ]
 
 
@@ -45,7 +44,15 @@ def _extract_cpp_objects(functions: typing.Union[Mesh, Function, tuple[Function]
 if _cpp.common.has_adios2:
     from dolfinx.cpp.io import FidesMeshPolicy, VTXMeshPolicy  # F401
 
-    __all__ = [*__all__, "FidesWriter", "VTXWriter", "FidesMeshPolicy", "VTXMeshPolicy"]
+    __all__ = [
+        *__all__,
+        "FidesWriter",
+        "VTXWriter",
+        "FidesMeshPolicy",
+        "VTXMeshPolicy",
+        "ADIOS2",
+        "write_test",
+    ]
 
     class VTXWriter:
         """Writer for VTX files, using ADIOS2 to create the files.
@@ -193,6 +200,17 @@ if _cpp.common.has_adios2:
         def close(self):
             self._cpp_object.close()
 
+    class ADIOS2(_cpp.io.ADIOS2):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exception_type, exception_value, traceback):
+            self.close()
+
+    def write_test(container: ADIOS2) -> None:
+        """Write to a file using ADIOS2"""
+        return _cpp.io.write_test(container)
+
 
 class VTKFile(_cpp.io.VTKFile):
     """Interface to VTK files.
@@ -286,19 +304,6 @@ class XDMFFile(_cpp.io.XDMFFile):
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
         mt = super().read_meshtags(mesh._cpp_object, name, xpath)
         return MeshTags(mt)
-
-
-class ADIOS2(_cpp.io.ADIOS2):
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exception_type, exception_value, traceback):
-        self.close()
-
-
-def write_test(container: ADIOS2) -> None:
-    """Write to a file using ADIOS2"""
-    return _cpp.io.write_test(container)
 
 
 def distribute_entity_data(

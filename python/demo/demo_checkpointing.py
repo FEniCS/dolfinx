@@ -15,17 +15,17 @@
 #
 
 # +
-# import importlib.util
+import importlib.util
 
-# if importlib.util.find_spec("adios2") is not None:
-#     import dolfinx
+if importlib.util.find_spec("adios2") is not None:
+    import dolfinx
 
-#     if not dolfinx.has_adios2:
-#         print("This demo requires DOLFINx to be compiled with ADIOS2 enabled.")
-#         exit(0)
-# else:
-#     print("This demo requires ADIOS2.")
-#     exit(0)
+    if not dolfinx.has_adios2:
+        print("This demo requires DOLFINx to be compiled with ADIOS2 enabled.")
+        exit(0)
+else:
+    print("This demo requires ADIOS2.")
+    exit(0)
 
 from mpi4py import MPI
 
