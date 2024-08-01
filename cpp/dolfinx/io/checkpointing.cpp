@@ -235,6 +235,11 @@ dolfinx::mesh::Mesh<float> read_mesh(adios2::IO& io, adios2::Engine& engine,
                                           (std::uint64_t)_cell_range[1]};
   std::uint64_t num_cells_local = cell_range[1] - cell_range[0];
 
+  // TODO: Determine type
+  //   if ("float" == io.VariableType("x"))
+  //     using T = float;
+  //   else if ("double" == io.VariableType("x"))
+  //     using T = double;
   using T = float;
 
   std::vector<int64_t> input_global_indices(num_vertices_local);

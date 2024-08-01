@@ -20,8 +20,6 @@
 namespace dolfinx::io::checkpointing
 {
 
-typedef boost::variant<float, double> floating_point;
-
 /// @brief Write mesh to a file.
 ///
 /// @param[in] io ADIOS2 IO
@@ -31,7 +29,7 @@ template <std::floating_point T>
 void write_mesh(adios2::IO& io, adios2::Engine& engine,
                 dolfinx::mesh::Mesh<T>& mesh);
 
-/// @brief Write mesh to a file.
+/// @brief Read mesh from a file.
 ///
 /// @param[in] io ADIOS2 IO
 /// @param[in] engine ADIOS2 Engine
