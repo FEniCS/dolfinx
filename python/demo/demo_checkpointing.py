@@ -29,9 +29,8 @@
 
 from mpi4py import MPI
 
-import numpy as np
-
 from dolfinx import io, mesh
+
 # -
 
 # Note that it is important to first `from mpi4py import MPI` to
