@@ -260,14 +260,13 @@ class Vector:
     def petsc_vec(self):
         """PETSc vector holding the entries of the vector.
 
-        Note:
-            When an object of this class is destroyed and this method was
-            called, the object will call destroy on the ``petsc4py`` vector
-            created by this method.
-
         Upon first call, this function creates a PETSc ``Vec`` object
         that wraps the degree-of-freedom data. The ``Vec`` object is
         cached and the cached ``Vec`` is returned upon subsequent calls.
+
+        Note:
+          When the object is destroyed it will destroy the underlying petsc4py
+          vector automatically.
         """
         if self._petsc_x is None:
             self._petsc_x = create_petsc_vector_wrap(self)
