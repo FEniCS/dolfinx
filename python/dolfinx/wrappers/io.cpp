@@ -11,9 +11,11 @@
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/ADIOS2Writers.h>
+#include <dolfinx/io/ADIOS2_utils.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
+#include <dolfinx/io/checkpointing.h>
 #include <dolfinx/io/vtk_utils.h>
 #include <dolfinx/io/xdmf_utils.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -236,6 +238,30 @@ void declare_data_types(nb::module_& m)
 
 void io(nb::module_& m)
 {
+#ifdef HAS_ADIOS2
+  // dolfinx::io::ADIOS2Container
+  nb::class_<dolfinx::io::ADIOS2Container> ADIOS2(m, "ADIOS2");
+
+  ADIOS2
+      .def(
+          "__init__",
+          [](dolfinx::io::ADIOS2Container* v, MPICommWrapper comm,
+             const std::string filename, std::string tag,
+             std::string engine = "BP5", std::string mode = "write")
+          {
+            new (v) dolfinx::io::ADIOS2Container(comm.get(), filename, tag,
+                                                 engine, mode);
+          },
+          nb::arg("comm"), nb::arg("filename"), nb::arg("tag"),
+          nb::arg("engine"), nb::arg("mode"))
+      .def("close", &dolfinx::io::ADIOS2Container::close);
+
+  // dolfinx::io::checkpointing::write_test
+  m.def("write_test", &dolfinx::io::checkpointing::write_test,
+        nb::arg("container"), "Write test to file using ADIOS2");
+
+#endif
+
   // dolfinx::io::cell vtk cell type converter
   m.def("get_vtk_cell_type", &dolfinx::io::cells::get_vtk_cell_type,
         nb::arg("cell"), nb::arg("dim"), "Get VTK cell identifier");

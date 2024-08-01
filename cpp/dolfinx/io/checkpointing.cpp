@@ -315,6 +315,21 @@ read_mesh<double>(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm);
 
 /// @endcond
 
+void write_test(ADIOS2Container& container)
+{
+  auto io = container.io();
+  auto engine = container.engine();
+
+  io->DefineAttribute<std::string>("name", "Test write");
+  adios2::Variable<std::uint64_t> var_num
+      = io->DefineVariable<std::uint64_t>("num");
+
+  std::uint64_t num = 100;
+
+  engine->BeginStep();
+  engine->Put(var_num, num);
+  engine->EndStep();
+}
 } // namespace dolfinx::io::checkpointing
 
 #endif

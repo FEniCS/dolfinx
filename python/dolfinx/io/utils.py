@@ -23,7 +23,14 @@ from dolfinx.cpp.io import perm_vtk as cell_perm_vtk
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh, MeshTags
 
-__all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
+__all__ = [
+    "VTKFile",
+    "XDMFFile",
+    "cell_perm_gmsh",
+    "cell_perm_vtk",
+    "distribute_entity_data",
+    "ADIOS2",
+]
 
 
 def _extract_cpp_objects(functions: typing.Union[Mesh, Function, tuple[Function], list[Function]]):
@@ -279,6 +286,19 @@ class XDMFFile(_cpp.io.XDMFFile):
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
         mt = super().read_meshtags(mesh._cpp_object, name, xpath)
         return MeshTags(mt)
+
+
+class ADIOS2(_cpp.io.ADIOS2):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        self.close()
+
+
+def write_test(container: ADIOS2) -> None:
+    """Write to a file using ADIOS2"""
+    return _cpp.io.write_test(container)
 
 
 def distribute_entity_data(

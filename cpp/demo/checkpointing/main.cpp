@@ -10,6 +10,7 @@
 #include <adios2.h>
 #include <dolfinx.h>
 #include <dolfinx/common/version.h>
+#include <dolfinx/io/ADIOS2_utils.h>
 #include <dolfinx/io/checkpointing.h>
 #include <mpi.h>
 
@@ -75,6 +76,11 @@ int main(int argc, char* argv[])
     io::checkpointing::write_mesh(io_write, writer, mesh_read);
     writer.Close();
   }
+
+  auto container
+      = ADIOS2Container(mesh->comm(), "test.bp", "test-write", "BP5", "write");
+
+  io::checkpointing::write_test(container);
 
   MPI_Finalize();
   return 0;

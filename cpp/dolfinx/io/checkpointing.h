@@ -8,7 +8,7 @@
 
 #ifdef HAS_ADIOS2
 
-#include "boost/variant.hpp"
+#include "ADIOS2_utils.h"
 #include <adios2.h>
 #include <basix/finite-element.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -38,6 +38,11 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
 template <std::floating_point T>
 dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
                                  MPI_Comm comm = MPI_COMM_WORLD);
+
+/// @brief Test function to see python API for ADIOS2 wrapper
+///
+/// @param[in] ADIOS2Container ADIOS2Container
+void write_test(ADIOS2Container& container);
 
 } // namespace dolfinx::io::checkpointing
 
