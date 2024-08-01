@@ -35,8 +35,9 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
 /// @param[in] engine ADIOS2 Engine
 /// @param[in] comm comm
 /// @return mesh reconstructed from the data
-dolfinx::mesh::Mesh<float> read_mesh(adios2::IO& io, adios2::Engine& engine,
-                                     MPI_Comm comm = MPI_COMM_WORLD);
+template <std::floating_point T>
+dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
+                                 MPI_Comm comm = MPI_COMM_WORLD);
 
 } // namespace dolfinx::io::checkpointing
 

@@ -165,8 +165,9 @@ template void write_mesh<double>(adios2::IO& io, adios2::Engine& engine,
 /// @endcond
 
 //-----------------------------------------------------------------------------
-dolfinx::mesh::Mesh<float> read_mesh(adios2::IO& io, adios2::Engine& engine,
-                                     MPI_Comm comm)
+template <std::floating_point T>
+dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
+                                 MPI_Comm comm)
 {
 
   int rank, size;
@@ -234,13 +235,6 @@ dolfinx::mesh::Mesh<float> read_mesh(adios2::IO& io, adios2::Engine& engine,
   std::array<std::uint64_t, 2> cell_range{(std::uint64_t)_cell_range[0],
                                           (std::uint64_t)_cell_range[1]};
   std::uint64_t num_cells_local = cell_range[1] - cell_range[0];
-
-  // TODO: Determine type
-  //   if ("float" == io.VariableType("x"))
-  //     using T = float;
-  //   else if ("double" == io.VariableType("x"))
-  //     using T = double;
-  using T = float;
 
   std::vector<int64_t> input_global_indices(num_vertices_local);
   std::vector<T> x(num_vertices_local * 3);
@@ -310,6 +304,16 @@ dolfinx::mesh::Mesh<float> read_mesh(adios2::IO& io, adios2::Engine& engine,
                                          x_reduced, xshape, part);
   return mesh;
 }
+
+//-----------------------------------------------------------------------------
+/// @cond
+template dolfinx::mesh::Mesh<float>
+read_mesh<float>(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm);
+
+template dolfinx::mesh::Mesh<double>
+read_mesh<double>(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm);
+
+/// @endcond
 
 } // namespace dolfinx::io::checkpointing
 
