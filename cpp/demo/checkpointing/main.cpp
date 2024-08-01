@@ -41,6 +41,19 @@ int main(int argc, char* argv[])
 
   engine.Close();
 
+  adios2::IO io_read = adios.DeclareIO("mesh-read");
+  io_read.SetEngine("BP5");
+
+  adios2::Engine reader = io_read.Open("mesh.bp", adios2::Mode::Read);
+  auto mesh_read = io::checkpointing::read_mesh(io_read, reader, mesh->comm());
+  reader.Close();
+
+  adios2::IO io_write = adios.DeclareIO("mesh-rewrite");
+  io_write.SetEngine("BP5");
+
+  adios2::Engine writer = io_write.Open("mesh2.bp", adios2::Mode::Write);
+  io::checkpointing::write_mesh(io_write, writer, mesh_read);
+
   MPI_Finalize();
   return 0;
 }
