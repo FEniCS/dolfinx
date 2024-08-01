@@ -41,7 +41,7 @@ dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
 
 /// @brief Test function to see python API for ADIOS2 wrapper
 ///
-/// @param[in] ADIOS2Container ADIOS2Container
+/// @param[in] container ADIOS2Container
 void write_test(ADIOS2Container& container);
 
 } // namespace dolfinx::io::checkpointing

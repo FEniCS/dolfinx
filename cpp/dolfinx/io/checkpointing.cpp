@@ -315,6 +315,7 @@ read_mesh<double>(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm);
 
 /// @endcond
 
+//-----------------------------------------------------------------------------
 void write_test(ADIOS2Container& container)
 {
   auto io = container.io();
