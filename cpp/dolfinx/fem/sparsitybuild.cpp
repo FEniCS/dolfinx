@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "create_sparsity_pattern.h"
+#include "sparsitybuild.h"
 
 using namespace dolfinx;
 using namespace dolfinx::fem;

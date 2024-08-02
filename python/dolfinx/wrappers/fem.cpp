@@ -12,7 +12,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/CoordinateElement.h>
-#include <dolfinx/fem/create_sparsity_pattern.h>
+#include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>

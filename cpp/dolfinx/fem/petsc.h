@@ -21,7 +21,7 @@
 #include <utility>
 #include <vector>
 
-#include "create_sparsity_pattern.h"
+#include "sparsitybuild.h"
 
 namespace dolfinx::common
 {
