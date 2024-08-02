@@ -316,10 +316,10 @@ read_mesh<double>(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm);
 /// @endcond
 
 //-----------------------------------------------------------------------------
-void write_test(ADIOS2Container& container)
+void write_test(ADIOS2Wrapper& ADIOS2)
 {
-  auto io = container.io();
-  auto engine = container.engine();
+  auto io = ADIOS2.io();
+  auto engine = ADIOS2.engine();
 
   io->DefineAttribute<std::string>("name", "Test write");
   adios2::Variable<std::uint64_t> var_num

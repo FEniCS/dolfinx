@@ -21,20 +21,21 @@ std::map<std::string, adios2::Mode> string_to_mode{
 using namespace dolfinx::io;
 
 //-----------------------------------------------------------------------------
-ADIOS2Container::ADIOS2Container(MPI_Comm comm, std::string filename,
-                           std::string tag, std::string engine,
-                           std::string mode)
+ADIOS2Wrapper::ADIOS2Wrapper(MPI_Comm comm, std::string filename,
+                             std::string tag, std::string engine_type,
+                             std::string mode)
 
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
       _io(std::make_unique<adios2::IO>(_adios->DeclareIO(tag)))
 {
-  _io->SetEngine(engine);
-  _engine = std::make_unique<adios2::Engine>(_io->Open(filename, string_to_mode[mode]));
+  _io->SetEngine(engine_type);
+  _engine = std::make_unique<adios2::Engine>(
+      _io->Open(filename, string_to_mode[mode]));
 }
 //-----------------------------------------------------------------------------
-ADIOS2Container::~ADIOS2Container() { close(); }
+ADIOS2Wrapper::~ADIOS2Wrapper() { close(); }
 //-----------------------------------------------------------------------------
-void ADIOS2Container::close()
+void ADIOS2Wrapper::close()
 {
   assert(_engine);
   if (*_engine)

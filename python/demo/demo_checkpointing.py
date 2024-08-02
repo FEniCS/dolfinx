@@ -55,10 +55,10 @@ engine_type = "BP5"
 tag = "test-write"
 mode = "write"
 
-container = io.ADIOS2(msh.comm, filename, tag, engine_type, mode)
+adios2 = io.ADIOS2(msh.comm, filename, tag, engine_type, mode)
 # -
 
 # +
-io.write_test(container)
-container.close()
+io.write_test(adios2)
+adios2.close()
 # -

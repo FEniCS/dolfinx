@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
   }
 
   auto container
-      = ADIOS2Container(mesh->comm(), "test.bp", "test-write", "BP5", "write");
+      = ADIOS2Wrapper(mesh->comm(), "test.bp", "test-write", "BP5", "write");
 
   io::checkpointing::write_test(container);
 

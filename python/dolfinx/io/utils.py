@@ -207,9 +207,9 @@ if _cpp.common.has_adios2:
         def __exit__(self, exception_type, exception_value, traceback):
             self.close()
 
-    def write_test(container: ADIOS2) -> None:
+    def write_test(ADIOS2: ADIOS2) -> None:
         """Write to a file using ADIOS2"""
-        return _cpp.io.write_test(container)
+        return _cpp.io.write_test(ADIOS2)
 
 
 class VTKFile(_cpp.io.VTKFile):

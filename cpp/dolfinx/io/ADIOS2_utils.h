@@ -20,34 +20,33 @@ namespace dolfinx::io
 {
 
 /// ADIOS2-based writers/readers
-class ADIOS2Container
+class ADIOS2Wrapper
 {
 public:
   /// @brief Create an ADIOS2-based engine writer/reader
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
   /// @param[in] tag The ADIOS2 object name
-  /// @param[in] engine ADIOS2 engine type. See
+  /// @param[in] engine_type ADIOS2 engine type. See
   /// https://adios2.readthedocs.io/en/latest/engines/engines.html.
   /// @param[in] mode ADIOS2 mode, default is Write or Read
-  ADIOS2Container(MPI_Comm comm, std::string filename,
-               std::string tag, std::string engine = "BP5",
-               std::string mode = "write");
+  ADIOS2Wrapper(MPI_Comm comm, std::string filename, std::string tag,
+                std::string engine_type = "BP5", std::string mode = "write");
 
   /// @brief Move constructor
-  ADIOS2Container(ADIOS2Container&& engine) = default;
+  ADIOS2Wrapper(ADIOS2Wrapper&& ADIOS2) = default;
 
   /// @brief Copy constructor
-  ADIOS2Container(const ADIOS2Container&) = delete;
+  ADIOS2Wrapper(const ADIOS2Wrapper&) = delete;
 
   /// @brief Destructor
-  ~ADIOS2Container();
+  ~ADIOS2Wrapper();
 
   /// @brief Move assignment
-  ADIOS2Container& operator=(ADIOS2Container&& engine) = default;
+  ADIOS2Wrapper& operator=(ADIOS2Wrapper&& ADIOS2) = default;
 
   // Copy assignment
-  ADIOS2Container& operator=(const ADIOS2Container&) = delete;
+  ADIOS2Wrapper& operator=(const ADIOS2Wrapper&) = delete;
 
   /// @brief  Close the file
   void close();
