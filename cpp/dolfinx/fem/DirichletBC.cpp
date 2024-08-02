@@ -115,18 +115,17 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
     // Convert dofs indices to 'block' map indices
     std::vector<std::int32_t> dofs_local_m;
     dofs_local_m.reserve(dofs_local.size());
-    std::transform(dofs_local.begin(), dofs_local.end(),
-                   std::back_inserter(dofs_local_m),
-                   [bs_map](auto dof) { return dof / bs_map; });
+    std::ranges::transform(dofs_local, std::back_inserter(dofs_local_m),
+                           [bs_map](auto dof) { return dof / bs_map; });
 
     // Compute global index of each block
     map.local_to_global(dofs_local_m, dofs_global);
 
     // Add offset
-    std::transform(dofs_global.begin(), dofs_global.end(), dofs_local.begin(),
-                   dofs_global.begin(),
-                   [bs_map](auto global_block, auto local_dof)
-                   { return bs_map * global_block + (local_dof % bs_map); });
+    std::ranges::transform(
+        dofs_global, dofs_local, dofs_global.begin(),
+        [bs_map](auto global_block, auto local_dof)
+        { return bs_map * global_block + (local_dof % bs_map); });
   }
 
   MPI_Wait(&request, MPI_STATUS_IGNORE);
@@ -250,7 +249,8 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
   // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates
   std::ranges::sort(dofs);
-  dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
+  auto [unique_end, range_end] = std::ranges::unique(dofs);
+  dofs.erase(unique_end, range_end);
 
   if (remote)
   {
@@ -267,7 +267,8 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
       std::span dest = map->dest();
       std::vector<int> ranks;
       std::ranges::set_union(src, dest, std::back_inserter(ranks));
-      ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+      auto [unique_end, range_end] = std::ranges::unique(ranks);
+      ranks.erase(unique_end, range_end);
       MPI_Dist_graph_create_adjacent(
           map->comm(), ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
           ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
@@ -285,7 +286,8 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     // duplicates
     dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
     std::ranges::sort(dofs);
-    dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
+    auto [unique_end, range_end] = std::ranges::unique(dofs);
+    dofs.erase(unique_end, range_end);
   }
 
   return dofs;
@@ -356,15 +358,17 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   // Remove duplicates
   std::vector<std::int32_t> perm(bc_dofs[0].size());
   std::iota(perm.begin(), perm.end(), 0);
-  dolfinx::argsort_radix<std::int32_t>(bc_dofs[0], perm);
+  dolfinx::radix_sort(perm,
+                      [&dofs = bc_dofs[0]](auto index) { return dofs[index]; });
+
   std::array<std::vector<std::int32_t>, 2> sorted_bc_dofs = bc_dofs;
   for (std::size_t b = 0; b < 2; ++b)
   {
-    std::transform(perm.cbegin(), perm.cend(), sorted_bc_dofs[b].begin(),
-                   [&bc_dofs = bc_dofs[b]](auto p) { return bc_dofs[p]; });
-    sorted_bc_dofs[b].erase(
-        std::unique(sorted_bc_dofs[b].begin(), sorted_bc_dofs[b].end()),
-        sorted_bc_dofs[b].end());
+    std::ranges::transform(perm, sorted_bc_dofs[b].begin(),
+                           [&bc_dofs = bc_dofs[b]](auto p)
+                           { return bc_dofs[p]; });
+    auto [unique_end, range_end] = std::ranges::unique(sorted_bc_dofs[b]);
+    sorted_bc_dofs[b].erase(unique_end, range_end);
   }
 
   if (!remote)
@@ -385,7 +389,8 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
       std::span dest = map0->dest();
       std::vector<int> ranks;
       std::ranges::set_union(src, dest, std::back_inserter(ranks));
-      ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+      auto [unique_end, range_end] = std::ranges::unique(ranks);
+      ranks.erase(unique_end, range_end);
       MPI_Dist_graph_create_adjacent(map0->comm(), ranks.size(), ranks.data(),
                                      MPI_UNWEIGHTED, ranks.size(), ranks.data(),
                                      MPI_UNWEIGHTED, MPI_INFO_NULL, false,
@@ -410,15 +415,17 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     // Remove duplicates and sort
     perm.resize(sorted_bc_dofs[0].size());
     std::iota(perm.begin(), perm.end(), 0);
-    dolfinx::argsort_radix<std::int32_t>(sorted_bc_dofs[0], perm);
+    dolfinx::radix_sort(perm, [&dofs = sorted_bc_dofs[0]](auto index)
+                        { return dofs[index]; });
+
     std::array<std::vector<std::int32_t>, 2> out_dofs = sorted_bc_dofs;
     for (std::size_t b = 0; b < 2; ++b)
     {
-      std::transform(perm.cbegin(), perm.cend(), out_dofs[b].begin(),
-                     [&sorted_dofs = sorted_bc_dofs[b]](auto p)
-                     { return sorted_dofs[p]; });
-      out_dofs[b].erase(std::unique(out_dofs[b].begin(), out_dofs[b].end()),
-                        out_dofs[b].end());
+      std::ranges::transform(perm, out_dofs[b].begin(),
+                             [&sorted_dofs = sorted_bc_dofs[b]](auto p)
+                             { return sorted_dofs[p]; });
+      auto [unique_end, range_end] = std::ranges::unique(out_dofs[b]);
+      out_dofs[b].erase(unique_end, range_end);
     }
 
     assert(out_dofs[0].size() == out_dofs[1].size());

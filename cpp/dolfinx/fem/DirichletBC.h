@@ -11,6 +11,7 @@
 #include "DofMap.h"
 #include "Function.h"
 #include "FunctionSpace.h"
+#include <algorithm>
 #include <array>
 #include <concepts>
 #include <dolfinx/common/types.h>
@@ -230,15 +231,16 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
 
   // Remove duplicates
   std::ranges::sort(bc_dofs);
-  bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
+  auto [unique_end, range_end] = std::ranges::unique(bc_dofs);
+  bc_dofs.erase(unique_end, range_end);
 
   // Copy to separate array
   std::array dofs = {std::vector<std::int32_t>(bc_dofs.size()),
                      std::vector<std::int32_t>(bc_dofs.size())};
-  std::transform(bc_dofs.cbegin(), bc_dofs.cend(), dofs[0].begin(),
-                 [](auto dof) { return dof[0]; });
-  std::transform(bc_dofs.cbegin(), bc_dofs.cend(), dofs[1].begin(),
-                 [](auto dof) { return dof[1]; });
+  std::ranges::transform(bc_dofs, dofs[0].begin(),
+                         [](auto dof) { return dof[0]; });
+  std::ranges::transform(bc_dofs, dofs[1].begin(),
+                         [](auto dof) { return dof[1]; });
 
   return dofs;
 }

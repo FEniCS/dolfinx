@@ -8,7 +8,6 @@
 #include "AdjacencyList.h"
 #include "partitioners.h"
 #include <algorithm>
-#include <bits/ranges_algo.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
@@ -207,8 +206,8 @@ graph::build::distribute(MPI_Comm comm,
     }
   }
 
-  std::transform(offsets1.begin(), offsets1.end(), offsets1.begin(),
-                 [off = offsets0.back()](auto x) { return x + off; });
+  std::ranges::transform(offsets1, offsets1.begin(),
+                         [off = offsets0.back()](auto x) { return x + off; });
   data0.insert(data0.end(), data1.begin(), data1.end());
   offsets0.insert(offsets0.end(), std::next(offsets1.begin()), offsets1.end());
   src_ranks0.insert(src_ranks0.end(), src_ranks1.begin(), src_ranks1.end());
@@ -496,15 +495,15 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
   std::ranges::sort(old_to_new);
 
   // Replace values in recv_data with new_index and send back
-  std::transform(recv_data.begin(), recv_data.end(), recv_data.begin(),
-                 [&old_to_new](auto r)
-                 {
-                   auto it = std::ranges::lower_bound(
-                       old_to_new, r, std::ranges::less(),
-                       [](auto& e) { return e[0]; });
-                   assert(it != old_to_new.end() and (*it)[0] == r);
-                   return (*it)[1];
-                 });
+  std::ranges::transform(recv_data, recv_data.begin(),
+                         [&old_to_new](auto r)
+                         {
+                           auto it = std::ranges::lower_bound(
+                               old_to_new, r, std::ranges::less(),
+                               [](auto e) { return e[0]; });
+                           assert(it != old_to_new.end() and (*it)[0] == r);
+                           return (*it)[1];
+                         });
 
   std::vector<std::int64_t> new_recv(send_data.size());
   MPI_Neighbor_alltoallv(recv_data.data(), recv_sizes.data(),
@@ -516,24 +515,22 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
 
   // Build (old id,  new id) pairs
   std::vector<std::array<std::int64_t, 2>> old_to_new1(send_data.size());
-  std::transform(send_data.begin(), send_data.end(), new_recv.begin(),
-                 old_to_new1.begin(),
-                 [](auto idx_old, auto idx_new) ->
-                 typename decltype(old_to_new1)::value_type
-                 { return {idx_old, idx_new}; });
+  std::ranges::transform(send_data, new_recv, old_to_new1.begin(),
+                         [](auto idx_old, auto idx_new) ->
+                         typename decltype(old_to_new1)::value_type
+                         { return {idx_old, idx_new}; });
   std::ranges::sort(old_to_new1);
 
   std::vector<std::int64_t> ghost_global_indices(ghost_indices.size());
-  std::transform(ghost_indices.begin(), ghost_indices.end(),
-                 ghost_global_indices.begin(),
-                 [&old_to_new1](auto q)
-                 {
-                   auto it = std::ranges::lower_bound(
-                       old_to_new1, std::array<std::int64_t, 2>{q, 0},
-                       [](auto& a, auto& b) { return a[0] < b[0]; });
-                   assert(it != old_to_new1.end() and (*it)[0] == q);
-                   return (*it)[1];
-                 });
+  std::ranges::transform(ghost_indices, ghost_global_indices.begin(),
+                         [&old_to_new1](auto q)
+                         {
+                           auto it = std::ranges::lower_bound(
+                               old_to_new1, std::array<std::int64_t, 2>{q, 0},
+                               [](auto a, auto b) { return a[0] < b[0]; });
+                           assert(it != old_to_new1.end() and (*it)[0] == q);
+                           return (*it)[1];
+                         });
 
   return ghost_global_indices;
 }
@@ -578,16 +575,16 @@ std::vector<std::int32_t> graph::build::compute_local_to_local(
   // Compute inverse map for local0_to_local1
   std::vector<std::int32_t> local0_to_local1;
   local0_to_local1.reserve(local0_to_global.size());
-  std::transform(local0_to_global.begin(), local0_to_global.end(),
-                 std::back_inserter(local0_to_local1),
-                 [&global_to_local1](auto l2g)
-                 {
-                   auto it = std::ranges::lower_bound(
-                       global_to_local1, l2g, std::ranges::less(),
-                       [](auto& e) { return e.first; });
-                   assert(it != global_to_local1.end() and it->first == l2g);
-                   return it->second;
-                 });
+  std::ranges::transform(
+      local0_to_global, std::back_inserter(local0_to_local1),
+      [&global_to_local1](auto l2g)
+      {
+        auto it = std::ranges::lower_bound(global_to_local1, l2g,
+                                           std::ranges::less(),
+                                           [](auto e) { return e.first; });
+        assert(it != global_to_local1.end() and it->first == l2g);
+        return it->second;
+      });
 
   return local0_to_local1;
 }

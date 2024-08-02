@@ -14,6 +14,8 @@
 #include "Form.h"
 #include "Function.h"
 #include "FunctionSpace.h"
+#include "sparsitybuild.h"
+#include <algorithm>
 #include <array>
 #include <concepts>
 #include <dolfinx/common/types.h>

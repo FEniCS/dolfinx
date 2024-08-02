@@ -8,6 +8,7 @@
 #include "cells.h"
 #include "vtk_utils.h"
 #include "xdmf_utils.h"
+#include <algorithm>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
@@ -154,12 +155,10 @@ void add_data(const std::string& name,
   {
     using U = typename T::value_type;
     std::vector<U> v(values.size());
-    std::transform(values.begin(), values.end(), v.begin(),
-                   [](auto x) { return x.real(); });
+    std::ranges::transform(values, v.begin(), [](auto x) { return x.real(); });
     add_data_float(name + field_ext[0], num_components, std::span<const U>(v),
                    node);
-    std::transform(values.begin(), values.end(), v.begin(),
-                   [](auto x) { return x.imag(); });
+    std::ranges::transform(values, v.begin(), [](auto x) { return x.imag(); });
     add_data_float(name + field_ext[1], num_components, std::span<const U>(v),
                    node);
   }

@@ -362,7 +362,7 @@ void SparsityPattern::finalize()
   {
     std::vector<std::int32_t>& row = _row_cache[i];
     std::ranges::sort(row);
-    auto it_end = std::unique(row.begin(), row.end());
+    auto it_end = std::ranges::unique(row).begin();
 
     // Find position of first "off-diagonal" column
     _off_diagonal_offsets[i] = std::distance(

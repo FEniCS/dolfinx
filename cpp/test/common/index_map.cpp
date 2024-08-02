@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <algorithm>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 #include <dolfinx/common/IndexMap.h>
@@ -144,8 +145,8 @@ void test_consensus_exchange()
   // Create an IndexMap
   std::vector<int> src_ranks = global_ghost_owner;
   std::ranges::sort(src_ranks);
-  src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
-                  src_ranks.end());
+  auto [unique_end, range_end] = std::ranges::unique(src_ranks);
+  src_ranks.erase(unique_end, range_end);
 
   auto dest_ranks0
       = dolfinx::MPI::compute_graph_edges_nbx(MPI_COMM_WORLD, src_ranks);
