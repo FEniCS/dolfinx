@@ -234,17 +234,19 @@ void declare_data_types(nb::module_& m)
       nb::arg("values").noconvert());
 }
 
-} // namespace
-
+#ifdef HAS_ADIOS2
 template <typename T>
 void declare_write_mesh(nb::module_& m, std::string type)
 {
-  // dolfinx::io::checkpointing::write_test
+  // dolfinx::io::checkpointing::write_mesh
   std::string pyfunction_write_mesh_name = std::string("write_mesh_") + type;
   m.def(pyfunction_write_mesh_name.c_str(),
         &dolfinx::io::checkpointing::write_mesh<T>, nb::arg("adios2"),
         nb::arg("mesh"), "Write test to file using ADIOS2");
 }
+#endif
+
+} // namespace
 
 void io(nb::module_& m)
 {
