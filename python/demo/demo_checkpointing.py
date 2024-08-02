@@ -44,9 +44,23 @@ from dolfinx import io, mesh
 msh = mesh.create_rectangle(
     comm=MPI.COMM_WORLD,
     points=((0.0, 0.0), (1.0, 1.0)),
-    n=(16, 16),
+    n=(4, 4),
     cell_type=mesh.CellType.triangle,
 )
+# -
+
+# +
+filename = "mesh.bp"
+engine_type = "BP5"
+tag = "mesh-write"
+mode = "write"
+
+adios2 = io.ADIOS2(msh.comm, filename, tag, engine_type, mode)
+# -
+
+# +
+io.write_mesh(adios2, msh)
+adios2.close()
 # -
 
 # +
@@ -55,10 +69,10 @@ engine_type = "BP5"
 tag = "test-write"
 mode = "write"
 
-adios2 = io.ADIOS2(msh.comm, filename, tag, engine_type, mode)
+adios2_test = io.ADIOS2(msh.comm, filename, tag, engine_type, mode)
 # -
 
 # +
-io.write_test(adios2)
-adios2.close()
+io.write_test(adios2_test)
+adios2_test.close()
 # -

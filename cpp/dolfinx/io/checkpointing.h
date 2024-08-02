@@ -22,21 +22,18 @@ namespace dolfinx::io::checkpointing
 
 /// @brief Write mesh to a file.
 ///
-/// @param[in] io ADIOS2 IO
-/// @param[in] engine ADIOS2 Engine
+/// @param[in] ADIOS2 ADIOS2Wrapper
 /// @param[in] mesh Mesh of type float or double to write to the file
 template <std::floating_point T>
-void write_mesh(adios2::IO& io, adios2::Engine& engine,
-                dolfinx::mesh::Mesh<T>& mesh);
+void write_mesh(ADIOS2Wrapper& ADIOS2, dolfinx::mesh::Mesh<T>& mesh);
 
 /// @brief Read mesh from a file.
 ///
-/// @param[in] io ADIOS2 IO
-/// @param[in] engine ADIOS2 Engine
+/// @param[in] ADIOS2 ADIOS2Wrapper
 /// @param[in] comm comm
 /// @return mesh reconstructed from the data
 template <std::floating_point T>
-dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
+dolfinx::mesh::Mesh<T> read_mesh(ADIOS2Wrapper& ADIOS2,
                                  MPI_Comm comm = MPI_COMM_WORLD);
 
 /// @brief Test function to see python API for ADIOS2 wrapper

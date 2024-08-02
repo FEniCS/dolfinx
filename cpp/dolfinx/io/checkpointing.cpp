@@ -36,8 +36,7 @@ namespace dolfinx::io::checkpointing
 {
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-void write_mesh(adios2::IO& io, adios2::Engine& engine,
-                dolfinx::mesh::Mesh<T>& mesh)
+void write_mesh(ADIOS2Wrapper& ADIOS2, dolfinx::mesh::Mesh<T>& mesh)
 {
 
   const mesh::Geometry<T>& geometry = mesh.geometry();
@@ -109,72 +108,77 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
 
   // ADIOS2 write attributes and variables
   {
-    io.DefineAttribute<std::string>("name", mesh.name);
-    io.DefineAttribute<std::int32_t>("dim", dim);
-    io.DefineAttribute<std::string>("cell_type", cell_type);
-    io.DefineAttribute<std::int32_t>("degree", degree);
-    io.DefineAttribute<std::string>("lagrange_variant", lagrange_variant);
+    auto io = ADIOS2.io();
+    auto engine = ADIOS2.engine();
+
+    io->DefineAttribute<std::string>("name", mesh.name);
+    io->DefineAttribute<std::int32_t>("dim", dim);
+    io->DefineAttribute<std::string>("cell_type", cell_type);
+    io->DefineAttribute<std::int32_t>("degree", degree);
+    io->DefineAttribute<std::string>("lagrange_variant", lagrange_variant);
 
     adios2::Variable<std::uint64_t> var_num_vertices
-        = io.DefineVariable<std::uint64_t>("num_vertices");
+        = io->DefineVariable<std::uint64_t>("num_vertices");
     adios2::Variable<std::uint64_t> var_num_cells
-        = io.DefineVariable<std::uint64_t>("num_cells");
+        = io->DefineVariable<std::uint64_t>("num_cells");
     adios2::Variable<std::uint32_t> var_num_dofs_per_cell
-        = io.DefineVariable<std::uint32_t>("num_dofs_per_cell");
+        = io->DefineVariable<std::uint32_t>("num_dofs_per_cell");
 
     adios2::Variable<std::int64_t> var_input_global_indices
-        = io.DefineVariable<std::int64_t>(
+        = io->DefineVariable<std::int64_t>(
             "input_global_indices", {num_vertices_global}, {offset},
             {num_vertices_local}, adios2::ConstantDims);
 
     adios2::Variable<T> var_x
-        = io.DefineVariable<T>("x", {num_vertices_global, 3}, {offset, 0},
-                               {num_vertices_local, 3}, adios2::ConstantDims);
+        = io->DefineVariable<T>("x", {num_vertices_global, 3}, {offset, 0},
+                                {num_vertices_local, 3}, adios2::ConstantDims);
 
     adios2::Variable<std::int64_t> var_topology_array
-        = io.DefineVariable<std::int64_t>(
+        = io->DefineVariable<std::int64_t>(
             "topology_array", {num_cells_global * num_dofs_per_cell},
             {cell_offset * num_dofs_per_cell},
             {num_cells_local * num_dofs_per_cell}, adios2::ConstantDims);
 
     adios2::Variable<std::int32_t> var_topology_offsets
-        = io.DefineVariable<std::int32_t>(
+        = io->DefineVariable<std::int32_t>(
             "topology_offsets", {num_cells_global + 1}, {cell_offset},
             {num_cells_local + 1}, adios2::ConstantDims);
 
-    engine.BeginStep();
-    engine.Put(var_num_vertices, num_vertices_global);
-    engine.Put(var_num_cells, num_cells_global);
-    engine.Put(var_num_dofs_per_cell, num_dofs_per_cell);
-    engine.Put(var_input_global_indices, input_global_indices_span.data());
-    engine.Put(var_x, mesh_x.subspan(0, num_vertices_local * 3).data());
-    engine.Put(var_topology_array, array_global.data());
-    engine.Put(var_topology_offsets, offsets_global.data());
-    engine.EndStep();
+    engine->BeginStep();
+    engine->Put(var_num_vertices, num_vertices_global);
+    engine->Put(var_num_cells, num_cells_global);
+    engine->Put(var_num_dofs_per_cell, num_dofs_per_cell);
+    engine->Put(var_input_global_indices, input_global_indices_span.data());
+    engine->Put(var_x, mesh_x.subspan(0, num_vertices_local * 3).data());
+    engine->Put(var_topology_array, array_global.data());
+    engine->Put(var_topology_offsets, offsets_global.data());
+    engine->EndStep();
   }
 }
 
 //-----------------------------------------------------------------------------
 /// @cond
-template void write_mesh<float>(adios2::IO& io, adios2::Engine& engine,
+template void write_mesh<float>(ADIOS2Wrapper& ADIOS2,
                                 dolfinx::mesh::Mesh<float>& mesh);
 
-template void write_mesh<double>(adios2::IO& io, adios2::Engine& engine,
+template void write_mesh<double>(ADIOS2Wrapper& ADIOS2,
                                  dolfinx::mesh::Mesh<double>& mesh);
 
 /// @endcond
 
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
-                                 MPI_Comm comm)
+dolfinx::mesh::Mesh<T> read_mesh(ADIOS2Wrapper& ADIOS2, MPI_Comm comm)
 {
 
   int rank, size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
 
-  engine.BeginStep();
+  auto io = ADIOS2.io();
+  auto engine = ADIOS2.engine();
+
+  engine->BeginStep();
 
   // Attributes
   std::string name;
@@ -185,15 +189,15 @@ dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
   // Read attributes
   {
     adios2::Attribute<std::string> var_name
-        = io.InquireAttribute<std::string>("name");
+        = io->InquireAttribute<std::string>("name");
     adios2::Attribute<std::int32_t> var_dim
-        = io.InquireAttribute<std::int32_t>("dim");
+        = io->InquireAttribute<std::int32_t>("dim");
     adios2::Attribute<std::string> var_cell_type
-        = io.InquireAttribute<std::string>("cell_type");
+        = io->InquireAttribute<std::string>("cell_type");
     adios2::Attribute<std::int32_t> var_degree
-        = io.InquireAttribute<std::int32_t>("degree");
+        = io->InquireAttribute<std::int32_t>("degree");
     adios2::Attribute<std::string> var_variant
-        = io.InquireAttribute<std::string>("lagrange_variant");
+        = io->InquireAttribute<std::string>("lagrange_variant");
 
     name = var_name.Data()[0];
     dim = var_dim.Data()[0];
@@ -210,15 +214,15 @@ dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
   // Read scalar variables
   {
     adios2::Variable<std::uint64_t> var_num_vertices
-        = io.InquireVariable<std::uint64_t>("num_vertices");
+        = io->InquireVariable<std::uint64_t>("num_vertices");
     adios2::Variable<std::uint64_t> var_num_cells
-        = io.InquireVariable<std::uint64_t>("num_cells");
+        = io->InquireVariable<std::uint64_t>("num_cells");
     adios2::Variable<std::uint32_t> var_num_dofs_per_cell
-        = io.InquireVariable<std::uint32_t>("num_dofs_per_cell");
+        = io->InquireVariable<std::uint32_t>("num_dofs_per_cell");
 
-    engine.Get(var_num_vertices, num_vertices_global);
-    engine.Get(var_num_cells, num_cells_global);
-    engine.Get(var_num_dofs_per_cell, num_dofs_per_cell);
+    engine->Get(var_num_vertices, num_vertices_global);
+    engine->Get(var_num_cells, num_cells_global);
+    engine->Get(var_num_dofs_per_cell, num_dofs_per_cell);
   }
 
   // Compute local sizes, offsets
@@ -243,44 +247,44 @@ dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
 
   {
     adios2::Variable<std::int64_t> var_input_global_indices
-        = io.InquireVariable<std::int64_t>("input_global_indices");
+        = io->InquireVariable<std::int64_t>("input_global_indices");
 
-    adios2::Variable<T> var_x = io.InquireVariable<T>("x");
+    adios2::Variable<T> var_x = io->InquireVariable<T>("x");
 
     adios2::Variable<std::int64_t> var_topology_array
-        = io.InquireVariable<std::int64_t>("topology_array");
+        = io->InquireVariable<std::int64_t>("topology_array");
 
     adios2::Variable<std::int32_t> var_topology_offsets
-        = io.InquireVariable<std::int32_t>("topology_offsets");
+        = io->InquireVariable<std::int32_t>("topology_offsets");
 
     if (var_input_global_indices)
     {
       var_input_global_indices.SetSelection(
           {{local_range[0]}, {num_vertices_local}});
-      engine.Get(var_input_global_indices, input_global_indices.data(),
-                 adios2::Mode::Deferred);
+      engine->Get(var_input_global_indices, input_global_indices.data(),
+                  adios2::Mode::Deferred);
     }
 
     if (var_x)
     {
       var_x.SetSelection({{local_range[0], 0}, {num_vertices_local, 3}});
-      engine.Get(var_x, x.data(), adios2::Mode::Deferred);
+      engine->Get(var_x, x.data(), adios2::Mode::Deferred);
     }
 
     if (var_topology_array)
     {
       var_topology_array.SetSelection({{cell_range[0] * num_dofs_per_cell},
                                        {cell_range[1] * num_dofs_per_cell}});
-      engine.Get(var_topology_array, array.data(), adios2::Mode::Deferred);
+      engine->Get(var_topology_array, array.data(), adios2::Mode::Deferred);
     }
 
     if (var_topology_offsets)
     {
       var_topology_offsets.SetSelection({{cell_range[0]}, {cell_range[1] + 1}});
-      engine.Get(var_topology_offsets, offsets.data(), adios2::Mode::Deferred);
+      engine->Get(var_topology_offsets, offsets.data(), adios2::Mode::Deferred);
     }
 
-    engine.EndStep();
+    engine->EndStep();
 
     std::int32_t cell_offset = offsets[0];
     for (auto offset = offsets.begin(); offset != offsets.end(); ++offset)
@@ -307,11 +311,11 @@ dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
 
 //-----------------------------------------------------------------------------
 /// @cond
-template dolfinx::mesh::Mesh<float>
-read_mesh<float>(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm);
+template dolfinx::mesh::Mesh<float> read_mesh<float>(ADIOS2Wrapper& ADIOS2,
+                                                     MPI_Comm comm);
 
-template dolfinx::mesh::Mesh<double>
-read_mesh<double>(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm);
+template dolfinx::mesh::Mesh<double> read_mesh<double>(ADIOS2Wrapper& ADIOS2,
+                                                       MPI_Comm comm);
 
 /// @endcond
 

@@ -51,6 +51,7 @@ if _cpp.common.has_adios2:
         "FidesMeshPolicy",
         "VTXMeshPolicy",
         "ADIOS2",
+        "write_mesh",
         "write_test",
     ]
 
@@ -206,6 +207,16 @@ if _cpp.common.has_adios2:
 
         def __exit__(self, exception_type, exception_value, traceback):
             self.close()
+
+    def write_mesh(ADIOS2: ADIOS2, mesh: Mesh) -> None:
+        """Write mesh to a file using ADIOS2"""
+        dtype = mesh.geometry.x.dtype  # type: ignore
+        if np.issubdtype(dtype, np.float32):
+            _writer = _cpp.io.write_mesh_float32
+        elif np.issubdtype(dtype, np.float64):
+            _writer = _cpp.io.write_mesh_float64
+
+        return _writer(ADIOS2, mesh._cpp_object)
 
     def write_test(ADIOS2: ADIOS2) -> None:
         """Write to a file using ADIOS2"""

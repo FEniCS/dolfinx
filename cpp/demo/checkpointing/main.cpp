@@ -29,52 +29,65 @@ int main(int argc, char* argv[])
       mesh::CellType::quadrilateral, part));
 
   // Set up ADIOS2 IO and Engine
-  adios2::ADIOS adios(mesh->comm());
-  adios2::IO io = adios.DeclareIO("mesh-write");
-  io.SetEngine("BP5");
-  adios2::Engine engine = io.Open("mesh.bp", adios2::Mode::Write);
+  auto adios
+      = ADIOS2Wrapper(mesh->comm(), "mesh.bp", "mesh-write", "BP5", "write");
+
+  auto io = adios.io();
 
   // TODO: Need to move this inside the checkpointing module
-  io.DefineAttribute<std::string>("version", DOLFINX_VERSION_STRING);
-  io.DefineAttribute<std::string>("git_hash", DOLFINX_VERSION_GIT);
+  io->DefineAttribute<std::string>("version", DOLFINX_VERSION_STRING);
+  io->DefineAttribute<std::string>("git_hash", DOLFINX_VERSION_GIT);
 
-  io::checkpointing::write_mesh(io, engine, *mesh);
+  // io::checkpointing::write_mesh(io, engine, *mesh);
+  io::checkpointing::write_mesh(adios, *mesh);
 
-  engine.Close();
+  // adios.close();
 
-  adios2::IO io_read = adios.DeclareIO("mesh-read");
-  io_read.SetEngine("BP5");
+  // ----------------------------------------------------------------------
+  auto adios_read
+      = ADIOS2Wrapper(mesh->comm(), "mesh.bp", "mesh-read", "BP5", "read");
 
-  adios2::Engine reader = io_read.Open("mesh.bp", adios2::Mode::Read);
+  auto io_read = adios_read.io();
+  auto engine_read = adios_read.engine();
+
+  // Following throws an error. engine_read->BeginStep() is needed to
+  // read the VariableType, but then EndStep() fails with message
+  // EndStep() called without a successful BeginStep()
+
+  // engine_read->BeginStep();
+  std::string floating_point = io->VariableType("x");
+  // engine_read->EndStep();
 
   // TODO: move type deduction inside checkpointing
-  if ("float" == io.VariableType("x"))
+  if ("float" == floating_point)
   {
     using T = float;
     mesh::Mesh<T> mesh_read
-        = io::checkpointing::read_mesh<T>(io_read, reader, mesh->comm());
-    reader.Close();
+        = io::checkpointing::read_mesh<T>(adios_read, mesh->comm());
+    adios_read.close();
 
-    adios2::IO io_write = adios.DeclareIO("mesh-rewrite");
-    io_write.SetEngine("BP5");
+    auto adios_write = ADIOS2Wrapper(mesh->comm(), "mesh2.bp", "mesh-rewrite",
+                                     "BP5", "write");
 
-    adios2::Engine writer = io_write.Open("mesh2.bp", adios2::Mode::Write);
-    io::checkpointing::write_mesh(io_write, writer, mesh_read);
-    writer.Close();
+    auto io_write = adios_write.io();
+
+    io::checkpointing::write_mesh(adios_write, mesh_read);
+    adios_write.close();
   }
-  else if ("double" == io.VariableType("x"))
+  else if ("double" == floating_point)
   {
     using T = double;
     mesh::Mesh<T> mesh_read
-        = io::checkpointing::read_mesh<T>(io_read, reader, mesh->comm());
-    reader.Close();
+        = io::checkpointing::read_mesh<T>(adios_read, mesh->comm());
+    adios_read.close();
 
-    adios2::IO io_write = adios.DeclareIO("mesh-rewrite");
-    io_write.SetEngine("BP5");
+    auto adios_write = ADIOS2Wrapper(mesh->comm(), "mesh2.bp", "mesh-rewrite",
+                                     "BP5", "write");
 
-    adios2::Engine writer = io_write.Open("mesh2.bp", adios2::Mode::Write);
-    io::checkpointing::write_mesh(io_write, writer, mesh_read);
-    writer.Close();
+    auto io_write = adios_write.io();
+
+    io::checkpointing::write_mesh(adios_write, mesh_read);
+    adios_write.close();
   }
 
   auto container

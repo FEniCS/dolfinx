@@ -19,6 +19,7 @@ if _cpp.common.has_adios2:
         FidesWriter,
         VTXMeshPolicy,
         VTXWriter,
+        write_mesh,
         write_test,
     )
 
@@ -29,5 +30,6 @@ if _cpp.common.has_adios2:
         "FidesMeshPolicy",
         "VTXMeshPolicy",
         "ADIOS2",
+        "write_mesh",
         "write_test",
     ]
