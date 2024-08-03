@@ -320,21 +320,35 @@ template dolfinx::mesh::Mesh<double> read_mesh<double>(ADIOS2Wrapper& ADIOS2,
 /// @endcond
 
 //-----------------------------------------------------------------------------
-void write_test(ADIOS2Wrapper& ADIOS2)
+std::string query_type(ADIOS2Wrapper& ADIOS2)
 {
   auto io = ADIOS2.io();
   auto engine = ADIOS2.engine();
-
-  io->DefineAttribute<std::string>("name", "Test write");
-  adios2::Variable<std::uint64_t> var_num
-      = io->DefineVariable<std::uint64_t>("num");
-
-  std::uint64_t num = 100;
-
   engine->BeginStep();
-  engine->Put(var_num, num);
+  std::string floating_point = io->VariableType("x");
   engine->EndStep();
+
+  return floating_point;
 }
+
+//-----------------------------------------------------------------------------
+std::variant<dolfinx::mesh::Mesh<float>, dolfinx::mesh::Mesh<double>>
+read_mesh_variant(ADIOS2Wrapper& _ADIOS2, ADIOS2Wrapper& ADIOS2, MPI_Comm comm)
+{
+  std::string floating_point = query_type(_ADIOS2);
+
+  if (floating_point == "float")
+  {
+    dolfinx::mesh::Mesh<float> mesh = read_mesh<float>(ADIOS2, comm);
+    return mesh;
+  }
+  else // floating_point == "double"
+  {
+    dolfinx::mesh::Mesh<double> mesh = read_mesh<double>(ADIOS2, comm);
+    return mesh;
+  }
+}
+
 } // namespace dolfinx::io::checkpointing
 
 #endif

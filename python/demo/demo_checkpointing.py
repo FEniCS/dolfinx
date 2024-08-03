@@ -63,16 +63,22 @@ io.write_mesh(adios2, msh)
 adios2.close()
 # -
 
-# +
-filename = "test.bp"
+filename = "mesh.bp"
 engine_type = "BP5"
-tag = "test-write"
-mode = "write"
+tag = "mesh-read"
+mode = "read"
 
-adios2_test = io.ADIOS2(msh.comm, filename, tag, engine_type, mode)
+adios2_query = io.ADIOS2(msh.comm, filename, tag, engine_type, mode)
+adios2_read = io.ADIOS2(msh.comm, filename, tag, engine_type, mode)
 # -
 
 # +
-io.write_test(adios2_test)
-adios2_test.close()
+msh_read = io.read_mesh(adios2_query, adios2_read, msh.comm)
+# -
+
+# +
+print(type(msh_read))
+print(msh_read.name)
+print(msh_read.geometry.x.dtype)
+print(msh_read.geometry.x)
 # -

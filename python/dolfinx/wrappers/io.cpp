@@ -242,8 +242,9 @@ void declare_write_mesh(nb::module_& m, std::string type)
   std::string pyfunction_write_mesh_name = std::string("write_mesh_") + type;
   m.def(pyfunction_write_mesh_name.c_str(),
         &dolfinx::io::checkpointing::write_mesh<T>, nb::arg("adios2"),
-        nb::arg("mesh"), "Write test to file using ADIOS2");
+        nb::arg("mesh"), "Write mesh to file using ADIOS2");
 }
+
 #endif
 
 } // namespace
@@ -268,9 +269,17 @@ void io(nb::module_& m)
           nb::arg("engine_type"), nb::arg("mode"))
       .def("close", &dolfinx::io::ADIOS2Wrapper::close);
 
-  // dolfinx::io::checkpointing::write_test
-  m.def("write_test", &dolfinx::io::checkpointing::write_test,
-        nb::arg("adios2"), "Write test to file using ADIOS2");
+  // dolfinx::io::checkpointing::read_mesh_variant
+  m.def(
+      "read_mesh",
+      [](dolfinx::io::ADIOS2Wrapper& _ADIOS2,
+         dolfinx::io::ADIOS2Wrapper& ADIOS2, MPICommWrapper comm)
+      {
+        return dolfinx::io::checkpointing::read_mesh_variant(_ADIOS2, ADIOS2,
+                                                             comm.get());
+      },
+      nb::arg("_adios2"), nb::arg("adios2"), nb::arg("comm"),
+      "Read mesh from file using ADIOS2");
 
   declare_write_mesh<float>(m, "float32");
   declare_write_mesh<double>(m, "float64");

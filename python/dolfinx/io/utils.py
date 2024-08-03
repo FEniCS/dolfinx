@@ -51,8 +51,8 @@ if _cpp.common.has_adios2:
         "FidesMeshPolicy",
         "VTXMeshPolicy",
         "ADIOS2",
+        "read_mesh",
         "write_mesh",
-        "write_test",
     ]
 
     class VTXWriter:
@@ -218,9 +218,11 @@ if _cpp.common.has_adios2:
 
         return _writer(ADIOS2, mesh._cpp_object)
 
-    def write_test(ADIOS2: ADIOS2) -> None:
-        """Write to a file using ADIOS2"""
-        return _cpp.io.write_test(ADIOS2)
+    def read_mesh(_ADIOS2: ADIOS2, ADIOS2: ADIOS2, comm: _MPI.Comm) -> Mesh:
+        """Read mesh from a file using ADIOS2"""
+        msh = _cpp.io.read_mesh(_ADIOS2, ADIOS2, comm)
+
+        return msh
 
 
 class VTKFile(_cpp.io.VTKFile):

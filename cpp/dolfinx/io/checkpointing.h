@@ -36,10 +36,21 @@ template <std::floating_point T>
 dolfinx::mesh::Mesh<T> read_mesh(ADIOS2Wrapper& ADIOS2,
                                  MPI_Comm comm = MPI_COMM_WORLD);
 
-/// @brief Test function to see python API for ADIOS2 wrapper
+/// @brief Read mesh from a file.
+///
+/// @param[in] _ADIOS2 ADIOS2Wrapper
+/// @param[in] ADIOS2 ADIOS2Wrapper
+/// @param[in] comm comm
+/// @return mesh reconstructed from the data
+std::variant<dolfinx::mesh::Mesh<float>, dolfinx::mesh::Mesh<double>>
+read_mesh_variant(ADIOS2Wrapper& _ADIOS2, ADIOS2Wrapper& ADIOS2,
+                  MPI_Comm comm = MPI_COMM_WORLD);
+
+/// @brief Query floating_point type stored in the file
 ///
 /// @param[in] ADIOS2 ADIOS2Wrapper
-void write_test(ADIOS2Wrapper& ADIOS2);
+/// @return type float or double as a string
+std::string query_type(ADIOS2Wrapper& ADIOS2);
 
 } // namespace dolfinx::io::checkpointing
 
