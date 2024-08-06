@@ -4,25 +4,14 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "array.h"
-#include "pycoeff.h"
 #include <array>
 #include <complex>
 #include <cstdint>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/fem/DirichletBC.h>
-#include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/FiniteElement.h>
-#include <dolfinx/fem/Form.h>
-#include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/fem/assembler.h>
-#include <dolfinx/fem/discreteoperators.h>
-#include <dolfinx/fem/sparsitybuild.h>
-#include <dolfinx/fem/utils.h>
-#include <dolfinx/la/MatrixCSR.h>
-#include <dolfinx/la/SparsityPattern.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <memory>
+#include <span>
+#include <string>
+#include <utility>
+
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/operators.h>
@@ -34,48 +23,28 @@
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
-#include <span>
-#include <string>
-#include <utility>
+
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/fem/DirichletBC.h>
+#include <dolfinx/fem/DofMap.h>
+#include <dolfinx/fem/FiniteElement.h>
+#include <dolfinx/fem/Form.h>
+#include <dolfinx/fem/FunctionSpace.h>
+#include <dolfinx/fem/assembler.h>
+#include <dolfinx/fem/sparsitybuild.h>
+#include <dolfinx/fem/discreteoperators.h>
+#include <dolfinx/fem/utils.h>
+#include <dolfinx/la/MatrixCSR.h>
+#include <dolfinx/la/SparsityPattern.h>
+#include <dolfinx/mesh/Mesh.h>
+
+#include "array.h"
+#include "pycoeff.h"
 
 namespace nb = nanobind;
 
 namespace
 {
-
-template <typename U>
-dolfinx::la::SparsityPattern
-create_sparsity(const dolfinx::fem::FunctionSpace<U>& V0,
-                const dolfinx::fem::FunctionSpace<U>& V1)
-{
-  assert(V0.mesh());
-  auto mesh = V0.mesh();
-  assert(V1.mesh());
-  assert(mesh == V1.mesh());
-  MPI_Comm comm = mesh->comm();
-
-  auto dofmap0 = V0.dofmap();
-  assert(dofmap0);
-  auto dofmap1 = V1.dofmap();
-  assert(dofmap1);
-
-  // Create and build  sparsity pattern
-  assert(dofmap0->index_map);
-  assert(dofmap1->index_map);
-  dolfinx::la::SparsityPattern sp(
-      comm, {dofmap1->index_map, dofmap0->index_map},
-      {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-
-  int tdim = mesh->topology()->dim();
-  auto map = mesh->topology()->index_map(tdim);
-  assert(map);
-  std::vector<std::int32_t> c(map->size_local(), 0);
-  std::iota(c.begin(), c.end(), 0);
-  dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
-  sp.finalize();
-
-  return sp;
-}
 
 // Declare assembler function that have multiple scalar types
 template <typename T, typename U>
@@ -86,7 +55,7 @@ void declare_discrete_operators(nb::module_& m)
            const dolfinx::fem::FunctionSpace<U>& V1)
         {
           // Create sparsity
-          auto sp = create_sparsity(V0, V1);
+          auto sp = dolfinx::fem::create_sparsity_pattern(V0, V1);
 
           // Build operator
           dolfinx::la::MatrixCSR<T> A(sp);
@@ -142,7 +111,7 @@ void declare_discrete_operators(nb::module_& m)
       [](const dolfinx::fem::FunctionSpace<U>& V0,
          const dolfinx::fem::FunctionSpace<U>& V1)
       {
-        auto sp = create_sparsity(V0, V1);
+        auto sp = dolfinx::fem::create_sparsity_pattern(V0, V1);
 
         // Build operator
         dolfinx::la::MatrixCSR<T> A(sp);

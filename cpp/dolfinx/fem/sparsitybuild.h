@@ -1,28 +1,20 @@
-// Copyright (C) 2007-2023 Garth N. Wells
-//
-// This file is part of DOLFINx (https://www.fenicsproject.org)
-//
-// SPDX-License-Identifier:    LGPL-3.0-or-later
-
 #pragma once
 
-#include <array>
-#include <cstdint>
-#include <functional>
-#include <span>
+#include <memory>
+#include <set>
+#include <stdexcept>
 
-namespace dolfinx::la
-{
-class SparsityPattern;
-}
+#include <dolfinx/common/types.h>
+#include <dolfinx/la/SparsityPattern.h>
+
+#include "Form.h"
 
 namespace dolfinx::fem
 {
-class DofMap;
 
-/// Support for building sparsity patterns from degree-of-freedom maps.
-namespace sparsitybuild
+namespace impl
 {
+
 /// @brief Iterate over cells and insert entries into sparsity pattern.
 ///
 /// Inserts the rectangular blocks of indices `dofmap[0][cells[0][i]] x
@@ -35,9 +27,10 @@ namespace sparsitybuild
 /// `cells[1]` must have the same size.
 /// @param dofmaps Dofmaps to used in building the sparsity pattern.
 /// @note The sparsity pattern is not finalised.
-void cells(la::SparsityPattern& pattern,
-           std::array<std::span<const std::int32_t>, 2> cells,
-           std::array<std::reference_wrapper<const DofMap>, 2> dofmaps);
+void sparsity_pattern_add_cells(
+    la::SparsityPattern& pattern,
+    std::array<std::span<const std::int32_t>, 2> cells,
+    std::array<std::reference_wrapper<const DofMap>, 2> dofmaps);
 
 /// @brief Iterate over interior facets and insert entries into sparsity
 /// pattern.
@@ -53,10 +46,156 @@ void cells(la::SparsityPattern& pattern,
 /// @param[in] dofmaps Dofmaps to use in building the sparsity pattern.
 ///
 /// @note The sparsity pattern is not finalised.
-void interior_facets(
+void sparsity_patter_add_interior_facets(
     la::SparsityPattern& pattern,
     std::array<std::span<const std::int32_t>, 2> cells,
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps);
 
-} // namespace sparsitybuild
+} // namespace impl
+
+/// @brief Create a sparsity pattern for a given form.
+/// @note The pattern is not finalised, i.e. the caller is responsible
+/// for calling SparsityPattern::assemble.
+/// @param[in] a A bilinear form
+/// @return The corresponding sparsity pattern
+template <dolfinx::scalar T, std::floating_point U>
+la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
+{
+  if (a.rank() != 2)
+  {
+    throw std::runtime_error(
+        "Cannot create sparsity pattern. Form is not a bilinear.");
+  }
+
+  // Get dof maps and mesh
+  std::array<std::reference_wrapper<const DofMap>, 2> dofmaps{
+      *a.function_spaces().at(0)->dofmap(),
+      *a.function_spaces().at(1)->dofmap()};
+  std::shared_ptr mesh = a.mesh();
+  assert(mesh);
+
+  std::shared_ptr mesh0 = a.function_spaces().at(0)->mesh();
+  assert(mesh0);
+  std::shared_ptr mesh1 = a.function_spaces().at(1)->mesh();
+  assert(mesh1);
+
+  const std::set<IntegralType> types = a.integral_types();
+  if (types.find(IntegralType::interior_facet) != types.end()
+      or types.find(IntegralType::exterior_facet) != types.end())
+  {
+    // FIXME: cleanup these calls? Some of the happen internally again.
+    int tdim = mesh->topology()->dim();
+    mesh->topology_mutable()->create_entities(tdim - 1);
+    mesh->topology_mutable()->create_connectivity(tdim - 1, tdim);
+  }
+
+  common::Timer t0("Build sparsity");
+
+  // Get common::IndexMaps for each dimension
+  const std::array index_maps{dofmaps[0].get().index_map,
+                              dofmaps[1].get().index_map};
+  const std::array bs
+      = {dofmaps[0].get().index_map_bs(), dofmaps[1].get().index_map_bs()};
+
+  auto extract_cells = [](std::span<const std::int32_t> facets)
+  {
+    assert(facets.size() % 2 == 0);
+    std::vector<std::int32_t> cells;
+    cells.reserve(facets.size() / 2);
+    for (std::size_t i = 0; i < facets.size(); i += 2)
+      cells.push_back(facets[i]);
+    return cells;
+  };
+
+  // Create and build sparsity pattern
+  la::SparsityPattern pattern(mesh->comm(), index_maps, bs);
+  for (auto type : types)
+  {
+    std::vector<int> ids = a.integral_ids(type);
+    switch (type)
+    {
+    case IntegralType::cell:
+      for (int id : ids)
+      {
+        impl::sparsity_pattern_add_cells(
+            pattern, {a.domain(type, id, *mesh0), a.domain(type, id, *mesh1)},
+            {{dofmaps[0], dofmaps[1]}});
+      }
+      break;
+    case IntegralType::interior_facet:
+      for (int id : ids)
+      {
+        impl::sparsity_patter_add_interior_facets(
+            pattern,
+            {extract_cells(a.domain(type, id, *mesh0)),
+             extract_cells(a.domain(type, id, *mesh1))},
+            {{dofmaps[0], dofmaps[1]}});
+      }
+      break;
+    case IntegralType::exterior_facet:
+      for (int id : ids)
+      {
+        impl::sparsity_pattern_add_cells(
+            pattern,
+            {extract_cells(a.domain(type, id, *mesh0)),
+             extract_cells(a.domain(type, id, *mesh1))},
+            {{dofmaps[0], dofmaps[1]}});
+      }
+      break;
+    default:
+      throw std::runtime_error("Unsupported integral type");
+    }
+  }
+
+  t0.stop();
+
+  return pattern;
+}
+
+/// @brief Create sparsity pattern for interaction of two function spaces.
+/// @note This is not the appropiate function to be used for form assembly, as
+/// it disregards any interior facets.
+/// @param[in] V0 function space associated with the domain of the sparsity
+/// pattern
+/// @param[in] V1 function space associated with the range of the sparsity
+/// pattern
+/// @return sparsity pattern of a linear map from V0 to V1
+///
+template <typename U>
+dolfinx::la::SparsityPattern create_sparsity_pattern(const dolfinx::fem::FunctionSpace<U>& V0,
+                const dolfinx::fem::FunctionSpace<U>& V1)
+{
+  assert(V0.mesh());
+  assert(V1.mesh());
+
+  auto mesh = V0.mesh();
+  if (mesh != V1.mesh())
+    throw std::runtime_error("Requires matching meshes.");
+
+  MPI_Comm comm = mesh->comm();
+
+  auto dofmap0 = V0.dofmap();
+  auto dofmap1 = V1.dofmap();
+  assert(dofmap0);
+  assert(dofmap1);
+
+  // Create and build  sparsity pattern
+  assert(dofmap0->index_map);
+  assert(dofmap1->index_map);
+  dolfinx::la::SparsityPattern sp(
+      comm, {dofmap1->index_map, dofmap0->index_map},
+      {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
+
+  int tdim = mesh->topology()->dim();
+  auto map = mesh->topology()->index_map(tdim);
+  assert(map);
+  std::vector<std::int32_t> c(map->size_local(), 0);
+  std::iota(c.begin(), c.end(), 0);
+  dolfinx::fem::impl::sparsity_pattern_add_cells(sp, {c, c},
+                                                 {*dofmap1, *dofmap0});
+  sp.finalize();
+
+  return sp;
+}
+
 } // namespace dolfinx::fem
