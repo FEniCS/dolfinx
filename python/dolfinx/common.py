@@ -17,8 +17,8 @@ from dolfinx.cpp.common import (
     has_debug,
     has_kahip,
     has_parmetis,
-    has_ptscotch,
     has_petsc,
+    has_ptscotch,
     has_slepc,
     ufcx_signature,
 )
@@ -32,7 +32,7 @@ __all__ = [
     "has_complex_ufcx_kernels",
     "has_debug",
     "has_kahip",
-    "has_parmetis"
+    "has_parmetis",
     "has_petsc",
     "has_ptscotch",
     "has_slepc",
