@@ -55,6 +55,7 @@ class NonlinearPDE_SNESProblem:
 
         from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
 
+        print("ghost_update")
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         with x.localForm() as _x:
             self.soln_vars.x.array[:] = _x.array_r
