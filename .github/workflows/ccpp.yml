@@ -221,7 +221,7 @@ jobs:
       - name: Build Python interface
         run: |
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
-          python -c "from mpi4py import MPI; from dolfinx.common import *; assert has_adios2; assert has_kahip; assert not has_parmetis; assert has_petsc; assert has_scotch; assert has_slepc"
+          python -c "from mpi4py import MPI; from dolfinx.common import *; assert has_adios2; assert has_kahip; assert not has_parmetis; assert has_petsc; assert has_ptscotch; assert has_slepc"
       - name: Build Python interface documentation
         run: |
           cd python/doc
