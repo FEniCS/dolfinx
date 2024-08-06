@@ -25,11 +25,11 @@ ADIOS2Wrapper::ADIOS2Wrapper(MPI_Comm comm, std::string filename,
                              std::string tag, std::string engine_type,
                              std::string mode)
 
-    : _adios(std::make_unique<adios2::ADIOS>(comm)),
-      _io(std::make_unique<adios2::IO>(_adios->DeclareIO(tag)))
+    : _adios(std::make_shared<adios2::ADIOS>(comm)),
+      _io(std::make_shared<adios2::IO>(_adios->DeclareIO(tag)))
 {
   _io->SetEngine(engine_type);
-  _engine = std::make_unique<adios2::Engine>(
+  _engine = std::make_shared<adios2::Engine>(
       _io->Open(filename, string_to_mode[mode]));
 }
 //-----------------------------------------------------------------------------

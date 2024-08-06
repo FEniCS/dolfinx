@@ -17,41 +17,44 @@
 /// @file checkpointing.h
 /// @brief ADIOS2 based checkpointing
 
-namespace dolfinx::io::checkpointing
+namespace dolfinx::io::native
 {
 
 /// @brief Write mesh to a file.
 ///
-/// @param[in] ADIOS2 ADIOS2Wrapper
+/// @param[in] io ADIOS2 IO
+/// @param[in] engine ADIOS2 Engine
 /// @param[in] mesh Mesh of type float or double to write to the file
 template <std::floating_point T>
-void write_mesh(ADIOS2Wrapper& ADIOS2, dolfinx::mesh::Mesh<T>& mesh);
+void write_mesh(adios2::IO& io, adios2::Engine& engine,
+                dolfinx::mesh::Mesh<T>& mesh);
 
 /// @brief Read mesh from a file.
 ///
-/// @param[in] ADIOS2 ADIOS2Wrapper
+/// @param[in] io ADIOS2 IO
+/// @param[in] engine ADIOS2 Engine
 /// @param[in] comm comm
 /// @return mesh reconstructed from the data
 template <std::floating_point T>
-dolfinx::mesh::Mesh<T> read_mesh(ADIOS2Wrapper& ADIOS2,
+dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
                                  MPI_Comm comm = MPI_COMM_WORLD);
 
 /// @brief Read mesh from a file.
 ///
-/// @param[in] _ADIOS2 ADIOS2Wrapper
-/// @param[in] ADIOS2 ADIOS2Wrapper
+/// @param[in] io ADIOS2 IO
+/// @param[in] engine ADIOS2 Engine
 /// @param[in] comm comm
 /// @return mesh reconstructed from the data
 std::variant<dolfinx::mesh::Mesh<float>, dolfinx::mesh::Mesh<double>>
-read_mesh_variant(ADIOS2Wrapper& _ADIOS2, ADIOS2Wrapper& ADIOS2,
+read_mesh_variant(adios2::IO& io, adios2::Engine& engine,
                   MPI_Comm comm = MPI_COMM_WORLD);
 
-/// @brief Query floating_point type stored in the file
-///
-/// @param[in] ADIOS2 ADIOS2Wrapper
-/// @return type float or double as a string
-std::string query_type(ADIOS2Wrapper& ADIOS2);
+// /// @brief Query floating_point type stored in the file
+// ///
+// /// @param[in] ADIOS2 ADIOS2Wrapper
+// /// @return type float or double as a string
+// std::string query_type(ADIOS2Wrapper& ADIOS2);
 
-} // namespace dolfinx::io::checkpointing
+} // namespace dolfinx::io::native
 
 #endif

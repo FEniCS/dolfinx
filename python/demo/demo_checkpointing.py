@@ -44,18 +44,13 @@ from dolfinx import io, mesh
 msh = mesh.create_rectangle(
     comm=MPI.COMM_WORLD,
     points=((0.0, 0.0), (1.0, 1.0)),
-    n=(4, 4),
+    n=(8, 8),
     cell_type=mesh.CellType.triangle,
 )
 # -
 
 # +
-filename = "mesh.bp"
-engine_type = "BP5"
-tag = "mesh-write"
-mode = "write"
-
-adios2 = io.ADIOS2(msh.comm, filename, tag, engine_type, mode)
+adios2 = io.ADIOS2(msh.comm, filename="mesh.bp", tag="mesh-write", engine_type="BP5", mode="write")
 # -
 
 # +
@@ -63,22 +58,22 @@ io.write_mesh(adios2, msh)
 adios2.close()
 # -
 
-filename = "mesh.bp"
-engine_type = "BP5"
-tag = "mesh-read"
-mode = "read"
-
-adios2_query = io.ADIOS2(msh.comm, filename, tag, engine_type, mode)
-adios2_read = io.ADIOS2(msh.comm, filename, tag, engine_type, mode)
+# +
+adios2_query = io.ADIOS2(
+    msh.comm, filename="mesh.bp", tag="mesh-read", engine_type="BP5", mode="read"
+)
+adios2_read = io.ADIOS2(
+    msh.comm, filename="mesh.bp", tag="mesh-read", engine_type="BP5", mode="read"
+)
 # -
 
 # +
 msh_read = io.read_mesh(adios2_query, adios2_read, msh.comm)
 # -
 
-# +
-print(type(msh_read))
-print(msh_read.name)
-print(msh_read.geometry.x.dtype)
-print(msh_read.geometry.x)
-# -
+# # +
+# print(type(msh_read))
+# print(msh_read.name)
+# print(msh_read.geometry.x.dtype)
+# print(msh_read.geometry.x)
+# # -

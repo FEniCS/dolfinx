@@ -57,7 +57,7 @@ public:
   /// @brief  Close the Engine object
   std::shared_ptr<adios2::Engine> engine() { return _engine; }
 
-protected:
+public:
   std::shared_ptr<adios2::ADIOS> _adios;
   std::shared_ptr<adios2::IO> _io;
   std::shared_ptr<adios2::Engine> _engine;
