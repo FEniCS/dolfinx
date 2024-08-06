@@ -95,7 +95,7 @@ def test_nullspace_check(gdim, degree, dtype):
     elif gdim == 3:
         mesh = create_box(
             comm,
-            [np.array([0.8, -0.2, 1.2]), np.array([3.0, 11.0, -5.0])],
+            [np.array([0.8, -0.2, -5.0]), np.array([3.0, 11.0, 1.2])],
             [12, 18, 25],
             cell_type=CellType.tetrahedron,
             ghost_mode=GhostMode.none,
