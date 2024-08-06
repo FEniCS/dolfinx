@@ -28,14 +28,7 @@ from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot, uti
 
 # Initialise logging
 from dolfinx.common import (
-    TimingType,
     git_commit_hash,
-    has_debug,
-    has_kahip,
-    has_petsc,
-    has_parmetis,
-    list_timings,
-    timing,
 )
 from dolfinx.cpp import __version__
 
@@ -68,11 +61,5 @@ __all__ = [
     "nls",
     "plot",
     "utils",
-    "TimingType",
     "git_commit_hash",
-    "has_debug",
-    "has_kahip",
-    "has_parmetis",
-    "list_timings",
-    "timing",
 ]
