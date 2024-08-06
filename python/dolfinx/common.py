@@ -13,10 +13,14 @@ from dolfinx.cpp.common import (
     IndexMap,
     git_commit_hash,
     has_adios2,
+    has_complex_ufcx_kernels,
     has_debug,
     has_kahip,
     has_parmetis,
+    has_ptscotch,
     has_petsc,
+    has_slepc,
+    ufcx_signature,
 )
 
 __all__ = [
@@ -25,10 +29,14 @@ __all__ = [
     "timed",
     "git_commit_hash",
     "has_adios2",
+    "has_complex_ufcx_kernels",
     "has_debug",
     "has_kahip",
+    "has_parmetis"
     "has_petsc",
-    "has_parmetis",
+    "has_ptscotch",
+    "has_slepc",
+    "ufcx_signature",
 ]
 
 TimingType = _cpp.common.TimingType
