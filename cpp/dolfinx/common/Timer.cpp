@@ -4,23 +4,23 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "Timer.h"
+#include <optional>
+#include <stdexcept>
+
 #include "TimeLogManager.h"
 #include "TimeLogger.h"
-#include <stdexcept>
+#include "Timer.h"
 
 using namespace dolfinx;
 using namespace dolfinx::common;
 
 //-----------------------------------------------------------------------------
-Timer::Timer() : Timer::Timer("")
+Timer::Timer(std::optional<std::string> task) : _task("")
 {
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-Timer::Timer(const std::string& task) : _task(task)
-{
-  // Do nothing
+  if (task)
+  {
+    _task = std::move(task.value());
+  }
 }
 //-----------------------------------------------------------------------------
 Timer::~Timer()

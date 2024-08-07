@@ -8,6 +8,7 @@
 
 #include <array>
 #include <boost/timer/timer.hpp>
+#include <optional>
 #include <string>
 
 namespace dolfinx::common
@@ -30,11 +31,9 @@ namespace dolfinx::common
 class Timer
 {
 public:
-  /// Create timer without logging
-  Timer();
-
-  /// Create timer with logging
-  Timer(const std::string& task);
+  /// Create timer
+  /// if a task name is provided this enables logging, otherwise without logging
+  Timer(std::optional<std::string> task = std::nullopt);
 
   /// Destructor
   ~Timer();
