@@ -67,6 +67,10 @@ public:
 
   /// @brief Insert non-zero locations using local (process-wise)
   /// indices.
+  void insert(std::int32_t row, std::int32_t col);
+
+  /// @brief Insert non-zero locations using local (process-wise)
+  /// indices.
   void insert(std::span<const std::int32_t> rows,
               std::span<const std::int32_t> cols);
 
