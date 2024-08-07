@@ -64,7 +64,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          python3 -m pip install cffi numba scikit-build-core[pyproject] pytest pytest-xdist scipy matplotlib
+          python3 -m pip install cffi==1.16.0 numba scikit-build-core[pyproject] pytest pytest-xdist scipy matplotlib
       - name: Build Python interface (editable install)
         run: |
           python3 -m pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Debug --config-settings=build-dir="build" -e python/
