@@ -13,9 +13,11 @@ import sys
 
 try:
     from petsc4py import PETSc as _PETSc
+
     # Additional sanity check that DOLFINx was built with petsc4py support.
     import dolfinx.common
-    assert dolfinx.common.has_petsc4py 
+
+    assert dolfinx.common.has_petsc4py
 
     default_scalar_type = _PETSc.ScalarType  # type: ignore
     default_real_type = _PETSc.RealType  # type: ignore

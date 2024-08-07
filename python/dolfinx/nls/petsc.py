@@ -14,6 +14,7 @@ if typing.TYPE_CHECKING:
     from petsc4py import PETSc
 
     import dolfinx.common
+
     assert dolfinx.common.has_petsc4py
 
     from dolfinx.fem.problem import NonlinearProblem
