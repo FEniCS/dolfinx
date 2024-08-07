@@ -674,6 +674,23 @@ petsc::KrylovSolver& petsc::KrylovSolver::operator=(KrylovSolver&& solver)
   return *this;
 }
 //-----------------------------------------------------------------------------
+void petsc::KrylovSolver::set_as_direct_solver() 
+{ 
+  assert(_ksp);
+  // remove iterative resolution: only use preconditioner pass
+  PetscErrorCode ierr = KSPSetType(_ksp, KSPPREONLY);
+  CHECK_ERROR("KSPSetType");
+
+  PC pc;
+  ierr = KSPGetPC(_ksp, &pc);
+  CHECK_ERROR("KSPGetPC");
+
+  // set preconditioner as a direct solver using LU factorization
+  ierr = PCSetType(pc, PCLU);
+  CHECK_ERROR("PCSetType");
+   
+}
+//-----------------------------------------------------------------------------
 void petsc::KrylovSolver::set_operator(const Mat A) { set_operators(A, A); }
 //-----------------------------------------------------------------------------
 void petsc::KrylovSolver::set_operators(const Mat A, const Mat P)
