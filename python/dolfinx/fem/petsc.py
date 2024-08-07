@@ -111,6 +111,10 @@ def create_vector(L: Form) -> PETSc.Vec:
 def create_vector_block(L: list[Form]) -> PETSc.Vec:
     """Create a PETSc vector (blocked) that is compatible with a list of linear forms.
 
+    Note:
+        Caller is responsible for calling ``.destroy()`` on the returned
+        petsc4py object.
+
     Args:
         L: List of linear forms.
 
@@ -148,6 +152,10 @@ def create_vector_nest(L: list[Form]) -> PETSc.Vec:
 def create_matrix(a: Form, mat_type=None) -> PETSc.Mat:
     """Create a PETSc matrix that is compatible with a bilinear form.
 
+    Note:
+        Caller is responsible for calling ``.destroy()`` on the returned
+        petsc4py object.
+
     Args:
         a: A bilinear form.
         mat_type: The PETSc matrix type (``MatType``).
@@ -164,6 +172,10 @@ def create_matrix(a: Form, mat_type=None) -> PETSc.Mat:
 def create_matrix_block(a: list[list[Form]]) -> PETSc.Mat:
     """Create a PETSc matrix that is compatible with a rectangular array of bilinear forms.
 
+    Note:
+        Caller is responsible for calling ``.destroy()`` on the returned
+        petsc4py object.
+
     Args:
         a: Rectangular array of bilinear forms.
 
@@ -177,6 +189,10 @@ def create_matrix_block(a: list[list[Form]]) -> PETSc.Mat:
 
 def create_matrix_nest(a: list[list[Form]]) -> PETSc.Mat:
     """Create a PETSc matrix (``MatNest``) that is compatible with an array of bilinear forms.
+
+    Note:
+        Caller is responsible for calling ``.destroy()`` on the returned
+        petsc4py object.
 
     Args:
         a: Rectangular array of bilinear forms.
@@ -958,6 +974,10 @@ def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.M
     H1 space uses an identity map and the H(curl) space uses a covariant
     Piola map.
 
+    Note:
+        Caller is responsible for calling ``.destroy()`` on the returned
+        petsc4py object.
+
     Args:
         space0: H1 space to interpolate the gradient from.
         space1: H(curl) space to interpolate into.
@@ -970,6 +990,10 @@ def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.M
 
 def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:
     """Assemble an interpolation operator matrix.
+
+    Note:
+        Caller is responsible for calling ``.destroy()`` on the returned
+        petsc4py object.
 
     Args:
         space0: Space to interpolate from.
