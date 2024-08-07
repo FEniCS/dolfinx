@@ -54,8 +54,10 @@ TEST_CASE("Interval uniform refinement", "refinement,interval,uniform")
   mesh::Mesh<double> mesh = create_3_vertex_interval_mesh();
   mesh.topology()->create_connectivity(1, 0);
 
-  auto [refined_mesh, parent_edge]
-      = refinement::refine_interval(mesh, std::nullopt, false);
+  // TODO: parent_facet
+  auto [refined_mesh, parent_edge, parent_facet] = refinement::refine(
+      mesh, std::nullopt, false, mesh::GhostMode::shared_facet,
+      refinement::Option::parent_cell);
 
   // Check geometry
   {
@@ -113,12 +115,14 @@ TEST_CASE("Interval uniform refinement", "refinement,interval,uniform")
 
   // Check parent edges
   {
-    CHECK(parent_edge.size() == 4);
+    CHECK(parent_edge.has_value());
 
-    CHECK(parent_edge[0] == 0);
-    CHECK(parent_edge[1] == 0);
-    CHECK(parent_edge[2] == 1);
-    CHECK(parent_edge[3] == 1);
+    CHECK(parent_edge.value().size() == 4);
+
+    CHECK(parent_edge.value()[0] == 0);
+    CHECK(parent_edge.value()[1] == 0);
+    CHECK(parent_edge.value()[2] == 1);
+    CHECK(parent_edge.value()[3] == 1);
   }
 }
 
@@ -131,8 +135,10 @@ TEST_CASE("Interval adaptive refinement", "refinement,interval,adaptive")
   mesh.topology()->create_connectivity(1, 0);
 
   std::vector<std::int32_t> edges{1};
-  auto [refined_mesh, parent_edge]
-      = refinement::refine_interval(mesh, std::span(edges), false);
+  // TODO: parent_facet
+  auto [refined_mesh, parent_edge, parent_facet] = refinement::refine(
+      mesh, std::span(edges), false, mesh::GhostMode::shared_facet,
+      refinement::Option::parent_cell);
 
   // Check geometry
   {
@@ -181,11 +187,13 @@ TEST_CASE("Interval adaptive refinement", "refinement,interval,adaptive")
 
   // Check parent edges
   {
-    CHECK(parent_edge.size() == 3);
+    CHECK(parent_edge.has_value());
 
-    CHECK(parent_edge[0] == 0);
-    CHECK(parent_edge[1] == 1);
-    CHECK(parent_edge[2] == 1);
+    CHECK(parent_edge.value().size() == 3);
+
+    CHECK(parent_edge.value()[0] == 0);
+    CHECK(parent_edge.value()[1] == 1);
+    CHECK(parent_edge.value()[2] == 1);
   }
 }
 
@@ -239,8 +247,10 @@ TEST_CASE("Interval Refinement (parallel)", "refinement,interval,paralle")
 
   // complete refinement
   {
-    auto [refined_mesh, parent_edges]
-        = refinement::refine_interval(mesh, std::nullopt, false);
+    // TODO: parent_facet
+    auto [refined_mesh, parent_edges, parent_facet] = refinement::refine(
+        mesh, std::nullopt, false, mesh::GhostMode::shared_facet,
+        refinement::Option::parent_cell);
 
     // Check geometry
     {
