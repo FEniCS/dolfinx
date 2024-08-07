@@ -14,6 +14,7 @@ import pytest
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type, default_scalar_type
+from dolfinx.common import has_adios2
 from dolfinx.fem import Function, functionspace
 from dolfinx.graph import adjacencylist
 from dolfinx.mesh import CellType, create_mesh, create_unit_cube, create_unit_square
@@ -39,6 +40,7 @@ def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
 
 
 @pytest.mark.adios2
+@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2 support")
 class TestFides:
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
@@ -123,6 +125,7 @@ class TestFides:
 
 
 @pytest.mark.adios2
+@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2 support")
 class TestVTX:
     @pytest.mark.skipif(MPI.COMM_WORLD.size > 1, reason="This test should only be run in serial.")
     def test_second_order_vtx(self, tempdir):
@@ -293,6 +296,7 @@ class TestVTX:
         """Test reusage of mesh by VTXWriter."""
         from dolfinx.io import VTXMeshPolicy, VTXWriter
 
+        # TODO: should this really be allowed to just be skipped?
         adios2 = pytest.importorskip("adios2")
 
         mesh = generate_mesh(dim, simplex)

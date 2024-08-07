@@ -103,6 +103,6 @@ jobs:
         run: pytest -m mpi --num-proc=2 python/demo/test.py
 
       - name: Run DOLFINx Python unit tests (serial)
-        run: python -m pytest -m "not adios2" -n=auto --durations=50 python/test/unit
+        run: python -m pytest -n=auto --durations=50 python/test/unit
       - name: Run DOLFINx Python unit tests (MPI, np=2)
-        run: mpiexec -n 2 python -m pytest -m "not adios2" python/test/unit
+        run: mpiexec -n 2 python -m pytest python/test/unit
