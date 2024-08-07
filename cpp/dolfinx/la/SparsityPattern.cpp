@@ -161,10 +161,8 @@ void SparsityPattern::insert(std::span<const std::int32_t> rows,
                              std::span<const std::int32_t> cols)
 {
   if (!_offsets.empty())
-  {
     throw std::runtime_error(
         "Cannot insert into sparsity pattern. It has already been finalized");
-  }
 
   assert(_index_maps[0]);
   const std::int32_t max_row
@@ -173,10 +171,8 @@ void SparsityPattern::insert(std::span<const std::int32_t> rows,
   for (std::int32_t row : rows)
   {
     if (row > max_row or row < 0)
-    {
       throw std::runtime_error(
           "Cannot insert rows that do not exist in the IndexMap.");
-    }
 
     _row_cache[row].insert(_row_cache[row].end(), cols.begin(), cols.end());
   }
@@ -185,10 +181,8 @@ void SparsityPattern::insert(std::span<const std::int32_t> rows,
 void SparsityPattern::insert_diagonal(std::span<const std::int32_t> rows)
 {
   if (!_offsets.empty())
-  {
     throw std::runtime_error(
         "Cannot insert into sparsity pattern. It has already been finalized");
-  }
 
   assert(_index_maps[0]);
   const std::int32_t max_row
@@ -197,10 +191,8 @@ void SparsityPattern::insert_diagonal(std::span<const std::int32_t> rows)
   for (std::int32_t row : rows)
   {
     if (row > max_row or row < 0)
-    {
       throw std::runtime_error(
           "Cannot insert rows that do not exist in the IndexMap.");
-    }
 
     _row_cache[row].push_back(row);
   }
