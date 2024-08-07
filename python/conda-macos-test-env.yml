@@ -1,0 +1,31 @@
+# Test environment for macOS system
+name: macos-test-env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - catch2
+  - cmake
+  - git
+  - hdf5=*=mpi*
+  - kahip
+  - libblas
+  - libboost-devel
+  - libcxx
+  - clang_osx-arm64
+  - matplotlib
+  - mpi4py
+  - mpich
+  - nanobind
+  - ninja
+  - numba
+  - petsc
+  - petsc4py
+  - pip
+  - pkg-config
+  - pugixml
+  - pytest
+  - pytest-xdist
+  - python=3.12
+  - scikit-build-core
+  - spdlog
