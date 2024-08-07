@@ -16,31 +16,30 @@
 # - Solve Poisson's equation using an HDG scheme.
 
 # +
+from mpi4py import MPI
+
+import dolfinx.common
+
+if not dolfinx.common.has_petsc4py:
+    print("DOLFINx Python was built without petsc4py support.")
+    exit(0)
+
 import importlib.util
 
 if importlib.util.find_spec("petsc4py") is not None:
-    import dolfinx
-
-    if not dolfinx.common.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
     from petsc4py import PETSc
-
-    from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
-
 else:
-    print("This demo requires petsc4py.")
+    print("Could not find petsc4py module.")
     exit(0)
 
 import sys
-
-from mpi4py import MPI
 
 import numpy as np
 
 import ufl
 from dolfinx import fem, mesh
 from dolfinx.cpp.mesh import cell_num_entities
+from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
 from ufl import div, dot, grad, inner
 
 
