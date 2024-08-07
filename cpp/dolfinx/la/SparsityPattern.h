@@ -71,6 +71,15 @@ public:
 
   /// @brief Insert non-zero locations using local (process-wise)
   /// indices.
+  ///
+  /// This inserts for every row in rows the columns (listed in cols) to the
+  /// sparsity pattern. This allows for easy setting of dense sub-blocks, for
+  /// example sp.insert({0, 1, 2}, {1, 2, 3}) creates a 3x3 block in the
+  /// sparsity pattern with top left corner at (0, 1).
+  ///
+  /// Note: Especially this operation does not perform a pairwise insertion to
+  /// the sparsity pattern, i.e. the above call does not introduce the entries
+  /// at locations (0, 1), (1, 2) and (2, 3)!
   void insert(std::span<const std::int32_t> rows,
               std::span<const std::int32_t> cols);
 
