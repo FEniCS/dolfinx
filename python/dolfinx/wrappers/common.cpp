@@ -47,6 +47,7 @@ void common(nb::module_& m)
   m.attr("has_kahip") = dolfinx::has_kahip();
   m.attr("has_parmetis") = dolfinx::has_parmetis();
   m.attr("has_petsc") = dolfinx::has_petsc();
+  m.attr("has_petsc4py") = HAS_PETSC4PY;
   m.attr("has_ptscotch") = dolfinx::has_ptscotch();
   m.attr("has_slepc") = dolfinx::has_slepc();
   m.attr("ufcx_signature") = dolfinx::ufcx_signature();
