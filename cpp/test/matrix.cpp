@@ -201,9 +201,9 @@ void test_matrix()
 {
   auto map0 = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 8);
   la::SparsityPattern p(MPI_COMM_SELF, {map0, map0}, {1, 1});
-  p.insert(std::vector{0}, std::vector{0});
-  p.insert(std::vector{4}, std::vector{5});
-  p.insert(std::vector{5}, std::vector{4});
+  p.insert(0, 0);
+  p.insert(4, 5);
+  p.insert(5, 4);
   p.finalize();
 
   using T = float;
