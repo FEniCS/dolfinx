@@ -155,7 +155,6 @@ class NonlinearPDE_SNESProblem:
             P.assemble()
 
 
-@pytest.mark.petsc4py
 @pytest.mark.skipif(not has_petsc4py, reason="Requires petsc4py support")
 class TestNLSPETSc:
     def test_matrix_assembly_block_nl(self):

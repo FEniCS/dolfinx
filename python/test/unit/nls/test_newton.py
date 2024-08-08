@@ -102,7 +102,6 @@ class NonlinearPDE_SNESProblem:
         J.assemble()
 
 
-@pytest.mark.petsc4py
 @pytest.mark.skipif(not has_petsc4py, reason="Requires petsc4py support")
 class TestNLS:
     def test_linear_pde(self):

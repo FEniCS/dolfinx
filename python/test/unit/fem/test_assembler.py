@@ -169,7 +169,6 @@ def nest_matrix_norm(A):
     return math.sqrt(norm)
 
 
-@pytest.mark.petsc4py
 @pytest.mark.skipif(not has_petsc4py, reason="Requires petsc4py support")
 class TestPETScAssemblers:
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])

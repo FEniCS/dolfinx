@@ -317,7 +317,6 @@ def test_custom_mesh_loop_rank1(dtype):
     assert np.linalg.norm(b3.x.array - b0.x.array) == pytest.approx(0.0, abs=1e-8)
 
 
-@pytest.mark.petsc4py
 @pytest.mark.skipif(not has_petsc4py, reason="Requires petsc4py support")
 @pytest.mark.parametrize(
     "set_vals,backend",
