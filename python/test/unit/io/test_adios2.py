@@ -39,7 +39,6 @@ def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
         raise RuntimeError("Unsupported dimension")
 
 
-@pytest.mark.adios2
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2 support")
 class TestFides:
     @pytest.mark.parametrize("dim", [2, 3])
@@ -124,7 +123,6 @@ class TestFides:
                 f.write(t)
 
 
-@pytest.mark.adios2
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2 support")
 class TestVTX:
     @pytest.mark.skipif(MPI.COMM_WORLD.size > 1, reason="This test should only be run in serial.")

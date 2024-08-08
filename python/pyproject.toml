@@ -61,7 +61,6 @@ junit_family = "xunit2"
 [tool.pytest.ini_options]
 markers = [
             "skip_in_parallel: marks tests that should be run in serial only.",
-            "adios2: tests that require Adios2 (deselect with '-m \"not adios2\"').",
             "xfail_win32_complex: expected failures for complex numbers in Win32."
 ]
 
