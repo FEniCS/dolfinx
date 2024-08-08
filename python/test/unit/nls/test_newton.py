@@ -13,6 +13,7 @@ import pytest
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
+from dolfinx.common import has_petsc4py
 from dolfinx.fem import Function, dirichletbc, form, functionspace, locate_dofs_geometrical
 from dolfinx.mesh import create_unit_square
 from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
@@ -102,6 +103,7 @@ class NonlinearPDE_SNESProblem:
 
 
 @pytest.mark.petsc4py
+@pytest.mark.skipif(not has_petsc4py, reason="Requires petsc4py support")
 class TestNLS:
     def test_linear_pde(self):
         """Test Newton solver for a linear PDE."""

@@ -15,6 +15,7 @@ import pytest
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
+from dolfinx.common import has_petsc4py
 from dolfinx.fem import (
     Function,
     bcs_by_block,
@@ -155,6 +156,7 @@ class NonlinearPDE_SNESProblem:
 
 
 @pytest.mark.petsc4py
+@pytest.mark.skipif(not has_petsc4py, reason="Requires petsc4py support")
 class TestNLSPETSc:
     def test_matrix_assembly_block_nl(self):
         """Test assembly of block matrices and vectors into (a) monolithic

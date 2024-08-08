@@ -26,6 +26,7 @@ import pytest
 import dolfinx
 import dolfinx.pkgconfig
 import ufl
+from dolfinx.common import has_petsc4py
 from dolfinx.fem import Function, form, functionspace
 from dolfinx.mesh import create_unit_square
 from dolfinx.utils import cffi_utils as petsc_cffi
@@ -317,6 +318,7 @@ def test_custom_mesh_loop_rank1(dtype):
 
 
 @pytest.mark.petsc4py
+@pytest.mark.skipif(not has_petsc4py, reason="Requires petsc4py support")
 @pytest.mark.parametrize(
     "set_vals,backend",
     [

@@ -13,11 +13,13 @@ import pytest
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type
+from dolfinx.common import has_petsc4py
 from dolfinx.fem import Expression, Function, assemble_scalar, form, functionspace
 from dolfinx.mesh import CellType, GhostMode, create_mesh, create_unit_cube, create_unit_square
 
 
 @pytest.mark.petsc4py
+@pytest.mark.skipif(not has_petsc4py, reason="Requires petsc4py support")
 class TestPETScDiscreteOperators:
     @pytest.mark.skip_in_parallel
     @pytest.mark.parametrize(

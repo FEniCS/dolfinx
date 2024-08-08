@@ -18,6 +18,7 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type, fem, graph, la
+from dolfinx.common import has_petsc4py
 from dolfinx.fem import (
     Constant,
     Function,
@@ -169,6 +170,7 @@ def nest_matrix_norm(A):
 
 
 @pytest.mark.petsc4py
+@pytest.mark.skipif(not has_petsc4py, reason="Requires petsc4py support")
 class TestPETScAssemblers:
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
     def test_basic_assembly_petsc_matrixcsr(self, mode):
