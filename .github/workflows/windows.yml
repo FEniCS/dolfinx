@@ -61,7 +61,7 @@ jobs:
       - name: Install build dependencies (workaround)
         run: |
           python -m pip install git+https://github.com/jhale/nanobind.git@jhale/msvc2022-workaround
-          python -m pip install scikit-build-core[pyproject]
+          python -m pip install scikit-build-core[pyproject] setuptools wheel
       - name: Install Basix (Python)
         working-directory: basix
         run: |
