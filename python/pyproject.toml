@@ -37,7 +37,7 @@ docs = ["breathe", "jupytext", "markdown", "matplotlib", "myst_parser", "pyyaml"
 lint = ["ruff>=0.2.0"]
 optional = ["numba", "pyamg"]
 petsc4py = ["petsc4py"]
-test = ["cffi", "pytest", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
+test = ["pytest", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
 ci = [
       "mypy",
       "pytest-xdist",
