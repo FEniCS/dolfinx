@@ -66,15 +66,12 @@ jobs:
       - name: Build Python interface (editable install)
         run: |
           python3 -m pip install --upgrade -r python/build-requirements.txt
-          python3 -m pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Debug --config-settings=build-dir="build" -e python/
+          python3 -m pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Debug --config-settings=build-dir="build" -e 'python/[test]'
 
       - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
-
-      - name: Install test Python dependencies
-        run: python3 -m pip install matplotlib numba pytest pytest-xdist scipy
 
       - name: Run demos (Python, serial)
         run: python3 -m pytest -n auto -m serial --durations=10 python/demo/test.py
