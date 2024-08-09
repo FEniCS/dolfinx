@@ -172,10 +172,11 @@ class ctypes_utils:
 class cffi_utils:
     """Utility attributes for working with CFFI (ABI mode) and Numba.
 
-    This will register Numba complex types with CFFI.
+    Registers Numba's complex types with CFFI.
 
-    If PETSc is available CFFI convenience functions for calling PETSc C
-    functions, typically from within Numba functions.
+    If PETSc is available, CFFI convenience functions for calling PETSc C
+    functions are also created. These are typically called from within Numba
+    functions.
 
     Note:
         `CFFI <https://cffi.readthedocs.io/>`_ and  `Numba
