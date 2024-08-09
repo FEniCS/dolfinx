@@ -187,14 +187,6 @@ jobs:
           cmake --build build
           cmake --install build
 
-      - name: Build C++ interface documentation
-        run: |
-          export DOLFINX_VERSION=`cmake -L build | grep DOXYGEN_DOLFINX_VERSION | cut -f2 -d "="`
-          echo $DOLFINX_VERSION
-          cd cpp/doc
-          doxygen Doxyfile
-          make html
-
       - name: Build C++ unit tests
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
@@ -220,11 +212,7 @@ jobs:
 
       - name: Build Python interface
         run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test,docs]'
-      - name: Build Python interface documentation
-        run: |
-          cd python/doc
-          python -m sphinx -W -b html source/ build/html/
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
 
       - name: Set default DOLFINx JIT options
         run: |
@@ -243,9 +231,7 @@ jobs:
       - name: Run Python unit tests (MPI, np=3)
         run: mpirun -np 3 python -m pytest -m "petsc4py or adios2" python/test/unit/
 
-  publish-docs:
-    if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
-    needs: build-with-petsc
+  build-and-publish-docs:
     runs-on: ubuntu-latest
     container: "ghcr.io/fenics/test-env:current-openmpi"
     env:
@@ -254,7 +240,7 @@ jobs:
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
-    name: Publish docs
+    name: Build and publish docs
     steps:
       - uses: actions/checkout@v4
 
@@ -277,6 +263,11 @@ jobs:
           cmake --build build
           cmake --install build
 
+      - name: Build Python interface
+        run: |
+          pip install -r python/build-requirements.txt
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[docs]'
+
       - name: Build C++ interface documentation
         run: |
           export DOLFINX_VERSION=`cmake -L build | grep DOXYGEN_DOLFINX_VERSION | cut -f2 -d "="`
@@ -284,26 +275,24 @@ jobs:
           cd cpp/doc
           doxygen Doxyfile
           make html
-
-      - name: Build Python interface
-        run: |
-          pip install -r python/build-requirements.txt
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[docs]'
       - name: Build Python interface documentation
         run: |
           cd python/doc
           python -m sphinx -W -b html source/ build/html/
 
       - name: Checkout FEniCS/docs
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
         uses: actions/checkout@v4
         with:
           repository: "FEniCS/docs"
           path: "docs"
           ssh-key: "${{ secrets.SSH_GITHUB_DOCS_PRIVATE_KEY }}"
       - name: Set version name
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
         run: |
           echo "VERSION_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - name: Copy documentation into repository
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
         run: |
           cd docs
           git rm -r --ignore-unmatch dolfinx/${{ env.VERSION_NAME }}/cpp
@@ -315,6 +304,7 @@ jobs:
           cp -r ../cpp/doc/html/* dolfinx/${{ env.VERSION_NAME }}/cpp/doxygen
           cp -r ../python/doc/build/html/* dolfinx/${{ env.VERSION_NAME }}/python
       - name: Commit and push documentation to FEniCS/docs
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
         run: |
           cd docs
           git config --global user.email "fenics@github.com"
