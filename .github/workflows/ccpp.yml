@@ -60,7 +60,7 @@ jobs:
         run: |
           cd cpp
           clang-format --version
-          find . -type f \( -name "*.cpp" -o -name "*.h" \) ! -name "loguru.cpp" | xargs clang-format --dry-run --Werror
+          find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
       - name: clang-format Python binding checks (non-blocking)
         continue-on-error: true
         run: |
