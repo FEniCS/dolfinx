@@ -24,13 +24,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Python dependencies
+      - name: Install Python build dependencies
         run: |
-          python3 -m pip install mpi4py nanobind scikit-build-core[pyproject] --upgrade
+          python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
       - name: Install FEniCS Python components
         run: |
-          python3 -m pip install --no-cache-dir --upgrade pip setuptools
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
           python3 -m pip install git+https://github.com/FEniCS/basix.git
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git
@@ -64,21 +63,20 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          python3 -m pip install cffi==1.16.0 numba scikit-build-core[pyproject] pytest pytest-xdist scipy matplotlib
       - name: Build Python interface (editable install)
         run: |
-          python3 -m pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Debug --config-settings=build-dir="build" -e python/
+          python3 -m pip install --upgrade -r python/build-requirements.txt
+          python3 -m pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Debug --config-settings=build-dir="build" -e 'python/[test]'
 
       - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
-      - name: Install test Python dependencies
-        run: python3 -m pip install matplotlib numba pytest pytest-xdist scipy
-
       - name: Run demos (Python, serial)
-        run: python3 -m pytest -n auto -m serial --durations=10 python/demo/test.py
+        run: |
+          python3 -m pip install pytest-xdist
+          python3 -m pytest -n auto -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=2))
         run: python3 -m pytest -m mpi --num-proc=2 python/demo/test.py
 
