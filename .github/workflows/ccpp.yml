@@ -96,7 +96,9 @@ jobs:
           python-version: "3.12"
 
       - name: Install Python build dependencies
-        run: pip install --no-build-isolation --upgrade -r python/build-requirements.txt
+        run: |
+          pip install --upgrade pip setuptools wheel
+          pip install --no-build-isolation --upgrade -r python/build-requirements.txt
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
