@@ -278,11 +278,13 @@ jobs:
       - name: Upload C++ Doxygen documentation artifact
         uses: actions/upload-artifact@v4
         with:
+          name: docs-cpp-doxygen
           path: cpp/doc/html 
           retention-days: 2 
       - name: Upload C++ Sphinx documentation artifact
         uses: actions/upload-artifact@v4
         with:
+          name: docs-cpp-sphinx
           path: cpp/doc/build/html 
           retention-days: 2 
       
@@ -293,6 +295,7 @@ jobs:
       - name: Upload Python documentation artifact
         uses: actions/upload-artifact@v4
         with:
+          name: docs-python
           path: python/doc/build/html 
           retention-days: 2 
 
