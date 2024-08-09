@@ -26,7 +26,7 @@ jobs:
 
       - name: Install Python build dependencies
         run: |
-          python3 -m pip install --no-cache-dir --upgrade pip setuptools
+          python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
       - name: Install FEniCS Python components
         run: |
@@ -74,7 +74,9 @@ jobs:
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
       - name: Run demos (Python, serial)
-        run: python3 -m pytest -n auto -m serial --durations=10 python/demo/test.py
+        run: |
+          python3 -m pip install pytest-xdist
+          python3 -m pytest -n auto -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=2))
         run: python3 -m pytest -m mpi --num-proc=2 python/demo/test.py
 

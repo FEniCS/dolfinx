@@ -97,8 +97,7 @@ jobs:
 
       - name: Install Python build dependencies
         run: |
-          pip install --upgrade pip setuptools wheel
-          pip install --no-build-isolation --upgrade -r python/build-requirements.txt
+          pip install --upgrade -r python/build-requirements.txt
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
@@ -216,12 +215,12 @@ jobs:
           ctest -V -R demo -R serial
           ctest -V -R demo -R mpi_2
 
-      - name: Install required Python (build Python interface)
-        run: pip install --no-build-isolation -r python/build-requirements.txt 
+      - name: Install Python build dependencies 
+        run: pip install -r python/build-requirements.txt 
 
       - name: Build Python interface
         run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test,docs]'
       - name: Build Python interface documentation
         run: |
           cd python/doc
@@ -288,7 +287,7 @@ jobs:
 
       - name: Build Python interface
         run: |
-          pip install -r --no-build-isolation python/build-requirements.txt
+          pip install -r python/build-requirements.txt
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[docs]'
       - name: Build Python interface documentation
         run: |
