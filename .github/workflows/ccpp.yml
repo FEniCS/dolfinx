@@ -276,13 +276,13 @@ jobs:
           doxygen Doxyfile
           make html
       - name: Upload C++ Doxygen documentation artifact
+        uses: actions/upload-artifact@v4
         with:
-          uses: actions/upload-artifact@v4
           path: cpp/doc/html 
           retention-days: 2 
       - name: Upload C++ Sphinx documentation artifact
+        uses: actions/upload-artifact@v4
         with:
-          uses: actions/upload-artifact@v4
           path: cpp/doc/build/html 
           retention-days: 2 
       
@@ -291,8 +291,8 @@ jobs:
           cd python/doc
           python -m sphinx -W -b html source/ build/html/
       - name: Upload Python documentation artifact
+        uses: actions/upload-artifact@v4
         with:
-          uses: actions/upload-artifact@v4
           path: python/doc/build/html 
           retention-days: 2 
 
