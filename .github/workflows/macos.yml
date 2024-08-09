@@ -29,6 +29,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip setuptools wheel
           python -m pip install --no-build-isolation mpi4py
+          python -m pip install cython
 
       - name: Install minimal PETSc and petsc4py
         run: |
