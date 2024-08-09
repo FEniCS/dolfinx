@@ -33,9 +33,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-docs = ["markdown", "pyyaml", "sphinx", "sphinx_rtd_theme"]
+docs = ["breathe", "jupytext", "markdown", "matplotlib", "myst_parser", "pyyaml", "sphinx", "sphinx_rtd_theme"]
 lint = ["ruff>=0.2.0"]
-optional = ["numba"]
+optional = ["numba", "pyamg"]
 petsc4py = ["petsc4py"]
 test = ["pytest", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
 ci = [

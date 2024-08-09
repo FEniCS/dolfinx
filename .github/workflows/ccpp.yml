@@ -93,7 +93,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install Python build dependencies
-        run: pip install mpi4py nanobind scikit-build-core[pyproject] --upgrade
+        run: pip install --no-build-isolation --upgrade -r python/build-requirements.txt
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
@@ -129,12 +129,12 @@ jobs:
           mpirun -n 3 ctest -V --output-on-failure -R unittests
 
       - name: Build Python interface
-        run: pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
+        run: pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
 
-      - name: Install Python demo/test dependencies
-        run: pip install matplotlib pyamg pytest pytest-xdist scipy
       - name: Run demos (Python, serial)
-        run: python -m pytest -n auto -m serial --durations=10 python/demo/test.py
+        run: |
+          pip install pytest-xdist
+          python -m pytest -n auto -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=3))
         run: python -m pytest -m mpi --num-proc=3 python/demo/test.py
       - name: Run unit tests
@@ -164,9 +164,6 @@ jobs:
     name: Build and test (${{ matrix.petsc_arch }}, ${{ matrix.docker_image }})
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install required Python packages (docs)
-        run: pip install breathe jupytext matplotlib myst_parser sphinx sphinx_rtd_theme
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
@@ -217,11 +214,11 @@ jobs:
           ctest -V -R demo -R mpi_2
 
       - name: Install required Python (build Python interface)
-        run: pip install nanobind scikit-build-core[pyproject]
+        run: pip install --no-build-isolation -r python/build-requirements.txt 
 
       - name: Build Python interface
         run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
       - name: Build Python interface documentation
         run: |
           cd python/doc
@@ -232,10 +229,10 @@ jobs:
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
-      - name: Install Python demo/test dependencies
-        run: pip install numba pyamg pytest pytest-xdist scipy
       - name: Run demos (Python, serial)
-        run: python -m pytest -n auto -m serial --durations=10 python/demo/test.py
+        run: |
+          pip install pytest-xdist
+          python -m pytest -n auto -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=3))
         run: python -m pytest -m mpi --num-proc=3 python/demo/test.py
 
@@ -258,9 +255,6 @@ jobs:
     name: Publish docs
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install required Python packages (docs)
-        run: pip install breathe jupytext matplotlib myst_parser sphinx sphinx_rtd_theme
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
@@ -293,7 +287,7 @@ jobs:
         run: pip install nanobind scikit-build-core[pyproject]
 
       - name: Build Python interface
-        run: pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
+        run: pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[docs]'
       - name: Build Python interface documentation
         run: |
           cd python/doc
