@@ -276,22 +276,25 @@ jobs:
           doxygen Doxyfile
           make html
       - name: Upload C++ Doxygen documentation artifact
-        uses: actions/upload-artifact@v4
-        path: cpp/doc/html 
-        retention-days: 2 
+        with:
+          uses: actions/upload-artifact@v4
+          path: cpp/doc/html 
+          retention-days: 2 
       - name: Upload C++ Sphinx documentation artifact
-        uses: actions/upload-artifact@v4
-        path: cpp/doc/build/html 
-        retention-days: 2 
+        with:
+          uses: actions/upload-artifact@v4
+          path: cpp/doc/build/html 
+          retention-days: 2 
       
       - name: Build Python interface documentation
         run: |
           cd python/doc
           python -m sphinx -W -b html source/ build/html/
       - name: Upload Python documentation artifact
-        uses: actions/upload-artifact@v4
-        path: python/doc/build/html 
-        retention-days: 2 
+        with:
+          uses: actions/upload-artifact@v4
+          path: python/doc/build/html 
+          retention-days: 2 
 
       - name: Checkout FEniCS/docs
         if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
