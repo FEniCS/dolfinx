@@ -66,9 +66,9 @@ residual_graph_components(const graph::AdjacencyList<int>& graph,
     it = std::find(it, labelled.end(), false);
   }
 
-  std::sort(rgc.begin(), rgc.end(),
-            [](const std::vector<int>& a, const std::vector<int>& b)
-            { return (a.size() > b.size()); });
+  std::ranges::sort(rgc,
+                    [](const std::vector<int>& a, const std::vector<int>& b)
+                    { return (a.size() > b.size()); });
 
   return rgc;
 }
@@ -241,24 +241,24 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
     std::vector<int> wn(k), wh(k), wl(k);
     for (const std::vector<int>& r : rgc)
     {
-      std::transform(ls.begin(), ls.end(), wn.begin(),
-                     [](const std::vector<int>& vec) { return vec.size(); });
-      std::copy(wn.begin(), wn.end(), wh.begin());
-      std::copy(wn.begin(), wn.end(), wl.begin());
+      std::ranges::transform(ls, wn.begin(), [](const std::vector<int>& vec)
+                             { return vec.size(); });
+      std::ranges::copy(wn, wh.begin());
+      std::ranges::copy(wn, wl.begin());
       for (int w : r)
       {
         ++wh[lvp[w][0]];
         ++wl[lvp[w][1]];
       }
       // Zero any entries which did not increase
-      std::transform(wh.begin(), wh.end(), wn.begin(), wh.begin(),
-                     [](int vh, int vn) { return (vh > vn) ? vh : 0; });
-      std::transform(wl.begin(), wl.end(), wn.begin(), wl.begin(),
-                     [](int vl, int vn) { return (vl > vn) ? vl : 0; });
+      std::ranges::transform(wh, wn, wh.begin(),
+                             [](int vh, int vn) { return (vh > vn) ? vh : 0; });
+      std::ranges::transform(wl, wn, wl.begin(),
+                             [](int vl, int vn) { return (vl > vn) ? vl : 0; });
 
       // Find maximum of those that did increase
-      int h0 = *std::max_element(wh.begin(), wh.end());
-      int l0 = *std::max_element(wl.begin(), wl.end());
+      int h0 = *std::ranges::max_element(wh);
+      int l0 = *std::ranges::max_element(wl);
 
       // Choose which side to use
       int side = h0 < l0 ? 0 : 1;
@@ -317,13 +317,13 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
         }
 
         // Add nodes to rv in order of increasing degree
-        std::sort(nbr.begin(), nbr.end(), cmp_degree);
+        std::ranges::sort(nbr, cmp_degree);
         rv.insert(rv.end(), nbr.begin(), nbr.end());
         for (int w : nbr)
           labelled[w] = true;
 
         // Save nodes for next level to a separate list, rv_next
-        std::sort(nbr_next.begin(), nbr_next.end(), cmp_degree);
+        std::ranges::sort(nbr_next, cmp_degree);
         rv_next.insert(rv_next.end(), nbr_next.begin(), nbr_next.end());
         for (int w : nbr_next)
           labelled[w] = true;
@@ -341,7 +341,7 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
       if (nrem.size() == 0)
         break;
 
-      std::sort(nrem.begin(), nrem.end(), cmp_degree);
+      std::ranges::sort(nrem, cmp_degree);
       rv.push_back(nrem.front());
       labelled[nrem.front()] = true;
     }

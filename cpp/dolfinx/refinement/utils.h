@@ -313,7 +313,7 @@ mesh::Mesh<T> partition(const mesh::Mesh<T>& old_mesh,
 
 /// @brief Given an index map, add "n" extra indices at the end of local range
 ///
-/// @note The returned global indices (local and ghosts) are adjust for the
+/// @note The returned global indices (local and ghosts) are adjusted for the
 /// addition of new local indices.
 /// @param[in] map Index map
 /// @param[in] n Number of new local indices

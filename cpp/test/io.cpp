@@ -36,7 +36,7 @@ void test_fides_mesh()
   auto x = mesh->geometry().x();
 
   // Move all coordinates of the mesh geometry
-  std::transform(x.begin(), x.end(), x.begin(), [](auto x) { return x + 1; });
+  std::ranges::transform(x, x.begin(), [](auto x) { return x + 1; });
   writer.write(0.2);
 
   // Only move x coordinate
@@ -105,7 +105,7 @@ void test_vtx_reuse_mesh()
                           io::VTXMeshPolicy::reuse);
   writer.write(0);
 
-  std::fill(u->x()->mutable_array().begin(), u->x()->mutable_array().end(), 1);
+  std::ranges::fill(u->x()->mutable_array(), 1);
 
   writer.write(1);
 }

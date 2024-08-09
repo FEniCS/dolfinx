@@ -34,13 +34,14 @@ sort_unique(const U& indices, const V& values)
 
   using T = typename std::pair<typename U::value_type, typename V::value_type>;
   std::vector<T> data(indices.size());
-  std::transform(indices.begin(), indices.end(), values.begin(), data.begin(),
-                 [](auto& idx, auto& v) -> T { return {idx, v}; });
+  std::ranges::transform(indices, values, data.begin(),
+                         [](auto& idx, auto& v) -> T { return {idx, v}; });
 
   // Sort make unique
-  std::sort(data.begin(), data.end());
-  auto it = std::unique(data.begin(), data.end(),
-                        [](auto& a, auto& b) { return a.first == b.first; });
+  std::ranges::sort(data);
+  auto it = std::ranges::unique(data, [](auto& a, auto& b)
+                                { return a.first == b.first; })
+                .begin();
 
   std::vector<typename U::value_type> indices_new;
   std::vector<typename V::value_type> values_new;

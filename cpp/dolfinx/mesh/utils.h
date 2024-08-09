@@ -9,6 +9,7 @@
 #include "Mesh.h"
 #include "Topology.h"
 #include "graphbuild.h"
+#include <algorithm>
 #include <basix/mdspan.hpp>
 #include <concepts>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -54,7 +55,7 @@ void reorder_list(std::span<T> list, std::span<const std::int32_t> nodemap)
   {
     auto links_old = std::span(orig.data() + n * degree, degree);
     auto links_new = list.subspan(nodemap[n] * degree, degree);
-    std::copy(links_old.begin(), links_old.end(), links_new.begin());
+    std::ranges::copy(links_old, links_new.begin());
   }
 }
 
@@ -103,12 +104,17 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
     }
 
     // Build vector of boundary vertices
-    std::sort(vertices.begin(), vertices.end());
-    vertices.erase(std::unique(vertices.begin(), vertices.end()),
-                   vertices.end());
-    std::sort(entities.begin(), entities.end());
-    entities.erase(std::unique(entities.begin(), entities.end()),
-                   entities.end());
+    {
+      std::ranges::sort(vertices);
+      auto [unique_end, range_end] = std::ranges::unique(vertices);
+      vertices.erase(unique_end, range_end);
+    }
+
+    {
+      std::ranges::sort(entities);
+      auto [unique_end, range_end] = std::ranges::unique(entities);
+      entities.erase(unique_end, range_end);
+    }
   }
 
   // Get geometry data
@@ -294,8 +300,8 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
 
       // Define normal by rotating tangent counter-clockwise
       std::array<T, 3> t;
-      std::transform(p[1].begin(), p[1].end(), p[0].begin(), t.begin(),
-                     [](auto x, auto y) { return x - y; });
+      std::ranges::transform(p[1], p[0], t.begin(),
+                             [](auto x, auto y) { return x - y; });
 
       T norm = std::sqrt(t[0] * t[0] + t[1] * t[1]);
       std::span<T, 3> ni(n.data() + 3 * i, 3);
@@ -319,16 +325,16 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
 
       // Compute (p1 - p0) and (p2 - p0)
       std::array<T, 3> dp1, dp2;
-      std::transform(p[1].begin(), p[1].end(), p[0].begin(), dp1.begin(),
-                     [](auto x, auto y) { return x - y; });
-      std::transform(p[2].begin(), p[2].end(), p[0].begin(), dp2.begin(),
-                     [](auto x, auto y) { return x - y; });
+      std::ranges::transform(p[1], p[0], dp1.begin(),
+                             [](auto x, auto y) { return x - y; });
+      std::ranges::transform(p[2], p[0], dp2.begin(),
+                             [](auto x, auto y) { return x - y; });
 
       // Define cell normal via cross product of first two edges
       std::array<T, 3> ni = math::cross(dp1, dp2);
       T norm = std::sqrt(ni[0] * ni[0] + ni[1] * ni[1] + ni[2] * ni[2]);
-      std::transform(ni.begin(), ni.end(), std::next(n.begin(), 3 * i),
-                     [norm](auto x) { return x / norm; });
+      std::ranges::transform(ni, std::next(n.begin(), 3 * i),
+                             [norm](auto x) { return x / norm; });
     }
 
     return n;
@@ -348,16 +354,16 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
 
       // Compute (p1 - p0) and (p2 - p0)
       std::array<T, 3> dp1, dp2;
-      std::transform(p[1].begin(), p[1].end(), p[0].begin(), dp1.begin(),
-                     [](auto x, auto y) { return x - y; });
-      std::transform(p[2].begin(), p[2].end(), p[0].begin(), dp2.begin(),
-                     [](auto x, auto y) { return x - y; });
+      std::ranges::transform(p[1], p[0], dp1.begin(),
+                             [](auto x, auto y) { return x - y; });
+      std::ranges::transform(p[2], p[0], dp2.begin(),
+                             [](auto x, auto y) { return x - y; });
 
       // Define cell normal via cross product of first two edges
       std::array<T, 3> ni = math::cross(dp1, dp2);
       T norm = std::sqrt(ni[0] * ni[0] + ni[1] * ni[1] + ni[2] * ni[2]);
-      std::transform(ni.begin(), ni.end(), std::next(n.begin(), 3 * i),
-                     [norm](auto x) { return x / norm; });
+      std::ranges::transform(ni, std::next(n.begin(), 3 * i),
+                             [norm](auto x) { return x / norm; });
     }
 
     return n;
@@ -394,9 +400,9 @@ std::vector<T> compute_midpoints(const Mesh<T>& mesh, int dim,
     for (auto row : rows)
     {
       std::span<const T, 3> xg(x.data() + 3 * row, 3);
-      std::transform(p.begin(), p.end(), xg.begin(), p.begin(),
-                     [size = rows.size()](auto x, auto y)
-                     { return x + y / size; });
+      std::ranges::transform(p, xg, p.begin(),
+                             [size = rows.size()](auto x, auto y)
+                             { return x + y / size; });
     }
   }
 
@@ -611,13 +617,18 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 /// @param[in] mesh The mesh.
 /// @param[in] dim Topological dimension of the entities of interest.
 /// @param[in] entities Entity indices (local to process).
-/// @param[in] permute If `true`, permute the DOFs such that they are consistent
-/// with the orientation of `dim`-dimensional mesh entities. This requires
-/// `create_entity_permutations` to be called first.
-/// @return The geometry DOFs associated with the closure of each
-/// entity in `entities`. The shape is `(num_entities, num_xdofs_per_entity)`
-/// and the storage is row-major. The index `indices[i, j]` is the position in
-/// the geometry array of the `j`-th vertex of the `entity[i]`.
+/// @param[in] permute If `true`, permute the DOFs such that they are
+/// consistent with the orientation of `dim`-dimensional mesh entities.
+/// This requires `create_entity_permutations` to be called first.
+/// @return The geometry DOFs associated with the closure of each entity
+/// in `entities`. The shape is `(num_entities, num_xdofs_per_entity)`
+/// and the storage is row-major. The index `indices[i, j]` is the
+/// position in the geometry array of the `j`-th vertex of the
+/// `entity[i]`.
+///
+/// @pre The mesh connectivities `dim -> mesh.topology().dim()` and
+/// `mesh.topology().dim() -> dim` must have been computed. Otherwise an
+/// exception is thrown.
 template <std::floating_point T>
 std::vector<std::int32_t>
 entities_to_geometry(const Mesh<T>& mesh, int dim,
@@ -626,28 +637,13 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 {
   auto topology = mesh.topology();
   assert(topology);
-
   CellType cell_type = topology->cell_type();
   if (cell_type == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cells");
 
   const int tdim = topology->dim();
-
   const Geometry<T>& geometry = mesh.geometry();
   auto xdofs = geometry.dofmap();
-  auto e_to_c = topology->connectivity(dim, tdim);
-  if (!e_to_c)
-  {
-    throw std::runtime_error(
-        "Entity-to-cell connectivity has not been computed.");
-  }
-
-  auto c_to_e = topology->connectivity(tdim, dim);
-  if (!c_to_e)
-  {
-    throw std::runtime_error(
-        "Cell-to-entity connectivity has not been computed.");
-  }
 
   // Get the DOF layout and the number of DOFs per entity
   const fem::CoordinateElement<T>& coord_ele = geometry.cmap();
@@ -660,9 +656,42 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   const std::vector<std::vector<std::vector<int>>>& closure_dofs_all
       = layout.entity_closure_dofs_all();
 
+  // Special case when dim == tdim (cells)
+  if (dim == tdim)
+  {
+    for (std::size_t i = 0; i < entities.size(); ++i)
+    {
+      const std::int32_t c = entities[i];
+      // Extract degrees of freedom
+      auto x_c = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+          xdofs, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      for (std::int32_t entity_dof : closure_dofs_all[tdim][0])
+        entity_xdofs.push_back(x_c[entity_dof]);
+    }
+    return entity_xdofs;
+  }
+
+  assert(dim != tdim);
+
+  auto e_to_c = topology->connectivity(dim, tdim);
+  if (!e_to_c)
+  {
+    throw std::runtime_error(
+        "Entity-to-cell connectivity has not been computed. Missing dims "
+        + std::to_string(dim) + "->" + std::to_string(tdim));
+  }
+
+  auto c_to_e = topology->connectivity(tdim, dim);
+  if (!c_to_e)
+  {
+    throw std::runtime_error(
+        "Cell-to-entity connectivity has not been computed. Missing dims "
+        + std::to_string(tdim) + "->" + std::to_string(dim));
+  }
+
   // Get the cell info, which is needed to permute the closure dofs
   std::span<const std::uint32_t> cell_info;
-  if (dim != topology->dim() and permute)
+  if (permute)
     cell_info = std::span(mesh.topology()->get_cell_permutation_info());
 
   for (std::size_t i = 0; i < entities.size(); ++i)
@@ -683,7 +712,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 
     // Cell sub-entities must be permuted so that their local orientation agrees
     // with their global orientation
-    if (dim != topology->dim() and permute)
+    if (permute)
     {
       mesh::CellType entity_type
           = mesh::cell_entity_type(cell_type, dim, local_entity);
@@ -742,7 +771,7 @@ compute_incident_entities(const Topology& topology,
 /// 'nodes' will be included. See dolfinx::io::cells for examples of the
 /// Basix ordering.
 /// @param[in] element Coordinate element for the cells.
-/// @param[in] commg
+/// @param[in] commg Communicator for geometry
 /// @param[in] x Geometry data ('node' coordinates). Row-major storage.
 /// The global index of the `i`th node (row) in `x` is taken as `i` plus
 /// the process offset  on`comm`, The offset  is the sum of `x` rows on
@@ -845,9 +874,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
     // Boundary vertices are marked as 'unknown'
     boundary_v = unmatched_facets;
-    std::sort(boundary_v.begin(), boundary_v.end());
-    boundary_v.erase(std::unique(boundary_v.begin(), boundary_v.end()),
-                     boundary_v.end());
+    std::ranges::sort(boundary_v);
+    auto [unique_end, range_end] = std::ranges::unique(boundary_v);
+    boundary_v.erase(unique_end, range_end);
 
     // Remove -1 if it occurs in boundary vertices (may occur in mixed
     // topology)
@@ -870,8 +899,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // Build list of unique (global) node indices from cells1 and
   // distribute coordinate data
   std::vector<std::int64_t> nodes1 = cells1;
-  dolfinx::radix_sort(std::span(nodes1));
-  nodes1.erase(std::unique(nodes1.begin(), nodes1.end()), nodes1.end());
+  dolfinx::radix_sort(nodes1);
+  auto [unique_end, range_end] = std::ranges::unique(nodes1);
+  nodes1.erase(unique_end, range_end);
+
   std::vector coords
       = dolfinx::MPI::distribute_data(comm, nodes1, commg, x, xshape[1]);
 
@@ -883,8 +914,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
               std::move(geometry));
 }
 
-/// @brief Create a distributed mesh from mesh data using a provided
-/// graph partitioning function for determining the parallel
+/// @brief Create a distributed mixed-topology mesh from mesh data using a
+/// provided graph partitioning function for determining the parallel
 /// distribution of the mesh.
 ///
 /// From mesh input data that is distributed across processes, a
@@ -892,17 +923,23 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// not callable, i.e. it does not store a callable function, no
 /// re-distribution of cells is done.
 ///
+/// @note This is an experimental specialised version of `create_mesh` for mixed
+/// topology meshes, and does not include cell reordering.
+///
 /// @param[in] comm Communicator to build the mesh on.
 /// @param[in] commt Communicator that the topology data (`cells`) is
 /// distributed on. This should be `MPI_COMM_NULL` for ranks that should
 /// not participate in computing the topology partitioning.
-/// @param[in] cells Cells on the calling process. Each cell is defined by its
-/// 'nodes' (using global indices) following the Basix ordering. For lowest
-/// order cells this will be just the cell vertices. For higher-order cells,
-/// other cells 'nodes' will be included. See dolfinx::io::cells for examples of
-/// the Basix ordering.
-/// @param[in] elements Coordinate elements for the cells.
-/// @param[in] commg
+/// @param[in] cells Cells on the calling process, as a list of lists,
+/// one list for each cell type (or an empty list if there are no cells of that
+/// type on this process). The cells are defined by their 'nodes' (using global
+/// indices) following the Basix ordering, and concatenated to form a flattened
+/// list.  For lowest order cells this will be just the cell vertices. For
+/// higher-order cells, other cells 'nodes' will be included. See
+/// dolfinx::io::cells for examples of the Basix ordering.
+/// @param[in] elements Coordinate elements for the cells, one for each cell
+/// type in the mesh. In parallel, these must be the same on all processes.
+/// @param[in] commg Communicator for geometry
 /// @param[in] x Geometry data ('node' coordinates). Row-major storage.
 /// The global index of the `i`th node (row) in `x` is taken as `i` plus
 /// the process offset  on`comm`, The offset  is the sum of `x` rows on
@@ -914,7 +951,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt,
-    std::vector<std::span<const std::int64_t>>& cells,
+    const std::vector<std::span<const std::int64_t>>& cells,
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
@@ -923,13 +960,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   assert(cells.size() == elements.size());
   std::int32_t num_cell_types = cells.size();
   std::vector<CellType> celltypes;
-  std::transform(elements.cbegin(), elements.cend(),
-                 std::back_inserter(celltypes),
-                 [](auto e) { return e.cell_shape(); });
+  std::ranges::transform(elements, std::back_inserter(celltypes),
+                         [](auto e) { return e.cell_shape(); });
   std::vector<fem::ElementDofLayout> doflayouts;
-  std::transform(elements.cbegin(), elements.cend(),
-                 std::back_inserter(doflayouts),
-                 [](auto e) { return e.create_dof_layout(); });
+  std::ranges::transform(elements, std::back_inserter(doflayouts),
+                         [](auto e) { return e.create_dof_layout(); });
 
   // Note: `extract_topology` extracts topology data, i.e. just the
   // vertices. For P1 geometry this should just be the identity
@@ -975,8 +1010,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
           std::next(dest.array().begin(), offsets_i.front()),
           std::next(dest.array().begin(), offsets_i.back()));
       std::int32_t offset_0 = offsets_i.front();
-      std::for_each(offsets_i.begin(), offsets_i.end(),
-                    [&offset_0](std::int32_t& j) { j -= offset_0; });
+      std::ranges::for_each(offsets_i,
+                            [&offset_0](std::int32_t& j) { j -= offset_0; });
       graph::AdjacencyList<std::int32_t> dest_i(data_i, offsets_i);
       cell_offset += num_cells;
 
@@ -1040,27 +1075,14 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     auto [graph, unmatched_facets, max_v, facet_attached_cells]
         = build_local_dual_graph(celltypes, cells1_v_local_cells);
 
-    // const std::vector<int> remap = graph::reorder_gps(graph);
-
-    // // Create re-ordered cell lists (leaves ghosts unchanged)
-    // std::vector<std::int64_t> _original_idx(original_idx1.size());
-    // for (std::size_t i = 0; i < remap.size(); ++i)
-    //   _original_idx[remap[i]] = original_idx1[i];
-    // std::copy_n(std::next(original_idx1.cbegin(), num_owned_cells),
-    //             ghost_owners.size(),
-    //             std::next(_original_idx.begin(), num_owned_cells));
-    // impl::reorder_list(
-    //     std::span(cells1_v.data(), remap.size() * num_cell_vertices),
-    //     remap);
-    // impl::reorder_list(
-    //     std::span(cells1.data(), remap.size() * num_cell_nodes), remap);
-    // original_idx1 = _original_idx;
+    // TODO: in the original create_mesh(), cell reordering is done here.
+    // This needs reworking for mixed cell topology
 
     // Boundary vertices are marked as 'unknown'
     boundary_v = unmatched_facets;
-    std::sort(boundary_v.begin(), boundary_v.end());
-    boundary_v.erase(std::unique(boundary_v.begin(), boundary_v.end()),
-                     boundary_v.end());
+    std::ranges::sort(boundary_v);
+    auto [unique_end, range_end] = std::ranges::unique(boundary_v);
+    boundary_v.erase(unique_end, range_end);
 
     // Remove -1 if it occurs in boundary vertices (may occur in mixed
     // topology)
@@ -1073,17 +1095,14 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // Create Topology
 
   std::vector<std::span<const std::int64_t>> cells1_v_span;
-  std::transform(cells1_v.cbegin(), cells1_v.cend(),
-                 std::back_inserter(cells1_v_span),
-                 [](auto& c) { return std::span(c); });
+  std::ranges::transform(cells1_v, std::back_inserter(cells1_v_span),
+                         [](auto& c) { return std::span(c); });
   std::vector<std::span<const std::int64_t>> original_idx1_span;
-  std::transform(original_idx1.cbegin(), original_idx1.cend(),
-                 std::back_inserter(original_idx1_span),
-                 [](auto& c) { return std::span(c); });
+  std::ranges::transform(original_idx1, std::back_inserter(original_idx1_span),
+                         [](auto& c) { return std::span(c); });
   std::vector<std::span<const int>> ghost_owners_span;
-  std::transform(ghost_owners.cbegin(), ghost_owners.cend(),
-                 std::back_inserter(ghost_owners_span),
-                 [](auto& c) { return std::span(c); });
+  std::ranges::transform(ghost_owners, std::back_inserter(ghost_owners_span),
+                         [](auto& c) { return std::span(c); });
 
   Topology topology
       = create_topology(comm, celltypes, cells1_v_span, original_idx1_span,
@@ -1108,8 +1127,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   for (std::vector<std::int64_t>& c : cells1)
     nodes2.insert(nodes2.end(), c.begin(), c.end());
 
-  dolfinx::radix_sort(std::span(nodes1));
-  nodes1.erase(std::unique(nodes1.begin(), nodes1.end()), nodes1.end());
+  dolfinx::radix_sort(nodes1);
+  auto [unique_end, range_end] = std::ranges::unique(nodes1);
+  nodes1.erase(unique_end, range_end);
+
   std::vector coords
       = dolfinx::MPI::distribute_data(comm, nodes1, commg, x, xshape[1]);
 
@@ -1181,9 +1202,9 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
       = entities_to_geometry(mesh, dim, subentity_to_entity, true);
 
   std::vector<std::int32_t> sub_x_dofs = x_indices;
-  std::sort(sub_x_dofs.begin(), sub_x_dofs.end());
-  sub_x_dofs.erase(std::unique(sub_x_dofs.begin(), sub_x_dofs.end()),
-                   sub_x_dofs.end());
+  std::ranges::sort(sub_x_dofs);
+  auto [unique_end, range_end] = std::ranges::unique(sub_x_dofs);
+  sub_x_dofs.erase(unique_end, range_end);
 
   // Get the sub-geometry dofs owned by this process
   auto x_index_map = geometry.index_map();
@@ -1217,13 +1238,12 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
   // Create sub-geometry dofmap
   std::vector<std::int32_t> sub_x_dofmap;
   sub_x_dofmap.reserve(x_indices.size());
-  std::transform(x_indices.cbegin(), x_indices.cend(),
-                 std::back_inserter(sub_x_dofmap),
-                 [&x_to_subx_dof_map](auto x_dof)
-                 {
-                   assert(x_to_subx_dof_map[x_dof] != -1);
-                   return x_to_subx_dof_map[x_dof];
-                 });
+  std::ranges::transform(x_indices, std::back_inserter(sub_x_dofmap),
+                         [&x_to_subx_dof_map](auto x_dof)
+                         {
+                           assert(x_to_subx_dof_map[x_dof] != -1);
+                           return x_to_subx_dof_map[x_dof];
+                         });
 
   // Create sub-geometry coordinate element
   CellType sub_coord_cell
@@ -1235,9 +1255,9 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
   const std::vector<std::int64_t>& igi = geometry.input_global_indices();
   std::vector<std::int64_t> sub_igi;
   sub_igi.reserve(subx_to_x_dofmap.size());
-  std::transform(subx_to_x_dofmap.begin(), subx_to_x_dofmap.end(),
-                 std::back_inserter(sub_igi),
-                 [&igi](std::int32_t sub_x_dof) { return igi[sub_x_dof]; });
+  std::ranges::transform(subx_to_x_dofmap, std::back_inserter(sub_igi),
+                         [&igi](auto sub_x_dof)
+                         { return igi[sub_x_dof]; });
 
   // Create geometry
   return {Geometry(sub_x_dof_index_map, std::move(sub_x_dofmap), {sub_cmap},

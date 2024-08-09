@@ -191,13 +191,13 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
       _data.resize(data_values.size());
       if (component == "real_")
       {
-        std::transform(data_values.begin(), data_values.end(), _data.begin(),
-                       [](auto x) { return x.real(); });
+        std::ranges::transform(data_values, _data.begin(),
+                               [](auto x) { return x.real(); });
       }
       else if (component == "imag_")
       {
-        std::transform(data_values.begin(), data_values.end(), _data.begin(),
-                       [](auto x) { return x.imag(); });
+        std::ranges::transform(data_values, _data.begin(),
+                               [](auto x) { return x.imag(); });
       }
       u = std::span<const scalar_value_type_t<T>>(_data);
     }

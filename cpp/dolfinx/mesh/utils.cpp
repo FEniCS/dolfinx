@@ -58,14 +58,15 @@ mesh::extract_topology(CellType cell_type, const fem::ElementDofLayout& layout,
 std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
 {
   const int tdim = topology.dim();
-  auto facet_map = topology.index_map(tdim - 1);
-  if (!facet_map)
-    throw std::runtime_error("Facets have not been computed.");
-
-  // Find all owned facets (not ghost) with only one attached cell
-  const int num_facets = facet_map->size_local();
   auto f_to_c = topology.connectivity(tdim - 1, tdim);
-  assert(f_to_c);
+  if (!f_to_c)
+  {
+    throw std::runtime_error(
+        "Facet to cell connectivity has not been computed.");
+  }
+  // Find all owned facets (not ghost) with only one attached cell
+  auto facet_map = topology.index_map(tdim - 1);
+  const int num_facets = facet_map->size_local();
   std::vector<std::int32_t> facets;
   for (std::int32_t f = 0; f < num_facets; ++f)
   {
@@ -74,12 +75,9 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
   }
 
   // Remove facets on internal inter-process boundary
-  const std::vector<std::int32_t>& interprocess_facets
-      = topology.interprocess_facets();
   std::vector<std::int32_t> ext_facets;
-  std::set_difference(facets.begin(), facets.end(), interprocess_facets.begin(),
-                      interprocess_facets.end(),
-                      std::back_inserter(ext_facets));
+  std::ranges::set_difference(facets, topology.interprocess_facets(),
+                              std::back_inserter(ext_facets));
   return ext_facets;
 }
 //------------------------------------------------------------------------------
@@ -139,9 +137,10 @@ mesh::compute_incident_entities(const Topology& topology,
     entities1.insert(entities1.end(), e.begin(), e.end());
   }
 
-  std::sort(entities1.begin(), entities1.end());
-  entities1.erase(std::unique(entities1.begin(), entities1.end()),
-                  entities1.end());
+  std::ranges::sort(entities1);
+  auto [unique_end, range_end] = std::ranges::unique(entities1);
+  entities1.erase(unique_end, range_end);
+
   return entities1;
 }
 //-----------------------------------------------------------------------------

@@ -18,6 +18,8 @@
 # pyamg is not MPI-parallel, therefore this demo runs in serial only.
 
 # +
+import sys
+
 from mpi4py import MPI
 
 import numpy as np
@@ -29,7 +31,7 @@ if MPI.COMM_WORLD.size > 1:
 
 try:
     import pyamg
-except ImportError:
+except (ImportError, AttributeError):
     print('This demo requires pyamg, install using "pip install pyamg"')
     exit(0)
 
@@ -233,8 +235,9 @@ poisson_problem(np.float32, "ruge_stuben")
 poisson_problem(np.float64, "ruge_stuben")
 
 # For complex, pyamg requires smoothed aggregation multigrid
-poisson_problem(np.complex64, "smoothed_aggregation")
-poisson_problem(np.complex128, "smoothed_aggregation")
+if not sys.platform.startswith("win32"):
+    poisson_problem(np.complex64, "smoothed_aggregation")
+    poisson_problem(np.complex128, "smoothed_aggregation")
 
 # Solve elasticity problem with different scalar types
 elasticity_problem(np.float32)

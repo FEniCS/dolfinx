@@ -60,6 +60,7 @@ __all__ = [
     "create_unit_cube",
     "to_type",
     "to_string",
+    "refine_interval",
     "refine_plaza",
     "transfer_meshtag",
     "entities_to_geometry",
@@ -333,6 +334,37 @@ def refine(
     return Mesh(mesh1, mesh._ufl_domain)
 
 
+def refine_interval(
+    mesh: Mesh,
+    cells: typing.Optional[np.ndarray] = None,
+    redistribute: bool = True,
+    ghost_mode: GhostMode = GhostMode.shared_facet,
+) -> tuple[Mesh, npt.NDArray[np.int32]]:
+    """Refine a (topologically) one dimensional mesh.
+
+    Args:
+        mesh: Mesh to refine
+        cells: Indices of cells, i.e. edges, to split druing refinement. If ``None``, mesh
+            refinement is uniform.
+        redistribute: Refined mesh is re-partitioned if ``True``.
+        ghost_mode: ghost mode of the refined mesh
+
+    Returns:
+        Refined mesh and parent cells
+    """
+
+    if cells is None:
+        refined_mesh, parent_cells = _cpp.refinement.refine_interval(
+            mesh._cpp_object, redistribute, ghost_mode
+        )
+    else:
+        refined_mesh, parent_cells = _cpp.refinement.refine_interval(
+            mesh._cpp_object, cells, redistribute, ghost_mode
+        )
+
+    return Mesh(refined_mesh, mesh._ufl_domain), parent_cells
+
+
 def refine_plaza(
     mesh: Mesh,
     edges: typing.Optional[np.ndarray] = None,
@@ -496,7 +528,7 @@ def meshtags(
     """
 
     if isinstance(values, int):
-        assert np.can_cast(values, np.int32)
+        assert values >= np.iinfo(np.int32).min and values <= np.iinfo(np.int32).max
         values = np.full(entities.shape, values, dtype=np.int32)
     elif isinstance(values, float):
         values = np.full(entities.shape, values, dtype=np.double)

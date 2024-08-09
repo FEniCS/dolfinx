@@ -127,7 +127,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       dest_to_index.push_back({dolfinx::MPI::index_owner(num_ranks, v0, range),
                                static_cast<int>(i)});
     }
-    std::sort(dest_to_index.begin(), dest_to_index.end());
+    std::ranges::sort(dest_to_index);
 
     // Build list of dest ranks and count number of items (facets) to
     // send to each dest post office (by neighbourhood rank)
@@ -235,14 +235,15 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     // Compute sort permutation for received data
     std::vector<int> sort_order(recv_buffer.size() / buffer_shape1);
     std::iota(sort_order.begin(), sort_order.end(), 0);
-    std::sort(sort_order.begin(), sort_order.end(),
-              [&recv_buffer, buffer_shape1, fshape1](auto f0, auto f1)
-              {
-                auto it0 = std::next(recv_buffer.begin(), f0 * buffer_shape1);
-                auto it1 = std::next(recv_buffer.begin(), f1 * buffer_shape1);
-                return std::lexicographical_compare(
-                    it0, std::next(it0, fshape1), it1, std::next(it1, fshape1));
-              });
+    std::ranges::sort(
+        sort_order,
+        [&recv_buffer, buffer_shape1, fshape1](auto f0, auto f1)
+        {
+          auto it0 = std::next(recv_buffer.begin(), f0 * buffer_shape1);
+          auto it1 = std::next(recv_buffer.begin(), f1 * buffer_shape1);
+          return std::lexicographical_compare(it0, std::next(it0, fshape1), it1,
+                                              std::next(it1, fshape1));
+        });
 
     auto it = sort_order.begin();
     while (it != sort_order.end())
@@ -327,8 +328,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     {
       auto e = local_graph.links(i);
       disp[i] += e.size();
-      std::transform(e.begin(), e.end(), std::next(data.begin(), offsets[i]),
-                     [cell_offset](auto x) { return x + cell_offset; });
+      std::ranges::transform(e, std::next(data.begin(), offsets[i]),
+                             [cell_offset](auto x) { return x + cell_offset; });
     }
 
     // Add non-local data
@@ -420,9 +421,8 @@ mesh::build_local_dual_graph(
       for (int f = 0; f < cell_facets.num_nodes(); ++f)
       {
         auto facet_vertices = cell_facets.links(f);
-        std::transform(facet_vertices.begin(), facet_vertices.end(),
-                       std::back_inserter(facets),
-                       [v](auto idx) { return v[idx]; });
+        std::ranges::transform(facet_vertices, std::back_inserter(facets),
+                               [v](auto idx) { return v[idx]; });
         std::sort(std::prev(facets.end(), facet_vertices.size()), facets.end());
         facets.insert(facets.end(),
                       max_vertices_per_facet - facet_vertices.size(), -1);

@@ -15,6 +15,7 @@
 // ## C++ program
 
 #include "hyperelasticity.h"
+#include <algorithm>
 #include <basix/finite-element.h>
 #include <climits>
 #include <cmath>
@@ -24,9 +25,14 @@
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/la/Vector.h>
+#include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/nls/NewtonSolver.h>
+#include <petscmat.h>
+#include <petscsys.h>
+#include <petscsystypes.h>
+#include <petscvec.h>
 
 using namespace dolfinx;
 using T = PetscScalar;
@@ -81,7 +87,7 @@ public:
     {
       // Assemble b and update ghosts
       std::span<T> b(_b.mutable_array());
-      std::fill(b.begin(), b.end(), 0.0);
+      std::ranges::fill(b, 0.0);
       fem::assemble_vector<T>(b, *_l);
       VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
       VecGhostUpdateEnd(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
