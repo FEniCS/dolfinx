@@ -33,6 +33,7 @@ jobs:
     name: Lint
     steps:
       - uses: actions/checkout@v4
+      
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -60,7 +61,7 @@ jobs:
         run: |
           cd cpp
           clang-format --version
-          find . -type f \( -name "*.cpp" -o -name "*.h" \) ! -name "loguru.cpp" | xargs clang-format --dry-run --Werror
+          find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
       - name: clang-format Python binding checks (non-blocking)
         continue-on-error: true
         run: |
@@ -83,6 +84,8 @@ jobs:
 
     name: Build and test
     steps:
+      - uses: actions/checkout@v4
+      
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -93,7 +96,8 @@ jobs:
           python-version: "3.12"
 
       - name: Install Python build dependencies
-        run: pip install mpi4py nanobind scikit-build-core[pyproject] --upgrade
+        run: |
+          pip install --upgrade -r python/build-requirements.txt
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
@@ -107,8 +111,6 @@ jobs:
           pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
           pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
           pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
-
-      - uses: actions/checkout@v4
 
       - name: Configure and install C++
         run: |
@@ -129,14 +131,14 @@ jobs:
           mpirun -n 3 ctest -V --output-on-failure -R unittests
 
       - name: Build Python interface
-        run: | 
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
+        run: |
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
           python -c "from mpi4py import MPI; from dolfinx.common import *; assert not has_petsc4py"
 
-      - name: Install Python demo/test dependencies
-        run: pip install matplotlib pyamg pytest pytest-xdist scipy
       - name: Run demos (Python, serial)
-        run: python -m pytest -n auto -m serial --durations=10 python/demo/test.py
+        run: |
+          pip install pytest-xdist
+          python -m pytest -n auto -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=3))
         run: python -m pytest -m mpi --num-proc=3 python/demo/test.py
       - name: Run unit tests
@@ -167,9 +169,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install required Python packages (docs)
-        run: pip install breathe jupytext matplotlib myst_parser sphinx sphinx_rtd_theme
-
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
@@ -189,14 +188,6 @@ jobs:
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_ADIOS2=true -DDOLFINX_ENABLE_KAHIP=true -DDOLFINX_ENABLE_PARMETIS=false -DDOLFINX_ENABLE_PETSC=true -DDOLFINX_ENABLE_SCOTCH=true -DDOLFINX_ENABLE_SLEPC=true -B build -S cpp/
           cmake --build build
           cmake --install build
-
-      - name: Build C++ interface documentation
-        run: |
-          export DOLFINX_VERSION=`cmake -L build | grep DOXYGEN_DOLFINX_VERSION | cut -f2 -d "="`
-          echo $DOLFINX_VERSION
-          cd cpp/doc
-          doxygen Doxyfile
-          make html
 
       - name: Build C++ unit tests
         run: |
@@ -218,27 +209,23 @@ jobs:
           ctest -V -R demo -R serial
           ctest -V -R demo -R mpi_2
 
-      - name: Install required Python (build Python interface)
-        run: pip install nanobind scikit-build-core[pyproject]
+      - name: Install Python build dependencies 
+        run: pip install -r python/build-requirements.txt 
 
       - name: Build Python interface
         run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
           python -c "from mpi4py import MPI; from dolfinx.common import *; assert has_adios2; assert has_kahip; assert not has_parmetis; assert has_petsc; assert has_petsc4py; assert has_ptscotch; assert has_slepc; assert has_complex_ufcx_kernels"
-      - name: Build Python interface documentation
-        run: |
-          cd python/doc
-          python -m sphinx -W -b html source/ build/html/
 
       - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
-      - name: Install Python demo/test dependencies
-        run: pip install numba pyamg pytest pytest-xdist scipy
       - name: Run demos (Python, serial)
-        run: python -m pytest -n auto -m serial --durations=10 python/demo/test.py
+        run: |
+          pip install pytest-xdist
+          python -m pytest -n auto -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=3))
         run: python -m pytest -m mpi --num-proc=3 python/demo/test.py
 
@@ -247,9 +234,7 @@ jobs:
       - name: Run Python unit tests (MPI, np=3)
         run: mpirun -np 3 python -m pytest -m "petsc4py or adios2" python/test/unit/
 
-  publish-docs:
-    if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
-    needs: build-with-petsc
+  build-and-publish-docs:
     runs-on: ubuntu-latest
     container: "ghcr.io/fenics/test-env:current-openmpi"
     env:
@@ -258,12 +243,9 @@ jobs:
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
-    name: Publish docs
+    name: Build and publish docs
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install required Python packages (docs)
-        run: pip install breathe jupytext matplotlib myst_parser sphinx sphinx_rtd_theme
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
@@ -284,6 +266,11 @@ jobs:
           cmake --build build
           cmake --install build
 
+      - name: Build Python interface
+        run: |
+          pip install -r python/build-requirements.txt
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[docs]'
+
       - name: Build C++ interface documentation
         run: |
           export DOLFINX_VERSION=`cmake -L build | grep DOXYGEN_DOLFINX_VERSION | cut -f2 -d "="`
@@ -291,27 +278,43 @@ jobs:
           cd cpp/doc
           doxygen Doxyfile
           make html
-
-      - name: Install required Python (build Python interface)
-        run: pip install nanobind scikit-build-core[pyproject]
-
-      - name: Build Python interface
-        run: pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
+      - name: Upload C++ Doxygen documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-cpp-doxygen
+          path: cpp/doc/html 
+          retention-days: 2 
+      - name: Upload C++ Sphinx documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-cpp-sphinx
+          path: cpp/doc/build/html 
+          retention-days: 2 
+      
       - name: Build Python interface documentation
         run: |
           cd python/doc
           python -m sphinx -W -b html source/ build/html/
+      - name: Upload Python documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-python
+          path: python/doc/build/html 
+          retention-days: 2 
 
       - name: Checkout FEniCS/docs
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
         uses: actions/checkout@v4
         with:
           repository: "FEniCS/docs"
           path: "docs"
           ssh-key: "${{ secrets.SSH_GITHUB_DOCS_PRIVATE_KEY }}"
       - name: Set version name
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
         run: |
           echo "VERSION_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - name: Copy documentation into repository
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
         run: |
           cd docs
           git rm -r --ignore-unmatch dolfinx/${{ env.VERSION_NAME }}/cpp
@@ -323,6 +326,7 @@ jobs:
           cp -r ../cpp/doc/html/* dolfinx/${{ env.VERSION_NAME }}/cpp/doxygen
           cp -r ../python/doc/build/html/* dolfinx/${{ env.VERSION_NAME }}/python
       - name: Commit and push documentation to FEniCS/docs
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
         run: |
           cd docs
           git config --global user.email "fenics@github.com"
