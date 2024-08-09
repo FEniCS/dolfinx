@@ -140,6 +140,7 @@ jobs:
       - name: Run units tests (Python, serial)
         working-directory: dolfinx
         run: |
+          pip install pytest-xdist
           python -m pytest -n auto -m "not petsc4py and not adios2" python/test/unit
       - name: Run units tests (Python, MPI, np=3)
         working-directory: dolfinx
@@ -149,7 +150,6 @@ jobs:
       - name: Run Python demos (serial)
         working-directory: dolfinx
         run: |
-          pip install pyamg matplotlib numba scipy # TO REMOVE
           cd python/demo
           python3 -m pytest -n auto -m serial --durations=10 test.py
       - name: Run Python demos (MPI, np=3)
