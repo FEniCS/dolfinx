@@ -283,11 +283,10 @@ jobs:
           doxygen Doxyfile
           make html
 
-      - name: Install required Python (build Python interface)
-        run: pip install nanobind scikit-build-core[pyproject]
-
       - name: Build Python interface
-        run: pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[docs]'
+        run: |
+          pip install -r --no-build-isolation python/build-requirements.txt
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[docs]'
       - name: Build Python interface documentation
         run: |
           cd python/doc
