@@ -17,8 +17,9 @@ import pytest
 import dolfinx
 import dolfinx.utils
 import ffcx.codegeneration.utils
-from dolfinx import TimingType, fem, la, list_timings
 from dolfinx import cpp as _cpp
+from dolfinx import fem, la
+from dolfinx.common import TimingType, list_timings
 from dolfinx.fem import Form, Function, IntegralType, form_cpp_class, functionspace
 from dolfinx.mesh import create_unit_square
 

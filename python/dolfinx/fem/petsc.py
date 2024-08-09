@@ -19,6 +19,11 @@ import typing
 
 from petsc4py import PETSc
 
+# ruff: noqa: E402
+import dolfinx.common
+
+assert dolfinx.common.has_petsc4py
+
 import numpy as np
 
 import dolfinx.cpp as _cpp
