@@ -80,9 +80,6 @@ public:
   /// creates a 3x3 block in the sparsity pattern with top left corner at (0,
   /// 1).
   ///
-  /// Note: Especially this operation does not perform a pairwise insertion to
-  /// the sparsity pattern, i.e. the above call creates more then (9 in total)
-  /// entries and not only entries at the locations (0,1), (1,2) and (2,3)!
   void insert(std::span<const std::int32_t> rows,
               std::span<const std::int32_t> cols);
 
