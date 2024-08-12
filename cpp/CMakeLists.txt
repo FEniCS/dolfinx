@@ -2,6 +2,10 @@
 # Top level CMakeLists.txt file for DOLFINx
 cmake_minimum_required(VERSION 3.21)
 
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)  # Boost CONFIG mode
+endif()
+
 # ------------------------------------------------------------------------------
 # Set project name and version number
 project(DOLFINX VERSION "0.9.0.0")
@@ -220,7 +224,7 @@ else()
       CACHE BOOL "Is KaHIP REQUIRED?"
   )
 endif()
-option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." OFF)
+option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." ON)
 set_package_properties(
   KaHIP PROPERTIES
   TYPE OPTIONAL

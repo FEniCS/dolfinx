@@ -325,9 +325,9 @@ void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
 
       // basis_i <- basis_i - dot_ij  basis_j
       auto dot_ij = inner_product(bi, bj);
-      std::transform(bj.array().begin(), bj.array().end(), bi.array().begin(),
-                     bi.mutable_array().begin(),
-                     [dot_ij](auto xj, auto xi) { return xi - dot_ij * xj; });
+      std::ranges::transform(bj.array(), bi.array(), bi.mutable_array().begin(),
+                             [dot_ij](auto xj, auto xi)
+                             { return xi - dot_ij * xj; });
     }
 
     // Normalise basis function
@@ -337,9 +337,8 @@ void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
       throw std::runtime_error(
           "Linear dependency detected. Cannot orthogonalize.");
     }
-    std::transform(bi.array().begin(), bi.array().end(),
-                   bi.mutable_array().begin(),
-                   [norm](auto x) { return x / norm; });
+    std::ranges::transform(bi.array(), bi.mutable_array().begin(),
+                           [norm](auto x) { return x / norm; });
   }
 }
 

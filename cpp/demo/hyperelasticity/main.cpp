@@ -25,9 +25,14 @@
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/la/Vector.h>
+#include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/nls/NewtonSolver.h>
+#include <petscmat.h>
+#include <petscsys.h>
+#include <petscsystypes.h>
+#include <petscvec.h>
 
 using namespace dolfinx;
 using T = PetscScalar;

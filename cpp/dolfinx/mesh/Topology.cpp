@@ -303,11 +303,12 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
                       [](std::size_t s, auto& v) { return s + v.size(); }));
   for (auto c : cells_owned)
     local_vertex_set.insert(local_vertex_set.end(), c.begin(), c.end());
-  dolfinx::radix_sort(std::span(local_vertex_set));
-  local_vertex_set.erase(
-      std::unique(local_vertex_set.begin(), local_vertex_set.end()),
-      local_vertex_set.end());
-
+ 
+  {
+    dolfinx::radix_sort(local_vertex_set);
+    auto [unique_end, range_end] = std::ranges::unique(local_vertex_set);
+    local_vertex_set.erase(unique_end, range_end);
+  }
   // Build set of ghost cell vertices (attached to a ghost cell)
   std::vector<std::int64_t> ghost_vertex_set;
   ghost_vertex_set.reserve(
@@ -315,11 +316,12 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
                       [](std::size_t s, auto& v) { return s + v.size(); }));
   for (auto c : cells_ghost)
     ghost_vertex_set.insert(ghost_vertex_set.end(), c.begin(), c.end());
-  dolfinx::radix_sort(std::span(ghost_vertex_set));
-  ghost_vertex_set.erase(
-      std::unique(ghost_vertex_set.begin(), ghost_vertex_set.end()),
-      ghost_vertex_set.end());
 
+  {
+    dolfinx::radix_sort(ghost_vertex_set);
+    auto [unique_end, range_end] = std::ranges::unique(ghost_vertex_set);
+    ghost_vertex_set.erase(unique_end, range_end);
+  }
   // Build difference 1: Vertices attached only to owned cells, and
   // therefore owned by this rank
   std::vector<std::int64_t> owned_vertices;
@@ -385,10 +387,18 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
     else
       src.push_back(ranks.front());
   }
-  std::ranges::sort(src);
-  src.erase(std::unique(src.begin(), src.end()), src.end());
-  std::ranges::sort(dest);
-  dest.erase(std::unique(dest.begin(), dest.end()), dest.end());
+
+  {
+    std::ranges::sort(src);
+    auto [unique_end, range_end] = std::ranges::unique(src);
+    src.erase(unique_end, range_end);
+  }
+
+  {
+    std::ranges::sort(dest);
+    auto [unique_end, range_end] = std::ranges::unique(dest);
+    dest.erase(unique_end, range_end);
+  }
 
   // Pack send data. Use std::vector<std::vector>> since size will be
   // modest (equal to number of neighbour ranks)
@@ -435,9 +445,8 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
     // Prepare send sizes and send displacements
     std::vector<int> send_sizes;
     send_sizes.reserve(dest.size());
-    std::transform(send_buffer.begin(), send_buffer.end(),
-                   std::back_inserter(send_sizes),
-                   [](auto& x) { return x.size(); });
+    std::ranges::transform(send_buffer, std::back_inserter(send_sizes),
+                           [](auto& x) { return x.size(); });
     std::vector<int> send_disp(dest.size() + 1, 0);
     std::partial_sum(send_sizes.begin(), send_sizes.end(),
                      std::next(send_disp.begin()));
@@ -534,19 +543,18 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
     // Build list of (owner rank, index) pairs for each ghost index, and
     // sort
     std::vector<std::pair<int, std::int64_t>> owner_to_ghost;
-    std::transform(map0.ghosts().begin(), map0.ghosts().end(),
-                   map0.owners().begin(), std::back_inserter(owner_to_ghost),
-                   [](auto idx, auto r) -> std::pair<int, std::int64_t>
-                   { return {r, idx}; });
+    std::ranges::transform(map0.ghosts(), map0.owners(),
+                           std::back_inserter(owner_to_ghost),
+                           [](auto idx, auto r) -> std::pair<int, std::int64_t>
+                           { return {r, idx}; });
     std::ranges::sort(owner_to_ghost);
 
     // Build send buffer (the second component of each pair in
     // owner_to_ghost) to send to rank that owns the index
     std::vector<std::int64_t> send_buffer;
     send_buffer.reserve(owner_to_ghost.size());
-    std::transform(owner_to_ghost.begin(), owner_to_ghost.end(),
-                   std::back_inserter(send_buffer),
-                   [](auto x) { return x.second; });
+    std::ranges::transform(owner_to_ghost, std::back_inserter(send_buffer),
+                           [](auto x) { return x.second; });
 
     // Compute send sizes and displacements
     std::vector<int> send_sizes, send_disp{0};
@@ -598,16 +606,15 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
       }
 
       std::ranges::sort(shared_vertices);
-      shared_vertices.erase(
-          std::unique(shared_vertices.begin(), shared_vertices.end()),
-          shared_vertices.end());
+      auto [unique_end, range_end] = std::ranges::unique(shared_vertices);
+      shared_vertices.erase(unique_end, range_end);
     }
   }
 
   // Compute send sizes and offsets
   std::vector<int> send_sizes(dest.size());
-  std::transform(shared_vertices_fwd.begin(), shared_vertices_fwd.end(),
-                 send_sizes.begin(), [](auto& x) { return 3 * x.size(); });
+  std::ranges::transform(shared_vertices_fwd, send_sizes.begin(),
+                         [](auto& x) { return 3 * x.size(); });
   std::vector<int> send_disp(dest.size() + 1);
   std::partial_sum(send_sizes.begin(), send_sizes.end(),
                    std::next(send_disp.begin()));
@@ -668,7 +675,8 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
   for (std::size_t i = 0; i < recv_buffer.size(); i += 3)
     data.push_back({recv_buffer[i], recv_buffer[i + 1], recv_buffer[i + 2]});
   std::ranges::sort(data);
-  data.erase(std::unique(data.begin(), data.end()), data.end());
+  auto [unique_end, range_end] = std::ranges::unique(data);
+  data.erase(unique_end, range_end);
 
   MPI_Comm_free(&comm);
 
@@ -1086,12 +1094,12 @@ Topology mesh::create_topology(
       else
         unowned_vertices.push_back(global_index);
     }
-    dolfinx::radix_sort(std::span(unowned_vertices));
+    dolfinx::radix_sort(unowned_vertices);
 
     // Add owned but shared vertices to owned_vertices, and sort
     owned_vertices.insert(owned_vertices.end(), owned_shared_vertices.begin(),
                           owned_shared_vertices.end());
-    dolfinx::radix_sort(std::span(owned_vertices));
+    dolfinx::radix_sort(owned_vertices);
   }
 
   // Number all owned vertices, iterating over vertices cell-wise
@@ -1169,18 +1177,14 @@ Topology mesh::create_topology(
           global_to_local_vertices;
       global_to_local_vertices.reserve(owned_vertices.size()
                                        + unowned_vertices.size());
-      std::transform(owned_vertices.begin(), owned_vertices.end(),
-                     local_vertex_indices.begin(),
-                     std::back_inserter(global_to_local_vertices),
-                     [](auto idx0, auto idx1) {
-                       return std::pair<std::int64_t, std::int32_t>(idx0, idx1);
-                     });
-      std::transform(unowned_vertices.begin(), unowned_vertices.end(),
-                     local_vertex_indices_unowned.begin(),
-                     std::back_inserter(global_to_local_vertices),
-                     [](auto idx0, auto idx1) {
-                       return std::pair<std::int64_t, std::int32_t>(idx0, idx1);
-                     });
+      std::ranges::transform(
+          owned_vertices, local_vertex_indices,
+          std::back_inserter(global_to_local_vertices), [](auto idx0, auto idx1)
+          { return std::pair<std::int64_t, std::int32_t>(idx0, idx1); });
+      std::ranges::transform(
+          unowned_vertices, local_vertex_indices_unowned,
+          std::back_inserter(global_to_local_vertices), [](auto idx0, auto idx1)
+          { return std::pair<std::int64_t, std::int32_t>(idx0, idx1); });
       std::ranges::sort(global_to_local_vertices);
 
       // Send (from the ghost cell owner) and receive global indices for
@@ -1227,15 +1231,13 @@ Topology mesh::create_topology(
   std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local_vertices;
   global_to_local_vertices.reserve(owned_vertices.size()
                                    + unowned_vertices.size());
-  std::transform(
-      owned_vertices.begin(), owned_vertices.end(),
-      local_vertex_indices.begin(),
+  std::ranges::transform(
+      owned_vertices, local_vertex_indices,
       std::back_inserter(global_to_local_vertices),
       [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t>
       { return {idx0, idx1}; });
-  std::transform(
-      unowned_vertices.begin(), unowned_vertices.end(),
-      local_vertex_indices_unowned.begin(),
+  std::ranges::transform(
+      unowned_vertices, local_vertex_indices_unowned,
       std::back_inserter(global_to_local_vertices),
       [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t>
       { return {idx0, idx1}; });
@@ -1271,8 +1273,10 @@ Topology mesh::create_topology(
     // Build list of ranks that own vertices that are ghosted by this
     // rank (out edges)
     std::vector<int> src = ghost_vertex_owners;
-    dolfinx::radix_sort(std::span(src));
-    src.erase(std::unique(src.begin(), src.end()), src.end());
+    dolfinx::radix_sort(src);
+    auto [unique_end, range_end] = std::ranges::unique(src);
+    src.erase(unique_end, range_end);
+
     dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
   }
 
@@ -1339,8 +1343,9 @@ mesh::create_subtopology(const Topology& topology, int dim,
     // FIXME Make this an input requirement?
     std::vector<std::int32_t> _entities(entities.begin(), entities.end());
     std::ranges::sort(_entities);
-    _entities.erase(std::unique(_entities.begin(), _entities.end()),
-                    _entities.end());
+    auto [unique_end, range_end] = std::ranges::unique(_entities);
+    _entities.erase(unique_end, range_end);
+
     auto [_submap, _subentities]
         = common::create_sub_index_map(*topology.index_map(dim), _entities);
     submap = std::make_shared<common::IndexMap>(std::move(_submap));

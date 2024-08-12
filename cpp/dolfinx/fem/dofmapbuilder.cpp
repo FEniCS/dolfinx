@@ -116,16 +116,14 @@ reorder_owned(const std::vector<dofmap_t>& dofmaps, std::int32_t owned_size,
   std::int32_t current_offset = 0;
   for (std::size_t i = 0; i < num_edges.size(); ++i)
   {
-    std::sort(std::next(edges.begin(), current_offset),
-              std::next(edges.begin(), current_offset + num_edges[i]));
-    const auto it
-        = std::unique(std::next(edges.begin(), current_offset),
-                      std::next(edges.begin(), current_offset + num_edges[i]));
-    graph_data.insert(graph_data.end(),
-                      std::next(edges.begin(), current_offset), it);
-    graph_offsets[i + 1]
-        = graph_offsets[i]
-          + std::distance(std::next(edges.begin(), current_offset), it);
+    auto range_begin = std::next(edges.begin(), current_offset);
+    auto edge_range = std::ranges::subrange(
+        range_begin, std::next(range_begin, num_edges[i]));
+    std::ranges::sort(edge_range);
+    auto it = std::ranges::unique(edge_range).begin();
+
+    graph_data.insert(graph_data.end(), range_begin, it);
+    graph_offsets[i + 1] = graph_offsets[i] + std::distance(range_begin, it);
     current_offset += num_edges[i];
   }
 
@@ -390,8 +388,8 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 
   // Get mesh entity ownership offset for each IndexMap
   std::vector<std::int32_t> offset(index_maps.size(), -1);
-  std::transform(index_maps.begin(), index_maps.end(), offset.begin(),
-                 [](auto map) { return map->size_local(); });
+  std::ranges::transform(index_maps, offset.begin(),
+                         [](auto& map) { return map->size_local(); });
 
   // Compute the number of dofs 'owned' by this process
   const std::int32_t owned_size = std::accumulate(
@@ -441,10 +439,10 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     // Apply graph reordering to owned dofs
     const std::vector<int> node_remap = reorder_owned(
         dofmaps, owned_size, original_to_contiguous, reorder_fn);
-    std::transform(original_to_contiguous.begin(), original_to_contiguous.end(),
-                   original_to_contiguous.begin(),
-                   [&node_remap, owned_size](auto index)
-                   { return index < owned_size ? node_remap[index] : index; });
+    std::ranges::transform(
+        original_to_contiguous, original_to_contiguous.begin(),
+        [&node_remap, owned_size](auto index)
+        { return index < owned_size ? node_remap[index] : index; });
   }
 
   return {std::move(original_to_contiguous), owned_size};
