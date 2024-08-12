@@ -16,8 +16,7 @@ set(HEADERS_io
 
 target_sources(
   dolfinx
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ADIOS2_utils.cpp
-          ${CMAKE_CURRENT_SOURCE_DIR}/ADIOS2Writers.cpp
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ADIOS2Writers.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/cells.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/checkpointing.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Interface.cpp

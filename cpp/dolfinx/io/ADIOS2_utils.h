@@ -16,6 +16,14 @@
 /// @file ADIOS2_utils.h
 /// @brief Utils for ADIOS2
 
+namespace
+{
+std::map<std::string, adios2::Mode> string_to_mode{
+    {"write", adios2::Mode::Write},
+    {"read", adios2::Mode::Read},
+};
+} // namespace
+
 namespace dolfinx::io
 {
 
@@ -26,12 +34,19 @@ public:
   /// @brief Create an ADIOS2-based engine writer/reader
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
-  /// @param[in] tag The ADIOS2 object name
+  /// @param[in] tag The ADIOS2 IO name
   /// @param[in] engine_type ADIOS2 engine type. See
   /// https://adios2.readthedocs.io/en/latest/engines/engines.html.
   /// @param[in] mode ADIOS2 mode, default is Write or Read
   ADIOS2Wrapper(MPI_Comm comm, std::string filename, std::string tag,
-                std::string engine_type = "BP5", std::string mode = "write");
+                std::string engine_type = "BP5", std::string mode = "write")
+      : _adios(std::make_shared<adios2::ADIOS>(comm)),
+        _io(std::make_shared<adios2::IO>(_adios->DeclareIO(tag)))
+  {
+    _io->SetEngine(engine_type);
+    _engine = std::make_shared<adios2::Engine>(
+        _io->Open(filename, string_to_mode[mode]));
+  }
 
   /// @brief Move constructor
   ADIOS2Wrapper(ADIOS2Wrapper&& ADIOS2) = default;
@@ -40,7 +55,7 @@ public:
   ADIOS2Wrapper(const ADIOS2Wrapper&) = delete;
 
   /// @brief Destructor
-  ~ADIOS2Wrapper();
+  ~ADIOS2Wrapper() { close(); }
 
   /// @brief Move assignment
   ADIOS2Wrapper& operator=(ADIOS2Wrapper&& ADIOS2) = default;
@@ -49,15 +64,20 @@ public:
   ADIOS2Wrapper& operator=(const ADIOS2Wrapper&) = delete;
 
   /// @brief  Close the file
-  void close();
+  void close()
+  {
+    assert(_engine);
+    if (*_engine)
+      _engine->Close();
+  }
 
   /// @brief  Get the IO object
   std::shared_ptr<adios2::IO> io() { return _io; }
 
-  /// @brief  Close the Engine object
+  /// @brief  Get the Engine object
   std::shared_ptr<adios2::Engine> engine() { return _engine; }
 
-public:
+private:
   std::shared_ptr<adios2::ADIOS> _adios;
   std::shared_ptr<adios2::IO> _io;
   std::shared_ptr<adios2::Engine> _engine;

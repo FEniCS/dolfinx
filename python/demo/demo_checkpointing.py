@@ -59,16 +59,13 @@ adios2.close()
 # -
 
 # +
-adios2_query = io.ADIOS2(
-    msh.comm, filename="mesh.bp", tag="mesh-read", engine_type="BP5", mode="read"
-)
 adios2_read = io.ADIOS2(
     msh.comm, filename="mesh.bp", tag="mesh-read", engine_type="BP5", mode="read"
 )
 # -
 
 # +
-msh_read = io.read_mesh(adios2_query, adios2_read, msh.comm)
+msh_read = io.read_mesh(adios2_read, msh.comm)
 # -
 
 # # +

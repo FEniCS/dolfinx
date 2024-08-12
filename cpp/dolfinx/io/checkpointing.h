@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Abdullah Mujahid
+// Copyright (C) 2024 Abdullah Mujahid, Jørgen S. Dokken, Jack S. Hale
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -27,7 +27,7 @@ namespace dolfinx::io::native
 /// @param[in] mesh Mesh of type float or double to write to the file
 template <std::floating_point T>
 void write_mesh(adios2::IO& io, adios2::Engine& engine,
-                dolfinx::mesh::Mesh<T>& mesh);
+                const dolfinx::mesh::Mesh<T>& mesh);
 
 /// @brief Read mesh from a file.
 ///
@@ -39,6 +39,10 @@ template <std::floating_point T>
 dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
                                  MPI_Comm comm = MPI_COMM_WORLD);
 
+} // namespace dolfinx::io::native
+
+namespace dolfinx::io::impl_native
+{
 /// @brief Read mesh from a file.
 ///
 /// @param[in] io ADIOS2 IO
@@ -49,12 +53,6 @@ std::variant<dolfinx::mesh::Mesh<float>, dolfinx::mesh::Mesh<double>>
 read_mesh_variant(adios2::IO& io, adios2::Engine& engine,
                   MPI_Comm comm = MPI_COMM_WORLD);
 
-// /// @brief Query floating_point type stored in the file
-// ///
-// /// @param[in] ADIOS2 ADIOS2Wrapper
-// /// @return type float or double as a string
-// std::string query_type(ADIOS2Wrapper& ADIOS2);
-
-} // namespace dolfinx::io::native
+} // namespace dolfinx::io::impl_native
 
 #endif

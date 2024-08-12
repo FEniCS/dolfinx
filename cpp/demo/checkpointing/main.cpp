@@ -1,5 +1,5 @@
 // ```text
-// Copyright (C) 2024 Abdullah Mujahid
+// Copyright (C) 2024 Abdullah Mujahid, Jørgen S. Dokken, Jack S. Hale
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 // ```
@@ -36,30 +36,31 @@ int main(int argc, char* argv[])
       MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {4, 4},
       mesh::CellType::quadrilateral, part));
 
-  // // Set up ADIOS2 IO and Engine
-  // auto adios
-  //     = ADIOS2Wrapper(mesh->comm(), "mesh.bp", "mesh-write", "BP5", "write");
 
-  // auto io = adios.io();
+    try
+    {
+      // Set up ADIOS2 IO and Engine
+      adios2::ADIOS adios("checkpointing.yml", mesh->comm());
 
-  // Set up ADIOS2 IO and Engine
-  adios2::ADIOS adios(mesh->comm());
-  adios2::IO io = adios.DeclareIO("mesh-write");
-  io.SetEngine("BP5");
-  adios2::Engine engine = io.Open("mesh.bp", adios2::Mode::Write);
+      adios2::IO io = adios.DeclareIO("mesh-write");
+      io.SetEngine("BP5");
+      adios2::Engine engine = io.Open("mesh.bp", adios2::Mode::Write);
 
-  // TODO: Need to move this inside the checkpointing module
-  // io.DefineAttribute<std::string>("version", DOLFINX_VERSION_STRING);
-  // io.DefineAttribute<std::string>("git_hash", DOLFINX_VERSION_GIT);
+      std::vector<std::string> mytags = {"one"};
+      io.DefineAttribute<std::string>("tags", mytags.data(), mytags.size(), "", "", true);
 
-  io::native::write_mesh(io, engine, *mesh);
+      std::vector<std::string> mytags2 = {"one", "two"};
+      io.DefineAttribute<std::string>("tags", mytags2.data(), mytags2.size());
 
-  engine.Close();
+      io::native::write_mesh(io, engine, *mesh);
 
-  // // io::native::write_mesh(io, engine, *mesh);
-  // io::native::write_mesh(adios, *mesh);
-
-  // adios.close();
+      engine.Close();
+    }
+    catch (std::exception &e)
+    {
+        std::cout << "ERROR: ADIOS2 exception: " << e.what() << "\n";
+        MPI_Abort(MPI_COMM_WORLD, -1);
+    }
 
   // Set up ADIOS2 IO and Engine
   // adios2::ADIOS adios_read(mesh->comm());

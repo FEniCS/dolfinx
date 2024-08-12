@@ -238,11 +238,17 @@ void declare_data_types(nb::module_& m)
 template <typename T>
 void declare_write_mesh(nb::module_& m, std::string type)
 {
-  // dolfinx::io::checkpointing::write_mesh
+  // dolfinx::io::native::write_mesh
   std::string pyfunction_write_mesh_name = std::string("write_mesh_") + type;
-  m.def(pyfunction_write_mesh_name.c_str(),
-        &dolfinx::io::checkpointing::write_mesh<T>, nb::arg("adios2"),
-        nb::arg("mesh"), "Write mesh to file using ADIOS2");
+  m.def(
+      pyfunction_write_mesh_name.c_str(),
+      [](dolfinx::io::ADIOS2Wrapper& ADIOS2, dolfinx::mesh::Mesh<T>& mesh)
+      {
+        auto io = ADIOS2.io();
+        auto engine = ADIOS2.engine();
+        return dolfinx::io::native::write_mesh<T>(*io, *engine, mesh);
+      },
+      nb::arg("adios2"), nb::arg("mesh"), "Write mesh to file using ADIOS2");
 }
 
 #endif
@@ -269,17 +275,17 @@ void io(nb::module_& m)
           nb::arg("engine_type"), nb::arg("mode"))
       .def("close", &dolfinx::io::ADIOS2Wrapper::close);
 
-  // dolfinx::io::checkpointing::read_mesh_variant
+  // dolfinx::io::impl_native::read_mesh_variant
   m.def(
       "read_mesh",
-      [](dolfinx::io::ADIOS2Wrapper& _ADIOS2,
-         dolfinx::io::ADIOS2Wrapper& ADIOS2, MPICommWrapper comm)
+      [](dolfinx::io::ADIOS2Wrapper& ADIOS2, MPICommWrapper comm)
       {
-        return dolfinx::io::checkpointing::read_mesh_variant(_ADIOS2, ADIOS2,
-                                                             comm.get());
+        auto io = ADIOS2.io();
+        auto engine = ADIOS2.engine();
+        return dolfinx::io::impl_native::read_mesh_variant(*io, *engine,
+                                                           comm.get());
       },
-      nb::arg("_adios2"), nb::arg("adios2"), nb::arg("comm"),
-      "Read mesh from file using ADIOS2");
+      nb::arg("adios2"), nb::arg("comm"), "Read mesh from file using ADIOS2");
 
   declare_write_mesh<float>(m, "float32");
   declare_write_mesh<double>(m, "float64");

@@ -218,9 +218,9 @@ if _cpp.common.has_adios2:
 
         return _writer(ADIOS2, mesh._cpp_object)
 
-    def read_mesh(_ADIOS2: ADIOS2, ADIOS2: ADIOS2, comm: _MPI.Comm) -> Mesh:
+    def read_mesh(ADIOS2: ADIOS2, comm: _MPI.Comm) -> Mesh:
         """Read mesh from a file using ADIOS2"""
-        msh = _cpp.io.read_mesh(_ADIOS2, ADIOS2, comm)
+        msh = _cpp.io.read_mesh(ADIOS2, comm)
 
         return msh
 
