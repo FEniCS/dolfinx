@@ -16,6 +16,7 @@
 
 # +
 import importlib.util
+import os
 
 if importlib.util.find_spec("adios2") is not None:
     import dolfinx
@@ -50,7 +51,8 @@ msh = mesh.create_rectangle(
 # -
 
 # +
-adios2 = io.ADIOS2(msh.comm, filename="mesh.bp", tag="mesh-write", engine_type="BP5", mode="write")
+config_path = os.getcwd() + "/checkpointing.yml"
+adios2 = io.ADIOS2(config_path, msh.comm, filename="mesh.bp", tag="mesh-write", mode="write")
 # -
 
 # +
@@ -65,7 +67,7 @@ adios2_read = io.ADIOS2(
 # -
 
 # +
-msh_read = io.read_mesh(adios2_read, msh.comm)
+# msh_read = io.read_mesh(adios2_read, msh.comm)
 # -
 
 # # +

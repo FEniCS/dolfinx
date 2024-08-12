@@ -48,6 +48,21 @@ public:
         _io->Open(filename, string_to_mode[mode]));
   }
 
+  /// @brief Create an ADIOS2-based engine writer/reader
+  /// @param[in] config_file Path to config file to set up ADIOS2 engine from
+  /// @param[in] comm The MPI communicator
+  /// @param[in] filename Name of output file
+  /// @param[in] tag The ADIOS2 IO name
+  /// @param[in] mode ADIOS2 mode, default is Write or Read
+  ADIOS2Wrapper(std::string config_file, MPI_Comm comm, std::string filename,
+                std::string tag, std::string mode = "write")
+  {
+    _adios = std::make_shared<adios2::ADIOS>(config_file, comm);
+    _io = std::make_shared<adios2::IO>(_adios->DeclareIO(tag));
+    _engine = std::make_shared<adios2::Engine>(
+        _io->Open(filename, string_to_mode[mode]));
+  }
+
   /// @brief Move constructor
   ADIOS2Wrapper(ADIOS2Wrapper&& ADIOS2) = default;
 

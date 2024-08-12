@@ -273,6 +273,17 @@ void io(nb::module_& m)
           },
           nb::arg("comm"), nb::arg("filename"), nb::arg("tag"),
           nb::arg("engine_type"), nb::arg("mode"))
+      .def(
+          "__init__",
+          [](dolfinx::io::ADIOS2Wrapper* v, std::string config,
+             MPICommWrapper comm, const std::string filename, std::string tag,
+             std::string mode = "write")
+          {
+            new (v) dolfinx::io::ADIOS2Wrapper(config, comm.get(), filename,
+                                               tag, mode);
+          },
+          nb::arg("config"), nb::arg("comm"), nb::arg("filename"),
+          nb::arg("tag"), nb::arg("mode"))
       .def("close", &dolfinx::io::ADIOS2Wrapper::close);
 
   // dolfinx::io::impl_native::read_mesh_variant
