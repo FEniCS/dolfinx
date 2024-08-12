@@ -73,7 +73,7 @@ public:
   /// indices.
   ///
   /// This routine inserts non-zero locations at the outer product of rows and
-  /// cols to the sparsity pattern, i.e. adds the matrix entries at
+  /// cols into the sparsity pattern, i.e. adds the matrix entries at
   ///   A[row[i], col[j]] for all i, j
   /// Enabling easy setting of dense sub-blocks, for example
   ///   sp.insert({0, 1, 2}, {1, 2, 3})
