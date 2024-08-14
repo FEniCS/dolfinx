@@ -387,6 +387,7 @@ def test_mixed_dom_codim_1(n, k):
 # TODO Test random mesh and interior facets
 
 
+@pytest.mark.petsc4py
 def test_mixed_measures():
     """Test block assembly of forms where the integration measure in each
     block may be different"""
