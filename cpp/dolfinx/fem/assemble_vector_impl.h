@@ -1073,7 +1073,6 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
 template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
     std::span<T> b, const std::vector<std::shared_ptr<const Form<T, U>>> a,
-    mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
@@ -1081,6 +1080,27 @@ void apply_lifting(
         bcs1,
     const std::vector<std::span<const T>>& x0, T scale)
 {
+  std::shared_ptr<const mesh::Mesh<U>> mesh;
+  for (auto& a_i : a)
+  {
+    if (a_i and !mesh)
+    {
+      std::cout << "Setting mesh in impl\n";
+      mesh = a_i->mesh();
+    }
+    if (a_i and mesh and a_i->mesh() != mesh)
+    {
+      std::cout << "Meshes differ\n";
+      throw std::runtime_error("Mismatch between meshes.");
+    }
+  }
+
+  if (!mesh)
+    throw std::runtime_error("Unable to extract a mesh.");
+
+  mdspan2_t x_dofmap = mesh->geometry().dofmap();
+  auto x = mesh->geometry().x();
+
   // FIXME: make changes to reactivate this check
   if (!x0.empty() and x0.size() != a.size())
   {

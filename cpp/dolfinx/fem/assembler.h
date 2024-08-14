@@ -157,35 +157,43 @@ void apply_lifting(
         bcs1,
     const std::vector<std::span<const T>>& x0, T scale)
 {
+  std::cout << "Applying lifting\n";
   // If all forms are null, there is nothing to do
   if (std::ranges::all_of(a, [](auto ptr) { return ptr == nullptr; }))
     return;
 
-  std::shared_ptr<const mesh::Mesh<U>> mesh;
-  for (auto& a_i : a)
-  {
-    if (a_i and !mesh)
-      mesh = a_i->mesh();
-    if (a_i and mesh and a_i->mesh() != mesh)
-      throw std::runtime_error("Mismatch between meshes.");
-  }
+  // std::shared_ptr<const mesh::Mesh<U>> mesh;
+  // for (auto& a_i : a)
+  // {
+  //   if (a_i and !mesh)
+  //   {
+  //     std::cout << "Setting mesh\n";
+  //     mesh = a_i->mesh();
+  //   }
+  //   if (a_i and mesh and a_i->mesh() != mesh)
+  //   {
+  //     std::cout << "Meshes differ\n";
+  //     throw std::runtime_error("Mismatch between meshes.");
+  //   }
+  // }
 
-  if (!mesh)
-    throw std::runtime_error("Unable to extract a mesh.");
+  // if (!mesh)
+  //   throw std::runtime_error("Unable to extract a mesh.");
 
-  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
-  {
-    impl::apply_lifting<T>(b, a, mesh->geometry().dofmap(),
-                           mesh->geometry().x(), constants, coeffs, bcs1, x0,
-                           scale);
-  }
-  else
-  {
-    auto x = mesh->geometry().x();
-    std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
-    impl::apply_lifting<T>(b, a, mesh->geometry().dofmap(), _x, constants,
-                           coeffs, bcs1, x0, scale);
-  }
+  // if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
+  // {
+  //   impl::apply_lifting<T>(b, a, mesh->geometry().dofmap(),
+  //                          mesh->geometry().x(), constants, coeffs, bcs1, x0,
+  //                          scale);
+  // }
+  // else
+  // {
+  //   auto x = mesh->geometry().x();
+  //   std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
+  //   impl::apply_lifting<T>(b, a, mesh->geometry().dofmap(), _x, constants,
+  //                          coeffs, bcs1, x0, scale);
+  // }
+  impl::apply_lifting<T>(b, a, constants, coeffs, bcs1, x0, scale);
 }
 
 /// Modify b such that:
