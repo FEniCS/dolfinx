@@ -393,7 +393,7 @@ def test_mixed_measures():
     from dolfinx.fem.petsc import assemble_vector_block
 
     comm = MPI.COMM_WORLD
-    msh = create_unit_square(comm, 16, 21, ghost_mode=None)
+    msh = create_unit_square(comm, 16, 21, ghost_mode=GhostMode.none)
 
     # Create a submesh of some cells
     tdim = msh.topology.dim
