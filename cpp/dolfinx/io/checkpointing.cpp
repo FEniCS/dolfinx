@@ -164,7 +164,8 @@ template void write_mesh<double>(adios2::IO& io, adios2::Engine& engine,
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
-                                 MPI_Comm comm)
+                                 MPI_Comm comm,
+                                 dolfinx::mesh::GhostMode ghost_mode)
 {
 
   int rank, size;
@@ -234,7 +235,10 @@ dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
   fem::CoordinateElement<T> element
       = fem::CoordinateElement<T>(cell_type, degree, lagrange_variant);
 
-  auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
+  auto part = mesh::create_cell_partitioner(ghost_mode);
+
+  if (size == 1)
+    part = nullptr;
 
   mesh::Mesh<T> mesh = mesh::create_mesh(comm, comm, array, element, comm,
                                          x_reduced, x_shape, part);
@@ -247,10 +251,12 @@ dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
 //-----------------------------------------------------------------------------
 /// @cond
 template dolfinx::mesh::Mesh<float>
-read_mesh<float>(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm);
+read_mesh<float>(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm,
+                 dolfinx::mesh::GhostMode ghost_mode);
 
 template dolfinx::mesh::Mesh<double>
-read_mesh<double>(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm);
+read_mesh<double>(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm,
+                  dolfinx::mesh::GhostMode ghost_mode);
 
 /// @endcond
 
@@ -354,7 +360,8 @@ std::vector<int64_t> read_topology_data(adios2::IO& io, adios2::Engine& engine,
 
 //-----------------------------------------------------------------------------
 std::variant<dolfinx::mesh::Mesh<float>, dolfinx::mesh::Mesh<double>>
-read_mesh_variant(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm)
+read_mesh_variant(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm,
+                  dolfinx::mesh::GhostMode ghost_mode)
 {
   engine.BeginStep();
   std::string floating_point = io.VariableType("x");
@@ -362,7 +369,7 @@ read_mesh_variant(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm)
   if (floating_point == "float")
   {
     dolfinx::mesh::Mesh<float> mesh
-        = dolfinx::io::native::read_mesh<float>(io, engine, comm);
+        = dolfinx::io::native::read_mesh<float>(io, engine, comm, ghost_mode);
     if (engine.BetweenStepPairs())
     {
       engine.EndStep();
@@ -372,7 +379,7 @@ read_mesh_variant(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm)
   else if (floating_point == "double")
   {
     dolfinx::mesh::Mesh<double> mesh
-        = dolfinx::io::native::read_mesh<double>(io, engine, comm);
+        = dolfinx::io::native::read_mesh<double>(io, engine, comm, ghost_mode);
     if (engine.BetweenStepPairs())
     {
       engine.EndStep();

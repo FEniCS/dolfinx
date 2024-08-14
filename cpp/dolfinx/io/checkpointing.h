@@ -12,6 +12,7 @@
 #include <adios2.h>
 #include <basix/finite-element.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/utils.h>
 #include <mpi.h>
 
 /// @file checkpointing.h
@@ -37,7 +38,9 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
 /// @return mesh reconstructed from the data
 template <std::floating_point T>
 dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
-                                 MPI_Comm comm = MPI_COMM_WORLD);
+                                 MPI_Comm comm = MPI_COMM_WORLD,
+                                 dolfinx::mesh::GhostMode ghost_mode
+                                 = dolfinx::mesh::GhostMode::shared_facet);
 
 } // namespace dolfinx::io::native
 
@@ -84,10 +87,13 @@ std::vector<int64_t> read_topology_data(adios2::IO& io, adios2::Engine& engine,
 /// @param[in] io ADIOS2 IO
 /// @param[in] engine ADIOS2 Engine
 /// @param[in] comm comm
+/// @param[in] ghost_mode The requested type of cell ghosting/overlap
 /// @return mesh reconstructed from the data
 std::variant<dolfinx::mesh::Mesh<float>, dolfinx::mesh::Mesh<double>>
 read_mesh_variant(adios2::IO& io, adios2::Engine& engine,
-                  MPI_Comm comm = MPI_COMM_WORLD);
+                  MPI_Comm comm = MPI_COMM_WORLD,
+                  dolfinx::mesh::GhostMode ghost_mode
+                  = dolfinx::mesh::GhostMode::shared_facet);
 
 } // namespace dolfinx::io::impl_native
 

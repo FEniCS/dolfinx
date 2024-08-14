@@ -289,14 +289,16 @@ void io(nb::module_& m)
   // dolfinx::io::impl_native::read_mesh_variant
   m.def(
       "read_mesh",
-      [](dolfinx::io::ADIOS2Wrapper& ADIOS2, MPICommWrapper comm)
+      [](dolfinx::io::ADIOS2Wrapper& ADIOS2, MPICommWrapper comm,
+         dolfinx::mesh::GhostMode ghost_mode)
       {
         auto io = ADIOS2.io();
         auto engine = ADIOS2.engine();
-        return dolfinx::io::impl_native::read_mesh_variant(*io, *engine,
-                                                           comm.get());
+        return dolfinx::io::impl_native::read_mesh_variant(
+            *io, *engine, comm.get(), ghost_mode);
       },
-      nb::arg("adios2"), nb::arg("comm"), "Read mesh from file using ADIOS2");
+      nb::arg("adios2"), nb::arg("comm"), nb::arg("ghost_mode"),
+      "Read mesh from file using ADIOS2");
 
   declare_write_mesh<float>(m, "float32");
   declare_write_mesh<double>(m, "float64");
