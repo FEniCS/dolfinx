@@ -408,11 +408,13 @@ def test_mixed_measures():
 
     # Trial and test functions
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    p, q = ufl.TrialFunction(Q),  ufl.TestFunction(Q)
+    p, q = ufl.TrialFunction(Q), ufl.TestFunction(Q)
 
     # First, assemble a block vector using both dx_msh and dx_smsh
-    a = [[fem.form(u * v * dx_msh), fem.form(p * v * dx_smsh, entity_maps={msh: smsh_to_msh})],
-         [fem.form(u * q * dx_smsh, entity_maps={msh: smsh_to_msh}), fem.form(p * q * dx_smsh)]]
+    a = [
+        [fem.form(u * v * dx_msh), fem.form(p * v * dx_smsh, entity_maps={msh: smsh_to_msh})],
+        [fem.form(u * q * dx_smsh, entity_maps={msh: smsh_to_msh}), fem.form(p * q * dx_smsh)],
+    ]
     L = [fem.form(v * dx_msh), fem.form(q * dx_smsh)]
     b0 = assemble_vector_block(L, a)
 
