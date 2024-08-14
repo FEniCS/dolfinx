@@ -157,7 +157,6 @@ void apply_lifting(
         bcs1,
     const std::vector<std::span<const T>>& x0, T scale)
 {
-  std::cout << "Applying lifting\n";
   // If all forms are null, there is nothing to do
   if (std::ranges::all_of(a, [](auto ptr) { return ptr == nullptr; }))
     return;

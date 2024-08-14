@@ -1098,6 +1098,7 @@ void apply_lifting(
     std::vector<T> bc_values1;
     if (a[j] and !bcs1[j].empty())
     {
+      // Extract data from mesh
       std::shared_ptr<const mesh::Mesh<U>> mesh = a[j]->mesh();
       if (!mesh)
         throw std::runtime_error("Unable to extract a mesh.");
