@@ -1080,28 +1080,6 @@ void apply_lifting(
         bcs1,
     const std::vector<std::span<const T>>& x0, T scale)
 {
-  std::shared_ptr<const mesh::Mesh<U>> mesh;
-  for (auto& a_i : a)
-  {
-    if (a_i and !mesh)
-    {
-      std::cout << "Setting mesh in impl\n";
-      mesh = a_i->mesh();
-    }
-    if (a_i and mesh and a_i->mesh() != mesh)
-    {
-      std::cout << "Meshes differ\n";
-      throw std::runtime_error("Mismatch between meshes.");
-    }
-  }
-
-  if (!mesh)
-    throw std::runtime_error("Unable to extract a mesh.");
-
-  mdspan2_t x_dofmap = mesh->geometry().dofmap();
-  auto x = mesh->geometry().x();
-
-  // FIXME: make changes to reactivate this check
   if (!x0.empty() and x0.size() != a.size())
   {
     throw std::runtime_error(
@@ -1120,6 +1098,12 @@ void apply_lifting(
     std::vector<T> bc_values1;
     if (a[j] and !bcs1[j].empty())
     {
+      std::shared_ptr<const mesh::Mesh<U>> mesh = a[j]->mesh();
+      if (!mesh)
+        throw std::runtime_error("Unable to extract a mesh.");
+      mdspan2_t x_dofmap = mesh->geometry().dofmap();
+      auto x = mesh->geometry().x();
+
       assert(a[j]->function_spaces().at(0));
 
       auto V1 = a[j]->function_spaces()[1];
