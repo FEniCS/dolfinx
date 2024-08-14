@@ -25,6 +25,7 @@ from dolfinx.mesh import (
     locate_entities_boundary,
     meshtags,
 )
+from dolfinx.fem.petsc import assemble_vector_block
 
 
 def assemble(mesh, space, k):
@@ -384,3 +385,39 @@ def test_mixed_dom_codim_1(n, k):
 
 
 # TODO Test random mesh and interior facets
+
+
+def test_mixed_measures():
+    comm = MPI.COMM_WORLD
+    msh = create_unit_square(comm, 2, 2, ghost_mode=None)
+
+    tdim = msh.topology.dim
+    smsh_cells = locate_entities(msh, tdim, lambda x: x[0] <= 0.5)
+    smsh, smsh_to_msh = create_submesh(msh, tdim, smsh_cells)[:2]
+
+    V = fem.functionspace(msh, ("Lagrange", 1))
+    Q = fem.functionspace(smsh, ("Lagrange", 1))
+
+    dx_msh = ufl.Measure("dx", msh, subdomain_data=[(1, smsh_cells)])
+    dx_smsh = ufl.Measure("dx", smsh)
+
+    u = ufl.TrialFunction(V)
+    p = ufl.TrialFunction(Q)
+    v = ufl.TestFunction(V)
+    q = ufl.TestFunction(Q)
+
+    a = [[fem.form(u * v * dx_msh), fem.form(p * v * dx_smsh, entity_maps={msh: smsh_to_msh})],
+         [fem.form(u * q * dx_smsh, entity_maps={msh: smsh_to_msh}), fem.form(p * q * dx_smsh)]]
+
+    L = [fem.form(v * dx_msh), fem.form(q * dx_smsh)]
+    b0 = assemble_vector_block(L, a)
+
+    cell_imap = msh.topology.index_map(tdim)
+    num_cells = cell_imap.size_local + cell_imap.num_ghosts
+    msh_to_smsh = np.full(num_cells, -1)
+    msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
+    entity_maps = {smsh: msh_to_smsh}
+    L = [fem.form(v * dx_msh), fem.form(q * dx_msh(1), entity_maps=entity_maps)]
+    b1 = assemble_vector_block(L, a)
+
+    assert np.allclose(b0[:], b1[:])
