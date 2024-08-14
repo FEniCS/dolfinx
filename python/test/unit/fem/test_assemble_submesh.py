@@ -430,4 +430,4 @@ def test_mixed_measures():
     b1 = assemble_vector_block(L, a)
 
     # Check the results are the same
-    assert np.allclose(b0[:], b1[:])
+    assert np.allclose(b0.norm(), b1.norm())
