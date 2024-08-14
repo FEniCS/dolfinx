@@ -13,6 +13,7 @@ import pytest
 
 import ufl
 from dolfinx import default_scalar_type, fem, la
+from dolfinx.fem.petsc import assemble_vector_block
 from dolfinx.mesh import (
     GhostMode,
     create_box,
@@ -25,7 +26,6 @@ from dolfinx.mesh import (
     locate_entities_boundary,
     meshtags,
 )
-from dolfinx.fem.petsc import assemble_vector_block
 
 
 def assemble(mesh, space, k):
