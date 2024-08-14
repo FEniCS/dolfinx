@@ -414,10 +414,16 @@ def test_mixed_measures():
 
     # First, assemble a block vector using both dx_msh and dx_smsh
     a = [
-        [fem.form(u * v * dx_msh), fem.form(p * v * dx_smsh, entity_maps={msh: smsh_to_msh})],
-        [fem.form(u * q * dx_smsh, entity_maps={msh: smsh_to_msh}), fem.form(p * q * dx_smsh)],
+        [
+            fem.form(ufl.inner(u, v) * dx_msh),
+            fem.form(ufl.inner(p, v) * dx_smsh, entity_maps={msh: smsh_to_msh}),
+        ],
+        [
+            fem.form(ufl.inner(u, q) * dx_smsh, entity_maps={msh: smsh_to_msh}),
+            fem.form(ufl.inner(p, q) * dx_smsh),
+        ],
     ]
-    L = [fem.form(v * dx_msh), fem.form(q * dx_smsh)]
+    L = [fem.form(ufl.inner(2.3, v) * dx_msh), fem.form(ufl.inner(1.3, q) * dx_smsh)]
     b0 = assemble_vector_block(L, a)
 
     # Now, assemble the same vector using only dx_msh
@@ -426,7 +432,10 @@ def test_mixed_measures():
     msh_to_smsh = np.full(num_cells, -1)
     msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
     entity_maps = {smsh: msh_to_smsh}
-    L = [fem.form(v * dx_msh), fem.form(q * dx_msh(1), entity_maps=entity_maps)]
+    L = [
+        fem.form(ufl.inner(2.3, v) * dx_msh),
+        fem.form(ufl.inner(1.3, q) * dx_msh(1), entity_maps=entity_maps),
+    ]
     b1 = assemble_vector_block(L, a)
 
     # Check the results are the same
