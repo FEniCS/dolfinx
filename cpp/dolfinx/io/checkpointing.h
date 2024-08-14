@@ -43,6 +43,42 @@ dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
 
 namespace dolfinx::io::impl_native
 {
+/// @brief Find offset and size.
+///
+/// @param[in] rank MPI rank
+/// @param[in] N size of data to distribute
+/// @param[in] size MPI size
+/// @return start and count
+std::pair<std::uint64_t, std::uint64_t> get_counters(int rank, std::uint64_t N,
+                                                     int size);
+
+/// @brief Read geometry data
+///
+/// @param[in] io ADIOS2 IO
+/// @param[in] engine ADIOS2 Engine
+/// @param[in] dim The geometric dimension (`0 < dim <= 3`).
+/// @param[in] num_nodes_global size of the global array of nodes
+/// @param[in] rank MPI rank
+/// @param[in] size MPI size
+/// @return The point coordinates of row-major storage and
+/// itsshape `(num_nodes_local, dim)`
+template <std::floating_point T>
+std::pair<std::vector<T>, std::array<std::size_t, 2>>
+read_geometry_data(adios2::IO& io, adios2::Engine& engine, int dim,
+                   std::uint64_t num_nodes_global, int rank, int size);
+
+/// @brief Read topology array
+///
+/// @param[in] io ADIOS2 IO
+/// @param[in] engine ADIOS2 Engine
+/// @param[in] num_cells_global global number of cells
+/// @param[in] rank MPI rank
+/// @param[in] size MPI size
+/// @return The cell-to-node connectivity in a flattened array
+std::vector<int64_t> read_topology_data(adios2::IO& io, adios2::Engine& engine,
+                                        std::uint64_t num_cells_global,
+                                        int rank, int size);
+
 /// @brief Read mesh from a file.
 ///
 /// @param[in] io ADIOS2 IO
