@@ -13,7 +13,6 @@ import pytest
 
 import ufl
 from dolfinx import default_scalar_type, fem, la
-from dolfinx.fem.petsc import assemble_vector_block
 from dolfinx.mesh import (
     GhostMode,
     create_box,
@@ -391,6 +390,8 @@ def test_mixed_dom_codim_1(n, k):
 def test_mixed_measures():
     """Test block assembly of forms where the integration measure in each
     block may be different"""
+    from dolfinx.fem.petsc import assemble_vector_block
+
     comm = MPI.COMM_WORLD
     msh = create_unit_square(comm, 16, 21, ghost_mode=None)
 
