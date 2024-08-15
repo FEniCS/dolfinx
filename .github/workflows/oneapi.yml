@@ -22,8 +22,8 @@ jobs:
     env:
       CC: icx
       CXX: icpx
-      I_MPI_CC: icx
-      I_MPI_CXX: icpx
+      OMPI_CC: icx
+      OMPI_CXX: icpx
       OMP_NUM_THREADS: 1
       OPENBLAS_NUM_THREADS: 1
 

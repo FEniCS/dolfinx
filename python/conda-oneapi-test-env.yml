@@ -10,7 +10,7 @@ dependencies:
   - dpcpp_linux-64
   - mkl
   - libblas=*=*mkl
-  - mpich
+  - openmpi
   - mpi4py
   - hdf5=*=mpi*
   - spdlog
