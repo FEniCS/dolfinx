@@ -137,10 +137,10 @@ def test_submesh_assembly(dtype):
         ff = dolfinx.mesh.meshtags(
             mesh, mesh.topology.dim - 1, facets, np.full(len(facets), subdomain_id, dtype=np.int32)
         )
-        uh = ufl.TestFunction(Vh)
+        vh = ufl.TestFunction(Vh)
         ex_solution = dolfinx.fem.assemble_vector(
             dolfinx.fem.form(
-                ufl.inner(g(x), uh)
+                ufl.inner(g(x), vh)
                 * ufl.ds(domain=mesh, subdomain_data=ff, subdomain_id=subdomain_id),
                 dtype=dtype,
             )
