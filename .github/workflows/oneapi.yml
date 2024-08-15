@@ -26,8 +26,8 @@ jobs:
       OMPI_CXX: icpx
       OMP_NUM_THREADS: 1
       OPENBLAS_NUM_THREADS: 1
-      PRTE_ALLOW_RUN_AS_ROOT: 1
-      PRTE_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
 
     name: oneAPI build and test
 
