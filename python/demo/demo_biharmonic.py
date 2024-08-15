@@ -115,7 +115,7 @@ import importlib.util
 if importlib.util.find_spec("petsc4py") is not None:
     import dolfinx
 
-    if not dolfinx.has_petsc:
+    if not dolfinx.common.has_petsc:
         print("This demo requires DOLFINx to be compiled with PETSc enabled.")
         exit(0)
     from petsc4py.PETSc import ScalarType  # type: ignore
@@ -158,10 +158,10 @@ V = fem.functionspace(msh, ("Lagrange", 2))
 #
 # Next, we locate the mesh facets that lie on the boundary
 # $\Gamma_D = \partial\Omega$.
-# We do this using using {py:func}`locate_entities_boundary
-# <dolfinx.mesh.locate_entities_boundary>` and providing  a marker
-# function that returns `True` for points `x` on the boundary and
-# `False` otherwise.
+# We do this using using {py:func}`exterior_facet_indices
+# <dolfinx.mesh.exterior_facet_indices>` which returns all mesh boundary facets
+# (Note: if we are only interested in a subset of those, consider {py:func}`locate_entities_boundary
+# <dolfinx.mesh.locate_entities_boundary>`).
 
 tdim = msh.topology.dim
 msh.topology.create_connectivity(tdim - 1, tdim)
