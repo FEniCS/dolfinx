@@ -49,6 +49,7 @@ jobs:
       - run: |
           conda info
           conda list
+          echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH/libfabric/}" >> $GITHUB_ENV
 
       - name: Install Basix
         run: pip install --no-build-isolation git+https://github.com/FEniCS/basix.git
@@ -81,7 +82,7 @@ jobs:
 
       - name: Build and run DOLFINx C++ unit tests (serial and MPI)
         run: |
-          export LD_LIBRARY_PATH=${LD_LIBRARY_PATH/libfabric/}
+          echo $LD_LIBRARY_PATH
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
           cmake --build build/test
           cd build/test
@@ -90,7 +91,6 @@ jobs:
 
       - name: Build and run DOLFINx C++ regression tests (serial and MPI (np=2))
         run: |
-          export LD_LIBRARY_PATH=${LD_LIBRARY_PATH/libfabric/}
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
           cmake --build build/demo
           cd build/demo
@@ -100,19 +100,11 @@ jobs:
       - name: Build DOLFINx Python interface
         run: pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" python/
       - name: Run DOLFINx demos (Python, serial)
-        run: |
-          export LD_LIBRARY_PATH=${LD_LIBRARY_PATH/libfabric/}
-          python -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
+        run: python -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
       - name: Run DOLFINx demos (Python, MPI (np=2))
-        run: |
-          export LD_LIBRARY_PATH=${LD_LIBRARY_PATH/libfabric/}
-          pytest -m mpi --num-proc=2 python/demo/test.py
+        run: pytest -m mpi --num-proc=2 python/demo/test.py
 
       - name: Run DOLFINx Python unit tests (serial)
-        run: |
-          export LD_LIBRARY_PATH=${LD_LIBRARY_PATH/libfabric/}
-          python -m pytest -m "not adios2" -n=auto --durations=50 python/test/unit
+        run: python -m pytest -m "not adios2" -n=auto --durations=50 python/test/unit
       - name: Run DOLFINx Python unit tests (MPI, np=2)
-        run: |
-          export LD_LIBRARY_PATH=${LD_LIBRARY_PATH/libfabric/}
-          mpiexec -n 2 python -m pytest -m "not adios2" python/test/unit
+        run: mpiexec -n 2 python -m pytest -m "not adios2" python/test/unit
