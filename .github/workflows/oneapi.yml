@@ -39,7 +39,7 @@ jobs:
       - name: Install compiler dependencies
         run: |
           apt-get -y update
-          apt-get -y install binutils libstdc++-14-dev
+          apt-get -y install binutils libstdc++-14-dev ssh
 
       - uses: actions/checkout@v4
 
