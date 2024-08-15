@@ -86,11 +86,13 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
 /// @brief Given an integral type and a set of entities, compute the
 /// entities that should be integrated over.
 ///
-/// This function returns as list `[(id, entities)]`. For cell
+/// This function returns a list `[(id, entities)]`. For cell
 /// integrals `entities` are the cell indices. For exterior facet
 /// integrals, `entities` is a list of `(cell_index, local_facet_index)`
 /// pairs. For interior facet integrals, `entities` is a list of
 /// `(cell_index0, local_facet_index0, cell_index1, local_facet_index1)`.
+/// `id` refers to the subdomain id used in the definition of the integration
+/// measures of the variational form.
 ///
 /// @note Owned mesh entities only are returned. Ghost entities are not
 /// included.
