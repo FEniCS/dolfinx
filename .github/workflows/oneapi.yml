@@ -22,12 +22,10 @@ jobs:
     env:
       CC: icx
       CXX: icpx
-      OMPI_CC: icx
-      OMPI_CXX: icpx
+      MPICH_CC: icx
+      MPICH_CXX: icpx
       OMP_NUM_THREADS: 1
       OPENBLAS_NUM_THREADS: 1
-      OMPI_ALLOW_RUN_AS_ROOT: 1
-      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
 
     name: oneAPI build and test
 
@@ -83,6 +81,7 @@ jobs:
 
       - name: Build and run DOLFINx C++ unit tests (serial and MPI)
         run: |
+          export LD_LIBRARY_PATH=${LD_LIBRARY_PATH/libfabric/}
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
           cmake --build build/test
           cd build/test
@@ -91,6 +90,7 @@ jobs:
 
       - name: Build and run DOLFINx C++ regression tests (serial and MPI (np=2))
         run: |
+          echo $LD_LIBRARY_PATH
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
           cmake --build build/demo
           cd build/demo
