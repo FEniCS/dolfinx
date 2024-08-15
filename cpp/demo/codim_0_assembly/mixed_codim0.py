@@ -20,16 +20,16 @@ v = TestFunction(V)
 
 # Next we define the sub-mesh
 submesh = Mesh(coord_element)
-V_sub = FunctionSpace(submesh, e)
-u = TrialFunction(V_sub)
+W = FunctionSpace(submesh, e)
+p = TrialFunction(W)
 
 # And finally we define a "mass matrix" on the submesh, with the test function
 # of the parent mesh. The integration domain is the parent mesh, but we restrict integration
 # to all cells marked with subdomain_id=3, which will indicate what cells of our mesh is part
 # of the submesh
-a = u * v * dx(domain=mesh, subdomain_id=3)
+a_mixed = p * v * dx(domain=mesh, subdomain_id=3)
 
-v_sub = TestFunction(V_sub)
-a_sub = u * v_sub * dx(domain=submesh)
+q = TestFunction(W)
+a = p * q * dx(domain=submesh)
 
-forms = [a, a_sub]
+forms = [a_mixed, a]

@@ -117,30 +117,29 @@ int main(int argc, char* argv[])
                                           integration_entities.size())});
 
     // We can now create the bi-linear form
-    auto a = std::make_shared<fem::Form<T>>(
-        fem::create_form<T>(*form_mixed_codim0_a, {V, W}, {}, {}, subdomain_map,
-                            entity_maps, V->mesh()));
+    auto a_mixed = std::make_shared<fem::Form<T>>(
+        fem::create_form<T>(*form_mixed_codim0_a_mixed, {V, W}, {}, {},
+                            subdomain_map, entity_maps, V->mesh()));
 
+    la::SparsityPattern sp_mixed = fem::create_sparsity_pattern(*a_mixed);
+    sp_mixed.finalize();
+    la::MatrixCSR<double> A_mixed(sp_mixed);
+    fem::assemble_matrix(A_mixed.mat_add_values(), *a_mixed, {});
+    A_mixed.scatter_rev();
+
+    auto a = std::make_shared<fem::Form<T>>(
+        fem::create_form<T>(*form_mixed_codim0_a, {W, W}, {}, {}, {}, {}));
     la::SparsityPattern sp = fem::create_sparsity_pattern(*a);
     sp.finalize();
+
     la::MatrixCSR<double> A(sp);
     fem::assemble_matrix(A.mat_add_values(), *a, {});
     A.scatter_rev();
-    std::cout << "here3\n" << std::endl;
 
-    auto a_sub = std::make_shared<fem::Form<T>>(
-        fem::create_form<T>(*form_mixed_codim0_a_sub, {W, W}, {}, {}, {}, {}));
-    la::SparsityPattern sp_sub = fem::create_sparsity_pattern(*a);
-    sp_sub.finalize();
-
-    la::MatrixCSR<double> A_sub(sp_sub);
-    fem::assemble_matrix(A_sub.mat_add_values(), *a_sub, {});
-    A_sub.scatter_rev();
-
-    std::vector<T> A_flattened = A.to_dense();
+    std::vector<T> A_mixed_flattened = A_mixed.to_dense();
     std::stringstream cc;
     cc.precision(3);
-    cc << "A:" << std::endl;
+    cc << "A_mixed:" << std::endl;
 
     std::size_t num_owned_rows = V->dofmap()->index_map->size_local();
     std::size_t num_sub_cols = W->dofmap()->index_map->size_local()
@@ -149,19 +148,19 @@ int main(int argc, char* argv[])
     {
       for (std::size_t j = 0; j < num_sub_cols; j++)
       {
-        cc << A_flattened[i * num_sub_cols + j] << " ";
+        cc << A_mixed_flattened[i * num_sub_cols + j] << " ";
       }
       cc << std::endl;
     }
 
     std::size_t num_owned_sub_rows = W->dofmap()->index_map->size_local();
-    std::vector<T> A_sub_flattened = A_sub.to_dense();
-    cc << "A_sub" << std::endl;
+    std::vector<T> A_flattened = A.to_dense();
+    cc << "A" << std::endl;
     for (std::size_t i = 0; i < num_owned_sub_rows; i++)
     {
       for (std::size_t j = 0; j < num_sub_cols; j++)
       {
-        cc << A_sub_flattened[i * num_sub_cols + j] << " ";
+        cc << A_flattened[i * num_sub_cols + j] << " ";
       }
       cc << std::endl;
     }
