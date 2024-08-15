@@ -90,7 +90,7 @@ jobs:
 
       - name: Build and run DOLFINx C++ regression tests (serial and MPI (np=2))
         run: |
-          echo $LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=${LD_LIBRARY_PATH/libfabric/}
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
           cmake --build build/demo
           cd build/demo
@@ -100,11 +100,19 @@ jobs:
       - name: Build DOLFINx Python interface
         run: pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" python/
       - name: Run DOLFINx demos (Python, serial)
-        run: python -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
+        run: |
+          export LD_LIBRARY_PATH=${LD_LIBRARY_PATH/libfabric/}
+          python -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
       - name: Run DOLFINx demos (Python, MPI (np=2))
-        run: pytest -m mpi --num-proc=2 python/demo/test.py
+        run: |
+          export LD_LIBRARY_PATH=${LD_LIBRARY_PATH/libfabric/}
+          pytest -m mpi --num-proc=2 python/demo/test.py
 
       - name: Run DOLFINx Python unit tests (serial)
-        run: python -m pytest -m "not adios2" -n=auto --durations=50 python/test/unit
+        run: |
+          export LD_LIBRARY_PATH=${LD_LIBRARY_PATH/libfabric/}
+          python -m pytest -m "not adios2" -n=auto --durations=50 python/test/unit
       - name: Run DOLFINx Python unit tests (MPI, np=2)
-        run: mpiexec -n 2 python -m pytest -m "not adios2" python/test/unit
+        run: |
+          export LD_LIBRARY_PATH=${LD_LIBRARY_PATH/libfabric/}
+          mpiexec -n 2 python -m pytest -m "not adios2" python/test/unit
