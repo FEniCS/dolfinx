@@ -14,9 +14,10 @@ import pytest
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type, default_scalar_type
-from dolfinx.fem import Function, functionspace
+from dolfinx.fem import Function, assemble_scalar, form, functionspace
 from dolfinx.graph import adjacencylist
-from dolfinx.mesh import CellType, create_mesh, create_unit_cube, create_unit_square
+from dolfinx.io import ADIOS2, read_mesh, write_mesh
+from dolfinx.mesh import CellType, GhostMode, create_mesh, create_unit_cube, create_unit_square
 
 
 def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
@@ -36,6 +37,62 @@ def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
             return create_unit_cube(MPI.COMM_WORLD, N, N, N, CellType.hexahedron, dtype=dtype)
     else:
         raise RuntimeError("Unsupported dimension")
+
+
+# TODO: Fix problems with ("HDF5", ".h5")
+@pytest.mark.adios2
+@pytest.mark.parametrize("encoder, suffix", [("BP4", ".bp"), ("BP5", ".bp")])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.shared_facet, GhostMode.none])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("simplex", [True, False])
+def test_mesh_read_write(encoder, suffix, ghost_mode, dtype, dim, simplex, tmp_path):
+    N = 5
+    # Consistent tmp dir across processes
+    fname = MPI.COMM_WORLD.bcast(tmp_path, root=0)
+    file = fname / f"adios_mesh_{encoder}"
+
+    mesh = generate_mesh(dim, simplex, N, dtype)
+
+    adios = ADIOS2(
+        mesh.comm,
+        filename=str(file.with_suffix(suffix)),
+        tag="mesh-write",
+        engine_type=encoder,
+        mode="write",
+    )
+
+    write_mesh(adios, mesh)
+
+    adios_read = ADIOS2(
+        MPI.COMM_WORLD,
+        filename=str(file.with_suffix(suffix)),
+        tag="mesh-read",
+        engine_type=encoder,
+        mode="read",
+    )
+
+    mesh_adios = read_mesh(adios_read, MPI.COMM_WORLD, ghost_mode=ghost_mode)
+
+    mesh_adios.comm.Barrier()
+    mesh.comm.Barrier()
+
+    for i in range(mesh.topology.dim + 1):
+        mesh.topology.create_entities(i)
+        mesh_adios.topology.create_entities(i)
+        assert (
+            mesh.topology.index_map(i).size_global == mesh_adios.topology.index_map(i).size_global
+        )
+
+    # Check that integration over different entities are consistent
+    measures = [ufl.ds, ufl.dx] if ghost_mode is GhostMode.none else [ufl.ds, ufl.dS, ufl.dx]
+    for measure in measures:
+        c_adios = assemble_scalar(form(1 * measure(domain=mesh_adios), dtype=dtype))
+        c_ref = assemble_scalar(form(1 * measure(domain=mesh), dtype=dtype))
+        assert np.isclose(
+            mesh_adios.comm.allreduce(c_adios, MPI.SUM),
+            mesh.comm.allreduce(c_ref, MPI.SUM),
+        )
 
 
 @pytest.mark.adios2

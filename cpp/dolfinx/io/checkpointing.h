@@ -35,6 +35,7 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
 /// @param[in] io ADIOS2 IO
 /// @param[in] engine ADIOS2 Engine
 /// @param[in] comm comm
+/// @param[in] ghost_mode The requested type of cell ghosting/overlap
 /// @return mesh reconstructed from the data
 template <std::floating_point T>
 dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,

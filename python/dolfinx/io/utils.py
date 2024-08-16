@@ -224,7 +224,17 @@ if _cpp.common.has_adios2:
         """Read mesh from a file using ADIOS2"""
         msh = _cpp.io.read_mesh(ADIOS2, comm, ghost_mode)
 
-        return msh
+        element = basix.ufl.element(
+            basix.ElementFamily.P,
+            basix.CellType[msh.topology.cell_name()],
+            msh.geometry.cmap.degree,
+            basix.LagrangeVariant(int(msh.geometry.cmap.variant)),
+            shape=(msh.geometry.x.shape[1],),
+            dtype=msh.geometry.x.dtype,
+        )
+        domain = ufl.Mesh(element)
+
+        return Mesh(msh, domain)
 
 
 class VTKFile(_cpp.io.VTKFile):

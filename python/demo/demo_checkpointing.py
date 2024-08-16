@@ -69,10 +69,3 @@ adios2_read = io.ADIOS2(
 # +
 msh_read = io.read_mesh(adios2_read, msh.comm)
 # -
-
-# +
-print(type(msh_read))
-print(msh_read.name)
-print(msh_read.geometry.x.dtype)
-print(msh_read.geometry.x)
-# -
