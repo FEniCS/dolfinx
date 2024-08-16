@@ -16,7 +16,6 @@ from basix.ufl import element
 from dolfinx import default_real_type, default_scalar_type
 from dolfinx.fem import Function, assemble_scalar, form, functionspace
 from dolfinx.graph import adjacencylist
-from dolfinx.io import ADIOS2, read_mesh, write_mesh
 from dolfinx.mesh import CellType, GhostMode, create_mesh, create_unit_cube, create_unit_square
 
 
@@ -47,6 +46,9 @@ def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
 def test_mesh_read_write(encoder, suffix, ghost_mode, dtype, dim, simplex, tmp_path):
+    "Test writing of a mesh"
+    from dolfinx.io import ADIOS2, read_mesh, write_mesh
+
     N = 5
     # Consistent tmp dir across processes
     fname = MPI.COMM_WORLD.bcast(tmp_path, root=0)
