@@ -19,16 +19,36 @@
 /// @brief ADIOS2 based checkpointing
 namespace
 {
+/// basix enum to string
 std::map<basix::element::lagrange_variant, std::string> variant_to_string{
     {basix::element::lagrange_variant::unset, "unset"},
     {basix::element::lagrange_variant::equispaced, "equispaced"},
     {basix::element::lagrange_variant::gll_warped, "gll_warped"},
+    {basix::element::lagrange_variant::gll_isaac, "gll_isaac"},
+    {basix::element::lagrange_variant::gll_centroid, "gll_centroid"},
+    {basix::element::lagrange_variant::chebyshev_warped, "chebyshev_warped"},
+    {basix::element::lagrange_variant::chebyshev_isaac, "chebyshev_isaac"},
+    {basix::element::lagrange_variant::gl_warped, "gl_warped"},
+    {basix::element::lagrange_variant::gl_isaac, "gl_isaac"},
+    {basix::element::lagrange_variant::gl_centroid, "gl_centroid"},
+    {basix::element::lagrange_variant::legendre, "legendre"},
+    {basix::element::lagrange_variant::bernstein, "bernstein"},
 };
 
+/// string to basix enum
 std::map<std::string, basix::element::lagrange_variant> string_to_variant{
     {"unset", basix::element::lagrange_variant::unset},
     {"equispaced", basix::element::lagrange_variant::equispaced},
     {"gll_warped", basix::element::lagrange_variant::gll_warped},
+    {"gll_isaac", basix::element::lagrange_variant::gll_isaac},
+    {"gll_centroid", basix::element::lagrange_variant::gll_centroid},
+    {"chebyshev_warped", basix::element::lagrange_variant::chebyshev_warped},
+    {"chebyshev_isaac", basix::element::lagrange_variant::chebyshev_isaac},
+    {"gl_warped", basix::element::lagrange_variant::gl_warped},
+    {"gl_isaac", basix::element::lagrange_variant::gl_isaac},
+    {"gl_centroid", basix::element::lagrange_variant::gl_centroid},
+    {"legendre", basix::element::lagrange_variant::legendre},
+    {"bernstein", basix::element::lagrange_variant::bernstein},
 };
 
 } // namespace
@@ -177,6 +197,27 @@ dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
     engine.BeginStep();
   }
 
+  // Compatibility check for version and git commit hash
+  {
+    adios2::Attribute<std::string> var_version
+        = io.InquireAttribute<std::string>("version");
+    adios2::Attribute<std::string> var_hash
+        = io.InquireAttribute<std::string>("git_hash");
+    std::string version = var_version.Data()[0];
+    if (version != dolfinx::version())
+    {
+      throw std::runtime_error("Reading from version: " + dolfinx::version()
+                               + " written with version: " + version);
+    }
+
+    std::string git_hash = var_hash.Data()[0];
+    if (git_hash != dolfinx::git_commit_hash())
+    {
+      throw std::runtime_error("Reading from GIT_COMMIT_HASH: "
+                               + dolfinx::git_commit_hash()
+                               + " written with GIT_COMMIT_HASH: " + git_hash);
+    }
+  }
   // Attributes
   std::string name;
   std::int32_t dim, tdim, degree;
@@ -230,6 +271,7 @@ dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
   std::vector<int64_t> array = dolfinx::io::impl_native::read_topology_data(
       io, engine, num_cells_global, rank, size);
 
+  assert(engine.BetweenStepPairs());
   engine.EndStep();
 
   fem::CoordinateElement<T> element

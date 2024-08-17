@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
 
     adios2::IO io = adios.DeclareIO("mesh-write");
     io.SetEngine("BP5");
-    adios2::Engine engine = io.Open("mesh.bp", adios2::Mode::Write);
+    adios2::Engine engine = io.Open("mesh.bp", adios2::Mode::Append);
 
     io::native::write_mesh(io, engine, *mesh);
 

@@ -21,6 +21,7 @@ namespace
 std::map<std::string, adios2::Mode> string_to_mode{
     {"write", adios2::Mode::Write},
     {"read", adios2::Mode::Read},
+    {"append", adios2::Mode::Append},
 };
 } // namespace
 
@@ -55,7 +56,7 @@ public:
   /// @param[in] tag The ADIOS2 IO name
   /// @param[in] mode ADIOS2 mode, default is Write or Read
   ADIOS2Wrapper(std::string config_file, MPI_Comm comm, std::string filename,
-                std::string tag, std::string mode = "write")
+                std::string tag, std::string mode = "append")
   {
     _adios = std::make_shared<adios2::ADIOS>(config_file, comm);
     _io = std::make_shared<adios2::IO>(_adios->DeclareIO(tag));
