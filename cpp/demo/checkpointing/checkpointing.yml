@@ -1,0 +1,10 @@
+---
+# adios2 config.yaml
+# IO YAML Sequence (-) Nodes to allow for multiple IO nodes
+# IO name referred in code with DeclareIO is mandatory
+
+- IO: "mesh-write"
+
+  Engine:
+     # If Type is missing or commented out, default Engine is picked up
+     Type: "BP5"

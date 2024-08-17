@@ -11,9 +11,11 @@
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/ADIOS2Writers.h>
+#include <dolfinx/io/ADIOS2_utils.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
+#include <dolfinx/io/checkpointing.h>
 #include <dolfinx/io/vtk_utils.h>
 #include <dolfinx/io/xdmf_utils.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -232,10 +234,77 @@ void declare_data_types(nb::module_& m)
       nb::arg("values").noconvert());
 }
 
+#ifdef HAS_ADIOS2
+template <typename T>
+void declare_write_mesh(nb::module_& m, std::string type)
+{
+  // dolfinx::io::native::write_mesh
+  std::string pyfunction_write_mesh_name = std::string("write_mesh_") + type;
+  m.def(
+      pyfunction_write_mesh_name.c_str(),
+      [](dolfinx::io::ADIOS2Wrapper& ADIOS2, dolfinx::mesh::Mesh<T>& mesh)
+      {
+        auto io = ADIOS2.io();
+        auto engine = ADIOS2.engine();
+        return dolfinx::io::native::write_mesh<T>(*io, *engine, mesh);
+      },
+      nb::arg("adios2"), nb::arg("mesh"), "Write mesh to file using ADIOS2");
+}
+
+#endif
+
 } // namespace
 
 void io(nb::module_& m)
 {
+#ifdef HAS_ADIOS2
+  // dolfinx::io::ADIOS2Wrapper
+  nb::class_<dolfinx::io::ADIOS2Wrapper> ADIOS2(m, "ADIOS2");
+
+  ADIOS2
+      .def(
+          "__init__",
+          [](dolfinx::io::ADIOS2Wrapper* v, MPICommWrapper comm,
+             const std::string filename, std::string tag,
+             std::string engine_type = "BP5", std::string mode = "write")
+          {
+            new (v) dolfinx::io::ADIOS2Wrapper(comm.get(), filename, tag,
+                                               engine_type, mode);
+          },
+          nb::arg("comm"), nb::arg("filename"), nb::arg("tag"),
+          nb::arg("engine_type"), nb::arg("mode"))
+      .def(
+          "__init__",
+          [](dolfinx::io::ADIOS2Wrapper* v, std::string config,
+             MPICommWrapper comm, const std::string filename, std::string tag,
+             std::string mode = "write")
+          {
+            new (v) dolfinx::io::ADIOS2Wrapper(config, comm.get(), filename,
+                                               tag, mode);
+          },
+          nb::arg("config"), nb::arg("comm"), nb::arg("filename"),
+          nb::arg("tag"), nb::arg("mode"))
+      .def("close", &dolfinx::io::ADIOS2Wrapper::close);
+
+  // dolfinx::io::impl_native::read_mesh_variant
+  m.def(
+      "read_mesh",
+      [](dolfinx::io::ADIOS2Wrapper& ADIOS2, MPICommWrapper comm,
+         dolfinx::mesh::GhostMode ghost_mode)
+      {
+        auto io = ADIOS2.io();
+        auto engine = ADIOS2.engine();
+        return dolfinx::io::impl_native::read_mesh_variant(
+            *io, *engine, comm.get(), ghost_mode);
+      },
+      nb::arg("adios2"), nb::arg("comm"), nb::arg("ghost_mode"),
+      "Read mesh from file using ADIOS2");
+
+  declare_write_mesh<float>(m, "float32");
+  declare_write_mesh<double>(m, "float64");
+
+#endif
+
   // dolfinx::io::cell vtk cell type converter
   m.def("get_vtk_cell_type", &dolfinx::io::cells::get_vtk_cell_type,
         nb::arg("cell"), nb::arg("dim"), "Get VTK cell identifier");

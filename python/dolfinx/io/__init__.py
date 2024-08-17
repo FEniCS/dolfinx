@@ -13,6 +13,23 @@ __all__ = ["gmshio", "distribute_entity_data", "VTKFile", "XDMFFile"]
 
 if _cpp.common.has_adios2:
     # FidesWriter and VTXWriter require ADIOS2
-    from dolfinx.io.utils import FidesMeshPolicy, FidesWriter, VTXMeshPolicy, VTXWriter
+    from dolfinx.io.utils import (
+        ADIOS2,
+        FidesMeshPolicy,
+        FidesWriter,
+        VTXMeshPolicy,
+        VTXWriter,
+        read_mesh,
+        write_mesh,
+    )
 
-    __all__ = [*__all__, "FidesWriter", "VTXWriter", "FidesMeshPolicy", "VTXMeshPolicy"]
+    __all__ = [
+        *__all__,
+        "FidesWriter",
+        "VTXWriter",
+        "FidesMeshPolicy",
+        "VTXMeshPolicy",
+        "ADIOS2",
+        "write_mesh",
+        "read_mesh",
+    ]
