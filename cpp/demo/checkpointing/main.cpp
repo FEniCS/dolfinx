@@ -30,6 +30,45 @@ int main(int argc, char* argv[])
       MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {4, 4},
       mesh::CellType::quadrilateral, part));
 
+  // Create cell meshtags
+  auto geometry = mesh->geometry();
+  auto topology = mesh->topology();
+
+  int dim = geometry.dim();
+  topology->create_entities(dim);
+  const std::shared_ptr<const dolfinx::common::IndexMap> topo_imap
+      = topology->index_map(dim);
+
+  std::uint32_t num_entities = topo_imap->size_local();
+
+  auto cmap = mesh->geometry().cmap();
+  auto geom_layout = cmap.create_dof_layout();
+  std::uint32_t num_dofs_per_entity = geom_layout.num_entity_closure_dofs(dim);
+
+  std::vector<int32_t> entities_array(num_entities * num_dofs_per_entity);
+  std::vector<int32_t> entities_offsets(num_entities + 1);
+  std::uint64_t offset = topo_imap->local_range()[0];
+  std::vector<std::uint64_t> values(num_entities);
+
+  for (std::uint32_t i = 0; i < num_entities; ++i)
+  {
+    values[i] = i + offset;
+  }
+
+  auto entities = topology->connectivity(dim, 0);
+
+  for (int i = 0; i < (int)num_entities + 1; ++i)
+    entities_offsets[i] = entities->offsets()[i];
+
+  for (int i = 0; i < (int)(num_entities * num_dofs_per_entity); ++i)
+    entities_array[i] = entities->array()[i];
+
+  graph::AdjacencyList<std::int32_t> entities_local(entities_array,
+                                                    entities_offsets);
+
+  auto meshtags = std::make_shared<mesh::MeshTags<std::uint64_t>>(
+      mesh::create_meshtags<std::uint64_t>(topology, dim, entities_local, values));
+
   try
   {
     // Set up ADIOS2 IO and Engine
@@ -40,6 +79,7 @@ int main(int argc, char* argv[])
     adios2::Engine engine = io.Open("mesh.bp", adios2::Mode::Append);
 
     io::native::write_mesh(io, engine, *mesh);
+    io::native::write_meshtags<float, std::uint64_t>(io, engine, *mesh, *meshtags);
 
     engine.Close();
   }
