@@ -775,6 +775,10 @@ FunctionSpace<T> create_functionspace(
         "Cannot specify value shape for non-scalar base element.");
   }
 
+  if (mesh::cell_type_from_basix_type(e.cell_type())
+      != mesh->topology()->cell_type())
+    throw std::runtime_error("Cell type of element and mesh must match!");
+
   std::size_t bs = value_shape.empty()
                        ? 1
                        : std::accumulate(value_shape.begin(), value_shape.end(),
