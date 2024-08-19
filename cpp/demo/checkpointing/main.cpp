@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
   const std::shared_ptr<const dolfinx::common::IndexMap> topo_imap
       = topology->index_map(dim);
 
-  std::uint32_t num_entities = topo_imap->size_local();
+  std::int32_t num_entities = topo_imap->size_local();
 
   auto cmap = mesh->geometry().cmap();
   auto geom_layout = cmap.create_dof_layout();
@@ -48,9 +48,9 @@ int main(int argc, char* argv[])
   std::vector<int32_t> entities_array(num_entities * num_dofs_per_entity);
   std::vector<int32_t> entities_offsets(num_entities + 1);
   std::uint64_t offset = topo_imap->local_range()[0];
-  std::vector<std::uint64_t> values(num_entities);
+  std::vector<std::int32_t> values(num_entities);
 
-  for (std::uint32_t i = 0; i < num_entities; ++i)
+  for (std::int32_t i = 0; i < num_entities; ++i)
   {
     values[i] = i + offset;
   }
@@ -66,8 +66,9 @@ int main(int argc, char* argv[])
   graph::AdjacencyList<std::int32_t> entities_local(entities_array,
                                                     entities_offsets);
 
-  auto meshtags = std::make_shared<mesh::MeshTags<std::uint64_t>>(
-      mesh::create_meshtags<std::uint64_t>(topology, dim, entities_local, values));
+  auto meshtags = std::make_shared<mesh::MeshTags<std::int32_t>>(
+      mesh::create_meshtags<std::int32_t>(topology, dim, entities_local,
+                                          values));
 
   try
   {
@@ -79,7 +80,8 @@ int main(int argc, char* argv[])
     adios2::Engine engine = io.Open("mesh.bp", adios2::Mode::Append);
 
     io::native::write_mesh(io, engine, *mesh);
-    io::native::write_meshtags<float, std::uint64_t>(io, engine, *mesh, *meshtags);
+    io::native::write_meshtags<float, std::int32_t>(io, engine, *mesh,
+                                                    *meshtags);
 
     engine.Close();
   }
@@ -100,6 +102,11 @@ int main(int argc, char* argv[])
     engine_read.BeginStep();
     auto mesh_read
         = io::native::read_mesh<float>(io_read, engine_read, MPI_COMM_WORLD);
+
+    mesh::MeshTags<std::int32_t> mt
+        = io::native::read_meshtags<float, std::int32_t>(
+            io_read, engine_read, MPI_COMM_WORLD, mesh_read, "mesh_tags");
+
     if (engine_read.BetweenStepPairs())
     {
       engine_read.EndStep();
@@ -113,6 +120,8 @@ int main(int argc, char* argv[])
         = io_write.Open("mesh2.bp", adios2::Mode::Write);
 
     io::native::write_mesh(io_write, engine_write, mesh_read);
+    io::native::write_meshtags<float, std::int32_t>(io_write, engine_write,
+                                                    mesh_read, mt);
     engine_write.Close();
   }
   catch (std::exception& e)

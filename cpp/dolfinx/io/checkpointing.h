@@ -9,8 +9,11 @@
 #ifdef HAS_ADIOS2
 
 #include "ADIOS2_utils.h"
+#include "xdmf_utils.h"
 #include <adios2.h>
 #include <basix/finite-element.h>
+#include <basix/mdspan.hpp>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/utils.h>
@@ -21,6 +24,11 @@
 
 namespace
 {
+
+template <typename T, std::size_t ndim>
+using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
+
 /// @brief Write a particular attribute incrementally.
 /// For example, to write a new meshtag, fetch the name attribute if it exists
 /// and append the name, otherwise create the attribute.
@@ -51,6 +59,59 @@ adios2::Attribute<T> define_attr(adios2::IO& io, const std::string& name,
 }
 
 } // namespace
+
+namespace dolfinx::io::impl_native
+{
+/// @brief Find offset and size.
+///
+/// @param[in] rank MPI rank
+/// @param[in] N size of data to distribute
+/// @param[in] size MPI size
+/// @return start and count
+std::pair<std::uint64_t, std::uint64_t> get_counters(int rank, std::uint64_t N,
+                                                     int size);
+
+/// @brief Read geometry data
+///
+/// @param[in] io ADIOS2 IO
+/// @param[in] engine ADIOS2 Engine
+/// @param[in] dim The geometric dimension (`0 < dim <= 3`).
+/// @param[in] num_nodes_global size of the global array of nodes
+/// @param[in] rank MPI rank
+/// @param[in] size MPI size
+/// @return The point coordinates of row-major storage and
+/// itsshape `(num_nodes_local, dim)`
+template <std::floating_point T>
+std::pair<std::vector<T>, std::array<std::size_t, 2>>
+read_geometry_data(adios2::IO& io, adios2::Engine& engine, int dim,
+                   std::uint64_t num_nodes_global, int rank, int size);
+
+/// @brief Read topology array
+///
+/// @param[in] io ADIOS2 IO
+/// @param[in] engine ADIOS2 Engine
+/// @param[in] num_cells_global global number of cells
+/// @param[in] rank MPI rank
+/// @param[in] size MPI size
+/// @return The cell-to-node connectivity in a flattened array
+std::vector<int64_t> read_topology_data(adios2::IO& io, adios2::Engine& engine,
+                                        std::uint64_t num_cells_global,
+                                        int rank, int size);
+
+/// @brief Read mesh from a file.
+///
+/// @param[in] io ADIOS2 IO
+/// @param[in] engine ADIOS2 Engine
+/// @param[in] comm comm
+/// @param[in] ghost_mode The requested type of cell ghosting/overlap
+/// @return mesh reconstructed from the data
+std::variant<dolfinx::mesh::Mesh<float>, dolfinx::mesh::Mesh<double>>
+read_mesh_variant(adios2::IO& io, adios2::Engine& engine,
+                  MPI_Comm comm = MPI_COMM_WORLD,
+                  dolfinx::mesh::GhostMode ghost_mode
+                  = dolfinx::mesh::GhostMode::shared_facet);
+
+} // namespace dolfinx::io::impl_native
 
 namespace dolfinx::io::native
 {
@@ -175,59 +236,130 @@ void write_meshtags(adios2::IO& io, adios2::Engine& engine,
   engine.EndStep();
 }
 
-} // namespace dolfinx::io::native
-
-namespace dolfinx::io::impl_native
-{
-/// @brief Find offset and size.
+/// @brief Read meshtags from a file.
 ///
-/// @param[in] rank MPI rank
-/// @param[in] N size of data to distribute
-/// @param[in] size MPI size
-/// @return start and count
-std::pair<std::uint64_t, std::uint64_t> get_counters(int rank, std::uint64_t N,
-                                                     int size);
-
-/// @brief Read geometry data
-///
-/// @param[in] io ADIOS2 IO
-/// @param[in] engine ADIOS2 Engine
-/// @param[in] dim The geometric dimension (`0 < dim <= 3`).
-/// @param[in] num_nodes_global size of the global array of nodes
-/// @param[in] rank MPI rank
-/// @param[in] size MPI size
-/// @return The point coordinates of row-major storage and
-/// itsshape `(num_nodes_local, dim)`
-template <std::floating_point T>
-std::pair<std::vector<T>, std::array<std::size_t, 2>>
-read_geometry_data(adios2::IO& io, adios2::Engine& engine, int dim,
-                   std::uint64_t num_nodes_global, int rank, int size);
-
-/// @brief Read topology array
-///
-/// @param[in] io ADIOS2 IO
-/// @param[in] engine ADIOS2 Engine
-/// @param[in] num_cells_global global number of cells
-/// @param[in] rank MPI rank
-/// @param[in] size MPI size
-/// @return The cell-to-node connectivity in a flattened array
-std::vector<int64_t> read_topology_data(adios2::IO& io, adios2::Engine& engine,
-                                        std::uint64_t num_cells_global,
-                                        int rank, int size);
-
-/// @brief Read mesh from a file.
-///
+/// @tparam U float or double
+/// @tparam T ADIOS2 supported type
 /// @param[in] io ADIOS2 IO
 /// @param[in] engine ADIOS2 Engine
 /// @param[in] comm comm
-/// @param[in] ghost_mode The requested type of cell ghosting/overlap
-/// @return mesh reconstructed from the data
-std::variant<dolfinx::mesh::Mesh<float>, dolfinx::mesh::Mesh<double>>
-read_mesh_variant(adios2::IO& io, adios2::Engine& engine,
-                  MPI_Comm comm = MPI_COMM_WORLD,
-                  dolfinx::mesh::GhostMode ghost_mode
-                  = dolfinx::mesh::GhostMode::shared_facet);
+/// @param[in] mesh Mesh of type float or double to which meshtags are
+/// associated
+/// @param[in] name name of the meshtags
+/// @return meshtags
+template <std::floating_point U, typename T>
+dolfinx::mesh::MeshTags<T>
+read_meshtags(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm,
+              dolfinx::mesh::Mesh<U>& mesh, std::string name)
+{
 
-} // namespace dolfinx::io::impl_native
+  int rank, size;
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &size);
+
+  if (!engine.BetweenStepPairs())
+  {
+    engine.BeginStep();
+  }
+
+  // Attributes
+  std::int32_t dim;
+  // Check if meshtags of given name exists, and find the dim
+  {
+    adios2::Attribute<std::string> var_names
+        = io.InquireAttribute<std::string>("meshtags_names");
+    adios2::Attribute<std::uint32_t> var_dims
+        = io.InquireAttribute<std::uint32_t>("meshtags_dims");
+
+    std::vector<std::string> names = var_names.Data();
+    std::vector<std::uint32_t> dims = var_dims.Data();
+    auto pos = std::ranges::find(names, name);
+    if (pos != names.end())
+    {
+      auto it = std::ranges::distance(pos, names.begin());
+      dim = dims[it];
+    }
+    else
+    {
+      throw std::runtime_error("Meshtags : " + name + " not found");
+    }
+  }
+
+  spdlog::info("Reading meshtags : {} for entities with dimension: {}", name,
+               dim);
+
+  // Read entities topology
+  adios2::Variable<std::int64_t> var_topology_array
+      = io.InquireVariable<std::int64_t>(name + "_topology");
+  std::vector<std::uint64_t> shape = var_topology_array.Shape();
+
+  auto [offset, num_tag_entities_local]
+      = dolfinx::io::impl_native::get_counters(rank, shape[0], size);
+
+  std::uint64_t num_dofs_per_entity = shape[1];
+  std::vector<std::int64_t> array(num_tag_entities_local * num_dofs_per_entity);
+  var_topology_array.SetSelection(
+      {{offset, 0}, {num_tag_entities_local, num_dofs_per_entity}});
+  engine.Get(var_topology_array, array.data(), adios2::Mode::Sync);
+
+  // Read entities tagged values
+  adios2::Variable<T> var_values = io.InquireVariable<T>(name + "_values");
+  std::vector<T> values(num_tag_entities_local);
+  var_values.SetSelection({{offset}, {num_tag_entities_local}});
+  engine.Get(var_values, values.data(), adios2::Mode::Sync);
+
+  // Redistribute data
+  std::pair<std::vector<std::int32_t>, std::vector<T>> entities_values;
+  std::int64_t num_entities, num_vert_per_entity;
+  std::shared_ptr<mesh::Topology> topology = mesh.topology();
+  assert(topology);
+
+  {
+    mdspan_t<const std::int64_t, 2> entities_span(
+        array.data(), num_tag_entities_local, num_dofs_per_entity);
+
+    const mesh::Geometry<U>& geometry = mesh.geometry();
+
+    auto xdofmap_span = geometry.dofmap();
+    const std::vector<int64_t>& input_global_indices
+        = geometry.input_global_indices();
+
+    const fem::CoordinateElement<U>& cmap = geometry.cmap();
+    const fem::ElementDofLayout cmap_dof_layout = cmap.create_dof_layout();
+    std::int64_t num_nodes_g = geometry.index_map()->size_global();
+
+    std::span<const std::int64_t> input_global_indices_span(
+        input_global_indices.data(), input_global_indices.size());
+    std::span<const T> values_span(values.data(), values.size());
+
+    entities_values = dolfinx::io::xdmf_utils::distribute_entity_data(
+        *topology, input_global_indices_span, num_nodes_g, cmap_dof_layout,
+        xdofmap_span, dim, entities_span, values_span);
+
+    num_vert_per_entity = dolfinx::mesh::cell_num_entities(
+        dolfinx::mesh::cell_entity_type(topology->cell_type(), dim, 0), 0);
+
+    num_entities = entities_values.first.size() / num_vert_per_entity;
+  }
+
+  // Construct MeshTags
+  std::vector<std::int32_t> offsets(num_entities + 1);
+  std::ranges::transform(offsets, offsets.begin(), [&, i = 0](auto e) mutable
+                         { return (i++) * num_vert_per_entity; });
+
+  dolfinx::graph::AdjacencyList entities(entities_values.first, offsets);
+  std::span<const T> values_span(entities_values.second.data(),
+                                 entities_values.second.size());
+
+  topology->create_connectivity(dim, 0);
+  topology->create_connectivity(dim, topology->dim());
+
+  dolfinx::mesh::MeshTags<T> meshtags
+      = dolfinx::mesh::create_meshtags(topology, dim, entities, values_span);
+
+  return meshtags;
+}
+
+} // namespace dolfinx::io::native
 
 #endif
