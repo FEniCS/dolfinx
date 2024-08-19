@@ -770,10 +770,8 @@ FunctionSpace<T> create_functionspace(
     = nullptr)
 {
   if (!e.value_shape().empty() and !value_shape.empty())
-  {
     throw std::runtime_error(
         "Cannot specify value shape for non-scalar base element.");
-  }
 
   if (mesh::cell_type_from_basix_type(e.cell_type())
       != mesh->topology()->cell_type())
