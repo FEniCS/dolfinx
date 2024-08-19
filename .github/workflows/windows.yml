@@ -140,7 +140,7 @@ jobs:
 
       - name: Run a demo
         working-directory: dolfinx/python/demo
-        run: python3 demo_poisson_matrix_free.py
+        run: python3 -v demo_poisson_matrix_free.py
 
       - name: Run units tests (Python, serial)
         working-directory: dolfinx
