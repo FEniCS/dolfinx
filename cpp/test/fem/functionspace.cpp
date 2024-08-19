@@ -15,7 +15,7 @@
 
 using namespace dolfinx;
 
-TEST_CASE("Create Function Space (missmatch of elements)", "[functionspace]")
+TEST_CASE("Create Function Space (mismatch of elements)", "[functionspace]")
 {
   auto mesh = std::make_shared<mesh::Mesh<double>>(
       dolfinx::mesh::create_rectangle<double>(
