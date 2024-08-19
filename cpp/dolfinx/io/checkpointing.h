@@ -18,33 +18,6 @@
 /// @file checkpointing.h
 /// @brief ADIOS2 based checkpointing
 
-namespace dolfinx::io::native
-{
-
-/// @brief Write mesh to a file.
-///
-/// @param[in] io ADIOS2 IO
-/// @param[in] engine ADIOS2 Engine
-/// @param[in] mesh Mesh of type float or double to write to the file
-template <std::floating_point T>
-void write_mesh(adios2::IO& io, adios2::Engine& engine,
-                const dolfinx::mesh::Mesh<T>& mesh);
-
-/// @brief Read mesh from a file.
-///
-/// @param[in] io ADIOS2 IO
-/// @param[in] engine ADIOS2 Engine
-/// @param[in] comm comm
-/// @param[in] ghost_mode The requested type of cell ghosting/overlap
-/// @return mesh reconstructed from the data
-template <std::floating_point T>
-dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
-                                 MPI_Comm comm = MPI_COMM_WORLD,
-                                 dolfinx::mesh::GhostMode ghost_mode
-                                 = dolfinx::mesh::GhostMode::shared_facet);
-
-} // namespace dolfinx::io::native
-
 namespace dolfinx::io::impl_native
 {
 /// @brief Find offset and size.
@@ -97,5 +70,32 @@ read_mesh_variant(adios2::IO& io, adios2::Engine& engine,
                   = dolfinx::mesh::GhostMode::shared_facet);
 
 } // namespace dolfinx::io::impl_native
+
+namespace dolfinx::io::native
+{
+
+/// @brief Write mesh to a file.
+///
+/// @param[in] io ADIOS2 IO
+/// @param[in] engine ADIOS2 Engine
+/// @param[in] mesh Mesh of type float or double to write to the file
+template <std::floating_point T>
+void write_mesh(adios2::IO& io, adios2::Engine& engine,
+                const dolfinx::mesh::Mesh<T>& mesh);
+
+/// @brief Read mesh from a file.
+///
+/// @param[in] io ADIOS2 IO
+/// @param[in] engine ADIOS2 Engine
+/// @param[in] comm comm
+/// @param[in] ghost_mode The requested type of cell ghosting/overlap
+/// @return mesh reconstructed from the data
+template <std::floating_point T>
+dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
+                                 MPI_Comm comm = MPI_COMM_WORLD,
+                                 dolfinx::mesh::GhostMode ghost_mode
+                                 = dolfinx::mesh::GhostMode::shared_facet);
+
+} // namespace dolfinx::io::native
 
 #endif
