@@ -42,6 +42,7 @@ add_executable(
   common/sort.cpp
   fem/functionspace.cpp
   mesh/distributed_mesh.cpp
+  mesh/interval.cpp
   mesh/rectangle.cpp
   common/CIFailure.cpp
   refinement/interval.cpp
