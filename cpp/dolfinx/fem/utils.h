@@ -914,6 +914,8 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
     {
       auto entity = entities.subspan(e, estride);
       std::int32_t cell = fetch_cells(entity);
+      if (cell < 0)
+        continue;
       auto cell_coeff = c.subspan((e / estride) * cstride + offset, space_dim);
       pack<T, 1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
@@ -923,6 +925,8 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
     {
       auto entity = entities.subspan(e, estride);
       std::int32_t cell = fetch_cells(entity);
+      if (cell < 0)
+        continue;
       auto cell_coeff = c.subspan((e / estride) * cstride + offset, space_dim);
       pack<T, 2>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
@@ -932,6 +936,8 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
     {
       auto entity = entities.subspan(e, estride);
       std::int32_t cell = fetch_cells(entity);
+      if (cell < 0)
+        continue;
       auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
       pack<T, 3>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
@@ -941,6 +947,8 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
     {
       auto entity = entities.subspan(e, estride);
       std::int32_t cell = fetch_cells(entity);
+      if (cell < 0)
+        continue;
       auto cell_coeff = c.subspan((e / estride) * cstride + offset, space_dim);
       pack<T, -1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
     }
@@ -1115,6 +1123,7 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
         auto mesh = coefficients[coeff]->function_space()->mesh();
         std::vector<std::int32_t> facets
             = form.domain(IntegralType::interior_facet, id, *mesh);
+
         std::span<const std::uint32_t> cell_info
             = impl::get_cell_orientation_info(*coefficients[coeff]);
 
