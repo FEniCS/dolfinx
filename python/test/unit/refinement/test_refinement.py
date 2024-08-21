@@ -32,7 +32,7 @@ def test_refine_create_unit_square():
     """Refine mesh of unit square."""
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 7, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
-    mesh_refined, _, _ = refine(mesh, redistribute=False)
+    mesh_refined, _, _ = refine(mesh)
     assert mesh_refined.topology.index_map(0).size_global == 165
     assert mesh_refined.topology.index_map(2).size_global == 280
 
@@ -46,7 +46,7 @@ def test_refine_create_unit_cube(ghost_mode, redistribute):
     """Refine mesh of unit cube."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=ghost_mode)
     mesh.topology.create_entities(1)
-    mesh, _, _ = refine(mesh, redistribute=redistribute)
+    mesh, _, _ = refine(mesh)  # , partitioner=create_cell_partitioner(ghost_mode))
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
 
@@ -58,7 +58,7 @@ def test_refine_create_form():
     """Check that forms can be assembled on refined mesh"""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     mesh.topology.create_entities(1)
-    mesh, _, _ = refine(mesh, redistribute=True)
+    mesh, _, _ = refine(mesh)  # TODO: recover redistribute=True behavior
 
     V = functionspace(mesh, ("Lagrange", 1))
 
@@ -83,7 +83,7 @@ def test_sub_refine():
     if MPI.COMM_WORLD.size == 0:
         assert edges == 1
 
-    mesh2, _, _ = refine(mesh, edges, redistribute=False)
+    mesh2, _, _ = refine(mesh, edges)
     assert mesh.topology.index_map(2).size_global + 3 == mesh2.topology.index_map(2).size_global
 
 
@@ -105,7 +105,7 @@ def test_refine_from_cells():
     edges = compute_incident_entities(msh.topology, cells, 2, 1)
     if MPI.COMM_WORLD.size == 0:
         assert edges.__len__() == Nx // 2 * (2 * Ny + 1) + (Nx // 2 + 1) * Ny
-    mesh2, _, _ = refine(msh, edges, redistribute=True)
+    mesh2, _, _ = refine(msh, edges)  # TODO: redistribute=True
 
     num_cells_global = mesh2.topology.index_map(2).size_global
     actual_cells = 3 * (Nx * Ny) + 3 * Ny + 2 * Nx * Ny
@@ -116,13 +116,10 @@ def test_refine_from_cells():
 @pytest.mark.parametrize(
     "refine_plaza_wrapper",
     [
-        lambda mesh: refine(
-            mesh, redistribute=False, option=RefinementOption.parent_cell_and_facet
-        ),
+        lambda mesh: refine(mesh, option=RefinementOption.parent_cell_and_facet),
         lambda mesh: refine(
             mesh,
             np.arange(mesh.topology.index_map(1).size_local),
-            redistribute=False,
             option=RefinementOption.parent_cell_and_facet,
         ),
     ],
@@ -178,13 +175,10 @@ def test_refine_facet_meshtag(tdim, refine_plaza_wrapper):
 @pytest.mark.parametrize(
     "refine_plaza_wrapper",
     [
-        lambda mesh: refine(
-            mesh, redistribute=False, option=RefinementOption.parent_cell_and_facet
-        ),
+        lambda mesh: refine(mesh, option=RefinementOption.parent_cell_and_facet),
         lambda mesh: refine(
             mesh,
             np.arange(mesh.topology.index_map(1).size_local),
-            redistribute=False,
             option=RefinementOption.parent_cell_and_facet,
         ),
     ],
