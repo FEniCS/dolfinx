@@ -4,11 +4,14 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import typing
+from collections import ChainMap
 from pathlib import Path
 
 from mpi4py import MPI
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 
 import ufl
@@ -16,7 +19,17 @@ from basix.ufl import element
 from dolfinx import default_real_type, default_scalar_type
 from dolfinx.fem import Function, assemble_scalar, form, functionspace
 from dolfinx.graph import adjacencylist
-from dolfinx.mesh import CellType, GhostMode, create_mesh, create_unit_cube, create_unit_square
+from dolfinx.mesh import (
+    CellType,
+    GhostMode,
+    Mesh,
+    MeshTags,
+    compute_midpoints,
+    create_mesh,
+    create_unit_cube,
+    create_unit_square,
+    meshtags,
+)
 
 
 def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
@@ -36,6 +49,39 @@ def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
             return create_unit_cube(MPI.COMM_WORLD, N, N, N, CellType.hexahedron, dtype=dtype)
     else:
         raise RuntimeError("Unsupported dimension")
+
+
+def generate_map(
+    mesh: Mesh,
+    meshtag: MeshTags,
+    comm: MPI.Intracomm,
+    root: int,
+) -> typing.Optional[dict[str, tuple[int, npt.NDArray]]]:
+    """
+    NOTE: From ADIOS4DOLFINx
+    Helper function to generate map from meshtag value to its corresponding index and midpoint.
+
+    Args:
+        mesh: The mesh
+        meshtag: The associated meshtag
+        comm: MPI communicator to gather the map from all processes with
+        root (int): Rank to store data on
+    Returns:
+        Root rank returns the map, all other ranks return None
+    """
+    mesh.topology.create_connectivity(meshtag.dim, mesh.topology.dim)
+    midpoints = compute_midpoints(mesh, meshtag.dim, meshtag.indices)
+    e_map = mesh.topology.index_map(meshtag.dim)
+    value_to_midpoint = {}
+    for index, value in zip(meshtag.indices, meshtag.values):
+        value_to_midpoint[value] = (
+            int(e_map.local_range[0] + index),
+            midpoints[index],
+        )
+    global_map = comm.gather(value_to_midpoint, root=root)
+    if comm.rank == root:
+        return dict(ChainMap(*global_map))  # type: ignore
+    return None
 
 
 # TODO: Fix problems with ("HDF5", ".h5")
@@ -95,6 +141,81 @@ def test_mesh_read_write(encoder, suffix, ghost_mode, dtype, dim, simplex, tmp_p
             mesh_adios.comm.allreduce(c_adios, MPI.SUM),
             mesh.comm.allreduce(c_ref, MPI.SUM),
         )
+
+
+# FIXME: ("BP4", ".bp") unable to read the shape of values
+@pytest.mark.adios2
+@pytest.mark.parametrize("encoder, suffix", [("BP5", ".bp")])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.shared_facet, GhostMode.none])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("simplex", [True, False])
+def test_meshtags(encoder, suffix, ghost_mode, dtype, dim, simplex, tmp_path):
+    """Test checkpointing of meshtags"""
+    from dolfinx.io import ADIOS2, read_mesh, read_meshtags, write_mesh, write_meshtags
+
+    root = 0
+    N = 5
+    mesh = generate_mesh(dim, simplex, N, dtype)
+
+    # Consistent tmp dir across processes
+    fname = MPI.COMM_WORLD.bcast(tmp_path, root=0)
+    key = f"meshtags_{mesh.topology.cell_name()}_{encoder}"
+    file = fname / key
+
+    adios = ADIOS2(
+        mesh.comm,
+        filename=str(file.with_suffix(suffix)),
+        tag="meshtags-write",
+        engine_type=encoder,
+        mode="write",
+    )
+
+    write_mesh(adios, mesh)
+
+    # Create and write meshtags and store midpoints of entities
+    ref_maps = []
+    for dim in range(mesh.topology.dim + 1):
+        mesh.topology.create_connectivity(dim, mesh.topology.dim)
+        e_map = mesh.topology.index_map(dim)
+        num_entities_local = e_map.size_local
+        entities = np.arange(num_entities_local, dtype=np.int32)
+        mt = meshtags(mesh, dim, entities, e_map.local_range[0] + entities)
+        mt.name = f"entity_{dim}"
+
+        write_meshtags(adios, mesh, mt)
+        ref_map = generate_map(mesh, mt, mesh.comm, root)
+        ref_maps.append(ref_map)
+
+        del mt
+
+    del mesh
+
+    adios.close()
+    MPI.COMM_WORLD.Barrier()
+
+    adios_read = ADIOS2(
+        MPI.COMM_WORLD,
+        filename=str(file.with_suffix(suffix)),
+        tag="meshtags-read",
+        engine_type=encoder,
+        mode="read",
+    )
+
+    mesh_adios = read_mesh(adios_read, MPI.COMM_WORLD, ghost_mode=ghost_mode)
+    tags_read = read_meshtags(adios_read, mesh_adios)
+
+    for dim, (mt_name, mt_adios) in enumerate(tags_read.items()):
+        assert dim == mt_adios.dim
+
+        read_map = generate_map(mesh_adios, mt_adios, mesh_adios.comm, root)
+
+        if MPI.COMM_WORLD.rank == root:
+            ref_map = ref_maps[dim]
+            assert len(ref_map) == len(read_map)
+            for value, (_, midpoint) in ref_map.items():
+                _, read_midpoint = read_map[value]
+                np.testing.assert_allclose(read_midpoint, midpoint)
 
 
 @pytest.mark.adios2
