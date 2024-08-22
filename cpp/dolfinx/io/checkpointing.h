@@ -153,13 +153,31 @@ void write_meshtags(adios2::IO& io, adios2::Engine& engine,
 {
   std::string name = meshtags.name;
   std::uint32_t dim = meshtags.dim();
+  std::string dtype;
 
-  spdlog::info("Writing meshtags : {} for entities with dimension: {}", name,
-               dim);
+  if (std::is_same_v<T, std::int32_t>)
+  {
+    dtype = "int32_t";
+  }
+  else if (std::is_same_v<T, double>)
+  {
+    dtype = "double";
+  }
+  else
+  {
+    throw std::runtime_error("The datatype associated with the meshtags values "
+                             "is not supported yet");
+  }
+
+  spdlog::info(
+      "Writing meshtags : {} for entities with dimension: {} of data type: {}",
+      name, dim, dtype);
 
   {
     adios2::Attribute<std::string> attr_names
         = define_attr<std::string>(io, "meshtags_names", name);
+    adios2::Attribute<std::string> attr_dtypes
+        = define_attr<std::string>(io, "meshtags_dtypes", dtype);
     adios2::Attribute<std::uint32_t> attr_dims
         = define_attr<std::uint32_t>(io, "meshtags_dims", dim);
   }
@@ -179,11 +197,13 @@ void write_meshtags(adios2::IO& io, adios2::Engine& engine,
   std::uint64_t num_tag_entities_local;
   std::vector<std::int64_t> array;
   {
+    // Fetch number of local (owned) entities
     std::uint32_t num_entities_local;
     {
-      std::shared_ptr<const mesh::Topology> topology = mesh.topology();
+      std::shared_ptr<mesh::Topology> topology = mesh.topology();
       assert(topology);
 
+      topology->create_entities(dim);
       num_entities_local = topology->index_map(dim)->size_local();
     }
 
@@ -242,20 +262,19 @@ void write_meshtags(adios2::IO& io, adios2::Engine& engine,
 /// @tparam T ADIOS2 supported type
 /// @param[in] io ADIOS2 IO
 /// @param[in] engine ADIOS2 Engine
-/// @param[in] comm comm
 /// @param[in] mesh Mesh of type float or double to which meshtags are
 /// associated
 /// @param[in] name name of the meshtags
 /// @return meshtags
 template <std::floating_point U, typename T>
-dolfinx::mesh::MeshTags<T>
-read_meshtags(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm,
-              dolfinx::mesh::Mesh<U>& mesh, std::string name)
+dolfinx::mesh::MeshTags<T> read_meshtags(adios2::IO& io, adios2::Engine& engine,
+                                         dolfinx::mesh::Mesh<U>& mesh,
+                                         std::string name)
 {
 
   int rank, size;
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &size);
+  MPI_Comm_rank(mesh.comm(), &rank);
+  MPI_Comm_size(mesh.comm(), &size);
 
   if (!engine.BetweenStepPairs())
   {
@@ -276,7 +295,7 @@ read_meshtags(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm,
     auto pos = std::ranges::find(names, name);
     if (pos != names.end())
     {
-      auto it = std::ranges::distance(pos, names.begin());
+      auto it = std::ranges::distance(names.begin(), pos);
       dim = dims[it];
     }
     else
@@ -356,6 +375,8 @@ read_meshtags(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm,
 
   dolfinx::mesh::MeshTags<T> meshtags
       = dolfinx::mesh::create_meshtags(topology, dim, entities, values_span);
+
+  meshtags.name = name;
 
   return meshtags;
 }
