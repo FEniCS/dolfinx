@@ -330,8 +330,8 @@ def refine(
     if edges is None:
         mesh1 = _cpp.refinement.refine(mesh._cpp_object, redistribute)
     else:
-        mesh1 = _cpp.refinement.refine(mesh._cpp_object, edges, redistribute)
-    return Mesh(mesh1, mesh._ufl_domain)
+        mesh1 = _cpp.refinement.refine(mesh._cpp_object, edges, redistribute)    
+    return Mesh(mesh1, ufl.Mesh(mesh._ufl_domain.ufl_coordinate_element()))
 
 
 def refine_interval(
