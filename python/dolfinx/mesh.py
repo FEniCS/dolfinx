@@ -331,7 +331,8 @@ def refine(
         mesh1 = _cpp.refinement.refine(mesh._cpp_object, redistribute)
     else:
         mesh1 = _cpp.refinement.refine(mesh._cpp_object, edges, redistribute)
-    return Mesh(mesh1, ufl.Mesh(mesh._ufl_domain.ufl_coordinate_element()))
+    ufl_domain = ufl.Mesh(mesh._ufl_domain.ufl_coordinate_element())  # type: ignore
+    return Mesh(mesh1, ufl_domain)
 
 
 def refine_interval(
