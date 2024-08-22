@@ -40,11 +40,8 @@ def test_create_matrix_csr():
     A = la.matrix_csr(pattern, dtype=np.complex128)
     assert A.data.dtype == np.complex128
 
-    cmap = pattern.column_index_map()
-    num_cols = cmap.size_local + cmap.num_ghosts
-    num_rows = bs * (map.size_local + map.num_ghosts)
-    zero = np.zeros((num_rows, bs * num_cols), dtype=np.complex128)
-    assert np.allclose(A.to_dense(), zero)
+    dense = A.to_dense()
+    assert np.allclose(dense, np.zeros(dense.shape, dtype=np.complex128))
 
 
 @pytest.mark.parametrize(

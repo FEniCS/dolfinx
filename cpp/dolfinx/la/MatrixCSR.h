@@ -630,15 +630,17 @@ std::vector<typename MatrixCSR<U, V, W, X>::value_type>
 MatrixCSR<U, V, W, X>::to_dense() const
 {
   const std::size_t nrows = num_all_rows();
-  const std::size_t ncols
-      = _index_maps[1]->size_local() + _index_maps[1]->num_ghosts();
+  const std::size_t ncols = _index_maps[1]->size_global();
   std::vector<value_type> A(nrows * ncols * _bs[0] * _bs[1], 0.0);
   for (std::size_t r = 0; r < nrows; ++r)
     for (std::int32_t j = _row_ptr[r]; j < _row_ptr[r + 1]; ++j)
       for (int i0 = 0; i0 < _bs[0]; ++i0)
         for (int i1 = 0; i1 < _bs[1]; ++i1)
         {
-          A[(r * _bs[1] + i0) * ncols * _bs[0] + _cols[j] * _bs[1] + i1]
+          std::vector<std::int32_t> local_col {_cols[j]};
+          std::vector<std::int64_t> global_col{0};
+          _index_maps[1]->local_to_global(local_col, global_col);
+          A[(r * _bs[1] + i0) * ncols * _bs[0] + global_col[0] * _bs[1] + i1]
               = _data[j * _bs[0] * _bs[1] + i0 * _bs[1] + i1];
         }
 

@@ -46,6 +46,7 @@ nanobind_add_module(
   dolfinx/wrappers/mesh.cpp
   dolfinx/wrappers/petsc.cpp
   dolfinx/wrappers/refinement.cpp
+  dolfinx/wrappers/transfer.cpp
 )
 target_compile_definitions(cpp PRIVATE cxx_std_20)
 

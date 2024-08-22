@@ -41,8 +41,13 @@ add_executable(
   common/index_map.cpp
   common/sort.cpp
   mesh/distributed_mesh.cpp
+  mesh/interval.cpp
+  mesh/rectangle.cpp
   common/CIFailure.cpp
-  refinement/interval.cpp
+  mesh/refinement/interval.cpp
+  mesh/refinement/option.cpp
+  mesh/refinement/rectangle.cpp
+  transfer/transfer_matrix.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )
 target_link_libraries(unittests PRIVATE Catch2::Catch2WithMain dolfinx)

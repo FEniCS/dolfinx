@@ -60,8 +60,6 @@ __all__ = [
     "create_unit_cube",
     "to_type",
     "to_string",
-    "refine_interval",
-    "refine_plaza",
     "transfer_meshtag",
     "entities_to_geometry",
 ]
@@ -313,85 +311,28 @@ def transfer_meshtag(
 
 
 def refine(
-    mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True
-) -> Mesh:
+    mesh: Mesh,
+    edges: typing.Optional[np.ndarray] = None,
+    partitioner: typing.Optional[typing.Callable] = None,
+    option: RefinementOption = RefinementOption.none,
+) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.
 
     Args:
         mesh: Mesh from which to create the refined mesh.
         edges: Indices of edges to split during refinement. If ``None``,
             mesh refinement is uniform.
-        redistribute:
-            Refined mesh is re-partitioned if ``True``.
+        partitioner:
+            partitioner to use for the refined mesh, If ``None`` no redistribution is performed,
+            i.e. previous local mesh is equally parallelized now with new vertices.s
 
     Returns:
        Refined mesh.
     """
-    if edges is None:
-        mesh1 = _cpp.refinement.refine(mesh._cpp_object, redistribute)
-    else:
-        mesh1 = _cpp.refinement.refine(mesh._cpp_object, edges, redistribute)
-    return Mesh(mesh1, mesh._ufl_domain)
-
-
-def refine_interval(
-    mesh: Mesh,
-    cells: typing.Optional[np.ndarray] = None,
-    redistribute: bool = True,
-    ghost_mode: GhostMode = GhostMode.shared_facet,
-) -> tuple[Mesh, npt.NDArray[np.int32]]:
-    """Refine a (topologically) one dimensional mesh.
-
-    Args:
-        mesh: Mesh to refine
-        cells: Indices of cells, i.e. edges, to split druing refinement. If ``None``, mesh
-            refinement is uniform.
-        redistribute: Refined mesh is re-partitioned if ``True``.
-        ghost_mode: ghost mode of the refined mesh
-
-    Returns:
-        Refined mesh and parent cells
-    """
-
-    if cells is None:
-        refined_mesh, parent_cells = _cpp.refinement.refine_interval(
-            mesh._cpp_object, redistribute, ghost_mode
-        )
-    else:
-        refined_mesh, parent_cells = _cpp.refinement.refine_interval(
-            mesh._cpp_object, cells, redistribute, ghost_mode
-        )
-
-    return Mesh(refined_mesh, mesh._ufl_domain), parent_cells
-
-
-def refine_plaza(
-    mesh: Mesh,
-    edges: typing.Optional[np.ndarray] = None,
-    redistribute: bool = True,
-    option: RefinementOption = RefinementOption.none,
-) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int32]]:
-    """Refine a mesh.
-
-    Args:
-        mesh: Mesh from which to create the refined mesh.
-        edges: Indices of edges to split during refinement. If ``None``,
-            mesh refinement is uniform.
-        redistribute:
-            Refined mesh is re-partitioned if ``True``.
-        option:
-            Control computation of the parent-refined mesh data.
-
-    Returns:
-       Refined mesh, list of parent cell for each refine cell, and list
-    """
-    if edges is None:
-        mesh1, cells, facets = _cpp.refinement.refine_plaza(mesh._cpp_object, redistribute, option)
-    else:
-        mesh1, cells, facets = _cpp.refinement.refine_plaza(
-            mesh._cpp_object, edges, redistribute, option
-        )
-    return Mesh(mesh1, mesh._ufl_domain), cells, facets
+    mesh1, parent_cell, parent_facet = _cpp.refinement.refine(
+        mesh._cpp_object, edges, partitioner, option
+    )
+    return Mesh(mesh1, mesh._ufl_domain), parent_cell, parent_facet
 
 
 def create_mesh(

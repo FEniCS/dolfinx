@@ -4,6 +4,7 @@ set(HEADERS_refinement
     ${CMAKE_CURRENT_SOURCE_DIR}/plaza.h
     ${CMAKE_CURRENT_SOURCE_DIR}/refine.h
     ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/option.h
     PARENT_SCOPE
 )
 
