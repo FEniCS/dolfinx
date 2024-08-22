@@ -19,20 +19,15 @@
 using namespace dolfinx;
 using namespace dolfinx::io;
 
-int main(int argc, char* argv[])
+// Create cell meshtags
+
+template <std::floating_point T>
+std::shared_ptr<mesh::MeshTags<std::int32_t>>
+create_meshtags(dolfinx::mesh::Mesh<T>& mesh)
 {
-  dolfinx::init_logging(argc, argv);
-  MPI_Init(&argc, &argv);
-
-  // Create mesh and function space
-  auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
-  auto mesh = std::make_shared<mesh::Mesh<float>>(mesh::create_rectangle<float>(
-      MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {4, 4},
-      mesh::CellType::quadrilateral, part));
-
   // Create cell meshtags
-  auto geometry = mesh->geometry();
-  auto topology = mesh->topology();
+  auto geometry = mesh.geometry();
+  auto topology = mesh.topology();
 
   int dim = geometry.dim();
   topology->create_entities(dim);
@@ -41,7 +36,7 @@ int main(int argc, char* argv[])
 
   std::int32_t num_entities = topo_imap->size_local();
 
-  auto cmap = mesh->geometry().cmap();
+  auto cmap = geometry.cmap();
   auto geom_layout = cmap.create_dof_layout();
   std::uint32_t num_dofs_per_entity = geom_layout.num_entity_closure_dofs(dim);
 
@@ -69,6 +64,22 @@ int main(int argc, char* argv[])
   auto meshtags = std::make_shared<mesh::MeshTags<std::int32_t>>(
       mesh::create_meshtags<std::int32_t>(topology, dim, entities_local,
                                           values));
+
+  return meshtags;
+}
+
+int main(int argc, char* argv[])
+{
+  dolfinx::init_logging(argc, argv);
+  MPI_Init(&argc, &argv);
+
+  // Create mesh and function space
+  auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
+  auto mesh = std::make_shared<mesh::Mesh<float>>(mesh::create_rectangle<float>(
+      MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {4, 4},
+      mesh::CellType::quadrilateral, part));
+
+  auto meshtags = create_meshtags<float>(*mesh);
 
   try
   {
@@ -105,7 +116,7 @@ int main(int argc, char* argv[])
 
     mesh::MeshTags<std::int32_t> mt
         = io::native::read_meshtags<float, std::int32_t>(
-            io_read, engine_read, MPI_COMM_WORLD, mesh_read, "mesh_tags");
+            io_read, engine_read, mesh_read, "mesh_tags");
 
     if (engine_read.BetweenStepPairs())
     {
