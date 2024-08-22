@@ -20,7 +20,9 @@ if _cpp.common.has_adios2:
         VTXMeshPolicy,
         VTXWriter,
         read_mesh,
+        read_meshtags,
         write_mesh,
+        write_meshtags,
     )
 
     __all__ = [
@@ -31,5 +33,7 @@ if _cpp.common.has_adios2:
         "VTXMeshPolicy",
         "ADIOS2",
         "write_mesh",
+        "write_meshtags",
         "read_mesh",
+        "read_meshtags",
     ]

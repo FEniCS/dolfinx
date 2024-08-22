@@ -52,7 +52,9 @@ if _cpp.common.has_adios2:
         "VTXMeshPolicy",
         "ADIOS2",
         "read_mesh",
+        "read_meshtags",
         "write_mesh",
+        "write_meshtags",
     ]
 
     class VTXWriter:
@@ -235,6 +237,37 @@ if _cpp.common.has_adios2:
         domain = ufl.Mesh(element)
 
         return Mesh(msh, domain)
+
+    def write_meshtags(ADIOS2: ADIOS2, mesh: Mesh, meshtags: MeshTags) -> None:
+        """
+        Write meshtags to a file using ADIOS2
+
+        Args:
+            ADIOS2: Wrapper to ADIOS2
+            mesh: The mesh
+            meshtags: The associated meshtags
+        """
+
+        return _cpp.io.write_meshtags(ADIOS2, mesh._cpp_object, meshtags._cpp_object)
+
+    def read_meshtags(ADIOS2: ADIOS2, mesh: Mesh) -> dict[str, MeshTags]:
+        """
+        Read all meshtags from a file using ADIOS2
+
+        Args:
+            ADIOS2: Wrapper to ADIOS2
+            mesh: The mesh
+        Returns:
+            meshtags: All meshtags stored in the file are returned as a dictionary
+            with (meshtags_name, meshtags) key-value pairs.
+        """
+
+        tags = _cpp.io.read_meshtags(ADIOS2, mesh._cpp_object)
+
+        for name, mt_cpp in tags.items():
+            tags[name] = MeshTags(mt_cpp)
+
+        return tags
 
 
 class VTKFile(_cpp.io.VTKFile):
