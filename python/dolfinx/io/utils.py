@@ -23,7 +23,13 @@ from dolfinx.cpp.io import perm_vtk as cell_perm_vtk
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh, MeshTags
 
-__all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
+__all__ = [
+    "VTKFile",
+    "XDMFFile",
+    "cell_perm_gmsh",
+    "cell_perm_vtk",
+    "distribute_entity_data",
+]
 
 
 def _extract_cpp_objects(functions: typing.Union[Mesh, Function, tuple[Function], list[Function]]):
@@ -38,7 +44,18 @@ def _extract_cpp_objects(functions: typing.Union[Mesh, Function, tuple[Function]
 if _cpp.common.has_adios2:
     from dolfinx.cpp.io import FidesMeshPolicy, VTXMeshPolicy  # F401
 
-    __all__ = [*__all__, "FidesWriter", "VTXWriter", "FidesMeshPolicy", "VTXMeshPolicy"]
+    __all__ = [
+        *__all__,
+        "FidesWriter",
+        "VTXWriter",
+        "FidesMeshPolicy",
+        "VTXMeshPolicy",
+        "ADIOS2",
+        "read_mesh",
+        "read_meshtags",
+        "write_mesh",
+        "write_meshtags",
+    ]
 
     class VTXWriter:
         """Writer for VTX files, using ADIOS2 to create the files.
@@ -185,6 +202,72 @@ if _cpp.common.has_adios2:
 
         def close(self):
             self._cpp_object.close()
+
+    class ADIOS2(_cpp.io.ADIOS2):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exception_type, exception_value, traceback):
+            self.close()
+
+    def write_mesh(ADIOS2: ADIOS2, mesh: Mesh) -> None:
+        """Write mesh to a file using ADIOS2"""
+        dtype = mesh.geometry.x.dtype  # type: ignore
+        if np.issubdtype(dtype, np.float32):
+            _writer = _cpp.io.write_mesh_float32
+        elif np.issubdtype(dtype, np.float64):
+            _writer = _cpp.io.write_mesh_float64
+
+        return _writer(ADIOS2, mesh._cpp_object)
+
+    def read_mesh(
+        ADIOS2: ADIOS2, comm: _MPI.Comm, ghost_mode: GhostMode = GhostMode.shared_facet
+    ) -> Mesh:
+        """Read mesh from a file using ADIOS2"""
+        msh = _cpp.io.read_mesh(ADIOS2, comm, ghost_mode)
+
+        element = basix.ufl.element(
+            basix.ElementFamily.P,
+            basix.CellType[msh.topology.cell_name()],
+            msh.geometry.cmap.degree,
+            basix.LagrangeVariant(int(msh.geometry.cmap.variant)),
+            shape=(msh.geometry.x.shape[1],),
+            dtype=msh.geometry.x.dtype,
+        )
+        domain = ufl.Mesh(element)
+
+        return Mesh(msh, domain)
+
+    def write_meshtags(ADIOS2: ADIOS2, mesh: Mesh, meshtags: MeshTags) -> None:
+        """
+        Write meshtags to a file using ADIOS2
+
+        Args:
+            ADIOS2: Wrapper to ADIOS2
+            mesh: The mesh
+            meshtags: The associated meshtags
+        """
+
+        return _cpp.io.write_meshtags(ADIOS2, mesh._cpp_object, meshtags._cpp_object)
+
+    def read_meshtags(ADIOS2: ADIOS2, mesh: Mesh) -> dict[str, MeshTags]:
+        """
+        Read all meshtags from a file using ADIOS2
+
+        Args:
+            ADIOS2: Wrapper to ADIOS2
+            mesh: The mesh
+        Returns:
+            meshtags: All meshtags stored in the file are returned as a dictionary
+            with (meshtags_name, meshtags) key-value pairs.
+        """
+
+        tags = _cpp.io.read_meshtags(ADIOS2, mesh._cpp_object)
+
+        for name, mt_cpp in tags.items():
+            tags[name] = MeshTags(mt_cpp)
+
+        return tags
 
 
 class VTKFile(_cpp.io.VTKFile):

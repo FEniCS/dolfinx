@@ -65,6 +65,7 @@ Interpolation, IO and visualisation
 
    demos/demo_pyvista.md
    demos/demo_interpolation-io.md
+   demos/demo_checkpointing.md
 
 
 Advanced iterative solvers
@@ -103,6 +104,7 @@ List of all demos
    demos/demo_static-condensation.md
    demos/demo_pyvista.md
    demos/demo_interpolation-io.md
+   demos/demo_checkpointing.md
    demos/demo_types.md
    demos/demo_lagrange_variants.md
    demos/demo_tnt-elements.md

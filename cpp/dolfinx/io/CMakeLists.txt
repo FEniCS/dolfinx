@@ -1,7 +1,9 @@
 set(HEADERS_io
     ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_io.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ADIOS2_utils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ADIOS2Writers.h
     ${CMAKE_CURRENT_SOURCE_DIR}/cells.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/checkpointing.h
     ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Interface.h
     ${CMAKE_CURRENT_SOURCE_DIR}/vtk_utils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/VTKFile.h
@@ -16,6 +18,7 @@ target_sources(
   dolfinx
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ADIOS2Writers.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/cells.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/checkpointing.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Interface.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/VTKFile.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/vtk_utils.cpp

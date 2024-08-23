@@ -30,10 +30,11 @@ from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot, uti
 from dolfinx.common import (
     TimingType,
     git_commit_hash,
+    has_adios2,
     has_debug,
     has_kahip,
-    has_petsc,
     has_parmetis,
+    has_petsc,
     list_timings,
     timing,
 )
@@ -70,9 +71,11 @@ __all__ = [
     "utils",
     "TimingType",
     "git_commit_hash",
+    "has_adios2",
     "has_debug",
     "has_kahip",
     "has_parmetis",
+    "has_petsc",
     "list_timings",
     "timing",
 ]

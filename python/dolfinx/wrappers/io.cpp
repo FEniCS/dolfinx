@@ -11,9 +11,11 @@
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/ADIOS2Writers.h>
+#include <dolfinx/io/ADIOS2_utils.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
+#include <dolfinx/io/checkpointing.h>
 #include <dolfinx/io/vtk_utils.h>
 #include <dolfinx/io/xdmf_utils.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -24,6 +26,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/complex.h>
 #include <nanobind/stl/filesystem.h>
+#include <nanobind/stl/map.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
@@ -232,10 +235,151 @@ void declare_data_types(nb::module_& m)
       nb::arg("values").noconvert());
 }
 
+#ifdef HAS_ADIOS2
+template <typename T>
+void declare_write_mesh(nb::module_& m, std::string type)
+{
+  // dolfinx::io::native::write_mesh
+  std::string pyfunction_write_mesh_name = std::string("write_mesh_") + type;
+  m.def(
+      pyfunction_write_mesh_name.c_str(),
+      [](dolfinx::io::ADIOS2Wrapper& ADIOS2, dolfinx::mesh::Mesh<T>& mesh)
+      {
+        auto io = ADIOS2.io();
+        auto engine = ADIOS2.engine();
+        return dolfinx::io::native::write_mesh<T>(*io, *engine, mesh);
+      },
+      nb::arg("adios2"), nb::arg("mesh"), "Write mesh to file using ADIOS2");
+}
+
+template <typename U, typename T>
+void declare_write_meshtags(nb::module_& m)
+{
+  // dolfinx::io::native::write_meshtags
+  m.def(
+      "write_meshtags",
+      [](dolfinx::io::ADIOS2Wrapper& ADIOS2, dolfinx::mesh::Mesh<U>& mesh,
+         dolfinx::mesh::MeshTags<T>& meshtags)
+      {
+        auto io = ADIOS2.io();
+        auto engine = ADIOS2.engine();
+        return dolfinx::io::native::write_meshtags<U, T>(*io, *engine, mesh,
+                                                         meshtags);
+      },
+      nb::arg("adios2"), nb::arg("mesh"), nb::arg("meshtags"),
+      "Write meshtags to file using ADIOS2");
+}
+
+template <typename U>
+void declare_read_meshtags(nb::module_& m)
+{
+  // dolfinx::io::native::read_meshtags
+  m.def(
+      "read_meshtags",
+      [](dolfinx::io::ADIOS2Wrapper& ADIOS2, dolfinx::mesh::Mesh<U>& mesh)
+      {
+        auto io = ADIOS2.io();
+        auto engine = ADIOS2.engine();
+
+        std::map<std::string, dolfinx::mesh::MeshTags<std::int32_t>> tags;
+
+        for (unsigned int step = 0;
+             engine->BeginStep() == adios2::StepStatus::OK; ++step)
+        {
+          adios2::Attribute<std::string> var_names
+              = io->InquireAttribute<std::string>("meshtags_names");
+          adios2::Attribute<std::string> var_dtypes
+              = io->InquireAttribute<std::string>("meshtags_dtypes");
+          std::vector<std::string> names = var_names.Data();
+          std::vector<std::string> dtypes = var_dtypes.Data();
+          std::string name = names.back();
+          std::string dtype = dtypes.back();
+
+          if (dtype == "int32_t")
+          {
+            dolfinx::mesh::MeshTags<std::int32_t> mt
+                = dolfinx::io::native::read_meshtags<U, std::int32_t>(
+                    *io, *engine, mesh, name);
+            engine->EndStep();
+            auto it = tags.end();
+            tags.insert(
+                it,
+                std::pair<std::string, dolfinx::mesh::MeshTags<std::int32_t>>(
+                    name, mt));
+          }
+          else
+          {
+            throw std::runtime_error(
+                "The datatype associated with the meshtags values "
+                "is not supported yet");
+          }
+        }
+        return tags;
+      },
+      nb::arg("adios2"), nb::arg("mesh"),
+      "Read all meshtags from file using ADIOS2");
+}
+
+#endif
+
 } // namespace
 
 void io(nb::module_& m)
 {
+#ifdef HAS_ADIOS2
+  // dolfinx::io::ADIOS2Wrapper
+  nb::class_<dolfinx::io::ADIOS2Wrapper> ADIOS2(m, "ADIOS2");
+
+  ADIOS2
+      .def(
+          "__init__",
+          [](dolfinx::io::ADIOS2Wrapper* v, MPICommWrapper comm,
+             const std::string filename, std::string tag,
+             std::string engine_type = "BP5", std::string mode = "write")
+          {
+            new (v) dolfinx::io::ADIOS2Wrapper(comm.get(), filename, tag,
+                                               engine_type, mode);
+          },
+          nb::arg("comm"), nb::arg("filename"), nb::arg("tag"),
+          nb::arg("engine_type"), nb::arg("mode"))
+      .def(
+          "__init__",
+          [](dolfinx::io::ADIOS2Wrapper* v, std::string config,
+             MPICommWrapper comm, const std::string filename, std::string tag,
+             std::string mode = "write")
+          {
+            new (v) dolfinx::io::ADIOS2Wrapper(config, comm.get(), filename,
+                                               tag, mode);
+          },
+          nb::arg("config"), nb::arg("comm"), nb::arg("filename"),
+          nb::arg("tag"), nb::arg("mode"))
+      .def("close", &dolfinx::io::ADIOS2Wrapper::close);
+
+  // dolfinx::io::impl_native::read_mesh_variant
+  m.def(
+      "read_mesh",
+      [](dolfinx::io::ADIOS2Wrapper& ADIOS2, MPICommWrapper comm,
+         dolfinx::mesh::GhostMode ghost_mode)
+      {
+        auto io = ADIOS2.io();
+        auto engine = ADIOS2.engine();
+        return dolfinx::io::impl_native::read_mesh_variant(
+            *io, *engine, comm.get(), ghost_mode);
+      },
+      nb::arg("adios2"), nb::arg("comm"), nb::arg("ghost_mode"),
+      "Read mesh from file using ADIOS2");
+
+  declare_write_mesh<float>(m, "float32");
+  declare_write_mesh<double>(m, "float64");
+
+  // TODO: Include MeshTags of other types
+  declare_write_meshtags<float, std::int32_t>(m);
+  declare_write_meshtags<double, std::int32_t>(m);
+  declare_read_meshtags<float>(m);
+  declare_read_meshtags<double>(m);
+
+#endif
+
   // dolfinx::io::cell vtk cell type converter
   m.def("get_vtk_cell_type", &dolfinx::io::cells::get_vtk_cell_type,
         nb::arg("cell"), nb::arg("dim"), "Get VTK cell identifier");
