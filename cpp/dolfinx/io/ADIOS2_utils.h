@@ -35,43 +35,17 @@ class ADIOS2Wrapper
 public:
   /// @brief Create an ADIOS2-based engine writer/reader
   /// @param[in] comm The MPI communicator
-  /// @param[in] filename Name of output file
-  ADIOS2Wrapper(MPI_Comm comm, std::string filename)
-      : _filename(filename), _adios(std::make_shared<adios2::ADIOS>(comm))
+  ADIOS2Wrapper(MPI_Comm comm)
   {
-  }
-
-  /// @brief Create an ADIOS2-based engine writer/reader
-  /// @param[in] comm The MPI communicator
-  /// @param[in] filename Name of output file
-  /// @param[in] tag The ADIOS2 IO name
-  /// @param[in] engine_type ADIOS2 engine type. See
-  /// https://adios2.readthedocs.io/en/latest/engines/engines.html.
-  /// @param[in] mode ADIOS2 mode, default is Write or Read
-  ADIOS2Wrapper(MPI_Comm comm, std::string filename, std::string tag,
-                std::string engine_type = "BP5", std::string mode = "write")
-      : _filename(filename), _adios(std::make_shared<adios2::ADIOS>(comm))
-  {
-    _ios.insert({tag, std::make_shared<adios2::IO>(_adios->DeclareIO(tag))});
-    _ios[tag]->SetEngine(engine_type);
-    _engines.insert(tag, std::make_shared<adios2::Engine>(
-                             _ios[tag]->Open(filename, string_to_mode[mode])));
+    _adios = std::make_shared<adios2::ADIOS>(comm);
   }
 
   /// @brief Create an ADIOS2-based engine writer/reader
   /// @param[in] config_file Path to config file to set up ADIOS2 engines from
   /// @param[in] comm The MPI communicator
-  /// @param[in] filename Name of output file
-  /// @param[in] tag The ADIOS2 IO name
-  /// @param[in] mode ADIOS2 mode, default is Write or Read
-  ADIOS2Wrapper(std::string config_file, MPI_Comm comm, std::string filename,
-                std::string tag, std::string mode = "append")
-      : _filename(filename)
+  ADIOS2Wrapper(std::string config_file, MPI_Comm comm)
   {
     _adios = std::make_shared<adios2::ADIOS>(config_file, comm);
-    _io = std::make_shared<adios2::IO>(_adios->DeclareIO(tag));
-    _engine = std::make_shared<adios2::Engine>(
-        _io->Open(filename, string_to_mode[mode]));
   }
 
   /// @brief Move constructor
@@ -90,13 +64,14 @@ public:
   ADIOS2Wrapper& operator=(const ADIOS2Wrapper&) = delete;
 
   /// @brief  Add IO and an Engine with specified type and mode
+  /// @param[in] filename Name of input/output file
   /// @param[in] tag The ADIOS2 IO name
   /// @param[in] engine_type ADIOS2 engine type. See
   /// https://adios2.readthedocs.io/en/latest/engines/engines.html.
   /// @param[in] mode ADIOS2 mode, available are: "write", "read", "append",
   /// "readrandomaccess", and the default is "append"
-  void add_io(std::string tag, std::string engine_type = "BP5",
-              std::string mode = "append")
+  void add_io(const std::string filename, std::string tag,
+              std::string engine_type = "BP5", std::string mode = "append")
   {
     std::map<std::string, std::shared_ptr<adios2::IO>>::iterator it_io
         = _ios.end();
@@ -105,13 +80,16 @@ public:
                     tag, std::make_shared<adios2::IO>(_adios->DeclareIO(tag))));
 
     assert(_ios[tag]);
-    _ios[tag]->SetEngine(engine_type);
+    if (!_ios[tag]->InConfigFile())
+    {
+      _ios[tag]->SetEngine(engine_type);
+    }
     std::map<std::string, std::shared_ptr<adios2::Engine>>::iterator it_engine
         = _engines.end();
     _engines.insert(it_engine,
                     std::pair<std::string, std::shared_ptr<adios2::Engine>>(
                         tag, std::make_shared<adios2::Engine>(_ios[tag]->Open(
-                                 _filename, string_to_mode[mode]))));
+                                 filename, string_to_mode[mode]))));
   }
 
   /// @brief  Close engine associated with the IO with the given tag
@@ -148,10 +126,9 @@ public:
   }
 
 private:
-  std::string _filename;
   std::shared_ptr<adios2::ADIOS> _adios;
   std::map<std::string, std::shared_ptr<adios2::IO>> _ios;
-  std::map<std::string, std::shared_ptr<adios2::Engin>> _engines;
+  std::map<std::string, std::shared_ptr<adios2::Engine>> _engines;
 };
 
 } // namespace dolfinx::io

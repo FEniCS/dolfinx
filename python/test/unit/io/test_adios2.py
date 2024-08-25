@@ -56,25 +56,19 @@ def test_mesh_read_write(encoder, suffix, ghost_mode, dtype, dim, simplex, tmp_p
 
     mesh = generate_mesh(dim, simplex, N, dtype)
 
-    adios = ADIOS2(
-        mesh.comm,
-        filename=str(file.with_suffix(suffix)),
-        tag="mesh-write",
-        engine_type=encoder,
-        mode="write",
+    adios = ADIOS2(mesh.comm)
+    tag = "mesh-write"
+    adios.add_io(filename=str(file.with_suffix(suffix)), tag=tag, engine_type=encoder, mode="write")
+
+    write_mesh(adios, tag, mesh)
+
+    adios_read = ADIOS2(MPI.COMM_WORLD)
+    tag = "mesh-read"
+    adios_read.add_io(
+        filename=str(file.with_suffix(suffix)), tag=tag, engine_type=encoder, mode="read"
     )
 
-    write_mesh(adios, mesh)
-
-    adios_read = ADIOS2(
-        MPI.COMM_WORLD,
-        filename=str(file.with_suffix(suffix)),
-        tag="mesh-read",
-        engine_type=encoder,
-        mode="read",
-    )
-
-    mesh_adios = read_mesh(adios_read, MPI.COMM_WORLD, ghost_mode=ghost_mode)
+    mesh_adios = read_mesh(adios_read, tag, MPI.COMM_WORLD, ghost_mode=ghost_mode)
 
     mesh_adios.comm.Barrier()
     mesh.comm.Barrier()

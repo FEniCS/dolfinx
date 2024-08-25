@@ -202,27 +202,62 @@ if _cpp.common.has_adios2:
             self._cpp_object.close()
 
     class ADIOS2(_cpp.io.ADIOS2):
+        """Wrapper around ADIOS2.
+        Supports creation of arbitrary number of IOs
+        """
+
         def __enter__(self):
             return self
 
         def __exit__(self, exception_type, exception_value, traceback):
             self.close()
 
-    def write_mesh(ADIOS2: ADIOS2, mesh: Mesh) -> None:
-        """Write mesh to a file using ADIOS2"""
+        def add_io(self, filename: str, tag: str, engine_type: str = "BP5", mode: str = "append"):
+            """Add IO and Engine
+
+            Args:
+                filename: filename to associate Engine with
+                tag: Name of the IO to use
+                engine_type: ADIOS2 Engine type, default is "BP5"
+                mode: ADIOS2 mode, default is "append"
+            """
+            super().add_io(filename, tag, engine_type, mode)
+
+        def close(self, tag: str):
+            """Close IO and Engine associated with the given tag"""
+            super().close(tag)
+
+    def write_mesh(ADIOS2: ADIOS2, tag: str, mesh: Mesh) -> None:
+        """Write mesh to a file using ADIOS2
+
+        Args:
+            ADIOS2: Wrapper around ADIOS2.
+            tag: Name of the IO to use.
+            mesh: Mesh to write to the file.
+        """
+
         dtype = mesh.geometry.x.dtype  # type: ignore
         if np.issubdtype(dtype, np.float32):
             _writer = _cpp.io.write_mesh_float32
         elif np.issubdtype(dtype, np.float64):
             _writer = _cpp.io.write_mesh_float64
 
-        return _writer(ADIOS2, mesh._cpp_object)
+        return _writer(ADIOS2, tag, mesh._cpp_object)
 
     def read_mesh(
-        ADIOS2: ADIOS2, comm: _MPI.Comm, ghost_mode: GhostMode = GhostMode.shared_facet
+        ADIOS2: ADIOS2, tag: str, comm: _MPI.Comm, ghost_mode: GhostMode = GhostMode.shared_facet
     ) -> Mesh:
-        """Read mesh from a file using ADIOS2"""
-        msh = _cpp.io.read_mesh(ADIOS2, comm, ghost_mode)
+        """Read mesh from a file using ADIOS2
+
+        Args:
+            ADIOS2: Wrapper around ADIOS2
+            tag: Name of the IO to use
+            comm: The MPI communicator
+            ghost_mode: GhostMode to use on mesh partitioning
+        Returns:
+            Mesh
+        """
+        msh = _cpp.io.read_mesh(ADIOS2, tag, comm, ghost_mode)
 
         element = basix.ufl.element(
             basix.ElementFamily.P,

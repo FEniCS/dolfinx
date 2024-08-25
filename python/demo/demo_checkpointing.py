@@ -47,20 +47,34 @@ msh = mesh.create_rectangle(
 
 # +
 config_path = os.getcwd() + "/checkpointing.yml"
-adios2 = io.ADIOS2(config_path, msh.comm, filename="mesh.bp", tag="mesh-write", mode="write")
+adios2 = io.ADIOS2(config_path, msh.comm)
+tag = "mesh-write"
+adios2.add_io(filename="mesh.bp", tag=tag, mode="write")
 # -
 
 # +
-io.write_mesh(adios2, msh)
-adios2.close()
+io.write_mesh(adios2, tag, msh)
+adios2.close(tag)
+# -
+
+# # +
+# adios2_read = io.ADIOS2(msh.comm)
+# tag = "mesh-read"
+# adios2_read.add_io(filename="mesh.bp", tag=tag, engine_type="BP5", mode="read")
+# # -
+
+# # +
+# msh_read = io.read_mesh(adios2_read, tag, msh.comm)
+# adios2_read.close(tag)
+# # -
+
+# +
+# adios2_read = io.ADIOS2(msh.comm)
+tag = "mesh-read"
+adios2.add_io(filename="mesh.bp", tag=tag, engine_type="BP5", mode="read")
 # -
 
 # +
-adios2_read = io.ADIOS2(
-    msh.comm, filename="mesh.bp", tag="mesh-read", engine_type="BP5", mode="read"
-)
-# -
-
-# +
-msh_read = io.read_mesh(adios2_read, msh.comm)
+msh_read = io.read_mesh(adios2, tag, msh.comm)
+adios2.close(tag)
 # -
