@@ -81,7 +81,7 @@ namespace dolfinx::io::native
 /// @param[in] mesh Mesh of type float or double to write to the file
 template <std::floating_point T>
 void write_mesh(adios2::IO& io, adios2::Engine& engine,
-                const dolfinx::mesh::Mesh<T>& mesh);
+                const dolfinx::mesh::Mesh<T>& mesh, double time = 0);
 
 /// @brief Read mesh from a file.
 ///

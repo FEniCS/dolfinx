@@ -40,6 +40,7 @@ int main(int argc, char* argv[])
     adios2::Engine engine = io.Open("mesh.bp", adios2::Mode::Append);
 
     io::native::write_mesh(io, engine, *mesh);
+    io::native::write_mesh(io, engine, *mesh, 0.5);
 
     engine.Close();
   }
