@@ -13,6 +13,8 @@
 #include <adios2.h>
 #include <basix/finite-element.h>
 #include <basix/mdspan.hpp>
+#include <dolfinx/fem/DofMap.h>
+#include <dolfinx/fem/Function.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
@@ -137,6 +139,130 @@ dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
                                  MPI_Comm comm = MPI_COMM_WORLD,
                                  dolfinx::mesh::GhostMode ghost_mode
                                  = dolfinx::mesh::GhostMode::shared_facet);
+
+/// @brief Write function to a file.
+///
+/// @param[in] io ADIOS2 IO
+/// @param[in] engine ADIOS2 Engine
+/// @param[in] function Function to write to the file
+/// @param[in] mesh Mesh of type float or double associated with the function
+/// space. Note: functionspace gives const version, we need non-const version
+/// mesh.
+/// @param[in] time Time point
+template <dolfinx::scalar T,
+          std::floating_point U = dolfinx::scalar_value_type_t<T>>
+void write_function(adios2::IO& io, adios2::Engine& engine,
+                    const dolfinx::fem::Function<T, U>& function,
+                    dolfinx::mesh::Mesh<U>& mesh, double time = 0)
+{
+  // std::shared_ptr<const mesh::Mesh<geometry_type>>
+  //   auto mesh = function.function_space()->mesh();
+  const mesh::Geometry<T>& geometry = mesh.geometry();
+  std::shared_ptr<mesh::Topology> topology = mesh.topology();
+  assert(topology);
+
+  topology->create_entity_permutations();
+  const std::vector<std::uint32_t>& cell_perm
+      = topology->get_cell_permutation_info();
+  const std::span<const uint32_t> cell_perm_span(cell_perm.begin(),
+                                                 cell_perm.end());
+
+  std::uint64_t num_cells_global, cell_offset;
+  std::uint32_t num_cells_local, num_dofs_per_cell;
+
+  // Cells information
+  {
+    std::int32_t tdim = topology->dim();
+    const std::shared_ptr<const common::IndexMap> topo_imap
+        = topology->index_map(tdim);
+    assert(topo_imap);
+
+    num_cells_global = topo_imap->size_global();
+    num_cells_local = topo_imap->size_local();
+    cell_offset = topo_imap->local_range()[0];
+
+    num_dofs_per_cell = geometry.dofmap().extent(1);
+  }
+
+  // function data
+  std::string name = function.name;
+  std::shared_ptr<const dolfinx::fem::DofMap> dofmap
+      = function.function_space()->dofmap();
+  std::span<const T> values = function.x()->array();
+
+  // Convert local dofmap into global_dofmap
+  mdspan_t<const std::int32_t, 2> dmap = dofmap->map();
+  std::size_t num_dofs_per_cell_v = dmap.extent(1);
+  std::uint32_t dofmap_bs = dofmap->bs();
+  std::size_t num_dofs_local_dmap
+      = num_cells_local * num_dofs_per_cell_v * dofmap_bs;
+  std::uint32_t index_map_bs = dofmap->index_map_bs();
+
+  std::vector<std::int32_t> dofs;
+  dofs.reserve(num_dofs_local_dmap);
+
+  std::vector<std::int32_t> rems;
+  rems.reserve(num_dofs_local_dmap);
+  int temp;
+
+  for (std::size_t i = 0; i < num_cells_local; ++i)
+    for (std::size_t j = 0; j < num_dofs_per_cell_v; ++j)
+      for (std::size_t k = 0; k < dofmap_bs; ++k)
+      {
+        temp = dmap(i, j) * dofmap_bs + k;
+        dofs.push_back(std::floor(temp / index_map_bs));
+        rems.push_back(temp % index_map_bs);
+      }
+
+  std::vector<std::int64_t> dofs_global(num_dofs_local_dmap);
+  dofmap->index_map->local_to_global(dofs, dofs_global);
+  for (std::size_t i = 0; i < num_dofs_local_dmap; ++i)
+  {
+    dofs_global[i] = dofs_global[i] * index_map_bs + rems[i];
+  }
+
+  // Compute dofmap offsets
+  auto dofmap_imap
+      = dolfinx::common::IndexMap(mesh.comm(), num_dofs_local_dmap);
+  std::uint32_t dofmap_offset = dofmap_imap.local_range()[0];
+  std::vector<std::int64_t> local_dofmap_offsets(num_cells_local + 1);
+  for (std::size_t i = 0; i < num_cells_local + 1; ++i)
+    local_dofmap_offsets[i] = i * num_dofs_per_cell * dofmap_bs + dofmap_offset;
+
+  std::uint64_t num_dofs_global
+      = dofmap->index_map->size_global() * index_map_bs;
+  std::uint32_t num_dofs_local = (dofmap->index_map->local_range()[1]
+                                  - dofmap->index_map->local_range()[0])
+                                 * index_map_bs;
+  std::uint32_t dof_offset = dofmap->index_map->local_range()[0] * index_map_bs;
+  std::uint64_t num_dofs_global_dmap = dofmap_imap.size_global();
+
+  adios2::Variable<std::uint32_t> var_cell_permutations
+      = io.DefineVariable<std::uint32_t>(
+          "cell_permutations", {num_cells_global}, {cell_offset},
+          {num_cells_local}, adios2::ConstantDims);
+
+  adios2::Variable<std::int64_t> var_dofmap = io.DefineVariable<std::int64_t>(
+      name + "_dofmap", {num_dofs_global_dmap}, {dofmap_offset},
+      {num_dofs_local_dmap}, adios2::ConstantDims);
+
+  adios2::Variable<std::int64_t> var_xdofmap = io.DefineVariable<std::int64_t>(
+      name + "_xdofmap", {num_cells_global + 1}, {cell_offset},
+      {num_cells_local + 1}, adios2::ConstantDims);
+
+  adios2::Variable<T> var_values
+      = io.DefineVariable<T>(name + "_values", {num_dofs_global}, {dof_offset},
+                             {num_dofs_local}, adios2::ConstantDims);
+
+  assert(!engine.BetweenStepPairs());
+  engine.BeginStep();
+  engine.Put(var_cell_permutations,
+             cell_perm_span.subspan(0, num_cells_local + 1).data());
+  engine.Put(var_dofmap, dofs_global.data());
+  engine.Put(var_xdofmap, local_dofmap_offsets.data());
+  engine.Put(var_values, values.data());
+  engine.EndStep();
+}
 
 /// @brief Write meshtags to a file.
 ///
