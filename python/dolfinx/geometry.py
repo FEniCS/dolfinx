@@ -270,3 +270,46 @@ def compute_distance_gjk(
 
     """
     return _cpp.geometry.compute_distance_gjk(p, q)
+
+
+def determine_point_ownership(
+    mesh: Mesh,
+    points: npt.NDArray[np.floating],
+    cells: typing.Optional[npt.NDArray[np.int32]] = None,
+    padding: float = 0.0,
+) -> PointOwnershipData:
+    """Build point ownership data for a mesh-points pair.
+
+    First, potential collisions are found by computing intersections
+    between the bounding boxes of the cells and the set of points.
+    Then, actual containment pairs are determined using the GJK algorithm.
+
+    Args:
+        mesh: The mesh
+        points: Points to check for collision (``shape=(num_points, gdim)``)
+        cells: Cells to check for ownership
+            If ``None`` then all cells are considered.
+        padding: Amount of absolute padding of bounding boxes of the mesh.
+        Each bounding box of the mesh is padded with this amount, to increase
+        the number of candidates, avoiding rounding errors in determining the owner
+        of a point if the point is on the surface of a cell in the mesh.
+
+    Returns:
+        Point ownership data
+
+    Note:
+        `dest_owner` is sorted
+
+        `src_owner` is -1 if no colliding process is found
+
+        A large padding value will increase the run-time of the code by orders
+        of magnitude. General advice is to use a padding on the scale of the
+        cell size.
+
+    """
+    if cells is None:
+        map = mesh.topology.index_map(mesh.topology.dim)
+        cells = np.arange(map.size_local, dtype=np.int32)
+    return PointOwnershipData(
+        _cpp.geometry.determine_point_ownership(mesh._cpp_object, points, cells, padding)
+    )

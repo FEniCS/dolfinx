@@ -1070,7 +1070,12 @@ geometry::PointOwnershipData<T> create_interpolation_data(
       x[3 * i + j] = coords[i + j * num_points];
 
   // Determine ownership of each point
-  return geometry::determine_point_ownership<T>(mesh1, x, padding);
+  const int tdim = mesh1.topology()->dim();
+  auto cell_map1 = mesh1.topology()->index_map(tdim);
+  const std::int32_t num_cells1 = cell_map1->size_local();
+  std::vector<std::int32_t> cells1(num_cells1, 0);
+  std::iota(cells1.begin(), cells1.end(), 0);
+  return geometry::determine_point_ownership<T>(mesh1, x, cells1, padding);
 }
 
 /// @brief Interpolate a finite element Function defined on a mesh to a

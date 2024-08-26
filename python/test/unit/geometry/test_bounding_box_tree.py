@@ -12,6 +12,7 @@ import pytest
 
 from dolfinx import cpp as _cpp
 from dolfinx.geometry import (
+    PointOwnershipData,
     bb_tree,
     compute_closest_entity,
     compute_colliding_cells,
@@ -19,6 +20,7 @@ from dolfinx.geometry import (
     compute_collisions_trees,
     compute_distance_gjk,
     create_midpoint_tree,
+    determine_point_ownership,
 )
 from dolfinx.mesh import (
     CellType,
@@ -496,3 +498,159 @@ def test_surface_bbtree_collision(dtype):
 
     collisions = compute_collisions_trees(bbtree1, bbtree2)
     assert len(collisions) == 1
+
+
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_determine_point_ownership(dim, dtype):
+    """Find point owners (ranks and cells) using bounding box trees + global communication
+    and compare to point ownership data results."""
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+
+    tdim = dim
+    num_cells_side = 4
+    h = dtype(1.0 / num_cells_side)
+    if tdim == 2:
+        mesh = create_unit_square(
+            MPI.COMM_WORLD, num_cells_side, num_cells_side, CellType.quadrilateral, dtype=dtype
+        )
+    else:
+        mesh = create_unit_cube(
+            MPI.COMM_WORLD,
+            num_cells_side,
+            num_cells_side,
+            num_cells_side,
+            CellType.hexahedron,
+            dtype=dtype,
+        )
+    cell_map = mesh.topology.index_map(tdim)
+
+    tree = bb_tree(mesh, mesh.topology.dim, np.arange(cell_map.size_local))
+    num_global_cells = num_cells_side**dim
+    all_midpoints = np.zeros((num_global_cells, 3), dtype=dtype)
+    counter = 0
+    Xs = [(i + 0.5) * h for i in range(num_cells_side)]
+    Ys = Xs
+    Zs = [0.0] if dim == 2 else Xs
+    for x in Xs:
+        for y in Ys:
+            for z in Zs:
+                all_midpoints[counter, :] = np.array([x, y, z], dtype=dtype)
+                counter += 1
+    # Since ghost cells are left out and the points considered are midpoints
+    # of cells, they are only contained in a single process / cell
+    # Moreover, the bounding boxes of the elements correspond to the elements,
+    # hence the tree collisions are the exact collisions
+    tree_col = compute_collisions_points(tree, all_midpoints)
+    processwise_owners = np.zeros(2 * num_global_cells, dtype=np.int32)
+    owners = np.empty_like(processwise_owners)
+    for ipoint in range(num_global_cells):
+        cell = tree_col.links(ipoint)
+        if len(cell) > 0:
+            processwise_owners[2 * ipoint] = rank
+            processwise_owners[2 * ipoint + 1] = cell[0]
+
+    # The value at a given index is null if it doesn't correspond
+    # to the current process.
+    # We can sum the processwise arrays to obtain a global array
+    comm.Allreduce(processwise_owners, owners, op=MPI.SUM)
+    owner_ranks = owners[[2 * i for i in range(num_global_cells)]]
+    owner_cells = owners[[2 * i + 1 for i in range(num_global_cells)]]
+
+    # Reorganize ownership data (point, index, rank, cell) into dictionary
+    ownership_data = {}
+    for ipoint in range(num_global_cells):
+        ownership_data[tuple(all_midpoints[ipoint])] = (
+            ipoint,
+            owner_ranks[ipoint],
+            owner_cells[ipoint],
+        )
+
+    def check_po(po: PointOwnershipData, src_points, ownership_data, global_dest_owners):
+        """
+        Check point ownership data
+
+        po: PointOwnershipData object to check
+        src_points: Points sent by process
+        ownership_data: {point:(global_index,rank,cell}
+        global_dest_owners: Rank who sent each point
+        """
+        # Check src_owner: Check owner ranks of sent points
+        src_owner = po.src_owner()
+        for ipoint in range(src_points.shape[0]):
+            assert ownership_data[tuple(src_points[ipoint])][1] == src_owner[ipoint]
+
+        dest_points = po.dest_points()
+        dest_owners = po.dest_owner()
+        dest_cells = po.dest_cells()
+
+        # Check dest_points: All points that should have been found have been found
+        dest_points_indices = list(range(dest_points.shape[0]))
+        for point, data in ownership_data.items():
+            (iglobal, processor, _) = data
+            if processor == rank:
+                found = False
+                point = np.array(point, dtype)
+                for jpoint in dest_points_indices:
+                    found = np.allclose(point, dest_points[jpoint])
+                    if found:
+                        break
+                assert found
+                dest_points_indices.remove(jpoint)
+
+        # Check dest_owners and dest_cells
+        # dest_owners: Ranks that asked about the points we own
+        # dest_cells: Local index of cell that contains the points we own
+        for ipoint in range(dest_points.shape[0]):
+            iglobal = ownership_data[tuple(dest_points[ipoint])][0]
+            c = ownership_data[tuple(dest_points[ipoint])][2]
+            assert dest_owners[ipoint] == global_dest_owners[iglobal]
+            assert dest_cells[ipoint] == c
+
+    def set_local_range(array):
+        N = array.shape[0]
+        n = N // comm.size
+        r = N % comm.size
+        # First r processes has one extra value
+        if rank < r:
+            (start, stop) = [rank * (n + 1), (rank + 1) * (n + 1)]
+        else:
+            (start, stop) = [rank * n + r, (rank + 1) * n + r]
+        return array[start:stop], start, stop
+
+    def compute_global_owners(N, start, stop):
+        """Compute array of ranks who own each point"""
+        mask_points_owned = np.zeros(N, np.int32)
+        global_owners = np.empty_like(mask_points_owned)
+        mask_points_owned[start:stop] = rank
+        comm.Allreduce(mask_points_owned, global_owners, op=MPI.SUM)
+        return global_owners
+
+    # All cells
+    points, start, stop = set_local_range(all_midpoints)
+    owners = compute_global_owners(np.int64(all_midpoints.shape[0]), start, stop)
+    all_cells = np.arange(cell_map.size_local, dtype=np.int32)
+    po = determine_point_ownership(mesh, points, all_cells)
+
+    check_po(po, points, ownership_data, owners)
+
+    # Left half
+    num_left_cells = np.rint((num_cells_side**dim) / 2).astype(np.int32)
+    left_midpoints = all_midpoints[np.arange(num_left_cells), :]
+    points, start, stop = set_local_range(left_midpoints)
+    owners = compute_global_owners(np.int64(all_midpoints.shape[0]), start, stop)
+    left_cells = locate_entities(mesh, tdim, lambda x: x[0] <= 0.5)
+    left_cells = np.array(
+        [cell for cell in left_cells if cell < cell_map.size_local], dtype=np.int32
+    )  # Filter out ghost cells
+    lpo = determine_point_ownership(mesh, points, left_cells)
+
+    left_ownership_data = {}
+    for ipoint in range(num_left_cells):
+        left_ownership_data[tuple(all_midpoints[ipoint])] = (
+            ipoint,
+            owner_ranks[ipoint],
+            owner_cells[ipoint],
+        )
+    check_po(lpo, points, left_ownership_data, owners)
