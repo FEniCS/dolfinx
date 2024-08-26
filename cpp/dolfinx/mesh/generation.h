@@ -200,15 +200,16 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
 /// @param[in] comm MPI communicator to build the mesh on.
 /// @param[in] n Number of cells.
 /// @param[in] p End points of the interval.
+/// @param[in] ghost_mode ghost mode of the created mesh, defaults to none
 /// @param[in] partitioner Partitioning function for distributing cells
 /// across MPI ranks.
 /// @return A mesh.
 template <std::floating_point T = double>
-Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<double, 2> p,
+Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<double, 2> p, mesh::GhostMode ghost_mode = mesh::GhostMode::none,
                         CellPartitionFunction partitioner = nullptr)
 {
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
-    partitioner = create_cell_partitioner();
+    partitioner = create_cell_partitioner(ghost_mode);
 
   fem::CoordinateElement<T> element(CellType::interval, 1);
   std::vector<T> x;

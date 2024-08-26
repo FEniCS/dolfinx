@@ -241,7 +241,7 @@ std::vector<int> adaptive_repartition(MPI_Comm comm,
   std::vector<real_t> ubvec(ncon, 1.05);
 
   // Call ParMETIS to repartition graph
-  int err = ParMETIS_V3_AdaptiveRepart(
+  [[maybe_unused]] int err = ParMETIS_V3_AdaptiveRepart(
       adj_graph.node_distribution().data(), adj_graph.nodes().data(),
       adj_graph.edges().data(), elmwgt, nullptr, vsize.data(), &wgtflag,
       &numflag, &ncon, &nparts, tpwgts.data(), ubvec.data(), &_itr, options,
@@ -291,7 +291,7 @@ std::vector<int> refine(MPI_Comm comm, const graph::AdjacencyList<T>& adj_graph)
 
   // Call ParMETIS to partition graph
   common::Timer timer1("ParMETIS: call ParMETIS_V3_RefineKway");
-  int err = ParMETIS_V3_RefineKway(
+  [[maybe_unused]] int err = ParMETIS_V3_RefineKway(
       adj_graph.node_distribution().data(), adj_graph.nodes().data(),
       adj_graph.edges().data(), elmwgt, nullptr, &wgtflag, &numflag, &ncon,
       &nparts, tpwgts.data(), ubvec.data(), options, &edgecut, part.data(),

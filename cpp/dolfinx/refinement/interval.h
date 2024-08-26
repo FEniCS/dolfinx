@@ -122,7 +122,6 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
 
   // Build the topology on the new vertices
   const auto refined_cell_count = mesh.topology()->index_map(1)->size_local()
-                                  + mesh.topology()->index_map(1)->num_ghosts()
                                   + number_of_refined_cells;
 
   std::vector<std::int64_t> cell_topology;

@@ -246,7 +246,7 @@ void declare_mesh(nb::module_& m, std::string type)
          const PythonCellPartitionFunction& part)
       {
         return dolfinx::mesh::create_interval<T>(
-            comm.get(), n, p, create_cell_partitioner_cpp(part));
+            comm.get(), n, p, ghost_mode, create_cell_partitioner_cpp(part));
       },
       nb::arg("comm"), nb::arg("n"), nb::arg("p"), nb::arg("ghost_mode"),
       nb::arg("partitioner").none());

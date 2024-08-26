@@ -617,7 +617,7 @@ compute_entities_by_key_matching(
   for (std::size_t k = 0; k < cell_lists.size(); ++k)
   {
     auto cells = std::get<1>(cell_lists[k]);
-    const std::size_t num_cells = cells->num_nodes();
+    [[maybe_unused]] const std::size_t num_cells = cells->num_nodes();
     auto cell_map = std::get<2>(cell_lists[k]);
     int num_entities_per_cell = cell_type_entities[k].size();
     assert(cell_map->size_local() + cell_map->num_ghosts() == (int)num_cells);
