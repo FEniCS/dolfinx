@@ -90,7 +90,7 @@ class Expression:
     def __init__(
         self,
         e: ufl.core.expr.Expr,
-        X: np.ndarray,
+        X: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
         comm: typing.Optional[_MPI.Comm] = None,
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
@@ -196,7 +196,7 @@ class Expression:
     def eval(
         self,
         mesh: Mesh,
-        entities: np.ndarray,
+        entities: npt.NDArray[np.int32],
         values: typing.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Evaluate Expression on entities.
@@ -412,8 +412,8 @@ class Function(ufl.Coefficient):
     def interpolate(
         self,
         u0: typing.Union[typing.Callable, Expression, Function],
-        cells0: typing.Optional[np.ndarray] = None,
-        cells1: typing.Optional[np.ndarray] = None,
+        cells0: typing.Optional[npt.NDArray[np.int32]] = None,
+        cells1: typing.Optional[npt.NDArray[np.int32]] = None,
     ) -> None:
         """Interpolate an expression.
 
@@ -582,7 +582,7 @@ def _create_dolfinx_element(
     comm: _MPI.Intracomm,
     cell_type: _cpp.mesh.CellType,
     ufl_e: ufl.FiniteElementBase,
-    dtype: np.dtype,
+    dtype: npt.DTypeLike,
 ) -> typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64]:
     """Create a DOLFINx element from a basix.ufl element."""
     if np.issubdtype(dtype, np.float32):

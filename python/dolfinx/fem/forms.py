@@ -102,7 +102,7 @@ class Form:
 
 def get_integration_domains(
     integral_type: IntegralType,
-    subdomain: typing.Optional[typing.Union[MeshTags, list[tuple[int, np.ndarray]]]],
+    subdomain: typing.Optional[typing.Union[MeshTags, list[tuple[int, npt.NDArray[np.int32]]]]],
     subdomain_ids: list[int],
 ) -> list[tuple[int, np.ndarray]]:
     """Get integration domains from subdomain data.
@@ -190,7 +190,7 @@ def form(
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
-    entity_maps: dict[Mesh, np.typing.NDArray[np.int32]] = {},
+    entity_maps: dict[Mesh, npt.NDArray[np.int32]] = {},
 ):
     """Create a Form or an array of Forms.
 

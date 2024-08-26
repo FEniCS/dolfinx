@@ -17,6 +17,7 @@ if typing.TYPE_CHECKING:
     from dolfinx.fem.function import Constant, Function
 
 import numpy as np
+import numpy.typing as npt
 
 import dolfinx
 from dolfinx import cpp as _cpp
@@ -57,7 +58,7 @@ def locate_dofs_geometrical(
 def locate_dofs_topological(
     V: typing.Union[dolfinx.fem.FunctionSpace, typing.Iterable[dolfinx.fem.FunctionSpace]],
     entity_dim: int,
-    entities: numpy.typing.NDArray[np.int32],
+    entities: npt.NDArray[np.int32],
     remote: bool = True,
 ) -> np.ndarray:
     """Locate degrees-of-freedom belonging to mesh entities topologically.
@@ -135,7 +136,7 @@ class DirichletBC:
 
 def dirichletbc(
     value: typing.Union[Function, Constant, np.ndarray],
-    dofs: numpy.typing.NDArray[np.int32],
+    dofs: npt.NDArray[np.int32],
     V: typing.Optional[dolfinx.fem.FunctionSpace] = None,
 ) -> DirichletBC:
     """Create a representation of Dirichlet boundary condition which
