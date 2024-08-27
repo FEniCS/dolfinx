@@ -74,12 +74,7 @@ public:
   ///
   /// This routine inserts non-zero locations at the outer product of rows and
   /// cols into the sparsity pattern, i.e. adds the matrix entries at
-  ///   A[row[i], col[j]] for all i, j
-  /// Enabling easy setting of dense sub-blocks, for example
-  ///   sp.insert({0, 1, 2}, {1, 2, 3})
-  /// creates a 3x3 block in the sparsity pattern with top left corner at (0,
-  /// 1).
-  ///
+  ///   A[row[i], col[j]] for all i, j.
   void insert(std::span<const std::int32_t> rows,
               std::span<const std::int32_t> cols);
 
