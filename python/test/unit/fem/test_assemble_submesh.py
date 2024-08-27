@@ -523,13 +523,13 @@ def test_disjoint_submeshes():
     J_local = fem.assemble_scalar(J_compiled)
     J_sum = mesh.comm.allreduce(J_local, op=MPI.SUM)
 
-    vertex_map = mesh.topology.index_map(mesh.topology.dim-1)
-    num_vertices_local = vertex_map.size_local 
+    vertex_map = mesh.topology.index_map(mesh.topology.dim - 1)
+    num_vertices_local = vertex_map.size_local
     # Compute value of expression at left interface
     if len(facets := facet_tag.find(left_interface_tag)) > 0:
         assert len(facets) == 1
         left_vertex = entities_to_geometry(mesh, mesh.topology.dim - 1, facets)
-        if left_vertex[0,0] < num_vertices_local:
+        if left_vertex[0, 0] < num_vertices_local:
             left_coord = mesh.geometry.x[left_vertex].reshape(3, -1)
             left_val = left_coord[0, 0] * f_left(left_coord)[0]
         else:
@@ -541,7 +541,7 @@ def test_disjoint_submeshes():
     if len(facets := facet_tag.find(right_interface_tag)) > 0:
         assert len(facets) == 1
         right_vertex = entities_to_geometry(mesh, mesh.topology.dim - 1, facets)
-        if right_vertex[0,0] < num_vertices_local:
+        if right_vertex[0, 0] < num_vertices_local:
             right_coord = mesh.geometry.x[right_vertex].reshape(3, -1)
             right_val = np.cos(right_coord[0, 0]) * f_right(right_coord)[0]
         else:
@@ -549,6 +549,6 @@ def test_disjoint_submeshes():
     else:
         right_val = 0.0
 
-    glob_left_val = mesh.comm.allreduce(left_val,op=MPI.SUM)
-    glob_right_val = mesh.comm.allreduce(right_val,op=MPI.SUM)
+    glob_left_val = mesh.comm.allreduce(left_val, op=MPI.SUM)
+    glob_right_val = mesh.comm.allreduce(right_val, op=MPI.SUM)
     assert np.isclose(J_sum, glob_left_val + glob_right_val)
