@@ -523,31 +523,32 @@ def test_disjoint_submeshes():
     J_local = fem.assemble_scalar(J_compiled)
     J_sum = mesh.comm.allreduce(J_local, op=MPI.SUM)
 
+    vertex_map = mesh.topology.index_map(mesh.topology.dim-1)
+    num_vertices_local = vertex_map.size_local 
     # Compute value of expression at left interface
     if len(facets := facet_tag.find(left_interface_tag)) > 0:
+        assert len(facets) == 1
         left_vertex = entities_to_geometry(mesh, mesh.topology.dim - 1, facets)
-        left_coord = mesh.geometry.x[left_vertex].reshape(3, -1)
-        left_val = left_coord[0, 0] * f_left(left_coord)[0]
+        if left_vertex[0,0] < num_vertices_local:
+            left_coord = mesh.geometry.x[left_vertex].reshape(3, -1)
+            left_val = left_coord[0, 0] * f_left(left_coord)[0]
+        else:
+            left_val = 0.0
     else:
-        left_val = 0
+        left_val = 0.0
 
     # Compute value of expression at right interface
     if len(facets := facet_tag.find(right_interface_tag)) > 0:
+        assert len(facets) == 1
         right_vertex = entities_to_geometry(mesh, mesh.topology.dim - 1, facets)
-        right_coord = mesh.geometry.x[right_vertex].reshape(3, -1)
-        right_val = np.cos(right_coord[0, 0]) * f_right(right_coord)[0]
+        if right_vertex[0,0] < num_vertices_local:
+            right_coord = mesh.geometry.x[right_vertex].reshape(3, -1)
+            right_val = np.cos(right_coord[0, 0]) * f_right(right_coord)[0]
+        else:
+            right_val = 0.0
     else:
-        right_val = 0
+        right_val = 0.0
 
-    # As multiple process might have the vertex, only get value from one process
-    _, left_rank = mesh.comm.allreduce([abs(left_val), mesh.comm.rank], op=MPI.MAXLOC)
-    _, right_rank = mesh.comm.allreduce([abs(right_val), mesh.comm.rank], op=MPI.MAXLOC)
-    if mesh.comm.rank == left_rank:
-        mesh.comm.send(left_val, dest=0, tag=0)
-    if mesh.comm.rank == right_rank:
-        mesh.comm.send(right_val, dest=0, tag=1)
-
-    if mesh.comm.rank == 0:
-        left_val = mesh.comm.recv(source=left_rank, tag=0)
-        right_val = mesh.comm.recv(source=right_rank, tag=1)
-        assert np.isclose(J_sum, left_val + right_val)
+    glob_left_val = mesh.comm.allreduce(left_val,op=MPI.SUM)
+    glob_right_val = mesh.comm.allreduce(right_val,op=MPI.SUM)
+    assert np.isclose(J_sum, glob_left_val + glob_right_val)
