@@ -177,9 +177,10 @@ void SparsityPattern::insert(std::span<const std::int32_t> rows,
   for (std::int32_t row : rows)
   {
     if (row > max_row or row < 0)
+    {
       throw std::runtime_error(
           "Cannot insert rows that do not exist in the IndexMap.");
-
+    }
     _row_cache[row].insert(_row_cache[row].end(), cols.begin(), cols.end());
   }
 }
@@ -199,8 +200,10 @@ void SparsityPattern::insert_diagonal(std::span<const std::int32_t> rows)
   for (std::int32_t row : rows)
   {
     if (row > max_row or row < 0)
+    {
       throw std::runtime_error(
           "Cannot insert rows that do not exist in the IndexMap.");
+    }
 
     _row_cache[row].push_back(row);
   }
