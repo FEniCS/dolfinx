@@ -126,7 +126,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
   auto kappa = std::make_shared<fem::Constant<double>>(2.0);
   auto a = std::make_shared<fem::Form<double, double>>(
       fem::create_form<double, double>(*form_poisson_a, {V, V}, {},
-                                       {{"kappa", kappa}}, {}));
+                                       {{"kappa", kappa}}, {}, {}));
 
   la::SparsityPattern sp = fem::create_sparsity_pattern(*a);
   sp.finalize();
@@ -167,7 +167,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
   // Define variational forms
   auto a = std::make_shared<fem::Form<double, double>>(
       fem::create_form<double, double>(*form_poisson_a, {V, V}, {},
-                                       {{"kappa", kappa}}, {}));
+                                       {{"kappa", kappa}}, {}, {}));
 
   // Create sparsity pattern
   la::SparsityPattern sp = fem::create_sparsity_pattern(*a);
