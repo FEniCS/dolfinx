@@ -8,6 +8,7 @@
 #include "caster_mpi.h"
 #include "numpy_dtype.h"
 #include <complex>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
@@ -265,6 +266,10 @@ void la(nb::module_& m)
                         std::span(cols.data(), cols.size()));
           },
           nb::arg("rows"), nb::arg("cols"))
+      .def("insert",
+           nb::overload_cast<int32_t, int32_t>(
+               &dolfinx::la::SparsityPattern::insert),
+           nb::arg("row"), nb::arg("col"))
       .def(
           "insert_diagonal",
           [](dolfinx::la::SparsityPattern& self,

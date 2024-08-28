@@ -224,7 +224,7 @@ else()
       CACHE BOOL "Is KaHIP REQUIRED?"
   )
 endif()
-option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." OFF)
+option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." ON)
 set_package_properties(
   KaHIP PROPERTIES
   TYPE OPTIONAL
