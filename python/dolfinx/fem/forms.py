@@ -190,7 +190,7 @@ def form(
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
-    entity_maps: dict[Mesh, np.typing.NDArray[np.int32]] = {},
+    entity_maps: typing.Optional[dict[Mesh, np.typing.NDArray[np.int32]]] = None,
 ):
     """Create a Form or an array of Forms.
 
@@ -282,7 +282,10 @@ def form(
             for (key, subdomain_data) in sd.get(domain).items()
         }
 
-        _entity_maps = {msh._cpp_object: emap for (msh, emap) in entity_maps.items()}
+        if entity_maps is None:
+            _entity_maps = dict()
+        else:
+            _entity_maps = {msh._cpp_object: emap for (msh, emap) in entity_maps.items()}
 
         f = ftype(
             module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)),
