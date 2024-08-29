@@ -276,7 +276,10 @@ def model_to_mesh(
         nbcells = len(_elementTags[0])
         nbcells_tagged = len(topologies[_d]["entity_tags"])
         if nbcells != nbcells_tagged:
-            e = f'All cells are expected to be tagged once; found: {nbcells_tagged}, expected: {nbcells}'
+            e = (
+                'All cells are expected to be tagged once;'
+                f'found: {nbcells_tagged}, expected: {nbcells}'
+                )
             raise RuntimeError(e)
         nbcells_tagged_once = len(np.unique(topologies[_d]['entity_tags']))
         if nbcells_tagged != nbcells_tagged_once:
