@@ -191,9 +191,9 @@ int main(int argc, char* argv[])
 
     //  Define variational forms
     auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_biharmonic_a, {V, V}, {}, {{"alpha", alpha}}, {}));
+        *form_biharmonic_a, {V, V}, {}, {{"alpha", alpha}}, {}, {}));
     auto L = std::make_shared<fem::Form<T>>(
-        fem::create_form<T>(*form_biharmonic_L, {V}, {{"f", f}}, {}, {}));
+        fem::create_form<T>(*form_biharmonic_L, {V}, {{"f", f}}, {}, {}, {}));
 
     //  Now, the Dirichlet boundary condition ($u = 0$) can be
     //  created using the class {cpp:class}`DirichletBC`. A

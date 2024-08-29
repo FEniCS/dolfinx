@@ -95,13 +95,11 @@ def test_ghost_connectivities(mode):
     map_f = topology.index_map(tdim - 1)
     num_facets = map_f.size_local + map_f.num_ghosts
 
-    reference = dict()
     meshR.topology.create_connectivity(tdim - 1, tdim)
     facet_mp = compute_midpoints(meshR, tdim - 1, np.arange(num_facets))
     meshR.topology.create_connectivity(tdim, tdim)
     cell_mp = compute_midpoints(meshR, tdim, np.arange(num_cells))
     reference = {tuple(row): [] for row in facet_mp}
-
     for i in range(num_facets):
         for cidx in meshR.topology.connectivity(1, 2).links(i):
             reference[tuple(facet_mp[i])].append(cell_mp[cidx].tolist())

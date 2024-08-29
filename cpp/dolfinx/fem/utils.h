@@ -83,23 +83,24 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
 
 } // namespace impl
 
-/// @brief Given an integral type and mesh tag data, compute the
+/// @brief Given an integral type and a set of entities, compute the
 /// entities that should be integrated over.
 ///
-/// This function returns as list `[(id, entities)]`, where `entities`
-/// are the entities in `meshtags` with tag value `id`. For cell
+/// This function returns a list `[(id, entities)]`. For cell
 /// integrals `entities` are the cell indices. For exterior facet
 /// integrals, `entities` is a list of `(cell_index, local_facet_index)`
 /// pairs. For interior facet integrals, `entities` is a list of
 /// `(cell_index0, local_facet_index0, cell_index1, local_facet_index1)`.
+/// `id` refers to the subdomain id used in the definition of the integration
+/// measures of the variational form.
 ///
 /// @note Owned mesh entities only are returned. Ghost entities are not
 /// included.
 ///
 /// @param[in] integral_type Integral type
 /// @param[in] topology Mesh topology
-/// @param[in] entities List of tagged mesh entities
-/// @param[in] dim Topological dimension of tagged entities
+/// @param[in] entities List of mesh entities
+/// @param[in] dim Topological dimension of entities
 /// @return List of integration entities
 /// @pre For facet integrals, the topology facet-to-cell and
 /// cell-to-facet connectivity must be computed before calling this
@@ -671,6 +672,8 @@ Form<T, U> create_form_factory(
 /// @param[in] constants Spatial constants in the form (by name).
 /// @param[in] subdomains Subdomain markers.
 /// @pre Each value in `subdomains` must be sorted by domain id.
+/// @param[in] entity_maps The entity maps for the form. Empty for
+/// single domain problems.
 /// @param[in] mesh Mesh of the domain. This is required if the form has
 /// no arguments, e.g. a functional.
 /// @return A Form
@@ -685,6 +688,8 @@ Form<T, U> create_form(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
         subdomains,
+    const std::map<std::shared_ptr<const mesh::Mesh<U>>,
+                   std::span<const std::int32_t>>& entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   // Place coefficients in appropriate order
@@ -712,7 +717,7 @@ Form<T, U> create_form(
   }
 
   return create_form_factory(ufcx_form, spaces, coeff_map, const_map,
-                             subdomains, {}, mesh);
+                             subdomains, entity_maps, mesh);
 }
 
 /// @brief Create a Form using a factory function that returns a pointer
@@ -727,6 +732,8 @@ Form<T, U> create_form(
 /// @param[in] constants Spatial constants in the form (by name),
 /// @param[in] subdomains Subdomain markers.
 /// @pre Each value in `subdomains` must be sorted by domain id.
+/// @param[in] entity_maps The entity maps for the form. Empty for
+/// single domain problems.
 /// @param[in] mesh Mesh of the domain. This is required if the form has
 /// no arguments, e.g. a functional.
 /// @return A Form
@@ -741,11 +748,13 @@ Form<T, U> create_form(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
         subdomains,
+    const std::map<std::shared_ptr<const mesh::Mesh<U>>,
+                   std::span<const std::int32_t>>& entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   ufcx_form* form = fptr();
   Form<T, U> L = create_form<T, U>(*form, spaces, coefficients, constants,
-                                   subdomains, mesh);
+                                   subdomains, entity_maps, mesh);
   std::free(form);
   return L;
 }
@@ -774,6 +783,10 @@ FunctionSpace<T> create_functionspace(
     throw std::runtime_error(
         "Cannot specify value shape for non-scalar base element.");
   }
+
+  if (mesh::cell_type_from_basix_type(e.cell_type())
+      != mesh->topology()->cell_type())
+    throw std::runtime_error("Cell type of element and mesh must match.");
 
   std::size_t bs = value_shape.empty()
                        ? 1

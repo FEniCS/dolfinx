@@ -1061,8 +1061,6 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
 /// @param[in,out] b The vector to be modified
 /// @param[in] a The bilinear forms, where a[j] is the form that
 /// generates A_j
-/// @param[in] x_dofmap Mesh geometry dofmap
-/// @param[in] x Mesh coordinates
 /// @param[in] constants Constants that appear in `a`
 /// @param[in] coeffs Coefficients that appear in `a`
 /// @param[in] bcs1 List of boundary conditions for each block, i.e.
@@ -1073,7 +1071,6 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
 template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
     std::span<T> b, const std::vector<std::shared_ptr<const Form<T, U>>> a,
-    mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
@@ -1081,7 +1078,6 @@ void apply_lifting(
         bcs1,
     const std::vector<std::span<const T>>& x0, T scale)
 {
-  // FIXME: make changes to reactivate this check
   if (!x0.empty() and x0.size() != a.size())
   {
     throw std::runtime_error(
@@ -1100,6 +1096,13 @@ void apply_lifting(
     std::vector<T> bc_values1;
     if (a[j] and !bcs1[j].empty())
     {
+      // Extract data from mesh
+      std::shared_ptr<const mesh::Mesh<U>> mesh = a[j]->mesh();
+      if (!mesh)
+        throw std::runtime_error("Unable to extract a mesh.");
+      mdspan2_t x_dofmap = mesh->geometry().dofmap();
+      auto x = mesh->geometry().x();
+
       assert(a[j]->function_spaces().at(0));
 
       auto V1 = a[j]->function_spaces()[1];

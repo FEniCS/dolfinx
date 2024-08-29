@@ -140,9 +140,9 @@ int main(int argc, char* argv[])
 
     // Define variational forms
     auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_poisson_a, {V, V}, {}, {{"kappa", kappa}}, {}));
+        *form_poisson_a, {V, V}, {}, {{"kappa", kappa}}, {}, {}));
     auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_poisson_L, {V}, {{"f", f}, {"g", g}}, {}, {}));
+        *form_poisson_L, {V}, {{"f", f}, {"g", g}}, {}, {}, {}));
 
     //  Now, the Dirichlet boundary condition ($u = 0$) can be created
     //  using the class {cpp:class}`DirichletBC`. A

@@ -421,3 +421,26 @@ def test_transpose_dofmap():
     dofmap = np.array([[0, 2, 1], [3, 2, 1], [4, 3, 1]], dtype=np.int32)
     transpose = dolfinx.fem.transpose_dofmap(dofmap, 3)
     assert np.array_equal(transpose.array, [0, 2, 5, 8, 1, 4, 3, 7, 6])
+
+
+def test_empty_rank_collapse():
+    """Test that dofmap with no dofs on a rank can be collapsed"""
+    if MPI.COMM_WORLD.rank == 0:
+        nodes = np.array([[0.0], [1.0], [2.0]], dtype=np.float64)
+        cells = np.array([[0, 1], [1, 2]], dtype=np.int64)
+    else:
+        nodes = np.empty((0, 1), dtype=np.float64)
+        cells = np.empty((0, 2), dtype=np.int64)
+    c_el = element("Lagrange", "interval", 1, shape=(1,))
+
+    def self_partitioner(comm: MPI.Intracomm, n, m, topo):
+        dests = np.full(len(topo[0]) // 2, comm.rank, dtype=np.int32)
+        offsets = np.arange(len(topo[0]) // 2 + 1, dtype=np.int32)
+        return dolfinx.graph.adjacencylist(dests, offsets)
+
+    mesh = create_mesh(MPI.COMM_WORLD, cells, nodes, c_el, partitioner=self_partitioner)
+
+    el = element("Lagrange", "interval", 1, shape=(2,))
+    V = functionspace(mesh, el)
+    V_0, _ = V.sub(0).collapse()
+    assert V.dofmap.index_map.size_local == V_0.dofmap.index_map.size_local
