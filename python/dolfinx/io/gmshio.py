@@ -268,7 +268,7 @@ def model_to_mesh(
 
         # Check that all cells are tagged once
         _d = model.getDimension()
-        if not(_d in topologies.keys()):
+        if _d not in topologies.keys():
             raise RuntimeError('All cells are expected to be tagged once; none found')
         _elementTypes, _elementTags, _nodeTags = model.mesh.getElements(dim=_d, tag=-1)
         # assert only one type of elements
