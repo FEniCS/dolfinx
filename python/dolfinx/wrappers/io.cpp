@@ -243,14 +243,31 @@ void declare_write_mesh(nb::module_& m, std::string type)
   m.def(
       pyfunction_write_mesh_name.c_str(),
       [](dolfinx::io::ADIOS2Wrapper& ADIOS2, std::string tag,
-         dolfinx::mesh::Mesh<T>& mesh)
+         dolfinx::mesh::Mesh<T>& mesh, double time)
       {
         auto io = ADIOS2.io(tag);
         auto engine = ADIOS2.engine(tag);
-        return dolfinx::io::native::write_mesh<T>(*io, *engine, mesh);
+        return dolfinx::io::native::write_mesh<T>(*io, *engine, mesh, time);
       },
-      nb::arg("adios2"), nb::arg("tag"), nb::arg("mesh"),
+      nb::arg("adios2"), nb::arg("tag"), nb::arg("mesh"), nb::arg("time") = 0.0,
       "Write mesh to file using ADIOS2");
+}
+
+template <typename T>
+void declare_update_mesh(nb::module_& m)
+{
+  // dolfinx::io::native::update_mesh
+  m.def(
+      "update_mesh",
+      [](dolfinx::io::ADIOS2Wrapper& ADIOS2, std::string tag,
+         dolfinx::mesh::Mesh<T>& mesh, std::size_t step)
+      {
+        auto io = ADIOS2.io(tag);
+        auto engine = ADIOS2.engine(tag);
+        return dolfinx::io::native::update_mesh(*io, *engine, mesh, step);
+      },
+      nb::arg("adios2"), nb::arg("tag"), nb::arg("mesh"), nb::arg("step"),
+      "Update mesh with geometry associated with a given ADIOS2 step");
 }
 
 #endif
@@ -303,8 +320,22 @@ void io(nb::module_& m)
       nb::arg("adios2"), nb::arg("tag"), nb::arg("comm"), nb::arg("ghost_mode"),
       "Read mesh from file using ADIOS2");
 
+  // dolfinx::io::native::read_timestamps
+  m.def(
+      "read_timestamps",
+      [](dolfinx::io::ADIOS2Wrapper& ADIOS2, std::string tag)
+      {
+        auto io = ADIOS2.io(tag);
+        auto engine = ADIOS2.engine(tag);
+        return dolfinx::io::native::read_timestamps(*io, *engine);
+      },
+      nb::arg("adios2"), nb::arg("tag"),
+      "Update mesh with geometry associated with a given ADIOS2 step");
+
   declare_write_mesh<float>(m, "float32");
   declare_write_mesh<double>(m, "float64");
+  declare_update_mesh<float>(m);
+  declare_update_mesh<double>(m);
 
 #endif
 

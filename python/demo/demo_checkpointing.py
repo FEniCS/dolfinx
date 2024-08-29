@@ -17,6 +17,8 @@
 # +
 import os
 
+import numpy as np
+
 import dolfinx
 
 if not dolfinx.common.has_adios2:
@@ -54,27 +56,40 @@ adios2.add_io(filename="mesh.bp", tag=tag, mode="write")
 
 # +
 io.write_mesh(adios2, tag, msh)
+
+msh.geometry.x[:] += 4
+io.write_mesh(adios2, tag, msh, 0.5)
+
+msh.geometry.x[:] += 4
+io.write_mesh(adios2, tag, msh, 1.0)
+
 adios2.close(tag)
 # -
 
-# # +
-# adios2_read = io.ADIOS2(msh.comm)
-# tag = "mesh-read"
-# adios2_read.add_io(filename="mesh.bp", tag=tag, engine_type="BP5", mode="read")
-# # -
-
-# # +
-# msh_read = io.read_mesh(adios2_read, tag, msh.comm)
-# adios2_read.close(tag)
-# # -
+# +
+tag = "mesh-readrandomaccess"
+adios2.add_io(filename="mesh.bp", tag=tag, engine_type="BP5", mode="readrandomaccess")
+# -
 
 # +
-# adios2_read = io.ADIOS2(msh.comm)
+times = io.read_timestamps(adios2, tag)
+print(f"Time stamps : {times}")
+# -
+
+# +
 tag = "mesh-read"
 adios2.add_io(filename="mesh.bp", tag=tag, engine_type="BP5", mode="read")
 # -
 
 # +
 msh_read = io.read_mesh(adios2, tag, msh.comm)
+print(np.max(msh_read.geometry.x))
+
+io.update_mesh(adios2, tag, msh_read, 1)
+print(np.max(msh_read.geometry.x))
+
+io.update_mesh(adios2, tag, msh_read, 2)
+print(np.max(msh_read.geometry.x))
+
 adios2.close(tag)
 # -

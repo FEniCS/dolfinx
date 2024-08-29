@@ -79,6 +79,7 @@ namespace dolfinx::io::native
 /// @param[in] io ADIOS2 IO
 /// @param[in] engine ADIOS2 Engine
 /// @param[in] mesh Mesh of type float or double to write to the file
+/// @param[in] time Time associated with the mesh with moving geometry
 template <std::floating_point T>
 void write_mesh(adios2::IO& io, adios2::Engine& engine,
                 const dolfinx::mesh::Mesh<T>& mesh, double time = 0);
@@ -95,6 +96,25 @@ dolfinx::mesh::Mesh<T> read_mesh(adios2::IO& io, adios2::Engine& engine,
                                  MPI_Comm comm = MPI_COMM_WORLD,
                                  dolfinx::mesh::GhostMode ghost_mode
                                  = dolfinx::mesh::GhostMode::shared_facet);
+
+/// @brief Update geometry of mesh by reading from a file.
+///
+/// @param[in] io ADIOS2 IO
+/// @param[in] engine ADIOS2 Engine
+/// @param[in] mesh Mesh of type float or double
+/// @param[in] step ADIOS2 Engine Step to read geometry from
+/// @note This method expects that ReadRandomAccess mode is used to determine
+/// the step in which a given time stamp exists
+template <std::floating_point T>
+void update_mesh(adios2::IO& io, adios2::Engine& engine,
+                 dolfinx::mesh::Mesh<T>& mesh, std::size_t step);
+
+/// @brief Read time stamps.
+///
+/// @param[in] io ADIOS2 IO
+/// @param[in] engine ADIOS2 Engine
+/// @note The Engine should be opened in ReadRandomAccess mode
+std::vector<double> read_timestamps(adios2::IO& io, adios2::Engine& engine);
 
 } // namespace dolfinx::io::native
 

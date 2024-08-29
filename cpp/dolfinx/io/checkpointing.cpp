@@ -335,6 +335,99 @@ read_mesh<double>(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm,
 
 /// @endcond
 
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+void update_mesh(adios2::IO& io, adios2::Engine& engine,
+                 dolfinx::mesh::Mesh<T>& mesh, std::size_t step)
+{
+  if (!engine.BetweenStepPairs())
+  {
+    engine.BeginStep();
+  }
+
+  std::uint32_t num_nodes_local = mesh.geometry().index_map()->size_local();
+  std::vector<T> x_raw(num_nodes_local * 3);
+
+  // Read variables
+  {
+    double time;
+    adios2::Variable<double> var_time = io.InquireVariable<double>("time");
+    var_time.SetStepSelection({step, 1});
+    if (var_time)
+    {
+      engine.Get(var_time, time);
+      spdlog::info("Updating geometry at time : {}", time);
+    }
+    else
+    {
+      throw std::runtime_error("Step : " + std::to_string(step) + " not found");
+    }
+
+    adios2::Variable<T> var_x = io.InquireVariable<T>("x");
+    var_x.SetStepSelection({step, 1});
+    if (var_x)
+    {
+      std::uint64_t nodes_offset
+          = mesh.geometry().index_map()->local_range()[0];
+      var_x.SetSelection({{nodes_offset, 0}, {num_nodes_local, 3}});
+      engine.Get(var_x, x_raw.data(), adios2::Mode::Sync);
+    }
+    else
+    {
+      throw std::runtime_error("Coordinates data not found at step : " + step);
+    }
+  }
+
+  engine.EndStep();
+
+  // Redistribute adios2 input coordinate data and find updated coordinates of
+  // the mesh
+  std::vector<T> x_new = dolfinx::MPI::distribute_data(
+      mesh.comm(), mesh.geometry().input_global_indices(), mesh.comm(), x_raw,
+      3);
+
+  std::span<T> x = mesh.geometry().x();
+  for (std::size_t i = 0; i < num_nodes_local * 3; ++i)
+  {
+    x[i] = x_new[i];
+  }
+}
+
+//-----------------------------------------------------------------------------
+/// @cond
+template void update_mesh<float>(adios2::IO& io, adios2::Engine& engine,
+                                 dolfinx::mesh::Mesh<float>& mesh,
+                                 std::size_t step);
+
+template void update_mesh<double>(adios2::IO& io, adios2::Engine& engine,
+                                  dolfinx::mesh::Mesh<double>& mesh,
+                                  std::size_t step);
+
+/// @endcond
+
+//-----------------------------------------------------------------------------
+std::vector<double> read_timestamps(adios2::IO& io, adios2::Engine& engine)
+{
+  if (engine.OpenMode() != adios2::Mode::ReadRandomAccess)
+  {
+    throw std::runtime_error(
+        "Time stamps can only be read in ReadRandomAccess mode");
+  }
+  adios2::Variable<double> var_time = io.InquireVariable<double>("time");
+  const std::vector<std::vector<adios2::Variable<double>::Info>> timestepsinfo
+      = var_time.AllStepsBlocksInfo();
+
+  std::size_t num_steps = timestepsinfo.size();
+  std::vector<double> times(num_steps);
+
+  for (std::size_t step = 0; step < num_steps; ++step)
+  {
+    var_time.SetStepSelection({step, 1});
+    engine.Get(var_time, times[step]);
+  }
+  return times;
+}
+
 } // namespace dolfinx::io::native
 
 namespace dolfinx::io::impl_native

@@ -52,6 +52,8 @@ if _cpp.common.has_adios2:
         "VTXMeshPolicy",
         "ADIOS2",
         "read_mesh",
+        "read_timestamps",
+        "update_mesh",
         "write_mesh",
     ]
 
@@ -227,13 +229,14 @@ if _cpp.common.has_adios2:
             """Close IO and Engine associated with the given tag"""
             super().close(tag)
 
-    def write_mesh(ADIOS2: ADIOS2, tag: str, mesh: Mesh) -> None:
+    def write_mesh(ADIOS2: ADIOS2, tag: str, mesh: Mesh, time: np.floating = 0) -> None:
         """Write mesh to a file using ADIOS2
 
         Args:
             ADIOS2: Wrapper around ADIOS2.
             tag: Name of the IO to use.
             mesh: Mesh to write to the file.
+            time: Associated time stamp
         """
 
         dtype = mesh.geometry.x.dtype  # type: ignore
@@ -242,7 +245,7 @@ if _cpp.common.has_adios2:
         elif np.issubdtype(dtype, np.float64):
             _writer = _cpp.io.write_mesh_float64
 
-        return _writer(ADIOS2, tag, mesh._cpp_object)
+        return _writer(ADIOS2, tag, mesh._cpp_object, time)
 
     def read_mesh(
         ADIOS2: ADIOS2, tag: str, comm: _MPI.Comm, ghost_mode: GhostMode = GhostMode.shared_facet
@@ -270,6 +273,29 @@ if _cpp.common.has_adios2:
         domain = ufl.Mesh(element)
 
         return Mesh(msh, domain)
+
+    def read_timestamps(ADIOS2: ADIOS2, tag: str) -> np.ndarray:
+        """Read timestamps from a file using ADIOS2
+
+        Args:
+            ADIOS2: Wrapper around ADIOS2
+            tag: Name of the IO to use
+        Returns:
+            vector of timestamps
+        """
+        return _cpp.io.read_timestamps(ADIOS2, tag)
+
+    def update_mesh(ADIOS2: ADIOS2, tag: str, mesh: Mesh, step: np.int64) -> None:
+        """Update mesh geometry with geometry stored with the given time stamp in the file
+
+        Args:
+            ADIOS2: Wrapper around ADIOS2
+            tag: Name of the IO to use
+            mesh: Mesh to update the geometry
+            step: ADIOS2 Step at which the corresponding geometry is to be read from the file
+        """
+
+        return _cpp.io.update_mesh(ADIOS2, tag, mesh._cpp_object, step)
 
 
 class VTKFile(_cpp.io.VTKFile):

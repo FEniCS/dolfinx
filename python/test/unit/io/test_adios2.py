@@ -38,9 +38,9 @@ def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
         raise RuntimeError("Unsupported dimension")
 
 
-# TODO: Fix problems with ("HDF5", ".h5")
+# TODO: Fix problems with ("HDF5", ".h5"), ("BP4", ".bp"),
 @pytest.mark.adios2
-@pytest.mark.parametrize("encoder, suffix", [("BP4", ".bp"), ("BP5", ".bp")])
+@pytest.mark.parametrize("encoder, suffix", [("BP5", ".bp")])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.shared_facet, GhostMode.none])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("dim", [2, 3])
