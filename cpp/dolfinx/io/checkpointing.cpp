@@ -387,10 +387,7 @@ void update_mesh(adios2::IO& io, adios2::Engine& engine,
       3);
 
   std::span<T> x = mesh.geometry().x();
-  for (std::size_t i = 0; i < num_nodes_local * 3; ++i)
-  {
-    x[i] = x_new[i];
-  }
+  std::ranges::transform(x_new, x.begin(), [](auto it) { return it; });
 }
 
 //-----------------------------------------------------------------------------

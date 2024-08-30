@@ -41,10 +41,7 @@ int main(int argc, char* argv[])
 
     io::native::write_mesh(io, engine, *mesh);
     std::span<float> x = mesh->geometry().x();
-    for (std::size_t i = 0; i < x.size(); ++i)
-    {
-      x[i] *= 4;
-    }
+    std::ranges::transform(x, x.begin(), [](auto xi) { return xi *= 4; });
 
     io::native::write_mesh(io, engine, *mesh, 0.5);
 
