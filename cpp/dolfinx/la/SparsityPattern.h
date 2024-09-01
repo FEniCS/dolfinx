@@ -67,6 +67,19 @@ public:
 
   /// @brief Insert non-zero locations using local (process-wise)
   /// indices.
+  /// @param[in] row local row index
+  /// @param[in] col local column index
+  void insert(std::int32_t row, std::int32_t col);
+
+  /// @brief Insert non-zero locations using local (process-wise)
+  /// indices.
+  ///
+  /// This routine inserts non-zero locations at the outer product of rows and
+  /// cols into the sparsity pattern, i.e. adds the matrix entries at
+  ///   A[row[i], col[j]] for all i, j.
+  ///
+  /// @param[in] rows list of the local row indices 
+  /// @param[in] cols list of the local column indices
   void insert(std::span<const std::int32_t> rows,
               std::span<const std::int32_t> cols);
 
