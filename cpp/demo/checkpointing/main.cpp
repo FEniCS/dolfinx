@@ -150,6 +150,19 @@ int main(int argc, char* argv[])
       io::native::write_function<T, U>(io, engine, *f, *mesh);
       engine.Close();
     }
+    adios2::IO io = adios.DeclareIO("mesh-write");
+    io.SetEngine("BP5");
+    adios2::Engine engine = io.Open("mesh.bp", adios2::Mode::Append);
+
+    io::native::write_mesh(io, engine, *mesh);
+    io::native::write_meshtags<float, std::int32_t>(io, engine, *mesh,
+                                                    *meshtags);
+    std::span<float> x = mesh->geometry().x();
+    std::ranges::transform(x, x.begin(), [](auto xi) { return xi *= 4; });
+
+    io::native::write_mesh(io, engine, *mesh, 0.5);
+
+    engine.Close();
   }
   catch (std::exception& e)
   {
@@ -159,30 +172,32 @@ int main(int argc, char* argv[])
 
   try
   {
-    // Set up ADIOS2 IO and Engine
+    // Read mode : set up ADIOS2 IO and Engine
     adios2::ADIOS adios_read(MPI_COMM_WORLD);
-    adios2::IO io_mesh = adios_read.DeclareIO("mesh-read");
-    io_mesh.SetEngine("BP5");
-    adios2::Engine engine_mesh = io_mesh.Open("mesh.bp", adios2::Mode::Read);
+    adios2::IO io_read = adios_read.DeclareIO("mesh-read");
+    io_read.SetEngine("BP5");
+    adios2::Engine engine_read = io_read.Open("mesh.bp", adios2::Mode::Read);
 
-    engine_mesh.BeginStep();
+    engine_read.BeginStep();
     auto mesh_read
-        = io::native::read_mesh<U>(io_mesh, engine_mesh, MPI_COMM_WORLD);
+        = io::native::read_mesh<float>(io_read, engine_read, MPI_COMM_WORLD);
 
-    adios2::IO io_meshtags = adios_read.DeclareIO("meshtags-read");
-    io_meshtags.SetEngine("BP5");
-    adios2::Engine engine_meshtags
-        = io_meshtags.Open("meshtags.bp", adios2::Mode::Read);
     mesh::MeshTags<std::int32_t> mt
-        = io::native::read_meshtags<U, std::int32_t>(
-            io_meshtags, engine_meshtags, mesh_read, "mesh_tags");
+        = io::native::read_meshtags<float, std::int32_t>(
+            io_read, engine_read, mesh_read, "mesh_tags");
 
-    if (engine_meshtags.BetweenStepPairs())
+    if (engine_read.BetweenStepPairs())
     {
-      engine_meshtags.EndStep();
+      engine_read.EndStep();
     }
 
-    engine_meshtags.Close();
+    engine_read.Close();
+
+    // ReadRandomAccess mode : set up ADIOS2 IO and Engine
+    adios2::IO io_rra = adios_read.DeclareIO("mesh-rra");
+    io_rra.SetEngine("BP5");
+    adios2::Engine engine_rra
+        = io_rra.Open("mesh.bp", adios2::Mode::ReadRandomAccess);
 
     {
       adios2::IO io_write = adios_read.DeclareIO("mesh-write");
@@ -203,6 +218,55 @@ int main(int argc, char* argv[])
                                                   mesh_read, mt);
       engine_write.Close();
     }
+
+    // Find the time stamps array
+    auto var_time = io_rra.InquireVariable<double>("time");
+    const std::vector<std::vector<adios2::Variable<double>::Info>> timestepsinfo
+        = var_time.AllStepsBlocksInfo();
+
+    std::size_t num_steps = timestepsinfo.size();
+    std::vector<double> times(num_steps);
+
+    for (std::size_t step = 0; step < num_steps; ++step)
+    {
+      var_time.SetStepSelection({step, 1});
+      engine_rra.Get(var_time, times[step]);
+    }
+    engine_rra.Close();
+
+    // Read mesh
+    engine_read.BeginStep();
+    auto mesh_read
+        = io::native::read_mesh<U>(io_read, engine_read, MPI_COMM_WORLD);
+    if (engine_read.BetweenStepPairs())
+    {
+      engine_read.EndStep();
+    }
+    // Write mesh
+    io::native::write_mesh(io_write, engine_write, mesh_read);
+
+    // Update mesh
+    double time = 0.5;
+    std::size_t querystep;
+    auto pos = std::ranges::find(times, time);
+    if (pos != times.end())
+    {
+      querystep = std::ranges::distance(times.begin(), pos);
+      std::cout << "Query step is : " << querystep << "\n";
+    }
+    else
+    {
+      throw std::runtime_error("Step corresponding to time : "
+                               + std::to_string(time) + " not found");
+    }
+
+    io::native::update_mesh<U>(io_read, engine_read, mesh_read, querystep);
+
+    // Write updated mesh
+    io::native::write_mesh(io_write, engine_write, mesh_read, time);
+
+    engine_read.Close();
+    engine_write.Close();
   }
   catch (std::exception& e)
   {

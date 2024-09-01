@@ -51,6 +51,24 @@ std::map<std::string, basix::element::lagrange_variant> string_to_variant{
     {"bernstein", basix::element::lagrange_variant::bernstein},
 };
 
+template <class T>
+adios2::Variable<T> define_var(adios2::IO& io, std::string name,
+                               const adios2::Dims& shape = adios2::Dims(),
+                               const adios2::Dims& start = adios2::Dims(),
+                               const adios2::Dims& count = adios2::Dims())
+{
+  if (adios2::Variable var = io.InquireVariable<T>(name); var)
+  {
+    if (var.Count() != count)
+      var.SetSelection({start, count});
+
+    return var;
+  }
+  else
+    return io.DefineVariable<T>(name, shape, start, count,
+                                adios2::ConstantDims);
+}
+
 } // namespace
 
 namespace dolfinx::io::native
@@ -58,126 +76,141 @@ namespace dolfinx::io::native
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 void write_mesh(adios2::IO& io, adios2::Engine& engine,
-                const dolfinx::mesh::Mesh<T>& mesh)
+                const dolfinx::mesh::Mesh<T>& mesh, double time)
 {
 
   const mesh::Geometry<T>& geometry = mesh.geometry();
   std::shared_ptr<const mesh::Topology> topology = mesh.topology();
   assert(topology);
+  std::shared_ptr<const common::IndexMap> geom_imap = geometry.index_map();
 
-  // Variables/attributes to save
-  std::int32_t dim = geometry.dim();
-  std::int32_t tdim = topology->dim();
-  std::uint64_t num_nodes_global, offset, num_cells_global, cell_offset;
-  std::uint32_t num_nodes_local, num_cells_local, degree;
-  std::string cell_type, lagrange_variant;
-  std::vector<std::int64_t> array_global;
-  std::vector<std::int32_t> offsets_global;
+  std::size_t currentstep = engine.CurrentStep();
+  assert(!engine.BetweenStepPairs());
+  engine.BeginStep();
 
-  std::shared_ptr<const common::IndexMap> geom_imap;
+  if (currentstep == 0)
+  {
+    // Variables/attributes to save
+    std::int32_t dim = geometry.dim();
+    std::int32_t tdim = topology->dim();
+    std::uint64_t num_cells_global, cell_offset;
+    std::uint32_t num_cells_local, degree;
+    std::string cell_type, lagrange_variant;
+    std::vector<std::int64_t> array_global;
+    std::vector<std::int32_t> offsets_global;
 
+    // Cells information
+    {
+      const std::shared_ptr<const common::IndexMap> topo_imap
+          = topology->index_map(tdim);
+      assert(topo_imap);
+
+      num_cells_global = topo_imap->size_global();
+      num_cells_local = topo_imap->size_local();
+      cell_offset = topo_imap->local_range()[0];
+    }
+
+    // Coordinate element information
+    {
+      const fem::CoordinateElement<T>& cmap = geometry.cmap();
+      cell_type = mesh::to_string(cmap.cell_shape());
+      degree = cmap.degree();
+      lagrange_variant = variant_to_string[cmap.variant()];
+    }
+
+    std::uint32_t num_dofs_per_cell;
+    // Connectivity
+    {
+      auto dofmap = geometry.dofmap();
+      num_dofs_per_cell = dofmap.extent(1);
+      std::vector<std::int32_t> connectivity;
+      connectivity.reserve(num_cells_local * num_dofs_per_cell);
+      for (std::size_t i = 0; i < num_cells_local; ++i)
+        for (std::size_t j = 0; j < num_dofs_per_cell; ++j)
+          connectivity.push_back(dofmap(i, j));
+
+      array_global.resize(num_cells_local * num_dofs_per_cell);
+      std::iota(array_global.begin(), array_global.end(), 0);
+
+      geom_imap->local_to_global(connectivity, array_global);
+      offsets_global.resize(num_cells_local + 1);
+
+      // FIXME: use std::ranges::transform
+      for (std::size_t i = 0; i < num_cells_local + 1; ++i)
+        offsets_global[i] = (i + cell_offset) * num_dofs_per_cell;
+    }
+
+    // ADIOS2 write attributes and variables
+    {
+      io.DefineAttribute<std::string>("version", dolfinx::version());
+      io.DefineAttribute<std::string>("git_hash", dolfinx::git_commit_hash());
+      io.DefineAttribute<std::string>("name", mesh.name);
+      io.DefineAttribute<std::int32_t>("dim", dim);
+      io.DefineAttribute<std::int32_t>("tdim", tdim);
+      io.DefineAttribute<std::string>("cell_type", cell_type);
+      io.DefineAttribute<std::int32_t>("degree", degree);
+      io.DefineAttribute<std::string>("lagrange_variant", lagrange_variant);
+
+      adios2::Variable<std::uint64_t> var_num_cells
+          = io.DefineVariable<std::uint64_t>("num_cells");
+
+      adios2::Variable<std::int64_t> var_topology_array
+          = io.DefineVariable<std::int64_t>(
+              "topology_array", {num_cells_global * num_dofs_per_cell},
+              {cell_offset * num_dofs_per_cell},
+              {num_cells_local * num_dofs_per_cell}, adios2::ConstantDims);
+
+      adios2::Variable<std::int32_t> var_topology_offsets
+          = io.DefineVariable<std::int32_t>(
+              "topology_offsets", {num_cells_global + 1}, {cell_offset},
+              {num_cells_local + 1}, adios2::ConstantDims);
+
+      engine.Put(var_num_cells, num_cells_global);
+      engine.Put(var_topology_array, array_global.data());
+      engine.Put(var_topology_offsets, offsets_global.data());
+    }
+  }
+
+  std::uint64_t num_nodes_global, offset;
+  std::uint32_t num_nodes_local;
   // Nodes information
   {
-    geom_imap = geometry.index_map();
+    // geom_imap = geometry.index_map();
     num_nodes_global = geom_imap->size_global();
     num_nodes_local = geom_imap->size_local();
     offset = geom_imap->local_range()[0];
   }
-
-  // Cells information
-  {
-    const std::shared_ptr<const common::IndexMap> topo_imap
-        = topology->index_map(tdim);
-    assert(topo_imap);
-
-    num_cells_global = topo_imap->size_global();
-    num_cells_local = topo_imap->size_local();
-    cell_offset = topo_imap->local_range()[0];
-  }
-
-  // Coordinate element information
-  {
-    const fem::CoordinateElement<T>& cmap = geometry.cmap();
-    cell_type = mesh::to_string(cmap.cell_shape());
-    degree = cmap.degree();
-    lagrange_variant = variant_to_string[cmap.variant()];
-  }
-
   const std::span<const T> mesh_x = geometry.x();
 
-  std::uint32_t num_dofs_per_cell;
-  // Connectivity
+  if (currentstep == 0)
   {
-    auto dofmap = geometry.dofmap();
-    num_dofs_per_cell = dofmap.extent(1);
-    std::vector<std::int32_t> connectivity;
-    connectivity.reserve(num_cells_local * num_dofs_per_cell);
-    for (std::size_t i = 0; i < num_cells_local; ++i)
-      for (std::size_t j = 0; j < num_dofs_per_cell; ++j)
-        connectivity.push_back(dofmap(i, j));
-
-    array_global.resize(num_cells_local * num_dofs_per_cell);
-    std::iota(array_global.begin(), array_global.end(), 0);
-
-    geom_imap->local_to_global(connectivity, array_global);
-    offsets_global.resize(num_cells_local + 1);
-
-    // FIXME: use std::ranges::transform
-    for (std::size_t i = 0; i < num_cells_local + 1; ++i)
-      offsets_global[i] = (i + cell_offset) * num_dofs_per_cell;
-  }
-
-  // ADIOS2 write attributes and variables
-  {
-    io.DefineAttribute<std::string>("version", dolfinx::version());
-    io.DefineAttribute<std::string>("git_hash", dolfinx::git_commit_hash());
-    io.DefineAttribute<std::string>("name", mesh.name);
-    io.DefineAttribute<std::int32_t>("dim", dim);
-    io.DefineAttribute<std::int32_t>("tdim", tdim);
-    io.DefineAttribute<std::string>("cell_type", cell_type);
-    io.DefineAttribute<std::int32_t>("degree", degree);
-    io.DefineAttribute<std::string>("lagrange_variant", lagrange_variant);
-
     adios2::Variable<std::uint64_t> var_num_nodes
         = io.DefineVariable<std::uint64_t>("num_nodes");
-    adios2::Variable<std::uint64_t> var_num_cells
-        = io.DefineVariable<std::uint64_t>("num_cells");
-
-    adios2::Variable<T> var_x
-        = io.DefineVariable<T>("x", {num_nodes_global, 3}, {offset, 0},
-                               {num_nodes_local, 3}, adios2::ConstantDims);
-
-    adios2::Variable<std::int64_t> var_topology_array
-        = io.DefineVariable<std::int64_t>(
-            "topology_array", {num_cells_global * num_dofs_per_cell},
-            {cell_offset * num_dofs_per_cell},
-            {num_cells_local * num_dofs_per_cell}, adios2::ConstantDims);
-
-    adios2::Variable<std::int32_t> var_topology_offsets
-        = io.DefineVariable<std::int32_t>(
-            "topology_offsets", {num_cells_global + 1}, {cell_offset},
-            {num_cells_local + 1}, adios2::ConstantDims);
-
-    assert(!engine.BetweenStepPairs());
-    engine.BeginStep();
     engine.Put(var_num_nodes, num_nodes_global);
-    engine.Put(var_num_cells, num_cells_global);
-    engine.Put(var_x, mesh_x.subspan(0, num_nodes_local * 3).data());
-    engine.Put(var_topology_array, array_global.data());
-    engine.Put(var_topology_offsets, offsets_global.data());
-    engine.EndStep();
-
-    spdlog::info("Mesh written");
   }
+
+  adios2::Variable var_time = define_var<double>(io, "time", {}, {}, {});
+
+  adios2::Variable var_x = define_var<T>(io, "x", {num_nodes_global, 3},
+                                         {offset, 0}, {num_nodes_local, 3});
+
+  engine.Put(var_time, time);
+  engine.Put(var_x, mesh_x.subspan(0, num_nodes_local * 3).data());
+
+  engine.EndStep();
+
+  spdlog::info("Mesh written");
 }
 
 //-----------------------------------------------------------------------------
 /// @cond
 template void write_mesh<float>(adios2::IO& io, adios2::Engine& engine,
-                                const dolfinx::mesh::Mesh<float>& mesh);
+                                const dolfinx::mesh::Mesh<float>& mesh,
+                                double time);
 
 template void write_mesh<double>(adios2::IO& io, adios2::Engine& engine,
-                                 const dolfinx::mesh::Mesh<double>& mesh);
+                                 const dolfinx::mesh::Mesh<double>& mesh,
+                                 double time);
 
 /// @endcond
 
@@ -301,6 +334,96 @@ read_mesh<double>(adios2::IO& io, adios2::Engine& engine, MPI_Comm comm,
                   dolfinx::mesh::GhostMode ghost_mode);
 
 /// @endcond
+
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+void update_mesh(adios2::IO& io, adios2::Engine& engine,
+                 dolfinx::mesh::Mesh<T>& mesh, std::size_t step)
+{
+  if (!engine.BetweenStepPairs())
+  {
+    engine.BeginStep();
+  }
+
+  std::uint32_t num_nodes_local = mesh.geometry().index_map()->size_local();
+  std::vector<T> x_raw(num_nodes_local * 3);
+
+  // Read variables
+  {
+    double time;
+    adios2::Variable<double> var_time = io.InquireVariable<double>("time");
+    var_time.SetStepSelection({step, 1});
+    if (var_time)
+    {
+      engine.Get(var_time, time);
+      spdlog::info("Updating geometry at time : {}", time);
+    }
+    else
+    {
+      throw std::runtime_error("Step : " + std::to_string(step) + " not found");
+    }
+
+    adios2::Variable<T> var_x = io.InquireVariable<T>("x");
+    var_x.SetStepSelection({step, 1});
+    if (var_x)
+    {
+      std::uint64_t nodes_offset
+          = mesh.geometry().index_map()->local_range()[0];
+      var_x.SetSelection({{nodes_offset, 0}, {num_nodes_local, 3}});
+      engine.Get(var_x, x_raw.data(), adios2::Mode::Sync);
+    }
+    else
+    {
+      throw std::runtime_error("Coordinates data not found at step : " + step);
+    }
+  }
+
+  engine.EndStep();
+
+  // Redistribute adios2 input coordinate data and find updated coordinates of
+  // the mesh
+  std::vector<T> x_new = dolfinx::MPI::distribute_data(
+      mesh.comm(), mesh.geometry().input_global_indices(), mesh.comm(), x_raw,
+      3);
+
+  std::span<T> x = mesh.geometry().x();
+  std::ranges::transform(x_new, x.begin(), [](auto it) { return it; });
+}
+
+//-----------------------------------------------------------------------------
+/// @cond
+template void update_mesh<float>(adios2::IO& io, adios2::Engine& engine,
+                                 dolfinx::mesh::Mesh<float>& mesh,
+                                 std::size_t step);
+
+template void update_mesh<double>(adios2::IO& io, adios2::Engine& engine,
+                                  dolfinx::mesh::Mesh<double>& mesh,
+                                  std::size_t step);
+
+/// @endcond
+
+//-----------------------------------------------------------------------------
+std::vector<double> read_timestamps(adios2::IO& io, adios2::Engine& engine)
+{
+  if (engine.OpenMode() != adios2::Mode::ReadRandomAccess)
+  {
+    throw std::runtime_error(
+        "Time stamps can only be read in ReadRandomAccess mode");
+  }
+  adios2::Variable<double> var_time = io.InquireVariable<double>("time");
+  const std::vector<std::vector<adios2::Variable<double>::Info>> timestepsinfo
+      = var_time.AllStepsBlocksInfo();
+
+  std::size_t num_steps = timestepsinfo.size();
+  std::vector<double> times(num_steps);
+
+  for (std::size_t step = 0; step < num_steps; ++step)
+  {
+    var_time.SetStepSelection({step, 1});
+    engine.Get(var_time, times[step]);
+  }
+  return times;
+}
 
 } // namespace dolfinx::io::native
 

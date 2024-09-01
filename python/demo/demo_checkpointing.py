@@ -17,6 +17,8 @@
 # +
 import os
 
+import numpy as np
+
 import dolfinx
 
 if not dolfinx.common.has_adios2:
@@ -24,8 +26,6 @@ if not dolfinx.common.has_adios2:
     exit(0)
 
 from mpi4py import MPI
-
-import numpy as np
 
 from dolfinx import io, mesh
 
@@ -65,41 +65,69 @@ for dim in range(msh.topology.dim + 1):
 
 # +
 config_path = os.getcwd() + "/checkpointing.yml"
-adios2 = io.ADIOS2(config_path, msh.comm, filename="mesh.bp", tag="mesh-write", mode="write")
+adios2 = io.ADIOS2(config_path, msh.comm)
+tag = "mesh-write"
+adios2.add_io(filename="mesh.bp", tag=tag, mode="write")
 # -
 
 # +
-io.write_mesh(adios2, msh)
+io.write_mesh(adios2, tag, msh)
+
+msh.geometry.x[:] += 4
+io.write_mesh(adios2, tag, msh, 0.5)
+
+msh.geometry.x[:] += 4
+io.write_mesh(adios2, tag, msh, 1.0)
+
+adios2.close(tag)
+# -
+
+# +
+tag = "mesh-readrandomaccess"
+adios2.add_io(filename="mesh.bp", tag=tag, engine_type="BP5", mode="readrandomaccess")
+# -
+
+# +
+times = io.read_timestamps(adios2, tag)
+print(f"Time stamps : {times}")
+# -
+
+# +
+tag = "mesh-read"
+adios2.add_io(filename="mesh.bp", tag=tag, engine_type="BP5", mode="read")
+# -
+
+# +
+msh_read = io.read_mesh(adios2, tag, msh.comm)
+print(np.max(msh_read.geometry.x))
+
+io.update_mesh(adios2, tag, msh_read, 1)
+print(np.max(msh_read.geometry.x))
+
+io.update_mesh(adios2, tag, msh_read, 2)
+print(np.max(msh_read.geometry.x))
+
+adios2.close(tag)
+# -
+
+# +
+tag = "meshtags-write"
+adios2.add_io(filename="meshtags.bp", tag=tag, engine_type="BP5", mode="write")
+# -
+
+# +
 for mt_name, mt in tags.items():
-    io.write_meshtags(adios2, msh, mt)
+    io.write_meshtags(adios2, tag, msh, mt)
 
-adios2.close()
+adios2.close(tag)
 # -
 
 # +
-adios2_read = io.ADIOS2(
-    msh.comm, filename="mesh.bp", tag="mesh-read", engine_type="BP5", mode="read"
-)
+tag = "meshtags-read"
+adios2.add_io(filename="meshtags.bp", tag=tag, engine_type="BP5", mode="read")
 # -
 
 # +
-msh_read = io.read_mesh(adios2_read, msh.comm)
-tags_read = io.read_meshtags(adios2_read, msh_read)
-adios2_read.close()
-# -
-
-# +
-adios2_write = io.ADIOS2(
-    msh_read.comm, filename="mesh2.bp", tag="mesh-write", engine_type="BP5", mode="write"
-)
-# -
-
-# +
-io.write_mesh(adios2_write, msh_read)
-
-for mt_name, mt_read in tags_read.items():
-    io.write_meshtags(adios2_write, msh_read, mt_read)
-
-
-adios2_write.close()
+tags_read = io.read_meshtags(adios2, tag, msh)
+adios2.close(tag)
 # -
