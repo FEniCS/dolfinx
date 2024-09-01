@@ -21,6 +21,8 @@ if _cpp.common.has_adios2:
         VTXWriter,
         read_mesh,
         read_meshtags,
+        read_timestamps,
+        update_mesh,
         write_mesh,
         write_meshtags,
     )
@@ -32,8 +34,11 @@ if _cpp.common.has_adios2:
         "FidesMeshPolicy",
         "VTXMeshPolicy",
         "ADIOS2",
-        "write_mesh",
-        "write_meshtags",
         "read_mesh",
         "read_meshtags",
+        "read_mesh",
+        "read_timestamps",
+        "update_mesh",
+        "write_mesh",
+        "write_meshtags",
     ]

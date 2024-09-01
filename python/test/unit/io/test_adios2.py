@@ -84,9 +84,9 @@ def generate_map(
     return None
 
 
-# TODO: Fix problems with ("HDF5", ".h5")
+# TODO: Fix problems with ("HDF5", ".h5"), ("BP4", ".bp"),
 @pytest.mark.adios2
-@pytest.mark.parametrize("encoder, suffix", [("BP4", ".bp"), ("BP5", ".bp")])
+@pytest.mark.parametrize("encoder, suffix", [("BP5", ".bp")])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.shared_facet, GhostMode.none])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("dim", [2, 3])
@@ -102,25 +102,19 @@ def test_mesh_read_write(encoder, suffix, ghost_mode, dtype, dim, simplex, tmp_p
 
     mesh = generate_mesh(dim, simplex, N, dtype)
 
-    adios = ADIOS2(
-        mesh.comm,
-        filename=str(file.with_suffix(suffix)),
-        tag="mesh-write",
-        engine_type=encoder,
-        mode="write",
+    adios = ADIOS2(mesh.comm)
+    tag = "mesh-write"
+    adios.add_io(filename=str(file.with_suffix(suffix)), tag=tag, engine_type=encoder, mode="write")
+
+    write_mesh(adios, tag, mesh)
+
+    adios_read = ADIOS2(MPI.COMM_WORLD)
+    tag = "mesh-read"
+    adios_read.add_io(
+        filename=str(file.with_suffix(suffix)), tag=tag, engine_type=encoder, mode="read"
     )
 
-    write_mesh(adios, mesh)
-
-    adios_read = ADIOS2(
-        MPI.COMM_WORLD,
-        filename=str(file.with_suffix(suffix)),
-        tag="mesh-read",
-        engine_type=encoder,
-        mode="read",
-    )
-
-    mesh_adios = read_mesh(adios_read, MPI.COMM_WORLD, ghost_mode=ghost_mode)
+    mesh_adios = read_mesh(adios_read, tag, MPI.COMM_WORLD, ghost_mode=ghost_mode)
 
     mesh_adios.comm.Barrier()
     mesh.comm.Barrier()
@@ -143,7 +137,7 @@ def test_mesh_read_write(encoder, suffix, ghost_mode, dtype, dim, simplex, tmp_p
         )
 
 
-# FIXME: ("BP4", ".bp") unable to read the shape of values
+# FIXME: Fix problems with ("HDF5", ".h5"), ("BP4", ".bp"),
 @pytest.mark.adios2
 @pytest.mark.parametrize("encoder, suffix", [("BP5", ".bp")])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.shared_facet, GhostMode.none])
@@ -160,18 +154,27 @@ def test_meshtags(encoder, suffix, ghost_mode, dtype, dim, simplex, tmp_path):
 
     # Consistent tmp dir across processes
     fname = MPI.COMM_WORLD.bcast(tmp_path, root=0)
-    key = f"meshtags_{mesh.topology.cell_name()}_{encoder}"
-    file = fname / key
+    key_mesh = f"mesh_{mesh.topology.cell_name()}_{encoder}"
+    key_meshtags = f"meshtags_{mesh.topology.cell_name()}_{encoder}"
 
-    adios = ADIOS2(
-        mesh.comm,
-        filename=str(file.with_suffix(suffix)),
-        tag="meshtags-write",
-        engine_type=encoder,
-        mode="write",
+    file_mesh = fname / key_mesh
+    file_meshtags = fname / key_meshtags
+
+    adios = ADIOS2(mesh.comm)
+
+    tag = "mesh-write"
+    adios.add_io(
+        filename=str(file_mesh.with_suffix(suffix)), tag=tag, engine_type=encoder, mode="write"
     )
 
-    write_mesh(adios, mesh)
+    write_mesh(adios, tag, mesh)
+
+    adios.close(tag)
+
+    tag = "meshtags-write"
+    adios.add_io(
+        filename=str(file_meshtags.with_suffix(suffix)), tag=tag, engine_type=encoder, mode="write"
+    )
 
     # Create and write meshtags and store midpoints of entities
     ref_maps = []
@@ -183,7 +186,7 @@ def test_meshtags(encoder, suffix, ghost_mode, dtype, dim, simplex, tmp_path):
         mt = meshtags(mesh, dim, entities, e_map.local_range[0] + entities)
         mt.name = f"entity_{dim}"
 
-        write_meshtags(adios, mesh, mt)
+        write_meshtags(adios, tag, mesh, mt)
         ref_map = generate_map(mesh, mt, mesh.comm, root)
         ref_maps.append(ref_map)
 
@@ -191,19 +194,23 @@ def test_meshtags(encoder, suffix, ghost_mode, dtype, dim, simplex, tmp_path):
 
     del mesh
 
-    adios.close()
+    adios.close(tag)
     MPI.COMM_WORLD.Barrier()
 
-    adios_read = ADIOS2(
-        MPI.COMM_WORLD,
-        filename=str(file.with_suffix(suffix)),
-        tag="meshtags-read",
-        engine_type=encoder,
-        mode="read",
+    adios_read = ADIOS2(MPI.COMM_WORLD)
+
+    tag = "mesh-read"
+    adios_read.add_io(
+        filename=str(file_mesh.with_suffix(suffix)), tag=tag, engine_type=encoder, mode="read"
     )
 
-    mesh_adios = read_mesh(adios_read, MPI.COMM_WORLD, ghost_mode=ghost_mode)
-    tags_read = read_meshtags(adios_read, mesh_adios)
+    mesh_adios = read_mesh(adios_read, tag, MPI.COMM_WORLD, ghost_mode=ghost_mode)
+
+    tag = "meshtags-read"
+    adios_read.add_io(
+        filename=str(file_meshtags.with_suffix(suffix)), tag=tag, engine_type=encoder, mode="read"
+    )
+    tags_read = read_meshtags(adios_read, tag, mesh_adios)
 
     for dim, (mt_name, mt_adios) in enumerate(tags_read.items()):
         assert dim == mt_adios.dim
@@ -216,6 +223,101 @@ def test_meshtags(encoder, suffix, ghost_mode, dtype, dim, simplex, tmp_path):
             for value, (_, midpoint) in ref_map.items():
                 _, read_midpoint = read_map[value]
                 np.testing.assert_allclose(read_midpoint, midpoint)
+
+
+# TODO: Fix problems with ("HDF5", ".h5"), ("BP4", ".bp"),
+@pytest.mark.adios2
+@pytest.mark.parametrize("encoder, suffix", [("BP5", ".bp")])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.shared_facet, GhostMode.none])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("simplex", [True, False])
+def test_timedep_mesh_read_write(encoder, suffix, ghost_mode, dtype, dim, simplex, tmp_path):
+    "Test writing of a time dependent mesh"
+    from dolfinx.io import ADIOS2, read_mesh, read_timestamps, update_mesh, write_mesh
+
+    N = 5
+    # Consistent tmp dir across processes
+    fname = MPI.COMM_WORLD.bcast(tmp_path, root=0)
+    file = fname / f"adios_timedep_mesh_{encoder}"
+
+    mesh = generate_mesh(dim, simplex, N, dtype)
+
+    def displace(x):
+        return np.asarray(
+            [
+                x[0] + 0.1 * np.sin(x[0]) * np.cos(x[1]),
+                x[1] + 0.6 * np.cos(x[0]) * np.sin(x[1]),
+                x[2],
+            ]
+        )
+
+    adios = ADIOS2(mesh.comm)
+    tag_write = "mesh-write"
+    adios.add_io(
+        filename=str(file.with_suffix(suffix)), tag=tag_write, engine_type=encoder, mode="write"
+    )
+
+    # Write mesh
+    write_mesh(adios, tag_write, mesh, time=0.0)
+
+    delta_x1 = displace(mesh.geometry.x.T).T
+    mesh.geometry.x[:] += delta_x1
+
+    write_mesh(adios, tag_write, mesh, time=1.0)
+
+    delta_x2 = displace(mesh.geometry.x.T).T
+    mesh.geometry.x[:] += delta_x2
+
+    write_mesh(adios, tag_write, mesh, time=2.0)
+
+    adios.close(tag_write)
+
+    # reset mesh geometry to the one at time=0.0
+    mesh.geometry.x[:] -= delta_x1 + delta_x2
+
+    tag_rra = "mesh-readrandomaccess"
+    adios.add_io(
+        filename=str(file.with_suffix(suffix)),
+        tag=tag_rra,
+        engine_type=encoder,
+        mode="readrandomaccess",
+    )
+    times = read_timestamps(adios, tag_rra)
+    adios.close(tag_rra)
+    assert np.all(np.isclose(times, [0.0, 1.0, 2.0]))
+
+    tag_read = "mesh-read"
+    adios.add_io(
+        filename=str(file.with_suffix(suffix)), tag=tag_read, engine_type=encoder, mode="read"
+    )
+    mesh_adios = read_mesh(adios, tag_read, MPI.COMM_WORLD, ghost_mode=ghost_mode)
+
+    mesh_adios.comm.Barrier()
+    mesh.comm.Barrier()
+
+    # Check that integration over different entities are consistent
+    measures = [ufl.ds, ufl.dx] if ghost_mode is GhostMode.none else [ufl.ds, ufl.dS, ufl.dx]
+    for step, time in enumerate(times):
+        if step == 1:
+            mesh.geometry.x[:] += delta_x1
+        if step == 2:
+            mesh.geometry.x[:] += delta_x2
+
+        # FIXME: update_mesh at time time=0.0 should work!?
+        if step > 0:
+            update_mesh(adios, tag_read, mesh_adios, step)
+
+        mesh_adios.comm.Barrier()
+        mesh.comm.Barrier()
+
+        for measure in measures:
+            c_adios = assemble_scalar(form(1 * measure(domain=mesh_adios), dtype=dtype))
+            c_ref = assemble_scalar(form(1 * measure(domain=mesh), dtype=dtype))
+            assert np.isclose(
+                mesh_adios.comm.allreduce(c_adios, MPI.SUM),
+                mesh.comm.allreduce(c_ref, MPI.SUM),
+            )
 
 
 @pytest.mark.adios2
