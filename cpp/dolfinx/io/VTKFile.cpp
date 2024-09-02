@@ -27,21 +27,13 @@
 #include <string>
 
 using namespace dolfinx;
+namespace impl = dolfinx::io::impl;
 
 namespace
 {
 /// String suffix for real and complex components of a vector-valued
 /// field
 constexpr std::array field_ext = {"_real", "_imag"};
-
-/// Return true if element is a cell-wise constant, otherwise false
-template <std::floating_point T>
-bool is_cellwise(const fem::FiniteElement<T>& e)
-{
-  return e.space_dimension() / e.block_size() == 1;
-}
-
-//----------------------------------------------------------------------------
 
 /// Get counter string to include in filename
 std::string get_counter(const pugi::xml_node& node, const std::string& name)
@@ -338,7 +330,7 @@ void write_function(
   {
     auto V = v.get().function_space();
     assert(V);
-    if (!is_cellwise(*V->element()))
+    if (!impl::is_cellwise(*V->element()))
     {
       V0 = V;
       break;
@@ -377,7 +369,7 @@ void write_function(
     }
 
     // Check that pointwise elements are the same (up to the block size)
-    if (!is_cellwise(*e))
+    if (!impl::is_cellwise(*e))
     {
       if (*e != *element0)
       {
@@ -412,7 +404,7 @@ void write_function(
   std::vector<std::uint8_t> x_ghost;
   std::vector<std::int64_t> cells;
   std::array<std::size_t, 2> cshape;
-  if (is_cellwise(*V0->element()))
+  if (impl::is_cellwise(*V0->element()))
   {
     std::vector<std::int64_t> tmp;
     std::tie(tmp, cshape) = io::extract_vtk_connectivity(
@@ -455,7 +447,7 @@ void write_function(
     assert(_u.get().function_space());
     auto e = _u.get().function_space()->element();
     assert(e);
-    auto data_type = is_cellwise(*e) ? "CellData" : "PointData";
+    auto data_type = impl::is_cellwise(*e) ? "CellData" : "PointData";
     if (piece_node.child(data_type).empty())
       piece_node.append_child(data_type);
 
@@ -487,7 +479,7 @@ void write_function(
     if (rank > 0)
       component_vector[0] = num_components;
 
-    if (is_cellwise(*e))
+    if (impl::is_cellwise(*e))
     {
       // -- Cell-wise data
 
@@ -633,7 +625,7 @@ void write_function(
     grid_node.append_attribute("GhostLevel") = 1;
     for (auto _u : u)
     {
-      if (auto e = _u.get().function_space()->element(); is_cellwise(*e))
+      if (auto e = _u.get().function_space()->element(); impl::is_cellwise(*e))
       {
         if (grid_node.child("PCellData").empty())
           grid_node.append_child("PCellData");
@@ -655,7 +647,7 @@ void write_function(
       assert(V);
       auto e = V->element();
       assert(e);
-      std::string d_type = is_cellwise(*e) ? "PCellData" : "PPointData";
+      std::string d_type = impl::is_cellwise(*e) ? "PCellData" : "PPointData";
       pugi::xml_node data_pnode = grid_node.child(d_type.c_str());
 
       // Pad to 3D if vector/tensor is product of dimensions is smaller than
