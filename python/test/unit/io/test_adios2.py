@@ -312,11 +312,9 @@ class TestVTX:
 
         reuse_variables = ["NumberOfEntities", "NumberOfNodes", "connectivity", "geometry", "types"]
         target_all = 3  # For all other variables the step count is number of writes
-        target_mesh = (
-            1 if reuse else 3
-        )
+        target_mesh = 1 if reuse else 3
         # For mesh variables the step count is 1 if reuse else number of writes
-        if hasattr(adios2 , "is_built_with_mpi"):
+        if hasattr(adios2, "is_built_with_mpi"):
             if not adios2.is_built_with_mpi:
                 pytest.skip("Require adios2 built with MPI support")
             adios = adios2.Adios(comm=mesh.comm)
