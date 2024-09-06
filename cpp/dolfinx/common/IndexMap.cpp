@@ -216,7 +216,7 @@ compute_submap_indices(const IndexMap& imap,
       for (int j = recv_disp[i]; j < recv_disp[i + 1]; ++j)
       {
         // Compute the local index
-        std::int32_t idx = recv_indices[j];
+        std::int64_t idx = recv_indices[j];
         assert(idx >= 0);
         std::int32_t idx_local = idx - local_range[0];
         assert(idx_local >= 0);
