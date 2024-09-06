@@ -270,161 +270,6 @@ class TestVTX:
             dest = np.full(len(cells), comm.rank, dtype=np.int32)
             return adjacencylist(dest)
 
-<<<<<<< HEAD
-
-@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
-@pytest.mark.parametrize("dim", [2, 3])
-@pytest.mark.parametrize("simplex", [True, False])
-def test_vtx_single_function(tempdir, dim, simplex):
-    "Test saving a single first order Lagrange functions"
-    mesh = generate_mesh(dim, simplex)
-    v = Function(functionspace(mesh, ("Lagrange", 1)))
-
-    filename = Path(tempdir, "v.bp")
-    writer = VTXWriter(mesh.comm, filename, v)
-    writer.write(0)
-    writer.close()
-
-    filename = Path(tempdir, "v2.bp")
-    writer = VTXWriter(mesh.comm, filename, v._cpp_object)
-    writer.write(0)
-    writer.close()
-
-
-@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-@pytest.mark.parametrize("dim", [2, 3])
-@pytest.mark.parametrize("simplex", [True, False])
-def test_vtx_functions(tempdir, dtype, dim, simplex):
-    "Test saving high order Lagrange functions"
-    xtype = np.real(dtype(0)).dtype
-    mesh = generate_mesh(dim, simplex, dtype=xtype)
-    gdim = mesh.geometry.dim
-    V = functionspace(mesh, ("DG", 2, (gdim,)))
-    v = Function(V, dtype=dtype)
-    bs = V.dofmap.index_map_bs
-
-    def vel(x):
-        values = np.zeros((dim, x.shape[1]), dtype=dtype)
-        values[0] = x[1]
-        values[1] = x[0]
-        return values
-
-    v.interpolate(vel)
-
-    W = functionspace(mesh, ("DG", 2))
-    w = Function(W, dtype=v.dtype)
-    w.interpolate(lambda x: x[0] + x[1])
-
-    filename = Path(tempdir, f"v-{np.dtype(dtype).num}.bp")
-    f = VTXWriter(mesh.comm, filename, [v, w])
-
-    # Set two cells to 0
-    for c in [0, 1]:
-        dofs = np.asarray([V.dofmap.cell_dofs(c) * bs + b for b in range(bs)], dtype=np.int32)
-        v.x.array[dofs] = 0
-        w.x.array[W.dofmap.cell_dofs(c)] = 1
-    v.x.scatter_forward()
-    w.x.scatter_forward()
-
-    # Save twice and update geometry
-    for t in [0.1, 1]:
-        mesh.geometry.x[:, :2] += 0.1
-        f.write(t)
-
-    f.close()
-
-
-@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
-def test_save_vtkx_cell_point(tempdir):
-    """Test writing point-wise data"""
-    mesh = create_unit_square(MPI.COMM_WORLD, 8, 5)
-    P = element("Discontinuous Lagrange", mesh.basix_cell(), 0)
-
-    V = functionspace(mesh, P)
-    u = Function(V)
-    u.interpolate(lambda x: 0.5 * x[0])
-    u.name = "A"
-
-    filename = Path(tempdir, "v.bp")
-    f = VTXWriter(mesh.comm, filename, [u])
-    f.write(0)
-    f.close()
-
-
-def test_empty_rank_mesh(tempdir):
-    """Test VTXWriter on mesh where some ranks have no cells"""
-    comm = MPI.COMM_WORLD
-    cell_type = CellType.triangle
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(2,), dtype=default_real_type))
-
-    def partitioner(comm, nparts, local_graph, num_ghost_nodes):
-        """Leave cells on the current rank"""
-        dest = np.full(len(cells), comm.rank, dtype=np.int32)
-        return adjacencylist(dest)
-
-    if comm.rank == 0:
-        cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
-        x = np.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]], dtype=default_real_type)
-    else:
-        cells = np.empty((0, 3), dtype=np.int64)
-        x = np.empty((0, 2), dtype=default_real_type)
-
-    mesh = create_mesh(comm, cells, x, domain, partitioner)
-
-    V = functionspace(mesh, ("Lagrange", 1))
-    u = Function(V)
-
-    filename = Path(tempdir, "empty_rank_mesh.bp")
-    with VTXWriter(comm, filename, u) as f:
-        f.write(0.0)
-
-
-@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
-@pytest.mark.parametrize("dim", [2, 3])
-@pytest.mark.parametrize("simplex", [True, False])
-@pytest.mark.parametrize("reuse", [True, False])
-def test_vtx_reuse_mesh(tempdir, dim, simplex, reuse):
-    "Test reusage of mesh by VTXWriter"
-    adios2 = pytest.importorskip("adios2")
-    if not adios2.is_built_with_mpi:
-        pytest.skip("adios2 was not built against MPI")
-
-    mesh = generate_mesh(dim, simplex)
-    v = Function(functionspace(mesh, ("Lagrange", 1)))
-    filename = Path(tempdir, "v.bp")
-    v.name = "v"
-    policy = VTXMeshPolicy.reuse if reuse else VTXMeshPolicy.update
-
-    # Save three steps
-    writer = VTXWriter(mesh.comm, filename, v, "BP4", policy)
-    writer.write(0)
-    v.interpolate(lambda x: 0.5 * x[0])
-    writer.write(1)
-    v.interpolate(lambda x: x[1])
-    writer.write(2)
-    writer.close()
-
-    reuse_variables = ["NumberOfEntities", "NumberOfNodes", "connectivity", "geometry", "types"]
-    target_all = 3  # For all other variables the step count is number of writes
-    target_mesh = (
-        1 if reuse else 3
-    )  # For mesh variables the step count is 1 if reuse else number of writes
-
-    # backwards compatibility adios2 < 2.10.0
-    try:
-        adios_file = adios2.open(str(filename), "r", comm=mesh.comm, engine_type="BP4")
-    except AttributeError:
-        # adios2 >= v2.10.0
-        adios = adios2.Adios(comm=mesh.comm)
-        io = adios.declare_io("TestData")
-        io.set_engine("BP4")
-        adios_file = adios2.Stream(io, str(filename), "r", mesh.comm)
-
-    for name, var in adios_file.available_variables().items():
-        if name in reuse_variables:
-            assert int(var["AvailableStepsCount"]) == target_mesh
-        
         if comm.rank == 0:
             cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
             x = np.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]], dtype=default_real_type)
@@ -469,17 +314,17 @@ def test_vtx_reuse_mesh(tempdir, dim, simplex, reuse):
         target_all = 3  # For all other variables the step count is number of writes
         target_mesh = (
             1 if reuse else 3
-        )  # For mesh variables the step count is 1 if reuse else number of writes
-
-        # backwards compatibility adios2 < 2.10.0
-        try:
-            adios_file = adios2.open(str(filename), "r", comm=mesh.comm, engine_type="BP4")
-        except AttributeError:
-            # adios2 >= v2.10.0
+        )
+        # For mesh variables the step count is 1 if reuse else number of writes
+        if hasattr(adios2 , "is_built_with_mpi"):
+            if not adios2.is_built_with_mpi:
+                pytest.skip("Require adios2 built with MPI support")
             adios = adios2.Adios(comm=mesh.comm)
             io = adios.declare_io("TestData")
             io.set_engine("BP4")
             adios_file = adios2.Stream(io, str(filename), "r", mesh.comm)
+        else:
+            pytest.skip("Require adios2>=2.10.0")
 
         for name, var in adios_file.available_variables().items():
             if name in reuse_variables:
