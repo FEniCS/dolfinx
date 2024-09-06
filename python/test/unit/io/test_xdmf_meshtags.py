@@ -5,7 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 from pathlib import Path
-from xml.etree import ElementTree
+from xml.etree import ElementTree as ET
 
 from mpi4py import MPI
 
@@ -93,8 +93,8 @@ def test_3d(tempdir, cell_type, encoding):
     facets_local = comm.allreduce(
         (mt.indices < mesh.topology.index_map(2).size_local).sum(), op=MPI.SUM
     )
-    parser = ElementTree.XMLParser()
-    tree = ElementTree.parse(Path(tempdir, "meshtags_3d_out.xdmf"), parser)
+    parser = ET.XMLParser()
+    tree = ET.parse(Path(tempdir, "meshtags_3d_out.xdmf"), parser)
     num_lines = int(tree.findall(".//Grid[@Name='lines']/Topology")[0].get("NumberOfElements"))
     num_facets = int(tree.findall(".//Grid[@Name='facets']/Topology")[0].get("NumberOfElements"))
     assert num_lines == lines_local

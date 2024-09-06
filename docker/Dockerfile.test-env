@@ -20,10 +20,10 @@ ARG HDF5_PATCH=3
 ARG HDF5_FIX=
 ARG KAHIP_VERSION=3.16
 ARG NUMPY_VERSION=1.26.4
-ARG PETSC_VERSION=3.21.2
+ARG PETSC_VERSION=3.21.3
 ARG SLEPC_VERSION=3.21.1
 
-ARG MPICH_VERSION=4.2.1
+ARG MPICH_VERSION=4.2.2
 ARG OPENMPI_SERIES=5.0
 ARG OPENMPI_PATCH=3
 
@@ -148,8 +148,8 @@ ENV PATH /dolfinx-env/bin:$PATH
 RUN python3 -m venv ${VIRTUAL_ENV}
 
 # Install Python packages (via pip)
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir cffi numpy==${NUMPY_VERSION} setuptools wheel && \
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir numpy==${NUMPY_VERSION} && \
     pip install --no-cache-dir --no-build-isolation mpi4py
 
 # Install KaHIP
@@ -316,9 +316,9 @@ RUN apt-get -qq update && \
     make PETSC_ARCH=linux-gnu-complex128-64 ${MAKEFLAGS} all && \
     # Install petsc4py
     cd src/binding/petsc4py && \
-    pip install --no-cache-dir cython wheel && \
+    pip install --no-cache-dir cython && \
     PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip -v install --no-cache-dir --no-build-isolation . && \
-    # pip3 uninstall --yes cython wheel && \
+    pip3 uninstall --yes cython && \
     # Cleanup
     apt-get -y purge bison flex && \
     apt-get -y autoremove && \
@@ -359,9 +359,9 @@ RUN git clone --depth=1 -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git 
     make && \
     # Install slepc4py
     cd src/binding/slepc4py && \
-    # pip3 install --break-system-packages --no-cache-dir cython wheel && \
+    pip3 install --no-cache-dir cython && \
     PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip -v install --no-cache-dir --no-build-isolation . && \
-    # pip3 uninstall --yes cython wheel && \
+    pip3 uninstall --yes cython && \
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*
 
