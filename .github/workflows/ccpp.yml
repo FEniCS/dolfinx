@@ -52,18 +52,18 @@ jobs:
           mypy demo
           mypy test
 
-      - name: clang-format C++ checks (non-blocking)
+      - name: clang-format cpp/
         working-directory: cpp
         run: |
           clang-format --version
           find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
 
-      - name: clang-format Python binding checks (non-blocking)
-        continue-on-error: true
+      - name: clang-format Python bindings
+        working-directory: python/dolfinx/wrappers
         run: |
-          cd python/dolfinx/wrappers
           clang-format --version
           find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
+
       - name: cmake-format (non-blocking)
         continue-on-error: true
         run: |
