@@ -38,18 +38,13 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
       - name: Install linting tools
         run: pip install clang-format cmake-format[YAML] mypy ruff
-      - name: ruff .py files in C++ code
-        run: |
-          cd cpp/
-          ruff check .
-          ruff format --check .
-      - name: ruff Python interface checks
-        run: |
-          cd python/
-          ruff check .
-          ruff format --check .
+
+      - name: Run ruff
+        run: ruff check python/ cpp/
+
       - name: mypy checks
         run: |
           cd python/
