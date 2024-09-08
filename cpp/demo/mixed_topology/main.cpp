@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
       std::cout << i << " [";
       for (auto q : topo_cells->links(i))
         std::cout << q << " ";
-      std::cout << "]" << std::endl;;
+      std::cout << "]" << std::endl;
     }
 
     topo->create_connectivity(1, 0);

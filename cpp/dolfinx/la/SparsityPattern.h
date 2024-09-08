@@ -78,7 +78,7 @@ public:
   /// cols into the sparsity pattern, i.e. adds the matrix entries at
   ///   A[row[i], col[j]] for all i, j.
   ///
-  /// @param[in] rows list of the local row indices 
+  /// @param[in] rows list of the local row indices
   /// @param[in] cols list of the local column indices
   void insert(std::span<const std::int32_t> rows,
               std::span<const std::int32_t> cols);

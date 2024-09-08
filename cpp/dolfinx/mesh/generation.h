@@ -205,7 +205,8 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
 /// across MPI ranks.
 /// @return A mesh.
 template <std::floating_point T = double>
-Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<double, 2> p, mesh::GhostMode ghost_mode = mesh::GhostMode::none,
+Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<double, 2> p,
+                        mesh::GhostMode ghost_mode = mesh::GhostMode::none,
                         CellPartitionFunction partitioner = nullptr)
 {
   if (!partitioner and dolfinx::MPI::size(comm) > 1)

@@ -1256,8 +1256,7 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
   std::vector<std::int64_t> sub_igi;
   sub_igi.reserve(subx_to_x_dofmap.size());
   std::ranges::transform(subx_to_x_dofmap, std::back_inserter(sub_igi),
-                         [&igi](auto sub_x_dof)
-                         { return igi[sub_x_dof]; });
+                         [&igi](auto sub_x_dof) { return igi[sub_x_dof]; });
 
   // Create geometry
   return {Geometry(sub_x_dof_index_map, std::move(sub_x_dofmap), {sub_cmap},
