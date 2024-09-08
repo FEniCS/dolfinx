@@ -47,7 +47,10 @@ jobs:
 
       - name: Run mypy
         working-directory: python/
-        run: mypy dolfinx/ demo/ test/
+        run: |
+          mypy dolfinx
+          mypy demo
+          mypy test
 
       - name: clang-format C++ checks (non-blocking)
         working-directory: cpp
