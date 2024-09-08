@@ -53,14 +53,10 @@ jobs:
           mypy test
 
       - name: Run clang-format
-        run: |
-          clang-format --version
-          find cpp/ python/dolfinx/wrappers/ -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
+        run: find cpp/ python/dolfinx/wrappers/ -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
 
-      - name: cmake-format (non-blocking)
-        continue-on-error: true
-        run: |
-          find . -type f \( -name "*.cmake" -o -name "*.cmake.in" -o -name "CMakeLists.txt" \) | xargs cmake-format --check
+      - name: Run cmake-format
+        run: find . -type f \( -name "*.cmake" -o -name "*.cmake.in" -o -name "CMakeLists.txt" \) | xargs cmake-format --check
 
   build:
     runs-on: ubuntu-latest
