@@ -42,10 +42,7 @@ find_package(
   REQUIRED
 )
 
-message(
-  STATUS
-    "Asking Python module FFCx for location of ufcx.h..."
-)
+message(STATUS "Asking Python module FFCx for location of ufcx.h...")
 
 # Get include path
 execute_process(

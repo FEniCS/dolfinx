@@ -386,7 +386,12 @@ find_package_handle_standard_args(
 
 if(SCOTCH_FOUND AND NOT TARGET SCOTCH::ptscotch)
   add_library(SCOTCH::ptscotch INTERFACE IMPORTED)
-  set_property(TARGET SCOTCH::ptscotch PROPERTY INTERFACE_LINK_LIBRARIES "${SCOTCH_LIBRARIES}")
-  set_property(TARGET SCOTCH::ptscotch PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${SCOTCH_INCLUDE_DIRS}")
+  set_property(
+    TARGET SCOTCH::ptscotch PROPERTY INTERFACE_LINK_LIBRARIES
+                                     "${SCOTCH_LIBRARIES}"
+  )
+  set_property(
+    TARGET SCOTCH::ptscotch PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+                                     "${SCOTCH_INCLUDE_DIRS}"
+  )
 endif()
-
