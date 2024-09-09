@@ -293,7 +293,7 @@ class TestVTX:
         """Test reusage of mesh by VTXWriter."""
         from dolfinx.io import VTXMeshPolicy, VTXWriter
 
-        adios2 = pytest.importorskip("adios2")
+        adios2 = pytest.importorskip("adios2", minversion="2.10.0")
 
         mesh = generate_mesh(dim, simplex)
         v = Function(functionspace(mesh, ("Lagrange", 1)))
@@ -314,15 +314,10 @@ class TestVTX:
         target_all = 3  # For all other variables the step count is number of writes
         target_mesh = 1 if reuse else 3
         # For mesh variables the step count is 1 if reuse else number of writes
-        if hasattr(adios2, "is_built_with_mpi"):
-            if not adios2.is_built_with_mpi:
-                pytest.skip("Require adios2 built with MPI support")
-            adios = adios2.Adios(comm=mesh.comm)
-            io = adios.declare_io("TestData")
-            io.set_engine("BP4")
-            adios_file = adios2.Stream(io, str(filename), "r", mesh.comm)
-        else:
-            pytest.skip("Require adios2>=2.10.0")
+        adios = adios2.Adios(comm=mesh.comm)
+        io = adios.declare_io("TestData")
+        io.set_engine("BP4")
+        adios_file = adios2.Stream(io, str(filename), "r", mesh.comm)
 
         for name, var in adios_file.available_variables().items():
             if name in reuse_variables:
