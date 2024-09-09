@@ -294,6 +294,8 @@ class TestVTX:
         from dolfinx.io import VTXMeshPolicy, VTXWriter
 
         adios2 = pytest.importorskip("adios2", minversion="2.10.0")
+        if not adios2.is_built_with_mpi:
+            pytest.skip("Require adios2 built with MPI support")
 
         mesh = generate_mesh(dim, simplex)
         v = Function(functionspace(mesh, ("Lagrange", 1)))
