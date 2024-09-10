@@ -14,7 +14,7 @@ using namespace dolfinx;
 using namespace dolfinx::common;
 
 //-----------------------------------------------------------------------------
-Timer::Timer(std::optional<std::string> task) : _task(std::move(task)) {}
+Timer::Timer(std::optional<std::string> task) : _task(task) {}
 //-----------------------------------------------------------------------------
 Timer::~Timer()
 {
