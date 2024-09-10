@@ -190,7 +190,7 @@ void declare_bbtree(nb::module_& m, std::string type)
                                                                  std::span(cells.data(), cells.size()),
                                                                  padding);
         },
-      nb::arg("mesh"), nb::arg("points"), nb::arg("cells"), nb::arg("padding") = 0.0,
+      nb::arg("mesh"), nb::arg("points"), nb::arg("cells"), nb::arg("padding"),
       "Compute point ownership data for mesh-points pair.");
 
   std::string pod_pyclass_name = "PointOwnershipData_" + type;
