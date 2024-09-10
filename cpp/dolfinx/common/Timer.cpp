@@ -4,11 +4,11 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <optional>
-#include <stdexcept>
+#include "Timer.h"
 #include "TimeLogManager.h"
 #include "TimeLogger.h"
-#include "Timer.h"
+#include <optional>
+#include <stdexcept>
 
 using namespace dolfinx;
 using namespace dolfinx::common;
