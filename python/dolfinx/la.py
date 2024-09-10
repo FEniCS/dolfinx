@@ -322,9 +322,10 @@ def create_petsc_vector_wrap(x: Vector):
     """Wrap a distributed DOLFINx vector as a PETSc vector.
 
     Note:
-        The caller is responsible for calling ``.destroy()`` on the returned
-        petsc4py object. Additionally, the vector ``x`` that was wrapped must
-        not be destroyed before the returned petsc4py object.
+        Due to subtle issues in the interaction between petsc4py memory management
+        and the Python garbage collector, it is recommended that the method ``PETSc.Vec.destroy()``
+        is called on the returned object once the object is no longer required. Note that
+        ``PETSc.Vec.destroy()`` is collective over the object's MPI communicator.
 
     Args:
         x: The vector to wrap as a PETSc vector.
@@ -346,8 +347,10 @@ def create_petsc_vector(map, bs: int):
     """Create a distributed PETSc vector.
 
     Note:
-        The caller is responsible for calling ``.destroy()`` on the returned
-        petsc4py object.
+        Due to subtle issues in the interaction between petsc4py memory management
+        and the Python garbage collector, it is recommended that the method ``PETSc.Vec.destroy()``
+        is called on the returned object once the object is no longer required. Note that
+        ``PETSc.Vec.destroy()`` is collective over the object's MPI communicator.
 
     Args:
         map: Index map that describes the size and parallel layout of
