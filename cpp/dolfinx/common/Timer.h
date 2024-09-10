@@ -32,7 +32,9 @@ class Timer
 {
 public:
   /// Create timer
-  /// if a task name is provided this enables logging, otherwise without logging
+  ///
+  /// If a task name is provided this enables logging to logger, otherwise (i.e.
+  /// no task provided) nothing gets logged.
   Timer(std::optional<std::string> task = std::nullopt);
 
   /// Destructor
@@ -53,7 +55,7 @@ public:
 
 private:
   // Name of task
-  std::string _task;
+  std::optional<std::string> _task;
 
   // Implementation of timer
   boost::timer::cpu_timer _timer;
