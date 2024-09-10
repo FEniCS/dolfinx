@@ -303,7 +303,7 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
                       [](std::size_t s, auto& v) { return s + v.size(); }));
   for (auto c : cells_owned)
     local_vertex_set.insert(local_vertex_set.end(), c.begin(), c.end());
- 
+
   {
     dolfinx::radix_sort(local_vertex_set);
     auto [unique_end, range_end] = std::ranges::unique(local_vertex_set);
@@ -749,7 +749,7 @@ Topology::Topology(MPI_Comm comm, const std::vector<CellType>& cell_types)
   assert(!cell_types.empty());
   std::int8_t tdim = cell_dim(cell_types[0]);
   assert(tdim > 0);
-  for (auto ct : cell_types)
+  for ([[maybe_unused]] auto ct : cell_types)
     assert(cell_dim(ct) == tdim);
   _interprocess_facets.resize(1);
 
