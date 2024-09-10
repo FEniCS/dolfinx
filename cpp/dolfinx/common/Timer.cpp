@@ -6,7 +6,6 @@
 
 #include <optional>
 #include <stdexcept>
-
 #include "TimeLogManager.h"
 #include "TimeLogger.h"
 #include "Timer.h"
