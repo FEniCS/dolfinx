@@ -19,6 +19,11 @@ import typing
 
 from petsc4py import PETSc
 
+# ruff: noqa: E402
+import dolfinx
+
+assert dolfinx.has_petsc4py
+
 import numpy as np
 
 import dolfinx.cpp as _cpp
@@ -111,6 +116,12 @@ def create_vector(L: Form) -> PETSc.Vec:
 def create_vector_block(L: list[Form]) -> PETSc.Vec:
     """Create a PETSc vector (blocked) that is compatible with a list of linear forms.
 
+    Note:
+        Due to subtle issues in the interaction between petsc4py memory management
+        and the Python garbage collector, it is recommended that the method ``PETSc.Vec.destroy()``
+        is called on the returned object once the object is no longer required. Note that
+        ``PETSc.Vec.destroy()`` is collective over the object's MPI communicator.
+
     Args:
         L: List of linear forms.
 
@@ -148,6 +159,12 @@ def create_vector_nest(L: list[Form]) -> PETSc.Vec:
 def create_matrix(a: Form, mat_type=None) -> PETSc.Mat:
     """Create a PETSc matrix that is compatible with a bilinear form.
 
+    Note:
+        Due to subtle issues in the interaction between petsc4py memory management
+        and the Python garbage collector, it is recommended that the method ``PETSc.Mat.destroy()``
+        is called on the returned object once the object is no longer required. Note that
+        ``PETSc.Mat.destroy()`` is collective over the object's MPI communicator.
+
     Args:
         a: A bilinear form.
         mat_type: The PETSc matrix type (``MatType``).
@@ -164,6 +181,12 @@ def create_matrix(a: Form, mat_type=None) -> PETSc.Mat:
 def create_matrix_block(a: list[list[Form]]) -> PETSc.Mat:
     """Create a PETSc matrix that is compatible with a rectangular array of bilinear forms.
 
+    Note:
+        Due to subtle issues in the interaction between petsc4py memory management
+        and the Python garbage collector, it is recommended that the method ``PETSc.Mat.destroy()``
+        is called on the returned object once the object is no longer required. Note that
+        ``PETSc.Mat.destroy()`` is collective over the object's MPI communicator.
+
     Args:
         a: Rectangular array of bilinear forms.
 
@@ -177,6 +200,12 @@ def create_matrix_block(a: list[list[Form]]) -> PETSc.Mat:
 
 def create_matrix_nest(a: list[list[Form]]) -> PETSc.Mat:
     """Create a PETSc matrix (``MatNest``) that is compatible with an array of bilinear forms.
+
+    Note:
+        Due to subtle issues in the interaction between petsc4py memory management
+        and the Python garbage collector, it is recommended that the method ``PETSc.Mat.destroy()``
+        is called on the returned object once the object is no longer required. Note that
+        ``PETSc.Mat.destroy()`` is collective over the object's MPI communicator.
 
     Args:
         a: Rectangular array of bilinear forms.
@@ -958,6 +987,12 @@ def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.M
     H1 space uses an identity map and the H(curl) space uses a covariant
     Piola map.
 
+    Note:
+        Due to subtle issues in the interaction between petsc4py memory management
+        and the Python garbage collector, it is recommended that the method ``PETSc.Mat.destroy()``
+        is called on the returned object once the object is no longer required. Note that
+        ``PETSc.Mat.destroy()`` is collective over the object's MPI communicator.
+
     Args:
         space0: H1 space to interpolate the gradient from.
         space1: H(curl) space to interpolate into.
@@ -970,6 +1005,12 @@ def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.M
 
 def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:
     """Assemble an interpolation operator matrix.
+
+    Note:
+        Due to subtle issues in the interaction between petsc4py memory management
+        and the Python garbage collector, it is recommended that the method ``PETSc.Mat.destroy()``
+        is called on the returned object once the object is no longer required. Note that
+        ``PETSc.Mat.destroy()`` is collective over the object's MPI communicator.
 
     Args:
         space0: Space to interpolate from.
