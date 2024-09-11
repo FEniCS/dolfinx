@@ -141,7 +141,7 @@ jobs:
       - name: Run units tests (Python, serial)
         working-directory: dolfinx
         run: |
-          python -m pytest -m "not petsc4py and not adios2" python/test/unit
+          python -m pytest -v -m "not petsc4py and not adios2" python/test/unit
       - name: Run units tests (Python, MPI, np=3)
         working-directory: dolfinx
         run: |
