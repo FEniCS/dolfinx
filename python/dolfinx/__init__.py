@@ -42,7 +42,7 @@ from dolfinx.common import (
     has_petsc4py,
     has_ptscotch,
     has_slepc,
-    ufcx_signature
+    ufcx_signature,
 )
 from dolfinx.cpp import __version__
 
@@ -85,5 +85,5 @@ __all__ = [
     "has_petsc4py",
     "has_ptscotch",
     "has_slepc",
-    "ufcx_signature"
+    "ufcx_signature",
 ]
