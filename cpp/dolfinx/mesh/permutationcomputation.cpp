@@ -272,7 +272,7 @@ compute_face_permutations(const mesh::Topology& topology)
         "Cannot compute permutations for mixed topology mesh.");
   }
 
-  const int tdim = topology.dim();
+  [[maybe_unused]] const int tdim = topology.dim();
   assert(tdim > 2);
   if (!topology.index_map(2))
     throw std::runtime_error("Faces have not been computed.");
