@@ -153,7 +153,7 @@ void common(nb::module_& m)
           nb::arg("global"));
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer>(m, "Timer", "Timer class")
-      .def(nb::init<std::optional<std::string>>(), nb::arg("task") = nb::none())
+      .def(nb::init<std::optional<std::string>>(), nb::arg("task").none())
       .def("start", &dolfinx::common::Timer::start, "Start timer")
       .def("stop", &dolfinx::common::Timer::stop, "Stop timer")
       .def("resume", &dolfinx::common::Timer::resume)
