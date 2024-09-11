@@ -68,6 +68,12 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
   }
   else if (_file_mode == "w")
   {
+    if (_encoding == Encoding::ASCII and MPI::size(_comm.comm()) > 1)
+    {
+      throw std::runtime_error(
+          "ASCII encoding is not supported for writing files in parallel.");
+    }
+
     _xml_doc->reset();
 
     // Add XDMF node and version attribute
@@ -84,6 +90,12 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
   }
   else if (_file_mode == "a")
   {
+    if (_encoding == Encoding::ASCII and MPI::size(_comm.comm()) > 1)
+    {
+      throw std::runtime_error("ASCII encoding is not supported for appending "
+                               "to files in parallel.");
+    }
+
     if (std::filesystem::exists(_filename))
     {
       // Load XML doc from file
