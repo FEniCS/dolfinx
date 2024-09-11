@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for PETSc solver interface"""
+"""Unit tests for high-level wrapper around PETSc for linear and non-linear problems"""
 
 from mpi4py import MPI
 
@@ -15,7 +15,7 @@ import ufl
 
 
 @pytest.mark.petsc4py
-class TestPETScSolvers:
+class TestPETScSolverWrappers:
     @pytest.mark.parametrize(
         "mode", [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet]
     )
