@@ -26,7 +26,7 @@ try:
 
     import dolfinx
 
-    if not dolfinx.common.has_petsc:
+    if not dolfinx.has_petsc:
         print("This demo requires DOLFINx to be compiled with PETSc enabled.")
         exit(0)
 except ModuleNotFoundError:

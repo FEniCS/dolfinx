@@ -13,9 +13,9 @@ if typing.TYPE_CHECKING:
     from mpi4py import MPI
     from petsc4py import PETSc
 
-    import dolfinx.common
+    import dolfinx
 
-    assert dolfinx.common.has_petsc4py
+    assert dolfinx.has_petsc4py
 
     from dolfinx.fem.problem import NonlinearProblem
 
