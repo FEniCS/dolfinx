@@ -8,6 +8,7 @@
 #include "caster_mpi.h"
 #include "numpy_dtype.h"
 #include <complex>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
@@ -135,10 +136,10 @@ void declare_objects(nb::module_& m, const std::string& type)
            {
              const std::array<int, 2> bs = self.block_size();
              std::size_t nrows = self.num_all_rows() * bs[0];
-             auto map_col = self.index_map(1);
-             std::size_t ncols
-                 = (map_col->size_local() + map_col->num_ghosts()) * bs[1];
-             return dolfinx_wrappers::as_nbarray(self.to_dense(),
+             std::size_t ncols = self.index_map(1)->size_global() * bs[1];
+             auto dense = self.to_dense();
+             assert(nrows*ncols == dense.size());
+             return dolfinx_wrappers::as_nbarray(std::move(self.to_dense()),
                                                  {nrows, ncols});
            })
       .def_prop_ro(
@@ -265,6 +266,10 @@ void la(nb::module_& m)
                         std::span(cols.data(), cols.size()));
           },
           nb::arg("rows"), nb::arg("cols"))
+      .def("insert",
+           nb::overload_cast<int32_t, int32_t>(
+               &dolfinx::la::SparsityPattern::insert),
+           nb::arg("row"), nb::arg("col"))
       .def(
           "insert_diagonal",
           [](dolfinx::la::SparsityPattern& self,
