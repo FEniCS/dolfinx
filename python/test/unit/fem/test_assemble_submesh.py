@@ -553,3 +553,59 @@ def test_disjoint_submeshes():
     glob_left_val = mesh.comm.allreduce(left_val, op=MPI.SUM)
     glob_right_val = mesh.comm.allreduce(right_val, op=MPI.SUM)
     assert np.isclose(J_sum, glob_left_val + glob_right_val)
+
+
+@pytest.mark.petsc4py
+def test_mixed_measures():
+    """Test block assembly of forms where the integration measure in each
+    block may be different"""
+    from dolfinx.fem.petsc import assemble_vector_block
+
+    comm = MPI.COMM_WORLD
+    msh = create_unit_square(comm, 16, 21, ghost_mode=GhostMode.none)
+
+    # Create a submesh of some cells
+    tdim = msh.topology.dim
+    smsh_cells = locate_entities(msh, tdim, lambda x: x[0] <= 0.5)
+    smsh, smsh_to_msh = create_submesh(msh, tdim, smsh_cells)[:2]
+
+    # Create function spaces over each mesh
+    V = fem.functionspace(msh, ("Lagrange", 1))
+    Q = fem.functionspace(smsh, ("Lagrange", 1))
+
+    # Define two integration measures, one over the mesh, the other over the submesh
+    dx_msh = ufl.Measure("dx", msh, subdomain_data=[(1, smsh_cells)])
+    dx_smsh = ufl.Measure("dx", smsh)
+
+    # Trial and test functions
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    p, q = ufl.TrialFunction(Q), ufl.TestFunction(Q)
+
+    # First, assemble a block vector using both dx_msh and dx_smsh
+    a = [
+        [
+            fem.form(ufl.inner(u, v) * dx_msh),
+            fem.form(ufl.inner(p, v) * dx_smsh, entity_maps={msh: smsh_to_msh}),
+        ],
+        [
+            fem.form(ufl.inner(u, q) * dx_smsh, entity_maps={msh: smsh_to_msh}),
+            fem.form(ufl.inner(p, q) * dx_smsh),
+        ],
+    ]
+    L = [fem.form(ufl.inner(2.3, v) * dx_msh), fem.form(ufl.inner(1.3, q) * dx_smsh)]
+    b0 = assemble_vector_block(L, a)
+
+    # Now, assemble the same vector using only dx_msh
+    cell_imap = msh.topology.index_map(tdim)
+    num_cells = cell_imap.size_local + cell_imap.num_ghosts
+    msh_to_smsh = np.full(num_cells, -1)
+    msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
+    entity_maps = {smsh: msh_to_smsh}
+    L = [
+        fem.form(ufl.inner(2.3, v) * dx_msh),
+        fem.form(ufl.inner(1.3, q) * dx_msh(1), entity_maps=entity_maps),
+    ]
+    b1 = assemble_vector_block(L, a)
+
+    # Check the results are the same
+    assert np.allclose(b0.norm(), b1.norm())
