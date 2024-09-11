@@ -94,10 +94,7 @@ class Timer:
     _cpp_object: _cpp.common.Timer
 
     def __init__(self, name: typing.Optional[str] = None):
-        if name is None:
-            self._cpp_object = _cpp.common.Timer()
-        else:
-            self._cpp_object = _cpp.common.Timer(name)
+        self._cpp_object = _cpp.common.Timer(name)
 
     def __enter__(self):
         self._cpp_object.start()
