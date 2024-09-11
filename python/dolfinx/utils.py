@@ -198,6 +198,7 @@ class cffi_utils:
     """
 
     import cffi as _cffi
+
     _ffi = _cffi.FFI()
 
     try:
