@@ -843,7 +843,7 @@ get_cell_orientation_info(const Function<T, U>& coefficient)
 }
 
 /// Pack a single coefficient for a single cell
-template <dolfinx::scalar T, int _bs>
+template <int _bs, dolfinx::scalar T>
 void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
           std::span<const std::uint32_t> cell_info, const DofMap& dofmap,
           auto transform)
@@ -860,6 +860,7 @@ void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
     }
     else
     {
+      assert(_bs == bs);
       const int pos_c = _bs * i;
       const int pos_v = _bs * dofs[i];
       for (int k = 0; k < _bs; ++k)
@@ -917,44 +918,47 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
     for (std::size_t e = 0; e < entities.size(); e += estride)
     {
       auto entity = entities.subspan(e, estride);
-      std::int32_t cell = fetch_cells(entity);
-      if (cell < 0)
-        continue;
-      auto cell_coeff = c.subspan((e / estride) * cstride + offset, space_dim);
-      pack<T, 1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      if (std::int32_t cell = fetch_cells(entity); cell >= 0)
+      {
+        auto cell_coeff
+            = c.subspan((e / estride) * cstride + offset, space_dim);
+        pack<1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      }
     }
     break;
   case 2:
     for (std::size_t e = 0; e < entities.size(); e += estride)
     {
       auto entity = entities.subspan(e, estride);
-      std::int32_t cell = fetch_cells(entity);
-      if (cell < 0)
-        continue;
-      auto cell_coeff = c.subspan((e / estride) * cstride + offset, space_dim);
-      pack<T, 2>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      if (std::int32_t cell = fetch_cells(entity); cell >= 0)
+      {
+        auto cell_coeff
+            = c.subspan((e / estride) * cstride + offset, space_dim);
+        pack<2>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      }
     }
     break;
   case 3:
     for (std::size_t e = 0; e < entities.size(); e += estride)
     {
       auto entity = entities.subspan(e, estride);
-      std::int32_t cell = fetch_cells(entity);
-      if (cell < 0)
-        continue;
-      auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
-      pack<T, 3>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      if (std::int32_t cell = fetch_cells(entity); cell >= 0)
+      {
+        auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
+        pack<3>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      }
     }
     break;
   default:
     for (std::size_t e = 0; e < entities.size(); e += estride)
     {
       auto entity = entities.subspan(e, estride);
-      std::int32_t cell = fetch_cells(entity);
-      if (cell < 0)
-        continue;
-      auto cell_coeff = c.subspan((e / estride) * cstride + offset, space_dim);
-      pack<T, -1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      if (std::int32_t cell = fetch_cells(entity); cell >= 0)
+      {
+        auto cell_coeff
+            = c.subspan((e / estride) * cstride + offset, space_dim);
+        pack<-1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      }
     }
     break;
   }

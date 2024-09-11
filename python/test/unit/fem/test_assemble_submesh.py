@@ -442,17 +442,17 @@ def test_disjoint_submeshes():
     # One sided interface integral uses only "+" restriction. Sort integration entities such that
     # this is always satisfied
     def compute_mapped_interior_facet_data(mesh, facet_tag, value, parent_to_sub_map):
-        """
-        Compute integration data for interior facet integrals, where the positive restriction is
-        always taken on the side that has a cell in the sub mesh
+        """Compute integration data for interior facet integrals, where the positive restriction is
+        always taken on the side that has a cell in the sub mesh.
 
-        Parameters
+        Args:
             mesh: Parent mesh
             facet_tag: Meshtags object for facets
             value: Value of the facets to extract
             parent_to_sub_map: Mapping from parent mesh to sub mesh
-        Returns
-            integration_data: Integration data for interior facets
+
+        Returns:
+            Integration data for interior facets
         """
         mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
         integration_data = compute_integration_domains(
@@ -525,6 +525,7 @@ def test_disjoint_submeshes():
 
     vertex_map = mesh.topology.index_map(mesh.topology.dim - 1)
     num_vertices_local = vertex_map.size_local
+
     # Compute value of expression at left interface
     if len(facets := facet_tag.find(left_interface_tag)) > 0:
         assert len(facets) == 1
