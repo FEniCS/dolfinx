@@ -14,6 +14,11 @@ import sys
 try:
     from petsc4py import PETSc as _PETSc
 
+    # Additional sanity check that DOLFINx was built with petsc4py support.
+    import dolfinx.common
+
+    assert dolfinx.common.has_petsc4py
+
     default_scalar_type = _PETSc.ScalarType  # type: ignore
     default_real_type = _PETSc.RealType  # type: ignore
 except ImportError:
@@ -26,16 +31,18 @@ from dolfinx import common
 from dolfinx import cpp as _cpp
 from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot, utils
 
-# Initialise logging
 from dolfinx.common import (
-    TimingType,
     git_commit_hash,
+    has_adios2,
+    has_complex_ufcx_kernels,
     has_debug,
     has_kahip,
-    has_petsc,
     has_parmetis,
-    list_timings,
-    timing,
+    has_petsc,
+    has_petsc4py,
+    has_ptscotch,
+    has_slepc,
+    ufcx_signature,
 )
 from dolfinx.cpp import __version__
 
@@ -68,11 +75,15 @@ __all__ = [
     "nls",
     "plot",
     "utils",
-    "TimingType",
     "git_commit_hash",
+    "has_adios2",
+    "has_complex_ufcx_kernels",
     "has_debug",
     "has_kahip",
     "has_parmetis",
-    "list_timings",
-    "timing",
+    "has_petsc",
+    "has_petsc4py",
+    "has_ptscotch",
+    "has_slepc",
+    "ufcx_signature",
 ]

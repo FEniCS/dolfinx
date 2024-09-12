@@ -105,11 +105,6 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
         send_data[r].push_back(ghosts[i]);
         pos_to_ghost[r].push_back(i);
       }
-      else
-      {
-        send_data[r].push_back(-1);
-        pos_to_ghost[r].push_back(-1);
-      }
     }
 
     // Count number of ghosts per dest
@@ -220,25 +215,22 @@ compute_submap_indices(const IndexMap& imap,
     {
       for (int j = recv_disp[i]; j < recv_disp[i + 1]; ++j)
       {
-        // Check if the index is included in the submap by process dest[i].
-        // If so, it must be assigned a submap owner
-        if (std::int64_t idx = recv_indices[j]; idx != -1)
-        {
-          // Compute the local index
-          std::int32_t idx_local = idx - local_range[0];
-          assert(idx_local >= 0);
-          assert(idx_local < local_range[1]);
+        // Compute the local index
+        std::int64_t idx = recv_indices[j];
+        assert(idx >= 0);
+        std::int32_t idx_local = idx - local_range[0];
+        assert(idx_local >= 0);
+        assert(idx_local < local_range[1]);
 
-          // Check if index is included in the submap on this process. If so,
-          // this process remains its owner in the submap. Otherwise,
-          // add the process that sent it to the list of possible owners.
-          if (is_in_submap[idx_local])
-            global_idx_to_possible_owner.push_back({idx, rank});
-          else
-          {
-            owners_changed = true;
-            global_idx_to_possible_owner.push_back({idx, dest[i]});
-          }
+        // Check if index is included in the submap on this process. If so,
+        // this process remains its owner in the submap. Otherwise,
+        // add the process that sent it to the list of possible owners.
+        if (is_in_submap[idx_local])
+          global_idx_to_possible_owner.push_back({idx, rank});
+        else
+        {
+          owners_changed = true;
+          global_idx_to_possible_owner.push_back({idx, dest[i]});
         }
       }
 
@@ -253,20 +245,13 @@ compute_submap_indices(const IndexMap& imap,
     send_owners.reserve(recv_indices.size());
     for (auto idx : recv_indices)
     {
-      // Check if the index is in the submap. If so, choose its owner in the
-      // submap, otherwise send -1
-      if (idx != -1)
-      {
-        // NOTE: Could choose new owner in a way that is is better for
-        // load balancing, though the impact is probably only very small
-        auto it = std::ranges::lower_bound(global_idx_to_possible_owner, idx,
-                                           std::ranges::less(),
-                                           [](auto& e) { return e.first; });
-        assert(it != global_idx_to_possible_owner.end() and it->first == idx);
-        send_owners.push_back(it->second);
-      }
-      else
-        send_owners.push_back(-1);
+      // NOTE: Could choose new owner in a way that is is better for
+      // load balancing, though the impact is probably only very small
+      auto it = std::ranges::lower_bound(global_idx_to_possible_owner, idx,
+                                         std::ranges::less(),
+                                         [](auto& e) { return e.first; });
+      assert(it != global_idx_to_possible_owner.end() and it->first == idx);
+      send_owners.push_back(it->second);
     }
 
     // Create neighbourhood comm (owner -> ghost)
@@ -317,19 +302,15 @@ compute_submap_indices(const IndexMap& imap,
     // submap_owned if the owning process has decided this process to be
     // the submap owner. Else, add the index and its (possibly new)
     // owner to submap_ghost and submap_ghost_owners respectively.
-    for (std::size_t i = 0; i < send_indices.size(); ++i)
+    for (std::size_t i = 0; i < send_indices_local.size(); ++i)
     {
-      // Check if index is in the submap
-      if (std::int64_t global_idx = send_indices[i]; global_idx >= 0)
+      std::int32_t local_idx = send_indices_local[i];
+      if (int owner = recv_owners[i]; owner == rank)
+        submap_owned.push_back(local_idx);
+      else
       {
-        std::int32_t local_idx = send_indices_local[i];
-        if (int owner = recv_owners[i]; owner == rank)
-          submap_owned.push_back(local_idx);
-        else
-        {
-          submap_ghost.push_back(local_idx);
-          submap_ghost_owners.push_back(owner);
-        }
+        submap_ghost.push_back(local_idx);
+        submap_ghost_owners.push_back(owner);
       }
     }
     std::ranges::sort(submap_owned);

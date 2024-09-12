@@ -7,21 +7,14 @@
 #include "Timer.h"
 #include "TimeLogManager.h"
 #include "TimeLogger.h"
+#include <optional>
 #include <stdexcept>
 
 using namespace dolfinx;
 using namespace dolfinx::common;
 
 //-----------------------------------------------------------------------------
-Timer::Timer() : Timer::Timer("")
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-Timer::Timer(const std::string& task) : _task(task)
-{
-  // Do nothing
-}
+Timer::Timer(std::optional<std::string> task) : _task(task) {}
 //-----------------------------------------------------------------------------
 Timer::~Timer()
 {
@@ -33,7 +26,7 @@ void Timer::start() { _timer.start(); }
 //-----------------------------------------------------------------------------
 void Timer::resume()
 {
-  if (!_task.empty())
+  if (_task.has_value())
   {
     throw std::runtime_error(
         "Resuming is not well-defined for logging timer. Only "
@@ -46,8 +39,8 @@ double Timer::stop()
 {
   _timer.stop();
   const auto [wall, user, system] = this->elapsed();
-  if (!_task.empty())
-    TimeLogManager::logger().register_timing(_task, wall, user, system);
+  if (_task.has_value())
+    TimeLogManager::logger().register_timing(_task.value(), wall, user, system);
   return wall;
 }
 //-----------------------------------------------------------------------------
