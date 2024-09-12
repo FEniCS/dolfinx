@@ -366,14 +366,32 @@ void petsc_nls_module(nb::module_& m)
           [](dolfinx::nls::petsc::NewtonSolver& self,
              std::function<void(const dolfinx::nls::petsc::NewtonSolver* solver,
                                 const Vec, Vec)>
-                 update)
+                 update) // See
+                         // https://github.com/wjakob/nanobind/discussions/361
+                         // on why we pass NewtonSolver* rather than
+                         // NewtonSolver&
           {
-            // See https://github.com/wjakob/nanobind/discussions/361 on below
             self.set_update(
                 [update](const dolfinx::nls::petsc::NewtonSolver& solver,
                          const Vec dx, Vec x) { update(&solver, dx, x); });
           },
           nb::arg("update"))
+      .def(
+          "set_convergence_check",
+          [](dolfinx::nls::petsc::NewtonSolver& self,
+             std::function<std::pair<double, bool>(
+                 const dolfinx::nls::petsc::NewtonSolver* solver, const Vec)>
+                 convergence_check) // See
+                                    // https://github.com/wjakob/nanobind/discussions/361
+                                    // on why we pass NewtonSolver* rather than
+                                    // NewtonSolver&
+          {
+            self.set_convergence_check(
+                [convergence_check](
+                    const dolfinx::nls::petsc::NewtonSolver& solver,
+                    const Vec r) { return convergence_check(&solver, r); });
+          },
+          nb::arg("convergence_check"))
       .def("set_form", &dolfinx::nls::petsc::NewtonSolver::set_form,
            nb::arg("form"))
       .def("solve", &dolfinx::nls::petsc::NewtonSolver::solve, nb::arg("x"))

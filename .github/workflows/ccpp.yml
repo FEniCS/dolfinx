@@ -131,7 +131,9 @@ jobs:
           mpirun -n 3 ctest -V --output-on-failure -R unittests
 
       - name: Build Python interface
-        run: pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
+        run: |
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
+          python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc4py"
 
       - name: Run demos (Python, serial)
         run: |
@@ -183,7 +185,7 @@ jobs:
 
       - name: Configure, build and install C++ library
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_ADIOS2=true -DDOLFINX_ENABLE_KAHIP=true -DDOLFINX_ENABLE_PARMETIS=false -DDOLFINX_ENABLE_PETSC=true -DDOLFINX_ENABLE_SCOTCH=true -DDOLFINX_ENABLE_SLEPC=true -B build -S cpp/
           cmake --build build
           cmake --install build
 
@@ -213,6 +215,7 @@ jobs:
       - name: Build Python interface
         run: |
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
+          python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_adios2; assert dolfinx.has_kahip; assert not dolfinx.has_parmetis; assert dolfinx.has_petsc; assert dolfinx.has_petsc4py; assert dolfinx.has_ptscotch; assert dolfinx.has_slepc; assert dolfinx.has_complex_ufcx_kernels"
 
       - name: Set default DOLFINx JIT options
         run: |
