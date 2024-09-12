@@ -298,9 +298,9 @@ def determine_point_ownership(
         Point ownership data
 
     Note:
-        `dest_owner` is sorted
+        ``dest_owner`` is sorted
 
-        `src_owner` is -1 if no colliding process is found
+        ``src_owner`` is -1 if no colliding process is found
 
         A large padding value will increase the run-time of the code by orders
         of magnitude. General advice is to use a padding on the scale of the
