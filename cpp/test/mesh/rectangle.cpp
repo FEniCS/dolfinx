@@ -4,15 +4,13 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <mpi.h>
-
+#include "util.h"
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
 #include <catch2/matchers/catch_matchers_vector.hpp>
-
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -20,8 +18,7 @@
 #include <dolfinx/mesh/utils.h>
 #include <dolfinx/refinement/interval.h>
 #include <dolfinx/refinement/refine.h>
-
-#include "util.h"
+#include <mpi.h>
 
 using namespace dolfinx;
 using namespace Catch::Matchers;
@@ -33,7 +30,6 @@ TEMPLATE_TEST_CASE("Rectangle quadrilateral mesh",
 
   const std::array<double, 2> lower = {0, 0};
   const std::array<double, 2> upper = {1, 1};
-
   mesh::Mesh<T> mesh = dolfinx::mesh::create_rectangle<T>(
       MPI_COMM_SELF, {lower, upper}, {1, 1}, mesh::CellType::quadrilateral);
 
@@ -63,7 +59,6 @@ TEMPLATE_TEST_CASE("Rectangle quadrilateral mesh",
   mesh.topology()->create_connectivity(1, 0);
   auto e_to_v = mesh.topology()->connectivity(1, 0);
   REQUIRE(e_to_v);
-
   CHECK_adjacency_list_equal(*e_to_v, {/* e_0 */ {0, 1},
                                        /* e_1 */ {0, 2},
                                        /* e_2 */ {1, 3},
@@ -77,7 +72,6 @@ TEMPLATE_TEST_CASE("Rectangle triangle mesh (right)",
 
   const std::array<double, 2> lower = {0, 0};
   const std::array<double, 2> upper = {1, 1};
-
   mesh::Mesh<T> mesh = dolfinx::mesh::create_rectangle<T>(
       MPI_COMM_SELF, {lower, upper}, {1, 1}, mesh::CellType::triangle,
       mesh::DiagonalType::right);
@@ -121,7 +115,6 @@ TEMPLATE_TEST_CASE("Rectangle triangle mesh (left)",
 
   const std::array<double, 2> lower = {0, 0};
   const std::array<double, 2> upper = {1, 1};
-
   mesh::Mesh<T> mesh = dolfinx::mesh::create_rectangle<T>(
       MPI_COMM_SELF, {lower, upper}, {1, 1}, mesh::CellType::triangle,
       mesh::DiagonalType::left);
@@ -152,7 +145,6 @@ TEMPLATE_TEST_CASE("Rectangle triangle mesh (left)",
   mesh.topology()->create_connectivity(1, 0);
   auto e_to_v = mesh.topology()->connectivity(1, 0);
   REQUIRE(e_to_v);
-
   CHECK_adjacency_list_equal(*e_to_v, {/* e_0 */ {0, 1},
                                        /* e_1 */ {0, 2},
                                        /* e_2 */ {1, 2},
@@ -167,7 +159,6 @@ TEMPLATE_TEST_CASE("Rectangle triangle mesh (crossed)",
 
   const std::array<double, 2> lower = {0, 0};
   const std::array<double, 2> upper = {1, 1};
-
   mesh::Mesh<T> mesh = dolfinx::mesh::create_rectangle<T>(
       MPI_COMM_SELF, {lower, upper}, {1, 1}, mesh::CellType::triangle,
       mesh::DiagonalType::crossed);
