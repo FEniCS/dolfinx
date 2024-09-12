@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2023 Anders Logg and Garth N. Wells
+// Copyright (C) 2005-2024 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -11,7 +11,6 @@
 #include "utils.h"
 #include <algorithm>
 #include <array>
-#include <cfloat>
 #include <cmath>
 #include <concepts>
 #include <cstddef>
@@ -259,9 +258,11 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<double, 2> p,
 
     // Create intervals -> cells=[0, 1, 1, ..., n-1, n-1, n]
     std::vector<std::int64_t> cells(2 * n);
-    for (std::int64_t ix = 0; ix < n; ++ix)
-      for (std::int64_t j = 0; j < 2; ++j)
-        cells[2 * ix + j] = ix + j;
+    for (std::size_t ix = 0; ix < cells.size() / 2; ++ix)
+    {
+      cells[2 * ix] = ix;
+      cells[2 * ix + 1] = ix + 1;
+    }
 
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
                        {x.size(), 1}, partitioner);
@@ -288,7 +289,7 @@ std::vector<T> create_geom(MPI_Comm comm,
   for (std::int64_t i = 0; i < 3; i++)
     assert(p0[i] < p1[i]);
 
-  // structured grid cuboid extents
+  // Structured grid cuboid extents
   const std::array<T, 3> extents = {
       (p1[0] - p0[0]) / static_cast<T>(nx),
       (p1[1] - p0[1]) / static_cast<T>(ny),
@@ -312,7 +313,7 @@ std::vector<T> create_geom(MPI_Comm comm,
   const std::int64_t sqxy = (nx + 1) * (ny + 1);
   for (std::int64_t v = range_begin; v < range_end; ++v)
   {
-    // lexiographic index to spacial index
+    // lexiographic index to spatial index
     const std::int64_t p = v % sqxy;
     std::array<std::int64_t, 3> idx = {p % (nx + 1), p / (nx + 1), v / sqxy};
 
@@ -437,7 +438,6 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
     const std::int64_t cell_range = range_c[1] - range_c[0];
 
     // Create cuboids
-
     cells.reserve(2 * cell_range * 6);
     for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
     {
@@ -472,7 +472,6 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
   fem::CoordinateElement<T> element(CellType::triangle, 1);
   if (dolfinx::MPI::rank(comm) == 0)
   {
-
     const auto [p0, p1] = p;
     const auto [nx, ny] = n;
 
