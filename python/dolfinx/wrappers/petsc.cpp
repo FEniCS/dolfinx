@@ -368,7 +368,7 @@ void petsc_nls_module(nb::module_& m)
                                 const Vec, Vec)>
                  update) // See
                          // https://github.com/wjakob/nanobind/discussions/361
-                         // on why we pass NewtonSolver* rather thane
+                         // on why we pass NewtonSolver* rather than
                          // NewtonSolver&
           {
             self.set_update(
@@ -383,7 +383,7 @@ void petsc_nls_module(nb::module_& m)
                  const dolfinx::nls::petsc::NewtonSolver* solver, const Vec)>
                  convergence_check) // See
                                     // https://github.com/wjakob/nanobind/discussions/361
-                                    // on why we pass NewtonSolver* rather thane
+                                    // on why we pass NewtonSolver* rather than
                                     // NewtonSolver&
           {
             self.set_convergence_check(
