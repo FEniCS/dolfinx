@@ -911,11 +911,12 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
     std::vector<U> coord_dofs_b(num_dofs_g * gdim);
     mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
-
-    std::vector<T> ref_data_b(Xshape[0] * 1 * value_size);
+    const std::size_t value_size_ref
+        = element->reference_value_size() / element_bs;
+    std::vector<T> ref_data_b(Xshape[0] * 1 * value_size_ref);
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
-        ref_data(ref_data_b.data(), Xshape[0], 1, value_size);
+        ref_data(ref_data_b.data(), Xshape[0], 1, value_size_ref);
 
     std::vector<T> _vals_b(Xshape[0] * 1 * value_size);
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<

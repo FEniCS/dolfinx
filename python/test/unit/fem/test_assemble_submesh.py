@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Joseph P. Dean
+# Copyright (C) 2022-2024 Joseph P. Dean, Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -13,13 +13,17 @@ import pytest
 
 import ufl
 from dolfinx import default_scalar_type, fem, la
+from dolfinx.cpp.fem import compute_integration_domains
 from dolfinx.mesh import (
     GhostMode,
+    compute_incident_entities,
     create_box,
     create_rectangle,
     create_submesh,
     create_unit_cube,
+    create_unit_interval,
     create_unit_square,
+    entities_to_geometry,
     exterior_facet_indices,
     locate_entities,
     locate_entities_boundary,
@@ -384,6 +388,171 @@ def test_mixed_dom_codim_1(n, k):
 
 
 # TODO Test random mesh and interior facets
+
+
+def test_disjoint_submeshes():
+    """Test assembly with multiple disjoint submeshes in same variational form"""
+
+    N = 10
+    tol = 1e-14
+    mesh = create_unit_interval(MPI.COMM_WORLD, N, ghost_mode=GhostMode.shared_facet)
+    tdim = mesh.topology.dim
+    dx = 1.0 / N
+    center_tag = 1
+    left_tag = 2
+    right_tag = 3
+    left_interface_tag = 4
+    right_interface_tag = 5
+
+    def left(x):
+        return x[0] < N // 3 * dx + tol
+
+    def right(x):
+        return x[0] > 2 * N // 3 * dx - tol
+
+    cell_map = mesh.topology.index_map(tdim)
+    num_cells_local = cell_map.size_local + cell_map.num_ghosts
+    values = np.full(num_cells_local, center_tag, dtype=np.int32)
+    values[locate_entities(mesh, tdim, left)] = left_tag
+    values[locate_entities(mesh, tdim, right)] = right_tag
+
+    cell_tag = meshtags(mesh, tdim, np.arange(num_cells_local, dtype=np.int32), values)
+    left_facets = compute_incident_entities(mesh.topology, cell_tag.find(left_tag), tdim, tdim - 1)
+    center_facets = compute_incident_entities(
+        mesh.topology, cell_tag.find(center_tag), tdim, tdim - 1
+    )
+    right_facets = compute_incident_entities(
+        mesh.topology, cell_tag.find(right_tag), tdim, tdim - 1
+    )
+
+    # Create parent facet tag where left interface is tagged with 4, right with 5
+    left_interface = np.intersect1d(left_facets, center_facets)
+    right_interface = np.intersect1d(right_facets, center_facets)
+    facet_map = mesh.topology.index_map(tdim)
+    num_facet_local = facet_map.size_local + cell_map.num_ghosts
+    facet_values = np.full(num_facet_local, 1, dtype=np.int32)
+    facet_values[left_interface] = left_interface_tag
+    facet_values[right_interface] = right_interface_tag
+    facet_tag = meshtags(mesh, tdim - 1, np.arange(num_facet_local, dtype=np.int32), facet_values)
+
+    # Create facet integrals on each interface
+    left_mesh, left_to_parent, _, _ = create_submesh(mesh, tdim, cell_tag.find(left_tag))
+    right_mesh, right_to_parent, _, _ = create_submesh(mesh, tdim, cell_tag.find(right_tag))
+
+    # One sided interface integral uses only "+" restriction. Sort integration entities such that
+    # this is always satisfied
+    def compute_mapped_interior_facet_data(mesh, facet_tag, value, parent_to_sub_map):
+        """Compute integration data for interior facet integrals, where the positive restriction is
+        always taken on the side that has a cell in the sub mesh.
+
+        Args:
+            mesh: Parent mesh
+            facet_tag: Meshtags object for facets
+            value: Value of the facets to extract
+            parent_to_sub_map: Mapping from parent mesh to sub mesh
+
+        Returns:
+            Integration data for interior facets
+        """
+        mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
+        integration_data = compute_integration_domains(
+            fem.IntegralType.interior_facet, mesh.topology, facet_tag.find(value), facet_tag.dim
+        )
+        mapped_cell_0 = parent_to_sub_map[integration_data[0::4]]
+        mapped_cell_1 = parent_to_sub_map[integration_data[2::4]]
+        switch = mapped_cell_1 > mapped_cell_0
+        # Order restriction on one side
+        ordered_integration_data = integration_data.reshape(-1, 4).copy()
+        if True in switch:
+            ordered_integration_data[switch, [0, 1, 2, 3]] = ordered_integration_data[
+                switch, [2, 3, 0, 1]
+            ]
+        return (value, ordered_integration_data.reshape(-1))
+
+    parent_to_left = np.full(num_cells_local, -1, dtype=np.int32)
+    parent_to_right = np.full(num_cells_local, -1, dtype=np.int32)
+    parent_to_left[left_to_parent] = np.arange(len(left_to_parent))
+    parent_to_right[right_to_parent] = np.arange(len(right_to_parent))
+    integral_data = [
+        compute_mapped_interior_facet_data(mesh, facet_tag, left_interface_tag, parent_to_left),
+        compute_mapped_interior_facet_data(mesh, facet_tag, right_interface_tag, parent_to_right),
+    ]
+
+    dS = ufl.Measure("dS", domain=mesh, subdomain_data=integral_data)
+
+    def f_left(x):
+        return np.sin(x[0])
+
+    def f_right(x):
+        return x[0]
+
+    V_left = fem.functionspace(left_mesh, ("Lagrange", 1))
+    u_left = fem.Function(V_left)
+    u_left.interpolate(f_left)
+
+    V_right = fem.functionspace(right_mesh, ("Lagrange", 1))
+    u_right = fem.Function(V_right)
+    u_right.interpolate(f_right)
+
+    # Create single integral with different submeshes restrictions
+    x = ufl.SpatialCoordinate(mesh)
+    res = "+"
+    J = x[0] * u_left(res) * dS(left_interface_tag) + ufl.cos(x[0]) * u_right(res) * dS(
+        right_interface_tag
+    )
+
+    # We create an entity map from the parent mesh to the submesh, where
+    # the cell on either side of the interface is mapped to the same cell
+    mesh.topology.create_connectivity(tdim - 1, tdim)
+    f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
+    parent_to_left = np.full(num_cells_local, -1, dtype=np.int32)
+    parent_to_right = np.full(num_cells_local, -1, dtype=np.int32)
+    parent_to_left[left_to_parent] = np.arange(len(left_to_parent))
+    parent_to_right[right_to_parent] = np.arange(len(right_to_parent))
+    for tag in [4, 5]:
+        for facet in facet_tag.find(tag):
+            cells = f_to_c.links(facet)
+            assert len(cells) == 2
+            left_map = parent_to_left[cells]
+            right_map = parent_to_right[cells]
+            parent_to_left[cells] = max(left_map)
+            parent_to_right[cells] = max(right_map)
+
+    entity_maps = {left_mesh: parent_to_left, right_mesh: parent_to_right}
+    J_compiled = fem.form(J, entity_maps=entity_maps)
+    J_local = fem.assemble_scalar(J_compiled)
+    J_sum = mesh.comm.allreduce(J_local, op=MPI.SUM)
+
+    vertex_map = mesh.topology.index_map(mesh.topology.dim - 1)
+    num_vertices_local = vertex_map.size_local
+
+    # Compute value of expression at left interface
+    if len(facets := facet_tag.find(left_interface_tag)) > 0:
+        assert len(facets) == 1
+        left_vertex = entities_to_geometry(mesh, mesh.topology.dim - 1, facets)
+        if left_vertex[0, 0] < num_vertices_local:
+            left_coord = mesh.geometry.x[left_vertex].reshape(3, -1)
+            left_val = left_coord[0, 0] * f_left(left_coord)[0]
+        else:
+            left_val = 0.0
+    else:
+        left_val = 0.0
+
+    # Compute value of expression at right interface
+    if len(facets := facet_tag.find(right_interface_tag)) > 0:
+        assert len(facets) == 1
+        right_vertex = entities_to_geometry(mesh, mesh.topology.dim - 1, facets)
+        if right_vertex[0, 0] < num_vertices_local:
+            right_coord = mesh.geometry.x[right_vertex].reshape(3, -1)
+            right_val = np.cos(right_coord[0, 0]) * f_right(right_coord)[0]
+        else:
+            right_val = 0.0
+    else:
+        right_val = 0.0
+
+    glob_left_val = mesh.comm.allreduce(left_val, op=MPI.SUM)
+    glob_right_val = mesh.comm.allreduce(right_val, op=MPI.SUM)
+    assert np.isclose(J_sum, glob_left_val + glob_right_val)
 
 
 @pytest.mark.petsc4py
