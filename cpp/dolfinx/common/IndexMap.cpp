@@ -1,4 +1,5 @@
-// Copyright (C) 2015-2022 Chris Richardson, Garth N. Wells and Igor Baratta
+// Copyright (C) 2015-2024 Chris Richardson, Garth N. Wells, Igor Baratta,
+// Joesep P. Dean and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -279,6 +280,7 @@ compute_submap_indices(const IndexMap& imap,
   // Local indices (w.r.t. original map) owned by this process in the
   // submap
   std::vector<std::int32_t> submap_owned;
+  submap_owned.reserve(indices.size());
 
   // Local indices (w.r.t. original map) ghosted by this process in the
   // submap
@@ -290,9 +292,9 @@ compute_submap_indices(const IndexMap& imap,
 
   {
     // Add owned indices to submap_owned
-    for (std::int32_t v : indices)
-      if (v < imap.size_local())
-        submap_owned.push_back(v);
+    std::copy_if(
+        indices.begin(), indices.end(), std::back_inserter(submap_owned),
+        [local_size = imap.size_local()](auto i) { return i < local_size; });
 
     // FIXME: Could just create when making send_indices
     std::vector<std::int32_t> send_indices_local(send_indices.size());
@@ -350,10 +352,88 @@ compute_submap_indices(const IndexMap& imap,
   }
 
   // Compute submap destination ranks
-  // FIXME Remove call to NBX
-  std::vector<int> submap_dest
-      = dolfinx::MPI::compute_graph_edges_nbx(imap.comm(), submap_src);
-  std::ranges::sort(submap_dest);
+  std::vector<int> submap_dest;
+  submap_dest.reserve(src.size());
+  {
+    // Create indicator function for src and dest ranks
+    std::vector<std::int8_t> src_indicator_fwd(src.size(), 0);
+    std::vector<std::int8_t> src_indicator_bwd(dest.size(), 0);
+    src_indicator_fwd.reserve(1);
+    src_indicator_bwd.reserve(1);
+    for (int src_rank : submap_src)
+    {
+      if (auto it = std::ranges::lower_bound(src, src_rank); *it == src_rank)
+      {
+        std::size_t r = std::distance(src.begin(), it);
+        src_indicator_fwd[r] = 1;
+      }
+      else if (auto it = std::ranges::lower_bound(dest, src_rank);
+               *it == src_rank)
+      {
+        std::size_t r = std::distance(dest.begin(), it);
+        src_indicator_bwd[r] = 1;
+      }
+      else
+      {
+        throw std::runtime_error("Rank not found in src or dest");
+      }
+
+      // Communicate ghost src ranks to previous src ranks
+
+      // Create neighbourhood comm (owner -> ghost)
+      {
+        std::vector<std::int8_t> dest_indicator(dest.size());
+        dest_indicator.reserve(1);
+
+        MPI_Comm comm0;
+        int ierr = MPI_Dist_graph_create_adjacent(
+            imap.comm(), src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
+            dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+        dolfinx::MPI::check_error(imap.comm(), ierr);
+        ierr = MPI_Neighbor_alltoall(src_indicator_fwd.data(), 1, MPI_INT8_T,
+                                     dest_indicator.data(), 1, MPI_INT8_T,
+                                     comm0);
+        dolfinx::MPI::check_error(comm0, ierr);
+        ierr = MPI_Comm_free(&comm0);
+        dolfinx::MPI::check_error(imap.comm(), ierr);
+
+        for (std::size_t i = 0; i < dest_indicator.size(); ++i)
+        {
+          if (dest_indicator[i])
+            submap_dest.push_back(dest[i]);
+        }
+      }
+      // Communicate ghost src ranks to previous dest ranks
+      // which happen at change of ownership
+      {
+        std::vector<std::int8_t> dest_indicator(src.size());
+        dest_indicator.reserve(1);
+
+        MPI_Comm comm1;
+        int ierr = MPI_Dist_graph_create_adjacent(
+            imap.comm(), dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(),
+            src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+        dolfinx::MPI::check_error(imap.comm(), ierr);
+        ierr = MPI_Neighbor_alltoall(src_indicator_bwd.data(), 1, MPI_INT8_T,
+                                     dest_indicator.data(), 1, MPI_INT8_T,
+                                     comm1);
+        dolfinx::MPI::check_error(comm1, ierr);
+        ierr = MPI_Comm_free(&comm1);
+        dolfinx::MPI::check_error(imap.comm(), ierr);
+
+        for (std::size_t i = 0; i < dest_indicator.size(); ++i)
+        {
+          if (dest_indicator[i])
+            submap_dest.push_back(src[i]);
+        }
+      }
+
+      // Sort and remove duplicates
+      std::ranges::sort(submap_dest);
+      auto [unique_end, range_end] = std::ranges::unique(submap_dest);
+      submap_dest.erase(unique_end, range_end);
+    }
+  }
 
   return {std::move(submap_owned), std::move(submap_ghost),
           std::move(submap_ghost_owners), std::move(submap_src),
