@@ -31,9 +31,18 @@ from dolfinx import common
 from dolfinx import cpp as _cpp
 from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot, utils
 
-# Initialise logging
 from dolfinx.common import (
     git_commit_hash,
+    has_adios2,
+    has_complex_ufcx_kernels,
+    has_debug,
+    has_kahip,
+    has_parmetis,
+    has_petsc,
+    has_petsc4py,
+    has_ptscotch,
+    has_slepc,
+    ufcx_signature,
 )
 from dolfinx.cpp import __version__
 
@@ -67,4 +76,14 @@ __all__ = [
     "plot",
     "utils",
     "git_commit_hash",
+    "has_adios2",
+    "has_complex_ufcx_kernels",
+    "has_debug",
+    "has_kahip",
+    "has_parmetis",
+    "has_petsc",
+    "has_petsc4py",
+    "has_ptscotch",
+    "has_slepc",
+    "ufcx_signature",
 ]
