@@ -68,7 +68,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
   }
   else if (_file_mode == "w")
   {
-    if (_encoding == Encoding::ASCII and MPI::size(_comm.comm()) > 1)
+    if (_encoding == Encoding::ASCII and dolfinx::MPI::size(_comm.comm()) > 1)
     {
       throw std::runtime_error(
           "ASCII encoding is not supported for writing files in parallel.");
