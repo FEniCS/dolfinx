@@ -6,6 +6,7 @@
 
 #include <complex>
 #include <memory>
+#include <optional>
 #include <span>
 #include <string>
 #include <vector>
@@ -13,18 +14,18 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 
-#include <dolfinx/common/defines.h>
-#include <dolfinx/common/defines.h>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/log.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/defines.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/timing.h>
 #include <dolfinx/common/utils.h>
 
@@ -36,6 +37,17 @@ namespace nb = nanobind;
 
 namespace dolfinx_wrappers
 {
+
+/// Return true if DOLFINx is compiled with petsc4py
+consteval bool has_petsc4py()
+{
+#ifdef HAS_PETSC4PY
+  return true;
+#else
+  return false;
+#endif
+}
+
 // Interface for dolfinx/common
 void common(nb::module_& m)
 {
@@ -47,6 +59,7 @@ void common(nb::module_& m)
   m.attr("has_kahip") = dolfinx::has_kahip();
   m.attr("has_parmetis") = dolfinx::has_parmetis();
   m.attr("has_petsc") = dolfinx::has_petsc();
+  m.attr("has_petsc4py") = has_petsc4py();
   m.attr("has_ptscotch") = dolfinx::has_ptscotch();
   m.attr("has_slepc") = dolfinx::has_slepc();
   m.attr("ufcx_signature") = dolfinx::ufcx_signature();
@@ -152,8 +165,7 @@ void common(nb::module_& m)
           nb::arg("global"));
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer>(m, "Timer", "Timer class")
-      .def(nb::init<>())
-      .def(nb::init<std::string>(), nb::arg("task"))
+      .def(nb::init<std::optional<std::string>>(), nb::arg("task").none())
       .def("start", &dolfinx::common::Timer::start, "Start timer")
       .def("stop", &dolfinx::common::Timer::stop, "Stop timer")
       .def("resume", &dolfinx::common::Timer::resume)
