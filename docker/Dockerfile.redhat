@@ -54,7 +54,7 @@ RUN curl -L -O https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${M
 # Build HDF5
 RUN curl -L -O https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5_${HDF5_VERSION}.tar.gz && \
     tar -xf hdf5_${HDF5_VERSION}.tar.gz && \
-    cd hdf5_${HDF5_VERSION}.tar.gz && \
+    cd hdf5-hdf5_${HDF5_VERSION} && \
     ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
     make -j${BUILD_NP} install && \
     rm -rf /tmp/*
