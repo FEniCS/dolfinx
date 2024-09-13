@@ -69,15 +69,6 @@ markers = [
 
 
 [tool.mypy]
-# Suggested at https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
-# Goal would be to make all of the below True long-term
-disallow_untyped_defs = false
-disallow_any_unimported = false
-no_implicit_optional = false
-check_untyped_defs = false
-warn_return_any = false
-warn_unused_ignores = false
-show_error_codes = true
 ignore_missing_imports = true
 
 
