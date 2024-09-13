@@ -287,17 +287,21 @@ compute_submap_indices(const IndexMap& imap,
       // Remove duplicate new dest ranks from recv process
       auto dest_begin
           = new_owner_dest_ranks.begin() + new_owner_dest_ranks_offsets[i];
-      std::ranges::sort(dest_begin, new_owner_dest_ranks.end());
-      auto [unique_end, range_end]
-          = std::ranges::unique(dest_begin, new_owner_dest_ranks.end());
-      std::size_t num_unique_dest_ranks = std::distance(dest_begin, unique_end);
-      new_owner_dest_ranks.erase(unique_end, range_end);
-      new_owner_dest_ranks.shrink_to_fit();
+      std::size_t num_unique_dest_ranks = 0;
+      if (dest_begin != new_owner_dest_ranks.end())
+      {
+        std::ranges::sort(dest_begin, new_owner_dest_ranks.end());
+        auto [unique_end, range_end]
+            = std::ranges::unique(dest_begin, new_owner_dest_ranks.end());
+
+        num_unique_dest_ranks = std::distance(dest_begin, unique_end);
+        new_owner_dest_ranks.erase(unique_end, range_end);
+        new_owner_dest_ranks.shrink_to_fit();
+      }
       new_owner_dest_ranks_sizes[i] = num_unique_dest_ranks;
       new_owner_dest_ranks_offsets[i + 1]
           = new_owner_dest_ranks_offsets[i] + num_unique_dest_ranks;
     }
-
     // Create neighbourhood comm (owner -> ghost)
     MPI_Comm comm1;
     int ierr = MPI_Dist_graph_create_adjacent(
@@ -313,14 +317,14 @@ compute_submap_indices(const IndexMap& imap,
     dolfinx::MPI::check_error(imap.comm(), ierr);
 
     // Communicate number of received dest_ranks from each process
-    std::vector<int> recv_dest_ranks_sizes(dest.size());
+    std::vector<int> recv_dest_ranks_sizes(src.size());
     recv_dest_ranks_sizes.reserve(1);
     ierr = MPI_Neighbor_alltoall(new_owner_dest_ranks_sizes.data(), 1, MPI_INT,
                                  recv_dest_ranks_sizes.data(), 1, MPI_INT,
                                  comm1);
     dolfinx::MPI::check_error(imap.comm(), ierr);
     // Communicate new dest ranks
-    std::vector<int> recv_dest_rank_disp(dest.size() + 1, 0);
+    std::vector<int> recv_dest_rank_disp(src.size() + 1, 0);
     std::partial_sum(recv_dest_ranks_sizes.begin(), recv_dest_ranks_sizes.end(),
                      std::next(recv_dest_rank_disp.begin()));
     std::vector<int> recv_dest_ranks(recv_dest_rank_disp.back());
@@ -331,6 +335,7 @@ compute_submap_indices(const IndexMap& imap,
         recv_dest_ranks_sizes.data(), recv_dest_rank_disp.data(), MPI_INT,
         comm1);
     dolfinx::MPI::check_error(imap.comm(), ierr);
+
     // Append new submap dest ranks and remove duplicates
     std::ranges::copy(recv_dest_ranks, std::back_inserter(submap_dest));
     std::ranges::sort(submap_dest);
@@ -397,6 +402,14 @@ compute_submap_indices(const IndexMap& imap,
   submap_src.erase(unique_end, range_end);
   submap_src.shrink_to_fit();
 
+  std::vector<int> submap_dest_nbx
+      = dolfinx::MPI::compute_graph_edges_nbx(imap.comm(), submap_src);
+  std::ranges::sort(submap_dest_nbx);
+  assert(submap_dest.size() == submap_dest_nbx.size());
+  for (std::size_t j = 0; j < submap_dest.size(); ++j)
+  {
+    assert(submap_dest[j] == submap_dest_nbx[j]);
+  }
   // If required, preserve the order of the ghost indices
   if (order == IndexMapOrder::preserve)
   {
