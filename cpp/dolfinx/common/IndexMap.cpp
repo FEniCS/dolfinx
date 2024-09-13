@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <cstdint>
 #include <functional>
-#include <iostream>
 #include <numeric>
 #include <span>
 #include <utility>
