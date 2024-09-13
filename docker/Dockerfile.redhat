@@ -7,9 +7,7 @@ FROM rockylinux/rockylinux:9
 
 ARG BUILD_NP=4
 
-ARG HDF5_SERIES=1.14
-ARG HDF5_PATCH=3
-ARG HDF5_FIX=
+ARG HDF5_VERSION=1.14.4.3
 ARG PETSC_VERSION=3.21.5
 ARG MPICH_VERSION=4.2.2
 
@@ -54,9 +52,9 @@ RUN curl -L -O https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${M
     rm -rf /tmp/*
 
 # Build HDF5
-RUN curl -L -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX}.tar.gz && \
-    tar -xf hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX}.tar.gz && \
-    cd hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX} && \
+RUN curl -L -O https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5_${HDF5_VERSION}.tar.gz && \
+    tar -xf hdf5_${HDF5_VERSION}.tar.gz && \
+    cd hdf5_${HDF5_VERSION}.tar.gz && \
     ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
     make -j${BUILD_NP} install && \
     rm -rf /tmp/*
