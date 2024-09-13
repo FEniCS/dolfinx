@@ -15,9 +15,7 @@
 ARG ADIOS2_VERSION=2.10.1
 ARG DOXYGEN_VERSION=1_12_0
 ARG GMSH_VERSION=4_13_1
-ARG HDF5_SERIES=1.14
-ARG HDF5_PATCH=3
-ARG HDF5_FIX=
+ARG HDF5_VERSION=1.14.4.3
 ARG KAHIP_VERSION=3.16
 ARG NUMPY_VERSION=2.1.1
 ARG PETSC_VERSION=3.21.5
@@ -35,9 +33,7 @@ LABEL description="FEniCS testing and development environment with PETSc real, c
 
 ARG DOXYGEN_VERSION
 ARG GMSH_VERSION
-ARG HDF5_SERIES
-ARG HDF5_PATCH
-ARG HDF5_FIX
+ARG HDF5_VERSION
 ARG PETSC_VERSION
 ARG SLEPC_VERSION
 ARG ADIOS2_VERSION
@@ -165,9 +161,9 @@ RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.ta
 # HDF5 overrides CMAKE_INSTALL_PREFIX by default, hence it is set
 # below to ensure that HDF5 is installed into a path where it can be
 # found.
-RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX}.tar.gz && \
-    tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX}.tar.gz && \
-    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DHDF5_ENABLE_PARALLEL=on -DHDF5_ENABLE_Z_LIB_SUPPORT=on -B build-dir -S hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX} && \
+RUN wget -nc --quiet https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5_${HDF5_VERSION}.tar.gz && \
+    tar xfz hdf5_${HDF5_VERSION}.tar.gz && \
+    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DHDF5_ENABLE_PARALLEL=on -DHDF5_ENABLE_Z_LIB_SUPPORT=on -B build-dir -S hdf5-hdf5_${HDF5_VERSION} && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     rm -rf /tmp/*
