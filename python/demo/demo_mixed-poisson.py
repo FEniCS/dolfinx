@@ -76,7 +76,7 @@
 # To discretize the above formulation, two discrete function spaces $\Sigma_h
 # \subset \Sigma$ and $V_h \subset V$ are needed to form a mixed function space
 # $\Sigma_h \times V_h$. A stable choice of finite element spaces is to let
-# $\Sigma_h$ be the Brezzi-Douglas-Fortin-Marini elements of polynomial order
+# $\Sigma_h$ be the Brezzi-Douglas-Marini elements of polynomial order
 # $k$ and let $V_h$ be discontinuous elements of polynomial order $k-1$.
 #
 # We will use the same definitions of functions and boundaries as in the
