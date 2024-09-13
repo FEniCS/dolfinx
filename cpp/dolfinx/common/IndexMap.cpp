@@ -204,8 +204,8 @@ compute_submap_indices(const IndexMap& imap,
   // If ownership of received index doesn't change, then this process has the
   // receiving rank as a destination
   std::vector<int> recv_owners(send_disp.back());
-  std::vector<int> submap_dest_new;
-  submap_dest_new.reserve(dest.size() + 1);
+  std::vector<int> submap_dest;
+  submap_dest.reserve(dest.size() + 1);
   const int rank = dolfinx::MPI::rank(imap.comm());
   {
     // Flag to track if the owner of any indices have changed in the submap
@@ -233,7 +233,7 @@ compute_submap_indices(const IndexMap& imap,
         if (is_in_submap[idx_local])
         {
           global_idx_to_possible_owner.push_back({idx, rank});
-          submap_dest_new.push_back(dest[i]);
+          submap_dest.push_back(dest[i]);
         }
         else
         {
@@ -333,12 +333,12 @@ compute_submap_indices(const IndexMap& imap,
         comm1);
     dolfinx::MPI::check_error(imap.comm(), ierr);
     // Append new submap dest ranks and remove duplicates
-    std::ranges::copy(recv_dest_ranks, std::back_inserter(submap_dest_new));
-    std::ranges::sort(submap_dest_new);
+    std::ranges::copy(recv_dest_ranks, std::back_inserter(submap_dest));
+    std::ranges::sort(submap_dest);
     {
-      auto [unique_end, range_end] = std::ranges::unique(submap_dest_new);
-      submap_dest_new.erase(unique_end, range_end);
-      submap_dest_new.shrink_to_fit();
+      auto [unique_end, range_end] = std::ranges::unique(submap_dest);
+      submap_dest.erase(unique_end, range_end);
+      submap_dest.shrink_to_fit();
     }
 
     // Free the communicator
@@ -403,11 +403,6 @@ compute_submap_indices(const IndexMap& imap,
     submap_src.erase(unique_end, range_end);
     submap_src.shrink_to_fit();
   }
-  std::vector<int> submap_dest
-      = dolfinx::MPI::compute_graph_edges_nbx(imap.comm(), submap_src);
-  std::ranges::sort(submap_dest);
-  for (std::size_t i = 0; i < submap_dest_new.size(); ++i)
-    assert(submap_dest[i] == submap_dest_new[i]);
 
   // If required, preserve the order of the ghost indices
   if (order == IndexMapOrder::preserve)
