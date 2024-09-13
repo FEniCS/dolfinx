@@ -375,18 +375,17 @@ compute_submap_indices(const IndexMap& imap,
     // submap_owned if the owning process has decided this process to be
     // the submap owner. Else, add the index and its (possibly new)
     // owner to submap_ghost and submap_ghost_owners respectively.
-    for (std::size_t i = 0; i < send_disp.size() - 1; ++i)
-      for (int j = send_disp[i]; j < send_disp[i + 1]; ++j)
+    for (std::size_t i = 0; i < send_indices_local.size(); ++i)
+    {
+      std::int32_t local_idx = send_indices_local[i];
+      if (int owner = recv_owners[i]; owner == rank)
+        submap_owned.push_back(local_idx);
+      else
       {
-        std::int32_t local_idx = send_indices_local[j];
-        if (int owner = recv_owners[j]; owner == rank)
-          submap_owned.push_back(local_idx);
-        else
-        {
-          submap_ghost.push_back(local_idx);
-          submap_ghost_owners.push_back(owner);
-        }
+        submap_ghost.push_back(local_idx);
+        submap_ghost_owners.push_back(owner);
       }
+    }
     std::ranges::sort(submap_owned);
   }
   // Get submap source ranks
