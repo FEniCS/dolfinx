@@ -402,14 +402,6 @@ compute_submap_indices(const IndexMap& imap,
   submap_src.erase(unique_end, range_end);
   submap_src.shrink_to_fit();
 
-  std::vector<int> submap_dest_nbx
-      = dolfinx::MPI::compute_graph_edges_nbx(imap.comm(), submap_src);
-  std::ranges::sort(submap_dest_nbx);
-  assert(submap_dest.size() == submap_dest_nbx.size());
-  for (std::size_t j = 0; j < submap_dest.size(); ++j)
-  {
-    assert(submap_dest[j] == submap_dest_nbx[j]);
-  }
   // If required, preserve the order of the ghost indices
   if (order == IndexMapOrder::preserve)
   {
