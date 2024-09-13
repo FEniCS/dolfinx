@@ -388,6 +388,7 @@ compute_submap_indices(const IndexMap& imap,
     }
     std::ranges::sort(submap_owned);
   }
+
   // Get submap source ranks
   std::vector<int> submap_src(submap_ghost_owners.begin(),
                               submap_ghost_owners.end());
