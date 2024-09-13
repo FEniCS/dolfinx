@@ -205,9 +205,7 @@ compute_submap_indices(const IndexMap& imap,
   // receiving rank as a destination
   std::vector<int> recv_owners(send_disp.back());
   std::vector<int> submap_dest_new;
-  submap_dest_new.reserve(dest.size());
-  std::stringstream ll;
-  ll << "Determniing stuff: " << dolfinx::MPI::rank(imap.comm()) << std::endl;
+  submap_dest_new.reserve(dest.size() + 1);
   const int rank = dolfinx::MPI::rank(imap.comm());
   {
     // Flag to track if the owner of any indices have changed in the submap
@@ -236,11 +234,9 @@ compute_submap_indices(const IndexMap& imap,
         {
           global_idx_to_possible_owner.push_back({idx, rank});
           submap_dest_new.push_back(dest[i]);
-          ll << "I own " << idx << "(ghost on)" << dest[i] << std::endl;
         }
         else
         {
-          ll << "I gave away " << idx << " to " << dest[i] << std::endl;
           owners_changed = true;
           global_idx_to_possible_owner.push_back({idx, dest[i]});
         }
@@ -277,10 +273,6 @@ compute_submap_indices(const IndexMap& imap,
         send_owners.push_back(it->second);
 
         // If rank that sent this ghost is the owner, send all other ranks
-        // that will ghost this index (dest rank)
-        // ll << idx << "is owned by " << it->second << " and sent to " <<
-        // dest[i]
-        //    << std::endl;
         if (it->second == dest[i])
         {
           // Find upper limit of recv index and pack all dest ranks for this
@@ -291,13 +283,6 @@ compute_submap_indices(const IndexMap& imap,
           std::transform(it + 1, it_upper,
                          std::back_inserter(new_owner_dest_ranks),
                          [](auto& e) { return e.second; });
-          // ll << "Packed " << std::distance(it + 1, it_upper)
-          //    << " dest ranks for " << idx << "(to " << dest[i - 1] << ")"
-          //    << std::endl;
-          // ll << "THESE were all candidates (ignore first)";
-          // for (auto e = it; e != it_upper; e++)
-          //   ll << e->second << " ";
-          // ll << std::endl;
         }
       }
       // Remove duplicate new dest ranks from recv process
@@ -312,13 +297,6 @@ compute_submap_indices(const IndexMap& imap,
       new_owner_dest_ranks_sizes[i] = num_unique_dest_ranks;
       new_owner_dest_ranks_offsets[i + 1]
           = new_owner_dest_ranks_offsets[i] + num_unique_dest_ranks;
-
-      // ll << "there were " << num_unique_dest_ranks << " unique dest ranks"
-      //    << std::endl;
-      // for (std::int32_t k = new_owner_dest_ranks_offsets[i];
-      //      k < new_owner_dest_ranks_offsets[i + 1]; k++)
-      //   ll << new_owner_dest_ranks[k] << " ";
-      // ll << "\n";
     }
 
     // Create neighbourhood comm (owner -> ghost)
@@ -347,6 +325,7 @@ compute_submap_indices(const IndexMap& imap,
     std::partial_sum(recv_dest_ranks_sizes.begin(), recv_dest_ranks_sizes.end(),
                      std::next(recv_dest_rank_disp.begin()));
     std::vector<int> recv_dest_ranks(recv_dest_rank_disp.back());
+    recv_dest_ranks.reserve(1);
     ierr = MPI_Neighbor_alltoallv(
         new_owner_dest_ranks.data(), new_owner_dest_ranks_sizes.data(),
         new_owner_dest_ranks_offsets.data(), MPI_INT, recv_dest_ranks.data(),
@@ -395,20 +374,14 @@ compute_submap_indices(const IndexMap& imap,
 
     // Loop over ghost indices (in the original map) and add to
     // submap_owned if the owning process has decided this process to be
-    // the submap owner (add old owner as new dest).
-    // Else, add the index and its (possibly new)
+    // the submap owner. Else, add the index and its (possibly new)
     // owner to submap_ghost and submap_ghost_owners respectively.
     for (std::size_t i = 0; i < send_disp.size() - 1; ++i)
       for (int j = send_disp[i]; j < send_disp[i + 1]; ++j)
       {
         std::int32_t local_idx = send_indices_local[j];
         if (int owner = recv_owners[j]; owner == rank)
-        {
           submap_owned.push_back(local_idx);
-          submap_dest_new.push_back(src[i]);
-          // ll << "I have taken ownership of " << send_indices[j] << " from "
-          //    << src[i] << std::endl;
-        }
         else
         {
           submap_ghost.push_back(local_idx);
@@ -417,7 +390,6 @@ compute_submap_indices(const IndexMap& imap,
       }
     std::ranges::sort(submap_owned);
   }
-  std::cout << ll.str() << std::endl;
   // Get submap source ranks
   std::vector<int> submap_src(submap_ghost_owners.begin(),
                               submap_ghost_owners.end());
@@ -425,19 +397,6 @@ compute_submap_indices(const IndexMap& imap,
   auto [unique_end, range_end] = std::ranges::unique(submap_src);
   submap_src.erase(unique_end, range_end);
   submap_src.shrink_to_fit();
-
-  std::stringstream cc;
-  cc << "MPI RANK" << rank << std::endl;
-  // cc << "Submap dest (who ghost me)" << std::endl;
-  // for (auto d : submap_dest_new)
-  //   cc << d << " ";
-  // cc << std::endl;
-  // cc << " I have ghosts from  " << std::endl;
-  // for (auto ghost : submap_ghost_owners)
-  //   cc << ghost << " ";
-  // cc << std::endl;
-  // std::cout << cc.str() << std::endl;
-
   std::ranges::sort(submap_src);
   {
     auto [unique_end, range_end] = std::ranges::unique(submap_src);
@@ -447,20 +406,9 @@ compute_submap_indices(const IndexMap& imap,
   std::vector<int> submap_dest
       = dolfinx::MPI::compute_graph_edges_nbx(imap.comm(), submap_src);
   std::ranges::sort(submap_dest);
-
-  // assert(submap_dest.size() == submap_dest_new.size());
-  cc << "new submap" << std::endl;
   for (std::size_t i = 0; i < submap_dest_new.size(); ++i)
-    // assert(submap_dest[i] == submap_dest_new[i]);
-    cc << submap_dest_new[i] << "\n";
-  cc << std::endl;
+    assert(submap_dest[i] == submap_dest_new[i]);
 
-  cc << "actual submap" << std::endl;
-  for (std::size_t i = 0; i < submap_dest.size(); ++i)
-    // assert(submap_dest[i] == submap_dest_new[i]);
-    cc << submap_dest[i] << "\n";
-  cc << std::endl;
-  std::cout << cc.str() << std::endl;
   // If required, preserve the order of the ghost indices
   if (order == IndexMapOrder::preserve)
   {
