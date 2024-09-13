@@ -23,10 +23,10 @@ namespace dolfinx::refinement
 {
 namespace impl
 {
-/// Refine with markers returning new mesh data.
+/// @brief Refine with markers returning new mesh data.
 ///
-/// @param[in] mesh Input mesh to be refined
-/// @param[in] cells Indices of the cells that are marked for refinement
+/// @param[in] mesh Input mesh to be refined.
+/// @param[in] cells Indices of the cells that are marked for refinement.
 ///
 /// @return New mesh data: cell topology, vertex coordinates and parent
 /// cell indices.
@@ -39,7 +39,6 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
   auto topology = mesh.topology();
   assert(topology);
   assert(topology->dim() == 1);
-
   auto map_c = topology->index_map(1);
   assert(map_c);
 
@@ -109,7 +108,7 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
 
   // Get the count of cells to refine, note: we only consider non-ghost
   // cells
-  std::int32_t number_of_refined_cells
+  const std::int32_t number_of_refined_cells
       = std::count(refinement_marker.begin(),
                    std::next(refinement_marker.begin(),
                              mesh.topology()->index_map(1)->size_local()),
@@ -120,7 +119,7 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
       = adjust_indices(*mesh.topology()->index_map(0), number_of_refined_cells);
 
   // Build the topology on the new vertices
-  const auto refined_cell_count
+  const std::int32_t refined_cell_count
       = mesh.topology()->index_map(1)->size_local() + number_of_refined_cells;
 
   std::vector<std::int64_t> cell_topology;
@@ -156,24 +155,22 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
     }
   }
 
-  assert(cell_topology.size() == refined_cell_count * 2);
+  assert(cell_topology.size() == 2 * refined_cell_count);
   assert(parent_cell.size() == refined_cell_count);
 
   std::vector<std::int32_t> offsets(refined_cell_count + 1);
   std::ranges::generate(offsets, [i = 0]() mutable { return 2 * i++; });
 
-  graph::AdjacencyList cell_adj(std::move(cell_topology), std::move(offsets));
-
-  return {std::move(cell_adj), std::move(new_vertex_coords), xshape,
-          std::move(parent_cell)};
+  return {graph::AdjacencyList(std::move(cell_topology), std::move(offsets)),
+          std::move(new_vertex_coords), xshape, std::move(parent_cell)};
 }
 
 } // namespace impl
 
-/// Refines a (topologically) one dimensional mesh by splitting cells,
-/// i.e. edges.
+/// @brief Refine a (topologically) one-dimensional mesh by splitting
+/// cells, i.e. edges.
 ///
-/// @param[in] mesh Mesh to be refined
+/// @param[in] mesh Mesh to be refined.
 /// @param[in] cells Optional indices of the cells that should be
 /// refined by this refinement. If not provided, all cells are
 /// considered marked for refinement, i.e. a uniform refinement is
@@ -181,7 +178,7 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
 /// @param[in] redistribute Option to enable redistribution of the
 /// refined mesh across processes.
 /// @param[in] ghost_mode Ghost mode of the refined mesh, default is
-/// ghost mode none
+/// ghost mode none.
 ///
 /// @return Refined mesh, and list of parent cells and an array mapping
 /// the child cell index of the refined mesh to its parent cell index in
