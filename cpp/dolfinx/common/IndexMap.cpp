@@ -396,12 +396,6 @@ compute_submap_indices(const IndexMap& imap,
   auto [unique_end, range_end] = std::ranges::unique(submap_src);
   submap_src.erase(unique_end, range_end);
   submap_src.shrink_to_fit();
-  std::ranges::sort(submap_src);
-  {
-    auto [unique_end, range_end] = std::ranges::unique(submap_src);
-    submap_src.erase(unique_end, range_end);
-    submap_src.shrink_to_fit();
-  }
 
   // If required, preserve the order of the ghost indices
   if (order == IndexMapOrder::preserve)
