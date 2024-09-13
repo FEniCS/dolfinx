@@ -194,9 +194,10 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
   std::vector<std::int32_t> recv_offsets(in_ranks.size() + 1, 0);
   {
     // Build map from parent to neighborhood communicator ranks
-    std::map<std::int32_t, std::int32_t> rank_to_neighbor;
+    std::vector<std::pair<std::int32_t, std::int32_t>> rank_to_neighbor;
     for (std::size_t i = 0; i < in_ranks.size(); i++)
-      rank_to_neighbor[in_ranks[i]] = i;
+      rank_to_neighbor.push_back({in_ranks[i], i});
+    std::ranges::sort(rank_to_neighbor);
 
     // Compute receive sizes
     std::ranges::for_each(
@@ -205,8 +206,12 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
         {
           if (rank >= 0)
           {
-            const int neighbor = rank_to_neighbor[rank];
-            recv_sizes[neighbor] += block_size;
+            auto neighbor = std::ranges::lower_bound(
+                rank_to_neighbor, rank, std::ranges::less(),
+                [](auto& e) { return e.first; });
+            assert(neighbor != rank_to_neighbor.end()
+                   and neighbor->first == rank);
+            recv_sizes[neighbor->second] += block_size;
           }
         });
 
@@ -221,10 +226,14 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
     {
       if (const std::int32_t rank = dest_ranks[i]; rank >= 0)
       {
-        const int neighbor = rank_to_neighbor[rank];
-        int insert_pos = recv_offsets[neighbor] + recv_counter[neighbor];
+        auto neighbor = std::ranges::lower_bound(
+            rank_to_neighbor, rank, std::ranges::less(),
+            [](auto& e) { return e.first; });
+        assert(neighbor != rank_to_neighbor.end() and neighbor->first == rank);
+        int insert_pos
+            = recv_offsets[neighbor->second] + recv_counter[neighbor->second];
         comm_to_output[insert_pos / block_size] = i * block_size;
-        recv_counter[neighbor] += block_size;
+        recv_counter[neighbor->second] += block_size;
       }
     }
   }
@@ -233,14 +242,26 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
   send_sizes.reserve(1);
   {
     // Compute map from parent mpi rank to neigbor rank for outgoing data
-    std::map<std::int32_t, std::int32_t> rank_to_neighbor;
+    // `out_ranks` are already sorted so ranK_to_neighbor is sorted
+    std::vector<std::pair<std::int32_t, std::int32_t>> rank_to_neighbor;
     for (std::size_t i = 0; i < out_ranks.size(); i++)
-      rank_to_neighbor[out_ranks[i]] = i;
+      rank_to_neighbor.push_back({out_ranks[i], i});
 
     // Compute send sizes
+    // As `src_ranks` are sorted we can move start in search forward
+    auto start = rank_to_neighbor.begin();
     std::ranges::for_each(
-        src_ranks, [&rank_to_neighbor, &send_sizes, block_size](auto rank)
-        { send_sizes[rank_to_neighbor[rank]] += block_size; });
+        src_ranks,
+        [&rank_to_neighbor, &send_sizes, &block_size, &start](auto rank)
+        {
+          auto neighbor = std::ranges::lower_bound(
+              start, rank_to_neighbor.end(), rank, std::ranges::less(),
+              [](auto& e) { return e.first; });
+          assert(neighbor != rank_to_neighbor.end()
+                 and neighbor->first == rank);
+          send_sizes[neighbor->second] += block_size;
+          start = neighbor;
+        });
   }
 
   // Compute sending offsets
