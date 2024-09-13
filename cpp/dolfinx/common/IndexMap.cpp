@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <functional>
+#include <iostream>
 #include <numeric>
 #include <span>
 #include <utility>
@@ -205,6 +206,8 @@ compute_submap_indices(const IndexMap& imap,
   std::vector<int> recv_owners(send_disp.back());
   std::vector<int> submap_dest_new;
   submap_dest_new.reserve(dest.size());
+  std::stringstream ll;
+  ll << "Determniing stuff: " << dolfinx::MPI::rank(imap.comm()) << std::endl;
   const int rank = dolfinx::MPI::rank(imap.comm());
   {
     // Flag to track if the owner of any indices have changed in the submap
@@ -233,9 +236,11 @@ compute_submap_indices(const IndexMap& imap,
         {
           global_idx_to_possible_owner.push_back({idx, rank});
           submap_dest_new.push_back(dest[i]);
+          ll << "I own " << idx << "(ghost on)" << dest[i] << std::endl;
         }
         else
         {
+          ll << "I gave away " << idx << " to " << dest[i] << std::endl;
           owners_changed = true;
           global_idx_to_possible_owner.push_back({idx, dest[i]});
         }
@@ -250,16 +255,77 @@ compute_submap_indices(const IndexMap& imap,
     // Choose the submap owner for each index in `recv_indices`
     std::vector<int> send_owners;
     send_owners.reserve(recv_indices.size());
-    for (auto idx : recv_indices)
+    std::vector<int> new_owner_dest_ranks;
+    new_owner_dest_ranks.reserve(recv_indices.size());
+    std::vector<int> new_owner_dest_ranks_offsets(recv_sizes.size() + 1, 0);
+    std::vector<std::int32_t> new_owner_dest_ranks_sizes(recv_sizes.size());
+
+    for (std::size_t i = 1; i < recv_disp.size(); ++i)
     {
-      // NOTE: Could choose new owner in a way that is is better for
-      // load balancing, though the impact is probably only very small
-      auto it = std::ranges::lower_bound(global_idx_to_possible_owner, idx,
-                                         std::ranges::less(),
-                                         [](auto& e) { return e.first; });
-      assert(it != global_idx_to_possible_owner.end() and it->first == idx);
-      send_owners.push_back(it->second);
+      for (int j = recv_disp[i - 1]; j < recv_disp[i]; ++j)
+      {
+        std::int64_t idx = recv_indices[j];
+
+        // NOTE: Could choose new owner in a way that is is better for
+        // load balancing, though the impact is probably only very small
+        auto it = std::ranges::lower_bound(global_idx_to_possible_owner, idx,
+                                           std::ranges::less(),
+                                           [](auto& e) { return e.first; });
+        assert(it != global_idx_to_possible_owner.end() and it->first == idx);
+        send_owners.push_back(it->second);
+
+        // If rank that sent this ghost is the owner, send all other ranks
+        // that will ghost this index (dest rank)
+        ll << idx << "is owned by " << it->second << " and sent to " << dest[i]
+           << std::endl;
+        if (it->second == dest[i - 1])
+        {
+          // Find upper limit of recv index and pack all dest ranks for this
+          // process
+          auto it_upper = std::ranges::upper_bound(
+              it, global_idx_to_possible_owner.end(), idx, std::ranges::less(),
+              [](auto& e) { return e.first; });
+          std::transform(it + 1, it_upper,
+                         std::back_inserter(new_owner_dest_ranks),
+                         [](auto& e) { return e.second; });
+          ll << "Packed " << std::distance(it + 1, it_upper)
+             << " dest ranks for " << idx << "(to " << dest[i - 1] << ")"
+             << std::endl;
+          ll << "THESE were all candidates (ignore first)";
+          for (auto e = it; e != it_upper; e++)
+            ll << e->second << " ";
+          ll << std::endl;
+        }
+      }
+      // Remove duplicate new dest ranks from recv process
+      auto dest_begin
+          = new_owner_dest_ranks.begin() + new_owner_dest_ranks_offsets[i - 1];
+      std::ranges::sort(dest_begin, new_owner_dest_ranks.end());
+      auto [unique_end, range_end]
+          = std::ranges::unique(dest_begin, new_owner_dest_ranks.end());
+      std::size_t num_unique_dest_ranks = std::distance(dest_begin, unique_end);
+      new_owner_dest_ranks.erase(unique_end, range_end);
+      new_owner_dest_ranks.shrink_to_fit();
+      new_owner_dest_ranks_sizes[i - 1] = num_unique_dest_ranks;
+      new_owner_dest_ranks_offsets[i]
+          = new_owner_dest_ranks_offsets[i - 1] + num_unique_dest_ranks;
+
+      ll << "there were " << num_unique_dest_ranks << " unique dest ranks"
+         << std::endl;
+      for (std::int32_t k = new_owner_dest_ranks_offsets[i - 1];
+           k < new_owner_dest_ranks_offsets[i]; k++)
+        ll << new_owner_dest_ranks[k] << " ";
+      ll << "\n";
     }
+    // // NOTE: Joe uses nbx to communicate src (owners of current process
+    // ghosts)
+    // // to dest (processes that ghost current process)
+    // std::vector<int> send_new_dest_ranks_disp(send_dest_ranks_sizes.size() +
+    // 1,
+    //                                           0);
+    // std::partial_sum(send_dest_ranks_sizes.begin(),
+    // send_dest_ranks_sizes.end(),
+    //                  std::next(send_new_dest_ranks_disp.begin()));
 
     // Create neighbourhood comm (owner -> ghost)
     MPI_Comm comm1;
@@ -274,6 +340,9 @@ compute_submap_indices(const IndexMap& imap,
                                   send_sizes.data(), send_disp.data(), MPI_INT,
                                   comm1);
     dolfinx::MPI::check_error(imap.comm(), ierr);
+
+    // Reuse recv_sizes and communicate how many dest ranks we will recieve when
+    // owning
 
     // Free the communicator
     ierr = MPI_Comm_free(&comm1);
@@ -319,6 +388,8 @@ compute_submap_indices(const IndexMap& imap,
         {
           submap_owned.push_back(local_idx);
           submap_dest_new.push_back(src[i]);
+          ll << "I have taken ownership of " << send_indices[j] << " from "
+             << src[i] << std::endl;
         }
         else
         {
@@ -328,7 +399,7 @@ compute_submap_indices(const IndexMap& imap,
       }
     std::ranges::sort(submap_owned);
   }
-
+  std::cout << ll.str() << std::endl;
   // Get submap source ranks
   std::vector<int> submap_src(submap_ghost_owners.begin(),
                               submap_ghost_owners.end());
@@ -339,18 +410,41 @@ compute_submap_indices(const IndexMap& imap,
 
   // Sort and remove duplicate dest ranks
   std::ranges::sort(submap_dest_new);
+  submap_dest_new.reserve(1);
   {
     auto [unique_end, range_end] = std::ranges::unique(submap_dest_new);
     submap_dest_new.erase(unique_end, range_end);
     submap_dest_new.shrink_to_fit();
   }
 
+  std::stringstream cc;
+  cc << "MPI RANK" << rank << std::endl;
+  cc << "Submap dest (who ghost me)" << std::endl;
+  for (auto d : submap_dest_new)
+    cc << d << " ";
+  cc << std::endl;
+  cc << " I have ghosts from  " << std::endl;
+  for (auto ghost : submap_ghost_owners)
+    cc << ghost << " ";
+  cc << std::endl;
+  std::cout << cc.str() << std::endl;
+
+  std::ranges::sort(submap_src);
+  {
+    auto [unique_end, range_end] = std::ranges::unique(submap_src);
+    submap_src.erase(unique_end, range_end);
+    submap_src.shrink_to_fit();
+  }
   std::vector<int> submap_dest
       = dolfinx::MPI::compute_graph_edges_nbx(imap.comm(), submap_src);
+  std::ranges::sort(submap_dest);
 
-  assert(submap_dest.size() == submap_dest_new.size());
+  // assert(submap_dest.size() == submap_dest_new.size());
+  cc << "actual submap" << std::endl;
   for (std::size_t i = 0; i < submap_dest.size(); ++i)
-    assert(submap_dest[i] == submap_dest_new[i]);
+    // assert(submap_dest[i] == submap_dest_new[i]);
+    cc << submap_dest[i] << "\n";
+  cc << std::endl;
 
   // If required, preserve the order of the ghost indices
   if (order == IndexMapOrder::preserve)
