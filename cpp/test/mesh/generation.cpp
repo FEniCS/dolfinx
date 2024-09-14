@@ -89,7 +89,6 @@ TEMPLATE_TEST_CASE("Interval mesh (parallel)", "[mesh][interval]", float,
 {
   using T = TestType;
   int comm_size = dolfinx::MPI::size(MPI_COMM_WORLD);
-  // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
 
   mesh::GhostMode ghost_mode = mesh::GhostMode::shared_facet;
 
@@ -257,19 +256,6 @@ TEMPLATE_TEST_CASE("Interval mesh (parallel)", "[mesh][interval]", float,
     CHECK(std::abs(mesh.geometry().x()[3 * i + 1] - 0.0) <= EPS<T>);
     CHECK(std::abs(mesh.geometry().x()[3 * i + 2] - 0.0) <= EPS<T>);
   }
-
-  // auto vertices = mesh.topology()->index_map(0);
-  // CHECK(vertices->size_local() == expected_local_vertex_count[rank]);
-  // CHECK(vertices->num_ghosts() == expected_num_ghosts[rank]);
-
-  // for (std::int32_t i = 0; i < vertices->size_local(); i++)
-  //   CHECK(expected_x[])
-  // CHECK_THAT(mesh.geometry().x(),
-  //            RangeEquals(expected_x[rank], [](auto a, auto b)
-  //                        { return std::abs(a - b) <= EPS<T>; }));
-  // mesh.topology()->create_connectivity(0, 1);
-  // CHECK_adjacency_list_equal(*mesh.topology()->connectivity(0, 1),
-  //                            expected_v_to_e[rank])·
 }
 
 TEMPLATE_TEST_CASE("Rectangle quadrilateral mesh",
