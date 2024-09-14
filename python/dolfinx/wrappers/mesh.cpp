@@ -167,6 +167,28 @@ void declare_mesh(nb::module_& m, std::string type)
   std::string pyclass_geometry_name = std::string("Geometry_") + type;
   nb::class_<dolfinx::mesh::Geometry<T>>(m, pyclass_geometry_name.c_str(),
                                          "Geometry object")
+      .def(
+          "__init__",
+          [](dolfinx::mesh::Geometry<T>* self,
+             std::shared_ptr<const dolfinx::common::IndexMap> index_map,
+             nb::ndarray<std::int32_t, nb::ndim<1>, nb::c_contig> dofmap,
+             const dolfinx::fem::CoordinateElement<T>& element,
+             nb::ndarray<T, nb::ndim<1>, nb::c_contig> x, int dim,
+             nb::ndarray<std::int64_t, nb::ndim<1>, nb::c_contig>
+                 input_global_indices)
+          {
+            std::vector<std::int32_t> dofmap_vec(dofmap.data(),
+                                                 dofmap.data() + dofmap.size());
+            std::vector<T> x_vec(x.data(), x.data() + x.size());
+            std::vector<std::int64_t> igi_vec(
+                input_global_indices.data(),
+                input_global_indices.data() + input_global_indices.size());
+            new (self) dolfinx::mesh::Geometry<T>(
+                std::move(index_map), std::move(dofmap_vec), element,
+                std::move(x_vec), dim, std::move(igi_vec));
+          },
+          nb::arg("index_map"), nb::arg("dofmap"), nb::arg("element"),
+          nb::arg("x"), nb::arg("dim"), nb::arg("input_global_indices"))
       .def_prop_ro("dim", &dolfinx::mesh::Geometry<T>::dim,
                    "Geometric dimension")
       .def_prop_ro(
@@ -189,7 +211,8 @@ void declare_mesh(nb::module_& m, std::string type)
                 nb::handle());
           },
           nb::rv_policy::reference_internal, nb::arg("i"),
-          "Get the geometry dofmap associated with coordinate element i (mixed "
+          "Get the geometry dofmap associated with coordinate element i "
+          "(mixed "
           "topology)")
       .def("index_map", &dolfinx::mesh::Geometry<T>::index_map)
       .def_prop_ro(
