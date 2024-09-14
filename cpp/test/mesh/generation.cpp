@@ -66,14 +66,14 @@ TEMPLATE_TEST_CASE("Interval mesh", "[mesh][interval]", float, double)
   };
 
   auto [x, cells] = mesh::impl::create_interval_cells<T>({0., 1.}, 4);
-  CHECK_THAT(x, RangeEquals(expected_x, [](auto a, auto b)
-                            { return std::abs(a - b) <= EPS<T>; }));
 
-  auto order = mesh.geometry().input_global_indices();
-  std::ranges::sort(order);
-  std::ranges::unique(order);
-  CHECK(order.size()
-        == (std::size_t)mesh.topology()->index_map(0)->size_local());
+  CHECK(mesh.topology()->index_map(0)->size_local() == 5);
+  for (std::int64_t i = 0; i < mesh.topology()->index_map(0)->size_local(); i ++)
+  {
+    CHECK(std::abs(expected_x[mesh.geometry().input_global_indices()[i]] - mesh.geometry().x()[3*i]) <= EPS<T>);
+    CHECK(std::abs(mesh.geometry().x()[3*i + 1] - 0.0) <= EPS<T>);
+    CHECK(std::abs(mesh.geometry().x()[3*i + 2] - 0.0) <= EPS<T>);
+  }
 
   // cell layout
   // x -0- x -1- x -2- x -3- x
