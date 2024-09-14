@@ -68,11 +68,13 @@ TEMPLATE_TEST_CASE("Interval mesh", "[mesh][interval]", float, double)
   auto [x, cells] = mesh::impl::create_interval_cells<T>({0., 1.}, 4);
 
   CHECK(mesh.topology()->index_map(0)->size_local() == 5);
-  for (std::int64_t i = 0; i < mesh.topology()->index_map(0)->size_local(); i ++)
+  for (std::int64_t i = 0; i < mesh.topology()->index_map(0)->size_local(); i++)
   {
-    CHECK(std::abs(expected_x[mesh.geometry().input_global_indices()[i]] - mesh.geometry().x()[3*i]) <= EPS<T>);
-    CHECK(std::abs(mesh.geometry().x()[3*i + 1] - 0.0) <= EPS<T>);
-    CHECK(std::abs(mesh.geometry().x()[3*i + 2] - 0.0) <= EPS<T>);
+    CHECK(std::abs(expected_x[mesh.geometry().input_global_indices()[i]]
+                   - mesh.geometry().x()[3 * i])
+          <= EPS<T>);
+    CHECK(std::abs(mesh.geometry().x()[3 * i + 1] - 0.0) <= EPS<T>);
+    CHECK(std::abs(mesh.geometry().x()[3 * i + 2] - 0.0) <= EPS<T>);
   }
 
   // cell layout
@@ -129,7 +131,7 @@ TEMPLATE_TEST_CASE("Interval mesh (parallel)", "[mesh][interval]", float,
 
   std::array<int32_t, 3> expected_local_vertex_count;
   std::array<int32_t, 3> expected_num_ghosts;
-  std::array<std::vector<T>, 3> expected_x;
+  std::vector<T> expected_x;
   std::array<std::vector<std::vector<std::int32_t>>, 3> expected_v_to_e;
 
   if (comm_size == 1)
@@ -139,12 +141,12 @@ TEMPLATE_TEST_CASE("Interval mesh (parallel)", "[mesh][interval]", float,
     expected_local_vertex_count = {5};
     expected_num_ghosts = {0};
 
-    expected_x[0] = {
-        /* v_0 */ 0.0,  0.0, 0.0,
-        /* v_1 */ 0.25, 0.0, 0.0,
-        /* v_2 */ 0.5,  0.0, 0.0,
-        /* v_3 */ 0.75, 0.0, 0.0,
-        /* v_4 */ 1.0,  0.0, 0.0,
+    expected_x = {
+        /* v_0 */ 0.0,
+        /* v_1 */ 0.25,
+        /* v_2 */ 0.5,
+        /* v_3 */ 0.75,
+        /* v_4 */ 1.0,
     };
 
     // cell layout
@@ -164,23 +166,17 @@ TEMPLATE_TEST_CASE("Interval mesh (parallel)", "[mesh][interval]", float,
     expected_local_vertex_count = {4, 6};
     expected_num_ghosts = {2, 1};
 
-    expected_x[0] = {
-        /* v_0 */ 0.0,    0.0, 0.0,
-        /* v_1 */ 1. / 9, 0.0, 0.0,
-        /* v_2 */ 2. / 9, 0.0, 0.0,
-        /* v_3 */ 3. / 9, 0.0, 0.0,
-        /* v_4 */ 4. / 9, 0.0, 0.0,
-        /* v_5 */ 5. / 9, 0.0, 0.0,
-    };
-
-    expected_x[1] = {
-        /* v_0 */ 4. / 9, 0.0, 0.0,
-        /* v_1 */ 5. / 9, 0.0, 0.0,
-        /* v_2 */ 6. / 9, 0.0, 0.0,
-        /* v_3 */ 7. / 9, 0.0, 0.0,
-        /* v_4 */ 8. / 9, 0.0, 0.0,
-        /* v_5 */ 9. / 9, 0.0, 0.0,
-        /* v_6 */ 3. / 9, 0.0, 0.0,
+    expected_x = {
+        /* v_0 */ 0.0,
+        /* v_1 */ 1. / 9,
+        /* v_2 */ 2. / 9,
+        /* v_3 */ 3. / 9,
+        /* v_4 */ 4. / 9,
+        /* v_5 */ 5. / 9,
+        /* v_6 */ 6. / 9,
+        /* v_7 */ 7. / 9,
+        /* v_8 */ 8. / 9,
+        /* v_9 */ 9. / 9,
     };
 
     /* clang-format off
@@ -209,34 +205,22 @@ TEMPLATE_TEST_CASE("Interval mesh (parallel)", "[mesh][interval]", float,
     expected_local_vertex_count = {5, 6, 4};
     expected_num_ghosts = {1, 1, 4};
 
-    expected_x[1] = {
-        /* v_0 */ 0. / 14, 0.0, 0.0,
-        /* v_1 */ 1. / 14, 0.0, 0.0,
-        /* v_2 */ 2. / 14, 0.0, 0.0,
-        /* v_3 */ 3. / 14, 0.0, 0.0,
-        /* v_4 */ 4. / 14, 0.0, 0.0,
-        /* v_5 */ 5. / 14, 0.0, 0.0,
-        /* v_6 */ 6. / 14, 0.0, 0.0,
-    };
-
-    expected_x[2] = {
-        /* v_0 */ 6. / 14,  0.0, 0.0,
-        /* v_1 */ 7. / 14,  0.0, 0.0,
-        /* v_2 */ 8. / 14,  0.0, 0.0,
-        /* v_3 */ 9. / 14,  0.0, 0.0,
-        /* v_4 */ 5. / 14,  0.0, 0.0,
-        /* v_5 */ 10. / 14, 0.0, 0.0,
-        /* v_6 */ 4. / 14,  0.0, 0.0,
-        /* v_7 */ 11. / 14, 0.0, 0.0,
-    };
-
-    expected_x[0] = {
-        /* v_0 */ 10. / 14, 0.0, 0.0,
-        /* v_1 */ 11. / 14, 0.0, 0.0,
-        /* v_2 */ 12. / 14, 0.0, 0.0,
-        /* v_3 */ 13. / 14, 0.0, 0.0,
-        /* v_4 */ 14. / 14, 0.0, 0.0,
-        /* v_5 */ 9. / 14,  0.0, 0.0,
+    expected_x = {
+        /* v_0 */ 0. / 14,
+        /* v_1 */ 1. / 14,
+        /* v_2 */ 2. / 14,
+        /* v_3 */ 3. / 14,
+        /* v_4 */ 4. / 14,
+        /* v_5 */ 5. / 14,
+        /* v_6 */ 6. / 14,
+        /* v_7 */ 7. / 14,
+        /* v_8 */ 8. / 14,
+        /* v_9 */ 9. / 14,
+        /* v_10 */ 10. / 14,
+        /* v_11 */ 11. / 14,
+        /* v_12 */ 12. / 14,
+        /* v_13 */ 13. / 14,
+        /* v_14 */ 14. / 14,
     };
 
     /* clang-format off
@@ -257,6 +241,21 @@ TEMPLATE_TEST_CASE("Interval mesh (parallel)", "[mesh][interval]", float,
   {
     // Test only supports np <= 3
     CHECK(false);
+  }
+
+  auto [x, cells]
+      = mesh::impl::create_interval_cells<T>({0., 1.}, 5 * comm_size - 1);
+
+  for (std::int64_t i = 0;
+       i < mesh.topology()->index_map(0)->size_local()
+               + mesh.topology()->index_map(0)->num_ghosts();
+       i++)
+  {
+    CHECK(std::abs(expected_x[mesh.geometry().input_global_indices()[i]]
+                   - mesh.geometry().x()[3 * i])
+          <= EPS<T>);
+    CHECK(std::abs(mesh.geometry().x()[3 * i + 1] - 0.0) <= EPS<T>);
+    CHECK(std::abs(mesh.geometry().x()[3 * i + 2] - 0.0) <= EPS<T>);
   }
 
   // auto vertices = mesh.topology()->index_map(0);
