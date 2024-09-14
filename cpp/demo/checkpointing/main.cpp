@@ -74,7 +74,7 @@ std::shared_ptr<fem::Function<T>>
 create_function(std::shared_ptr<dolfinx::mesh::Mesh<U>> mesh)
 {
   auto element = basix::create_element<U>(
-      basix::element::family::P, basix::cell::type::triangle, 1,
+      basix::element::family::P, basix::cell::type::quadrilateral, 1,
       basix::element::lagrange_variant::unset,
       basix::element::dpc_variant::unset, false);
 
@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
 
   try
   {
-    // Set up ADIOS2 IO and Engine
+    // Set up ADIOS2 for writing
     adios2::ADIOS adios(mesh->comm());
 
     {
@@ -150,19 +150,20 @@ int main(int argc, char* argv[])
       io::native::write_function<T, U>(io, engine, *f, *mesh);
       engine.Close();
     }
-    adios2::IO io = adios.DeclareIO("mesh-write");
-    io.SetEngine("BP5");
-    adios2::Engine engine = io.Open("mesh.bp", adios2::Mode::Append);
+    // time dependent write
+    {
+      adios2::IO io = adios.DeclareIO("mesh-time-write");
+      io.SetEngine("BP5");
+      adios2::Engine engine = io.Open("mesh-time.bp", adios2::Mode::Append);
 
-    io::native::write_mesh(io, engine, *mesh);
-    io::native::write_meshtags<float, std::int32_t>(io, engine, *mesh,
-                                                    *meshtags);
-    std::span<float> x = mesh->geometry().x();
-    std::ranges::transform(x, x.begin(), [](auto xi) { return xi *= 4; });
+      io::native::write_mesh(io, engine, *mesh);
+      std::span<U> x = mesh->geometry().x();
+      std::ranges::transform(x, x.begin(), [](auto xi) { return xi *= 4; });
 
-    io::native::write_mesh(io, engine, *mesh, 0.5);
+      io::native::write_mesh(io, engine, *mesh, 0.5);
 
-    engine.Close();
+      engine.Close();
+    }
   }
   catch (std::exception& e)
   {
@@ -172,52 +173,57 @@ int main(int argc, char* argv[])
 
   try
   {
-    // Read mode : set up ADIOS2 IO and Engine
-    adios2::ADIOS adios_read(MPI_COMM_WORLD);
-    adios2::IO io_read = adios_read.DeclareIO("mesh-read");
-    io_read.SetEngine("BP5");
-    adios2::Engine engine_read = io_read.Open("mesh.bp", adios2::Mode::Read);
+    // Set up ADIOS2 for reading
+    adios2::ADIOS adios(MPI_COMM_WORLD);
 
-    engine_read.BeginStep();
-    auto mesh_read
-        = io::native::read_mesh<float>(io_read, engine_read, MPI_COMM_WORLD);
-
-    mesh::MeshTags<std::int32_t> mt
-        = io::native::read_meshtags<float, std::int32_t>(
-            io_read, engine_read, mesh_read, "mesh_tags");
-
-    if (engine_read.BetweenStepPairs())
     {
-      engine_read.EndStep();
+      // Read mesh
+      adios2::IO io = adios.DeclareIO("mesh-read");
+      io.SetEngine("BP5");
+      adios2::Engine engine = io.Open("mesh.bp", adios2::Mode::Read);
+
+      engine.BeginStep();
+      auto mesh_read = io::native::read_mesh<U>(io, engine, MPI_COMM_WORLD);
+
+      engine.Close();
+
+      // Read meshtags
+      adios2::IO io_mt = adios.DeclareIO("meshtags-read");
+      io_mt.SetEngine("BP5");
+      adios2::Engine engine_mt = io_mt.Open("meshtags.bp", adios2::Mode::Read);
+
+      mesh::MeshTags<std::int32_t> mt
+          = io::native::read_meshtags<U, std::int32_t>(io_mt, engine_mt,
+                                                       mesh_read, "mesh_tags");
+
+      engine_mt.Close();
+
+      {
+        adios2::IO io_write = adios.DeclareIO("mesh-write");
+        io_write.SetEngine("BP5");
+        adios2::Engine engine_write
+            = io_write.Open("mesh2.bp", adios2::Mode::Write);
+
+        io::native::write_mesh(io_write, engine_write, mesh_read);
+        engine_write.Close();
+      }
+      {
+        adios2::IO io_write = adios.DeclareIO("meshtags-write");
+        io_write.SetEngine("BP5");
+        adios2::Engine engine_write
+            = io_write.Open("meshtags2.bp", adios2::Mode::Write);
+
+        io::native::write_meshtags<U, std::int32_t>(io_write, engine_write,
+                                                    mesh_read, mt);
+        engine_write.Close();
+      }
     }
 
-    engine_read.Close();
-
-    // ReadRandomAccess mode : set up ADIOS2 IO and Engine
-    adios2::IO io_rra = adios_read.DeclareIO("mesh-rra");
+    // ReadRandomAccess mode
+    adios2::IO io_rra = adios.DeclareIO("mesh-rra");
     io_rra.SetEngine("BP5");
     adios2::Engine engine_rra
-        = io_rra.Open("mesh.bp", adios2::Mode::ReadRandomAccess);
-
-    {
-      adios2::IO io_write = adios_read.DeclareIO("mesh-write");
-      io_write.SetEngine("BP5");
-      adios2::Engine engine_write
-          = io_write.Open("mesh2.bp", adios2::Mode::Write);
-
-      io::native::write_mesh(io_write, engine_write, mesh_read);
-      engine_write.Close();
-    }
-    {
-      adios2::IO io_write = adios_read.DeclareIO("meshtags-write");
-      io_write.SetEngine("BP5");
-      adios2::Engine engine_write
-          = io_write.Open("meshtags2.bp", adios2::Mode::Write);
-
-      io::native::write_meshtags<U, std::int32_t>(io_write, engine_write,
-                                                  mesh_read, mt);
-      engine_write.Close();
-    }
+        = io_rra.Open("mesh-time.bp", adios2::Mode::ReadRandomAccess);
 
     // Find the time stamps array
     auto var_time = io_rra.InquireVariable<double>("time");
@@ -233,6 +239,17 @@ int main(int argc, char* argv[])
       engine_rra.Get(var_time, times[step]);
     }
     engine_rra.Close();
+
+    // Read and rewrite time dependent mesh
+    adios2::IO io_read = adios.DeclareIO("mesh-time-read");
+    io_read.SetEngine("BP5");
+    adios2::Engine engine_read
+        = io_read.Open("mesh-time.bp", adios2::Mode::Read);
+
+    adios2::IO io_write = adios.DeclareIO("mesh-time-write");
+    io_write.SetEngine("BP5");
+    adios2::Engine engine_write
+        = io_write.Open("mesh-time2.bp", adios2::Mode::Write);
 
     // Read mesh
     engine_read.BeginStep();
