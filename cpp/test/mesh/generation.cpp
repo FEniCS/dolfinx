@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "dolfinx/mesh/generation.h"
+#include <algorithm>
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
@@ -57,16 +58,21 @@ TEMPLATE_TEST_CASE("Interval mesh", "[mesh][interval]", float, double)
   // vertex layout
   // 0 --- 1 --- 2 --- 3 --- 4
   std::vector<T> expected_x = {
-      /* v_0 */ 0.0,  0.0, 0.0,
-      /* v_1 */ 0.25, 0.0, 0.0,
-      /* v_2 */ 0.5,  0.0, 0.0,
-      /* v_3 */ 0.75, 0.0, 0.0,
-      /* v_4 */ 1.0,  0.0, 0.0,
+      /* v_0 */ 0.0,
+      /* v_1 */ 0.25,
+      /* v_2 */ 0.5,
+      /* v_3 */ 0.75,
+      /* v_4 */ 1.0,
   };
 
-  CHECK_THAT(mesh.geometry().x(),
-             RangeEquals(expected_x, [](auto a, auto b)
-                         { return std::abs(a - b) <= EPS<T>; }));
+  auto [x, cells] = mesh::impl::create_interval_cells<T>({0., 1.}, 4);
+  CHECK_THAT(x, RangeEquals(expected_x, [](auto a, auto b)
+                            { return std::abs(a - b) <= EPS<T>; }));
+
+  auto order = mesh.geometry().input_global_indices();
+  std::ranges::sort(order);
+  std::ranges::unique(order);
+  CHECK(order.size() == mesh.topology()->index_map(0)->size_local());
 
   // cell layout
   // x -0- x -1- x -2- x -3- x
