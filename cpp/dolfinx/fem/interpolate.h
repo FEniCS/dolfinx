@@ -195,6 +195,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
   {
     // Build map from parent to neighborhood communicator ranks
     std::vector<std::pair<std::int32_t, std::int32_t>> rank_to_neighbor;
+    rank_to_neighbor.reserve(in_ranks.size());
     for (std::size_t i = 0; i < in_ranks.size(); i++)
       rank_to_neighbor.push_back({in_ranks[i], i});
     std::ranges::sort(rank_to_neighbor);
@@ -242,17 +243,18 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
   send_sizes.reserve(1);
   {
     // Compute map from parent mpi rank to neigbor rank for outgoing data
-    // `out_ranks` are already sorted so ranK_to_neighbor is sorted
+    // `out_ranks` is sorted, so rank_to_neighbor will be sorted too
     std::vector<std::pair<std::int32_t, std::int32_t>> rank_to_neighbor;
+    rank_to_neighbor.reserve(out_ranks.size());
     for (std::size_t i = 0; i < out_ranks.size(); i++)
       rank_to_neighbor.push_back({out_ranks[i], i});
 
     // Compute send sizes
-    // As `src_ranks` are sorted we can move start in search forward
+    // As `src_ranks` is sorted, we can move 'start' in search forward
     auto start = rank_to_neighbor.begin();
     std::ranges::for_each(
         src_ranks,
-        [&rank_to_neighbor, &send_sizes, &block_size, &start](auto rank)
+        [&rank_to_neighbor, &send_sizes, block_size, &start](auto rank)
         {
           auto neighbor = std::ranges::lower_bound(
               start, rank_to_neighbor.end(), rank, std::ranges::less(),
