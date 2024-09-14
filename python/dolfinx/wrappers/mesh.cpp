@@ -209,8 +209,7 @@ void declare_mesh(nb::module_& m, std::string type)
                 nb::handle());
           },
           nb::rv_policy::reference_internal, nb::arg("i"),
-          "Get the geometry dofmap associated with coordinate element i "
-          "(mixed "
+          "Get the geometry dofmap associated with coordinate element i (mixed "
           "topology)")
       .def("index_map", &dolfinx::mesh::Geometry<T>::index_map)
       .def_prop_ro(
