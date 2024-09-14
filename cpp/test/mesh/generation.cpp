@@ -108,9 +108,9 @@ TEMPLATE_TEST_CASE("Interval mesh", "[mesh][interval]", float, double)
 
   // cell layout
   // x -0- x -1- x -2- x -3- x
-  // mesh.topology()->create_connectivity(0, 1);
-  // CHECK_adjacency_list_equal(*mesh.topology()->connectivity(0, 1),
-  //                            {{0}, {0, 1}, {1, 2}, {2, 3}, {3}});
+  mesh.topology()->create_connectivity(0, 1);
+  CHECK_adjacency_list_equal(*mesh.topology()->connectivity(0, 1),
+                             {{0}, {0, 1}, {1, 2}, {2, 3}, {3}});
 }
 
 TEMPLATE_TEST_CASE("Interval mesh (parallel)", "[mesh][interval]", float,
