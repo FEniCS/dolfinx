@@ -72,7 +72,8 @@ TEMPLATE_TEST_CASE("Interval mesh", "[mesh][interval]", float, double)
   auto order = mesh.geometry().input_global_indices();
   std::ranges::sort(order);
   std::ranges::unique(order);
-  CHECK(order.size() == mesh.topology()->index_map(0)->size_local());
+  CHECK(order.size()
+        == (std::size_t)mesh.topology()->index_map(0)->size_local());
 
   // cell layout
   // x -0- x -1- x -2- x -3- x
