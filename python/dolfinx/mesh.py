@@ -356,7 +356,7 @@ def compute_incident_entities(
         d1: Topological dimension to map to
 
     """
-    return _cpp.mesh.compute_incident_entities(topology, entities, d0, d1)
+    return _cpp.mesh.compute_incident_entities(topology._cpp_object, entities, d0, d1)
 
 
 def compute_midpoints(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
@@ -405,19 +405,6 @@ def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> n
         Indices (local to the process) of marked mesh entities.
     """
     return _cpp.mesh.locate_entities_boundary(mesh._cpp_object, dim, marker)
-
-
-_uflcell_to_dolfinxcell = {
-    "interval": CellType.interval,
-    "interval2D": CellType.interval,
-    "interval3D": CellType.interval,
-    "triangle": CellType.triangle,
-    "triangle3D": CellType.triangle,
-    "quadrilateral": CellType.quadrilateral,
-    "quadrilateral3D": CellType.quadrilateral,
-    "tetrahedron": CellType.tetrahedron,
-    "hexahedron": CellType.hexahedron,
-}
 
 
 def transfer_meshtag(
