@@ -720,7 +720,7 @@ def meshtags_from_entities(
     elif isinstance(values, float):
         values = np.full(entities.num_nodes, values, dtype=np.double)
     values = np.asarray(values)
-    return MeshTags(_cpp.mesh.create_meshtags(mesh.topology, dim, entities, values))
+    return MeshTags(_cpp.mesh.create_meshtags(mesh.topology._cpp_object, dim, entities, values))
 
 
 def create_interval(
