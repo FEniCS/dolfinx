@@ -1,41 +1,43 @@
-_help_parse: Options affecting listfile parsing
+# _help_parse: Options affecting listfile parsing
+
 parse:
   _help_additional_commands:
-  - Specify structure for custom cmake functions
+
+- Specify structure for custom cmake functions
   additional_commands:
     foo:
       flags:
-      - BAR
-      - BAZ
+  - BAR
+  - BAZ
       kwargs:
         HEADERS: '*'
         SOURCES: '*'
         DEPENDS: '*'
   _help_override_spec:
-  - Override configurations per-command where available
+- Override configurations per-command where available
   override_spec: {}
   _help_vartags:
-  - Specify variable tags.
+- Specify variable tags.
   vartags: []
   _help_proptags:
-  - Specify property tags.
+- Specify property tags.
   proptags: []
 _help_format: Options affecting formatting.
 format:
   _help_disable:
-  - Disable formatting entirely, making cmake-format a no-op
+- Disable formatting entirely, making cmake-format a no-op
   disable: false
   _help_line_width:
-  - How wide to allow formatted cmake files
+- How wide to allow formatted cmake files
   line_width: 80
   _help_tab_size:
-  - How many spaces to tab for indent
+- How many spaces to tab for indent
   tab_size: 2
   _help_use_tabchars:
-  - If true, lines are indented using tab characters (utf-8
-  - 0x09) instead of <tab_size> space characters (utf-8 0x20).
-  - In cases where the layout would require a fractional tab
-  - character, the behavior of the  fractional indentation is
+- If true, lines are indented using tab characters (utf-8
+- 0x09) instead of <tab_size> space characters (utf-8 0x20).
+- In cases where the layout would require a fractional tab
+- character, the behavior of the  fractional indentation is
 - governed by <fractional_tab_policy>
   use_tabchars: false
   _help_fractional_tab_policy:
