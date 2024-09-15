@@ -45,7 +45,7 @@ constexpr auto EPS = std::numeric_limits<T>::epsilon();
 TEMPLATE_TEST_CASE("Interval mesh", "[mesh][interval]", float, double)
 {
   using T = TestType;
-  mesh::Mesh<T> mesh = mesh::create_interval<T>(MPI_COMM_SELF, 4, {0., 1.});
+  mesh::Mesh<T> mesh = mesh::create_interval<T>(MPI_COMM_SELF, 4, {T(0), T(1)});
 
   {
     int comp_result;
@@ -263,8 +263,8 @@ TEMPLATE_TEST_CASE("Rectangle quadrilateral mesh",
 {
   using T = TestType;
 
-  const std::array<double, 2> lower = {0, 0};
-  const std::array<double, 2> upper = {1, 1};
+  const std::array<T, 2> lower = {0, 0};
+  const std::array<T, 2> upper = {1, 1};
   mesh::Mesh<T> mesh = dolfinx::mesh::create_rectangle<T>(
       MPI_COMM_SELF, {lower, upper}, {1, 1}, mesh::CellType::quadrilateral);
 
@@ -305,8 +305,8 @@ TEMPLATE_TEST_CASE("Rectangle triangle mesh (right)",
 {
   using T = TestType;
 
-  const std::array<double, 2> lower = {0, 0};
-  const std::array<double, 2> upper = {1, 1};
+  const std::array<T, 2> lower = {0, 0};
+  const std::array<T, 2> upper = {1, 1};
   mesh::Mesh<T> mesh = dolfinx::mesh::create_rectangle<T>(
       MPI_COMM_SELF, {lower, upper}, {1, 1}, mesh::CellType::triangle,
       mesh::DiagonalType::right);
@@ -348,8 +348,8 @@ TEMPLATE_TEST_CASE("Rectangle triangle mesh (left)",
 {
   using T = TestType;
 
-  const std::array<double, 2> lower = {0, 0};
-  const std::array<double, 2> upper = {1, 1};
+  const std::array<T, 2> lower = {0, 0};
+  const std::array<T, 2> upper = {1, 1};
   mesh::Mesh<T> mesh = dolfinx::mesh::create_rectangle<T>(
       MPI_COMM_SELF, {lower, upper}, {1, 1}, mesh::CellType::triangle,
       mesh::DiagonalType::left);
@@ -392,8 +392,8 @@ TEMPLATE_TEST_CASE("Rectangle triangle mesh (crossed)",
 {
   using T = TestType;
 
-  const std::array<double, 2> lower = {0, 0};
-  const std::array<double, 2> upper = {1, 1};
+  const std::array<T, 2> lower = {0, 0};
+  const std::array<T, 2> upper = {1, 1};
   mesh::Mesh<T> mesh = dolfinx::mesh::create_rectangle<T>(
       MPI_COMM_SELF, {lower, upper}, {1, 1}, mesh::CellType::triangle,
       mesh::DiagonalType::crossed);
