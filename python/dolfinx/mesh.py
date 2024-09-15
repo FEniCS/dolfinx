@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2021 Chris N. Richardson and Garth N. Wells
+# Copyright (C) 2017-2024 Chris N. Richardson, Garth N. Wells and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -19,6 +19,7 @@ import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
+from dolfinx.common import IndexMap as _IndexMap
 from dolfinx.cpp.mesh import (
     CellType,
     DiagonalType,
@@ -64,7 +65,66 @@ __all__ = [
     "refine_plaza",
     "transfer_meshtag",
     "entities_to_geometry",
+    "create_geometry",
+    "Geometry",
 ]
+
+
+class Geometry:
+    """The geometry of a ``dolfinx.mesh.Mesh``"""
+
+    _cpp_object: typing.Union[_cpp.mesh.Geometry_float32, _cpp.mesh.Geometry_float64]
+
+    def __init__(
+        self, geometry: typing.Union[_cpp.mesh.Geometry_float32, _cpp.mesh.Geometry_float64]
+    ):
+        """Initialize a geometry from a C++ geometry.
+
+        Args: The C++ geometry object
+
+        Note:
+            geometry objects should not usually be created using this
+            initializer directly.
+        """
+
+        self._cpp_object = geometry
+
+    @property
+    def cmap(self) -> _CoordinateElement:
+        """The element that describes the geometry map"""
+        return _CoordinateElement(self._cpp_object.cmap)
+
+    def cmaps(self, i: int) -> _CoordinateElement:
+        """The `i`th element that describes the geometry map"""
+        return _CoordinateElement(self._cpp_object.cmaps(i))
+
+    @property
+    def dim(self):
+        """Euclidian dimension of the coordinate system"""
+        return self._cpp_object.dim
+
+    @property
+    def dofmap(self) -> npt.NDArray[np.int32]:
+        """Dofmap for the geometry, shape ``(num_cells, dofs_per_cell)``"""
+        return self._cpp_object.dofmap
+
+    def dofmaps(self, i: int) -> npt.NDArray[np.int32]:
+        """Return the `i`th dofmap"""
+        return self._cpp_object.dofmaps(i)
+
+    def index_map(self) -> _IndexMap:
+        """The index map for the geometry"""
+        return self._cpp_object.index_map()
+
+    @property
+    def input_global_indices(self) -> npt.NDArray[np.int64]:
+        """The global input indices of the geometry nodes"""
+        return self._cpp_object.input_global_indices
+
+    @property
+    def x(self) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
+        """The geometry data, with the shape ``(num_points, 3)``"""
+        return self._cpp_object.x
 
 
 class Mesh:
@@ -143,9 +203,9 @@ class Mesh:
         return self._cpp_object.topology
 
     @property
-    def geometry(self):
+    def geometry(self) -> Geometry:
         "Mesh geometry."
-        return self._cpp_object.geometry
+        return Geometry(self._cpp_object.geometry)
 
 
 class MeshTags:
@@ -819,3 +879,33 @@ def entities_to_geometry(
         The geometric DOFs associated with the closure of the entities in `entities`.
     """
     return _cpp.mesh.entities_to_geometry(mesh._cpp_object, dim, entities, permute)
+
+
+def create_geometry(
+    index_map: _IndexMap,
+    dofmap: npt.NDArray[np.int32],
+    element: _CoordinateElement,
+    x: np.ndarray,
+    input_global_indices: npt.NDArray[np.int64],
+) -> Geometry:
+    """Create a Geometry object
+
+    Args:
+        index_map: Index map associated with the geometry dofmap
+        dofmap: The geometry (point) dofmap. For a cell, it gives the position
+            in the point array of each local geometry node
+        element: Element that describes the cell geometry map.
+        x: The point coordinates. The shape is ``(num_points, geometric_dimension)``
+        input_global_indices: The 'global' input index of each point, commonly
+            from a mesh input file.
+    """
+    if x.dtype == np.float64:
+        ftype = _cpp.mesh.Geometry_float64
+    elif x.dtype == np.float32:
+        ftype = _cpp.mesh.Geometry_float64
+    else:
+        raise ValueError("Unknown floating type for geometry, got: {x.dtype}")
+
+    if (dtype := np.dtype(element.dtype)) != x.dtype:
+        raise ValueError(f"Mismatch in x dtype ({x.dtype}) and coordinate element ({dtype})")
+    return Geometry(ftype(index_map, dofmap, element, x, input_global_indices))

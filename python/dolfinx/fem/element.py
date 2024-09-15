@@ -46,6 +46,10 @@ class CoordinateElement:
         """Scalar type for the coordinate element."""
         return np.dtype(self._cpp_object.dtype)
 
+    def create_dof_layout(self) -> _cpp.fem.ElementDofLayout:
+        """Compute and return the dof layout"""
+        return self._cpp_object.create_dof_layout()
+
 
 @singledispatch
 def coordinate_element(
