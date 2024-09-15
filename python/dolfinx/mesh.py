@@ -963,4 +963,18 @@ def entities_to_geometry(
 
 
 def exterior_facet_indices(topology: Topology) -> npt.NDArray[np.int32]:
+    """Compute the indices of all exterior facets that are owned by the caller.
+
+    An exterior facet (co-dimension 1) is one that is connected globally to
+    only one cell of co-dimension 0).
+
+    Note:
+        This is a collective operation that should be called on all processes.
+
+    Args:
+        topology: The topology
+
+    Returns:
+        Sorted list of owned facet indices that are exterior facets of the mesh.
+    """
     return _cpp.mesh.exterior_facet_indices(topology._cpp_object)
