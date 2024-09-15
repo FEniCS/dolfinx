@@ -7,7 +7,7 @@ Check out all of the FEniCSx components on the `release` branch.
 Check that all CIs on `main` are running green.
 
 Check that the `main` documentation looks reasonable at
-https://docs.fenicsproject.org.
+<https://docs.fenicsproject.org>g>.
 
 The release proceeds in a bottom up manner (UFL, Basix, FFCx, DOLFINx). pypa
 packages cannot be deleted and should be made a number of days after the
