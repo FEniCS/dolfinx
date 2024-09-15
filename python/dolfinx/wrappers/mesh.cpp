@@ -173,20 +173,30 @@ void declare_mesh(nb::module_& m, std::string type)
              std::shared_ptr<const dolfinx::common::IndexMap> index_map,
              nb::ndarray<std::int32_t, nb::ndim<2>, nb::c_contig> dofmap,
              const dolfinx::fem::CoordinateElement<T>& element,
-             nb::ndarray<T, nb::ndim<2>, nb::c_contig> x, int dim,
+             nb::ndarray<T, nb::ndim<2>, nb::c_contig> x,
              nb::ndarray<std::int64_t, nb::ndim<1>, nb::c_contig>
                  input_global_indices)
           {
+            // Pad geometry to be 3D
+            std::size_t shape0 = x.shape(0);
+            int shape1 = x.shape(1);
+            std::vector<T> x_vec(3 * shape0, 0);
+            for (std::size_t i = 0; i < shape0; ++i)
+            {
+              std::copy_n(std::next(x.data(), shape1 * i), shape1,
+                          std::next(x_vec.begin(), 3 * i));
+            }
+
             new (self) dolfinx::mesh::Geometry<T>(
                 index_map,
                 std::vector(dofmap.data(), dofmap.data() + dofmap.size()),
-                element, std::vector(x.data(), x.data() + x.size()), dim,
+                element, std::move(x_vec), shape1,
                 std::vector(input_global_indices.data(),
                             input_global_indices.data()
                                 + input_global_indices.size()));
           },
           nb::arg("index_map"), nb::arg("dofmap"), nb::arg("element"),
-          nb::arg("x"), nb::arg("dim"), nb::arg("input_global_indices"))
+          nb::arg("x"), nb::arg("input_global_indices"))
       .def_prop_ro("dim", &dolfinx::mesh::Geometry<T>::dim,
                    "Geometric dimension")
       .def_prop_ro(
