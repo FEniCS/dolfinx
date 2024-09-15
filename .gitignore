@@ -129,3 +129,5 @@ _petsc*
 # Files created by demos
 core
 log.txt
+
+.fake

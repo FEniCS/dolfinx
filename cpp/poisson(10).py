@@ -5,16 +5,16 @@
 
 from basix.ufl import element
 from ufl import (
-    Coefficient,
-    Constant,
-    FunctionSpace,
-    Mesh,
-    TestFunction,
-    TrialFunction,
-    ds,
-    dx,
-    grad,
-    inner,
+    Coefficient, # type: ignore
+    Constant, # type: ignore
+    FunctionSpace, # type: ignore
+    Mesh, # type: ignore
+    TestFunction, # type: ignore
+    TrialFunction, # type: ignore
+    ds, # type: ignore
+    dx, # type: ignore
+    grad, # type: ignore
+    inner, # type: ignore
 )
 
 e = element("Lagrange", "triangle", 1)
