@@ -62,7 +62,7 @@ class CoordinateElement:
     def push_forward(self, X: np.ndarray, cell_geometry: np.ndarray) -> np.ndarray:
         """Compute the physical coordinates ``x`` of the reference coordinates ``X``
         for the cell with coordinates ``cell_geometry``.
-        
+
         Args:
             X: The physical coordinates of the reference points,
                 shape ``(num_points, topological_dimension)``.

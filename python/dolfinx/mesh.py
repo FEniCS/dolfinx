@@ -96,7 +96,7 @@ class Geometry:
 
     def cmaps(self, i: int) -> _CoordinateElement:
         """The ith element that describes the geometry map
-        
+
         Args:
             i: The index of the element to return
         """
@@ -114,7 +114,7 @@ class Geometry:
 
     def dofmaps(self, i: int) -> npt.NDArray[np.int32]:
         """Return the ith dofmap
-        
+
         Args:
             i: The index of the dofmap to return
         """
