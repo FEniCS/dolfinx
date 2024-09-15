@@ -84,19 +84,22 @@ class Topology:
         """String representation of the cell-type of the topology"""
         return self._cpp_object.cell_name
 
-    def connectivity(self, d0: int, d1: int) -> _cpp.graph.AdjacencyList_int32 | None:
+    def connectivity(self, d0: int, d1: int) -> _cpp.graph.AdjacencyList_int32:
         """Return connectivity from entities of dimension ``d0`` to entities of dimension ``d1``.
 
         Note:
             Assumes only one entity type per dimension.
 
-        Note:
-            returns ``None`` if connectivity has not been computed.
         Args:
             d0: Dimension of entity one is mapping from
             d1: Dimension of entity one is mapping to
         """
-        return self._cpp_object.connectivity(d0, d1)
+        if conn := self._cpp_object.connectivity(d0, d1) is not None:
+            return conn
+        else:
+            raise RuntimeError(
+                f"Connectiivty between dimension {d0} and {d1} has not been computed."
+            )
 
     @property
     def comm(self):
