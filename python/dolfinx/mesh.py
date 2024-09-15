@@ -139,6 +139,7 @@ class Mesh:
     """A mesh."""
 
     _mesh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64]
+    _geometry: Geometry
     _ufl_domain: typing.Optional[ufl.Mesh]
 
     def __init__(self, mesh, domain: typing.Optional[ufl.Mesh]):
@@ -153,6 +154,7 @@ class Mesh:
             initializer directly.
         """
         self._cpp_object = mesh
+        self._geometry = Geometry(self._cpp_object)
         self._ufl_domain = domain
         if self._ufl_domain is not None:
             self._ufl_domain._ufl_cargo = self._cpp_object  # type: ignore
@@ -213,7 +215,7 @@ class Mesh:
     @property
     def geometry(self) -> Geometry:
         "Mesh geometry."
-        return Geometry(self._cpp_object.geometry)
+        return self._geometry
 
 
 class MeshTags:
