@@ -154,7 +154,7 @@ class Mesh:
             initializer directly.
         """
         self._cpp_object = mesh
-        self._geometry = Geometry(self._cpp_object)
+        self._geometry = Geometry(self._cpp_object.geometry)
         self._ufl_domain = domain
         if self._ufl_domain is not None:
             self._ufl_domain._ufl_cargo = self._cpp_object  # type: ignore
