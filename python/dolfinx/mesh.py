@@ -26,7 +26,6 @@ from dolfinx.cpp.mesh import (
     build_dual_graph,
     cell_dim,
     create_cell_partitioner,
-    exterior_facet_indices,
     to_string,
     to_type,
 )
@@ -67,10 +66,137 @@ __all__ = [
 ]
 
 
+class Topology:
+    """Topology for for a :class:`dolfinx.mesh.Mesh`"""
+
+    _cpp_object: _cpp.mesh.Topology
+
+    def __init__(self, topology: _cpp.mesh.Topology):
+        """Initialize a topology from a C++ topology.
+        Args: The C++ topology object
+        Note:
+            topology objects should not usually be created using this
+            initializer directly.
+        """
+        self._cpp_object = topology
+
+    def cell_name(self) -> str:
+        """String representation of the cell-type of the topology"""
+        return self._cpp_object.cell_name
+
+    def connectivity(self, d0: int, d1: int) -> _cpp.graph.AdjacencyList_int32 | None:
+        """Return connectivity from entities of dimension ``d0`` to entities of dimension ``d1``.
+
+        Note:
+            Assumes only one entity type per dimension.
+
+        Note:
+            returns ``None`` if connectivity has not been computed.
+        Args:
+            d0: Dimension of entity one is mapping from
+            d1: Dimension of entity one is mapping to
+        """
+        return self._cpp_object.connectivity(d0, d1)
+
+    @property
+    def comm(self):
+        return self._cpp_object.comm
+
+    def create_connectivity(self, d0: int, d1: int):
+        """Create connectivity between given pair of dimensions, ``d0`` and  ``d1``.
+
+        Args:
+            d0: Dimension of entity one is mapping from
+            d1: Dimension of entity one is mapping to
+        """
+        self._cpp_object.create_connectivity(d0, d1)
+
+    def create_entities(self, dim: int) -> int:
+        """Create entities of given topological dimension.
+
+        Args:
+            dim: Topological dimension
+
+        Returns:
+            Number of newly created entities, returns -1 if entities already existed
+        """
+        return self._cpp_object.create_entities(dim)
+
+    def create_entity_permutations(self):
+        """Compute entity permutations and reflections."""
+        self._cpp_object.create_entity_permutations()
+
+    @property
+    def dim(self) -> int:
+        """Return the topological dimension of the mesh."""
+        return self._cpp_object.dim
+
+    @property
+    def entity_types(self) -> list[list[CellType]]:
+        """Get the entity types in the topology for all topological dimensions."""
+        return self._cpp_object.entity_types
+
+    def get_cell_permutation_info(self) -> npt.NDArray[np.uint32]:
+        """Returns the permutation information"""
+        return self._cpp_object.get_cell_permutation_info()
+
+    def get_facet_permutations(self) -> npt.NDArray[np.uint8]:
+        """Get the permutation number to apply to a facet."""
+        return self._cpp_object.get_facet_permutations()
+
+    def index_map(self, dim: int) -> _cpp.common.IndexMap:
+        """Get the IndexMap that described the parallel distribution of the mesh entities.
+
+        Args:
+            dim: Topological dimension
+
+        Returns:
+            Index map for the entities of dimension `dim`.
+        """
+        if (imap := self._cpp_object.index_map(dim)) is not None:
+            return imap
+        else:
+            raise RuntimeError(f"Entities of dimension {dim} has not been computed")
+
+    def interprocess_facets(self) -> npt.NDArray[np.int32]:
+        """List of inter-process facets, if facet topology has been computed."""
+        return self._cpp_object.interprocess_facets()
+
+    @property
+    def original_cell_index(self) -> npt.NDArray[np.int64]:
+        """Get the original cell index"""
+        return self._cpp_object.original_cell_index
+
+    def set_connectivity(self, graph: _cpp.graph.AdjacencyList_int32, d0: int, d1: int):
+        """Set connectivity for given pair of topological dimensions.
+
+        Args:
+            graph: Connectivity graph
+            d0: Topological dimension mapping from
+            d1: Topological dimension mapping to
+        """
+        self._cpp_object.set_connectivity(graph, d0, d1)
+
+    def set_index_map(self, dim: int, index_map: _cpp.common.IndexMap):
+        """Set the IndexMap for dimension ``dim``.
+
+        Args:
+            dim: Topological dimension of entity
+            index_map: IndexMap
+        """
+        return self._cpp_object.set_index_map(dim, index_map)
+
+    @property
+    def cell_type(self) -> CellType:
+        """Get the cell type of the topology"""
+        return self._cpp_object.cell_type
+
+
 class Mesh:
     """A mesh."""
 
     _mesh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64]
+    _topology: Topology
     _ufl_domain: typing.Optional[ufl.Mesh]
 
     def __init__(self, mesh, domain: typing.Optional[ufl.Mesh]):
@@ -85,6 +211,7 @@ class Mesh:
             initializer directly.
         """
         self._cpp_object = mesh
+        self._topology = Topology(self._cpp_object.topology)
         self._ufl_domain = domain
         if self._ufl_domain is not None:
             self._ufl_domain._ufl_cargo = self._cpp_object  # type: ignore
@@ -138,9 +265,9 @@ class Mesh:
         return _cpp.mesh.h(self._cpp_object, dim, entities)
 
     @property
-    def topology(self):
+    def topology(self) -> Topology:
         "Mesh topology."
-        return self._cpp_object.topology
+        return self._topology
 
     @property
     def geometry(self):
@@ -214,7 +341,18 @@ class MeshTags:
         return self._cpp_object.find(value)
 
 
-def compute_incident_entities(topology, entities: npt.NDArray[np.int32], d0: int, d1: int):
+def compute_incident_entities(
+    topology: Topology, entities: npt.NDArray[np.int32], d0: int, d1: int
+) -> npt.NDArray[np.int32]:
+    """Compute all entities of ``d1`` connected to ``entities`` of dimension ``d0``.
+
+    Args:
+        topology: The topology
+        entities: List of entities fo dimension ``d0``.
+        d0: Topological dimension
+        d1: Topological dimension to map to
+
+    """
     return _cpp.mesh.compute_incident_entities(topology, entities, d0, d1)
 
 
@@ -819,3 +957,7 @@ def entities_to_geometry(
         The geometric DOFs associated with the closure of the entities in `entities`.
     """
     return _cpp.mesh.entities_to_geometry(mesh._cpp_object, dim, entities, permute)
+
+
+def exterior_facet_indices(topology: Topology) -> npt.NDArray[np.int32]:
+    return _cpp.mesh.exterior_facet_indices(topology._cpp_object)
