@@ -95,7 +95,7 @@ class Geometry:
         return _CoordinateElement(self._cpp_object.cmap)
 
     def cmaps(self, i: int) -> _CoordinateElement:
-        """The `i`th element that describes the geometry map"""
+        """The ``i``th element that describes the geometry map"""
         return _CoordinateElement(self._cpp_object.cmaps(i))
 
     @property
