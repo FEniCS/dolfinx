@@ -42,36 +42,36 @@ std::tuple<std::vector<T>, std::vector<std::int64_t>>
 create_interval_cells(std::array<double, 2> p, std::int64_t n);
 
 template <std::floating_point T>
-Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
+Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                   std::array<std::int64_t, 2> n,
                   const CellPartitionFunction& partitioner,
                   DiagonalType diagonal);
 
 template <std::floating_point T>
-Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
+Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<T, 2>, 2> p,
                    std::array<std::int64_t, 2> n,
                    const CellPartitionFunction& partitioner);
 
 template <std::floating_point T>
 std::vector<T> create_geom(MPI_Comm comm,
-                           std::array<std::array<double, 3>, 2> p,
+                           std::array<std::array<T, 3>, 2> p,
                            std::array<std::int64_t, 3> n);
 
 template <std::floating_point T>
 Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
-                  std::array<std::array<double, 3>, 2> p,
+                  std::array<std::array<T, 3>, 2> p,
                   std::array<std::int64_t, 3> n,
                   const CellPartitionFunction& partitioner);
 
 template <std::floating_point T>
 Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
-                  std::array<std::array<double, 3>, 2> p,
+                  std::array<std::array<T, 3>, 2> p,
                   std::array<std::int64_t, 3> n,
                   const CellPartitionFunction& partitioner);
 
 template <std::floating_point T>
 Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
-                    std::array<std::array<double, 3>, 2> p,
+                    std::array<std::array<T, 3>, 2> p,
                     std::array<std::int64_t, 3> n,
                     const CellPartitionFunction& partitioner);
 } // namespace impl
@@ -98,7 +98,7 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
 /// @return Mesh
 template <std::floating_point T = double>
 Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
-                   std::array<std::array<double, 3>, 2> p,
+                   std::array<std::array<T, 3>, 2> p,
                    std::array<std::int64_t, 3> n, CellType celltype,
                    CellPartitionFunction partitioner = nullptr)
 {
@@ -144,7 +144,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
 /// across MPI ranks.
 /// @return Mesh
 template <std::floating_point T = double>
-Mesh<T> create_box(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
+Mesh<T> create_box(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
                    std::array<std::int64_t, 3> n, CellType celltype,
                    const CellPartitionFunction& partitioner = nullptr)
 {
@@ -168,7 +168,7 @@ Mesh<T> create_box(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
 /// @param[in] diagonal Direction of diagonals
 /// @return Mesh
 template <std::floating_point T = double>
-Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
+Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                          std::array<std::int64_t, 2> n, CellType celltype,
                          CellPartitionFunction partitioner,
                          DiagonalType diagonal = DiagonalType::right)
@@ -211,7 +211,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
 /// @param[in] diagonal Direction of diagonals
 /// @return Mesh
 template <std::floating_point T = double>
-Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
+Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                          std::array<std::int64_t, 2> n, CellType celltype,
                          DiagonalType diagonal = DiagonalType::right)
 {
@@ -232,7 +232,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
 /// across MPI ranks.
 /// @return A mesh.
 template <std::floating_point T = double>
-Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<double, 2> p,
+Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
                         mesh::GhostMode ghost_mode = mesh::GhostMode::none,
                         CellPartitionFunction partitioner = nullptr)
 {
@@ -294,7 +294,7 @@ create_interval_cells(std::array<double, 2> p, std::int64_t n)
 
 template <std::floating_point T>
 std::vector<T> create_geom(MPI_Comm comm,
-                           std::array<std::array<double, 3>, 2> p,
+                           std::array<std::array<T, 3>, 2> p,
                            std::array<std::int64_t, 3> n)
 {
   // Extract data
@@ -343,7 +343,7 @@ std::vector<T> create_geom(MPI_Comm comm,
 
 template <std::floating_point T>
 Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
-                  std::array<std::array<double, 3>, 2> p,
+                  std::array<std::array<T, 3>, 2> p,
                   std::array<std::int64_t, 3> n,
                   const CellPartitionFunction& partitioner)
 {
@@ -391,7 +391,7 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
 
 template <std::floating_point T>
 mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
-                        std::array<std::array<double, 3>, 2> p,
+                        std::array<std::array<T, 3>, 2> p,
                         std::array<std::int64_t, 3> n,
                         const CellPartitionFunction& partitioner)
 {
@@ -434,7 +434,7 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
 
 template <std::floating_point T>
 Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
-                    std::array<std::array<double, 3>, 2> p,
+                    std::array<std::array<T, 3>, 2> p,
                     std::array<std::int64_t, 3> n,
                     const CellPartitionFunction& partitioner)
 {
@@ -480,7 +480,7 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
 }
 
 template <std::floating_point T>
-Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
+Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                   std::array<std::int64_t, 2> n,
                   const CellPartitionFunction& partitioner,
                   DiagonalType diagonal)
@@ -637,7 +637,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
 }
 
 template <std::floating_point T>
-Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
+Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<T, 2>, 2> p,
                    std::array<std::int64_t, 2> n,
                    const CellPartitionFunction& partitioner)
 {
