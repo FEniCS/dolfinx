@@ -62,11 +62,12 @@ class CoordinateElement:
     def push_forward(self, X: np.ndarray, cell_geometry: np.ndarray) -> np.ndarray:
         """Compute the physical coordinates ``x`` of the reference coordinates ``X``
         for the cell with coordinates ``cell_geometry``.
+        
         Args:
             X: The physical coordinates of the reference points,
                 shape ``(num_points, topological_dimension)``.
             cell_geometry: Physical coordinates describing the cell,
-                shape (:func:`dolfinx.fem.CoordinateElement.dim`, geometricaldimension)``
+                shape (:func:`dolfinx.fem.CoordinateElement.dim`, geometrical_dimension)``
         """
         return self._cpp_object.push_forward(X, cell_geometry)
 
@@ -74,7 +75,7 @@ class CoordinateElement:
         """Compute reference coordinates ``X`` for physical coordinates ``x``
 
         Args:
-          x: Physical coordinates to pull back
+          x: Physical coordinates to pull back, shape ``(num_points, geometrical_dimension)``
           cell_geometry: Physical coordinates describing the cell,
               shape (:func:`dolfinx.fem.CoordinateElement.dim`, geometricaldimension)``
         """

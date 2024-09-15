@@ -95,7 +95,11 @@ class Geometry:
         return _CoordinateElement(self._cpp_object.cmap)
 
     def cmaps(self, i: int) -> _CoordinateElement:
-        """The ``i``th element that describes the geometry map"""
+        """The ith element that describes the geometry map
+        
+        Args:
+            i: The index of the element to return
+        """
         return _CoordinateElement(self._cpp_object.cmaps(i))
 
     @property
@@ -109,7 +113,11 @@ class Geometry:
         return self._cpp_object.dofmap
 
     def dofmaps(self, i: int) -> npt.NDArray[np.int32]:
-        """Return the `i`th dofmap"""
+        """Return the ith dofmap
+        
+        Args:
+            i: The index of the dofmap to return
+        """
         return self._cpp_object.dofmaps(i)
 
     def index_map(self) -> _IndexMap:
