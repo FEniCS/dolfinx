@@ -81,5 +81,5 @@ find_package_handle_standard_args(
   UFCx
   REQUIRED_VARS UFCX_INCLUDE_DIRS UFCX_SIGNATURE UFCX_VERSION
   VERSION_VAR UFCX_VERSION HANDLE_VERSION_RANGE REASON_FAILURE_MESSAGE
-                           "UFCx could not be found."
+                          "UFCx could not be found."
 )
