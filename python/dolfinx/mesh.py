@@ -94,7 +94,7 @@ class Topology:
             d0: Dimension of entity one is mapping from
             d1: Dimension of entity one is mapping to
         """
-        if conn := self._cpp_object.connectivity(d0, d1) is not None:
+        if (conn := self._cpp_object.connectivity(d0, d1)) is not None:
             return conn
         else:
             raise RuntimeError(
