@@ -53,8 +53,7 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<T, 2>, 2> p,
                    const CellPartitionFunction& partitioner);
 
 template <std::floating_point T>
-std::vector<T> create_geom(MPI_Comm comm,
-                           std::array<std::array<T, 3>, 2> p,
+std::vector<T> create_geom(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
                            std::array<std::int64_t, 3> n);
 
 template <std::floating_point T>
@@ -232,7 +231,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 /// across MPI ranks.
 /// @return A mesh.
 template <std::floating_point T = double>
-Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
+Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<double, 2> p,
                         mesh::GhostMode ghost_mode = mesh::GhostMode::none,
                         CellPartitionFunction partitioner = nullptr)
 {
@@ -293,8 +292,7 @@ create_interval_cells(std::array<double, 2> p, std::int64_t n)
 }
 
 template <std::floating_point T>
-std::vector<T> create_geom(MPI_Comm comm,
-                           std::array<std::array<T, 3>, 2> p,
+std::vector<T> create_geom(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
                            std::array<std::int64_t, 3> n)
 {
   // Extract data
