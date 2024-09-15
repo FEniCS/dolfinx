@@ -71,7 +71,7 @@ __all__ = [
 
 
 class Geometry:
-    """The geometry of a ``dolfinx.mesh.Mesh``"""
+    """The geometry of a :class:`dolfinx.mesh.Mesh`"""
 
     _cpp_object: typing.Union[_cpp.mesh.Geometry_float32, _cpp.mesh.Geometry_float64]
 
