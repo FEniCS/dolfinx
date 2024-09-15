@@ -39,7 +39,7 @@ namespace impl
 
 template <std::floating_point T>
 std::tuple<std::vector<T>, std::vector<std::int64_t>>
-create_interval_cells(std::array<double, 2> p, std::int64_t n);
+create_interval_cells(std::array<T, 2> p, std::int64_t n);
 
 template <std::floating_point T>
 Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
@@ -269,7 +269,7 @@ namespace impl
 
 template <std::floating_point T>
 std::tuple<std::vector<T>, std::vector<std::int64_t>>
-create_interval_cells(std::array<double, 2> p, std::int64_t n)
+create_interval_cells(std::array<T, 2> p, std::int64_t n)
 {
   const auto [a, b] = p;
 
