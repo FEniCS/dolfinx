@@ -687,7 +687,7 @@ def meshtags(
     else:
         raise NotImplementedError(f"Type {values.dtype} not supported.")
 
-    return MeshTags(ftype(mesh.topology, dim, np.asarray(entities, dtype=np.int32), values))
+    return MeshTags(ftype(mesh.topology._cpp_object, dim, np.asarray(entities, dtype=np.int32), values))
 
 
 def meshtags_from_entities(
