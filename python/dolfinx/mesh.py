@@ -428,12 +428,14 @@ def transfer_meshtag(
         Mesh tags on the refined mesh.
     """
     if meshtag.dim == meshtag.topology.dim:
-        mt = _cpp.refinement.transfer_cell_meshtag(meshtag._cpp_object, mesh1.topology, parent_cell)
+        mt = _cpp.refinement.transfer_cell_meshtag(
+            meshtag._cpp_object, mesh1.topology._cpp_object, parent_cell
+        )
         return MeshTags(mt)
     elif meshtag.dim == meshtag.topology.dim - 1:
         assert parent_facet is not None
         mt = _cpp.refinement.transfer_facet_meshtag(
-            meshtag._cpp_object, mesh1.topology, parent_cell, parent_facet
+            meshtag._cpp_object, mesh1.topology._cpp_object, parent_cell, parent_facet
         )
         return MeshTags(mt)
     else:
