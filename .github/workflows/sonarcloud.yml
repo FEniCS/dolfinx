@@ -17,7 +17,7 @@ jobs:
     container: fenicsproject/test-env:current-mpich
     env:
       SONAR_SCANNER_VERSION:
-        6.0.1.4477 # Find the latest version at:
+        6.1.0.4477 # Find the latest version at:
         # https://github.com/SonarSource/sonar-scanner-cli/tags
       SONAR_SERVER_URL: "https://sonarcloud.io"
       BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory # Directory where build-wrapper output will be placed
