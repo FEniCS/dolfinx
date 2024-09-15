@@ -46,9 +46,54 @@ class CoordinateElement:
         """Scalar type for the coordinate element."""
         return np.dtype(self._cpp_object.dtype)
 
+    @property
+    def dim(self) -> int:
+        """The dimension of the coordinate element space.
+
+        The number of basis function is returned. E.g., for a linear
+        triangle cell the dimension will be 3.
+        """
+        return self._cpp_object.dim
+
     def create_dof_layout(self) -> _cpp.fem.ElementDofLayout:
         """Compute and return the dof layout"""
         return self._cpp_object.create_dof_layout()
+
+    def push_forward(self, X: np.ndarray, cell_geometry: np.ndarray) -> np.ndarray:
+        """Compute the physical coordinates ``x`` of the reference coordinates ``X``
+        for the cell with coordinates ``cell_geometry``.
+        Args:
+            X: The physical coordinates of the reference points,
+                shape ``(num_points, topological_dimension)``.
+            cell_geometry: Physical coordinates describing the cell,
+                shape (:func:`dolfinx.fem.CoordinateElement.dim`, geometricaldimension)``
+        """
+        return self._cpp_object.push_forward(X, cell_geometry)
+
+    def pull_back(self, x: np.ndarray, cell_geometry: np.ndarray) -> np.ndarray:
+        """Compute reference coordinates ``X`` for physical coordinates ``x``
+
+        Args:
+          x: Physical coordinates to pull back
+          cell_geometry: Physical coordinates describing the cell,
+              shape (:func:`dolfinx.fem.CoordinateElement.dim`, geometricaldimension)``
+        """
+        return self._cpp_object.pull_back(x, cell_geometry)
+
+    @property
+    def variant(self) -> int:
+        """Return the Lagrange variant of the coordinate element.
+
+        Note:
+            Is returned as an integer and can be converted into a basix Lagrange variant using
+            ``basix.LagrangeVariant(value)``.
+        """
+        return self._cpp_object.variant
+
+    @property
+    def degree(self) -> int:
+        """Return the degree of the coordinate element"""
+        return self._cpp_object.degree
 
 
 @singledispatch
