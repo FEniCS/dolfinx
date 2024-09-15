@@ -82,7 +82,7 @@ class Topology:
 
     def cell_name(self) -> str:
         """String representation of the cell-type of the topology"""
-        return self._cpp_object.cell_name
+        return self._cpp_object.cell_name()
 
     def connectivity(self, d0: int, d1: int) -> _cpp.graph.AdjacencyList_int32:
         """Return connectivity from entities of dimension ``d0`` to entities of dimension ``d1``.
