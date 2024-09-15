@@ -47,8 +47,9 @@ void export_refinement_with_variable_mesh_type(nb::module_& m)
       [](const dolfinx::mesh::Mesh<T>& mesh, bool redistribute,
          dolfinx::mesh::GhostMode ghost_mode)
       {
-        auto [mesh_refined, parent_cells] = dolfinx::refinement::refine_interval(
-            mesh, std::nullopt, redistribute, ghost_mode);
+        auto [mesh_refined, parent_cells]
+            = dolfinx::refinement::refine_interval(mesh, std::nullopt,
+                                                   redistribute, ghost_mode);
         return std::tuple(std::move(mesh_refined),
                           as_nbarray(std::move(parent_cells)));
       },

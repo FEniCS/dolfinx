@@ -42,6 +42,7 @@ add_executable(
   common/sort.cpp
   fem/functionspace.cpp
   mesh/distributed_mesh.cpp
+  mesh/generation.cpp
   common/CIFailure.cpp
   refinement/interval.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c

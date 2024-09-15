@@ -1,9 +1,17 @@
 name: macOS build
 
 on:
-  schedule:
-    # '*' is a special character in YAML, so string must be quoted
-    - cron: "0 4 * * WED"
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - "main"
+    tags:
+      - "v*"
+  merge_group:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
