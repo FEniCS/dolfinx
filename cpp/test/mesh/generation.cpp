@@ -263,8 +263,8 @@ TEMPLATE_TEST_CASE("Rectangle quadrilateral mesh",
 {
   using T = TestType;
 
-  const std::array<double, 2> lower = {0, 0};
-  const std::array<double, 2> upper = {1, 1};
+  const std::array<T, 2> lower = {0, 0};
+  const std::array<T, 2> upper = {1, 1};
   mesh::Mesh<T> mesh = dolfinx::mesh::create_rectangle<T>(
       MPI_COMM_SELF, {lower, upper}, {1, 1}, mesh::CellType::quadrilateral);
 
