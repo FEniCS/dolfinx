@@ -92,7 +92,7 @@ class CoordinateElement:
 
     @property
     def degree(self) -> int:
-        """Return the degree of the coordinate element"""
+        """Return the degree of the coordinate element."""
         return self._cpp_object.degree
 
 
