@@ -66,7 +66,7 @@ class CoordinateElement:
             X: The physical coordinates of the reference points,
                 shape ``(num_points, topological_dimension)``.
             cell_geometry: Physical coordinates describing the cell,
-                shape (:func:`dolfinx.fem.CoordinateElement.dim`, geometrical_dimension)``
+                shape ``(num_geometry_basis_functions, geometrical_dimension)``
         """
         return self._cpp_object.push_forward(X, cell_geometry)
 
