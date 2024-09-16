@@ -6,49 +6,54 @@
 
 #pragma once
 
-#include <algorithm>
-#include <cstddef>
-#include <mpi.h>
-
-#include <concepts>
-#include <cstdint>
-#include <optional>
-#include <stdexcept>
-#include <vector>
-
 #include "dolfinx/mesh/Mesh.h"
 #include "dolfinx/mesh/cell_types.h"
 #include "dolfinx/mesh/utils.h"
 #include "dolfinx/refinement/plaza.h"
+#include <algorithm>
+#include <concepts>
+#include <cstddef>
+#include <cstdint>
+#include <mpi.h>
+#include <optional>
+#include <stdexcept>
+#include <vector>
 
-namespace dolfinx::refinement
+#include "dolfinx/refinement/option.h"
+#include "dolfinx/refinement/utils.h"
+
+namespace dolfinx::refinement::interval
 {
-
-namespace impl
-{
-
-/// Refine with markers returning new mesh data.
+/// @brief Refine with markers returning new mesh data.
 ///
 /// @param[in] mesh Input mesh to be refined
 /// @param[in] cells Indices of the cells that are marked for refinement
-///
+/// @param[in] option Refinement option indicating if parent cells
+/// and/or facets are to be computed.
 /// @return New mesh data: cell topology, vertex coordinates and parent
 /// cell indices.
 template <std::floating_point T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
-           std::array<std::size_t, 2>, std::vector<std::int32_t>>
-compute_interval_refinement(const mesh::Mesh<T>& mesh,
-                            std::optional<std::span<const std::int32_t>> cells)
+           std::array<std::size_t, 2>, std::optional<std::vector<std::int32_t>>,
+           std::optional<std::vector<std::int8_t>>>
+compute_refinement_data(const mesh::Mesh<T>& mesh,
+                        std::optional<std::span<const std::int32_t>> cells,
+                        Option option)
 {
+  bool compute_parent_facet = option_parent_facet(option);
+  bool compute_parent_cell = option_parent_cell(option);
+
+  if (compute_parent_facet)
+    throw std::runtime_error("Parent facet computation not yet supported!");
+
   auto topology = mesh.topology();
   assert(topology);
   assert(topology->dim() == 1);
-
   auto map_c = topology->index_map(1);
   assert(map_c);
 
-  // TODO: creation of sharing ranks in external function? Also same code in use
-  // for plaza
+  // TODO: creation of sharing ranks in external function? Also same
+  // code in use for plaza
   // Get sharing ranks for each cell
   graph::AdjacencyList<int> cell_ranks = map_c->index_to_dest_ranks();
 
@@ -95,11 +100,13 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
       mesh.comm(), ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
       ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm);
 
-  // Communicate ghost cells that might have been marked. This is not necessary
-  // for a uniform refinement.
+  // Communicate ghost cells that might have been marked. This is not
+  // necessary for a uniform refinement.
   if (cells.has_value())
+  {
     update_logical_edgefunction(neighbor_comm, marked_for_update,
                                 refinement_marker, *map_c);
+  }
 
   // Construct the new vertices
   const auto [new_vertex_map, new_vertex_coords, xshape]
@@ -109,8 +116,9 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
   auto c_to_v = mesh.topology()->connectivity(1, 0);
   assert(c_to_v);
 
-  // Get the count of cells to refine, note: we only consider non-ghost cells
-  std::int32_t number_of_refined_cells
+  // Get the count of cells to refine, note: we only consider non-ghost
+  // cells
+  const std::int32_t number_of_refined_cells
       = std::count(refinement_marker.begin(),
                    std::next(refinement_marker.begin(),
                              mesh.topology()->index_map(1)->size_local()),
@@ -121,14 +129,18 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
       = adjust_indices(*mesh.topology()->index_map(0), number_of_refined_cells);
 
   // Build the topology on the new vertices
-  const auto refined_cell_count = mesh.topology()->index_map(1)->size_local()
-                                  + number_of_refined_cells;
+  const std::int32_t refined_cell_count
+      = mesh.topology()->index_map(1)->size_local() + number_of_refined_cells;
 
   std::vector<std::int64_t> cell_topology;
   cell_topology.reserve(refined_cell_count * 2);
 
-  std::vector<std::int32_t> parent_cell;
-  parent_cell.reserve(refined_cell_count);
+  std::optional<std::vector<std::int32_t>> parent_cell(std::nullopt);
+  if (compute_parent_cell)
+  {
+    parent_cell.emplace();
+    parent_cell->reserve(refined_cell_count);
+  }
 
   for (std::int32_t cell = 0; cell < map_c->size_local(); ++cell)
   {
@@ -139,7 +151,6 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
     // a ----------- b
     const std::int64_t a = global_indices[vertices[0]];
     const std::int64_t b = global_indices[vertices[1]];
-
     if (refinement_marker[cell])
     {
       // Find (global) index of new midpoint vertex:
@@ -150,18 +161,22 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
 
       // Add new cells/edges to refined topology
       cell_topology.insert(cell_topology.end(), {a, c, c, b});
-      parent_cell.insert(parent_cell.end(), {cell, cell});
+
+      if (compute_parent_cell)
+        parent_cell->insert(parent_cell->end(), {cell, cell});
     }
     else
     {
       // Copy the previous cell
       cell_topology.insert(cell_topology.end(), {a, b});
-      parent_cell.push_back(cell);
+
+      if (compute_parent_cell)
+        parent_cell->push_back(cell);
     }
   }
 
-  assert(cell_topology.size() == refined_cell_count * 2);
-  assert(parent_cell.size() == refined_cell_count);
+  assert(cell_topology.size() == 2 * refined_cell_count);
+  assert(parent_cell->size() == (compute_parent_cell ? refined_cell_count : 0));
 
   std::vector<std::int32_t> offsets(refined_cell_count + 1);
   std::ranges::generate(offsets, [i = 0]() mutable { return 2 * i++; });
@@ -169,56 +184,7 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
   graph::AdjacencyList cell_adj(std::move(cell_topology), std::move(offsets));
 
   return {std::move(cell_adj), std::move(new_vertex_coords), xshape,
-          std::move(parent_cell)};
+          std::move(parent_cell), std::nullopt};
 }
 
-} // namespace impl
-
-/// Refines a (topologically) one dimensional mesh by splitting cells, i.e.
-/// edges.
-///
-/// @param[in] mesh Mesh to be refined
-/// @param[in] cells Optional indices of the cells that should be refined by
-/// this refinement. If not provided, all cells are considered marked for
-/// refinement, i.e. a uniform refinement is performed.
-/// @param[in] redistribute Option to enable redistribution of the refined mesh
-/// across processes.
-/// @param[in] ghost_mode Ghost mode of the refined mesh, default is ghost mode
-/// none
-///
-/// @return Refined mesh, and list of parent cells and an array mapping the
-/// child cell index of the refined mesh to its parent cell index in the
-/// unrefined mesh.
-template <std::floating_point T>
-std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>>
-refine_interval(const mesh::Mesh<T>& mesh,
-                std::optional<std::span<const std::int32_t>> cells,
-                bool redistribute,
-                mesh::GhostMode ghost_mode = mesh::GhostMode::shared_facet)
-{
-
-  if (mesh.topology()->cell_type() != mesh::CellType::interval)
-    throw std::runtime_error("Cell type not supported");
-
-  assert(mesh.topology()->dim() == 1);
-  assert(mesh.topology()->index_map(1));
-
-  auto [cell_adj, new_coords, xshape, parent_cell]
-      = impl::compute_interval_refinement(mesh, cells);
-
-  if (dolfinx::MPI::size(mesh.comm()) == 1)
-  {
-    return {mesh::create_mesh(mesh.comm(), cell_adj.array(),
-                              mesh.geometry().cmap(), new_coords, xshape,
-                              mesh::GhostMode::none),
-            std::move(parent_cell)};
-  }
-  else
-  {
-    return {partition<T>(mesh, cell_adj, std::span(new_coords), xshape,
-                         redistribute, ghost_mode),
-            std::move(parent_cell)};
-  }
-}
-
-} // namespace dolfinx::refinement
+} // namespace dolfinx::refinement::interval

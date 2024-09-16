@@ -171,20 +171,24 @@ void declare_mesh(nb::module_& m, std::string type)
           "__init__",
           [](dolfinx::mesh::Geometry<T>* self,
              std::shared_ptr<const dolfinx::common::IndexMap> index_map,
-             nb::ndarray<std::int32_t, nb::ndim<2>, nb::c_contig> dofmap,
+             nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> dofmap,
              const dolfinx::fem::CoordinateElement<T>& element,
-             nb::ndarray<T, nb::ndim<2>, nb::c_contig> x,
-             nb::ndarray<std::int64_t, nb::ndim<1>, nb::c_contig>
+             nb::ndarray<const T, nb::ndim<2>> x,
+             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
                  input_global_indices)
           {
-            // Pad geometry to be 3D
-            std::size_t shape0 = x.shape(0);
             int shape1 = x.shape(1);
-            std::vector<T> x_vec(3 * shape0, 0);
-            for (std::size_t i = 0; i < shape0; ++i)
+            std::vector<T> x_vec;
+            if (shape1 == 3 and x.stride(0) == 3 and x.stride(1) == 1)
+              x_vec.assign(x.data(), x.data() + x.size());
+            else
             {
-              std::copy_n(std::next(x.data(), shape1 * i), shape1,
-                          std::next(x_vec.begin(), 3 * i));
+              // Pad geometry to be 3D
+              x_vec.assign(3 * x.shape(0), 0);
+              auto _x = x.view();
+              for (std::size_t i = 0; i < x.shape(0); ++i)
+                for (int j = 0; j < shape1; ++j)
+                  x_vec[3 * i + j] = _x(i, j);
             }
 
             new (self) dolfinx::mesh::Geometry<T>(
@@ -274,7 +278,7 @@ void declare_mesh(nb::module_& m, std::string type)
   std::string create_interval("create_interval_" + type);
   m.def(
       create_interval.c_str(),
-      [](MPICommWrapper comm, std::int64_t n, std::array<double, 2> p,
+      [](MPICommWrapper comm, std::int64_t n, std::array<T, 2> p,
          dolfinx::mesh::GhostMode ghost_mode,
          const PythonCellPartitionFunction& part)
       {
@@ -287,7 +291,7 @@ void declare_mesh(nb::module_& m, std::string type)
   std::string create_rectangle("create_rectangle_" + type);
   m.def(
       create_rectangle.c_str(),
-      [](MPICommWrapper comm, std::array<std::array<double, 2>, 2> p,
+      [](MPICommWrapper comm, std::array<std::array<T, 2>, 2> p,
          std::array<std::int64_t, 2> n, dolfinx::mesh::CellType celltype,
          const PythonCellPartitionFunction& part,
          dolfinx::mesh::DiagonalType diagonal)
@@ -302,7 +306,7 @@ void declare_mesh(nb::module_& m, std::string type)
   std::string create_box("create_box_" + type);
   m.def(
       create_box.c_str(),
-      [](MPICommWrapper comm, std::array<std::array<double, 3>, 2> p,
+      [](MPICommWrapper comm, std::array<std::array<T, 3>, 2> p,
          std::array<std::int64_t, 3> n, dolfinx::mesh::CellType celltype,
          const PythonCellPartitionFunction& part)
       {
@@ -683,12 +687,16 @@ void mesh(nb::module_& m)
           })
       .def("cell_name", [](const dolfinx::mesh::Topology& self)
            { return dolfinx::mesh::to_string(self.cell_type()); })
-      .def("interprocess_facets",
-           nb::overload_cast<>(&dolfinx::mesh::Topology::interprocess_facets,
-                               nb::const_))
-      .def("interprocess_facets",
-           nb::overload_cast<std::int8_t>(
-               &dolfinx::mesh::Topology::interprocess_facets, nb::const_))
+      .def(
+          "interprocess_facets",
+          [](const dolfinx::mesh::Topology& self)
+          {
+            const std::vector<std::int32_t>& facets
+                = self.interprocess_facets();
+            return nb::ndarray<const std::int32_t, nb::numpy>(
+                facets.data(), {facets.size()}, nb::handle());
+          },
+          nb::rv_policy::reference_internal)
       .def_prop_ro(
           "comm", [](dolfinx::mesh::Topology& self)
           { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>());
