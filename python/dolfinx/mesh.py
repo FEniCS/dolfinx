@@ -145,7 +145,7 @@ class Topology:
         return self._cpp_object.get_cell_permutation_info()
 
     def get_facet_permutations(self) -> npt.NDArray[np.uint8]:
-        """Get the permutation number to apply to a facet."""
+        """Get the permutation number to apply to facets."""
         return self._cpp_object.get_facet_permutations()
 
     def index_map(self, dim: int) -> _cpp.common.IndexMap:
