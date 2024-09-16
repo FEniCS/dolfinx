@@ -61,9 +61,9 @@ class CoordinateElement:
 
     def push_forward(
         self,
-        X: npt.NDArray[np.float32] | npt.NDArray[np.float64],
-        cell_geometry: npt.NDArray[np.float32] | npt.NDArray[np.float64],
-    ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
+        X: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
+        cell_geometry: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
+    ) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
         """Compute the physical coordinates ``x`` of the reference coordinates ``X``.
 
         Args:
@@ -76,9 +76,9 @@ class CoordinateElement:
 
     def pull_back(
         self,
-        x: npt.NDArray[np.float32] | npt.NDArray[np.float64],
-        cell_geometry: npt.NDArray[np.float32] | npt.NDArray[np.float64],
-    ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
+        x: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
+        cell_geometry: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
+    ) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
         """Compute reference coordinates ``X`` for physical coordinates ``x``.
 
         Args:
