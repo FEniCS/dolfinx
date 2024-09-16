@@ -648,12 +648,16 @@ void mesh(nb::module_& m)
               entity_types.push_back(self.entity_types(i));
             return entity_types;
           })
-      .def("interprocess_facets",
-           nb::overload_cast<>(&dolfinx::mesh::Topology::interprocess_facets,
-                               nb::const_))
-      .def("interprocess_facets",
-           nb::overload_cast<std::int8_t>(
-               &dolfinx::mesh::Topology::interprocess_facets, nb::const_))
+      .def(
+          "interprocess_facets",
+          [](const dolfinx::mesh::Topology& self)
+          {
+            const std::vector<std::int32_t>& facets
+                = self.interprocess_facets();
+            return nb::ndarray<const std::int32_t, nb::numpy>(
+                facets.data(), {facets.size()}, nb::handle());
+          },
+          nb::rv_policy::reference_internal)
       .def_prop_ro(
           "comm", [](dolfinx::mesh::Topology& self)
           { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>());
