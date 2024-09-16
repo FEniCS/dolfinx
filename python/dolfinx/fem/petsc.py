@@ -431,9 +431,6 @@ def assemble_matrix(
         The returned matrix is not 'assembled', i.e. ghost contributions
         have not been communicated.
 
-    Note:
-        Diagonal entries are only inserted for matrices with the same trial and test space.
-
     Args:
         a: Bilinear form to assembled into a matrix.
         bc: Dirichlet boundary conditions applied to the system.
