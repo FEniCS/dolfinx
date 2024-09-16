@@ -28,8 +28,8 @@ namespace dolfinx::refinement::interval
 ///
 /// @param[in] mesh Input mesh to be refined
 /// @param[in] cells Indices of the cells that are marked for refinement
-/// @param[in] option Refinement option indicating if parent cells and/or facets
-/// are to be computed
+/// @param[in] option Refinement option indicating if parent cells
+/// and/or facets are to be computed.
 /// @return New mesh data: cell topology, vertex coordinates and parent
 /// cell indices.
 template <std::floating_point T>

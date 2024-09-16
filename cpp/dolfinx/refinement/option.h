@@ -11,7 +11,6 @@
 
 namespace dolfinx::refinement
 {
-
 /// @brief Options for data to compute during mesh refinement.
 enum class Option : std::uint8_t
 {
@@ -23,8 +22,8 @@ enum class Option : std::uint8_t
   parent_cell_and_facet = 0b11 /*< Both cell and facet parent data */
 };
 
-/// @brief Combine two refinement options into one, both flags will be set for
-/// the resulting option.
+/// @brief Combine two refinement options into one, both flags will be
+/// set for the resulting option.
 inline constexpr Option operator|(Option a, Option b)
 {
   using bitmask_t = std::underlying_type_t<Option>;

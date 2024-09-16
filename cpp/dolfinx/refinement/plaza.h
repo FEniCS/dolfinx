@@ -4,6 +4,12 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "dolfinx/graph/AdjacencyList.h"
+#include "dolfinx/mesh/Mesh.h"
+#include "dolfinx/mesh/Topology.h"
+#include "dolfinx/mesh/utils.h"
+#include "option.h"
+#include "utils.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -12,14 +18,6 @@
 #include <tuple>
 #include <utility>
 #include <vector>
-
-#include "dolfinx/graph/AdjacencyList.h"
-#include "dolfinx/mesh/Mesh.h"
-#include "dolfinx/mesh/Topology.h"
-#include "dolfinx/mesh/utils.h"
-
-#include "option.h"
-#include "utils.h"
 
 #pragma once
 
@@ -30,7 +28,6 @@
 /// Applied Numerical Mathematics 32 (2000), 195-218.
 namespace dolfinx::refinement::plaza
 {
-
 namespace impl
 {
 /// Computes the parent-child facet relationship
@@ -106,21 +103,23 @@ auto compute_parent_facets(std::span<const std::int32_t> simplex_set)
   return parent_facet;
 }
 
-/// Get the subdivision of an original simplex into smaller simplices,
+/// @brief Get the subdivision of an original simplex into smaller simplices,
 /// for a given set of marked edges, and the longest edge of each facet
-/// (cell local indexing). A flag indicates if a uniform subdivision is
-/// preferable in 2D.
+/// (cell local indexing).
 ///
-/// @param[in] indices Vector containing the global indices for the original
-/// vertices and potential new vertices at each edge. Size (num_vertices +
-/// num_edges). If an edge is not refined its corresponding entry is -1
+/// A flag indicates if a uniform subdivision is preferable in 2D.
+///
+/// @param[in] indices Vector containing the global indices for the
+/// original vertices and potential new vertices at each edge. Size
+/// (num_vertices + num_edges). If an edge is not refined its
+/// corresponding entry is -1.
 /// @param[in] longest_edge Vector indicating the longest edge for each
-/// triangle in the cell. For triangular cells (2D) there is only one value,
-/// and for tetrahedra (3D) there are four values, one for each facet. The
-/// values give the local edge indices of the cell.
-/// @param[in] tdim Topological dimension (2 or 3)
-/// @param[in] uniform Make a "uniform" subdivision with all triangles being
-/// similar shape
+/// triangle in the cell. For triangular cells (2D) there is only one
+/// value, and for tetrahedra (3D) there are four values, one for each
+/// facet. The values give the local edge indices of the cell.
+/// @param[in] tdim Topological dimension (2 or 3).
+/// @param[in] uniform Make a "uniform" subdivision with all triangles.
+/// being similar shape.
 /// @return
 std::pair<std::array<std::int32_t, 32>, std::size_t>
 get_simplices(std::span<const std::int64_t> indices,
@@ -134,15 +133,15 @@ void enforce_rules(MPI_Comm comm, const graph::AdjacencyList<int>& shared_edges,
                    const mesh::Topology& topology,
                    std::span<const std::int32_t> long_edge);
 
-/// @brief Get the longest edge of each face (using local mesh index)
+/// @brief Get the longest edge of each face (using local mesh index).
 ///
-/// @note Edge ratio ok returns an array in 2D, where it checks if the ratio
-/// between the shortest and longest edge of a cell is bigger than sqrt(2)/2. In
-/// 3D an empty array is returned
+/// @note Edge ratio ok returns an array in 2D, where it checks if the
+/// ratio between the shortest and longest edge of a cell is bigger than
+/// sqrt(2)/2. In 3D an empty array is returned.
 ///
 /// @param[in] mesh The mesh
-/// @return A tuple (longest edge, edge ratio ok) where longest edge gives the
-/// local index of the longest edge for each face.
+/// @return A tuple (longest edge, edge ratio ok) where longest edge
+/// gives the local index of the longest edge for each face.
 template <std::floating_point T>
 std::pair<std::vector<std::int32_t>, std::vector<std::int8_t>>
 face_long_edge(const mesh::Mesh<T>& mesh)

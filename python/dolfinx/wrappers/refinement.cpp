@@ -4,18 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "array.h"
 #include <concepts>
 #include <cstdint>
-#include <optional>
-#include <span>
-
-#include <nanobind/nanobind.h>
-#include <nanobind/ndarray.h>
-#include <nanobind/stl/optional.h>
-#include <nanobind/stl/shared_ptr.h>
-#include <nanobind/stl/tuple.h>
-#include <nanobind/stl/vector.h>
-
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/refinement/interval.h>
@@ -23,8 +14,14 @@
 #include <dolfinx/refinement/plaza.h>
 #include <dolfinx/refinement/refine.h>
 #include <dolfinx/refinement/utils.h>
-
-#include "array.h"
+#include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
+#include <nanobind/stl/optional.h>
+#include <nanobind/stl/shared_ptr.h>
+#include <nanobind/stl/tuple.h>
+#include <nanobind/stl/vector.h>
+#include <optional>
+#include <span>
 
 namespace nb = nanobind;
 
@@ -45,8 +42,10 @@ void export_refinement_with_variable_mesh_type(nb::module_& m)
       {
         std::optional<std::span<const std::int32_t>> cpp_edges(std::nullopt);
         if (edges.has_value())
+        {
           cpp_edges.emplace(
               std::span(edges.value().data(), edges.value().size()));
+        }
 
         auto [mesh1, cell, facet] = dolfinx::refinement::refine(
             mesh, cpp_edges, redistribute, ghost_mode, option);
