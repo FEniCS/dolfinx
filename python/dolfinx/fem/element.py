@@ -59,7 +59,11 @@ class CoordinateElement:
         """Compute and return the dof layout"""
         return self._cpp_object.create_dof_layout()
 
-    def push_forward(self, X: np.ndarray, cell_geometry: np.ndarray) -> np.ndarray:
+    def push_forward(
+        self,
+        X: npt.NDArray[np.float32] | npt.NDArray[np.float64],
+        cell_geometry: npt.NDArray[np.float32] | npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
         """Compute the physical coordinates ``x`` of the reference coordinates ``X``.
 
         Args:
@@ -70,8 +74,12 @@ class CoordinateElement:
         """
         return self._cpp_object.push_forward(X, cell_geometry)
 
-    def pull_back(self, x: np.ndarray, cell_geometry: np.ndarray) -> np.ndarray:
-        """Compute reference coordinates ``X`` for physical coordinates ``x``
+    def pull_back(
+        self,
+        x: npt.NDArray[np.float32] | npt.NDArray[np.float64],
+        cell_geometry: npt.NDArray[np.float32] | npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
+        """Compute reference coordinates ``X`` for physical coordinates ``x``.
 
         Args:
           x: Physical coordinates to pull back, shape ``(num_points, geometrical_dimension)``
