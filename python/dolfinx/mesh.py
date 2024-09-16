@@ -67,7 +67,7 @@ __all__ = [
 
 
 class Topology:
-    """Topology for for a :class:`dolfinx.mesh.Mesh`"""
+    """Topology for a :class:`dolfinx.mesh.Mesh`"""
 
     _cpp_object: _cpp.mesh.Topology
 
