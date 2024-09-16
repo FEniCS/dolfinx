@@ -650,12 +650,16 @@ void mesh(nb::module_& m)
           })
       .def("cell_name", [](const dolfinx::mesh::Topology& self)
            { return dolfinx::mesh::to_string(self.cell_type()); })
-      .def("interprocess_facets",
-           nb::overload_cast<>(&dolfinx::mesh::Topology::interprocess_facets,
-                               nb::const_))
-      .def("interprocess_facets",
-           nb::overload_cast<std::int8_t>(
-               &dolfinx::mesh::Topology::interprocess_facets, nb::const_))
+      .def(
+          "interprocess_facets",
+          [](const dolfinx::mesh::Topology& self)
+          {
+            const std::vector<std::int32_t>& facets
+                = self.interprocess_facets();
+            return nb::ndarray<const std::int32_t, nb::numpy>(
+                facets.data(), {facets.size()}, nb::handle());
+          },
+          nb::rv_policy::reference_internal)
       .def_prop_ro(
           "comm", [](dolfinx::mesh::Topology& self)
           { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>());
