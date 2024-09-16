@@ -437,8 +437,8 @@ def assemble_matrix(
     Args:
         a: Bilinear form to assembled into a matrix.
         bc: Dirichlet boundary conditions applied to the system.
-        diagonal: Value to set on matrix diagonal for Dirichlet boundary
-            condition constrained degrees-of-freedom.
+        diagonal: Value to set on the matrix diagonal for Dirichlet boundary
+            condition constrained degrees-of-freedom belonging to the same trial and test space.
         constants: Constants appearing the in the form.
         coeffs: Coefficients appearing the in the form.
 
@@ -491,8 +491,8 @@ def assemble_matrix_nest(
         a: Rectangular (list-of-lists) array for bilinear forms.
         bcs: Dirichlet boundary conditions.
         mat_types: PETSc matrix type for each matrix block.
-        diagonal: Value to set on matrix diagonal for Dirichlet boundary
-            condition constrained degrees-of-freedom.
+        diagonal: Value to set on the matrix diagonal for Dirichlet boundary
+            condition constrained degrees-of-freedom belonging to the same trial and test space.
         constants: Constants appearing the in the form.
         coeffs: Coefficients appearing the in the form.
 
@@ -523,8 +523,8 @@ def _assemble_matrix_nest_mat(
         a: Rectangular (list-of-lists) array for bilinear forms.
         bcs: Dirichlet boundary conditions.
         mat_types: PETSc matrix type for each matrix block.
-        diagonal: Value to set on matrix diagonal for Dirichlet boundary
-            condition constrained degrees-of-freedom.
+        diagonal: Value to set on the matrix diagonal for Dirichlet boundary
+            condition constrained degrees-of-freedom belonging to the same trial and test space.
         constants: Constants appearing the in the form.
         coeffs: Coefficients appearing the in the form.
 
