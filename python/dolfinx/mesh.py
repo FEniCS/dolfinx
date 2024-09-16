@@ -83,19 +83,20 @@ class Geometry:
         Args: The C++ geometry object
 
         Note:
-            geometry objects should not usually be created using this
-            initializer directly.
+            geometry objects should usually be constructed with the :func:`create_geometry`
+            and not this class initializer. This class is combined with different base classes
+            that depend on the scalar type used in the Geometry.
         """
 
         self._cpp_object = geometry
 
     @property
     def cmap(self) -> _CoordinateElement:
-        """The element that describes the geometry map"""
+        """The element that describes the geometry map."""
         return _CoordinateElement(self._cpp_object.cmap)
 
     def cmaps(self, i: int) -> _CoordinateElement:
-        """The ith element that describes the geometry map
+        """The ith element that describes the geometry map.
 
         Args:
             i: The index of the element to return
@@ -104,16 +105,16 @@ class Geometry:
 
     @property
     def dim(self):
-        """Euclidian dimension of the coordinate system"""
+        """Dimension of the Euclidean coordinate system."""
         return self._cpp_object.dim
 
     @property
     def dofmap(self) -> npt.NDArray[np.int32]:
-        """Dofmap for the geometry, shape ``(num_cells, dofs_per_cell)``"""
+        """Dofmap for the geometry, shape ``(num_cells, dofs_per_cell)``."""
         return self._cpp_object.dofmap
 
     def dofmaps(self, i: int) -> npt.NDArray[np.int32]:
-        """Return the ith dofmap
+        """Return the ith dofmap.
 
         Args:
             i: The index of the dofmap to return
@@ -121,17 +122,17 @@ class Geometry:
         return self._cpp_object.dofmaps(i)
 
     def index_map(self) -> _IndexMap:
-        """The index map for the geometry"""
+        """The index map for the geometry."""
         return self._cpp_object.index_map()
 
     @property
     def input_global_indices(self) -> npt.NDArray[np.int64]:
-        """The global input indices of the geometry nodes"""
+        """The global input indices of the geometry nodes."""
         return self._cpp_object.input_global_indices
 
     @property
     def x(self) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
-        """The geometry data, with the shape ``(num_points, 3)``"""
+        """The geometry data, with the shape ``(num_points, 3)``."""
         return self._cpp_object.x
 
 
@@ -150,8 +151,9 @@ class Mesh:
             domain: A UFL domain.
 
         Note:
-            Mesh objects should not usually be created using this
-            initializer directly.
+            Mesh objects should usually be constructed with the :func:`create_mesh`
+            and not this class initializer. This class is combined with different base classes
+            that depend on the scalar type used in the Mesh.
         """
         self._cpp_object = mesh
         self._geometry = Geometry(self._cpp_object.geometry)
@@ -418,7 +420,7 @@ def refine_interval(
         cells: Indices of cells, i.e. edges, to split druing refinement. If ``None``, mesh
             refinement is uniform.
         redistribute: Refined mesh is re-partitioned if ``True``.
-        ghost_mode: ghost mode of the refined mesh
+        ghost_mode: ghost mode of the refined mesh.
 
     Returns:
         Refined mesh and parent cells
@@ -901,11 +903,11 @@ def create_geometry(
     """Create a Geometry object
 
     Args:
-        index_map: Index map associated with the geometry dofmap
-        dofmap: The geometry (point) dofmap. For a cell, it gives the position
-            in the point array of each local geometry node
+        index_map: Index map associated with the geometry dofmap.
+        dofmap: The geometry (point) dofmap. For a cell, it gives the row
+            in the point coordinates ``x`` of each local geometry node.
         element: Element that describes the cell geometry map.
-        x: The point coordinates. The shape is ``(num_points, geometric_dimension)``
+        x: The point coordinates. The shape is ``(num_points, geometric_dimension).``
         input_global_indices: The 'global' input index of each point, commonly
             from a mesh input file.
     """
