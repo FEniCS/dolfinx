@@ -241,7 +241,7 @@ void declare_mesh(nb::module_& m, std::string type)
   std::string create_interval("create_interval_" + type);
   m.def(
       create_interval.c_str(),
-      [](MPICommWrapper comm, std::int64_t n, std::array<double, 2> p,
+      [](MPICommWrapper comm, std::int64_t n, std::array<T, 2> p,
          dolfinx::mesh::GhostMode ghost_mode,
          const PythonCellPartitionFunction& part)
       {
@@ -254,7 +254,7 @@ void declare_mesh(nb::module_& m, std::string type)
   std::string create_rectangle("create_rectangle_" + type);
   m.def(
       create_rectangle.c_str(),
-      [](MPICommWrapper comm, std::array<std::array<double, 2>, 2> p,
+      [](MPICommWrapper comm, std::array<std::array<T, 2>, 2> p,
          std::array<std::int64_t, 2> n, dolfinx::mesh::CellType celltype,
          const PythonCellPartitionFunction& part,
          dolfinx::mesh::DiagonalType diagonal)
@@ -269,7 +269,7 @@ void declare_mesh(nb::module_& m, std::string type)
   std::string create_box("create_box_" + type);
   m.def(
       create_box.c_str(),
-      [](MPICommWrapper comm, std::array<std::array<double, 3>, 2> p,
+      [](MPICommWrapper comm, std::array<std::array<T, 3>, 2> p,
          std::array<std::int64_t, 3> n, dolfinx::mesh::CellType celltype,
          const PythonCellPartitionFunction& part)
       {
