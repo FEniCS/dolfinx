@@ -109,8 +109,8 @@ class Topology:
         """Create connectivity between given pair of dimensions, ``d0`` and  ``d1``.
 
         Args:
-            d0: Dimension of entity one is mapping from
-            d1: Dimension of entity one is mapping to
+            d0: Dimension of entities one is mapping from
+            d1: Dimension of entities one is mapping to
         """
         self._cpp_object.create_connectivity(d0, d1)
 
