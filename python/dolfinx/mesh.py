@@ -97,7 +97,7 @@ class Topology:
         else:
             raise RuntimeError(
                 f"Connectivity between dimension {d0} and {d1} has not been computed.",
-                "Please call :func:`dolfinx.mesh.Topology.create_connectivity` first.",
+                f"Please call `dolfinx.mesh.Topology.create_connectivity({d0}, {d1})` first.",
             )
 
     @property
@@ -142,15 +142,15 @@ class Topology:
         """Returns the permutation information
 
         The returned data is used for packing coefficients and assembling of tensors.
-        Each integer encodes the number of reflections and permutations for each sub-entity
-        of the cell to be able to map it to the reference element.
+        The bits of each integer encodes the number of reflections and permutations
+        for each sub-entity of the cell to be able to map it to the reference element.
         """
         return self._cpp_object.get_cell_permutation_info()
 
     def get_facet_permutations(self) -> npt.NDArray[np.uint8]:
         """Get the permutation number to apply to facets.
 
-        An entry describes the number of reflections and rotations that has to
+        The bits of each integer describes the number of reflections and rotations that has to
         be applied to a facet to map between a facet in the mesh (relative to a cell)
         and the corresponding facet on the reference element. The data has
         the shape ``(num_cells, num_facets_per_cell)``, flattened row-wise.
@@ -173,7 +173,10 @@ class Topology:
         if (imap := self._cpp_object.index_map(dim)) is not None:
             return imap
         else:
-            raise RuntimeError(f"Entities of dimension {dim} has not been computed")
+            raise RuntimeError(
+                f"Entities of dimension {dim} has not been computed."
+                f"Call `dolfinx.mesh.Topology.create_entities({dim}) first."
+            )
 
     def interprocess_facets(self) -> npt.NDArray[np.int32]:
         """List of inter-process facets, if facet topology has been computed."""
