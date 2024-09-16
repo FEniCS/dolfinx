@@ -76,7 +76,7 @@ class CoordinateElement:
         Args:
           x: Physical coordinates to pull back, shape ``(num_points, geometrical_dimension)``
           cell_geometry: Physical coordinates describing the cell,
-              shape (:func:`dolfinx.fem.CoordinateElement.dim`, geometricaldimension)``
+              shape ``(num_of_geometry_basis_functions, geometrical_dimension)``
         """
         return self._cpp_object.pull_back(x, cell_geometry)
 
