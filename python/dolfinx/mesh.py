@@ -83,7 +83,7 @@ class Geometry:
         Args: The C++ geometry object
 
         Note:
-            geometry objects should usually be constructed with the :func:`create_geometry`
+            Geometry objects should usually be constructed with the :func:`create_geometry`
             and not this class initializer. This class is combined with different base classes
             that depend on the scalar type used in the Geometry.
         """
