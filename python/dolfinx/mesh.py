@@ -80,7 +80,7 @@ class Geometry:
     ):
         """Initialize a geometry from a C++ geometry.
 
-        Args: The C++ geometry object
+        Args: The C++ geometry object.
 
         Note:
             Geometry objects should usually be constructed with the :func:`create_geometry`
