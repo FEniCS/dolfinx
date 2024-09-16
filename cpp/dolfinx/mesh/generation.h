@@ -36,7 +36,6 @@ enum class DiagonalType
 
 namespace impl
 {
-
 template <std::floating_point T>
 std::tuple<std::vector<T>, std::vector<std::int64_t>>
 create_interval_cells(std::array<T, 2> p, std::int64_t n);
@@ -231,7 +230,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 /// across MPI ranks.
 /// @return A mesh.
 template <std::floating_point T = double>
-Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<double, 2> p,
+Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
                         mesh::GhostMode ghost_mode = mesh::GhostMode::none,
                         CellPartitionFunction partitioner = nullptr)
 {

@@ -45,7 +45,7 @@ constexpr auto EPS = std::numeric_limits<T>::epsilon();
 TEMPLATE_TEST_CASE("Interval mesh", "[mesh][interval]", float, double)
 {
   using T = TestType;
-  mesh::Mesh<T> mesh = mesh::create_interval<T>(MPI_COMM_SELF, 4, {0, 1});
+  mesh::Mesh<T> mesh = mesh::create_interval<T>(MPI_COMM_SELF, 4, {0.0, 1.0});
 
   {
     int comp_result;
