@@ -900,7 +900,7 @@ def create_geometry(
     x: np.ndarray,
     input_global_indices: npt.NDArray[np.int64],
 ) -> Geometry:
-    """Create a Geometry object
+    """Create a Geometry object.
 
     Args:
         index_map: Index map associated with the geometry dofmap.
