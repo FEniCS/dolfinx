@@ -82,7 +82,7 @@ class Topology:
 
     def cell_name(self) -> str:
         """String representation of the cell-type of the topology"""
-        return self._cpp_object.cell_name()
+        return to_string(self._cpp_object.cell_type)
 
     def connectivity(self, d0: int, d1: int) -> _cpp.graph.AdjacencyList_int32:
         """Return connectivity from entities of dimension ``d0`` to entities of dimension ``d1``.
@@ -98,7 +98,8 @@ class Topology:
             return conn
         else:
             raise RuntimeError(
-                f"Connectiivty between dimension {d0} and {d1} has not been computed."
+                f"Connectivity between dimension {d0} and {d1} has not been computed.",
+                "Please call :func:`dolfinx.mesh.Topology.create_connectivity` first.",
             )
 
     @property
