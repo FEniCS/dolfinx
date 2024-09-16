@@ -73,8 +73,8 @@ class Topology:
         """Initialize a topology from a C++ topology.
         Args: The C++ topology object
         Note:
-            topology objects should not usually be created using this
-            initializer directly.
+            Topology objects should usually be constructed with the
+            :func:`dolfinx.cpp.mesh.create_topology` and not this class initializer.
         """
         self._cpp_object = topology
 
@@ -139,11 +139,26 @@ class Topology:
         return self._cpp_object.entity_types
 
     def get_cell_permutation_info(self) -> npt.NDArray[np.uint32]:
-        """Returns the permutation information"""
+        """Returns the permutation information
+
+        The returned data is used for packing coefficients and assembling of tensors.
+        Each integer encodes the number of reflections and permutations for each sub-entity
+        of the cell to be able to map it to the reference element.
+        """
         return self._cpp_object.get_cell_permutation_info()
 
     def get_facet_permutations(self) -> npt.NDArray[np.uint8]:
-        """Get the permutation number to apply to facets."""
+        """Get the permutation number to apply to facets.
+
+        An entry describes the number of reflections and rotations that has to
+        be applied to a facet to map between a facet in the mesh (relative to a cell)
+        and the corresponding facet on the reference element. The data has
+        the shape ``(num_cells, num_facets_per_cell)``, flattened row-wise.
+        The number of cells include potential ghost cells.
+
+        Note:
+            The data can be unpacked with ``numpy.unpack_bits``.
+        """
         return self._cpp_object.get_facet_permutations()
 
     def index_map(self, dim: int) -> _cpp.common.IndexMap:
