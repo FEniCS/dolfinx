@@ -4,10 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <cstdint>
-
 #include <catch2/catch_test_macros.hpp>
-
+#include <cstdint>
 #include <dolfinx/refinement/option.h>
 
 using namespace dolfinx::refinement;
