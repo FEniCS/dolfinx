@@ -99,7 +99,7 @@ class Geometry:
         """The ith element that describes the geometry map.
 
         Args:
-            i: The index of the element to return
+            i: The index of the element to return.
         """
         return _CoordinateElement(self._cpp_object.cmaps(i))
 
@@ -117,7 +117,7 @@ class Geometry:
         """Return the ith dofmap.
 
         Args:
-            i: The index of the dofmap to return
+            i: The index of the dofmap to return.
         """
         return self._cpp_object.dofmaps(i)
 
