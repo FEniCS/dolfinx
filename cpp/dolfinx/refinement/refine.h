@@ -26,7 +26,7 @@ template <std::floating_point T>
 mesh::Mesh<T>
 create_refined_mesh(const mesh::Mesh<T>& mesh,
                     const graph::AdjacencyList<std::int64_t>& cell_adj,
-                    const std::vector<T>& new_vertex_coords,
+                    std::span<const T> new_vertex_coords,
                     std::array<std::size_t, 2> xshape, bool redistribute,
                     mesh::GhostMode ghost_mode)
 {
@@ -81,7 +81,7 @@ refine(const mesh::Mesh<T>& mesh,
              : plaza::compute_refinement_data(mesh, edges, option);
 
   mesh::Mesh<T> refined_mesh = impl::create_refined_mesh(
-      mesh, std::move(cell_adj), std::move(new_vertex_coords), xshape,
+      mesh, cell_adj, std::span<const T>(new_vertex_coords), xshape,
       redistribute, ghost_mode);
 
   // Report the number of refined cellse
