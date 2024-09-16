@@ -241,7 +241,7 @@ void declare_mesh(nb::module_& m, std::string type)
   std::string create_interval("create_interval_" + type);
   m.def(
       create_interval.c_str(),
-      [](MPICommWrapper comm, std::int64_t n, std::array<double, 2> p,
+      [](MPICommWrapper comm, std::int64_t n, std::array<T, 2> p,
          dolfinx::mesh::GhostMode ghost_mode,
          const PythonCellPartitionFunction& part)
       {
@@ -254,7 +254,7 @@ void declare_mesh(nb::module_& m, std::string type)
   std::string create_rectangle("create_rectangle_" + type);
   m.def(
       create_rectangle.c_str(),
-      [](MPICommWrapper comm, std::array<std::array<double, 2>, 2> p,
+      [](MPICommWrapper comm, std::array<std::array<T, 2>, 2> p,
          std::array<std::int64_t, 2> n, dolfinx::mesh::CellType celltype,
          const PythonCellPartitionFunction& part,
          dolfinx::mesh::DiagonalType diagonal)
@@ -269,7 +269,7 @@ void declare_mesh(nb::module_& m, std::string type)
   std::string create_box("create_box_" + type);
   m.def(
       create_box.c_str(),
-      [](MPICommWrapper comm, std::array<std::array<double, 3>, 2> p,
+      [](MPICommWrapper comm, std::array<std::array<T, 3>, 2> p,
          std::array<std::int64_t, 3> n, dolfinx::mesh::CellType celltype,
          const PythonCellPartitionFunction& part)
       {
@@ -650,12 +650,16 @@ void mesh(nb::module_& m)
           })
       .def("cell_name", [](const dolfinx::mesh::Topology& self)
            { return dolfinx::mesh::to_string(self.cell_type()); })
-      .def("interprocess_facets",
-           nb::overload_cast<>(&dolfinx::mesh::Topology::interprocess_facets,
-                               nb::const_))
-      .def("interprocess_facets",
-           nb::overload_cast<std::int8_t>(
-               &dolfinx::mesh::Topology::interprocess_facets, nb::const_))
+      .def(
+          "interprocess_facets",
+          [](const dolfinx::mesh::Topology& self)
+          {
+            const std::vector<std::int32_t>& facets
+                = self.interprocess_facets();
+            return nb::ndarray<const std::int32_t, nb::numpy>(
+                facets.data(), {facets.size()}, nb::handle());
+          },
+          nb::rv_policy::reference_internal)
       .def_prop_ro(
           "comm", [](dolfinx::mesh::Topology& self)
           { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>());
