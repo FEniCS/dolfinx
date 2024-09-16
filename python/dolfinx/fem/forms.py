@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import collections
 import typing
+import types
 from dataclasses import dataclass
 from itertools import chain
 
@@ -47,7 +48,7 @@ class Form:
         ],
         ufcx_form=None,
         code: typing.Optional[str] = None,
-        module=None,
+        module: typing.Optional[types.ModuleType] = None,
     ):
         """A finite element form
 
@@ -79,7 +80,7 @@ class Form:
         return self._code
 
     @property
-    def module(self):
+    def module(self) -> typing.Union[types.ModuleType, None]:
         """The CFFI module"""
         return self._module
 
