@@ -24,7 +24,6 @@ from dolfinx.mesh import (
     locate_entities_boundary,
     meshtags,
     refine,
-    refine_plaza,
     transfer_meshtag,
 )
 
@@ -33,36 +32,24 @@ def test_refine_create_unit_square():
     """Refine mesh of unit square."""
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 7, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
-    mesh = refine(mesh, redistribute=False)
-    assert mesh.topology.index_map(0).size_global == 165
-    assert mesh.topology.index_map(2).size_global == 280
+    mesh_refined, _, _ = refine(mesh, redistribute=False)
+    assert mesh_refined.topology.index_map(0).size_global == 165
+    assert mesh_refined.topology.index_map(2).size_global == 280
+
+    # Test that 2D refinement is still 2D
+    assert mesh.geometry.dim == mesh_refined.geometry.dim
 
 
-def test_refine_create_unit_cube_repartition():
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
+@pytest.mark.parametrize("redistribute", [True, False])
+def test_refine_create_unit_cube(ghost_mode, redistribute):
     """Refine mesh of unit cube."""
-    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=GhostMode.none)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=ghost_mode)
     mesh.topology.create_entities(1)
-    mesh = refine(mesh, redistribute=True)
+    mesh, _, _ = refine(mesh, redistribute=redistribute)
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
 
-    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=GhostMode.shared_facet)
-    mesh.topology.create_entities(1)
-    mesh = refine(mesh, redistribute=True)
-    assert mesh.topology.index_map(0).size_global == 3135
-    assert mesh.topology.index_map(3).size_global == 15120
-
-    Q = functionspace(mesh, ("Lagrange", 1))
-    assert Q
-
-
-def test_refine_create_unit_cube_keep_partition():
-    """Refine mesh of unit cube."""
-    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=GhostMode.none)
-    mesh.topology.create_entities(1)
-    mesh = refine(mesh, redistribute=False)
-    assert mesh.topology.index_map(0).size_global == 3135
-    assert mesh.topology.index_map(3).size_global == 15120
     Q = functionspace(mesh, ("Lagrange", 1))
     assert Q
 
@@ -71,7 +58,7 @@ def test_refine_create_form():
     """Check that forms can be assembled on refined mesh"""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     mesh.topology.create_entities(1)
-    mesh = refine(mesh, redistribute=True)
+    mesh, _, _ = refine(mesh, redistribute=True)
 
     V = functionspace(mesh, ("Lagrange", 1))
 
@@ -80,14 +67,6 @@ def test_refine_create_form():
     v = ufl.TestFunction(V)
     a = form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)
     assemble_matrix(a)
-
-
-def test_refinement_gdim():
-    """Test that 2D refinement is still 2D"""
-    mesh = create_unit_square(MPI.COMM_WORLD, 3, 4, ghost_mode=GhostMode.none)
-    mesh.topology.create_entities(1)
-    mesh2 = refine(mesh, redistribute=True)
-    assert mesh.geometry.dim == mesh2.geometry.dim
 
 
 def test_sub_refine():
@@ -104,7 +83,7 @@ def test_sub_refine():
     if MPI.COMM_WORLD.size == 0:
         assert edges == 1
 
-    mesh2 = refine(mesh, edges, redistribute=False)
+    mesh2, _, _ = refine(mesh, edges, redistribute=False)
     assert mesh.topology.index_map(2).size_global + 3 == mesh2.topology.index_map(2).size_global
 
 
@@ -126,7 +105,7 @@ def test_refine_from_cells():
     edges = compute_incident_entities(msh.topology, cells, 2, 1)
     if MPI.COMM_WORLD.size == 0:
         assert edges.__len__() == Nx // 2 * (2 * Ny + 1) + (Nx // 2 + 1) * Ny
-    mesh2 = refine(msh, edges, redistribute=True)
+    mesh2, _, _ = refine(msh, edges, redistribute=True)
 
     num_cells_global = mesh2.topology.index_map(2).size_global
     actual_cells = 3 * (Nx * Ny) + 3 * Ny + 2 * Nx * Ny
@@ -137,12 +116,14 @@ def test_refine_from_cells():
 @pytest.mark.parametrize(
     "refine_plaza_wrapper",
     [
-        lambda mesh: refine_plaza(mesh, None, False, RefinementOption.parent_cell_and_facet),
-        lambda mesh: refine_plaza(
+        lambda mesh: refine(
+            mesh, redistribute=False, option=RefinementOption.parent_cell_and_facet
+        ),
+        lambda mesh: refine(
             mesh,
             np.arange(mesh.topology.index_map(1).size_local),
-            False,
-            RefinementOption.parent_cell_and_facet,
+            redistribute=False,
+            option=RefinementOption.parent_cell_and_facet,
         ),
     ],
 )
@@ -197,12 +178,14 @@ def test_refine_facet_meshtag(tdim, refine_plaza_wrapper):
 @pytest.mark.parametrize(
     "refine_plaza_wrapper",
     [
-        lambda mesh: refine_plaza(mesh, None, False, RefinementOption.parent_cell_and_facet),
-        lambda mesh: refine_plaza(
+        lambda mesh: refine(
+            mesh, redistribute=False, option=RefinementOption.parent_cell_and_facet
+        ),
+        lambda mesh: refine(
             mesh,
             np.arange(mesh.topology.index_map(1).size_local),
-            False,
-            RefinementOption.parent_cell_and_facet,
+            redistribute=False,
+            option=RefinementOption.parent_cell_and_facet,
         ),
     ],
 )
