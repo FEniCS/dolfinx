@@ -50,7 +50,7 @@ class CoordinateElement:
     def dim(self) -> int:
         """The dimension of the coordinate element space.
 
-        The number of basis function is returned. E.g., for a linear
+        The number of basis function is returned. e.g., for a linear
         triangle cell the dimension will be 3.
         """
         return self._cpp_object.dim
@@ -60,8 +60,7 @@ class CoordinateElement:
         return self._cpp_object.create_dof_layout()
 
     def push_forward(self, X: np.ndarray, cell_geometry: np.ndarray) -> np.ndarray:
-        """Compute the physical coordinates ``x`` of the reference coordinates ``X``
-        for the cell with coordinates ``cell_geometry``.
+        """Compute the physical coordinates ``x`` of the reference coordinates ``X``.
 
         Args:
             X: The physical coordinates of the reference points,
