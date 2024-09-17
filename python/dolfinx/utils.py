@@ -208,6 +208,8 @@ class cffi_utils:
         _cffi_support.register_type(_ffi.typeof("float _Complex"), _numba.types.complex64)
         _cffi_support.register_type(_ffi.typeof("double _Complex"), _numba.types.complex128)
 
+    except KeyError:
+        pass
     except ImportError:
         warnings.warn("Could not import numba, so complex types are not registered!", ImportWarning)
 
@@ -248,6 +250,8 @@ class cffi_utils:
         """See PETSc `MatSetValuesBlockedLocal
         <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
         documentation."""
+    except KeyError:
+        pass
     except ImportError:
         warnings.warn(
             "Could not import petsc4py, so numba petsc overloads are not available!", ImportWarning
