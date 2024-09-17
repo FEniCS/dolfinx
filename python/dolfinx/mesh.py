@@ -836,6 +836,7 @@ def create_geometry(
         index_map: Index map describing the layout of the geometry points (nodes).
         dofmap: The geometry (point) dofmap. For a cell, it gives the row
             in the point coordinates ``x`` of each local geometry node.
+            ``shape=(num_cells, num_dofs_per_cell)``.
         element: Element that describes the cell geometry map.
         x: The point coordinates. The shape is ``(num_points, geometric_dimension).``
         input_global_indices: The 'global' input index of each point, commonly
