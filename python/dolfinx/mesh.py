@@ -82,7 +82,7 @@ class Geometry:
 
         Note:
             Geometry objects should usually be constructed with the :func:`create_geometry`
-            and not this class initializer. This class is combined with different base classes
+            and not using this class initializer. This class is combined with different base classes
             that depend on the scalar type used in the Geometry.
         """
 
@@ -90,7 +90,7 @@ class Geometry:
 
     @property
     def cmap(self) -> _CoordinateElement:
-        """The element that describes the geometry map."""
+        """Element that describes the geometry map."""
         return _CoordinateElement(self._cpp_object.cmap)
 
     def cmaps(self, i: int) -> _CoordinateElement:
@@ -120,17 +120,17 @@ class Geometry:
         return self._cpp_object.dofmaps(i)
 
     def index_map(self) -> _IndexMap:
-        """The index map for the geometry."""
+        """Index map describing the layout of the geometry points (nodes)."""
         return self._cpp_object.index_map()
 
     @property
     def input_global_indices(self) -> npt.NDArray[np.int64]:
-        """The global input indices of the geometry nodes."""
+        """Global input indices of the geometry nodes."""
         return self._cpp_object.input_global_indices
 
     @property
     def x(self) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
-        """The geometry data, with the shape ``(num_points, 3)``."""
+        """Geometry coordinate points,  ``shape=(num_points, 3)``."""
         return self._cpp_object.x
 
 
@@ -149,8 +149,8 @@ class Mesh:
             domain: A UFL domain.
 
         Note:
-            Mesh objects should usually be constructed with the :func:`create_mesh`
-            and not this class initializer. This class is combined with different base classes
+            Mesh objects should usually be constructed using :func:`create_mesh`
+            and not using this class initializer. This class is combined with different base classes
             that depend on the scalar type used in the Mesh.
         """
         self._cpp_object = mesh
@@ -846,7 +846,7 @@ def create_geometry(
     """Create a Geometry object.
 
     Args:
-        index_map: Index map associated with the geometry dofmap.
+        index_map: Index map describing the layout of the geometry points (nodes).
         dofmap: The geometry (point) dofmap. For a cell, it gives the row
             in the point coordinates ``x`` of each local geometry node.
         element: Element that describes the cell geometry map.

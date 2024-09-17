@@ -113,7 +113,7 @@ public:
   /// Move Assignment
   Geometry& operator=(Geometry&&) = default;
 
-  /// Return Dimension of the Euclidean coordinate system
+  /// Return dimension of the Euclidean coordinate system
   int dim() const { return _dim; }
 
   /// @brief  DofMap for the geometry

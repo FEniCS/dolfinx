@@ -48,9 +48,9 @@ class CoordinateElement:
 
     @property
     def dim(self) -> int:
-        """The dimension of the coordinate element space.
+        """Dimension of the coordinate element space.
 
-        The number of basis function is returned. e.g., for a linear
+        This is number of basis functions that span the coordinate space, e.g., for a linear
         triangle cell the dimension will be 3.
         """
         return self._cpp_object.dim
@@ -64,11 +64,11 @@ class CoordinateElement:
         X: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
         cell_geometry: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
     ) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
-        """Compute the physical coordinates ``x`` of the reference coordinates ``X``.
+        """Push points on the reference cell forward to the physical cell.
 
         Args:
-            X: The physical coordinates of the reference points,
-                shape ``(num_points, topological_dimension)``.
+            X: Coordinates of points on the reference cell,
+                ``shape=(num_points, topological_dimension)``.
             cell_geometry: Physical coordinates describing the cell,
                 shape ``(num_geometry_basis_functions, geometrical_dimension)``
         """
@@ -82,7 +82,7 @@ class CoordinateElement:
         """Compute reference coordinates ``X`` for physical coordinates ``x``.
 
         Args:
-          x: Physical coordinates to pull back, shape ``(num_points, geometrical_dimension)``
+          x: Physical coordinates to pull back to the reference cells, `` shape=(num_points, geometrical_dimension)``.
           cell_geometry: Physical coordinates describing the cell,
               shape ``(num_of_geometry_basis_functions, geometrical_dimension)``
         """
@@ -90,7 +90,7 @@ class CoordinateElement:
 
     @property
     def variant(self) -> int:
-        """Return the Lagrange variant of the coordinate element.
+        """Lagrange variant of the coordinate element.
 
         Note:
             Is returned as an integer and can be converted into a basix Lagrange variant using
@@ -100,7 +100,7 @@ class CoordinateElement:
 
     @property
     def degree(self) -> int:
-        """Return the degree of the coordinate element."""
+        """Polynomial degree of the coordinate element."""
         return self._cpp_object.degree
 
 
