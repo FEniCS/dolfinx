@@ -69,9 +69,10 @@ class CoordinateElement:
         Args:
             X: Coordinates of points on the reference cell,
                 ``shape=(num_points, topological_dimension)``.
-            cell_geometry: Coordinate 'degrees-of-freedom' (nodes) of the cell,
-                 ``shape=(num_geometry_basis_functions, geometrical_dimension)``.
-                Can be created by accessing `geometry.x[geometry.dofmap.cell_dofs(i)]`,
+            cell_geometry: Coordinate 'degrees-of-freedom' (nodes) of
+                the cell, ``shape=(num_geometry_basis_functions,
+                geometrical_dimension)``. Can be created by accessing
+                ``geometry.x[geometry.dofmap.cell_dofs(i)]``,
 
         Returns:
             Physical coordinates of the points reference points ``X``.
