@@ -168,7 +168,7 @@ class Topology:
             dim: Topological dimension
 
         Returns:
-            Index map for the entities of dimension `dim`.
+            Index map for the entities of dimension ``dim``.
         """
         if (imap := self._cpp_object.index_map(dim)) is not None:
             return imap
