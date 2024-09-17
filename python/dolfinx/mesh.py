@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2021 Chris N. Richardson and Garth N. Wells
+# Copyright (C) 2017-2024 Chris N. Richardson, Garth N. Wells and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -19,6 +19,7 @@ import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
+from dolfinx.common import IndexMap as _IndexMap
 from dolfinx.cpp.mesh import (
     CellType,
     DiagonalType,
@@ -62,13 +63,67 @@ __all__ = [
     "to_string",
     "transfer_meshtag",
     "entities_to_geometry",
+    "create_geometry",
+    "Geometry",
 ]
+
+
+class Geometry:
+    """The geometry of a :class:`dolfinx.mesh.Mesh`"""
+
+    _cpp_object: typing.Union[_cpp.mesh.Geometry_float32, _cpp.mesh.Geometry_float64]
+
+    def __init__(
+        self, geometry: typing.Union[_cpp.mesh.Geometry_float32, _cpp.mesh.Geometry_float64]
+    ):
+        """Initialize a geometry from a C++ geometry.
+
+        Args:
+            geometry: The C++ geometry object.
+
+        Note:
+            Geometry objects should usually be constructed with the :func:`create_geometry`
+            and not using this class initializer. This class is combined with different base classes
+            that depend on the scalar type used in the Geometry.
+        """
+
+        self._cpp_object = geometry
+
+    @property
+    def cmap(self) -> _CoordinateElement:
+        """Element that describes the geometry map."""
+        return _CoordinateElement(self._cpp_object.cmap)
+
+    @property
+    def dim(self):
+        """Dimension of the Euclidean coordinate system."""
+        return self._cpp_object.dim
+
+    @property
+    def dofmap(self) -> npt.NDArray[np.int32]:
+        """Dofmap for the geometry, shape ``(num_cells, dofs_per_cell)``."""
+        return self._cpp_object.dofmap
+
+    def index_map(self) -> _IndexMap:
+        """Index map describing the layout of the geometry points (nodes)."""
+        return self._cpp_object.index_map()
+
+    @property
+    def input_global_indices(self) -> npt.NDArray[np.int64]:
+        """Global input indices of the geometry nodes."""
+        return self._cpp_object.input_global_indices
+
+    @property
+    def x(self) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
+        """Geometry coordinate points,  ``shape=(num_points, 3)``."""
+        return self._cpp_object.x
 
 
 class Mesh:
     """A mesh."""
 
     _mesh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64]
+    _geometry: Geometry
     _ufl_domain: typing.Optional[ufl.Mesh]
 
     def __init__(self, mesh, domain: typing.Optional[ufl.Mesh]):
@@ -79,10 +134,12 @@ class Mesh:
             domain: A UFL domain.
 
         Note:
-            Mesh objects should not usually be created using this
-            initializer directly.
+            Mesh objects should usually be constructed using :func:`create_mesh`
+            and not using this class initializer. This class is combined with different base classes
+            that depend on the scalar type used in the Mesh.
         """
         self._cpp_object = mesh
+        self._geometry = Geometry(self._cpp_object.geometry)
         self._ufl_domain = domain
         if self._ufl_domain is not None:
             self._ufl_domain._ufl_cargo = self._cpp_object  # type: ignore
@@ -141,9 +198,9 @@ class Mesh:
         return self._cpp_object.topology
 
     @property
-    def geometry(self):
+    def geometry(self) -> Geometry:
         "Mesh geometry."
-        return self._cpp_object.geometry
+        return self._geometry
 
 
 class MeshTags:
@@ -762,3 +819,34 @@ def entities_to_geometry(
         The geometric DOFs associated with the closure of the entities in `entities`.
     """
     return _cpp.mesh.entities_to_geometry(mesh._cpp_object, dim, entities, permute)
+
+
+def create_geometry(
+    index_map: _IndexMap,
+    dofmap: npt.NDArray[np.int32],
+    element: _CoordinateElement,
+    x: np.ndarray,
+    input_global_indices: npt.NDArray[np.int64],
+) -> Geometry:
+    """Create a Geometry object.
+
+    Args:
+        index_map: Index map describing the layout of the geometry points (nodes).
+        dofmap: The geometry (point) dofmap. For a cell, it gives the row
+            in the point coordinates ``x`` of each local geometry node.
+            ``shape=(num_cells, num_dofs_per_cell)``.
+        element: Element that describes the cell geometry map.
+        x: The point coordinates. The shape is ``(num_points, geometric_dimension).``
+        input_global_indices: The 'global' input index of each point, commonly
+            from a mesh input file.
+    """
+    if x.dtype == np.float64:
+        ftype = _cpp.mesh.Geometry_float64
+    elif x.dtype == np.float32:
+        ftype = _cpp.mesh.Geometry_float64
+    else:
+        raise ValueError("Unknown floating type for geometry, got: {x.dtype}")
+
+    if (dtype := np.dtype(element.dtype)) != x.dtype:
+        raise ValueError(f"Mismatch in x dtype ({x.dtype}) and coordinate element ({dtype})")
+    return Geometry(ftype(index_map, dofmap, element, x, input_global_indices))

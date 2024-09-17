@@ -21,7 +21,7 @@ from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
 from dolfinx.cpp.io import perm_vtk as cell_perm_vtk
 from dolfinx.fem import Function
-from dolfinx.mesh import GhostMode, Mesh, MeshTags
+from dolfinx.mesh import Geometry, GhostMode, Mesh, MeshTags
 
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
 
@@ -225,12 +225,12 @@ class XDMFFile(_cpp.io.XDMFFile):
     def write_meshtags(
         self,
         tags: MeshTags,
-        x: typing.Union[_cpp.mesh.Geometry_float32, _cpp.mesh.Geometry_float64],
+        x: Geometry,
         geometry_xpath: str = "/Xdmf/Domain/Grid/Geometry",
         xpath: str = "/Xdmf/Domain",
     ) -> None:
         """Write mesh tags to file"""
-        super().write_meshtags(tags._cpp_object, x, geometry_xpath, xpath)
+        super().write_meshtags(tags._cpp_object, x._cpp_object, geometry_xpath, xpath)
 
     def write_function(
         self, u: Function, t: float = 0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"
