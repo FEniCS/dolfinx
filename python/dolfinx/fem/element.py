@@ -69,8 +69,10 @@ class CoordinateElement:
         Args:
             X: Coordinates of points on the reference cell,
                 ``shape=(num_points, topological_dimension)``.
-            cell_geometry: Physical coordinates describing the cell,
-                shape ``(num_geometry_basis_functions, geometrical_dimension)``
+            cell_geometry: The physical coordinates of the geometry degrees-of-freedom,
+                shape ``(num_geometry_basis_functions, geometrical_dimension)``.
+                They can be created by accessing `geometry.x[geometry.dofmap.cell_dofs(i)]`,
+
         """
         return self._cpp_object.push_forward(X, cell_geometry)
 
@@ -82,9 +84,12 @@ class CoordinateElement:
         """Compute reference coordinates ``X`` for physical coordinates ``x``.
 
         Args:
-          x: Physical coordinates to pull back to the reference cells, `` shape=(num_points, geometrical_dimension)``.
-          cell_geometry: Physical coordinates describing the cell,
-              shape ``(num_of_geometry_basis_functions, geometrical_dimension)``
+            x: Physical coordinates to pull back to the reference cells,
+            ``shape=(num_points, geometrical_dimension)``.
+            cell_geometry: Physical coordinates describing the cell,
+                shape ``(num_of_geometry_basis_functions, geometrical_dimension)``
+                They can be created by accessing `geometry.x[geometry.dofmap.cell_dofs(i)]`,
+
         """
         return self._cpp_object.pull_back(x, cell_geometry)
 
@@ -93,7 +98,7 @@ class CoordinateElement:
         """Lagrange variant of the coordinate element.
 
         Note:
-            Is returned as an integer and can be converted into a basix Lagrange variant using
+            The return type is an integer. A Basix enum can be created using
             ``basix.LagrangeVariant(value)``.
         """
         return self._cpp_object.variant

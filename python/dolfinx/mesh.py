@@ -78,7 +78,8 @@ class Geometry:
     ):
         """Initialize a geometry from a C++ geometry.
 
-        Args: The C++ geometry object.
+        Args:
+            geometry: The C++ geometry object.
 
         Note:
             Geometry objects should usually be constructed with the :func:`create_geometry`
@@ -93,13 +94,6 @@ class Geometry:
         """Element that describes the geometry map."""
         return _CoordinateElement(self._cpp_object.cmap)
 
-    def cmaps(self, i: int) -> _CoordinateElement:
-        """The ith element that describes the geometry map.
-
-        Args:
-            i: The index of the element to return.
-        """
-        return _CoordinateElement(self._cpp_object.cmaps(i))
 
     @property
     def dim(self):
@@ -111,13 +105,6 @@ class Geometry:
         """Dofmap for the geometry, shape ``(num_cells, dofs_per_cell)``."""
         return self._cpp_object.dofmap
 
-    def dofmaps(self, i: int) -> npt.NDArray[np.int32]:
-        """Return the ith dofmap.
-
-        Args:
-            i: The index of the dofmap to return.
-        """
-        return self._cpp_object.dofmaps(i)
 
     def index_map(self) -> _IndexMap:
         """Index map describing the layout of the geometry points (nodes)."""
