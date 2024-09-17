@@ -16,7 +16,7 @@ from dolfinx import cpp as _cpp
 
 
 class CoordinateElement:
-    """Coordinate element describing the geometry map for mesh cells"""
+    """Coordinate element describing the geometry map for mesh cells."""
 
     _cpp_object: typing.Union[
         _cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64
@@ -50,8 +50,8 @@ class CoordinateElement:
     def dim(self) -> int:
         """Dimension of the coordinate element space.
 
-        This is number of basis functions that span the coordinate space, e.g., for a linear
-        triangle cell the dimension will be 3.
+        This is number of basis functions that span the coordinate
+        space, e.g., for a linear triangle cell the dimension will be 3.
         """
         return self._cpp_object.dim
 
@@ -69,10 +69,12 @@ class CoordinateElement:
         Args:
             X: Coordinates of points on the reference cell,
                 ``shape=(num_points, topological_dimension)``.
-            cell_geometry: The physical coordinates of the geometry degrees-of-freedom,
-                shape ``(num_geometry_basis_functions, geometrical_dimension)``.
-                They can be created by accessing `geometry.x[geometry.dofmap.cell_dofs(i)]`,
+            cell_geometry: Coordinate 'degrees-of-freedom' (nodes) of the cell,
+                 ``shape=(num_geometry_basis_functions, geometrical_dimension)``.
+                Can be created by accessing `geometry.x[geometry.dofmap.cell_dofs(i)]`,
 
+        Returns:
+            Physical coordinates of the points reference points ``X``.
         """
         return self._cpp_object.push_forward(X, cell_geometry)
 
@@ -81,7 +83,9 @@ class CoordinateElement:
         x: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
         cell_geometry: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
     ) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
-        """Compute reference coordinates ``X`` for physical coordinates ``x``.
+        """Pull points on the physical cell back to the reference cell.
+
+        For non-affine cells, the pull-back is a nonlinear operation.
 
         Args:
             x: Physical coordinates to pull back to the reference cells,
@@ -90,6 +94,8 @@ class CoordinateElement:
                 shape ``(num_of_geometry_basis_functions, geometrical_dimension)``
                 They can be created by accessing `geometry.x[geometry.dofmap.cell_dofs(i)]`,
 
+        Returns:
+            Reference coordinates of the physical points ``x``.
         """
         return self._cpp_object.pull_back(x, cell_geometry)
 
