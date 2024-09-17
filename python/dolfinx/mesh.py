@@ -474,9 +474,12 @@ def refine(
             mesh refinement is uniform.
         redistribute:
             Refined mesh is re-partitioned if ``True``.
+        ghost_mode: Ghost mode to use for the refined mesh.
+        option: Controls whether parent cells and/or parent facets are computed.
+
 
     Returns:
-       Refined mesh.
+       Refined mesh, (optional) parent cells, (optional) parent facets
     """
     mesh1, parent_cell, parent_facet = _cpp.refinement.refine(
         mesh._cpp_object, edges, redistribute, ghost_mode, option
