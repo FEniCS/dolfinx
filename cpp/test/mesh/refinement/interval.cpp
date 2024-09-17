@@ -4,17 +4,11 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <optional>
-#include <span>
-
-#include <mpi.h>
-
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
-
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -22,6 +16,9 @@
 #include <dolfinx/mesh/utils.h>
 #include <dolfinx/refinement/interval.h>
 #include <dolfinx/refinement/refine.h>
+#include <mpi.h>
+#include <optional>
+#include <span>
 
 using namespace dolfinx;
 using namespace Catch::Matchers;
@@ -35,13 +32,13 @@ void CHECK_adjacency_list_equal(
 {
   REQUIRE(static_cast<std::size_t>(adj_list.num_nodes())
           == expected_list.size());
-
   for (T i = 0; i < adj_list.num_nodes(); i++)
   {
     CHECK_THAT(adj_list.links(i),
                Catch::Matchers::RangeEquals(expected_list[i]));
   }
 }
+
 template <typename T>
 constexpr auto EPS = std::numeric_limits<T>::epsilon();
 } // namespace
@@ -147,10 +144,8 @@ TEMPLATE_TEST_CASE("Interval adaptive refinement",
 TEMPLATE_TEST_CASE("Interval Refinement (parallel)",
                    "[refinement][interva][parallel]", float, double)
 {
-  /**
-  Produces an interval with communicator size intervals. Every process is
-  assigned one interval and we refine uniformly.
-  */
+  // Produces an interval with communicator size intervals. Every process is
+  // assigned one interval and we refine uniformly.
 
   using T = TestType;
 
