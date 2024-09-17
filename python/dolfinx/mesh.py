@@ -94,7 +94,6 @@ class Geometry:
         """Element that describes the geometry map."""
         return _CoordinateElement(self._cpp_object.cmap)
 
-
     @property
     def dim(self):
         """Dimension of the Euclidean coordinate system."""
@@ -104,7 +103,6 @@ class Geometry:
     def dofmap(self) -> npt.NDArray[np.int32]:
         """Dofmap for the geometry, shape ``(num_cells, dofs_per_cell)``."""
         return self._cpp_object.dofmap
-
 
     def index_map(self) -> _IndexMap:
         """Index map describing the layout of the geometry points (nodes)."""
