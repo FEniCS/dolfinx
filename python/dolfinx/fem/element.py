@@ -85,7 +85,7 @@ class CoordinateElement:
 
         Args:
             x: Physical coordinates to pull back to the reference cells,
-            ``shape=(num_points, geometrical_dimension)``.
+                ``shape=(num_points, geometrical_dimension)``.
             cell_geometry: Physical coordinates describing the cell,
                 shape ``(num_of_geometry_basis_functions, geometrical_dimension)``
                 They can be created by accessing `geometry.x[geometry.dofmap.cell_dofs(i)]`,
