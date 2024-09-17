@@ -15,23 +15,23 @@ namespace dolfinx::mesh
 class Topology;
 
 /// Compute (1) facet rotation and reflection data, and (2) cell
-/// permutation data. This information is used assemble of (1) facet
-/// inetgrals and (2) vector elements.
+/// permutation data. This information is used in the assembly of (1) facet
+/// integrals and (2) most non-Lagrange elements.
 ///
-/// 1. Get the permutation numbers to apply to facets. The
-///    permutations are numbered so that:
+/// 1. The facet rotation and reflection data is encoded so that:
 ///
 ///     - `n % 2` gives the number of reflections to apply
 ///     - `n // 2` gives the number of rotations to apply
 ///
-///    Each column of the returned array represents a cell, and each
-///    row a facet of that cell. This data is used to permute the
-///    quadrature point on facet integrals when data from the cells on
-///    both sides of the facet is used.
+///    The data is stored in a flattened 2D array, so that `data[cell_index *
+///    facets_per_cell + facet_index]` contains the facet with index
+///    `facet_index` of the cell with index `cell_index`. This data passed to
+///    FFCx kernels, where it is used to permute the quadrature points on facet
+///    integrals when data from the cells on both sides of the facet is used.
 ///
-/// 2. Get the permutation information about the entities of each
+/// 2. The cell permutation data contains information about the entities of each
 ///    cell, relative to a low-to-high ordering. This data is packed
-///    so that a 32 bit int is used for each cell. For 2D cells, one
+///    so that a 32-bit int is used for each cell. For 2D cells, one
 ///    bit is used for each edge, to represent whether or not the edge
 ///    is reversed: the least significant bit is for edge 0, the next
 ///    for edge 1, etc. For 3D cells, three bits are used for each
