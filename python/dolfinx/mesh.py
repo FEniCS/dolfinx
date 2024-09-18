@@ -88,8 +88,6 @@ class Topology:
     def connectivity(self, d0: int, d1: int) -> _cpp.graph.AdjacencyList_int32:
         """Return connectivity from entities of dimension ``d0`` to entities of dimension ``d1``.
 
-        Note:
-            Assumes only one entity type per dimension.
 
         Args:
             d0: Dimension of entity one is mapping from
