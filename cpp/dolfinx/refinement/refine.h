@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "dolfinx/graph/AdjacencyList.h"
 #include "dolfinx/mesh/Mesh.h"
 #include "dolfinx/mesh/Topology.h"
 #include "dolfinx/mesh/cell_types.h"
@@ -17,25 +18,16 @@
 #include <optional>
 #include <utility>
 
-#include "dolfinx/graph/AdjacencyList.h"
-#include "dolfinx/mesh/Mesh.h"
-#include "dolfinx/mesh/Topology.h"
-#include "dolfinx/mesh/cell_types.h"
-#include "dolfinx/mesh/utils.h"
-
-#include "interval.h"
-#include "plaza.h"
-
 namespace dolfinx::refinement
 {
 
-// TODO: move to cpp?
+/// TODO: Document function
 inline graph::AdjacencyList<std::int32_t> maintain_coarse_partitioner(
     MPI_Comm comm, int, const std::vector<mesh::CellType>& cell_types,
     const std::vector<std::span<const std::int64_t>>& cell_topology)
 {
-  std::int32_t mpi_rank = MPI::rank(comm);
-  std::int32_t num_cell_vertices = mesh::num_cell_vertices(cell_types.front());
+  int mpi_rank = MPI::rank(comm);
+  int num_cell_vertices = mesh::num_cell_vertices(cell_types.front());
   std::int32_t num_cells = cell_topology.front().size() / num_cell_vertices;
   std::vector<std::int32_t> destinations(num_cells, mpi_rank);
   std::vector<std::int32_t> dest_offsets(num_cells + 1);
@@ -46,10 +38,10 @@ inline graph::AdjacencyList<std::int32_t> maintain_coarse_partitioner(
 /// @brief Refine with markers, optionally redistributing, and
 /// optionally calculating the parent-child relationships.
 ///
-/// @param[in] mesh Input mesh to be refined
-/// @param[in] edges Optional indices of the edges that should be split by this
-/// refinement, if optional is not set, a uniform refinement is performend, same
-/// behavior as passing a list of all indices.
+/// @param[in] mesh Input mesh to be refined.
+/// @param[in] edges Optional indices of the edges that should be split
+/// by this refinement, if optional is not set, a uniform refinement is
+/// performed, same behavior as passing a list of all indices.
 /// @param[in] partitioner partitioner to be used for the refined mesh
 /// @param[in] option Control the computation of parent facets, parent
 /// cells. If an option is unselected, an empty list is returned.
@@ -65,10 +57,9 @@ refine(const mesh::Mesh<T>& mesh,
 {
   auto topology = mesh.topology();
   assert(topology);
-
-  mesh::CellType cell_t = topology->cell_type();
-  if (!mesh::is_simplex(cell_t))
+  if (!mesh::is_simplex(topology->cell_type()))
     throw std::runtime_error("Refinement only defined for simplices");
+
   bool oned = topology->cell_type() == mesh::CellType::interval;
   auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
       = oned ? interval::compute_refinement_data(mesh, edges, option)
