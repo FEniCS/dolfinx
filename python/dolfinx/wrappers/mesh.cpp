@@ -239,6 +239,9 @@ void declare_mesh(nb::module_& m, std::string type)
       .def_prop_ro(
           "cmap", [](dolfinx::mesh::Geometry<T>& self) { return self.cmap(); },
           "The coordinate map")
+      .def(
+          "cmaps", [](dolfinx::mesh::Geometry<T>& self, int i)
+          { return self.cmap(i); }, "The ith coordinate map")
       .def_prop_ro(
           "input_global_indices",
           [](const dolfinx::mesh::Geometry<T>& self)
@@ -682,8 +685,6 @@ void mesh(nb::module_& m)
               entity_types.push_back(self.entity_types(i));
             return entity_types;
           })
-      .def("cell_name", [](const dolfinx::mesh::Topology& self)
-           { return dolfinx::mesh::to_string(self.cell_type()); })
       .def(
           "interprocess_facets",
           [](const dolfinx::mesh::Topology& self)
