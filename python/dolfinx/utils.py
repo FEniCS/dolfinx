@@ -211,7 +211,10 @@ class cffi_utils:
     except KeyError:
         pass
     except ImportError:
-        warnings.warn("Could not import numba, so cffi/numba complex types were not registered.", ImportWarning)
+        warnings.warn(
+            "Could not import numba, so cffi/numba complex types were not registered.",
+            ImportWarning,
+        )
 
     try:
         from petsc4py import PETSc as _PETSc
@@ -254,5 +257,6 @@ class cffi_utils:
         pass
     except ImportError:
         warnings.warn(
-            "Could not import petsc4py, so cffi/PETSc ABI mode interface was not created.", ImportWarning
+            "Could not import petsc4py, so cffi/PETSc ABI mode interface was not created.",
+            ImportWarning,
         )
