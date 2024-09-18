@@ -461,7 +461,9 @@ class Function(ufl.Coefficient):
         except TypeError:
             # u0 is callable
             assert callable(u0)
-            x = _cpp.fem.interpolation_coords(self._V.element, self._V.mesh.geometry, cells0)
+            x = _cpp.fem.interpolation_coords(
+                self._V.element, self._V.mesh.geometry._cpp_object, cells0
+            )
             self._cpp_object.interpolate(np.asarray(u0(x), dtype=self.dtype), cells0)  # type: ignore
 
     def copy(self) -> Function:
