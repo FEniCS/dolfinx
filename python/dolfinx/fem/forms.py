@@ -7,8 +7,8 @@
 from __future__ import annotations
 
 import collections
-import typing
 import types
+import typing
 from dataclasses import dataclass
 from itertools import chain
 
@@ -233,6 +233,7 @@ def form(
 
     form_compiler_options["scalar_type"] = dtype
     ftype = form_cpp_class(dtype)
+
     def _form(form):
         """Compile a single UFL form"""
         # Extract subdomain data from UFL form
