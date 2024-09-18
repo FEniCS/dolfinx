@@ -989,6 +989,7 @@ def exterior_facet_indices(topology: Topology) -> npt.NDArray[np.int32]:
     """
     return _cpp.mesh.exterior_facet_indices(topology._cpp_object)
 
+
 def create_geometry(
     index_map: _IndexMap,
     dofmap: npt.NDArray[np.int32],
