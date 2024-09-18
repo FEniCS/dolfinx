@@ -70,7 +70,7 @@ refine(const mesh::Mesh<T>& mesh,
                           mesh.geometry().cmap(), mesh.comm(),
                           std::move(new_vertex_coords), xshape, partitioner);
 
-  // Report the number of refined cellse
+  // Report the number of refined cells
   const int D = topology->dim();
   const std::int64_t n0 = topology->index_map(D)->size_global();
   const std::int64_t n1 = refined_mesh.topology()->index_map(D)->size_global();
