@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import collections
+import types
 import typing
 from dataclasses import dataclass
 from itertools import chain
@@ -47,6 +48,7 @@ class Form:
         ],
         ufcx_form=None,
         code: typing.Optional[str] = None,
+        module: typing.Optional[types.ModuleType] = None,
     ):
         """A finite element form
 
@@ -60,10 +62,12 @@ class Form:
             form: Compiled form object.
             ufcx_form: UFCx form
             code: Form C++ code
+            module: CFFI module
         """
         self._code = code
         self._ufcx_form = ufcx_form
         self._cpp_object = form
+        self._module = module
 
     @property
     def ufcx_form(self):
@@ -74,6 +78,11 @@ class Form:
     def code(self) -> typing.Union[str, None]:
         """C code strings"""
         return self._code
+
+    @property
+    def module(self) -> typing.Union[types.ModuleType, None]:
+        """The CFFI module"""
+        return self._module
 
     @property
     def rank(self) -> int:
@@ -296,7 +305,7 @@ def form(
             _entity_maps,
             mesh,
         )
-        return Form(f, ufcx_form, code)
+        return Form(f, ufcx_form, code, module)
 
     def _create_form(form):
         """Recursively convert ufl.Forms to dolfinx.fem.Form, otherwise
