@@ -685,8 +685,6 @@ void mesh(nb::module_& m)
               entity_types.push_back(self.entity_types(i));
             return entity_types;
           })
-      .def("cell_name", [](const dolfinx::mesh::Topology& self)
-           { return dolfinx::mesh::to_string(self.cell_type()); })
       .def(
           "interprocess_facets",
           [](const dolfinx::mesh::Topology& self)
