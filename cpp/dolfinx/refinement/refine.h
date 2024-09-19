@@ -21,7 +21,15 @@
 namespace dolfinx::refinement
 {
 
-/// TODO: Document function
+/// @brief Partitioner that maintains the regional destribution for a refined
+/// mesh. Meaning, process local data is just maintained and no redistribution
+/// happens.
+///
+/// @param[in] comm MPI Communicator
+/// @param[in] nparts Number of partitions (input has no effect)
+/// @param[in] cell_types Cell types in the mesh
+/// @param[in] cells Lists of cells of each cell type.
+/// @return Destination ranks for each cell on this process
 graph::AdjacencyList<std::int32_t> maintain_coarse_partitioner(
     MPI_Comm comm, int, const std::vector<mesh::CellType>& cell_types,
     const std::vector<std::span<const std::int64_t>>& cell_topology);
