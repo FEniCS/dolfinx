@@ -64,6 +64,7 @@ __all__ = [
     "entities_to_geometry",
     "create_geometry",
     "Geometry",
+    "Topology",
 ]
 
 
