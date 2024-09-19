@@ -155,7 +155,7 @@ def compute_integration_domains(
     Returns:
         List of integration entities
     """
-    return _compute_integration_domains(integral_type, topology, entities, dim)
+    return _compute_integration_domains(integral_type, topology._cpp_object, entities, dim)
 
 
 __all__ = [
