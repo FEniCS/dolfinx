@@ -294,7 +294,7 @@ def distribute_entity_data(
         corresponding values.
     """
     return _cpp.io.distribute_entity_data(
-        mesh.topology,
+        mesh.topology._cpp_object,
         mesh.geometry.input_global_indices,
         mesh.geometry.index_map().size_global,
         mesh.geometry.cmap.create_dof_layout(),
