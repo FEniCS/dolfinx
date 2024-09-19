@@ -439,7 +439,7 @@ def compute_incident_entities(
 
 
 def compute_midpoints(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
-    """Compute the midpoints of a set of mesh entities
+    """Compute the midpoints of a set of mesh entities.
 
     Args:
         mesh: The mesh.
