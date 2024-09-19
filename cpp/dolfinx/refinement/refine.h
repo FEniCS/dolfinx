@@ -31,7 +31,7 @@ namespace dolfinx::refinement
 /// @param[in] cells Lists of cells of each cell type.
 /// @return Destination ranks for each cell on this process
 graph::AdjacencyList<std::int32_t> maintain_coarse_partitioner(
-    MPI_Comm comm, int, const std::vector<mesh::CellType>& cell_types,
+    MPI_Comm comm, int nparts, const std::vector<mesh::CellType>& cell_types,
     const std::vector<std::span<const std::int64_t>>& cell_topology);
 
 /// @brief Refine with markers, optionally redistributing, and
