@@ -647,7 +647,7 @@ def functionspace(
 
     cpp_element = _create_dolfinx_element(mesh.comm, mesh.topology.cell_type, ufl_e, dtype)
 
-    cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology, cpp_element)
+    cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, cpp_element)
 
     assert np.issubdtype(
         mesh.geometry.x.dtype, cpp_element.dtype
