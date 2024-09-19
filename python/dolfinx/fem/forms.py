@@ -302,6 +302,8 @@ def form(
         """Recursively convert ufl.Forms to dolfinx.fem.Form, otherwise
         return form argument"""
         if isinstance(form, ufl.Form):
+            if form.empty():
+                return None
             return _form(form)
         elif isinstance(form, collections.abc.Iterable):
             return list(map(lambda sub_form: _create_form(sub_form), form))
