@@ -32,7 +32,7 @@ namespace dolfinx::refinement
 /// @return Destination ranks for each cell on this process
 graph::AdjacencyList<std::int32_t> maintain_coarse_partitioner(
     MPI_Comm comm, int nparts, const std::vector<mesh::CellType>& cell_types,
-    const std::vector<std::span<const std::int64_t>>& cell_topology);
+    const std::vector<std::span<const std::int64_t>>& cells);
 
 /// @brief Refine with markers, optionally redistributing, and
 /// optionally calculating the parent-child relationships.
