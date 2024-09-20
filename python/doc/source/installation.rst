@@ -6,22 +6,17 @@ Installation
 DOLFINx can be installed using various packages managers, run using
 containers, or built manually from source.
 
-`Spack <https://spack.io/>`_ is the recommended installation tool for
-high performance computers.
-
-
 Binaries
 --------
 
 See the `README.md <https://github.com/FEniCS/dolfinx/blob/main/README.md#installation>`_
-for instructions.
+for recommendations and instructions.
 
 Source
 ------
 
 Installation of DOLFINx requires installation of the C++ core. Most
 users will also want the Python interface.
-
 
 Dependencies
 ^^^^^^^^^^^^
@@ -40,8 +35,7 @@ C++ core
 
 - `CMake <https://cmake.org>`_ [build dependency]
 - HDF5 (with MPI support enabled)
-- MPI
-- `PETSc <https://petsc.org/>`_ [1]_
+- MPI supporting MPI version 3 or above.
 - `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_
 - `pugixml <https://pugixml.org/>`_
 - `spdlog <https://github.com/gabime/spdlog/>`_
@@ -54,8 +48,10 @@ From ParMETIS, KaHIP or PT-SCOTCH, ParMETIS is recommended.
 
 - `ADIOS2 <https://github.com/ornladios/ADIOS2/>`_ (additional parallel
   IO support)
+- `PETSc <https://petsc.org/>`_ [1]_
 - `SLEPc <https://slepc.upv.es/>`_ (eigenvalue computations)
 
+PETSc is optional but still recommended.
 
 Python interface
 ****************
@@ -69,15 +65,15 @@ Below are additional requirements for the Python interface.
 - mpi4py
 - nanobind (https://github.com/wjakob/nanobind)
 - NumPy (https://www.numpy.org)
-- petsc4py
 - scikit-build-core[pyproject] (https://scikit-build-core.readthedocs.io)
 
-.. rubric:: Suggested
+.. rubric:: Optional
 
-- pyvista (for plotting)
 - Numba
+- petsc4py (recommended)
+- pyamg
+- pyvista (for plotting)
 - slepc4py
-
 
 Building and installing
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -112,6 +108,8 @@ Python interface can be installed using::
 .. [1] Its is recommended to configure with ParMETIS, PT-SCOTCH,
        MUMPS and Hypre using
        ``--download-parmetis --download-ptscotch --download-suitesparse
-       --download-mumps --download-hypre``
+       --download-mumps --download-hypre``. macOS users should 
+       additionally configure MUMPS via PETSc with 
+       ``--download-mumps-avoid-mpi-in-place``.
 
 .. [2] PETSc can download and configure and build these libraries.
