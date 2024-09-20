@@ -41,14 +41,14 @@ The C++ core can be installed without Python.
 - `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_
 - `pugixml <https://pugixml.org/>`_
 - `spdlog <https://github.com/gabime/spdlog/>`_
-- UFCx [``ufcx.h``, provided by FFCx or UFCx C++ at ``ffcx/cmake/*``]
+- UFCx [``ufcx.h``, provided by FFCx Python package or UFCx CMake install at ``ffcx/cmake/*``]
 - At least one of ParMETIS [2]_, KaHIP or PT-SCOTCH [2]_
 
 From ParMETIS, KaHIP or PT-SCOTCH, ParMETIS is recommended.
 
 .. rubric:: Optional
 
-- `FFCx`
+- FFCx
 - `ADIOS2 <https://github.com/ornladios/ADIOS2/>`_ (additional parallel
   IO support)
 - `PETSc <https://petsc.org/>`_ [1]_
