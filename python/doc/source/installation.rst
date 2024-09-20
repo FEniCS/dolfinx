@@ -24,10 +24,12 @@ Dependencies
 C++ core
 ********
 
+The C++ core can be installed without Python.
+
 .. rubric:: Required
 
 - C++ compiler (supporting the C++20 standard)
-- `Basix <https://github.com/FEniCS/basix>`_
+- `Basix C++ core <https://github.com/FEniCS/basix>`_
 - `Boost <https://www.boost.org>`_, with the following compiled Boost
   components
 
@@ -35,33 +37,35 @@ C++ core
 
 - `CMake <https://cmake.org>`_ [build dependency]
 - HDF5 (with MPI support enabled)
-- MPI supporting MPI version 3 or above.
+- MPI supporting MPI standard version 3 or above.
 - `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_
 - `pugixml <https://pugixml.org/>`_
 - `spdlog <https://github.com/gabime/spdlog/>`_
-- UFCx [``ufcx.h``, provided by FFCx]
+- UFCx [``ufcx.h``, provided by FFCx or UFCx C++ at ``ffcx/cmake/*``]
 - At least one of ParMETIS [2]_, KaHIP or PT-SCOTCH [2]_
 
 From ParMETIS, KaHIP or PT-SCOTCH, ParMETIS is recommended.
 
 .. rubric:: Optional
 
+- `FFCx`
 - `ADIOS2 <https://github.com/ornladios/ADIOS2/>`_ (additional parallel
   IO support)
 - `PETSc <https://petsc.org/>`_ [1]_
 - `SLEPc <https://slepc.upv.es/>`_ (eigenvalue computations)
 
-PETSc is optional but still recommended.
+PETSc and FFCx are optional but still recommended.
 
 Python interface
 ****************
 
-Below are additional requirements for the Python interface.
+Below are additional requirements for the Python interface to the C++ core.
 
 .. rubric:: Required
 
 - Python
-- FFCx, UFL and Basix (https://github.com/FEniCS/).
+- Python cffi
+- FFCx, UFL and Basix Python interface.
 - mpi4py
 - nanobind (https://github.com/wjakob/nanobind)
 - NumPy (https://www.numpy.org)
