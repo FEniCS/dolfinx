@@ -271,7 +271,7 @@ compute_submap_indices(const IndexMap& imap,
         assert(it != global_idx_to_possible_owner.end() and it->first == idx);
         send_owners.push_back(it->second);
 
-        // If rank that sent this ghost is the owner, send all other ranks
+        // If rank that sent this ghost is the submap owner, send all other ranks
         if (it->second == dest[i])
         {
           // Find upper limit of recv index and pack all dest ranks for this
