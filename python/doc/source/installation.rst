@@ -24,7 +24,7 @@ Dependencies
 C++ core
 ********
 
-The C++ core can be installed without Python.
+The C++ core can be installed without Python as a dependency.
 
 .. rubric:: Required
 
