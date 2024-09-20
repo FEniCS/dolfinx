@@ -1,5 +1,5 @@
 // Copyright (C) 2015-2024 Chris Richardson, Garth N. Wells, Igor Baratta,
-// Joesep P. Dean and Jørgen S. Dokken
+// Joseph P. Dean and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
