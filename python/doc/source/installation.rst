@@ -18,6 +18,12 @@ Source
 Installation of DOLFINx requires installation of the C++ core. Most
 users will also want the Python interface.
 
+We do not provide step-by-step instructions for a complete source install as
+these often do not work consistently between different environments. Instead,
+we recommend consulting our `RedHat Dockerfile <https://github.com/FEniCS/dolfinx/blob/main/docker/Dockerfile.redhat>`_
+and `RedHat GitHub Actions workflow <https://github.com/FEniCS/dolfinx/blob/main/.github/workflows/redhat.yml>`_
+for a minimal set of tested steps that can be adapted to suit most Unix-like systems.
+
 Dependencies
 ^^^^^^^^^^^^
 
@@ -41,7 +47,7 @@ The C++ core can be installed without Python as a dependency.
 - `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_
 - `pugixml <https://pugixml.org/>`_
 - `spdlog <https://github.com/gabime/spdlog/>`_
-- UFCx [``ufcx.h``, provided by FFCx Python package or UFCx CMake install at ``ffcx/cmake/*``]
+- UFCx [``ufcx.h``, provided by FFCx package or FFCx UFCx CMake install at ``ffcx/cmake/*``]
 - At least one of ParMETIS [2]_, KaHIP or PT-SCOTCH [2]_
 
 From ParMETIS, KaHIP or PT-SCOTCH, ParMETIS is recommended.
