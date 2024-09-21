@@ -64,6 +64,7 @@ __all__ = [
     "entities_to_geometry",
     "create_geometry",
     "Geometry",
+    "Topology",
 ]
 
 
@@ -427,10 +428,10 @@ def compute_incident_entities(
     """Compute all entities of ``d1`` connected to ``entities`` of dimension ``d0``.
 
     Args:
-        topology: The topology
+        topology: The topology.
         entities: List of entities fo dimension ``d0``.
-        d0: Topological dimension
-        d1: Topological dimension to map to
+        d0: Topological dimension.
+        d1: Topological dimension to map to.
 
     Returns:
         Incident entity indices.
@@ -439,6 +440,16 @@ def compute_incident_entities(
 
 
 def compute_midpoints(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
+    """Compute the midpoints of a set of mesh entities.
+
+    Args:
+        mesh: The mesh.
+        dim: Topological dimension of the mesh entities to consider.
+        entities: Indices of entities in ``mesh`` to consider.
+
+    Returns:
+        Midpoints of the entities, shape ``(num_entities, 3)``.
+    """
     return _cpp.mesh.compute_midpoints(mesh._cpp_object, dim, entities)
 
 
