@@ -244,9 +244,6 @@ public:
       std::ranges::fill(values_local, 0);
       _fn(values_local.data(), coeff_cell, constant_data.data(),
           coord_dofs.data(), entity_index, nullptr);
-      for (auto vl : values_local)
-        std::cout << vl << " ";
-      std::cout << "----------------" << std::endl;
       post_dof_transform(values_local, cell_info, e, size0);
       for (std::size_t j = 0; j < values_local.size(); ++j)
         values[e * vshape[1] + j] = values_local[j];
