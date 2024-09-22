@@ -252,7 +252,7 @@ compute_submap_indices(const IndexMap& imap,
     std::vector<int> send_owners;
     send_owners.reserve(recv_indices.size());
     std::vector<int> new_owner_dest_ranks;
-    new_owner_dest_ranks.reserve(recv_indices.size());
+    new_owner_dest_ranks.reserve(1);
     std::vector<int> new_owner_dest_ranks_offsets(recv_sizes.size() + 1, 0);
     std::vector<std::int32_t> new_owner_dest_ranks_sizes(recv_sizes.size());
     new_owner_dest_ranks_sizes.reserve(1);
