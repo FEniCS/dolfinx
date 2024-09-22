@@ -138,7 +138,7 @@ void declare_objects(nb::module_& m, const std::string& type)
              std::size_t nrows = self.num_all_rows() * bs[0];
              std::size_t ncols = self.index_map(1)->size_global() * bs[1];
              auto dense = self.to_dense();
-             assert(nrows*ncols == dense.size());
+             assert(nrows * ncols == dense.size());
              return dolfinx_wrappers::as_nbarray(std::move(self.to_dense()),
                                                  {nrows, ncols});
            })

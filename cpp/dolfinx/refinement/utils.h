@@ -35,23 +35,21 @@ class IndexMap;
 
 namespace dolfinx::refinement
 {
-
 namespace impl
 {
-
 /// @brief  Compute global index
 std::int64_t local_to_global(std::int32_t local_index,
                              const common::IndexMap& map);
 
-/// Create geometric points of new Mesh, from current Mesh and a
+/// @brief Create geometric points of new Mesh, from current Mesh and a
 /// edge_to_vertex map listing the new local points (midpoints of those
-/// edges)
+/// edges).
 ///
-/// @param mesh Current mesh
+/// @param mesh Current mesh.
 /// @param local_edge_to_new_vertex A map from a local edge to the new
-/// global vertex index that will be inserted at its midpoint
+/// global vertex index that will be inserted at its midpoint.
 /// @return (1) Array of new (flattened) mesh geometry and (2) its
-/// multi-dimensional shape
+/// multi-dimensional shape.
 template <std::floating_point T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>> create_new_geometry(
     const mesh::Mesh<T>& mesh,

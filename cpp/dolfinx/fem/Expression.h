@@ -199,7 +199,7 @@ public:
       num_argument_dofs
           = _argument_function_space->dofmap()->element_dof_layout().num_dofs();
       auto element = _argument_function_space->element();
-
+      num_argument_dofs *= _argument_function_space->dofmap()->bs();
       assert(element);
       if (element->needs_dof_transformations())
       {
@@ -244,7 +244,6 @@ public:
       std::ranges::fill(values_local, 0);
       _fn(values_local.data(), coeff_cell, constant_data.data(),
           coord_dofs.data(), entity_index, nullptr);
-
       post_dof_transform(values_local, cell_info, e, size0);
       for (std::size_t j = 0; j < values_local.size(); ++j)
         values[e * vshape[1] + j] = values_local[j];

@@ -295,7 +295,7 @@ def model_to_mesh(
 
     # Create MeshTags for cells
     local_entities, local_values = distribute_entity_data(
-        mesh._cpp_object, mesh.topology.dim, cells, cell_values
+        mesh, mesh.topology.dim, cells, cell_values
     )
     mesh.topology.create_connectivity(mesh.topology.dim, 0)
     adj = _cpp.graph.AdjacencyList_int32(local_entities)
@@ -320,7 +320,7 @@ def model_to_mesh(
         marked_facets = marked_facets[:, gmsh_facet_perm]
 
         local_entities, local_values = distribute_entity_data(
-            mesh._cpp_object, tdim - 1, marked_facets, facet_values
+            mesh, tdim - 1, marked_facets, facet_values
         )
         mesh.topology.create_connectivity(topology.dim - 1, tdim)
         adj = _cpp.graph.AdjacencyList_int32(local_entities)

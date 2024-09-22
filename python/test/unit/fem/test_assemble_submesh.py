@@ -13,7 +13,7 @@ import pytest
 
 import ufl
 from dolfinx import default_scalar_type, fem, la
-from dolfinx.cpp.fem import compute_integration_domains
+from dolfinx.fem import compute_integration_domains
 from dolfinx.mesh import (
     GhostMode,
     compute_incident_entities,

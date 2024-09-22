@@ -232,6 +232,8 @@ def assemble_matrix(
             Degrees-of-freedom constrained by a boundary condition will
             have their rows/columns zeroed and the value ``diagonal``
             set on on the matrix diagonal.
+        diagonal: Value to set on the matrix diagonal for Dirichlet boundary
+            condition constrained degrees-of-freedom belonging to the same trial and test space.
         constants: Constants that appear in the form. If not provided,
             any required constants will be computed.
         coeffs: Coefficients that appear in the form. If not provided,
@@ -271,6 +273,8 @@ def _assemble_matrix_csr(
             Degrees-of-freedom constrained by a boundary condition will
             have their rows/columns zeroed and the value ``diagonal``
             set on on
+        diagonal: Value to set on the matrix diagonal for Dirichlet boundary
+            condition constrained degrees-of-freedom belonging to the same trial and test space.
         constants: Constants that appear in the form. If not provided,
             any required constants will be computed.
             the matrix diagonal.

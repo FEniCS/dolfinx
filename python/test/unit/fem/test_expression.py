@@ -486,3 +486,39 @@ def test_facet_expression(dtype):
 
         exact_expr = 2 * (midpoint[1] + midpoint[0]) * np.dot(grad_u, exact_n)
         assert np.allclose(values, exact_expr, atol=atol)
+
+
+def test_rank1_blocked():
+    """
+    Check that a test function with tensor shape is unrolled as
+    (num_cells, num_points, num_dofs, bs) when evaluated as an expression
+    """
+    mesh = dolfinx.mesh.create_unit_square(
+        MPI.COMM_SELF, 1, 1, cell_type=dolfinx.mesh.CellType.quadrilateral
+    )
+    value_shape = (3, 2)
+    V = dolfinx.fem.functionspace(mesh, ("Lagrange", 2, value_shape))
+    v = ufl.TestFunction(V)
+
+    points = np.array([[0.513, 0.317], [0.11, 0.38]], dtype=mesh.geometry.x.dtype)
+    expr = dolfinx.fem.Expression(v, points)
+
+    values = expr.eval(mesh, np.array([0], dtype=np.int32))[0]
+    # Tabulate returns (num_derivatives, num_points, num_dofs, value_size)
+    ref_values = V.element.basix_element.tabulate(1, points)[0]
+
+    num_points = points.shape[0]
+    num_dofs = V.dofmap.dof_layout.num_dofs
+    bs = V.dofmap.bs
+    assert len(values) == num_dofs * num_points * bs * bs
+    for i in range(num_points):
+        # Get basis functions for all blocks for ith point
+        point_values = values[i * num_dofs * bs * bs : (i + 1) * num_dofs * bs * bs]
+        for j in range(bs):
+            block_values = point_values[j * num_dofs * bs : (j + 1) * num_dofs * bs]
+            for k in range(bs):
+                # Test functions are evaluated as a vector function
+                if j != k:
+                    np.testing.assert_allclose(block_values[k::bs], 0.0)
+                else:
+                    np.testing.assert_allclose(block_values[k::bs], ref_values[i].flatten())

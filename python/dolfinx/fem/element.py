@@ -16,7 +16,7 @@ from dolfinx import cpp as _cpp
 
 
 class CoordinateElement:
-    """Coordinate element describing the geometry map for mesh cells"""
+    """Coordinate element describing the geometry map for mesh cells."""
 
     _cpp_object: typing.Union[
         _cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64
@@ -45,6 +45,75 @@ class CoordinateElement:
     def dtype(self) -> np.dtype:
         """Scalar type for the coordinate element."""
         return np.dtype(self._cpp_object.dtype)
+
+    @property
+    def dim(self) -> int:
+        """Dimension of the coordinate element space.
+
+        This is number of basis functions that span the coordinate
+        space, e.g., for a linear triangle cell the dimension will be 3.
+        """
+        return self._cpp_object.dim
+
+    def create_dof_layout(self) -> _cpp.fem.ElementDofLayout:
+        """Compute and return the dof layout"""
+        return self._cpp_object.create_dof_layout()
+
+    def push_forward(
+        self,
+        X: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
+        cell_geometry: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
+    ) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
+        """Push points on the reference cell forward to the physical cell.
+
+        Args:
+            X: Coordinates of points on the reference cell,
+                ``shape=(num_points, topological_dimension)``.
+            cell_geometry: Coordinate 'degrees-of-freedom' (nodes) of
+                the cell, ``shape=(num_geometry_basis_functions,
+                geometrical_dimension)``. Can be created by accessing
+                ``geometry.x[geometry.dofmap.cell_dofs(i)]``,
+
+        Returns:
+            Physical coordinates of the points reference points ``X``.
+        """
+        return self._cpp_object.push_forward(X, cell_geometry)
+
+    def pull_back(
+        self,
+        x: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
+        cell_geometry: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
+    ) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
+        """Pull points on the physical cell back to the reference cell.
+
+        For non-affine cells, the pull-back is a nonlinear operation.
+
+        Args:
+            x: Physical coordinates to pull back to the reference cells,
+                ``shape=(num_points, geometrical_dimension)``.
+            cell_geometry: Physical coordinates describing the cell,
+                shape ``(num_of_geometry_basis_functions, geometrical_dimension)``
+                They can be created by accessing `geometry.x[geometry.dofmap.cell_dofs(i)]`,
+
+        Returns:
+            Reference coordinates of the physical points ``x``.
+        """
+        return self._cpp_object.pull_back(x, cell_geometry)
+
+    @property
+    def variant(self) -> int:
+        """Lagrange variant of the coordinate element.
+
+        Note:
+            The return type is an integer. A Basix enum can be created using
+            ``basix.LagrangeVariant(value)``.
+        """
+        return self._cpp_object.variant
+
+    @property
+    def degree(self) -> int:
+        """Polynomial degree of the coordinate element."""
+        return self._cpp_object.degree
 
 
 @singledispatch

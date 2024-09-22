@@ -242,7 +242,7 @@ def test_create_entities():
 
     quad_v = mesh.topology.connectivity((2, qi), (0, 0))
     tri_v = mesh.topology.connectivity((2, ti), (0, 0))
-    ims = mesh.topology.index_maps(2)
+    ims = mesh.topology._cpp_object.index_maps(2)
     assert len(ims) == 2
     assert ims[qi].size_global == 32
     assert len(quad_v.links(0)) == 4

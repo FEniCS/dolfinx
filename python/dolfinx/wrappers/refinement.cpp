@@ -6,18 +6,22 @@
 
 #include "array.h"
 #include <concepts>
+#include <cstdint>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/refinement/interval.h>
+#include <dolfinx/refinement/option.h>
 #include <dolfinx/refinement/plaza.h>
 #include <dolfinx/refinement/refine.h>
 #include <dolfinx/refinement/utils.h>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <optional>
+#include <span>
 
 namespace nb = nanobind;
 
@@ -27,75 +31,40 @@ namespace dolfinx_wrappers
 template <std::floating_point T>
 void export_refinement_with_variable_mesh_type(nb::module_& m)
 {
-  m.def("refine",
-        nb::overload_cast<const dolfinx::mesh::Mesh<T>&, bool>(
-            &dolfinx::refinement::refine<T>),
-        nb::arg("mesh"), nb::arg("redistribute") = true);
   m.def(
       "refine",
       [](const dolfinx::mesh::Mesh<T>& mesh,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> edges,
-         bool redistribute)
+         std::optional<
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+             edges,
+         bool redistribute, dolfinx::mesh::GhostMode ghost_mode,
+         dolfinx::refinement::Option option)
       {
-        return dolfinx::refinement::refine(
-            mesh, std::span(edges.data(), edges.size()), redistribute);
-      },
-      nb::arg("mesh"), nb::arg("edges"), nb::arg("redistribute") = true);
+        std::optional<std::span<const std::int32_t>> cpp_edges(std::nullopt);
+        if (edges.has_value())
+        {
+          cpp_edges.emplace(
+              std::span(edges.value().data(), edges.value().size()));
+        }
 
-  m.def(
-      "refine_interval",
-      [](const dolfinx::mesh::Mesh<T>& mesh, bool redistribute,
-         dolfinx::mesh::GhostMode ghost_mode)
-      {
-        auto [mesh_refined, parent_cells] = dolfinx::refinement::refine_interval(
-            mesh, std::nullopt, redistribute, ghost_mode);
-        return std::tuple(std::move(mesh_refined),
-                          as_nbarray(std::move(parent_cells)));
-      },
-      nb::arg("mesh"), nb::arg("redistribute"), nb::arg("ghost_mode"));
+        auto [mesh1, cell, facet] = dolfinx::refinement::refine(
+            mesh, cpp_edges, redistribute, ghost_mode, option);
 
-  m.def(
-      "refine_interval",
-      [](const dolfinx::mesh::Mesh<T>& mesh,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
-         bool redistribute, dolfinx::mesh::GhostMode ghost_mode)
-      {
-        auto [mesh_refined, parent_cells]
-            = dolfinx::refinement::refine_interval(
-                mesh, std::make_optional(std::span(cells.data(), cells.size())),
-                redistribute, ghost_mode);
-        return std::tuple(std::move(mesh_refined),
-                          as_nbarray(std::move(parent_cells)));
-      },
-      nb::arg("mesh"), nb::arg("edges"), nb::arg("redistribute"),
-      nb::arg("ghost_mode"));
+        std::optional<nb::ndarray<std::int32_t, nb::numpy>> python_cell(
+            std::nullopt);
+        if (cell.has_value())
+          python_cell.emplace(as_nbarray(std::move(cell.value())));
 
-  m.def(
-      "refine_plaza",
-      [](const dolfinx::mesh::Mesh<T>& mesh0, bool redistribute,
-         dolfinx::refinement::plaza::Option option)
-      {
-        auto [mesh1, cell, facet]
-            = dolfinx::refinement::plaza::refine(mesh0, redistribute, option);
-        return std::tuple{std::move(mesh1), as_nbarray(std::move(cell)),
-                          as_nbarray(std::move(facet))};
-      },
-      nb::arg("mesh"), nb::arg("redistribute"), nb::arg("option"));
+        std::optional<nb::ndarray<std::int8_t, nb::numpy>> python_facet(
+            std::nullopt);
+        if (facet.has_value())
+          python_facet.emplace(as_nbarray(std::move(facet.value())));
 
-  m.def(
-      "refine_plaza",
-      [](const dolfinx::mesh::Mesh<T>& mesh0,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> edges,
-         bool redistribute, dolfinx::refinement::plaza::Option option)
-      {
-        auto [mesh1, cell, facet] = dolfinx::refinement::plaza::refine(
-            mesh0, std::span<const std::int32_t>(edges.data(), edges.size()),
-            redistribute, option);
-        return std::tuple{std::move(mesh1), as_nbarray(std::move(cell)),
-                          as_nbarray(std::move(facet))};
+        return std::tuple{std::move(mesh1), std::move(python_cell),
+                          std::move(python_facet)};
       },
-      nb::arg("mesh"), nb::arg("edges"), nb::arg("redistribute"),
-      nb::arg("option"));
+      nb::arg("mesh"), nb::arg("edges") = nb::none(), nb::arg("redistribute"),
+      nb::arg("ghost_mode"), nb::arg("option"));
 }
 
 void refinement(nb::module_& m)
@@ -103,12 +72,12 @@ void refinement(nb::module_& m)
   export_refinement_with_variable_mesh_type<float>(m);
   export_refinement_with_variable_mesh_type<double>(m);
 
-  nb::enum_<dolfinx::refinement::plaza::Option>(m, "RefinementOption")
-      .value("none", dolfinx::refinement::plaza::Option::none)
-      .value("parent_facet", dolfinx::refinement::plaza::Option::parent_facet)
-      .value("parent_cell", dolfinx::refinement::plaza::Option::parent_cell)
+  nb::enum_<dolfinx::refinement::Option>(m, "RefinementOption")
+      .value("none", dolfinx::refinement::Option::none)
+      .value("parent_facet", dolfinx::refinement::Option::parent_facet)
+      .value("parent_cell", dolfinx::refinement::Option::parent_cell)
       .value("parent_cell_and_facet",
-             dolfinx::refinement::plaza::Option::parent_cell_and_facet);
+             dolfinx::refinement::Option::parent_cell_and_facet);
   m.def(
       "transfer_facet_meshtag",
       [](const dolfinx::mesh::MeshTags<std::int32_t>& parent_meshtag,
