@@ -287,6 +287,8 @@ compute_submap_indices(const IndexMap& imap,
         }
       }
       // Remove duplicate new dest ranks from recv process
+      // The new owning process can have taken ownership of multiple
+      // indices from the same rank.
       auto dest_begin
           = new_owner_dest_ranks.begin() + new_owner_dest_ranks_offsets[i];
       std::size_t num_unique_dest_ranks = 0;
