@@ -250,7 +250,9 @@ compute_submap_indices(const IndexMap& imap,
     std::ranges::sort(global_idx_to_possible_owner);
 
     // Choose the submap owner for each index in `recv_indices` and pack
-    // destination ranks for each process that has received new indices
+    // destination ranks for each process that has received new indices.
+    // During ownership determination, we know what other processes
+    // requires this index, and add them to the destination set.
     std::vector<int> send_owners;
     send_owners.reserve(1);
     std::vector<int> new_owner_dest_ranks;
@@ -287,6 +289,8 @@ compute_submap_indices(const IndexMap& imap,
         }
       }
       // Remove duplicate new dest ranks from recv process
+      // The new owning process can have taken ownership of multiple
+      // indices from the same rank.
       auto dest_begin
           = new_owner_dest_ranks.begin() + new_owner_dest_ranks_offsets[i];
       std::size_t num_unique_dest_ranks = 0;
