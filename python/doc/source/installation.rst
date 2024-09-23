@@ -18,11 +18,13 @@ Source
 Installation of DOLFINx requires installation of the C++ core. Most
 users will also want the Python interface.
 
-We do not provide step-by-step instructions for a complete source install as
-these often do not work consistently between different environments. Instead,
-we recommend consulting our `RedHat Dockerfile <https://github.com/FEniCS/dolfinx/blob/main/docker/Dockerfile.redhat>`_
-and `RedHat GitHub Actions workflow <https://github.com/FEniCS/dolfinx/blob/main/.github/workflows/redhat.yml>`_
-for a minimal set of tested steps that can be adapted to suit most Unix-like systems.
+An example of how to build DOLFINx and its dependencies can be found in
+our `RedHat Dockerfile
+<https://github.com/FEniCS/dolfinx/blob/main/docker/Dockerfile.redhat>`_
+and `RedHat GitHub Actions workflow
+<https://github.com/FEniCS/dolfinx/blob/main/.github/workflows/redhat.yml>`_
+for a minimal set of tested steps that can be adapted to suit most
+Unix-like systems.
 
 Dependencies
 ^^^^^^^^^^^^
@@ -54,33 +56,40 @@ From ParMETIS, KaHIP or PT-SCOTCH, ParMETIS is recommended.
 
 .. rubric:: Optional
 
-- FFCx
 - `ADIOS2 <https://github.com/ornladios/ADIOS2/>`_ (additional parallel
   IO support)
 - `PETSc <https://petsc.org/>`_ [1]_
 - `SLEPc <https://slepc.upv.es/>`_ (eigenvalue computations)
+
+.. rubric:: Optional for demos
+
+- FFCx
 
 PETSc and FFCx are optional but still recommended.
 
 Python interface
 ****************
 
-Below are additional requirements for the Python interface to the C++ core.
+Below are additional requirements for the Python interface to the C++
+core.
 
 .. rubric:: Required
 
 - Python
-- Python cffi
+- Python cffi (https://cffi.readthedocs.io/)
 - FFCx, UFL and Basix Python interface.
-- mpi4py
+- mpi4py (https://mpi4py.readthedocs.io/)
 - nanobind (https://github.com/wjakob/nanobind)
 - NumPy (https://www.numpy.org)
 - scikit-build-core[pyproject] (https://scikit-build-core.readthedocs.io)
 
 .. rubric:: Optional
 
-- Numba
 - petsc4py (recommended)
+
+.. rubric:: Optional for demos
+
+- Numba
 - pyamg
 - pyvista (for plotting)
 - slepc4py
@@ -118,8 +127,8 @@ Python interface can be installed using::
 .. [1] Its is recommended to configure with ParMETIS, PT-SCOTCH,
        MUMPS and Hypre using
        ``--download-parmetis --download-ptscotch --download-suitesparse
-       --download-mumps --download-hypre``. macOS users should 
-       additionally configure MUMPS via PETSc with 
+       --download-mumps --download-hypre``. macOS users should
+       additionally configure MUMPS via PETSc with
        ``--download-mumps-avoid-mpi-in-place``.
 
 .. [2] PETSc can download and configure and build these libraries.
