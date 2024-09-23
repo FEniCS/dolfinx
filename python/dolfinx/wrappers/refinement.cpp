@@ -4,20 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "MPICommWrapper.h"
+#include "array.h"
 #include <concepts>
 #include <cstdint>
-#include <functional>
-#include <optional>
-#include <span>
-
-#include <nanobind/nanobind.h>
-#include <nanobind/ndarray.h>
-#include <nanobind/stl/array.h>
-#include <nanobind/stl/optional.h>
-#include <nanobind/stl/shared_ptr.h>
-#include <nanobind/stl/tuple.h>
-#include <nanobind/stl/vector.h>
-
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/refinement/interval.h>
@@ -25,18 +15,23 @@
 #include <dolfinx/refinement/plaza.h>
 #include <dolfinx/refinement/refine.h>
 #include <dolfinx/refinement/utils.h>
-
-#include "MPICommWrapper.h"
-#include "array.h"
+#include <functional>
+#include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
+#include <nanobind/stl/array.h>
+#include <nanobind/stl/optional.h>
+#include <nanobind/stl/shared_ptr.h>
+#include <nanobind/stl/tuple.h>
+#include <nanobind/stl/vector.h>
+#include <optional>
+#include <span>
 
 namespace nb = nanobind;
 
 namespace dolfinx_wrappers
 {
-
 namespace
 {
-
 using PythonCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
         dolfinx_wrappers::MPICommWrapper, int,

@@ -20,19 +20,19 @@
 
 namespace dolfinx::refinement
 {
-
-/// @brief Partitioner that maintains the regional destribution for a refined
-/// mesh. Meaning, process local data is just maintained and no redistribution
-/// happens.
+/// @brief Partitioner that maintains the regional distribution for a
+/// refined mesh. Meaning, process local data is just maintained and no
+/// redistribution happens.
 ///
 /// @param[in] comm MPI Communicator
 /// @param[in] nparts Number of partitions (input has no effect)
 /// @param[in] cell_types Cell types in the mesh
 /// @param[in] cells Lists of cells of each cell type.
 /// @return Destination ranks for each cell on this process
-graph::AdjacencyList<std::int32_t> maintain_coarse_partitioner(
-    MPI_Comm comm, int nparts, const std::vector<mesh::CellType>& cell_types,
-    const std::vector<std::span<const std::int64_t>>& cells);
+graph::AdjacencyList<std::int32_t>
+maintain_coarse_partitioner(MPI_Comm comm, int nparts,
+                            std::vector<mesh::CellType> cell_types,
+                            std::vector<std::span<const std::int64_t>> cells);
 
 /// @brief Refine with markers, optionally redistributing, and
 /// optionally calculating the parent-child relationships.
