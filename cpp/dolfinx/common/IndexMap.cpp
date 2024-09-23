@@ -195,25 +195,27 @@ compute_submap_indices(const IndexMap& imap,
           std::span(is_in_submap.cbegin() + imap.size_local(),
                     is_in_submap.cend()));
 
-  // --- Step 2 ---: Create a map from the indices in `recv_indices` (i.e.
-  // indices owned by this process that are in `indices` on other processes) to
-  // their owner in the submap. This is required since not all indices in
-  // `recv_indices` will necessarily be in `indices` on this process, and thus
-  // other processes must own them in the submap.
-  // If ownership of received index doesn't change, then this process has the
-  // receiving rank as a destination
+  // --- Step 2 ---: Create a map from the indices in `recv_indices`
+  // (i.e. indices owned by this process that are in `indices` on other
+  // processes) to their owner in the submap. This is required since not
+  // all indices in `recv_indices` will necessarily be in `indices` on
+  // this process, and thus other processes must own them in the submap.
+  // If ownership of received index doesn't change, then this process
+  // has the receiving rank as a destination
   std::vector<int> recv_owners(send_disp.back());
   std::vector<int> submap_dest;
-  submap_dest.reserve(dest.size() + 1);
+  submap_dest.reserve(1);
   const int rank = dolfinx::MPI::rank(imap.comm());
   {
-    // Flag to track if the owner of any indices have changed in the submap
+    // Flag to track if the owner of any indices have changed in the
+    // submap
     bool owners_changed = false;
 
     // Create a map from (global) indices in `recv_indices` to a list of
     // processes that can own them in the submap.
     std::vector<std::pair<std::int64_t, int>> global_idx_to_possible_owner;
     const std::array local_range = imap.local_range();
+
     // Loop through the received indices
     for (std::size_t i = 0; i < recv_disp.size() - 1; ++i)
     {
@@ -226,8 +228,8 @@ compute_submap_indices(const IndexMap& imap,
         assert(idx_local >= 0);
         assert(idx_local < local_range[1]);
 
-        // Check if index is included in the submap on this process. If so,
-        // this process remains its owner in the submap. Otherwise,
+        // Check if index is included in the submap on this process. If
+        // so, this process remains its owner in the submap. Otherwise,
         // add the process that sent it to the list of possible owners.
         if (is_in_submap[idx_local])
         {
@@ -247,16 +249,15 @@ compute_submap_indices(const IndexMap& imap,
 
     std::ranges::sort(global_idx_to_possible_owner);
 
-    // Choose the submap owner for each index in `recv_indices`
-    // and pack destination ranks for each process that has received new indices
+    // Choose the submap owner for each index in `recv_indices` and pack
+    // destination ranks for each process that has received new indices
     std::vector<int> send_owners;
-    send_owners.reserve(recv_indices.size());
+    send_owners.reserve(1);
     std::vector<int> new_owner_dest_ranks;
     new_owner_dest_ranks.reserve(1);
     std::vector<int> new_owner_dest_ranks_offsets(recv_sizes.size() + 1, 0);
     std::vector<std::int32_t> new_owner_dest_ranks_sizes(recv_sizes.size());
     new_owner_dest_ranks_sizes.reserve(1);
-
     for (std::size_t i = 0; i < recv_sizes.size(); ++i)
     {
       for (int j = recv_disp[i]; j < recv_disp[i + 1]; ++j)
@@ -267,21 +268,22 @@ compute_submap_indices(const IndexMap& imap,
         // load balancing, though the impact is probably only very small
         auto it = std::ranges::lower_bound(global_idx_to_possible_owner, idx,
                                            std::ranges::less(),
-                                           [](auto& e) { return e.first; });
+                                           [](auto e) { return e.first; });
         assert(it != global_idx_to_possible_owner.end() and it->first == idx);
         send_owners.push_back(it->second);
 
-        // If rank that sent this ghost is the submap owner, send all other ranks
+        // If rank that sent this ghost is the submap owner, send all
+        // other ranks
         if (it->second == dest[i])
         {
-          // Find upper limit of recv index and pack all dest ranks for this
-          // process
+          // Find upper limit of recv index and pack all dest ranks for
+          // this process
           auto it_upper = std::ranges::upper_bound(
               it, global_idx_to_possible_owner.end(), idx, std::ranges::less(),
-              [](auto& e) { return e.first; });
+              [](auto e) { return e.first; });
           std::transform(it + 1, it_upper,
                          std::back_inserter(new_owner_dest_ranks),
-                         [](auto& e) { return e.second; });
+                         [](auto e) { return e.second; });
         }
       }
       // Remove duplicate new dest ranks from recv process
