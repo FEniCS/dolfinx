@@ -379,7 +379,7 @@ compute_submap_ghost_indices(std::span<const int> submap_src,
                              std::span<const std::int32_t> submap_owned,
                              std::span<const std::int64_t> submap_ghosts_global,
                              std::span<const std::int32_t> submap_ghost_owners,
-                             int submap_offset, const IndexMap& imap)
+                             std::int64_t submap_offset, const IndexMap& imap)
 {
   // --- Step 1 ---: Send global ghost indices (w.r.t. original imap) to
   // owning rank
@@ -397,15 +397,15 @@ compute_submap_ghost_indices(std::span<const int> submap_src,
   std::vector<std::int64_t> send_gidx;
   {
     send_gidx.reserve(recv_indices.size());
-    // NOTE: Received indices are owned by this process in the submap, but not
-    // necessarily in the original imap, so we must use global_to_local to
-    // convert rather than subtracting local_range[0]
+    // NOTE: Received indices are owned by this process in the submap,
+    // but not necessarily in the original imap, so we must use
+    // global_to_local to convert rather than subtracting local_range[0]
     // TODO Convert recv_indices or submap_owned?
-    std::vector<int32_t> recv_indices_local(recv_indices.size());
+    std::vector<std::int32_t> recv_indices_local(recv_indices.size());
     imap.global_to_local(recv_indices, recv_indices_local);
 
     // Compute submap global index
-    for (auto idx : recv_indices_local)
+    for (std::int32_t idx : recv_indices_local)
     {
       // Could avoid search by creating look-up array
       auto it = std::ranges::lower_bound(submap_owned, idx);
