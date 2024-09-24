@@ -200,7 +200,7 @@ def generate_mesh_wire(
     gmsh.model.addPhysicalGroup(dim, y_group, tag=pml_tag + 2)
 
     # Marker interior surface in bkg group
-    boundaries: list[np.tynp.ping.NDArray[np.int32]] = []
+    boundaries: list[np.typing.NDArray[np.int32]] = []
     for tag in bkg_group:
         boundary_pairs = gmsh.model.get_boundary([(dim, tag)], oriented=False)
         boundaries.append(np.asarray([pair[1] for pair in boundary_pairs], dtype=np.int32))
@@ -697,12 +697,12 @@ a, L = ufl.lhs(F), ufl.rhs(F)
 
 # For factorisation prefer superlu_dist, then MUMPS, then default
 sys = PETSc.Sys()  # type: ignore
-if sys.hasExternalPackage("superlu_dist"):
+if sys.hasExternalPackage("superlu_dist"):  # type: ignore
     mat_factor_backend = "superlu_dist"
-elif sys.hasExternalPackage("mumps"):
+elif sys.hasExternalPackage("mumps"):  # type: ignore
     mat_factor_backend = "mumps"
 else:
-    if mesh.comm > 1:
+    if msh.comm > 1:
         raise RuntimeError("This demo requires a parallel linear algebra backend.")
     else:
         mat_factor_backend = "petsc"

@@ -29,12 +29,12 @@ try:
 
     # The time-harmonic Maxwell equation is complex-valued PDE. PETSc
     # must therefore have compiled with complex scalars.
-    if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
+    if not np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
         print("Demo can only be executed when PETSc using complex scalars.")
         exit(0)
 
-    scalar_type = PETSc.ScalarType
-    real_type = PETSc.RealType
+    scalar_type = PETSc.ScalarType  # type: ignore
+    real_type = PETSc.RealType  # type: ignore
 
     if not dolfinx.has_petsc:
         print("This demo requires DOLFINx to be compiled with PETSc enabled.")
@@ -649,12 +649,12 @@ for m in m_list:
     )
     a, L = ufl.lhs(F), ufl.rhs(F)
     sys = PETSc.Sys()  # type: ignore
-    if sys.hasExternalPackage("superlu_dist"):
+    if sys.hasExternalPackage("superlu_dist"):  # type: ignore
         mat_factor_backend = "superlu_dist"
-    elif sys.hasExternalPackage("mumps"):
+    elif sys.hasExternalPackage("mumps"):  # type: ignore
         mat_factor_backend = "mumps"
     else:
-        if mesh.comm > 1:
+        if msh.comm > 1:
             raise RuntimeError("This demo requires a parallel linear algebra backend.")
         else:
             mat_factor_backend = "petsc"
