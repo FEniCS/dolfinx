@@ -20,7 +20,6 @@ using namespace dolfinx::common;
 
 namespace
 {
-
 /// @brief Given source ranks (ranks that own indices ghosted by the
 /// calling rank), compute ranks that ghost indices owned by the calling
 /// rank.
@@ -157,6 +156,7 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
 /// Given an index map and a subset of local indices (can be owned or
 /// ghost but must be unique and sorted), compute the owned, ghost and
 /// ghost owners in the submap.
+///
 /// @param[in] imap An index map.
 /// @param[in] indices List of entity indices (indices local to the
 /// process).
@@ -176,9 +176,6 @@ compute_submap_indices(const IndexMap& imap,
                        std::span<const std::int32_t> indices,
                        IndexMapOrder order, bool allow_owner_change)
 {
-  std::span<const int> src = imap.src();
-  std::span<const int> dest = imap.dest();
-
   // Create lookup array to determine if an index is in the sub-map
   std::vector<std::uint8_t> is_in_submap(imap.size_local() + imap.num_ghosts(),
                                          0);
@@ -217,6 +214,7 @@ compute_submap_indices(const IndexMap& imap,
     const std::array local_range = imap.local_range();
 
     // Loop through the received indices
+    std::span<const int> dest = imap.dest();
     for (std::size_t i = 0; i < recv_disp.size() - 1; ++i)
     {
       for (int j = recv_disp[i]; j < recv_disp[i + 1]; ++j)
@@ -311,8 +309,8 @@ compute_submap_indices(const IndexMap& imap,
     // Create neighbourhood comm (owner -> ghost)
     MPI_Comm comm1;
     int ierr = MPI_Dist_graph_create_adjacent(
-        imap.comm(), src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
-        dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+        imap.comm(), imap.src().size(), imap.src().data(), MPI_UNWEIGHTED,
+        dest.size(), dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
     dolfinx::MPI::check_error(imap.comm(), ierr);
 
     // Send the data
@@ -323,14 +321,14 @@ compute_submap_indices(const IndexMap& imap,
     dolfinx::MPI::check_error(imap.comm(), ierr);
 
     // Communicate number of received dest_ranks from each process
-    std::vector<int> recv_dest_ranks_sizes(src.size());
+    std::vector<int> recv_dest_ranks_sizes(imap.src().size());
     recv_dest_ranks_sizes.reserve(1);
     ierr = MPI_Neighbor_alltoall(new_owner_dest_ranks_sizes.data(), 1, MPI_INT,
                                  recv_dest_ranks_sizes.data(), 1, MPI_INT,
                                  comm1);
     dolfinx::MPI::check_error(imap.comm(), ierr);
     // Communicate new dest ranks
-    std::vector<int> recv_dest_rank_disp(src.size() + 1, 0);
+    std::vector<int> recv_dest_rank_disp(imap.src().size() + 1, 0);
     std::partial_sum(recv_dest_ranks_sizes.begin(), recv_dest_ranks_sizes.end(),
                      std::next(recv_dest_rank_disp.begin()));
     std::vector<int> recv_dest_ranks(recv_dest_rank_disp.back());
@@ -457,7 +455,7 @@ compute_submap_ghost_indices(std::span<const int> submap_src,
                              std::span<const std::int32_t> submap_owned,
                              std::span<const std::int64_t> submap_ghosts_global,
                              std::span<const std::int32_t> submap_ghost_owners,
-                             int submap_offset, const IndexMap& imap)
+                             std::int64_t submap_offset, const IndexMap& imap)
 {
   // --- Step 1 ---: Send global ghost indices (w.r.t. original imap) to
   // owning rank
@@ -475,15 +473,15 @@ compute_submap_ghost_indices(std::span<const int> submap_src,
   std::vector<std::int64_t> send_gidx;
   {
     send_gidx.reserve(recv_indices.size());
-    // NOTE: Received indices are owned by this process in the submap, but not
-    // necessarily in the original imap, so we must use global_to_local to
-    // convert rather than subtracting local_range[0]
-    // TODO Convert recv_indices or submap_owned?
-    std::vector<int32_t> recv_indices_local(recv_indices.size());
+    // NOTE: Received indices are owned by this process in the submap,
+    // but not necessarily in the original imap, so we must use
+    // global_to_local to convert rather than subtracting local_range[0]
+    // TODO: Convert recv_indices or submap_owned?
+    std::vector<std::int32_t> recv_indices_local(recv_indices.size());
     imap.global_to_local(recv_indices, recv_indices_local);
 
     // Compute submap global index
-    for (auto idx : recv_indices_local)
+    for (std::int32_t idx : recv_indices_local)
     {
       // Could avoid search by creating look-up array
       auto it = std::ranges::lower_bound(submap_owned, idx);
@@ -493,7 +491,8 @@ compute_submap_ghost_indices(std::span<const int> submap_src,
     }
   }
 
-  // --- Step 3 ---: Send submap global indices to process that ghost them
+  // --- Step 3 ---: Send submap global indices to process that ghost
+  // them
 
   std::vector<std::int64_t> recv_gidx(send_disp.back());
   {
