@@ -27,12 +27,6 @@ try:
 
     import dolfinx
 
-    if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
-        print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
-        # Note: when PETSc.IntType == np.int32, superlu_dist is used
-        # rather than MUMPS and does not trigger memory failures.
-        exit(0)
-
     # The time-harmonic Maxwell equation is complex-valued PDE. PETSc
     # must therefore have compiled with complex scalars.
     if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
@@ -463,7 +457,10 @@ if MPI.COMM_WORLD.rank == 0:
     )
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
-msh, cell_tags, facet_tags = io.gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
+partitioner = dolfinx.cpp.mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.shared_facet)
+msh, cell_tags, facet_tags = io.gmshio.model_to_mesh(
+    model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner
+)
 
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()
@@ -651,9 +648,28 @@ for m in m_list:
         + k0**2 * ufl.inner(eps_pml * Es_m, v_m) * rho * dPml
     )
     a, L = ufl.lhs(F), ufl.rhs(F)
-
-    problem = LinearProblem(a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+    sys = PETSc.Sys()  # type: ignore
+    if sys.hasExternalPackage("superlu_dist"):
+        mat_factor_backend = "superlu_dist"
+    elif sys.hasExternalPackage("mumps"):
+        mat_factor_backend = "mumps"
+    else:
+        if mesh.comm > 1:
+            raise RuntimeError("This demo requires a parallel linear algebra backend.")
+        else:
+            mat_factor_backend = "petsc"
+    problem = LinearProblem(
+        a,
+        L,
+        bcs=[],
+        petsc_options={
+            "ksp_type": "preonly",
+            "pc_type": "lu",
+            "pc_factor_mat_solver_type": mat_factor_backend,
+        },
+    )
     Esh_m = problem.solve()
+    assert problem.solver.getConvergedReason() > 0, "Solver did not converge!"
 
     # Scattered magnetic field
     Hsh_m = -1j * curl_axis(Esh_m, m, rho) / (Z0 * k0)
