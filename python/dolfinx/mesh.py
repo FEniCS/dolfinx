@@ -557,7 +557,9 @@ def refine(
     mesh1, parent_cell, parent_facet = _cpp.refinement.refine(
         mesh._cpp_object, edges, redistribute, ghost_mode, option
     )
-    return Mesh(mesh1, mesh._ufl_domain), parent_cell, parent_facet
+    # Create new ufl domain as it will carry a reference to the C++ mesh in the ufl_cargo
+    ufl_domain = ufl.Mesh(mesh._ufl_domain.ufl_coordinate_element()) # type: ignore
+    return Mesh(mesh1, ufl_domain), parent_cell, parent_facet
 
 
 def create_mesh(
