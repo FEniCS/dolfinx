@@ -421,24 +421,10 @@ void set_bc(std::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
             std::optional<std::span<const T>> x0, T scale = 1)
 {
-  if (x0.has_value())
+  for (auto& bc : bcs)
   {
-
-    if (b.size() > x0.value().size())
-      throw std::runtime_error("Size mismatch between b and x0 vectors.");
-    for (auto& bc : bcs)
-    {
-      assert(bc);
-      bc->set(b, x0.value(), scale);
-    }
-  }
-  else
-  {
-    for (auto& bc : bcs)
-    {
-      assert(bc);
-      bc->set(b, scale);
-    }
+    assert(bc);
+    bc->set(b, x0.value(), scale);
   }
 }
 } // namespace dolfinx::fem
