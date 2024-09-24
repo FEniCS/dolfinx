@@ -272,7 +272,7 @@ def model_to_mesh(
         _elementTypes, _elementTags, _nodeTags = model.mesh.getElements(dim=_d, tag=-1)
         # assert only one type of elements
         # assert len(_elementTypes) == 1  # NOTE: already checked in extract_topology_and_markers
-        _elementType_dim = _elementType[0]
+        _elementType_dim = _elementTypes[0]
         if _elementType_dim not in topologies.keys():
             raise RuntimeError("All cells are expected to be tagged once; none found")
         nbcells = len(_elementTags[0])
