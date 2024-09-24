@@ -408,10 +408,7 @@ def _assemble_vector_block_vec(
     b_array = b.getArray(readonly=False)
     for submap, bc, _x0 in zip(maps, bcs0, x0_sub):
         size = submap[0].size_local * submap[1]
-        if _x0 is None:
-            _cpp.fem.set_bc(b_array[offset : offset + size], bc, scale)
-        else:
-            _cpp.fem.set_bc(b_array[offset : offset + size], bc, _x0, scale)
+        _cpp.fem.set_bc(b_array[offset : offset + size], bc, _x0, scale)
         offset += size
 
     return b
@@ -434,8 +431,9 @@ def assemble_matrix(
     Args:
         a: Bilinear form to assembled into a matrix.
         bc: Dirichlet boundary conditions applied to the system.
-        diagonal: Value to set on the matrix diagonal for Dirichlet boundary
-            condition constrained degrees-of-freedom belonging to the same trial and test space.
+        diagonal: Value to set on the matrix diagonal for Dirichlet
+            boundary condition constrained degrees-of-freedom belonging
+            to the same trial and test space.
         constants: Constants appearing the in the form.
         coeffs: Coefficients appearing the in the form.
 
@@ -488,8 +486,9 @@ def assemble_matrix_nest(
         a: Rectangular (list-of-lists) array for bilinear forms.
         bcs: Dirichlet boundary conditions.
         mat_types: PETSc matrix type for each matrix block.
-        diagonal: Value to set on the matrix diagonal for Dirichlet boundary
-            condition constrained degrees-of-freedom belonging to the same trial and test space.
+        diagonal: Value to set on the matrix diagonal for Dirichlet
+            boundary condition constrained degrees-of-freedom belonging
+            to the same trial and test space.
         constants: Constants appearing the in the form.
         coeffs: Coefficients appearing the in the form.
 
@@ -520,8 +519,9 @@ def _assemble_matrix_nest_mat(
         a: Rectangular (list-of-lists) array for bilinear forms.
         bcs: Dirichlet boundary conditions.
         mat_types: PETSc matrix type for each matrix block.
-        diagonal: Value to set on the matrix diagonal for Dirichlet boundary
-            condition constrained degrees-of-freedom belonging to the same trial and test space.
+        diagonal: Value to set on the matrix diagonal for Dirichlet
+            boundary condition constrained degrees-of-freedom belonging
+            to the same trial and test space.
         constants: Constants appearing the in the form.
         coeffs: Coefficients appearing the in the form.
 
@@ -680,9 +680,7 @@ def apply_lifting_nest(
     constants=None,
     coeffs=None,
 ) -> PETSc.Vec:
-    """Apply the function :func:`dolfinx.fem.apply_lifting` to each sub-vector
-    in a nested PETSc Vector.
-    """
+    """Apply the function :func:`dolfinx.fem.apply_lifting` to each sub-vector in a nested PETSc Vector."""
     x0 = [] if x0 is None else x0.getNestSubVecs()
     bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
     constants = (
