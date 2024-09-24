@@ -99,8 +99,7 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
     {
       auto it = std::ranges::lower_bound(src, owners[i]);
       assert(it != src.end() and *it == owners[i]);
-      std::size_t r = std::distance(src.begin(), it);
-      if (include_ghost[i])
+      if (std::size_t r = std::distance(src.begin(), it); include_ghost[i])
       {
         send_data[r].push_back(ghosts[i]);
         pos_to_ghost[r].push_back(i);
@@ -276,8 +275,8 @@ compute_submap_indices(const IndexMap& imap,
         // other ranks
         if (it->second == dest[i])
         {
-          // Find upper limit of recv index and pack all dest ranks for
-          // this process
+          // Find upper limit of recv index and pack all ranks from
+          // ownership determination (except new owner) as dest ranks
           auto it_upper = std::ranges::upper_bound(
               it, global_idx_to_possible_owner.end(), idx, std::ranges::less(),
               [](auto e) { return e.first; });
@@ -286,26 +285,32 @@ compute_submap_indices(const IndexMap& imap,
                          [](auto e) { return e.second; });
         }
       }
-      // Remove duplicate new dest ranks from recv process
-      // The new owning process can have taken ownership of multiple
-      // indices from the same rank.
-      auto dest_begin
-          = new_owner_dest_ranks.begin() + new_owner_dest_ranks_offsets[i];
-      std::size_t num_unique_dest_ranks = 0;
-      if (dest_begin != new_owner_dest_ranks.end())
+
+      // Remove duplicate new dest ranks from recv process. The new
+      // owning process can have taken ownership of multiple indices
+      // from the same rank.
+      if (auto dest_begin = std::next(new_owner_dest_ranks.begin(),
+                                      new_owner_dest_ranks_offsets[i]);
+          dest_begin != new_owner_dest_ranks.end())
       {
         std::ranges::sort(dest_begin, new_owner_dest_ranks.end());
         auto [unique_end, range_end]
             = std::ranges::unique(dest_begin, new_owner_dest_ranks.end());
-
-        num_unique_dest_ranks = std::distance(dest_begin, unique_end);
         new_owner_dest_ranks.erase(unique_end, range_end);
-        new_owner_dest_ranks.shrink_to_fit();
+
+        std::size_t num_unique_dest_ranks
+            = std::distance(dest_begin, unique_end);
+        new_owner_dest_ranks_sizes[i] = num_unique_dest_ranks;
+        new_owner_dest_ranks_offsets[i + 1]
+            = new_owner_dest_ranks_offsets[i] + num_unique_dest_ranks;
       }
-      new_owner_dest_ranks_sizes[i] = num_unique_dest_ranks;
-      new_owner_dest_ranks_offsets[i + 1]
-          = new_owner_dest_ranks_offsets[i] + num_unique_dest_ranks;
+      else
+      {
+        new_owner_dest_ranks_sizes[i] = 0;
+        new_owner_dest_ranks_offsets[i + 1] = new_owner_dest_ranks_offsets[i];
+      }
     }
+
     // Create neighbourhood comm (owner -> ghost)
     MPI_Comm comm1;
     int ierr = MPI_Dist_graph_create_adjacent(
@@ -327,6 +332,7 @@ compute_submap_indices(const IndexMap& imap,
                                  recv_dest_ranks_sizes.data(), 1, MPI_INT,
                                  comm1);
     dolfinx::MPI::check_error(imap.comm(), ierr);
+
     // Communicate new dest ranks
     std::vector<int> recv_dest_rank_disp(imap.src().size() + 1, 0);
     std::partial_sum(recv_dest_ranks_sizes.begin(), recv_dest_ranks_sizes.end(),
