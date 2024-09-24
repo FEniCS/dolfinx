@@ -408,14 +408,21 @@ void set_diagonal(
 
 // -- Setting bcs ------------------------------------------------------------
 
-// FIXME: Move these function elsewhere?
+// FIXME: Move this function elsewhere?
 
 // FIXME: clarify x0
 // FIXME: clarify what happens with ghosts
 
-/// Set bc values in owned (local) part of the vector, multiplied by
-/// 'scale'. The vectors b and x0 must have the same local size. The bcs
-/// should be on (sub-)spaces of the form L that b represents.
+/// @brief Set bc values in owned (local) part of the vector, multiplied by
+/// 'scale'.
+///
+/// The vectors b and x0 must have the same local size. The bcs should
+/// be on (sub-)spaces of the form L that b represents.
+///
+/// @param[in,out] b Array to modify
+/// @param[in] bcs
+/// @param[in] x0
+/// @param[in] scale
 template <dolfinx::scalar T, std::floating_point U>
 void set_bc(std::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
@@ -424,7 +431,7 @@ void set_bc(std::span<T> b,
   for (auto& bc : bcs)
   {
     assert(bc);
-    bc->set(b, x0.value(), scale);
+    bc->set(b, x0, scale);
   }
 }
 } // namespace dolfinx::fem
