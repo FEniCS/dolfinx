@@ -433,7 +433,7 @@ void declare_assembly_functions(nb::module_& m)
                                   std::nullopt, scale);
         }
       },
-      nb::arg("b").noconvert(), nb::arg("bcs"), nb::arg("x0").noconvert(),
+      nb::arg("b").noconvert(), nb::arg("bcs"), nb::arg("x0").none(),
       nb::arg("scale"));
 }
 

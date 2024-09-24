@@ -513,7 +513,8 @@ public:
     }
   }
 
-  /// Set bc entries in `x` to `scale * (x0 - x_bc)`
+  /// @brief Set bc entries in `x` to `scale * (x0 - x_bc)`.
+  ///
   /// @param[in] x The array in which to set `scale * (x0 - x_bc)`
   /// @param[in] x0 The array used in compute the value to set
   /// @param[in] scale The scaling value to apply
