@@ -1,5 +1,5 @@
-# Copyright (C) 2018-2021 Chris N Richardson and Jørgen S. Dokken
-#
+# Copyright (C) 2018-2024 Chris N Richardson and Jørgen S. Dokken
+
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
@@ -212,3 +212,10 @@ def test_refine_cell_meshtag(tdim, refine_plaza_wrapper):
     new_meshtag = transfer_meshtag(meshtag, fine_mesh, parent_cell)
     assert sum(new_meshtag.values) == (tdim * 4 - 4) * sum(meshtag.values)
     assert len(new_meshtag.indices) == (tdim * 4 - 4) * len(meshtag.indices)
+
+
+def test_refine_ufl_cargo():
+    mesh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 3)
+    mesh.topology.create_entities(1)
+    refined_mesh, _, _ = refine(mesh, redistribute=False)
+    assert refined_mesh.ufl_domain().ufl_cargo() != mesh.ufl_domain().ufl_cargo()
