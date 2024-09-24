@@ -680,7 +680,8 @@ def apply_lifting_nest(
     constants=None,
     coeffs=None,
 ) -> PETSc.Vec:
-    """Apply the function :func:`dolfinx.fem.apply_lifting` to each sub-vector in a nested PETSc Vector."""
+    """Apply the function :func:`dolfinx.fem.apply_lifting` to each sub-vector
+    in a nested PETSc Vector."""
     x0 = [] if x0 is None else x0.getNestSubVecs()
     bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
     constants = (
