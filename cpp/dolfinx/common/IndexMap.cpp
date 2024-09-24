@@ -280,7 +280,7 @@ compute_submap_indices(const IndexMap& imap,
           auto it_upper = std::ranges::upper_bound(
               it, global_idx_to_possible_owner.end(), idx, std::ranges::less(),
               [](auto e) { return e.first; });
-          std::transform(it + 1, it_upper,
+          std::transform(std::next(it), it_upper,
                          std::back_inserter(new_owner_dest_ranks),
                          [](auto e) { return e.second; });
         }
@@ -1161,8 +1161,8 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
       dolfinx::MPI::check_error(_comm.comm(), ierr);
 
       // Prepare displacement vectors
-      std::vector<int> send_disp(dest.size() + 1, 0),
-          recv_disp(src.size() + 1, 0);
+      std::vector<int> send_disp(dest.size() + 1, 0);
+      std::vector<int> recv_disp(src.size() + 1, 0);
       std::partial_sum(send_sizes.begin(), send_sizes.end(),
                        std::next(send_disp.begin()));
       std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
