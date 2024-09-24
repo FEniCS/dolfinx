@@ -359,8 +359,4 @@ def set_bc(
     calling this function is not required unless ghost entries need to
     be updated to the boundary condition value.
     """
-    _bcs = [bc._cpp_object for bc in bcs]
-    if x0 is None:
-        _cpp.fem.set_bc(b, _bcs, scale)
-    else:
-        _cpp.fem.set_bc(b, _bcs, x0, scale)
+    _cpp.fem.set_bc(b, [bc._cpp_object for bc in bcs], x0, scale)

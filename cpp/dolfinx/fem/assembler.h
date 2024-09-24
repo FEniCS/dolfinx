@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <dolfinx/common/types.h>
 #include <memory>
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -37,10 +38,10 @@ make_coefficients_span(const std::map<std::pair<IntegralType, int>,
 {
   using Key = typename std::remove_reference_t<decltype(coeffs)>::key_type;
   std::map<Key, std::pair<std::span<const T>, int>> c;
-  std::ranges::transform(coeffs, std::inserter(c, c.end()),
-                         [](auto& e) -> typename decltype(c)::value_type {
-                           return {e.first, {e.second.first, e.second.second}};
-                         });
+  std::ranges::transform(
+      coeffs, std::inserter(c, c.end()),
+      [](auto& e) -> typename decltype(c)::value_type
+      { return {e.first, {e.second.first, e.second.second}}; });
   return c;
 }
 
@@ -418,30 +419,26 @@ void set_diagonal(
 template <dolfinx::scalar T, std::floating_point U>
 void set_bc(std::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
-            std::span<const T> x0, T scale = 1)
+            std::optional<std::span<const T>> x0, T scale = 1)
 {
-  if (b.size() > x0.size())
-    throw std::runtime_error("Size mismatch between b and x0 vectors.");
-  for (auto& bc : bcs)
+  if (x0.has_value())
   {
-    assert(bc);
-    bc->set(b, x0, scale);
+
+    if (b.size() > x0.value().size())
+      throw std::runtime_error("Size mismatch between b and x0 vectors.");
+    for (auto& bc : bcs)
+    {
+      assert(bc);
+      bc->set(b, x0.value(), scale);
+    }
+  }
+  else
+  {
+    for (auto& bc : bcs)
+    {
+      assert(bc);
+      bc->set(b, scale);
+    }
   }
 }
-
-/// Set bc values in owned (local) part of the vector, multiplied by
-/// 'scale'. The bcs should be on (sub-)spaces of the form L that b
-/// represents.
-template <dolfinx::scalar T, std::floating_point U>
-void set_bc(std::span<T> b,
-            const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
-            T scale = 1)
-{
-  for (auto& bc : bcs)
-  {
-    assert(bc);
-    bc->set(b, scale);
-  }
-}
-
 } // namespace dolfinx::fem

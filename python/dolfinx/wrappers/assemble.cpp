@@ -193,7 +193,8 @@ void declare_assembly_functions(nb::module_& m)
       nb::arg("form"), "Pack coefficients for a Form.");
   m.def(
       "pack_constants",
-      [](const dolfinx::fem::Form<T, U>& form) {
+      [](const dolfinx::fem::Form<T, U>& form)
+      {
         return dolfinx_wrappers::as_nbarray(dolfinx::fem::pack_constants(form));
       },
       nb::arg("form"), "Pack constants for a Form.");
@@ -417,21 +418,23 @@ void declare_assembly_functions(nb::module_& m)
       [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs,
-         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x0, T scale)
+         std::optional<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>> x0,
+         T scale)
       {
-        dolfinx::fem::set_bc<T>(std::span(b.data(), b.size()), bcs,
-                                std::span(x0.data(), x0.shape(0)), scale);
+        if (x0.has_value())
+        {
+          dolfinx::fem::set_bc<T>(
+              std::span(b.data(), b.size()), bcs,
+              std::span(x0.value().data(), x0.value().shape(0)), scale);
+        }
+        else
+        {
+          dolfinx::fem::set_bc<T>(std::span(b.data(), b.size()), bcs,
+                                  std::nullopt, scale);
+        }
       },
       nb::arg("b").noconvert(), nb::arg("bcs"), nb::arg("x0").noconvert(),
       nb::arg("scale"));
-  m.def(
-      "set_bc",
-      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
-         const std::vector<
-             std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs,
-         T scale)
-      { dolfinx::fem::set_bc<T>(std::span(b.data(), b.size()), bcs, scale); },
-      nb::arg("b").noconvert(), nb::arg("bcs"), nb::arg("scale"));
 }
 
 } // namespace
