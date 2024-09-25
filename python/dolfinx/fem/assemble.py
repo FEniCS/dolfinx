@@ -351,7 +351,7 @@ def set_bc(
     b: np.ndarray,
     bcs: list[DirichletBC],
     x0: typing.Optional[np.ndarray] = None,
-    scale: float = 1.0,
+    alpha: float = 1,
 ) -> None:
     """Insert boundary condition values into vector.
 
@@ -359,4 +359,4 @@ def set_bc(
     calling this function is not required unless ghost entries need to
     be updated to the boundary condition value.
     """
-    _cpp.fem.set_bc(b, [bc._cpp_object for bc in bcs], x0, scale)
+    _cpp.fem.set_bc(b, [bc._cpp_object for bc in bcs], x0, alpha)

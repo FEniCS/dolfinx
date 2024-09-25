@@ -305,7 +305,7 @@ def assemble_vector_block(
     a: list[list[Form]],
     bcs: list[DirichletBC] = [],
     x0: typing.Optional[PETSc.Vec] = None,
-    scale: float = 1.0,
+    alpha: float = 1,
     constants_L=None,
     coeffs_L=None,
     constants_a=None,
@@ -323,7 +323,7 @@ def assemble_vector_block(
     with b.localForm() as b_local:
         b_local.set(0.0)
     return _assemble_vector_block_vec(
-        b, L, a, bcs, x0, scale, constants_L, coeffs_L, constants_a, coeffs_a
+        b, L, a, bcs, x0, alpha, constants_L, coeffs_L, constants_a, coeffs_a
     )
 
 
@@ -334,7 +334,7 @@ def _assemble_vector_block_vec(
     a: list[list[Form]],
     bcs: list[DirichletBC] = [],
     x0: typing.Optional[PETSc.Vec] = None,
-    scale: float = 1.0,
+    alpha: float = 1,
     constants_L=None,
     coeffs_L=None,
     constants_a=None,
@@ -398,7 +398,7 @@ def _assemble_vector_block_vec(
     ):
         _cpp.fem.assemble_vector(b_sub, L_sub._cpp_object, const_L, coeff_L)
         _a_sub = [None if form is None else form._cpp_object for form in a_sub]
-        _cpp.fem.apply_lifting(b_sub, _a_sub, const_a, coeff_a, bcs1, x0_local, scale)
+        _cpp.fem.apply_lifting(b_sub, _a_sub, const_a, coeff_a, bcs1, x0_local, alpha)
 
     _cpp.la.petsc.scatter_local_vectors(b, b_local, maps)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -408,7 +408,7 @@ def _assemble_vector_block_vec(
     b_array = b.getArray(readonly=False)
     for submap, bc, _x0 in zip(maps, bcs0, x0_sub):
         size = submap[0].size_local * submap[1]
-        _cpp.fem.set_bc(b_array[offset : offset + size], bc, _x0, scale)
+        _cpp.fem.set_bc(b_array[offset : offset + size], bc, _x0, alpha)
         offset += size
 
     return b
@@ -659,7 +659,7 @@ def apply_lifting(
     a: list[Form],
     bcs: list[list[DirichletBC]],
     x0: list[PETSc.Vec] = [],
-    scale: float = 1.0,
+    alpha: float = 1,
     constants=None,
     coeffs=None,
 ) -> None:
@@ -668,7 +668,7 @@ def apply_lifting(
         x0 = [stack.enter_context(x.localForm()) for x in x0]
         x0_r = [x.array_r for x in x0]
         b_local = stack.enter_context(b.localForm())
-        _assemble.apply_lifting(b_local.array_w, a, bcs, x0_r, scale, constants, coeffs)
+        _assemble.apply_lifting(b_local.array_w, a, bcs, x0_r, alpha, constants, coeffs)
 
 
 def apply_lifting_nest(
@@ -676,7 +676,7 @@ def apply_lifting_nest(
     a: list[list[Form]],
     bcs: list[DirichletBC],
     x0: typing.Optional[PETSc.Vec] = None,
-    scale: float = 1.0,
+    alpha: float = 1,
     constants=None,
     coeffs=None,
 ) -> PETSc.Vec:
@@ -706,30 +706,30 @@ def apply_lifting_nest(
         else coeffs
     )
     for b_sub, a_sub, const, coeff in zip(b.getNestSubVecs(), a, constants, coeffs):
-        apply_lifting(b_sub, a_sub, bcs1, x0, scale, const, coeff)
+        apply_lifting(b_sub, a_sub, bcs1, x0, alpha, const, coeff)
     return b
 
 
 def set_bc(
-    b: PETSc.Vec, bcs: list[DirichletBC], x0: typing.Optional[PETSc.Vec] = None, scale: float = 1.0
+    b: PETSc.Vec, bcs: list[DirichletBC], x0: typing.Optional[PETSc.Vec] = None, alpha: float = 1
 ) -> None:
     """Apply the function :func:`dolfinx.fem.set_bc` to a PETSc Vector."""
     if x0 is not None:
         x0 = x0.array_r
-    _assemble.set_bc(b.array_w, bcs, x0, scale)
+    _assemble.set_bc(b.array_w, bcs, x0, alpha)
 
 
 def set_bc_nest(
     b: PETSc.Vec,
     bcs: list[list[DirichletBC]],
     x0: typing.Optional[PETSc.Vec] = None,
-    scale: float = 1.0,
+    alpha: float = 1,
 ) -> None:
     """Apply the function :func:`dolfinx.fem.set_bc` to each sub-vector of a nested PETSc Vector."""
     _b = b.getNestSubVecs()
     x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()
     for b_sub, bc, x_sub in zip(_b, bcs, x0):
-        set_bc(b_sub, bc, x_sub, scale)
+        set_bc(b_sub, bc, x_sub, alpha)
 
 
 class LinearProblem:
@@ -963,7 +963,7 @@ class NonlinearProblem:
         assemble_vector(b, self._L)
 
         # Apply boundary condition
-        apply_lifting(b, [self._a], bcs=[self.bcs], x0=[x], scale=-1.0)
+        apply_lifting(b, [self._a], bcs=[self.bcs], x0=[x], alpha=-1.0)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         set_bc(b, self.bcs, x, -1.0)
 
