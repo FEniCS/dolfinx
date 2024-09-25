@@ -22,6 +22,7 @@ from dolfinx.fem.assemble import (
     assemble_vector,
     create_matrix,
     create_vector,
+    set_bc,
 )
 from dolfinx.fem.bcs import (
     DirichletBC,
@@ -190,4 +191,5 @@ __all__ = [
     "form_cpp_class",
     "create_form",
     "compile_form",
+    "set_bc",
 ]

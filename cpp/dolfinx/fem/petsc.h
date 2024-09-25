@@ -483,8 +483,6 @@ void set_bc(
     for (auto& bc : bcs)
       bc->set(_b, std::nullopt, alpha);
   }
-  // fem::set_bc(_b, bcs, std::nullopt, alpha);
-
   VecRestoreArray(b, &array);
 }
 

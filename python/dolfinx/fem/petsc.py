@@ -850,7 +850,7 @@ class LinearProblem:
         apply_lifting(self._b, [self._a], bcs=[self.bcs])
         self._b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         for bc in self.bcs:
-            bc.set(self._b)
+            bc.set(self._b.array_w)
 
         # Solve linear system and update ghost values in the solution
         self._solver.solve(self._b, self._x)
