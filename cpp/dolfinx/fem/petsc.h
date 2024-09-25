@@ -34,7 +34,7 @@ class DirichletBC;
 /// @brief Helper functions for assembly into PETSc data structures
 namespace petsc
 {
-/// Create a matrix
+/// @brief Create a matrix
 /// @param[in] a A bilinear form
 /// @param[in] type The PETSc matrix type to create
 /// @return A sparse matrix with a layout and sparsity that matches the
@@ -49,7 +49,8 @@ Mat create_matrix(const Form<PetscScalar, T>& a,
   return la::petsc::create_matrix(a.mesh()->comm(), pattern, type);
 }
 
-/// Initialise a monolithic matrix for an array of bilinear forms
+/// @brief Initialise a monolithic matrix for an array of bilinear
+/// forms.
 /// @param[in] a Rectangular array of bilinear forms. The `a(i, j)` form
 /// will correspond to the `(i, j)` block in the returned matrix
 /// @param[in] type The type of PETSc Mat. If empty the PETSc default is
@@ -316,7 +317,7 @@ void assemble_vector(Vec b, const Form<PetscScalar, T>& L)
 ///
 /// Modify b such that:
 ///
-///   b <- b - scale * A_j (g_j - x0_j)
+///   b <- b - alpha * A_j (g_j - x0_j)
 ///
 /// where j is a block (nest) index. For a non-blocked problem j = 0. The
 /// boundary conditions bcs1 are on the trial spaces V_j. The forms in
@@ -335,7 +336,7 @@ void apply_lifting(
         coeffs,
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar, T>>>>& bcs1,
-    const std::vector<Vec>& x0, PetscScalar scale)
+    const std::vector<Vec>& x0, PetscScalar alpha)
 {
   Vec b_local;
   VecGhostGetLocalForm(b, &b_local);
@@ -346,7 +347,7 @@ void apply_lifting(
   std::span<PetscScalar> _b(array, n);
 
   if (x0.empty())
-    fem::apply_lifting(_b, a, constants, coeffs, bcs1, {}, scale);
+    fem::apply_lifting(_b, a, constants, coeffs, bcs1, {}, alpha);
   else
   {
     std::vector<std::span<const PetscScalar>> x0_ref;
@@ -363,7 +364,7 @@ void apply_lifting(
     }
 
     std::vector x0_tmp(x0_ref.begin(), x0_ref.end());
-    fem::apply_lifting(_b, a, constants, coeffs, bcs1, x0_tmp, scale);
+    fem::apply_lifting(_b, a, constants, coeffs, bcs1, x0_tmp, alpha);
 
     for (std::size_t i = 0; i < x0_local.size(); ++i)
     {
@@ -384,7 +385,7 @@ void apply_lifting(
 
 /// Modify b such that:
 ///
-///   b <- b - scale * A_j (g_j - x0_j)
+///   b <- b - alpha * A_j (g_j - x0_j)
 ///
 /// where j is a block (nest) index. For a non-blocked problem j = 0. The
 /// boundary conditions bcs1 are on the trial spaces V_j. The forms in
@@ -401,7 +402,7 @@ void apply_lifting(
     const std::vector<
         std::vector<std::shared_ptr<const DirichletBC<PetscScalar, double>>>>&
         bcs1,
-    const std::vector<Vec>& x0, PetscScalar scale)
+    const std::vector<Vec>& x0, PetscScalar alpha)
 {
   Vec b_local;
   VecGhostGetLocalForm(b, &b_local);
@@ -412,7 +413,7 @@ void apply_lifting(
   std::span<PetscScalar> _b(array, n);
 
   if (x0.empty())
-    fem::apply_lifting<PetscScalar>(_b, a, bcs1, {}, scale);
+    fem::apply_lifting<PetscScalar>(_b, a, bcs1, {}, alpha);
   else
   {
     std::vector<std::span<const PetscScalar>> x0_ref;
@@ -429,7 +430,7 @@ void apply_lifting(
     }
 
     std::vector x0_tmp(x0_ref.begin(), x0_ref.end());
-    fem::apply_lifting<PetscScalar>(_b, a, bcs1, x0_tmp, scale);
+    fem::apply_lifting<PetscScalar>(_b, a, bcs1, x0_tmp, alpha);
 
     for (std::size_t i = 0; i < x0_local.size(); ++i)
     {
@@ -450,13 +451,13 @@ void apply_lifting(
 // FIXME: clarify what happens with ghosts
 
 /// Set bc values in owned (local) part of the PETSc vector, multiplied
-/// by 'scale'. The vectors b and x0 must have the same local size. The
+/// by 'alpha'. The vectors b and x0 must have the same local size. The
 /// bcs should be on (sub-)spaces of the form L that b represents.
 template <std::floating_point T>
 void set_bc(
     Vec b,
     const std::vector<std::shared_ptr<const DirichletBC<PetscScalar, T>>>& bcs,
-    const Vec x0, PetscScalar scale = 1)
+    const Vec x0, PetscScalar alpha = 1)
 {
   PetscInt n = 0;
   VecGetLocalSize(b, &n);
@@ -472,12 +473,12 @@ void set_bc(
     const PetscScalar* array = nullptr;
     VecGetArrayRead(x0_local, &array);
     std::span<const PetscScalar> _x0(array, n);
-    fem::set_bc(_b, bcs, _x0, scale);
+    fem::set_bc(_b, bcs, _x0, alpha);
     VecRestoreArrayRead(x0_local, &array);
     VecGhostRestoreLocalForm(x0, &x0_local);
   }
   else
-    fem::set_bc(_b, bcs, scale);
+    fem::set_bc(_b, bcs, std::nullopt, alpha);
 
   VecRestoreArray(b, &array);
 }

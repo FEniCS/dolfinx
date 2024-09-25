@@ -138,7 +138,7 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 
 /// Modify b such that:
 ///
-///   b <- b - scale * A_j (g_j - x0_j)
+///   b <- b - alpha * A_j (g_j - x0_j)
 ///
 /// where j is a block (nest) index. For a non-blocked problem j = 0. The
 /// boundary conditions bcs1 are on the trial spaces V_j. The forms in
@@ -156,13 +156,13 @@ void apply_lifting(
                                std::pair<std::span<const T>, int>>>& coeffs,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T, U>>>>&
         bcs1,
-    const std::vector<std::span<const T>>& x0, T scale)
+    const std::vector<std::span<const T>>& x0, T alpha)
 {
   // If all forms are null, there is nothing to do
   if (std::ranges::all_of(a, [](auto ptr) { return ptr == nullptr; }))
     return;
 
-  impl::apply_lifting<T>(b, a, constants, coeffs, bcs1, x0, scale);
+  impl::apply_lifting<T>(b, a, constants, coeffs, bcs1, x0, alpha);
 }
 
 /// Modify b such that:
@@ -182,7 +182,7 @@ void apply_lifting(
     std::span<T> b, const std::vector<std::shared_ptr<const Form<T, U>>>& a,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T, U>>>>&
         bcs1,
-    const std::vector<std::span<const T>>& x0, T scale)
+    const std::vector<std::span<const T>>& x0, T alpha)
 {
   std::vector<
       std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>>
@@ -212,7 +212,7 @@ void apply_lifting(
   std::ranges::transform(coeffs, std::back_inserter(_coeffs),
                          [](auto& c) { return make_coefficients_span(c); });
 
-  apply_lifting(b, a, _constants, _coeffs, bcs1, x0, scale);
+  apply_lifting(b, a, _constants, _coeffs, bcs1, x0, alpha);
 }
 
 // -- Matrices ---------------------------------------------------------------
@@ -409,29 +409,29 @@ void set_diagonal(
 // -- Setting bcs ------------------------------------------------------------
 
 // FIXME: Move this function elsewhere?
+// TODO: clarify what happens with ghosts
 
-// FIXME: clarify x0
-// FIXME: clarify what happens with ghosts
-
-/// @brief Set bc values in owned (local) part of the vector, multiplied by
-/// 'scale'.
+/// @brief Set bc values in owned (local) part of an array.
 ///
-/// The vectors b and x0 must have the same local size. The bcs should
-/// be on (sub-)spaces of the form L that b represents.
+/// Entries in the array `b` that are constrained by a Dirichlet
+/// boundary conditions are set to `alpha * (x_bc - x0)`.
+///
+/// The array b and x0 must have the same local size. The bcs should be
+/// on (sub-)spaces of the form `L` that `b` represents.
 ///
 /// @param[in,out] b Array to modify
-/// @param[in] bcs
-/// @param[in] x0
-/// @param[in] scale
+/// @param[in] bcs Boundary conditions to take value from.
+/// @param[in] x0 Optional array used in boundary condition setting.
+/// @param[in] alpha Scaling parameters
 template <dolfinx::scalar T, std::floating_point U>
 void set_bc(std::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
-            std::optional<std::span<const T>> x0, T scale = 1)
+            std::optional<std::span<const T>> x0, T alpha = 1)
 {
   for (auto& bc : bcs)
   {
     assert(bc);
-    bc->set(b, x0, scale);
+    bc->set(b, x0, alpha);
   }
 }
 } // namespace dolfinx::fem

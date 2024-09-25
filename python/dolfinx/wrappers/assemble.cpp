@@ -391,7 +391,7 @@ void declare_assembly_functions(nb::module_& m)
          const std::vector<std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>>& bcs1,
          const std::vector<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>& x0,
-         T scale)
+         T alpha)
       {
         std::vector<std::span<const T>> _x0;
         for (auto x : x0)
@@ -409,10 +409,10 @@ void declare_assembly_functions(nb::module_& m)
                                [](auto& c) { return py_to_cpp_coeffs(c); });
 
         dolfinx::fem::apply_lifting<T>(std::span<T>(b.data(), b.size()), a,
-                                       _constants, _coeffs, bcs1, _x0, scale);
+                                       _constants, _coeffs, bcs1, _x0, alpha);
       },
       nb::arg("b").noconvert(), nb::arg("a"), nb::arg("constants"),
-      nb::arg("coeffs"), nb::arg("bcs1"), nb::arg("x0"), nb::arg("scale"),
+      nb::arg("coeffs"), nb::arg("bcs1"), nb::arg("x0"), nb::arg("alpha"),
       "Modify vector for lifted boundary conditions");
   m.def(
       "set_bc",
@@ -420,22 +420,22 @@ void declare_assembly_functions(nb::module_& m)
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs,
          std::optional<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>> x0,
-         T scale)
+         T alpha)
       {
         if (x0.has_value())
         {
           dolfinx::fem::set_bc<T>(
               std::span(b.data(), b.size()), bcs,
-              std::span(x0.value().data(), x0.value().shape(0)), scale);
+              std::span(x0.value().data(), x0.value().shape(0)), alpha);
         }
         else
         {
           dolfinx::fem::set_bc<T>(std::span(b.data(), b.size()), bcs,
-                                  std::nullopt, scale);
+                                  std::nullopt, alpha);
         }
       },
-      nb::arg("b").noconvert(), nb::arg("bcs"), nb::arg("x0").noconvert().none(),
-      nb::arg("scale"));
+      nb::arg("b").noconvert(), nb::arg("bcs"),
+      nb::arg("x0").noconvert().none(), nb::arg("alpha"));
 }
 
 } // namespace
