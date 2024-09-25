@@ -364,8 +364,7 @@ def set_bc(
     be updated to the boundary condition value.
     """
     warnings.warn(
-        "dolfinx.fem.assembler.set_bc is deprecated.",
-        "Use dolfinx.fem.DirichletBC.set instead.",
+        "dolfinx.fem.assembler.set_bc is deprecated. Use dolfinx.fem.DirichletBC.set instead.",
         DeprecationWarning,
     )
     for bc in bcs:
