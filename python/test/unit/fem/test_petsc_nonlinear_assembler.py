@@ -265,12 +265,12 @@ class TestNLSPETSc:
 
             A = assemble_matrix_nest(a_block, bcs=[bc])
             b = assemble_vector_nest(L_block)
-            apply_lifting_nest(b, a_block, bcs=[bc], x0=x, scale=-1.0)
+            apply_lifting_nest(b, a_block, bcs=[bc], x0=x, alpha=-1.0)
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
 
-            set_bc_nest(b, bcs0, x, scale=-1.0)
+            set_bc_nest(b, bcs0, x, alpha=-1.0)
             A.assemble()
             assert A.getType() == "nest"
             Anorm = nest_matrix_norm(A)
@@ -308,9 +308,9 @@ class TestNLSPETSc:
             A = assemble_matrix(J, bcs=[bc])
             A.assemble()
             b = assemble_vector(F)
-            apply_lifting(b, [J], bcs=[[bc]], x0=[U.x.petsc_vec], scale=-1.0)
+            apply_lifting(b, [J], bcs=[[bc]], x0=[U.x.petsc_vec], alpha=-1.0)
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-            set_bc(b, [bc], x0=U.x.petsc_vec, scale=-1.0)
+            set_bc(b, [bc], x0=U.x.petsc_vec, alpha=-1.0)
             assert A.getType() != "nest"
             Anorm = A.norm()
             bnorm = b.norm()
