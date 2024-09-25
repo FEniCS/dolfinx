@@ -61,7 +61,7 @@ class NonlinearPDE_SNESProblem:
         with F.localForm() as f_local:
             f_local.set(0.0)
         assemble_vector(F, self.L)
-        apply_lifting(F, [self.a], bcs=[self.bcs], x0=[x], scale=-1.0)
+        apply_lifting(F, [self.a], bcs=[self.bcs], x0=[x], alpha=-1.0)
         F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         set_bc(F, self.bcs, x, -1.0)
 
@@ -97,7 +97,7 @@ class NonlinearPDE_SNESProblem:
             )
             offset += size_local
 
-        assemble_vector_block(F, self.L, self.a, bcs=self.bcs, x0=x, scale=-1.0)
+        assemble_vector_block(F, self.L, self.a, bcs=self.bcs, x0=x, alpha=-1.0)
 
     def J_block(self, snes, x, J, P):
         from dolfinx.fem.petsc import assemble_matrix_block
@@ -130,7 +130,7 @@ class NonlinearPDE_SNESProblem:
             with F_sub.localForm() as F_sub_local:
                 F_sub_local.set(0.0)
             assemble_vector(F_sub, L)
-            apply_lifting(F_sub, a, bcs=bcs1, x0=x, scale=-1.0)
+            apply_lifting(F_sub, a, bcs=bcs1, x0=x, alpha=-1.0)
             F_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
         # Set bc value in RHS
@@ -241,7 +241,7 @@ class TestNLSPETSc:
 
             # Ghosts are updated inside assemble_vector_block
             A = assemble_matrix_block(a_block, bcs=[bc])
-            b = assemble_vector_block(L_block, a_block, bcs=[bc], x0=x, scale=-1.0)
+            b = assemble_vector_block(L_block, a_block, bcs=[bc], x0=x, alpha=-1.0)
             A.assemble()
             assert A.getType() != "nest"
             Anorm = A.norm()
