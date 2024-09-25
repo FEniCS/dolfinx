@@ -414,28 +414,6 @@ void declare_assembly_functions(nb::module_& m)
       nb::arg("b").noconvert(), nb::arg("a"), nb::arg("constants"),
       nb::arg("coeffs"), nb::arg("bcs1"), nb::arg("x0"), nb::arg("alpha"),
       "Modify vector for lifted boundary conditions");
-  m.def(
-      "set_bc",
-      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
-         const std::vector<
-             std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs,
-         std::optional<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>> x0,
-         T alpha)
-      {
-        if (x0.has_value())
-        {
-          dolfinx::fem::set_bc<T>(
-              std::span(b.data(), b.size()), bcs,
-              std::span(x0.value().data(), x0.value().shape(0)), alpha);
-        }
-        else
-        {
-          dolfinx::fem::set_bc<T>(std::span(b.data(), b.size()), bcs,
-                                  std::nullopt, alpha);
-        }
-      },
-      nb::arg("b").noconvert(), nb::arg("bcs"),
-      nb::arg("x0").noconvert().none(), nb::arg("alpha"));
 }
 
 } // namespace

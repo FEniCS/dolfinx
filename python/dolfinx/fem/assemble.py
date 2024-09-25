@@ -347,16 +347,17 @@ def apply_lifting(
     _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, alpha)
 
 
-def set_bc(
-    b: np.ndarray,
-    bcs: list[DirichletBC],
-    x0: typing.Optional[np.ndarray] = None,
-    alpha: float = 1,
-) -> None:
-    """Insert boundary condition values into vector.
+# def set_bc(
+#     b: np.ndarray,
+#     bcs: list[DirichletBC],
+#     x0: typing.Optional[np.ndarray] = None,
+#     alpha: float = 1,
+# ) -> None:
+#     """Insert boundary condition values into vector.
 
-    Only local (owned) entries are set, hence communication after
-    calling this function is not required unless ghost entries need to
-    be updated to the boundary condition value.
-    """
-    _cpp.fem.set_bc(b, [bc._cpp_object for bc in bcs], x0, alpha)
+#     Only local (owned) entries are set, hence communication after
+#     calling this function is not required unless ghost entries need to
+#     be updated to the boundary condition value.
+#     """
+#     for bc in bcs:
+#         bc.set(b, x0, alpha)

@@ -408,7 +408,7 @@ def _assemble_vector_block_vec(
     b_array = b.getArray(readonly=False)
     for submap, bc, _x0 in zip(maps, bcs0, x0_sub):
         size = submap[0].size_local * submap[1]
-        _cpp.fem.set_bc(b_array[offset : offset + size], bc, _x0, alpha)
+        bc.set(b_array[offset : offset + size], _x0, alpha)
         offset += size
 
     return b
@@ -716,7 +716,8 @@ def set_bc(
     """Apply the function :func:`dolfinx.fem.set_bc` to a PETSc Vector."""
     if x0 is not None:
         x0 = x0.array_r
-    _assemble.set_bc(b.array_w, bcs, x0, alpha)
+    for bc in bcs:
+        bc.set(b.array_w, x0, alpha)
 
 
 def set_bc_nest(
@@ -847,7 +848,8 @@ class LinearProblem:
         # Apply boundary conditions to the rhs
         apply_lifting(self._b, [self._a], bcs=[self.bcs])
         self._b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        set_bc(self._b, self.bcs)
+        for bc in self.bcs:
+            bc.set(self._b)
 
         # Solve linear system and update ghost values in the solution
         self._solver.solve(self._b, self._x)

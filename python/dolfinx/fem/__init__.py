@@ -22,7 +22,6 @@ from dolfinx.fem.assemble import (
     assemble_vector,
     create_matrix,
     create_vector,
-    set_bc,
 )
 from dolfinx.fem.bcs import (
     DirichletBC,
@@ -173,7 +172,6 @@ __all__ = [
     "assemble_matrix",
     "assemble_vector",
     "apply_lifting",
-    "set_bc",
     "DirichletBC",
     "dirichletbc",
     "bcs_by_block",
