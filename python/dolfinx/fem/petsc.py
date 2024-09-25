@@ -406,9 +406,10 @@ def _assemble_vector_block_vec(
     bcs0 = _bcs_by_block(_extract_spaces(L), _bcs)
     offset = 0
     b_array = b.getArray(readonly=False)
-    for submap, bc, _x0 in zip(maps, bcs0, x0_sub):
+    for submap, bcs, _x0 in zip(maps, bcs0, x0_sub):
         size = submap[0].size_local * submap[1]
-        bc.set(b_array[offset : offset + size], _x0, alpha)
+        for bc in bcs:
+            bc.set(b_array[offset : offset + size], _x0, alpha)
         offset += size
 
     return b

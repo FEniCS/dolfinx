@@ -217,7 +217,8 @@ def test_vector_constant_bc(mesh_factory):
         u_bcs[i].x.array[:] = c[i]
         bcs_f.append(dirichletbc(u_bcs[i], boundary_dofs[i], V.sub(i)))
     u_f = Function(V)
-    bcs_f.set(u_f.x.array)
+    for bc in bcs_f:
+        bc.set(u_f.x.array)
 
     # Set using constant
     boundary_dofs = locate_dofs_topological(V, tdim - 1, boundary_facets)
