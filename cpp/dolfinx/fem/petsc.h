@@ -473,12 +473,17 @@ void set_bc(
     const PetscScalar* array = nullptr;
     VecGetArrayRead(x0_local, &array);
     std::span<const PetscScalar> _x0(array, n);
-    fem::set_bc(_b, bcs, _x0, alpha);
+    for (auto& bc : bcs)
+      bc->set(_b, _x0, alpha);
     VecRestoreArrayRead(x0_local, &array);
     VecGhostRestoreLocalForm(x0, &x0_local);
   }
   else
-    fem::set_bc(_b, bcs, std::nullopt, alpha);
+  {
+    for (auto& bc : bcs)
+      bc->set(_b, std::nullopt, alpha);
+  }
+  // fem::set_bc(_b, bcs, std::nullopt, alpha);
 
   VecRestoreArray(b, &array);
 }

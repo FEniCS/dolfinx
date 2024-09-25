@@ -97,10 +97,12 @@ public:
       VecGhostGetLocalForm(x, &x_local);
       PetscInt n = 0;
       VecGetSize(x_local, &n);
-      const T* array = nullptr;
-      VecGetArrayRead(x_local, &array);
-      fem::set_bc<T>(b, _bcs, std::span<const T>(array, n), -1.0);
-      VecRestoreArrayRead(x, &array);
+      const T* x_array = nullptr;
+      VecGetArrayRead(x_local, &x_array);
+      auto _x = std::span<const T>(x_array, n);
+      for (auto& bc : _bcs)
+        bc->set(b, _x, -1.0);
+      VecRestoreArrayRead(x_local, &x_array);
     };
   }
 
