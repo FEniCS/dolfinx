@@ -305,7 +305,7 @@ def apply_lifting(
     a: list[Form],
     bcs: list[list[DirichletBC]],
     x0: typing.Optional[list[np.ndarray]] = None,
-    scale: float = 1.0,
+    alpha: float = 1,
     constants=None,
     coeffs=None,
 ) -> None:
@@ -344,7 +344,7 @@ def apply_lifting(
     )
     _a = [None if form is None else form._cpp_object for form in a]
     _bcs = [[bc._cpp_object for bc in bcs0] for bcs0 in bcs]
-    _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, scale)
+    _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, alpha)
 
 
 def set_bc(
