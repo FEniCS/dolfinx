@@ -183,7 +183,7 @@ A.assemble()
 b = assemble_vector(L)
 apply_lifting(b, [a], bcs=[[bc]])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
-bc.set(b)
+bc.set(b.array_w)
 # -
 
 # Create the near-nullspace and attach it to the PETSc matrix:
