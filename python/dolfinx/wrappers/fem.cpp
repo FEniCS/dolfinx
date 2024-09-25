@@ -35,6 +35,7 @@
 #include <nanobind/stl/complex.h>
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/map.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/set.h>
 #include <nanobind/stl/shared_ptr.h>
@@ -109,7 +110,8 @@ void declare_function_space(nb::module_& m, std::string type)
             "__init__",
             [](dolfinx::fem::FiniteElement<T>* self,
                basix::FiniteElement<T>& element, std::size_t block_size,
-               bool symmetric) {
+               bool symmetric)
+            {
               new (self) dolfinx::fem::FiniteElement<T>(element, block_size,
                                                         symmetric);
             },
@@ -364,6 +366,24 @@ void declare_objects(nb::module_& m, const std::string& type)
                                   dofs.data(), {dofs.size()}, nb::handle()),
                               owned);
            })
+      .def(
+          "set",
+          [](const dolfinx::fem::DirichletBC<T, U>& self,
+             nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
+             std::optional<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>> x0,
+             T alpha)
+          {
+            auto _b = std::span(b.data(), b.size());
+            if (x0.has_value())
+            {
+              self.set(_b, std::span(x0.value().data(), x0.value().shape(0)),
+                       alpha);
+            }
+            else
+              self.set(_b, std::nullopt, alpha);
+          },
+          nb::arg("b").noconvert(), nb::arg("x0").noconvert().none(),
+          nb::arg("alpha"))
       .def_prop_ro("function_space",
                    &dolfinx::fem::DirichletBC<T, U>::function_space)
       .def_prop_ro("value", &dolfinx::fem::DirichletBC<T, U>::value);

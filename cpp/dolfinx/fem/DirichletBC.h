@@ -478,7 +478,7 @@ public:
   ///
   /// @param[in,out] x The array to modify.
   /// @param[in] x0 Optional array used in computing the value to set.
-  /// If not provided it it treated as zero.
+  /// If not provided it is treated as zero.
   /// @param[in] alpha Scaling to apply.
   void set(std::span<T> x, std::optional<std::span<const T>> x0,
            T alpha = 1) const
