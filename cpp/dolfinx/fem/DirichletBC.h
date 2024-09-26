@@ -495,103 +495,84 @@ public:
   void set(std::span<T> x, std::optional<std::span<const T>> x0,
            T alpha = 1) const
   {
-    if (std::holds_alternative<std::shared_ptr<const Function<T, U>>>(_g))
+    std::int32_t x_size = x.size();
+    if (alpha == T(0)) // Optimisation for when alpha == 0
     {
-      auto g = std::get<std::shared_ptr<const Function<T, U>>>(_g);
-      assert(g);
-      std::span<const T> values = g->x()->array();
-      auto dofs1_g = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
-      std::int32_t x_size = x.size();
-      if (x0.has_value())
-      {
-        std::span<const T> _x0 = x0.value();
-        assert(x.size() <= _x0.size());
-        for (std::size_t i = 0; i < _dofs0.size(); ++i)
-        {
-          if (_dofs0[i] < x_size)
-          {
-            assert(dofs1_g[i] < (std::int32_t)values.size());
-            x[_dofs0[i]] = alpha * (values[dofs1_g[i]] - _x0[_dofs0[i]]);
-          }
-        }
-      }
-      else
-      {
-        for (std::size_t i = 0; i < _dofs0.size(); ++i)
-        {
-          if (_dofs0[i] < x_size)
-          {
-            assert(dofs1_g[i] < (std::int32_t)values.size());
-            x[_dofs0[i]] = alpha * values[dofs1_g[i]];
-          }
-        }
-      }
-    }
-    else if (std::holds_alternative<std::shared_ptr<const Constant<T>>>(_g))
-    {
-      auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
-      const std::vector<T>& value = g->value;
-      std::int32_t bs = _function_space->dofmap()->bs();
-      if (x0.has_value())
-      {
-        assert(x.size() <= x0.value().size());
-        std::ranges::for_each(_dofs0,
-                              [&x, x0 = x0.value(), &value, alpha, bs](auto dof)
-                              {
-                                if (dof < (std::int32_t)x.size())
-                                  x[dof] = alpha * (value[dof % bs] - x0[dof]);
-                              });
-      }
-      else
-      {
-        std::ranges::for_each(
-            _dofs0,
-            [x_size = x.size(), bs, alpha, &value, &x](auto dof)
-            {
-              if (dof < x_size)
-                x[dof] = alpha * value[dof % bs];
-            });
-      }
-    }
-  }
-
-  /// @todo Review this function - it is almost identical to the
-  /// 'DirichletBC::set' function.
-  ///
-  /// @brief Set boundary condition value for entries with an applied
-  /// boundary condition. Other entries are not modified.
-  ///
-  /// @param[out] values Array in which to set the dof values. The array
-  /// must be at least as long as the array associated with V1 (the
-  /// space of the function that provides the dof values)
-  void dof_values(std::span<T> values) const
-  {
-    if (std::holds_alternative<std::shared_ptr<const Function<T, U>>>(_g))
-    {
-      auto g = std::get<std::shared_ptr<const Function<T, U>>>(_g);
-      assert(g);
-      std::span<const T> g_values = g->x()->array();
-      auto dofs1_g = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
-      for (std::size_t i = 0; i < dofs1_g.size(); ++i)
-        values[_dofs0[i]] = g_values[dofs1_g[i]];
-    }
-    else if (std::holds_alternative<std::shared_ptr<const Constant<T>>>(_g))
-    {
-      auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
-      assert(g);
-      const std::vector<T>& g_value = g->value;
-      std::int32_t bs = _function_space->dofmap()->bs();
       for (std::int32_t idx : _dofs0)
-        values[idx] = g_value[idx % bs];
+      {
+        if (idx < x_size)
+          x[idx] = 0;
+      }
+    }
+    else
+    {
+      if (std::holds_alternative<std::shared_ptr<const Function<T, U>>>(_g))
+      {
+        auto g = std::get<std::shared_ptr<const Function<T, U>>>(_g);
+        assert(g);
+        auto dofs1_g
+            = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
+        std::span<const T> values = g->x()->array();
+        if (x0.has_value())
+        {
+          std::span<const T> _x0 = x0.value();
+          assert(x.size() <= _x0.size());
+          for (std::size_t i = 0; i < _dofs0.size(); ++i)
+          {
+            if (_dofs0[i] < x_size)
+            {
+              assert(dofs1_g[i] < (std::int32_t)values.size());
+              x[_dofs0[i]] = alpha * (values[dofs1_g[i]] - _x0[_dofs0[i]]);
+            }
+          }
+        }
+        else
+        {
+          for (std::size_t i = 0; i < _dofs0.size(); ++i)
+          {
+            if (_dofs0[i] < x_size)
+            {
+              assert(dofs1_g[i] < (std::int32_t)values.size());
+              x[_dofs0[i]] = alpha * values[dofs1_g[i]];
+            }
+          }
+        }
+      }
+      else if (std::holds_alternative<std::shared_ptr<const Constant<T>>>(_g))
+      {
+        auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
+        const std::vector<T>& value = g->value;
+        std::int32_t bs = _function_space->dofmap()->bs();
+        if (x0.has_value())
+        {
+          assert(x.size() <= x0.value().size());
+          std::ranges::for_each(
+              _dofs0,
+              [x_size, &x, x0 = x0.value(), &value, alpha, bs](auto dof)
+              {
+                if (dof < x.size())
+                  x[dof] = alpha * (value[dof % bs] - x0[dof]);
+              });
+        }
+        else
+        {
+          std::ranges::for_each(_dofs0,
+                                [x_size, bs, alpha, &value, &x](auto dof)
+                                {
+                                  if (dof < x_size)
+                                    x[dof] = alpha * value[dof % bs];
+                                });
+        }
+      }
     }
   }
 
-  /// @brief Set markers[i] = true if dof i has a boundary condition
+  /// @brief Set `markers[i] = true` if dof `i` has a boundary condition
   /// applied.
   ///
-  /// Value of markers[i] is not changed otherwise.
+  /// Value of `markers[i]` is not changed otherwise.
   ///
-  /// @param[in,out] markers Entry makers[i] is set to true if dof `i`
+  /// @param[in,out] markers Entry `makers[i]` is set to true if dof `i`
   /// in V0 had a boundary condition applied, i.e. dofs which are fixed
   /// by a boundary condition. Other entries in `markers` are left
   /// unchanged.

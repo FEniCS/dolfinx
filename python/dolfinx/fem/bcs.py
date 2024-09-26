@@ -137,9 +137,9 @@ class DirichletBC:
     ) -> None:
         """Set entries in an array that are constrained by Dirichlet boundary conditions.
 
-        Entries in an array ``x`` that are constrained by a Dirichlet
-        boundary conditions are set to ``alpha * (x_bc - x0)``, where
-        ``x_bc`` is the (interpolated) boundary condition value.
+        Entries in ``x`` that are constrained by a Dirichlet boundary
+        conditions are set to ``alpha * (x_bc - x0)``, where ``x_bc`` is
+        the (interpolated) boundary condition value.
 
         For elements with point-wise evaluated degrees-of-freedom, e.g.
         Lagrange elements, ``x_bc`` is the value of the boundary condition
