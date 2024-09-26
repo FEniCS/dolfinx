@@ -167,7 +167,7 @@ void apply_lifting(
 
 /// Modify b such that:
 ///
-///   b <- b - scale * A_j (g_j - x0_j)
+///   b <- b - alpha * A_j.(g_j - x0_j)
 ///
 /// where j is a block (nest) index. For a non-blocked problem j = 0. The
 /// boundary conditions bcs1 are on the trial spaces V_j. The forms in
