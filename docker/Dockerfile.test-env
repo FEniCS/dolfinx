@@ -13,14 +13,12 @@
 #
 
 ARG ADIOS2_VERSION=2.10.1
-ARG DOXYGEN_VERSION=1_11_0
+ARG DOXYGEN_VERSION=1_12_0
 ARG GMSH_VERSION=4_13_1
-ARG HDF5_SERIES=1.14
-ARG HDF5_PATCH=3
-ARG HDF5_FIX=
+ARG HDF5_VERSION=1.14.4.3
 ARG KAHIP_VERSION=3.16
-ARG NUMPY_VERSION=1.26.4
-ARG PETSC_VERSION=3.21.3
+ARG NUMPY_VERSION=2.1.1
+ARG PETSC_VERSION=3.21.5
 ARG SLEPC_VERSION=3.21.1
 
 ARG MPICH_VERSION=4.2.2
@@ -35,9 +33,7 @@ LABEL description="FEniCS testing and development environment with PETSc real, c
 
 ARG DOXYGEN_VERSION
 ARG GMSH_VERSION
-ARG HDF5_SERIES
-ARG HDF5_PATCH
-ARG HDF5_FIX
+ARG HDF5_VERSION
 ARG PETSC_VERSION
 ARG SLEPC_VERSION
 ARG ADIOS2_VERSION
@@ -148,8 +144,8 @@ ENV PATH /dolfinx-env/bin:$PATH
 RUN python3 -m venv ${VIRTUAL_ENV}
 
 # Install Python packages (via pip)
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir cffi numpy==${NUMPY_VERSION} setuptools wheel && \
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir cython numpy==${NUMPY_VERSION} && \
     pip install --no-cache-dir --no-build-isolation mpi4py
 
 # Install KaHIP
@@ -165,9 +161,9 @@ RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.ta
 # HDF5 overrides CMAKE_INSTALL_PREFIX by default, hence it is set
 # below to ensure that HDF5 is installed into a path where it can be
 # found.
-RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX}.tar.gz && \
-    tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX}.tar.gz && \
-    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DHDF5_ENABLE_PARALLEL=on -DHDF5_ENABLE_Z_LIB_SUPPORT=on -B build-dir -S hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX} && \
+RUN wget -nc --quiet https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5_${HDF5_VERSION}.tar.gz && \
+    tar xfz hdf5_${HDF5_VERSION}.tar.gz && \
+    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DHDF5_ENABLE_PARALLEL=on -DHDF5_ENABLE_Z_LIB_SUPPORT=on -B build-dir -S hdf5-hdf5_${HDF5_VERSION} && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     rm -rf /tmp/*
@@ -316,9 +312,7 @@ RUN apt-get -qq update && \
     make PETSC_ARCH=linux-gnu-complex128-64 ${MAKEFLAGS} all && \
     # Install petsc4py
     cd src/binding/petsc4py && \
-    pip install --no-cache-dir cython wheel && \
     PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip -v install --no-cache-dir --no-build-isolation . && \
-    # pip3 uninstall --yes cython wheel && \
     # Cleanup
     apt-get -y purge bison flex && \
     apt-get -y autoremove && \
@@ -359,9 +353,7 @@ RUN git clone --depth=1 -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git 
     make && \
     # Install slepc4py
     cd src/binding/slepc4py && \
-    # pip3 install --break-system-packages --no-cache-dir cython wheel && \
     PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip -v install --no-cache-dir --no-build-isolation . && \
-    # pip3 uninstall --yes cython wheel && \
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*
 
