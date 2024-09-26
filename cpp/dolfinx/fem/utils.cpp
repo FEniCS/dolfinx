@@ -186,6 +186,18 @@ std::vector<std::int32_t> fem::compute_integration_domains(
     break;
     case IntegralType::interior_facet:
     {
+      // Create indicator for interprocess facets
+      const std::vector<std::int32_t>& interprocess_facets
+          = topology.interprocess_facets();
+      std::int32_t num_facets = topology.index_map(tdim - 1)->size_local()
+                                + topology.index_map(tdim - 1)->num_ghosts();
+      std::vector<std::int8_t> interprocess_marker(num_facets);
+      assert(topology.index_map(tdim - 1));
+
+      std::ranges::for_each(interprocess_facets,
+                            [&interprocess_marker](std::int32_t f)
+                            { interprocess_marker[f] = 1; });
+
       for (std::size_t j = 0; j < entities.size(); ++j)
       {
         const std::int32_t f = entities[j];
@@ -196,6 +208,13 @@ std::vector<std::int32_t> fem::compute_integration_domains(
           auto facets
               = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
           entity_data.insert(entity_data.end(), facets.begin(), facets.end());
+        }
+        else if (interprocess_marker[f])
+        {
+          throw std::runtime_error(
+              "Cannot compute interior facet integral over interprocess "
+              "facet. Please use ghost mode shared facet when creating the "
+              "mesh.");
         }
       }
     }

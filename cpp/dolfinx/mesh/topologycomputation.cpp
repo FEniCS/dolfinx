@@ -804,13 +804,13 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim,
     cell_lists[i] = {cell_types[i], cells, cell_map};
   }
 
-  auto [d0, d1, im, interprocess_facets] = compute_entities_by_key_matching(
+  auto [d0, d1, im, interprocess_entities] = compute_entities_by_key_matching(
       comm, cell_lists, *vertex_map, entity_type, dim);
 
   return {d0,
           std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(d1)),
           std::make_shared<common::IndexMap>(std::move(im)),
-          std::move(interprocess_facets)};
+          std::move(interprocess_entities)};
 }
 //-----------------------------------------------------------------------------
 std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>

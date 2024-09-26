@@ -573,6 +573,21 @@ Form<T, U> create_form_factory(
                              num_integrals_type[interior_facet]);
     auto itg = integrals.insert({IntegralType::interior_facet, {}});
     auto sd = subdomains.find(IntegralType::interior_facet);
+
+    // Create indicator for interprocess facets
+    const std::vector<std::int32_t>& interprocess_facets
+        = topology->interprocess_facets();
+    std::vector<std::int8_t> interprocess_marker;
+    if (num_integrals_type[interior_facet] > 0)
+    {
+      assert(topology->index_map(tdim - 1));
+      std::int32_t num_facets = topology->index_map(tdim - 1)->size_local()
+                                + topology->index_map(tdim - 1)->num_ghosts();
+      interprocess_marker.resize(num_facets, 0);
+      std::ranges::for_each(interprocess_facets,
+                            [&interprocess_marker](std::int32_t f)
+                            { interprocess_marker[f] = 1; });
+    }
     for (int i = 0; i < num_integrals_type[interior_facet]; ++i)
     {
       const int id = ids[i];
@@ -630,6 +645,13 @@ Form<T, U> create_form_factory(
                 = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
             default_facets_int.insert(default_facets_int.end(), pairs.begin(),
                                       pairs.end());
+          }
+          else if (interprocess_marker[f])
+          {
+            throw std::runtime_error(
+                "Cannot compute interior facet integral over interprocess "
+                "facet. Please use ghost mode shared facet when creating the "
+                "mesh");
           }
         }
         itg.first->second.emplace_back(id, k, default_facets_int,
