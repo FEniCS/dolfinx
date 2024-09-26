@@ -95,7 +95,7 @@ int get_ownership(const U& processes, const V& vertices)
 /// @param[in] num_entities_per_cell Number of entities per cell
 /// @param[in] entity_index Initial numbering for each row in
 /// entity_list
-/// @returns Local indices and index map
+/// @returns Local indices, the index map and shared entities
 std::tuple<std::vector<int>, common::IndexMap, std::vector<std::int32_t>>
 get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
                    std::span<const std::int32_t> entity_list,
