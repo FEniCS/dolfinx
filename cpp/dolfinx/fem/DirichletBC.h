@@ -550,7 +550,7 @@ public:
               _dofs0,
               [x_size, &x, x0 = x0.value(), &value, alpha, bs](auto dof)
               {
-                if (dof < x.size())
+                if (dof < x_size)
                   x[dof] = alpha * (value[dof % bs] - x0[dof]);
               });
         }
