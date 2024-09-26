@@ -140,6 +140,7 @@ std::vector<std::int32_t> fem::compute_integration_domains(
   }
 
   {
+    // Create span of the owned entities (leaves off any ghosts)
     assert(topology.index_map(dim));
     auto it1 = std::ranges::lower_bound(entities,
                                         topology.index_map(dim)->size_local());
@@ -150,15 +151,19 @@ std::vector<std::int32_t> fem::compute_integration_domains(
   switch (integral_type)
   {
   case IntegralType::cell:
+  {
     entity_data.insert(entity_data.begin(), entities.begin(), entities.end());
     break;
+  }
   default:
+  {
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
     if (!f_to_c)
     {
       throw std::runtime_error(
           "Topology facet-to-cell connectivity has not been computed.");
     }
+
     auto c_to_f = topology.connectivity(tdim, tdim - 1);
     if (!c_to_f)
     {
@@ -189,18 +194,14 @@ std::vector<std::int32_t> fem::compute_integration_domains(
       // Create indicator for interprocess facets
       const std::vector<std::int32_t>& interprocess_facets
           = topology.interprocess_facets();
+      assert(topology.index_map(tdim - 1));
       std::int32_t num_facets = topology.index_map(tdim - 1)->size_local()
                                 + topology.index_map(tdim - 1)->num_ghosts();
-      std::vector<std::int8_t> interprocess_marker(num_facets);
-      assert(topology.index_map(tdim - 1));
-
-      std::ranges::for_each(interprocess_facets,
-                            [&interprocess_marker](std::int32_t f)
+      std::vector<std::int8_t> interprocess_marker(num_facets, 0);
+      std::ranges::for_each(interprocess_facets, [&interprocess_marker](auto f)
                             { interprocess_marker[f] = 1; });
-
-      for (std::size_t j = 0; j < entities.size(); ++j)
+      for (auto f : entities)
       {
-        const std::int32_t f = entities[j];
         if (f_to_c->num_links(f) == 2)
         {
           // Get the facet as a pair of (cell, local facet) pairs, one
@@ -224,6 +225,8 @@ std::vector<std::int32_t> fem::compute_integration_domains(
           "Cannot compute integration domains. Integral type not supported.");
     }
   }
+  }
+
   return entity_data;
 }
 //-----------------------------------------------------------------------------
