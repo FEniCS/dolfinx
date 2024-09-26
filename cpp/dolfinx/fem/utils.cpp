@@ -192,12 +192,13 @@ std::vector<std::int32_t> fem::compute_integration_domains(
     case IntegralType::interior_facet:
     {
       // Create indicator for interprocess facets
+      assert(topology.index_map(tdim - 1));
       const std::vector<std::int32_t>& interprocess_facets
           = topology.interprocess_facets();
-      assert(topology.index_map(tdim - 1));
-      std::int32_t num_facets = topology.index_map(tdim - 1)->size_local()
-                                + topology.index_map(tdim - 1)->num_ghosts();
-      std::vector<std::int8_t> interprocess_marker(num_facets, 0);
+      std::vector<std::int8_t> interprocess_marker(
+          topology.index_map(tdim - 1)->size_local()
+              + topology.index_map(tdim - 1)->num_ghosts(),
+          0);
       std::ranges::for_each(interprocess_facets, [&interprocess_marker](auto f)
                             { interprocess_marker[f] = 1; });
       for (auto f : entities)
