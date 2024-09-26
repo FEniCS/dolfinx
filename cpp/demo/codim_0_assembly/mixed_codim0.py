@@ -7,6 +7,7 @@ from ufl import (
     TestFunction,
     TrialFunction,
     dx,
+    inner,
 )
 
 cell = "quadrilateral"
@@ -27,9 +28,9 @@ p = TrialFunction(W)
 # of the parent mesh. The integration domain is the parent mesh, but we restrict integration
 # to all cells marked with subdomain_id=3, which will indicate what cells of our mesh is part
 # of the submesh
-a_mixed = p * v * dx(domain=mesh, subdomain_id=3)
+a_mixed = inner(p, v) * dx(domain=mesh, subdomain_id=3)
 
 q = TestFunction(W)
-a = p * q * dx(domain=submesh)
+a = inner(p, q) * dx(domain=submesh)
 
 forms = [a_mixed, a]
