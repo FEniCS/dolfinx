@@ -535,8 +535,7 @@ def transfer_meshtag(
 def refine(
     mesh: Mesh,
     edges: typing.Optional[np.ndarray] = None,
-    redistribute: bool = True,
-    ghost_mode: GhostMode = GhostMode.shared_facet,
+    partitioner: typing.Optional[typing.Callable] = None,
     option: RefinementOption = RefinementOption.none,
 ) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.
@@ -545,17 +544,16 @@ def refine(
         mesh: Mesh from which to create the refined mesh.
         edges: Indices of edges to split during refinement. If ``None``,
             mesh refinement is uniform.
-        redistribute:
-            Refined mesh is re-partitioned if ``True``.
-        ghost_mode: Ghost mode to use for the refined mesh.
+        partitioner:
+            partitioner to use for the refined mesh, If ``None`` no redistribution is performed,
+            i.e. previous local mesh is equally parallelized now with new vertices.s
         option: Controls whether parent cells and/or parent facets are computed.
-
 
     Returns:
        Refined mesh, (optional) parent cells, (optional) parent facets
     """
     mesh1, parent_cell, parent_facet = _cpp.refinement.refine(
-        mesh._cpp_object, edges, redistribute, ghost_mode, option
+        mesh._cpp_object, edges, partitioner, option
     )
     # Create new ufl domain as it will carry a reference to the C++ mesh in the ufl_cargo
     ufl_domain = ufl.Mesh(mesh._ufl_domain.ufl_coordinate_element())  # type: ignore
