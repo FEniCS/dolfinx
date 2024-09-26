@@ -133,20 +133,31 @@ class DirichletBC:
         return self._cpp_object.function_space
 
     def set(
-        self, b: npt.NDArray, x0: typing.Optional[npt.NDArray[np.int32]] = None, alpha: float = 1
+        self, x: npt.NDArray, x0: typing.Optional[npt.NDArray[np.int32]] = None, alpha: float = 1
     ) -> None:
-        """Insert boundary condition values into vector.
+        """Set entries in an array that are constrained by Dirichlet boundary conditions.
 
-        Only local (owned) entries are set, hence communication after
-        calling this function is not required unless ghost entries need to
-        be updated to the boundary condition value.
+        Entries in an array ``x`` that are constrained by a Dirichlet
+        boundary conditions are set to ``alpha * (x_bc - x0)``, where
+        ``x_bc`` is the (interpolated) boundary condition value.
+
+        For elements with point-wise evaluated degrees-of-freedom, e.g.
+        Lagrange elements, ``x_bc`` is the value of the boundary condition
+        at the degree-of-freedom. For elements with moment
+        degrees-of-freedom, ``x_bc`` is the value of the boundary condition
+        interpolated into the finite element space.
+
+        If `x` includes ghosted entries (entries available on the calling
+        rank but owned by another rank), ghosted entries constrained by a
+        Dirichlet condition will also be set.
 
         Args:
-            b:
-            x0:
-            alpha:
+            x: Array to modify for Dirichlet boundary conditions.
+            x0: Optional array used in computing the value to set. If
+                not provided it is treated as zero.
+            alpha: Scaling factor.
         """
-        self._cpp_object.set(b, x0, alpha)
+        self._cpp_object.set(x, x0, alpha)
 
     def dof_indices(self) -> tuple[npt.NDArray[np.int32], int]:
         """Access dof indices `(local indices, unrolled)`, including ghosts, to
