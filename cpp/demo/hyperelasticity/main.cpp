@@ -86,7 +86,7 @@ public:
     return [&](const Vec x, Vec)
     {
       // Assemble b and update ghosts
-      std::span<T> b(_b.mutable_array());
+      std::span b(_b.mutable_array());
       std::ranges::fill(b, 0);
       fem::assemble_vector<T>(b, *_l);
       VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
@@ -97,11 +97,11 @@ public:
       VecGhostGetLocalForm(x, &x_local);
       PetscInt n = 0;
       VecGetSize(x_local, &n);
-      const T* x_array = nullptr;
-      VecGetArrayRead(x_local, &x_array);
-      auto _x = std::span<const T>(x_array, n);
-      std::ranges::for_each(_bcs, [b, _x](auto& bc) { bc->set(b, _x, -1); });
-      VecRestoreArrayRead(x_local, &x_array);
+      const T* _x = nullptr;
+      VecGetArrayRead(x_local, &_x);
+      std::ranges::for_each(_bcs, [b, x = std::span(_x, n)](auto& bc)
+                            { bc->set(b, x, -1); });
+      VecRestoreArrayRead(x_local, &_x);
     };
   }
 

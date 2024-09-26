@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
     std::map<std::shared_ptr<const mesh::Mesh<U>>,
              std::span<const std::int32_t>>
         entity_maps
-        = {{const_ptr, std::span<const std::int32_t>(mesh_to_submesh.data(),
+        = {{const_ptr, std::span(mesh_to_submesh.data(),
                                                      mesh_to_submesh.size())}};
 
     // Next we compute the integration entities on the integration domain `mesh`
@@ -113,8 +113,8 @@ int main(int argc, char* argv[])
         fem::IntegralType::cell, *mesh->topology(), cell_marker.find(2), tdim);
 
     subdomain_map[fem::IntegralType::cell].push_back(
-        {3, std::span<const std::int32_t>(integration_entities.data(),
-                                          integration_entities.size())});
+        {3,
+         std::span(integration_entities.data(), integration_entities.size())});
 
     // We can now create the bi-linear form
     auto a_mixed = std::make_shared<fem::Form<T>>(
