@@ -214,9 +214,8 @@ std::vector<std::int32_t> fem::compute_integration_domains(
         else if (interprocess_marker[f])
         {
           throw std::runtime_error(
-              "Cannot compute interior facet integral over interprocess "
-              "facet. Please use ghost mode shared facet when creating the "
-              "mesh.");
+              "Cannot compute interior facet integral over interprocess facet. "
+              "Use \"shared facet\"  ghost mode when creating the mesh.");
         }
       }
     }
