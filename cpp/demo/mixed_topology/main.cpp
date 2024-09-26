@@ -105,8 +105,8 @@ int main(int argc, char* argv[])
   std::vector<mesh::CellType> cell_types{mesh::CellType::quadrilateral,
                                          mesh::CellType::triangle};
   std::vector<fem::CoordinateElement<double>> elements;
-  for (auto ct : cell_types)
-    elements.push_back(fem::CoordinateElement<double>(ct, 1));
+  std::ranges::transform(cell_types, std::back_inserter(elements), [](auto ct)
+                         { return fem::CoordinateElement<double>(ct, 1); });
 
   {
     auto topo = std::make_shared<mesh::Topology>(mesh::create_topology(
@@ -120,7 +120,8 @@ int main(int argc, char* argv[])
       std::cout << i << " [";
       for (auto q : topo_cells->links(i))
         std::cout << q << " ";
-      std::cout << "]" << std::endl;;
+      std::cout << "]" << std::endl;
+      ;
     }
 
     topo->create_connectivity(1, 0);
