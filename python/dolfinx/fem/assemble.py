@@ -352,7 +352,7 @@ def set_bc(
     b: np.ndarray,
     bcs: list[DirichletBC],
     x0: typing.Optional[np.ndarray] = None,
-    alpha: float = 1,
+    scale: float = 1,
 ) -> None:
     """Insert boundary condition values into vector.
 
@@ -368,4 +368,4 @@ def set_bc(
         DeprecationWarning,
     )
     for bc in bcs:
-        bc.set(b, x0, alpha)
+        bc.set(b, x0, scale)
