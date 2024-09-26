@@ -135,7 +135,7 @@ std::vector<std::int32_t> fem::compute_integration_domains(
   const int tdim = topology.dim();
   if ((integral_type == IntegralType::cell ? tdim : tdim - 1) != dim)
   {
-    throw std::runtime_error("Invalid MeshTags dimension: "
+    throw std::runtime_error("Invalid mesh entity dimension: "
                              + std::to_string(dim));
   }
 
