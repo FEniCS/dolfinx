@@ -578,10 +578,9 @@ Form<T, U> create_form_factory(
     std::vector<std::int8_t> interprocess_marker;
     if (num_integrals_type[interior_facet] > 0)
     {
+      assert(topology->index_map(tdim - 1));
       const std::vector<std::int32_t>& interprocess_facets
           = topology->interprocess_facets();
-
-      assert(topology->index_map(tdim - 1));
       std::int32_t num_facets = topology->index_map(tdim - 1)->size_local()
                                 + topology->index_map(tdim - 1)->num_ghosts();
       interprocess_marker.resize(num_facets, 0);
