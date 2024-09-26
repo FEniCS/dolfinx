@@ -225,7 +225,7 @@ int main(int argc, char* argv[])
     fem::assemble_vector(b.mutable_array(), *L);
     fem::apply_lifting<T, U>(b.mutable_array(), {a}, {{bc}}, {}, T(1));
     b.scatter_rev(std::plus<T>());
-    fem::set_bc<T, U>(b.mutable_array(), {bc});
+    bc->set(b.mutable_array(), std::nullopt);
 
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
     la::petsc::options::set("ksp_type", "preonly");

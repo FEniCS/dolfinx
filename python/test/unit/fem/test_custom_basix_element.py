@@ -23,7 +23,6 @@ from dolfinx.fem import (
     form,
     functionspace,
     locate_dofs_topological,
-    set_bc,
 )
 from dolfinx.mesh import CellType, create_unit_cube, create_unit_square, exterior_facet_indices
 from ufl import SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad, inner
@@ -66,7 +65,7 @@ def run_scalar_test(V, degree, dtype, cg_solver, rtol=None):
     b = assemble_vector(L)
     apply_lifting(b.array, [a], bcs=[[bc]])
     b.scatter_reverse(la.InsertMode.add)
-    set_bc(b.array, [bc])
+    bc.set(b.array)
 
     a = form(a, dtype=dtype)
     A = assemble_matrix(a, bcs=[bc])

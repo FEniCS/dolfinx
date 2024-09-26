@@ -26,7 +26,6 @@ from dolfinx.fem import (
     form,
     functionspace,
     locate_dofs_topological,
-    set_bc,
 )
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (
@@ -93,7 +92,7 @@ def run_scalar_test(mesh, V, degree, cg_solver):
     b = assemble_vector(L)
     apply_lifting(b.array, [a], bcs=[[bc]])
     b.scatter_reverse(la.InsertMode.add)
-    set_bc(b.array, [bc])
+    bc.set(b.array)
 
     a = form(a, dtype=dtype)
     A = assemble_matrix(a, bcs=[bc])
@@ -386,7 +385,8 @@ def test_biharmonic(family, dtype):
     b = assemble_vector(L)
     apply_lifting(b.array, [a], bcs=[bcs])
     b.scatter_reverse(la.InsertMode.add)
-    set_bc(b.array, bcs)
+    for bc in bcs:
+        bc.set(b.array)
 
     x_h = Function(V, dtype=dtype)
     x_h.x.array[:] = scipy.sparse.linalg.spsolve(A.to_scipy(), b.array)

@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 import typing
-import warnings
 from functools import singledispatch
 
 import numpy as np
@@ -483,25 +482,6 @@ class Function(ufl.Coefficient):
     def x(self) -> la.Vector:
         """Vector holding the degrees-of-freedom."""
         return self._x
-
-    @property
-    def vector(self):
-        """PETSc vector holding the degrees-of-freedom.
-
-        Upon first call, this function creates a PETSc ``Vec`` object
-        that wraps the degree-of-freedom data. The ``Vec`` object is
-        cached and the cached ``Vec`` is returned upon subsequent calls.
-
-        Note:
-            Prefer :func`x` where possible.
-        """
-        warnings.warn(
-            "dolfinx.fem.Function.vector is deprecated.\n"
-            "Please use dolfinx.fem.Function.x.petsc_vec "
-            "to access the underlying petsc4py wrapper",
-            DeprecationWarning,
-        )
-        return self.x.petsc_vec
 
     @property
     def dtype(self) -> np.dtype:

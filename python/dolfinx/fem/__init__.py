@@ -173,7 +173,6 @@ __all__ = [
     "assemble_matrix",
     "assemble_vector",
     "apply_lifting",
-    "set_bc",
     "DirichletBC",
     "dirichletbc",
     "bcs_by_block",
@@ -192,4 +191,5 @@ __all__ = [
     "form_cpp_class",
     "create_form",
     "compile_form",
+    "set_bc",
 ]

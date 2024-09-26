@@ -46,7 +46,6 @@ from dolfinx.fem import (
     form,
     functionspace,
     locate_dofs_topological,
-    set_bc,
 )
 from dolfinx.mesh import CellType, create_box, locate_entities_boundary
 from ufl import ds, dx, grad, inner
@@ -95,7 +94,7 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str):
     A = assemble_matrix(a, [bc]).to_scipy()
     b = assemble_vector(L)
     apply_lifting(b.array, [a], bcs=[[bc]])
-    set_bc(b.array, [bc])
+    bc.set(b.array)
 
     # Create solution function and create AMG solver
     uh = fem.Function(V, dtype=dtype)
@@ -208,7 +207,7 @@ def elasticity_problem(dtype):
     A = assemble_matrix(a, bcs=[bc]).to_scipy()
     b = assemble_vector(L)
     apply_lifting(b.array, [a], bcs=[[bc]])
-    set_bc(b.array, [bc])
+    bc.set(b.array)
 
     uh = fem.Function(V, dtype=dtype)
     B = nullspace_elasticty(V)

@@ -58,7 +58,7 @@ def assemble(mesh, space, k):
     b = fem.assemble_vector(L)
     fem.apply_lifting(b.array, [a], bcs=[[bc]])
     b.scatter_reverse(la.InsertMode.add)
-    fem.set_bc(b.array, [bc])
+    bc.set(b.array)
     s = mesh.comm.allreduce(
         fem.assemble_scalar(fem.form(ufl.inner(c * f, f) * (dx + ds))), op=MPI.SUM
     )

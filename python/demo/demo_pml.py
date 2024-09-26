@@ -64,13 +64,6 @@ except ModuleNotFoundError:
 
 from petsc4py import PETSc
 
-if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
-    print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
-    # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
-    # than MUMPS and does not trigger memory failures.
-    exit(0)
-# -
-
 # Since we want to solve time-harmonic Maxwell's equation, we require
 # that the demo is executed with DOLFINx (PETSc) complex mode.
 
@@ -121,7 +114,6 @@ def generate_mesh_wire(
     scatt_tag: int,
     pml_tag: int,
 ):
-    gmsh.model.add("nanowire")
     dim = 2
     # A dummy circle for setting a finer mesh
     c1 = gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_wire * 0.8, angle1=0.0, angle2=2 * np.pi)
@@ -208,7 +200,7 @@ def generate_mesh_wire(
     gmsh.model.addPhysicalGroup(dim, y_group, tag=pml_tag + 2)
 
     # Marker interior surface in bkg group
-    boundaries: list[np.tynp.ping.NDArray[np.int32]] = []
+    boundaries: list[np.typing.NDArray[np.int32]] = []
     for tag in bkg_group:
         boundary_pairs = gmsh.model.get_boundary([(dim, tag)], oriented=False)
         boundaries.append(np.asarray([pair[1] for pair in boundary_pairs], dtype=np.int32))
@@ -457,7 +449,11 @@ if MPI.COMM_WORLD.rank == 0:
         pml_tag,
     )
 model = MPI.COMM_WORLD.bcast(model, root=0)
-msh, cell_tags, facet_tags = gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
+partitioner = dolfinx.cpp.mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.shared_facet)
+
+msh, cell_tags, facet_tags = gmshio.model_to_mesh(
+    model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner
+)
 
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()
@@ -699,8 +695,30 @@ F = (
 
 a, L = ufl.lhs(F), ufl.rhs(F)
 
-problem = LinearProblem(a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+# For factorisation prefer superlu_dist, then MUMPS, then default
+sys = PETSc.Sys()  # type: ignore
+if sys.hasExternalPackage("superlu_dist"):  # type: ignore
+    mat_factor_backend = "superlu_dist"
+elif sys.hasExternalPackage("mumps"):  # type: ignore
+    mat_factor_backend = "mumps"
+else:
+    if msh.comm > 1:
+        raise RuntimeError("This demo requires a parallel linear algebra backend.")
+    else:
+        mat_factor_backend = "petsc"
+
+problem = LinearProblem(
+    a,
+    L,
+    bcs=[],
+    petsc_options={
+        "ksp_type": "preonly",
+        "pc_type": "lu",
+        "pc_factor_mat_solver_type": mat_factor_backend,
+    },
+)
 Esh = problem.solve()
+assert problem.solver.getConvergedReason() > 0, "Solver did not converge!"
 # -
 
 # Let's now save the solution in a `bp`-file. In order to do so, we need
