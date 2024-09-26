@@ -49,12 +49,7 @@ parametrize_ghost_mode = pytest.mark.parametrize(
                 reason="Unghosted interior facets fail in parallel",
             ),
         ),
-        pytest.param(
-            GhostMode.shared_facet,
-            marks=pytest.mark.skipif(
-                condition=MPI.COMM_WORLD.size == 1, reason="Shared ghost modes fail in serial"
-            ),
-        ),
+        GhostMode.shared_facet,
     ],
 )
 
