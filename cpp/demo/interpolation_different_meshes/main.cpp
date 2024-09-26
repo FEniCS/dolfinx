@@ -78,8 +78,7 @@ int main(int argc, char* argv[])
         = fem::create_interpolation_data(
             u_hex->function_space()->mesh()->geometry(),
             *u_hex->function_space()->element(),
-            *u_tet->function_space()->mesh(),
-            std::span<const std::int32_t>(cells), 1e-8);
+            *u_tet->function_space()->mesh(), std::span(cells), 1e-8);
     u_hex->interpolate(*u_tet, cells, interpolation_data);
 
 #ifdef HAS_ADIOS2

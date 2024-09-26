@@ -92,13 +92,13 @@ def test_assembly_dx_domains(mode, meshtags_factory):
 
     fem.apply_lifting(b.array, [a], [[bc]])
     b.scatter_reverse(la.InsertMode.add)
-    fem.set_bc(b.array, [bc])
+    bc.set(b.array)
 
     L2 = form(ufl.inner(w, v) * dx)
     b2 = fem.assemble_vector(L2)
     fem.apply_lifting(b2.array, [a], [[bc]])
     b2.scatter_reverse(la.InsertMode.add)
-    fem.set_bc(b2.array, [bc])
+    bc.set(b2.array)
     assert np.allclose(b.array, b2.array)
 
     # Assemble scalar
@@ -181,13 +181,13 @@ def test_assembly_ds_domains(mode):
 
     fem.apply_lifting(b.array, [a], [[bc]])
     b.scatter_reverse(la.InsertMode.add)
-    fem.set_bc(b.array, [bc])
+    bc.set(b.array)
 
     L2 = form(ufl.inner(w, v) * ds)
     b2 = fem.assemble_vector(L2)
     fem.apply_lifting(b2.array, [a2], [[bc]])
     b2.scatter_reverse(la.InsertMode.add)
-    fem.set_bc(b2.array, [bc])
+    bc.set(b2.array)
     assert np.allclose(b.array, b2.array)
 
     # Assemble scalar
