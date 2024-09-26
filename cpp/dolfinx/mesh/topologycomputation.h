@@ -41,9 +41,9 @@ class Topology;
 /// `Topology::entity_types(dim)`.
 /// @return Tuple of (cell-entity connectivity, entity-vertex
 /// connectivity, index map, list of interprocess entities).
-/// Interprocess entities lie on the "true" boundary between owned cells of each
-/// process. If the entities already exist, then {nullptr, nullptr, nullptr,
-/// std::vector()} is returned.
+/// Interprocess entities lie on the "true" boundary between owned cells
+/// of each process. If the entities already exists, then {nullptr,
+/// nullptr, nullptr, std::vector()} is returned.
 std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>>
