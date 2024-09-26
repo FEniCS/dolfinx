@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
           + mesh->topology()->index_map(tdim)->num_ghosts();
     std::vector<std::int32_t> cells(num_cells_local);
     std::iota(cells.begin(), cells.end(), 0);
-    std::vector<std::int32_t> values(cell_map->size_local(), 1);
+    std::vector<std::int32_t> values(num_cells_local, 1);
     std::for_each(marked_cells.begin(), marked_cells.end(),
                   [&values](auto& c) { values[c] = 2; });
     dolfinx::mesh::MeshTags<std::int32_t> cell_marker(mesh->topology(), tdim,
@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
 
     la::SparsityPattern sp_mixed = fem::create_sparsity_pattern(*a_mixed);
     sp_mixed.finalize();
-    la::MatrixCSR<double> A_mixed(sp_mixed);
+    la::MatrixCSR<PetscScalar> A_mixed(sp_mixed);
     fem::assemble_matrix(A_mixed.mat_add_values(), *a_mixed, {});
     A_mixed.scatter_rev();
 
@@ -132,7 +132,7 @@ int main(int argc, char* argv[])
     la::SparsityPattern sp = fem::create_sparsity_pattern(*a);
     sp.finalize();
 
-    la::MatrixCSR<double> A(sp);
+    la::MatrixCSR<PetscScalar> A(sp);
     fem::assemble_matrix(A.mat_add_values(), *a, {});
     A.scatter_rev();
 
