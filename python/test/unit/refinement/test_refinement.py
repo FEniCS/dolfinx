@@ -211,5 +211,5 @@ def test_refine_cell_meshtag(tdim, refine_plaza_wrapper):
 def test_refine_ufl_cargo():
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 3)
     mesh.topology.create_entities(1)
-    refined_mesh, _, _ = refine(mesh, redistribute=False)
+    refined_mesh, _, _ = refine(mesh)
     assert refined_mesh.ufl_domain().ufl_cargo() != mesh.ufl_domain().ufl_cargo()
