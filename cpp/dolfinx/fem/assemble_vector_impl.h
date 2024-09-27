@@ -1118,7 +1118,6 @@ void apply_lifting(
       for (const std::shared_ptr<const DirichletBC<T, U>>& bc : bcs1[j])
       {
         bc->mark_dofs(bc_markers1);
-        // bc->dof_values(bc_values1);
         bc->set(bc_values1, std::nullopt, 1);
       }
 
