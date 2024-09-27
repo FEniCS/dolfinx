@@ -424,7 +424,7 @@ mesh::MeshTags<std::int32_t>
 XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
                         std::string xpath)
 {
-  return read_meshtags_by_label(mesh, name, std::string(), xpath);
+  return read_meshtags_by_name(mesh, name, std::string(), xpath);
 }
 //-----------------------------------------------------------------------------
 std::pair<mesh::CellType, int> XDMFFile::read_cell_type(std::string grid_name,
