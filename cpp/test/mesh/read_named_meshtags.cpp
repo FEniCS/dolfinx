@@ -70,17 +70,17 @@ void test_read_named_meshtags()
       fem::CoordinateElement<double>(mesh::CellType::triangle, 1),
       mesh::GhostMode::none, "mesh"));
 
-  const auto mt_domain = meshFile.read_meshtags_by_label(
+  const auto mt_domain = meshFile.read_meshtags_by_name(
       *mesh, "domain", "domain", "/Xdmf/Domain");
 
   CHECK(mt_domain.values().front() == domain_value);
 
-  const auto mt_material = meshFile.read_meshtags_by_label(
+  const auto mt_material = meshFile.read_meshtags_by_name(
       *mesh, "material", "material", "/Xdmf/Domain");
 
   CHECK(mt_material.values().front() == material_value);
 
-  CHECK_THROWS(meshFile.read_meshtags_by_label(*mesh, "mesh", "missing"));
+  CHECK_THROWS(meshFile.read_meshtags_by_name(*mesh, "mesh", "missing"));
 }
 
 } // namespace
