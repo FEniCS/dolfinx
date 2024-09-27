@@ -521,7 +521,8 @@ def mixed_direct():
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     # Set Dirichlet boundary condition values in the RHS
-    fem.petsc.set_bc(b, bcs)
+    for bc in bcs:
+        bc.set(b)
 
     # Create and configure solver
     ksp = PETSc.KSP().create(msh.comm)
