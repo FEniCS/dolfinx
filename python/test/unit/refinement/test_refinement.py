@@ -80,7 +80,7 @@ def test_sub_refine():
         return isclose(x[0], 0) & (x[1] < 1 / 4 + tol)
 
     edges = locate_entities_boundary(mesh, 1, left_corner_edge)
-    if MPI.COMM_WORLD.size == 0:
+    if MPI.COMM_WORLD.size == 1:
         assert edges == 1
 
     mesh2, _, _ = refine(mesh, edges)
@@ -100,12 +100,12 @@ def test_refine_from_cells():
         return x[0] <= 0.5 + tol
 
     cells = locate_entities(msh, msh.topology.dim, left_side)
-    if MPI.COMM_WORLD.size == 0:
-        assert cells.__len__() == Nx * Ny
+    if MPI.COMM_WORLD.size == 1:
+        assert len(cells) == Nx * Ny
     edges = compute_incident_entities(msh.topology, cells, 2, 1)
-    if MPI.COMM_WORLD.size == 0:
-        assert edges.__len__() == Nx // 2 * (2 * Ny + 1) + (Nx // 2 + 1) * Ny
-    mesh2, _, _ = refine(msh, edges)  # TODO: redistribute=True
+    if MPI.COMM_WORLD.size == 1:
+        assert len(edges) == Nx // 2 * (2 * Ny + 1) + (Nx // 2 + 1) * Ny
+    mesh2, _, _ = refine(msh, edges)
 
     num_cells_global = mesh2.topology.index_map(2).size_global
     actual_cells = 3 * (Nx * Ny) + 3 * Ny + 2 * Nx * Ny
