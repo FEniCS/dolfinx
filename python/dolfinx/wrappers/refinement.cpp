@@ -6,6 +6,7 @@
 
 #include "MPICommWrapper.h"
 #include "array.h"
+#include "mesh.h"
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/mesh/Mesh.h>
@@ -30,46 +31,6 @@ namespace nb = nanobind;
 
 namespace dolfinx_wrappers
 {
-namespace
-{
-using PythonCellPartitionFunction
-    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        dolfinx_wrappers::MPICommWrapper, int,
-        const std::vector<dolfinx::mesh::CellType>&,
-        std::vector<nb::ndarray<const std::int64_t, nb::numpy>>)>;
-
-using CppCellPartitionFunction
-    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        MPI_Comm, int, const std::vector<dolfinx::mesh::CellType>& q,
-        const std::vector<std::span<const std::int64_t>>&)>;
-
-/// Wrap a Python graph partitioning function as a C++ function
-CppCellPartitionFunction
-create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
-{
-  if (p)
-  {
-    return [p](MPI_Comm comm, int n,
-               const std::vector<dolfinx::mesh::CellType>& cell_types,
-               const std::vector<std::span<const std::int64_t>>& cells)
-    {
-      std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
-      std::ranges::transform(
-          cells, std::back_inserter(cells_nb),
-          [](auto c)
-          {
-            return nb::ndarray<const std::int64_t, nb::numpy>(
-                c.data(), {c.size()}, nb::handle());
-          });
-
-      return p(dolfinx_wrappers::MPICommWrapper(comm), n, cell_types, cells_nb);
-    };
-  }
-  else
-    return nullptr;
-}
-} // namespace
-
 template <std::floating_point T>
 void export_refinement_with_variable_mesh_type(nb::module_& m)
 {
@@ -80,7 +41,7 @@ void export_refinement_with_variable_mesh_type(nb::module_& m)
          std::optional<
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
              edges,
-         std::optional<PythonCellPartitionFunction> partitioner,
+         std::optional<part::impl::PythonCellPartitionFunction> partitioner,
          dolfinx::refinement::Option option)
       {
         std::optional<std::span<const std::int32_t>> cpp_edges(std::nullopt);
@@ -90,9 +51,9 @@ void export_refinement_with_variable_mesh_type(nb::module_& m)
               std::span(edges.value().data(), edges.value().size()));
         }
 
-        CppCellPartitionFunction cpp_partitioner
+        part::impl::CppCellPartitionFunction cpp_partitioner
             = partitioner.has_value()
-                  ? create_cell_partitioner_cpp(partitioner.value())
+                  ? part::impl::create_cell_partitioner_cpp(partitioner.value())
                   : nullptr;
         auto [mesh1, cell, facet] = dolfinx::refinement::refine(
             mesh, cpp_edges, cpp_partitioner, option);
