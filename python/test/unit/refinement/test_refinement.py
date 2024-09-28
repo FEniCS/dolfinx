@@ -59,8 +59,7 @@ def test_refine_create_form():
     """Check that forms can be assembled on refined mesh"""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     mesh.topology.create_entities(1)
-    mesh, _, _ = refine(mesh)  # TODO: recover redistribute=True behavior
-
+    mesh, _, _ = refine(mesh)
     V = functionspace(mesh, ("Lagrange", 1))
 
     # Define variational problem
