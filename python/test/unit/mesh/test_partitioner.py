@@ -20,12 +20,10 @@ if dolfinx.has_ptscotch:
 
 @pytest.mark.parametrize("partitioner", avail_partitioners)
 def test_partitioner(partitioner):
-    quadrilaterals = np.array([], dtype=np.int64)
+    cells = np.array([[]], dtype=np.int64)
     quad_points = np.array([[0, 0], [0.3, 0]], dtype=np.float64)
 
     ufl_quad = ufl.Mesh(element("Lagrange", "quadrilateral", 1, shape=(2,)))
 
     cell_part = dolfinx.mesh.create_cell_partitioner(partitioner())
-    dolfinx.mesh.create_mesh(
-        MPI.COMM_WORLD, quadrilaterals, quad_points, ufl_quad, partitioner=cell_part
-    )
+    dolfinx.mesh.create_mesh(MPI.COMM_WORLD, cells, quad_points, ufl_quad, partitioner=cell_part)
