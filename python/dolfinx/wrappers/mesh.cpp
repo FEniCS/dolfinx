@@ -37,6 +37,34 @@ namespace nb = nanobind;
 
 namespace dolfinx_wrappers
 {
+namespace part::impl
+{
+CppCellPartitionFunction
+create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
+{
+  if (p)
+  {
+    return [p](MPI_Comm comm, int n,
+               const std::vector<dolfinx::mesh::CellType>& cell_types,
+               const std::vector<std::span<const std::int64_t>>& cells)
+    {
+      std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
+      std::ranges::transform(
+          cells, std::back_inserter(cells_nb),
+          [](auto c)
+          {
+            return nb::ndarray<const std::int64_t, nb::numpy>(
+                c.data(), {c.size()}, nb::handle());
+          });
+
+      return p(dolfinx_wrappers::MPICommWrapper(comm), n, cell_types, cells_nb);
+    };
+  }
+  else
+    return nullptr;
+}
+} // namespace part::impl
+
 template <typename T>
 void declare_meshtags(nb::module_& m, std::string type)
 {
