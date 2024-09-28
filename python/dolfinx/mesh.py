@@ -535,9 +535,7 @@ def transfer_meshtag(
 def refine(
     mesh: Mesh,
     edges: typing.Optional[np.ndarray] = None,
-    partitioner: typing.Optional[typing.Callable] = _cpp.mesh.create_cell_partitioner(
-        GhostMode.none
-    ),
+    partitioner: typing.Optional[typing.Callable] = create_cell_partitioner(GhostMode.none),
     option: RefinementOption = RefinementOption.none,
 ) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.
@@ -609,7 +607,7 @@ def create_mesh(
         A mesh.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(GhostMode.none)
+        partitioner = create_cell_partitioner(GhostMode.none)
 
     x = np.asarray(x, order="C")
     if x.ndim == 1:

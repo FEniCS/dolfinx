@@ -11,6 +11,7 @@ import pytest
 from numpy import isclose
 
 import ufl
+from dolfinx.cpp.mesh import create_cell_partitioner
 from dolfinx.fem import assemble_matrix, form, functionspace
 from dolfinx.mesh import (
     CellType,
@@ -46,7 +47,7 @@ def test_refine_create_unit_cube(ghost_mode, redistribute):
     """Refine mesh of unit cube."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=ghost_mode)
     mesh.topology.create_entities(1)
-    mesh, _, _ = refine(mesh)  # , partitioner=create_cell_partitioner(ghost_mode))
+    mesh, _, _ = refine(mesh, partitioner=create_cell_partitioner(ghost_mode))
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
 
