@@ -535,19 +535,29 @@ def transfer_meshtag(
 def refine(
     mesh: Mesh,
     edges: typing.Optional[np.ndarray] = None,
-    partitioner: typing.Optional[typing.Callable] = None,
+    partitioner: typing.Optional[typing.Callable] = _cpp.mesh.create_cell_partitioner(
+        GhostMode.shared_facet
+    ),
     option: RefinementOption = RefinementOption.none,
 ) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.
+
+    Warning:
+        Passing ``None`` for ``partitioner``, refined cells will be on
+        the same process as the parent cell but the refined mesh will
+        **not** have ghosts cells. The possibility to not re-partition
+        the refined mesh and include ghost cells in the refined will be
+        added in a future release.
 
     Args:
         mesh: Mesh from which to create the refined mesh.
         edges: Indices of edges to split during refinement. If ``None``,
             mesh refinement is uniform.
-        partitioner:
-            partitioner to use for the refined mesh, If ``None`` no redistribution is performed,
-            i.e. previous local mesh is equally parallelized now with new vertices.s
-        option: Controls whether parent cells and/or parent facets are computed.
+        partitioner: Partitioner to distribute the refined mesh. If
+            ``None`` no redistribution is performed, i.e. refined cells remain on the
+            same process as the parent cell.
+        option: Controls whether parent cells and/or parent facets are
+            computed.
 
     Returns:
        Refined mesh, (optional) parent cells, (optional) parent facets

@@ -23,10 +23,21 @@ namespace dolfinx::refinement
 /// @brief Refine with markers, optionally redistributing, and
 /// optionally calculating the parent-child relationships.
 ///
+/// @note Using the default partitioner for a refined mesh, the refined
+/// mesh will include ghosts cells (connected by facet).
+///
+/// @warning Passing `nullptr` for `partitioner`, refined cells will be
+/// on the same process as the parent cell but the refined mesh will
+/// **not** have ghosts cells. The possibility to not re-partition the
+/// refined mesh and include ghost cells in the refined mesh will be
+/// added in a future release.
+///
 /// @param[in] mesh Input mesh to be refined.
 /// @param[in] edges Indices of the edges that should be split by this
 /// refinement. If not provides, a uniform refinement is performed.
-/// @param[in] partitioner partitioner to be used for the refined mesh
+/// @param[in] partitioner Partitioner to be used for the refined mesh.
+/// If not callable, refined cells will be on the same process as the
+/// parent cell.
 /// @param[in] option Control the computation of parent facets, parent
 /// cells. If an option is unselected, an empty list is returned.
 /// @return New mesh and optional parent cell index, parent facet
