@@ -40,7 +40,9 @@ void export_refinement(nb::module_& m)
          std::optional<
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
              edges,
-         std::optional<part::impl::PythonCellPartitionFunction> partitioner,
+         std::optional<
+             dolfinx_wrappers::part::impl::PythonCellPartitionFunction>
+             partitioner,
          dolfinx::refinement::Option option)
       {
         std::optional<std::span<const std::int32_t>> cpp_edges(std::nullopt);
@@ -50,9 +52,10 @@ void export_refinement(nb::module_& m)
               std::span(edges.value().data(), edges.value().size()));
         }
 
-        part::impl::CppCellPartitionFunction cpp_partitioner
+        dolfinx_wrappers::part::impl::CppCellPartitionFunction cpp_partitioner
             = partitioner.has_value()
-                  ? part::impl::create_cell_partitioner_cpp(partitioner.value())
+                  ? dolfinx_wrappers::part::impl::create_cell_partitioner_cpp(
+                        partitioner.value())
                   : nullptr;
         auto [mesh1, cell, facet] = dolfinx::refinement::refine(
             mesh, cpp_edges, cpp_partitioner, option);
@@ -60,12 +63,18 @@ void export_refinement(nb::module_& m)
         std::optional<nb::ndarray<std::int32_t, nb::numpy>> python_cell(
             std::nullopt);
         if (cell.has_value())
-          python_cell.emplace(as_nbarray(std::move(cell.value())));
+        {
+          python_cell.emplace(
+              dolfinx_wrappers::as_nbarray(std::move(cell.value())));
+        }
 
         std::optional<nb::ndarray<std::int8_t, nb::numpy>> python_facet(
             std::nullopt);
         if (facet.has_value())
-          python_facet.emplace(as_nbarray(std::move(facet.value())));
+        {
+          python_facet.emplace(
+              dolfinx_wrappers::as_nbarray(std::move(facet.value())));
+        }
 
         return std::tuple{std::move(mesh1), std::move(python_cell),
                           std::move(python_facet)};
