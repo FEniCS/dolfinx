@@ -93,7 +93,7 @@ void export_refinement_with_variable_mesh_type(nb::module_& m)
         CppCellPartitionFunction cpp_partitioner
             = partitioner.has_value()
                   ? create_cell_partitioner_cpp(partitioner.value())
-                  : dolfinx::refinement::maintain_coarse_partitioner;
+                  : nullptr;
         auto [mesh1, cell, facet] = dolfinx::refinement::refine(
             mesh, cpp_edges, cpp_partitioner, option);
 
