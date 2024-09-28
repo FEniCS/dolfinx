@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2018-2024 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -13,13 +13,12 @@
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/refinement/interval.h>
 #include <dolfinx/refinement/option.h>
-#include <dolfinx/refinement/plaza.h>
 #include <dolfinx/refinement/refine.h>
 #include <dolfinx/refinement/utils.h>
 #include <functional>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
-#include <nanobind/stl/array.h>
+#include <nanobind/stl/function.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/tuple.h>
@@ -79,8 +78,8 @@ void export_refinement(nb::module_& m)
         return std::tuple{std::move(mesh1), std::move(python_cell),
                           std::move(python_facet)};
       },
-      nb::arg("mesh"), nb::arg("edges") = nb::none(),
-      nb::arg("partitioner") = nb::none(), nb::arg("option"));
+      nb::arg("mesh"), nb::arg("edges").none(), nb::arg("partitioner").none(),
+      nb::arg("option"));
 }
 } // namespace
 

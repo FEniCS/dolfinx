@@ -542,12 +542,20 @@ def refine(
 ) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.
 
+    Passing ``None`` for ``partitioner``, refined cells will be on the
+    same process as the parent cell.
+
+    Note:
+        Using the default partitioner for a refined mesh, the refined
+        mesh will include ghosts cells (connected by facet) even if the
+        parent mesh does not include ghost cells.
+
     Warning:
-        Passing ``None`` for ``partitioner``, refined cells will be on
-        the same process as the parent cell but the refined mesh will
-        **not** have ghosts cells. The possibility to not re-partition
-        the refined mesh and include ghost cells in the refined will be
-        added in a future release.
+        Passing ``None`` for ``partitioner``, the refined mesh will
+        **not** have ghosts cells even if the parent mesh has ghost
+        cells. The possibility to not re-partition the refined mesh and
+        include ghost cells in the refined mesh will be added in a
+        future release.
 
     Args:
         mesh: Mesh from which to create the refined mesh.

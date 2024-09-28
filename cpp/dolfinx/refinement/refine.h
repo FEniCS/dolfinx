@@ -24,7 +24,8 @@ namespace dolfinx::refinement
 /// optionally calculating the parent-child relationships.
 ///
 /// @note Using the default partitioner for a refined mesh, the refined
-/// mesh will include ghosts cells (connected by facet).
+/// mesh will include ghosts cells (connected by facet) even if the
+/// parent mesh is not ghosted.
 ///
 /// @warning Passing `nullptr` for `partitioner`, refined cells will be
 /// on the same process as the parent cell but the refined mesh will
