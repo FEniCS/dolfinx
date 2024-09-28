@@ -20,38 +20,24 @@
 
 namespace dolfinx::refinement
 {
-/// @brief Partitioner that maintains the regional distribution for a
-/// refined mesh. Meaning, process local data is just maintained and no
-/// redistribution happens.
-///
-/// @param[in] comm MPI Communicator
-/// @param[in] nparts Number of partitions (input has no effect)
-/// @param[in] cell_types Cell types in the mesh
-/// @param[in] cells Lists of cells of each cell type.
-/// @return Destination ranks for each cell on this process
-graph::AdjacencyList<std::int32_t>
-maintain_coarse_partitioner(MPI_Comm comm, int nparts,
-                            std::vector<mesh::CellType> cell_types,
-                            std::vector<std::span<const std::int64_t>> cells);
-
 /// @brief Refine with markers, optionally redistributing, and
 /// optionally calculating the parent-child relationships.
 ///
 /// @param[in] mesh Input mesh to be refined.
-/// @param[in] edges Optional indices of the edges that should be split
-/// by this refinement, if optional is not set, a uniform refinement is
-/// performed, same behavior as passing a list of all indices.
+/// @param[in] edges Indices of the edges that should be split by this
+/// refinement. If not provides, a uniform refinement is performed.
 /// @param[in] partitioner partitioner to be used for the refined mesh
 /// @param[in] option Control the computation of parent facets, parent
 /// cells. If an option is unselected, an empty list is returned.
-/// @return New Mesh and optional parent cell index, parent facet
+/// @return New mesh and optional parent cell index, parent facet
 /// indices.
 template <std::floating_point T>
 std::tuple<mesh::Mesh<T>, std::optional<std::vector<std::int32_t>>,
            std::optional<std::vector<std::int8_t>>>
 refine(const mesh::Mesh<T>& mesh,
        std::optional<std::span<const std::int32_t>> edges,
-       mesh::CellPartitionFunction partitioner = maintain_coarse_partitioner,
+       const mesh::CellPartitionFunction& partitioner
+       = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet),
        Option option = Option::none)
 {
   auto topology = mesh.topology();
@@ -59,10 +45,10 @@ refine(const mesh::Mesh<T>& mesh,
   if (!mesh::is_simplex(topology->cell_type()))
     throw std::runtime_error("Refinement only defined for simplices");
 
-  bool oned = topology->cell_type() == mesh::CellType::interval;
   auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
-      = oned ? interval::compute_refinement_data(mesh, edges, option)
-             : plaza::compute_refinement_data(mesh, edges, option);
+      = (topology->cell_type() == mesh::CellType::interval)
+            ? interval::compute_refinement_data(mesh, edges, option)
+            : plaza::compute_refinement_data(mesh, edges, option);
 
   mesh::Mesh<T> refined_mesh
       = mesh::create_mesh(mesh.comm(), mesh.comm(), std::move(cell_adj).array(),
