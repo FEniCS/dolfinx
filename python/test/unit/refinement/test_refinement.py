@@ -180,10 +180,11 @@ def test_refine_facet_meshtag(tdim, refine_plaza_wrapper):
 @pytest.mark.parametrize(
     "refine_plaza_wrapper",
     [
-        lambda mesh: refine(mesh, option=RefinementOption.parent_cell_and_facet),
+        lambda mesh: refine(mesh, partitioner=None, option=RefinementOption.parent_cell_and_facet),
         lambda mesh: refine(
             mesh,
             np.arange(mesh.topology.index_map(1).size_local),
+            partitioner=None,
             option=RefinementOption.parent_cell_and_facet,
         ),
     ],
