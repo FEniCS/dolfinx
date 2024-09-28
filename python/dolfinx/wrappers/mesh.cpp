@@ -32,6 +32,7 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
+#include <optional>
 #include <span>
 
 namespace nb = nanobind;
@@ -323,15 +324,14 @@ void declare_mesh(nb::module_& m, std::string type)
          nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> cells,
          const dolfinx::fem::CoordinateElement<T>& element,
          nb::ndarray<const T, nb::c_contig> x,
-         const PythonCellPartitionFunction& p)
+         PythonCellPartitionFunction p)
       {
-        std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
+        std::optional<CppCellPartitionFunction> p_wrap;
         if (p)
         {
-          auto p_wrap
-              = [p](MPI_Comm comm, int n,
-                    const std::vector<dolfinx::mesh::CellType>& cell_types,
-                    const std::vector<std::span<const std::int64_t>>& cells)
+          p_wrap = [p](MPI_Comm comm, int n,
+                       const std::vector<dolfinx::mesh::CellType>& cell_types,
+                       const std::vector<std::span<const std::int64_t>>& cells)
           {
             std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
             std::ranges::transform(
@@ -343,18 +343,13 @@ void declare_mesh(nb::module_& m, std::string type)
                 });
             return p(MPICommWrapper(comm), n, cell_types, cells_nb);
           };
-          return dolfinx::mesh::create_mesh(
-              comm.get(), comm.get(), std::span(cells.data(), cells.size()),
-              element, comm.get(), std::span(x.data(), x.size()),
-              {x.shape(0), shape1}, p_wrap);
         }
-        else
-        {
-          return dolfinx::mesh::create_mesh(
-              comm.get(), comm.get(), std::span(cells.data(), cells.size()),
-              element, comm.get(), std::span(x.data(), x.size()),
-              {x.shape(0), shape1}, nullptr);
-        }
+
+        std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
+        return dolfinx::mesh::create_mesh(
+            comm.get(), comm.get(), std::span(cells.data(), cells.size()),
+            element, comm.get(), std::span(x.data(), x.size()),
+            {x.shape(0), shape1}, p ? p_wrap.value() : nullptr);
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("element"),
       nb::arg("x").noconvert(), nb::arg("partitioner").none(),
