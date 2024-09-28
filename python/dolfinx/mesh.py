@@ -536,7 +536,7 @@ def refine(
     mesh: Mesh,
     edges: typing.Optional[np.ndarray] = None,
     partitioner: typing.Optional[typing.Callable] = _cpp.mesh.create_cell_partitioner(
-        GhostMode.shared_facet
+        GhostMode.none
     ),
     option: RefinementOption = RefinementOption.none,
 ) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:

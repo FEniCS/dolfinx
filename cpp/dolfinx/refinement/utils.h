@@ -276,9 +276,12 @@ std::vector<std::int64_t> adjust_indices(const common::IndexMap& map,
                                          std::int32_t n);
 
 /// @brief Transfer facet MeshTags from coarse mesh to refined mesh
-/// @note The refined mesh must not have been redistributed during
-/// refinement
-/// @note GhostMode must be GhostMode.none
+///
+/// @warning The refined mesh must not have been redistributed during
+/// refinement.
+///
+/// @warning GhostMode must be GhostMode.none.
+///
 /// @param[in] tags0 Tags on the parent mesh
 /// @param[in] topology1 Refined mesh topology
 /// @param[in] cell Parent cell of each cell in refined mesh
@@ -292,7 +295,8 @@ std::array<std::vector<std::int32_t>, 2> transfer_facet_meshtag(
 ///
 /// @note The refined mesh must not have been redistributed during
 /// refinement.
-/// @note GhostMode must be GhostMode.none
+///
+/// @warning GhostMode must be GhostMode.none.
 ///
 /// @param[in] tags0 Tags on the parent mesh
 /// @param[in] topology1 Refined mesh topology

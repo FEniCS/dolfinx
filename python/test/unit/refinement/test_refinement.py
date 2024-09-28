@@ -112,14 +112,18 @@ def test_refine_from_cells():
     assert num_cells_global == actual_cells
 
 
-@pytest.mark.parametrize("tdim", [2, 3])
+@pytest.mark.parametrize(
+    "tdim",
+    [2, 3],
+)
 @pytest.mark.parametrize(
     "refine_plaza_wrapper",
     [
-        lambda mesh: refine(mesh, option=RefinementOption.parent_cell_and_facet),
+        lambda mesh: refine(mesh, partitioner=None, option=RefinementOption.parent_cell_and_facet),
         lambda mesh: refine(
             mesh,
-            np.arange(mesh.topology.index_map(1).size_local),
+            edges=np.arange(mesh.topology.index_map(1).size_local),
+            partitioner=None,
             option=RefinementOption.parent_cell_and_facet,
         ),
     ],
@@ -149,6 +153,7 @@ def test_refine_facet_meshtag(tdim, refine_plaza_wrapper):
     )
 
     fine_mesh, parent_cell, parent_facet = refine_plaza_wrapper(mesh)
+
     fine_mesh.topology.create_entities(tdim - 1)
     new_meshtag = transfer_meshtag(meshtag, fine_mesh, parent_cell, parent_facet)
     assert len(new_meshtag.indices) == (tdim * 2 - 2) * len(meshtag.indices)
