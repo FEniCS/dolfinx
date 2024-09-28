@@ -29,7 +29,7 @@
 
 namespace nb = nanobind;
 
-namespace dolfinx_wrappers
+namespace
 {
 template <std::floating_point T>
 void export_refinement(nb::module_& m)
@@ -73,6 +73,10 @@ void export_refinement(nb::module_& m)
       nb::arg("mesh"), nb::arg("edges") = nb::none(),
       nb::arg("partitioner") = nb::none(), nb::arg("option"));
 }
+} // namespace
+
+namespace dolfinx_wrappers
+{
 
 void refinement(nb::module_& m)
 {
