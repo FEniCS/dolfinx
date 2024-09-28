@@ -73,8 +73,7 @@ TEMPLATE_TEST_CASE("Interval uniform refinement",
 
   // TODO: parent_facet
   auto [refined_mesh, parent_edge, parent_facet] = refinement::refine(
-      mesh, std::nullopt, &refinement::maintain_coarse_partitioner,
-      refinement::Option::parent_cell);
+      mesh, std::nullopt, nullptr, refinement::Option::parent_cell);
 
   std::vector<T> expected_x = {
       /* v_0 */ 0.0, 0.0, 0.0,
@@ -193,8 +192,7 @@ TEMPLATE_TEST_CASE("Interval Refinement (parallel)",
 
   // TODO: parent_facet
   auto [refined_mesh, parent_edges, parent_facet] = refinement::refine(
-      mesh, std::nullopt, &refinement::maintain_coarse_partitioner,
-      refinement::Option::parent_cell);
+      mesh, std::nullopt, nullptr, refinement::Option::parent_cell);
 
   T rank_d = static_cast<T>(rank);
   T comm_size_d = static_cast<T>(comm_size);
