@@ -32,9 +32,8 @@ namespace nb = nanobind;
 namespace dolfinx_wrappers
 {
 template <std::floating_point T>
-void export_refinement_with_variable_mesh_type(nb::module_& m)
+void export_refinement(nb::module_& m)
 {
-
   m.def(
       "refine",
       [](const dolfinx::mesh::Mesh<T>& mesh,
@@ -77,8 +76,8 @@ void export_refinement_with_variable_mesh_type(nb::module_& m)
 
 void refinement(nb::module_& m)
 {
-  export_refinement_with_variable_mesh_type<float>(m);
-  export_refinement_with_variable_mesh_type<double>(m);
+  export_refinement<float>(m);
+  export_refinement<double>(m);
 
   nb::enum_<dolfinx::refinement::Option>(m, "RefinementOption")
       .value("none", dolfinx::refinement::Option::none)
