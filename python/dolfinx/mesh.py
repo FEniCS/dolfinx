@@ -467,7 +467,7 @@ def locate_entities(msh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
     Returns:
         Indices (local to the process) of marked mesh entities.
     """
-    return _cpp.mesh.locate_entities(mesh._cpp_object, dim, marker)
+    return _cpp.mesh.locate_entities(msh._cpp_object, dim, marker)
 
 
 def locate_entities_boundary(msh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
