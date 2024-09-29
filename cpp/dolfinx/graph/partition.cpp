@@ -366,7 +366,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   std::int32_t i_ghost = 0;
   for (std::int32_t i = 0; i < recv_disp.back(); ++i)
   {
-    // int src_rank = src[i];
+    int src_rank = src[i];
 
     std::span row(recv_buffer.data() + i * buffer_shape1, buffer_shape1);
     auto info = row.last(2);
@@ -377,7 +377,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
     {
       std::ranges::copy(edges, std::next(data.begin(), i_owned * shape[1]));
       global_indices[i_owned] = orig_global_index;
-      // src_ranks0.push_back(src_rank);
+      src_ranks0.push_back(src_rank);
       ++i_owned;
     }
     else
@@ -386,14 +386,14 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
           edges, std::next(data.begin(), (i_ghost + num_owned_r) * shape[1]));
       global_indices[i_ghost + num_owned_r] = orig_global_index;
       ghost_index_owner[i_ghost] = owner;
-      // src_ranks1.push_back(src_rank);
+      src_ranks1.push_back(src_rank);
       ++i_ghost;
     }
   }
   assert(i_owned == num_owned_r);
 
-  // src_ranks0.insert(src_ranks0.end(), src_ranks1.begin(), src_ranks1.end());
-  // src_ranks0.shrink_to_fit();
+  src_ranks0.insert(src_ranks0.end(), src_ranks1.begin(), src_ranks1.end());
+  src_ranks0.shrink_to_fit();
 
   spdlog::debug("data.size = {}", data.size());
   return {std::move(data), std::move(src_ranks0), std::move(global_indices),
