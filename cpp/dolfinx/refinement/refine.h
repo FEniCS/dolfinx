@@ -16,31 +16,39 @@
 #include <algorithm>
 #include <concepts>
 #include <optional>
+#include <spdlog/spdlog.h>
 #include <utility>
 
 namespace dolfinx::refinement
 {
-/// @brief Refine with markers, optionally redistributing, and
-/// optionally calculating the parent-child relationships.
+/// @brief Refine a mesh with markers.
 ///
-/// @note Using the default partitioner for a refined mesh, the refined
-/// mesh will **not** include ghosts cells (connected by facet) even if
-/// the parent mesh is ghosted.
+/// The refined mesh can be optionally re-partitioned across processes.
+/// Passing `nullptr` for `partitioner`, refined cells will be on the
+/// same process as the parent cell.
 ///
-/// @warning Passing `nullptr` for `partitioner`, refined cells will be
-/// on the same process as the parent cell but the refined mesh will
-/// **not** have ghosts cells. The possibility to not re-partition the
-/// refined mesh and include ghost cells in the refined mesh will be
-/// added in a future release.
+/// Parent-child relationships can be optionally computed. Parent-child
+/// relationships can be used to create MeshTags on the refined mesh
+/// from MeshTags on the parent mesh.
+///
+/// @warning Using the default partitioner for a refined mesh, the
+/// refined mesh will **not** include ghosts cells (cells connected by
+/// facet to an owned cell) even if the parent mesh is ghosted.
+///
+/// @warning Passing `nullptr` for `partitioner`, the refined mesh will
+/// **not** have ghosts cells even if the parent mesh is ghosted. The
+/// possibility to not re-partition the refined mesh and include ghost
+/// cells in the refined mesh will be added in a future release.
 ///
 /// @param[in] mesh Input mesh to be refined.
-/// @param[in] edges Indices of the edges that should be split by this
-/// refinement. If not provides, a uniform refinement is performed.
-/// @param[in] partitioner Partitioner to be used for the refined mesh.
-/// If not callable, refined cells will be on the same process as the
-/// parent cell.
+/// @param[in] edges Indices of the edges that should be split in the
+/// refinement. If not provided (`std::nullopt`), uniform refinement is
+/// performed.
+/// @param[in] partitioner Partitioner to be used to distribute the
+/// refined mesh. If not callable, refined cells will be on the same
+/// process as the parent cell.
 /// @param[in] option Control the computation of parent facets, parent
-/// cells. If an option is unselected, an empty list is returned.
+/// cells. If an option is not selected, an empty list is returned.
 /// @return New mesh and optional parent cell index, parent facet
 /// indices.
 template <std::floating_point T>
@@ -62,20 +70,18 @@ refine(const mesh::Mesh<T>& mesh,
             ? interval::compute_refinement_data(mesh, edges, option)
             : plaza::compute_refinement_data(mesh, edges, option);
 
-  mesh::Mesh<T> refined_mesh = mesh::create_mesh(
+  mesh::Mesh<T> mesh1 = mesh::create_mesh(
       mesh.comm(), mesh.comm(), cell_adj.array(), mesh.geometry().cmap(),
       mesh.comm(), new_vertex_coords, xshape, partitioner);
 
   // Report the number of refined cells
   const int D = topology->dim();
   const std::int64_t n0 = topology->index_map(D)->size_global();
-  const std::int64_t n1 = refined_mesh.topology()->index_map(D)->size_global();
+  const std::int64_t n1 = mesh1.topology()->index_map(D)->size_global();
   spdlog::info(
       "Number of cells increased from {} to {} ({}% increase).", n0, n1,
       100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0));
 
-  return {std::move(refined_mesh), std::move(parent_cell),
-          std::move(parent_facet)};
+  return {std::move(mesh1), std::move(parent_cell), std::move(parent_facet)};
 }
-
 } // namespace dolfinx::refinement

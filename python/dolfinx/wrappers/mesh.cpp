@@ -238,11 +238,11 @@ void declare_mesh(nb::module_& m, std::string type)
   m.def(
       create_interval.c_str(),
       [](MPICommWrapper comm, std::int64_t n, std::array<T, 2> p,
-         dolfinx::mesh::GhostMode ghost_mode,
+         dolfinx::mesh::GhostMode mode,
          const part::impl::PythonCellPartitionFunction& part)
       {
         return dolfinx::mesh::create_interval<T>(
-            comm.get(), n, p, ghost_mode,
+            comm.get(), n, p, mode,
             part::impl::create_cell_partitioner_cpp(part));
       },
       nb::arg("comm"), nb::arg("n"), nb::arg("p"), nb::arg("ghost_mode"),
@@ -683,8 +683,6 @@ void mesh(nb::module_& m)
               ghost_owners_span, boundary_vertices_span);
         });
 
-  // dolfinx::mesh::MeshTags
-
   declare_meshtags<std::int8_t>(m, "int8");
   declare_meshtags<std::int32_t>(m, "int32");
   declare_meshtags<std::int64_t>(m, "int64");
@@ -695,10 +693,11 @@ void mesh(nb::module_& m)
 
   m.def(
       "create_cell_partitioner",
-      [](dolfinx::mesh::GhostMode gm) -> part::impl::PythonCellPartitionFunction
+      [](dolfinx::mesh::GhostMode mode)
+          -> part::impl::PythonCellPartitionFunction
       {
         return part::impl::create_cell_partitioner_py(
-            dolfinx::mesh::create_cell_partitioner(gm));
+            dolfinx::mesh::create_cell_partitioner(mode));
       },
       "Create default cell partitioner.");
   m.def(
@@ -708,12 +707,12 @@ void mesh(nb::module_& m)
              const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
              bool ghosting)>
              part,
-         dolfinx::mesh::GhostMode ghost_mode)
+         dolfinx::mesh::GhostMode mode)
           -> part::impl::PythonCellPartitionFunction
       {
         return part::impl::create_cell_partitioner_py(
             dolfinx::mesh::create_cell_partitioner(
-                ghost_mode, part::impl::create_partitioner_cpp(part)));
+                mode, part::impl::create_partitioner_cpp(part)));
       },
       nb::arg("part"), nb::arg("ghost_mode") = dolfinx::mesh::GhostMode::none,
       "Create a cell partitioner from a graph partitioning function.");

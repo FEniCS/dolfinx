@@ -264,6 +264,8 @@ create_new_vertices(MPI_Comm comm,
           xshape};
 }
 
+/// @todo Improve docstring.
+///
 /// @brief Given an index map, add "n" extra indices at the end of local
 /// range.
 ///
@@ -277,7 +279,7 @@ create_new_vertices(MPI_Comm comm,
 std::vector<std::int64_t> adjust_indices(const common::IndexMap& map,
                                          std::int32_t n);
 
-/// @brief Transfer facet MeshTags from coarse mesh to refined mesh
+/// @brief Transfer facet MeshTags from coarse mesh to refined mesh.
 ///
 /// @warning The refined mesh must not have been redistributed during
 /// refinement.
