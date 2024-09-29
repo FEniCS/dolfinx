@@ -820,7 +820,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     assert(cells.size() % num_cell_nodes == 0);
     std::size_t num_cells = cells.size() / num_cell_nodes;
     std::vector<int> src_ranks;
-    std::tie(cells1, src_ranks, original_idx1, ghost_owners)
+    std::tie(cells1, /* src_ranks, */ original_idx1, ghost_owners)
         = graph::build::distribute(comm, cells, {num_cells, num_cell_nodes},
                                    dest);
     spdlog::debug("Got {} cells from distribution", cells1.size());
@@ -1018,8 +1018,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
       // Distribute cells (topology, includes higher-order 'nodes') to
       // destination rank
-      std::vector<int> src_ranks;
-      std::tie(cells1[i], src_ranks, original_idx1[i], ghost_owners[i])
+      // std::vector<int> src_ranks;
+      std::tie(cells1[i], /*src_ranks,*/ original_idx1[i], ghost_owners[i])
           = graph::build::distribute(comm, cells[i],
                                      {num_cells, num_cell_nodes}, dest_i);
       spdlog::debug("Got {} cells from distribution", cells1[i].size());
