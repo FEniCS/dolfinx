@@ -84,7 +84,7 @@ distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
 /// 2. Source rank for each received entry
 /// 3. Original global index for each node
 /// 4. Owner rank of ghost nodes
-std::tuple<std::vector<std::int64_t>, /*std::vector<int>,*/
+std::tuple<std::vector<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
 distribute(MPI_Comm comm, std::span<const std::int64_t> list,
            std::array<std::size_t, 2> shape,

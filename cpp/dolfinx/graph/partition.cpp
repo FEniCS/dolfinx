@@ -224,7 +224,7 @@ graph::build::distribute(MPI_Comm comm,
           std::move(ghost_index_owner)};
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::vector<std::int64_t>, /*std::vector<int>,*/
+std::tuple<std::vector<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
 graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
                          std::array<std::size_t, 2> shape,
@@ -396,7 +396,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   // src_ranks0.shrink_to_fit();
 
   spdlog::debug("data.size = {}", data.size());
-  return {std::move(data), /*std::move(src_ranks0),*/ std::move(global_indices),
+  return {std::move(data), std::move(src_ranks0), std::move(global_indices),
           std::move(ghost_index_owner)};
 }
 //-----------------------------------------------------------------------------
