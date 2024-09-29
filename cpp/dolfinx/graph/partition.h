@@ -81,10 +81,11 @@ distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
 /// array. The first rank is the 'owner' of the node.
 /// @return
 /// 1. Received list for this process
-/// 2. Original global index for each node
-/// 3. Owner rank of ghost nodes
-std::tuple<std::vector<std::int64_t>, std::vector<std::int64_t>,
-           std::vector<int>>
+/// 2. Source rank for each received entry
+/// 3. Original global index for each node
+/// 4. Owner rank of ghost nodes
+std::tuple<std::vector<std::int64_t>, std::vector<int>,
+           std::vector<std::int64_t>, std::vector<int>>
 distribute(MPI_Comm comm, std::span<const std::int64_t> list,
            std::array<std::size_t, 2> shape,
            const graph::AdjacencyList<std::int32_t>& destinations);
