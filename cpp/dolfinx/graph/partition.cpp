@@ -345,27 +345,28 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
                 shape[1]);
 
   // Count number of owned entries
-  std::int32_t num_owned_r = 0;
-  for (std::int32_t i = 0; i < recv_disp.back(); ++i)
-  {
-    std::span row(recv_buffer.data() + i * buffer_shape1, buffer_shape1);
-    auto info = row.last(2);
-    int owner = info[0];
-    if (owner == rank)
-      num_owned_r++;
-  }
+  // std::int32_t num_owned_r = 0;
+  // for (std::int32_t i = 0; i < recv_disp.back(); ++i)
+  // {
+  //   std::span row(recv_buffer.data() + i * buffer_shape1, buffer_shape1);
+  //   auto info = row.last(2);
+  //   int owner = info[0];
+  //   // if (owner == rank)
+  //   //   num_owned_r++;
+  // }
 
   // Unpack receive buffer
   // std::vector<std::int64_t> data(shape[1] * recv_disp.back());
   // std::vector<std::int64_t> global_indices(recv_disp.back());
+  // std::vector<int> ghost_index_owner(recv_disp.back() - num_owned_r);
   std::vector<std::int64_t> data, data1;
-  std::vector<int> ghost_index_owner(recv_disp.back() - num_owned_r);
+  std::vector<int> ghost_index_owner;
 
   std::vector<std::int64_t> global_indices, global_indices1;
   std::vector<int> src_ranks, src_ranks1; //, ghost_index_owner;
 
-  std::int32_t i_owned = 0;
-  std::int32_t i_ghost = 0;
+  // std::int32_t i_owned = 0;
+  // std::int32_t i_ghost = 0;
   for (std::int32_t i = 0; i < recv_disp.back(); ++i)
   {
     int src_rank = src[i];
@@ -382,7 +383,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
       // global_indices[i_owned] = orig_global_index;
       global_indices.push_back(orig_global_index);
       src_ranks.push_back(src_rank);
-      ++i_owned;
+      // ++i_owned;
     }
     else
     {
@@ -392,12 +393,13 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
       data1.insert(data1.end(), edges.begin(), edges.end());
       // global_indices[i_ghost + num_owned_r] = orig_global_index;
       global_indices1.push_back(orig_global_index);
-      ghost_index_owner[i_ghost] = owner;
+      // ghost_index_owner[i_ghost] = owner;
+      ghost_index_owner.push_back(owner);
       src_ranks1.push_back(src_rank);
-      ++i_ghost;
+      // ++i_ghost;
     }
   }
-  assert(i_owned == num_owned_r);
+  // assert(i_owned == num_owned_r);
 
   data.insert(data.end(), data1.begin(), data1.end());
   global_indices.insert(global_indices.end(), global_indices1.begin(),
