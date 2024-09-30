@@ -356,8 +356,9 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   }
 
   // Unpack receive buffer
-  std::vector<std::int64_t> data(shape[1] * recv_disp.back());
+  // std::vector<std::int64_t> data(shape[1] * recv_disp.back());
   // std::vector<std::int64_t> global_indices(recv_disp.back());
+  std::vector<std::int64_t> data, data1;
   std::vector<int> ghost_index_owner(recv_disp.back() - num_owned_r);
 
   std::vector<std::int64_t> global_indices, global_indices1;
@@ -376,7 +377,8 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
     auto edges = row.first(shape[1]);
     if (owner == rank)
     {
-      std::ranges::copy(edges, std::next(data.begin(), i_owned * shape[1]));
+      // std::ranges::copy(edges, std::next(data.begin(), i_owned * shape[1]));
+      data.insert(data.end(), edges.begin(), edges.end());
       // global_indices[i_owned] = orig_global_index;
       global_indices.push_back(orig_global_index);
       src_ranks.push_back(src_rank);
@@ -384,8 +386,10 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
     }
     else
     {
-      std::ranges::copy(
-          edges, std::next(data.begin(), (i_ghost + num_owned_r) * shape[1]));
+      // std::ranges::copy(
+      //     edges, std::next(data.begin(), (i_ghost + num_owned_r) *
+      //     shape[1]));
+      data1.insert(data1.end(), edges.begin(), edges.end());
       // global_indices[i_ghost + num_owned_r] = orig_global_index;
       global_indices1.push_back(orig_global_index);
       ghost_index_owner[i_ghost] = owner;
@@ -395,6 +399,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   }
   assert(i_owned == num_owned_r);
 
+  data.insert(data.end(), data1.begin(), data1.end());
   global_indices.insert(global_indices.end(), global_indices1.begin(),
                         global_indices1.end());
 
