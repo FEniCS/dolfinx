@@ -17,7 +17,11 @@ ARG DOXYGEN_VERSION=1_12_0
 ARG GMSH_VERSION=4_13_1
 ARG HDF5_VERSION=1.14.4.3
 ARG KAHIP_VERSION=3.16
-ARG NUMPY_VERSION=2.1.1
+# NOTE: The NumPy version (https://pypi.org/project/numpy/#history)
+# should be pinned to the most recent NumPy release that is supported by
+# the most recent Numba release, see
+# https://numba.readthedocs.io/en/stable/user/installing.html#version-support-information
+ARG NUMPY_VERSION=2.0.1
 ARG PETSC_VERSION=3.22.0
 ARG SLEPC_VERSION=3.22.0
 
