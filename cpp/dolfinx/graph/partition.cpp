@@ -407,21 +407,17 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
   std::vector<int> ghost_index_count;
   std::vector<int> neighbors;
   std::map<int, int> proc_to_neighbor;
+  for (int p : ghost_owners)
   {
-    int np = 0;
-    for (int p : ghost_owners)
+    assert(p != dolfinx::MPI::rank(comm));
+    auto [it, insert] = proc_to_neighbor.insert({p, neighbors.size()});
+    if (insert)
     {
-      assert(p != dolfinx::MPI::rank(comm));
-      auto [it, insert] = proc_to_neighbor.insert({p, np});
-      if (insert)
-      {
-        // New neighbor found
-        neighbors.push_back(p);
-        ghost_index_count.push_back(0);
-        ++np;
-      }
-      ++ghost_index_count[it->second];
+      // New neighbor found
+      neighbors.push_back(p);
+      ghost_index_count.push_back(0);
     }
+    ++ghost_index_count[it->second];
   }
 
   MPI_Comm neighbor_comm_fwd, neighbor_comm_rev;
@@ -538,9 +534,9 @@ graph::build::compute_local_to_global(std::span<const std::int64_t> global,
 {
   common::Timer timer(
       "Compute-local-to-global links for global/local adjacency list");
+
   if (global.empty() and local.empty())
     return std::vector<std::int64_t>();
-
   if (global.size() != local.size())
     throw std::runtime_error("Data size mismatch.");
 
