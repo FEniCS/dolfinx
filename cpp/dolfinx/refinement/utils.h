@@ -284,7 +284,7 @@ std::vector<std::int64_t> adjust_indices(const common::IndexMap& map,
 /// @warning The refined mesh must not have been redistributed during
 /// refinement.
 ///
-/// @warning `GhostMode` must be mesh::GhostMode::none.
+/// @warning Mesh/topology `GhostMode` must be mesh::GhostMode::none.
 ///
 /// @param[in] tags0 Tags on the parent mesh.
 /// @param[in] topology1 Refined mesh topology.
@@ -300,7 +300,7 @@ std::array<std::vector<std::int32_t>, 2> transfer_facet_meshtag(
 /// @warning The refined mesh must not have been redistributed during
 /// refinement.
 ///
-/// @warning `GhostMode` must be mesh::GhostMode::none.
+/// @warning Mesh/topology `GhostMode` must be mesh::GhostMode::none.
 ///
 /// @param[in] tags0 Tags on the parent mesh.
 /// @param[in] topology1 Refined mesh topology.

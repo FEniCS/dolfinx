@@ -49,7 +49,7 @@ namespace dolfinx::refinement
 /// process as the parent cell.
 /// @param[in] option Control the computation of parent facets, parent
 /// cells. If an option is not selected, an empty list is returned.
-/// @return New mesh and optional parent cell index, parent facet
+/// @return New mesh, and optional parent cell indices and parent facet
 /// indices.
 template <std::floating_point T>
 std::tuple<mesh::Mesh<T>, std::optional<std::vector<std::int32_t>>,
