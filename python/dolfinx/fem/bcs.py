@@ -17,6 +17,7 @@ if typing.TYPE_CHECKING:
     from dolfinx.fem.function import Constant, Function
 
 import numpy as np
+import numpy.typing as npt
 
 import dolfinx
 from dolfinx import cpp as _cpp

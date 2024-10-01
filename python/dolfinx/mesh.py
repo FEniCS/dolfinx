@@ -453,7 +453,7 @@ def compute_midpoints(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
     return _cpp.mesh.compute_midpoints(mesh._cpp_object, dim, entities)
 
 
-def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
+def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> npt.NDArray[np.int32]:
     """Compute mesh entities satisfying a geometric marking function.
 
     Args:
@@ -470,7 +470,9 @@ def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray
     return _cpp.mesh.locate_entities(mesh._cpp_object, dim, marker)
 
 
-def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
+def locate_entities_boundary(
+    mesh: Mesh, dim: int, marker: typing.Callable
+) -> npt.NDArray[np.int32]:
     """Compute mesh entities that are connected to an owned boundary
     facet and satisfy a geometric marking function.
 
@@ -534,7 +536,7 @@ def transfer_meshtag(
 
 def refine(
     mesh: Mesh,
-    edges: typing.Optional[np.ndarray] = None,
+    edges: typing.Optional[npt.NDArray[np.int32]] = None,
     redistribute: bool = True,
     ghost_mode: GhostMode = GhostMode.shared_facet,
     option: RefinementOption = RefinementOption.none,
