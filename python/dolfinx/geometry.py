@@ -275,8 +275,8 @@ def compute_distance_gjk(
 def determine_point_ownership(
     mesh: Mesh,
     points: npt.NDArray[np.floating],
+    padding: float,
     cells: typing.Optional[npt.NDArray[np.int32]] = None,
-    padding: float = 0.0,
 ) -> PointOwnershipData:
     """Build point ownership data for a mesh-points pair.
 
@@ -287,12 +287,12 @@ def determine_point_ownership(
     Args:
         mesh: The mesh
         points: Points to check for collision (``shape=(num_points, gdim)``)
-        cells: Cells to check for ownership
-            If ``None`` then all cells are considered.
         padding: Amount of absolute padding of bounding boxes of the mesh.
         Each bounding box of the mesh is padded with this amount, to increase
         the number of candidates, avoiding rounding errors in determining the owner
         of a point if the point is on the surface of a cell in the mesh.
+        cells: Cells to check for ownership
+            If ``None`` then all cells are considered.
 
     Returns:
         Point ownership data
@@ -305,7 +305,6 @@ def determine_point_ownership(
         A large padding value will increase the run-time of the code by orders
         of magnitude. General advice is to use a padding on the scale of the
         cell size.
-
     """
     if cells is None:
         map = mesh.topology.index_map(mesh.topology.dim)

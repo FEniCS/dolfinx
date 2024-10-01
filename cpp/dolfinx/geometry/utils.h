@@ -668,11 +668,7 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// Each bounding box of the mesh is padded with this amount, to increase
 /// the number of candidates, avoiding rounding errors in determining the owner
 /// of a point if the point is on the surface of a cell in the mesh.
-/// @return Point ownership data with fields `src_owner`, `dest_owner`, `dest_points`, `dest_cells`,
-/// where `src_owner` is a list of ranks corresponding to the input
-/// points. `dest_owner` is a list of ranks corresponding to `dest_points`,
-/// the points that this process owns. `dest_cells` contains the
-/// corresponding cell for each entry in dest_points.
+/// @return Point ownership data.
 ///
 /// @note `dest_owner` is sorted
 /// @note `src_owner` is -1 if no colliding process is found
@@ -685,14 +681,22 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 template <std::floating_point T>
 PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
                                                 std::span<const T> points,
-                                                std::span<const std::int32_t> cells,
-                                                T padding = 0.0)
+                                                T padding,
+                                                std::span<const std::int32_t> cells = {})
 {
   MPI_Comm comm = mesh.comm();
 
+  const int tdim = mesh.topology()->dim();
+
+  std::vector<std::int32_t> local_cells;
+  if (cells.empty()) {
+    auto cell_map = mesh.topology()->index_map(tdim);
+    local_cells.resize(cell_map->size_local());
+    std::iota(local_cells.begin(), local_cells.end(), 0);
+    cells = std::span<const std::int32_t>(local_cells.data(), local_cells.size());
+  }
   // Create a global bounding-box tree to find candidate processes with
   // cells that could collide with the points
-  const int tdim = mesh.topology()->dim();
   BoundingBoxTree bb(mesh, tdim, cells, padding);
   BoundingBoxTree global_bbtree = bb.create_global_tree(comm);
 

@@ -187,10 +187,10 @@ void declare_bbtree(nb::module_& m, std::string type)
           const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
           std::span<const T> _p(points.data(), 3 * p_s0);
           return dolfinx::geometry::determine_point_ownership<T>(mesh, _p,
-                                                                 std::span(cells.data(), cells.size()),
-                                                                 padding);
+                                                                 padding,
+                                                                 std::span(cells.data(), cells.size()));
         },
-      nb::arg("mesh"), nb::arg("points"), nb::arg("cells"), nb::arg("padding"),
+      nb::arg("mesh"), nb::arg("points"), nb::arg("padding"), nb::arg("cells"),
       "Compute point ownership data for mesh-points pair.");
 
   std::string pod_pyclass_name = "PointOwnershipData_" + type;
