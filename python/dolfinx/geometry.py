@@ -103,8 +103,8 @@ class BoundingBoxTree:
 def bb_tree(
     mesh: Mesh,
     dim: int,
+    padding: float,
     entities: typing.Optional[npt.NDArray[np.int32]] = None,
-    padding: float = 0.0,
 ) -> BoundingBoxTree:
     """Create a bounding box tree for use in collision detection.
 
