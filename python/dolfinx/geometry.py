@@ -128,11 +128,11 @@ def bb_tree(
     dtype = mesh.geometry.x.dtype
     if np.issubdtype(dtype, np.float32):
         return BoundingBoxTree(
-            _cpp.geometry.BoundingBoxTree_float32(mesh._cpp_object, dim, entities, padding)
+            _cpp.geometry.BoundingBoxTree_float32(mesh._cpp_object, dim, padding, entities)
         )
     elif np.issubdtype(dtype, np.float64):
         return BoundingBoxTree(
-            _cpp.geometry.BoundingBoxTree_float64(mesh._cpp_object, dim, entities, padding)
+            _cpp.geometry.BoundingBoxTree_float64(mesh._cpp_object, dim, padding, entities)
         )
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")

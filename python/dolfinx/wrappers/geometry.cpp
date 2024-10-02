@@ -33,17 +33,16 @@ void declare_bbtree(nb::module_& m, std::string type)
           "__init__",
           [](dolfinx::geometry::BoundingBoxTree<T>* bbt,
              const dolfinx::mesh::Mesh<T>& mesh, int dim,
+             double padding,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
-                 entities,
-             double padding)
+                 entities)
           {
             new (bbt) dolfinx::geometry::BoundingBoxTree<T>(
                 mesh, dim,
-                std::span<const std::int32_t>(entities.data(), entities.size()),
-                padding);
+                padding,
+                std::span<const std::int32_t>(entities.data(), entities.size()));
           },
-          nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"),
-          nb::arg("padding") = 0.0)
+          nb::arg("mesh"), nb::arg("dim"), nb::arg("padding"), nb::arg("entities"))
       .def_prop_ro("num_bboxes",
                    &dolfinx::geometry::BoundingBoxTree<T>::num_bboxes)
       .def(

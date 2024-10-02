@@ -697,7 +697,7 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
   }
   // Create a global bounding-box tree to find candidate processes with
   // cells that could collide with the points
-  BoundingBoxTree bb(mesh, tdim, cells, padding);
+  BoundingBoxTree bb(mesh, tdim, padding, cells);
   BoundingBoxTree global_bbtree = bb.create_global_tree(comm);
 
   // Compute collisions:
