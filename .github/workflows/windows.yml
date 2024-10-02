@@ -35,7 +35,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install UFL
-        run: pip install git+https://github.com/FEniCS/ufl.git
+        run: pip install git+https://github.com/FEniCS/ufl.git@dokken/form-split-no-arguments
 
       - name: Checkout Basix
         uses: actions/checkout@v4

@@ -102,7 +102,7 @@ jobs:
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git
+          pip install git+https://github.com/FEniCS/ufl.git@dokken/form-split-no-arguments
           pip install git+https://github.com/FEniCS/basix.git
           pip install git+https://github.com/FEniCS/ffcx.git
       - name: Install FEniCS Python components
@@ -172,7 +172,7 @@ jobs:
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git
+          pip install git+https://github.com/FEniCS/ufl.git@dokken/form-split-no-arguments
           pip install git+https://github.com/FEniCS/basix.git
           pip install git+https://github.com/FEniCS/ffcx.git
 
@@ -250,7 +250,7 @@ jobs:
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git
+          pip install git+https://github.com/FEniCS/ufl.git@dokken/form-split-no-arguments
           pip install git+https://github.com/FEniCS/basix.git
           pip install git+https://github.com/FEniCS/ffcx.git
       - name: Install FEniCS Python components
