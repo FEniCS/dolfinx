@@ -264,85 +264,48 @@ create_new_vertices(MPI_Comm comm,
           xshape};
 }
 
-/// Use vertex and topology data to partition new mesh across
-/// processes
-/// @param[in] old_mesh
-/// @param[in] cell_topology Topology of cells, (vertex indices)
-/// @param[in] new_coords New coordinates, row-major storage
-/// @param[in] xshape The shape of `new_coords`
-/// @param[in] redistribute Call graph partitioner if true
-/// @param[in] ghost_mode None or shared_facet
-/// @return New mesh
-template <std::floating_point T>
-mesh::Mesh<T> partition(const mesh::Mesh<T>& old_mesh,
-                        const graph::AdjacencyList<std::int64_t>& cell_topology,
-                        std::span<const T> new_coords,
-                        std::array<std::size_t, 2> xshape, bool redistribute,
-                        mesh::GhostMode ghost_mode)
-{
-  if (redistribute)
-  {
-    return mesh::create_mesh(old_mesh.comm(), cell_topology.array(),
-                             old_mesh.geometry().cmap(), new_coords, xshape,
-                             ghost_mode);
-  }
-  else
-  {
-    auto partitioner
-        = [](MPI_Comm comm, int, const std::vector<mesh::CellType>& cell_types,
-             const std::vector<std::span<const std::int64_t>>& cell_topology)
-    {
-      std::int32_t mpi_rank = MPI::rank(comm);
-      std::int32_t num_cell_vertices
-          = mesh::num_cell_vertices(cell_types.front());
-      std::int32_t num_cells = cell_topology.front().size() / num_cell_vertices;
-      std::vector<std::int32_t> destinations(num_cells, mpi_rank);
-      std::vector<std::int32_t> dest_offsets(num_cells + 1);
-      std::iota(dest_offsets.begin(), dest_offsets.end(), 0);
-      return graph::AdjacencyList(std::move(destinations),
-                                  std::move(dest_offsets));
-    };
-
-    return mesh::create_mesh(old_mesh.comm(), old_mesh.comm(),
-                             cell_topology.array(), old_mesh.geometry().cmap(),
-                             old_mesh.comm(), new_coords, xshape, partitioner);
-  }
-}
-
-/// @brief Given an index map, add "n" extra indices at the end of local range
+/// @todo Improve docstring.
 ///
-/// @note The returned global indices (local and ghosts) are adjust for the
-/// addition of new local indices.
-/// @param[in] map Index map
-/// @param[in] n Number of new local indices
-/// @return New global indices for both owned and ghosted indices in input
-/// index map.
+/// @brief Given an index map, add "n" extra indices at the end of local
+/// range.
+///
+/// @note The returned global indices (local and ghosts) are adjust for
+/// the addition of new local indices.
+///
+/// @param[in] map Index map.
+/// @param[in] n Number of new local indices.
+/// @return New global indices for both owned and ghosted indices in
+/// input index map.
 std::vector<std::int64_t> adjust_indices(const common::IndexMap& map,
                                          std::int32_t n);
 
-/// @brief Transfer facet MeshTags from coarse mesh to refined mesh
-/// @note The refined mesh must not have been redistributed during
-/// refinement
-/// @note GhostMode must be GhostMode.none
-/// @param[in] tags0 Tags on the parent mesh
-/// @param[in] topology1 Refined mesh topology
+/// @brief Transfer facet MeshTags from coarse mesh to refined mesh.
+///
+/// @warning The refined mesh must not have been redistributed during
+/// refinement.
+///
+/// @warning Mesh/topology `GhostMode` must be mesh::GhostMode::none.
+///
+/// @param[in] tags0 Tags on the parent mesh.
+/// @param[in] topology1 Refined mesh topology.
 /// @param[in] cell Parent cell of each cell in refined mesh
-/// @param[in] facet Local facets of parent in each cell in refined mesh
-/// @return (0) entities and (1) values on the refined topology
+/// @param[in] facet Local facets of parent in each cell in refined mesh.
+/// @return (0) entities and (1) values on the refined topology.
 std::array<std::vector<std::int32_t>, 2> transfer_facet_meshtag(
     const mesh::MeshTags<std::int32_t>& tags0, const mesh::Topology& topology1,
     std::span<const std::int32_t> cell, std::span<const std::int8_t> facet);
 
 /// @brief Transfer cell MeshTags from coarse mesh to refined mesh.
 ///
-/// @note The refined mesh must not have been redistributed during
+/// @warning The refined mesh must not have been redistributed during
 /// refinement.
-/// @note GhostMode must be GhostMode.none
 ///
-/// @param[in] tags0 Tags on the parent mesh
-/// @param[in] topology1 Refined mesh topology
-/// @param[in] parent_cell Parent cell of each cell in refined mesh
-/// @return (0) entities and (1) values on the refined topology
+/// @warning Mesh/topology `GhostMode` must be mesh::GhostMode::none.
+///
+/// @param[in] tags0 Tags on the parent mesh.
+/// @param[in] topology1 Refined mesh topology.
+/// @param[in] parent_cell Parent cell of each cell in refined mesh.
+/// @return (0) entities and (1) values on the refined topology.
 std::array<std::vector<std::int32_t>, 2>
 transfer_cell_meshtag(const mesh::MeshTags<std::int32_t>& tags0,
                       const mesh::Topology& topology1,
