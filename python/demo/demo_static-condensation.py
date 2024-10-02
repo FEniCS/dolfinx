@@ -183,7 +183,7 @@ A = assemble_matrix(a, bcs=[bc])
 A.assemble()
 
 # Create bounding box for function evaluation
-bb_tree = geometry.bb_tree(msh, 2)
+bb_tree = geometry.bb_tree(msh, 2, 0.0)
 
 # Check against standard table value
 p = np.array([[48.0, 52.0, 0.0]], dtype=np.float64)
