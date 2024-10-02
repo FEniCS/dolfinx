@@ -38,7 +38,7 @@ jobs:
 
       - name: Install FEniCS Python components
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git@dokken/form-split-no-arguments
+          pip install git+https://github.com/FEniCS/ufl.git
           pip install git+https://github.com/FEniCS/basix.git
           pip install git+https://github.com/FEniCS/ffcx.git
           apt-get update

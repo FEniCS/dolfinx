@@ -77,7 +77,7 @@ jobs:
 
       - name: Install UFL and FFCx modules
         run: |
-          pip install --no-build-isolation git+https://github.com/FEniCS/ufl.git@dokken/form-split-no-arguments
+          pip install --no-build-isolation git+https://github.com/FEniCS/ufl.git
           pip install --no-build-isolation ffcx/
 
       - name: Build and run DOLFINx C++ unit tests (serial and MPI)
