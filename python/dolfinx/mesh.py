@@ -276,11 +276,11 @@ class Mesh:
     _geometry: Geometry
     _ufl_domain: typing.Optional[ufl.Mesh]
 
-    def __init__(self, mesh, domain: typing.Optional[ufl.Mesh]):
+    def __init__(self, msh, domain: typing.Optional[ufl.Mesh]):
         """Initialize mesh from a C++ mesh.
 
         Args:
-            mesh: A C++ mesh object.
+            msh: A C++ mesh object.
             domain: A UFL domain.
 
         Note:
@@ -289,7 +289,7 @@ class Mesh:
             This class is combined with different base classes that
             depend on the scalar type used in the Mesh.
         """
-        self._cpp_object = mesh
+        self._cpp_object = msh
         self._topology = Topology(self._cpp_object.topology)
         self._geometry = Geometry(self._cpp_object.geometry)
         self._ufl_domain = domain
@@ -439,25 +439,25 @@ def compute_incident_entities(
     return _cpp.mesh.compute_incident_entities(topology._cpp_object, entities, d0, d1)
 
 
-def compute_midpoints(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
+def compute_midpoints(msh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
     """Compute the midpoints of a set of mesh entities.
 
     Args:
-        mesh: The mesh.
+        msh: The mesh.
         dim: Topological dimension of the mesh entities to consider.
         entities: Indices of entities in ``mesh`` to consider.
 
     Returns:
         Midpoints of the entities, shape ``(num_entities, 3)``.
     """
-    return _cpp.mesh.compute_midpoints(mesh._cpp_object, dim, entities)
+    return _cpp.mesh.compute_midpoints(msh._cpp_object, dim, entities)
 
 
-def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
+def locate_entities(msh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
     """Compute mesh entities satisfying a geometric marking function.
 
     Args:
-        mesh: Mesh to locate entities on.
+        msh: Mesh to locate entities on.
         dim: Topological dimension of the mesh entities to consider.
         marker: A function that takes an array of points ``x`` with
             shape ``(gdim, num_points)`` and returns an array of
@@ -467,10 +467,10 @@ def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray
     Returns:
         Indices (local to the process) of marked mesh entities.
     """
-    return _cpp.mesh.locate_entities(mesh._cpp_object, dim, marker)
+    return _cpp.mesh.locate_entities(msh._cpp_object, dim, marker)
 
 
-def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
+def locate_entities_boundary(msh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
     """Compute mesh entities that are connected to an owned boundary
     facet and satisfy a geometric marking function.
 
@@ -484,7 +484,7 @@ def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> n
     parallel communication.
 
     Args:
-        mesh: Mesh to locate boundary entities on.
+        msh: Mesh to locate boundary entities on.
         dim: Topological dimension of the mesh entities to consider
         marker: Function that takes an array of points ``x`` with shape
             ``(gdim, num_points)`` and returns an array of booleans of
@@ -494,12 +494,12 @@ def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> n
     Returns:
         Indices (local to the process) of marked mesh entities.
     """
-    return _cpp.mesh.locate_entities_boundary(mesh._cpp_object, dim, marker)
+    return _cpp.mesh.locate_entities_boundary(msh._cpp_object, dim, marker)
 
 
 def transfer_meshtag(
     meshtag: MeshTags,
-    mesh1: Mesh,
+    msh1: Mesh,
     parent_cell: npt.NDArray[np.int32],
     parent_facet: typing.Optional[npt.NDArray[np.int8]] = None,
 ) -> MeshTags:
@@ -507,7 +507,7 @@ def transfer_meshtag(
 
     Args:
         meshtag: Mesh tags on the coarse, parent mesh.
-        mesh1: The refined mesh.
+        msh1: The refined mesh.
         parent_cell: Index of the parent cell for each cell in the
             refined mesh.
         parent_facet: Index of the local parent facet for each cell
@@ -519,13 +519,13 @@ def transfer_meshtag(
     """
     if meshtag.dim == meshtag.topology.dim:
         mt = _cpp.refinement.transfer_cell_meshtag(
-            meshtag._cpp_object, mesh1.topology._cpp_object, parent_cell
+            meshtag._cpp_object, msh1.topology._cpp_object, parent_cell
         )
         return MeshTags(mt)
     elif meshtag.dim == meshtag.topology.dim - 1:
         assert parent_facet is not None
         mt = _cpp.refinement.transfer_facet_meshtag(
-            meshtag._cpp_object, mesh1.topology._cpp_object, parent_cell, parent_facet
+            meshtag._cpp_object, msh1.topology._cpp_object, parent_cell, parent_facet
         )
         return MeshTags(mt)
     else:
@@ -533,32 +533,47 @@ def transfer_meshtag(
 
 
 def refine(
-    mesh: Mesh,
+    msh: Mesh,
     edges: typing.Optional[np.ndarray] = None,
-    redistribute: bool = True,
-    ghost_mode: GhostMode = GhostMode.shared_facet,
+    partitioner: typing.Optional[typing.Callable] = create_cell_partitioner(GhostMode.none),
     option: RefinementOption = RefinementOption.none,
 ) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.
 
+    Passing ``None`` for ``partitioner``, refined cells will be on the
+    same process as the parent cell.
+
+    Note:
+        Using the default partitioner for the refined mesh, the refined
+        mesh will **not** include ghosts cells (cells connected by facet
+        to an owned cells) even if the parent mesh is ghosted.
+
+    Warning:
+        Passing ``None`` for ``partitioner``, the refined mesh will
+        **not** have ghosts cells even if the parent mesh has ghost
+        cells. The possibility to not re-partition the refined mesh and
+        include ghost cells in the refined mesh will be added in a
+        future release.
+
     Args:
-        mesh: Mesh from which to create the refined mesh.
+        msh: Mesh from which to create the refined mesh.
         edges: Indices of edges to split during refinement. If ``None``,
             mesh refinement is uniform.
-        redistribute:
-            Refined mesh is re-partitioned if ``True``.
-        ghost_mode: Ghost mode to use for the refined mesh.
-        option: Controls whether parent cells and/or parent facets are computed.
-
+        partitioner: Partitioner to distribute the refined mesh. If
+            ``None`` no redistribution is performed, i.e. refined cells
+            remain on the same process as the parent cell.
+        option: Controls whether parent cells and/or parent facets are
+            computed.
 
     Returns:
        Refined mesh, (optional) parent cells, (optional) parent facets
     """
     mesh1, parent_cell, parent_facet = _cpp.refinement.refine(
-        mesh._cpp_object, edges, redistribute, ghost_mode, option
+        msh._cpp_object, edges, partitioner, option
     )
-    # Create new ufl domain as it will carry a reference to the C++ mesh in the ufl_cargo
-    ufl_domain = ufl.Mesh(mesh._ufl_domain.ufl_coordinate_element())  # type: ignore
+    # Create new ufl domain as it will carry a reference to the C++ mesh
+    # in the ufl_cargo
+    ufl_domain = ufl.Mesh(msh._ufl_domain.ufl_coordinate_element())  # type: ignore
     return Mesh(mesh1, ufl_domain), parent_cell, parent_facet
 
 
@@ -582,8 +597,8 @@ def create_mesh(
         x: Mesh geometry ('node' coordinates), with shape ``(num_nodes, gdim)``.
         e: UFL mesh. The mesh scalar type is determined by the scalar
             type of ``e``.
-        partitioner: Function that computes the parallel distribution of
-            cells across MPI ranks.
+        partitioner: Function that determines the parallel distribution
+            of cells across MPI ranks.
 
     Note:
         If required, the coordinates ``x`` will be cast to the same
@@ -593,7 +608,7 @@ def create_mesh(
         A mesh.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(GhostMode.none)
+        partitioner = create_cell_partitioner(GhostMode.none)
 
     x = np.asarray(x, order="C")
     if x.ndim == 1:
@@ -635,9 +650,9 @@ def create_mesh(
 
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
-    mesh = _cpp.mesh.create_mesh(comm, cells, cmap._cpp_object, x, partitioner)
+    msh = _cpp.mesh.create_mesh(comm, cells, cmap._cpp_object, x, partitioner)
 
-    return Mesh(mesh, domain)
+    return Mesh(msh, domain)
 
 
 def create_submesh(
@@ -646,7 +661,7 @@ def create_submesh(
     """Create a mesh with specified entities from another mesh.
 
     Args:
-        mesh: Mesh to create the sub-mesh from.
+        msh: Mesh to create the sub-mesh from.
         dim: Topological dimension of the entities in ``msh`` to include
             in the sub-mesh.
         entities: Indices of entities in ``msh`` to include in the
@@ -675,7 +690,7 @@ def create_submesh(
 
 
 def meshtags(
-    mesh: Mesh,
+    msh: Mesh,
     dim: int,
     entities: npt.NDArray[np.int32],
     values: typing.Union[np.ndarray, int, float],
@@ -683,7 +698,7 @@ def meshtags(
     """Create a MeshTags object that associates data with a subset of mesh entities.
 
     Args:
-        mesh: The mesh.
+        msh: The mesh.
         dim: Topological dimension of the mesh entity.
         entities: Indices(local to process) of entities to associate
             values with . The array must be sorted and must not contain
@@ -716,19 +731,19 @@ def meshtags(
         raise NotImplementedError(f"Type {values.dtype} not supported.")
 
     return MeshTags(
-        ftype(mesh.topology._cpp_object, dim, np.asarray(entities, dtype=np.int32), values)
+        ftype(msh.topology._cpp_object, dim, np.asarray(entities, dtype=np.int32), values)
     )
 
 
 def meshtags_from_entities(
-    mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyList_int32, values: npt.NDArray[typing.Any]
+    msh: Mesh, dim: int, entities: _cpp.graph.AdjacencyList_int32, values: npt.NDArray[typing.Any]
 ):
     """Create a :class:dolfinx.mesh.MeshTags` object that associates
     data with a subset of mesh entities, where the entities are defined
     by their vertices.
 
     Args:
-        mesh: The mesh.
+        msh: The mesh.
         dim: Topological dimension of the mesh entity.
         entities: Entities to associated values with, with entities
             defined by their vertices.
@@ -748,7 +763,7 @@ def meshtags_from_entities(
     elif isinstance(values, float):
         values = np.full(entities.num_nodes, values, dtype=np.double)
     values = np.asarray(values)
-    return MeshTags(_cpp.mesh.create_meshtags(mesh.topology._cpp_object, dim, entities, values))
+    return MeshTags(_cpp.mesh.create_meshtags(msh.topology._cpp_object, dim, entities, values))
 
 
 def create_interval(
@@ -779,12 +794,13 @@ def create_interval(
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(1,), dtype=dtype))  # type: ignore
     if np.issubdtype(dtype, np.float32):
-        mesh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, partitioner)
+        msh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, partitioner)
     elif np.issubdtype(dtype, np.float64):
-        mesh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner)
+        msh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner)
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
-    return Mesh(mesh, domain)
+
+    return Mesh(msh, domain)
 
 
 def create_unit_interval(
@@ -847,12 +863,13 @@ def create_rectangle(
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, shape=(2,), dtype=dtype))  # type: ignore
     if np.issubdtype(dtype, np.float32):
-        mesh = _cpp.mesh.create_rectangle_float32(comm, points, n, cell_type, partitioner, diagonal)
+        msh = _cpp.mesh.create_rectangle_float32(comm, points, n, cell_type, partitioner, diagonal)
     elif np.issubdtype(dtype, np.float64):
-        mesh = _cpp.mesh.create_rectangle_float64(comm, points, n, cell_type, partitioner, diagonal)
+        msh = _cpp.mesh.create_rectangle_float64(comm, points, n, cell_type, partitioner, diagonal)
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
-    return Mesh(mesh, domain)
+
+    return Mesh(msh, domain)
 
 
 def create_unit_square(
@@ -925,12 +942,13 @@ def create_box(
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, shape=(3,), dtype=dtype))  # type: ignore
     if np.issubdtype(dtype, np.float32):
-        mesh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner)
+        msh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner)
     elif np.issubdtype(dtype, np.float64):
-        mesh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner)
+        msh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner)
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
-    return Mesh(mesh, domain)
+
+    return Mesh(msh, domain)
 
 
 def create_unit_cube(
@@ -973,12 +991,12 @@ def create_unit_cube(
 
 
 def entities_to_geometry(
-    mesh: Mesh, dim: int, entities: npt.NDArray[np.int32], permute=False
+    msh: Mesh, dim: int, entities: npt.NDArray[np.int32], permute=False
 ) -> npt.NDArray[np.int32]:
     """Compute the geometric DOFs associated with the closure of the given mesh entities.
 
     Args:
-        mesh: The mesh.
+        msh: The mesh.
         dim: Topological dimension of the entities of interest.
         entities: Entity indices (local to the process).
         permute: Permute the DOFs such that they are consistent with the
@@ -989,7 +1007,7 @@ def entities_to_geometry(
         The geometric DOFs associated with the closure of the entities
         in `entities`.
     """
-    return _cpp.mesh.entities_to_geometry(mesh._cpp_object, dim, entities, permute)
+    return _cpp.mesh.entities_to_geometry(msh._cpp_object, dim, entities, permute)
 
 
 def exterior_facet_indices(topology: Topology) -> npt.NDArray[np.int32]:

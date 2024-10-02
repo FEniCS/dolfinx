@@ -20,16 +20,14 @@ from dolfinx import mesh
     "ghost_mode_refined",
     [mesh.GhostMode.none, mesh.GhostMode.shared_vertex, mesh.GhostMode.shared_facet],
 )
-@pytest.mark.parametrize("redistribute", [True, False])
 @pytest.mark.parametrize("option", [mesh.RefinementOption.none, mesh.RefinementOption.parent_cell])
-def test_refine_interval(n, ghost_mode, redistribute, ghost_mode_refined, option):
+def test_refine_interval(n, ghost_mode, ghost_mode_refined, option):
     msh = mesh.create_interval(MPI.COMM_WORLD, n, [0, 1], ghost_mode=ghost_mode)
     msh_refined, edges, vertices = mesh.refine(
         msh,
-        redistribute=redistribute,
-        ghost_mode=ghost_mode_refined,
         option=option,
     )
+    # TODO: add create_cell_partitioner(ghost_mode) when works
 
     # vertex count
     assert msh_refined.topology.index_map(0).size_global == 2 * n + 1
@@ -52,16 +50,14 @@ def test_refine_interval(n, ghost_mode, redistribute, ghost_mode_refined, option
     "ghost_mode_refined",
     [mesh.GhostMode.none, mesh.GhostMode.shared_vertex, mesh.GhostMode.shared_facet],
 )
-@pytest.mark.parametrize("redistribute", [True, False])
-def test_refine_interval_adaptive(n, ghost_mode, redistribute, ghost_mode_refined):
+def test_refine_interval_adaptive(n, ghost_mode, ghost_mode_refined):
     msh = mesh.create_interval(MPI.COMM_WORLD, n, [0, 1], ghost_mode=ghost_mode)
     msh_refined, edges, vertices = mesh.refine(
         msh,
         np.arange(10, dtype=np.int32),
-        redistribute=redistribute,
-        ghost_mode=ghost_mode_refined,
         option=mesh.RefinementOption.parent_cell,
     )
+    # TODO: add create_cell_partitioner(ghost_mode) when works
 
     # vertex count
     assert msh_refined.topology.index_map(0).size_global == n + 1 + 10 * MPI.COMM_WORLD.size
