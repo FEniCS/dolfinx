@@ -185,8 +185,9 @@ from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
 from ufl import (
     CellDiameter,
     FacetNormal,
-    TestFunction,
-    TrialFunction,
+    MixedFunctionSpace,
+    TestFunctions,
+    TrialFunctions,
     avg,
     conditional,
     div,
@@ -194,6 +195,7 @@ from ufl import (
     dS,
     ds,
     dx,
+    extract_blocks,
     grad,
     gt,
     inner,
@@ -283,6 +285,7 @@ msh = mesh.create_unit_square(MPI.COMM_WORLD, n, n)
 # Function spaces for the velocity and for the pressure
 V = fem.functionspace(msh, ("Raviart-Thomas", k + 1))
 Q = fem.functionspace(msh, ("Discontinuous Lagrange", k))
+VQ = MixedFunctionSpace(V, Q)
 
 # Funcion space for visualising the velocity field
 gdim = msh.geometry.dim
@@ -290,8 +293,8 @@ W = fem.functionspace(msh, ("Discontinuous Lagrange", k + 1, (gdim,)))
 
 # Define trial and test functions
 
-u, v = TrialFunction(V), TestFunction(V)
-p, q = TrialFunction(Q), TestFunction(Q)
+u, p = TrialFunctions(VQ)
+v, q = TestFunctions(VQ)
 
 delta_t = fem.Constant(msh, default_real_type(t_end / num_time_steps))
 alpha = fem.Constant(msh, default_real_type(6.0 * k**2))
@@ -311,7 +314,7 @@ def jump(phi, n):
 
 
 # +
-a_00 = (1.0 / Re) * (
+a = (1.0 / Re) * (
     inner(grad(u), grad(v)) * dx
     - inner(avg(grad(u)), jump(v, n)) * dS
     - inner(jump(u, n), avg(grad(v))) * dS
@@ -320,19 +323,19 @@ a_00 = (1.0 / Re) * (
     - inner(outer(u, n), grad(v)) * ds
     + (alpha / h) * inner(outer(u, n), outer(v, n)) * ds
 )
-a_01 = -inner(p, div(v)) * dx
-a_10 = -inner(div(u), q) * dx
+a -= inner(p, div(v)) * dx
+a -= inner(div(u), q) * dx
 
-a = fem.form([[a_00, a_01], [a_10, None]])
+a_blocked = fem.form(extract_blocks(a))
 
 f = fem.Function(W)
 u_D = fem.Function(V)
 u_D.interpolate(u_e_expr)
-L_0 = inner(f, v) * dx + (1 / Re) * (
+L = inner(f, v) * dx + (1 / Re) * (
     -inner(outer(u_D, n), grad(v)) * ds + (alpha / h) * inner(outer(u_D, n), outer(v, n)) * ds
 )
-L_1 = inner(fem.Constant(msh, default_real_type(0.0)), q) * dx
-L = fem.form([L_0, L_1])
+L += inner(fem.Constant(msh, default_real_type(0.0)), q) * dx
+L_blocked = fem.form(extract_blocks(L))
 
 # Boundary conditions
 boundary_facets = mesh.exterior_facet_indices(msh.topology)
@@ -341,9 +344,9 @@ bc_u = fem.dirichletbc(u_D, boundary_vel_dofs)
 bcs = [bc_u]
 
 # Assemble Stokes problem
-A = assemble_matrix_block(a, bcs=bcs)
+A = assemble_matrix_block(a_blocked, bcs=bcs)
 A.assemble()
-b = assemble_vector_block(L, a, bcs=bcs)
+b = assemble_vector_block(L_blocked, a_blocked, bcs=bcs)
 
 # Create and configure solver
 ksp = PETSc.KSP().create(msh.comm)  # type: ignore
@@ -369,7 +372,6 @@ except PETSc.Error as e:  # type: ignore
         exit(0)
     else:
         raise e
-
 
 # Split the solution
 u_h = fem.Function(V)
@@ -408,29 +410,29 @@ u_n.x.array[:] = u_h.x.array
 # +
 lmbda = conditional(gt(dot(u_n, n), 0), 1, 0)
 u_uw = lmbda("+") * u("+") + lmbda("-") * u("-")
-a_00 += (
+a += (
     inner(u / delta_t, v) * dx
     - inner(u, div(outer(v, u_n))) * dx
     + inner((dot(u_n, n))("+") * u_uw, v("+")) * dS
     + inner((dot(u_n, n))("-") * u_uw, v("-")) * dS
     + inner(dot(u_n, n) * lmbda * u, v) * ds
 )
-a = fem.form([[a_00, a_01], [a_10, None]])
+a_blocked = fem.form(extract_blocks(a))
 
-L_0 += inner(u_n / delta_t, v) * dx - inner(dot(u_n, n) * (1 - lmbda) * u_D, v) * ds
-L = fem.form([L_0, L_1])
+L += inner(u_n / delta_t, v) * dx - inner(dot(u_n, n) * (1 - lmbda) * u_D, v) * ds
+L_blocked = fem.form(extract_blocks(L))
 
 # Time stepping loop
 for n in range(num_time_steps):
     t += delta_t.value
 
     A.zeroEntries()
-    fem.petsc.assemble_matrix_block(A, a, bcs=bcs)  # type: ignore
+    fem.petsc.assemble_matrix_block(A, a_blocked, bcs=bcs)  # type: ignore
     A.assemble()
 
     with b.localForm() as b_loc:
         b_loc.set(0)
-    fem.petsc.assemble_vector_block(b, L, a, bcs=bcs)  # type: ignore
+    fem.petsc.assemble_vector_block(b, L_blocked, a_blocked, bcs=bcs)  # type: ignore
 
     # Compute solution
     ksp.solve(b, x)
