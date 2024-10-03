@@ -352,26 +352,28 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   std::vector<int> ghost_index_owner;
   std::vector<std::int64_t> global_indices, global_indices1;
   std::vector<int> src_ranks, src_ranks1;
-  for (std::int32_t p = 0; p < recv_disp.back(); ++p)
+  for (std::int32_t p = 0; p < recv_disp.size(); ++p)
   {
     int src_rank = src[p];
-
-    std::span row(recv_buffer.data() + p * buffer_shape1, buffer_shape1);
-    auto info = row.last(2);
-    std::int64_t orig_global_index = info[1];
-    auto edges = row.first(shape[1]);
-    if (int owner = info[0]; owner == rank)
+    for (std::int32_t q = recv_disp[p]; q < recv_disp[p + 1]; ++q)
     {
-      data.insert(data.end(), edges.begin(), edges.end());
-      global_indices.push_back(orig_global_index);
-      src_ranks.push_back(src_rank);
-    }
-    else
-    {
-      data1.insert(data1.end(), edges.begin(), edges.end());
-      global_indices1.push_back(orig_global_index);
-      ghost_index_owner.push_back(owner);
-      src_ranks1.push_back(src_rank);
+      std::span row(recv_buffer.data() + q * buffer_shape1, buffer_shape1);
+      auto info = row.last(2);
+      std::int64_t orig_global_index = info[1];
+      auto edges = row.first(shape[1]);
+      if (int owner = info[0]; owner == rank)
+      {
+        data.insert(data.end(), edges.begin(), edges.end());
+        global_indices.push_back(orig_global_index);
+        src_ranks.push_back(src_rank);
+      }
+      else
+      {
+        data1.insert(data1.end(), edges.begin(), edges.end());
+        global_indices1.push_back(orig_global_index);
+        ghost_index_owner.push_back(owner);
+        src_ranks1.push_back(src_rank);
+      }
     }
   }
 
