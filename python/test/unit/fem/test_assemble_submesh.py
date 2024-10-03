@@ -15,6 +15,7 @@ import ufl
 from dolfinx import default_scalar_type, fem, la
 from dolfinx.fem import compute_integration_domains
 from dolfinx.mesh import (
+    CellType,
     GhostMode,
     compute_incident_entities,
     create_box,
@@ -609,3 +610,73 @@ def test_mixed_measures():
 
     # Check the results are the same
     assert np.allclose(b0.norm(), b1.norm())
+
+
+def test_interior_facet_codim_1():
+    """
+    Check that assembly on an interior facet with coefficients defined on a co-dim 1
+    mesh gives the correct result.
+    """
+    msh = create_unit_square(
+        MPI.COMM_WORLD, 10, 10, cell_type=CellType.triangle, ghost_mode=GhostMode.shared_facet
+    )
+
+    tdim = msh.topology.dim
+    fdim = tdim - 1
+    msh.topology.create_connectivity(fdim, tdim)
+    facet_imap = msh.topology.index_map(fdim)
+    num_facets = facet_imap.size_local + facet_imap.num_ghosts
+
+    # Mark all local (and owned interior facets)
+    interior_marker = np.full(facet_imap.size_local + facet_imap.num_ghosts, 0, dtype=np.int32)
+    interior_marker[: facet_imap.size_local] = 1
+    interior_marker[exterior_facet_indices(msh.topology)] = 0
+
+    # Get all ghosted interior facets
+    facet_vector = la.vector(facet_imap, 1, dtype=np.int32)
+    facet_vector.array[:] = interior_marker
+    facet_vector.scatter_forward()
+    interior_facets = np.flatnonzero(facet_vector.array)
+
+    # Create submesh with all owned and ghosted interior facets
+    submesh, sub_to_parent, _, _ = create_submesh(msh, msh.topology.dim - 1, interior_facets)
+
+    # Create inverse map
+    mesh_to_submesh = np.full(num_facets, -1)
+    mesh_to_submesh[sub_to_parent] = np.arange(len(sub_to_parent))
+    entity_maps = {submesh: mesh_to_submesh}
+
+    def f(x):
+        return 2 + x[0] + 3 * x[1]
+
+    # Create functional and vector with submesh codim 1 coefficient
+    metadata = {"quadrature_degree": 4}
+    dS = ufl.Measure("dS", domain=msh, metadata=metadata)
+    Q = fem.functionspace(submesh, ("Lagrange", 1))
+    j = fem.Function(Q)
+    j.interpolate(f)
+    j.x.scatter_forward()
+
+    V = fem.functionspace(msh, ("DG", 2))
+    v = ufl.TestFunction(V)
+
+    J = fem.form(ufl.avg(j) * dS, entity_maps=entity_maps)
+    F = ufl.inner(ufl.jump(v), j) * dS
+    F_compiled = fem.form(F, entity_maps=entity_maps)
+    J_compiled = fem.form(J, entity_maps=entity_maps)
+    J_global = msh.comm.allreduce(fem.assemble_scalar(J_compiled), op=MPI.SUM)
+    b = fem.assemble_vector(F_compiled)
+    b.scatter_reverse(la.InsertMode.add)
+    b.scatter_forward()
+
+    x = ufl.SpatialCoordinate(msh)
+    J_ref = fem.form(ufl.avg(f(x)) * ufl.dS(metadata=metadata))
+    F_ref = fem.form(ufl.inner(ufl.jump(v), f(x)) * dS)
+    J_ref_global = msh.comm.allreduce(fem.assemble_scalar(J_ref), op=MPI.SUM)
+    b_ref = fem.assemble_vector(F_ref)
+    b_ref.scatter_reverse(la.InsertMode.add)
+    b_ref.scatter_forward()
+    tol = 100 * np.finfo(default_scalar_type()).eps
+
+    assert np.isclose(J_global, J_ref_global, atol=tol)
+    np.testing.assert_allclose(b.array, b_ref.array, atol=tol)
