@@ -104,7 +104,7 @@ jobs:
         run: |
           pip install git+https://github.com/FEniCS/ufl.git
           pip install git+https://github.com/FEniCS/basix.git
-          pip install git+https://github.com/FEniCS/ffcx.git
+          pip install git+https://github.com/FEniCS/ffcx.git@dokken/codim-1-interior-facet
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
@@ -174,7 +174,7 @@ jobs:
         run: |
           pip install git+https://github.com/FEniCS/ufl.git
           pip install git+https://github.com/FEniCS/basix.git
-          pip install git+https://github.com/FEniCS/ffcx.git
+          pip install git+https://github.com/FEniCS/ffcx.git@dokken/codim-1-interior-facet
 
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
@@ -252,7 +252,7 @@ jobs:
         run: |
           pip install git+https://github.com/FEniCS/ufl.git
           pip install git+https://github.com/FEniCS/basix.git
-          pip install git+https://github.com/FEniCS/ffcx.git
+          pip install git+https://github.com/FEniCS/ffcx.git@dokken/codim-1-interior-facet
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
