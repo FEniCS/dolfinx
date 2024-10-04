@@ -612,17 +612,29 @@ def test_mixed_measures():
     assert np.allclose(b0.norm(), b1.norm())
 
 
-@pytest.mark.parametrize("msh", [
-    pytest.param(
-        create_unit_interval(MPI.COMM_WORLD, 10),
-        marks=pytest.mark.xfail(
-            reason="Interior facet submesh of dimension 0 not supported in submesh creation",
-            strict=True)),
-    create_unit_square(
-        MPI.COMM_WORLD, 10, 10, cell_type=CellType.triangle, ghost_mode=GhostMode.shared_facet),
-    create_unit_cube(MPI.COMM_WORLD, 3, 3, 3,
-                     cell_type=CellType.tetrahedron, ghost_mode=GhostMode.shared_facet)
-])
+@pytest.mark.parametrize(
+    "msh",
+    [
+        pytest.param(
+            create_unit_interval(MPI.COMM_WORLD, 10),
+            marks=pytest.mark.xfail(
+                reason="Interior facet submesh of dimension 0 not supported in submesh creation",
+                strict=True,
+            ),
+        ),
+        create_unit_square(
+            MPI.COMM_WORLD, 10, 10, cell_type=CellType.triangle, ghost_mode=GhostMode.shared_facet
+        ),
+        create_unit_cube(
+            MPI.COMM_WORLD,
+            3,
+            3,
+            3,
+            cell_type=CellType.tetrahedron,
+            ghost_mode=GhostMode.shared_facet,
+        ),
+    ],
+)
 def test_interior_facet_codim_1(msh):
     """
     Check that assembly on an interior facet with coefficients defined on a co-dim 1
@@ -637,8 +649,8 @@ def test_interior_facet_codim_1(msh):
 
     # Mark all local and owned interior facets and "unmark" exterior facets
     facet_vector = la.vector(facet_imap, 1, dtype=np.int32)
-    facet_vector.array[:facet_imap.size_local] = 1
-    facet_vector.array[facet_imap.size_local:] = 0
+    facet_vector.array[: facet_imap.size_local] = 1
+    facet_vector.array[facet_imap.size_local :] = 0
     facet_vector.array[exterior_facet_indices(msh.topology)] = 0
     facet_vector.scatter_forward()
     interior_facets = np.flatnonzero(facet_vector.array)
@@ -676,13 +688,15 @@ def test_interior_facet_codim_1(msh):
     j.x.scatter_forward()
     J_submesh = assemble_interior_facet_formulation(ufl.avg(j) * dS_submesh, entity_maps)
     b_submesh = assemble_interior_facet_formulation(
-        ufl.inner(ufl.jump(v), j) * dS_submesh, entity_maps)
+        ufl.inner(ufl.jump(v), j) * dS_submesh, entity_maps
+    )
 
     # Assemble reference value forms on the parent mesh using function defined with UFL
     x = ufl.SpatialCoordinate(msh)
     J_ref = assemble_interior_facet_formulation(ufl.avg(f(x)) * ufl.dS(metadata=metadata), None)
     b_ref = assemble_interior_facet_formulation(
-        ufl.inner(ufl.jump(v), f(x)) * ufl.dS(metadata=metadata), None)
+        ufl.inner(ufl.jump(v), f(x)) * ufl.dS(metadata=metadata), None
+    )
 
     # Ensure both are equivalent
     tol = 100 * np.finfo(default_scalar_type()).eps
