@@ -52,7 +52,7 @@ jobs:
           conda list
 
       - name: Install Basix
-        run: pip install --no-build-isolation git+https://github.com/FEniCS/basix.git
+        run: pip install --no-build-isolation git+https://github.com/FEniCS/basix.git@dokken/vertex-submesh
 
       - name: Clone FFCx
         uses: actions/checkout@v4
