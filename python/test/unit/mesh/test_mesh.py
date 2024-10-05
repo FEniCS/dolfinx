@@ -519,7 +519,7 @@ def test_submesh_full(d, n, codim, marker, ghost_mode, simplex):
         ct = CellType.tetrahedron if simplex else CellType.hexahedron
         mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode, cell_type=ct)
 
-    edim = mesh.topology.dim - codim
+    edim = max(mesh.topology.dim - codim, 0)
     entities = locate_entities(mesh, edim, marker)
     submesh, entity_map, vertex_map, geom_map = create_submesh(mesh, edim, entities)
     submesh_topology_test(mesh, submesh, entity_map, vertex_map, edim)
