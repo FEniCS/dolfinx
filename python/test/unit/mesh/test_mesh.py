@@ -512,7 +512,7 @@ def boundary_2(x):
 def test_submesh_full(d, n, codim, marker, ghost_mode, simplex):
     if d == 1:
         mesh = create_unit_interval(MPI.COMM_WORLD, n, ghost_mode=ghost_mode)
-    if d == 2:
+    elif d == 2:
         ct = CellType.triangle if simplex else CellType.quadrilateral
         mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode, cell_type=ct)
     else:
@@ -537,7 +537,6 @@ def test_submesh_boundary(d, n, boundary, ghost_mode):
         mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
-
     edim = mesh.topology.dim - 1
     entities = locate_entities_boundary(mesh, edim, boundary)
     submesh, entity_map, vertex_map, geom_map = create_submesh(mesh, edim, entities)
