@@ -1250,7 +1250,12 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
   // Create sub-geometry coordinate element
   CellType sub_coord_cell
       = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
-  fem::CoordinateElement<T> sub_cmap(sub_coord_cell, geometry.cmap().degree(),
+  // Special handling if point meshes, as they only support constant basis
+  // functions
+  int degree = geometry.cmap().degree();
+  if (sub_coord_cell == CellType::point)
+    degree = 0;
+  fem::CoordinateElement<T> sub_cmap(sub_coord_cell, degree,
                                      geometry.cmap().variant());
 
   // Sub-geometry input_global_indices
