@@ -537,7 +537,7 @@ def test_submesh_boundary(d, n, boundary, ghost_mode):
         mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
-    
+
     edim = mesh.topology.dim - 1
     entities = locate_entities_boundary(mesh, edim, boundary)
     submesh, entity_map, vertex_map, geom_map = create_submesh(mesh, edim, entities)
