@@ -15,6 +15,7 @@ import ufl
 from dolfinx import default_scalar_type, fem, la
 from dolfinx.fem import compute_integration_domains
 from dolfinx.mesh import (
+    CellType,
     GhostMode,
     compute_incident_entities,
     create_box,
@@ -609,3 +610,95 @@ def test_mixed_measures():
 
     # Check the results are the same
     assert np.allclose(b0.norm(), b1.norm())
+
+
+@pytest.mark.parametrize(
+    "msh",
+    [
+        pytest.param(
+            create_unit_interval(MPI.COMM_WORLD, 10),
+            marks=pytest.mark.xfail(
+                reason="Interior facet submesh of dimension 0 not supported in submesh creation",
+                strict=True,
+            ),
+        ),
+        create_unit_square(
+            MPI.COMM_WORLD, 10, 10, cell_type=CellType.triangle, ghost_mode=GhostMode.shared_facet
+        ),
+        create_unit_cube(
+            MPI.COMM_WORLD,
+            3,
+            3,
+            3,
+            cell_type=CellType.tetrahedron,
+            ghost_mode=GhostMode.shared_facet,
+        ),
+    ],
+)
+def test_interior_facet_codim_1(msh):
+    """
+    Check that assembly on an interior facet with coefficients defined on a co-dim 1
+    mesh gives the correct result.
+    """
+    # Collect mesh properties
+    tdim = msh.topology.dim
+    fdim = tdim - 1
+    msh.topology.create_connectivity(fdim, tdim)
+    facet_imap = msh.topology.index_map(fdim)
+    num_facets = facet_imap.size_local + facet_imap.num_ghosts
+
+    # Mark all local and owned interior facets and "unmark" exterior facets
+    facet_vector = la.vector(facet_imap, 1, dtype=np.int32)
+    facet_vector.array[: facet_imap.size_local] = 1
+    facet_vector.array[facet_imap.size_local :] = 0
+    facet_vector.array[exterior_facet_indices(msh.topology)] = 0
+    facet_vector.scatter_forward()
+    interior_facets = np.flatnonzero(facet_vector.array)
+
+    # Create submesh with all owned and ghosted interior facets
+    submesh, sub_to_parent, _, _ = create_submesh(msh, fdim, interior_facets)
+
+    # Create inverse map
+    mesh_to_submesh = np.full(num_facets, -1)
+    mesh_to_submesh[sub_to_parent] = np.arange(len(sub_to_parent))
+    entity_maps = {submesh: mesh_to_submesh}
+
+    def assemble_interior_facet_formulation(formulation, entity_maps):
+        F = fem.form(formulation, entity_maps=entity_maps)
+        if F.rank == 0:
+            return msh.comm.allreduce(fem.assemble_scalar(F), op=MPI.SUM)
+        elif F.rank == 1:
+            b = fem.assemble_vector(F)
+            b.scatter_reverse(la.InsertMode.add)
+            b.scatter_forward()
+            return b
+        raise NotImplementedError(f"Unexpected formulation of rank {F.rank}")
+
+    def f(x):
+        return 2 + x[0] + 3 * x[1]
+
+    # Compare evaluation of finite element formulations on the submesh and the parent mesh
+    metadata = {"quadrature_degree": 4}
+    v = ufl.TestFunction(fem.functionspace(msh, ("DG", 2)))
+
+    # Assemble forms using function interpolated on the submesh
+    dS_submesh = ufl.Measure("dS", domain=msh, metadata=metadata)
+    j = fem.Function(fem.functionspace(submesh, ("Lagrange", 1)))
+    j.interpolate(f)
+    j.x.scatter_forward()
+    J_submesh = assemble_interior_facet_formulation(ufl.avg(j) * dS_submesh, entity_maps)
+    b_submesh = assemble_interior_facet_formulation(
+        ufl.inner(ufl.jump(v), j) * dS_submesh, entity_maps
+    )
+
+    # Assemble reference value forms on the parent mesh using function defined with UFL
+    x = ufl.SpatialCoordinate(msh)
+    J_ref = assemble_interior_facet_formulation(ufl.avg(f(x)) * ufl.dS(metadata=metadata), None)
+    b_ref = assemble_interior_facet_formulation(
+        ufl.inner(ufl.jump(v), f(x)) * ufl.dS(metadata=metadata), None
+    )
+
+    # Ensure both are equivalent
+    tol = 100 * np.finfo(default_scalar_type()).eps
+    assert np.isclose(J_submesh, J_ref, atol=tol)
+    np.testing.assert_allclose(b_submesh.array, b_ref.array, atol=tol)
