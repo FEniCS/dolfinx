@@ -59,7 +59,7 @@ jobs:
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: dokken/codim-1-interior-facet
+          ref: main
       - name: Install FFCx C interface
         run: |
           cmake -G Ninja -B ufcx-build-dir -S ffcx/cmake/

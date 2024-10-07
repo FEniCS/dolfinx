@@ -40,7 +40,7 @@ jobs:
         run: |
           pip install git+https://github.com/FEniCS/ufl.git
           pip install git+https://github.com/FEniCS/basix.git
-          pip install git+https://github.com/FEniCS/ffcx.git@dokken/codim-1-interior-facet
+          pip install git+https://github.com/FEniCS/ffcx.git
           apt-get update
           apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb  # pyvista
           apt-get install -y --no-install-recommends libqt5gui5t64 libgl1 # pyvistaqt
