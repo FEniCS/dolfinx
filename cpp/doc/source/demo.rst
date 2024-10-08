@@ -42,3 +42,4 @@ Experimental
    :maxdepth: 1
 
    demos/demo_mixed_topology.md
+   demos/demo_checkpointing.md
