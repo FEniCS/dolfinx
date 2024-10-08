@@ -688,14 +688,14 @@ def test_interior_facet_codim_1(msh):
     j.x.scatter_forward()
     J_submesh = assemble_interior_facet_formulation(ufl.avg(j) * dS_submesh, entity_maps)
     b_submesh = assemble_interior_facet_formulation(
-        ufl.inner(ufl.jump(v), j) * dS_submesh, entity_maps
+        ufl.inner(j, ufl.jump(v)) * dS_submesh, entity_maps
     )
 
     # Assemble reference value forms on the parent mesh using function defined with UFL
     x = ufl.SpatialCoordinate(msh)
     J_ref = assemble_interior_facet_formulation(ufl.avg(f(x)) * ufl.dS(metadata=metadata), None)
     b_ref = assemble_interior_facet_formulation(
-        ufl.inner(ufl.jump(v), f(x)) * ufl.dS(metadata=metadata), None
+        ufl.inner(f(x), ufl.jump(v)) * ufl.dS(metadata=metadata), None
     )
 
     # Ensure both are equivalent
