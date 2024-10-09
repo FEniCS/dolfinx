@@ -10,7 +10,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "fenics-dolfinx"
-version = "0.9.0.dev0"
+version = "0.9.0"
 description = "DOLFINx Python interface"
 readme = "../README.md"
 requires-python = ">=3.9.0"
@@ -23,9 +23,9 @@ dependencies = [
       "numpy>=1.21",
       "cffi<1.17",                           # See https://github.com/FEniCS/dolfinx/issues/3340
       "mpi4py",
-      "fenics-basix>=0.9.0.dev0,<0.10.0",
-      "fenics-ffcx>=0.9.0.dev0,<0.10.0",
-      "fenics-ufl>=2024.2.0.dev0,<2024.3.0",
+      "fenics-basix>=0.9.0,<0.10.0",
+      "fenics-ffcx>=0.9.0,<0.10.0",
+      "fenics-ufl>=2024.2.0,<2024.3.0",
 ]
 
 [project.optional-dependencies]

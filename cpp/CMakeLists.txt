@@ -8,7 +8,7 @@ endif()
 
 # ------------------------------------------------------------------------------
 # Set project name and version number
-project(DOLFINX VERSION "0.9.0.0")
+project(DOLFINX VERSION "0.9.0")
 
 set(DOXYGEN_DOLFINX_VERSION
     ${DOLFINX_VERSION}
