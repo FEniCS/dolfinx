@@ -29,8 +29,6 @@ using namespace dolfinx;
 /// and outputs the finite element function to a VTX file for
 /// visualisation.
 ///
-/// Also shows how to create a finite element using Basix.
-///
 /// @tparam T Scalar type of the finite element function.
 /// @tparam U Float type for the finite element basis and the mesh.
 /// @param mesh Mesh.
@@ -149,8 +147,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
       {
         std::vector<T> f(2 * x.extent(1), 0.0);
         std::copy_n(x.data_handle(), f.size(), f.begin());
-        std::transform(f.cbegin(), f.cend(), f.begin(),
-                       [](auto x) { return x + T(1); });
+        std::ranges::transform(f, f.begin(), [](auto x) { return x + T(1); });
         return {f, {2, x.extent(1)}};
       },
       cells1);
@@ -191,8 +188,8 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
 #endif
 }
 
-/// @brief This program shows how to create finite element spaces without FFCx
-/// generated code.
+/// @brief This program shows how to interpolate functions into different types
+/// of finite element spaces and output the result to file for visualisation.
 int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);

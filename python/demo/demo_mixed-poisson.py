@@ -76,7 +76,7 @@
 # To discretize the above formulation, two discrete function spaces $\Sigma_h
 # \subset \Sigma$ and $V_h \subset V$ are needed to form a mixed function space
 # $\Sigma_h \times V_h$. A stable choice of finite element spaces is to let
-# $\Sigma_h$ be the Brezzi-Douglas-Fortin-Marini elements of polynomial order
+# $\Sigma_h$ be the Brezzi-Douglas-Marini elements of polynomial order
 # $k$ and let $V_h$ be discontinuous elements of polynomial order $k-1$.
 #
 # We will use the same definitions of functions and boundaries as in the
@@ -93,21 +93,32 @@
 
 # +
 
+try:
+    from petsc4py import PETSc
+
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
+
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import numpy as np
 
 from basix.ufl import element, mixed_element
-from dolfinx import fem, io, mesh
+from dolfinx import default_real_type, fem, io, mesh
 from dolfinx.fem.petsc import LinearProblem
 from ufl import Measure, SpatialCoordinate, TestFunctions, TrialFunctions, div, exp, inner
 
 msh = mesh.create_unit_square(MPI.COMM_WORLD, 32, 32, mesh.CellType.quadrilateral)
 
 k = 1
-Q_el = element("BDMCF", msh.basix_cell(), k)
-P_el = element("DG", msh.basix_cell(), k - 1)
+Q_el = element("BDMCF", msh.basix_cell(), k, dtype=default_real_type)
+P_el = element("DG", msh.basix_cell(), k - 1, dtype=default_real_type)
 V_el = mixed_element([Q_el, P_el])
 V = fem.functionspace(msh, V_el)
 
@@ -162,7 +173,11 @@ problem = LinearProblem(
     a,
     L,
     bcs=bcs,
-    petsc_options={"ksp_type": "preonly", "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"},
+    petsc_options={
+        "ksp_type": "preonly",
+        "pc_type": "lu",
+        "pc_factor_mat_solver_type": "superlu_dist",
+    },
 )
 try:
     w_h = problem.solve()

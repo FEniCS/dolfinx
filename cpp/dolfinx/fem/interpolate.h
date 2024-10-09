@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2022 Garth N. Wells, Igor A. Baratta, Massimiliano Leoni
+// Copyright (C) 2020-2024 Garth N. Wells, Igor A. Baratta, Massimiliano Leoni
 // and Jørgen S.Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -11,11 +11,11 @@
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
+#include <algorithm>
 #include <basix/mdspan.hpp>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
-#include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
@@ -32,7 +32,6 @@ template <typename T>
 concept MDSpan = requires(T x, std::size_t idx) {
   x(idx, idx);
   { x.extent(0) } -> std::integral;
-
   { x.extent(1) } -> std::integral;
 };
 
@@ -40,12 +39,13 @@ concept MDSpan = requires(T x, std::size_t idx) {
 /// an expression should be computed to interpolate it in a finite
 /// element space.
 ///
-/// @param[in] element The element to be interpolated into
-/// @param[in] geometry Mesh geometry
+/// @param[in] element Element to be interpolated into.
+/// @param[in] geometry Mesh geometry.
 /// @param[in] cells Indices of the cells in the mesh to compute
-/// interpolation coordinates for
+/// interpolation coordinates for.
 /// @return The coordinates in the physical space at which to evaluate
-/// an expression. The shape is (3, num_points) and storage is row-major.
+/// an expression. The shape is (3, num_points) and storage is
+/// row-major.
 template <std::floating_point T>
 std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
                                     const mesh::Geometry<T>& geometry,
@@ -105,20 +105,21 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
   return x;
 }
 
-/// @brief Interpolate an expression f(x) in a finite element space.
+/// @brief Interpolate an evaluated expression f(x) in a finite element
+/// space.
 ///
-/// @param[out] u The Function object to interpolate into
-/// @param[in] f Evaluation of the function `f(x)` at the physical
-/// points `x` given by fem::interpolation_coords. The element used in
-/// fem::interpolation_coords should be the same element as associated
-/// with `u`. The shape of `f` should be (value_size, num_points), with
-/// row-major storage.
-/// @param[in] fshape The shape of `f`.
-/// @param[in] cells Indices of the cells in the mesh on which to
-/// interpolate. Should be the same as the list used when calling
-/// fem::interpolation_coords.
 /// @tparam T Scalar type
 /// @tparam U Mesh geometry type
+/// @param[out] u Function object to interpolate into
+/// @param[in] f Evaluation of the function `f(x)` at the physical
+/// points `x` given by \ref interpolation_coords. The element used in
+/// \ref interpolation_coords should be the same element as associated
+/// with `u`. The shape of `f` is  `(value_size, num_points)`, with
+/// row-major storage.
+/// @param[in] fshape Shape of `f`.
+/// @param[in] cells Indices of the cells in the mesh on which to
+/// interpolate. Should be the same as the list of cells used when
+/// calling \ref interpolation_coords.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
@@ -133,31 +134,27 @@ using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
 
 /// @brief Scatter data into non-contiguous memory.
 ///
-/// Scatter blocked data `send_values` to its corresponding `src_rank` and
-/// insert the data into `recv_values`. The insert location in
+/// Scatter blocked data `send_values` to its corresponding `src_rank`
+/// and insert the data into `recv_values`. The insert location in
 /// `recv_values` is determined by `dest_ranks`. If the j-th dest rank
 /// is -1, then `recv_values[j*block_size:(j+1)*block_size]) = 0`.
 ///
-/// @param[in] comm The mpi communicator
-/// @param[in] src_ranks The rank owning the values of each row in
-/// send_values
+/// @param[in] comm The MPI communicator.
+/// @param[in] src_ranks Rank owning the values of each row in
+/// `send_values`.
 /// @param[in] dest_ranks List of ranks receiving data. Size of array is
 /// how many values we are receiving (not unrolled for block_size).
-/// @param[in] send_values The values to send back to owner. Shape
-/// (src_ranks.size(), block_size).
+/// @param[in] send_values Values to send back to owner. Shape is
+/// `(src_ranks.size(), block_size)`.
 /// @param[in,out] recv_values Array to fill with values.  Shape
-/// (dest_ranks.size(), block_size). Storage is row-major.
+/// `(dest_ranks.size(), block_size)`. Storage is row-major.
 /// @pre It is required that src_ranks are sorted.
-/// @note dest_ranks can contain repeated entries
-/// @note dest_ranks might contain -1 (no process owns the point)
+/// @note `dest_ranks` can contain repeated entries.
+/// @note `dest_ranks` might contain -1 (no process owns the point).
 template <dolfinx::scalar T>
-void scatter_values(
-    MPI_Comm comm, std::span<const std::int32_t> src_ranks,
-    std::span<const std::int32_t> dest_ranks,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-        send_values,
-    std::span<T> recv_values)
+void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
+                    std::span<const std::int32_t> dest_ranks,
+                    mdspan_t<const T, 2> send_values, std::span<T> recv_values)
 {
   const std::size_t block_size = send_values.extent(1);
   assert(src_ranks.size() * block_size == send_values.size());
@@ -166,8 +163,8 @@ void scatter_values(
   // Build unique set of the sorted src_ranks
   std::vector<std::int32_t> out_ranks(src_ranks.size());
   out_ranks.assign(src_ranks.begin(), src_ranks.end());
-  out_ranks.erase(std::unique(out_ranks.begin(), out_ranks.end()),
-                  out_ranks.end());
+  auto [unique_end, range_end] = std::ranges::unique(out_ranks);
+  out_ranks.erase(unique_end, range_end);
   out_ranks.reserve(out_ranks.size() + 1);
 
   // Remove negative entries from dest_ranks
@@ -178,8 +175,11 @@ void scatter_values(
                [](auto rank) { return rank >= 0; });
 
   // Create unique set of sorted in-ranks
-  std::sort(in_ranks.begin(), in_ranks.end());
-  in_ranks.erase(std::unique(in_ranks.begin(), in_ranks.end()), in_ranks.end());
+  {
+    std::ranges::sort(in_ranks);
+    auto [unique_end, range_end] = std::ranges::unique(in_ranks);
+    in_ranks.erase(unique_end, range_end);
+  }
   in_ranks.reserve(in_ranks.size() + 1);
 
   // Create neighborhood communicator
@@ -194,19 +194,24 @@ void scatter_values(
   std::vector<std::int32_t> recv_offsets(in_ranks.size() + 1, 0);
   {
     // Build map from parent to neighborhood communicator ranks
-    std::map<std::int32_t, std::int32_t> rank_to_neighbor;
+    std::vector<std::pair<std::int32_t, std::int32_t>> rank_to_neighbor;
+    rank_to_neighbor.reserve(in_ranks.size());
     for (std::size_t i = 0; i < in_ranks.size(); i++)
-      rank_to_neighbor[in_ranks[i]] = i;
+      rank_to_neighbor.push_back({in_ranks[i], i});
+    std::ranges::sort(rank_to_neighbor);
 
     // Compute receive sizes
-    std::for_each(
-        dest_ranks.begin(), dest_ranks.end(),
+    std::ranges::for_each(
+        dest_ranks,
         [&dest_ranks, &rank_to_neighbor, &recv_sizes, block_size](auto rank)
         {
           if (rank >= 0)
           {
-            const int neighbor = rank_to_neighbor[rank];
-            recv_sizes[neighbor] += block_size;
+            auto it = std::ranges::lower_bound(rank_to_neighbor, rank,
+                                               std::ranges::less(),
+                                               [](auto e) { return e.first; });
+            assert(it != rank_to_neighbor.end() and it->first == rank);
+            recv_sizes[it->second] += block_size;
           }
         });
 
@@ -221,10 +226,13 @@ void scatter_values(
     {
       if (const std::int32_t rank = dest_ranks[i]; rank >= 0)
       {
-        const int neighbor = rank_to_neighbor[rank];
-        int insert_pos = recv_offsets[neighbor] + recv_counter[neighbor];
+        auto it = std::ranges::lower_bound(rank_to_neighbor, rank,
+                                           std::ranges::less(),
+                                           [](auto e) { return e.first; });
+        assert(it != rank_to_neighbor.end() and it->first == rank);
+        int insert_pos = recv_offsets[it->second] + recv_counter[it->second];
         comm_to_output[insert_pos / block_size] = i * block_size;
-        recv_counter[neighbor] += block_size;
+        recv_counter[it->second] += block_size;
       }
     }
   }
@@ -232,15 +240,28 @@ void scatter_values(
   std::vector<std::int32_t> send_sizes(out_ranks.size());
   send_sizes.reserve(1);
   {
-    // Compute map from parent mpi rank to neigbor rank for outgoing data
-    std::map<std::int32_t, std::int32_t> rank_to_neighbor;
+    // Compute map from parent MPI rank to neighbor rank for outgoing
+    // data. `out_ranks` is sorted, so rank_to_neighbor will be sorted
+    // too.
+    std::vector<std::pair<std::int32_t, std::int32_t>> rank_to_neighbor;
+    rank_to_neighbor.reserve(out_ranks.size());
     for (std::size_t i = 0; i < out_ranks.size(); i++)
-      rank_to_neighbor[out_ranks[i]] = i;
+      rank_to_neighbor.push_back({out_ranks[i], i});
 
-    // Compute send sizes
-    std::for_each(src_ranks.begin(), src_ranks.end(),
-                  [&rank_to_neighbor, &send_sizes, block_size](auto rank)
-                  { send_sizes[rank_to_neighbor[rank]] += block_size; });
+    // Compute send sizes. As `src_ranks` is sorted, we can move 'start'
+    // in search forward.
+    auto start = rank_to_neighbor.begin();
+    std::ranges::for_each(
+        src_ranks,
+        [&rank_to_neighbor, &send_sizes, block_size, &start](auto rank)
+        {
+          auto it = std::ranges::lower_bound(start, rank_to_neighbor.end(),
+                                             rank, std::ranges::less(),
+                                             [](auto e) { return e.first; });
+          assert(it != rank_to_neighbor.end() and it->first == rank);
+          send_sizes[it->second] += block_size;
+          start = it;
+        });
   }
 
   // Compute sending offsets
@@ -257,8 +278,9 @@ void scatter_values(
                          dolfinx::MPI::mpi_type<T>(), reverse_comm);
   MPI_Comm_free(&reverse_comm);
 
-  // Insert values received from neighborhood communicator in output span
-  std::fill(recv_values.begin(), recv_values.end(), T(0));
+  // Insert values received from neighborhood communicator in output
+  // span
+  std::ranges::fill(recv_values, T(0));
   for (std::size_t i = 0; i < comm_to_output.size(); i++)
   {
     auto vals = std::next(recv_values.begin(), comm_to_output[i]);
@@ -311,15 +333,23 @@ void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
   }
 }
 
-/// Interpolate from one finite element Function to another on the same
-/// mesh. The function is for cases where the finite element basis
-/// functions are mapped in the same way, e.g. both use the same Piola
-/// map.
-/// @param[out] u1 The function to interpolate to
-/// @param[in] u0 The function to interpolate from
-/// @param[in] cells1 The cells to interpolate on
-/// @param[in] cells0 Equivalent cell in u0 for each cell in u1
-/// @pre The functions `u1` and `u0` must share the same mesh and the
+/// @brief Interpolate from one finite element Function to another on
+/// the same mesh.
+///
+/// The function is for cases where the finite element basis functions
+/// are mapped in the same way, e.g. both use the same Piola map.
+///
+/// @param[out] u1 Function to interpolate into.
+/// @param[in] u0 Function to b interpolated from.
+/// @param[in] cells1 Cell indices associated with the mesh of `u1` that
+/// will be interpolated onto.
+/// @param[in] cells0 Cell indices associated with the mesh of `u0` that
+/// will be interpolated from. If `cells1[i]` is the index of a cell in
+/// the mesh associated with `u1`, then `cells0[i]` is the index of the
+/// *same* cell but in the mesh associated with `u0`. `cells0` and
+/// `cells1` have be the same size.
+///
+/// @pre fem::Functions `u1` and `u0` must share the same mesh and the
 /// elements must share the same basis function map. Neither is checked
 /// by the function.
 template <dolfinx::scalar T, std::floating_point U>
@@ -395,7 +425,7 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
 
     // FIXME: Get compile-time ranges from Basix
     // Apply interpolation operator
-    std::fill(local1.begin(), local1.end(), 0);
+    std::ranges::fill(local1, 0);
     for (std::size_t i = 0; i < im_shape[0]; ++i)
       for (std::size_t j = 0; j < im_shape[1]; ++j)
         local1[i] += static_cast<X>(i_m[im_shape[1] * i + j]) * local0[j];
@@ -408,20 +438,24 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   }
 }
 
-/// Interpolate from one finite element Function to another on the same
-/// mesh. This interpolation function is for cases where the finite
-/// element basis functions for the two elements are mapped differently,
-/// e.g. one may be subject to a Piola mapping and the other to a
-/// standard isoparametric mapping.
-/// @param[out] u1 The function to interpolate to
-/// @param[in] u0 The function to interpolate from
-/// @param[in] cells1 The cells to interpolate on
-/// @param[in] cells0 Equivalent cell in u0 for each cell in u1
+/// @brief Interpolate from one finite element Function to another on
+/// the same mesh.
+///
+/// This interpolation function is for cases where the finite element
+/// basis functions for the two elements are mapped differently, e.g.
+/// one may be subject to a Piola mapping and the other to a standard
+/// isoparametric mapping.
+///
+/// @param[out] u1 Function to interpolate to.
+/// @param[in] cells1 Cells to interpolate on.
+/// @param[in] u0 Function to interpolate from.
+/// @param[in] cells0 Equivalent cell in `u0` for each cell in `u1`.
 /// @pre The functions `u1` and `u0` must share the same mesh. This is
 /// not checked by the function.
 template <dolfinx::scalar T, std::floating_point U>
-void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
+void interpolate_nonmatching_maps(Function<T, U>& u1,
                                   std::span<const std::int32_t> cells1,
+                                  const Function<T, U>& u0,
                                   std::span<const std::int32_t> cells0)
 {
   // Get mesh
@@ -446,7 +480,6 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
 
   std::span<const std::uint32_t> cell_info0;
   std::span<const std::uint32_t> cell_info1;
-
   if (element1->needs_dof_transformations()
       or element0->needs_dof_transformations())
   {
@@ -529,19 +562,14 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   impl::mdspan_t<const U, 2> Pi_1(_Pi_1.data(), pi_shape);
 
   using u_t = impl::mdspan_t<U, 2>;
-  using U_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using J_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using K_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  using U_t = impl::mdspan_t<const U, 2>;
+  using J_t = impl::mdspan_t<const U, 2>;
+  using K_t = impl::mdspan_t<const U, 2>;
   auto push_forward_fn0
       = element0->basix_element().template map_fn<u_t, U_t, J_t, K_t>();
 
-  using v_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using V_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  using v_t = impl::mdspan_t<const T, 2>;
+  using V_t = impl::mdspan_t<T, 2>;
   auto pull_back_fn1
       = element1->basix_element().template map_fn<V_t, v_t, K_t, J_t>();
 
@@ -561,7 +589,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
     }
 
     // Compute Jacobians and reference points for current cell
-    std::fill(J_b.begin(), J_b.end(), 0);
+    std::ranges::fill(J_b, 0);
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       auto dphi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
@@ -668,70 +696,6 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   }
 }
 
-template <dolfinx::scalar T, std::floating_point U>
-void interpolate_nonmatching_meshes(
-    Function<T, U>& u, const Function<T, U>& v,
-    std::span<const std::int32_t> cells,
-    const std::tuple<std::span<const std::int32_t>,
-                     std::span<const std::int32_t>, std::span<const U>,
-                     std::span<const std::int32_t>>& nmm_interpolation_data)
-{
-  auto mesh = u.function_space()->mesh();
-  assert(mesh);
-  MPI_Comm comm = mesh->comm();
-
-  {
-    auto mesh_v = v.function_space()->mesh();
-    assert(mesh_v);
-    int result;
-    MPI_Comm_compare(comm, mesh_v->comm(), &result);
-    if (result == MPI_UNEQUAL)
-    {
-      throw std::runtime_error("Interpolation on different meshes is only "
-                               "supported with the same communicator.");
-    }
-  }
-
-  assert(mesh->topology());
-  auto cell_map = mesh->topology()->index_map(mesh->topology()->dim());
-  assert(cell_map);
-
-  auto element_u = u.function_space()->element();
-  assert(element_u);
-  const std::size_t value_size = u.function_space()->value_size();
-
-  const auto& [dest_ranks, src_ranks, recv_points, evaluation_cells]
-      = nmm_interpolation_data;
-
-  // Evaluate the interpolating function where possible
-  std::vector<T> send_values(recv_points.size() / 3 * value_size);
-  v.eval(recv_points, {recv_points.size() / 3, (std::size_t)3},
-         evaluation_cells, send_values, {recv_points.size() / 3, value_size});
-
-  // Send values back to owning process
-  std::vector<T> values_b(dest_ranks.size() * value_size);
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-      _send_values(send_values.data(), src_ranks.size(), value_size);
-  impl::scatter_values(comm, src_ranks, dest_ranks, _send_values,
-                       std::span(values_b));
-
-  // Transpose received data
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-      values(values_b.data(), dest_ranks.size(), value_size);
-  std::vector<T> valuesT_b(value_size * dest_ranks.size());
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-      valuesT(valuesT_b.data(), value_size, dest_ranks.size());
-  for (std::size_t i = 0; i < values.extent(0); ++i)
-    for (std::size_t j = 0; j < values.extent(1); ++j)
-      valuesT(j, i) = values(i, j);
-
-  // Call local interpolation operator
-  fem::interpolate<T>(u, valuesT_b, {valuesT.extent(0), valuesT.extent(1)},
-                      cells);
-}
 //----------------------------------------------------------------------------
 } // namespace impl
 
@@ -969,11 +933,12 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
     std::vector<U> coord_dofs_b(num_dofs_g * gdim);
     mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
-
-    std::vector<T> ref_data_b(Xshape[0] * 1 * value_size);
+    const std::size_t value_size_ref
+        = element->reference_value_size() / element_bs;
+    std::vector<T> ref_data_b(Xshape[0] * 1 * value_size_ref);
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
-        ref_data(ref_data_b.data(), Xshape[0], 1, value_size);
+        ref_data(ref_data_b.data(), Xshape[0], 1, value_size_ref);
 
     std::vector<T> _vals_b(Xshape[0] * 1 * value_size);
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
@@ -1026,7 +991,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
       }
 
       // Compute J, detJ and K
-      std::fill(J_b.begin(), J_b.end(), 0);
+      std::ranges::fill(J_b, 0);
       for (std::size_t p = 0; p < Xshape[0]; ++p)
       {
         auto _dphi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
@@ -1093,34 +1058,32 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   }
 }
 
-/// @brief Generate data needed to interpolate discrete functions across
-/// different meshes.
+/// @brief Generate data needed to interpolate finite element Functions
+/// across different meshes.
+///
 /// @param[in] geometry0 Mesh geometry of the space to interpolate into
 /// @param[in] element0 Element of the space to interpolate into
 /// @param[in] mesh1 Mesh of the function to interpolate from
 /// @param[in] cells Indices of the cells in the destination mesh on
 /// which to interpolate. Should be the same as the list used when
-/// calling fem::interpolation_coords.
+/// calling \ref interpolation_coords.
 /// @param[in] padding Absolute padding of bounding boxes of all
 /// entities on `mesh1`. This is used avoid floating point issues when
 /// an interpolation point from `mesh0` is on the surface of a cell in
 /// `mesh1`. This parameter can also be used for extrapolation, i.e. if
 /// cells in `mesh0` is not overlapped by `mesh1`.
 ///
-/// @note Setting the `padding` to a large value will increase runtime
-/// of this function, as one has to determine what entity is closest if
-/// there is no intersection.
+/// @note Setting the `padding` to a large value will increase the
+/// runtime of this function, as one has to determine what entity is
+/// closest if there is no intersection.
 template <std::floating_point T>
-std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
-           std::vector<std::int32_t>>
-create_nonmatching_meshes_interpolation_data(
+geometry::PointOwnershipData<T> create_interpolation_data(
     const mesh::Geometry<T>& geometry0, const FiniteElement<T>& element0,
     const mesh::Mesh<T>& mesh1, std::span<const std::int32_t> cells, T padding)
 {
   // Collect all the points at which values are needed to define the
   // interpolating function
-  const std::vector<T> coords
-      = interpolation_coords(element0, geometry0, cells);
+  std::vector<T> coords = interpolation_coords(element0, geometry0, cells);
 
   // Transpose interpolation coords
   std::vector<T> x(coords.size());
@@ -1133,61 +1096,106 @@ create_nonmatching_meshes_interpolation_data(
   return geometry::determine_point_ownership<T>(mesh1, x, padding);
 }
 
-/// @brief Generate data needed to interpolate discrete functions
-/// defined on different meshes. Interpolate on all cells in the mesh.
-/// @param[in] mesh0 Mesh of the space to interpolate into
-/// @param[in] element0 Element of the space to interpolate into
-/// @param[in] mesh1 Mesh of the function to interpolate from
-/// @param[in] padding Absolute padding of bounding boxes of all entities on
-/// `mesh1`. This is used avoid floating point issues when an interpolation
-/// point from `mesh0` is on the surface of a cell in `mesh1`. This parameter
-/// can also be used for extrapolation, i.e. if cells in `mesh0` is not
-/// overlapped by `mesh1`.
-/// @note Setting the `padding` to a large value will increase runtime of this
-/// function, as one has to determine what entity is closest if there is no
-/// intersection.
-template <std::floating_point T>
-std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
-           std::vector<std::int32_t>>
-create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
-                                             const FiniteElement<T>& element0,
-                                             const mesh::Mesh<T>& mesh1,
-                                             T padding)
+/// @brief Interpolate a finite element Function defined on a mesh to a
+/// finite element Function defined on different (non-matching) mesh.
+/// @tparam T Function scalar type.
+/// @tparam U mesh::Mesh geometry scalar type.
+/// @param u Function to interpolate into.
+/// @param v Function to interpolate from.
+/// @param cells Cells indices relative to the mesh associated with `u`
+/// that will be interpolated into.
+/// @param interpolation_data Data required for associating the
+/// interpolation points of `u` with cells in `v`. This is computed by
+/// fem::create_interpolation_data.
+template <dolfinx::scalar T, std::floating_point U>
+void interpolate(Function<T, U>& u, const Function<T, U>& v,
+                 std::span<const std::int32_t> cells,
+                 const geometry::PointOwnershipData<U>& interpolation_data)
 {
-  int tdim = mesh0.topology()->dim();
-  auto cell_map = mesh0.topology()->index_map(tdim);
+  auto mesh = u.function_space()->mesh();
+  assert(mesh);
+  MPI_Comm comm = mesh->comm();
+  {
+    auto mesh_v = v.function_space()->mesh();
+    assert(mesh_v);
+    int result;
+    MPI_Comm_compare(comm, mesh_v->comm(), &result);
+    if (result == MPI_UNEQUAL)
+    {
+      throw std::runtime_error("Interpolation on different meshes is only "
+                               "supported on the same communicator.");
+    }
+  }
+
+  assert(mesh->topology());
+  auto cell_map = mesh->topology()->index_map(mesh->topology()->dim());
   assert(cell_map);
-  std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
-  std::vector<std::int32_t> cells(num_cells, 0);
-  std::iota(cells.begin(), cells.end(), 0);
-  return create_nonmatching_meshes_interpolation_data(
-      mesh0.geometry(), element0, mesh1, cells, padding);
+  auto element_u = u.function_space()->element();
+  assert(element_u);
+  const std::size_t value_size = u.function_space()->value_size();
+
+  const std::vector<int>& dest_ranks = interpolation_data.src_owner;
+  const std::vector<int>& src_ranks = interpolation_data.dest_owners;
+  const std::vector<U>& recv_points = interpolation_data.dest_points;
+  const std::vector<std::int32_t>& evaluation_cells
+      = interpolation_data.dest_cells;
+
+  // Evaluate the interpolating function where possible
+  std::vector<T> send_values(recv_points.size() / 3 * value_size);
+  v.eval(recv_points, {recv_points.size() / 3, (std::size_t)3},
+         evaluation_cells, send_values, {recv_points.size() / 3, value_size});
+
+  using dextents2 = MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>;
+
+  // Send values back to owning process
+  std::vector<T> values_b(dest_ranks.size() * value_size);
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<const T, dextents2> _send_values(
+      send_values.data(), src_ranks.size(), value_size);
+  impl::scatter_values(comm, src_ranks, dest_ranks, _send_values,
+                       std::span(values_b));
+
+  // Transpose received data
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<const T, dextents2> values(
+      values_b.data(), dest_ranks.size(), value_size);
+  std::vector<T> valuesT_b(value_size * dest_ranks.size());
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<T, dextents2> valuesT(
+      valuesT_b.data(), value_size, dest_ranks.size());
+  for (std::size_t i = 0; i < values.extent(0); ++i)
+    for (std::size_t j = 0; j < values.extent(1); ++j)
+      valuesT(j, i) = values(i, j);
+
+  // Call local interpolation operator
+  fem::interpolate<T>(u, valuesT_b, {valuesT.extent(0), valuesT.extent(1)},
+                      cells);
 }
 
-/// @brief Interpolate from one finite element Function to another one.
-/// @param[out] u1 The function to interpolate into
-/// @param[in] u0 The function to be interpolated
-/// @param[in] cells1 List of cell indices associated with the mesh of `u1` that
-/// will be interpolated onto
-/// @param[in] cell_map Mapping of cells in mesh associated with `u1` to cells
-/// associated with `u0`
-/// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
-/// nonmatching meshes. This data can be generated with
-/// create_nonmatching_meshes_interpolation_data (optional).
+/// @brief Interpolate from one finite element Function to another
+/// Function on the same (sub)mesh.
+///
+/// Interpolation can be performed on a subset of mesh cells and
+/// Functions may be defined on 'sub-meshes'.
+///
+/// @param[out] u1 Function to interpolate into.
+/// @param[in] cells1 Cell indices associated with the mesh of `u1` that
+/// will be interpolated onto.
+/// @param[in] u0 Function to b interpolated from.
+/// @param[in] cells0 Cell indices associated with the mesh of `u0` that
+/// will be interpolated from. If `cells1[i]` is the index of a cell in
+/// the mesh associated with `u1`, then `cells0[i]` is the index of the
+/// *same* cell but in the mesh associated with `u0`. `cells0` and
+/// `cells1` must be the same size.
 template <dolfinx::scalar T, std::floating_point U>
-void interpolate(
-    Function<T, U>& u1, const Function<T, U>& u0,
-    std::span<const std::int32_t> cells1,
-    std::span<const std::int32_t> cell_map,
-    const std::tuple<std::span<const std::int32_t>,
-                     std::span<const std::int32_t>, std::span<const U>,
-                     std::span<const std::int32_t>>& nmm_interpolation_data
-    = {})
+void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
+                 const Function<T, U>& u0, std::span<const std::int32_t> cells0)
 {
+  if (cells0.size() != cells1.size())
+    throw std::runtime_error("Length of cell lists do not match.");
+
   assert(u1.function_space());
   assert(u0.function_space());
   auto mesh = u1.function_space()->mesh();
   assert(mesh);
+  assert(cells0.size() == cells1.size());
 
   auto cell_map0 = mesh->topology()->index_map(mesh->topology()->dim());
   assert(cell_map0);
@@ -1198,31 +1206,10 @@ void interpolate(
     // Same function spaces and on whole mesh
     std::span<T> u1_array = u1.x()->mutable_array();
     std::span<const T> u0_array = u0.x()->array();
-    std::copy(u0_array.begin(), u0_array.end(), u1_array.begin());
+    std::ranges::copy(u0_array, u1_array.begin());
   }
   else
   {
-    std::vector<std::int32_t> cells0;
-    cells0.reserve(cells1.size());
-    // Get mesh and check that functions share the same mesh
-    if (auto mesh_v = u0.function_space()->mesh(); mesh == mesh_v)
-    {
-      cells0.insert(cells0.end(), cells1.begin(), cells1.end());
-    }
-    // If meshes are different and input mapping is given
-    else if (cell_map.size() > 0)
-    {
-      std::transform(cells1.begin(), cells1.end(), std::back_inserter(cells0),
-                     [&cell_map](std::int32_t c) { return cell_map[c]; });
-    }
-    // Non-matching meshes
-    if (cells0.empty())
-    {
-      impl::interpolate_nonmatching_meshes(u1, u0, cells1,
-                                           nmm_interpolation_data);
-      return;
-    }
-
     // Get elements and check value shape
     auto fs0 = u0.function_space();
     auto element0 = fs0->element();
@@ -1241,11 +1228,9 @@ void interpolate(
     if (element1 == element0 or *element1 == *element0)
     {
       // Same element, different dofmaps (or just a subset of cells)
-
       const int tdim = mesh->topology()->dim();
       auto cell_map1 = mesh->topology()->index_map(tdim);
       assert(cell_map1);
-
       assert(element1->block_size() == element0->block_size());
 
       // Get dofmaps
@@ -1285,7 +1270,7 @@ void interpolate(
     else
     {
       //  Different elements with different maps for basis functions
-      impl::interpolate_nonmatching_maps(u1, u0, cells1, cells0);
+      impl::interpolate_nonmatching_maps(u1, cells1, u0, cells0);
     }
   }
 }

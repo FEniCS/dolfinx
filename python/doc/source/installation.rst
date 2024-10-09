@@ -6,15 +6,11 @@ Installation
 DOLFINx can be installed using various packages managers, run using
 containers, or built manually from source.
 
-`Spack <https://spack.io/>`_ is the recommended installation tool for
-high performance computers.
-
-
 Binaries
 --------
 
 See the `README.md <https://github.com/FEniCS/dolfinx/blob/main/README.md#installation>`_
-for instructions.
+for recommendations and instructions.
 
 Source
 ------
@@ -22,6 +18,13 @@ Source
 Installation of DOLFINx requires installation of the C++ core. Most
 users will also want the Python interface.
 
+An example of how to build DOLFINx and its dependencies can be found in
+our `RedHat Dockerfile
+<https://github.com/FEniCS/dolfinx/blob/main/docker/Dockerfile.redhat>`_
+and `RedHat GitHub Actions workflow
+<https://github.com/FEniCS/dolfinx/blob/main/.github/workflows/redhat.yml>`_
+for a minimal set of tested steps that can be adapted to suit most
+Unix-like systems.
 
 Dependencies
 ^^^^^^^^^^^^
@@ -29,22 +32,24 @@ Dependencies
 C++ core
 ********
 
+The C++ core can be installed without Python as a dependency.
+
 .. rubric:: Required
 
 - C++ compiler (supporting the C++20 standard)
+- `Basix C++ core <https://github.com/FEniCS/basix>`_
 - `Boost <https://www.boost.org>`_, with the following compiled Boost
   components
 
   - timer
 
 - `CMake <https://cmake.org>`_ [build dependency]
-- `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_
-- `Basix <https://github.com/FEniCS/basix>`_
-- `pugixml <https://pugixml.org/>`_
-- UFCx [``ufcx.h``, provided by FFCx]
-- MPI
 - HDF5 (with MPI support enabled)
-- `PETSc <https://petsc.org/>`_ [1]_
+- MPI supporting MPI standard version 3 or above.
+- `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_
+- `pugixml <https://pugixml.org/>`_
+- `spdlog <https://github.com/gabime/spdlog/>`_
+- UFCx [``ufcx.h``, provided by FFCx package or FFCx UFCx CMake install at ``ffcx/cmake/*``]
 - At least one of ParMETIS [2]_, KaHIP or PT-SCOTCH [2]_
 
 From ParMETIS, KaHIP or PT-SCOTCH, ParMETIS is recommended.
@@ -53,30 +58,41 @@ From ParMETIS, KaHIP or PT-SCOTCH, ParMETIS is recommended.
 
 - `ADIOS2 <https://github.com/ornladios/ADIOS2/>`_ (additional parallel
   IO support)
+- `PETSc <https://petsc.org/>`_ [1]_
 - `SLEPc <https://slepc.upv.es/>`_ (eigenvalue computations)
 
+.. rubric:: Optional for demos
+
+- FFCx
+
+PETSc and FFCx are optional but still recommended.
 
 Python interface
 ****************
 
-Below are additional requirements for the Python interface.
+Below are additional requirements for the Python interface to the C++
+core.
 
 .. rubric:: Required
 
 - Python
-- FFCx, UFL and Basix (https://github.com/FEniCS/).
+- Python cffi (https://cffi.readthedocs.io/)
+- FFCx, UFL and Basix Python interface.
+- mpi4py (https://mpi4py.readthedocs.io/)
 - nanobind (https://github.com/wjakob/nanobind)
 - NumPy (https://www.numpy.org)
-- mpi4py
-- petsc4py
 - scikit-build-core[pyproject] (https://scikit-build-core.readthedocs.io)
 
-.. rubric:: Suggested
+.. rubric:: Optional
 
-- pyvista (for plotting)
+- petsc4py (recommended)
+
+.. rubric:: Optional for demos
+
 - Numba
+- pyamg
+- pyvista (for plotting)
 - slepc4py
-
 
 Building and installing
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -111,6 +127,8 @@ Python interface can be installed using::
 .. [1] Its is recommended to configure with ParMETIS, PT-SCOTCH,
        MUMPS and Hypre using
        ``--download-parmetis --download-ptscotch --download-suitesparse
-       --download-mumps --download-hypre``
+       --download-mumps --download-hypre``. macOS users should
+       additionally configure MUMPS via PETSc with
+       ``--download-mumps-avoid-mpi-in-place``.
 
 .. [2] PETSc can download and configure and build these libraries.

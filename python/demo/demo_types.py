@@ -17,6 +17,8 @@
 # - Interfacing with [SciPy](https://scipy.org/) sparse linear algebra
 #   functionality
 
+import sys
+
 from mpi4py import MPI
 
 # +
@@ -72,9 +74,8 @@ def display_vector(u, name, filter=np.real):
         V = u.function_space
         cells, types, x = plot.vtk_mesh(V)
         grid = pyvista.UnstructuredGrid(cells, types, x)
-        grid.point_data["u"] = filter(
-            np.insert(u.x.array.reshape(x.shape[0], V.dofmap.index_map_bs), 2, 0, axis=1)
-        )
+        bs = V.dofmap.index_map_bs
+        grid.point_data["u"] = filter(np.insert(u.x.array.reshape(x.shape[0], bs), bs, 0, axis=1))
         plotter = pyvista.Plotter()
         plotter.add_mesh(grid.warp_by_scalar(), show_edges=True)
         plotter.add_title(f"{name}: real" if filter is np.real else f"{name}: imag")
@@ -140,10 +141,10 @@ def poisson(dtype):
     b = fem.assemble_vector(L0)
     fem.apply_lifting(b.array, [a0], bcs=[[bc]])
     b.scatter_reverse(la.InsertMode.add)
-    fem.set_bc(b.array, [bc])
+    bc.set(b.array)
 
     # Create a SciPy CSR  matrix that shares data with A and solve
-    As = scipy.sparse.csr_matrix((A.data, A.indices, A.indptr))
+    As = A.to_scipy()
     uh = fem.Function(V, dtype=dtype)
     uh.x.array[:] = scipy.sparse.linalg.spsolve(As, b.array)
 
@@ -199,17 +200,16 @@ def elasticity(dtype) -> fem.Function:
     bc = fem.dirichletbc(np.zeros(2, dtype=dtype), dofs, V=V)
 
     # Assemble forms (CSR matrix)
-    A = fem.assemble_matrix(a0, [bc], block_mode=la.BlockMode.expanded)
+    A = fem.assemble_matrix(a0, [bc])
     A.scatter_reverse()
-    assert A.block_size == [1, 1]
 
     b = fem.assemble_vector(L0)
     fem.apply_lifting(b.array, [a0], bcs=[[bc]])
     b.scatter_reverse(la.InsertMode.add)
-    fem.set_bc(b.array, [bc])
+    bc.set(b.array)
 
     # Create a SciPy CSR  matrix that shares data with A and solve
-    As = scipy.sparse.csr_matrix((A.data, A.indices, A.indptr))
+    As = A.to_scipy()
     uh = fem.Function(V, dtype=dtype)
     uh.x.array[:] = scipy.sparse.linalg.spsolve(As, b.array)
 
@@ -221,14 +221,16 @@ def elasticity(dtype) -> fem.Function:
 
 uh = poisson(dtype=np.float32)
 uh = poisson(dtype=np.float64)
-uh = poisson(dtype=np.complex64)
-uh = poisson(dtype=np.complex128)
+if not sys.platform.startswith("win32"):
+    uh = poisson(dtype=np.complex64)
+    uh = poisson(dtype=np.complex128)
 display_scalar(uh, "poisson", np.real)
 display_scalar(uh, "poisson", np.imag)
 
 
 uh = elasticity(dtype=np.float32)
 uh = elasticity(dtype=np.float64)
-uh = elasticity(dtype=np.complex64)
-uh = elasticity(dtype=np.complex128)
+if not sys.platform.startswith("win32"):
+    uh = elasticity(dtype=np.complex64)
+    uh = elasticity(dtype=np.complex128)
 display_vector(uh, "elasticity", np.real)

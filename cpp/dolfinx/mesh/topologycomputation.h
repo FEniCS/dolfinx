@@ -29,8 +29,11 @@ namespace dolfinx::mesh
 class Topology;
 
 /// @brief Compute mesh entities of given topological dimension by
-/// computing entity-to-vertex connectivity (dim, 0), and cell-to-entity
-/// connectivity (tdim, dim).
+/// computing entity-to-vertex connectivity `(dim, 0)`, and cell-to-entity
+/// connectivity `(tdim, dim)`.
+///
+/// Computed entities are oriented such that their
+/// local (to the process) orientation agrees with their global orientation
 /// @param[in] comm MPI Communicator
 /// @param[in] topology Mesh topology
 /// @param[in] dim The dimension of the entities to create
@@ -38,9 +41,9 @@ class Topology;
 /// `Topology::entity_types(dim)`.
 /// @return Tuple of (cell-entity connectivity, entity-vertex
 /// connectivity, index map, list of interprocess entities).
-/// Interprocess entities lie on the "true" boundary between owned cells of each
-/// process. If the entities already exist, then {nullptr, nullptr, nullptr,
-/// std::vector()} is returned.
+/// Interprocess entities lie on the "true" boundary between owned cells
+/// of each process. If the entities already exists, then {nullptr,
+/// nullptr, nullptr, std::vector()} is returned.
 std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>>

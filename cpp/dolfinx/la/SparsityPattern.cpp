@@ -140,6 +140,27 @@ SparsityPattern::SparsityPattern(
   }
 }
 //-----------------------------------------------------------------------------
+void SparsityPattern::insert(std::int32_t row, std::int32_t col)
+{
+  if (!_offsets.empty())
+  {
+    throw std::runtime_error(
+        "Cannot insert into sparsity pattern. It has already been finalized");
+  }
+
+  assert(_index_maps[0]);
+  const std::int32_t max_row
+      = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() - 1;
+
+  if (row > max_row or row < 0)
+  {
+    throw std::runtime_error(
+        "Cannot insert rows that do not exist in the IndexMap.");
+  }
+
+  _row_cache[row].push_back(col);
+}
+//-----------------------------------------------------------------------------
 void SparsityPattern::insert(std::span<const std::int32_t> rows,
                              std::span<const std::int32_t> cols)
 {
@@ -160,7 +181,6 @@ void SparsityPattern::insert(std::span<const std::int32_t> rows,
       throw std::runtime_error(
           "Cannot insert rows that do not exist in the IndexMap.");
     }
-
     _row_cache[row].insert(_row_cache[row].end(), cols.begin(), cols.end());
   }
 }
@@ -205,8 +225,7 @@ std::vector<std::int64_t> SparsityPattern::column_indices() const
   const std::int32_t num_ghosts = _col_ghosts.size();
   std::vector<std::int64_t> global(local_size + num_ghosts);
   std::iota(global.begin(), std::next(global.begin(), local_size), range[0]);
-  std::copy(_col_ghosts.begin(), _col_ghosts.end(),
-            global.begin() + local_size);
+  std::ranges::copy(_col_ghosts, global.begin() + local_size);
   return global;
 }
 //-----------------------------------------------------------------------------
@@ -250,7 +269,7 @@ void SparsityPattern::finalize()
   std::vector<int> send_sizes(src0.size(), 0);
   for (std::size_t i = 0; i < owners0.size(); ++i)
   {
-    auto it = std::lower_bound(src0.begin(), src0.end(), owners0[i]);
+    auto it = std::ranges::lower_bound(src0, owners0[i]);
     assert(it != src0.end() and *it == owners0[i]);
     const int neighbour_rank = std::distance(src0.begin(), it);
     send_sizes[neighbour_rank] += 3 * _row_cache[i + local_size0].size();
@@ -268,7 +287,7 @@ void SparsityPattern::finalize()
   const int rank = dolfinx::MPI::rank(_comm.comm());
   for (std::size_t i = 0; i < owners0.size(); ++i)
   {
-    auto it = std::lower_bound(src0.begin(), src0.end(), owners0[i]);
+    auto it = std::ranges::lower_bound(src0, owners0[i]);
     assert(it != src0.end() and *it == owners0[i]);
     const int neighbour_rank = std::distance(src0.begin(), it);
 
@@ -362,8 +381,8 @@ void SparsityPattern::finalize()
   for (std::size_t i = 0; i < local_size0 + owners0.size(); ++i)
   {
     std::vector<std::int32_t>& row = _row_cache[i];
-    std::sort(row.begin(), row.end());
-    auto it_end = std::unique(row.begin(), row.end());
+    std::ranges::sort(row);
+    auto it_end = std::ranges::unique(row).begin();
 
     // Find position of first "off-diagonal" column
     _off_diagonal_offsets[i] = std::distance(
@@ -382,8 +401,8 @@ void SparsityPattern::finalize()
   _edges.shrink_to_fit();
 
   // Column count increased due to received rows from other processes
-  LOG(INFO) << "Column ghost size increased from "
-            << _index_maps[1]->ghosts().size() << " to " << _col_ghosts.size();
+  spdlog::info("Column ghost size increased from {} to {}",
+               _index_maps[1]->ghosts().size(), _col_ghosts.size());
 }
 //-----------------------------------------------------------------------------
 std::int64_t SparsityPattern::num_nonzeros() const

@@ -5,13 +5,11 @@
 # docker run -ti -v docker.io/fenicsproject/test-env:current-redhat
 FROM rockylinux/rockylinux:9
 
-ARG BUILD_NP=3
+ARG BUILD_NP=4
 
-ARG HDF5_SERIES=1.14
-ARG HDF5_PATCH=3
-ARG HDF5_FIX=
-ARG PETSC_VERSION=3.21.0
-ARG MPICH_VERSION=4.1.3
+ARG HDF5_VERSION=1.14.4.3
+ARG PETSC_VERSION=3.21.5
+ARG MPICH_VERSION=4.2.2
 
 WORKDIR /tmp
 
@@ -22,7 +20,6 @@ RUN dnf -y update && \
     dnf -y install \
     bison \
     boost-devel \
-    boost-filesystem \
     boost-timer \
     boost-program-options \
     cmake \
@@ -33,6 +30,7 @@ RUN dnf -y update && \
     python3 \
     python3-devel \
     python3-pip \
+    spdlog-devel \
     # Required for PETSc build
     diffutils \
     findutils \
@@ -54,20 +52,12 @@ RUN curl -L -O https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${M
     rm -rf /tmp/*
 
 # Build HDF5
-RUN curl -L -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX}.tar.gz && \
-    tar -xf hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX}.tar.gz && \
-    cd hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX} && \
+RUN curl -L -O https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5_${HDF5_VERSION}.tar.gz && \
+    tar -xf hdf5_${HDF5_VERSION}.tar.gz && \
+    cd hdf5-hdf5_${HDF5_VERSION} && \
     ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
     make -j${BUILD_NP} install && \
     rm -rf /tmp/*
-
-# Install Python packages (via pip)
-# - make sure pip/setuptoools are up-to-date before using them
-# - First set of dependencies for building and running Python DOLFINx
-# - Second set of dependencies for running DOLFINx tests
-RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools && \
-    python3 -m pip install --no-cache-dir cffi numba mpi4py nanobind scikit-build-core[pyproject] wheel && \
-    python3 -m pip install --no-cache-dir pytest pytest-xdist scipy matplotlib
 
 # Build PETSc
 RUN git clone -b v${PETSC_VERSION}  https://gitlab.com/petsc/petsc.git && \

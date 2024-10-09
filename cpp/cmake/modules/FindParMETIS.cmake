@@ -65,9 +65,25 @@ if(MPI_CXX_FOUND)
     METIS_LIBRARY metis DOC "Directory where the METIS library is located"
   )
 
+  # Newer METIS and ParMETIS build against separate GKLib
+  find_library(
+    GKLIB_LIBRARY gklib
+    HINTS ${PARMETIS_ROOT}/lib $ENV{PARMETIS_ROOT}/lib ${PETSC_LIBRARY_DIRS}
+    NO_DEFAULT_PATH
+    DOC "Directory where the gklib library is located"
+  )
+  find_library(
+    GKLIB_LIBRARY gklib DOC "Directory where the GKLib library is located"
+  )
+
   set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARY})
   if(METIS_LIBRARY)
     set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARIES} ${METIS_LIBRARY})
+  endif()
+  if(GKLIB_LIBRARY)
+    set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARIES} ${METIS_LIBRARY}
+                           ${GKLIB_LIBRARY}
+    )
   endif()
 
   # Try compiling and running test program

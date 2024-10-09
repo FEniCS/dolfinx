@@ -128,6 +128,7 @@
 // convenience we also include the DOLFINx namespace.
 
 #include "biharmonic.h"
+#include <basix/finite-element.h>
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/common/types.h>
@@ -162,9 +163,14 @@ int main(int argc, char* argv[])
     //    A function space object, which is defined in the generated code,
     //    is created:
 
+    auto element = basix::create_element<U>(
+        basix::element::family::P, basix::cell::type::triangle, 2,
+        basix::element::lagrange_variant::unset,
+        basix::element::dpc_variant::unset, false);
+
     //  Create function space
     auto V = std::make_shared<fem::FunctionSpace<U>>(
-        fem::create_functionspace(functionspace_form_biharmonic_a, "u", mesh));
+        fem::create_functionspace(mesh, element));
 
     // The source function $f$ and the penalty term $\alpha$ are
     // declared:
@@ -185,9 +191,9 @@ int main(int argc, char* argv[])
 
     //  Define variational forms
     auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_biharmonic_a, {V, V}, {}, {{"alpha", alpha}}, {}));
+        *form_biharmonic_a, {V, V}, {}, {{"alpha", alpha}}, {}, {}));
     auto L = std::make_shared<fem::Form<T>>(
-        fem::create_form<T>(*form_biharmonic_L, {V}, {{"f", f}}, {}, {}));
+        fem::create_form<T>(*form_biharmonic_L, {V}, {{"f", f}}, {}, {}, {}));
 
     //  Now, the Dirichlet boundary condition ($u = 0$) can be
     //  created using the class {cpp:class}`DirichletBC`. A
@@ -201,23 +207,7 @@ int main(int argc, char* argv[])
     //  follows:
 
     //  Define boundary condition
-    auto facets = mesh::locate_entities_boundary(
-        *mesh, 1,
-        [](auto x)
-        {
-          constexpr U eps = 1.0e-6;
-          std::vector<std::int8_t> marker(x.extent(1), false);
-          for (std::size_t p = 0; p < x.extent(1); ++p)
-          {
-            U x0 = x(0, p);
-            U x1 = x(1, p);
-            if (std::abs(x0) < eps or std::abs(x0 - 1) < eps)
-              marker[p] = true;
-            if (std::abs(x1) < eps or std::abs(x1 - 1) < eps)
-              marker[p] = true;
-          }
-          return marker;
-        });
+    auto facets = mesh::exterior_facet_indices(*mesh->topology());
     const auto bdofs = fem::locate_dofs_topological(
         *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
     auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
@@ -249,7 +239,7 @@ int main(int argc, char* argv[])
     fem::assemble_vector(b.mutable_array(), *L);
     fem::apply_lifting<T, U>(b.mutable_array(), {a}, {{bc}}, {}, T(1.0));
     b.scatter_rev(std::plus<T>());
-    fem::set_bc<T, U>(b.mutable_array(), {bc});
+    bc->set(b.mutable_array(), std::nullopt);
 
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
     la::petsc::options::set("ksp_type", "preonly");

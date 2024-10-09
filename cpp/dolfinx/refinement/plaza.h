@@ -4,14 +4,16 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "dolfinx/graph/AdjacencyList.h"
+#include "dolfinx/mesh/Mesh.h"
+#include "dolfinx/mesh/Topology.h"
+#include "dolfinx/mesh/utils.h"
+#include "option.h"
 #include "utils.h"
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/mesh/Geometry.h>
-#include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/utils.h>
+#include <optional>
 #include <span>
 #include <tuple>
 #include <utility>
@@ -26,108 +28,100 @@
 /// Applied Numerical Mathematics 32 (2000), 195-218.
 namespace dolfinx::refinement::plaza
 {
-
-/// @brief Options for data to compute during mesh refinement.
-enum class Option : int
-{
-  none = 0, /*!< No extra data */
-  parent_cell
-  = 1, /*!< Compute list with the parent cell index for each new cell  */
-  parent_facet
-  = 2, /*!< Compute list of the cell-local facet indices in the parent cell of
-          each facet in each new cell (or -1 if no match) */
-  parent_cell_and_facet = 3 /*!< Both cell and facet parent data */
-};
-
 namespace impl
 {
 /// Computes the parent-child facet relationship
 /// @param simplex_set - index into indices for each child cell
 /// @return mapping from child to parent facets, using cell-local index
 template <int tdim>
-std::vector<std::int8_t>
-compute_parent_facets(std::span<const std::int32_t> simplex_set)
+auto compute_parent_facets(std::span<const std::int32_t> simplex_set)
 {
+  static_assert(tdim == 2 or tdim == 3);
+  assert(simplex_set.size() % (tdim + 1) == 0);
+  using parent_facet_t
+      = std::conditional_t<tdim == 2, std::array<std::int8_t, 12>,
+                           std::array<std::int8_t, 32>>;
+  parent_facet_t parent_facet;
+  parent_facet.fill(-1);
+  assert(simplex_set.size() <= parent_facet.size());
+
+  // Index lookups in 'indices' for the child vertices that occur on
+  // each parent facet in 2D and 3D. In 2D each edge has 3 child
+  // vertices, and in 3D each triangular facet has six child vertices.
+  constexpr std::array<std::array<int, 3>, 3> facet_table_2d{
+      {{1, 2, 3}, {0, 2, 4}, {0, 1, 5}}};
+
+  constexpr std::array<std::array<int, 6>, 4> facet_table_3d{
+      {{1, 2, 3, 4, 5, 6},
+       {0, 2, 3, 4, 7, 8},
+       {0, 1, 3, 5, 7, 9},
+       {0, 1, 2, 6, 8, 9}}};
+
+  const int ncells = simplex_set.size() / (tdim + 1);
+  for (int fpi = 0; fpi < (tdim + 1); ++fpi)
   {
-    assert(simplex_set.size() % (tdim + 1) == 0);
-    std::vector<std::int8_t> parent_facet(simplex_set.size(), -1);
-
-    // Index lookups in 'indices' for the child vertices that occur on
-    // each parent facet in 2D and 3D. In 2D each edge has 3 child
-    // vertices, and in 3D each triangular facet has six child vertices.
-    constexpr std::array<std::array<int, 3>, 3> facet_table_2d{
-        {{1, 2, 3}, {0, 2, 4}, {0, 1, 5}}};
-
-    constexpr std::array<std::array<int, 6>, 4> facet_table_3d{
-        {{1, 2, 3, 4, 5, 6},
-         {0, 2, 3, 4, 7, 8},
-         {0, 1, 3, 5, 7, 9},
-         {0, 1, 2, 6, 8, 9}}};
-
-    const int ncells = simplex_set.size() / (tdim + 1);
-    for (int fpi = 0; fpi < (tdim + 1); ++fpi)
+    // For each child cell, consider all facets
+    for (int cc = 0; cc < ncells; ++cc)
     {
-      // For each child cell, consider all facets
-      for (int cc = 0; cc < ncells; ++cc)
+      for (int fci = 0; fci < (tdim + 1); ++fci)
       {
-        for (int fci = 0; fci < (tdim + 1); ++fci)
+        // Indices of all vertices on child facet, sorted
+        std::array<int, tdim> cf, set_output;
+
+        int num_common_vertices;
+        if constexpr (tdim == 2)
         {
-          // Indices of all vertices on child facet, sorted
-          std::array<int, tdim> cf, set_output;
+          for (int j = 0; j < tdim; ++j)
+            cf[j] = simplex_set[cc * 3 + facet_table_2d[fci][j]];
 
-          int num_common_vertices;
-          if constexpr (tdim == 2)
-          {
-            for (int j = 0; j < tdim; ++j)
-              cf[j] = simplex_set[cc * 3 + facet_table_2d[fci][j]];
-            std::sort(cf.begin(), cf.end());
-            auto it = std::set_intersection(
-                facet_table_2d[fpi].begin(), facet_table_2d[fpi].end(),
-                cf.begin(), cf.end(), set_output.begin());
-            num_common_vertices = std::distance(set_output.begin(), it);
-          }
-          else
-          {
-            for (int j = 0; j < tdim; ++j)
-              cf[j] = simplex_set[cc * 4 + facet_table_3d[fci][j]];
-            std::sort(cf.begin(), cf.end());
-            auto it = std::set_intersection(
-                facet_table_3d[fpi].begin(), facet_table_3d[fpi].end(),
-                cf.begin(), cf.end(), set_output.begin());
-            num_common_vertices = std::distance(set_output.begin(), it);
-          }
+          std::ranges::sort(cf);
+          auto [last1, last2, it_last] = std::ranges::set_intersection(
+              facet_table_2d[fpi], cf, set_output.begin());
+          num_common_vertices = std::distance(set_output.begin(), it_last);
+        }
+        else
+        {
+          for (int j = 0; j < tdim; ++j)
+            cf[j] = simplex_set[cc * 4 + facet_table_3d[fci][j]];
 
-          if (num_common_vertices == tdim)
-          {
-            assert(parent_facet[cc * (tdim + 1) + fci] == -1);
-            // Child facet "fci" of cell cc, lies on parent facet "fpi"
-            parent_facet[cc * (tdim + 1) + fci] = fpi;
-          }
+          std::ranges::sort(cf);
+          auto [last1, last2, it_last] = std::ranges::set_intersection(
+              facet_table_3d[fpi], cf, set_output.begin());
+          num_common_vertices = std::distance(set_output.begin(), it_last);
+        }
+
+        if (num_common_vertices == tdim)
+        {
+          assert(parent_facet[cc * (tdim + 1) + fci] == -1);
+          // Child facet "fci" of cell cc, lies on parent facet "fpi"
+          parent_facet[cc * (tdim + 1) + fci] = fpi;
         }
       }
     }
-
-    return parent_facet;
   }
+
+  return parent_facet;
 }
 
-/// Get the subdivision of an original simplex into smaller simplices,
+/// @brief Get the subdivision of an original simplex into smaller simplices,
 /// for a given set of marked edges, and the longest edge of each facet
-/// (cell local indexing). A flag indicates if a uniform subdivision is
-/// preferable in 2D.
+/// (cell local indexing).
 ///
-/// @param[in] indices Vector containing the global indices for the original
-/// vertices and potential new vertices at each edge. Size (num_vertices +
-/// num_edges). If an edge is not refined its corresponding entry is -1
+/// A flag indicates if a uniform subdivision is preferable in 2D.
+///
+/// @param[in] indices Vector containing the global indices for the
+/// original vertices and potential new vertices at each edge. Size
+/// (num_vertices + num_edges). If an edge is not refined its
+/// corresponding entry is -1.
 /// @param[in] longest_edge Vector indicating the longest edge for each
-/// triangle in the cell. For triangular cells (2D) there is only one value,
-/// and for tetrahedra (3D) there are four values, one for each facet. The
-/// values give the local edge indices of the cell.
-/// @param[in] tdim Topological dimension (2 or 3)
-/// @param[in] uniform Make a "uniform" subdivision with all triangles being
-/// similar shape
+/// triangle in the cell. For triangular cells (2D) there is only one
+/// value, and for tetrahedra (3D) there are four values, one for each
+/// facet. The values give the local edge indices of the cell.
+/// @param[in] tdim Topological dimension (2 or 3).
+/// @param[in] uniform Make a "uniform" subdivision with all triangles.
+/// being similar shape.
 /// @return
-std::vector<std::int32_t>
+std::pair<std::array<std::int32_t, 32>, std::size_t>
 get_simplices(std::span<const std::int64_t> indices,
               std::span<const std::int32_t> longest_edge, int tdim,
               bool uniform);
@@ -135,19 +129,19 @@ get_simplices(std::span<const std::int64_t> indices,
 /// Propagate edge markers according to rules (longest edge of each
 /// face must be marked, if any edge of face is marked)
 void enforce_rules(MPI_Comm comm, const graph::AdjacencyList<int>& shared_edges,
-                   std::vector<std::int8_t>& marked_edges,
+                   std::span<std::int8_t> marked_edges,
                    const mesh::Topology& topology,
                    std::span<const std::int32_t> long_edge);
 
-/// @brief Get the longest edge of each face (using local mesh index)
+/// @brief Get the longest edge of each face (using local mesh index).
 ///
-/// @note Edge ratio ok returns an array in 2D, where it checks if the ratio
-/// between the shortest and longest edge of a cell is bigger than sqrt(2)/2. In
-/// 3D an empty array is returned
+/// @note Edge ratio ok returns an array in 2D, where it checks if the
+/// ratio between the shortest and longest edge of a cell is bigger than
+/// sqrt(2)/2. In 3D an empty array is returned.
 ///
 /// @param[in] mesh The mesh
-/// @return A tuple (longest edge, edge ratio ok) where longest edge gives the
-/// local index of the longest edge for each face.
+/// @return A tuple (longest edge, edge ratio ok) where longest edge
+/// gives the local index of the longest edge for each face.
 template <std::floating_point T>
 std::pair<std::vector<std::int32_t>, std::vector<std::int8_t>>
 face_long_edge(const mesh::Mesh<T>& mesh)
@@ -169,7 +163,7 @@ face_long_edge(const mesh::Mesh<T>& mesh)
 
   // Check mesh face quality (may be used in 2D to switch to "uniform"
   // refinement)
-  const T min_ratio = sqrt(2.0) / 2.0;
+  const T min_ratio = std::sqrt(2.0) / 2.0;
   if (tdim == 2)
     edge_ratio_ok.resize(num_faces);
 
@@ -290,31 +284,34 @@ face_long_edge(const mesh::Mesh<T>& mesh)
 /// and (5) map from refined facets to parent facets.
 template <std::floating_point T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
-           std::array<std::size_t, 2>, std::vector<std::int32_t>,
-           std::vector<std::int8_t>>
+           std::array<std::size_t, 2>, std::optional<std::vector<std::int32_t>>,
+           std::optional<std::vector<std::int8_t>>>
 compute_refinement(MPI_Comm neighbor_comm,
-                   const std::vector<std::int8_t>& marked_edges,
+                   std::span<const std::int8_t> marked_edges,
                    const graph::AdjacencyList<int>& shared_edges,
                    const mesh::Mesh<T>& mesh,
-                   const std::vector<std::int32_t>& long_edge,
-                   const std::vector<std::int8_t>& edge_ratio_ok,
-                   plaza::Option option)
+                   std::span<const std::int32_t> long_edge,
+                   std::span<const std::int8_t> edge_ratio_ok, Option option)
 {
   int tdim = mesh.topology()->dim();
   int num_cell_edges = tdim * 3 - 3;
   int num_cell_vertices = tdim + 1;
-  bool compute_facets = (option == plaza::Option::parent_facet
-                         or option == plaza::Option::parent_cell_and_facet);
-  bool compute_parent_cell
-      = (option == plaza::Option::parent_cell
-         or option == plaza::Option::parent_cell_and_facet);
+
+  bool compute_facets = option_parent_facet(option);
+  bool compute_parent_cell = option_parent_cell(option);
 
   // Make new vertices in parallel
   const auto [new_vertex_map, new_vertex_coords, xshape]
       = create_new_vertices(neighbor_comm, shared_edges, mesh, marked_edges);
 
-  std::vector<std::int32_t> parent_cell;
-  std::vector<std::int8_t> parent_facet;
+  std::optional<std::vector<std::int32_t>> parent_cell(std::nullopt);
+  if (compute_parent_cell)
+    parent_cell.emplace();
+
+  std::optional<std::vector<std::int8_t>> parent_facet(std::nullopt);
+  if (compute_facets)
+    parent_facet.emplace();
+
   std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
   std::vector<std::int32_t> simplex_set;
 
@@ -334,7 +331,7 @@ compute_refinement(MPI_Comm neighbor_comm,
   std::vector<std::int64_t> global_indices
       = adjust_indices(*mesh.topology()->index_map(0), num_new_vertices_local);
 
-  const int num_cells = map_c->size_local();
+  const std::int32_t num_cells = map_c->size_local();
 
   // Iterate over all cells, and refine if cell has a marked edge
   std::vector<std::int64_t> cell_topology;
@@ -371,14 +368,14 @@ compute_refinement(MPI_Comm neighbor_comm,
         cell_topology.push_back(global_indices[v]);
 
       if (compute_parent_cell)
-        parent_cell.push_back(c);
+        parent_cell->push_back(c);
 
       if (compute_facets)
       {
         if (tdim == 3)
-          parent_facet.insert(parent_facet.end(), {0, 1, 2, 3});
+          parent_facet->insert(parent_facet->end(), {0, 1, 2, 3});
         else
-          parent_facet.insert(parent_facet.end(), {0, 1, 2});
+          parent_facet->insert(parent_facet->end(), {0, 1, 2});
       }
     }
     else
@@ -403,27 +400,33 @@ compute_refinement(MPI_Comm neighbor_comm,
       }
 
       const bool uniform = (tdim == 2) ? edge_ratio_ok[c] : false;
-
-      // FIXME: this has an expensive dynamic memory allocation
-      simplex_set = get_simplices(indices, longest_edge, tdim, uniform);
+      const auto [simplex_set_b, simplex_set_size]
+          = get_simplices(indices, longest_edge, tdim, uniform);
+      std::span<const std::int32_t> simplex_set(simplex_set_b.data(),
+                                                simplex_set_size);
 
       // Save parent index
       const std::int32_t ncells = simplex_set.size() / num_cell_vertices;
-
       if (compute_parent_cell)
       {
         for (std::int32_t i = 0; i < ncells; ++i)
-          parent_cell.push_back(c);
+          parent_cell->push_back(c);
       }
 
       if (compute_facets)
       {
-        std::vector<std::int8_t> npf;
         if (tdim == 3)
-          npf = compute_parent_facets<3>(simplex_set);
+        {
+          auto npf = compute_parent_facets<3>(simplex_set);
+          parent_facet->insert(parent_facet->end(), npf.begin(),
+                               std::next(npf.begin(), simplex_set.size()));
+        }
         else
-          npf = compute_parent_facets<2>(simplex_set);
-        parent_facet.insert(parent_facet.end(), npf.begin(), npf.end());
+        {
+          auto npf = compute_parent_facets<2>(simplex_set);
+          parent_facet->insert(parent_facet->end(), npf.begin(),
+                               std::next(npf.begin(), simplex_set.size()));
+        }
       }
 
       // Convert from cell local index to mesh index and add to cells
@@ -444,164 +447,6 @@ compute_refinement(MPI_Comm neighbor_comm,
 }
 } // namespace impl
 
-/// @brief Uniform refine, optionally redistributing and optionally
-/// calculating the parent-child relationships`.
-///
-/// @param[in] mesh Input mesh to be refined
-/// @param[in] redistribute Flag to call the mesh partitioner to
-/// redistribute after refinement
-/// @param[in] option Control the computation of parent facets, parent
-/// cells. If an option is unselected, an empty list is returned.
-/// @return Refined mesh and optional parent cell index, parent facet
-/// indices
-template <std::floating_point T>
-std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>, std::vector<std::int8_t>>
-refine(const mesh::Mesh<T>& mesh, bool redistribute, Option option)
-{
-  auto [cell_adj, new_coords, xshape, parent_cell, parent_facet]
-      = compute_refinement_data(mesh, option);
-
-  if (dolfinx::MPI::size(mesh.comm()) == 1)
-  {
-    return {mesh::create_mesh(mesh.comm(), cell_adj.array(),
-                              mesh.geometry().cmap(), new_coords, xshape,
-                              mesh::GhostMode::none),
-            std::move(parent_cell), std::move(parent_facet)};
-  }
-  else
-  {
-    std::shared_ptr<const common::IndexMap> map_c
-        = mesh.topology()->index_map(mesh.topology()->dim());
-    const int num_ghost_cells = map_c->num_ghosts();
-    // Check if mesh has ghost cells on any rank
-    // FIXME: this is not a robust test. Should be user option.
-    int max_ghost_cells = 0;
-    MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
-                  mesh.comm());
-
-    // Build mesh
-    const mesh::GhostMode ghost_mode = max_ghost_cells == 0
-                                           ? mesh::GhostMode::none
-                                           : mesh::GhostMode::shared_facet;
-    return {partition<T>(mesh, cell_adj, std::span(new_coords), xshape,
-                         redistribute, ghost_mode),
-            std::move(parent_cell), std::move(parent_facet)};
-  }
-}
-
-/// @brief Refine with markers, optionally redistributing, and
-/// optionally calculating the parent-child relationships.
-///
-/// @param[in] mesh Input mesh to be refined
-/// @param[in] edges Indices of the edges that should be split by this
-/// refinement
-/// @param[in] redistribute Flag to call the Mesh Partitioner to
-/// redistribute after refinement
-/// @param[in] option Control the computation of parent facets, parent
-/// cells. If an option is unselected, an empty list is returned.
-/// @return New Mesh and optional parent cell index, parent facet indices
-template <std::floating_point T>
-std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>, std::vector<std::int8_t>>
-refine(const mesh::Mesh<T>& mesh, std::span<const std::int32_t> edges,
-       bool redistribute, Option option)
-{
-  auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
-      = compute_refinement_data(mesh, edges, option);
-
-  if (dolfinx::MPI::size(mesh.comm()) == 1)
-  {
-    return {mesh::create_mesh(mesh.comm(), cell_adj.array(),
-                              mesh.geometry().cmap(), new_vertex_coords, xshape,
-                              mesh::GhostMode::none),
-            std::move(parent_cell), std::move(parent_facet)};
-  }
-  else
-  {
-    std::shared_ptr<const common::IndexMap> map_c
-        = mesh.topology()->index_map(mesh.topology()->dim());
-    const int num_ghost_cells = map_c->num_ghosts();
-    // Check if mesh has ghost cells on any rank
-    // FIXME: this is not a robust test. Should be user option.
-    int max_ghost_cells = 0;
-    MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
-                  mesh.comm());
-
-    // Build mesh
-    const mesh::GhostMode ghost_mode = max_ghost_cells == 0
-                                           ? mesh::GhostMode::none
-                                           : mesh::GhostMode::shared_facet;
-
-    return {partition<T>(mesh, cell_adj, new_vertex_coords, xshape,
-                         redistribute, ghost_mode),
-            std::move(parent_cell), std::move(parent_facet)};
-  }
-}
-
-/// @brief Refine mesh returning new mesh data.
-///
-/// @param[in] mesh Input mesh to be refined
-/// @param[in] option Control computation of parent facets and parent
-/// cells. If an option is unselected, an empty list is returned.
-/// @return New mesh data: cell topology, vertex coordinates, vertex
-/// coordinates shape, and optional parent cell index, and parent facet
-/// indices.
-template <std::floating_point T>
-std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
-           std::array<std::size_t, 2>, std::vector<std::int32_t>,
-           std::vector<std::int8_t>>
-compute_refinement_data(const mesh::Mesh<T>& mesh, Option option)
-{
-  common::Timer t0("PLAZA: refine");
-  auto topology = mesh.topology();
-  assert(topology);
-
-  if (topology->cell_type() != mesh::CellType::triangle
-      and topology->cell_type() != mesh::CellType::tetrahedron)
-  {
-    throw std::runtime_error("Cell type not supported");
-  }
-
-  auto map_e = topology->index_map(1);
-  if (!map_e)
-    throw std::runtime_error("Edges must be initialised");
-
-  // Get sharing ranks for each edge
-  graph::AdjacencyList<int> edge_ranks = map_e->index_to_dest_ranks();
-
-  // Create unique list of ranks that share edges (owners of ghosts
-  // plus ranks that ghost owned indices)
-  std::vector<int> ranks(edge_ranks.array().begin(), edge_ranks.array().end());
-  std::sort(ranks.begin(), ranks.end());
-  ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
-
-  // Convert edge_ranks from global rank to to neighbourhood ranks
-  std::transform(edge_ranks.array().begin(), edge_ranks.array().end(),
-                 edge_ranks.array().begin(),
-                 [&ranks](auto r)
-                 {
-                   auto it = std::lower_bound(ranks.begin(), ranks.end(), r);
-                   assert(it != ranks.end() and *it == r);
-                   return std::distance(ranks.begin(), it);
-                 });
-
-  MPI_Comm comm;
-  MPI_Dist_graph_create_adjacent(mesh.comm(), ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
-
-  const auto [long_edge, edge_ratio_ok] = impl::face_long_edge(mesh);
-  auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
-      = impl::compute_refinement(
-          comm,
-          std::vector<std::int8_t>(map_e->size_local() + map_e->num_ghosts(),
-                                   true),
-          edge_ranks, mesh, long_edge, edge_ratio_ok, option);
-  MPI_Comm_free(&comm);
-
-  return {std::move(cell_adj), std::move(new_vertex_coords), xshape,
-          std::move(parent_cell), std::move(parent_facet)};
-}
-
 /// Refine with markers returning new mesh data.
 ///
 /// @param[in] mesh Input mesh to be refined
@@ -613,10 +458,11 @@ compute_refinement_data(const mesh::Mesh<T>& mesh, Option option)
 /// cell index, and stored parent facet indices (if requested).
 template <std::floating_point T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
-           std::array<std::size_t, 2>, std::vector<std::int32_t>,
-           std::vector<std::int8_t>>
+           std::array<std::size_t, 2>, std::optional<std::vector<std::int32_t>>,
+           std::optional<std::vector<std::int8_t>>>
 compute_refinement_data(const mesh::Mesh<T>& mesh,
-                        std::span<const std::int32_t> edges, Option option)
+                        std::optional<std::span<const std::int32_t>> edges,
+                        Option option)
 {
   common::Timer t0("PLAZA: refine");
   auto topology = mesh.topology();
@@ -638,32 +484,36 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   // Create unique list of ranks that share edges (owners of ghosts plus
   // ranks that ghost owned indices)
   std::vector<int> ranks(edge_ranks.array().begin(), edge_ranks.array().end());
-  std::sort(ranks.begin(), ranks.end());
-  ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+  std::ranges::sort(ranks);
+  auto [unique_end, range_end] = std::ranges::unique(ranks);
+  ranks.erase(unique_end, range_end);
 
   // Convert edge_ranks from global rank to to neighbourhood ranks
-  std::transform(edge_ranks.array().begin(), edge_ranks.array().end(),
-                 edge_ranks.array().begin(),
-                 [&ranks](auto r)
-                 {
-                   auto it = std::lower_bound(ranks.begin(), ranks.end(), r);
-                   assert(it != ranks.end() and *it == r);
-                   return std::distance(ranks.begin(), it);
-                 });
+  std::ranges::transform(edge_ranks.array(), edge_ranks.array().begin(),
+                         [&ranks](auto r)
+                         {
+                           auto it = std::ranges::lower_bound(ranks, r);
+                           assert(it != ranks.end() and *it == r);
+                           return std::distance(ranks.begin(), it);
+                         });
 
   // Get number of neighbors
   std::vector<std::int8_t> marked_edges(
-      map_e->size_local() + map_e->num_ghosts(), false);
+      map_e->size_local() + map_e->num_ghosts(), !edges.has_value());
   std::vector<std::vector<std::int32_t>> marked_for_update(ranks.size());
-  for (auto edge : edges)
-  {
-    if (!marked_edges[edge])
-    {
-      marked_edges[edge] = true;
 
-      // If it is a shared edge, add all sharing neighbors to update set
-      for (int rank : edge_ranks.links(edge))
-        marked_for_update[rank].push_back(edge);
+  if (edges.has_value())
+  {
+    for (auto edge : edges.value())
+    {
+      if (!marked_edges[edge])
+      {
+        marked_edges[edge] = true;
+
+        // If it is a shared edge, add all sharing neighbors to update set
+        for (int rank : edge_ranks.links(edge))
+          marked_for_update[rank].push_back(edge);
+      }
     }
   }
 

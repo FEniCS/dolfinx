@@ -17,8 +17,9 @@ import pytest
 import dolfinx
 import dolfinx.utils
 import ffcx.codegeneration.utils
-from dolfinx import TimingType, fem, la, list_timings
 from dolfinx import cpp as _cpp
+from dolfinx import fem, la
+from dolfinx.common import TimingType, list_timings
 from dolfinx.fem import Form, Function, IntegralType, form_cpp_class, functionspace
 from dolfinx.mesh import create_unit_square
 
@@ -90,16 +91,17 @@ def test_numba_assembly(dtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13, dtype=xdtype)
     V = functionspace(mesh, ("Lagrange", 1))
     cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
+    active_coeffs = np.array([], dtype=np.int8)
     integrals = {
         IntegralType.cell: [
-            (-1, k2.address, cells),
-            (2, k2.address, np.arange(0)),
-            (12, k2.address, np.arange(0)),
+            (-1, k2.address, cells, active_coeffs),
+            (2, k2.address, np.arange(0), active_coeffs),
+            (12, k2.address, np.arange(0), active_coeffs),
         ]
     }
     formtype = form_cpp_class(dtype)
     a = Form(formtype([V._cpp_object, V._cpp_object], integrals, [], [], False, {}, None))
-    integrals = {IntegralType.cell: [(-1, k1.address, cells)]}
+    integrals = {IntegralType.cell: [(-1, k1.address, cells, active_coeffs)]}
     L = Form(formtype([V._cpp_object], integrals, [], [], False, {}, None))
 
     A = dolfinx.fem.assemble_matrix(a)
@@ -128,7 +130,10 @@ def test_coefficient(dtype):
 
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
-    integrals = {IntegralType.cell: [(1, k1.address, np.arange(num_cells, dtype=np.int32))]}
+    active_coeffs = np.array([0], dtype=np.int8)
+    integrals = {
+        IntegralType.cell: [(1, k1.address, np.arange(num_cells, dtype=np.int32), active_coeffs)]
+    }
     formtype = form_cpp_class(dtype)
     L = Form(formtype([V._cpp_object], integrals, [vals._cpp_object], [], False, {}, None))
 
@@ -258,13 +263,14 @@ def test_cffi_assembly():
     cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
 
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
-    integrals = {IntegralType.cell: [(-1, ptrA, cells)]}
+    active_coeffs = np.array([], dtype=np.int8)
+    integrals = {IntegralType.cell: [(-1, ptrA, cells, active_coeffs)]}
     a = Form(
         _cpp.fem.Form_float64([V._cpp_object, V._cpp_object], integrals, [], [], False, {}, None)
     )
 
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
-    integrals = {IntegralType.cell: [(-1, ptrL, cells)]}
+    integrals = {IntegralType.cell: [(-1, ptrL, cells, active_coeffs)]}
     L = Form(_cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False, {}, None))
 
     A = fem.assemble_matrix(a)

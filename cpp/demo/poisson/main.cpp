@@ -80,10 +80,15 @@
 // namespace.
 
 #include "poisson.h"
+#include <basix/finite-element.h>
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/petsc.h>
+#include <dolfinx/la/petsc.h>
+#include <petscmat.h>
+#include <petscsys.h>
+#include <petscsystypes.h>
 #include <utility>
 #include <vector>
 
@@ -114,8 +119,13 @@ int main(int argc, char* argv[])
         mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}},
                                   {32, 16}, mesh::CellType::triangle, part));
 
+    auto element = basix::create_element<U>(
+        basix::element::family::P, basix::cell::type::triangle, 1,
+        basix::element::lagrange_variant::unset,
+        basix::element::dpc_variant::unset, false);
+
     auto V = std::make_shared<fem::FunctionSpace<U>>(
-        fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
+        fem::create_functionspace(mesh, element, {}));
 
     //  Next, we define the variational formulation by initializing the
     //  bilinear and linear forms ($a$, $L$) using the previously
@@ -130,9 +140,9 @@ int main(int argc, char* argv[])
 
     // Define variational forms
     auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_poisson_a, {V, V}, {}, {{"kappa", kappa}}, {}));
+        *form_poisson_a, {V, V}, {}, {{"kappa", kappa}}, {}, {}));
     auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_poisson_L, {V}, {{"f", f}, {"g", g}}, {}, {}));
+        *form_poisson_L, {V}, {{"f", f}, {"g", g}}, {}, {}, {}));
 
     //  Now, the Dirichlet boundary condition ($u = 0$) can be created
     //  using the class {cpp:class}`DirichletBC`. A
@@ -215,7 +225,7 @@ int main(int argc, char* argv[])
     fem::assemble_vector(b.mutable_array(), *L);
     fem::apply_lifting<T, U>(b.mutable_array(), {a}, {{bc}}, {}, T(1));
     b.scatter_rev(std::plus<T>());
-    fem::set_bc<T, U>(b.mutable_array(), {bc});
+    bc->set(b.mutable_array(), std::nullopt);
 
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
     la::petsc::options::set("ksp_type", "preonly");

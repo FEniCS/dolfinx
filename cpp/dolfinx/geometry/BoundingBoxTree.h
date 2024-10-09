@@ -164,16 +164,15 @@ _build_from_point(std::span<std::pair<std::array<T, 3>, std::int32_t>> points,
   }
 
   // Compute bounding box of all points
-  auto minmax = std::minmax_element(points.begin(), points.end());
-  std::array<T, 3> b0 = minmax.first->first;
-  std::array<T, 3> b1 = minmax.second->first;
+  auto [min, max] = std::ranges::minmax_element(points);
+  std::array<T, 3> b0 = min->first;
+  std::array<T, 3> b1 = max->first;
 
   // Sort bounding boxes along longest axis
   std::array<T, 3> b_diff;
-  std::transform(b1.begin(), b1.end(), b0.begin(), b_diff.begin(),
-                 std::minus<T>());
-  const std::size_t axis = std::distance(
-      b_diff.begin(), std::max_element(b_diff.begin(), b_diff.end()));
+  std::ranges::transform(b1, b0, b_diff.begin(), std::minus<T>());
+  const std::size_t axis
+      = std::distance(b_diff.begin(), std::ranges::max_element(b_diff));
 
   auto middle = std::next(points.begin(), points.size() / 2);
   std::nth_element(points.begin(), middle, points.end(),
@@ -257,8 +256,8 @@ public:
       std::tie(_bboxes, _bbox_coordinates)
           = impl_bb::build_from_leaf(leaf_bboxes);
 
-    LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
-              << " nodes for " << entities.size() << " entities.";
+    spdlog::info("Computed bounding box tree with {} nodes for {} entities",
+                 num_bboxes(), entities.size());
   }
 
   /// Constructor
@@ -286,8 +285,8 @@ public:
       impl_bb::_build_from_point(std::span(points), _bboxes, _bbox_coordinates);
     }
 
-    LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
-              << " nodes for " << points.size() << " points.";
+    spdlog::info("Computed bounding box tree with {} nodes for {} points.",
+                 num_bboxes(), points.size());
   }
 
   /// Move constructor
@@ -351,8 +350,8 @@ public:
     BoundingBoxTree global_tree(std::move(global_bboxes),
                                 std::move(global_coords));
 
-    LOG(INFO) << "Computed global bounding box tree with "
-              << global_tree.num_bboxes() << " boxes.";
+    spdlog::info("Computed global bounding box tree with {} boxes.",
+                 global_tree.num_bboxes());
 
     return global_tree;
   }
@@ -405,7 +404,8 @@ private:
       for (std::size_t k = 0; k < 3; ++k)
         s << _bbox_coordinates[6 * i + j * 3 + k] << " ";
       if (j == 0)
-        s << "]->" << "[";
+        s << "]->"
+          << "[";
     }
     s << "]\n";
 

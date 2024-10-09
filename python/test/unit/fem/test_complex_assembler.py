@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly in complex mode"""
 
+import sys
+
 from mpi4py import MPI
 
 import numpy as np
@@ -17,6 +19,9 @@ from dolfinx.fem import Function, assemble_matrix, assemble_vector, form, functi
 from dolfinx.mesh import create_unit_square
 from ufl import dx, grad, inner
 
+if sys.platform.startswith("win32"):
+    pytest.skip("No Win32 _Complex support", allow_module_level=True)
+
 
 @pytest.mark.parametrize("complex_dtype", [np.complex64, np.complex128])
 def test_complex_assembly(complex_dtype):
@@ -24,7 +29,7 @@ def test_complex_assembly(complex_dtype):
 
     real_dtype = np.real(complex_dtype(1.0)).dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=real_dtype)
-    P2 = element("Lagrange", mesh.basix_cell(), 2)
+    P2 = element("Lagrange", mesh.basix_cell(), 2, dtype=real_dtype)
     V = functionspace(mesh, P2)
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
@@ -78,7 +83,7 @@ def test_complex_assembly_solve(complex_dtype, cg_solver):
     degree = 3
     real_dtype = np.real(complex_dtype(1.0)).dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 20, 20, dtype=real_dtype)
-    P = element("Lagrange", mesh.basix_cell(), degree)
+    P = element("Lagrange", mesh.basix_cell(), degree, dtype=real_dtype)
     V = functionspace(mesh, P)
 
     x = ufl.SpatialCoordinate(mesh)

@@ -47,7 +47,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
                                  double t, pugi::xml_node& xml_node,
                                  hid_t h5_id)
 {
-  LOG(INFO) << "Adding function to node \"" << xml_node.path('/') << "\"";
+  spdlog::info("Adding function to node \"{}\"", xml_node.path('/'));
 
   assert(u.function_space());
   auto mesh = u.function_space()->mesh();
@@ -75,13 +75,14 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   assert(dofmap);
   const int bs = dofmap->bs();
 
+  // Pad to 3D if vector/tensor is product of dimensions is smaller than 3**rank
+  // to ensure that we can visualize them correctly in Paraview
   std::span<const std::size_t> value_shape = u.function_space()->value_shape();
+  int rank = value_shape.size();
   int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
                                    std::multiplies{});
-  // Pad to 3D if vector is 1 or 2D, to ensure that we can visualize them
-  // correctly in Paraview
-  if (value_shape.size() == 1 && value_shape.front() < 3)
-    num_components = 3;
+  if (num_components < std::pow(3, rank))
+    num_components = std::pow(3, rank);
 
   // Get fem::Function data values and shape
   std::vector<T> data_values;
@@ -190,13 +191,13 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
       _data.resize(data_values.size());
       if (component == "real_")
       {
-        std::transform(data_values.begin(), data_values.end(), _data.begin(),
-                       [](auto x) { return x.real(); });
+        std::ranges::transform(data_values, _data.begin(),
+                               [](auto x) { return x.real(); });
       }
       else if (component == "imag_")
       {
-        std::transform(data_values.begin(), data_values.end(), _data.begin(),
-                       [](auto x) { return x.imag(); });
+        std::ranges::transform(data_values, _data.begin(),
+                               [](auto x) { return x.imag(); });
       }
       u = std::span<const scalar_value_type_t<T>>(_data);
     }

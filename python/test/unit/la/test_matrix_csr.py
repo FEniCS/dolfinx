@@ -25,9 +25,9 @@ def create_test_sparsity(n, bs):
     if bs == 1:
         for i in range(2):
             for j in range(2):
-                sp.insert(np.array([2 + i]), np.array([4 + j]))
+                sp.insert(2 + i, 4 + j)
     elif bs == 2:
-        sp.insert(np.array([1]), np.array([2]))
+        sp.insert(1, 2)
     sp.finalize()
     return sp
 
@@ -126,10 +126,10 @@ def test_distributed_csr(dtype):
     sp = SparsityPattern(MPI.COMM_WORLD, [im, im], [1, 1])
     for i in range(n):
         for j in range(n + nghost):
-            sp.insert(np.array([i]), np.array([j]))
+            sp.insert(i, j)
     for i in range(n, n + nghost):
         for j in range(n, n + nghost):
-            sp.insert(np.array([i]), np.array([j]))
+            sp.insert(i, j)
     sp.finalize()
 
     mat = matrix_csr(sp, dtype=dtype)
@@ -147,7 +147,15 @@ def test_distributed_csr(dtype):
     assert np.isclose(mat.data.sum(), pre_final_sum)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 def test_set_block_matrix(dtype):
     mesh_dtype = np.real(dtype(0)).dtype
     ghost_mode = GhostMode.shared_facet
@@ -160,7 +168,15 @@ def test_set_block_matrix(dtype):
     assert As.blocksize == (2, 2)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 def test_set_diagonal_distributed(dtype):
     mesh_dtype = np.real(dtype(0)).dtype
     ghost_mode = GhostMode.shared_facet

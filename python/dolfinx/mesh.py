@@ -1,9 +1,9 @@
-# Copyright (C) 2017-2021 Chris N. Richardson and Garth N. Wells
+# Copyright (C) 2017-2024 Chris N. Richardson, Garth N. Wells and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Creation, refining and marking of meshes"""
+"""Creation, refining and marking of meshes."""
 
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
+from dolfinx.common import IndexMap as _IndexMap
 from dolfinx.cpp.mesh import (
     CellType,
     DiagonalType,
@@ -26,7 +27,6 @@ from dolfinx.cpp.mesh import (
     build_dual_graph,
     cell_dim,
     create_cell_partitioner,
-    exterior_facet_indices,
     to_string,
     to_type,
 )
@@ -40,6 +40,7 @@ __all__ = [
     "locate_entities_boundary",
     "refine",
     "create_mesh",
+    "create_submesh",
     "Mesh",
     "MeshTags",
     "meshtags",
@@ -59,30 +60,238 @@ __all__ = [
     "create_unit_cube",
     "to_type",
     "to_string",
-    "refine_plaza",
     "transfer_meshtag",
     "entities_to_geometry",
+    "create_geometry",
+    "Geometry",
+    "Topology",
 ]
+
+
+class Topology:
+    """Topology for a :class:`dolfinx.mesh.Mesh`"""
+
+    _cpp_object: _cpp.mesh.Topology
+
+    def __init__(self, topology: _cpp.mesh.Topology):
+        """Initialize a topology from a C++ topology.
+        Args:
+            topology: The C++ topology object
+
+        Note:
+            Topology objects should usually be constructed with the
+            :func:`dolfinx.cpp.mesh.create_topology` and not this class initializer.
+        """
+        self._cpp_object = topology
+
+    def cell_name(self) -> str:
+        """String representation of the cell-type of the topology"""
+        return to_string(self._cpp_object.cell_type)
+
+    def connectivity(self, d0: int, d1: int) -> _cpp.graph.AdjacencyList_int32:
+        """Return connectivity from entities of dimension ``d0`` to entities of dimension ``d1``.
+
+        Args:
+            d0: Dimension of entity one is mapping from
+            d1: Dimension of entity one is mapping to
+        """
+        if (conn := self._cpp_object.connectivity(d0, d1)) is not None:
+            return conn
+        else:
+            raise RuntimeError(
+                f"Connectivity between dimension {d0} and {d1} has not been computed.",
+                f"Please call `dolfinx.mesh.Topology.create_connectivity({d0}, {d1})` first.",
+            )
+
+    @property
+    def comm(self):
+        return self._cpp_object.comm
+
+    def create_connectivity(self, d0: int, d1: int):
+        """Create connectivity between given pair of dimensions, ``d0`` and  ``d1``.
+
+        Args:
+            d0: Dimension of entities one is mapping from
+            d1: Dimension of entities one is mapping to
+        """
+        self._cpp_object.create_connectivity(d0, d1)
+
+    def create_entities(self, dim: int) -> int:
+        """Create entities of given topological dimension.
+
+        Args:
+            dim: Topological dimension
+
+        Returns:
+            Number of newly created entities, returns -1 if entities already existed
+        """
+        return self._cpp_object.create_entities(dim)
+
+    def create_entity_permutations(self):
+        """Compute entity permutations and reflections."""
+        self._cpp_object.create_entity_permutations()
+
+    @property
+    def dim(self) -> int:
+        """Return the topological dimension of the mesh."""
+        return self._cpp_object.dim
+
+    @property
+    def entity_types(self) -> list[list[CellType]]:
+        """Entity types in the topology for all topological dimensions."""
+        return self._cpp_object.entity_types
+
+    def get_cell_permutation_info(self) -> npt.NDArray[np.uint32]:
+        """Get permutation information.
+
+        The returned data is used for packing coefficients and
+        assembling of tensors. The bits of each integer encodes the
+        number of reflections and permutations for each sub-entity of
+        the cell to be able to map it to the reference element.
+        """
+        return self._cpp_object.get_cell_permutation_info()
+
+    def get_facet_permutations(self) -> npt.NDArray[np.uint8]:
+        """Get the permutation integer to apply to facets.
+
+        The bits of each integer describes the number of reflections and
+        rotations that has to be applied to a facet to map between a
+        facet in the mesh (relative to a cell) and the corresponding
+        facet on the reference element. The data has the shape
+        ``(num_cells, num_facets_per_cell)``, flattened row-wise. The
+        number of cells include potential ghost cells.
+
+        Note:
+            The data can be unpacked with ``numpy.unpack_bits``.
+        """
+        return self._cpp_object.get_facet_permutations()
+
+    def index_map(self, dim: int) -> _cpp.common.IndexMap:
+        """Get the IndexMap that described the parallel distribution of the mesh entities.
+
+        Args:
+            dim: Topological dimension
+
+        Returns:
+            Index map for the entities of dimension ``dim``.
+        """
+        if (imap := self._cpp_object.index_map(dim)) is not None:
+            return imap
+        else:
+            raise RuntimeError(
+                f"Entities of dimension {dim} has not been computed."
+                f"Call `dolfinx.mesh.Topology.create_entities({dim}) first."
+            )
+
+    def interprocess_facets(self) -> npt.NDArray[np.int32]:
+        """List of inter-process facets, if facet topology has been computed."""
+        return self._cpp_object.interprocess_facets()
+
+    @property
+    def original_cell_index(self) -> npt.NDArray[np.int64]:
+        """Get the original cell index"""
+        return self._cpp_object.original_cell_index
+
+    def set_connectivity(self, graph: _cpp.graph.AdjacencyList_int32, d0: int, d1: int):
+        """Set connectivity for given pair of topological dimensions.
+
+        Args:
+            graph: Connectivity graph
+            d0: Topological dimension mapping from
+            d1: Topological dimension mapping to
+        """
+        self._cpp_object.set_connectivity(graph, d0, d1)
+
+    def set_index_map(self, dim: int, index_map: _cpp.common.IndexMap):
+        """Set the IndexMap for dimension ``dim``.
+
+        Args:
+            dim: Topological dimension of entity.
+            index_map: Index map to store.
+        """
+        return self._cpp_object.set_index_map(dim, index_map)
+
+    @property
+    def cell_type(self) -> CellType:
+        """Get the cell type of the topology"""
+        return self._cpp_object.cell_type
+
+
+class Geometry:
+    """The geometry of a :class:`dolfinx.mesh.Mesh`"""
+
+    _cpp_object: typing.Union[_cpp.mesh.Geometry_float32, _cpp.mesh.Geometry_float64]
+
+    def __init__(
+        self, geometry: typing.Union[_cpp.mesh.Geometry_float32, _cpp.mesh.Geometry_float64]
+    ):
+        """Initialize a geometry from a C++ geometry.
+
+        Args:
+            geometry: The C++ geometry object.
+
+        Note:
+            Geometry objects should usually be constructed with the
+            :func:`create_geometry` and not using this class
+            initializer. This class is combined with different base
+            classes that depend on the scalar type used in the Geometry.
+        """
+        self._cpp_object = geometry
+
+    @property
+    def cmap(self) -> _CoordinateElement:
+        """Element that describes the geometry map."""
+        return _CoordinateElement(self._cpp_object.cmap)
+
+    @property
+    def dim(self):
+        """Dimension of the Euclidean coordinate system."""
+        return self._cpp_object.dim
+
+    @property
+    def dofmap(self) -> npt.NDArray[np.int32]:
+        """Dofmap for the geometry, shape ``(num_cells, dofs_per_cell)``."""
+        return self._cpp_object.dofmap
+
+    def index_map(self) -> _IndexMap:
+        """Index map describing the layout of the geometry points (nodes)."""
+        return self._cpp_object.index_map()
+
+    @property
+    def input_global_indices(self) -> npt.NDArray[np.int64]:
+        """Global input indices of the geometry nodes."""
+        return self._cpp_object.input_global_indices
+
+    @property
+    def x(self) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
+        """Geometry coordinate points,  ``shape=(num_points, 3)``."""
+        return self._cpp_object.x
 
 
 class Mesh:
     """A mesh."""
 
     _mesh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64]
+    _topology: Topology
+    _geometry: Geometry
     _ufl_domain: typing.Optional[ufl.Mesh]
 
-    def __init__(self, mesh, domain: typing.Optional[ufl.Mesh]):
+    def __init__(self, msh, domain: typing.Optional[ufl.Mesh]):
         """Initialize mesh from a C++ mesh.
 
         Args:
-            mesh: A C++ mesh object.
+            msh: A C++ mesh object.
             domain: A UFL domain.
 
         Note:
-            Mesh objects should not usually be created using this
-            initializer directly.
+            Mesh objects should usually be constructed using
+            :func:`create_mesh` and not using this class initializer.
+            This class is combined with different base classes that
+            depend on the scalar type used in the Mesh.
         """
-        self._cpp_object = mesh
+        self._cpp_object = msh
+        self._topology = Topology(self._cpp_object.topology)
+        self._geometry = Geometry(self._cpp_object.geometry)
         self._ufl_domain = domain
         if self._ufl_domain is not None:
             self._ufl_domain._ufl_cargo = self._cpp_object  # type: ignore
@@ -110,7 +319,8 @@ class Mesh:
     def ufl_domain(self) -> ufl.Mesh:
         """Return the ufl domain corresponding to the mesh.
 
-        Domain is ``None`` if it has not been set.
+        Returns:
+            The UFL domain. Is ``None`` if the domain has not been set.
 
         Note:
             This method is required for UFL compatibility.
@@ -136,14 +346,14 @@ class Mesh:
         return _cpp.mesh.h(self._cpp_object, dim, entities)
 
     @property
-    def topology(self):
+    def topology(self) -> Topology:
         "Mesh topology."
-        return self._cpp_object.topology
+        return self._topology
 
     @property
-    def geometry(self):
+    def geometry(self) -> Geometry:
         "Mesh geometry."
-        return self._cpp_object.geometry
+        return self._geometry
 
 
 class MeshTags:
@@ -212,19 +422,42 @@ class MeshTags:
         return self._cpp_object.find(value)
 
 
-def compute_incident_entities(topology, entities: npt.NDArray[np.int32], d0: int, d1: int):
-    return _cpp.mesh.compute_incident_entities(topology, entities, d0, d1)
+def compute_incident_entities(
+    topology: Topology, entities: npt.NDArray[np.int32], d0: int, d1: int
+) -> npt.NDArray[np.int32]:
+    """Compute all entities of ``d1`` connected to ``entities`` of dimension ``d0``.
+
+    Args:
+        topology: The topology.
+        entities: List of entities fo dimension ``d0``.
+        d0: Topological dimension.
+        d1: Topological dimension to map to.
+
+    Returns:
+        Incident entity indices.
+    """
+    return _cpp.mesh.compute_incident_entities(topology._cpp_object, entities, d0, d1)
 
 
-def compute_midpoints(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
-    return _cpp.mesh.compute_midpoints(mesh._cpp_object, dim, entities)
+def compute_midpoints(msh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
+    """Compute the midpoints of a set of mesh entities.
+
+    Args:
+        msh: The mesh.
+        dim: Topological dimension of the mesh entities to consider.
+        entities: Indices of entities in ``mesh`` to consider.
+
+    Returns:
+        Midpoints of the entities, shape ``(num_entities, 3)``.
+    """
+    return _cpp.mesh.compute_midpoints(msh._cpp_object, dim, entities)
 
 
-def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
+def locate_entities(msh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
     """Compute mesh entities satisfying a geometric marking function.
 
     Args:
-        mesh: Mesh to locate entities on.
+        msh: Mesh to locate entities on.
         dim: Topological dimension of the mesh entities to consider.
         marker: A function that takes an array of points ``x`` with
             shape ``(gdim, num_points)`` and returns an array of
@@ -234,10 +467,10 @@ def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray
     Returns:
         Indices (local to the process) of marked mesh entities.
     """
-    return _cpp.mesh.locate_entities(mesh._cpp_object, dim, marker)
+    return _cpp.mesh.locate_entities(msh._cpp_object, dim, marker)
 
 
-def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
+def locate_entities_boundary(msh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
     """Compute mesh entities that are connected to an owned boundary
     facet and satisfy a geometric marking function.
 
@@ -251,7 +484,7 @@ def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> n
     parallel communication.
 
     Args:
-        mesh: Mesh to locate boundary entities on.
+        msh: Mesh to locate boundary entities on.
         dim: Topological dimension of the mesh entities to consider
         marker: Function that takes an array of points ``x`` with shape
             ``(gdim, num_points)`` and returns an array of booleans of
@@ -261,25 +494,12 @@ def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> n
     Returns:
         Indices (local to the process) of marked mesh entities.
     """
-    return _cpp.mesh.locate_entities_boundary(mesh._cpp_object, dim, marker)
-
-
-_uflcell_to_dolfinxcell = {
-    "interval": CellType.interval,
-    "interval2D": CellType.interval,
-    "interval3D": CellType.interval,
-    "triangle": CellType.triangle,
-    "triangle3D": CellType.triangle,
-    "quadrilateral": CellType.quadrilateral,
-    "quadrilateral3D": CellType.quadrilateral,
-    "tetrahedron": CellType.tetrahedron,
-    "hexahedron": CellType.hexahedron,
-}
+    return _cpp.mesh.locate_entities_boundary(msh._cpp_object, dim, marker)
 
 
 def transfer_meshtag(
     meshtag: MeshTags,
-    mesh1: Mesh,
+    msh1: Mesh,
     parent_cell: npt.NDArray[np.int32],
     parent_facet: typing.Optional[npt.NDArray[np.int8]] = None,
 ) -> MeshTags:
@@ -287,7 +507,7 @@ def transfer_meshtag(
 
     Args:
         meshtag: Mesh tags on the coarse, parent mesh.
-        mesh1: The refined mesh.
+        msh1: The refined mesh.
         parent_cell: Index of the parent cell for each cell in the
             refined mesh.
         parent_facet: Index of the local parent facet for each cell
@@ -298,12 +518,14 @@ def transfer_meshtag(
         Mesh tags on the refined mesh.
     """
     if meshtag.dim == meshtag.topology.dim:
-        mt = _cpp.refinement.transfer_cell_meshtag(meshtag._cpp_object, mesh1.topology, parent_cell)
+        mt = _cpp.refinement.transfer_cell_meshtag(
+            meshtag._cpp_object, msh1.topology._cpp_object, parent_cell
+        )
         return MeshTags(mt)
     elif meshtag.dim == meshtag.topology.dim - 1:
         assert parent_facet is not None
         mt = _cpp.refinement.transfer_facet_meshtag(
-            meshtag._cpp_object, mesh1.topology, parent_cell, parent_facet
+            meshtag._cpp_object, msh1.topology._cpp_object, parent_cell, parent_facet
         )
         return MeshTags(mt)
     else:
@@ -311,54 +533,48 @@ def transfer_meshtag(
 
 
 def refine(
-    mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True
-) -> Mesh:
-    """Refine a mesh.
-
-    Args:
-        mesh: Mesh from which to create the refined mesh.
-        edges: Indices of edges to split during refinement. If ``None``,
-            mesh refinement is uniform.
-        redistribute:
-            Refined mesh is re-partitioned if ``True``.
-
-    Returns:
-       Refined mesh.
-    """
-    if edges is None:
-        mesh1 = _cpp.refinement.refine(mesh._cpp_object, redistribute)
-    else:
-        mesh1 = _cpp.refinement.refine(mesh._cpp_object, edges, redistribute)
-    return Mesh(mesh1, mesh._ufl_domain)
-
-
-def refine_plaza(
-    mesh: Mesh,
+    msh: Mesh,
     edges: typing.Optional[np.ndarray] = None,
-    redistribute: bool = True,
+    partitioner: typing.Optional[typing.Callable] = create_cell_partitioner(GhostMode.none),
     option: RefinementOption = RefinementOption.none,
-) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int32]]:
+) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.
 
+    Passing ``None`` for ``partitioner``, refined cells will be on the
+    same process as the parent cell.
+
+    Note:
+        Using the default partitioner for the refined mesh, the refined
+        mesh will **not** include ghosts cells (cells connected by facet
+        to an owned cells) even if the parent mesh is ghosted.
+
+    Warning:
+        Passing ``None`` for ``partitioner``, the refined mesh will
+        **not** have ghosts cells even if the parent mesh has ghost
+        cells. The possibility to not re-partition the refined mesh and
+        include ghost cells in the refined mesh will be added in a
+        future release.
+
     Args:
-        mesh: Mesh from which to create the refined mesh.
+        msh: Mesh from which to create the refined mesh.
         edges: Indices of edges to split during refinement. If ``None``,
             mesh refinement is uniform.
-        redistribute:
-            Refined mesh is re-partitioned if ``True``.
-        option:
-            Control computation of the parent-refined mesh data.
+        partitioner: Partitioner to distribute the refined mesh. If
+            ``None`` no redistribution is performed, i.e. refined cells
+            remain on the same process as the parent cell.
+        option: Controls whether parent cells and/or parent facets are
+            computed.
 
     Returns:
-       Refined mesh, list of parent cell for each refine cell, and list
+       Refined mesh, (optional) parent cells, (optional) parent facets
     """
-    if edges is None:
-        mesh1, cells, facets = _cpp.refinement.refine_plaza(mesh._cpp_object, redistribute, option)
-    else:
-        mesh1, cells, facets = _cpp.refinement.refine_plaza(
-            mesh._cpp_object, edges, redistribute, option
-        )
-    return Mesh(mesh1, mesh._ufl_domain), cells, facets
+    mesh1, parent_cell, parent_facet = _cpp.refinement.refine(
+        msh._cpp_object, edges, partitioner, option
+    )
+    # Create new ufl domain as it will carry a reference to the C++ mesh
+    # in the ufl_cargo
+    ufl_domain = ufl.Mesh(msh._ufl_domain.ufl_coordinate_element())  # type: ignore
+    return Mesh(mesh1, ufl_domain), parent_cell, parent_facet
 
 
 def create_mesh(
@@ -381,18 +597,18 @@ def create_mesh(
         x: Mesh geometry ('node' coordinates), with shape ``(num_nodes, gdim)``.
         e: UFL mesh. The mesh scalar type is determined by the scalar
             type of ``e``.
-        partitioner: Function that computes the parallel distribution of
-            cells across MPI ranks.
+        partitioner: Function that determines the parallel distribution
+            of cells across MPI ranks.
 
     Note:
-        If required, the coordinates ``x`` will be cast to the same type
-        as the domain/element ``e``.
+        If required, the coordinates ``x`` will be cast to the same
+        scalar type as the domain/element ``e``.
 
     Returns:
         A mesh.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(GhostMode.none)
+        partitioner = create_cell_partitioner(GhostMode.none)
 
     x = np.asarray(x, order="C")
     if x.ndim == 1:
@@ -434,20 +650,35 @@ def create_mesh(
 
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
-    mesh = _cpp.mesh.create_mesh(comm, cells, cmap._cpp_object, x, partitioner)
+    msh = _cpp.mesh.create_mesh(comm, cells, cmap._cpp_object, x, partitioner)
 
-    return Mesh(mesh, domain)
+    return Mesh(msh, domain)
 
 
-def create_submesh(msh, dim, entities):
+def create_submesh(
+    msh: Mesh, dim: int, entities: npt.NDArray[np.int32]
+) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray[np.int32]]:
+    """Create a mesh with specified entities from another mesh.
+
+    Args:
+        msh: Mesh to create the sub-mesh from.
+        dim: Topological dimension of the entities in ``msh`` to include
+            in the sub-mesh.
+        entities: Indices of entities in ``msh`` to include in the
+            sub-mesh.
+
+    Returns:
+        The (1) sub mesh, (2) entity map, (3) vertex map, and (4) node
+        map (geometry). Each of the maps a local index of the sub mesh
+        to a local index of ``msh``.
+    """
     submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(
         msh._cpp_object, dim, entities
     )
-    submsh_ufl_cell = ufl.Cell(submsh.topology.cell_name())
     submsh_domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
-            submsh_ufl_cell.cellname(),
+            to_string(submsh.topology.cell_type),
             submsh.geometry.cmap.degree,
             basix.LagrangeVariant(submsh.geometry.cmap.variant),
             shape=(submsh.geometry.dim,),
@@ -458,7 +689,7 @@ def create_submesh(msh, dim, entities):
 
 
 def meshtags(
-    mesh: Mesh,
+    msh: Mesh,
     dim: int,
     entities: npt.NDArray[np.int32],
     values: typing.Union[np.ndarray, int, float],
@@ -466,7 +697,7 @@ def meshtags(
     """Create a MeshTags object that associates data with a subset of mesh entities.
 
     Args:
-        mesh: The mesh.
+        msh: The mesh.
         dim: Topological dimension of the mesh entity.
         entities: Indices(local to process) of entities to associate
             values with . The array must be sorted and must not contain
@@ -479,11 +710,9 @@ def meshtags(
     Note:
         The type of the returned MeshTags is inferred from the type of
         ``values``.
-
     """
-
     if isinstance(values, int):
-        assert np.can_cast(values, np.int32)
+        assert values >= np.iinfo(np.int32).min and values <= np.iinfo(np.int32).max
         values = np.full(entities.shape, values, dtype=np.int32)
     elif isinstance(values, float):
         values = np.full(entities.shape, values, dtype=np.double)
@@ -500,18 +729,20 @@ def meshtags(
     else:
         raise NotImplementedError(f"Type {values.dtype} not supported.")
 
-    return MeshTags(ftype(mesh.topology, dim, np.asarray(entities, dtype=np.int32), values))
+    return MeshTags(
+        ftype(msh.topology._cpp_object, dim, np.asarray(entities, dtype=np.int32), values)
+    )
 
 
 def meshtags_from_entities(
-    mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyList_int32, values: npt.NDArray[typing.Any]
+    msh: Mesh, dim: int, entities: _cpp.graph.AdjacencyList_int32, values: npt.NDArray[typing.Any]
 ):
     """Create a :class:dolfinx.mesh.MeshTags` object that associates
     data with a subset of mesh entities, where the entities are defined
     by their vertices.
 
     Args:
-        mesh: The mesh.
+        msh: The mesh.
         dim: Topological dimension of the mesh entity.
         entities: Entities to associated values with, with entities
             defined by their vertices.
@@ -531,7 +762,7 @@ def meshtags_from_entities(
     elif isinstance(values, float):
         values = np.full(entities.num_nodes, values, dtype=np.double)
     values = np.asarray(values)
-    return MeshTags(_cpp.mesh.create_meshtags(mesh.topology, dim, entities, values))
+    return MeshTags(_cpp.mesh.create_meshtags(msh.topology._cpp_object, dim, entities, values))
 
 
 def create_interval(
@@ -557,18 +788,18 @@ def create_interval(
 
     Returns:
         An interval mesh.
-
     """
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(1,), dtype=dtype))  # type: ignore
     if np.issubdtype(dtype, np.float32):
-        mesh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, partitioner)
+        msh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, partitioner)
     elif np.issubdtype(dtype, np.float64):
-        mesh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner)
+        msh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner)
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
-    return Mesh(mesh, domain)
+
+    return Mesh(msh, domain)
 
 
 def create_unit_interval(
@@ -631,12 +862,13 @@ def create_rectangle(
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, shape=(2,), dtype=dtype))  # type: ignore
     if np.issubdtype(dtype, np.float32):
-        mesh = _cpp.mesh.create_rectangle_float32(comm, points, n, cell_type, partitioner, diagonal)
+        msh = _cpp.mesh.create_rectangle_float32(comm, points, n, cell_type, partitioner, diagonal)
     elif np.issubdtype(dtype, np.float64):
-        mesh = _cpp.mesh.create_rectangle_float64(comm, points, n, cell_type, partitioner, diagonal)
+        msh = _cpp.mesh.create_rectangle_float64(comm, points, n, cell_type, partitioner, diagonal)
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
-    return Mesh(mesh, domain)
+
+    return Mesh(msh, domain)
 
 
 def create_unit_square(
@@ -709,12 +941,13 @@ def create_box(
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, shape=(3,), dtype=dtype))  # type: ignore
     if np.issubdtype(dtype, np.float32):
-        mesh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner)
+        msh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner)
     elif np.issubdtype(dtype, np.float64):
-        mesh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner)
+        msh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner)
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
-    return Mesh(mesh, domain)
+
+    return Mesh(msh, domain)
 
 
 def create_unit_cube(
@@ -743,7 +976,7 @@ def create_unit_cube(
 
     Returns:
         A mesh of an axis-aligned unit cube with corners at ``(0, 0, 0)``
-            and ``(1, 1, 1)``.
+        and ``(1, 1, 1)``.
     """
     return create_box(
         comm,
@@ -757,24 +990,73 @@ def create_unit_cube(
 
 
 def entities_to_geometry(
-    mesh: Mesh, dim: int, entities: npt.NDArray[np.int32], orient: bool = False
+    msh: Mesh, dim: int, entities: npt.NDArray[np.int32], permute=False
 ) -> npt.NDArray[np.int32]:
-    """Indices in the geometry data for each vertex of the given mesh entities.
-
-    Warning:
-        This function should not be used unless there is no alternative.
-        It may be removed in the future.
+    """Compute the geometric DOFs associated with the closure of the given mesh entities.
 
     Args:
-        mesh: The mesh.
+        msh: The mesh.
         dim: Topological dimension of the entities of interest.
-        entities: Entity indices (local to the process) to determine the
-            vertex geometry indices for.
-        orient: If True, the triangular facets of a 3D mesh will be reordered
-            so that they have a consistent normal direction. This option is likely
-            to be removed in the future.
+        entities: Entity indices (local to the process).
+        permute: Permute the DOFs such that they are consistent with the
+            orientation of `dim`-dimensional mesh entities. This
+            requires `create_entity_permutations` to be called first.
 
     Returns:
-        Indices in the geometry array for the entity vertices.
+        The geometric DOFs associated with the closure of the entities
+        in `entities`.
     """
-    return _cpp.mesh.entities_to_geometry(mesh._cpp_object, dim, entities, orient)
+    return _cpp.mesh.entities_to_geometry(msh._cpp_object, dim, entities, permute)
+
+
+def exterior_facet_indices(topology: Topology) -> npt.NDArray[np.int32]:
+    """Compute the indices of all exterior facets that are owned by the caller.
+
+    An exterior facet (co-dimension 1) is one that is connected globally
+    to only one cell of co-dimension 0).
+
+    Note:
+        This is a collective operation that should be called on all
+        processes.
+
+    Args:
+        topology: The topology
+
+    Returns:
+        Sorted list of owned facet indices that are exterior facets of
+        the mesh.
+    """
+    return _cpp.mesh.exterior_facet_indices(topology._cpp_object)
+
+
+def create_geometry(
+    index_map: _IndexMap,
+    dofmap: npt.NDArray[np.int32],
+    element: _CoordinateElement,
+    x: np.ndarray,
+    input_global_indices: npt.NDArray[np.int64],
+) -> Geometry:
+    """Create a Geometry object.
+
+    Args:
+        index_map: Index map describing the layout of the geometry
+            points (nodes).
+        dofmap: The geometry (point) dofmap. For a cell, it gives the
+            row in the point coordinates ``x`` of each local geometry
+            node. ``shape=(num_cells, num_dofs_per_cell)``.
+        element: Element that describes the cell geometry map.
+        x: The point coordinates. The shape is ``(num_points, geometric_dimension).``
+        input_global_indices: The 'global' input index of each point,
+            commonly from a mesh input file.
+    """
+    if x.dtype == np.float64:
+        ftype = _cpp.mesh.Geometry_float64
+    elif x.dtype == np.float32:
+        ftype = _cpp.mesh.Geometry_float64
+    else:
+        raise ValueError("Unknown floating type for geometry, got: {x.dtype}")
+
+    if (dtype := np.dtype(element.dtype)) != x.dtype:
+        raise ValueError(f"Mismatch in x dtype ({x.dtype}) and coordinate element ({dtype})")
+
+    return Geometry(ftype(index_map, dofmap, element, x, input_global_indices))

@@ -4,7 +4,6 @@ set(HEADERS_common
     ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_doc.h
     ${CMAKE_CURRENT_SOURCE_DIR}/IndexMap.h
     ${CMAKE_CURRENT_SOURCE_DIR}/log.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/loguru.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sort.h
     ${CMAKE_CURRENT_SOURCE_DIR}/types.h
     ${CMAKE_CURRENT_SOURCE_DIR}/math.h

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "partitioners.h"
+#include <algorithm>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
@@ -70,7 +71,7 @@ graph::AdjacencyList<int> compute_destination_ranks(
     {
       if (node1 < range0 or node1 >= range1)
       {
-        auto it = std::upper_bound(node_disp.begin(), node_disp.end(), node1);
+        auto it = std::ranges::upper_bound(node_disp, node1);
         int remote_rank = std::distance(node_disp.begin(), it) - 1;
         node_to_dest.push_back(
             {remote_rank, node1, static_cast<std::int64_t>(part[node0])});
@@ -80,9 +81,10 @@ graph::AdjacencyList<int> compute_destination_ranks(
             {rank, node1, static_cast<std::int64_t>(part[node0])});
     }
   }
-  std::sort(node_to_dest.begin(), node_to_dest.end());
-  node_to_dest.erase(std::unique(node_to_dest.begin(), node_to_dest.end()),
-                     node_to_dest.end());
+
+  std::ranges::sort(node_to_dest);
+  auto [unique_end, range_end] = std::ranges::unique(node_to_dest);
+  node_to_dest.erase(unique_end, range_end);
 
   // Build send data and buffer
   std::vector<int> dest, send_sizes;
@@ -163,11 +165,12 @@ graph::AdjacencyList<int> compute_destination_ranks(
     std::int32_t idx_local = idx - range0;
     local_node_to_dest.push_back({idx_local, d});
   }
-  std::sort(local_node_to_dest.begin(), local_node_to_dest.end());
-  local_node_to_dest.erase(
-      std::unique(local_node_to_dest.begin(), local_node_to_dest.end()),
-      local_node_to_dest.end());
 
+  {
+    std::ranges::sort(local_node_to_dest);
+    auto [unique_end, range_end] = std::ranges::unique(local_node_to_dest);
+    local_node_to_dest.erase(unique_end, range_end);
+  }
   // Compute offsets
   std::vector<std::int32_t> offsets(graph.num_nodes() + 1, 0);
   {
@@ -238,7 +241,7 @@ std::vector<int> adaptive_repartition(MPI_Comm comm,
   std::vector<real_t> ubvec(ncon, 1.05);
 
   // Call ParMETIS to repartition graph
-  int err = ParMETIS_V3_AdaptiveRepart(
+  [[maybe_unused]] int err = ParMETIS_V3_AdaptiveRepart(
       adj_graph.node_distribution().data(), adj_graph.nodes().data(),
       adj_graph.edges().data(), elmwgt, nullptr, vsize.data(), &wgtflag,
       &numflag, &ncon, &nparts, tpwgts.data(), ubvec.data(), &_itr, options,
@@ -288,7 +291,7 @@ std::vector<int> refine(MPI_Comm comm, const graph::AdjacencyList<T>& adj_graph)
 
   // Call ParMETIS to partition graph
   common::Timer timer1("ParMETIS: call ParMETIS_V3_RefineKway");
-  int err = ParMETIS_V3_RefineKway(
+  [[maybe_unused]] int err = ParMETIS_V3_RefineKway(
       adj_graph.node_distribution().data(), adj_graph.nodes().data(),
       adj_graph.edges().data(), elmwgt, nullptr, &wgtflag, &numflag, &ncon,
       &nparts, tpwgts.data(), ubvec.data(), options, &edgecut, part.data(),
@@ -312,7 +315,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
                                      const AdjacencyList<std::int64_t>& graph,
                                      bool ghosting)
   {
-    LOG(INFO) << "Compute graph partition using PT-SCOTCH";
+    spdlog::info("Compute graph partition using PT-SCOTCH");
     common::Timer timer("Compute graph partition (SCOTCH)");
 
     std::int64_t offset_global = 0;
@@ -413,8 +416,8 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       std::copy_if(graph.array().begin(), graph.array().end(),
                    std::back_inserter(ghost_edges),
                    [range](auto e) { return e < range[0] or e >= range[1]; });
-      std::sort(ghost_edges.begin(), ghost_edges.end());
-      auto it = std::unique(ghost_edges.begin(), ghost_edges.end());
+      std::ranges::sort(ghost_edges);
+      auto it = std::ranges::unique(ghost_edges).begin();
       num_ghost_nodes = std::distance(ghost_edges.begin(), it);
     }
 
@@ -517,7 +520,7 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
                               const graph::AdjacencyList<std::int64_t>& graph,
                               bool ghosting)
   {
-    LOG(INFO) << "Compute graph partition using ParMETIS";
+    spdlog::info("Compute graph partition using ParMETIS");
     common::Timer timer("Compute graph partition (ParMETIS)");
 
     if (nparts == 1 and dolfinx::MPI::size(comm) == 1)
@@ -613,7 +616,7 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
              MPI_Comm comm, int nparts,
              const graph::AdjacencyList<std::int64_t>& graph, bool ghosting)
   {
-    LOG(INFO) << "Compute graph partition using (parallel) KaHIP";
+    spdlog::info("Compute graph partition using (parallel) KaHIP");
 
     // KaHIP integer type
     using T = unsigned long long;

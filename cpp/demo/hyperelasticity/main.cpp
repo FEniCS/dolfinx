@@ -15,6 +15,7 @@
 // ## C++ program
 
 #include "hyperelasticity.h"
+#include <algorithm>
 #include <basix/finite-element.h>
 #include <climits>
 #include <cmath>
@@ -24,9 +25,14 @@
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/la/Vector.h>
+#include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/nls/NewtonSolver.h>
+#include <petscmat.h>
+#include <petscsys.h>
+#include <petscsystypes.h>
+#include <petscvec.h>
 
 using namespace dolfinx;
 using T = PetscScalar;
@@ -80,8 +86,8 @@ public:
     return [&](const Vec x, Vec)
     {
       // Assemble b and update ghosts
-      std::span<T> b(_b.mutable_array());
-      std::fill(b.begin(), b.end(), 0.0);
+      std::span b(_b.mutable_array());
+      std::ranges::fill(b, 0);
       fem::assemble_vector<T>(b, *_l);
       VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
       VecGhostUpdateEnd(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
@@ -91,10 +97,11 @@ public:
       VecGhostGetLocalForm(x, &x_local);
       PetscInt n = 0;
       VecGetSize(x_local, &n);
-      const T* array = nullptr;
-      VecGetArrayRead(x_local, &array);
-      fem::set_bc<T>(b, _bcs, std::span<const T>(array, n), -1.0);
-      VecRestoreArrayRead(x, &array);
+      const T* _x = nullptr;
+      VecGetArrayRead(x_local, &_x);
+      std::ranges::for_each(_bcs, [b, x = std::span(_x, n)](auto& bc)
+                            { bc->set(b, x, -1); });
+      VecRestoreArrayRead(x_local, &_x);
     };
   }
 
@@ -137,8 +144,9 @@ int main(int argc, char* argv[])
   // Set the logging thread name to show the process rank
   int mpi_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-  std::string thread_name = "RANK " + std::to_string(mpi_rank);
-  loguru::set_thread_name(thread_name.c_str());
+  std::string fmt = "[%Y-%m-%d %H:%M:%S.%e] [RANK " + std::to_string(mpi_rank)
+                    + "] [%l] %v";
+  spdlog::set_pattern(fmt);
   {
     // Inside the `main` function, we begin by defining a tetrahedral
     // mesh of the domain and the function space on this mesh. Here, we
@@ -153,8 +161,13 @@ int main(int argc, char* argv[])
         mesh::CellType::tetrahedron,
         mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
-    auto V = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace(
-        functionspace_form_hyperelasticity_F_form, "u", mesh));
+    auto element = basix::create_element<U>(
+        basix::element::family::P, basix::cell::type::tetrahedron, 1,
+        basix::element::lagrange_variant::unset,
+        basix::element::dpc_variant::unset, false);
+
+    auto V = std::make_shared<fem::FunctionSpace<U>>(
+        fem::create_functionspace(mesh, element, {3}));
 
     auto B = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
     auto traction = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
@@ -163,10 +176,10 @@ int main(int argc, char* argv[])
     auto u = std::make_shared<fem::Function<T>>(V);
     auto a = std::make_shared<fem::Form<T>>(
         fem::create_form<T>(*form_hyperelasticity_J_form, {V, V}, {{"u", u}},
-                            {{"B", B}, {"T", traction}}, {}));
+                            {{"B", B}, {"T", traction}}, {}, {}));
     auto L = std::make_shared<fem::Form<T>>(
         fem::create_form<T>(*form_hyperelasticity_F_form, {V}, {{"u", u}},
-                            {{"B", B}, {"T", traction}}, {}));
+                            {{"B", B}, {"T", traction}}, {}, {}));
 
     auto u_rotation = std::make_shared<fem::Function<T>>(V);
     u_rotation->interpolate(
@@ -264,7 +277,7 @@ int main(int argc, char* argv[])
 
     auto sigma = fem::Function<T>(S);
     sigma.name = "cauchy_stress";
-    sigma.interpolate(sigma_expression, *mesh);
+    sigma.interpolate(sigma_expression);
 
     // Save solution in VTK format
     io::VTKFile file_u(mesh->comm(), "u.pvd", "w");

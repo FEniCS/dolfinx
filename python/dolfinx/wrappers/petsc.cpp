@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#ifdef HAS_PETSC
+#if defined(HAS_PETSC) && defined(HAS_PETSC4PY)
 
 #include "array.h"
 #include "caster_mpi.h"
@@ -353,8 +353,7 @@ void petsc_nls_module(nb::module_& m)
                    {
                      KSP ksp = self.get_krylov_solver().ksp();
                      PyObject* obj = PyPetscKSP_New(ksp);
-                     PetscObjectDereference((PetscObject)ksp);
-                     return nb::borrow(obj);
+                     return nb::steal(obj);
                    })
       .def("setF", &dolfinx::nls::petsc::NewtonSolver::setF, nb::arg("F"),
            nb::arg("b"))
@@ -367,14 +366,32 @@ void petsc_nls_module(nb::module_& m)
           [](dolfinx::nls::petsc::NewtonSolver& self,
              std::function<void(const dolfinx::nls::petsc::NewtonSolver* solver,
                                 const Vec, Vec)>
-                 update)
+                 update) // See
+                         // https://github.com/wjakob/nanobind/discussions/361
+                         // on why we pass NewtonSolver* rather than
+                         // NewtonSolver&
           {
-            // See https://github.com/wjakob/nanobind/discussions/361 on below
             self.set_update(
                 [update](const dolfinx::nls::petsc::NewtonSolver& solver,
                          const Vec dx, Vec x) { update(&solver, dx, x); });
           },
           nb::arg("update"))
+      .def(
+          "set_convergence_check",
+          [](dolfinx::nls::petsc::NewtonSolver& self,
+             std::function<std::pair<double, bool>(
+                 const dolfinx::nls::petsc::NewtonSolver* solver, const Vec)>
+                 convergence_check) // See
+                                    // https://github.com/wjakob/nanobind/discussions/361
+                                    // on why we pass NewtonSolver* rather than
+                                    // NewtonSolver&
+          {
+            self.set_convergence_check(
+                [convergence_check](
+                    const dolfinx::nls::petsc::NewtonSolver& solver,
+                    const Vec r) { return convergence_check(&solver, r); });
+          },
+          nb::arg("convergence_check"))
       .def("set_form", &dolfinx::nls::petsc::NewtonSolver::set_form,
            nb::arg("form"))
       .def("solve", &dolfinx::nls::petsc::NewtonSolver::solve, nb::arg("x"))

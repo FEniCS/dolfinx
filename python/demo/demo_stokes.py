@@ -86,13 +86,24 @@
 # The required modules are first imported:
 
 from mpi4py import MPI
-from petsc4py import PETSc
+
+try:
+    from petsc4py import PETSc
+
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
 
 import numpy as np
 
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import fem, la
+from dolfinx import default_real_type, fem, la
 from dolfinx.fem import (
     Constant,
     Function,
@@ -106,6 +117,10 @@ from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 from ufl import div, dx, grad, inner
+
+opts = PETSc.Options()
+opts["mat_superlu_dist_iterrefine"] = True
+
 
 # We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions for
 # locating geometrically subsets of the boundary, and define a function
@@ -141,8 +156,8 @@ def lid_velocity_expression(x):
 # piecewise linear basis (scalar).
 
 
-P2 = element("Lagrange", msh.basix_cell(), 2, shape=(msh.geometry.dim,))
-P1 = element("Lagrange", msh.basix_cell(), 1)
+P2 = element("Lagrange", msh.basix_cell(), 2, shape=(msh.geometry.dim,), dtype=default_real_type)
+P1 = element("Lagrange", msh.basix_cell(), 1, dtype=default_real_type)
 V, Q = functionspace(msh, P2), functionspace(msh, P1)
 
 # Boundary conditions for the velocity field are defined:
@@ -282,7 +297,9 @@ def nested_iterative_solver():
     # `scatter_forward`.
     with XDMFFile(MPI.COMM_WORLD, "out_stokes/velocity.xdmf", "w") as ufile_xdmf:
         u.x.scatter_forward()
-        P1 = element("Lagrange", msh.basix_cell(), 1, shape=(msh.geometry.dim,))
+        P1 = element(
+            "Lagrange", msh.basix_cell(), 1, shape=(msh.geometry.dim,), dtype=default_real_type
+        )
         u1 = Function(functionspace(msh, P1))
         u1.interpolate(u)
         ufile_xdmf.write_mesh(msh)
@@ -425,7 +442,7 @@ def block_direct_solver():
     # handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    pc.setFactorSolverType("mumps")
+    pc.setFactorSolverType("superlu_dist")
     try:
         pc.setFactorSetUpSolverType()
     except PETSc.Error as e:
@@ -435,8 +452,8 @@ def block_direct_solver():
             exit(0)
         else:
             raise e
-    pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)  # For pressure nullspace
-    pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)  # For pressure nullspace
+    # pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)  # For pressure nullspace
+    # pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)  # For pressure nullspace
 
     # Create a block vector (x) to store the full solution, and solve
     x = A.createVecLeft()
@@ -504,7 +521,8 @@ def mixed_direct():
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     # Set Dirichlet boundary condition values in the RHS
-    fem.petsc.set_bc(b, bcs)
+    for bc in bcs:
+        bc.set(b)
 
     # Create and configure solver
     ksp = PETSc.KSP().create(msh.comm)
@@ -514,10 +532,12 @@ def mixed_direct():
     # Configure MUMPS to handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    pc.setFactorSolverType("mumps")
-    pc.setFactorSetUpSolverType()
-    pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
-    pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
+    # pc.setFactorSolverType("mumps")
+    # pc.setFactorSetUpSolverType()
+    # pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
+    # pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
+
+    pc.setFactorSolverType("superlu_dist")
 
     # Compute the solution
     U = Function(W)

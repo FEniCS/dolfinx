@@ -15,6 +15,7 @@ import pytest
 import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
+from dolfinx import default_real_type
 from dolfinx.fem import functionspace
 from dolfinx.mesh import (
     CellType,
@@ -43,8 +44,10 @@ def mesh():
 def test_tabulate_dofs(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
-    W0 = element("Lagrange", mesh.basix_cell(), 1)
-    W1 = element("Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
+    W0 = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
+    W1 = element(
+        "Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,), dtype=default_real_type
+    )
     W = functionspace(mesh, W0 * W1)
 
     L0 = W.sub(0)
@@ -160,7 +163,7 @@ def test_block_size():
         create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron),
     ]
     for mesh in meshes:
-        P2 = element("Lagrange", mesh.basix_cell(), 2)
+        P2 = element("Lagrange", mesh.basix_cell(), 2, dtype=default_real_type)
         V = functionspace(mesh, P2)
         assert V.dofmap.bs == 1
 
@@ -180,8 +183,8 @@ def test_block_size():
 @pytest.mark.skip
 def test_block_size_real():
     mesh = create_unit_interval(MPI.COMM_WORLD, 12)
-    V = element("DG", mesh.basix_cell(), 0)
-    R = element("R", mesh.basix_cell(), 0)
+    V = element("DG", mesh.basix_cell(), 0, dtype=default_real_type)
+    R = element("R", mesh.basix_cell(), 0, dtype=default_real_type)
     X = functionspace(mesh, V * R)
     assert X.dofmap.index_map_bs == 1
 
@@ -198,8 +201,10 @@ def test_local_dimension(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
 
-    v = element("Lagrange", mesh.basix_cell(), 1)
-    q = element("Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
+    v = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
+    q = element(
+        "Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,), dtype=default_real_type
+    )
     w = v * q
 
     V = functionspace(mesh, v)
@@ -316,7 +321,9 @@ def test_readonly_view_local_to_global_unwoned(mesh):
 def test_higher_order_coordinate_map(points, celltype, order):
     """Computes physical coordinates of a cell, based on the coordinate map."""
     cells = np.array([range(len(points))])
-    domain = ufl.Mesh(element("Lagrange", celltype.name, order, shape=(points.shape[1],)))
+    domain = ufl.Mesh(
+        element("Lagrange", celltype.name, order, shape=(points.shape[1],), dtype=default_real_type)
+    )
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     V = functionspace(mesh, ("Lagrange", 2))
@@ -333,11 +340,11 @@ def test_higher_order_coordinate_map(points, celltype, order):
         i += 1
     x = cmap.push_forward(X, x_coord_new)
 
-    assert np.allclose(x[:, 0], X[:, 0])
-    assert np.allclose(x[:, 1], 2 * X[:, 1])
+    assert np.allclose(x[:, 0], X[:, 0], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
+    assert np.allclose(x[:, 1], 2 * X[:, 1], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
 
     if mesh.geometry.dim == 3:
-        assert np.allclose(x[:, 2], 3 * X[:, 2])
+        assert np.allclose(x[:, 2], 3 * X[:, 2], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
 
 
 @pytest.mark.skip_in_parallel
@@ -390,7 +397,9 @@ def test_higher_order_tetra_coordinate_map(order):
             ]
         )
     cells = np.array([range(len(points))])
-    domain = ufl.Mesh(element("Lagrange", celltype.name, order, shape=(3,)))
+    domain = ufl.Mesh(
+        element("Lagrange", celltype.name, order, shape=(3,), dtype=default_real_type)
+    )
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     V = functionspace(mesh, ("Lagrange", order))
     X = V.element.interpolation_points()
@@ -402,9 +411,9 @@ def test_higher_order_tetra_coordinate_map(order):
         x_coord_new[node] = x_g[x_dofs[0, node], : mesh.geometry.dim]
 
     x = mesh.geometry.cmap.push_forward(X, x_coord_new)
-    assert np.allclose(x[:, 0], X[:, 0])
-    assert np.allclose(x[:, 1], 2 * X[:, 1])
-    assert np.allclose(x[:, 2], 3 * X[:, 2])
+    assert np.allclose(x[:, 0], X[:, 0], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
+    assert np.allclose(x[:, 1], 2 * X[:, 1], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
+    assert np.allclose(x[:, 2], 3 * X[:, 2], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
 
 
 @pytest.mark.skip_in_parallel
@@ -412,3 +421,26 @@ def test_transpose_dofmap():
     dofmap = np.array([[0, 2, 1], [3, 2, 1], [4, 3, 1]], dtype=np.int32)
     transpose = dolfinx.fem.transpose_dofmap(dofmap, 3)
     assert np.array_equal(transpose.array, [0, 2, 5, 8, 1, 4, 3, 7, 6])
+
+
+def test_empty_rank_collapse():
+    """Test that dofmap with no dofs on a rank can be collapsed"""
+    if MPI.COMM_WORLD.rank == 0:
+        nodes = np.array([[0.0], [1.0], [2.0]], dtype=np.float64)
+        cells = np.array([[0, 1], [1, 2]], dtype=np.int64)
+    else:
+        nodes = np.empty((0, 1), dtype=np.float64)
+        cells = np.empty((0, 2), dtype=np.int64)
+    c_el = element("Lagrange", "interval", 1, shape=(1,))
+
+    def self_partitioner(comm: MPI.Intracomm, n, m, topo):
+        dests = np.full(len(topo[0]) // 2, comm.rank, dtype=np.int32)
+        offsets = np.arange(len(topo[0]) // 2 + 1, dtype=np.int32)
+        return dolfinx.graph.adjacencylist(dests, offsets)
+
+    mesh = create_mesh(MPI.COMM_WORLD, cells, nodes, c_el, partitioner=self_partitioner)
+
+    el = element("Lagrange", "interval", 1, shape=(2,))
+    V = functionspace(mesh, el)
+    V_0, _ = V.sub(0).collapse()
+    assert V.dofmap.index_map.size_local == V_0.dofmap.index_map.size_local

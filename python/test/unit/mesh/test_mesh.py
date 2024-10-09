@@ -77,7 +77,8 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
     if len(entity_map) > 0:
         assert mesh.geometry.dim == submesh.geometry.dim
 
-        e_to_g = entities_to_geometry(mesh, entity_dim, np.array(entity_map), False)
+        mesh.topology.create_entity_permutations()
+        e_to_g = entities_to_geometry(mesh, entity_dim, np.array(entity_map), True)
         for submesh_entity in range(len(entity_map)):
             submesh_x_dofs = submesh.geometry.dofmap[submesh_entity]
             # e_to_g[i] gets the mesh x_dofs of entities[i], which should
@@ -317,6 +318,7 @@ def test_cell_circumradius(c0, c1, c5):
 @pytest.mark.skip_in_parallel
 def test_cell_h(c0, c1, c5):
     for c in [c0, c1, c5]:
+        c[0].topology.create_connectivity(c[1], c[1])
         assert c[0].h(c[1], np.array([c[2]]))
 
 
@@ -324,6 +326,7 @@ def test_cell_h_prism():
     N = 3
     mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, cell_type=CellType.prism)
     tdim = mesh.topology.dim
+    mesh.topology.create_connectivity(tdim, tdim)
     num_cells = mesh.topology.index_map(tdim).size_local
     cells = np.arange(num_cells, dtype=np.int32)
     h = _cpp.mesh.h(mesh._cpp_object, tdim, cells)
@@ -367,6 +370,7 @@ def dirname(request):
 def test_hmin_hmax(_mesh, dtype, hmin, hmax):
     mesh = _mesh(dtype)
     tdim = mesh.topology.dim
+    mesh.topology.create_connectivity(tdim, tdim)
     num_cells = mesh.topology.index_map(tdim).size_local
     h = _cpp.mesh.h(mesh._cpp_object, tdim, np.arange(num_cells))
     assert h.min() == pytest.approx(hmin)
@@ -499,35 +503,37 @@ def boundary_2(x):
 
 
 # TODO Test that submesh of full mesh is a copy of the mesh
-@pytest.mark.parametrize("d", [2, 3])
+@pytest.mark.parametrize("d", [1, 2, 3])
 @pytest.mark.parametrize("n", [3, 6])
 @pytest.mark.parametrize("codim", [0, 1, 2])
 @pytest.mark.parametrize("marker", [lambda x: x[0] >= 0.5, lambda x: x[0] >= -1])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("simplex", [True, False])
 def test_submesh_full(d, n, codim, marker, ghost_mode, simplex):
-    if d == codim:
-        pytest.xfail("Cannot create vertex submesh")
-    if d == 2:
+    if d == 1:
+        mesh = create_unit_interval(MPI.COMM_WORLD, n, ghost_mode=ghost_mode)
+    elif d == 2:
         ct = CellType.triangle if simplex else CellType.quadrilateral
         mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode, cell_type=ct)
     else:
         ct = CellType.tetrahedron if simplex else CellType.hexahedron
         mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode, cell_type=ct)
 
-    edim = mesh.topology.dim - codim
+    edim = max(mesh.topology.dim - codim, 0)
     entities = locate_entities(mesh, edim, marker)
     submesh, entity_map, vertex_map, geom_map = create_submesh(mesh, edim, entities)
     submesh_topology_test(mesh, submesh, entity_map, vertex_map, edim)
     submesh_geometry_test(mesh, submesh, entity_map, geom_map, edim)
 
 
-@pytest.mark.parametrize("d", [2, 3])
+@pytest.mark.parametrize("d", [1, 2, 3])
 @pytest.mark.parametrize("n", [3, 6])
 @pytest.mark.parametrize("boundary", [boundary_0, boundary_1, boundary_2])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 def test_submesh_boundary(d, n, boundary, ghost_mode):
-    if d == 2:
+    if d == 1:
+        mesh = create_unit_interval(MPI.COMM_WORLD, n, ghost_mode=ghost_mode)
+    elif d == 2:
         mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
@@ -701,17 +707,13 @@ def test_mesh_create_cmap(dtype):
     assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # basix.finite_element
-    domain = basix.create_element(
-        basix.ElementFamily.P, basix.cell.string_to_type(shape), degree, dtype=dtype
-    )
+    domain = basix.create_element(basix.ElementFamily.P, basix.CellType[shape], degree, dtype=dtype)
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
     assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # cpp.fem.CoordinateElement
-    e = basix.create_element(
-        basix.ElementFamily.P, basix.cell.string_to_type(shape), degree, dtype=dtype
-    )
+    e = basix.create_element(basix.ElementFamily.P, basix.CellType[shape], degree, dtype=dtype)
     domain = coordinate_element(e)
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
     assert msh.geometry.cmap.dim == 3

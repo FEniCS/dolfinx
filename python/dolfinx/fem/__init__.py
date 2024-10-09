@@ -5,21 +5,16 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tools for assembling and manipulating finite element forms."""
 
-import typing
-
 import numpy as np
 import numpy.typing as npt
 
-from dolfinx.cpp.fem import FiniteElement_float32 as _FiniteElement_float32
-from dolfinx.cpp.fem import FiniteElement_float64 as _FiniteElement_float64
 from dolfinx.cpp.fem import IntegralType, transpose_dofmap
-from dolfinx.cpp.fem import (
-    create_nonmatching_meshes_interpolation_data as _create_nonmatching_meshes_interpolation_data,
-)
+from dolfinx.cpp.fem import compute_integration_domains as _compute_integration_domains
+from dolfinx.cpp.fem import create_interpolation_data as _create_interpolation_data
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.cpp.fem import discrete_gradient as _discrete_gradient
-from dolfinx.cpp.mesh import Geometry_float32 as _Geometry_float32
-from dolfinx.cpp.mesh import Geometry_float64 as _Geometry_float64
+from dolfinx.cpp.fem import interpolation_matrix as _interpolation_matrix
+from dolfinx.cpp.mesh import Topology
 from dolfinx.fem.assemble import (
     apply_lifting,
     assemble_matrix,
@@ -38,18 +33,24 @@ from dolfinx.fem.bcs import (
 )
 from dolfinx.fem.dofmap import DofMap
 from dolfinx.fem.element import CoordinateElement, coordinate_element
-from dolfinx.fem.forms import Form, extract_function_spaces, form, form_cpp_class
+from dolfinx.fem.forms import (
+    Form,
+    compile_form,
+    create_form,
+    extract_function_spaces,
+    form,
+    form_cpp_class,
+)
 from dolfinx.fem.function import (
     Constant,
     ElementMetaData,
     Expression,
     Function,
     FunctionSpace,
-    PointOwnershipData,
     functionspace,
 )
+from dolfinx.geometry import PointOwnershipData as _PointOwnershipData
 from dolfinx.la import MatrixCSR as _MatrixCSR
-from dolfinx.mesh import Mesh as _Mesh
 
 
 def create_sparsity_pattern(a: Form):
@@ -64,42 +65,35 @@ def create_sparsity_pattern(a: Form):
     Note:
         The pattern is not finalised, i.e. the caller is responsible for
         calling ``assemble`` on the sparsity pattern.
-
     """
     return _create_sparsity_pattern(a._cpp_object)
 
 
-def create_nonmatching_meshes_interpolation_data(
-    mesh_to: typing.Union[_Mesh, _Geometry_float64, _Geometry_float32],
-    element: typing.Union[_FiniteElement_float32, _FiniteElement_float64],
-    mesh_from: _Mesh,
-    cells: typing.Optional[npt.NDArray[np.int32]] = None,
+def create_interpolation_data(
+    V_to: FunctionSpace,
+    V_from: FunctionSpace,
+    cells: npt.NDArray[np.int32],
     padding: float = 1e-14,
-) -> PointOwnershipData:
+) -> _PointOwnershipData:
     """Generate data needed to interpolate discrete functions across different meshes.
 
     Args:
-        mesh_to: Mesh or geometry of the mesh of the function space to interpolate into
-        element: Element of the function space to interpolate into
-        mesh_from: Mesh that the function to interpolate from is defined on
-        cells: Indices of the cells in the destination mesh on which to interpolate.
-        padding: Absolute padding of bounding boxes of all entities on mesh_to
+        V_to: Function space to interpolate into
+        V_from: Function space to interpolate from
+        cells: Indices of the cells associated with `V_to` on which to
+            interpolate into.
+        padding: Absolute padding of bounding boxes of all entities on
+            mesh_to
 
     Returns:
-        Data needed to interpolation functions defined on function spaces on the meshes.
+        Data needed to interpolation functions defined on function
+        spaces on the meshes.
     """
-    if cells is None:
-        return PointOwnershipData(
-            *_create_nonmatching_meshes_interpolation_data(
-                mesh_to._cpp_object, element, mesh_from._cpp_object, padding
-            )
+    return _PointOwnershipData(
+        _create_interpolation_data(
+            V_to.mesh._cpp_object.geometry, V_to.element, V_from.mesh._cpp_object, cells, padding
         )
-    else:
-        return PointOwnershipData(
-            *_create_nonmatching_meshes_interpolation_data(
-                mesh_to, element, mesh_from._cpp_object, cells, padding
-            )
-        )
+    )
 
 
 def discrete_gradient(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCSR:
@@ -119,12 +113,58 @@ def discrete_gradient(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCS
     return _discrete_gradient(space0._cpp_object, space1._cpp_object)
 
 
+def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCSR:
+    """Assemble an interpolation matrix for two function spaces on the same mesh.
+
+    Args:
+        space0: space to interpolate from
+        space1: space to interpolate into
+
+    Returns:
+        Interpolation matrix
+    """
+    return _MatrixCSR(_interpolation_matrix(space0._cpp_object, space1._cpp_object))
+
+
+def compute_integration_domains(
+    integral_type: IntegralType, topology: Topology, entities: np.ndarray, dim: int
+):
+    """Given an integral type and a set of entities compute integration entities.
+
+    This function returns a list `[(id, entities)]`.
+    For cell integrals `entities` are the cell indices. For exterior facet
+    integrals, `entities` is a list of `(cell_index, local_facet_index)`
+    pairs. For interior facet integrals, `entities` is a list of
+    `(cell_index0, local_facet_index0, cell_index1, local_facet_index1)`.
+    `id` refers to the subdomain id used in the definition of the integration
+    measures of the variational form.
+
+    Note:
+        Owned mesh entities only are returned. Ghost entities are not included.
+
+    Note:
+        For facet integrals, the topology facet-to-cell and
+        cell-to-facet connectivity must be computed before calling this function.
+
+    Args:
+        integral_type: Integral type
+        topology: Mesh topology
+        entities: List of mesh entities
+        dim: Topological dimension of entities
+
+    Returns:
+        List of integration entities
+    """
+    return _compute_integration_domains(integral_type, topology._cpp_object, entities, dim)
+
+
 __all__ = [
     "Constant",
     "Expression",
     "Function",
     "ElementMetaData",
     "create_matrix",
+    "compute_integration_domains",
     "functionspace",
     "FunctionSpace",
     "create_sparsity_pattern",
@@ -133,7 +173,6 @@ __all__ = [
     "assemble_matrix",
     "assemble_vector",
     "apply_lifting",
-    "set_bc",
     "DirichletBC",
     "dirichletbc",
     "bcs_by_block",
@@ -146,8 +185,11 @@ __all__ = [
     "locate_dofs_topological",
     "extract_function_spaces",
     "transpose_dofmap",
-    "create_nonmatching_meshes_interpolation_data",
+    "create_interpolation_data",
     "CoordinateElement",
     "coordinate_element",
     "form_cpp_class",
+    "create_form",
+    "compile_form",
+    "set_bc",
 ]

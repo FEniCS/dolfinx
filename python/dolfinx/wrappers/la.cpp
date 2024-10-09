@@ -8,6 +8,7 @@
 #include "caster_mpi.h"
 #include "numpy_dtype.h"
 #include <complex>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
@@ -55,7 +56,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           [](dolfinx::la::Vector<T>& self)
           {
             return nb::ndarray<T, nb::numpy>(self.mutable_array().data(),
-                                             {self.array().size()});
+                                             {self.array().size()},
+                                             nb::handle());
           },
           nb::rv_policy::reference_internal)
       .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
@@ -134,18 +136,18 @@ void declare_objects(nb::module_& m, const std::string& type)
            {
              const std::array<int, 2> bs = self.block_size();
              std::size_t nrows = self.num_all_rows() * bs[0];
-             auto map_col = self.index_map(1);
-             std::size_t ncols
-                 = (map_col->size_local() + map_col->num_ghosts()) * bs[1];
-             return dolfinx_wrappers::as_nbarray(self.to_dense(),
+             std::size_t ncols = self.index_map(1)->size_global() * bs[1];
+             auto dense = self.to_dense();
+             assert(nrows * ncols == dense.size());
+             return dolfinx_wrappers::as_nbarray(std::move(self.to_dense()),
                                                  {nrows, ncols});
            })
       .def_prop_ro(
           "data",
           [](dolfinx::la::MatrixCSR<T>& self)
           {
-            return nb::ndarray<T, nb::numpy>(self.values().data(),
-                                             {self.values().size()});
+            return nb::ndarray<T, nb::numpy>(
+                self.values().data(), {self.values().size()}, nb::handle());
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro(
@@ -153,7 +155,7 @@ void declare_objects(nb::module_& m, const std::string& type)
           [](dolfinx::la::MatrixCSR<T>& self)
           {
             return nb::ndarray<const std::int32_t, nb::numpy>(
-                self.cols().data(), {self.cols().size()});
+                self.cols().data(), {self.cols().size()}, nb::handle());
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro(
@@ -161,8 +163,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           [](dolfinx::la::MatrixCSR<T>& self)
           {
             std::span<const std::int64_t> array = self.row_ptr();
-            return nb::ndarray<const std::int64_t, nb::numpy>(array.data(),
-                                                              {array.size()});
+            return nb::ndarray<const std::int64_t, nb::numpy>(
+                array.data(), {array.size()}, nb::handle());
           },
           nb::rv_policy::reference_internal)
       .def("scatter_rev_begin", &dolfinx::la::MatrixCSR<T>::scatter_rev_begin)
@@ -192,15 +194,16 @@ void declare_functions(nb::module_& m)
       nb::arg("basis"));
   m.def(
       "is_orthonormal",
-      [](std::vector<const dolfinx::la::Vector<T>*> basis)
+      [](std::vector<const dolfinx::la::Vector<T>*> basis,
+         dolfinx::scalar_value_type_t<T> eps)
       {
         std::vector<std::reference_wrapper<const dolfinx::la::Vector<T>>>
             _basis;
         for (std::size_t i = 0; i < basis.size(); ++i)
           _basis.push_back(*basis[i]);
-        return dolfinx::la::is_orthonormal(_basis);
+        return dolfinx::la::is_orthonormal(_basis, eps);
       },
-      nb::arg("basis"));
+      nb::arg("basis"), nb::arg("eps"));
 }
 
 } // namespace
@@ -263,6 +266,10 @@ void la(nb::module_& m)
                         std::span(cols.data(), cols.size()));
           },
           nb::arg("rows"), nb::arg("cols"))
+      .def("insert",
+           nb::overload_cast<int32_t, int32_t>(
+               &dolfinx::la::SparsityPattern::insert),
+           nb::arg("row"), nb::arg("col"))
       .def(
           "insert_diagonal",
           [](dolfinx::la::SparsityPattern& self,
@@ -275,9 +282,9 @@ void la(nb::module_& m)
           {
             auto [edges, ptr] = self.graph();
             return std::pair(nb::ndarray<const std::int32_t, nb::numpy>(
-                                 edges.data(), {edges.size()}),
+                                 edges.data(), {edges.size()}, nb::handle()),
                              nb::ndarray<const std::int64_t, nb::numpy>(
-                                 ptr.data(), {ptr.size()}));
+                                 ptr.data(), {ptr.size()}, nb::handle()));
           },
           nb::rv_policy::reference_internal);
 

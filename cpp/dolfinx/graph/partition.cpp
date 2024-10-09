@@ -5,12 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "partition.h"
+#include "AdjacencyList.h"
 #include "partitioners.h"
 #include <algorithm>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <memory>
 
@@ -70,10 +70,11 @@ graph::build::distribute(MPI_Comm comm,
   for (std::int32_t i = 0; i < destinations.num_nodes(); ++i)
   {
     auto di = destinations.links(i);
-    for (auto d : di)
-      dest_to_index.push_back({d, i, di[0]});
+    std::ranges::transform(di, std::back_inserter(dest_to_index),
+                           [i, d0 = di.front()](auto d) -> std::array<int, 3>
+                           { return {d, i, d0}; });
   }
-  std::sort(dest_to_index.begin(), dest_to_index.end());
+  std::ranges::sort(dest_to_index);
 
   // Build list of unique dest ranks and count number of rows to send to
   // each dest (by neighbourhood rank)
@@ -84,10 +85,10 @@ graph::build::distribute(MPI_Comm comm,
     while (it != dest_to_index.end())
     {
       // Store global rank and find iterator to next global rank
-      dest.push_back((*it)[0]);
+      dest.push_back(it->front());
       auto it1
           = std::find_if(it, dest_to_index.end(),
-                         [r = dest.back()](auto& idx) { return idx[0] != r; });
+                         [r = dest.back()](auto idx) { return idx[0] != r; });
 
       // Store number of items for current rank
       num_items_per_dest.push_back(std::distance(it, it1));
@@ -100,7 +101,7 @@ graph::build::distribute(MPI_Comm comm,
   // Determine source ranks. Sort ranks to make distribution
   // deterministic.
   std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
-  std::sort(src.begin(), src.end());
+  std::ranges::sort(src);
 
   // Create neighbourhood communicator
   MPI_Comm neigh_comm;
@@ -133,7 +134,7 @@ graph::build::distribute(MPI_Comm comm,
 
       std::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
       auto row = list.links(pos);
-      std::copy(row.begin(), row.end(), b.begin());
+      std::ranges::copy(row, b.begin());
 
       auto info = b.last(3);
       info[0] = row.size();          // Number of edges for node
@@ -161,20 +162,20 @@ graph::build::distribute(MPI_Comm comm,
   MPI_Comm_free(&neigh_comm);
 
   // Unpack receive buffer
-  std::vector<int> src_ranks0, src_ranks1, ghost_index_owner;
-  src_ranks0.reserve(recv_disp.back());
+  std::vector<int> src_ranks, src_ranks1, ghost_index_owner;
+  src_ranks.reserve(recv_disp.back());
   src_ranks1.reserve(recv_disp.back());
 
-  std::vector<std::int64_t> data0, data1;
-  data0.reserve((buffer_shape1 - 3) * recv_disp.back());
+  std::vector<std::int64_t> data, data1;
+  data.reserve((buffer_shape1 - 3) * recv_disp.back());
   data1.reserve((buffer_shape1 - 3) * recv_disp.back());
 
-  std::vector<std::int32_t> offsets0{0}, offsets1{0};
-  offsets0.reserve(recv_disp.back());
+  std::vector<std::int32_t> offsets{0}, offsets1{0};
+  offsets.reserve(recv_disp.back());
   offsets1.reserve(recv_disp.back());
 
-  std::vector<std::int64_t> global_indices0, global_indices1;
-  global_indices0.reserve(recv_disp.back());
+  std::vector<std::int64_t> global_indices, global_indices1;
+  global_indices.reserve(recv_disp.back());
   global_indices1.reserve(recv_disp.back());
   for (std::size_t p = 0; p < recv_disp.size() - 1; ++p)
   {
@@ -184,15 +185,14 @@ graph::build::distribute(MPI_Comm comm,
       std::span row(recv_buffer.data() + i * buffer_shape1, buffer_shape1);
       auto info = row.last(3);
       std::size_t num_edges = info[0];
-      int owner = info[1];
       std::int64_t orig_global_index = info[2];
       auto edges = row.first(num_edges);
-      if (owner == rank)
+      if (int owner = info[1]; owner == rank)
       {
-        data0.insert(data0.end(), edges.begin(), edges.end());
-        offsets0.push_back(offsets0.back() + num_edges);
-        src_ranks0.push_back(src_rank);
-        global_indices0.push_back(orig_global_index);
+        data.insert(data.end(), edges.begin(), edges.end());
+        offsets.push_back(offsets.back() + num_edges);
+        src_ranks.push_back(src_rank);
+        global_indices.push_back(orig_global_index);
       }
       else
       {
@@ -200,28 +200,194 @@ graph::build::distribute(MPI_Comm comm,
         offsets1.push_back(offsets1.back() + info[0]);
         src_ranks1.push_back(src_rank);
         global_indices1.push_back(orig_global_index);
-
         ghost_index_owner.push_back(info[1]);
       }
     }
   }
 
-  std::transform(offsets1.begin(), offsets1.end(), offsets1.begin(),
-                 [off = offsets0.back()](auto x) { return x + off; });
-  data0.insert(data0.end(), data1.begin(), data1.end());
-  offsets0.insert(offsets0.end(), std::next(offsets1.begin()), offsets1.end());
-  src_ranks0.insert(src_ranks0.end(), src_ranks1.begin(), src_ranks1.end());
-  global_indices0.insert(global_indices0.end(), global_indices1.begin(),
-                         global_indices1.end());
+  std::ranges::transform(offsets1, offsets1.begin(),
+                         [off = offsets.back()](auto x) { return x + off; });
+  data.insert(data.end(), data1.begin(), data1.end());
+  offsets.insert(offsets.end(), std::next(offsets1.begin()), offsets1.end());
+  src_ranks.insert(src_ranks.end(), src_ranks1.begin(), src_ranks1.end());
+  global_indices.insert(global_indices.end(), global_indices1.begin(),
+                        global_indices1.end());
 
-  data0.shrink_to_fit();
-  offsets0.shrink_to_fit();
-  src_ranks0.shrink_to_fit();
-  global_indices0.shrink_to_fit();
+  data.shrink_to_fit();
+  offsets.shrink_to_fit();
+  src_ranks.shrink_to_fit();
+  global_indices.shrink_to_fit();
   ghost_index_owner.shrink_to_fit();
 
-  return {graph::AdjacencyList<std::int64_t>(data0, offsets0), src_ranks0,
-          global_indices0, ghost_index_owner};
+  return {
+      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offsets)),
+      std::move(src_ranks), std::move(global_indices),
+      std::move(ghost_index_owner)};
+}
+//-----------------------------------------------------------------------------
+std::tuple<std::vector<std::int64_t>, std::vector<int>,
+           std::vector<std::int64_t>, std::vector<int>>
+graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
+                         std::array<std::size_t, 2> shape,
+                         const graph::AdjacencyList<std::int32_t>& destinations)
+{
+  common::Timer timer(
+      "Distribute fixed-degree adjacency list to destination ranks");
+
+  assert(list.size() == shape[0] * shape[1]);
+  assert(destinations.num_nodes() == (std::int32_t)shape[0]);
+  int rank = dolfinx::MPI::rank(comm);
+  std::int64_t num_owned = destinations.num_nodes();
+
+  // Get global offset for converting local index to global index for
+  // nodes in 'list'
+  std::int64_t offset_global = 0;
+  MPI_Exscan(&num_owned, &offset_global, 1, MPI_INT64_T, MPI_SUM, comm);
+
+  // Buffer size (max number of edges + 2 for owning rank,
+  // and node global index)
+  const std::size_t buffer_shape1 = shape[1] + 2;
+
+  // Build (dest, index, owning rank) list and sort
+  std::vector<std::array<int, 3>> dest_to_index;
+  dest_to_index.reserve(destinations.array().size());
+  for (std::int32_t i = 0; i < destinations.num_nodes(); ++i)
+  {
+    auto di = destinations.links(i);
+    std::ranges::transform(di, std::back_inserter(dest_to_index),
+                           [i, d0 = di.front()](auto d) -> std::array<int, 3>
+                           { return {d, i, d0}; });
+  }
+  std::ranges::sort(dest_to_index);
+
+  // Build list of unique dest ranks and count number of rows to send to
+  // each dest (by neighbourhood rank)
+  std::vector<int> dest;
+  std::vector<std::int32_t> num_items_per_dest;
+  {
+    auto it = dest_to_index.begin();
+    while (it != dest_to_index.end())
+    {
+      // Store global rank and find iterator to next global rank
+      dest.push_back(it->front());
+      auto it1
+          = std::find_if(it, dest_to_index.end(),
+                         [r = dest.back()](auto& idx) { return idx[0] != r; });
+
+      // Store number of items for current rank
+      num_items_per_dest.push_back(std::distance(it, it1));
+
+      // Advance iterator
+      it = it1;
+    }
+  }
+
+  // Determine source ranks. Sort ranks to make distribution
+  // deterministic.
+  std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
+  std::ranges::sort(src);
+
+  // Create neighbourhood communicator
+  MPI_Comm neigh_comm;
+  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
+                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &neigh_comm);
+
+  // Send number of nodes to receivers
+  std::vector<int> num_items_recv(src.size());
+  num_items_per_dest.reserve(1);
+  num_items_recv.reserve(1);
+  MPI_Request request_size;
+  MPI_Ineighbor_alltoall(num_items_per_dest.data(), 1, MPI_INT,
+                         num_items_recv.data(), 1, MPI_INT, neigh_comm,
+                         &request_size);
+
+  // Compute send displacements
+  std::vector<std::int32_t> send_disp(num_items_per_dest.size() + 1, 0);
+  std::partial_sum(num_items_per_dest.begin(), num_items_per_dest.end(),
+                   std::next(send_disp.begin()));
+
+  // Pack send buffer
+  std::vector<std::int64_t> send_buffer(buffer_shape1 * send_disp.back(), -1);
+  {
+    assert(send_disp.back() == (std::int32_t)dest_to_index.size());
+    for (std::size_t i = 0; i < dest_to_index.size(); ++i)
+    {
+      std::array<int, 3> dest_data = dest_to_index[i];
+      const std::size_t pos = dest_data[1];
+
+      std::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
+      std::span row(list.data() + pos * shape[1], shape[1]);
+      std::ranges::copy(row, b.begin());
+
+      auto info = b.last(2);
+      info[0] = dest_data[2];        // Owning rank
+      info[1] = pos + offset_global; // Original global index
+    }
+  }
+
+  // Prepare receive displacement
+  MPI_Wait(&request_size, MPI_STATUS_IGNORE);
+  std::vector<std::int32_t> recv_disp(num_items_recv.size() + 1, 0);
+  std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
+                   std::next(recv_disp.begin()));
+
+  // Send/receive data facet
+  MPI_Datatype compound_type;
+  MPI_Type_contiguous(buffer_shape1, MPI_INT64_T, &compound_type);
+  MPI_Type_commit(&compound_type);
+  std::vector<std::int64_t> recv_buffer(buffer_shape1 * recv_disp.back());
+  MPI_Neighbor_alltoallv(send_buffer.data(), num_items_per_dest.data(),
+                         send_disp.data(), compound_type, recv_buffer.data(),
+                         num_items_recv.data(), recv_disp.data(), compound_type,
+                         neigh_comm);
+  MPI_Type_free(&compound_type);
+  MPI_Comm_free(&neigh_comm);
+
+  spdlog::debug("Received {} data on {} [{}]", recv_disp.back(), rank,
+                shape[1]);
+
+  // Unpack receive buffer
+  std::vector<std::int64_t> data, data1;
+  std::vector<int> ghost_index_owner;
+  std::vector<std::int64_t> global_indices, global_indices1;
+  std::vector<int> src_ranks, src_ranks1;
+  for (std::size_t p = 0; p < recv_disp.size() - 1; ++p)
+  {
+    int src_rank = src[p];
+    for (std::int32_t q = recv_disp[p]; q < recv_disp[p + 1]; ++q)
+    {
+      std::span row(recv_buffer.data() + q * buffer_shape1, buffer_shape1);
+      auto info = row.last(2);
+      std::int64_t orig_global_index = info[1];
+      auto edges = row.first(shape[1]);
+      if (int owner = info[0]; owner == rank)
+      {
+        data.insert(data.end(), edges.begin(), edges.end());
+        global_indices.push_back(orig_global_index);
+        src_ranks.push_back(src_rank);
+      }
+      else
+      {
+        data1.insert(data1.end(), edges.begin(), edges.end());
+        global_indices1.push_back(orig_global_index);
+        ghost_index_owner.push_back(owner);
+        src_ranks1.push_back(src_rank);
+      }
+    }
+  }
+
+  data.insert(data.end(), data1.begin(), data1.end());
+  data.shrink_to_fit();
+  global_indices.insert(global_indices.end(), global_indices1.begin(),
+                        global_indices1.end());
+  global_indices.shrink_to_fit();
+  src_ranks.insert(src_ranks.end(), src_ranks1.begin(), src_ranks1.end());
+  src_ranks.shrink_to_fit();
+  ghost_index_owner.shrink_to_fit();
+
+  return {std::move(data), std::move(src_ranks), std::move(global_indices),
+          std::move(ghost_index_owner)};
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t>
@@ -230,7 +396,7 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
                                     std::span<const std::int64_t> ghost_indices,
                                     std::span<const int> ghost_owners)
 {
-  LOG(INFO) << "Compute ghost indices";
+  spdlog::info("Compute ghost indices");
 
   // Get number of local cells determine global offset
   std::int64_t offset_local = 0;
@@ -243,22 +409,17 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
   std::vector<int> ghost_index_count;
   std::vector<int> neighbors;
   std::map<int, int> proc_to_neighbor;
+  for (int p : ghost_owners)
   {
-    int np = 0;
-    [[maybe_unused]] int mpi_rank = dolfinx::MPI::rank(comm);
-    for (int p : ghost_owners)
+    assert(p != dolfinx::MPI::rank(comm));
+    auto [it, insert] = proc_to_neighbor.insert({p, neighbors.size()});
+    if (insert)
     {
-      assert(p != mpi_rank);
-      auto [it, insert] = proc_to_neighbor.insert({p, np});
-      if (insert)
-      {
-        // New neighbor found
-        neighbors.push_back(p);
-        ghost_index_count.push_back(0);
-        ++np;
-      }
-      ++ghost_index_count[it->second];
+      // New neighbor found
+      neighbors.push_back(p);
+      ghost_index_count.push_back(0);
     }
+    ++ghost_index_count[it->second];
   }
 
   MPI_Comm neighbor_comm_fwd, neighbor_comm_rev;
@@ -326,19 +487,18 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
     old_to_new.push_back(
         {idx, static_cast<std::int64_t>(offset_local + old_to_new.size())});
   }
-  std::sort(old_to_new.begin(), old_to_new.end());
+  std::ranges::sort(old_to_new);
 
   // Replace values in recv_data with new_index and send back
-  std::transform(recv_data.begin(), recv_data.end(), recv_data.begin(),
-                 [&old_to_new](auto r)
-                 {
-                   auto it = std::lower_bound(
-                       old_to_new.begin(), old_to_new.end(),
-                       std::array<std::int64_t, 2>{r, 0},
-                       [](auto& a, auto& b) { return a[0] < b[0]; });
-                   assert(it != old_to_new.end() and (*it)[0] == r);
-                   return (*it)[1];
-                 });
+  std::ranges::transform(recv_data, recv_data.begin(),
+                         [&old_to_new](auto r)
+                         {
+                           auto it = std::ranges::lower_bound(
+                               old_to_new, r, std::ranges::less(),
+                               [](auto e) { return e[0]; });
+                           assert(it != old_to_new.end() and it->front() == r);
+                           return (*it)[1];
+                         });
 
   std::vector<std::int64_t> new_recv(send_data.size());
   MPI_Neighbor_alltoallv(recv_data.data(), recv_sizes.data(),
@@ -350,25 +510,22 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
 
   // Build (old id,  new id) pairs
   std::vector<std::array<std::int64_t, 2>> old_to_new1(send_data.size());
-  std::transform(send_data.begin(), send_data.end(), new_recv.begin(),
-                 old_to_new1.begin(),
-                 [](auto idx_old, auto idx_new) ->
-                 typename decltype(old_to_new1)::value_type
-                 { return {idx_old, idx_new}; });
-  std::sort(old_to_new1.begin(), old_to_new1.end());
+  std::ranges::transform(send_data, new_recv, old_to_new1.begin(),
+                         [](auto idx_old, auto idx_new) ->
+                         typename decltype(old_to_new1)::value_type
+                         { return {idx_old, idx_new}; });
+  std::ranges::sort(old_to_new1);
 
   std::vector<std::int64_t> ghost_global_indices(ghost_indices.size());
-  std::transform(
-      ghost_indices.begin(), ghost_indices.end(), ghost_global_indices.begin(),
-      [&old_to_new1](auto q)
-      {
-        auto it
-            = std::lower_bound(old_to_new1.begin(), old_to_new1.end(),
-                               std::array<std::int64_t, 2>{q, 0},
-                               [](auto& a, auto& b) { return a[0] < b[0]; });
-        assert(it != old_to_new1.end() and (*it)[0] == q);
-        return (*it)[1];
-      });
+  std::ranges::transform(ghost_indices, ghost_global_indices.begin(),
+                         [&old_to_new1](auto q)
+                         {
+                           auto it = std::ranges::lower_bound(
+                               old_to_new1, std::array<std::int64_t, 2>{q, 0},
+                               [](auto a, auto b) { return a[0] < b[0]; });
+                           assert(it != old_to_new1.end() and it->front() == q);
+                           return (*it)[1];
+                         });
 
   return ghost_global_indices;
 }
@@ -379,13 +536,13 @@ graph::build::compute_local_to_global(std::span<const std::int64_t> global,
 {
   common::Timer timer(
       "Compute-local-to-global links for global/local adjacency list");
+
   if (global.empty() and local.empty())
     return std::vector<std::int64_t>();
-
   if (global.size() != local.size())
     throw std::runtime_error("Data size mismatch.");
 
-  std::int32_t max_local_idx = *std::max_element(local.begin(), local.end());
+  std::int32_t max_local_idx = *std::ranges::max_element(local);
   std::vector<std::int64_t> local_to_global_list(max_local_idx + 1, -1);
   for (std::size_t i = 0; i < local.size(); ++i)
   {
@@ -408,22 +565,21 @@ std::vector<std::int32_t> graph::build::compute_local_to_local(
   global_to_local1.reserve(local1_to_global.size());
   for (auto idx_global : local1_to_global)
     global_to_local1.push_back({idx_global, global_to_local1.size()});
-  std::sort(global_to_local1.begin(), global_to_local1.end());
+  std::ranges::sort(global_to_local1);
 
   // Compute inverse map for local0_to_local1
   std::vector<std::int32_t> local0_to_local1;
   local0_to_local1.reserve(local0_to_global.size());
-  std::transform(local0_to_global.begin(), local0_to_global.end(),
-                 std::back_inserter(local0_to_local1),
-                 [&global_to_local1](auto l2g)
-                 {
-                   auto it = std::lower_bound(
-                       global_to_local1.begin(), global_to_local1.end(),
-                       typename decltype(global_to_local1)::value_type(l2g, 0),
-                       [](auto& a, auto& b) { return a.first < b.first; });
-                   assert(it != global_to_local1.end() and it->first == l2g);
-                   return it->second;
-                 });
+  std::ranges::transform(
+      local0_to_global, std::back_inserter(local0_to_local1),
+      [&global_to_local1](auto l2g)
+      {
+        auto it = std::ranges::lower_bound(global_to_local1, l2g,
+                                           std::ranges::less(),
+                                           [](auto e) { return e.first; });
+        assert(it != global_to_local1.end() and it->first == l2g);
+        return it->second;
+      });
 
   return local0_to_local1;
 }

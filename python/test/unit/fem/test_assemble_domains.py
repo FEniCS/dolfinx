@@ -49,12 +49,7 @@ parametrize_ghost_mode = pytest.mark.parametrize(
                 reason="Unghosted interior facets fail in parallel",
             ),
         ),
-        pytest.param(
-            GhostMode.shared_facet,
-            marks=pytest.mark.skipif(
-                condition=MPI.COMM_WORLD.size == 1, reason="Shared ghost modes fail in serial"
-            ),
-        ),
+        GhostMode.shared_facet,
     ],
 )
 
@@ -97,13 +92,13 @@ def test_assembly_dx_domains(mode, meshtags_factory):
 
     fem.apply_lifting(b.array, [a], [[bc]])
     b.scatter_reverse(la.InsertMode.add)
-    fem.set_bc(b.array, [bc])
+    bc.set(b.array)
 
     L2 = form(ufl.inner(w, v) * dx)
     b2 = fem.assemble_vector(L2)
     fem.apply_lifting(b2.array, [a], [[bc]])
     b2.scatter_reverse(la.InsertMode.add)
-    fem.set_bc(b2.array, [bc])
+    bc.set(b2.array)
     assert np.allclose(b.array, b2.array)
 
     # Assemble scalar
@@ -115,6 +110,17 @@ def test_assembly_dx_domains(mode, meshtags_factory):
     s2 = assemble_scalar(L2)
     s2 = mesh.comm.allreduce(s2, op=MPI.SUM)
     assert s == pytest.approx(s2, rel=1.0e-6)
+
+    # Assemble scalar, using both dx("everywhere") and dx(i), i = 1, 2, 3
+    L = form(w * (dx(1) + dx(2) + dx(3) + dx))
+    s_sum = assemble_scalar(L)
+    s_sum = mesh.comm.allreduce(s_sum, op=MPI.SUM)
+    assert s_sum == pytest.approx(s + s2, rel=1.0e-6)
+
+    L2 = form(2 * w * dx)
+    s2 = assemble_scalar(L2)
+    s2 = mesh.comm.allreduce(s2, op=MPI.SUM)
+    assert s_sum == pytest.approx(s2, rel=1.0e-6)
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
@@ -175,13 +181,13 @@ def test_assembly_ds_domains(mode):
 
     fem.apply_lifting(b.array, [a], [[bc]])
     b.scatter_reverse(la.InsertMode.add)
-    fem.set_bc(b.array, [bc])
+    bc.set(b.array)
 
     L2 = form(ufl.inner(w, v) * ds)
     b2 = fem.assemble_vector(L2)
     fem.apply_lifting(b2.array, [a2], [[bc]])
     b2.scatter_reverse(la.InsertMode.add)
-    fem.set_bc(b2.array, [bc])
+    bc.set(b2.array)
     assert np.allclose(b.array, b2.array)
 
     # Assemble scalar

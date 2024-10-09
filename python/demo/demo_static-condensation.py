@@ -22,8 +22,20 @@
 # +
 from pathlib import Path
 
+try:
+    from petsc4py import PETSc
+
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
+
+
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import cffi
 import numba
@@ -43,7 +55,7 @@ from dolfinx.fem import (
     functionspace,
     locate_dofs_topological,
 )
-from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector, set_bc
+from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import locate_entities_boundary, meshtags
@@ -150,7 +162,7 @@ def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL):
 # Prepare a Form with a condensed tabulation kernel
 formtype = form_cpp_class(PETSc.ScalarType)  # type: ignore
 cells = np.arange(msh.topology.index_map(msh.topology.dim).size_local)
-integrals = {IntegralType.cell: [(-1, tabulate_A.address, cells)]}
+integrals = {IntegralType.cell: [(-1, tabulate_A.address, cells, np.array([], dtype=np.int8))]}
 a_cond = Form(formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, {}, None))
 
 A_cond = assemble_matrix(a_cond, bcs=[bc])
@@ -158,7 +170,7 @@ A_cond.assemble()
 b = assemble_vector(b1)
 apply_lifting(b, [a_cond], bcs=[[bc]])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
-set_bc(b, [bc])
+bc.set(b)
 
 uc = Function(U)
 solver = PETSc.KSP().create(A_cond.getComm())  # type: ignore

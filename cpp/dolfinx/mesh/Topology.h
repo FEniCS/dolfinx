@@ -151,16 +151,18 @@ public:
   /// @brief Returns the permutation information
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
-  /// @brief Get the permutation number to apply to a facet.
+  /// @brief Get the numbers that encode the number of permutations to apply to
+  /// facets.
   ///
-  /// The permutations are numbered so that:
+  /// The permutations are encoded so that:
   ///
   ///   - `n % 2` gives the number of reflections to apply
   ///   - `n // 2` gives the number of rotations to apply
   ///
-  /// Each column of the returned array represents a cell, and each row
-  /// a facet of that cell.
-  /// @return The permutation number
+  /// The data is stored in a flattened 2D array, so that `data[cell_index *
+  /// facets_per_cell + facet_index]` contains the facet with index
+  /// `facet_index` of the cell with index `cell_index`.
+  /// @return The encoded permutation info
   /// @note An exception is raised if the permutations have not been
   /// computed
   const std::vector<std::uint8_t>& get_facet_permutations() const;
@@ -189,13 +191,19 @@ public:
   /// @brief Compute entity permutations and reflections.
   void create_entity_permutations();
 
-  /// @brief List of inter-process facets, if facet topology has been
-  /// computed.
+  /// @brief List of inter-process facets.
+  ///
+  /// "Inter-process" facets are facets that are connected (1) to a cell
+  /// that is owned by the calling process (rank) and (2) to a cell that
+  /// is owned by another process.
+  ///
+  /// @pre Inter-process facets are available only if facet topology has
+  /// been computed.
   const std::vector<std::int32_t>& interprocess_facets() const;
 
   /// @brief List of inter-process facets, if facet topology has been
-  /// computed, for the facet type in `Topology::entity_types` identified by
-  /// index
+  /// computed, for the facet type in `Topology::entity_types`
+  /// identified by index.
   /// @param index Index of facet type
   const std::vector<std::int32_t>& interprocess_facets(std::int8_t index) const;
 

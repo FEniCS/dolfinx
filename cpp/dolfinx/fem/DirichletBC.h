@@ -11,11 +11,13 @@
 #include "DofMap.h"
 #include "Function.h"
 #include "FunctionSpace.h"
+#include <algorithm>
 #include <array>
 #include <concepts>
 #include <dolfinx/common/types.h>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <span>
 #include <type_traits>
 #include <utility>
@@ -229,24 +231,23 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
   }
 
   // Remove duplicates
-  std::sort(bc_dofs.begin(), bc_dofs.end());
-  bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
+  std::ranges::sort(bc_dofs);
+  auto [unique_end, range_end] = std::ranges::unique(bc_dofs);
+  bc_dofs.erase(unique_end, range_end);
 
   // Copy to separate array
   std::array dofs = {std::vector<std::int32_t>(bc_dofs.size()),
                      std::vector<std::int32_t>(bc_dofs.size())};
-  std::transform(bc_dofs.cbegin(), bc_dofs.cend(), dofs[0].begin(),
-                 [](auto dof) { return dof[0]; });
-  std::transform(bc_dofs.cbegin(), bc_dofs.cend(), dofs[1].begin(),
-                 [](auto dof) { return dof[1]; });
+  std::ranges::transform(bc_dofs, dofs[0].begin(),
+                         [](auto dof) { return dof[0]; });
+  std::ranges::transform(bc_dofs, dofs[1].begin(),
+                         [](auto dof) { return dof[1]; });
 
   return dofs;
 }
 
 /// Object for setting (strong) Dirichlet boundary conditions
-///
-///     \f$u = g \ \text{on} \ G\f$,
-///
+/// \f[u = g \ \text{on} \ G,\f]
 /// where \f$u\f$ is the solution to be computed, \f$g\f$ is a function
 /// and \f$G\f$ is a sub domain of the mesh.
 ///
@@ -266,7 +267,7 @@ private:
     int bs = dofmap.index_map_bs();
     std::int32_t map_size = dofmap.index_map->size_local();
     std::int32_t owned_size = bs * map_size;
-    auto it = std::lower_bound(dofs.begin(), dofs.end(), owned_size);
+    auto it = std::ranges::lower_bound(dofs, owned_size);
     return std::distance(dofs.begin(), it);
   }
 
@@ -469,129 +470,118 @@ public:
     return {_dofs0, _owned_indices0};
   }
 
-  /// Set bc entries in `x` to `scale * x_bc`
+  /// @brief Set entries in an array that are constrained by Dirichlet
+  /// boundary conditions.
   ///
-  /// @param[in] x The array in which to set `scale * x_bc[i]`, where
-  /// x_bc[i] is the boundary value of x[i]. Entries in x that do not
-  /// have a Dirichlet condition applied to them are unchanged. The
-  /// length of x must be less than or equal to the index of the
-  /// greatest boundary dof index. To set values only for
-  /// degrees-of-freedom that are owned by the calling rank, the length
-  /// of the array @p x should be equal to the number of dofs owned by
-  /// this rank.
-  /// @param[in] scale The scaling value to apply
-  void set(std::span<T> x, T scale = 1) const
+  /// Entries in `x` that are constrained by a Dirichlet boundary
+  /// conditions are set to `alpha * (x_bc - x0)`, where `x_bc` is the
+  /// (interpolated) boundary condition value.
+  ///
+  /// For elements with point-wise evaluated degrees-of-freedom, e.g.
+  /// Lagrange elements, `x_bc` is the value of the boundary condition
+  /// at the degree-of-freedom. For elements with moment
+  /// degrees-of-freedom, `x_bc` is the value of the boundary condition
+  /// interpolated into the finite element space.
+  ///
+  /// If `x` includes ghosted entries (entries available on the calling
+  /// rank but owned by another rank), ghosted entries constrained by a
+  /// Dirichlet condition will also be set.
+  ///
+  /// @param[in,out] x Array to modify for Dirichlet boundary
+  /// conditions.
+  /// @param[in] x0 Optional array used in computing the value to set.
+  /// If not provided it is treated as zero.
+  /// @param[in] alpha Scaling to apply.
+  void set(std::span<T> x, std::optional<std::span<const T>> x0,
+           T alpha = 1) const
   {
-    if (std::holds_alternative<std::shared_ptr<const Function<T, U>>>(_g))
+    std::int32_t x_size = x.size();
+    if (alpha == T(0)) // Optimisation for when alpha == 0
     {
-      auto g = std::get<std::shared_ptr<const Function<T, U>>>(_g);
-      assert(g);
-      std::span<const T> values = g->x()->array();
-      auto dofs1_g = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
-      std::int32_t x_size = x.size();
-      for (std::size_t i = 0; i < _dofs0.size(); ++i)
+      for (std::int32_t idx : _dofs0)
       {
-        if (_dofs0[i] < x_size)
+        if (idx < x_size)
+          x[idx] = 0;
+      }
+    }
+    else
+    {
+      if (std::holds_alternative<std::shared_ptr<const Function<T, U>>>(_g))
+      {
+        auto g = std::get<std::shared_ptr<const Function<T, U>>>(_g);
+        assert(g);
+        auto dofs1_g
+            = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
+        std::span<const T> values = g->x()->array();
+        if (x0.has_value())
         {
-          assert(dofs1_g[i] < (std::int32_t)values.size());
-          x[_dofs0[i]] = scale * values[dofs1_g[i]];
+          std::span<const T> _x0 = x0.value();
+          assert(x.size() <= _x0.size());
+          for (std::size_t i = 0; i < _dofs0.size(); ++i)
+          {
+            if (_dofs0[i] < x_size)
+            {
+              assert(dofs1_g[i] < (std::int32_t)values.size());
+              x[_dofs0[i]] = alpha * (values[dofs1_g[i]] - _x0[_dofs0[i]]);
+            }
+          }
+        }
+        else
+        {
+          for (std::size_t i = 0; i < _dofs0.size(); ++i)
+          {
+            if (_dofs0[i] < x_size)
+            {
+              assert(dofs1_g[i] < (std::int32_t)values.size());
+              x[_dofs0[i]] = alpha * values[dofs1_g[i]];
+            }
+          }
+        }
+      }
+      else if (std::holds_alternative<std::shared_ptr<const Constant<T>>>(_g))
+      {
+        auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
+        const std::vector<T>& value = g->value;
+        std::int32_t bs = _function_space->dofmap()->bs();
+        if (x0.has_value())
+        {
+          assert(x.size() <= x0.value().size());
+          std::ranges::for_each(
+              _dofs0,
+              [x_size, &x, x0 = x0.value(), &value, alpha, bs](auto dof)
+              {
+                if (dof < x_size)
+                  x[dof] = alpha * (value[dof % bs] - x0[dof]);
+              });
+        }
+        else
+        {
+          std::ranges::for_each(_dofs0,
+                                [x_size, bs, alpha, &value, &x](auto dof)
+                                {
+                                  if (dof < x_size)
+                                    x[dof] = alpha * value[dof % bs];
+                                });
         }
       }
     }
-    else if (std::holds_alternative<std::shared_ptr<const Constant<T>>>(_g))
-    {
-      auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
-      std::vector<T> value = g->value;
-      int bs = _function_space->dofmap()->bs();
-      std::int32_t x_size = x.size();
-      std::for_each(_dofs0.cbegin(), _dofs0.cend(),
-                    [x_size, bs, scale, &value, &x](auto dof)
-                    {
-                      if (dof < x_size)
-                        x[dof] = scale * value[dof % bs];
-                    });
-    }
   }
 
-  /// Set bc entries in `x` to `scale * (x0 - x_bc)`
-  /// @param[in] x The array in which to set `scale * (x0 - x_bc)`
-  /// @param[in] x0 The array used in compute the value to set
-  /// @param[in] scale The scaling value to apply
-  void set(std::span<T> x, std::span<const T> x0, T scale = 1) const
-  {
-    if (std::holds_alternative<std::shared_ptr<const Function<T, U>>>(_g))
-    {
-      auto g = std::get<std::shared_ptr<const Function<T, U>>>(_g);
-      assert(g);
-      std::span<const T> values = g->x()->array();
-      assert(x.size() <= x0.size());
-      auto dofs1_g = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
-      std::int32_t x_size = x.size();
-      for (std::size_t i = 0; i < _dofs0.size(); ++i)
-      {
-        if (_dofs0[i] < x_size)
-        {
-          assert(dofs1_g[i] < (std::int32_t)values.size());
-          x[_dofs0[i]] = scale * (values[dofs1_g[i]] - x0[_dofs0[i]]);
-        }
-      }
-    }
-    else if (std::holds_alternative<std::shared_ptr<const Constant<T>>>(_g))
-    {
-      auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
-      const std::vector<T>& value = g->value;
-      std::int32_t bs = _function_space->dofmap()->bs();
-      std::for_each(_dofs0.begin(), _dofs0.end(),
-                    [&x, &x0, &value, scale, bs](auto dof)
-                    {
-                      if (dof < (std::int32_t)x.size())
-                        x[dof] = scale * (value[dof % bs] - x0[dof]);
-                    });
-    }
-  }
-
-  /// @todo Review this function - it is almost identical to the
-  /// 'DirichletBC::set' function
+  /// @brief Set `markers[i] = true` if dof `i` has a boundary condition
+  /// applied.
   ///
-  /// Set boundary condition value for entries with an applied boundary
-  /// condition. Other entries are not modified.
-  /// @param[out] values The array in which to set the dof values.
-  /// The array must be at least as long as the array associated with V1
-  /// (the space of the function that provides the dof values)
-  void dof_values(std::span<T> values) const
-  {
-    if (std::holds_alternative<std::shared_ptr<const Function<T, U>>>(_g))
-    {
-      auto g = std::get<std::shared_ptr<const Function<T, U>>>(_g);
-      assert(g);
-      std::span<const T> g_values = g->x()->array();
-      auto dofs1_g = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
-      for (std::size_t i = 0; i < dofs1_g.size(); ++i)
-        values[_dofs0[i]] = g_values[dofs1_g[i]];
-    }
-    else if (std::holds_alternative<std::shared_ptr<const Constant<T>>>(_g))
-    {
-      auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
-      assert(g);
-      const std::vector<T>& g_value = g->value;
-      const std::int32_t bs = _function_space->dofmap()->bs();
-      for (std::size_t i = 0; i < _dofs0.size(); ++i)
-        values[_dofs0[i]] = g_value[_dofs0[i] % bs];
-    }
-  }
-
-  /// Set markers[i] = true if dof i has a boundary condition applied.
-  /// Value of markers[i] is not changed otherwise.
-  /// @param[in,out] markers Entry makers[i] is set to true if dof i in
-  /// V0 had a boundary condition applied, i.e. dofs which are fixed by
-  /// a boundary condition. Other entries in @p markers are left
+  /// Value of `markers[i]` is not changed otherwise.
+  ///
+  /// @param[in,out] markers Entry `makers[i]` is set to true if dof `i`
+  /// in V0 had a boundary condition applied, i.e. dofs which are fixed
+  /// by a boundary condition. Other entries in `markers` are left
   /// unchanged.
   void mark_dofs(std::span<std::int8_t> markers) const
   {
-    for (std::size_t i = 0; i < _dofs0.size(); ++i)
+    for (std::int32_t idx : _dofs0)
     {
-      assert(_dofs0[i] < (std::int32_t)markers.size());
-      markers[_dofs0[i]] = true;
+      assert(idx < (std::int32_t)markers.size());
+      markers[idx] = true;
     }
   }
 
@@ -604,8 +594,8 @@ private:
                std::shared_ptr<const Constant<T>>>
       _g;
 
-  // Dof indices (_dofs0) in _function_space and (_dofs1_g) in the
-  // space of _g. _dofs1_g may be empty if _dofs0 can be re-used
+  // Dof indices (_dofs0) in _function_space and (_dofs1_g) in the space
+  // of _g. _dofs1_g may be empty if _dofs0 can be re-used
   std::vector<std::int32_t> _dofs0, _dofs1_g;
 
   // The first _owned_indices in _dofs are owned by this process

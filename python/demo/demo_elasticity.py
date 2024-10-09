@@ -23,12 +23,22 @@
 # The required modules are first imported:
 
 from mpi4py import MPI
-from petsc4py import PETSc
+
+try:
+    from petsc4py import PETSc
+
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
 
 # +
 import numpy as np
 
-import dolfinx
 import ufl
 from dolfinx import la
 from dolfinx.fem import (
@@ -40,7 +50,7 @@ from dolfinx.fem import (
     functionspace,
     locate_dofs_topological,
 )
-from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector, set_bc
+from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode, create_box, locate_entities_boundary
 from ufl import dx, grad, inner
@@ -85,9 +95,7 @@ def build_nullspace(V: FunctionSpace):
     b[5][dofs[2]] = x1
     b[5][dofs[1]] = -x2
 
-    _basis = [x._cpp_object for x in basis]
-    dolfinx.cpp.la.orthonormalize(_basis)
-    assert dolfinx.cpp.la.is_orthonormal(_basis)
+    la.orthonormalize(basis)
 
     basis_petsc = [
         PETSc.Vec().createWithArray(x[: bs * length0], bsize=3, comm=V.mesh.comm)  # type: ignore
@@ -175,7 +183,7 @@ A.assemble()
 b = assemble_vector(L)
 apply_lifting(b, [a], bcs=[[bc]])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
-set_bc(b, [bc])
+bc.set(b.array_w)
 # -
 
 # Create the near-nullspace and attach it to the PETSc matrix:
