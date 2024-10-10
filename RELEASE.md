@@ -107,10 +107,10 @@ UFL still runs on the year-based release scheme.
 2. In `cpp/CMakeLists.txt` change the version number e.g. `0.5.0`.
 
 3. In `cpp/CMakeLists.txt` change the version number in the
-   `find_package(ufcx)` and `find_package(UFCx)` calls.
+   `find_package(ufcx)`, `find_package(UFCx)` and `find_package(Basix)` calls.
 
-4. In `python/pyproject.toml` update the version to e.g. `0.5.0` and
-   update the dependency versions for `fenics-ffcx` and `fenics-ufl`.
+4. In `python/pyproject.toml` update the version to e.g. `0.5.0` and update the
+   dependency versions for `fenics-basix`, `fenics-ffcx` and `fenics-ufl`.
 
 5. In `CITATION.md` update the version number `version: 0.5.0` and the release
    date `date-released: 2022-03-14`.
