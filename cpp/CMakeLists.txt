@@ -349,7 +349,7 @@ if(DOLFINX_BASIX_PYTHON)
   endif()
 endif()
 
-find_package(Basix 0.8 REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
+find_package(Basix 0.9 REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 set_package_properties(
   basix PROPERTIES
   TYPE REQUIRED
