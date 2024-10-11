@@ -43,7 +43,7 @@ G_compiled = dolfinx.fem.form(G)
 du = ufl.conj(ufl.TestFunction(V))
 residual = ufl.derivative(G, uh, du)
 
-# We generate the integration kernels for the residua, and assemble an initial
+# We generate the integration kernels for the residual, and assemble an initial
 # residual vector `b`.
 
 F = dolfinx.fem.form(residual)
