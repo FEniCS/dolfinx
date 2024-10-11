@@ -2,9 +2,9 @@ name: Conda install
 
 on:
   # Uncomment the below 'push' to trigger on push
-  push:
-    branches:
-       - "**"
+  #push:
+  #  branches:
+  #     - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 2 * * WED"
@@ -15,7 +15,8 @@ jobs:
     name: Install and test
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-13, macos-14, windows-2022]
+        # NOTE: Re-enable windows-2022 after iimpi libfabric.dll issue fixed.
+        os: [ubuntu-latest, macos-13, macos-14]
         python-version: ["3.9", "3.10", "3.11", "3.12"]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
