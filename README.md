@@ -78,23 +78,21 @@ comprehensive instructions.
 
 #### conda
 
-To install the latest release of the Python interface, with pyvista
-support for visualisation, using [conda](https://conda.io):
+To install the latest release of the Python interface, including pyvista for
+visualisation, using [conda](https://conda.io):
 
 ```shell
 conda create -n fenicsx-env
 conda activate fenicsx-env
-conda install -c conda-forge fenics-dolfinx mpich pyvista
+conda install -c conda-forge fenics-dolfinx mpich pyvista # Linux and macOS
+conda install -c conda-forge fenics-dolfinx pyvista pyamg # Windows
 ```
 
-Windows conda packages are currently in beta testing and can be installed using:
-```shell
-conda create -n fenicsx-env
-conda activate fenicsx-env
-conda install -c minrk/label/fenics-windows -c conda-forge fenics-dolfinx=0.9.0.dev
-```
-Because FEniCS uses just-in-time compilation it also necessary to install
-[Microsoft Visual Studio](https://visualstudio.microsoft.com/downloads/).
+*Windows only*: Windows conda packages are currently in beta testing. PETSc and
+petsc4py are not available on Windows; as an alternative we recommend using
+`pyamg` following `python/demo/demo_pyamg.py`. Because FEniCS uses just-in-time
+compilation it necessary to install [Microsoft Visual
+Studio](https://visualstudio.microsoft.com/downloads/).
 
 conda is distributed with [Anaconda](https://www.anaconda.com/) and
 [Miniconda](https://docs.conda.io/en/latest/miniconda.html). The recipe
