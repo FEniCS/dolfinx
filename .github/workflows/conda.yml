@@ -16,55 +16,25 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-13, macos-14, windows-2022]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
 
     steps:
       - uses: conda-incubator/setup-miniconda@v3
-
-      - name: Install DOLFINx (py3-9)
-        run: |
-          conda create -n env3-9 -c conda-forge python=3.9 fenics-dolfinx mpich
-          conda env export -n env3-9
-      - name: Test (py3-10)
-        run: |
-          conda run -n env3-9 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
-          conda run -n env3-9 mpirun -np 2 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
       
-      - name: Install DOLFINx (py3-10)
+      - name: Install DOLFINx
+        if: ${{ matrix.os }} != "Windows"
         run: |
-          conda create -n env3-10 -c conda-forge python=3.10 fenics-dolfinx mpich
-          conda env export -n env3-10
-      - name: Test (py3-10)
+          conda install -c conda-forge fenics-dolfinx mpich
+      - name: Install DOLFINx
+        if: ${{ matrix.os }} == "Windows"
         run: |
-          conda run -n env3-10 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
-          conda run -n env3-10 mpirun -np 2 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
-
-      - name: Install DOLFINx (py3-11)
+          conda install -c conda-forge fenics-dolfinx
+      - name: Test
         run: |
-          conda create -n env3-11 -c conda-forge python=3.11 fenics-dolfinx mpich
-          conda env export -n env3-11
-      - name: Test (py3-11)
-        run: |
-          conda run -n env3-11 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
-          conda run -n env3-11 mpirun -np 2 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
-
-      - name: Install DOLFINx (py3-12)
-        run: |
-          conda create -n env3-12 -c conda-forge python=3.12 fenics-dolfinx mpich
-          conda env export -n env3-12
-      - name: Test (py3-12)
-        run: |
-          conda run -n env3-12 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
-          conda run -n env3-12 mpirun -np 2 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
-
-      - name: Install DOLFINx (py3-12, petsc-complex)
-        if: runner.os == 'macOS' || runner.os == 'Linux'
-        run: |
-          conda create -n env3-12-complex -c conda-forge python=3.12 fenics-dolfinx petsc=*=complex* mpich
-          conda env export -n env3-12-complex
-      - name: Test (py3-12-complex)
-        if: runner.os == 'macOS' || runner.os == 'Linux'
-        run: |
-          conda run -n env3-12-complex python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
-          conda run -n env3-12-complex mpirun -np 2 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+          python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+          mpirun -np 2 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
