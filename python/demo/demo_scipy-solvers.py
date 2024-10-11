@@ -1,3 +1,18 @@
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.13.6
+# ---
+# Copyright (C) 2024 Jørgen S. Dokken
+#
+# This file is part of DOLFINx (<https://www.fenicsproject.org>)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
+#
 # # $L^2$ projection through minimization using SciPy solvers
 # In this demo, we will go through how to do a `projection` of a spatially varying function `g`,
 # into a function space `V`.
@@ -18,6 +33,10 @@ import scipy.sparse.linalg
 import dolfinx
 import ufl
 
+if MPI.COMM_WORLD.size > 1:
+    print("This demo works only in serial.")
+    exit(0)
+
 # Next we define the `domain` ($\Omega$) and the function space `V` where we want to
 # project the function `g` into.
 
@@ -31,7 +50,7 @@ g = ufl.sin(ufl.pi * x) * ufl.cos(ufl.pi * y)
 # The functional $G$ can be defined as follows
 
 uh = dolfinx.fem.Function(V)
-G = ufl.inner(uh - g, uh - g) * ufl.dx
+G = ufl.dot(uh - g, uh - g) * ufl.dx
 
 G_compiled = dolfinx.fem.form(G)
 
