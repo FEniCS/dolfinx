@@ -106,7 +106,7 @@ is_nonlinear = uh._cpp_object in J_compiled._cpp_object.coefficients
 # where we use the Jacobian and scipy's sparse LU solver to solve the linear system.
 
 
-def solve_system(_A, x, rtol: float, maxiter: int, M) -> tuple[npt.NDArray[np.float64], int]:
+def solve_system(_A, x, **kwargs) -> tuple[npt.NDArray[np.float64], int]:
     """Compute the Jacobian and solve the linear system Ax"""
     if is_nonlinear:
         A.data[:] = 0
