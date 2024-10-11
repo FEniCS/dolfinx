@@ -25,12 +25,11 @@ jobs:
         run: |
           brew install anaconda
           echo "/opt/homebrew/anaconda3/bin:/usr/local/anaconda3/bin" >> $GITHUB_PATH
-      - nane: Place conda on path (Windows)
+      - name: Place conda on path (Windows)
         if: runner.os == 'Windows'
         run: |
           echo "$env:CONDA/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
       - name: Update conda
-        shell: bash
         run: |
           conda update conda
 
