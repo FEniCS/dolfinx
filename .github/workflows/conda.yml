@@ -26,6 +26,7 @@ jobs:
           brew install anaconda
           echo "/opt/homebrew/anaconda3/bin:/usr/local/anaconda3/bin" >> $GITHUB_PATH
       - name: Update conda
+        shell: bash
         run: |
           conda update conda
 
