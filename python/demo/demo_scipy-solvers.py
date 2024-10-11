@@ -85,8 +85,10 @@ def compute_residual(x) -> npt.NDArray[dolfinx.default_scalar_type]:
     """
     Evaluate the residual F(x) = 0
 
-    :param x: Input vector with current solution
-    :return: Returns residual array
+    Args:
+        x: Input vector with current solution
+    Returns:
+        Residual array
     """
     uh.x.array[:] = x
     b.array[:] = 0
