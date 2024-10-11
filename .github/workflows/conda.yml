@@ -19,6 +19,10 @@ jobs:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    # This is necessary to ensure conda environment is activated in every step.
+    defaults:
+      run:
+        shell: bash -el {0}
 
     steps:
       - uses: conda-incubator/setup-miniconda@v3
@@ -34,7 +38,9 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         run: |
           conda install -c conda-forge fenics-dolfinx
+      
       - name: Test
         run: |
+          conda info
           python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
           mpirun -np 2 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
