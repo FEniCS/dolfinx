@@ -40,7 +40,7 @@ G_compiled = dolfinx.fem.form(G)
 #
 # $$ F(u, \delta u) = \frac{\mathrm{d}G}{\mathrm{d}u}[\delta u] = 0, \quad \forall \delta u \in V.$$
 
-du = ufl.TestFunction(V)
+du = ufl.conj(ufl.TestFunction(V))
 residual = ufl.derivative(G, uh, du)
 
 # We generate the integration kernels for the residua, and assemble an initial
