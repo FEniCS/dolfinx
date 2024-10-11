@@ -71,7 +71,7 @@ jobs:
           conda create -n env3-12-complex -c conda-forge python=3.12 fenics-dolfinx petsc=*=complex* mpich
           conda env export -n env3-12-complex
       - name: Test (py3-12-complex)
-        if: runner.os == 'macOS' or runner.os == 'Linux'
+        if: runner.os == 'macOS' || runner.os == 'Linux'
         run: |
           conda run -n env3-12-complex python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
           conda run -n env3-12-complex mpirun -np 2 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
