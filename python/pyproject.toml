@@ -21,7 +21,7 @@ authors = [
 ]
 dependencies = [
       "numpy>=1.21",
-      "cffi<1.17",                           # See https://github.com/FEniCS/dolfinx/issues/3340
+      "cffi@git+https://github.com/nitzmahone/cffi.git@backports/1.17/111",
       "mpi4py",
       "fenics-basix>=0.10.0.dev0,<0.11.0",
       "fenics-ffcx>=0.10.0.dev0,<0.11.0",
