@@ -20,18 +20,7 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Install conda (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install anaconda
-          echo "/opt/homebrew/anaconda3/bin:/usr/local/anaconda3/bin" >> $GITHUB_PATH
-      - name: Place conda on path (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          echo "$env:CONDA/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
-      - name: Update conda
-        run: |
-          conda update conda
+      - uses: conda-incubator/setup-miniconda@v3
 
       - name: Install DOLFINx (py3-9)
         run: |
