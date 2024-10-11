@@ -31,7 +31,7 @@ ARG OPENMPI_PATCH=3
 
 ########################################
 
-FROM ubuntu:24.04 as dev-env
+FROM ubuntu:24.04 AS dev-env
 LABEL maintainer="FEniCS Steering Council <fenics-steering-council@googlegroups.com>"
 LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
@@ -143,8 +143,8 @@ RUN if [ "$MPI" = "mpich" ]; then \
     ldconfig && \
     rm -rf /tmp/*
 
-ENV VIRTUAL_ENV /dolfinx-env
-ENV PATH /dolfinx-env/bin:$PATH
+ENV VIRTUAL_ENV=/dolfinx-env
+ENV PATH=/dolfinx-env/bin:$PATH
 RUN python3 -m venv ${VIRTUAL_ENV}
 
 # Install Python packages (via pip)
