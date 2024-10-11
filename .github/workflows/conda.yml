@@ -42,6 +42,7 @@ jobs:
       - name: Test
         run: |
           conda info
-          mpiexec -np 2 python -c "from mpi4py import MPI;"
+          mpiexec --version
+          I_MPI_DEBUG=30 FI_LOG_LEVEL=Debug mpiexec -v -np 2 python -c "from mpi4py import MPI;"
           #python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
           #mpiexec -np 2 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
