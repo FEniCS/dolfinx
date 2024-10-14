@@ -116,9 +116,9 @@ dv = ufl.TrialFunction(V)
 jacobian = ufl.derivative(residual, uh, dv)
 
 # We assemble the Jacobian matrix and its inverse.
-# Note that we assemble the Jacobian into a :class:`dolfinx.la.MatrixCSR`.
+# Note that we assemble the Jacobian into a {py:class}`dolfinx.la.MatrixCSR`.
 # Then, we get a view of the data in this matrix by using
-# :func:`dolfinx.la.MatrixCSR.to_scipy`.
+# {py:meth}`dolfinx.la.MatrixCSR.to_scipy`.
 
 J_compiled = dolfinx.fem.form(jacobian)
 A = dolfinx.fem.assemble_matrix(J_compiled)

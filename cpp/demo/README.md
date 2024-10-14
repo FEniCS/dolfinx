@@ -50,9 +50,9 @@ The C++ and Python documentation reST source files should
   and explaining code snippets from the demo source code.
 
 * Include links to the API documentation using the :cpp:class: and
-  :py:class: directives. Note that for the Python classes, the
+  {py:class} directives. Note that for the Python classes, the
   full module path is required (for instance
-  py:class:dolfinx.cpp.NewtonSolver)
+  {py:class}`dolfinx.cpp.NewtonSolver`)
 
 * Include the complete set of files needed to run the demo using the
   include directive.
