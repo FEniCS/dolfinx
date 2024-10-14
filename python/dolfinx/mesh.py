@@ -791,7 +791,7 @@ def create_interval(
     Returns:
         An interval mesh.
     """
-    if not gdim in [1, 2, 3]:
+    if gdim not in [1, 2, 3]:
         raise ValueError(f"gdim must be 1, 2 or 3: {gdim}")
 
     if partitioner is None and comm.size > 1:
