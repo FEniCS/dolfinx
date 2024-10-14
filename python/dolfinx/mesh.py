@@ -782,7 +782,7 @@ def create_interval(
         points: Coordinates of the end points.
         dtype: Float type for the mesh geometry (``numpy.float32``
             or ``numpy.float64``).
-        gdim: Geometric dimension of ambient space (``1``, ``2`` or ``3``).
+        gdim: Geometric dimension of ambient space.
         ghost_mode: Ghost mode used in the mesh partitioning. Options
             are ``GhostMode.none`` and ``GhostMode.shared_facet``.
         partitioner: Partitioning function to use for determining the
@@ -808,8 +808,9 @@ def create_unit_interval(
     comm: _MPI.Comm,
     nx: int,
     dtype: npt.DTypeLike = default_real_type,
-    ghost_mode=GhostMode.shared_facet,
-    partitioner=None,
+    gdim: int = 1,
+    ghost_mode = GhostMode.shared_facet,
+    partitioner = None,
 ) -> Mesh:
     """Create a mesh on the unit interval.
 
@@ -817,8 +818,9 @@ def create_unit_interval(
         comm: MPI communicator.
         nx: Number of cells.
         points: Coordinates of the end points.
-        dtype: Float type for the mesh geometry(``numpy.float32``
+        dtype: Float type for the mesh geometry (``numpy.float32``
             or ``numpy.float64``).
+        gdim: Geometric dimension of ambient space.
         ghost_mode: Ghost mode used in the mesh partitioning. Options
             are ``GhostMode.none`` and ``GhostMode.shared_facet``.
         partitioner: Partitioning function to use for determining the
@@ -827,7 +829,7 @@ def create_unit_interval(
     Returns:
         A unit interval mesh with end points at 0 and 1.
     """
-    return create_interval(comm, nx, [0.0, 1.0], dtype, ghost_mode, partitioner)
+    return create_interval(comm, nx, [0.0, 1.0], dtype, gdim, ghost_mode, partitioner)
 
 
 def create_rectangle(
