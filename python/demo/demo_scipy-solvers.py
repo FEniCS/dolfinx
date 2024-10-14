@@ -14,7 +14,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 #
 # # $L^2$ projection through minimization using SciPy solvers
-# In this demo, we will go through how to do a `projection` of a spatially varying function `g`,
+# In this demo, we will go through how to do a "projection" of a spatially varying function `g`,
 # into a function space `V`.
 #
 # An $L^2$ projection can be viewed as the following minimization problem:
@@ -32,6 +32,8 @@ import scipy.sparse.linalg
 
 import dolfinx
 import ufl
+# This demo uses scipy to solve the projection problem, which does not support matrices and vectors
+# distributed with MPI.
 
 if MPI.COMM_WORLD.size > 1:
     print("This demo works only in serial.")
@@ -112,7 +114,10 @@ print(f"Minimal functional {compute_functional_value():.2e}")
 dv = ufl.TrialFunction(V)
 jacobian = ufl.derivative(residual, uh, dv)
 
-# We assemble the Jacobian matrix and its inverse
+# We assemble the Jacobian matrix and its inverse.
+# Note that we assemble the Jacobian into a :class:`dolfinx.la.MatrixCSR`.
+# Then, we get a view of the data in this matrix by using
+# :func:`dolfinx.la.MatrixCSR.to_scipy`.
 
 J_compiled = dolfinx.fem.form(jacobian)
 A = dolfinx.fem.assemble_matrix(J_compiled)
