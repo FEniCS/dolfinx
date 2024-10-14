@@ -334,8 +334,9 @@ template void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>&,
 /// @endcond
 //-----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t>
-XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
-                        std::string xpath)
+XDMFFile::read_meshtags_by_name(const mesh::Mesh<double>& mesh,
+                                std::string name, std::string attribute_name,
+                                std::string xpath)
 {
   spdlog::info("XDMF read meshtags ({})", name);
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
@@ -348,8 +349,39 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
 
   const auto [entities, eshape] = read_topology_data(name, xpath);
 
-  pugi::xml_node values_data_node
-      = grid_node.child("Attribute").child("DataItem");
+  pugi::xml_node attribute_node = grid_node.child("Attribute");
+  pugi::xml_node values_data_node = attribute_node.child("DataItem");
+  if (!attribute_name.empty())
+  {
+    // Search for an attribute by the name of "Name" and whose value is the
+    // provided `attribute_name`.
+    bool found = false;
+
+    // Keep searching until it hasn't been found and there are more attribute
+    // nodes to search.
+    while (!found and attribute_node)
+    {
+      pugi::xml_attribute hint;
+      // Get the next attribute node
+      pugi::xml_attribute name = attribute_node.attribute("Name", hint);
+      // If it has the right name
+      if (name.value() == attribute_name)
+      {
+        // Note it down and end the search
+        values_data_node = attribute_node.child("DataItem");
+        found = true;
+      }
+      attribute_node = attribute_node.next_sibling("Attribute");
+    }
+
+    // If the search ended after testing all attributes but without finding
+    // a match, throw an error.
+    if (!found)
+    {
+      throw std::runtime_error("Attribute with name '" + attribute_name
+                               + "' not found.");
+    }
+  }
   const std::vector values = xdmf_utils::get_dataset<std::int32_t>(
       _comm.comm(), values_data_node, _h5_id);
 
@@ -386,6 +418,13 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
   meshtags.name = name;
 
   return meshtags;
+}
+//-----------------------------------------------------------------------------
+mesh::MeshTags<std::int32_t>
+XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
+                        std::string xpath)
+{
+  return read_meshtags_by_name(mesh, name, std::string(), xpath);
 }
 //-----------------------------------------------------------------------------
 std::pair<mesh::CellType, int> XDMFFile::read_cell_type(std::string grid_name,
