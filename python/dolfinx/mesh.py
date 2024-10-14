@@ -769,6 +769,7 @@ def create_interval(
     comm: _MPI.Comm,
     nx: int,
     points: npt.ArrayLike,
+    gdim: int = 1,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode=GhostMode.shared_facet,
     partitioner=None,
@@ -779,8 +780,9 @@ def create_interval(
         comm: MPI communicator.
         nx: Number of cells.
         points: Coordinates of the end points.
-        dtype: Float type for the mesh geometry(``numpy.float32``
+        dtype: Float type for the mesh geometry (``numpy.float32``
             or ``numpy.float64``).
+        gdim: Geometric dimension (``1``, ``2`` or ``3``).
         ghost_mode: Ghost mode used in the mesh partitioning. Options
             are ``GhostMode.none`` and ``GhostMode.shared_facet``.
         partitioner: Partitioning function to use for determining the
@@ -789,9 +791,12 @@ def create_interval(
     Returns:
         An interval mesh.
     """
+    if not gdim in [1, 2, 3]:
+        raise ValueError(f"gdim must be 1, 2 or 3: {gdim}")
+
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    domain = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(1,), dtype=dtype))  # type: ignore
+    domain = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(gdim,), dtype=dtype))  # type: ignore
     if np.issubdtype(dtype, np.float32):
         msh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, partitioner)
     elif np.issubdtype(dtype, np.float64):
