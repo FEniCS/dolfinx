@@ -100,14 +100,7 @@ def compute_residual(x) -> npt.NDArray[dolfinx.default_scalar_type]:
     return b.array
 
 
-uh.x.array[:] = 0
-print("Jacobian free Newton Krylov")
-print(f"Initial functional {compute_functional_value():.2e}")
-solution = scipy.optimize.newton_krylov(compute_residual, uh.x.array, method="lgmres", verbose=True)
-uh.x.array[:] = solution
-print(f"Minimal functional {compute_functional_value():.2e}")
-
-# We could also exploit the Jacobian information and use a Newton method with an exact gradient
+# We use the Jacobian to create a Newton method with an exact gradient
 #
 #  $$ J(u, \delta u, \delta v) = \frac{\mathrm{d} F}{\mathrm{d}u}[\delta u, \delta v] =
 # \frac{\mathrm{d}^2G}{\mathrm{d}u^2}[\delta u, \delta v].$$
