@@ -782,7 +782,7 @@ def create_interval(
         points: Coordinates of the end points.
         dtype: Float type for the mesh geometry (``numpy.float32``
             or ``numpy.float64``).
-        gdim: Geometric dimension (``1``, ``2`` or ``3``).
+        gdim: Geometric dimension of embedding space (``1``, ``2`` or ``3``).
         ghost_mode: Ghost mode used in the mesh partitioning. Options
             are ``GhostMode.none`` and ``GhostMode.shared_facet``.
         partitioner: Partitioning function to use for determining the
