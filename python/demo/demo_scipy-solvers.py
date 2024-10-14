@@ -32,6 +32,7 @@ import scipy.sparse.linalg
 
 import dolfinx
 import ufl
+
 # This demo uses scipy to solve the projection problem, which does not support matrices and vectors
 # distributed with MPI.
 
@@ -126,21 +127,23 @@ Ainv = scipy.sparse.linalg.splu(A_scipy)
 
 # If the Jacobian is independent of uh, we can avoid re-assembling the matrix
 
-is_nonlinear = uh._cpp_object in J_compiled._cpp_object.coefficients
+is_nonlinear = uh in ufl.algorithms.expand_derivatives(jacobian).coefficients()
 
-# We next create a function for solving the Krylov subspace problem
+# We next create a function for solving the linear system $Ay= x)
 # where we use the Jacobian and scipy's sparse LU solver to solve the linear system.
 
 
 def solve_system(_A, x, **kwargs) -> tuple[npt.NDArray[np.float64], int]:
-    """Compute the Jacobian and solve the linear system Ax"""
+    """Apply the action of the inverse of the Jacobian `y=A^{-1}x`."""
     if is_nonlinear:
         A.data[:] = 0
         uh.x.array[:] = x
         dolfinx.fem.assemble_matrix(A, J_compiled)
-        return scipy.sparse.linalg.splu(A_scipy).solve(x), 0
+        y = scipy.sparse.linalg.splu(A_scipy).solve(x)
+        return y, 0
     else:
-        return Ainv.solve(x), 0
+        y = Ainv.solve(x)
+        return y, 0
 
 
 print("Newton Krylov with Jacobian")
