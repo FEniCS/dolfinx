@@ -782,7 +782,7 @@ def create_interval(
         points: Coordinates of the end points.
         dtype: Float type for the mesh geometry (``numpy.float32``
             or ``numpy.float64``).
-        gdim: Geometric dimension of embedding space (``1``, ``2`` or ``3``).
+        gdim: Geometric dimension of ambient space (``1``, ``2`` or ``3``).
         ghost_mode: Ghost mode used in the mesh partitioning. Options
             are ``GhostMode.none`` and ``GhostMode.shared_facet``.
         partitioner: Partitioning function to use for determining the
@@ -791,9 +791,6 @@ def create_interval(
     Returns:
         An interval mesh.
     """
-    if gdim not in [1, 2, 3]:
-        raise ValueError(f"gdim must be 1, 2 or 3: {gdim}")
-
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(gdim,), dtype=dtype))  # type: ignore
