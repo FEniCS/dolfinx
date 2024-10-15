@@ -829,7 +829,9 @@ def create_unit_interval(
     Returns:
         A unit interval mesh with end points at 0 and 1.
     """
-    return create_interval(comm, nx, [0.0, 1.0], dtype, gdim, ghost_mode, partitioner)
+    return create_interval(
+        comm, nx, [0.0, 1.0], dtype=dtype, gdim=gdim, ghost_mode=ghost_mode, partitioner=partitioner
+    )
 
 
 def create_rectangle(
