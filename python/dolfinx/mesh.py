@@ -867,9 +867,13 @@ def create_rectangle(
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, shape=(gdim,), dtype=dtype))  # type: ignore
     if np.issubdtype(dtype, np.float32):
-        msh = _cpp.mesh.create_rectangle_float32(comm, points, n, cell_type, gdim, partitioner, diagonal)
+        msh = _cpp.mesh.create_rectangle_float32(
+            comm, points, n, cell_type, gdim, partitioner, diagonal
+        )
     elif np.issubdtype(dtype, np.float64):
-        msh = _cpp.mesh.create_rectangle_float64(comm, points, n, cell_type, gdim, partitioner, diagonal)
+        msh = _cpp.mesh.create_rectangle_float64(
+            comm, points, n, cell_type, gdim, partitioner, diagonal
+        )
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
 
