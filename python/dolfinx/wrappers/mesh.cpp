@@ -473,13 +473,13 @@ void declare_mesh(nb::module_& m, std::string type)
            const std::vector<dolfinx::fem::CoordinateElement<T>>& elements,
            nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> nodes,
            nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> xdofs,
-           nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x, int dim)
+           nb::ndarray<const T, nb::ndim<2>, nb::c_contig> x, int gdim)
         {
           return dolfinx::mesh::create_geometry(
               topology, elements,
               std::span<const std::int64_t>(nodes.data(), nodes.size()),
               std::span<const std::int64_t>(xdofs.data(), xdofs.size()),
-              std::span<const T>(x.data(), x.size()), dim);
+              std::span<const T>(x.data(), x.size()), std::array<std::size_t, 2>{x.shape(0), x.shape(1)}, gdim);
         });
 }
 

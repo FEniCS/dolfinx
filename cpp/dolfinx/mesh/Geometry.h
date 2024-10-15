@@ -254,7 +254,8 @@ Geometry(std::shared_ptr<const common::IndexMap>, U,
 /// rank_offset`, where `i` is the local row index in `x` and
 /// `rank_offset` is the sum of `x` rows on all processed with a lower
 /// rank than the caller.
-/// @param[in] dim Geometric dimension (1, 2, or 3).
+/// @param[in] xshape The shape of `x`. 
+/// @param[in] gdim Euclidean dimension of ambient space.
 /// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
 /// map associated with the geometry data.
 /// @note Experimental new interface for multiple cmap/dofmap
@@ -266,7 +267,7 @@ create_geometry(
     const std::vector<fem::CoordinateElement<
         std::remove_reference_t<typename U::value_type>>>& elements,
     std::span<const std::int64_t> nodes, std::span<const std::int64_t> xdofs,
-    const U& x, int dim,
+    const U& x, std::array<std::size_t, 2> xshape, int gdim,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn
     = nullptr)
@@ -338,20 +339,17 @@ create_geometry(
                          [&nodes](auto index) { return nodes[index]; });
 
   // Build coordinate dof array, copying coordinates to correct position
-  assert(x.size() % dim == 0);
-  const std::size_t shape0 = x.size() / dim;
-  const std::size_t shape1 = dim;
-  std::vector<T> xg(3 * shape0, 0);
-  for (std::size_t i = 0; i < shape0; ++i)
+  std::vector<T> xg(3 * xshape[0], 0);
+  for (std::size_t i = 0; i < xshape[0]; ++i)
   {
-    std::copy_n(std::next(x.begin(), shape1 * l2l[i]), shape1,
+    std::copy_n(std::next(x.begin(), xshape[1] * l2l[i]), xshape[1],
                 std::next(xg.begin(), 3 * i));
   }
 
   spdlog::info("Creating geometry with {} dofmaps", dof_layouts.size());
 
   return Geometry(dof_index_map, std::move(dofmaps), elements, std::move(xg),
-                  dim, std::move(igi));
+                  gdim, std::move(igi));
 }
 
 /// @brief Build Geometry from input data.
@@ -373,7 +371,8 @@ create_geometry(
 /// rank_offset`, where `i` is the local row index in `x` and
 /// `rank_offset` is the sum of `x` rows on all processed with a lower
 /// rank than the caller.
-/// @param[in] dim Geometric dimension (1, 2, or 3).
+/// @param[in] xshape Shape of the `x` data.
+/// @param[in] gdim Geometric dimension of the ambient space.
 /// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
 /// map associated with the geometry data.
 /// @return A mesh geometry.
@@ -384,7 +383,7 @@ create_geometry(
     const fem::CoordinateElement<
         std::remove_reference_t<typename U::value_type>>& element,
     std::span<const std::int64_t> nodes, std::span<const std::int64_t> xdofs,
-    const U& x, int dim,
+    const U& x, std::array<std::size_t, 2> xshape, int gdim,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn
     = nullptr)
@@ -430,18 +429,15 @@ create_geometry(
                          [&nodes](auto index) { return nodes[index]; });
 
   // Build coordinate dof array, copying coordinates to correct position
-  assert(x.size() % dim == 0);
-  const std::size_t shape0 = x.size() / dim;
-  const std::size_t shape1 = dim;
-  std::vector<T> xg(3 * shape0, 0);
-  for (std::size_t i = 0; i < shape0; ++i)
+  std::vector<T> xg(3 * xshape[0], 0);
+  for (std::size_t i = 0; i < xshape[0]; ++i)
   {
-    std::copy_n(std::next(x.cbegin(), shape1 * l2l[i]), shape1,
+    std::copy_n(std::next(x.cbegin(), xshape[1] * l2l[i]), xshape[1],
                 std::next(xg.begin(), 3 * i));
   }
 
   return Geometry(dof_index_map, std::move(dofmaps.front()), {element},
-                  std::move(xg), dim, std::move(igi));
+                  std::move(xg), gdim, std::move(igi));
 }
 
 } // namespace dolfinx::mesh

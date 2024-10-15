@@ -911,7 +911,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
   // Create geometry object
   Geometry geometry
-      = create_geometry(topology, element, nodes1, cells1, coords, gdim);
+      = create_geometry(topology, element, nodes1, cells1, coords, xshape, gdim);
 
   return Mesh(comm, std::make_shared<Topology>(std::move(topology)),
               std::move(geometry));
@@ -1142,7 +1142,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
   // Create geometry object
   Geometry geometry
-      = create_geometry(topology, elements, nodes1, nodes2, coords, xshape[1]);
+      = create_geometry(topology, elements, nodes1, nodes2, coords, xshape, gdim);
 
   return Mesh(comm, std::make_shared<Topology>(std::move(topology)),
               std::move(geometry));
