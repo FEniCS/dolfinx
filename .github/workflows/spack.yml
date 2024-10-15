@@ -20,7 +20,7 @@ on:
         type: string
       dolfinx_version:
         description: "DOLFINx release branch/tag to test"
-        default: "0.8.0"
+        default: "0.9.0"
         type: string
 
 jobs:
