@@ -54,7 +54,9 @@ def test_mixed_topology_mesh():
     quad = coordinate_element(CellType.quadrilateral, 1)
     nodes = np.array([0, 1, 2, 3, 4, 5], dtype=np.int64)
     xdofs = np.array([0, 1, 2, 1, 2, 3, 2, 3, 4, 5], dtype=np.int64)
-    x = np.array([0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 1.0, 2.0, 0.0], dtype=np.float64)
+    x = np.array(
+        [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]], dtype=np.float64
+    )
     geom = create_geometry(topology, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x, 2)
     print(geom.x)
     print(geom.index_map().size_local)
@@ -201,9 +203,7 @@ def test_parallel_mixed_mesh():
 
     set_log_level(LogLevel.INFO)
     set_thread_name(str(rank))
-    geom = create_geometry(
-        topology, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x.flatten(), 2
-    )
+    geom = create_geometry(topology, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x, 2)
 
     assert len(geom.dofmaps(0)) == 2
     assert len(geom.dofmaps(1)) == 1

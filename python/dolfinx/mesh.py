@@ -650,7 +650,7 @@ def create_mesh(
 
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
-    msh = _cpp.mesh.create_mesh(comm, cells, cmap._cpp_object, x, partitioner)
+    msh = _cpp.mesh.create_mesh(comm, cells, cmap._cpp_object, x, gdim, partitioner)
 
     return Mesh(msh, domain)
 
@@ -795,9 +795,9 @@ def create_interval(
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(gdim,), dtype=dtype))  # type: ignore
     if np.issubdtype(dtype, np.float32):
-        msh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, gdim, partitioner)
+        msh = _cpp.mesh.create_interval_float32(comm, nx, points, gdim, ghost_mode, partitioner)
     elif np.issubdtype(dtype, np.float64):
-        msh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, gdim, partitioner)
+        msh = _cpp.mesh.create_interval_float64(comm, nx, points, gdim, ghost_mode, partitioner)
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
 
