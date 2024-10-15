@@ -840,6 +840,7 @@ def create_rectangle(
     n: npt.ArrayLike,
     cell_type=CellType.triangle,
     dtype: npt.DTypeLike = default_real_type,
+    gdim: int = 2,
     ghost_mode=GhostMode.shared_facet,
     partitioner=None,
     diagonal: DiagonalType = DiagonalType.right,
@@ -852,21 +853,19 @@ def create_rectangle(
             the rectangle.
         n: Number of cells in each direction.
         cell_type: Mesh cell type.
-        dtype: Float type for the mesh geometry(``numpy.float32``
+        dtype: Float type for the mesh geometry (``numpy.float32``
             or ``numpy.float64``)
+        gdim: Geometric dimension of ambient space.
         ghost_mode: Ghost mode used in the mesh partitioning.
         partitioner: Function that computes the parallel distribution of
             cells across MPI ranks.
-        diagonal: Direction of diagonal of triangular meshes. The
-            options are ``left``, ``right``, ``crossed``, ``left / right``,
-            ``right / left``.
-
+        diagonal: Direction of diagonal of triangular meshes.
     Returns:
         A mesh of a rectangle.
     """
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, shape=(2,), dtype=dtype))  # type: ignore
+    domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, shape=(gdim,), dtype=dtype))  # type: ignore
     if np.issubdtype(dtype, np.float32):
         msh = _cpp.mesh.create_rectangle_float32(comm, points, n, cell_type, partitioner, diagonal)
     elif np.issubdtype(dtype, np.float64):
@@ -883,6 +882,7 @@ def create_unit_square(
     ny: int,
     cell_type=CellType.triangle,
     dtype: npt.DTypeLike = default_real_type,
+    gdim: int = 2,
     ghost_mode=GhostMode.shared_facet,
     partitioner=None,
     diagonal: DiagonalType = DiagonalType.right,
@@ -896,6 +896,7 @@ def create_unit_square(
         cell_type: Mesh cell type.
         dtype: Float type for the mesh geometry(``numpy.float32``
             or ``numpy.float64``).
+        gdim: Geometric dimension of ambient space.
         ghost_mode: Ghost mode used in the mesh partitioning.
         partitioner: Function that computes the parallel distribution of
             cells across MPI ranks.
@@ -909,11 +910,12 @@ def create_unit_square(
         comm,
         [np.array([0.0, 0.0]), np.array([1.0, 1.0])],
         [nx, ny],
-        cell_type,
-        dtype,
-        ghost_mode,
-        partitioner,
-        diagonal,
+        cell_type=cell_type,
+        dtype=dtype,
+        gdim=gdim,
+        ghost_mode=ghost_mode,
+        partitioner=partitioner,
+        diagonal=diagonal,
     )
 
 
@@ -988,10 +990,10 @@ def create_unit_cube(
         comm,
         [np.array([0.0, 0.0, 0.0]), np.array([1.0, 1.0, 1.0])],
         [nx, ny, nz],
-        cell_type,
-        dtype,
-        ghost_mode,
-        partitioner,
+        cell_type=cell_type,
+        dtype=dtype,
+        ghost_mode=ghost_mode,
+        partitioner=partitioner,
     )
 
 
