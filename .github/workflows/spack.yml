@@ -100,7 +100,6 @@ jobs:
           spack env create cpp-release-test
           spack env activate cpp-release-test
           spack add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+adios2 cmake py-fenics-ffcx
-          spack add py-nanobind@1.9
           spack install
           cd dolfinx-release/cpp/
           cd demo/poisson
