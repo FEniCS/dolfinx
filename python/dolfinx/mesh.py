@@ -809,8 +809,8 @@ def create_unit_interval(
     nx: int,
     dtype: npt.DTypeLike = default_real_type,
     gdim: int = 1,
-    ghost_mode = GhostMode.shared_facet,
-    partitioner = None,
+    ghost_mode=GhostMode.shared_facet,
+    partitioner=None,
 ) -> Mesh:
     """Create a mesh on the unit interval.
 
