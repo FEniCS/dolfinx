@@ -776,6 +776,7 @@ compute_incident_entities(const Topology& topology,
 /// the process offset  on`comm`, The offset  is the sum of `x` rows on
 /// all processed with a lower rank than the caller.
 /// @param[in] xshape Shape of the `x` data.
+/// @param[in] gdim Geometric dimension of ambient space. 
 /// @param[in] partitioner Graph partitioner that computes the owning
 /// rank for each cell. If not callable, cells are not redistributed.
 /// @return A mesh distributed on the communicator `comm`.
@@ -785,6 +786,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     const fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
+    int gdim,
     const CellPartitionFunction& partitioner)
 {
   CellType celltype = element.cell_shape();
@@ -909,7 +911,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
   // Create geometry object
   Geometry geometry
-      = create_geometry(topology, element, nodes1, cells1, coords, xshape[1]);
+      = create_geometry(topology, element, nodes1, cells1, coords, gdim);
 
   return Mesh(comm, std::make_shared<Topology>(std::move(topology)),
               std::move(geometry));
@@ -946,6 +948,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// the process offset  on`comm`, The offset  is the sum of `x` rows on
 /// all processed with a lower rank than the caller.
 /// @param[in] xshape Shape of the `x` data.
+/// @param[in] gdim Geometric dimension of ambient space.
 /// @param[in] partitioner Graph partitioner that computes the owning
 /// rank for each cell. If not callable, cells are not redistributed.
 /// @return A mesh distributed on the communicator `comm`.
@@ -956,6 +959,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
+    int gdim,
     const CellPartitionFunction& partitioner)
 {
   assert(cells.size() == elements.size());
@@ -1159,7 +1163,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// @param[in] elements Coordinate elements for the cells.
 /// @param[in] x Geometry data ('node' coordinates). See ::create_mesh
 /// for a detailed description.
-/// @param[in] xshape The shape of `x`. It should be `(num_points, gdim)`.
+/// @param[in] xshape The shape of `x`.
+/// @param[in] gdim Euclidean dimension of ambient space.
 /// @param[in] ghost_mode The requested type of cell ghosting/overlap
 /// @return A mesh distributed on the communicator `comm`.
 template <typename U>
@@ -1167,13 +1172,13 @@ Mesh<typename std::remove_reference_t<typename U::value_type>>
 create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
             const fem::CoordinateElement<
                 std::remove_reference_t<typename U::value_type>>& elements,
-            const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
+            const U& x, std::array<std::size_t, 2> xshape, int gdim, GhostMode ghost_mode)
 {
   if (dolfinx::MPI::size(comm) == 1)
-    return create_mesh(comm, comm, cells, elements, comm, x, xshape, nullptr);
+    return create_mesh(comm, comm, cells, elements, comm, x, xshape, gdim, nullptr);
   else
   {
-    return create_mesh(comm, comm, cells, elements, comm, x, xshape,
+    return create_mesh(comm, comm, cells, elements, comm, x, xshape, gdim,
                        create_cell_partitioner(ghost_mode));
   }
 }

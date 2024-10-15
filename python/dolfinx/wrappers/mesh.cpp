@@ -237,30 +237,30 @@ void declare_mesh(nb::module_& m, std::string type)
   std::string create_interval("create_interval_" + type);
   m.def(
       create_interval.c_str(),
-      [](MPICommWrapper comm, std::int64_t n, std::array<T, 2> p,
+      [](MPICommWrapper comm, std::int64_t n, std::array<T, 2> p, int gdim,
          dolfinx::mesh::GhostMode mode,
          const part::impl::PythonCellPartitionFunction& part)
       {
         return dolfinx::mesh::create_interval<T>(
-            comm.get(), n, p, mode,
+            comm.get(), n, p, gdim, mode,
             part::impl::create_cell_partitioner_cpp(part));
       },
-      nb::arg("comm"), nb::arg("n"), nb::arg("p"), nb::arg("ghost_mode"),
+      nb::arg("comm"), nb::arg("n"), nb::arg("p"), nb::arg("gdim"), nb::arg("ghost_mode"),
       nb::arg("partitioner").none());
 
   std::string create_rectangle("create_rectangle_" + type);
   m.def(
       create_rectangle.c_str(),
       [](MPICommWrapper comm, std::array<std::array<T, 2>, 2> p,
-         std::array<std::int64_t, 2> n, dolfinx::mesh::CellType celltype,
+         std::array<std::int64_t, 2> n, dolfinx::mesh::CellType celltype, int gdim,
          const part::impl::PythonCellPartitionFunction& part,
          dolfinx::mesh::DiagonalType diagonal)
       {
         return dolfinx::mesh::create_rectangle<T>(
             comm.get(), p, n, celltype,
-            part::impl::create_cell_partitioner_cpp(part), diagonal);
+            part::impl::create_cell_partitioner_cpp(part), gdim, diagonal);
       },
-      nb::arg("comm"), nb::arg("p"), nb::arg("n"), nb::arg("celltype"),
+      nb::arg("comm"), nb::arg("p"), nb::arg("n"), nb::arg("celltype"), nb::arg("gdim"),
       nb::arg("partitioner").none(), nb::arg("diagonal"));
 
   std::string create_box("create_box_" + type);
@@ -284,6 +284,7 @@ void declare_mesh(nb::module_& m, std::string type)
                                          nb::c_contig>>& cells_nb,
            const std::vector<dolfinx::fem::CoordinateElement<T>>& elements,
            nb::ndarray<const T, nb::c_contig> x,
+	   int gdim,
            const part::impl::PythonCellPartitionFunction& p)
         {
           std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
@@ -312,12 +313,12 @@ void declare_mesh(nb::module_& m, std::string type)
             };
             return dolfinx::mesh::create_mesh(
                 comm.get(), comm.get(), cells, elements, comm.get(),
-                std::span(x.data(), x.size()), {x.shape(0), shape1}, p_wrap);
+                std::span(x.data(), x.size()), {x.shape(0), shape1}, gdim, p_wrap);
           }
           else
             return dolfinx::mesh::create_mesh(
                 comm.get(), comm.get(), cells, elements, comm.get(),
-                std::span(x.data(), x.size()), {x.shape(0), shape1}, nullptr);
+                std::span(x.data(), x.size()), {x.shape(0), shape1}, gdim, nullptr);
         });
 
   m.def(
@@ -326,6 +327,7 @@ void declare_mesh(nb::module_& m, std::string type)
          nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> cells,
          const dolfinx::fem::CoordinateElement<T>& element,
          nb::ndarray<const T, nb::c_contig> x,
+	 int gdim,
          const part::impl::PythonCellPartitionFunction& p)
       {
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
@@ -349,18 +351,18 @@ void declare_mesh(nb::module_& m, std::string type)
           return dolfinx::mesh::create_mesh(
               comm.get(), comm.get(), std::span(cells.data(), cells.size()),
               element, comm.get(), std::span(x.data(), x.size()),
-              {x.shape(0), shape1}, p_wrap);
+              {x.shape(0), shape1}, gdim, p_wrap);
         }
         else
         {
           return dolfinx::mesh::create_mesh(
               comm.get(), comm.get(), std::span(cells.data(), cells.size()),
               element, comm.get(), std::span(x.data(), x.size()),
-              {x.shape(0), shape1}, nullptr);
+              {x.shape(0), shape1}, gdim, nullptr);
         }
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("element"),
-      nb::arg("x").noconvert(), nb::arg("partitioner").none(),
+      nb::arg("x").noconvert(), nb::arg("gdim"), nb::arg("partitioner").none(),
       "Helper function for creating meshes.");
   m.def(
       "create_submesh",
