@@ -118,7 +118,7 @@ TEMPLATE_TEST_CASE("Interval mesh (parallel)", "[mesh][interval]", float,
   };
 
   mesh::Mesh<T> mesh = mesh::create_interval<T>(
-      MPI_COMM_WORLD, 5 * comm_size - 1, {0., 1.}, ghost_mode, part);
+      MPI_COMM_WORLD, 5 * comm_size - 1, {0., 1.}, 1, ghost_mode, part);
 
   {
     int comp_result;
@@ -304,7 +304,7 @@ TEMPLATE_TEST_CASE("Rectangle triangle mesh (right)",
   using T = TestType;
 
   mesh::Mesh<T> mesh = dolfinx::mesh::create_rectangle<T>(
-      MPI_COMM_SELF, {{{0, 0}, {1, 1}}}, {1, 1}, mesh::CellType::triangle,
+      MPI_COMM_SELF, {{{0, 0}, {1, 1}}}, {1, 1}, mesh::CellType::triangle, 2,
       mesh::DiagonalType::right);
 
   // vertex layout:
@@ -345,7 +345,7 @@ TEMPLATE_TEST_CASE("Rectangle triangle mesh (left)",
   using T = TestType;
 
   mesh::Mesh<T> mesh = dolfinx::mesh::create_rectangle<T>(
-      MPI_COMM_SELF, {{{0, 0}, {1, 1}}}, {1, 1}, mesh::CellType::triangle,
+      MPI_COMM_SELF, {{{0, 0}, {1, 1}}}, {1, 1}, mesh::CellType::triangle, 2,
       mesh::DiagonalType::left);
 
   // vertex layout:
@@ -387,7 +387,7 @@ TEMPLATE_TEST_CASE("Rectangle triangle mesh (crossed)",
   using T = TestType;
 
   mesh::Mesh<T> mesh = dolfinx::mesh::create_rectangle<T>(
-      MPI_COMM_SELF, {{{0, 0}, {1, 1}}}, {1, 1}, mesh::CellType::triangle,
+      MPI_COMM_SELF, {{{0, 0}, {1, 1}}}, {1, 1}, mesh::CellType::triangle, 2,
       mesh::DiagonalType::crossed);
 
   // vertex layout:
