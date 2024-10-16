@@ -139,7 +139,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 
   // Build mesh
   mesh::Mesh mesh = mesh::create_mesh(comm, subset_comm, cells, cmap, comm, x,
-                                      xshape, 2, partitioner);
+                                      xshape, xshape[1], partitioner);
   auto t = mesh.topology();
   int tdim = t->dim();
   CHECK(t->index_map(tdim)->size_global() == 2 * N * N);
