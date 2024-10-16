@@ -64,6 +64,8 @@ public:
         _input_global_indices(std::forward<W>(input_global_indices))
   {
     assert(_x.size() % 3 == 0);
+    std::cout << _x.size() << std::endl;
+    std::cout << _input_global_indices.size() << std::endl;
     if (_x.size() / 3 != _input_global_indices.size())
       throw std::runtime_error("Geometry size mis-match");
   }
@@ -94,6 +96,8 @@ public:
         _input_global_indices(std::forward<W>(input_global_indices))
   {
     assert(_x.size() % 3 == 0);
+    std::cout << _x.size() << std::endl;
+    std::cout << _input_global_indices.size() << std::endl;
     if (_x.size() / 3 != _input_global_indices.size())
       throw std::runtime_error("Geometry size mis-match");
   }
