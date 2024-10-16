@@ -262,7 +262,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         # Build the mesh
         cmap = _cpp.fem.CoordinateElement_float64(cell_shape, cell_degree)
         msh = _cpp.mesh.create_mesh(
-            self.comm, cells, cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode)
+            self.comm, cells, cmap, x, x.shape[1], _cpp.mesh.create_cell_partitioner(ghost_mode)
         )
         msh.name = name
         domain = ufl.Mesh(

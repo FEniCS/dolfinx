@@ -42,13 +42,13 @@ create_interval_cells(std::array<T, 2> p, std::int64_t n);
 
 template <std::floating_point T>
 Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
-                  std::array<std::int64_t, 2> n,
+                  std::array<std::int64_t, 2> n, int gdim,
                   const CellPartitionFunction& partitioner,
                   DiagonalType diagonal);
 
 template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<T, 2>, 2> p,
-                   std::array<std::int64_t, 2> n,
+                   std::array<std::int64_t, 2> n, int gdim,
                    const CellPartitionFunction& partitioner);
 
 template <std::floating_point T>
@@ -161,6 +161,7 @@ Mesh<T> create_box(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
 /// @param[in] p Bottom-left and top-right corners of the rectangle.
 /// @param[in] n Number of cells in each direction.
 /// @param[in] celltype Cell shape.
+/// @param[in] gdim Geometric dimension of ambient space.
 /// @param[in] partitioner Partitioning function for distributing cells
 /// across MPI ranks.
 /// @param[in] diagonal Direction of diagonals
@@ -169,6 +170,7 @@ template <std::floating_point T = double>
 Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                          std::array<std::int64_t, 2> n, CellType celltype,
                          CellPartitionFunction partitioner,
+			 int gdim = 2,
                          DiagonalType diagonal = DiagonalType::right)
 {
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
@@ -186,9 +188,9 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
   switch (celltype)
   {
   case CellType::triangle:
-    return impl::build_tri<T>(comm, p, n, partitioner, diagonal);
+    return impl::build_tri<T>(comm, p, n, gdim, partitioner, diagonal);
   case CellType::quadrilateral:
-    return impl::build_quad<T>(comm, p, n, partitioner);
+    return impl::build_quad<T>(comm, p, n, gdim, partitioner);
   default:
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
   }
@@ -206,14 +208,16 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 /// @param[in] p Two corner points
 /// @param[in] n Number of cells in each direction
 /// @param[in] celltype Cell shape
+/// @param[in] gdim Geometric dimension of ambient space
 /// @param[in] diagonal Direction of diagonals
 /// @return Mesh
 template <std::floating_point T = double>
 Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                          std::array<std::int64_t, 2> n, CellType celltype,
+			 int gdim = 2,
                          DiagonalType diagonal = DiagonalType::right)
 {
-  return create_rectangle<T>(comm, p, n, celltype, nullptr, diagonal);
+  return create_rectangle<T>(comm, p, n, celltype, nullptr, gdim, diagonal);
 }
 
 /// @brief Interval mesh of the 1D line `[a, b]`.
@@ -225,12 +229,13 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 /// @param[in] comm MPI communicator to build the mesh on.
 /// @param[in] n Number of cells.
 /// @param[in] p End points of the interval.
+/// @param[in] gdim Geometric dimension of ambient space
 /// @param[in] ghost_mode ghost mode of the created mesh, defaults to none
 /// @param[in] partitioner Partitioning function for distributing cells
 /// across MPI ranks.
 /// @return A mesh.
 template <std::floating_point T = double>
-Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
+Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p, int gdim = 1,
                         mesh::GhostMode ghost_mode = mesh::GhostMode::none,
                         CellPartitionFunction partitioner = nullptr)
 {
@@ -254,12 +259,12 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
   {
     auto [x, cells] = impl::create_interval_cells<T>(p, n);
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                       {x.size(), 1}, partitioner);
+                       {x.size(), 1}, gdim, partitioner);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, 1}, partitioner);
+                       std::vector<T>{}, {0, 1}, gdim, partitioner);
   }
 }
 
@@ -383,7 +388,7 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3}, partitioner);
+                     {x.size() / 3, 3}, 3, partitioner);
 }
 
 template <std::floating_point T>
@@ -426,7 +431,7 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3}, partitioner);
+                     {x.size() / 3, 3}, 3, partitioner);
 }
 
 template <std::floating_point T>
@@ -473,12 +478,12 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3}, partitioner);
+                     {x.size() / 3, 3}, 3, partitioner);
 }
 
 template <std::floating_point T>
 Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
-                  std::array<std::int64_t, 2> n,
+                  std::array<std::int64_t, 2> n, int gdim,
                   const CellPartitionFunction& partitioner,
                   DiagonalType diagonal)
 {
@@ -624,18 +629,18 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     }
 
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                       {x.size() / 2, 2}, partitioner);
+                       {x.size() / 2, 2}, gdim, partitioner);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, 2}, partitioner);
+                       std::vector<T>{}, {0, 2}, gdim, partitioner);
   }
 }
 
 template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<T, 2>, 2> p,
-                   std::array<std::int64_t, 2> n,
+                   std::array<std::int64_t, 2> n, int gdim,
                    const CellPartitionFunction& partitioner)
 {
   fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
@@ -673,12 +678,12 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<T, 2>, 2> p,
     }
 
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                       {x.size() / 2, 2}, partitioner);
+                       {x.size() / 2, 2}, gdim, partitioner);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, 2}, partitioner);
+                       std::vector<T>{}, {0, 2}, gdim, partitioner);
   }
 }
 } // namespace impl
