@@ -429,6 +429,7 @@ create_geometry(
                          [&nodes](auto index) { return nodes[index]; });
 
   // Build coordinate dof array, copying coordinates to correct position
+  assert(x.size() % xshape[1] == 0);
   std::vector<T> xg(3 * xshape[0], 0);
   for (std::size_t i = 0; i < xshape[0]; ++i)
   {
