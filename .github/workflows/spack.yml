@@ -34,7 +34,7 @@ jobs:
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe   # Newer OpenMPI
       OMPI_MCA_rmaps_base_oversubscribe: true                 # Older OpenMPI
 
-      DOLFINX_RELEASE_VERSION: "${{ github.event_name != 'workflow_dispatch' && '0.8.0' || github.event.inputs.dolfinx_version }}"
+      DOLFINX_RELEASE_VERSION: "${{ github.event_name != 'workflow_dispatch' && '0.9.0' || github.event.inputs.dolfinx_version }}"
 
     steps:
       - name: Get Spack
