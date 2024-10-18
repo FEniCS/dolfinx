@@ -133,8 +133,6 @@ jobs:
 
       - name: Build Python interface
         run: |
-          sudo apt-get -y update
-          sudo apt-get -y install libffi-dev 
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
           python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc4py"
 
