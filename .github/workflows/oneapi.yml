@@ -37,8 +37,8 @@ jobs:
     steps:
       - name: Install compiler dependencies
         run: |
-          apt-get -y update
-          apt-get -y install binutils libstdc++-14-dev
+          apt-get update
+          apt-get install binutils libstdc++-14-dev
 
       - uses: actions/checkout@v4
 
@@ -97,7 +97,9 @@ jobs:
           ctest -R demo -R mpi_2
 
       - name: Build DOLFINx Python interface
-        run: pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" python/
+        run: |
+          apt-get -y install libffi-dev
+          pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" python/
       - name: Run DOLFINx demos (Python, serial)
         run: python -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
       - name: Run DOLFINx demos (Python, MPI (np=2))
