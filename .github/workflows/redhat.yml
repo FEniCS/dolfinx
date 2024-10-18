@@ -30,6 +30,7 @@ jobs:
 
       - name: Install FEniCS Python components
         run: |
+          yum update
           yum install -y libffi-devel
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
           python3 -m pip install git+https://github.com/FEniCS/basix.git
