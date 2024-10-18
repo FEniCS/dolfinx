@@ -79,8 +79,7 @@ jobs:
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
-      PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe   # Newer OpenMPI
-      OMPI_MCA_rmaps_base_oversubscribe: true                 # Older OpenMPI
+      PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
     name: Build and test
     steps:
@@ -102,6 +101,8 @@ jobs:
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
+          apt update
+          apt install libffi-dev
           pip install git+https://github.com/FEniCS/ufl.git
           pip install git+https://github.com/FEniCS/basix.git
           pip install git+https://github.com/FEniCS/ffcx.git
