@@ -17,7 +17,11 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-13, macos-14, windows-2022]
         python-version: ["3.9", "3.10", "3.11", "3.12"]
-        petsc-scalar-type: "real"
+        petsc-scalar-type: ["real"]
+        include:
+          - os: ubuntu-latest
+            python-version: "3.12"
+            petsc-scalar-type: "complex"
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     # This is necessary to ensure conda environment is activated in every step.
