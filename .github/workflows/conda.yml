@@ -2,9 +2,9 @@ name: Conda install
 
 on:
   # Uncomment the below 'push' to trigger on push
-  #push:
-  #  branches:
-  #     - "**"
+  push:
+    branches:
+       - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 2 * * WED"
@@ -15,9 +15,9 @@ jobs:
     name: Install and test
     strategy:
       matrix:
-        # NOTE: Re-enable windows-2022 after iimpi libfabric.dll issue fixed.
-        os: [ubuntu-latest, macos-13, macos-14]
+        os: [ubuntu-latest, macos-13, macos-14, windows-2022]
         python-version: ["3.9", "3.10", "3.11", "3.12"]
+        petsc-scalar-type: "real"
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     # This is necessary to ensure conda environment is activated in every step.
@@ -31,16 +31,29 @@ jobs:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
       
+      # TODO: These could probably be merged into one cross-platform step.
       - name: Install DOLFINx with MPICH (Unix-like)
         if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
         run: |
-          conda install -c conda-forge fenics-dolfinx mpich
+          conda install -c conda-forge fenics-dolfinx mpich petsc=*=${{ matrix.petsc-scalar-type }}*
       - name: Install DOLFINx (Windows)
         if: ${{ runner.os == 'Windows' }}
         run: |
           conda install -c conda-forge fenics-dolfinx
       
-      - name: Test
+      - name: Test (Unix-like)
+        if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
+        run: |
+          conda info
+          conda list
+          mpiexec --version
+          mpiexec -v -np 1 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+          mpiexec -v -np 2 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+ 
+      # NOTE: Late 2024, Intel MPI is only correctly setup using cmd.exe.
+      - name: Test (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        shell: cmd /C CALL {0}
         run: |
           conda info
           conda list
