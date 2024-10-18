@@ -181,6 +181,8 @@ jobs:
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
+          apt-get update
+          apt-get install libffi-dev
           pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
           pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
           pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
@@ -252,6 +254,8 @@ jobs:
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
+          apt-get update
+          apt-get install libffi-dev
           pip install git+https://github.com/FEniCS/ufl.git
           pip install git+https://github.com/FEniCS/basix.git
           pip install git+https://github.com/FEniCS/ffcx.git
