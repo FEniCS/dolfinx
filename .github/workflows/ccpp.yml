@@ -87,8 +87,6 @@ jobs:
       
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install libffi-dev 
           sudo apt-get install catch2 cmake g++ libboost-dev libboost-timer-dev libhdf5-mpi-dev libparmetis-dev libpugixml-dev libspdlog-dev mpi-default-dev ninja-build pkg-config
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -134,6 +132,8 @@ jobs:
 
       - name: Build Python interface
         run: |
+          sudo apt-get -y update
+          sudo apt-get -y install libffi-dev 
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
           python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc4py"
 
@@ -181,8 +181,6 @@ jobs:
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
-          apt-get -y update
-          apt-get -y install libffi-dev
           pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
           pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
           pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
@@ -218,6 +216,8 @@ jobs:
 
       - name: Build Python interface
         run: |
+          apt-get -y update
+          apt-get -y install libffi-dev
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
           python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_adios2; assert dolfinx.has_kahip; assert not dolfinx.has_parmetis; assert dolfinx.has_petsc; assert dolfinx.has_petsc4py; assert dolfinx.has_ptscotch; assert dolfinx.has_slepc; assert dolfinx.has_complex_ufcx_kernels"
 
@@ -254,8 +254,6 @@ jobs:
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          apt-get -y update
-          apt-get -y install libffi-dev
           pip install git+https://github.com/FEniCS/ufl.git
           pip install git+https://github.com/FEniCS/basix.git
           pip install git+https://github.com/FEniCS/ffcx.git
@@ -274,6 +272,8 @@ jobs:
 
       - name: Build Python interface
         run: |
+          apt-get -y update
+          apt-get -y install libffi-dev
           pip install -r python/build-requirements.txt
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[docs]'
 
