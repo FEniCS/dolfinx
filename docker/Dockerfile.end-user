@@ -92,7 +92,7 @@ ONBUILD RUN cd dolfinx && \
     cd ../python && \
     PETSC_ARCH=linux-gnu-real64-32 pip -v install \
       --config-settings=cmake.build-type="${DOLFINX_CMAKE_BUILD_TYPE}" --config-settings=install.strip=false --no-build-isolation --check-build-dependencies \
-      --target /usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir . && \
+      --target /usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir '.[test]' && \
     git clean -fdx && \
     cd ../ && \
     mkdir -p build-complex && \
@@ -103,7 +103,7 @@ ONBUILD RUN cd dolfinx && \
     cd ../python && \
     PETSC_ARCH=linux-gnu-complex128-32 pip -v install \
       --config-settings=cmake.build-type="${DOLFINX_CMAKE_BUILD_TYPE}" --config-settings=install.strip=false --no-build-isolation --check-build-dependencies \
-      --target /usr/local/dolfinx-complex/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir .
+      --target /usr/local/dolfinx-complex/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir '.[test]'
 
 # Real by default.
 ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
