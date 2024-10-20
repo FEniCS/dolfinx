@@ -1,3 +1,9 @@
+# Copyright (C) 2024 Paul T. Kühner
+#
+# This file is part of DOLFINx (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
+
 from mpi4py import MPI
 
 import pytest
