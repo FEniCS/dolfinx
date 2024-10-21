@@ -67,12 +67,14 @@ ONBUILD ADD dolfinx/ /src/dolfinx/
 ONBUILD ADD dolfinx/docker/dolfinx_jit_options.json /root/.config/dolfinx/dolfinx_jit_options.json
 ONBUILD ADD dolfinx/docker/ffcx_options.json /root/.config/ffcx/ffcx_options.json
 
-# The following ARGS are used in the DOLFINx layer.
-# They are safe defaults.
 # CMake build type for DOLFINx C++ build. See CMake documentation.
 ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="Release"
 
-ONBUILD RUN pip install --no-cache-dir -r dolfinx/python/build-requirements.txt
+# Using pip install `.[test]` with --no-dependencies and --no-build-isolation
+# does not install necessary packages, hence install build and optional
+# dependencies manually here.
+ONBUILD RUN pip install --no-cache-dir -r dolfinx/python/build-requirements.txt && \
+            pip install --no-cache-dir pyamg pytest scipy matplotlib numba # test + optional set
 
 # The dolfinx-onbuild container expects to have folders basix/ ufl/
 # ffcx/ and dolfinx/ mounted/shared at /src.
@@ -84,6 +86,8 @@ ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_
     cd ../ffcx && pip install --no-cache-dir . && \
     cd ../ && pip install --no-cache-dir ipython
 
+# --no-dependencies necessary as --target does not contain any dependencies e.g.
+# mpi4py - leading to unwanted rebuild.
 ONBUILD RUN cd dolfinx && \
     mkdir -p build-real && \
     cd build-real && \
@@ -92,7 +96,7 @@ ONBUILD RUN cd dolfinx && \
     cd ../python && \
     PETSC_ARCH=linux-gnu-real64-32 pip -v install \
       --config-settings=cmake.build-type="${DOLFINX_CMAKE_BUILD_TYPE}" --config-settings=install.strip=false --no-build-isolation --check-build-dependencies \
-      --target /usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages --no-cache-dir '.[test]' && \
+      --target /usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir '.' && \
     git clean -fdx && \
     cd ../ && \
     mkdir -p build-complex && \
@@ -103,7 +107,7 @@ ONBUILD RUN cd dolfinx && \
     cd ../python && \
     PETSC_ARCH=linux-gnu-complex128-32 pip -v install \
       --config-settings=cmake.build-type="${DOLFINX_CMAKE_BUILD_TYPE}" --config-settings=install.strip=false --no-build-isolation --check-build-dependencies \
-      --target /usr/local/dolfinx-complex/lib/python${PYTHON_VERSION}/dist-packages --no-cache-dir '.[test]'
+      --target /usr/local/dolfinx-complex/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir '.'
 
 # Real by default.
 ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
