@@ -164,11 +164,10 @@ void common(nb::module_& m)
           },
           nb::arg("global"));
   // dolfinx::common::Timer
-  nb::class_<dolfinx::common::Timer>(m, "Timer", "Timer class")
+  nb::class_<dolfinx::common::Timer<>>(m, "Timer", "Timer class")
       .def(nb::init<std::optional<std::string>>(), nb::arg("task").none())
-      .def("start", &dolfinx::common::Timer::start, "Start timer")
-      .def("stop", &dolfinx::common::Timer::stop, "Stop timer")
-      .def("elapsed", &dolfinx::common::Timer::elapsed);
+      .def("start", &dolfinx::common::Timer<>::start, "Start timer")
+      .def("stop", &dolfinx::common::Timer<>::stop, "Stop timer");
 
   // dolfinx::common::Timer enum
   nb::enum_<dolfinx::TimingType>(m, "TimingType")

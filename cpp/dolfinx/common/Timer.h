@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg, 2015 Jan Blechta
+// Copyright (C) 2008 Anders Logg, 2015 Jan Blechta, 2024 Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -7,7 +7,7 @@
 #pragma once
 
 #include <array>
-#include <boost/timer/timer.hpp>
+#include <chrono>
 #include <optional>
 #include <string>
 
@@ -28,6 +28,7 @@ namespace dolfinx::common
 ///
 ///   list_timings();
 
+template <typename chrono_timer = std::chrono::high_resolution_clock>
 class Timer
 {
 public:
@@ -35,26 +36,32 @@ public:
   ///
   /// If a task name is provided this enables logging to logger, otherwise (i.e.
   /// no task provided) nothing gets logged.
-  Timer(std::optional<std::string> task = std::nullopt);
+  Timer(std::optional<std::string> task = std::nullopt) : _task(task) {}
 
   /// Destructor
-  ~Timer();
+  ~Timer() = default;
 
   /// Zero and start timer
-  void start();
+  void start() { _start_time = chrono_timer::now(); }
 
   /// Stop timer, return wall time elapsed and store timing data into
   /// logger
-  double stop();
-
-  /// Return wall, user and system time in seconds
-  std::array<double, 3> elapsed() const;
+  template <typename unit = std::chrono::nanoseconds>
+  double stop()
+  {
+    auto end_time = chrono_timer::now();
+    auto elapsed = unit(end_time - _start_time).count();
+    // TODO: reactivate
+    // if (_task.has_value())
+    //   TimeLogManager::logger().register_timing(_task.value(), wall, user,
+    //   system);
+    return elapsed;
+  }
 
 private:
   // Name of task
   std::optional<std::string> _task;
 
-  // Implementation of timer
-  boost::timer::cpu_timer _timer;
+  chrono_timer::time_point _start_time;
 };
 } // namespace dolfinx::common
