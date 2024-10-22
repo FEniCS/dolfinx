@@ -108,6 +108,7 @@ def mesh_2d(dtype):
         [1, 1],
         CellType.triangle,
         dtype,
+        2,
         GhostMode.none,
         create_cell_partitioner(GhostMode.none),
         DiagonalType.left,
@@ -174,6 +175,7 @@ def rectangle():
         [5, 5],
         CellType.triangle,
         np.float64,
+        2,
         GhostMode.none,
     )
 

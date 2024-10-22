@@ -72,7 +72,7 @@ refine(const mesh::Mesh<T>& mesh,
 
   mesh::Mesh<T> mesh1 = mesh::create_mesh(
       mesh.comm(), mesh.comm(), cell_adj.array(), mesh.geometry().cmap(),
-      mesh.comm(), new_vertex_coords, xshape, partitioner);
+      mesh.comm(), new_vertex_coords, xshape, mesh.geometry().dim(), partitioner);
 
   // Report the number of refined cells
   const int D = topology->dim();
