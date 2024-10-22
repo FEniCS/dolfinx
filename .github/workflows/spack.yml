@@ -20,7 +20,7 @@ on:
         type: string
       dolfinx_version:
         description: "DOLFINx release branch/tag to test"
-        default: "0.8.0"
+        default: "0.9.0"
         type: string
 
 jobs:
@@ -34,7 +34,7 @@ jobs:
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe   # Newer OpenMPI
       OMPI_MCA_rmaps_base_oversubscribe: true                 # Older OpenMPI
 
-      DOLFINX_RELEASE_VERSION: "${{ github.event_name != 'workflow_dispatch' && '0.8.0' || github.event.inputs.dolfinx_version }}"
+      DOLFINX_RELEASE_VERSION: "${{ github.event_name != 'workflow_dispatch' && '0.9.0' || github.event.inputs.dolfinx_version }}"
 
     steps:
       - name: Get Spack
@@ -100,7 +100,6 @@ jobs:
           spack env create cpp-release-test
           spack env activate cpp-release-test
           spack add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+adios2 cmake py-fenics-ffcx
-          spack add py-nanobind@1.9
           spack install
           cd dolfinx-release/cpp/
           cd demo/poisson

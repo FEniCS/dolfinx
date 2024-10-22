@@ -675,11 +675,10 @@ def create_submesh(
     submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(
         msh._cpp_object, dim, entities
     )
-    submsh_ufl_cell = ufl.Cell(to_string(submsh.topology.cell_type))
     submsh_domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
-            submsh_ufl_cell.cellname(),
+            to_string(submsh.topology.cell_type),
             submsh.geometry.cmap.degree,
             basix.LagrangeVariant(submsh.geometry.cmap.variant),
             shape=(submsh.geometry.dim,),
