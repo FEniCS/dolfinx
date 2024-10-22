@@ -8,8 +8,7 @@ set(PROJECT_NAME demo_hyperelasticity)
 project(${PROJECT_NAME} LANGUAGES C CXX)
 
 # Set C++20 standard
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(NOT TARGET dolfinx)

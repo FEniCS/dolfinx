@@ -17,9 +17,8 @@ set(PROJECT_NAME {project_name})
 project(${{PROJECT_NAME}} LANGUAGES C CXX)
 
 # Set C++20 standard
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+target_compile_features(${{PROJECT_NAME}} PUBLIC cxx_std_20)
 
 if(NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
@@ -60,8 +59,7 @@ set(PROJECT_NAME {project_name})
 project(${{PROJECT_NAME}} LANGUAGES C CXX)
 
 # Set C++20 standard
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+target_compile_features(${{PROJECT_NAME}} PUBLIC cxx_std_20)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(NOT TARGET dolfinx)
@@ -125,9 +123,8 @@ set(PROJECT_NAME {project_name})
 project(${{PROJECT_NAME}} LANGUAGES C CXX)
 
 # Set C++20 standard
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+target_compile_features(${{PROJECT_NAME}} PUBLIC cxx_std_20)
 
 if(NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)

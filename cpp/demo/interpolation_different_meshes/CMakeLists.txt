@@ -8,9 +8,8 @@ set(PROJECT_NAME demo_interpolation_different_meshes)
 project(${PROJECT_NAME} LANGUAGES C CXX)
 
 # Set C++20 standard
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 
 if(NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
