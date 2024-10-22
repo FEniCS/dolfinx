@@ -109,9 +109,6 @@ class Timer:
     def stop(self):
         return self._cpp_object.stop()
 
-    def resume(self):
-        self._cpp_object.resume()
-
     def elapsed(self):
         return self._cpp_object.elapsed()
 

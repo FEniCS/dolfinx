@@ -24,17 +24,6 @@ Timer::~Timer()
 //-----------------------------------------------------------------------------
 void Timer::start() { _timer.start(); }
 //-----------------------------------------------------------------------------
-void Timer::resume()
-{
-  if (_task.has_value())
-  {
-    throw std::runtime_error(
-        "Resuming is not well-defined for logging timer. Only "
-        "non-logging timer can be resumed");
-  }
-  _timer.resume();
-}
-//-----------------------------------------------------------------------------
 double Timer::stop()
 {
   _timer.stop();

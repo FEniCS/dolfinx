@@ -43,9 +43,6 @@ public:
   /// Zero and start timer
   void start();
 
-  /// Resume timer. Not well-defined for logging timer
-  void resume();
-
   /// Stop timer, return wall time elapsed and store timing data into
   /// logger
   double stop();
