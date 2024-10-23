@@ -11,7 +11,7 @@ if(NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
-include(CheckSymbolExists git push --set-upstream origin garth/disable-gnu-ext)
+include(CheckSymbolExists)
 set(CMAKE_REQUIRED_INCLUDES ${PETSC_INCLUDE_DIRS})
 check_symbol_exists(PETSC_USE_COMPLEX petscsystypes.h PETSC_SCALAR_COMPLEX)
 if(PETSC_SCALAR_COMPLEX EQUAL 1)
