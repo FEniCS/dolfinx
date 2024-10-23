@@ -16,10 +16,6 @@ cmake_minimum_required(VERSION 3.21)
 set(PROJECT_NAME {project_name})
 project(${{PROJECT_NAME}} LANGUAGES C CXX)
 
-# Set C++20 standard
-set(CMAKE_CXX_EXTENSIONS OFF)
-target_compile_features(${{PROJECT_NAME}} PUBLIC cxx_std_20)
-
 if(NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
@@ -28,6 +24,10 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 add_executable(${{PROJECT_NAME}} {src_files})
 target_link_libraries(${{PROJECT_NAME}} dolfinx)
+
+# Set C++20 standard
+set(CMAKE_CXX_EXTENSIONS OFF)
+target_compile_features(${{PROJECT_NAME}} PUBLIC cxx_std_20)
 
 # Do not throw error for 'multi-line comments' (these are typical in rst which
 # includes LaTeX)
@@ -57,10 +57,6 @@ cmake_minimum_required(VERSION 3.21)
 
 set(PROJECT_NAME {project_name})
 project(${{PROJECT_NAME}} LANGUAGES C CXX)
-
-# Set C++20 standard
-target_compile_features(${{PROJECT_NAME}} PUBLIC cxx_std_20)
-set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
@@ -93,6 +89,10 @@ else()
   add_executable(${{PROJECT_NAME}} {src_files} ${{CMAKE_CURRENT_BINARY_DIR}}/{ufl_c_files})
   target_link_libraries(${{PROJECT_NAME}} dolfinx)
 
+  # Set C++20 standard
+  target_compile_features(${{PROJECT_NAME}} PUBLIC cxx_std_20)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+
   # Do not throw error for 'multi-line comments' (these are typical in rst which
   # includes LaTeX)
   include(CheckCXXCompilerFlag)
@@ -121,10 +121,6 @@ cmake_minimum_required(VERSION 3.21)
 
 set(PROJECT_NAME {project_name})
 project(${{PROJECT_NAME}} LANGUAGES C CXX)
-
-# Set C++20 standard
-set(CMAKE_CXX_EXTENSIONS OFF)
-target_compile_features(${{PROJECT_NAME}} PUBLIC cxx_std_20)
 
 if(NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
@@ -161,6 +157,10 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 add_executable(${{PROJECT_NAME}} {src_files} ${{CMAKE_CURRENT_BINARY_DIR}}/{ufl_c_files})
 target_link_libraries(${{PROJECT_NAME}} dolfinx)
+
+# Set C++20 standard
+set(CMAKE_CXX_EXTENSIONS OFF)
+target_compile_features(${{PROJECT_NAME}} PUBLIC cxx_std_20)
 
 # Do not throw error for 'multi-line comments' (these are typical in rst which
 # includes LaTeX)

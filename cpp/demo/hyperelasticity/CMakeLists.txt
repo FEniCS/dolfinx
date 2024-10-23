@@ -2,20 +2,16 @@
 #
 # python cmake/scripts/generate-cmakefiles from dolfinx/cpp
 #
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.21)
 
 set(PROJECT_NAME demo_hyperelasticity)
 project(${PROJECT_NAME} LANGUAGES C CXX)
-
-# Set C++20 standard
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
-set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
-include(CheckSymbolExists)
+include(CheckSymbolExists git push --set-upstream origin garth/disable-gnu-ext)
 set(CMAKE_REQUIRED_INCLUDES ${PETSC_INCLUDE_DIRS})
 check_symbol_exists(PETSC_USE_COMPLEX petscsystypes.h PETSC_SCALAR_COMPLEX)
 if(PETSC_SCALAR_COMPLEX EQUAL 1)
@@ -41,6 +37,10 @@ else()
 
   add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/hyperelasticity.c)
   target_link_libraries(${PROJECT_NAME} dolfinx)
+
+  # Set C++20 standard
+  target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
+  set(CMAKE_CXX_EXTENSIONS OFF)
 
   # Do not throw error for 'multi-line comments' (these are typical in rst which
   # includes LaTeX)
