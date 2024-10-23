@@ -14,6 +14,7 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
+#include <nanobind/stl/chrono.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
@@ -167,7 +168,7 @@ void common(nb::module_& m)
   nb::class_<dolfinx::common::Timer<>>(m, "Timer", "Timer class")
       .def(nb::init<std::optional<std::string>>(), nb::arg("task").none())
       .def("start", &dolfinx::common::Timer<>::start, "Start timer")
-      .def("stop", &dolfinx::common::Timer<>::stop, "Stop timer");
+      .def("stop", &dolfinx::common::Timer<>::stop<>, "Stop timer");
 
   // dolfinx::common::Timer enum
   nb::enum_<dolfinx::TimingType>(m, "TimingType")

@@ -47,10 +47,10 @@ public:
   /// Stop timer, return wall time elapsed and store timing data into
   /// logger
   template <typename unit = std::chrono::nanoseconds>
-  double stop()
+  unit stop()
   {
     auto end_time = chrono_timer::now();
-    auto elapsed = unit(end_time - _start_time).count();
+    auto elapsed = unit(end_time - _start_time);
     // TODO: reactivate
     // if (_task.has_value())
     //   TimeLogManager::logger().register_timing(_task.value(), wall, user,
