@@ -48,12 +48,11 @@ def timing(task: str):
     return _cpp.common.timing(task)
 
 
-def list_timings(comm, timing_types: list, reduction=Reduction.max):
-    """Print out a summary of all Timer measurements, with a choice of
-    wall time, system time or user time. When used in parallel, a
+def list_timings(comm, reduction=Reduction.max):
+    """Print out a summary of all Timer measurements. When used in parallel, a
     reduction is applied across all processes. By default, the maximum
     time is shown."""
-    _cpp.common.list_timings(comm, timing_types, reduction)
+    _cpp.common.list_timings(comm, reduction)
 
 
 class Timer:
