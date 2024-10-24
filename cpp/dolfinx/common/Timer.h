@@ -46,7 +46,7 @@ public:
 
   /// Stop timer, return wall time elapsed and store timing data into
   /// logger
-  template <typename unit = std::chrono::nanoseconds>
+  template <typename unit = std::chrono::microseconds>
   unit stop()
   {
     auto end_time = chrono_timer::now();
