@@ -39,5 +39,6 @@ def test_context_manager_anonymous():
 
     assert timer.elapsed().total_seconds() > 0.035
 
+
 if __name__ == "__main__":
     pytest.main([__file__])
