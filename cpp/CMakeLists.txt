@@ -303,6 +303,7 @@ endif()
 
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_VERBOSE TRUE)
+find_package(Boost 1.70 REQUIRED)
 set_package_properties(
   Boost PROPERTIES
   TYPE REQUIRED
