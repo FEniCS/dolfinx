@@ -171,22 +171,15 @@ void common(nb::module_& m)
       .def("stop", &dolfinx::common::Timer<>::stop<>, "Stop timer");
 
   // dolfinx::common::Timer enum
-  nb::enum_<dolfinx::TimingType>(m, "TimingType")
-      .value("wall", dolfinx::TimingType::wall)
-      .value("system", dolfinx::TimingType::system)
-      .value("user", dolfinx::TimingType::user);
-
   m.def("timing", &dolfinx::timing);
 
   m.def(
       "list_timings",
-      [](MPICommWrapper comm, std::vector<dolfinx::TimingType> type,
-         dolfinx::Table::Reduction reduction)
+      [](MPICommWrapper comm, dolfinx::Table::Reduction reduction)
       {
-        std::set<dolfinx::TimingType> _type(type.begin(), type.end());
-        dolfinx::list_timings(comm.get(), _type, reduction);
+        dolfinx::list_timings(comm.get(), reduction);
       },
-      nb::arg("comm"), nb::arg("type"), nb::arg("reduction"));
+      nb::arg("comm"), nb::arg("reduction"));
 
   m.def(
       "init_logging",

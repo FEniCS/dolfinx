@@ -41,7 +41,6 @@ __all__ = [
     "ufcx_signature",
 ]
 
-TimingType = _cpp.common.TimingType
 Reduction = _cpp.common.Reduction
 
 
@@ -88,7 +87,7 @@ class Timer:
     may be printed using functions ``timing``, ``timings``,
     ``list_timings``, ``dump_timings_to_xml``, e.g.::
 
-        list_timings(comm, [TimingType.wall, TimingType.user])
+        list_timings(comm)
     """
 
     _cpp_object: _cpp.common.Timer

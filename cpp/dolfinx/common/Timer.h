@@ -11,6 +11,7 @@
 #include <optional>
 #include <string>
 
+#include "TimeLogManager.h"
 namespace dolfinx::common
 {
 
@@ -51,10 +52,8 @@ public:
   {
     auto end_time = chrono_timer::now();
     auto elapsed = std::chrono::duration_cast<unit>(end_time - _start_time);
-    // TODO: reactivate
-    // if (_task.has_value())
-    //   TimeLogManager::logger().register_timing(_task.value(), wall, user,
-    //   system);
+    if (_task.has_value())
+      TimeLogManager::logger().register_timing(_task.value(), elapsed.count());
     return elapsed;
   }
 
