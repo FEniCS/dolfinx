@@ -19,6 +19,7 @@ PDEs (introductory)
    demos/demo_pml.md
    demos/demo_half_loaded_waveguide.md
    demos/demo_axis.md
+   demos/demo_scipy-solvers.md
 
 PDEs (advanced)
 ---------------

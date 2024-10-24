@@ -23,7 +23,7 @@ from ufl import (
 
 e = element("Lagrange", "triangle", 2)
 
-# The first argument to :py:class:`FiniteElement` is the finite element
+# The first argument to {py:class}`FiniteElement` is the finite element
 # family, the second argument specifies the domain, while the third
 # argument specifies the polynomial degree. Thus, in this case, our
 # element `element` consists of second-order, continuous Lagrange basis
