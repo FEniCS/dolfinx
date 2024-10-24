@@ -7,7 +7,6 @@
 
 import functools
 import typing
-from datetime import timedelta
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import (
