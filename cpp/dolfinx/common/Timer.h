@@ -45,6 +45,8 @@ public:
   /// Zero and start timer
   void start() { _start_time = chrono_timer::now(); }
 
+  /// @brief Returns elapsed time since time has been started.
+  /// @tparam unit to which the time difference is cast
   template <typename unit = std::chrono::microseconds>
   unit elapsed()
   {
