@@ -45,13 +45,18 @@ public:
   /// Zero and start timer
   void start() { _start_time = chrono_timer::now(); }
 
+  template <typename unit = std::chrono::microseconds>
+  unit elapsed()
+  {
+    return std::chrono::duration_cast<unit>(chrono_timer::now() - _start_time);
+  }
+
   /// Stop timer, return wall time elapsed and store timing data into
   /// logger
   template <typename unit = std::chrono::microseconds>
   unit stop()
   {
-    auto end_time = chrono_timer::now();
-    auto elapsed = std::chrono::duration_cast<unit>(end_time - _start_time);
+    auto elapsed = this->elapsed<unit>();
     if (_task.has_value())
       TimeLogManager::logger().register_timing(_task.value(), elapsed.count());
     return elapsed;

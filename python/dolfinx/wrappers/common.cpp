@@ -168,6 +168,7 @@ void common(nb::module_& m)
   nb::class_<dolfinx::common::Timer<>>(m, "Timer", "Timer class")
       .def(nb::init<std::optional<std::string>>(), nb::arg("task").none())
       .def("start", &dolfinx::common::Timer<>::start, "Start timer")
+      .def("elapsed", &dolfinx::common::Timer<>::elapsed<>, "Elapsed time")
       .def("stop", &dolfinx::common::Timer<>::stop<>, "Stop timer");
 
   // dolfinx::common::Timer enum
