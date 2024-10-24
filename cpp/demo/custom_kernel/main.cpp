@@ -269,7 +269,7 @@ void assemble(MPI_Comm comm)
   assemble_matrix1<T>(mesh->geometry(), *V->dofmap(), kernel_a, cells);
   assemble_vector1<T>(mesh->geometry(), *V->dofmap(), kernel_L, cells);
 
-  list_timings(comm, {TimingType::wall});
+  list_timings(comm);
 }
 
 int main(int argc, char* argv[])

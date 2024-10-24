@@ -8,6 +8,8 @@
 
 from time import sleep
 
+import pytest
+
 from dolfinx import common
 
 
@@ -17,8 +19,10 @@ def test_context_manager_named():
 
     # Execute task in the context manager
     t = common.Timer(task)
+    t.start()
     sleep(0.05)
-    assert t.elapsed()[0] > 0.035
+    t.stop()
+    assert t.elapsed().total_seconds() > 0.035
     del t
 
     # Check timing
@@ -29,6 +33,12 @@ def test_context_manager_named():
 
 def test_context_manager_anonymous():
     """Test that anonymous Timer works as context manager"""
-    with common.Timer() as t:
+    timer = common.Timer()
+    with timer:
         sleep(0.05)
-        assert t.elapsed()[0] > 0.035
+
+    assert timer.elapsed().total_seconds() > 0.035
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])
