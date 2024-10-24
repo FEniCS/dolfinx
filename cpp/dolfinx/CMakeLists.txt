@@ -96,7 +96,6 @@ target_link_libraries(dolfinx PUBLIC Basix::basix)
 
 # Boost
 target_link_libraries(dolfinx PUBLIC Boost::headers)
-target_link_libraries(dolfinx PUBLIC Boost::timer)
 
 # MPI
 target_link_libraries(dolfinx PUBLIC MPI::MPI_CXX)
