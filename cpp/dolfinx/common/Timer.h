@@ -28,7 +28,7 @@ namespace dolfinx::common
 ///
 ///   list_timings();
 
-template <typename chrono_timer = std::chrono::high_resolution_clock>
+template <typename T = std::chrono::high_resolution_clock>
 class Timer
 {
 public:
@@ -42,11 +42,11 @@ public:
   ~Timer() = default;
 
   /// Zero and start timer
-  void start() { _start_time = chrono_timer::now(); }
+  void start() { _start_time = T::now(); }
 
   /// @brief Returns elapsed time since time has been started.
   /// @tparam unit to which the time difference is cast
-  auto elapsed() const { return chrono_timer::now() - _start_time; }
+  auto elapsed() const { return T::now() - _start_time; }
 
   /// Stop timer and return elapsed (wall) time. Also registers timing
   /// data into the logger.
@@ -62,6 +62,6 @@ private:
   // Name of task
   std::optional<std::string> _task;
 
-  chrono_timer::time_point _start_time;
+  T::time_point _start_time;
 };
 } // namespace dolfinx::common
