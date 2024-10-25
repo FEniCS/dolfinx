@@ -14,7 +14,9 @@
 
 namespace dolfinx::common
 {
-/// A timer can be used for timing tasks. The basic usage is
+/// @brief Timer for timing tasks.
+///
+/// The basic usage is
 ///
 ///   Timer timer("Assembling over cells");
 ///
@@ -27,7 +29,6 @@ namespace dolfinx::common
 /// Timings are stored globally and a summary may be printed by calling
 ///
 ///   list_timings();
-
 template <typename T = std::chrono::high_resolution_clock>
 class Timer
 {
