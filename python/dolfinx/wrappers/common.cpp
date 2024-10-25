@@ -4,13 +4,19 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "MPICommWrapper.h"
+#include "array.h"
+#include "caster_mpi.h"
 #include <complex>
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/Scatterer.h>
+#include <dolfinx/common/Table.h>
+#include <dolfinx/common/Timer.h>
+#include <dolfinx/common/defines.h>
+#include <dolfinx/common/log.h>
+#include <dolfinx/common/timing.h>
+#include <dolfinx/common/utils.h>
 #include <memory>
-#include <optional>
-#include <span>
-#include <string>
-#include <vector>
-
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
@@ -20,19 +26,10 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
-
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/Scatterer.h>
-#include <dolfinx/common/Table.h>
-#include <dolfinx/common/Timer.h>
-#include <dolfinx/common/defines.h>
-#include <dolfinx/common/log.h>
-#include <dolfinx/common/timing.h>
-#include <dolfinx/common/utils.h>
-
-#include "MPICommWrapper.h"
-#include "array.h"
-#include "caster_mpi.h"
+#include <optional>
+#include <span>
+#include <string>
+#include <vector>
 
 namespace nb = nanobind;
 

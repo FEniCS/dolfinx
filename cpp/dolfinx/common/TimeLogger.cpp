@@ -51,13 +51,9 @@ Table TimeLogger::timings()
   Table table("Summary of timings");
   for (auto& it : _timings)
   {
-    const std::string task = it.first;
-    const auto [num_timings, time] = it.second;
-    // NB - the cast to std::variant should not be needed: needed by
-    // Intel compiler.
-    table.set(task, "reps",
-              std::variant<std::string, int, double>(num_timings));
-
+    std::string task = it.first;
+    auto [num_timings, time] = it.second;
+    table.set(task, "reps", num_timings);
     table.set(task, "avg", time / static_cast<double>(num_timings));
     table.set(task, "tot", time);
   }
