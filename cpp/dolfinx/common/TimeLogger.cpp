@@ -49,13 +49,12 @@ Table TimeLogger::timings()
 {
   // Generate log::timing table
   Table table("Summary of timings");
-
   for (auto& it : _timings)
   {
     const std::string task = it.first;
     const auto [num_timings, time] = it.second;
-    // NB - the cast to std::variant should not be needed: needed by Intel
-    // compiler.
+    // NB - the cast to std::variant should not be needed: needed by
+    // Intel compiler.
     table.set(task, "reps",
               std::variant<std::string, int, double>(num_timings));
 
@@ -66,7 +65,7 @@ Table TimeLogger::timings()
   return table;
 }
 //-----------------------------------------------------------------------------
-std::tuple<int, double> TimeLogger::timing(std::string task)
+std::pair<int, double> TimeLogger::timing(std::string task)
 {
   // Find timing
   auto it = _timings.find(task);

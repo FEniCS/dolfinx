@@ -6,15 +6,14 @@
 
 #pragma once
 
+#include "TimeLogManager.h"
 #include <array>
 #include <chrono>
 #include <optional>
 #include <string>
 
-#include "TimeLogManager.h"
 namespace dolfinx::common
 {
-
 /// A timer can be used for timing tasks. The basic usage is
 ///
 ///   Timer timer("Assembling over cells");
@@ -33,10 +32,10 @@ template <typename chrono_timer = std::chrono::high_resolution_clock>
 class Timer
 {
 public:
-  /// Create timer
+  /// @brief Create timer.
   ///
-  /// If a task name is provided this enables logging to logger, otherwise (i.e.
-  /// no task provided) nothing gets logged.
+  /// If a task name is provided this enables logging to logger,
+  /// otherwise (i.e. no task provided) nothing gets logged.
   Timer(std::optional<std::string> task = std::nullopt) : _task(task) {}
 
   /// Destructor
@@ -47,18 +46,13 @@ public:
 
   /// @brief Returns elapsed time since time has been started.
   /// @tparam unit to which the time difference is cast
-  template <typename unit = std::chrono::microseconds>
-  unit elapsed()
-  {
-    return std::chrono::duration_cast<unit>(chrono_timer::now() - _start_time);
-  }
+  auto elapsed() const { return chrono_timer::now() - _start_time; }
 
-  /// Stop timer, return wall time elapsed and store timing data into
-  /// logger
-  template <typename unit = std::chrono::microseconds>
-  unit stop()
+  /// Stop timer and return elapsed (wall) time. Also registers timing
+  /// data into the logger.
+  auto stop()
   {
-    auto elapsed = this->elapsed<unit>();
+    auto elapsed = this->elapsed();
     if (_task.has_value())
       TimeLogManager::logger().register_timing(_task.value(), elapsed.count());
     return elapsed;

@@ -165,11 +165,18 @@ void common(nb::module_& m)
           },
           nb::arg("global"));
   // dolfinx::common::Timer
-  nb::class_<dolfinx::common::Timer<>>(m, "Timer", "Timer class")
+  nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(
+      m, "Timer", "Timer class")
       .def(nb::init<std::optional<std::string>>(), nb::arg("task").none())
-      .def("start", &dolfinx::common::Timer<>::start, "Start timer")
-      .def("elapsed", &dolfinx::common::Timer<>::elapsed<>, "Elapsed time")
-      .def("stop", &dolfinx::common::Timer<>::stop<>, "Stop timer");
+      .def("start",
+           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::start,
+           "Start timer")
+      .def("elapsed",
+           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::elapsed,
+           "Elapsed time")
+      .def("stop",
+           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::stop,
+           "Stop timer");
 
   // dolfinx::common::Timer enum
   m.def("timing", &dolfinx::timing);
@@ -177,10 +184,8 @@ void common(nb::module_& m)
   m.def(
       "list_timings",
       [](MPICommWrapper comm, dolfinx::Table::Reduction reduction)
-      {
-        dolfinx::list_timings(comm.get(), reduction);
-      },
-      nb::arg("comm"), nb::arg("reduction"));
+      { dolfinx::list_timings(comm.get(), reduction); }, nb::arg("comm"),
+      nb::arg("reduction"));
 
   m.def(
       "init_logging",

@@ -10,15 +10,13 @@
 #include "timing.h"
 #include <map>
 #include <mpi.h>
-#include <set>
 #include <string>
-#include <tuple>
+#include <utility>
 
 namespace dolfinx::common
 {
 
 /// Timer logging
-
 class TimeLogger
 {
 public:
@@ -46,15 +44,15 @@ public:
   /// @param reduction Reduction type (min, max or average)
   void list_timings(MPI_Comm comm, Table::Reduction reduction);
 
-  /// Return timing
+  /// @brief Return timing.
   /// @param[in] task The task name to retrieve the timing for
   /// @returns Values (count, total wall time, total user time, total
   /// system time) for given task.
-  std::tuple<int, double> timing(std::string task);
+  std::pair<int, double> timing(std::string task);
 
 private:
   // List of timings for tasks, map from string to (num_timings,
-  // total_wall_time, total_user_time, total_system_time)
-  std::map<std::string, std::tuple<int, double>> _timings;
+  // total_wall_time)
+  std::map<std::string, std::pair<int, double>> _timings;
 };
 } // namespace dolfinx::common
