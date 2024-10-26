@@ -8,9 +8,8 @@
 
 #include "Table.h"
 #include <mpi.h>
-#include <set>
 #include <string>
-#include <tuple>
+#include <utility>
 
 namespace dolfinx
 {
@@ -31,8 +30,7 @@ void list_timings(MPI_Comm comm,
 /// @brief Return timing (count, total wall time, total user time, total
 /// system time) for given task.
 /// @param[in] task Name of a task
-/// @return The (count, total wall time, total user time, total system
-/// time) for the task.
-std::tuple<std::size_t, double> timing(std::string task);
+/// @return The (count, total wall time) for the task.
+std::pair<std::size_t, double> timing(std::string task);
 
 } // namespace dolfinx

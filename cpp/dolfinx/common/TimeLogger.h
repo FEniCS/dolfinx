@@ -36,19 +36,19 @@ public:
   void register_timing(std::string task, double wall);
 
   /// Return a summary of timings and tasks in a Table
-  Table timings();
+  Table timings() const;
 
   /// List a summary of timings and tasks. Reduction type is
   /// printed.
   /// @param comm MPI Communicator
   /// @param reduction Reduction type (min, max or average)
-  void list_timings(MPI_Comm comm, Table::Reduction reduction);
+  void list_timings(MPI_Comm comm, Table::Reduction reduction) const;
 
   /// @brief Return timing.
   /// @param[in] task The task name to retrieve the timing for
   /// @returns Values (count, total wall time, total user time, total
   /// system time) for given task.
-  std::pair<int, double> timing(std::string task);
+  std::pair<int, double> timing(std::string task) const;
 
 private:
   // List of timings for tasks, map from string to (num_timings,

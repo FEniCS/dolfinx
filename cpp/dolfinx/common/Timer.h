@@ -1,4 +1,5 @@
-// Copyright (C) 2008 Anders Logg, 2015 Jan Blechta, 2024 Paul T. Kühner
+// Copyright (C) 2008-2015 Anders Logg, Jan Blechta, Paul T. Kühner and Garth
+// N./ Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -7,7 +8,6 @@
 #pragma once
 
 #include "TimeLogManager.h"
-#include <array>
 #include <chrono>
 #include <optional>
 #include <string>
@@ -35,34 +35,65 @@ class Timer
 public:
   /// @brief Create timer.
   ///
-  /// If a task name is provided this enables logging to logger,
-  /// otherwise (i.e. no task provided) nothing gets logged.
+  /// Time is optionally registered in the logger.
+  ///
+  /// @param[in] task Name to use for registering the time in the
+  /// logger. If no name is set, the timing is not registered in the
+  /// logger.
   Timer(std::optional<std::string> task = std::nullopt) : _task(task) {}
 
-  /// Destructor
-  ~Timer() = default;
-
-  /// Zero and start timer
-  void start() { _start_time = T::now(); }
-
-  /// @brief Returns elapsed time since time has been started.
-  /// @tparam unit to which the time difference is cast
-  auto elapsed() const { return T::now() - _start_time; }
-
-  /// Stop timer and return elapsed (wall) time. Also registers timing
-  /// data into the logger.
-  auto stop()
+  /// Destructor. If timer is still running, it is stopped and timing is
+  /// registered in the logger.
+  ~Timer()
   {
-    auto elapsed = this->elapsed();
-    if (_task.has_value())
-      TimeLogManager::logger().register_timing(_task.value(), elapsed.count());
-    return elapsed;
+    if (_start_time.has_value())
+      this->stop();
+  }
+
+  /// Zero and (re-)start timer.
+  void start()
+  {
+    _acc = std::chrono::duration<double>();
+    _start_time = T::now();
+  }
+
+  /// @brief Elapsed time since time has been started.
+  /// @return Elapsed time duration.
+  std::chrono::duration<double> elapsed() const
+  {
+    if (_start_time.has_value()) // Timer is running
+      return T::now() - _start_time.value() + _acc;
+    else // Timer is stoped
+      return _acc;
+  }
+
+  /// @brief Stop timer and return elapsed (wall) time.
+  ///
+  /// Also registers timing data in the logger.
+  ///
+  /// @return The elapsed time.
+  std::chrono::duration<double> stop()
+  {
+    if (_start_time.has_value()) // Timer is running
+    {
+      _acc += T::now() - _start_time.value();
+      _start_time = std::nullopt;
+
+      if (_task.has_value())
+        TimeLogManager::logger().register_timing(_task.value(), _acc.count());
+    }
+
+    return _acc;
   }
 
 private:
   // Name of task
   std::optional<std::string> _task;
 
-  T::time_point _start_time;
+  // Elapsed time offset
+  std::chrono::duration<double> _acc;
+
+  // Start time. std::nullopt of timer has been stopped.
+  std::optional<typename T::time_point> _start_time = T::now();
 };
 } // namespace dolfinx::common

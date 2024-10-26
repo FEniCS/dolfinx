@@ -8,7 +8,6 @@
 #include "MPI.h"
 #include "log.h"
 #include <iostream>
-#include <variant>
 
 using namespace dolfinx;
 using namespace dolfinx::common;
@@ -33,7 +32,7 @@ void TimeLogger::register_timing(std::string task, double time)
     _timings.insert({task, {1, time}});
 }
 //-----------------------------------------------------------------------------
-void TimeLogger::list_timings(MPI_Comm comm, Table::Reduction reduction)
+void TimeLogger::list_timings(MPI_Comm comm, Table::Reduction reduction) const
 {
   // Format and reduce to rank 0
   Table timings = this->timings();
@@ -45,7 +44,7 @@ void TimeLogger::list_timings(MPI_Comm comm, Table::Reduction reduction)
     std::cout << str << std::endl;
 }
 //-----------------------------------------------------------------------------
-Table TimeLogger::timings()
+Table TimeLogger::timings() const
 {
   // Generate log::timing table
   Table table("Summary of timings");
@@ -61,7 +60,7 @@ Table TimeLogger::timings()
   return table;
 }
 //-----------------------------------------------------------------------------
-std::pair<int, double> TimeLogger::timing(std::string task)
+std::pair<int, double> TimeLogger::timing(std::string task) const
 {
   // Find timing
   auto it = _timings.find(task);
@@ -70,6 +69,7 @@ std::pair<int, double> TimeLogger::timing(std::string task)
     throw std::runtime_error("No timings registered for task \"" + task
                              + "\".");
   }
+
   return it->second;
 }
 //-----------------------------------------------------------------------------
