@@ -1,4 +1,5 @@
-// Copyright (C) 2008-2015 Anders Logg, Jan Blechta, Paul T. Kühner and Garth N. Wells
+// Copyright (C) 2008-2015 Anders Logg, Jan Blechta, Paul T. Kühner and Garth N.
+// Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -53,13 +54,17 @@ public:
   /// Zero and (re-)start timer.
   void start()
   {
-    _acc = std::chrono::duration<double>();
+    _acc = T::duration::zero();
     _start_time = T::now();
   }
 
   /// @brief Elapsed time since time has been started.
+  ///
+  /// Default duration unit is seconds.
+  ///
   /// @return Elapsed time duration.
-  std::chrono::duration<double> elapsed() const
+  template <typename Period = std::ratio<1>>
+  std::chrono::duration<double, Period> elapsed() const
   {
     if (_start_time.has_value()) // Timer is running
       return T::now() - _start_time.value() + _acc;
@@ -69,18 +74,22 @@ public:
 
   /// @brief Stop timer and return elapsed (wall) time.
   ///
-  /// Also registers timing data in the logger.
+  /// Also registers timing data in the logger (using seconds).
   ///
   /// @return The elapsed time.
-  std::chrono::duration<double> stop()
+  template <typename Period = std::ratio<1>>
+  std::chrono::duration<double, Period> stop()
   {
     if (_start_time.has_value()) // Timer is running
     {
       _acc += T::now() - _start_time.value();
       _start_time = std::nullopt;
-
       if (_task.has_value())
-        TimeLogManager::logger().register_timing(_task.value(), _acc.count());
+      {
+        using X = std::chrono::duration<double, std::ratio<1>>;
+        TimeLogManager::logger().register_timing(
+            _task.value(), std::chrono::duration_cast<X>(_acc).count());
+      }
     }
 
     return _acc;
@@ -91,9 +100,9 @@ private:
   std::optional<std::string> _task;
 
   // Elapsed time offset
-  std::chrono::duration<double> _acc;
+  T::duration _acc = T::duration::zero();
 
-  // Store start time. std::nullopt if timer has been stopped.
+  // Store start time *std::nullopt if timer has been stopped)
   std::optional<typename T::time_point> _start_time = T::now();
 };
 } // namespace dolfinx::common

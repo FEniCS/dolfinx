@@ -169,10 +169,11 @@ void common(nb::module_& m)
            &dolfinx::common::Timer<std::chrono::high_resolution_clock>::start,
            "Start timer")
       .def("elapsed",
-           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::elapsed,
+           &dolfinx::common::Timer<
+               std::chrono::high_resolution_clock>::elapsed<>,
            "Elapsed time")
       .def("stop",
-           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::stop,
+           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::stop<>,
            "Stop timer");
 
   // dolfinx::common::Timer enum
