@@ -36,19 +36,30 @@ class Timer
 public:
   /// @brief Create and start timer.
   ///
-  /// Time is optionally registered in the logger (in seconds).
+  /// Time is optionally registered in the logger (in seconds) when the
+  /// Timer destructor is called.
   ///
   /// @param[in] task Name to use for registering the time in the
   /// logger. If no name is set, the timing is not registered in the
   /// logger.
   Timer(std::optional<std::string> task = std::nullopt) : _task(task) {}
 
-  /// Destructor. If timer is still running, it is stopped and timing is
+  /// Destructor. If timer is still running, it is stopped. Timing is
   /// registered in the logger.
   ~Timer()
   {
-    if (_start_time.has_value())
-      this->stop();
+    if (_start_time.has_value()) // Timer is running
+    {
+      _acc += T::now() - _start_time.value();
+      _start_time = std::nullopt;
+    }
+
+    if (_task.has_value())
+    {
+      using X = std::chrono::duration<double, std::ratio<1>>;
+      TimeLogManager::logger().register_timing(
+          _task.value(), std::chrono::duration_cast<X>(_acc).count());
+    }
   }
 
   /// Zero and (re-)start timer.
@@ -74,9 +85,9 @@ public:
 
   /// @brief Stop timer and return elapsed (wall) time.
   ///
-  /// Also registers timing data in the logger (using seconds).
+  /// Default duration unit is seconds.
   ///
-  /// @return The elapsed time.
+  /// @return Elapsed time duration.
   template <typename Period = std::ratio<1>>
   std::chrono::duration<double, Period> stop()
   {
@@ -84,12 +95,6 @@ public:
     {
       _acc += T::now() - _start_time.value();
       _start_time = std::nullopt;
-      if (_task.has_value())
-      {
-        using X = std::chrono::duration<double, std::ratio<1>>;
-        TimeLogManager::logger().register_timing(
-            _task.value(), std::chrono::duration_cast<X>(_acc).count());
-      }
     }
 
     return _acc;
