@@ -1,5 +1,4 @@
-// Copyright (C) 2008-2015 Anders Logg, Jan Blechta, Paul T. Kühner and Garth
-// N./ Wells
+// Copyright (C) 2008-2015 Anders Logg, Jan Blechta, Paul T. Kühner and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -26,16 +25,17 @@ namespace dolfinx::common
 ///
 ///   timer.start(); timer.stop();
 ///
-/// Timings are stored globally and a summary may be printed by calling
+/// Timings are stored globally (in seconds) and a summary may be
+/// printed by calling
 ///
 ///   list_timings();
 template <typename T = std::chrono::high_resolution_clock>
 class Timer
 {
 public:
-  /// @brief Create timer.
+  /// @brief Create and start timer.
   ///
-  /// Time is optionally registered in the logger.
+  /// Time is optionally registered in the logger (in seconds).
   ///
   /// @param[in] task Name to use for registering the time in the
   /// logger. If no name is set, the timing is not registered in the
@@ -93,7 +93,7 @@ private:
   // Elapsed time offset
   std::chrono::duration<double> _acc;
 
-  // Start time. std::nullopt of timer has been stopped.
+  // Store start time. std::nullopt if timer has been stopped.
   std::optional<typename T::time_point> _start_time = T::now();
 };
 } // namespace dolfinx::common
