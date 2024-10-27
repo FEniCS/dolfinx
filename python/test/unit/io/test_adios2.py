@@ -13,7 +13,7 @@ import pytest
 
 import ufl
 from basix.ufl import element
-from dolfinx import default_real_type, default_scalar_type
+from dolfinx import default_real_type
 from dolfinx.fem import Function, functionspace
 from dolfinx.graph import adjacencylist
 from dolfinx.mesh import CellType, create_mesh, create_unit_cube, create_unit_square
