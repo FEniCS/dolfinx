@@ -109,8 +109,6 @@ using U = typename dolfinx::scalar_value_type_t<T>;
 
 int main(int argc, char* argv[])
 {
-  common::Timer t;
-
   dolfinx::init_logging(argc, argv);
   PetscInitialize(&argc, &argv, nullptr, nullptr);
 
@@ -259,10 +257,6 @@ int main(int argc, char* argv[])
   }
 
   PetscFinalize();
-
-  auto t0 = t.elapsed();
-  std::cout << "Time:  " << t0 << std::endl;
-  std::cout << "Count: " << t0.count() << std::endl;
 
   return 0;
 }
