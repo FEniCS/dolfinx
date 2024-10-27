@@ -14,37 +14,39 @@
 
 namespace dolfinx::common
 {
-/// @brief Timer for timing tasks.
+/// @brief Timer for measuring and logging elapsed time durations.
 ///
 /// The basic usage is
-///
-///   Timer timer("Assembling over cells");
-///
+/// \code{.cpp}
+/// Timer timer("Assembling over cells");
+/// \endcode
 /// The timer is started at construction and timing ends when the timer
-/// is destroyed (goes out of scope). It is also possible to start and
-/// stop a timer explicitly by
-///
-///   timer.start(); timer.stop();
-///
-/// Timings are stored globally (in seconds) and a summary may be
-/// printed by calling
-///
+/// is destroyed (goes out of scope). The timer can be started (reset)
+/// and stopped explicitly by
+/// \code{.cpp}
+///   timer.start();
+///    /* .... */
+///   timer.stop();
+/// \endcode
+/// A summary of registered elapsed times can be printed by calling
+/// \code{.cpp}
 ///   list_timings();
+/// \endcode
 template <typename T = std::chrono::high_resolution_clock>
 class Timer
 {
 public:
   /// @brief Create and start timer.
   ///
-  /// Time is optionally registered in the logger (in seconds) when the
-  /// Timer destructor is called.
+  /// Elapsed is optionally registered in the logger (in seconds) when
+  /// the Timer destructor is called.
   ///
-  /// @param[in] task Name to use for registering the time in the
-  /// logger. If no name is set, the timing is not registered in the
-  /// logger.
+  /// @param[in] task Name used to registered the elapsed time in the
+  /// logger. If no name is set, the elapsed time is not registered in
+  /// the logger.
   Timer(std::optional<std::string> task = std::nullopt) : _task(task) {}
 
-  /// Destructor. If timer is still running, it is stopped. Timing is
+  /// If timer is still running, it is stopped. Elapsed time is
   /// registered in the logger.
   ~Timer()
   {
@@ -62,7 +64,7 @@ public:
     }
   }
 
-  /// Zero and (re-)start timer.
+  /// Reset elapsed time and (re-)start timer.
   void start()
   {
     _acc = T::duration::zero();
@@ -83,7 +85,7 @@ public:
       return _acc;
   }
 
-  /// @brief Stop timer and return elapsed (wall) time.
+  /// @brief Stop timer and return elapsed time.
   ///
   /// Default duration unit is seconds.
   ///
@@ -101,7 +103,7 @@ public:
   }
 
 private:
-  // Name of task
+  // Name of task to register in logger
   std::optional<std::string> _task;
 
   // Elapsed time offset
