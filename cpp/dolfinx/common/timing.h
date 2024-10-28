@@ -7,16 +7,16 @@
 #pragma once
 
 #include "Table.h"
+#include <map>
 #include <mpi.h>
 #include <string>
 #include <utility>
 
 namespace dolfinx
 {
-
 /// @brief Return a summary of timings and tasks in a Table.
 /// @return Table with timings.
-Table timings();
+Table timing_table();
 
 /// @brief List a summary of timings and tasks.
 ///
@@ -27,10 +27,13 @@ Table timings();
 void list_timings(MPI_Comm comm,
                   Table::Reduction reduction = Table::Reduction::max);
 
-/// @brief Return timing (count, total wall time, total user time, total
-/// system time) for given task.
+/// @brief Return timing (count, total wall time) for given task.
 /// @param[in] task Name of a task
 /// @return The (count, total wall time) for the task.
 std::pair<std::size_t, double> timing(std::string task);
+
+/// @brief Logged elapsed times.
+/// @return Elapsed [task id: (count, total wall time)].
+std::map<std::string, std::pair<int, double>> timings();
 
 } // namespace dolfinx

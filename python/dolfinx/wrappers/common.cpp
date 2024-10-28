@@ -21,6 +21,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/chrono.h>
+#include <nanobind/stl/map.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
@@ -161,6 +162,7 @@ void common(nb::module_& m)
             return dolfinx_wrappers::as_nbarray(std::move(local));
           },
           nb::arg("global"));
+
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(
       m, "Timer", "Timer class")
@@ -176,8 +178,8 @@ void common(nb::module_& m)
            &dolfinx::common::Timer<std::chrono::high_resolution_clock>::stop<>,
            "Stop timer");
 
-  // dolfinx::common::Timer enum
   m.def("timing", &dolfinx::timing);
+  m.def("timings", &dolfinx::timings);
 
   m.def(
       "list_timings",

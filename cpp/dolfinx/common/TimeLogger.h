@@ -36,7 +36,7 @@ public:
   void register_timing(std::string task, double wall);
 
   /// Return a summary of timings and tasks in a Table
-  Table timings() const;
+  Table timing_table() const;
 
   /// List a summary of timings and tasks. Reduction type is
   /// printed.
@@ -46,9 +46,12 @@ public:
 
   /// @brief Return timing.
   /// @param[in] task The task name to retrieve the timing for
-  /// @returns Values (count, total wall time, total user time, total
-  /// system time) for given task.
+  /// @return Values (count, total wall time) for given task.
   std::pair<int, double> timing(std::string task) const;
+
+  /// @brief Logged elapsed times.
+  /// @return Elapsed [task id: (count, total wall time)].
+  std::map<std::string, std::pair<int, double>> timings() const;
 
 private:
   // List of timings for tasks, map from string to (num_timings,
