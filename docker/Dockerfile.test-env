@@ -12,10 +12,10 @@
 #    docker build --target dev-env --file dolfinx/docker/Dockerfile.test-env --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" .
 #
 
-ARG ADIOS2_VERSION=2.10.1
+ARG ADIOS2_VERSION=2.10.2
 ARG DOXYGEN_VERSION=1_12_0
 ARG GMSH_VERSION=4_13_1
-ARG HDF5_VERSION=1.14.4.3
+ARG HDF5_VERSION=1.14.5
 ARG KAHIP_VERSION=3.16
 # NOTE: The NumPy version (https://pypi.org/project/numpy/#history)
 # should be pinned to the most recent NumPy release that is supported by
@@ -25,9 +25,9 @@ ARG NUMPY_VERSION=2.0.2
 ARG PETSC_VERSION=3.22.0
 ARG SLEPC_VERSION=3.22.0
 
-ARG MPICH_VERSION=4.2.2
+ARG MPICH_VERSION=4.2.3
 ARG OPENMPI_SERIES=5.0
-ARG OPENMPI_PATCH=3
+ARG OPENMPI_PATCH=5
 
 ########################################
 
