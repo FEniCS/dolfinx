@@ -8,42 +8,34 @@
 #include "MPI.h"
 #include "log.h"
 #include <iostream>
-#include <variant>
 
 using namespace dolfinx;
 using namespace dolfinx::common;
 
 //-----------------------------------------------------------------------------
-void TimeLogger::register_timing(std::string task, double wall, double user,
-                                 double system)
+void TimeLogger::register_timing(std::string task, double time)
 {
-  assert(wall >= 0.0);
-  assert(user >= 0.0);
-  assert(system >= 0.0);
+  assert(time >= 0.0);
 
   // Print a message
-  std::string line = "Elapsed wall, usr, sys time: " + std::to_string(wall)
-                     + ", " + std::to_string(user) + ", "
-                     + std::to_string(system) + " (" + task + ")";
+  std::string line
+      = "Elapsed time: " + std::to_string(time) + " (" + task + ")";
   spdlog::debug(line.c_str());
 
   // Store values for summary
   if (auto it = _timings.find(task); it != _timings.end())
   {
     std::get<0>(it->second) += 1;
-    std::get<1>(it->second) += wall;
-    std::get<2>(it->second) += user;
-    std::get<3>(it->second) += system;
+    std::get<1>(it->second) += time;
   }
   else
-    _timings.insert({task, {1, wall, user, system}});
+    _timings.insert({task, {1, time}});
 }
 //-----------------------------------------------------------------------------
-void TimeLogger::list_timings(MPI_Comm comm, std::set<TimingType> type,
-                              Table::Reduction reduction)
+void TimeLogger::list_timings(MPI_Comm comm, Table::Reduction reduction) const
 {
   // Format and reduce to rank 0
-  Table timings = this->timings(type);
+  Table timings = this->timings();
   timings = timings.reduce(comm, reduction);
   const std::string str = "\n" + timings.str();
 
@@ -52,44 +44,23 @@ void TimeLogger::list_timings(MPI_Comm comm, std::set<TimingType> type,
     std::cout << str << std::endl;
 }
 //-----------------------------------------------------------------------------
-Table TimeLogger::timings(std::set<TimingType> type)
+Table TimeLogger::timings() const
 {
   // Generate log::timing table
   Table table("Summary of timings");
-
-  bool time_wall = type.find(TimingType::wall) != type.end();
-  bool time_user = type.find(TimingType::user) != type.end();
-  bool time_sys = type.find(TimingType::system) != type.end();
-
   for (auto& it : _timings)
   {
-    const std::string task = it.first;
-    const auto [num_timings, wall, usr, sys] = it.second;
-    // NB - the cast to std::variant should not be needed: needed by Intel
-    // compiler.
-    table.set(task, "reps",
-              std::variant<std::string, int, double>(num_timings));
-    if (time_wall)
-    {
-      table.set(task, "wall avg", wall / static_cast<double>(num_timings));
-      table.set(task, "wall tot", wall);
-    }
-    if (time_user)
-    {
-      table.set(task, "usr avg", usr / static_cast<double>(num_timings));
-      table.set(task, "usr tot", usr);
-    }
-    if (time_sys)
-    {
-      table.set(task, "sys avg", sys / static_cast<double>(num_timings));
-      table.set(task, "sys tot", sys);
-    }
+    std::string task = it.first;
+    auto [num_timings, time] = it.second;
+    table.set(task, "reps", num_timings);
+    table.set(task, "avg", time / static_cast<double>(num_timings));
+    table.set(task, "tot", time);
   }
 
   return table;
 }
 //-----------------------------------------------------------------------------
-std::tuple<int, double, double, double> TimeLogger::timing(std::string task)
+std::pair<int, double> TimeLogger::timing(std::string task) const
 {
   // Find timing
   auto it = _timings.find(task);
@@ -98,6 +69,7 @@ std::tuple<int, double, double, double> TimeLogger::timing(std::string task)
     throw std::runtime_error("No timings registered for task \"" + task
                              + "\".");
   }
+
   return it->second;
 }
 //-----------------------------------------------------------------------------
