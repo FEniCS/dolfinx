@@ -161,6 +161,7 @@ void common(nb::module_& m)
             return dolfinx_wrappers::as_nbarray(std::move(local));
           },
           nb::arg("global"));
+
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(
       m, "Timer", "Timer class")
@@ -174,7 +175,10 @@ void common(nb::module_& m)
            "Elapsed time")
       .def("stop",
            &dolfinx::common::Timer<std::chrono::high_resolution_clock>::stop<>,
-           "Stop timer");
+           "Stop timer")
+      .def("flush",
+           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::flush,
+           "Flush timer");
 
   // dolfinx::common::Timer enum
   m.def("timing", &dolfinx::timing);
