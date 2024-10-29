@@ -32,8 +32,6 @@ namespace nls::petsc
 /// It solves \f[ \left. \frac{dF}{dx} \right|_{x} \Delta x = F(x) \f]
 /// with default update \f$x \leftarrow x - \Delta x\f$.
 ///
-///
-///
 /// It relies on PETSc for linear algebra backends.
 class NewtonSolver
 {
