@@ -26,15 +26,20 @@ class KrylovSolver;
 
 namespace nls::petsc
 {
-
-/// This class defines a Newton solver for nonlinear systems of
-/// equations of the form \f$F(x) = 0\f$.
-
+/// @brief A Newton solver for nonlinear systems of equations of the
+/// form \f$F(x) = 0\f$.
+///
+/// It solves \f[ \left. \frac{dF}{dx} \right|_{x} \Delta x = F(x) \f]
+/// with default update \f$x \leftarrow x - \Delta x\f$.
+///
+///
+///
+/// It relies on PETSc for linear algebra backends.
 class NewtonSolver
 {
 public:
-  /// Create nonlinear solver
-  /// @param[in] comm The MPI communicator for the solver
+  /// @brief Create nonlinear solver
+  /// @param[in] comm MPI communicator for the solver
   explicit NewtonSolver(MPI_Comm comm);
 
   /// Move constructor
@@ -52,22 +57,22 @@ public:
   /// Destructor
   ~NewtonSolver();
 
-  /// @brief Set the function for computing the residual and the vector
-  /// to the assemble the residual into.
-  /// @param[in] F Function to compute the residual vector b (x, b)
-  /// @param[in] b The vector to assemble to residual into
+  /// @brief Set the function for computing the residual \f$F(x) = 0\f$
+  /// and the vector to assemble the residual into.
+  /// @param[in] F Function to compute/assemble the residual vector `b`.
+  /// @param[in] b Vector to assemble to residual into.
   void setF(std::function<void(const Vec, Vec)> F, Vec b);
 
-  /// @brief Set the function for computing the Jacobian (dF/dx) and the
-  /// matrix to assemble the residual into.
-  /// @param[in] J Function to compute the Jacobian matrix b (x, A)
-  /// @param[in] Jmat The matrix to assemble the Jacobian into
+  /// @brief Set the function for computing the Jacobian \f$J:=dF/dx\f$
+  /// and the matrix to assemble the Jacobian into.
+  /// @param[in] J Function to compute the Jacobian matrix `Jmat`.
+  /// @param[in] Jmat Matrix to assemble the Jacobian into.
   void setJ(std::function<void(const Vec, Mat)> J, Mat Jmat);
 
   /// @brief Set the function for computing the preconditioner matrix
   /// (optional).
-  /// @param[in] P Function to compute the preconditioner matrix b (x, P)
-  /// @param[in] Pmat The matrix to assemble the preconditioner into
+  /// @param[in] P Function to compute the preconditioner matrix `Pmat`.
+  /// @param[in] Pmat Matrix to assemble the preconditioner into.
   void setP(std::function<void(const Vec, Mat)> P, Mat Pmat);
 
   /// @brief Get the internal Krylov solver used to solve for the Newton
@@ -88,37 +93,42 @@ public:
 
   /// @brief Set the function that is called before the residual or
   /// Jacobian are computed. It is commonly used to update ghost values.
-  /// @param[in] form The function to call. It takes the latest solution
+  /// @param[in] form Function to call. It takes the latest solution
   /// vector `x` as an argument.
   void set_form(std::function<void(Vec)> form);
 
   /// @brief Set function that is called at the end of each Newton
   /// iteration to test for convergence.
-  /// @param[in] c The function that tests for convergence
+  /// @param[in] c Function that tests for convergence
   void set_convergence_check(
       std::function<std::pair<double, bool>(const NewtonSolver&, const Vec)> c);
 
-  /// @brief Set function that is called after each Newton iteration to
-  /// update the solution.
+  /// @brief Optional set function that is called after each Newton
+  /// iteration to update the solution.
+  ///
+  /// The function takes `this`, the Newton increment `dx`, and the
+  /// vector `x` from the start of the Newton solve.
+  ///
+  /// By default, the update is x <- x - dx
+  ///
   /// @param[in] update The function that updates the solution
   void set_update(
       std::function<void(const NewtonSolver& solver, const Vec, Vec)> update);
 
-  /// @brief Solve the nonlinear problem \f$`F(x) = 0\f$ for given
+  /// @brief Solve the nonlinear problem \f$F(x) = 0\f$ for given
   /// \f$F\f$ and Jacobian \f$\dfrac{\partial F}{\partial x}\f$.
   ///
   /// @param[in,out] x The vector
   /// @return (number of Newton iterations, whether iteration converged)
   std::pair<int, bool> solve(Vec x);
 
-  /// @brief The number of Newton iterations. It can can called by
-  /// functions that check for convergence during a solve.
-  /// @return The number of Newton iterations performed
+  /// @brief Number of Newton iterations. It can can called by functions
+  /// that check for convergence during a solve.
+  /// @return Number of Newton iterations performed.
   int iteration() const;
 
-  /// @brief Get number of Krylov iterations elapsed since solve
-  /// started.
-  /// @return Number of iterations.
+  /// @brief Number of Krylov iterations elapsed since solve started.
+  /// @return Number of Krylov iterations.
   int krylov_iterations() const;
 
   /// @brief Get current residual.
