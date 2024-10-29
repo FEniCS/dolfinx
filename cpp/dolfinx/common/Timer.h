@@ -46,9 +46,22 @@ public:
   /// the logger.
   Timer(std::optional<std::string> task = std::nullopt) : _task(task) {}
 
+<<<<<<< HEAD
   /// If timer is still running, it is stopped. Elapsed time is
   /// registered in the logger.
   ~Timer()
+=======
+  /// Destructor
+  ~Timer() = default;
+
+  /// Zero and start timer
+  void start() { _start_time = chrono_timer::now(); }
+
+  /// Stop timer, return wall time elapsed and store timing data into
+  /// logger
+  template <typename unit = std::chrono::microseconds>
+  unit stop()
+>>>>>>> 92995756e8 (Switch to microseconds as default)
   {
     if (_start_time.has_value()) // Timer is running
     {
