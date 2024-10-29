@@ -77,7 +77,7 @@ public:
   {
     if (_start_time.has_value()) // Timer is running
       return T::now() - *_start_time + _acc;
-    else // Timer is stoped
+    else // Timer is stopped
       return _acc;
   }
 
