@@ -119,6 +119,10 @@ class Timer:
         """
         return self._cpp_object.stop()
 
+    def resume(self) -> None:
+        """Resume timer."""
+        self._cpp_object.resume()
+
     def elapsed(self) -> datetime.timedelta:
         """Return elapsed time.
 
@@ -126,6 +130,16 @@ class Timer:
             Elapsed time.
         """
         return self._cpp_object.elapsed()
+
+    def flush(self) -> None:
+        """Flush timer duration to the logger.
+
+        Note:
+            Timer can be flushed only once.
+
+            Timer must have been stopped before flushing.
+        """
+        self._cpp_object.flush()
 
 
 def timed(task: str):
