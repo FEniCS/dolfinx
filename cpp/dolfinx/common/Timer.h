@@ -10,6 +10,7 @@
 #include "TimeLogManager.h"
 #include <chrono>
 #include <optional>
+#include <stdexcept>
 #include <string>
 
 namespace dolfinx::common
