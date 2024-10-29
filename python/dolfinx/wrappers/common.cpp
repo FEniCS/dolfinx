@@ -176,6 +176,9 @@ void common(nb::module_& m)
       .def("stop",
            &dolfinx::common::Timer<std::chrono::high_resolution_clock>::stop<>,
            "Stop timer")
+      .def("resume",
+           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::resume,
+           "Resume timer")
       .def("flush",
            &dolfinx::common::Timer<std::chrono::high_resolution_clock>::flush,
            "Flush timer");

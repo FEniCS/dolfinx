@@ -98,6 +98,15 @@ public:
     return _acc;
   }
 
+  /// @brief Resume a stopped timer.
+  ///
+  /// Does nothing if timer has not been stopped.
+  void resume()
+  {
+    if (!_start_time.has_value())
+      _start_time = T::now();
+  }
+
   /// @brief Flush timer duration to the logger.
   ///
   /// Timer can be flushed only once.
