@@ -15,7 +15,6 @@
 
 namespace dolfinx::common
 {
-
 /// Timer logging
 class TimeLogger
 {
