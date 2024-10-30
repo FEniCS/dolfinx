@@ -1,4 +1,5 @@
-// Copyright (C) 2008 Anders Logg, 2015 Jan Blechta
+// Copyright (C) 2008-2015 Anders Logg, Jan Blechta, Paul T. Kühner and Garth N.
+// Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -6,58 +7,109 @@
 
 #pragma once
 
-#include <array>
-#include <boost/timer/timer.hpp>
+#include "TimeLogManager.h"
+#include <chrono>
 #include <optional>
 #include <string>
 
 namespace dolfinx::common
 {
-
-/// A timer can be used for timing tasks. The basic usage is
+/// @brief Timer for measuring and logging elapsed time durations.
 ///
-///   Timer timer("Assembling over cells");
-///
+/// The basic usage is
+/// \code{.cpp}
+/// Timer timer("Assembling over cells");
+/// \endcode
 /// The timer is started at construction and timing ends when the timer
-/// is destroyed (goes out of scope). It is also possible to start and
-/// stop a timer explicitly by
-///
-///   timer.start(); timer.stop();
-///
-/// Timings are stored globally and a summary may be printed by calling
-///
+/// is destroyed (goes out of scope). The timer can be started (reset)
+/// and stopped explicitly by
+/// \code{.cpp}
+///   timer.start();
+///    /* .... */
+///   timer.stop();
+/// \endcode
+/// A summary of registered elapsed times can be printed by calling
+/// \code{.cpp}
 ///   list_timings();
-
+/// \endcode
+template <typename T = std::chrono::high_resolution_clock>
 class Timer
 {
 public:
-  /// Create timer
+  /// @brief Create and start timer.
   ///
-  /// If a task name is provided this enables logging to logger, otherwise (i.e.
-  /// no task provided) nothing gets logged.
-  Timer(std::optional<std::string> task = std::nullopt);
+  /// Elapsed is optionally registered in the logger (in seconds) when
+  /// the Timer destructor is called.
+  ///
+  /// @param[in] task Name used to registered the elapsed time in the
+  /// logger. If no name is set, the elapsed time is not registered in
+  /// the logger.
+  Timer(std::optional<std::string> task = std::nullopt) : _task(task) {}
 
-  /// Destructor
-  ~Timer();
+  /// If timer is still running, it is stopped. Elapsed time is
+  /// registered in the logger.
+  ~Timer()
+  {
+    if (_start_time.has_value()) // Timer is running
+    {
+      _acc += T::now() - _start_time.value();
+      _start_time = std::nullopt;
+    }
 
-  /// Zero and start timer
-  void start();
+    if (_task.has_value())
+    {
+      using X = std::chrono::duration<double, std::ratio<1>>;
+      TimeLogManager::logger().register_timing(
+          _task.value(), std::chrono::duration_cast<X>(_acc).count());
+    }
+  }
 
-  /// Resume timer. Not well-defined for logging timer
-  void resume();
+  /// Reset elapsed time and (re-)start timer.
+  void start()
+  {
+    _acc = T::duration::zero();
+    _start_time = T::now();
+  }
 
-  /// Stop timer, return wall time elapsed and store timing data into
-  /// logger
-  double stop();
+  /// @brief Elapsed time since time has been started.
+  ///
+  /// Default duration unit is seconds.
+  ///
+  /// @return Elapsed time duration.
+  template <typename Period = std::ratio<1>>
+  std::chrono::duration<double, Period> elapsed() const
+  {
+    if (_start_time.has_value()) // Timer is running
+      return T::now() - _start_time.value() + _acc;
+    else // Timer is stoped
+      return _acc;
+  }
 
-  /// Return wall, user and system time in seconds
-  std::array<double, 3> elapsed() const;
+  /// @brief Stop timer and return elapsed time.
+  ///
+  /// Default duration unit is seconds.
+  ///
+  /// @return Elapsed time duration.
+  template <typename Period = std::ratio<1>>
+  std::chrono::duration<double, Period> stop()
+  {
+    if (_start_time.has_value()) // Timer is running
+    {
+      _acc += T::now() - _start_time.value();
+      _start_time = std::nullopt;
+    }
+
+    return _acc;
+  }
 
 private:
-  // Name of task
+  // Name of task to register in logger
   std::optional<std::string> _task;
 
-  // Implementation of timer
-  boost::timer::cpu_timer _timer;
+  // Elapsed time offset
+  T::duration _acc = T::duration::zero();
+
+  // Store start time *std::nullopt if timer has been stopped)
+  std::optional<typename T::time_point> _start_time = T::now();
 };
 } // namespace dolfinx::common

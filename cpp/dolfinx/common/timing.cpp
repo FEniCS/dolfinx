@@ -11,19 +11,17 @@
 #include "Timer.h"
 
 //-----------------------------------------------------------------------
-dolfinx::Table dolfinx::timings(std::set<TimingType> type)
+dolfinx::Table dolfinx::timings()
 {
-  return dolfinx::common::TimeLogManager::logger().timings(type);
+  return dolfinx::common::TimeLogManager::logger().timings();
 }
 //-----------------------------------------------------------------------------
-void dolfinx::list_timings(MPI_Comm comm, std::set<TimingType> type,
-                           Table::Reduction reduction)
+void dolfinx::list_timings(MPI_Comm comm, Table::Reduction reduction)
 {
-  dolfinx::common::TimeLogManager::logger().list_timings(comm, type, reduction);
+  dolfinx::common::TimeLogManager::logger().list_timings(comm, reduction);
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::size_t, double, double, double>
-dolfinx::timing(std::string task)
+std::pair<std::size_t, double> dolfinx::timing(std::string task)
 {
   return dolfinx::common::TimeLogManager::logger().timing(task);
 }

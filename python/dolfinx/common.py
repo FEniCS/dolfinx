@@ -41,7 +41,6 @@ __all__ = [
     "ufcx_signature",
 ]
 
-TimingType = _cpp.common.TimingType
 Reduction = _cpp.common.Reduction
 
 
@@ -49,12 +48,11 @@ def timing(task: str):
     return _cpp.common.timing(task)
 
 
-def list_timings(comm, timing_types: list, reduction=Reduction.max):
-    """Print out a summary of all Timer measurements, with a choice of
-    wall time, system time or user time. When used in parallel, a
+def list_timings(comm, reduction=Reduction.max):
+    """Print out a summary of all Timer measurements. When used in parallel, a
     reduction is applied across all processes. By default, the maximum
     time is shown."""
-    _cpp.common.list_timings(comm, timing_types, reduction)
+    _cpp.common.list_timings(comm, reduction)
 
 
 class Timer:
@@ -88,7 +86,7 @@ class Timer:
     may be printed using functions ``timing``, ``timings``,
     ``list_timings``, ``dump_timings_to_xml``, e.g.::
 
-        list_timings(comm, [TimingType.wall, TimingType.user])
+        list_timings(comm)
     """
 
     _cpp_object: _cpp.common.Timer
@@ -108,9 +106,6 @@ class Timer:
 
     def stop(self):
         return self._cpp_object.stop()
-
-    def resume(self):
-        self._cpp_object.resume()
 
     def elapsed(self):
         return self._cpp_object.elapsed()

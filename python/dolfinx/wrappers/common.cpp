@@ -4,22 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "MPICommWrapper.h"
+#include "array.h"
+#include "caster_mpi.h"
 #include <complex>
-#include <memory>
-#include <optional>
-#include <span>
-#include <string>
-#include <vector>
-
-#include <nanobind/nanobind.h>
-#include <nanobind/ndarray.h>
-#include <nanobind/stl/array.h>
-#include <nanobind/stl/optional.h>
-#include <nanobind/stl/pair.h>
-#include <nanobind/stl/string.h>
-#include <nanobind/stl/tuple.h>
-#include <nanobind/stl/vector.h>
-
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Table.h>
@@ -28,10 +16,20 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/timing.h>
 #include <dolfinx/common/utils.h>
-
-#include "MPICommWrapper.h"
-#include "array.h"
-#include "caster_mpi.h"
+#include <memory>
+#include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
+#include <nanobind/stl/array.h>
+#include <nanobind/stl/chrono.h>
+#include <nanobind/stl/optional.h>
+#include <nanobind/stl/pair.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/tuple.h>
+#include <nanobind/stl/vector.h>
+#include <optional>
+#include <span>
+#include <string>
+#include <vector>
 
 namespace nb = nanobind;
 
@@ -164,30 +162,28 @@ void common(nb::module_& m)
           },
           nb::arg("global"));
   // dolfinx::common::Timer
-  nb::class_<dolfinx::common::Timer>(m, "Timer", "Timer class")
+  nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(
+      m, "Timer", "Timer class")
       .def(nb::init<std::optional<std::string>>(), nb::arg("task").none())
-      .def("start", &dolfinx::common::Timer::start, "Start timer")
-      .def("stop", &dolfinx::common::Timer::stop, "Stop timer")
-      .def("resume", &dolfinx::common::Timer::resume)
-      .def("elapsed", &dolfinx::common::Timer::elapsed);
+      .def("start",
+           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::start,
+           "Start timer")
+      .def("elapsed",
+           &dolfinx::common::Timer<
+               std::chrono::high_resolution_clock>::elapsed<>,
+           "Elapsed time")
+      .def("stop",
+           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::stop<>,
+           "Stop timer");
 
   // dolfinx::common::Timer enum
-  nb::enum_<dolfinx::TimingType>(m, "TimingType")
-      .value("wall", dolfinx::TimingType::wall)
-      .value("system", dolfinx::TimingType::system)
-      .value("user", dolfinx::TimingType::user);
-
   m.def("timing", &dolfinx::timing);
 
   m.def(
       "list_timings",
-      [](MPICommWrapper comm, std::vector<dolfinx::TimingType> type,
-         dolfinx::Table::Reduction reduction)
-      {
-        std::set<dolfinx::TimingType> _type(type.begin(), type.end());
-        dolfinx::list_timings(comm.get(), _type, reduction);
-      },
-      nb::arg("comm"), nb::arg("type"), nb::arg("reduction"));
+      [](MPICommWrapper comm, dolfinx::Table::Reduction reduction)
+      { dolfinx::list_timings(comm.get(), reduction); }, nb::arg("comm"),
+      nb::arg("reduction"));
 
   m.def(
       "init_logging",
