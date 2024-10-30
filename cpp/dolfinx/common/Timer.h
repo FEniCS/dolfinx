@@ -10,6 +10,7 @@
 #include "TimeLogManager.h"
 #include <chrono>
 #include <optional>
+#include <stdexcept>
 #include <string>
 
 namespace dolfinx::common
@@ -50,17 +51,12 @@ public:
   /// registered in the logger.
   ~Timer()
   {
-    if (_start_time.has_value()) // Timer is running
+    if (_start_time.has_value() and _task.has_value())
     {
-      _acc += T::now() - _start_time.value();
-      _start_time = std::nullopt;
-    }
-
-    if (_task.has_value())
-    {
+      _acc += T::now() - *_start_time;
       using X = std::chrono::duration<double, std::ratio<1>>;
       TimeLogManager::logger().register_timing(
-          _task.value(), std::chrono::duration_cast<X>(_acc).count());
+          *_task, std::chrono::duration_cast<X>(_acc).count());
     }
   }
 
@@ -80,8 +76,8 @@ public:
   std::chrono::duration<double, Period> elapsed() const
   {
     if (_start_time.has_value()) // Timer is running
-      return T::now() - _start_time.value() + _acc;
-    else // Timer is stoped
+      return T::now() - *_start_time + _acc;
+    else // Timer is stopped
       return _acc;
   }
 
@@ -95,11 +91,39 @@ public:
   {
     if (_start_time.has_value()) // Timer is running
     {
-      _acc += T::now() - _start_time.value();
+      _acc += T::now() - *_start_time;
       _start_time = std::nullopt;
     }
 
     return _acc;
+  }
+
+  /// @brief Resume a stopped timer.
+  ///
+  /// Does nothing if timer has not been stopped.
+  void resume()
+  {
+    if (!_start_time.has_value())
+      _start_time = T::now();
+  }
+
+  /// @brief Flush timer duration to the logger.
+  ///
+  /// Timer can be flushed only once.
+  ///
+  /// @pre Timer must have been stopped before flushing.
+  void flush()
+  {
+    if (_start_time.has_value())
+      throw std::runtime_error("Timer must be stopped before flushing.");
+
+    if (_task.has_value())
+    {
+      using X = std::chrono::duration<double, std::ratio<1>>;
+      TimeLogManager::logger().register_timing(
+          *_task, std::chrono::duration_cast<X>(_acc).count());
+      _task = std::nullopt;
+    }
   }
 
 private:
@@ -109,7 +133,7 @@ private:
   // Elapsed time offset
   T::duration _acc = T::duration::zero();
 
-  // Store start time *std::nullopt if timer has been stopped)
+  // Store start time (std::nullopt if timer has been stopped)
   std::optional<typename T::time_point> _start_time = T::now();
 };
 } // namespace dolfinx::common

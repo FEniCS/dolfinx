@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """General tools for timing and configuration."""
 
+import datetime
 import functools
 import typing
 
@@ -74,13 +75,12 @@ class Timer:
     timer explicitly by::
 
         t = Timer(\"Some costly operation\")
-        t.start()
         costly_call()
-        t.stop()
+        delta = t.stop()
 
     and retrieve timing data using::
 
-        t.elapsed()
+        delta = t.elapsed()
 
     Timings are stored globally (if task name is given) and
     may be printed using functions ``timing``, ``timings``,
@@ -92,6 +92,11 @@ class Timer:
     _cpp_object: _cpp.common.Timer
 
     def __init__(self, name: typing.Optional[str] = None):
+        """Create timer.
+
+        Args:
+            name: Identifier to use when storing elapsed time in logger.
+        """
         self._cpp_object = _cpp.common.Timer(name)
 
     def __enter__(self):
@@ -100,15 +105,41 @@ class Timer:
 
     def __exit__(self, *args):
         self._cpp_object.stop()
+        self._cpp_object.flush()
 
-    def start(self):
+    def start(self) -> None:
+        """Reset elapsed time and (re-)start timer."""
         self._cpp_object.start()
 
-    def stop(self):
+    def stop(self) -> datetime.timedelta:
+        """Stop timer and return elapsed time.
+
+        Returns:
+            Elapsed time.
+        """
         return self._cpp_object.stop()
 
-    def elapsed(self):
+    def resume(self) -> None:
+        """Resume timer."""
+        self._cpp_object.resume()
+
+    def elapsed(self) -> datetime.timedelta:
+        """Return elapsed time.
+
+        Returns:
+            Elapsed time.
+        """
         return self._cpp_object.elapsed()
+
+    def flush(self) -> None:
+        """Flush timer duration to the logger.
+
+        Note:
+            Timer can be flushed only once.
+
+            Timer must have been stopped before flushing.
+        """
+        self._cpp_object.flush()
 
 
 def timed(task: str):
