@@ -29,10 +29,12 @@ namespace dolfinx::common
 ///    /* .... */
 ///   timer.stop();
 /// \endcode
-/// A summary of registered elapsed times can be printed by calling
+/// A summary of registered elapsed times can be printed by calling:
 /// \code{.cpp}
 ///   list_timings();
 /// \endcode
+/// Registered elapsed times are logged when (1) the timer goes
+/// out-of-scope or (2) Timer::flush() is called.
 template <typename T = std::chrono::high_resolution_clock>
 class Timer
 {
@@ -109,7 +111,8 @@ public:
 
   /// @brief Flush timer duration to the logger.
   ///
-  /// Timer can be flushed only once.
+  /// Timer can be flushed only once. Subsequent call will have no
+  /// effect and will not trigger any logging.
   ///
   /// @pre Timer must have been stopped before flushing.
   void flush()

@@ -34,7 +34,21 @@ def test_timer():
     assert t[1] > 0.045
 
 
-def xtest_context_manager_named():
+def test_timer_flush_stop():
+    """Test stop/flush."""
+    t = common.Timer()
+    t.start()
+    with pytest.raises(RuntimeError):
+        t.flush()
+    t.stop()
+    t.resume()
+    with pytest.raises(RuntimeError):
+        t.flush()
+    t.stop()
+    t.flush()
+
+
+def test_context_manager_named():
     """Test that named Timer works as context manager."""
     task = "test_context_manager_named_str"
     with common.Timer(task):
@@ -43,7 +57,7 @@ def xtest_context_manager_named():
     assert delta[1] > 0.045
 
 
-def xtest_context_manager_anonymous():
+def test_context_manager_anonymous():
     """Test that anonymous Timer works with context manager."""
     timer = common.Timer()
     with timer:
