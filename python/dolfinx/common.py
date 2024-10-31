@@ -45,46 +45,72 @@ __all__ = [
 Reduction = _cpp.common.Reduction
 
 
-def timing(task: str):
+def timing(task: str) -> tuple[int, datetime.timedelta]:
+    """Return the logged elapsed time.
+
+    Timing data is for the calling process.
+
+    Arguments:
+        task: The task name using when logging the time.
+
+    Returns:
+        (number of times logged, total wall time)
+    """
     return _cpp.common.timing(task)
 
 
 def list_timings(comm, reduction=Reduction.max):
-    """Print out a summary of all Timer measurements. When used in parallel, a
-    reduction is applied across all processes. By default, the maximum
-    time is shown."""
+    """Print out a summary of all Timer measurements.
+
+    When used in parallel, a reduction is applied across all processes.
+    By default, the maximum time is shown.
+    """
     _cpp.common.list_timings(comm, reduction)
 
 
 class Timer:
-    """A timer can be used for timing tasks. The basic usage is::
+    """A timer for timing section of code.
 
-        with Timer(\"Some costly operation\"):
-            costly_call_1()
-            costly_call_2()
+    The recommended usage is with a context manager.
 
-    or::
+    Example:
+        With a context manager, the timer is started when entering
+        and stopped at exit. With a named ``Timer``::
 
-        with Timer() as t:
-            costly_call_1()
-            costly_call_2()
-            print(\"Elapsed time so far: %s\" % t.elapsed()[0])
+            with Timer(\"Some costly operation\"):
+                costly_call_1()
+                costly_call_2()
 
-    The timer is started when entering context manager and timing
-    ends when exiting it. It is also possible to start and stop a
-    timer explicitly by::
+            delta = timing(\"Some costly operation\")
+            print(delta)
 
-        t = Timer(\"Some costly operation\")
-        costly_call()
-        delta = t.stop()
+        or with an un-named ``Timer``::
 
-    and retrieve timing data using::
+            with Timer() as t:
+                costly_call_1()
+                costly_call_2()
+                print(f\"Elapsed time: {t.elapsed()}\")
 
-        delta = t.elapsed()
+    Example:
+        It is possible to start and stop a timer explicitly::
 
-    Timings are stored globally (if task name is given) and
-    may be printed using functions ``timing``, ``timings``,
-    ``list_timings``, ``dump_timings_to_xml``, e.g.::
+            t = Timer(\"Some costly operation\")
+            costly_call()
+            delta = t.stop()
+
+        and retrieve timing data using::
+
+            delta = t.elapsed()
+
+        To flush the timing data for a named ``Timer`` to the logger, the
+        timer should be stopped and flushed::
+
+            t.stop()
+            t.flush()
+
+    Timings are stored globally (if task name is given) and once flushed
+    (if used without a context manager) may be printed using functions
+    ``timing`` and ``list_timings``, e.g.::
 
         list_timings(comm)
     """
@@ -135,9 +161,10 @@ class Timer:
         """Flush timer duration to the logger.
 
         Note:
-            Timer can be flushed only once.
-
             Timer must have been stopped before flushing.
+
+            Timer can be flushed only once. Subsequent calls will have
+            no effect.
         """
         self._cpp_object.flush()
 

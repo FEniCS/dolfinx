@@ -21,6 +21,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/chrono.h>
+#include <nanobind/stl/map.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
@@ -183,8 +184,8 @@ void common(nb::module_& m)
            &dolfinx::common::Timer<std::chrono::high_resolution_clock>::flush,
            "Flush timer");
 
-  // dolfinx::common::Timer enum
   m.def("timing", &dolfinx::timing);
+  m.def("timings", &dolfinx::timings);
 
   m.def(
       "list_timings",
