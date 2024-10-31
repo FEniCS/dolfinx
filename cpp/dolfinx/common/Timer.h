@@ -22,25 +22,27 @@ namespace dolfinx::common
 /// Timer timer("Assembling over cells");
 /// \endcode
 /// The timer is started at construction and timing ends when the timer
-/// is destroyed (goes out of scope). The timer can be started (reset)
+/// is destroyed (goes out-of-scope). The timer can be started (reset)
 /// and stopped explicitly by
 /// \code{.cpp}
 ///   timer.start();
 ///    /* .... */
 ///   timer.stop();
 /// \endcode
-/// A summary of registered elapsed times can be printed by calling
+/// A summary of registered elapsed times can be printed by calling:
 /// \code{.cpp}
 ///   list_timings();
 /// \endcode
+/// Registered elapsed times are logged when (1) the timer goes
+/// out-of-scope or (2) Timer::flush() is called.
 template <typename T = std::chrono::high_resolution_clock>
 class Timer
 {
 public:
   /// @brief Create and start timer.
   ///
-  /// Elapsed is optionally registered in the logger (in seconds) when
-  /// the Timer destructor is called.
+  /// Elapsed time is optionally registered in the logger when the Timer
+  /// destructor is called.
   ///
   /// @param[in] task Name used to registered the elapsed time in the
   /// logger. If no name is set, the elapsed time is not registered in
@@ -54,9 +56,7 @@ public:
     if (_start_time.has_value() and _task.has_value())
     {
       _acc += T::now() - *_start_time;
-      using X = std::chrono::duration<double, std::ratio<1>>;
-      TimeLogManager::logger().register_timing(
-          *_task, std::chrono::duration_cast<X>(_acc).count());
+      TimeLogManager::logger().register_timing(*_task, _acc);
     }
   }
 
@@ -109,7 +109,9 @@ public:
 
   /// @brief Flush timer duration to the logger.
   ///
-  /// Timer can be flushed only once.
+  /// An instance of a timer can be flushed to the logger only once.
+  /// Subsequent calls will have no effect and will not trigger any
+  /// logging.
   ///
   /// @pre Timer must have been stopped before flushing.
   void flush()
@@ -119,9 +121,7 @@ public:
 
     if (_task.has_value())
     {
-      using X = std::chrono::duration<double, std::ratio<1>>;
-      TimeLogManager::logger().register_timing(
-          *_task, std::chrono::duration_cast<X>(_acc).count());
+      TimeLogManager::logger().register_timing(*_task, _acc);
       _task = std::nullopt;
     }
   }
