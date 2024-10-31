@@ -8,6 +8,7 @@
 
 #include "Table.h"
 #include "timing.h"
+#include <chrono>
 #include <map>
 #include <mpi.h>
 #include <string>
@@ -32,7 +33,8 @@ public:
   ~TimeLogger() = default;
 
   /// Register timing (for later summary)
-  void register_timing(std::string task, double wall);
+  void register_timing(std::string task,
+                       std::chrono::duration<double, std::ratio<1>> wall);
 
   /// Return a summary of timings and tasks in a Table
   Table timing_table() const;
@@ -46,15 +48,20 @@ public:
   /// @brief Return timing.
   /// @param[in] task The task name to retrieve the timing for
   /// @return Values (count, total wall time) for given task.
-  std::pair<int, double> timing(std::string task) const;
+  std::pair<int, std::chrono::duration<double, std::ratio<1>>>
+  timing(std::string task) const;
 
   /// @brief Logged elapsed times.
   /// @return Elapsed [task id: (count, total wall time)].
-  std::map<std::string, std::pair<int, double>> timings() const;
+  std::map<std::string,
+           std::pair<int, std::chrono::duration<double, std::ratio<1>>>>
+  timings() const;
 
 private:
   // List of timings for tasks, map from string to (num_timings,
   // total_wall_time)
-  std::map<std::string, std::pair<int, double>> _timings;
+  std::map<std::string,
+           std::pair<int, std::chrono::duration<double, std::ratio<1>>>>
+      _timings;
 };
 } // namespace dolfinx::common

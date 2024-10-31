@@ -7,6 +7,7 @@
 #pragma once
 
 #include "Table.h"
+#include <chrono>
 #include <map>
 #include <mpi.h>
 #include <string>
@@ -30,10 +31,13 @@ void list_timings(MPI_Comm comm,
 /// @brief Return timing (count, total wall time) for given task.
 /// @param[in] task Name of a task
 /// @return The (count, total wall time) for the task.
-std::pair<int, double> timing(std::string task);
+std::pair<int, std::chrono::duration<double, std::ratio<1>>>
+timing(std::string task);
 
 /// @brief Logged elapsed times.
 /// @return Elapsed [task id: (count, total wall time)].
-std::map<std::string, std::pair<int, double>> timings();
+std::map<std::string,
+         std::pair<int, std::chrono::duration<double, std::ratio<1>>>>
+timings();
 
 } // namespace dolfinx

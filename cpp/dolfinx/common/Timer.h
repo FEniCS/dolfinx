@@ -58,7 +58,7 @@ public:
       _acc += T::now() - *_start_time;
       using X = std::chrono::duration<double, std::ratio<1>>;
       TimeLogManager::logger().register_timing(
-          *_task, std::chrono::duration_cast<X>(_acc).count());
+          *_task, std::chrono::duration_cast<X>(_acc));
     }
   }
 
@@ -124,7 +124,7 @@ public:
     {
       using X = std::chrono::duration<double, std::ratio<1>>;
       TimeLogManager::logger().register_timing(
-          *_task, std::chrono::duration_cast<X>(_acc).count());
+          *_task, std::chrono::duration_cast<X>(_acc));
       _task = std::nullopt;
     }
   }

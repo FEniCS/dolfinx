@@ -45,7 +45,7 @@ __all__ = [
 Reduction = _cpp.common.Reduction
 
 
-def timing(task: str) -> tuple[int, float]:
+def timing(task: str) -> tuple[int, datetime.timedelta]:
     """Return the logged elapsed time.
 
     Timing data is for the calling process.
@@ -54,7 +54,7 @@ def timing(task: str) -> tuple[int, float]:
         task: The task name using when logging the time.
 
     Returns:
-        (number of times logged, total wall time (seconds)
+        (number of times logged, total wall time)
     """
     return _cpp.common.timing(task)
 
