@@ -13,13 +13,12 @@ using namespace dolfinx;
 using namespace dolfinx::common;
 
 //-----------------------------------------------------------------------------
-void TimeLogger::register_timing(std::string task, double time)
+void TimeLogger::register_timing(
+    std::string task, std::chrono::duration<double, std::ratio<1>> time)
 {
-  assert(time >= 0.0);
-
   // Print a message
   std::string line
-      = "Elapsed time: " + std::to_string(time) + " (" + task + ")";
+      = "Elapsed time: " + std::to_string(time.count()) + " (" + task + ")";
   spdlog::debug(line.c_str());
 
   // Store values for summary
@@ -35,7 +34,7 @@ void TimeLogger::register_timing(std::string task, double time)
 void TimeLogger::list_timings(MPI_Comm comm, Table::Reduction reduction) const
 {
   // Format and reduce to rank 0
-  Table timings = this->timings();
+  Table timings = this->timing_table();
   timings = timings.reduce(comm, reduction);
   const std::string str = "\n" + timings.str();
 
@@ -44,23 +43,24 @@ void TimeLogger::list_timings(MPI_Comm comm, Table::Reduction reduction) const
     std::cout << str << std::endl;
 }
 //-----------------------------------------------------------------------------
-Table TimeLogger::timings() const
+Table TimeLogger::timing_table() const
 {
   // Generate log::timing table
-  Table table("Summary of timings");
+  Table table("Summary of timings (s)");
   for (auto& it : _timings)
   {
     std::string task = it.first;
     auto [num_timings, time] = it.second;
     table.set(task, "reps", num_timings);
-    table.set(task, "avg", time / static_cast<double>(num_timings));
-    table.set(task, "tot", time);
+    table.set(task, "avg", time.count() / static_cast<double>(num_timings));
+    table.set(task, "tot", time.count());
   }
 
   return table;
 }
 //-----------------------------------------------------------------------------
-std::pair<int, double> TimeLogger::timing(std::string task) const
+std::pair<int, std::chrono::duration<double, std::ratio<1>>>
+TimeLogger::timing(std::string task) const
 {
   // Find timing
   auto it = _timings.find(task);
@@ -71,5 +71,12 @@ std::pair<int, double> TimeLogger::timing(std::string task) const
   }
 
   return it->second;
+}
+//-----------------------------------------------------------------------------
+std::map<std::string,
+         std::pair<int, std::chrono::duration<double, std::ratio<1>>>>
+TimeLogger::timings() const
+{
+  return _timings;
 }
 //-----------------------------------------------------------------------------
