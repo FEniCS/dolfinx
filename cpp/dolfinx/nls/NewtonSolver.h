@@ -130,7 +130,7 @@ public:
   /// @return (number of Newton iterations, whether iteration converged)
   std::pair<int, bool> solve(Vec x);
 
-  /// @brief Get number of Newton iterations. It can can be called by
+  /// @brief Get number of Newton iterations. It can be called by
   /// functions that check for convergence during a solve.
   /// @return Number of Newton iterations performed.
   int iteration() const;
