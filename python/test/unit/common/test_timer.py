@@ -31,7 +31,7 @@ def test_timer():
     t.flush()
     t = common.timing(task)
     assert t[0] == 1
-    assert t[1] > 0.045
+    assert t[1].total_seconds() > 0.045
 
 
 def test_timer_flush_stop():
@@ -54,7 +54,7 @@ def test_context_manager_named():
     with common.Timer(task):
         sleep(0.05)
     delta = common.timing(task)
-    assert delta[1] > 0.045
+    assert delta[1].total_seconds() > 0.045
 
 
 def test_context_manager_anonymous():
@@ -62,7 +62,6 @@ def test_context_manager_anonymous():
     timer = common.Timer()
     with timer:
         sleep(0.05)
-
     assert timer.elapsed().total_seconds() > 0.045
 
 
