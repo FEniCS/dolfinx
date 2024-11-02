@@ -7,11 +7,12 @@
 
 #pragma once
 
-#include "TimeLogManager.h"
 #include <chrono>
 #include <optional>
 #include <stdexcept>
 #include <string>
+
+#include "TimeLogger.h"
 
 namespace dolfinx::common
 {
@@ -56,7 +57,8 @@ public:
     if (_start_time.has_value() and _task.has_value())
     {
       _acc += T::now() - *_start_time;
-      TimeLogManager::logger().register_timing(*_task, _acc);
+      TimeLogger logger;
+      logger.register_timing(*_task, _acc);
     }
   }
 
@@ -121,7 +123,8 @@ public:
 
     if (_task.has_value())
     {
-      TimeLogManager::logger().register_timing(*_task, _acc);
+      TimeLogger logger;
+      logger.register_timing(*_task, _acc);
       _task = std::nullopt;
     }
   }

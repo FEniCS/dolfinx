@@ -6,31 +6,30 @@
 
 #include "timing.h"
 #include "Table.h"
-#include "TimeLogManager.h"
 #include "TimeLogger.h"
 #include "Timer.h"
 
 //-----------------------------------------------------------------------
 dolfinx::Table dolfinx::timing_table()
 {
-  return dolfinx::common::TimeLogManager::logger().timing_table();
+  return dolfinx::common::TimeLogger().timing_table();
 }
 //-----------------------------------------------------------------------------
 void dolfinx::list_timings(MPI_Comm comm, Table::Reduction reduction)
 {
-  dolfinx::common::TimeLogManager::logger().list_timings(comm, reduction);
+  dolfinx::common::TimeLogger().list_timings(comm, reduction);
 }
 //-----------------------------------------------------------------------------
 std::pair<int, std::chrono::duration<double, std::ratio<1>>>
 dolfinx::timing(std::string task)
 {
-  return dolfinx::common::TimeLogManager::logger().timing(task);
+  return dolfinx::common::TimeLogger().timing(task);
 }
 //-----------------------------------------------------------------------------
 std::map<std::string,
          std::pair<int, std::chrono::duration<double, std::ratio<1>>>>
 dolfinx::timings()
 {
-  return dolfinx::common::TimeLogManager::logger().timings();
+  return dolfinx::common::TimeLogger().timings();
 }
 //-----------------------------------------------------------------------------
