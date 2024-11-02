@@ -1199,8 +1199,7 @@ void fem(nb::module_& m)
                 type, topology, std::span(entities.data(), entities.size()));
         return dolfinx_wrappers::as_nbarray(std::move(integration_entities));
       },
-      nb::arg("integral_type"), nb::arg("topology"), nb::arg("entities"),
-      nb::arg("dim"));
+      nb::arg("integral_type"), nb::arg("topology"), nb::arg("entities"));
 
   // dolfinx::fem::ElementDofLayout
   nb::class_<dolfinx::fem::ElementDofLayout>(
