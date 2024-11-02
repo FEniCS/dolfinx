@@ -100,7 +100,7 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
 /// @param[in] topology Mesh topology.
 /// @param[in] entities List of mesh entities. For
 /// `integral_type==IntegralType::cell`, `entities` should be cell
-/// indices. For other `IntegralType`, entities` should be facet
+/// indices. For other `IntegralType`, `entities` should be facet
 /// indices.
 /// @return List of integration entity data.
 /// @pre For facet integrals, the topology facet-to-cell and

@@ -58,12 +58,14 @@ int main(int argc, char* argv[])
     auto dofmap = std::make_shared<fem::DofMap>(fem::create_dofmap(
         MPI_COMM_WORLD, layout, *mesh->topology(), permute_inv, nullptr));
 
-    // TODO: Allow mixed FunctionSpace to be created from Basix elements
+    // TODO: Allow mixed FunctionSpace to be created from DOLFINx
+    // elements (not just Basix elements) via fem::create_functionspace.
+
     // Create Dofmap
     std::vector<std::size_t> vs = {3};
     auto V = std::make_shared<fem::FunctionSpace<U>>(mesh, ME, dofmap, vs);
 
-    // Get subspaces (views)
+    // Get subspaces (views into V)
     auto V0 = std::make_shared<fem::FunctionSpace<U>>(V->sub({0}));
     auto V1 = std::make_shared<fem::FunctionSpace<U>>(V->sub({1}));
 
@@ -140,8 +142,6 @@ int main(int argc, char* argv[])
     g->x()->set(10);
     auto bc = std::make_shared<fem::DirichletBC<T>>(g, ndofs, V0);
 
-    // TODO: is last argument to fem::compute_integration_domains
-    // required, or can it be inferred from fem::IntegralType?
     // Create integration domain for u boundary condition on ds(1)
 
     // Get facet data integration data for facets in dfacets

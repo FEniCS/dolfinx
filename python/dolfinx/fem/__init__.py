@@ -127,7 +127,8 @@ def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _Matri
 
 
 def compute_integration_domains(
-    integral_type: IntegralType, topology: Topology, entities: np.ndarray):
+    integral_type: IntegralType, topology: Topology, entities: np.ndarray
+):
     """Given an integral type and a set of entities compute integration entities.
 
     This function returns a list `[(id, entities)]`. For cell integrals
@@ -150,7 +151,10 @@ def compute_integration_domains(
     Args:
         integral_type: Integral type.
         topology: Mesh topology.
-        entities: List of mesh entities.
+        entities: List of mesh entities. For
+            ``integral_type==IntegralType.cell``, ``entities`` should be
+            cell indices. For other ``IntegralType``s, ``entities``
+            should be facet indices.
 
     Returns:
         List of integration entities.
