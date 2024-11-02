@@ -771,8 +771,8 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
   std::vector<T> received_points((std::size_t)recv_offsets.back());
   MPI_Neighbor_alltoallv(
       send_data.data(), send_sizes.data(), send_offsets.data(),
-      dolfinx::MPI::mpi_type<T>(), received_points.data(), recv_sizes.data(),
-      recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), forward_comm);
+      dolfinx::MPI::mpi_t<T>(), received_points.data(), recv_sizes.data(),
+      recv_offsets.data(), dolfinx::MPI::mpi_t<T>(), forward_comm);
 
   // Get mesh geometry for closest entity
   const mesh::Geometry<T>& geometry = mesh.geometry();
@@ -905,8 +905,8 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
   std::vector<T> recv_distances(recv_offsets.back());
   MPI_Neighbor_alltoallv(
       squared_distances.data(), send_sizes.data(), send_offsets.data(),
-      dolfinx::MPI::mpi_type<T>(), recv_distances.data(), recv_sizes.data(),
-      recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), reverse_comm);
+      dolfinx::MPI::mpi_t<T>(), recv_distances.data(), recv_sizes.data(),
+      recv_offsets.data(), dolfinx::MPI::mpi_t<T>(), reverse_comm);
 
   // Update point ownership with extrapolation information
   std::vector<T> closest_distance(point_owners.size(),

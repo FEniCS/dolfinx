@@ -245,7 +245,7 @@ auto inner_product(const V& a, const V& b)
       });
 
   T result;
-  MPI_Allreduce(&local, &result, 1, dolfinx::MPI::mpi_type<T>(), MPI_SUM,
+  MPI_Allreduce(&local, &result, 1, dolfinx::MPI::mpi_t<T>, MPI_SUM,
                 a.index_map()->comm());
   return result;
 }
@@ -279,7 +279,7 @@ auto norm(const V& x, Norm type = Norm::l2)
         = std::accumulate(data.begin(), data.end(), U(0),
                           [](auto norm, auto x) { return norm + std::abs(x); });
     U l1(0);
-    MPI_Allreduce(&local_l1, &l1, 1, MPI::mpi_type<U>(), MPI_SUM,
+    MPI_Allreduce(&local_l1, &l1, 1, MPI::mpi_t<U>(), MPI_SUM,
                   x.index_map()->comm());
     return l1;
   }
@@ -293,7 +293,7 @@ auto norm(const V& x, Norm type = Norm::l2)
         data, [](T a, T b) { return std::norm(a) < std::norm(b); });
     auto local_linf = std::abs(*max_pos);
     decltype(local_linf) linf = 0;
-    MPI_Allreduce(&local_linf, &linf, 1, MPI::mpi_type<decltype(linf)>(),
+    MPI_Allreduce(&local_linf, &linf, 1, MPI::mpi_t<decltype(linf)>(),
                   MPI_MAX, x.index_map()->comm());
     return linf;
   }

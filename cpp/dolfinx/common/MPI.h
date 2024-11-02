@@ -269,39 +269,32 @@ struct dependent_false : std::false_type
 };
 
 /// MPI Type
+template <typename>
+struct mpi_type_mapping;
+
 template <typename T>
-constexpr MPI_Datatype mpi_type()
-{
-  if constexpr (std::is_same_v<T, float>)
-    return MPI_FLOAT;
-  else if constexpr (std::is_same_v<T, double>)
-    return MPI_DOUBLE;
-  else if constexpr (std::is_same_v<T, std::complex<double>>)
-    return MPI_C_DOUBLE_COMPLEX;
-  else if constexpr (std::is_same_v<T, std::complex<float>>)
-    return MPI_C_FLOAT_COMPLEX;
-  else if constexpr (std::is_same_v<T, short int>)
-    return MPI_SHORT;
-  else if constexpr (std::is_same_v<T, int>)
-    return MPI_INT;
-  else if constexpr (std::is_same_v<T, unsigned int>)
-    return MPI_UNSIGNED;
-  else if constexpr (std::is_same_v<T, long int>)
-    return MPI_LONG;
-  else if constexpr (std::is_same_v<T, unsigned long>)
-    return MPI_UNSIGNED_LONG;
-  else if constexpr (std::is_same_v<T, long long>)
-    return MPI_LONG_LONG;
-  else if constexpr (std::is_same_v<T, unsigned long long>)
-    return MPI_UNSIGNED_LONG_LONG;
-  else if constexpr (std::is_same_v<T, bool>)
-    return MPI_C_BOOL;
-  else if constexpr (std::is_same_v<T, std::int8_t>)
-    return MPI_INT8_T;
-  else
-    // Issue compile time error
-    static_assert(!std::is_same_v<T, T>);
-}
+MPI_Datatype mpi_t = mpi_type_mapping<T>::type;
+
+#define MAP_TO_MPI_TYPE(cpp_t, mpi_t)                                          \
+  template <>                                                                  \
+  struct mpi_type_mapping<cpp_t>                                               \
+  {                                                                            \
+    static inline MPI_Datatype type = mpi_t;                                   \
+  };
+
+MAP_TO_MPI_TYPE(float, MPI_FLOAT)
+MAP_TO_MPI_TYPE(double, MPI_DOUBLE)
+MAP_TO_MPI_TYPE(std::complex<float>, MPI_C_FLOAT_COMPLEX)
+MAP_TO_MPI_TYPE(std::complex<double>, MPI_C_DOUBLE_COMPLEX)
+MAP_TO_MPI_TYPE(short int, MPI_SHORT)
+MAP_TO_MPI_TYPE(int, MPI_INT)
+MAP_TO_MPI_TYPE(unsigned int, MPI_UNSIGNED)
+MAP_TO_MPI_TYPE(long int, MPI_LONG)
+MAP_TO_MPI_TYPE(unsigned long, MPI_UNSIGNED_LONG)
+MAP_TO_MPI_TYPE(long long, MPI_LONG_LONG)
+MAP_TO_MPI_TYPE(unsigned long long, MPI_UNSIGNED_LONG_LONG)
+MAP_TO_MPI_TYPE(std::int8_t, MPI_INT8_T)
+MAP_TO_MPI_TYPE(bool, MPI_C_BOOL)
 
 //---------------------------------------------------------------------------
 template <typename U>
@@ -432,7 +425,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
 
   // Send/receive data (x)
   MPI_Datatype compound_type;
-  MPI_Type_contiguous(shape[1], dolfinx::MPI::mpi_type<T>(), &compound_type);
+  MPI_Type_contiguous(shape[1], dolfinx::MPI::mpi_t<T>, &compound_type);
   MPI_Type_commit(&compound_type);
   std::vector<T> recv_buffer_data(shape[1] * recv_disp.back());
   err = MPI_Neighbor_alltoallv(
@@ -614,7 +607,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   dolfinx::MPI::check_error(comm, err);
 
   MPI_Datatype compound_type0;
-  MPI_Type_contiguous(shape[1], dolfinx::MPI::mpi_type<T>(), &compound_type0);
+  MPI_Type_contiguous(shape[1], dolfinx::MPI::mpi_t<T>, &compound_type0);
   MPI_Type_commit(&compound_type0);
 
   std::vector<T> recv_buffer_data(shape[1] * send_disp.back());

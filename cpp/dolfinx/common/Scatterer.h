@@ -208,8 +208,8 @@ public:
       assert(requests.size() == std::size_t(1));
       MPI_Ineighbor_alltoallv(
           send_buffer.data(), _sizes_local.data(), _displs_local.data(),
-          dolfinx::MPI::mpi_type<T>(), recv_buffer.data(), _sizes_remote.data(),
-          _displs_remote.data(), dolfinx::MPI::mpi_type<T>(), _comm0.comm(),
+          dolfinx::MPI::mpi_t<T>(), recv_buffer.data(), _sizes_remote.data(),
+          _displs_remote.data(), dolfinx::MPI::mpi_t<T>(), _comm0.comm(),
           requests.data());
       break;
     }
@@ -219,14 +219,14 @@ public:
       for (std::size_t i = 0; i < _src.size(); i++)
       {
         MPI_Irecv(recv_buffer.data() + _displs_remote[i], _sizes_remote[i],
-                  dolfinx::MPI::mpi_type<T>(), _src[i], MPI_ANY_TAG,
+                  dolfinx::MPI::mpi_t<T>(), _src[i], MPI_ANY_TAG,
                   _comm0.comm(), &requests[i]);
       }
 
       for (std::size_t i = 0; i < _dest.size(); i++)
       {
         MPI_Isend(send_buffer.data() + _displs_local[i], _sizes_local[i],
-                  dolfinx::MPI::mpi_type<T>(), _dest[i], 0, _comm0.comm(),
+                  dolfinx::MPI::mpi_t<T>(), _dest[i], 0, _comm0.comm(),
                   &requests[i + _src.size()]);
       }
       break;
@@ -404,9 +404,9 @@ public:
     {
       assert(requests.size() == 1);
       MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_remote.data(),
-                              _displs_remote.data(), MPI::mpi_type<T>(),
+                              _displs_remote.data(), MPI::mpi_t<T>(),
                               recv_buffer.data(), _sizes_local.data(),
-                              _displs_local.data(), MPI::mpi_type<T>(),
+                              _displs_local.data(), MPI::mpi_t<T>(),
                               _comm1.comm(), &requests[0]);
       break;
     }
@@ -417,7 +417,7 @@ public:
       for (std::size_t i = 0; i < _dest.size(); i++)
       {
         MPI_Irecv(recv_buffer.data() + _displs_local[i], _sizes_local[i],
-                  dolfinx::MPI::mpi_type<T>(), _dest[i], MPI_ANY_TAG,
+                  dolfinx::MPI::mpi_t<T>(), _dest[i], MPI_ANY_TAG,
                   _comm0.comm(), &requests[i]);
       }
 
@@ -426,7 +426,7 @@ public:
       for (std::size_t i = 0; i < _src.size(); i++)
       {
         MPI_Isend(send_buffer.data() + _displs_remote[i], _sizes_remote[i],
-                  dolfinx::MPI::mpi_type<T>(), _src[i], 0, _comm0.comm(),
+                  dolfinx::MPI::mpi_t<T>(), _src[i], 0, _comm0.comm(),
                   &requests[i + _dest.size()]);
       }
       break;

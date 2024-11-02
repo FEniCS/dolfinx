@@ -335,8 +335,8 @@ public:
     if (num_bboxes() > 0)
       std::copy_n(std::prev(_bbox_coordinates.end(), 6), 6, send_bbox.begin());
     std::vector<T> recv_bbox(mpi_size * 6);
-    MPI_Allgather(send_bbox.data(), 6, dolfinx::MPI::mpi_type<T>(),
-                  recv_bbox.data(), 6, dolfinx::MPI::mpi_type<T>(), comm);
+    MPI_Allgather(send_bbox.data(), 6, dolfinx::MPI::mpi_t<T>(),
+                  recv_bbox.data(), 6, dolfinx::MPI::mpi_t<T>(), comm);
 
     std::vector<std::pair<std::array<T, 6>, std::int32_t>> _recv_bbox(mpi_size);
     for (std::size_t i = 0; i < _recv_bbox.size(); ++i)
