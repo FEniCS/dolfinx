@@ -418,9 +418,11 @@ public:
   template <typename X>
   DirichletBC(std::shared_ptr<const Function<T, U>> g, X&& V_g_dofs,
               std::shared_ptr<const FunctionSpace<U>> V)
-      : _function_space(V), _g(g), _dofs0(V_g_dofs[0]), _dofs1_g(V_g_dofs[1]),
-        // _dofs0(std::forward<typename X::value_type>(V_g_dofs[0])),
-        // _dofs1_g(std::forward<typename X::value_type>(V_g_dofs[1])),
+      : _function_space(V), _g(g),
+        _dofs0(std::forward<typename std::remove_reference_t<X>::value_type>(
+            V_g_dofs[0])),
+        _dofs1_g(std::forward<typename std::remove_reference_t<X>::value_type>(
+            V_g_dofs[1])),
         _owned_indices0(num_owned(*_function_space->dofmap(), _dofs0))
   {
   }
