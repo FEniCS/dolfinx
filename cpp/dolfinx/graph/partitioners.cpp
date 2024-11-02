@@ -555,9 +555,8 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
       const int psize = dolfinx::MPI::size(pcomm);
       const idx_t num_local_nodes = graph.num_nodes();
       node_disp = std::vector<idx_t>(psize + 1, 0);
-      MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_t<idx_t>(),
-                    node_disp.data() + 1, 1, dolfinx::MPI::mpi_t<idx_t>(),
-                    pcomm);
+      MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_t<idx_t>,
+                    node_disp.data() + 1, 1, dolfinx::MPI::mpi_t<idx_t>, pcomm);
       std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
       std::vector<idx_t> array(graph.array().begin(), graph.array().end());
       std::vector<idx_t> offsets(graph.offsets().begin(),
@@ -632,8 +631,8 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
     common::Timer timer1("KaHIP: build adjacency data");
     std::vector<T> node_disp(dolfinx::MPI::size(comm) + 1, 0);
     const T num_local_nodes = graph.num_nodes();
-    MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_t<T>(),
-                  node_disp.data() + 1, 1, dolfinx::MPI::mpi_t<T>(), comm);
+    MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_t<T>,
+                  node_disp.data() + 1, 1, dolfinx::MPI::mpi_t<T>, comm);
     std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
     std::vector<T> array(graph.array().begin(), graph.array().end());
     std::vector<T> offsets(graph.offsets().begin(), graph.offsets().end());
