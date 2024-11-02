@@ -12,6 +12,9 @@
 using namespace dolfinx;
 using namespace dolfinx::common;
 
+// definition of static members
+decltype(TimeLogger::_timings) TimeLogger::_timings; 
+
 //-----------------------------------------------------------------------------
 void TimeLogger::register_timing(
     std::string task, std::chrono::duration<double, std::ratio<1>> time)
