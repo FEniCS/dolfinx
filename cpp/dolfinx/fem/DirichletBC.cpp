@@ -140,9 +140,10 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
   // MPI_Neighbor_alltoallv to send only to relevant processes.
   // Send/receive global index of dofs with bcs to all neighbors
   std::vector<std::int64_t> dofs_received(disp.back());
-  MPI_Ineighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
-                           dofs_received.data(), num_dofs_recv.data(),
-                           disp.data(), MPI_INT64_T, comm, &request);
+  MPI_Ineighbor_allgatherv(
+      dofs_global.data(), dofs_global.size(), dolfinx::MPI::mpi_t<std::int64_t>,
+      dofs_received.data(), num_dofs_recv.data(), disp.data(),
+      dolfinx::MPI::mpi_t<std::int64_t>, comm, &request);
 
   // FIXME: check that dofs is sorted
   // Build vector of local dof indices that have been marked by another

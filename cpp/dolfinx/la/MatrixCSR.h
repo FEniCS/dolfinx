@@ -573,9 +573,10 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
 
     ghost_index_array.resize(recv_disp.back());
     MPI_Neighbor_alltoallv(ghost_index_data.data(), send_sizes.data(),
-                           send_disp.data(), MPI_INT64_T,
+                           send_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
                            ghost_index_array.data(), recv_sizes.data(),
-                           recv_disp.data(), MPI_INT64_T, _comm.comm());
+                           recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
+                           _comm.comm());
   }
 
   // Store receive displacements for future use, when transferring
@@ -637,7 +638,7 @@ MatrixCSR<U, V, W, X>::to_dense() const
       for (int i0 = 0; i0 < _bs[0]; ++i0)
         for (int i1 = 0; i1 < _bs[1]; ++i1)
         {
-          std::array<std::int32_t, 1> local_col {_cols[j]};
+          std::array<std::int32_t, 1> local_col{_cols[j]};
           std::array<std::int64_t, 1> global_col{0};
           _index_maps[1]->local_to_global(local_col, global_col);
           A[(r * _bs[1] + i0) * ncols * _bs[0] + global_col[0] * _bs[1] + i1]

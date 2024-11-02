@@ -172,7 +172,8 @@ create_new_vertices(MPI_Comm comm,
 
   const std::int64_t num_local = n;
   std::int64_t global_offset = 0;
-  MPI_Exscan(&num_local, &global_offset, 1, MPI_INT64_T, MPI_SUM, mesh.comm());
+  MPI_Exscan(&num_local, &global_offset, 1, dolfinx::MPI::mpi_t<std::int64_t>,
+             MPI_SUM, mesh.comm());
   global_offset += mesh.topology()->index_map(0)->local_range()[1];
   std::for_each(local_edge_to_new_vertex.begin(),
                 local_edge_to_new_vertex.end(),
@@ -239,9 +240,10 @@ create_new_vertices(MPI_Comm comm,
 
     received_values.resize(recv_disp.back());
     MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
-                           send_disp.data(), MPI_INT64_T,
+                           send_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
                            received_values.data(), recv_sizes.data(),
-                           recv_disp.data(), MPI_INT64_T, comm);
+                           recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
+                           comm);
   }
 
   // Add received remote global vertex indices to map

@@ -143,10 +143,10 @@ graph::AdjacencyList<int> compute_destination_ranks(
 
   // Send/receive data
   std::vector<std::int64_t> recv_buffer(recv_disp.back());
-  MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
-                         send_disp.data(), MPI_INT64_T, recv_buffer.data(),
-                         recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
-                         neigh_comm);
+  MPI_Neighbor_alltoallv(
+      send_buffer.data(), send_sizes.data(), send_disp.data(),
+      dolfinx::MPI::mpi_t<std::int64_t>, recv_buffer.data(), recv_sizes.data(),
+      recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>, neigh_comm);
   MPI_Comm_free(&neigh_comm);
 
   // Prepare (local node index, destination rank) array. Add local data,
@@ -321,7 +321,8 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     std::int64_t offset_global = 0;
     const std::int64_t num_owned = graph.num_nodes();
     MPI_Request request_offset_scan;
-    MPI_Iexscan(&num_owned, &offset_global, 1, MPI_INT64_T, MPI_SUM, comm,
+    MPI_Iexscan(&num_owned, &offset_global, 1,
+                dolfinx::MPI::mpi_t<std::int64_t>, MPI_SUM, comm,
                 &request_offset_scan);
 
     // C-style array indexing

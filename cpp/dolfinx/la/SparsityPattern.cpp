@@ -335,8 +335,9 @@ void SparsityPattern::finalize()
 
     ghost_data_in.resize(recv_disp.back());
     MPI_Neighbor_alltoallv(ghost_data.data(), send_sizes.data(),
-                           send_disp.data(), MPI_INT64_T, ghost_data_in.data(),
-                           recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                           send_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
+                           ghost_data_in.data(), recv_sizes.data(),
+                           recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
                            comm);
     MPI_Comm_free(&comm);
   }

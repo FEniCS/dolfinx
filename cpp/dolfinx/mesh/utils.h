@@ -831,7 +831,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     assert(cells1.size() % num_cell_nodes == 0);
     std::int64_t offset = 0;
     std::int64_t num_owned = cells1.size() / num_cell_nodes;
-    MPI_Exscan(&num_owned, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
+    MPI_Exscan(&num_owned, &offset, 1, dolfinx::MPI::mpi_t<std::int64_t>,
+               MPI_SUM, comm);
     original_idx1.resize(num_owned);
     std::iota(original_idx1.begin(), original_idx1.end(), offset);
   }
@@ -1039,7 +1040,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     }
     // Add on global offset
     std::int64_t global_offset = 0;
-    MPI_Exscan(&num_owned, &global_offset, 1, MPI_INT64_T, MPI_SUM, comm);
+    MPI_Exscan(&num_owned, &global_offset, 1, dolfinx::MPI::mpi_t<std::int64_t>,
+               MPI_SUM, comm);
     for (std::int32_t i = 0; i < num_cell_types; ++i)
     {
       std::iota(original_idx1[i].begin(), original_idx1[i].end(),

@@ -131,10 +131,11 @@ public:
     // Send ghost global indices to owning rank, and receive owned
     // indices that are ghosts on other ranks
     std::vector<std::int64_t> recv_buffer(_displs_local.back(), 0);
-    MPI_Neighbor_alltoallv(ghosts_sorted.data(), _sizes_remote.data(),
-                           _displs_remote.data(), MPI_INT64_T,
-                           recv_buffer.data(), _sizes_local.data(),
-                           _displs_local.data(), MPI_INT64_T, _comm1.comm());
+    MPI_Neighbor_alltoallv(
+        ghosts_sorted.data(), _sizes_remote.data(), _displs_remote.data(),
+        dolfinx::MPI::mpi_t<std::int64_t>, recv_buffer.data(),
+        _sizes_local.data(), _displs_local.data(),
+        dolfinx::MPI::mpi_t<std::int64_t>, _comm1.comm());
 
     const std::array<std::int64_t, 2> range = map.local_range();
 #ifndef NDEBUG
@@ -206,11 +207,11 @@ public:
     case type::neighbor:
     {
       assert(requests.size() == std::size_t(1));
-      MPI_Ineighbor_alltoallv(
-          send_buffer.data(), _sizes_local.data(), _displs_local.data(),
-          dolfinx::MPI::mpi_t<T>(), recv_buffer.data(), _sizes_remote.data(),
-          _displs_remote.data(), dolfinx::MPI::mpi_t<T>(), _comm0.comm(),
-          requests.data());
+      MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_local.data(),
+                              _displs_local.data(), dolfinx::MPI::mpi_t<T>(),
+                              recv_buffer.data(), _sizes_remote.data(),
+                              _displs_remote.data(), dolfinx::MPI::mpi_t<T>(),
+                              _comm0.comm(), requests.data());
       break;
     }
     case type::p2p:
@@ -219,8 +220,8 @@ public:
       for (std::size_t i = 0; i < _src.size(); i++)
       {
         MPI_Irecv(recv_buffer.data() + _displs_remote[i], _sizes_remote[i],
-                  dolfinx::MPI::mpi_t<T>(), _src[i], MPI_ANY_TAG,
-                  _comm0.comm(), &requests[i]);
+                  dolfinx::MPI::mpi_t<T>(), _src[i], MPI_ANY_TAG, _comm0.comm(),
+                  &requests[i]);
       }
 
       for (std::size_t i = 0; i < _dest.size(); i++)
@@ -403,11 +404,10 @@ public:
     case type::neighbor:
     {
       assert(requests.size() == 1);
-      MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_remote.data(),
-                              _displs_remote.data(), MPI::mpi_t<T>(),
-                              recv_buffer.data(), _sizes_local.data(),
-                              _displs_local.data(), MPI::mpi_t<T>(),
-                              _comm1.comm(), &requests[0]);
+      MPI_Ineighbor_alltoallv(
+          send_buffer.data(), _sizes_remote.data(), _displs_remote.data(),
+          MPI::mpi_t<T>(), recv_buffer.data(), _sizes_local.data(),
+          _displs_local.data(), MPI::mpi_t<T>(), _comm1.comm(), &requests[0]);
       break;
     }
     case type::p2p:
