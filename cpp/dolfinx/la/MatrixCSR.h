@@ -726,7 +726,8 @@ double MatrixCSR<U, V, W, X>::squared_norm() const
       _data.cbegin(), std::next(_data.cbegin(), _row_ptr[num_owned_rows] * bs2),
       double(0), [](auto norm, value_type y) { return norm + std::norm(y); });
   double norm_sq;
-  MPI_Allreduce(&norm_sq_local, &norm_sq, 1, MPI_DOUBLE, MPI_SUM, _comm.comm());
+  MPI_Allreduce(&norm_sq_local, &norm_sq, 1, dolfinx::MPI::mpi_t<double>,
+                MPI_SUM, _comm.comm());
   return norm_sq;
 }
 //-----------------------------------------------------------------------------
