@@ -26,31 +26,26 @@ int main(int argc, char* argv[])
   PetscInitialize(&argc, &argv, nullptr, nullptr);
 
   {
-    // Create mesh and function space
-    auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
+    // Create mesh
     auto mesh = std::make_shared<mesh::Mesh<U>>(
         mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
-                                  {46, 46}, mesh::CellType::triangle, part));
+                                  {46, 46}, mesh::CellType::triangle));
 
     // Create Basix elements
-    auto RT_b = basix::create_element<U>(
+    auto RT = basix::create_element<U>(
         basix::element::family::RT, basix::cell::type::triangle, 1,
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, false);
-    auto P0_b = basix::create_element<U>(
+    auto P0 = basix::create_element<U>(
         basix::element::family::P, basix::cell::type::triangle, 0,
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, true);
 
-    // Create DOLFINx elements
-    auto RT = std::make_shared<fem::FiniteElement<U>>(RT_b, 1);
-    auto P0 = std::make_shared<fem::FiniteElement<U>>(P0_b, 1);
-
-    // TODO: Allow mixed DOLFINx elements to be created from Basix
-    // elements
-    // Create mixed element
-    std::vector<std::shared_ptr<const fem::FiniteElement<U>>> _ME = {RT, P0};
-    auto ME = std::make_shared<fem::FiniteElement<U>>(_ME);
+    // Create DOLFINx mixed element
+    auto ME = std::make_shared<fem::FiniteElement<U>>(
+        std::vector<
+            std::tuple<std::reference_wrapper<const basix::FiniteElement<U>>,
+                       std::size_t, bool>>{{RT, 1, false}, {P0, 1, false}});
 
     // Create dof permutation function
     std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv

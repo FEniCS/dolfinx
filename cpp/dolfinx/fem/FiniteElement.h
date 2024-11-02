@@ -47,17 +47,26 @@ public:
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
                 std::size_t block_size, bool symmetric = false);
 
+  /// @brief Create a mixed finite element from Basix finite elements.
+  /// @param[in] elements List of (Basix finite element, block size,
+  /// symmetric) tuples, one for each element in the mixed element.
+  FiniteElement(
+      std::vector<std::tuple<
+          std::reference_wrapper<const basix::FiniteElement<geometry_type>>,
+          std::size_t, bool>>
+          elements);
+
   /// @brief Create mixed finite element from a list of finite elements.
   /// @param[in] elements Basix finite elements
   FiniteElement(
       const std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>&
           elements);
 
-  /// @brief Create a quadrature element
-  /// @param[in] cell_type The cell type
-  /// @param[in] points Quadrature points
-  /// @param[in] pshape Shape of points array
-  /// @param[in] block_size The block size for the element
+  /// @brief Create a quadrature element.
+  /// @param[in] cell_type Cell type.
+  /// @param[in] points Quadrature points.
+  /// @param[in] pshape Shape of `points` array.
+  /// @param[in] block_size The block size for the element.
   /// @param[in] symmetric Is the element a symmetric tensor?
   FiniteElement(mesh::CellType cell_type, std::span<const geometry_type> points,
                 std::array<std::size_t, 2> pshape, std::size_t block_size,

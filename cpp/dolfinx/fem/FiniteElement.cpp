@@ -13,6 +13,7 @@
 #include <dolfinx/common/log.h>
 #include <functional>
 #include <numeric>
+#include <ranges>
 #include <utility>
 #include <vector>
 
@@ -21,6 +22,29 @@ using namespace dolfinx::fem;
 
 namespace
 {
+/// @brief Create a list of fem::FiniteElement from Basix elements and
+/// other data.
+/// @tparam T
+/// @param elements
+/// @return List of DOLFINx elements
+template <std::floating_point T>
+std::vector<std::shared_ptr<const FiniteElement<T>>> _build_element_list(
+    std::vector<
+        std::tuple<std::reference_wrapper<const basix::FiniteElement<T>>,
+                   std::size_t, bool>>
+        elements)
+{
+  std::vector<std::shared_ptr<const FiniteElement<T>>> _e;
+  std::ranges::transform(elements, std::back_inserter(_e),
+                         [](auto data)
+                         {
+                           auto [e, bs, symm] = data;
+                           return std::make_shared<fem::FiniteElement<T>>(e, bs,
+                                                                          symm);
+                         });
+  return _e;
+}
+
 /// Recursively extract sub finite element
 template <std::floating_point T>
 std::shared_ptr<const FiniteElement<T>>
@@ -65,35 +89,6 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
 
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
-                                std::span<const geometry_type> points,
-                                std::array<std::size_t, 2> pshape,
-                                std::size_t block_size, bool symmetric)
-    : _signature("Quadrature element " + std::to_string(pshape[0]) + " "
-                 + std::to_string(block_size)),
-      _space_dim(pshape[0] * block_size), _reference_value_shape({}),
-      _bs(block_size), _is_mixed(false), _symmetric(symmetric),
-      _needs_dof_permutations(false), _needs_dof_transformations(false),
-      _entity_dofs(mesh::cell_dim(cell_type) + 1),
-      _entity_closure_dofs(mesh::cell_dim(cell_type) + 1),
-      _points(std::vector<T>(points.begin(), points.end()), pshape)
-{
-  const int tdim = mesh::cell_dim(cell_type);
-  for (int d = 0; d <= tdim; ++d)
-  {
-    int num_entities = mesh::cell_num_entities(cell_type, d);
-    _entity_dofs[d].resize(num_entities);
-    _entity_closure_dofs[d].resize(num_entities);
-  }
-
-  for (std::size_t i = 0; i < pshape[0]; ++i)
-  {
-    _entity_dofs[tdim][0].push_back(i);
-    _entity_closure_dofs[tdim][0].push_back(i);
-  }
-}
-//-----------------------------------------------------------------------------
-template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
                                 std::size_t block_size, bool symmetric)
     : _space_dim(block_size * element.dim()),
@@ -134,6 +129,16 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
   }
 
   _signature = "Basix element " + family + " " + std::to_string(_bs);
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+FiniteElement<T>::FiniteElement(
+    std::vector<
+        std::tuple<std::reference_wrapper<const basix::FiniteElement<T>>,
+                   std::size_t, bool>>
+        elements)
+    : FiniteElement(_build_element_list(elements))
+{
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -193,6 +198,35 @@ FiniteElement<T>::FiniteElement(
   _space_dim = dof_offset;
   _reference_value_shape = {vsize};
   _signature += ")";
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
+                                std::span<const geometry_type> points,
+                                std::array<std::size_t, 2> pshape,
+                                std::size_t block_size, bool symmetric)
+    : _signature("Quadrature element " + std::to_string(pshape[0]) + " "
+                 + std::to_string(block_size)),
+      _space_dim(pshape[0] * block_size), _reference_value_shape({}),
+      _bs(block_size), _is_mixed(false), _symmetric(symmetric),
+      _needs_dof_permutations(false), _needs_dof_transformations(false),
+      _entity_dofs(mesh::cell_dim(cell_type) + 1),
+      _entity_closure_dofs(mesh::cell_dim(cell_type) + 1),
+      _points(std::vector<T>(points.begin(), points.end()), pshape)
+{
+  const int tdim = mesh::cell_dim(cell_type);
+  for (int d = 0; d <= tdim; ++d)
+  {
+    int num_entities = mesh::cell_num_entities(cell_type, d);
+    _entity_dofs[d].resize(num_entities);
+    _entity_closure_dofs[d].resize(num_entities);
+  }
+
+  for (std::size_t i = 0; i < pshape[0]; ++i)
+  {
+    _entity_dofs[tdim][0].push_back(i);
+    _entity_closure_dofs[tdim][0].push_back(i);
+  }
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
