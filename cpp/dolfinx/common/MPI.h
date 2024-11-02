@@ -272,11 +272,6 @@ struct dependent_false : std::false_type
 template <typename>
 struct mpi_type_mapping;
 
-/// @brief Retrieves the MPI data type associated to the provided type.
-/// @tparam T cpp type to map
-template <typename T>
-MPI_Datatype mpi_t = mpi_type_mapping<T>::type;
-
 #define MAP_TO_MPI_TYPE(cpp_t, mpi_t)                                          \
   template <>                                                                  \
   struct mpi_type_mapping<cpp_t>                                               \
@@ -297,6 +292,11 @@ MAP_TO_MPI_TYPE(std::uint16_t, MPI_UINT16_T)
 MAP_TO_MPI_TYPE(std::uint32_t, MPI_UINT32_T)
 MAP_TO_MPI_TYPE(std::uint64_t, MPI_UINT64_T)
 MAP_TO_MPI_TYPE(bool, MPI_C_BOOL)
+
+/// @brief Retrieves the MPI data type associated to the provided type.
+/// @tparam T cpp type to map
+template <typename T>
+MPI_Datatype mpi_t = mpi_type_mapping<T>::type;
 
 //---------------------------------------------------------------------------
 template <typename U>
