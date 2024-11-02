@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2023 Magnus Vikstrøm and Garth N. Wells
+// Copyright (C) 2007-2023 Magnus Vikstrøm, Garth N. Wells and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -294,6 +294,7 @@ MAP_TO_MPI_TYPE(unsigned long, MPI_UNSIGNED_LONG)
 MAP_TO_MPI_TYPE(long long, MPI_LONG_LONG)
 MAP_TO_MPI_TYPE(unsigned long long, MPI_UNSIGNED_LONG_LONG)
 MAP_TO_MPI_TYPE(std::int8_t, MPI_INT8_T)
+MAP_TO_MPI_TYPE(std::int32_t, MPI_INT32_T)
 MAP_TO_MPI_TYPE(std::int64_t, MPI_INT64_T)
 MAP_TO_MPI_TYPE(bool, MPI_C_BOOL)
 

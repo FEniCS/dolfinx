@@ -120,8 +120,10 @@ public:
     _displs_local.resize(_sizes_local.size() + 1);
     _sizes_remote.reserve(1);
     _sizes_local.reserve(1);
-    MPI_Neighbor_alltoall(_sizes_remote.data(), 1, MPI_INT32_T,
-                          _sizes_local.data(), 1, MPI_INT32_T, _comm1.comm());
+    MPI_Neighbor_alltoall(_sizes_remote.data(), 1,
+                          dolfinx::MPI::mpi_t<std::in32_t> _T,
+                          _sizes_local.data(), 1,
+                          dolfinx::MPI::mpi_t<std::in32_t> _T, _comm1.comm());
     std::partial_sum(_sizes_local.begin(), _sizes_local.end(),
                      std::next(_displs_local.begin()));
 

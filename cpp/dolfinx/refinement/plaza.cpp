@@ -243,8 +243,8 @@ void plaza::impl::enforce_rules(MPI_Comm comm,
     }
 
     const std::int32_t update_count_old = update_count;
-    MPI_Allreduce(&update_count_old, &update_count, 1, MPI_INT32_T, MPI_SUM,
-                  comm);
+    MPI_Allreduce(&update_count_old, &update_count, 1,
+                  dolfinx::MPI::mpi_t<std::in32_t> _T, MPI_SUM, comm);
   }
 }
 //-----------------------------------------------------------------------------
