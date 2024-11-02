@@ -49,7 +49,6 @@ class IndexMap;
 
 namespace dolfinx::fem
 {
-
 namespace impl
 {
 /// Helper function to get an array of of (cell, local_facet) pairs
@@ -83,25 +82,25 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
 
 } // namespace impl
 
-/// @brief Given an integral type and a set of entities, compute the
-/// entities that should be integrated over.
+/// @brief Given an integral type and a set of entities, compute data
+/// for the entities that should be integrated over.
 ///
-/// This function returns a list `[(id, entities)]`. For cell
-/// integrals `entities` are the cell indices. For exterior facet
-/// integrals, `entities` is a list of `(cell_index, local_facet_index)`
-/// pairs. For interior facet integrals, `entities` is a list of
-/// `(cell_index0, local_facet_index0, cell_index1, local_facet_index1)`.
-/// `id` refers to the subdomain id used in the definition of the integration
+/// This function returns a list `[(id, entities)]`. For cell integrals
+/// `entities` are the cell indices. For exterior facet integrals,
+/// `entities` is a list of `(cell_index, local_facet_index)` pairs. For
+/// interior facet integrals, `entities` is a list of `(cell_index0,
+/// local_facet_index0, cell_index1, local_facet_index1)`. `id` refers
+/// to the subdomain id used in the definition of the integration
 /// measures of the variational form.
 ///
 /// @note Owned mesh entities only are returned. Ghost entities are not
 /// included.
 ///
-/// @param[in] integral_type Integral type
-/// @param[in] topology Mesh topology
-/// @param[in] entities List of mesh entities
-/// @param[in] dim Topological dimension of entities
-/// @return List of integration entities
+/// @param[in] integral_type Integral type.
+/// @param[in] topology Mesh topology.
+/// @param[in] entities List of mesh entities.
+/// @param[in] dim Topological dimension of entities.
+/// @return List of integration entity data.
 /// @pre For facet integrals, the topology facet-to-cell and
 /// cell-to-facet connectivity must be computed before calling this
 /// function.
@@ -113,7 +112,7 @@ compute_integration_domains(IntegralType integral_type,
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms.
 ///
-/// @param[in] a A rectangular block on bilinear forms
+/// @param[in] a A rectangular block on bilinear forms.
 /// @return Rectangular array of the same shape as `a` with a pair of
 /// function spaces in each array entry. If a form is null, then the
 /// returned function space pair is (null, null).

@@ -6,9 +6,13 @@
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/la/petsc.h>
+#include <map>
+#include <memory>
 #include <petscmat.h>
 #include <petscsys.h>
 #include <petscsystypes.h>
+#include <ranges>
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -127,8 +131,7 @@ int main(int argc, char* argv[])
 
     // Facets with \sigma (flux) boundary condition
     std::vector<std::int32_t> nfacets;
-    std::set_difference(bfacets.begin(), bfacets.end(), dfacets.begin(),
-                        dfacets.end(), std::back_inserter(nfacets));
+    std::ranges::set_difference(bfacets, dfacets, std::back_inserter(nfacets));
     if (dfacets.size() + nfacets.size() != bfacets.size())
       throw std::runtime_error("Inconsistent facets numbers.");
 
@@ -138,9 +141,9 @@ int main(int argc, char* argv[])
             *mesh->topology(), {*V0->dofmap(), *W0->dofmap()}, 1, nfacets);
 
     // Create boundary condition for \sigma
-    auto g = std::make_shared<fem::Function<U>>(W0);
+    auto g = std::make_shared<fem::Function<T>>(W0);
     g->x()->set(10);
-    auto bc = std::make_shared<fem::DirichletBC<U>>(g, ndofs, V0);
+    auto bc = std::make_shared<fem::DirichletBC<T>>(g, ndofs, V0);
 
     // TODO: is last argument to fem::compute_integration_domains
     // required, or can it be inferred from fem::IntegralType?
@@ -170,7 +173,7 @@ int main(int argc, char* argv[])
     la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
                     L->function_spaces()[0]->dofmap()->index_map_bs());
 
-    // Assemble natrix
+    // Assemble matrix
     MatZeroEntries(A.mat());
     fem::assemble_matrix(la::petsc::Matrix::set_fn(A.mat(), ADD_VALUES), *a,
                          {bc});
@@ -212,7 +215,7 @@ int main(int argc, char* argv[])
     u->x()->scatter_fwd();
 
     // Save solution in VTK format
-    auto u_soln = std::make_shared<fem::Function<U>>(u->sub(1).collapse());
+    auto u_soln = std::make_shared<fem::Function<T>>(u->sub(1).collapse());
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
     file.write<T>({*u_soln}, 0);
 
