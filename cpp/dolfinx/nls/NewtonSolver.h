@@ -100,6 +100,7 @@ public:
 
   /// @brief Set the function that is called before the residual or
   /// Jacobian are computed. It is commonly used to update ghost values.
+  ///
   /// @param[in] form Function to call. It takes the (latest) solution
   /// vector `x` as an argument.
   void set_form(std::function<void(Vec)> form);
@@ -110,8 +111,8 @@ public:
   void set_convergence_check(
       std::function<std::pair<double, bool>(const NewtonSolver&, const Vec)> c);
 
-  /// @brief Optional set function that is called after each Newton
-  /// iteration to update the solution.
+  /// @brief Optional set function that is called after each inner solve for
+  /// the Newton increment to update the solution.
   ///
   /// The function `update` takes `this`, the Newton increment `dx`, and
   /// the vector `x` from the start of the Newton iteration.
@@ -129,7 +130,7 @@ public:
   /// @return (number of Newton iterations, whether iteration converged)
   std::pair<int, bool> solve(Vec x);
 
-  /// @brief Get number of Newton iterations. It can can called by
+  /// @brief Get number of Newton iterations. It can be called by
   /// functions that check for convergence during a solve.
   /// @return Number of Newton iterations performed.
   int iteration() const;
@@ -202,7 +203,7 @@ private:
                                         const Vec r)>
       _converged;
 
-  // Function to update the solution once convergence is reached
+  // Function to update the solution after inner solve for the Newton increment
   std::function<void(const NewtonSolver& solver, const Vec dx, Vec x)>
       _update_solution;
 
