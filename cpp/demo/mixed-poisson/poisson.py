@@ -6,20 +6,15 @@
 from basix.ufl import element, mixed_element
 from ufl import (
     Coefficient,
-    Constant,
+    FacetNormal,
     FunctionSpace,
+    Measure,
     Mesh,
     TestFunctions,
     TrialFunctions,
-    ds,
-    dx,
-    grad,
-    inner,
     div,
-    Measure,
-    FacetNormal,
+    inner,
 )
-
 
 shape = "triangle"
 RT = element("RT", shape, 1)
@@ -37,6 +32,7 @@ V0 = FunctionSpace(msh, P)
 f = Coefficient(V0)
 u0 = Coefficient(V0)
 
-dx, ds = Measure("dx", msh), Measure("ds", msh)
+dx = Measure("dx", msh)
+ds = Measure("ds", msh)
 a = inner(sigma, tau) * dx + inner(u, div(tau)) * dx + inner(div(sigma), v) * dx
 L = -inner(f, v) * dx + inner(u0 * n, tau) * ds(1)
