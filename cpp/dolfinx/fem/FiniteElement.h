@@ -124,7 +124,7 @@ public:
   int reference_value_size() const;
 
   /// The reference value shape
-  std::span<const std::size_t> reference_value_shape() const noexcept;
+  std::vector<std::size_t> reference_value_shape() const noexcept;
 
   /// The local DOFs associated with each subentity of the cell
   const std::vector<std::vector<std::vector<int>>>&

@@ -259,7 +259,7 @@ int FiniteElement<T>::space_dimension() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-std::span<const std::size_t>
+std::vector<std::size_t>
 FiniteElement<T>::reference_value_shape() const noexcept
 {
   return _reference_value_shape;

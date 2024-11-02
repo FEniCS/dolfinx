@@ -440,14 +440,12 @@ std::vector<std::size_t> compute_value_shape(
     std::shared_ptr<const dolfinx::fem::FiniteElement<T>> element,
     std::size_t tdim, std::size_t gdim)
 {
-  auto rvs = element->reference_value_shape();
+  std::vector<std::size_t> rvs = element->reference_value_shape();
   std::vector<std::size_t> value_shape(rvs.size());
   if (element->block_size() > 1)
   {
     for (std::size_t i = 0; i < rvs.size(); ++i)
-    {
       value_shape[i] = rvs[i];
-    }
   }
   else
   {
