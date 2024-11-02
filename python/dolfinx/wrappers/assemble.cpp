@@ -87,7 +87,7 @@ void declare_discrete_operators(nb::module_& m)
            const dolfinx::fem::FunctionSpace<U>& V1)
         {
           // Create sparsity
-          auto sp = create_sparsity(V0, V1);
+          dolfinx::la::SparsityPattern sp = create_sparsity(V0, V1);
 
           // Build operator
           dolfinx::la::MatrixCSR<T> A(sp);
@@ -143,7 +143,7 @@ void declare_discrete_operators(nb::module_& m)
       [](const dolfinx::fem::FunctionSpace<U>& V0,
          const dolfinx::fem::FunctionSpace<U>& V1)
       {
-        auto sp = create_sparsity(V0, V1);
+        dolfinx::la::SparsityPattern sp = create_sparsity(V0, V1);
 
         // Build operator
         dolfinx::la::MatrixCSR<T> A(sp);

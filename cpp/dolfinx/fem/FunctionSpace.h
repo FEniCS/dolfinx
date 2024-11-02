@@ -335,13 +335,10 @@ public:
   std::shared_ptr<const DofMap> dofmap() const { return _dofmap; }
 
   /// The shape of the value space
-  std::span<const std::size_t> value_shape() const noexcept
-  {
-    return _value_shape;
-  }
+  std::vector<std::size_t> value_shape() const noexcept { return _value_shape; }
 
-  /// The value size, e.g. 1 for a scalar-valued function, 2 for a 2D vector, 9
-  /// for a second-order tensor in 3D.
+  /// The value size, e.g. 1 for a scalar-valued function, 2 for a 2D
+  /// vector, 9 for a second-order tensor in 3D.
   /// @note The return value of this function is equivalent to
   /// `std::accumulate(value_shape().begin(), value_shape().end(), 1,
   /// std::multiplies{})`.

@@ -87,7 +87,7 @@ void declare_function_space(nb::module_& m, std::string type)
             "value_shape",
             [](const dolfinx::fem::FunctionSpace<T>& self)
             {
-              std::span<const std::size_t> vshape = self.value_shape();
+              std::vector<std::size_t> vshape = self.value_shape();
               return nb::ndarray<const std::size_t, nb::numpy>(
                   vshape.data(), {vshape.size()}, nb::handle());
             },
@@ -373,7 +373,7 @@ void declare_objects(nb::module_& m, const std::string& type)
              std::optional<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>> x0,
              T alpha)
           {
-            auto _b = std::span(b.data(), b.size());
+            std::span _b(b.data(), b.size());
             if (x0.has_value())
             {
               self.set(_b, std::span(x0.value().data(), x0.value().shape(0)),
@@ -464,7 +464,7 @@ void declare_objects(nb::module_& m, const std::string& type)
             const int gdim = self.function_space()->mesh()->geometry().dim();
 
             // Compute value size
-            auto vshape = self.function_space()->value_shape();
+            std::vector vshape = self.function_space()->value_shape();
             std::size_t value_size = std::reduce(vshape.begin(), vshape.end(),
                                                  1, std::multiplies{});
 
@@ -551,7 +551,8 @@ void declare_objects(nb::module_& m, const std::string& type)
              const std::vector<
                  std::shared_ptr<const dolfinx::fem::Constant<T>>>& constants,
              nb::ndarray<const U, nb::ndim<2>, nb::c_contig> X,
-             std::uintptr_t fn_addr, const std::vector<int>& value_shape,
+             std::uintptr_t fn_addr,
+             const std::vector<std::size_t>& value_shape,
              std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>
                  argument_function_space)
           {
@@ -735,7 +736,7 @@ void declare_form(nb::module_& m, std::string type)
           [](const dolfinx::fem::Form<T, U>& self,
              dolfinx::fem::IntegralType type)
           {
-            auto ids = self.integral_ids(type);
+            std::vector<int> ids = self.integral_ids(type);
             return dolfinx_wrappers::as_nbarray(std::move(ids));
           },
           nb::arg("type"))
@@ -1177,7 +1178,7 @@ void fem(nb::module_& m)
   m.def(
       "transpose_dofmap",
       [](nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> dofmap,
-         int num_cells)
+         std::int32_t num_cells)
       {
         MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
             const std::int32_t,
@@ -1244,7 +1245,7 @@ void fem(nb::module_& m)
       .def_prop_ro("dof_layout", &dolfinx::fem::DofMap::element_dof_layout)
       .def(
           "cell_dofs",
-          [](const dolfinx::fem::DofMap& self, int cell)
+          [](const dolfinx::fem::DofMap& self, std::int32_t cell)
           {
             std::span<const std::int32_t> dofs = self.cell_dofs(cell);
             return nb::ndarray<const std::int32_t, nb::numpy>(
