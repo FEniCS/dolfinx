@@ -20,6 +20,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <numeric>
+#include <ranges>
 #include <span>
 #include <vector>
 
@@ -1217,9 +1218,7 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
     auto fs1 = u1.function_space();
     auto element1 = fs1->element();
     assert(element1);
-    if (fs0->value_shape().size() != fs1->value_shape().size()
-        or !std::equal(fs0->value_shape().begin(), fs0->value_shape().end(),
-                       fs1->value_shape().begin()))
+    if (!std::ranges::equal(fs0->value_shape(), fs1->value_shape()))
     {
       throw std::runtime_error(
           "Interpolation: elements have different value dimensions");
