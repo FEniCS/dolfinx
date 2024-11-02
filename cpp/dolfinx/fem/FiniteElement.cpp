@@ -13,7 +13,6 @@
 #include <dolfinx/common/log.h>
 #include <functional>
 #include <numeric>
-#include <ranges>
 #include <utility>
 #include <vector>
 

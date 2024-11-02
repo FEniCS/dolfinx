@@ -87,7 +87,7 @@ void declare_function_space(nb::module_& m, std::string type)
             "value_shape",
             [](const dolfinx::fem::FunctionSpace<T>& self)
             {
-              std::vector<std::size_t> vshape = self.value_shape();
+              std::span<const std::size_t> vshape = self.value_shape();
               return nb::ndarray<const std::size_t, nb::numpy>(
                   vshape.data(), {vshape.size()}, nb::handle());
             },
@@ -373,7 +373,7 @@ void declare_objects(nb::module_& m, const std::string& type)
              std::optional<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>> x0,
              T alpha)
           {
-            std::span _b(b.data(), b.size());
+            auto _b = std::span(b.data(), b.size());
             if (x0.has_value())
             {
               self.set(_b, std::span(x0.value().data(), x0.value().shape(0)),
@@ -464,7 +464,7 @@ void declare_objects(nb::module_& m, const std::string& type)
             const int gdim = self.function_space()->mesh()->geometry().dim();
 
             // Compute value size
-            std::vector vshape = self.function_space()->value_shape();
+            auto vshape = self.function_space()->value_shape();
             std::size_t value_size = std::reduce(vshape.begin(), vshape.end(),
                                                  1, std::multiplies{});
 
@@ -736,7 +736,7 @@ void declare_form(nb::module_& m, std::string type)
           [](const dolfinx::fem::Form<T, U>& self,
              dolfinx::fem::IntegralType type)
           {
-            std::vector<int> ids = self.integral_ids(type);
+            auto ids = self.integral_ids(type);
             return dolfinx_wrappers::as_nbarray(std::move(ids));
           },
           nb::arg("type"))
@@ -1245,7 +1245,7 @@ void fem(nb::module_& m)
       .def_prop_ro("dof_layout", &dolfinx::fem::DofMap::element_dof_layout)
       .def(
           "cell_dofs",
-          [](const dolfinx::fem::DofMap& self, std::int32_t cell)
+          [](const dolfinx::fem::DofMap& self, int cell)
           {
             std::span<const std::int32_t> dofs = self.cell_dofs(cell);
             return nb::ndarray<const std::int32_t, nb::numpy>(

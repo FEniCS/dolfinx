@@ -476,7 +476,7 @@ void write_function(
 
     // Pad to 3D if vector/tensor is product of dimensions is smaller than
     // 3**rank to ensure that we can visualize them correctly in Paraview
-    std::vector<std::size_t> value_shape = V->value_shape();
+    std::span<const std::size_t> value_shape = V->value_shape();
     int rank = value_shape.size();
     int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
                                      std::multiplies{});
@@ -660,7 +660,7 @@ void write_function(
 
       // Pad to 3D if vector/tensor is product of dimensions is smaller than
       // 3**rank to ensure that we can visualize them correctly in Paraview
-      std::vector<std::size_t> value_shape = V->value_shape();
+      std::span<const std::size_t> value_shape = V->value_shape();
       int rank = value_shape.size();
       int num_components = std::reduce(value_shape.begin(), value_shape.end(),
                                        1, std::multiplies{});
