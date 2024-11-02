@@ -144,16 +144,6 @@ int main(int argc, char* argv[])
     auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_poisson_L, {V}, {{"f", f}, {"g", g}}, {}, {}, {}));
 
-    //  Now, the Dirichlet boundary condition ($u = 0$) can be created
-    //  using the class {cpp:class}`DirichletBC`. A
-    //  {cpp:class}`DirichletBC` takes two arguments: the value of the
-    //  boundary condition, and the part of the boundary on which the
-    //  condition applies. In our example, the value of the boundary
-    //  condition (0.0) can represented using a {cpp:class}`Function`,
-    //  and the Dirichlet boundary is defined by the indices of degrees
-    //  of freedom to which the boundary condition applies. The
-    //  definition of the Dirichlet boundary condition then looks as
-    //  follows:
 
     // Define boundary condition
 

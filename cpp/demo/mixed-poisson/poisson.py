@@ -17,6 +17,7 @@ from ufl import (
     inner,
     div,
     Measure,
+    FacetNormal,
 )
 
 
@@ -26,17 +27,16 @@ P = element("DP", shape, 0)
 ME = mixed_element([RT, P])
 
 msh = Mesh(element("Lagrange", shape, 1, shape=(2,)))
+n = FacetNormal(msh)
 V = FunctionSpace(msh, ME)
 
 (sigma, u) = TrialFunctions(V)
 (tau, v) = TestFunctions(V)
 
 V0 = FunctionSpace(msh, P)
-
 f = Coefficient(V0)
 u0 = Coefficient(V0)
-g = Coefficient(V0)
 
-dx = Measure("dx", msh)
+dx, ds = Measure("dx", msh), Measure("ds", msh)
 a = inner(sigma, tau) * dx + inner(u, div(tau)) * dx + inner(div(sigma), v) * dx
-L = -inner(f, v) * dx + inner(u0, v) * ds(1)
+L = -inner(f, v) * dx + inner(u0 * n, tau) * ds(1)

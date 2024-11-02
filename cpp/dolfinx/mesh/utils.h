@@ -557,7 +557,7 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 {
   auto topology = mesh.topology();
   assert(topology);
-  const int tdim = topology->dim();
+  int tdim = topology->dim();
   if (dim == tdim)
   {
     throw std::runtime_error(
@@ -567,8 +567,7 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
   // Compute list of boundary facets
   mesh.topology_mutable()->create_entities(tdim - 1);
   mesh.topology_mutable()->create_connectivity(tdim - 1, tdim);
-  const std::vector<std::int32_t> boundary_facets
-      = exterior_facet_indices(*topology);
+  std::vector<std::int32_t> boundary_facets = exterior_facet_indices(*topology);
 
   using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       const T,
@@ -576,10 +575,10 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
           std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Run marker function on the vertex coordinates
-  const auto [facet_entities, xdata, vertex_to_pos]
+  auto [facet_entities, xdata, vertex_to_pos]
       = impl::compute_vertex_coords_boundary(mesh, dim, boundary_facets);
   cmdspan3x_t x(xdata.data(), 3, xdata.size() / 3);
-  const std::vector<std::int8_t> marked = marker(x);
+  std::vector<std::int8_t> marked = marker(x);
   if (marked.size() != x.extent(1))
     throw std::runtime_error("Length of array of markers is wrong.");
 

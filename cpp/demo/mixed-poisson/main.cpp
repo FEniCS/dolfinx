@@ -25,190 +25,202 @@ int main(int argc, char* argv[])
     // Create mesh and function space
     auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
     auto mesh = std::make_shared<mesh::Mesh<U>>(
-        mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}},
-                                  {32, 16}, mesh::CellType::triangle, part));
+        mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
+                                  {46, 46}, mesh::CellType::triangle, part));
 
+    // Create Basix elements
     auto RT_b = basix::create_element<U>(
         basix::element::family::RT, basix::cell::type::triangle, 1,
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, false);
     auto P0_b = basix::create_element<U>(
-        basix::element::family::P, basix::cell::type::triangle, 1,
+        basix::element::family::P, basix::cell::type::triangle, 0,
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, true);
 
+    // Create DOLFINx elements
     auto RT = std::make_shared<fem::FiniteElement<U>>(RT_b, 1);
     auto P0 = std::make_shared<fem::FiniteElement<U>>(P0_b, 1);
 
-    // Create element
+    // TODO: Allow mixed DOLFINx elements to be created from Basix
+    // elements
+    // Create mixed element
     std::vector<std::shared_ptr<const fem::FiniteElement<U>>> _ME = {RT, P0};
     auto ME = std::make_shared<fem::FiniteElement<U>>(_ME);
 
+    // Create dof permutation function
     std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
         = nullptr;
     if (ME->needs_dof_permutations())
       permute_inv = ME->dof_permutation_fn(true, true);
 
-    // // Create dofmap
+    // Create dofmap
     fem::ElementDofLayout layout = fem::create_element_dof_layout(*ME);
     auto dofmap = std::make_shared<fem::DofMap>(fem::create_dofmap(
         MPI_COMM_WORLD, layout, *mesh->topology(), permute_inv, nullptr));
 
-    // std::vector<
+    // TODO: Allow mixed FunctionSpace to be created from Basix elements
+    // Create Dofmap
     std::vector<std::size_t> vs = {3};
     auto V = std::make_shared<fem::FunctionSpace<U>>(mesh, ME, dofmap, vs);
-    // auto V = std::make_shared<fem::FunctionSpace<U>>(
-    //     fem::create_functionspace<U>(mesh, ME, vs));
 
-    // const std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>&
-    //     elements);
+    // Get subspaces (views)
+    auto V0 = std::make_shared<fem::FunctionSpace<U>>(V->sub({0}));
+    auto V1 = std::make_shared<fem::FunctionSpace<U>>(V->sub({1}));
 
-    // std::vector<std::shared_ptr<fem::FiniteElement<U>>> elements;
+    // Collapse spaces
+    auto W0 = std::make_shared<fem::FunctionSpace<U>>(V0->collapse().first);
+    auto W1 = std::make_shared<fem::FunctionSpace<U>>(V1->collapse().first);
 
-    // auto P0 = std::make_shared<basix::create_element<U>>(
-    //     basix::element::family::P, basix::cell::type::triangle, 0,
-    //     basix::element::lagrange_variant::unset,
-    //     basix::element::dpc_variant::unset, true);
+    // TODO: Add Function that takes lambda function to interpolate?
+    // Source function
+    auto f = std::make_shared<fem::Function<T>>(W1);
+    f->interpolate(
+        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
+        {
+          std::vector<T> f;
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+          {
+            auto x0 = x(0, p);
+            f.push_back(std::sin(5 * x0) + 1);
+          }
+          return {f, {f.size()}};
+        });
 
-    // std::vector<std::shared_ptr<fem::FiniteElement<U>>> elements;
-    // elements.push_back(RT);
-    // = {RT, P0};
-    // fem::FiniteElement<U> ME({RT, P0});
-    // const std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>&
-    //     elements);
+    // Boundary condition value for u
+    auto u0 = std::make_shared<fem::Function<T>>(W1);
+    u0->interpolate(
+        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
+        {
+          std::vector<T> f;
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+            f.push_back(20 * x(1, p) + 1);
+          return {f, {f.size()}};
+        });
 
-    // auto V = std::make_shared<fem::FunctionSpace<U>>(
-    //     fem::create_functionspace(mesh, ME, {}));
+    // Get list of boundary facets
+    mesh->topology()->create_connectivity(1, 2);
+    std::vector bfacets = mesh::exterior_facet_indices(*mesh->topology());
+    // TODO: are facet indices guaranteed to be sorted?
+    if (!std::ranges::is_sorted(bfacets))
+      throw std::runtime_error("Not sorted");
 
-    //     //  Next, we define the variational formulation by initializing the
-    //     //  bilinear and linear forms ($a$, $L$) using the previously
-    //     //  defined {cpp:class}`FunctionSpace` `V`.  Then we can create the
-    //     //  source and boundary flux term ($f$, $g$) and attach these to the
-    //     //  linear form.
+    // Get facets with boundary condition on u
+    std::vector<std::int32_t> dfacets = locate_entities_boundary(
+        *mesh, 1,
+        [](auto x)
+        {
+          using U = typename decltype(x)::value_type;
+          constexpr U eps = 1.0e-8;
+          std::vector<std::int8_t> marker(x.extent(1), false);
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+          {
+            auto x0 = x(0, p);
+            if (std::abs(x0) < eps or std::abs(x0 - 1) < eps)
+              marker[p] = true;
+          }
+          return marker;
+        });
+    // TODO: are facet indices guaranteed to be sorted?
+    if (!std::ranges::is_sorted(dfacets))
+      throw std::runtime_error("Not sorted");
 
-    //     // Prepare and set Constants for the bilinear form
-    //     auto kappa = std::make_shared<fem::Constant<T>>(2.0);
-    //     auto f = std::make_shared<fem::Function<T>>(V);
-    //     auto g = std::make_shared<fem::Function<T>>(V);
+    // Facets with \sigma (flux) boundary condition
+    std::vector<std::int32_t> nfacets;
+    std::set_difference(bfacets.begin(), bfacets.end(), dfacets.begin(),
+                        dfacets.end(), std::back_inserter(nfacets));
+    if (dfacets.size() + nfacets.size() != bfacets.size())
+      throw std::runtime_error("Inconsistent facets numbers.");
 
-    //     // Define variational forms
-    //     auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-    //         *form_poisson_a, {V, V}, {}, {{"kappa", kappa}}, {}, {}));
-    //     auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-    //         *form_poisson_L, {V}, {{"f", f}, {"g", g}}, {}, {}, {}));
+    // Get dofs that are constrained by a flux (\sigma)
+    std::array<std::vector<std::int32_t>, 2> ndofs
+        = fem::locate_dofs_topological(
+            *mesh->topology(), {*V0->dofmap(), *W0->dofmap()}, 1, nfacets);
 
-    //     //  Now, the Dirichlet boundary condition ($u = 0$) can be created
-    //     //  using the class {cpp:class}`DirichletBC`. A
-    //     //  {cpp:class}`DirichletBC` takes two arguments: the value of the
-    //     //  boundary condition, and the part of the boundary on which the
-    //     //  condition applies. In our example, the value of the boundary
-    //     //  condition (0.0) can represented using a {cpp:class}`Function`,
-    //     //  and the Dirichlet boundary is defined by the indices of degrees
-    //     //  of freedom to which the boundary condition applies. The
-    //     //  definition of the Dirichlet boundary condition then looks as
-    //     //  follows:
+    // Create boundary condition for \sigma
+    auto g = std::make_shared<fem::Function<U>>(W0);
+    g->x()->set(10);
+    auto bc = std::make_shared<fem::DirichletBC<U>>(g, ndofs, V0);
 
-    //     // Define boundary condition
+    // TODO: is last argument to fem::compute_integration_domains
+    // required, or can it be inferred from fem::IntegralType?
+    // Create integration domain for u boundary condition on ds(1)
 
-    //     auto facets = mesh::locate_entities_boundary(
-    //         *mesh, 1,
-    //         [](auto x)
-    //         {
-    //           using U = typename decltype(x)::value_type;
-    //           constexpr U eps = 1.0e-8;
-    //           std::vector<std::int8_t> marker(x.extent(1), false);
-    //           for (std::size_t p = 0; p < x.extent(1); ++p)
-    //           {
-    //             auto x0 = x(0, p);
-    //             if (std::abs(x0) < eps or std::abs(x0 - 2) < eps)
-    //               marker[p] = true;
-    //           }
-    //           return marker;
-    //         });
-    //     const auto bdofs = fem::locate_dofs_topological(
-    //         *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
-    //     auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
+    // Get facet data integration data for facets in dfacets
+    std::vector<std::int32_t> domains = fem::compute_integration_domains(
+        fem::IntegralType::exterior_facet, *mesh->topology(), dfacets, 1);
 
-    //     f->interpolate(
-    //         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
-    //         {
-    //           std::vector<T> f;
-    //           for (std::size_t p = 0; p < x.extent(1); ++p)
-    //           {
-    //             auto dx = (x(0, p) - 0.5) * (x(0, p) - 0.5);
-    //             auto dy = (x(1, p) - 0.5) * (x(1, p) - 0.5);
-    //             f.push_back(10 * std::exp(-(dx + dy) / 0.02));
-    //           }
+    // Create data structure for ds(1) integration domain in form
+    std::map<
+        fem::IntegralType,
+        std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>
+        subdomain_data = {{fem::IntegralType::exterior_facet, {{1, domains}}}};
 
-    //           return {f, {f.size()}};
-    //         });
+    // Define variational forms and attach required data
+    auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
+        *form_poisson_a, {V, V}, {}, {}, subdomain_data, {}));
+    auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
+        *form_poisson_L, {V}, {{"f", f}, {"u0", u0}}, {}, subdomain_data, {}));
 
-    //     g->interpolate(
-    //         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
-    //         {
-    //           std::vector<T> f;
-    //           for (std::size_t p = 0; p < x.extent(1); ++p)
-    //             f.push_back(std::sin(5 * x(0, p)));
-    //           return {f, {f.size()}};
-    //         });
+    // Create solution Function
+    auto u = std::make_shared<fem::Function<T>>(V);
 
-    //     //  Now, we have specified the variational forms and can consider
-    //     //  the solution of the variational problem. First, we need to
-    //     //  define a {cpp:class}`Function` `u` to store the solution. (Upon
-    //     //  initialization, it is simply set to the zero function.) Next, we
-    //     //  can call the `solve` function with the arguments `a == L`, `u`
-    //     //  and `bc` as follows:
+    // Create matrix and RHS vector
+    auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
+    la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
+                    L->function_spaces()[0]->dofmap()->index_map_bs());
 
-    //     auto u = std::make_shared<fem::Function<T>>(V);
-    //     auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
-    //     la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
-    //                     L->function_spaces()[0]->dofmap()->index_map_bs());
+    // Assemble natrix
+    MatZeroEntries(A.mat());
+    fem::assemble_matrix(la::petsc::Matrix::set_fn(A.mat(), ADD_VALUES), *a,
+                         {bc});
+    MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
+    MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
 
-    //     MatZeroEntries(A.mat());
-    //     fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A.mat(),
-    //     ADD_VALUES),
-    //                          *a, {bc});
-    //     MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
-    //     MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
-    //     fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(),
-    //     INSERT_VALUES), *V,
-    //                          {bc});
-    //     MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
-    //     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
+    // Set '1' on diagonal for Dirichlet dofs
+    fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
+                         {bc});
+    MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
-    //     b.set(0.0);
-    //     fem::assemble_vector(b.mutable_array(), *L);
-    //     fem::apply_lifting<T, U>(b.mutable_array(), {a}, {{bc}}, {}, T(1));
-    //     b.scatter_rev(std::plus<T>());
-    //     bc->set(b.mutable_array(), std::nullopt);
+    // Assemble RHS vector
+    b.set(0.0);
+    fem::assemble_vector(b.mutable_array(), *L);
 
-    //     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
-    //     la::petsc::options::set("ksp_type", "preonly");
-    //     la::petsc::options::set("pc_type", "lu");
-    //     lu.set_from_options();
+    // Modify unconstrained dofs on RHS to account for Dirichlet bcs
+    fem::apply_lifting<T, U>(b.mutable_array(), {a}, {{bc}}, {}, T(1));
+    b.scatter_rev(std::plus<T>());
 
-    //     lu.set_operator(A.mat());
-    //     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
-    //     la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
-    //     lu.solve(_u.vec(), _b.vec());
+    // Set value for constrained dofs
+    bc->set(b.mutable_array(), std::nullopt);
 
-    //     // Update ghost values before output
-    //     u->x()->scatter_fwd();
+    // Create PETSc linear solver
+    la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
+    la::petsc::options::set("ksp_type", "preonly");
+    la::petsc::options::set("pc_type", "lu");
+    la::petsc::options::set("pc_factor_mat_solver_type", "superlu");
+    la::petsc::options::set("ksp_view");
+    lu.set_from_options();
 
-    //     //  The function `u` will be modified during the call to solve. A
-    //     //  {cpp:class}`Function` can be saved to a file. Here, we output
-    //     //  the solution to a `VTK` file (specified using the suffix `.pvd`)
-    //     //  for visualisation in an external program such as Paraview.
+    // Solve linear system Ax = b
+    lu.set_operator(A.mat());
+    la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
+    la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
+    lu.solve(_u.vec(), _b.vec());
 
-    //     // Save solution in VTK format
-    //     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
-    //     file.write<T>({*u}, 0.0);
+    // Update ghost values before output
+    u->x()->scatter_fwd();
 
-    // #ifdef HAS_ADIOS2
-    //     // Save solution in VTX format
-    //     io::VTXWriter<U> vtx(MPI_COMM_WORLD, "u.bp", {u}, "bp4");
-    //     vtx.write(0);
-    // #endif
+    // Save solution in VTK format
+    auto u_soln = std::make_shared<fem::Function<U>>(u->sub(1).collapse());
+    io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
+    file.write<T>({*u_soln}, 0);
+
+#ifdef HAS_ADIOS2
+    // Save solution in VTX format
+    io::VTXWriter<U> vtx(MPI_COMM_WORLD, "u.bp", {u_soln}, "bp4");
+    vtx.write(0);
+#endif
   }
 
   PetscFinalize();
