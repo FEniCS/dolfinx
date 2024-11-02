@@ -153,7 +153,6 @@ def get_integration_domains(
                     integral_type,
                     subdomain._cpp_object.topology,  # type: ignore
                     subdomain.find(id),  # type: ignore
-                    subdomain.dim,  # type: ignore
                 )
                 domains.append((id, integration_entities))
             return [(s[0], np.array(s[1])) for s in domains]

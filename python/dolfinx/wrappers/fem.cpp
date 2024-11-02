@@ -1192,11 +1192,11 @@ void fem(nb::module_& m)
       [](dolfinx::fem::IntegralType type,
          const dolfinx::mesh::Topology& topology,
          const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
-             entities,
-         int dim)
+             entities)
       {
-        auto integration_entities = dolfinx::fem::compute_integration_domains(
-            type, topology, std::span(entities.data(), entities.size()), dim);
+        std::vector<std::int32_t> integration_entities
+            = dolfinx::fem::compute_integration_domains(
+                type, topology, std::span(entities.data(), entities.size()));
         return dolfinx_wrappers::as_nbarray(std::move(integration_entities));
       },
       nb::arg("integral_type"), nb::arg("topology"), nb::arg("entities"),

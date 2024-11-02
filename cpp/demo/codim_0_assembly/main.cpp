@@ -108,9 +108,8 @@ int main(int argc, char* argv[])
     // Next we compute the integration entities on the integration
     // domain `mesh`
     std::vector<std::int32_t> integration_entities
-        = fem::compute_integration_domains(fem::IntegralType::cell,
-                                           *mesh->topology(),
-                                           cell_marker.find(2), tdim);
+        = fem::compute_integration_domains(
+            fem::IntegralType::cell, *mesh->topology(), cell_marker.find(2));
     std::map<
         fem::IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>

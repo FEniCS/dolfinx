@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
 
     // Get facet data integration data for facets in dfacets
     std::vector<std::int32_t> domains = fem::compute_integration_domains(
-        fem::IntegralType::exterior_facet, *mesh->topology(), dfacets, 1);
+        fem::IntegralType::exterior_facet, *mesh->topology(), dfacets);
 
     // Create data structure for ds(1) integration domain in form
     std::map<
