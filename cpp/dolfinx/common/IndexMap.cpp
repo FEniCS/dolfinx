@@ -116,10 +116,10 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
     send_sizes.reserve(1);
     recv_sizes.reserve(1);
     MPI_Request sizes_request;
-    MPI_Ineighbor_alltoall(
-        send_sizes.data(), 1, dolfinx::MPI::mpi_t<std::in32_t> _T,
-        recv_sizes.data(), 1, dolfinx::MPI::mpi_t<std::in32_t> _T, comm0,
-        &sizes_request);
+    MPI_Ineighbor_alltoall(send_sizes.data(), 1,
+                           dolfinx::MPI::mpi_t<std::int32_t>, recv_sizes.data(),
+                           1, dolfinx::MPI::mpi_t<std::int32_t>, comm0,
+                           &sizes_request);
 
     // Build send buffer and ghost position to send buffer position
     for (auto& d : send_data)
@@ -742,8 +742,8 @@ common::stack_index_maps(
     send_sizes.reserve(1);
     recv_sizes.reserve(1);
     ierr = MPI_Neighbor_alltoall(
-        send_sizes.data(), 1, dolfinx::MPI::mpi_t<std::in32_t> _T,
-        recv_sizes.data(), 1, dolfinx::MPI::mpi_t<std::in32_t> _T, comm0);
+        send_sizes.data(), 1, dolfinx::MPI::mpi_t<std::int32_t>,
+        recv_sizes.data(), 1, dolfinx::MPI::mpi_t<std::int32_t>, comm0);
     dolfinx::MPI::check_error(comm0, ierr);
 
     // Prepare displacement vectors
@@ -1322,11 +1322,11 @@ std::array<double, 2> IndexMap::imbalance() const
   // Find the maximum number of owned indices and the maximum number of ghost
   // indices across all processes.
   MPI_Allreduce(local_sizes.data(), max_count.data(), 2,
-                dolfinx::MPI::mpi_t<std::in32_t> _T, MPI_MAX, _comm.comm());
+                dolfinx::MPI::mpi_t<std::int32_t>, MPI_MAX, _comm.comm());
 
   std::int32_t total_num_ghosts = 0;
   MPI_Allreduce(&local_sizes[1], &total_num_ghosts, 1,
-                dolfinx::MPI::mpi_t<std::in32_t> _T, MPI_SUM, _comm.comm());
+                dolfinx::MPI::mpi_t<std::int32_t>, MPI_SUM, _comm.comm());
 
   // Compute the average number of owned and ghost indices per process.
   int comm_size = dolfinx::MPI::size(_comm.comm());

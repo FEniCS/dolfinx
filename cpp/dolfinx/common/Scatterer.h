@@ -121,9 +121,9 @@ public:
     _sizes_remote.reserve(1);
     _sizes_local.reserve(1);
     MPI_Neighbor_alltoall(_sizes_remote.data(), 1,
-                          dolfinx::MPI::mpi_t<std::in32_t> _T,
+                          dolfinx::MPI::mpi_t<std::int32_t>,
                           _sizes_local.data(), 1,
-                          dolfinx::MPI::mpi_t<std::in32_t> _T, _comm1.comm());
+                          dolfinx::MPI::mpi_t<std::int32_t>, _comm1.comm());
     std::partial_sum(_sizes_local.begin(), _sizes_local.end(),
                      std::next(_displs_local.begin()));
 
