@@ -269,11 +269,8 @@ struct dependent_false : std::false_type
 };
 
 /// MPI Type
-template <typename T, MPI_Datatype MPI_T = nullptr>
-struct mpi_type_mapping
-{
-  static inline MPI_Datatype type = MPI_T;
-};
+template <typename>
+struct mpi_type_mapping;
 
 /// @brief Retrieves the MPI data type associated to the provided type.
 /// @tparam T cpp type to map
@@ -282,7 +279,10 @@ MPI_Datatype mpi_t = mpi_type_mapping<T>::type;
 
 #define MAP_TO_MPI_TYPE(cpp_t, mpi_t)                                          \
   template <>                                                                  \
-  struct mpi_type_mapping<cpp_t, mpi_t>;
+  struct mpi_type_mapping<cpp_t>                                               \
+  {                                                                            \
+    static inline MPI_Datatype type = mpi_t;                                   \
+  };
 
 MAP_TO_MPI_TYPE(float, MPI_FLOAT)
 MAP_TO_MPI_TYPE(double, MPI_DOUBLE)
