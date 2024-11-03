@@ -13,6 +13,8 @@
 #include <utility>
 #include <vector>
 
+#include <iostream>
+
 namespace nb = nanobind;
 
 namespace dolfinx_wrappers
@@ -27,7 +29,7 @@ template <typename V>
 auto as_nbarray(V&& x, std::size_t ndim, const std::size_t* shape)
 {
   using _V = std::decay_t<V>;
-  _V* ptr = new _V(std::move(x));
+  _V* ptr = new _V(std::forward<V>(x));
   return nb::ndarray<typename _V::value_type, nb::numpy>(
       ptr->data(), ndim, shape,
       nb::capsule(ptr, [](void* p) noexcept { delete (_V*)p; }));
