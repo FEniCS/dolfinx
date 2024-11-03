@@ -91,18 +91,19 @@ void declare_meshtags(nb::module_& m, std::string type)
       .def_prop_ro("topology", &dolfinx::mesh::MeshTags<T>::topology)
       .def_prop_ro(
           "values",
-          [](dolfinx::mesh::MeshTags<T>& self)
+          [](const dolfinx::mesh::MeshTags<T>& self)
           {
-            return nb::ndarray<const T, nb::numpy>(self.values().data(),
-                                                   {self.values().size()});
+            std::span<const T> v = self.values();
+            return nb::ndarray<const T, nb::numpy>(v.data(), {v.size()});
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro(
           "indices",
-          [](dolfinx::mesh::MeshTags<T>& self)
+          [](const dolfinx::mesh::MeshTags<T>& self)
           {
-            return nb::ndarray<const std::int32_t, nb::numpy>(
-                self.indices().data(), {self.indices().size()});
+            std::span<const std::int32_t> idx = self.indices();
+            return nb::ndarray<const std::int32_t, nb::numpy>(idx.data(),
+                                                              {idx.size()});
           },
           nb::rv_policy::reference_internal)
       .def("find", [](dolfinx::mesh::MeshTags<T>& self, T value)
@@ -185,8 +186,9 @@ void declare_mesh(nb::module_& m, std::string type)
           "x",
           [](dolfinx::mesh::Geometry<T>& self)
           {
-            return nb::ndarray<T, nb::numpy>(self.x().data(),
-                                             {self.x().size() / 3, 3});
+            std::span<T> x = self.x();
+            return nb::ndarray<T, nb::shape<-1, 3>, nb::numpy>(
+                x.data(), {x.size() / 3, 3});
           },
           nb::rv_policy::reference_internal,
           "Return coordinates of all geometry points. Each row is the "

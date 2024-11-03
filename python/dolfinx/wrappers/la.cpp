@@ -55,8 +55,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           "array",
           [](dolfinx::la::Vector<T>& self)
           {
-            return nb::ndarray<T, nb::numpy>(self.mutable_array().data(),
-                                             {self.array().size()});
+            std::span<T> x = self.mutable_array();
+            return nb::ndarray<T, nb::numpy>(x.data(), {x.size()});
           },
           nb::rv_policy::reference_internal)
       .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
@@ -81,7 +81,9 @@ void declare_objects(nb::module_& m, const std::string& type)
 
   // dolfinx::la::MatrixCSR
   std::string pyclass_matrix_name = std::string("MatrixCSR_") + type;
-  nb::class_<dolfinx::la::MatrixCSR<T>>(m, pyclass_matrix_name.c_str())
+  nb::class_<dolfinx::la::MatrixCSR<
+      T, std::vector<T>, std::vector<std::int32_t>, std::vector<std::int64_t>>>(
+      m, pyclass_matrix_name.c_str())
       .def(nb::init<const dolfinx::la::SparsityPattern&,
                     dolfinx::la::BlockMode>(),
            nb::arg("p"),
@@ -161,9 +163,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           "indptr",
           [](dolfinx::la::MatrixCSR<T>& self)
           {
-            std::span<const std::int64_t> array = self.row_ptr();
-            return nb::ndarray<const std::int64_t, nb::numpy>(array.data(),
-                                                              {array.size()});
+            return nb::ndarray<const std::int64_t, nb::numpy>(
+                self.row_ptr().data(), {self.row_ptr().size()});
           },
           nb::rv_policy::reference_internal)
       .def("scatter_rev_begin", &dolfinx::la::MatrixCSR<T>::scatter_rev_begin)

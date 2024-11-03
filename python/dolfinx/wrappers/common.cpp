@@ -137,7 +137,7 @@ void common(nb::module_& m)
           [](const dolfinx::common::IndexMap& self)
           {
             std::span owners = self.owners();
-            return nb::ndarray<nb::numpy, const int, nb::ndim<1>>(
+            return nb::ndarray<const int, nb::ndim<1>, nb::numpy>(
                 owners.data(), {owners.size()});
           },
           nb::rv_policy::reference_internal)

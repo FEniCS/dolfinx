@@ -369,7 +369,7 @@ void declare_assembly_functions(nb::module_& m)
                      nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
                                  nb::numpy>(cols.data(), {cols.size()}),
                      nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>(
-                         data.data(), {data.size()}));
+                         data.data(), {rows.size(), cols.size()}));
         };
         dolfinx::fem::assemble_matrix(f, form, bcs);
       },
