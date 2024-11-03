@@ -157,7 +157,7 @@ int main(int argc, char* argv[])
 
     // Define boundary condition
 
-    auto facets = mesh::locate_entities_boundary(
+    std::vector facets = mesh::locate_entities_boundary(
         *mesh, 1,
         [](auto x)
         {
@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
           }
           return marker;
         });
-    const auto bdofs = fem::locate_dofs_topological(
+    std::vector bdofs = fem::locate_dofs_topological(
         *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
     fem::DirichletBC<T> bc(0.0, bdofs, V);
 
@@ -207,7 +207,7 @@ int main(int argc, char* argv[])
     //  and `bc` as follows:
 
     auto u = std::make_shared<fem::Function<T>>(V);
-    auto A = la::petsc::Matrix(fem::petsc::create_matrix(a), false);
+    la::petsc::Matrix A(fem::petsc::create_matrix(a), false);
     la::Vector<T> b(L.function_spaces()[0]->dofmap()->index_map,
                     L.function_spaces()[0]->dofmap()->index_map_bs());
 

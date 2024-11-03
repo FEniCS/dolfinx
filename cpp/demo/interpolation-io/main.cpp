@@ -114,7 +114,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
   // the Nedelec space when there are cell edges aligned to x0 = 0.5.
 
   // Find cells with all vertices satisfying (0) x0 <= 0.5 and (1) x0 >= 0.5
-  auto cells0
+  std::vector cells0
       = mesh::locate_entities(*mesh, 2,
                               [](auto x)
                               {
@@ -123,7 +123,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
                                   marked.push_back(x(0, i) <= 0.5);
                                 return marked;
                               });
-  auto cells1
+  std::vector cells1
       = mesh::locate_entities(*mesh, 2,
                               [](auto x)
                               {
