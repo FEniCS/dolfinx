@@ -423,12 +423,11 @@ void declare_assembly_functions(nb::module_& m)
         for (auto& bc1 : bcs1)
         {
           auto& _bcs0 = _bcs.emplace_back();
-          for (auto& bc : bc1)
-            for (auto& bc : bc1)
-            {
-              assert(bc);
-              _bcs0.push_back(*bc);
-            }
+          for (auto bc : bc1)
+          {
+            assert(bc);
+            _bcs0.push_back(*bc);
+          }
         }
 
         std::vector<std::span<const T>> _x0;
