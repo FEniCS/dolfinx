@@ -274,10 +274,8 @@ struct mpi_type_mapping;
 
 /// @brief Retrieves the MPI data type associated to the provided type.
 /// @tparam T cpp type to map
-template <typename T>
-MPI_Datatype mpi_t
-    = mpi_type_mapping<T,
-                       std::void_t<decltype(mpi_type_mapping<T>::type)>>::type;
+template <typename T, typename = std::void_t<decltype(mpi_type_mapping<T>::type)>>
+MPI_Datatype mpi_t = mpi_type_mapping<T>::type;
 
 #define MAP_TO_MPI_TYPE(cpp_t, mpi_t)                                          \
   template <>                                                                  \
