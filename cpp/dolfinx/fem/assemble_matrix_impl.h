@@ -501,9 +501,11 @@ void assemble_matrix(
   // Integration domain mesh
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
+
   // Test function mesh
   auto mesh0 = a.function_spaces().at(0)->mesh();
   assert(mesh0);
+
   // Trial function mesh
   auto mesh1 = a.function_spaces().at(1)->mesh();
   assert(mesh1);

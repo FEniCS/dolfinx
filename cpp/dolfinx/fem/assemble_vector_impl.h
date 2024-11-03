@@ -937,9 +937,11 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
   // Integration domain mesh
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
+
   // Test function mesh
   auto mesh0 = a.function_spaces().at(0)->mesh();
   assert(mesh0);
+
   // Trial function mesh
   auto mesh1 = a.function_spaces().at(1)->mesh();
   assert(mesh1);
@@ -1072,7 +1074,6 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
 template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
     std::span<T> b,
-    // const std::vector<std::shared_ptr<const Form<T, U>>> a,
     std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>> a,
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
@@ -1106,8 +1107,8 @@ void apply_lifting(
       mdspan2_t x_dofmap = mesh->geometry().dofmap();
       auto x = mesh->geometry().x();
 
-      assert(a[j].value().get().function_spaces().at(0));
-      auto V1 = a[j].value().get().function_spaces()[1];
+      assert(a[j]->get().function_spaces().at(0));
+      auto V1 = a[j]->get().function_spaces()[1];
       assert(V1);
       auto map1 = V1->dofmap()->index_map;
       const int bs1 = V1->dofmap()->index_map_bs();

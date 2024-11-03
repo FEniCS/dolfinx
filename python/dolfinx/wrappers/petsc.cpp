@@ -147,11 +147,12 @@ void petsc_la_module(nb::module_& m)
       "create_index_sets",
       [](const std::vector<std::pair<const common::IndexMap*, int>>& maps)
       {
-        std::vector<
-            std::pair<std::reference_wrapper<const common::IndexMap>, int>>
-            _maps;
-        for (auto m : maps)
-          _maps.push_back({*m.first, m.second});
+        X = std::vector<
+            std::pair<std::reference_wrapper<const common::IndexMap>, int>>;
+        X _maps;
+        std::ranges::transform(maps, std::back_inserter(_maps),
+                               [](auto m) -> typename X::value_type
+                               { return {*m.first, m.second}; });
         std::vector<IS> index_sets
             = dolfinx::la::petsc::create_index_sets(_maps);
 
@@ -195,16 +196,19 @@ void petsc_la_module(nb::module_& m)
          const std::vector<std::pair<
              std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
       {
-        std::vector<std::pair<
-            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>
-            _maps;
-        for (auto m : maps)
-          _maps.push_back({*m.first, m.second});
+        using X = std::vector<std::pair<
+            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
+        X _maps;
+        std::ranges::transform(maps, std::back_inserter(_maps),
+                               [](auto& m) -> typename X::value_type
+                               { return {*m.first, m.second}; });
+
         std::vector<std::vector<PetscScalar>> vecs
             = dolfinx::la::petsc::get_local_vectors(x, _maps);
         std::vector<nb::ndarray<PetscScalar, nb::numpy>> ret;
-        for (std::vector<PetscScalar>& v : vecs)
-          ret.push_back(dolfinx_wrappers::as_nbarray(std::move(v)));
+        std::ranges::transform(
+            vecs, std::back_inserter(ret),
+            [](auto& v) { return dolfinx_wrappers::as_nbarray(std::move(v)); });
         return ret;
       },
       nb::arg("x"), nb::arg("maps"),
@@ -219,12 +223,12 @@ void petsc_fem_module(nb::module_& m)
       [](const std::vector<
           std::pair<std::shared_ptr<const common::IndexMap>, int>>& maps)
       {
-        std::vector<
-            std::pair<std::reference_wrapper<const common::IndexMap>, int>>
-            _maps;
-        for (auto q : maps)
-          _maps.push_back({*q.first, q.second});
-
+        using X = std::vector<
+            std::pair<std::reference_wrapper<const common::IndexMap>, int>>;
+        X _maps;
+        std::ranges::transform(maps, std::back_inserter(_maps),
+                               [](auto q) -> typename X::value_type
+                               { return {*q.first, q.second}; });
         return dolfinx::fem::petsc::create_vector_block(_maps);
       },
       nb::rv_policy::take_ownership, nb::arg("maps"),
@@ -234,11 +238,12 @@ void petsc_fem_module(nb::module_& m)
       [](const std::vector<
           std::pair<std::shared_ptr<const common::IndexMap>, int>>& maps)
       {
-        std::vector<
-            std::pair<std::reference_wrapper<const common::IndexMap>, int>>
-            _maps;
-        for (auto m : maps)
-          _maps.push_back({*m.first, m.second});
+        using X = std::vector<
+            std::pair<std::reference_wrapper<const common::IndexMap>, int>>;
+        X _maps;
+        std::ranges::transform(maps, std::back_inserter(_maps),
+                               [](auto m) -> typename X::value_type
+                               { return {*m.first, m.second}; });
         return dolfinx::fem::petsc::create_vector_nest(_maps);
       },
       nb::rv_policy::take_ownership, nb::arg("maps"),
