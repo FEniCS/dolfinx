@@ -616,9 +616,11 @@ void mesh(nb::module_& m)
           {
             if (self.original_cell_index.size() != 1)
               throw std::runtime_error("Mixed topology unsupported");
-            return nb::ndarray<const std::int64_t, nb::numpy>(
-                self.original_cell_index[0].data(),
-                {self.original_cell_index[0].size()});
+
+            const std::vector<std::vector<std::int64_t>>& idx
+                = self.original_cell_index;
+            return nb::ndarray<const std::int64_t, nb::numpy>(idx[0].data(),
+                                                              {idx[0].size()});
           },
           nb::rv_policy::reference_internal)
       .def("connectivity",
