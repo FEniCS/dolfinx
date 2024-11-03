@@ -1204,7 +1204,8 @@ Expression<T, U> create_expression(
   std::array<std::size_t, 2> Xshape
       = {static_cast<std::size_t>(e.num_points),
          static_cast<std::size_t>(e.entity_dimension)};
-  std::vector<int> value_shape(e.value_shape, e.value_shape + e.num_components);
+  std::vector<std::size_t> value_shape(e.value_shape,
+                                       e.value_shape + e.num_components);
   std::function<void(T*, const T*, const T*,
                      const typename scalar_value_type<T>::value_type*,
                      const int*, const std::uint8_t*)>

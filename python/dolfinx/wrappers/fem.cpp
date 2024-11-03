@@ -552,7 +552,8 @@ void declare_objects(nb::module_& m, const std::string& type)
              const std::vector<
                  std::shared_ptr<const dolfinx::fem::Constant<T>>>& constants,
              nb::ndarray<const U, nb::ndim<2>, nb::c_contig> X,
-             std::uintptr_t fn_addr, const std::vector<int>& value_shape,
+             std::uintptr_t fn_addr,
+             const std::vector<std::size_t>& value_shape,
              std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>
                  argument_function_space)
           {
@@ -590,7 +591,15 @@ void declare_objects(nb::module_& m, const std::string& type)
       .def_prop_ro("dtype", [](const dolfinx::fem::Expression<T, U>&)
                    { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def_prop_ro("value_size", &dolfinx::fem::Expression<T, U>::value_size)
-      .def_prop_ro("value_shape", &dolfinx::fem::Expression<T, U>::value_shape);
+      .def_prop_ro(
+          "value_shape",
+          [](const dolfinx::fem::Expression<T, U>& self)
+          {
+            const std::vector<std::size_t>& vshape = self.value_shape();
+            return nb::ndarray<const std::size_t, nb::numpy>(vshape.data(),
+                                                             {vshape.size()});
+          },
+          nb::rv_policy::reference_internal);
 
   std::string pymethod_create_expression
       = std::string("create_expression_") + type;
