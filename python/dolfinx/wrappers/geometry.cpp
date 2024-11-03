@@ -6,6 +6,7 @@
 
 #include "array.h"
 #include "caster_mpi.h"
+#include <array>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/gjk.h>
@@ -52,7 +53,8 @@ void declare_bbtree(nb::module_& m, std::string type)
              const std::size_t i)
           {
             std::array<T, 6> bbox = self.get_bbox(i);
-            return nb::ndarray<T, nb::numpy>(bbox.data(), {2, 3}).cast();
+            return nb::ndarray<T, nb::shape<2, 3>, nb::numpy>(bbox.data())
+                .cast();
           },
           nb::arg("i"))
       .def("__repr__", &dolfinx::geometry::BoundingBoxTree<T>::str)

@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Garth N. Wells
+// Copyright (C) 2021-2024 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -12,8 +12,6 @@
 #include <nanobind/ndarray.h>
 #include <utility>
 #include <vector>
-
-#include <iostream>
 
 namespace nb = nanobind;
 
