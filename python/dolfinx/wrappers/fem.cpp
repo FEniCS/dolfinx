@@ -88,8 +88,8 @@ void declare_function_space(nb::module_& m, std::string type)
             [](const dolfinx::fem::FunctionSpace<T>& self)
             {
               std::span<const std::size_t> vshape = self.value_shape();
-              return nb::ndarray<const std::size_t, nb::numpy>(
-                  vshape.data(), {vshape.size()}, nb::handle());
+              return nb::ndarray<const std::size_t, nb::numpy>(vshape.data(),
+                                                               {vshape.size()});
             },
             nb::rv_policy::reference_internal)
         .def("sub", &dolfinx::fem::FunctionSpace<T>::sub, nb::arg("component"))
@@ -358,14 +358,16 @@ void declare_objects(nb::module_& m, const std::string& type)
           nb::arg("V").noconvert())
       .def_prop_ro("dtype", [](const dolfinx::fem::Function<T, U>&)
                    { return dolfinx_wrappers::numpy_dtype<T>(); })
-      .def("dof_indices",
-           [](const dolfinx::fem::DirichletBC<T, U>& self)
-           {
-             auto [dofs, owned] = self.dof_indices();
-             return std::pair(nb::ndarray<const std::int32_t, nb::numpy>(
-                                  dofs.data(), {dofs.size()}, nb::handle()),
-                              owned);
-           })
+      .def(
+          "dof_indices",
+          [](const dolfinx::fem::DirichletBC<T, U>& self)
+          {
+            auto [dofs, owned] = self.dof_indices();
+            return std::pair(nb::ndarray<const std::int32_t, nb::numpy>(
+                                 dofs.data(), {dofs.size()}),
+                             owned);
+          },
+          nb::rv_policy::reference_internal)
       .def(
           "set",
           [](const dolfinx::fem::DirichletBC<T, U>& self,
@@ -533,9 +535,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           "value",
           [](dolfinx::fem::Constant<T>& self)
           {
-            return nb::ndarray<T, nb::numpy>(self.value.data(),
-                                             self.shape.size(),
-                                             self.shape.data(), nb::handle());
+            return nb::ndarray<T, nb::numpy>(
+                self.value.data(), self.shape.size(), self.shape.data());
           },
           nb::rv_policy::reference_internal);
 
@@ -551,7 +552,8 @@ void declare_objects(nb::module_& m, const std::string& type)
              const std::vector<
                  std::shared_ptr<const dolfinx::fem::Constant<T>>>& constants,
              nb::ndarray<const U, nb::ndim<2>, nb::c_contig> X,
-             std::uintptr_t fn_addr, const std::vector<int>& value_shape,
+             std::uintptr_t fn_addr,
+             const std::vector<std::size_t>& value_shape,
              std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>
                  argument_function_space)
           {
@@ -589,7 +591,15 @@ void declare_objects(nb::module_& m, const std::string& type)
       .def_prop_ro("dtype", [](const dolfinx::fem::Expression<T, U>&)
                    { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def_prop_ro("value_size", &dolfinx::fem::Expression<T, U>::value_size)
-      .def_prop_ro("value_shape", &dolfinx::fem::Expression<T, U>::value_shape);
+      .def_prop_ro(
+          "value_shape",
+          [](const dolfinx::fem::Expression<T, U>& self)
+          {
+            const std::vector<std::size_t>& vshape = self.value_shape();
+            return nb::ndarray<const std::size_t, nb::numpy>(vshape.data(),
+                                                             {vshape.size()});
+          },
+          nb::rv_policy::reference_internal);
 
   std::string pymethod_create_expression
       = std::string("create_expression_") + type;
@@ -734,10 +744,7 @@ void declare_form(nb::module_& m, std::string type)
           "integral_ids",
           [](const dolfinx::fem::Form<T, U>& self,
              dolfinx::fem::IntegralType type)
-          {
-            auto ids = self.integral_ids(type);
-            return dolfinx_wrappers::as_nbarray(std::move(ids));
-          },
+          { return dolfinx_wrappers::as_nbarray(self.integral_ids(type)); },
           nb::arg("type"))
       .def_prop_ro("integral_types", &dolfinx::fem::Form<T, U>::integral_types)
       .def_prop_ro("needs_facet_permutations",
@@ -751,17 +758,17 @@ void declare_form(nb::module_& m, std::string type)
             switch (type)
             {
             case dolfinx::fem::IntegralType::cell:
-              return nb::ndarray<const std::int32_t, nb::numpy>(
-                  _d.data(), {_d.size()}, nb::handle());
+              return nb::ndarray<const std::int32_t, nb::numpy>(_d.data(),
+                                                                {_d.size()});
             case dolfinx::fem::IntegralType::exterior_facet:
             {
               return nb::ndarray<const std::int32_t, nb::numpy>(
-                  _d.data(), {_d.size() / 2, 2}, nb::handle());
+                  _d.data(), {_d.size() / 2, 2});
             }
             case dolfinx::fem::IntegralType::interior_facet:
             {
               return nb::ndarray<const std::int32_t, nb::numpy>(
-                  _d.data(), {_d.size() / 4, 2, 2}, nb::handle());
+                  _d.data(), {_d.size() / 4, 2, 2});
             }
             default:
               throw ::std::runtime_error("Integral type unsupported.");
@@ -915,7 +922,6 @@ void declare_cmap(nb::module_& m, std::string type)
                 mdspan2_t(xb.data(), shape),
                 cmdspan2_t(cell_x.data(), cell_x.shape(0), cell_x.shape(1)),
                 phi);
-
             return dolfinx_wrappers::as_nbarray(std::move(xb),
                                                 {X.shape(0), cell_x.shape(1)});
           },
@@ -1077,7 +1083,7 @@ void declare_real_functions(nb::module_& m)
         auto _marker = [&marker](auto x)
         {
           nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
-              x.data_handle(), {x.extent(0), x.extent(1)}, nb::handle());
+              x.data_handle(), {x.extent(0), x.extent(1)});
           auto marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
@@ -1100,7 +1106,7 @@ void declare_real_functions(nb::module_& m)
         auto _marker = [&marker](auto x)
         {
           nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
-              x.data_handle(), {x.extent(0), x.extent(1)}, nb::handle());
+              x.data_handle(), {x.extent(0), x.extent(1)});
           auto marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
@@ -1191,13 +1197,13 @@ void fem(nb::module_& m)
       "compute_integration_domains",
       [](dolfinx::fem::IntegralType type,
          const dolfinx::mesh::Topology& topology,
-         const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
-             entities,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities,
          int dim)
       {
-        auto integration_entities = dolfinx::fem::compute_integration_domains(
-            type, topology, std::span(entities.data(), entities.size()), dim);
-        return dolfinx_wrappers::as_nbarray(std::move(integration_entities));
+        return dolfinx_wrappers::as_nbarray(
+            dolfinx::fem::compute_integration_domains(
+                type, topology, std::span(entities.data(), entities.size()),
+                dim));
       },
       nb::arg("integral_type"), nb::arg("topology"), nb::arg("entities"),
       nb::arg("dim"));
@@ -1248,8 +1254,8 @@ void fem(nb::module_& m)
           [](const dolfinx::fem::DofMap& self, int cell)
           {
             std::span<const std::int32_t> dofs = self.cell_dofs(cell);
-            return nb::ndarray<const std::int32_t, nb::numpy>(
-                dofs.data(), {dofs.size()}, nb::handle());
+            return nb::ndarray<const std::int32_t, nb::numpy>(dofs.data(),
+                                                              {dofs.size()});
           },
           nb::rv_policy::reference_internal, nb::arg("cell"))
       .def_prop_ro("bs", &dolfinx::fem::DofMap::bs)
@@ -1259,8 +1265,7 @@ void fem(nb::module_& m)
           {
             auto dofs = self.map();
             return nb::ndarray<const std::int32_t, nb::numpy>(
-                dofs.data_handle(), {dofs.extent(0), dofs.extent(1)},
-                nb::handle());
+                dofs.data_handle(), {dofs.extent(0), dofs.extent(1)});
           },
           nb::rv_policy::reference_internal);
 
