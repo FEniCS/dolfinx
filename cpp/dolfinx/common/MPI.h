@@ -273,6 +273,7 @@ template <typename>
 struct mpi_type_mapping
 {
   static inline MPI_Datatype type = MPI_DATATYPE_NULL;
+  static_assert(false, "Undefined MPI type mapping.");
 };
 
 /// @brief Retrieves the MPI data type associated to the provided type.
