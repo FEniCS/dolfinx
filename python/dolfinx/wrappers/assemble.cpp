@@ -422,15 +422,13 @@ void declare_assembly_functions(nb::module_& m)
             _bcs;
         for (auto& bc1 : bcs1)
         {
-          std::vector<
-              std::reference_wrapper<const dolfinx::fem::DirichletBC<T, U>>>&
-              _bcs0
-              = _bcs.emplacse_back();
+          auto& _bcs0 = _bcs.emplace_back();
           for (auto& bc : bc1)
-          {
-            assert(bc);
-            _bcs0.push_back(*bc);
-          }
+            for (auto& bc : bc1)
+            {
+              assert(bc);
+              _bcs0.push_back(*bc);
+            }
         }
 
         std::vector<std::span<const T>> _x0;
