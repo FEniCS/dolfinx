@@ -1178,7 +1178,7 @@ void fem(nb::module_& m)
   m.def(
       "transpose_dofmap",
       [](nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> dofmap,
-         std::int32_t num_cells)
+         int num_cells)
       {
         MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
             const std::int32_t,
