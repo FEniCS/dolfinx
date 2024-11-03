@@ -254,8 +254,10 @@ void declare_assembly_functions(nb::module_& m)
                a.function_spaces().at(1)->dofmap()->index_map_bs()};
 
         if (data_bs[0] != data_bs[1])
+        {
           throw std::runtime_error(
               "Non-square blocksize unsupported in Python");
+        }
 
         if (data_bs[0] == 1)
         {
