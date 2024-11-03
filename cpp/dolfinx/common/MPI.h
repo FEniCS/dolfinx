@@ -269,6 +269,8 @@ struct dependent_false : std::false_type
 };
 
 /// MPI Type
+
+/// @brief Type trait for MPI type conversions.
 template <typename T>
 struct mpi_type_mapping;
 
@@ -277,6 +279,8 @@ struct mpi_type_mapping;
 template <typename T>
 MPI_Datatype mpi_t = mpi_type_mapping<T>::type;
 
+/// @brief Registers for cpp_t the correpsonding mpi_t which can then be
+/// retrieved with mpi_t<cpp_t> form here on.
 #define MAP_TO_MPI_TYPE(cpp_t, mpi_t)                                          \
   template <>                                                                  \
   struct mpi_type_mapping<cpp_t>                                               \
