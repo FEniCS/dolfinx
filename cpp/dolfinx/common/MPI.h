@@ -270,7 +270,10 @@ struct dependent_false : std::false_type
 
 /// MPI Type
 template <typename>
-struct mpi_type_mapping;
+struct mpi_type_mapping
+{
+  static inline MPI_Datatype type = MPI_DATATYPE_NULL;
+};
 
 /// @brief Retrieves the MPI data type associated to the provided type.
 /// @tparam T cpp type to map
