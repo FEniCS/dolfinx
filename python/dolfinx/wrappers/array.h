@@ -38,8 +38,10 @@ auto as_nbarray_copy(const V& x, const std::initializer_list<std::size_t> shape)
 }
 
 /// Create an n-dimensional nb::ndarray that shares data with a
-/// std::vector. The std::vector owns the data, and the nb::ndarray
-/// object keeps the std::vector alive.
+/// std::vector.
+///
+/// The std::vector owns the data, and the nb::ndarray object keeps the
+/// std::vector alive.
 template <typename V>
 auto as_nbarray(V&& x, std::size_t ndim, const std::size_t* shape)
 {
@@ -50,14 +52,20 @@ auto as_nbarray(V&& x, std::size_t ndim, const std::size_t* shape)
       nb::capsule(ptr, [](void* p) noexcept { delete (_V*)p; }));
 }
 
+/// Create an n-dimensional nb::ndarray that shares data with a
+/// std::vector.
+///
+/// The std::vector owns the data, and the nb::ndarray object keeps the
+/// std::vector alive.
 template <typename V>
 auto as_nbarray(V&& x, const std::initializer_list<std::size_t> shape)
 {
   return as_nbarray(x, shape.size(), shape.begin());
 }
 
-/// Create a nb::ndarray that shares data with a std::vector. The
-/// std::vector owns the data, and the nb::ndarray object keeps the
+/// Create a 1D nb::ndarray that shares data with a std::vector.
+///
+/// The std::vector owns the data, and the nb::ndarray object keeps the
 /// std::vector alive.
 template <typename V>
 auto as_nbarray(V&& x)
