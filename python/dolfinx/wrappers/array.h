@@ -6,13 +6,11 @@
 
 #pragma once
 
-#include <algorithm>
-#include <array>
 #include <concepts>
 #include <initializer_list>
-#include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <utility>
 #include <vector>
 
 namespace nb = nanobind;
