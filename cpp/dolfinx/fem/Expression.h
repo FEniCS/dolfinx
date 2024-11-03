@@ -269,7 +269,7 @@ public:
 
   /// @brief Get value shape.
   /// @return The value shape.
-  std::vector<std::size_t> value_shape() const { return _value_shape; }
+  const std::vector<std::size_t>& value_shape() const { return _value_shape; }
 
   /// @brief Evaluation points on the reference cell.
   /// @return Evaluation points.

@@ -254,8 +254,10 @@ void declare_assembly_functions(nb::module_& m)
                a.function_spaces().at(1)->dofmap()->index_map_bs()};
 
         if (data_bs[0] != data_bs[1])
+        {
           throw std::runtime_error(
               "Non-square blocksize unsupported in Python");
+        }
 
         if (data_bs[0] == 1)
         {
@@ -364,13 +366,12 @@ void declare_assembly_functions(nb::module_& m)
                         std::span<const std::int32_t> cols,
                         std::span<const T> data)
         {
-          return fin(
-              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
-                          nb::numpy>(rows.data(), {rows.size()}, nb::handle()),
-              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
-                          nb::numpy>(cols.data(), {cols.size()}, nb::handle()),
-              nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>(
-                  data.data(), {data.size()}, nb::handle()));
+          return fin(nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
+                                 nb::numpy>(rows.data(), {rows.size()}),
+                     nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
+                                 nb::numpy>(cols.data(), {cols.size()}),
+                     nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>(
+                         data.data(), {rows.size(), cols.size()}));
         };
         dolfinx::fem::assemble_matrix(f, form, bcs);
       },

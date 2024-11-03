@@ -128,8 +128,8 @@ void common(nb::module_& m)
           [](const dolfinx::common::IndexMap& self)
           {
             std::span ghosts = self.ghosts();
-            return nb::ndarray<const std::int64_t, nb::numpy>(
-                ghosts.data(), {ghosts.size()}, nb::handle());
+            return nb::ndarray<const std::int64_t, nb::numpy>(ghosts.data(),
+                                                              {ghosts.size()});
           },
           nb::rv_policy::reference_internal, "Return list of ghost indices")
       .def_prop_ro(
@@ -137,8 +137,8 @@ void common(nb::module_& m)
           [](const dolfinx::common::IndexMap& self)
           {
             std::span owners = self.owners();
-            return nb::ndarray<nb::numpy, const int, nb::ndim<1>>(
-                owners.data(), {owners.size()}, nb::handle());
+            return nb::ndarray<const int, nb::ndim<1>, nb::numpy>(
+                owners.data(), {owners.size()});
           },
           nb::rv_policy::reference_internal)
       .def(
