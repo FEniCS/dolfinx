@@ -288,6 +288,9 @@ MPI_Datatype mpi_t = mpi_type_mapping<T>::type;
     static inline MPI_Datatype type = mpi_t;                                   \
   };
 
+/// @defgroup MPI type mappings
+/// @{
+/// @cond
 MAP_TO_MPI_TYPE(float, MPI_FLOAT)
 MAP_TO_MPI_TYPE(double, MPI_DOUBLE)
 MAP_TO_MPI_TYPE(std::complex<float>, MPI_C_FLOAT_COMPLEX)
@@ -304,6 +307,8 @@ MAP_TO_MPI_TYPE(unsigned int, MPI_UNSIGNED)
 MAP_TO_MPI_TYPE(unsigned long int, MPI_UNSIGNED_LONG)
 MAP_TO_MPI_TYPE(unsigned long long int, MPI_UNSIGNED_LONG_LONG)
 MAP_TO_MPI_TYPE(bool, MPI_C_BOOL)
+/// @endcond
+/// @}
 
 // NOTE: this mapping fails on some platforms
 // MAP_TO_MPI_TYPE(std::int8_t, MPI_INT8_T)
