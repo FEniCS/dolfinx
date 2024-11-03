@@ -140,7 +140,7 @@ int main(int argc, char* argv[])
     // Create boundary condition for \sigma
     auto g = std::make_shared<fem::Function<T>>(W0);
     g->x()->set(10);
-    auto bc = std::make_shared<fem::DirichletBC<T>>(g, ndofs, V0);
+    fem::DirichletBC<T> bc(g, ndofs, V0);
 
     // Create integration domain for u boundary condition on ds(1)
 
@@ -155,22 +155,22 @@ int main(int argc, char* argv[])
         subdomain_data = {{fem::IntegralType::exterior_facet, {{1, domains}}}};
 
     // Define variational forms and attach required data
-    auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_poisson_a, {V, V}, {}, {}, subdomain_data, {}));
-    auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_poisson_L, {V}, {{"f", f}, {"u0", u0}}, {}, subdomain_data, {}));
+    fem::Form<T> a = fem::create_form<T>(*form_poisson_a, {V, V}, {}, {},
+                                         subdomain_data, {});
+    fem::Form<T> L = fem::create_form<T>(
+        *form_poisson_L, {V}, {{"f", f}, {"u0", u0}}, {}, subdomain_data, {});
 
     // Create solution Function
     auto u = std::make_shared<fem::Function<T>>(V);
 
     // Create matrix and RHS vector
-    auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
-    la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
-                    L->function_spaces()[0]->dofmap()->index_map_bs());
+    auto A = la::petsc::Matrix(fem::petsc::create_matrix(a), false);
+    la::Vector<T> b(L.function_spaces()[0]->dofmap()->index_map,
+                    L.function_spaces()[0]->dofmap()->index_map_bs());
 
     // Assemble matrix
     MatZeroEntries(A.mat());
-    fem::assemble_matrix(la::petsc::Matrix::set_fn(A.mat(), ADD_VALUES), *a,
+    fem::assemble_matrix(la::petsc::Matrix::set_fn(A.mat(), ADD_VALUES), a,
                          {bc});
     MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
@@ -183,14 +183,14 @@ int main(int argc, char* argv[])
 
     // Assemble RHS vector
     b.set(0.0);
-    fem::assemble_vector(b.mutable_array(), *L);
+    fem::assemble_vector(b.mutable_array(), L);
 
     // Modify unconstrained dofs on RHS to account for Dirichlet bcs
     fem::apply_lifting<T, U>(b.mutable_array(), {a}, {{bc}}, {}, T(1));
     b.scatter_rev(std::plus<T>());
 
     // Set value for constrained dofs
-    bc->set(b.mutable_array(), std::nullopt);
+    bc.set(b.mutable_array(), std::nullopt);
 
     // Create PETSc linear solver
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
