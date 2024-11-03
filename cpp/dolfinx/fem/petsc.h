@@ -400,7 +400,9 @@ void apply_lifting(
 template <std::floating_point T>
 void apply_lifting(
     Vec b,
-    const std::vector<std::shared_ptr<const Form<PetscScalar, double>>>& a,
+    std::vector<
+        std::optional<std::reference_wrapper<const Form<PetscScalar, double>>>>
+        a,
     const std::vector<std::vector<
         std::reference_wrapper<const DirichletBC<PetscScalar, double>>>>& bcs1,
     const std::vector<Vec>& x0, PetscScalar alpha)

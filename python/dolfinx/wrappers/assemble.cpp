@@ -407,7 +407,7 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "apply_lifting",
       [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
-         const std::vector<std::shared_ptr<const dolfinx::fem::Form<T, U>>>& a,
+         std::vector<const dolfinx::fem::Form<T, U>*> a,
          const std::vector<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>&
              constants,
          const std::vector<
@@ -430,6 +430,17 @@ void declare_assembly_functions(nb::module_& m)
           }
         }
 
+        std::vector<std::optional<
+            std::reference_wrapper<const dolfinx::fem::Form<T, U>>>>
+            _a;
+        for (auto form : a)
+        {
+          if (form)
+            _a.push_back(*form);
+          else
+            _a.push_back(std::nullopt);
+        }
+
         std::vector<std::span<const T>> _x0;
         for (auto x : x0)
           _x0.emplace_back(x.data(), x.size());
@@ -445,7 +456,7 @@ void declare_assembly_functions(nb::module_& m)
         std::ranges::transform(coeffs, std::back_inserter(_coeffs),
                                [](auto& c) { return py_to_cpp_coeffs(c); });
 
-        dolfinx::fem::apply_lifting<T>(std::span<T>(b.data(), b.size()), a,
+        dolfinx::fem::apply_lifting<T>(std::span<T>(b.data(), b.size()), _a,
                                        _constants, _coeffs, _bcs, _x0, alpha);
       },
       nb::arg("b").noconvert(), nb::arg("a"), nb::arg("constants"),

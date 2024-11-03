@@ -28,7 +28,6 @@
 
 namespace dolfinx::fem::impl
 {
-
 /// @cond
 using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
     const std::int32_t,
@@ -1072,7 +1071,9 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
 /// @param[in] alpha Scaling to apply
 template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
-    std::span<T> b, const std::vector<std::shared_ptr<const Form<T, U>>> a,
+    std::span<T> b,
+    // const std::vector<std::shared_ptr<const Form<T, U>>> a,
+    std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>> a,
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
@@ -1099,15 +1100,14 @@ void apply_lifting(
     if (a[j] and !bcs1[j].empty())
     {
       // Extract data from mesh
-      std::shared_ptr<const mesh::Mesh<U>> mesh = a[j]->mesh();
+      std::shared_ptr<const mesh::Mesh<U>> mesh = a[j]->get().mesh();
       if (!mesh)
         throw std::runtime_error("Unable to extract a mesh.");
       mdspan2_t x_dofmap = mesh->geometry().dofmap();
       auto x = mesh->geometry().x();
 
-      assert(a[j]->function_spaces().at(0));
-
-      auto V1 = a[j]->function_spaces()[1];
+      assert(a[j].value().get().function_spaces().at(0));
+      auto V1 = a[j].value().get().function_spaces()[1];
       assert(V1);
       auto map1 = V1->dofmap()->index_map;
       const int bs1 = V1->dofmap()->index_map_bs();
@@ -1123,13 +1123,13 @@ void apply_lifting(
 
       if (!x0.empty())
       {
-        lift_bc<T>(b, *a[j], x_dofmap, x, constants[j], coeffs[j], bc_values1,
-                   bc_markers1, x0[j], alpha);
+        lift_bc<T>(b, a[j]->get(), x_dofmap, x, constants[j], coeffs[j],
+                   bc_values1, bc_markers1, x0[j], alpha);
       }
       else
       {
-        lift_bc<T>(b, *a[j], x_dofmap, x, constants[j], coeffs[j], bc_values1,
-                   bc_markers1, std::span<const T>(), alpha);
+        lift_bc<T>(b, a[j]->get(), x_dofmap, x, constants[j], coeffs[j],
+                   bc_values1, bc_markers1, std::span<const T>(), alpha);
       }
     }
   }

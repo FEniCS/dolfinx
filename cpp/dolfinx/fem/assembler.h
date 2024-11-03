@@ -150,7 +150,8 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 /// is responsible for calling VecGhostUpdateBegin/End.
 template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
-    std::span<T> b, const std::vector<std::shared_ptr<const Form<T, U>>>& a,
+    std::span<T> b,
+    std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>> a,
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
@@ -159,7 +160,7 @@ void apply_lifting(
     const std::vector<std::span<const T>>& x0, T alpha)
 {
   // If all forms are null, there is nothing to do
-  if (std::ranges::all_of(a, [](auto ptr) { return ptr == nullptr; }))
+  if (std::ranges::all_of(a, [](auto ai) { return !ai; }))
     return;
 
   impl::apply_lifting<T>(b, a, constants, coeffs, bcs1, x0, alpha);
@@ -179,7 +180,8 @@ void apply_lifting(
 /// is responsible for calling VecGhostUpdateBegin/End.
 template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
-    std::span<T> b, const std::vector<std::shared_ptr<const Form<T, U>>>& a,
+    std::span<T> b,
+    std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>> a,
     const std::vector<
         std::vector<std::reference_wrapper<const DirichletBC<T, U>>>>& bcs1,
     const std::vector<std::span<const T>>& x0, T alpha)
@@ -192,10 +194,10 @@ void apply_lifting(
   {
     if (_a)
     {
-      auto coefficients = allocate_coefficient_storage(*_a);
-      pack_coefficients(*_a, coefficients);
+      auto coefficients = allocate_coefficient_storage(_a->get());
+      pack_coefficients(_a->get(), coefficients);
       coeffs.push_back(coefficients);
-      constants.push_back(pack_constants(*_a));
+      constants.push_back(pack_constants(_a->get()));
     }
     else
     {
