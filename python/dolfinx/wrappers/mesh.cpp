@@ -364,8 +364,10 @@ void declare_mesh(nb::module_& m, std::string type)
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities)
       {
-        auto submesh = dolfinx::mesh::create_submesh(
-            mesh, dim, std::span(entities.data(), entities.size()));
+        std::tuple<dolfinx::mesh::Mesh<T>, std::vector<std::int32_t>,
+                   std::vector<std::int32_t>, std::vector<std::int32_t>>
+            submesh = dolfinx::mesh::create_submesh(
+                mesh, dim, std::span(entities.data(), entities.size()));
         auto _e_map = as_nbarray(std::move(std::get<1>(submesh)));
         auto _v_map = as_nbarray(std::move(std::get<2>(submesh)));
         auto _g_map = as_nbarray(std::move(std::get<3>(submesh)));
@@ -454,10 +456,6 @@ void declare_mesh(nb::module_& m, std::string type)
       {
         std::vector<std::int32_t> idx = dolfinx::mesh::entities_to_geometry(
             mesh, dim, std::span(entities.data(), entities.size()), permute);
-
-        auto topology = mesh.topology();
-        assert(topology);
-        dolfinx::mesh::CellType cell_type = topology->cell_type();
         return as_nbarray(std::move(idx),
                           {entities.size(), idx.size() / entities.size()});
       },

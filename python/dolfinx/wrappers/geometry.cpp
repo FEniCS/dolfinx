@@ -52,7 +52,7 @@ void declare_bbtree(nb::module_& m, std::string type)
              const std::size_t i)
           {
             std::array<T, 6> bbox = self.get_bbox(i);
-            return dolfinx_wrappers::as_nbarray_copy(bbox, {2, 3});
+            return nb::ndarray<T, nb::numpy>(bbox.data(), {2, 3});
           },
           nb::arg("i"))
       .def("__repr__", &dolfinx::geometry::BoundingBoxTree<T>::str)
@@ -160,7 +160,7 @@ void declare_bbtree(nb::module_& m, std::string type)
         std::size_t q_s0 = q.ndim() == 1 ? 1 : q.shape(0);
         std::span<const T> _p(p.data(), 3 * p_s0), _q(q.data(), 3 * q_s0);
         std::array<T, 3> d = dolfinx::geometry::compute_distance_gjk<T>(_p, _q);
-        return dolfinx_wrappers::as_nbarray_copy(d, {d.size()});
+        return nb::ndarray<T, nb::numpy>(d.data(), {d.size()});
       },
       //   nb::rv_policy::copy,
       nb::arg("p"), nb::arg("q"));

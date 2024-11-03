@@ -735,10 +735,7 @@ void declare_form(nb::module_& m, std::string type)
           "integral_ids",
           [](const dolfinx::fem::Form<T, U>& self,
              dolfinx::fem::IntegralType type)
-          {
-            auto ids = self.integral_ids(type);
-            return dolfinx_wrappers::as_nbarray(std::move(ids));
-          },
+          { return dolfinx_wrappers::as_nbarray(self.integral_ids(type)); },
           nb::arg("type"))
       .def_prop_ro("integral_types", &dolfinx::fem::Form<T, U>::integral_types)
       .def_prop_ro("needs_facet_permutations",
@@ -916,7 +913,6 @@ void declare_cmap(nb::module_& m, std::string type)
                 mdspan2_t(xb.data(), shape),
                 cmdspan2_t(cell_x.data(), cell_x.shape(0), cell_x.shape(1)),
                 phi);
-
             return dolfinx_wrappers::as_nbarray(std::move(xb),
                                                 {X.shape(0), cell_x.shape(1)});
           },
@@ -1196,9 +1192,10 @@ void fem(nb::module_& m)
              entities,
          int dim)
       {
-        auto integration_entities = dolfinx::fem::compute_integration_domains(
-            type, topology, std::span(entities.data(), entities.size()), dim);
-        return dolfinx_wrappers::as_nbarray(std::move(integration_entities));
+        return dolfinx_wrappers::as_nbarray(
+            dolfinx::fem::compute_integration_domains(
+                type, topology, std::span(entities.data(), entities.size()),
+                dim));
       },
       nb::arg("integral_type"), nb::arg("topology"), nb::arg("entities"),
       nb::arg("dim"));

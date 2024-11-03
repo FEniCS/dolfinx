@@ -133,12 +133,12 @@ void declare_objects(nb::module_& m, const std::string& type)
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {
-             const std::array<int, 2> bs = self.block_size();
+             std::array<int, 2> bs = self.block_size();
              std::size_t nrows = self.num_all_rows() * bs[0];
              std::size_t ncols = self.index_map(1)->size_global() * bs[1];
-             auto dense = self.to_dense();
+             std::vector<T> dense = self.to_dense();
              assert(nrows * ncols == dense.size());
-             return dolfinx_wrappers::as_nbarray(std::move(self.to_dense()),
+             return dolfinx_wrappers::as_nbarray(std::move(dense),
                                                  {nrows, ncols});
            })
       .def_prop_ro(
