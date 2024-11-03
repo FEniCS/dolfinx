@@ -269,12 +269,12 @@ struct dependent_false : std::false_type
 };
 
 /// MPI Type
-template <typename T, typename = void>
+template <typename T>
 struct mpi_type_mapping;
 
 /// @brief Retrieves the MPI data type associated to the provided type.
 /// @tparam T cpp type to map
-template <typename T, typename = std::void_t<decltype(mpi_type_mapping<T>::type)>>
+template <typename T>
 MPI_Datatype mpi_t = mpi_type_mapping<T>::type;
 
 #define MAP_TO_MPI_TYPE(cpp_t, mpi_t)                                          \
@@ -288,14 +288,6 @@ MAP_TO_MPI_TYPE(float, MPI_FLOAT)
 MAP_TO_MPI_TYPE(double, MPI_DOUBLE)
 MAP_TO_MPI_TYPE(std::complex<float>, MPI_C_FLOAT_COMPLEX)
 MAP_TO_MPI_TYPE(std::complex<double>, MPI_C_DOUBLE_COMPLEX)
-// MAP_TO_MPI_TYPE(std::int8_t, MPI_INT8_T)
-// MAP_TO_MPI_TYPE(std::int16_t, MPI_INT16_T)
-// MAP_TO_MPI_TYPE(std::int32_t, MPI_INT32_T)
-// MAP_TO_MPI_TYPE(std::int64_t, MPI_INT64_T)
-// MAP_TO_MPI_TYPE(std::uint8_t, MPI_UINT8_T)
-// MAP_TO_MPI_TYPE(std::uint16_t, MPI_UINT16_T)
-// MAP_TO_MPI_TYPE(std::uint32_t, MPI_UINT32_T)
-// MAP_TO_MPI_TYPE(std::uint64_t, MPI_UINT64_T)
 MAP_TO_MPI_TYPE(short int, MPI_SHORT)
 MAP_TO_MPI_TYPE(int, MPI_INT)
 MAP_TO_MPI_TYPE(long int, MPI_LONG)
@@ -305,6 +297,16 @@ MAP_TO_MPI_TYPE(unsigned int, MPI_UNSIGNED)
 MAP_TO_MPI_TYPE(unsigned long int, MPI_UNSIGNED_LONG)
 MAP_TO_MPI_TYPE(unsigned long long int, MPI_UNSIGNED_LONG_LONG)
 MAP_TO_MPI_TYPE(bool, MPI_C_BOOL)
+
+// NOTE: this mapping fails on some platforms
+// MAP_TO_MPI_TYPE(std::int8_t, MPI_INT8_T)
+// MAP_TO_MPI_TYPE(std::int16_t, MPI_INT16_T)
+// MAP_TO_MPI_TYPE(std::int32_t, MPI_INT32_T)
+// MAP_TO_MPI_TYPE(std::int64_t, MPI_INT64_T)
+// MAP_TO_MPI_TYPE(std::uint8_t, MPI_UINT8_T)
+// MAP_TO_MPI_TYPE(std::uint16_t, MPI_UINT16_T)
+// MAP_TO_MPI_TYPE(std::uint32_t, MPI_UINT32_T)
+// MAP_TO_MPI_TYPE(std::uint64_t, MPI_UINT64_T)
 
 //---------------------------------------------------------------------------
 template <typename U>
