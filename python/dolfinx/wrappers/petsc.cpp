@@ -147,7 +147,7 @@ void petsc_la_module(nb::module_& m)
       "create_index_sets",
       [](const std::vector<std::pair<const common::IndexMap*, int>>& maps)
       {
-        X = std::vector<
+        using X = std::vector<
             std::pair<std::reference_wrapper<const common::IndexMap>, int>>;
         X _maps;
         std::ranges::transform(maps, std::back_inserter(_maps),
@@ -176,14 +176,15 @@ void petsc_la_module(nb::module_& m)
              std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
       {
         std::vector<std::span<const PetscScalar>> _x_b;
-        std::vector<std::pair<
-            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>
-            _maps;
-        for (auto& array : x_b)
-          _x_b.emplace_back(array.data(), array.size());
-        for (auto q : maps)
-          _maps.push_back({*q.first, q.second});
+        std::ranges::transform(x_b, std::back_inserter(_x_b), [](auto x)
+                               { return std::span(x.data(), x.size()); });
 
+        using X = std::vector<std::pair<
+            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
+        X _maps;
+        std::ranges::transform(maps, std::back_inserter(_maps),
+                               [](auto q) -> typename X::value_type
+                               { return {*q.first, q.second}; });
         dolfinx::la::petsc::scatter_local_vectors(x, _x_b, _maps);
       },
       nb::arg("x"), nb::arg("x_b"), nb::arg("maps"),
