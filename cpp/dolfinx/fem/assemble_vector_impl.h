@@ -1076,8 +1076,8 @@ void apply_lifting(
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
-    const std::vector<std::vector<std::shared_ptr<const DirichletBC<T, U>>>>&
-        bcs1,
+    const std::vector<
+        std::vector<std::reference_wrapper<const DirichletBC<T, U>>>>& bcs1,
     const std::vector<std::span<const T>>& x0, T alpha)
 {
   if (!x0.empty() and x0.size() != a.size())
@@ -1115,10 +1115,10 @@ void apply_lifting(
       const int crange = bs1 * (map1->size_local() + map1->num_ghosts());
       bc_markers1.assign(crange, false);
       bc_values1.assign(crange, 0);
-      for (const std::shared_ptr<const DirichletBC<T, U>>& bc : bcs1[j])
+      for (auto& bc : bcs1[j])
       {
-        bc->mark_dofs(bc_markers1);
-        bc->set(bc_values1, std::nullopt, 1);
+        bc.get().mark_dofs(bc_markers1);
+        bc.get().set(bc_values1, std::nullopt, 1);
       }
 
       if (!x0.empty())

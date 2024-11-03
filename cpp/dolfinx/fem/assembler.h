@@ -154,8 +154,8 @@ void apply_lifting(
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
-    const std::vector<std::vector<std::shared_ptr<const DirichletBC<T, U>>>>&
-        bcs1,
+    const std::vector<
+        std::vector<std::reference_wrapper<const DirichletBC<T, U>>>>& bcs1,
     const std::vector<std::span<const T>>& x0, T alpha)
 {
   // If all forms are null, there is nothing to do
@@ -180,8 +180,8 @@ void apply_lifting(
 template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
     std::span<T> b, const std::vector<std::shared_ptr<const Form<T, U>>>& a,
-    const std::vector<std::vector<std::shared_ptr<const DirichletBC<T, U>>>>&
-        bcs1,
+    const std::vector<
+        std::vector<std::reference_wrapper<const DirichletBC<T, U>>>>& bcs1,
     const std::vector<std::span<const T>>& x0, T alpha)
 {
   std::vector<
@@ -268,7 +268,7 @@ void assemble_matrix(
     auto mat_add, const Form<T, U>& a, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
-    const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs)
+    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
 {
   // Index maps for dof ranges
   auto map0 = a.function_spaces().at(0)->dofmap()->index_map;
@@ -284,18 +284,17 @@ void assemble_matrix(
   std::int32_t dim1 = bs1 * (map1->size_local() + map1->num_ghosts());
   for (std::size_t k = 0; k < bcs.size(); ++k)
   {
-    assert(bcs[k]);
-    assert(bcs[k]->function_space());
-    if (a.function_spaces().at(0)->contains(*bcs[k]->function_space()))
+    assert(bcs[k].get().function_space());
+    if (a.function_spaces().at(0)->contains(*bcs[k].get().function_space()))
     {
       dof_marker0.resize(dim0, false);
-      bcs[k]->mark_dofs(dof_marker0);
+      bcs[k].get().mark_dofs(dof_marker0);
     }
 
-    if (a.function_spaces().at(1)->contains(*bcs[k]->function_space()))
+    if (a.function_spaces().at(1)->contains(*bcs[k].get().function_space()))
     {
       dof_marker1.resize(dim1, false);
-      bcs[k]->mark_dofs(dof_marker1);
+      bcs[k].get().mark_dofs(dof_marker1);
     }
   }
 
@@ -312,7 +311,7 @@ void assemble_matrix(
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     auto mat_add, const Form<T, U>& a,
-    const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs)
+    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
 {
   // Prepare constants and coefficients
   const std::vector<T> constants = pack_constants(a);
@@ -392,15 +391,14 @@ void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
 template <dolfinx::scalar T, std::floating_point U>
 void set_diagonal(
     auto set_fn, const FunctionSpace<U>& V,
-    const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
+    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs,
     T diagonal = 1.0)
 {
   for (auto& bc : bcs)
   {
-    assert(bc);
-    if (V.contains(*bc->function_space()))
+    if (V.contains(*bc.get().function_space()))
     {
-      const auto [dofs, range] = bc->dof_indices();
+      const auto [dofs, range] = bc.get().dof_indices();
       set_diagonal(set_fn, dofs.first(range), diagonal);
     }
   }

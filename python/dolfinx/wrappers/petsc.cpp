@@ -266,10 +266,19 @@ void petsc_fem_module(nb::module_& m)
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<const PetscScalar, nb::ndim<2>,
                                     nb::c_contig>>& coefficients,
-         const std::vector<std::shared_ptr<
-             const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>>>& bcs,
+         std::vector<const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>*>
+             bcs,
          bool unrolled)
       {
+        std::vector<std::reference_wrapper<
+            const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>>>
+            _bcs;
+        for (auto bc : bcs)
+        {
+          assert(bc);
+          _bcs.push_back(*bc);
+        }
+
         if (unrolled)
         {
           auto set_fn = dolfinx::la::petsc::Matrix::set_block_expand_fn(
@@ -277,14 +286,14 @@ void petsc_fem_module(nb::module_& m)
               a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
           dolfinx::fem::assemble_matrix(
               set_fn, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), bcs);
+              py_to_cpp_coeffs(coefficients), _bcs);
         }
         else
         {
           dolfinx::fem::assemble_matrix(
               dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a,
               std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), bcs);
+              py_to_cpp_coeffs(coefficients), _bcs);
         }
       },
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
@@ -325,12 +334,21 @@ void petsc_fem_module(nb::module_& m)
   m.def(
       "insert_diagonal",
       [](Mat A, const dolfinx::fem::FunctionSpace<PetscReal>& V,
-         const std::vector<std::shared_ptr<
-             const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>>>& bcs,
+         std::vector<const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>*>
+             bcs,
          PetscScalar diagonal)
       {
+        std::vector<std::reference_wrapper<
+            const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>>>
+            _bcs;
+        for (auto bc : bcs)
+        {
+          assert(bc);
+          _bcs.push_back(*bc);
+        }
+
         dolfinx::fem::set_diagonal(
-            dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES), V, bcs,
+            dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES), V, _bcs,
             diagonal);
       },
       nb::arg("A"), nb::arg("V"), nb::arg("bcs"), nb::arg("diagonal"));

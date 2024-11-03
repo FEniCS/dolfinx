@@ -45,7 +45,7 @@ public:
   /// Constructor
   HyperElasticProblem(
       std::shared_ptr<fem::Form<T>> L, std::shared_ptr<fem::Form<T>> J,
-      std::vector<std::shared_ptr<const fem::DirichletBC<T>>> bcs)
+      std::vector<std::reference_wrapper<const fem::DirichletBC<T>>> bcs)
       : _l(L), _j(J), _bcs(bcs),
         _b(L->function_spaces()[0]->dofmap()->index_map,
            L->function_spaces()[0]->dofmap()->index_map_bs()),
@@ -100,7 +100,7 @@ public:
       const T* _x = nullptr;
       VecGetArrayRead(x_local, &_x);
       std::ranges::for_each(_bcs, [b, x = std::span(_x, n)](auto& bc)
-                            { bc->set(b, x, -1); });
+                            { bc.get().set(b, x, -1); });
       VecRestoreArrayRead(x_local, &_x);
     };
   }
@@ -130,7 +130,7 @@ public:
 
 private:
   std::shared_ptr<fem::Form<T>> _l, _j;
-  std::vector<std::shared_ptr<const fem::DirichletBC<T>>> _bcs;
+  std::vector<std::reference_wrapper<const fem::DirichletBC<T>>> _bcs;
   la::Vector<T> _b;
   Vec _b_petsc = nullptr;
   la::petsc::Matrix _matA;
@@ -243,12 +243,11 @@ int main(int argc, char* argv[])
           }
           return marker;
         });
-    std::vector bcs = {
-        std::make_shared<const fem::DirichletBC<T>>(std::vector<T>{0, 0, 0},
-                                                    bdofs_left, V),
-        std::make_shared<const fem::DirichletBC<T>>(u_rotation, bdofs_right)};
+    std::vector bcs
+        = {fem::DirichletBC<T>(std::vector<T>{0, 0, 0}, bdofs_left, V),
+           fem::DirichletBC<T>(u_rotation, bdofs_right)};
 
-    HyperElasticProblem problem(L, a, bcs);
+    HyperElasticProblem problem(L, a, {bcs[0], bcs[1]});
     nls::petsc::NewtonSolver newton_solver(mesh->comm());
     newton_solver.setF(problem.F(), problem.vector());
     newton_solver.setJ(problem.J(), problem.matrix());

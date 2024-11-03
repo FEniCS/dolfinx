@@ -13,6 +13,7 @@
 #include "utils.h"
 #include <concepts>
 #include <dolfinx/la/petsc.h>
+#include <functional>
 #include <map>
 #include <memory>
 #include <petscmat.h>
@@ -335,7 +336,8 @@ void apply_lifting(
                                std::pair<std::span<const PetscScalar>, int>>>&
         coeffs,
     const std::vector<
-        std::vector<std::shared_ptr<const DirichletBC<PetscScalar, T>>>>& bcs1,
+        std::vector<std::reference_wrapper<const DirichletBC<PetscScalar, T>>>>&
+        bcs1,
     const std::vector<Vec>& x0, PetscScalar alpha)
 {
   Vec b_local;
@@ -399,9 +401,8 @@ template <std::floating_point T>
 void apply_lifting(
     Vec b,
     const std::vector<std::shared_ptr<const Form<PetscScalar, double>>>& a,
-    const std::vector<
-        std::vector<std::shared_ptr<const DirichletBC<PetscScalar, double>>>>&
-        bcs1,
+    const std::vector<std::vector<
+        std::reference_wrapper<const DirichletBC<PetscScalar, double>>>>& bcs1,
     const std::vector<Vec>& x0, PetscScalar alpha)
 {
   Vec b_local;
