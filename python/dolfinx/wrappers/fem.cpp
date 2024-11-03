@@ -1078,7 +1078,7 @@ void declare_real_functions(nb::module_& m)
         auto _marker = [&marker](auto x)
         {
           nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
-              x.data_handle(), {x.extent(0), x.extent(1)}, nb::handle());
+              x.data_handle(), {x.extent(0), x.extent(1)});
           auto marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
@@ -1101,7 +1101,7 @@ void declare_real_functions(nb::module_& m)
         auto _marker = [&marker](auto x)
         {
           nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
-              x.data_handle(), {x.extent(0), x.extent(1)}, nb::handle());
+              x.data_handle(), {x.extent(0), x.extent(1)});
           auto marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());

@@ -216,34 +216,38 @@ void declare_bbtree(nb::module_& m, std::string type)
           },
           nb::arg("src_owner"), nb::arg("dest_owners"), nb::arg("dest_points"),
           nb::arg("dest_cells"))
-      .def_prop_ro("src_owner",
-                   [](const dolfinx::geometry::PointOwnershipData<T>& self)
-                   {
-                     return nb::ndarray<const int, nb::numpy>(
-                         self.src_owner.data(), {self.src_owner.size()},
-                         nb::handle());
-                   })
-      .def_prop_ro("dest_owners",
-                   [](const dolfinx::geometry::PointOwnershipData<T>& self)
-                   {
-                     return nb::ndarray<const int, nb::numpy>(
-                         self.dest_owners.data(), {self.dest_owners.size()},
-                         nb::handle());
-                   })
-      .def_prop_ro("dest_points",
-                   [](const dolfinx::geometry::PointOwnershipData<T>& self)
-                   {
-                     return nb::ndarray<const T, nb::numpy>(
-                         self.dest_points.data(),
-                         {self.dest_points.size() / 3, 3}, nb::handle());
-                   })
-      .def_prop_ro("dest_cells",
-                   [](const dolfinx::geometry::PointOwnershipData<T>& self)
-                   {
-                     return nb::ndarray<const std::int32_t, nb::numpy>(
-                         self.dest_cells.data(), {self.dest_cells.size()},
-                         nb::handle());
-                   });
+      .def_prop_ro(
+          "src_owner",
+          [](const dolfinx::geometry::PointOwnershipData<T>& self)
+          {
+            return nb::ndarray<const int, nb::numpy>(self.src_owner.data(),
+                                                     {self.src_owner.size()});
+          },
+          nb::rv_policy::reference_internal)
+      .def_prop_ro(
+          "dest_owners",
+          [](const dolfinx::geometry::PointOwnershipData<T>& self)
+          {
+            return nb::ndarray<const int, nb::numpy>(self.dest_owners.data(),
+                                                     {self.dest_owners.size()});
+          },
+          nb::rv_policy::reference_internal)
+      .def_prop_ro(
+          "dest_points",
+          [](const dolfinx::geometry::PointOwnershipData<T>& self)
+          {
+            return nb::ndarray<const T, nb::numpy>(
+                self.dest_points.data(), {self.dest_points.size() / 3, 3});
+          },
+          nb::rv_policy::reference_internal)
+      .def_prop_ro(
+          "dest_cells",
+          [](const dolfinx::geometry::PointOwnershipData<T>& self)
+          {
+            return nb::ndarray<const std::int32_t, nb::numpy>(
+                self.dest_cells.data(), {self.dest_cells.size()});
+          },
+          nb::rv_policy::reference_internal);
 }
 } // namespace
 

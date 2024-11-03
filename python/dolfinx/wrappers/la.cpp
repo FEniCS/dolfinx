@@ -56,8 +56,7 @@ void declare_objects(nb::module_& m, const std::string& type)
           [](dolfinx::la::Vector<T>& self)
           {
             return nb::ndarray<T, nb::numpy>(self.mutable_array().data(),
-                                             {self.array().size()},
-                                             nb::handle());
+                                             {self.array().size()});
           },
           nb::rv_policy::reference_internal)
       .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
@@ -146,8 +145,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           "data",
           [](dolfinx::la::MatrixCSR<T>& self)
           {
-            return nb::ndarray<T, nb::numpy>(
-                self.values().data(), {self.values().size()}, nb::handle());
+            return nb::ndarray<T, nb::numpy>(self.values().data(),
+                                             {self.values().size()});
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro(
@@ -155,7 +154,7 @@ void declare_objects(nb::module_& m, const std::string& type)
           [](dolfinx::la::MatrixCSR<T>& self)
           {
             return nb::ndarray<const std::int32_t, nb::numpy>(
-                self.cols().data(), {self.cols().size()}, nb::handle());
+                self.cols().data(), {self.cols().size()});
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro(
@@ -163,8 +162,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           [](dolfinx::la::MatrixCSR<T>& self)
           {
             std::span<const std::int64_t> array = self.row_ptr();
-            return nb::ndarray<const std::int64_t, nb::numpy>(
-                array.data(), {array.size()}, nb::handle());
+            return nb::ndarray<const std::int64_t, nb::numpy>(array.data(),
+                                                              {array.size()});
           },
           nb::rv_policy::reference_internal)
       .def("scatter_rev_begin", &dolfinx::la::MatrixCSR<T>::scatter_rev_begin)
@@ -246,7 +245,8 @@ void la(nb::module_& m)
                      std::reference_wrapper<const dolfinx::common::IndexMap>,
                      int>>,
                  2>& maps,
-             const std::array<std::vector<int>, 2>& bs) {
+             const std::array<std::vector<int>, 2>& bs)
+          {
             new (sp)
                 dolfinx::la::SparsityPattern(comm.get(), patterns, maps, bs);
           },
@@ -282,9 +282,9 @@ void la(nb::module_& m)
           {
             auto [edges, ptr] = self.graph();
             return std::pair(nb::ndarray<const std::int32_t, nb::numpy>(
-                                 edges.data(), {edges.size()}, nb::handle()),
+                                 edges.data(), {edges.size()}),
                              nb::ndarray<const std::int64_t, nb::numpy>(
-                                 ptr.data(), {ptr.size()}, nb::handle()));
+                                 ptr.data(), {ptr.size()}));
           },
           nb::rv_policy::reference_internal);
 
