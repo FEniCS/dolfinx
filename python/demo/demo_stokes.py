@@ -442,18 +442,26 @@ def block_direct_solver():
     # handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    pc.setFactorSolverType("mumps")
-    try:
+    sys = PETSc.Sys()  # type: ignore
+    if sys.hasExternalPackage("mumps") and (PETSc.IntType != np.int64 and MPI.COMM_WORLD.size > 1):
+        pc.setFactorSolverType("mumps")
         pc.setFactorSetUpSolverType()
-    except PETSc.Error as e:
-        if e.ierr == 92:
-            print("The required PETSc solver/preconditioner is not available. Exiting.")
-            print(e)
-            exit(0)
-        else:
-            raise e
-    pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)  # For pressure nullspace
-    pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)  # For pressure nullspace
+        pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
+        pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
+    else:
+        pc.setFactorSolverType("superlu_dist")
+    # pc.setFactorSolverType("mumps")
+    # try:
+    #     pc.setFactorSetUpSolverType()
+    # except PETSc.Error as e:
+    #     if e.ierr == 92:
+    #         print("The required PETSc solver/preconditioner is not available. Exiting.")
+    #         print(e)
+    #         exit(0)
+    #     else:
+    #         raise e
+    # pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)  # For pressure nullspace
+    # pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)  # For pressure nullspace
 
     # Create a block vector (x) to store the full solution, and solve
     x = A.createVecLeft()
