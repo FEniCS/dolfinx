@@ -532,10 +532,14 @@ def mixed_direct():
     # Configure MUMPS to handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    pc.setFactorSolverType("mumps")
-    pc.setFactorSetUpSolverType()
-    pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
-    pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
+    sys = PETSc.Sys()  # type: ignore
+    if sys.hasExternalPackage("mumps") and (PETSc.IntType != np.int64 and MPI.COMM_WORLD.size > 1):
+        pc.setFactorSolverType("mumps")
+        pc.setFactorSetUpSolverType()
+        pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
+        pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
+    else:
+        pc.setFactorSolverType("superlu_dist")
 
     # Compute the solution
     U = Function(W)
