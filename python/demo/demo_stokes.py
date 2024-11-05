@@ -119,7 +119,7 @@ from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 from ufl import div, dx, grad, inner
 
 opts = PETSc.Options()
-opts["mat_superlu_dist_iterrefine"] = True
+# opts["mat_superlu_dist_iterrefine"] = True
 
 
 # We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions for
@@ -442,7 +442,7 @@ def block_direct_solver():
     # handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    pc.setFactorSolverType("superlu_dist")
+    pc.setFactorSolverType("mumps")
     try:
         pc.setFactorSetUpSolverType()
     except PETSc.Error as e:
@@ -452,8 +452,8 @@ def block_direct_solver():
             exit(0)
         else:
             raise e
-    # pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)  # For pressure nullspace
-    # pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)  # For pressure nullspace
+    pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)  # For pressure nullspace
+    pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)  # For pressure nullspace
 
     # Create a block vector (x) to store the full solution, and solve
     x = A.createVecLeft()
@@ -522,7 +522,7 @@ def mixed_direct():
 
     # Set Dirichlet boundary condition values in the RHS
     for bc in bcs:
-        bc.set(b)
+        bc.set(b.array_w)
 
     # Create and configure solver
     ksp = PETSc.KSP().create(msh.comm)
@@ -532,12 +532,10 @@ def mixed_direct():
     # Configure MUMPS to handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    # pc.setFactorSolverType("mumps")
-    # pc.setFactorSetUpSolverType()
-    # pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
-    # pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
-
-    pc.setFactorSolverType("superlu_dist")
+    pc.setFactorSolverType("mumps")
+    pc.setFactorSetUpSolverType()
+    pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
+    pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
 
     # Compute the solution
     U = Function(W)
