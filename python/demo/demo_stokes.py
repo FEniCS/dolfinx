@@ -541,9 +541,10 @@ def mixed_direct():
     pc = ksp.getPC()
     pc.setType("lu")
     sys = PETSc.Sys()  # type: ignore
-    if sys.hasExternalPackage("mumps") and (
-        (PETSc.IntType != np.int64 and MPI.COMM_WORLD.size > 1) or PETSc.ScalarType != np.complex64
-    ):
+    use_superlu = (
+        PETSc.IntType == np.int64 and MPI.COMM_WORLD.size == 1
+    ) or PETSc.ScalarType == np.complex64
+    if sys.hasExternalPackage("mumps") and not use_superlu:
         pc.setFactorSolverType("mumps")
         pc.setFactorSetUpSolverType()
         pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
