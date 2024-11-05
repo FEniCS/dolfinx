@@ -207,6 +207,7 @@ RUN apt-get -qq update && \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-metis \
+    --download-mumps-avoid-mpi-in-place \
     --download-mumps \
     --download-ptscotch \
     --download-scalapack \
@@ -226,6 +227,7 @@ RUN apt-get -qq update && \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-metis \
+    --download-mumps-avoid-mpi-in-place \
     --download-mumps \
     --download-ptscotch \
     --download-scalapack \
@@ -246,6 +248,7 @@ RUN apt-get -qq update && \
     --with-shared-libraries \
     --download-hypre \
     --download-metis \
+    --download-mumps-avoid-mpi-in-place \
     --download-mumps \
     --download-ptscotch \
     --download-scalapack \
@@ -268,6 +271,7 @@ RUN apt-get -qq update && \
     --with-shared-libraries \
     --download-hypre \
     --download-metis \
+    --download-mumps-avoid-mpi-in-place \
     --download-mumps \
     --download-ptscotch \
     --download-scalapack \
@@ -288,6 +292,7 @@ RUN apt-get -qq update && \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-hypre \
+    --download-mumps-avoid-mpi-in-place \
     --download-mumps \
     --download-ptscotch \
     --download-scalapack \
@@ -307,6 +312,7 @@ RUN apt-get -qq update && \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-hypre \
+    --download-mumps-avoid-mpi-in-place \
     --download-mumps \
     --download-ptscotch \
     --download-scalapack \
