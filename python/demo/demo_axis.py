@@ -649,12 +649,12 @@ for m in m_list:
     )
     a, L = ufl.lhs(F), ufl.rhs(F)
     sys = PETSc.Sys()  # type: ignore
-    if sys.hasExternalPackage("mumps") and (PETSc.IntType != np.int64 and MPI.COMM_WORLD.size > 1):  # type: ignore
-        mat_factor_backend = "mumps"
-    elif sys.hasExternalPackage("superlu_dist"):  # type: ignore
+    # if sys.hasExternalPackage("mumps") and (PETSc.IntType != np.int64 and MPI.COMM_WORLD.size > 1):  # type: ignore
+    #     mat_factor_backend = "mumps"
+    if sys.hasExternalPackage("superlu_dist"):  # type: ignore
         mat_factor_backend = "superlu_dist"
     else:
-        if msh.comm > 1:
+        if msh.comm.size > 1:
             raise RuntimeError("This demo requires a parallel linear algebra backend.")
         else:
             mat_factor_backend = "petsc"
