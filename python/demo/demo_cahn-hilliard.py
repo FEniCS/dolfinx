@@ -279,7 +279,7 @@ opts[f"{option_prefix}ksp_type"] = "preonly"
 opts[f"{option_prefix}pc_type"] = "lu"
 sys = PETSc.Sys()  # type: ignore
 # For factorisation prefer MUMPS, then superlu_dist, then default
-if sys.hasExternalPackage("mumps"):
+if sys.hasExternalPackage("mumps") and (PETSc.IntType != np.int64 and MPI.COMM_WORLD.size > 1):
     opts[f"{option_prefix}pc_factor_mat_solver_type"] = "mumps"
 elif sys.hasExternalPackage("superlu_dist"):
     opts[f"{option_prefix}pc_factor_mat_solver_type"] = "superlu_dist"
