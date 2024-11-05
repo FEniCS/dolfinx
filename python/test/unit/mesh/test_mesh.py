@@ -503,35 +503,37 @@ def boundary_2(x):
 
 
 # TODO Test that submesh of full mesh is a copy of the mesh
-@pytest.mark.parametrize("d", [2, 3])
+@pytest.mark.parametrize("d", [1, 2, 3])
 @pytest.mark.parametrize("n", [3, 6])
 @pytest.mark.parametrize("codim", [0, 1, 2])
 @pytest.mark.parametrize("marker", [lambda x: x[0] >= 0.5, lambda x: x[0] >= -1])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("simplex", [True, False])
 def test_submesh_full(d, n, codim, marker, ghost_mode, simplex):
-    if d == codim:
-        pytest.xfail("Cannot create vertex submesh")
-    if d == 2:
+    if d == 1:
+        mesh = create_unit_interval(MPI.COMM_WORLD, n, ghost_mode=ghost_mode)
+    elif d == 2:
         ct = CellType.triangle if simplex else CellType.quadrilateral
         mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode, cell_type=ct)
     else:
         ct = CellType.tetrahedron if simplex else CellType.hexahedron
         mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode, cell_type=ct)
 
-    edim = mesh.topology.dim - codim
+    edim = max(mesh.topology.dim - codim, 0)
     entities = locate_entities(mesh, edim, marker)
     submesh, entity_map, vertex_map, geom_map = create_submesh(mesh, edim, entities)
     submesh_topology_test(mesh, submesh, entity_map, vertex_map, edim)
     submesh_geometry_test(mesh, submesh, entity_map, geom_map, edim)
 
 
-@pytest.mark.parametrize("d", [2, 3])
+@pytest.mark.parametrize("d", [1, 2, 3])
 @pytest.mark.parametrize("n", [3, 6])
 @pytest.mark.parametrize("boundary", [boundary_0, boundary_1, boundary_2])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 def test_submesh_boundary(d, n, boundary, ghost_mode):
-    if d == 2:
+    if d == 1:
+        mesh = create_unit_interval(MPI.COMM_WORLD, n, ghost_mode=ghost_mode)
+    elif d == 2:
         mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)

@@ -55,9 +55,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           "array",
           [](dolfinx::la::Vector<T>& self)
           {
-            return nb::ndarray<T, nb::numpy>(self.mutable_array().data(),
-                                             {self.array().size()},
-                                             nb::handle());
+            std::span<T> x = self.mutable_array();
+            return nb::ndarray<T, nb::numpy>(x.data(), {x.size()});
           },
           nb::rv_policy::reference_internal)
       .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
@@ -82,7 +81,9 @@ void declare_objects(nb::module_& m, const std::string& type)
 
   // dolfinx::la::MatrixCSR
   std::string pyclass_matrix_name = std::string("MatrixCSR_") + type;
-  nb::class_<dolfinx::la::MatrixCSR<T>>(m, pyclass_matrix_name.c_str())
+  nb::class_<dolfinx::la::MatrixCSR<
+      T, std::vector<T>, std::vector<std::int32_t>, std::vector<std::int64_t>>>(
+      m, pyclass_matrix_name.c_str())
       .def(nb::init<const dolfinx::la::SparsityPattern&,
                     dolfinx::la::BlockMode>(),
            nb::arg("p"),
@@ -134,20 +135,20 @@ void declare_objects(nb::module_& m, const std::string& type)
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {
-             const std::array<int, 2> bs = self.block_size();
+             std::array<int, 2> bs = self.block_size();
              std::size_t nrows = self.num_all_rows() * bs[0];
-             auto map_col = self.index_map(1);
-             std::size_t ncols
-                 = (map_col->size_local() + map_col->num_ghosts()) * bs[1];
-             return dolfinx_wrappers::as_nbarray(self.to_dense(),
+             std::size_t ncols = self.index_map(1)->size_global() * bs[1];
+             std::vector<T> dense = self.to_dense();
+             assert(nrows * ncols == dense.size());
+             return dolfinx_wrappers::as_nbarray(std::move(dense),
                                                  {nrows, ncols});
            })
       .def_prop_ro(
           "data",
           [](dolfinx::la::MatrixCSR<T>& self)
           {
-            return nb::ndarray<T, nb::numpy>(
-                self.values().data(), {self.values().size()}, nb::handle());
+            return nb::ndarray<T, nb::numpy>(self.values().data(),
+                                             {self.values().size()});
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro(
@@ -155,16 +156,15 @@ void declare_objects(nb::module_& m, const std::string& type)
           [](dolfinx::la::MatrixCSR<T>& self)
           {
             return nb::ndarray<const std::int32_t, nb::numpy>(
-                self.cols().data(), {self.cols().size()}, nb::handle());
+                self.cols().data(), {self.cols().size()});
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro(
           "indptr",
           [](dolfinx::la::MatrixCSR<T>& self)
           {
-            std::span<const std::int64_t> array = self.row_ptr();
             return nb::ndarray<const std::int64_t, nb::numpy>(
-                array.data(), {array.size()}, nb::handle());
+                self.row_ptr().data(), {self.row_ptr().size()});
           },
           nb::rv_policy::reference_internal)
       .def("scatter_rev_begin", &dolfinx::la::MatrixCSR<T>::scatter_rev_begin)
@@ -246,7 +246,8 @@ void la(nb::module_& m)
                      std::reference_wrapper<const dolfinx::common::IndexMap>,
                      int>>,
                  2>& maps,
-             const std::array<std::vector<int>, 2>& bs) {
+             const std::array<std::vector<int>, 2>& bs)
+          {
             new (sp)
                 dolfinx::la::SparsityPattern(comm.get(), patterns, maps, bs);
           },
@@ -282,9 +283,9 @@ void la(nb::module_& m)
           {
             auto [edges, ptr] = self.graph();
             return std::pair(nb::ndarray<const std::int32_t, nb::numpy>(
-                                 edges.data(), {edges.size()}, nb::handle()),
+                                 edges.data(), {edges.size()}),
                              nb::ndarray<const std::int64_t, nb::numpy>(
-                                 ptr.data(), {ptr.size()}, nb::handle()));
+                                 ptr.data(), {ptr.size()}));
           },
           nb::rv_policy::reference_internal);
 

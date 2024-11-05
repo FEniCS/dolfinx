@@ -47,6 +47,8 @@ nanobind_add_module(
   dolfinx/wrappers/petsc.cpp
   dolfinx/wrappers/refinement.cpp
 )
+
+set(CMAKE_CXX_EXTENSIONS OFF)
 target_compile_definitions(cpp PRIVATE cxx_std_20)
 
 # Add DOLFINx libraries

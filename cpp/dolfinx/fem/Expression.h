@@ -72,7 +72,7 @@ public:
       std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
                          const geometry_type*, const int*, const uint8_t*)>
           fn,
-      const std::vector<int>& value_shape,
+      const std::vector<std::size_t>& value_shape,
       std::shared_ptr<const FunctionSpace<geometry_type>>
           argument_function_space
       = nullptr)
@@ -199,7 +199,7 @@ public:
       num_argument_dofs
           = _argument_function_space->dofmap()->element_dof_layout().num_dofs();
       auto element = _argument_function_space->element();
-
+      num_argument_dofs *= _argument_function_space->dofmap()->bs();
       assert(element);
       if (element->needs_dof_transformations())
       {
@@ -244,7 +244,6 @@ public:
       std::ranges::fill(values_local, 0);
       _fn(values_local.data(), coeff_cell, constant_data.data(),
           coord_dofs.data(), entity_index, nullptr);
-
       post_dof_transform(values_local, cell_info, e, size0);
       for (std::size_t j = 0; j < values_local.size(); ++j)
         values[e * vshape[1] + j] = values_local[j];
@@ -270,7 +269,7 @@ public:
 
   /// @brief Get value shape.
   /// @return The value shape.
-  const std::vector<int>& value_shape() const { return _value_shape; }
+  const std::vector<std::size_t>& value_shape() const { return _value_shape; }
 
   /// @brief Evaluation points on the reference cell.
   /// @return Evaluation points.
@@ -296,7 +295,7 @@ private:
       _fn;
 
   // Shape of the evaluated expression
-  std::vector<int> _value_shape;
+  std::vector<std::size_t> _value_shape;
 
   // Evaluation points on reference cell. Synonymous with X in public
   // interface.

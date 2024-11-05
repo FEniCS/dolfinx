@@ -8,7 +8,7 @@ endif()
 
 # ------------------------------------------------------------------------------
 # Set project name and version number
-project(DOLFINX VERSION "0.9.0.0")
+project(DOLFINX VERSION "0.10.0.0")
 
 set(DOXYGEN_DOLFINX_VERSION
     ${DOLFINX_VERSION}
@@ -303,7 +303,7 @@ endif()
 
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_VERBOSE TRUE)
-find_package(Boost 1.70 REQUIRED timer)
+find_package(Boost 1.70 REQUIRED)
 set_package_properties(
   Boost PROPERTIES
   TYPE REQUIRED
@@ -349,7 +349,7 @@ if(DOLFINX_BASIX_PYTHON)
   endif()
 endif()
 
-find_package(Basix 0.8 REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
+find_package(Basix 0.10 REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 set_package_properties(
   basix PROPERTIES
   TYPE REQUIRED
@@ -380,7 +380,7 @@ set_package_properties(
 # which method UFCx was found.
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
-  find_package(ufcx 0.9 REQUIRED CONFIG)
+  find_package(ufcx 0.10 REQUIRED CONFIG)
 else()
   # Check in MODULE mode (using FindUFCX.cmake) using Python intepreter.
   find_package(
@@ -388,7 +388,7 @@ else()
     COMPONENTS Interpreter
     REQUIRED
   )
-  find_package(UFCx 0.9 REQUIRED MODULE)
+  find_package(UFCx 0.10 REQUIRED MODULE)
 endif()
 
 set_package_properties(

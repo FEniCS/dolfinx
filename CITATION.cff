@@ -1,8 +1,8 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 title: "DOLFINx"
-version: 0.8.0
-date-released: 2024-04-22
+version: 0.9.0
+date-released: 2024-10-10
 url: "https://github.com/FEniCS/dolfinx"
 doi: "10.5281/zenodo.10047760"
 authors:

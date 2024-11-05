@@ -141,7 +141,7 @@ def poisson(dtype):
     b = fem.assemble_vector(L0)
     fem.apply_lifting(b.array, [a0], bcs=[[bc]])
     b.scatter_reverse(la.InsertMode.add)
-    fem.set_bc(b.array, [bc])
+    bc.set(b.array)
 
     # Create a SciPy CSR  matrix that shares data with A and solve
     As = A.to_scipy()
@@ -206,7 +206,7 @@ def elasticity(dtype) -> fem.Function:
     b = fem.assemble_vector(L0)
     fem.apply_lifting(b.array, [a0], bcs=[[bc]])
     b.scatter_reverse(la.InsertMode.add)
-    fem.set_bc(b.array, [bc])
+    bc.set(b.array)
 
     # Create a SciPy CSR  matrix that shares data with A and solve
     As = A.to_scipy()

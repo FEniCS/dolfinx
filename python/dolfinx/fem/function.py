@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 import typing
-import warnings
 from functools import singledispatch
 
 import numpy as np
@@ -461,7 +460,9 @@ class Function(ufl.Coefficient):
         except TypeError:
             # u0 is callable
             assert callable(u0)
-            x = _cpp.fem.interpolation_coords(self._V.element, self._V.mesh.geometry, cells0)
+            x = _cpp.fem.interpolation_coords(
+                self._V.element, self._V.mesh.geometry._cpp_object, cells0
+            )
             self._cpp_object.interpolate(np.asarray(u0(x), dtype=self.dtype), cells0)  # type: ignore
 
     def copy(self) -> Function:
@@ -481,25 +482,6 @@ class Function(ufl.Coefficient):
     def x(self) -> la.Vector:
         """Vector holding the degrees-of-freedom."""
         return self._x
-
-    @property
-    def vector(self):
-        """PETSc vector holding the degrees-of-freedom.
-
-        Upon first call, this function creates a PETSc ``Vec`` object
-        that wraps the degree-of-freedom data. The ``Vec`` object is
-        cached and the cached ``Vec`` is returned upon subsequent calls.
-
-        Note:
-            Prefer :func`x` where possible.
-        """
-        warnings.warn(
-            "dolfinx.fem.Function.vector is deprecated.\n"
-            "Please use dolfinx.fem.Function.x.petsc_vec "
-            "to access the underlying petsc4py wrapper",
-            DeprecationWarning,
-        )
-        return self.x.petsc_vec
 
     @property
     def dtype(self) -> np.dtype:
@@ -645,7 +627,7 @@ def functionspace(
 
     cpp_element = _create_dolfinx_element(mesh.comm, mesh.topology.cell_type, ufl_e, dtype)
 
-    cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology, cpp_element)
+    cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, cpp_element)
 
     assert np.issubdtype(
         mesh.geometry.x.dtype, cpp_element.dtype

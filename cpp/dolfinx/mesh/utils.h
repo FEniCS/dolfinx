@@ -387,7 +387,6 @@ std::vector<T> compute_midpoints(const Mesh<T>& mesh, int dim,
   std::span<const T> x = mesh.geometry().x();
 
   // Build map from entity -> geometry dof
-  // FIXME: This assumes a linear geometry.
   const std::vector<std::int32_t> e_to_g
       = entities_to_geometry(mesh, dim, entities, false);
   std::size_t shape1 = e_to_g.size() / entities.size();
@@ -820,8 +819,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     // destination rank
     assert(cells.size() % num_cell_nodes == 0);
     std::size_t num_cells = cells.size() / num_cell_nodes;
-    std::tie(cells1, original_idx1, ghost_owners) = graph::build::distribute(
-        comm, cells, {num_cells, num_cell_nodes}, dest);
+    std::vector<int> src_ranks;
+    std::tie(cells1, src_ranks, original_idx1, ghost_owners)
+        = graph::build::distribute(comm, cells, {num_cells, num_cell_nodes},
+                                   dest);
     spdlog::debug("Got {} cells from distribution", cells1.size());
   }
   else
@@ -1017,7 +1018,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
       // Distribute cells (topology, includes higher-order 'nodes') to
       // destination rank
-      std::tie(cells1[i], original_idx1[i], ghost_owners[i])
+      std::vector<int> src_ranks;
+      std::tie(cells1[i], src_ranks, original_idx1[i], ghost_owners[i])
           = graph::build::distribute(comm, cells[i],
                                      {num_cells, num_cell_nodes}, dest_i);
       spdlog::debug("Got {} cells from distribution", cells1[i].size());
@@ -1248,7 +1250,12 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
   // Create sub-geometry coordinate element
   CellType sub_coord_cell
       = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
-  fem::CoordinateElement<T> sub_cmap(sub_coord_cell, geometry.cmap().degree(),
+  // Special handling if point meshes, as they only support constant basis
+  // functions
+  int degree = geometry.cmap().degree();
+  if (sub_coord_cell == CellType::point)
+    degree = 0;
+  fem::CoordinateElement<T> sub_cmap(sub_coord_cell, degree,
                                      geometry.cmap().variant());
 
   // Sub-geometry input_global_indices
@@ -1256,8 +1263,7 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
   std::vector<std::int64_t> sub_igi;
   sub_igi.reserve(subx_to_x_dofmap.size());
   std::ranges::transform(subx_to_x_dofmap, std::back_inserter(sub_igi),
-                         [&igi](auto sub_x_dof)
-                         { return igi[sub_x_dof]; });
+                         [&igi](auto sub_x_dof) { return igi[sub_x_dof]; });
 
   // Create geometry
   return {Geometry(sub_x_dof_index_map, std::move(sub_x_dofmap), {sub_cmap},

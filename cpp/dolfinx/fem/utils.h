@@ -573,6 +573,21 @@ Form<T, U> create_form_factory(
                              num_integrals_type[interior_facet]);
     auto itg = integrals.insert({IntegralType::interior_facet, {}});
     auto sd = subdomains.find(IntegralType::interior_facet);
+
+    // Create indicator for interprocess facets
+    std::vector<std::int8_t> interprocess_marker;
+    if (num_integrals_type[interior_facet] > 0)
+    {
+      assert(topology->index_map(tdim - 1));
+      const std::vector<std::int32_t>& interprocess_facets
+          = topology->interprocess_facets();
+      std::int32_t num_facets = topology->index_map(tdim - 1)->size_local()
+                                + topology->index_map(tdim - 1)->num_ghosts();
+      interprocess_marker.resize(num_facets, 0);
+      std::ranges::for_each(interprocess_facets, [&interprocess_marker](auto f)
+                            { interprocess_marker[f] = 1; });
+    }
+
     for (int i = 0; i < num_integrals_type[interior_facet]; ++i)
     {
       const int id = ids[i];
@@ -630,6 +645,13 @@ Form<T, U> create_form_factory(
                 = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
             default_facets_int.insert(default_facets_int.end(), pairs.begin(),
                                       pairs.end());
+          }
+          else if (interprocess_marker[f])
+          {
+            throw std::runtime_error(
+                "Cannot compute interior facet integral over interprocess "
+                "facet. Please use ghost mode shared facet when creating the "
+                "mesh");
           }
         }
         itg.first->second.emplace_back(id, k, default_facets_int,
@@ -852,7 +874,7 @@ get_cell_orientation_info(const Function<T, U>& coefficient)
 }
 
 /// Pack a single coefficient for a single cell
-template <dolfinx::scalar T, int _bs>
+template <int _bs, dolfinx::scalar T>
 void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
           std::span<const std::uint32_t> cell_info, const DofMap& dofmap,
           auto transform)
@@ -869,6 +891,7 @@ void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
     }
     else
     {
+      assert(_bs == bs);
       const int pos_c = _bs * i;
       const int pos_v = _bs * dofs[i];
       for (int k = 0; k < _bs; ++k)
@@ -926,36 +949,47 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
     for (std::size_t e = 0; e < entities.size(); e += estride)
     {
       auto entity = entities.subspan(e, estride);
-      std::int32_t cell = fetch_cells(entity);
-      auto cell_coeff = c.subspan((e / estride) * cstride + offset, space_dim);
-      pack<T, 1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      if (std::int32_t cell = fetch_cells(entity); cell >= 0)
+      {
+        auto cell_coeff
+            = c.subspan((e / estride) * cstride + offset, space_dim);
+        pack<1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      }
     }
     break;
   case 2:
     for (std::size_t e = 0; e < entities.size(); e += estride)
     {
       auto entity = entities.subspan(e, estride);
-      std::int32_t cell = fetch_cells(entity);
-      auto cell_coeff = c.subspan((e / estride) * cstride + offset, space_dim);
-      pack<T, 2>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      if (std::int32_t cell = fetch_cells(entity); cell >= 0)
+      {
+        auto cell_coeff
+            = c.subspan((e / estride) * cstride + offset, space_dim);
+        pack<2>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      }
     }
     break;
   case 3:
     for (std::size_t e = 0; e < entities.size(); e += estride)
     {
       auto entity = entities.subspan(e, estride);
-      std::int32_t cell = fetch_cells(entity);
-      auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
-      pack<T, 3>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      if (std::int32_t cell = fetch_cells(entity); cell >= 0)
+      {
+        auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
+        pack<3>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      }
     }
     break;
   default:
     for (std::size_t e = 0; e < entities.size(); e += estride)
     {
       auto entity = entities.subspan(e, estride);
-      std::int32_t cell = fetch_cells(entity);
-      auto cell_coeff = c.subspan((e / estride) * cstride + offset, space_dim);
-      pack<T, -1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      if (std::int32_t cell = fetch_cells(entity); cell >= 0)
+      {
+        auto cell_coeff
+            = c.subspan((e / estride) * cstride + offset, space_dim);
+        pack<-1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      }
     }
     break;
   }
@@ -1128,6 +1162,7 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
         auto mesh = coefficients[coeff]->function_space()->mesh();
         std::vector<std::int32_t> facets
             = form.domain(IntegralType::interior_facet, id, *mesh);
+
         std::span<const std::uint32_t> cell_info
             = impl::get_cell_orientation_info(*coefficients[coeff]);
 
@@ -1169,7 +1204,8 @@ Expression<T, U> create_expression(
   std::array<std::size_t, 2> Xshape
       = {static_cast<std::size_t>(e.num_points),
          static_cast<std::size_t>(e.entity_dimension)};
-  std::vector<int> value_shape(e.value_shape, e.value_shape + e.num_components);
+  std::vector<std::size_t> value_shape(e.value_shape,
+                                       e.value_shape + e.num_components);
   std::function<void(T*, const T*, const T*,
                      const typename scalar_value_type<T>::value_type*,
                      const int*, const std::uint8_t*)>

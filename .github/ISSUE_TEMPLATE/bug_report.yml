@@ -53,6 +53,7 @@ body:
       description: What version of DOLFINx are you running?
       options:
         - main branch
+        - 0.9.0
         - 0.8.0
         - 0.7.3
         - 0.7.2

@@ -10,6 +10,7 @@ from __future__ import annotations
 import collections
 import functools
 import typing
+import warnings
 
 import numpy as np
 
@@ -232,6 +233,8 @@ def assemble_matrix(
             Degrees-of-freedom constrained by a boundary condition will
             have their rows/columns zeroed and the value ``diagonal``
             set on on the matrix diagonal.
+        diagonal: Value to set on the matrix diagonal for Dirichlet boundary
+            condition constrained degrees-of-freedom belonging to the same trial and test space.
         constants: Constants that appear in the form. If not provided,
             any required constants will be computed.
         coeffs: Coefficients that appear in the form. If not provided,
@@ -271,6 +274,8 @@ def _assemble_matrix_csr(
             Degrees-of-freedom constrained by a boundary condition will
             have their rows/columns zeroed and the value ``diagonal``
             set on on
+        diagonal: Value to set on the matrix diagonal for Dirichlet boundary
+            condition constrained degrees-of-freedom belonging to the same trial and test space.
         constants: Constants that appear in the form. If not provided,
             any required constants will be computed.
             the matrix diagonal.
@@ -301,7 +306,7 @@ def apply_lifting(
     a: list[Form],
     bcs: list[list[DirichletBC]],
     x0: typing.Optional[list[np.ndarray]] = None,
-    scale: float = 1.0,
+    alpha: float = 1,
     constants=None,
     coeffs=None,
 ) -> None:
@@ -340,23 +345,27 @@ def apply_lifting(
     )
     _a = [None if form is None else form._cpp_object for form in a]
     _bcs = [[bc._cpp_object for bc in bcs0] for bcs0 in bcs]
-    _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, scale)
+    _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, alpha)
 
 
 def set_bc(
     b: np.ndarray,
     bcs: list[DirichletBC],
     x0: typing.Optional[np.ndarray] = None,
-    scale: float = 1.0,
+    scale: float = 1,
 ) -> None:
     """Insert boundary condition values into vector.
+
+    Note:
+        This function is deprecated.
 
     Only local (owned) entries are set, hence communication after
     calling this function is not required unless ghost entries need to
     be updated to the boundary condition value.
     """
-    _bcs = [bc._cpp_object for bc in bcs]
-    if x0 is None:
-        _cpp.fem.set_bc(b, _bcs, scale)
-    else:
-        _cpp.fem.set_bc(b, _bcs, x0, scale)
+    warnings.warn(
+        "dolfinx.fem.assembler.set_bc is deprecated. Use dolfinx.fem.DirichletBC.set instead.",
+        DeprecationWarning,
+    )
+    for bc in bcs:
+        bc.set(b, x0, scale)

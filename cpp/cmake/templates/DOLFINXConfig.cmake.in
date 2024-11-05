@@ -12,13 +12,17 @@ find_dependency(MPI REQUIRED)
 find_dependency(spdlog REQUIRED)
 find_dependency(pugixml REQUIRED)
 
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)  # Boost CONFIG mode
+endif()
+
 # Check for Boost
 if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
 endif()
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_VERBOSE TRUE)
-find_dependency(Boost 1.70 REQUIRED COMPONENTS timer)
+find_package(Boost 1.70 REQUIRED)
 
 if(@ufcx_FOUND@)
   find_dependency(ufcx)
