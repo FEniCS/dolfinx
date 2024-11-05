@@ -45,19 +45,19 @@ class PointOwnershipData:
         self._cpp_object = ownership_data
 
     def src_owner(self) -> npt.NDArray[np.int32]:
-        """Ranks owning each point sent into ownership determination for current process"""
+        """Ranks owning each point sent into ownership determination for current process."""
         return self._cpp_object.src_owner
 
     def dest_owner(self) -> npt.NDArray[np.int32]:
-        """Ranks that sent `dest_points` to current process"""
+        """Ranks that sent ``dest_points`` to current process."""
         return self._cpp_object.dest_owners
 
     def dest_points(self) -> npt.NDArray[np.floating]:
-        """Points owned by current rank"""
+        """Points owned by current rank."""
         return self._cpp_object.dest_points
 
     def dest_cells(self) -> npt.NDArray[np.int32]:
-        """Cell indices (local to process) where each entry of `dest_points` is located"""
+        """Cell indices (local to process) where each entry of ``dest_points`` is located."""
         return self._cpp_object.dest_cells
 
 

@@ -73,8 +73,7 @@ TEMPLATE_TEST_CASE("Interval uniform refinement",
 
   // TODO: parent_facet
   auto [refined_mesh, parent_edge, parent_facet] = refinement::refine(
-      mesh, std::nullopt, false, mesh::GhostMode::shared_facet,
-      refinement::Option::parent_cell);
+      mesh, std::nullopt, nullptr, refinement::Option::parent_cell);
 
   std::vector<T> expected_x = {
       /* v_0 */ 0.0, 0.0, 0.0,
@@ -114,7 +113,8 @@ TEMPLATE_TEST_CASE("Interval adaptive refinement",
   std::vector<std::int32_t> edges{1};
   // TODO: parent_facet
   auto [refined_mesh, parent_edge, parent_facet] = refinement::refine(
-      mesh, std::span(edges), false, mesh::GhostMode::shared_facet,
+      mesh, std::span(edges),
+      mesh::create_cell_partitioner(mesh::GhostMode::shared_facet),
       refinement::Option::parent_cell);
 
   std::vector<T> expected_x = {
@@ -190,15 +190,13 @@ TEMPLATE_TEST_CASE("Interval Refinement (parallel)",
   mesh::Mesh<T> mesh = create_mesh();
   mesh.topology()->create_connectivity(1, 0);
 
-  // TODO: parent_facet
   auto [refined_mesh, parent_edges, parent_facet] = refinement::refine(
-      mesh, std::nullopt, false, mesh::GhostMode::shared_facet,
-      refinement::Option::parent_cell);
+      mesh, std::nullopt, nullptr, refinement::Option::parent_cell);
 
   T rank_d = static_cast<T>(rank);
   T comm_size_d = static_cast<T>(comm_size);
 
-  auto x = refined_mesh.geometry().x();
+  std::span x = refined_mesh.geometry().x();
   std::ranges::sort(x);
   std::vector<T> expected_x
       = {rank_d / comm_size_d,

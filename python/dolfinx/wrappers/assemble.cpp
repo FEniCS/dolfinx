@@ -30,6 +30,7 @@
 #include <nanobind/stl/complex.h>
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/map.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/tuple.h>
@@ -193,7 +194,8 @@ void declare_assembly_functions(nb::module_& m)
       nb::arg("form"), "Pack coefficients for a Form.");
   m.def(
       "pack_constants",
-      [](const dolfinx::fem::Form<T, U>& form) {
+      [](const dolfinx::fem::Form<T, U>& form)
+      {
         return dolfinx_wrappers::as_nbarray(dolfinx::fem::pack_constants(form));
       },
       nb::arg("form"), "Pack constants for a Form.");
@@ -252,8 +254,10 @@ void declare_assembly_functions(nb::module_& m)
                a.function_spaces().at(1)->dofmap()->index_map_bs()};
 
         if (data_bs[0] != data_bs[1])
+        {
           throw std::runtime_error(
               "Non-square blocksize unsupported in Python");
+        }
 
         if (data_bs[0] == 1)
         {
@@ -362,13 +366,12 @@ void declare_assembly_functions(nb::module_& m)
                         std::span<const std::int32_t> cols,
                         std::span<const T> data)
         {
-          return fin(
-              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
-                          nb::numpy>(rows.data(), {rows.size()}, nb::handle()),
-              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
-                          nb::numpy>(cols.data(), {cols.size()}, nb::handle()),
-              nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>(
-                  data.data(), {data.size()}, nb::handle()));
+          return fin(nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
+                                 nb::numpy>(rows.data(), {rows.size()}),
+                     nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
+                                 nb::numpy>(cols.data(), {cols.size()}),
+                     nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>(
+                         data.data(), {rows.size(), cols.size()}));
         };
         dolfinx::fem::assemble_matrix(f, form, bcs);
       },
@@ -389,7 +392,7 @@ void declare_assembly_functions(nb::module_& m)
          const std::vector<std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>>& bcs1,
          const std::vector<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>& x0,
-         T scale)
+         T alpha)
       {
         std::vector<std::span<const T>> _x0;
         for (auto x : x0)
@@ -407,31 +410,11 @@ void declare_assembly_functions(nb::module_& m)
                                [](auto& c) { return py_to_cpp_coeffs(c); });
 
         dolfinx::fem::apply_lifting<T>(std::span<T>(b.data(), b.size()), a,
-                                       _constants, _coeffs, bcs1, _x0, scale);
+                                       _constants, _coeffs, bcs1, _x0, alpha);
       },
       nb::arg("b").noconvert(), nb::arg("a"), nb::arg("constants"),
-      nb::arg("coeffs"), nb::arg("bcs1"), nb::arg("x0"), nb::arg("scale"),
+      nb::arg("coeffs"), nb::arg("bcs1"), nb::arg("x0"), nb::arg("alpha"),
       "Modify vector for lifted boundary conditions");
-  m.def(
-      "set_bc",
-      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
-         const std::vector<
-             std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs,
-         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x0, T scale)
-      {
-        dolfinx::fem::set_bc<T>(std::span(b.data(), b.size()), bcs,
-                                std::span(x0.data(), x0.shape(0)), scale);
-      },
-      nb::arg("b").noconvert(), nb::arg("bcs"), nb::arg("x0").noconvert(),
-      nb::arg("scale"));
-  m.def(
-      "set_bc",
-      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
-         const std::vector<
-             std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs,
-         T scale)
-      { dolfinx::fem::set_bc<T>(std::span(b.data(), b.size()), bcs, scale); },
-      nb::arg("b").noconvert(), nb::arg("bcs"), nb::arg("scale"));
 }
 
 } // namespace

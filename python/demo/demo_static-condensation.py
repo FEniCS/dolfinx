@@ -55,7 +55,7 @@ from dolfinx.fem import (
     functionspace,
     locate_dofs_topological,
 )
-from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector, set_bc
+from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import locate_entities_boundary, meshtags
@@ -170,7 +170,7 @@ A_cond.assemble()
 b = assemble_vector(b1)
 apply_lifting(b, [a_cond], bcs=[[bc]])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
-set_bc(b, [bc])
+bc.set(b)
 
 uc = Function(U)
 solver = PETSc.KSP().create(A_cond.getComm())  # type: ignore

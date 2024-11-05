@@ -164,12 +164,12 @@ M_fem = fem.form(M, dtype=dtype)
 # Apply lifting: b <- b - A * x_bc
 b = fem.assemble_vector(L_fem)
 ui.x.array[:] = 0.0
-fem.set_bc(ui.x.array, [bc], scale=-1.0)
+bc.set(ui.x.array, alpha=-1.0)
 fem.assemble_vector(b.array, M_fem)
 b.scatter_reverse(la.InsertMode.add)
 
 # Set BC dofs to zero on right hand side
-fem.set_bc(b.array, [bc], scale=0.0)
+bc.set(b.array, alpha=0.0)
 b.scatter_forward()
 
 # To implement the matrix-free CG solver using *DOLFINx* vectors, we define the
@@ -188,7 +188,7 @@ def action_A(x, y):
     y.scatter_reverse(la.InsertMode.add)
 
     # Set BC dofs to zero
-    fem.set_bc(y.array, [bc], scale=0.0)
+    bc.set(y.array, alpha=0.0)
 
 
 # ### Basic conjugate gradient solver
@@ -248,7 +248,7 @@ u = fem.Function(V, dtype=dtype)
 iter_cg1 = cg(mesh.comm, action_A, u.x, b, max_iter=200, rtol=rtol)
 
 # Set BC values in the solution vector
-fem.set_bc(u.x.array, [bc], scale=1.0)
+bc.set(u.x.array, alpha=1.0)
 
 
 def L2Norm(u):

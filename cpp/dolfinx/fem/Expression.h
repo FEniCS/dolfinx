@@ -72,7 +72,7 @@ public:
       std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
                          const geometry_type*, const int*, const uint8_t*)>
           fn,
-      const std::vector<int>& value_shape,
+      const std::vector<std::size_t>& value_shape,
       std::shared_ptr<const FunctionSpace<geometry_type>>
           argument_function_space
       = nullptr)
@@ -269,7 +269,7 @@ public:
 
   /// @brief Get value shape.
   /// @return The value shape.
-  const std::vector<int>& value_shape() const { return _value_shape; }
+  const std::vector<std::size_t>& value_shape() const { return _value_shape; }
 
   /// @brief Evaluation points on the reference cell.
   /// @return Evaluation points.
@@ -295,7 +295,7 @@ private:
       _fn;
 
   // Shape of the evaluated expression
-  std::vector<int> _value_shape;
+  std::vector<std::size_t> _value_shape;
 
   // Evaluation points on reference cell. Synonymous with X in public
   // interface.

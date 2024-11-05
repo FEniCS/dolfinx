@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "TimeLogger.h"
+
 namespace dolfinx::common
 {
 

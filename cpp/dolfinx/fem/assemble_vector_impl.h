@@ -22,6 +22,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -70,7 +71,7 @@ using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
 /// @param[in] bc_markers1 Marker to identify which DOFs have boundary
 /// conditions applied.
 /// @param[in] x0 Vector used in the lifting.
-/// @param[in] scale Scaling to apply.
+/// @param[in] alpha Scaling to apply.
 template <dolfinx::scalar T, int _bs0 = -1, int _bs1 = -1>
 void _lift_bc_cells(
     std::span<T> b, mdspan2_t x_dofmap,
@@ -83,7 +84,7 @@ void _lift_bc_cells(
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1, std::span<const T> bc_values1,
-    std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T scale)
+    std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T alpha)
 {
   if (cells.empty())
     return;
@@ -183,9 +184,9 @@ void _lift_bc_cells(
             const T bc = bc_values1[jj];
             const T _x0 = x0.empty() ? 0 : x0[jj];
             // const T _x0 = 0;
-            // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
+            // be -= Ae.col(bs1 * j + k) * alpha * (bc - _x0);
             for (int m = 0; m < num_rows; ++m)
-              be[m] -= Ae[m * num_cols + _bs1 * j + k] * scale * (bc - _x0);
+              be[m] -= Ae[m * num_cols + _bs1 * j + k] * alpha * (bc - _x0);
           }
         }
       }
@@ -199,9 +200,9 @@ void _lift_bc_cells(
           {
             const T bc = bc_values1[jj];
             const T _x0 = x0.empty() ? 0 : x0[jj];
-            // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
+            // be -= Ae.col(bs1 * j + k) * alpha * (bc - _x0);
             for (int m = 0; m < num_rows; ++m)
-              be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
+              be[m] -= Ae[m * num_cols + bs1 * j + k] * alpha * (bc - _x0);
           }
         }
       }
@@ -255,7 +256,7 @@ void _lift_bc_cells(
 /// @param[in] bc_markers1 Marker to identify which DOFs have boundary
 /// conditions applied.
 /// @param[in] x0 The vector used in the lifting.
-/// @param[in] scale The scaling to apply.
+/// @param[in] alpha The scaling to apply.
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
 template <dolfinx::scalar T, int _bs = -1>
@@ -270,7 +271,7 @@ void _lift_bc_exterior_facets(
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1, std::span<const T> bc_values1,
-    std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T scale,
+    std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T alpha,
     std::span<const std::uint8_t> perms)
 {
   if (facets.empty())
@@ -358,9 +359,9 @@ void _lift_bc_exterior_facets(
         {
           const T bc = bc_values1[jj];
           const T _x0 = x0.empty() ? 0 : x0[jj];
-          // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
+          // be -= Ae.col(bs1 * j + k) * alpha * (bc - _x0);
           for (int m = 0; m < num_rows; ++m)
-            be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
+            be[m] -= Ae[m * num_cols + bs1 * j + k] * alpha * (bc - _x0);
         }
       }
     }
@@ -406,7 +407,7 @@ void _lift_bc_exterior_facets(
 /// @param[in] bc_markers1 Marker to identify which DOFs have boundary
 /// conditions applied.
 /// @param[in] x0 The vector used in the lifting.
-/// @param[in] scale The scaling to apply
+/// @param[in] alpha The scaling to apply
 template <dolfinx::scalar T, int _bs = -1>
 void _lift_bc_interior_facets(
     std::span<T> b, mdspan2_t x_dofmap,
@@ -420,7 +421,7 @@ void _lift_bc_interior_facets(
     std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
     std::span<const std::uint8_t> perms, std::span<const T> bc_values1,
-    std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T scale)
+    std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T alpha)
 {
   if (facets.empty())
     return;
@@ -568,9 +569,9 @@ void _lift_bc_interior_facets(
         {
           const T bc = bc_values1[jj];
           const T _x0 = x0.empty() ? 0 : x0[jj];
-          // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
+          // be -= Ae.col(bs1 * j + k) * alpha * (bc - _x0);
           for (int m = 0; m < num_rows; ++m)
-            be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
+            be[m] -= Ae[m * num_cols + bs1 * j + k] * alpha * (bc - _x0);
         }
       }
     }
@@ -586,11 +587,11 @@ void _lift_bc_interior_facets(
         {
           const T bc = bc_values1[jj];
           const T _x0 = x0.empty() ? 0 : x0[jj];
-          // be -= Ae.col(offset + bs1 * j + k) * scale * (bc - x0[jj]);
+          // be -= Ae.col(offset + bs1 * j + k) * alpha * (bc - x0[jj]);
           for (int m = 0; m < num_rows; ++m)
           {
             be[m]
-                -= Ae[m * num_cols + offset + bs1 * j + k] * scale * (bc - _x0);
+                -= Ae[m * num_cols + offset + bs1 * j + k] * alpha * (bc - _x0);
           }
         }
       }
@@ -910,7 +911,7 @@ void assemble_interior_facets(
 
 /// Modify RHS vector to account for boundary condition such that:
 ///
-/// b <- b - scale * A (x_bc - x0)
+/// b <- b - alpha * A.(x_bc - x0)
 ///
 /// @param[in,out] b The vector to be modified
 /// @param[in] a The bilinear form that generates A
@@ -923,7 +924,7 @@ void assemble_interior_facets(
 /// which bcs belong
 /// @param[in] x0 The array used in the lifting, typically a 'current
 /// solution' in a Newton method
-/// @param[in] scale Scaling to apply
+/// @param[in] alpha Scaling to apply
 template <dolfinx::scalar T, std::floating_point U>
 void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
              std::span<const scalar_value_type_t<T>> x,
@@ -932,7 +933,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
                             std::pair<std::span<const T>, int>>& coefficients,
              std::span<const T> bc_values1,
              std::span<const std::int8_t> bc_markers1, std::span<const T> x0,
-             T scale)
+             T alpha)
 {
   // Integration domain mesh
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
@@ -986,7 +987,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
           {dofmap0, bs0, a.domain(IntegralType::cell, i, *mesh0)}, P0,
           {dofmap1, bs1, a.domain(IntegralType::cell, i, *mesh1)}, P1T,
           constants, coeffs, cstride, cell_info0, cell_info1, bc_values1,
-          bc_markers1, x0, scale);
+          bc_markers1, x0, alpha);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
@@ -995,7 +996,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
           {dofmap0, bs0, a.domain(IntegralType::cell, i, *mesh0)}, P0,
           {dofmap1, bs1, a.domain(IntegralType::cell, i, *mesh1)}, P1T,
           constants, coeffs, cstride, cell_info0, cell_info1, bc_values1,
-          bc_markers1, x0, scale);
+          bc_markers1, x0, alpha);
     }
     else
     {
@@ -1004,7 +1005,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
                      P0,
                      {dofmap1, bs1, a.domain(IntegralType::cell, i, *mesh1)},
                      P1T, constants, coeffs, cstride, cell_info0, cell_info1,
-                     bc_values1, bc_markers1, x0, scale);
+                     bc_values1, bc_markers1, x0, alpha);
     }
   }
 
@@ -1030,7 +1031,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
         {dofmap0, bs0, a.domain(IntegralType::exterior_facet, i, *mesh0)}, P0,
         {dofmap1, bs1, a.domain(IntegralType::exterior_facet, i, *mesh1)}, P1T,
         constants, coeffs, cstride, cell_info0, cell_info1, bc_values1,
-        bc_markers1, x0, scale, perms);
+        bc_markers1, x0, alpha, perms);
   }
 
   for (int i : a.integral_ids(IntegralType::interior_facet))
@@ -1045,19 +1046,20 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
         {dofmap0, bs0, a.domain(IntegralType::interior_facet, i, *mesh0)}, P0,
         {dofmap1, bs1, a.domain(IntegralType::interior_facet, i, *mesh1)}, P1T,
         constants, coeffs, cstride, cell_info0, cell_info1, perms, bc_values1,
-        bc_markers1, x0, scale);
+        bc_markers1, x0, alpha);
   }
 }
 
 /// Modify b such that:
 ///
-///   b <- b - scale * A_j (g_j - x0_j)
+///   b <- b - alpha * A_j.(g_j - x0_j)
 ///
-/// where j is a block (nest) row index. For a non-blocked problem j = 0.
-/// The boundary conditions bc1 are on the trial spaces V_j. The forms
-/// in [a] must have the same test space as L (from which b was built),
-/// but the trial space may differ. If x0 is not supplied, then it is
-/// treated as zero.
+/// where j is a block (nest) row index. For a non-blocked problem j =
+/// 0. The boundary conditions bc1 are on the trial spaces V_j. The
+/// forms in [a] must have the same test space as L (from which b was
+/// built), but the trial space may differ. If x0 is not supplied, then
+/// it is treated as zero.
+///
 /// @param[in,out] b The vector to be modified
 /// @param[in] a The bilinear forms, where a[j] is the form that
 /// generates A_j
@@ -1067,7 +1069,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
 /// bcs1[2] are the boundary conditions applied to the columns of a[2] /
 /// x0[2] block
 /// @param[in] x0 The vectors used in the lifting
-/// @param[in] scale Scaling to apply
+/// @param[in] alpha Scaling to apply
 template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
     std::span<T> b, const std::vector<std::shared_ptr<const Form<T, U>>> a,
@@ -1076,7 +1078,7 @@ void apply_lifting(
                                std::pair<std::span<const T>, int>>>& coeffs,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T, U>>>>&
         bcs1,
-    const std::vector<std::span<const T>>& x0, T scale)
+    const std::vector<std::span<const T>>& x0, T alpha)
 {
   if (!x0.empty() and x0.size() != a.size())
   {
@@ -1116,31 +1118,31 @@ void apply_lifting(
       for (const std::shared_ptr<const DirichletBC<T, U>>& bc : bcs1[j])
       {
         bc->mark_dofs(bc_markers1);
-        bc->dof_values(bc_values1);
+        bc->set(bc_values1, std::nullopt, 1);
       }
 
       if (!x0.empty())
       {
         lift_bc<T>(b, *a[j], x_dofmap, x, constants[j], coeffs[j], bc_values1,
-                   bc_markers1, x0[j], scale);
+                   bc_markers1, x0[j], alpha);
       }
       else
       {
         lift_bc<T>(b, *a[j], x_dofmap, x, constants[j], coeffs[j], bc_values1,
-                   bc_markers1, std::span<const T>(), scale);
+                   bc_markers1, std::span<const T>(), alpha);
       }
     }
   }
 }
 
-/// Assemble linear form into a vector
+/// @brief Assemble linear form into a vector.
 /// @param[in,out] b The vector to be assembled. It will not be zeroed
 /// before assembly.
-/// @param[in] L The linear forms to assemble into b
-/// @param[in] x_dofmap Mesh geometry dofmap
-/// @param[in] x Mesh coordinates
-/// @param[in] constants Packed constants that appear in `L`
-/// @param[in] coefficients Packed coefficients that appear in `L`
+/// @param[in] L Linear forms to assemble into b.
+/// @param[in] x_dofmap Mesh geometry dofmap.
+/// @param[in] x Mesh coordinates.
+/// @param[in] constants Packed constants that appear in `L`.
+/// @param[in] coefficients Packed coefficients that appear in `L`.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_vector(
     std::span<T> b, const Form<T, U>& L, mdspan2_t x_dofmap,

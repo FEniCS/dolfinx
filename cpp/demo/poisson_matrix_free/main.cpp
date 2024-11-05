@@ -182,14 +182,14 @@ void solver(MPI_Comm comm)
 
   // Apply lifting to account for Dirichlet boundary condition
   // b <- b - A * x_bc
-  fem::set_bc<T, U>(ui->x()->mutable_array(), {bc}, T(-1));
+  bc->set(ui->x()->mutable_array(), std::nullopt, T(-1));
   fem::assemble_vector(b.mutable_array(), *M);
 
   // Communicate ghost values
   b.scatter_rev(std::plus<T>());
 
   // Set BC dofs to zero (effectively zeroes columns of A)
-  fem::set_bc<T, U>(b.mutable_array(), {bc}, T(0));
+  bc->set(b.mutable_array(), std::nullopt, T(0));
 
   b.scatter_fwd();
 
@@ -212,7 +212,7 @@ void solver(MPI_Comm comm)
                          fem::make_coefficients_span(coeff));
 
     // Set BC dofs to zero (effectively zeroes rows of A)
-    fem::set_bc<T, U>(y.mutable_array(), {bc}, T(0));
+    bc->set(y.mutable_array(), std::nullopt, T(0));
 
     // Accumulate ghost values
     y.scatter_rev(std::plus<T>());
@@ -226,7 +226,7 @@ void solver(MPI_Comm comm)
   int num_it = linalg::cg(*u->x(), b, action, 200, 1e-6);
 
   // Set BC values in the solution vectors
-  fem::set_bc<T, U>(u->x()->mutable_array(), {bc}, T(1));
+  bc->set(u->x()->mutable_array(), std::nullopt, T(1));
 
   // Compute L2 error (squared) of the solution vector e = (u - u_d, u
   // - u_d)*dx
