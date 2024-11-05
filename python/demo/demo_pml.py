@@ -697,7 +697,7 @@ a, L = ufl.lhs(F), ufl.rhs(F)
 
 # For factorisation prefer MUMPS, then superlu_dist, then default
 sys = PETSc.Sys()  # type: ignore
-if sys.hasExternalPackage("mumps"):  # type: ignore
+if sys.hasExternalPackage("mumps") and (PETSc.IntType != np.int64 and MPI.COMM_WORLD.size > 1):  # type: ignore
     mat_factor_backend = "mumps"
 elif sys.hasExternalPackage("superlu_dist"):  # type: ignore
     mat_factor_backend = "superlu_dist"
