@@ -649,10 +649,10 @@ for m in m_list:
     )
     a, L = ufl.lhs(F), ufl.rhs(F)
     sys = PETSc.Sys()  # type: ignore
-    if sys.hasExternalPackage("superlu_dist"):  # type: ignore
-        mat_factor_backend = "superlu_dist"
-    elif sys.hasExternalPackage("mumps"):  # type: ignore
+    if sys.hasExternalPackage("mumps"):  # type: ignore
         mat_factor_backend = "mumps"
+    elif sys.hasExternalPackage("superlu_dist"):  # type: ignore
+        mat_factor_backend = "superlu_dist"
     else:
         if msh.comm > 1:
             raise RuntimeError("This demo requires a parallel linear algebra backend.")
