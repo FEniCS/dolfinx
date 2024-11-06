@@ -43,16 +43,15 @@ class HyperElasticProblem
 {
 public:
   /// Constructor
-  HyperElasticProblem(
-      std::shared_ptr<fem::Form<T>> L, std::shared_ptr<fem::Form<T>> J,
-      std::vector<std::reference_wrapper<const fem::DirichletBC<T>>> bcs)
-      : _l(L), _j(J), _bcs(bcs),
-        _b(L->function_spaces()[0]->dofmap()->index_map,
-           L->function_spaces()[0]->dofmap()->index_map_bs()),
-        _matA(la::petsc::Matrix(fem::petsc::create_matrix(*J, "aij"), false))
+  HyperElasticProblem(fem::Form<T>& L, fem::Form<T>& J,
+                      const std::vector<fem::DirichletBC<T>>& bcs)
+      : _l(L), _j(J), _bcs(bcs.begin(), bcs.end()),
+        _b(L.function_spaces()[0]->dofmap()->index_map,
+           L.function_spaces()[0]->dofmap()->index_map_bs()),
+        _matA(la::petsc::Matrix(fem::petsc::create_matrix(J, "aij"), false))
   {
-    auto map = L->function_spaces()[0]->dofmap()->index_map;
-    const int bs = L->function_spaces()[0]->dofmap()->index_map_bs();
+    auto map = L.function_spaces()[0]->dofmap()->index_map;
+    const int bs = L.function_spaces()[0]->dofmap()->index_map_bs();
     std::int32_t size_local = bs * map->size_local();
 
     std::vector<PetscInt> ghosts(map->ghosts().begin(), map->ghosts().end());
@@ -88,7 +87,7 @@ public:
       // Assemble b and update ghosts
       std::span b(_b.mutable_array());
       std::ranges::fill(b, 0);
-      fem::assemble_vector<T>(b, *_l);
+      fem::assemble_vector<T>(b, _l);
       VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
       VecGhostUpdateEnd(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
 
@@ -111,12 +110,12 @@ public:
     return [&](const Vec, Mat A)
     {
       MatZeroEntries(A);
-      fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A, ADD_VALUES), *_j,
+      fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A, ADD_VALUES), _j,
                            _bcs);
       MatAssemblyBegin(A, MAT_FLUSH_ASSEMBLY);
       MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY);
       fem::set_diagonal(la::petsc::Matrix::set_fn(A, INSERT_VALUES),
-                        *_j->function_spaces()[0], _bcs);
+                        *_j.function_spaces()[0], _bcs);
       MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
       MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
     };
@@ -129,7 +128,8 @@ public:
   Mat matrix() { return _matA.mat(); }
 
 private:
-  std::shared_ptr<fem::Form<T>> _l, _j;
+  fem::Form<T>& _l;
+  fem::Form<T>& _j;
   std::vector<std::reference_wrapper<const fem::DirichletBC<T>>> _bcs;
   la::Vector<T> _b;
   Vec _b_petsc = nullptr;
@@ -174,12 +174,12 @@ int main(int argc, char* argv[])
 
     // Define solution function
     auto u = std::make_shared<fem::Function<T>>(V);
-    auto a = std::make_shared<fem::Form<T>>(
-        fem::create_form<T>(*form_hyperelasticity_J_form, {V, V}, {{"u", u}},
-                            {{"B", B}, {"T", traction}}, {}, {}));
-    auto L = std::make_shared<fem::Form<T>>(
-        fem::create_form<T>(*form_hyperelasticity_F_form, {V}, {{"u", u}},
-                            {{"B", B}, {"T", traction}}, {}, {}));
+    fem::Form<T> a
+        = fem::create_form<T>(*form_hyperelasticity_J_form, {V, V}, {{"u", u}},
+                              {{"B", B}, {"T", traction}}, {}, {});
+    fem::Form<T> L
+        = fem::create_form<T>(*form_hyperelasticity_F_form, {V}, {{"u", u}},
+                              {{"B", B}, {"T", traction}}, {}, {});
 
     auto u_rotation = std::make_shared<fem::Function<T>>(V);
     u_rotation->interpolate(
@@ -247,7 +247,7 @@ int main(int argc, char* argv[])
         = {fem::DirichletBC<T>(std::vector<T>{0, 0, 0}, bdofs_left, V),
            fem::DirichletBC<T>(u_rotation, bdofs_right)};
 
-    HyperElasticProblem problem(L, a, {bcs[0], bcs[1]});
+    HyperElasticProblem problem(L, a, bcs);
     nls::petsc::NewtonSolver newton_solver(mesh->comm());
     newton_solver.setF(problem.F(), problem.vector());
     newton_solver.setJ(problem.J(), problem.matrix());
@@ -261,6 +261,9 @@ int main(int argc, char* argv[])
 
     // Compute Cauchy stress. Construct appropriate Basix element for
     // stress.
+    fem::Expression sigma_expression = fem::create_expression<T, U>(
+        *expression_hyperelasticity_sigma, {{"u", u}}, {});
+
     constexpr auto family = basix::element::family::P;
     auto cell_type
         = mesh::cell_type_to_basix_type(mesh->topology()->cell_type());
@@ -271,10 +274,8 @@ int main(int argc, char* argv[])
         basix::element::dpc_variant::unset, discontinuous);
     auto S = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace(
         mesh, S_element, std::vector<std::size_t>{3, 3}));
-    auto sigma_expression = fem::create_expression<T, U>(
-        *expression_hyperelasticity_sigma, {{"u", u}}, {});
 
-    auto sigma = fem::Function<T>(S);
+    fem::Function<T> sigma(S);
     sigma.name = "cauchy_stress";
     sigma.interpolate(sigma_expression);
 
