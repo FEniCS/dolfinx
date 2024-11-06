@@ -319,7 +319,9 @@ MAP_TO_MPI_TYPE(std::uint8_t, MPI_UINT8_T)
 MAP_TO_MPI_TYPE(std::uint16_t, MPI_UINT16_T)
 MAP_TO_MPI_TYPE(std::uint32_t, MPI_UINT32_T)
 MAP_TO_MPI_TYPE(std::uint64_t, MPI_UINT64_T)
-
+# if __LONG_LONG_WIDTH__ > 64
+MAP_TO_MPI_TYPE(unsigned long long int, MPI_UNSIGNED_LONG_LONG)
+#endif
 //---------------------------------------------------------------------------
 template <typename U>
 std::pair<std::vector<std::int32_t>,
