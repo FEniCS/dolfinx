@@ -39,7 +39,7 @@ class TestPETScSolverWrappers:
         sys = PETSc.Sys()
         if MPI.COMM_WORLD.size == 1:
             factor_type = "petsc"
-        if sys.hasExternalPackage("mumps"):
+        elif sys.hasExternalPackage("mumps"):
             factor_type = "mumps"
         elif sys.hasExternalPackage("superlu_dist"):
             factor_type = "superlu_dist"
