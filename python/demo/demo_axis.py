@@ -651,7 +651,7 @@ for m in m_list:
     sys = PETSc.Sys()  # type: ignore
     use_superlu = PETSc.IntType == np.int64
     if sys.hasExternalPackage("mumps") and not use_superlu:
-         mat_factor_backend = "mumps"
+        mat_factor_backend = "mumps"
     elif sys.hasExternalPackage("superlu_dist"):  # type: ignore
         mat_factor_backend = "superlu_dist"
     else:
