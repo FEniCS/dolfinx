@@ -650,7 +650,7 @@ for m in m_list:
     a, L = ufl.lhs(F), ufl.rhs(F)
     sys = PETSc.Sys()  # type: ignore
     use_superlu = PETSc.IntType == np.int64
-    if sys.hasExternalPackage("mumps") and not use_superlu:
+    if sys.hasExternalPackage("mumps") and not use_superlu:  # type: ignore
         mat_factor_backend = "mumps"
     elif sys.hasExternalPackage("superlu_dist"):  # type: ignore
         mat_factor_backend = "superlu_dist"
