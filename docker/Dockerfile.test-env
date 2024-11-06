@@ -207,6 +207,7 @@ RUN apt-get -qq update && \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-metis \
+    --download-mumps-avoid-mpi-in-place \
     --download-mumps \
     --download-ptscotch \
     --download-scalapack \
@@ -226,9 +227,12 @@ RUN apt-get -qq update && \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-metis \
+    --download-mumps-avoid-mpi-in-place \
     --download-mumps \
     --download-ptscotch \
     --download-scalapack \
+    --download-superlu \
+    --download-superlu_dist \
     --with-scalar-type=complex \
     --with-precision=single && \
     make PETSC_ARCH=linux-gnu-complex64-32 ${MAKEFLAGS} all && \
@@ -244,6 +248,7 @@ RUN apt-get -qq update && \
     --with-shared-libraries \
     --download-hypre \
     --download-metis \
+    --download-mumps-avoid-mpi-in-place \
     --download-mumps \
     --download-ptscotch \
     --download-scalapack \
@@ -266,6 +271,7 @@ RUN apt-get -qq update && \
     --with-shared-libraries \
     --download-hypre \
     --download-metis \
+    --download-mumps-avoid-mpi-in-place \
     --download-mumps \
     --download-ptscotch \
     --download-scalapack \
@@ -286,6 +292,7 @@ RUN apt-get -qq update && \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-hypre \
+    --download-mumps-avoid-mpi-in-place \
     --download-mumps \
     --download-ptscotch \
     --download-scalapack \
@@ -305,6 +312,7 @@ RUN apt-get -qq update && \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-hypre \
+    --download-mumps-avoid-mpi-in-place \
     --download-mumps \
     --download-ptscotch \
     --download-scalapack \
