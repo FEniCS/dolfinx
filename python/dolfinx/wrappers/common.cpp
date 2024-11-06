@@ -21,6 +21,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/chrono.h>
+#include <nanobind/stl/map.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
@@ -127,8 +128,8 @@ void common(nb::module_& m)
           [](const dolfinx::common::IndexMap& self)
           {
             std::span ghosts = self.ghosts();
-            return nb::ndarray<const std::int64_t, nb::numpy>(
-                ghosts.data(), {ghosts.size()}, nb::handle());
+            return nb::ndarray<const std::int64_t, nb::numpy>(ghosts.data(),
+                                                              {ghosts.size()});
           },
           nb::rv_policy::reference_internal, "Return list of ghost indices")
       .def_prop_ro(
@@ -136,8 +137,8 @@ void common(nb::module_& m)
           [](const dolfinx::common::IndexMap& self)
           {
             std::span owners = self.owners();
-            return nb::ndarray<nb::numpy, const int, nb::ndim<1>>(
-                owners.data(), {owners.size()}, nb::handle());
+            return nb::ndarray<const int, nb::ndim<1>, nb::numpy>(
+                owners.data(), {owners.size()});
           },
           nb::rv_policy::reference_internal)
       .def(
@@ -161,6 +162,7 @@ void common(nb::module_& m)
             return dolfinx_wrappers::as_nbarray(std::move(local));
           },
           nb::arg("global"));
+
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(
       m, "Timer", "Timer class")
@@ -174,10 +176,16 @@ void common(nb::module_& m)
            "Elapsed time")
       .def("stop",
            &dolfinx::common::Timer<std::chrono::high_resolution_clock>::stop<>,
-           "Stop timer");
+           "Stop timer")
+      .def("resume",
+           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::resume,
+           "Resume timer")
+      .def("flush",
+           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::flush,
+           "Flush timer");
 
-  // dolfinx::common::Timer enum
   m.def("timing", &dolfinx::timing);
+  m.def("timings", &dolfinx::timings);
 
   m.def(
       "list_timings",

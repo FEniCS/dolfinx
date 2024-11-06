@@ -82,8 +82,7 @@ void declare_adjacency_list(nb::module_& m, std::string type)
           [](const dolfinx::graph::AdjacencyList<T>& self, int i)
           {
             std::span<const T> link = self.links(i);
-            return nb::ndarray<const T, nb::numpy>(link.data(), {link.size()},
-                                                   nb::handle());
+            return nb::ndarray<const T, nb::numpy>(link.data(), {link.size()});
           },
           nb::rv_policy::reference_internal, nb::arg("i"),
           "Links (edges) of a node")
@@ -91,8 +90,8 @@ void declare_adjacency_list(nb::module_& m, std::string type)
           "array",
           [](const dolfinx::graph::AdjacencyList<T>& self)
           {
-            return nb::ndarray<const T, nb::numpy>(
-                self.array().data(), {self.array().size()}, nb::handle());
+            return nb::ndarray<const T, nb::numpy>(self.array().data(),
+                                                   {self.array().size()});
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro(
@@ -100,7 +99,7 @@ void declare_adjacency_list(nb::module_& m, std::string type)
           [](const dolfinx::graph::AdjacencyList<T>& self)
           {
             return nb::ndarray<const std::int32_t, nb::numpy>(
-                self.offsets().data(), {self.offsets().size()}, nb::handle());
+                self.offsets().data(), {self.offsets().size()});
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro("num_nodes", &dolfinx::graph::AdjacencyList<T>::num_nodes)
