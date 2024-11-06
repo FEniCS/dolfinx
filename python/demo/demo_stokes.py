@@ -118,9 +118,6 @@ from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 from ufl import div, dx, grad, inner
 
-opts = PETSc.Options()
-# opts["mat_superlu_dist_iterrefine"] = True
-
 
 # We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions for
 # locating geometrically subsets of the boundary, and define a function
@@ -451,18 +448,6 @@ def block_direct_solver():
         pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
     else:
         pc.setFactorSolverType("superlu_dist")
-    # pc.setFactorSolverType("mumps")
-    # try:
-    #     pc.setFactorSetUpSolverType()
-    # except PETSc.Error as e:
-    #     if e.ierr == 92:
-    #         print("The required PETSc solver/preconditioner is not available. Exiting.")
-    #         print(e)
-    #         exit(0)
-    #     else:
-    #         raise e
-    # pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)  # For pressure nullspace
-    # pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)  # For pressure nullspace
 
     # Create a block vector (x) to store the full solution, and solve
     x = A.createVecLeft()
