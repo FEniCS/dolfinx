@@ -697,13 +697,14 @@ a, L = ufl.lhs(F), ufl.rhs(F)
 
 # For factorisation prefer MUMPS, then superlu_dist, then default
 sys = PETSc.Sys()  # type: ignore
-if sys.hasExternalPackage("mumps") and (PETSc.IntType != np.int64 and MPI.COMM_WORLD.size > 1):  # type: ignore
+use_superlu = PETSc.IntType == np.int64
+if sys.hasExternalPackage("mumps") and not use_superlu:
     mat_factor_backend = "mumps"
 elif sys.hasExternalPackage("superlu_dist"):  # type: ignore
     mat_factor_backend = "superlu_dist"
 else:
     if msh.comm > 1:
-        raise RuntimeError("This demo requires a parallel linear algebra backend.")
+        raise RuntimeError("This demo requires a parallel LU solver.")
     else:
         mat_factor_backend = "petsc"
 

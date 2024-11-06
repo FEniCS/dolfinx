@@ -443,7 +443,7 @@ def block_direct_solver():
     pc = ksp.getPC()
     pc.setType("lu")
     sys = PETSc.Sys()  # type: ignore
-    use_superlu = PETSc.IntType == np.int64 or PETSc.ScalarType == np.complex64
+    use_superlu = PETSc.IntType == np.int64
     if sys.hasExternalPackage("mumps") and not use_superlu:
         pc.setFactorSolverType("mumps")
         pc.setFactorSetUpSolverType()
@@ -589,6 +589,5 @@ np.testing.assert_allclose(norm_u_2, norm_u_0, rtol=1e-4)
 np.testing.assert_allclose(norm_p_2, norm_p_0, rtol=1e-4)
 
 # Solve using a non-blocked matrix and an LU solver
-if PETSc.ScalarType != np.complex64:
-    norm_u_3, norm_p_3 = mixed_direct()
-    np.testing.assert_allclose(norm_u_3, norm_u_0, rtol=1e-4)
+norm_u_3, norm_p_3 = mixed_direct()
+np.testing.assert_allclose(norm_u_3, norm_u_0, rtol=1e-4)
