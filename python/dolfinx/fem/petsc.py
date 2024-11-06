@@ -160,10 +160,12 @@ def create_matrix(a: Form, mat_type=None) -> PETSc.Mat:
     """Create a PETSc matrix that is compatible with a bilinear form.
 
     Note:
-        Due to subtle issues in the interaction between petsc4py memory management
-        and the Python garbage collector, it is recommended that the method ``PETSc.Mat.destroy()``
-        is called on the returned object once the object is no longer required. Note that
-        ``PETSc.Mat.destroy()`` is collective over the object's MPI communicator.
+        Due to subtle issues in the interaction between petsc4py memory
+        management and the Python garbage collector, it is recommended
+        that the method ``PETSc.Mat.destroy()`` is called on the
+        returned object once the object is no longer required. Note that
+        ``PETSc.Mat.destroy()`` is collective over the object's MPI
+        communicator.
 
     Args:
         a: A bilinear form.
@@ -182,10 +184,12 @@ def create_matrix_block(a: list[list[Form]]) -> PETSc.Mat:
     """Create a PETSc matrix that is compatible with a rectangular array of bilinear forms.
 
     Note:
-        Due to subtle issues in the interaction between petsc4py memory management
-        and the Python garbage collector, it is recommended that the method ``PETSc.Mat.destroy()``
-        is called on the returned object once the object is no longer required. Note that
-        ``PETSc.Mat.destroy()`` is collective over the object's MPI communicator.
+        Due to subtle issues in the interaction between petsc4py memory
+        management and the Python garbage collector, it is recommended
+        that the method ``PETSc.Mat.destroy()`` is called on the
+        returned object once the object is no longer required. Note that
+        ``PETSc.Mat.destroy()`` is collective over the object's MPI
+        communicator.
 
     Args:
         a: Rectangular array of bilinear forms.
@@ -202,10 +206,12 @@ def create_matrix_nest(a: list[list[Form]]) -> PETSc.Mat:
     """Create a PETSc matrix (``MatNest``) that is compatible with an array of bilinear forms.
 
     Note:
-        Due to subtle issues in the interaction between petsc4py memory management
-        and the Python garbage collector, it is recommended that the method ``PETSc.Mat.destroy()``
-        is called on the returned object once the object is no longer required. Note that
-        ``PETSc.Mat.destroy()`` is collective over the object's MPI communicator.
+        Due to subtle issues in the interaction between petsc4py memory
+        management and the Python garbage collector, it is recommended
+        that the method ``PETSc.Mat.destroy()`` is called on the
+        returned object once the object is no longer required. Note that
+        ``PETSc.Mat.destroy()`` is collective over the object's MPI
+        communicator.
 
     Args:
         a: Rectangular array of bilinear forms.
@@ -990,10 +996,12 @@ def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.M
     Piola map.
 
     Note:
-        Due to subtle issues in the interaction between petsc4py memory management
-        and the Python garbage collector, it is recommended that the method ``PETSc.Mat.destroy()``
-        is called on the returned object once the object is no longer required. Note that
-        ``PETSc.Mat.destroy()`` is collective over the object's MPI communicator.
+        Due to subtle issues in the interaction between petsc4py memory
+        management and the Python garbage collector, it is recommended
+        that the method ``PETSc.Mat.destroy()`` is called on the
+        returned object once the object is no longer required. Note that
+        ``PETSc.Mat.destroy()`` is collective over the object's MPI
+        communicator.
 
     Args:
         space0: H1 space to interpolate the gradient from.
@@ -1009,10 +1017,12 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
     """Assemble an interpolation operator matrix.
 
     Note:
-        Due to subtle issues in the interaction between petsc4py memory management
-        and the Python garbage collector, it is recommended that the method ``PETSc.Mat.destroy()``
-        is called on the returned object once the object is no longer required. Note that
-        ``PETSc.Mat.destroy()`` is collective over the object's MPI communicator.
+        Due to subtle issues in the interaction between petsc4py memory
+        management and the Python garbage collector, it is recommended
+        that the method ``PETSc.Mat.destroy()`` is called on the
+        returned object once the object is no longer required. Note that
+        ``PETSc.Mat.destroy()`` is collective over the object's MPI
+        communicator.
 
     Args:
         space0: Space to interpolate from.

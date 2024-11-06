@@ -53,7 +53,9 @@ figsize = 800
 def plot_scalar():
     # We start by creating a unit square mesh and interpolating a
     # function into a degree 1 Lagrange space
-    msh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
+    msh = create_unit_square(
+        MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral, dtype=np.float64
+    )
     V = functionspace(msh, ("Lagrange", 1))
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: np.sin(np.pi * x[0]) * np.sin(2 * x[1] * np.pi))
@@ -110,7 +112,9 @@ def plot_scalar():
 
 def plot_meshtags():
     # Create a mesh
-    msh = create_unit_square(MPI.COMM_WORLD, 25, 25, cell_type=CellType.quadrilateral)
+    msh = create_unit_square(
+        MPI.COMM_WORLD, 25, 25, cell_type=CellType.quadrilateral, dtype=np.float64
+    )
 
     # Create a geometric indicator function
     def in_circle(x):
@@ -164,7 +168,9 @@ def plot_meshtags():
 
 def plot_higher_order():
     # Create a mesh
-    msh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
+    msh = create_unit_square(
+        MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral, dtype=np.float64
+    )
 
     # Define a geometric indicator function
     def in_circle(x):
@@ -233,7 +239,9 @@ def plot_higher_order():
 
 
 def plot_nedelec():
-    msh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 5, cell_type=CellType.tetrahedron)
+    msh = create_unit_cube(
+        MPI.COMM_WORLD, 4, 3, 5, cell_type=CellType.tetrahedron, dtype=np.float64
+    )
 
     # We create a pyvista plotter
     plotter = pyvista.Plotter()
@@ -292,7 +300,7 @@ def plot_nedelec():
 
 
 def plot_streamlines():
-    msh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
+    msh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron, dtype=np.float64)
     gdim = msh.geometry.dim
     V = functionspace(msh, ("Discontinuous Lagrange", 2, (gdim,)))
     u = Function(V, dtype=np.float64)
