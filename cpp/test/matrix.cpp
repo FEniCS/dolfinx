@@ -120,7 +120,8 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
       basix::element::dpc_variant::unset, false);
 
   auto V = std::make_shared<fem::FunctionSpace<double>>(
-      fem::create_functionspace(mesh, element, {}));
+      fem::create_functionspace<double>(
+          mesh, std::make_shared<fem::FiniteElement<double>>(element, 1)));
 
   // Prepare and set Constants for the bilinear form
   auto kappa = std::make_shared<fem::Constant<double>>(2.0);
@@ -158,7 +159,8 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
       basix::element::dpc_variant::unset, false);
 
   auto V = std::make_shared<fem::FunctionSpace<double>>(
-      fem::create_functionspace(mesh, element, {}));
+      fem::create_functionspace<double>(
+          mesh, std::make_shared<fem::FiniteElement<double>>(element, 1)));
 
   // Prepare and set Constants for the bilinear form
   auto kappa = std::make_shared<fem::Constant<double>>(2.0);
