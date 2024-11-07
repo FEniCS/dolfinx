@@ -25,6 +25,7 @@
 #include <dolfinx/mesh/utils.h>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <set>
 #include <span>
 #include <stdexcept>
@@ -782,8 +783,8 @@ Form<T, U> create_form(
   return L;
 }
 
-/// @brief Create a function space from a Basix element.
-/// @param[in] mesh Mesh
+/// @brief Create a function space from a Basix finite element.
+/// @param[in] mesh Mesh.
 /// @param[in] e Basix finite element.
 /// @param[in] value_shape Value shape for 'blocked' elements, e.g.
 /// vector-valued Lagrange elements where each component for the vector
@@ -792,59 +793,58 @@ Form<T, U> create_form(
 /// tensor element in 2D `value_shape` equal to `{2, 2}`.
 /// @param[in] reorder_fn The graph reordering function to call on the
 /// dofmap. If `nullptr`, the default re-ordering is used.
-/// @return The created function space
+/// @return The created function space.
 template <std::floating_point T>
 FunctionSpace<T> create_functionspace(
     std::shared_ptr<mesh::Mesh<T>> mesh, const basix::FiniteElement<T>& e,
-    std::vector<std::size_t> value_shape = {},
+    std::optional<std::vector<std::size_t>> value_shape = std::nullopt,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn
     = nullptr)
 {
-  if (!e.value_shape().empty() and !value_shape.empty())
-  {
-    throw std::runtime_error(
-        "Cannot specify value shape for non-scalar base element.");
-  }
-
   if (mesh::cell_type_from_basix_type(e.cell_type())
       != mesh->topology()->cell_type())
+  {
     throw std::runtime_error("Cell type of element and mesh must match.");
+  }
 
-  std::size_t bs = value_shape.empty()
-                       ? 1
-                       : std::accumulate(value_shape.begin(), value_shape.end(),
-                                         1, std::multiplies{});
+  std::size_t bs
+      = value_shape.has_value()
+            ? std::accumulate(value_shape->begin(), value_shape->end(), 1,
+                              std::multiplies{})
+            : 1;
 
   // Create a DOLFINx element
   auto _e = std::make_shared<const FiniteElement<T>>(e, bs);
   assert(_e);
 
-  // TODO: clarify
-  const std::vector<std::size_t> _value_shape
-      = (value_shape.empty() and !_e->reference_value_shape().empty())
-            ? fem::compute_value_shape(*_e, mesh->topology()->dim(),
-                                       mesh->geometry().dim())
-            : value_shape;
-
-  return create_functionspace(mesh, _e, _value_shape, reorder_fn);
+  return create_functionspace(mesh, _e, value_shape, reorder_fn);
 }
 
-/// @brief NEW Create a function space from a Basix element.
+/// @brief NEW Create a function space from a fen::FiniteElement.
 template <std::floating_point T>
 FunctionSpace<T> create_functionspace(
     std::shared_ptr<mesh::Mesh<T>> mesh,
     std::shared_ptr<const fem::FiniteElement<T>> e,
-    std::span<const std::size_t> value_shape,
+    std::optional<std::vector<std::size_t>> value_shape = std::nullopt,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn
     = nullptr)
 {
-  // const std::vector<std::size_t> _value_shape
-  //     = (value_shape.empty() and !e->value_shape().empty())
-  //           ? fem::compute_value_shape(*e, mesh->topology()->dim(),
-  //                                      mesh->geometry().dim())
-  //           : value_shape;
+  if (value_shape.has_value() and !e->reference_value_shape().empty())
+  {
+    throw std::runtime_error(
+        "Cannot specify value shape for non-scalar base element.");
+  }
+
+  // TODO: check cell type of e (need to add method to fem::FiniteElement)
+
+  // TODO: clarify
+  const std::vector<std::size_t> _value_shape
+      = !value_shape.has_value() and !e->reference_value_shape().empty()
+            ? fem::compute_value_shape(*e, mesh->topology()->dim(),
+                                       mesh->geometry().dim())
+            : *value_shape;
 
   // Create UFC subdofmaps and compute offset
   const int num_sub_elements = e->num_sub_elements();
@@ -871,8 +871,24 @@ FunctionSpace<T> create_functionspace(
   assert(mesh->topology());
   auto dofmap = std::make_shared<const DofMap>(create_dofmap(
       mesh->comm(), layout, *mesh->topology(), permute_inv, reorder_fn));
-  return FunctionSpace(mesh, e, dofmap, value_shape);
+  return FunctionSpace(mesh, e, dofmap, _value_shape);
 }
+
+// /// @brief NEW Create a function space from a Basix element.
+// template <std::floating_point T>
+// FunctionSpace<T> create_functionspace(
+//     std::shared_ptr<mesh::Mesh<T>> mesh,
+//     std::shared_ptr<const fem::FiniteElement<T>> e,
+//     std::initializer_list<std::size_t> value_shape,
+//     std::function<std::vector<int>(const
+//     graph::AdjacencyList<std::int32_t>&)>
+//         reorder_fn
+//     = nullptr)
+// {
+//   return create_functionspace(
+//       mesh, e, std::vector(value_shape.begin(), value_shape.end()),
+//       reorder_fn);
+// }
 
 /// @private
 namespace impl
