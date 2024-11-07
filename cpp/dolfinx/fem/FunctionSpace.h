@@ -44,10 +44,10 @@ public:
   FunctionSpace(std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
                 std::shared_ptr<const FiniteElement<geometry_type>> element,
                 std::shared_ptr<const DofMap> dofmap,
-                std::vector<std::size_t> value_shape)
+                std::span<const std::size_t> value_shape)
       : _mesh(mesh), _element(element), _dofmap(dofmap),
         _id(boost::uuids::random_generator()()), _root_space_id(_id),
-        _value_shape(value_shape)
+        _value_shape(value_shape.begin(), value_shape.end())
   {
     // Do nothing
   }
