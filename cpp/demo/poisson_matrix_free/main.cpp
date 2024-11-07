@@ -143,8 +143,8 @@ void solver(MPI_Comm comm)
       basix::element::family::P, basix::cell::type::triangle, 2,
       basix::element::lagrange_variant::unset,
       basix::element::dpc_variant::unset, false);
-  auto V = std::make_shared<fem::FunctionSpace<U>>(
-      fem::create_functionspace(mesh, element, {}));
+  auto V = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+      mesh, std::make_shared<fem::FiniteElement<U>>(element, 1)));
 
   // Prepare and set Constants for the bilinear form
   auto f = std::make_shared<fem::Constant<T>>(-6.0);

@@ -67,13 +67,12 @@ int main(int argc, char* argv[])
     // auto V = std::make_shared<fem::FunctionSpace<U>>(mesh, ME, dofmap, vs);
     // auto V = std::make_shared<fem::FunctionSpace<U>>(
     //     fem::create_functionspace<U>(mesh, ME));
-    std::vector<
-        std::tuple<std::reference_wrapper<const basix::FiniteElement<U>>,
-                   std::size_t, bool>>
-        ME1{{RT, 1, false}, {P0, 1, false}};
+    // std::vector<
+    //     std::tuple<std::reference_wrapper<const basix::FiniteElement<U>>,
+    //                std::size_t, bool>>
+    //     ME1{{RT, 1, false}, {P0, 1, false}};
     auto V = std::make_shared<fem::FunctionSpace<U>>(
-        fem::create_functionspace<U>(mesh, ME1));
-    /*
+        fem::create_functionspace<U>(mesh, ME));
 
     // Get subspaces (views into V)
     auto V0 = std::make_shared<fem::FunctionSpace<U>>(V->sub({0}));
@@ -232,7 +231,6 @@ int main(int argc, char* argv[])
     io::VTXWriter<U> vtx(MPI_COMM_WORLD, "u.bp", {u_soln}, "bp4");
     vtx.write(0);
 #endif
-*/
   }
 
   PetscFinalize();

@@ -166,8 +166,9 @@ int main(int argc, char* argv[])
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, false);
 
-    auto V = std::make_shared<fem::FunctionSpace<U>>(
-        fem::create_functionspace(mesh, element, std::vector<std::size_t>{3}));
+    auto V
+        = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+            mesh, std::make_shared<fem::FiniteElement<U>>(element, 3)));
 
     auto B = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
     auto traction = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
@@ -272,8 +273,10 @@ int main(int argc, char* argv[])
     basix::FiniteElement S_element = basix::create_element<U>(
         family, cell_type, k, basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, discontinuous);
-    auto S = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace(
-        mesh, S_element, std::vector<std::size_t>{3, 3}));
+    auto S
+        = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+            mesh, std::make_shared<fem::FiniteElement<U>>(S_element, 1),
+            std::vector<std::size_t>{3, 3}));
 
     fem::Function<T> sigma(S);
     sigma.name = "cauchy_stress";

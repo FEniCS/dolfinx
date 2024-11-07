@@ -784,42 +784,42 @@ Form<T, U> create_form(
   return L;
 }
 
-/// @brief Create a function space from a Basix finite element.
-/// @param[in] mesh Mesh.
-/// @param[in] e Basix finite element.
-/// @param[in] value_shape Value shape for 'blocked' elements, e.g.
-/// vector-valued Lagrange elements where each component for the vector
-/// field is a Lagrange element. For example, a vector-valued element in
-/// 3D will have `value_shape` equal to `{3}`, and for a second-order
-/// tensor element in 2D `value_shape` equal to `{2, 2}`.
-/// @param[in] reorder_fn The graph reordering function to call on the
-/// dofmap. If `nullptr`, the default re-ordering is used.
-/// @return The created function space.
-template <std::floating_point T>
-FunctionSpace<T> create_functionspace(
-    std::shared_ptr<mesh::Mesh<T>> mesh, const basix::FiniteElement<T>& e,
-    std::optional<std::vector<std::size_t>> value_shape = std::nullopt,
-    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
-        reorder_fn
-    = nullptr)
-{
-  if (mesh::cell_type_from_basix_type(e.cell_type())
-      != mesh->topology()->cell_type())
-  {
-    throw std::runtime_error("Cell type of element and mesh must match.");
-  }
+// /// @brief Create a function space from a Basix finite element.
+// /// @param[in] mesh Mesh.
+// /// @param[in] e Basix finite element.
+// /// @param[in] value_shape Value shape for 'blocked' elements, e.g.
+// /// vector-valued Lagrange elements where each component for the vector
+// /// field is a Lagrange element. For example, a vector-valued element in
+// /// 3D will have `value_shape` equal to `{3}`, and for a second-order
+// /// tensor element in 2D `value_shape` equal to `{2, 2}`.
+// /// @param[in] reorder_fn The graph reordering function to call on the
+// /// dofmap. If `nullptr`, the default re-ordering is used.
+// /// @return The created function space.
+// template <std::floating_point T>
+// FunctionSpace<T> create_functionspace(
+//     std::shared_ptr<mesh::Mesh<T>> mesh, const basix::FiniteElement<T>& e,
+//     std::optional<std::vector<std::size_t>> value_shape = std::nullopt,
+//     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
+//         reorder_fn
+//     = nullptr)
+// {
+//   if (mesh::cell_type_from_basix_type(e.cell_type())
+//       != mesh->topology()->cell_type())
+//   {
+//     throw std::runtime_error("Cell type of element and mesh must match.");
+//   }
 
-  // Create a DOLFINx element
-  std::size_t bs
-      = value_shape.has_value()
-            ? std::accumulate(value_shape->begin(), value_shape->end(), 1,
-                              std::multiplies{})
-            : 1;
-  auto _e = std::make_shared<const FiniteElement<T>>(e, bs);
-  assert(_e);
+//   // Create a DOLFINx element
+//   std::size_t bs
+//       = value_shape.has_value()
+//             ? std::accumulate(value_shape->begin(), value_shape->end(), 1,
+//                               std::multiplies{})
+//             : 1;
+//   auto _e = std::make_shared<const FiniteElement<T>>(e, bs);
+//   assert(_e);
 
-  return create_functionspace(mesh, _e, std::nullopt, reorder_fn);
-}
+//   return create_functionspace(mesh, _e, std::nullopt, reorder_fn);
+// }
 
 /// @brief NEW Create a function space from a fem::FiniteElement.
 template <std::floating_point T>
@@ -869,20 +869,20 @@ FunctionSpace<T> create_functionspace(
 /// @param[in] reorder_fn The graph reordering function to call on the
 /// dofmap. If `nullptr`, the default re-ordering is used.
 /// @return The created function space.
-template <std::floating_point T>
-FunctionSpace<T> create_functionspace(
-    std::shared_ptr<mesh::Mesh<T>> mesh,
-    std::vector<
-        std::tuple<std::reference_wrapper<const basix::FiniteElement<T>>,
-                   std::size_t, bool>>
-        e,
-    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
-        reorder_fn
-    = nullptr)
-{
-  auto _e = std::make_shared<fem::FiniteElement<T>>(e);
-  return create_functionspace<T>(mesh, _e, std::nullopt, reorder_fn);
-}
+// template <std::floating_point T>
+// FunctionSpace<T> create_functionspace(
+//     std::shared_ptr<mesh::Mesh<T>> mesh,
+//     std::vector<
+//         std::tuple<std::reference_wrapper<const basix::FiniteElement<T>>,
+//                    std::size_t, bool>>
+//         e,
+//     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
+//         reorder_fn
+//     = nullptr)
+// {
+//   auto _e = std::make_shared<fem::FiniteElement<T>>(e);
+//   return create_functionspace<T>(mesh, _e, std::nullopt, reorder_fn);
+// }
 
 /// @private
 namespace impl

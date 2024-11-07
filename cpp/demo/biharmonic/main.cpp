@@ -134,6 +134,7 @@
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/petsc.h>
+#include <memory>
 #include <numbers>
 #include <utility>
 #include <vector>
@@ -169,8 +170,9 @@ int main(int argc, char* argv[])
         basix::element::dpc_variant::unset, false);
 
     //  Create function space
-    auto V = std::make_shared<fem::FunctionSpace<U>>(
-        fem::create_functionspace(mesh, element));
+    auto V
+        = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+            mesh, std::make_shared<fem::FiniteElement<U>>(element, 1)));
 
     // The source function $f$ and the penalty term $\alpha$ are
     // declared:
