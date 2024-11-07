@@ -818,7 +818,7 @@ FunctionSpace<T> create_functionspace(
   auto _e = std::make_shared<const FiniteElement<T>>(e, bs);
   assert(_e);
 
-  return create_functionspace(mesh, _e, value_shape, reorder_fn);
+  return create_functionspace(mesh, _e, std::nullopt, reorder_fn);
 }
 
 /// @brief NEW Create a function space from a fem::FiniteElement.
