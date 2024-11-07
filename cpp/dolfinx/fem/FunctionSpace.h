@@ -94,7 +94,7 @@ public:
 
     // Create new sub space
     FunctionSpace sub_space(_mesh, element, dofmap,
-                            compute_value_shape(element,
+                            compute_value_shape(*element,
                                                 _mesh->topology()->dim(),
                                                 _mesh->geometry().dim()));
 
@@ -157,7 +157,7 @@ public:
 
     return {
         FunctionSpace(_mesh, _element, collapsed_dofmap,
-                      compute_value_shape(_element, _mesh->topology()->dim(),
+                      compute_value_shape(*_element, _mesh->topology()->dim(),
                                           _mesh->geometry().dim())),
         std::move(collapsed_dofs)};
   }
@@ -436,13 +436,13 @@ common_function_spaces(
 /// @param[in] gdim Geometric dimension
 /// @return Physical valus shape
 template <std::floating_point T>
-std::vector<std::size_t> compute_value_shape(
-    std::shared_ptr<const dolfinx::fem::FiniteElement<T>> element,
-    std::size_t tdim, std::size_t gdim)
+std::vector<std::size_t>
+compute_value_shape(const dolfinx::fem::FiniteElement<T>& element,
+                    std::size_t tdim, std::size_t gdim)
 {
-  std::vector<std::size_t> rvs = element->reference_value_shape();
+  std::vector<std::size_t> rvs = element.reference_value_shape();
   std::vector<std::size_t> value_shape(rvs.size());
-  if (element->block_size() > 1)
+  if (element.block_size() > 1)
   {
     for (std::size_t i = 0; i < rvs.size(); ++i)
       value_shape[i] = rvs[i];

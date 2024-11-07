@@ -143,15 +143,16 @@ FiniteElement<T>::FiniteElement(
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(
     const std::vector<std::shared_ptr<const FiniteElement<T>>>& elements)
-    : _space_dim(0), _sub_elements(elements), _bs(1), _is_mixed(true),
-      _symmetric(false), _needs_dof_permutations(false),
-      _needs_dof_transformations(false)
+    : _space_dim(0), _sub_elements(elements), _reference_value_shape({}),
+      _bs(1), _is_mixed(true), _symmetric(false),
+      _needs_dof_permutations(false), _needs_dof_transformations(false)
 {
+  assert(!elements.empty());
   std::size_t vsize = 0;
   _signature = "Mixed element (";
 
   const std::vector<std::vector<std::vector<int>>>& ed
-      = elements[0]->entity_dofs();
+      = elements.front()->entity_dofs();
   _entity_dofs.resize(ed.size());
   _entity_closure_dofs.resize(ed.size());
   for (std::size_t i = 0; i < ed.size(); ++i)
@@ -176,8 +177,8 @@ FiniteElement<T>::FiniteElement(
     {
       for (std::size_t j = 0; j < _entity_dofs[i].size(); ++j)
       {
-        const std::vector<int> sub_ed = e->entity_dofs()[i][j];
-        const std::vector<int> sub_ecd = e->entity_closure_dofs()[i][j];
+        std::vector<int> sub_ed = e->entity_dofs()[i][j];
+        std::vector<int> sub_ecd = e->entity_closure_dofs()[i][j];
         for (auto k : sub_ed)
         {
           for (std::size_t b = 0; b < sub_bs; ++b)

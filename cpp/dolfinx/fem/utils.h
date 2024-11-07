@@ -796,7 +796,7 @@ Form<T, U> create_form(
 template <std::floating_point T>
 FunctionSpace<T> create_functionspace(
     std::shared_ptr<mesh::Mesh<T>> mesh, const basix::FiniteElement<T>& e,
-    const std::vector<std::size_t>& value_shape = {},
+    std::span<const std::size_t> value_shape = {},
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn
     = nullptr)
@@ -809,49 +809,98 @@ FunctionSpace<T> create_functionspace(
 
   if (mesh::cell_type_from_basix_type(e.cell_type())
       != mesh->topology()->cell_type())
+  {
     throw std::runtime_error("Cell type of element and mesh must match.");
+  }
 
+  // Create a DOLFINx element
   std::size_t bs = value_shape.empty()
                        ? 1
                        : std::accumulate(value_shape.begin(), value_shape.end(),
                                          1, std::multiplies{});
-
-  // Create a DOLFINx element
   auto _e = std::make_shared<const FiniteElement<T>>(e, bs);
   assert(_e);
 
+  return create_functionspace(mesh, _e, value_shape, reorder_fn);
+
+  // const std::vector<std::size_t> _value_shape
+  //     = (value_shape.empty() and !_e->value_shape().empty())
+  //           ? fem::compute_value_shape(*_e, mesh->topology()->dim(),
+  //                                      mesh->geometry().dim())
+  //           : value_shape;
+
+  // // Create UFC subdofmaps and compute offset
+  // const int num_sub_elements = _e->num_sub_elements();
+  // std::vector<ElementDofLayout> sub_doflayout;
+  // sub_doflayout.reserve(num_sub_elements);
+  // for (int i = 0; i < num_sub_elements; ++i)
+  // {
+  //   auto sub_element = _e->extract_sub_element({i});
+  //   std::vector<int> parent_map_sub(sub_element->space_dimension());
+  //   for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
+  //     parent_map_sub[j] = i + _e->block_size() * j;
+  //   sub_doflayout.emplace_back(1, _e->entity_dofs(),
+  //   _e->entity_closure_dofs(),
+  //                              parent_map_sub,
+  //                              std::vector<ElementDofLayout>());
+  // }
+
+  // // Create a dofmap
+  // ElementDofLayout layout(_e->block_size(), _e->entity_dofs(),
+  //                         _e->entity_closure_dofs(), {}, sub_doflayout);
+  // std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
+  //     = nullptr;
+  // if (_e->needs_dof_permutations())
+  //   permute_inv = _e->dof_permutation_fn(true, true);
+  // assert(mesh);
+  // assert(mesh->topology());
+  // auto dofmap = std::make_shared<const DofMap>(create_dofmap(
+  //     mesh->comm(), layout, *mesh->topology(), permute_inv, reorder_fn));
+  // return FunctionSpace(mesh, _e, dofmap, _value_shape);
+}
+
+/// @brief NEW Create a function space from a Basix element.
+template <std::floating_point T>
+FunctionSpace<T> create_functionspace(
+    std::shared_ptr<mesh::Mesh<T>> mesh,
+    std::shared_ptr<const fem::FiniteElement<T>> e,
+    std::span<const std::size_t> value_shape = {},
+    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
+        reorder_fn
+    = nullptr)
+{
   const std::vector<std::size_t> _value_shape
       = (value_shape.empty() and !e.value_shape().empty())
-            ? fem::compute_value_shape(_e, mesh->topology()->dim(),
+            ? fem::compute_value_shape(e, mesh->topology()->dim(),
                                        mesh->geometry().dim())
             : value_shape;
 
   // Create UFC subdofmaps and compute offset
-  const int num_sub_elements = _e->num_sub_elements();
+  const int num_sub_elements = e.num_sub_elements();
   std::vector<ElementDofLayout> sub_doflayout;
   sub_doflayout.reserve(num_sub_elements);
   for (int i = 0; i < num_sub_elements; ++i)
   {
-    auto sub_element = _e->extract_sub_element({i});
+    auto sub_element = e.extract_sub_element({i});
     std::vector<int> parent_map_sub(sub_element->space_dimension());
     for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
-      parent_map_sub[j] = i + _e->block_size() * j;
+      parent_map_sub[j] = i + e.block_size() * j;
     sub_doflayout.emplace_back(1, e.entity_dofs(), e.entity_closure_dofs(),
                                parent_map_sub, std::vector<ElementDofLayout>());
   }
 
   // Create a dofmap
-  ElementDofLayout layout(_e->block_size(), e.entity_dofs(),
+  ElementDofLayout layout(e.block_size(), e.entity_dofs(),
                           e.entity_closure_dofs(), {}, sub_doflayout);
   std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
       = nullptr;
-  if (_e->needs_dof_permutations())
-    permute_inv = _e->dof_permutation_fn(true, true);
+  if (e.needs_dof_permutations())
+    permute_inv = e.dof_permutation_fn(true, true);
   assert(mesh);
   assert(mesh->topology());
   auto dofmap = std::make_shared<const DofMap>(create_dofmap(
       mesh->comm(), layout, *mesh->topology(), permute_inv, reorder_fn));
-  return FunctionSpace(mesh, _e, dofmap, _value_shape);
+  return FunctionSpace(mesh, e, dofmap, _value_shape);
 }
 
 /// @private
