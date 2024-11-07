@@ -14,6 +14,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <span>
 #include <utility>
 #include <vector>
@@ -115,7 +116,7 @@ public:
   int reference_value_size() const;
 
   /// The reference value shape
-  std::span<const std::size_t> reference_value_shape() const noexcept;
+  std::span<const std::size_t> reference_value_shape() const;
 
   /// The local DOFs associated with each subentity of the cell
   const std::vector<std::vector<std::vector<int>>>&
@@ -324,7 +325,7 @@ public:
 
     if (!_sub_elements.empty())
     {
-      if (_is_mixed)
+      if (!_reference_value_shape.has_value())
       {
         // Mixed element
         std::vector<std::function<void(
@@ -426,9 +427,9 @@ public:
         // Do nothing
       };
     }
-    else if (_sub_elements.size() != 0)
+    else if (!_sub_elements.empty())
     {
-      if (_is_mixed)
+      if (!_reference_value_shape.has_value())
       {
         // Mixed element
         std::vector<std::function<void(
@@ -725,14 +726,12 @@ private:
       _sub_elements;
 
   // Dimension of each value space
-  std::vector<std::size_t> _reference_value_shape;
+  // std::vector<std::size_t> _reference_value_shape;
+  std::optional<std::vector<std::size_t>> _reference_value_shape;
 
   // Block size for BlockedElements. This gives the number of DOFs
   // co-located at each dof 'point'.
   int _bs;
-
-  // Indicate whether this is a mixed element
-  bool _is_mixed;
 
   // Basix Element (nullptr for mixed elements)
   std::unique_ptr<basix::FiniteElement<geometry_type>> _element;
