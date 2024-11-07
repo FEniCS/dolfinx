@@ -64,9 +64,9 @@ int main(int argc, char* argv[])
     // TODO: Get rid of value_shape for mixed elements
     // Create FunctionSpace
     std::vector<std::size_t> vs = {3};
-    auto V = std::make_shared<fem::FunctionSpace<U>>(mesh, ME, dofmap, vs);
-    // auto V = std::make_shared<fem::FunctionSpace<U>>(
-    //     fem::create_functionspace<U>(mesh, ME));
+    // auto V = std::make_shared<fem::FunctionSpace<U>>(mesh, ME, dofmap, vs);
+    auto V = std::make_shared<fem::FunctionSpace<U>>(
+        fem::create_functionspace<U>(mesh, ME));
 
     // Get subspaces (views into V)
     auto V0 = std::make_shared<fem::FunctionSpace<U>>(V->sub({0}));

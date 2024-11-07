@@ -839,6 +839,8 @@ FunctionSpace<T> create_functionspace(
   }
 
   // TODO: check cell type of e (need to add method to fem::FiniteElement)
+  assert(mesh);
+  assert(mesh->topology());
 
   // TODO: clarify
   const std::vector<std::size_t> _value_shape
@@ -848,29 +850,14 @@ FunctionSpace<T> create_functionspace(
                                        mesh->geometry().dim())
             : value_shape.value_or(std::vector<std::size_t>());
 
-  // Create UFC subdofmaps and compute offset
-  const int num_sub_elements = e->num_sub_elements();
-  std::vector<ElementDofLayout> sub_doflayout;
-  sub_doflayout.reserve(num_sub_elements);
-  for (int i = 0; i < num_sub_elements; ++i)
-  {
-    auto sub_element = e->extract_sub_element({i});
-    std::vector<int> parent_map_sub(sub_element->space_dimension());
-    for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
-      parent_map_sub[j] = i + e->block_size() * j;
-    sub_doflayout.emplace_back(1, e->entity_dofs(), e->entity_closure_dofs(),
-                               parent_map_sub, std::vector<ElementDofLayout>());
-  }
+  // Create element dof layout
+  fem::ElementDofLayout layout = fem::create_element_dof_layout(*e);
 
   // Create a dofmap
-  ElementDofLayout layout(e->block_size(), e->entity_dofs(),
-                          e->entity_closure_dofs(), {}, sub_doflayout);
   std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
-      = nullptr;
-  if (e->needs_dof_permutations())
-    permute_inv = e->dof_permutation_fn(true, true);
-  assert(mesh);
-  assert(mesh->topology());
+      = e->needs_dof_permutations() ? e->dof_permutation_fn(true, true)
+                                    : nullptr;
+
   auto dofmap = std::make_shared<const DofMap>(create_dofmap(
       mesh->comm(), layout, *mesh->topology(), permute_inv, reorder_fn));
 
