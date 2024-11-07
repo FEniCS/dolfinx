@@ -842,14 +842,6 @@ FunctionSpace<T> create_functionspace(
   assert(mesh);
   assert(mesh->topology());
 
-  // TODO: clarify
-  const std::vector<std::size_t> _value_shape
-      = !e->is_mixed() and !value_shape.has_value()
-                and !e->reference_value_shape().empty()
-            ? fem::compute_value_shape(*e, mesh->topology()->dim(),
-                                       mesh->geometry().dim())
-            : value_shape.value_or(std::vector<std::size_t>());
-
   // Create element dof layout
   fem::ElementDofLayout layout = fem::create_element_dof_layout(*e);
 
@@ -857,9 +849,16 @@ FunctionSpace<T> create_functionspace(
   std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
       = e->needs_dof_permutations() ? e->dof_permutation_fn(true, true)
                                     : nullptr;
-
   auto dofmap = std::make_shared<const DofMap>(create_dofmap(
       mesh->comm(), layout, *mesh->topology(), permute_inv, reorder_fn));
+
+  // TODO: clarify
+  const std::vector<std::size_t> _value_shape
+      = !e->is_mixed() and !value_shape.has_value()
+                and !e->reference_value_shape().empty()
+            ? fem::compute_value_shape(*e, mesh->topology()->dim(),
+                                       mesh->geometry().dim())
+            : value_shape.value_or(std::vector<std::size_t>());
 
   return FunctionSpace(mesh, e, dofmap, _value_shape);
 }
