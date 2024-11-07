@@ -820,41 +820,16 @@ FunctionSpace<T> create_functionspace(
   auto _e = std::make_shared<const FiniteElement<T>>(e, bs);
   assert(_e);
 
+  // TODO: clarify
   const std::vector<std::size_t> _value_shape
-      = (value_shape.empty() and !e.value_shape().empty())
+      = (value_shape.empty() and !_e->reference_value_shape().empty())
             ? fem::compute_value_shape(*_e, mesh->topology()->dim(),
                                        mesh->geometry().dim())
             : value_shape;
 
-  // Create UFC subdofmaps and compute offset
-  const int num_sub_elements = _e->num_sub_elements();
-  std::vector<ElementDofLayout> sub_doflayout;
-  sub_doflayout.reserve(num_sub_elements);
-  for (int i = 0; i < num_sub_elements; ++i)
-  {
-    auto sub_element = _e->extract_sub_element({i});
-    std::vector<int> parent_map_sub(sub_element->space_dimension());
-    for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
-      parent_map_sub[j] = i + _e->block_size() * j;
-    sub_doflayout.emplace_back(1, e.entity_dofs(), e.entity_closure_dofs(),
-                               parent_map_sub, std::vector<ElementDofLayout>());
-  }
-
-  // Create a dofmap
-  ElementDofLayout layout(_e->block_size(), e.entity_dofs(),
-                          e.entity_closure_dofs(), {}, sub_doflayout);
-  std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
-      = nullptr;
-  if (_e->needs_dof_permutations())
-    permute_inv = _e->dof_permutation_fn(true, true);
-  assert(mesh);
-  assert(mesh->topology());
-  auto dofmap = std::make_shared<const DofMap>(create_dofmap(
-      mesh->comm(), layout, *mesh->topology(), permute_inv, reorder_fn));
-  return FunctionSpace(mesh, _e, dofmap, _value_shape);
+  return create_functionspace(mesh, _e, _value_shape, reorder_fn);
 }
 
-/*
 /// @brief NEW Create a function space from a Basix element.
 template <std::floating_point T>
 FunctionSpace<T> create_functionspace(
@@ -898,7 +873,6 @@ FunctionSpace<T> create_functionspace(
       mesh->comm(), layout, *mesh->topology(), permute_inv, reorder_fn));
   return FunctionSpace(mesh, e, dofmap, value_shape);
 }
-*/
 
 /// @private
 namespace impl

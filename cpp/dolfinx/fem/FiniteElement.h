@@ -99,7 +99,7 @@ public:
   /// mixed element, this function will raise an exception.
   bool operator!=(const FiniteElement& e) const;
 
-  /// String identifying the finite element
+  /// @brief String identifying the finite element.
   /// @return Element signature
   /// @warning The function is provided for convenience, but it should
   /// not be relied upon for determining the element type. Use other
@@ -112,15 +112,17 @@ public:
   /// @return Dimension of the finite element space
   int space_dimension() const noexcept;
 
-  /// Block size of the finite element function space. For
-  /// BlockedElements, this is the number of DOFs
-  /// colocated at each DOF point. For other elements, this is always 1.
+  /// @brief Block size of the finite element function space.
+  ///
+  /// For BlockedElements, this is the number of DOFs colocated at each
+  /// DOF point. For other elements, this is always 1.
+  ///
   /// @return Block size of the finite element space
   int block_size() const noexcept;
 
   /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector, 9
-  /// for a second-order tensor in 3D, for the reference element
-  /// @return The value size for the reference element
+  /// for a second-order tensor in 3D, for the reference element.
+  /// @return The value size for the reference element.
   int reference_value_size() const;
 
   /// The reference value shape
