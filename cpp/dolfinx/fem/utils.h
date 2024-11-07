@@ -842,7 +842,8 @@ FunctionSpace<T> create_functionspace(
 
   // TODO: clarify
   const std::vector<std::size_t> _value_shape
-      = !value_shape.has_value() and !e->reference_value_shape().empty()
+      = !e->is_mixed() and !value_shape.has_value()
+                and !e->reference_value_shape().empty()
             ? fem::compute_value_shape(*e, mesh->topology()->dim(),
                                        mesh->geometry().dim())
             : value_shape.value_or(std::vector<std::size_t>());
