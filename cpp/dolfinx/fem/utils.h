@@ -30,6 +30,7 @@
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <ufcx.h>
 #include <utility>
@@ -808,13 +809,12 @@ FunctionSpace<T> create_functionspace(
     throw std::runtime_error("Cell type of element and mesh must match.");
   }
 
+  // Create a DOLFINx element
   std::size_t bs
       = value_shape.has_value()
             ? std::accumulate(value_shape->begin(), value_shape->end(), 1,
                               std::multiplies{})
             : 1;
-
-  // Create a DOLFINx element
   auto _e = std::make_shared<const FiniteElement<T>>(e, bs);
   assert(_e);
 
@@ -863,21 +863,26 @@ FunctionSpace<T> create_functionspace(
   return FunctionSpace(mesh, e, dofmap, _value_shape);
 }
 
-// /// @brief NEW Create a function space from a Basix element.
-// template <std::floating_point T>
-// FunctionSpace<T> create_functionspace(
-//     std::shared_ptr<mesh::Mesh<T>> mesh,
-//     std::shared_ptr<const fem::FiniteElement<T>> e,
-//     std::initializer_list<std::size_t> value_shape,
-//     std::function<std::vector<int>(const
-//     graph::AdjacencyList<std::int32_t>&)>
-//         reorder_fn
-//     = nullptr)
-// {
-//   return create_functionspace(
-//       mesh, e, std::vector(value_shape.begin(), value_shape.end()),
-//       reorder_fn);
-// }
+/// @brief Create a function space from a Basix finite element.
+/// @param[in] mesh Mesh.
+/// @param[in] e Basix finite element.
+/// @param[in] reorder_fn The graph reordering function to call on the
+/// dofmap. If `nullptr`, the default re-ordering is used.
+/// @return The created function space.
+template <std::floating_point T>
+FunctionSpace<T> create_functionspace(
+    std::shared_ptr<mesh::Mesh<T>> mesh,
+    std::vector<
+        std::tuple<std::reference_wrapper<const basix::FiniteElement<T>>,
+                   std::size_t, bool>>
+        e,
+    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
+        reorder_fn
+    = nullptr)
+{
+  auto _e = std::make_shared<fem::FiniteElement<T>>(e);
+  return create_functionspace<T>(mesh, _e, std::nullopt, reorder_fn);
+}
 
 /// @private
 namespace impl

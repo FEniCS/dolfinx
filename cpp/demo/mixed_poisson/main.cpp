@@ -48,15 +48,15 @@ int main(int argc, char* argv[])
                        std::size_t, bool>>{{RT, 1, false}, {P0, 1, false}});
 
     // Create dof permutation function
-    std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
-        = nullptr;
-    if (ME->needs_dof_permutations())
-      permute_inv = ME->dof_permutation_fn(true, true);
+    // std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
+    //     = nullptr;
+    // if (ME->needs_dof_permutations())
+    //   permute_inv = ME->dof_permutation_fn(true, true);
 
-    // Create dofmap
-    fem::ElementDofLayout layout = fem::create_element_dof_layout(*ME);
-    auto dofmap = std::make_shared<fem::DofMap>(fem::create_dofmap(
-        MPI_COMM_WORLD, layout, *mesh->topology(), permute_inv, nullptr));
+    // // Create dofmap
+    // fem::ElementDofLayout layout = fem::create_element_dof_layout(*ME);
+    // auto dofmap = std::make_shared<fem::DofMap>(fem::create_dofmap(
+    //     MPI_COMM_WORLD, layout, *mesh->topology(), permute_inv, nullptr));
 
     // TODO: Allow mixed FunctionSpace to be created from DOLFINx
     // elements (not just Basix elements) via fem::create_functionspace.
@@ -65,8 +65,15 @@ int main(int argc, char* argv[])
     // Create FunctionSpace
     std::vector<std::size_t> vs = {3};
     // auto V = std::make_shared<fem::FunctionSpace<U>>(mesh, ME, dofmap, vs);
+    // auto V = std::make_shared<fem::FunctionSpace<U>>(
+    //     fem::create_functionspace<U>(mesh, ME));
+    std::vector<
+        std::tuple<std::reference_wrapper<const basix::FiniteElement<U>>,
+                   std::size_t, bool>>
+        ME1{{RT, 1, false}, {P0, 1, false}};
     auto V = std::make_shared<fem::FunctionSpace<U>>(
-        fem::create_functionspace<U>(mesh, ME));
+        fem::create_functionspace<U>(mesh, ME1));
+    /*
 
     // Get subspaces (views into V)
     auto V0 = std::make_shared<fem::FunctionSpace<U>>(V->sub({0}));
@@ -225,6 +232,7 @@ int main(int argc, char* argv[])
     io::VTXWriter<U> vtx(MPI_COMM_WORLD, "u.bp", {u_soln}, "bp4");
     vtx.write(0);
 #endif
+*/
   }
 
   PetscFinalize();
