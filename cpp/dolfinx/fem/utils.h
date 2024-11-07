@@ -831,6 +831,7 @@ FunctionSpace<T> create_functionspace(
         reorder_fn
     = nullptr)
 {
+  assert(e);
   if (value_shape.has_value() and !e->reference_value_shape().empty())
   {
     throw std::runtime_error(
@@ -844,7 +845,7 @@ FunctionSpace<T> create_functionspace(
       = !value_shape.has_value() and !e->reference_value_shape().empty()
             ? fem::compute_value_shape(*e, mesh->topology()->dim(),
                                        mesh->geometry().dim())
-            : *value_shape;
+            : value_shape.value_or(std::vector<std::size_t>());
 
   // Create UFC subdofmaps and compute offset
   const int num_sub_elements = e->num_sub_elements();
@@ -871,6 +872,7 @@ FunctionSpace<T> create_functionspace(
   assert(mesh->topology());
   auto dofmap = std::make_shared<const DofMap>(create_dofmap(
       mesh->comm(), layout, *mesh->topology(), permute_inv, reorder_fn));
+
   return FunctionSpace(mesh, e, dofmap, _value_shape);
 }
 

@@ -24,36 +24,6 @@
 
 namespace dolfinx::fem
 {
-/// @brief Compute the physical value shape of an element for a mesh.
-/// @param[in] element The element
-/// @param[in] tdim Topological dimension
-/// @param[in] gdim Geometric dimension
-/// @return Physical valus shape
-template <std::floating_point T>
-std::vector<std::size_t>
-compute_value_shape(const dolfinx::fem::FiniteElement<T>& element,
-                    std::size_t tdim, std::size_t gdim)
-{
-  std::vector<std::size_t> rvs = element.reference_value_shape();
-  std::vector<std::size_t> value_shape;
-  if (element.block_size() > 1)
-  {
-    value_shape = rvs;
-  }
-  else
-  {
-    for (std::size_t vs : rvs)
-    {
-      if (vs == tdim)
-        value_shape.push_back(gdim);
-      else
-        value_shape.push_back(vs);
-    }
-  }
-
-  return value_shape;
-}
-
 /// @brief This class represents a finite element function space defined
 /// by a mesh, a finite element, and a local-to-global map of the
 /// degrees-of-freedom.
@@ -70,7 +40,7 @@ public:
   /// @param[in] mesh Mesh that the space is defined on.
   /// @param[in] element Finite element for the space.
   /// @param[in] dofmap Degree-of-freedom map for the space.
-  /// @param[in] value_shape Shape of the value space on the physical cell.
+  /// @param[in] value_shape The shape of the value space on the physical cell
   FunctionSpace(std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
                 std::shared_ptr<const FiniteElement<geometry_type>> element,
                 std::shared_ptr<const DofMap> dofmap,
@@ -458,6 +428,36 @@ common_function_spaces(
     throw std::runtime_error("Could not deduce all block trial spaces.");
 
   return {spaces0, spaces1};
+}
+
+/// @brief Compute the physical value shape of an element for a mesh
+/// @param[in] element The element
+/// @param[in] tdim Topological dimension
+/// @param[in] gdim Geometric dimension
+/// @return Physical valus shape
+template <std::floating_point T>
+std::vector<std::size_t>
+compute_value_shape(const dolfinx::fem::FiniteElement<T>& element,
+                    std::size_t tdim, std::size_t gdim)
+{
+  std::vector<std::size_t> rvs = element.reference_value_shape();
+  std::vector<std::size_t> value_shape(rvs.size());
+  if (element.block_size() > 1)
+  {
+    for (std::size_t i = 0; i < rvs.size(); ++i)
+      value_shape[i] = rvs[i];
+  }
+  else
+  {
+    for (std::size_t i = 0; i < rvs.size(); ++i)
+    {
+      if (rvs[i] == tdim)
+        value_shape[i] = gdim;
+      else
+        value_shape[i] = rvs[i];
+    }
+  }
+  return value_shape;
 }
 
 /// Type deduction
