@@ -47,16 +47,16 @@ int main(int argc, char* argv[])
             std::tuple<std::reference_wrapper<const basix::FiniteElement<U>>,
                        std::size_t, bool>>{{RT, 1, false}, {P0, 1, false}});
 
-    // // Create dof permutation function
-    // std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
-    //     = nullptr;
-    // if (ME->needs_dof_permutations())
-    //   permute_inv = ME->dof_permutation_fn(true, true);
+    // Create dof permutation function
+    std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
+        = nullptr;
+    if (ME->needs_dof_permutations())
+      permute_inv = ME->dof_permutation_fn(true, true);
 
-    // // Create dofmap
-    // fem::ElementDofLayout layout = fem::create_element_dof_layout(*ME);
-    // auto dofmap = std::make_shared<fem::DofMap>(fem::create_dofmap(
-    //     MPI_COMM_WORLD, layout, *mesh->topology(), permute_inv, nullptr));
+    // Create dofmap
+    fem::ElementDofLayout layout = fem::create_element_dof_layout(*ME);
+    auto dofmap = std::make_shared<fem::DofMap>(fem::create_dofmap(
+        MPI_COMM_WORLD, layout, *mesh->topology(), permute_inv, nullptr));
 
     // TODO: Allow mixed FunctionSpace to be created from DOLFINx
     // elements (not just Basix elements) via fem::create_functionspace.
@@ -64,8 +64,9 @@ int main(int argc, char* argv[])
     // TODO: Get rid of value_shape for mixed elements
     // Create FunctionSpace
     std::vector<std::size_t> vs = {3};
-    auto V = std::make_shared<fem::FunctionSpace<U>>(
-        fem::create_functionspace<U>(mesh, ME));
+    auto V = std::make_shared<fem::FunctionSpace<U>>(mesh, ME, dofmap, vs);
+    // auto V = std::make_shared<fem::FunctionSpace<U>>(
+    //     fem::create_functionspace<U>(mesh, ME));
 
     // Get subspaces (views into V)
     auto V0 = std::make_shared<fem::FunctionSpace<U>>(V->sub({0}));
@@ -200,8 +201,8 @@ int main(int argc, char* argv[])
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
     la::petsc::options::set("ksp_type", "preonly");
     la::petsc::options::set("pc_type", "lu");
-    la::petsc::options::set("pc_factor_mat_solver_type", "superlu_dist");
-    // la::petsc::options::set("pc_factor_mat_solver_type", "mumps");
+    // la::petsc::options::set("pc_factor_mat_solver_type", "superlu_dist");
+    la::petsc::options::set("pc_factor_mat_solver_type", "mumps");
     // la::petsc::options::set("ksp_view");
     lu.set_from_options();
 
