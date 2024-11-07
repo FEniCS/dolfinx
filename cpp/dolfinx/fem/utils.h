@@ -808,13 +808,12 @@ FunctionSpace<T> create_functionspace(
     throw std::runtime_error("Cell type of element and mesh must match.");
   }
 
+  // Create a DOLFINx element
   std::size_t bs
       = value_shape.has_value()
             ? std::accumulate(value_shape->begin(), value_shape->end(), 1,
                               std::multiplies{})
             : 1;
-
-  // Create a DOLFINx element
   auto _e = std::make_shared<const FiniteElement<T>>(e, bs);
   assert(_e);
 

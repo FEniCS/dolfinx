@@ -61,9 +61,9 @@ int main(int argc, char* argv[])
     // TODO: Allow mixed FunctionSpace to be created from DOLFINx
     // elements (not just Basix elements) via fem::create_functionspace.
 
-    // Create Dofmap
-    std::vector<std::size_t> vs = {3};
-    auto V = std::make_shared<fem::FunctionSpace<U>>(mesh, ME, dofmap, vs);
+    // Create FunctionSpace
+    auto V = std::make_shared<fem::FunctionSpace<U>>(
+        mesh, ME, dofmap, std::vector<std::size_t>{3});
 
     // Get subspaces (views into V)
     auto V0 = std::make_shared<fem::FunctionSpace<U>>(V->sub({0}));
