@@ -799,7 +799,8 @@ Form<T, U> create_form(
 // FunctionSpace<T> create_functionspace(
 //     std::shared_ptr<mesh::Mesh<T>> mesh, const basix::FiniteElement<T>& e,
 //     std::optional<std::vector<std::size_t>> value_shape = std::nullopt,
-//     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
+//     std::function<std::vector<int>(const
+//     graph::AdjacencyList<std::int32_t>&)>
 //         reorder_fn
 //     = nullptr)
 // {
@@ -841,6 +842,8 @@ FunctionSpace<T> create_functionspace(
   // TODO: check cell type of e (need to add method to fem::FiniteElement)
   assert(mesh);
   assert(mesh->topology());
+  if (e->cell_type() != mesh->topology()->cell_type())
+    throw std::runtime_error("Cell type of element and mesh must match.");
 
   // Create element dof layout
   fem::ElementDofLayout layout = fem::create_element_dof_layout(*e);
@@ -876,7 +879,8 @@ FunctionSpace<T> create_functionspace(
 //         std::tuple<std::reference_wrapper<const basix::FiniteElement<T>>,
 //                    std::size_t, bool>>
 //         e,
-//     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
+//     std::function<std::vector<int>(const
+//     graph::AdjacencyList<std::int32_t>&)>
 //         reorder_fn
 //     = nullptr)
 // {

@@ -90,7 +90,8 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
                                 std::size_t block_size, bool symmetric)
-    : _space_dim(block_size * element.dim()),
+    : _cell_type(mesh::cell_type_from_basix_type(element.cell_type())),
+      _space_dim(block_size * element.dim()),
       _reference_value_shape(element.value_shape()), _bs(block_size),
       _is_mixed(false),
       _element(std::make_unique<basix::FiniteElement<T>>(element)),
@@ -143,9 +144,10 @@ FiniteElement<T>::FiniteElement(
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(
     const std::vector<std::shared_ptr<const FiniteElement<T>>>& elements)
-    : _space_dim(0), _sub_elements(elements), _reference_value_shape({}),
-      _bs(1), _is_mixed(true), _symmetric(false),
-      _needs_dof_permutations(false), _needs_dof_transformations(false)
+    : _cell_type(elements.front()->cell_type()), _space_dim(0),
+      _sub_elements(elements), _reference_value_shape({}), _bs(1),
+      _is_mixed(true), _symmetric(false), _needs_dof_permutations(false),
+      _needs_dof_transformations(false)
 {
   assert(!elements.empty());
   std::size_t vsize = 0;
@@ -205,7 +207,8 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
                                 std::span<const geometry_type> points,
                                 std::array<std::size_t, 2> pshape,
                                 std::size_t block_size, bool symmetric)
-    : _signature("Quadrature element " + std::to_string(pshape[0]) + " "
+    : _cell_type(cell_type),
+      _signature("Quadrature element " + std::to_string(pshape[0]) + " "
                  + std::to_string(block_size)),
       _space_dim(pshape[0] * block_size), _reference_value_shape({}),
       _bs(block_size), _is_mixed(false), _symmetric(symmetric),
@@ -245,6 +248,12 @@ template <std::floating_point T>
 bool FiniteElement<T>::operator!=(const FiniteElement& e) const
 {
   return !(*this == e);
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+mesh::CellType FiniteElement<T>::cell_type() const noexcept
+{
+  return _cell_type;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

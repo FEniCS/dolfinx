@@ -99,6 +99,9 @@ public:
   /// mixed element, this function will raise an exception.
   bool operator!=(const FiniteElement& e) const;
 
+  /// @brief Cell shape
+  mesh::CellType cell_type() const noexcept;
+
   /// @brief String identifying the finite element.
   /// @return Element signature
   /// @warning The function is provided for convenience, but it should
@@ -727,6 +730,8 @@ public:
   dof_permutation_fn(bool inverse = false, bool scalar_element = false) const;
 
 private:
+  mesh::CellType _cell_type;
+
   std::string _signature;
 
   int _space_dim;
