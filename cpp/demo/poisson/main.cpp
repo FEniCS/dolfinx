@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
         basix::element::dpc_variant::unset, false);
 
     auto V = std::make_shared<fem::FunctionSpace<U>>(
-        fem::create_functionspace(mesh, element, {}));
+        fem::create_functionspace(mesh, element));
 
     //  Next, we define the variational formulation by initializing the
     //  bilinear and linear forms ($a$, $L$) using the previously

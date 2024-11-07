@@ -808,19 +808,20 @@ FunctionSpace<T> create_functionspace(
     throw std::runtime_error("Cell type of element and mesh must match.");
   }
 
-  // Create a DOLFINx element
   std::size_t bs
       = value_shape.has_value()
             ? std::accumulate(value_shape->begin(), value_shape->end(), 1,
                               std::multiplies{})
             : 1;
+
+  // Create a DOLFINx element
   auto _e = std::make_shared<const FiniteElement<T>>(e, bs);
   assert(_e);
 
   return create_functionspace(mesh, _e, value_shape, reorder_fn);
 }
 
-/// @brief NEW Create a function space from a fen::FiniteElement.
+/// @brief NEW Create a function space from a fem::FiniteElement.
 template <std::floating_point T>
 FunctionSpace<T> create_functionspace(
     std::shared_ptr<mesh::Mesh<T>> mesh,
