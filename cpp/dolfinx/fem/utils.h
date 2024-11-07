@@ -796,7 +796,7 @@ Form<T, U> create_form(
 template <std::floating_point T>
 FunctionSpace<T> create_functionspace(
     std::shared_ptr<mesh::Mesh<T>> mesh, const basix::FiniteElement<T>& e,
-    std::span<const std::size_t> value_shape = {},
+    std::vector<std::size_t> value_shape = {},
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn
     = nullptr)
