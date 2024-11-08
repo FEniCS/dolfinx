@@ -325,9 +325,8 @@ public:
 
     if (!_sub_elements.empty())
     {
-      if (!_reference_value_shape.has_value())
+      if (!_reference_value_shape) // Mixed element
       {
-        // Mixed element
         std::vector<std::function<void(
             std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)>>
             sub_element_fns;
@@ -429,9 +428,8 @@ public:
     }
     else if (!_sub_elements.empty())
     {
-      if (!_reference_value_shape.has_value())
+      if (!_reference_value_shape) // Mixed element
       {
-        // Mixed element
         std::vector<std::function<void(
             std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)>>
             sub_element_fns;
