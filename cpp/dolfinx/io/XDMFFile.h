@@ -165,7 +165,7 @@ public:
                       std::string xpath = "/Xdmf/Domain");
 
   /// Read MeshTags by name
-  /// @param[in] mesh The Mesh that the data is defined on
+  /// @param[in] mesh The Mesh that the input data is defined on
   /// @param[in] name Name of the grid node in the xml-scheme of the XDMF-file. E.g. "Material" in
   ///                 Grid Name="Material" GridType="Uniform"
   /// @param[in] attribute_name The name of the attribute to read
