@@ -515,7 +515,7 @@ public:
         auto dofs1_g
             = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
         std::span<const T> values = g->x()->array();
-        if (x0.has_value())
+        if (x0)
         {
           std::span<const T> _x0 = x0.value();
           assert(x.size() <= _x0.size());
@@ -545,7 +545,7 @@ public:
         auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
         const std::vector<T>& value = g->value;
         std::int32_t bs = _function_space->dofmap()->bs();
-        if (x0.has_value())
+        if (x0)
         {
           assert(x.size() <= x0.value().size());
           std::ranges::for_each(
