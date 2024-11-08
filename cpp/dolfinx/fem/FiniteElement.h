@@ -104,18 +104,31 @@ public:
   /// @return Dimension of the finite element space
   int space_dimension() const noexcept;
 
-  /// Block size of the finite element function space. For
-  /// BlockedElements, this is the number of DOFs
-  /// colocated at each DOF point. For other elements, this is always 1.
+  /// @brief Block size of the finite element function space.
+  ///
+  /// For BlockedElements, this is the number of DOFs colocated at each
+  /// DOF point. For other elements, this is always 1.
   /// @return Block size of the finite element space
   int block_size() const noexcept;
 
-  /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector, 9
-  /// for a second-order tensor in 3D, for the reference element
-  /// @return The value size for the reference element
+  /// @brief Value size.
+  ///
+  /// The value size is the product of the value shape, e.g. is is  1
+  /// for a scalar function, 2 for a 2D vector, 9 for a second-order
+  /// tensor in 3D.
+  /// @throws Exception is thrown for a mixed element as mixed elements
+  /// do not have a value shape.
+  /// @return The value size.
   int reference_value_size() const;
 
-  /// The reference value shape
+  /// @brief Value shape.
+  ///
+  /// The value shape described the shape of the finite element field,
+  /// e.g. {} for a scalar, {3, 3} for a tensor in 3D. Mixed elements do
+  /// not have a value shape.
+  /// @throws Exception is thrown for a mixed element as mixed elements
+  /// do not have a value shape.
+  /// @return The value shape.
   std::span<const std::size_t> reference_value_shape() const;
 
   /// The local DOFs associated with each subentity of the cell
