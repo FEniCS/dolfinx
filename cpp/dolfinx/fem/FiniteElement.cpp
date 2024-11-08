@@ -71,9 +71,8 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
                                 std::size_t block_size, bool symmetric)
     : _signature("Quadrature element " + std::to_string(pshape[0]) + " "
                  + std::to_string(block_size)),
-      _space_dim(pshape[0] * block_size), _reference_value_shape(std::nullopt),
-      _bs(block_size),
-      /*_is_mixed(false), */
+      _space_dim(pshape[0] * block_size),
+      _reference_value_shape(std::vector<std::size_t>{}), _bs(block_size),
       _symmetric(symmetric), _needs_dof_permutations(false),
       _needs_dof_transformations(false),
       _entity_dofs(mesh::cell_dim(cell_type) + 1),
@@ -144,7 +143,12 @@ FiniteElement<T>::FiniteElement(
       _reference_value_shape(std::nullopt), _bs(1), _symmetric(false),
       _needs_dof_permutations(false), _needs_dof_transformations(false)
 {
-  // std::size_t vsize = 0;
+  if (elements.size() > 1)
+  {
+    throw std::runtime_error("FiniteElement constructor for mixed elements "
+                             "called with a single element.");
+  }
+
   _signature = "Mixed element (";
 
   const std::vector<std::vector<std::vector<int>>>& ed
@@ -160,7 +164,6 @@ FiniteElement<T>::FiniteElement(
   int dof_offset = 0;
   for (auto& e : elements)
   {
-    // vsize += e->reference_value_size();
     _signature += e->signature() + ", ";
 
     if (e->needs_dof_permutations())
@@ -192,7 +195,6 @@ FiniteElement<T>::FiniteElement(
   }
 
   _space_dim = dof_offset;
-  // _reference_value_shape = {vsize};
   _signature += ")";
 }
 //-----------------------------------------------------------------------------
@@ -229,7 +231,7 @@ int FiniteElement<T>::space_dimension() const noexcept
 template <std::floating_point T>
 std::span<const std::size_t> FiniteElement<T>::reference_value_shape() const
 {
-  if (_reference_value_shape.has_value())
+  if (_reference_value_shape)
     return *_reference_value_shape;
   else
     throw std::runtime_error("Element does not have a reference_value_shape.");
@@ -258,7 +260,7 @@ bool FiniteElement<T>::symmetric() const
 template <std::floating_point T>
 int FiniteElement<T>::reference_value_size() const
 {
-  if (_reference_value_shape.has_value())
+  if (_reference_value_shape)
   {
     return std::accumulate(_reference_value_shape->begin(),
                            _reference_value_shape->end(), 1, std::multiplies{});
