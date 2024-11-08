@@ -143,7 +143,7 @@ FiniteElement<T>::FiniteElement(
       _reference_value_shape(std::nullopt), _bs(1), _symmetric(false),
       _needs_dof_permutations(false), _needs_dof_transformations(false)
 {
-  if (elements.size() > 1)
+  if (elements.size() < 2)
   {
     throw std::runtime_error("FiniteElement constructor for mixed elements "
                              "called with a single element.");
