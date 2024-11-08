@@ -166,7 +166,7 @@ public:
 
   /// Read MeshTags by name
   /// @param[in] mesh The Mesh that the data is defined on
-  /// @param[in] name Name of the grid node in the xml file. E.g. "Material" in
+  /// @param[in] name Name of the grid node in the xml-scheme of the XDMF-file. E.g. "Material" in
   ///                 Grid Name="Material" GridType="Uniform"
   /// @param[in] attribute_name The name of the attribute to read
   /// @param[in] xpath XPath where MeshTags Grid is stored in file
