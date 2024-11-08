@@ -349,38 +349,22 @@ XDMFFile::read_meshtags_by_name(const mesh::Mesh<double>& mesh,
 
   const auto [entities, eshape] = read_topology_data(name, xpath);
 
-  pugi::xml_node attribute_node = grid_node.child("Attribute");
-  pugi::xml_node values_data_node = attribute_node.child("DataItem");
+  pugi::xml_node values_data_node
+      = grid_node.child("Attribute").child("DataItem");
   if (!attribute_name.empty())
   {
-    // Search for an attribute by the name of "Name" and whose value is the
-    // provided `attribute_name`.
-    bool found = false;
+    // Search for a child that contains an attribute with the requested name
+    pugi::xml_node attribute_node = grid_node.find_child(
+        [&attribute_name](const auto& n)
+        { return n.attribute("Name").value() == attribute_name; });
 
-    // Keep searching until it hasn't been found and there are more attribute
-    // nodes to search.
-    while (!found and attribute_node)
-    {
-      pugi::xml_attribute hint;
-      // Get the next attribute node
-      pugi::xml_attribute name = attribute_node.attribute("Name", hint);
-      // If it has the right name
-      if (name.value() == attribute_name)
-      {
-        // Note it down and end the search
-        values_data_node = attribute_node.child("DataItem");
-        found = true;
-      }
-      attribute_node = attribute_node.next_sibling("Attribute");
-    }
-
-    // If the search ended after testing all attributes but without finding
-    // a match, throw an error.
-    if (!found)
+    if (!attribute_node)
     {
       throw std::runtime_error("Attribute with name '" + attribute_name
                                + "' not found.");
     }
+
+    values_data_node = attribute_node.child("DataItem");
   }
   const std::vector values = xdmf_utils::get_dataset<std::int32_t>(
       _comm.comm(), values_data_node, _h5_id);

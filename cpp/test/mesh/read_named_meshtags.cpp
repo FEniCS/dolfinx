@@ -70,6 +70,11 @@ void test_read_named_meshtags()
       fem::CoordinateElement<double>(mesh::CellType::triangle, 1),
       mesh::GhostMode::none, "mesh"));
 
+  const auto mt_first= meshFile.read_meshtags_by_name(
+      *mesh, "material", std::string());
+
+  CHECK(mt_first.values().front() == material_value);
+
   const auto mt_domain = meshFile.read_meshtags_by_name(
       *mesh, "domain", "domain", "/Xdmf/Domain");
 
@@ -87,5 +92,5 @@ void test_read_named_meshtags()
 
 TEST_CASE("Read meshtag by name", "[read_meshtag_by_name]")
 {
-  CHECK_NOTHROW(test_read_named_meshtags());
+  test_read_named_meshtags();
 }
