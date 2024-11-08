@@ -1197,13 +1197,16 @@ void fem(nb::module_& m)
       "compute_integration_domains",
       [](dolfinx::fem::IntegralType type,
          const dolfinx::mesh::Topology& topology,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities)
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities,
+         int dim)
       {
         return dolfinx_wrappers::as_nbarray(
             dolfinx::fem::compute_integration_domains(
-                type, topology, std::span(entities.data(), entities.size())));
+                type, topology, std::span(entities.data(), entities.size()),
+                dim));
       },
-      nb::arg("integral_type"), nb::arg("topology"), nb::arg("entities"));
+      nb::arg("integral_type"), nb::arg("topology"), nb::arg("entities"),
+      nb::arg("dim"));
 
   // dolfinx::fem::ElementDofLayout
   nb::class_<dolfinx::fem::ElementDofLayout>(
