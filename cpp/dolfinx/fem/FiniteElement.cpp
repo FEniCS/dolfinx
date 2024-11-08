@@ -144,7 +144,7 @@ FiniteElement<T>::FiniteElement(
       _reference_value_shape(std::nullopt), _bs(1), _symmetric(false),
       _needs_dof_permutations(false), _needs_dof_transformations(false)
 {
-  std::size_t vsize = 0;
+  // std::size_t vsize = 0;
   _signature = "Mixed element (";
 
   const std::vector<std::vector<std::vector<int>>>& ed
@@ -160,7 +160,7 @@ FiniteElement<T>::FiniteElement(
   int dof_offset = 0;
   for (auto& e : elements)
   {
-    vsize += e->reference_value_size();
+    // vsize += e->reference_value_size();
     _signature += e->signature() + ", ";
 
     if (e->needs_dof_permutations())
