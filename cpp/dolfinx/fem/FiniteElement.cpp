@@ -302,7 +302,7 @@ int FiniteElement<T>::num_sub_elements() const noexcept
 template <std::floating_point T>
 bool FiniteElement<T>::is_mixed() const noexcept
 {
-  return !_reference_value_shape.has_value();
+  return !_reference_value_shape;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
