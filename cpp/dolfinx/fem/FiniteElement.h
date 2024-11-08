@@ -725,8 +725,7 @@ private:
   std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>
       _sub_elements;
 
-  // Dimension of each value space
-  // std::vector<std::size_t> _reference_value_shape;
+  // Value space shape, e.g. {} for a scalar, {3, 3} for a tensor in 3D
   std::optional<std::vector<std::size_t>> _reference_value_shape;
 
   // Block size for BlockedElements. This gives the number of DOFs
