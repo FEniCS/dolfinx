@@ -440,7 +440,7 @@ std::vector<std::size_t>
 compute_value_shape(const dolfinx::fem::FiniteElement<T>& element,
                     std::size_t tdim, std::size_t gdim)
 {
-  std::vector<std::size_t> rvs = element.reference_value_shape();
+  std::span<const std::size_t> rvs = element.reference_value_shape();
   std::vector<std::size_t> value_shape(rvs.size());
   if (element.block_size() > 1)
   {
