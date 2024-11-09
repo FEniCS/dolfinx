@@ -62,7 +62,7 @@ void test_fides_function()
 
   // Create a scalar function space
   auto V = std::make_shared<fem::FunctionSpace<T>>(fem::create_functionspace<T>(
-      mesh, std::make_shared<fem::FiniteElement<T>>(e, 1)));
+      mesh, std::make_shared<fem::FiniteElement<T>>(e)));
 
   // Create a finite element Function
   auto u = std::make_shared<fem::Function<T>>(V);
@@ -93,7 +93,7 @@ void test_vtx_reuse_mesh()
 
   // Create a scalar function space
   auto V = std::make_shared<fem::FunctionSpace<T>>(fem::create_functionspace<T>(
-      mesh, std::make_shared<fem::FiniteElement<T>>(e, 1)));
+      mesh, std::make_shared<fem::FiniteElement<T>>(e)));
 
   // Create a finite element Function
   auto u = std::make_shared<fem::Function<T>>(V);
