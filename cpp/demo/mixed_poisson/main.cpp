@@ -42,10 +42,15 @@ int main(int argc, char* argv[])
         basix::element::dpc_variant::unset, true);
 
     // Create DOLFINx mixed element
+    // fem::ElementData e0 = {RT, 1, false};
+    // fem::ElementData<U> e1 = {P0, 1, false};
+    // auto ME = std::make_shared<fem::FiniteElement<U>>(std::vector{e0, e1});
     auto ME = std::make_shared<fem::FiniteElement<U>>(
-        std::vector<
-            std::tuple<std::reference_wrapper<const basix::FiniteElement<U>>,
-                       std::size_t, bool>>{{RT, 1, false}, {P0, 1, false}});
+        std::vector<fem::ElementData<U>>{{RT}, {P0}});
+
+    // auto ME = std::make_shared<fem::FiniteElement<U>>(
+    //     std::vector < fem::ElementData<U>{{std::ref(RT), 1, false},
+    //                                       {std::ref(P0), 1, false}});
 
     // Create dof permutation function
     // std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv

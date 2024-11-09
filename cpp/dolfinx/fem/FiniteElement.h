@@ -30,6 +30,19 @@ enum class doftransform
   inverse_transpose = 3, ///< Transpose inverse
 };
 
+template <std::floating_point T>
+struct BasixElementData
+{
+  std::reference_wrapper<const basix::FiniteElement<T>> element;
+  std::size_t bs = 1;
+  bool symmetry = false;
+};
+
+/// Type deduction
+template <typename U, typename V, typename W>
+BasixElementData(U element, V bs, W symmetry)
+    -> BasixElementData<typename std::remove_cvref<U>::type::scalar_type>;
+
 /// @brief Model of a finite element.
 ///
 /// Provides the dof layout on a reference element, and various methods
@@ -51,11 +64,7 @@ public:
   /// @brief Create a mixed finite element from Basix finite elements.
   /// @param[in] elements List of (Basix finite element, block size,
   /// symmetric) tuples, one for each element in the mixed element.
-  FiniteElement(
-      std::vector<std::tuple<
-          std::reference_wrapper<const basix::FiniteElement<geometry_type>>,
-          std::size_t, bool>>
-          elements);
+  FiniteElement(std::vector<BasixElementData<geometry_type>> elements);
 
   /// @brief Create mixed finite element from a list of finite elements.
   /// @param[in] elements Basix finite elements
@@ -775,4 +784,5 @@ private:
   // all elements except quadrature elements)
   std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>> _points;
 };
+
 } // namespace dolfinx::fem

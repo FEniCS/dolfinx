@@ -27,11 +27,8 @@ namespace
 /// @param elements
 /// @return List of DOLFINx elements
 template <std::floating_point T>
-std::vector<std::shared_ptr<const FiniteElement<T>>> _build_element_list(
-    std::vector<
-        std::tuple<std::reference_wrapper<const basix::FiniteElement<T>>,
-                   std::size_t, bool>>
-        elements)
+std::vector<std::shared_ptr<const FiniteElement<T>>>
+_build_element_list(std::vector<BasixElementData<T>> elements)
 {
   std::vector<std::shared_ptr<const FiniteElement<T>>> _e;
   std::ranges::transform(elements, std::back_inserter(_e),
@@ -131,11 +128,7 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-FiniteElement<T>::FiniteElement(
-    std::vector<
-        std::tuple<std::reference_wrapper<const basix::FiniteElement<T>>,
-                   std::size_t, bool>>
-        elements)
+FiniteElement<T>::FiniteElement(std::vector<BasixElementData<T>> elements)
     : FiniteElement(_build_element_list(elements))
 {
 }
