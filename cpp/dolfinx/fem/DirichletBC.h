@@ -246,6 +246,17 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
   return dofs;
 }
 
+namespace
+{
+// To be used with std::variant, compare
+// https://en.cppreference.com/w/cpp/utility/variant/visit
+template <class... Ts>
+struct overloaded : Ts...
+{
+  using Ts::operator()...;
+};
+} // namespace
+
 /// Object for setting (strong) Dirichlet boundary conditions
 /// \f[u = g \ \text{on} \ G,\f]
 /// where \f$u\f$ is the solution to be computed, \f$g\f$ is a function
@@ -494,12 +505,11 @@ public:
   void set(std::span<T> x, std::optional<std::span<const T>> x0,
            T alpha = 1) const
   {
-    std::int32_t x_size = x.size();
-
     // setter is a lambda which gets evaluated for every index in [0,
     // _dofs0.size()) and its result is assigned to x[_dofs0[i]].
     auto apply = [&](auto setter)
     {
+      std::int32_t x_size = x.size();
       for (std::size_t i = 0; i < _dofs0.size(); ++i)
       {
         if (_dofs0[i] < x_size)
@@ -508,57 +518,58 @@ public:
     };
 
     if (alpha == T(0)) // Optimisation for when alpha == 0
-      apply([](std::size_t i) -> T { return 0; });
-    else
     {
-      if (std::holds_alternative<std::shared_ptr<const Function<T, U>>>(_g))
-      {
-        auto g = std::get<std::shared_ptr<const Function<T, U>>>(_g);
-        assert(g);
-        auto dofs1_g
-            = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
-        std::span<const T> values = g->x()->array();
-        if (x0.has_value())
-        {
-          std::span<const T> _x0 = x0.value();
-          assert(x.size() <= _x0.size());
-          apply(
-              [&](std::size_t i) -> T
-              {
-                assert(dofs1_g[i] < static_cast<std::int32_t>(values.size()));
-                return alpha * (values[dofs1_g[i]] - _x0[_dofs0[i]]);
-              });
-        }
-        else
-        {
-          apply(
-              [&](std::size_t i) -> T
-              {
-                assert(dofs1_g[i] < static_cast<std::int32_t>(values.size()));
-                return alpha * values[dofs1_g[i]];
-              });
-        }
-      }
-      else if (std::holds_alternative<std::shared_ptr<const Constant<T>>>(_g))
-      {
-        auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
-        const std::vector<T>& value = g->value;
-        std::int32_t bs = _function_space->dofmap()->bs();
-        if (x0.has_value())
-        {
-          assert(x.size() <= x0.value().size());
-          apply(
-              [&](std::size_t i) -> T {
-                return alpha * (value[_dofs0[i] % bs] - x0.value()[_dofs0[i]]);
-              });
-        }
-        else
-        {
-          apply([&](std::size_t i) -> T
-                { return alpha * value[_dofs0[i] % bs]; });
-        }
-      }
+      apply([](std::size_t) -> T { return 0; });
+      return;
     }
+
+    auto handle_function = [&](std::shared_ptr<const Function<T, U>> g)
+    {
+      assert(g);
+      auto dofs1_g = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
+      std::span<const T> values = g->x()->array();
+      if (x0.has_value())
+      {
+        std::span<const T> _x0 = x0.value();
+        assert(x.size() <= _x0.size());
+        apply(
+            [&](std::size_t i) -> T
+            {
+              assert(dofs1_g[i] < static_cast<std::int32_t>(values.size()));
+              return alpha * (values[dofs1_g[i]] - _x0[_dofs0[i]]);
+            });
+      }
+      else
+      {
+        apply(
+            [&](std::size_t i) -> T
+            {
+              assert(dofs1_g[i] < static_cast<std::int32_t>(values.size()));
+              return alpha * values[dofs1_g[i]];
+            });
+      }
+    };
+
+    auto handle_constant = [&](std::shared_ptr<const Constant<T>> g)
+    {
+      const std::vector<T>& value = g->value;
+      std::int32_t bs = _function_space->dofmap()->bs();
+      if (x0.has_value())
+      {
+        assert(x.size() <= x0.value().size());
+        apply(
+            [&](std::size_t i) -> T {
+              return alpha * (value[_dofs0[i] % bs] - x0.value()[_dofs0[i]]);
+            });
+      }
+      else
+      {
+        apply([&](std::size_t i) -> T
+              { return alpha * value[_dofs0[i] % bs]; });
+      }
+    };
+  
+    std::visit(overloaded{handle_function, handle_constant}, _g);
   }
 
   /// @brief Set `markers[i] = true` if dof `i` has a boundary condition
