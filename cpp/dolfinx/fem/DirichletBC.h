@@ -505,15 +505,15 @@ public:
   void set(std::span<T> x, std::optional<std::span<const T>> x0,
            T alpha = 1) const
   {
-    // setter is a lambda which gets evaluated for every index in [0,
+    // set_fn is a lambda which gets evaluated for every index in [0,
     // _dofs0.size()) and its result is assigned to x[_dofs0[i]].
-    auto apply = [&](auto setter)
+    auto apply = [&](auto set_fn)
     {
       std::int32_t x_size = x.size();
       for (std::size_t i = 0; i < _dofs0.size(); ++i)
       {
         if (_dofs0[i] < x_size)
-          x[_dofs0[i]] = setter(i);
+          x[_dofs0[i]] = set_fn(i);
       }
     };
 
