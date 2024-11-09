@@ -8,7 +8,7 @@ FROM rockylinux/rockylinux:9
 ARG BUILD_NP=4
 
 ARG HDF5_VERSION=1.14.5
-ARG PETSC_VERSION=3.22.0
+ARG PETSC_VERSION=3.22.1
 ARG MPICH_VERSION=4.2.3
 
 WORKDIR /tmp
@@ -20,7 +20,6 @@ RUN dnf -y update && \
     dnf -y install \
     bison \
     boost-devel \
-    boost-timer \
     boost-program-options \
     cmake \
     gcc \

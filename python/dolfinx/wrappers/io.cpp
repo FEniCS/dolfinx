@@ -115,7 +115,8 @@ void declare_vtx_writer(nb::module_& m, std::string type)
             [](dolfinx::io::VTXWriter<T>* self, MPICommWrapper comm,
                std::filesystem::path filename,
                std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
-               std::string engine) {
+               std::string engine)
+            {
               new (self)
                   dolfinx::io::VTXWriter<T>(comm.get(), filename, mesh, engine);
             },
@@ -155,7 +156,8 @@ void declare_vtx_writer(nb::module_& m, std::string type)
             [](dolfinx::io::FidesWriter<T>* self, MPICommWrapper comm,
                std::filesystem::path filename,
                std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
-               std::string engine) {
+               std::string engine)
+            {
               new (self) dolfinx::io::FidesWriter<T>(comm.get(), filename, mesh,
                                                      engine);
             },
@@ -277,7 +279,8 @@ void io(nb::module_& m)
           "__init__",
           [](dolfinx::io::XDMFFile* x, MPICommWrapper comm,
              std::filesystem::path filename, std::string file_mode,
-             dolfinx::io::XDMFFile::Encoding encoding) {
+             dolfinx::io::XDMFFile::Encoding encoding)
+          {
             new (x) dolfinx::io::XDMFFile(comm.get(), filename, file_mode,
                                           encoding);
           },
