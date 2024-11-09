@@ -756,6 +756,11 @@ public:
   dof_permutation_fn(bool inverse = false, bool scalar_element = false) const;
 
 private:
+  // Block size for BlockedElements. This gives the number of DOFs
+  // co-located at each dof 'point'.
+  std::optional<std::vector<std::size_t>> _block_shape;
+  int _bs;
+
   mesh::CellType _cell_type;
 
   std::string _signature;
@@ -769,11 +774,6 @@ private:
   // Value space shape, e.g. {} for a scalar, {3, 3} for a tensor in 3D.
   // For a mixed element it is std::nullopt.
   std::optional<std::vector<std::size_t>> _reference_value_shape;
-
-  // Block size for BlockedElements. This gives the number of DOFs
-  // co-located at each dof 'point'.
-  std::optional<std::vector<std::size_t>> _block_shape;
-  int _bs;
 
   // Basix Element (nullptr for mixed elements)
   std::unique_ptr<basix::FiniteElement<geometry_type>> _element;

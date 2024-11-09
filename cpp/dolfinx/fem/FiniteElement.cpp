@@ -93,6 +93,10 @@ FiniteElement<T>::FiniteElement(
       // _space_dim(block_size * element.dim()),
       _reference_value_shape(element.value_shape()),
       // _bs(block_size),
+      // _bs(block_shape
+      //         ? std::accumulate(block_shape->begin(), block_shape->end(), 1,
+      //                           std::multiplies{})
+      //         : 1),
       _element(std::make_unique<basix::FiniteElement<T>>(element)),
       _symmetric(symmetric),
       _needs_dof_permutations(
@@ -145,8 +149,8 @@ FiniteElement<T>::FiniteElement(std::vector<BasixElementData<T>> elements)
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(
     const std::vector<std::shared_ptr<const FiniteElement<T>>>& elements)
-    : _cell_type(elements.front()->cell_type()), _space_dim(0),
-      _sub_elements(elements), _reference_value_shape(std::nullopt), _bs(1),
+    : _bs(1), _cell_type(elements.front()->cell_type()), _space_dim(0),
+      _sub_elements(elements), _reference_value_shape(std::nullopt),
       _symmetric(false), _needs_dof_permutations(false),
       _needs_dof_transformations(false)
 {
