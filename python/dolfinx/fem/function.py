@@ -578,12 +578,12 @@ def _create_dolfinx_element(
         elements = [_create_dolfinx_element(comm, cell_type, e, dtype) for e in ufl_e.sub_elements]
         return CppElement(elements)
     elif ufl_e.is_quadrature:
-        return CppElement(
-            cell_type, ufl_e.custom_quadrature()[0], ufl_e.block_size, ufl_e.is_symmetric
-        )
+        bs = [ufl_e.block_size] if ufl_e.block_size > 1 else None
+        return CppElement(cell_type, ufl_e.custom_quadrature()[0], bs, ufl_e.is_symmetric)
     else:
         basix_e = ufl_e.basix_element._e
-        return CppElement(basix_e, ufl_e.block_size, ufl_e.is_symmetric)
+        bs = [ufl_e.block_size] if ufl_e.block_size > 1 else None
+        return CppElement(basix_e, bs, ufl_e.is_symmetric)
 
 
 def functionspace(

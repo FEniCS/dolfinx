@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 
     auto V
         = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
-            mesh, std::make_shared<fem::FiniteElement<U>>(element, 1)));
+            mesh, std::make_shared<fem::FiniteElement<U>>(element)));
 
     // Next we find all cells of the mesh with y<0.5
     const int tdim = mesh->topology()->dim();
@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
     // We create the function space used for the trial space
     auto W
         = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
-            submesh, std::make_shared<fem::FiniteElement<U>>(element, 1)));
+            submesh, std::make_shared<fem::FiniteElement<U>>(element)));
 
     // A mixed-domain form has functions defined over different meshes.
     // The mesh associated with the measure (dx, ds, etc.) is called the

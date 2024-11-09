@@ -35,9 +35,11 @@ enum class doftransform
 template <std::floating_point T>
 struct BasixElementData
 {
-  std::reference_wrapper<const basix::FiniteElement<T>> element; ///< Finite element
-  std::size_t bs = 1;                                            ///< Value shape
-  bool symmetry = false;                                         ///< symmetry
+  std::reference_wrapper<const basix::FiniteElement<T>>
+      element; ///< Finite element
+  std::optional<std::vector<std::size_t>> value_shape
+      = std::nullopt;    ///< Value shape
+  bool symmetry = false; ///< symmetry
 };
 
 /// Type deduction
@@ -58,10 +60,12 @@ public:
 
   /// @brief Create a finite element from a Basix finite element.
   /// @param[in] element Basix finite element
-  /// @param[in] block_size The block size for the element
+  /// @param[in] block_shape The block size for the element
   /// @param[in] symmetric Is the element a symmetric tensor?
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
-                std::size_t block_size, bool symmetric = false);
+                std::optional<std::vector<std::size_t>> block_shape
+                = std::nullopt,
+                bool symmetric = false);
 
   /// @brief Create a mixed finite element from Basix finite elements.
   /// @param[in] elements List of (Basix finite element, block size,
@@ -767,6 +771,7 @@ private:
 
   // Block size for BlockedElements. This gives the number of DOFs
   // co-located at each dof 'point'.
+  std::optional<std::vector<std::size_t>> _block_shape;
   int _bs;
 
   // Basix Element (nullptr for mixed elements)

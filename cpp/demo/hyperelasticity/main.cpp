@@ -168,7 +168,8 @@ int main(int argc, char* argv[])
 
     auto V
         = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
-            mesh, std::make_shared<fem::FiniteElement<U>>(element, 3)));
+            mesh, std::make_shared<fem::FiniteElement<U>>(
+                      element, std::vector<std::size_t>{3})));
 
     auto B = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
     auto traction = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
@@ -275,7 +276,7 @@ int main(int argc, char* argv[])
         basix::element::dpc_variant::unset, discontinuous);
     auto S
         = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
-            mesh, std::make_shared<fem::FiniteElement<U>>(S_element, 1),
+            mesh, std::make_shared<fem::FiniteElement<U>>(S_element),
             std::vector<std::size_t>{3, 3}));
 
     fem::Function<T> sigma(S);

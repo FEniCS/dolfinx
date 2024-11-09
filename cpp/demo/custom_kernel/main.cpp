@@ -210,7 +210,7 @@ void assemble(MPI_Comm comm)
 
   // Create a scalar function space
   auto V = std::make_shared<fem::FunctionSpace<T>>(fem::create_functionspace<T>(
-      mesh, std::make_shared<fem::FiniteElement<T>>(e, 1)));
+      mesh, std::make_shared<fem::FiniteElement<T>>(e)));
 
   // Build list of cells to assembler over (all cells owned by this
   // rank)

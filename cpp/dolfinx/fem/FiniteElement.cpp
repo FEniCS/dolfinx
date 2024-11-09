@@ -35,8 +35,9 @@ _build_element_list(std::vector<BasixElementData<T>> elements)
                          [](auto data)
                          {
                            auto [e, bs, symm] = data;
-                           return std::make_shared<fem::FiniteElement<T>>(e, bs,
-                                                                          symm);
+                          //  int _bs = bs ? bs->front() : 1;
+                           // TODO: Check bs and symm, bs should be empty?
+                           return std::make_shared<fem::FiniteElement<T>>(e);
                          });
   return _e;
 }
@@ -85,11 +86,13 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
 
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
-                                std::size_t block_size, bool symmetric)
+FiniteElement<T>::FiniteElement(
+    const basix::FiniteElement<T>& element,
+    std::optional<std::vector<std::size_t>> block_shape, bool symmetric)
     : _cell_type(mesh::cell_type_from_basix_type(element.cell_type())),
-      _space_dim(block_size * element.dim()),
-      _reference_value_shape(element.value_shape()), _bs(block_size),
+      // _space_dim(block_size * element.dim()),
+      _reference_value_shape(element.value_shape()),
+      // _bs(block_size),
       _element(std::make_unique<basix::FiniteElement<T>>(element)),
       _symmetric(symmetric),
       _needs_dof_permutations(
@@ -101,14 +104,20 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
       _entity_dofs(element.entity_dofs()),
       _entity_closure_dofs(element.entity_closure_dofs())
 {
+  _bs = block_shape ? std::accumulate(block_shape->begin(), block_shape->end(),
+                                      1, std::multiplies{})
+                    : 1;
+
   // Create all sub-elements
-  if (_bs > 1)
+  if (block_shape)
   {
     _sub_elements
         = std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>(
-            _bs, std::make_shared<FiniteElement<T>>(element, 1));
-    _reference_value_shape = {block_size};
+            _bs, std::make_shared<FiniteElement<T>>(element));
+    _reference_value_shape = *block_shape;
   }
+
+  _space_dim = _bs * element.dim();
 
   std::string family;
   switch (_element->family())

@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
     //  Create function space
     auto V
         = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
-            mesh, std::make_shared<fem::FiniteElement<U>>(element, 1)));
+            mesh, std::make_shared<fem::FiniteElement<U>>(element)));
 
     // The source function $f$ and the penalty term $\alpha$ are
     // declared:

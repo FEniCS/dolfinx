@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
 
     auto V
         = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
-            mesh, std::make_shared<fem::FiniteElement<U>>(element, 1)));
+            mesh, std::make_shared<fem::FiniteElement<U>>(element)));
 
     //  Next, we define the variational formulation by initializing the
     //  bilinear and linear forms ($a$, $L$) using the previously
