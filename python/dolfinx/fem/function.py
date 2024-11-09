@@ -576,6 +576,12 @@ def _create_dolfinx_element(
 
     if ufl_e.is_mixed:
         elements = [_create_dolfinx_element(comm, cell_type, e, dtype) for e in ufl_e.sub_elements]
+        print("EEEE")
+        for e in ufl_e.sub_elements:
+            print(e)
+            print(ufl_e.block_size)
+            print(type(e))
+
         return CppElement(elements)
     elif ufl_e.is_quadrature:
         bs = [ufl_e.block_size] if ufl_e.block_size > 1 else None
@@ -583,6 +589,7 @@ def _create_dolfinx_element(
     else:
         basix_e = ufl_e.basix_element._e
         bs = [ufl_e.block_size] if ufl_e.block_size > 1 else None
+        print("Make element: ", bs)
         return CppElement(basix_e, bs, ufl_e.is_symmetric)
 
 
