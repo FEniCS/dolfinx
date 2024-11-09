@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
     // fem::ElementData<U> e1 = {P0, 1, false};
     // auto ME = std::make_shared<fem::FiniteElement<U>>(std::vector{e0, e1});
     auto ME = std::make_shared<fem::FiniteElement<U>>(
-        std::vector<fem::ElementData<U>>{{RT}, {P0}});
+        std::vector<fem::BasixElementData<U>>{{RT}, {P0}});
 
     // auto ME = std::make_shared<fem::FiniteElement<U>>(
     //     std::vector < fem::ElementData<U>{{std::ref(RT), 1, false},
