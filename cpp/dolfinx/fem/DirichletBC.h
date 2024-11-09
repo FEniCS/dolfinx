@@ -495,14 +495,20 @@ public:
            T alpha = 1) const
   {
     std::int32_t x_size = x.size();
-    if (alpha == T(0)) // Optimisation for when alpha == 0
+
+    // setter is a lambda which gets evaluated for every index in [0,
+    // _dofs0.size()) and its result is assigned to x[_dofs0[i]].
+    auto apply = [&](auto setter)
     {
-      for (std::int32_t idx : _dofs0)
+      for (std::size_t i = 0; i < _dofs0.size(); ++i)
       {
-        if (idx < x_size)
-          x[idx] = 0;
+        if (_dofs0[i] < x_size)
+          x[_dofs0[i]] = setter(i);
       }
-    }
+    };
+
+    if (alpha == T(0)) // Optimisation for when alpha == 0
+      apply([](std::size_t i) -> T { return 0; });
     else
     {
       if (std::holds_alternative<std::shared_ptr<const Function<T, U>>>(_g))
@@ -516,25 +522,21 @@ public:
         {
           std::span<const T> _x0 = x0.value();
           assert(x.size() <= _x0.size());
-          for (std::size_t i = 0; i < _dofs0.size(); ++i)
-          {
-            if (_dofs0[i] < x_size)
-            {
-              assert(dofs1_g[i] < (std::int32_t)values.size());
-              x[_dofs0[i]] = alpha * (values[dofs1_g[i]] - _x0[_dofs0[i]]);
-            }
-          }
+          apply(
+              [&](std::size_t i) -> T
+              {
+                assert(dofs1_g[i] < static_cast<std::int32_t>(values.size()));
+                return alpha * (values[dofs1_g[i]] - _x0[_dofs0[i]]);
+              });
         }
         else
         {
-          for (std::size_t i = 0; i < _dofs0.size(); ++i)
-          {
-            if (_dofs0[i] < x_size)
-            {
-              assert(dofs1_g[i] < (std::int32_t)values.size());
-              x[_dofs0[i]] = alpha * values[dofs1_g[i]];
-            }
-          }
+          apply(
+              [&](std::size_t i) -> T
+              {
+                assert(dofs1_g[i] < static_cast<std::int32_t>(values.size()));
+                return alpha * values[dofs1_g[i]];
+              });
         }
       }
       else if (std::holds_alternative<std::shared_ptr<const Constant<T>>>(_g))
@@ -545,22 +547,15 @@ public:
         if (x0.has_value())
         {
           assert(x.size() <= x0.value().size());
-          std::ranges::for_each(
-              _dofs0,
-              [x_size, &x, x0 = x0.value(), &value, alpha, bs](auto dof)
-              {
-                if (dof < x_size)
-                  x[dof] = alpha * (value[dof % bs] - x0[dof]);
+          apply(
+              [&](std::size_t i) -> T {
+                return alpha * (value[_dofs0[i] % bs] - x0.value()[_dofs0[i]]);
               });
         }
         else
         {
-          std::ranges::for_each(_dofs0,
-                                [x_size, bs, alpha, &value, &x](auto dof)
-                                {
-                                  if (dof < x_size)
-                                    x[dof] = alpha * value[dof % bs];
-                                });
+          apply([&](std::size_t i) -> T
+                { return alpha * value[_dofs0[i] % bs]; });
         }
       }
     }
