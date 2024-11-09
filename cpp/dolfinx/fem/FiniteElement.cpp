@@ -35,7 +35,7 @@ _build_element_list(std::vector<BasixElementData<T>> elements)
                          [](auto data)
                          {
                            auto [e, bs, symm] = data;
-                          //  int _bs = bs ? bs->front() : 1;
+                           //  int _bs = bs ? bs->front() : 1;
                            // TODO: Check bs and symm, bs should be empty?
                            return std::make_shared<fem::FiniteElement<T>>(e);
                          });
@@ -209,17 +209,25 @@ template <std::floating_point T>
 FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
                                 std::span<const geometry_type> points,
                                 std::array<std::size_t, 2> pshape,
-                                std::size_t block_size, bool symmetric)
+                                std::vector<std::size_t> block_shape,
+                                bool symmetric)
     : _cell_type(cell_type),
-      _signature("Quadrature element " + std::to_string(pshape[0]) + " "
-                 + std::to_string(block_size)),
-      _space_dim(pshape[0] * block_size), _reference_value_shape({}),
-      _bs(block_size), _symmetric(symmetric), _needs_dof_permutations(false),
+      _signature("Quadrature element " + std::to_string(pshape[0])),
+      // _space_dim(pshape[0] * block_size),
+      _reference_value_shape({}),
+      // _bs(block_size),
+      _symmetric(symmetric), _needs_dof_permutations(false),
       _needs_dof_transformations(false),
       _entity_dofs(mesh::cell_dim(cell_type) + 1),
       _entity_closure_dofs(mesh::cell_dim(cell_type) + 1),
       _points(std::vector<T>(points.begin(), points.end()), pshape)
 {
+  assert(block_shape.size() <= 1);
+  _bs = std::accumulate(block_shape.begin(), block_shape.end(), 1,
+                        std::multiplies{});
+  _space_dim = pshape[0] * _bs;
+  _signature += " " + std::to_string(_bs);
+
   const int tdim = mesh::cell_dim(cell_type);
   for (int d = 0; d <= tdim; ++d)
   {

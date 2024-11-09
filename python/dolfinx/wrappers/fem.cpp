@@ -117,7 +117,7 @@ void declare_function_space(nb::module_& m, std::string type)
                                                         symmetric);
             },
             nb::arg("element"), nb::arg("block_shape").none(),
-            nb::arg("symmetric"))
+            nb::arg("symmetric"), "Single Basix element constructor.")
         .def(
             "__init__",
             [](dolfinx::fem::FiniteElement<T>* self,
@@ -125,20 +125,20 @@ void declare_function_space(nb::module_& m, std::string type)
                    std::shared_ptr<const dolfinx::fem::FiniteElement<T>>>
                    elements)
             { new (self) dolfinx::fem::FiniteElement<T>(elements); },
-            nb::arg("elements"))
+            nb::arg("elements"), "Mixed-element constructor.")
         .def(
             "__init__",
             [](dolfinx::fem::FiniteElement<T>* self, mesh::CellType cell_type,
                nb::ndarray<T, nb::ndim<2>, nb::numpy> points,
-               std::size_t block_size, bool symmetry)
+               std::vector<std::size_t> block_shape, bool symmetry)
             {
               std::span<T> pdata(points.data(), points.size());
               new (self) dolfinx::fem::FiniteElement<T>(
                   cell_type, pdata, {points.shape(0), points.shape(1)},
-                  block_size, symmetry);
+                  block_shape, symmetry);
             },
-            nb::arg("cell_type"), nb::arg("points"), nb::arg("block_size"),
-            nb::arg("symmetry"))
+            nb::arg("cell_type"), nb::arg("points"), nb::arg("block_shape"),
+            nb::arg("symmetry"), "Quadrature element constructor.")
         .def("__eq__", &dolfinx::fem::FiniteElement<T>::operator==)
         .def_prop_ro("dtype", [](const dolfinx::fem::FiniteElement<T>&)
                      { return dolfinx_wrappers::numpy_dtype<T>(); })
