@@ -116,7 +116,8 @@ void declare_function_space(nb::module_& m, std::string type)
               new (self) dolfinx::fem::FiniteElement<T>(element, block_shape,
                                                         symmetric);
             },
-            nb::arg("element"), nb::arg("block_size"), nb::arg("symmetric"))
+            nb::arg("element"), nb::arg("block_shape").none(),
+            nb::arg("symmetric"))
         .def(
             "__init__",
             [](dolfinx::fem::FiniteElement<T>* self,
