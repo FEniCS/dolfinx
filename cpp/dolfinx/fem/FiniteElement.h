@@ -30,12 +30,14 @@ enum class doftransform
   inverse_transpose = 3, ///< Transpose inverse
 };
 
+/// @brief Basix element holder
+/// @tparam T Scalar type
 template <std::floating_point T>
 struct BasixElementData
 {
-  std::reference_wrapper<const basix::FiniteElement<T>> element;
-  std::size_t bs = 1;
-  bool symmetry = false;
+  std::reference_wrapper<const basix::FiniteElement<T>> element; ///< Finite element
+  std::size_t bs = 1;                                            ///< Value shape
+  bool symmetry = false;                                         ///< symmetry
 };
 
 /// Type deduction
