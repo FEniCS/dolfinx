@@ -83,15 +83,15 @@ void declare_function_space(nb::module_& m, std::string type)
         .def_prop_ro("element", &dolfinx::fem::FunctionSpace<T>::element)
         .def_prop_ro("mesh", &dolfinx::fem::FunctionSpace<T>::mesh)
         .def_prop_ro("dofmap", &dolfinx::fem::FunctionSpace<T>::dofmap)
-        .def_prop_ro(
-            "value_shape",
-            [](const dolfinx::fem::FunctionSpace<T>& self)
-            {
-              std::span<const std::size_t> vshape = self.value_shape();
-              return nb::ndarray<const std::size_t, nb::numpy>(vshape.data(),
-                                                               {vshape.size()});
-            },
-            nb::rv_policy::reference_internal)
+        // .def_prop_ro(
+        //     "value_shape",
+        //     [](const dolfinx::fem::FunctionSpace<T>& self)
+        //     {
+        //       std::span<const std::size_t> vshape = self.value_shape();
+        //       return nb::ndarray<const std::size_t, nb::numpy>(vshape.data(),
+        //                                                        {vshape.size()});
+        //     },
+        //     nb::rv_policy::reference_internal)
         .def("sub", &dolfinx::fem::FunctionSpace<T>::sub, nb::arg("component"))
         .def("tabulate_dof_coordinates",
              [](const dolfinx::fem::FunctionSpace<T>& self)
@@ -147,6 +147,15 @@ void declare_function_space(nb::module_& m, std::string type)
                      nb::rv_policy::reference_internal)
         .def_prop_ro("num_sub_elements",
                      &dolfinx::fem::FiniteElement<T>::num_sub_elements)
+        .def_prop_ro(
+            "value_shape",
+            [](const dolfinx::fem::FiniteElement<T>& self)
+            {
+              std::span<const std::size_t> vshape = self.value_shape();
+              return nb::ndarray<const std::size_t, nb::numpy>(vshape.data(),
+                                                               {vshape.size()});
+            },
+            nb::rv_policy::reference_internal)
         .def("interpolation_points",
              [](const dolfinx::fem::FiniteElement<T>& self)
              {
@@ -468,7 +477,7 @@ void declare_objects(nb::module_& m, const std::string& type)
             const int gdim = self.function_space()->mesh()->geometry().dim();
 
             // Compute value size
-            auto vshape = self.function_space()->value_shape();
+            auto vshape = self.function_space()->element()->value_shape();
             std::size_t value_size = std::reduce(vshape.begin(), vshape.end(),
                                                  1, std::multiplies{});
 

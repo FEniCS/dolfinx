@@ -361,11 +361,11 @@ public:
   /// The dofmap
   std::shared_ptr<const DofMap> dofmap() const { return _dofmap; }
 
-  /// The shape of the value space
-  std::span<const std::size_t> value_shape() const noexcept
-  {
-    return _value_shape;
-  }
+  // /// The shape of the value space
+  // std::span<const std::size_t> value_shape() const noexcept
+  // {
+  //   return _value_shape;
+  // }
 
   /// The value size, e.g. 1 for a scalar-valued function, 2 for a 2D vector, 9
   /// for a second-order tensor in 3D.

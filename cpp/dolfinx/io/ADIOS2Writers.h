@@ -250,7 +250,8 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
   std::uint32_t num_vertices
       = vertex_map->size_local() + vertex_map->num_ghosts();
 
-  std::span<const std::size_t> value_shape = u.function_space()->value_shape();
+  std::span<const std::size_t> value_shape
+      = u.function_space()->element()->value_shape();
   int rank = value_shape.size();
   int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
                                    std::multiplies{});
@@ -302,7 +303,8 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
 
   // Pad to 3D if vector/tensor is product of dimensions is smaller than
   // 3**rank to ensure that we can visualize them correctly in Paraview
-  std::span<const std::size_t> value_shape = u.function_space()->value_shape();
+  std::span<const std::size_t> value_shape
+      = u.function_space()->element()->value_shape();
   int rank = value_shape.size();
   int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
                                    std::multiplies{});
@@ -682,7 +684,8 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
 
   // Pad to 3D if vector/tensor is product of dimensions is smaller than
   // 3**rank to ensure that we can visualize them correctly in Paraview
-  std::span<const std::size_t> value_shape = u.function_space()->value_shape();
+  std::span<const std::size_t> value_shape
+      = u.function_space()->element()->value_shape();
   int rank = value_shape.size();
   int num_comp = std::reduce(value_shape.begin(), value_shape.end(), 1,
                              std::multiplies{});

@@ -89,7 +89,8 @@ template <std::floating_point T>
 FiniteElement<T>::FiniteElement(
     const basix::FiniteElement<T>& element,
     std::optional<std::vector<std::size_t>> block_shape, bool symmetric)
-    : _cell_type(mesh::cell_type_from_basix_type(element.cell_type())),
+    : _block_shape(block_shape),
+      _cell_type(mesh::cell_type_from_basix_type(element.cell_type())),
       // _space_dim(block_size * element.dim()),
       _reference_value_shape(element.value_shape()),
       // _bs(block_size),
@@ -108,6 +109,9 @@ FiniteElement<T>::FiniteElement(
       _entity_dofs(element.entity_dofs()),
       _entity_closure_dofs(element.entity_closure_dofs())
 {
+  // TODO: add consistency check
+  _block_shape = block_shape ? *block_shape : element.value_shape();
+
   _bs = block_shape ? std::accumulate(block_shape->begin(), block_shape->end(),
                                       1, std::multiplies{})
                     : 1;
@@ -118,7 +122,8 @@ FiniteElement<T>::FiniteElement(
     _sub_elements
         = std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>(
             _bs, std::make_shared<FiniteElement<T>>(element));
-    _reference_value_shape = *block_shape;
+    _reference_value_shape
+        = *block_shape; // FIXME: should be base element value shape
   }
 
   _space_dim = _bs * element.dim();
@@ -284,6 +289,39 @@ int FiniteElement<T>::space_dimension() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
+int FiniteElement<T>::value_size() const
+{
+  if (_block_shape)
+  {
+    return std::accumulate(_block_shape->begin(), _block_shape->end(), 1,
+                           std::multiplies{});
+  }
+  else
+    throw std::runtime_error("Element does not have a value_shape.");
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+std::span<const std::size_t> FiniteElement<T>::value_shape() const
+{
+  if (_block_shape)
+    return *_block_shape;
+  else
+    throw std::runtime_error("Element does not have a value_shape.");
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+int FiniteElement<T>::reference_value_size() const
+{
+  if (_reference_value_shape)
+  {
+    return std::accumulate(_reference_value_shape->begin(),
+                           _reference_value_shape->end(), 1, std::multiplies{});
+  }
+  else
+    throw std::runtime_error("Element does not have a reference_value_shape.");
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
 std::span<const std::size_t> FiniteElement<T>::reference_value_shape() const
 {
   if (_reference_value_shape)
@@ -310,18 +348,6 @@ template <std::floating_point T>
 bool FiniteElement<T>::symmetric() const
 {
   return _symmetric;
-}
-//-----------------------------------------------------------------------------
-template <std::floating_point T>
-int FiniteElement<T>::reference_value_size() const
-{
-  if (_reference_value_shape)
-  {
-    return std::accumulate(_reference_value_shape->begin(),
-                           _reference_value_shape->end(), 1, std::multiplies{});
-  }
-  else
-    throw std::runtime_error("Element does not have a reference_value_shape.");
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

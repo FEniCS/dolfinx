@@ -582,7 +582,9 @@ def _create_dolfinx_element(
         )
     else:
         basix_e = ufl_e.basix_element._e
-        bs = [ufl_e.block_size] if ufl_e.block_size > 1 else None
+        bs = ufl_e.reference_value_shape if ufl_e.block_size > 1 else None
+        # bs = [ufl_e.block_size] if ufl_e.block_size > 1 else None
+        # print(bs, ufl_e.reference_value_shape)
         return CppElement(basix_e, bs, ufl_e.is_symmetric)
 
 
@@ -698,14 +700,14 @@ class FunctionSpace(ufl.FunctionSpace):
                 self._cpp_object.mesh,
                 self._cpp_object.element,
                 self._cpp_object.dofmap,
-                self._cpp_object.value_shape,
+                self._cpp_object.element.value_shape,
             )  # type: ignore
         except TypeError:
             Vcpp = _cpp.fem.FunctionSpace_float32(
                 self._cpp_object.mesh,
                 self._cpp_object.element,
                 self._cpp_object.dofmap,
-                self._cpp_object.value_shape,
+                self._cpp_object.element.value_shape,
             )  # type: ignore
         return FunctionSpace(self._mesh, self.ufl_element(), Vcpp)
 
@@ -714,10 +716,10 @@ class FunctionSpace(ufl.FunctionSpace):
         """Number of sub spaces."""
         return self.element.num_sub_elements
 
-    @property
-    def value_shape(self) -> tuple[int, ...]:
-        """Value shape."""
-        return tuple(int(i) for i in self._cpp_object.value_shape)
+    # @property
+    # def value_shape(self) -> tuple[int, ...]:
+    #     """Value shape."""
+    #     return tuple(int(i) for i in self._cpp_object.value_shape)
 
     def sub(self, i: int) -> FunctionSpace:
         """Return the i-th sub space.

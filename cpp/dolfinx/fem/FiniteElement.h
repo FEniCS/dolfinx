@@ -139,6 +139,26 @@ public:
   /// @return Block size of the finite element space
   int block_size() const noexcept;
 
+  /// @brief Value size (new).
+  ///
+  /// The value size is the product of the value shape, e.g. is is  1
+  /// for a scalar function, 2 for a 2D vector, 9 for a second-order
+  /// tensor in 3D.
+  /// @throws Exception is thrown for a mixed element as mixed elements
+  /// do not have a value shape.
+  /// @return The value size.
+  int value_size() const;
+
+  /// @brief Value shape (new, ).
+  ///
+  /// The value shape described the shape of the finite element field,
+  /// e.g. {} for a scalar, {3, 3} for a tensor in 3D. Mixed elements do
+  /// not have a value shape.
+  /// @throws Exception is thrown for a mixed element as mixed elements
+  /// do not have a value shape.
+  /// @return The value shape.
+  std::span<const std::size_t> value_shape() const;
+
   /// @brief Value size.
   ///
   /// The value size is the product of the value shape, e.g. is is  1

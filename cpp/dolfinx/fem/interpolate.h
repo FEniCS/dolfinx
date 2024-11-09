@@ -1218,7 +1218,8 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
     auto fs1 = u1.function_space();
     auto element1 = fs1->element();
     assert(element1);
-    if (!std::ranges::equal(fs0->value_shape(), fs1->value_shape()))
+    if (!std::ranges::equal(fs0->element()->value_shape(),
+                            fs1->element()->value_shape()))
     {
       throw std::runtime_error(
           "Interpolation: elements have different value dimensions");
