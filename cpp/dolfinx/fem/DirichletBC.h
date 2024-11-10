@@ -255,6 +255,9 @@ struct overloaded : Ts...
 {
   using Ts::operator()...;
 };
+// explicit deduction guide
+template <class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
 } // namespace
 
 /// Object for setting (strong) Dirichlet boundary conditions
@@ -568,7 +571,7 @@ public:
               { return alpha * value[_dofs0[i] % bs]; });
       }
     };
-  
+
     std::visit(overloaded{handle_function, handle_constant}, _g);
   }
 
