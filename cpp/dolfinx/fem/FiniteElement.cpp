@@ -16,6 +16,8 @@
 #include <utility>
 #include <vector>
 
+#include <iostream>
+
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
@@ -109,12 +111,22 @@ FiniteElement<T>::FiniteElement(
       _entity_dofs(element.entity_dofs()),
       _entity_closure_dofs(element.entity_closure_dofs())
 {
-  // TODO: add consistency check
+  // block_shape only makes sense if element.value_shape() == 1?
+
+  // TODO: add consistency check between block_shape and value_shape
   _block_shape = block_shape ? *block_shape : element.value_shape();
 
   _bs = block_shape ? std::accumulate(block_shape->begin(), block_shape->end(),
                                       1, std::multiplies{})
                     : 1;
+
+  if (symmetric)
+  {
+    if (_bs == 9)
+      _bs = 6;
+    else if (_bs == 4)
+      _bs = 3;
+  }
 
   // Create all sub-elements
   if (block_shape)
@@ -122,8 +134,9 @@ FiniteElement<T>::FiniteElement(
     _sub_elements
         = std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>(
             _bs, std::make_shared<FiniteElement<T>>(element));
+
     _reference_value_shape
-        = *block_shape; // FIXME: should be base element value shape
+        = *block_shape; // FIXME: should be base element value shape?
   }
 
   _space_dim = _bs * element.dim();
@@ -220,7 +233,7 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
                                 std::array<std::size_t, 2> pshape,
                                 std::vector<std::size_t> block_shape,
                                 bool symmetric)
-    : _cell_type(cell_type),
+    : _block_shape(block_shape), _cell_type(cell_type),
       _signature("Quadrature element " + std::to_string(pshape[0])),
       // _space_dim(pshape[0] * block_size),
       _reference_value_shape({}),
@@ -291,10 +304,25 @@ int FiniteElement<T>::space_dimension() const noexcept
 template <std::floating_point T>
 int FiniteElement<T>::value_size() const
 {
+  std::cout << "In FiniteElement<T>::value_size(): " << _symmetric << std::endl;
   if (_block_shape)
   {
-    return std::accumulate(_block_shape->begin(), _block_shape->end(), 1,
-                           std::multiplies{});
+    int vs = std::accumulate(_block_shape->begin(), _block_shape->end(), 1,
+                             std::multiplies{});
+    if (_symmetric)
+    {
+      std::cout << "Symmetric: " << vs << std::endl;
+      if (vs == 3)
+        return 4;
+      else if (vs == 6)
+        return 9;
+      else
+        return vs;
+    }
+    else
+      return vs;
+    // return std::accumulate(_block_shape->begin(), _block_shape->end(), 1,
+    //                        std::multiplies{});
   }
   else
     throw std::runtime_error("Element does not have a value_shape.");

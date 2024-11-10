@@ -637,13 +637,9 @@ def functionspace(
 
     # Initialize the cpp.FunctionSpace
     try:
-        cppV = _cpp.fem.FunctionSpace_float64(
-            mesh._cpp_object, cpp_element, cpp_dofmap, value_shape
-        )
+        cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, cpp_element, cpp_dofmap)
     except TypeError:
-        cppV = _cpp.fem.FunctionSpace_float32(
-            mesh._cpp_object, cpp_element, cpp_dofmap, value_shape
-        )
+        cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, cpp_element, cpp_dofmap)
 
     return FunctionSpace(mesh, ufl_e, cppV)
 
@@ -697,17 +693,11 @@ class FunctionSpace(ufl.FunctionSpace):
         """
         try:
             Vcpp = _cpp.fem.FunctionSpace_float64(
-                self._cpp_object.mesh,
-                self._cpp_object.element,
-                self._cpp_object.dofmap,
-                self._cpp_object.element.value_shape,
+                self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap
             )  # type: ignore
         except TypeError:
             Vcpp = _cpp.fem.FunctionSpace_float32(
-                self._cpp_object.mesh,
-                self._cpp_object.element,
-                self._cpp_object.dofmap,
-                self._cpp_object.element.value_shape,
+                self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap
             )  # type: ignore
         return FunctionSpace(self._mesh, self.ufl_element(), Vcpp)
 

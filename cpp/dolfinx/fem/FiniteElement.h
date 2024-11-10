@@ -141,6 +141,8 @@ public:
 
   /// @brief Value size (new).
   ///
+  /// @todo Document carefully, esp. w.r.t block size
+  ///
   /// The value size is the product of the value shape, e.g. is is  1
   /// for a scalar function, 2 for a 2D vector, 9 for a second-order
   /// tensor in 3D.
@@ -149,7 +151,9 @@ public:
   /// @return The value size.
   int value_size() const;
 
-  /// @brief Value shape (new, ).
+  /// @brief Value shape (new).
+  ///
+  /// @todo Document carefully, esp. w.r.t block size
   ///
   /// The value shape described the shape of the finite element field,
   /// e.g. {} for a scalar, {3, 3} for a tensor in 3D. Mixed elements do

@@ -72,10 +72,8 @@ void declare_function_space(nb::module_& m, std::string type)
                                                "Finite element function space")
         .def(nb::init<std::shared_ptr<const dolfinx::mesh::Mesh<T>>,
                       std::shared_ptr<const dolfinx::fem::FiniteElement<T>>,
-                      std::shared_ptr<const dolfinx::fem::DofMap>,
-                      std::vector<std::size_t>>(),
-             nb::arg("mesh"), nb::arg("element"), nb::arg("dofmap"),
-             nb::arg("value_shape"))
+                      std::shared_ptr<const dolfinx::fem::DofMap>>(),
+             nb::arg("mesh"), nb::arg("element"), nb::arg("dofmap"))
         .def("collapse", &dolfinx::fem::FunctionSpace<T>::collapse)
         .def("component", &dolfinx::fem::FunctionSpace<T>::component)
         .def("contains", &dolfinx::fem::FunctionSpace<T>::contains,

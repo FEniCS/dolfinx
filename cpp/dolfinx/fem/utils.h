@@ -818,13 +818,13 @@ FunctionSpace<T> create_functionspace(
       mesh->comm(), layout, *mesh->topology(), permute_inv, reorder_fn));
 
   // TODO: clarify what is happening here
-  const std::vector<std::size_t> _value_shape
-      = !e->is_mixed() and !value_shape and !e->reference_value_shape().empty()
-            ? fem::compute_value_shape(*e, mesh->topology()->dim(),
-                                       mesh->geometry().dim())
-            : value_shape.value_or(std::vector<std::size_t>());
+  // const std::vector<std::size_t> _value_shape
+  //     = !e->is_mixed() and !value_shape and !e->reference_value_shape().empty()
+  //           ? fem::compute_value_shape(*e, mesh->topology()->dim(),
+  //                                      mesh->geometry().dim())
+  //           : value_shape.value_or(std::vector<std::size_t>());
 
-  return FunctionSpace(mesh, e, dofmap, _value_shape);
+  return FunctionSpace(mesh, e, dofmap);
 }
 
 /// @private
