@@ -619,8 +619,8 @@ def functionspace(
     if ufl_e.cell != mesh.ufl_domain().ufl_cell():
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
 
-    ufl_space = ufl.FunctionSpace(mesh.ufl_domain(), ufl_e)
-    value_shape = ufl_space.value_shape
+    # ufl_space = ufl.FunctionSpace(mesh.ufl_domain(), ufl_e)
+    # value_shape = ufl_space.value_shape
 
     # Compile dofmap and element and create DOLFINx objects
     if form_compiler_options is None:
