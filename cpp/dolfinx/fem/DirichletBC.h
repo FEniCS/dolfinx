@@ -533,7 +533,7 @@ public:
     auto handle_function = [&](std::shared_ptr<const Function<T, U>> g)
     {
       assert(g);
-      auto dofs1_g = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
+      auto dofs_g = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
       std::span<const T> values = g->x()->array();
       if (x0.has_value())
       {
@@ -542,8 +542,8 @@ public:
         apply(
             [&](std::int32_t i) -> T
             {
-              assert(dofs1_g[i] < static_cast<std::int32_t>(values.size()));
-              return alpha * (values[dofs1_g[i]] - _x0[_dofs0[i]]);
+              assert(dofs_g[i] < static_cast<std::int32_t>(values.size()));
+              return alpha * (values[dofs_g[i]] - _x0[_dofs0[i]]);
             });
       }
       else
@@ -551,8 +551,8 @@ public:
         apply(
             [&](std::int32_t i) -> T
             {
-              assert(dofs1_g[i] < static_cast<std::int32_t>(values.size()));
-              return alpha * values[dofs1_g[i]];
+              assert(dofs_g[i] < static_cast<std::int32_t>(values.size()));
+              return alpha * values[dofs_g[i]];
             });
       }
     };
@@ -565,7 +565,8 @@ public:
       {
         assert(x.size() <= x0.value().size());
         apply(
-            [&](std::int32_t i) -> T {
+            [&](std::int32_t i) -> T
+            {
               auto dof = _dofs0[i];
               return alpha * (value[dof % bs] - x0.value()[dof]);
             });
