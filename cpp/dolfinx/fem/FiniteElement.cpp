@@ -304,14 +304,14 @@ int FiniteElement<T>::space_dimension() const noexcept
 template <std::floating_point T>
 int FiniteElement<T>::value_size() const
 {
-  std::cout << "In FiniteElement<T>::value_size(): " << _symmetric << std::endl;
+  // std::cout << "In FiniteElement<T>::value_size(): " << _symmetric << std::endl;
   if (_block_shape)
   {
     int vs = std::accumulate(_block_shape->begin(), _block_shape->end(), 1,
                              std::multiplies{});
     if (_symmetric)
     {
-      std::cout << "Symmetric: " << vs << std::endl;
+      // std::cout << "Symmetric: " << vs << std::endl;
       if (vs == 3)
         return 4;
       else if (vs == 6)

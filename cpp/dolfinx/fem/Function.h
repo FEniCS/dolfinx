@@ -355,6 +355,8 @@ public:
       throw std::runtime_error("Cannot interpolate Expression with Argument.");
     if (value_size != _function_space->value_size())
     {
+      std::cout << "Test: " << value_size << ", "
+                << _function_space->value_size() << std::endl;
       throw std::runtime_error(
           "Function value size not equal to Expression value size.");
     }

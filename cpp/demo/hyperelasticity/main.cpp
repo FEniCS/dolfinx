@@ -276,8 +276,8 @@ int main(int argc, char* argv[])
         basix::element::dpc_variant::unset, discontinuous);
     auto S
         = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
-            mesh, std::make_shared<fem::FiniteElement<U>>(S_element),
-            std::vector<std::size_t>{3, 3}));
+            mesh, std::make_shared<fem::FiniteElement<U>>(
+                      S_element, std::vector<std::size_t>{3, 3})));
 
     fem::Function<T> sigma(S);
     sigma.name = "cauchy_stress";
