@@ -566,7 +566,8 @@ public:
         assert(x.size() <= x0.value().size());
         apply(
             [&](std::int32_t i) -> T {
-              return alpha * (value[_dofs0[i] % bs] - x0.value()[_dofs0[i]]);
+              auto dof = _dofs0[i];
+              return alpha * (value[dof % bs] - x0.value()[dof]);
             });
       }
       else
