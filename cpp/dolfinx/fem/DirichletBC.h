@@ -533,8 +533,13 @@ public:
     auto handle_function = [&](std::shared_ptr<const Function<T, U>> g)
     {
       assert(g);
-      auto dofs_g = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
       std::span<const T> values = g->x()->array();
+
+      // Extract degrees of freedom associated with g. If g is in a collapsed
+      // sub-space, get the dofs in this space, otherwise the degrees of g is
+      // the same as for x
+      auto dofs_g = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
+      
       if (x0.has_value())
       {
         std::span<const T> _x0 = x0.value();
