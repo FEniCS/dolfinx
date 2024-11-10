@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Garth N. Wells and Matthew W. Scroggs
+// Copyright (C) 2020-2024 Garth N. Wells and Matthew W. Scroggs
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -108,10 +108,10 @@ public:
   /// Move assignment
   FiniteElement& operator=(FiniteElement&& element) = default;
 
-  /// Check if two elements are equivalent
+  /// @brief Check if two elements are equivalent.
   /// @return True is the two elements are the same
   /// @note Equality can be checked only for non-mixed elements. For a
-  /// mixed element, this function will raise an exception.
+  /// mixed element, this function will throw an exception.
   bool operator==(const FiniteElement& e) const;
 
   /// Check if two elements are not equivalent
@@ -157,10 +157,8 @@ public:
 
   /// @brief Value shape of the finite element field.
   ///
-  /// @todo DONE
-  ///
   /// The value shape described the shape of the finite element field,
-  /// e.g. {} for a scalar, {3, 3} for a tensor in 3D, etc.
+  /// e.g. `{}` for a scalar, `{3, 3}` for a tensor in 3D, etc.
   ///
   /// Mixed elements do not have a value shape.
   ///
@@ -169,31 +167,36 @@ public:
   /// @return The value shape.
   std::span<const std::size_t> value_shape() const;
 
-  /// @brief Value size.
+  /// @brief Value size for the reference value shape.
   ///
-  /// The value size is the product of the value shape, e.g. is is  1
-  /// for a scalar function, 2 for a 2D vector, 9 for a second-order
-  /// tensor in 3D.
+  /// The reference value size is the product of the reference value
+  /// shape, e.g. it is  1 for a scalar element, 2 for a 2D
+  /// (non-blocked) vector, 9 for a (non-blocked) second-order tensor in
+  /// 3D, etc.
   /// @throws Exception is thrown for a mixed element as mixed elements
   /// do not have a value shape.
   /// @return The value size.
   int reference_value_size() const;
 
-  /// @brief Value shape.
+  /// @brief Value shape of the base (non-blocked) finite element field.
   ///
-  /// The value shape described the shape of the finite element field,
-  /// e.g. {} for a scalar, {3, 3} for a tensor in 3D. Mixed elements do
-  /// not have a value shape.
+  /// For non-blocked elements, this function returns the same as
+  /// FiniteElement::value_shape. For blocked and quadrature elements
+  /// the returned shape will be `{}`.
+  ///
+  /// Mixed elements do not have a reference value shape.
+  ///
   /// @throws Exception is thrown for a mixed element as mixed elements
   /// do not have a value shape.
   /// @return The value shape.
   std::span<const std::size_t> reference_value_shape() const;
 
-  /// The local DOFs associated with each subentity of the cell
+  /// @brief Local DOFs associated with each sub-entity of the cell.
   const std::vector<std::vector<std::vector<int>>>&
   entity_dofs() const noexcept;
 
-  /// The local DOFs associated with the closure of each subentity of the cell
+  /// @brief Local DOFs associated with the closure of each sub-entity
+  /// of the cell.
   const std::vector<std::vector<std::vector<int>>>&
   entity_closure_dofs() const noexcept;
 
@@ -215,15 +218,16 @@ public:
                 std::span<const geometry_type> X,
                 std::array<std::size_t, 2> shape, int order) const;
 
-  /// Evaluate all derivatives of the basis functions up to given order
-  /// at given points in reference cell
+  /// @brief Evaluate all derivatives of the basis functions up to given
+  /// order at given points in reference cell.
+  ///
   /// @param[in] X The reference coordinates at which to evaluate the
   /// basis functions. Shape is `(num_points, topological dimension)`
-  /// (row-major storage)
-  /// @param[in] shape The shape of `X`
-  /// @param[in] order The number of derivatives (up to and including
-  /// this order) to tabulate for
-  /// @return Basis function values and array shape (row-major storage)
+  /// (row-major storage).
+  /// @param[in] shape Shape of `X`
+  /// @param[in] order Number of derivatives (up to and including this
+  /// order) to tabulate for.
+  /// @return Basis function values and array shape (row-major storage).
   std::pair<std::vector<geometry_type>, std::array<std::size_t, 4>>
   tabulate(std::span<const geometry_type> X, std::array<std::size_t, 2> shape,
            int order) const;
@@ -234,9 +238,9 @@ public:
 
   /// @brief Check if element is a mixed element.
   ///
-  /// A mixed element i composed of two or more elements of different
-  /// types (a block element, e.g. a Lagrange element with block size >=
-  /// 1 is not considered mixed).
+  /// A mixed element is composed of two or more elements of different
+  /// types (a blocked element, e.g. a Lagrange element with block size
+  /// >= 1 is not considered mixed).
   ///
   /// @return True if element is mixed.
   bool is_mixed() const noexcept;
@@ -786,15 +790,24 @@ public:
   dof_permutation_fn(bool inverse = false, bool scalar_element = false) const;
 
 private:
+  // Value shape. For blocked elements this is larger than
+  // _reference_value_shape. For non-blocked 'primal' elements it is
+  // equal to _reference_value_shape. For mixed elements, it is
+  // std::nullopt.
+  std::optional<std::vector<std::size_t>> _value_shape;
+
   // Block size for BlockedElements. This gives the number of DOFs
   // co-located at each dof 'point'.
-  std::optional<std::vector<std::size_t>> _value_shape;
+  // TODO: add docs for symmetric elements
   int _bs;
 
+  // Element cell shape
   mesh::CellType _cell_type;
 
+  // Element signature
   std::string _signature;
 
+  // Dimension of the finite element space (accounting for any blocking)
   int _space_dim;
 
   // List of sub-elements (if any)
