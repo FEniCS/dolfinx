@@ -61,12 +61,13 @@ public:
 
   /// @brief Create a finite element from a Basix finite element.
   /// @param[in] element Basix finite element
-  /// @param[in] block_shape The block size for the element. Can only be
-  /// set for scalar `element`.
+  /// @param[in] value_shape Value shape for blocked element, e.g. `{3}`
+  /// for a vector in 3D or `{2, 2}` for a rank-2 tensor in 2D. Can only
+  /// be set for scalar `element`.
   /// @param[in] symmetric Is the element a symmetric tensor? Should ony
   /// set set for 2nd-order tensor blocked elements.
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
-                std::optional<std::vector<std::size_t>> block_shape
+                std::optional<std::vector<std::size_t>> value_shape
                 = std::nullopt,
                 bool symmetric = false);
 
@@ -85,11 +86,11 @@ public:
   /// @param[in] cell_type Cell type.
   /// @param[in] points Quadrature points.
   /// @param[in] pshape Shape of `points` array.
-  /// @param[in] block_shape The block size for the element.
+  /// @param[in] value_shape Value shapefor the element.
   /// @param[in] symmetric Is the element a symmetric tensor?
   FiniteElement(mesh::CellType cell_type, std::span<const geometry_type> points,
                 std::array<std::size_t, 2> pshape,
-                std::vector<std::size_t> block_shape = {},
+                std::vector<std::size_t> value_shape = {},
                 bool symmetric = false);
 
   /// Copy constructor
@@ -154,13 +155,15 @@ public:
   /// @return The value size.
   int value_size() const;
 
-  /// @brief Value shape (new).
+  /// @brief Value shape of the finite element field.
   ///
-  /// @todo Document carefully, esp. w.r.t block size
+  /// @todo DONE
   ///
   /// The value shape described the shape of the finite element field,
-  /// e.g. {} for a scalar, {3, 3} for a tensor in 3D. Mixed elements do
-  /// not have a value shape.
+  /// e.g. {} for a scalar, {3, 3} for a tensor in 3D, etc.
+  ///
+  /// Mixed elements do not have a value shape.
+  ///
   /// @throws Exception is thrown for a mixed element as mixed elements
   /// do not have a value shape.
   /// @return The value shape.
@@ -785,7 +788,7 @@ public:
 private:
   // Block size for BlockedElements. This gives the number of DOFs
   // co-located at each dof 'point'.
-  std::optional<std::vector<std::size_t>> _block_shape;
+  std::optional<std::vector<std::size_t>> _value_shape;
   int _bs;
 
   mesh::CellType _cell_type;

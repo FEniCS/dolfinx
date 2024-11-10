@@ -730,10 +730,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
   const int gdim = mesh->geometry().dim();
   const int tdim = mesh->topology()->dim();
-  const bool symmetric = u.function_space()->symmetric();
 
-  std::cout << "Testing: " << fshape[0] << ", "
-            << u.function_space()->element()->value_size() << std::endl;
   if (fshape[0] != (std::size_t)u.function_space()->element()->value_size())
     throw std::runtime_error("Interpolation data has the wrong shape/size.");
 
@@ -765,6 +762,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
   // This assumes that any element with an identity interpolation matrix
   // is a point evaluation
+  const bool symmetric = u.function_space()->symmetric();
   if (element->map_ident() && element->interpolation_ident())
   {
     // Point evaluation element *and* the geometric map is the identity,
@@ -779,17 +777,18 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
       std::size_t matrix_size = 0;
       while (matrix_size * matrix_size < fshape[0])
         ++matrix_size;
+
       // Loop over cells
       for (std::size_t c = 0; c < cells.size(); ++c)
       {
-        // The entries of a symmetric matrix are numbered (for an example 4x4
-        // element):
+        // The entries of a symmetric matrix are numbered (for an
+        // example 4x4 element):
         //  0 * * *
         //  1 2 * *
         //  3 4 5 *
         //  6 7 8 9
-        // The loop extracts these elements. In this loop, row is the row of
-        // this matrix, and (k - rowstart) is the column
+        // The loop extracts these elements. In this loop, row is the
+        // row of this matrix, and (k - rowstart) is the column
         std::size_t row = 0;
         std::size_t rowstart = 0;
         const std::int32_t cell = cells[c];
@@ -801,6 +800,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
             ++row;
             rowstart = k;
           }
+
           // num_scalar_dofs is the number of interpolation points per
           // cell in this case (interpolation matrix is identity)
           std::copy_n(
@@ -855,7 +855,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     const int element_vs
         = u.function_space()->element()->value_size() / element_bs;
 
-    if (element_vs > 1 && element_bs > 1)
+    if (element_vs > 1 and element_bs > 1)
     {
       throw std::runtime_error(
           "Interpolation into this element not supported.");

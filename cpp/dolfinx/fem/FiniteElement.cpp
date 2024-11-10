@@ -91,14 +91,21 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(
     const basix::FiniteElement<T>& element,
-    std::optional<std::vector<std::size_t>> block_shape, bool symmetric)
-    : _block_shape(block_shape ? *block_shape : element.value_shape()),
-      _bs(block_shape
-              ? std::accumulate(block_shape->begin(), block_shape->end(), 1,
+    std::optional<std::vector<std::size_t>> value_shape, bool symmetric)
+    : _value_shape(value_shape ? *value_shape : element.value_shape()),
+      _bs(value_shape
+              ? std::accumulate(value_shape->begin(), value_shape->end(), 1,
                                 std::multiplies{})
               : 1),
       _cell_type(mesh::cell_type_from_basix_type(element.cell_type())),
-      // _space_dim(block_size * element.dim()),
+      _space_dim(_bs * element.dim()),
+      _sub_elements(
+          value_shape
+              ? std::vector<
+                    std::shared_ptr<const FiniteElement<geometry_type>>>(
+                    _bs, std::make_shared<FiniteElement<T>>(element))
+              : std::vector<
+                    std::shared_ptr<const FiniteElement<geometry_type>>>(0)),
       _reference_value_shape(element.value_shape()),
       _element(std::make_unique<basix::FiniteElement<T>>(element)),
       _symmetric(symmetric),
@@ -111,8 +118,11 @@ FiniteElement<T>::FiniteElement(
       _entity_dofs(element.entity_dofs()),
       _entity_closure_dofs(element.entity_closure_dofs())
 {
+  // TODO: update _space_dim(_bs * element.dim()), once symmetric tensor
+  // element is done properly
+
   // If element is blocked, check that base element is scalar
-  if (block_shape and !element.value_shape().empty())
+  if (value_shape and !element.value_shape().empty())
   {
     throw std::runtime_error("Blocked finite elements can be constructed only "
                              "from scalar base elements.");
@@ -121,7 +131,7 @@ FiniteElement<T>::FiniteElement(
   // Consistency check for symmetric elements
   if (symmetric)
   {
-    if (!block_shape)
+    if (!value_shape)
     {
       throw std::runtime_error(
           "Symmetric elements required value shape to be supplied.");
@@ -133,22 +143,16 @@ FiniteElement<T>::FiniteElement(
     // }
   }
 
-  // If block_shape is not provided, set _block_shape to the underlying
+  // If block_shape is not provided, set _value_shape to the underlying
   // element value shape
-  // _block_shape = block_shape ? *block_shape : element.value_shape();
+  // _value_shape = block_shape ? *block_shape : element.value_shape();
 
   // TODO: symmetric rank-2 symmetric tensors are presently constructed
   // as rank-1 tensors, e.g. a rank-2 symmetric tensor in 3D is
   // constructed as rank-1 with shape (6,). It should be really be
   // shape=(3, 3) with block size 6.
 
-  // // Compute block size
-  // _bs = block_shape ? std::accumulate(block_shape->begin(),
-  // block_shape->end(),
-  //                                     1, std::multiplies{})
-  //                   : 1;
-
-  if (block_shape)
+  if (value_shape)
   {
     // Create sub-elements (one for each block)
     _sub_elements
@@ -156,7 +160,7 @@ FiniteElement<T>::FiniteElement(
             _bs, std::make_shared<FiniteElement<T>>(element));
 
     _reference_value_shape
-        = *block_shape; // FIXME: should be base element value shape?
+        = *value_shape; // FIXME: should be base element value shape?
   }
 
   _space_dim = _bs * element.dim();
@@ -187,7 +191,8 @@ FiniteElement<T>::FiniteElement(std::vector<BasixElementData<T>> elements)
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(
     const std::vector<std::shared_ptr<const FiniteElement<T>>>& elements)
-    : _bs(1), _cell_type(elements.front()->cell_type()), _space_dim(0),
+    : _value_shape(std::nullopt), _bs(1),
+      _cell_type(elements.front()->cell_type()), _space_dim(-1),
       _sub_elements(elements), _reference_value_shape(std::nullopt),
       _symmetric(false), _needs_dof_permutations(false),
       _needs_dof_transformations(false)
@@ -203,6 +208,7 @@ FiniteElement<T>::FiniteElement(
   const std::vector<std::vector<std::vector<int>>>& ed
       = elements.front()->entity_dofs();
   _entity_dofs.resize(ed.size());
+
   _entity_closure_dofs.resize(ed.size());
   for (std::size_t i = 0; i < ed.size(); ++i)
   {
@@ -251,21 +257,22 @@ template <std::floating_point T>
 FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
                                 std::span<const geometry_type> points,
                                 std::array<std::size_t, 2> pshape,
-                                std::vector<std::size_t> block_shape,
+                                std::vector<std::size_t> value_shape,
                                 bool symmetric)
-    : _block_shape(block_shape), _cell_type(cell_type),
+    : _value_shape(value_shape),
+      _bs(std::accumulate(value_shape.begin(), value_shape.end(), 1,
+                          std::multiplies{})),
+      _cell_type(cell_type),
       _signature("Quadrature element " + std::to_string(pshape[0])),
-      // _space_dim(pshape[0] * block_size),
-      _reference_value_shape({}),
-      // _bs(block_size),
-      _symmetric(symmetric), _needs_dof_permutations(false),
-      _needs_dof_transformations(false),
+      _space_dim(_bs * pshape[0]), _sub_elements({}),
+      _reference_value_shape({}), _element(nullptr), _symmetric(symmetric),
+      _needs_dof_permutations(false), _needs_dof_transformations(false),
       _entity_dofs(mesh::cell_dim(cell_type) + 1),
       _entity_closure_dofs(mesh::cell_dim(cell_type) + 1),
       _points(std::vector<T>(points.begin(), points.end()), pshape)
 {
-  assert(block_shape.size() <= 1);
-  _bs = std::accumulate(block_shape.begin(), block_shape.end(), 1,
+  assert(value_shape.size() <= 1);
+  _bs = std::accumulate(value_shape.begin(), value_shape.end(), 1,
                         std::multiplies{});
   _space_dim = pshape[0] * _bs;
   _signature += " " + std::to_string(_bs);
@@ -324,9 +331,9 @@ int FiniteElement<T>::space_dimension() const noexcept
 template <std::floating_point T>
 int FiniteElement<T>::value_size() const
 {
-  if (_block_shape)
+  if (_value_shape)
   {
-    int vs = std::accumulate(_block_shape->begin(), _block_shape->end(), 1,
+    int vs = std::accumulate(_value_shape->begin(), _value_shape->end(), 1,
                              std::multiplies{});
     if (_symmetric)
     {
@@ -350,8 +357,8 @@ int FiniteElement<T>::value_size() const
 template <std::floating_point T>
 std::span<const std::size_t> FiniteElement<T>::value_shape() const
 {
-  if (_block_shape)
-    return *_block_shape;
+  if (_value_shape)
+    return *_value_shape;
   else
     throw std::runtime_error("Element does not have a value_shape.");
 }
