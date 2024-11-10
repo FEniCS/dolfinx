@@ -84,6 +84,7 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
 
   return _extract_sub_element(*sub_element, sub_component);
 }
+
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -91,15 +92,14 @@ template <std::floating_point T>
 FiniteElement<T>::FiniteElement(
     const basix::FiniteElement<T>& element,
     std::optional<std::vector<std::size_t>> block_shape, bool symmetric)
-    : _block_shape(block_shape),
+    : _block_shape(block_shape ? *block_shape : element.value_shape()),
+      _bs(block_shape
+              ? std::accumulate(block_shape->begin(), block_shape->end(), 1,
+                                std::multiplies{})
+              : 1),
       _cell_type(mesh::cell_type_from_basix_type(element.cell_type())),
       // _space_dim(block_size * element.dim()),
       _reference_value_shape(element.value_shape()),
-      // _bs(block_size),
-      // _bs(block_shape
-      //         ? std::accumulate(block_shape->begin(), block_shape->end(), 1,
-      //                           std::multiplies{})
-      //         : 1),
       _element(std::make_unique<basix::FiniteElement<T>>(element)),
       _symmetric(symmetric),
       _needs_dof_permutations(
@@ -111,26 +111,46 @@ FiniteElement<T>::FiniteElement(
       _entity_dofs(element.entity_dofs()),
       _entity_closure_dofs(element.entity_closure_dofs())
 {
-  // block_shape only makes sense if element.value_shape() == 1?
-
-  // TODO: add consistency check between block_shape and value_shape
-  _block_shape = block_shape ? *block_shape : element.value_shape();
-
-  _bs = block_shape ? std::accumulate(block_shape->begin(), block_shape->end(),
-                                      1, std::multiplies{})
-                    : 1;
-
-  if (symmetric)
+  // If element is blocked, check that base element is scalar
+  if (block_shape and !element.value_shape().empty())
   {
-    if (_bs == 9)
-      _bs = 6;
-    else if (_bs == 4)
-      _bs = 3;
+    throw std::runtime_error("Blocked finite elements can be constructed only "
+                             "from scalar base elements.");
   }
 
-  // Create all sub-elements
+  // Consistency check for symmetric elements
+  if (symmetric)
+  {
+    if (!block_shape)
+    {
+      throw std::runtime_error(
+          "Symmetric elements required value shape to be supplied.");
+    }
+    // else if (block_shape->size()
+    //          != 2) // See below TODO on symmetric rank-2 tensors
+    // {
+    //   throw std::runtime_error("Symmetric elements must be rank-2.");
+    // }
+  }
+
+  // If block_shape is not provided, set _block_shape to the underlying
+  // element value shape
+  // _block_shape = block_shape ? *block_shape : element.value_shape();
+
+  // TODO: symmetric rank-2 symmetric tensors are presently constructed
+  // as rank-1 tensors, e.g. a rank-2 symmetric tensor in 3D is
+  // constructed as rank-1 with shape (6,). It should be really be
+  // shape=(3, 3) with block size 6.
+
+  // // Compute block size
+  // _bs = block_shape ? std::accumulate(block_shape->begin(),
+  // block_shape->end(),
+  //                                     1, std::multiplies{})
+  //                   : 1;
+
   if (block_shape)
   {
+    // Create sub-elements (one for each block)
     _sub_elements
         = std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>(
             _bs, std::make_shared<FiniteElement<T>>(element));
@@ -304,25 +324,24 @@ int FiniteElement<T>::space_dimension() const noexcept
 template <std::floating_point T>
 int FiniteElement<T>::value_size() const
 {
-  // std::cout << "In FiniteElement<T>::value_size(): " << _symmetric << std::endl;
   if (_block_shape)
   {
     int vs = std::accumulate(_block_shape->begin(), _block_shape->end(), 1,
                              std::multiplies{});
     if (_symmetric)
     {
-      // std::cout << "Symmetric: " << vs << std::endl;
       if (vs == 3)
         return 4;
       else if (vs == 6)
         return 9;
       else
-        return vs;
+      {
+        throw std::runtime_error(
+            "Inconsistent size for symmetric rank-2 tensor.");
+      }
     }
     else
       return vs;
-    // return std::accumulate(_block_shape->begin(), _block_shape->end(), 1,
-    //                        std::multiplies{});
   }
   else
     throw std::runtime_error("Element does not have a value_shape.");

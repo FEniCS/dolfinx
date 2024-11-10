@@ -36,13 +36,14 @@ template <std::floating_point T>
 struct BasixElementData
 {
   std::reference_wrapper<const basix::FiniteElement<T>>
-      element; ///< Finite element
+      element; ///< Finite element.
   std::optional<std::vector<std::size_t>> value_shape
-      = std::nullopt;    ///< Value shape
-  bool symmetry = false; ///< symmetry
+      = std::nullopt;    ///< Value shape. Can only be set for scalar `element`.
+  bool symmetry = false; ///< Symmetry. Should ony set set for 2nd-order tensor
+                         ///< blocked elements.
 };
 
-/// Type deduction
+/// Type deduction helper
 template <typename U, typename V, typename W>
 BasixElementData(U element, V bs, W symmetry)
     -> BasixElementData<typename std::remove_cvref<U>::type::scalar_type>;
@@ -60,8 +61,10 @@ public:
 
   /// @brief Create a finite element from a Basix finite element.
   /// @param[in] element Basix finite element
-  /// @param[in] block_shape The block size for the element
-  /// @param[in] symmetric Is the element a symmetric tensor?
+  /// @param[in] block_shape The block size for the element. Can only be
+  /// set for scalar `element`.
+  /// @param[in] symmetric Is the element a symmetric tensor? Should ony
+  /// set set for 2nd-order tensor blocked elements.
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
                 std::optional<std::vector<std::size_t>> block_shape
                 = std::nullopt,

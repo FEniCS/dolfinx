@@ -627,8 +627,8 @@ def functionspace(
         form_compiler_options = dict()
     form_compiler_options["scalar_type"] = dtype
 
+    print("Create element")
     cpp_element = _create_dolfinx_element(mesh.topology.cell_type, ufl_e, dtype)
-
     cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, cpp_element)
 
     assert np.issubdtype(

@@ -36,7 +36,8 @@ public:
   /// Geometry type of the Mesh that the FunctionSpace is defined on.
   using geometry_type = T;
 
-  /// @brief Create function space for given mesh, element and dofmap.
+  /// @brief Create function space for given mesh, element and
+  /// degree-of-freedom map.
   /// @param[in] mesh Mesh that the space is defined on.
   /// @param[in] element Finite element for the space.
   /// @param[in] dofmap Degree-of-freedom map for the space.
@@ -64,7 +65,7 @@ public:
   /// Move assignment operator
   FunctionSpace& operator=(FunctionSpace&& V) = default;
 
-  ///  @brief Create a subspace (view) for a specific component.
+  /// @brief Create a subspace (view) for a specific component.
   ///
   /// @note If the subspace is re-used, for performance reasons the
   /// returned subspace should be stored by the caller to avoid repeated
@@ -116,10 +117,10 @@ public:
       return false;
     }
     else if (!std::equal(_component.begin(), _component.end(),
-                         V._component.begin()))
+                         V._component.begin())) // Components of 'this' are not
+                                                // the same as the leading
+                                                // components of V
     {
-      // Components of 'this' are not the same as the leading components
-      // of V
       return false;
     }
     else // Ok, V is really our subspace
@@ -150,7 +151,7 @@ public:
   std::vector<int> component() const { return _component; }
 
   /// @brief Indicate whether this function space represents a symmetric
-  /// 2-tensor
+  /// 2-tensor.
   bool symmetric() const
   {
     if (_element)
@@ -316,13 +317,6 @@ public:
   /// The dofmap
   std::shared_ptr<const DofMap> dofmap() const { return _dofmap; }
 
-  /// The value size, e.g. 1 for a scalar-valued function, 2 for a 2D vector, 9
-  /// for a second-order tensor in 3D.
-  /// @note The return value of this function is equivalent to
-  /// `std::accumulate(value_shape().begin(), value_shape().end(), 1,
-  /// std::multiplies{})`.
-  int value_size() const { return _element->value_size(); }
-
 private:
   // The mesh
   std::shared_ptr<const mesh::Mesh<geometry_type>> _mesh;
@@ -341,10 +335,11 @@ private:
   boost::uuids::uuid _root_space_id;
 };
 
-/// Extract FunctionSpaces for (0) rows blocks and (1) columns blocks
-/// from a rectangular array of (test, trial) space pairs. The test
-/// space must be the same for each row and the trial spaces must be the
-/// same for each column. Raises an exception if there is an
+/// @brief Extract FunctionSpaces for (0) rows blocks and (1) columns
+/// blocks from a rectangular array of (test, trial) space pairs.
+///
+/// The test space must be the same for each row and the trial spaces
+/// must be the same for each column. Raises an exception if there is an
 /// inconsistency. e.g. if each form in row i does not have the same
 /// test space then an exception is raised.
 ///

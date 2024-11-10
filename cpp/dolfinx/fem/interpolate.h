@@ -508,7 +508,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   // Get sizes of elements
   const std::size_t dim0 = element0->space_dimension() / bs0;
   const std::size_t value_size_ref0 = element0->reference_value_size() / bs0;
-  const std::size_t value_size0 = V0->value_size() / bs0;
+  const std::size_t value_size0 = V0->element()->value_size() / bs0;
 
   const CoordinateElement<U>& cmap = mesh0->geometry().cmap();
   auto x_dofmap = mesh0->geometry().dofmap();
@@ -540,13 +540,13 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   impl::mdspan_t<U, 3> basis_reference0(basis_reference0_b.data(), Xshape[0],
                                         dim0, value_size_ref0);
 
-  std::vector<T> values0_b(Xshape[0] * 1 * V1->value_size());
+  std::vector<T> values0_b(Xshape[0] * 1 * V1->element()->value_size());
   impl::mdspan_t<T, 3> values0(values0_b.data(), Xshape[0], 1,
-                               V1->value_size());
+                               V1->element()->value_size());
 
-  std::vector<T> mapped_values_b(Xshape[0] * 1 * V1->value_size());
+  std::vector<T> mapped_values_b(Xshape[0] * 1 * V1->element()->value_size());
   impl::mdspan_t<T, 3> mapped_values0(mapped_values_b.data(), Xshape[0], 1,
-                                      V1->value_size());
+                                      V1->element()->value_size());
 
   std::vector<U> coord_dofs_b(num_dofs_g * gdim);
   impl::mdspan_t<U, 2> coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
@@ -732,7 +732,9 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   const int tdim = mesh->topology()->dim();
   const bool symmetric = u.function_space()->symmetric();
 
-  if (fshape[0] != (std::size_t)u.function_space()->value_size())
+  std::cout << "Testing: " << fshape[0] << ", "
+            << u.function_space()->element()->value_size() << std::endl;
+  if (fshape[0] != (std::size_t)u.function_space()->element()->value_size())
     throw std::runtime_error("Interpolation data has the wrong shape/size.");
 
   std::span<const std::uint32_t> cell_info;
@@ -742,7 +744,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
-  const std::size_t f_shape1 = f.size() / u.function_space()->value_size();
+  const std::size_t f_shape1
+      = f.size() / u.function_space()->element()->value_size();
   MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
       _f(f.data(), fshape);
@@ -754,7 +757,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
   // Loop over cells and compute interpolation dofs
   const int num_scalar_dofs = element->space_dimension() / element_bs;
-  const int value_size = u.function_space()->value_size() / element_bs;
+  const int value_size
+      = u.function_space()->element()->value_size() / element_bs;
 
   std::span<T> coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
@@ -848,7 +852,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
           "Interpolation into this element not supported.");
     }
 
-    const int element_vs = u.function_space()->value_size() / element_bs;
+    const int element_vs
+        = u.function_space()->element()->value_size() / element_bs;
 
     if (element_vs > 1 && element_bs > 1)
     {
@@ -1133,7 +1138,7 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
   assert(cell_map);
   auto element_u = u.function_space()->element();
   assert(element_u);
-  const std::size_t value_size = u.function_space()->value_size();
+  const std::size_t value_size = u.function_space()->element()->value_size();
 
   const std::vector<int>& dest_ranks = interpolation_data.src_owner;
   const std::vector<int>& src_ranks = interpolation_data.dest_owners;
