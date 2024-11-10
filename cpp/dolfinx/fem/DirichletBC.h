@@ -513,7 +513,7 @@ public:
     auto apply = [&](auto set_fn)
     {
       std::int32_t x_size = x.size();
-      for (std::size_t i = 0; i < _dofs0.size(); ++i)
+      for (std::int32_t i = 0; i < _dofs0.size(); ++i)
       {
         if (_dofs0[i] < x_size)
           x[_dofs0[i]] = set_fn(i);
@@ -522,7 +522,7 @@ public:
 
     if (alpha == T(0)) // Optimisation for when alpha == 0
     {
-      apply([](std::size_t) -> T { return 0; });
+      apply([](std::int32_t) -> T { return 0; });
       return;
     }
 
@@ -536,7 +536,7 @@ public:
         std::span<const T> _x0 = x0.value();
         assert(x.size() <= _x0.size());
         apply(
-            [&](std::size_t i) -> T
+            [&](std::int32_t i) -> T
             {
               assert(dofs1_g[i] < static_cast<std::int32_t>(values.size()));
               return alpha * (values[dofs1_g[i]] - _x0[_dofs0[i]]);
@@ -545,7 +545,7 @@ public:
       else
       {
         apply(
-            [&](std::size_t i) -> T
+            [&](std::int32_t i) -> T
             {
               assert(dofs1_g[i] < static_cast<std::int32_t>(values.size()));
               return alpha * values[dofs1_g[i]];
@@ -561,13 +561,13 @@ public:
       {
         assert(x.size() <= x0.value().size());
         apply(
-            [&](std::size_t i) -> T {
+            [&](std::int32_t i) -> T {
               return alpha * (value[_dofs0[i] % bs] - x0.value()[_dofs0[i]]);
             });
       }
       else
       {
-        apply([&](std::size_t i) -> T
+        apply([&](std::int32_t i) -> T
               { return alpha * value[_dofs0[i] % bs]; });
       }
     };
