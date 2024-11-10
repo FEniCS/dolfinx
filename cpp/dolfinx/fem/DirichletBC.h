@@ -1,5 +1,5 @@
-// Copyright (C) 2007-2021 Michal Habera, Anders Logg, Garth N. Wells
-// and Jørgen S.Dokken
+// Copyright (C) 2007-2024 Michal Habera, Anders Logg, Garth N. Wells, Jørgen
+// S.Dokken and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -539,7 +539,7 @@ public:
       // sub-space, get the dofs in this space, otherwise the degrees of g is
       // the same as for x
       auto dofs_g = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
-      
+
       if (x0.has_value())
       {
         std::span<const T> _x0 = x0.value();
