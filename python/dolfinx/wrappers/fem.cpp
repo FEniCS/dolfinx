@@ -81,15 +81,6 @@ void declare_function_space(nb::module_& m, std::string type)
         .def_prop_ro("element", &dolfinx::fem::FunctionSpace<T>::element)
         .def_prop_ro("mesh", &dolfinx::fem::FunctionSpace<T>::mesh)
         .def_prop_ro("dofmap", &dolfinx::fem::FunctionSpace<T>::dofmap)
-        // .def_prop_ro(
-        //     "value_shape",
-        //     [](const dolfinx::fem::FunctionSpace<T>& self)
-        //     {
-        //       std::span<const std::size_t> vshape = self.value_shape();
-        //       return nb::ndarray<const std::size_t, nb::numpy>(vshape.data(),
-        //                                                        {vshape.size()});
-        //     },
-        //     nb::rv_policy::reference_internal)
         .def("sub", &dolfinx::fem::FunctionSpace<T>::sub, nb::arg("component"))
         .def("tabulate_dof_coordinates",
              [](const dolfinx::fem::FunctionSpace<T>& self)

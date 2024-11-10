@@ -24,33 +24,6 @@
 
 namespace dolfinx::fem
 {
-// /// @brief Compute the physical value shape of an element for a mesh
-// /// @param[in] element The element
-// /// @param[in] tdim Topological dimension
-// /// @param[in] gdim Geometric dimension
-// /// @return Physical value shape
-// template <std::floating_point T>
-// std::vector<std::size_t>
-// compute_value_shape(const dolfinx::fem::FiniteElement<T>& element,
-//                     std::size_t tdim, std::size_t gdim)
-// {
-//   std::span<const std::size_t> rvs = element.reference_value_shape();
-//   if (element.block_size() > 1)
-//     return std::vector<std::size_t>(rvs.begin(), rvs.end());
-//   else
-//   {
-//     std::vector<std::size_t> value_shape;
-//     for (auto vs : rvs)
-//     {
-//       if (vs == tdim)
-//         value_shape.push_back(gdim);
-//       else
-//         value_shape.push_back(vs);
-//     }
-//     return value_shape;
-//   }
-// }
-
 /// @brief This class represents a finite element function space defined
 /// by a mesh, a finite element, and a local-to-global map of the
 /// degrees-of-freedom.
@@ -133,19 +106,13 @@ public:
   /// FunctionSpace
   bool contains(const FunctionSpace& V) const
   {
-    if (this == std::addressof(V))
-    {
-      // Spaces are the same (same memory address)
+    if (this == std::addressof(V)) // Spaces are the same (same memory address)
       return true;
-    }
-    else if (_root_space_id != V._root_space_id)
-    {
-      // Different root spaces
+    else if (_root_space_id != V._root_space_id) // Different root spaces
       return false;
-    }
-    else if (_component.size() > V._component.size())
+    else if (_component.size()
+             > V._component.size()) // V is a superspace of *this
     {
-      // V is a superspace of *this
       return false;
     }
     else if (!std::equal(_component.begin(), _component.end(),
@@ -155,11 +122,8 @@ public:
       // of V
       return false;
     }
-    else
-    {
-      // Ok, V is really our subspace
+    else // Ok, V is really our subspace
       return true;
-    }
   }
 
   /// Collapse a subspace and return a new function space and a map from
@@ -357,23 +321,7 @@ public:
   /// @note The return value of this function is equivalent to
   /// `std::accumulate(value_shape().begin(), value_shape().end(), 1,
   /// std::multiplies{})`.
-  int value_size() const
-  {
-    return _element->value_size();
-    // int vs0 = std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
-    //                           std::multiplies{});
-    // std::cout << "Get element evs" << std::endl;
-    // auto evs = _element->value_shape();
-    // std::cout << "Post element evs" << std::endl;
-    // int vs1 = std::accumulate(evs.begin(), evs.end(), 1, std::multiplies{});
-    // if (vs0 != vs1)
-    // {
-    //   std::cout << "Not equal:" << vs0 << ", " << vs1 << std::endl;
-    //   throw std::runtime_error("oops");
-    // }
-    // return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
-    //                        std::multiplies{});
-  }
+  int value_size() const { return _element->value_size(); }
 
 private:
   // The mesh

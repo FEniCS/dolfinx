@@ -789,17 +789,11 @@ template <std::floating_point T>
 FunctionSpace<T> create_functionspace(
     std::shared_ptr<mesh::Mesh<T>> mesh,
     std::shared_ptr<const fem::FiniteElement<T>> e,
-    std::optional<std::vector<std::size_t>> value_shape = std::nullopt,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn
     = nullptr)
 {
   assert(e);
-  if (value_shape and !e->reference_value_shape().empty())
-  {
-    throw std::runtime_error(
-        "Cannot specify value shape for non-scalar base element.");
-  }
 
   // TODO: check cell type of e (need to add method to fem::FiniteElement)
   assert(mesh);
@@ -816,13 +810,6 @@ FunctionSpace<T> create_functionspace(
                                     : nullptr;
   auto dofmap = std::make_shared<const DofMap>(create_dofmap(
       mesh->comm(), layout, *mesh->topology(), permute_inv, reorder_fn));
-
-  // TODO: clarify what is happening here
-  // const std::vector<std::size_t> _value_shape
-  //     = !e->is_mixed() and !value_shape and !e->reference_value_shape().empty()
-  //           ? fem::compute_value_shape(*e, mesh->topology()->dim(),
-  //                                      mesh->geometry().dim())
-  //           : value_shape.value_or(std::vector<std::size_t>());
 
   return FunctionSpace(mesh, e, dofmap);
 }
