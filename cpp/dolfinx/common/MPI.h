@@ -319,7 +319,7 @@ MAP_TO_MPI_TYPE(std::uint8_t, MPI_UINT8_T)
 MAP_TO_MPI_TYPE(std::uint16_t, MPI_UINT16_T)
 MAP_TO_MPI_TYPE(std::uint32_t, MPI_UINT32_T)
 MAP_TO_MPI_TYPE(std::uint64_t, MPI_UINT64_T)
-# if __WORDSIZE != 64
+# if (__WORDSIZE != 64) || (ULLONG_WIDTH > 64)
 MAP_TO_MPI_TYPE(unsigned long long int, MPI_UNSIGNED_LONG_LONG)
 #endif
 //---------------------------------------------------------------------------
