@@ -1,3 +1,94 @@
+// # Mixed Poisson equation
+//
+// This demo illustrates how to solve Poisson equation using a mixed
+// (two-field) formulation. In particular, it illustrates how to
+//
+// * Create a mixed finite element problem.
+// * Extract subspaces.
+// * Apply boundary conditions to different fields in a mixed problem.
+// * Create integration domain data to execute finite element kernels.
+//   over subsets of the boundary.
+//
+// The full implementation is in
+// {download}`demo_hyperelasticity/main.cpp`.
+//
+//
+// # Mixed formulation for the Poisson equation
+//
+// ## Equation and problem definition
+//
+// A mixed formulation of Poisson equation can be formulated by
+// introducing an additional (vector) variable, namely the (negative)
+// flux: $\sigma = \nabla u$. The partial differential equations
+// then read
+//
+// $$
+// \begin{align}
+//   \sigma - \nabla u &= 0 \quad {\rm in} \ \Omega, \\
+//   \nabla \cdot \sigma &= - f \quad {\rm in} \ \Omega,
+// \end{align}
+// $$
+// with boundary conditions
+//
+// $$
+//   u = u_0 \quad {\rm on} \ \Gamma_{D},  \\
+//   \sigma \cdot n = g \quad {\rm on} \ \Gamma_{N}.
+// $$
+//
+// where $n$ denotes the outward unit normal vector on the boundary. We
+// see that the boundary condition for the flux ($\sigma \cdot n = g$)
+// is an essential boundary condition (which should be enforced in
+// the function space), while the other boundary condition ($u = u_0$)
+// is a natural boundary condition (which should be applied to the
+// variational form). Inserting the boundary conditions, this
+// variational problem can be phrased in the general form: find
+// $(\sigma, u) \in \Sigma_g \times V$ such that
+//
+// $$
+//    a((\sigma, u), (\tau, v)) = L((\tau, v))
+//    \quad \forall \ (\tau, v) \in \Sigma_0 \times V,
+// $$
+//
+// where the forms $a$ and $L$ are defined as
+//
+// $$
+// \begin{align}
+//   a((\sigma, u), (\tau, v)) &:=
+//     \int_{\Omega} \sigma \cdot \tau + \nabla \cdot \tau \ u
+//   + \nabla \cdot \sigma \ v \ {\rm d} x, \\
+//   L((\tau, v)) &:= - \int_{\Omega} f v \ {\rm d} x
+//   + \int_{\Gamma_D} u_0 \tau \cdot n  \ {\rm d} s,
+// \end{align}
+// $$
+// and $\Sigma_g := \{ \tau \in H({\rm div})$ such that $\tau \cdot
+// n|_{\Gamma_N} = g \}$ and $V := L^2(\Omega)$.
+//
+// To discretize the above formulation, discrete function spaces
+// $\Sigma_h \subset \Sigma$ and $V_h \subset V$ are needed to form a
+// mixed function space $\Sigma_h \times V_h$. A stable choice of finite
+// element spaces is to let $\Sigma_h$ be a Raviart-Thomas elements of
+// polynomial order $k$ and $V_h$ be discontinuous elements of
+// polynomial order $k-1$.
+//
+// We will use the same definitions of functions and boundaries as in the
+// demo for {doc}`the Poisson equation <demo_poisson>`. These are:
+//
+// * $\Omega = [0,1] \times [0,1]$ (a unit square)
+// * $\Gamma_{D} = \{(0, y) \cup (1, y) \in \partial \Omega\}$
+// * $\Gamma_{N} = \{(x, 0) \cup (x, 1) \in \partial \Omega\}$
+// * $u_0 = 20 y + 1$ on $\Gamma_{D}$
+// * $g = 10$ (flux) on $\Gamma_{N}$
+// * $f = \sin(5x - 0.5) + 1 (source term)
+
+// ## UFL form file
+//
+// The UFL file is implemented in
+// {download}`demo_mixed_poisson/poisson.py`.
+// ````{admonition} UFL form implemented in python
+// :class: dropdown
+// ![ufl-code]
+// ````
+//
 
 #include "poisson.h"
 #include <basix/finite-element.h>
@@ -29,7 +120,7 @@ int main(int argc, char* argv[])
     // Create mesh
     auto mesh = std::make_shared<mesh::Mesh<U>>(
         mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
-                                  {46, 46}, mesh::CellType::triangle));
+                                  {32, 32}, mesh::CellType::triangle));
 
     // Create Basix elements
     auto RT = basix::create_element<U>(
@@ -42,40 +133,10 @@ int main(int argc, char* argv[])
         basix::element::dpc_variant::unset, true);
 
     // Create DOLFINx mixed element
-    // fem::ElementData e0 = {RT, 1, false};
-    // fem::ElementData<U> e1 = {P0, 1, false};
-    // auto ME = std::make_shared<fem::FiniteElement<U>>(std::vector{e0, e1});
     auto ME = std::make_shared<fem::FiniteElement<U>>(
         std::vector<fem::BasixElementData<U>>{{RT}, {P0}});
 
-    // auto ME = std::make_shared<fem::FiniteElement<U>>(
-    //     std::vector < fem::ElementData<U>{{std::ref(RT), 1, false},
-    //                                       {std::ref(P0), 1, false}});
-
-    // Create dof permutation function
-    // std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
-    //     = nullptr;
-    // if (ME->needs_dof_permutations())
-    //   permute_inv = ME->dof_permutation_fn(true, true);
-
-    // // Create dofmap
-    // fem::ElementDofLayout layout = fem::create_element_dof_layout(*ME);
-    // auto dofmap = std::make_shared<fem::DofMap>(fem::create_dofmap(
-    //     MPI_COMM_WORLD, layout, *mesh->topology(), permute_inv, nullptr));
-
-    // TODO: Allow mixed FunctionSpace to be created from DOLFINx
-    // elements (not just Basix elements) via fem::create_functionspace.
-
-    // TODO: Get rid of value_shape for mixed elements
     // Create FunctionSpace
-    std::vector<std::size_t> vs = {3};
-    // auto V = std::make_shared<fem::FunctionSpace<U>>(mesh, ME, dofmap, vs);
-    // auto V = std::make_shared<fem::FunctionSpace<U>>(
-    //     fem::create_functionspace<U>(mesh, ME));
-    // std::vector<
-    //     std::tuple<std::reference_wrapper<const basix::FiniteElement<U>>,
-    //                std::size_t, bool>>
-    //     ME1{{RT, 1, false}, {P0, 1, false}};
     auto V = std::make_shared<fem::FunctionSpace<U>>(
         fem::create_functionspace<U>(mesh, ME));
 
@@ -87,8 +148,7 @@ int main(int argc, char* argv[])
     auto W0 = std::make_shared<fem::FunctionSpace<U>>(V0->collapse().first);
     auto W1 = std::make_shared<fem::FunctionSpace<U>>(V1->collapse().first);
 
-    // TODO: Add Function that takes lambda function to interpolate?
-    // Source function
+    // Create source function and interpolate sin(5x) + 1
     auto f = std::make_shared<fem::Function<T>>(W1);
     f->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
@@ -102,7 +162,7 @@ int main(int argc, char* argv[])
           return {f, {f.size()}};
         });
 
-    // Boundary condition value for u
+    // Boundary condition value for u and interpolate 20y + 1
     auto u0 = std::make_shared<fem::Function<T>>(W1);
     u0->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
@@ -113,15 +173,30 @@ int main(int argc, char* argv[])
           return {f, {f.size()}};
         });
 
-    // Get list of boundary facets
+    // Create boundary condition for \sigma and interpolate such that
+    // flux = 10 (for top and bottom boundaries)
+    auto g = std::make_shared<fem::Function<T>>(W0);
+    g->interpolate(
+        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
+        {
+          using mspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+              U, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+                     std::size_t, 2,
+                     MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
+
+          std::vector<U> fdata(2 * x.extent(1), 0);
+          mspan_t f(fdata.data(), 2, x.extent(1));
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+            f(1, p) = x(1, p) < 0.5 ? -10 : 10;
+          return {std::move(fdata), {2, x.extent(1)}};
+        });
+
+    // Get list of all boundary facets
     mesh->topology()->create_connectivity(1, 2);
     std::vector bfacets = mesh::exterior_facet_indices(*mesh->topology());
-    // TODO: are facet indices guaranteed to be sorted?
-    if (!std::ranges::is_sorted(bfacets))
-      throw std::runtime_error("Not sorted");
 
     // Get facets with boundary condition on u
-    std::vector<std::int32_t> dfacets = locate_entities_boundary(
+    std::vector<std::int32_t> dfacets = mesh::locate_entities_boundary(
         *mesh, 1,
         [](auto x)
         {
@@ -136,9 +211,6 @@ int main(int argc, char* argv[])
           }
           return marker;
         });
-    // TODO: are facet indices guaranteed to be sorted?
-    if (!std::ranges::is_sorted(dfacets))
-      throw std::runtime_error("Not sorted");
 
     // Facets with \sigma (flux) boundary condition
     std::vector<std::int32_t> nfacets;
@@ -151,9 +223,6 @@ int main(int argc, char* argv[])
         = fem::locate_dofs_topological(
             *mesh->topology(), {*V0->dofmap(), *W0->dofmap()}, 1, nfacets);
 
-    // Create boundary condition for \sigma
-    auto g = std::make_shared<fem::Function<T>>(W0);
-    g->x()->set(10);
     fem::DirichletBC<T> bc(g, ndofs, V0);
 
     // Create integration domain for u boundary condition on ds(1)
@@ -212,9 +281,8 @@ int main(int argc, char* argv[])
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
     la::petsc::options::set("ksp_type", "preonly");
     la::petsc::options::set("pc_type", "lu");
-    la::petsc::options::set("pc_factor_mat_solver_type", "superlu_dist");
-    // la::petsc::options::set("pc_factor_mat_solver_type", "mumps");
-    // la::petsc::options::set("ksp_view");
+    // la::petsc::options::set("pc_factor_mat_solver_type", "superlu_dist");
+    la::petsc::options::set("pc_factor_mat_solver_type", "mumps");
     lu.set_from_options();
 
     // Solve linear system Ax = b

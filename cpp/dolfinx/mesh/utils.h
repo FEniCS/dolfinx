@@ -59,7 +59,7 @@ void reorder_list(std::span<T> list, std::span<const std::int32_t> nodemap)
   }
 }
 
-/// @brief The coordinates of 'vertices' for for entities of a give
+/// @brief The coordinates of 'vertices' for for entities of a given
 /// dimension that are attached to specified facets.
 ///
 /// @pre The provided facets must be on the boundary of the mesh.
@@ -67,7 +67,7 @@ void reorder_list(std::span<T> list, std::span<const std::int32_t> nodemap)
 /// @param[in] mesh Mesh to compute the vertex coordinates for
 /// @param[in] dim Topological dimension of the entities
 /// @param[in] facets List of facets on the meh boundary
-/// @return (0) Entities attached to the boundary facets, (1) vertex
+/// @return (0) Entities attached to the boundary facets (sorted), (1) vertex
 /// coordinates (shape is `(3, num_vertices)`) and (2) map from vertex
 /// in the full mesh to the position (column) in the vertex coordinates
 /// array (set to -1 if vertex in full mesh is not in the coordinate
@@ -161,7 +161,7 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
 ///
 /// @note Collective
 ///
-/// @param[in] topology Mesh topology
+/// @param[in] topology Mesh topology.
 /// @return Sorted list of owned facet indices that are exterior facets
 /// of the mesh.
 std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
@@ -550,7 +550,7 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
 /// @param[in] marker Marking function, returns `true` for a point that
 /// is 'marked', and `false` otherwise.
 /// @returns List of marked entity indices (indices local to the
-/// process)
+/// process).
 template <std::floating_point T, MarkerFn<T> U>
 std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
                                                    U marker)
