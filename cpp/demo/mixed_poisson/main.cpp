@@ -184,7 +184,7 @@ int main(int argc, char* argv[])
                      std::size_t, 2,
                      MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
-          std::vector<U> fdata(2 * x.extent(1), 0);
+          std::vector<T> fdata(2 * x.extent(1), 0);
           mspan_t f(fdata.data(), 2, x.extent(1));
           for (std::size_t p = 0; p < x.extent(1); ++p)
             f(1, p) = x(1, p) < 0.5 ? -10 : 10;
