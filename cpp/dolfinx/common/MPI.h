@@ -291,8 +291,6 @@ MPI_Datatype mpi_t = mpi_type_mapping<T>::type;
 /// @defgroup MPI type mappings
 /// @{
 /// @cond
-MAP_TO_MPI_TYPE(char, MPI_CHAR)
-MAP_TO_MPI_TYPE(bool, MPI_C_BOOL)
 MAP_TO_MPI_TYPE(float, MPI_FLOAT)
 MAP_TO_MPI_TYPE(double, MPI_DOUBLE)
 MAP_TO_MPI_TYPE(std::complex<float>, MPI_C_FLOAT_COMPLEX)
