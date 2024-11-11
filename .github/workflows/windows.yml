@@ -38,10 +38,10 @@ jobs:
         run: pip install git+https://github.com/FEniCS/ufl.git
 
       - name: Checkout custom vcpkg triplets
-         uses: actions/checkout@v4
-         with:
-           repository: Neumann-A/my-vcpkg-triplets
-           path: vcpkg-triplets/
+        uses: actions/checkout@v4
+        with:
+          repository: Neumann-A/my-vcpkg-triplets
+          path: vcpkg-triplets/
 
       - name: Checkout Basix
         uses: actions/checkout@v4
