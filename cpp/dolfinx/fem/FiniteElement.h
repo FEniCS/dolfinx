@@ -162,8 +162,13 @@ public:
   /// 3D, etc. For blocked elements, this function returns the value
   /// size for the full 'blocked' element.
   ///
-  /// Mixed elements do not have a value shape, hence do not have a
-  /// value size.
+  /// @note The return value of this function is inconsistent with
+  /// value_shape() for rank-2 'symmetric' elements. Due to issues
+  /// elsewhere in the code base, rank-2 symmetric fields have value
+  /// shape `{3}` (2D) or `{6}` rather than `{2, 2}` and `{3, 3}`,
+  /// respectively. For symmetric rank-2 tensors this function returns 4
+  /// for 2D cases and 9 for 3D cases. This inconsistency will be fixed
+  /// in the future.
   ///
   /// @throws Exception is thrown for a mixed element as mixed elements
   /// do not have a value shape.
@@ -173,10 +178,8 @@ public:
   /// @brief Value shape of the finite element field.
   ///
   /// The value shape describes the shape of the finite element field,
-  /// e.g. `{}` for a scalar, `{2}` for a vector in 2D, {3, 3}` for a
-  /// tensor in 3D, etc.
-  ///
-  /// Mixed elements do not have a value shape.
+  /// e.g. `{}` for a scalar, `{2}` for a vector in 2D, `{3, 3}` for a
+  /// rank-2 tensor in 3D, etc.
   ///
   /// @throws Exception is thrown for a mixed element as mixed elements
   /// do not have a value shape.
@@ -227,15 +230,16 @@ public:
 
   /// @brief Evaluate derivatives of the basis functions up to given order
   /// at points in the reference cell.
+  ///
   /// @param[in,out] values Array that will be filled with the tabulated
   /// basis values. Must have shape `(num_derivatives, num_points,
   /// num_dofs, reference_value_size)` (row-major storage)
   /// @param[in] X The reference coordinates at which to evaluate the
   /// basis functions. Shape is `(num_points, topological dimension)`
-  /// (row-major storage)
-  /// @param[in] shape The shape of `X`
-  /// @param[in] order The number of derivatives (up to and including
-  /// this order) to tabulate for
+  /// (row-major storage).
+  /// @param[in] shape Shape of `X`.
+  /// @param[in] order Number of derivatives (up to and including
+  /// this order) to tabulate for.
   void tabulate(std::span<geometry_type> values,
                 std::span<const geometry_type> X,
                 std::array<std::size_t, 2> shape, int order) const;
@@ -246,7 +250,7 @@ public:
   /// @param[in] X The reference coordinates at which to evaluate the
   /// basis functions. Shape is `(num_points, topological dimension)`
   /// (row-major storage).
-  /// @param[in] shape Shape of `X`
+  /// @param[in] shape Shape of `X`.
   /// @param[in] order Number of derivatives (up to and including this
   /// order) to tabulate for.
   /// @return Basis function values and array shape (row-major storage).
@@ -255,14 +259,14 @@ public:
            int order) const;
 
   /// @brief Number of sub elements (for a mixed or blocked element).
-  /// @return The number of sub elements
+  /// @return Number of sub elements.
   int num_sub_elements() const noexcept;
 
   /// @brief Check if element is a mixed element.
   ///
   /// A mixed element is composed of two or more elements of different
-  /// types (a blocked element, e.g. a Lagrange element with block size
-  /// >= 1 is not considered mixed).
+  /// types. A blocked element, e.g. a Lagrange element with block size
+  /// >= 1 is not considered mixed.
   ///
   /// @return True if element is mixed.
   bool is_mixed() const noexcept;
@@ -324,15 +328,15 @@ public:
   /// @brief Create a matrix that maps degrees of freedom from one
   /// element to this element (interpolation).
   ///
-  /// @param[in] from The element to interpolate from
+  /// @param[in] from The element to interpolate from.
   /// @return Matrix operator that maps the `from` degrees-of-freedom to
   /// the degrees-of-freedom of this element. The (0) matrix data
   /// (row-major storage) and (1) the shape (num_dofs of `this` element,
   /// num_dofs of `from`) are returned.
   ///
   /// @pre The two elements must use the same mapping between the
-  /// reference and physical cells
-  /// @note Does not support mixed elements
+  /// reference and physical cells.
+  /// @note Does not support mixed elements.
   std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>>
   create_interpolation_operator(const FiniteElement& from) const;
 
@@ -348,7 +352,7 @@ public:
   /// orientation of a basis function, and this orientation cannot be
   /// corrected for by permuting the DOF numbers on each cell.
   ///
-  /// @return True if DOF transformations are required
+  /// @return True if DOF transformations are required.
   bool needs_dof_transformations() const noexcept;
 
   /// @brief Check if DOF permutations are needed for this element.
@@ -364,7 +368,7 @@ public:
   /// this can be corrected for by permuting the DOF numbers on each
   /// cell.
   ///
-  /// @return True if DOF transformations are required
+  /// @return True if DOF transformations are required.
   bool needs_dof_permutations() const noexcept;
 
   /// @brief Return a function that applies a DOF transformation
@@ -405,7 +409,7 @@ public:
   /// data* from the reference element to the conforming (physical)
   /// ordering, e.g. \f$u = T^{-t} \tilde{u}\f$.
   /// @param[in] scalar_element Indicates whether the scalar
-  /// transformations should be returned for a vector element
+  /// transformations should be returned for a vector element.
   template <typename U>
   std::function<void(std::span<U>, std::span<const std::uint32_t>, std::int32_t,
                      int)>
