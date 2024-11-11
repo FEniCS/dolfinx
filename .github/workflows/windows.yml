@@ -40,7 +40,7 @@ jobs:
       - name: Checkout custom vcpkg triplets
         uses: actions/checkout@v4
         with:
-          repository: Neumann-A/my-vcpkg-triplets
+          repository: "Neumann-A/my-vcpkg-triplets"
           path: vcpkg-triplets/
 
       - name: Checkout Basix
@@ -56,9 +56,8 @@ jobs:
           Get-Content __init__.py
 
       - name: Install Basix (C++)
-        working-directory: basix
+        working-directory: basix/cpp
         run: |
-          cd cpp
           cmake -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_TRIPLETS=D:/a/dolfinx/vcpkg-triplets -DVCPKG_HOST_TRIPLET=x64-win-llvm -B build-dir -S .
           cmake --build build-dir --config Release
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/basix-install
@@ -69,10 +68,9 @@ jobs:
           python -m pip install git+https://github.com/jhale/nanobind.git@jhale/msvc2022-workaround
           python -m pip install scikit-build-core[pyproject] setuptools wheel
       - name: Install Basix (Python)
-        working-directory: basix
+        working-directory: basix/python
         run: |
-          cd python
-        python -m pip -v install --check-build-dependencies --no-build-isolation --no-cache-dir .[ci] --config-settings=cmake.args=-DBasix_DIR=D:/a/basix/install/lib/cmake/basix --config-settings=cmake.args=-DVCPKG_OVERLAY_TRIPLETS=D:/a/dolfinx/vcpkg-triplets --config-settings=cmake.args=-DVCPKG_HOST_TRIPLET=x64-win-llvm
+          python -m pip -v install --check-build-dependencies --no-build-isolation --no-cache-dir .[ci] --config-settings=cmake.args=-DBasix_DIR=D:/a/basix/install/lib/cmake/basix --config-settings=cmake.args=-DVCPKG_OVERLAY_TRIPLETS=D:/a/dolfinx/vcpkg-triplets --config-settings=cmake.args=-DVCPKG_HOST_TRIPLET=x64-win-llvm
 
       - name: Checkout FFCx
         uses: actions/checkout@v4
@@ -122,14 +120,12 @@ jobs:
           cmake --build build/test --config Release --parallel 3
 
       - name: Run unit tests (C++, MPI, np=1)
-        working-directory: dolfinx
+        working-directory: dolfinx/build/test
         run: |
-          cd build/test
           mpiexec -n 1 ctest -V --output-on-failure -R unittests
       - name: Run C++ tests (C++, MPI, np=3)
-        working-directory: dolfinx
+        working-directory: dolfinx/build/test
         run: |
-          cd build/test
           mpiexec -n 3 ctest -V --output-on-failure -R unittests
 
       - name: Install build dependencies
@@ -138,9 +134,8 @@ jobs:
           pip -v install --no-binary mpi4py -r "mpi4py<4"
 
       - name: Install DOLFINx (Python)
-        working-directory: dolfinx
+        working-directory: dolfinx/python
         run: |
-          cd python
           pip -v install --check-build-dependencies --no-build-isolation .[test] --config-settings=cmake.args=-DBasix_DIR=D:/a/dolfinx/basix-install/lib/cmake/basix --config-settings=cmake.args=-Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake --config-settings=cmake.args=-DDOLFINX_DIR=D:/a/dolfinx/dolfinx-install/lib/cmake/dolfinx --config-settings=cmake.args=-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake --config-settings=cmake.args=-DVCPKG_OVERLAY_PORTS="../cpp/.vcpkg-overlay" --config-settings=cmake.args=-DVCPKG_OVERLAY_TRIPLETS="../../vcpkg-triplets/" --config-settings=cmake.args=-DVCPKG_HOST_TRIPLET=x64-win-llvm
 
       - name: Run units tests (Python, serial)
@@ -154,12 +149,10 @@ jobs:
           mpiexec -n 3 python -m pytest -m "not petsc4py and not adios2" python/test/unit
 
       - name: Run Python demos (serial)
-        working-directory: dolfinx
+        working-directory: dolfinx/python/demo
         run: |
-          cd python/demo
           python3 -m pytest -n auto -m serial --durations=10 test.py
       - name: Run Python demos (MPI, np=3)
-        working-directory: dolfinx
+        working-directory: dolfinx/python/demo
         run: |
-          cd python/demo
           python3 -m pytest -m mpi --num-proc=3 test.py
