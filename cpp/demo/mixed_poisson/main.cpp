@@ -212,22 +212,25 @@ int main(int argc, char* argv[])
           return marker;
         });
 
-    // Facets with \sigma (flux) boundary condition
+    // Compute facets with \sigma (flux) boundary condition facets, which is
+    // {all boundary facet} - {u0 boundary facets }
     std::vector<std::int32_t> nfacets;
     std::ranges::set_difference(bfacets, dfacets, std::back_inserter(nfacets));
-    if (dfacets.size() + nfacets.size() != bfacets.size())
-      throw std::runtime_error("Inconsistent facets numbers.");
 
-    // Get dofs that are constrained by a flux (\sigma)
+    // Get dofs that are constrained by \sigma
     std::array<std::vector<std::int32_t>, 2> ndofs
         = fem::locate_dofs_topological(
             *mesh->topology(), {*V0->dofmap(), *W0->dofmap()}, 1, nfacets);
 
+    // Create boundary condition for \sigma. \sigma \cdot n will be
+    // constrained to to be equal to the normal component of g. The
+    // boundary conditions are applied to degrees-of-freedom ndofs, and
+    // V0 is the subspace that is constrained.
     fem::DirichletBC<T> bc(g, ndofs, V0);
 
-    // Create integration domain for u boundary condition on ds(1)
-
-    // Get facet data integration data for facets in dfacets
+    // Create integration domain data for u boundary condition (ds(1) in
+    // the UFL file). First we get facet data integration data for
+    // facets in dfacets.
     std::vector<std::int32_t> domains = fem::compute_integration_domains(
         fem::IntegralType::exterior_facet, *mesh->topology(), dfacets);
 
