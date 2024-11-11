@@ -612,24 +612,7 @@ void mesh(nb::module_& m)
           nb::rv_policy::reference_internal)
       .def_prop_ro("dim", &dolfinx::mesh::Topology::dim,
                    "Topological dimension")
-      .def(
-          "set_original_cell_index",
-          [](dolfinx::mesh::Topology& self,
-             const std::vector<
-                 nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>&
-                 original_cell_indices)
-          {
-            self.original_cell_index.resize(original_cell_indices.size());
-            for (std::size_t i = 0; i < original_cell_indices.size(); ++i)
-            {
-              self.original_cell_index[i].assign(
-                  original_cell_indices[i].data(),
-                  original_cell_indices[i].data()
-                      + original_cell_indices[i].size());
-            }
-          },
-          nb::arg("original_cell_indices"))
-      .def_prop_ro(
+      .def_prop_rw(
           "original_cell_index",
           [](const dolfinx::mesh::Topology& self)
           {
@@ -640,7 +623,16 @@ void mesh(nb::module_& m)
             return nb::ndarray<const std::int64_t, nb::numpy>(idx[0].data(),
                                                               {idx[0].size()});
           },
-          nb::rv_policy::reference_internal)
+          [](dolfinx::mesh::Topology& self,
+             const nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>&
+                 original_cell_indices)
+          {
+            self.original_cell_index.resize(1);
+            self.original_cell_index[0].assign(
+                original_cell_indices.data(),
+                original_cell_indices.data() + original_cell_indices.size());
+          },
+          nb::arg("original_cell_indices"))
       .def("connectivity",
            nb::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        nb::const_),
