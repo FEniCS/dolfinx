@@ -58,10 +58,10 @@ jobs:
       - name: Install Basix (C++)
         working-directory: basix/cpp
         run: |
-          cmake -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_TRIPLETS=${{ github.workspace }}/vcpkg-triplets -DVCPKG_HOST_TRIPLET=x64-win-llvm -B build-dir -S .
+          cmake -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE=$Env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_TRIPLETS=$GITHUB_WORKSPACE/vcpkg-triplets -DVCPKG_HOST_TRIPLET=x64-win-llvm -B build-dir -S .
           cmake --build build-dir --config Release
-          cmake --install build-dir --config Release --prefix ${{ github.workspace }}/basix-install
-          echo "D:/a/dolfinx/basix-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
+          cmake --install build-dir --config Release --prefix $Env:GITHUB_WORKSPACE/basix-install
+          echo "D:/a/dolfinx/basix-install/bin" | Out-File -Append -FilePath $Env:GITHUB_PATH -Encoding utf8
 
       - name: Install build dependencies (workaround)
         run: |
