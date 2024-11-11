@@ -540,15 +540,14 @@ public:
       // the same as for x
       auto dofs_g = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
 
-      if (x0.has_value())
+      if (x0)
       {
-        std::span<const T> _x0 = x0.value();
-        assert(x.size() <= _x0.size());
+        assert(x.size() <= x0->size());
         apply(
             [&](std::int32_t i) -> T
             {
               assert(dofs_g[i] < static_cast<std::int32_t>(values.size()));
-              return alpha * (values[dofs_g[i]] - _x0[_dofs0[i]]);
+              return alpha * (values[dofs_g[i]] - (*x0)[_dofs0[i]]);
             });
       }
       else
@@ -566,14 +565,14 @@ public:
     {
       const std::vector<T>& value = g->value;
       std::int32_t bs = _function_space->dofmap()->bs();
-      if (x0.has_value())
+      if (x0)
       {
-        assert(x.size() <= x0.value().size());
+        assert(x.size() <= x0->size());
         apply(
             [&](std::int32_t i) -> T
             {
               auto dof = _dofs0[i];
-              return alpha * (value[dof % bs] - x0.value()[dof]);
+              return alpha * (value[dof % bs] - (*x0)[dof]);
             });
       }
       else
