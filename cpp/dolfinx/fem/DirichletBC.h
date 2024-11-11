@@ -517,7 +517,7 @@ public:
                          T>);
 
       std::int32_t x_size = x.size();
-      for (std::int32_t i = 0; i < _dofs0.size(); ++i)
+      for (std::size_t i = 0; i < _dofs0.size(); ++i)
       {
         if (_dofs0[i] < x_size)
           x[_dofs0[i]] = set_fn(i);
