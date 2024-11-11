@@ -141,10 +141,6 @@ FiniteElement<T>::FiniteElement(
     // }
   }
 
-  // If block_shape is not provided, set _value_shape to the underlying
-  // element value shape
-  // _value_shape = block_shape ? *block_shape : element.value_shape();
-
   // TODO: symmetric rank-2 symmetric tensors are presently constructed
   // as rank-1 tensors, e.g. a rank-2 symmetric tensor in 3D is
   // constructed as rank-1 with shape (6,). It should be really be
@@ -152,13 +148,9 @@ FiniteElement<T>::FiniteElement(
 
   if (value_shape)
   {
-    //   // Create sub-elements (one for each block)
-    //   _sub_elements
-    //       = std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>(
-    //           _bs, std::make_shared<FiniteElement<T>>(element));
-
-    _reference_value_shape
-        = *value_shape; // FIXME: should be base element value shape?
+    // FIXME: this should be the base element value shape,
+    // element.value_shape(), as set in the initializer list
+    _reference_value_shape = *value_shape;
   }
 
   // _space_dim = _bs * element.dim();
