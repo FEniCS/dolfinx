@@ -59,7 +59,7 @@ jobs:
         working-directory: basix
         run: |
           cd cpp
-        cmake -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_TRIPLETS=D:/a/dolfinx/vcpkg-triplets -DVCPKG_HOST_TRIPLET=x64-win-llvm -B build-dir -S .
+          cmake -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_TRIPLETS=D:/a/dolfinx/vcpkg-triplets -DVCPKG_HOST_TRIPLET=x64-win-llvm -B build-dir -S .
           cmake --build build-dir --config Release
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/basix-install
           echo "D:/a/dolfinx/basix-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
