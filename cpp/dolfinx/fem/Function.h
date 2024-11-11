@@ -488,7 +488,7 @@ public:
     const int bs_element = element->block_size();
     const std::size_t reference_value_size = element->reference_value_size();
     const std::size_t value_size
-        = _function_space->element()->value_size() / bs_element;
+        = _function_space->element()->reference_value_size();
     const std::size_t space_dimension = element->space_dimension() / bs_element;
 
     // If the space has sub elements, concatenate the evaluations on the

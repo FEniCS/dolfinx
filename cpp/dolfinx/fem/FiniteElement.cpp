@@ -37,7 +37,8 @@ _build_element_list(std::vector<BasixElementData<T>> elements)
                            auto [e, bs, symm] = data;
                            //  int _bs = bs ? bs->front() : 1;
                            // TODO: Check bs and symm, bs should be empty?
-                           return std::make_shared<fem::FiniteElement<T>>(e);
+                           return std::make_shared<fem::FiniteElement<T>>(e, bs,
+                                                                          symm);
                          });
   return _e;
 }
