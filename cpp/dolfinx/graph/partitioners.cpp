@@ -631,6 +631,11 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
     common::Timer timer1("KaHIP: build adjacency data");
     std::vector<T> node_disp(dolfinx::MPI::size(comm) + 1, 0);
     const T num_local_nodes = graph.num_nodes();
+
+    // KaHIP internally relies on an unsigned long long int type, which is not
+    // easily convertible to a general mpi type due to platform specific
+    // differences. So we can not rely on the general mpi_t<> mapping and do it
+    // by hand in this sole occurence.
     MPI_Allgather(&num_local_nodes, 1, MPI_UNSIGNED_LONG_LONG,
                   node_disp.data() + 1, 1, MPI_UNSIGNED_LONG_LONG, comm);
     std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
