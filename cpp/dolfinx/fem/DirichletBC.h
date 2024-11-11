@@ -545,16 +545,17 @@ public:
       {
         assert(x.size() <= x0->size());
         apply(
-            [&](std::int32_t i) -> T
+            [dofs_g, x0 = *x0, alpha, values,
+             &dofs0 = this->_dofs0](std::int32_t i) -> T
             {
               assert(dofs_g[i] < static_cast<std::int32_t>(values.size()));
-              return alpha * (values[dofs_g[i]] - (*x0)[_dofs0[i]]);
+              return alpha * (values[dofs_g[i]] - x0[dofs0[i]]);
             });
       }
       else
       {
         apply(
-            [&](std::int32_t i) -> T
+            [dofs_g, values, alpha](std::int32_t i) -> T
             {
               assert(dofs_g[i] < static_cast<std::int32_t>(values.size()));
               return alpha * values[dofs_g[i]];
@@ -571,16 +572,16 @@ public:
       {
         assert(x.size() <= x0->size());
         apply(
-            [&](std::int32_t i) -> T
+            [x0 = *x0, alpha, bs, &value, &dofs0 = _dofs0](std::int32_t i) -> T
             {
-              auto dof = _dofs0[i];
-              return alpha * (value[dof % bs] - (*x0)[dof]);
+              auto dof = dofs0[i];
+              return alpha * (value[dof % bs] - x0[dof]);
             });
       }
       else
       {
-        apply([&](std::int32_t i) -> T
-              { return alpha * value[_dofs0[i] % bs]; });
+        apply([alpha, bs, &value, &dofs0 = _dofs0](std::int32_t i) -> T
+              { return alpha * value[dofs0[i] % bs]; });
       }
     };
 
