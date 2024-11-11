@@ -103,7 +103,7 @@ FiniteElement<T>::FiniteElement(
                     std::shared_ptr<const FiniteElement<geometry_type>>>(
                     _bs, std::make_shared<FiniteElement<T>>(element))
               : std::vector<
-                    std::shared_ptr<const FiniteElement<geometry_type>>>(0)),
+                    std::shared_ptr<const FiniteElement<geometry_type>>>()),
       _reference_value_shape(element.value_shape()),
       _element(std::make_unique<basix::FiniteElement<T>>(element)),
       _symmetric(symmetric),
@@ -150,16 +150,16 @@ FiniteElement<T>::FiniteElement(
   // constructed as rank-1 with shape (6,). It should be really be
   // shape=(3, 3) with block size 6.
 
-  // if (value_shape)
-  // {
-  //   // Create sub-elements (one for each block)
-  //   _sub_elements
-  //       = std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>(
-  //           _bs, std::make_shared<FiniteElement<T>>(element));
+  if (value_shape)
+  {
+    //   // Create sub-elements (one for each block)
+    //   _sub_elements
+    //       = std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>(
+    //           _bs, std::make_shared<FiniteElement<T>>(element));
 
-  //   _reference_value_shape
-  //       = *value_shape; // FIXME: should be base element value shape?
-  // }
+    _reference_value_shape
+        = *value_shape; // FIXME: should be base element value shape?
+  }
 
   // _space_dim = _bs * element.dim();
 
