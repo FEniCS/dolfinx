@@ -108,11 +108,11 @@ FiniteElement<T>::FiniteElement(
       _element(std::make_unique<basix::FiniteElement<T>>(element)),
       _symmetric(symmetric),
       _needs_dof_permutations(
-          !_element->dof_transformations_are_identity()
-          and _element->dof_transformations_are_permutations()),
+          !element.dof_transformations_are_identity()
+          and element.dof_transformations_are_permutations()),
       _needs_dof_transformations(
-          !_element->dof_transformations_are_identity()
-          and !_element->dof_transformations_are_permutations()),
+          !element.dof_transformations_are_identity()
+          and !element.dof_transformations_are_permutations()),
       _entity_dofs(element.entity_dofs()),
       _entity_closure_dofs(element.entity_closure_dofs())
 {
