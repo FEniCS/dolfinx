@@ -116,8 +116,10 @@ FiniteElement<T>::FiniteElement(
       _entity_dofs(element.entity_dofs()),
       _entity_closure_dofs(element.entity_closure_dofs())
 {
-  // TODO: update _space_dim(_bs * element.dim()), once symmetric tensor
-  // element is done properly
+  // TODO: symmetric rank-2 symmetric tensors are presently constructed
+  // as rank-1 tensors, e.g. a rank-2 symmetric tensor in 3D is
+  // constructed as rank-1 with shape (6,). It should be really be
+  // shape=(3, 3) with block size 6.
 
   // If element is blocked, check that base element is scalar
   if (value_shape and !element.value_shape().empty())
@@ -126,8 +128,7 @@ FiniteElement<T>::FiniteElement(
                              "from scalar base elements.");
   }
 
-  // Consistency check for symmetric elements
-  if (symmetric)
+  if (symmetric) // Consistency check for symmetric elements
   {
     if (!value_shape)
     {
@@ -140,20 +141,6 @@ FiniteElement<T>::FiniteElement(
     //   throw std::runtime_error("Symmetric elements must be rank-2.");
     // }
   }
-
-  // TODO: symmetric rank-2 symmetric tensors are presently constructed
-  // as rank-1 tensors, e.g. a rank-2 symmetric tensor in 3D is
-  // constructed as rank-1 with shape (6,). It should be really be
-  // shape=(3, 3) with block size 6.
-
-  if (value_shape)
-  {
-    // FIXME: this should be the base element value shape,
-    // element.value_shape(), as set in the initializer list
-    _reference_value_shape = *value_shape;
-  }
-
-  // _space_dim = _bs * element.dim();
 
   std::string family;
   switch (_element->family())
@@ -255,8 +242,9 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
       _cell_type(cell_type),
       _signature("Quadrature element " + std::to_string(pshape[0])),
       _space_dim(_bs * pshape[0]), _sub_elements({}),
-      _reference_value_shape({}), _element(nullptr), _symmetric(symmetric),
-      _needs_dof_permutations(false), _needs_dof_transformations(false),
+      _reference_value_shape(std::vector<std::size_t>()), _element(nullptr),
+      _symmetric(symmetric), _needs_dof_permutations(false),
+      _needs_dof_transformations(false),
       _entity_dofs(mesh::cell_dim(cell_type) + 1),
       _entity_closure_dofs(mesh::cell_dim(cell_type) + 1),
       _points(std::vector<T>(points.begin(), points.end()), pshape)

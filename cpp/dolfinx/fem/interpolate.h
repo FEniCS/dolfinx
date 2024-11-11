@@ -507,8 +507,8 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
 
   // Get sizes of elements
   const std::size_t dim0 = element0->space_dimension() / bs0;
-  const std::size_t value_size_ref0 = element0->reference_value_size() / bs0;
-  const std::size_t value_size0 = V0->element()->value_size() / bs0;
+  const std::size_t value_size_ref0 = element0->reference_value_size();
+  const std::size_t value_size0 = V0->element()->reference_value_size();
 
   const CoordinateElement<U>& cmap = mesh0->geometry().cmap();
   auto x_dofmap = mesh0->geometry().dofmap();
@@ -754,8 +754,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
   // Loop over cells and compute interpolation dofs
   const int num_scalar_dofs = element->space_dimension() / element_bs;
-  const int value_size
-      = u.function_space()->element()->value_size() / element_bs;
+  const int value_size = u.function_space()->element()->reference_value_size();
 
   std::span<T> coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
@@ -853,7 +852,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     }
 
     const int element_vs
-        = u.function_space()->element()->value_size() / element_bs;
+        = u.function_space()->element()->reference_value_size();
 
     if (element_vs > 1 and element_bs > 1)
     {
@@ -939,8 +938,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
     std::vector<U> coord_dofs_b(num_dofs_g * gdim);
     mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
-    const std::size_t value_size_ref
-        = element->reference_value_size() / element_bs;
+    const std::size_t value_size_ref = element->reference_value_size();
     std::vector<T> ref_data_b(Xshape[0] * 1 * value_size_ref);
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>

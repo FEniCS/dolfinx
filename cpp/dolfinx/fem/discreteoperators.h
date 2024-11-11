@@ -194,9 +194,9 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   const std::size_t space_dim0 = e0->space_dimension();
   const std::size_t space_dim1 = e1->space_dimension();
   const std::size_t dim0 = space_dim0 / bs0;
-  const std::size_t value_size_ref0 = e0->reference_value_size() / bs0;
-  const std::size_t value_size0 = V0.element()->value_size() / bs0;
-  const std::size_t value_size1 = V1.element()->value_size() / bs1;
+  const std::size_t value_size_ref0 = e0->reference_value_size();
+  const std::size_t value_size0 = V0.element()->reference_value_size();
+  const std::size_t value_size1 = V1.element()->reference_value_size();
 
   // Get geometry data
   const CoordinateElement<U>& cmap = mesh->geometry().cmap();
