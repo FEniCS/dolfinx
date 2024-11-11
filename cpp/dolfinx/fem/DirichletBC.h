@@ -530,6 +530,7 @@ public:
       return;
     }
 
+    // called by std::visist in case g holds a Function
     auto handle_function = [&](std::shared_ptr<const Function<T, U>> g)
     {
       assert(g);
@@ -561,6 +562,7 @@ public:
       }
     };
 
+    // called by std::visist in case g holds a Constant
     auto handle_constant = [&](std::shared_ptr<const Constant<T>> g)
     {
       const std::vector<T>& value = g->value;
