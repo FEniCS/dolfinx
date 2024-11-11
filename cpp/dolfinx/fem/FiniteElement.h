@@ -60,12 +60,13 @@ public:
   using geometry_type = T;
 
   /// @brief Create a finite element from a Basix finite element.
-  /// @param[in] element Basix finite element
+  /// @param[in] element Basix finite element.
   /// @param[in] value_shape Value shape for blocked element, e.g. `{3}`
   /// for a vector in 3D or `{2, 2}` for a rank-2 tensor in 2D. Can only
-  /// be set for scalar `element`.
+  /// be set for blocked scalar `element`. For other elements and scalar
+  /// elements it should be `std::nullopt`.
   /// @param[in] symmetric Is the element a symmetric tensor? Should ony
-  /// set set for 2nd-order tensor blocked elements.
+  /// set for 2nd-order tensor blocked elements.
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
                 std::optional<std::vector<std::size_t>> value_shape
                 = std::nullopt,
@@ -76,8 +77,9 @@ public:
   /// symmetric) tuples, one for each element in the mixed element.
   FiniteElement(std::vector<BasixElementData<geometry_type>> elements);
 
-  /// @brief Create mixed finite element from a list of finite elements.
-  /// @param[in] elements Basix finite elements
+  /// @brief Create a mixed finite element from a list of finite
+  /// elements.
+  /// @param[in] elements Finite elements to compose the mixed element.
   FiniteElement(
       const std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>&
           elements);
@@ -86,7 +88,7 @@ public:
   /// @param[in] cell_type Cell type.
   /// @param[in] points Quadrature points.
   /// @param[in] pshape Shape of `points` array.
-  /// @param[in] value_shape Value shapefor the element.
+  /// @param[in] value_shape Value shape for the element.
   /// @param[in] symmetric Is the element a symmetric tensor?
   FiniteElement(mesh::CellType cell_type, std::span<const geometry_type> points,
                 std::array<std::size_t, 2> pshape,
@@ -109,18 +111,18 @@ public:
   FiniteElement& operator=(FiniteElement&& element) = default;
 
   /// @brief Check if two elements are equivalent.
-  /// @return True is the two elements are the same
+  /// @return True is the two elements are the same.
   /// @note Equality can be checked only for non-mixed elements. For a
   /// mixed element, this function will throw an exception.
   bool operator==(const FiniteElement& e) const;
 
-  /// Check if two elements are not equivalent
-  /// @return True is the two elements are not the same
+  /// @brief Check if two elements are not equivalent.
+  /// @return True is the two elements are not the same.
   /// @note Equality can be checked only for non-mixed elements. For a
   /// mixed element, this function will raise an exception.
   bool operator!=(const FiniteElement& e) const;
 
-  /// @brief Cell shape
+  /// @brief Cell shape that the element is defined on.
   mesh::CellType cell_type() const noexcept;
 
   /// @brief String identifying the finite element.
@@ -131,25 +133,38 @@ public:
   /// properties.
   std::string signature() const noexcept;
 
-  /// Dimension of the finite element function space (the number of
-  /// degrees-of-freedom for the element)
-  /// @return Dimension of the finite element space
+  /// @brief Dimension of the finite element function space (the number
+  /// of degrees-of-freedom for the element).
+  ///
+  /// For 'blocked' elements, this function returns the dimension of the
+  /// full element rather than the dimension of the base element.
+  ///
+  /// @return Dimension of the finite element space.
   int space_dimension() const noexcept;
 
   /// @brief Block size of the finite element function space.
   ///
-  /// For BlockedElements, this is the number of DOFs colocated at each
-  /// DOF point. For other elements, this is always 1.
-  /// @return Block size of the finite element space
+  /// For non-blocked elements, this is always 1. For blocked elements,
+  /// this is the number of DOFs collocated at each DOF point. For
+  /// blocked elements the block size is equal to the value size, except
+  /// for symmetric rank-2 tensor blocked elements. For a symmetric
+  /// rank-2 tensor blocked element the block size is 3 in 2D and 6 in
+  /// 3D.
+  ///
+  /// @return Block size of the finite element space.
   int block_size() const noexcept;
 
-  /// @brief Value size (new).
+  /// @brief Value size of the finite element field.
   ///
-  /// @todo Document carefully, esp. w.r.t block size
+  /// The value size is the number of components in the finite element
+  /// field. It is the product of the value shape, e.g. is is 1 for a
+  /// scalar function, 2 for a 2D vector, 9 for a second-order tensor in
+  /// 3D, etc. For blocked elements, this function returns the value
+  /// size for the full 'blocked' element.
   ///
-  /// The value size is the product of the value shape, e.g. is is  1
-  /// for a scalar function, 2 for a 2D vector, 9 for a second-order
-  /// tensor in 3D.
+  /// Mixed elements do not have a value shape, hence do not have a
+  /// value size.
+  ///
   /// @throws Exception is thrown for a mixed element as mixed elements
   /// do not have a value shape.
   /// @return The value size.
@@ -157,8 +172,9 @@ public:
 
   /// @brief Value shape of the finite element field.
   ///
-  /// The value shape described the shape of the finite element field,
-  /// e.g. `{}` for a scalar, `{3, 3}` for a tensor in 3D, etc.
+  /// The value shape describes the shape of the finite element field,
+  /// e.g. `{}` for a scalar, `{2}` for a vector in 2D, {3, 3}` for a
+  /// tensor in 3D, etc.
   ///
   /// Mixed elements do not have a value shape.
   ///
@@ -167,12 +183,18 @@ public:
   /// @return The value shape.
   std::span<const std::size_t> value_shape() const;
 
-  /// @brief Value size for the reference value shape.
+  /// @brief Value size of the base (non-blocked) finite element field.
   ///
   /// The reference value size is the product of the reference value
   /// shape, e.g. it is  1 for a scalar element, 2 for a 2D
   /// (non-blocked) vector, 9 for a (non-blocked) second-order tensor in
   /// 3D, etc.
+  ///
+  /// For blocked elements, this function returns the value shape for
+  /// the 'base' element from which the blocked element is composed. For
+  /// other elements, the return value is the same as
+  /// FiniteElement::value_shape.
+  ///
   /// @throws Exception is thrown for a mixed element as mixed elements
   /// do not have a value shape.
   /// @return The value size.

@@ -16,8 +16,6 @@
 #include <utility>
 #include <vector>
 
-#include <iostream>
-
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
