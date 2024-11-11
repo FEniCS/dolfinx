@@ -52,7 +52,7 @@ jobs:
       - name: Insert add_dll_directory calls into Basix
         working-directory: basix/python/basix
         run: |
-          (Get-Content __init__.py).Replace('# WINDOWSDLL', 'import os; os.add_dll_directory("D:/a/dolfinx/basix-install/bin")') | Set-Content __init__.py
+          (Get-Content __init__.py).Replace('# WINDOWSDLL', 'import os; os.add_dll_directory("${{ github.workspace }}/basix-install/bin")') | Set-Content __init__.py
           Get-Content __init__.py
 
       - name: Install Basix (C++)
