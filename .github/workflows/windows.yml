@@ -59,7 +59,7 @@ jobs:
         working-directory: basix
         run: |
           cd cpp
-          cmake -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_TRIPLETS="../../vcpkg-triplets/" -DVCPKG_HOST_TRIPLET=x64-win-llvm -B build-dir -S .
+        cmake -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_TRIPLETS=D:/a/dolfinx/vcpkg-triplets -DVCPKG_HOST_TRIPLET=x64-win-llvm -B build-dir -S .
           cmake --build build-dir --config Release
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/basix-install
           echo "D:/a/dolfinx/basix-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
@@ -72,7 +72,7 @@ jobs:
         working-directory: basix
         run: |
           cd python
-          python -m pip -v install --check-build-dependencies --no-build-isolation --no-cache-dir .[ci] --config-settings=cmake.args=-DBasix_DIR=D:/a/basix/install/lib/cmake/basix --config-settings=cmake.args=-DVCPKG_OVERLAY_TRIPLETS="../../vcpkg-triplets/" --config-settings=cmake.args=-DVCPKG_HOST_TRIPLET=x64-win-llvm
+        python -m pip -v install --check-build-dependencies --no-build-isolation --no-cache-dir .[ci] --config-settings=cmake.args=-DBasix_DIR=D:/a/basix/install/lib/cmake/basix --config-settings=cmake.args=-DVCPKG_OVERLAY_TRIPLETS=D:/a/dolfinx/vcpkg-triplets --config-settings=cmake.args=-DVCPKG_HOST_TRIPLET=x64-win-llvm
 
       - name: Checkout FFCx
         uses: actions/checkout@v4
@@ -110,7 +110,7 @@ jobs:
       - name: Install DOLFINx (C++)
         working-directory: dolfinx
         run: |
-          cmake -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR=D:/a/dolfinx/basix-install/share/basix -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS="cpp/.vcpkg-overlay" -DVCPKG_OVERLAY_TRIPLETS="../vcpkg-triplets/" -DVCPKG_HOST_TRIPLET=x64-win-llvm -B build-dir -S cpp
+          cmake -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR=D:/a/dolfinx/basix-install/share/basix -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS="cpp/.vcpkg-overlay" -DVCPKG_OVERLAY_TRIPLETS=D:/a/dolfinx/vcpkg-triplets -DVCPKG_HOST_TRIPLET=x64-win-llvm -B build-dir -S cpp
           cmake --build build-dir --config Release
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/dolfinx-install
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
@@ -118,7 +118,7 @@ jobs:
       - name: Build unit tests (C++)
         working-directory: dolfinx
         run: |
-          cmake -DBasix_DIR=D:/a/dolfinx/basix-install/share/basix -Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS="cpp/.vcpkg-overlay" -DVCPKG_OVERLAY_TRIPLETS="../vcpkg-triplets/" -DVCPKG_HOST_TRIPLET=x64-win-llvm -B build/test/ -S cpp/test/
+          cmake -DBasix_DIR=D:/a/dolfinx/basix-install/share/basix -Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS="cpp/.vcpkg-overlay" -DVCPKG_OVERLAY_TRIPLETS=D:/a/dolfinx/vcpkg-triplets -DVCPKG_HOST_TRIPLET=x64-win-llvm -B build/test/ -S cpp/test/
           cmake --build build/test --config Release --parallel 3
 
       - name: Run unit tests (C++, MPI, np=1)
