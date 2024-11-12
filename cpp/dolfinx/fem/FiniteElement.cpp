@@ -34,9 +34,7 @@ _build_element_list(std::vector<BasixElementData<T>> elements)
   std::ranges::transform(elements, std::back_inserter(_e),
                          [](auto data)
                          {
-                           auto [e, bs, symm] = data;
-                           //  int _bs = bs ? bs->front() : 1;
-                           // TODO: Check bs and symm, bs should be empty?
+                           auto& [e, bs, symm] = data;
                            return std::make_shared<fem::FiniteElement<T>>(e, bs,
                                                                           symm);
                          });
@@ -314,6 +312,9 @@ int FiniteElement<T>::value_size() const
   {
     int vs = std::accumulate(_value_shape->begin(), _value_shape->end(), 1,
                              std::multiplies{});
+
+    // See comments in constructor on why special handling for the
+    // symmetric case is required.
     if (_symmetric)
     {
       if (vs == 3)
