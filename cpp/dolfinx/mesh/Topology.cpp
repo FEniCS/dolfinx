@@ -746,13 +746,22 @@ Topology::Topology(MPI_Comm comm, CellType cell_type,
   // One facet type
   _interprocess_facets.resize(1);
 
-  _index_map[_entity_type_offsets[0]] = vertex_map;
-  _connectivity[_entity_type_offsets[0]][_entity_type_offsets[0]]
-      = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-          vertex_map->size_local() + vertex_map->num_ghosts());
+  this->set_index_map(0, vertex_map);
+  this->set_connectivity(
+      std::make_shared<graph::AdjacencyList<std::int32_t>>(
+          vertex_map->size_local() + vertex_map->num_ghosts()),
+      0, 0);
 
-  _index_map[_entity_type_offsets[tdim]] = cell_map;
-  _connectivity[_entity_type_offsets[tdim]][_entity_type_offsets[0]] = cells;
+  // _index_map[_entity_type_offsets[0]] = vertex_map;
+  // _connectivity[_entity_type_offsets[0]][_entity_type_offsets[0]]
+  //     = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+  //         vertex_map->size_local() + vertex_map->num_ghosts());
+
+  this->set_index_map(tdim, 0, cell_map);
+  this->set_connectivity(cells, {tdim, 0}, {0, 0});
+
+  // _index_map[_entity_type_offsets[tdim]] = cell_map;
+  // _connectivity[_entity_type_offsets[tdim]][_entity_type_offsets[0]] = cells;
 
   this->original_cell_index[0].assign(original_cell_index.begin(),
                                       original_cell_index.end());
@@ -813,6 +822,13 @@ Topology::Topology(
 
   // Set data
   _index_map[_entity_type_offsets[0]] = vertex_map;
+
+  this->set_index_map(0, vertex_map);
+  this->set_connectivity(
+      std::make_shared<graph::AdjacencyList<std::int32_t>>(
+          vertex_map->size_local() + vertex_map->num_ghosts()),
+      0, 0);
+
   for (std::size_t i = 0; i < cell_types.size(); ++i)
   {
     this->set_index_map(tdim, i, cell_map[i]);
