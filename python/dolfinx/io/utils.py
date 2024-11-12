@@ -34,11 +34,11 @@ def _extract_cpp_objects(functions: typing.Union[Mesh, Function, tuple[Function]
         return [getattr(functions, "_cpp_object", functions)]
 
 
-# FidesWriter and VTXWriter require ADIOS2
+# VTXWriter requires ADIOS2
 if _cpp.common.has_adios2:
-    from dolfinx.cpp.io import FidesMeshPolicy, VTXMeshPolicy  # F401
+    from dolfinx.cpp.io import VTXMeshPolicy  # F401
 
-    __all__ = [*__all__, "FidesWriter", "VTXWriter", "FidesMeshPolicy", "VTXMeshPolicy"]
+    __all__ = [*__all__, "VTXWriter", "VTXMeshPolicy"]
 
     class VTXWriter:
         """Writer for VTX files, using ADIOS2 to create the files.
@@ -100,77 +100,6 @@ if _cpp.common.has_adios2:
             except (NotImplementedError, TypeError, AttributeError):
                 # Input is a single function or a list of functions
                 self._cpp_object = _vtxwriter(
-                    comm, filename, _extract_cpp_objects(output), engine, mesh_policy
-                )  # type: ignore[arg-type]
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, exception_type, exception_value, traceback):
-            self.close()
-
-        def write(self, t: float):
-            self._cpp_object.write(t)
-
-        def close(self):
-            self._cpp_object.close()
-
-    class FidesWriter:
-        """Writer for Fides files, using ADIOS2 to create the files.
-
-        Fides (https://fides.readthedocs.io/) supports first order
-        Lagrange finite elements for the geometry description and first
-        order Lagrange finite elements for functions. All functions have
-        to be of the same element family and same order.
-
-        The files can be displayed by Paraview.
-        """
-
-        _cpp_object: typing.Union[_cpp.io.FidesWriter_float32, _cpp.io.FidesWriter_float64]
-
-        def __init__(
-            self,
-            comm: _MPI.Comm,
-            filename: typing.Union[str, Path],
-            output: typing.Union[Mesh, list[Function], Function],
-            engine: str = "BPFile",
-            mesh_policy: FidesMeshPolicy = FidesMeshPolicy.update,
-        ):
-            """Initialize a writer for outputting a mesh, a single Lagrange
-            function or list of Lagrange functions sharing the same
-            element family and degree
-
-            Args:
-                comm: MPI communicator.
-                filename: Output filename.
-                output: Data to output. Either a mesh, a single degree one
-                    Lagrange function or list of degree one Lagrange functions.
-                engine: ADIOS2 engine to use for output. See
-                    ADIOS2 documentation for options.
-                mesh_policy: Controls if the mesh is written to file at
-                    the first time step only when a ``Function`` is
-                    written to file, or is re-written (updated) at each
-                    time step. Has an effect only for ``Function``
-                    output.
-            """
-            # Get geometry type
-            try:
-                dtype = output.geometry.x.dtype  # type: ignore
-            except AttributeError:
-                try:
-                    dtype = output.function_space.mesh.geometry.x.dtype  # type: ignore
-                except AttributeError:
-                    dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
-
-            if np.issubdtype(dtype, np.float32):
-                _fides_writer = _cpp.io.FidesWriter_float32
-            elif np.issubdtype(dtype, np.float64):
-                _fides_writer = _cpp.io.FidesWriter_float64
-
-            try:
-                self._cpp_object = _fides_writer(comm, filename, output._cpp_object, engine)  # type: ignore
-            except (NotImplementedError, TypeError, AttributeError):
-                self._cpp_object = _fides_writer(
                     comm, filename, _extract_cpp_objects(output), engine, mesh_policy
                 )  # type: ignore[arg-type]
 

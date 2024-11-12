@@ -146,47 +146,6 @@ void declare_vtx_writer(nb::module_& m, std::string type)
             "write", [](dolfinx::io::VTXWriter<T>& self, double t)
             { self.write(t); }, nb::arg("t"));
   }
-
-  {
-    std::string pyclass_name = "FidesWriter_" + type;
-    nb::class_<dolfinx::io::FidesWriter<T>>(m, pyclass_name.c_str(),
-                                            "FidesWriter object")
-        .def(
-            "__init__",
-            [](dolfinx::io::FidesWriter<T>* self, MPICommWrapper comm,
-               std::filesystem::path filename,
-               std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
-               std::string engine)
-            {
-              new (self) dolfinx::io::FidesWriter<T>(comm.get(), filename, mesh,
-                                                     engine);
-            },
-            nb::arg("comm"), nb::arg("filename"), nb::arg("mesh"),
-            nb::arg("engine") = "BPFile")
-        .def(
-            "__init__",
-            [](dolfinx::io::FidesWriter<T>* self, MPICommWrapper comm,
-               std::filesystem::path filename,
-               const std::vector<std::variant<
-                   std::shared_ptr<const dolfinx::fem::Function<float, T>>,
-                   std::shared_ptr<const dolfinx::fem::Function<double, T>>,
-                   std::shared_ptr<
-                       const dolfinx::fem::Function<std::complex<float>, T>>,
-                   std::shared_ptr<const dolfinx::fem::Function<
-                       std::complex<double>, T>>>>& u,
-               std::string engine, dolfinx::io::FidesMeshPolicy policy)
-            {
-              new (self) dolfinx::io::FidesWriter<T>(comm.get(), filename, u,
-                                                     engine, policy);
-            },
-            nb::arg("comm"), nb::arg("filename"), nb::arg("u"),
-            nb::arg("engine") = "BPFile",
-            nb::arg("policy") = dolfinx::io::FidesMeshPolicy::update)
-        .def("close", [](dolfinx::io::FidesWriter<T>& self) { self.close(); })
-        .def(
-            "write", [](dolfinx::io::FidesWriter<T>& self, double t)
-            { self.write(t); }, nb::arg("t"));
-  }
 #endif
 }
 
@@ -347,10 +306,6 @@ void io(nb::module_& m)
   vtk_scalar_fn<std::complex<double>, double>(vtk_file);
 
 #ifdef HAS_ADIOS2
-  nb::enum_<dolfinx::io::FidesMeshPolicy>(m, "FidesMeshPolicy")
-      .value("update", dolfinx::io::FidesMeshPolicy::update)
-      .value("reuse", dolfinx::io::FidesMeshPolicy::reuse);
-
   nb::enum_<dolfinx::io::VTXMeshPolicy>(m, "VTXMeshPolicy")
       .value("update", dolfinx::io::VTXMeshPolicy::update)
       .value("reuse", dolfinx::io::VTXMeshPolicy::reuse);
