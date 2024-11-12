@@ -757,12 +757,13 @@ Topology::Topology(MPI_Comm comm, CellType cell_type,
   //     = std::make_shared<graph::AdjacencyList<std::int32_t>>(
   //         vertex_map->size_local() + vertex_map->num_ghosts());
 
-  this->set_index_map(tdim, 0, cell_map);
-  this->set_connectivity(cells, {tdim, 0}, {0, 0});
+  this->set_index_map(tdim, cell_map);
+  this->set_connectivity(cells, tdim, 0);
 
   // _index_map[_entity_type_offsets[tdim]] = cell_map;
   // _connectivity[_entity_type_offsets[tdim]][_entity_type_offsets[0]] = cells;
 
+  this->original_cell_index.resize(1);
   this->original_cell_index[0].assign(original_cell_index.begin(),
                                       original_cell_index.end());
 }
@@ -779,8 +780,12 @@ Topology::Topology(
   assert(!cell_types.empty());
   std::int8_t tdim = cell_dim(cell_types[0]);
   assert(tdim > 0);
-  for ([[maybe_unused]] auto ct : cell_types)
+
+#ifndef NDEBUG
+  for (auto ct : cell_types)
     assert(cell_dim(ct) == tdim);
+#endif
+
   _interprocess_facets.resize(1);
 
   // Create all the entity types in the mesh
@@ -1469,9 +1474,10 @@ mesh::create_subtopology(const Topology& topology, int dim,
       std::move(sub_e_to_v_vec), std::move(sub_e_to_v_offsets));
 
   // Create sub-topology
-
   Topology subtopology(topology.comm(), entity_type, submap0, submap,
                        sub_e_to_v, {});
+
+  // std::cout << "Post" << std::endl;
 
   // Topology subtopology(topology.comm(), entity_type);
   // subtopology.set_index_map(0, submap0);
