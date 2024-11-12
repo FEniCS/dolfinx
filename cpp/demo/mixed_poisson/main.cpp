@@ -181,7 +181,7 @@ int main(int argc, char* argv[])
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
           using mspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-              U, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+              T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
                      std::size_t, 2,
                      MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
