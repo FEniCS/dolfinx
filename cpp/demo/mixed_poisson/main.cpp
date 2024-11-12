@@ -289,7 +289,7 @@ int main(int argc, char* argv[])
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
     la::petsc::options::set("ksp_type", "preonly");
     la::petsc::options::set("pc_type", "lu");
-    if (sizeof(PETSC_INT) == 4)
+    if (sizeof(PetscInt) == 4)
       la::petsc::options::set("pc_factor_mat_solver_type", "mumps");
     else
       la::petsc::options::set("pc_factor_mat_solver_type", "superlu_dist");
