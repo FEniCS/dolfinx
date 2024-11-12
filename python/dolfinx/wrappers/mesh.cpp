@@ -572,9 +572,20 @@ void mesh(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::mesh::Topology* t, MPICommWrapper comm,
-             dolfinx::mesh::CellType cell_type)
-          { new (t) dolfinx::mesh::Topology(comm.get(), cell_type); },
-          nb::arg("comm"), nb::arg("cell_type"))
+             dolfinx::mesh::CellType cell_type,
+             std::shared_ptr<const dolfinx::common::IndexMap> vertex_map,
+             std::shared_ptr<const dolfinx::common::IndexMap> cell_map,
+             std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>> cells,
+             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
+                 original_cell_index)
+          {
+            new (t) dolfinx::mesh::Topology(
+                comm.get(), cell_type, vertex_map, cell_map, cells,
+                std::span(original_cell_index.data(),
+                          original_cell_index.size()));
+          },
+          nb::arg("comm"), nb::arg("cell_type"), nb::arg("vertex_map"),
+          nb::arg("cell_map"), nb::arg("cells"), nb::arg("original_cell_index"))
       .def("set_connectivity",
            nb::overload_cast<
                std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>>,

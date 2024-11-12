@@ -50,7 +50,7 @@ public:
            std::shared_ptr<const common::IndexMap> vertex_map,
            std::shared_ptr<const common::IndexMap> cell_map,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells,
-           std::span<const std::size_t> original_cell_index);
+           std::span<const std::int64_t> original_cell_index);
 
   /// @brief Create empty mesh topology with multiple cell types
   /// @param comm MPI communicator

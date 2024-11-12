@@ -717,7 +717,7 @@ Topology::Topology(MPI_Comm comm, CellType cell_type,
                    std::shared_ptr<const common::IndexMap> vertex_map,
                    std::shared_ptr<const common::IndexMap> cell_map,
                    std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells,
-                   std::span<const std::size_t> original_cell_index)
+                   std::span<const std::int64_t> original_cell_index)
     : _comm(comm), _index_map(cell_dim(cell_type) + 1, {nullptr}),
       _connectivity(
           cell_dim(cell_type) + 1,
