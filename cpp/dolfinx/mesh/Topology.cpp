@@ -1448,11 +1448,15 @@ mesh::create_subtopology(const Topology& topology, int dim,
       std::move(sub_e_to_v_vec), std::move(sub_e_to_v_offsets));
 
   // Create sub-topology
-  Topology subtopology(topology.comm(), entity_type);
-  subtopology.set_index_map(0, submap0);
-  subtopology.set_index_map(dim, submap);
-  subtopology.set_connectivity(sub_v_to_v, 0, 0);
-  subtopology.set_connectivity(sub_e_to_v, dim, 0);
+
+  Topology subtopology(topology.comm(), entity_type, submap0, submap,
+                       sub_e_to_v, {});
+
+  // Topology subtopology(topology.comm(), entity_type);
+  // subtopology.set_index_map(0, submap0);
+  // subtopology.set_index_map(dim, submap);
+  // subtopology.set_connectivity(sub_v_to_v, 0, 0);
+  // subtopology.set_connectivity(sub_e_to_v, dim, 0);
 
   return {std::move(subtopology), std::move(subentities),
           std::move(subvertices0)};
