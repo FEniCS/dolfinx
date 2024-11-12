@@ -85,7 +85,7 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
 } // namespace impl
 
 /// @brief Given an integral type and a set of entities, computes and
-/// return  data for the entities that should be integrated over.
+/// return data for the entities that should be integrated over.
 ///
 /// This function returns a list data, for each entity in  `entities`,
 /// that is used in assembly. For cell integrals it is simply the cell
@@ -93,9 +93,15 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
 /// local_facet_index)` pairs is returned. For interior facet integrals,
 /// a list of `(cell_index0, local_facet_index0, cell_index1,
 /// local_facet_index1)` tuples is returned.
+/// The data computed by this function is typically used as input to
+/// fem::create_form.
 ///
 /// @note Owned mesh entities only are returned. Ghost entities are not
 /// included.
+///
+/// @pre For facet integrals, the topology facet-to-cell and
+/// cell-to-facet connectivity must be computed before calling this
+/// function.
 ///
 /// @param[in] integral_type Integral type.
 /// @param[in] topology Mesh topology.
@@ -104,9 +110,6 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
 /// indices. For other `IntegralType`, `entities` should be facet
 /// indices.
 /// @return List of integration entity data.
-/// @pre For facet integrals, the topology facet-to-cell and
-/// cell-to-facet connectivity must be computed before calling this
-/// function.
 std::vector<std::int32_t>
 compute_integration_domains(IntegralType integral_type,
                             const mesh::Topology& topology,
@@ -325,7 +328,8 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// equal to the rank of the form.
 /// @param[in] coefficients Coefficient fields in the form.
 /// @param[in] constants Spatial constants in the form.
-/// @param[in] subdomains Subdomain markers.
+/// @param[in] subdomains Subdomain markers. The data can be computed
+/// using fem::compute_integration_domains.
 /// @param[in] entity_maps The entity maps for the form. Empty for
 /// single domain problems.
 /// @param[in] mesh The mesh of the domain.
@@ -694,7 +698,8 @@ Form<T, U> create_form_factory(
 /// @param[in] spaces Function spaces for the Form arguments.
 /// @param[in] coefficients Coefficient fields in the form (by name).
 /// @param[in] constants Spatial constants in the form (by name).
-/// @param[in] subdomains Subdomain markers.
+/// @param[in] subdomains Subdomain markers. The data can be computed
+/// using fem::compute_integration_domains.
 /// @pre Each value in `subdomains` must be sorted by domain id.
 /// @param[in] entity_maps The entity maps for the form. Empty for
 /// single domain problems.
@@ -730,7 +735,6 @@ Form<T, U> create_form(
   }
 
   // Place constants in appropriate order
-
   std::vector<std::shared_ptr<const Constant<T>>> const_map;
   for (const std::string& name : get_constant_names(ufcx_form))
   {
@@ -754,7 +758,8 @@ Form<T, U> create_form(
 /// @param[in] spaces Function spaces for the Form arguments.
 /// @param[in] coefficients Coefficient fields in the form (by name),
 /// @param[in] constants Spatial constants in the form (by name),
-/// @param[in] subdomains Subdomain markers.
+/// @param[in] subdomains Subdomain markers. The data can be computed
+/// using fem::compute_integration_domains.
 /// @pre Each value in `subdomains` must be sorted by domain id.
 /// @param[in] entity_maps The entity maps for the form. Empty for
 /// single domain problems.
