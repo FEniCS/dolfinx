@@ -92,6 +92,7 @@
 
 #include "poisson.h"
 #include <basix/finite-element.h>
+#include <basix/mdspan.hpp>
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/fem/Constant.h>
@@ -228,33 +229,38 @@ int main(int argc, char* argv[])
     // V0 is the subspace that is constrained.
     fem::DirichletBC<T> bc(g, ndofs, V0);
 
-    // Create integration domain data for u boundary condition (ds(1) in
-    // the UFL file). First we get facet data integration data for
-    // facets in dfacets.
+    // Create integration domain data for u0 boundary condition (applied
+    // on the ds(1) in the UFL file). First we get facet data
+    // integration data for facets in dfacets.
     std::vector<std::int32_t> domains = fem::compute_integration_domains(
         fem::IntegralType::exterior_facet, *mesh->topology(), dfacets);
 
-    // Create data structure for ds(1) integration domain in form
+    // Create data structure for the ds(1) integration domain in form
+    // (see the UFL file). It is for en exterior facet integral (the key
+    // in the map), and exterior facet domain marked as '1' in the UFL
+    // file, and 'domains' holds the necessary data to perform
+    // integration of selected facets.
     std::map<
         fem::IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>
-        subdomain_data = {{fem::IntegralType::exterior_facet, {{1, domains}}}};
+        subdomain_data{{fem::IntegralType::exterior_facet, {{1, domains}}}};
 
-    // Define variational forms and attach required data
+    // Define variational forms and attach he required data
     fem::Form<T> a = fem::create_form<T>(*form_poisson_a, {V, V}, {}, {},
                                          subdomain_data, {});
     fem::Form<T> L = fem::create_form<T>(
         *form_poisson_L, {V}, {{"f", f}, {"u0", u0}}, {}, subdomain_data, {});
 
-    // Create solution Function
+    // Create solution finite element Function
     auto u = std::make_shared<fem::Function<T>>(V);
 
-    // Create matrix and RHS vector
+    // Create matrix and RHS vector data structures
     auto A = la::petsc::Matrix(fem::petsc::create_matrix(a), false);
     la::Vector<T> b(L.function_spaces()[0]->dofmap()->index_map,
                     L.function_spaces()[0]->dofmap()->index_map_bs());
 
-    // Assemble matrix
+    // Assemble the bilinear form into a matrix. The PETSc matrix is
+    // 'flushed' so we can set values in it in the subsequent step.
     MatZeroEntries(A.mat());
     fem::assemble_matrix(la::petsc::Matrix::set_fn(A.mat(), ADD_VALUES), a,
                          {bc});
@@ -267,13 +273,12 @@ int main(int argc, char* argv[])
     MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
-    std::cout << "Matrix norm: " << A.norm(la::Norm::frobenius) << std::endl;
-
-    // Assemble RHS vector
-    b.set(0.0);
+    // Assemble the linear form L into RHS vector
+    b.set(0);
     fem::assemble_vector(b.mutable_array(), L);
 
-    // Modify unconstrained dofs on RHS to account for Dirichlet bcs
+    // Modify unconstrained dofs on RHS to account for Dirichlet BC dofs
+    // (constrained dofs), and perform parallel update on the vector.
     fem::apply_lifting<T, U>(b.mutable_array(), {a}, {{bc}}, {}, T(1));
     b.scatter_rev(std::plus<T>());
 
