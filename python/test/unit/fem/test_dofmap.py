@@ -436,7 +436,8 @@ def test_empty_rank_collapse():
     def self_partitioner(comm: MPI.Intracomm, n, m, topo):
         dests = np.full(len(topo[0]) // 2, comm.rank, dtype=np.int32)
         offsets = np.arange(len(topo[0]) // 2 + 1, dtype=np.int32)
-        return dolfinx.graph.adjacencylist(dests, offsets)
+        # TODO: can we improve on this interface? I.e. warp to do cpp type conversion automatically
+        return dolfinx.graph.adjacencylist(dests, offsets)._cpp_object
 
     mesh = create_mesh(MPI.COMM_WORLD, cells, nodes, c_el, partitioner=self_partitioner)
 
