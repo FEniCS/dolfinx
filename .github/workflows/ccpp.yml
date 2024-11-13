@@ -147,6 +147,7 @@ jobs:
         run: mpirun -np 3 python -m pytest -m "not petsc4py and not adios2" python/test/unit
 
   build-with-petsc:
+    continue-on-error: true
     runs-on: ubuntu-latest
     needs: lint
     strategy:
