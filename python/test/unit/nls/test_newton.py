@@ -239,8 +239,6 @@ class TestNLS:
         snes.solve(None, u.x.petsc_vec)
         assert snes.getConvergedReason() > 0
         assert snes.getIterationNumber() < 6
-        # print(snes.getIterationNumber())
-        # print(snes.getFunctionNorm())
 
         snes.destroy()
         b.destroy()
