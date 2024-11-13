@@ -33,8 +33,8 @@ namespace dolfinx::MPI
 /// MPI communication tags
 enum class tag : int
 {
-  consensus_pcx,
-  consensus_pex
+  consensus_pcx = 1200,
+  consensus_pex = 1201
 };
 
 /// @brief A duplicate MPI communicator and manage lifetime of the

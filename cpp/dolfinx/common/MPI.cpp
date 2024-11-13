@@ -8,6 +8,9 @@
 #include <dolfinx/common/log.h>
 #include <iostream>
 
+#include <dolfinx/common/utils.h>
+#include <iostream>
+
 //-----------------------------------------------------------------------------
 dolfinx::MPI::Comm::Comm(MPI_Comm comm, bool duplicate)
 {
@@ -161,10 +164,20 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
 std::vector<int>
 dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
 {
+  // return dolfinx::MPI::compute_graph_edges_pcx(comm, edges);
+
+  // static int count = 0;
+
   spdlog::info(
       "Computing communication graph edges (using NBX algorithm). Number "
       "of input edges: {}",
       static_cast<int>(edges.size()));
+
+  // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  // std::vector<int> foo(edges.begin(), edges.end());
+  // std::cout << "NBX in: " << ", " << rank << ", " << count << ", " <<
+  // foo.size()
+  //           << ", " << common::hash_local(foo) << std::endl;
 
   // Start non-blocking synchronised send
   std::vector<MPI_Request> send_requests(edges.size());
@@ -200,8 +213,12 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
     {
       // Receive it
       int other_rank = status.MPI_SOURCE;
-      std::byte buffer_recv;
-      int err = MPI_Recv(&buffer_recv, 1, MPI_BYTE, other_rank,
+      // std::byte buffer_recv;
+      // int err = MPI_Recv(&buffer_recv, 1, MPI_BYTE, other_rank,
+      //                    static_cast<int>(tag::consensus_pex), comm,
+      //                    MPI_STATUS_IGNORE);
+      int buffer_recv;
+      int err = MPI_Recv(&buffer_recv, 1, MPI_INT, other_rank,
                          static_cast<int>(tag::consensus_pex), comm,
                          MPI_STATUS_IGNORE);
       dolfinx::MPI::check_error(comm, err);
@@ -237,6 +254,14 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
   spdlog::info("Finished graph edge discovery using NBX algorithm. Number "
                "of discovered edges {}",
                static_cast<int>(other_ranks.size()));
+
+  // std::cout << "NBX out: " << rank << ", " << count << ", "
+  //           << other_ranks.size() << ", " << common::hash_local(other_ranks)
+  //           << std::endl;
+
+  // ++count;
+
+  MPI_Barrier(comm);
 
   return other_ranks;
 }
