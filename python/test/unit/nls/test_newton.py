@@ -78,11 +78,14 @@ class NonlinearPDE_SNESProblem:
     def F(self, snes, x_, b_):
         """Assemble residual vector."""
         from petsc4py import PETSc
-        
+
         from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
 
         # Store current state of the SNES solver
-        self.x0.x.array[:] = self.u.x.array[:]
+        self.u.x.petsc_vec.copy(self.x0.x.petsc_vec)
+        self.x0.x.petsc_vec.ghostUpdate(
+            addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
+        )
 
         x_.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         x_.copy(self.u.x.petsc_vec)
@@ -96,7 +99,10 @@ class NonlinearPDE_SNESProblem:
         set_bc(b_, [self.bc], x_, -1.0)
 
         self.u.x.array[:] = self.x0.x.array[:]
-        self.u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        # NOTE: The following fails due to a PETSc Vec being locked for read-only access
+        # self.x0.x.petsc_vec.copy(self.u.x.petsc_vec)
+        # self.u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT,
+        #     mode=PETSc.ScatterMode.FORWARD)
 
     def J(self, snes, x_, J, P):
         """Assemble Jacobian matrix."""
@@ -238,7 +244,7 @@ class TestNLS:
         u_bc.x.array[:] = 0.6
         snes.solve(None, u.x.petsc_vec)
         assert snes.getConvergedReason() > 0
-        assert snes.getIterationNumber() < 7 
+        assert snes.getIterationNumber() < 7
 
         snes.destroy()
         b.destroy()
