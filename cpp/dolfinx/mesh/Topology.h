@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <memory>
+#include <optional>
 #include <span>
 #include <tuple>
 #include <vector>
@@ -51,13 +52,13 @@ public:
   /// @param[in] cell_map Index map describing the distribution of mesh
   /// cells.
   /// @param[in] cells Cell-to-vertex connectivity.
-  /// @param[in] original_cell_index Original index for each cell in
-  /// `cells`.
+  /// @param[in] original_index Original index for each cell in `cells`.
   Topology(MPI_Comm comm, CellType cell_type,
            std::shared_ptr<const common::IndexMap> vertex_map,
            std::shared_ptr<const common::IndexMap> cell_map,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells,
-           std::span<const std::int64_t> original_cell_index);
+           std::optional<std::vector<std::int64_t>> original_index
+           = std::nullopt);
 
   /// @brief Create empty mesh topology with multiple cell types.
   ///
@@ -77,8 +78,9 @@ public:
       MPI_Comm comm, std::vector<CellType> cell_types,
       std::shared_ptr<const common::IndexMap> vertex_map,
       std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
-      std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
-      std::vector<std::span<const std::int64_t>> original_cell_index);
+      std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells //,
+      // std::vector<std::span<const std::int64_t>> original_cell_index
+  );
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -130,8 +132,7 @@ public:
   index_maps(std::int8_t dim) const;
 
   /// @brief Return connectivity from entities of dimension d0 to
-  /// entities of dimension d1. Assumes only one entity type per
-  /// dimension.
+  /// entities of dimension d1. Assumes only one entity type per dimension.
   ///
   /// @param[in] d0
   /// @param[in] d1
@@ -142,16 +143,14 @@ public:
   connectivity(int d0, int d1) const;
 
   /// @brief Return the connectivity from entities of topological
-  /// dimension d0 to dimension d1.
-  ///
-  /// The entity type, and incident entity type are each described by a
-  /// pair (dim, index). The index within a topological dimension `dim`,
-  /// is that of the cell type given in `entity_types(dim)`.
-  ///
-  /// @param d0 Pair of (topological dimension of entities, index of
-  /// "entity type" within topological dimension)
+  /// dimension d0 to dimension d1. The entity type, and incident entity type
+  /// are each described by a pair (dim, index). The index within a topological
+  /// dimension `dim`, is that of the cell type given in `entity_types(dim)`.
+  /// @param d0 Pair of (topological dimension of entities,
+  ///                    index of "entity type" within topological dimension)
   /// @param d1 Pair of (topological dimension of indicent entities,
-  /// index of incident "entity type" within topological dimension)
+  ///                    index of incident "entity type" within topological
+  ///                    dimension)
   /// @return AdjacencyList of connectivity from entity type in d0 to
   /// entity types in d1, or nullptr if not yet computed.
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
@@ -164,16 +163,15 @@ public:
                         int d0, int d1);
 
   /// @brief Set connectivity for given pair of entity types, defined by
-  /// dimension and index, as listed in `entity_types()`.
-  ///
-  /// General version for mixed topology. Connectivity from d0 to d1.
-  ///
-  /// @param c Connectivity AdjacencyList.
-  /// @param d0 Pair of (topological dimension of entities, index of
-  /// "entity type" within topological dimension).
+  /// dimension and index, as listed in `entity_types()`. General version for
+  /// mixed topology. Connectivity from d0 to d1.
+  /// @param c Connectivity AdjacencyList
+  /// @param d0 Pair of (topological dimension of entities,
+  ///                    index of "entity type" within topological dimension)
   /// @param d1 Pair of (topological dimension of indicent entities,
-  /// index of incident "entity type" within topological dimension).
-  /// @warning Experimental.
+  ///                    index of incident "entity type" within topological
+  ///                    dimension)
+  /// @warning Experimental
   void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
                         std::pair<std::int8_t, std::int8_t> d0,
                         std::pair<std::int8_t, std::int8_t> d1);
@@ -312,17 +310,16 @@ Topology create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                          std::span<const int> ghost_owners, CellType cell_type,
                          std::span<const std::int64_t> boundary_vertices);
 
-/// @brief Create a topology of mixed cell types.
-///
-/// @param comm MPI Communicator.
-/// @param cell_type List of cell types.
-/// @param cells Lists of cells, using vertex indices, flattened, for
-/// each cell type.
-/// @param original_cell_index Input cell index for each cell type.
-/// @param ghost_owners Owning rank for ghost cells (at end of each list
-/// of cells).
-/// @param boundary_vertices Vertices of undetermined ownership on
-/// external or inter-process boundary.
+/// @brief Create a topology of mixed cell type
+/// @param comm MPI Communicator
+/// @param cell_type List of cell types
+/// @param cells Lists of cells, using vertex indices, flattened, for each cell
+/// type.
+/// @param original_cell_index Input cell index for each cell type
+/// @param ghost_owners Owning rank for ghost cells (at end of each list of
+/// cells).
+/// @param boundary_vertices Vertices of undetermined ownership on external or
+/// inter-process boundary.
 /// @return
 Topology
 create_topology(MPI_Comm comm, const std::vector<CellType>& cell_type,

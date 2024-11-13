@@ -615,13 +615,13 @@ def test_mixed_measures():
 @pytest.mark.parametrize(
     "msh",
     [
-        pytest.param(
-            create_unit_interval(MPI.COMM_WORLD, 10),
-            marks=pytest.mark.xfail(
-                reason="Interior facet submesh of dimension 0 not supported in submesh creation",
-                strict=True,
-            ),
-        ),
+        # pytest.param(
+        #     create_unit_interval(MPI.COMM_WORLD, 10),
+        #     marks=pytest.mark.xfail(
+        #         reason="Interior facet submesh of dimension 0 not supported in submesh creation",
+        #         strict=True,
+        #     ),
+        # ),
         create_unit_square(
             MPI.COMM_WORLD, 10, 10, cell_type=CellType.triangle, ghost_mode=GhostMode.shared_facet
         ),

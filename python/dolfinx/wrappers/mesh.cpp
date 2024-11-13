@@ -26,6 +26,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/function.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
@@ -51,8 +52,7 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
       std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
       std::ranges::transform(
           cells, std::back_inserter(cells_nb),
-          [](auto c)
-          {
+          [](auto c) {
             return nb::ndarray<const std::int64_t, nb::numpy>(c.data(),
                                                               {c.size()});
           });
@@ -217,8 +217,7 @@ void declare_mesh(nb::module_& m, std::string type)
           "__init__",
           [](dolfinx::mesh::Mesh<T>* mesh, MPICommWrapper comm,
              std::shared_ptr<dolfinx::mesh::Topology> topology,
-             dolfinx::mesh::Geometry<T>& geometry)
-          {
+             dolfinx::mesh::Geometry<T>& geometry) {
             new (mesh) dolfinx::mesh::Mesh<T>(comm.get(), topology, geometry);
           },
           nb::arg("comm"), nb::arg("topology"), nb::arg("geometry"))
@@ -302,8 +301,7 @@ void declare_mesh(nb::module_& m, std::string type)
               std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
               std::ranges::transform(
                   cells, std::back_inserter(cells_nb),
-                  [](auto c)
-                  {
+                  [](auto c) {
                     return nb::ndarray<const std::int64_t, nb::numpy>(
                         c.data(), {c.size()});
                   });
@@ -338,8 +336,7 @@ void declare_mesh(nb::module_& m, std::string type)
             std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
             std::ranges::transform(
                 cells, std::back_inserter(cells_nb),
-                [](auto c)
-                {
+                [](auto c) {
                   return nb::ndarray<const std::int64_t, nb::numpy>(c.data(),
                                                                     {c.size()});
                 });
@@ -557,8 +554,7 @@ void mesh(nb::module_& m)
   m.def(
       "compute_entities",
       [](MPICommWrapper comm, const dolfinx::mesh::Topology& topology, int dim,
-         int index)
-      {
+         int index) {
         return dolfinx::mesh::compute_entities(comm.get(), topology, dim,
                                                index);
       },
@@ -576,16 +572,31 @@ void mesh(nb::module_& m)
              std::shared_ptr<const dolfinx::common::IndexMap> vertex_map,
              std::shared_ptr<const dolfinx::common::IndexMap> cell_map,
              std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>> cells,
-             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
-                 original_cell_index)
+             std::optional<
+                 nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>
+                 original_index)
           {
-            new (t) dolfinx::mesh::Topology(
-                comm.get(), cell_type, vertex_map, cell_map, cells,
-                std::span(original_cell_index.data(),
-                          original_cell_index.size()));
+            if (original_index)
+            {
+              std::vector<std::int64_t> index(original_index->data(),
+                                              original_index->data()
+                                                  + original_index->size());
+              new (t) dolfinx::mesh::Topology(comm.get(), cell_type, vertex_map,
+                                              cell_map, cells, index);
+            }
+            else
+            {
+              new (t) dolfinx::mesh::Topology(comm.get(), cell_type, vertex_map,
+                                              cell_map, cells);
+            }
+            // new (t) dolfinx::mesh::Topology(
+            //     comm.get(), cell_type, vertex_map, cell_map, cells,
+            //     std::span(original_cell_index.data(),
+            //               original_cell_index.size()));
           },
           nb::arg("comm"), nb::arg("cell_type"), nb::arg("vertex_map"),
-          nb::arg("cell_map"), nb::arg("cells"), nb::arg("original_cell_index"))
+          nb::arg("cell_map"), nb::arg("cells"),
+          nb::arg("original_index").none())
       .def("set_connectivity",
            nb::overload_cast<
                std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>>,
