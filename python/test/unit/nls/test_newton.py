@@ -6,6 +6,7 @@
 """Unit tests for Newton solver assembly"""
 
 from mpi4py import MPI
+from petsc4py import PETSc
 
 import numpy as np
 import pytest
@@ -75,24 +76,29 @@ class NonlinearPDE_SNESProblem:
         self._F, self._J = None, None
         self.u = u
 
-    def F(self, snes, x, F):
+    def F(self, snes: PETSc.SNES, x_: PETSc.Vec, b_: PETSc.Vec):
         """Assemble residual vector."""
-        from petsc4py import PETSc
-
         from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
 
-        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        x.copy(self.u.x.petsc_vec)
+        # Store current state of the SNES solver
+        x0 = self.u.x.petsc_vec.copy()
+
+        x_.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        x_.copy(self.u.x.petsc_vec)
         self.u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-        with F.localForm() as f_local:
+        with b_.localForm() as f_local:
             f_local.set(0.0)
-        assemble_vector(F, self.L)
-        apply_lifting(F, [self.a], bcs=[[self.bc]], x0=[x], alpha=-1.0)
-        F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        set_bc(F, [self.bc], x, -1.0)
+        assemble_vector(b_, self.L)
+        apply_lifting(b_, [self.a], bcs=[[self.bc]], x0=[x_], alpha=-1.0)
+        b_.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        set_bc(b_, [self.bc], x_, -1.0)
 
-    def J(self, snes, x, J, P):
+        with x0.localForm() as x0_local, self.u.x.petsc_vec.localForm() as u_local:
+            # Restore the state of the SNES solver
+            x0_local.copy(u_local)
+
+    def J(self, snes: PETSc.SNES, x_: PETSc.Vec, J: PETSc.Mat, P: PETSc.Mat):
         """Assemble Jacobian matrix."""
         from dolfinx.fem.petsc import assemble_matrix
 
