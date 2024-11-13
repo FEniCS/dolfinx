@@ -769,9 +769,9 @@ Topology::Topology(MPI_Comm comm, CellType cell_type,
 }
 //-----------------------------------------------------------------------------
 Topology::Topology(
-    MPI_Comm comm, const std::vector<CellType>& cell_types,
+    MPI_Comm comm, std::vector<CellType> cell_types,
     std::shared_ptr<const common::IndexMap> vertex_map,
-    std::vector<std::shared_ptr<const common::IndexMap>> cell_map,
+    std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
     std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
     std::vector<std::span<const std::int64_t>> original_cell_index)
     : _comm(comm), _entity_types({mesh::CellType::point}),
@@ -836,7 +836,7 @@ Topology::Topology(
 
   for (std::size_t i = 0; i < cell_types.size(); ++i)
   {
-    this->set_index_map(tdim, i, cell_map[i]);
+    this->set_index_map(tdim, i, cell_maps[i]);
     this->set_connectivity(cells[i], {tdim, i}, {0, 0});
   }
 
