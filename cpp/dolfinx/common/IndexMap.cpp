@@ -38,7 +38,7 @@ std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
     return std::array<std::vector<int>, 2>();
   }
 
-  int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
 
   std::vector<int> src(owners.begin(), owners.end());
   std::ranges::sort(src);
@@ -46,12 +46,12 @@ std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
   src.erase(unique_end, range_end);
   src.shrink_to_fit();
 
-  std::cout << "In: " << rank << ", " << common::hash_local(src) << std::endl;
+  // std::cout << "In: " << rank << ", " << common::hash_local(src) << std::endl;
 
   std::vector<int> dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
   std::ranges::sort(dest);
 
-  std::cout << "Out: " << rank << ", " << common::hash_local(dest) << std::endl;
+  // std::cout << "Out: " << rank << ", " << common::hash_local(dest) << std::endl;
 
   return {std::move(src), std::move(dest)};
 }

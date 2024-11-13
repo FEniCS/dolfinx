@@ -22,9 +22,6 @@
 #include <utility>
 #include <vector>
 
-#include <dolfinx/common/utils.h>
-#include <iostream>
-
 using namespace dolfinx;
 
 namespace
@@ -206,14 +203,6 @@ build_basic_dofmaps(
             required_dim_et.push_back({d, et_index});
             const std::int32_t num_entity_dofs = entity_dofs_d[e].size();
             num_entity_dofs_et.push_back(num_entity_dofs);
-
-            int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
-            std::cout << "T0 map: " << rank << ", " << d << ", " << et_index
-                      << ", "
-                      << common::hash_local(
-                             topology.index_maps(d)[et_index]->shared_indices())
-                      << std::endl;
-
             auto im = topology.index_maps(d)[et_index];
             topo_index_maps.push_back(im);
             local_entity_offsets.push_back(
@@ -483,8 +472,6 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 {
   assert(dof_entity.size() == global_indices_old.size());
 
-  // int rank = dolfinx::MPI::rank(index_maps[0]->comm());
-
   // Build list of flags for owned mesh entities that are shared, i.e.
   // are a ghost on a neighbor
   std::vector<std::vector<std::int8_t>> shared_entity(index_maps.size());
@@ -495,8 +482,6 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
     shared_entity[d] = std::vector<std::int8_t>(map->size_local(), false);
     const std::vector<std::int32_t> forward_indices = map->shared_indices();
-    // std::cout << "Dof ent: " << rank << ", "
-    //           << common::hash_local(forward_indices) << std::endl;
     std::ranges::for_each(forward_indices,
                           [&entities = shared_entity[d]](auto idx)
                           { entities[idx] = true; });
@@ -504,15 +489,6 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
   // Build list of (global old, global new) index pairs for dofs that
   // are ghosted on other processes
-
-  // std::cout << "Gsize: " << rank << ", " << dof_entity.size() << ", "
-  //           << dof_entity.size() << std::endl;
-
-  // std::cout << "Dof ent: " << rank << ", " << common::hash_local(dof_entity)
-  //           << ", " << dof_entity.size() << std::endl;
-  // std::cout << "Dof ent: " << rank << ", " <<
-  // common::hash_local(shared_entity)
-  //           << ", " << shared_entity.size() << std::endl;
 
   // Loop over all dofs
   std::vector<std::vector<std::int64_t>> global(index_maps.size());
@@ -530,15 +506,11 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     }
   }
 
-  // std::cout << "Gsize: " << rank << ", " << global.size() << ", "
-  //           << global[0].size() << std::endl;
-
   std::vector<int> requests_dim;
   std::vector<MPI_Request> requests(index_maps.size());
   std::vector<MPI_Comm> comm(index_maps.size(), MPI_COMM_NULL);
   std::vector<std::vector<std::int64_t>> all_dofs_received(index_maps.size());
   std::vector<std::vector<int>> disp_recv(index_maps.size());
-  // std::cout << "testing: " << rank << ", " << index_maps.size() << std::endl;
   for (std::size_t d = 0; d < index_maps.size(); ++d)
   {
     auto map = index_maps[d];
@@ -555,33 +527,23 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     std::vector<int> size_recv;
     size_recv.reserve(1); // ensure data is not a nullptr
     size_recv.resize(src.size());
-    // std::cout << "All gather: " << rank << ", " << num_indices << ", "
-    //           << src.size() << std::endl;
     MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, size_recv.data(), 1,
                            MPI_INT, comm[d]);
 
     // Compute displacements for data to receive. Last entry has total
     // number of received items.
     disp_recv[d].resize(src.size() + 1);
-    // std::cout << "Partial sum: " << rank << ", " << num_indices << ", "
-    //           << src.size() << std::endl;
     std::partial_sum(size_recv.begin(), size_recv.begin() + src.size(),
                      disp_recv[d].begin() + 1);
-
-    // std::cout << "Dof recv size: " << rank << ", " << disp_recv[d].back()
-    //           << std::endl;
 
     // TODO: use MPI_Ineighbor_alltoallv
     // Send global index of dofs to neighbors
     all_dofs_received[d].resize(disp_recv[d].back());
-    MPI_Neighbor_allgatherv(global[d].data(), global[d].size(), MPI_INT64_T,
-                            all_dofs_received[d].data(), size_recv.data(),
-                            disp_recv[d].data(), MPI_INT64_T, comm[d]);
-    // MPI_Ineighbor_allgatherv(global[d].data(), global[d].size(), MPI_INT64_T,
-    //                          all_dofs_received[d].data(), size_recv.data(),
-    //                          disp_recv[d].data(), MPI_INT64_T, comm[d],
-    //                          &requests[requests_dim.size()]);
-    // requests_dim.push_back(d);
+    MPI_Ineighbor_allgatherv(global[d].data(), global[d].size(), MPI_INT64_T,
+                             all_dofs_received[d].data(), size_recv.data(),
+                             disp_recv[d].data(), MPI_INT64_T, comm[d],
+                             &requests[requests_dim.size()]);
+    requests_dim.push_back(d);
   }
 
   // Build  [local_new - num_owned] -> global old array  broken down by
@@ -601,17 +563,11 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
   std::vector<std::int64_t> local_to_global_new(old_to_new.size() - num_owned);
   std::vector<int> local_to_global_new_owner(old_to_new.size() - num_owned);
-  // for (std::size_t i = 0; i < requests_dim.size(); ++i)
-  for (std::size_t d = 0; d < index_maps.size(); ++d)
+  for (std::size_t i = 0; i < requests_dim.size(); ++i)
   {
-    // int idx;
-    // int d;
-    // MPI_Waitany(requests_dim.size(), requests.data(), &idx,
-    // MPI_STATUS_IGNORE); d = requests_dim[idx];
-
-    // std::cout << "Index map size: " << rank << ", "
-    //           << index_maps[d]->size_local() << ", "
-    //           << index_maps[d]->num_ghosts() << std::endl;
+    int idx, d;
+    MPI_Waitany(requests_dim.size(), requests.data(), &idx, MPI_STATUS_IGNORE);
+    d = requests_dim[idx];
 
     std::span src = index_maps[d]->src();
 
@@ -619,9 +575,6 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     std::vector<std::pair<std::int64_t, std::pair<int64_t, int>>>
         global_old_new;
     global_old_new.reserve(disp_recv[d].back());
-    // std::cout << "Loop range: " << rank << ", " <<
-    // all_dofs_received[d].size()
-    //           << std::endl;
     for (std::size_t j = 0; j < all_dofs_received[d].size(); j += 2)
     {
       const auto pos = std::ranges::upper_bound(disp_recv[d], j);
@@ -631,21 +584,15 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     }
     std::ranges::sort(global_old_new);
 
-    // std::cout << "Size: " << rank << ", " << global_old_new.size() << ", "
-    //           << std::endl;
-
-    // std::cout << "Size, search: " << global_old_new.size() << ", "
-    //           << idx_old.first << ", " << idx_old.second.first << ", "
-    //           << idx_old.second.second << std::endl;
-
     // Build the dimension d part of local_to_global_new vector
     for (std::size_t i = 0; i < local_new_to_global_old[d].size(); i += 2)
     {
       std::pair<std::int64_t, std::pair<int64_t, int>> idx_old
           = {local_new_to_global_old[d][i], {0, 0}};
-      auto it
-          = std::ranges::lower_bound(global_old_new, idx_old, [](auto a, auto b)
-                                     { return a.first < b.first; });
+
+      auto it = std::ranges::lower_bound(global_old_new, idx_old,
+                                         [](auto& a, auto& b)
+                                         { return a.first < b.first; });
       assert(it != global_old_new.end() and it->first == idx_old.first);
 
       local_to_global_new[local_new_to_global_old[d][i + 1]] = it->second.first;
@@ -682,11 +629,6 @@ fem::build_dofmap_data(
   const auto [node_graphs, local_to_global0, dof_entity0, topo_index_maps,
               offset]
       = build_basic_dofmaps(topology, element_dof_layouts);
-
-  int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
-  std::cout << "T1 map: " << rank << ", "
-            << common::hash_local(topo_index_maps[0]->shared_indices())
-            << std::endl;
 
   spdlog::info("Got {} index_maps", topo_index_maps.size());
 

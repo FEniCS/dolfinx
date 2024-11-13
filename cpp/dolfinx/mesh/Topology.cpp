@@ -1292,8 +1292,8 @@ Topology mesh::create_topology(
     }
   }
 
-  int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
-  std::cout << "Make map: " << rank << std::endl;
+  // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  // std::cout << "Make map: " << rank << std::endl;
 
   // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
   // std::cout << "TX data: " << rank << ", " << owned_vertices.size() << ", "
