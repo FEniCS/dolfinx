@@ -168,7 +168,9 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
 
   // Start non-blocking synchronised send
   std::vector<MPI_Request> send_requests(edges.size());
+  send_requests.reserve(1);
   std::vector<std::byte> send_buffer(edges.size());
+  send_buffer.reserve(1);
   for (std::size_t e = 0; e < edges.size(); ++e)
   {
     int err = MPI_Issend(send_buffer.data() + e, 1, MPI_BYTE, edges[e],

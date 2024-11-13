@@ -64,16 +64,16 @@ public:
   ///
   /// @warning Experimental
   ///
-  / @param comm MPI communicator.
-  / @param[in] cell_types Types of cells.
-  / @param[in] vertex_map Index map describing the distribution of
-  / mesh vertices.
-  / @param[in] cell_maps Index maps describing the distribution of
-  / mesh cells for each cell type in `cell_types`.
-  / @param[in] cells Cell-to-vertex connectivities for each cell type
-  / in `cell_types`.
-  / @param[in] original_cell_index Original indices for each cell in
-  / `cells`.
+  /// @param comm MPI communicator.
+  /// @param[in] cell_types Types of cells.
+  /// @param[in] vertex_map Index map describing the distribution of
+  /// mesh vertices.
+  /// @param[in] cell_maps Index maps describing the distribution of
+  /// mesh cells for each cell type in `cell_types`.
+  /// @param[in] cells Cell-to-vertex connectivities for each cell type
+  /// in `cell_types`.
+  /// @param[in] original_cell_index Original indices for each cell in
+  /// `cells`.
   Topology(
       MPI_Comm comm, std::vector<CellType> cell_types,
       std::shared_ptr<const common::IndexMap> vertex_map,

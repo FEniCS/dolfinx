@@ -19,6 +19,9 @@
 #include <random>
 #include <set>
 
+#include <dolfinx/common/utils.h>
+#include <iostream>
+
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
@@ -823,6 +826,10 @@ Topology::Topology(
 
   // Set data
   // _index_map[_entity_type_offsets[0]] = vertex_map;
+  // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  // std::cout << "TX map: " << rank << ", "
+  //           << common::hash_local(vertex_map->shared_indices()) << std::endl;
+
   this->set_index_map(0, vertex_map);
   this->set_connectivity(
       std::make_shared<graph::AdjacencyList<std::int32_t>>(
@@ -1120,6 +1127,15 @@ Topology mesh::create_topology(
   auto [owned_vertices, unowned_vertices]
       = vertex_ownership_groups(owned_cells, ghost_cells, boundary_vertices);
 
+  // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  // std::cout << "TX data: " << rank << ", " << owned_vertices.size()
+  //           << std::endl;
+
+  // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  // std::cout << "TX data: " << rank << ", " << owned_vertices.size() << ", "
+  //           << common::hash_local(ghost_vertices) << ", "
+  //           << common::hash_local(ghost_vertex_owners) << ", " << std::endl;
+
   // For each vertex whose ownership needs determining, find the sharing
   // ranks. The first index in the list of ranks for a vertex is the
   // owner (as determined by determine_sharing_ranks).
@@ -1276,6 +1292,14 @@ Topology mesh::create_topology(
     }
   }
 
+  int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  std::cout << "Make map: " << rank << std::endl;
+
+  // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  // std::cout << "TX data: " << rank << ", " << owned_vertices.size() << ", "
+  //           << common::hash_local(ghost_vertices) << ", "
+  //           << common::hash_local(ghost_vertex_owners) << ", " << std::endl;
+
   // TODO: avoid building global_to_local_vertices
 
   // Convert input cell topology to local vertex indexing
@@ -1331,9 +1355,21 @@ Topology mesh::create_topology(
     dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
   }
 
+  // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  // std::cout << "TX data: " << rank << ", " << owned_vertices.size() << ", "
+  //           << common::hash_local(ghost_vertices) << ", "
+  //           << common::hash_local(ghost_vertex_owners) << ", " << std::endl;
+
+
   // Create index map for vertices
   auto index_map_v = std::make_shared<common::IndexMap>(
       comm, owned_vertices.size(), ghost_vertices, ghost_vertex_owners);
+
+  // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  // std::cout << "TX map: " << rank << ", "
+  //           << common::hash_local(index_map_v->shared_indices()) <<
+  //           std::endl;
+
   // auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
   //     index_map_v->size_local() + index_map_v->num_ghosts());
 
@@ -1353,6 +1389,11 @@ Topology mesh::create_topology(
     // topology.set_index_map(tdim, i, index_map_c[i]);
     // topology.set_connectivity(cells_local_idx, {tdim, i}, {0, 0});
   }
+
+  // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  // std::cout << "T build: " << rank << ", "
+  //           << common::hash_local(index_map_c[0]->shared_indices()) <<
+  //           std::endl;
 
   Topology topology(comm, cell_type, index_map_v, index_map_c, cells_c);
 
