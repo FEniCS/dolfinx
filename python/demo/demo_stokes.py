@@ -118,10 +118,6 @@ from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 from ufl import div, dx, grad, inner
 
-opts = PETSc.Options()
-opts["mat_superlu_dist_iterrefine"] = True
-
-
 # We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions for
 # locating geometrically subsets of the boundary, and define a function
 # for the  velocity on the lid:
@@ -442,18 +438,15 @@ def block_direct_solver():
     # handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    pc.setFactorSolverType("superlu_dist")
-    try:
+    sys = PETSc.Sys()  # type: ignore
+    use_superlu = PETSc.IntType == np.int64
+    if sys.hasExternalPackage("mumps") and not use_superlu:
+        pc.setFactorSolverType("mumps")
         pc.setFactorSetUpSolverType()
-    except PETSc.Error as e:
-        if e.ierr == 92:
-            print("The required PETSc solver/preconditioner is not available. Exiting.")
-            print(e)
-            exit(0)
-        else:
-            raise e
-    # pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)  # For pressure nullspace
-    # pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)  # For pressure nullspace
+        pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
+        pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
+    else:
+        pc.setFactorSolverType("superlu_dist")
 
     # Create a block vector (x) to store the full solution, and solve
     x = A.createVecLeft()
@@ -522,7 +515,7 @@ def mixed_direct():
 
     # Set Dirichlet boundary condition values in the RHS
     for bc in bcs:
-        bc.set(b)
+        bc.set(b.array_w)
 
     # Create and configure solver
     ksp = PETSc.KSP().create(msh.comm)
@@ -532,12 +525,15 @@ def mixed_direct():
     # Configure MUMPS to handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    # pc.setFactorSolverType("mumps")
-    # pc.setFactorSetUpSolverType()
-    # pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
-    # pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
-
-    pc.setFactorSolverType("superlu_dist")
+    sys = PETSc.Sys()  # type: ignore
+    use_superlu = PETSc.IntType == np.int64
+    if sys.hasExternalPackage("mumps") and not use_superlu:
+        pc.setFactorSolverType("mumps")
+        pc.setFactorSetUpSolverType()
+        pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
+        pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
+    else:
+        pc.setFactorSolverType("superlu_dist")
 
     # Compute the solution
     U = Function(W)

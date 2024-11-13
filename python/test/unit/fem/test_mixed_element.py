@@ -44,8 +44,6 @@ def test_mixed_element(rank, family, cell, degree):
         A.scatter_reverse()
         norms.append(A.squared_norm())
 
-        U_el = mixed_element([U_el])
-
     for i in norms[1:]:
         assert np.isclose(norms[0], i)
 

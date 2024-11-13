@@ -14,6 +14,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <span>
 #include <utility>
 #include <vector>
@@ -103,19 +104,32 @@ public:
   /// @return Dimension of the finite element space
   int space_dimension() const noexcept;
 
-  /// Block size of the finite element function space. For
-  /// BlockedElements, this is the number of DOFs
-  /// colocated at each DOF point. For other elements, this is always 1.
+  /// @brief Block size of the finite element function space.
+  ///
+  /// For BlockedElements, this is the number of DOFs colocated at each
+  /// DOF point. For other elements, this is always 1.
   /// @return Block size of the finite element space
   int block_size() const noexcept;
 
-  /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector, 9
-  /// for a second-order tensor in 3D, for the reference element
-  /// @return The value size for the reference element
+  /// @brief Value size.
+  ///
+  /// The value size is the product of the value shape, e.g. is is  1
+  /// for a scalar function, 2 for a 2D vector, 9 for a second-order
+  /// tensor in 3D.
+  /// @throws Exception is thrown for a mixed element as mixed elements
+  /// do not have a value shape.
+  /// @return The value size.
   int reference_value_size() const;
 
-  /// The reference value shape
-  std::span<const std::size_t> reference_value_shape() const noexcept;
+  /// @brief Value shape.
+  ///
+  /// The value shape described the shape of the finite element field,
+  /// e.g. {} for a scalar, {3, 3} for a tensor in 3D. Mixed elements do
+  /// not have a value shape.
+  /// @throws Exception is thrown for a mixed element as mixed elements
+  /// do not have a value shape.
+  /// @return The value shape.
+  std::span<const std::size_t> reference_value_shape() const;
 
   /// The local DOFs associated with each subentity of the cell
   const std::vector<std::vector<std::vector<int>>>&
@@ -324,9 +338,8 @@ public:
 
     if (!_sub_elements.empty())
     {
-      if (_is_mixed)
+      if (!_reference_value_shape) // Mixed element
       {
-        // Mixed element
         std::vector<std::function<void(
             std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)>>
             sub_element_fns;
@@ -426,11 +439,10 @@ public:
         // Do nothing
       };
     }
-    else if (_sub_elements.size() != 0)
+    else if (!_sub_elements.empty())
     {
-      if (_is_mixed)
+      if (!_reference_value_shape) // Mixed element
       {
-        // Mixed element
         std::vector<std::function<void(
             std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)>>
             sub_element_fns;
@@ -724,15 +736,13 @@ private:
   std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>
       _sub_elements;
 
-  // Dimension of each value space
-  std::vector<std::size_t> _reference_value_shape;
+  // Value space shape, e.g. {} for a scalar, {3, 3} for a tensor in 3D.
+  // For a mixed element it is std::nullopt.
+  std::optional<std::vector<std::size_t>> _reference_value_shape;
 
   // Block size for BlockedElements. This gives the number of DOFs
   // co-located at each dof 'point'.
   int _bs;
-
-  // Indicate whether this is a mixed element
-  bool _is_mixed;
 
   // Basix Element (nullptr for mixed elements)
   std::unique_ptr<basix::FiniteElement<geometry_type>> _element;

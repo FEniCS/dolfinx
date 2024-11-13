@@ -71,9 +71,10 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
                                 std::size_t block_size, bool symmetric)
     : _signature("Quadrature element " + std::to_string(pshape[0]) + " "
                  + std::to_string(block_size)),
-      _space_dim(pshape[0] * block_size), _reference_value_shape({}),
-      _bs(block_size), _is_mixed(false), _symmetric(symmetric),
-      _needs_dof_permutations(false), _needs_dof_transformations(false),
+      _space_dim(pshape[0] * block_size),
+      _reference_value_shape(std::vector<std::size_t>{}), _bs(block_size),
+      _symmetric(symmetric), _needs_dof_permutations(false),
+      _needs_dof_transformations(false),
       _entity_dofs(mesh::cell_dim(cell_type) + 1),
       _entity_closure_dofs(mesh::cell_dim(cell_type) + 1),
       _points(std::vector<T>(points.begin(), points.end()), pshape)
@@ -98,7 +99,6 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
                                 std::size_t block_size, bool symmetric)
     : _space_dim(block_size * element.dim()),
       _reference_value_shape(element.value_shape()), _bs(block_size),
-      _is_mixed(false),
       _element(std::make_unique<basix::FiniteElement<T>>(element)),
       _symmetric(symmetric),
       _needs_dof_permutations(
@@ -139,11 +139,16 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(
     const std::vector<std::shared_ptr<const FiniteElement<T>>>& elements)
-    : _space_dim(0), _sub_elements(elements), _bs(1), _is_mixed(true),
-      _symmetric(false), _needs_dof_permutations(false),
-      _needs_dof_transformations(false)
+    : _space_dim(0), _sub_elements(elements),
+      _reference_value_shape(std::nullopt), _bs(1), _symmetric(false),
+      _needs_dof_permutations(false), _needs_dof_transformations(false)
 {
-  std::size_t vsize = 0;
+  if (elements.size() < 2)
+  {
+    throw std::runtime_error("FiniteElement constructor for mixed elements "
+                             "called with a single element.");
+  }
+
   _signature = "Mixed element (";
 
   const std::vector<std::vector<std::vector<int>>>& ed
@@ -159,7 +164,6 @@ FiniteElement<T>::FiniteElement(
   int dof_offset = 0;
   for (auto& e : elements)
   {
-    vsize += e->reference_value_size();
     _signature += e->signature() + ", ";
 
     if (e->needs_dof_permutations())
@@ -191,7 +195,6 @@ FiniteElement<T>::FiniteElement(
   }
 
   _space_dim = dof_offset;
-  _reference_value_shape = {vsize};
   _signature += ")";
 }
 //-----------------------------------------------------------------------------
@@ -226,10 +229,12 @@ int FiniteElement<T>::space_dimension() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-std::span<const std::size_t>
-FiniteElement<T>::reference_value_shape() const noexcept
+std::span<const std::size_t> FiniteElement<T>::reference_value_shape() const
 {
-  return _reference_value_shape;
+  if (_reference_value_shape)
+    return *_reference_value_shape;
+  else
+    throw std::runtime_error("Element does not have a reference_value_shape.");
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -255,8 +260,13 @@ bool FiniteElement<T>::symmetric() const
 template <std::floating_point T>
 int FiniteElement<T>::reference_value_size() const
 {
-  return std::accumulate(_reference_value_shape.begin(),
-                         _reference_value_shape.end(), 1, std::multiplies{});
+  if (_reference_value_shape)
+  {
+    return std::accumulate(_reference_value_shape->begin(),
+                           _reference_value_shape->end(), 1, std::multiplies{});
+  }
+  else
+    throw std::runtime_error("Element does not have a reference_value_shape.");
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -292,7 +302,7 @@ int FiniteElement<T>::num_sub_elements() const noexcept
 template <std::floating_point T>
 bool FiniteElement<T>::is_mixed() const noexcept
 {
-  return _is_mixed;
+  return !_reference_value_shape;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
