@@ -72,8 +72,8 @@ public:
   /// mesh cells for each cell type in `cell_types`.
   /// @param[in] cells Cell-to-vertex connectivities for each cell type
   /// in `cell_types`.
-  /// @param[in] original_cell_index Original indices for each cell in
-  /// `cells`.
+  // @param[in] original_cell_index Original indices for each cell in
+  // `cells`.
   Topology(
       MPI_Comm comm, std::vector<CellType> cell_types,
       std::shared_ptr<const common::IndexMap> vertex_map,
