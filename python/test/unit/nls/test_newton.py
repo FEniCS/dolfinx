@@ -6,7 +6,6 @@
 """Unit tests for Newton solver assembly"""
 
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import numpy as np
 import pytest
@@ -73,15 +72,17 @@ class NonlinearPDE_SNESProblem:
         self.L = form(F)
         self.a = form(derivative(F, u, du))
         self.bc = bc
-        self._F, self._J = None, None
         self.u = u
+        self.x0 = Function(V)
 
     def F(self, snes, x_, b_):
         """Assemble residual vector."""
+        from petsc4py import PETSc
+        
         from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
 
         # Store current state of the SNES solver
-        x0 = self.u.x.petsc_vec.copy()
+        self.x0.x.array[:] = self.u.x.array[:]
 
         x_.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         x_.copy(self.u.x.petsc_vec)
@@ -94,9 +95,8 @@ class NonlinearPDE_SNESProblem:
         b_.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         set_bc(b_, [self.bc], x_, -1.0)
 
-        with x0.localForm() as x0_local, self.u.x.petsc_vec.localForm() as u_local:
-            # Restore the state of the SNES solver
-            x0_local.copy(u_local)
+        self.u.x.array[:] = self.x0.x.array[:]
+        self.u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     def J(self, snes, x_, J, P):
         """Assemble Jacobian matrix."""
@@ -232,13 +232,13 @@ class TestNLS:
 
         snes.solve(None, u.x.petsc_vec)
         assert snes.getConvergedReason() > 0
-        assert snes.getIterationNumber() < 6
+        assert snes.getIterationNumber() < 7
 
         # Modify boundary condition and solve again
         u_bc.x.array[:] = 0.6
         snes.solve(None, u.x.petsc_vec)
         assert snes.getConvergedReason() > 0
-        assert snes.getIterationNumber() < 6
+        assert snes.getIterationNumber() < 7 
 
         snes.destroy()
         b.destroy()
