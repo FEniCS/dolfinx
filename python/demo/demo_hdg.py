@@ -52,8 +52,7 @@ def par_print(comm, string):
 
 def norm_L2(comm, v, measure=ufl.dx):
     return np.sqrt(
-        comm.allreduce(fem.assemble_scalar(
-            fem.form(ufl.inner(v, v) * measure)), op=MPI.SUM)
+        comm.allreduce(fem.assemble_scalar(fem.form(ufl.inner(v, v) * measure)), op=MPI.SUM)
     )
 
 
@@ -129,8 +128,7 @@ dx_c = ufl.Measure("dx", domain=msh)
 cell_boundary_facets = compute_cell_boundary_facets(msh)
 cell_boundaries = 1  # A tag
 # Create the measure
-ds_c = ufl.Measure("ds", subdomain_data=[
-                   (cell_boundaries, cell_boundary_facets)], domain=msh)
+ds_c = ufl.Measure("ds", subdomain_data=[(cell_boundaries, cell_boundary_facets)], domain=msh)
 # Create a cell integral measure over the facet mesh
 dx_f = ufl.Measure("dx", domain=facet_mesh)
 
