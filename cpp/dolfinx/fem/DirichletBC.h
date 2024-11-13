@@ -246,20 +246,6 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
   return dofs;
 }
 
-namespace
-{
-// To be used with std::variant, compare
-// https://en.cppreference.com/w/cpp/utility/variant/visit
-template <class... Ts>
-struct overloaded : Ts...
-{
-  using Ts::operator()...;
-};
-// explicit deduction guide
-template <class... Ts>
-overloaded(Ts...) -> overloaded<Ts...>;
-} // namespace
-
 /// Object for setting (strong) Dirichlet boundary conditions
 /// \f[u = g \ \text{on} \ G,\f]
 /// where \f$u\f$ is the solution to be computed, \f$g\f$ is a function
@@ -530,9 +516,9 @@ public:
       return;
     }
 
-    // called by std::visist in case g holds a Function
-    auto handle_function = [&](std::shared_ptr<const Function<T, U>> g)
+    if (std::holds_alternative<std::shared_ptr<const Function<T, U>>>(_g))
     {
+      auto g = std::get<std::shared_ptr<const Function<T, U>>>(_g);
       assert(g);
       std::span<const T> values = g->x()->array();
 
@@ -561,11 +547,10 @@ public:
               return alpha * values[dofs_g[i]];
             });
       }
-    };
-
-    // called by std::visist in case g holds a Constant
-    auto handle_constant = [&](std::shared_ptr<const Constant<T>> g)
+    }
+    else if (std::holds_alternative<std::shared_ptr<const Constant<T>>>(_g))
     {
+      auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
       const std::vector<T>& value = g->value;
       std::int32_t bs = _function_space->dofmap()->bs();
       if (x0)
@@ -583,9 +568,12 @@ public:
         apply([alpha, bs, &value, &dofs0 = _dofs0](std::int32_t i) -> T
               { return alpha * value[dofs0[i] % bs]; });
       }
-    };
-
-    std::visit(overloaded{handle_function, handle_constant}, _g);
+    }
+    else
+    {
+      // replace with std::unreachable once C++23 is supported
+      assert(false);
+    }
   }
 
   /// @brief Set `markers[i] = true` if dof `i` has a boundary condition
