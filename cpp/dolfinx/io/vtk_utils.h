@@ -246,8 +246,8 @@ vtk_mesh_from_space(const fem::FunctionSpace<T>& V)
 /// geometry 'nodes'.
 /// @note The indices in the return array correspond to the point
 /// indices in the mesh geometry array.
-/// @note Even if the indices are local (int32), both Fides and VTX
-/// require int64 as local input.
+/// @note Even if the indices are local (int32), VTX requires int64 as
+/// local input.
 std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
 extract_vtk_connectivity(
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
