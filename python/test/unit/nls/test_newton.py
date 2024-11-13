@@ -76,7 +76,7 @@ class NonlinearPDE_SNESProblem:
         self._F, self._J = None, None
         self.u = u
 
-    def F(self, snes: PETSc.SNES, x_: PETSc.Vec, b_: PETSc.Vec):
+    def F(self, snes, x_, b_):
         """Assemble residual vector."""
         from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
 
@@ -98,7 +98,7 @@ class NonlinearPDE_SNESProblem:
             # Restore the state of the SNES solver
             x0_local.copy(u_local)
 
-    def J(self, snes: PETSc.SNES, x_: PETSc.Vec, J: PETSc.Mat, P: PETSc.Mat):
+    def J(self, snes, x_, J, P):
         """Assemble Jacobian matrix."""
         from dolfinx.fem.petsc import assemble_matrix
 
