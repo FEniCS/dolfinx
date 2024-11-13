@@ -52,7 +52,8 @@ def par_print(comm, string):
 
 def norm_L2(comm, v, measure=ufl.dx):
     return np.sqrt(
-        comm.allreduce(fem.assemble_scalar(fem.form(ufl.inner(v, v) * measure)), op=MPI.SUM)
+        comm.allreduce(fem.assemble_scalar(
+            fem.form(ufl.inner(v, v) * measure)), op=MPI.SUM)
     )
 
 
@@ -128,7 +129,8 @@ dx_c = ufl.Measure("dx", domain=msh)
 cell_boundary_facets = compute_cell_boundary_facets(msh)
 cell_boundaries = 1  # A tag
 # Create the measure
-ds_c = ufl.Measure("ds", subdomain_data=[(cell_boundaries, cell_boundary_facets)], domain=msh)
+ds_c = ufl.Measure("ds", subdomain_data=[
+                   (cell_boundaries, cell_boundary_facets)], domain=msh)
 # Create a cell integral measure over the facet mesh
 dx_f = ufl.Measure("dx", domain=facet_mesh)
 
@@ -148,14 +150,10 @@ x = ufl.SpatialCoordinate(msh)
 c = 1.0 + 0.1 * ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])
 a = (
     inner(c * grad(u), grad(v)) * dx_c
-    - inner(c * u, dot(grad(v), n)) * ds_c(cell_boundaries)
-    - inner(dot(grad(u), n), c * v) * ds_c(cell_boundaries)
-    + gamma * inner(c * u, v) * ds_c(cell_boundaries)
+    - inner(c * (u - ubar), dot(grad(v), n)) * ds_c(cell_boundaries)
+    - inner(dot(grad(u), n), c * (v - vbar)) * ds_c(cell_boundaries)
+    + gamma * inner(c * (u - ubar), v - vbar) * ds_c(cell_boundaries)
 )
-
-a += inner(dot(grad(u), n) - gamma * u, c * vbar) * ds_c(cell_boundaries)
-a += inner(c * ubar, dot(grad(v), n) - gamma * v) * ds_c(cell_boundaries)
-a += gamma * inner(c * ubar, vbar) * ds_c(cell_boundaries)
 
 # Manufacture a source term
 f = -div(c * grad(u_e(x)))
