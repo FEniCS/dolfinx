@@ -164,8 +164,7 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
 std::vector<int>
 dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
 {
-  // return dolfinx::MPI::compute_graph_edges_pcx(comm, edges);
-
+  return dolfinx::MPI::compute_graph_edges_pcx(comm, edges);
   // static int count = 0;
 
   spdlog::info(
@@ -213,12 +212,8 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
     {
       // Receive it
       int other_rank = status.MPI_SOURCE;
-      // std::byte buffer_recv;
-      // int err = MPI_Recv(&buffer_recv, 1, MPI_BYTE, other_rank,
-      //                    static_cast<int>(tag::consensus_pex), comm,
-      //                    MPI_STATUS_IGNORE);
-      int buffer_recv;
-      int err = MPI_Recv(&buffer_recv, 1, MPI_INT, other_rank,
+      std::byte buffer_recv;
+      int err = MPI_Recv(&buffer_recv, 1, MPI_BYTE, other_rank,
                          static_cast<int>(tag::consensus_pex), comm,
                          MPI_STATUS_IGNORE);
       dolfinx::MPI::check_error(comm, err);
@@ -260,8 +255,6 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
   //           << std::endl;
 
   // ++count;
-
-  MPI_Barrier(comm);
 
   return other_ranks;
 }
