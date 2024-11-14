@@ -102,6 +102,8 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
       "of input edges: {}",
       static_cast<int>(edges.size()));
 
+  // std::cout << "Test0: " << edges.size() << std::endl;
+
   // Build array with '0' for no outedge and '1' for an outedge for each
   // rank
   const int size = dolfinx::MPI::size(comm);
@@ -158,19 +160,24 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
                "of discovered edges {}",
                static_cast<int>(other_ranks.size()));
 
+  // std::cout << "Test1: " << other_ranks.size() << std::endl;
+
   return other_ranks;
 }
 //-----------------------------------------------------------------------------
 std::vector<int>
 dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
 {
-  return dolfinx::MPI::compute_graph_edges_pcx(comm, edges);
+  // return std::vector<int>(edges.size(), 0);
+  // return dolfinx::MPI::compute_graph_edges_pcx(comm, edges);
   // static int count = 0;
 
   spdlog::info(
       "Computing communication graph edges (using NBX algorithm). Number "
       "of input edges: {}",
       static_cast<int>(edges.size()));
+
+  MPI_Barrier(comm);
 
   // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
   // std::vector<int> foo(edges.begin(), edges.end());
@@ -186,7 +193,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
   for (std::size_t e = 0; e < edges.size(); ++e)
   {
     int err = MPI_Issend(send_buffer.data() + e, 1, MPI_BYTE, edges[e],
-                         static_cast<int>(tag::consensus_pex), comm,
+                         static_cast<int>(tag::consensus_nbx), comm,
                          &send_requests[e]);
     dolfinx::MPI::check_error(comm, err);
   }
@@ -203,7 +210,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
     // Check for message
     int request_pending;
     MPI_Status status;
-    int err = MPI_Iprobe(MPI_ANY_SOURCE, static_cast<int>(tag::consensus_pex),
+    int err = MPI_Iprobe(MPI_ANY_SOURCE, static_cast<int>(tag::consensus_nbx),
                          comm, &request_pending, &status);
     dolfinx::MPI::check_error(comm, err);
 
@@ -214,7 +221,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
       int other_rank = status.MPI_SOURCE;
       std::byte buffer_recv;
       int err = MPI_Recv(&buffer_recv, 1, MPI_BYTE, other_rank,
-                         static_cast<int>(tag::consensus_pex), comm,
+                         static_cast<int>(tag::consensus_nbx), comm,
                          MPI_STATUS_IGNORE);
       dolfinx::MPI::check_error(comm, err);
       other_ranks.push_back(other_rank);
@@ -245,6 +252,8 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
       }
     }
   }
+
+  // MPI_Barrier(comm);
 
   spdlog::info("Finished graph edge discovery using NBX algorithm. Number "
                "of discovered edges {}",
