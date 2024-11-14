@@ -120,7 +120,7 @@ def saw_tooth(x):
 # elements, and plot the finite element interpolation.
 
 # +
-msh = mesh.create_unit_interval(MPI.COMM_WORLD, 10)
+msh = mesh.create_unit_interval(MPI.COMM_WORLD, 20)
 
 x = ufl.SpatialCoordinate(msh)
 u_exact = saw_tooth(x[0])
