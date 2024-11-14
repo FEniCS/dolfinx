@@ -171,7 +171,7 @@ def test_create_submap_owner_change():
         owners = np.array([comm.rank - 1, comm.rank + 1], dtype=np.int32)
         submap_indices = np.array([0, 2, 3], dtype=np.int32)
 
-    imap = dolfinx.common.IndexMap(comm, local_size, ghosts, owners)
+    imap = dolfinx.common.IndexMap(comm, local_size, ghosts, owners, 1)
     sub_imap, sub_imap_to_imap = _cpp.common.create_sub_index_map(imap, submap_indices, True)
 
     if comm.rank == 0:
@@ -235,7 +235,7 @@ def test_sub_index_map_multiple_possible_owners():
         submap_size_local_expected = 0
         submap_num_ghosts_expected = 0
 
-    imap = dolfinx.common.IndexMap(comm, local_size, ghosts, owners)
+    imap = dolfinx.common.IndexMap(comm, local_size, ghosts, owners, 0)
 
     # Create a submap where both processes 0 and 1 include the index on process 2,
     # but process 2 does not include it
