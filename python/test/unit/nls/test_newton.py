@@ -106,6 +106,7 @@ class TestNLS:
     def test_linear_pde(self):
         """Test Newton solver for a linear PDE."""
         from petsc4py import PETSc
+        from dolfinx.nls.petsc import NewtonSolver
 
         # Create mesh and function space
         mesh = create_unit_square(MPI.COMM_WORLD, 12, 12)
@@ -127,20 +128,20 @@ class TestNLS:
             x.axpy(-1, dx)
 
         # Create Newton solver and solve
-        solver = _cpp.nls.petsc.NewtonSolver(MPI.COMM_WORLD)
+        solver = NewtonSolver(MPI.COMM_WORLD, problem)
         solver.setF(problem.F, problem.vector())
         solver.setJ(problem.J, problem.matrix())
         solver.set_form(problem.form)
         solver.set_update(update)
         solver.atol = 1.0e-8
         solver.rtol = 1.0e2 * np.finfo(default_real_type).eps
-        n, converged = solver.solve(u.x.petsc_vec)
+        n, converged = solver.solve(u)
         assert converged
         assert n == 1
 
         # Increment boundary condition and solve again
         bc.g.value[...] = PETSc.ScalarType(2.0)
-        n, converged = solver.solve(u.x.petsc_vec)
+        n, converged = solver.solve(u)
         assert converged
         assert n == 1
 
@@ -153,6 +154,7 @@ class TestNLS:
     def test_nonlinear_pde(self):
         """Test Newton solver for a simple nonlinear PDE"""
         from petsc4py import PETSc
+        from dolfinx.nls.petsc import NewtonSolver
 
         mesh = create_unit_square(MPI.COMM_WORLD, 12, 5)
         V = functionspace(mesh, ("Lagrange", 1))
@@ -171,19 +173,19 @@ class TestNLS:
 
         # Create Newton solver and solve
         u.x.array[:] = 0.9
-        solver = _cpp.nls.petsc.NewtonSolver(MPI.COMM_WORLD)
+        solver = NewtonSolver(MPI.COMM_WORLD, problem)
         solver.setF(problem.F, problem.vector())
         solver.setJ(problem.J, problem.matrix())
         solver.set_form(problem.form)
         solver.atol = 1.0e-8
         solver.rtol = 1.0e2 * np.finfo(default_real_type).eps
-        n, converged = solver.solve(u.x.petsc_vec)
+        n, converged = solver.solve(u)
         assert converged
         assert n < 6
 
         # Modify boundary condition and solve again
         bc.g.value[...] = 0.5
-        n, converged = solver.solve(u.x.petsc_vec)
+        n, converged = solver.solve(u)
         assert converged
         assert n > 0 and n < 6
 
@@ -224,6 +226,9 @@ class TestNLS:
         snes.getKSP().setTolerances(rtol=1.0e-9)
         snes.getKSP().getPC().setType("lu")
 
+        # For SNES line search to function correctly it is necessary that the
+        # u.x.petsc_vec in the Jacobian and residual is *not* passed to
+        # snes.solve.
         x = u.x.petsc_vec.copy()
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
