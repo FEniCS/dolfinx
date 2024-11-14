@@ -72,39 +72,27 @@ class NonlinearPDE_SNESProblem:
         self.L = form(F)
         self.a = form(derivative(F, u, du))
         self.bc = bc
+        self._F, self._J = None, None
         self.u = u
-        self.x0 = Function(V)
 
-    def F(self, snes, x_, b_):
+    def F(self, snes, x, F):
         """Assemble residual vector."""
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
 
-        # Store current state of the SNES solver
-        self.u.x.petsc_vec.copy(self.x0.x.petsc_vec)
-        self.x0.x.petsc_vec.ghostUpdate(
-            addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
-        )
-
-        x_.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        x_.copy(self.u.x.petsc_vec)
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        x.copy(self.u.x.petsc_vec)
         self.u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-        with b_.localForm() as f_local:
+        with F.localForm() as f_local:
             f_local.set(0.0)
-        assemble_vector(b_, self.L)
-        apply_lifting(b_, [self.a], bcs=[[self.bc]], x0=[x_], alpha=-1.0)
-        b_.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        set_bc(b_, [self.bc], x_, -1.0)
+        assemble_vector(F, self.L)
+        apply_lifting(F, [self.a], bcs=[[self.bc]], x0=[x], alpha=-1.0)
+        F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        set_bc(F, [self.bc], x, -1.0)
 
-        self.u.x.array[:] = self.x0.x.array[:]
-        # NOTE: The following fails due to a PETSc Vec being locked for read-only access
-        # self.x0.x.petsc_vec.copy(self.u.x.petsc_vec)
-        # self.u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT,
-        #     mode=PETSc.ScatterMode.FORWARD)
-
-    def J(self, snes, x_, J, P):
+    def J(self, snes, x, J, P):
         """Assemble Jacobian matrix."""
         from dolfinx.fem.petsc import assemble_matrix
 
@@ -236,15 +224,20 @@ class TestNLS:
         snes.getKSP().setTolerances(rtol=1.0e-9)
         snes.getKSP().getPC().setType("lu")
 
-        snes.solve(None, u.x.petsc_vec)
+        x = u.x.petsc_vec.copy()
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+        snes.solve(None, x)
         assert snes.getConvergedReason() > 0
-        assert snes.getIterationNumber() < 7
+        assert snes.getIterationNumber() < 6
 
         # Modify boundary condition and solve again
         u_bc.x.array[:] = 0.6
-        snes.solve(None, u.x.petsc_vec)
+        snes.solve(None, x)
         assert snes.getConvergedReason() > 0
-        assert snes.getIterationNumber() < 7
+        assert snes.getIterationNumber() < 6
+        # print(snes.getIterationNumber())
+        # print(snes.getFunctionNorm())
 
         snes.destroy()
         b.destroy()
