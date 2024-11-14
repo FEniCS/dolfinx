@@ -119,8 +119,10 @@ public:
   /// of owned entries
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] owners Owner rank (on `comm`) of each entry in `ghosts`
+  /// @param[in] tag Tag used in MPI calls.
   IndexMap(MPI_Comm comm, std::int32_t local_size,
-           std::span<const std::int64_t> ghosts, std::span<const int> owners);
+           std::span<const std::int64_t> ghosts, std::span<const int> owners,
+           int tag = static_cast<int>(dolfinx::MPI::tag::consensus_nbx));
 
   /// @brief Create an overlapping (ghosted) index map.
   ///

@@ -1207,7 +1207,8 @@ Topology mesh::create_topology(
 
     // Create index maps for each cell type
     index_map_c.push_back(std::make_shared<common::IndexMap>(
-        comm, num_local_cells[i], cell_ghost_indices[i], ghost_owners[i]));
+        comm, num_local_cells[i], cell_ghost_indices[i], ghost_owners[i],
+        static_cast<int>(dolfinx::MPI::tag::consensus_nbx) + i));
   }
 
   // Send and receive  ((input vertex index) -> (new global index, owner
@@ -1360,10 +1361,10 @@ Topology mesh::create_topology(
   //           << common::hash_local(ghost_vertices) << ", "
   //           << common::hash_local(ghost_vertex_owners) << ", " << std::endl;
 
-
   // Create index map for vertices
   auto index_map_v = std::make_shared<common::IndexMap>(
-      comm, owned_vertices.size(), ghost_vertices, ghost_vertex_owners);
+      comm, owned_vertices.size(), ghost_vertices, ghost_vertex_owners,
+      static_cast<int>(dolfinx::MPI::tag::consensus_nbx) + cell_type.size());
 
   // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
   // std::cout << "TX map: " << rank << ", "

@@ -29,8 +29,8 @@ namespace
 /// @param comm MPI communicator.
 /// @param owners List of ranks that own each ghost index.
 /// @return (src ranks, destination ranks). Both lists are sorted.
-std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
-                                               std::span<const int> owners)
+std::array<std::vector<int>, 2>
+build_src_dest(MPI_Comm comm, std::span<const int> owners, int tag)
 {
   if (dolfinx::MPI::size(comm) == 1)
   {
@@ -46,12 +46,14 @@ std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
   src.erase(unique_end, range_end);
   src.shrink_to_fit();
 
-  // std::cout << "In: " << rank << ", " << common::hash_local(src) << std::endl;
+  // std::cout << "In: " << rank << ", " << common::hash_local(src) <<
+  // std::endl;
 
-  std::vector<int> dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
+  std::vector<int> dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src, tag);
   std::ranges::sort(dest);
 
-  // std::cout << "Out: " << rank << ", " << common::hash_local(dest) << std::endl;
+  // std::cout << "Out: " << rank << ", " << common::hash_local(dest) <<
+  // std::endl;
 
   return {std::move(src), std::move(dest)};
 }
@@ -890,8 +892,9 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size) : _comm(comm, true)
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
                    std::span<const std::int64_t> ghosts,
-                   std::span<const int> owners)
-    : IndexMap(comm, local_size, build_src_dest(comm, owners), ghosts, owners)
+                   std::span<const int> owners, int tag)
+    : IndexMap(comm, local_size, build_src_dest(comm, owners, tag), ghosts,
+               owners)
 {
   // Do nothing
 }

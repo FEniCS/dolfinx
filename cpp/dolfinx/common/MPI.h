@@ -182,9 +182,11 @@ std::vector<int> compute_graph_edges_pcx(MPI_Comm comm,
 ///
 /// @param[in] comm MPI communicator
 /// @param[in] edges Edges (ranks) from this rank (the caller).
+/// @param[in] tag Tag used in MPI calls.
 /// @return Ranks that have defined edges from them to this rank.
-std::vector<int> compute_graph_edges_nbx(MPI_Comm comm,
-                                         std::span<const int> edges);
+std::vector<int>
+compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
+                        int tag = static_cast<int>(tag::consensus_nbx));
 
 /// @brief Distribute row data to 'post office' ranks.
 ///
