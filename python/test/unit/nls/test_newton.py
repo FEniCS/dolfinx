@@ -11,7 +11,6 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.fem import Function, dirichletbc, form, functionspace, locate_dofs_geometrical
 from dolfinx.mesh import create_unit_square
@@ -106,6 +105,7 @@ class TestNLS:
     def test_linear_pde(self):
         """Test Newton solver for a linear PDE."""
         from petsc4py import PETSc
+
         from dolfinx.nls.petsc import NewtonSolver
 
         # Create mesh and function space
@@ -154,6 +154,7 @@ class TestNLS:
     def test_nonlinear_pde(self):
         """Test Newton solver for a simple nonlinear PDE"""
         from petsc4py import PETSc
+
         from dolfinx.nls.petsc import NewtonSolver
 
         mesh = create_unit_square(MPI.COMM_WORLD, 12, 5)
