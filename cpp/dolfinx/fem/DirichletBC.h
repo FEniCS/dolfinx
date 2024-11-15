@@ -336,7 +336,7 @@ public:
   {
     assert(g);
     assert(V);
-    if (g->shape.size() != V->value_shape().size())
+    if (g->shape.size() != V->element()->value_shape().size())
     {
       throw std::runtime_error(
           "Rank mis-match between Constant and function space in DirichletBC");
@@ -419,8 +419,10 @@ public:
   DirichletBC(std::shared_ptr<const Function<T, U>> g, X&& V_g_dofs,
               std::shared_ptr<const FunctionSpace<U>> V)
       : _function_space(V), _g(g),
-        _dofs0(std::forward<typename X::value_type>(V_g_dofs[0])),
-        _dofs1_g(std::forward<typename X::value_type>(V_g_dofs[1])),
+        _dofs0(std::forward<typename std::remove_reference_t<X>::value_type>(
+            V_g_dofs[0])),
+        _dofs1_g(std::forward<typename std::remove_reference_t<X>::value_type>(
+            V_g_dofs[1])),
         _owned_indices0(num_owned(*_function_space->dofmap(), _dofs0))
   {
   }
@@ -513,7 +515,7 @@ public:
         auto dofs1_g
             = _dofs1_g.empty() ? std::span(_dofs0) : std::span(_dofs1_g);
         std::span<const T> values = g->x()->array();
-        if (x0.has_value())
+        if (x0)
         {
           std::span<const T> _x0 = x0.value();
           assert(x.size() <= _x0.size());
@@ -543,7 +545,7 @@ public:
         auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
         const std::vector<T>& value = g->value;
         std::int32_t bs = _function_space->dofmap()->bs();
-        if (x0.has_value())
+        if (x0)
         {
           assert(x.size() <= x0.value().size());
           std::ranges::for_each(

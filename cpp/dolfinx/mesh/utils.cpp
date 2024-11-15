@@ -64,11 +64,11 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
     throw std::runtime_error(
         "Facet to cell connectivity has not been computed.");
   }
+
   // Find all owned facets (not ghost) with only one attached cell
   auto facet_map = topology.index_map(tdim - 1);
-  const int num_facets = facet_map->size_local();
   std::vector<std::int32_t> facets;
-  for (std::int32_t f = 0; f < num_facets; ++f)
+  for (std::int32_t f = 0; f < facet_map->size_local(); ++f)
   {
     if (f_to_c->num_links(f) == 1)
       facets.push_back(f);

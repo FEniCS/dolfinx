@@ -42,7 +42,7 @@ struct dofmap_t
 /// [0:owned_size).
 /// @param[in] dofmaps The local dofmaps (cell -> dofs)
 /// @param[in] owned_size Number of dofs owned by this process
-/// @param[in] original_to_contiguous Map from dof indices in @p dofmap
+/// @param[in] original_to_contiguous Map from dof indices in `dofmap`.
 /// to new indices that are ordered such that owned indices are [0,
 /// owned_size)
 /// @param[in] reorder_fn The graph reordering function to apply
@@ -370,9 +370,10 @@ build_basic_dofmaps(
 /// same range
 /// @param [in] dof_entity Map from dof index to (index_map, entity_index),
 /// where entity_index is the local mesh entity index in the given index_map
-/// @param [in] index_maps The set of IndexMaps, one for each topological
-/// entity type used in the dofmap. The location in this array is referred to by
-/// the first item in each entry of @p dof_entity
+/// @param [in] index_maps The set of IndexMaps, one for each
+/// topological entity type used in the dofmap. The location in this
+/// array is referred to by the first item in each entry of
+/// `dof_entity`.
 /// @param [in] reorder_fn Graph reordering function that is applied for
 /// dof re-ordering
 /// @return The pair (old-to-new local index map, M), where M is the

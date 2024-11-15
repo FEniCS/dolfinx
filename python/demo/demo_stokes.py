@@ -152,8 +152,10 @@ def lid_velocity_expression(x):
 # piecewise linear basis (scalar).
 
 
-P2 = element("Lagrange", msh.basix_cell(), 2, shape=(msh.geometry.dim,), dtype=default_real_type)
-P1 = element("Lagrange", msh.basix_cell(), 1, dtype=default_real_type)
+P2 = element(
+    "Lagrange", msh.basix_cell(), degree=2, shape=(msh.geometry.dim,), dtype=default_real_type
+)
+P1 = element("Lagrange", msh.basix_cell(), degree=1, dtype=default_real_type)
 V, Q = functionspace(msh, P2), functionspace(msh, P1)
 
 # Boundary conditions for the velocity field are defined:
