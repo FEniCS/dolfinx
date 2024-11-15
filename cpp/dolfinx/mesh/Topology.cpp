@@ -713,17 +713,6 @@ std::vector<std::int32_t> convert_to_local_indexing(
 } // namespace
 
 //-----------------------------------------------------------------------------
-namespace
-{
-auto idx_helper
-    = [](auto& idx) -> std::optional<std::vector<std::vector<std::int64_t>>>
-{
-  if (idx)
-    return std::vector<std::vector<std::int64_t>>{idx.value()};
-  else
-    return std::nullopt;
-};
-} // namespace
 Topology::Topology(
     MPI_Comm comm, CellType cell_type,
     std::shared_ptr<const common::IndexMap> vertex_map,
@@ -731,45 +720,11 @@ Topology::Topology(
     std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells,
     const std::optional<std::vector<std::int64_t>>& original_index)
     : Topology(comm, {cell_type}, vertex_map, {cell_map}, {cells},
-               idx_helper(original_index))
-// : _comm(comm), _index_map(cell_dim(cell_type) + 1, {nullptr}),
-//   _connectivity(
-//       cell_dim(cell_type) + 1,
-//       std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(
-//           cell_dim(cell_type) + 1))
+               original_index
+                   ? std::vector<std::vector<std::int64_t>>{*original_index}
+                   : std::optional<std::vector<std::vector<std::int64_t>>>(
+                         std::nullopt))
 {
-  // std::int8_t tdim = cell_dim(cell_type);
-
-  // Create all the entity types in mesh, one per dimension for a single cell
-  // type mesh.
-  // _entity_type_offsets.resize(tdim + 2);
-  // for (std::int8_t i = 0; i < tdim + 2; ++i)
-  //   _entity_type_offsets[i] = i;
-
-  // _entity_types = {CellType::point};
-  // if (tdim > 0)
-  //   _entity_types.push_back(CellType::interval);
-
-  // if (tdim == 2)
-  //   _entity_types.push_back(cell_type);
-  // else if (tdim == 3)
-  // {
-  //   _entity_types.push_back(cell_facet_type(cell_type, 0));
-  //   _entity_types.push_back(cell_type);
-  // }
-
-  // // One facet type
-  // _interprocess_facets.resize(1);
-
-  // this->set_index_map(0, vertex_map);
-  // this->set_connectivity(
-  //     std::make_shared<graph::AdjacencyList<std::int32_t>>(
-  //         vertex_map->size_local() + vertex_map->num_ghosts()),
-  //     0, 0);
-  // this->set_index_map(tdim, cell_map);
-  // this->set_connectivity(cells, tdim, 0);
-  // if (original_index)
-  //   this->original_cell_index.push_back(*original_index);
 }
 //-----------------------------------------------------------------------------
 Topology::Topology(
@@ -778,19 +733,19 @@ Topology::Topology(
     std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
     std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
     const std::optional<std::vector<std::vector<std::int64_t>>>& original_index)
-    : _comm(comm), _entity_types({mesh::CellType::point}),
-      _entity_type_offsets({0, 1})
+    : original_cell_index(original_index
+                              ? *original_index
+                              : std::vector<std::vector<std::int64_t>>()),
+      _comm(comm), _entity_types({mesh::CellType::point}),
+      _entity_type_offsets({0, 1}), _interprocess_facets(1)
 {
   assert(!cell_types.empty());
   std::int8_t tdim = cell_dim(cell_types.front());
-  // assert(tdim > 0);
 
 #ifndef NDEBUG
   for (auto ct : cell_types)
     assert(cell_dim(ct) == tdim);
 #endif
-
-  _interprocess_facets.resize(1);
 
   // Create all the entity types in the mesh
   if (tdim > 1)
@@ -830,9 +785,6 @@ Topology::Topology(
     c.resize(conn_size);
 
   // Set data
-  // _index_map[_entity_type_offsets[0]] = vertex_map;
-  // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
-
   this->set_index_map(0, vertex_map);
   this->set_connectivity(
       std::make_shared<graph::AdjacencyList<std::int32_t>>(
@@ -843,9 +795,6 @@ Topology::Topology(
     this->set_index_map(tdim, i, cell_maps[i]);
     this->set_connectivity(cells[i], {tdim, i}, {0, 0});
   }
-
-  if (original_index)
-    this->original_cell_index = *original_index;
 }
 //-----------------------------------------------------------------------------
 int Topology::dim() const noexcept { return _entity_type_offsets.size() - 2; }
