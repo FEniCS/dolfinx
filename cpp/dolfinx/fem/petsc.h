@@ -13,6 +13,7 @@
 #include "utils.h"
 #include <concepts>
 #include <dolfinx/la/petsc.h>
+#include <functional>
 #include <map>
 #include <memory>
 #include <petscmat.h>
@@ -329,13 +330,17 @@ void assemble_vector(Vec b, const Form<PetscScalar, T>& L)
 /// is responsible for calling VecGhostUpdateBegin/End.
 template <std::floating_point T>
 void apply_lifting(
-    Vec b, const std::vector<std::shared_ptr<const Form<PetscScalar, T>>>& a,
+    Vec b,
+    std::vector<
+        std::optional<std::reference_wrapper<const Form<PetscScalar, T>>>>
+        a,
     const std::vector<std::span<const PetscScalar>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const PetscScalar>, int>>>&
         coeffs,
     const std::vector<
-        std::vector<std::shared_ptr<const DirichletBC<PetscScalar, T>>>>& bcs1,
+        std::vector<std::reference_wrapper<const DirichletBC<PetscScalar, T>>>>&
+        bcs1,
     const std::vector<Vec>& x0, PetscScalar alpha)
 {
   Vec b_local;
@@ -398,10 +403,11 @@ void apply_lifting(
 template <std::floating_point T>
 void apply_lifting(
     Vec b,
-    const std::vector<std::shared_ptr<const Form<PetscScalar, double>>>& a,
-    const std::vector<
-        std::vector<std::shared_ptr<const DirichletBC<PetscScalar, double>>>>&
-        bcs1,
+    std::vector<
+        std::optional<std::reference_wrapper<const Form<PetscScalar, double>>>>
+        a,
+    const std::vector<std::vector<
+        std::reference_wrapper<const DirichletBC<PetscScalar, double>>>>& bcs1,
     const std::vector<Vec>& x0, PetscScalar alpha)
 {
   Vec b_local;
@@ -456,7 +462,7 @@ void apply_lifting(
 template <std::floating_point T>
 void set_bc(
     Vec b,
-    const std::vector<std::shared_ptr<const DirichletBC<PetscScalar, T>>>& bcs,
+    const std::vector<std::reference_wrapper<const DirichletBC<PetscScalar, T>>> bcs,
     const Vec x0, PetscScalar alpha = 1)
 {
   PetscInt n = 0;
@@ -474,7 +480,7 @@ void set_bc(
     VecGetArrayRead(x0_local, &array);
     std::span<const PetscScalar> _x0(array, n);
     for (auto& bc : bcs)
-      bc->set(_b, _x0, alpha);
+      bc.set(_b, _x0, alpha);
     VecRestoreArrayRead(x0_local, &array);
     VecGhostRestoreLocalForm(x0, &x0_local);
   }
