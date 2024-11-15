@@ -179,8 +179,10 @@ std::vector<int> compute_graph_edges_pcx(MPI_Comm comm,
 /// @param[in] edges Edges (ranks) from this rank (the caller).
 /// @param[in] tag Tag used in non-blocking MPI calls. A tag can be
 /// required when this function is called a second time on some ranks
-/// before a previous call has completed on all other ranks.
-/// @return Ranks that have defined edges from them to this rank.
+/// before a previous call has completed on all other ranks. @return
+/// Ranks that have defined edges from them to this rank. @note An
+/// alternative to passing a tag is to ensure that there is an implicit
+/// or explicit barrier before and after the call to this function.
 std::vector<int>
 compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
                         int tag = static_cast<int>(tag::consensus_nbx));

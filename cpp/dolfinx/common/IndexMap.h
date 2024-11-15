@@ -128,7 +128,10 @@ public:
   /// not completed its first consensus algorithm call, communications
   /// can be corrupted if each collective call of this constructor does
   /// not have its own `tag` value. Each collective call to this
-  /// constructor must use the same `tag` value.
+  /// constructor must use the same `tag` value.  An alternative to
+  /// passing a tag is to have an implicit or explicit MPI barrier
+  /// before and after the call to this constructor.
+  std::vector<int>
   IndexMap(MPI_Comm comm, std::int32_t local_size,
            std::span<const std::int64_t> ghosts, std::span<const int> owners,
            int tag = static_cast<int>(dolfinx::MPI::tag::consensus_nbx));
