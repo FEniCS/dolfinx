@@ -263,6 +263,10 @@ class Vector:
         Upon first call, this function creates a PETSc ``Vec`` object
         that wraps the degree-of-freedom data. The ``Vec`` object is
         cached and the cached ``Vec`` is returned upon subsequent calls.
+
+        Note:
+          When the object is destroyed it will destroy the underlying petsc4py
+          vector automatically.
         """
         if self._petsc_x is None:
             self._petsc_x = create_petsc_vector_wrap(self)
@@ -317,15 +321,18 @@ def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
 def create_petsc_vector_wrap(x: Vector):
     """Wrap a distributed DOLFINx vector as a PETSc vector.
 
+    Note:
+        Due to subtle issues in the interaction between petsc4py memory management
+        and the Python garbage collector, it is recommended that the method ``PETSc.Vec.destroy()``
+        is called on the returned object once the object is no longer required. Note that
+        ``PETSc.Vec.destroy()`` is collective over the object's MPI communicator.
+
     Args:
         x: The vector to wrap as a PETSc vector.
 
     Returns:
         A PETSc vector that shares data with ``x``.
 
-    Note:
-        The vector ``x`` must not be destroyed before the returned PETSc
-        object.
     """
     from petsc4py import PETSc
 
@@ -338,6 +345,12 @@ def create_petsc_vector_wrap(x: Vector):
 
 def create_petsc_vector(map, bs: int):
     """Create a distributed PETSc vector.
+
+    Note:
+        Due to subtle issues in the interaction between petsc4py memory management
+        and the Python garbage collector, it is recommended that the method ``PETSc.Vec.destroy()``
+        is called on the returned object once the object is no longer required. Note that
+        ``PETSc.Vec.destroy()`` is collective over the object's MPI communicator.
 
     Args:
         map: Index map that describes the size and parallel layout of

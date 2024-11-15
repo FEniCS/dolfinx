@@ -15,6 +15,7 @@
 #include "Function.h"
 #include "FunctionSpace.h"
 #include "sparsitybuild.h"
+#include <algorithm>
 #include <array>
 #include <concepts>
 #include <dolfinx/common/types.h>
@@ -24,10 +25,12 @@
 #include <dolfinx/mesh/utils.h>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <set>
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <ufcx.h>
 #include <utility>
@@ -48,7 +51,6 @@ class IndexMap;
 
 namespace dolfinx::fem
 {
-
 namespace impl
 {
 /// Helper function to get an array of of (cell, local_facet) pairs
@@ -82,36 +84,41 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
 
 } // namespace impl
 
-/// @brief Given an integral type and mesh tag data, compute the
-/// entities that should be integrated over.
+/// @brief Given an integral type and a set of entities, computes and
+/// return data for the entities that should be integrated over.
 ///
-/// This function returns as list `[(id, entities)]`, where `entities`
-/// are the entities in `meshtags` with tag value `id`. For cell
-/// integrals `entities` are the cell indices. For exterior facet
-/// integrals, `entities` is a list of `(cell_index, local_facet_index)`
-/// pairs. For interior facet integrals, `entities` is a list of
-/// `(cell_index0, local_facet_index0, cell_index1, local_facet_index1)`.
+/// This function returns a list data, for each entity in  `entities`,
+/// that is used in assembly. For cell integrals it is simply the cell
+/// cell indices. For exterior facet integrals, a list of `(cell_index,
+/// local_facet_index)` pairs is returned. For interior facet integrals,
+/// a list of `(cell_index0, local_facet_index0, cell_index1,
+/// local_facet_index1)` tuples is returned.
+/// The data computed by this function is typically used as input to
+/// fem::create_form.
 ///
 /// @note Owned mesh entities only are returned. Ghost entities are not
 /// included.
 ///
-/// @param[in] integral_type Integral type
-/// @param[in] topology Mesh topology
-/// @param[in] entities List of tagged mesh entities
-/// @param[in] dim Topological dimension of tagged entities
-/// @return List of integration entities
 /// @pre For facet integrals, the topology facet-to-cell and
 /// cell-to-facet connectivity must be computed before calling this
 /// function.
+///
+/// @param[in] integral_type Integral type.
+/// @param[in] topology Mesh topology.
+/// @param[in] entities List of mesh entities. For
+/// `integral_type==IntegralType::cell`, `entities` should be cell
+/// indices. For other `IntegralType`, `entities` should be facet
+/// indices.
+/// @return List of integration entity data.
 std::vector<std::int32_t>
 compute_integration_domains(IntegralType integral_type,
                             const mesh::Topology& topology,
-                            std::span<const std::int32_t> entities, int dim);
+                            std::span<const std::int32_t> entities);
 
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms.
 ///
-/// @param[in] a A rectangular block on bilinear forms
+/// @param[in] a A rectangular block on bilinear forms.
 /// @return Rectangular array of the same shape as `a` with a pair of
 /// function spaces in each array entry. If a form is null, then the
 /// returned function space pair is (null, null).
@@ -321,7 +328,8 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// equal to the rank of the form.
 /// @param[in] coefficients Coefficient fields in the form.
 /// @param[in] constants Spatial constants in the form.
-/// @param[in] subdomains Subdomain markers.
+/// @param[in] subdomains Subdomain markers. The data can be computed
+/// using fem::compute_integration_domains.
 /// @param[in] entity_maps The entity maps for the form. Empty for
 /// single domain problems.
 /// @param[in] mesh The mesh of the domain.
@@ -571,6 +579,21 @@ Form<T, U> create_form_factory(
                              num_integrals_type[interior_facet]);
     auto itg = integrals.insert({IntegralType::interior_facet, {}});
     auto sd = subdomains.find(IntegralType::interior_facet);
+
+    // Create indicator for interprocess facets
+    std::vector<std::int8_t> interprocess_marker;
+    if (num_integrals_type[interior_facet] > 0)
+    {
+      assert(topology->index_map(tdim - 1));
+      const std::vector<std::int32_t>& interprocess_facets
+          = topology->interprocess_facets();
+      std::int32_t num_facets = topology->index_map(tdim - 1)->size_local()
+                                + topology->index_map(tdim - 1)->num_ghosts();
+      interprocess_marker.resize(num_facets, 0);
+      std::ranges::for_each(interprocess_facets, [&interprocess_marker](auto f)
+                            { interprocess_marker[f] = 1; });
+    }
+
     for (int i = 0; i < num_integrals_type[interior_facet]; ++i)
     {
       const int id = ids[i];
@@ -629,6 +652,13 @@ Form<T, U> create_form_factory(
             default_facets_int.insert(default_facets_int.end(), pairs.begin(),
                                       pairs.end());
           }
+          else if (interprocess_marker[f])
+          {
+            throw std::runtime_error(
+                "Cannot compute interior facet integral over interprocess "
+                "facet. Please use ghost mode shared facet when creating the "
+                "mesh");
+          }
         }
         itg.first->second.emplace_back(id, k, default_facets_int,
                                        active_coeffs);
@@ -668,8 +698,11 @@ Form<T, U> create_form_factory(
 /// @param[in] spaces Function spaces for the Form arguments.
 /// @param[in] coefficients Coefficient fields in the form (by name).
 /// @param[in] constants Spatial constants in the form (by name).
-/// @param[in] subdomains Subdomain markers.
+/// @param[in] subdomains Subdomain markers. The data can be computed
+/// using fem::compute_integration_domains.
 /// @pre Each value in `subdomains` must be sorted by domain id.
+/// @param[in] entity_maps The entity maps for the form. Empty for
+/// single domain problems.
 /// @param[in] mesh Mesh of the domain. This is required if the form has
 /// no arguments, e.g. a functional.
 /// @return A Form
@@ -684,6 +717,8 @@ Form<T, U> create_form(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
         subdomains,
+    const std::map<std::shared_ptr<const mesh::Mesh<U>>,
+                   std::span<const std::int32_t>>& entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   // Place coefficients in appropriate order
@@ -700,7 +735,6 @@ Form<T, U> create_form(
   }
 
   // Place constants in appropriate order
-
   std::vector<std::shared_ptr<const Constant<T>>> const_map;
   for (const std::string& name : get_constant_names(ufcx_form))
   {
@@ -711,7 +745,7 @@ Form<T, U> create_form(
   }
 
   return create_form_factory(ufcx_form, spaces, coeff_map, const_map,
-                             subdomains, {}, mesh);
+                             subdomains, entity_maps, mesh);
 }
 
 /// @brief Create a Form using a factory function that returns a pointer
@@ -724,8 +758,11 @@ Form<T, U> create_form(
 /// @param[in] spaces Function spaces for the Form arguments.
 /// @param[in] coefficients Coefficient fields in the form (by name),
 /// @param[in] constants Spatial constants in the form (by name),
-/// @param[in] subdomains Subdomain markers.
+/// @param[in] subdomains Subdomain markers. The data can be computed
+/// using fem::compute_integration_domains.
 /// @pre Each value in `subdomains` must be sorted by domain id.
+/// @param[in] entity_maps The entity maps for the form. Empty for
+/// single domain problems.
 /// @param[in] mesh Mesh of the domain. This is required if the form has
 /// no arguments, e.g. a functional.
 /// @return A Form
@@ -740,81 +777,45 @@ Form<T, U> create_form(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
         subdomains,
+    const std::map<std::shared_ptr<const mesh::Mesh<U>>,
+                   std::span<const std::int32_t>>& entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   ufcx_form* form = fptr();
   Form<T, U> L = create_form<T, U>(*form, spaces, coefficients, constants,
-                                   subdomains, mesh);
+                                   subdomains, entity_maps, mesh);
   std::free(form);
   return L;
 }
 
-/// @brief Create a function space from a Basix element.
-/// @param[in] mesh Mesh
-/// @param[in] e Basix finite element.
-/// @param[in] value_shape Value shape for 'blocked' elements, e.g.
-/// vector-valued Lagrange elements where each component for the vector
-/// field is a Lagrange element. For example, a vector-valued element in
-/// 3D will have `value_shape` equal to `{3}`, and for a second-order
-/// tensor element in 2D `value_shape` equal to `{2, 2}`.
-/// @param[in] reorder_fn The graph reordering function to call on the
-/// dofmap. If `nullptr`, the default re-ordering is used.
-/// @return The created function space
+/// @brief NEW Create a function space from a fem::FiniteElement.
 template <std::floating_point T>
 FunctionSpace<T> create_functionspace(
-    std::shared_ptr<mesh::Mesh<T>> mesh, const basix::FiniteElement<T>& e,
-    const std::vector<std::size_t>& value_shape = {},
+    std::shared_ptr<mesh::Mesh<T>> mesh,
+    std::shared_ptr<const fem::FiniteElement<T>> e,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn
     = nullptr)
 {
-  if (!e.value_shape().empty() and !value_shape.empty())
-  {
-    throw std::runtime_error(
-        "Cannot specify value shape for non-scalar base element.");
-  }
+  assert(e);
 
-  std::size_t bs = value_shape.empty()
-                       ? 1
-                       : std::accumulate(value_shape.begin(), value_shape.end(),
-                                         1, std::multiplies{});
-
-  // Create a DOLFINx element
-  auto _e = std::make_shared<const FiniteElement<T>>(e, bs);
-  assert(_e);
-
-  const std::vector<std::size_t> _value_shape
-      = (value_shape.empty() and !e.value_shape().empty())
-            ? fem::compute_value_shape(_e, mesh->topology()->dim(),
-                                       mesh->geometry().dim())
-            : value_shape;
-
-  // Create UFC subdofmaps and compute offset
-  const int num_sub_elements = _e->num_sub_elements();
-  std::vector<ElementDofLayout> sub_doflayout;
-  sub_doflayout.reserve(num_sub_elements);
-  for (int i = 0; i < num_sub_elements; ++i)
-  {
-    auto sub_element = _e->extract_sub_element({i});
-    std::vector<int> parent_map_sub(sub_element->space_dimension());
-    for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
-      parent_map_sub[j] = i + _e->block_size() * j;
-    sub_doflayout.emplace_back(1, e.entity_dofs(), e.entity_closure_dofs(),
-                               parent_map_sub, std::vector<ElementDofLayout>());
-  }
-
-  // Create a dofmap
-  ElementDofLayout layout(_e->block_size(), e.entity_dofs(),
-                          e.entity_closure_dofs(), {}, sub_doflayout);
-  std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
-      = nullptr;
-  if (_e->needs_dof_permutations())
-    permute_inv = _e->dof_permutation_fn(true, true);
+  // TODO: check cell type of e (need to add method to fem::FiniteElement)
   assert(mesh);
   assert(mesh->topology());
+  if (e->cell_type() != mesh->topology()->cell_type())
+    throw std::runtime_error("Cell type of element and mesh must match.");
+
+  // Create element dof layout
+  fem::ElementDofLayout layout = fem::create_element_dof_layout(*e);
+
+  // Create a dofmap
+  std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
+      = e->needs_dof_permutations() ? e->dof_permutation_fn(true, true)
+                                    : nullptr;
   auto dofmap = std::make_shared<const DofMap>(create_dofmap(
       mesh->comm(), layout, *mesh->topology(), permute_inv, reorder_fn));
-  return FunctionSpace(mesh, _e, dofmap, _value_shape);
+
+  return FunctionSpace(mesh, e, dofmap);
 }
 
 /// @private
@@ -838,7 +839,7 @@ get_cell_orientation_info(const Function<T, U>& coefficient)
 }
 
 /// Pack a single coefficient for a single cell
-template <dolfinx::scalar T, int _bs>
+template <int _bs, dolfinx::scalar T>
 void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
           std::span<const std::uint32_t> cell_info, const DofMap& dofmap,
           auto transform)
@@ -855,6 +856,7 @@ void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
     }
     else
     {
+      assert(_bs == bs);
       const int pos_c = _bs * i;
       const int pos_v = _bs * dofs[i];
       for (int k = 0; k < _bs; ++k)
@@ -912,36 +914,47 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
     for (std::size_t e = 0; e < entities.size(); e += estride)
     {
       auto entity = entities.subspan(e, estride);
-      std::int32_t cell = fetch_cells(entity);
-      auto cell_coeff = c.subspan((e / estride) * cstride + offset, space_dim);
-      pack<T, 1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      if (std::int32_t cell = fetch_cells(entity); cell >= 0)
+      {
+        auto cell_coeff
+            = c.subspan((e / estride) * cstride + offset, space_dim);
+        pack<1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      }
     }
     break;
   case 2:
     for (std::size_t e = 0; e < entities.size(); e += estride)
     {
       auto entity = entities.subspan(e, estride);
-      std::int32_t cell = fetch_cells(entity);
-      auto cell_coeff = c.subspan((e / estride) * cstride + offset, space_dim);
-      pack<T, 2>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      if (std::int32_t cell = fetch_cells(entity); cell >= 0)
+      {
+        auto cell_coeff
+            = c.subspan((e / estride) * cstride + offset, space_dim);
+        pack<2>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      }
     }
     break;
   case 3:
     for (std::size_t e = 0; e < entities.size(); e += estride)
     {
       auto entity = entities.subspan(e, estride);
-      std::int32_t cell = fetch_cells(entity);
-      auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
-      pack<T, 3>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      if (std::int32_t cell = fetch_cells(entity); cell >= 0)
+      {
+        auto cell_coeff = c.subspan(e / estride * cstride + offset, space_dim);
+        pack<3>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      }
     }
     break;
   default:
     for (std::size_t e = 0; e < entities.size(); e += estride)
     {
       auto entity = entities.subspan(e, estride);
-      std::int32_t cell = fetch_cells(entity);
-      auto cell_coeff = c.subspan((e / estride) * cstride + offset, space_dim);
-      pack<T, -1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      if (std::int32_t cell = fetch_cells(entity); cell >= 0)
+      {
+        auto cell_coeff
+            = c.subspan((e / estride) * cstride + offset, space_dim);
+        pack<-1>(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
+      }
     }
     break;
   }
@@ -1114,6 +1127,7 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
         auto mesh = coefficients[coeff]->function_space()->mesh();
         std::vector<std::int32_t> facets
             = form.domain(IntegralType::interior_facet, id, *mesh);
+
         std::span<const std::uint32_t> cell_info
             = impl::get_cell_orientation_info(*coefficients[coeff]);
 
@@ -1155,7 +1169,8 @@ Expression<T, U> create_expression(
   std::array<std::size_t, 2> Xshape
       = {static_cast<std::size_t>(e.num_points),
          static_cast<std::size_t>(e.entity_dimension)};
-  std::vector<int> value_shape(e.value_shape, e.value_shape + e.num_components);
+  std::vector<std::size_t> value_shape(e.value_shape,
+                                       e.value_shape + e.num_components);
   std::function<void(T*, const T*, const T*,
                      const typename scalar_value_type<T>::value_type*,
                      const int*, const std::uint8_t*)>

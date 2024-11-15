@@ -36,15 +36,17 @@ int main(int argc, char* argv[])
         mesh::cell_type_to_basix_type(mesh_tet->topology()->cell_type()), 1,
         basix::element::lagrange_variant::equispaced, false);
     auto V_tet = std::make_shared<fem::FunctionSpace<double>>(
-        fem::create_functionspace(mesh_tet, element_tet,
-                                  std::vector<std::size_t>{3}));
+        fem::create_functionspace<double>(
+            mesh_tet, std::make_shared<fem::FiniteElement<double>>(
+                          element_tet, std::vector<std::size_t>{3})));
 
     basix::FiniteElement element_hex = basix::element::create_lagrange<double>(
         mesh::cell_type_to_basix_type(mesh_hex->topology()->cell_type()), 2,
         basix::element::lagrange_variant::equispaced, false);
     auto V_hex = std::make_shared<fem::FunctionSpace<double>>(
-        fem::create_functionspace(mesh_hex, element_hex,
-                                  std::vector<std::size_t>{3}));
+        fem::create_functionspace<double>(
+            mesh_hex, std::make_shared<fem::FiniteElement<double>>(
+                          element_hex, std::vector<std::size_t>{3})));
 
     auto u_tet = std::make_shared<fem::Function<T>>(V_tet);
     auto u_hex = std::make_shared<fem::Function<T>>(V_hex);
@@ -78,8 +80,7 @@ int main(int argc, char* argv[])
         = fem::create_interpolation_data(
             u_hex->function_space()->mesh()->geometry(),
             *u_hex->function_space()->element(),
-            *u_tet->function_space()->mesh(),
-            std::span<const std::int32_t>(cells), 1e-8);
+            *u_tet->function_space()->mesh(), std::span(cells), 1e-8);
     u_hex->interpolate(*u_tet, cells, interpolation_data);
 
 #ifdef HAS_ADIOS2

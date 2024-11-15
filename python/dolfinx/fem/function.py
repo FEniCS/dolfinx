@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 import typing
-import warnings
 from functools import singledispatch
 
 import numpy as np
@@ -461,7 +460,9 @@ class Function(ufl.Coefficient):
         except TypeError:
             # u0 is callable
             assert callable(u0)
-            x = _cpp.fem.interpolation_coords(self._V.element, self._V.mesh.geometry, cells0)
+            x = _cpp.fem.interpolation_coords(
+                self._V.element, self._V.mesh.geometry._cpp_object, cells0
+            )
             self._cpp_object.interpolate(np.asarray(u0(x), dtype=self.dtype), cells0)  # type: ignore
 
     def copy(self) -> Function:
@@ -481,25 +482,6 @@ class Function(ufl.Coefficient):
     def x(self) -> la.Vector:
         """Vector holding the degrees-of-freedom."""
         return self._x
-
-    @property
-    def vector(self):
-        """PETSc vector holding the degrees-of-freedom.
-
-        Upon first call, this function creates a PETSc ``Vec`` object
-        that wraps the degree-of-freedom data. The ``Vec`` object is
-        cached and the cached ``Vec`` is returned upon subsequent calls.
-
-        Note:
-            Prefer :func`x` where possible.
-        """
-        warnings.warn(
-            "dolfinx.fem.Function.vector is deprecated.\n"
-            "Please use dolfinx.fem.Function.x.petsc_vec "
-            "to access the underlying petsc4py wrapper",
-            DeprecationWarning,
-        )
-        return self.x.petsc_vec
 
     @property
     def dtype(self) -> np.dtype:
@@ -579,7 +561,6 @@ class ElementMetaData(typing.NamedTuple):
 
 
 def _create_dolfinx_element(
-    comm: _MPI.Intracomm,
     cell_type: _cpp.mesh.CellType,
     ufl_e: ufl.FiniteElementBase,
     dtype: np.dtype,
@@ -593,15 +574,18 @@ def _create_dolfinx_element(
         raise ValueError(f"Unsupported dtype: {dtype}")
 
     if ufl_e.is_mixed:
-        elements = [_create_dolfinx_element(comm, cell_type, e, dtype) for e in ufl_e.sub_elements]
+        elements = [_create_dolfinx_element(cell_type, e, dtype) for e in ufl_e.sub_elements]
         return CppElement(elements)
     elif ufl_e.is_quadrature:
         return CppElement(
-            cell_type, ufl_e.custom_quadrature()[0], ufl_e.block_size, ufl_e.is_symmetric
+            cell_type, ufl_e.custom_quadrature()[0], [ufl_e.block_size], ufl_e.is_symmetric
         )
     else:
         basix_e = ufl_e.basix_element._e
-        return CppElement(basix_e, ufl_e.block_size, ufl_e.is_symmetric)
+        bs = ufl_e.reference_value_shape if ufl_e.block_size > 1 else None
+        # bs = [ufl_e.block_size] if ufl_e.block_size > 1 else None
+        # print(bs, ufl_e.reference_value_shape)
+        return CppElement(basix_e, bs, ufl_e.is_symmetric)
 
 
 def functionspace(
@@ -635,17 +619,17 @@ def functionspace(
     if ufl_e.cell != mesh.ufl_domain().ufl_cell():
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
 
-    ufl_space = ufl.FunctionSpace(mesh.ufl_domain(), ufl_e)
-    value_shape = ufl_space.value_shape
+    # ufl_space = ufl.FunctionSpace(mesh.ufl_domain(), ufl_e)
+    # value_shape = ufl_space.value_shape
 
     # Compile dofmap and element and create DOLFINx objects
     if form_compiler_options is None:
         form_compiler_options = dict()
     form_compiler_options["scalar_type"] = dtype
 
-    cpp_element = _create_dolfinx_element(mesh.comm, mesh.topology.cell_type, ufl_e, dtype)
-
-    cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology, cpp_element)
+    print("Create element")
+    cpp_element = _create_dolfinx_element(mesh.topology.cell_type, ufl_e, dtype)
+    cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, cpp_element)
 
     assert np.issubdtype(
         mesh.geometry.x.dtype, cpp_element.dtype
@@ -653,13 +637,9 @@ def functionspace(
 
     # Initialize the cpp.FunctionSpace
     try:
-        cppV = _cpp.fem.FunctionSpace_float64(
-            mesh._cpp_object, cpp_element, cpp_dofmap, value_shape
-        )
+        cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, cpp_element, cpp_dofmap)
     except TypeError:
-        cppV = _cpp.fem.FunctionSpace_float32(
-            mesh._cpp_object, cpp_element, cpp_dofmap, value_shape
-        )
+        cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, cpp_element, cpp_dofmap)
 
     return FunctionSpace(mesh, ufl_e, cppV)
 
@@ -713,17 +693,11 @@ class FunctionSpace(ufl.FunctionSpace):
         """
         try:
             Vcpp = _cpp.fem.FunctionSpace_float64(
-                self._cpp_object.mesh,
-                self._cpp_object.element,
-                self._cpp_object.dofmap,
-                self._cpp_object.value_shape,
+                self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap
             )  # type: ignore
         except TypeError:
             Vcpp = _cpp.fem.FunctionSpace_float32(
-                self._cpp_object.mesh,
-                self._cpp_object.element,
-                self._cpp_object.dofmap,
-                self._cpp_object.value_shape,
+                self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap
             )  # type: ignore
         return FunctionSpace(self._mesh, self.ufl_element(), Vcpp)
 
@@ -732,10 +706,10 @@ class FunctionSpace(ufl.FunctionSpace):
         """Number of sub spaces."""
         return self.element.num_sub_elements
 
-    @property
-    def value_shape(self) -> tuple[int, ...]:
-        """Value shape."""
-        return tuple(int(i) for i in self._cpp_object.value_shape)
+    # @property
+    # def value_shape(self) -> tuple[int, ...]:
+    #     """Value shape."""
+    #     return tuple(int(i) for i in self._cpp_object.value_shape)
 
     def sub(self, i: int) -> FunctionSpace:
         """Return the i-th sub space.

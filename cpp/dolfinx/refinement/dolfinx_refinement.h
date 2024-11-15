@@ -10,4 +10,5 @@ namespace dolfinx::refinement
 
 // DOLFINx refinement interface
 
+#include <dolfinx/refinement/interval.h>
 #include <dolfinx/refinement/refine.h>

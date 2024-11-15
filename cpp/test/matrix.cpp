@@ -7,6 +7,7 @@
 // Unit tests for Distributed la::MatrixCSR
 
 #include "poisson.h"
+#include <algorithm>
 #include <basix/mdspan.hpp>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -15,6 +16,8 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
+#include <mpi.h>
+#include <span>
 
 using namespace dolfinx;
 
@@ -117,13 +120,14 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
       basix::element::dpc_variant::unset, false);
 
   auto V = std::make_shared<fem::FunctionSpace<double>>(
-      fem::create_functionspace(mesh, element, {}));
+      fem::create_functionspace<double>(
+          mesh, std::make_shared<fem::FiniteElement<double>>(element)));
 
   // Prepare and set Constants for the bilinear form
   auto kappa = std::make_shared<fem::Constant<double>>(2.0);
   auto a = std::make_shared<fem::Form<double, double>>(
       fem::create_form<double, double>(*form_poisson_a, {V, V}, {},
-                                       {{"kappa", kappa}}, {}));
+                                       {{"kappa", kappa}}, {}, {}));
 
   la::SparsityPattern sp = fem::create_sparsity_pattern(*a);
   sp.finalize();
@@ -155,7 +159,8 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
       basix::element::dpc_variant::unset, false);
 
   auto V = std::make_shared<fem::FunctionSpace<double>>(
-      fem::create_functionspace(mesh, element, {}));
+      fem::create_functionspace<double>(
+          mesh, std::make_shared<fem::FiniteElement<double>>(element)));
 
   // Prepare and set Constants for the bilinear form
   auto kappa = std::make_shared<fem::Constant<double>>(2.0);
@@ -164,7 +169,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
   // Define variational forms
   auto a = std::make_shared<fem::Form<double, double>>(
       fem::create_form<double, double>(*form_poisson_a, {V, V}, {},
-                                       {{"kappa", kappa}}, {}));
+                                       {{"kappa", kappa}}, {}, {}));
 
   // Create sparsity pattern
   la::SparsityPattern sp = fem::create_sparsity_pattern(*a);
@@ -198,11 +203,11 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
 
 void test_matrix()
 {
-  auto map0 = std::make_shared<common::IndexMap>(MPI_COMM_SELF, 8);
-  la::SparsityPattern p(MPI_COMM_SELF, {map0, map0}, {1, 1});
-  p.insert(std::vector{0}, std::vector{0});
-  p.insert(std::vector{4}, std::vector{5});
-  p.insert(std::vector{5}, std::vector{4});
+  auto map0 = std::make_shared<common::IndexMap>(MPI_COMM_WORLD, 8);
+  la::SparsityPattern p(MPI_COMM_WORLD, {map0, map0}, {1, 1});
+  p.insert(0, 0);
+  p.insert(4, 5);
+  p.insert(5, 4);
   p.finalize();
 
   using T = float;
@@ -214,23 +219,36 @@ void test_matrix()
 
   const std::vector Adense0 = A.to_dense();
 
+  // Note: we cut off the ghost rows by intent here! But therefore we are not
+  // able to work with the dimensions of Adense0 to compute indices, these
+  // contain the ghost rows, which also vary between processes.
   MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<std::size_t, 8, 8>>
-      Adense(Adense0.data(), 8, 8);
+      const T,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+          std::size_t, 8, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
+      Adense(Adense0.data(), 8, A.index_map(1)->size_global());
 
-  std::vector<T> Aref_data(8 * 8, 0);
+  std::vector<T> Aref_data(8 * A.index_map(1)->size_global(), 0);
   MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<std::size_t, 8, 8>>
-      Aref(Aref_data.data(), 8, 8);
-  Aref(0, 0) = 1;
-  Aref(4, 5) = 2.3;
+      T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+             std::size_t, 8, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
+      Aref(Aref_data.data(), 8, A.index_map(1)->size_global());
+
+  auto to_global_col = [&](auto col)
+  {
+    std::array<std::int64_t, 1> tmp;
+    A.index_map(1)->local_to_global(std::vector<std::int32_t>{col}, tmp);
+    return tmp[0];
+  };
+  Aref(0, to_global_col(0)) = 1;
+  Aref(4, to_global_col(5)) = 2.3;
 
   for (std::size_t i = 0; i < Adense.extent(0); ++i)
     for (std::size_t j = 0; j < Adense.extent(1); ++j)
       CHECK(Adense(i, j) == Aref(i, j));
 
-  Aref(4, 4) = 2.3;
-  CHECK(Adense(4, 4) != Aref(4, 4));
+  Aref(4, to_global_col(4)) = 2.3;
+  CHECK(Adense(4, to_global_col(4)) != Aref(4, to_global_col(4)));
 }
 
 } // namespace

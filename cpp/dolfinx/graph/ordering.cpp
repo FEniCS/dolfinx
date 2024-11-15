@@ -241,8 +241,8 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
     std::vector<int> wn(k), wh(k), wl(k);
     for (const std::vector<int>& r : rgc)
     {
-      std::transform(ls.begin(), ls.end(), wn.begin(),
-                     [](const std::vector<int>& vec) { return vec.size(); });
+      std::ranges::transform(ls, wn.begin(), [](const std::vector<int>& vec)
+                             { return vec.size(); });
       std::ranges::copy(wn, wh.begin());
       std::ranges::copy(wn, wl.begin());
       for (int w : r)
@@ -251,10 +251,10 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
         ++wl[lvp[w][1]];
       }
       // Zero any entries which did not increase
-      std::transform(wh.begin(), wh.end(), wn.begin(), wh.begin(),
-                     [](int vh, int vn) { return (vh > vn) ? vh : 0; });
-      std::transform(wl.begin(), wl.end(), wn.begin(), wl.begin(),
-                     [](int vl, int vn) { return (vl > vn) ? vl : 0; });
+      std::ranges::transform(wh, wn, wh.begin(),
+                             [](int vh, int vn) { return (vh > vn) ? vh : 0; });
+      std::ranges::transform(wl, wn, wl.begin(),
+                             [](int vl, int vn) { return (vl > vn) ? vl : 0; });
 
       // Find maximum of those that did increase
       int h0 = *std::ranges::max_element(wh);

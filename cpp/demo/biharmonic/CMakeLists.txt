@@ -2,15 +2,10 @@
 #
 # python cmake/scripts/generate-cmakefiles from dolfinx/cpp
 #
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.21)
 
 set(PROJECT_NAME demo_biharmonic)
 project(${PROJECT_NAME} LANGUAGES C CXX)
-
-# Set C++20 standard
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
@@ -45,10 +40,12 @@ add_custom_command(
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-add_executable(
-  ${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/biharmonic.c
-)
+add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/biharmonic.c)
 target_link_libraries(${PROJECT_NAME} dolfinx)
+
+# Set C++20 standard
+set(CMAKE_CXX_EXTENSIONS OFF)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 
 # Do not throw error for 'multi-line comments' (these are typical in rst which
 # includes LaTeX)

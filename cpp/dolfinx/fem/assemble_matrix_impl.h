@@ -24,7 +24,7 @@
 
 namespace dolfinx::fem::impl
 {
-
+/// @brief Typedef
 using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
     const std::int32_t,
     MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
@@ -317,7 +317,8 @@ void assemble_exterior_facets(
 /// applied.
 /// @param[in] bc1 Marker for columns with Dirichlet boundary conditions
 /// applied.
-/// @param[in] coeffs  The coefficient data array of shape (cells.size(), cstride),
+/// @param[in] coeffs  The coefficient data array of shape (cells.size(),
+/// cstride),
 /// @param[in] kernel Kernel function to execute over each cell.
 /// flattened into row-major format.
 /// @param[in] cstride Coefficient stride.
@@ -500,9 +501,11 @@ void assemble_matrix(
   // Integration domain mesh
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
+
   // Test function mesh
   auto mesh0 = a.function_spaces().at(0)->mesh();
   assert(mesh0);
+
   // Trial function mesh
   auto mesh1 = a.function_spaces().at(1)->mesh();
   assert(mesh1);

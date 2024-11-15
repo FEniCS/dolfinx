@@ -77,7 +77,8 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
 
   // Pad to 3D if vector/tensor is product of dimensions is smaller than 3**rank
   // to ensure that we can visualize them correctly in Paraview
-  std::span<const std::size_t> value_shape = u.function_space()->value_shape();
+  std::span<const std::size_t> value_shape
+      = u.function_space()->element()->value_shape();
   int rank = value_shape.size();
   int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
                                    std::multiplies{});
@@ -191,13 +192,13 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
       _data.resize(data_values.size());
       if (component == "real_")
       {
-        std::transform(data_values.begin(), data_values.end(), _data.begin(),
-                       [](auto x) { return x.real(); });
+        std::ranges::transform(data_values, _data.begin(),
+                               [](auto x) { return x.real(); });
       }
       else if (component == "imag_")
       {
-        std::transform(data_values.begin(), data_values.end(), _data.begin(),
-                       [](auto x) { return x.imag(); });
+        std::ranges::transform(data_values, _data.begin(),
+                               [](auto x) { return x.imag(); });
       }
       u = std::span<const scalar_value_type_t<T>>(_data);
     }

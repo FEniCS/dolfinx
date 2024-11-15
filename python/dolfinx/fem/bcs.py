@@ -11,7 +11,7 @@ from __future__ import annotations
 import numbers
 import typing
 
-import numpy.typing
+import numpy.typing as npt
 
 if typing.TYPE_CHECKING:
     from dolfinx.fem.function import Constant, Function
@@ -57,7 +57,7 @@ def locate_dofs_geometrical(
 def locate_dofs_topological(
     V: typing.Union[dolfinx.fem.FunctionSpace, typing.Iterable[dolfinx.fem.FunctionSpace]],
     entity_dim: int,
-    entities: numpy.typing.NDArray[np.int32],
+    entities: npt.NDArray[np.int32],
     remote: bool = True,
 ) -> np.ndarray:
     """Locate degrees-of-freedom belonging to mesh entities topologically.
@@ -132,10 +132,52 @@ class DirichletBC:
         """The function space on which the boundary condition is defined"""
         return self._cpp_object.function_space
 
+    def set(
+        self, x: npt.NDArray, x0: typing.Optional[npt.NDArray[np.int32]] = None, alpha: float = 1
+    ) -> None:
+        """Set entries in an array that are constrained by Dirichlet boundary conditions.
+
+        Entries in ``x`` that are constrained by a Dirichlet boundary
+        conditions are set to ``alpha * (x_bc - x0)``, where ``x_bc`` is
+        the (interpolated) boundary condition value.
+
+        For elements with point-wise evaluated degrees-of-freedom, e.g.
+        Lagrange elements, ``x_bc`` is the value of the boundary condition
+        at the degree-of-freedom. For elements with moment
+        degrees-of-freedom, ``x_bc`` is the value of the boundary condition
+        interpolated into the finite element space.
+
+        If `x` includes ghosted entries (entries available on the calling
+        rank but owned by another rank), ghosted entries constrained by a
+        Dirichlet condition will also be set.
+
+        Args:
+            x: Array to modify for Dirichlet boundary conditions.
+            x0: Optional array used in computing the value to set. If
+                not provided it is treated as zero.
+            alpha: Scaling factor.
+        """
+        self._cpp_object.set(x, x0, alpha)
+
+    def dof_indices(self) -> tuple[npt.NDArray[np.int32], int]:
+        """Access dof indices `(local indices, unrolled)`, including ghosts, to
+        which a Dirichlet condition is applied, and the index to the first
+        non-owned (ghost) index. The array of indices is sorted.
+
+        Note:
+            The returned array is read-only.
+
+        Returns:
+            Sorted array of dof indices (unrolled) and index to the
+            first entry in the dof index array that is not owned. Entries
+            `dofs[:pos]` are owned and entries `dofs[pos:]` are ghosts.
+        """
+        return self._cpp_object.dof_indices()
+
 
 def dirichletbc(
     value: typing.Union[Function, Constant, np.ndarray],
-    dofs: numpy.typing.NDArray[np.int32],
+    dofs: npt.NDArray[np.int32],
     V: typing.Optional[dolfinx.fem.FunctionSpace] = None,
 ) -> DirichletBC:
     """Create a representation of Dirichlet boundary condition which

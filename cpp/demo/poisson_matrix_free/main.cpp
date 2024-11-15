@@ -42,6 +42,7 @@
 // ## C++ program
 
 #include "poisson.h"
+#include <algorithm>
 #include <basix/finite-element.h>
 #include <cmath>
 #include <complex>
@@ -50,6 +51,7 @@
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/Constant.h>
 #include <memory>
+#include <petscsystypes.h>
 
 using namespace dolfinx;
 
@@ -62,9 +64,8 @@ namespace linalg
 /// @param[in] y
 void axpy(auto&& r, auto alpha, auto&& x, auto&& y)
 {
-  std::transform(x.array().begin(), x.array().end(), y.array().begin(),
-                 r.mutable_array().begin(),
-                 [alpha](auto x, auto y) { return alpha * x + y; });
+  std::ranges::transform(x.array(), y.array(), r.mutable_array().begin(),
+                         [alpha](auto x, auto y) { return alpha * x + y; });
 }
 
 /// @brief Solve problem A.x = b using the conjugate gradient (CG)
@@ -142,20 +143,20 @@ void solver(MPI_Comm comm)
       basix::element::family::P, basix::cell::type::triangle, 2,
       basix::element::lagrange_variant::unset,
       basix::element::dpc_variant::unset, false);
-  auto V = std::make_shared<fem::FunctionSpace<U>>(
-      fem::create_functionspace(mesh, element, {}));
+  auto V = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+      mesh, std::make_shared<fem::FiniteElement<U>>(element)));
 
   // Prepare and set Constants for the bilinear form
   auto f = std::make_shared<fem::Constant<T>>(-6.0);
 
   // Define variational forms
-  auto L = std::make_shared<fem::Form<T, U>>(
-      fem::create_form<T>(*form_poisson_L, {V}, {}, {{"f", f}}, {}));
+  fem::Form<T, U> L
+      = fem::create_form<T>(*form_poisson_L, {V}, {}, {{"f", f}}, {}, {});
 
   // Action of the bilinear form "a" on a function ui
   auto ui = std::make_shared<fem::Function<T, U>>(V);
-  auto M = std::make_shared<fem::Form<T, U>>(
-      fem::create_form<T>(*form_poisson_M, {V}, {{"ui", ui}}, {{}}, {}));
+  fem::Form<T, U> M
+      = fem::create_form<T>(*form_poisson_M, {V}, {{"ui", ui}}, {{}}, {}, {});
 
   // Define boundary condition
   auto u_D = std::make_shared<fem::Function<T, U>>(V);
@@ -177,24 +178,24 @@ void solver(MPI_Comm comm)
 
   // Assemble RHS vector
   la::Vector<T> b(V->dofmap()->index_map, V->dofmap()->index_map_bs());
-  fem::assemble_vector(b.mutable_array(), *L);
+  fem::assemble_vector(b.mutable_array(), L);
 
   // Apply lifting to account for Dirichlet boundary condition
   // b <- b - A * x_bc
-  fem::set_bc<T, U>(ui->x()->mutable_array(), {bc}, T(-1));
-  fem::assemble_vector(b.mutable_array(), *M);
+  bc->set(ui->x()->mutable_array(), std::nullopt, T(-1));
+  fem::assemble_vector(b.mutable_array(), M);
 
   // Communicate ghost values
   b.scatter_rev(std::plus<T>());
 
   // Set BC dofs to zero (effectively zeroes columns of A)
-  fem::set_bc<T, U>(b.mutable_array(), {bc}, T(0));
+  bc->set(b.mutable_array(), std::nullopt, T(0));
 
   b.scatter_fwd();
 
   // Pack coefficients and constants
-  auto coeff = fem::allocate_coefficient_storage(*M);
-  std::vector<T> constants = fem::pack_constants(*M);
+  auto coeff = fem::allocate_coefficient_storage(M);
+  std::vector<T> constants = fem::pack_constants(M);
 
   // Create function for computing the action of A on x (y = Ax)
   auto action = [&M, &ui, &bc, &coeff, &constants](auto& x, auto& y)
@@ -206,12 +207,12 @@ void solver(MPI_Comm comm)
     std::ranges::copy(x.array(), ui->x()->mutable_array().begin());
 
     // Compute action of A on x
-    fem::pack_coefficients(*M, coeff);
-    fem::assemble_vector(y.mutable_array(), *M, std::span<const T>(constants),
+    fem::pack_coefficients(M, coeff);
+    fem::assemble_vector(y.mutable_array(), M, std::span<const T>(constants),
                          fem::make_coefficients_span(coeff));
 
     // Set BC dofs to zero (effectively zeroes rows of A)
-    fem::set_bc<T, U>(y.mutable_array(), {bc}, T(0));
+    bc->set(y.mutable_array(), std::nullopt, T(0));
 
     // Accumulate ghost values
     y.scatter_rev(std::plus<T>());
@@ -225,13 +226,13 @@ void solver(MPI_Comm comm)
   int num_it = linalg::cg(*u->x(), b, action, 200, 1e-6);
 
   // Set BC values in the solution vectors
-  fem::set_bc<T, U>(u->x()->mutable_array(), {bc}, T(1));
+  bc->set(u->x()->mutable_array(), std::nullopt, T(1));
 
   // Compute L2 error (squared) of the solution vector e = (u - u_d, u
   // - u_d)*dx
-  auto E = std::make_shared<fem::Form<T>>(fem::create_form<T, U>(
-      *form_poisson_E, {}, {{"uexact", u_D}, {"usol", u}}, {}, {}, mesh));
-  T error = fem::assemble_scalar(*E);
+  fem::Form<T> E = fem::create_form<T, U>(
+      *form_poisson_E, {}, {{"uexact", u_D}, {"usol", u}}, {}, {}, {}, mesh);
+  T error = fem::assemble_scalar(E);
   if (dolfinx::MPI::rank(comm) == 0)
   {
     std::cout << "Number of CG iterations " << num_it << std::endl;

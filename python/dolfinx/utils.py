@@ -10,6 +10,7 @@ from __future__ import annotations
 import ctypes as _ctypes
 import os
 import pathlib
+import warnings
 
 import numpy as np
 
@@ -170,15 +171,17 @@ class ctypes_utils:
 
 
 class cffi_utils:
-    """Utility attributes for working with CFFI (ABI mode) and PETSc.
+    """Utility attributes for working with CFFI (ABI mode) and Numba.
 
-    These attributes are convenience functions for calling PETSc C
-    functions, typically from within Numba functions.
+    Registers Numba's complex types with CFFI.
+
+    If PETSc is available, CFFI convenience functions for calling PETSc C
+    functions are also created. These are typically called from within Numba
+    functions.
 
     Note:
         `CFFI <https://cffi.readthedocs.io/>`_ and  `Numba
-        <https://numba.pydata.org/>`_ must be available to use these
-        utilities.
+        <https://numba.pydata.org/>`_ must be available to use these utilities.
 
     Examples:
         A typical use of these utility functions is::
@@ -188,22 +191,33 @@ class cffi_utils:
             def set_vals(A: int,
                          m: int, rows: npt.NDArray[PETSc.IntType],
                          n: int, cols: npt.NDArray[PETSc.IntType],
-                         data: npt.NDArray[PETSc.ScalarTYpe], mode: int):
+                         data: npt.NDArray[PETSc.ScalarType], mode: int):
                 MatSetValuesLocal(A, m, ffi.from_buffer(rows), n, ffi.from_buffer(cols),
                                 ffi.from_buffer(rows(data), mode)
     """
 
-    try:
-        from petsc4py import PETSc as _PETSc
+    import cffi as _cffi
 
-        import cffi as _cffi
+    _ffi = _cffi.FFI()
+
+    try:
         import numba as _numba
         import numba.core.typing.cffi_utils as _cffi_support
 
         # Register complex types
-        _ffi = _cffi.FFI()
         _cffi_support.register_type(_ffi.typeof("float _Complex"), _numba.types.complex64)
         _cffi_support.register_type(_ffi.typeof("double _Complex"), _numba.types.complex128)
+
+    except KeyError:
+        pass
+    except ImportError:
+        warnings.warn(
+            "Could not import numba, so cffi/numba complex types were not registered.",
+            ImportWarning,
+        )
+
+    try:
+        from petsc4py import PETSc as _PETSc
 
         _lib_cffi = _ffi.dlopen(str(get_petsc_lib()))
 
@@ -216,6 +230,7 @@ class cffi_utils:
             np.complex128: "double _Complex",
             np.longlong: "long long",
         }
+
         _c_int_t = _CTYPES[_PETSc.IntType]  # type: ignore
         _c_scalar_t = _CTYPES[_PETSc.ScalarType]  # type: ignore
         _ffi.cdef(
@@ -238,5 +253,10 @@ class cffi_utils:
         """See PETSc `MatSetValuesBlockedLocal
         <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
         documentation."""
-    except (ImportError, KeyError):
+    except KeyError:
         pass
+    except ImportError:
+        warnings.warn(
+            "Could not import petsc4py, so cffi/PETSc ABI mode interface was not created.",
+            ImportWarning,
+        )

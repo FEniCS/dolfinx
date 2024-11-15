@@ -44,6 +44,8 @@ from ufl import dx
 # size is 1, so we take the slice `[0, :, :]` to get a 2-dimensional
 # array.
 
+N = 20
+
 # +
 element = basix.ufl.element(
     basix.ElementFamily.P,
@@ -120,7 +122,7 @@ def saw_tooth(x):
 # elements, and plot the finite element interpolation.
 
 # +
-msh = mesh.create_unit_interval(MPI.COMM_WORLD, 10)
+msh = mesh.create_unit_interval(MPI.COMM_WORLD, N)
 
 x = ufl.SpatialCoordinate(msh)
 u_exact = saw_tooth(x[0])
@@ -135,9 +137,9 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
     if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
         pts: list[list[float]] = []
         cells: list[int] = []
-        for cell in range(10):
+        for cell in range(N):
             for i in range(51):
-                pts.append([cell / 10 + i / 50 / 10, 0, 0])
+                pts.append([cell / N + i / 50 / N, 0, 0])
                 cells.append(cell)
         values = uh.eval(pts, cells)
         plt.plot(pts, [saw_tooth(i[0]) for i in pts], "k--")

@@ -7,6 +7,7 @@
 #pragma once
 
 #include "Topology.h"
+#include <algorithm>
 #include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdint>
@@ -112,7 +113,7 @@ public:
   /// Move Assignment
   Geometry& operator=(Geometry&&) = default;
 
-  /// Return Euclidean dimension of coordinate system
+  /// Return dimension of the Euclidean coordinate system
   int dim() const { return _dim; }
 
   /// @brief  DofMap for the geometry
@@ -164,14 +165,14 @@ public:
   /// @brief Access geometry degrees-of-freedom data (const version).
   ///
   /// @return The flattened row-major geometry data, where the shape is
-  /// (num_points, 3)
+  /// `(num_points, 3)`.
   std::span<const value_type> x() const { return _x; }
 
   /// @brief Access geometry degrees-of-freedom data (non-const
   /// version).
   ///
   /// @return The flattened row-major geometry data, where the shape is
-  /// (num_points, 3)
+  /// `(num_points, 3)`.
   std::span<value_type> x() { return _x; }
 
   /// @brief The element that describes the geometry map.
@@ -230,8 +231,8 @@ template <typename U, typename V, typename W>
 Geometry(std::shared_ptr<const common::IndexMap>, U,
          const std::vector<fem::CoordinateElement<
              typename std::remove_reference_t<typename V::value_type>>>&,
-         V, int,
-         W) -> Geometry<typename std::remove_cvref_t<typename V::value_type>>;
+         V, int, W)
+    -> Geometry<typename std::remove_cvref_t<typename V::value_type>>;
 /// @endcond
 
 /// @brief Build Geometry from input data.
@@ -333,8 +334,8 @@ create_geometry(
 
   // Allocate space for input global indices and copy data
   std::vector<std::int64_t> igi(nodes.size());
-  std::transform(l2l.cbegin(), l2l.cend(), igi.begin(),
-                 [&nodes](auto index) { return nodes[index]; });
+  std::ranges::transform(l2l, igi.begin(),
+                         [&nodes](auto index) { return nodes[index]; });
 
   // Build coordinate dof array, copying coordinates to correct position
   assert(x.size() % dim == 0);
@@ -425,8 +426,8 @@ create_geometry(
 
   // Allocate space for input global indices and copy data
   std::vector<std::int64_t> igi(nodes.size());
-  std::transform(l2l.cbegin(), l2l.cend(), igi.begin(),
-                 [&nodes](auto index) { return nodes[index]; });
+  std::ranges::transform(l2l, igi.begin(),
+                         [&nodes](auto index) { return nodes[index]; });
 
   // Build coordinate dof array, copying coordinates to correct position
   assert(x.size() % dim == 0);

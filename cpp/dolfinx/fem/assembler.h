@@ -11,9 +11,11 @@
 #include "assemble_vector_impl.h"
 #include "traits.h"
 #include "utils.h"
+#include <algorithm>
 #include <cstdint>
 #include <dolfinx/common/types.h>
 #include <memory>
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -36,9 +38,10 @@ make_coefficients_span(const std::map<std::pair<IntegralType, int>,
 {
   using Key = typename std::remove_reference_t<decltype(coeffs)>::key_type;
   std::map<Key, std::pair<std::span<const T>, int>> c;
-  std::transform(coeffs.cbegin(), coeffs.cend(), std::inserter(c, c.end()),
-                 [](auto& e) -> typename decltype(c)::value_type
-                 { return {e.first, {e.second.first, e.second.second}}; });
+  std::ranges::transform(
+      coeffs, std::inserter(c, c.end()),
+      [](auto& e) -> typename decltype(c)::value_type
+      { return {e.first, {e.second.first, e.second.second}}; });
   return c;
 }
 
@@ -135,7 +138,7 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 
 /// Modify b such that:
 ///
-///   b <- b - scale * A_j (g_j - x0_j)
+///   b <- b - alpha * A_j (g_j - x0_j)
 ///
 /// where j is a block (nest) index. For a non-blocked problem j = 0. The
 /// boundary conditions bcs1 are on the trial spaces V_j. The forms in
@@ -147,44 +150,25 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 /// is responsible for calling VecGhostUpdateBegin/End.
 template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
-    std::span<T> b, const std::vector<std::shared_ptr<const Form<T, U>>>& a,
+    std::span<T> b,
+    std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>> a,
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
-    const std::vector<std::vector<std::shared_ptr<const DirichletBC<T, U>>>>&
-        bcs1,
-    const std::vector<std::span<const T>>& x0, T scale)
+    const std::vector<
+        std::vector<std::reference_wrapper<const DirichletBC<T, U>>>>& bcs1,
+    const std::vector<std::span<const T>>& x0, T alpha)
 {
-  std::shared_ptr<const mesh::Mesh<U>> mesh;
-  for (auto& a_i : a)
-  {
-    if (a_i and !mesh)
-      mesh = a_i->mesh();
-    if (a_i and mesh and a_i->mesh() != mesh)
-      throw std::runtime_error("Mismatch between meshes.");
-  }
+  // If all forms are null, there is nothing to do
+  if (std::ranges::all_of(a, [](auto ai) { return !ai; }))
+    return;
 
-  if (!mesh)
-    throw std::runtime_error("Unable to extract a mesh.");
-
-  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
-  {
-    impl::apply_lifting<T>(b, a, mesh->geometry().dofmap(),
-                           mesh->geometry().x(), constants, coeffs, bcs1, x0,
-                           scale);
-  }
-  else
-  {
-    auto x = mesh->geometry().x();
-    std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
-    impl::apply_lifting<T>(b, a, mesh->geometry().dofmap(), _x, constants,
-                           coeffs, bcs1, x0, scale);
-  }
+  impl::apply_lifting<T>(b, a, constants, coeffs, bcs1, x0, alpha);
 }
 
 /// Modify b such that:
 ///
-///   b <- b - scale * A_j (g_j - x0_j)
+///   b <- b - alpha * A_j.(g_j - x0_j)
 ///
 /// where j is a block (nest) index. For a non-blocked problem j = 0. The
 /// boundary conditions bcs1 are on the trial spaces V_j. The forms in
@@ -196,10 +180,11 @@ void apply_lifting(
 /// is responsible for calling VecGhostUpdateBegin/End.
 template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
-    std::span<T> b, const std::vector<std::shared_ptr<const Form<T, U>>>& a,
-    const std::vector<std::vector<std::shared_ptr<const DirichletBC<T, U>>>>&
-        bcs1,
-    const std::vector<std::span<const T>>& x0, T scale)
+    std::span<T> b,
+    std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>> a,
+    const std::vector<
+        std::vector<std::reference_wrapper<const DirichletBC<T, U>>>>& bcs1,
+    const std::vector<std::span<const T>>& x0, T alpha)
 {
   std::vector<
       std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>>
@@ -209,10 +194,10 @@ void apply_lifting(
   {
     if (_a)
     {
-      auto coefficients = allocate_coefficient_storage(*_a);
-      pack_coefficients(*_a, coefficients);
+      auto coefficients = allocate_coefficient_storage(_a->get());
+      pack_coefficients(_a->get(), coefficients);
       coeffs.push_back(coefficients);
-      constants.push_back(pack_constants(*_a));
+      constants.push_back(pack_constants(_a->get()));
     }
     else
     {
@@ -226,10 +211,10 @@ void apply_lifting(
   std::vector<std::map<std::pair<IntegralType, int>,
                        std::pair<std::span<const T>, int>>>
       _coeffs;
-  std::transform(coeffs.cbegin(), coeffs.cend(), std::back_inserter(_coeffs),
-                 [](auto& c) { return make_coefficients_span(c); });
+  std::ranges::transform(coeffs, std::back_inserter(_coeffs),
+                         [](auto& c) { return make_coefficients_span(c); });
 
-  apply_lifting(b, a, _constants, _coeffs, bcs1, x0, scale);
+  apply_lifting(b, a, _constants, _coeffs, bcs1, x0, alpha);
 }
 
 // -- Matrices ---------------------------------------------------------------
@@ -285,7 +270,7 @@ void assemble_matrix(
     auto mat_add, const Form<T, U>& a, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
-    const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs)
+    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
 {
   // Index maps for dof ranges
   auto map0 = a.function_spaces().at(0)->dofmap()->index_map;
@@ -301,18 +286,17 @@ void assemble_matrix(
   std::int32_t dim1 = bs1 * (map1->size_local() + map1->num_ghosts());
   for (std::size_t k = 0; k < bcs.size(); ++k)
   {
-    assert(bcs[k]);
-    assert(bcs[k]->function_space());
-    if (a.function_spaces().at(0)->contains(*bcs[k]->function_space()))
+    assert(bcs[k].get().function_space());
+    if (a.function_spaces().at(0)->contains(*bcs[k].get().function_space()))
     {
       dof_marker0.resize(dim0, false);
-      bcs[k]->mark_dofs(dof_marker0);
+      bcs[k].get().mark_dofs(dof_marker0);
     }
 
-    if (a.function_spaces().at(1)->contains(*bcs[k]->function_space()))
+    if (a.function_spaces().at(1)->contains(*bcs[k].get().function_space()))
     {
       dof_marker1.resize(dim1, false);
-      bcs[k]->mark_dofs(dof_marker1);
+      bcs[k].get().mark_dofs(dof_marker1);
     }
   }
 
@@ -329,7 +313,7 @@ void assemble_matrix(
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     auto mat_add, const Form<T, U>& a,
-    const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs)
+    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
 {
   // Prepare constants and coefficients
   const std::vector<T> constants = pack_constants(a);
@@ -409,57 +393,16 @@ void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
 template <dolfinx::scalar T, std::floating_point U>
 void set_diagonal(
     auto set_fn, const FunctionSpace<U>& V,
-    const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
+    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs,
     T diagonal = 1.0)
 {
   for (auto& bc : bcs)
   {
-    assert(bc);
-    if (V.contains(*bc->function_space()))
+    if (V.contains(*bc.get().function_space()))
     {
-      const auto [dofs, range] = bc->dof_indices();
+      const auto [dofs, range] = bc.get().dof_indices();
       set_diagonal(set_fn, dofs.first(range), diagonal);
     }
   }
 }
-
-// -- Setting bcs ------------------------------------------------------------
-
-// FIXME: Move these function elsewhere?
-
-// FIXME: clarify x0
-// FIXME: clarify what happens with ghosts
-
-/// Set bc values in owned (local) part of the vector, multiplied by
-/// 'scale'. The vectors b and x0 must have the same local size. The bcs
-/// should be on (sub-)spaces of the form L that b represents.
-template <dolfinx::scalar T, std::floating_point U>
-void set_bc(std::span<T> b,
-            const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
-            std::span<const T> x0, T scale = 1)
-{
-  if (b.size() > x0.size())
-    throw std::runtime_error("Size mismatch between b and x0 vectors.");
-  for (auto& bc : bcs)
-  {
-    assert(bc);
-    bc->set(b, x0, scale);
-  }
-}
-
-/// Set bc values in owned (local) part of the vector, multiplied by
-/// 'scale'. The bcs should be on (sub-)spaces of the form L that b
-/// represents.
-template <dolfinx::scalar T, std::floating_point U>
-void set_bc(std::span<T> b,
-            const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
-            T scale = 1)
-{
-  for (auto& bc : bcs)
-  {
-    assert(bc);
-    bc->set(b, scale);
-  }
-}
-
 } // namespace dolfinx::fem

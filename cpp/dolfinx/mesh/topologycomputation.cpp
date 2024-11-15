@@ -8,7 +8,6 @@
 #include "Topology.h"
 #include "cell_types.h"
 #include <algorithm>
-#include <bits/ranges_algo.h>
 #include <boost/unordered_map.hpp>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -41,12 +40,13 @@ template <typename U>
 graph::AdjacencyList<int> create_adj_list(U& data, std::int32_t size)
 {
   std::ranges::sort(data);
-  data.erase(std::unique(data.begin(), data.end()), data.end());
+  auto [unique_end, range_end] = std::ranges::unique(data);
+  data.erase(unique_end, range_end);
 
   std::vector<int> array;
   array.reserve(data.size());
-  std::transform(data.begin(), data.end(), std::back_inserter(array),
-                 [](auto x) { return x.second; });
+  std::ranges::transform(data, std::back_inserter(array),
+                         [](auto x) { return x.second; });
 
   std::vector<std::int32_t> offsets{0};
   offsets.reserve(size + 1);
@@ -95,7 +95,7 @@ int get_ownership(const U& processes, const V& vertices)
 /// @param[in] num_entities_per_cell Number of entities per cell
 /// @param[in] entity_index Initial numbering for each row in
 /// entity_list
-/// @returns Local indices and index map
+/// @returns Local indices, the index map and shared entities
 std::tuple<std::vector<int>, common::IndexMap, std::vector<std::int32_t>>
 get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
                    std::span<const std::int32_t> entity_list,
@@ -131,7 +131,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   std::vector<int> ranks(vertex_ranks.array().begin(),
                          vertex_ranks.array().end());
   std::ranges::sort(ranks);
-  ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+  auto [unique_end, range_end] = std::ranges::unique(ranks);
+  ranks.erase(unique_end, range_end);
 
   MPI_Comm neighbor_comm;
   MPI_Dist_graph_create_adjacent(
@@ -206,25 +207,20 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
 
     perm.resize(entity_to_local_idx.size() / (num_vertices_per_e + 1));
     std::iota(perm.begin(), perm.end(), 0);
-    std::ranges::sort(perm,
-                      [&entities = entity_to_local_idx,
-                       shape = num_vertices_per_e + 1](auto e0, auto e1)
-                      {
-                        auto it0 = std::next(entities.begin(), e0 * shape);
-                        auto it1 = std::next(entities.begin(), e1 * shape);
-                        return std::lexicographical_compare(
-                            it0, std::next(it0, shape), it1,
-                            std::next(it1, shape));
-                      });
-    perm.erase(std::unique(perm.begin(), perm.end(),
-                           [&entities = entity_to_local_idx,
-                            shape = num_vertices_per_e + 1](auto e0, auto e1)
-                           {
-                             auto it0 = std::next(entities.begin(), e0 * shape);
-                             auto it1 = std::next(entities.begin(), e1 * shape);
-                             return std::equal(it0, std::next(it0, shape), it1);
-                           }),
-               perm.end());
+
+    auto range_by_index = [&, shape = num_vertices_per_e + 1](auto e)
+    {
+      auto begin = std::next(entity_to_local_idx.begin(), e * shape);
+      return std::ranges::subrange(begin, std::next(begin, shape));
+    };
+
+    std::ranges::sort(perm, std::ranges::lexicographical_compare,
+                      range_by_index);
+
+    auto [unique_end, range_end]
+        = std::ranges::unique(perm, std::ranges::equal, range_by_index);
+
+    perm.erase(unique_end, range_end);
   }
 
   // Get shared entities of this dimension, and also match up an index
@@ -308,9 +304,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
           shared_entities_data.push_back({idx, ranks[r]});
           shared_entities_data.push_back({idx, mpi_rank});
           recv_index.push_back(idx);
-          std::transform(
-              entity.begin(), entity.end(),
-              std::back_inserter(shared_entity_to_global_vertices_data),
+          std::ranges::transform(
+              entity, std::back_inserter(shared_entity_to_global_vertices_data),
               [idx](auto v) -> std::pair<std::int32_t, std::int64_t>
               { return {idx, v}; });
         }
@@ -365,15 +360,13 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
     }
     num_local = c;
 
-    std::transform(local_index.cbegin(), local_index.cend(),
-                   local_index.begin(),
-                   [&c](auto index) { return index == -1 ? c++ : index; });
+    std::ranges::transform(local_index, local_index.begin(), [&c](auto index)
+                           { return index == -1 ? c++ : index; });
     assert(c == entity_count);
 
     // Convert interprocess entities to local_index
-    std::transform(interprocess_entities.cbegin(), interprocess_entities.cend(),
-                   interprocess_entities.begin(),
-                   [&local_index](std::int32_t i) { return local_index[i]; });
+    std::ranges::transform(interprocess_entities, interprocess_entities.begin(),
+                           [&local_index](auto i) { return local_index[i]; });
   }
 
   //---------
@@ -391,25 +384,20 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
     std::vector<std::int64_t> send_global_index_data;
     for (const auto& indices : send_index)
     {
-      std::transform(indices.cbegin(), indices.cend(),
-                     std::back_inserter(send_global_index_data),
-                     [&local_index, size = num_local,
-                      offset = local_offset](auto idx) -> std::int64_t
-                     {
-                       // If not in our local range, send -1.
-                       return local_index[idx] < size
-                                  ? offset + local_index[idx]
-                                  : -1;
-                     });
+      std::ranges::transform(
+          indices, std::back_inserter(send_global_index_data),
+          [&local_index, size = num_local,
+           offset = local_offset](auto idx) -> std::int64_t
+          {
+            // If not in our local range, send -1.
+            return local_index[idx] < size ? offset + local_index[idx] : -1;
+          });
     }
 
     // Transform send/receive sizes and displacements for scalar send
     for (auto x : {&send_sizes, &send_disp, &recv_sizes, &recv_disp})
-    {
-      std::transform(x->begin(), x->end(), x->begin(),
-                     [num_vertices_per_e](auto a)
-                     { return a / num_vertices_per_e; });
-    }
+      std::ranges::transform(*x, x->begin(), [num_vertices_per_e](auto a)
+                             { return a / num_vertices_per_e; });
 
     recv_data.resize(recv_disp.back());
     MPI_Neighbor_alltoallv(send_global_index_data.data(), send_sizes.data(),
@@ -442,9 +430,9 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
 
   // Create map from initial numbering to new local indices
   std::vector<std::int32_t> new_entity_index(entity_index.size());
-  std::transform(entity_index.begin(), entity_index.end(),
-                 new_entity_index.begin(),
-                 [&local_index](auto index) { return local_index[index]; });
+  std::ranges::transform(entity_index, new_entity_index.begin(),
+                         [&local_index](auto index)
+                         { return local_index[index]; });
 
   return {std::move(new_entity_index), std::move(index_map),
           std::move(interprocess_entities)};
@@ -550,10 +538,9 @@ compute_entities_by_key_matching(
 
         std::vector<std::size_t> perm(global_vertices.size());
         std::iota(perm.begin(), perm.end(), 0);
-        std::ranges::sort(perm,
-                          [&global_vertices](std::size_t i0, std::size_t i1) {
-                            return global_vertices[i0] < global_vertices[i1];
-                          });
+        std::ranges::sort(
+            perm, [&global_vertices](std::size_t i0, std::size_t i1)
+            { return global_vertices[i0] < global_vertices[i1]; });
         // For quadrilaterals, the vertex opposite the lowest vertex should
         // be last
         if (entity_type == mesh::CellType::quadrilateral)
@@ -629,7 +616,7 @@ compute_entities_by_key_matching(
   for (std::size_t k = 0; k < cell_lists.size(); ++k)
   {
     auto cells = std::get<1>(cell_lists[k]);
-    const std::size_t num_cells = cells->num_nodes();
+    [[maybe_unused]] const std::size_t num_cells = cells->num_nodes();
     auto cell_map = std::get<2>(cell_lists[k]);
     int num_entities_per_cell = cell_type_entities[k].size();
     assert(cell_map->size_local() + cell_map->num_ghosts() == (int)num_cells);
@@ -816,13 +803,13 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim,
     cell_lists[i] = {cell_types[i], cells, cell_map};
   }
 
-  auto [d0, d1, im, interprocess_facets] = compute_entities_by_key_matching(
+  auto [d0, d1, im, interprocess_entities] = compute_entities_by_key_matching(
       comm, cell_lists, *vertex_map, entity_type, dim);
 
   return {d0,
           std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(d1)),
           std::make_shared<common::IndexMap>(std::move(im)),
-          std::move(interprocess_facets)};
+          std::move(interprocess_entities)};
 }
 //-----------------------------------------------------------------------------
 std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>

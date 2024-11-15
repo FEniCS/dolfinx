@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <algorithm>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 #include <dolfinx/common/IndexMap.h>
@@ -44,8 +45,9 @@ void test_scatter_fwd(int n)
   // Scatter values to ghost and check value is correctly received
   sct.scatter_fwd<std::int64_t>(data_local, data_ghost);
   CHECK((int)data_ghost.size() == n * num_ghosts);
-  CHECK(std::all_of(data_ghost.begin(), data_ghost.end(), [=](auto i)
-                    { return i == val * ((mpi_rank + 1) % mpi_size); }));
+  CHECK(
+      std::ranges::all_of(data_ghost, [=](auto i)
+                          { return i == val * ((mpi_rank + 1) % mpi_size); }));
 
   std::vector<MPI_Request> requests
       = sct.create_request_vector(decltype(sct)::type::p2p);
@@ -55,8 +57,9 @@ void test_scatter_fwd(int n)
                                       decltype(sct)::type::p2p);
   sct.scatter_fwd_end(requests);
 
-  CHECK(std::all_of(data_ghost.begin(), data_ghost.end(), [=](auto i)
-                    { return i == val * ((mpi_rank + 1) % mpi_size); }));
+  CHECK(
+      std::ranges::all_of(data_ghost, [=](auto i)
+                          { return i == val * ((mpi_rank + 1) % mpi_size); }));
 }
 
 void test_scatter_rev()
@@ -144,8 +147,8 @@ void test_consensus_exchange()
   // Create an IndexMap
   std::vector<int> src_ranks = global_ghost_owner;
   std::ranges::sort(src_ranks);
-  src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
-                  src_ranks.end());
+  auto [unique_end, range_end] = std::ranges::unique(src_ranks);
+  src_ranks.erase(unique_end, range_end);
 
   auto dest_ranks0
       = dolfinx::MPI::compute_graph_edges_nbx(MPI_COMM_WORLD, src_ranks);

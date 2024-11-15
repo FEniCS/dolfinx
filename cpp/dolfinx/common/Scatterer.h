@@ -79,17 +79,17 @@ public:
     std::span owners = map.owners();
     std::vector<std::int32_t> perm(owners.size());
     std::iota(perm.begin(), perm.end(), 0);
-    dolfinx::argsort_radix<std::int32_t>(owners, perm);
+    dolfinx::radix_sort(perm, [&owners](auto index) { return owners[index]; });
 
     // Sort (i) ghost indices and (ii) ghost index owners by rank
     // (using perm array)
     std::span ghosts = map.ghosts();
     std::vector<int> owners_sorted(owners.size());
     std::vector<std::int64_t> ghosts_sorted(owners.size());
-    std::transform(perm.begin(), perm.end(), owners_sorted.begin(),
-                   [&owners](auto idx) { return owners[idx]; });
-    std::transform(perm.begin(), perm.end(), ghosts_sorted.begin(),
-                   [&ghosts](auto idx) { return ghosts[idx]; });
+    std::ranges::transform(perm, owners_sorted.begin(),
+                           [&owners](auto idx) { return owners[idx]; });
+    std::ranges::transform(perm, ghosts_sorted.begin(),
+                           [&ghosts](auto idx) { return ghosts[idx]; });
 
     // For data associated with ghost indices, packed by owning
     // (neighbourhood) rank, compute sizes and displacements. I.e.,
@@ -147,8 +147,7 @@ public:
     {
       auto rescale = [](auto& x, int bs)
       {
-        std::transform(x.begin(), x.end(), x.begin(),
-                       [bs](auto e) { return e *= bs; });
+        std::ranges::transform(x, x.begin(), [bs](auto e) { return e *= bs; });
       };
       rescale(_sizes_local, bs);
       rescale(_displs_local, bs);
@@ -461,8 +460,8 @@ public:
   /// @note This function is intended for advanced usage, and in
   /// particular when using CUDA/device-aware MPI.
   ///
-  /// @tparam T The data type to send
-  /// @tparam F The pack function
+  /// @tparam T Data type to send.
+  /// @tparam F Pack function.
   /// @param[in] remote_data Received data associated with the ghost
   /// indices. The order follows the order of the ghost indices in the
   /// IndexMap used to create the scatterer. The size equal to the
@@ -495,14 +494,15 @@ public:
                       type);
   }
 
-  /// @brief End the reverse scatter communication, and unpack the received
-  /// local buffer into local data.
+  /// @brief End the reverse scatter communication, and unpack the
+  /// received local buffer into local data.
   ///
   /// This function must be called after Scatterer::scatter_rev_begin.
   /// The buffers passed to Scatterer::scatter_rev_begin must not be
   /// modified until after the function has been called.
-  /// @param[in] local_buffer Working buffer. Same buffer should be used in
-  /// Scatterer::scatter_rev_begin.
+  ///
+  /// @param[in] local_buffer Working buffer. Same buffer should be used
+  /// in Scatterer::scatter_rev_begin.
   /// @param[out] local_data All data associated with owned indices.
   /// Size is `size_local()` from the IndexMap used to create the
   /// scatterer, multiplied by the block size. The data for each index
@@ -559,7 +559,7 @@ public:
   }
 
   /// @brief Size of buffer for local data (owned and shared) used in
-  /// forward and reverse communication
+  /// forward and reverse communication.
   /// @return The required buffer size
   std::int32_t local_buffer_size() const noexcept { return _local_inds.size(); }
 
@@ -571,9 +571,9 @@ public:
     return _remote_inds.size();
   }
 
-  /// Return a vector of local indices (owned) used to pack/unpack local data.
-  /// These indices are grouped by neighbor process (process for which an index
-  /// is a ghost).
+  /// Return a vector of local indices (owned) used to pack/unpack local
+  /// data. These indices are grouped by neighbor process (process for
+  /// which an index is a ghost).
   const std::vector<std::int32_t>& local_indices() const noexcept
   {
     return _local_inds;

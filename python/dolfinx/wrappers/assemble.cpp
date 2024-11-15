@@ -22,6 +22,7 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <functional>
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
@@ -30,6 +31,7 @@
 #include <nanobind/stl/complex.h>
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/map.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/tuple.h>
@@ -86,7 +88,7 @@ void declare_discrete_operators(nb::module_& m)
            const dolfinx::fem::FunctionSpace<U>& V1)
         {
           // Create sparsity
-          auto sp = create_sparsity(V0, V1);
+          dolfinx::la::SparsityPattern sp = create_sparsity(V0, V1);
 
           // Build operator
           dolfinx::la::MatrixCSR<T> A(sp);
@@ -142,7 +144,7 @@ void declare_discrete_operators(nb::module_& m)
       [](const dolfinx::fem::FunctionSpace<U>& V0,
          const dolfinx::fem::FunctionSpace<U>& V1)
       {
-        auto sp = create_sparsity(V0, V1);
+        dolfinx::la::SparsityPattern sp = create_sparsity(V0, V1);
 
         // Build operator
         dolfinx::la::MatrixCSR<T> A(sp);
@@ -172,8 +174,8 @@ void declare_assembly_functions(nb::module_& m)
 
         // Move into NumPy data structures
         std::map<Key_t, nb::ndarray<T, nb::numpy>> c;
-        std::transform(
-            coeffs.begin(), coeffs.end(), std::inserter(c, c.end()),
+        std::ranges::transform(
+            coeffs, std::inserter(c, c.end()),
             [](auto& e) -> typename decltype(c)::value_type
             {
               std::size_t num_ents
@@ -193,7 +195,8 @@ void declare_assembly_functions(nb::module_& m)
       nb::arg("form"), "Pack coefficients for a Form.");
   m.def(
       "pack_constants",
-      [](const dolfinx::fem::Form<T, U>& form) {
+      [](const dolfinx::fem::Form<T, U>& form)
+      {
         return dolfinx_wrappers::as_nbarray(dolfinx::fem::pack_constants(form));
       },
       nb::arg("form"), "Pack constants for a Form.");
@@ -244,79 +247,89 @@ void declare_assembly_functions(nb::module_& m)
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<const T, nb::ndim<2>, nb::c_contig>>&
              coefficients,
-         const std::vector<
-             std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs)
+         std::vector<const dolfinx::fem::DirichletBC<T, U>*> bcs)
       {
+        std::vector<
+            std::reference_wrapper<const dolfinx::fem::DirichletBC<T, U>>>
+            _bcs;
+        for (auto bc : bcs)
+        {
+          assert(bc);
+          _bcs.push_back(*bc);
+        }
+
         const std::array<int, 2> data_bs
             = {a.function_spaces().at(0)->dofmap()->index_map_bs(),
                a.function_spaces().at(1)->dofmap()->index_map_bs()};
 
         if (data_bs[0] != data_bs[1])
+        {
           throw std::runtime_error(
               "Non-square blocksize unsupported in Python");
+        }
 
         if (data_bs[0] == 1)
         {
           dolfinx::fem::assemble_matrix(
               A.mat_add_values(), a,
               std::span<const T>(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), bcs);
+              py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 2)
         {
           auto mat_add = A.template mat_add_values<2, 2>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), bcs);
+              py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 3)
         {
           auto mat_add = A.template mat_add_values<3, 3>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), bcs);
+              py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 4)
         {
           auto mat_add = A.template mat_add_values<4, 4>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), bcs);
+              py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 5)
         {
           auto mat_add = A.template mat_add_values<5, 5>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), bcs);
+              py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 6)
         {
           auto mat_add = A.template mat_add_values<6, 6>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), bcs);
+              py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 7)
         {
           auto mat_add = A.template mat_add_values<7, 7>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), bcs);
+              py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 8)
         {
           auto mat_add = A.template mat_add_values<8, 8>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), bcs);
+              py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 9)
         {
           auto mat_add = A.template mat_add_values<9, 9>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), bcs);
+              py_to_cpp_coeffs(coefficients), _bcs);
         }
         else
           throw std::runtime_error("Block size not supported in Python");
@@ -326,12 +339,19 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "insert_diagonal",
       [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::FunctionSpace<U>& V,
-         const std::vector<
-             std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs,
-         T diagonal)
+         std::vector<const dolfinx::fem::DirichletBC<T, U>*> bcs, T diagonal)
       {
+        std::vector<
+            std::reference_wrapper<const dolfinx::fem::DirichletBC<T, U>>>
+            _bcs;
+        for (auto bc : bcs)
+        {
+          assert(bc);
+          _bcs.push_back(*bc);
+        }
+
         // NB block size of data ("diagonal") is (1, 1)
-        dolfinx::fem::set_diagonal(A.mat_set_values(), V, bcs, diagonal);
+        dolfinx::fem::set_diagonal(A.mat_set_values(), V, _bcs, diagonal);
       },
       nb::arg("A"), nb::arg("V"), nb::arg("bcs"), nb::arg("diagonal"),
       "Experimental.");
@@ -355,22 +375,29 @@ void declare_assembly_functions(nb::module_& m)
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>)>
              fin,
          const dolfinx::fem::Form<T, U>& form,
-         const std::vector<
-             std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs)
+         std::vector<const dolfinx::fem::DirichletBC<T, U>*> bcs)
       {
+        std::vector<
+            std::reference_wrapper<const dolfinx::fem::DirichletBC<T, U>>>
+            _bcs;
+        for (auto bc : bcs)
+        {
+          assert(bc);
+          _bcs.push_back(*bc);
+        }
+
         auto f = [&fin](std::span<const std::int32_t> rows,
                         std::span<const std::int32_t> cols,
                         std::span<const T> data)
         {
-          return fin(
-              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
-                          nb::numpy>(rows.data(), {rows.size()}, nb::handle()),
-              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
-                          nb::numpy>(cols.data(), {cols.size()}, nb::handle()),
-              nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>(
-                  data.data(), {data.size()}, nb::handle()));
+          return fin(nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
+                                 nb::numpy>(rows.data(), {rows.size()}),
+                     nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
+                                 nb::numpy>(cols.data(), {cols.size()}),
+                     nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>(
+                         data.data(), {rows.size(), cols.size()}));
         };
-        dolfinx::fem::assemble_matrix(f, form, bcs);
+        dolfinx::fem::assemble_matrix(f, form, _bcs);
       },
       nb::arg("fin"), nb::arg("form"), nb::arg("bcs"),
       "Experimental assembly with Python insertion function. This will be "
@@ -380,59 +407,61 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "apply_lifting",
       [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
-         const std::vector<std::shared_ptr<const dolfinx::fem::Form<T, U>>>& a,
+         std::vector<const dolfinx::fem::Form<T, U>*> a,
          const std::vector<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>&
              constants,
          const std::vector<
              std::map<std::pair<dolfinx::fem::IntegralType, int>,
                       nb::ndarray<const T, nb::ndim<2>, nb::c_contig>>>& coeffs,
-         const std::vector<std::vector<
-             std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>>& bcs1,
+         std::vector<std::vector<const dolfinx::fem::DirichletBC<T, U>*>> bcs1,
          const std::vector<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>& x0,
-         T scale)
+         T alpha)
       {
+        std::vector<std::vector<
+            std::reference_wrapper<const dolfinx::fem::DirichletBC<T, U>>>>
+            _bcs;
+        for (auto& bc1 : bcs1)
+        {
+          auto& _bcs0 = _bcs.emplace_back();
+          for (auto bc : bc1)
+          {
+            assert(bc);
+            _bcs0.push_back(*bc);
+          }
+        }
+
+        std::vector<std::optional<
+            std::reference_wrapper<const dolfinx::fem::Form<T, U>>>>
+            _a;
+        for (auto form : a)
+        {
+          if (form)
+            _a.push_back(*form);
+          else
+            _a.push_back(std::nullopt);
+        }
+
         std::vector<std::span<const T>> _x0;
         for (auto x : x0)
           _x0.emplace_back(x.data(), x.size());
 
         std::vector<std::span<const T>> _constants;
-        std::transform(constants.begin(), constants.end(),
-                       std::back_inserter(_constants), [](auto& c)
-                       { return std::span<const T>(c.data(), c.size()); });
+        std::ranges::transform(
+            constants, std::back_inserter(_constants),
+            [](auto& c) { return std::span<const T>(c.data(), c.size()); });
 
         std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
                              std::pair<std::span<const T>, int>>>
             _coeffs;
-        std::transform(coeffs.begin(), coeffs.end(),
-                       std::back_inserter(_coeffs),
-                       [](auto& c) { return py_to_cpp_coeffs(c); });
+        std::ranges::transform(coeffs, std::back_inserter(_coeffs),
+                               [](auto& c) { return py_to_cpp_coeffs(c); });
 
-        dolfinx::fem::apply_lifting<T>(std::span<T>(b.data(), b.size()), a,
-                                       _constants, _coeffs, bcs1, _x0, scale);
+        dolfinx::fem::apply_lifting<T>(std::span<T>(b.data(), b.size()), _a,
+                                       _constants, _coeffs, _bcs, _x0, alpha);
       },
       nb::arg("b").noconvert(), nb::arg("a"), nb::arg("constants"),
-      nb::arg("coeffs"), nb::arg("bcs1"), nb::arg("x0"), nb::arg("scale"),
+      nb::arg("coeffs"), nb::arg("bcs1"), nb::arg("x0"), nb::arg("alpha"),
       "Modify vector for lifted boundary conditions");
-  m.def(
-      "set_bc",
-      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
-         const std::vector<
-             std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs,
-         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x0, T scale)
-      {
-        dolfinx::fem::set_bc<T>(std::span(b.data(), b.size()), bcs,
-                                std::span(x0.data(), x0.shape(0)), scale);
-      },
-      nb::arg("b").noconvert(), nb::arg("bcs"), nb::arg("x0").noconvert(),
-      nb::arg("scale"));
-  m.def(
-      "set_bc",
-      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
-         const std::vector<
-             std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs,
-         T scale)
-      { dolfinx::fem::set_bc<T>(std::span(b.data(), b.size()), bcs, scale); },
-      nb::arg("b").noconvert(), nb::arg("bcs"), nb::arg("scale"));
 }
 
 } // namespace

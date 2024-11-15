@@ -29,8 +29,6 @@ using namespace dolfinx;
 /// and outputs the finite element function to a VTX file for
 /// visualisation.
 ///
-/// Also shows how to create a finite element using Basix.
-///
 /// @tparam T Scalar type of the finite element function.
 /// @tparam U Float type for the finite element basis and the mesh.
 /// @param mesh Mesh.
@@ -48,8 +46,8 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
       basix::element::dpc_variant::unset, false);
 
   // Create a scalar function space
-  auto V = std::make_shared<fem::FunctionSpace<U>>(
-      fem::create_functionspace(mesh, e));
+  auto V = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+      mesh, std::make_shared<fem::FiniteElement<U>>(e)));
 
   // Create a finite element Function
   auto u = std::make_shared<fem::Function<T>>(V);
@@ -100,8 +98,8 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
       basix::element::dpc_variant::unset, false);
 
   // Create a Nedelec function space
-  auto V = std::make_shared<fem::FunctionSpace<U>>(
-      fem::create_functionspace(mesh, e));
+  auto V = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+      mesh, std::make_shared<fem::FiniteElement<U>>(e)));
 
   // Create a Nedelec finite element Function
   auto u = std::make_shared<fem::Function<T>>(V);
@@ -116,7 +114,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
   // the Nedelec space when there are cell edges aligned to x0 = 0.5.
 
   // Find cells with all vertices satisfying (0) x0 <= 0.5 and (1) x0 >= 0.5
-  auto cells0
+  std::vector cells0
       = mesh::locate_entities(*mesh, 2,
                               [](auto x)
                               {
@@ -125,7 +123,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
                                   marked.push_back(x(0, i) <= 0.5);
                                 return marked;
                               });
-  auto cells1
+  std::vector cells1
       = mesh::locate_entities(*mesh, 2,
                               [](auto x)
                               {
@@ -149,8 +147,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
       {
         std::vector<T> f(2 * x.extent(1), 0.0);
         std::copy_n(x.data_handle(), f.size(), f.begin());
-        std::transform(f.cbegin(), f.cend(), f.begin(),
-                       [](auto x) { return x + T(1); });
+        std::ranges::transform(f, f.begin(), [](auto x) { return x + T(1); });
         return {f, {2, x.extent(1)}};
       },
       cells1);
@@ -170,8 +167,10 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
       basix::element::dpc_variant::unset, true);
 
   // Create a function space
-  auto V_l = std::make_shared<fem::FunctionSpace<U>>(
-      fem::create_functionspace(mesh, e_l, std::vector<std::size_t>{2}));
+  auto V_l
+      = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+          mesh, std::make_shared<fem::FiniteElement<U>>(
+                    e_l, std::vector<std::size_t>{2})));
 
   auto u_l = std::make_shared<fem::Function<T>>(V_l);
 
@@ -191,8 +190,8 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
 #endif
 }
 
-/// @brief This program shows how to create finite element spaces without FFCx
-/// generated code.
+/// @brief This program shows how to interpolate functions into different types
+/// of finite element spaces and output the result to file for visualisation.
 int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);

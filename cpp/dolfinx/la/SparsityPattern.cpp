@@ -140,6 +140,27 @@ SparsityPattern::SparsityPattern(
   }
 }
 //-----------------------------------------------------------------------------
+void SparsityPattern::insert(std::int32_t row, std::int32_t col)
+{
+  if (!_offsets.empty())
+  {
+    throw std::runtime_error(
+        "Cannot insert into sparsity pattern. It has already been finalized");
+  }
+
+  assert(_index_maps[0]);
+  const std::int32_t max_row
+      = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() - 1;
+
+  if (row > max_row or row < 0)
+  {
+    throw std::runtime_error(
+        "Cannot insert rows that do not exist in the IndexMap.");
+  }
+
+  _row_cache[row].push_back(col);
+}
+//-----------------------------------------------------------------------------
 void SparsityPattern::insert(std::span<const std::int32_t> rows,
                              std::span<const std::int32_t> cols)
 {
@@ -160,7 +181,6 @@ void SparsityPattern::insert(std::span<const std::int32_t> rows,
       throw std::runtime_error(
           "Cannot insert rows that do not exist in the IndexMap.");
     }
-
     _row_cache[row].insert(_row_cache[row].end(), cols.begin(), cols.end());
   }
 }
@@ -362,7 +382,7 @@ void SparsityPattern::finalize()
   {
     std::vector<std::int32_t>& row = _row_cache[i];
     std::ranges::sort(row);
-    auto it_end = std::unique(row.begin(), row.end());
+    auto it_end = std::ranges::unique(row).begin();
 
     // Find position of first "off-diagonal" column
     _off_diagonal_offsets[i] = std::distance(

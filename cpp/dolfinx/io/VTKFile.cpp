@@ -8,6 +8,7 @@
 #include "cells.h"
 #include "vtk_utils.h"
 #include "xdmf_utils.h"
+#include <algorithm>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
@@ -154,12 +155,10 @@ void add_data(const std::string& name,
   {
     using U = typename T::value_type;
     std::vector<U> v(values.size());
-    std::transform(values.begin(), values.end(), v.begin(),
-                   [](auto x) { return x.real(); });
+    std::ranges::transform(values, v.begin(), [](auto x) { return x.real(); });
     add_data_float(name + field_ext[0], num_components, std::span<const U>(v),
                    node);
-    std::transform(values.begin(), values.end(), v.begin(),
-                   [](auto x) { return x.imag(); });
+    std::ranges::transform(values, v.begin(), [](auto x) { return x.imag(); });
     add_data_float(name + field_ext[1], num_components, std::span<const U>(v),
                    node);
   }
@@ -460,7 +459,7 @@ void write_function(
     if (piece_node.child(data_type).empty())
       piece_node.append_child(data_type);
 
-    const int rank = _u.get().function_space()->value_shape().size();
+    const int rank = _u.get().function_space()->element()->value_shape().size();
     pugi::xml_node data_node = piece_node.child(data_type);
     if (data_node.attribute(tensor_str[rank]).empty())
       data_node.append_attribute(tensor_str[rank]);
@@ -477,7 +476,7 @@ void write_function(
 
     // Pad to 3D if vector/tensor is product of dimensions is smaller than
     // 3**rank to ensure that we can visualize them correctly in Paraview
-    std::span<const std::size_t> value_shape = V->value_shape();
+    std::span<const std::size_t> value_shape = V->element()->value_shape();
     int rank = value_shape.size();
     int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
                                      std::multiplies{});
@@ -661,7 +660,7 @@ void write_function(
 
       // Pad to 3D if vector/tensor is product of dimensions is smaller than
       // 3**rank to ensure that we can visualize them correctly in Paraview
-      std::span<const std::size_t> value_shape = V->value_shape();
+      std::span<const std::size_t> value_shape = V->element()->value_shape();
       int rank = value_shape.size();
       int num_components = std::reduce(value_shape.begin(), value_shape.end(),
                                        1, std::multiplies{});

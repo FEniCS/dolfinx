@@ -11,6 +11,7 @@
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
+#include <algorithm>
 #include <basix/mdspan.hpp>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
@@ -19,6 +20,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <numeric>
+#include <ranges>
 #include <span>
 #include <vector>
 
@@ -133,12 +135,12 @@ using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
 
 /// @brief Scatter data into non-contiguous memory.
 ///
-/// Scatter blocked data `send_values` to its corresponding `src_rank` and
-/// insert the data into `recv_values`. The insert location in
+/// Scatter blocked data `send_values` to its corresponding `src_rank`
+/// and insert the data into `recv_values`. The insert location in
 /// `recv_values` is determined by `dest_ranks`. If the j-th dest rank
 /// is -1, then `recv_values[j*block_size:(j+1)*block_size]) = 0`.
 ///
-/// @param[in] comm The MPI communicator
+/// @param[in] comm The MPI communicator.
 /// @param[in] src_ranks Rank owning the values of each row in
 /// `send_values`.
 /// @param[in] dest_ranks List of ranks receiving data. Size of array is
@@ -162,8 +164,8 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
   // Build unique set of the sorted src_ranks
   std::vector<std::int32_t> out_ranks(src_ranks.size());
   out_ranks.assign(src_ranks.begin(), src_ranks.end());
-  out_ranks.erase(std::unique(out_ranks.begin(), out_ranks.end()),
-                  out_ranks.end());
+  auto [unique_end, range_end] = std::ranges::unique(out_ranks);
+  out_ranks.erase(unique_end, range_end);
   out_ranks.reserve(out_ranks.size() + 1);
 
   // Remove negative entries from dest_ranks
@@ -174,8 +176,11 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
                [](auto rank) { return rank >= 0; });
 
   // Create unique set of sorted in-ranks
-  std::ranges::sort(in_ranks);
-  in_ranks.erase(std::unique(in_ranks.begin(), in_ranks.end()), in_ranks.end());
+  {
+    std::ranges::sort(in_ranks);
+    auto [unique_end, range_end] = std::ranges::unique(in_ranks);
+    in_ranks.erase(unique_end, range_end);
+  }
   in_ranks.reserve(in_ranks.size() + 1);
 
   // Create neighborhood communicator
@@ -190,9 +195,11 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
   std::vector<std::int32_t> recv_offsets(in_ranks.size() + 1, 0);
   {
     // Build map from parent to neighborhood communicator ranks
-    std::map<std::int32_t, std::int32_t> rank_to_neighbor;
+    std::vector<std::pair<std::int32_t, std::int32_t>> rank_to_neighbor;
+    rank_to_neighbor.reserve(in_ranks.size());
     for (std::size_t i = 0; i < in_ranks.size(); i++)
-      rank_to_neighbor[in_ranks[i]] = i;
+      rank_to_neighbor.push_back({in_ranks[i], i});
+    std::ranges::sort(rank_to_neighbor);
 
     // Compute receive sizes
     std::ranges::for_each(
@@ -201,8 +208,11 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
         {
           if (rank >= 0)
           {
-            const int neighbor = rank_to_neighbor[rank];
-            recv_sizes[neighbor] += block_size;
+            auto it = std::ranges::lower_bound(rank_to_neighbor, rank,
+                                               std::ranges::less(),
+                                               [](auto e) { return e.first; });
+            assert(it != rank_to_neighbor.end() and it->first == rank);
+            recv_sizes[it->second] += block_size;
           }
         });
 
@@ -217,10 +227,13 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
     {
       if (const std::int32_t rank = dest_ranks[i]; rank >= 0)
       {
-        const int neighbor = rank_to_neighbor[rank];
-        int insert_pos = recv_offsets[neighbor] + recv_counter[neighbor];
+        auto it = std::ranges::lower_bound(rank_to_neighbor, rank,
+                                           std::ranges::less(),
+                                           [](auto e) { return e.first; });
+        assert(it != rank_to_neighbor.end() and it->first == rank);
+        int insert_pos = recv_offsets[it->second] + recv_counter[it->second];
         comm_to_output[insert_pos / block_size] = i * block_size;
-        recv_counter[neighbor] += block_size;
+        recv_counter[it->second] += block_size;
       }
     }
   }
@@ -228,15 +241,28 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
   std::vector<std::int32_t> send_sizes(out_ranks.size());
   send_sizes.reserve(1);
   {
-    // Compute map from parent mpi rank to neigbor rank for outgoing data
-    std::map<std::int32_t, std::int32_t> rank_to_neighbor;
+    // Compute map from parent MPI rank to neighbor rank for outgoing
+    // data. `out_ranks` is sorted, so rank_to_neighbor will be sorted
+    // too.
+    std::vector<std::pair<std::int32_t, std::int32_t>> rank_to_neighbor;
+    rank_to_neighbor.reserve(out_ranks.size());
     for (std::size_t i = 0; i < out_ranks.size(); i++)
-      rank_to_neighbor[out_ranks[i]] = i;
+      rank_to_neighbor.push_back({out_ranks[i], i});
 
-    // Compute send sizes
+    // Compute send sizes. As `src_ranks` is sorted, we can move 'start'
+    // in search forward.
+    auto start = rank_to_neighbor.begin();
     std::ranges::for_each(
-        src_ranks, [&rank_to_neighbor, &send_sizes, block_size](auto rank)
-        { send_sizes[rank_to_neighbor[rank]] += block_size; });
+        src_ranks,
+        [&rank_to_neighbor, &send_sizes, block_size, &start](auto rank)
+        {
+          auto it = std::ranges::lower_bound(start, rank_to_neighbor.end(),
+                                             rank, std::ranges::less(),
+                                             [](auto e) { return e.first; });
+          assert(it != rank_to_neighbor.end() and it->first == rank);
+          send_sizes[it->second] += block_size;
+          start = it;
+        });
   }
 
   // Compute sending offsets
@@ -253,7 +279,8 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
                          dolfinx::MPI::mpi_type<T>(), reverse_comm);
   MPI_Comm_free(&reverse_comm);
 
-  // Insert values received from neighborhood communicator in output span
+  // Insert values received from neighborhood communicator in output
+  // span
   std::ranges::fill(recv_values, T(0));
   for (std::size_t i = 0; i < comm_to_output.size(); i++)
   {
@@ -480,8 +507,8 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
 
   // Get sizes of elements
   const std::size_t dim0 = element0->space_dimension() / bs0;
-  const std::size_t value_size_ref0 = element0->reference_value_size() / bs0;
-  const std::size_t value_size0 = V0->value_size() / bs0;
+  const std::size_t value_size_ref0 = element0->reference_value_size();
+  const std::size_t value_size0 = V0->element()->reference_value_size();
 
   const CoordinateElement<U>& cmap = mesh0->geometry().cmap();
   auto x_dofmap = mesh0->geometry().dofmap();
@@ -513,13 +540,13 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   impl::mdspan_t<U, 3> basis_reference0(basis_reference0_b.data(), Xshape[0],
                                         dim0, value_size_ref0);
 
-  std::vector<T> values0_b(Xshape[0] * 1 * V1->value_size());
+  std::vector<T> values0_b(Xshape[0] * 1 * V1->element()->value_size());
   impl::mdspan_t<T, 3> values0(values0_b.data(), Xshape[0], 1,
-                               V1->value_size());
+                               V1->element()->value_size());
 
-  std::vector<T> mapped_values_b(Xshape[0] * 1 * V1->value_size());
+  std::vector<T> mapped_values_b(Xshape[0] * 1 * V1->element()->value_size());
   impl::mdspan_t<T, 3> mapped_values0(mapped_values_b.data(), Xshape[0], 1,
-                                      V1->value_size());
+                                      V1->element()->value_size());
 
   std::vector<U> coord_dofs_b(num_dofs_g * gdim);
   impl::mdspan_t<U, 2> coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
@@ -703,9 +730,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
   const int gdim = mesh->geometry().dim();
   const int tdim = mesh->topology()->dim();
-  const bool symmetric = u.function_space()->symmetric();
 
-  if (fshape[0] != (std::size_t)u.function_space()->value_size())
+  if (fshape[0] != (std::size_t)u.function_space()->element()->value_size())
     throw std::runtime_error("Interpolation data has the wrong shape/size.");
 
   std::span<const std::uint32_t> cell_info;
@@ -715,7 +741,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
-  const std::size_t f_shape1 = f.size() / u.function_space()->value_size();
+  const std::size_t f_shape1
+      = f.size() / u.function_space()->element()->value_size();
   MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
       _f(f.data(), fshape);
@@ -727,13 +754,14 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
   // Loop over cells and compute interpolation dofs
   const int num_scalar_dofs = element->space_dimension() / element_bs;
-  const int value_size = u.function_space()->value_size() / element_bs;
+  const int value_size = u.function_space()->element()->reference_value_size();
 
   std::span<T> coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
 
   // This assumes that any element with an identity interpolation matrix
   // is a point evaluation
+  const bool symmetric = u.function_space()->symmetric();
   if (element->map_ident() && element->interpolation_ident())
   {
     // Point evaluation element *and* the geometric map is the identity,
@@ -748,17 +776,18 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
       std::size_t matrix_size = 0;
       while (matrix_size * matrix_size < fshape[0])
         ++matrix_size;
+
       // Loop over cells
       for (std::size_t c = 0; c < cells.size(); ++c)
       {
-        // The entries of a symmetric matrix are numbered (for an example 4x4
-        // element):
+        // The entries of a symmetric matrix are numbered (for an
+        // example 4x4 element):
         //  0 * * *
         //  1 2 * *
         //  3 4 5 *
         //  6 7 8 9
-        // The loop extracts these elements. In this loop, row is the row of
-        // this matrix, and (k - rowstart) is the column
+        // The loop extracts these elements. In this loop, row is the
+        // row of this matrix, and (k - rowstart) is the column
         std::size_t row = 0;
         std::size_t rowstart = 0;
         const std::int32_t cell = cells[c];
@@ -770,6 +799,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
             ++row;
             rowstart = k;
           }
+
           // num_scalar_dofs is the number of interpolation points per
           // cell in this case (interpolation matrix is identity)
           std::copy_n(
@@ -821,9 +851,10 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
           "Interpolation into this element not supported.");
     }
 
-    const int element_vs = u.function_space()->value_size() / element_bs;
+    const int element_vs
+        = u.function_space()->element()->reference_value_size();
 
-    if (element_vs > 1 && element_bs > 1)
+    if (element_vs > 1 and element_bs > 1)
     {
       throw std::runtime_error(
           "Interpolation into this element not supported.");
@@ -907,11 +938,11 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
     std::vector<U> coord_dofs_b(num_dofs_g * gdim);
     mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
-
-    std::vector<T> ref_data_b(Xshape[0] * 1 * value_size);
+    const std::size_t value_size_ref = element->reference_value_size();
+    std::vector<T> ref_data_b(Xshape[0] * 1 * value_size_ref);
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
-        ref_data(ref_data_b.data(), Xshape[0], 1, value_size);
+        ref_data(ref_data_b.data(), Xshape[0], 1, value_size_ref);
 
     std::vector<T> _vals_b(Xshape[0] * 1 * value_size);
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
@@ -1105,12 +1136,13 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
   assert(cell_map);
   auto element_u = u.function_space()->element();
   assert(element_u);
-  const std::size_t value_size = u.function_space()->value_size();
+  const std::size_t value_size = u.function_space()->element()->value_size();
 
-  auto& dest_ranks = interpolation_data.src_owner;
-  auto& src_ranks = interpolation_data.dest_owners;
-  auto& recv_points = interpolation_data.dest_points;
-  auto& evaluation_cells = interpolation_data.dest_cells;
+  const std::vector<int>& dest_ranks = interpolation_data.src_owner;
+  const std::vector<int>& src_ranks = interpolation_data.dest_owners;
+  const std::vector<U>& recv_points = interpolation_data.dest_points;
+  const std::vector<std::int32_t>& evaluation_cells
+      = interpolation_data.dest_cells;
 
   // Evaluate the interpolating function where possible
   std::vector<T> send_values(recv_points.size() / 3 * value_size);
@@ -1189,9 +1221,8 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
     auto fs1 = u1.function_space();
     auto element1 = fs1->element();
     assert(element1);
-    if (fs0->value_shape().size() != fs1->value_shape().size()
-        or !std::equal(fs0->value_shape().begin(), fs0->value_shape().end(),
-                       fs1->value_shape().begin()))
+    if (!std::ranges::equal(fs0->element()->value_shape(),
+                            fs1->element()->value_shape()))
     {
       throw std::runtime_error(
           "Interpolation: elements have different value dimensions");

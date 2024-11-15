@@ -10,6 +10,7 @@
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include "interpolate.h"
+#include <algorithm>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
@@ -199,7 +200,8 @@ public:
 
     const auto [fx, fshape] = f(_x);
     assert(fshape.size() <= 2);
-    if (int vs = _function_space->value_size(); vs == 1 and fshape.size() == 1)
+    if (int vs = _function_space->element()->value_size();
+        vs == 1 and fshape.size() == 1)
     {
       // Check for scalar-valued functions
       if (fshape.front() != x.size() / 3)
@@ -352,7 +354,7 @@ public:
     std::size_t value_size = e0.value_size();
     if (e0.argument_function_space())
       throw std::runtime_error("Cannot interpolate Expression with Argument.");
-    if (value_size != _function_space->value_size())
+    if (value_size != _function_space->element()->value_size())
     {
       throw std::runtime_error(
           "Function value size not equal to Expression value size.");
@@ -484,9 +486,9 @@ public:
     auto element = _function_space->element();
     assert(element);
     const int bs_element = element->block_size();
-    const std::size_t reference_value_size
-        = element->reference_value_size() / bs_element;
-    const std::size_t value_size = _function_space->value_size() / bs_element;
+    const std::size_t reference_value_size = element->reference_value_size();
+    const std::size_t value_size
+        = _function_space->element()->reference_value_size();
     const std::size_t space_dimension = element->space_dimension() / bs_element;
 
     // If the space has sub elements, concatenate the evaluations on the

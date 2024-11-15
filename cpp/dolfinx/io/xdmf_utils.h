@@ -26,7 +26,6 @@
 
 namespace dolfinx
 {
-
 namespace fem
 {
 template <dolfinx::scalar T, std::floating_point U>

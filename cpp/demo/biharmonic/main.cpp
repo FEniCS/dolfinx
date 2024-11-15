@@ -134,6 +134,7 @@
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/petsc.h>
+#include <memory>
 #include <numbers>
 #include <utility>
 #include <vector>
@@ -169,8 +170,9 @@ int main(int argc, char* argv[])
         basix::element::dpc_variant::unset, false);
 
     //  Create function space
-    auto V = std::make_shared<fem::FunctionSpace<U>>(
-        fem::create_functionspace(mesh, element));
+    auto V
+        = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+            mesh, std::make_shared<fem::FiniteElement<U>>(element)));
 
     // The source function $f$ and the penalty term $\alpha$ are
     // declared:
@@ -190,10 +192,10 @@ int main(int argc, char* argv[])
     auto alpha = std::make_shared<fem::Constant<T>>(8.0);
 
     //  Define variational forms
-    auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_biharmonic_a, {V, V}, {}, {{"alpha", alpha}}, {}));
-    auto L = std::make_shared<fem::Form<T>>(
-        fem::create_form<T>(*form_biharmonic_L, {V}, {{"f", f}}, {}, {}));
+    fem::Form<T> a = fem::create_form<T>(*form_biharmonic_a, {V, V}, {},
+                                         {{"alpha", alpha}}, {}, {});
+    fem::Form<T> L
+        = fem::create_form<T>(*form_biharmonic_L, {V}, {{"f", f}}, {}, {}, {});
 
     //  Now, the Dirichlet boundary condition ($u = 0$) can be
     //  created using the class {cpp:class}`DirichletBC`. A
@@ -210,7 +212,7 @@ int main(int argc, char* argv[])
     auto facets = mesh::exterior_facet_indices(*mesh->topology());
     const auto bdofs = fem::locate_dofs_topological(
         *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
-    auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
+    fem::DirichletBC<T> bc(0.0, bdofs, V);
 
     //  Now, we have specified the variational forms and can consider
     //  the solution of the variational problem. First, we need to
@@ -221,13 +223,13 @@ int main(int argc, char* argv[])
 
     //  Compute solution
     fem::Function<T> u(V);
-    auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
-    la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
-                    L->function_spaces()[0]->dofmap()->index_map_bs());
+    auto A = la::petsc::Matrix(fem::petsc::create_matrix(a), false);
+    la::Vector<T> b(L.function_spaces()[0]->dofmap()->index_map,
+                    L.function_spaces()[0]->dofmap()->index_map_bs());
 
     MatZeroEntries(A.mat());
     fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A.mat(), ADD_VALUES),
-                         *a, {bc});
+                         a, {bc});
     MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
     fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
@@ -236,10 +238,10 @@ int main(int argc, char* argv[])
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
     b.set(0.0);
-    fem::assemble_vector(b.mutable_array(), *L);
+    fem::assemble_vector(b.mutable_array(), L);
     fem::apply_lifting<T, U>(b.mutable_array(), {a}, {{bc}}, {}, T(1.0));
     b.scatter_rev(std::plus<T>());
-    fem::set_bc<T, U>(b.mutable_array(), {bc});
+    bc.set(b.mutable_array(), std::nullopt);
 
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
     la::petsc::options::set("ksp_type", "preonly");

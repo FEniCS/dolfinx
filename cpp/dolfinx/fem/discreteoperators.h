@@ -9,6 +9,7 @@
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
+#include <algorithm>
 #include <array>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
@@ -193,9 +194,9 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   const std::size_t space_dim0 = e0->space_dimension();
   const std::size_t space_dim1 = e1->space_dimension();
   const std::size_t dim0 = space_dim0 / bs0;
-  const std::size_t value_size_ref0 = e0->reference_value_size() / bs0;
-  const std::size_t value_size0 = V0.value_size() / bs0;
-  const std::size_t value_size1 = V1.value_size() / bs1;
+  const std::size_t value_size_ref0 = e0->reference_value_size();
+  const std::size_t value_size0 = V0.element()->reference_value_size();
+  const std::size_t value_size1 = V1.element()->reference_value_size();
 
   // Get geometry data
   const CoordinateElement<U>& cmap = mesh->geometry().cmap();
@@ -230,10 +231,9 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   e0->tabulate(basis_derivatives_reference0_b, X, Xshape, 0);
 
   // Clamp values
-  std::transform(basis_derivatives_reference0_b.begin(),
-                 basis_derivatives_reference0_b.end(),
-                 basis_derivatives_reference0_b.begin(), [atol = 1e-14](auto x)
-                 { return std::abs(x) < atol ? 0.0 : x; });
+  std::ranges::transform(
+      basis_derivatives_reference0_b, basis_derivatives_reference0_b.begin(),
+      [atol = 1e-14](auto x) { return std::abs(x) < atol ? 0.0 : x; });
 
   // Create working arrays
   std::vector<U> basis_reference0_b(Xshape[0] * dim0 * value_size_ref0);
@@ -267,12 +267,14 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
 
   // Basis values of Lagrange space unrolled for block size
   // (num_quadrature_points, Lagrange dof, value_size)
-  std::vector<U> basis_values_b(Xshape[0] * bs0 * dim0 * V1.value_size());
+  std::vector<U> basis_values_b(Xshape[0] * bs0 * dim0
+                                * V1.element()->value_size());
   mdspan3_t basis_values(basis_values_b.data(), Xshape[0], bs0 * dim0,
-                         V1.value_size());
-  std::vector<U> mapped_values_b(Xshape[0] * bs0 * dim0 * V1.value_size());
+                         V1.element()->value_size());
+  std::vector<U> mapped_values_b(Xshape[0] * bs0 * dim0
+                                 * V1.element()->value_size());
   mdspan3_t mapped_values(mapped_values_b.data(), Xshape[0], bs0 * dim0,
-                          V1.value_size());
+                          V1.element()->value_size());
 
   auto pull_back_fn1
       = e1->basix_element().template map_fn<u_t, U_t, K_t, J_t>();
@@ -382,7 +384,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
     {
       MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
           T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
-          A(Ab.data(), Xshape[0], V1.value_size(), space_dim0);
+          A(Ab.data(), Xshape[0], V1.element()->value_size(), space_dim0);
       for (std::size_t i = 0; i < mapped_values.extent(0); ++i)
         for (std::size_t j = 0; j < mapped_values.extent(1); ++j)
           for (std::size_t k = 0; k < mapped_values.extent(2); ++k)

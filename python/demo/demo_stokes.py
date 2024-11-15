@@ -152,8 +152,10 @@ def lid_velocity_expression(x):
 # piecewise linear basis (scalar).
 
 
-P2 = element("Lagrange", msh.basix_cell(), 2, shape=(msh.geometry.dim,), dtype=default_real_type)
-P1 = element("Lagrange", msh.basix_cell(), 1, dtype=default_real_type)
+P2 = element(
+    "Lagrange", msh.basix_cell(), degree=2, shape=(msh.geometry.dim,), dtype=default_real_type
+)
+P1 = element("Lagrange", msh.basix_cell(), degree=1, dtype=default_real_type)
 V, Q = functionspace(msh, P2), functionspace(msh, P1)
 
 # Boundary conditions for the velocity field are defined:
@@ -438,18 +440,15 @@ def block_direct_solver():
     # handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    pc.setFactorSolverType("superlu_dist")
-    try:
+    sys = PETSc.Sys()  # type: ignore
+    use_superlu = PETSc.IntType == np.int64
+    if sys.hasExternalPackage("mumps") and not use_superlu:
+        pc.setFactorSolverType("mumps")
         pc.setFactorSetUpSolverType()
-    except PETSc.Error as e:
-        if e.ierr == 92:
-            print("The required PETSc solver/preconditioner is not available. Exiting.")
-            print(e)
-            exit(0)
-        else:
-            raise e
-    # pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)  # For pressure nullspace
-    # pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)  # For pressure nullspace
+        pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
+        pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
+    else:
+        pc.setFactorSolverType("superlu_dist")
 
     # Create a block vector (x) to store the full solution, and solve
     x = A.createVecLeft()
@@ -517,7 +516,8 @@ def mixed_direct():
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     # Set Dirichlet boundary condition values in the RHS
-    fem.petsc.set_bc(b, bcs)
+    for bc in bcs:
+        bc.set(b.array_w)
 
     # Create and configure solver
     ksp = PETSc.KSP().create(msh.comm)
@@ -527,12 +527,15 @@ def mixed_direct():
     # Configure MUMPS to handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    # pc.setFactorSolverType("mumps")
-    # pc.setFactorSetUpSolverType()
-    # pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
-    # pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
-
-    pc.setFactorSolverType("superlu_dist")
+    sys = PETSc.Sys()  # type: ignore
+    use_superlu = PETSc.IntType == np.int64
+    if sys.hasExternalPackage("mumps") and not use_superlu:
+        pc.setFactorSolverType("mumps")
+        pc.setFactorSetUpSolverType()
+        pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
+        pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
+    else:
+        pc.setFactorSolverType("superlu_dist")
 
     # Compute the solution
     U = Function(W)
@@ -573,4 +576,4 @@ np.testing.assert_allclose(norm_p_2, norm_p_0, rtol=1e-4)
 
 # Solve using a non-blocked matrix and an LU solver
 norm_u_3, norm_p_3 = mixed_direct()
-np.testing.assert_allclose(norm_u_3, norm_u_0, rtol=1e-3)
+np.testing.assert_allclose(norm_u_3, norm_u_0, rtol=1e-4)
