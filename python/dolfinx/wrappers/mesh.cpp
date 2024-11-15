@@ -581,19 +581,14 @@ void mesh(nb::module_& m)
                  nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>
                  original_index)
           {
-            if (original_index)
-            {
-              std::vector<std::int64_t> index(original_index->data(),
-                                              original_index->data()
-                                                  + original_index->size());
-              new (t) dolfinx::mesh::Topology(comm.get(), cell_type, vertex_map,
-                                              cell_map, cells, index);
-            }
-            else
-            {
-              new (t) dolfinx::mesh::Topology(comm.get(), cell_type, vertex_map,
-                                              cell_map, cells);
-            }
+            std::optional<std::vector<std::int64_t>> idx
+                = original_index
+                      ? std::vector<std::int64_t>(original_index->data(),
+                                                  original_index->data()
+                                                      + original_index->size())
+                      : std::optional<std::vector<std::int64_t>>(std::nullopt);
+            new (t) dolfinx::mesh::Topology(comm.get(), cell_type, vertex_map,
+                                            cell_map, cells, idx);
           },
           nb::arg("comm"), nb::arg("cell_type"), nb::arg("vertex_map"),
           nb::arg("cell_map"), nb::arg("cells"),

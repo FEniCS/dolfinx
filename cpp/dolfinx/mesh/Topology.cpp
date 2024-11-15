@@ -1365,10 +1365,6 @@ mesh::create_subtopology(const Topology& topology, int dim,
     subvertices0 = std::move(map_data.second);
   }
 
-  // Sub-topology vertex-to-vertex connectivity (identity)
-  // auto sub_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-  //     submap0->size_local() + submap0->num_ghosts());
-
   // Sub-topology entity to vertex connectivity
   const CellType entity_type = cell_entity_type(topology.cell_type(), dim, 0);
   int num_vertices_per_entity = cell_num_entities(entity_type, 0);
