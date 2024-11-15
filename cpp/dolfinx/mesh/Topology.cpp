@@ -170,8 +170,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
       }
       owner.push_back((*it_owner)[2]);
 
-      // Update number of items to be sent to each rank and record
-      // owner
+      // Update number of items to be sent to each rank and record owner
       for (auto itx = it; itx != it1; ++itx)
       {
         auto& data = *itx;
@@ -1249,11 +1248,11 @@ Topology mesh::create_topology(
       { return {idx0, idx1}; });
   std::ranges::sort(global_to_local_vertices);
 
-  std::vector<std::vector<std::int32_t>> _cells_local_idx(cells.size());
-  for (std::size_t i = 0; i < cell_type.size(); ++i)
+  std::vector<std::vector<std::int32_t>> _cells_local_idx;
+  for (auto& c : cells)
   {
-    _cells_local_idx[i]
-        = convert_to_local_indexing(cells[i], global_to_local_vertices);
+    _cells_local_idx.push_back(
+        convert_to_local_indexing(c, global_to_local_vertices));
   }
 
   // -- Create Topology object
@@ -1295,11 +1294,9 @@ Topology mesh::create_topology(
   std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells_c;
   for (std::size_t i = 0; i < cell_type.size(); ++i)
   {
-    int num_cell_vertices = mesh::num_cell_vertices(cell_type[i]);
-    auto cells_local_idx = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+    cells_c.push_back(std::make_shared<graph::AdjacencyList<std::int32_t>>(
         graph::regular_adjacency_list(std::move(_cells_local_idx[i]),
-                                      num_cell_vertices));
-    cells_c.push_back(cells_local_idx);
+                                      mesh::num_cell_vertices(cell_type[i]))));
   }
 
   // Save original cell index
