@@ -99,8 +99,6 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
       "of input edges: {}",
       static_cast<int>(edges.size()));
 
-  // std::cout << "Test0: " << edges.size() << std::endl;
-
   // Build array with '0' for no outedge and '1' for an outedge for each
   // rank
   const int size = dolfinx::MPI::size(comm);
@@ -157,8 +155,6 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
                "of discovered edges {}",
                static_cast<int>(other_ranks.size()));
 
-  // std::cout << "Test1: " << other_ranks.size() << std::endl;
-
   return other_ranks;
 }
 //-----------------------------------------------------------------------------
@@ -173,9 +169,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
 
   // Start non-blocking synchronised send
   std::vector<MPI_Request> send_requests(edges.size());
-  send_requests.reserve(1);
   std::vector<std::byte> send_buffer(edges.size());
-  send_buffer.reserve(1);
   for (std::size_t e = 0; e < edges.size(); ++e)
   {
     int err = MPI_Issend(send_buffer.data() + e, 1, MPI_BYTE, edges[e], tag,

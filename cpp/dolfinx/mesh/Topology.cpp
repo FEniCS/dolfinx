@@ -735,6 +735,7 @@ Topology::Topology(MPI_Comm comm, CellType cell_type,
   _entity_types = {CellType::point};
   if (tdim > 0)
     _entity_types.push_back(CellType::interval);
+
   if (tdim == 2)
     _entity_types.push_back(cell_type);
   else if (tdim == 3)
@@ -742,6 +743,7 @@ Topology::Topology(MPI_Comm comm, CellType cell_type,
     _entity_types.push_back(cell_facet_type(cell_type, 0));
     _entity_types.push_back(cell_type);
   }
+
   // One facet type
   _interprocess_facets.resize(1);
 
@@ -750,16 +752,10 @@ Topology::Topology(MPI_Comm comm, CellType cell_type,
       std::make_shared<graph::AdjacencyList<std::int32_t>>(
           vertex_map->size_local() + vertex_map->num_ghosts()),
       0, 0);
-
   this->set_index_map(tdim, cell_map);
   this->set_connectivity(cells, tdim, 0);
-
   if (original_index)
-  {
-    this->original_cell_index.resize(1);
-    this->original_cell_index[0].assign(original_index->begin(),
-                                        original_index->end());
-  }
+    this->original_cell_index.push_back(*original_index);
 }
 //-----------------------------------------------------------------------------
 Topology::Topology(
@@ -830,7 +826,6 @@ Topology::Topology(
       std::make_shared<graph::AdjacencyList<std::int32_t>>(
           vertex_map->size_local() + vertex_map->num_ghosts()),
       0, 0);
-
   for (std::size_t i = 0; i < cell_types.size(); ++i)
   {
     this->set_index_map(tdim, i, cell_maps[i]);
@@ -850,6 +845,7 @@ void Topology::set_index_map(int dim,
                              std::shared_ptr<const common::IndexMap> map)
 {
   assert(dim < (int)_entity_type_offsets.size() - 1);
+
   // Check there is only one index map in this dimension
   if (_entity_type_offsets[dim + 1] - _entity_type_offsets[dim] != 1)
     throw std::runtime_error("Cannot set IndexMap on mixed topology mesh");
@@ -861,7 +857,6 @@ void Topology::set_index_map(std::int8_t dim, std::int8_t i,
 {
   assert(dim < (std::int8_t)_entity_type_offsets.size() - 1);
   assert(i < (_entity_type_offsets[dim + 1] - _entity_type_offsets[dim]));
-
   _index_map[_entity_type_offsets[dim] + i] = map;
 }
 //-----------------------------------------------------------------------------
@@ -883,9 +878,9 @@ Topology::index_maps(std::int8_t dim) const
 //-----------------------------------------------------------------------------
 std::int32_t Topology::create_entities(int dim)
 {
-  // TODO: is this check sufficient/correct? Does not catch the cell_entity
-  // entity case. Should there also be a check for
-  // connectivity(this->dim(), dim) ?
+  // TODO: is this check sufficient/correct? Does not catch the
+  // cell_entity entity case. Should there also be a check for
+  // connectivity(this->dim(), dim)?
   // Skip if already computed (vertices (dim=0) should always exist)
   if (connectivity(dim, 0))
     return -1;
@@ -917,6 +912,7 @@ std::int32_t Topology::create_entities(int dim)
       _interprocess_facets[index] = std::move(interprocess_entities);
     }
   }
+
   return this->index_maps(dim)[0]->size_local();
 }
 //-----------------------------------------------------------------------------
@@ -970,7 +966,6 @@ void Topology::create_entity_permutations()
   // FIXME: Is this always required? Could it be made cheaper by doing a
   // local version? This call does quite a lot of parallel work
   // Create all mesh entities
-
   for (int d = 0; d < tdim; ++d)
     create_entities(d);
 
@@ -1025,7 +1020,6 @@ void Topology::set_connectivity(
   assert(i0 < (_entity_type_offsets[dim0 + 1] - _entity_type_offsets[dim0]));
   assert(dim1 < (std::int8_t)_entity_type_offsets.size() - 1);
   assert(i1 < (_entity_type_offsets[dim1 + 1] - _entity_type_offsets[dim1]));
-
   _connectivity[_entity_type_offsets[dim0] + i0]
                [_entity_type_offsets[dim1] + i1]
       = c;
@@ -1339,13 +1333,6 @@ Topology mesh::create_topology(
       comm, owned_vertices.size(), ghost_vertices, ghost_vertex_owners,
       static_cast<int>(dolfinx::MPI::tag::consensus_nbx) + cell_type.size());
 
-  // auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-  //     index_map_v->size_local() + index_map_v->num_ghosts());
-
-  // Set vertex index map and 'connectivity'
-  // topology.set_index_map(0, index_map_v);
-  // topology.set_connectivity(c0, 0, 0);
-
   // Set cell index map and connectivity
   std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells_c;
   for (std::size_t i = 0; i < cell_type.size(); ++i)
@@ -1355,19 +1342,13 @@ Topology mesh::create_topology(
         graph::regular_adjacency_list(std::move(_cells_local_idx[i]),
                                       num_cell_vertices));
     cells_c.push_back(cells_local_idx);
-    // topology.set_index_map(tdim, i, index_map_c[i]);
-    // topology.set_connectivity(cells_local_idx, {tdim, i}, {0, 0});
   }
 
   Topology topology(comm, cell_type, index_map_v, index_map_c, cells_c);
 
   // Save original cell index
-  topology.original_cell_index.resize(cell_type.size());
-  for (std::size_t i = 0; i < cell_type.size(); ++i)
-  {
-    topology.original_cell_index[i].assign(original_cell_index[i].begin(),
-                                           original_cell_index[i].end());
-  }
+  for (auto& idx : original_cell_index)
+    topology.original_cell_index.emplace_back(idx.begin(), idx.end());
 
   // Topology topology(comm, cell_type, index_map_v, index_map_c, cells_c,
   //                   original_cell_index);
