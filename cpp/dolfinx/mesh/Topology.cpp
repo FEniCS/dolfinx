@@ -734,8 +734,12 @@ Topology::Topology(
     std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
     std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
     const std::optional<std::vector<std::vector<std::int64_t>>>& original_index)
-    : _comm(comm), _entity_types({mesh::CellType::point}),
-      _entity_type_offsets({0, 1})
+    : original_cell_index(original_index
+                              ? *original_index
+                              : std::vector<std::vector<std::int64_t>>()),
+      _comm(comm), _entity_types({mesh::CellType::point}),
+      _entity_type_offsets({0, 1}), _interprocess_facets(1)
+
 {
   assert(!cell_types.empty());
   std::int8_t tdim = cell_dim(cell_types.front());
@@ -744,8 +748,6 @@ Topology::Topology(
   for (auto ct : cell_types)
     assert(cell_dim(ct) == tdim);
 #endif
-
-  _interprocess_facets.resize(1);
 
   // Create all the entity types in the mesh
   if (tdim > 1)
@@ -795,9 +797,6 @@ Topology::Topology(
     this->set_index_map(tdim, i, cell_maps[i]);
     this->set_connectivity(cells[i], {tdim, i}, {0, 0});
   }
-
-  if (original_index)
-    this->original_cell_index = *original_index;
 }
 //-----------------------------------------------------------------------------
 int Topology::dim() const noexcept { return _entity_type_offsets.size() - 2; }
@@ -1253,10 +1252,10 @@ Topology mesh::create_topology(
   std::ranges::sort(global_to_local_vertices);
 
   std::vector<std::vector<std::int32_t>> _cells_local_idx(cells.size());
-  for (std::size_t i = 0; i < cell_type.size(); ++i)
+  for (std::span<const std::int64_t> c : cells)
   {
-    _cells_local_idx[i]
-        = convert_to_local_indexing(cells[i], global_to_local_vertices);
+    _cells_local_idx.push_back(
+        convert_to_local_indexing(c, global_to_local_vertices));
   }
 
   // -- Create Topology object
@@ -1299,10 +1298,9 @@ Topology mesh::create_topology(
   for (std::size_t i = 0; i < cell_type.size(); ++i)
   {
     int num_cell_vertices = mesh::num_cell_vertices(cell_type[i]);
-    auto cells_local_idx = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+    cells_c.push_back(std::make_shared<graph::AdjacencyList<std::int32_t>>(
         graph::regular_adjacency_list(std::move(_cells_local_idx[i]),
-                                      num_cell_vertices));
-    cells_c.push_back(cells_local_idx);
+                                      num_cell_vertices)));
   }
 
   // Save original cell index
