@@ -119,7 +119,16 @@ public:
   /// of owned entries
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] owners Owner rank (on `comm`) of each entry in `ghosts`
-  /// @param[in] tag Tag used in MPI calls.
+  /// @param[in] tag Tag used in non-blocking MPI calls in the consensus
+  /// algorithm.
+  /// @note A tag can sometimes be required when there are a series of
+  /// calls to this constructor, or other functions that call the
+  /// consensus algorithm, that are close together. In cases where this
+  /// constructor is called a second time on rank and another rank has
+  /// not completed its first consensus algorithm call, communications
+  /// can be corrupted if each collective call of this constructor does
+  /// not have its own `tag` value. Each collective call to this
+  /// constructor must use the same `tag` value.
   IndexMap(MPI_Comm comm, std::int32_t local_size,
            std::span<const std::int64_t> ghosts, std::span<const int> owners,
            int tag = static_cast<int>(dolfinx::MPI::tag::consensus_nbx));
@@ -210,8 +219,16 @@ public:
   ///
   /// @brief Compute map from each local (owned) index to the set of
   /// ranks that have the index as a ghost.
-  /// @return shared indices
-  graph::AdjacencyList<int> index_to_dest_ranks() const;
+  ///
+  /// @note Collective
+  ///
+  /// @param[in] tag Tag to pass to MPI calls.
+  /// @note See ::IndexMap(MPI_Comm,std::int32_t,std::span<const
+  /// std::int64_t>,std::span<const int>,int) for an explanation of when
+  /// `tag` is required.
+  /// @return Shared indices.
+  graph::AdjacencyList<int> index_to_dest_ranks(
+      int tag = static_cast<int>(dolfinx::MPI::tag::consensus_nbx)) const;
 
   /// @brief Build a list of owned indices that are ghosted by another
   /// rank.

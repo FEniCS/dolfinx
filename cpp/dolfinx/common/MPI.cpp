@@ -8,9 +8,6 @@
 #include <dolfinx/common/log.h>
 #include <iostream>
 
-#include <dolfinx/common/utils.h>
-#include <iostream>
-
 //-----------------------------------------------------------------------------
 dolfinx::MPI::Comm::Comm(MPI_Comm comm, bool duplicate)
 {
@@ -169,22 +166,10 @@ std::vector<int>
 dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
                                       int tag)
 {
-  // return std::vector<int>(edges.size(), 0);
-  // return dolfinx::MPI::compute_graph_edges_pcx(comm, edges);
-  // static int count = 0;
-
   spdlog::info(
       "Computing communication graph edges (using NBX algorithm). Number "
       "of input edges: {}",
       static_cast<int>(edges.size()));
-
-  // MPI_Barrier(comm);
-
-  // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
-  // std::vector<int> foo(edges.begin(), edges.end());
-  // std::cout << "NBX in: " << ", " << rank << ", " << count << ", " <<
-  // foo.size()
-  //           << ", " << common::hash_local(foo) << std::endl;
 
   // Start non-blocking synchronised send
   std::vector<MPI_Request> send_requests(edges.size());
@@ -251,17 +236,9 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
     }
   }
 
-  // MPI_Barrier(comm);
-
   spdlog::info("Finished graph edge discovery using NBX algorithm. Number "
                "of discovered edges {}",
                static_cast<int>(other_ranks.size()));
-
-  // std::cout << "NBX out: " << rank << ", " << count << ", "
-  //           << other_ranks.size() << ", " << common::hash_local(other_ranks)
-  //           << std::endl;
-
-  // ++count;
 
   return other_ranks;
 }
