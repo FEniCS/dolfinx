@@ -57,7 +57,7 @@ public:
            std::shared_ptr<const common::IndexMap> vertex_map,
            std::shared_ptr<const common::IndexMap> cell_map,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells,
-           std::optional<std::vector<std::int64_t>> original_index
+           const std::optional<std::vector<std::int64_t>>& original_index
            = std::nullopt);
 
   /// @brief Create empty mesh topology with multiple cell types.
@@ -72,15 +72,16 @@ public:
   /// mesh cells for each cell type in `cell_types`.
   /// @param[in] cells Cell-to-vertex connectivities for each cell type
   /// in `cell_types`.
-  // @param[in] original_cell_index Original indices for each cell in
-  // `cells`.
+  /// @param[in] original_cell_index Original indices for each cell in
+  /// `cells`.
   Topology(
       MPI_Comm comm, std::vector<CellType> cell_types,
       std::shared_ptr<const common::IndexMap> vertex_map,
       std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
-      std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells //,
-      // std::vector<std::span<const std::int64_t>> original_cell_index
-  );
+      std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
+      const std::optional<std::vector<std::vector<std::int64_t>>>&
+          original_cell_index
+      = std::nullopt);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
