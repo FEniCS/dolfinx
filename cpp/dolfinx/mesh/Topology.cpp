@@ -1371,10 +1371,6 @@ mesh::create_subtopology(const Topology& topology, int dim,
     subvertices0 = std::move(map_data.second);
   }
 
-  // Sub-topology vertex-to-vertex connectivity (identity)
-  // auto sub_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-  //     submap0->size_local() + submap0->num_ghosts());
-
   // Sub-topology entity to vertex connectivity
   const CellType entity_type = cell_entity_type(topology.cell_type(), dim, 0);
   int num_vertices_per_entity = cell_num_entities(entity_type, 0);
@@ -1386,7 +1382,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
   sub_e_to_v_offsets.reserve(subentities.size() + 1);
 
   // Create vertex-to-subvertex vertex map (i.e. the inverse of
-  // subvertex_to_vertex)
+  // sub-vertex_to_vertex)
   // NOTE: Depending on the sub-topology, this may be densely or sparsely
   // populated. Is a different data structure more appropriate?
   std::vector<std::int32_t> vertex_to_subvertex(
