@@ -20,7 +20,6 @@
 
 namespace dolfinx::fem::impl
 {
-
 /// Assemble functional over cells
 template <dolfinx::scalar T>
 T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,

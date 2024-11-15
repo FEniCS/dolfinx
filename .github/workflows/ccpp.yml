@@ -207,7 +207,7 @@ jobs:
           cmake --build build/demo --parallel 3
           cd build/demo
           ctest -V -R demo -R serial
-          ctest -V -R demo -R mpi_2
+          ctest --output-on-failure -V -R demo -R mpi_2
 
       - name: Install Python build dependencies
         run: pip install -r python/build-requirements.txt
