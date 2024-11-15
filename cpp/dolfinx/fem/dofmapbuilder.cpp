@@ -510,6 +510,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   std::vector<MPI_Request> requests(index_maps.size());
   std::vector<MPI_Comm> comm(index_maps.size(), MPI_COMM_NULL);
   std::vector<std::vector<std::int64_t>> all_dofs_received(index_maps.size());
+  std::vector<std::vector<int>> size_recv(index_maps.size());
   std::vector<std::vector<int>> disp_recv(index_maps.size());
   for (std::size_t d = 0; d < index_maps.size(); ++d)
   {
@@ -524,23 +525,22 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
     // Number and values to send and receive
     const int num_indices = global[d].size();
-    std::vector<int> size_recv;
-    size_recv.reserve(1); // ensure data is not a nullptr
-    size_recv.resize(src.size());
-    MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, size_recv.data(), 1,
+    size_recv[d].reserve(1); // ensure data is not a nullptr
+    size_recv[d].resize(src.size());
+    MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, size_recv[d].data(), 1,
                            MPI_INT, comm[d]);
 
     // Compute displacements for data to receive. Last entry has total
     // number of received items.
     disp_recv[d].resize(src.size() + 1);
-    std::partial_sum(size_recv.begin(), size_recv.begin() + src.size(),
+    std::partial_sum(size_recv[d].begin(), size_recv[d].begin() + src.size(),
                      disp_recv[d].begin() + 1);
 
     // TODO: use MPI_Ineighbor_alltoallv
     // Send global index of dofs to neighbors
     all_dofs_received[d].resize(disp_recv[d].back());
     MPI_Ineighbor_allgatherv(global[d].data(), global[d].size(), MPI_INT64_T,
-                             all_dofs_received[d].data(), size_recv.data(),
+                             all_dofs_received[d].data(), size_recv[d].data(),
                              disp_recv[d].data(), MPI_INT64_T, comm[d],
                              &requests[requests_dim.size()]);
     requests_dim.push_back(d);
