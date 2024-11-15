@@ -713,6 +713,17 @@ std::vector<std::int32_t> convert_to_local_indexing(
 } // namespace
 
 //-----------------------------------------------------------------------------
+namespace
+{
+auto idx_helper
+    = [](auto& idx) -> std::optional<std::vector<std::vector<std::int64_t>>>
+{
+  if (idx)
+    return std::vector<std::vector<std::int64_t>>{idx.value()};
+  else
+    return std::nullopt;
+};
+} // namespace
 Topology::Topology(
     MPI_Comm comm, CellType cell_type,
     std::shared_ptr<const common::IndexMap> vertex_map,
@@ -720,12 +731,45 @@ Topology::Topology(
     std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells,
     const std::optional<std::vector<std::int64_t>>& original_index)
     : Topology(comm, {cell_type}, vertex_map, {cell_map}, {cells},
-               original_index
-                   ? std::optional<std::vector<std::vector<std::int64_t>>>(
-                         {*original_index})
-                   : std::optional<std::vector<std::vector<std::int64_t>>>(
-                         std::nullopt))
+               idx_helper(original_index))
+// : _comm(comm), _index_map(cell_dim(cell_type) + 1, {nullptr}),
+//   _connectivity(
+//       cell_dim(cell_type) + 1,
+//       std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(
+//           cell_dim(cell_type) + 1))
 {
+  // std::int8_t tdim = cell_dim(cell_type);
+
+  // Create all the entity types in mesh, one per dimension for a single cell
+  // type mesh.
+  // _entity_type_offsets.resize(tdim + 2);
+  // for (std::int8_t i = 0; i < tdim + 2; ++i)
+  //   _entity_type_offsets[i] = i;
+
+  // _entity_types = {CellType::point};
+  // if (tdim > 0)
+  //   _entity_types.push_back(CellType::interval);
+
+  // if (tdim == 2)
+  //   _entity_types.push_back(cell_type);
+  // else if (tdim == 3)
+  // {
+  //   _entity_types.push_back(cell_facet_type(cell_type, 0));
+  //   _entity_types.push_back(cell_type);
+  // }
+
+  // // One facet type
+  // _interprocess_facets.resize(1);
+
+  // this->set_index_map(0, vertex_map);
+  // this->set_connectivity(
+  //     std::make_shared<graph::AdjacencyList<std::int32_t>>(
+  //         vertex_map->size_local() + vertex_map->num_ghosts()),
+  //     0, 0);
+  // this->set_index_map(tdim, cell_map);
+  // this->set_connectivity(cells, tdim, 0);
+  // if (original_index)
+  //   this->original_cell_index.push_back(*original_index);
 }
 //-----------------------------------------------------------------------------
 Topology::Topology(
@@ -734,20 +778,19 @@ Topology::Topology(
     std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
     std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
     const std::optional<std::vector<std::vector<std::int64_t>>>& original_index)
-    : original_cell_index(original_index
-                              ? *original_index
-                              : std::vector<std::vector<std::int64_t>>()),
-      _comm(comm), _entity_types({mesh::CellType::point}),
-      _entity_type_offsets({0, 1}), _interprocess_facets(1)
-
+    : _comm(comm), _entity_types({mesh::CellType::point}),
+      _entity_type_offsets({0, 1})
 {
   assert(!cell_types.empty());
   std::int8_t tdim = cell_dim(cell_types.front());
+  // assert(tdim > 0);
 
 #ifndef NDEBUG
   for (auto ct : cell_types)
     assert(cell_dim(ct) == tdim);
 #endif
+
+  _interprocess_facets.resize(1);
 
   // Create all the entity types in the mesh
   if (tdim > 1)
@@ -787,6 +830,9 @@ Topology::Topology(
     c.resize(conn_size);
 
   // Set data
+  // _index_map[_entity_type_offsets[0]] = vertex_map;
+  // int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+
   this->set_index_map(0, vertex_map);
   this->set_connectivity(
       std::make_shared<graph::AdjacencyList<std::int32_t>>(
@@ -797,6 +843,9 @@ Topology::Topology(
     this->set_index_map(tdim, i, cell_maps[i]);
     this->set_connectivity(cells[i], {tdim, i}, {0, 0});
   }
+
+  if (original_index)
+    this->original_cell_index = *original_index;
 }
 //-----------------------------------------------------------------------------
 int Topology::dim() const noexcept { return _entity_type_offsets.size() - 2; }
@@ -1252,10 +1301,10 @@ Topology mesh::create_topology(
   std::ranges::sort(global_to_local_vertices);
 
   std::vector<std::vector<std::int32_t>> _cells_local_idx(cells.size());
-  for (std::span<const std::int64_t> c : cells)
+  for (std::size_t i = 0; i < cell_type.size(); ++i)
   {
-    _cells_local_idx.push_back(
-        convert_to_local_indexing(c, global_to_local_vertices));
+    _cells_local_idx[i]
+        = convert_to_local_indexing(cells[i], global_to_local_vertices);
   }
 
   // -- Create Topology object
@@ -1298,9 +1347,10 @@ Topology mesh::create_topology(
   for (std::size_t i = 0; i < cell_type.size(); ++i)
   {
     int num_cell_vertices = mesh::num_cell_vertices(cell_type[i]);
-    cells_c.push_back(std::make_shared<graph::AdjacencyList<std::int32_t>>(
+    auto cells_local_idx = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         graph::regular_adjacency_list(std::move(_cells_local_idx[i]),
-                                      num_cell_vertices)));
+                                      num_cell_vertices));
+    cells_c.push_back(cells_local_idx);
   }
 
   // Save original cell index
@@ -1369,6 +1419,10 @@ mesh::create_subtopology(const Topology& topology, int dim,
     subvertices0 = std::move(map_data.second);
   }
 
+  // Sub-topology vertex-to-vertex connectivity (identity)
+  // auto sub_v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+  //     submap0->size_local() + submap0->num_ghosts());
+
   // Sub-topology entity to vertex connectivity
   const CellType entity_type = cell_entity_type(topology.cell_type(), dim, 0);
   int num_vertices_per_entity = cell_num_entities(entity_type, 0);
@@ -1380,7 +1434,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
   sub_e_to_v_offsets.reserve(subentities.size() + 1);
 
   // Create vertex-to-subvertex vertex map (i.e. the inverse of
-  // sub-vertex_to_vertex)
+  // subvertex_to_vertex)
   // NOTE: Depending on the sub-topology, this may be densely or sparsely
   // populated. Is a different data structure more appropriate?
   std::vector<std::int32_t> vertex_to_subvertex(
