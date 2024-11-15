@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <memory>
+#include <optional>
 #include <span>
 #include <tuple>
 #include <vector>
@@ -43,16 +44,44 @@ enum class CellType;
 class Topology
 {
 public:
-  /// @brief Empty Topology constructor
-  /// @param comm MPI communicator
-  /// @param cell_type Type of cell
-  Topology(MPI_Comm comm, CellType cell_type);
+  /// @brief Topology constructor.
+  /// @param[in] comm MPI communicator.
+  /// @param[in] cell_type Type of cell.
+  /// @param[in] vertex_map Index map describing the distribution of
+  /// mesh vertices.
+  /// @param[in] cell_map Index map describing the distribution of mesh
+  /// cells.
+  /// @param[in] cells Cell-to-vertex connectivity.
+  /// @param[in] original_index Original index for each cell in `cells`.
+  Topology(MPI_Comm comm, CellType cell_type,
+           std::shared_ptr<const common::IndexMap> vertex_map,
+           std::shared_ptr<const common::IndexMap> cell_map,
+           std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells,
+           const std::optional<std::vector<std::int64_t>>& original_index
+           = std::nullopt);
 
-  /// @brief Create empty mesh topology with multiple cell types
-  /// @param comm MPI communicator
-  /// @param cell_type List of cell types
+  /// @brief Create empty mesh topology with multiple cell types.
+  ///
   /// @warning Experimental
-  Topology(MPI_Comm comm, const std::vector<CellType>& cell_type);
+  ///
+  /// @param comm MPI communicator.
+  /// @param[in] cell_types Types of cells.
+  /// @param[in] vertex_map Index map describing the distribution of
+  /// mesh vertices.
+  /// @param[in] cell_maps Index maps describing the distribution of
+  /// mesh cells for each cell type in `cell_types`.
+  /// @param[in] cells Cell-to-vertex connectivities for each cell type
+  /// in `cell_types`.
+  /// @param[in] original_cell_index Original indices for each cell in
+  /// `cells`.
+  Topology(
+      MPI_Comm comm, std::vector<CellType> cell_types,
+      std::shared_ptr<const common::IndexMap> vertex_map,
+      std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
+      std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
+      const std::optional<std::vector<std::vector<std::int64_t>>>&
+          original_cell_index
+      = std::nullopt);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
