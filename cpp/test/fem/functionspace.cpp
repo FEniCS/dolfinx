@@ -26,5 +26,6 @@ TEST_CASE("Create Function Space (mismatch of elements)", "[functionspace]")
       basix::element::lagrange_variant::unset,
       basix::element::dpc_variant::unset, false);
 
-  CHECK_THROWS(fem::create_functionspace<double>(mesh, element, {}));
+  CHECK_THROWS(fem::create_functionspace<double>(
+      mesh, std::make_shared<fem::FiniteElement<double>>(element)));
 }

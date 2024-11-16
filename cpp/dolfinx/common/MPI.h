@@ -33,8 +33,9 @@ namespace dolfinx::MPI
 /// MPI communication tags
 enum class tag : int
 {
-  consensus_pcx,
-  consensus_pex
+  consensus_pcx = 1200,
+  consensus_pex = 1201,
+  consensus_nbx = 1202,
 };
 
 /// @brief A duplicate MPI communicator and manage lifetime of the
@@ -72,22 +73,21 @@ private:
 int rank(MPI_Comm comm);
 
 /// Return size of the group (number of processes) associated with the
-/// communicator
+/// communicator.
 int size(MPI_Comm comm);
 
 /// @brief Check MPI error code. If the error code is not equal to
 /// MPI_SUCCESS, then std::abort is called.
-/// @param[in] comm MPI communicator
-/// @param[in] code Error code returned by an MPI function call
+/// @param[in] comm MPI communicator.
+/// @param[in] code Error code returned by an MPI function call.
 void check_error(MPI_Comm comm, int code);
 
 /// @brief Return local range for the calling process, partitioning the
 /// global [0, N - 1] range across all ranks into partitions of almost
 /// equal size.
 /// @param[in] rank MPI rank of the caller
-/// @param[in] N The value to partition
-/// @param[in] size The number of MPI ranks across which to partition
-/// `N`
+/// @param[in] N The value to partition.
+/// @param[in] size Number of MPI ranks across which to partition `N`.
 constexpr std::array<std::int64_t, 2> local_range(int rank, std::int64_t N,
                                                   int size)
 {
@@ -108,10 +108,10 @@ constexpr std::array<std::int64_t, 2> local_range(int rank, std::int64_t N,
 
 /// @brief Return which rank owns index in global range [0, N - 1]
 /// (inverse of MPI::local_range).
-/// @param[in] size Number of MPI ranks
-/// @param[in] index The index to determine owning rank
-/// @param[in] N Total number of indices
-/// @return The rank of the owning process
+/// @param[in] size Number of MPI ranks.
+/// @param[in] index The index to determine the owning rank of.
+/// @param[in] N Total number of indices.
+/// @return Rank of the owning process.
 constexpr int index_owner(int size, std::size_t index, std::size_t N)
 {
   assert(index < N);
@@ -171,19 +171,21 @@ std::vector<int> compute_graph_edges_pcx(MPI_Comm comm,
 /// implements the NBX algorithm presented in
 /// https://dx.doi.org/10.1145/1837853.1693476.
 ///
-/// @note For sparse graphs, this function has \f$O(\log p)\f$ cost,
-/// where \f$p\f$is the number of MPI ranks. It is suitable for modest
-/// MPI rank counts.
-///
 /// @note The order of the returned ranks is not deterministic.
 ///
 /// @note Collective.
 ///
 /// @param[in] comm MPI communicator
 /// @param[in] edges Edges (ranks) from this rank (the caller).
-/// @return Ranks that have defined edges from them to this rank.
-std::vector<int> compute_graph_edges_nbx(MPI_Comm comm,
-                                         std::span<const int> edges);
+/// @param[in] tag Tag used in non-blocking MPI calls. A tag can be
+/// required when this function is called a second time on some ranks
+/// before a previous call has completed on all other ranks. @return
+/// Ranks that have defined edges from them to this rank. @note An
+/// alternative to passing a tag is to ensure that there is an implicit
+/// or explicit barrier before and after the call to this function.
+std::vector<int>
+compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
+                        int tag = static_cast<int>(tag::consensus_nbx));
 
 /// @brief Distribute row data to 'post office' ranks.
 ///

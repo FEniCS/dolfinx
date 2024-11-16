@@ -36,8 +36,8 @@ void test_vtx_reuse_mesh()
       basix::element::dpc_variant::unset, false);
 
   // Create a scalar function space
-  auto V = std::make_shared<fem::FunctionSpace<T>>(
-      fem::create_functionspace(mesh, e));
+  auto V = std::make_shared<fem::FunctionSpace<T>>(fem::create_functionspace<T>(
+      mesh, std::make_shared<fem::FiniteElement<T>>(e)));
 
   // Create a finite element Function
   auto u = std::make_shared<fem::Function<T>>(V);

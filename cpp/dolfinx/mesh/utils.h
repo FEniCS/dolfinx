@@ -59,7 +59,7 @@ void reorder_list(std::span<T> list, std::span<const std::int32_t> nodemap)
   }
 }
 
-/// @brief The coordinates of 'vertices' for for entities of a give
+/// @brief The coordinates of 'vertices' for for entities of a given
 /// dimension that are attached to specified facets.
 ///
 /// @pre The provided facets must be on the boundary of the mesh.
@@ -67,7 +67,7 @@ void reorder_list(std::span<T> list, std::span<const std::int32_t> nodemap)
 /// @param[in] mesh Mesh to compute the vertex coordinates for
 /// @param[in] dim Topological dimension of the entities
 /// @param[in] facets List of facets on the meh boundary
-/// @return (0) Entities attached to the boundary facets, (1) vertex
+/// @return (0) Entities attached to the boundary facets (sorted), (1) vertex
 /// coordinates (shape is `(3, num_vertices)`) and (2) map from vertex
 /// in the full mesh to the position (column) in the vertex coordinates
 /// array (set to -1 if vertex in full mesh is not in the coordinate
@@ -161,7 +161,7 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
 ///
 /// @note Collective
 ///
-/// @param[in] topology Mesh topology
+/// @param[in] topology Mesh topology.
 /// @return Sorted list of owned facet indices that are exterior facets
 /// of the mesh.
 std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
@@ -550,14 +550,14 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
 /// @param[in] marker Marking function, returns `true` for a point that
 /// is 'marked', and `false` otherwise.
 /// @returns List of marked entity indices (indices local to the
-/// process)
+/// process).
 template <std::floating_point T, MarkerFn<T> U>
 std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
                                                    U marker)
 {
   auto topology = mesh.topology();
   assert(topology);
-  const int tdim = topology->dim();
+  int tdim = topology->dim();
   if (dim == tdim)
   {
     throw std::runtime_error(
@@ -567,8 +567,7 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
   // Compute list of boundary facets
   mesh.topology_mutable()->create_entities(tdim - 1);
   mesh.topology_mutable()->create_connectivity(tdim - 1, tdim);
-  const std::vector<std::int32_t> boundary_facets
-      = exterior_facet_indices(*topology);
+  std::vector<std::int32_t> boundary_facets = exterior_facet_indices(*topology);
 
   using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       const T,
@@ -576,10 +575,10 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
           std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Run marker function on the vertex coordinates
-  const auto [facet_entities, xdata, vertex_to_pos]
+  auto [facet_entities, xdata, vertex_to_pos]
       = impl::compute_vertex_coords_boundary(mesh, dim, boundary_facets);
   cmdspan3x_t x(xdata.data(), 3, xdata.size() / 3);
-  const std::vector<std::int8_t> marked = marker(x);
+  std::vector<std::int8_t> marked = marker(x);
   if (marked.size() != x.extent(1))
     throw std::runtime_error("Length of array of markers is wrong.");
 

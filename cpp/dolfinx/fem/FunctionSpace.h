@@ -36,18 +36,16 @@ public:
   /// Geometry type of the Mesh that the FunctionSpace is defined on.
   using geometry_type = T;
 
-  /// @brief Create function space for given mesh, element and dofmap.
+  /// @brief Create function space for given mesh, element and
+  /// degree-of-freedom map.
   /// @param[in] mesh Mesh that the space is defined on.
   /// @param[in] element Finite element for the space.
   /// @param[in] dofmap Degree-of-freedom map for the space.
-  /// @param[in] value_shape The shape of the value space on the physical cell
   FunctionSpace(std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
                 std::shared_ptr<const FiniteElement<geometry_type>> element,
-                std::shared_ptr<const DofMap> dofmap,
-                std::vector<std::size_t> value_shape)
+                std::shared_ptr<const DofMap> dofmap)
       : _mesh(mesh), _element(element), _dofmap(dofmap),
-        _id(boost::uuids::random_generator()()), _root_space_id(_id),
-        _value_shape(value_shape)
+        _id(boost::uuids::random_generator()()), _root_space_id(_id)
   {
     // Do nothing
   }
@@ -67,7 +65,7 @@ public:
   /// Move assignment operator
   FunctionSpace& operator=(FunctionSpace&& V) = default;
 
-  ///  @brief Create a subspace (view) for a specific component.
+  /// @brief Create a subspace (view) for a specific component.
   ///
   /// @note If the subspace is re-used, for performance reasons the
   /// returned subspace should be stored by the caller to avoid repeated
@@ -93,10 +91,7 @@ public:
         = std::make_shared<DofMap>(_dofmap->extract_sub_dofmap(component));
 
     // Create new sub space
-    FunctionSpace sub_space(_mesh, element, dofmap,
-                            compute_value_shape(element,
-                                                _mesh->topology()->dim(),
-                                                _mesh->geometry().dim()));
+    FunctionSpace sub_space(_mesh, element, dofmap);
 
     // Set root space id and component w.r.t. root
     sub_space._root_space_id = _root_space_id;
@@ -112,33 +107,24 @@ public:
   /// FunctionSpace
   bool contains(const FunctionSpace& V) const
   {
-    if (this == std::addressof(V))
-    {
-      // Spaces are the same (same memory address)
+    if (this == std::addressof(V)) // Spaces are the same (same memory address)
       return true;
-    }
-    else if (_root_space_id != V._root_space_id)
-    {
-      // Different root spaces
+    else if (_root_space_id != V._root_space_id) // Different root spaces
       return false;
-    }
-    else if (_component.size() > V._component.size())
+    else if (_component.size()
+             > V._component.size()) // V is a superspace of *this
     {
-      // V is a superspace of *this
       return false;
     }
     else if (!std::equal(_component.begin(), _component.end(),
-                         V._component.begin()))
+                         V._component.begin())) // Components of 'this' are not
+                                                // the same as the leading
+                                                // components of V
     {
-      // Components of 'this' are not the same as the leading components
-      // of V
       return false;
     }
-    else
-    {
-      // Ok, V is really our subspace
+    else // Ok, V is really our subspace
       return true;
-    }
   }
 
   /// Collapse a subspace and return a new function space and a map from
@@ -155,11 +141,8 @@ public:
     auto collapsed_dofmap
         = std::make_shared<DofMap>(std::move(_collapsed_dofmap));
 
-    return {
-        FunctionSpace(_mesh, _element, collapsed_dofmap,
-                      compute_value_shape(_element, _mesh->topology()->dim(),
-                                          _mesh->geometry().dim())),
-        std::move(collapsed_dofs)};
+    return {FunctionSpace(_mesh, _element, collapsed_dofmap),
+            std::move(collapsed_dofs)};
   }
 
   /// @brief Get the component with respect to the root superspace.
@@ -168,7 +151,7 @@ public:
   std::vector<int> component() const { return _component; }
 
   /// @brief Indicate whether this function space represents a symmetric
-  /// 2-tensor
+  /// 2-tensor.
   bool symmetric() const
   {
     if (_element)
@@ -334,23 +317,6 @@ public:
   /// The dofmap
   std::shared_ptr<const DofMap> dofmap() const { return _dofmap; }
 
-  /// The shape of the value space
-  std::span<const std::size_t> value_shape() const noexcept
-  {
-    return _value_shape;
-  }
-
-  /// The value size, e.g. 1 for a scalar-valued function, 2 for a 2D vector, 9
-  /// for a second-order tensor in 3D.
-  /// @note The return value of this function is equivalent to
-  /// `std::accumulate(value_shape().begin(), value_shape().end(), 1,
-  /// std::multiplies{})`.
-  int value_size() const
-  {
-    return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
-                           std::multiplies{});
-  }
-
 private:
   // The mesh
   std::shared_ptr<const mesh::Mesh<geometry_type>> _mesh;
@@ -367,14 +333,13 @@ private:
   // Unique identifier for the space and for its root space
   boost::uuids::uuid _id;
   boost::uuids::uuid _root_space_id;
-
-  std::vector<std::size_t> _value_shape;
 };
 
-/// Extract FunctionSpaces for (0) rows blocks and (1) columns blocks
-/// from a rectangular array of (test, trial) space pairs. The test
-/// space must be the same for each row and the trial spaces must be the
-/// same for each column. Raises an exception if there is an
+/// @brief Extract FunctionSpaces for (0) rows blocks and (1) columns
+/// blocks from a rectangular array of (test, trial) space pairs.
+///
+/// The test space must be the same for each row and the trial spaces
+/// must be the same for each column. Raises an exception if there is an
 /// inconsistency. e.g. if each form in row i does not have the same
 /// test space then an exception is raised.
 ///
@@ -430,41 +395,9 @@ common_function_spaces(
   return {spaces0, spaces1};
 }
 
-/// @brief Compute the physical value shape of an element for a mesh
-/// @param[in] element The element
-/// @param[in] tdim Topological dimension
-/// @param[in] gdim Geometric dimension
-/// @return Physical valus shape
-template <std::floating_point T>
-std::vector<std::size_t> compute_value_shape(
-    std::shared_ptr<const dolfinx::fem::FiniteElement<T>> element,
-    std::size_t tdim, std::size_t gdim)
-{
-  auto rvs = element->reference_value_shape();
-  std::vector<std::size_t> value_shape(rvs.size());
-  if (element->block_size() > 1)
-  {
-    for (std::size_t i = 0; i < rvs.size(); ++i)
-    {
-      value_shape[i] = rvs[i];
-    }
-  }
-  else
-  {
-    for (std::size_t i = 0; i < rvs.size(); ++i)
-    {
-      if (rvs[i] == tdim)
-        value_shape[i] = gdim;
-      else
-        value_shape[i] = rvs[i];
-    }
-  }
-  return value_shape;
-}
-
 /// Type deduction
-template <typename U, typename V, typename W, typename X>
-FunctionSpace(U mesh, V element, W dofmap, X value_shape)
+template <typename U, typename V, typename W>
+FunctionSpace(U mesh, V element, W dofmap)
     -> FunctionSpace<typename std::remove_cvref<
         typename U::element_type>::type::geometry_type::value_type>;
 
