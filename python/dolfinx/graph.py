@@ -38,21 +38,52 @@ class AdjacencyList:
     _cpp_object: Union[_cpp.la.AdjacencyList_int32, _cpp.la.AdjacencyList_int64]
 
     def __init__(self, cpp_object: Union[_cpp.la.AdjacencyList_int32, _cpp.la.AdjacencyList_int64]):
+        """Creates a python wrapper for the exported adjacency list class.
+
+        Note:
+            This constructor does not create a new adjacency list, see `adjacencylist` for that.
+
+        Args:
+            The underlying cpp instance that this object will wrap.
+        """
         self._cpp_object = cpp_object
 
     def links(self, node: Union[np.int32, np.int64]) -> npt.NDArray[Union[np.int32, np.int64]]:
+        """Retrieve the links of a node.
+
+        Args:
+            Node to retrieve the connectitivty of.
+
+        Returns:
+            Neighbors of the node.
+        """
         return self._cpp_object.links(node)
 
     @property
     def array(self) -> npt.NDArray[Union[np.int32, np.int64]]:
+        """Array representation of the adjacency list.
+
+        Returns:
+            Flattened array representation of the adjacency list.
+        """
         return self._cpp_object.array
 
     @property
     def offsets(self) -> npt.NDArray[np.int32]:
+        """Offsets for each node in the `array()`.
+
+        Returns:
+            Array of indices with shape `(num_nodes+1)`.
+        """
         return self._cpp_object.offsets
 
     @property
     def num_nodes(self) -> np.int32:
+        """Number of nodes in the adjacency list.
+
+        Returns:
+            Number of nodes.
+        """
         return self._cpp_object.num_nodes
 
 
