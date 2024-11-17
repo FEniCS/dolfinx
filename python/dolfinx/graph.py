@@ -38,10 +38,10 @@ class AdjacencyList:
     _cpp_object: Union[_cpp.la.AdjacencyList_int32, _cpp.la.AdjacencyList_int64]
 
     def __init__(self, cpp_object: Union[_cpp.la.AdjacencyList_int32, _cpp.la.AdjacencyList_int64]):
-        """Creates a python wrapper for the exported adjacency list class.
+        """Creates a Python wrapper for the exported adjacency list class.
 
         Note:
-            This constructor does not create a new adjacency list, see `adjacencylist` for that.
+            This constructor does not create a new adjacency list, see  :func:`adjacencylist` for that.
 
         Args:
             The underlying cpp instance that this object will wrap.
@@ -70,7 +70,7 @@ class AdjacencyList:
 
     @property
     def offsets(self) -> npt.NDArray[np.int32]:
-        """Offsets for each node in the `array()`.
+        """Offsets for each node in the :func:`array`.
 
         Returns:
             Array of indices with shape `(num_nodes+1)`.
