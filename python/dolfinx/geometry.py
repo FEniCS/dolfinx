@@ -234,7 +234,7 @@ def compute_colliding_cells(
 
 
 def squared_distance(
-    mesh: Mesh, dim: int, entities: list[int], points: npt.NDArray[np.floating]
+    mesh: Mesh, dim: int, entities: npt.NDArray[np.int32], points: npt.NDArray[np.floating]
 ) -> npt.NDArray[np.floating]:
     """Compute the squared distance between a point and a mesh entity.
 
