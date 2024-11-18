@@ -106,7 +106,7 @@ jobs:
       - name: Install DOLFINx (C++)
         working-directory: dolfinx
         run: |
-          cmake -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR=D:/a/dolfinx/basix-install/share/basix -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -B build-dir -S cpp
+          cmake -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR="$env:GITHUB_WORKSPACE/basix-install/lib/cmake/basix" -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR="$env:GITHUB_WORKSPACE/ufcx-install/share/ufcx/cmake" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS="cpp/.vcpkg-overlay" -B build-dir -S cpp
           cmake --build build-dir --config Release
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/dolfinx-install
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
@@ -114,7 +114,7 @@ jobs:
       - name: Build unit tests (C++)
         working-directory: dolfinx
         run: |
-          cmake -DBasix_DIR=D:/a/dolfinx/basix-install/share/basix -Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -B build/test/ -S cpp/test/
+          cmake -DBasix_DIR=D:/a/dolfinx/basix-install/share/basix -Dufcx_DIR="$env:GITHUB_WORKSPACE/ufcx-install/share/ufcx/cmake" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -B build/test/ -S cpp/test/
           cmake --build build/test --config Release --parallel 3
 
       - name: Run unit tests (C++, MPI, np=1)
@@ -134,7 +134,7 @@ jobs:
       - name: Install DOLFINx (Python)
         working-directory: dolfinx/python
         run: |
-          pip -v install --check-build-dependencies --no-build-isolation .[test] --config-settings=cmake.args=-DBasix_DIR=D:/a/dolfinx/basix-install/lib/cmake/basix --config-settings=cmake.args=-Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake --config-settings=cmake.args=-DDOLFINX_DIR=D:/a/dolfinx/dolfinx-install/lib/cmake/dolfinx --config-settings=cmake.args=-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+          pip -v install --check-build-dependencies --no-build-isolation .[test] --config-settings=cmake.args=-DBasix_DIR="$env:GITHUB_WORKSPACE/basix-install/lib/cmake/basix" --config-settings=cmake.args=-Dufcx_DIR="$env:GITHUB_WORKSPACE/ufcx-install/share/ufcx/cmake" --config-settings=cmake.args=-DDOLFINX_DIR="$env:GITHUB_WORKSPACE/dolfinx-install/lib/cmake/dolfinx" --config-settings=cmake.args=-DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
 
       - name: Run units tests (Python, serial)
         working-directory: dolfinx
