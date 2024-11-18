@@ -49,6 +49,11 @@ jobs:
           (Get-Content __init__.py).Replace('# WINDOWSDLL', 'import os; os.add_dll_directory("${{ github.workspace }}/basix-install/bin")') | Set-Content __init__.py
           Get-Content __init__.py
 
+      - name: Set up CMake
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: "~3.30.0"
+
       - name: Install Basix (C++)
         working-directory: basix/cpp
         run: |
