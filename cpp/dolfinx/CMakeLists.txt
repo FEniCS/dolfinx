@@ -173,7 +173,8 @@ if(INSTALL_RUNTIME_DEPENDENCIES AND WIN32)
     [[.*(\\|/)system32(\\|/).*\.dll]]
     DIRECTORIES
     $<TARGET_FILE_DIR:Basix::basix>
-)
+  )
+endif()
 
 # Generate DOLFINTargets.cmake
 install(EXPORT DOLFINXTargets DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx)
