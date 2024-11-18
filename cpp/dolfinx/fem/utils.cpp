@@ -128,16 +128,13 @@ std::vector<std::string> fem::get_constant_names(const ufcx_form& ufcx_form)
                                       + ufcx_form.num_constants);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t> fem::compute_integration_domains(
-    fem::IntegralType integral_type, const mesh::Topology& topology,
-    std::span<const std::int32_t> entities, int dim)
+std::vector<std::int32_t>
+fem::compute_integration_domains(fem::IntegralType integral_type,
+                                 const mesh::Topology& topology,
+                                 std::span<const std::int32_t> entities)
 {
   const int tdim = topology.dim();
-  if ((integral_type == IntegralType::cell ? tdim : tdim - 1) != dim)
-  {
-    throw std::runtime_error("Invalid mesh entity dimension: "
-                             + std::to_string(dim));
-  }
+  const int dim = integral_type == IntegralType::cell ? tdim : tdim - 1;
 
   {
     // Create span of the owned entities (leaves off any ghosts)

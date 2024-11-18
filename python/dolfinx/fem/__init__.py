@@ -127,35 +127,39 @@ def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _Matri
 
 
 def compute_integration_domains(
-    integral_type: IntegralType, topology: Topology, entities: np.ndarray, dim: int
+    integral_type: IntegralType, topology: Topology, entities: np.ndarray
 ):
     """Given an integral type and a set of entities compute integration entities.
 
-    This function returns a list `[(id, entities)]`.
-    For cell integrals `entities` are the cell indices. For exterior facet
-    integrals, `entities` is a list of `(cell_index, local_facet_index)`
-    pairs. For interior facet integrals, `entities` is a list of
-    `(cell_index0, local_facet_index0, cell_index1, local_facet_index1)`.
-    `id` refers to the subdomain id used in the definition of the integration
+    This function returns a list `[(id, entities)]`. For cell integrals
+    `entities` are the cell indices. For exterior facet integrals,
+    `entities` is a list of `(cell_index, local_facet_index)` pairs. For
+    interior facet integrals, `entities` is a list of `(cell_index0,
+    local_facet_index0, cell_index1, local_facet_index1)`. `id` refers
+    to the subdomain id used in the definition of the integration
     measures of the variational form.
 
     Note:
-        Owned mesh entities only are returned. Ghost entities are not included.
+        Owned mesh entities only are returned. Ghost entities are not
+        included.
 
     Note:
         For facet integrals, the topology facet-to-cell and
-        cell-to-facet connectivity must be computed before calling this function.
+        cell-to-facet connectivity must be computed before calling this
+        function.
 
     Args:
-        integral_type: Integral type
-        topology: Mesh topology
-        entities: List of mesh entities
-        dim: Topological dimension of entities
+        integral_type: Integral type.
+        topology: Mesh topology.
+        entities: List of mesh entities. For
+            ``integral_type==IntegralType.cell``, ``entities`` should be
+            cell indices. For other ``IntegralType``s, ``entities``
+            should be facet indices.
 
     Returns:
-        List of integration entities
+        List of integration entities.
     """
-    return _compute_integration_domains(integral_type, topology._cpp_object, entities, dim)
+    return _compute_integration_domains(integral_type, topology._cpp_object, entities)
 
 
 __all__ = [

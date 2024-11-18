@@ -502,7 +502,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
       map_e->size_local() + map_e->num_ghosts(), !edges.has_value());
   std::vector<std::vector<std::int32_t>> marked_for_update(ranks.size());
 
-  if (edges.has_value())
+  if (edges)
   {
     for (auto edge : edges.value())
     {

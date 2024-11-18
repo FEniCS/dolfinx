@@ -26,6 +26,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/function.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
@@ -572,9 +573,26 @@ void mesh(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::mesh::Topology* t, MPICommWrapper comm,
-             dolfinx::mesh::CellType cell_type)
-          { new (t) dolfinx::mesh::Topology(comm.get(), cell_type); },
-          nb::arg("comm"), nb::arg("cell_type"))
+             dolfinx::mesh::CellType cell_type,
+             std::shared_ptr<const dolfinx::common::IndexMap> vertex_map,
+             std::shared_ptr<const dolfinx::common::IndexMap> cell_map,
+             std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>> cells,
+             std::optional<
+                 nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>
+                 original_index)
+          {
+            std::optional<std::vector<std::int64_t>> idx
+                = original_index
+                      ? std::vector<std::int64_t>(original_index->data(),
+                                                  original_index->data()
+                                                      + original_index->size())
+                      : std::optional<std::vector<std::int64_t>>(std::nullopt);
+            new (t) dolfinx::mesh::Topology(comm.get(), cell_type, vertex_map,
+                                            cell_map, cells, idx);
+          },
+          nb::arg("comm"), nb::arg("cell_type"), nb::arg("vertex_map"),
+          nb::arg("cell_map"), nb::arg("cells"),
+          nb::arg("original_index").none())
       .def("set_connectivity",
            nb::overload_cast<
                std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>>,
@@ -612,7 +630,7 @@ void mesh(nb::module_& m)
           nb::rv_policy::reference_internal)
       .def_prop_ro("dim", &dolfinx::mesh::Topology::dim,
                    "Topological dimension")
-      .def_prop_ro(
+      .def_prop_rw(
           "original_cell_index",
           [](const dolfinx::mesh::Topology& self)
           {
@@ -623,7 +641,16 @@ void mesh(nb::module_& m)
             return nb::ndarray<const std::int64_t, nb::numpy>(idx[0].data(),
                                                               {idx[0].size()});
           },
-          nb::rv_policy::reference_internal)
+          [](dolfinx::mesh::Topology& self,
+             const nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>&
+                 original_cell_indices)
+          {
+            self.original_cell_index.resize(1);
+            self.original_cell_index[0].assign(
+                original_cell_indices.data(),
+                original_cell_indices.data() + original_cell_indices.size());
+          },
+          nb::arg("original_cell_indices"))
       .def("connectivity",
            nb::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        nb::const_),

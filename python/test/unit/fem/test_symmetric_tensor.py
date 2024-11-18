@@ -20,9 +20,7 @@ def test_transpose(degree, symmetry):
         symmetry=symmetry,
         dtype=dolfinx.default_real_type,
     )
-
     space = dolfinx.fem.functionspace(mesh, e)
-
     f = dolfinx.fem.Function(space)
     f.interpolate(lambda x: (x[0], x[1], x[0] ** 3, x[0]))
 
@@ -39,17 +37,17 @@ def test_interpolation():
         return np.broadcast_to(mat, (9, x.shape[1]))
 
     element = basix.ufl.element(
-        "DG", mesh.basix_cell(), 0, shape=(3, 3), dtype=dolfinx.default_real_type
+        "DG", mesh.basix_cell(), 0, shape=(3, 3), symmetry=False, dtype=dolfinx.default_real_type
     )
+    space = dolfinx.fem.functionspace(mesh, element)
+    f = dolfinx.fem.Function(space)
+    f.interpolate(lambda x: tensor(x))
+
     symm_element = basix.ufl.element(
         "DG", mesh.basix_cell(), 0, shape=(3, 3), symmetry=True, dtype=dolfinx.default_real_type
     )
-    space = dolfinx.fem.functionspace(mesh, element)
     symm_space = dolfinx.fem.functionspace(mesh, symm_element)
-    f = dolfinx.fem.Function(space)
     symm_f = dolfinx.fem.Function(symm_space)
-
-    f.interpolate(lambda x: tensor(x))
     symm_f.interpolate(lambda x: tensor(x))
 
     l2_error = dolfinx.fem.assemble_scalar(dolfinx.fem.form((f - symm_f) ** 2 * ufl.dx))
@@ -71,10 +69,7 @@ def test_eval():
     )
     space = dolfinx.fem.functionspace(mesh, element)
     f = dolfinx.fem.Function(space)
-
     f.interpolate(lambda x: tensor(x))
-
     value = f.eval([[0, 0, 0]], [0])
-
     atol = 10 * np.finfo(dolfinx.default_scalar_type).resolution
     assert np.allclose(value, mat, atol=atol)
