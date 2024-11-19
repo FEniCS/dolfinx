@@ -159,7 +159,9 @@ WORKDIR /root
 RUN pip install --no-cache-dir jupyter jupyterlab
 
 # pyvista built in FEniCS PPA
-RUN add-apt-repository ppa:fenics-packages/fenics && \
+RUN apt-get -qq update && \
+    apt-get -y install software-properties-common && \
+    add-apt-repository ppa:fenics-packages/fenics && \
     apt-get -qq update && \
     apt-get -y install python3-pyvista xvfb && \
     apt-get clean && \
