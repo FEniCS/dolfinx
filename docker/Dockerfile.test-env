@@ -144,12 +144,12 @@ RUN if [ "$MPI" = "mpich" ]; then \
 
 ENV VIRTUAL_ENV=/dolfinx-env
 ENV PATH=/dolfinx-env/bin:$PATH
-RUN python3 -m venv ${VIRTUAL_ENV}
+RUN python3 -m venv --system-site-packages ${VIRTUAL_ENV}
 
 # Install Python packages (via pip)
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir cython numpy==${NUMPY_VERSION} && \
-    pip install --no-cache-dir mpi4py
+RUN pip install --no-cache-dir --upgrade --ignore-installed pip setuptools wheel && \
+    pip install --no-cache-dir --ignore-installed cython numpy==${NUMPY_VERSION} && \
+    pip install --no-cache-dir --ignore-installed mpi4py
 
 # Install KaHIP
 RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
