@@ -98,3 +98,30 @@ def test_element_product(d1, d2):
     B.scatter_reverse()
 
     assert np.isclose(A.squared_norm(), B.squared_norm())
+
+
+def test_single_element_in_mixed_element():
+    """
+    Check that a mixed element with a single element is equivalent to a single element
+    """
+    mesh = dolfinx.mesh.create_unit_square(
+        MPI.COMM_WORLD, 10, 3, ghost_mode=dolfinx.mesh.GhostMode.shared_facet
+    )
+    el = element("Lagrange", mesh.basix_cell(), 3)
+    me = mixed_element([el])
+
+    V = dolfinx.fem.functionspace(mesh, me)
+    assert V.num_sub_spaces == 1
+
+    W = dolfinx.fem.functionspace(mesh, el)
+    np.testing.assert_allclose(W.dofmap.list, V.dofmap.list)
+
+    def f(x):
+        return x[0] ** 2 + x[1] ** 2
+
+    u = dolfinx.fem.Function(V)
+    u.sub(0).interpolate(f)
+    w = dolfinx.fem.Function(W)
+    w.interpolate(f)
+
+    np.testing.assert_allclose(u.x.array, w.x.array)
