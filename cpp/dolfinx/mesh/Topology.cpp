@@ -773,7 +773,8 @@ Topology::Topology(
   // Cell Types
   _entity_types.insert(_entity_types.end(), cell_types.begin(),
                        cell_types.end());
-  _entity_type_offsets.push_back(_entity_types.size());
+  if (tdim > 0)
+    _entity_type_offsets.push_back(_entity_types.size());
 
   std::int8_t conn_size = _entity_type_offsets.back();
   _index_map.resize(conn_size);
@@ -1397,6 +1398,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
 
   auto sub_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::move(sub_e_to_v_vec), std::move(sub_e_to_v_offsets));
+  std::cout << "dim" << dim << int(entity_type) << "\n";
 
   return {Topology(topology.comm(), entity_type, submap0, submap, sub_e_to_v),
           std::move(subentities), std::move(subvertices0)};
