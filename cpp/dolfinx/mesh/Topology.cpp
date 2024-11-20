@@ -1398,7 +1398,6 @@ mesh::create_subtopology(const Topology& topology, int dim,
 
   auto sub_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::move(sub_e_to_v_vec), std::move(sub_e_to_v_offsets));
-  std::cout << "dim" << dim << int(entity_type) << "\n";
 
   return {Topology(topology.comm(), entity_type, submap0, submap, sub_e_to_v),
           std::move(subentities), std::move(subvertices0)};
