@@ -245,7 +245,7 @@ def assemble_vector(L: typing.Any, constants=None, coeffs=None) -> PETSc.Vec:
         and the Python garbage collector, it is recommended that the method ``PETSc.Vec.destroy()``
         is called on the returned object once the object is no longer required. Note that
         ``PETSc.Vec.destroy()`` is collective over the object's MPI communicator.
-        
+
     Args:
         L: A linear form.
 
@@ -342,7 +342,7 @@ def assemble_vector_block(
         and the Python garbage collector, it is recommended that the method ``PETSc.Vec.destroy()``
         is called on the returned object once the object is no longer required. Note that
         ``PETSc.Vec.destroy()`` is collective over the object's MPI communicator.
-    
+
     The vector is not finalised, i.e. ghost values are not accumulated.
     """
     maps = [
@@ -464,7 +464,7 @@ def assemble_matrix(
         and the Python garbage collector, it is recommended that the method ``PETSc.Mat.destroy()``
         is called on the returned object once the object is no longer required. Note that
         ``PETSc.Mat.destroy()`` is collective over the object's MPI communicator.
-        
+
     Args:
         a: Bilinear form to assembled into a matrix.
         bc: Dirichlet boundary conditions applied to the system.
@@ -613,7 +613,7 @@ def assemble_matrix_block(
     coeffs=None,
 ) -> PETSc.Mat:  # type: ignore
     """Assemble bilinear forms into a blocked matrix.
-    
+
     Note:
         Due to subtle issues in the interaction between petsc4py memory management
         and the Python garbage collector, it is recommended that the method ``PETSc.Mat.destroy()``
