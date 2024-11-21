@@ -205,14 +205,14 @@ class XDMFFile(_cpp.io.XDMFFile):
         )
         return Mesh(msh, domain)
 
-    def read_meshtags(self, mesh, name, attribute_label=None, xpath="/Xdmf/Domain"):
+    def read_meshtags(self, mesh, name, attribute_label="", xpath="/Xdmf/Domain"):
         """Read meshtags with a specific name as specified in the xdmf file. If
-        `attribute_label` is `None`, read the first attribute in the file.
-        If `attribute_label` is not `None` but no attributes have the provided name,
+        `attribute_label` is empty, read the first attribute in the file.
+        If `attribute_label` is not empty but no attributes have the provided name,
         throw an error. If multiple attributes have the provided name, read the first
         one found."""
         mt = super().read_meshtags(
-            mesh._cpp_object, name, attribute_label if attribute_label is not None else "", xpath
+            mesh._cpp_object, name, attribute_label, xpath
         )
         return MeshTags(mt)
 

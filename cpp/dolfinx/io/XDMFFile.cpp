@@ -334,15 +334,15 @@ template void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>&,
 /// @endcond
 //-----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t>
-XDMFFile::read_meshtags_by_name(const mesh::Mesh<double>& mesh,
-                                std::string name, std::string attribute_name,
-                                std::string xpath)
+XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
+                        std::optional<std::string> attribute_name,
+                        std::string xpath)
 {
   spdlog::info("XDMF read meshtags ({})", name);
-  const pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
     throw std::runtime_error("XML node '" + xpath + "' not found.");
-  const pugi::xml_node grid_node
+  pugi::xml_node grid_node
       = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
@@ -351,16 +351,16 @@ XDMFFile::read_meshtags_by_name(const mesh::Mesh<double>& mesh,
 
   pugi::xml_node values_data_node
       = grid_node.child("Attribute").child("DataItem");
-  if (!attribute_name.empty())
+  if (attribute_name)
   {
     // Search for a child that contains an attribute with the requested name
     const pugi::xml_node attribute_node = grid_node.find_child(
         [&attribute_name](const auto& n)
-        { return n.attribute("Name").value() == attribute_name; });
+        { return n.attribute("Name").value() == *attribute_name; });
 
     if (!attribute_node)
     {
-      throw std::runtime_error("Attribute with name '" + attribute_name
+      throw std::runtime_error("Attribute with name '" + *attribute_name
                                + "' not found.");
     }
 
@@ -402,13 +402,6 @@ XDMFFile::read_meshtags_by_name(const mesh::Mesh<double>& mesh,
   meshtags.name = name;
 
   return meshtags;
-}
-//-----------------------------------------------------------------------------
-mesh::MeshTags<std::int32_t>
-XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
-                        std::string xpath)
-{
-  return read_meshtags_by_name(mesh, name, std::string(), xpath);
 }
 //-----------------------------------------------------------------------------
 std::pair<mesh::CellType, int> XDMFFile::read_cell_type(std::string grid_name,

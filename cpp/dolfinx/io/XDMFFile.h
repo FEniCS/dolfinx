@@ -12,6 +12,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <string>
 #include <variant>
 
@@ -164,25 +165,16 @@ public:
                       const mesh::Geometry<T>& x, std::string geometry_xpath,
                       std::string xpath = "/Xdmf/Domain");
 
-  /// Read MeshTags by name
+  /// Read MeshTags
   /// @param[in] mesh The Mesh that the input data is defined on
   /// @param[in] name Name of the grid node in the xml-scheme of the XDMF-file. E.g. "Material" in
   ///                 Grid Name="Material" GridType="Uniform"
   /// @param[in] attribute_name The name of the attribute to read
   /// @param[in] xpath XPath where MeshTags Grid is stored in file
   mesh::MeshTags<std::int32_t>
-  read_meshtags_by_name(const mesh::Mesh<double>& mesh, std::string name,
-                        std::string attribute_name,
-                        std::string xpath = "/Xdmf/Domain");
-
-  /// Read MeshTags
-  /// @param[in] mesh The Mesh that the data is defined on
-  /// @param[in] name Name of the grid node in the xml file. E.g. "Material" in
-  ///                 Grid Name="Material" GridType="Uniform"
-  /// @param[in] xpath XPath where MeshTags Grid is stored in file
-  mesh::MeshTags<std::int32_t>
   read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
-                std::string xpath = "/Xdmf/Domain");
+                        std::optional<std::string> attribute_name,
+                        std::string xpath = "/Xdmf/Domain");
 
   /// Write Information
   /// @param[in] name

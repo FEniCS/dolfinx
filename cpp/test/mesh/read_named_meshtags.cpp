@@ -41,11 +41,8 @@ void test_read_named_meshtags()
   std::vector<std::int32_t> indices(n_cells);
   std::iota(std::begin(indices), std::end(indices), 0);
 
-  std::vector<std::int32_t> domain_values(n_cells);
-  std::ranges::fill(domain_values, domain_value);
-
-  std::vector<std::int32_t> material_values(n_cells);
-  std::ranges::fill(material_values, material_value);
+  std::vector<std::int32_t> domain_values(n_cells, domain_value);
+  std::vector<std::int32_t> material_values(n_cells, material_value);
 
   mesh::MeshTags<std::int32_t> mt_domains(mesh->topology(), 2, indices,
                                           domain_values);
@@ -70,22 +67,21 @@ void test_read_named_meshtags()
       fem::CoordinateElement<double>(mesh::CellType::triangle, 1),
       mesh::GhostMode::none, "mesh"));
 
-  const auto mt_first= meshFile.read_meshtags_by_name(
-      *mesh, "material", std::string());
+  const auto mt_first = meshFile.read_meshtags(*mesh, "material", {});
 
   CHECK(mt_first.values().front() == material_value);
 
-  const auto mt_domain = meshFile.read_meshtags_by_name(
-      *mesh, "domain", "domain", "/Xdmf/Domain");
+  const auto mt_domain
+      = meshFile.read_meshtags(*mesh, "domain", "domain", "/Xdmf/Domain");
 
   CHECK(mt_domain.values().front() == domain_value);
 
-  const auto mt_material = meshFile.read_meshtags_by_name(
-      *mesh, "material", "material", "/Xdmf/Domain");
+  const auto mt_material
+      = meshFile.read_meshtags(*mesh, "material", "material", "/Xdmf/Domain");
 
   CHECK(mt_material.values().front() == material_value);
 
-  CHECK_THROWS(meshFile.read_meshtags_by_name(*mesh, "mesh", "missing"));
+  CHECK_THROWS(meshFile.read_meshtags(*mesh, "mesh", "missing"));
 }
 
 } // namespace
