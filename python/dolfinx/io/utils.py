@@ -205,14 +205,21 @@ class XDMFFile(_cpp.io.XDMFFile):
         )
         return Mesh(msh, domain)
 
-    def read_meshtags(self, mesh, name, attribute_label="", xpath="/Xdmf/Domain"):
-        """Read meshtags with a specific name as specified in the xdmf file. If
-        `attribute_label` is empty, read the first attribute in the file.
-        If `attribute_label` is not empty but no attributes have the provided name,
-        throw an error. If multiple attributes have the provided name, read the first
-        one found."""
+    def read_meshtags(self, mesh, name, attribute_name="", xpath="/Xdmf/Domain"):
+        """Read meshtags with a specific name as specified in the xdmf file.
+
+        Args:
+            mesh: The Mesh that the input data is defined on.
+            name: Name of the grid node in the xml-scheme of the XDMF-file.
+            attribute_name: The name of the attribute to read. If `attribute_name`
+                is empty, reads the first attribute in the file. If `attribute_name`
+                is not empty but no attributes have the provided name, throws an error.
+                If multiple attributes have the provided name, reads the first one
+                found.
+            xpath: XPath where MeshTags Grid is stored in file.
+        """
         mt = super().read_meshtags(
-            mesh._cpp_object, name, attribute_label, xpath
+            mesh._cpp_object, name, attribute_name, xpath
         )
         return MeshTags(mt)
 
