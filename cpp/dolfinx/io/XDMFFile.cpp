@@ -339,10 +339,10 @@ XDMFFile::read_meshtags_by_name(const mesh::Mesh<double>& mesh,
                                 std::string xpath)
 {
   spdlog::info("XDMF read meshtags ({})", name);
-  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+  const pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
     throw std::runtime_error("XML node '" + xpath + "' not found.");
-  pugi::xml_node grid_node
+  const pugi::xml_node grid_node
       = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
@@ -354,7 +354,7 @@ XDMFFile::read_meshtags_by_name(const mesh::Mesh<double>& mesh,
   if (!attribute_name.empty())
   {
     // Search for a child that contains an attribute with the requested name
-    pugi::xml_node attribute_node = grid_node.find_child(
+    const pugi::xml_node attribute_node = grid_node.find_child(
         [&attribute_name](const auto& n)
         { return n.attribute("Name").value() == attribute_name; });
 
