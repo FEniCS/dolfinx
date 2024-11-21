@@ -355,7 +355,7 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
   {
     // Search for a child that contains an attribute with the requested name
     const pugi::xml_node attribute_node = grid_node.find_child(
-        [&attribute_name](const auto& n)
+        [&attribute_name](auto n)
         { return n.attribute("Name").value() == *attribute_name; });
 
     if (!attribute_node)
