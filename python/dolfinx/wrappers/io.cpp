@@ -270,9 +270,22 @@ void io(nb::module_& m)
            nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_cell_type", &dolfinx::io::XDMFFile::read_cell_type,
            nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
-      .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
-           nb::arg("mesh"), nb::arg("name"), nb::arg("attribute_name"),
-           nb::arg("xpath"))
+      .def(
+          "read_meshtags",
+          [](dolfinx::io::XDMFFile& self, dolfinx::mesh::Mesh<double>& mesh,
+             std::string name, std::string attribute_name, std::string xpath)
+          {
+            if (attribute_name.empty())
+            {
+              return self.read_meshtags(mesh, name, std::nullopt, xpath);
+            }
+            else
+            {
+              return self.read_meshtags(mesh, name, attribute_name, xpath);
+            }
+          },
+          nb::arg("mesh"), nb::arg("name"), nb::arg("attribute_name"),
+          nb::arg("xpath"))
       .def("write_information", &dolfinx::io::XDMFFile::write_information,
            nb::arg("name"), nb::arg("value"), nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_information", &dolfinx::io::XDMFFile::read_information,
