@@ -217,6 +217,9 @@ class XDMFFile(_cpp.io.XDMFFile):
                 If multiple attributes have the provided name, reads the first one
                 found.
             xpath: XPath where MeshTags Grid is stored in file.
+
+        Returns:
+            A MeshTags object containing the requested data read from file.
         """
         mt = super().read_meshtags(
             mesh._cpp_object, name, attribute_name, xpath
