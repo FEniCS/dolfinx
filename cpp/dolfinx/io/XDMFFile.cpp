@@ -354,17 +354,16 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
   if (attribute_name)
   {
     // Search for a child that contains an attribute with the requested name
-    const pugi::xml_node attribute_node = grid_node.find_child(
-        [&attribute_name](auto n)
-        { return n.attribute("Name").value() == *attribute_name; });
-
+    pugi::xml_node attribute_node = grid_node.find_child(
+        [attr_name = *attribute_name](auto n)
+        { return n.attribute("Name").value() == attr_name; });
     if (!attribute_node)
     {
       throw std::runtime_error("Attribute with name '" + *attribute_name
                                + "' not found.");
     }
-
-    values_data_node = attribute_node.child("DataItem");
+    else
+      values_data_node = attribute_node.child("DataItem");
   }
   const std::vector values = xdmf_utils::get_dataset<std::int32_t>(
       _comm.comm(), values_data_node, _h5_id);
