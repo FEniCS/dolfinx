@@ -205,7 +205,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         )
         return Mesh(msh, domain)
 
-    def read_meshtags(self, mesh, name, attribute_name="", xpath="/Xdmf/Domain"):
+    def read_meshtags(self, mesh: dolfinx.mesh.Mesh, name: str, attribute_name: str="", xpath: str="/Xdmf/Domain"):
         """Read meshtags with a specific name as specified in the xdmf file.
 
         Args:
