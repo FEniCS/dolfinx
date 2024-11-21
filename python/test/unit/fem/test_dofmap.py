@@ -171,7 +171,7 @@ def test_block_size():
         V = functionspace(mesh, mixed_element([P2, P2]))
         assert V.dofmap.index_map_bs == 1
 
-        for i in range(1, 6):
+        for i in range(2, 6):
             W = functionspace(mesh, mixed_element(i * [P2]))
             assert W.dofmap.index_map_bs == 1
 

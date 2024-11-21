@@ -8,17 +8,15 @@
 
 #include "Table.h"
 #include "timing.h"
+#include <chrono>
 #include <map>
 #include <mpi.h>
-#include <set>
 #include <string>
-#include <tuple>
+#include <utility>
 
 namespace dolfinx::common
 {
-
 /// Timer logging
-
 class TimeLogger
 {
 public:
@@ -35,29 +33,35 @@ public:
   ~TimeLogger() = default;
 
   /// Register timing (for later summary)
-  void register_timing(std::string task, double wall, double user,
-                       double system);
+  void register_timing(std::string task,
+                       std::chrono::duration<double, std::ratio<1>> wall);
 
   /// Return a summary of timings and tasks in a Table
-  Table timings(std::set<TimingType> type);
+  Table timing_table() const;
 
   /// List a summary of timings and tasks. Reduction type is
   /// printed.
   /// @param comm MPI Communicator
-  /// @param type Set of possible timings: wall, user or system
   /// @param reduction Reduction type (min, max or average)
-  void list_timings(MPI_Comm comm, std::set<TimingType> type,
-                    Table::Reduction reduction);
+  void list_timings(MPI_Comm comm, Table::Reduction reduction) const;
 
-  /// Return timing
+  /// @brief Return timing.
   /// @param[in] task The task name to retrieve the timing for
-  /// @returns Values (count, total wall time, total user time, total
-  /// system time) for given task.
-  std::tuple<int, double, double, double> timing(std::string task);
+  /// @return Values (count, total wall time) for given task.
+  std::pair<int, std::chrono::duration<double, std::ratio<1>>>
+  timing(std::string task) const;
+
+  /// @brief Logged elapsed times.
+  /// @return Elapsed [task id: (count, total wall time)].
+  std::map<std::string,
+           std::pair<int, std::chrono::duration<double, std::ratio<1>>>>
+  timings() const;
 
 private:
   // List of timings for tasks, map from string to (num_timings,
-  // total_wall_time, total_user_time, total_system_time)
-  std::map<std::string, std::tuple<int, double, double, double>> _timings;
+  // total_wall_time)
+  std::map<std::string,
+           std::pair<int, std::chrono::duration<double, std::ratio<1>>>>
+      _timings;
 };
 } // namespace dolfinx::common

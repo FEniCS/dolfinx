@@ -39,10 +39,10 @@ class TestPETScSolverWrappers:
         sys = PETSc.Sys()
         if MPI.COMM_WORLD.size == 1:
             factor_type = "petsc"
-        elif sys.hasExternalPackage("superlu_dist"):
-            factor_type = "superlu_dist"
         elif sys.hasExternalPackage("mumps"):
             factor_type = "mumps"
+        elif sys.hasExternalPackage("superlu_dist"):
+            factor_type = "superlu_dist"
         else:
             pytest.skip("No external solvers available in parallel")
 

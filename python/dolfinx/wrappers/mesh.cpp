@@ -26,6 +26,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/function.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
@@ -53,10 +54,9 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
           cells, std::back_inserter(cells_nb),
           [](auto c)
           {
-            return nb::ndarray<const std::int64_t, nb::numpy>(
-                c.data(), {c.size()}, nb::handle());
+            return nb::ndarray<const std::int64_t, nb::numpy>(c.data(),
+                                                              {c.size()});
           });
-
       return p(dolfinx_wrappers::MPICommWrapper(comm), n, cell_types, cells_nb);
     };
   }
@@ -92,18 +92,19 @@ void declare_meshtags(nb::module_& m, std::string type)
       .def_prop_ro("topology", &dolfinx::mesh::MeshTags<T>::topology)
       .def_prop_ro(
           "values",
-          [](dolfinx::mesh::MeshTags<T>& self)
+          [](const dolfinx::mesh::MeshTags<T>& self)
           {
-            return nb::ndarray<const T, nb::numpy>(
-                self.values().data(), {self.values().size()}, nb::handle());
+            std::span<const T> v = self.values();
+            return nb::ndarray<const T, nb::numpy>(v.data(), {v.size()});
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro(
           "indices",
-          [](dolfinx::mesh::MeshTags<T>& self)
+          [](const dolfinx::mesh::MeshTags<T>& self)
           {
-            return nb::ndarray<const std::int32_t, nb::numpy>(
-                self.indices().data(), {self.indices().size()}, nb::handle());
+            std::span<const std::int32_t> idx = self.indices();
+            return nb::ndarray<const std::int32_t, nb::numpy>(idx.data(),
+                                                              {idx.size()});
           },
           nb::rv_policy::reference_internal)
       .def("find", [](dolfinx::mesh::MeshTags<T>& self, T value)
@@ -167,8 +168,7 @@ void declare_mesh(nb::module_& m, std::string type)
           {
             auto dofs = self.dofmap();
             return nb::ndarray<const std::int32_t, nb::numpy>(
-                dofs.data_handle(), {dofs.extent(0), dofs.extent(1)},
-                nb::handle());
+                dofs.data_handle(), {dofs.extent(0), dofs.extent(1)});
           },
           nb::rv_policy::reference_internal)
       .def(
@@ -177,8 +177,7 @@ void declare_mesh(nb::module_& m, std::string type)
           {
             auto dofs = self.dofmap(i);
             return nb::ndarray<const std::int32_t, nb::numpy>(
-                dofs.data_handle(), {dofs.extent(0), dofs.extent(1)},
-                nb::handle());
+                dofs.data_handle(), {dofs.extent(0), dofs.extent(1)});
           },
           nb::rv_policy::reference_internal, nb::arg("i"),
           "Get the geometry dofmap associated with coordinate element i (mixed "
@@ -188,8 +187,9 @@ void declare_mesh(nb::module_& m, std::string type)
           "x",
           [](dolfinx::mesh::Geometry<T>& self)
           {
-            return nb::ndarray<T, nb::numpy>(
-                self.x().data(), {self.x().size() / 3, 3}, nb::handle());
+            std::span<T> x = self.x();
+            return nb::ndarray<T, nb::shape<-1, 3>, nb::numpy>(
+                x.data(), {x.size() / 3, 3});
           },
           nb::rv_policy::reference_internal,
           "Return coordinates of all geometry points. Each row is the "
@@ -207,7 +207,7 @@ void declare_mesh(nb::module_& m, std::string type)
             const std::vector<std::int64_t>& id_to_global
                 = self.input_global_indices();
             return nb::ndarray<const std::int64_t, nb::numpy>(
-                id_to_global.data(), {id_to_global.size()}, nb::handle());
+                id_to_global.data(), {id_to_global.size()});
           },
           nb::rv_policy::reference_internal);
 
@@ -306,7 +306,7 @@ void declare_mesh(nb::module_& m, std::string type)
                   [](auto c)
                   {
                     return nb::ndarray<const std::int64_t, nb::numpy>(
-                        c.data(), {c.size()}, nb::handle());
+                        c.data(), {c.size()});
                   });
               return p(MPICommWrapper(comm), n, cell_types, cells_nb);
             };
@@ -341,8 +341,8 @@ void declare_mesh(nb::module_& m, std::string type)
                 cells, std::back_inserter(cells_nb),
                 [](auto c)
                 {
-                  return nb::ndarray<const std::int64_t, nb::numpy>(
-                      c.data(), {c.size()}, nb::handle());
+                  return nb::ndarray<const std::int64_t, nb::numpy>(c.data(),
+                                                                    {c.size()});
                 });
             return p(MPICommWrapper(comm), n, cell_types, cells_nb);
           };
@@ -367,8 +367,10 @@ void declare_mesh(nb::module_& m, std::string type)
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities)
       {
-        auto submesh = dolfinx::mesh::create_submesh(
-            mesh, dim, std::span(entities.data(), entities.size()));
+        std::tuple<dolfinx::mesh::Mesh<T>, std::vector<std::int32_t>,
+                   std::vector<std::int32_t>, std::vector<std::int32_t>>
+            submesh = dolfinx::mesh::create_submesh(
+                mesh, dim, std::span(entities.data(), entities.size()));
         auto _e_map = as_nbarray(std::move(std::get<1>(submesh)));
         auto _v_map = as_nbarray(std::move(std::get<2>(submesh)));
         auto _g_map = as_nbarray(std::move(std::get<3>(submesh)));
@@ -418,7 +420,7 @@ void declare_mesh(nb::module_& m, std::string type)
         auto cpp_marker = [&marker](auto x)
         {
           nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
-              x.data_handle(), {x.extent(0), x.extent(1)}, nb::handle());
+              x.data_handle(), {x.extent(0), x.extent(1)});
           auto marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
@@ -439,7 +441,7 @@ void declare_mesh(nb::module_& m, std::string type)
         auto cpp_marker = [&marker](auto x)
         {
           nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
-              x.data_handle(), {x.extent(0), x.extent(1)}, nb::handle());
+              x.data_handle(), {x.extent(0), x.extent(1)});
           auto marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
@@ -457,10 +459,6 @@ void declare_mesh(nb::module_& m, std::string type)
       {
         std::vector<std::int32_t> idx = dolfinx::mesh::entities_to_geometry(
             mesh, dim, std::span(entities.data(), entities.size()), permute);
-
-        auto topology = mesh.topology();
-        assert(topology);
-        dolfinx::mesh::CellType cell_type = topology->cell_type();
         return as_nbarray(std::move(idx),
                           {entities.size(), idx.size() / entities.size()});
       },
@@ -575,9 +573,26 @@ void mesh(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::mesh::Topology* t, MPICommWrapper comm,
-             dolfinx::mesh::CellType cell_type)
-          { new (t) dolfinx::mesh::Topology(comm.get(), cell_type); },
-          nb::arg("comm"), nb::arg("cell_type"))
+             dolfinx::mesh::CellType cell_type,
+             std::shared_ptr<const dolfinx::common::IndexMap> vertex_map,
+             std::shared_ptr<const dolfinx::common::IndexMap> cell_map,
+             std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>> cells,
+             std::optional<
+                 nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>
+                 original_index)
+          {
+            std::optional<std::vector<std::int64_t>> idx
+                = original_index
+                      ? std::vector<std::int64_t>(original_index->data(),
+                                                  original_index->data()
+                                                      + original_index->size())
+                      : std::optional<std::vector<std::int64_t>>(std::nullopt);
+            new (t) dolfinx::mesh::Topology(comm.get(), cell_type, vertex_map,
+                                            cell_map, cells, idx);
+          },
+          nb::arg("comm"), nb::arg("cell_type"), nb::arg("vertex_map"),
+          nb::arg("cell_map"), nb::arg("cells"),
+          nb::arg("original_index").none())
       .def("set_connectivity",
            nb::overload_cast<
                std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>>,
@@ -599,8 +614,8 @@ void mesh(nb::module_& m)
           [](const dolfinx::mesh::Topology& self)
           {
             const std::vector<std::uint8_t>& p = self.get_facet_permutations();
-            return nb::ndarray<const std::uint8_t, nb::numpy>(
-                p.data(), {p.size()}, nb::handle());
+            return nb::ndarray<const std::uint8_t, nb::numpy>(p.data(),
+                                                              {p.size()});
           },
           nb::rv_policy::reference_internal)
       .def(
@@ -609,23 +624,33 @@ void mesh(nb::module_& m)
           {
             const std::vector<std::uint32_t>& p
                 = self.get_cell_permutation_info();
-            return nb::ndarray<const std::uint32_t, nb::numpy>(
-                p.data(), {p.size()}, nb::handle());
+            return nb::ndarray<const std::uint32_t, nb::numpy>(p.data(),
+                                                               {p.size()});
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro("dim", &dolfinx::mesh::Topology::dim,
                    "Topological dimension")
-      .def_prop_ro(
+      .def_prop_rw(
           "original_cell_index",
           [](const dolfinx::mesh::Topology& self)
           {
             if (self.original_cell_index.size() != 1)
               throw std::runtime_error("Mixed topology unsupported");
-            return nb::ndarray<const std::int64_t, nb::numpy>(
-                self.original_cell_index[0].data(),
-                {self.original_cell_index[0].size()}, nb::handle());
+            const std::vector<std::vector<std::int64_t>>& idx
+                = self.original_cell_index;
+            return nb::ndarray<const std::int64_t, nb::numpy>(idx[0].data(),
+                                                              {idx[0].size()});
           },
-          nb::rv_policy::reference_internal)
+          [](dolfinx::mesh::Topology& self,
+             const nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>&
+                 original_cell_indices)
+          {
+            self.original_cell_index.resize(1);
+            self.original_cell_index[0].assign(
+                original_cell_indices.data(),
+                original_cell_indices.data() + original_cell_indices.size());
+          },
+          nb::arg("original_cell_indices"))
       .def("connectivity",
            nb::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        nb::const_),
@@ -653,8 +678,8 @@ void mesh(nb::module_& m)
           {
             const std::vector<std::int32_t>& facets
                 = self.interprocess_facets();
-            return nb::ndarray<const std::int32_t, nb::numpy>(
-                facets.data(), {facets.size()}, nb::handle());
+            return nb::ndarray<const std::int32_t, nb::numpy>(facets.data(),
+                                                              {facets.size()});
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro(
