@@ -221,9 +221,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         Returns:
             A MeshTags object containing the requested data read from file.
         """
-        mt = super().read_meshtags(
-            mesh._cpp_object, name, attribute_name, xpath
-        )
+        mt = super().read_meshtags(mesh._cpp_object, name, attribute_name, xpath)
         return MeshTags(mt)
 
 
