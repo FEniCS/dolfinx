@@ -9,7 +9,7 @@ from dolfinx import cpp as _cpp
 from dolfinx.io import gmshio
 from dolfinx.io.utils import VTKFile, XDMFFile, distribute_entity_data
 
-__all__ = ["gmshio", "distribute_entity_data", "VTKFile", "XDMFFile"]
+__all__ = ["VTKFile", "XDMFFile", "distribute_entity_data", "gmshio"]
 
 if _cpp.common.has_adios2:
     # VTXWriter requires ADIOS2
