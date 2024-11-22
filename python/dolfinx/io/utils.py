@@ -122,7 +122,6 @@ class VTKFile(_cpp.io.VTKFile):
     VTK supports arbitrary order Lagrange finite elements for the
     geometry description. XDMF is the preferred format for geometry
     order <= 2.
-
     """
 
     def __enter__(self):
@@ -205,8 +204,32 @@ class XDMFFile(_cpp.io.XDMFFile):
         )
         return Mesh(msh, domain)
 
-    def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
-        mt = super().read_meshtags(mesh._cpp_object, name, xpath)
+    def read_meshtags(
+        self,
+        mesh: Mesh,
+        name: str,
+        attribute_name: typing.Optional[str] = None,
+        xpath: str = "/Xdmf/Domain",
+    ) -> MeshTags:
+        """Read MeshTags with a specific name as specified in the XMDF file.
+
+        Args:
+            mesh: Mesh that the input data is defined on.
+            name: Name of the grid node in the xml-scheme of the
+                XDMF-file.
+            attribute_name: The name of the attribute to read. If
+                ``attribute_name`` is empty, reads the first attribute in
+                the file. If ``attribute_name`` is not empty but no
+                attributes have the provided name, throws an error. If
+                multiple attributes have the provided name, reads the
+                first one found.
+            xpath: XPath where MeshTags Grid is stored in file.
+
+        Returns:
+            A MeshTags object containing the requested data read from
+            file.
+        """
+        mt = super().read_meshtags(mesh._cpp_object, name, attribute_name, xpath)
         return MeshTags(mt)
 
 
@@ -215,12 +238,12 @@ def distribute_entity_data(
 ) -> tuple[npt.NDArray[np.int64], np.ndarray]:
     """Given a set of mesh entities and values, distribute them to the process that owns the entity.
 
-    The entities are described by the global vertex indices of the mesh. These entity indices are
-    using the original input ordering.
+    The entities are described by the global vertex indices of the mesh.
+    These entity indices are using the original input ordering.
 
     Returns:
-        Entities owned by the process (and their local entity-to-vertex indices) and the
-        corresponding values.
+        Entities owned by the process (and their local entity-to-vertex
+        indices) and the corresponding values.
     """
     return _cpp.io.distribute_entity_data(
         mesh.topology._cpp_object,
