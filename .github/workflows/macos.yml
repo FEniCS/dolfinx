@@ -87,7 +87,7 @@ jobs:
         working-directory: dolfinx
         run: |
           cd build/test
-          ctest -V --output-on-failure -R unittests
+          mpiexec -np 1 ctest -V --output-on-failure -R unittests
       - name: Run C++ unit tests (MPI)
         working-directory: dolfinx
         run: |
