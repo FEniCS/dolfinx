@@ -100,10 +100,11 @@ def test_element_product(d1, d2):
     assert np.isclose(A.squared_norm(), B.squared_norm())
 
 
-def test_single_element_in_mixed_element():
+@pytest.mark.parametrize("rtype", [np.float32, np.float64])
+def test_single_element_in_mixed_element(rtype):
     """Check that a mixed element with a single element is equivalent to a single element."""
-    mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 3)
-    el = element("Lagrange", mesh.basix_cell(), 3, dtype=default_real_type)
+    mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 3, dtype=rtype)
+    el = element("Lagrange", mesh.basix_cell(), 3, dtype=rtype)
     me = mixed_element([el])
     V = dolfinx.fem.functionspace(mesh, me)
     assert V.num_sub_spaces == 1
@@ -113,9 +114,9 @@ def test_single_element_in_mixed_element():
     def f(x):
         return x[0] ** 2 + x[1] ** 2
 
-    u = dolfinx.fem.Function(V)
+    u = dolfinx.fem.Function(V, dtype=rtype)
     u.sub(0).interpolate(f)
-    w = dolfinx.fem.Function(W)
+    w = dolfinx.fem.Function(W, dtype=rtype)
     w.interpolate(f)
     np.testing.assert_allclose(u.x.array, w.x.array)
 
