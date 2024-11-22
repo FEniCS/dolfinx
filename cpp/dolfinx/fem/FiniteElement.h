@@ -73,13 +73,32 @@ public:
                 bool symmetric = false);
 
   /// @brief Create a mixed finite element from Basix finite elements.
+  ///
+  /// See FiniteElement(const std::vector<std::shared_ptr<const
+  /// FiniteElement<geometry_type>>>&) for a discussion of mixed
+  /// elements.
+  ///
   /// @param[in] elements List of (Basix finite element, block size,
   /// symmetric) tuples, one for each element in the mixed element.
   FiniteElement(std::vector<BasixElementData<geometry_type>> elements);
 
   /// @brief Create a mixed finite element from a list of finite
   /// elements.
-  /// @param[in] elements Finite elements to compose the mixed element.
+  ///
+  /// This constructs a mixed element \f$E_0 \times E_1 \times \ldots
+  /// \times E_{n-1}\f$. The *i*th sub-element \f$E_i\f$ can be accessed
+  /// by ::extract_sub_element. Functions defined on mixed element
+  /// spaces cannot be interpolated into directly. It is necessary to
+  /// first extract a sub-Function (view), which can then be
+  /// interpolated into.
+  ///
+  /// A mixed element can be constructed from one element. In this case
+  /// the `FiniteElement` behaves like a mixed element and cannot be
+  /// interpolated into. The underlying element can be accessed using
+  /// ::extract_sub_element.
+  ///
+  /// @param[in] elements Finite elements to compose the mixed element
+  /// from.
   FiniteElement(
       const std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>&
           elements);
