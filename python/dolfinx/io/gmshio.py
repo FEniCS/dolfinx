@@ -24,11 +24,11 @@ from dolfinx.mesh import CellType, Mesh, create_mesh, meshtags, meshtags_from_en
 
 __all__ = [
     "cell_perm_array",
-    "ufl_mesh",
-    "extract_topology_and_markers",
     "extract_geometry",
+    "extract_topology_and_markers",
     "model_to_mesh",
     "read_from_msh",
+    "ufl_mesh",
 ]
 
 
@@ -234,7 +234,7 @@ def model_to_mesh(
     Note:
         For performance, this function should only be called once for
         large problems. For re-use, it is recommended to save the mesh
-        and corresponding tags using :class:`dolfinxio.XDMFFile` after
+        and corresponding tags using :class:`dolfinx.io.XDMFFile` after
         creation for efficient access.
 
     """

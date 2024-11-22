@@ -21,6 +21,26 @@ using namespace dolfinx::fem;
 
 namespace
 {
+/// @brief Create a list of fem::FiniteElement from Basix elements and
+/// other data.
+/// @tparam T
+/// @param elements
+/// @return List of DOLFINx elements
+template <std::floating_point T>
+std::vector<std::shared_ptr<const FiniteElement<T>>>
+_build_element_list(std::vector<BasixElementData<T>> elements)
+{
+  std::vector<std::shared_ptr<const FiniteElement<T>>> _e;
+  std::ranges::transform(elements, std::back_inserter(_e),
+                         [](auto data)
+                         {
+                           auto& [e, bs, symm] = data;
+                           return std::make_shared<fem::FiniteElement<T>>(e, bs,
+                                                                          symm);
+                         });
+  return _e;
+}
+
 /// Recursively extract sub finite element
 template <std::floating_point T>
 std::shared_ptr<const FiniteElement<T>>
@@ -61,62 +81,64 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
 
   return _extract_sub_element(*sub_element, sub_component);
 }
+
 } // namespace
 
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
-                                std::span<const geometry_type> points,
-                                std::array<std::size_t, 2> pshape,
-                                std::size_t block_size, bool symmetric)
-    : _signature("Quadrature element " + std::to_string(pshape[0]) + " "
-                 + std::to_string(block_size)),
-      _space_dim(pshape[0] * block_size), _reference_value_shape({}),
-      _bs(block_size), _is_mixed(false), _symmetric(symmetric),
-      _needs_dof_permutations(false), _needs_dof_transformations(false),
-      _entity_dofs(mesh::cell_dim(cell_type) + 1),
-      _entity_closure_dofs(mesh::cell_dim(cell_type) + 1),
-      _points(std::vector<T>(points.begin(), points.end()), pshape)
-{
-  const int tdim = mesh::cell_dim(cell_type);
-  for (int d = 0; d <= tdim; ++d)
-  {
-    int num_entities = mesh::cell_num_entities(cell_type, d);
-    _entity_dofs[d].resize(num_entities);
-    _entity_closure_dofs[d].resize(num_entities);
-  }
-
-  for (std::size_t i = 0; i < pshape[0]; ++i)
-  {
-    _entity_dofs[tdim][0].push_back(i);
-    _entity_closure_dofs[tdim][0].push_back(i);
-  }
-}
-//-----------------------------------------------------------------------------
-template <std::floating_point T>
-FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
-                                std::size_t block_size, bool symmetric)
-    : _space_dim(block_size * element.dim()),
-      _reference_value_shape(element.value_shape()), _bs(block_size),
-      _is_mixed(false),
+FiniteElement<T>::FiniteElement(
+    const basix::FiniteElement<T>& element,
+    std::optional<std::vector<std::size_t>> value_shape, bool symmetric)
+    : _value_shape(value_shape ? *value_shape : element.value_shape()),
+      _bs(value_shape
+              ? std::accumulate(value_shape->begin(), value_shape->end(), 1,
+                                std::multiplies{})
+              : 1),
+      _cell_type(mesh::cell_type_from_basix_type(element.cell_type())),
+      _space_dim(_bs * element.dim()),
+      _sub_elements(
+          value_shape
+              ? std::vector<
+                    std::shared_ptr<const FiniteElement<geometry_type>>>(
+                    _bs, std::make_shared<FiniteElement<T>>(element))
+              : std::vector<
+                    std::shared_ptr<const FiniteElement<geometry_type>>>()),
+      _reference_value_shape(element.value_shape()),
       _element(std::make_unique<basix::FiniteElement<T>>(element)),
       _symmetric(symmetric),
       _needs_dof_permutations(
-          !_element->dof_transformations_are_identity()
-          and _element->dof_transformations_are_permutations()),
+          !element.dof_transformations_are_identity()
+          and element.dof_transformations_are_permutations()),
       _needs_dof_transformations(
-          !_element->dof_transformations_are_identity()
-          and !_element->dof_transformations_are_permutations()),
+          !element.dof_transformations_are_identity()
+          and !element.dof_transformations_are_permutations()),
       _entity_dofs(element.entity_dofs()),
       _entity_closure_dofs(element.entity_closure_dofs())
 {
-  // Create all sub-elements
-  if (_bs > 1)
+  // TODO: symmetric rank-2 symmetric tensors are presently constructed
+  // as rank-1 tensors, e.g. a rank-2 symmetric tensor in 3D is
+  // constructed as rank-1 with shape (6,). It should be really be
+  // shape=(3, 3) with block size 6.
+
+  // If element is blocked, check that base element is scalar
+  if (value_shape and !element.value_shape().empty())
   {
-    _sub_elements
-        = std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>(
-            _bs, std::make_shared<FiniteElement<T>>(element, 1));
-    _reference_value_shape = {block_size};
+    throw std::runtime_error("Blocked finite elements can be constructed only "
+                             "from scalar base elements.");
+  }
+
+  if (symmetric) // Consistency check for symmetric elements
+  {
+    if (!value_shape)
+    {
+      throw std::runtime_error(
+          "Symmetric elements required value shape to be supplied.");
+    }
+    // else if (block_shape->size()
+    //          != 2) // See below TODO on symmetric rank-2 tensors
+    // {
+    //   throw std::runtime_error("Symmetric elements must be rank-2.");
+    // }
   }
 
   std::string family;
@@ -137,18 +159,26 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
+FiniteElement<T>::FiniteElement(std::vector<BasixElementData<T>> elements)
+    : FiniteElement(_build_element_list(elements))
+{
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
 FiniteElement<T>::FiniteElement(
     const std::vector<std::shared_ptr<const FiniteElement<T>>>& elements)
-    : _space_dim(0), _sub_elements(elements), _bs(1), _is_mixed(true),
+    : _value_shape(std::nullopt), _bs(1),
+      _cell_type(elements.front()->cell_type()), _space_dim(-1),
+      _sub_elements(elements), _reference_value_shape(std::nullopt),
       _symmetric(false), _needs_dof_permutations(false),
       _needs_dof_transformations(false)
 {
-  std::size_t vsize = 0;
   _signature = "Mixed element (";
 
   const std::vector<std::vector<std::vector<int>>>& ed
-      = elements[0]->entity_dofs();
+      = elements.front()->entity_dofs();
   _entity_dofs.resize(ed.size());
+
   _entity_closure_dofs.resize(ed.size());
   for (std::size_t i = 0; i < ed.size(); ++i)
   {
@@ -159,7 +189,6 @@ FiniteElement<T>::FiniteElement(
   int dof_offset = 0;
   for (auto& e : elements)
   {
-    vsize += e->reference_value_size();
     _signature += e->signature() + ", ";
 
     if (e->needs_dof_permutations())
@@ -172,8 +201,8 @@ FiniteElement<T>::FiniteElement(
     {
       for (std::size_t j = 0; j < _entity_dofs[i].size(); ++j)
       {
-        const std::vector<int> sub_ed = e->entity_dofs()[i][j];
-        const std::vector<int> sub_ecd = e->entity_closure_dofs()[i][j];
+        std::vector<int> sub_ed = e->entity_dofs()[i][j];
+        std::vector<int> sub_ecd = e->entity_closure_dofs()[i][j];
         for (auto k : sub_ed)
         {
           for (std::size_t b = 0; b < sub_bs; ++b)
@@ -191,8 +220,47 @@ FiniteElement<T>::FiniteElement(
   }
 
   _space_dim = dof_offset;
-  _reference_value_shape = {vsize};
   _signature += ")";
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
+                                std::span<const geometry_type> points,
+                                std::array<std::size_t, 2> pshape,
+                                std::vector<std::size_t> value_shape,
+                                bool symmetric)
+    : _value_shape(value_shape),
+      _bs(std::accumulate(value_shape.begin(), value_shape.end(), 1,
+                          std::multiplies{})),
+      _cell_type(cell_type),
+      _signature("Quadrature element " + std::to_string(pshape[0])),
+      _space_dim(_bs * pshape[0]), _sub_elements({}),
+      _reference_value_shape(std::vector<std::size_t>()), _element(nullptr),
+      _symmetric(symmetric), _needs_dof_permutations(false),
+      _needs_dof_transformations(false),
+      _entity_dofs(mesh::cell_dim(cell_type) + 1),
+      _entity_closure_dofs(mesh::cell_dim(cell_type) + 1),
+      _points(std::vector<T>(points.begin(), points.end()), pshape)
+{
+  assert(value_shape.size() <= 1);
+  _bs = std::accumulate(value_shape.begin(), value_shape.end(), 1,
+                        std::multiplies{});
+  _space_dim = pshape[0] * _bs;
+  _signature += " " + std::to_string(_bs);
+
+  const int tdim = mesh::cell_dim(cell_type);
+  for (int d = 0; d <= tdim; ++d)
+  {
+    int num_entities = mesh::cell_num_entities(cell_type, d);
+    _entity_dofs[d].resize(num_entities);
+    _entity_closure_dofs[d].resize(num_entities);
+  }
+
+  for (std::size_t i = 0; i < pshape[0]; ++i)
+  {
+    _entity_dofs[tdim][0].push_back(i);
+    _entity_closure_dofs[tdim][0].push_back(i);
+  }
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -214,6 +282,12 @@ bool FiniteElement<T>::operator!=(const FiniteElement& e) const
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
+mesh::CellType FiniteElement<T>::cell_type() const noexcept
+{
+  return _cell_type;
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
 std::string FiniteElement<T>::signature() const noexcept
 {
   return _signature;
@@ -226,10 +300,62 @@ int FiniteElement<T>::space_dimension() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-std::span<const std::size_t>
-FiniteElement<T>::reference_value_shape() const noexcept
+int FiniteElement<T>::value_size() const
 {
-  return _reference_value_shape;
+  if (_value_shape)
+  {
+    int vs = std::accumulate(_value_shape->begin(), _value_shape->end(), 1,
+                             std::multiplies{});
+
+    // See comments in constructor on why special handling for the
+    // symmetric case is required.
+    if (_symmetric)
+    {
+      if (vs == 3)
+        return 4;
+      else if (vs == 6)
+        return 9;
+      else
+      {
+        throw std::runtime_error(
+            "Inconsistent size for symmetric rank-2 tensor.");
+      }
+    }
+    else
+      return vs;
+  }
+  else
+    throw std::runtime_error("Element does not have a value_shape.");
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+std::span<const std::size_t> FiniteElement<T>::value_shape() const
+{
+  if (_value_shape)
+    return *_value_shape;
+  else
+    throw std::runtime_error("Element does not have a value_shape.");
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+int FiniteElement<T>::reference_value_size() const
+{
+  if (_reference_value_shape)
+  {
+    return std::accumulate(_reference_value_shape->begin(),
+                           _reference_value_shape->end(), 1, std::multiplies{});
+  }
+  else
+    throw std::runtime_error("Element does not have a reference_value_shape.");
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+std::span<const std::size_t> FiniteElement<T>::reference_value_shape() const
+{
+  if (_reference_value_shape)
+    return *_reference_value_shape;
+  else
+    throw std::runtime_error("Element does not have a reference_value_shape.");
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -250,13 +376,6 @@ template <std::floating_point T>
 bool FiniteElement<T>::symmetric() const
 {
   return _symmetric;
-}
-//-----------------------------------------------------------------------------
-template <std::floating_point T>
-int FiniteElement<T>::reference_value_size() const
-{
-  return std::accumulate(_reference_value_shape.begin(),
-                         _reference_value_shape.end(), 1, std::multiplies{});
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -292,7 +411,7 @@ int FiniteElement<T>::num_sub_elements() const noexcept
 template <std::floating_point T>
 bool FiniteElement<T>::is_mixed() const noexcept
 {
-  return _is_mixed;
+  return !_reference_value_shape;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

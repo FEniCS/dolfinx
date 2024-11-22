@@ -72,10 +72,8 @@ void declare_function_space(nb::module_& m, std::string type)
                                                "Finite element function space")
         .def(nb::init<std::shared_ptr<const dolfinx::mesh::Mesh<T>>,
                       std::shared_ptr<const dolfinx::fem::FiniteElement<T>>,
-                      std::shared_ptr<const dolfinx::fem::DofMap>,
-                      std::vector<std::size_t>>(),
-             nb::arg("mesh"), nb::arg("element"), nb::arg("dofmap"),
-             nb::arg("value_shape"))
+                      std::shared_ptr<const dolfinx::fem::DofMap>>(),
+             nb::arg("mesh"), nb::arg("element"), nb::arg("dofmap"))
         .def("collapse", &dolfinx::fem::FunctionSpace<T>::collapse)
         .def("component", &dolfinx::fem::FunctionSpace<T>::component)
         .def("contains", &dolfinx::fem::FunctionSpace<T>::contains,
@@ -83,15 +81,6 @@ void declare_function_space(nb::module_& m, std::string type)
         .def_prop_ro("element", &dolfinx::fem::FunctionSpace<T>::element)
         .def_prop_ro("mesh", &dolfinx::fem::FunctionSpace<T>::mesh)
         .def_prop_ro("dofmap", &dolfinx::fem::FunctionSpace<T>::dofmap)
-        .def_prop_ro(
-            "value_shape",
-            [](const dolfinx::fem::FunctionSpace<T>& self)
-            {
-              std::span<const std::size_t> vshape = self.value_shape();
-              return nb::ndarray<const std::size_t, nb::numpy>(vshape.data(),
-                                                               {vshape.size()});
-            },
-            nb::rv_policy::reference_internal)
         .def("sub", &dolfinx::fem::FunctionSpace<T>::sub, nb::arg("component"))
         .def("tabulate_dof_coordinates",
              [](const dolfinx::fem::FunctionSpace<T>& self)
@@ -109,13 +98,15 @@ void declare_function_space(nb::module_& m, std::string type)
         .def(
             "__init__",
             [](dolfinx::fem::FiniteElement<T>* self,
-               basix::FiniteElement<T>& element, std::size_t block_size,
+               basix::FiniteElement<T>& element,
+               std::optional<std::vector<std::size_t>> block_shape,
                bool symmetric)
             {
-              new (self) dolfinx::fem::FiniteElement<T>(element, block_size,
+              new (self) dolfinx::fem::FiniteElement<T>(element, block_shape,
                                                         symmetric);
             },
-            nb::arg("element"), nb::arg("block_size"), nb::arg("symmetric"))
+            nb::arg("element"), nb::arg("block_shape").none(),
+            nb::arg("symmetric"), "Single Basix element constructor.")
         .def(
             "__init__",
             [](dolfinx::fem::FiniteElement<T>* self,
@@ -123,20 +114,20 @@ void declare_function_space(nb::module_& m, std::string type)
                    std::shared_ptr<const dolfinx::fem::FiniteElement<T>>>
                    elements)
             { new (self) dolfinx::fem::FiniteElement<T>(elements); },
-            nb::arg("elements"))
+            nb::arg("elements"), "Mixed-element constructor.")
         .def(
             "__init__",
             [](dolfinx::fem::FiniteElement<T>* self, mesh::CellType cell_type,
                nb::ndarray<T, nb::ndim<2>, nb::numpy> points,
-               std::size_t block_size, bool symmetry)
+               std::vector<std::size_t> block_shape, bool symmetry)
             {
               std::span<T> pdata(points.data(), points.size());
               new (self) dolfinx::fem::FiniteElement<T>(
                   cell_type, pdata, {points.shape(0), points.shape(1)},
-                  block_size, symmetry);
+                  block_shape, symmetry);
             },
-            nb::arg("cell_type"), nb::arg("points"), nb::arg("block_size"),
-            nb::arg("symmetry"))
+            nb::arg("cell_type"), nb::arg("points"), nb::arg("block_shape"),
+            nb::arg("symmetry"), "Quadrature element constructor.")
         .def("__eq__", &dolfinx::fem::FiniteElement<T>::operator==)
         .def_prop_ro("dtype", [](const dolfinx::fem::FiniteElement<T>&)
                      { return dolfinx_wrappers::numpy_dtype<T>(); })
@@ -145,6 +136,15 @@ void declare_function_space(nb::module_& m, std::string type)
                      nb::rv_policy::reference_internal)
         .def_prop_ro("num_sub_elements",
                      &dolfinx::fem::FiniteElement<T>::num_sub_elements)
+        .def_prop_ro(
+            "value_shape",
+            [](const dolfinx::fem::FiniteElement<T>& self)
+            {
+              std::span<const std::size_t> vshape = self.value_shape();
+              return nb::ndarray<const std::size_t, nb::numpy>(vshape.data(),
+                                                               {vshape.size()});
+            },
+            nb::rv_policy::reference_internal)
         .def("interpolation_points",
              [](const dolfinx::fem::FiniteElement<T>& self)
              {
@@ -466,7 +466,7 @@ void declare_objects(nb::module_& m, const std::string& type)
             const int gdim = self.function_space()->mesh()->geometry().dim();
 
             // Compute value size
-            auto vshape = self.function_space()->value_shape();
+            auto vshape = self.function_space()->element()->value_shape();
             std::size_t value_size = std::reduce(vshape.begin(), vshape.end(),
                                                  1, std::multiplies{});
 
@@ -1197,16 +1197,13 @@ void fem(nb::module_& m)
       "compute_integration_domains",
       [](dolfinx::fem::IntegralType type,
          const dolfinx::mesh::Topology& topology,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities,
-         int dim)
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities)
       {
         return dolfinx_wrappers::as_nbarray(
             dolfinx::fem::compute_integration_domains(
-                type, topology, std::span(entities.data(), entities.size()),
-                dim));
+                type, topology, std::span(entities.data(), entities.size())));
       },
-      nb::arg("integral_type"), nb::arg("topology"), nb::arg("entities"),
-      nb::arg("dim"));
+      nb::arg("integral_type"), nb::arg("topology"), nb::arg("entities"));
 
   // dolfinx::fem::ElementDofLayout
   nb::class_<dolfinx::fem::ElementDofLayout>(

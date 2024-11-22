@@ -15,39 +15,6 @@
 using namespace dolfinx;
 using namespace dolfinx::io;
 
-namespace
-{
-/// Convert DOLFINx CellType to Fides CellType
-/// https://gitlab.kitware.com/vtk/vtk-m/-/blob/master/vtkm/CellShape.h#L30-53
-/// @param[in] type The DOLFInx cell
-/// @return The Fides cell string
-std::string to_fides_cell(mesh::CellType type)
-{
-  switch (type)
-  {
-  case mesh::CellType::point:
-    return "vertex";
-  case mesh::CellType::interval:
-    return "line";
-  case mesh::CellType::triangle:
-    return "triangle";
-  case mesh::CellType::tetrahedron:
-    return "tetrahedron";
-  case mesh::CellType::quadrilateral:
-    return "quad";
-  case mesh::CellType::pyramid:
-    return "pyramid";
-  case mesh::CellType::prism:
-    return "wedge";
-  case mesh::CellType::hexahedron:
-    return "hexahedron";
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
-}
-
-} // namespace
-
 //-----------------------------------------------------------------------------
 ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
                            std::string tag, std::string engine)
@@ -68,26 +35,6 @@ void ADIOS2Writer::close()
   // to test if the engine is open
   if (*_engine)
     _engine->Close();
-}
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-void impl_fides::initialize_mesh_attributes(adios2::IO& io, mesh::CellType type)
-{
-  // NOTE: If we start using mixed element types, we can change
-  // data-model to "unstructured"
-  impl_adios2::define_attribute<std::string>(io, "Fides_Data_Model",
-                                             "unstructured_single");
-
-  // Define Fides attributes pointing to ADIOS2 Variables for geometry
-  // and topology
-  impl_adios2::define_attribute<std::string>(io, "Fides_Coordinates_Variable",
-                                             "points");
-  impl_adios2::define_attribute<std::string>(io, "Fides_Connectivity_Variable",
-                                             "connectivity");
-  impl_adios2::define_attribute<std::string>(io, "Fides_Cell_Type",
-                                             to_fides_cell(type));
-
-  impl_adios2::define_attribute<std::string>(io, "Fides_Time_Variable", "step");
 }
 //-----------------------------------------------------------------------------
 std::stringstream

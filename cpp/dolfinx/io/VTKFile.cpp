@@ -459,7 +459,7 @@ void write_function(
     if (piece_node.child(data_type).empty())
       piece_node.append_child(data_type);
 
-    const int rank = _u.get().function_space()->value_shape().size();
+    const int rank = _u.get().function_space()->element()->value_shape().size();
     pugi::xml_node data_node = piece_node.child(data_type);
     if (data_node.attribute(tensor_str[rank]).empty())
       data_node.append_attribute(tensor_str[rank]);
@@ -476,7 +476,7 @@ void write_function(
 
     // Pad to 3D if vector/tensor is product of dimensions is smaller than
     // 3**rank to ensure that we can visualize them correctly in Paraview
-    std::span<const std::size_t> value_shape = V->value_shape();
+    std::span<const std::size_t> value_shape = V->element()->value_shape();
     int rank = value_shape.size();
     int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
                                      std::multiplies{});
@@ -660,7 +660,7 @@ void write_function(
 
       // Pad to 3D if vector/tensor is product of dimensions is smaller than
       // 3**rank to ensure that we can visualize them correctly in Paraview
-      std::span<const std::size_t> value_shape = V->value_shape();
+      std::span<const std::size_t> value_shape = V->element()->value_shape();
       int rank = value_shape.size();
       int num_components = std::reduce(value_shape.begin(), value_shape.end(),
                                        1, std::multiplies{});

@@ -456,8 +456,9 @@ def test_disjoint_submeshes():
             Integration data for interior facets
         """
         mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
+        assert facet_tag.dim == mesh.topology.dim - 1
         integration_data = compute_integration_domains(
-            fem.IntegralType.interior_facet, mesh.topology, facet_tag.find(value), facet_tag.dim
+            fem.IntegralType.interior_facet, mesh.topology, facet_tag.find(value)
         )
         mapped_cell_0 = parent_to_sub_map[integration_data[0::4]]
         mapped_cell_1 = parent_to_sub_map[integration_data[2::4]]

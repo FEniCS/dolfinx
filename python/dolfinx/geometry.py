@@ -21,15 +21,15 @@ from dolfinx import cpp as _cpp
 
 __all__ = [
     "BoundingBoxTree",
+    "PointOwnershipData",
     "bb_tree",
-    "compute_colliding_cells",
-    "squared_distance",
     "compute_closest_entity",
-    "compute_collisions_trees",
+    "compute_colliding_cells",
     "compute_collisions_points",
+    "compute_collisions_trees",
     "compute_distance_gjk",
     "create_midpoint_tree",
-    "PointOwnershipData",
+    "squared_distance",
 ]
 
 
