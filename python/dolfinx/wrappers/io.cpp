@@ -24,6 +24,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/complex.h>
 #include <nanobind/stl/filesystem.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
@@ -271,7 +272,8 @@ void io(nb::module_& m)
       .def("read_cell_type", &dolfinx::io::XDMFFile::read_cell_type,
            nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
-           nb::arg("mesh"), nb::arg("name"), nb::arg("xpath") = "/Xdmf/Domain")
+           nb::arg("mesh"), nb::arg("name"), nb::arg("attribute_name").none(),
+           nb::arg("xpath"))
       .def("write_information", &dolfinx::io::XDMFFile::write_information,
            nb::arg("name"), nb::arg("value"), nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_information", &dolfinx::io::XDMFFile::read_information,
