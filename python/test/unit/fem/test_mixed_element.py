@@ -103,7 +103,7 @@ def test_element_product(d1, d2):
 def test_single_element_in_mixed_element():
     """Check that a mixed element with a single element is equivalent to a single element."""
     mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 3)
-    el = element("Lagrange", mesh.basix_cell(), 3)
+    el = element("Lagrange", mesh.basix_cell(), 3, dtype=default_real_type)
     me = mixed_element([el])
     V = dolfinx.fem.functionspace(mesh, me)
     assert V.num_sub_spaces == 1
