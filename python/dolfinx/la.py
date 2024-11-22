@@ -15,15 +15,15 @@ from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
 
 __all__ = [
-    "orthonormalize",
-    "is_orthonormal",
-    "matrix_csr",
-    "vector",
+    "InsertMode",
     "MatrixCSR",
     "Norm",
-    "InsertMode",
     "Vector",
     "create_petsc_vector",
+    "is_orthonormal",
+    "matrix_csr",
+    "orthonormalize",
+    "vector",
 ]
 
 
