@@ -103,7 +103,7 @@ def test_3d(tempdir, cell_type, encoding):
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_read_named_meshtags(tempdir,cell_type, encoding):
+def test_read_named_meshtags(tempdir, cell_type, encoding):
     domain_value = 1
     material_value = 2
 
