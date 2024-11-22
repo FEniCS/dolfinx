@@ -41,7 +41,6 @@ add_executable(
   common/sub_systems_manager.cpp
   common/index_map.cpp
   common/sort.cpp
-  common/CIFailure.cpp
   fem/functionspace.cpp
   mesh/distributed_mesh.cpp
   mesh/generation.cpp

@@ -24,7 +24,7 @@ namespace
 {
 void test_read_named_meshtags()
 {
-  const std::string mesh_file = "Domain.xdmf";
+  const std::string mesh_file_name = "Domain.xdmf";
   constexpr std::int32_t domain_value = 1;
   constexpr std::int32_t material_value = 2;
 
@@ -49,7 +49,7 @@ void test_read_named_meshtags()
                                             material_values);
   mt_materials.name = "material";
 
-  io::XDMFFile file(mesh->comm(), mesh_file, "w", io::XDMFFile::Encoding::HDF5);
+  io::XDMFFile file(mesh->comm(), mesh_file_name, "w", io::XDMFFile::Encoding::HDF5);
   file.write_mesh(*mesh);
   file.write_meshtags(mt_domains, mesh->geometry(),
                       "/Xdmf/Domain/mesh/Geometry");
@@ -57,25 +57,26 @@ void test_read_named_meshtags()
                       "/Xdmf/Domain/Grid/Geometry");
   file.close();
 
-  io::XDMFFile meshFile(MPI_COMM_WORLD, mesh_file, "r",
+  io::XDMFFile mesh_file(MPI_COMM_WORLD, mesh_file_name, "r",
                         io::XDMFFile::Encoding::HDF5);
-  mesh = std::make_shared<mesh::Mesh<double>>(meshFile.read_mesh(
+  mesh = std::make_shared<mesh::Mesh<double>>(mesh_file.read_mesh(
       fem::CoordinateElement<double>(mesh::CellType::triangle, 1),
       mesh::GhostMode::none, "mesh"));
 
   mesh::MeshTags<std::int32_t> mt_first
-      = meshFile.read_meshtags(*mesh, "material", {});
+      = mesh_file.read_meshtags(*mesh, "material", {});
   CHECK(mt_first.values().front() == material_value);
 
   mesh::MeshTags<std::int32_t> mt_domain
-      = meshFile.read_meshtags(*mesh, "domain", "domain", "/Xdmf/Domain");
+      = mesh_file.read_meshtags(*mesh, "domain", "domain", "/Xdmf/Domain");
   CHECK(mt_domain.values().front() == domain_value);
 
   mesh::MeshTags<std::int32_t> mt_material
-      = meshFile.read_meshtags(*mesh, "material", "material", "/Xdmf/Domain");
+      = mesh_file.read_meshtags(*mesh, "material", "material", "/Xdmf/Domain");
   CHECK(mt_material.values().front() == material_value);
 
-  CHECK_THROWS(meshFile.read_meshtags(*mesh, "mesh", "missing"));
+  CHECK_THROWS(mesh_file.read_meshtags(*mesh, "mesh", "missing"));
+  mesh_file.close();
 }
 } // namespace
 
