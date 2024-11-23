@@ -65,8 +65,8 @@ private:
 
   // List of timings for tasks, map from string to (num_timings,
   // total_wall_time)
-  static std::map<std::string,
-                  std::pair<int, std::chrono::duration<double, std::ratio<1>>>>
+  std::map<std::string,
+           std::pair<int, std::chrono::duration<double, std::ratio<1>>>>
       _timings;
 };
 } // namespace dolfinx::common
