@@ -28,7 +28,6 @@ from dolfinx.cpp.common import (
 __all__ = [
     "IndexMap",
     "Timer",
-    "timed",
     "git_commit_hash",
     "has_adios2",
     "has_complex_ufcx_kernels",
@@ -39,6 +38,7 @@ __all__ = [
     "has_petsc4py",
     "has_ptscotch",
     "has_slepc",
+    "timed",
     "ufcx_signature",
 ]
 
