@@ -103,7 +103,12 @@ def adjacencylist(
         An adjacency list.
     """
     # TODO: Switch to np.isdtype(data.dtype, np.int32) once numpy >= 2.0 is enforced
-    is_32bit = data.dtype == np.int32
-    cpp_t = _cpp.graph.AdjacencyList_int32 if is_32bit else _cpp.graph.AdjacencyList_int64
+    if data.dtype == np.int32:
+        cpp_t = _cpp.graph.AdjacencyList_int32
+    elif data.dtype == np.int64:
+        cpp_t = _cpp.graph.AdjacencyList_int64
+    else:
+        raise TypeError("Data type for adjacency list not supported.")
+
     cpp_object = cpp_t(data, offsets) if offsets is not None else cpp_t(data)
     return AdjacencyList(cpp_object)
