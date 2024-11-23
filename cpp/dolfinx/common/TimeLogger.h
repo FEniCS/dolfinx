@@ -23,17 +23,7 @@ namespace dolfinx::common
 class TimeLogger
 {
 public:
-  /// Constructor
-  TimeLogger() = default;
-
-  // This class is used as a singleton and thus should not allow copies.
-  TimeLogger(const TimeLogger&) = delete;
-
-  // This class is used as a singleton and thus should not allow copies.
-  TimeLogger& operator=(const TimeLogger&) = delete;
-
-  /// Destructor
-  ~TimeLogger() = default;
+  static TimeLogger& instance();
 
   /// Register timing (for later summary)
   void register_timing(std::string task,
@@ -61,6 +51,18 @@ public:
   timings() const;
 
 private:
+  /// Constructor
+  TimeLogger() = default;
+
+  // This class is used as a singleton and thus should not allow copies.
+  TimeLogger(const TimeLogger&) = delete;
+
+  // This class is used as a singleton and thus should not allow copies.
+  TimeLogger& operator=(const TimeLogger&) = delete;
+
+  /// Destructor
+  ~TimeLogger() = default;
+
   // List of timings for tasks, map from string to (num_timings,
   // total_wall_time)
   static std::map<std::string,

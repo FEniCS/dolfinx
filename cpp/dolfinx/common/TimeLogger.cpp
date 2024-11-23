@@ -12,8 +12,12 @@
 using namespace dolfinx;
 using namespace dolfinx::common;
 
-// definition of static members
-decltype(TimeLogger::_timings) TimeLogger::_timings; 
+//-----------------------------------------------------------------------------
+TimeLogger& TimeLogger::instance()
+{
+  static TimeLogger _instance{};
+  return _instance;
+}
 
 //-----------------------------------------------------------------------------
 void TimeLogger::register_timing(
