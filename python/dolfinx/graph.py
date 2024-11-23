@@ -41,8 +41,7 @@ class AdjacencyList:
         """Creates a Python wrapper for the exported adjacency list class.
 
         Note:
-            This constructor does not create a new adjacency list, see  :func:`adjacencylist` for
-            that.
+            Do not use this constructor directly. Instead use :func:`adjacencylist`.
 
         Args:
             The underlying cpp instance that this object will wrap.
