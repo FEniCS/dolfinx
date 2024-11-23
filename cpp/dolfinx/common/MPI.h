@@ -431,9 +431,8 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
   std::vector<std::int64_t> recv_buffer_index(recv_disp.back());
   err = MPI_Neighbor_alltoallv(
       send_buffer_index.data(), num_items_per_dest.data(), send_disp.data(),
-      dolfinx::MPI::mpi_t<std::int64_t>, recv_buffer_index.data(),
-      num_items_recv.data(), recv_disp.data(),
-      dolfinx::MPI::mpi_t<std::int64_t>, neigh_comm);
+      MPI_INT64_T, recv_buffer_index.data(), num_items_recv.data(),
+      recv_disp.data(), MPI_INT64_T, neigh_comm);
   dolfinx::MPI::check_error(comm, err);
 
   // Send/receive data (x)
@@ -562,9 +561,8 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   std::vector<std::int64_t> recv_buffer_index(recv_disp.back());
   err = MPI_Neighbor_alltoallv(
       send_buffer_index.data(), num_items_per_src.data(), send_disp.data(),
-      dolfinx::MPI::mpi_t<std::int64_t>, recv_buffer_index.data(),
-      num_items_recv.data(), recv_disp.data(),
-      dolfinx::MPI::mpi_t<std::int64_t>, neigh_comm0);
+      MPI_INT64_T, recv_buffer_index.data(), num_items_recv.data(),
+      recv_disp.data(), MPI_INT64_T, neigh_comm0);
   dolfinx::MPI::check_error(comm, err);
 
   err = MPI_Comm_free(&neigh_comm0);
@@ -689,8 +687,7 @@ distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
 
   int err;
   std::int64_t shape0 = 0;
-  err = MPI_Allreduce(&shape0_local, &shape0, 1,
-                      dolfinx::MPI::mpi_t<std::int64_t>, MPI_SUM, comm0);
+  err = MPI_Allreduce(&shape0_local, &shape0, 1, MPI_INT64_T, MPI_SUM, comm0);
   dolfinx::MPI::check_error(comm0, err);
 
   std::int64_t rank_offset = -1;

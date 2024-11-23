@@ -50,8 +50,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
   {
     std::int64_t max_index
         = indices.empty() ? 0 : *std::ranges::max_element(indices);
-    MPI_Allreduce(&max_index, &global_range, 1,
-                  dolfinx::MPI::mpi_t<std::int64_t>, MPI_MAX, comm);
+    MPI_Allreduce(&max_index, &global_range, 1, MPI_INT64_T, MPI_MAX, comm);
     global_range += 1;
   }
 
@@ -468,9 +467,8 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
                      std::next(recv_disp.begin()));
     recv_data = std::vector<std::int64_t>(recv_disp.back());
     MPI_Neighbor_alltoallv(sbuffer.data(), send_sizes.data(), send_disp.data(),
-                           dolfinx::MPI::mpi_t<std::int64_t>, recv_data.data(),
-                           recv_sizes.data(), recv_disp.data(),
-                           dolfinx::MPI::mpi_t<std::int64_t>, comm0);
+                           MPI_INT64_T, recv_data.data(), recv_sizes.data(),
+                           recv_disp.data(), MPI_INT64_T, comm0);
 
     MPI_Comm_free(&comm0);
   }
@@ -584,9 +582,8 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
     // Send ghost indices to owner, and receive owned indices
     std::vector<std::int64_t> recv_buffer(recv_disp.back());
     MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
-                           send_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
-                           recv_buffer.data(), recv_sizes.data(),
-                           recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
+                           send_disp.data(), MPI_INT64_T, recv_buffer.data(),
+                           recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
                            comm1);
     MPI_Comm_free(&comm1);
 
@@ -667,10 +664,10 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                    std::next(recv_disp.begin()));
   std::vector<std::int64_t> recv_buffer(recv_disp.back());
-  MPI_Neighbor_alltoallv(
-      send_buffer.data(), send_sizes.data(), send_disp.data(),
-      dolfinx::MPI::mpi_t<std::int64_t>, recv_buffer.data(), recv_sizes.data(),
-      recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>, comm);
+  MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
+                         send_disp.data(), MPI_INT64_T, recv_buffer.data(),
+                         recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                         comm);
 
   std::vector<std::array<std::int64_t, 3>> data;
   data.reserve(recv_buffer.size() / 3);
@@ -1133,8 +1130,7 @@ Topology mesh::create_topology(
   std::int64_t global_offset_v = 0;
   {
     const std::int64_t nlocal = owned_vertices.size();
-    MPI_Exscan(&nlocal, &global_offset_v, 1, dolfinx::MPI::mpi_t<std::int64_t>,
-               MPI_SUM, comm);
+    MPI_Exscan(&nlocal, &global_offset_v, 1, MPI_INT64_T, MPI_SUM, comm);
   }
 
   // Get global indices of ghost cells

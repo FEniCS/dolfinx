@@ -81,8 +81,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   MPI_Request request_cell_offset;
   {
     const std::int64_t num_local = local_graph.num_nodes();
-    MPI_Iexscan(&num_local, &cell_offset, 1, dolfinx::MPI::mpi_t<std::int64_t>,
-                MPI_SUM, comm, &request_cell_offset);
+    MPI_Iexscan(&num_local, &cell_offset, 1, MPI_INT64_T, MPI_SUM, comm,
+                &request_cell_offset);
   }
 
   // Find (max_vert_per_facet, min_vertex_index, max_vertex_index)
@@ -100,8 +100,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
     // Compute reductions
     std::array<std::int64_t, 3> recv_buffer_r;
-    MPI_Allreduce(send_buffer_r.data(), recv_buffer_r.data(), 3,
-                  dolfinx::MPI::mpi_t<std::int64_t>, MPI_MAX, comm);
+    MPI_Allreduce(send_buffer_r.data(), recv_buffer_r.data(), 3, MPI_INT64_T,
+                  MPI_MAX, comm);
     assert(recv_buffer_r[1] != std::numeric_limits<std::int64_t>::min());
     assert(recv_buffer_r[2] != -1);
     fshape1 = recv_buffer_r[0];
@@ -217,8 +217,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   // Send/receive data facet
   MPI_Datatype compound_type;
-  MPI_Type_contiguous(buffer_shape1, dolfinx::MPI::mpi_t<std::int64_t>,
-                      &compound_type);
+  MPI_Type_contiguous(buffer_shape1, MPI_INT64_T, &compound_type);
   MPI_Type_commit(&compound_type);
   std::vector<std::int64_t> recv_buffer(buffer_shape1 * recv_disp.back());
   MPI_Neighbor_alltoallv(send_buffer.data(), num_items_per_dest.data(),

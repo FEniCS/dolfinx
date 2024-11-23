@@ -284,8 +284,7 @@ xdmf_utils::distribute_entity_data(
 
   MPI_Comm comm = topology.comm();
   MPI_Datatype compound_type;
-  MPI_Type_contiguous(entities_v.extent(1), dolfinx::MPI::mpi_t<std::int64_t>,
-                      &compound_type);
+  MPI_Type_contiguous(entities_v.extent(1), MPI_INT64_T, &compound_type);
   MPI_Type_commit(&compound_type);
 
   // -- B. Send entities and entity data to postmaster
@@ -403,8 +402,7 @@ xdmf_utils::distribute_entity_data(
     std::vector<std::pair<int, std::int64_t>> dest_to_index;
     std::ranges::transform(
         indices, std::back_inserter(dest_to_index),
-        [size, num_nodes](auto n)
-        {
+        [size, num_nodes](auto n) {
           return std::pair(dolfinx::MPI::index_owner(size, n, num_nodes), n);
         });
     std::ranges::sort(dest_to_index);
@@ -464,11 +462,10 @@ xdmf_utils::distribute_entity_data(
                            [](auto x) { return x.second; });
 
     std::vector<std::int64_t> recv_buffer(recv_disp.back());
-    err = MPI_Neighbor_alltoallv(
-        send_buffer.data(), num_items_send.data(), send_disp.data(),
-        dolfinx::MPI::mpi_t<std::int64_t>, recv_buffer.data(),
-        num_items_recv.data(), recv_disp.data(),
-        dolfinx::MPI::mpi_t<std::int64_t>, comm0);
+    err = MPI_Neighbor_alltoallv(send_buffer.data(), num_items_send.data(),
+                                 send_disp.data(), MPI_INT64_T,
+                                 recv_buffer.data(), num_items_recv.data(),
+                                 recv_disp.data(), MPI_INT64_T, comm0);
     dolfinx::MPI::check_error(comm, err);
     err = MPI_Comm_free(&comm0);
     dolfinx::MPI::check_error(comm, err);

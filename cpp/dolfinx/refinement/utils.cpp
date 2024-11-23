@@ -84,8 +84,8 @@ void refinement::update_logical_edgefunction(
 
     data_to_recv.resize(recv_disp.back());
     MPI_Neighbor_alltoallv(data_to_send.data(), send_sizes.data(),
-                           send_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>, data_to_recv.data(),
-                           recv_sizes.data(), recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
+                           send_disp.data(), MPI_INT64_T, data_to_recv.data(),
+                           recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
                            comm);
   }
 
@@ -107,7 +107,7 @@ refinement::adjust_indices(const common::IndexMap& map, std::int32_t n)
   // Get offset for 'n' for this process
   const std::int64_t num_local = n;
   std::int64_t global_offset = 0;
-  MPI_Exscan(&num_local, &global_offset, 1, dolfinx::MPI::mpi_t<std::int64_t>, MPI_SUM, map.comm());
+  MPI_Exscan(&num_local, &global_offset, 1, MPI_INT64_T, MPI_SUM, map.comm());
 
   std::span owners = map.owners();
   std::span src = map.src();
@@ -121,8 +121,8 @@ refinement::adjust_indices(const common::IndexMap& map, std::int32_t n)
   // Communicate offset to neighbors
   std::vector<std::int64_t> offsets(src.size(), 0);
   offsets.reserve(1);
-  MPI_Neighbor_allgather(&global_offset, 1, dolfinx::MPI::mpi_t<std::int64_t>, offsets.data(), 1,
-                         dolfinx::MPI::mpi_t<std::int64_t>, comm);
+  MPI_Neighbor_allgather(&global_offset, 1, MPI_INT64_T, offsets.data(), 1,
+                         MPI_INT64_T, comm);
 
   MPI_Comm_free(&comm);
 

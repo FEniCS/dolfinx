@@ -49,8 +49,7 @@ graph::build::distribute(MPI_Comm comm,
   std::int64_t offset_global = 0;
   {
     const std::int64_t num_owned = list.num_nodes();
-    MPI_Exscan(&num_owned, &offset_global, 1, dolfinx::MPI::mpi_t<std::int64_t>,
-               MPI_SUM, comm);
+    MPI_Exscan(&num_owned, &offset_global, 1, MPI_INT64_T, MPI_SUM, comm);
   }
 
   // TODO: Do this on the neighbourhood only
@@ -152,8 +151,7 @@ graph::build::distribute(MPI_Comm comm,
 
   // Send/receive data facet
   MPI_Datatype compound_type;
-  MPI_Type_contiguous(buffer_shape1, dolfinx::MPI::mpi_t<std::int64_t>,
-                      &compound_type);
+  MPI_Type_contiguous(buffer_shape1, MPI_INT64_T, &compound_type);
   MPI_Type_commit(&compound_type);
   std::vector<std::int64_t> recv_buffer(buffer_shape1 * recv_disp.back());
   MPI_Neighbor_alltoallv(send_buffer.data(), num_items_per_dest.data(),
@@ -244,8 +242,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   // Get global offset for converting local index to global index for
   // nodes in 'list'
   std::int64_t offset_global = 0;
-  MPI_Exscan(&num_owned, &offset_global, 1, dolfinx::MPI::mpi_t<std::int64_t>,
-             MPI_SUM, comm);
+  MPI_Exscan(&num_owned, &offset_global, 1, MPI_INT64_T, MPI_SUM, comm);
 
   // Buffer size (max number of edges + 2 for owning rank,
   // and node global index)
@@ -337,8 +334,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
 
   // Send/receive data facet
   MPI_Datatype compound_type;
-  MPI_Type_contiguous(buffer_shape1, dolfinx::MPI::mpi_t<std::int64_t>,
-                      &compound_type);
+  MPI_Type_contiguous(buffer_shape1, MPI_INT64_T, &compound_type);
   MPI_Type_commit(&compound_type);
   std::vector<std::int64_t> recv_buffer(buffer_shape1 * recv_disp.back());
   MPI_Neighbor_alltoallv(send_buffer.data(), num_items_per_dest.data(),
@@ -406,8 +402,8 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
   std::int64_t offset_local = 0;
   MPI_Request request_offset_scan;
   const std::int64_t num_local = owned_indices.size();
-  MPI_Iexscan(&num_local, &offset_local, 1, dolfinx::MPI::mpi_t<std::int64_t>,
-              MPI_SUM, comm, &request_offset_scan);
+  MPI_Iexscan(&num_local, &offset_local, 1, MPI_INT64_T, MPI_SUM, comm,
+              &request_offset_scan);
 
   // Find out how many ghosts are on each neighboring process
   std::vector<int> ghost_index_count;
@@ -476,9 +472,8 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
 
   std::vector<std::int64_t> recv_data(recv_offsets.back());
   MPI_Neighbor_alltoallv(send_data.data(), ghost_index_count.data(),
-                         send_offsets.data(), dolfinx::MPI::mpi_t<std::int64_t>,
-                         recv_data.data(), recv_sizes.data(),
-                         recv_offsets.data(), dolfinx::MPI::mpi_t<std::int64_t>,
+                         send_offsets.data(), MPI_INT64_T, recv_data.data(),
+                         recv_sizes.data(), recv_offsets.data(), MPI_INT64_T,
                          neighbor_comm_fwd);
 
   // Complete global_offset scan
@@ -507,10 +502,9 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
 
   std::vector<std::int64_t> new_recv(send_data.size());
   MPI_Neighbor_alltoallv(recv_data.data(), recv_sizes.data(),
-                         recv_offsets.data(), dolfinx::MPI::mpi_t<std::int64_t>,
-                         new_recv.data(), ghost_index_count.data(),
-                         send_offsets.data(), dolfinx::MPI::mpi_t<std::int64_t>,
-                         neighbor_comm_rev);
+                         recv_offsets.data(), MPI_INT64_T, new_recv.data(),
+                         ghost_index_count.data(), send_offsets.data(),
+                         MPI_INT64_T, neighbor_comm_rev);
   MPI_Comm_free(&neighbor_comm_fwd);
   MPI_Comm_free(&neighbor_comm_rev);
 

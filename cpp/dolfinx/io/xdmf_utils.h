@@ -317,8 +317,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
 
     std::int64_t size_global = 0;
     const std::int64_t size_local = data_vector.size();
-    MPI_Allreduce(&size_local, &size_global, 1,
-                  dolfinx::MPI::mpi_t<std::int64_t>, MPI_SUM, comm);
+    MPI_Allreduce(&size_local, &size_global, 1, MPI_INT64_T, MPI_SUM, comm);
     if (size != size_global)
     {
       throw std::runtime_error(

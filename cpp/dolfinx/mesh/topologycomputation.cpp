@@ -256,10 +256,10 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
                      std::back_inserter(recv_disp));
 
     recv_data.resize(recv_disp.back());
-    MPI_Neighbor_alltoallv(
-        send_buffer.data(), send_sizes.data(), send_disp.data(),
-        dolfinx::MPI::mpi_t<std::int64_t>, recv_data.data(), recv_sizes.data(),
-        recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>, neighbor_comm);
+    MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
+                           send_disp.data(), MPI_INT64_T, recv_data.data(),
+                           recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                           neighbor_comm);
   }
 
   // List of (local index, sorted global vertices) pairs received from
@@ -376,8 +376,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   {
     const std::int64_t _num_local = num_local;
     std::int64_t local_offset = 0;
-    MPI_Exscan(&_num_local, &local_offset, 1, dolfinx::MPI::mpi_t<std::int64_t>,
-               MPI_SUM, comm);
+    MPI_Exscan(&_num_local, &local_offset, 1, MPI_INT64_T, MPI_SUM, comm);
 
     // Send global indices for same entities that we sent before. This
     // uses the same pattern as before, so we can match up the received
@@ -401,10 +400,10 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
                              { return a / num_vertices_per_e; });
 
     recv_data.resize(recv_disp.back());
-    MPI_Neighbor_alltoallv(
-        send_global_index_data.data(), send_sizes.data(), send_disp.data(),
-        dolfinx::MPI::mpi_t<std::int64_t>, recv_data.data(), recv_sizes.data(),
-        recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>, neighbor_comm);
+    MPI_Neighbor_alltoallv(send_global_index_data.data(), send_sizes.data(),
+                           send_disp.data(), MPI_INT64_T, recv_data.data(),
+                           recv_sizes.data(), recv_disp.data(), MPI_INT64_T,
+                           neighbor_comm);
     MPI_Comm_free(&neighbor_comm);
 
     // Map back received indices
@@ -539,9 +538,10 @@ compute_entities_by_key_matching(
 
         std::vector<std::size_t> perm(global_vertices.size());
         std::iota(perm.begin(), perm.end(), 0);
-        std::ranges::sort(
-            perm, [&global_vertices](std::size_t i0, std::size_t i1)
-            { return global_vertices[i0] < global_vertices[i1]; });
+        std::ranges::sort(perm,
+                          [&global_vertices](std::size_t i0, std::size_t i1) {
+                            return global_vertices[i0] < global_vertices[i1];
+                          });
         // For quadrilaterals, the vertex opposite the lowest vertex should
         // be last
         if (entity_type == mesh::CellType::quadrilateral)

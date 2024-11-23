@@ -540,9 +540,9 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     // TODO: use MPI_Ineighbor_alltoallv
     // Send global index of dofs to neighbors
     all_dofs_received[d].resize(disp_recv[d].back());
-    MPI_Ineighbor_allgatherv(global[d].data(), global[d].size(), dolfinx::MPI::mpi_t<std::int64_t>,
+    MPI_Ineighbor_allgatherv(global[d].data(), global[d].size(), MPI_INT64_T,
                              all_dofs_received[d].data(), size_recv[d].data(),
-                             disp_recv[d].data(), dolfinx::MPI::mpi_t<std::int64_t>, comm[d],
+                             disp_recv[d].data(), MPI_INT64_T, comm[d],
                              &requests[requests_dim.size()]);
     requests_dim.push_back(d);
   }

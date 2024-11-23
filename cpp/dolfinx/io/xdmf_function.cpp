@@ -161,8 +161,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
 
   const std::int64_t num_local = data_values.size() / num_components;
   std::int64_t offset = 0;
-  MPI_Exscan(&num_local, &offset, 1, dolfinx::MPI::mpi_t<std::int64_t>, MPI_SUM,
-             comm);
+  MPI_Exscan(&num_local, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
 
   const bool use_mpi_io = dolfinx::MPI::size(comm) > 1;
 

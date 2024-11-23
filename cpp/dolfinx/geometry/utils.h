@@ -827,10 +827,10 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
   }
 
   std::vector<std::int32_t> recv_ranks(recv_offsets.back());
-  MPI_Neighbor_alltoallv(
-      cell_indicator.data(), send_sizes.data(), send_offsets.data(),
-      dolfinx::MPI::mpi_t<std::int32_t>, recv_ranks.data(), recv_sizes.data(),
-      recv_offsets.data(), dolfinx::MPI::mpi_t<std::int32_t>, reverse_comm);
+  MPI_Neighbor_alltoallv(cell_indicator.data(), send_sizes.data(),
+                         send_offsets.data(), MPI_INT32_T, recv_ranks.data(),
+                         recv_sizes.data(), recv_offsets.data(), MPI_INT32_T,
+                         reverse_comm);
 
   std::vector<int> point_owners(points.size() / 3, -1);
   for (std::size_t i = 0; i < unpack_map.size(); i++)
@@ -946,10 +946,10 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
 
   // Send ownership info
   std::vector<std::int32_t> dest_ranks(recv_offsets.back());
-  MPI_Neighbor_alltoallv(
-      send_owners.data(), send_sizes.data(), send_offsets.data(),
-      dolfinx::MPI::mpi_t<std::int32_t>, dest_ranks.data(), recv_sizes.data(),
-      recv_offsets.data(), dolfinx::MPI::mpi_t<std::int32_t>, forward_comm);
+  MPI_Neighbor_alltoallv(send_owners.data(), send_sizes.data(),
+                         send_offsets.data(), MPI_INT32_T, dest_ranks.data(),
+                         recv_sizes.data(), recv_offsets.data(), MPI_INT32_T,
+                         forward_comm);
 
   // Unpack dest ranks if point owner is this rank
   std::vector<int> owned_recv_ranks;

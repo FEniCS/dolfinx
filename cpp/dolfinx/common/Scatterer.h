@@ -120,10 +120,8 @@ public:
     _displs_local.resize(_sizes_local.size() + 1);
     _sizes_remote.reserve(1);
     _sizes_local.reserve(1);
-    MPI_Neighbor_alltoall(_sizes_remote.data(), 1,
-                          dolfinx::MPI::mpi_t<std::int32_t>,
-                          _sizes_local.data(), 1,
-                          dolfinx::MPI::mpi_t<std::int32_t>, _comm1.comm());
+    MPI_Neighbor_alltoall(_sizes_remote.data(), 1, MPI_INT32_T,
+                          _sizes_local.data(), 1, MPI_INT32_T, _comm1.comm());
     std::partial_sum(_sizes_local.begin(), _sizes_local.end(),
                      std::next(_displs_local.begin()));
 
@@ -133,11 +131,10 @@ public:
     // Send ghost global indices to owning rank, and receive owned
     // indices that are ghosts on other ranks
     std::vector<std::int64_t> recv_buffer(_displs_local.back(), 0);
-    MPI_Neighbor_alltoallv(
-        ghosts_sorted.data(), _sizes_remote.data(), _displs_remote.data(),
-        dolfinx::MPI::mpi_t<std::int64_t>, recv_buffer.data(),
-        _sizes_local.data(), _displs_local.data(),
-        dolfinx::MPI::mpi_t<std::int64_t>, _comm1.comm());
+    MPI_Neighbor_alltoallv(ghosts_sorted.data(), _sizes_remote.data(),
+                           _displs_remote.data(), MPI_INT64_T,
+                           recv_buffer.data(), _sizes_local.data(),
+                           _displs_local.data(), MPI_INT64_T, _comm1.comm());
 
     const std::array<std::int64_t, 2> range = map.local_range();
 #ifndef NDEBUG
@@ -148,8 +145,7 @@ public:
 
     // Scale sizes and displacements by block size
     {
-      auto rescale = [](auto& x, int bs)
-      {
+      auto rescale = [](auto& x, int bs) {
         std::ranges::transform(x, x.begin(), [bs](auto e) { return e *= bs; });
       };
       rescale(_sizes_local, bs);

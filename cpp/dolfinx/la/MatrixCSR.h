@@ -577,10 +577,9 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
 
     ghost_index_array.resize(recv_disp.back());
     MPI_Neighbor_alltoallv(ghost_index_data.data(), send_sizes.data(),
-                           send_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
+                           send_disp.data(), MPI_INT64_T,
                            ghost_index_array.data(), recv_sizes.data(),
-                           recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
-                           _comm.comm());
+                           recv_disp.data(), MPI_INT64_T, _comm.comm());
   }
 
   // Store receive displacements for future use, when transferring
@@ -730,8 +729,7 @@ double MatrixCSR<U, V, W, X>::squared_norm() const
       _data.cbegin(), std::next(_data.cbegin(), _row_ptr[num_owned_rows] * bs2),
       double(0), [](auto norm, value_type y) { return norm + std::norm(y); });
   double norm_sq;
-  MPI_Allreduce(&norm_sq_local, &norm_sq, 1, dolfinx::MPI::mpi_t<double>,
-                MPI_SUM, _comm.comm());
+  MPI_Allreduce(&norm_sq_local, &norm_sq, 1, MPI_DOUBLE, MPI_SUM, _comm.comm());
   return norm_sq;
 }
 //-----------------------------------------------------------------------------
