@@ -522,6 +522,7 @@ def test_submesh_full(d, n, codim, marker, ghost_mode, simplex):
     edim = max(mesh.topology.dim - codim, 0)
     entities = locate_entities(mesh, edim, marker)
     submesh, entity_map, vertex_map, geom_map = create_submesh(mesh, edim, entities)
+    assert submesh.topology.dim == edim
     submesh_topology_test(mesh, submesh, entity_map, vertex_map, edim)
     submesh_geometry_test(mesh, submesh, entity_map, geom_map, edim)
 
