@@ -20,7 +20,7 @@ on:
         type: string
       basix_ref:
         description: "Basix branch or tag"
-        default: "main"
+        default: "michal/symmetry-value-shape"
         type: string
       ufl_ref:
         description: "UFL branch or tag"

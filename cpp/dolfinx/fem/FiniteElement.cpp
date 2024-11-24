@@ -302,30 +302,11 @@ int FiniteElement<T>::space_dimension() const noexcept
 template <std::floating_point T>
 int FiniteElement<T>::value_size() const
 {
-  if (_value_shape)
-  {
-    int vs = std::accumulate(_value_shape->begin(), _value_shape->end(), 1,
-                             std::multiplies{});
-
-    // See comments in constructor on why special handling for the
-    // symmetric case is required.
-    if (_symmetric)
-    {
-      if (vs == 3)
-        return 4;
-      else if (vs == 6)
-        return 9;
-      else
-      {
-        throw std::runtime_error(
-            "Inconsistent size for symmetric rank-2 tensor.");
-      }
-    }
-    else
-      return vs;
-  }
-  else
+  if (!_value_shape)
     throw std::runtime_error("Element does not have a value_shape.");
+
+  return std::accumulate(_value_shape->begin(), _value_shape->end(), 1,
+                         std::multiplies{});
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
