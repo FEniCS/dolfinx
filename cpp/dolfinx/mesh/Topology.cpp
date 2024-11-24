@@ -773,7 +773,8 @@ Topology::Topology(
   // Cell Types
   _entity_types.insert(_entity_types.end(), cell_types.begin(),
                        cell_types.end());
-  _entity_type_offsets.push_back(_entity_types.size());
+  if (tdim > 0)
+    _entity_type_offsets.push_back(_entity_types.size());
 
   std::int8_t conn_size = _entity_type_offsets.back();
   _index_map.resize(conn_size);

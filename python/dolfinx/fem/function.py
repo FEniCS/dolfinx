@@ -583,24 +583,18 @@ def _create_dolfinx_element(
     else:
         basix_e = ufl_e.basix_element._e
         bs = ufl_e.reference_value_shape if ufl_e.block_size > 1 else None
-        # bs = [ufl_e.block_size] if ufl_e.block_size > 1 else None
-        # print(bs, ufl_e.reference_value_shape)
         return CppElement(basix_e, bs, ufl_e.is_symmetric)
 
 
 def functionspace(
     mesh: Mesh,
     element: typing.Union[ufl.FiniteElementBase, ElementMetaData, tuple[str, int, tuple, bool]],
-    form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
-    jit_options: typing.Optional[dict[str, typing.Any]] = None,
 ) -> FunctionSpace:
     """Create a finite element function space.
 
     Args:
         mesh: Mesh that space is defined on.
         element: Finite element description.
-        form_compiler_options: Options passed to the form compiler.
-        jit_options: Options controlling just-in-time compilation.
 
     Returns:
         A function space.
@@ -619,14 +613,7 @@ def functionspace(
     if ufl_e.cell != mesh.ufl_domain().ufl_cell():
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
 
-    # ufl_space = ufl.FunctionSpace(mesh.ufl_domain(), ufl_e)
-    # value_shape = ufl_space.value_shape
-
-    # Compile dofmap and element and create DOLFINx objects
-    if form_compiler_options is None:
-        form_compiler_options = dict()
-    form_compiler_options["scalar_type"] = dtype
-
+    # Create DOLFINx objects
     cpp_element = _create_dolfinx_element(mesh.topology.cell_type, ufl_e, dtype)
     cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, cpp_element)
 
