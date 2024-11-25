@@ -11,8 +11,10 @@ on:
   workflow_dispatch: ~
 
 jobs:
+  refs:
+    uses: ./.github/workflows/fenicsx-refs.yml
+
   pyvista:
-    if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
     runs-on: ubuntu-latest
     container: ghcr.io/fenics/test-env:current-openmpi
 
@@ -38,9 +40,9 @@ jobs:
 
       - name: Install FEniCS Python components
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git
-          pip install git+https://github.com/FEniCS/basix.git
-          pip install git+https://github.com/FEniCS/ffcx.git
+          python -m pip install git+https://github.com/fenics/ufl.git@${{ needs.refs.outputs.ufl_ref }}
+          python -m pip install git+https://github.com/fenics/basix.git@${{ needs.refs.outputs.basix_ref }}
+          python -m pip install git+https://github.com/fenics/ffcx.git@${{ needs.refs.outputs.ffcx_ref }}
           apt-get update
           apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb  # pyvista
           apt-get install -y --no-install-recommends libqt5gui5t64 libgl1 # pyvistaqt
