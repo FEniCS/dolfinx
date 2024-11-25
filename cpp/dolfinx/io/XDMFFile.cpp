@@ -411,7 +411,7 @@ void XDMFFile::read_function(const mesh::Mesh<double>& mesh, std::string name,
    * retrieved values in the correct position in the function's array,
    * reading values and positions from `entities_values`.
    */
-  for (int i = 0; i < entities_values.first.size(); ++i)
+  for (size_t i = 0; i < entities_values.first.size(); ++i)
   {
     u.x()->mutable_array()[vertex_to_dofmap[entities_values.first[i]]]
         = entities_values.second[i];
