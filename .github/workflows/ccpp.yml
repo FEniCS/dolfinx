@@ -20,7 +20,7 @@ on:
         type: string
       basix_ref:
         description: "Basix branch or tag"
-        default: "michal/symmetry-value-shape"
+        default: "main"
         type: string
       ufl_ref:
         description: "UFL branch or tag"
@@ -103,7 +103,7 @@ jobs:
         if: github.event_name != 'workflow_dispatch'
         run: |
           pip install git+https://github.com/FEniCS/ufl.git
-          pip install git+https://github.com/FEniCS/basix.git
+          pip install git+https://github.com/FEniCS/basix.git@michal/symmetry-value-shape
           pip install git+https://github.com/FEniCS/ffcx.git
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
