@@ -114,6 +114,7 @@ jobs:
 
       - name: Build FFCx wheel
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        working-directory: ffcx
         run: python -m build --outdir wheelhouse/ .
 
       - name: Make temporary simple503 repository
@@ -138,7 +139,7 @@ jobs:
       - name: Build DOLFINx wheel
         run: python -m cibuildwheel --output-dir wheelhouse dolfinx/python
         env:
-          CIBW_BEFORE_BUILD: yum -y update && yum -y install mpich-devel && python -m pip -v install --prefer-binary fenics-ffcx fenics-basix fenics-ufl && python -m pip -v install --prefer-binary mpi4py -i https://pypi.anaconda.org/mpi4py/simple && cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) && cmake --build build-dir && cmake --install build-dir
+          CIBW_BEFORE_BUILD: yum -y update && yum -y install boost-devel boost-program-options hdf5-mpich-devel mpich-devel openblas-devel pugixml-devel spdlog-devel && python -m pip -v install --prefer-binary fenics-ffcx fenics-basix fenics-ufl && python -m pip -v install --prefer-binary mpi4py -i https://pypi.anaconda.org/mpi4py/simple && cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) && cmake --build build-dir && cmake --install build-dir
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} && auditwheel repair -w {dest_dir} {wheel}
           CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple MAKEFLAGS=-j3 LD_LIBRARY_PATH=/usr/lib64/mpich/lib
 
