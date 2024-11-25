@@ -15,13 +15,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  refs:
+  fenicsx-refs:
     uses: ./.github/workflows/fenicsx-refs.yml
 
   windows-build:
     name: Windows vcpkg build
     runs-on: windows-latest
-    needs: refs
+    needs: fenicsx-refs
     env:
       VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
 
@@ -39,14 +39,14 @@ jobs:
           python-version: "3.12"
 
       - name: Install UFL
-        run: pip install git+https://github.com/FEniCS/ufl.git@${{ needs.refs.outputs.ufl_ref }}
+        run: pip install git+https://github.com/FEniCS/ufl.git@${{ needs.fenicsx-refs.outputs.ufl_ref }}
 
       - name: Checkout Basix
         uses: actions/checkout@v4
         with:
           repository: "fenics/basix"
           path: basix
-          ref: ${{ needs.refs.outputs.basix_ref }}
+          ref: ${{ needs.fenicsx-refs.outputs.basix_ref }}
 
       - name: Insert add_dll_directory calls into Basix
         working-directory: basix/python/basix
@@ -79,7 +79,7 @@ jobs:
         with:
           repository: "fenics/ffcx"
           path: ffcx
-          ref: ${{ needs.refs.outputs.ffcx_ref }}
+          ref: ${{ needs.fenicsx-refs.outputs.ffcx_ref }}
 
       - name: Install UFCx header
         working-directory: ffcx

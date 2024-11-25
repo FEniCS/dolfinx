@@ -62,9 +62,9 @@ jobs:
           echo "$HOME/.sonar/build-wrapper-linux-x86" >> $GITHUB_PATH
       - name: Install FEniCS Python components
         run: |
-          python -m pip install git+https://github.com/fenics/ufl.git@${{ needs.refs.outputs.ufl_ref }}
-          python -m pip install git+https://github.com/fenics/basix.git@${{ needs.refs.outputs.basix_ref }}
-          python -m pip install git+https://github.com/fenics/ffcx.git@${{ needs.refs.outputs.ffcx_ref }}
+          python -m pip install git+https://github.com/fenics/ufl.git@${{ needs.fenicsx-refs.outputs.ufl_ref }}
+          python -m pip install git+https://github.com/fenics/basix.git@${{ needs.fenicsx-refs.outputs.basix_ref }}
+          python -m pip install git+https://github.com/fenics/ffcx.git@${{ needs.fenicsx-refs.outputs.ffcx_ref }}
       - name: Run build-wrapper
         run: |
           mkdir build
