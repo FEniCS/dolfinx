@@ -39,7 +39,7 @@ jobs:
       - name: Install FEniCS Python components
         run: |
           pip install git+https://github.com/FEniCS/ufl.git
-          pip install git+https://github.com/FEniCS/basix.git
+          pip install git+https://github.com/FEniCS/basix.git@michal/symmetry-value-shape
           pip install git+https://github.com/FEniCS/ffcx.git
           apt-get update
           apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb  # pyvista
