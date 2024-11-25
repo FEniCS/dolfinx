@@ -89,20 +89,8 @@ template <std::floating_point T>
 FiniteElement<T>::FiniteElement(
     const basix::FiniteElement<T>& element,
     std::optional<std::vector<std::size_t>> value_shape, bool symmetric)
-    : _value_shape(value_shape ? *value_shape : element.value_shape()),
-      _bs(value_shape
-              ? std::accumulate(value_shape->begin(), value_shape->end(), 1,
-                                std::multiplies{})
-              : 1),
+    : _value_shape(value_shape.value_or(element.value_shape())),
       _cell_type(mesh::cell_type_from_basix_type(element.cell_type())),
-      _space_dim(_bs * element.dim()),
-      _sub_elements(
-          value_shape
-              ? std::vector<
-                    std::shared_ptr<const FiniteElement<geometry_type>>>(
-                    _bs, std::make_shared<FiniteElement<T>>(element))
-              : std::vector<
-                    std::shared_ptr<const FiniteElement<geometry_type>>>()),
       _reference_value_shape(element.value_shape()),
       _element(std::make_unique<basix::FiniteElement<T>>(element)),
       _symmetric(symmetric),
@@ -115,30 +103,42 @@ FiniteElement<T>::FiniteElement(
       _entity_dofs(element.entity_dofs()),
       _entity_closure_dofs(element.entity_closure_dofs())
 {
-  // TODO: symmetric rank-2 symmetric tensors are presently constructed
-  // as rank-1 tensors, e.g. a rank-2 symmetric tensor in 3D is
-  // constructed as rank-1 with shape (6,). It should be really be
-  // shape=(3, 3) with block size 6.
-
-  // If element is blocked, check that base element is scalar
   if (value_shape and !element.value_shape().empty())
   {
     throw std::runtime_error("Blocked finite elements can be constructed only "
                              "from scalar base elements.");
   }
 
-  if (symmetric) // Consistency check for symmetric elements
+  if (symmetric)
   {
-    if (!value_shape)
+    if (!value_shape || _value_shape->size() != 2
+        || (_value_shape.value()[0] != _value_shape.value()[1]))
     {
       throw std::runtime_error(
-          "Symmetric elements required value shape to be supplied.");
+          "Symmetric elements require square rank-2 value shape.");
     }
-    // else if (block_shape->size()
-    //          != 2) // See below TODO on symmetric rank-2 tensors
-    // {
-    //   throw std::runtime_error("Symmetric elements must be rank-2.");
-    // }
+
+    // Symmetric rank-2 tensors have block size equal to the number
+    // of unique elements in the symmetric tensor , i.e. dim * (dim + 1) / 2.
+    const int dim = _value_shape.value()[0];
+    _bs = dim * (dim + 1) / 2;
+  }
+  else
+  {
+    _bs = std::accumulate(_value_shape->begin(), _value_shape->end(), 1,
+                          std::multiplies{});
+  }
+
+  _space_dim = _bs * element.dim();
+  if (value_shape)
+  {
+    _sub_elements
+        = std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>(
+            _bs, std::make_shared<FiniteElement<T>>(element));
+  }
+  else
+  {
+    _sub_elements = std::vector<std::shared_ptr<const FiniteElement<T>>>();
   }
 
   std::string family;
