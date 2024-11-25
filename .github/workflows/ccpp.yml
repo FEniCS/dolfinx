@@ -28,11 +28,18 @@ on:
         type: string
 
 jobs:
+  refs:
+    uses: ./fenicsx-refs.yml
+
   lint:
     runs-on: ubuntu-latest
+    needs: refs
     name: Lint
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout DOLFINx
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.refs.outputs.dolfinx_ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -83,6 +90,7 @@ jobs:
       OMPI_MCA_rmaps_base_oversubscribe: true                 # Older OpenMPI
 
     name: Build and test
+    needs: [lint, refs]
     steps:
       - uses: actions/checkout@v4
 
@@ -99,12 +107,13 @@ jobs:
         run: |
           pip install --upgrade -r python/build-requirements.txt
 
+
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git
-          pip install git+https://github.com/FEniCS/basix.git
-          pip install git+https://github.com/FEniCS/ffcx.git
+          pip install git+https://github.com/FEniCS/ufl.git@{{ needs.refs.outputs.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@{{ needs.refs.outputs.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@{{ needs.refs.outputs.ffcx_ref }}
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
@@ -148,7 +157,7 @@ jobs:
 
   build-with-petsc:
     runs-on: ubuntu-latest
-    needs: lint
+    needs: [lint, refs]
     strategy:
       matrix:
         petsc_arch: [linux-gnu-real32-32, linux-gnu-real64-32, linux-gnu-complex64-32, linux-gnu-complex128-32, linux-gnu-real64-64, linux-gnu-complex128-64]
