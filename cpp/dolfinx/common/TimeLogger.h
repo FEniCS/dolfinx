@@ -23,6 +23,8 @@ namespace dolfinx::common
 class TimeLogger
 {
 public:
+  /// @brief Singleton access.
+  /// @return Unique time logger object.
   static TimeLogger& instance();
 
   /// Register timing (for later summary)
