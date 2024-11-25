@@ -155,6 +155,7 @@ public:
   /// Read Function
   /// @param[in] mesh The Mesh that the data is defined on
   /// @param[in] name
+  /// @param[in/out] u The function into which to read data
   /// @param[in] xpath XPath where MeshFunction Grid is stored in file
   void read_function(const mesh::Mesh<double>& mesh, std::string name,
                          fem::Function<double, double>& u,
