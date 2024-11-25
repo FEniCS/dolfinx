@@ -10,12 +10,13 @@ on:
 
 
 jobs:
-  refs:
+  fenicsx-refs:
     uses: ./.github/workflows/fenicsx-refs.yml
 
   build:
     name: Build
     runs-on: ubuntu-latest
+    needs: fenicsx-refs
     if: (github.event.pull_request.head.repo.full_name == github.repository) || github.ref_name == 'main'
     container: fenicsproject/test-env:current-mpich
     env:
