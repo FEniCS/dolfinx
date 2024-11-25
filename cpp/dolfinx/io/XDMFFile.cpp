@@ -302,11 +302,10 @@ void XDMFFile::read_function(const mesh::Mesh<double>& mesh, std::string name,
                              std::string xpath)
 {
   /*
-   *  This is the main function that I implemented so far. As the name says,
-   *  it is supposed to read a function from file. This function closely
+   *  This routine reads a function from file. The implementation closely
    *  follows `XDMFFile::read_meshtags` below.
    *
-   *  For reference, I am reading an xdmf file whose header is
+   *  For reference, we are reading an xdmf file whose header is akin to
    *
    *  <Xdmf Version="3.0">
    *    <Domain>
@@ -327,12 +326,11 @@ void XDMFFile::read_function(const mesh::Mesh<double>& mesh, std::string name,
    *  </Domain>
    *  </Xdmf>
    *
-   *  and that I generated saving a vtu file from Paraview and converting it to
-   *  xdmf with meshio.
+   *  and that was generated saving a vtu file from Paraview and converting it
+   *  to xdmf with meshio.
    *
    *  The goal for now is to read a P1 function, so the degrees of freedom are
-   *  the vertexes of the mesh. This is different from the meshtags I am used to
-   *  in that meshtags are cell data, not point data.
+   *  the vertexes of the mesh.
    */
   spdlog::info("XDMF read function ({})", name);
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
@@ -349,15 +347,14 @@ void XDMFFile::read_function(const mesh::Mesh<double>& mesh, std::string name,
       = xdmf_utils::get_dataset<double>(_comm.comm(), values_data_node, _h5_id);
 
   /*
-   * Similarly, reading the cell type would read "hexahedron", so I set this
+   * Reading the cell type would read "hexahedron", so we set this
    * manually to "point" instead.
    */
   mesh::CellType cell_type = mesh::CellType::point;
 
   /*
    * The `entities1` vector contains the global indexes of the entities
-   * [aka points] that this process owns. I used the local_range to choose
-   * the correct values, which however might not be correct after all.
+   * [aka points] that this process owns.
    */
   std::int64_t num_xnodes = mesh.geometry().index_map()->size_global();
   auto range
@@ -373,11 +370,7 @@ void XDMFFile::read_function(const mesh::Mesh<double>& mesh, std::string name,
       const std::int64_t,
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
       entities_span(entities1.data(), shape);
-  /*
-   * This call is analogous to the one in `read_meshtags` except that I
-   * had to make the function `distribute_entity_data` a template because
-   * it read only integers but I want to read doubles instead.
-   */
+
   std::pair<std::vector<std::int32_t>, std::vector<double>> entities_values
       = xdmf_utils::distribute_entity_data<double>(
           *mesh.topology(), mesh.geometry().input_global_indices(),
@@ -414,7 +407,7 @@ void XDMFFile::read_function(const mesh::Mesh<double>& mesh, std::string name,
   }
 
   /*
-   * After the data is read and distributed, I just need to place the
+   * After the data is read and distributed, we need to place the
    * retrieved values in the correct position in the function's array,
    * reading values and positions from `entities_values`.
    */
