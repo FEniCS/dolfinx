@@ -333,7 +333,8 @@ template void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>&,
                                        std::string, std::string);
 /// @endcond
 //-----------------------------------------------------------------------------
-mesh::MeshTags<std::int32_t>
+template <typename T>
+mesh::MeshTags<T>
 XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
                         std::optional<std::string> attribute_name,
                         std::string xpath)
@@ -365,8 +366,8 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
     else
       values_data_node = attribute_node.child("DataItem");
   }
-  const std::vector values = xdmf_utils::get_dataset<std::int32_t>(
-      _comm.comm(), values_data_node, _h5_id);
+  const std::vector values
+      = xdmf_utils::get_dataset<T>(_comm.comm(), values_data_node, _h5_id);
 
   const std::pair<std::string, int> cell_type_str
       = xdmf_utils::get_cell_type(grid_node.child("Topology"));
@@ -380,8 +381,8 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
       const std::int64_t,
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
       entities_span(entities1.data(), eshape);
-  std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-      entities_values = xdmf_utils::distribute_entity_data<std::int32_t>(
+  std::pair<std::vector<std::int32_t>, std::vector<T>> entities_values
+      = xdmf_utils::distribute_entity_data<T>(
           *mesh.topology(), mesh.geometry().input_global_indices(),
           mesh.geometry().index_map()->size_global(),
           mesh.geometry().cmap().create_dof_layout(), mesh.geometry().dofmap(),
@@ -397,11 +398,21 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
                                       num_vertices_per_entity);
   mesh::MeshTags meshtags = mesh::create_meshtags(
       mesh.topology(), mesh::cell_dim(cell_type), entities_adj,
-      std::span<const std::int32_t>(entities_values.second));
+      std::span<const T>(entities_values.second));
   meshtags.name = name;
 
   return meshtags;
 }
+//-----------------------------------------------------------------------------
+// Instantiation for different types
+/// @cond
+template mesh::MeshTags<std::int32_t>
+XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
+                        std::string attribute_name, std::string xpath);
+template mesh::MeshTags<double>
+XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
+                        std::string attribute_name, std::string xpath);
+/// @endcond
 //-----------------------------------------------------------------------------
 std::pair<mesh::CellType, int> XDMFFile::read_cell_type(std::string grid_name,
                                                         std::string xpath)
