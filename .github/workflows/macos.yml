@@ -30,7 +30,8 @@ jobs:
 
       - name: Install Homebrew dependencies
         run: |
-          brew install adios2 boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml spdlog # FEniCS
+          brew unlink pkg-config@0.29.2 # Can be removed once - https://github.com/actions/runner-images/pull/11015
+          brew install adios2 boost cmake hdf5-mpi make ninja open-mpi pkgconf pugixml spdlog # FEniCS
           brew install bison flex gfortran # PETSc
 
       - name: Install Python dependencies (petsc4py)
@@ -87,7 +88,7 @@ jobs:
         working-directory: dolfinx
         run: |
           cd build/test
-          ctest -V --output-on-failure -R unittests
+          mpiexec -np 1 ctest -V --output-on-failure -R unittests
       - name: Run C++ unit tests (MPI)
         working-directory: dolfinx
         run: |
@@ -102,15 +103,15 @@ jobs:
 
       - name: Basic test
         run: |
-          python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
-          mpirun -np 2 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+          mpiexec -np 1 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+          mpiexec -np 2 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
 
       - name: Run Python unit tests (serial)
         working-directory: dolfinx
         run: |
           python -m pip install pytest-xdist
-          python3 -m pytest -n=auto --durations=50 python/test/unit/
+          mpiexec -np 1 python3 -m pytest -n=auto --durations=50 python/test/unit/
       - name: Run Python unit tests (MPI, np=3)
         working-directory: dolfinx
         run: |
-          mpirun -np 3 python3 -m pytest python/test/unit/
+          mpiexec -np 3 python3 -m pytest python/test/unit/

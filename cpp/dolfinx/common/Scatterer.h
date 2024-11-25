@@ -25,9 +25,9 @@ namespace dolfinx::common
 /// @brief A Scatterer supports the MPI scattering and gathering of data
 /// that is associated with a common::IndexMap.
 ///
-/// Scatter and gather operations uses MPI neighbourhood collectives.
-/// The implementation is designed is for sparse communication patterns,
-/// as it typical of patterns based on and IndexMap.
+/// Scatter and gather operations use MPI neighbourhood collectives.
+/// The implementation is designed for sparse communication patterns,
+/// as it typical of patterns based on an IndexMap.
 template <class Allocator = std::allocator<std::int32_t>>
 class Scatterer
 {

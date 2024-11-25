@@ -99,3 +99,42 @@ def test_3d(tempdir, cell_type, encoding):
     num_facets = int(tree.findall(".//Grid[@Name='facets']/Topology")[0].get("NumberOfElements"))
     assert num_lines == lines_local
     assert num_facets == facets_local
+
+
+@pytest.mark.parametrize("cell_type", celltypes_3D)
+@pytest.mark.parametrize("encoding", encodings)
+def test_read_named_meshtags(tempdir, cell_type, encoding):
+    domain_value = 1
+    material_value = 2
+
+    filename = Path(tempdir, "named_meshtags.xdmf")
+    comm = MPI.COMM_WORLD
+    mesh = create_unit_cube(comm, 4, 4, 4, cell_type)
+
+    indices = np.arange(mesh.topology.index_map(3).size_local)
+    domain_values = np.full(indices.shape, domain_value, dtype=np.int32)
+    mt_domains = meshtags(mesh, 3, indices, domain_values)
+    mt_domains.name = "domain"
+
+    material_values = np.full(indices.shape, material_value, dtype=np.int32)
+    mt_materials = meshtags(mesh, 3, indices, material_values)
+    mt_materials.name = "material"
+
+    with XDMFFile(comm, filename, "w", encoding=encoding) as file:
+        file.write_mesh(mesh)
+        file.write_meshtags(mt_domains, mesh.geometry)
+        file.write_meshtags(mt_materials, mesh.geometry)
+
+    with XDMFFile(comm, filename, "r", encoding=encoding) as file:
+        mesh_in = file.read_mesh()
+        tdim = mesh_in.topology.dim
+        mesh_in.topology.create_connectivity(1, tdim)
+
+        mt_first_in = file.read_meshtags(mesh_in, "material")
+        assert all(v == material_value for v in mt_first_in.values)
+
+        mt_domains_in = file.read_meshtags(mesh_in, "domain")
+        assert all(v == domain_value for v in mt_domains_in.values)
+
+        mt_materials_in = file.read_meshtags(mesh_in, "material")
+        assert all(v == material_value for v in mt_materials_in.values)

@@ -37,13 +37,14 @@ add_executable(
   vector.cpp
   matrix.cpp
   io.cpp
+  common/CIFailure.cpp
   common/sub_systems_manager.cpp
   common/index_map.cpp
   common/sort.cpp
   fem/functionspace.cpp
   mesh/distributed_mesh.cpp
   mesh/generation.cpp
-  common/CIFailure.cpp
+  mesh/read_named_meshtags.cpp
   mesh/refinement/interval.cpp
   mesh/refinement/option.cpp
   mesh/refinement/rectangle.cpp
