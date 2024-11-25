@@ -109,9 +109,8 @@ FiniteElement<T>::FiniteElement(
                              "from scalar base elements.");
   }
 
-  if (symmetric)
-  {
-    if (!value_shape || _value_shape->size() != 2
+  if (symmetric && value_shape){
+    if (_value_shape->size() != 2
         || (_value_shape.value()[0] != _value_shape.value()[1]))
     {
       throw std::runtime_error(
@@ -123,10 +122,14 @@ FiniteElement<T>::FiniteElement(
     const int dim = _value_shape.value()[0];
     _bs = dim * (dim + 1) / 2;
   }
-  else
+  else if (value_shape)
   {
     _bs = std::accumulate(_value_shape->begin(), _value_shape->end(), 1,
                           std::multiplies{});
+  }
+  else
+  {
+    _bs = 1;
   }
 
   _space_dim = _bs * element.dim();
