@@ -29,7 +29,7 @@ on:
 
 jobs:
   refs:
-    uses: ./fenicsx-refs.yml
+    uses: ./.github/workflows/fenicsx-refs.yml
 
   lint:
     runs-on: ubuntu-latest
