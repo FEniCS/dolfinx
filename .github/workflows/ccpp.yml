@@ -28,12 +28,11 @@ on:
         type: string
 
 jobs:
-  refs:
+  fenicsx-refs:
     uses: ./.github/workflows/fenicsx-refs.yml
 
   lint:
     runs-on: ubuntu-latest
-    needs: refs
     name: Lint
     steps:
       - name: Checkout DOLFINx
@@ -80,7 +79,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    needs: [refs, lint]
+    needs: [fenicsx-refs, lint]
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
@@ -104,13 +103,12 @@ jobs:
         run: |
           pip install --upgrade -r python/build-requirements.txt
 
-
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/fenics/ufl.git@${{ needs.refs.outputs.ufl_ref }}
-          pip install git+https://github.com/fenics/basix.git@${{ needs.refs.outputs.basix_ref }}
-          pip install git+https://github.com/fenics/ffcx.git@${{ needs.refs.outputs.ffcx_ref }}
+          pip install git+https://github.com/fenics/ufl.git@${{ needs.fenicsx-refs.outputs.ufl_ref }}
+          pip install git+https://github.com/fenics/basix.git@${{ needs.fenicsx-refs.outputs.basix_ref }}
+          pip install git+https://github.com/fenics/ffcx.git@${{ needs.fenicsx-refs.outputs.ffcx_ref }}
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
@@ -154,6 +152,7 @@ jobs:
 
   build-with-petsc:
     runs-on: ubuntu-latest
+    needs: [fenicsx-refs, lint]
     strategy:
       matrix:
         petsc_arch: [linux-gnu-real32-32, linux-gnu-real64-32, linux-gnu-complex64-32, linux-gnu-complex128-32, linux-gnu-real64-64, linux-gnu-complex128-64]
@@ -177,9 +176,9 @@ jobs:
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git@${{ needs.refs.outputs.ufl_ref }}
-          pip install git+https://github.com/FEniCS/basix.git@${{ needs.refs.outputs.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@${{ needs.refs.outputs.ffcx_ref }}
+          pip install git+https://github.com/FEniCS/ufl.git@${{ needs.fenicsx-refs.outputs.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@${{ needs.fenicsx-refs.outputs.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ needs.fenicsx-refs.outputs.ffcx_ref }}
 
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
@@ -241,7 +240,7 @@ jobs:
 
   build-and-publish-docs:
     runs-on: ubuntu-latest
-    needs: [refs, lint]
+    needs: [fenicsx-refs, lint]
     container: "ghcr.io/fenics/test-env:current-openmpi"
     env:
       PETSC_ARCH: linux-gnu-real64-32
@@ -256,9 +255,9 @@ jobs:
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git@${{ needs.refs.outputs.ufl_ref }}
-          pip install git+https://github.com/FEniCS/basix.git@${{ needs.refs.outputs.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@${{ needs.refs.outputs.ffcx_ref }}
+          pip install git+https://github.com/FEniCS/ufl.git@${{ needs.fenicsx-refs.outputs.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@${{ needs.fenicsx-refs.outputs.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ needs.fenicsx-refs.outputs.ffcx_ref }}
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
