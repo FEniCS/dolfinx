@@ -8,7 +8,7 @@ on:
     inputs:
       dolfinx_ref:
         description: "dolfinx git ref to checkout"
-        default: ""
+        default: "main"
         type: string
 
       build_fenicsx_stack:
@@ -18,24 +18,24 @@ on:
 
       basix_ref:
         description: "basix git ref to checkout"
-        default: ""
+        default: "main"
         type: string
 
       ufl_ref:
         description: "ufl git ref to checkout"
-        default: ""
+        default: "main"
         type: string
 
       ffcx_ref:
         description: "ffcx git ref to checkout"
-        default: ""
+        default: "main"
         type: string
 
   workflow_call:
     inputs:
       dolfinx_ref:
         description: "dolfinx git ref to checkout"
-        default: ""
+        default: "main"
         type: string
 
       build_fenicsx_stack:
@@ -45,17 +45,17 @@ on:
 
       basix_ref:
         description: "basix git ref to checkout"
-        default: ""
+        default: "main"
         type: string
 
       ufl_ref:
         description: "ufl git ref to checkout"
-        default: ""
+        default: "main"
         type: string
 
       ffcx_ref:
         description: "ffcx git ref to checkout"
-        default: ""
+        default: "main"
         type: string
 
 jobs:
@@ -67,7 +67,7 @@ jobs:
       CIBW_BUILD: cp39-manylinux_x86_64
       CIBW_BUILD_VERBOSITY: 1
       CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple MAKEFLAGS=-j3
-      CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_28_x86-64:2024-09-16-ab73a4b
+      CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_28_x86_64:2024-09-16-ab73a4b
 
     steps:
       - uses: actions/setup-python@v5
