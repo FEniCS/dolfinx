@@ -27,8 +27,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      
-      # NOTE: Removed pkg-config due to Homebrew linking issue
+
       - name: Install Homebrew dependencies
         run: |
           brew install adios2 boost cmake hdf5-mpi make ninja open-mpi pkgconf pugixml spdlog # FEniCS
