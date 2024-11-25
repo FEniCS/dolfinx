@@ -7,11 +7,11 @@ on:
   workflow_call:
     outputs:
       basix_ref:
-        value: ${{ job.refs.outputs.basix_ref }}
+        value: ${{ jobs.refs.outputs.basix_ref }}
       ufl_ref:
-        value: ${{ job.refs.outputs.ufl_ref }}
+        value: ${{ jobs.refs.outputs.ufl_ref }}
       ffcx_ref:
-        value: ${{ job.refs.outputs.ffcx_ref }}
+        value: ${{ jobs.refs.outputs.ffcx_ref }}
 
 jobs:
   refs:
