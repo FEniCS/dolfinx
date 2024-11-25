@@ -12,8 +12,6 @@ on:
         value: ${{ job.refs.outputs.ufl_ref }}
       ffcx_ref:
         value: ${{ job.refs.outputs.ffcx_ref }}
-      dolfinx_ref:
-        value: ${{ job.refs.outputs.dolfinx_ref }}
 
 jobs:
   refs:
@@ -24,7 +22,6 @@ jobs:
       basix_ref: ${{ steps.outputs.basix_ref }}
       ufl_ref: ${{ steps.outputs.ufl_ref }}
       ffcx_ref: ${{ steps.outputs.ffcx_ref }}
-      dolfinx_ref: ${{ steps.outputs.dolfinx_ref }}
 
     # Make necessary changes to right side of equality
     steps:
@@ -33,6 +30,3 @@ jobs:
           echo "basix_ref=main" >> $GITHUB_OUTPUT
           echo "ufl_ref=main" >> $GITHUB_OUTPUT
           echo "ffcx_ref=main" >> $GITHUB_OUTPUT
-          echo "dolfinx_ref=main" >> $GITHUB_OUTPUT
-
-

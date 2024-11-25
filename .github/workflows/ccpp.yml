@@ -38,8 +38,6 @@ jobs:
     steps:
       - name: Checkout DOLFINx
         uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.refs.outputs.dolfinx_ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
