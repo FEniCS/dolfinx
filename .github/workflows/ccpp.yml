@@ -108,9 +108,9 @@ jobs:
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git@{{ needs.refs.outputs.ufl_ref }}
-          pip install git+https://github.com/FEniCS/basix.git@{{ needs.refs.outputs.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@{{ needs.refs.outputs.ffcx_ref }}
+          pip install git+https://github.com/FEniCS/ufl.git@${{ needs.refs.outputs.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@${{ needs.refs.outputs.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ needs.refs.outputs.ffcx_ref }}
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
@@ -177,9 +177,9 @@ jobs:
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git
-          pip install git+https://github.com/FEniCS/basix.git
-          pip install git+https://github.com/FEniCS/ffcx.git
+          pip install git+https://github.com/FEniCS/ufl.git@${{ needs.refs.outputs.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@${{ needs.refs.outputs.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ needs.refs.outputs.ffcx_ref }}
 
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
@@ -241,6 +241,7 @@ jobs:
 
   build-and-publish-docs:
     runs-on: ubuntu-latest
+    needs: [refs, lint]
     container: "ghcr.io/fenics/test-env:current-openmpi"
     env:
       PETSC_ARCH: linux-gnu-real64-32
@@ -255,9 +256,9 @@ jobs:
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git
-          pip install git+https://github.com/FEniCS/basix.git
-          pip install git+https://github.com/FEniCS/ffcx.git
+          pip install git+https://github.com/FEniCS/ufl.git@${{ needs.refs.outputs.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@${{ needs.refs.outputs.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ needs.refs.outputs.ffcx_ref }}
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
