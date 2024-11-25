@@ -173,7 +173,7 @@ jobs:
         if: github.event_name != 'workflow_dispatch'
         run: |
           pip install git+https://github.com/FEniCS/ufl.git
-          pip install git+https://github.com/FEniCS/basix.git
+          pip install git+https://github.com/FEniCS/basix.git@michal/symmetry-value-shape
           pip install git+https://github.com/FEniCS/ffcx.git
 
       - name: Install FEniCS Python components
@@ -251,7 +251,7 @@ jobs:
         if: github.event_name != 'workflow_dispatch'
         run: |
           pip install git+https://github.com/FEniCS/ufl.git
-          pip install git+https://github.com/FEniCS/basix.git
+          pip install git+https://github.com/FEniCS/basix.git@michal/symmetry-value-shape
           pip install git+https://github.com/FEniCS/ffcx.git
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
