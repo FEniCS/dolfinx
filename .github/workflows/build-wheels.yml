@@ -67,10 +67,12 @@ jobs:
       CIBW_BUILD: cp39-manylinux_x86_64
       CIBW_BUILD_VERBOSITY: 1
       CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple MAKEFLAGS=-j3
-      CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_28_aarch64:2024-09-16-ab73a4b
+      CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_28_x86-64:2024-09-16-ab73a4b
 
     steps:
       - uses: actions/setup-python@v5
+        with:
+          version: 3.12
 
       - name: Install Python dependencies
         run: python -m pip install cibuildwheel simple503 wheel
