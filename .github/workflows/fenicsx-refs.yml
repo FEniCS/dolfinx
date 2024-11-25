@@ -28,8 +28,8 @@ jobs:
 
     # Make necessary changes to right side of equality
     steps:
-      name: Set FEniCSx component git refs
-      - run: |
+      - name: Set FEniCSx component git refs
+        run: |
           echo "basix_ref=main" >> $GITHUB_OUTPUT
           echo "ufl_ref=main" >> $GITHUB_OUTPUT
           echo "ffcx_ref=main" >> $GITHUB_OUTPUT
