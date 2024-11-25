@@ -19,13 +19,14 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      basix_ref: ${{ steps.outputs.basix_ref }}
-      ufl_ref: ${{ steps.outputs.ufl_ref }}
-      ffcx_ref: ${{ steps.outputs.ffcx_ref }}
+      basix_ref: ${{ steps.refs.outputs.basix_ref }}
+      ufl_ref: ${{ steps.refs.outputs.ufl_ref }}
+      ffcx_ref: ${{ steps.refs.outputs.ffcx_ref }}
 
     # Make necessary changes to right side of equality
     steps:
       - name: Set FEniCSx component git refs
+        id: refs
         run: |
           echo "basix_ref=main" >> $GITHUB_OUTPUT
           echo "ufl_ref=main" >> $GITHUB_OUTPUT
