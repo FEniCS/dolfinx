@@ -408,10 +408,12 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
 /// @cond
 template mesh::MeshTags<std::int32_t>
 XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
-                        std::string attribute_name, std::string xpath);
+                        std::optional<std::string> attribute_name,
+                        std::string xpath);
 template mesh::MeshTags<double>
 XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
-                        std::string attribute_name, std::string xpath);
+                        std::optional<std::string> attribute_name,
+                        std::string xpath);
 /// @endcond
 //-----------------------------------------------------------------------------
 std::pair<mesh::CellType, int> XDMFFile::read_cell_type(std::string grid_name,
