@@ -156,9 +156,10 @@ public:
   /// @param[in] mesh The Mesh that the data is defined on
   /// @param[in] name
   /// @param[out] u The function into which to read data
+  /// @param[in] function_name The (optinal) name of the function to read from file
   /// @param[in] xpath XPath where MeshFunction Grid is stored in file
   void read_function(const mesh::Mesh<double>& mesh, std::string name,
-                         fem::Function<double, double>& u,
+                         fem::Function<double, double>& u, std::optional<std::string> function_name,
                          std::string xpath = "/Xdmf/Domain");
 
   /// Write MeshTags

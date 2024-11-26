@@ -299,6 +299,7 @@ XDMFFile::write_function(const fem::Function<std::complex<double>, double>&,
 //-----------------------------------------------------------------------------
 void XDMFFile::read_function(const mesh::Mesh<double>& mesh, std::string name,
                              fem::Function<double, double>& u,
+                             std::optional<std::string> function_name,
                              std::string xpath)
 {
   /*
@@ -343,6 +344,20 @@ void XDMFFile::read_function(const mesh::Mesh<double>& mesh, std::string name,
 
   pugi::xml_node values_data_node
       = grid_node.child("Attribute").child("DataItem");
+  if (function_name)
+  {
+    // Search for a child that contains an attribute with the requested name
+    pugi::xml_node function_node = grid_node.find_child(
+        [fun_name = *function_name](auto n)
+        { return n.attribute("Name").value() == fun_name; });
+    if (!function_node)
+    {
+      throw std::runtime_error("Function with name '" + *function_name
+                               + "' not found.");
+    }
+    else
+      values_data_node = function_node.child("DataItem");
+  }
   const std::vector values
       = xdmf_utils::get_dataset<double>(_comm.comm(), values_data_node, _h5_id);
 
