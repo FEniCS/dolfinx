@@ -75,7 +75,7 @@ jobs:
           python-version: 3.12
 
       - name: Install Python dependencies
-        run: python -m pip install cibuildwheel simple503 build
+        run: python -m pip install cibuildwheel simple503
 
       - name: Checkout Basix
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
@@ -87,9 +87,8 @@ jobs:
 
       - name: Build Basix wheel
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
-        working-directory: basix
         run: |
-          python -m cibuildwheel --output-dir ../wheelhouse .
+          python -m cibuildwheel --output-dir wheelhouse/ basix/
 
       - name: Checkout UFL
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
@@ -101,8 +100,7 @@ jobs:
 
       - name: Build UFL wheel
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
-        working-directory: ufl
-        run: python -m build --outdir wheelhouse/ .
+        run: python -m cibuildwheel --output-dir wheelhouse/ ufl/
 
       - name: Checkout FFCx
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
@@ -114,8 +112,7 @@ jobs:
 
       - name: Build FFCx wheel
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
-        working-directory: ffcx
-        run: python -m build --outdir wheelhouse/ .
+        run: python -m cibuildwheel --output-dir wheelhouse/ ffcx/
 
       - name: Make temporary simple503 repository
         run: |
@@ -137,7 +134,7 @@ jobs:
       # fenics-ffcx and fenics-basix are required by DOLFINx C++ build
       # mpi4py and petsc4py are build_requirements of DOLFINx Python
       - name: Build DOLFINx wheel
-        run: python -m cibuildwheel --output-dir wheelhouse dolfinx/python
+        run: python -m cibuildwheel --output-dir wheelhouse/ dolfinx/python
         env:
           CIBW_BEFORE_BUILD: . /etc/profile && dnf -y update && dnf install -y dnf-plugins-core && dnf install -y epel-release && /usr/bin/crb enable && dnf -y update && dnf -y install boost-devel boost-program-options cmake hdf5-mpich-devel mpich-devel openblas-devel pugixml-devel spdlog-devel && module load mpi/mpich-$(arch) && python -m pip -v install --prefer-binary fenics-ffcx>=0.10.0.dev0 fenics-basix>=0.10.0.dev0 fenics-ufl>=0.10.0.dev0 && python -m pip -v install --prefer-binary mpi4py -i https://pypi.anaconda.org/mpi4py/simple && /usr/bin/cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) && /usr/bin/cmake --build build-dir && /usr/bin/cmake --install build-dir
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} && auditwheel repair -w {dest_dir} {wheel}
