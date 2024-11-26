@@ -30,7 +30,8 @@ jobs:
 
       - name: Install Homebrew dependencies
         run: |
-          brew install adios2 boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml spdlog # FEniCS
+          brew unlink pkg-config@0.29.2 # Can be removed once - https://github.com/actions/runner-images/pull/11015
+          brew install adios2 boost cmake hdf5-mpi make ninja open-mpi pkgconf pugixml spdlog # FEniCS
           brew install bison flex gfortran # PETSc
 
       - name: Install Python dependencies (petsc4py)
