@@ -109,7 +109,8 @@ FiniteElement<T>::FiniteElement(
                              "from scalar base elements.");
   }
 
-  if (symmetric && value_shape){
+  if (symmetric && value_shape)
+  {
     if (_value_shape->size() != 2
         || (_value_shape.value()[0] != _value_shape.value()[1]))
     {
