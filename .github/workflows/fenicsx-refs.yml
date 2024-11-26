@@ -1,0 +1,33 @@
+name: Set FEniCSx component git refs
+
+# Developers can set these refs to propagate a consistent set of git refs
+# across all workflows
+
+on:
+  workflow_call:
+    outputs:
+      basix_ref:
+        value: ${{ jobs.fenicsx-refs.outputs.basix_ref }}
+      ufl_ref:
+        value: ${{ jobs.fenicsx-refs.outputs.ufl_ref }}
+      ffcx_ref:
+        value: ${{ jobs.fenicsx-refs.outputs.ffcx_ref }}
+
+jobs:
+  fenicsx-refs:
+    name: Set FEniCSx component git refs
+    runs-on: ubuntu-latest
+
+    outputs:
+      basix_ref: ${{ steps.fenicsx-refs.outputs.basix_ref }}
+      ufl_ref: ${{ steps.fenicsx-refs.outputs.ufl_ref }}
+      ffcx_ref: ${{ steps.fenicsx-refs.outputs.ffcx_ref }}
+
+    # Make necessary changes to right side of equality
+    steps:
+      - name: Set FEniCSx component git refs
+        id: fenicsx-refs
+        run: |
+          echo "basix_ref=main" >> $GITHUB_OUTPUT
+          echo "ufl_ref=main" >> $GITHUB_OUTPUT
+          echo "ffcx_ref=main" >> $GITHUB_OUTPUT
