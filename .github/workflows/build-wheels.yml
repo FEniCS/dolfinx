@@ -67,7 +67,7 @@ jobs:
       CIBW_BUILD: cp39-manylinux_x86_64
       CIBW_BUILD_VERBOSITY: 1
       CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple MAKEFLAGS=-j3
-      CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_28_x86_64:2024-09-16-ab73a4b
+      CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_34_x86_64:2024-11-24-a3012f3
 
     steps:
       - uses: actions/setup-python@v5
