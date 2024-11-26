@@ -140,9 +140,10 @@ jobs:
         run: |
           python -m cibuildwheel --output-dir wheelhouse/ dolfinx/python
         env:
-          CIBW_BEFORE_BUILD: . /etc/profile && dnf -y update && dnf install -y dnf-plugins-core && dnf install -y epel-release && /usr/bin/crb enable && dnf -y update && dnf -y install boost-devel boost-program-options cmake hdf5-mpich-devel mpich-devel openblas-devel pugixml-devel spdlog-devel && module load mpi/mpich-$(arch) && python -m pip -v install --prefer-binary fenics-ffcx>=0.10.0.dev0 fenics-basix>=0.10.0.dev0 fenics-ufl>=0.10.0.dev0 && python -m pip -v install --prefer-binary mpi4py -i https://pypi.anaconda.org/mpi4py/simple && /usr/bin/cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) && /usr/bin/cmake --build build-dir && /usr/bin/cmake --install build-dir
+          CIBW_BEFORE_BUILD: . /etc/profile && dnf -y update && dnf install -y dnf-plugins-core && dnf install -y epel-release && /usr/bin/crb enable && dnf -y update && dnf -y install boost-devel boost-program-options cmake hdf5-mpich-devel mpich-devel openblas-devel pugixml-devel spdlog-devel && module load mpi/mpich-$(arch) && python -m pip -v install --prefer-binary fenics-ffcx>=0.10.0.dev0 fenics-basix>=0.10.0.dev0 fenics-ufl>=0.10.0.dev0 && python -m pip -v install --prefer-binary mpi4py scikit-build-core[pyproject] nanobind -i https://pypi.anaconda.org/mpi4py/simple && /usr/bin/cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) && /usr/bin/cmake --build build-dir && /usr/bin/cmake --install build-dir
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} && auditwheel repair -w {dest_dir} {wheel}
           CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple MAKEFLAGS=-j3 LD_LIBRARY_PATH=/usr/lib64/mpich/lib
+          CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
 
       - name: Update temporary simple503 repository
         run: |
