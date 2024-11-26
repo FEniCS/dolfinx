@@ -82,6 +82,32 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
   return _extract_sub_element(*sub_element, sub_component);
 }
 
+int _compute_block_size(std::optional<std::vector<std::size_t>> value_shape,
+                        bool symmetric)
+{
+  if (symmetric && value_shape)
+  {
+    if (value_shape->size() != 2
+        || (value_shape.value()[0] != value_shape.value()[1]))
+    {
+      throw std::runtime_error(
+          "Symmetric elements require square rank-2 value shape.");
+    }
+
+    const int dim = value_shape.value()[0];
+    return dim * (dim + 1) / 2;
+  }
+  else if (value_shape)
+  {
+    return std::accumulate(value_shape->begin(), value_shape->end(), 1,
+                           std::multiplies{});
+  }
+  else
+  {
+    return 1;
+  }
+}
+
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -108,31 +134,7 @@ FiniteElement<T>::FiniteElement(
     throw std::runtime_error("Blocked finite elements can be constructed only "
                              "from scalar base elements.");
   }
-
-  if (symmetric && value_shape)
-  {
-    if (_value_shape->size() != 2
-        || (_value_shape.value()[0] != _value_shape.value()[1]))
-    {
-      throw std::runtime_error(
-          "Symmetric elements require square rank-2 value shape.");
-    }
-
-    // Symmetric rank-2 tensors have block size equal to the number
-    // of unique elements in the symmetric tensor , i.e. dim * (dim + 1) / 2.
-    const int dim = _value_shape.value()[0];
-    _bs = dim * (dim + 1) / 2;
-  }
-  else if (value_shape)
-  {
-    _bs = std::accumulate(_value_shape->begin(), _value_shape->end(), 1,
-                          std::multiplies{});
-  }
-  else
-  {
-    _bs = 1;
-  }
-
+  _bs = _compute_block_size(value_shape, symmetric);
   _space_dim = _bs * element.dim();
   if (value_shape)
   {
@@ -141,9 +143,7 @@ FiniteElement<T>::FiniteElement(
             _bs, std::make_shared<FiniteElement<T>>(element));
   }
   else
-  {
-    _sub_elements = std::vector<std::shared_ptr<const FiniteElement<T>>>();
-  }
+    _sub_elements = {};
 
   std::string family;
   switch (_element->family())
@@ -233,22 +233,16 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
                                 std::array<std::size_t, 2> pshape,
                                 std::vector<std::size_t> value_shape,
                                 bool symmetric)
-    : _value_shape(value_shape),
-      _bs(std::accumulate(value_shape.begin(), value_shape.end(), 1,
-                          std::multiplies{})),
-      _cell_type(cell_type),
+    : _value_shape(value_shape), _cell_type(cell_type),
       _signature("Quadrature element " + std::to_string(pshape[0])),
-      _space_dim(_bs * pshape[0]), _sub_elements({}),
-      _reference_value_shape(std::vector<std::size_t>()), _element(nullptr),
-      _symmetric(symmetric), _needs_dof_permutations(false),
+      _sub_elements({}), _reference_value_shape(std::vector<std::size_t>()),
+      _element(nullptr), _symmetric(symmetric), _needs_dof_permutations(false),
       _needs_dof_transformations(false),
       _entity_dofs(mesh::cell_dim(cell_type) + 1),
       _entity_closure_dofs(mesh::cell_dim(cell_type) + 1),
       _points(std::vector<T>(points.begin(), points.end()), pshape)
 {
-  assert(value_shape.size() <= 1);
-  _bs = std::accumulate(value_shape.begin(), value_shape.end(), 1,
-                        std::multiplies{});
+  _bs = _compute_block_size(value_shape, symmetric);
   _space_dim = pshape[0] * _bs;
   _signature += " " + std::to_string(_bs);
 
