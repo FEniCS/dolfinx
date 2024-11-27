@@ -37,8 +37,7 @@ struct BasixElementData
 {
   std::reference_wrapper<const basix::FiniteElement<T>>
       element; ///< Finite element.
-  std::optional<std::vector<std::size_t>> value_shape
-      = std::nullopt;    ///< Value shape. Can only be set for scalar `element`.
+  std::vector<std::size_t> value_shape = {};
   bool symmetry = false; ///< Symmetry. Should ony set set for 2nd-order tensor
                          ///< blocked elements.
 };
@@ -64,12 +63,11 @@ public:
   /// @param[in] value_shape Value shape for blocked element, e.g. `{3}`
   /// for a vector in 3D or `{2, 2}` for a rank-2 tensor in 2D. Can only
   /// be set for blocked scalar `element`. For other elements and scalar
-  /// elements it should be `std::nullopt`.
+  /// elements it should be empty vector.
   /// @param[in] symmetric Is the element a symmetric tensor? Should ony
   /// set for 2nd-order tensor blocked elements.
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
-                std::optional<std::vector<std::size_t>> value_shape
-                = std::nullopt,
+                std::vector<std::size_t> value_shape = {}, int block_size = 1,
                 bool symmetric = false);
 
   /// @brief Create a mixed finite element from Basix finite elements.
@@ -111,7 +109,7 @@ public:
   /// @param[in] symmetric Is the element a symmetric tensor?
   FiniteElement(mesh::CellType cell_type, std::span<const geometry_type> points,
                 std::array<std::size_t, 2> pshape,
-                std::vector<std::size_t> value_shape = {},
+                std::vector<std::size_t> value_shape = {}, int block_size = 1,
                 bool symmetric = false);
 
   /// Copy constructor
@@ -180,14 +178,6 @@ public:
   /// scalar function, 2 for a 2D vector, 9 for a second-order tensor in
   /// 3D, etc. For blocked elements, this function returns the value
   /// size for the full 'blocked' element.
-  ///
-  /// @note The return value of this function is inconsistent with
-  /// value_shape() for rank-2 'symmetric' elements. Due to issues
-  /// elsewhere in the code base, rank-2 symmetric fields have value
-  /// shape `{3}` (2D) or `{6}` rather than `{2, 2}` and `{3, 3}`,
-  /// respectively. For symmetric rank-2 tensors this function returns 4
-  /// for 2D cases and 9 for 3D cases. This inconsistency will be fixed
-  /// in the future.
   ///
   /// @throws Exception is thrown for a mixed element as mixed elements
   /// do not have a value shape.
@@ -838,8 +828,8 @@ private:
   // Value shape. For blocked elements this is larger than
   // _reference_value_shape. For non-blocked 'primal' elements it is
   // equal to _reference_value_shape. For mixed elements, it is
-  // std::nullopt.
-  std::optional<std::vector<std::size_t>> _value_shape;
+  // empty.
+  std::vector<std::size_t> _value_shape;
 
   // Block size for BlockedElements. This gives the number of DOFs
   // co-located at each dof 'point'.
