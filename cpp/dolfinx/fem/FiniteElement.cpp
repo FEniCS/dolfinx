@@ -82,15 +82,40 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
   return _extract_sub_element(*sub_element, sub_component);
 }
 
+int _compute_block_size(std::optional<std::vector<std::size_t>> value_shape,
+                        bool symmetric)
+{
+  if (symmetric && value_shape)
+  {
+    if (value_shape->size() != 2
+        || (value_shape.value()[0] != value_shape.value()[1]))
+    {
+      throw std::runtime_error(
+          "Symmetric elements require square rank-2 value shape.");
+    }
+
+    const int dim = value_shape.value()[0];
+    return dim * (dim + 1) / 2;
+  }
+  else if (value_shape)
+  {
+    return std::accumulate(value_shape->begin(), value_shape->end(), 1,
+                           std::multiplies{});
+  }
+  else
+  {
+    return 1;
+  }
+}
+
 } // namespace
 
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
-                                std::vector<std::size_t> value_shape,
-                                int block_size, bool symmetric)
-    : _value_shape(value_shape.empty() ? element.value_shape() : value_shape),
-      _bs(block_size),
+FiniteElement<T>::FiniteElement(
+    const basix::FiniteElement<T>& element,
+    std::optional<std::vector<std::size_t>> value_shape, bool symmetric)
+    : _value_shape(value_shape.value_or(element.value_shape())),
       _cell_type(mesh::cell_type_from_basix_type(element.cell_type())),
       _reference_value_shape(element.value_shape()),
       _element(std::make_unique<basix::FiniteElement<T>>(element)),
@@ -104,13 +129,14 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
       _entity_dofs(element.entity_dofs()),
       _entity_closure_dofs(element.entity_closure_dofs())
 {
-  if (_bs > 1 and !element.value_shape().empty())
+  if (value_shape and !element.value_shape().empty())
   {
     throw std::runtime_error("Blocked finite elements can be constructed only "
                              "from scalar base elements.");
   }
+  _bs = _compute_block_size(value_shape, symmetric);
   _space_dim = _bs * element.dim();
-  if (_bs > 1)
+  if (value_shape)
   {
     _sub_elements
         = std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>(
@@ -145,10 +171,11 @@ FiniteElement<T>::FiniteElement(std::vector<BasixElementData<T>> elements)
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(
     const std::vector<std::shared_ptr<const FiniteElement<T>>>& elements)
-    : _value_shape({}), _bs(1), _cell_type(elements.front()->cell_type()),
-      _space_dim(-1), _sub_elements(elements),
-      _reference_value_shape(std::nullopt), _symmetric(false),
-      _needs_dof_permutations(false), _needs_dof_transformations(false)
+    : _value_shape(std::nullopt), _bs(1),
+      _cell_type(elements.front()->cell_type()), _space_dim(-1),
+      _sub_elements(elements), _reference_value_shape(std::nullopt),
+      _symmetric(false), _needs_dof_permutations(false),
+      _needs_dof_transformations(false)
 {
   _signature = "Mixed element (";
 
@@ -205,8 +232,8 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
                                 std::span<const geometry_type> points,
                                 std::array<std::size_t, 2> pshape,
                                 std::vector<std::size_t> value_shape,
-                                int block_size, bool symmetric)
-    : _value_shape(value_shape), _bs(block_size), _cell_type(cell_type),
+                                bool symmetric)
+    : _value_shape(value_shape), _cell_type(cell_type),
       _signature("Quadrature element " + std::to_string(pshape[0])),
       _sub_elements({}), _reference_value_shape(std::vector<std::size_t>()),
       _element(nullptr), _symmetric(symmetric), _needs_dof_permutations(false),
@@ -215,6 +242,7 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
       _entity_closure_dofs(mesh::cell_dim(cell_type) + 1),
       _points(std::vector<T>(points.begin(), points.end()), pshape)
 {
+  _bs = _compute_block_size(value_shape, symmetric);
   _space_dim = pshape[0] * _bs;
   _signature += " " + std::to_string(_bs);
 
@@ -272,14 +300,20 @@ int FiniteElement<T>::space_dimension() const noexcept
 template <std::floating_point T>
 int FiniteElement<T>::value_size() const
 {
-  return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
+  if (!_value_shape)
+    throw std::runtime_error("Element does not have a value_shape.");
+
+  return std::accumulate(_value_shape->begin(), _value_shape->end(), 1,
                          std::multiplies{});
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 std::span<const std::size_t> FiniteElement<T>::value_shape() const
 {
-  return _value_shape;
+  if (_value_shape)
+    return *_value_shape;
+  else
+    throw std::runtime_error("Element does not have a value_shape.");
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
