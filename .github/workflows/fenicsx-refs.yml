@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      basix_ref: michal/symmetry-value-shape
+      basix_ref: ${{ steps.fenicsx-refs.outputs.basix_ref }}
       ufl_ref: ${{ steps.fenicsx-refs.outputs.ufl_ref }}
       ffcx_ref: ${{ steps.fenicsx-refs.outputs.ffcx_ref }}
 
