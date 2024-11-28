@@ -843,7 +843,6 @@ private:
 
   // Block size for BlockedElements. This gives the number of DOFs
   // co-located at each dof 'point'.
-  // TODO: add docs for symmetric elements
   int _bs;
 
   // Element cell shape
