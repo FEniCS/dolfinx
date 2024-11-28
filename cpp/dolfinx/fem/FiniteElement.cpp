@@ -85,17 +85,16 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
 int _compute_block_size(std::optional<std::vector<std::size_t>> value_shape,
                         bool symmetric)
 {
-  if (symmetric && value_shape)
+  if (symmetric and value_shape)
   {
     if (value_shape->size() != 2
-        || (value_shape.value()[0] != value_shape.value()[1]))
+        or (value_shape->front() != value_shape->back()))
     {
       throw std::runtime_error(
           "Symmetric elements require square rank-2 value shape.");
     }
 
-    const int dim = value_shape.value()[0];
-    return dim * (dim + 1) / 2;
+    return value_shape->front() * (value_shape->front() + 1) / 2;
   }
   else if (value_shape)
   {
@@ -103,11 +102,8 @@ int _compute_block_size(std::optional<std::vector<std::size_t>> value_shape,
                            std::multiplies{});
   }
   else
-  {
     return 1;
-  }
 }
-
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -116,7 +112,9 @@ FiniteElement<T>::FiniteElement(
     const basix::FiniteElement<T>& element,
     std::optional<std::vector<std::size_t>> value_shape, bool symmetric)
     : _value_shape(value_shape.value_or(element.value_shape())),
+      _bs(_compute_block_size(value_shape, symmetric)),
       _cell_type(mesh::cell_type_from_basix_type(element.cell_type())),
+      _space_dim(_bs * element.dim()),
       _reference_value_shape(element.value_shape()),
       _element(std::make_unique<basix::FiniteElement<T>>(element)),
       _symmetric(symmetric),
@@ -134,8 +132,7 @@ FiniteElement<T>::FiniteElement(
     throw std::runtime_error("Blocked finite elements can be constructed only "
                              "from scalar base elements.");
   }
-  _bs = _compute_block_size(value_shape, symmetric);
-  _space_dim = _bs * element.dim();
+
   if (value_shape)
   {
     _sub_elements
@@ -233,19 +230,18 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
                                 std::array<std::size_t, 2> pshape,
                                 std::vector<std::size_t> value_shape,
                                 bool symmetric)
-    : _value_shape(value_shape), _cell_type(cell_type),
-      _signature("Quadrature element " + std::to_string(pshape[0])),
-      _sub_elements({}), _reference_value_shape(std::vector<std::size_t>()),
-      _element(nullptr), _symmetric(symmetric), _needs_dof_permutations(false),
+    : _value_shape(value_shape),
+      _bs(_compute_block_size(value_shape, symmetric)), _cell_type(cell_type),
+      _signature("Quadrature element " + std::to_string(pshape[0]) + " "
+                 + std::to_string(_bs)),
+      _space_dim(pshape[0] * _bs), _sub_elements({}),
+      _reference_value_shape(std::vector<std::size_t>()), _element(nullptr),
+      _symmetric(symmetric), _needs_dof_permutations(false),
       _needs_dof_transformations(false),
       _entity_dofs(mesh::cell_dim(cell_type) + 1),
       _entity_closure_dofs(mesh::cell_dim(cell_type) + 1),
       _points(std::vector<T>(points.begin(), points.end()), pshape)
 {
-  _bs = _compute_block_size(value_shape, symmetric);
-  _space_dim = pshape[0] * _bs;
-  _signature += " " + std::to_string(_bs);
-
   const int tdim = mesh::cell_dim(cell_type);
   for (int d = 0; d <= tdim; ++d)
   {
@@ -300,11 +296,13 @@ int FiniteElement<T>::space_dimension() const noexcept
 template <std::floating_point T>
 int FiniteElement<T>::value_size() const
 {
-  if (!_value_shape)
+  if (_value_shape)
+  {
+    return std::accumulate(_value_shape->begin(), _value_shape->end(), 1,
+                           std::multiplies{});
+  }
+  else
     throw std::runtime_error("Element does not have a value_shape.");
-
-  return std::accumulate(_value_shape->begin(), _value_shape->end(), 1,
-                         std::multiplies{});
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -414,33 +412,37 @@ FiniteElement<T>::extract_sub_element(const std::vector<int>& component) const
 template <std::floating_point T>
 const basix::FiniteElement<T>& FiniteElement<T>::basix_element() const
 {
-  if (!_element)
+  if (_element)
+    return *_element;
+  else
   {
     throw std::runtime_error("No Basix element available. "
                              "Maybe this is a mixed element?");
   }
-
-  return *_element;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 basix::maps::type FiniteElement<T>::map_type() const
 {
-  if (!_element)
+  if (_element)
+    return _element->map_type();
+  else
   {
     throw std::runtime_error("Cannot element map type - no Basix element "
                              "available. Maybe this is a mixed element?");
   }
-
-  return _element->map_type();
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 bool FiniteElement<T>::map_ident() const noexcept
 {
-  if (!_element && _points.second[0] > 0)
-    // Quadratute elements must use identity map
+  if (!_element
+      and _points.second.front()
+              > 0) // Quadratute elements must use identity map
+  {
     return true;
+  }
+
   assert(_element);
   return _element->map_type() == basix::maps::type::identity;
 }
@@ -448,10 +450,13 @@ bool FiniteElement<T>::map_ident() const noexcept
 template <std::floating_point T>
 bool FiniteElement<T>::interpolation_ident() const noexcept
 {
-  if (!_element && _points.second[0] > 0)
+  if (!_element and _points.second[0] > 0)
     return true;
-  assert(_element);
-  return _element->interpolation_is_identity();
+  else
+  {
+    assert(_element);
+    return _element->interpolation_is_identity();
+  }
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -460,14 +465,17 @@ FiniteElement<T>::interpolation_points() const
 {
   if (_points.second[0] > 0)
     return _points;
-  if (!_element)
+  else
   {
-    throw std::runtime_error(
-        "Cannot get interpolation points - no Basix element available. Maybe "
-        "this is a mixed element?");
-  }
+    if (!_element)
+    {
+      throw std::runtime_error(
+          "Cannot get interpolation points - no Basix element available. Maybe "
+          "this is a mixed element?");
+    }
 
-  return _element->points();
+    return _element->points();
+  }
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -497,8 +505,8 @@ FiniteElement<T>::create_interpolation_operator(const FiniteElement& from) const
 
   if (_bs == 1 or from._bs == 1)
   {
-    // If one of the elements has bs=1, Basix can figure out the size
-    // of the matrix
+    // If one of the elements has bs=1, Basix can figure out the size of
+    // the matrix
     return basix::compute_interpolation_operator<T>(*from._element, *_element);
   }
   else if (_bs > 1 and from._bs == _bs)
