@@ -303,7 +303,7 @@ def test_manual_integration_domains():
     # to give same result as above)
     cell_domains = [
         (domain_id, cell_indices[(cell_values == domain_id) & (cell_indices < cell_map.size_local)])
-        for domain_id in [0, 7]
+        for domain_id in [7, 0]
     ]
 
     # Manually specify exterior facets to integrate over as
