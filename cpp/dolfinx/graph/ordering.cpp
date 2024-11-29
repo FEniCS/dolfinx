@@ -209,10 +209,10 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
   std::vector<std::array<int, 2>> lvp(n);
   for (int i = 0; i < k; ++i)
   {
-    for (int w : lv.links(i))
-      lvp[w][0] = i;
-    for (int w : lu.links(i))
-      lvp[w][1] = k - 1 - i;
+    for (std::size_t w : lv.links(i))
+      (lvp[w])[0] = i;
+    for (std::size_t w : lu.links(i))
+      (lvp[w])[1] = k - 1 - i;
   }
 
   assert(lvp[v][0] == 0 and lvp[v][1] == 0);
