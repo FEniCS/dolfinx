@@ -82,10 +82,9 @@ from mpi4py import MPI
 # +
 import numpy as np
 
-import ufl
 from dolfinx import fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
-from ufl import ds, dx, grad, inner
+from ufl import SpatialCoordinate, TestFunction, TrialFunction, ds, dx, exp, grad, inner, sin
 
 # -
 
@@ -141,11 +140,11 @@ bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 # Next, the variational problem is defined:
 
 # +
-u = ufl.TrialFunction(V)
-v = ufl.TestFunction(V)
-x = ufl.SpatialCoordinate(msh)
-f = 10 * ufl.exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
-g = ufl.sin(5 * x[0])
+u = TrialFunction(V)
+v = TestFunction(V)
+x = SpatialCoordinate(msh)
+f = 10 * exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
+g = sin(5 * x[0])
 a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx + inner(g, v) * ds
 # -
