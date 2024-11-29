@@ -144,11 +144,12 @@ jobs:
             dnf -y update &&
             dnf -y install boost-devel boost-program-options cmake hdf5-devel hdf5-mpich-devel make mpich-devel openblas-devel pugixml-devel spdlog-devel &&
             module load mpi/mpich-$(arch) &&
-            python -m pip -v install --prefer-binary 'fenics-basix>=0.10.0.dev0' &&
-            python -m pip -v install --prefer-binary mpi4py -i https://pypi.anaconda.org/mpi4py/simple &&
+            python -m pip -v install fenics-basix>=0.10.0.dev0 fenics-ffcx fenics-ufl &&
+            python -m pip -v install mpi4py -i https://pypi.anaconda.org/mpi4py/simple &&
             pip -v install scikit-build-core[pyproject] nanobind &&
             /usr/bin/cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) -DHDF5_C_INCLUDE_DIR=/usr/include/mpich-$(arch) -DHDF5_C_LIBRARIES=/usr/lib64/mpich/lib &&
-            /usr/bin/cmake --build build-dir && /usr/bin/cmake --install build-dir
+            /usr/bin/cmake --build build-dir &&
+            /usr/bin/cmake --install build-dir
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} && auditwheel repair -w {dest_dir} {wheel}
           CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple MAKEFLAGS=-j3
           CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
