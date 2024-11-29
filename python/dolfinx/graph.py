@@ -7,7 +7,10 @@
 
 from __future__ import annotations
 
+import typing
+
 import numpy as np
+import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.graph import partitioner
@@ -31,7 +34,10 @@ except ImportError:
 __all__ = ["adjacencylist", "partitioner"]
 
 
-def adjacencylist(data: np.ndarray, offsets=None):
+def adjacencylist(
+    data: typing.Union[npt.NDArray[np.int32], npt.NDArray[np.int64]],
+    offsets: typing.Optional[npt.NDArray[np.int32]] = None,
+):
     """Create an AdjacencyList for int32 or int64 datasets.
 
     Args:

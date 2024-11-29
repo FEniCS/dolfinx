@@ -224,7 +224,7 @@ public:
   /// @param[in] padding Value to pad (extend) the the bounding box of
   /// each entity by.
   BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim,
-                  std::span<const std::int32_t> entities, double padding = 0)
+                  double padding, std::span<const std::int32_t> entities)
       : _tdim(tdim)
   {
     if (tdim < 0 or tdim > mesh.topology()->dim())
@@ -266,7 +266,7 @@ public:
   /// build the bounding box tree for
   /// @param[in] padding Value to pad (extend) the the bounding box of
   /// each entity by.
-  BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim, T padding = 0)
+  BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim, T padding)
       : BoundingBoxTree::BoundingBoxTree(
             mesh, tdim, range(mesh.topology_mutable(), tdim), padding)
   {
