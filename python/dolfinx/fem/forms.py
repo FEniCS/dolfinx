@@ -156,7 +156,7 @@ def get_integration_domains(
                 domains.append((id, integration_entities))
             return [(s[0], np.array(s[1])) for s in domains]
         except AttributeError:
-            return [(s[0], np.array(s[1])) for s in subdomain]  # type: ignore
+            return [(s[0], np.array(s[1])) for s in sorted(subdomain)]  # type: ignore
 
 
 def form_cpp_class(
