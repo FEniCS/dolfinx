@@ -91,7 +91,11 @@ def create_interpolation_data(
     """
     return _PointOwnershipData(
         _create_interpolation_data(
-            V_to.mesh._cpp_object.geometry, V_to.element, V_from.mesh._cpp_object, cells, padding
+            V_to.mesh._cpp_object.geometry,
+            V_to.element._cpp_object,
+            V_from.mesh._cpp_object,
+            cells,
+            padding,
         )
     )
 
