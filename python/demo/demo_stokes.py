@@ -101,7 +101,6 @@ except ModuleNotFoundError:
 
 import numpy as np
 
-import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, fem, la
 from dolfinx.fem import (
@@ -116,7 +115,7 @@ from dolfinx.fem import (
 from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
-from ufl import div, dx, grad, inner
+from ufl import TestFunction, TestFunctions, TrialFunction, TrialFunctions, div, dx, grad, inner
 
 # We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions for
 # locating geometrically subsets of the boundary, and define a function
@@ -181,8 +180,8 @@ bcs = [bc0, bc1]
 
 # +
 # Define variational problem
-(u, p) = ufl.TrialFunction(V), ufl.TrialFunction(Q)
-(v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
+(u, p) = TrialFunction(V), TrialFunction(Q)
+(v, q) = TestFunction(V), TestFunction(Q)
 f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))  # type: ignore
 
 a = form([[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx], [inner(div(u), q) * dx, None]])
@@ -501,8 +500,8 @@ def mixed_direct():
     bcs = [bc0, bc1]
 
     # Define variational problem
-    (u, p) = ufl.TrialFunctions(W)
-    (v, q) = ufl.TestFunctions(W)
+    (u, p) = TrialFunctions(W)
+    (v, q) = TestFunctions(W)
     f = Function(Q)
     a = form((inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx)
     L = form(inner(f, v) * dx)
