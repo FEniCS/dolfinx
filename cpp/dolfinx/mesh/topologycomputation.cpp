@@ -95,7 +95,7 @@ int get_ownership(const U& processes, const V& vertices)
 /// @param[in] num_entities_per_cell Number of entities per cell
 /// @param[in] entity_index Initial numbering for each row in
 /// entity_list
-/// @returns Local indices and index map
+/// @returns Local indices, the index map and shared entities
 std::tuple<std::vector<int>, common::IndexMap, std::vector<std::int32_t>>
 get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
                    std::span<const std::int32_t> entity_list,
@@ -538,10 +538,9 @@ compute_entities_by_key_matching(
 
         std::vector<std::size_t> perm(global_vertices.size());
         std::iota(perm.begin(), perm.end(), 0);
-        std::ranges::sort(perm,
-                          [&global_vertices](std::size_t i0, std::size_t i1) {
-                            return global_vertices[i0] < global_vertices[i1];
-                          });
+        std::ranges::sort(
+            perm, [&global_vertices](std::size_t i0, std::size_t i1)
+            { return global_vertices[i0] < global_vertices[i1]; });
         // For quadrilaterals, the vertex opposite the lowest vertex should
         // be last
         if (entity_type == mesh::CellType::quadrilateral)
@@ -804,13 +803,13 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim,
     cell_lists[i] = {cell_types[i], cells, cell_map};
   }
 
-  auto [d0, d1, im, interprocess_facets] = compute_entities_by_key_matching(
+  auto [d0, d1, im, interprocess_entities] = compute_entities_by_key_matching(
       comm, cell_lists, *vertex_map, entity_type, dim);
 
   return {d0,
           std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(d1)),
           std::make_shared<common::IndexMap>(std::move(im)),
-          std::move(interprocess_facets)};
+          std::move(interprocess_entities)};
 }
 //-----------------------------------------------------------------------------
 std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>

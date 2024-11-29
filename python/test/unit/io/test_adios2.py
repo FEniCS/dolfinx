@@ -13,7 +13,7 @@ import pytest
 
 import ufl
 from basix.ufl import element
-from dolfinx import default_real_type, default_scalar_type
+from dolfinx import default_real_type
 from dolfinx.fem import Function, functionspace
 from dolfinx.graph import adjacencylist
 from dolfinx.mesh import CellType, create_mesh, create_unit_cube, create_unit_square
@@ -39,96 +39,12 @@ def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
 
 
 @pytest.mark.adios2
-class TestFides:
-    @pytest.mark.parametrize("dim", [2, 3])
-    @pytest.mark.parametrize("simplex", [True, False])
-    def test_fides_mesh(self, tempdir, dim, simplex):
-        """Test writing of a single Fides mesh with changing geometry."""
-        from dolfinx.io import FidesWriter
-
-        filename = Path(tempdir, "mesh_fides.bp")
-        mesh = generate_mesh(dim, simplex)
-        with FidesWriter(mesh.comm, filename, mesh) as f:
-            f.write(0.0)
-            mesh.geometry.x[:, 1] += 0.1
-            f.write(0.1)
-
-    @pytest.mark.parametrize("dim", [2, 3])
-    @pytest.mark.parametrize("simplex", [True, False])
-    def test_two_fides_functions(self, tempdir, dim, simplex):
-        """Test saving two functions with Fides."""
-        from dolfinx.io import FidesWriter
-
-        mesh = generate_mesh(dim, simplex)
-        gdim = mesh.geometry.dim
-        v = Function(functionspace(mesh, ("Lagrange", 1, (gdim,))))
-        q = Function(functionspace(mesh, ("Lagrange", 1)))
-        filename = Path(tempdir, "v.bp")
-        with FidesWriter(mesh.comm, filename, [v._cpp_object, q]) as f:
-            f.write(0)
-
-            def vel(x):
-                values = np.zeros((dim, x.shape[1]))
-                values[0] = x[1]
-                values[1] = x[0]
-                return values
-
-            v.interpolate(vel)
-            q.interpolate(lambda x: x[0])
-            f.write(1)
-
-    @pytest.mark.parametrize("dim", [2, 3])
-    @pytest.mark.parametrize("simplex", [True, False])
-    def test_fides_single_function(self, tempdir, dim, simplex):
-        """Test saving a single first order Lagrange functions."""
-        from dolfinx.io import FidesWriter
-
-        mesh = generate_mesh(dim, simplex)
-        v = Function(functionspace(mesh, ("Lagrange", 1)))
-        filename = Path(tempdir, "v.bp")
-        writer = FidesWriter(mesh.comm, filename, v)
-        writer.write(0)
-        writer.close()
-
-    @pytest.mark.parametrize("dim", [2, 3])
-    @pytest.mark.parametrize("simplex", [True, False])
-    def test_fides_function_at_nodes(self, tempdir, dim, simplex):
-        """Test saving P1 functions with Fides (with changing geometry)."""
-        from dolfinx.io import FidesWriter
-
-        mesh = generate_mesh(dim, simplex)
-        gdim = mesh.geometry.dim
-        v = Function(functionspace(mesh, ("Lagrange", 1, (gdim,))), dtype=default_scalar_type)
-        v.name = "v"
-        q = Function(functionspace(mesh, ("Lagrange", 1)))
-        q.name = "q"
-        filename = Path(tempdir, "v.bp")
-        if np.issubdtype(default_scalar_type, np.complexfloating):
-            alpha = 1j
-        else:
-            alpha = 0
-
-        with FidesWriter(mesh.comm, filename, [v, q]) as f:
-            for t in [0.1, 0.5, 1]:
-                # Only change one function
-                q.interpolate(lambda x: t * (x[0] - 0.5) ** 2)
-                f.write(t)
-
-                mesh.geometry.x[:, :2] += 0.1
-                if mesh.geometry.dim == 2:
-                    v.interpolate(lambda x: np.vstack((t * x[0], x[1] + x[1] * alpha)))
-                elif mesh.geometry.dim == 3:
-                    v.interpolate(lambda x: np.vstack((t * x[2], x[0] + x[2] * 2 * alpha, x[1])))
-                f.write(t)
-
-
-@pytest.mark.adios2
 class TestVTX:
     @pytest.mark.skipif(MPI.COMM_WORLD.size > 1, reason="This test should only be run in serial.")
     def test_second_order_vtx(self, tempdir):
         from dolfinx.io import VTXWriter
 
-        filename = Path(tempdir, "mesh_fides.bp")
+        filename = Path(tempdir, "mesh_vtx.bp")
         points = np.array([[0, 0, 0], [1, 0, 0], [0.5, 0, 0]], dtype=default_real_type)
         cells = np.array([[0, 1, 2]], dtype=np.int32)
         domain = ufl.Mesh(element("Lagrange", "interval", 2, shape=(1,), dtype=default_real_type))

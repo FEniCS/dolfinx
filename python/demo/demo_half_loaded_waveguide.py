@@ -52,7 +52,7 @@ try:
         print("This demo requires DOLFINx to be compiled with PETSc enabled.")
         exit(0)
     if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
-        print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
+        print("This solver fails with PETSc and 64-bit integers because of memory errors in MUMPS.")
         # Note: when PETSc.IntType == np.int32, superlu_dist is used
         # rather than MUMPS and does not trigger memory failures.
         exit(0)

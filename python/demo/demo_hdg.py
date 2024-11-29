@@ -112,11 +112,11 @@ k = 3  # Polynomial order
 V = fem.functionspace(msh, ("Discontinuous Lagrange", k))
 Vbar = fem.functionspace(facet_mesh, ("Discontinuous Lagrange", k))
 
-# Trial and test functions
-# Cell space
-u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-# Facet space
-ubar, vbar = ufl.TrialFunction(Vbar), ufl.TestFunction(Vbar)
+# Trial and test functions in mixed space
+W = ufl.MixedFunctionSpace(V, Vbar)
+u, ubar = ufl.TrialFunctions(W)
+v, vbar = ufl.TestFunctions(W)
+
 
 # Define integration measures
 # Cell
@@ -146,31 +146,22 @@ gamma = 16.0 * k**2 / h  # Scaled penalty parameter
 
 x = ufl.SpatialCoordinate(msh)
 c = 1.0 + 0.1 * ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])
-a_00 = fem.form(
+a = (
     inner(c * grad(u), grad(v)) * dx_c
-    - (
-        inner(c * u, dot(grad(v), n)) * ds_c(cell_boundaries)
-        + inner(dot(grad(u), n), c * v) * ds_c(cell_boundaries)
-    )
-    + gamma * inner(c * u, v) * ds_c(cell_boundaries)
+    - inner(c * (u - ubar), dot(grad(v), n)) * ds_c(cell_boundaries)
+    - inner(dot(grad(u), n), c * (v - vbar)) * ds_c(cell_boundaries)
+    + gamma * inner(c * (u - ubar), v - vbar) * ds_c(cell_boundaries)
 )
-a_10 = fem.form(
-    inner(dot(grad(u), n) - gamma * u, c * vbar) * ds_c(cell_boundaries), entity_maps=entity_maps
-)
-a_01 = fem.form(
-    inner(c * ubar, dot(grad(v), n) - gamma * v) * ds_c(cell_boundaries), entity_maps=entity_maps
-)
-a_11 = fem.form(gamma * inner(c * ubar, vbar) * ds_c(cell_boundaries), entity_maps=entity_maps)
 
 # Manufacture a source term
 f = -div(c * grad(u_e(x)))
 
-L_0 = fem.form(inner(f, v) * dx_c)
-L_1 = fem.form(inner(fem.Constant(facet_mesh, dtype(0.0)), vbar) * dx_f)
+L = inner(f, v) * dx_c
+L += inner(fem.Constant(facet_mesh, dtype(0.0)), vbar) * dx_f
 
 # Define block structure
-a = [[a_00, a_01], [a_10, a_11]]
-L = [L_0, L_1]
+a_blocked = dolfinx.fem.form(ufl.extract_blocks(a), entity_maps=entity_maps)
+L_blocked = dolfinx.fem.form(ufl.extract_blocks(L))
 
 # Apply Dirichlet boundary conditions
 # We begin by locating the boundary facets of msh
@@ -185,9 +176,9 @@ dofs = fem.locate_dofs_topological(Vbar, fdim, facet_mesh_boundary_facets)
 bc = fem.dirichletbc(dtype(0.0), dofs, Vbar)
 
 # Assemble the matrix and vector
-A = assemble_matrix_block(a, bcs=[bc])
+A = assemble_matrix_block(a_blocked, bcs=[bc])
 A.assemble()
-b = assemble_vector_block(L, a, bcs=[bc])
+b = assemble_vector_block(L_blocked, a_blocked, bcs=[bc])
 
 # Setup the solver
 ksp = PETSc.KSP().create(msh.comm)

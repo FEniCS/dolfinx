@@ -26,15 +26,18 @@ class KrylovSolver;
 
 namespace nls::petsc
 {
-
-/// This class defines a Newton solver for nonlinear systems of
-/// equations of the form \f$F(x) = 0\f$.
-
+/// @brief A Newton solver for nonlinear systems of equations of the
+/// form \f$F(x) = 0\f$.
+///
+/// It solves \f[ \left. \frac{dF}{dx} \right|_{x} \Delta x = F(x) \f]
+/// with default update \f$x \leftarrow x - \Delta x\f$.
+///
+/// It relies on PETSc for linear algebra backends.
 class NewtonSolver
 {
 public:
-  /// Create nonlinear solver
-  /// @param[in] comm The MPI communicator for the solver
+  /// @brief Create nonlinear solver
+  /// @param[in] comm MPI communicator for the solver
   explicit NewtonSolver(MPI_Comm comm);
 
   /// Move constructor
@@ -52,22 +55,31 @@ public:
   /// Destructor
   ~NewtonSolver();
 
-  /// @brief Set the function for computing the residual and the vector
-  /// to the assemble the residual into.
-  /// @param[in] F Function to compute the residual vector b (x, b)
-  /// @param[in] b The vector to assemble to residual into
+  /// @brief Set the function for computing the residual \f$F(x) = 0\f$
+  /// and the vector to assemble the residual into.
+  /// @param[in] F Function to compute/assemble the residual vector `b`.
+  /// The first argument to the function is the solution vector `x` and
+  /// the second is the vector `b` to assemble into.
+  /// @param[in] b Vector to assemble to residual into.
   void setF(std::function<void(const Vec, Vec)> F, Vec b);
 
-  /// @brief Set the function for computing the Jacobian (dF/dx) and the
-  /// matrix to assemble the residual into.
-  /// @param[in] J Function to compute the Jacobian matrix b (x, A)
-  /// @param[in] Jmat The matrix to assemble the Jacobian into
+  /// @brief Set the function for computing the Jacobian \f$J:=dF/dx\f$
+  /// and the matrix to assemble the Jacobian into.
+  /// @param[in] J Function to compute the Jacobian matrix `Jmat`. The
+  /// first argument to the function is the solution vector `x` and the
+  /// second is the matrix to assemble into.
+  /// @param[in] Jmat Matrix to assemble the Jacobian into.
   void setJ(std::function<void(const Vec, Mat)> J, Mat Jmat);
 
-  /// @brief Set the function for computing the preconditioner matrix
-  /// (optional).
-  /// @param[in] P Function to compute the preconditioner matrix b (x, P)
-  /// @param[in] Pmat The matrix to assemble the preconditioner into
+  /// @brief Set the function for computing the preconditioner matrix.
+  ///
+  /// It is optional to set the preconditioner matrix. By default the
+  /// solver will use the Jacobian matrix.
+  ///
+  /// @param[in] P Function to compute the preconditioner matrix `Pmat`.
+  /// The first argument to the function is the solution vector `x` and
+  /// the second is the matrix to assemble into.
+  /// @param[in] Pmat Matrix to assemble the preconditioner into.
   void setP(std::function<void(const Vec, Mat)> P, Mat Pmat);
 
   /// @brief Get the internal Krylov solver used to solve for the Newton
@@ -88,70 +100,76 @@ public:
 
   /// @brief Set the function that is called before the residual or
   /// Jacobian are computed. It is commonly used to update ghost values.
-  /// @param[in] form The function to call. It takes the latest solution
+  ///
+  /// @param[in] form Function to call. It takes the (latest) solution
   /// vector `x` as an argument.
   void set_form(std::function<void(Vec)> form);
 
   /// @brief Set function that is called at the end of each Newton
   /// iteration to test for convergence.
-  /// @param[in] c The function that tests for convergence
+  /// @param[in] c Function that tests for convergence
   void set_convergence_check(
       std::function<std::pair<double, bool>(const NewtonSolver&, const Vec)> c);
 
-  /// @brief Set function that is called after each Newton iteration to
-  /// update the solution.
+  /// @brief Optional set function that is called after each inner solve for
+  /// the Newton increment to update the solution.
+  ///
+  /// The function `update` takes `this`, the Newton increment `dx`, and
+  /// the vector `x` from the start of the Newton iteration.
+  ///
+  /// By default, the update is x <- x - dx
+  ///
   /// @param[in] update The function that updates the solution
   void set_update(
       std::function<void(const NewtonSolver& solver, const Vec, Vec)> update);
 
-  /// @brief Solve the nonlinear problem \f$`F(x) = 0\f$ for given
-  /// \f$F\f$ and Jacobian \f$\dfrac{\partial F}{\partial x}\f$.
+  /// @brief Solve the nonlinear problem.
   ///
-  /// @param[in,out] x The vector
+  /// @param[in,out] x The solution vector. It should be set the initial
+  /// solution guess.
   /// @return (number of Newton iterations, whether iteration converged)
   std::pair<int, bool> solve(Vec x);
 
-  /// @brief The number of Newton iterations. It can can called by
+  /// @brief Get number of Newton iterations. It can be called by
   /// functions that check for convergence during a solve.
-  /// @return The number of Newton iterations performed
+  /// @return Number of Newton iterations performed.
   int iteration() const;
 
-  /// @brief Get number of Krylov iterations elapsed since solve
-  /// started.
-  /// @return Number of iterations.
+  /// @brief Number of Krylov iterations elapsed since solve started.
+  /// @return Number of Krylov iterations.
   int krylov_iterations() const;
 
   /// @brief Get current residual.
-  /// @return Current residual
+  /// @return Current residual.
   double residual() const;
 
-  /// @brief Return initial residual.
-  /// @return Initial residual
+  /// @brief Get initial residual.
+  /// @return Initial residual.
   double residual0() const;
 
   /// @brief Get MPI communicator.
   MPI_Comm comm() const;
 
-  /// Maximum number of iterations
+  /// @brief Maximum number of iterations.
   int max_it = 50;
 
-  /// Relative tolerance
+  /// @brief Relative convergence tolerance.
   double rtol = 1e-9;
 
-  /// Absolute tolerance
+  /// @brief Absolute convergence tolerance.
   double atol = 1e-10;
 
-  // FIXME: change to string to enum
-  /// Convergence criterion
+  /// @todo change to string to enum.
+  /// @brief Convergence criterion.
   std::string convergence_criterion = "residual";
 
-  /// Monitor convergence
+  /// @brief Monitor convergence.
   bool report = true;
 
-  /// Throw error if solver fails to converge
+  /// @brief Throw error if solver fails to converge.
   bool error_on_nonconvergence = true;
 
-  /// Relaxation parameter
+  /// @brief Relaxation parameter.
   double relaxation_parameter = 1.0;
 
 private:
@@ -185,7 +203,7 @@ private:
                                         const Vec r)>
       _converged;
 
-  // Function to update the solution once convergence is reached
+  // Function to update the solution after inner solve for the Newton increment
   std::function<void(const NewtonSolver& solver, const Vec dx, Vec x)>
       _update_solution;
 
