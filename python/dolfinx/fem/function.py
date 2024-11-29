@@ -18,6 +18,7 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
 from dolfinx.fem import dofmap
+from dolfinx.fem.element import finite_element
 from dolfinx.geometry import PointOwnershipData
 
 if typing.TYPE_CHECKING:
@@ -560,32 +561,6 @@ class ElementMetaData(typing.NamedTuple):
     symmetry: typing.Optional[bool] = None
 
 
-def _create_dolfinx_element(
-    cell_type: _cpp.mesh.CellType,
-    ufl_e: ufl.FiniteElementBase,
-    dtype: np.dtype,
-) -> typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64]:
-    """Create a DOLFINx element from a basix.ufl element."""
-    if np.issubdtype(dtype, np.float32):
-        CppElement = _cpp.fem.FiniteElement_float32
-    elif np.issubdtype(dtype, np.float64):
-        CppElement = _cpp.fem.FiniteElement_float64
-    else:
-        raise ValueError(f"Unsupported dtype: {dtype}")
-
-    if ufl_e.is_mixed:
-        elements = [_create_dolfinx_element(cell_type, e, dtype) for e in ufl_e.sub_elements]
-        return CppElement(elements)
-    elif ufl_e.is_quadrature:
-        return CppElement(
-            cell_type, ufl_e.custom_quadrature()[0], ufl_e.reference_value_shape, ufl_e.is_symmetric
-        )
-    else:
-        basix_e = ufl_e.basix_element._e
-        value_shape = ufl_e.reference_value_shape if ufl_e.block_size > 1 else None
-        return CppElement(basix_e, value_shape, ufl_e.is_symmetric)
-
-
 def functionspace(
     mesh: Mesh,
     element: typing.Union[ufl.FiniteElementBase, ElementMetaData, tuple[str, int, tuple, bool]],
@@ -614,18 +589,18 @@ def functionspace(
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
 
     # Create DOLFINx objects
-    cpp_element = _create_dolfinx_element(mesh.topology.cell_type, ufl_e, dtype)
-    cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, cpp_element)
+    element = finite_element(mesh.topology.cell_type, ufl_e, dtype)
+    cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, element._cpp_object)
 
     assert np.issubdtype(
-        mesh.geometry.x.dtype, cpp_element.dtype
+        mesh.geometry.x.dtype, element.dtype
     ), "Mesh and element dtype are not compatible."
 
     # Initialize the cpp.FunctionSpace
     try:
-        cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, cpp_element, cpp_dofmap)
+        cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, element._cpp_object, cpp_dofmap)
     except TypeError:
-        cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, cpp_element, cpp_dofmap)
+        cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, element._cpp_object, cpp_dofmap)
 
     return FunctionSpace(mesh, ufl_e, cppV)
 

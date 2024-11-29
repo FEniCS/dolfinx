@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Garth N. Wells
+# Copyright (C) 2024 Garth N. Wells and Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -12,6 +12,7 @@ import numpy as np
 import numpy.typing as npt
 
 import basix
+import ufl
 from dolfinx import cpp as _cpp
 
 
@@ -160,3 +161,84 @@ def _(e: basix.finite_element.FiniteElement):
         return CoordinateElement(_cpp.fem.CoordinateElement_float32(e._e))
     except TypeError:
         return CoordinateElement(_cpp.fem.CoordinateElement_float64(e._e))
+
+
+class FiniteElement:
+    _cpp_object: typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64]
+
+    def __init__(self, cpp_object):
+        self._cpp_object = cpp_object
+
+    def __eq__(self, other):
+        return self._cpp_object == other._cpp_object
+
+    @property
+    def dtype(self):
+        return self._cpp_object.dtype
+
+    @property
+    def basix_element(self):
+        return self._cpp_object.basix_element
+
+    @property
+    def num_sub_elements(self):
+        return self._cpp_object.num_sub_elements
+
+    @property
+    def value_shape(self):
+        return self._cpp_object.value_shape
+
+    @property
+    def interpolation_points(self):
+        return self._cpp_object.interpolation_points
+
+    @property
+    def interpolation_ident(self):
+        return self._cpp_object.interpolation_ident
+
+    @property
+    def space_dimension(self):
+        return self._cpp_object.space_dimension
+
+    @property
+    def needs_dof_transformations(self):
+        return self._cpp_object.needs_dof_transformations
+
+    @property
+    def signature(self):
+        return self._cpp_object.signature
+
+    def T_apply(self, x, cell_permutations, dim):
+        self._cpp_object.T_apply(x, cell_permutations, dim)
+
+    def Tt_apply(self, x, cell_permutations, dim):
+        self._cpp_object.Tt_apply(x, cell_permutations, dim)
+
+    def Tt_inv_apply(self, x, cell_permutations, dim):
+        self._cpp_object.Tt_apply(x, cell_permutations, dim)
+
+
+def finite_element(
+    cell_type: _cpp.mesh.CellType,
+    ufl_e: ufl.FiniteElementBase,
+    dtype: np.dtype,
+) -> FiniteElement:
+    """Create a DOLFINx element from a basix.ufl element."""
+    if np.issubdtype(dtype, np.float32):
+        CppElement = _cpp.fem.FiniteElement_float32
+    elif np.issubdtype(dtype, np.float64):
+        CppElement = _cpp.fem.FiniteElement_float64
+    else:
+        raise ValueError(f"Unsupported dtype: {dtype}")
+
+    if ufl_e.is_mixed:
+        elements = [finite_element(cell_type, e, dtype) for e in ufl_e.sub_elements]
+        return CppElement(elements)
+    elif ufl_e.is_quadrature:
+        return CppElement(
+            cell_type, ufl_e.custom_quadrature()[0], ufl_e.reference_value_shape, ufl_e.is_symmetric
+        )
+    else:
+        basix_e = ufl_e.basix_element._e
+        value_shape = ufl_e.reference_value_shape if ufl_e.block_size > 1 else None
+        return FiniteElement(CppElement(basix_e, value_shape, ufl_e.is_symmetric))

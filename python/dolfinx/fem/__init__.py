@@ -32,7 +32,7 @@ from dolfinx.fem.bcs import (
     locate_dofs_topological,
 )
 from dolfinx.fem.dofmap import DofMap
-from dolfinx.fem.element import CoordinateElement, coordinate_element
+from dolfinx.fem.element import CoordinateElement, FiniteElement, coordinate_element, finite_element
 from dolfinx.fem.forms import (
     Form,
     compile_form,
@@ -163,16 +163,6 @@ def compute_integration_domains(
 
 
 __all__ = [
-    "Constant",
-    "CoordinateElement",
-    "DirichletBC",
-    "DofMap",
-    "ElementMetaData",
-    "Expression",
-    "Form",
-    "Function",
-    "FunctionSpace",
-    "IntegralType",
     "apply_lifting",
     "assemble_matrix",
     "assemble_scalar",
@@ -180,18 +170,30 @@ __all__ = [
     "bcs_by_block",
     "compile_form",
     "compute_integration_domains",
+    "Constant",
     "coordinate_element",
+    "CoordinateElement",
     "create_form",
     "create_interpolation_data",
     "create_matrix",
     "create_sparsity_pattern",
     "create_vector",
     "dirichletbc",
+    "DirichletBC",
     "discrete_gradient",
+    "DofMap",
+    "ElementMetaData",
+    "Expression",
     "extract_function_spaces",
-    "form",
+    "finite_element",
+    "FiniteElement",
     "form_cpp_class",
+    "form",
+    "Form",
+    "Function",
     "functionspace",
+    "FunctionSpace",
+    "IntegralType",
     "locate_dofs_geometrical",
     "locate_dofs_topological",
     "set_bc",
