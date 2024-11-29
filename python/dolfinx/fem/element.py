@@ -14,6 +14,7 @@ import numpy.typing as npt
 import basix
 import ufl
 from dolfinx import cpp as _cpp
+import ufl.finiteelement
 
 
 class CoordinateElement:
@@ -220,7 +221,7 @@ class FiniteElement:
 
 def finite_element(
     cell_type: _cpp.mesh.CellType,
-    ufl_e: ufl.FiniteElementBase,
+    ufl_e: ufl.finiteelement,
     dtype: np.dtype,
 ) -> FiniteElement:
     """Create a DOLFINx element from a basix.ufl element."""
