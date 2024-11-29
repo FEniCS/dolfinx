@@ -80,9 +80,8 @@ from mpi4py import MPI
 import numpy as np
 
 import dolfinx
-import ufl
 from dolfinx import fem, la
-from ufl import action, dx, grad, inner
+from ufl import SpatialCoordinate, TestFunction, TrialFunction, action, dx, grad, inner
 
 # We begin by using {py:func}`create_rectangle
 # <dolfinx.mesh.create_rectangle>` to create a rectangular
@@ -133,9 +132,9 @@ bc = fem.dirichletbc(value=uD, dofs=dofs)
 
 # Next, we express the variational problem using UFL.
 
-x = ufl.SpatialCoordinate(mesh)
-u = ufl.TrialFunction(V)
-v = ufl.TestFunction(V)
+x = SpatialCoordinate(mesh)
+u = TrialFunction(V)
+v = TestFunction(V)
 f = fem.Constant(mesh, dtype(-6.0))
 a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx
