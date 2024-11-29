@@ -168,6 +168,14 @@ class FiniteElement:
     _cpp_object: typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64]
 
     def __init__(self, cpp_object):
+        """Creates a Python wrapper for the exported finite element class.
+
+        Note:
+            Do not use this constructor directly. Instead use :func:`finite_element`.
+
+        Args:
+            The underlying cpp instance that this object will wrap.
+        """
         self._cpp_object = cpp_object
 
     def __eq__(self, other):
@@ -175,47 +183,112 @@ class FiniteElement:
 
     @property
     def dtype(self):
+        """Geometry type of the Mesh that the FunctionSpace is defined on."""
         return self._cpp_object.dtype
 
     @property
     def basix_element(self):
+        """Return underlying Basix element (if it exists).
+
+        Raises:
+            Runtime error if Basix element does not exist.
+        """
         return self._cpp_object.basix_element
 
     @property
     def num_sub_elements(self):
+        """Number of sub elements (for a mixed or blocked element)."""
         return self._cpp_object.num_sub_elements
 
     @property
     def value_shape(self):
+        """Value shape of the finite element field.
+
+        The value shape describes the shape of the finite element field, e.g. `{}` for a scalar,
+        `{2}` for a vector in 2D, `{3, 3}` for a rank-2 tensor in 3D, etc.
+
+        Returns:
+            The value shape.
+        """
         return self._cpp_object.value_shape
 
     @property
     def interpolation_points(self):
+        """Points on the reference cell at which an expression needs to be evaluated in order to
+        interpolate the expression in the finite element space.
+
+        Note:
+            For Lagrange elements the points will just be the nodal positions. For other elements
+            the points will typically be the quadrature points used to evaluate moment degrees of
+            freedom.
+
+        Returns:
+            Interpolation point coordinates on the reference cell, returning the (0) coordinates
+            data (row-major) storage and (1) the shape `(num_points, tdim)`.
+        """
         return self._cpp_object.interpolation_points
 
     @property
     def interpolation_ident(self):
+        """Check if interpolation into the finite element space is an identity operation given the
+        evaluation on an expression at specific points, i.e. the degree-of-freedom are equal to
+        point evaluations. The function will return `true` for Lagrange elements.
+
+        Returns:
+            True if interpolation is an identity operation"""
         return self._cpp_object.interpolation_ident
 
     @property
     def space_dimension(self):
+        """Dimension of the finite element function space (the number of degrees-of-freedom for the
+        element).
+
+        For 'blocked' elements, this function returns the dimension of the full element rather than
+        the dimension of the base element.
+
+        Returns:
+            Dimension of the finite element space.
+        """
         return self._cpp_object.space_dimension
 
     @property
     def needs_dof_transformations(self):
+        """Check if DOF transformations are needed for this element.
+
+        DOF transformations will be needed for elements which might not be continuous when two
+        neighbouring cells disagree on the orientation of a shared sub-entity, and when this cannot
+        be corrected for by permuting the DOF numbering in the dofmap.
+
+        For example, Raviart-Thomas elements will need DOF transformations, as the neighbouring
+        cells may disagree on the orientation of a basis function, and this orientation cannot be
+        corrected for by permuting the DOF numbers on each cell.
+
+        Returns:
+            True if DOF transformations are required.
+        """
         return self._cpp_object.needs_dof_transformations
 
     @property
     def signature(self):
+        """String identifying the finite element.
+
+        Returns:
+            Element signature
+        """
         return self._cpp_object.signature
 
     def T_apply(self, x, cell_permutations, dim):
+        """Transform basis functions from the reference element ordering and orientation to the
+        globally consistent physical element ordering and orientation.
+        """
         self._cpp_object.T_apply(x, cell_permutations, dim)
 
     def Tt_apply(self, x, cell_permutations, dim):
+        """Apply the transpose of the operator applied by T_apply()."""
         self._cpp_object.Tt_apply(x, cell_permutations, dim)
 
     def Tt_inv_apply(self, x, cell_permutations, dim):
+        """Apply the inverse transpose of the operator applied by T_apply()."""
         self._cpp_object.Tt_apply(x, cell_permutations, dim)
 
 
