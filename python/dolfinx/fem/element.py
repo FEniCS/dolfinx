@@ -13,8 +13,8 @@ import numpy.typing as npt
 
 import basix
 import ufl
-from dolfinx import cpp as _cpp
 import ufl.finiteelement
+from dolfinx import cpp as _cpp
 
 
 class CoordinateElement:
