@@ -18,7 +18,7 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
 from dolfinx.fem import dofmap
-from dolfinx.fem.element import finite_element
+from dolfinx.fem.element import FiniteElement, finite_element
 from dolfinx.geometry import PointOwnershipData
 
 if typing.TYPE_CHECKING:
@@ -721,11 +721,9 @@ class FunctionSpace(ufl.FunctionSpace):
         return self
 
     @property
-    def element(
-        self,
-    ) -> typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64]:
+    def element(self) -> FiniteElement:
         """Function space finite element."""
-        return self._cpp_object.element  # type: ignore
+        return FiniteElement(self._cpp_object.element)
 
     @property
     def dofmap(self) -> dofmap.DofMap:
