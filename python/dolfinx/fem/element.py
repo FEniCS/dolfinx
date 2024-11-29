@@ -233,11 +233,16 @@ def finite_element(
         raise ValueError(f"Unsupported dtype: {dtype}")
 
     if ufl_e.is_mixed:
-        elements = [finite_element(cell_type, e, dtype) for e in ufl_e.sub_elements]
-        return CppElement(elements)
+        elements = [finite_element(cell_type, e, dtype)._cpp_object for e in ufl_e.sub_elements]
+        return FiniteElement(CppElement(elements))
     elif ufl_e.is_quadrature:
-        return CppElement(
-            cell_type, ufl_e.custom_quadrature()[0], ufl_e.reference_value_shape, ufl_e.is_symmetric
+        return FiniteElement(
+            CppElement(
+                cell_type,
+                ufl_e.custom_quadrature()[0],
+                ufl_e.reference_value_shape,
+                ufl_e.is_symmetric,
+            )
         )
     else:
         basix_e = ufl_e.basix_element._e
