@@ -25,7 +25,9 @@ def test_dgrsph_1d():
         x = 0
     # Circular chain of interval cells
     cells = [[n0, n0 + 1], [n0 + 1, n0 + 2], [n0 + 2, x]]
-    w = mesh.build_dual_graph(MPI.COMM_WORLD, mesh.CellType.interval, to_adj(cells, np.int64))
+    w = mesh.build_dual_graph(
+        MPI.COMM_WORLD, mesh.CellType.interval, to_adj(cells, np.int64)._cpp_object
+    )
     assert w.num_nodes == 3
     for i in range(w.num_nodes):
         assert len(w.links(i)) == 2
