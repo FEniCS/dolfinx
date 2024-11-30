@@ -285,7 +285,13 @@ def finite_element(
     ufl_e: ufl.finiteelement,
     dtype: np.dtype,
 ) -> FiniteElement:
-    """Create a DOLFINx element from a basix.ufl element."""
+    """Create a DOLFINx element from a basix.ufl element.
+
+    Args:
+        cell_type: Element cell type, see `mesh.CellType`
+        ufl_e: UFL element, holding quadrature rule and other properties of the selected element.
+        dtype: Geometry type of the element.
+    """
     if np.issubdtype(dtype, np.float32):
         CppElement = _cpp.fem.FiniteElement_float32
     elif np.issubdtype(dtype, np.float64):
