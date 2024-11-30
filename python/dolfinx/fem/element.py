@@ -266,17 +266,46 @@ class FiniteElement:
     def T_apply(self, x: npt.NDArray[np.floating], cell_permutations: np.int32, dim: int) -> None:
         """Transform basis functions from the reference element ordering and orientation to the
         globally consistent physical element ordering and orientation.
+
+        Args:
+            x: Data to transform (in place). The shape is `(m, n)`, where `m` is the number of
+            dgerees-of-freedom and the storage is row-major.
+            cell_permutations: Permutation data for the cell.
+            dim: Number of columns in `data`.
+
+        Note:
+            Exposed for testing only, expect poor performance.
         """
         self._cpp_object.T_apply(x, cell_permutations, dim)
 
     def Tt_apply(self, x: npt.NDArray[np.floating], cell_permutations: np.int32, dim: int) -> None:
-        """Apply the transpose of the operator applied by T_apply()."""
+        """Apply the transpose of the operator applied by T_apply().
+
+        Args:
+            x: Data to transform (in place). The shape is `(m, n)`, where `m` is the number of
+            dgerees-of-freedom and the storage is row-major.
+            cell_permutations: Permutation data for the cell.
+            dim: Number of columns in `data`.
+
+        Note:
+            Exposed for testing only, expect poor performance.
+        """
         self._cpp_object.Tt_apply(x, cell_permutations, dim)
 
     def Tt_inv_apply(
         self, x: npt.NDArray[np.floating], cell_permutations: np.int32, dim: int
     ) -> None:
-        """Apply the inverse transpose of the operator applied by T_apply()."""
+        """Apply the inverse transpose of the operator applied by T_apply().
+
+        Args:
+            x: Data to transform (in place). The shape is `(m, n)`, where `m` is the number of
+            dgerees-of-freedom and the storage is row-major.
+            cell_permutations: Permutation data for the cell.
+            dim: Number of columns in `data`.
+
+        Note:
+            Exposed for testing only, expect poor performance.
+        """
         self._cpp_object.Tt_apply(x, cell_permutations, dim)
 
 
