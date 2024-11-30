@@ -292,9 +292,10 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   // Send back data
   std::vector<std::int64_t> recv_buffer1(send_disp.back());
   MPI_Neighbor_alltoallv(send_buffer1.data(), num_items_recv.data(),
-                         recv_disp.data(), MPI_INT64_T, recv_buffer1.data(),
-                         num_items_per_dest.data(), send_disp.data(),
-                         MPI_INT64_T, neigh_comm1);
+                         recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
+                         recv_buffer1.data(), num_items_per_dest.data(),
+                         send_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
+                         neigh_comm1);
   MPI_Comm_free(&neigh_comm1);
 
   // --- Build new graph

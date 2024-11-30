@@ -19,6 +19,7 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.cpp.graph import AdjacencyList_int32
+from dolfinx.graph import AdjacencyList, adjacencylist
 from dolfinx.io.utils import distribute_entity_data
 from dolfinx.mesh import CellType, Mesh, create_mesh, meshtags, meshtags_from_entities
 
@@ -329,7 +330,7 @@ def model_to_mesh(
         mesh, mesh.topology.dim, cells, cell_values
     )
     mesh.topology.create_connectivity(mesh.topology.dim, 0)
-    adj = _cpp.graph.AdjacencyList_int32(local_entities)
+    adj = adjacencylist(local_entities)
     ct = meshtags_from_entities(
         mesh, mesh.topology.dim, adj, local_values.astype(np.int32, copy=False)
     )
@@ -354,7 +355,7 @@ def model_to_mesh(
             mesh, tdim - 1, marked_facets, facet_values
         )
         mesh.topology.create_connectivity(topology.dim - 1, tdim)
-        adj = _cpp.graph.AdjacencyList_int32(local_entities)
+        adj = adjacencylist(local_entities)
         ft = meshtags_from_entities(mesh, tdim - 1, adj, local_values.astype(np.int32, copy=False))
         ft.name = "Facet tags"
     else:
@@ -369,7 +370,7 @@ def read_from_msh(
     rank: int = 0,
     gdim: int = 3,
     partitioner: typing.Optional[
-        typing.Callable[[_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]
+        typing.Callable[[_MPI.Comm, int, int, AdjacencyList], AdjacencyList_int32]
     ] = None,
 ) -> tuple[Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
     """Read a Gmsh .msh file and return a :class:`dolfinx.mesh.Mesh` and cell facet markers.
