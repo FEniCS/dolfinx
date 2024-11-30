@@ -167,7 +167,10 @@ def _(e: basix.finite_element.FiniteElement):
 class FiniteElement:
     _cpp_object: typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64]
 
-    def __init__(self, cpp_object):
+    def __init__(
+        self,
+        cpp_object: typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64],
+    ):
         """Creates a Python wrapper for the exported finite element class.
 
         Note:
@@ -182,12 +185,12 @@ class FiniteElement:
         return self._cpp_object == other._cpp_object
 
     @property
-    def dtype(self):
+    def dtype(self) -> np.dtype:
         """Geometry type of the Mesh that the FunctionSpace is defined on."""
         return self._cpp_object.dtype
 
     @property
-    def basix_element(self):
+    def basix_element(self) -> basix.finite_element.FiniteElement:
         """Return underlying Basix element (if it exists).
 
         Raises:
@@ -196,12 +199,12 @@ class FiniteElement:
         return self._cpp_object.basix_element
 
     @property
-    def num_sub_elements(self):
+    def num_sub_elements(self) -> int:
         """Number of sub elements (for a mixed or blocked element)."""
         return self._cpp_object.num_sub_elements
 
     @property
-    def value_shape(self):
+    def value_shape(self) -> npt.NDArray[np.integer]:
         """Value shape of the finite element field.
 
         The value shape describes the shape of the finite element field, e.g. `{}` for a scalar,
@@ -213,7 +216,7 @@ class FiniteElement:
         return self._cpp_object.value_shape
 
     @property
-    def interpolation_points(self):
+    def interpolation_points(self) -> npt.NDArray[np.floating]:
         """Points on the reference cell at which an expression needs to be evaluated in order to
         interpolate the expression in the finite element space.
 
@@ -229,7 +232,7 @@ class FiniteElement:
         return self._cpp_object.interpolation_points
 
     @property
-    def interpolation_ident(self):
+    def interpolation_ident(self) -> bool:
         """Check if interpolation into the finite element space is an identity operation given the
         evaluation on an expression at specific points, i.e. the degree-of-freedom are equal to
         point evaluations. The function will return `true` for Lagrange elements.
@@ -239,7 +242,7 @@ class FiniteElement:
         return self._cpp_object.interpolation_ident
 
     @property
-    def space_dimension(self):
+    def space_dimension(self) -> int:
         """Dimension of the finite element function space (the number of degrees-of-freedom for the
         element).
 
@@ -252,7 +255,7 @@ class FiniteElement:
         return self._cpp_object.space_dimension
 
     @property
-    def needs_dof_transformations(self):
+    def needs_dof_transformations(self) -> bool:
         """Check if DOF transformations are needed for this element.
 
         DOF transformations will be needed for elements which might not be continuous when two
@@ -269,7 +272,7 @@ class FiniteElement:
         return self._cpp_object.needs_dof_transformations
 
     @property
-    def signature(self):
+    def signature(self) -> str:
         """String identifying the finite element.
 
         Returns:
@@ -277,17 +280,19 @@ class FiniteElement:
         """
         return self._cpp_object.signature
 
-    def T_apply(self, x, cell_permutations, dim):
+    def T_apply(self, x: npt.NDArray[np.floating], cell_permutations: np.int32, dim: int) -> None:
         """Transform basis functions from the reference element ordering and orientation to the
         globally consistent physical element ordering and orientation.
         """
         self._cpp_object.T_apply(x, cell_permutations, dim)
 
-    def Tt_apply(self, x, cell_permutations, dim):
+    def Tt_apply(self, x: npt.NDArray[np.floating], cell_permutations: np.int32, dim: int) -> None:
         """Apply the transpose of the operator applied by T_apply()."""
         self._cpp_object.Tt_apply(x, cell_permutations, dim)
 
-    def Tt_inv_apply(self, x, cell_permutations, dim):
+    def Tt_inv_apply(
+        self, x: npt.NDArray[np.floating], cell_permutations: np.int32, dim: int
+    ) -> None:
         """Apply the inverse transpose of the operator applied by T_apply()."""
         self._cpp_object.Tt_apply(x, cell_permutations, dim)
 
