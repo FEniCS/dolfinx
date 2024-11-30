@@ -87,6 +87,7 @@ def test_create_mixed_mesh():
         cells_np,
         [hexahedron._cpp_object, pyramid._cpp_object, tetrahedron._cpp_object],
         geomx,
+        3,
         part,
     )
 
