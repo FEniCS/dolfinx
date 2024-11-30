@@ -191,7 +191,7 @@ class FiniteElement:
 
     @property
     def basix_element(self) -> basix.finite_element.FiniteElement:
-        """Return underlying Basix element (if it exists).
+        """Return underlying Basix C++ element (if it exists).
 
         Raises:
             Runtime error if Basix element does not exist.
@@ -209,9 +209,6 @@ class FiniteElement:
 
         The value shape describes the shape of the finite element field, e.g. `{}` for a scalar,
         `{2}` for a vector in 2D, `{3, 3}` for a rank-2 tensor in 3D, etc.
-
-        Returns:
-            The value shape.
         """
         return self._cpp_object.value_shape
 
@@ -220,14 +217,13 @@ class FiniteElement:
         """Points on the reference cell at which an expression needs to be evaluated in order to
         interpolate the expression in the finite element space.
 
+        Interpolation point coordinates on the reference cell, returning the (0) coordinates data
+        (row-major) storage and (1) the shape `(num_points, tdim)`.
+
         Note:
             For Lagrange elements the points will just be the nodal positions. For other elements
             the points will typically be the quadrature points used to evaluate moment degrees of
             freedom.
-
-        Returns:
-            Interpolation point coordinates on the reference cell, returning the (0) coordinates
-            data (row-major) storage and (1) the shape `(num_points, tdim)`.
         """
         return self._cpp_object.interpolation_points
 
@@ -235,10 +231,7 @@ class FiniteElement:
     def interpolation_ident(self) -> bool:
         """Check if interpolation into the finite element space is an identity operation given the
         evaluation on an expression at specific points, i.e. the degree-of-freedom are equal to
-        point evaluations. The function will return `true` for Lagrange elements.
-
-        Returns:
-            True if interpolation is an identity operation"""
+        point evaluations. The function will return `true` for Lagrange elements."""
         return self._cpp_object.interpolation_ident
 
     @property
@@ -248,9 +241,6 @@ class FiniteElement:
 
         For 'blocked' elements, this function returns the dimension of the full element rather than
         the dimension of the base element.
-
-        Returns:
-            Dimension of the finite element space.
         """
         return self._cpp_object.space_dimension
 
@@ -265,19 +255,12 @@ class FiniteElement:
         For example, Raviart-Thomas elements will need DOF transformations, as the neighbouring
         cells may disagree on the orientation of a basis function, and this orientation cannot be
         corrected for by permuting the DOF numbers on each cell.
-
-        Returns:
-            True if DOF transformations are required.
         """
         return self._cpp_object.needs_dof_transformations
 
     @property
     def signature(self) -> str:
-        """String identifying the finite element.
-
-        Returns:
-            Element signature
-        """
+        """String identifying the finite element."""
         return self._cpp_object.signature
 
     def T_apply(self, x: npt.NDArray[np.floating], cell_permutations: np.int32, dim: int) -> None:
