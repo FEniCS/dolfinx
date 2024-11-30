@@ -10,9 +10,13 @@ on:
 
 
 jobs:
+  fenicsx-refs:
+    uses: ./.github/workflows/fenicsx-refs.yml
+
   build:
     name: Build
     runs-on: ubuntu-latest
+    needs: fenicsx-refs
     if: (github.event.pull_request.head.repo.full_name == github.repository) || github.ref_name == 'main'
     container: fenicsproject/test-env:current-mpich
     env:
@@ -58,9 +62,9 @@ jobs:
           echo "$HOME/.sonar/build-wrapper-linux-x86" >> $GITHUB_PATH
       - name: Install FEniCS Python components
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+          python -m pip install git+https://github.com/fenics/ufl.git@${{ needs.fenicsx-refs.outputs.ufl_ref }}
+          python -m pip install git+https://github.com/fenics/basix.git@${{ needs.fenicsx-refs.outputs.basix_ref }}
+          python -m pip install git+https://github.com/fenics/ffcx.git@${{ needs.fenicsx-refs.outputs.ffcx_ref }}
       - name: Run build-wrapper
         run: |
           mkdir build

@@ -33,38 +33,39 @@ from dolfinx.cpp.mesh import (
 from dolfinx.cpp.refinement import RefinementOption
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem import coordinate_element as _coordinate_element
+from dolfinx.graph import AdjacencyList
 
 __all__ = [
-    "meshtags_from_entities",
-    "locate_entities",
-    "locate_entities_boundary",
-    "refine",
-    "create_mesh",
-    "create_submesh",
+    "CellType",
+    "Geometry",
+    "GhostMode",
     "Mesh",
     "MeshTags",
-    "meshtags",
-    "CellType",
-    "GhostMode",
+    "Topology",
     "build_dual_graph",
     "cell_dim",
-    "compute_midpoints",
-    "exterior_facet_indices",
     "compute_incident_entities",
-    "create_cell_partitioner",
-    "create_interval",
-    "create_unit_interval",
-    "create_rectangle",
-    "create_unit_square",
+    "compute_midpoints",
     "create_box",
-    "create_unit_cube",
-    "to_type",
-    "to_string",
-    "transfer_meshtag",
-    "entities_to_geometry",
+    "create_cell_partitioner",
     "create_geometry",
-    "Geometry",
-    "Topology",
+    "create_interval",
+    "create_mesh",
+    "create_rectangle",
+    "create_submesh",
+    "create_unit_cube",
+    "create_unit_interval",
+    "create_unit_square",
+    "entities_to_geometry",
+    "exterior_facet_indices",
+    "locate_entities",
+    "locate_entities_boundary",
+    "meshtags",
+    "meshtags_from_entities",
+    "refine",
+    "to_string",
+    "to_type",
+    "transfer_meshtag",
 ]
 
 
@@ -735,7 +736,7 @@ def meshtags(
 
 
 def meshtags_from_entities(
-    msh: Mesh, dim: int, entities: _cpp.graph.AdjacencyList_int32, values: npt.NDArray[typing.Any]
+    msh: Mesh, dim: int, entities: AdjacencyList, values: npt.NDArray[typing.Any]
 ):
     """Create a :class:dolfinx.mesh.MeshTags` object that associates
     data with a subset of mesh entities, where the entities are defined
@@ -762,7 +763,9 @@ def meshtags_from_entities(
     elif isinstance(values, float):
         values = np.full(entities.num_nodes, values, dtype=np.double)
     values = np.asarray(values)
-    return MeshTags(_cpp.mesh.create_meshtags(msh.topology._cpp_object, dim, entities, values))
+    return MeshTags(
+        _cpp.mesh.create_meshtags(msh.topology._cpp_object, dim, entities._cpp_object, values)
+    )
 
 
 def create_interval(

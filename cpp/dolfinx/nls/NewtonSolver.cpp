@@ -211,9 +211,6 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
     // Increment iteration count
     ++_iteration;
 
-    // FIXME: This step is not needed if residual is based on dx and
-    //        this has converged.
-    // FIXME: But, this function call may update internal variables, etc.
     // Compute F
     if (_system)
       _system(x);

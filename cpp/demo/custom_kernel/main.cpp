@@ -209,8 +209,8 @@ void assemble(MPI_Comm comm)
   mdspand_t<const T, 2> X(X_b.data(), weights.size(), 2);
 
   // Create a scalar function space
-  auto V = std::make_shared<fem::FunctionSpace<T>>(
-      fem::create_functionspace(mesh, e));
+  auto V = std::make_shared<fem::FunctionSpace<T>>(fem::create_functionspace<T>(
+      mesh, std::make_shared<fem::FiniteElement<T>>(e)));
 
   // Build list of cells to assembler over (all cells owned by this
   // rank)
@@ -269,7 +269,7 @@ void assemble(MPI_Comm comm)
   assemble_matrix1<T>(mesh->geometry(), *V->dofmap(), kernel_a, cells);
   assemble_vector1<T>(mesh->geometry(), *V->dofmap(), kernel_L, cells);
 
-  list_timings(comm, {TimingType::wall});
+  list_timings(comm);
 }
 
 int main(int argc, char* argv[])

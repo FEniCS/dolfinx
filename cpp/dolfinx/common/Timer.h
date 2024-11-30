@@ -1,4 +1,5 @@
-// Copyright (C) 2008 Anders Logg, 2015 Jan Blechta
+// Copyright (C) 2008-2015 Anders Logg, Jan Blechta, Paul T. Kühner and Garth N.
+// Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -6,58 +7,134 @@
 
 #pragma once
 
-#include <array>
-#include <boost/timer/timer.hpp>
+#include <chrono>
 #include <optional>
+#include <stdexcept>
 #include <string>
+
+#include "TimeLogger.h"
 
 namespace dolfinx::common
 {
-
-/// A timer can be used for timing tasks. The basic usage is
+/// @brief Timer for measuring and logging elapsed time durations.
 ///
-///   Timer timer("Assembling over cells");
-///
+/// The basic usage is
+/// \code{.cpp}
+/// Timer timer("Assembling over cells");
+/// \endcode
 /// The timer is started at construction and timing ends when the timer
-/// is destroyed (goes out of scope). It is also possible to start and
-/// stop a timer explicitly by
-///
-///   timer.start(); timer.stop();
-///
-/// Timings are stored globally and a summary may be printed by calling
-///
+/// is destroyed (goes out-of-scope). The timer can be started (reset)
+/// and stopped explicitly by
+/// \code{.cpp}
+///   timer.start();
+///    /* .... */
+///   timer.stop();
+/// \endcode
+/// A summary of registered elapsed times can be printed by calling:
+/// \code{.cpp}
 ///   list_timings();
-
+/// \endcode
+/// Registered elapsed times are logged when (1) the timer goes
+/// out-of-scope or (2) Timer::flush() is called.
+template <typename T = std::chrono::high_resolution_clock>
 class Timer
 {
 public:
-  /// Create timer
+  /// @brief Create and start timer.
   ///
-  /// If a task name is provided this enables logging to logger, otherwise (i.e.
-  /// no task provided) nothing gets logged.
-  Timer(std::optional<std::string> task = std::nullopt);
+  /// Elapsed time is optionally registered in the logger when the Timer
+  /// destructor is called.
+  ///
+  /// @param[in] task Name used to registered the elapsed time in the
+  /// logger. If no name is set, the elapsed time is not registered in
+  /// the logger.
+  Timer(std::optional<std::string> task = std::nullopt) : _task(task) {}
 
-  /// Destructor
-  ~Timer();
+  /// If timer is still running, it is stopped. Elapsed time is
+  /// registered in the logger.
+  ~Timer()
+  {
+    if (_start_time.has_value() and _task.has_value())
+    {
+      _acc += T::now() - *_start_time;
+      TimeLogger::instance().register_timing(*_task, _acc);
+    }
+  }
 
-  /// Zero and start timer
-  void start();
+  /// Reset elapsed time and (re-)start timer.
+  void start()
+  {
+    _acc = T::duration::zero();
+    _start_time = T::now();
+  }
 
-  /// Resume timer. Not well-defined for logging timer
-  void resume();
+  /// @brief Elapsed time since time has been started.
+  ///
+  /// Default duration unit is seconds.
+  ///
+  /// @return Elapsed time duration.
+  template <typename Period = std::ratio<1>>
+  std::chrono::duration<double, Period> elapsed() const
+  {
+    if (_start_time.has_value()) // Timer is running
+      return T::now() - *_start_time + _acc;
+    else // Timer is stopped
+      return _acc;
+  }
 
-  /// Stop timer, return wall time elapsed and store timing data into
-  /// logger
-  double stop();
+  /// @brief Stop timer and return elapsed time.
+  ///
+  /// Default duration unit is seconds.
+  ///
+  /// @return Elapsed time duration.
+  template <typename Period = std::ratio<1>>
+  std::chrono::duration<double, Period> stop()
+  {
+    if (_start_time.has_value()) // Timer is running
+    {
+      _acc += T::now() - *_start_time;
+      _start_time = std::nullopt;
+    }
 
-  /// Return wall, user and system time in seconds
-  std::array<double, 3> elapsed() const;
+    return _acc;
+  }
+
+  /// @brief Resume a stopped timer.
+  ///
+  /// Does nothing if timer has not been stopped.
+  void resume()
+  {
+    if (!_start_time.has_value())
+      _start_time = T::now();
+  }
+
+  /// @brief Flush timer duration to the logger.
+  ///
+  /// An instance of a timer can be flushed to the logger only once.
+  /// Subsequent calls will have no effect and will not trigger any
+  /// logging.
+  ///
+  /// @pre Timer must have been stopped before flushing.
+  void flush()
+  {
+    if (_start_time.has_value())
+      throw std::runtime_error("Timer must be stopped before flushing.");
+
+    if (_task.has_value())
+    {
+      TimeLogger::instance().register_timing(*_task, _acc);
+      _task = std::nullopt;
+    }
+  }
 
 private:
-  // Name of task
+  // Name of task to register in logger
   std::optional<std::string> _task;
 
-  // Implementation of timer
-  boost::timer::cpu_timer _timer;
+  // Elapsed time offset
+  T::duration _acc = T::duration::zero();
+
+  // Store start time (std::nullopt if timer has been stopped)
+  std::optional<typename T::time_point> _start_time = T::now();
 };
 } // namespace dolfinx::common

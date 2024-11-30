@@ -524,6 +524,7 @@ def test_submesh_full(d, n, codim, marker, ghost_mode, simplex):
     edim = max(mesh.topology.dim - codim, 0)
     entities = locate_entities(mesh, edim, marker)
     submesh, entity_map, vertex_map, geom_map = create_submesh(mesh, edim, entities)
+    assert submesh.topology.dim == edim
     submesh_topology_test(mesh, submesh, entity_map, vertex_map, edim)
     submesh_geometry_test(mesh, submesh, entity_map, geom_map, edim)
 
@@ -557,7 +558,7 @@ def test_empty_rank_mesh(dtype):
     def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the curent rank"""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
-        return graph.adjacencylist(dest)
+        return graph.adjacencylist(dest)._cpp_object
 
     if comm.rank == 0:
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)

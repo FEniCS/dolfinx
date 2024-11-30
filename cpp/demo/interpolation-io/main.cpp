@@ -46,8 +46,8 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
       basix::element::dpc_variant::unset, false);
 
   // Create a scalar function space
-  auto V = std::make_shared<fem::FunctionSpace<U>>(
-      fem::create_functionspace(mesh, e));
+  auto V = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+      mesh, std::make_shared<fem::FiniteElement<U>>(e)));
 
   // Create a finite element Function
   auto u = std::make_shared<fem::Function<T>>(V);
@@ -98,8 +98,8 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
       basix::element::dpc_variant::unset, false);
 
   // Create a Nedelec function space
-  auto V = std::make_shared<fem::FunctionSpace<U>>(
-      fem::create_functionspace(mesh, e));
+  auto V = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+      mesh, std::make_shared<fem::FiniteElement<U>>(e)));
 
   // Create a Nedelec finite element Function
   auto u = std::make_shared<fem::Function<T>>(V);
@@ -114,7 +114,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
   // the Nedelec space when there are cell edges aligned to x0 = 0.5.
 
   // Find cells with all vertices satisfying (0) x0 <= 0.5 and (1) x0 >= 0.5
-  auto cells0
+  std::vector cells0
       = mesh::locate_entities(*mesh, 2,
                               [](auto x)
                               {
@@ -123,7 +123,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
                                   marked.push_back(x(0, i) <= 0.5);
                                 return marked;
                               });
-  auto cells1
+  std::vector cells1
       = mesh::locate_entities(*mesh, 2,
                               [](auto x)
                               {
@@ -167,8 +167,10 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
       basix::element::dpc_variant::unset, true);
 
   // Create a function space
-  auto V_l = std::make_shared<fem::FunctionSpace<U>>(
-      fem::create_functionspace(mesh, e_l, std::vector<std::size_t>{2}));
+  auto V_l
+      = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+          mesh, std::make_shared<fem::FiniteElement<U>>(
+                    e_l, std::vector<std::size_t>{2})));
 
   auto u_l = std::make_shared<fem::Function<T>>(V_l);
 

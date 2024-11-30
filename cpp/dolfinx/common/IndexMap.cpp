@@ -26,8 +26,8 @@ namespace
 /// @param comm MPI communicator.
 /// @param owners List of ranks that own each ghost index.
 /// @return (src ranks, destination ranks). Both lists are sorted.
-std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
-                                               std::span<const int> owners)
+std::array<std::vector<int>, 2>
+build_src_dest(MPI_Comm comm, std::span<const int> owners, int tag)
 {
   if (dolfinx::MPI::size(comm) == 1)
   {
@@ -40,8 +40,9 @@ std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
   auto [unique_end, range_end] = std::ranges::unique(src);
   src.erase(unique_end, range_end);
   src.shrink_to_fit();
-  std::vector<int> dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
+  std::vector<int> dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src, tag);
   std::ranges::sort(dest);
+
   return {std::move(src), std::move(dest)};
 }
 
@@ -57,9 +58,9 @@ std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
 /// @param[in] dest Destination ranks on `comm`.
 /// @param[in] ghosts Ghost indices on calling process.
 /// @param[in] owners Owning rank for each entry in `ghosts`.
-/// @param[in] include_ghost A list of the same length as `ghosts`, whose
-/// ith entry must be non-zero (true) to include `ghost[i]`, otherwise
-/// the ghost will be excluded
+/// @param[in] include_ghost A list of the same length as `ghosts`,
+/// whose ith entry must be non-zero (true) to include `ghost[i]`,
+/// otherwise the ghost will be excluded
 /// @return 1) The ghost indices packed in a buffer for communication
 ///         2) The received indices (in receive buffer layout)
 ///         3) A map relating the position of a ghost in the packed
@@ -879,8 +880,9 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size) : _comm(comm, true)
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
                    std::span<const std::int64_t> ghosts,
-                   std::span<const int> owners)
-    : IndexMap(comm, local_size, build_src_dest(comm, owners), ghosts, owners)
+                   std::span<const int> owners, int tag)
+    : IndexMap(comm, local_size, build_src_dest(comm, owners, tag), ghosts,
+               owners)
 {
   // Do nothing
 }
@@ -1002,7 +1004,7 @@ std::vector<std::int64_t> IndexMap::global_indices() const
 //-----------------------------------------------------------------------------
 MPI_Comm IndexMap::comm() const { return _comm.comm(); }
 //----------------------------------------------------------------------------
-graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
+graph::AdjacencyList<int> IndexMap::index_to_dest_ranks(int tag) const
 {
   const std::int64_t offset = _local_range[0];
 
@@ -1011,7 +1013,8 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
   std::ranges::sort(src);
   auto [unique_end, range_end] = std::ranges::unique(src);
   src.erase(unique_end, range_end);
-  auto dest = dolfinx::MPI::compute_graph_edges_nbx(_comm.comm(), src);
+  std::vector<int> dest
+      = dolfinx::MPI::compute_graph_edges_nbx(_comm.comm(), src, tag);
   std::ranges::sort(dest);
 
   // Array (local idx, ghosting rank) pairs for owned indices

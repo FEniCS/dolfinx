@@ -304,8 +304,7 @@ std::vector<T> create_geom(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
   const auto [nx, ny, nz] = n;
 
   assert(std::ranges::all_of(n, [](auto e) { return e >= 1; }));
-  for (std::int64_t i = 0; i < 3; i++)
-    assert(p0[i] < p1[i]);
+  assert(p0 < p1);
 
   // Structured grid cuboid extents
   const std::array<T, 3> extents = {

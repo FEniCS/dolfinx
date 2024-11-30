@@ -4,6 +4,7 @@ include(GNUInstallDirs)
 # ------------------------------------------------------------------------------
 # Declare the library (target) and set C++ standard
 add_library(dolfinx)
+set(CMAKE_CXX_EXTENSIONS OFF)
 target_compile_features(dolfinx PUBLIC cxx_std_20)
 
 # ------------------------------------------------------------------------------
@@ -96,7 +97,6 @@ target_link_libraries(dolfinx PUBLIC Basix::basix)
 
 # Boost
 target_link_libraries(dolfinx PUBLIC Boost::headers)
-target_link_libraries(dolfinx PUBLIC Boost::timer)
 
 # MPI
 target_link_libraries(dolfinx PUBLIC MPI::MPI_CXX)

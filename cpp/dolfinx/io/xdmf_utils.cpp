@@ -378,9 +378,8 @@ xdmf_utils::distribute_entity_data(
     std::vector<T> recv_values_buffer(recv_disp.back());
     err = MPI_Neighbor_alltoallv(
         send_values_buffer.data(), num_items_send.data(), send_disp.data(),
-        dolfinx::MPI::mpi_type<T>(), recv_values_buffer.data(),
-        num_items_recv.data(), recv_disp.data(), dolfinx::MPI::mpi_type<T>(),
-        comm0);
+        dolfinx::MPI::mpi_t<T>, recv_values_buffer.data(),
+        num_items_recv.data(), recv_disp.data(), dolfinx::MPI::mpi_t<T>, comm0);
     dolfinx::MPI::check_error(comm, err);
     err = MPI_Comm_free(&comm0);
     dolfinx::MPI::check_error(comm, err);
@@ -551,9 +550,8 @@ xdmf_utils::distribute_entity_data(
     std::vector<T> recv_values_buffer(recv_disp.back());
     err = MPI_Neighbor_alltoallv(
         send_values_buffer.data(), num_items_send.data(), send_disp.data(),
-        dolfinx::MPI::mpi_type<T>(), recv_values_buffer.data(),
-        num_items_recv.data(), recv_disp.data(), dolfinx::MPI::mpi_type<T>(),
-        comm0);
+        dolfinx::MPI::mpi_t<T>, recv_values_buffer.data(),
+        num_items_recv.data(), recv_disp.data(), dolfinx::MPI::mpi_t<T>, comm0);
 
     dolfinx::MPI::check_error(comm, err);
 
