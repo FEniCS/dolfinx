@@ -24,8 +24,8 @@ import matplotlib.pylab as plt
 
 import basix
 import basix.ufl
-import ufl
 from dolfinx import default_real_type, fem, mesh
+from ufl import SpatialCoordinate, dx
 
 # -
 
@@ -123,7 +123,7 @@ def saw_tooth(x):
 # +
 msh = mesh.create_unit_interval(MPI.COMM_WORLD, N)
 
-x = ufl.SpatialCoordinate(msh)
+x = SpatialCoordinate(msh)
 u_exact = saw_tooth(x[0])
 
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
@@ -174,7 +174,7 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
     V = fem.functionspace(msh, ufl_element)
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
-    M = fem.form((u_exact - uh) ** 2 * ufl.dx)
+    M = fem.form((u_exact - uh) ** 2 * dx)
     error = msh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
     print(f"Computed L2 interpolation error ({variant.name}):", error**0.5)
 # -
