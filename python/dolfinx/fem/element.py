@@ -312,24 +312,27 @@ class FiniteElement:
 def finite_element(
     cell_type: _cpp.mesh.CellType,
     ufl_e: ufl.finiteelement,
-    dtype: np.dtype,
+    FiniteElement_dtype: np.dtype,
 ) -> FiniteElement:
     """Create a DOLFINx element from a basix.ufl element.
 
     Args:
         cell_type: Element cell type, see `mesh.CellType`
         ufl_e: UFL element, holding quadrature rule and other properties of the selected element.
-        dtype: Geometry type of the element.
+        FiniteElement_dtype: Geometry type of the element.
     """
-    if np.issubdtype(dtype, np.float32):
+    if np.issubdtype(FiniteElement_dtype, np.float32):
         CppElement = _cpp.fem.FiniteElement_float32
-    elif np.issubdtype(dtype, np.float64):
+    elif np.issubdtype(FiniteElement_dtype, np.float64):
         CppElement = _cpp.fem.FiniteElement_float64
     else:
-        raise ValueError(f"Unsupported dtype: {dtype}")
+        raise ValueError(f"Unsupported dtype: {FiniteElement_dtype}")
 
     if ufl_e.is_mixed:
-        elements = [finite_element(cell_type, e, dtype)._cpp_object for e in ufl_e.sub_elements]
+        elements = [
+            finite_element(cell_type, e, FiniteElement_dtype)._cpp_object
+            for e in ufl_e.sub_elements
+        ]
         return FiniteElement(CppElement(elements))
     elif ufl_e.is_quadrature:
         return FiniteElement(
