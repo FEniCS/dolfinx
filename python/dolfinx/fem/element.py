@@ -330,8 +330,7 @@ def finiteelement(
 
     if ufl_e.is_mixed:
         elements = [
-            finiteelement(cell_type, e, FiniteElement_dtype)._cpp_object
-            for e in ufl_e.sub_elements
+            finiteelement(cell_type, e, FiniteElement_dtype)._cpp_object for e in ufl_e.sub_elements
         ]
         return FiniteElement(CppElement(elements))
     elif ufl_e.is_quadrature:
