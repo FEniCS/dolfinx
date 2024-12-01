@@ -18,7 +18,7 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
 from dolfinx.fem import dofmap
-from dolfinx.fem.element import FiniteElement, finite_element
+from dolfinx.fem.element import FiniteElement, finiteelement
 from dolfinx.geometry import PointOwnershipData
 
 if typing.TYPE_CHECKING:
@@ -589,7 +589,7 @@ def functionspace(
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
 
     # Create DOLFINx objects
-    element = finite_element(mesh.topology.cell_type, ufl_e, dtype)
+    element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)
     cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, element._cpp_object)
 
     assert np.issubdtype(

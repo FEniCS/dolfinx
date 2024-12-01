@@ -32,7 +32,7 @@ from dolfinx.fem.bcs import (
     locate_dofs_topological,
 )
 from dolfinx.fem.dofmap import DofMap
-from dolfinx.fem.element import CoordinateElement, FiniteElement, coordinate_element, finite_element
+from dolfinx.fem.element import CoordinateElement, FiniteElement, coordinate_element, finiteelement
 from dolfinx.fem.forms import (
     Form,
     compile_form,
@@ -194,7 +194,7 @@ __all__ = [
     "dirichletbc",
     "discrete_gradient",
     "extract_function_spaces",
-    "finite_element",
+    "finiteelement",
     "form",
     "form_cpp_class",
     "functionspace",

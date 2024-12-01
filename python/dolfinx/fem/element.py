@@ -174,7 +174,7 @@ class FiniteElement:
         """Creates a Python wrapper for the exported finite element class.
 
         Note:
-            Do not use this constructor directly. Instead use :func:`finite_element`.
+            Do not use this constructor directly. Instead use :func:`finiteelement`.
 
         Args:
             The underlying cpp instance that this object will wrap.
@@ -309,7 +309,7 @@ class FiniteElement:
         self._cpp_object.Tt_apply(x, cell_permutations, dim)
 
 
-def finite_element(
+def finiteelement(
     cell_type: _cpp.mesh.CellType,
     ufl_e: ufl.finiteelement,
     FiniteElement_dtype: np.dtype,
@@ -330,7 +330,7 @@ def finite_element(
 
     if ufl_e.is_mixed:
         elements = [
-            finite_element(cell_type, e, FiniteElement_dtype)._cpp_object
+            finiteelement(cell_type, e, FiniteElement_dtype)._cpp_object
             for e in ufl_e.sub_elements
         ]
         return FiniteElement(CppElement(elements))
