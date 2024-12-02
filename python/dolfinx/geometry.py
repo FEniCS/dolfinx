@@ -121,8 +121,6 @@ def bb_tree(
     map = mesh.topology.index_map(dim)
     if map is None:
         raise RuntimeError(f"Mesh entities of dimension {dim} have not been created.")
-    if entities is None:
-        entities = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
 
     dtype = mesh.geometry.x.dtype
     if np.issubdtype(dtype, np.float32):
