@@ -453,7 +453,6 @@ def compute_midpoints(msh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
     return _cpp.mesh.compute_midpoints(msh._cpp_object, dim, entities)
 
 
-
 def locate_entities(msh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
     """Compute mesh entities satisfying a geometric marking function.
 

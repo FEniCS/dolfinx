@@ -462,7 +462,8 @@ void apply_lifting(
 template <std::floating_point T>
 void set_bc(
     Vec b,
-    const std::vector<std::reference_wrapper<const DirichletBC<PetscScalar, T>>> bcs,
+    const std::vector<std::reference_wrapper<const DirichletBC<PetscScalar, T>>>
+        bcs,
     const Vec x0, PetscScalar alpha = 1)
 {
   PetscInt n = 0;
