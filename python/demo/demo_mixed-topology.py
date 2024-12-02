@@ -101,14 +101,14 @@ for cell_name in ["hexahedron", "prism"]:
     k = 12.0
     a += [(ufl.inner(ufl.grad(u), ufl.grad(v)) - k**2 * u * v) * ufl.dx]
 w, module, _ = ffcx.codegeneration.jit.compile_forms(a, options={"scalar_type": np.float64})
-kernels = [getattr(w[i].form_integrals[0], "tabulate_tensor_float64") for i in range(2)]
+kernels = [getattr(w_i.form_integrals[0], "tabulate_tensor_float64") for w_i in w]
 ffi = module.ffi
 
 # Assembler
 A = matrix_csr(sp)
 print(f"Assembling into matrix of size {len(A.data)} non-zeros")
 
-# For each cell type
+# For each cell type (ct)
 for ct in range(2):
     num_cells_type = mesh.topology.index_maps(3)[ct].size_local
     geom_dm = mesh.geometry.dofmaps(ct)
@@ -144,17 +144,21 @@ xdmf = """<?xml version="1.0"?>
 
 """
 
-vtk_topology = []
 perm = [cell_perm_vtk(CellType.hexahedron, 8), cell_perm_vtk(CellType.prism, 6)]
+topologies = ["Hexahedron", "Wedge"]
 
-geom_dm = mesh.geometry.dofmaps(0)
-for c in geom_dm:
-    vtk_topology += list(c[perm[0]])
+for j in range(2):
+    vtk_topology = []
+    geom_dm = mesh.geometry.dofmaps(j)
+    for c in geom_dm:
+        vtk_topology += list(c[perm[j]])
+    topology_type = topologies[j]
 
-xdmf += f"""
-      <Grid Name="hex" GridType="Uniform">
-        <Topology TopologyType="Hexahedron">
-          <DataItem Dimensions="{geom_dm.shape[0]} 8" Precision="4" NumberType="Int" Format="XML">
+    xdmf += f"""
+      <Grid Name="{topology_type}" GridType="Uniform">
+        <Topology TopologyType="{topology_type}">
+          <DataItem Dimensions="{geom_dm.shape[0]} {geom_dm.shape[1]}"
+           Precision="4" NumberType="Int" Format="XML">
           {" ".join(str(val) for val in vtk_topology)}
           </DataItem>
         </Topology>
@@ -168,30 +172,6 @@ xdmf += f"""
             {" ".join(str(val) for val in x)}
           </DataItem>
        </Attribute>
-      </Grid>"""
-
-vtk_topology = []
-geom_dm = mesh.geometry.dofmaps(1)
-for c in geom_dm:
-    vtk_topology += list(c[perm[1]])
-
-xdmf += f"""
-      <Grid Name="prism" GridType="Uniform">
-        <Topology TopologyType="Wedge">
-          <DataItem Dimensions="{geom_dm.shape[0]} 6" Precision="4" NumberType="Int" Format="XML">
-          {" ".join(str(val) for val in vtk_topology)}
-          </DataItem>
-        </Topology>
-        <Geometry GeometryType="XYZ" NumberType="float" Rank="2" Precision="8">
-          <DataItem Dimensions="{mesh.geometry.x.shape[0]} 3" Format="XML">
-            {" ".join(str(val) for val in mesh.geometry.x.flatten())}
-          </DataItem>
-        </Geometry>
-        <Attribute Name="u" Center="Node" NumberType="float" Precision="8">
-          <DataItem Dimensions="{len(x)}" Format="XML">
-            {" ".join(str(val) for val in x)}
-          </DataItem>
-        </Attribute>
       </Grid>"""
 
 xdmf += """
