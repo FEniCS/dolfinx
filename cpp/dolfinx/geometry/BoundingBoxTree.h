@@ -227,7 +227,7 @@ public:
   /// build the bounding box tree for.
   /// @param[in] entities List of entity indices (local to process) to
   /// compute the bounding box for. If `std::nullopt`, the bounding box tree is
-  /// computed for all local entiteis (including ghosts) of the given `tdim`.
+  /// computed for all local entities (including ghosts) of the given `tdim`.
   /// @param[in] padding Value to pad (extend) the the bounding box of
   /// each entity by.
   BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim,
