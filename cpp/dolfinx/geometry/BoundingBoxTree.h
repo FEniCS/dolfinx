@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <dolfinx/mesh/utils.h>
 #include <mpi.h>
+#include <optional>
 #include <span>
 #include <string>
 #include <vector>
@@ -203,6 +204,11 @@ template <std::floating_point T>
 class BoundingBoxTree
 {
 private:
+  /// @brief Return a range of entity indices of the given topological dimension
+  /// (including ghosts).
+  /// @param topology Topology to get entities from.
+  /// @param tdim Dimension of the entities.
+  /// @return Range of local indices, including ghosts.
   static std::vector<std::int32_t> range(mesh::Topology& topology, int tdim)
   {
     topology.create_entities(tdim);
@@ -220,13 +226,32 @@ public:
   /// @param[in] tdim Topological dimension of the mesh entities to
   /// build the bounding box tree for.
   /// @param[in] entities List of entity indices (local to process) to
-  /// compute the bounding box for (may be empty, if none).
+  /// compute the bounding box for. If `std::nullopt`, the bounding box tree is
+  /// computed for all local entiteis (including ghosts) of the given `tdim`.
   /// @param[in] padding Value to pad (extend) the the bounding box of
   /// each entity by.
   BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim,
-                  std::span<const std::int32_t> entities, double padding = 0)
+                  std::optional<std::span<const std::int32_t>> entities
+                  = std::nullopt,
+                  double padding = 0)
       : _tdim(tdim)
   {
+    // Initialize entities of given dimension if they don't exist
+    mesh.topology_mutable()->create_entities(tdim);
+
+    // Get input entities. If not provided, get all local entities of the given
+    // dimension (including ghosts)
+    std::span<const std::int32_t> entities_span;
+    std::optional<std::vector<std::int32_t>> local_range(std::nullopt);
+    if (entities)
+      entities_span = entities.value();
+    else
+    {
+      local_range.emplace(range(*mesh.topology_mutable(), tdim));
+      entities_span = std::span<const std::int32_t>(local_range->data(),
+                                                    local_range->size());
+    }
+
     if (tdim < 0 or tdim > mesh.topology()->dim())
     {
       throw std::runtime_error(
@@ -234,14 +259,12 @@ public:
           "equal to the topological dimension of the mesh");
     }
 
-    // Initialize entities of given dimension if they don't exist
-    mesh.topology_mutable()->create_entities(tdim);
     mesh.topology_mutable()->create_connectivity(tdim, mesh.topology()->dim());
 
     // Create bounding boxes for all mesh entities (leaves)
     std::vector<std::pair<std::array<T, 6>, std::int32_t>> leaf_bboxes;
-    leaf_bboxes.reserve(entities.size());
-    for (std::int32_t e : entities)
+    leaf_bboxes.reserve(entities_span.size());
+    for (std::int32_t e : entities_span)
     {
       std::array<T, 6> b = impl_bb::compute_bbox_of_entity(mesh, tdim, e);
       std::transform(b.cbegin(), std::next(b.cbegin(), 3), b.begin(),
@@ -257,20 +280,7 @@ public:
           = impl_bb::build_from_leaf(leaf_bboxes);
 
     spdlog::info("Computed bounding box tree with {} nodes for {} entities",
-                 num_bboxes(), entities.size());
-  }
-
-  /// Constructor
-  /// @param[in] mesh The mesh for building the bounding box tree
-  /// @param[in] tdim The topological dimension of the mesh entities to
-  /// build the bounding box tree for
-  /// @param[in] padding Value to pad (extend) the the bounding box of
-  /// each entity by.
-  BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim, T padding = 0)
-      : BoundingBoxTree::BoundingBoxTree(
-            mesh, tdim, range(mesh.topology_mutable(), tdim), padding)
-  {
-    // Do nothing
+                 num_bboxes(), entities_span.size());
   }
 
   /// Constructor @param[in] points Cloud of points, with associated
