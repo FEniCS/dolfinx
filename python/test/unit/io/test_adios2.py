@@ -184,7 +184,7 @@ class TestVTX:
         def partitioner(comm, nparts, local_graph, num_ghost_nodes):
             """Leave cells on the current rank"""
             dest = np.full(len(cells), comm.rank, dtype=np.int32)
-            return adjacencylist(dest)
+            return adjacencylist(dest)._cpp_object
 
         if comm.rank == 0:
             cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)

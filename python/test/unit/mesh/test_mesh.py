@@ -556,7 +556,7 @@ def test_empty_rank_mesh(dtype):
     def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the curent rank"""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
-        return graph.adjacencylist(dest)
+        return graph.adjacencylist(dest)._cpp_object
 
     if comm.rank == 0:
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)

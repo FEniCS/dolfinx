@@ -33,6 +33,7 @@ from dolfinx.cpp.mesh import (
 from dolfinx.cpp.refinement import RefinementOption
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem import coordinate_element as _coordinate_element
+from dolfinx.graph import AdjacencyList
 
 __all__ = [
     "CellType",
@@ -735,7 +736,7 @@ def meshtags(
 
 
 def meshtags_from_entities(
-    msh: Mesh, dim: int, entities: _cpp.graph.AdjacencyList_int32, values: npt.NDArray[typing.Any]
+    msh: Mesh, dim: int, entities: AdjacencyList, values: npt.NDArray[typing.Any]
 ):
     """Create a :class:dolfinx.mesh.MeshTags` object that associates
     data with a subset of mesh entities, where the entities are defined
@@ -762,7 +763,9 @@ def meshtags_from_entities(
     elif isinstance(values, float):
         values = np.full(entities.num_nodes, values, dtype=np.double)
     values = np.asarray(values)
-    return MeshTags(_cpp.mesh.create_meshtags(msh.topology._cpp_object, dim, entities, values))
+    return MeshTags(
+        _cpp.mesh.create_meshtags(msh.topology._cpp_object, dim, entities._cpp_object, values)
+    )
 
 
 def create_interval(

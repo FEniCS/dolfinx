@@ -144,8 +144,9 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   std::partial_sum(pcounts.begin(), pcounts.end(), offsets.begin() + 1);
 
   std::vector<double> values_all(offsets.back());
-  err = MPI_Gatherv(values.data(), values.size(), MPI_DOUBLE, values_all.data(),
-                    pcounts.data(), offsets.data(), MPI_DOUBLE, 0, comm);
+  err = MPI_Gatherv(values.data(), values.size(), dolfinx::MPI::mpi_t<double>,
+                    values_all.data(), pcounts.data(), offsets.data(),
+                    dolfinx::MPI::mpi_t<double>, 0, comm);
   dolfinx::MPI::check_error(comm, err);
 
   // Return empty table on rank > 0

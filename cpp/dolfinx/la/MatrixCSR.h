@@ -688,9 +688,9 @@ void MatrixCSR<U, V, W, X>::scatter_rev_begin()
 
   int status = MPI_Ineighbor_alltoallv(
       _ghost_value_data.data(), val_send_count.data(), _val_send_disp.data(),
-      dolfinx::MPI::mpi_type<value_type>(), _ghost_value_data_in.data(),
+      dolfinx::MPI::mpi_t<value_type>, _ghost_value_data_in.data(),
       val_recv_count.data(), _val_recv_disp.data(),
-      dolfinx::MPI::mpi_type<value_type>(), _comm.comm(), &_request);
+      dolfinx::MPI::mpi_t<value_type>, _comm.comm(), &_request);
   assert(status == MPI_SUCCESS);
 }
 //-----------------------------------------------------------------------------

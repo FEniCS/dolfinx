@@ -13,6 +13,13 @@ using namespace dolfinx;
 using namespace dolfinx::common;
 
 //-----------------------------------------------------------------------------
+TimeLogger& TimeLogger::instance()
+{
+  static TimeLogger _instance{};
+  return _instance;
+}
+
+//-----------------------------------------------------------------------------
 void TimeLogger::register_timing(
     std::string task, std::chrono::duration<double, std::ratio<1>> time)
 {

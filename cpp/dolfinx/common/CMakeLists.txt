@@ -12,7 +12,6 @@ set(HEADERS_common
     ${CMAKE_CURRENT_SOURCE_DIR}/Table.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Timer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogger.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogManager.h
     ${CMAKE_CURRENT_SOURCE_DIR}/timing.h
     ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
     PARENT_SCOPE
@@ -26,6 +25,5 @@ target_sources(
           ${CMAKE_CURRENT_SOURCE_DIR}/MPI.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/Table.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogger.cpp
-          ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogManager.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/timing.cpp
 )
