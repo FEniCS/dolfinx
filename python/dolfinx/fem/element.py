@@ -274,7 +274,8 @@ class FiniteElement:
             dim: Number of columns in `data`.
 
         Note:
-            Exposed for testing only, expect poor performance.
+            Exposed for testing. Function is not vectorised across multiple cells. Please see
+            `basix.numba_helpers` for performant versions.
         """
         self._cpp_object.T_apply(x, cell_permutations, dim)
 
@@ -288,7 +289,8 @@ class FiniteElement:
             dim: Number of columns in `data`.
 
         Note:
-            Exposed for testing only, expect poor performance.
+            Exposed for testing. Function is not vectorised across multiple cells. Please see
+            `basix.numba_helpers` for performant versions.
         """
         self._cpp_object.Tt_apply(x, cell_permutations, dim)
 
@@ -304,7 +306,8 @@ class FiniteElement:
             dim: Number of columns in `data`.
 
         Note:
-            Exposed for testing only, expect poor performance.
+            Exposed for testing. Function is not vectorised across multiple cells. Please see
+            `basix.numba_helpers` for performant versions.
         """
         self._cpp_object.Tt_apply(x, cell_permutations, dim)
 
