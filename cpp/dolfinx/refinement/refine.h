@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2023 Garth N. Wells
+// Copyright (C) 2010-2024 Garth N. Wells and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "dolfinx/graph/AdjacencyList.h"
 #include "dolfinx/mesh/Mesh.h"
 #include "dolfinx/mesh/Topology.h"
 #include "dolfinx/mesh/cell_types.h"
@@ -15,85 +16,72 @@
 #include <algorithm>
 #include <concepts>
 #include <optional>
+#include <spdlog/spdlog.h>
 #include <utility>
 
 namespace dolfinx::refinement
 {
-namespace impl
-{
-/// @brief create the refined mesh by optionally redistributing it
-template <std::floating_point T>
-mesh::Mesh<T>
-create_refined_mesh(const mesh::Mesh<T>& mesh,
-                    const graph::AdjacencyList<std::int64_t>& cell_adj,
-                    std::span<const T> new_vertex_coords,
-                    std::array<std::size_t, 2> xshape, bool redistribute,
-                    mesh::GhostMode ghost_mode)
-{
-  if (dolfinx::MPI::size(mesh.comm()) == 1)
-  {
-    // No parallel construction necessary, i.e. redistribute also has no
-    // effect
-    return mesh::create_mesh(mesh.comm(), cell_adj.array(),
-                             mesh.geometry().cmap(), new_vertex_coords, xshape,
-                             ghost_mode);
-  }
-  else
-  {
-    // Let partition handle the parallel construction of the mesh
-    return partition<T>(mesh, cell_adj, new_vertex_coords, xshape, redistribute,
-                        ghost_mode);
-  }
-}
-} // namespace impl
-
-/// @brief Refine with markers, optionally redistributing, and
-/// optionally calculating the parent-child relationships.
+/// @brief Refine a mesh with markers.
 ///
-/// @param[in] mesh Input mesh to be refined
-/// @param[in] edges Optional indices of the edges that should be split
-/// by this refinement, if optional is not set, a uniform refinement is
-/// performed, same behavior as passing a list of all indices.
-/// @param[in] redistribute Flag to call the Mesh Partitioner to
-/// redistribute after refinement.
-/// @param[in] ghost_mode Ghost mode of the refined mesh.
+/// The refined mesh can be optionally re-partitioned across processes.
+/// Passing `nullptr` for `partitioner`, refined cells will be on the
+/// same process as the parent cell.
+///
+/// Parent-child relationships can be optionally computed. Parent-child
+/// relationships can be used to create MeshTags on the refined mesh
+/// from MeshTags on the parent mesh.
+///
+/// @warning Using the default partitioner for a refined mesh, the
+/// refined mesh will **not** include ghosts cells (cells connected by
+/// facet to an owned cell) even if the parent mesh is ghosted.
+///
+/// @warning Passing `nullptr` for `partitioner`, the refined mesh will
+/// **not** have ghosts cells even if the parent mesh is ghosted. The
+/// possibility to not re-partition the refined mesh and include ghost
+/// cells in the refined mesh will be added in a future release.
+///
+/// @param[in] mesh Input mesh to be refined.
+/// @param[in] edges Indices of the edges that should be split in the
+/// refinement. If not provided (`std::nullopt`), uniform refinement is
+/// performed.
+/// @param[in] partitioner Partitioner to be used to distribute the
+/// refined mesh. If not callable, refined cells will be on the same
+/// process as the parent cell.
 /// @param[in] option Control the computation of parent facets, parent
-/// cells. If an option is unselected, an empty list is returned.
-/// @return New Mesh and optional parent cell index, parent facet
+/// cells. If an option is not selected, an empty list is returned.
+/// @return New mesh, and optional parent cell indices and parent facet
 /// indices.
 template <std::floating_point T>
 std::tuple<mesh::Mesh<T>, std::optional<std::vector<std::int32_t>>,
            std::optional<std::vector<std::int8_t>>>
 refine(const mesh::Mesh<T>& mesh,
-       std::optional<std::span<const std::int32_t>> edges, bool redistribute,
-       mesh::GhostMode ghost_mode = mesh::GhostMode::shared_facet,
+       std::optional<std::span<const std::int32_t>> edges,
+       const mesh::CellPartitionFunction& partitioner
+       = mesh::create_cell_partitioner(mesh::GhostMode::none),
        Option option = Option::none)
 {
   auto topology = mesh.topology();
   assert(topology);
-
-  mesh::CellType cell_t = topology->cell_type();
-  if (!mesh::is_simplex(cell_t))
+  if (!mesh::is_simplex(topology->cell_type()))
     throw std::runtime_error("Refinement only defined for simplices");
-  bool oned = topology->cell_type() == mesh::CellType::interval;
+
   auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
-      = oned ? interval::compute_refinement_data(mesh, edges, option)
-             : plaza::compute_refinement_data(mesh, edges, option);
+      = (topology->cell_type() == mesh::CellType::interval)
+            ? interval::compute_refinement_data(mesh, edges, option)
+            : plaza::compute_refinement_data(mesh, edges, option);
 
-  mesh::Mesh<T> refined_mesh = impl::create_refined_mesh(
-      mesh, cell_adj, std::span<const T>(new_vertex_coords), xshape,
-      redistribute, ghost_mode);
+  mesh::Mesh<T> mesh1 = mesh::create_mesh(
+      mesh.comm(), mesh.comm(), cell_adj.array(), mesh.geometry().cmap(),
+      mesh.comm(), new_vertex_coords, xshape, partitioner);
 
-  // Report the number of refined cellse
+  // Report the number of refined cells
   const int D = topology->dim();
   const std::int64_t n0 = topology->index_map(D)->size_global();
-  const std::int64_t n1 = refined_mesh.topology()->index_map(D)->size_global();
+  const std::int64_t n1 = mesh1.topology()->index_map(D)->size_global();
   spdlog::info(
       "Number of cells increased from {} to {} ({}% increase).", n0, n1,
       100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0));
 
-  return {std::move(refined_mesh), std::move(parent_cell),
-          std::move(parent_facet)};
+  return {std::move(mesh1), std::move(parent_cell), std::move(parent_facet)};
 }
-
 } // namespace dolfinx::refinement

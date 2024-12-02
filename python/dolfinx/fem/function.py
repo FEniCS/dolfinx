@@ -561,7 +561,6 @@ class ElementMetaData(typing.NamedTuple):
 
 
 def _create_dolfinx_element(
-    comm: _MPI.Intracomm,
     cell_type: _cpp.mesh.CellType,
     ufl_e: ufl.FiniteElementBase,
     dtype: np.dtype,
@@ -575,30 +574,27 @@ def _create_dolfinx_element(
         raise ValueError(f"Unsupported dtype: {dtype}")
 
     if ufl_e.is_mixed:
-        elements = [_create_dolfinx_element(comm, cell_type, e, dtype) for e in ufl_e.sub_elements]
+        elements = [_create_dolfinx_element(cell_type, e, dtype) for e in ufl_e.sub_elements]
         return CppElement(elements)
     elif ufl_e.is_quadrature:
         return CppElement(
-            cell_type, ufl_e.custom_quadrature()[0], ufl_e.block_size, ufl_e.is_symmetric
+            cell_type, ufl_e.custom_quadrature()[0], ufl_e.reference_value_shape, ufl_e.is_symmetric
         )
     else:
         basix_e = ufl_e.basix_element._e
-        return CppElement(basix_e, ufl_e.block_size, ufl_e.is_symmetric)
+        value_shape = ufl_e.reference_value_shape if ufl_e.block_size > 1 else None
+        return CppElement(basix_e, value_shape, ufl_e.is_symmetric)
 
 
 def functionspace(
     mesh: Mesh,
     element: typing.Union[ufl.FiniteElementBase, ElementMetaData, tuple[str, int, tuple, bool]],
-    form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
-    jit_options: typing.Optional[dict[str, typing.Any]] = None,
 ) -> FunctionSpace:
     """Create a finite element function space.
 
     Args:
         mesh: Mesh that space is defined on.
         element: Finite element description.
-        form_compiler_options: Options passed to the form compiler.
-        jit_options: Options controlling just-in-time compilation.
 
     Returns:
         A function space.
@@ -617,16 +613,8 @@ def functionspace(
     if ufl_e.cell != mesh.ufl_domain().ufl_cell():
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
 
-    ufl_space = ufl.FunctionSpace(mesh.ufl_domain(), ufl_e)
-    value_shape = ufl_space.value_shape
-
-    # Compile dofmap and element and create DOLFINx objects
-    if form_compiler_options is None:
-        form_compiler_options = dict()
-    form_compiler_options["scalar_type"] = dtype
-
-    cpp_element = _create_dolfinx_element(mesh.comm, mesh.topology.cell_type, ufl_e, dtype)
-
+    # Create DOLFINx objects
+    cpp_element = _create_dolfinx_element(mesh.topology.cell_type, ufl_e, dtype)
     cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, cpp_element)
 
     assert np.issubdtype(
@@ -635,13 +623,9 @@ def functionspace(
 
     # Initialize the cpp.FunctionSpace
     try:
-        cppV = _cpp.fem.FunctionSpace_float64(
-            mesh._cpp_object, cpp_element, cpp_dofmap, value_shape
-        )
+        cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, cpp_element, cpp_dofmap)
     except TypeError:
-        cppV = _cpp.fem.FunctionSpace_float32(
-            mesh._cpp_object, cpp_element, cpp_dofmap, value_shape
-        )
+        cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, cpp_element, cpp_dofmap)
 
     return FunctionSpace(mesh, ufl_e, cppV)
 
@@ -695,17 +679,11 @@ class FunctionSpace(ufl.FunctionSpace):
         """
         try:
             Vcpp = _cpp.fem.FunctionSpace_float64(
-                self._cpp_object.mesh,
-                self._cpp_object.element,
-                self._cpp_object.dofmap,
-                self._cpp_object.value_shape,
+                self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap
             )  # type: ignore
         except TypeError:
             Vcpp = _cpp.fem.FunctionSpace_float32(
-                self._cpp_object.mesh,
-                self._cpp_object.element,
-                self._cpp_object.dofmap,
-                self._cpp_object.value_shape,
+                self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap
             )  # type: ignore
         return FunctionSpace(self._mesh, self.ufl_element(), Vcpp)
 
@@ -714,10 +692,10 @@ class FunctionSpace(ufl.FunctionSpace):
         """Number of sub spaces."""
         return self.element.num_sub_elements
 
-    @property
-    def value_shape(self) -> tuple[int, ...]:
-        """Value shape."""
-        return tuple(int(i) for i in self._cpp_object.value_shape)
+    # @property
+    # def value_shape(self) -> tuple[int, ...]:
+    #     """Value shape."""
+    #     return tuple(int(i) for i in self._cpp_object.value_shape)
 
     def sub(self, i: int) -> FunctionSpace:
         """Return the i-th sub space.

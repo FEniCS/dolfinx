@@ -159,7 +159,8 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
 }
 //-----------------------------------------------------------------------------
 std::vector<int>
-dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
+dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
+                                      int tag)
 {
   spdlog::info(
       "Computing communication graph edges (using NBX algorithm). Number "
@@ -171,9 +172,8 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
   std::vector<std::byte> send_buffer(edges.size());
   for (std::size_t e = 0; e < edges.size(); ++e)
   {
-    int err = MPI_Issend(send_buffer.data() + e, 1, MPI_BYTE, edges[e],
-                         static_cast<int>(tag::consensus_pex), comm,
-                         &send_requests[e]);
+    int err = MPI_Issend(send_buffer.data() + e, 1, MPI_BYTE, edges[e], tag,
+                         comm, &send_requests[e]);
     dolfinx::MPI::check_error(comm, err);
   }
 
@@ -189,8 +189,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
     // Check for message
     int request_pending;
     MPI_Status status;
-    int err = MPI_Iprobe(MPI_ANY_SOURCE, static_cast<int>(tag::consensus_pex),
-                         comm, &request_pending, &status);
+    int err = MPI_Iprobe(MPI_ANY_SOURCE, tag, comm, &request_pending, &status);
     dolfinx::MPI::check_error(comm, err);
 
     // Check if message is waiting to be processed
@@ -199,8 +198,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
       // Receive it
       int other_rank = status.MPI_SOURCE;
       std::byte buffer_recv;
-      int err = MPI_Recv(&buffer_recv, 1, MPI_BYTE, other_rank,
-                         static_cast<int>(tag::consensus_pex), comm,
+      int err = MPI_Recv(&buffer_recv, 1, MPI_BYTE, other_rank, tag, comm,
                          MPI_STATUS_IGNORE);
       dolfinx::MPI::check_error(comm, err);
       other_ranks.push_back(other_rank);

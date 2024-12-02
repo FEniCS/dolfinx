@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Garth N. Wells and Matthew W. Scroggs
+// Copyright (C) 2020-2024 Garth N. Wells and Matthew W. Scroggs
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -14,6 +14,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <span>
 #include <utility>
 #include <vector>
@@ -29,6 +30,24 @@ enum class doftransform
   inverse_transpose = 3, ///< Transpose inverse
 };
 
+/// @brief Basix element holder
+/// @tparam T Scalar type
+template <std::floating_point T>
+struct BasixElementData
+{
+  std::reference_wrapper<const basix::FiniteElement<T>>
+      element; ///< Finite element.
+  std::optional<std::vector<std::size_t>> value_shape
+      = std::nullopt;    ///< Value shape. Can only be set for scalar `element`.
+  bool symmetry = false; ///< Symmetry. Should ony set set for 2nd-order tensor
+                         ///< blocked elements.
+};
+
+/// Type deduction helper
+template <typename U, typename V, typename W>
+BasixElementData(U element, V bs, W symmetry)
+    -> BasixElementData<typename std::remove_cvref<U>::type::scalar_type>;
+
 /// @brief Model of a finite element.
 ///
 /// Provides the dof layout on a reference element, and various methods
@@ -41,26 +60,58 @@ public:
   using geometry_type = T;
 
   /// @brief Create a finite element from a Basix finite element.
-  /// @param[in] element Basix finite element
-  /// @param[in] block_size The block size for the element
-  /// @param[in] symmetric Is the element a symmetric tensor?
+  /// @param[in] element Basix finite element.
+  /// @param[in] value_shape Value shape for blocked element, e.g. `{3}`
+  /// for a vector in 3D or `{2, 2}` for a rank-2 tensor in 2D. Can only
+  /// be set for blocked scalar `element`. For other elements and scalar
+  /// elements it should be `std::nullopt`.
+  /// @param[in] symmetric Is the element a symmetric tensor? Should ony
+  /// set for 2nd-order tensor blocked elements.
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
-                std::size_t block_size, bool symmetric = false);
+                std::optional<std::vector<std::size_t>> value_shape
+                = std::nullopt,
+                bool symmetric = false);
 
-  /// @brief Create mixed finite element from a list of finite elements.
-  /// @param[in] elements Basix finite elements
+  /// @brief Create a mixed finite element from Basix finite elements.
+  ///
+  /// See FiniteElement(const std::vector<std::shared_ptr<const
+  /// FiniteElement<geometry_type>>>&) for a discussion of mixed
+  /// elements.
+  ///
+  /// @param[in] elements List of (Basix finite element, block size,
+  /// symmetric) tuples, one for each element in the mixed element.
+  FiniteElement(std::vector<BasixElementData<geometry_type>> elements);
+
+  /// @brief Create a mixed finite element from a list of finite
+  /// elements.
+  ///
+  /// This constructs a mixed element \f$E_0 \times E_1 \times \ldots
+  /// \times E_{n-1}\f$. The *i*th sub-element \f$E_i\f$ can be accessed
+  /// by ::extract_sub_element. Functions defined on mixed element
+  /// spaces cannot be interpolated into directly. It is necessary to
+  /// first extract a sub-Function (view), which can then be
+  /// interpolated into.
+  ///
+  /// A mixed element can be constructed from one element. In this case
+  /// the `FiniteElement` behaves like a mixed element and cannot be
+  /// interpolated into. The underlying element can be accessed using
+  /// ::extract_sub_element.
+  ///
+  /// @param[in] elements Finite elements to compose the mixed element
+  /// from.
   FiniteElement(
       const std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>&
           elements);
 
-  /// @brief Create a quadrature element
-  /// @param[in] cell_type The cell type
-  /// @param[in] points Quadrature points
-  /// @param[in] pshape Shape of points array
-  /// @param[in] block_size The block size for the element
+  /// @brief Create a quadrature element.
+  /// @param[in] cell_type Cell type.
+  /// @param[in] points Quadrature points.
+  /// @param[in] pshape Shape of `points` array.
+  /// @param[in] value_shape Value shape for the element.
   /// @param[in] symmetric Is the element a symmetric tensor?
   FiniteElement(mesh::CellType cell_type, std::span<const geometry_type> points,
-                std::array<std::size_t, 2> pshape, std::size_t block_size,
+                std::array<std::size_t, 2> pshape,
+                std::vector<std::size_t> value_shape = {},
                 bool symmetric = false);
 
   /// Copy constructor
@@ -78,19 +129,22 @@ public:
   /// Move assignment
   FiniteElement& operator=(FiniteElement&& element) = default;
 
-  /// Check if two elements are equivalent
-  /// @return True is the two elements are the same
+  /// @brief Check if two elements are equivalent.
+  /// @return True is the two elements are the same.
   /// @note Equality can be checked only for non-mixed elements. For a
-  /// mixed element, this function will raise an exception.
+  /// mixed element, this function will throw an exception.
   bool operator==(const FiniteElement& e) const;
 
-  /// Check if two elements are not equivalent
-  /// @return True is the two elements are not the same
+  /// @brief Check if two elements are not equivalent.
+  /// @return True is the two elements are not the same.
   /// @note Equality can be checked only for non-mixed elements. For a
   /// mixed element, this function will raise an exception.
   bool operator!=(const FiniteElement& e) const;
 
-  /// String identifying the finite element
+  /// @brief Cell shape that the element is defined on.
+  mesh::CellType cell_type() const noexcept;
+
+  /// @brief String identifying the finite element.
   /// @return Element signature
   /// @warning The function is provided for convenience, but it should
   /// not be relied upon for determining the element type. Use other
@@ -98,30 +152,95 @@ public:
   /// properties.
   std::string signature() const noexcept;
 
-  /// Dimension of the finite element function space (the number of
-  /// degrees-of-freedom for the element)
-  /// @return Dimension of the finite element space
+  /// @brief Dimension of the finite element function space (the number
+  /// of degrees-of-freedom for the element).
+  ///
+  /// For 'blocked' elements, this function returns the dimension of the
+  /// full element rather than the dimension of the base element.
+  ///
+  /// @return Dimension of the finite element space.
   int space_dimension() const noexcept;
 
-  /// Block size of the finite element function space. For
-  /// BlockedElements, this is the number of DOFs
-  /// colocated at each DOF point. For other elements, this is always 1.
-  /// @return Block size of the finite element space
+  /// @brief Block size of the finite element function space.
+  ///
+  /// For non-blocked elements, this is always 1. For blocked elements,
+  /// this is the number of DOFs collocated at each DOF point. For
+  /// blocked elements the block size is equal to the value size, except
+  /// for symmetric rank-2 tensor blocked elements. For a symmetric
+  /// rank-2 tensor blocked element the block size is 3 in 2D and 6 in
+  /// 3D.
+  ///
+  /// @return Block size of the finite element space.
   int block_size() const noexcept;
 
-  /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector, 9
-  /// for a second-order tensor in 3D, for the reference element
-  /// @return The value size for the reference element
+  /// @brief Value size of the finite element field.
+  ///
+  /// The value size is the number of components in the finite element
+  /// field. It is the product of the value shape, e.g. is is 1 for a
+  /// scalar function, 2 for a 2D vector, 9 for a second-order tensor in
+  /// 3D, etc. For blocked elements, this function returns the value
+  /// size for the full 'blocked' element.
+  ///
+  /// @note The return value of this function is inconsistent with
+  /// value_shape() for rank-2 'symmetric' elements. Due to issues
+  /// elsewhere in the code base, rank-2 symmetric fields have value
+  /// shape `{3}` (2D) or `{6}` rather than `{2, 2}` and `{3, 3}`,
+  /// respectively. For symmetric rank-2 tensors this function returns 4
+  /// for 2D cases and 9 for 3D cases. This inconsistency will be fixed
+  /// in the future.
+  ///
+  /// @throws Exception is thrown for a mixed element as mixed elements
+  /// do not have a value shape.
+  /// @return The value size.
+  int value_size() const;
+
+  /// @brief Value shape of the finite element field.
+  ///
+  /// The value shape describes the shape of the finite element field,
+  /// e.g. `{}` for a scalar, `{2}` for a vector in 2D, `{3, 3}` for a
+  /// rank-2 tensor in 3D, etc.
+  ///
+  /// @throws Exception is thrown for a mixed element as mixed elements
+  /// do not have a value shape.
+  /// @return The value shape.
+  std::span<const std::size_t> value_shape() const;
+
+  /// @brief Value size of the base (non-blocked) finite element field.
+  ///
+  /// The reference value size is the product of the reference value
+  /// shape, e.g. it is  1 for a scalar element, 2 for a 2D
+  /// (non-blocked) vector, 9 for a (non-blocked) second-order tensor in
+  /// 3D, etc.
+  ///
+  /// For blocked elements, this function returns the value shape for
+  /// the 'base' element from which the blocked element is composed. For
+  /// other elements, the return value is the same as
+  /// FiniteElement::value_shape.
+  ///
+  /// @throws Exception is thrown for a mixed element as mixed elements
+  /// do not have a value shape.
+  /// @return The value size.
   int reference_value_size() const;
 
-  /// The reference value shape
-  std::span<const std::size_t> reference_value_shape() const noexcept;
+  /// @brief Value shape of the base (non-blocked) finite element field.
+  ///
+  /// For non-blocked elements, this function returns the same as
+  /// FiniteElement::value_shape. For blocked and quadrature elements
+  /// the returned shape will be `{}`.
+  ///
+  /// Mixed elements do not have a reference value shape.
+  ///
+  /// @throws Exception is thrown for a mixed element as mixed elements
+  /// do not have a value shape.
+  /// @return The value shape.
+  std::span<const std::size_t> reference_value_shape() const;
 
-  /// The local DOFs associated with each subentity of the cell
+  /// @brief Local DOFs associated with each sub-entity of the cell.
   const std::vector<std::vector<std::vector<int>>>&
   entity_dofs() const noexcept;
 
-  /// The local DOFs associated with the closure of each subentity of the cell
+  /// @brief Local DOFs associated with the closure of each sub-entity
+  /// of the cell.
   const std::vector<std::vector<std::vector<int>>>&
   entity_closure_dofs() const noexcept;
 
@@ -130,41 +249,43 @@ public:
 
   /// @brief Evaluate derivatives of the basis functions up to given order
   /// at points in the reference cell.
+  ///
   /// @param[in,out] values Array that will be filled with the tabulated
   /// basis values. Must have shape `(num_derivatives, num_points,
   /// num_dofs, reference_value_size)` (row-major storage)
   /// @param[in] X The reference coordinates at which to evaluate the
   /// basis functions. Shape is `(num_points, topological dimension)`
-  /// (row-major storage)
-  /// @param[in] shape The shape of `X`
-  /// @param[in] order The number of derivatives (up to and including
-  /// this order) to tabulate for
+  /// (row-major storage).
+  /// @param[in] shape Shape of `X`.
+  /// @param[in] order Number of derivatives (up to and including
+  /// this order) to tabulate for.
   void tabulate(std::span<geometry_type> values,
                 std::span<const geometry_type> X,
                 std::array<std::size_t, 2> shape, int order) const;
 
-  /// Evaluate all derivatives of the basis functions up to given order
-  /// at given points in reference cell
+  /// @brief Evaluate all derivatives of the basis functions up to given
+  /// order at given points in reference cell.
+  ///
   /// @param[in] X The reference coordinates at which to evaluate the
   /// basis functions. Shape is `(num_points, topological dimension)`
-  /// (row-major storage)
-  /// @param[in] shape The shape of `X`
-  /// @param[in] order The number of derivatives (up to and including
-  /// this order) to tabulate for
-  /// @return Basis function values and array shape (row-major storage)
+  /// (row-major storage).
+  /// @param[in] shape Shape of `X`.
+  /// @param[in] order Number of derivatives (up to and including this
+  /// order) to tabulate for.
+  /// @return Basis function values and array shape (row-major storage).
   std::pair<std::vector<geometry_type>, std::array<std::size_t, 4>>
   tabulate(std::span<const geometry_type> X, std::array<std::size_t, 2> shape,
            int order) const;
 
   /// @brief Number of sub elements (for a mixed or blocked element).
-  /// @return The number of sub elements
+  /// @return Number of sub elements.
   int num_sub_elements() const noexcept;
 
   /// @brief Check if element is a mixed element.
   ///
-  /// A mixed element i composed of two or more elements of different
-  /// types (a block element, e.g. a Lagrange element with block size >=
-  /// 1 is not considered mixed).
+  /// A mixed element is composed of two or more elements of different
+  /// types. A blocked element, e.g. a Lagrange element with block size
+  /// >= 1 is not considered mixed.
   ///
   /// @return True if element is mixed.
   bool is_mixed() const noexcept;
@@ -226,15 +347,15 @@ public:
   /// @brief Create a matrix that maps degrees of freedom from one
   /// element to this element (interpolation).
   ///
-  /// @param[in] from The element to interpolate from
+  /// @param[in] from The element to interpolate from.
   /// @return Matrix operator that maps the `from` degrees-of-freedom to
   /// the degrees-of-freedom of this element. The (0) matrix data
   /// (row-major storage) and (1) the shape (num_dofs of `this` element,
   /// num_dofs of `from`) are returned.
   ///
   /// @pre The two elements must use the same mapping between the
-  /// reference and physical cells
-  /// @note Does not support mixed elements
+  /// reference and physical cells.
+  /// @note Does not support mixed elements.
   std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>>
   create_interpolation_operator(const FiniteElement& from) const;
 
@@ -250,7 +371,7 @@ public:
   /// orientation of a basis function, and this orientation cannot be
   /// corrected for by permuting the DOF numbers on each cell.
   ///
-  /// @return True if DOF transformations are required
+  /// @return True if DOF transformations are required.
   bool needs_dof_transformations() const noexcept;
 
   /// @brief Check if DOF permutations are needed for this element.
@@ -266,7 +387,7 @@ public:
   /// this can be corrected for by permuting the DOF numbers on each
   /// cell.
   ///
-  /// @return True if DOF transformations are required
+  /// @return True if DOF transformations are required.
   bool needs_dof_permutations() const noexcept;
 
   /// @brief Return a function that applies a DOF transformation
@@ -307,7 +428,7 @@ public:
   /// data* from the reference element to the conforming (physical)
   /// ordering, e.g. \f$u = T^{-t} \tilde{u}\f$.
   /// @param[in] scalar_element Indicates whether the scalar
-  /// transformations should be returned for a vector element
+  /// transformations should be returned for a vector element.
   template <typename U>
   std::function<void(std::span<U>, std::span<const std::uint32_t>, std::int32_t,
                      int)>
@@ -324,9 +445,8 @@ public:
 
     if (!_sub_elements.empty())
     {
-      if (_is_mixed)
+      if (!_reference_value_shape) // Mixed element
       {
-        // Mixed element
         std::vector<std::function<void(
             std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)>>
             sub_element_fns;
@@ -426,11 +546,10 @@ public:
         // Do nothing
       };
     }
-    else if (_sub_elements.size() != 0)
+    else if (!_sub_elements.empty())
     {
-      if (_is_mixed)
+      if (!_reference_value_shape) // Mixed element
       {
-        // Mixed element
         std::vector<std::function<void(
             std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)>>
             sub_element_fns;
@@ -716,23 +835,32 @@ public:
   dof_permutation_fn(bool inverse = false, bool scalar_element = false) const;
 
 private:
+  // Value shape. For blocked elements this is larger than
+  // _reference_value_shape. For non-blocked 'primal' elements it is
+  // equal to _reference_value_shape. For mixed elements, it is
+  // std::nullopt.
+  std::optional<std::vector<std::size_t>> _value_shape;
+
+  // Block size for BlockedElements. This gives the number of DOFs
+  // co-located at each dof 'point'.
+  int _bs;
+
+  // Element cell shape
+  mesh::CellType _cell_type;
+
+  // Element signature
   std::string _signature;
 
+  // Dimension of the finite element space (accounting for any blocking)
   int _space_dim;
 
   // List of sub-elements (if any)
   std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>
       _sub_elements;
 
-  // Dimension of each value space
-  std::vector<std::size_t> _reference_value_shape;
-
-  // Block size for BlockedElements. This gives the number of DOFs
-  // co-located at each dof 'point'.
-  int _bs;
-
-  // Indicate whether this is a mixed element
-  bool _is_mixed;
+  // Value space shape, e.g. {} for a scalar, {3, 3} for a tensor in 3D.
+  // For a mixed element it is std::nullopt.
+  std::optional<std::vector<std::size_t>> _reference_value_shape;
 
   // Basix Element (nullptr for mixed elements)
   std::unique_ptr<basix::FiniteElement<geometry_type>> _element;
@@ -751,4 +879,5 @@ private:
   // all elements except quadrature elements)
   std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>> _points;
 };
+
 } // namespace dolfinx::fem

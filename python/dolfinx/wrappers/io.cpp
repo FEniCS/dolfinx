@@ -24,6 +24,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/complex.h>
 #include <nanobind/stl/filesystem.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
@@ -115,7 +116,8 @@ void declare_vtx_writer(nb::module_& m, std::string type)
             [](dolfinx::io::VTXWriter<T>* self, MPICommWrapper comm,
                std::filesystem::path filename,
                std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
-               std::string engine) {
+               std::string engine)
+            {
               new (self)
                   dolfinx::io::VTXWriter<T>(comm.get(), filename, mesh, engine);
             },
@@ -143,46 +145,6 @@ void declare_vtx_writer(nb::module_& m, std::string type)
         .def("close", [](dolfinx::io::VTXWriter<T>& self) { self.close(); })
         .def(
             "write", [](dolfinx::io::VTXWriter<T>& self, double t)
-            { self.write(t); }, nb::arg("t"));
-  }
-
-  {
-    std::string pyclass_name = "FidesWriter_" + type;
-    nb::class_<dolfinx::io::FidesWriter<T>>(m, pyclass_name.c_str(),
-                                            "FidesWriter object")
-        .def(
-            "__init__",
-            [](dolfinx::io::FidesWriter<T>* self, MPICommWrapper comm,
-               std::filesystem::path filename,
-               std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
-               std::string engine) {
-              new (self) dolfinx::io::FidesWriter<T>(comm.get(), filename, mesh,
-                                                     engine);
-            },
-            nb::arg("comm"), nb::arg("filename"), nb::arg("mesh"),
-            nb::arg("engine") = "BPFile")
-        .def(
-            "__init__",
-            [](dolfinx::io::FidesWriter<T>* self, MPICommWrapper comm,
-               std::filesystem::path filename,
-               const std::vector<std::variant<
-                   std::shared_ptr<const dolfinx::fem::Function<float, T>>,
-                   std::shared_ptr<const dolfinx::fem::Function<double, T>>,
-                   std::shared_ptr<
-                       const dolfinx::fem::Function<std::complex<float>, T>>,
-                   std::shared_ptr<const dolfinx::fem::Function<
-                       std::complex<double>, T>>>>& u,
-               std::string engine, dolfinx::io::FidesMeshPolicy policy)
-            {
-              new (self) dolfinx::io::FidesWriter<T>(comm.get(), filename, u,
-                                                     engine, policy);
-            },
-            nb::arg("comm"), nb::arg("filename"), nb::arg("u"),
-            nb::arg("engine") = "BPFile",
-            nb::arg("policy") = dolfinx::io::FidesMeshPolicy::update)
-        .def("close", [](dolfinx::io::FidesWriter<T>& self) { self.close(); })
-        .def(
-            "write", [](dolfinx::io::FidesWriter<T>& self, double t)
             { self.write(t); }, nb::arg("t"));
   }
 #endif
@@ -277,7 +239,8 @@ void io(nb::module_& m)
           "__init__",
           [](dolfinx::io::XDMFFile* x, MPICommWrapper comm,
              std::filesystem::path filename, std::string file_mode,
-             dolfinx::io::XDMFFile::Encoding encoding) {
+             dolfinx::io::XDMFFile::Encoding encoding)
+          {
             new (x) dolfinx::io::XDMFFile(comm.get(), filename, file_mode,
                                           encoding);
           },
@@ -309,7 +272,8 @@ void io(nb::module_& m)
       .def("read_cell_type", &dolfinx::io::XDMFFile::read_cell_type,
            nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
-           nb::arg("mesh"), nb::arg("name"), nb::arg("xpath") = "/Xdmf/Domain")
+           nb::arg("mesh"), nb::arg("name"), nb::arg("attribute_name").none(),
+           nb::arg("xpath"))
       .def("write_information", &dolfinx::io::XDMFFile::write_information,
            nb::arg("name"), nb::arg("value"), nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_information", &dolfinx::io::XDMFFile::read_information,
@@ -344,10 +308,6 @@ void io(nb::module_& m)
   vtk_scalar_fn<std::complex<double>, double>(vtk_file);
 
 #ifdef HAS_ADIOS2
-  nb::enum_<dolfinx::io::FidesMeshPolicy>(m, "FidesMeshPolicy")
-      .value("update", dolfinx::io::FidesMeshPolicy::update)
-      .value("reuse", dolfinx::io::FidesMeshPolicy::reuse);
-
   nb::enum_<dolfinx::io::VTXMeshPolicy>(m, "VTXMeshPolicy")
       .value("update", dolfinx::io::VTXMeshPolicy::update)
       .value("reuse", dolfinx::io::VTXMeshPolicy::reuse);

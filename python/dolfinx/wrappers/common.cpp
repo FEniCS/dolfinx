@@ -4,22 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "MPICommWrapper.h"
+#include "array.h"
+#include "caster_mpi.h"
 #include <complex>
-#include <memory>
-#include <optional>
-#include <span>
-#include <string>
-#include <vector>
-
-#include <nanobind/nanobind.h>
-#include <nanobind/ndarray.h>
-#include <nanobind/stl/array.h>
-#include <nanobind/stl/optional.h>
-#include <nanobind/stl/pair.h>
-#include <nanobind/stl/string.h>
-#include <nanobind/stl/tuple.h>
-#include <nanobind/stl/vector.h>
-
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Table.h>
@@ -28,10 +16,21 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/timing.h>
 #include <dolfinx/common/utils.h>
-
-#include "MPICommWrapper.h"
-#include "array.h"
-#include "caster_mpi.h"
+#include <memory>
+#include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
+#include <nanobind/stl/array.h>
+#include <nanobind/stl/chrono.h>
+#include <nanobind/stl/map.h>
+#include <nanobind/stl/optional.h>
+#include <nanobind/stl/pair.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/tuple.h>
+#include <nanobind/stl/vector.h>
+#include <optional>
+#include <span>
+#include <string>
+#include <vector>
 
 namespace nb = nanobind;
 
@@ -83,14 +82,15 @@ void common(nb::module_& m)
           [](dolfinx::common::IndexMap* self, MPICommWrapper comm,
              std::int32_t local_size,
              nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> ghosts,
-             nb::ndarray<const int, nb::ndim<1>, nb::c_contig> ghost_owners)
+             nb::ndarray<const int, nb::ndim<1>, nb::c_contig> ghost_owners,
+             int tag)
           {
             new (self) dolfinx::common::IndexMap(
                 comm.get(), local_size, std::span(ghosts.data(), ghosts.size()),
-                std::span(ghost_owners.data(), ghost_owners.size()));
+                std::span(ghost_owners.data(), ghost_owners.size()), tag);
           },
           nb::arg("comm"), nb::arg("local_size"), nb::arg("ghosts"),
-          nb::arg("ghost_owners"))
+          nb::arg("ghost_owners"), nb::arg("tag"))
       .def(
           "__init__",
           [](dolfinx::common::IndexMap* self, MPICommWrapper comm,
@@ -129,8 +129,8 @@ void common(nb::module_& m)
           [](const dolfinx::common::IndexMap& self)
           {
             std::span ghosts = self.ghosts();
-            return nb::ndarray<const std::int64_t, nb::numpy>(
-                ghosts.data(), {ghosts.size()}, nb::handle());
+            return nb::ndarray<const std::int64_t, nb::numpy>(ghosts.data(),
+                                                              {ghosts.size()});
           },
           nb::rv_policy::reference_internal, "Return list of ghost indices")
       .def_prop_ro(
@@ -138,8 +138,8 @@ void common(nb::module_& m)
           [](const dolfinx::common::IndexMap& self)
           {
             std::span owners = self.owners();
-            return nb::ndarray<nb::numpy, const int, nb::ndim<1>>(
-                owners.data(), {owners.size()}, nb::handle());
+            return nb::ndarray<const int, nb::ndim<1>, nb::numpy>(
+                owners.data(), {owners.size()});
           },
           nb::rv_policy::reference_internal)
       .def(
@@ -163,31 +163,36 @@ void common(nb::module_& m)
             return dolfinx_wrappers::as_nbarray(std::move(local));
           },
           nb::arg("global"));
-  // dolfinx::common::Timer
-  nb::class_<dolfinx::common::Timer>(m, "Timer", "Timer class")
-      .def(nb::init<std::optional<std::string>>(), nb::arg("task").none())
-      .def("start", &dolfinx::common::Timer::start, "Start timer")
-      .def("stop", &dolfinx::common::Timer::stop, "Stop timer")
-      .def("resume", &dolfinx::common::Timer::resume)
-      .def("elapsed", &dolfinx::common::Timer::elapsed);
 
-  // dolfinx::common::Timer enum
-  nb::enum_<dolfinx::TimingType>(m, "TimingType")
-      .value("wall", dolfinx::TimingType::wall)
-      .value("system", dolfinx::TimingType::system)
-      .value("user", dolfinx::TimingType::user);
+  // dolfinx::common::Timer
+  nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(
+      m, "Timer", "Timer class")
+      .def(nb::init<std::optional<std::string>>(), nb::arg("task").none())
+      .def("start",
+           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::start,
+           "Start timer")
+      .def("elapsed",
+           &dolfinx::common::Timer<
+               std::chrono::high_resolution_clock>::elapsed<>,
+           "Elapsed time")
+      .def("stop",
+           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::stop<>,
+           "Stop timer")
+      .def("resume",
+           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::resume,
+           "Resume timer")
+      .def("flush",
+           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::flush,
+           "Flush timer");
 
   m.def("timing", &dolfinx::timing);
+  m.def("timings", &dolfinx::timings);
 
   m.def(
       "list_timings",
-      [](MPICommWrapper comm, std::vector<dolfinx::TimingType> type,
-         dolfinx::Table::Reduction reduction)
-      {
-        std::set<dolfinx::TimingType> _type(type.begin(), type.end());
-        dolfinx::list_timings(comm.get(), _type, reduction);
-      },
-      nb::arg("comm"), nb::arg("type"), nb::arg("reduction"));
+      [](MPICommWrapper comm, dolfinx::Table::Reduction reduction)
+      { dolfinx::list_timings(comm.get(), reduction); }, nb::arg("comm"),
+      nb::arg("reduction"));
 
   m.def(
       "init_logging",

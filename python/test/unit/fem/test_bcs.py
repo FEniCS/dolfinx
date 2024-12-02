@@ -25,7 +25,6 @@ from dolfinx.fem import (
     functionspace,
     locate_dofs_geometrical,
     locate_dofs_topological,
-    set_bc,
 )
 from dolfinx.mesh import CellType, create_unit_cube, create_unit_square, exterior_facet_indices
 from ufl import dx, inner
@@ -103,7 +102,8 @@ def test_overlapping_bcs():
     assemble_vector(b.array, L)
     apply_lifting(b.array, [a], [bcs])
     b.scatter_reverse(la.InsertMode.add)
-    set_bc(b.array, bcs)
+    for bc in bcs:
+        bc.set(b.array)
     b.scatter_forward()
 
     if len(dof_corner) > 0:
@@ -176,10 +176,10 @@ def test_constant_bc(mesh_factory):
     bc_c = dirichletbc(c, boundary_dofs, V)
 
     u_f = Function(V)
-    set_bc(u_f.x.array, [bc_f])
+    bc_f.set(u_f.x.array)
 
     u_c = Function(V)
-    set_bc(u_c.x.array, [bc_c])
+    bc_c.set(u_c.x.array)
     assert np.allclose(u_f.x.array, u_c.x.array)
 
 
@@ -217,14 +217,15 @@ def test_vector_constant_bc(mesh_factory):
         u_bcs[i].x.array[:] = c[i]
         bcs_f.append(dirichletbc(u_bcs[i], boundary_dofs[i], V.sub(i)))
     u_f = Function(V)
-    set_bc(u_f.x.array, bcs_f)
+    for bc in bcs_f:
+        bc.set(u_f.x.array)
 
     # Set using constant
     boundary_dofs = locate_dofs_topological(V, tdim - 1, boundary_facets)
     bc_c = dirichletbc(c, boundary_dofs, V)
     u_c = Function(V)
     u_c.x.array[:] = 0.0
-    set_bc(u_c.x.array, [bc_c])
+    bc_c.set(u_c.x.array)
 
     assert np.allclose(u_f.x.array, u_c.x.array)
 
@@ -262,9 +263,9 @@ def test_sub_constant_bc(mesh_factory):
         bc_c = dirichletbc(c, boundary_dofs, V.sub(i))
 
         u_f = Function(V)
-        set_bc(u_f.x.array, [bc_fi])
+        bc_fi.set(u_f.x.array)
         u_c = Function(V)
-        set_bc(u_c.x.array, [bc_c])
+        bc_c.set(u_c.x.array)
         assert np.allclose(u_f.x.array, u_c.x.array)
 
 
@@ -304,7 +305,7 @@ def test_mixed_constant_bc(mesh_factory):
         # Apply BC to scalar component of a mixed space using a Constant
         dofs = locate_dofs_topological(W.sub(i), tdim - 1, boundary_facets)
         bc = dirichletbc(c, dofs, W.sub(i))
-        set_bc(u.x.array, [bc])
+        bc.set(u.x.array)
 
         # Apply BC to scalar component of a mixed space using a Function
         ubc = u.sub(i).collapse()
@@ -313,7 +314,7 @@ def test_mixed_constant_bc(mesh_factory):
             (W.sub(i), ubc.function_space), tdim - 1, boundary_facets
         )
         bc_func = dirichletbc(ubc, dofs_both, W.sub(i))
-        set_bc(u_func.x.array, [bc_func])
+        bc_func.set(u_func.x.array)
 
         # Check that both approaches yield the same vector
         assert np.allclose(u.x.array, u_func.x.array)
@@ -344,7 +345,7 @@ def test_mixed_blocked_constant():
     c0 = default_scalar_type(3)
     dofs0 = locate_dofs_topological(W.sub(0), tdim - 1, boundary_facets)
     bc0 = dirichletbc(c0, dofs0, W.sub(0))
-    set_bc(u.x.array, [bc0])
+    bc0.set(u.x.array)
 
     # Apply BC to scalar component of a mixed space using a Function
     ubc = u.sub(0).collapse()
@@ -352,7 +353,7 @@ def test_mixed_blocked_constant():
     dofs_both = locate_dofs_topological((W.sub(0), ubc.function_space), tdim - 1, boundary_facets)
     bc_func = dirichletbc(ubc, dofs_both, W.sub(0))
     u_func = Function(W)
-    set_bc(u_func.x.array, [bc_func])
+    bc_func.set(u_func.x.array)
     assert np.allclose(u.x.array, u_func.x.array)
 
     # Check that vector space throws error

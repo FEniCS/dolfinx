@@ -11,9 +11,9 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, fem, la
 from dolfinx.fem import Constant, Function, assemble_scalar, dirichletbc, form, functionspace
+from dolfinx.graph import adjacencylist
 from dolfinx.mesh import (
     GhostMode,
     Mesh,
@@ -33,9 +33,7 @@ def mesh():
 def create_cell_meshtags_from_entities(mesh: Mesh, dim: int, cells: np.ndarray, values: np.ndarray):
     mesh.topology.create_connectivity(mesh.topology.dim, 0)
     cell_to_vertices = mesh.topology.connectivity(mesh.topology.dim, 0)
-    entities = _cpp.graph.AdjacencyList_int32(
-        np.array([cell_to_vertices.links(cell) for cell in cells])
-    )
+    entities = adjacencylist(np.array([cell_to_vertices.links(cell) for cell in cells]))
     return meshtags_from_entities(mesh, dim, entities, values)
 
 
@@ -49,12 +47,7 @@ parametrize_ghost_mode = pytest.mark.parametrize(
                 reason="Unghosted interior facets fail in parallel",
             ),
         ),
-        pytest.param(
-            GhostMode.shared_facet,
-            marks=pytest.mark.skipif(
-                condition=MPI.COMM_WORLD.size == 1, reason="Shared ghost modes fail in serial"
-            ),
-        ),
+        GhostMode.shared_facet,
     ],
 )
 
@@ -97,13 +90,13 @@ def test_assembly_dx_domains(mode, meshtags_factory):
 
     fem.apply_lifting(b.array, [a], [[bc]])
     b.scatter_reverse(la.InsertMode.add)
-    fem.set_bc(b.array, [bc])
+    bc.set(b.array)
 
     L2 = form(ufl.inner(w, v) * dx)
     b2 = fem.assemble_vector(L2)
     fem.apply_lifting(b2.array, [a], [[bc]])
     b2.scatter_reverse(la.InsertMode.add)
-    fem.set_bc(b2.array, [bc])
+    bc.set(b2.array)
     assert np.allclose(b.array, b2.array)
 
     # Assemble scalar
@@ -186,13 +179,13 @@ def test_assembly_ds_domains(mode):
 
     fem.apply_lifting(b.array, [a], [[bc]])
     b.scatter_reverse(la.InsertMode.add)
-    fem.set_bc(b.array, [bc])
+    bc.set(b.array)
 
     L2 = form(ufl.inner(w, v) * ds)
     b2 = fem.assemble_vector(L2)
     fem.apply_lifting(b2.array, [a2], [[bc]])
     b2.scatter_reverse(la.InsertMode.add)
-    fem.set_bc(b2.array, [bc])
+    bc.set(b2.array)
     assert np.allclose(b.array, b2.array)
 
     # Assemble scalar
@@ -310,7 +303,7 @@ def test_manual_integration_domains():
     # to give same result as above)
     cell_domains = [
         (domain_id, cell_indices[(cell_values == domain_id) & (cell_indices < cell_map.size_local)])
-        for domain_id in [0, 7]
+        for domain_id in [7, 0]
     ]
 
     # Manually specify exterior facets to integrate over as

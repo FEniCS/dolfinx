@@ -14,7 +14,7 @@ import warnings
 
 import numpy as np
 
-__all__ = ["cffi_utils", "numba_utils", "ctypes_utils"]
+__all__ = ["cffi_utils", "ctypes_utils", "numba_utils"]
 
 
 def get_petsc_lib() -> pathlib.Path:

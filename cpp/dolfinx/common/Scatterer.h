@@ -25,9 +25,9 @@ namespace dolfinx::common
 /// @brief A Scatterer supports the MPI scattering and gathering of data
 /// that is associated with a common::IndexMap.
 ///
-/// Scatter and gather operations uses MPI neighbourhood collectives.
-/// The implementation is designed is for sparse communication patterns,
-/// as it typical of patterns based on and IndexMap.
+/// Scatter and gather operations use MPI neighbourhood collectives.
+/// The implementation is designed for sparse communication patterns,
+/// as it typical of patterns based on an IndexMap.
 template <class Allocator = std::allocator<std::int32_t>>
 class Scatterer
 {
@@ -206,11 +206,11 @@ public:
     case type::neighbor:
     {
       assert(requests.size() == std::size_t(1));
-      MPI_Ineighbor_alltoallv(
-          send_buffer.data(), _sizes_local.data(), _displs_local.data(),
-          dolfinx::MPI::mpi_type<T>(), recv_buffer.data(), _sizes_remote.data(),
-          _displs_remote.data(), dolfinx::MPI::mpi_type<T>(), _comm0.comm(),
-          requests.data());
+      MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_local.data(),
+                              _displs_local.data(), dolfinx::MPI::mpi_t<T>,
+                              recv_buffer.data(), _sizes_remote.data(),
+                              _displs_remote.data(), dolfinx::MPI::mpi_t<T>,
+                              _comm0.comm(), requests.data());
       break;
     }
     case type::p2p:
@@ -219,14 +219,14 @@ public:
       for (std::size_t i = 0; i < _src.size(); i++)
       {
         MPI_Irecv(recv_buffer.data() + _displs_remote[i], _sizes_remote[i],
-                  dolfinx::MPI::mpi_type<T>(), _src[i], MPI_ANY_TAG,
-                  _comm0.comm(), &requests[i]);
+                  dolfinx::MPI::mpi_t<T>, _src[i], MPI_ANY_TAG, _comm0.comm(),
+                  &requests[i]);
       }
 
       for (std::size_t i = 0; i < _dest.size(); i++)
       {
         MPI_Isend(send_buffer.data() + _displs_local[i], _sizes_local[i],
-                  dolfinx::MPI::mpi_type<T>(), _dest[i], 0, _comm0.comm(),
+                  dolfinx::MPI::mpi_t<T>, _dest[i], 0, _comm0.comm(),
                   &requests[i + _src.size()]);
       }
       break;
@@ -403,11 +403,10 @@ public:
     case type::neighbor:
     {
       assert(requests.size() == 1);
-      MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_remote.data(),
-                              _displs_remote.data(), MPI::mpi_type<T>(),
-                              recv_buffer.data(), _sizes_local.data(),
-                              _displs_local.data(), MPI::mpi_type<T>(),
-                              _comm1.comm(), &requests[0]);
+      MPI_Ineighbor_alltoallv(
+          send_buffer.data(), _sizes_remote.data(), _displs_remote.data(),
+          MPI::mpi_t<T>, recv_buffer.data(), _sizes_local.data(),
+          _displs_local.data(), MPI::mpi_t<T>, _comm1.comm(), &requests[0]);
       break;
     }
     case type::p2p:
@@ -417,8 +416,8 @@ public:
       for (std::size_t i = 0; i < _dest.size(); i++)
       {
         MPI_Irecv(recv_buffer.data() + _displs_local[i], _sizes_local[i],
-                  dolfinx::MPI::mpi_type<T>(), _dest[i], MPI_ANY_TAG,
-                  _comm0.comm(), &requests[i]);
+                  dolfinx::MPI::mpi_t<T>, _dest[i], MPI_ANY_TAG, _comm0.comm(),
+                  &requests[i]);
       }
 
       // Start non-blocking receive from neighbor process for which an owned
@@ -426,7 +425,7 @@ public:
       for (std::size_t i = 0; i < _src.size(); i++)
       {
         MPI_Isend(send_buffer.data() + _displs_remote[i], _sizes_remote[i],
-                  dolfinx::MPI::mpi_type<T>(), _src[i], 0, _comm0.comm(),
+                  dolfinx::MPI::mpi_t<T>, _src[i], 0, _comm0.comm(),
                   &requests[i + _dest.size()]);
       }
       break;
@@ -459,8 +458,8 @@ public:
   /// @note This function is intended for advanced usage, and in
   /// particular when using CUDA/device-aware MPI.
   ///
-  /// @tparam T The data type to send
-  /// @tparam F The pack function
+  /// @tparam T Data type to send.
+  /// @tparam F Pack function.
   /// @param[in] remote_data Received data associated with the ghost
   /// indices. The order follows the order of the ghost indices in the
   /// IndexMap used to create the scatterer. The size equal to the
@@ -493,14 +492,15 @@ public:
                       type);
   }
 
-  /// @brief End the reverse scatter communication, and unpack the received
-  /// local buffer into local data.
+  /// @brief End the reverse scatter communication, and unpack the
+  /// received local buffer into local data.
   ///
   /// This function must be called after Scatterer::scatter_rev_begin.
   /// The buffers passed to Scatterer::scatter_rev_begin must not be
   /// modified until after the function has been called.
-  /// @param[in] local_buffer Working buffer. Same buffer should be used in
-  /// Scatterer::scatter_rev_begin.
+  ///
+  /// @param[in] local_buffer Working buffer. Same buffer should be used
+  /// in Scatterer::scatter_rev_begin.
   /// @param[out] local_data All data associated with owned indices.
   /// Size is `size_local()` from the IndexMap used to create the
   /// scatterer, multiplied by the block size. The data for each index
@@ -557,7 +557,7 @@ public:
   }
 
   /// @brief Size of buffer for local data (owned and shared) used in
-  /// forward and reverse communication
+  /// forward and reverse communication.
   /// @return The required buffer size
   std::int32_t local_buffer_size() const noexcept { return _local_inds.size(); }
 
@@ -569,9 +569,9 @@ public:
     return _remote_inds.size();
   }
 
-  /// Return a vector of local indices (owned) used to pack/unpack local data.
-  /// These indices are grouped by neighbor process (process for which an index
-  /// is a ghost).
+  /// Return a vector of local indices (owned) used to pack/unpack local
+  /// data. These indices are grouped by neighbor process (process for
+  /// which an index is a ghost).
   const std::vector<std::int32_t>& local_indices() const noexcept
   {
     return _local_inds;

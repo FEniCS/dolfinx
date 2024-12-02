@@ -38,7 +38,7 @@ UFL still runs on the year-based release scheme.
        git pull
        git checkout release
        git merge --no-commit origin/main
-       git checkout --theirs origin/main . # files deleted on `main` must be manually git `add`ed
+       git checkout --theirs . # files deleted on `main` must be manually git `rm`ed
        git diff origin/main
 
 2. Update the version number in `pyproject.toml`, e.g. `2022.2.0`.
@@ -54,7 +54,7 @@ UFL still runs on the year-based release scheme.
        git pull
        git checkout release
        git merge --no-commit origin/main
-       git checkout --theirs origin/main . # files deleted on `main` must be manually `git add`ed
+       git checkout --theirs . # files deleted on `main` must be manually git `rm`ed
        git diff origin/main
 
 2. Update version numbers in `pyproject.toml`, `python/pyproject.toml`,
@@ -75,7 +75,7 @@ UFL still runs on the year-based release scheme.
        git pull
        git checkout release
        git merge --no-commit origin/main
-       git checkout --theirs origin/main . # files deleted on `main` must be manually git `add`ed
+       git checkout --theirs . # files deleted on `main` must be manually git `rm`ed
        git diff origin/main
 
 2. Update the version number in `pyproject.toml`, e.g. `0.5.0`.
@@ -101,16 +101,16 @@ UFL still runs on the year-based release scheme.
        git pull
        git checkout release
        git merge --no-commit origin/main
-       git checkout --theirs origin/main . # files deleted on `main` must be manually git `add`ed
+       git checkout --theirs . # files deleted on `main` must be manually git `rm`ed
        git diff origin/main
 
 2. In `cpp/CMakeLists.txt` change the version number e.g. `0.5.0`.
 
 3. In `cpp/CMakeLists.txt` change the version number in the
-   `find_package(ufcx)` and `find_package(UFCx)` calls.
+   `find_package(ufcx)`, `find_package(UFCx)` and `find_package(Basix)` calls.
 
-4. In `python/pyproject.toml` update the version to e.g. `0.5.0` and
-   update the dependency versions for `fenics-ffcx` and `fenics-ufl`.
+4. In `python/pyproject.toml` update the version to e.g. `0.5.0` and update the
+   dependency versions for `fenics-basix`, `fenics-ffcx` and `fenics-ufl`.
 
 5. In `CITATION.md` update the version number `version: 0.5.0` and the release
    date `date-released: 2022-03-14`.

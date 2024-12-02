@@ -145,20 +145,18 @@ def get_integration_domains(
                 subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)  # type: ignore
                 subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)  # type: ignore
             # Compute integration domains only for each subdomain id in
-            # the integrals
-            # If a process has no integral entities, insert an empty
-            # array
+            # the integrals. If a process has no integral entities,
+            # insert an empty array.
             for id in subdomain_ids:
                 integration_entities = _cpp.fem.compute_integration_domains(
                     integral_type,
                     subdomain._cpp_object.topology,  # type: ignore
                     subdomain.find(id),  # type: ignore
-                    subdomain.dim,  # type: ignore
                 )
                 domains.append((id, integration_entities))
             return [(s[0], np.array(s[1])) for s in domains]
         except AttributeError:
-            return [(s[0], np.array(s[1])) for s in subdomain]  # type: ignore
+            return [(s[0], np.array(s[1])) for s in sorted(subdomain)]  # type: ignore
 
 
 def form_cpp_class(
@@ -246,7 +244,7 @@ def form(
 
         # Check that subdomain data for each integral type is the same
         for data in sd.get(domain).values():
-            assert all([d is data[0] for d in data])
+            assert all([d is data[0] for d in data if d is not None])
 
         mesh = domain.ufl_cargo()
         if mesh is None:

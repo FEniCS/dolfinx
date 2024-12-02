@@ -19,7 +19,7 @@ import dolfinx.utils
 import ffcx.codegeneration.utils
 from dolfinx import cpp as _cpp
 from dolfinx import fem, la
-from dolfinx.common import TimingType, list_timings
+from dolfinx.common import list_timings
 from dolfinx.fem import Form, Function, IntegralType, form_cpp_class, functionspace
 from dolfinx.mesh import create_unit_square
 
@@ -114,7 +114,7 @@ def test_numba_assembly(dtype):
     assert np.isclose(Anorm, 56.124860801609124)
     assert np.isclose(bnorm, 0.0739710713711999)
 
-    list_timings(MPI.COMM_WORLD, [TimingType.wall])
+    list_timings(MPI.COMM_WORLD)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
