@@ -11,8 +11,6 @@ from __future__ import annotations
 import numbers
 import typing
 
-import numpy.typing as npt
-
 if typing.TYPE_CHECKING:
     from dolfinx.fem.function import Constant, Function
 

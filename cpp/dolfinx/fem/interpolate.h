@@ -1097,7 +1097,8 @@ geometry::PointOwnershipData<T> create_interpolation_data(
       x[3 * i + j] = coords[i + j * num_points];
 
   // Determine ownership of each point
-  return geometry::determine_point_ownership<T>(mesh1, x, padding);
+  return geometry::determine_point_ownership<T>(mesh1, x, padding,
+                                                std::nullopt);
 }
 
 /// @brief Interpolate a finite element Function defined on a mesh to a

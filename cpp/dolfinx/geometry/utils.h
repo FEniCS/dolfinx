@@ -679,25 +679,27 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// one has to determine the closest cell among all processes with an
 /// intersecting bounding box, which is an expensive operation to perform.
 template <std::floating_point T>
-PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
-                                                std::span<const T> points,
-                                                T padding,
-                                                std::span<const std::int32_t> cells = {})
+PointOwnershipData<T>
+determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
+                          T padding,
+                          std::optional<std::span<const std::int32_t>> cells)
 {
   MPI_Comm comm = mesh.comm();
 
   const int tdim = mesh.topology()->dim();
 
   std::vector<std::int32_t> local_cells;
-  if (cells.empty()) {
+  if (not(cells.has_value()))
+  {
     auto cell_map = mesh.topology()->index_map(tdim);
     local_cells.resize(cell_map->size_local());
     std::iota(local_cells.begin(), local_cells.end(), 0);
-    cells = std::span<const std::int32_t>(local_cells.data(), local_cells.size());
+    cells
+        = std::span<const std::int32_t>(local_cells.data(), local_cells.size());
   }
   // Create a global bounding-box tree to find candidate processes with
   // cells that could collide with the points
-  BoundingBoxTree bb(mesh, tdim, padding, cells);
+  BoundingBoxTree bb(mesh, tdim, padding, cells.value());
   BoundingBoxTree global_bbtree = bb.create_global_tree(comm);
 
   // Compute collisions:

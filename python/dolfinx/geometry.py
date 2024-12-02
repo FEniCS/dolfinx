@@ -288,9 +288,9 @@ def determine_point_ownership(
         mesh: The mesh
         points: Points to check for collision (``shape=(num_points, gdim)``)
         padding: Amount of absolute padding of bounding boxes of the mesh.
-        Each bounding box of the mesh is padded with this amount, to increase
-        the number of candidates, avoiding rounding errors in determining the owner
-        of a point if the point is on the surface of a cell in the mesh.
+            Each bounding box of the mesh is padded with this amount, to increase
+            the number of candidates, avoiding rounding errors in determining the owner
+            of a point if the point is on the surface of a cell in the mesh.
         cells: Cells to check for ownership
             If ``None`` then all cells are considered.
 
@@ -303,12 +303,9 @@ def determine_point_ownership(
         ``src_owner`` is -1 if no colliding process is found
 
         A large padding value will increase the run-time of the code by orders
-        of magnitude. General advice is to use a padding on the scale of the
-        cell size.
+            of magnitude. General advice is to use a padding on the scale of the
+            cell size.
     """
-    if cells is None:
-        map = mesh.topology.index_map(mesh.topology.dim)
-        cells = np.arange(map.size_local, dtype=np.int32)
     return PointOwnershipData(
-        _cpp.geometry.determine_point_ownership(mesh._cpp_object, points, cells, padding)
+        _cpp.geometry.determine_point_ownership(mesh._cpp_object, points, padding, cells)
     )
