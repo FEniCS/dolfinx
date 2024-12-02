@@ -244,7 +244,7 @@ def form(
 
         # Check that subdomain data for each integral type is the same
         for data in sd.get(domain).values():
-            assert all([d is data[0] for d in data])
+            assert all([d is data[0] for d in data if d is not None])
 
         mesh = domain.ufl_cargo()
         if mesh is None:
