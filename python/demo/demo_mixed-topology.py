@@ -75,7 +75,7 @@ elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
 
-cpp_elements = [_cpp.fem.FiniteElement_float64(e._e, 1, True) for e in elements]
+cpp_elements = [_cpp.fem.FiniteElement_float64(e._e, None, True) for e in elements]
 
 dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, cpp_elements)
 q = [DofMap(dofmaps[0]), DofMap(dofmaps[1])]
