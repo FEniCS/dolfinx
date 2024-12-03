@@ -169,6 +169,8 @@ def create_mesh(comm: MPI.Comm, model: gmsh.model, name: str, filename: str, mod
     msh.vertex_tags.name = f"{name}_vertices"
     with XDMFFile(msh.mesh.comm, filename, mode) as file:
         msh.mesh.topology.create_connectivity(2, 3)
+        msh.mesh.topology.create_connectivity(1, 3)
+        msh.mesh.topology.create_connectivity(0, 3)
         file.write_mesh(msh.mesh)
         file.write_meshtags(
             msh.cell_tags,
