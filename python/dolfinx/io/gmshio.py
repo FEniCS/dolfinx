@@ -55,6 +55,14 @@ _gmsh_to_cells = {
 }
 
 
+class GMSHModel(typing.NamedTuple):
+    mesh: Mesh
+    cell_tags: _cpp.mesh.MeshTags_int32
+    facet_tags: _cpp.mesh.MeshTags_int32
+    edge_tags: _cpp.mesh.MeshTags_int32
+    vertex_tags: _cpp.mesh.MeshTags_int32
+
+
 def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
     """Create a UFL mesh from a Gmsh cell identifier and geometric dimension.
 
@@ -211,7 +219,7 @@ def model_to_mesh(
         typing.Callable[[_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]
     ] = None,
     dtype=default_real_type,
-) -> tuple[Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
+) -> GMSHModel:
     """Create a Mesh from a Gmsh model.
 
     Creates a :class:`dolfinx.mesh.Mesh` from the physical entities of
@@ -228,9 +236,11 @@ def model_to_mesh(
             distribution of cells across MPI ranks.
 
     Returns:
-        A triplet ``(mesh, cell_tags, facet_tags)``, where cell_tags
-        hold markers for the cells and facet tags holds markers for
-        facets (if tags are found in Gmsh model).
+        A NamedTuple ``(mesh, cell_tags, facet_tags, edge_tags, vertex_tags)``,
+        where cell_tags hold markers for the cells, facet tags holds markers
+        for facets (if tags are found in Gmsh model), edge_tags holds markers
+        for edges (if tags are found in Gmsh model), and vertex_tags holds
+        markers for vertices (if tags are found in Gmsh model).
 
     Note:
         For performance, this function should only be called once for
@@ -264,10 +274,16 @@ def model_to_mesh(
         num_nodes = cell_information[perm_sort[-1]]["num_nodes"]
         cell_id, num_nodes = comm.bcast([cell_id, num_nodes], root=rank)
 
-        # Check for facet data and broadcast relevant info if True
+        # Check for facet, edge and vertex data and broadcast relevant info if True
         has_facet_data = False
         if tdim - 1 in cell_dimensions:
             has_facet_data = True
+        has_edge_data = False
+        if tdim - 2 in cell_dimensions:
+            has_edge_data = True
+        has_vertex_data = False
+        if tdim - 3 in cell_dimensions:
+            has_vertex_data = True
 
         has_facet_data = comm.bcast(has_facet_data, root=rank)
         if has_facet_data:
@@ -276,17 +292,44 @@ def model_to_mesh(
             marked_facets = np.asarray(topologies[gmsh_facet_id]["topology"], dtype=np.int64)
             facet_values = np.asarray(topologies[gmsh_facet_id]["cell_data"], dtype=np.int32)
 
+        has_edge_data = comm.bcast(has_edge_data, root=rank)
+        if has_edge_data:
+            num_edge_nodes = comm.bcast(cell_information[perm_sort[-3]]["num_nodes"], root=rank)
+            gmsh_edge_id = cell_information[perm_sort[-3]]["id"]
+            marked_edges = np.asarray(topologies[gmsh_edge_id]["topology"], dtype=np.int64)
+            edge_values = np.asarray(topologies[gmsh_edge_id]["cell_data"], dtype=np.int32)
+
+        has_vertex_data = comm.bcast(has_vertex_data, root=rank)
+        if has_vertex_data:
+            num_vertex_nodes = comm.bcast(cell_information[perm_sort[-4]]["num_nodes"], root=rank)
+            gmsh_vertex_id = cell_information[perm_sort[-4]]["id"]
+            marked_vertices = np.asarray(topologies[gmsh_vertex_id]["topology"], dtype=np.int64)
+            vertex_values = np.asarray(topologies[gmsh_vertex_id]["cell_data"], dtype=np.int32)
+
         cells = np.asarray(topologies[cell_id]["topology"], dtype=np.int64)
         cell_values = np.asarray(topologies[cell_id]["cell_data"], dtype=np.int32)
     else:
         cell_id, num_nodes = comm.bcast([None, None], root=rank)
         cells, x = np.empty([0, num_nodes], dtype=np.int32), np.empty([0, gdim], dtype=dtype)
         cell_values = np.empty((0,), dtype=np.int32)
+
         has_facet_data = comm.bcast(None, root=rank)
         if has_facet_data:
             num_facet_nodes = comm.bcast(None, root=rank)
             marked_facets = np.empty((0, num_facet_nodes), dtype=np.int32)
             facet_values = np.empty((0,), dtype=np.int32)
+
+        has_edge_data = comm.bcast(None, root=rank)
+        if has_edge_data:
+            num_edge_nodes = comm.bcast(None, root=rank)
+            marked_edges = np.empty((0, num_edge_nodes), dtype=np.int32)
+            edge_values = np.empty((0,), dtype=np.int32)
+
+        has_vertex_data = comm.bcast(None, root=rank)
+        if has_vertex_data:
+            num_vertex_nodes = comm.bcast(None, root=rank)
+            marked_vertices = np.empty((0, num_vertex_nodes), dtype=np.int32)
+            vertex_values = np.empty((0,), dtype=np.int32)
 
     # Create distributed mesh
     ufl_domain = ufl_mesh(cell_id, gdim, dtype=dtype)
@@ -330,7 +373,43 @@ def model_to_mesh(
     else:
         ft = meshtags(mesh, tdim - 1, np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32))
 
-    return (mesh, ct, ft)
+    if has_edge_data:
+        # Permute edges from MSH to DOLFINx ordering
+        edge_type = _cpp.mesh.cell_entity_type(
+            _cpp.mesh.to_type(str(ufl_domain.ufl_cell())), tdim - 2, 0
+        )
+        gmsh_edge_perm = cell_perm_array(edge_type, num_edge_nodes)
+        marked_edges = marked_edges[:, gmsh_edge_perm]
+
+        local_entities, local_values = distribute_entity_data(
+            mesh, tdim - 2, marked_edges, edge_values
+        )
+        mesh.topology.create_connectivity(topology.dim - 2, tdim)
+        adj = adjacencylist(local_entities)
+        et = meshtags_from_entities(mesh, tdim - 2, adj, local_values.astype(np.int32, copy=False))
+        et.name = "Edge tags"
+    else:
+        et = meshtags(mesh, tdim - 2, np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32))
+
+    if has_vertex_data:
+        # Permute vertices from MSH to DOLFINx ordering
+        vertex_type = _cpp.mesh.cell_entity_type(
+            _cpp.mesh.to_type(str(ufl_domain.ufl_cell())), tdim - 3, 0
+        )
+        gmsh_vertex_perm = cell_perm_array(vertex_type, num_vertex_nodes)
+        marked_vertices = marked_vertices[:, gmsh_vertex_perm]
+
+        local_entities, local_values = distribute_entity_data(
+            mesh, tdim - 3, marked_vertices, vertex_values
+        )
+        mesh.topology.create_connectivity(topology.dim - 3, tdim)
+        adj = adjacencylist(local_entities)
+        vt = meshtags_from_entities(mesh, tdim - 3, adj, local_values.astype(np.int32, copy=False))
+        vt.name = "Vertex tags"
+    else:
+        vt = meshtags(mesh, tdim - 3, np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32))
+
+    return GMSHModel(mesh, ct, ft, et, vt)
 
 
 def read_from_msh(
@@ -341,7 +420,7 @@ def read_from_msh(
     partitioner: typing.Optional[
         typing.Callable[[_MPI.Comm, int, int, AdjacencyList], AdjacencyList_int32]
     ] = None,
-) -> tuple[Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
+) -> GMSHModel:
     """Read a Gmsh .msh file and return a :class:`dolfinx.mesh.Mesh` and cell facet markers.
 
     Note:
@@ -355,8 +434,8 @@ def read_from_msh(
         gdim: Geometric dimension of the mesh
 
     Returns:
-        A triplet ``(mesh, cell_tags, facet_tags)`` with meshtags for
-        associated physical groups for cells and facets.
+        A NamedTuple ``(mesh, cell_tags, facet_tags, edge_tags, vertex_tags)``
+        with meshtags for associated physical groups for cells and facets.
 
     """
     try:
