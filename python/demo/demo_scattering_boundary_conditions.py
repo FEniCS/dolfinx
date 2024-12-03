@@ -442,7 +442,7 @@ if MPI.COMM_WORLD.rank == 0:
     )
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
-domain, cell_tags, facet_tags = io.gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
+domain, cell_tags, facet_tags, _, _ = io.gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
 
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()

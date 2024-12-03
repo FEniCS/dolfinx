@@ -161,18 +161,34 @@ def create_mesh(comm: MPI.Comm, model: gmsh.model, name: str, filename: str, mod
         filename: XDMF filename.
         mode: XDMF file mode. "w" (write) or "a" (append).
     """
-    msh, ct, ft = gmshio.model_to_mesh(model, comm, rank=0)
-    msh.name = name
-    ct.name = f"{msh.name}_cells"
-    ft.name = f"{msh.name}_facets"
-    with XDMFFile(msh.comm, filename, mode) as file:
-        msh.topology.create_connectivity(2, 3)
-        file.write_mesh(msh)
+    msh = gmshio.model_to_mesh(model, comm, rank=0)
+    msh.mesh.name = name
+    msh.cell_tags.name = f"{name}_cells"
+    msh.facet_tags.name = f"{name}_facets"
+    msh.edge_tags.name = f"{name}_edges"
+    msh.vertex_tags.name = f"{name}_vertices"
+    with XDMFFile(msh.mesh.comm, filename, mode) as file:
+        msh.mesh.topology.create_connectivity(2, 3)
+        file.write_mesh(msh.mesh)
         file.write_meshtags(
-            ct, msh.geometry, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry"
+            msh.cell_tags,
+            msh.mesh.geometry,
+            geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{name}']/Geometry",
         )
         file.write_meshtags(
-            ft, msh.geometry, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry"
+            msh.facet_tags,
+            msh.mesh.geometry,
+            geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{name}']/Geometry",
+        )
+        file.write_meshtags(
+            msh.edge_tags,
+            msh.mesh.geometry,
+            geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{name}']/Geometry",
+        )
+        file.write_meshtags(
+            msh.vertex_tags,
+            msh.mesh.geometry,
+            geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{name}']/Geometry",
         )
 
 
