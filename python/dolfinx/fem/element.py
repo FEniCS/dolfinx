@@ -217,8 +217,8 @@ class FiniteElement:
         """Points on the reference cell at which an expression needs to be evaluated in order to
         interpolate the expression in the finite element space.
 
-        Interpolation point coordinates on the reference cell, returning the (0) coordinates data
-        (row-major) storage and (1) the shape ``(num_points, tdim)``.
+        Interpolation point coordinates on the reference cell, returning the coordinates data
+        (row-major) storage with shape ``(num_points, tdim)``.
 
         Note:
             For Lagrange elements the points will just be the nodal positions. For other elements
