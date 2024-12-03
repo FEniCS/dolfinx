@@ -95,7 +95,7 @@ class CoordinateElement:
                 ``shape=(num_points, geometrical_dimension)``.
             cell_geometry: Physical coordinates describing the cell,
                 shape ``(num_of_geometry_basis_functions, geometrical_dimension)``
-                They can be created by accessing `geometry.x[geometry.dofmap.cell_dofs(i)]`,
+                They can be created by accessing ``geometry.x[geometry.dofmap.cell_dofs(i)]``,
 
         Returns:
             Reference coordinates of the physical points ``x``.
@@ -174,7 +174,7 @@ class FiniteElement:
         """Creates a Python wrapper for the exported finite element class.
 
         Note:
-            Do not use this constructor directly. Instead use :func:`finiteelement`.
+            Do not use this constructor directly. Instead use :func:``finiteelement``.
 
         Args:
             The underlying cpp instance that this object will wrap.
@@ -207,8 +207,8 @@ class FiniteElement:
     def value_shape(self) -> npt.NDArray[np.integer]:
         """Value shape of the finite element field.
 
-        The value shape describes the shape of the finite element field, e.g. `{}` for a scalar,
-        `{2}` for a vector in 2D, `{3, 3}` for a rank-2 tensor in 3D, etc.
+        The value shape describes the shape of the finite element field, e.g. ``{}`` for a scalar,
+        ``{2}`` for a vector in 2D, ``{3, 3}`` for a rank-2 tensor in 3D, etc.
         """
         return self._cpp_object.value_shape
 
@@ -218,7 +218,7 @@ class FiniteElement:
         interpolate the expression in the finite element space.
 
         Interpolation point coordinates on the reference cell, returning the (0) coordinates data
-        (row-major) storage and (1) the shape `(num_points, tdim)`.
+        (row-major) storage and (1) the shape ``(num_points, tdim)``.
 
         Note:
             For Lagrange elements the points will just be the nodal positions. For other elements
@@ -268,10 +268,10 @@ class FiniteElement:
         globally consistent physical element ordering and orientation.
 
         Args:
-            x: Data to transform (in place). The shape is `(m, n)`, where `m` is the number of
+            x: Data to transform (in place). The shape is ``(m, n)``, where `m` is the number of
             dgerees-of-freedom and the storage is row-major.
             cell_permutations: Permutation data for the cell.
-            dim: Number of columns in `data`.
+            dim: Number of columns in ``data``.
 
         Note:
             Exposed for testing. Function is not vectorised across multiple cells. Please see
@@ -283,7 +283,7 @@ class FiniteElement:
         """Apply the transpose of the operator applied by T_apply().
 
         Args:
-            x: Data to transform (in place). The shape is `(m, n)`, where `m` is the number of
+            x: Data to transform (in place). The shape is ``(m, n)``, where `m` is the number of
             dgerees-of-freedom and the storage is row-major.
             cell_permutations: Permutation data for the cell.
             dim: Number of columns in `data`.
@@ -300,14 +300,14 @@ class FiniteElement:
         """Apply the inverse transpose of the operator applied by T_apply().
 
         Args:
-            x: Data to transform (in place). The shape is `(m, n)`, where `m` is the number of
+            x: Data to transform (in place). The shape is ``(m, n)``, where ``m`` is the number of
             dgerees-of-freedom and the storage is row-major.
             cell_permutations: Permutation data for the cell.
             dim: Number of columns in `data`.
 
         Note:
             Exposed for testing. Function is not vectorised across multiple cells. Please see
-            `basix.numba_helpers` for performant versions.
+            ``basix.numba_helpers`` for performant versions.
         """
         self._cpp_object.Tt_apply(x, cell_permutations, dim)
 
@@ -320,7 +320,7 @@ def finiteelement(
     """Create a DOLFINx element from a basix.ufl element.
 
     Args:
-        cell_type: Element cell type, see `mesh.CellType`
+        cell_type: Element cell type, see ``mesh.CellType``
         ufl_e: UFL element, holding quadrature rule and other properties of the selected element.
         FiniteElement_dtype: Geometry type of the element.
     """
