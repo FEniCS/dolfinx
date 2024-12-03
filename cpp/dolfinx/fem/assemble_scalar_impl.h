@@ -55,9 +55,7 @@ T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
     return value;
 
   // Create data structures used in assembly
-  using X = scalar_value_type_t<T>;
-  std::vector<X> coordinate_dofs_cnt(3 * x_dofmap.extent(1));
-  std::span<X> coordinate_dofs(coordinate_dofs_cnt);
+  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
 
   // Iterate over all cells
   for (std::size_t index = 0; index < cells.size(); ++index)
@@ -65,7 +63,7 @@ T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
     std::int32_t cell = cells[index];
 
     // Get cell coordinates/geometry
-    get_cell_geometry(coordinate_dofs, x_dofmap, x, cell);
+    get_cell_geometry(std::span(coordinate_dofs), x_dofmap, x, cell);
 
     const T* coeff_cell = coeffs.data() + index * cstride;
     fn(&value, coeff_cell, constants.data(), coordinate_dofs.data(),
@@ -90,9 +88,7 @@ T assemble_exterior_facets(mdspan2_t x_dofmap,
     return value;
 
   // Create data structures used in assembly
-  using X = scalar_value_type_t<T>;
-  std::vector<X> coordinate_dofs_cnt(3 * x_dofmap.extent(1));
-  std::span<X> coordinate_dofs(coordinate_dofs_cnt);
+  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
 
   // Iterate over all facets
   const std::uint8_t step = 4;
@@ -103,7 +99,7 @@ T assemble_exterior_facets(mdspan2_t x_dofmap,
     std::int32_t local_facet = facets[index + 1];
 
     // Get cell coordinates/geometry
-    get_cell_geometry(coordinate_dofs, x_dofmap, x, cell);
+    get_cell_geometry(std::span(coordinate_dofs), x_dofmap, x, cell);
 
     // Permutations
     auto perm = get_cell_permutations(cell, local_facet, num_facets_per_cell, perms);
