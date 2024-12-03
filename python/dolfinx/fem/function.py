@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 import typing
-from functools import singledispatch
+from functools import cached_property, singledispatch
 
 import numpy as np
 import numpy.typing as npt
@@ -720,7 +720,7 @@ class FunctionSpace(ufl.FunctionSpace):
         """UFL function space."""
         return self
 
-    @property
+    @cached_property
     def element(self) -> FiniteElement:
         """Function space finite element."""
         return FiniteElement(self._cpp_object.element)
