@@ -24,15 +24,21 @@ from ufl import Measure
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 
+@pytest.mark.parametrize("adjacency_list_api", ["old", "new"])
 @pytest.mark.parametrize("cell_type", celltypes_3D)
-def test_create(cell_type):
+def test_create(adjacency_list_api, cell_type):
     comm = MPI.COMM_WORLD
     mesh = create_unit_cube(comm, 6, 6, 6, cell_type)
 
     marked_lines = locate_entities(mesh, 1, lambda x: np.isclose(x[1], 0.5))
     f_v = mesh.topology.connectivity(1, 0).array.reshape(-1, 2)
 
-    entities = adjacencylist(f_v[marked_lines])
+    if adjacency_list_api == "old":
+        from dolfinx import cpp as _cpp
+
+        entities = _cpp.graph.AdjacencyList_int32(f_v[marked_lines])
+    else:
+        entities = adjacencylist(f_v[marked_lines])
     values = np.full(marked_lines.shape[0], 2, dtype=np.int32)
     mt = meshtags_from_entities(mesh, 1, entities, values)
 
