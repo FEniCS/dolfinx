@@ -55,7 +55,7 @@ _gmsh_to_cells = {
 }
 
 
-class GMSHModel(typing.NamedTuple):
+class GmshModel(typing.NamedTuple):
     mesh: Mesh
     cell_tags: MeshTags
     facet_tags: MeshTags
@@ -219,7 +219,7 @@ def model_to_mesh(
         typing.Callable[[_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]
     ] = None,
     dtype=default_real_type,
-) -> GMSHModel:
+) -> GmshModel:
     """Create a Mesh from a Gmsh model.
 
     Creates a :class:`dolfinx.mesh.Mesh` from the physical entities of
@@ -409,7 +409,7 @@ def model_to_mesh(
     else:
         vt = meshtags(mesh, tdim - 3, np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32))
 
-    return GMSHModel(mesh, ct, ft, et, vt)
+    return GmshModel(mesh, ct, ft, et, vt)
 
 
 def read_from_msh(
@@ -420,7 +420,7 @@ def read_from_msh(
     partitioner: typing.Optional[
         typing.Callable[[_MPI.Comm, int, int, AdjacencyList], AdjacencyList_int32]
     ] = None,
-) -> GMSHModel:
+) -> GmshModel:
     """Read a Gmsh .msh file and return a :class:`dolfinx.mesh.Mesh` and cell facet markers.
 
     Note:
