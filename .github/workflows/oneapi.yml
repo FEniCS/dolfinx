@@ -45,6 +45,7 @@ jobs:
           apt-get -y install binutils libstdc++-14-dev
 
       - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
@@ -56,7 +57,7 @@ jobs:
           conda list
 
       - name: Install Basix
-        run: pip install --no-build-isolation git+https://github.com/FEniCS/basix.git@${{ needs.fenicsx-refs.outputs.basix_ref }}
+        run: uv pip install --no-build-isolation git+https://github.com/FEniCS/basix.git@${{ needs.fenicsx-refs.outputs.basix_ref }}
 
       - name: Clone FFCx
         uses: actions/checkout@v4
@@ -82,8 +83,8 @@ jobs:
 
       - name: Install UFL and FFCx modules
         run: |
-          pip install --no-build-isolation git+https://github.com/FEniCS/ufl.git@${{ needs.fenicsx-refs.outputs.ufl_ref }}
-          pip install --no-build-isolation ffcx/
+          uv pip install --no-build-isolation git+https://github.com/FEniCS/ufl.git@${{ needs.fenicsx-refs.outputs.ufl_ref }}
+          uv pip install --no-build-isolation ffcx/
 
       - name: Build and run DOLFINx C++ unit tests (serial and MPI)
         run: |
@@ -102,7 +103,7 @@ jobs:
           ctest -R demo -R mpi_2
 
       - name: Build DOLFINx Python interface
-        run: pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" python/
+        run: uv pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" python/
       - name: Run DOLFINx demos (Python, serial)
         run: python -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
       - name: Run DOLFINx demos (Python, MPI (np=2))
