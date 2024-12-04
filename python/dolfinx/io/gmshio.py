@@ -21,7 +21,7 @@ from dolfinx import default_real_type
 from dolfinx.cpp.graph import AdjacencyList_int32
 from dolfinx.graph import AdjacencyList, adjacencylist
 from dolfinx.io.utils import distribute_entity_data
-from dolfinx.mesh import CellType, Mesh, create_mesh, meshtags, meshtags_from_entities
+from dolfinx.mesh import CellType, Mesh, create_mesh, meshtags, meshtags_from_entities, MeshTags
 
 __all__ = [
     "cell_perm_array",
@@ -57,10 +57,10 @@ _gmsh_to_cells = {
 
 class GMSHModel(typing.NamedTuple):
     mesh: Mesh
-    cell_tags: _cpp.mesh.MeshTags_int32
-    facet_tags: _cpp.mesh.MeshTags_int32
-    edge_tags: _cpp.mesh.MeshTags_int32
-    vertex_tags: _cpp.mesh.MeshTags_int32
+    cell_tags: MeshTags
+    facet_tags: MeshTags
+    edge_tags: MeshTags
+    vertex_tags: MeshTags
 
 
 def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
