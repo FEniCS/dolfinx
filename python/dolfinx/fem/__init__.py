@@ -32,7 +32,7 @@ from dolfinx.fem.bcs import (
     locate_dofs_topological,
 )
 from dolfinx.fem.dofmap import DofMap
-from dolfinx.fem.element import CoordinateElement, coordinate_element
+from dolfinx.fem.element import CoordinateElement, FiniteElement, coordinate_element, finiteelement
 from dolfinx.fem.forms import (
     Form,
     compile_form,
@@ -91,7 +91,11 @@ def create_interpolation_data(
     """
     return _PointOwnershipData(
         _create_interpolation_data(
-            V_to.mesh._cpp_object.geometry, V_to.element, V_from.mesh._cpp_object, cells, padding
+            V_to.mesh._cpp_object.geometry,
+            V_to.element._cpp_object,
+            V_from.mesh._cpp_object,
+            cells,
+            padding,
         )
     )
 
@@ -169,6 +173,7 @@ __all__ = [
     "DofMap",
     "ElementMetaData",
     "Expression",
+    "FiniteElement",
     "Form",
     "Function",
     "FunctionSpace",
@@ -189,6 +194,7 @@ __all__ = [
     "dirichletbc",
     "discrete_gradient",
     "extract_function_spaces",
+    "finiteelement",
     "form",
     "form_cpp_class",
     "functionspace",
