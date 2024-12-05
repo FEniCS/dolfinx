@@ -29,6 +29,5 @@ dependencies:
   - cmake
   - ninja
   - pkg-config
-  - pip
   - git
   - uv
