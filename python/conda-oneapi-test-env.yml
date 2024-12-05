@@ -31,3 +31,4 @@ dependencies:
   - pkg-config
   - pip
   - git
+  - uv
