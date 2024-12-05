@@ -35,6 +35,29 @@ except ImportError:
 
 
 # +
+def gmsh_sphere_no_physical_groups(model: gmsh.model, name: str) -> gmsh.model:
+    """Create a Gmsh model of a sphere.
+
+    Args:
+        model: Gmsh model to add the mesh to.
+        name: Name (identifier) of the mesh to add.
+
+    Returns:
+        Gmsh model with a sphere mesh added.
+
+    """
+    model.add(name)
+    model.setCurrent(name)
+    model.occ.addSphere(0, 0, 0, 1, tag=1)
+
+    # Synchronize OpenCascade representation with gmsh model
+    model.occ.synchronize()
+
+    # Generate the mesh
+    model.mesh.generate(dim=3)
+    return model
+
+
 def gmsh_sphere(model: gmsh.model, name: str) -> gmsh.model:
     """Create a Gmsh model of a sphere.
 
@@ -212,7 +235,16 @@ model = gmsh.model()
 # First, we create a Gmsh model of a sphere using tetrahedral cells
 # (linear geometry), then create independent meshes on each MPI rank and
 # write each mesh to an XDMF file. The MPI rank is appended to the
-# filename since the meshes are not distributed.
+# filename since the meshes are not distributed. We can first create
+# a sphere without physical groups.
+
+# +
+model = gmsh_sphere_no_physical_groups(model, "Sphere")
+model.setCurrent("Sphere")
+create_mesh(MPI.COMM_SELF, model, "sphere", f"out_gmsh/mesh_rank_{MPI.COMM_WORLD.rank}.xdmf", "w")
+# -
+
+# Next, we create a sphere with physical groups.
 
 # +
 model = gmsh_sphere(model, "Sphere")
