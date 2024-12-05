@@ -21,7 +21,7 @@ from dolfinx import default_real_type
 from dolfinx.cpp.graph import AdjacencyList_int32
 from dolfinx.graph import AdjacencyList, adjacencylist
 from dolfinx.io.utils import distribute_entity_data
-from dolfinx.mesh import CellType, Mesh, create_mesh, meshtags, meshtags_from_entities, MeshTags
+from dolfinx.mesh import CellType, Mesh, MeshTags, create_mesh, meshtags, meshtags_from_entities
 
 __all__ = [
     "cell_perm_array",
