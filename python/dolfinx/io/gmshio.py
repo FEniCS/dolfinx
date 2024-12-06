@@ -283,9 +283,7 @@ def model_to_mesh(
             )
         num_cells_tagged_once = len(np.unique(topologies[_elementType_dim]["entity_tags"]))
         if num_cells_tagged != num_cells_tagged_once:
-            raise RuntimeError(
-                "All cells are expected to be tagged once; found duplicates"
-            )
+            raise RuntimeError("All cells are expected to be tagged once; found duplicates")
 
         # Broadcast cell type data and geometric dimension
         cell_id = cell_information[perm_sort[-1]]["id"]
