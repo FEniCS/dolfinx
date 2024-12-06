@@ -451,9 +451,7 @@ if MPI.COMM_WORLD.rank == 0:
 model = MPI.COMM_WORLD.bcast(model, root=0)
 partitioner = dolfinx.cpp.mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.shared_facet)
 
-msh, cell_tags, facet_tags, _, _ = gmshio.model_to_mesh(
-    model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner
-)
+gmsh_model = gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
 
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()
@@ -462,13 +460,15 @@ MPI.COMM_WORLD.barrier()
 # We visualize the mesh and subdomains with
 # [PyVista](https://docs.pyvista.org/)
 
-tdim = msh.topology.dim
+tdim = gmsh_model.mesh.topology.dim
 if have_pyvista:
-    topology, cell_types, geometry = plot.vtk_mesh(msh, 2)
+    topology, cell_types, geometry = plot.vtk_mesh(gmsh_model.mesh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     plotter = pyvista.Plotter()
-    num_local_cells = msh.topology.index_map(tdim).size_local
-    grid.cell_data["Marker"] = cell_tags.values[cell_tags.indices < num_local_cells]
+    num_local_cells = gmsh_model.mesh.topology.index_map(tdim).size_local
+    grid.cell_data["Marker"] = gmsh_model.cell_tags.values[
+        gmsh_model.cell_tags.indices < num_local_cells
+    ]
     grid.set_active_scalars("Marker")
     plotter.add_mesh(grid, show_edges=True)
     plotter.view_xy()
@@ -508,8 +508,8 @@ theta = 0  # Angle of incidence of the background field
 # element to represent the electric field:
 
 degree = 3
-curl_el = element("N1curl", msh.basix_cell(), degree, dtype=default_real_type)
-V = fem.functionspace(msh, curl_el)
+curl_el = element("N1curl", gmsh_model.mesh.basix_cell(), degree, dtype=default_real_type)
+V = fem.functionspace(gmsh_model.mesh, curl_el)
 
 # Next, we interpolate $\mathbf{E}_b$ into the function space $V$,
 # define our trial and test function, and the integration domains:
@@ -528,7 +528,7 @@ Es_3d = ufl.as_vector((Es[0], Es[1], 0))
 v_3d = ufl.as_vector((v[0], v[1], 0))
 
 # Measures for subdomains
-dx = ufl.Measure("dx", msh, subdomain_data=cell_tags)
+dx = ufl.Measure("dx", gmsh_model.mesh, subdomain_data=gmsh_model.cell_tags)
 dDom = dx((au_tag, bkg_tag))
 dPml_xy = dx(pml_tag)
 dPml_x = dx(pml_tag + 1)
@@ -550,10 +550,10 @@ eps_au = -1.0782 + 1j * 5.8089
 # it takes the value of the background permittivity $\varepsilon_b$ in
 # the background region:
 
-D = fem.functionspace(msh, ("DG", 0))
+D = fem.functionspace(gmsh_model.mesh, ("DG", 0))
 eps = fem.Function(D)
-au_cells = cell_tags.find(au_tag)
-bkg_cells = cell_tags.find(bkg_tag)
+au_cells = gmsh_model.cell_tags.find(au_tag)
+bkg_cells = gmsh_model.cell_tags.find(bkg_tag)
 eps.x.array[au_cells] = np.full_like(au_cells, eps_au, dtype=eps.x.array.dtype)
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=eps.x.array.dtype)
 eps.x.scatter_forward()
@@ -563,7 +563,7 @@ eps.x.scatter_forward()
 # coordinates as:
 
 # +
-x = ufl.SpatialCoordinate(msh)
+x = ufl.SpatialCoordinate(gmsh_model.mesh)
 alpha = 1
 
 # PML corners
@@ -703,7 +703,7 @@ if sys.hasExternalPackage("mumps") and not use_superlu:  # type: ignore
 elif sys.hasExternalPackage("superlu_dist"):  # type: ignore
     mat_factor_backend = "superlu_dist"
 else:
-    if msh.comm > 1:
+    if gmsh_model.mesh.comm > 1:
         raise RuntimeError("This demo requires a parallel LU solver.")
     else:
         mat_factor_backend = "petsc"
@@ -727,12 +727,12 @@ assert problem.solver.getConvergedReason() > 0, "Solver did not converge!"
 # compatible discontinuous Lagrange space.
 
 # +
-gdim = msh.geometry.dim
-V_dg = fem.functionspace(msh, ("DG", degree, (gdim,)))
+gdim = gmsh_model.mesh.geometry.dim
+V_dg = fem.functionspace(gmsh_model.mesh, ("DG", degree, (gdim,)))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 
-with VTXWriter(msh.comm, "Esh.bp", Esh_dg) as vtx:
+with VTXWriter(gmsh_model.mesh.comm, "Esh.bp", Esh_dg) as vtx:
     vtx.write(0.0)
 # -
 
@@ -770,7 +770,7 @@ E.x.array[:] = Eb.x.array[:] + Esh.x.array[:]
 E_dg = fem.Function(V_dg)
 E_dg.interpolate(E)
 
-with VTXWriter(msh.comm, "E.bp", E_dg) as vtx:
+with VTXWriter(gmsh_model.mesh.comm, "E.bp", E_dg) as vtx:
     vtx.write(0.0)
 # -
 
@@ -809,17 +809,19 @@ I0 = 0.5 / Z0
 # Geometrical cross section of the wire
 gcs = 2 * radius_wire
 
-n = ufl.FacetNormal(msh)
+n = ufl.FacetNormal(gmsh_model.mesh)
 n_3d = ufl.as_vector((n[0], n[1], 0))
 
 # Create a marker for the integration boundary for the scattering
 # efficiency
 marker = fem.Function(D)
-scatt_facets = facet_tags.find(scatt_tag)
-incident_cells = mesh.compute_incident_entities(msh.topology, scatt_facets, tdim - 1, tdim)
+scatt_facets = gmsh_model.facet_tags.find(scatt_tag)
+incident_cells = mesh.compute_incident_entities(
+    gmsh_model.mesh.topology, scatt_facets, tdim - 1, tdim
+)
 
-msh.topology.create_connectivity(tdim, tdim)
-midpoints = mesh.compute_midpoints(msh, tdim, incident_cells)
+gmsh_model.mesh.topology.create_connectivity(tdim, tdim)
+midpoints = mesh.compute_midpoints(gmsh_model.mesh, tdim, incident_cells)
 inner_cells = incident_cells[(midpoints[:, 0] ** 2 + midpoints[:, 1] ** 2) < (radius_scatt) ** 2]
 
 marker.x.array[inner_cells] = 1
@@ -832,12 +834,12 @@ Q = 0.5 * eps_au.imag * k0 * (ufl.inner(E_3d, E_3d)) / (Z0 * n_bkg)
 dAu = dx(au_tag)
 
 # Define integration facet for the scattering efficiency
-dS = ufl.Measure("dS", msh, subdomain_data=facet_tags)
+dS = ufl.Measure("dS", gmsh_model.mesh, subdomain_data=gmsh_model.facet_tags)
 
 # Normalized absorption efficiency
 q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / (gcs * I0)).real
 # Sum results from all MPI processes
-q_abs_fenics = msh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
+q_abs_fenics = gmsh_model.mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
 # Normalized scattering efficiency
 q_sca_fenics_proc = (
@@ -845,7 +847,7 @@ q_sca_fenics_proc = (
 ).real
 
 # Sum results from all MPI processes
-q_sca_fenics = msh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
+q_sca_fenics = gmsh_model.mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
 # Extinction efficiency
 q_ext_fenics = q_abs_fenics + q_sca_fenics
@@ -855,7 +857,7 @@ err_abs = np.abs(q_abs_analyt - q_abs_fenics) / q_abs_analyt
 err_sca = np.abs(q_sca_analyt - q_sca_fenics) / q_sca_analyt
 err_ext = np.abs(q_ext_analyt - q_ext_fenics) / q_ext_analyt
 
-if msh.comm.rank == 0:
+if gmsh_model.mesh.comm.rank == 0:
     print()
     print(f"The analytical absorption efficiency is {q_abs_analyt}")
     print(f"The numerical absorption efficiency is {q_abs_fenics}")
