@@ -8,6 +8,7 @@
 
 from mpi4py import MPI
 
+import numpy as np
 import pytest
 
 import basix
@@ -16,7 +17,7 @@ import dolfinx
 from dolfinx.fem import extract_function_spaces, form, functionspace
 from dolfinx.fem.forms import form_cpp_class
 from dolfinx.mesh import create_unit_square
-from ufl import TestFunction, TrialFunction, dx, inner
+from ufl import Measure, SpatialCoordinate, TestFunction, TrialFunction, dx, inner
 
 
 def test_extract_forms():
@@ -109,3 +110,24 @@ def test_incorrect_element():
             mesh._cpp_object,
         )
         dolfinx.fem.Form(f, ufcx_form, code)
+
+
+def test_multiple_measures_one_subdomain_data():
+    comm = MPI.COMM_WORLD
+    mesh = dolfinx.mesh.create_unit_interval(comm, 10)
+    x = SpatialCoordinate(mesh)
+    num_cells_local = mesh.topology.index_map(mesh.topology.dim).size_local
+    ct = dolfinx.mesh.meshtags(
+        mesh,
+        mesh.topology.dim,
+        np.arange(num_cells_local, dtype=np.int32),
+        np.arange(num_cells_local, dtype=np.int32),
+    )
+
+    dx = Measure("dx", domain=mesh, subdomain_data=ct)
+    dx_stand = Measure("dx", domain=mesh)
+
+    J = dolfinx.fem.form(x[0] ** 2 * dx + x[0] * dx_stand)
+    J_local = dolfinx.fem.assemble_scalar(J)
+    J_global = comm.allreduce(J_local, op=MPI.SUM)
+    assert np.isclose(J_global, 1 / 3 + 1 / 2)
