@@ -271,23 +271,21 @@ def model_to_mesh(
         # Check that all cells are tagged once
         _d = model.getDimension()
         _elementTypes, _elementTags, _nodeTags = model.mesh.getElements(dim=_d, tag=-1)
-        # assert only one type of elements
-        # assert len(_elementTypes) == 1  # NOTE: already checked in extract_topology_and_markers
         _elementType_dim = _elementTypes[0]
         if _elementType_dim not in topologies.keys():
             raise RuntimeError("All cells are expected to be tagged once; none found")
-        nbcells = len(_elementTags[0])
-        nbcells_tagged = len(topologies[_elementType_dim]["entity_tags"])
-        if nbcells != nbcells_tagged:
-            e = (
+        num_cells = len(_elementTags[0])
+        num_cells_tagged = len(topologies[_elementType_dim]["entity_tags"])
+        if num_cells != num_cells_tagged:
+            raise RuntimeError(
                 "All cells are expected to be tagged once;"
-                f"found: {nbcells_tagged}, expected: {nbcells}"
+                f"found: {num_cells_tagged}, expected: {num_cells}"
             )
-            raise RuntimeError(e)
-        nbcells_tagged_once = len(np.unique(topologies[_elementType_dim]["entity_tags"]))
-        if nbcells_tagged != nbcells_tagged_once:
-            e = "All cells are expected to be tagged once; found duplicates"
-            raise RuntimeError(e)
+        num_cells_tagged_once = len(np.unique(topologies[_elementType_dim]["entity_tags"]))
+        if num_cells_tagged != num_cells_tagged_once:
+            raise RuntimeError(
+                "All cells are expected to be tagged once; found duplicates"
+            )
 
         # Broadcast cell type data and geometric dimension
         cell_id = cell_information[perm_sort[-1]]["id"]
