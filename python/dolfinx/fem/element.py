@@ -268,8 +268,8 @@ class FiniteElement:
         globally consistent physical element ordering and orientation.
 
         Args:
-            x: Data to transform (in place). The shape is ``(m, n)``, where `m` is the number of
-            dgerees-of-freedom and the storage is row-major.
+            x: Data to transform (in place). The shape is ``(num_cells, n, dim)``, where ``n`` is
+                the number degrees-of-freedom and the data is flattened (row-major).
             cell_permutations: Permutation data for the cell.
             dim: Number of columns in ``data``.
 
@@ -283,14 +283,10 @@ class FiniteElement:
         """Apply the transpose of the operator applied by T_apply().
 
         Args:
-            x: Data to transform (in place). The shape is ``(m, n)``, where `m` is the number of
-            dgerees-of-freedom and the storage is row-major.
-            cell_permutations: Permutation data for the cell.
-            dim: Number of columns in `data`.
-
-        Note:
-            Exposed for testing. Function is not vectorised across multiple cells. Please see
-            `basix.numba_helpers` for performant versions.
+            x: Data to transform (in place). The shape is ``(num_cells, n, dim)``, where ``n`` is
+                the number degrees-of-freedom and the data is flattened (row-major).
+            cell_permutations: Permutation data for the cells
+            dim: Number of columns in ``data``.
         """
         self._cpp_object.Tt_apply(x, cell_permutations, dim)
 
@@ -300,16 +296,12 @@ class FiniteElement:
         """Apply the inverse transpose of the operator applied by T_apply().
 
         Args:
-            x: Data to transform (in place). The shape is ``(m, n)``, where ``m`` is the number of
-            dgerees-of-freedom and the storage is row-major.
-            cell_permutations: Permutation data for the cell.
-            dim: Number of columns in `data`.
-
-        Note:
-            Exposed for testing. Function is not vectorised across multiple cells. Please see
-            ``basix.numba_helpers`` for performant versions.
+            x: Data to transform (in place). The shape is ``(num_cells, n, dim)``, where ``n`` is
+                the number degrees-of-freedom and the data is flattened (row-major).
+            cell_permutations: Permutation data for the cells
+            dim: Number of columns in ``data``.
         """
-        self._cpp_object.Tt_apply(x, cell_permutations, dim)
+        self._cpp_object.Tt_inv_apply(x, cell_permutations, dim)
 
 
 def finiteelement(
