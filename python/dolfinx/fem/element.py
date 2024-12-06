@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Garth N. Wells
+# Copyright (C) 2024 Garth N. Wells and Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -12,6 +12,8 @@ import numpy as np
 import numpy.typing as npt
 
 import basix
+import ufl
+import ufl.finiteelement
 from dolfinx import cpp as _cpp
 
 
@@ -93,7 +95,7 @@ class CoordinateElement:
                 ``shape=(num_points, geometrical_dimension)``.
             cell_geometry: Physical coordinates describing the cell,
                 shape ``(num_of_geometry_basis_functions, geometrical_dimension)``
-                They can be created by accessing `geometry.x[geometry.dofmap.cell_dofs(i)]`,
+                They can be created by accessing ``geometry.x[geometry.dofmap.cell_dofs(i)]``,
 
         Returns:
             Reference coordinates of the physical points ``x``.
@@ -160,3 +162,190 @@ def _(e: basix.finite_element.FiniteElement):
         return CoordinateElement(_cpp.fem.CoordinateElement_float32(e._e))
     except TypeError:
         return CoordinateElement(_cpp.fem.CoordinateElement_float64(e._e))
+
+
+class FiniteElement:
+    _cpp_object: typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64]
+
+    def __init__(
+        self,
+        cpp_object: typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64],
+    ):
+        """Creates a Python wrapper for the exported finite element class.
+
+        Note:
+            Do not use this constructor directly. Instead use :func:``finiteelement``.
+
+        Args:
+            The underlying cpp instance that this object will wrap.
+        """
+        self._cpp_object = cpp_object
+
+    def __eq__(self, other):
+        return self._cpp_object == other._cpp_object
+
+    @property
+    def dtype(self) -> np.dtype:
+        """Geometry type of the Mesh that the FunctionSpace is defined on."""
+        return self._cpp_object.dtype
+
+    @property
+    def basix_element(self) -> basix.finite_element.FiniteElement:
+        """Return underlying Basix C++ element (if it exists).
+
+        Raises:
+            Runtime error if Basix element does not exist.
+        """
+        return self._cpp_object.basix_element
+
+    @property
+    def num_sub_elements(self) -> int:
+        """Number of sub elements (for a mixed or blocked element)."""
+        return self._cpp_object.num_sub_elements
+
+    @property
+    def value_shape(self) -> npt.NDArray[np.integer]:
+        """Value shape of the finite element field.
+
+        The value shape describes the shape of the finite element field, e.g. ``{}`` for a scalar,
+        ``{2}`` for a vector in 2D, ``{3, 3}`` for a rank-2 tensor in 3D, etc.
+        """
+        return self._cpp_object.value_shape
+
+    @property
+    def interpolation_points(self) -> npt.NDArray[np.floating]:
+        """Points on the reference cell at which an expression needs to be evaluated in order to
+        interpolate the expression in the finite element space.
+
+        Interpolation point coordinates on the reference cell, returning the coordinates data
+        (row-major) storage with shape ``(num_points, tdim)``.
+
+        Note:
+            For Lagrange elements the points will just be the nodal positions. For other elements
+            the points will typically be the quadrature points used to evaluate moment degrees of
+            freedom.
+        """
+        return self._cpp_object.interpolation_points
+
+    @property
+    def interpolation_ident(self) -> bool:
+        """Check if interpolation into the finite element space is an identity operation given the
+        evaluation on an expression at specific points, i.e. the degree-of-freedom are equal to
+        point evaluations. The function will return `true` for Lagrange elements."""
+        return self._cpp_object.interpolation_ident
+
+    @property
+    def space_dimension(self) -> int:
+        """Dimension of the finite element function space (the number of degrees-of-freedom for the
+        element).
+
+        For 'blocked' elements, this function returns the dimension of the full element rather than
+        the dimension of the base element.
+        """
+        return self._cpp_object.space_dimension
+
+    @property
+    def needs_dof_transformations(self) -> bool:
+        """Check if DOF transformations are needed for this element.
+
+        DOF transformations will be needed for elements which might not be continuous when two
+        neighbouring cells disagree on the orientation of a shared sub-entity, and when this cannot
+        be corrected for by permuting the DOF numbering in the dofmap.
+
+        For example, Raviart-Thomas elements will need DOF transformations, as the neighbouring
+        cells may disagree on the orientation of a basis function, and this orientation cannot be
+        corrected for by permuting the DOF numbers on each cell.
+        """
+        return self._cpp_object.needs_dof_transformations
+
+    @property
+    def signature(self) -> str:
+        """String identifying the finite element."""
+        return self._cpp_object.signature
+
+    def T_apply(self, x: npt.NDArray[np.floating], cell_permutations: np.int32, dim: int) -> None:
+        """Transform basis functions from the reference element ordering and orientation to the
+        globally consistent physical element ordering and orientation.
+
+        Args:
+            x: Data to transform (in place). The shape is ``(m, n)``, where `m` is the number of
+            dgerees-of-freedom and the storage is row-major.
+            cell_permutations: Permutation data for the cell.
+            dim: Number of columns in ``data``.
+
+        Note:
+            Exposed for testing. Function is not vectorised across multiple cells. Please see
+            `basix.numba_helpers` for performant versions.
+        """
+        self._cpp_object.T_apply(x, cell_permutations, dim)
+
+    def Tt_apply(self, x: npt.NDArray[np.floating], cell_permutations: np.int32, dim: int) -> None:
+        """Apply the transpose of the operator applied by T_apply().
+
+        Args:
+            x: Data to transform (in place). The shape is ``(m, n)``, where `m` is the number of
+            dgerees-of-freedom and the storage is row-major.
+            cell_permutations: Permutation data for the cell.
+            dim: Number of columns in `data`.
+
+        Note:
+            Exposed for testing. Function is not vectorised across multiple cells. Please see
+            `basix.numba_helpers` for performant versions.
+        """
+        self._cpp_object.Tt_apply(x, cell_permutations, dim)
+
+    def Tt_inv_apply(
+        self, x: npt.NDArray[np.floating], cell_permutations: np.int32, dim: int
+    ) -> None:
+        """Apply the inverse transpose of the operator applied by T_apply().
+
+        Args:
+            x: Data to transform (in place). The shape is ``(m, n)``, where ``m`` is the number of
+            dgerees-of-freedom and the storage is row-major.
+            cell_permutations: Permutation data for the cell.
+            dim: Number of columns in `data`.
+
+        Note:
+            Exposed for testing. Function is not vectorised across multiple cells. Please see
+            ``basix.numba_helpers`` for performant versions.
+        """
+        self._cpp_object.Tt_apply(x, cell_permutations, dim)
+
+
+def finiteelement(
+    cell_type: _cpp.mesh.CellType,
+    ufl_e: ufl.finiteelement,
+    FiniteElement_dtype: np.dtype,
+) -> FiniteElement:
+    """Create a DOLFINx element from a basix.ufl element.
+
+    Args:
+        cell_type: Element cell type, see ``mesh.CellType``
+        ufl_e: UFL element, holding quadrature rule and other properties of the selected element.
+        FiniteElement_dtype: Geometry type of the element.
+    """
+    if np.issubdtype(FiniteElement_dtype, np.float32):
+        CppElement = _cpp.fem.FiniteElement_float32
+    elif np.issubdtype(FiniteElement_dtype, np.float64):
+        CppElement = _cpp.fem.FiniteElement_float64
+    else:
+        raise ValueError(f"Unsupported dtype: {FiniteElement_dtype}")
+
+    if ufl_e.is_mixed:
+        elements = [
+            finiteelement(cell_type, e, FiniteElement_dtype)._cpp_object for e in ufl_e.sub_elements
+        ]
+        return FiniteElement(CppElement(elements))
+    elif ufl_e.is_quadrature:
+        return FiniteElement(
+            CppElement(
+                cell_type,
+                ufl_e.custom_quadrature()[0],
+                ufl_e.reference_value_shape,
+                ufl_e.is_symmetric,
+            )
+        )
+    else:
+        basix_e = ufl_e.basix_element._e
+        value_shape = ufl_e.reference_value_shape if ufl_e.block_size > 1 else None
+        return FiniteElement(CppElement(basix_e, value_shape, ufl_e.is_symmetric))
