@@ -33,6 +33,11 @@ __all__ = [
 ]
 
 
+class TopologyDict(typing.TypedDict):
+    topology: npt.NDArray[typing.Any]
+    cell_data: npt.NDArray[typing.Any]
+
+
 # Map from Gmsh cell type identifier (integer) to DOLFINx cell type and
 # degree https://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format
 _gmsh_to_cells = {
@@ -61,6 +66,7 @@ class GmshModel(typing.NamedTuple):
     facet_tags: MeshTags
     edge_tags: MeshTags
     vertex_tags: MeshTags
+    physical_groups: dict[str, tuple[int, int]]
 
 
 def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
@@ -108,7 +114,9 @@ def cell_perm_array(cell_type: CellType, num_nodes: int) -> list[int]:
     return _cpp.io.perm_gmsh(cell_type, num_nodes)
 
 
-def extract_topology_and_markers(model, name: typing.Optional[str] = None):
+def extract_topology_and_markers(
+    model, name: typing.Optional[str] = None
+) -> tuple[dict[int, TopologyDict], dict[str, tuple[int, int]]]:
     """Extract all entities tagged with a physical marker in the gmsh model.
 
     Returns a nested dictionary where the first key is the gmsh MSH
@@ -122,10 +130,13 @@ def extract_topology_and_markers(model, name: typing.Optional[str] = None):
             model will be used.
 
     Returns:
-        A nested dictionary where each key corresponds to a gmsh cell
+        A tuple ``(topologies, groups)``, where ``topologies`` is a
+        nested dictionary where each key corresponds to a gmsh cell
         type. Each cell type found in the mesh has a 2D array containing
         the topology of the marked cell and a list with the
-        corresponding markers.
+        corresponding markers. ``groups`` is a dictionary where the key
+        is the physical name and the value is a tuple with the dimension
+        and tag.
 
     """
     if name is not None:
@@ -134,7 +145,10 @@ def extract_topology_and_markers(model, name: typing.Optional[str] = None):
     # Get the physical groups from gmsh in the form [(dim1, tag1),
     # (dim1, tag2), (dim2, tag3),...]
     phys_grps = model.getPhysicalGroups()
-    topologies: dict[int, dict[str, npt.NDArray[typing.Any]]] = {}
+    topologies: dict[int, TopologyDict] = {}
+    # Create a dictionary with the physical groups where the key is the
+    # physical name and the value is a tuple with the dimension and tag
+    groups: dict[str, tuple[int, int]] = {}
     for dim, tag in phys_grps:
         # Get the entities of dimension `dim`, dim=0 -> Points, dim=1 -
         # >Lines, dim=2 -> Triangles/Quadrilaterals, etc.
@@ -173,7 +187,9 @@ def extract_topology_and_markers(model, name: typing.Optional[str] = None):
             else:
                 topologies[entity_type] = {"topology": topology, "cell_data": marker}
 
-    return topologies
+        groups[model.getPhysicalName(dim, tag)] = (dim, tag)
+
+    return topologies, groups
 
 
 def extract_geometry(model, name: typing.Optional[str] = None) -> npt.NDArray[np.float64]:
@@ -253,7 +269,7 @@ def model_to_mesh(
         assert model is not None, "Gmsh model is None on rank responsible for mesh creation."
         # Get mesh geometry and mesh topology for each element
         x = extract_geometry(model)
-        topologies = extract_topology_and_markers(model)
+        topologies, physical_groups = extract_topology_and_markers(model)
 
         # Extract Gmsh cell id, dimension of cell and number of nodes to
         # cell for each
@@ -409,7 +425,7 @@ def model_to_mesh(
     else:
         vt = meshtags(mesh, tdim - 3, np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32))
 
-    return GmshModel(mesh, ct, ft, et, vt)
+    return GmshModel(mesh, ct, ft, et, vt, physical_groups)
 
 
 def read_from_msh(
