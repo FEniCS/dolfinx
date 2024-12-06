@@ -324,6 +324,7 @@ def model_to_mesh(
 
         cells = np.asarray(topologies[cell_id]["topology"], dtype=np.int64)
         cell_values = np.asarray(topologies[cell_id]["cell_data"], dtype=np.int32)
+        physical_groups = comm.bcast(physical_groups, root=rank)
     else:
         cell_id, num_nodes = comm.bcast([None, None], root=rank)
         cells, x = np.empty([0, num_nodes], dtype=np.int32), np.empty([0, gdim], dtype=dtype)
@@ -346,6 +347,8 @@ def model_to_mesh(
             num_vertex_nodes = comm.bcast(None, root=rank)
             marked_vertices = np.empty((0, num_vertex_nodes), dtype=np.int32)
             vertex_values = np.empty((0,), dtype=np.int32)
+
+        physical_groups = comm.bcast(None, root=rank)
 
     # Create distributed mesh
     ufl_domain = ufl_mesh(cell_id, gdim, dtype=dtype)
