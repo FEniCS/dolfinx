@@ -130,11 +130,11 @@ def extract_topology_and_markers(
             model will be used.
 
     Returns:
-        A tuple ``(topologies, groups)``, where ``topologies`` is a
+        A tuple ``(topologies, physical_groups)``, where ``topologies`` is a
         nested dictionary where each key corresponds to a gmsh cell
         type. Each cell type found in the mesh has a 2D array containing
         the topology of the marked cell and a list with the
-        corresponding markers. ``groups`` is a dictionary where the key
+        corresponding markers. ``physical_groups`` is a dictionary where the key
         is the physical name and the value is a tuple with the dimension
         and tag.
 
@@ -148,7 +148,7 @@ def extract_topology_and_markers(
     topologies: dict[int, TopologyDict] = {}
     # Create a dictionary with the physical groups where the key is the
     # physical name and the value is a tuple with the dimension and tag
-    groups: dict[str, tuple[int, int]] = {}
+    physical_groups: dict[str, tuple[int, int]] = {}
     for dim, tag in phys_grps:
         # Get the entities of dimension `dim`, dim=0 -> Points, dim=1 -
         # >Lines, dim=2 -> Triangles/Quadrilaterals, etc.
@@ -187,9 +187,9 @@ def extract_topology_and_markers(
             else:
                 topologies[entity_type] = {"topology": topology, "cell_data": marker}
 
-        groups[model.getPhysicalName(dim, tag)] = (dim, tag)
+        physical_groups[model.getPhysicalName(dim, tag)] = (dim, tag)
 
-    return topologies, groups
+    return topologies, physical_groups
 
 
 def extract_geometry(model, name: typing.Optional[str] = None) -> npt.NDArray[np.float64]:
