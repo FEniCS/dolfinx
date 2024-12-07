@@ -102,7 +102,7 @@ T assemble_exterior_facets(mdspan2_t x_dofmap,
     get_cell_geometry(std::span(coordinate_dofs), x_dofmap, x, cell);
 
     // Permutations
-    auto perm = get_cell_permutations(cell, local_facet, num_facets_per_cell, perms);
+    std::uint8_t perm = get_cell_permutations(cell, local_facet, num_facets_per_cell, perms);
 
     const T* coeff_cell = coeffs.data() + index / 2 * cstride;
     fn(&value, coeff_cell, constants.data(), coordinate_dofs.data(),
@@ -128,7 +128,7 @@ T assemble_interior_facets(mdspan2_t x_dofmap,
     return value;
 
   // Create data structures used in assembly
-  auto dofs_size = 3 * x_dofmap.extent(1);
+  const std::uint8_t dofs_size = 3 * x_dofmap.extent(1);
   using X = scalar_value_type_t<T>;
   std::vector<X> coordinate_dofs_cnt(2 * dofs_size);
   std::span<X> coordinate_dofs(coordinate_dofs_cnt);
@@ -149,7 +149,7 @@ T assemble_interior_facets(mdspan2_t x_dofmap,
     get_cell_geometry(coordinate_dofs.last(dofs_size), x_dofmap, x, cells[1]);
 
     // Permutations
-    auto perm = std::array<std::uint8_t, 2>{
+    std::array<std::uint8_t, 2> perm = {
       get_cell_permutations(cells[0], local_facets[0], num_facets_per_cell, perms),
       get_cell_permutations(cells[1], local_facets[1], num_facets_per_cell, perms)
     };
