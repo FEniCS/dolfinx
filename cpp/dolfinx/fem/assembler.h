@@ -45,6 +45,21 @@ make_coefficients_span(const std::map<std::pair<IntegralType, int>,
   return c;
 }
 
+/// @brief Converts mesh geometry type if needed
+template <typename T, typename U>
+inline std::span<const T> convert_geometry_type(std::span<const U> x)
+{
+  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
+  {
+    return x;
+  }
+  else
+  {
+    std::vector<const T> _x(x.begin(), x.end());
+    return std::span<const T>(_x);
+  }
+}
+
 // -- Scalar ----------------------------------------------------------------
 
 /// @brief Assemble functional into scalar.
@@ -66,18 +81,9 @@ T assemble_scalar(
 {
   std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
-  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
-  {
-    return impl::assemble_scalar(M, mesh->geometry().dofmap(),
-                                 mesh->geometry().x(), constants, coefficients);
-  }
-  else
-  {
-    auto x = mesh->geometry().x();
-    std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
-    return impl::assemble_scalar(M, mesh->geometry().dofmap(), _x, constants,
-                                 coefficients);
-  }
+  auto dofmap = mesh->geometry().dofmap();
+  auto x = convert_geometry_type<scalar_value_type_t<T>, U>(mesh->geometry().x());
+  return impl::assemble_scalar(M, dofmap, x, constants, coefficients);
 }
 
 /// Assemble functional into scalar
@@ -243,19 +249,11 @@ void assemble_matrix(
 {
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
-  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
-  {
-    impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap(),
-                          mesh->geometry().x(), constants, coefficients,
-                          dof_marker0, dof_marker1);
-  }
-  else
-  {
-    auto x = mesh->geometry().x();
-    std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
-    impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap(), _x, constants,
-                          coefficients, dof_marker0, dof_marker1);
-  }
+  auto dofmap = mesh->geometry().dofmap();
+  auto x = convert_geometry_type<scalar_value_type_t<T>, U>(mesh->geometry().x());
+
+  impl::assemble_matrix(mat_add, a, dofmap, x, constants,
+                        coefficients, dof_marker0, dof_marker1);
 }
 
 /// Assemble bilinear form into a matrix
