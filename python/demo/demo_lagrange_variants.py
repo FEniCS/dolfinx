@@ -24,9 +24,8 @@ import matplotlib.pylab as plt
 
 import basix
 import basix.ufl
-import ufl  # type: ignore
 from dolfinx import default_real_type, fem, mesh
-from ufl import dx
+from ufl import SpatialCoordinate, dx
 
 # -
 
@@ -124,7 +123,7 @@ def saw_tooth(x):
 # +
 msh = mesh.create_unit_interval(MPI.COMM_WORLD, N)
 
-x = ufl.SpatialCoordinate(msh)
+x = SpatialCoordinate(msh)
 u_exact = saw_tooth(x[0])
 
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
