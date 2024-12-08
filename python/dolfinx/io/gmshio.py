@@ -60,7 +60,17 @@ _gmsh_to_cells = {
 }
 
 
-class GmshModel(typing.NamedTuple):
+class MeshData(typing.NamedTuple):
+    """A NamedTuple ``(mesh, cell_tags, facet_tags,
+    edge_tags, vertex_tags, physical_groups)``, where
+    cell_tags hold markers for the cells, facet tags holds markers
+    for facets (if tags are found), edge_tags holds markers
+    for edges (if tags are found), and vertex_tags holds
+    markers for vertices (if tags are found).
+    Physical groups is a dictionary where the key is the physical
+    name and the value is a tuple with the dimension and tag.
+    """
+
     mesh: Mesh
     cell_tags: MeshTags
     facet_tags: MeshTags
@@ -235,7 +245,7 @@ def model_to_mesh(
         typing.Callable[[_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]
     ] = None,
     dtype=default_real_type,
-) -> GmshModel:
+) -> MeshData:
     """Create a Mesh from a Gmsh model.
 
     Creates a :class:`dolfinx.mesh.Mesh` from the physical entities of
@@ -252,11 +262,8 @@ def model_to_mesh(
             distribution of cells across MPI ranks.
 
     Returns:
-        A NamedTuple ``(mesh, cell_tags, facet_tags, edge_tags, vertex_tags)``,
-        where cell_tags hold markers for the cells, facet tags holds markers
-        for facets (if tags are found in Gmsh model), edge_tags holds markers
-        for edges (if tags are found in Gmsh model), and vertex_tags holds
-        markers for vertices (if tags are found in Gmsh model).
+        MeshData with mesh, cell tags, facet tags, edge tags,
+        vertex tags and physical groups.
 
     Note:
         For performance, this function should only be called once for
@@ -428,7 +435,7 @@ def model_to_mesh(
     else:
         vt = meshtags(mesh, tdim - 3, np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32))
 
-    return GmshModel(mesh, ct, ft, et, vt, physical_groups)
+    return MeshData(mesh, ct, ft, et, vt, physical_groups)
 
 
 def read_from_msh(
@@ -439,7 +446,7 @@ def read_from_msh(
     partitioner: typing.Optional[
         typing.Callable[[_MPI.Comm, int, int, AdjacencyList], AdjacencyList_int32]
     ] = None,
-) -> GmshModel:
+) -> MeshData:
     """Read a Gmsh .msh file and return a :class:`dolfinx.mesh.Mesh` and cell facet markers.
 
     Note:
@@ -453,8 +460,8 @@ def read_from_msh(
         gdim: Geometric dimension of the mesh
 
     Returns:
-        A NamedTuple ``(mesh, cell_tags, facet_tags, edge_tags, vertex_tags)``
-        with meshtags for associated physical groups for cells and facets.
+        Meshdata with mesh, cell tags, facet tags, edge tags,
+        vertex tags and physical groups.
 
     """
     try:

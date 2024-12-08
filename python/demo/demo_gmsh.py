@@ -161,35 +161,35 @@ def create_mesh(comm: MPI.Comm, model: gmsh.model, name: str, filename: str, mod
         filename: XDMF filename.
         mode: XDMF file mode. "w" (write) or "a" (append).
     """
-    msh = gmshio.model_to_mesh(model, comm, rank=0)
-    msh.mesh.name = name
-    msh.cell_tags.name = f"{name}_cells"
-    msh.facet_tags.name = f"{name}_facets"
-    msh.edge_tags.name = f"{name}_edges"
-    msh.vertex_tags.name = f"{name}_vertices"
-    with XDMFFile(msh.mesh.comm, filename, mode) as file:
-        msh.mesh.topology.create_connectivity(2, 3)
-        msh.mesh.topology.create_connectivity(1, 3)
-        msh.mesh.topology.create_connectivity(0, 3)
-        file.write_mesh(msh.mesh)
+    mesh_data = gmshio.model_to_mesh(model, comm, rank=0)
+    mesh_data.mesh.name = name
+    mesh_data.cell_tags.name = f"{name}_cells"
+    mesh_data.facet_tags.name = f"{name}_facets"
+    mesh_data.edge_tags.name = f"{name}_edges"
+    mesh_data.vertex_tags.name = f"{name}_vertices"
+    with XDMFFile(mesh_data.mesh.comm, filename, mode) as file:
+        mesh_data.mesh.topology.create_connectivity(2, 3)
+        mesh_data.mesh.topology.create_connectivity(1, 3)
+        mesh_data.mesh.topology.create_connectivity(0, 3)
+        file.write_mesh(mesh_data.mesh)
         file.write_meshtags(
-            msh.cell_tags,
-            msh.mesh.geometry,
+            mesh_data.cell_tags,
+            mesh_data.mesh.geometry,
             geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{name}']/Geometry",
         )
         file.write_meshtags(
-            msh.facet_tags,
-            msh.mesh.geometry,
+            mesh_data.facet_tags,
+            mesh_data.mesh.geometry,
             geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{name}']/Geometry",
         )
         file.write_meshtags(
-            msh.edge_tags,
-            msh.mesh.geometry,
+            mesh_data.edge_tags,
+            mesh_data.mesh.geometry,
             geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{name}']/Geometry",
         )
         file.write_meshtags(
-            msh.vertex_tags,
-            msh.mesh.geometry,
+            mesh_data.vertex_tags,
+            mesh_data.mesh.geometry,
             geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{name}']/Geometry",
         )
 
