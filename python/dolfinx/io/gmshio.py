@@ -298,15 +298,9 @@ def model_to_mesh(
         cell_id, num_nodes = comm.bcast([cell_id, num_nodes], root=rank)
 
         # Check for facet, edge and vertex data and broadcast relevant info if True
-        has_facet_data = False
-        if tdim - 1 in cell_dimensions:
-            has_facet_data = True
-        has_edge_data = False
-        if tdim - 2 in cell_dimensions:
-            has_edge_data = True
-        has_vertex_data = False
-        if tdim - 3 in cell_dimensions:
-            has_vertex_data = True
+        has_facet_data = (tdim - 1) in cell_dimensions
+        has_edge_data = (tdim - 2) in cell_dimensions
+        has_vertex_data = (tdim - 3) in cell_dimensions
 
         has_facet_data = comm.bcast(has_facet_data, root=rank)
         if has_facet_data:
