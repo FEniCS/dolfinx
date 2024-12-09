@@ -459,6 +459,8 @@ if MPI.COMM_WORLD.rank == 0:
 model = MPI.COMM_WORLD.bcast(model, root=0)
 partitioner = dolfinx.cpp.mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.shared_facet)
 mesh_data = io.gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
+assert mesh_data.cell_tags is not None, "Cell tags are missing"
+assert mesh_data.facet_tags is not None, "Facet tags are missing"
 
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()

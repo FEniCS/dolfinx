@@ -21,7 +21,7 @@ from dolfinx import default_real_type
 from dolfinx.cpp.graph import AdjacencyList_int32
 from dolfinx.graph import AdjacencyList, adjacencylist
 from dolfinx.io.utils import distribute_entity_data
-from dolfinx.mesh import CellType, Mesh, MeshTags, create_mesh, meshtags, meshtags_from_entities
+from dolfinx.mesh import CellType, Mesh, MeshTags, create_mesh, meshtags_from_entities
 
 __all__ = [
     "cell_perm_array",
@@ -72,10 +72,10 @@ class MeshData(typing.NamedTuple):
     """
 
     mesh: Mesh
-    cell_tags: MeshTags
-    facet_tags: MeshTags
-    edge_tags: MeshTags
-    vertex_tags: MeshTags
+    cell_tags: typing.Optional[MeshTags]
+    facet_tags: typing.Optional[MeshTags]
+    edge_tags: typing.Optional[MeshTags]
+    vertex_tags: typing.Optional[MeshTags]
     physical_groups: dict[str, tuple[int, int]]
 
 
@@ -391,7 +391,7 @@ def model_to_mesh(
         ft = meshtags_from_entities(mesh, tdim - 1, adj, local_values.astype(np.int32, copy=False))
         ft.name = "Facet tags"
     else:
-        ft = meshtags(mesh, tdim - 1, np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32))
+        ft = None
 
     if has_edge_data:
         # Permute edges from MSH to DOLFINx ordering
@@ -409,7 +409,7 @@ def model_to_mesh(
         et = meshtags_from_entities(mesh, tdim - 2, adj, local_values.astype(np.int32, copy=False))
         et.name = "Edge tags"
     else:
-        et = meshtags(mesh, tdim - 2, np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32))
+        et = None
 
     if has_vertex_data:
         # Permute vertices from MSH to DOLFINx ordering
@@ -427,7 +427,7 @@ def model_to_mesh(
         vt = meshtags_from_entities(mesh, tdim - 3, adj, local_values.astype(np.int32, copy=False))
         vt.name = "Vertex tags"
     else:
-        vt = meshtags(mesh, tdim - 3, np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32))
+        vt = None
 
     return MeshData(mesh, ct, ft, et, vt, physical_groups)
 
