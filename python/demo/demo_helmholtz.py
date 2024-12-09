@@ -37,12 +37,11 @@ except ModuleNotFoundError:
 import numpy as np
 
 import dolfinx
-import ufl
 from dolfinx.fem import Function, assemble_scalar, form, functionspace
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import create_unit_square
-from ufl import dx, grad, inner
+from ufl import TestFunction, TrialFunction, dx, grad, inner
 
 # Wavenumber
 k0 = 4 * np.pi
@@ -65,7 +64,7 @@ else:
 V = functionspace(msh, ("Lagrange", deg))
 
 # Define variational problem
-u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+u, v = TrialFunction(V), TestFunction(V)
 f = Function(V)
 f.interpolate(lambda x: A * k0**2 * np.cos(k0 * x[0]) * np.cos(k0 * x[1]))
 a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx

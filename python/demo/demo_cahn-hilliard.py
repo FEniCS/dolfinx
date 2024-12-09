@@ -137,7 +137,6 @@ from mpi4py import MPI
 
 import numpy as np
 
-import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, log, plot
 from dolfinx.fem import Function, functionspace
@@ -145,7 +144,7 @@ from dolfinx.fem.petsc import NonlinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_square
 from dolfinx.nls.petsc import NewtonSolver
-from ufl import dx, grad, inner
+from ufl import TestFunctions, diff, dx, grad, inner, split, variable
 
 try:
     import pyvista as pv
@@ -179,7 +178,7 @@ ME = functionspace(msh, mixed_element([P1, P1]))
 
 # Trial and test functions of the space `ME` are now defined:
 
-q, v = ufl.TestFunctions(ME)
+q, v = TestFunctions(ME)
 
 # ```{index} split functions
 # ```
@@ -196,11 +195,11 @@ u = Function(ME)  # current solution
 u0 = Function(ME)  # solution from previous converged step
 
 # Split mixed functions
-c, mu = ufl.split(u)
-c0, mu0 = ufl.split(u0)
+c, mu = split(u)
+c0, mu0 = split(u0)
 # -
 
-# The line `c, mu = ufl.split(u)` permits direct access to the
+# The line `c, mu = split(u)` permits direct access to the
 # components of a mixed function. Note that `c` and `mu` are references
 # for components of `u`, and not copies.
 #
@@ -232,9 +231,9 @@ u.x.scatter_forward()
 # differentiation:
 
 # Compute the chemical potential df/dc
-c = ufl.variable(c)
+c = variable(c)
 f = 100 * c**2 * (1 - c) ** 2
-dfdc = ufl.diff(f, c)
+dfdc = diff(f, c)
 
 # The first line declares that `c` is a variable that some function can
 # be differentiated with respect to. The next line is the function $f$
