@@ -45,6 +45,21 @@ make_coefficients_span(const std::map<std::pair<IntegralType, int>,
   return c;
 }
 
+/// @brief Converts mesh geometry type if needed
+template <typename T, typename U>
+inline std::span<const T> convert_geometry_type(std::span<const U> x)
+{
+  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
+  {
+    return x;
+  }
+  else
+  {
+    std::vector<const T> _x(x.begin(), x.end());
+    return std::span<const T>(_x);
+  }
+}
+
 // -- Scalar ----------------------------------------------------------------
 
 /// @brief Assemble functional into scalar.
@@ -66,18 +81,9 @@ T assemble_scalar(
 {
   std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
-  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
-  {
-    return impl::assemble_scalar(M, mesh->geometry().dofmap(),
-                                 mesh->geometry().x(), constants, coefficients);
-  }
-  else
-  {
-    auto x = mesh->geometry().x();
-    std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
-    return impl::assemble_scalar(M, mesh->geometry().dofmap(), _x, constants,
-                                 coefficients);
-  }
+  auto dofmap = mesh->geometry().dofmap();
+  auto x = convert_geometry_type<scalar_value_type_t<T>, U>(mesh->geometry().x());
+  return impl::assemble_scalar(M, dofmap, x, constants, coefficients);
 }
 
 /// Assemble functional into scalar
@@ -93,6 +99,46 @@ T assemble_scalar(const Form<T, U>& M)
   pack_coefficients(M, coefficients);
   return assemble_scalar(M, std::span(constants),
                          make_coefficients_span(coefficients));
+}
+
+/// @brief Integrate functional over mesh into scalars.
+///
+/// The caller supplies the form constants and coefficients for this
+/// version, which has efficiency benefits if the data can be re-used
+/// for multiple calls.
+/// @note Caller is responsible for accumulation across processes.
+/// @param[in] M The form (functional) to assemble
+/// @param[in] constants The constants that appear in `M`
+/// @param[in] coefficients The coefficients that appear in `M`
+/// @return The contribution to the form (functional) from the local
+/// process
+template <dolfinx::scalar T, std::floating_point U>
+std::map<std::pair<IntegralType, int>, std::span<T>> integrate_scalar(
+    const Form<T, U>& M, std::span<const T> constants,
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<std::span<const T>, int>>& coefficients)
+{
+  std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
+  assert(mesh);
+  auto dofmap = mesh->geometry().dofmap();
+  auto x = convert_geometry_type<scalar_value_type_t<T>, U>(mesh->geometry().x());
+  return impl::integrate_scalar(M, dofmap, x, constants, coefficients);
+}
+
+/// Integrate functional over mesh into scalars
+/// @note Caller is responsible for accumulation across processes.
+/// @param[in] M The form (functional) to assemble
+/// @return The contribution to the form (functional) from the local
+///   process
+template <dolfinx::scalar T, std::floating_point U>
+std::map<std::pair<IntegralType, int>, std::span<T>> integrate_scalar(
+    const Form<T, U>& M)
+{
+  const std::vector<T> constants = pack_constants(M);
+  auto coefficients = allocate_coefficient_storage(M);
+  pack_coefficients(M, coefficients);
+  return integrate_scalar(M, std::span(constants),
+                          make_coefficients_span(coefficients));
 }
 
 // -- Vectors ----------------------------------------------------------------
@@ -243,19 +289,11 @@ void assemble_matrix(
 {
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
-  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
-  {
-    impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap(),
-                          mesh->geometry().x(), constants, coefficients,
-                          dof_marker0, dof_marker1);
-  }
-  else
-  {
-    auto x = mesh->geometry().x();
-    std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
-    impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap(), _x, constants,
-                          coefficients, dof_marker0, dof_marker1);
-  }
+  auto dofmap = mesh->geometry().dofmap();
+  auto x = convert_geometry_type<scalar_value_type_t<T>, U>(mesh->geometry().x());
+
+  impl::assemble_matrix(mat_add, a, dofmap, x, constants,
+                        coefficients, dof_marker0, dof_marker1);
 }
 
 /// Assemble bilinear form into a matrix

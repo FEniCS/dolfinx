@@ -221,6 +221,32 @@ void declare_assembly_functions(nb::module_& m)
       nb::arg("M"), nb::arg("constants"), nb::arg("coefficients"),
       "Assemble functional over mesh with provided constants and "
       "coefficients");
+  m.def(
+      "integrate_scalar",
+      [](const dolfinx::fem::Form<T, U>& M,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
+         const std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                        nb::ndarray<const T, nb::ndim<2>, nb::c_contig>>&
+             coefficients)
+      {
+        std::map<std::pair<dolfinx::fem::IntegralType, int>, std::span<T>> scalars
+            = dolfinx::fem::integrate_scalar<T>(
+                M, std::span(constants.data(), constants.size()),
+                py_to_cpp_coeffs(coefficients));
+
+        std::map<std::pair<dolfinx::fem::IntegralType, int>, std::vector<T>>
+            _scalars;
+        for (const auto& [key, value] : scalars)
+        {
+          std::vector<T> vals(value.begin(), value.end());
+          _scalars.emplace(key, vals);
+        }
+
+        return _scalars;
+      },
+      nb::arg("M"), nb::arg("constants"), nb::arg("coefficients"),
+      "Integrate functional over mesh with provided constants and "
+      "coefficients");
   // Vector
   m.def(
       "assemble_vector",
