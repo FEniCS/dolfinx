@@ -15,6 +15,7 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <variant>
 #include <memory>
 #include <vector>
 
@@ -35,6 +36,18 @@ inline void get_cell_geometry(std::span<T> coordinate_dofs,
   }
 }
 
+template <dolfinx::scalar T>
+inline T* get_value_ptr(std::variant<std::shared_ptr<T>, std::span<T>> acc, std::size_t i)
+{
+  if (std::holds_alternative<std::shared_ptr<T>>(acc))
+  {
+    return std::get<std::shared_ptr<T>>(acc).get();
+  }
+  else if (std::holds_alternative<std::span<T>>(acc)){
+    return &(std::get<std::span<T>>(acc)[i]);
+  }
+}
+
 inline std::uint8_t get_cell_permutations(std::int32_t cell,
                                           std::int32_t local_facet,
                                           int num_facets_per_cell,
@@ -45,14 +58,17 @@ inline std::uint8_t get_cell_permutations(std::int32_t cell,
 
 /// Assemble functional over cells
 template <dolfinx::scalar T>
-T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
-                 std::span<const std::int32_t> cells, FEkernel<T> auto fn,
-                 std::span<const T> constants, std::span<const T> coeffs,
-                 int cstride)
+void assemble_cells(std::variant<std::shared_ptr<T>, std::span<T>> acc,
+                    mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
+                    std::span<const std::int32_t> cells, FEkernel<T> auto fn,
+                    std::span<const T> constants, std::span<const T> coeffs,
+                    int cstride)
 {
-  T value(0);
   if (cells.empty())
-    return value;
+    return;
+
+  if (!(std::holds_alternative<std::shared_ptr<T>>(acc) || std::holds_alternative<std::span<T>>(acc)))
+    return;
 
   // Create data structures used in assembly
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
@@ -64,28 +80,32 @@ T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
 
     // Get cell coordinates/geometry
     get_cell_geometry(std::span(coordinate_dofs), x_dofmap, x, cell);
-
+    // Get cell form coefficients
     const T* coeff_cell = coeffs.data() + index * cstride;
-    fn(&value, coeff_cell, constants.data(), coordinate_dofs.data(),
+    // Get output value pointer
+    T* value = get_value_ptr(acc, index);
+
+    fn(value, coeff_cell, constants.data(), coordinate_dofs.data(),
        nullptr, nullptr);
   }
-
-  return value;
 }
 
 /// Execute kernel over exterior facets and accumulate result
 template <dolfinx::scalar T>
-T assemble_exterior_facets(mdspan2_t x_dofmap,
-                           std::span<const scalar_value_type_t<T>> x,
-                           int num_facets_per_cell,
-                           std::span<const std::int32_t> facets,
-                           FEkernel<T> auto fn, std::span<const T> constants,
-                           std::span<const T> coeffs, int cstride,
-                           std::span<const std::uint8_t> perms)
+void assemble_exterior_facets(std::variant<std::shared_ptr<T>, std::span<T>> acc,
+                              mdspan2_t x_dofmap,
+                              std::span<const scalar_value_type_t<T>> x,
+                              int num_facets_per_cell,
+                              std::span<const std::int32_t> facets,
+                              FEkernel<T> auto fn, std::span<const T> constants,
+                              std::span<const T> coeffs, int cstride,
+                              std::span<const std::uint8_t> perms)
 {
-  T value(0);
   if (facets.empty())
-    return value;
+    return;
+
+  if (!(std::holds_alternative<std::shared_ptr<T>>(acc) || std::holds_alternative<std::span<T>>(acc)))
+    return;
 
   // Create data structures used in assembly
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
@@ -100,32 +120,35 @@ T assemble_exterior_facets(mdspan2_t x_dofmap,
 
     // Get cell coordinates/geometry
     get_cell_geometry(std::span(coordinate_dofs), x_dofmap, x, cell);
-
-    // Permutations
+    // Get cell permutations
     std::uint8_t perm = get_cell_permutations(cell, local_facet, num_facets_per_cell, perms);
-
+    // Get cell form coefficients
     const T* coeff_cell = coeffs.data() + index / 2 * cstride;
-    fn(&value, coeff_cell, constants.data(), coordinate_dofs.data(),
+    // Get output value pointer
+    T* value = get_value_ptr(acc, index);
+
+    fn(value, coeff_cell, constants.data(), coordinate_dofs.data(),
        &local_facet, &perm);
   }
-
-  return value;
 }
 
 /// Assemble functional over interior facets
 template <dolfinx::scalar T>
-T assemble_interior_facets(mdspan2_t x_dofmap,
-                           std::span<const scalar_value_type_t<T>> x,
-                           int num_facets_per_cell,
-                           std::span<const std::int32_t> facets,
-                           FEkernel<T> auto fn, std::span<const T> constants,
-                           std::span<const T> coeffs, int cstride,
-                           std::span<const int> offsets,
-                           std::span<const std::uint8_t> perms)
+void assemble_interior_facets(std::variant<std::shared_ptr<T>, std::span<T>> acc,
+                              mdspan2_t x_dofmap,
+                              std::span<const scalar_value_type_t<T>> x,
+                              int num_facets_per_cell,
+                              std::span<const std::int32_t> facets,
+                              FEkernel<T> auto fn, std::span<const T> constants,
+                              std::span<const T> coeffs, int cstride,
+                              std::span<const int> offsets,
+                              std::span<const std::uint8_t> perms)
 {
-  T value(0);
   if (facets.empty())
-    return value;
+    return;
+
+  if (!(std::holds_alternative<std::shared_ptr<T>>(acc) || std::holds_alternative<std::span<T>>(acc)))
+    return;
 
   // Create data structures used in assembly
   const std::uint8_t dofs_size = 3 * x_dofmap.extent(1);
@@ -147,19 +170,19 @@ T assemble_interior_facets(mdspan2_t x_dofmap,
     // Get cell coordinates/geometry
     get_cell_geometry(coordinate_dofs.first(dofs_size), x_dofmap, x, cells[0]);
     get_cell_geometry(coordinate_dofs.last(dofs_size), x_dofmap, x, cells[1]);
-
-    // Permutations
+    // Get cell permutations
     std::array<std::uint8_t, 2> perm = {
       get_cell_permutations(cells[0], local_facets[0], num_facets_per_cell, perms),
       get_cell_permutations(cells[1], local_facets[1], num_facets_per_cell, perms)
     };
-
+    // Get cell form coefficients
     const T* coeff_cell = coeffs.data() + index / 2 * cstride;
-    fn(&value, coeff_cell, constants.data(), coordinate_dofs.data(),
-      local_facets.data(), perm.data());
-  }
+    // Get output value pointer
+    T* value = get_value_ptr(acc, index);
 
-  return value;
+    fn(value, coeff_cell, constants.data(), coordinate_dofs.data(), 
+       local_facets.data(), perm.data());
+  }
 }
 
 /// Assemble functional into an scalar with provided mesh geometry.
@@ -173,15 +196,14 @@ T assemble_scalar(
   std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
 
-  T value = 0;
+  std::shared_ptr<T> value_ptr = std::make_shared<T>(T(0));
   for (int i : M.integral_ids(IntegralType::cell))
   {
     auto fn = M.kernel(IntegralType::cell, i);
     assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     std::span<const std::int32_t> cells = M.domain(IntegralType::cell, i);
-    value += impl::assemble_cells(x_dofmap, x, cells, fn, constants, coeffs,
-                                  cstride);
+    impl::assemble_cells<T>(value_ptr, x_dofmap, x, cells, fn, constants, coeffs, cstride);    
   }
 
   std::span<const std::uint8_t> perms;
@@ -199,10 +221,9 @@ T assemble_scalar(
     auto fn = M.kernel(IntegralType::exterior_facet, i);
     assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::exterior_facet, i});
-    value += impl::assemble_exterior_facets(
-        x_dofmap, x, num_facets_per_cell,
-        M.domain(IntegralType::exterior_facet, i), fn, constants, coeffs,
-        cstride, perms);
+    std::span<const std::int32_t> exterior_facets = M.domain(IntegralType::exterior_facet, i);
+    impl::assemble_exterior_facets<T>(value_ptr, x_dofmap, x, num_facets_per_cell, exterior_facets,
+                                      fn, constants, coeffs, cstride, perms);
   }
 
   for (int i : M.integral_ids(IntegralType::interior_facet))
@@ -211,13 +232,76 @@ T assemble_scalar(
     auto fn = M.kernel(IntegralType::interior_facet, i);
     assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::interior_facet, i});
-    value += impl::assemble_interior_facets(
-        x_dofmap, x, num_facets_per_cell,
-        M.domain(IntegralType::interior_facet, i), fn, constants, coeffs,
-        cstride, c_offsets, perms);
+    std::span<const std::int32_t> interior_facets = M.domain(IntegralType::interior_facet, i);
+    impl::assemble_interior_facets<T>(value_ptr, x_dofmap, x, num_facets_per_cell, interior_facets,
+                                      fn, constants, coeffs, cstride, c_offsets, perms);
+  }
+  return *value_ptr;
+}
+
+
+/// Integrate functional over mesh geometry into a scalar vectors.
+template <dolfinx::scalar T, std::floating_point U>
+std::map<std::pair<IntegralType, int>, std::span<T>> integrate_scalar(
+    const fem::Form<T, U>& M, mdspan2_t x_dofmap,
+    std::span<const scalar_value_type_t<T>> x, std::span<const T> constants,
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<std::span<const T>, int>>& coefficients)
+{
+  std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
+  assert(mesh);
+
+  std::map<std::pair<IntegralType, int>, std::span<T>> values;
+  
+  for (int i : M.integral_ids(IntegralType::cell))
+  {
+    auto fn = M.kernel(IntegralType::cell, i);
+    assert(fn);
+    auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
+    std::span<const std::int32_t> cells = M.domain(IntegralType::cell, i);
+
+    std::vector<T> scalars(cells.size());
+    impl::assemble_cells<T>(std::span<T>(scalars), x_dofmap, x, cells, fn, constants, coeffs, cstride);
+    values.emplace(std::make_pair(IntegralType::cell, i), std::span<T>(scalars));
   }
 
-  return value;
+  std::span<const std::uint8_t> perms;
+  if (M.needs_facet_permutations())
+  {
+    mesh->topology_mutable()->create_entity_permutations();
+    perms = std::span(mesh->topology()->get_facet_permutations());
+  }
+
+  mesh::CellType cell_type = mesh->topology()->cell_type();
+  int num_facets_per_cell
+      = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
+  for (int i : M.integral_ids(IntegralType::exterior_facet))
+  {
+    auto fn = M.kernel(IntegralType::exterior_facet, i);
+    assert(fn);
+    auto& [coeffs, cstride] = coefficients.at({IntegralType::exterior_facet, i});
+    std::span<const std::int32_t> exterior_facets = M.domain(IntegralType::exterior_facet, i);
+
+    std::vector<T> scalars(exterior_facets.size());
+    impl::assemble_exterior_facets<T>(std::span<T>(scalars), x_dofmap, x, num_facets_per_cell, exterior_facets,
+                                      fn, constants, coeffs, cstride, perms);
+    values.emplace(std::make_pair(IntegralType::exterior_facet, i), std::span<T>(scalars));
+  }
+
+  for (int i : M.integral_ids(IntegralType::interior_facet))
+  {
+    const std::vector<int> c_offsets = M.coefficient_offsets();
+    auto fn = M.kernel(IntegralType::interior_facet, i);
+    assert(fn);
+    auto& [coeffs, cstride] = coefficients.at({IntegralType::interior_facet, i});
+    std::span<const std::int32_t> interior_facets = M.domain(IntegralType::interior_facet, i);
+
+    std::vector<T> scalars(interior_facets.size());
+    impl::assemble_interior_facets<T>(std::span<T>(scalars), x_dofmap, x, num_facets_per_cell, interior_facets,
+                                      fn, constants, coeffs, cstride, c_offsets, perms);
+    values.emplace(std::make_pair(IntegralType::interior_facet, i), std::span<T>(scalars));
+  }
+  return values;
 }
 
 } // namespace dolfinx::fem::impl

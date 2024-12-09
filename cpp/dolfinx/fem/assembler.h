@@ -101,6 +101,46 @@ T assemble_scalar(const Form<T, U>& M)
                          make_coefficients_span(coefficients));
 }
 
+/// @brief Integrate functional over mesh into scalars.
+///
+/// The caller supplies the form constants and coefficients for this
+/// version, which has efficiency benefits if the data can be re-used
+/// for multiple calls.
+/// @note Caller is responsible for accumulation across processes.
+/// @param[in] M The form (functional) to assemble
+/// @param[in] constants The constants that appear in `M`
+/// @param[in] coefficients The coefficients that appear in `M`
+/// @return The contribution to the form (functional) from the local
+/// process
+template <dolfinx::scalar T, std::floating_point U>
+std::map<std::pair<IntegralType, int>, std::span<T>> integrate_scalar(
+    const Form<T, U>& M, std::span<const T> constants,
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<std::span<const T>, int>>& coefficients)
+{
+  std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
+  assert(mesh);
+  auto dofmap = mesh->geometry().dofmap();
+  auto x = convert_geometry_type<scalar_value_type_t<T>, U>(mesh->geometry().x());
+  return impl::integrate_scalar(M, dofmap, x, constants, coefficients);
+}
+
+/// Integrate functional over mesh into scalars
+/// @note Caller is responsible for accumulation across processes.
+/// @param[in] M The form (functional) to assemble
+/// @return The contribution to the form (functional) from the local
+///   process
+template <dolfinx::scalar T, std::floating_point U>
+std::map<std::pair<IntegralType, int>, std::span<T>> integrate_scalar(
+    const Form<T, U>& M)
+{
+  const std::vector<T> constants = pack_constants(M);
+  auto coefficients = allocate_coefficient_storage(M);
+  pack_coefficients(M, coefficients);
+  return integrate_scalar(M, std::span(constants),
+                          make_coefficients_span(coefficients));
+}
+
 // -- Vectors ----------------------------------------------------------------
 
 /// @brief Assemble linear form into a vector.
