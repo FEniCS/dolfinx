@@ -142,6 +142,33 @@ def assemble_scalar(M: Form, constants=None, coeffs=None):
     return _cpp.fem.assemble_scalar(M._cpp_object, constants, coeffs)
 
 
+def integrate_scalar(M: Form, constants=None, coeffs=None):
+    """Integrate functional. The returned values are local and not
+    accumulated across processes.
+
+    Args:
+        M: The functional to compute.
+        constants: Constants that appear in the form. If not provided,
+            any required constants will be computed.
+        coeffs: Coefficients that appear in the form. If not provided,
+            any required coefficients will be computed.
+
+    Returns:
+        The computed scalars over the mesh.
+
+    Note:
+        Passing `constants` and `coefficients` is a performance
+        optimisation for when a form is assembled multiple times and
+        when (some) constants and coefficients are unchanged.
+
+        To compute the functional value on the whole domain, the output
+        of this function is typically summed across all MPI ranks.
+    """
+    constants = constants or _pack_constants(M._cpp_object)
+    coeffs = coeffs or _pack_coefficients(M._cpp_object)
+    return _cpp.fem.integrate_scalar(M._cpp_object, constants, coeffs)
+
+
 # -- Vector assembly ---------------------------------------------------------
 
 
