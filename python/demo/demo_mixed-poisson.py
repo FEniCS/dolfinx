@@ -112,7 +112,15 @@ import numpy as np
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, fem, io, mesh
 from dolfinx.fem.petsc import LinearProblem
-from ufl import Measure, SpatialCoordinate, TestFunctions, TrialFunctions, div, exp, inner
+from ufl import (
+    Measure,
+    SpatialCoordinate,
+    TestFunctions,
+    TrialFunctions,
+    div,
+    exp,
+    inner,
+)
 
 msh = mesh.create_unit_square(MPI.COMM_WORLD, 32, 32, mesh.CellType.quadrilateral)
 
@@ -169,6 +177,13 @@ bc_bottom = fem.dirichletbc(f_h2, dofs_bottom, V0)
 
 bcs = [bc_top, bc_bottom]
 
+# We choose the direct solver based on the integer type used in PETSc,
+# as MUMPS has issues with 64-bit integers.
+if PETSc.IntType == np.int32:
+    direct_solver = "mumps"
+else:
+    direct_solver = "superlu_dist"
+
 problem = LinearProblem(
     a,
     L,
@@ -176,7 +191,7 @@ problem = LinearProblem(
     petsc_options={
         "ksp_type": "preonly",
         "pc_type": "lu",
-        "pc_factor_mat_solver_type": "mumps",
+        "pc_factor_mat_solver_type": direct_solver,
         "ksp_error_if_not_converged": True,
     },
 )
