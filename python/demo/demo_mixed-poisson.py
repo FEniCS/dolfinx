@@ -177,6 +177,7 @@ problem = LinearProblem(
         "ksp_type": "preonly",
         "pc_type": "lu",
         "pc_factor_mat_solver_type": "superlu_dist",
+        "ksp_error_if_not_converged": True,
     },
 )
 try:
