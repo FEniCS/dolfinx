@@ -60,7 +60,9 @@ mpl.use("agg")
 #
 # We begin by defining a basis of the polynomial space spanned by the
 # TNT element, which is defined in terms of the orthogonal Legendre
-# polynomials on the cell. For a degree 1 element, the polynomial set
+# polynomials on the cell. For a degree 2 element (here, we use the 
+# superdegree rather than the conventional subdegree to allign with
+# the definition of other elements), the polynomial set
 # contains $1$, $y$, $y^2$, $x$, $xy$, $xy^2$, $x^2$, and $x^2y$, which
 # are the first 8 polynomials in the degree 2 set of polynomials on a
 # quadrilateral. We create an $8 \times 9$  matrix (number of dofs by
@@ -146,7 +148,7 @@ M[2].append(np.zeros([0, 1, 0, 1]))
 # We now create the element. Using the Basix UFL interface, we can wrap
 # this element so that it can be used with FFCx/DOLFINx.
 
-tnt_degree1 = basix.ufl.custom_element(
+tnt_degree2 = basix.ufl.custom_element(
     basix.CellType.quadrilateral,
     [],
     wcoeffs,
@@ -168,22 +170,25 @@ tnt_degree1 = basix.ufl.custom_element(
 
 
 def create_tnt_quad(degree):
-    assert degree > 1
+    assert degree > 0
     # Polyset
-    ndofs = (degree + 1) ** 2 + 4
-    npoly = (degree + 2) ** 2
+    ndofs = 4*degree + max(degree-2,0)**2
+    npoly = (degree + 1) ** 2
 
     wcoeffs = np.zeros((ndofs, npoly))
 
     dof_n = 0
-    for i in range(degree + 1):
-        for j in range(degree + 1):
-            wcoeffs[dof_n, i * (degree + 2) + j] = 1
+    for i in range(degree):
+        for j in range(degree):
+            wcoeffs[dof_n, i * (degree + 1) + j] = 1
             dof_n += 1
 
-    for i, j in [(degree + 1, 1), (degree + 1, 0), (1, degree + 1), (0, degree + 1)]:
-        wcoeffs[dof_n, i * (degree + 2) + j] = 1
+    for i, j in [(degree, 1), (degree, 0), (0, degree)]:
+        wcoeffs[dof_n, i * (degree + 1) + j] = 1
         dof_n += 1
+
+    if degree > 1:
+        wcoeffs[dof_n, 2 * degree + 1] = 1
 
     # Interpolation
     geometry = basix.geometry(basix.CellType.quadrilateral)
@@ -197,31 +202,44 @@ def create_tnt_quad(degree):
         M[0].append(np.array([[[[1.0]]]]))
 
     # Edges
-    pts, wts = basix.make_quadrature(basix.CellType.interval, 2 * degree)
-    poly = basix.tabulate_polynomials(
-        basix.PolynomialType.legendre, basix.CellType.interval, degree - 1, pts
-    )
-    edge_ndofs = poly.shape[0]
-    for e in topology[1]:
-        v0 = geometry[e[0]]
-        v1 = geometry[e[1]]
-        edge_pts = np.array([v0 + p * (v1 - v0) for p in pts])
-        x[1].append(edge_pts)
-
-        mat = np.zeros((edge_ndofs, 1, len(pts), 1))
-        for i in range(edge_ndofs):
-            mat[i, 0, :, 0] = wts[:] * poly[i, :]
-        M[1].append(mat)
+    if degree < 2:
+        for _ in topology[1]:
+            x[1].append(np.zeros([0, 2]))
+            M[1].append(np.zeros([0, 1, 0, 1]))
+    else:
+        pts, wts = basix.make_quadrature(basix.CellType.interval, 2 * degree - 2)
+        poly = basix.tabulate_polynomials(
+            basix.PolynomialType.legendre, basix.CellType.interval, degree - 2, pts
+        )
+        edge_ndofs = poly.shape[0]
+        for e in topology[1]:
+            v0 = geometry[e[0]]
+            v1 = geometry[e[1]]
+            edge_pts = np.array([v0 + p * (v1 - v0) for p in pts])
+            x[1].append(edge_pts)
+    
+            mat = np.zeros((edge_ndofs, 1, len(pts), 1))
+            for i in range(edge_ndofs):
+                mat[i, 0, :, 0] = wts[:] * poly[i, :]
+            M[1].append(mat)
 
     # Interior
-    if degree == 1:
+    if degree < 3:
         x[2].append(np.zeros([0, 2]))
         M[2].append(np.zeros([0, 1, 0, 1]))
     else:
-        pts, wts = basix.make_quadrature(basix.CellType.quadrilateral, 2 * degree - 1)
-        poly = basix.tabulate_polynomials(
-            basix.PolynomialType.legendre, basix.CellType.quadrilateral, degree - 2, pts
+        pts, wts = basix.make_quadrature(basix.CellType.quadrilateral, 2 * degree - 2)
+        u = pts[:, 0]
+        v = pts[:, 1]
+        pol_set = basix.polynomials.tabulate_polynomial_set(
+            basix.CellType.quadrilateral, basix.PolynomialType.legendre, degree - 3, 2, pts
         )
+        # this assumes the conventional [0 to 1][0 to 1] domain of the reference element, 
+        # and takes the Laplacian of (1-u)*u*(1-v)*v*pol_set[0], 
+        # cf https://github.com/mscroggs/symfem/blob/main/symfem/elements/tnt.py
+        poly = (pol_set[5]+pol_set[3])*(u-1)*u*(v-1)*v+ \
+                2*(pol_set[2]*(u-1)*u*(2*v-1)+pol_set[1]*(v-1)*v*(2*u-1)+ \
+                   pol_set[0]*((u-1)*u+(v-1)*v))
         face_ndofs = poly.shape[0]
         x[2].append(pts)
         mat = np.zeros((face_ndofs, 1, len(pts), 1))
@@ -239,8 +257,8 @@ def create_tnt_quad(degree):
         basix.MapType.identity,
         basix.SobolevSpace.H1,
         False,
+        max(degree - 1, 1),
         degree,
-        degree + 1,
         dtype=default_real_type,
     )
 
@@ -296,12 +314,12 @@ tnt_ndofs = []
 tnt_degrees = []
 tnt_errors = []
 
-V = fem.functionspace(msh, tnt_degree1)
+V = fem.functionspace(msh, tnt_degree2)
 tnt_degrees.append(2)
 tnt_ndofs.append(V.dofmap.index_map.size_global)
 tnt_errors.append(poisson_error(V))
 print(f"TNT degree 2 error: {tnt_errors[-1]}")
-for degree in range(2, 9):
+for degree in range(1, 9):
     V = fem.functionspace(msh, create_tnt_quad(degree))
     tnt_degrees.append(degree + 1)
     tnt_ndofs.append(V.dofmap.index_map.size_global)
@@ -317,6 +335,17 @@ for degree in range(1, 9):
     q_ndofs.append(V.dofmap.index_map.size_global)
     q_errors.append(poisson_error(V))
     print(f"Q degree {degree} error: {q_errors[-1]}")
+
+s_ndofs = []
+s_degrees = []
+s_errors = []
+for degree in range(1, 9):
+    V = fem.functionspace(msh, ("S", degree))
+    s_degrees.append(degree)
+    s_ndofs.append(V.dofmap.index_map.size_global)
+    s_errors.append(poisson_error(V))
+    print(f"S degree {degree} error: {s_errors[-1]}")
+
 # -
 
 # We now plot the data that we have obtained. First we plot the error
@@ -326,27 +355,30 @@ for degree in range(1, 9):
 if MPI.COMM_WORLD.rank == 0:  # Only plot on one rank
     plt.plot(q_degrees, q_errors, "bo-")
     plt.plot(tnt_degrees, tnt_errors, "gs-")
+    plt.plot(s_degrees, s_errors, "rD-")
     plt.yscale("log")
     plt.xlabel("Polynomial degree")
     plt.ylabel("Error")
-    plt.legend(["Q", "TNT"])
+    plt.legend(["Q", "TNT", "S"])
     plt.savefig("demo_tnt-elements_degrees_vs_error.png")
     plt.clf()
 
 # ![](demo_tnt-elements_degrees_vs_error.png)
 #
 # A key advantage of TNT elements is that for a given degree, they span
-# a smaller polynomial space than Q elements. This can be observed in
+# a smaller polynomial space than Q tensorproduct elements. This can be observed in
 # the following diagram, where we plot the error against the square root
 # of the number of DOFs (providing a measure of cell size in 2D)
+# S serendipity element perform even better here.
 
 if MPI.COMM_WORLD.rank == 0:  # Only plot on one rank
     plt.plot(np.sqrt(q_ndofs), q_errors, "bo-")
     plt.plot(np.sqrt(tnt_ndofs), tnt_errors, "gs-")
+    plt.plot(np.sqrt(s_ndofs), s_errors, "rD-")
     plt.yscale("log")
     plt.xlabel("Square root of number of DOFs")
     plt.ylabel("Error")
-    plt.legend(["Q", "TNT"])
+    plt.legend(["Q", "TNT", "S"])
     plt.savefig("demo_tnt-elements_ndofs_vs_error.png")
     plt.clf()
 
