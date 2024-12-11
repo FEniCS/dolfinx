@@ -225,7 +225,7 @@ class FiniteElement:
             the points will typically be the quadrature points used to evaluate moment degrees of
             freedom.
         """
-        return self._cpp_object.interpolation_points
+        return self._cpp_object.interpolation_points()
 
     @property
     def interpolation_ident(self) -> bool:
