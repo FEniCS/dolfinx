@@ -103,7 +103,7 @@ class TestPETScDiscreteOperators:
         u = Function(V)
         u.interpolate(lambda x: 2 * x[0] ** p + 3 * x[1] ** p)
 
-        grad_u = Expression(ufl.grad(u), W.element.interpolation_points())
+        grad_u = Expression(ufl.grad(u), W.element.interpolation_points)
         w_expr = Function(W)
         w_expr.interpolate(grad_u)
 

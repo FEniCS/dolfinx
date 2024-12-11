@@ -100,8 +100,7 @@ void declare_function_space(nb::module_& m, std::string type)
             [](dolfinx::fem::FiniteElement<T>* self,
                basix::FiniteElement<T>& element,
                std::optional<std::vector<std::size_t>> block_shape,
-               bool symmetric)
-            {
+               bool symmetric) {
               new (self) dolfinx::fem::FiniteElement<T>(element, block_shape,
                                                         symmetric);
             },
@@ -284,7 +283,7 @@ void declare_function_space(nb::module_& m, std::string type)
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def_prop_ro("needs_dof_transformations",
                      &dolfinx::fem::FiniteElement<T>::needs_dof_transformations)
-        .def("signature", &dolfinx::fem::FiniteElement<T>::signature);
+        .def_prop_ro("signature", &dolfinx::fem::FiniteElement<T>::signature);
   }
 }
 

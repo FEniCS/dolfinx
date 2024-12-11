@@ -792,7 +792,7 @@ if has_vtx:
     v_dg_el = element("DG", mesh_data.mesh.basix_cell(), degree, shape=(3,), dtype=real_type)
     W = fem.functionspace(mesh_data.mesh, v_dg_el)
     Es_dg = fem.Function(W)
-    Es_expr = fem.Expression(Esh, W.element.interpolation_points())
+    Es_expr = fem.Expression(Esh, W.element.interpolation_points)
     Es_dg.interpolate(Es_expr)
     with VTXWriter(mesh_data.mesh.comm, "sols/Es.bp", Es_dg) as f:
         f.write(0.0)
