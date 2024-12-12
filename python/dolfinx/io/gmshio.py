@@ -34,16 +34,16 @@ __all__ = [
 
 
 class TopologyDict(typing.TypedDict):
-    """
-    TopologyDict is a TypedDict where the key is the gmsh cell type
-    and the value is a dictionary with the keys "topology" and
-    "cell_data". The value of "topology" is a 2D array containing
-    the topology of the marked cell and the value of "cell_data"
-    is a list with the corresponding markers.
+    """TopologyDict is a TypedDict for storing the topology of the marked cell.
 
-    The TypedDict is only used for type hinting, and does not
-    enforce the structure of the dictionary, but rather provides
-    a hint to the user and the type checker.
+    Args:
+        topology: 2D array containing the topology of the marked cell.
+        cell_data: List with the corresponding markers.
+
+    Note:
+        The TypedDict is only used for type hinting, and does not
+        enforce the structure of the dictionary, but rather provides
+        a hint to the user and the type checker.
     """
 
     topology: npt.NDArray[typing.Any]
@@ -75,14 +75,15 @@ _gmsh_to_cells = {
 class MeshData(typing.NamedTuple):
     """Data for representing a mesh and associated tags.
 
-    :param mesh: Mesh.
-    :param cell_tags: MeshTags for cells.
-    :param facet_tags: MeshTags for facets.
-    :param edge_tags: MeshTags for edges.
-    :param vertex_tags: MeshTags for vertices.
-    :param physical_groups: Physical groups in the mesh, where the key
-        is the physical name and the value is a tuple with the
-        dimension and tag.
+    Args:
+        mesh: Mesh.
+        cell_tags: MeshTags for cells.
+        facet_tags: MeshTags for facets.
+        edge_tags: MeshTags for edges.
+        vertex_tags: MeshTags for vertices.
+        physical_groups: Physical groups in the mesh, where the key
+            is the physical name and the value is a tuple with the
+            dimension and tag.
     """
 
     mesh: Mesh
