@@ -34,6 +34,18 @@ __all__ = [
 
 
 class TopologyDict(typing.TypedDict):
+    """
+    TopologyDict is a TypedDict where the key is the gmsh cell type
+    and the value is a dictionary with the keys "topology" and
+    "cell_data". The value of "topology" is a 2D array containing
+    the topology of the marked cell and the value of "cell_data"
+    is a list with the corresponding markers.
+
+    The TypedDict is only used for type hinting, and does not
+    enforce the structure of the dictionary, but rather provides
+    a hint to the user and the type checker.
+    """
+
     topology: npt.NDArray[typing.Any]
     cell_data: npt.NDArray[typing.Any]
 
