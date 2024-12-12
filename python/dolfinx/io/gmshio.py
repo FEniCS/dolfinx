@@ -73,14 +73,16 @@ _gmsh_to_cells = {
 
 
 class MeshData(typing.NamedTuple):
-    """A NamedTuple ``(mesh, cell_tags, facet_tags,
-    edge_tags, vertex_tags, physical_groups)``, where
-    cell_tags hold markers for the cells, facet tags holds markers
-    for facets (if tags are found), edge_tags holds markers
-    for edges (if tags are found), and vertex_tags holds
-    markers for vertices (if tags are found).
-    Physical groups is a dictionary where the key is the physical
-    name and the value is a tuple with the dimension and tag.
+    """Data for representing a mesh and associated tags.
+
+    :param mesh: Mesh.
+    :param cell_tags: MeshTags for cells.
+    :param facet_tags: MeshTags for facets.
+    :param edge_tags: MeshTags for edges.
+    :param vertex_tags: MeshTags for vertices.
+    :param physical_groups: Physical groups in the mesh, where the key
+        is the physical name and the value is a tuple with the
+        dimension and tag.
     """
 
     mesh: Mesh
