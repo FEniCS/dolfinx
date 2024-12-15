@@ -486,7 +486,7 @@ def create_tnt_hex(degree):
         # cf https://github.com/mscroggs/symfem/blob/main/symfem/elements/tnt.py
         poly = (pol_set[9]+pol_set[7]+pol_set[4])*(u-1)*u*(v-1)*v*(w-1)*w+ \
                 2*(pol_set[3]*(u-1)*u*(v-1)*v*(2*w-1)+pol_set[2]*(u-1)*u*(w-1)*w*(2*v-1)+pol_set[1]*(v-1)*v*(w-1)*w*(2*u-1)+ \
-                   pol_set[0]*((u-1)*u*(v-1)*v+(u-1)*u*(w-1)*w+(v-1)*v))
+                   pol_set[0]*((u-1)*u*(v-1)*v+(u-1)*u*(w-1)*w+(v-1)*v*(w-1)*w))
         vol_ndofs = poly.shape[0]
         x[3].append(pts)
         mat = np.zeros((vol_ndofs, 1, len(pts), 1))
