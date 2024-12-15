@@ -386,33 +386,33 @@ if MPI.COMM_WORLD.rank == 0:  # Only plot on one rank
 
 # extension to hexahedrons is trivial:
 
+
 def create_tnt_hex(degree):
     assert degree > 0
     # Polyset
-    ndofs = 12 * degree - 4 + (k + 4) * max(degree-2, 0) ** 2
+    ndofs = 12 * degree - 4 + (degree + 4) * max(degree-2, 0) ** 2
     npoly = (degree + 1) ** 3
-
     wcoeffs = np.zeros((ndofs, npoly))
 
     dof_n = 0
     for i in range(degree):
         for j in range(degree):
             for k in range(degree):
-                wcoeffs[dof_n, (i * (degree + 2) + j) * (degree + 1) + k ] = 1
+                wcoeffs[dof_n, (i * (degree + 1) + j) * (degree + 1) + k ] = 1
                 dof_n += 1
 
-    for i, j, k in [(degree, 0, 0), (0, degree, 0), (0, 0, degree), (1, 1, degree), (1, 0, degree), (0, 1, degree), (0, degree, 1)]:
-        wcoeffs[dof_n, (i * (degree + 2) + j) * (degree + 1) + k] = 1
+    for i, j, k in [(degree, 0, 0), (0, degree, 0), (0, 0, degree), (1, 1, degree), (1, 0, degree), (0, 1, degree), (degree, 1, 0)]:
+        wcoeffs[dof_n, (i * (degree + 1) + j) * (degree + 1) + k] = 1
         dof_n += 1
 
     if degree > 1:
-        for i, j in [(1, degree, 1), (degree, 1, 1), (degree, 0, 1), (degree, 0, 1), (0, 1, degree)]:
-            wcoeffs[dof_n, (i * (degree + 2) + j) * (degree + 1) + k] = 1
+        for i, j, k  in [(1, degree, 1), (degree, 1, 1), (degree, 0, 1), (0, degree, 1), (1, degree, 0)]:
+            wcoeffs[dof_n, (i * (degree + 1) + j) * (degree + 1) + k] = 1
             dof_n += 1
 
     # Interpolation
-    geometry = basix.geometry(basix.CellType.hexahedral)
-    topology = basix.topology(basix.CellType.hexahedral)
+    geometry = basix.geometry(basix.CellType.hexahedron)
+    topology = basix.topology(basix.CellType.hexahedron)
     x = [[], [], [], []]
     M = [[], [], [], []]
 
@@ -424,7 +424,7 @@ def create_tnt_hex(degree):
     # Edges
     if degree < 2:
         for _ in topology[1]:
-            x[1].append(np.zeros([0, 2]))
+            x[1].append(np.zeros([0, 3]))
             M[1].append(np.zeros([0, 1, 0, 1]))
     else:
         pts, wts = basix.make_quadrature(basix.CellType.interval, 2 * degree - 2)
@@ -443,59 +443,59 @@ def create_tnt_hex(degree):
                 mat[i, 0, :, 0] = wts[:] * poly[i, :]
             M[1].append(mat)
 
-    # Interior
+    # Faces
     if degree < 3:
         for _ in topology[2]:
-            x[2].append(np.zeros([0, 2]))
+            x[2].append(np.zeros([0, 3]))
             M[2].append(np.zeros([0, 1, 0, 1]))
-
     else:
-        pts, wts = basix.make_quadrature(basix.CellType.quadrilateral, 2 * degree - 2)
-        u = pts[:, 0]
-        v = pts[:, 1]
-        pol_set = basix.polynomials.tabulate_polynomial_set(
-            basix.CellType.quadrilateral, basix.PolynomialType.legendre, degree - 3, 2, pts
-        )
+            ptsr, wts = basix.make_quadrature(basix.CellType.quadrilateral, 2 * degree - 2)
+            pol_set = basix.polynomials.tabulate_polynomial_set(
+                basix.CellType.quadrilateral, basix.PolynomialType.legendre, degree - 3, 2, ptsr
+                )
         # this assumes the conventional [0 to 1][0 to 1] domain of the reference element, 
-        # and takes the Laplacian of (1-u)*u*(1-v)*v*pol_set[0], 
-        # cf https://github.com/mscroggs/symfem/blob/main/symfem/elements/tnt.py
-        poly = (pol_set[5]+pol_set[3])*(u-1)*u*(v-1)*v+ \
-                2*(pol_set[2]*(u-1)*u*(2*v-1)+pol_set[1]*(v-1)*v*(2*u-1)+ \
-                   pol_set[0]*((u-1)*u+(v-1)*v))
-        face_ndofs = poly.shape[0]
-        x[2].append(pts)
-        mat = np.zeros((face_ndofs, 1, len(pts), 1))
-        for i in range(face_ndofs):
-            mat[i, 0, :, 0] = wts[:] * poly[i, :]
-        M[2].append(mat)
+            # and takes the Laplacian of (1-u)*u*(1-v)*v*pol_set[0], 
+            # cf https://github.com/mscroggs/symfem/blob/main/symfem/elements/tnt.py
+            u = ptsr[:, 0]
+            v = ptsr[:, 1]
+            poly = (pol_set[5]+pol_set[3])*(u-1)*u*(v-1)*v+ \
+                    2*(pol_set[2]*(u-1)*u*(2*v-1)+pol_set[1]*(v-1)*v*(2*u-1)+ \
+                       pol_set[0]*((u-1)*u+(v-1)*v))
+            face_ndofs = poly.shape[0]
+            for f in topology[2]:
+                x[2].append(np.dot(ptsr,(geometry[f][1]-geometry[f][0],geometry[f][2]-geometry[f][0]))+geometry[f][0])
+                mat = np.zeros((face_ndofs, 1, len(ptsr), 1))
+                for i in range(face_ndofs):
+                    mat[i, 0, :, 0] = wts[:] * poly[i, :]
+                M[2].append(mat)
 
+    # Interior
     if degree < 3:
-        x[3].append(np.zeros([0, 2]))
+        x[3].append(np.zeros([0, 3]))
         M[3].append(np.zeros([0, 1, 0, 1]))
-
     else:
-        pts, wts = basix.make_quadrature(basix.CellType.hexahedral, 2 * degree - 2)
+        pts, wts = basix.make_quadrature(basix.CellType.hexahedron, 2 * degree - 2)
+        pol_set = basix.polynomials.tabulate_polynomial_set(
+            basix.CellType.hexahedron, basix.PolynomialType.legendre, degree - 3, 2, pts
+        )
         u = pts[:, 0]
         v = pts[:, 1]
-        w = pts[:  2]
-        pol_set = basix.polynomials.tabulate_polynomial_set(
-            basix.CellType.hexahedral, basix.PolynomialType.legendre, degree - 3, 2, pts
-        )
+        w = pts[:, 2]
         # this assumes the conventional [0 to 1][0 to 1] domain of the reference element, 
         # and takes the Laplacian of (1-u)*u*(1-v)*v*(1-w)*w*pol_set[0], 
         # cf https://github.com/mscroggs/symfem/blob/main/symfem/elements/tnt.py
         poly = (pol_set[9]+pol_set[7]+pol_set[4])*(u-1)*u*(v-1)*v*(w-1)*w+ \
                 2*(pol_set[3]*(u-1)*u*(v-1)*v*(2*w-1)+pol_set[2]*(u-1)*u*(w-1)*w*(2*v-1)+pol_set[1]*(v-1)*v*(w-1)*w*(2*u-1)+ \
                    pol_set[0]*((u-1)*u*(v-1)*v+(u-1)*u*(w-1)*w+(v-1)*v))
-        face_ndofs = poly.shape[0]
+        vol_ndofs = poly.shape[0]
         x[3].append(pts)
-        mat = np.zeros((face_ndofs, 1, len(pts), 1))
-        for i in range(face_ndofs):
+        mat = np.zeros((vol_ndofs, 1, len(pts), 1))
+        for i in range(vol_ndofs):
             mat[i, 0, :, 0] = wts[:] * poly[i, :]
         M[3].append(mat)
         
     return basix.ufl.custom_element(
-        basix.CellType.hexahedral,
+        basix.CellType.hexahedron,
         [],
         wcoeffs,
         x,
