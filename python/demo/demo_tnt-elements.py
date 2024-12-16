@@ -449,25 +449,25 @@ def create_tnt_hex(degree):
             x[2].append(np.zeros([0, 3]))
             M[2].append(np.zeros([0, 1, 0, 1]))
     else:
-            ptsr, wts = basix.make_quadrature(basix.CellType.quadrilateral, 2 * degree - 2)
-            pol_set = basix.polynomials.tabulate_polynomial_set(
-                basix.CellType.quadrilateral, basix.PolynomialType.legendre, degree - 3, 2, ptsr
+        ptsr, wts = basix.make_quadrature(basix.CellType.quadrilateral, 2 * degree - 2)
+        pol_set = basix.polynomials.tabulate_polynomial_set(
+            basix.CellType.quadrilateral, basix.PolynomialType.legendre, degree - 3, 2, ptsr
                 )
         # this assumes the conventional [0 to 1][0 to 1] domain of the reference element, 
-            # and takes the Laplacian of (1-u)*u*(1-v)*v*pol_set[0], 
-            # cf https://github.com/mscroggs/symfem/blob/main/symfem/elements/tnt.py
-            u = ptsr[:, 0]
-            v = ptsr[:, 1]
-            poly = (pol_set[5]+pol_set[3])*(u-1)*u*(v-1)*v+ \
-                    2*(pol_set[2]*(u-1)*u*(2*v-1)+pol_set[1]*(v-1)*v*(2*u-1)+ \
-                       pol_set[0]*((u-1)*u+(v-1)*v))
-            face_ndofs = poly.shape[0]
-            for f in topology[2]:
-                x[2].append(np.dot(ptsr,(geometry[f][1]-geometry[f][0],geometry[f][2]-geometry[f][0]))+geometry[f][0])
-                mat = np.zeros((face_ndofs, 1, len(ptsr), 1))
-                for i in range(face_ndofs):
-                    mat[i, 0, :, 0] = wts[:] * poly[i, :]
-                M[2].append(mat)
+        # and takes the Laplacian of (1-u)*u*(1-v)*v*pol_set[0], 
+        # cf https://github.com/mscroggs/symfem/blob/main/symfem/elements/tnt.py
+        u = ptsr[:, 0]
+        v = ptsr[:, 1]
+        poly = (pol_set[5]+pol_set[3])*(u-1)*u*(v-1)*v+ \
+                2*(pol_set[2]*(u-1)*u*(2*v-1)+pol_set[1]*(v-1)*v*(2*u-1)+ \
+                    pol_set[0]*((u-1)*u+(v-1)*v))
+        face_ndofs = poly.shape[0]
+        for f in topology[2]:
+            x[2].append(np.dot(ptsr,(geometry[f][1]-geometry[f][0],geometry[f][2]-geometry[f][0]))+geometry[f][0])
+            mat = np.zeros((face_ndofs, 1, len(ptsr), 1))
+            for i in range(face_ndofs):
+                mat[i, 0, :, 0] = wts[:] * poly[i, :]
+            M[2].append(mat)
 
     # Interior
     if degree < 3:
@@ -496,6 +496,151 @@ def create_tnt_hex(degree):
         
     return basix.ufl.custom_element(
         basix.CellType.hexahedron,
+        [],
+        wcoeffs,
+        x,
+        M,
+        0,
+        basix.MapType.identity,
+        basix.SobolevSpace.H1,
+        False,
+        max(degree - 1,1),
+        degree,
+        dtype=default_real_type,
+    )
+
+def create_tnt_prism(degree):
+    assert degree > 0
+    # Polyset
+    ndofs = 9 * degree - 3 + (round((degree + 5) * (degree - 2) / 2) + 1) * max(degree - 2, 0)
+    npoly = round((degree + 1) * (degree + 2) / 2) * (degree + 1)
+
+    wcoeffs = np.zeros((ndofs, npoly))
+
+    dof_n = 0
+    for i in range(round((degree + 1) * degree / 2)):
+        for j in range(degree):
+            wcoeffs[dof_n, i * (degree + 1) + j] = 1
+            dof_n += 1
+
+    for i in range(3):
+        if degree > 1 or i == 0:
+            wcoeffs[dof_n, i * (degree + 1) + degree] = 1
+            dof_n += 1
+    
+    for i in range(degree+1):
+        for j in range(2):
+            wcoeffs[dof_n, (i + round((degree + 1) * degree / 2)) * (degree + 1) + j] = 1
+            dof_n += 1
+
+    # Interpolation
+    geometry = basix.geometry(basix.CellType.prism)
+    topology = basix.topology(basix.CellType.prism)
+    x = [[], [], [], []]
+    M = [[], [], [], []]
+
+    # Vertices
+    for v in topology[0]:
+        x[0].append(np.array(geometry[v]))
+        M[0].append(np.array([[[[1.0]]]]))
+
+    # Edges
+    if degree < 2:
+        for _ in topology[1]:
+            x[1].append(np.zeros([0, 3]))
+            M[1].append(np.zeros([0, 1, 0, 1]))
+    else:
+        pts, wts = basix.make_quadrature(basix.CellType.interval, 2 * degree - 2)
+        poly = basix.tabulate_polynomials(
+            basix.PolynomialType.legendre, basix.CellType.interval, degree - 2, pts
+        )
+        edge_ndofs = poly.shape[0]
+        for e in topology[1]:
+            v0 = geometry[e[0]]
+            v1 = geometry[e[1]]
+            edge_pts = np.array([v0 + p * (v1 - v0) for p in pts])
+            x[1].append(edge_pts)
+    
+            mat = np.zeros((edge_ndofs, 1, len(pts), 1))
+            for i in range(edge_ndofs):
+                mat[i, 0, :, 0] = wts[:] * poly[i, :]
+            M[1].append(mat)
+
+    # Faces
+    if degree < 3:
+        for _ in topology[2]:
+            x[2].append(np.zeros([0, 3]))
+            M[2].append(np.zeros([0, 1, 0, 1]))
+    else:
+        ptsr_t, wts_t = basix.make_quadrature(basix.CellType.triangle, 2 * degree - 2) # or triangle for face 0 or 5
+        pol_set_t = basix.polynomials.tabulate_polynomial_set(
+            basix.CellType.triangle, basix.PolynomialType.legendre, degree - 3, 2, ptsr_t
+        )
+        ptsr_q, wts_q = basix.make_quadrature(basix.CellType.quadrilateral, 2 * degree - 2) # or triangle for face 0 or 5
+        pol_set_q = basix.polynomials.tabulate_polynomial_set(
+             basix.CellType.quadrilateral, basix.PolynomialType.legendre, degree - 3, 2, ptsr_q
+            )
+        # this assumes the conventional [0 to 1][0 to 1] domain of the reference element, 
+        # and takes the Laplacian of (1-u)*u*(1-v)*v*pol_set[0], 
+        # cf https://github.com/mscroggs/symfem/blob/main/symfem/elements/tnt.py
+        u = ptsr_t[:, 0]
+        v = ptsr_t[:, 1]
+        poly_t = (pol_set_t[5]+pol_set_t[3])*(u-1)*u*(v-1)*v+ \
+                2*(pol_set_t[2]*(u-1)*u*(2*v-1)+pol_set_t[1]*(v-1)*v*(2*u-1)+ \
+                   pol_set_t[0]*((u-1)*u+(v-1)*v))
+        u = ptsr_q[:, 0]
+        v = ptsr_q[:, 1]
+        poly_q = (pol_set_q[5]+pol_set_q[3])*(u-1)*u*(v-1)*v+ \
+                2*(pol_set_q[2]*(u-1)*u*(2*v-1)+pol_set_q[1]*(v-1)*v*(2*u-1)+ \
+                   pol_set_q[0]*((u-1)*u+(v-1)*v))
+        for f in topology[2]:
+            if geometry[f].shape[0] == 3:
+                poly = poly_t
+                wts = wts_t
+                ptsr = ptsr_t
+            else:
+                poly = poly_q
+                wts = wts_q
+                ptsr = ptsr_q
+            face_ndofs = poly.shape[0]
+            x[2].append(np.dot(ptsr,(geometry[f][1]-geometry[f][0],geometry[f][2]-geometry[f][0]))+geometry[f][0])
+            mat = np.zeros((face_ndofs, 1, len(ptsr), 1))
+            for i in range(face_ndofs):
+                mat[i, 0, :, 0] = wts[:] * poly[i, :]
+            M[2].append(mat)
+
+    # Interior
+    if degree < 3:
+        x[3].append(np.zeros([0, 3]))
+        M[3].append(np.zeros([0, 1, 0, 1]))
+    else:
+        pts, wts = basix.make_quadrature(basix.CellType.prism, 2 * degree - 2)
+        #The dimension of the left over space tells us we should reduce the xy space by 1, so we are making the appopriate selection
+        sel=[]
+        for i in range(round((degree - 2) * (degree - 3)/ 2)):
+            for j in range(degree - 2):
+                sel.append(i * (degree  - 2) + j)
+        pol_set = basix.polynomials.tabulate_polynomial_set(
+            basix.CellType.prism, basix.PolynomialType.legendre, degree - 3, 2, pts)[:,sel,:]
+        u = pts[:, 0]
+        v = pts[:, 1]
+        w = pts[:, 2]    
+        # this assumes the conventional [0 to 1][0 to 1] domain of the reference element, 
+        # and takes the Laplacian of (u+v-1)*u*v*(w-1)*w*pol_set[0], 
+        # cf https://github.com/mscroggs/symfem/blob/main/symfem/elements/tnt.py
+        poly = (pol_set[9]+pol_set[7]+pol_set[4])*(u+v-1)*u*v*(w-1)*w+ \
+                2*(pol_set[3]*(u+v-1)*u*v*(2*w-1)+pol_set[2]*u*(w-1)*w*(2*v+u-1)+pol_set[1]*v*(w-1)*w*(2*u+v-1)+ \
+                   pol_set[0]*((u+v-1)*u*v+u*(w-1)*w+v*(w-1)*w))
+        poly=pol_set[0]
+        vol_ndofs = poly.shape[0]
+        x[3].append(pts)
+        mat = np.zeros((vol_ndofs, 1, len(pts), 1))
+        for i in range(vol_ndofs):
+            mat[i, 0, :, 0] = wts[:] * poly[i, :]
+        M[3].append(mat)
+    
+    return basix.ufl.custom_element(
+        basix.CellType.prism,
         [],
         wcoeffs,
         x,
