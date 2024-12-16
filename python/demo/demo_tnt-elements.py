@@ -610,12 +610,13 @@ def create_tnt_prism(degree):
             M[2].append(mat)
 
     # Interior
-    if degree < 3:
+    if degree < 4:
         x[3].append(np.zeros([0, 3]))
         M[3].append(np.zeros([0, 1, 0, 1]))
     else:
         pts, wts = basix.make_quadrature(basix.CellType.prism, 2 * degree - 2)
         #The dimension of the left over space tells us we should reduce the xy space by 1, so we are making the appopriate selection
+        #This corresponds to tetrahedrons not needing an internal dof at degree 3
         sel=[]
         for i in range(round((degree - 2) * (degree - 3)/ 2)):
             for j in range(degree - 2):
