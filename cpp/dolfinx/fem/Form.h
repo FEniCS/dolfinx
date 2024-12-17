@@ -189,8 +189,9 @@ public:
       const std::map<std::shared_ptr<const mesh::Mesh<geometry_type>>,
                      std::span<const std::int32_t>>& entity_maps,
       std::shared_ptr<const mesh::Mesh<geometry_type>> mesh = nullptr)
-      : _function_spaces(V), _coefficients(coefficients), _constants(constants),
-        _mesh(mesh), _needs_facet_permutations(needs_facet_permutations)
+      : _mesh_dofmap_id(0), _function_spaces(V), _coefficients(coefficients),
+        _constants(constants), _mesh(mesh),
+        _needs_facet_permutations(needs_facet_permutations)
   {
     // Extract _mesh from FunctionSpace, and check they are the same
     if (!_mesh and !V.empty())
@@ -503,6 +504,9 @@ public:
   {
     return _constants;
   }
+
+  /// Which dofmap to use in the mesh (default 0)
+  int _mesh_dofmap_id;
 
 private:
   // Function spaces (one for each argument)

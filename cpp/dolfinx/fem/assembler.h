@@ -242,10 +242,11 @@ void assemble_matrix(
 
 {
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
+  int mesh_dofmap_id = a._mesh_dofmap_id;
   assert(mesh);
   if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
   {
-    impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap(),
+    impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap(mesh_dofmap_id),
                           mesh->geometry().x(), constants, coefficients,
                           dof_marker0, dof_marker1);
   }
@@ -253,8 +254,9 @@ void assemble_matrix(
   {
     auto x = mesh->geometry().x();
     std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
-    impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap(), _x, constants,
-                          coefficients, dof_marker0, dof_marker1);
+    impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap(mesh_dofmap_id),
+                          _x, constants, coefficients, dof_marker0,
+                          dof_marker1);
   }
 }
 

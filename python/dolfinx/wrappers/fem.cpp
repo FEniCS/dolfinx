@@ -740,6 +740,11 @@ void declare_form(nb::module_& m, std::string type)
       .def_prop_ro("mesh", &dolfinx::fem::Form<T, U>::mesh)
       .def_prop_ro("function_spaces",
                    &dolfinx::fem::Form<T, U>::function_spaces)
+      .def_prop_rw(
+          "mesh_dofmap_id",
+          [](dolfinx::fem::Form<T, U>& f) { return f._mesh_dofmap_id; },
+          [](dolfinx::fem::Form<T, U>& f, int value)
+          { f._mesh_dofmap_id = value; })
       .def(
           "integral_ids",
           [](const dolfinx::fem::Form<T, U>& self,
