@@ -315,13 +315,13 @@ tnt_degrees = []
 tnt_errors = []
 
 V = fem.functionspace(msh, tnt_degree2)
-tnt_degrees.append(2)
-tnt_ndofs.append(V.dofmap.index_map.size_global)
-tnt_errors.append(poisson_error(V))
-print(f"TNT degree 2 error: {tnt_errors[-1]}")
+#tnt_degrees.append(2)
+#tnt_ndofs.append(V.dofmap.index_map.size_global)
+#tnt_errors.append(poisson_error(V))
+#print(f"TNT degree 2 error: {tnt_errors[-1]}")
 for degree in range(1, 9):
     V = fem.functionspace(msh, create_tnt_quad(degree))
-    tnt_degrees.append(degree + 1)
+    tnt_degrees.append(degree)
     tnt_ndofs.append(V.dofmap.index_map.size_global)
     tnt_errors.append(poisson_error(V))
     print(f"TNT degree {degree} error: {tnt_errors[-1]}")
@@ -567,7 +567,7 @@ def create_tnt_prism(degree):
     
             mat = np.zeros((edge_ndofs, 1, len(pts), 1))
             for i in range(edge_ndofs):
-                mat[i, 0, :, 0] = wts[:] * poly[i, :] * np.linalg.norm(v1 - v0)
+                mat[i, 0, :, 0] = wts[:] * poly[i, :] #* np.linalg.norm(v1 - v0)
             M[1].append(mat)
 
     # Faces
@@ -610,7 +610,7 @@ def create_tnt_prism(degree):
             x[2].append(np.dot(ptsr,(geometry[f][1]-geometry[f][0],geometry[f][2]-geometry[f][0]))+geometry[f][0])
             mat = np.zeros((face_ndofs, 1, len(ptsr), 1))
             for i in range(face_ndofs):
-                mat[i, 0, :, 0] = wts[:] * poly[i, :] * np.linalg.norm(np.cross(geometry[f][1]-geometry[f][0],geometry[f][2]-geometry[f][0]))
+                mat[i, 0, :, 0] = wts[:] * poly[i, :] #* np.linalg.norm(np.cross(geometry[f][1]-geometry[f][0],geometry[f][2]-geometry[f][0]))
             M[2].append(mat)
 
     # Interior
@@ -660,3 +660,142 @@ def create_tnt_prism(degree):
         dtype=default_real_type,
     )
 
+# Here is the matching triangle and interval elements. Their boundary dofs are moments, not point values.
+
+def create_tnt_triangle(degree):
+    assert degree > 0
+    # Polyset
+    ndofs = round((degree+1)*(degree+2)/2)
+    npoly = round((degree+1)*(degree+2)/2)
+    
+    wcoeffs = np.eye(ndofs)
+
+    # Interpolation
+    geometry = basix.geometry(basix.CellType.triangle)
+    topology = basix.topology(basix.CellType.triangle)
+    x = [[], [], [], []]
+    M = [[], [], [], []]
+
+    # Vertices
+    for v in topology[0]:
+        x[0].append(np.array(geometry[v]))
+        M[0].append(np.array([[[[1.0]]]]))
+
+    # Edges
+    if degree < 2:
+        for _ in topology[1]:
+            x[1].append(np.zeros([0, 2]))
+            M[1].append(np.zeros([0, 1, 0, 1]))
+    else:
+        pts, wts = basix.make_quadrature(basix.CellType.interval, 2 * degree - 2)
+        poly = basix.tabulate_polynomials(
+            basix.PolynomialType.legendre, basix.CellType.interval, degree - 2, pts
+        )
+        edge_ndofs = poly.shape[0]
+        for e in topology[1]:
+            v0 = geometry[e[0]]
+            v1 = geometry[e[1]]
+            edge_pts = np.array([v0 + p * (v1 - v0) for p in pts])
+            x[1].append(edge_pts)
+    
+            mat = np.zeros((edge_ndofs, 1, len(pts), 1))
+            for i in range(edge_ndofs):
+                mat[i, 0, :, 0] = wts[:] * poly[i, :] #* np.linalg.norm(v1 - v0)
+            M[1].append(mat)
+
+    # Faces
+    if degree < 3:
+        for _ in topology[2]:
+            x[2].append(np.zeros([0, 2]))
+            M[2].append(np.zeros([0, 1, 0, 1]))
+    else:
+        ptsr, wts = basix.make_quadrature(basix.CellType.triangle, 2 * degree - 2) # or triangle for face 0 or 5
+        pol_set = basix.polynomials.tabulate_polynomial_set(
+            basix.CellType.triangle, basix.PolynomialType.legendre, degree - 3, 2, ptsr
+        )
+        # this assumes the conventional [0 to 1][0 to 1] domain of the reference element, 
+        # and takes the Laplacian of (u+v-1)*u*v*pol_set[0], , 
+        # cf https://github.com/mscroggs/symfem/blob/main/symfem/elements/tnt.py
+        u = ptsr[:, 0]
+        v = ptsr[:, 1]
+        poly = (pol_set[5]+pol_set[3])*(u+v-1)*u*v+ \
+                2*(pol_set[2]*u*(2*v+u-1)+pol_set[1]*v*(2*u+v-1)+ \
+                   pol_set[0]*(u+v))
+
+        face_ndofs = poly.shape[0]
+        x[2].append(ptsr)
+        mat = np.zeros((face_ndofs, 1, len(ptsr), 1))
+        for i in range(face_ndofs):
+            mat[i, 0, :, 0] = wts[:] * poly[i, :] #* np.linalg.norm(np.cross(geometry[f][1]-geometry[f][0],geometry[f][2]-geometry[f][0]))
+        M[2].append(mat)
+    
+    return basix.ufl.custom_element(
+        basix.CellType.triangle,
+        [],
+        wcoeffs,
+        x,
+        M,
+        0,
+        basix.MapType.identity,
+        basix.SobolevSpace.H1,
+        False,
+        degree,
+        degree,
+        dtype=default_real_type,
+    )
+
+def create_tnt_interval(degree):
+    assert degree > 0
+    # Polyset
+    ndofs = degree + 1
+    npoly = degree + 1
+    
+    wcoeffs = np.eye(ndofs)
+
+    # Interpolation
+    geometry = basix.geometry(basix.CellType.interval)
+    topology = basix.topology(basix.CellType.interval)
+    x = [[], [], [], []]
+    M = [[], [], [], []]
+
+    # Vertices
+    for v in topology[0]:
+        x[0].append(np.array(geometry[v]))
+        M[0].append(np.array([[[[1.0]]]]))
+
+    # Edges
+    if degree < 2:
+        for _ in topology[1]:
+            x[1].append(np.zeros([0, 1]))
+            M[1].append(np.zeros([0, 1, 0, 1]))
+    else:
+        pts, wts = basix.make_quadrature(basix.CellType.interval, 2 * degree - 2)
+        poly = basix.tabulate_polynomials(
+            basix.PolynomialType.legendre, basix.CellType.interval, degree - 2, pts
+        )
+        edge_ndofs = poly.shape[0]
+        for e in topology[1]:
+            v0 = geometry[e[0]]
+            v1 = geometry[e[1]]
+            edge_pts = np.array([v0 + p * (v1 - v0) for p in pts])
+            x[1].append(edge_pts)
+    
+            mat = np.zeros((edge_ndofs, 1, len(pts), 1))
+            for i in range(edge_ndofs):
+                mat[i, 0, :, 0] = wts[:] * poly[i, :]
+            M[1].append(mat)
+    
+    return basix.ufl.custom_element(
+        basix.CellType.interval,
+        [],
+        wcoeffs,
+        x,
+        M,
+        0,
+        basix.MapType.identity,
+        basix.SobolevSpace.H1,
+        False,
+        degree,
+        degree,
+        dtype=default_real_type,
+    )
