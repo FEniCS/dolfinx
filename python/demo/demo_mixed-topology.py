@@ -5,13 +5,12 @@ from scipy.sparse.linalg import spsolve
 
 import basix
 import dolfinx.cpp as _cpp
-import ffcx
 import ufl
 from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner, create_mesh
-from dolfinx.fem import DofMap, coordinate_element
+from dolfinx.fem import DofMap, FunctionSpace, coordinate_element, form
 from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.la import matrix_csr
-from dolfinx.mesh import CellType
+from dolfinx.mesh import CellType, Mesh
 
 nx = 16
 ny = 16
@@ -91,18 +90,19 @@ for ct in range(2):
         sp.insert(cell_dofs_j, cell_dofs_j)
 sp.finalize()
 
-a = []
-for cell_name in ["hexahedron", "prism"]:
+aforms = []
+for i, cell_name in enumerate(["hexahedron", "prism"]):
     print(f"Compiling form for {cell_name}")
     element = basix.ufl.element("Lagrange", cell_name, 1)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_name, 1, shape=(3,)))
-    space = ufl.FunctionSpace(domain, element)
-    u, v = ufl.TrialFunction(space), ufl.TestFunction(space)
+    cppV = _cpp.fem.FunctionSpace_float64(mesh, cpp_elements[i], dofmaps[i])
+    V = FunctionSpace(Mesh(mesh, domain), element, cppV)
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     k = 12.0
-    a += [(ufl.inner(ufl.grad(u), ufl.grad(v)) - k**2 * u * v) * ufl.dx]
-w, module, _ = ffcx.codegeneration.jit.compile_forms(a, options={"scalar_type": np.float64})
-kernels = [getattr(w_i.form_integrals[0], "tabulate_tensor_float64") for w_i in w]
-ffi = module.ffi
+    a = (ufl.inner(ufl.grad(u), ufl.grad(v)) - k**2 * u * v) * ufl.dx
+    aforms += [form(a)]
+
+ffi = aforms[0].module.ffi
 
 # Assembler
 A = matrix_csr(sp)
@@ -112,9 +112,10 @@ print(f"Assembling into matrix of size {len(A.data)} non-zeros")
 for ct in range(2):
     num_cells_type = mesh.topology.index_maps(3)[ct].size_local
     geom_dm = mesh.geometry.dofmaps(ct)
-    kernel = kernels[ct]
+    kernel = getattr(aforms[ct].ufcx_form.form_integrals[0], "tabulate_tensor_float64")
+    dm = aforms[ct].function_spaces[0].dofmap
     for j in range(num_cells_type):
-        cell_dofs_j = q[ct].cell_dofs(j)
+        cell_dofs_j = dm.cell_dofs(j)
         A_local = np.zeros((len(cell_dofs_j) ** 2), dtype=np.float64)
         cell_geom = mesh.geometry.x[geom_dm[j]]
         kernel(
