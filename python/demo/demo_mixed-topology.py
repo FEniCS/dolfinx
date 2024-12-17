@@ -12,6 +12,11 @@ from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.la import matrix_csr
 from dolfinx.mesh import CellType, Mesh
 
+if MPI.COMM_WORLD.size > 1:
+    print("Not yet running in parallel")
+    exit(0)
+
+
 # Create a mesh
 nx = 16
 ny = 16
@@ -108,7 +113,7 @@ ffi = aforms[0].module.ffi
 A = matrix_csr(sp)
 print(f"Assembling into matrix of size {len(A.data)} non-zeros")
 
-# For each cell type (ct)
+# Assemble for each cell type (ct)
 for ct in range(2):
     num_cells_type = mesh.topology.index_maps(3)[ct].size_local
     geom_dm = mesh.geometry.dofmaps(ct)
@@ -128,7 +133,7 @@ for ct in range(2):
         )
         A.add(A_local, cell_dofs_j, cell_dofs_j, 1)
 
-
+# Quick solve
 A_scipy = A.to_scipy()
 b_scipy = np.ones(A_scipy.shape[1])
 
