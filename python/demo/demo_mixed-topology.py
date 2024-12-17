@@ -7,11 +7,12 @@ import basix
 import dolfinx.cpp as _cpp
 import ufl
 from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner, create_mesh
-from dolfinx.fem import DofMap, FunctionSpace, coordinate_element, form
+from dolfinx.fem import FunctionSpace, coordinate_element, form
 from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.la import matrix_csr
 from dolfinx.mesh import CellType, Mesh
 
+# Create a mesh
 nx = 16
 ny = 16
 nz = 16
@@ -68,28 +69,27 @@ mesh = create_mesh(
     MPI.COMM_WORLD, cells_np, [hexahedron._cpp_object, prism._cpp_object], geomx, part
 )
 
-# Order 1 dofmaps
+# Create order 1 dofmaps on mesh
 elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.hexahedron, 1),
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
 
 cpp_elements = [_cpp.fem.FiniteElement_float64(e._e, None, True) for e in elements]
-
 dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, cpp_elements)
-q = [DofMap(dofmaps[0]), DofMap(dofmaps[1])]
 
 # Both dofmaps have the same IndexMap, but different cell_dofs
 # Create SparsityPattern
-sp = _cpp.la.SparsityPattern(MPI.COMM_WORLD, [q[0].index_map, q[0].index_map], [1, 1])
+sp = _cpp.la.SparsityPattern(MPI.COMM_WORLD, [dofmaps[0].index_map, dofmaps[0].index_map], [1, 1])
 for ct in range(2):
     num_cells_type = mesh.topology.index_maps(3)[ct].size_local
     print(f"For cell type {ct}, create sparsity with {num_cells_type} cells.")
     for j in range(num_cells_type):
-        cell_dofs_j = q[ct].cell_dofs(j)
+        cell_dofs_j = dofmaps[ct].cell_dofs(j)
         sp.insert(cell_dofs_j, cell_dofs_j)
 sp.finalize()
 
+# Compile forms for each cell type
 aforms = []
 for i, cell_name in enumerate(["hexahedron", "prism"]):
     print(f"Compiling form for {cell_name}")
