@@ -523,15 +523,19 @@ def create_tnt_prism(degree):
             wcoeffs[dof_n, i * (degree + 1) + j] = 1
             dof_n += 1
 
-    for i in range(3):
-        if degree > 1 or i == 0:
-            wcoeffs[dof_n, i * (degree + 1) + degree] = 1
-            dof_n += 1
-    
     for i in range(degree+1):
         for j in range(2):
             wcoeffs[dof_n, (i + round((degree + 1) * degree / 2)) * (degree + 1) + j] = 1
             dof_n += 1
+
+    wcoeffs[dof_n, degree] = 1
+    dof_n += 1
+
+    if degree > 1:
+        for i in range(1,3):
+            wcoeffs[dof_n, i * (degree + 1) + degree] = 1
+            dof_n += 1
+
 
     # Interpolation
     geometry = basix.geometry(basix.CellType.prism)
@@ -563,7 +567,7 @@ def create_tnt_prism(degree):
     
             mat = np.zeros((edge_ndofs, 1, len(pts), 1))
             for i in range(edge_ndofs):
-                mat[i, 0, :, 0] = wts[:] * poly[i, :]
+                mat[i, 0, :, 0] = wts[:] * poly[i, :] * np.linalg.norm(v1 - v0)
             M[1].append(mat)
 
     # Faces
@@ -581,13 +585,13 @@ def create_tnt_prism(degree):
              basix.CellType.quadrilateral, basix.PolynomialType.legendre, degree - 3, 2, ptsr_q
             )
         # this assumes the conventional [0 to 1][0 to 1] domain of the reference element, 
-        # and takes the Laplacian of (1-u)*u*(1-v)*v*pol_set[0], 
+        # and takes the Laplacian of (1-u)*u*(1-v)*v*pol_set[0] or (u+v-1)*u*v*pol_set[0], , 
         # cf https://github.com/mscroggs/symfem/blob/main/symfem/elements/tnt.py
         u = ptsr_t[:, 0]
         v = ptsr_t[:, 1]
-        poly_t = (pol_set_t[5]+pol_set_t[3])*(u-1)*u*(v-1)*v+ \
-                2*(pol_set_t[2]*(u-1)*u*(2*v-1)+pol_set_t[1]*(v-1)*v*(2*u-1)+ \
-                   pol_set_t[0]*((u-1)*u+(v-1)*v))
+        poly_t = (pol_set_t[5]+pol_set_t[3])*(u+v-1)*u*v+ \
+                2*(pol_set_t[2]*u*(2*v+u-1)+pol_set_t[1]*v*(2*u+v-1)+ \
+                   pol_set_t[0]*(u+v))
         u = ptsr_q[:, 0]
         v = ptsr_q[:, 1]
         poly_q = (pol_set_q[5]+pol_set_q[3])*(u-1)*u*(v-1)*v+ \
@@ -606,17 +610,16 @@ def create_tnt_prism(degree):
             x[2].append(np.dot(ptsr,(geometry[f][1]-geometry[f][0],geometry[f][2]-geometry[f][0]))+geometry[f][0])
             mat = np.zeros((face_ndofs, 1, len(ptsr), 1))
             for i in range(face_ndofs):
-                mat[i, 0, :, 0] = wts[:] * poly[i, :]
+                mat[i, 0, :, 0] = wts[:] * poly[i, :] * np.linalg.norm(np.cross(geometry[f][1]-geometry[f][0],geometry[f][2]-geometry[f][0]))
             M[2].append(mat)
 
     # Interior
-    if degree < 4:
+    if degree < 3:
         x[3].append(np.zeros([0, 3]))
         M[3].append(np.zeros([0, 1, 0, 1]))
     else:
         pts, wts = basix.make_quadrature(basix.CellType.prism, 2 * degree - 2)
         #The dimension of the left over space tells us we should reduce the xy space by 1, so we are making the appopriate selection
-        #This corresponds to tetrahedrons not needing an internal dof at degree 3
         sel=[]
         for i in range(round((degree - 2) * (degree - 3)/ 2)):
             for j in range(degree - 2):
@@ -639,6 +642,8 @@ def create_tnt_prism(degree):
         for i in range(vol_ndofs):
             mat[i, 0, :, 0] = wts[:] * poly[i, :]
         M[3].append(mat)
+
+#    print("x: ", x)
     
     return basix.ufl.custom_element(
         basix.CellType.prism,
@@ -654,3 +659,4 @@ def create_tnt_prism(degree):
         degree,
         dtype=default_real_type,
     )
+
