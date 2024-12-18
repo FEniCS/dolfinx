@@ -99,7 +99,8 @@ def write(mesh: Mesh, filename: str | Path):
 
         # Extract topology information
         cell_index_maps = [imap for imap in mesh.topology.index_maps(mesh.topology.dim)]
-        num_cells = sum([imap.size_global for imap in cell_index_maps])
+        num_cells = [cmap.size_local for cmap in cell_index_maps]
+        num_cells_global = np.array([cmap.size_global for cmap in cell_index_maps], dtype=np.int64)
 
         # Extract various ownership information from the geometry
         geom_imap = mesh.geometry.index_map()
@@ -107,6 +108,7 @@ def write(mesh: Mesh, filename: str | Path):
         geom_global_shape = (geom_imap.size_global, gdim)
         gdtype = mesh.geometry.x.dtype
         geom_irange = geom_imap.local_range
+        c_els = [mesh.geometry.cmaps(i) for i in range(len(num_cells))]
 
         # Create dataset for storing the nodes of the geometry
         p_string = np.bytes_("Points")
@@ -125,28 +127,50 @@ def write(mesh: Mesh, filename: str | Path):
             map_vtk = np.argsort(_cpp.io.perm_vtk(entity_cells[i], local_dm.shape[1]))
             local_dm = local_dm[:, map_vtk]
             # FIXME: add local to global map here
-            geometry_flattened.append(local_dm.flatten())
+
+            global_dm = geom_imap.local_to_global(local_dm.flatten())
+            geometry_flattened.append(global_dm)
             geometry_num_cell_dofs.append(
                 np.full(g_dofmap.shape[0], g_dofmap.shape[1], dtype=np.int32)
             )
-        geom_offsets = np.zeros(num_cells + 1)
+        geom_offsets = np.zeros(sum(num_cells) + 1)
         geom_offsets[1:] = np.cumsum(np.hstack(geometry_num_cell_dofs))
 
-        # FIXME: need communication in parallel here to figure out insert position for cell
-        # connectivities and offsets
-        assert mesh.comm.size == 1, "Parallel writing not implemented"
+        num_nodes_per_cell = [c_el.dim for c_el in c_els]
+        cell_start_position = [cmap.local_range[0] for cmap in cell_index_maps]
+        cell_stop_position = [cmap.local_range[1] for cmap in cell_index_maps]
+
+        offset_start_position = sum(cell_start_position)
+        offset_stop_position = sum(cell_stop_position)
+        # Adapt offset for multiple processes
+        process_start_shift = 0 if mesh.comm.rank == 0 else 1
+        accumulated_other_proc_topology = [
+            ni * csp for (ni, csp) in zip(num_nodes_per_cell, cell_start_position)
+        ]
+        geom_offsets += sum(accumulated_other_proc_topology)
+
+        # If rank 0 we start at 0, otherwise we start one further than the number
+        # of cells on the previous rank
+        process_start_shift = 0 if mesh.comm.rank == 0 else 1
+        offset_start_position += process_start_shift
+        process_stop_shift = 1
+        offset_stop_position += process_stop_shift
 
         # Offsets
-        offsets = hdf.create_dataset("Offsets", (num_cells + 1,), dtype=np.int64)
-        offsets[:] = geom_offsets
-        geom_out = np.hstack(geometry_flattened)
+        offsets = hdf.create_dataset("Offsets", (sum(num_cells_global) + 1,), dtype=np.int64)
+        offsets[offset_start_position:offset_stop_position] = geom_offsets[process_start_shift:]
 
         # Store global mesh connectivity for geometry
-        top_set = hdf.create_dataset("Connectivity", (geom_out.size,), dtype=np.int64)
-        top_set[:] = geom_out
+        topology_size_global = sum(
+            [ncg * nnpc for (ncg, nnpc) in zip(num_cells_global, num_nodes_per_cell)]
+        )
+        top_set = hdf.create_dataset("Connectivity", (topology_size_global,), dtype=np.int64)
+        geom_out = np.hstack(geometry_flattened)
+        top_start_pos = sum(accumulated_other_proc_topology)
+        top_set[top_start_pos : top_start_pos + len(geom_out)] = geom_out
 
         # Store cell types
-        type_set = hdf.create_dataset("Types", (num_cells,), dtype=np.uint8)
+        type_set = hdf.create_dataset("Types", (sum(num_cells_global),), dtype=np.uint8)
         cts = np.hstack(
             [
                 np.full(
@@ -157,11 +181,10 @@ def write(mesh: Mesh, filename: str | Path):
                 for i in range(len(cell_index_maps))
             ]
         )
-        type_set[:] = cts
-
+        type_set[sum(cell_start_position) : sum(cell_stop_position)] = cts
         # Geom dofmap offset
         con_part = hdf.create_dataset("NumberOfConnectivityIds", (1,), dtype=np.int64)
-        con_part[0] = geom_offsets[-1]
+        con_part[0] = topology_size_global
 
         # Store meta-variable used by VTKHDF5 when partitioning data. We do not partition data,
         # as then everything becomes "local index", and cannot be read in again
@@ -170,7 +193,7 @@ def write(mesh: Mesh, filename: str | Path):
             "NumberOfCells",
             (1,),
             dtype=np.int64,
-            data=np.array([num_cells], dtype=np.int64),
+            data=np.array([sum(num_cells_global)], dtype=np.int64),
         )
 
         # Similar metadata for number of nodes

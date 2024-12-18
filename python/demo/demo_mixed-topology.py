@@ -1,6 +1,9 @@
+from pathlib import Path
+
 from mpi4py import MPI
 
 import numpy as np
+from read_write_vtkhdf import write
 from scipy.sparse.linalg import spsolve
 
 import basix
@@ -18,9 +21,9 @@ if MPI.COMM_WORLD.size > 1:
 
 
 # Create a mesh
-nx = 16
-ny = 16
-nz = 16
+nx = 25
+ny = 23
+nz = 21
 n_cells = nx * ny * nz
 
 cells: list = [[], []]
@@ -133,8 +136,7 @@ for ct in range(2):
         )
         A.add(A_local, cell_dofs_j, cell_dofs_j, 1)
 
-from read_write_vtkhdf import write
-from pathlib import Path
+
 write(mesh, Path("mixed_mesh.vtkhdf"))
 
 # Quick solve
