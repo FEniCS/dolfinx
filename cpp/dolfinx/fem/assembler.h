@@ -247,7 +247,7 @@ void assemble_matrix(
   const int tdim = mesh->topology()->dim();
   std::vector<mesh::CellType> cell_types = mesh->topology()->entity_types(tdim);
   mesh::CellType cell_type = a.function_spaces()[0]->element()->cell_type();
-  auto it = std::find(cell_types.begin(), cell_types.end(), cell_type);
+  auto it = std::ranges::find(cell_types, cell_type);
   assert(it != cell_types.end());
   const int geom_idx = std::distance(cell_types.begin(), it);
 
