@@ -19,6 +19,7 @@ set(DOLFINX_DIRS
     mesh
     nls
     refinement
+    transfer
 )
 
 # Add source to dolfinx target, and get sets of header files
