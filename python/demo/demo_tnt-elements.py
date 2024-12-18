@@ -670,6 +670,7 @@ def create_tnt_prism(degree):
     )
 
 # Here is the matching tetrahedron, triangle and interval elements. Their boundary dofs are moments, not point values, except at the vertices.
+# The interval elements match the Legendre variant of the serendipity elements.
 
 def create_tnt_tetrahedron(degree):
     assert degree > 0
