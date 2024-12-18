@@ -23,8 +23,8 @@ ny = 16
 nz = 16
 n_cells = nx * ny * nz
 
-cells: list = [[], []]
-orig_idx: list = [[], []]
+cells: list = [[], [], []]
+orig_idx: list = [[], [], []]
 geom = []
 
 if MPI.COMM_WORLD.rank == 0:
@@ -47,12 +47,16 @@ if MPI.COMM_WORLD.rank == 0:
             cells[0] += [v0, v1, v2, v3, v4, v5, v6, v7]
             orig_idx[0] += [idx]
             idx += 1
-        else:
+        elif iz < nz / 2:
             cells[1] += [v0, v1, v2, v4, v5, v6]
             orig_idx[1] += [idx]
             idx += 1
             cells[1] += [v1, v2, v3, v5, v6, v7]
             orig_idx[1] += [idx]
+            idx += 1
+        else:
+            cells[2] += [v0, v1, v2, v3]
+            orig_idx[2] += [idx]
             idx += 1
 
     n_points = (nx + 1) * (ny + 1) * (nz + 1)
@@ -66,7 +70,7 @@ if MPI.COMM_WORLD.rank == 0:
 
 cells_np = [np.array(c) for c in cells]
 geomx = np.array(geom, dtype=np.float64)
-cell_types = [CellType.hexahedron, CellType.prism]
+cell_types = [CellType.hexahedron, CellType.prism, CellType.tetrahedron]
 coordinate_elements = [coordinate_element(cell, 1) for cell in cell_types]
 
 part = create_cell_partitioner(GhostMode.none)
@@ -83,11 +87,11 @@ dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, cpp_elements)
 # Both dofmaps have the same IndexMap, but different cell_dofs
 # Create SparsityPattern
 sp = _cpp.la.SparsityPattern(MPI.COMM_WORLD, [dofmaps[0].index_map, dofmaps[0].index_map], [1, 1])
-for ct in range(2):
+for ct, dm in enumerate(dofmaps):
     num_cells_type = mesh.topology.index_maps(3)[ct].size_local
     print(f"For cell type {ct}, create sparsity with {num_cells_type} cells.")
     for j in range(num_cells_type):
-        cell_dofs_j = dofmaps[ct].cell_dofs(j)
+        cell_dofs_j = dm.cell_dofs(j)
         sp.insert(cell_dofs_j, cell_dofs_j)
 sp.finalize()
 
