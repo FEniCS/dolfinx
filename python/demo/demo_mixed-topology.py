@@ -7,7 +7,7 @@ import basix
 import dolfinx.cpp as _cpp
 import ufl
 from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner, create_mesh
-from dolfinx.fem import FunctionSpace, coordinate_element, form
+from dolfinx.fem import FunctionSpace, coordinate_element, form, assemble_matrix
 from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.la import matrix_csr
 from dolfinx.mesh import CellType, Mesh
@@ -110,11 +110,10 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
 ffi = aforms[0].module.ffi
 
 # Assembler
-A = matrix_csr(sp)
-print(f"Assembling into matrix of size {len(A.data)} non-zeros")
+# print(f"Assembling into matrix of size {len(A.data)} non-zeros")
 
 # Assemble for each cell type (ct)
-for ct in range(2):
+def custom_assemble(A, ct):
     num_cells_type = mesh.topology.index_maps(3)[ct].size_local
     geom_dm = mesh.geometry.dofmaps(ct)
     kernel = getattr(aforms[ct].ufcx_form.form_integrals[0], "tabulate_tensor_float64")
@@ -132,6 +131,19 @@ for ct in range(2):
             ffi.NULL,
         )
         A.add(A_local, cell_dofs_j, cell_dofs_j, 1)
+
+A_cust_0 = matrix_csr(sp)
+custom_assemble(A_cust_0, 0)
+
+A_cust_1 = matrix_csr(sp)
+custom_assemble(A_cust_1, 1)
+
+A_0 = assemble_matrix(aforms[0])
+A_1 = assemble_matrix(aforms[1])
+
+print(A_cust_0.squared_norm(), A_0.squared_norm())
+print(A_cust_1.squared_norm(), A_1.squared_norm())
+exit()
 
 # Quick solve
 A_scipy = A.to_scipy()

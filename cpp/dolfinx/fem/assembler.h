@@ -38,10 +38,10 @@ make_coefficients_span(const std::map<std::pair<IntegralType, int>,
 {
   using Key = typename std::remove_reference_t<decltype(coeffs)>::key_type;
   std::map<Key, std::pair<std::span<const T>, int>> c;
-  std::ranges::transform(
-      coeffs, std::inserter(c, c.end()),
-      [](auto& e) -> typename decltype(c)::value_type
-      { return {e.first, {e.second.first, e.second.second}}; });
+  std::ranges::transform(coeffs, std::inserter(c, c.end()),
+                         [](auto& e) -> typename decltype(c)::value_type {
+                           return {e.first, {e.second.first, e.second.second}};
+                         });
   return c;
 }
 
@@ -243,9 +243,17 @@ void assemble_matrix(
 {
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
+
+  const int tdim = mesh->topology()->dim();
+  std::vector<mesh::CellType> cell_types = mesh->topology()->entity_types(tdim);
+  mesh::CellType cell_type = a.function_spaces()[0]->element()->cell_type();
+  auto it = std::find(cell_types.begin(), cell_types.end(), cell_type);
+  assert(it != cell_types.end());
+  const int geom_idx = std::distance(cell_types.begin(), it);
+
   if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
   {
-    impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap(),
+    impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap(geom_idx),
                           mesh->geometry().x(), constants, coefficients,
                           dof_marker0, dof_marker1);
   }
@@ -253,8 +261,8 @@ void assemble_matrix(
   {
     auto x = mesh->geometry().x();
     std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
-    impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap(), _x, constants,
-                          coefficients, dof_marker0, dof_marker1);
+    impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap(geom_idx), _x,
+                          constants, coefficients, dof_marker0, dof_marker1);
   }
 }
 
