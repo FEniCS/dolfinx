@@ -450,8 +450,6 @@ def create_tnt_hex(degree):
         )
         edge_ndofs = poly.shape[0]
         for e in topology[1]:
-            v0 = geometry[e[0]]
-            v1 = geometry[e[1]]
             x[1].append(np.array(geometry[e[0]] + np.dot(pts,[geometry[e[1]]-geometry[e[0]]])))
             mat = np.zeros((edge_ndofs, 1, len(pts), 1))
             for i in range(edge_ndofs):
