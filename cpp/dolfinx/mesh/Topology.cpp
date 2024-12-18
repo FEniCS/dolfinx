@@ -821,6 +821,9 @@ void Topology::set_index_map(std::int8_t dim, std::int8_t i,
 std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
   assert(dim < (int)_entity_type_offsets.size() - 1);
+  if (_entity_type_offsets[dim + 1] - _entity_type_offsets[dim] > 1)
+    throw std::runtime_error(
+        "Multiple index maps of this dimension. Call index_maps instead.");
   return _index_map[_entity_type_offsets[dim]];
 }
 //-----------------------------------------------------------------------------
