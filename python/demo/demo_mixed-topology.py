@@ -132,18 +132,15 @@ def custom_assemble(A, ct):
         )
         A.add(A_local, cell_dofs_j, cell_dofs_j, 1)
 
-A_cust_0 = matrix_csr(sp)
-custom_assemble(A_cust_0, 0)
-A_cust_1 = matrix_csr(sp)
-custom_assemble(A_cust_1, 1)
+A_cust = matrix_csr(sp)
+custom_assemble(A_cust, 0)
+custom_assemble(A_cust, 1)
 
-A_0 = matrix_csr(sp)
-assemble_matrix(A_0, aforms[0])
-A_1 = matrix_csr(sp)
-assemble_matrix(A_1, aforms[1])
+A = matrix_csr(sp)
+assemble_matrix(A, aforms[0])
+assemble_matrix(A, aforms[1])
 
-print(A_cust_0.squared_norm(), A_0.squared_norm())
-print(A_cust_1.squared_norm(), A_1.squared_norm())
+print(A_cust.squared_norm(), A.squared_norm())
 exit()
 
 # Quick solve
