@@ -213,9 +213,7 @@ def create_tnt_quad(degree):
         )
         edge_ndofs = poly.shape[0]
         for e in topology[1]:
-            v0 = geometry[e[0]]
-            v1 = geometry[e[1]]
-            edge_pts = np.array([v0 + p * (v1 - v0) for p in pts])
+            edge_pts = np.array(geometry[e[0]] + np.dot(pts,[geometry[e[1]]-geometry[e[0]]]))
             x[1].append(edge_pts)
     
             mat = np.zeros((edge_ndofs, 1, len(pts), 1))
@@ -419,7 +417,7 @@ def create_tnt_hex(degree):
     for i in range(degree):
         for j in range(degree):
             for k in range(degree):
-                wcoeffs[dof_n, (i * (degree + 1) + j) * (degree + 1) + k ] = 1
+                wcoeffs[dof_n, (i * (degree + 1) + j) * (degree + 1) + k] = 1
                 dof_n += 1
 
     for i, j, k in [(degree, 0, 0), (0, degree, 0), (0, 0, degree), (1, 1, degree), (1, 0, degree), (0, 1, degree), (degree, 1, 0)]:
@@ -456,7 +454,7 @@ def create_tnt_hex(degree):
         for e in topology[1]:
             v0 = geometry[e[0]]
             v1 = geometry[e[1]]
-            edge_pts = np.array([v0 + p * (v1 - v0) for p in pts])
+            edge_pts = np.array(geometry[e[0]] + np.dot(pts,[geometry[e[1]]-geometry[e[0]]]))
             x[1].append(edge_pts)
     
             mat = np.zeros((edge_ndofs, 1, len(pts), 1))
@@ -579,9 +577,7 @@ def create_tnt_prism(degree):
         )
         edge_ndofs = poly.shape[0]
         for e in topology[1]:
-            v0 = geometry[e[0]]
-            v1 = geometry[e[1]]
-            edge_pts = np.array([v0 + p * (v1 - v0) for p in pts])
+            edge_pts = np.array(geometry[e[0]] + np.dot(pts,[geometry[e[1]]-geometry[e[0]]]))
             x[1].append(edge_pts)
     
             mat = np.zeros((edge_ndofs, 1, len(pts), 1))
@@ -714,7 +710,7 @@ def create_tnt_tetrahedron(degree):
         for e in topology[1]:
             v0 = geometry[e[0]]
             v1 = geometry[e[1]]
-            edge_pts = np.array([v0 + p * (v1 - v0) for p in pts])
+            edge_pts = np.array(geometry[e[0]] + np.dot(pts,[geometry[e[1]]-geometry[e[0]]]))
             x[1].append(edge_pts)
     
             mat = np.zeros((edge_ndofs, 1, len(pts), 1))
@@ -820,9 +816,7 @@ def create_tnt_triangle(degree):
         )
         edge_ndofs = poly.shape[0]
         for e in topology[1]:
-            v0 = geometry[e[0]]
-            v1 = geometry[e[1]]
-            edge_pts = np.array([v0 + p * (v1 - v0) for p in pts])
+            edge_pts = np.array(geometry[e[0]] + np.dot(pts,[geometry[e[1]]-geometry[e[0]]]))
             x[1].append(edge_pts)
     
             mat = np.zeros((edge_ndofs, 1, len(pts), 1))
