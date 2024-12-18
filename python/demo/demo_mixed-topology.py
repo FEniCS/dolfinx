@@ -134,7 +134,6 @@ def custom_assemble(A, ct):
 
 A_cust_0 = matrix_csr(sp)
 custom_assemble(A_cust_0, 0)
-
 A_cust_1 = matrix_csr(sp)
 custom_assemble(A_cust_1, 1)
 

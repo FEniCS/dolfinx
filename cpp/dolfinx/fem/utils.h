@@ -468,9 +468,19 @@ Form<T, U> create_form_factory(
       // Build list of entities to assemble over
       if (id == -1)
       {
+        // TODO Figure out best place for this. Make a function? Is there
+        // a better way?
+        std::vector<mesh::CellType> cell_types
+            = mesh->topology()->entity_types(tdim);
+        mesh::CellType cell_type = spaces[0]->element()->cell_type();
+        auto it = std::ranges::find(cell_types, cell_type);
+        assert(it != cell_types.end());
+        const int cell_type_idx = std::distance(cell_types.begin(), it);
+
         // Default kernel, operates on all (owned) cells
-        assert(topology->index_map(tdim));
-        default_cells.resize(topology->index_map(tdim)->size_local(), 0);
+        assert(topology->index_maps(tdim)[cell_type_idx]);
+        default_cells.resize(
+            topology->index_maps(tdim)[cell_type_idx]->size_local(), 0);
         std::iota(default_cells.begin(), default_cells.end(), 0);
         itg.first->second.emplace_back(id, k, default_cells, active_coeffs);
       }
