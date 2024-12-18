@@ -66,21 +66,18 @@ if MPI.COMM_WORLD.rank == 0:
 
 cells_np = [np.array(c) for c in cells]
 geomx = np.array(geom, dtype=np.float64)
-hexahedron = coordinate_element(CellType.hexahedron, 1)
-prism = coordinate_element(CellType.prism, 1)
+cell_types = [CellType.hexahedron, CellType.prism]
+coordinate_elements = [coordinate_element(cell, 1) for cell in cell_types]
 
 part = create_cell_partitioner(GhostMode.none)
 mesh = create_mesh(
-    MPI.COMM_WORLD, cells_np, [hexahedron._cpp_object, prism._cpp_object], geomx, part
+    MPI.COMM_WORLD, cells_np, [e._cpp_object for e in coordinate_elements], geomx, part
 )
 
 # Create order 1 dofmaps on mesh
-elements = [
-    basix.create_element(basix.ElementFamily.P, basix.CellType.hexahedron, 1),
-    basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
-]
+elements = [basix.ufl.element("Lagrange", cell.name, 1) for cell in cell_types]
 
-cpp_elements = [_cpp.fem.FiniteElement_float64(e._e, None, True) for e in elements]
+cpp_elements = [_cpp.fem.FiniteElement_float64(e.basix_element._e, None, True) for e in elements]
 dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, cpp_elements)
 
 # Both dofmaps have the same IndexMap, but different cell_dofs
@@ -96,11 +93,10 @@ sp.finalize()
 
 # Compile forms for each cell type
 aforms = []
-for i, cell_name in enumerate(["hexahedron", "prism"]):
-    print(f"Compiling form for {cell_name}")
-    element = basix.ufl.element("Lagrange", cell_name, 1)
-    domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_name, 1, shape=(3,)))
-    cppV = _cpp.fem.FunctionSpace_float64(mesh, cpp_elements[i], dofmaps[i])
+for element, cpp_element, dofmap in zip(elements, cpp_elements, dofmaps):
+    print(f"Compiling form for {element.cell_type.name}")
+    domain = ufl.Mesh(basix.ufl.element("Lagrange", element.cell_type, 1, shape=(3,)))
+    cppV = _cpp.fem.FunctionSpace_float64(mesh, cpp_element, dofmap)
     V = FunctionSpace(Mesh(mesh, domain), element, cppV)
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     k = 12.0
@@ -114,11 +110,11 @@ A = matrix_csr(sp)
 print(f"Assembling into matrix of size {len(A.data)} non-zeros")
 
 # Assemble for each cell type (ct)
-for ct in range(2):
+for ct, aform in enumerate(aforms):
     num_cells_type = mesh.topology.index_maps(3)[ct].size_local
     geom_dm = mesh.geometry.dofmaps(ct)
     kernel = getattr(aforms[ct].ufcx_form.form_integrals[0], "tabulate_tensor_float64")
-    dm = aforms[ct].function_spaces[0].dofmap
+    dm = aform.function_spaces[0].dofmap
     for j in range(num_cells_type):
         cell_dofs_j = dm.cell_dofs(j)
         A_local = np.zeros((len(cell_dofs_j) ** 2), dtype=np.float64)
