@@ -1,5 +1,5 @@
 from enum import Enum
-from dolfinx.mesh import Mesh, entities_to_geometry
+from dolfinx.mesh import Mesh
 import dolfinx.cpp as _cpp
 from pathlib import Path
 import h5py
@@ -35,6 +35,7 @@ class VTKCellType(Enum):
     quadrilateral = 70
     tetrahedron = 78
     hexahedron = 72
+    wedge = 73
 
 
     def __str__(self) -> str:
@@ -50,8 +51,30 @@ class VTKCellType(Enum):
             return "hexahedron"
         elif self == VTKCellType.vertex:
             return "point"
+        elif self == VTKCellType.wedge:
+            return "prism"
         else:
             raise ValueError(f"Unknown cell type: {self}")
+
+    @classmethod
+    def to_vtk(self, cell):
+        if cell == "interval":
+            return VTKCellType.line
+        elif cell =="triangle":
+            return  VTKCellType.triangle
+        elif cell == "quadrilateral":
+            return VTKCellType.quadrilateral
+        elif cell == "tetrahedron":
+            return VTKCellType.tetrahedron
+        elif cell == "hexahedron":
+            return VTKCellType.hexahedron
+        elif cell == "point":
+            return VTKCellType.vertex
+        elif cell == "prism":
+            return VTKCellType.wedge
+        else:
+            raise ValueError(f"Unknown cell type: {cell}")
+
 
     def __int__(self) -> int:
         return self.value
@@ -86,49 +109,65 @@ def write(mesh: Mesh, filename: str | Path):
 
         #cell_map = mesh.topology.
         cell_maps = [imap for imap in mesh.topology.index_maps(mesh.topology.dim)]
-        
+        geometry_flattened = []
+        geometry_offset_flattened = []  
+        entity_cells = mesh.topology.entity_types[mesh.topology.dim]
+
         for i in range(len(cell_maps)):
+            g_dofmap = mesh.geometry.dofmaps(i)
+            num_nodes_per_cell = np.full(g_dofmap.shape[0], g_dofmap.shape[1],dtype=np.int32)
+            geometry_offset = np.zeros(g_dofmap.shape[0]+1, dtype=np.int64)
+            geometry_offset[1:] = np.cumsum(num_nodes_per_cell)
+            geometry_offset_flattened.append(geometry_offset)
+            local_dm = g_dofmap[:cell_maps[i].size_local,:].copy()
+            map_vtk = np.argsort(_cpp.io.perm_vtk(entity_cells[i],local_dm.shape[1]))
+            local_dm = local_dm[:, map_vtk]
+            geometry_flattened.append(local_dm.flatten())
+        if len(cell_maps) > 1:
+            for i in range(1, len(cell_maps)):
+                geometry_offset_flattened[i] += geometry_offset_flattened[i-1][-1]
+                geometry_offset_flattened[i] = geometry_offset_flattened[i][1:]
+        geom_o = np.hstack(geometry_offset_flattened)
+        geom_out = np.hstack(geometry_flattened)
 
-
+        # FIXME: need communication in parallel here to figure out insert position for cell connecitivites and offsets
+        assert mesh.comm.size == 1, "Parallel writing not implemented"
 
         # Put global topology
         top_set = hdf.create_dataset(
-            "Connectivity", (mesh.topology_offset[-1],), dtype=np.int64
+            "Connectivity", (geom_out.size,), dtype=np.int64
         )
-        top_set[:] = mesh.topology_array
+        top_set[:] = geom_out
 
         # Put cell type
-        num_cells = len(mesh.topology_offset) - 1
-        type_set = hdf.create_dataset("Types", (num_cells,), dtype=np.uint8)
-
-        cts = np.asarray(
-            [int(VTKCellType.from_value(ct)) for ct in mesh.cell_types], dtype=np.uint8
-        )
+        num_cells = [cmap.size_global for cmap in cell_maps]
+        type_set = hdf.create_dataset("Types", (sum(num_cells),), dtype=np.uint8)
+        cts = np.hstack([np.full(cell_maps[i].size_local, int(VTKCellType.to_vtk(entity_cells[i].name)), dtype=np.uint8) for i in range(len(cell_maps))])
         type_set[:] = cts
 
         # Geom dofmap offset
         con_part = hdf.create_dataset("NumberOfConnectivityIds", (1,), dtype=np.int64)
-        con_part[0] = mesh.topology_offset[-1]
+        con_part[0] = geom_o[-1]
 
         # Num cells
         hdf.create_dataset(
             "NumberOfCells",
             (1,),
             dtype=np.int64,
-            data=np.array([num_cells], dtype=np.int64),
+            data=np.array([sum(num_cells)], dtype=np.int64),
         )
 
         # num points
         num_points = hdf.create_dataset("NumberOfPoints", (1,), dtype=np.int64)
-        num_points[0] = mesh.geometry.shape[0]
+        num_points[0] = geom_imap.size_global
 
         # Offsets
-        offsets = hdf.create_dataset("Offsets", (num_cells + 1,), dtype=np.int64)
-        offsets[:] = mesh.topology_offset
+        offsets = hdf.create_dataset("Offsets", (sum(num_cells) + 1,), dtype=np.int64)
+        offsets[:] = geom_o
 
-        # Add celldata
-        if len(mesh.cell_values) > 0:
-            cv = hdf.create_group("CellData")
-            cv.attrs["Scalars"] = ["Cell_Markers"]
-            cv.create_dataset("Cell_Markers", shape=(num_cells,), data=mesh.cell_values)
+        # # Add celldata
+        # if len(mesh.cell_values) > 0:
+        #     cv = hdf.create_group("CellData")
+        #     cv.attrs["Scalars"] = ["Cell_Markers"]
+        #     cv.create_dataset("Cell_Markers", shape=(num_cells,), data=mesh.cell_values)
 
