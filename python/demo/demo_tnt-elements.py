@@ -306,21 +306,22 @@ def poisson_error(V: fem.FunctionSpace):
 # elements of degree 1 to 9. We then do the same with Q elements of
 # degree 1 to 9.
 
-# 0 Form S elements have the following polynomial power pattern in 2D:
+# 0-Form S elements have the following polynomial power pattern for a parallelogram or quadrilateral:
 # 00000
 # 0000
 # 000
 # 00
 # 0
+# (For serendipity on general quadrilateral, precision is lost, unless one uses "direct" serendipity.)
 
-# 0 Form TNT element have the following polynomial power pattern in 2D:
+# 0-Form TNT element have the following polynomial power pattern for a parallelogram or quadrilateral:
 # 00000
 # 00000
 # 0000
 # 0000
 # 00
 
-# 0 elements have the following polynomial power pattern in 2D:
+# 0-Form Q elements have the following polynomial power pattern for a parallelogram or quadrilateral:
 # 00000
 # 00000
 # 00000
