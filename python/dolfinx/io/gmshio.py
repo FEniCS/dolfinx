@@ -21,7 +21,7 @@ from dolfinx import default_real_type
 from dolfinx.cpp.graph import AdjacencyList_int32
 from dolfinx.graph import AdjacencyList, adjacencylist
 from dolfinx.io.utils import distribute_entity_data
-from dolfinx.mesh import CellType, Mesh, create_mesh, meshtags, meshtags_from_entities
+from dolfinx.mesh import CellType, Mesh, MeshTags, create_mesh, meshtags_from_entities
 
 __all__ = [
     "cell_perm_array",
@@ -31,6 +31,23 @@ __all__ = [
     "read_from_msh",
     "ufl_mesh",
 ]
+
+
+class TopologyDict(typing.TypedDict):
+    """TopologyDict is a TypedDict for storing the topology of the marked cell.
+
+    Args:
+        topology: 2D array containing the topology of the marked cell.
+        cell_data: List with the corresponding markers.
+
+    Note:
+        The TypedDict is only used for type hinting, and does not
+        enforce the structure of the dictionary, but rather provides
+        a hint to the user and the type checker.
+    """
+
+    topology: npt.NDArray[typing.Any]
+    cell_data: npt.NDArray[typing.Any]
 
 
 # Map from Gmsh cell type identifier (integer) to DOLFINx cell type and
@@ -53,6 +70,28 @@ _gmsh_to_cells = {
     36: ("quadrilateral", 3),
     92: ("hexahedron", 3),
 }
+
+
+class MeshData(typing.NamedTuple):
+    """Data for representing a mesh and associated tags.
+
+    Args:
+        mesh: Mesh.
+        cell_tags: MeshTags for cells.
+        facet_tags: MeshTags for facets.
+        edge_tags: MeshTags for edges.
+        vertex_tags: MeshTags for vertices.
+        physical_groups: Physical groups in the mesh, where the key
+            is the physical name and the value is a tuple with the
+            dimension and tag.
+    """
+
+    mesh: Mesh
+    cell_tags: typing.Optional[MeshTags]
+    facet_tags: typing.Optional[MeshTags]
+    edge_tags: typing.Optional[MeshTags]
+    vertex_tags: typing.Optional[MeshTags]
+    physical_groups: dict[str, tuple[int, int]]
 
 
 def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
@@ -100,7 +139,9 @@ def cell_perm_array(cell_type: CellType, num_nodes: int) -> list[int]:
     return _cpp.io.perm_gmsh(cell_type, num_nodes)
 
 
-def extract_topology_and_markers(model, name: typing.Optional[str] = None):
+def extract_topology_and_markers(
+    model, name: typing.Optional[str] = None
+) -> tuple[dict[int, TopologyDict], dict[str, tuple[int, int]]]:
     """Extract all entities tagged with a physical marker in the gmsh model.
 
     Returns a nested dictionary where the first key is the gmsh MSH
@@ -114,10 +155,13 @@ def extract_topology_and_markers(model, name: typing.Optional[str] = None):
             model will be used.
 
     Returns:
-        A nested dictionary where each key corresponds to a gmsh cell
+        A tuple ``(topologies, physical_groups)``, where ``topologies`` is a
+        nested dictionary where each key corresponds to a gmsh cell
         type. Each cell type found in the mesh has a 2D array containing
         the topology of the marked cell and a list with the
-        corresponding markers.
+        corresponding markers. ``physical_groups`` is a dictionary where the key
+        is the physical name and the value is a tuple with the dimension
+        and tag.
 
     """
     if name is not None:
@@ -126,7 +170,10 @@ def extract_topology_and_markers(model, name: typing.Optional[str] = None):
     # Get the physical groups from gmsh in the form [(dim1, tag1),
     # (dim1, tag2), (dim2, tag3),...]
     phys_grps = model.getPhysicalGroups()
-    topologies: dict[int, dict[str, npt.NDArray[typing.Any]]] = {}
+    topologies: dict[int, TopologyDict] = {}
+    # Create a dictionary with the physical groups where the key is the
+    # physical name and the value is a tuple with the dimension and tag
+    physical_groups: dict[str, tuple[int, int]] = {}
     for dim, tag in phys_grps:
         # Get the entities of dimension `dim`, dim=0 -> Points, dim=1 -
         # >Lines, dim=2 -> Triangles/Quadrilaterals, etc.
@@ -165,7 +212,9 @@ def extract_topology_and_markers(model, name: typing.Optional[str] = None):
             else:
                 topologies[entity_type] = {"topology": topology, "cell_data": marker}
 
-    return topologies
+        physical_groups[model.getPhysicalName(dim, tag)] = (dim, tag)
+
+    return topologies, physical_groups
 
 
 def extract_geometry(model, name: typing.Optional[str] = None) -> npt.NDArray[np.float64]:
@@ -211,7 +260,7 @@ def model_to_mesh(
         typing.Callable[[_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]
     ] = None,
     dtype=default_real_type,
-) -> tuple[Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
+) -> MeshData:
     """Create a Mesh from a Gmsh model.
 
     Creates a :class:`dolfinx.mesh.Mesh` from the physical entities of
@@ -228,9 +277,8 @@ def model_to_mesh(
             distribution of cells across MPI ranks.
 
     Returns:
-        A triplet ``(mesh, cell_tags, facet_tags)``, where cell_tags
-        hold markers for the cells and facet tags holds markers for
-        facets (if tags are found in Gmsh model).
+        MeshData with mesh, cell tags, facet tags, edge tags,
+        vertex tags and physical groups.
 
     Note:
         For performance, this function should only be called once for
@@ -243,7 +291,7 @@ def model_to_mesh(
         assert model is not None, "Gmsh model is None on rank responsible for mesh creation."
         # Get mesh geometry and mesh topology for each element
         x = extract_geometry(model)
-        topologies = extract_topology_and_markers(model)
+        topologies, physical_groups = extract_topology_and_markers(model)
 
         # Extract Gmsh cell id, dimension of cell and number of nodes to
         # cell for each
@@ -264,10 +312,10 @@ def model_to_mesh(
         num_nodes = cell_information[perm_sort[-1]]["num_nodes"]
         cell_id, num_nodes = comm.bcast([cell_id, num_nodes], root=rank)
 
-        # Check for facet data and broadcast relevant info if True
-        has_facet_data = False
-        if tdim - 1 in cell_dimensions:
-            has_facet_data = True
+        # Check for facet, edge and vertex data and broadcast relevant info if True
+        has_facet_data = (tdim - 1) in cell_dimensions
+        has_edge_data = (tdim - 2) in cell_dimensions
+        has_vertex_data = (tdim - 3) in cell_dimensions
 
         has_facet_data = comm.bcast(has_facet_data, root=rank)
         if has_facet_data:
@@ -276,17 +324,47 @@ def model_to_mesh(
             marked_facets = np.asarray(topologies[gmsh_facet_id]["topology"], dtype=np.int64)
             facet_values = np.asarray(topologies[gmsh_facet_id]["cell_data"], dtype=np.int32)
 
+        has_edge_data = comm.bcast(has_edge_data, root=rank)
+        if has_edge_data:
+            num_edge_nodes = comm.bcast(cell_information[perm_sort[-3]]["num_nodes"], root=rank)
+            gmsh_edge_id = cell_information[perm_sort[-3]]["id"]
+            marked_edges = np.asarray(topologies[gmsh_edge_id]["topology"], dtype=np.int64)
+            edge_values = np.asarray(topologies[gmsh_edge_id]["cell_data"], dtype=np.int32)
+
+        has_vertex_data = comm.bcast(has_vertex_data, root=rank)
+        if has_vertex_data:
+            num_vertex_nodes = comm.bcast(cell_information[perm_sort[-4]]["num_nodes"], root=rank)
+            gmsh_vertex_id = cell_information[perm_sort[-4]]["id"]
+            marked_vertices = np.asarray(topologies[gmsh_vertex_id]["topology"], dtype=np.int64)
+            vertex_values = np.asarray(topologies[gmsh_vertex_id]["cell_data"], dtype=np.int32)
+
         cells = np.asarray(topologies[cell_id]["topology"], dtype=np.int64)
         cell_values = np.asarray(topologies[cell_id]["cell_data"], dtype=np.int32)
+        physical_groups = comm.bcast(physical_groups, root=rank)
     else:
         cell_id, num_nodes = comm.bcast([None, None], root=rank)
         cells, x = np.empty([0, num_nodes], dtype=np.int32), np.empty([0, gdim], dtype=dtype)
         cell_values = np.empty((0,), dtype=np.int32)
+
         has_facet_data = comm.bcast(None, root=rank)
         if has_facet_data:
             num_facet_nodes = comm.bcast(None, root=rank)
             marked_facets = np.empty((0, num_facet_nodes), dtype=np.int32)
             facet_values = np.empty((0,), dtype=np.int32)
+
+        has_edge_data = comm.bcast(None, root=rank)
+        if has_edge_data:
+            num_edge_nodes = comm.bcast(None, root=rank)
+            marked_edges = np.empty((0, num_edge_nodes), dtype=np.int32)
+            edge_values = np.empty((0,), dtype=np.int32)
+
+        has_vertex_data = comm.bcast(None, root=rank)
+        if has_vertex_data:
+            num_vertex_nodes = comm.bcast(None, root=rank)
+            marked_vertices = np.empty((0, num_vertex_nodes), dtype=np.int32)
+            vertex_values = np.empty((0,), dtype=np.int32)
+
+        physical_groups = comm.bcast(None, root=rank)
 
     # Create distributed mesh
     ufl_domain = ufl_mesh(cell_id, gdim, dtype=dtype)
@@ -328,9 +406,45 @@ def model_to_mesh(
         ft = meshtags_from_entities(mesh, tdim - 1, adj, local_values.astype(np.int32, copy=False))
         ft.name = "Facet tags"
     else:
-        ft = meshtags(mesh, tdim - 1, np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32))
+        ft = None
 
-    return (mesh, ct, ft)
+    if has_edge_data:
+        # Permute edges from MSH to DOLFINx ordering
+        edge_type = _cpp.mesh.cell_entity_type(
+            _cpp.mesh.to_type(str(ufl_domain.ufl_cell())), tdim - 2, 0
+        )
+        gmsh_edge_perm = cell_perm_array(edge_type, num_edge_nodes)
+        marked_edges = marked_edges[:, gmsh_edge_perm]
+
+        local_entities, local_values = distribute_entity_data(
+            mesh, tdim - 2, marked_edges, edge_values
+        )
+        mesh.topology.create_connectivity(topology.dim - 2, tdim)
+        adj = adjacencylist(local_entities)
+        et = meshtags_from_entities(mesh, tdim - 2, adj, local_values.astype(np.int32, copy=False))
+        et.name = "Edge tags"
+    else:
+        et = None
+
+    if has_vertex_data:
+        # Permute vertices from MSH to DOLFINx ordering
+        vertex_type = _cpp.mesh.cell_entity_type(
+            _cpp.mesh.to_type(str(ufl_domain.ufl_cell())), tdim - 3, 0
+        )
+        gmsh_vertex_perm = cell_perm_array(vertex_type, num_vertex_nodes)
+        marked_vertices = marked_vertices[:, gmsh_vertex_perm]
+
+        local_entities, local_values = distribute_entity_data(
+            mesh, tdim - 3, marked_vertices, vertex_values
+        )
+        mesh.topology.create_connectivity(topology.dim - 3, tdim)
+        adj = adjacencylist(local_entities)
+        vt = meshtags_from_entities(mesh, tdim - 3, adj, local_values.astype(np.int32, copy=False))
+        vt.name = "Vertex tags"
+    else:
+        vt = None
+
+    return MeshData(mesh, ct, ft, et, vt, physical_groups)
 
 
 def read_from_msh(
@@ -341,7 +455,7 @@ def read_from_msh(
     partitioner: typing.Optional[
         typing.Callable[[_MPI.Comm, int, int, AdjacencyList], AdjacencyList_int32]
     ] = None,
-) -> tuple[Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
+) -> MeshData:
     """Read a Gmsh .msh file and return a :class:`dolfinx.mesh.Mesh` and cell facet markers.
 
     Note:
@@ -355,8 +469,8 @@ def read_from_msh(
         gdim: Geometric dimension of the mesh
 
     Returns:
-        A triplet ``(mesh, cell_tags, facet_tags)`` with meshtags for
-        associated physical groups for cells and facets.
+        Meshdata with mesh, cell tags, facet tags, edge tags,
+        vertex tags and physical groups.
 
     """
     try:

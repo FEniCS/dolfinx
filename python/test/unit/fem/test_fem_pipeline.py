@@ -237,6 +237,7 @@ def test_petsc_curl_curl_eigenvalue(family, order):
         [np.array([0.0, 0.0]), np.array([np.pi, np.pi])],
         [24, 24],
         CellType.triangle,
+        dtype=default_real_type,
     )
 
     e = element(family, basix.CellType.triangle, order, dtype=default_real_type)
@@ -253,7 +254,7 @@ def test_petsc_curl_curl_eigenvalue(family, order):
     boundary_facets = exterior_facet_indices(mesh.topology)
     boundary_dofs = locate_dofs_topological(V, mesh.topology.dim - 1, boundary_facets)
 
-    zero_u = Function(V)
+    zero_u = Function(V, dtype=dolfinx.default_scalar_type)
     zero_u.x.array[:] = 0
     bcs = [dirichletbc(zero_u, boundary_dofs)]
 
