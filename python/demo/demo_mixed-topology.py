@@ -133,6 +133,10 @@ for ct in range(2):
         )
         A.add(A_local, cell_dofs_j, cell_dofs_j, 1)
 
+from read_write_vtkhdf import write
+from pathlib import Path
+write(mesh, Path("mixed_mesh.vtkhdf"))
+
 # Quick solve
 A_scipy = A.to_scipy()
 b_scipy = np.ones(A_scipy.shape[1])
