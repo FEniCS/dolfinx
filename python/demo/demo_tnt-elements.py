@@ -480,7 +480,7 @@ def create_tnt_hex(degree):
                     pol_set[0]*((u-1)*u+(v-1)*v))
         face_ndofs = poly.shape[0]
         for f in topology[2]:
-            x[2].append(np.dot(ptsr,(geometry[f][1]-geometry[f][0],geometry[f][2]-geometry[f][0]))+geometry[f][0])
+            x[2].append(np.dot(ptsr,(geometry[f[1]]-geometry[f[0]],geometry[f[2]]-geometry[f[0]]))+geometry[f[0]])
             mat = np.zeros((face_ndofs, 1, len(ptsr), 1))
             for i in range(face_ndofs):
                 mat[i, 0, :, 0] = wts[:] * poly[i, :]
@@ -585,11 +585,11 @@ def create_tnt_prism(degree):
             x[2].append(np.zeros([0, 3]))
             M[2].append(np.zeros([0, 1, 0, 1]))
     else:
-        ptsr_t, wts_t = basix.make_quadrature(basix.CellType.triangle, 2 * degree - 2) # or triangle for face 0 or 5
+        ptsr_t, wts_t = basix.make_quadrature(basix.CellType.triangle, 2 * degree - 2)
         pol_set_t = basix.polynomials.tabulate_polynomial_set(
             basix.CellType.triangle, basix.PolynomialType.legendre, degree - 3, 2, ptsr_t
         )
-        ptsr_q, wts_q = basix.make_quadrature(basix.CellType.quadrilateral, 2 * degree - 2) # or triangle for face 0 or 5
+        ptsr_q, wts_q = basix.make_quadrature(basix.CellType.quadrilateral, 2 * degree - 2)
         pol_set_q = basix.polynomials.tabulate_polynomial_set(
              basix.CellType.quadrilateral, basix.PolynomialType.legendre, degree - 3, 2, ptsr_q
             )
@@ -616,10 +616,10 @@ def create_tnt_prism(degree):
                 wts = wts_q
                 ptsr = ptsr_q
             face_ndofs = poly.shape[0]
-            x[2].append(np.dot(ptsr,(geometry[f][1]-geometry[f][0],geometry[f][2]-geometry[f][0]))+geometry[f][0])
+            x[2].append(np.dot(ptsr,(geometry[f[1]]-geometry[f[0]],geometry[f[2]]-geometry[f[0]]))+geometry[f[0]])
             mat = np.zeros((face_ndofs, 1, len(ptsr), 1))
             for i in range(face_ndofs):
-                mat[i, 0, :, 0] = wts[:] * poly[i, :] #* np.linalg.norm(np.cross(geometry[f][1]-geometry[f][0],geometry[f][2]-geometry[f][0]))
+                mat[i, 0, :, 0] = wts[:] * poly[i, :] #* np.linalg.norm(np.cross(geometry[f[1]]-geometry[f[0]],geometry[f[2]]-geometry[f[0]]))
             M[2].append(mat)
 
     # Interior
@@ -628,7 +628,8 @@ def create_tnt_prism(degree):
         M[3].append(np.zeros([0, 1, 0, 1]))
     else:
         pts, wts = basix.make_quadrature(basix.CellType.prism, 2 * degree - 2)
-        #The dimension of the left over space tells us we should reduce the xy space by 1, so we are making the appopriate selection
+        #The dimension of the left over space tells us we should reduce the xy space by 1 as the xy bubble is 3rd order,
+        #so we are making the appopriate selection.
         sel=[]
         for i in range(round((degree - 2) * (degree - 3)/ 2)):
             for j in range(degree - 2):
@@ -671,6 +672,7 @@ def create_tnt_prism(degree):
 
 # Here is the matching tetrahedron, triangle and interval elements. Their boundary dofs are moments, not point values, except at the vertices.
 # The interval elements match the Legendre variant of the serendipity elements.
+# The performance of the triangle element matches the P type element, as the same space is spanned.
 
 def create_tnt_tetrahedron(degree):
     assert degree > 0
@@ -730,7 +732,7 @@ def create_tnt_tetrahedron(degree):
 
         for f in topology[2]:
             face_ndofs = poly.shape[0]
-            x[2].append(np.dot(ptsr,(geometry[f][1]-geometry[f][0],geometry[f][2]-geometry[f][0]))+geometry[f][0])
+            x[2].append(np.dot(ptsr,(geometry[f[1]]-geometry[f[0]],geometry[f[2]]-geometry[f[0]]))+geometry[f[0]])
             mat = np.zeros((face_ndofs, 1, len(ptsr), 1))
             for i in range(face_ndofs):
                 mat[i, 0, :, 0] = wts[:] * poly[i, :]
@@ -819,7 +821,7 @@ def create_tnt_triangle(degree):
             x[2].append(np.zeros([0, 2]))
             M[2].append(np.zeros([0, 1, 0, 1]))
     else:
-        ptsr, wts = basix.make_quadrature(basix.CellType.triangle, 2 * degree - 2) # or triangle for face 0 or 5
+        ptsr, wts = basix.make_quadrature(basix.CellType.triangle, 2 * degree - 2)
         pol_set = basix.polynomials.tabulate_polynomial_set(
             basix.CellType.triangle, basix.PolynomialType.legendre, degree - 3, 2, ptsr
         )
