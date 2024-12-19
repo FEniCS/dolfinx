@@ -84,7 +84,6 @@ elements = [
 cpp_elements = [_cpp.fem.FiniteElement_float64(
     e._e, None, True) for e in elements]
 dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, cpp_elements)
-
 # Both dofmaps have the same IndexMap, but different cell_dofs
 
 # Compile forms for each cell type
@@ -102,14 +101,16 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
 
 ffi = aforms[0].module.ffi
 
-# Assembler
+# Create a sparsity patter for form 0
 sp = create_sparsity_pattern(aforms[0])
+# Add to sparsity pattern for form 1
 build_sparsity_pattern(sp, aforms[1])
 sp.finalize()
-A = matrix_csr(sp)
 
+A = matrix_csr(sp)
 print(f"Assembling into matrix of size {len(A.data)} non-zeros")
 
+# Assemble
 assemble_matrix(A, aforms[0])
 assemble_matrix(A, aforms[1])
 
