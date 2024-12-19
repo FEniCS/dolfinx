@@ -20,8 +20,8 @@ class VTKCellType(Enum):
     quadrilateral = 70
     tetrahedron = 78
     hexahedron = 72
-    wedge = 73
     pyramid = 14
+    wedge = 73
 
     def __int__(self) -> int:
         return self.value
