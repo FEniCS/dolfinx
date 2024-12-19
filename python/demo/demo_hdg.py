@@ -38,10 +38,25 @@ from mpi4py import MPI
 
 import numpy as np
 
-import ufl
 from dolfinx import fem, mesh
 from dolfinx.cpp.mesh import cell_num_entities
-from ufl import div, dot, grad, inner
+from ufl import (
+    CellDiameter,
+    FacetNormal,
+    Measure,
+    MixedFunctionSpace,
+    SpatialCoordinate,
+    TestFunctions,
+    TrialFunctions,
+    div,
+    dot,
+    dx,
+    extract_blocks,
+    grad,
+    inner,
+    pi,
+    sin,
+)
 
 
 def par_print(comm, string):
@@ -50,10 +65,8 @@ def par_print(comm, string):
         sys.stdout.flush()
 
 
-def norm_L2(comm, v, measure=ufl.dx):
-    return np.sqrt(
-        comm.allreduce(fem.assemble_scalar(fem.form(ufl.inner(v, v) * measure)), op=MPI.SUM)
-    )
+def norm_L2(comm, v, measure=dx):
+    return np.sqrt(comm.allreduce(fem.assemble_scalar(fem.form(inner(v, v) * measure)), op=MPI.SUM))
 
 
 def compute_cell_boundary_facets(msh):
@@ -78,7 +91,7 @@ def u_e(x):
     """Exact solution."""
     u_e = 1
     for i in range(tdim):
-        u_e *= ufl.sin(ufl.pi * x[i])
+        u_e *= sin(pi * x[i])
     return u_e
 
 
@@ -113,14 +126,14 @@ V = fem.functionspace(msh, ("Discontinuous Lagrange", k))
 Vbar = fem.functionspace(facet_mesh, ("Discontinuous Lagrange", k))
 
 # Trial and test functions in mixed space
-W = ufl.MixedFunctionSpace(V, Vbar)
-u, ubar = ufl.TrialFunctions(W)
-v, vbar = ufl.TestFunctions(W)
+W = MixedFunctionSpace(V, Vbar)
+u, ubar = TrialFunctions(W)
+v, vbar = TestFunctions(W)
 
 
 # Define integration measures
 # Cell
-dx_c = ufl.Measure("dx", domain=msh)
+dx_c = Measure("dx", domain=msh)
 # Cell boundaries
 # We need to define an integration measure to integrate around the
 # boundary of each cell. The integration entities can be computed
@@ -128,9 +141,9 @@ dx_c = ufl.Measure("dx", domain=msh)
 cell_boundary_facets = compute_cell_boundary_facets(msh)
 cell_boundaries = 1  # A tag
 # Create the measure
-ds_c = ufl.Measure("ds", subdomain_data=[(cell_boundaries, cell_boundary_facets)], domain=msh)
+ds_c = Measure("ds", subdomain_data=[(cell_boundaries, cell_boundary_facets)], domain=msh)
 # Create a cell integral measure over the facet mesh
-dx_f = ufl.Measure("dx", domain=facet_mesh)
+dx_f = Measure("dx", domain=facet_mesh)
 
 # We write the mixed domain forms as integrals over msh. Hence, we must
 # provide a map from facets in msh to cells in facet_mesh. This is the
@@ -140,12 +153,12 @@ mesh_to_facet_mesh[facet_mesh_to_mesh] = np.arange(len(facet_mesh_to_mesh))
 entity_maps = {facet_mesh: mesh_to_facet_mesh}
 
 # Define forms
-h = ufl.CellDiameter(msh)
-n = ufl.FacetNormal(msh)
+h = CellDiameter(msh)
+n = FacetNormal(msh)
 gamma = 16.0 * k**2 / h  # Scaled penalty parameter
 
-x = ufl.SpatialCoordinate(msh)
-c = 1.0 + 0.1 * ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])
+x = SpatialCoordinate(msh)
+c = 1.0 + 0.1 * sin(pi * x[0]) * sin(pi * x[1])
 a = (
     inner(c * grad(u), grad(v)) * dx_c
     - inner(c * (u - ubar), dot(grad(v), n)) * ds_c(cell_boundaries)
@@ -160,8 +173,8 @@ L = inner(f, v) * dx_c
 L += inner(fem.Constant(facet_mesh, dtype(0.0)), vbar) * dx_f
 
 # Define block structure
-a_blocked = dolfinx.fem.form(ufl.extract_blocks(a), entity_maps=entity_maps)
-L_blocked = dolfinx.fem.form(ufl.extract_blocks(L))
+a_blocked = dolfinx.fem.form(extract_blocks(a), entity_maps=entity_maps)
+L_blocked = dolfinx.fem.form(extract_blocks(L))
 
 # Apply Dirichlet boundary conditions
 # We begin by locating the boundary facets of msh
@@ -220,9 +233,9 @@ except ImportError:
 
 
 # Compute errors
-x = ufl.SpatialCoordinate(msh)
+x = SpatialCoordinate(msh)
 e_u = norm_L2(msh.comm, u - u_e(x))
-x_bar = ufl.SpatialCoordinate(facet_mesh)
+x_bar = SpatialCoordinate(facet_mesh)
 e_ubar = norm_L2(msh.comm, ubar - u_e(x_bar))
 par_print(comm, f"e_u = {e_u}")
 par_print(comm, f"e_ubar = {e_ubar}")
