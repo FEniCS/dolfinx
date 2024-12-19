@@ -126,8 +126,6 @@ def write(mesh: Mesh, filename: str | Path):
             # Permute DOLFINx order to VTK
             map_vtk = np.argsort(_cpp.io.perm_vtk(entity_cells[i], local_dm.shape[1]))
             local_dm = local_dm[:, map_vtk]
-            # FIXME: add local to global map here
-
             global_dm = geom_imap.local_to_global(local_dm.flatten())
             geometry_flattened.append(global_dm)
             geometry_num_cell_dofs.append(
@@ -143,7 +141,6 @@ def write(mesh: Mesh, filename: str | Path):
         offset_start_position = sum(cell_start_position)
         offset_stop_position = sum(cell_stop_position)
         # Adapt offset for multiple processes
-        process_start_shift = 0 if mesh.comm.rank == 0 else 1
         accumulated_other_proc_topology = [
             ni * csp for (ni, csp) in zip(num_nodes_per_cell, cell_start_position)
         ]

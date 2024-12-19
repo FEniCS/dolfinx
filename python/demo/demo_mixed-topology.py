@@ -15,7 +15,7 @@ from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.la import matrix_csr
 from dolfinx.mesh import CellType, Mesh
 
-if MPI.COMM_WORLD.size > 1:
+if MPI.COMM_WORLD.size > 4:
     print("Not yet running in parallel")
     exit(0)
 
@@ -68,7 +68,10 @@ if MPI.COMM_WORLD.rank == 0:
         geom += [[ix / nx, iy / ny, iz / nz]]
 
 cells_np = [np.array(c) for c in cells]
-geomx = np.array(geom, dtype=np.float64)
+if len(geom) == 0:
+    geomx = np.empty((0, 3), dtype=np.float64)
+else:
+    geomx = np.array(geom, dtype=np.float64)
 hexahedron = coordinate_element(CellType.hexahedron, 1)
 prism = coordinate_element(CellType.prism, 1)
 
@@ -138,6 +141,9 @@ for ct in range(2):
 
 
 write(mesh, Path("mixed_mesh.vtkhdf"))
+
+exit(0)
+
 
 # Quick solve
 A_scipy = A.to_scipy()
