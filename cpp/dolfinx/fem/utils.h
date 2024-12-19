@@ -172,7 +172,6 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
 /// for calling SparsityPattern::assemble.
 /// @param[in] pattern The sparsity pattern to add to
 /// @param[in] a A bilinear form
-/// @return The corresponding sparsity pattern
 template <dolfinx::scalar T, std::floating_point U>
 void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
 {
