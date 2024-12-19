@@ -52,6 +52,7 @@ vtk_to_str = {
     VTKCellType.hexahedron: "hexahedron",
     VTKCellType.vertex: "point",
     VTKCellType.wedge: "prism",
+    VTKCellType.pyramid: "pyramid",
 }
 
 
