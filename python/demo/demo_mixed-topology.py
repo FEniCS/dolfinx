@@ -7,7 +7,14 @@ import basix
 import dolfinx.cpp as _cpp
 import ufl
 from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner, create_mesh
-from dolfinx.fem import FunctionSpace, coordinate_element, form, assemble_matrix, build_sparsity_pattern, create_sparsity_pattern
+from dolfinx.fem import (
+    FunctionSpace,
+    assemble_matrix,
+    build_sparsity_pattern,
+    coordinate_element,
+    create_sparsity_pattern,
+    form,
+)
 from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.la import matrix_csr
 from dolfinx.mesh import CellType, Mesh
@@ -71,8 +78,7 @@ prism = coordinate_element(CellType.prism, 1)
 
 part = create_cell_partitioner(GhostMode.none)
 mesh = create_mesh(
-    MPI.COMM_WORLD, cells_np, [
-        hexahedron._cpp_object, prism._cpp_object], geomx, part
+    MPI.COMM_WORLD, cells_np, [hexahedron._cpp_object, prism._cpp_object], geomx, part
 )
 
 # Create order 1 dofmaps on mesh
@@ -81,8 +87,7 @@ elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
 
-cpp_elements = [_cpp.fem.FiniteElement_float64(
-    e._e, None, True) for e in elements]
+cpp_elements = [_cpp.fem.FiniteElement_float64(e._e, None, True) for e in elements]
 dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, cpp_elements)
 # Both dofmaps have the same IndexMap, but different cell_dofs
 
@@ -131,8 +136,7 @@ xdmf = """<?xml version="1.0"?>
 
 """
 
-perm = [cell_perm_vtk(CellType.hexahedron, 8),
-        cell_perm_vtk(CellType.prism, 6)]
+perm = [cell_perm_vtk(CellType.hexahedron, 8), cell_perm_vtk(CellType.prism, 6)]
 topologies = ["Hexahedron", "Wedge"]
 
 for j in range(2):
