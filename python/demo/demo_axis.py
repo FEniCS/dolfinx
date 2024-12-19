@@ -458,9 +458,9 @@ if MPI.COMM_WORLD.rank == 0:
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
 partitioner = dolfinx.cpp.mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.shared_facet)
-msh, cell_tags, facet_tags = io.gmshio.model_to_mesh(
-    model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner
-)
+mesh_data = io.gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
+assert mesh_data.cell_tags is not None, "Cell tags are missing"
+assert mesh_data.facet_tags is not None, "Facet tags are missing"
 
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()
@@ -468,13 +468,15 @@ MPI.COMM_WORLD.barrier()
 
 # Visually check of the mesh and of the subdomains using PyVista:
 
-tdim = msh.topology.dim
+tdim = mesh_data.mesh.topology.dim
 if have_pyvista:
-    topology, cell_types, geometry = plot.vtk_mesh(msh, 2)
+    topology, cell_types, geometry = plot.vtk_mesh(mesh_data.mesh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     plotter = pyvista.Plotter()
-    num_local_cells = msh.topology.index_map(tdim).size_local
-    grid.cell_data["Marker"] = cell_tags.values[cell_tags.indices < num_local_cells]
+    num_local_cells = mesh_data.mesh.topology.index_map(tdim).size_local
+    grid.cell_data["Marker"] = mesh_data.cell_tags.values[
+        mesh_data.cell_tags.indices < num_local_cells
+    ]
     grid.set_active_scalars("Marker")
     plotter.add_mesh(grid, show_edges=True)
     plotter.view_xy()
@@ -489,15 +491,17 @@ if have_pyvista:
 # will use Lagrange elements:
 
 degree = 3
-curl_el = element("N1curl", msh.basix_cell(), degree, dtype=real_type)
-lagr_el = element("Lagrange", msh.basix_cell(), degree, dtype=real_type)
-V = fem.functionspace(msh, mixed_element([curl_el, lagr_el]))
+curl_el = element("N1curl", mesh_data.mesh.basix_cell(), degree, dtype=real_type)
+lagr_el = element("Lagrange", mesh_data.mesh.basix_cell(), degree, dtype=real_type)
+V = fem.functionspace(mesh_data.mesh, mixed_element([curl_el, lagr_el]))
 
 # The integration domains of our problem are the following:
 
 # +
 # Measures for subdomains
-dx = ufl.Measure("dx", msh, subdomain_data=cell_tags, metadata={"quadrature_degree": 5})
+dx = ufl.Measure(
+    "dx", mesh_data.mesh, subdomain_data=mesh_data.cell_tags, metadata={"quadrature_degree": 5}
+)
 dDom = dx((au_tag, bkg_tag))
 dPml = dx(pml_tag)
 # -
@@ -509,10 +513,10 @@ n_bkg = 1  # Background refractive index
 eps_bkg = n_bkg**2  # Background relative permittivity
 eps_au = -1.0782 + 1j * 5.8089
 
-D = fem.functionspace(msh, ("DG", 0))
+D = fem.functionspace(mesh_data.mesh, ("DG", 0))
 eps = fem.Function(D)
-au_cells = cell_tags.find(au_tag)
-bkg_cells = cell_tags.find(bkg_tag)
+au_cells = mesh_data.cell_tags.find(au_tag)
+bkg_cells = mesh_data.cell_tags.find(bkg_tag)
 eps.x.array[au_cells] = np.full_like(au_cells, eps_au, dtype=eps.x.array.dtype)
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=eps.x.array.dtype)
 eps.x.scatter_forward()
@@ -556,7 +560,7 @@ I0 = 0.5 * n_bkg / Z0  # Intensity
 # We now now define `eps_pml` and `mu_pml`:
 
 # +
-rho, z = ufl.SpatialCoordinate(msh)
+rho, z = ufl.SpatialCoordinate(mesh_data.mesh)
 alpha = 5
 r = ufl.sqrt(rho**2 + z**2)
 
@@ -577,7 +581,7 @@ eps_pml, mu_pml = create_eps_mu(pml_coords, rho, eps_bkg, 1)
 Eh_m = fem.Function(V)
 Esh = fem.Function(V)
 
-n = ufl.FacetNormal(msh)
+n = ufl.FacetNormal(mesh_data.mesh)
 n_3d = ufl.as_vector((n[0], n[1], 0))
 
 # Geometrical cross section of the sphere, for efficiency calculation
@@ -585,10 +589,12 @@ gcs = np.pi * radius_sph**2
 
 # Marker functions for the scattering efficiency integral
 marker = fem.Function(D)
-scatt_facets = facet_tags.find(scatt_tag)
-incident_cells = mesh.compute_incident_entities(msh.topology, scatt_facets, tdim - 1, tdim)
-msh.topology.create_connectivity(tdim, tdim)
-midpoints = mesh.compute_midpoints(msh, tdim, incident_cells)
+scatt_facets = mesh_data.facet_tags.find(scatt_tag)
+incident_cells = mesh.compute_incident_entities(
+    mesh_data.mesh.topology, scatt_facets, tdim - 1, tdim
+)
+mesh_data.mesh.topology.create_connectivity(tdim, tdim)
+midpoints = mesh.compute_midpoints(mesh_data.mesh, tdim, incident_cells)
 inner_cells = incident_cells[(midpoints[:, 0] ** 2 + midpoints[:, 1] ** 2) < (radius_scatt) ** 2]
 marker.x.array[inner_cells] = 1
 
@@ -596,7 +602,7 @@ marker.x.array[inner_cells] = 1
 dAu = dx(au_tag)
 
 # Define integration facet for the scattering efficiency
-dS = ufl.Measure("dS", msh, subdomain_data=facet_tags)
+dS = ufl.Measure("dS", mesh_data.mesh, subdomain_data=mesh_data.facet_tags)
 # -
 
 # We also specify a variable `phi`, corresponding to the $\phi$ angle of
@@ -620,7 +626,7 @@ dS = ufl.Measure("dS", msh, subdomain_data=facet_tags)
 phi = np.pi / 4
 
 # Initialize phase term
-phase = fem.Constant(msh, scalar_type(np.exp(1j * 0 * phi)))
+phase = fem.Constant(mesh_data.mesh, scalar_type(np.exp(1j * 0 * phi)))
 # -
 
 # We now solve the problem:
@@ -655,7 +661,7 @@ for m in m_list:
     elif sys.hasExternalPackage("superlu_dist"):  # type: ignore
         mat_factor_backend = "superlu_dist"
     else:
-        if msh.comm.size > 1:
+        if mesh_data.mesh.comm.size > 1:
             raise RuntimeError("This demo requires a parallel linear algebra backend.")
         else:
             mat_factor_backend = "petsc"
@@ -705,8 +711,8 @@ for m in m_list:
         q_sca_fenics_proc = (
             fem.assemble_scalar(fem.form((P("+") + P("-")) * rho * dS(scatt_tag))) / gcs / I0
         ).real
-        q_abs_fenics = msh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
-        q_sca_fenics = msh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
+        q_abs_fenics = mesh_data.mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
+        q_sca_fenics = mesh_data.mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
     elif m == m_list[0]:  # initialize and add 2 factor
         P = 2 * np.pi * ufl.inner(-ufl.cross(Esh_m, ufl.conj(Hsh_m)), n_3d) * marker
         Q = 2 * np.pi * eps_au.imag * k0 * (ufl.inner(Eh_m, Eh_m)) / Z0 / n_bkg
@@ -714,8 +720,8 @@ for m in m_list:
         q_sca_fenics_proc = (
             fem.assemble_scalar(fem.form((P("+") + P("-")) * rho * dS(scatt_tag))) / gcs / I0
         ).real
-        q_abs_fenics = msh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
-        q_sca_fenics = msh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
+        q_abs_fenics = mesh_data.mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
+        q_sca_fenics = mesh_data.mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
     else:  # do not initialize and add 2 factor
         P = 2 * np.pi * ufl.inner(-ufl.cross(Esh_m, ufl.conj(Hsh_m)), n_3d) * marker
         Q = 2 * np.pi * eps_au.imag * k0 * (ufl.inner(Eh_m, Eh_m)) / Z0 / n_bkg
@@ -723,8 +729,8 @@ for m in m_list:
         q_sca_fenics_proc = (
             fem.assemble_scalar(fem.form((P("+") + P("-")) * rho * dS(scatt_tag))) / gcs / I0
         ).real
-        q_abs_fenics += msh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
-        q_sca_fenics += msh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
+        q_abs_fenics += mesh_data.mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
+        q_sca_fenics += mesh_data.mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
 q_ext_fenics = q_abs_fenics + q_sca_fenics
 # -
@@ -783,11 +789,11 @@ if MPI.COMM_WORLD.rank == 0:
 # assert err_ext < 0.01
 
 if has_vtx:
-    v_dg_el = element("DG", msh.basix_cell(), degree, shape=(3,), dtype=real_type)
-    W = fem.functionspace(msh, v_dg_el)
+    v_dg_el = element("DG", mesh_data.mesh.basix_cell(), degree, shape=(3,), dtype=real_type)
+    W = fem.functionspace(mesh_data.mesh, v_dg_el)
     Es_dg = fem.Function(W)
     Es_expr = fem.Expression(Esh, W.element.interpolation_points)
     Es_dg.interpolate(Es_expr)
-    with VTXWriter(msh.comm, "sols/Es.bp", Es_dg) as f:
+    with VTXWriter(mesh_data.mesh.comm, "sols/Es.bp", Es_dg) as f:
         f.write(0.0)
 # -
