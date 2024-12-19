@@ -37,6 +37,7 @@ class VTKCellType(Enum):
     quadrilateral = 70
     tetrahedron = 78
     hexahedron = 72
+    pyramid = 14
     wedge = 73
 
     def __str__(self) -> str:
@@ -52,6 +53,8 @@ class VTKCellType(Enum):
             return "hexahedron"
         elif self == VTKCellType.vertex:
             return "point"
+        elif self == VTKCellType.pyramid:
+            return "pyramid"
         elif self == VTKCellType.wedge:
             return "prism"
         else:
@@ -73,6 +76,8 @@ class VTKCellType(Enum):
             return VTKCellType.vertex
         elif cell == "prism":
             return VTKCellType.wedge
+        elif cell == "pyramid":
+            return VTKCellType.pyramid
         else:
             raise ValueError(f"Unknown cell type: {cell}")
 

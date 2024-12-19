@@ -1,6 +1,9 @@
+from pathlib import Path
+
 from mpi4py import MPI
 
 import numpy as np
+from read_write_vtkhdf import write
 from scipy.sparse.linalg import spsolve
 
 import basix
@@ -23,8 +26,8 @@ ny = 16
 nz = 16
 n_cells = nx * ny * nz
 
-cells: list = [[], [], []]
-orig_idx: list = [[], [], []]
+cells: list = [[], [], [], []]
+orig_idx: list = [[], [], [], []]
 geom = []
 
 if MPI.COMM_WORLD.rank == 0:
@@ -43,21 +46,49 @@ if MPI.COMM_WORLD.rank == 0:
         v5 = v1 + (nx + 1) * (ny + 1)
         v6 = v2 + (nx + 1) * (ny + 1)
         v7 = v3 + (nx + 1) * (ny + 1)
-        if ix < nx / 2:
-            cells[0] += [v0, v1, v2, v3, v4, v5, v6, v7]
-            orig_idx[0] += [idx]
-            idx += 1
-        elif iz < nz / 2:
-            cells[1] += [v0, v1, v2, v4, v5, v6]
-            orig_idx[1] += [idx]
-            idx += 1
-            cells[1] += [v1, v2, v3, v5, v6, v7]
-            orig_idx[1] += [idx]
-            idx += 1
+
+        if iz < nz / 2:
+            if (ix < nx / 2 and iy < ny / 2) or (ix >= nx / 2 and iy >= ny / 2):
+                cells[0] += [v0, v1, v2, v3, v4, v5, v6, v7]
+                orig_idx[0] += [idx]
+                idx += 1
+            else:
+                cells[1] += [v0, v1, v3, v4, v5, v7]
+                orig_idx[1] += [idx]
+                idx += 1
+                cells[1] += [v0, v2, v3, v4, v6, v7]
+                orig_idx[1] += [idx]
+                idx += 1
         else:
-            cells[2] += [v0, v1, v2, v3]
-            orig_idx[2] += [idx]
-            idx += 1
+            if (iy < ny / 2 and ix >= nx / 2) or (iy >= ny / 2 and ix < nx / 2):
+                cells[2] += [v0, v1, v3, v7]
+                orig_idx[2] += [idx]
+                idx += 1
+                cells[2] += [v0, v1, v7, v5]
+                orig_idx[2] += [idx]
+                idx += 1
+                cells[2] += [v0, v5, v7, v4]
+                orig_idx[2] += [idx]
+                idx += 1
+                cells[2] += [v0, v3, v2, v7]
+                orig_idx[2] += [idx]
+                idx += 1
+                cells[2] += [v0, v6, v4, v7]
+                orig_idx[2] += [idx]
+                idx += 1
+                cells[2] += [v0, v2, v6, v7]
+                orig_idx[2] += [idx]
+                idx += 1
+            else:
+                cells[3] += [v0, v1, v2, v3, v7]
+                orig_idx[3] += [idx]
+                idx += 1
+                cells[3] += [v0, v1, v4, v5, v7]
+                orig_idx[3] += [idx]
+                idx += 1
+                cells[3] += [v0, v2, v4, v6, v7]
+                orig_idx[3] += [idx]
+                idx += 1
 
     n_points = (nx + 1) * (ny + 1) * (nz + 1)
     sqxy = (nx + 1) * (ny + 1)
@@ -70,7 +101,7 @@ if MPI.COMM_WORLD.rank == 0:
 
 cells_np = [np.array(c) for c in cells]
 geomx = np.array(geom, dtype=np.float64)
-cell_types = [CellType.hexahedron, CellType.prism, CellType.tetrahedron]
+cell_types = [CellType.hexahedron, CellType.prism, CellType.tetrahedron, CellType.pyramid]
 coordinate_elements = [coordinate_element(cell, 1) for cell in cell_types]
 
 part = create_cell_partitioner(GhostMode.none)
@@ -133,8 +164,6 @@ for ct, aform in enumerate(aforms):
         )
         A.add(A_local, cell_dofs_j, cell_dofs_j, 1)
 
-from read_write_vtkhdf import write
-from pathlib import Path
 write(mesh, Path("mixed_mesh.vtkhdf"))
 
 # Quick solve
@@ -154,10 +183,15 @@ xdmf = """<?xml version="1.0"?>
 
 """
 
-perm = [cell_perm_vtk(CellType.hexahedron, 8), cell_perm_vtk(CellType.prism, 6)]
-topologies = ["Hexahedron", "Wedge"]
+perm = [
+    cell_perm_vtk(CellType.hexahedron, 8),
+    cell_perm_vtk(CellType.prism, 6),
+    cell_perm_vtk(CellType.tetrahedron, 4),
+    cell_perm_vtk(CellType.pyramid, 5),
+]
+topologies = ["Hexahedron", "Wedge", "Tetrahedron", "Pyramid"]
 
-for j in range(2):
+for j in range(len(topologies)):
     vtk_topology = []
     geom_dm = mesh.geometry.dofmaps(j)
     for c in geom_dm:
