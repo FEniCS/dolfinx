@@ -857,9 +857,11 @@ void declare_form(nb::module_& m, std::string type)
       nb::arg("constants"), nb::arg("subdomains"), nb::arg("entity_maps"),
       nb::arg("mesh"), "Create Form from a pointer to ufcx_form.");
 
-  m.def("create_sparsity_pattern",
-        &dolfinx::fem ::create_sparsity_pattern<T, U>, nb::arg("a"),
-        "Create a sparsity pattern.");
+  m.def("create_sparsity_pattern", &dolfinx::fem::create_sparsity_pattern<T, U>,
+        nb::arg("a"), "Create a sparsity pattern.");
+
+  m.def("build_sparsity_pattern", &dolfinx::fem::build_sparsity_pattern<T, U>,
+        nb::arg("pattern"), nb::arg("a"), "Build a sparsity pattern.");
 }
 
 template <typename T>

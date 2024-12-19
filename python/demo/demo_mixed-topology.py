@@ -7,7 +7,7 @@ import basix
 import dolfinx.cpp as _cpp
 import ufl
 from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner, create_mesh
-from dolfinx.fem import FunctionSpace, coordinate_element, form, assemble_matrix
+from dolfinx.fem import FunctionSpace, coordinate_element, form, assemble_matrix, build_sparsity_pattern, create_sparsity_pattern
 from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.la import matrix_csr
 from dolfinx.mesh import CellType, Mesh
@@ -71,7 +71,8 @@ prism = coordinate_element(CellType.prism, 1)
 
 part = create_cell_partitioner(GhostMode.none)
 mesh = create_mesh(
-    MPI.COMM_WORLD, cells_np, [hexahedron._cpp_object, prism._cpp_object], geomx, part
+    MPI.COMM_WORLD, cells_np, [
+        hexahedron._cpp_object, prism._cpp_object], geomx, part
 )
 
 # Create order 1 dofmaps on mesh
@@ -80,12 +81,14 @@ elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
 
-cpp_elements = [_cpp.fem.FiniteElement_float64(e._e, None, True) for e in elements]
+cpp_elements = [_cpp.fem.FiniteElement_float64(
+    e._e, None, True) for e in elements]
 dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, cpp_elements)
 
 # Both dofmaps have the same IndexMap, but different cell_dofs
 # Create SparsityPattern
-sp = _cpp.la.SparsityPattern(MPI.COMM_WORLD, [dofmaps[0].index_map, dofmaps[0].index_map], [1, 1])
+sp = _cpp.la.SparsityPattern(
+    MPI.COMM_WORLD, [dofmaps[0].index_map, dofmaps[0].index_map], [1, 1])
 for ct in range(2):
     num_cells_type = mesh.topology.index_maps(3)[ct].size_local
     print(f"For cell type {ct}, create sparsity with {num_cells_type} cells.")
@@ -113,10 +116,13 @@ ffi = aforms[0].module.ffi
 # print(f"Assembling into matrix of size {len(A.data)} non-zeros")
 
 # Assemble for each cell type (ct)
+
+
 def custom_assemble(A, ct):
     num_cells_type = mesh.topology.index_maps(3)[ct].size_local
     geom_dm = mesh.geometry.dofmaps(ct)
-    kernel = getattr(aforms[ct].ufcx_form.form_integrals[0], "tabulate_tensor_float64")
+    kernel = getattr(
+        aforms[ct].ufcx_form.form_integrals[0], "tabulate_tensor_float64")
     dm = aforms[ct].function_spaces[0].dofmap
     for j in range(num_cells_type):
         cell_dofs_j = dm.cell_dofs(j)
@@ -132,11 +138,16 @@ def custom_assemble(A, ct):
         )
         A.add(A_local, cell_dofs_j, cell_dofs_j, 1)
 
+
 A_cust = matrix_csr(sp)
 custom_assemble(A_cust, 0)
 custom_assemble(A_cust, 1)
 
-A = matrix_csr(sp)
+sp1 = create_sparsity_pattern(aforms[0])
+build_sparsity_pattern(sp1, aforms[1])
+sp1.finalize()
+
+A = matrix_csr(sp1)
 assemble_matrix(A, aforms[0])
 assemble_matrix(A, aforms[1])
 
@@ -160,7 +171,8 @@ xdmf = """<?xml version="1.0"?>
 
 """
 
-perm = [cell_perm_vtk(CellType.hexahedron, 8), cell_perm_vtk(CellType.prism, 6)]
+perm = [cell_perm_vtk(CellType.hexahedron, 8),
+        cell_perm_vtk(CellType.prism, 6)]
 topologies = ["Hexahedron", "Wedge"]
 
 for j in range(2):

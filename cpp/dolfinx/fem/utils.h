@@ -151,19 +151,39 @@ extract_function_spaces(const std::vector<std::vector<const Form<T, U>*>>& a)
 template <dolfinx::scalar T, std::floating_point U>
 la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
 {
+  std::shared_ptr mesh = a.mesh();
+  assert(mesh);
+  std::array<std::reference_wrapper<const DofMap>, 2> dofmaps{
+      *a.function_spaces().at(0)->dofmap(),
+      *a.function_spaces().at(1)->dofmap()};
+
+  const std::array index_maps{dofmaps[0].get().index_map,
+                              dofmaps[1].get().index_map};
+  const std::array bs
+      = {dofmaps[0].get().index_map_bs(), dofmaps[1].get().index_map_bs()};
+
+  la::SparsityPattern pattern(mesh->comm(), index_maps, bs);
+  build_sparsity_pattern(pattern, a);
+  return pattern;
+}
+
+/// @brief Create a sparsity pattern for a given form.
+/// @note The pattern is not finalised, i.e. the caller is responsible
+/// for calling SparsityPattern::assemble.
+/// @param[in] pattern The sparsity pattern to add to
+/// @param[in] a A bilinear form
+/// @return The corresponding sparsity pattern
+template <dolfinx::scalar T, std::floating_point U>
+void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
+{
   if (a.rank() != 2)
   {
     throw std::runtime_error(
         "Cannot create sparsity pattern. Form is not a bilinear.");
   }
 
-  // Get dof maps and mesh
-  std::array<std::reference_wrapper<const DofMap>, 2> dofmaps{
-      *a.function_spaces().at(0)->dofmap(),
-      *a.function_spaces().at(1)->dofmap()};
   std::shared_ptr mesh = a.mesh();
   assert(mesh);
-
   std::shared_ptr mesh0 = a.function_spaces().at(0)->mesh();
   assert(mesh0);
   std::shared_ptr mesh1 = a.function_spaces().at(1)->mesh();
@@ -181,12 +201,6 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
 
   common::Timer t0("Build sparsity");
 
-  // Get common::IndexMaps for each dimension
-  const std::array index_maps{dofmaps[0].get().index_map,
-                              dofmaps[1].get().index_map};
-  const std::array bs
-      = {dofmaps[0].get().index_map_bs(), dofmaps[1].get().index_map_bs()};
-
   auto extract_cells = [](std::span<const std::int32_t> facets)
   {
     assert(facets.size() % 2 == 0);
@@ -197,8 +211,11 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
     return cells;
   };
 
+  std::array<std::reference_wrapper<const DofMap>, 2> dofmaps{
+      *a.function_spaces().at(0)->dofmap(),
+      *a.function_spaces().at(1)->dofmap()};
+
   // Create and build sparsity pattern
-  la::SparsityPattern pattern(mesh->comm(), index_maps, bs);
   for (auto type : types)
   {
     std::vector<int> ids = a.integral_ids(type);
@@ -237,8 +254,6 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
   }
 
   t0.stop();
-
-  return pattern;
 }
 
 /// Create an ElementDofLayout from a FiniteElement
