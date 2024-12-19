@@ -15,11 +15,6 @@ from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.la import matrix_csr
 from dolfinx.mesh import CellType, Mesh
 
-if MPI.COMM_WORLD.size > 4:
-    print("Not yet running in parallel")
-    exit(0)
-
-
 # Create a mesh
 nx = 25
 ny = 23
@@ -169,6 +164,10 @@ for ct, aform in enumerate(aforms):
         A.add(A_local, cell_dofs_j, cell_dofs_j, 1)
 
 write(mesh, Path("mixed_mesh.vtkhdf"))
+
+if MPI.COMM_WORLD.size > 1:
+    print("Solver not parallelised yet")
+    exit(0)
 
 # Quick solve
 A_scipy = A.to_scipy()
