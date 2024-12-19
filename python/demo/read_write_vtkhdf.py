@@ -7,23 +7,6 @@ import numpy as np
 import dolfinx.cpp as _cpp
 from dolfinx.mesh import Mesh
 
-# # Copy from dolfinx::io::xdmf_utils.cpp
-# xdmf_to_dolfin = {
-#     "polyvertex": ("point", 1),
-#     "polyline": ("interval", 1),
-#     "edge_3": ("interval", 2),
-#     "triangle": ("triangle", 1),
-#     "triangle_6": ("triangle", 2),
-#     "tetrahedron": ("tetrahedron", 1),
-#     "tetrahedron_10": ("tetrahedron", 2),
-#     "quadrilateral": ("quadrilateral", 1),
-#     "quadrilateral_9": ("quadrilateral", 2),
-#     "quadrilateral_16": ("quadrilateral", 3),
-#     "hexahedron": ("hexahedron", 1),
-#     "wedge": ("prism", 1),
-#     "hexahedron_27": ("hexahedron", 2),
-# }
-
 
 class VTKCellType(Enum):
     """
@@ -95,6 +78,10 @@ def write(mesh: Mesh, filename: str | Path):
         geom_set = hdf.create_dataset(p_string, geom_global_shape, dtype=gdtype)
         geom_set[geom_irange[0] : geom_irange[1], :] = mesh.geometry.x[: geom_imap.size_local, :]
 
+        # Metadata for number of nodes
+        num_points = hdf.create_dataset("NumberOfPoints", (1,), dtype=np.int64)
+        num_points[0] = geom_imap.size_global
+
         # VTKHDF5 stores the cells as an adjacency list, where cell types might be jumbled up.
         topology_flattened = []
         topology_num_cell_points = []
@@ -161,7 +148,3 @@ def write(mesh: Mesh, filename: str | Path):
             dtype=np.int64,
             data=np.array([sum(num_cells_global)], dtype=np.int64),
         )
-
-        # Similar metadata for number of nodes
-        num_points = hdf.create_dataset("NumberOfPoints", (1,), dtype=np.int64)
-        num_points[0] = geom_imap.size_global
