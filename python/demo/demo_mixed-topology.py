@@ -170,9 +170,6 @@ for ct, aform in enumerate(aforms):
 
 write(mesh, Path("mixed_mesh.vtkhdf"))
 
-exit(0)
-
-
 # Quick solve
 A_scipy = A.to_scipy()
 b_scipy = np.ones(A_scipy.shape[1])
