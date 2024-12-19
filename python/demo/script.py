@@ -7,6 +7,7 @@ from mpi4py import MPI
 
 import h5py
 import numpy as np
+from read_write_vtkhdf import write
 
 import basix.ufl
 import dolfinx
@@ -172,7 +173,6 @@ def find_all_unique_cell_types(comm, cell_types, num_nodes):
 
 
 x, connectivity, offsets, cell_types = read_vtkhdf("test", MPI.COMM_WORLD)
-
 num_nodes_per_cell = offsets[1:] - offsets[:-1]
 unique_cells = find_all_unique_cell_types(MPI.COMM_WORLD, cell_types, num_nodes_per_cell)
 
@@ -180,7 +180,6 @@ unique_cells = find_all_unique_cell_types(MPI.COMM_WORLD, cell_types, num_nodes_
 masks = [
     np.flatnonzero((cell_types == ct) & (num_nodes_per_cell == nn)) for (ct, nn) in unique_cells
 ]
-
 
 cell_types: list[basix.ufl._BasixElement] = []
 connectivities: list[np.ndarray] = []
@@ -213,6 +212,15 @@ mesh = create_mesh(
     part,
 )
 
-print(mesh.topology.entity_types)
-print(mesh.topology.connectivity((2, 0), (0, 0)))
-print(mesh.topology.connectivity((2, 1), (0, 0)))
+print(
+    mesh.comm.rank,
+    mesh.topology.index_maps(2)[0].size_local,
+    mesh.topology.index_maps(2)[1].size_local,
+)
+
+# print(mesh.topology.entity_types)
+# print(mesh.topology.connectivity((2, 0), (0, 0)))
+# print(mesh.topology.connectivity((2, 1), (0, 0)))
+
+
+write(mesh, f"test_{MPI.COMM_WORLD.size}")

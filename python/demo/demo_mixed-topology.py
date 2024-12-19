@@ -15,15 +15,15 @@ from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.la import matrix_csr
 from dolfinx.mesh import CellType, Mesh
 
-if MPI.COMM_WORLD.size > 1:
+if MPI.COMM_WORLD.size > 4:
     print("Not yet running in parallel")
     exit(0)
 
 
 # Create a mesh
-nx = 16
-ny = 16
-nz = 16
+nx = 25
+ny = 23
+nz = 21
 n_cells = nx * ny * nz
 
 cells: list = [[], [], [], []]
@@ -101,9 +101,13 @@ if MPI.COMM_WORLD.rank == 0:
 
 cells_np = [np.array(c) for c in cells]
 geomx = np.array(geom, dtype=np.float64)
+if len(geom) == 0:
+    geomx = np.empty((0, 3), dtype=np.float64)
+else:
+    geomx = np.array(geom, dtype=np.float64)
+
 cell_types = [CellType.hexahedron, CellType.prism, CellType.tetrahedron, CellType.pyramid]
 coordinate_elements = [coordinate_element(cell, 1) for cell in cell_types]
-
 part = create_cell_partitioner(GhostMode.none)
 mesh = create_mesh(
     MPI.COMM_WORLD, cells_np, [e._cpp_object for e in coordinate_elements], geomx, part
@@ -165,6 +169,9 @@ for ct, aform in enumerate(aforms):
         A.add(A_local, cell_dofs_j, cell_dofs_j, 1)
 
 write(mesh, Path("mixed_mesh.vtkhdf"))
+
+exit(0)
+
 
 # Quick solve
 A_scipy = A.to_scipy()

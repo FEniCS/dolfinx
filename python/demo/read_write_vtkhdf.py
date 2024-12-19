@@ -40,49 +40,24 @@ class VTKCellType(Enum):
     pyramid = 14
     wedge = 73
 
-    def __str__(self) -> str:
-        if self == VTKCellType.line:
-            return "interval"
-        elif self == VTKCellType.triangle:
-            return "triangle"
-        elif self == VTKCellType.quadrilateral:
-            return "quadrilateral"
-        elif self == VTKCellType.tetrahedron:
-            return "tetrahedron"
-        elif self == VTKCellType.hexahedron:
-            return "hexahedron"
-        elif self == VTKCellType.vertex:
-            return "point"
-        elif self == VTKCellType.pyramid:
-            return "pyramid"
-        elif self == VTKCellType.wedge:
-            return "prism"
-        else:
-            raise ValueError(f"Unknown cell type: {self}")
-
-    @classmethod
-    def to_vtk(self, cell):
-        if cell == "interval":
-            return VTKCellType.line
-        elif cell == "triangle":
-            return VTKCellType.triangle
-        elif cell == "quadrilateral":
-            return VTKCellType.quadrilateral
-        elif cell == "tetrahedron":
-            return VTKCellType.tetrahedron
-        elif cell == "hexahedron":
-            return VTKCellType.hexahedron
-        elif cell == "point":
-            return VTKCellType.vertex
-        elif cell == "prism":
-            return VTKCellType.wedge
-        elif cell == "pyramid":
-            return VTKCellType.pyramid
-        else:
-            raise ValueError(f"Unknown cell type: {cell}")
-
     def __int__(self) -> int:
         return self.value
+
+
+vtk_to_str = {
+    VTKCellType.line: "interval",
+    VTKCellType.triangle: "triangle",
+    VTKCellType.quadrilateral: "quadrilateral",
+    VTKCellType.tetrahedron: "tetrahedron",
+    VTKCellType.hexahedron: "hexahedron",
+    VTKCellType.vertex: "point",
+    VTKCellType.wedge: "prism",
+    VTKCellType.pyramid: "pyramid",
+}
+
+
+def str_to_vtk(name):
+    return next(key for (key, value) in vtk_to_str.items() if value == name)
 
 
 def write(mesh: Mesh, filename: str | Path):
@@ -102,11 +77,13 @@ def write(mesh: Mesh, filename: str | Path):
         hdf.attrs["Version"] = [2, 2]
         hdf.attrs["Type"] = np.bytes_("UnstructuredGrid")
 
-        # Extract topology information
+        # Extract topology information for each cell type
+        cell_types = mesh.topology.entity_types[mesh.topology.dim]
         cell_index_maps = [imap for imap in mesh.topology.index_maps(mesh.topology.dim)]
-        num_cells = sum([imap.size_global for imap in cell_index_maps])
+        num_cells = [cmap.size_local for cmap in cell_index_maps]
+        num_cells_global = [cmap.size_global for cmap in cell_index_maps]
 
-        # Extract various ownership information from the geometry
+        # Geometry dofmap and points
         geom_imap = mesh.geometry.index_map()
         gdim = mesh.geometry.dim
         geom_global_shape = (geom_imap.size_global, gdim)
@@ -118,55 +95,62 @@ def write(mesh: Mesh, filename: str | Path):
         geom_set = hdf.create_dataset(p_string, geom_global_shape, dtype=gdtype)
         geom_set[geom_irange[0] : geom_irange[1], :] = mesh.geometry.x[: geom_imap.size_local, :]
 
-        entity_cells = mesh.topology.entity_types[mesh.topology.dim]
-
-        # VTKHDF5 stores the geometry as an adjacency lists, where cell types might be jumbled up.
-        geometry_flattened = []
-        geometry_num_cell_dofs = []
+        # VTKHDF5 stores the cells as an adjacency list, where cell types might be jumbled up.
+        topology_flattened = []
+        topology_num_cell_points = []
         for i in range(len(cell_index_maps)):
             g_dofmap = mesh.geometry.dofmaps(i)
             local_dm = g_dofmap[: cell_index_maps[i].size_local, :].copy()
             # Permute DOLFINx order to VTK
-            map_vtk = np.argsort(_cpp.io.perm_vtk(entity_cells[i], local_dm.shape[1]))
+            map_vtk = np.argsort(_cpp.io.perm_vtk(cell_types[i], local_dm.shape[1]))
             local_dm = local_dm[:, map_vtk]
-            # FIXME: add local to global map here
-            geometry_flattened.append(local_dm.flatten())
-            geometry_num_cell_dofs.append(
+            global_dm = geom_imap.local_to_global(local_dm.flatten())
+            topology_flattened.append(global_dm)
+            topology_num_cell_points.append(
                 np.full(g_dofmap.shape[0], g_dofmap.shape[1], dtype=np.int32)
             )
-        geom_offsets = np.zeros(num_cells + 1)
-        geom_offsets[1:] = np.cumsum(np.hstack(geometry_num_cell_dofs))
+        topo_offsets = np.cumsum(np.hstack(topology_num_cell_points))
 
-        # FIXME: need communication in parallel here to figure out insert position for cell
-        # connectivities and offsets
-        assert mesh.comm.size == 1, "Parallel writing not implemented"
+        num_nodes_per_cell = [mesh.geometry.cmaps(i).dim for i in range(len(num_cells))]
+        cell_start_position = [cmap.local_range[0] for cmap in cell_index_maps]
+        cell_stop_position = [cmap.local_range[1] for cmap in cell_index_maps]
 
-        # Offsets
-        offsets = hdf.create_dataset("Offsets", (num_cells + 1,), dtype=np.int64)
-        offsets[:] = geom_offsets
-        geom_out = np.hstack(geometry_flattened)
+        # Compute overall cell offset from offsets for each cell type
+        offset_start_position = sum(cell_start_position)
+        offset_stop_position = sum(cell_stop_position)
 
-        # Store global mesh connectivity for geometry
-        top_set = hdf.create_dataset("Connectivity", (geom_out.size,), dtype=np.int64)
-        top_set[:] = geom_out
+        # Compute overall topology offset from offsets for each cell type
+        topology_start = np.dot(num_nodes_per_cell, cell_start_position)
+        topo_offsets += topology_start
+
+        # Offsets into topology
+        offsets = hdf.create_dataset("Offsets", (sum(num_cells_global) + 1,), dtype=np.int64)
+        if comm.rank == 0:
+            offsets[0] = 0
+        offsets[offset_start_position + 1 : offset_stop_position + 1] = topo_offsets
+
+        # Store global mesh connectivity
+        topology_size_global = np.dot(num_cells_global, num_nodes_per_cell)
+        topology_set = hdf.create_dataset("Connectivity", (topology_size_global,), dtype=np.int64)
+        topo_out = np.hstack(topology_flattened)
+        topology_set[topology_start : topology_start + len(topo_out)] = topo_out
 
         # Store cell types
-        type_set = hdf.create_dataset("Types", (num_cells,), dtype=np.uint8)
+        type_set = hdf.create_dataset("Types", (sum(num_cells_global),), dtype=np.uint8)
         cts = np.hstack(
             [
                 np.full(
                     cell_index_maps[i].size_local,
-                    int(VTKCellType.to_vtk(entity_cells[i].name)),
+                    int(str_to_vtk(cell_types[i].name)),
                     dtype=np.uint8,
                 )
                 for i in range(len(cell_index_maps))
             ]
         )
-        type_set[:] = cts
+        type_set[offset_start_position:offset_stop_position] = cts
 
-        # Geom dofmap offset
         con_part = hdf.create_dataset("NumberOfConnectivityIds", (1,), dtype=np.int64)
-        con_part[0] = geom_offsets[-1]
+        con_part[0] = topology_size_global
 
         # Store meta-variable used by VTKHDF5 when partitioning data. We do not partition data,
         # as then everything becomes "local index", and cannot be read in again
@@ -175,7 +159,7 @@ def write(mesh: Mesh, filename: str | Path):
             "NumberOfCells",
             (1,),
             dtype=np.int64,
-            data=np.array([num_cells], dtype=np.int64),
+            data=np.array([sum(num_cells_global)], dtype=np.int64),
         )
 
         # Similar metadata for number of nodes
