@@ -482,8 +482,8 @@ Form<T, U> create_form_factory(
       // Build list of entities to assemble over
       if (id == -1)
       {
-        // TODO Figure out best place for this. Make a function? Is there
-        // a better way?
+        // FIXME Can't get cell_type from function space. For example, for
+        // assemble scalar, a.function_spaces() will be empty.
         std::vector<mesh::CellType> cell_types
             = mesh->topology()->entity_types(tdim);
         mesh::CellType cell_type = spaces[0]->element()->cell_type();
