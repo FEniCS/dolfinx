@@ -167,7 +167,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
   return pattern;
 }
 
-/// @brief Create a sparsity pattern for a given form.
+/// @brief Build a sparsity pattern for a given form.
 /// @note The pattern is not finalised, i.e. the caller is responsible
 /// for calling SparsityPattern::assemble.
 /// @param[in] pattern The sparsity pattern to add to
