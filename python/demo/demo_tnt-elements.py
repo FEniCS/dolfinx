@@ -669,7 +669,6 @@ def create_tnt_prism(degree):
     )
 
 # Here is the matching tetrahedron, triangle and interval elements. Their boundary dofs are moments, not point values, except at the vertices.
-# The interval elements match the Legendre variant of the serendipity elements.
 # The performance of the triangle element matches the P type element, as the same space is spanned.
 
 def create_tnt_tetrahedron(degree):
@@ -854,7 +853,10 @@ def create_tnt_triangle(degree):
         dtype=default_real_type,
     )
 
-def create_tnt_interval(degree):
+# The interval elements match the Legendre variant of the serendipity elements for the 0-form
+# The interval elements match the Legendre variant of the discontinuous P elements for the 1-Form of 1 lower degree
+
+def create_tnt_interval_0Form(degree):
     assert degree > 0
     # Polyset
     ndofs = degree + 1
@@ -883,13 +885,9 @@ def create_tnt_interval(degree):
         poly = basix.tabulate_polynomials(
             basix.PolynomialType.legendre, basix.CellType.interval, degree - 2, pts
         )
-        edge_ndofs = poly.shape[0]
         for e in topology[1]:
             x[1].append(np.array(geometry[e[0]] + np.dot(pts,[geometry[e[1]]-geometry[e[0]]])))    
-            mat = np.zeros((edge_ndofs, 1, len(pts), 1))
-            for i in range(edge_ndofs):
-                mat[i, 0, :, 0] = wts[:] * poly[i, :]
-            M[1].append(mat)
+            M[1].append((wts*[[poly]]).transpose([2,1,3,0]))
     
     return basix.ufl.custom_element(
         basix.CellType.interval,
@@ -903,5 +901,48 @@ def create_tnt_interval(degree):
         False,
         degree,
         degree,
+        dtype=default_real_type,
+    )
+
+def create_tnt_interval_1Form(degree):
+    assert degree > 0
+    # Polyset
+    ndofs = degree
+    npoly = degree
+    
+    wcoeffs = np.eye(ndofs)
+
+    # Interpolation
+    geometry = basix.geometry(basix.CellType.interval)
+    topology = basix.topology(basix.CellType.interval)
+    x = [[], [], [], []]
+    M = [[], [], [], []]
+
+    # Vertices
+    for v in topology[0]:
+        x[0].append(np.zeros([0, 1]))
+        M[0].append(np.zeros([0, 1, 0, 1]))
+
+    # Edges
+    pts, wts = basix.make_quadrature(basix.CellType.interval, 2 * degree - 1)
+    poly = basix.tabulate_polynomials(
+        basix.PolynomialType.legendre, basix.CellType.interval, degree - 1, pts
+    )
+    for e in topology[1]:
+        x[1].append(np.array(geometry[e[0]] + np.dot(pts,[geometry[e[1]]-geometry[e[0]]])))   
+        M[1].append((wts*[[poly]]).transpose([2,1,3,0]))
+
+    return basix.ufl.custom_element(
+        basix.CellType.interval,
+        [],
+        wcoeffs,
+        x,
+        M,
+        0,
+        basix.MapType.identity,
+        basix.SobolevSpace.H1,
+        False,
+        degree-1,
+        degree-1,
         dtype=default_real_type,
     )
