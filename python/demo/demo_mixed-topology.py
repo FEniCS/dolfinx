@@ -86,16 +86,6 @@ cpp_elements = [_cpp.fem.FiniteElement_float64(
 dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, cpp_elements)
 
 # Both dofmaps have the same IndexMap, but different cell_dofs
-# Create SparsityPattern
-sp = _cpp.la.SparsityPattern(
-    MPI.COMM_WORLD, [dofmaps[0].index_map, dofmaps[0].index_map], [1, 1])
-for ct in range(2):
-    num_cells_type = mesh.topology.index_maps(3)[ct].size_local
-    print(f"For cell type {ct}, create sparsity with {num_cells_type} cells.")
-    for j in range(num_cells_type):
-        cell_dofs_j = dofmaps[ct].cell_dofs(j)
-        sp.insert(cell_dofs_j, cell_dofs_j)
-sp.finalize()
 
 # Compile forms for each cell type
 aforms = []
@@ -113,46 +103,15 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
 ffi = aforms[0].module.ffi
 
 # Assembler
-# print(f"Assembling into matrix of size {len(A.data)} non-zeros")
+sp = create_sparsity_pattern(aforms[0])
+build_sparsity_pattern(sp, aforms[1])
+sp.finalize()
+A = matrix_csr(sp)
 
-# Assemble for each cell type (ct)
+print(f"Assembling into matrix of size {len(A.data)} non-zeros")
 
-
-def custom_assemble(A, ct):
-    num_cells_type = mesh.topology.index_maps(3)[ct].size_local
-    geom_dm = mesh.geometry.dofmaps(ct)
-    kernel = getattr(
-        aforms[ct].ufcx_form.form_integrals[0], "tabulate_tensor_float64")
-    dm = aforms[ct].function_spaces[0].dofmap
-    for j in range(num_cells_type):
-        cell_dofs_j = dm.cell_dofs(j)
-        A_local = np.zeros((len(cell_dofs_j) ** 2), dtype=np.float64)
-        cell_geom = mesh.geometry.x[geom_dm[j]]
-        kernel(
-            ffi.cast("double *", A_local.ctypes.data),
-            ffi.NULL,
-            ffi.NULL,
-            ffi.cast("double *", cell_geom.ctypes.data),
-            ffi.NULL,
-            ffi.NULL,
-        )
-        A.add(A_local, cell_dofs_j, cell_dofs_j, 1)
-
-
-A_cust = matrix_csr(sp)
-custom_assemble(A_cust, 0)
-custom_assemble(A_cust, 1)
-
-sp1 = create_sparsity_pattern(aforms[0])
-build_sparsity_pattern(sp1, aforms[1])
-sp1.finalize()
-
-A = matrix_csr(sp1)
 assemble_matrix(A, aforms[0])
 assemble_matrix(A, aforms[1])
-
-print(A_cust.squared_norm(), A.squared_norm())
-exit()
 
 # Quick solve
 A_scipy = A.to_scipy()
