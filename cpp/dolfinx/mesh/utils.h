@@ -768,9 +768,6 @@ compute_incident_entities(const Topology& topology,
 ///
 /// @note Collective.
 ///
-/// @note This is an experimental specialised version of `create_mesh` for mixed
-/// topology meshes, and does not include cell reordering.
-///
 /// @param[in] comm Communicator to build the mesh on.
 /// @param[in] commt Communicator that the topology data (`cells`) is
 /// distributed on. This should be `MPI_COMM_NULL` for ranks that should
@@ -910,7 +907,6 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // Build local dual graph for owned cells to (i) get list of vertices
   // on the process boundary and (ii) apply re-ordering to cells for
   // locality
-  // std::vector<std::int64_t> boundary_v;
   auto boundary_v_fn = [](const std::vector<CellType>& celltypes,
                           const std::vector<fem::ElementDofLayout>& doflayouts,
                           const std::vector<std::vector<int>>& ghost_owners,
@@ -923,36 +919,39 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     for (std::size_t i = 0; i < celltypes.size(); ++i)
     {
       int num_cell_vertices = mesh::num_cell_vertices(celltypes[i]);
-      std::int32_t num_owned_cells
+      std::size_t num_owned_cells
           = cells1_v[i].size() / num_cell_vertices - ghost_owners[i].size();
-      cells1_v_local.push_back(
-          std::span(cells1_v[i].data(), num_owned_cells * num_cell_vertices));
+      cells1_v_local.emplace_back(cells1_v[i].data(),
+                                  num_owned_cells * num_cell_vertices);
 
-      auto [graph, xunmatched_facets, xmax_v, xfacet_attached_cells]
+      // Build local dual graph for cell type
+      auto [graph, _unmatched_facets, _max_v, _facet_attached_cells]
           = build_local_dual_graph(std::vector{celltypes[i]},
                                    std::vector{cells1_v_local.back()});
+
+      // Compute re-ordering of graph
       const std::vector<std::int32_t> remap = graph::reorder_gps(graph);
-      std::vector<std::int64_t> _original_idx(original_idx1[i].size());
+
+      // Update 'original' indices
+      const std::vector<std::int64_t>& orig_idx = original_idx1[i];
+      std::vector<std::int64_t> _original_idx(orig_idx.size());
+      std::copy_n(orig_idx.rbegin(), ghost_owners[i].size(),
+                  _original_idx.rbegin());
       {
-        const std::vector<std::int64_t>& orig_idx = original_idx1[i];
         for (std::size_t j = 0; j < remap.size(); ++j)
           _original_idx[remap[j]] = orig_idx[j];
       }
+      original_idx1[i] = _original_idx;
 
-      std::copy_n(std::next(original_idx1[i].cbegin(), num_owned_cells),
-                  ghost_owners[i].size(),
-                  std::next(_original_idx.begin(), num_owned_cells));
       impl::reorder_list(
           std::span(cells1_v[i].data(), remap.size() * num_cell_vertices),
           remap);
-
-      std::size_t num_cell_nodes = doflayouts[i].num_dofs();
       impl::reorder_list(
-          std::span(cells1[i].data(), remap.size() * num_cell_nodes), remap);
-      original_idx1[i] = _original_idx;
+          std::span(cells1[i].data(), remap.size() * doflayouts[i].num_dofs()),
+          remap);
     }
 
-    spdlog::info("Build local dual graph");
+    // spdlog::info("Build local dual graph");
     auto [xgraph, boundary_v, xmax_v, xfacet_attached_cells]
         = build_local_dual_graph(celltypes, cells1_v_local);
 

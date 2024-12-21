@@ -138,7 +138,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
         const int neigh_rank = dest.size();
 
         // Store global rank
-        dest.push_back((*it)[0]);
+        dest.push_back(it->front());
 
         // Find iterator to next global rank
         auto it1
