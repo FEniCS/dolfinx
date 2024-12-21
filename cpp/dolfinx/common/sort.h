@@ -23,19 +23,18 @@ namespace dolfinx
 
 struct __radix_sort
 {
-
-  /// @brief Sort a range with radix sorting algorithm. The bucket
-  /// size is determined by the number of bits to sort at a time (2^BITS).
+  /// @brief Sort a range with radix sorting algorithm. The bucket size
+  /// is determined by the number of bits to sort at a time (2^BITS).
   ///
-  /// This allows usage with standard range containers of integral types, for
-  /// example
+  /// This allows usage with standard range containers of integral
+  /// types, for example
   /// @code
   /// std::array<std::int16_t, 3> a{2, 3, 1};
   /// dolfixn::radix_sort(a); // a = {1, 2, 3}
   /// @endcode
-  /// Additionally the projection based approach of the STL library is adpated,
-  /// which allows for versatile usage, for example the easy realization of an
-  /// argsort
+  /// Additionally the projection based approach of the STL library is
+  /// adpated, which allows for versatile usage, for example the easy
+  /// realization of an argsort
   /// @code
   /// std::array<std::int16_t, 3> a{2, 3, 1};
   /// std::array<std::int16_t, 3> i{0, 1, 2};
@@ -43,8 +42,8 @@ struct __radix_sort
   /// 1} and a[i] = {1, 2, 3};
   /// @endcode
   /// @tparam R Type of range to be sorted.
-  /// @tparam P Projection type to be applied on range elements to produce a
-  /// sorting index.
+  /// @tparam P Projection type to be applied on range elements to
+  /// produce a sorting index.
   /// @tparam BITS The number of bits to sort at a time.
   /// @param[in, out] range The range to sort.
   /// @param[in] P Element projection.
@@ -147,7 +146,7 @@ std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1)
   std::vector<T> column(shape0);
   for (std::size_t i = 0; i < shape1; ++i)
   {
-    int col = shape1 - 1 - i;
+    std::size_t col = shape1 - 1 - i;
     for (std::size_t j = 0; j < shape0; ++j)
       column[j] = x[j * shape1 + col];
 
