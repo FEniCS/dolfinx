@@ -910,11 +910,17 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // Build local dual graph for owned cells to (i) get list of vertices
   // on the process boundary and (ii) apply re-ordering to cells for
   // locality
-  std::vector<std::int64_t> boundary_v;
+  // std::vector<std::int64_t> boundary_v;
+  auto boundary_v_fn = [](const std::vector<CellType>& celltypes,
+                          const std::vector<fem::ElementDofLayout>& doflayouts,
+                          const std::vector<std::vector<int>>& ghost_owners,
+                          std::vector<std::vector<std::int64_t>>& cells1,
+                          std::vector<std::vector<std::int64_t>>& cells1_v,
+                          std::vector<std::vector<std::int64_t>>& original_idx1)
   {
     // Build lists of cells (by cell type) that excludes ghosts
     std::vector<std::span<const std::int64_t>> cells1_v_local;
-    for (int i = 0; i < num_cell_types; ++i)
+    for (std::size_t i = 0; i < celltypes.size(); ++i)
     {
       int num_cell_vertices = mesh::num_cell_vertices(celltypes[i]);
       std::int32_t num_owned_cells
@@ -926,12 +932,14 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
           = build_local_dual_graph(std::vector{celltypes[i]},
                                    std::vector{cells1_v_local.back()});
       const std::vector<std::int32_t> remap = graph::reorder_gps(graph);
+      std::vector<std::int64_t> _original_idx(original_idx1[i].size());
+      {
+        const std::vector<std::int64_t>& orig_idx = original_idx1[i];
+        for (std::size_t j = 0; j < remap.size(); ++j)
+          _original_idx[remap[j]] = orig_idx[j];
+      }
 
-      std::vector<std::int64_t>& _original_idx1 = original_idx1[i];
-      std::vector<std::int64_t> _original_idx(_original_idx1.size());
-      for (std::size_t i = 0; i < remap.size(); ++i)
-        _original_idx[remap[i]] = _original_idx1[i];
-      std::copy_n(std::next(_original_idx1.cbegin(), num_owned_cells),
+      std::copy_n(std::next(original_idx1[i].cbegin(), num_owned_cells),
                   ghost_owners[i].size(),
                   std::next(_original_idx.begin(), num_owned_cells));
       impl::reorder_list(
@@ -941,15 +949,14 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       std::size_t num_cell_nodes = doflayouts[i].num_dofs();
       impl::reorder_list(
           std::span(cells1[i].data(), remap.size() * num_cell_nodes), remap);
-      _original_idx1 = _original_idx;
+      original_idx1[i] = _original_idx;
     }
 
     spdlog::info("Build local dual graph");
-    auto [xgraph, unmatched_facets, xmax_v, xfacet_attached_cells]
+    auto [xgraph, boundary_v, xmax_v, xfacet_attached_cells]
         = build_local_dual_graph(celltypes, cells1_v_local);
 
     // Boundary vertices are marked as 'unknown'
-    boundary_v = unmatched_facets;
     std::ranges::sort(boundary_v);
     auto [unique_end, range_end] = std::ranges::unique(boundary_v);
     boundary_v.erase(unique_end, range_end);
@@ -958,7 +965,12 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     // topology)
     if (!boundary_v.empty() and boundary_v[0] == -1)
       boundary_v.erase(boundary_v.begin());
-  }
+
+    return boundary_v;
+  };
+
+  const std::vector<std::int64_t> boundary_v = boundary_v_fn(
+      celltypes, doflayouts, ghost_owners, cells1, cells1_v, original_idx1);
 
   spdlog::debug("Got {} boundary vertices", boundary_v.size());
 
