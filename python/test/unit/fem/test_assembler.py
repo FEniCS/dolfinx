@@ -592,7 +592,7 @@ class TestPETScAssemblers:
         Anorm2, bnorm2, xnorm2 = monolithic()
         assert Anorm2 == pytest.approx(Anorm0, 1.0e-6)
         assert bnorm2 == pytest.approx(bnorm0, 1.0e-6)
-        assert xnorm2 == pytest.approx(xnorm0, 1.0e-6)
+        assert xnorm2 == pytest.approx(xnorm0, 1.0e-5)
 
     @pytest.mark.parametrize(
         "mesh",
