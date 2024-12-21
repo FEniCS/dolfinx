@@ -791,6 +791,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner)
 {
+  return create_mesh(comm, commt, {cells}, {element}, commg, x, xshape,
+                     partitioner);
+  /*
   CellType celltype = element.cell_shape();
   const fem::ElementDofLayout doflayout = element.create_dof_layout();
 
@@ -919,6 +922,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
   return Mesh(comm, std::make_shared<Topology>(std::move(topology)),
               std::move(geometry));
+*/
 }
 
 /// @brief Create a distributed mesh::Mesh from mesh data and using the
