@@ -932,7 +932,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       for (std::size_t i = 0; i < remap.size(); ++i)
         _original_idx[remap[i]] = _original_idx1[i];
       std::copy_n(std::next(_original_idx1.cbegin(), num_owned_cells),
-                  ghost_owners.size(),
+                  ghost_owners[i].size(),
                   std::next(_original_idx.begin(), num_owned_cells));
       impl::reorder_list(
           std::span(cells1_v[i].data(), remap.size() * num_cell_vertices),
