@@ -912,18 +912,40 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // locality
   std::vector<std::int64_t> boundary_v;
   {
+    // Build lists of cells (by cell type) that excludes ghosts
     std::vector<std::span<const std::int64_t>> cells1_v_local_cells;
-    for (std::int32_t i = 0; i < num_cell_types; ++i)
+    for (int i = 0; i < num_cell_types; ++i)
     {
-      std::int32_t num_cell_vertices = mesh::num_cell_vertices(celltypes[i]);
+      int num_cell_vertices = mesh::num_cell_vertices(celltypes[i]);
       std::int32_t num_owned_cells
           = cells1_v[i].size() / num_cell_vertices - ghost_owners[i].size();
       cells1_v_local_cells.push_back(
           std::span(cells1_v[i].data(), num_owned_cells * num_cell_vertices));
+
+      auto [graph, xunmatched_facets, xmax_v, xfacet_attached_cells]
+          = build_local_dual_graph(std::vector{celltypes[i]},
+                                   std::vector{cells1_v_local_cells.back()});
+      const std::vector<std::int32_t> remap = graph::reorder_gps(graph);
+
+      std::vector<std::int64_t>& _original_idx1 = original_idx1[i];
+      std::vector<std::int64_t> _original_idx(_original_idx1.size());
+      for (std::size_t i = 0; i < remap.size(); ++i)
+        _original_idx[remap[i]] = _original_idx1[i];
+      std::copy_n(std::next(_original_idx1.cbegin(), num_owned_cells),
+                  ghost_owners.size(),
+                  std::next(_original_idx.begin(), num_owned_cells));
+      impl::reorder_list(
+          std::span(cells1_v[i].data(), remap.size() * num_cell_vertices),
+          remap);
+
+      std::size_t num_cell_nodes = doflayouts[i].num_dofs();
+      impl::reorder_list(
+          std::span(cells1[i].data(), remap.size() * num_cell_nodes), remap);
+      _original_idx1 = _original_idx;
     }
 
     spdlog::info("Build local dual graph");
-    auto [graph, unmatched_facets, max_v, facet_attached_cells]
+    auto [xgraph, unmatched_facets, xmax_v, xfacet_attached_cells]
         = build_local_dual_graph(celltypes, cells1_v_local_cells);
 
     // TODO: in the original create_mesh(), cell reordering is done
@@ -1107,7 +1129,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         = build_local_dual_graph(
             std::vector{celltype},
             {std::span(cells1_v.data(), num_owned_cells * num_cell_vertices)});
-    const std::vector<int> remap = graph::reorder_gps(graph);
+    const std::vector<std::int32_t> remap = graph::reorder_gps(graph);
 
     // Create re-ordered cell lists (leaves ghosts unchanged)
     std::vector<std::int64_t> _original_idx(original_idx1.size());
