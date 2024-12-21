@@ -377,6 +377,8 @@ mesh::build_local_dual_graph(
         "Number of cell types must match number of cell arrays.");
   };
 
+  constexpr std::int32_t padding_value = -1;
+
   // Create indexing offset for each cell type
   // and determine max number of vertices per facet
   std::vector<std::int32_t> cell_offsets = {0};
@@ -426,7 +428,8 @@ mesh::build_local_dual_graph(
                                [v](auto idx) { return v[idx]; });
         std::sort(std::prev(facets.end(), facet_vertices.size()), facets.end());
         facets.insert(facets.end(),
-                      max_vertices_per_facet - facet_vertices.size(), -1);
+                      max_vertices_per_facet - facet_vertices.size(),
+                      padding_value);
         facets.push_back(c + cell_offsets[j]);
       }
     }

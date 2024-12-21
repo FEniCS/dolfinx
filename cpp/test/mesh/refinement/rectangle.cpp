@@ -43,8 +43,8 @@ void CHECK_adjacency_list_equal(
                Catch::Matchers::RangeEquals(expected_list[i]));
   }
 }
-template <typename T>
-constexpr auto EPS = std::numeric_limits<T>::epsilon();
+// template <typename T>
+// constexpr auto EPS = std::numeric_limits<T>::epsilon();
 } // namespace
 
 TEMPLATE_TEST_CASE("Rectangle uniform refinement",
