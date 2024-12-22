@@ -1014,27 +1014,29 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       boundary_v_all_new.erase(unique_end, range_end);
     }
 
-    // spdlog::info("Build local dual graph");
-    auto [xgraph, boundary_v, xmax_v, xfacet_attached_cells]
-        = build_local_dual_graph(celltypes, cells1_v_local);
+    return boundary_v_all_new;
 
-    // Boundary vertices are marked as 'unknown'
-    {
-      std::ranges::sort(boundary_v);
-      auto [unique_end, range_end] = std::ranges::unique(boundary_v);
-      boundary_v.erase(unique_end, range_end);
-    }
+    // // spdlog::info("Build local dual graph");
+    // auto [xgraph, boundary_v, xmax_v, xfacet_attached_cells]
+    //     = build_local_dual_graph(celltypes, cells1_v_local);
 
-    // TEST
-    if (boundary_v_all_new != boundary_v)
-      throw std::runtime_error("Boundary vertex mis-match.");
+    // // Boundary vertices are marked as 'unknown'
+    // {
+    //   std::ranges::sort(boundary_v);
+    //   auto [unique_end, range_end] = std::ranges::unique(boundary_v);
+    //   boundary_v.erase(unique_end, range_end);
+    // }
 
-    // Remove -1 if it occurs in boundary vertices (may occur in mixed
-    // topology)
-    if (!boundary_v.empty() and boundary_v[0] == -1)
-      boundary_v.erase(boundary_v.begin());
+    // // TEST
+    // if (boundary_v_all_new != boundary_v)
+    //   throw std::runtime_error("Boundary vertex mis-match.");
 
-    return boundary_v;
+    // // Remove -1 if it occurs in boundary vertices (may occur in mixed
+    // // topology)
+    // if (!boundary_v.empty() and boundary_v[0] == -1)
+    //   boundary_v.erase(boundary_v.begin());
+
+    // return boundary_v;
   };
 
   const std::vector<std::int64_t> boundary_v = boundary_v_fn(
