@@ -958,39 +958,41 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
           remap);
     }
 
-    // Pack 'unmatched' facets for all cell types into one array
-    std::vector<std::int64_t> boundary_v_all;
-    boundary_v_all.reserve(std::accumulate(
-        boundary_v_data.begin(), boundary_v_data.end(), std::size_t(0),
-        [](std::size_t x, auto& y) { return x + y.first.size(); }));
-    int max_v = std::ranges::max_element(boundary_v_data, [](auto& a, auto& b)
-                                         { return a.second < b.second; })
-                    ->second;
-    for (const auto& [v_data, num_v] : boundary_v_data)
+    std::vector<std::int64_t> boundary_v;
+    if (boundary_v_data.size() == 1)
+      boundary_v = std::move(boundary_v_data.front().first);
+    else
     {
-      for (auto it = v_data.begin(); it != v_data.end(); it += num_v)
+      // Pack 'unmatched' facets for all cell types into one array
+      boundary_v.reserve(std::accumulate(
+          boundary_v_data.begin(), boundary_v_data.end(), std::size_t(0),
+          [](std::size_t x, auto& y) { return x + y.first.size(); }));
+      int max_v = std::ranges::max_element(boundary_v_data, [](auto& a, auto& b)
+                                           { return a.second < b.second; })
+                      ->second;
+      for (const auto& [v_data, num_v] : boundary_v_data)
       {
-        boundary_v_all.insert(boundary_v_all.end(), it, std::next(it, num_v));
-        boundary_v_all.insert(boundary_v_all.end(), max_v - num_v, -1);
+        for (auto it = v_data.begin(); it != v_data.end(); it += num_v)
+        {
+          boundary_v.insert(boundary_v.end(), it, std::next(it, num_v));
+          boundary_v.insert(boundary_v.end(), max_v - num_v, -1);
+        }
       }
-    }
 
-    // Compute row permutaion
-    const std::vector<std::int32_t> perm = dolfinx::sort_by_perm(
-        std::span<const std::int64_t>(boundary_v_all), max_v);
+      // Compute row permutaion
+      const std::vector<std::int32_t> perm = dolfinx::sort_by_perm(
+          std::span<const std::int64_t>(boundary_v), max_v);
 
-    // For facets in boundary_v_all that appear only once, store the
-    // facet vertices
-    std::vector<std::int64_t> boundary_v_all_new;
-    {
+      // For facets in boundary_v_all that appear only once, store the
+      // facet vertices
       auto it = perm.begin();
       while (it != perm.end())
       {
         // Find iterator to next facet different from f0
-        std::span f(boundary_v_all.data() + (*it) * max_v, max_v);
+        std::span f(boundary_v.data() + (*it) * max_v, max_v);
         auto it1 = std::find_if_not(
             it, perm.end(),
-            [f, max_v, it0 = boundary_v_all.begin()](auto idx) -> bool
+            [f, max_v, it0 = boundary_v.begin()](auto idx) -> bool
             {
               return std::equal(f.begin(), f.end(),
                                 std::next(it0, idx * max_v));
@@ -999,8 +1001,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         // If no repeated facet found, insert f0 vertices
         if (std::distance(it, it1) == 1)
         {
-          boundary_v_all_new.insert(boundary_v_all_new.end(), f.begin(),
-                                    f.end());
+          boundary_v.insert(boundary_v.end(), f.begin(), f.end());
         }
         else if (std::distance(it, it1) > 2)
           throw std::runtime_error("More than two matching facets found.");
@@ -1008,13 +1009,13 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         // Advance iterator
         it = it1;
       }
-
-      std::ranges::sort(boundary_v_all_new);
-      auto [unique_end, range_end] = std::ranges::unique(boundary_v_all_new);
-      boundary_v_all_new.erase(unique_end, range_end);
     }
 
-    return boundary_v_all_new;
+    std::ranges::sort(boundary_v);
+    auto [unique_end, range_end] = std::ranges::unique(boundary_v);
+    boundary_v.erase(unique_end, range_end);
+
+    return boundary_v;
 
     // // spdlog::info("Build local dual graph");
     // auto [xgraph, boundary_v, xmax_v, xfacet_attached_cells]
