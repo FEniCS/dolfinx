@@ -966,21 +966,16 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     int max_v = std::ranges::max_element(boundary_v_data, [](auto& a, auto& b)
                                          { return a.second < b.second; })
                     ->second;
-    // for (std::pair<std::vector<std::int64_t>, int>& v_data : boundary_v_data)
     for (const auto& [v_data, num_v] : boundary_v_data)
     {
-      std::size_t num_entties = v_data.size();
-      boundary_v_all.insert(boundary_v_all.end(), num_entties, -1);
-
-      auto it1 = std::prev(boundary_v_all.end(), num_entties);
       for (auto it = v_data.begin(); it != v_data.end(); it += num_v)
       {
-        std::copy_n(it, num_v, it1);
-        it1 += max_v;
+        boundary_v_all.insert(boundary_v_all.end(), it, std::next(it, num_v));
+        boundary_v_all.insert(boundary_v_all.end(), max_v - num_v, -1);
       }
     }
 
-    // Sort rows
+    // Compute row permutaion
     const std::vector<std::int32_t> perm = dolfinx::sort_by_perm(
         std::span<const std::int64_t>(boundary_v_all), max_v);
 
@@ -991,22 +986,26 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       auto it = perm.begin();
       while (it != perm.end())
       {
-        std::span f0(boundary_v_all.data() + (*it) * max_v, max_v);
-
-        // Insert f0 vertices
-        boundary_v_all_new.insert(boundary_v_all_new.end(), f0.begin(),
-                                  f0.end());
-
         // Find iterator to next facet different from f0
+        std::span f(boundary_v_all.data() + (*it) * max_v, max_v);
         auto it1 = std::find_if_not(
             it, perm.end(),
-            [f0, max_v, &boundary_v_all](auto idx) -> bool
+            [f, max_v, it0 = boundary_v_all.begin()](auto idx) -> bool
             {
-              return std::equal(f0.begin(), f0.end(),
-                                std::next(boundary_v_all.begin(), idx * max_v));
+              return std::equal(f.begin(), f.end(),
+                                std::next(it0, idx * max_v));
             });
 
-        // Advance iterator and increment entity
+        // If no repeated facet found, insert f0 vertices
+        if (std::distance(it, it1) == 1)
+        {
+          boundary_v_all_new.insert(boundary_v_all_new.end(), f.begin(),
+                                    f.end());
+        }
+        else if (std::distance(it, it1) > 2)
+          throw std::runtime_error("More than two matching facets found.");
+
+        // Advance iterator
         it = it1;
       }
 
@@ -1026,6 +1025,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       boundary_v.erase(unique_end, range_end);
     }
 
+    // TEST
     if (boundary_v_all_new != boundary_v)
       throw std::runtime_error("Boundary vertex mis-match.");
 
