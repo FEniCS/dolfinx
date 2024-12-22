@@ -959,53 +959,56 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     }
 
     // Pack 'unmatched' facets for all cell types into one array
-    std::vector<std::int64_t> boundary_v_all;
-    boundary_v_all.reserve(std::accumulate(
-        boundary_v_data.begin(), boundary_v_data.end(), std::size_t(0),
-        [](std::size_t x, auto& y) { return x + y.first.size(); }));
-    int max_v = std::ranges::max_element(boundary_v_data, [](auto& a, auto& b)
-                                         { return a.second < b.second; })
-                    ->second;
-    for (const auto& [v_data, num_v] : boundary_v_data)
-    {
-      for (auto it = v_data.begin(); it != v_data.end(); it += num_v)
-      {
-        boundary_v_all.insert(boundary_v_all.end(), it, std::next(it, num_v));
-        boundary_v_all.insert(boundary_v_all.end(), max_v - num_v, -1);
-      }
-    }
-
-    // Compute row permutaion
-    const std::vector<std::int32_t> perm = dolfinx::sort_by_perm(
-        std::span<const std::int64_t>(boundary_v_all), max_v);
-
-    // For facets in boundary_v_all that appear only once, store the
-    // facet vertices
     std::vector<std::int64_t> boundary_v_unique;
     {
-      auto it = perm.begin();
-      while (it != perm.end())
+      std::vector<std::int64_t> boundary_v_all;
+      boundary_v_all.reserve(std::accumulate(
+          boundary_v_data.begin(), boundary_v_data.end(), std::size_t(0),
+          [](std::size_t x, auto& y) { return x + y.first.size(); }));
+      int max_v = std::ranges::max_element(boundary_v_data, [](auto& a, auto& b)
+                                           { return a.second < b.second; })
+                      ->second;
+      for (const auto& [v_data, num_v] : boundary_v_data)
       {
-        // Find iterator to next facet different from f0
-        std::span f(boundary_v_all.data() + (*it) * max_v, max_v);
-        auto it1 = std::find_if_not(
-            it, perm.end(),
-            [f, max_v, it0 = boundary_v_all.begin()](auto idx) -> bool
-            {
-              return std::equal(f.begin(), f.end(),
-                                std::next(it0, idx * max_v));
-            });
-
-        // If no repeated facet found, insert f0 vertices
-        if (std::distance(it, it1) == 1)
+        for (auto it = v_data.begin(); it != v_data.end(); it += num_v)
         {
-          boundary_v_unique.insert(boundary_v_unique.end(), f.begin(), f.end());
+          boundary_v_all.insert(boundary_v_all.end(), it, std::next(it, num_v));
+          boundary_v_all.insert(boundary_v_all.end(), max_v - num_v, -1);
         }
-        else if (std::distance(it, it1) > 2)
-          throw std::runtime_error("More than two matching facets found.");
+      }
 
-        // Advance iterator
-        it = it1;
+      // Compute row permutaion
+      const std::vector<std::int32_t> perm = dolfinx::sort_by_perm(
+          std::span<const std::int64_t>(boundary_v_all), max_v);
+
+      // For facets in boundary_v_all that appear only once, store the
+      // facet vertices
+      {
+        auto it = perm.begin();
+        while (it != perm.end())
+        {
+          // Find iterator to next facet different from f0
+          std::span f(boundary_v_all.data() + (*it) * max_v, max_v);
+          auto it1 = std::find_if_not(
+              it, perm.end(),
+              [f, max_v, it0 = boundary_v_all.begin()](auto idx) -> bool
+              {
+                return std::equal(f.begin(), f.end(),
+                                  std::next(it0, idx * max_v));
+              });
+
+          // If no repeated facet found, insert f0 vertices
+          if (std::distance(it, it1) == 1)
+          {
+            boundary_v_unique.insert(boundary_v_unique.end(), f.begin(),
+                                     f.end());
+          }
+          else if (std::distance(it, it1) > 2)
+            throw std::runtime_error("More than two matching facets found.");
+
+          // Advance iterator
+          it = it1;
+        }
       }
     }
 
