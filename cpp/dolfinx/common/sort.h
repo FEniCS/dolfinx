@@ -20,7 +20,6 @@
 
 namespace dolfinx
 {
-
 struct __radix_sort
 {
   /// @brief Sort a range with radix sorting algorithm. The bucket size
@@ -125,9 +124,10 @@ inline constexpr __radix_sort radix_sort{};
 /// @brief Compute the permutation array that sorts a 2D array by row.
 ///
 /// @param[in] x The flattened 2D array to compute the permutation array
-/// for.
+/// for (row-major storage).
 /// @param[in] shape1 The number of columns of `x`.
-/// @return The permutation array such that `x[perm[i]] <= x[perm[i +1]].
+/// @return The permutation array such that `x[perm[i]] <= x[perm[i
+/// +1]].
 /// @pre `x.size()` must be a multiple of `shape1`.
 /// @note This function is suitable for small values of `shape1`. Each
 /// column of `x` is copied into an array that is then sorted.

@@ -914,6 +914,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                           std::vector<std::vector<std::int64_t>>& cells1_v,
                           std::vector<std::vector<std::int64_t>>& original_idx1)
   {
+    std::vector<std::pair<std::vector<std::int64_t>, int>> boundary_v_data;
+
     // Build lists of cells (by cell type) that excludes ghosts
     std::vector<std::span<const std::int64_t>> cells1_v_local;
     for (std::size_t i = 0; i < celltypes.size(); ++i)
@@ -925,9 +927,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                                   num_owned_cells * num_cell_vertices);
 
       // Build local dual graph for cell type
-      auto [graph, _unmatched_facets, _max_v, _facet_attached_cells]
+      auto [graph, unmatched_facets, max_v, _facet_attached_cells]
           = build_local_dual_graph(std::vector{celltypes[i]},
                                    std::vector{cells1_v_local.back()});
+
+      boundary_v_data.emplace_back(std::move(unmatched_facets), max_v);
 
       // Compute re-ordering of graph
       const std::vector<std::int32_t> remap = graph::reorder_gps(graph);
@@ -951,14 +955,77 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
           remap);
     }
 
+    // Pack all 'unmatched' facets
+    std::vector<std::int64_t> boundary_v_all;
+    boundary_v_all.reserve(std::reduce(
+        boundary_v_data.begin(), boundary_v_data.end(), std::size_t(0),
+        [](int x, auto& y) { return x + y.first.size(); }));
+    int max_v = std::ranges::max_element(boundary_v_data, [](auto& a, auto& b)
+                                         { return a.second < b.second; })
+                    ->second;
+    for (auto& v_data : boundary_v_data)
+    {
+      std::size_t num_entties = v_data.first.size();
+      boundary_v_all.insert(boundary_v_all.end(), num_entties, -1);
+
+      auto it1 = std::prev(boundary_v_all.end(), num_entties);
+      std::size_t num_v = v_data.second;
+      for (auto it = v_data.first.begin(); it != v_data.first.end();
+           it += num_v)
+      {
+        std::copy_n(it, num_v, it1);
+        it1 += max_v;
+      }
+    }
+
+    // Sort rows
+    const std::vector<std::int32_t> perm = dolfinx::sort_by_perm(
+        std::span<const std::int64_t>(boundary_v_all), max_v);
+
+    // For facets in boundary_v_all that appear only once, store the
+    // facet vertices
+    std::vector<std::int64_t> boundary_v_all_new;
+    {
+      auto it = perm.begin();
+      while (it != perm.end())
+      {
+        std::span f0(boundary_v_all.data() + (*it) * max_v, max_v);
+
+        // Insert f0 vertices
+        boundary_v_all_new.insert(boundary_v_all_new.end(), f0.begin(),
+                                  f0.end());
+
+        // Find iterator to next facet different from f0
+        auto it1 = std::find_if_not(
+            it, perm.end(),
+            [f0, max_v, &boundary_v_all](auto idx) -> bool
+            {
+              return std::equal(f0.begin(), f0.end(),
+                                std::next(boundary_v_all.begin(), idx * max_v));
+            });
+
+        // Advance iterator and increment entity
+        it = it1;
+      }
+
+      std::ranges::sort(boundary_v_all_new);
+      auto [unique_end, range_end] = std::ranges::unique(boundary_v_all_new);
+      boundary_v_all_new.erase(unique_end, range_end);
+    }
+
     // spdlog::info("Build local dual graph");
     auto [xgraph, boundary_v, xmax_v, xfacet_attached_cells]
         = build_local_dual_graph(celltypes, cells1_v_local);
 
     // Boundary vertices are marked as 'unknown'
-    std::ranges::sort(boundary_v);
-    auto [unique_end, range_end] = std::ranges::unique(boundary_v);
-    boundary_v.erase(unique_end, range_end);
+    {
+      std::ranges::sort(boundary_v);
+      auto [unique_end, range_end] = std::ranges::unique(boundary_v);
+      boundary_v.erase(unique_end, range_end);
+    }
+
+    if (boundary_v_all_new != boundary_v)
+      throw std::runtime_error("Boundary vertex mis-match.");
 
     // Remove -1 if it occurs in boundary vertices (may occur in mixed
     // topology)

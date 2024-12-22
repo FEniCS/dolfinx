@@ -379,8 +379,8 @@ mesh::build_local_dual_graph(
 
   constexpr std::int32_t padding_value = -1;
 
-  // Create indexing offset for each cell type
-  // and determine max number of vertices per facet
+  // Create indexing offset for each cell type and determine max number
+  // of vertices per facet
   std::vector<std::int32_t> cell_offsets = {0};
   int max_vertices_per_facet = 0;
   int facet_count = 0;

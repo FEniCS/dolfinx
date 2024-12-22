@@ -30,14 +30,16 @@ enum class CellType;
 /// one for each cell type).
 /// @return
 /// 1. Local dual graph
-/// 2. Facets, defined by their vertices, that are shared by only one
-/// cell on this rank. The logically 2D array is flattened (row-major).
-/// 3. The number of columns for the facet data array (2).
-/// 4. The attached cell (local index) to each returned facet in (2).
+/// 2. Facets, defined by their sorted vertices, that are shared by only
+/// one cell on this rank. The logically 2D array is flattened
+/// (row-major).
+/// 3. Facet data array (2) number of columns
+/// 4. Attached cell (local index) to each returned facet in (2).
 ///
 /// Each row of the returned data (2) contains `[v0, ... v_(n-1), x, ..,
 /// x]`, where `v_i` is a vertex global index, `x` is a negative value
-/// (all padding values will be equal).
+/// (all padding values will be equal). The vertex global indices are
+/// sorted for each facet.
 ///
 /// @note The cells of each cell type are numbered locally
 /// consecutively, i.e. if there are `n` cells of type `0` and `m` cells
