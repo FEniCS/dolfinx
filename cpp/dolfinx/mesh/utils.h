@@ -958,14 +958,12 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
           remap);
     }
 
-    // Pack 'unmatched' facets for all cell types into one array
     std::vector<std::int64_t> boundary_v_unique;
     if (boundary_v_data.size() == 1)
-    {
-      boundary_v_unique = boundary_v_data.front().first;
-    }
+      boundary_v_unique = std::move(boundary_v_data.front().first);
     else
     {
+      // Pack 'unmatched' facets for all cell types into one array
       std::vector<std::int64_t> boundary_v_all;
       boundary_v_all.reserve(std::accumulate(
           boundary_v_data.begin(), boundary_v_data.end(), std::size_t(0),
@@ -988,32 +986,29 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
       // For facets in boundary_v_all that appear only once, store the
       // facet vertices
+      auto it = perm.begin();
+      while (it != perm.end())
       {
-        auto it = perm.begin();
-        while (it != perm.end())
+        // Find iterator to next facet different from f0
+        std::span f(boundary_v_all.data() + (*it) * max_v, max_v);
+        auto it1 = std::find_if_not(
+            it, perm.end(),
+            [f, max_v, it0 = boundary_v_all.begin()](auto idx) -> bool
+            {
+              return std::equal(f.begin(), f.end(),
+                                std::next(it0, idx * max_v));
+            });
+
+        // If no repeated facet found, insert f0 vertices
+        if (std::distance(it, it1) == 1)
         {
-          // Find iterator to next facet different from f0
-          std::span f(boundary_v_all.data() + (*it) * max_v, max_v);
-          auto it1 = std::find_if_not(
-              it, perm.end(),
-              [f, max_v, it0 = boundary_v_all.begin()](auto idx) -> bool
-              {
-                return std::equal(f.begin(), f.end(),
-                                  std::next(it0, idx * max_v));
-              });
-
-          // If no repeated facet found, insert f0 vertices
-          if (std::distance(it, it1) == 1)
-          {
-            boundary_v_unique.insert(boundary_v_unique.end(), f.begin(),
-                                     f.end());
-          }
-          else if (std::distance(it, it1) > 2)
-            throw std::runtime_error("More than two matching facets found.");
-
-          // Advance iterator
-          it = it1;
+          boundary_v_unique.insert(boundary_v_unique.end(), f.begin(), f.end());
         }
+        else if (std::distance(it, it1) > 2)
+          throw std::runtime_error("More than two matching facets found.");
+
+        // Advance iterator
+        it = it1;
       }
     }
 
