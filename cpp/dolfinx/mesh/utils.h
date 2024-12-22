@@ -981,7 +981,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
     // For facets in boundary_v_all that appear only once, store the
     // facet vertices
-    std::vector<std::int64_t> boundary_v_all_new;
+    std::vector<std::int64_t> boundary_v_unique;
     {
       auto it = perm.begin();
       while (it != perm.end())
@@ -999,8 +999,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         // If no repeated facet found, insert f0 vertices
         if (std::distance(it, it1) == 1)
         {
-          boundary_v_all_new.insert(boundary_v_all_new.end(), f.begin(),
-                                    f.end());
+          boundary_v_unique.insert(boundary_v_unique.end(), f.begin(), f.end());
         }
         else if (std::distance(it, it1) > 2)
           throw std::runtime_error("More than two matching facets found.");
@@ -1011,9 +1010,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     }
 
     {
-      std::ranges::sort(boundary_v_all_new);
-      auto [unique_end, range_end] = std::ranges::unique(boundary_v_all_new);
-      boundary_v_all_new.erase(unique_end, range_end);
+      std::ranges::sort(boundary_v_unique);
+      auto [unique_end, range_end] = std::ranges::unique(boundary_v_unique);
+      boundary_v_unique.erase(unique_end, range_end);
     }
 
     // spdlog::info("Build local dual graph");
@@ -1028,7 +1027,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     }
 
     // TEST
-    if (boundary_v_all_new != boundary_v)
+    if (boundary_v_unique != boundary_v)
       throw std::runtime_error("Boundary vertex mis-match.");
 
     // Remove -1 if it occurs in boundary vertices (may occur in mixed
