@@ -17,6 +17,7 @@
 #include <dolfinx/graph/partition.h>
 #include <functional>
 #include <mpi.h>
+#include <numeric>
 #include <span>
 
 /// @file utils.h
@@ -959,9 +960,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
     // Pack 'unmatched' facets for all cell types into one array
     std::vector<std::int64_t> boundary_v_all;
-    boundary_v_all.reserve(std::reduce(
+    boundary_v_all.reserve(std::accumulate(
         boundary_v_data.begin(), boundary_v_data.end(), std::size_t(0),
-        [](int x, auto& y) { return x + y.first.size(); }));
+        [](std::size_t x, auto& y) { return x + y.first.size(); }));
     int max_v = std::ranges::max_element(boundary_v_data, [](auto& a, auto& b)
                                          { return a.second < b.second; })
                     ->second;
