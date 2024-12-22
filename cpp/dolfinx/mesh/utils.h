@@ -960,6 +960,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
     // Pack 'unmatched' facets for all cell types into one array
     std::vector<std::int64_t> boundary_v_unique;
+    if (boundary_v_data.size() == 1)
+    {
+      boundary_v_unique = boundary_v_data.front().first;
+    }
+    else
     {
       std::vector<std::int64_t> boundary_v_all;
       boundary_v_all.reserve(std::accumulate(
