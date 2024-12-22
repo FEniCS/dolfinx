@@ -931,6 +931,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
           = build_local_dual_graph(std::vector{celltypes[i]},
                                    std::vector{cells1_v_local.back()});
 
+      // Store unmatched_facets for current cell type
       boundary_v_data.emplace_back(std::move(unmatched_facets), max_v);
 
       // Compute re-ordering of graph
@@ -947,6 +948,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       }
       original_idx1[i] = _original_idx;
 
+      // Reorder cells
       impl::reorder_list(
           std::span(cells1_v[i].data(), remap.size() * num_cell_vertices),
           remap);
@@ -955,7 +957,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
           remap);
     }
 
-    // Pack all 'unmatched' facets
+    // Pack 'unmatched' facets for all cell types into one array
     std::vector<std::int64_t> boundary_v_all;
     boundary_v_all.reserve(std::reduce(
         boundary_v_data.begin(), boundary_v_data.end(), std::size_t(0),
@@ -963,15 +965,14 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     int max_v = std::ranges::max_element(boundary_v_data, [](auto& a, auto& b)
                                          { return a.second < b.second; })
                     ->second;
-    for (auto& v_data : boundary_v_data)
+    // for (std::pair<std::vector<std::int64_t>, int>& v_data : boundary_v_data)
+    for (const auto& [v_data, num_v] : boundary_v_data)
     {
-      std::size_t num_entties = v_data.first.size();
+      std::size_t num_entties = v_data.size();
       boundary_v_all.insert(boundary_v_all.end(), num_entties, -1);
 
       auto it1 = std::prev(boundary_v_all.end(), num_entties);
-      std::size_t num_v = v_data.second;
-      for (auto it = v_data.first.begin(); it != v_data.first.end();
-           it += num_v)
+      for (auto it = v_data.begin(); it != v_data.end(); it += num_v)
       {
         std::copy_n(it, num_v, it1);
         it1 += max_v;
