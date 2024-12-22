@@ -135,6 +135,10 @@ template <typename T, int BITS = 16>
 std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1)
 {
   static_assert(std::is_integral_v<T>, "Integral required.");
+
+  if (x.empty())
+    return std::vector<std::int32_t>{};
+
   assert(shape1 > 0);
   assert(x.size() % shape1 == 0);
   const std::size_t shape0 = x.size() / shape1;
