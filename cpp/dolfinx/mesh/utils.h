@@ -976,8 +976,6 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     }
 
     // Compute row permutaion
-    // std::cout << "Shape: " << boundary_v_all.size() << ", " << max_v
-    //           << std::endl;
     const std::vector<std::int32_t> perm = dolfinx::sort_by_perm(
         std::span<const std::int64_t>(boundary_v_all), max_v);
 
@@ -1010,7 +1008,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         // Advance iterator
         it = it1;
       }
+    }
 
+    {
       std::ranges::sort(boundary_v_all_new);
       auto [unique_end, range_end] = std::ranges::unique(boundary_v_all_new);
       boundary_v_all_new.erase(unique_end, range_end);
