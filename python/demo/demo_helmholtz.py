@@ -16,8 +16,9 @@
 # In the complex mode, the exact solution is a plane wave propagating at
 # an angle theta to the positive x-axis. Chosen for comparison with
 # results from Ihlenburg's book "Finite Element Analysis of Acoustic
-# Scattering" p138-139. In real mode, the Method of Manufactured
-# Solutions is used to produce the exact solution and source term.
+# Scattering" p138-139. In real mode, the exact solution corresponds
+# to the real part of the plane wave (a sin function which also solves
+# the homogeneous Helmholtz equation).
 
 from mpi4py import MPI
 
@@ -38,11 +39,18 @@ import numpy as np
 
 import dolfinx
 import ufl
-from dolfinx.fem import Function, assemble_scalar, form, functionspace, dirichletbc, locate_dofs_geometrical
+from dolfinx.fem import (
+    Function,
+    assemble_scalar,
+    dirichletbc,
+    form,
+    functionspace,
+    locate_dofs_geometrical,
+)
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import create_unit_square
-from ufl import dx, grad, inner, FacetNormal, dot, ds
+from ufl import FacetNormal, dot, ds, dx, grad, inner
 
 # Wavenumber
 k0 = 4 * np.pi
@@ -72,28 +80,20 @@ u_exact = Function(V_exact)
 u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
 
-if is_complex_mode:
-    # solve for plane wave with mixed Dirichlet and Neumann BCs (ensuring well-posedness at all wavenumbers)
-    theta = 0.0
-    u_exact.interpolate(lambda x: A * np.exp(1j*k0*(np.cos(theta)*x[0] + np.sin(theta)*x[1])))
-    n = FacetNormal(msh)
-    g = -dot(n, grad(u_exact))
-    L = -inner(g, v) * ds
+# solve for plane wave with mixed Dirichlet and Neumann BCs
+theta = np.pi / 4
+u_exact.interpolate(lambda x: A * np.exp(1j*k0*(np.cos(theta)*x[0] + np.sin(theta)*x[1])))
+n = FacetNormal(msh)
+g = -dot(n, grad(u_exact))
+L = -inner(g, v) * ds
 
-    def boundary_D(x):
-        return np.logical_or(np.isclose(x[0], 0), np.isclose(x[1], 0))
+def boundary_D(x):
+    return np.logical_or(np.isclose(x[0], 0), np.isclose(x[1], 0))
 
-    dofs_D = locate_dofs_geometrical(V, boundary_D)
-    u_bc = Function(V)
-    u_bc.interpolate(u_exact)
-    bcs = [dirichletbc(u_bc, dofs_D)]
-
-else:
-    u_exact.interpolate(lambda x: A * np.cos(k0 * x[0]) * np.cos(k0 * x[1]))
-    f = Function(V)
-    f.interpolate(lambda x: A * k0**2 * np.cos(k0 * x[0]) * np.cos(k0 * x[1]))
-    L = inner(f, v) * dx
-    bcs = []
+dofs_D = locate_dofs_geometrical(V, boundary_D)
+u_bc = Function(V)
+u_bc.interpolate(u_exact)
+bcs = [dirichletbc(u_bc, dofs_D)]
 
 # Compute solution
 uh = Function(V)
