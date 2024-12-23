@@ -13,12 +13,13 @@
 # Copyright (C) 2018 Samuel Groth
 #
 # Helmholtz problem in both complex and real modes
+#
 # In the complex mode, the exact solution is a plane wave propagating at
 # an angle theta to the positive x-axis. Chosen for comparison with
 # results from Ihlenburg's book "Finite Element Analysis of Acoustic
-# Scattering" p138-139. In real mode, the exact solution corresponds
-# to the real part of the plane wave (a sin function which also solves
-# the homogeneous Helmholtz equation).
+# Scattering" p138-139. In real mode, the exact solution corresponds to
+# the real part of the plane wave (a sin function which also solves the
+# homogeneous Helmholtz equation).
 
 from mpi4py import MPI
 
@@ -88,11 +89,9 @@ g = -dot(n, grad(u_exact))
 L = -inner(g, v) * ds
 
 
-def boundary_D(x):
-    return np.logical_or(np.isclose(x[0], 0), np.isclose(x[1], 0))
-
-
-dofs_D = locate_dofs_geometrical(V, boundary_D)
+dofs_D = locate_dofs_geometrical(
+    V, lambda x: np.logical_or(np.isclose(x[0], 0), np.isclose(x[1], 0))
+)
 u_bc = Function(V)
 u_bc.interpolate(u_exact)
 bcs = [dirichletbc(u_bc, dofs_D)]
