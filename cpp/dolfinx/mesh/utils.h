@@ -966,12 +966,27 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
           remap);
     }
 
-    std::vector<std::int64_t> boundary_v;
-    if (facets.size() == 1)
-      boundary_v = std::move(facets.front().first);
+    if (facets.size() == 1) // Optimisation for single cell type
+    {
+      std::vector<std::int64_t>& vertices = facets.front().first;
+
+      // Remove duplicated vertex indices
+      std::ranges::sort(vertices);
+      auto [unique_end, range_end] = std::ranges::unique(vertices);
+      vertices.erase(unique_end, range_end);
+
+      // Remove -1 if it appears as first entity. This can happend in
+      // mixed topology meshes where '-1' is used to pad facet data when
+      // cells facets have differing numbers of vertices.
+      if (!vertices.empty() and vertices.front() == -1)
+        vertices.erase(vertices.begin());
+
+      return vertices;
+    }
     else
     {
-      // Pack 'unmatched' facets for all cell types into one array
+      // Pack 'unmatched' facets for all cell types into single array
+      // (facets0)
       std::vector<std::int64_t> facets0;
       facets0.reserve(std::accumulate(facets.begin(), facets.end(),
                                       std::size_t(0), [](std::size_t x, auto& y)
@@ -994,43 +1009,41 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
       // For facets in facets0 that appear only once, store the facet
       // vertices
+      std::vector<std::int64_t> vertices;
       auto it = perm.begin();
       while (it != perm.end())
       {
-        // Find iterator to next facet different from f0
-        std::span f(facets0.data() + (*it) * max_v, max_v);
+        // Find iterator to next facet different from f and trim any  -1
+        // padding
+        std::span _f(facets0.data() + (*it) * max_v, max_v);
+        auto end = std::find_if(_f.rbegin(), _f.rend(),
+                                [](auto a) { return a >= 0; });
+        auto f = _f.first(std::distance(end, _f.rend()));
+
         auto it1 = std::find_if_not(
             it, perm.end(),
-            [f, max_v, it0 = facets0.begin()](auto idx) -> bool
+            [f, max_v, it0 = facets0.begin()](auto p) -> bool
             {
-              return std::equal(f.begin(), f.end(),
-                                std::next(it0, idx * max_v));
+              return std::equal(f.begin(), f.end(), std::next(it0, p * max_v));
             });
 
-        // If no repeated facet found, insert f0 vertices
+        // If no repeated facet found, insert f vertices
         if (std::distance(it, it1) == 1)
-          boundary_v.insert(boundary_v.end(), f.begin(), f.end());
+          vertices.insert(vertices.end(), f.begin(), f.end());
         else if (std::distance(it, it1) > 2)
           throw std::runtime_error("More than two matching facets found.");
 
         // Advance iterator
         it = it1;
       }
+
+      // Remove duplicate indices
+      std::ranges::sort(vertices);
+      auto [unique_end, range_end] = std::ranges::unique(vertices);
+      vertices.erase(unique_end, range_end);
+
+      return vertices;
     }
-
-    // Remove duplicates
-    std::ranges::sort(boundary_v);
-    auto [unique_end, range_end] = std::ranges::unique(boundary_v);
-    boundary_v.erase(unique_end, range_end);
-
-    // Remove -1 if it appears as first entty in occurs in boundary
-    // vertices. This can happend in mixed topology meshes where '-1' is
-    // used to pad facet data when cells facets have differing numbers
-    // of vertices.
-    if (!boundary_v.empty() and boundary_v.front() == -1)
-      boundary_v.erase(boundary_v.begin());
-
-    return boundary_v;
   };
 
   const std::vector<std::int64_t> boundary_v = boundary_v_fn(
