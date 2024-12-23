@@ -12,7 +12,7 @@
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/io/VTKFile.h>
-#include <dolfinx/io/VTKHDFFile.h>
+#include <dolfinx/io/VTKHDF.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/io/vtk_utils.h>

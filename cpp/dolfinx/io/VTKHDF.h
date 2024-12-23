@@ -1,5 +1,5 @@
+#include "HDF5Interface.h"
 
-#include "VTKHDFFile.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -8,6 +8,20 @@
 
 #include <map>
 #include <vector>
+
+namespace dolfinx::io::VTKHDF
+{
+
+/// Write a mesh to VTKHDF format
+/// @param filename
+/// @param mesh
+template <typename U>
+void write_mesh(std::string filename, const mesh::Mesh<U>& mesh);
+
+template <typename U>
+mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename);
+
+} // namespace dolfinx::io::VTKHDF
 
 using namespace dolfinx;
 
@@ -275,8 +289,3 @@ mesh::Mesh<U> io::VTKHDF::read_mesh(MPI_Comm comm, std::string filename)
   return create_mesh(comm, comm, cells_span, coordinate_elements, comm,
                      points_local, xs, part);
 }
-
-template void io::VTKHDF::write_mesh(std::string filename,
-                                     const mesh::Mesh<double>& mesh);
-template mesh::Mesh<double> io::VTKHDF::read_mesh<double>(MPI_Comm comm,
-                                                          std::string filename);

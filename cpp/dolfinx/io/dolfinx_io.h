@@ -11,4 +11,4 @@ namespace dolfinx::io
 
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/io/VTKFile.h>
-#include <dolfinx/io/VTKHDFFile.h>
+#include <dolfinx/io/VTKHDF.h>
