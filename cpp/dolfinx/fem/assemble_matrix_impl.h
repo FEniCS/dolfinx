@@ -539,8 +539,8 @@ void assemble_matrix(
   {
     mesh0->topology_mutable()->create_entity_permutations();
     mesh1->topology_mutable()->create_entity_permutations();
-    std::span cell_info0(mesh0->topology()->get_cell_permutation_info());
-    std::span cell_info1(mesh1->topology()->get_cell_permutation_info());
+    cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
+    cell_info1 = std::span(mesh1->topology()->get_cell_permutation_info());
   }
 
   for (int i : a.integral_ids(IntegralType::cell))
