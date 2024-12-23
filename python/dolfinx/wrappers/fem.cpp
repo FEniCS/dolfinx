@@ -691,7 +691,7 @@ void declare_form(nb::module_& m, std::string type)
           nb::arg("entity_maps"), nb::arg("mesh").none())
       .def(
           "__init__",
-          [](dolfinx::fem::Form<T, U>* fp, std::uintptr_t form,
+          [](dolfinx::fem::Form<T, U>* fp, std::vector<std::uintptr_t> forms,
              const std::vector<
                  std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>>& spaces,
              const std::vector<std::shared_ptr<
@@ -727,10 +727,12 @@ void declare_form(nb::module_& m, std::string type)
                 _entity_maps;
             for (auto& [msh, map] : entity_maps)
               _entity_maps.emplace(msh, std::span(map.data(), map.size()));
-            ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
+            std::vector<std::reference_wrapper<const ufcx_form>> ps;
+            for (auto form : forms)
+                ps.push_back(*(reinterpret_cast<ufcx_form*>(form)));
             new (fp)
                 dolfinx::fem::Form<T, U>(dolfinx::fem::create_form_factory<T>(
-                    {*p}, spaces, coefficients, constants, sd, _entity_maps,
+                    ps, spaces, coefficients, constants, sd, _entity_maps,
                     mesh));
           },
           nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),

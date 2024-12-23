@@ -89,6 +89,7 @@ elements = [
 
 cpp_elements = [_cpp.fem.FiniteElement_float64(e._e, None, True) for e in elements]
 dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, cpp_elements)
+cppV = _cpp.fem.FunctionSpace_float64(mesh, cpp_elements, dofmaps)
 # Both dofmaps have the same IndexMap, but different cell_dofs
 
 # Compile forms for each cell type
@@ -97,13 +98,14 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
     print(f"Compiling form for {cell_name}")
     element = basix.ufl.element("Lagrange", cell_name, 1)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_name, 1, shape=(3,)))
-    cppV = _cpp.fem.FunctionSpace_float64(mesh, cpp_elements[i], dofmaps[i])
+    # cppV = _cpp.fem.FunctionSpace_float64(mesh, cpp_elements[i], dofmaps[i])
     V = FunctionSpace(Mesh(mesh, domain), element, cppV)
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     k = 12.0
     a = (ufl.inner(ufl.grad(u), ufl.grad(v)) - k**2 * u * v) * ufl.dx
-    aforms += [form(a)]
+    aforms += [a]
 
+aforms = form(aforms)
 ffi = aforms[0].module.ffi
 
 # Create a sparsity patter for form 0
