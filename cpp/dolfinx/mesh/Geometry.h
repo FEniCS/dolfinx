@@ -38,65 +38,38 @@ public:
 
   /// @brief Constructor of object that holds mesh geometry data.
   ///
-  /// @param[in] index_map Index map associated with the geometry dofmap
+  /// @param[in] index_map Index map associated with the geometry dofmap.
   /// @param[in] dofmaps The geometry (point) dofmaps. For a cell, it
-  /// gives the position in the point array of each local geometry node
-  /// @param[in] elements Elements that describes the cell geometry maps.
-  /// @param[in] x The point coordinates. The shape is `(num_points, 3)`
-  /// and the storage is row-major.
+  /// gives the position in the point array of each local geometry node.
+  /// Row-major storage. Each cell type has its own dofmap.
+  /// @param[in] elements Elements that describe the cell geometry maps.
+  /// @param[in] x Point coordinates. The shape is `(num_points, 3)` and
+  /// the storage is row-major.
   /// @param[in] dim The geometric dimension (`0 < dim <= 3`).
-  /// @param[in] input_global_indices The 'global' input index of each
+  /// @param[in] input_global_indices 'Global' input index of each
   /// point, commonly from a mesh input file.
-  template <typename V, typename W>
-    requires std::is_convertible_v<std::remove_cvref_t<V>, std::vector<T>>
+  template <typename U, typename V, typename W>
+    requires std::is_convertible_v<std::remove_cvref_t<U>,
+                                   std::vector<std::vector<std::int32_t>>>
+                 and std::is_convertible_v<std::remove_cvref_t<V>,
+                                           std::vector<T>>
                  and std::is_convertible_v<std::remove_cvref_t<W>,
                                            std::vector<std::int64_t>>
   Geometry(
       std::shared_ptr<const common::IndexMap> index_map,
-      const std::vector<std::vector<std::int32_t>>& dofmaps,
+      // const std::vector<std::vector<std::int32_t>>& dofmaps,
+      U&& dofmaps,
       const std::vector<fem::CoordinateElement<
           typename std::remove_reference_t<typename V::value_type>>>& elements,
       V&& x, int dim, W&& input_global_indices)
-      : _dim(dim), _dofmaps(dofmaps), _index_map(index_map), _cmaps(elements),
-        _x(std::forward<V>(x)),
+      : _dim(dim), _dofmaps(std::forward<U>(dofmaps)), _index_map(index_map),
+        _cmaps(elements), _x(std::forward<V>(x)),
         _input_global_indices(std::forward<W>(input_global_indices))
   {
     assert(_x.size() % 3 == 0);
     if (_x.size() / 3 != _input_global_indices.size())
       throw std::runtime_error("Geometry size mis-match");
   }
-
-  // /// @brief Constructor of object that holds mesh geometry data for a
-  // /// single cell type.
-  // ///
-  // /// This constructor provides and simpler interface to ::Geometry for
-  // /// the case of a single cell/element type.
-  // ///
-  // /// @param[in] index_map Index map associated with the geometry dofmap.
-  // /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
-  // /// gives the position in the point array of each local geometry node.
-  // /// @param[in] element Element that describes the cell geometry map.
-  // /// @param[in] x The point coordinates. The shape is `(num_points, 3)`
-  // /// and the storage is row-major.
-  // /// @param[in] dim Geometric dimension of the mesh coordinates (`0 <
-  // /// dim <= 3`).
-  // /// @param[in] input_global_indices 'Global' input index of each
-  // /// point, commonly from a mesh input file.
-  // template <typename U, typename V, typename W>
-  //   requires std::is_convertible_v<std::remove_cvref_t<U>,
-  //                                  std::vector<std::int32_t>>
-  //            and std::is_convertible_v<std::remove_cvref_t<V>, std::vector<T>>
-  //            and std::is_convertible_v<std::remove_cvref_t<W>,
-  //                                      std::vector<std::int64_t>>
-  // Geometry(
-  //     std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
-  //     const fem::CoordinateElement<
-  //         typename std::remove_reference_t<typename V::value_type>>& element,
-  //     V&& x, int dim, W&& input_global_indices)
-  //     : Geometry(index_map, std::vector{dofmap}, std::vector{element},
-  //                std::forward<V>(x), dim, std::forward<W>(input_global_indices))
-  // {
-  // }
 
   /// Copy constructor
   Geometry(const Geometry&) = default;
@@ -215,14 +188,6 @@ private:
 };
 
 /// @cond
-/// Template type deduction
-// template <typename U, typename V, typename W>
-// Geometry(std::shared_ptr<const common::IndexMap>, U,
-//          const fem::CoordinateElement<
-//              typename std::remove_reference_t<typename V::value_type>>&,
-//          V, int, W)
-//     -> Geometry<typename std::remove_cvref_t<typename V::value_type>>;
-
 /// Template type deduction
 template <typename U, typename V, typename W>
 Geometry(std::shared_ptr<const common::IndexMap>, U,
@@ -437,8 +402,8 @@ create_geometry(
                 std::next(xg.begin(), 3 * i));
   }
 
-  return Geometry(dof_index_map, std::move(dofmaps.front()), {element},
-                  std::move(xg), dim, std::move(igi));
+  return Geometry(dof_index_map, std::move(dofmaps), {element}, std::move(xg),
+                  dim, std::move(igi));
 }
 
 } // namespace dolfinx::mesh
