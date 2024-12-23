@@ -116,8 +116,8 @@ void assemble_cells(
     P1T(_Ae, cell_info1, c1, ndim0); // A =  B P1_T
 
     // Zero rows/columns for essential bcs
-    auto dofs0 = std::span(dmap0.data_handle() + c0 * num_dofs0, num_dofs0);
-    auto dofs1 = std::span(dmap1.data_handle() + c1 * num_dofs1, num_dofs1);
+    std::span dofs0(dmap0.data_handle() + c0 * num_dofs0, num_dofs0);
+    std::span dofs1(dmap1.data_handle() + c1 * num_dofs1, num_dofs1);
 
     if (!bc0.empty())
     {
@@ -255,8 +255,8 @@ void assemble_exterior_facets(
     P1T(_Ae, cell_info1, cell1, ndim0);
 
     // Zero rows/columns for essential bcs
-    auto dofs0 = std::span(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
-    auto dofs1 = std::span(dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
+    std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
+    std::span dofs1(dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
     if (!bc0.empty())
     {
       for (int i = 0; i < num_dofs0; ++i)
@@ -539,8 +539,8 @@ void assemble_matrix(
   {
     mesh0->topology_mutable()->create_entity_permutations();
     mesh1->topology_mutable()->create_entity_permutations();
-    cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
-    cell_info1 = std::span(mesh1->topology()->get_cell_permutation_info());
+    std::span cell_info0(mesh0->topology()->get_cell_permutation_info());
+    std::span cell_info1(mesh1->topology()->get_cell_permutation_info());
   }
 
   for (int i : a.integral_ids(IntegralType::cell))
