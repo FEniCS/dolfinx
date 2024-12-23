@@ -200,6 +200,10 @@ public:
   /// @return Cell type that the topology is for
   CellType cell_type() const;
 
+  /// @brief Get the types of cells in the topology
+  /// @return The cell types
+  std::vector<CellType> cell_types() const;
+
   /// @brief Get the entity types in the topology for a given dimension
   /// @param dim Topological dimension
   /// @return List of entity types

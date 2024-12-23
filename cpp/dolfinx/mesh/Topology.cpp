@@ -1026,7 +1026,20 @@ Topology::interprocess_facets(std::int8_t index) const
   return _interprocess_facets.at(index);
 }
 //-----------------------------------------------------------------------------
-mesh::CellType Topology::cell_type() const { return _entity_types.back(); }
+mesh::CellType Topology::cell_type() const
+{
+  std::vector<CellType> cell_types = entity_types(dim());
+  if (cell_types.size() > 1)
+    throw std::runtime_error(
+        "Multiple cell types of this dimension. Call cell_types "
+        "instead.");
+  return cell_types[0];
+}
+//-----------------------------------------------------------------------------
+std::vector<mesh::CellType> Topology::cell_types() const
+{
+  return entity_types(dim());
+}
 //-----------------------------------------------------------------------------
 std::vector<CellType> Topology::entity_types(std::int8_t dim) const
 {
