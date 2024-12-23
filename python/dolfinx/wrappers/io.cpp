@@ -219,6 +219,10 @@ void io(nb::module_& m)
       "geometry indices");
 
   m.def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<double>);
+  m.def("read_vtkhdf_mesh",
+        [](MPICommWrapper comm, std::string filename) {
+          return dolfinx::io::VTKHDF::read_mesh<double>(comm.get(), filename);
+        });
 
   // dolfinx::io::cell permutation functions
   m.def("perm_vtk", &dolfinx::io::cells::perm_vtk, nb::arg("type"),

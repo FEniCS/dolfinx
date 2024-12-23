@@ -15,4 +15,7 @@ namespace dolfinx::io::VTKHDF
 template <typename U>
 void write_mesh(std::string filename, const mesh::Mesh<U>& mesh);
 
+template <typename U>
+mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename);
+
 } // namespace dolfinx::io::VTKHDF

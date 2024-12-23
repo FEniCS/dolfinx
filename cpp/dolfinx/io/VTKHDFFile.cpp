@@ -4,6 +4,10 @@
 #include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/utils.h>
+
+#include <map>
+#include <vector>
 
 using namespace dolfinx;
 
@@ -17,6 +21,7 @@ void io::VTKHDF::write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
 
   hid_t vtk_group = H5Gopen(h5file, "VTKHDF", H5P_DEFAULT);
 
+  // Create "Version" attribute
   hsize_t dims = 2;
   hid_t space_id = H5Screate_simple(1, &dims, NULL);
   hid_t attr_id = H5Acreate(vtk_group, "Version", H5T_NATIVE_INT32, space_id,
@@ -26,6 +31,7 @@ void io::VTKHDF::write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
   H5Aclose(attr_id);
   H5Sclose(space_id);
 
+  // Create "Type" attribute
   space_id = H5Screate(H5S_SCALAR);
   hid_t atype = H5Tcopy(H5T_C_S1);
   H5Tset_size(atype, 16);
@@ -148,7 +154,129 @@ void io::VTKHDF::write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
 
   io::hdf5::write_dataset(h5file, "/VTKHDF/NumberOfCells",
                           &num_all_cells_global, {0, 1}, {1}, true, false);
+
+  io::hdf5::close_file(h5file);
+}
+
+template <typename U>
+mesh::Mesh<U> io::VTKHDF::read_mesh(MPI_Comm comm, std::string filename)
+{
+  hid_t h5file = io::hdf5::open_file(comm, filename, "r", true);
+
+  std::vector<std::int64_t> shape
+      = io::hdf5::get_dataset_shape(h5file, "/VTKHDF/Types");
+  int rank = MPI::rank(comm);
+  int size = MPI::size(comm);
+  auto local_cell_range = dolfinx::MPI::local_range(rank, shape[0], size);
+
+  hid_t dset_id = io::hdf5::open_dataset(h5file, "/VTKHDF/Types");
+  std::vector<std::uint8_t> types
+      = io::hdf5::read_dataset<std::uint8_t>(dset_id, local_cell_range, true);
+  H5Dclose(dset_id);
+  std::vector<std::uint8_t> types_unique(types.begin(), types.end());
+  {
+    std::ranges::sort(types_unique);
+    auto [unique_end, range_end] = std::ranges::unique(types_unique);
+    types_unique.erase(unique_end, range_end);
+  }
+
+  // Share cell types with all processes to make global list of cell types
+  // FIXME: amount of data is small, but number of connections does not scale.
+  std::int32_t count = types_unique.size();
+  std::vector<std::int32_t> recv_count(size);
+  std::vector<std::int32_t> recv_offsets(size + 1, 0);
+  MPI_Allgather(&count, 1, MPI_INT32_T, recv_count.data(), 1, MPI_INT32_T,
+                comm);
+  std::partial_sum(recv_count.begin(), recv_count.end(),
+                   recv_offsets.begin() + 1);
+  std::vector<std::uint8_t> recv_types(recv_offsets.back());
+  MPI_Allgatherv(types_unique.data(), count, MPI_UINT8_T, recv_types.data(),
+                 recv_count.data(), recv_offsets.data(), MPI_UINT8_T, comm);
+  {
+    std::ranges::sort(recv_types);
+    auto [unique_end, range_end] = std::ranges::unique(recv_types);
+    recv_types.erase(unique_end, range_end);
+  }
+
+  // Create reverse map from VTK to dolfinx cell types
+  std::map<std::uint8_t, mesh::CellType> vtk_to_dolfinx;
+  const std::vector<mesh::CellType> dolfinx_cells
+      = {mesh::CellType::point,       mesh::CellType::interval,
+         mesh::CellType::triangle,    mesh::CellType::quadrilateral,
+         mesh::CellType::tetrahedron, mesh::CellType::prism,
+         mesh::CellType::pyramid,     mesh::CellType::hexahedron};
+  for (auto dolfinx_type : dolfinx_cells)
+  {
+    vtk_to_dolfinx.insert({io::cells::get_vtk_cell_type(
+                               dolfinx_type, mesh::cell_dim(dolfinx_type)),
+                           dolfinx_type});
+  }
+
+  // Map from VTKCellType to index in list of cell types
+  std::map<std::uint8_t, std::int32_t> type_to_index;
+  std::vector<mesh::CellType> dolfinx_cell_type;
+  for (std::size_t i = 0; i < recv_types.size(); ++i)
+  {
+    type_to_index.insert({recv_types[i], i});
+    dolfinx_cell_type.push_back(vtk_to_dolfinx.at(recv_types[i]));
+  }
+
+  dset_id = io::hdf5::open_dataset(h5file, "/VTKHDF/NumberOfPoints");
+  std::vector<std::int64_t> npoints
+      = io::hdf5::read_dataset<std::int64_t>(dset_id, {0, 1}, true);
+  H5Dclose(dset_id);
+  spdlog::info("Mesh with {} points", npoints[0]);
+  auto local_point_range = MPI::local_range(rank, npoints[0], size);
+
+  std::vector<std::int64_t> x_shape
+      = io::hdf5::get_dataset_shape(h5file, "/VTKHDF/Points");
+  dset_id = io::hdf5::open_dataset(h5file, "/VTKHDF/Points");
+  std::vector<U> points_local
+      = io::hdf5::read_dataset<U>(dset_id, local_point_range, true);
+  H5Dclose(dset_id);
+  dset_id = io::hdf5::open_dataset(h5file, "/VTKHDF/Offsets");
+  std::vector<std::int64_t> offsets = io::hdf5::read_dataset<std::int64_t>(
+      dset_id, {local_cell_range[0], local_cell_range[1] + 1}, true);
+  H5Dclose(dset_id);
+  dset_id = io::hdf5::open_dataset(h5file, "/VTKHDF/Connectivity");
+  std::vector<std::int64_t> topology = io::hdf5::read_dataset<std::int64_t>(
+      dset_id, {offsets.front(), offsets.back()}, true);
+  H5Dclose(dset_id);
+  const std::int64_t offset0 = offsets.front();
+  std::for_each(offsets.begin(), offsets.end(),
+                [&offset0](std::int64_t& v) { v -= offset0; });
+  io::hdf5::close_file(h5file);
+
+  // Create cell topologies for each celltype in mesh
+  std::vector<std::vector<std::int64_t>> cells_local(recv_types.size());
+  for (std::size_t j = 0; j < types.size(); ++j)
+  {
+    std::int32_t type_index = type_to_index.at(types[j]);
+    mesh::CellType cell_type = dolfinx_cell_type[type_index];
+    auto perm = io::cells::perm_vtk(cell_type, offsets[j + 1] - offsets[j]);
+
+    for (std::size_t k = 0; k < offsets[j + 1] - offsets[j]; ++k)
+    {
+      cells_local[type_index].push_back(topology[perm[k] + offsets[j]]);
+    }
+  }
+
+  // Make first order coordinate elements
+  std::vector<fem::CoordinateElement<U>> coordinate_elements;
+  for (auto& cell : dolfinx_cell_type)
+    coordinate_elements.push_back(fem::CoordinateElement<U>(cell, 1));
+
+  auto part = create_cell_partitioner(mesh::GhostMode::none);
+  std::vector<std::span<const std::int64_t>> cells_span;
+  for (auto& cells : cells_local)
+    cells_span.push_back(cells);
+  std::array<std::size_t, 2> xs
+      = {(std::size_t)x_shape[0], (std::size_t)x_shape[1]};
+  return create_mesh(comm, comm, cells_span, coordinate_elements, comm,
+                     points_local, xs, part);
 }
 
 template void io::VTKHDF::write_mesh(std::string filename,
                                      const mesh::Mesh<double>& mesh);
+template mesh::Mesh<double> io::VTKHDF::read_mesh<double>(MPI_Comm comm,
+                                                          std::string filename);
