@@ -915,7 +915,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                           std::vector<std::vector<std::int64_t>>& cells1_v,
                           std::vector<std::vector<std::int64_t>>& original_idx1)
   {
-    std::vector<std::pair<std::vector<std::int64_t>, int>> boundary_v_data;
+    spdlog::info("Build local dual graphs, re-order cells, and compute process "
+                 "boundary vertices.");
+
+    std::vector<std::pair<std::vector<std::int64_t>, int>> facets;
 
     // Build lists of cells (by cell type) that excludes ghosts
     std::vector<std::span<const std::int64_t>> cells1_v_local;
@@ -933,7 +936,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                                    std::vector{cells1_v_local.back()});
 
       // Store unmatched_facets for current cell type
-      boundary_v_data.emplace_back(std::move(unmatched_facets), max_v);
+      facets.emplace_back(std::move(unmatched_facets), max_v);
 
       // Compute re-ordering of graph
       const std::vector<std::int32_t> remap = graph::reorder_gps(graph);
@@ -958,42 +961,42 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
           remap);
     }
 
-    std::vector<std::int64_t> boundary_v_unique;
-    if (boundary_v_data.size() == 1)
-      boundary_v_unique = std::move(boundary_v_data.front().first);
+    std::vector<std::int64_t> boundary_v;
+    if (facets.size() == 1)
+      boundary_v = std::move(facets.front().first);
     else
     {
       // Pack 'unmatched' facets for all cell types into one array
-      std::vector<std::int64_t> boundary_v_all;
-      boundary_v_all.reserve(std::accumulate(
-          boundary_v_data.begin(), boundary_v_data.end(), std::size_t(0),
-          [](std::size_t x, auto& y) { return x + y.first.size(); }));
-      int max_v = std::ranges::max_element(boundary_v_data, [](auto& a, auto& b)
+      std::vector<std::int64_t> facets0;
+      facets0.reserve(std::accumulate(facets.begin(), facets.end(),
+                                      std::size_t(0), [](std::size_t x, auto& y)
+                                      { return x + y.first.size(); }));
+      int max_v = std::ranges::max_element(facets, [](auto& a, auto& b)
                                            { return a.second < b.second; })
                       ->second;
-      for (const auto& [v_data, num_v] : boundary_v_data)
+      for (const auto& [v_data, num_v] : facets)
       {
         for (auto it = v_data.begin(); it != v_data.end(); it += num_v)
         {
-          boundary_v_all.insert(boundary_v_all.end(), it, std::next(it, num_v));
-          boundary_v_all.insert(boundary_v_all.end(), max_v - num_v, -1);
+          facets0.insert(facets0.end(), it, std::next(it, num_v));
+          facets0.insert(facets0.end(), max_v - num_v, -1);
         }
       }
 
       // Compute row permutaion
       const std::vector<std::int32_t> perm = dolfinx::sort_by_perm(
-          std::span<const std::int64_t>(boundary_v_all), max_v);
+          std::span<const std::int64_t>(facets0), max_v);
 
-      // For facets in boundary_v_all that appear only once, store the
-      // facet vertices
+      // For facets in facets0 that appear only once, store the facet
+      // vertices
       auto it = perm.begin();
       while (it != perm.end())
       {
         // Find iterator to next facet different from f0
-        std::span f(boundary_v_all.data() + (*it) * max_v, max_v);
+        std::span f(facets0.data() + (*it) * max_v, max_v);
         auto it1 = std::find_if_not(
             it, perm.end(),
-            [f, max_v, it0 = boundary_v_all.begin()](auto idx) -> bool
+            [f, max_v, it0 = facets0.begin()](auto idx) -> bool
             {
               return std::equal(f.begin(), f.end(),
                                 std::next(it0, idx * max_v));
@@ -1001,9 +1004,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
         // If no repeated facet found, insert f0 vertices
         if (std::distance(it, it1) == 1)
-        {
-          boundary_v_unique.insert(boundary_v_unique.end(), f.begin(), f.end());
-        }
+          boundary_v.insert(boundary_v.end(), f.begin(), f.end());
         else if (std::distance(it, it1) > 2)
           throw std::runtime_error("More than two matching facets found.");
 
@@ -1012,30 +1013,16 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       }
     }
 
-    {
-      std::ranges::sort(boundary_v_unique);
-      auto [unique_end, range_end] = std::ranges::unique(boundary_v_unique);
-      boundary_v_unique.erase(unique_end, range_end);
-    }
+    // Remove duplicates
+    std::ranges::sort(boundary_v);
+    auto [unique_end, range_end] = std::ranges::unique(boundary_v);
+    boundary_v.erase(unique_end, range_end);
 
-    // spdlog::info("Build local dual graph");
-    auto [xgraph, boundary_v, xmax_v, xfacet_attached_cells]
-        = build_local_dual_graph(celltypes, cells1_v_local);
-
-    // Boundary vertices are marked as 'unknown'
-    {
-      std::ranges::sort(boundary_v);
-      auto [unique_end, range_end] = std::ranges::unique(boundary_v);
-      boundary_v.erase(unique_end, range_end);
-    }
-
-    // TEST
-    if (boundary_v_unique != boundary_v)
-      throw std::runtime_error("Boundary vertex mis-match.");
-
-    // Remove -1 if it occurs in boundary vertices (may occur in mixed
-    // topology)
-    if (!boundary_v.empty() and boundary_v[0] == -1)
+    // Remove -1 if it appears as first entty in occurs in boundary
+    // vertices. This can happend in mixed topology meshes where '-1' is
+    // used to pad facet data when cells facets have differing numbers
+    // of vertices.
+    if (!boundary_v.empty() and boundary_v.front() == -1)
       boundary_v.erase(boundary_v.begin());
 
     return boundary_v;
@@ -1047,7 +1034,6 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   spdlog::debug("Got {} boundary vertices", boundary_v.size());
 
   // Create Topology
-
   std::vector<std::span<const std::int64_t>> cells1_v_span;
   std::ranges::transform(cells1_v, std::back_inserter(cells1_v_span),
                          [](auto& c) { return std::span(c); });
@@ -1057,7 +1043,6 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   std::vector<std::span<const int>> ghost_owners_span;
   std::ranges::transform(ghost_owners, std::back_inserter(ghost_owners_span),
                          [](auto& c) { return std::span(c); });
-
   Topology topology
       = create_topology(comm, celltypes, cells1_v_span, original_idx1_span,
                         ghost_owners_span, boundary_v);
