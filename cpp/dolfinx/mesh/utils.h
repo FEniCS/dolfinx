@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Garth N. Wells
+// Copyright (C) 2019-2024 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -42,11 +42,11 @@ enum class GhostMode : int
 
 namespace impl
 {
-/// @brief Re-order an adjacency list of fixed degree.
+/// @brief Re-order the nodes a fixed-degree adjacency list.
 /// @param[in,out] list Fixed-degree adjacency list stored row-major.
 /// Degree is equal to `list.size() / nodemap.size()`.
-/// @param[in] nodemap Map from old to new index, i.e. fro old index `i`
-/// its new index is `nodemap[i]`.
+/// @param[in] nodemap Map from old to new index, i.e. for an old index
+/// `i` the new index is `nodemap[i]`.
 template <typename T>
 void reorder_list(std::span<T> list, std::span<const std::int32_t> nodemap)
 {
@@ -193,8 +193,8 @@ using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
     const std::vector<std::span<const std::int64_t>>& cells)>;
 
 /// @brief Extract topology from cell data, i.e. extract cell vertices.
-/// @param[in] cell_type The cell shape
-/// @param[in] layout The layout of geometry 'degrees-of-freedom' on the
+/// @param[in] cell_type Cell shape.
+/// @param[in] layout Layout of geometry 'degrees-of-freedom' on the
 /// reference cell.
 /// @param[in] cells List of 'nodes' for each cell using global indices.
 /// The layout must be consistent with `layout`.
@@ -264,21 +264,23 @@ std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
   return h;
 }
 
-/// @brief Compute normal to given cell (viewed as embedded in 3D)
+/// @brief Compute normal to given cell (viewed as embedded in 3D).
 /// @returns The entity normals. The shape is `(entities.size(), 3)` and
 /// the storage is row-major.
 template <std::floating_point T>
 std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
                             std::span<const std::int32_t> entities)
 {
-  auto topology = mesh.topology();
-  assert(topology);
-
   if (entities.empty())
     return std::vector<T>();
 
+  auto topology = mesh.topology();
+  assert(topology);
   if (topology->cell_type() == CellType::prism and dim == 2)
-    throw std::runtime_error("More work needed for prism cell");
+  {
+    throw std::runtime_error(
+        "Cell normal computation for prism cells not yet supported.");
+  }
 
   const int gdim = mesh.geometry().dim();
   const CellType type = cell_entity_type(topology->cell_type(), dim, 0);
@@ -295,7 +297,7 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
   case CellType::interval:
   {
     if (gdim > 2)
-      throw std::invalid_argument("Interval cell normal undefined in 3D");
+      throw std::invalid_argument("Interval cell normal undefined in 3D.");
     for (std::size_t i = 0; i < entities.size(); ++i)
     {
       // Get the two vertices as points
@@ -416,10 +418,10 @@ std::vector<T> compute_midpoints(const Mesh<T>& mesh, int dim,
 
 namespace impl
 {
-/// The coordinates for all 'vertices' in the mesh
-/// @param[in] mesh Mesh to compute the vertex coordinates for
+/// @brief The coordinates for all 'vertices' in the mesh.
+/// @param[in] mesh Mesh to compute the vertex coordinates for.
 /// @return The vertex coordinates. The shape is `(3, num_vertices)` and
-/// the jth column hold the coordinates of vertex j.
+/// the `jth` column hold the coordinates of vertex `j`.
 template <std::floating_point T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>>
 compute_vertex_coords(const mesh::Mesh<T>& mesh)
@@ -643,7 +645,10 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   assert(topology);
   CellType cell_type = topology->cell_type();
   if (cell_type == CellType::prism and dim == 2)
-    throw std::runtime_error("More work needed for prism cells");
+  {
+    throw std::runtime_error(
+        "mesh::entities_to_geometry for prism cells not yet supported.");
+  }
 
   const int tdim = topology->dim();
   const Geometry<T>& geometry = mesh.geometry();
@@ -714,8 +719,8 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 
     std::vector<std::int32_t> closure_dofs(closure_dofs_all[dim][local_entity]);
 
-    // Cell sub-entities must be permuted so that their local orientation agrees
-    // with their global orientation
+    // Cell sub-entities must be permuted so that their local
+    // orientation agrees with their global orientation
     if (permute)
     {
       mesh::CellType entity_type
@@ -735,7 +740,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 }
 
 /// @brief Create a function that computes destination rank for mesh
-/// cells in this rank by applying the default graph partitioner to the
+/// cells on this rank by applying the default graph partitioner to the
 /// dual graph of the mesh.
 /// @return Function that computes the destination ranks for each cell.
 CellPartitionFunction create_cell_partitioner(mesh::GhostMode ghost_mode
@@ -743,7 +748,7 @@ CellPartitionFunction create_cell_partitioner(mesh::GhostMode ghost_mode
                                               const graph::partition_fn& partfn
                                               = &graph::partition_graph);
 
-/// @brief Compute incident indices.
+/// @brief Compute incident entities.
 /// @param[in] topology The topology.
 /// @param[in] entities List of indices of topological dimension `d0`.
 /// @param[in] d0 Topological dimension.
@@ -1084,9 +1089,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
               std::move(geometry));
 }
 
-/// @brief Create a distributed mesh from mesh data using a provided
-/// graph partitioning function for determining the parallel
-/// distribution of the mesh.
+/// @brief Create a distributed mesh wirh a single cell type from mesh
+/// data and using a provided graph partitioning function for
+/// determining the parallel distribution of the mesh.
 ///
 /// From mesh input data that is distributed across processes, a
 /// distributed mesh::Mesh is created. If the partitioning function is
@@ -1113,6 +1118,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// @param[in] partitioner Graph partitioner that computes the owning
 /// rank for each cell. If not callable, cells are not redistributed.
 /// @return A mesh distributed on the communicator `comm`.
+///
+/// This constructor provdes a simplified interface to the more general
+/// ::create_mesh constructor, which supports meshes with more than one
+/// cell type.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt, std::span<const std::int64_t> cells,
@@ -1140,8 +1149,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// @param[in] elements Coordinate elements for the cells.
 /// @param[in] x Geometry data ('node' coordinates). See ::create_mesh
 /// for a detailed description.
-/// @param[in] xshape The shape of `x`. It should be `(num_points, gdim)`.
-/// @param[in] ghost_mode The requested type of cell ghosting/overlap
+/// @param[in] xshape Shape of `x`. It should be `(num_points, gdim)`.
+/// @param[in] ghost_mode Required type of cell ghosting/overlap.
 /// @return A mesh distributed on the communicator `comm`.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>>
@@ -1151,11 +1160,12 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
             const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
 {
   if (dolfinx::MPI::size(comm) == 1)
-    return create_mesh(comm, comm, cells, elements, comm, x, xshape, nullptr);
+    return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
+                       comm, x, xshape, nullptr);
   else
   {
-    return create_mesh(comm, comm, cells, elements, comm, x, xshape,
-                       create_cell_partitioner(ghost_mode));
+    return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
+                       comm, x, xshape, create_cell_partitioner(ghost_mode));
   }
 }
 

@@ -17,7 +17,7 @@ class Topology;
 
 /// @brief A Mesh consists of a set of connected and numbered mesh
 /// topological entities, and geometry data.
-/// @tparam The floating point type for representing the geometry.
+/// @tparam Floating point type for representing the geometry.
 template <std::floating_point T>
 class Mesh
 {
@@ -25,10 +25,10 @@ public:
   /// @brief Value type
   using geometry_type = Geometry<T>;
 
-  /// @brief Create a mesh.
+  /// @brief Create a Mesh.
   ///
   /// @note This constructor is not normally called by users. User code
-  /// will normally ::create_mesh.
+  /// will normally use ::create_mesh.
   ///
   /// @param[in] comm MPI Communicator.
   /// @param[in] topology Mesh topology.
