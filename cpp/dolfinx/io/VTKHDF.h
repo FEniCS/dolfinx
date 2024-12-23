@@ -1,3 +1,9 @@
+// Copyright (C) 2024 Chris Richardson
+//
+// This file is part of DOLFINx (https://www.fenicsproject.org)
+//
+// SPDX-License-Identifier:    LGPL-3.0-or-later
+
 #include "HDF5Interface.h"
 
 #include <dolfinx/common/IndexMap.h>
@@ -12,12 +18,18 @@
 namespace dolfinx::io::VTKHDF
 {
 
-/// Write a mesh to VTKHDF format
-/// @param filename
-/// @param mesh
+/// @brief Write a mesh to VTKHDF format
+/// @tparam U Scalar type of the mesh
+/// @param filename File to write to
+/// @param mesh Mesh
 template <typename U>
 void write_mesh(std::string filename, const mesh::Mesh<U>& mesh);
 
+/// @brief  Read a mesh from VTKHDF format file
+/// @tparam U Scalar type of mesh
+/// @param comm MPI Communicator for reading mesh
+/// @param filename Filename
+/// @return a mesh
 template <typename U>
 mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename);
 
