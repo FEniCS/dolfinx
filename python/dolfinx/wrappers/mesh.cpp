@@ -152,8 +152,10 @@ void declare_mesh(nb::module_& m, std::string type)
 
             new (self) dolfinx::mesh::Geometry<T>(
                 index_map,
-                std::vector(dofmap.data(), dofmap.data() + dofmap.size()),
-                element, std::move(x_vec), shape1,
+                std::vector<std::vector<std::int32_t>>(
+                    1, std::vector<std::int32_t>(
+                           dofmap.data(), dofmap.data() + dofmap.size())),
+                {element}, std::move(x_vec), shape1,
                 std::vector(input_global_indices.data(),
                             input_global_indices.data()
                                 + input_global_indices.size()));

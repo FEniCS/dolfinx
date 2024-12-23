@@ -66,37 +66,37 @@ public:
       throw std::runtime_error("Geometry size mis-match");
   }
 
-  /// @brief Constructor of object that holds mesh geometry data for a
-  /// single cell type.
-  ///
-  /// This constructor provides and simpler interface to ::Geometry for
-  /// the case of a single cell/element type.
-  ///
-  /// @param[in] index_map Index map associated with the geometry dofmap.
-  /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
-  /// gives the position in the point array of each local geometry node.
-  /// @param[in] element Element that describes the cell geometry map.
-  /// @param[in] x The point coordinates. The shape is `(num_points, 3)`
-  /// and the storage is row-major.
-  /// @param[in] dim Geometric dimension of the mesh coordinates (`0 <
-  /// dim <= 3`).
-  /// @param[in] input_global_indices 'Global' input index of each
-  /// point, commonly from a mesh input file.
-  template <typename U, typename V, typename W>
-    requires std::is_convertible_v<std::remove_cvref_t<U>,
-                                   std::vector<std::int32_t>>
-             and std::is_convertible_v<std::remove_cvref_t<V>, std::vector<T>>
-             and std::is_convertible_v<std::remove_cvref_t<W>,
-                                       std::vector<std::int64_t>>
-  Geometry(
-      std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
-      const fem::CoordinateElement<
-          typename std::remove_reference_t<typename V::value_type>>& element,
-      V&& x, int dim, W&& input_global_indices)
-      : Geometry(index_map, std::vector{dofmap}, std::vector{element},
-                 std::forward<V>(x), dim, std::forward<W>(input_global_indices))
-  {
-  }
+  // /// @brief Constructor of object that holds mesh geometry data for a
+  // /// single cell type.
+  // ///
+  // /// This constructor provides and simpler interface to ::Geometry for
+  // /// the case of a single cell/element type.
+  // ///
+  // /// @param[in] index_map Index map associated with the geometry dofmap.
+  // /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
+  // /// gives the position in the point array of each local geometry node.
+  // /// @param[in] element Element that describes the cell geometry map.
+  // /// @param[in] x The point coordinates. The shape is `(num_points, 3)`
+  // /// and the storage is row-major.
+  // /// @param[in] dim Geometric dimension of the mesh coordinates (`0 <
+  // /// dim <= 3`).
+  // /// @param[in] input_global_indices 'Global' input index of each
+  // /// point, commonly from a mesh input file.
+  // template <typename U, typename V, typename W>
+  //   requires std::is_convertible_v<std::remove_cvref_t<U>,
+  //                                  std::vector<std::int32_t>>
+  //            and std::is_convertible_v<std::remove_cvref_t<V>, std::vector<T>>
+  //            and std::is_convertible_v<std::remove_cvref_t<W>,
+  //                                      std::vector<std::int64_t>>
+  // Geometry(
+  //     std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
+  //     const fem::CoordinateElement<
+  //         typename std::remove_reference_t<typename V::value_type>>& element,
+  //     V&& x, int dim, W&& input_global_indices)
+  //     : Geometry(index_map, std::vector{dofmap}, std::vector{element},
+  //                std::forward<V>(x), dim, std::forward<W>(input_global_indices))
+  // {
+  // }
 
   /// Copy constructor
   Geometry(const Geometry&) = default;
@@ -215,6 +215,14 @@ private:
 };
 
 /// @cond
+/// Template type deduction
+// template <typename U, typename V, typename W>
+// Geometry(std::shared_ptr<const common::IndexMap>, U,
+//          const fem::CoordinateElement<
+//              typename std::remove_reference_t<typename V::value_type>>&,
+//          V, int, W)
+//     -> Geometry<typename std::remove_cvref_t<typename V::value_type>>;
+
 /// Template type deduction
 template <typename U, typename V, typename W>
 Geometry(std::shared_ptr<const common::IndexMap>, U,
