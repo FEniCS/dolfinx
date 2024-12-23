@@ -247,7 +247,7 @@ private:
   // MPI communicator
   dolfinx::MPI::Comm _comm;
 
-  // Cell types for entites in Topology, as follows:
+  // Cell types for entities in Topology, as follows:
   // [CellType::point, edge_types..., facet_types..., cell_types...]
   // Only one type is expected for vertices, (and usually edges), but facets
   // and cells can be a list of multiple types, e.g. [quadrilateral, triangle]
