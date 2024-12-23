@@ -50,6 +50,20 @@ public:
     // Do nothing
   }
 
+  /// @brief Create function space for given mesh, elements and
+  /// degree-of-freedom maps.
+  /// @param[in] mesh Mesh that the space is defined on.
+  /// @param[in] elements Finite element for the space.
+  /// @param[in] dofmaps Degree-of-freedom map for the space.
+  FunctionSpace(std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
+                std::vector<std::shared_ptr<const FiniteElement<geometry_type>>> elements,
+                std::vector<std::shared_ptr<const DofMap>> dofmaps)
+      : _mesh(mesh), _dofmaps(dofmaps), _elements(elements),
+        _id(boost::uuids::random_generator()()), _root_space_id(_id)
+  {
+    // Do nothing
+  }
+
   // Copy constructor (deleted)
   FunctionSpace(const FunctionSpace& V) = delete;
 
@@ -87,8 +101,8 @@ public:
     auto element = this->_elements.front()->extract_sub_element(component);
 
     // Extract sub dofmap
-    auto dofmap
-        = std::make_shared<DofMap>(_dofmaps.front()->extract_sub_dofmap(component));
+    auto dofmap = std::make_shared<DofMap>(
+        _dofmaps.front()->extract_sub_dofmap(component));
 
     // Create new sub space
     FunctionSpace sub_space(_mesh, element, dofmap);
@@ -193,7 +207,8 @@ public:
 
     // Get dofmap local size
     assert(_dofmaps.front());
-    std::shared_ptr<const common::IndexMap> index_map = _dofmaps.front()->index_map;
+    std::shared_ptr<const common::IndexMap> index_map
+        = _dofmaps.front()->index_map;
     assert(index_map);
     const int index_map_bs = _dofmaps.front()->index_map_bs();
     const int dofmap_bs = _dofmaps.front()->bs();
