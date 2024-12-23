@@ -695,7 +695,8 @@ def meshtags(
     entities: npt.NDArray[np.int32],
     values: typing.Union[np.ndarray, int, float],
 ) -> MeshTags:
-    """Create a MeshTags object that associates data with a subset of mesh entities.
+    """Create a MeshTags object that associates data with a subset of
+    mesh entities.
 
     Args:
         msh: The mesh.
@@ -845,8 +846,8 @@ def create_rectangle(
 
     Args:
         comm: MPI communicator.
-        points: Coordinates of the lower - left and upper - right corners of
-            the rectangle.
+        points: Coordinates of the lower - left and upper - right
+            corners of the rectangle.
         n: Number of cells in each direction.
         cell_type: Mesh cell type.
         dtype: Float type for the mesh geometry(``numpy.float32``
@@ -900,7 +901,7 @@ def create_unit_square(
             Direction of diagonal.
 
     Returns:
-        A mesh of a square with corners at (0, 0) and (1, 1).
+        A mesh of a square with corners at ``(0, 0)`` and ``(1, 1)``.
     """
     return create_rectangle(
         comm,
@@ -995,7 +996,8 @@ def create_unit_cube(
 def entities_to_geometry(
     msh: Mesh, dim: int, entities: npt.NDArray[np.int32], permute=False
 ) -> npt.NDArray[np.int32]:
-    """Compute the geometric DOFs associated with the closure of the given mesh entities.
+    """Compute the geometric DOFs associated with the closure of the
+    given mesh entities.
 
     Args:
         msh: The mesh.

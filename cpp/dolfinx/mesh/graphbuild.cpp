@@ -138,7 +138,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
         const int neigh_rank = dest.size();
 
         // Store global rank
-        dest.push_back((*it)[0]);
+        dest.push_back(it->front());
 
         // Find iterator to next global rank
         auto it1
@@ -261,20 +261,19 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
             return std::equal(f0, std::next(f0, fshape1), f1);
           });
 
-      std::size_t num_matches = std::distance(it, it1);
-      if (num_matches > 2)
-      {
-        throw std::runtime_error(
-            "A facet is connected to more than two cells.");
-      }
-
-      // TODO: generalise for more than matches and log warning (maybe
-      // with an option?). Would need to send back multiple values.
-      if (num_matches == 2)
+      // TODO: generalise for more than two matches and log warning
+      // (maybe with an option?). Would need to send back multiple
+      // values.
+      if (std::size_t num_matches = std::distance(it, it1); num_matches == 2)
       {
         // Store the global cell index from the other rank
         send_buffer1[*it] = recv_buffer[*(it + 1) * buffer_shape1 + fshape1];
         send_buffer1[*(it + 1)] = recv_buffer[*it * buffer_shape1 + fshape1];
+      }
+      else if (num_matches > 2)
+      {
+        throw std::runtime_error(
+            "A facet is connected to more than two cells.");
       }
 
       // Advance iterator and increment entity
@@ -359,12 +358,11 @@ mesh::build_local_dual_graph(
   spdlog::info("Build local part of mesh dual graph (mixed)");
   common::Timer timer("Compute local part of mesh dual graph (mixed)");
 
-  std::size_t ncells_local
+  if (std::size_t ncells_local
       = std::accumulate(cells.begin(), cells.end(), 0,
                         [](std::size_t s, std::span<const std::int64_t> c)
                         { return s + c.size(); });
-
-  if (ncells_local == 0)
+      ncells_local == 0)
   {
     // Empty mesh on this process
     return {graph::AdjacencyList<std::int32_t>(0), std::vector<std::int64_t>(),
@@ -377,8 +375,10 @@ mesh::build_local_dual_graph(
         "Number of cell types must match number of cell arrays.");
   };
 
-  // Create indexing offset for each cell type
-  // and determine max number of vertices per facet
+  constexpr std::int32_t padding_value = -1;
+
+  // Create indexing offset for each cell type and determine max number
+  // of vertices per facet
   std::vector<std::int32_t> cell_offsets = {0};
   int max_vertices_per_facet = 0;
   int facet_count = 0;
@@ -426,7 +426,8 @@ mesh::build_local_dual_graph(
                                [v](auto idx) { return v[idx]; });
         std::sort(std::prev(facets.end(), facet_vertices.size()), facets.end());
         facets.insert(facets.end(),
-                      max_vertices_per_facet - facet_vertices.size(), -1);
+                      max_vertices_per_facet - facet_vertices.size(),
+                      padding_value);
         facets.push_back(c + cell_offsets[j]);
       }
     }
@@ -454,7 +455,7 @@ mesh::build_local_dual_graph(
     auto it = perm.begin();
     while (it != perm.end())
     {
-      auto f0 = std::span(facets.data() + (*it) * shape1, shape1);
+      std::span f0(facets.data() + (*it) * shape1, shape1);
 
       // Find iterator to next facet different from f0
       auto it1 = std::find_if_not(
@@ -470,7 +471,7 @@ mesh::build_local_dual_graph(
       std::int32_t cell0 = f0.back();
       for (auto itx = std::next(it); itx != it1; ++itx)
       {
-        auto f1 = std::span(facets.data() + *itx * shape1, shape1);
+        std::span f1(facets.data() + *itx * shape1, shape1);
         std::int32_t cell1 = f1.back();
         edges.push_back({cell0, cell1});
       }
