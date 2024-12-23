@@ -329,8 +329,17 @@ public:
     return _elements.front();
   }
 
+  /// The finite elements
+  std::vector<std::shared_ptr<const FiniteElement<geometry_type>>> elements() const
+  {
+    return _elements;
+  }
+
   /// The dofmap
   std::shared_ptr<const DofMap> dofmap() const { return _dofmaps.front(); }
+
+  /// The dofmaps
+  std::vector<std::shared_ptr<const DofMap>> dofmaps() const { return _dofmaps; }
 
 private:
   // The mesh
