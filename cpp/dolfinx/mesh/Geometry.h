@@ -56,9 +56,7 @@ public:
                  and std::is_convertible_v<std::remove_cvref_t<W>,
                                            std::vector<std::int64_t>>
   Geometry(
-      std::shared_ptr<const common::IndexMap> index_map,
-      // const std::vector<std::vector<std::int32_t>>& dofmaps,
-      U&& dofmaps,
+      std::shared_ptr<const common::IndexMap> index_map, U&& dofmaps,
       const std::vector<fem::CoordinateElement<
           typename std::remove_reference_t<typename V::value_type>>>& elements,
       V&& x, int dim, W&& input_global_indices)
@@ -313,96 +311,6 @@ create_geometry(
   spdlog::info("Creating geometry with {} dofmaps", dof_layouts.size());
 
   return Geometry(dof_index_map, std::move(dofmaps), elements, std::move(xg),
-                  dim, std::move(igi));
-}
-
-/// @brief Build Geometry from input data.
-///
-/// This function should be called after the mesh topology is built and
-/// 'node' coordinate data has been distributed to the processes where
-/// it is required.
-///
-/// @param[in] topology Mesh topology.
-/// @param[in] element Element that defines the geometry map for
-/// each cell.
-/// @param[in] nodes Geometry node global indices for cells on this
-/// process. Must be sorted.
-/// @param[in] xdofs Geometry degree-of-freedom map (using global
-/// indices) for cells on this process. `nodes` is a sorted and unique
-/// list of the indices in `xdofs`.
-/// @param[in] x The node coordinates (row-major, with shape
-/// `(num_nodes, dim)`. The global index of each node is `i +
-/// rank_offset`, where `i` is the local row index in `x` and
-/// `rank_offset` is the sum of `x` rows on all processed with a lower
-/// rank than the caller.
-/// @param[in] dim Geometric dimension (1, 2, or 3).
-/// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
-/// map associated with the geometry data.
-/// @return A mesh geometry.
-template <typename U>
-Geometry<typename std::remove_reference_t<typename U::value_type>>
-create_geometry(
-    const Topology& topology,
-    const fem::CoordinateElement<
-        std::remove_reference_t<typename U::value_type>>& element,
-    std::span<const std::int64_t> nodes, std::span<const std::int64_t> xdofs,
-    const U& x, int dim,
-    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
-        reorder_fn
-    = nullptr)
-{
-  assert(std::ranges::is_sorted(nodes));
-  using T = typename std::remove_reference_t<typename U::value_type>;
-
-  fem::ElementDofLayout dof_layout = element.create_dof_layout();
-
-  //  Build 'geometry' dofmap on the topology
-  auto [_dof_index_map, bs, dofmaps]
-      = fem::build_dofmap_data(topology.index_map(topology.dim())->comm(),
-                               topology, {dof_layout}, reorder_fn);
-  auto dof_index_map
-      = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
-
-  // If the mesh has higher order geometry, permute the dofmap
-  if (element.needs_dof_permutations())
-  {
-    const std::int32_t num_cells
-        = topology.connectivity(topology.dim(), 0)->num_nodes();
-    const std::vector<std::uint32_t>& cell_info
-        = topology.get_cell_permutation_info();
-    int d = element.dim();
-    for (std::int32_t cell = 0; cell < num_cells; ++cell)
-    {
-      std::span dofs(dofmaps.front().data() + cell * d, d);
-      element.permute_inv(dofs, cell_info[cell]);
-    }
-  }
-
-  // Compute local-to-global map from local indices in dofmap to the
-  // corresponding global indices in cells, and pass to function to
-  // compute local (dof) to local (position in coords) map from (i)
-  // local-to-global for dofs and (ii) local-to-global for entries in
-  // coords
-  const std::vector<std::int32_t> l2l = graph::build::compute_local_to_local(
-      graph::build::compute_local_to_global(xdofs, dofmaps.front()), nodes);
-
-  // Allocate space for input global indices and copy data
-  std::vector<std::int64_t> igi(nodes.size());
-  std::ranges::transform(l2l, igi.begin(),
-                         [&nodes](auto index) { return nodes[index]; });
-
-  // Build coordinate dof array, copying coordinates to correct position
-  assert(x.size() % dim == 0);
-  const std::size_t shape0 = x.size() / dim;
-  const std::size_t shape1 = dim;
-  std::vector<T> xg(3 * shape0, 0);
-  for (std::size_t i = 0; i < shape0; ++i)
-  {
-    std::copy_n(std::next(x.cbegin(), shape1 * l2l[i]), shape1,
-                std::next(xg.begin(), 3 * i));
-  }
-
-  return Geometry(dof_index_map, std::move(dofmaps), {element}, std::move(xg),
                   dim, std::move(igi));
 }
 
