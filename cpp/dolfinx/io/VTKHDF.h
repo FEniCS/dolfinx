@@ -270,9 +270,7 @@ mesh::Mesh<U> io::VTKHDF::read_mesh(MPI_Comm comm, std::string filename)
     auto perm = io::cells::perm_vtk(cell_type, offsets[j + 1] - offsets[j]);
 
     for (std::size_t k = 0; k < offsets[j + 1] - offsets[j]; ++k)
-    {
       cells_local[type_index].push_back(topology[perm[k] + offsets[j]]);
-    }
   }
 
   // Make first order coordinate elements
