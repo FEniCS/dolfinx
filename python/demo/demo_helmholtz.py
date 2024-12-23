@@ -82,13 +82,15 @@ a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
 
 # solve for plane wave with mixed Dirichlet and Neumann BCs
 theta = np.pi / 4
-u_exact.interpolate(lambda x: A * np.exp(1j*k0*(np.cos(theta)*x[0] + np.sin(theta)*x[1])))
+u_exact.interpolate(lambda x: A * np.exp(1j * k0 * (np.cos(theta) * x[0] + np.sin(theta) * x[1])))
 n = FacetNormal(msh)
 g = -dot(n, grad(u_exact))
 L = -inner(g, v) * ds
 
+
 def boundary_D(x):
     return np.logical_or(np.isclose(x[0], 0), np.isclose(x[1], 0))
+
 
 dofs_D = locate_dofs_geometrical(V, boundary_D)
 u_bc = Function(V)
