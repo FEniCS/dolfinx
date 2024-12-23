@@ -38,13 +38,20 @@ public:
 
   /// @brief Constructor of object that holds mesh geometry data.
   ///
-  /// @param[in] index_map Index map associated with the geometry dofmap.
+  /// The geometry 'degree-of-freedom map' is a logically rectangular
+  /// array (row-major) where each row corresponds to a cell, and the
+  /// columns are the indices in the coordinate array of the cell
+  /// coordinate degree-of-freedom. For each cell type there is a
+  /// geometry degree-of-freedom map.
+  ///
+  /// @param[in] index_map Index map associated with the geometry
+  /// degrees-of-freedom.
   /// @param[in] dofmaps The geometry (point) dofmaps for each cell type
   /// in the mesh. For a cell of a given type, the dofmap  gives the
   /// position in the point array of each local geometry node of the
   /// cell. Each cell type has its own dofmap. Each dofmap uses
   /// row-major storage.
-  /// @param[in] elements Elements that describe the cell geometry maps.
+  /// @param[in] elements Elements that describe cell geometry maps.
   /// `element[i]` is the coordinate element associated with
   /// `dofmaps[i]`.
   /// @param[in] x Point coordinates. The shape is `(num_points, 3)` and
@@ -71,6 +78,14 @@ public:
     assert(_x.size() % 3 == 0);
     if (_x.size() / 3 != _input_global_indices.size())
       throw std::runtime_error("Geometry size mis-match");
+
+    if (dofmaps.size() != elements.size())
+    {
+      throw std::runtime_error("Geometry number of dofmaps not equal to the "
+                               "number of coordinate elements.");
+    }
+
+    // TODO: check that elements dim == number of dofmap columns
   }
 
   /// Copy constructor
@@ -100,32 +115,29 @@ public:
   {
     if (_dofmaps.size() != 1)
       throw std::runtime_error("Multiple dofmaps");
-
-    int ndofs = _cmaps.front().dim();
-    return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
-        _dofmaps.front().data(), _dofmaps.front().size() / ndofs, ndofs);
+    return this->dofmap(0);
   }
 
-  /// @brief Dofmap associated with the `i`th coordinate map element in
-  /// the geometry.
-  /// @param i Index.
-  /// @return A 2D array with shape [num_cells, dofs_per_cell]
+  /// @brief Degree-of-freedom map associated with the `i`th coordinate
+  /// map element in the geometry.
+  /// @param i Index of the requested degree-of-freedom map. The
+  /// degree-of-freedom map corresponds to the geometry element
+  /// `cmaps()[i]`.
+  /// @return A dofmap array, with shape `(num_cells, dofs_per_cell)`.
   MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       const std::int32_t,
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
   dofmap(std::size_t i) const
   {
-    int ndofs = _cmaps.at(i).dim();
+    std::size_t ndofs = _cmaps.at(i).dim();
     return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const std::int32_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
         _dofmaps.at(i).data(), _dofmaps.at(i).size() / ndofs, ndofs);
   }
 
-  /// @brief Index map
-  /// @return The index map for the geometry dofs
+  /// @brief Index map for the geometry 'degrees-of-freedom'.
+  /// @return Index map for the geometry dofs.
   std::shared_ptr<const common::IndexMap> index_map() const
   {
     return _index_map;
@@ -144,6 +156,17 @@ public:
   /// `(num_points, 3)`.
   std::span<value_type> x() { return _x; }
 
+  /// @brief The elements that describes the geometry map.
+  ///
+  /// The coordinate element `cmaps()[i]` corresponds to the
+  /// degree-of-freedom map `dofmap(i)`.
+  ///
+  /// @return The coordinate/geometry elements.
+  const std::vector<fem::CoordinateElement<value_type>>& cmaps() const
+  {
+    return _cmaps;
+  }
+
   /// @brief The element that describes the geometry map.
   ///
   /// @return The coordinate/geometry element
@@ -154,15 +177,7 @@ public:
     return _cmaps.front();
   }
 
-  /// @brief The element that describe the `i`th geometry map
-  /// @param i Index of the coordinate element
-  /// @return Coordinate element
-  const fem::CoordinateElement<value_type>& cmap(std::size_t i) const
-  {
-    return _cmaps.at(i);
-  }
-
-  /// Global user indices
+  /// @brief Global user indices.
   const std::vector<std::int64_t>& input_global_indices() const
   {
     return _input_global_indices;
