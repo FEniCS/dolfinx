@@ -75,7 +75,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
     while (it != dest_to_index.end())
     {
       // Store global rank and find iterator to next global rank
-      dest.push_back((*it)[0]);
+      dest.push_back(it->front());
       auto it1
           = std::find_if(it, dest_to_index.end(),
                          [r = dest.back()](auto& idx) { return idx[0] != r; });
@@ -168,7 +168,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
         std::uniform_int_distribution<int> distrib(0, num - 1);
         it_owner = std::next(it, distrib(rng));
       }
-      owner.push_back((*it_owner)[2]);
+      owner.push_back(it_owner->at(2));
 
       // Update number of items to be sent to each rank and record owner
       for (auto itx = it; itx != it1; ++itx)
