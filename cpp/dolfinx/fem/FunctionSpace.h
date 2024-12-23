@@ -44,10 +44,10 @@ public:
   FunctionSpace(std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
                 std::shared_ptr<const FiniteElement<geometry_type>> element,
                 std::shared_ptr<const DofMap> dofmap)
-      : _mesh(mesh), _dofmap(dofmap),
+      : _mesh(mesh), _dofmaps{dofmap}, _elements{element},
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
   {
-    _elements.push_back(element);
+    // Do nothing
   }
 
   // Copy constructor (deleted)
@@ -77,7 +77,7 @@ public:
   {
     assert(_mesh);
     assert(_elements.front());
-    assert(_dofmap);
+    assert(_dofmaps.front());
 
     // Check that component is valid
     if (component.empty())
@@ -88,7 +88,7 @@ public:
 
     // Extract sub dofmap
     auto dofmap
-        = std::make_shared<DofMap>(_dofmap->extract_sub_dofmap(component));
+        = std::make_shared<DofMap>(_dofmaps.front()->extract_sub_dofmap(component));
 
     // Create new sub space
     FunctionSpace sub_space(_mesh, element, dofmap);
@@ -137,7 +137,7 @@ public:
 
     // Create collapsed DofMap
     auto [_collapsed_dofmap, collapsed_dofs]
-        = _dofmap->collapse(_mesh->comm(), *_mesh->topology());
+        = _dofmaps.front()->collapse(_mesh->comm(), *_mesh->topology());
     auto collapsed_dofmap
         = std::make_shared<DofMap>(std::move(_collapsed_dofmap));
 
@@ -192,11 +192,11 @@ public:
     const int tdim = _mesh->topology()->dim();
 
     // Get dofmap local size
-    assert(_dofmap);
-    std::shared_ptr<const common::IndexMap> index_map = _dofmap->index_map;
+    assert(_dofmaps.front());
+    std::shared_ptr<const common::IndexMap> index_map = _dofmaps.front()->index_map;
     assert(index_map);
-    const int index_map_bs = _dofmap->index_map_bs();
-    const int dofmap_bs = _dofmap->bs();
+    const int index_map_bs = _dofmaps.front()->index_map_bs();
+    const int dofmap_bs = _dofmaps.front()->bs();
 
     const int element_block_size = _elements.front()->block_size();
     const std::size_t scalar_dofs
@@ -282,7 +282,7 @@ public:
           x_b, std::span(cell_info.data(), cell_info.size()), c, x.extent(1));
 
       // Get cell dofmap
-      auto dofs = _dofmap->cell_dofs(c);
+      auto dofs = _dofmaps.front()->cell_dofs(c);
 
       // Copy dof coordinates into vector
       if (!transpose)
@@ -315,7 +315,7 @@ public:
   }
 
   /// The dofmap
-  std::shared_ptr<const DofMap> dofmap() const { return _dofmap; }
+  std::shared_ptr<const DofMap> dofmap() const { return _dofmaps.front(); }
 
 private:
   // The mesh
@@ -325,7 +325,7 @@ private:
   std::vector<std::shared_ptr<const FiniteElement<geometry_type>>> _elements;
 
   // The dofmap
-  std::shared_ptr<const DofMap> _dofmap;
+  std::vector<std::shared_ptr<const DofMap>> _dofmaps;
 
   // The component w.r.t. to root space
   std::vector<int> _component;
