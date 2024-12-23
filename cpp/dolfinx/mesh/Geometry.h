@@ -79,7 +79,7 @@ public:
     if (_x.size() / 3 != _input_global_indices.size())
       throw std::runtime_error("Geometry size mis-match");
 
-    if (dofmaps.size() != elements.size())
+    if (_dofmaps.size() != _cmaps.size())
     {
       throw std::runtime_error("Geometry number of dofmaps not equal to the "
                                "number of coordinate elements.");
