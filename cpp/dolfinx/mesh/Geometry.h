@@ -39,10 +39,14 @@ public:
   /// @brief Constructor of object that holds mesh geometry data.
   ///
   /// @param[in] index_map Index map associated with the geometry dofmap.
-  /// @param[in] dofmaps The geometry (point) dofmaps. For a cell, it
-  /// gives the position in the point array of each local geometry node.
-  /// Row-major storage. Each cell type has its own dofmap.
+  /// @param[in] dofmaps The geometry (point) dofmaps for each cell type
+  /// in the mesh. For a cell of a given type, the dofmap  gives the
+  /// position in the point array of each local geometry node of the
+  /// cell. Each cell type has its own dofmap. Each dofmap uses
+  /// row-major storage.
   /// @param[in] elements Elements that describe the cell geometry maps.
+  /// `element[i]` is the coordinate element associated with
+  /// `dofmaps[i]`.
   /// @param[in] x Point coordinates. The shape is `(num_points, 3)` and
   /// the storage is row-major.
   /// @param[in] dim The geometric dimension (`0 < dim <= 3`).
