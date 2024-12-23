@@ -42,7 +42,7 @@ enum class GhostMode : int
 
 namespace impl
 {
-/// @brief Re-order the nodes a fixed-degree adjacency list.
+/// @brief Re-order the nodes of a fixed-degree adjacency list.
 /// @param[in,out] list Fixed-degree adjacency list stored row-major.
 /// Degree is equal to `list.size() / nodemap.size()`.
 /// @param[in] nodemap Map from old to new index, i.e. for an old index
@@ -792,7 +792,7 @@ compute_incident_entities(const Topology& topology,
 /// @param[in] commg Communicator for geometry.
 /// @param[in] x Geometry data ('node' coordinates). Row-major storage.
 /// The global index of the `i`th node (row) in `x` is taken as `i` plus
-/// the paralell rank offset (on `comm`), where rhe offset is the sum of
+/// the parallel rank offset (on `comm`), where the offset is the sum of
 /// `x` rows on all lower ranks than the caller.
 /// @param[in] xshape Shape of the `x` data.
 /// @param[in] partitioner Graph partitioner that computes the owning
@@ -1102,7 +1102,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
               std::move(geometry));
 }
 
-/// @brief Create a distributed mesh wirh a single cell type from mesh
+/// @brief Create a distributed mesh with a single cell type from mesh
 /// data and using a provided graph partitioning function for
 /// determining the parallel distribution of the mesh.
 ///
@@ -1282,7 +1282,7 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
 /// @param[in] mesh The mesh.
 /// @param[in] dim Dimension entities in `mesh` that will be cells in
 /// the sub-mesh.
-/// @param[in] entities Indices of entites in `mesh` to include in the
+/// @param[in] entities Indices of entities in `mesh` to include in the
 /// sub-mesh.
 /// @return A new mesh, and maps from the new mesh entities, vertices,
 /// and geometry to the input mesh entities, vertices, and geometry.
