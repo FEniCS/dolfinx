@@ -39,38 +39,6 @@ public:
   /// @brief Constructor of object that holds mesh geometry data.
   ///
   /// @param[in] index_map Index map associated with the geometry dofmap
-  /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
-  /// gives the position in the point array of each local geometry node
-  /// @param[in] element Element that describes the cell geometry map.
-  /// @param[in] x The point coordinates. The shape is `(num_points, 3)`
-  /// and the storage is row-major.
-  /// @param[in] dim The geometric dimension (`0 < dim <= 3`).
-  /// @param[in] input_global_indices The 'global' input index of each
-  /// point, commonly from a mesh input file.
-  template <typename U, typename V, typename W>
-    requires std::is_convertible_v<std::remove_cvref_t<U>,
-                                   std::vector<std::int32_t>>
-                 and std::is_convertible_v<std::remove_cvref_t<V>,
-                                           std::vector<T>>
-                 and std::is_convertible_v<std::remove_cvref_t<W>,
-                                           std::vector<std::int64_t>>
-  Geometry(
-      std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
-      const fem::CoordinateElement<
-          typename std::remove_reference_t<typename V::value_type>>& element,
-      V&& x, int dim, W&& input_global_indices)
-      : _dim(dim), _dofmaps({dofmap}), _index_map(index_map), _cmaps({element}),
-        _x(std::forward<V>(x)),
-        _input_global_indices(std::forward<W>(input_global_indices))
-  {
-    assert(_x.size() % 3 == 0);
-    if (_x.size() / 3 != _input_global_indices.size())
-      throw std::runtime_error("Geometry size mis-match");
-  }
-
-  /// @brief Constructor of object that holds mesh geometry data.
-  ///
-  /// @param[in] index_map Index map associated with the geometry dofmap
   /// @param[in] dofmaps The geometry (point) dofmaps. For a cell, it
   /// gives the position in the point array of each local geometry node
   /// @param[in] elements Elements that describes the cell geometry maps.
@@ -98,6 +66,38 @@ public:
       throw std::runtime_error("Geometry size mis-match");
   }
 
+  /// @brief Constructor of object that holds mesh geometry data for a
+  /// single cell type.
+  ///
+  /// This constructor provides and simpler interface to ::Geometry for
+  /// the case of a single cell/element type.
+  ///
+  /// @param[in] index_map Index map associated with the geometry dofmap.
+  /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
+  /// gives the position in the point array of each local geometry node.
+  /// @param[in] element Element that describes the cell geometry map.
+  /// @param[in] x The point coordinates. The shape is `(num_points, 3)`
+  /// and the storage is row-major.
+  /// @param[in] dim Geometric dimension of the mesh coordinates (`0 <
+  /// dim <= 3`).
+  /// @param[in] input_global_indices 'Global' input index of each
+  /// point, commonly from a mesh input file.
+  template <typename U, typename V, typename W>
+    requires std::is_convertible_v<std::remove_cvref_t<U>,
+                                   std::vector<std::int32_t>>
+             and std::is_convertible_v<std::remove_cvref_t<V>, std::vector<T>>
+             and std::is_convertible_v<std::remove_cvref_t<W>,
+                                       std::vector<std::int64_t>>
+  Geometry(
+      std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
+      const fem::CoordinateElement<
+          typename std::remove_reference_t<typename V::value_type>>& element,
+      V&& x, int dim, W&& input_global_indices)
+      : Geometry(index_map, std::vector{dofmap}, std::vector{element},
+                 std::forward<V>(x), dim, std::forward<W>(input_global_indices))
+  {
+  }
+
   /// Copy constructor
   Geometry(const Geometry&) = default;
 
@@ -113,11 +113,11 @@ public:
   /// Move Assignment
   Geometry& operator=(Geometry&&) = default;
 
-  /// Return dimension of the Euclidean coordinate system
+  /// @brief Return dimension of the Euclidean coordinate system.
   int dim() const { return _dim; }
 
-  /// @brief  DofMap for the geometry
-  /// @return A 2D array with shape [num_cells, dofs_per_cell]
+  /// @brief DofMap for the geometry.
+  /// @return A 2D array with shape `(num_cells, dofs_per_cell)`.
   MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       const std::int32_t,
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
@@ -133,26 +133,20 @@ public:
         _dofmaps.front().data(), _dofmaps.front().size() / ndofs, ndofs);
   }
 
-  /// @brief The dofmap associated with the `i`th coordinate map in the
-  /// geometry.
-  /// @param i Index
+  /// @brief Dofmap associated with the `i`th coordinate map element in
+  /// the geometry.
+  /// @param i Index.
   /// @return A 2D array with shape [num_cells, dofs_per_cell]
   MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       const std::int32_t,
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-  dofmap(std::int32_t i) const
+  dofmap(std::size_t i) const
   {
-    if (i < 0 or i >= (int)_dofmaps.size())
-    {
-      throw std::out_of_range("Cannot get dofmap:" + std::to_string(i)
-                              + " out of range");
-    }
-    int ndofs = _cmaps[i].dim();
-
+    int ndofs = _cmaps.at(i).dim();
     return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const std::int32_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
-        _dofmaps[i].data(), _dofmaps[i].size() / ndofs, ndofs);
+        _dofmaps.at(i).data(), _dofmaps.at(i).size() / ndofs, ndofs);
   }
 
   /// @brief Index map
@@ -180,7 +174,7 @@ public:
   /// @return The coordinate/geometry element
   const fem::CoordinateElement<value_type>& cmap() const
   {
-    if (_cmaps.size() != 1)
+    if (_cmaps.size() > 1)
       throw std::runtime_error("Multiple cmaps.");
     return _cmaps.front();
   }
@@ -188,14 +182,9 @@ public:
   /// @brief The element that describe the `i`th geometry map
   /// @param i Index of the coordinate element
   /// @return Coordinate element
-  const fem::CoordinateElement<value_type>& cmap(std::int32_t i) const
+  const fem::CoordinateElement<value_type>& cmap(std::size_t i) const
   {
-    if (i < 0 or i >= (int)_cmaps.size())
-    {
-      throw std::out_of_range("Cannot get cmap:" + std::to_string(i)
-                              + " out of range");
-    }
-    return _cmaps[i];
+    return _cmaps.at(i);
   }
 
   /// Global user indices
