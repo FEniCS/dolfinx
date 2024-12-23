@@ -730,7 +730,7 @@ void declare_form(nb::module_& m, std::string type)
             ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
             new (fp)
                 dolfinx::fem::Form<T, U>(dolfinx::fem::create_form_factory<T>(
-                    *p, spaces, coefficients, constants, sd, _entity_maps,
+                    {*p}, spaces, coefficients, constants, sd, _entity_maps,
                     mesh));
           },
           nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
@@ -810,7 +810,7 @@ void declare_form(nb::module_& m, std::string type)
         }
 
         ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
-        return dolfinx::fem::create_form_factory<T>(*p, spaces, coefficients,
+        return dolfinx::fem::create_form_factory<T>({*p}, spaces, coefficients,
                                                     constants, sd, {}, mesh);
       },
       nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),

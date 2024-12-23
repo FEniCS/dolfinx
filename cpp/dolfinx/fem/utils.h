@@ -351,7 +351,7 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @pre Each value in `subdomains` must be sorted by domain id.
 template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
 Form<T, U> create_form_factory(
-    const ufcx_form& ufcx_form,
+    const std::vector<std::reference_wrapper<const ufcx_form>>& ufcx_forms,
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
     const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
@@ -363,6 +363,8 @@ Form<T, U> create_form_factory(
                    std::span<const std::int32_t>>& entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
+  const ufcx_form& ufcx_form = ufcx_forms[0];
+
   if (ufcx_form.rank != (int)spaces.size())
     throw std::runtime_error("Wrong number of argument spaces for Form.");
   if (ufcx_form.num_coefficients != (int)coefficients.size())
@@ -768,7 +770,7 @@ Form<T, U> create_form(
       throw std::runtime_error("Form constant \"" + name + "\" not provided.");
   }
 
-  return create_form_factory(ufcx_form, spaces, coeff_map, const_map,
+  return create_form_factory({ufcx_form}, spaces, coeff_map, const_map,
                              subdomains, entity_maps, mesh);
 }
 
