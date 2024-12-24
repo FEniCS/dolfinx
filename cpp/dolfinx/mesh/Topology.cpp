@@ -746,11 +746,12 @@ Topology::Topology(
     _entity_types_new.push_back({mesh::CellType::interval});
 
     // Find all facet types
-    std::vector<mesh::CellType> facet_types;
+    std::set<mesh::CellType> facet_types;
     for (auto c : cell_types)
       for (int i = 0; i < cell_num_entities(c, tdim - 1); ++i)
-        facet_types.push_back(cell_facet_type(c, i));
-    _entity_types_new.push_back(facet_types);
+        facet_types.insert(cell_facet_type(c, i));
+
+    _entity_types_new.emplace_back(facet_types.begin(), facet_types.end());
 
     _entity_types_new.push_back(cell_types);
   }
@@ -828,9 +829,22 @@ std::vector<CellType> Topology::entity_types(int dim) const
 {
   // return _entity_types_new.at(dim);
   assert(dim < (int)_entity_type_offsets.size() - 1 and dim >= 0);
-  return std::vector<CellType>(
+
+  std::vector<CellType> tmp(
       std::next(_entity_types.begin(), _entity_type_offsets[dim]),
       std::next(_entity_types.begin(), _entity_type_offsets[dim + 1]));
+
+  if (tmp != _entity_types_new.at(dim))
+  {
+    throw std::runtime_error("Error: " + std::to_string(this->dim()) + ", "
+                             + std::to_string(dim) + ", "
+                             + std::to_string(_entity_types_new.at(dim).size())
+                             + ", " + std::to_string(tmp.size()));
+  }
+  return tmp;
+  // return std::vector<CellType>(
+  //     std::next(_entity_types.begin(), _entity_type_offsets[dim]),
+  //     std::next(_entity_types.begin(), _entity_type_offsets[dim + 1]));
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _entity_types.back(); }
