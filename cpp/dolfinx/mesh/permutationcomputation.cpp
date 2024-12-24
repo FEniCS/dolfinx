@@ -147,8 +147,8 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
       if (mesh_face_types[i] == cell_face_types[j])
         face_type_indices[i].push_back(j);
     }
-    c_to_f.push_back(topology.connectivity({tdim, cell_index}, {2, i}));
-    f_to_v.push_back(topology.connectivity({2, i}, {0, 0}));
+    c_to_f.push_back(topology.connectivity({tdim, cell_index}, {2, int(i)}));
+    f_to_v.push_back(topology.connectivity({2, int(i)}, {0, 0}));
   }
 
   auto c_to_v = topology.connectivity({tdim, cell_index}, {0, 0});

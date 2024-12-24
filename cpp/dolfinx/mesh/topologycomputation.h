@@ -62,8 +62,7 @@ compute_entities(MPI_Comm comm, const Topology& topology, int dim, int index);
 /// part of computing (d0, d1), the (d1, d0) is returned as the second
 /// entry. The second entry is otherwise nullptr.
 std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>
-compute_connectivity(const Topology& topology,
-                     std::pair<std::int8_t, std::int8_t> d0,
-                     std::pair<std::int8_t, std::int8_t> d1);
+compute_connectivity(const Topology& topology, std::array<int, 2> d0,
+                     std::array<int, 2> d1);
 
 } // namespace dolfinx::mesh
