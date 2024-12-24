@@ -16,7 +16,7 @@ For questions about using DOLFINx, visit the [FEniCS
 Discourse](https://fenicsproject.discourse.group/) page or use the
 [FEniCS Slack channel](https://fenicsproject.slack.com/) (use
 [this](https://join.slack.com/t/fenicsproject/shared_invite/zt-1lraknsp1-6_3Js5kueDIyWgF192d3nA)
-to sign up to the Slack channel).
+link to sign up to the Slack channel).
 
 ## Documentation
 
