@@ -305,7 +305,6 @@ private:
 
 /// @brief Create a mesh topology.
 ///
-///
 /// This function creates a Topology from cells that have been already
 /// distributed to the processes that own or ghost the cell.
 ///
@@ -328,7 +327,7 @@ private:
 /// processes.
 /// @return A distributed mesh topology
 Topology
-create_topology(MPI_Comm comm, const std::vector<CellType>& cell_type,
+create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
                 std::vector<std::span<const std::int64_t>> cells,
                 std::vector<std::span<const std::int64_t>> original_cell_index,
                 std::vector<std::span<const int>> ghost_owners,

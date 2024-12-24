@@ -1024,7 +1024,7 @@ void Topology::create_entity_permutations()
 MPI_Comm Topology::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------
 Topology mesh::create_topology(
-    MPI_Comm comm, const std::vector<CellType>& cell_type,
+    MPI_Comm comm, const std::vector<CellType>& cell_types,
     std::vector<std::span<const std::int64_t>> cells,
     std::vector<std::span<const std::int64_t>> original_cell_index,
     std::vector<std::span<const int>> ghost_owners,
@@ -1032,18 +1032,18 @@ Topology mesh::create_topology(
 {
   common::Timer timer("Topology: create");
 
-  assert(cell_type.size() == cells.size());
+  assert(cell_types.size() == cells.size());
   assert(ghost_owners.size() == cells.size());
   assert(original_cell_index.size() == cells.size());
 
   spdlog::info("Create topology (generalised)");
   // Check cell data consistency and compile spans of owned and ghost cells
-  std::vector<std::int32_t> num_local_cells(cell_type.size());
+  std::vector<std::int32_t> num_local_cells(cell_types.size());
   std::vector<std::span<const std::int64_t>> owned_cells;
   std::vector<std::span<const std::int64_t>> ghost_cells;
-  for (std::size_t i = 0; i < cell_type.size(); i++)
+  for (std::size_t i = 0; i < cell_types.size(); i++)
   {
-    int num_vertices = num_cell_vertices(cell_type[i]);
+    int num_vertices = num_cell_vertices(cell_types[i]);
     if (cells[i].size() % num_vertices != 0)
     {
       throw std::runtime_error("Inconsistent number of cell vertices. Got "
@@ -1099,7 +1099,7 @@ Topology mesh::create_topology(
   std::vector<std::int32_t> local_vertex_indices(owned_vertices.size(), -1);
   {
     std::int32_t v = 0;
-    for (std::size_t i = 0; i < cell_type.size(); ++i)
+    for (std::size_t i = 0; i < cell_types.size(); ++i)
     {
       for (auto vtx : cells[i])
       {
@@ -1124,7 +1124,7 @@ Topology mesh::create_topology(
   // Get global indices of ghost cells
   std::vector<std::vector<std::int64_t>> cell_ghost_indices;
   std::vector<std::shared_ptr<const common::IndexMap>> index_map_c;
-  for (std::size_t i = 0; i < cell_type.size(); ++i)
+  for (std::size_t i = 0; i < cell_types.size(); ++i)
   {
     std::span cell_idx(original_cell_index[i]);
     cell_ghost_indices.push_back(graph::build::compute_ghost_indices(
@@ -1188,9 +1188,9 @@ Topology mesh::create_topology(
       // vertex owner.
       // Repeat for each cell type
       std::vector<std::array<std::int64_t, 3>> recv_data;
-      for (std::size_t i = 0; i < cell_type.size(); ++i)
+      for (std::size_t i = 0; i < cell_types.size(); ++i)
       {
-        int num_cell_vertices = mesh::num_cell_vertices(cell_type[i]);
+        int num_cell_vertices = mesh::num_cell_vertices(cell_types[i]);
         std::vector<std::array<std::int64_t, 3>> recv_data_i
             = exchange_ghost_indexing(*index_map_c[i], cells[i],
                                       num_cell_vertices, owned_vertices.size(),
@@ -1277,15 +1277,15 @@ Topology mesh::create_topology(
   // Create index map for vertices
   auto index_map_v = std::make_shared<common::IndexMap>(
       comm, owned_vertices.size(), ghost_vertices, ghost_vertex_owners,
-      static_cast<int>(dolfinx::MPI::tag::consensus_nbx) + cell_type.size());
+      static_cast<int>(dolfinx::MPI::tag::consensus_nbx) + cell_types.size());
 
   // Set cell index map and connectivity
   std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells_c;
-  for (std::size_t i = 0; i < cell_type.size(); ++i)
+  for (std::size_t i = 0; i < cell_types.size(); ++i)
   {
     cells_c.push_back(std::make_shared<graph::AdjacencyList<std::int32_t>>(
         graph::regular_adjacency_list(std::move(_cells_local_idx[i]),
-                                      mesh::num_cell_vertices(cell_type[i]))));
+                                      mesh::num_cell_vertices(cell_types[i]))));
   }
 
   // Save original cell index
@@ -1293,7 +1293,7 @@ Topology mesh::create_topology(
   for (std::span<const std::int64_t> idx : original_cell_index)
     orig_index.emplace_back(idx.begin(), idx.end());
 
-  return Topology(comm, cell_type, index_map_v, index_map_c, cells_c,
+  return Topology(comm, cell_types, index_map_v, index_map_c, cells_c,
                   orig_index);
 }
 //-----------------------------------------------------------------------------
