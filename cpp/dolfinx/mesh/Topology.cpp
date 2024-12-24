@@ -824,13 +824,13 @@ Topology::Topology(
 //-----------------------------------------------------------------------------
 int Topology::dim() const noexcept { return _entity_type_offsets.size() - 2; }
 //-----------------------------------------------------------------------------
-const std::vector<CellType>& Topology::entity_types(int dim) const
+std::vector<CellType> Topology::entity_types(int dim) const
 {
-  return _entity_types_new.at(dim);
-  // assert(dim < (int)_entity_type_offsets.size() - 1 and dim >= 0);
-  // return std::vector<CellType>(
-  //     std::next(_entity_types.begin(), _entity_type_offsets[dim]),
-  //     std::next(_entity_types.begin(), _entity_type_offsets[dim + 1]));
+  // return _entity_types_new.at(dim);
+  assert(dim < (int)_entity_type_offsets.size() - 1 and dim >= 0);
+  return std::vector<CellType>(
+      std::next(_entity_types.begin(), _entity_type_offsets[dim]),
+      std::next(_entity_types.begin(), _entity_type_offsets[dim + 1]));
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _entity_types.back(); }

@@ -104,7 +104,7 @@ public:
   /// @brief Entity types in the topology for a given dimension.
   /// @param[in] dim Topological dimension.
   /// @return Entity types.
-  const std::vector<CellType>& entity_types(int dim) const;
+  std::vector<CellType> entity_types(int dim) const;
 
   /// @brief Cell type.
   ///
