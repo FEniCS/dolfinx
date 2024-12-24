@@ -203,14 +203,14 @@ class Topology:
         """
         self._cpp_object.set_connectivity(graph, d0, d1)
 
-    def set_index_map(self, dim: int, index_map: _cpp.common.IndexMap):
-        """Set the IndexMap for dimension ``dim``.
+    # def set_index_map(self, dim: int, index_map: _cpp.common.IndexMap):
+    #     """Set the IndexMap for dimension ``dim``.
 
-        Args:
-            dim: Topological dimension of entity.
-            index_map: Index map to store.
-        """
-        return self._cpp_object.set_index_map(dim, index_map)
+    #     Args:
+    #         dim: Topological dimension of entity.
+    #         index_map: Index map to store.
+    #     """
+    #     return self._cpp_object.set_index_map(dim, index_map)
 
     @property
     def cell_type(self) -> CellType:

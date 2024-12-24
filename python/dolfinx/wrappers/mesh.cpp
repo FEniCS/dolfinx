@@ -600,11 +600,11 @@ void mesh(nb::module_& m)
                std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>>,
                int, int>(&dolfinx::mesh::Topology::set_connectivity),
            nb::arg("c"), nb::arg("d0"), nb::arg("d1"))
-      .def("set_index_map",
-           nb::overload_cast<int,
-                             std::shared_ptr<const dolfinx::common::IndexMap>>(
-               &dolfinx::mesh::Topology::set_index_map),
-           nb::arg("dim"), nb::arg("map"))
+    //   .def("set_index_map",
+    //        nb::overload_cast<int,
+    //                          std::shared_ptr<const dolfinx::common::IndexMap>>(
+    //            &dolfinx::mesh::Topology::set_index_map),
+    //        nb::arg("dim"), nb::arg("map"))
       .def("create_entities", &dolfinx::mesh::Topology::create_entities,
            nb::arg("dim"))
       .def("create_entity_permutations",

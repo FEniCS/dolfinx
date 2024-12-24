@@ -713,20 +713,6 @@ std::vector<std::int32_t> convert_to_local_indexing(
 
 //-----------------------------------------------------------------------------
 Topology::Topology(
-    MPI_Comm comm, CellType cell_type,
-    std::shared_ptr<const common::IndexMap> vertex_map,
-    std::shared_ptr<const common::IndexMap> cell_map,
-    std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells,
-    const std::optional<std::vector<std::int64_t>>& original_index)
-    : Topology(comm, {cell_type}, vertex_map, {cell_map}, {cells},
-               original_index
-                   ? std::vector<std::vector<std::int64_t>>{*original_index}
-                   : std::optional<std::vector<std::vector<std::int64_t>>>(
-                         std::nullopt))
-{
-}
-//-----------------------------------------------------------------------------
-Topology::Topology(
     MPI_Comm comm, std::vector<CellType> cell_types,
     std::shared_ptr<const common::IndexMap> vertex_map,
     std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
@@ -745,6 +731,29 @@ Topology::Topology(
   for (auto ct : cell_types)
     assert(cell_dim(ct) == tdim);
 #endif
+
+  // Build list of entity types in the mesh
+  _entity_types_new.push_back({mesh::CellType::point});
+  if (tdim == 1)
+    _entity_types_new.push_back({mesh::CellType::interval});
+  else if (tdim == 2)
+  {
+    _entity_types_new.push_back({mesh::CellType::interval});
+    _entity_types_new.push_back(cell_types);
+  }
+  else if (tdim == 3)
+  {
+    _entity_types_new.push_back({mesh::CellType::interval});
+
+    // Find all facet types
+    std::vector<mesh::CellType> facet_types;
+    for (auto c : cell_types)
+      for (int i = 0; i < cell_num_entities(c, tdim - 1); ++i)
+        facet_types.push_back(cell_facet_type(c, i));
+    _entity_types_new.push_back(facet_types);
+
+    _entity_types_new.push_back(cell_types);
+  }
 
   // Create all the entity types in the mesh
   if (tdim > 1)
@@ -784,6 +793,8 @@ Topology::Topology(
   for (auto& c : _connectivity)
     c.resize(conn_size);
 
+  _index_maps.resize(tdim + 1);
+
   // Set data
   this->set_index_map(0, vertex_map);
   this->set_connectivity(
@@ -797,14 +808,29 @@ Topology::Topology(
   }
 }
 //-----------------------------------------------------------------------------
+Topology::Topology(
+    MPI_Comm comm, CellType cell_type,
+    std::shared_ptr<const common::IndexMap> vertex_map,
+    std::shared_ptr<const common::IndexMap> cell_map,
+    std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells,
+    const std::optional<std::vector<std::int64_t>>& original_index)
+    : Topology(comm, {cell_type}, vertex_map, {cell_map}, {cells},
+               original_index
+                   ? std::vector<std::vector<std::int64_t>>{*original_index}
+                   : std::optional<std::vector<std::vector<std::int64_t>>>(
+                         std::nullopt))
+{
+}
+//-----------------------------------------------------------------------------
 int Topology::dim() const noexcept { return _entity_type_offsets.size() - 2; }
 //-----------------------------------------------------------------------------
-std::vector<CellType> Topology::entity_types(int dim) const
+const std::vector<CellType>& Topology::entity_types(int dim) const
 {
-  assert(dim < (int)_entity_type_offsets.size() - 1 and dim >= 0);
-  return std::vector<CellType>(
-      std::next(_entity_types.begin(), _entity_type_offsets[dim]),
-      std::next(_entity_types.begin(), _entity_type_offsets[dim + 1]));
+  return _entity_types_new.at(dim);
+  // assert(dim < (int)_entity_type_offsets.size() - 1 and dim >= 0);
+  // return std::vector<CellType>(
+  //     std::next(_entity_types.begin(), _entity_type_offsets[dim]),
+  //     std::next(_entity_types.begin(), _entity_type_offsets[dim + 1]));
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _entity_types.back(); }

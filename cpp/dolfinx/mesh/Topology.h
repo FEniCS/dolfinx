@@ -44,22 +44,6 @@ enum class CellType;
 class Topology
 {
 public:
-  /// @brief Topology constructor.
-  /// @param[in] comm MPI communicator.
-  /// @param[in] cell_type Type of cell.
-  /// @param[in] vertex_map Index map describing the distribution of
-  /// mesh vertices.
-  /// @param[in] cell_map Index map describing the distribution of mesh
-  /// cells.
-  /// @param[in] cells Cell-to-vertex connectivity.
-  /// @param[in] original_index Original index for each cell in `cells`.
-  Topology(MPI_Comm comm, CellType cell_type,
-           std::shared_ptr<const common::IndexMap> vertex_map,
-           std::shared_ptr<const common::IndexMap> cell_map,
-           std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells,
-           const std::optional<std::vector<std::int64_t>>& original_index
-           = std::nullopt);
-
   /// @brief Create empty mesh topology with multiple cell types.
   ///
   /// @warning Experimental
@@ -83,6 +67,22 @@ public:
           original_cell_index
       = std::nullopt);
 
+  /// @brief Topology constructor.
+  /// @param[in] comm MPI communicator.
+  /// @param[in] cell_type Type of cell.
+  /// @param[in] vertex_map Index map describing the distribution of
+  /// mesh vertices.
+  /// @param[in] cell_map Index map describing the distribution of mesh
+  /// cells.
+  /// @param[in] cells Cell-to-vertex connectivity.
+  /// @param[in] original_index Original index for each cell in `cells`.
+  Topology(MPI_Comm comm, CellType cell_type,
+           std::shared_ptr<const common::IndexMap> vertex_map,
+           std::shared_ptr<const common::IndexMap> cell_map,
+           std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells,
+           const std::optional<std::vector<std::int64_t>>& original_index
+           = std::nullopt);
+
   /// Copy constructor
   Topology(const Topology& topology) = default;
 
@@ -104,7 +104,7 @@ public:
   /// @brief Entity types in the topology for a given dimension.
   /// @param[in] dim Topological dimension.
   /// @return Entity types.
-  std::vector<CellType> entity_types(int dim) const;
+  const std::vector<CellType>& entity_types(int dim) const;
 
   /// @brief Cell type.
   ///
@@ -201,6 +201,7 @@ public:
   /// been computed.
   const std::vector<std::int32_t>& interprocess_facets() const;
 
+private:
   /// @todo Merge with set_connectivity
   ///
   /// @brief Set the IndexMap for the `i`th `celltype` of dimension `dim`.
@@ -213,12 +214,14 @@ public:
   /// @param[in] map Index map to set.
   void set_index_map(int dim, int i,
                      std::shared_ptr<const common::IndexMap> map);
+
   /// @todo Merge with set_connectivity
   ///
   /// @brief Set the IndexMap for dimension dim
   /// @warning This is experimental and likely to change
   void set_index_map(int dim, std::shared_ptr<const common::IndexMap> map);
 
+public:
   /// @brief Set connectivity for given pair of entity types, defined by
   /// dimension and index, as listed in ::entity_types.
   ///
@@ -273,12 +276,14 @@ private:
   // facets and cells can be a list of multiple types, e.g.
   // [quadrilateral, triangle] for facets. Offsets are position in the
   // list for each entity dimension, in AdjacencyList style.
+  std::vector<std::vector<CellType>> _entity_types_new;
   std::vector<CellType> _entity_types;
   std::vector<std::int8_t> _entity_type_offsets;
 
   // Parallel layout of entities for each dimension and cell type
   // flattened in the same layout as _entity_types above.
   std::vector<std::shared_ptr<const common::IndexMap>> _index_map;
+  std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> _index_maps;
 
   // Connectivity between entity dimensions and cell types, arranged as
   // a 2D array. The indexing follows the order in _entity_types, i.e.
