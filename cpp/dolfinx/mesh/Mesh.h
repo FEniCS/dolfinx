@@ -17,7 +17,7 @@ class Topology;
 
 /// @brief A Mesh consists of a set of connected and numbered mesh
 /// topological entities, and geometry data.
-/// @tparam The floating point type for representing the geometry.
+/// @tparam Floating point type for representing the geometry.
 template <std::floating_point T>
 class Mesh
 {
@@ -25,10 +25,14 @@ public:
   /// @brief Value type
   using geometry_type = Geometry<T>;
 
-  /// @brief Create a mesh
-  /// @param[in] comm MPI Communicator
-  /// @param[in] topology Mesh topology
-  /// @param[in] geometry Mesh geometry
+  /// @brief Create a Mesh.
+  ///
+  /// @note This constructor is not normally called by users. User code
+  /// will normally use ::create_mesh.
+  ///
+  /// @param[in] comm MPI Communicator.
+  /// @param[in] topology Mesh topology.
+  /// @param[in] geometry Mesh geometry.
   template <typename V>
     requires std::is_convertible_v<std::remove_cvref_t<V>, Geometry<T>>
   Mesh(MPI_Comm comm, std::shared_ptr<Topology> topology, V&& geometry)
@@ -59,28 +63,28 @@ public:
   // the topology of a const Mesh, which is done by
   // Mesh::topology_mutable. Note that the python interface (calls
   // Mesh::topology()) may still rely on it.
-  /// @brief Get mesh topology
+  /// @brief Get mesh topology.
   /// @return The topology object associated with the mesh.
   std::shared_ptr<Topology> topology() { return _topology; }
 
-  /// Get mesh topology (const version)
+  /// @brief Get mesh topology (const version).
   /// @return The topology object associated with the mesh.
   std::shared_ptr<const Topology> topology() const { return _topology; }
 
-  /// Get mesh topology if one really needs the mutable version
+  /// @brief Get mesh topology if one really needs the mutable version.
   /// @return The topology object associated with the mesh.
   std::shared_ptr<Topology> topology_mutable() const { return _topology; }
 
-  /// @brief Get mesh geometry
-  /// @return The geometry object associated with the mesh
+  /// @brief Get mesh geometry.
+  /// @return The geometry object associated with the mesh.
   Geometry<T>& geometry() { return _geometry; }
 
-  /// @brief Get mesh geometry (const version)
-  /// @return The geometry object associated with the mesh
+  /// @brief Get mesh geometry (const version).
+  /// @return The geometry object associated with the mesh.
   const Geometry<T>& geometry() const { return _geometry; }
 
-  /// @brief Mesh MPI communicator
-  /// @return The communicator on which the mesh is distributed
+  /// @brief Mesh MPI communicator.
+  /// @return The communicator on which the mesh is distributed.
   MPI_Comm comm() const { return _comm.comm(); }
 
   /// Name
@@ -88,7 +92,7 @@ public:
 
 private:
   // Mesh topology
-  // Note: This is mutable because of the current memory management
+  // Note: This is non-const because of the current memory management
   // within mesh::Topology. It allows to obtain a non-const Topology
   // from a const mesh (via Mesh::topology_mutable()).
   std::shared_ptr<Topology> _topology;
