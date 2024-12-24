@@ -799,21 +799,15 @@ Topology::Topology(
 //-----------------------------------------------------------------------------
 int Topology::dim() const noexcept { return _entity_type_offsets.size() - 2; }
 //-----------------------------------------------------------------------------
-void Topology::set_index_map(int dim, int i,
-                             std::shared_ptr<const common::IndexMap> map)
+std::vector<CellType> Topology::entity_types(int dim) const
 {
-  assert(dim < (int)_entity_type_offsets.size() - 1);
-  assert(i < (_entity_type_offsets[dim + 1] - _entity_type_offsets[dim]));
-  _index_map[_entity_type_offsets[dim] + i] = map;
+  assert(dim < (int)_entity_type_offsets.size() - 1 and dim >= 0);
+  return std::vector<CellType>(
+      std::next(_entity_types.begin(), _entity_type_offsets[dim]),
+      std::next(_entity_types.begin(), _entity_type_offsets[dim + 1]));
 }
 //-----------------------------------------------------------------------------
-void Topology::set_index_map(int dim,
-                             std::shared_ptr<const common::IndexMap> map)
-{
-  if (_entity_type_offsets[dim + 1] - _entity_type_offsets[dim] != 1)
-    throw std::runtime_error("Cannot set IndexMap on mixed topology mesh");
-  this->set_index_map(dim, 0, map);
-}
+mesh::CellType Topology::cell_type() const { return _entity_types.back(); }
 //-----------------------------------------------------------------------------
 std::vector<std::shared_ptr<const common::IndexMap>>
 Topology::index_maps(int dim) const
@@ -850,131 +844,6 @@ Topology::connectivity(int d0, int d1) const
   return this->connectivity({d0, 0}, {d1, 0});
 }
 //-----------------------------------------------------------------------------
-std::int32_t Topology::create_entities(int dim)
-{
-  // TODO: is this check sufficient/correct? Does not catch the
-  // cell_entity entity case. Should there also be a check for
-  // connectivity(this->dim(), dim)?
-  // Skip if already computed (vertices (dim=0) should always exist)
-  if (connectivity(dim, 0))
-    return -1;
-
-  for (std::size_t index = 0; index < this->entity_types(dim).size(); ++index)
-  {
-    // Create local entities
-    auto [cell_entity, entity_vertex, index_map, interprocess_entities]
-        = compute_entities(_comm.comm(), *this, dim, index);
-    for (std::size_t k = 0; k < cell_entity.size(); ++k)
-    {
-      if (cell_entity[k])
-      {
-        set_connectivity(cell_entity[k], {this->dim(), int(k)},
-                         {dim, int(index)});
-      }
-    }
-
-    // TODO: is this check necessary? Seems redundant after the "skip check"
-    if (entity_vertex)
-      set_connectivity(entity_vertex, {dim, int(index)}, {0, 0});
-
-    assert(index_map);
-    this->set_index_map(dim, index, index_map);
-
-    // Store boundary facets
-    if (dim == this->dim() - 1)
-    {
-      std::ranges::sort(interprocess_entities);
-      assert(index < _interprocess_facets.size());
-      _interprocess_facets[index] = std::move(interprocess_entities);
-    }
-  }
-
-  return this->index_maps(dim)[0]->size_local();
-}
-//-----------------------------------------------------------------------------
-void Topology::create_connectivity(int d0, int d1)
-{
-  // Make sure entities exist
-  create_entities(d0);
-  create_entities(d1);
-
-  // Get the number of different entity types in each dimension
-  std::int32_t num_d0 = this->entity_types(d0).size();
-  std::int32_t num_d1 = this->entity_types(d1).size();
-
-  // Create all connectivities between the two entity dimensions
-  for (int i0 = 0; i0 < num_d0; ++i0)
-  {
-    for (int i1 = 0; i1 < num_d1; ++i1)
-    {
-      // Compute connectivity
-      const auto [c_d0_d1, c_d1_d0]
-          = compute_connectivity(*this, {d0, i0}, {d1, i1});
-
-      // NOTE: that to compute the (d0, d1) connections is it sometimes
-      // necessary to compute the (d1, d0) connections. We store the (d1,
-      // d0) for possible later use, but there is a memory overhead if they
-      // are not required. It may be better to not automatically store
-      // connectivity that was not requested, but advise in a docstring the
-      // most efficient order in which to call this function if several
-      // connectivities are needed.
-
-      // TODO: Caching policy/strategy.
-      // Concerning the note above: Provide an overload
-      // create_connectivity(std::vector<std::pair<int, int>>)?
-
-      // Attach connectivities
-      if (c_d0_d1)
-        set_connectivity(c_d0_d1, {d0, i0}, {d1, i1});
-      if (c_d1_d0)
-        set_connectivity(c_d1_d0, {d1, i1}, {d0, i0});
-    }
-  }
-}
-//-----------------------------------------------------------------------------
-void Topology::create_entity_permutations()
-{
-  if (!_cell_permutations.empty())
-    return;
-
-  const int tdim = this->dim();
-
-  // FIXME: Is this always required? Could it be made cheaper by doing a
-  // local version? This call does quite a lot of parallel work
-  // Create all mesh entities
-  for (int d = 0; d < tdim; ++d)
-    create_entities(d);
-
-  auto [facet_permutations, cell_permutations]
-      = compute_entity_permutations(*this);
-  _facet_permutations = std::move(facet_permutations);
-  _cell_permutations = std::move(cell_permutations);
-}
-//-----------------------------------------------------------------------------
-void Topology::set_connectivity(
-    std::shared_ptr<graph::AdjacencyList<std::int32_t>> c, int d0, int d1)
-{
-  // Just sets the first connectivity between (d0, d1) - compatibility
-  assert(d0 < (int)_entity_type_offsets.size() - 1);
-  assert(d1 < (int)_entity_type_offsets.size() - 1);
-  _connectivity[_entity_type_offsets[d0]][_entity_type_offsets[d1]] = c;
-}
-//-----------------------------------------------------------------------------
-void Topology::set_connectivity(
-    std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
-    std::array<int, 2> d0, std::array<int, 2> d1)
-{
-  auto [dim0, i0] = d0;
-  auto [dim1, i1] = d1;
-  assert(dim0 < (int)_entity_type_offsets.size() - 1);
-  assert(i0 < (_entity_type_offsets[dim0 + 1] - _entity_type_offsets[dim0]));
-  assert(dim1 < (int)_entity_type_offsets.size() - 1);
-  assert(i1 < (_entity_type_offsets[dim1 + 1] - _entity_type_offsets[dim1]));
-  _connectivity[_entity_type_offsets[dim0] + i0]
-               [_entity_type_offsets[dim1] + i1]
-      = c;
-}
-//-----------------------------------------------------------------------------
 const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 {
   // Check if this process owns or ghosts any cells
@@ -1004,24 +873,152 @@ const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
   return _facet_permutations;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::int32_t>& Topology::interprocess_facets() const
-{
-  return _interprocess_facets[0];
-}
-//-----------------------------------------------------------------------------
 const std::vector<std::int32_t>& Topology::interprocess_facets(int index) const
 {
   return _interprocess_facets.at(index);
 }
 //-----------------------------------------------------------------------------
-mesh::CellType Topology::cell_type() const { return _entity_types.back(); }
-//-----------------------------------------------------------------------------
-std::vector<CellType> Topology::entity_types(int dim) const
+const std::vector<std::int32_t>& Topology::interprocess_facets() const
 {
-  assert(dim < (int)_entity_type_offsets.size() - 1 and dim >= 0);
-  return std::vector<CellType>(
-      std::next(_entity_types.begin(), _entity_type_offsets[dim]),
-      std::next(_entity_types.begin(), _entity_type_offsets[dim + 1]));
+  return this->interprocess_facets(0);
+}
+//-----------------------------------------------------------------------------
+void Topology::set_index_map(int dim, int i,
+                             std::shared_ptr<const common::IndexMap> map)
+{
+  assert(dim < (int)_entity_type_offsets.size() - 1);
+  assert(i < (_entity_type_offsets[dim + 1] - _entity_type_offsets[dim]));
+  _index_map[_entity_type_offsets[dim] + i] = map;
+}
+//-----------------------------------------------------------------------------
+void Topology::set_index_map(int dim,
+                             std::shared_ptr<const common::IndexMap> map)
+{
+  if (_entity_type_offsets[dim + 1] - _entity_type_offsets[dim] != 1)
+    throw std::runtime_error("Cannot set IndexMap on mixed topology mesh");
+  this->set_index_map(dim, 0, map);
+}
+//-----------------------------------------------------------------------------
+void Topology::set_connectivity(
+    std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
+    std::array<int, 2> d0, std::array<int, 2> d1)
+{
+  auto [dim0, i0] = d0;
+  auto [dim1, i1] = d1;
+  assert(dim0 < (int)_entity_type_offsets.size() - 1);
+  assert(i0 < (_entity_type_offsets[dim0 + 1] - _entity_type_offsets[dim0]));
+  assert(dim1 < (int)_entity_type_offsets.size() - 1);
+  assert(i1 < (_entity_type_offsets[dim1 + 1] - _entity_type_offsets[dim1]));
+  _connectivity[_entity_type_offsets[dim0] + i0]
+               [_entity_type_offsets[dim1] + i1]
+      = c;
+}
+//-----------------------------------------------------------------------------
+void Topology::set_connectivity(
+    std::shared_ptr<graph::AdjacencyList<std::int32_t>> c, int d0, int d1)
+{
+  this->set_connectivity(c, {d0, 0}, {d1, 0});
+}
+//-----------------------------------------------------------------------------
+std::int32_t Topology::create_entities(int dim)
+{
+  // TODO: is this check sufficient/correct? Does not catch the
+  // cell_entity entity case. Should there also be a check for
+  // connectivity(this->dim(), dim)?
+  // Skip if already computed (vertices (dim=0) should always exist)
+  if (connectivity(dim, 0))
+    return -1;
+
+  for (std::size_t index = 0; index < this->entity_types(dim).size(); ++index)
+  {
+    // Create local entities
+    auto [cell_entity, entity_vertex, index_map, interprocess_entities]
+        = compute_entities(_comm.comm(), *this, dim, index);
+    for (std::size_t k = 0; k < cell_entity.size(); ++k)
+    {
+      if (cell_entity[k])
+      {
+        set_connectivity(cell_entity[k], {this->dim(), int(k)},
+                         {dim, int(index)});
+      }
+    }
+
+    // TODO: is this check necessary? Seems redundant after the "skip
+    // check"
+    if (entity_vertex)
+      set_connectivity(entity_vertex, {dim, int(index)}, {0, 0});
+
+    assert(index_map);
+    this->set_index_map(dim, index, index_map);
+
+    // Store boundary facets
+    if (dim == this->dim() - 1)
+    {
+      std::ranges::sort(interprocess_entities);
+      assert(index < _interprocess_facets.size());
+      _interprocess_facets[index] = std::move(interprocess_entities);
+    }
+  }
+
+  return this->index_maps(dim)[0]->size_local();
+}
+//-----------------------------------------------------------------------------
+void Topology::create_connectivity(int d0, int d1)
+{
+  // Make sure entities exist
+  create_entities(d0);
+  create_entities(d1);
+
+  // Get the number of different entity types in each dimension
+  int num_d0 = this->entity_types(d0).size();
+  int num_d1 = this->entity_types(d1).size();
+
+  // Create all connectivities between the two entity dimensions
+  for (int i0 = 0; i0 < num_d0; ++i0)
+  {
+    for (int i1 = 0; i1 < num_d1; ++i1)
+    {
+      // Compute connectivity
+      auto [c_d0_d1, c_d1_d0] = compute_connectivity(*this, {d0, i0}, {d1, i1});
+
+      // NOTE: that to compute the (d0, d1) connections is it sometimes
+      // necessary to compute the (d1, d0) connections. We store the (d1,
+      // d0) for possible later use, but there is a memory overhead if they
+      // are not required. It may be better to not automatically store
+      // connectivity that was not requested, but advise in a docstring the
+      // most efficient order in which to call this function if several
+      // connectivities are needed.
+
+      // TODO: Caching policy/strategy.
+      // Concerning the note above: Provide an overload
+      // create_connectivity(std::vector<std::pair<int, int>>)?
+
+      // Attach connectivities
+      if (c_d0_d1)
+        set_connectivity(c_d0_d1, {d0, i0}, {d1, i1});
+      if (c_d1_d0)
+        set_connectivity(c_d1_d0, {d1, i1}, {d0, i0});
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void Topology::create_entity_permutations()
+{
+  if (!_cell_permutations.empty())
+    return;
+
+  int tdim = this->dim();
+
+  // FIXME: Is this always required? Could it be made cheaper by doing a
+  // local version? This call does quite a lot of parallel work
+  // Create all mesh entities
+  for (int d = 0; d < tdim; ++d)
+    create_entities(d);
+
+  auto [facet_permutations, cell_permutations]
+      = compute_entity_permutations(*this);
+  _facet_permutations = std::move(facet_permutations);
+  _cell_permutations = std::move(cell_permutations);
 }
 //-----------------------------------------------------------------------------
 MPI_Comm Topology::comm() const { return _comm.comm(); }
@@ -1189,22 +1186,23 @@ Topology mesh::create_topology(
       // communicated via ghost cells. Note that the ghost cell owner
       // (who we get the vertex index from) is not necessarily the
       // vertex owner.
-      std::vector<std::array<std::int64_t, 3>> recv_data;
       // Repeat for each cell type
+      std::vector<std::array<std::int64_t, 3>> recv_data;
       for (std::size_t i = 0; i < cell_type.size(); ++i)
       {
         int num_cell_vertices = mesh::num_cell_vertices(cell_type[i]);
-        auto recv_data_i = exchange_ghost_indexing(
-            *index_map_c[i], cells[i], num_cell_vertices, owned_vertices.size(),
-            global_offset_v, global_to_local_vertices, ghost_vertices,
-            ghost_vertex_owners);
+        std::vector<std::array<std::int64_t, 3>> recv_data_i
+            = exchange_ghost_indexing(*index_map_c[i], cells[i],
+                                      num_cell_vertices, owned_vertices.size(),
+                                      global_offset_v, global_to_local_vertices,
+                                      ghost_vertices, ghost_vertex_owners);
         recv_data.insert(recv_data.end(), recv_data_i.begin(),
                          recv_data_i.end());
       }
 
       // Unpack received data and add to arrays of ghost indices and ghost
       // owners
-      for (auto& data : recv_data)
+      for (std::array<std::int64_t, 3>& data : recv_data)
       {
         std::int64_t global_idx_old = data[0];
         auto it0 = std::ranges::lower_bound(unowned_vertices, global_idx_old);
@@ -1241,7 +1239,7 @@ Topology mesh::create_topology(
   std::ranges::sort(global_to_local_vertices);
 
   std::vector<std::vector<std::int32_t>> _cells_local_idx;
-  for (auto& c : cells)
+  for (std::span<const std::int64_t> c : cells)
   {
     _cells_local_idx.push_back(
         convert_to_local_indexing(c, global_to_local_vertices));
@@ -1273,7 +1271,6 @@ Topology mesh::create_topology(
     dolfinx::radix_sort(src);
     auto [unique_end, range_end] = std::ranges::unique(src);
     src.erase(unique_end, range_end);
-
     dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
   }
 
@@ -1293,7 +1290,7 @@ Topology mesh::create_topology(
 
   // Save original cell index
   std::vector<std::vector<std::int64_t>> orig_index;
-  for (auto& idx : original_cell_index)
+  for (std::span<const std::int64_t> idx : original_cell_index)
     orig_index.emplace_back(idx.begin(), idx.end());
 
   return Topology(comm, cell_type, index_map_v, index_map_c, cells_c,
