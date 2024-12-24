@@ -134,7 +134,7 @@ void io::VTKHDF::write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
   std::vector<std::int64_t> cell_stop_pos;
   for (int i = 0; i < cell_index_maps.size(); ++i)
   {
-    num_nodes_per_cell.push_back(mesh.geometry().cmap(i).dim());
+    num_nodes_per_cell.push_back(mesh.geometry().cmaps()[i].dim());
     auto r = cell_index_maps[i]->local_range();
     cell_start_pos.push_back(r[0]);
     cell_stop_pos.push_back(r[1]);
