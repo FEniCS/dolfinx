@@ -538,10 +538,9 @@ compute_entities_by_key_matching(
 
         std::vector<std::size_t> perm(global_vertices.size());
         std::iota(perm.begin(), perm.end(), 0);
-        std::ranges::sort(perm,
-                          [&global_vertices](std::size_t i0, std::size_t i1) {
-                            return global_vertices[i0] < global_vertices[i1];
-                          });
+        std::ranges::sort(
+            perm, [&global_vertices](std::size_t i0, std::size_t i1)
+            { return global_vertices[i0] < global_vertices[i1]; });
         // For quadrilaterals, the vertex opposite the lowest vertex should
         // be last
         if (entity_type == mesh::CellType::quadrilateral)
@@ -798,7 +797,7 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim,
   {
     auto cell_map = cell_index_maps[i];
     assert(cell_map);
-    auto cells = topology.connectivity({tdim, i}, {0, 0});
+    auto cells = topology.connectivity({tdim, int(i)}, {0, 0});
     if (!cells)
       throw std::runtime_error("Cell connectivity missing.");
     cell_lists[i] = {cell_types[i], cells, cell_map};
@@ -814,52 +813,55 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim,
 }
 //-----------------------------------------------------------------------------
 std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>
-mesh::compute_connectivity(const Topology& topology,
-                           std::pair<std::int8_t, std::int8_t> d0,
-                           std::pair<std::int8_t, std::int8_t> d1)
+mesh::compute_connectivity(const Topology& topology, std::array<int, 2> d0,
+                           std::array<int, 2> d1)
 {
   spdlog::info("Requesting connectivity ({}, {}) - ({}, {})",
-               std::to_string(d0.first), std::to_string(d0.second),
-               std::to_string(d1.first), std::to_string(d1.second));
+               std::to_string(d0[0]), std::to_string(d0[1]),
+               std::to_string(d1[0]), std::to_string(d1[1]));
 
   // Return if connectivity has already been computed
   if (topology.connectivity(d0, d1))
     return {nullptr, nullptr};
 
   // Return if no connectivity is possible
-  if (d0.first == d1.first and d0.second != d1.second)
+  if (d0[0] == d1[0] and d0[1] != d1[1])
     return {nullptr, nullptr};
 
   // No connectivity between these cell types
-  CellType c0 = topology.entity_types(d0.first)[d0.second];
-  CellType c1 = topology.entity_types(d1.first)[d1.second];
+  CellType c0 = topology.entity_types(d0[0])[d0[1]];
+  CellType c1 = topology.entity_types(d1[0])[d1[1]];
   if ((c0 == CellType::hexahedron and c1 == CellType::triangle)
       or (c0 == CellType::triangle and c1 == CellType::hexahedron))
+  {
     return {nullptr, nullptr};
+  }
   if ((c0 == CellType::tetrahedron and c1 == CellType::quadrilateral)
       or (c0 == CellType::quadrilateral and c1 == CellType::tetrahedron))
+  {
     return {nullptr, nullptr};
+  }
 
   // Get entities if they exist
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d0_0
       = topology.connectivity(d0, {0, 0});
-  if (d0.first > 0 and !topology.connectivity(d0, {0, 0}))
+  if (d0[0] > 0 and !topology.connectivity(d0, {0, 0}))
   {
     throw std::runtime_error("Missing entities of dimension "
-                             + std::to_string(d0.first) + ".");
+                             + std::to_string(d0[0]) + ".");
   }
 
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d1_0
       = topology.connectivity(d1, {0, 0});
-  if (d1.first > 0 and !topology.connectivity(d1, {0, 0}))
+  if (d1[0] > 0 and !topology.connectivity(d1, {0, 0}))
   {
     throw std::runtime_error("Missing entities of dimension "
-                             + std::to_string(d1.first) + ".");
+                             + std::to_string(d1[0]) + ".");
   }
 
   // Start timer
-  common::Timer timer("Compute connectivity " + std::to_string(d0.first) + "-"
-                      + std::to_string(d1.second));
+  common::Timer timer("Compute connectivity " + std::to_string(d0[0]) + "-"
+                      + std::to_string(d1[1]));
 
   // Decide how to compute the connectivity
   if (d0 == d1)
@@ -868,18 +870,18 @@ mesh::compute_connectivity(const Topology& topology,
                 c_d0_0->num_nodes()),
             nullptr};
   }
-  else if (d0.first < d1.first)
+  else if (d0[0] < d1[0])
   {
     // Compute connectivity d1 - d0 (if needed), and take transpose
     if (!topology.connectivity(d1, d0))
     {
       // Only possible case is edge->facet
-      assert(d0.first == 1 and d1.first == 2);
+      assert(d0[0] == 1 and d1[0] == 2);
       auto c_d1_d0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_map(*c_d1_0, *c_d0_0));
 
-      spdlog::info("Computing mesh connectivity {}-{} from transpose.",
-                   d0.first, d1.first);
+      spdlog::info("Computing mesh connectivity {}-{} from transpose.", d0[0],
+                   d1[0]);
       auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*c_d1_d0, c_d0_0->num_nodes()));
       return {c_d0_d1, c_d1_d0};
@@ -890,20 +892,20 @@ mesh::compute_connectivity(const Topology& topology,
       assert(topology.connectivity(d1, d0));
 
       spdlog::info("Computing mesh connectivity {}-{} from transpose.",
-                   std::to_string(d0.first), std::to_string(d1.first));
+                   std::to_string(d0[0]), std::to_string(d1[0]));
       auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*topology.connectivity(d1, d0),
                                  c_d0_0->num_nodes()));
       return {c_d0_d1, nullptr};
     }
   }
-  else if (d0.first > d1.first)
+  else if (d0[0] > d1[0])
   {
     // Compute by mapping vertices from a lower dimension entity to
     // those of a higher dimension entity
 
     // Only possible case is facet->edge
-    assert(d0.first == 2 and d1.first == 1);
+    assert(d0[0] == 2 and d1[0] == 1);
     auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         compute_from_map(*c_d0_0, *c_d1_0));
     return {c_d0_d1, nullptr};

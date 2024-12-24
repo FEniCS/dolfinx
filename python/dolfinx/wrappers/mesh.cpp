@@ -637,18 +637,18 @@ void mesh(nb::module_& m)
           [](const dolfinx::mesh::Topology& self)
           {
             if (self.original_cell_index.size() != 1)
-              throw std::runtime_error("Mixed topology unsupported");
+              throw std::runtime_error("Mixed topology unsupported.");
             const std::vector<std::vector<std::int64_t>>& idx
                 = self.original_cell_index;
-            return nb::ndarray<const std::int64_t, nb::numpy>(idx[0].data(),
-                                                              {idx[0].size()});
+            return nb::ndarray<const std::int64_t, nb::numpy>(
+                idx.front().data(), {idx.front().size()});
           },
           [](dolfinx::mesh::Topology& self,
-             const nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>&
+             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
                  original_cell_indices)
           {
             self.original_cell_index.resize(1);
-            self.original_cell_index[0].assign(
+            self.original_cell_index.front().assign(
                 original_cell_indices.data(),
                 original_cell_indices.data() + original_cell_indices.size());
           },
@@ -658,8 +658,7 @@ void mesh(nb::module_& m)
                                        nb::const_),
            nb::arg("d0"), nb::arg("d1"))
       .def("connectivity",
-           nb::overload_cast<std::pair<std::int8_t, std::int8_t>,
-                             std::pair<std::int8_t, std::int8_t>>(
+           nb::overload_cast<std::array<int, 2>, std::array<int, 2>>(
                &dolfinx::mesh::Topology::connectivity, nb::const_),
            nb::arg("d0"), nb::arg("d1"))
       .def("index_map", &dolfinx::mesh::Topology::index_map, nb::arg("dim"))

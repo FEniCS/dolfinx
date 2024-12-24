@@ -97,10 +97,10 @@ public:
   /// Destructor
   ~Geometry() = default;
 
-  /// Copy Assignment
+  /// Copy assignment
   Geometry& operator=(const Geometry&) = delete;
 
-  /// Move Assignment
+  /// Move assignment
   Geometry& operator=(Geometry&&) = default;
 
   /// @brief Return dimension of the Euclidean coordinate system.
@@ -120,7 +120,7 @@ public:
 
   /// @brief Degree-of-freedom map associated with the `i`th coordinate
   /// map element in the geometry.
-  /// @param i Index of the requested degree-of-freedom map. The
+  /// @param[in] i Index of the requested degree-of-freedom map. The
   /// degree-of-freedom map corresponds to the geometry element
   /// `cmaps()[i]`.
   /// @return A dofmap array, with shape `(num_cells, dofs_per_cell)`.
