@@ -669,7 +669,8 @@ def create_tnt_prism(degree):
     )
 
 # Here is the matching tetrahedron, triangle and interval elements. Their boundary dofs are moments, not point values, except at the vertices.
-# The performance of the triangle element matches the P type element, as the same space is spanned.
+# The performance of the triangle element 0-form matches the P type element, as the same space is spanned. The interior spaces are differently parametrized.
+# The performance of the triangle element 1-Form matches the Legendre variant of Nedelec1, as the same space is spanned. The interior spaces are differently parametrized.
 
 def create_tnt_tetrahedron(degree):
     assert degree > 0
@@ -775,7 +776,7 @@ def create_tnt_tetrahedron(degree):
         dtype=default_real_type,
     )
     
-def create_tnt_triangle(degree):
+def create_tnt_triangle_0Form(degree):
     assert degree > 0
     # Polyset
     ndofs = round((degree+1)*(degree+2)/2)
@@ -801,16 +802,11 @@ def create_tnt_triangle(degree):
             M[1].append(np.zeros([0, 1, 0, 1]))
     else:
         pts, wts = basix.make_quadrature(basix.CellType.interval, 2 * degree - 2)
-        poly = basix.tabulate_polynomials(
-            basix.PolynomialType.legendre, basix.CellType.interval, degree - 2, pts
-        )
-        edge_ndofs = poly.shape[0]
+        poly = basix.tabulate_polynomials(basix.PolynomialType.legendre, basix.CellType.interval, degree - 2, pts)
         for e in topology[1]:
-            x[1].append(np.array(geometry[e[0]] + np.dot(pts,[geometry[e[1]]-geometry[e[0]]])))
-            mat = np.zeros((edge_ndofs, 1, len(pts), 1))
-            for i in range(edge_ndofs):
-                mat[i, 0, :, 0] = wts[:] * poly[i, :] #* np.linalg.norm(v1 - v0)
-            M[1].append(mat)
+            x[1].append(geometry[e[0]] + np.dot(pts,[geometry[e[1]]-geometry[e[0]]]))
+            M[1].append((wts[None,None,:]*[[poly]]).transpose([2,1,3,0]))
+            print(geometry[e[0]] + np.dot(pts,[geometry[e[1]]-geometry[e[0]]]))
 
     # Faces
     if degree < 3:
@@ -818,25 +814,20 @@ def create_tnt_triangle(degree):
             x[2].append(np.zeros([0, 2]))
             M[2].append(np.zeros([0, 1, 0, 1]))
     else:
-        ptsr, wts = basix.make_quadrature(basix.CellType.triangle, 2 * degree - 2)
-        pol_set = basix.polynomials.tabulate_polynomial_set(
-            basix.CellType.triangle, basix.PolynomialType.legendre, degree - 3, 2, ptsr
-        )
+        pts, wts = basix.make_quadrature(basix.CellType.triangle, 2 * degree - 2)
+        pol_set = basix.polynomials.tabulate_polynomial_set(basix.CellType.triangle, basix.PolynomialType.legendre, degree - 3, 2, pts)
         # this assumes the conventional [0 to 1][0 to 1] domain of the reference element, 
         # and takes the Laplacian of (u+v-1)*u*v*pol_set[0], , 
         # cf https://github.com/mscroggs/symfem/blob/main/symfem/elements/tnt.py
-        u = ptsr[:, 0]
-        v = ptsr[:, 1]
+        u = pts[:, 0]
+        v = pts[:, 1]
         poly = (pol_set[5]+pol_set[3])*(u+v-1)*u*v+ \
                 2*(pol_set[2]*u*(2*v+u-1)+pol_set[1]*v*(2*u+v-1)+ \
                    pol_set[0]*(u+v))
 
-        face_ndofs = poly.shape[0]
-        x[2].append(ptsr)
-        mat = np.zeros((face_ndofs, 1, len(ptsr), 1))
-        for i in range(face_ndofs):
-            mat[i, 0, :, 0] = wts[:] * poly[i, :] #* np.linalg.norm(np.cross(geometry[f][1]-geometry[f][0],geometry[f][2]-geometry[f][0]))
-        M[2].append(mat)
+        x[2].append(pts)
+        M[2].append((wts[None,None,:]*[[poly]]).transpose([2,1,3,0]))
+
     
     return basix.ufl.custom_element(
         basix.CellType.triangle,
@@ -852,7 +843,90 @@ def create_tnt_triangle(degree):
         degree,
         dtype=default_real_type,
     )
+    
+def cross2d(x):
+    return [x[1],-x[0]] 
 
+def create_tnt_triangle_1Form (degree):
+    assert degree > 0
+    # Polyset
+    ndofs = (degree+2)*degree
+    npoly = (degree+1)*(degree+2)
+    
+    wcoeffs = np.zeros((ndofs,npoly))
+    wcoeffs[:round((degree+1)*degree/2),:round((degree+1)*degree/2)] = np.eye(round((degree+1)*degree/2))
+    wcoeffs[round((degree+1)*degree/2):(degree+1)*degree,round((degree+1)*(degree+2)/2):round((degree+1)*(degree+2)/2)+round((degree+1)*degree/2)] = np.eye(round((degree+1)*degree/2))
+
+    pts, wts = basix.make_quadrature(basix.CellType.triangle, 2*degree)
+    poly  = basix.tabulate_polynomials(basix.PolynomialType.legendre, basix.CellType.triangle, degree, pts)
+    poly0 = basix.tabulate_polynomials(basix.PolynomialType.legendre, basix.CellType.triangle, degree-1, pts)
+    u = pts[:, 0]
+    v = pts[:, 1]
+    for j in range(degree):
+        for i in range(round((degree+1)*(degree+2)/2)):
+            wcoeffs[(degree+1)*degree + j, i]                                  = sum( v * poly0[round((degree-1)*(degree)/2)+j, :] * poly[i, :] * wts)
+            wcoeffs[(degree+1)*degree + j, round((degree+1)*(degree+2)/2) + i] = sum(-u * poly0[round((degree-1)*(degree)/2)+j, :] * poly[i, :] * wts)
+
+    # Interpolation
+    geometry = basix.geometry(basix.CellType.triangle)
+    topology = basix.topology(basix.CellType.triangle)
+    x = [[], [], [], []]
+    M = [[], [], [], []]
+
+    # Vertices
+    for v in topology[0]:
+        x[0].append(np.zeros([0, 2]))
+        M[0].append(np.zeros([0, 2, 0, 1]))
+
+    # Edges
+    pts, wts = basix.make_quadrature(basix.CellType.interval, 2 * degree - 2 )
+    poly = basix.tabulate_polynomials(basix.PolynomialType.legendre, basix.CellType.interval, degree - 1, pts)
+    for e in topology[1]:
+        x[1].append(geometry[e[0]] + np.dot(pts,[geometry[e[1]]-geometry[e[0]]]))
+        mat = np.ones((degree, 2, len(wts), 1))
+        mat0 = np.multiply.outer(geometry[e[1]]-geometry[e[0]],wts*[poly]).transpose([2,0,3,1])
+        mat1=np.zeros(mat0.shape)
+        mat1[:,:,:,:]=mat0
+        M[1].append(mat1)
+        
+    # Faces
+    if degree < 2:
+        for _ in topology[2]:
+            x[2].append(np.zeros([0, 2]))
+            M[2].append(np.zeros([0, 2, 0, 1]))
+    else:
+        pts, wts = basix.make_quadrature(basix.CellType.triangle, 2 * degree - 2)
+        x[2].append(pts)
+        pol_set = basix.polynomials.tabulate_polynomial_set(basix.CellType.triangle, basix.PolynomialType.legendre, degree - 1, 1, pts)
+        mat0=(wts[None,None,None,:]*[cross2d(pol_set[1:,1:])]).transpose([2,1,3,0])
+        mat1=np.zeros(mat0.shape)
+        mat1[:,:,:,:]=mat0
+        if degree<3:
+            M[2].append(mat1)
+        else:
+            pol_set = basix.polynomials.tabulate_polynomial_set(basix.CellType.triangle, basix.PolynomialType.legendre, degree - 3, 1, pts)
+            u = pts[:, 0]
+            v = pts[:, 1]
+            poly = cross2d(cross2d([v*(pol_set[1]*(u+v-1)*u+pol_set[0]*(2*u+v-1)),u*(pol_set[2]*(u+v-1)*v+pol_set[0]*(2*v+u-1))]))
+            mat2=(wts[None,None,None,:]*[poly]).transpose([2,1,3,0])
+            M[2].append(np.concatenate((mat1,mat2)))
+
+
+    return basix.ufl.custom_element(
+        basix.CellType.triangle,
+        [2],
+        wcoeffs,
+        x,
+        M,
+        0,
+        basix.MapType.covariantPiola, 
+        basix.SobolevSpace.HCurl,
+        False,
+        degree-1,
+        degree,
+        basix.PolysetType.standard,
+    )
+    
 # The interval elements match the Legendre variant of the serendipity elements for the 0-form
 # The interval elements match the Legendre variant of the discontinuous P elements for the 1-Form of 1 lower degree
 
