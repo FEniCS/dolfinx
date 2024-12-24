@@ -703,6 +703,10 @@ std::int8_t io::cells::get_vtk_cell_type(mesh::CellType cell, int dim)
     return 71;
   case mesh::CellType::hexahedron:
     return 72;
+  case mesh::CellType::pyramid:
+    return 14;
+  case mesh::CellType::prism:
+    return 73;
   default:
     throw std::runtime_error("Unknown cell type");
   }
