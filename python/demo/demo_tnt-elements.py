@@ -450,7 +450,6 @@ def create_tnt_quadrilateral_1Form(degree):
     poly = basix.tabulate_polynomials(basix.PolynomialType.legendre, basix.CellType.interval, degree - 1, pts)
     for e in topology[1]:
         x[1].append(geometry[e[0]] + np.dot(pts,[geometry[e[1]]-geometry[e[0]]]))
-        mat = np.ones((degree, 2, len(wts), 1))
         mat0 = np.multiply.outer(geometry[e[1]]-geometry[e[0]],wts*[poly]).transpose([2,0,3,1])
         mat1=np.zeros(mat0.shape)
         mat1[:,:,:,:]=mat0
@@ -974,7 +973,6 @@ def create_tnt_triangle_1Form (degree):
     poly = basix.tabulate_polynomials(basix.PolynomialType.legendre, basix.CellType.interval, degree - 1, pts)
     for e in topology[1]:
         x[1].append(geometry[e[0]] + np.dot(pts,[geometry[e[1]]-geometry[e[0]]]))
-        mat = np.ones((degree, 2, len(wts), 1))
         mat0 = np.multiply.outer(geometry[e[1]]-geometry[e[0]],wts*[poly]).transpose([2,0,3,1])
         mat1=np.zeros(mat0.shape)
         mat1[:,:,:,:]=mat0
