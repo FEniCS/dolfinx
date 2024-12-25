@@ -169,7 +169,7 @@ tnt_degree2 = basix.ufl.custom_element(
 # arbitrary degree TNT elements.
 
 
-def create_tnt_quad(degree):
+def create_tnt_quadrilateral_0Form(degree):
     assert degree > 0
     # Polyset
     ndofs = 4*degree + max(degree-2,0)**2
@@ -337,7 +337,7 @@ V = fem.functionspace(msh, tnt_degree2)
 #tnt_errors.append(poisson_error(V))
 #print(f"TNT degree 2 error: {tnt_errors[-1]}")
 for degree in range(1, 9):
-    V = fem.functionspace(msh, create_tnt_quad(degree))
+    V = fem.functionspace(msh, create_tnt_quadrilateral_0Form(degree))
     tnt_degrees.append(degree)
     tnt_ndofs.append(V.dofmap.index_map.size_global)
     tnt_errors.append(poisson_error(V))
@@ -401,10 +401,101 @@ if MPI.COMM_WORLD.rank == 0:  # Only plot on one rank
 
 # ![](demo_tnt-elements_ndofs_vs_error.png)
 
+# We can also generate the 1Form version:
+
+def cross2d(x):
+    return [x[1],-x[0]] 
+
+def create_tnt_quadrilateral_1Form(degree):
+    assert degree > 0
+    # Polyset
+    ndofs = 4*degree+degree**2-1+max(0,(degree-2))**2
+    npoly = 2*(degree+1)**2
+
+    wcoeffs = np.zeros((ndofs,npoly))
+    for i in range(degree):
+        for j in range(degree):
+            wcoeffs[i*degree+j,i*(degree+1)+j]=1
+            wcoeffs[degree**2+i*degree+j,(degree+1)**2+i*(degree+1)+j]=1
+    wcoeffs[2*degree**2,degree**2+degree-1]=1
+    wcoeffs[2*degree**2,2*(degree+1)**2-2]=-1
+    
+    pts, wts = basix.make_quadrature(basix.CellType.quadrilateral, 2*degree)
+    poly = basix.polynomials.tabulate_polynomial_set(basix.CellType.quadrilateral, basix.PolynomialType.legendre, degree, 1, pts)
+#    u = pts[:, 0]
+#    v = pts[:, 1]
+    for i in range((degree+1)**2):
+# alternative calculation of this row for checking
+#        wcoeffs[2*degree**2,i]              =sum( v*poly[0,(degree+1)**2-degree-3, :] * poly[0,i, :] * wts)
+#        wcoeffs[2*degree**2,(degree+1)**2+i]=sum(-u*poly[0,(degree+1)**2-degree-3, :] * poly[0,i, :] * wts)
+        wcoeffs[2*degree**2+1,i]               = sum( poly[1,2*degree+1, :] * poly[0,i, :] * wts)
+        wcoeffs[2*degree**2+1,(degree+1)**2+i] = sum( poly[2,2*degree+1, :] * poly[0,i, :] * wts)
+        if degree>1:
+            wcoeffs[2*degree**2+2,i]               = sum( poly[1,(degree+1)**2-degree, :] * poly[0,i, :] * wts)
+            wcoeffs[2*degree**2+2,(degree+1)**2+i] = sum( poly[2,(degree+1)**2-degree, :] * poly[0,i, :] * wts)
+
+    # Interpolation
+    geometry = basix.geometry(basix.CellType.quadrilateral)
+    topology = basix.topology(basix.CellType.quadrilateral)
+    x = [[], [], [], []]
+    M = [[], [], [], []]
+
+    # Vertices
+    for v in topology[0]:
+        x[0].append(np.zeros([0, 2]))
+        M[0].append(np.zeros([0, 2, 0, 1]))
+
+    # Edges
+    pts, wts = basix.make_quadrature(basix.CellType.interval, 2 * degree - 2 )
+    poly = basix.tabulate_polynomials(basix.PolynomialType.legendre, basix.CellType.interval, degree - 1, pts)
+    for e in topology[1]:
+        x[1].append(geometry[e[0]] + np.dot(pts,[geometry[e[1]]-geometry[e[0]]]))
+        mat = np.ones((degree, 2, len(wts), 1))
+        mat0 = np.multiply.outer(geometry[e[1]]-geometry[e[0]],wts*[poly]).transpose([2,0,3,1])
+        mat1=np.zeros(mat0.shape)
+        mat1[:,:,:,:]=mat0
+        M[1].append(mat1)
+
+    # Faces
+    if degree < 2:
+        for _ in topology[2]:
+            x[2].append(np.zeros([0, 2]))
+            M[2].append(np.zeros([0, 2, 0, 1]))
+    else:
+        pts, wts = basix.make_quadrature(basix.CellType.quadrilateral, 2 * degree - 2)
+        x[2].append(pts)
+        pol_set = basix.polynomials.tabulate_polynomial_set(basix.CellType.quadrilateral, basix.PolynomialType.legendre, degree - 1, 1, pts)
+        mat0=(wts[None,None,None,:]*[cross2d(pol_set[1:,1:])]).transpose([2,1,3,0])
+        mat1=np.zeros(mat0.shape)
+        mat1[:,:,:,:]=mat0
+        if degree<3:
+            M[2].append(mat1)
+        else:
+            pol_set = basix.polynomials.tabulate_polynomial_set(basix.CellType.quadrilateral, basix.PolynomialType.legendre, degree - 3, 1, pts)
+            u = pts[:, 0]
+            v = pts[:, 1]
+            poly = cross2d(cross2d([v*(v-1)*(pol_set[1]*(u-1)*u+pol_set[0]*(2*u-1)),u*(u-1)*(pol_set[2]*(v-1)*v+pol_set[0]*(2*v-1))]))
+            mat2=(wts[None,None,None,:]*[poly]).transpose([2,1,3,0])
+            M[2].append(np.concatenate((mat1,mat2)))
+
+    return basix.ufl.custom_element(
+        basix.CellType.quadrilateral,
+        [2],
+        wcoeffs,
+        x,
+        M,
+        0,
+        basix.MapType.covariantPiola, 
+        basix.SobolevSpace.HCurl,
+        False,
+        degree-1,
+        degree,
+        basix.PolysetType.standard,
+    )
+
 # extension to hexahedrons is trivial:
 
-
-def create_tnt_hex(degree):
+def create_tnt_hexahedron(degree):
     assert degree > 0
     # Polyset
     ndofs = 12 * degree - 4 + (degree + 4) * max(degree-2, 0) ** 2
