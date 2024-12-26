@@ -39,12 +39,19 @@ def test_mixed_topology_mesh():
 
     entity_types = topology.entity_types
     assert len(entity_types[0]) == 1
+
+    topology.create_entities(1)
+    entity_types = topology.entity_types
     assert len(entity_types[1]) == 1
-    assert len(entity_types[2]) == 2
     assert CellType.interval in entity_types[1]
+
+    entity_types = topology.entity_types
+    assert len(entity_types[2]) == 2
+
     # Two triangle cells
     assert entity_types[2][0] == CellType.triangle
     assert topology.connectivity((2, 0), (0, 0)).num_nodes == 2
+
     # One quadrlilateral cell
     assert entity_types[2][1] == CellType.quadrilateral
     assert topology.connectivity((2, 1), (0, 0)).num_nodes == 1
@@ -81,8 +88,15 @@ def test_mixed_topology_mesh_3d():
 
     entity_types = topology.entity_types
     assert len(entity_types[0]) == 1
+
+    topology.create_entities(1)
+    entity_types = topology.entity_types
     assert len(entity_types[1]) == 1
+
+    topology.create_entities(2)
+    entity_types = topology.entity_types
     assert len(entity_types[2]) == 2
+
     assert len(entity_types[3]) == 3
 
     # Create triangle and quadrilateral facets

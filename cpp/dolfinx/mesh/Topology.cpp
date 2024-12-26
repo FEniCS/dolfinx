@@ -722,36 +722,40 @@ Topology::Topology(
 {
   assert(!cell_types.empty());
   int tdim = cell_dim(cell_types.front());
-
 #ifndef NDEBUG
   for (auto ct : cell_types)
     assert(cell_dim(ct) == tdim);
 #endif
 
+  _entity_types.resize(tdim + 1);
+  _entity_types[0] = {mesh::CellType::point};
+  _entity_types[tdim] = cell_types;
+
   // Build list of entity types in the mesh
-  _entity_types.push_back({mesh::CellType::point});
+  std::vector<std::vector<CellType>> tmp_entity_types;
+  tmp_entity_types.push_back({mesh::CellType::point});
   if (tdim == 1)
-    _entity_types.push_back({mesh::CellType::interval});
-  else if (tdim == 2)
+    tmp_entity_types.push_back({mesh::CellType::interval});
+  if (tdim == 2)
   {
-    _entity_types.push_back({mesh::CellType::interval});
-    _entity_types.push_back(cell_types);
+    tmp_entity_types.push_back({mesh::CellType::interval});
+    tmp_entity_types.push_back(cell_types);
   }
   else if (tdim == 3)
   {
-    _entity_types.push_back({mesh::CellType::interval});
+    tmp_entity_types.push_back({mesh::CellType::interval});
 
     // Find all facet types
     std::set<mesh::CellType> facet_types;
     for (auto c : cell_types)
       for (int i = 0; i < cell_num_entities(c, tdim - 1); ++i)
         facet_types.insert(cell_facet_type(c, i));
-    _entity_types.emplace_back(facet_types.begin(), facet_types.end());
-    _entity_types.push_back(cell_types);
+    tmp_entity_types.emplace_back(facet_types.begin(), facet_types.end());
+    tmp_entity_types.push_back(cell_types);
   }
 
   // _index_maps.resize(tdim + 1);
-  for (auto& e : _entity_types)
+  for (auto& e : tmp_entity_types)
     _index_maps.emplace_back(e.size());
 
   // Set data
@@ -911,6 +915,19 @@ bool Topology::create_entities(int dim)
   if (connectivity(dim, 0))
     return false;
 
+  int tdim = this->dim();
+  if (dim == 1 and tdim > 1)
+    _entity_types[1] = {mesh::CellType::interval};
+  else if (dim == 2 and tdim > 2)
+  {
+    //  Find all facet types
+    std::set<mesh::CellType> e_types;
+    for (auto c : _entity_types[tdim])
+      for (int i = 0; i < cell_num_entities(c, dim); ++i)
+        e_types.insert(cell_facet_type(c, i));
+    _entity_types[dim] = std::vector(e_types.begin(), e_types.end());
+  }
+
   for (std::size_t index = 0; index < this->entity_types(dim).size(); ++index)
   {
     // Create local entities
@@ -933,7 +950,7 @@ bool Topology::create_entities(int dim)
     assert(index_map);
     this->set_index_map(dim, index, index_map);
 
-    // Store boundary facets
+    // Store interprocess facets
     if (dim == this->dim() - 1)
     {
       std::ranges::sort(interprocess_entities);

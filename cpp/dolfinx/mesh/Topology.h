@@ -246,7 +246,7 @@ public:
 
   /// @brief Create entities of given topological dimension.
   /// @param[in] dim Topological dimension of entities to compute.
-  /// @return True is entities are created, false if entities already
+  /// @return True if entities are created, false if entities already
   /// existed.
   bool create_entities(int dim);
 
