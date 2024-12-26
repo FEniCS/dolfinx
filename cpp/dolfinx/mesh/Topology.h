@@ -204,16 +204,16 @@ public:
   const std::vector<std::int32_t>& interprocess_facets() const;
 
 private:
-  /// @todo Merge with set_connectivity
-  ///
-  /// @brief Set the IndexMap for the `i`th `celltype` of dimension `dim`.
-  ///
-  /// @warning This is experimental and likely to change.
-  ///
-  /// @param[in] dim Topological dimension.
-  /// @param[in] i Index of cell type within dimension `dim`. The cell types
-  /// in the mesh for a given dimension are returned by ::entity_types.
-  /// @param[in] map Index map to set.
+  // / @todo Merge with set_connectivity
+  // /
+  // / @brief Set the IndexMap for the `i`th `celltype` of dimension `dim`.
+  // /
+  // / @warning This is experimental and likely to change.
+  // /
+  // / @param[in] dim Topological dimension.
+  // / @param[in] i Index of cell type within dimension `dim`. The cell types
+  // / in the mesh for a given dimension are returned by ::entity_types.
+  // / @param[in] map Index map to set.
   // void set_index_map(int dim, int i,
   //                    std::shared_ptr<const common::IndexMap> map);
 
