@@ -218,10 +218,15 @@ void io(nb::module_& m)
       "Extract the mesh topology with VTK ordering using "
       "geometry indices");
 
-  m.def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<double>);
-  m.def("read_vtkhdf_mesh",
+  m.def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<double>)
+      .def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<float>);
+  m.def("read_vtkhdf_mesh_float64",
         [](MPICommWrapper comm, std::string filename) {
           return dolfinx::io::VTKHDF::read_mesh<double>(comm.get(), filename);
+        });
+  m.def("read_vtkhdf_mesh_float32",
+        [](MPICommWrapper comm, std::string filename) {
+          return dolfinx::io::VTKHDF::read_mesh<float>(comm.get(), filename);
         });
 
   // dolfinx::io::cell permutation functions
