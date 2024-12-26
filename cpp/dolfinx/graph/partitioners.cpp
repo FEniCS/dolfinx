@@ -94,7 +94,7 @@ graph::AdjacencyList<int> compute_destination_ranks(
     while (it != node_to_dest.end())
     {
       // Current destination rank
-      dest.push_back((*it)[0]);
+      dest.push_back(it->front());
 
       // Find iterator to next destination rank and pack send data
       auto it1
@@ -103,8 +103,8 @@ graph::AdjacencyList<int> compute_destination_ranks(
       send_sizes.push_back(2 * std::distance(it, it1));
       for (auto itx = it; itx != it1; ++itx)
       {
-        send_buffer.push_back((*itx)[1]);
-        send_buffer.push_back((*itx)[2]);
+        send_buffer.push_back(itx->at(1));
+        send_buffer.push_back(itx->at(2));
       }
 
       it = it1;
