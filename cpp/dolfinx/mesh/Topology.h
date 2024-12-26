@@ -262,25 +262,17 @@ public:
   /// Original cell index for each cell type
   std::vector<std::vector<std::int64_t>> original_cell_index;
 
-  /// Mesh MPI communicator
-  /// @return The communicator on which the topology is distributed
+  /// @brief Mesh MPI communicator.
+  /// @return Communicator on which the topology is distributed.
   MPI_Comm comm() const;
 
 private:
   // MPI communicator
   dolfinx::MPI::Comm _comm;
 
-  // Cell types for entities in Topology, as follows:
-  //
-  // [CellType::point, edge_types..., facet_types..., cell_types...]
-  //
-  // Only one type is expected for vertices, (and usually edges), but
-  // facets and cells can be a list of multiple types, e.g.
-  // [quadrilateral, triangle] for facets. Offsets are position in the
-  // list for each entity dimension, in AdjacencyList style.
-
-  // _entity_types_new[d][i] is the ith entity of dimension d
-  std::vector<std::vector<CellType>> _entity_types_new;
+  // Cell types for entities in Topology, where _entity_types_new[d][i]
+  // is the ith entity type of dimension d
+  std::vector<std::vector<CellType>> _entity_types;
 
   // Parallel layout of entities for each dimension and cell type
   // flattened in the same layout as _entity_types above.
@@ -290,18 +282,13 @@ private:
   // dimensions d
   std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> _index_maps;
 
-  // Connectivity between entity dimensions and cell types, arranged as
-  // a 2D array. The indexing follows the order in _entity_types, i.e.
-  // increasing in topological dimension. There may be multiple types in
-  // each dimension, e.g. triangle and quadrilateral facets.
-  // Connectivity between different entity types of same dimension will
-  // always be nullptr.
-  ///
-  // _connectivity_new[(dim0, i0), (dim1, i1)] is the connection from
-  // (dim0, i0) -> (dim1, i1).
+  // Connectivity between cell types _connectivity_new[(dim0, i0),
+  // (dim1, i1)] is the connection from (dim0, i0) -> (dim1, i1),
+  // where dim0 and dim1 are topological dimensions and i0 and i1
+  // are the indices of cell types (following the order in _entity_types).
   std::map<std::pair<std::array<int, 2>, std::array<int, 2>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>>
-      _connectivity_new;
+      _connectivity;
 
   // The facet permutations (local facet, cell))
   // [cell0_0, cell0_1, ,cell0_2, cell1_0, cell1_1, ,cell1_2, ...,

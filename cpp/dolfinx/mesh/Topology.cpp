@@ -729,29 +729,29 @@ Topology::Topology(
 #endif
 
   // Build list of entity types in the mesh
-  _entity_types_new.push_back({mesh::CellType::point});
+  _entity_types.push_back({mesh::CellType::point});
   if (tdim == 1)
-    _entity_types_new.push_back({mesh::CellType::interval});
+    _entity_types.push_back({mesh::CellType::interval});
   else if (tdim == 2)
   {
-    _entity_types_new.push_back({mesh::CellType::interval});
-    _entity_types_new.push_back(cell_types);
+    _entity_types.push_back({mesh::CellType::interval});
+    _entity_types.push_back(cell_types);
   }
   else if (tdim == 3)
   {
-    _entity_types_new.push_back({mesh::CellType::interval});
+    _entity_types.push_back({mesh::CellType::interval});
 
     // Find all facet types
     std::set<mesh::CellType> facet_types;
     for (auto c : cell_types)
       for (int i = 0; i < cell_num_entities(c, tdim - 1); ++i)
         facet_types.insert(cell_facet_type(c, i));
-    _entity_types_new.emplace_back(facet_types.begin(), facet_types.end());
-    _entity_types_new.push_back(cell_types);
+    _entity_types.emplace_back(facet_types.begin(), facet_types.end());
+    _entity_types.push_back(cell_types);
   }
 
   // _index_maps.resize(tdim + 1);
-  for (auto& e : _entity_types_new)
+  for (auto& e : _entity_types)
     _index_maps.emplace_back(e.size());
 
   // Set data
@@ -796,17 +796,17 @@ Topology::Topology(
 //-----------------------------------------------------------------------------
 int Topology::dim() const noexcept
 {
-  return mesh::cell_dim(_entity_types_new.back().front());
+  return mesh::cell_dim(_entity_types.back().front());
 }
 //-----------------------------------------------------------------------------
 const std::vector<CellType>& Topology::entity_types(int dim) const
 {
-  return _entity_types_new.at(dim);
+  return _entity_types.at(dim);
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const
 {
-  return _entity_types_new.back().at(0);
+  return _entity_types.back().at(0);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::shared_ptr<const common::IndexMap>>
@@ -823,7 +823,7 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(std::array<int, 2> d0, std::array<int, 2> d1) const
 {
-  if (auto it = _connectivity_new.find({d0, d1}); it == _connectivity_new.end())
+  if (auto it = _connectivity.find({d0, d1}); it == _connectivity.end())
     return nullptr;
   else
     return it->second;
@@ -892,7 +892,7 @@ void Topology::set_connectivity(
     std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
     std::array<int, 2> d0, std::array<int, 2> d1)
 {
-  _connectivity_new.insert_or_assign(std::pair(d0, d1), c);
+  _connectivity.insert_or_assign(std::pair(d0, d1), c);
 }
 //-----------------------------------------------------------------------------
 void Topology::set_connectivity(
@@ -988,8 +988,10 @@ void Topology::create_entity_permutations()
   if (!_cell_permutations.empty())
     return;
 
-  // FIXME: Is this always required? Could it be made cheaper by doing a
-  // local version? This call does quite a lot of parallel work
+  // FIXME: Is creating all entities always required? Could it be made
+  // cheaper by doing a local version? This call does quite a lot of
+  // parallel work.
+
   // Create all mesh entities
   int tdim = this->dim();
   for (int d = 0; d < tdim; ++d)
@@ -1166,8 +1168,7 @@ Topology mesh::create_topology(
       // ghost vertices that are not on the process boundary. Data is
       // communicated via ghost cells. Note that the ghost cell owner
       // (who we get the vertex index from) is not necessarily the
-      // vertex owner.
-      // Repeat for each cell type
+      // vertex owner. Repeat for each cell type,
       std::vector<std::array<std::int64_t, 3>> recv_data;
       for (std::size_t i = 0; i < cell_types.size(); ++i)
       {
@@ -1271,8 +1272,9 @@ Topology mesh::create_topology(
 
   // Save original cell index
   std::vector<std::vector<std::int64_t>> orig_index;
-  for (std::span<const std::int64_t> idx : original_cell_index)
-    orig_index.emplace_back(idx.begin(), idx.end());
+  std::transform(original_cell_index.begin(), original_cell_index.end(),
+                 std::back_inserter(orig_index), [](auto idx)
+                 { return std::vector<std::int64_t>(idx.begin(), idx.end()); });
 
   return Topology(comm, cell_types, index_map_v, index_map_c, cells_c,
                   orig_index);
