@@ -106,7 +106,7 @@ public:
   /// @brief Entity types in the topology for a given dimension.
   /// @param[in] dim Topological dimension.
   /// @return Entity types.
-  std::vector<CellType> entity_types(int dim) const;
+  const std::vector<CellType>& entity_types(int dim) const;
 
   /// @brief Cell type.
   ///
@@ -281,7 +281,6 @@ private:
 
   // _entity_types_new[d][i] is the ith entity of dimension d
   std::vector<std::vector<CellType>> _entity_types_new;
-  std::vector<std::int8_t> _entity_type_offsets;
 
   // Parallel layout of entities for each dimension and cell type
   // flattened in the same layout as _entity_types above.
@@ -298,10 +297,6 @@ private:
   // Connectivity between different entity types of same dimension will
   // always be nullptr.
   ///
-  /// _connectivity[i][j] is the connectivity between
-  std::vector<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>>
-      _connectivity;
-
   // _connectivity_new[(dim0, i0), (dim1, i1)] is the connection from
   // (dim0, i0) -> (dim1, i1).
   std::map<std::pair<std::array<int, 2>, std::array<int, 2>>,

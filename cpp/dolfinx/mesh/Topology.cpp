@@ -43,8 +43,6 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
 {
   common::Timer timer("Topology: determine shared index ownership");
 
-  const int size = dolfinx::MPI::size(comm);
-
   // FIXME: use sensible name
   std::int64_t global_range = 0;
   {
@@ -57,6 +55,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
   // Build {dest, pos} list, and sort
   std::vector<std::array<int, 2>> dest_to_index;
   {
+    const int size = dolfinx::MPI::size(comm);
     dest_to_index.reserve(indices.size());
     for (auto idx : indices)
     {
@@ -136,10 +135,8 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
   // Build {global index, pos, src} list
   std::vector<std::array<std::int64_t, 3>> indices_list;
   for (std::size_t p = 0; p < recv_disp0.size() - 1; ++p)
-  {
     for (std::int32_t i = recv_disp0[p]; i < recv_disp0[p + 1]; ++i)
       indices_list.push_back({recv_buffer0[i], i, int(p)});
-  }
   std::ranges::sort(indices_list);
 
   // Find which ranks have each index
@@ -380,8 +377,7 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
   std::vector<int> src, dest;
   for (std::int32_t i = 0; i < index_to_ranks.num_nodes(); ++i)
   {
-    auto ranks = index_to_ranks.links(i);
-    if (ranks.front() == mpi_rank)
+    if (auto ranks = index_to_ranks.links(i); ranks.front() == mpi_rank)
       dest.insert(dest.end(), std::next(ranks.begin()), ranks.end());
     else
       src.push_back(ranks.front());
@@ -406,8 +402,7 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
   {
     // Get (global) ranks that share this vertex. Note that first rank
     // is the owner.
-    auto ranks = index_to_ranks.links(i);
-    if (ranks.front() == mpi_rank)
+    if (auto ranks = index_to_ranks.links(i); ranks.front() == mpi_rank)
     {
       // Get local vertex index
       std::int64_t idx_old = indices[i];
@@ -452,7 +447,7 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
 
     std::vector<std::int64_t> sbuffer;
     sbuffer.reserve(send_disp.back());
-    for (auto& data : send_buffer)
+    for (const std::vector<std::int64_t>& data : send_buffer)
       sbuffer.insert(sbuffer.end(), data.begin(), data.end());
 
     // Get receive sizes
@@ -529,9 +524,9 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
 
   // --
 
-  // For each rank, list of owned vertices that are ghosted by other ranks
+  // For each rank, list of owned vertices that are ghosted by other
+  // ranks
   std::vector<std::vector<std::int64_t>> shared_vertices_fwd(dest.size());
-
   {
     // -- Send cell ghost indices to owner
     MPI_Comm comm1;
@@ -557,14 +552,17 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
 
     // Compute send sizes and displacements
     std::vector<int> send_sizes, send_disp{0};
-    auto it = owner_to_ghost.begin();
-    while (it != owner_to_ghost.end())
     {
-      auto it1 = std::find_if(it, owner_to_ghost.end(),
-                              [r = it->first](auto x) { return x.first != r; });
-      send_sizes.push_back(std::distance(it, it1));
-      send_disp.push_back(send_disp.back() + send_sizes.back());
-      it = it1;
+      auto it = owner_to_ghost.begin();
+      while (it != owner_to_ghost.end())
+      {
+        auto it1
+            = std::find_if(it, owner_to_ghost.end(),
+                           [r = it->first](auto x) { return x.first != r; });
+        send_sizes.push_back(std::distance(it, it1));
+        send_disp.push_back(send_disp.back() + send_sizes.back());
+        it = it1;
+      }
     }
 
     // Exchange number of indices to send/receive from each rank
@@ -588,7 +586,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
     MPI_Comm_free(&comm1);
 
     // Iterate over ranks that ghost cells owned by this rank
-    auto local_range = map0.local_range();
+    std::array<std::int64_t, 2> local_range = map0.local_range();
     for (std::size_t r = 0; r < recv_disp.size() - 1; ++r)
     {
       assert(r < shared_vertices_fwd.size());
@@ -632,10 +630,10 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
     const int mpi_rank = dolfinx::MPI::rank(comm);
 
     // Iterate over each rank to send vertex data to
-    for (const auto& vertices_old : shared_vertices_fwd)
+    for (const std::vector<std::int64_t>& vertices_old : shared_vertices_fwd)
     {
       // Iterate over vertex indices (old) for current destination rank
-      for (auto vertex_old : vertices_old)
+      for (std::int64_t vertex_old : vertices_old)
       {
         // Find new vertex index and determine owning rank
         auto it = std::ranges::lower_bound(
@@ -645,7 +643,6 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
         assert(it != global_local_entities1.end());
         assert(it->first == vertex_old);
         assert(it->second != -1);
-
         std::int64_t global_idx = it->second < nlocal1
                                       ? it->second + offset1
                                       : ghost_entities1[it->second - nlocal1];
@@ -721,9 +718,7 @@ Topology::Topology(
     : original_cell_index(original_index
                               ? *original_index
                               : std::vector<std::vector<std::int64_t>>()),
-      _comm(comm),
-      // _entity_types({mesh::CellType::point}),
-      _entity_type_offsets({0, 1}), _interprocess_facets(1)
+      _comm(comm), _interprocess_facets(1)
 {
   assert(!cell_types.empty());
   int tdim = cell_dim(cell_types.front());
@@ -763,7 +758,6 @@ Topology::Topology(
   {
     // In 2D, the facet is an interval
     tmp_entity_types.push_back(CellType::interval);
-    _entity_type_offsets.push_back(tmp_entity_types.size());
 
     if (tdim == 3)
     {
@@ -778,23 +772,8 @@ Topology::Topology(
       tmp_entity_types.insert(tmp_entity_types.end(), facet_types.begin(),
                               facet_types.end());
       _interprocess_facets.resize(facet_types.size());
-      _entity_type_offsets.push_back(tmp_entity_types.size());
     }
   }
-
-  // Cell Types
-  tmp_entity_types.insert(tmp_entity_types.end(), cell_types.begin(),
-                          cell_types.end());
-  if (tdim > 0)
-    _entity_type_offsets.push_back(tmp_entity_types.size());
-
-  int conn_size = _entity_type_offsets.back();
-  // _index_map.resize(conn_size);
-
-  // Create square list of lists
-  _connectivity.resize(conn_size);
-  for (auto& c : _connectivity)
-    c.resize(conn_size);
 
   // _index_maps.resize(tdim + 1);
   for (auto& e : _entity_types_new)
@@ -802,7 +781,6 @@ Topology::Topology(
 
   // Set data
   _index_maps[0][0] = vertex_map;
-  // this->set_index_map(0, vertex_map);
   this->set_connectivity(
       std::make_shared<graph::AdjacencyList<std::int32_t>>(
           vertex_map->size_local() + vertex_map->num_ghosts()),
@@ -812,7 +790,6 @@ Topology::Topology(
     for (std::size_t i = 0; i < cell_types.size(); ++i)
     {
       _index_maps[tdim][i] = cell_maps[i];
-      // this->set_index_map(tdim, i, cell_maps[i]);
       this->set_connectivity(cells[i], {tdim, int(i)}, {0, 0});
     }
   }
@@ -832,9 +809,12 @@ Topology::Topology(
 {
 }
 //-----------------------------------------------------------------------------
-int Topology::dim() const noexcept { return _entity_type_offsets.size() - 2; }
+int Topology::dim() const noexcept
+{
+  return mesh::cell_dim(_entity_types_new.back().front());
+}
 //-----------------------------------------------------------------------------
-std::vector<CellType> Topology::entity_types(int dim) const
+const std::vector<CellType>& Topology::entity_types(int dim) const
 {
   return _entity_types_new.at(dim);
 }
@@ -853,43 +833,15 @@ Topology::index_maps(int dim) const
 std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
   return _index_maps.at(dim).at(0);
-  // assert(dim < (int)_entity_type_offsets.size() - 1);
-  // return _index_map[_entity_type_offsets[dim]];
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(std::array<int, 2> d0, std::array<int, 2> d1) const
 {
-  int dim0 = d0[0];
-  int dim1 = d1[0];
-  assert(dim0 < (int)_entity_type_offsets.size() - 1);
-  assert(d0[1] < (_entity_type_offsets[dim0 + 1] - _entity_type_offsets[dim0]));
-  assert(dim1 < (int)_entity_type_offsets.size() - 1);
-  assert(d1[1] < (_entity_type_offsets[dim1 + 1] - _entity_type_offsets[dim1]));
-
-  auto it = _connectivity_new.find({d0, d1});
-  if (it != _connectivity_new.end())
-  {
-    if (it->second
-        != _connectivity[_entity_type_offsets[dim0] + d0[1]]
-                        [_entity_type_offsets[dim1] + d1[1]])
-    {
-      throw std::runtime_error("Connectivity mis-match (A): "
-                               + std::to_string(d0[0]) + ", "
-                               + std::to_string(d1[0]));
-    }
-  }
+  if (auto it = _connectivity_new.find({d0, d1}); it == _connectivity_new.end())
+    return nullptr;
   else
-  {
-    if (_connectivity[_entity_type_offsets[dim0] + d0[1]]
-                     [_entity_type_offsets[dim1] + d1[1]])
-    {
-      throw std::runtime_error("Connectivity mis-match (B).");
-    }
-  }
-
-  return _connectivity[_entity_type_offsets[dim0] + d0[1]]
-                      [_entity_type_offsets[dim1] + d1[1]];
+    return it->second;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
@@ -940,17 +892,12 @@ const std::vector<std::int32_t>& Topology::interprocess_facets() const
 void Topology::set_index_map(int dim, int i,
                              std::shared_ptr<const common::IndexMap> map)
 {
-  // assert(dim < (int)_entity_type_offsets.size() - 1);
-  // assert(i < (_entity_type_offsets[dim + 1] - _entity_type_offsets[dim]));
-  // _index_map[_entity_type_offsets[dim] + i] = map;
   _index_maps.at(dim).at(i) = map;
 }
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
                              std::shared_ptr<const common::IndexMap> map)
 {
-  if (_entity_type_offsets[dim + 1] - _entity_type_offsets[dim] != 1)
-    throw std::runtime_error("Cannot set IndexMap on mixed topology mesh.");
   this->set_index_map(dim, 0, map);
 }
 //-----------------------------------------------------------------------------
@@ -958,16 +905,6 @@ void Topology::set_connectivity(
     std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
     std::array<int, 2> d0, std::array<int, 2> d1)
 {
-  auto [dim0, i0] = d0;
-  auto [dim1, i1] = d1;
-  assert(dim0 < (int)_entity_type_offsets.size() - 1);
-  assert(i0 < (_entity_type_offsets[dim0 + 1] - _entity_type_offsets[dim0]));
-  assert(dim1 < (int)_entity_type_offsets.size() - 1);
-  assert(i1 < (_entity_type_offsets[dim1 + 1] - _entity_type_offsets[dim1]));
-  _connectivity[_entity_type_offsets[dim0] + i0]
-               [_entity_type_offsets[dim1] + i1]
-      = c;
-  // _connectivity_new.insert({std::pair(d0, d1), c});
   _connectivity_new.insert_or_assign(std::pair(d0, d1), c);
 }
 //-----------------------------------------------------------------------------
