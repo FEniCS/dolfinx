@@ -13,6 +13,12 @@ from dolfinx.mesh import Mesh
 
 
 def read_mesh(comm, filename, dtype=np.float64):
+    """Read a mesh from a VTKHDF format file
+    Args:
+           comm: An MPI communicator.
+           filename: File to read from.
+           dtype: Scalar type of mesh geometry (need not match dtype in file)
+    """
     if dtype == np.float64:
         mesh_cpp = read_vtkhdf_mesh_float64(comm, filename)
     elif dtype == np.float32:
@@ -20,7 +26,7 @@ def read_mesh(comm, filename, dtype=np.float64):
 
     cell_types = mesh_cpp.topology.entity_types[-1]
     if len(cell_types) > 1:
-        # Not yet defined for mixed topology
+        # FIXME: not yet defined for mixed topology
         domain = None
     else:
         cell_degree = mesh_cpp.geometry.cmap.degree
@@ -37,4 +43,9 @@ def read_mesh(comm, filename, dtype=np.float64):
 
 
 def write_mesh(filename, mesh):
+    """Write a mesh to file in VTKHDF format
+    Args:
+           filename: File to write to.
+           mesh: Mesh.
+    """
     write_vtkhdf_mesh(filename, mesh._cpp_object)
