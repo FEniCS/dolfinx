@@ -9,10 +9,12 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
+#include <map>
 #include <memory>
 #include <optional>
 #include <span>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::common
@@ -134,7 +136,7 @@ public:
   /// @brief Get the connectivity from entities of topological
   /// dimension d0 to dimension d1.
   ///
-  /// The entity type, and incident entity type are each described by a
+  /// The entity type and incident entity type are each described by a
   /// pair (dim, index). The index within a topological dimension `dim`,
   /// is that of the cell type given in `entity_types(dim)`.
   ///
@@ -276,13 +278,17 @@ private:
   // facets and cells can be a list of multiple types, e.g.
   // [quadrilateral, triangle] for facets. Offsets are position in the
   // list for each entity dimension, in AdjacencyList style.
+
+  // _entity_types_new[d][i] is the ith entity of dimension d
   std::vector<std::vector<CellType>> _entity_types_new;
-  std::vector<CellType> _entity_types;
   std::vector<std::int8_t> _entity_type_offsets;
 
   // Parallel layout of entities for each dimension and cell type
   // flattened in the same layout as _entity_types above.
-  std::vector<std::shared_ptr<const common::IndexMap>> _index_map;
+  // std::vector<std::shared_ptr<const common::IndexMap>> _index_map;
+
+  // _index_maps[d][i] is the index map for the ith entity type of
+  // dimensions d
   std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> _index_maps;
 
   // Connectivity between entity dimensions and cell types, arranged as
@@ -291,8 +297,16 @@ private:
   // each dimension, e.g. triangle and quadrilateral facets.
   // Connectivity between different entity types of same dimension will
   // always be nullptr.
+  ///
+  /// _connectivity[i][j] is the connectivity between
   std::vector<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>>
       _connectivity;
+
+  // _connectivity_new[(dim0, i0), (dim1, i1)] is the connection from
+  // (dim0, i0) -> (dim1, i1).
+  std::map<std::pair<std::array<int, 2>, std::array<int, 2>>,
+           std::shared_ptr<graph::AdjacencyList<std::int32_t>>>
+      _connectivity_new;
 
   // The facet permutations (local facet, cell))
   // [cell0_0, cell0_1, ,cell0_2, cell1_0, cell1_1, ,cell1_2, ...,
@@ -304,7 +318,8 @@ private:
   std::vector<std::uint32_t> _cell_permutations;
 
   // List of facets that are on the inter-process boundary for each
-  // facet type
+  // facet type. _interprocess_facets[i] is the inter-process facets of
+  // facet type i.
   std::vector<std::vector<std::int32_t>> _interprocess_facets;
 };
 
