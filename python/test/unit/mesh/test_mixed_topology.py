@@ -28,6 +28,7 @@ def test_mixed_topology_mesh():
 
     maps = topology.index_maps(topology.dim)
     assert len(maps) == 2
+
     # Two triangles and one quad
     assert maps[0].size_local == 2
     assert maps[1].size_local == 1

@@ -214,14 +214,14 @@ private:
   /// @param[in] i Index of cell type within dimension `dim`. The cell types
   /// in the mesh for a given dimension are returned by ::entity_types.
   /// @param[in] map Index map to set.
-  void set_index_map(int dim, int i,
-                     std::shared_ptr<const common::IndexMap> map);
+  // void set_index_map(int dim, int i,
+  //                    std::shared_ptr<const common::IndexMap> map);
 
-  /// @todo Merge with set_connectivity
-  ///
-  /// @brief Set the IndexMap for dimension dim
-  /// @warning This is experimental and likely to change
-  void set_index_map(int dim, std::shared_ptr<const common::IndexMap> map);
+  // /// @todo Merge with set_connectivity
+  // ///
+  // /// @brief Set the IndexMap for dimension dim
+  // /// @warning This is experimental and likely to change
+  // void set_index_map(int dim, std::shared_ptr<const common::IndexMap> map);
 
 public:
   /// @brief Set connectivity for given pair of entity types, defined by
@@ -279,8 +279,10 @@ private:
   // std::vector<std::shared_ptr<const common::IndexMap>> _index_map;
 
   // _index_maps[d][i] is the index map for the ith entity type of
-  // dimensions d
+  // dimension d
   std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> _index_maps;
+  std::map<std::array<int, 2>, std::shared_ptr<const common::IndexMap>>
+      _index_maps_new;
 
   // Connectivity between cell types _connectivity_new[(dim0, i0),
   // (dim1, i1)] is the connection from (dim0, i0) -> (dim1, i1),

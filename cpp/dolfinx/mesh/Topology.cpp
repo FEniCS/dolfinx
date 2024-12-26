@@ -760,6 +760,7 @@ Topology::Topology(
 
   // Set data
   _index_maps[0][0] = vertex_map;
+  _index_maps_new.insert({{0, 0}, vertex_map});
   this->set_connectivity(
       std::make_shared<graph::AdjacencyList<std::int32_t>>(
           vertex_map->size_local() + vertex_map->num_ghosts()),
@@ -769,6 +770,7 @@ Topology::Topology(
     for (std::size_t i = 0; i < cell_types.size(); ++i)
     {
       _index_maps[tdim][i] = cell_maps[i];
+      _index_maps_new.insert({{tdim, (int)i}, cell_maps[i]});
       this->set_connectivity(cells[i], {tdim, int(i)}, {0, 0});
     }
   }
@@ -816,12 +818,21 @@ mesh::CellType Topology::cell_type() const
 std::vector<std::shared_ptr<const common::IndexMap>>
 Topology::index_maps(int dim) const
 {
-  return _index_maps.at(dim);
+  std::vector<std::shared_ptr<const common::IndexMap>> maps;
+  for (std::size_t i = 0; i < _entity_types[dim].size(); ++i)
+  {
+    auto it = _index_maps_new.find({dim, int(i)});
+    assert(it != _index_maps_new.end());
+    maps.push_back(it->second);
+  }
+
+  return maps;
+  // return _index_maps.at(dim);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
-  return _index_maps.at(dim).at(0);
+  return this->index_maps(dim).at(0);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
@@ -880,17 +891,17 @@ const std::vector<std::int32_t>& Topology::interprocess_facets() const
   return this->interprocess_facets(0);
 }
 //-----------------------------------------------------------------------------
-void Topology::set_index_map(int dim, int i,
-                             std::shared_ptr<const common::IndexMap> map)
-{
-  _index_maps.at(dim).at(i) = map;
-}
-//-----------------------------------------------------------------------------
-void Topology::set_index_map(int dim,
-                             std::shared_ptr<const common::IndexMap> map)
-{
-  this->set_index_map(dim, 0, map);
-}
+// void Topology::set_index_map(int dim, int i,
+//                              std::shared_ptr<const common::IndexMap> map)
+// {
+//   _index_maps.at(dim).at(i) = map;
+// }
+// //-----------------------------------------------------------------------------
+// void Topology::set_index_map(int dim,
+//                              std::shared_ptr<const common::IndexMap> map)
+// {
+//   this->set_index_map(dim, 0, map);
+// }
 //-----------------------------------------------------------------------------
 void Topology::set_connectivity(
     std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
@@ -948,7 +959,8 @@ bool Topology::create_entities(int dim)
       this->set_connectivity(entity_vertex, {dim, int(index)}, {0, 0});
 
     assert(index_map);
-    this->set_index_map(dim, index, index_map);
+    // this->set_index_map(dim, index, index_map);
+    _index_maps_new.insert({{dim, int(index)}, index_map});
 
     // Store interprocess facets
     if (dim == this->dim() - 1)
