@@ -718,7 +718,7 @@ Topology::Topology(
     : original_cell_index(original_index
                               ? *original_index
                               : std::vector<std::vector<std::int64_t>>()),
-      _comm(comm), _interprocess_facets(1)
+      _comm(comm)
 {
   assert(!cell_types.empty());
   int tdim = cell_dim(cell_types.front());
@@ -771,7 +771,6 @@ Topology::Topology(
       }
       tmp_entity_types.insert(tmp_entity_types.end(), facet_types.begin(),
                               facet_types.end());
-      _interprocess_facets.resize(facet_types.size());
     }
   }
 
@@ -881,6 +880,8 @@ const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
 //-----------------------------------------------------------------------------
 const std::vector<std::int32_t>& Topology::interprocess_facets(int index) const
 {
+  if (_interprocess_facets.empty())
+    throw std::runtime_error("Interprocess facets have not been computed.");
   return _interprocess_facets.at(index);
 }
 //-----------------------------------------------------------------------------
@@ -920,7 +921,27 @@ std::int32_t Topology::create_entities(int dim)
   // cell_entity entity case. Should there also be a check for
   // connectivity(this->dim(), dim)?
   // Skip if already computed (vertices (dim=0) should always exist)
-  if (connectivity(dim, 0))
+  // if (connectivity(dim, 0) and dim != this->dim() - 1)
+  // {
+  //   return -1;
+  // }
+
+  // FIXME: Hack because _interprocess_facets will not have been
+  // computed for dim==0 when tdim=1
+  if (connectivity(dim, 0) and dim != this->dim() - 1)
+  {
+    return -1;
+  }
+  else if (connectivity(dim, 0) and dim == this->dim() - 1
+           and _interprocess_facets.empty())
+  {
+    auto [cell_entity, entity_vertex, index_map, interprocess_entities]
+        = compute_entities(_comm.comm(), *this, dim, 0);
+    std::ranges::sort(interprocess_entities);
+    _interprocess_facets.push_back(std::move(interprocess_entities));
+    return -1;
+  }
+  else if (connectivity(dim, 0))
     return -1;
 
   for (std::size_t index = 0; index < this->entity_types(dim).size(); ++index)
@@ -949,8 +970,7 @@ std::int32_t Topology::create_entities(int dim)
     if (dim == this->dim() - 1)
     {
       std::ranges::sort(interprocess_entities);
-      assert(index < _interprocess_facets.size());
-      _interprocess_facets[index] = std::move(interprocess_entities);
+      _interprocess_facets.push_back(std::move(interprocess_entities));
     }
   }
 
