@@ -792,6 +792,16 @@ Topology::Topology(
       this->set_connectivity(cells[i], {tdim, int(i)}, {0, 0});
     }
   }
+
+  // FIXME: This is a hack for setting _interprocess_facets when
+  // tdim==1, i.e. the 'facets' are vertices
+  if (tdim == 1)
+  {
+    auto [cell_entity, entity_vertex, index_map, interprocess_entities]
+        = compute_entities(_comm.comm(), *this, 0, 0);
+    std::ranges::sort(interprocess_entities);
+    _interprocess_facets.push_back(std::move(interprocess_entities));
+  }
 }
 //-----------------------------------------------------------------------------
 Topology::Topology(
@@ -920,28 +930,9 @@ std::int32_t Topology::create_entities(int dim)
   // TODO: is this check sufficient/correct? Does not catch the
   // cell_entity entity case. Should there also be a check for
   // connectivity(this->dim(), dim)?
-  // Skip if already computed (vertices (dim=0) should always exist)
-  // if (connectivity(dim, 0) and dim != this->dim() - 1)
-  // {
-  //   return -1;
-  // }
 
-  // FIXME: Hack because _interprocess_facets will not have been
-  // computed for dim==0 when tdim=1
-  if (connectivity(dim, 0) and dim != this->dim() - 1)
-  {
-    return -1;
-  }
-  else if (connectivity(dim, 0) and dim == this->dim() - 1
-           and _interprocess_facets.empty())
-  {
-    auto [cell_entity, entity_vertex, index_map, interprocess_entities]
-        = compute_entities(_comm.comm(), *this, dim, 0);
-    std::ranges::sort(interprocess_entities);
-    _interprocess_facets.push_back(std::move(interprocess_entities));
-    return -1;
-  }
-  else if (connectivity(dim, 0))
+  // Skip if already computed (vertices (dim=0) should always exist)
+  if (connectivity(dim, 0))
     return -1;
 
   for (std::size_t index = 0; index < this->entity_types(dim).size(); ++index)
