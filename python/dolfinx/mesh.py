@@ -194,15 +194,15 @@ class Topology:
         """Get the original cell index"""
         return self._cpp_object.original_cell_index
 
-    def set_connectivity(self, graph: _cpp.graph.AdjacencyList_int32, d0: int, d1: int):
-        """Set connectivity for given pair of topological dimensions.
+    # def set_connectivity(self, graph: _cpp.graph.AdjacencyList_int32, d0: int, d1: int):
+    #     """Set connectivity for given pair of topological dimensions.
 
-        Args:
-            graph: Connectivity graph.
-            d0: Topological dimension mapping from.
-            d1: Topological dimension mapping to.
-        """
-        self._cpp_object.set_connectivity(graph, d0, d1)
+    #     Args:
+    #         graph: Connectivity graph.
+    #         d0: Topological dimension mapping from.
+    #         d1: Topological dimension mapping to.
+    #     """
+    #     self._cpp_object.set_connectivity(graph, d0, d1)
 
     @property
     def cell_type(self) -> CellType:

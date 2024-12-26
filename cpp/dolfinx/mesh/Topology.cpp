@@ -755,16 +755,17 @@ Topology::Topology(
 
   // Set data
   _index_maps.insert({{0, 0}, vertex_map});
-  this->set_connectivity(
-      std::make_shared<graph::AdjacencyList<std::int32_t>>(
-          vertex_map->size_local() + vertex_map->num_ghosts()),
-      0, 0);
+  _connectivity.insert(
+      {{{0, 0}, {0, 0}},
+       std::make_shared<graph::AdjacencyList<std::int32_t>>(
+           vertex_map->size_local() + vertex_map->num_ghosts())});
   if (tdim > 0)
   {
     for (std::size_t i = 0; i < cell_types.size(); ++i)
     {
       _index_maps.insert({{tdim, (int)i}, cell_maps[i]});
-      this->set_connectivity(cells[i], {tdim, int(i)}, {0, 0});
+      _connectivity.insert({{{tdim, int(i)}, {0, 0}}, cells[i]});
+      // this->set_connectivity(cells[i], {tdim, int(i)}, {0, 0});
     }
   }
 
@@ -881,18 +882,18 @@ const std::vector<std::int32_t>& Topology::interprocess_facets() const
   return this->interprocess_facets(0);
 }
 //-----------------------------------------------------------------------------
-void Topology::set_connectivity(
-    std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
-    std::array<int, 2> d0, std::array<int, 2> d1)
-{
-  _connectivity.insert_or_assign(std::pair(d0, d1), c);
-}
-//-----------------------------------------------------------------------------
-void Topology::set_connectivity(
-    std::shared_ptr<graph::AdjacencyList<std::int32_t>> c, int d0, int d1)
-{
-  this->set_connectivity(c, {d0, 0}, {d1, 0});
-}
+// void Topology::set_connectivity(
+//     std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
+//     std::array<int, 2> d0, std::array<int, 2> d1)
+// {
+//   _connectivity.insert_or_assign(std::pair(d0, d1), c);
+// }
+// //-----------------------------------------------------------------------------
+// void Topology::set_connectivity(
+//     std::shared_ptr<graph::AdjacencyList<std::int32_t>> c, int d0, int d1)
+// {
+//   this->set_connectivity(c, {d0, 0}, {d1, 0});
+// }
 //-----------------------------------------------------------------------------
 bool Topology::create_entities(int dim)
 {
@@ -931,15 +932,20 @@ bool Topology::create_entities(int dim)
     {
       if (cell_entity[k])
       {
-        this->set_connectivity(cell_entity[k], {this->dim(), int(k)},
-                               {dim, int(index)});
+        _connectivity.insert(
+            {{{this->dim(), int(k)}, {dim, int(index)}}, cell_entity[k]});
+        // this->set_connectivity(cell_entity[k], {this->dim(), int(k)},
+        //                        {dim, int(index)});
       }
     }
 
     // TODO: is this check necessary? Seems redundant after the "skip
     // check"
     if (entity_vertex)
-      this->set_connectivity(entity_vertex, {dim, int(index)}, {0, 0});
+    {
+      _connectivity.insert({{{dim, int(index)}, {0, 0}}, entity_vertex});
+      // this->set_connectivity(entity_vertex, {dim, int(index)}, {0, 0});
+    }
 
     _index_maps.insert({{dim, int(index)}, index_map});
 
@@ -986,9 +992,16 @@ void Topology::create_connectivity(int d0, int d1)
 
       // Attach connectivities
       if (c_d0_d1)
-        this->set_connectivity(c_d0_d1, {d0, i0}, {d1, i1});
+      {
+        _connectivity.insert({{{d0, i0}, {d1, i1}}, c_d0_d1});
+        // this->set_connectivity(c_d0_d1, {d0, i0}, {d1, i1});
+      }
+
       if (c_d1_d0)
-        this->set_connectivity(c_d1_d0, {d1, i1}, {d0, i0});
+      {
+        _connectivity.insert({{{d1, i1}, {d0, i0}}, c_d1_d0});
+        // this->set_connectivity(c_d1_d0, {d1, i1}, {d0, i0});
+      }
     }
   }
 }

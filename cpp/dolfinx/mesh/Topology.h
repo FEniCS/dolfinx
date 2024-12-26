@@ -197,23 +197,23 @@ public:
   /// been computed.
   const std::vector<std::int32_t>& interprocess_facets() const;
 
-  /// @brief Set connectivity for given pair of entity types, defined by
-  /// dimension and index, as listed in ::entity_types.
-  ///
-  /// General version for mixed topology. Connectivity from d0 to d1.
-  ///
-  /// @param[in] c Connectivity.
-  /// @param[in] d0 Pair of (topological dimension of entities, index of
-  /// "entity type" within topological dimension).
-  /// @param[in] d1 Pair of (topological dimension of incident entities,
-  /// index of incident "entity type" within topological dimension).
-  void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
-                        std::array<int, 2> d0, std::array<int, 2> d1);
+  // /// @brief Set connectivity for given pair of entity types, defined by
+  // /// dimension and index, as listed in ::entity_types.
+  // ///
+  // /// General version for mixed topology. Connectivity from d0 to d1.
+  // ///
+  // /// @param[in] c Connectivity.
+  // /// @param[in] d0 Pair of (topological dimension of entities, index of
+  // /// "entity type" within topological dimension).
+  // /// @param[in] d1 Pair of (topological dimension of incident entities,
+  // /// index of incident "entity type" within topological dimension).
+  // void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
+  //                       std::array<int, 2> d0, std::array<int, 2> d1);
 
-  /// @todo Merge with set_index_map
-  /// @brief Set connectivity for given pair of topological dimensions.
-  void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
-                        int d0, int d1);
+  // /// @todo Merge with set_index_map
+  // /// @brief Set connectivity for given pair of topological dimensions.
+  // void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
+  //                       int d0, int d1);
 
   /// @brief Create entities of given topological dimension.
   /// @param[in] dim Topological dimension of entities to compute.

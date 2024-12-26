@@ -590,11 +590,11 @@ void mesh(nb::module_& m)
           },
           nb::arg("cell_type"), nb::arg("vertex_map"), nb::arg("cell_map"),
           nb::arg("cells"), nb::arg("original_index").none())
-      .def("set_connectivity",
-           nb::overload_cast<
-               std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>>,
-               int, int>(&dolfinx::mesh::Topology::set_connectivity),
-           nb::arg("c"), nb::arg("d0"), nb::arg("d1"))
+    //   .def("set_connectivity",
+    //        nb::overload_cast<
+    //            std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>>,
+    //            int, int>(&dolfinx::mesh::Topology::set_connectivity),
+    //        nb::arg("c"), nb::arg("d0"), nb::arg("d1"))
       .def("create_entities", &dolfinx::mesh::Topology::create_entities,
            nb::arg("dim"))
       .def("create_entity_permutations",
