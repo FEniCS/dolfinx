@@ -40,15 +40,12 @@ enum class CellType;
 /// where dim is the topological dimension and i is the index of the
 /// entity within that topological dimension.
 ///
-/// @todo Rework memory management and associated API. Currently, there
-/// is no clear caching policy implemented and no way of discarding
-/// cached data.
+/// @todo Rework memory management and associated API. Currently, the
+/// caching policy is not clear.
 class Topology
 {
 public:
   /// @brief Create empty mesh topology with multiple cell types.
-  ///
-  /// @warning Experimental
   ///
   /// @param[in] comm MPI communicator.
   /// @param[in] cell_types Types of cells.
@@ -118,8 +115,6 @@ public:
   /// @brief Get the index maps that described the parallel distribution
   /// of the mesh entities of a given topological dimension.
   ///
-  /// @warning Experimental
-  ///
   /// @param[in] dim Topological dimension.
   /// @return Index maps, one for each cell type.
   std::vector<std::shared_ptr<const common::IndexMap>>
@@ -133,34 +128,35 @@ public:
   /// `nullptr` if index map has not been set.
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
-  /// @brief Get the connectivity from entities of topological
-  /// dimension d0 to dimension d1.
+  /// @brief Get the connectivity from entities of topological dimension
+  /// `d0` to dimension `d1`.
   ///
   /// The entity type and incident entity type are each described by a
-  /// pair (dim, index). The index within a topological dimension `dim`,
-  /// is that of the cell type given in `entity_types(dim)`.
+  /// pair `(dim, index)`. The index within a topological dimension
+  /// `dim`, is that of the cell type given in `entity_types(dim)`.
   ///
   /// @param[in] d0 Pair of (topological dimension of entities, index of
   /// "entity type" within topological dimension).
   /// @param[in] d1 Pair of (topological dimension of entities, index of
   /// incident "entity type" within topological dimension).
-  /// @return AdjacencyList of connectivity from entity type in d0 to
-  /// entity types in d1, or nullptr if not yet computed.
+  /// @return AdjacencyList of connectivity from entity type in `d0` to
+  /// entity types in `d1`, or `nullptr` if not yet computed.
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
   connectivity(std::array<int, 2> d0, std::array<int, 2> d1) const;
 
-  /// @brief Return connectivity from entities of dimension d0 to
-  /// entities of dimension d1. Assumes only one entity type per dimension.
+  /// @brief Return connectivity from entities of dimension `d0` to
+  /// entities of dimension `d1`. Assumes only one entity type per
+  /// dimension.
   ///
-  /// @param[in] d0
-  /// @param[in] d1
-  /// @return The adjacency list that for each entity of dimension d0
-  /// gives the list of incident entities of dimension d1. Returns
+  /// @param[in] d0 Topological dimension.
+  /// @param[in] d1 Topological dimension.
+  /// @return The adjacency list that for each entity of dimension `d0`
+  /// gives the list of incident entities of dimension `d1`. Returns
   /// `nullptr` if connectivity has not been computed.
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
   connectivity(int d0, int d1) const;
 
-  /// @brief Returns the permutation information
+  /// @brief Returns the permutation information.
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
   /// @brief Get the numbers that encode the number of permutations to
@@ -207,8 +203,6 @@ public:
   /// dimension and index, as listed in ::entity_types.
   ///
   /// General version for mixed topology. Connectivity from d0 to d1.
-  ///
-  /// @warning Experimental.
   ///
   /// @param[in] c Connectivity.
   /// @param[in] d0 Pair of (topological dimension of entities, index of

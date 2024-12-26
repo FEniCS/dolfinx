@@ -169,10 +169,10 @@ class Topology:
         return self._cpp_object.get_facet_permutations()
 
     def index_map(self, dim: int) -> _cpp.common.IndexMap:
-        """Get the IndexMap that described the parallel distribution of the mesh entities.
+        """Get the IndexMap that describes the parallel distribution of the mesh entities.
 
         Args:
-            dim: Topological dimension
+            dim: Topological dimension.
 
         Returns:
             Index map for the entities of dimension ``dim``.
@@ -206,7 +206,7 @@ class Topology:
 
     @property
     def cell_type(self) -> CellType:
-        """Get the cell type of the topology"""
+        """Get the cell type of the topology."""
         return self._cpp_object.cell_type
 
 
