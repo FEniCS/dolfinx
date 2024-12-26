@@ -1015,7 +1015,7 @@ void Topology::create_entity_permutations()
 //-----------------------------------------------------------------------------
 MPI_Comm Topology::comm() const
 {
-  auto it = _index_maps.find({0, this->dim()});
+  auto it = _index_maps.find({this->dim(), 0});
   assert(it != _index_maps.end());
   return it->second->comm();
 }
