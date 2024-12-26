@@ -559,14 +559,10 @@ void mesh(nb::module_& m)
   // dolfinx::mesh::TopologyComputation
   m.def(
       "compute_entities",
-      [](MPICommWrapper comm, const dolfinx::mesh::Topology& topology, int dim,
+      [](const dolfinx::mesh::Topology& topology, int dim,
          dolfinx::mesh::CellType entity_type)
-      {
-        return dolfinx::mesh::compute_entities(comm.get(), topology, dim,
-                                               entity_type);
-      },
-      nb::arg("comm"), nb::arg("topology"), nb::arg("dim"),
-      nb::arg("entity_type"));
+      { return dolfinx::mesh::compute_entities(topology, dim, entity_type); },
+      nb::arg("topology"), nb::arg("dim"), nb::arg("entity_type"));
   m.def("compute_connectivity", &dolfinx::mesh::compute_connectivity,
         nb::arg("topology"), nb::arg("d0"), nb::arg("d1"));
 
