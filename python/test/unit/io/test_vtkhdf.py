@@ -9,7 +9,7 @@ from mpi4py import MPI
 import numpy as np
 
 from dolfinx.io.vtkhdf import read_mesh, write_mesh
-from dolfinx.mesh import CellType, create_unit_cube, create_unit_square
+from dolfinx.mesh import CellType, Mesh, create_unit_cube, create_unit_square
 
 
 def test_read_write_vtkhdf_mesh2d():
@@ -28,3 +28,12 @@ def test_read_write_vtkhdf_mesh3d():
     mesh2 = read_mesh(MPI.COMM_WORLD, "example3d.vtkhdf")
 
     assert mesh.topology.index_map(3).size_global == mesh2.topology.index_map(3).size_global
+
+
+def test_read_write_mixed_topology(mixed_topology_mesh):
+    mesh = Mesh(mixed_topology_mesh, None)
+    write_mesh("mixed_mesh.vtkhdf", mesh)
+
+    mesh2 = read_mesh(MPI.COMM_WORLD, "mixed_mesh.vtkhdf", np.float64)
+    for t in mesh2.topology.entity_types[-1]:
+        assert t in mesh.topology.entity_types[-1]
