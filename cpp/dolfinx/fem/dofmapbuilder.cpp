@@ -209,7 +209,9 @@ build_basic_dofmaps(
                 local_entity_offsets.back()
                 + num_entity_dofs * (im->size_local() + im->num_ghosts()));
 
-            if (d < D and !topology.connectivity({D, i}, {d, et_index}))
+            if (d < D
+                and !topology.connectivity({int(D), int(i)},
+                                           {int(d), int(et_index)}))
             {
               throw std::runtime_error("Missing needed connectivity. Cell type:"
                                        + std::to_string(i)
@@ -280,13 +282,16 @@ build_basic_dofmaps(
         const std::vector<std::vector<int>>& e_dofs_d = entity_dofs[d];
 
         // Skip over undefined topology, e.g. quad facets of tetrahedra
-        if (d < D and !topology.connectivity({D, i}, {d, et}))
+        if (d < D
+            and !topology.connectivity({int(D), int(i)}, {int(d), int(et)}))
           continue;
 
         // Iterate over each entity of current dimension d and type et
         std::span<const std::int32_t> c_to_e
-            = d < D ? topology.connectivity({D, i}, {d, et})->links(c)
-                    : std::span<const std::int32_t>(&c, 1);
+            = d < D
+                  ? topology.connectivity({int(D), int(i)}, {int(d), int(et)})
+                        ->links(c)
+                  : std::span<const std::int32_t>(&c, 1);
 
         int w = 0;
         for (std::size_t e = 0; e < e_dofs_d.size(); ++e)

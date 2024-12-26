@@ -38,8 +38,9 @@ std::array<T, 6> compute_bbox_of_entity(const mesh::Mesh<T>& mesh, int dim,
       = mesh::entities_to_geometry(mesh, dim, entity, false);
 
   std::array<T, 6> b;
-  auto b0 = std::span(b).template subspan<0, 3>();
-  auto b1 = std::span(b).template subspan<3, 3>();
+  std::span<T, 3> b0(b.data(), 3);
+  std::span<T, 3> b1(b.data() + 3, 3);
+
   std::copy_n(std::next(xg.begin(), 3 * vertex_indices.front()), 3, b0.begin());
   std::copy_n(std::next(xg.begin(), 3 * vertex_indices.front()), 3, b1.begin());
 
