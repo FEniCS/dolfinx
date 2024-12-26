@@ -771,8 +771,10 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim,
 
   // Vertices must always exist
   if (dim == 0)
+  {
     return {std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(),
             nullptr, nullptr, std::vector<std::int32_t>()};
+  }
 
   if (topology.connectivity({dim, index}, {0, 0}))
   {

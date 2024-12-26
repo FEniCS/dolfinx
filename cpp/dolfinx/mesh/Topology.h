@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2022 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2024 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -203,27 +203,6 @@ public:
   /// been computed.
   const std::vector<std::int32_t>& interprocess_facets() const;
 
-private:
-  // / @todo Merge with set_connectivity
-  // /
-  // / @brief Set the IndexMap for the `i`th `celltype` of dimension `dim`.
-  // /
-  // / @warning This is experimental and likely to change.
-  // /
-  // / @param[in] dim Topological dimension.
-  // / @param[in] i Index of cell type within dimension `dim`. The cell types
-  // / in the mesh for a given dimension are returned by ::entity_types.
-  // / @param[in] map Index map to set.
-  // void set_index_map(int dim, int i,
-  //                    std::shared_ptr<const common::IndexMap> map);
-
-  // /// @todo Merge with set_connectivity
-  // ///
-  // /// @brief Set the IndexMap for dimension dim
-  // /// @warning This is experimental and likely to change
-  // void set_index_map(int dim, std::shared_ptr<const common::IndexMap> map);
-
-public:
   /// @brief Set connectivity for given pair of entity types, defined by
   /// dimension and index, as listed in ::entity_types.
   ///
@@ -278,11 +257,10 @@ private:
   // flattened in the same layout as _entity_types above.
   // std::vector<std::shared_ptr<const common::IndexMap>> _index_map;
 
-  // _index_maps[d][i] is the index map for the ith entity type of
+  // _index_maps[(d, i) is the index map for the ith entity type of
   // dimension d
-  std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> _index_maps;
   std::map<std::array<int, 2>, std::shared_ptr<const common::IndexMap>>
-      _index_maps_new;
+      _index_maps;
 
   // Connectivity between cell types _connectivity_new[(dim0, i0),
   // (dim1, i1)] is the connection from (dim0, i0) -> (dim1, i1),
