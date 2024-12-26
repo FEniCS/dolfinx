@@ -710,15 +710,14 @@ std::vector<std::int32_t> convert_to_local_indexing(
 
 //-----------------------------------------------------------------------------
 Topology::Topology(
-    MPI_Comm comm, std::vector<CellType> cell_types,
+    std::vector<CellType> cell_types,
     std::shared_ptr<const common::IndexMap> vertex_map,
     std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
     std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
     const std::optional<std::vector<std::vector<std::int64_t>>>& original_index)
     : original_cell_index(original_index
                               ? *original_index
-                              : std::vector<std::vector<std::int64_t>>()),
-      _comm(comm)
+                              : std::vector<std::vector<std::int64_t>>())
 {
   assert(!cell_types.empty());
   int tdim = cell_dim(cell_types.front());
@@ -781,12 +780,11 @@ Topology::Topology(
 }
 //-----------------------------------------------------------------------------
 Topology::Topology(
-    MPI_Comm comm, CellType cell_type,
-    std::shared_ptr<const common::IndexMap> vertex_map,
+    CellType cell_type, std::shared_ptr<const common::IndexMap> vertex_map,
     std::shared_ptr<const common::IndexMap> cell_map,
     std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells,
     const std::optional<std::vector<std::int64_t>>& original_index)
-    : Topology(comm, {cell_type}, vertex_map, {cell_map}, {cells},
+    : Topology(std::vector{cell_type}, vertex_map, {cell_map}, {cells},
                original_index
                    ? std::vector<std::vector<std::int64_t>>{*original_index}
                    : std::optional<std::vector<std::vector<std::int64_t>>>(
@@ -1015,7 +1013,12 @@ void Topology::create_entity_permutations()
   _cell_permutations = std::move(cell_permutations);
 }
 //-----------------------------------------------------------------------------
-MPI_Comm Topology::comm() const { return _comm.comm(); }
+MPI_Comm Topology::comm() const
+{
+  auto it = _index_maps.find({0, this->dim()});
+  assert(it != _index_maps.end());
+  return it->second->comm();
+}
 //-----------------------------------------------------------------------------
 Topology mesh::create_topology(
     MPI_Comm comm, const std::vector<CellType>& cell_types,
@@ -1288,8 +1291,7 @@ Topology mesh::create_topology(
                  std::back_inserter(orig_index), [](auto idx)
                  { return std::vector<std::int64_t>(idx.begin(), idx.end()); });
 
-  return Topology(comm, cell_types, index_map_v, index_map_c, cells_c,
-                  orig_index);
+  return Topology(cell_types, index_map_v, index_map_c, cells_c, orig_index);
 }
 //-----------------------------------------------------------------------------
 Topology
@@ -1382,7 +1384,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
   auto sub_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::move(sub_e_to_v_vec), std::move(sub_e_to_v_offsets));
 
-  return {Topology(topology.comm(), entity_type, submap0, submap, sub_e_to_v),
+  return {Topology(entity_type, submap0, submap, sub_e_to_v),
           std::move(subentities), std::move(subvertices0)};
 }
 //-----------------------------------------------------------------------------

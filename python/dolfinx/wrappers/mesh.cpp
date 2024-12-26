@@ -571,8 +571,7 @@ void mesh(nb::module_& m)
                                       "Topology object")
       .def(
           "__init__",
-          [](dolfinx::mesh::Topology* t, MPICommWrapper comm,
-             dolfinx::mesh::CellType cell_type,
+          [](dolfinx::mesh::Topology* t, dolfinx::mesh::CellType cell_type,
              std::shared_ptr<const dolfinx::common::IndexMap> vertex_map,
              std::shared_ptr<const dolfinx::common::IndexMap> cell_map,
              std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>> cells,
@@ -586,12 +585,11 @@ void mesh(nb::module_& m)
                                                   original_index->data()
                                                       + original_index->size())
                       : std::optional<std::vector<std::int64_t>>(std::nullopt);
-            new (t) dolfinx::mesh::Topology(comm.get(), cell_type, vertex_map,
-                                            cell_map, cells, idx);
+            new (t) dolfinx::mesh::Topology(cell_type, vertex_map, cell_map,
+                                            cells, idx);
           },
-          nb::arg("comm"), nb::arg("cell_type"), nb::arg("vertex_map"),
-          nb::arg("cell_map"), nb::arg("cells"),
-          nb::arg("original_index").none())
+          nb::arg("cell_type"), nb::arg("vertex_map"), nb::arg("cell_map"),
+          nb::arg("cells"), nb::arg("original_index").none())
       .def("set_connectivity",
            nb::overload_cast<
                std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>>,

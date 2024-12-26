@@ -47,7 +47,6 @@ class Topology
 public:
   /// @brief Create empty mesh topology with multiple cell types.
   ///
-  /// @param[in] comm MPI communicator.
   /// @param[in] cell_types Types of cells.
   /// @param[in] vertex_map Index map describing the distribution of
   /// mesh vertices.
@@ -58,7 +57,7 @@ public:
   /// @param[in] original_cell_index Original indices for each cell in
   /// `cells`.
   Topology(
-      MPI_Comm comm, std::vector<CellType> cell_types,
+      std::vector<CellType> cell_types,
       std::shared_ptr<const common::IndexMap> vertex_map,
       std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
       std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
@@ -67,7 +66,6 @@ public:
       = std::nullopt);
 
   /// @brief Topology constructor.
-  /// @param[in] comm MPI communicator.
   /// @param[in] cell_type Type of cell.
   /// @param[in] vertex_map Index map describing the distribution of
   /// mesh vertices.
@@ -75,7 +73,7 @@ public:
   /// cells.
   /// @param[in] cells Cell-to-vertex connectivity.
   /// @param[in] original_index Original index for each cell in `cells`.
-  Topology(MPI_Comm comm, CellType cell_type,
+  Topology(CellType cell_type,
            std::shared_ptr<const common::IndexMap> vertex_map,
            std::shared_ptr<const common::IndexMap> cell_map,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells,
@@ -240,9 +238,6 @@ public:
   MPI_Comm comm() const;
 
 private:
-  // MPI communicator
-  dolfinx::MPI::Comm _comm;
-
   // Cell types for entities in Topology, where _entity_types_new[d][i]
   // is the ith entity type of dimension d
   std::vector<std::vector<CellType>> _entity_types;
