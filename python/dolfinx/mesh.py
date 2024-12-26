@@ -109,22 +109,23 @@ class Topology:
         return self._cpp_object.comm
 
     def create_connectivity(self, d0: int, d1: int):
-        """Create connectivity between given pair of dimensions, ``d0`` and  ``d1``.
+        """Build entity connectivity ``d0 -> d1``.
 
         Args:
-            d0: Dimension of entities one is mapping from
-            d1: Dimension of entities one is mapping to
+            d0: Dimension of entities connectivity is from.
+            d1: Dimension of entities connectivity is to.
         """
         self._cpp_object.create_connectivity(d0, d1)
 
-    def create_entities(self, dim: int) -> int:
+    def create_entities(self, dim: int) -> bool:
         """Create entities of given topological dimension.
 
         Args:
-            dim: Topological dimension
+            dim: Topological dimension of entities to create.
 
         Returns:
-            Number of newly created entities, returns -1 if entities already existed
+            ``True` is entities are created, ``False`` is if entities
+            already existed.
         """
         return self._cpp_object.create_entities(dim)
 
@@ -197,20 +198,11 @@ class Topology:
         """Set connectivity for given pair of topological dimensions.
 
         Args:
-            graph: Connectivity graph
-            d0: Topological dimension mapping from
-            d1: Topological dimension mapping to
+            graph: Connectivity graph.
+            d0: Topological dimension mapping from.
+            d1: Topological dimension mapping to.
         """
         self._cpp_object.set_connectivity(graph, d0, d1)
-
-    # def set_index_map(self, dim: int, index_map: _cpp.common.IndexMap):
-    #     """Set the IndexMap for dimension ``dim``.
-
-    #     Args:
-    #         dim: Topological dimension of entity.
-    #         index_map: Index map to store.
-    #     """
-    #     return self._cpp_object.set_index_map(dim, index_map)
 
     @property
     def cell_type(self) -> CellType:

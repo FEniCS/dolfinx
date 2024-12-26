@@ -746,32 +746,8 @@ Topology::Topology(
     for (auto c : cell_types)
       for (int i = 0; i < cell_num_entities(c, tdim - 1); ++i)
         facet_types.insert(cell_facet_type(c, i));
-
     _entity_types_new.emplace_back(facet_types.begin(), facet_types.end());
-
     _entity_types_new.push_back(cell_types);
-  }
-
-  // Create all the entity types in the mesh
-  std::vector<CellType> tmp_entity_types({mesh::CellType::point});
-  if (tdim > 1)
-  {
-    // In 2D, the facet is an interval
-    tmp_entity_types.push_back(CellType::interval);
-
-    if (tdim == 3)
-    {
-      // Find all facet types
-      std::set<mesh::CellType> facet_types;
-      for (auto c : cell_types)
-      {
-        assert(cell_dim(c) == tdim);
-        for (int i = 0; i < cell_num_entities(c, tdim - 1); ++i)
-          facet_types.insert(cell_facet_type(c, i));
-      }
-      tmp_entity_types.insert(tmp_entity_types.end(), facet_types.begin(),
-                              facet_types.end());
-    }
   }
 
   // _index_maps.resize(tdim + 1);
@@ -925,7 +901,7 @@ void Topology::set_connectivity(
   this->set_connectivity(c, {d0, 0}, {d1, 0});
 }
 //-----------------------------------------------------------------------------
-std::int32_t Topology::create_entities(int dim)
+bool Topology::create_entities(int dim)
 {
   // TODO: is this check sufficient/correct? Does not catch the
   // cell_entity entity case. Should there also be a check for
@@ -933,7 +909,7 @@ std::int32_t Topology::create_entities(int dim)
 
   // Skip if already computed (vertices (dim=0) should always exist)
   if (connectivity(dim, 0))
-    return -1;
+    return false;
 
   for (std::size_t index = 0; index < this->entity_types(dim).size(); ++index)
   {
@@ -944,15 +920,15 @@ std::int32_t Topology::create_entities(int dim)
     {
       if (cell_entity[k])
       {
-        set_connectivity(cell_entity[k], {this->dim(), int(k)},
-                         {dim, int(index)});
+        this->set_connectivity(cell_entity[k], {this->dim(), int(k)},
+                               {dim, int(index)});
       }
     }
 
     // TODO: is this check necessary? Seems redundant after the "skip
     // check"
     if (entity_vertex)
-      set_connectivity(entity_vertex, {dim, int(index)}, {0, 0});
+      this->set_connectivity(entity_vertex, {dim, int(index)}, {0, 0});
 
     assert(index_map);
     this->set_index_map(dim, index, index_map);
@@ -965,7 +941,7 @@ std::int32_t Topology::create_entities(int dim)
     }
   }
 
-  return this->index_maps(dim)[0]->size_local();
+  return true;
 }
 //-----------------------------------------------------------------------------
 void Topology::create_connectivity(int d0, int d1)
@@ -1000,9 +976,9 @@ void Topology::create_connectivity(int d0, int d1)
 
       // Attach connectivities
       if (c_d0_d1)
-        set_connectivity(c_d0_d1, {d0, i0}, {d1, i1});
+        this->set_connectivity(c_d0_d1, {d0, i0}, {d1, i1});
       if (c_d1_d0)
-        set_connectivity(c_d1_d0, {d1, i1}, {d0, i0});
+        this->set_connectivity(c_d1_d0, {d1, i1}, {d0, i0});
     }
   }
 }
@@ -1040,9 +1016,9 @@ Topology mesh::create_topology(
   assert(ghost_owners.size() == cells.size());
   assert(original_cell_index.size() == cells.size());
 
-  spdlog::info("Create topology (generalised)");
   // Check cell data consistency and compile spans of owned and ghost
   // cells
+  spdlog::info("Create topology (generalised)");
   std::vector<std::int32_t> num_local_cells(cell_types.size());
   std::vector<std::span<const std::int64_t>> owned_cells;
   std::vector<std::span<const std::int64_t>> ghost_cells;
@@ -1108,8 +1084,8 @@ Topology mesh::create_topology(
     {
       for (auto vtx : cells[i])
       {
-        auto it = std::ranges::lower_bound(owned_vertices, vtx);
-        if (it != owned_vertices.end() and *it == vtx)
+        if (auto it = std::ranges::lower_bound(owned_vertices, vtx);
+            it != owned_vertices.end() and *it == vtx)
         {
           std::size_t pos = std::distance(owned_vertices.begin(), it);
           if (local_vertex_indices[pos] < 0)

@@ -246,9 +246,9 @@ public:
 
   /// @brief Create entities of given topological dimension.
   /// @param[in] dim Topological dimension of entities to compute.
-  /// @return Number of newly created entities, returns -1 if entities
-  /// already existed
-  std::int32_t create_entities(int dim);
+  /// @return True is entities are created, false if entities already
+  /// existed.
+  bool create_entities(int dim);
 
   /// @brief Create connectivity between given pair of dimensions, `d0
   /// -> d1`.
