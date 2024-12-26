@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "cell_types.h"
 #include <array>
 #include <cstdint>
 #include <memory>
@@ -48,7 +49,8 @@ class Topology;
 std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>>
-compute_entities(MPI_Comm comm, const Topology& topology, int dim, int index);
+compute_entities(MPI_Comm comm, const Topology& topology, int dim,
+                 CellType entity_type);
 
 /// @brief Compute connectivity (d0 -> d1) for given pair of entity
 /// types, given by topological dimension and index, as found in

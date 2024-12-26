@@ -764,7 +764,7 @@ std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>>
 mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim,
-                       int index)
+                       CellType entity_type)
 {
   spdlog::info("Computing mesh entities of dimension {}", dim);
   const int tdim = topology.dim();
@@ -776,6 +776,10 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim,
             nullptr, nullptr, std::vector<std::int32_t>()};
   }
 
+  auto idx = std::ranges::find(topology.entity_types(dim), entity_type);
+  assert(idx != topology.entity_types(dim).end());
+  int index = std::distance(topology.entity_types(dim).begin(), idx);
+
   if (topology.connectivity({dim, index}, {0, 0}))
   {
     return {std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(),
@@ -784,8 +788,6 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim,
 
   auto vertex_map = topology.index_map(0);
   assert(vertex_map);
-
-  CellType entity_type = topology.entity_types(dim)[index];
 
   // Lists of all cells by cell type
   std::vector<CellType> cell_types = topology.entity_types(tdim);

@@ -774,7 +774,7 @@ Topology::Topology(
   if (tdim == 1)
   {
     auto [cell_entity, entity_vertex, index_map, interprocess_entities]
-        = compute_entities(_comm.comm(), *this, 0, 0);
+        = compute_entities(_comm.comm(), *this, 0, CellType::point);
     std::ranges::sort(interprocess_entities);
     _interprocess_facets.push_back(std::move(interprocess_entities));
   }
@@ -919,11 +919,16 @@ bool Topology::create_entities(int dim)
     _entity_types[dim] = std::vector(e_types.begin(), e_types.end());
   }
 
-  for (std::size_t index = 0; index < this->entity_types(dim).size(); ++index)
+  // for (std::size_t index = 0; index < this->entity_types(dim).size();
+  // ++index)
+  for (auto entity = this->entity_types(dim).begin();
+       entity != this->entity_types(dim).end(); ++entity)
   {
+    int index = std::distance(this->entity_types(dim).begin(), entity);
+
     // Create local entities
     auto [cell_entity, entity_vertex, index_map, interprocess_entities]
-        = compute_entities(_comm.comm(), *this, dim, index);
+        = compute_entities(_comm.comm(), *this, dim, *entity);
     for (std::size_t k = 0; k < cell_entity.size(); ++k)
     {
       if (cell_entity[k])
