@@ -4,7 +4,13 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import typing
+from pathlib import Path
+
+from mpi4py import MPI as _MPI
+
 import numpy as np
+import numpy.typing as npt
 
 import basix
 import ufl
@@ -12,7 +18,9 @@ from dolfinx.cpp.io import read_vtkhdf_mesh_float32, read_vtkhdf_mesh_float64, w
 from dolfinx.mesh import Mesh
 
 
-def read_mesh(comm, filename, dtype=np.float64):
+def read_mesh(
+    comm: _MPI.Comm, filename: typing.Union[str, Path], dtype: npt.DTypeLike = np.float64
+):
     """Read a mesh from a VTKHDF format file
     Args:
            comm: An MPI communicator.
@@ -42,7 +50,7 @@ def read_mesh(comm, filename, dtype=np.float64):
     return Mesh(mesh_cpp, domain)
 
 
-def write_mesh(filename, mesh):
+def write_mesh(filename: typing.Union[str, Path], mesh: Mesh):
     """Write a mesh to file in VTKHDF format
     Args:
            filename: File to write to.
