@@ -559,13 +559,10 @@ void mesh(nb::module_& m)
   // dolfinx::mesh::TopologyComputation
   m.def(
       "compute_entities",
-      [](MPICommWrapper comm, const dolfinx::mesh::Topology& topology, int dim,
-         int index)
-      {
-        return dolfinx::mesh::compute_entities(comm.get(), topology, dim,
-                                               index);
-      },
-      nb::arg("comm"), nb::arg("topology"), nb::arg("dim"), nb::arg("index"));
+      [](const dolfinx::mesh::Topology& topology, int dim,
+         dolfinx::mesh::CellType entity_type)
+      { return dolfinx::mesh::compute_entities(topology, dim, entity_type); },
+      nb::arg("topology"), nb::arg("dim"), nb::arg("entity_type"));
   m.def("compute_connectivity", &dolfinx::mesh::compute_connectivity,
         nb::arg("topology"), nb::arg("d0"), nb::arg("d1"));
 
@@ -574,8 +571,7 @@ void mesh(nb::module_& m)
                                       "Topology object")
       .def(
           "__init__",
-          [](dolfinx::mesh::Topology* t, MPICommWrapper comm,
-             dolfinx::mesh::CellType cell_type,
+          [](dolfinx::mesh::Topology* t, dolfinx::mesh::CellType cell_type,
              std::shared_ptr<const dolfinx::common::IndexMap> vertex_map,
              std::shared_ptr<const dolfinx::common::IndexMap> cell_map,
              std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>> cells,
@@ -583,28 +579,18 @@ void mesh(nb::module_& m)
                  nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>
                  original_index)
           {
-            std::optional<std::vector<std::int64_t>> idx
-                = original_index
-                      ? std::vector<std::int64_t>(original_index->data(),
-                                                  original_index->data()
-                                                      + original_index->size())
-                      : std::optional<std::vector<std::int64_t>>(std::nullopt);
-            new (t) dolfinx::mesh::Topology(comm.get(), cell_type, vertex_map,
-                                            cell_map, cells, idx);
+            using U = std::vector<std::vector<std::int64_t>>;
+            using V = std::optional<U>;
+            V idx = original_index
+                        ? U(1, std::vector(original_index->data(),
+                                           original_index->data()
+                                               + original_index->size()))
+                        : V(std::nullopt);
+            new (t) dolfinx::mesh::Topology({cell_type}, vertex_map, {cell_map},
+                                            {cells}, idx);
           },
-          nb::arg("comm"), nb::arg("cell_type"), nb::arg("vertex_map"),
-          nb::arg("cell_map"), nb::arg("cells"),
-          nb::arg("original_index").none())
-      .def("set_connectivity",
-           nb::overload_cast<
-               std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>>,
-               int, int>(&dolfinx::mesh::Topology::set_connectivity),
-           nb::arg("c"), nb::arg("d0"), nb::arg("d1"))
-      .def("set_index_map",
-           nb::overload_cast<int,
-                             std::shared_ptr<const dolfinx::common::IndexMap>>(
-               &dolfinx::mesh::Topology::set_index_map),
-           nb::arg("dim"), nb::arg("map"))
+          nb::arg("cell_type"), nb::arg("vertex_map"), nb::arg("cell_map"),
+          nb::arg("cells"), nb::arg("original_index").none())
       .def("create_entities", &dolfinx::mesh::Topology::create_entities,
            nb::arg("dim"))
       .def("create_entity_permutations",
