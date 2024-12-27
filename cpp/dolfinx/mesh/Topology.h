@@ -45,7 +45,13 @@ enum class CellType;
 class Topology
 {
 public:
-  /// @brief Create empty mesh topology with multiple cell types.
+  /// @brief Create a mesh topology.
+  ///
+  /// A Topology represents the connectivity of a mesh. Mesh entities,
+  /// i.e. vertices, edges, faces and cells, are defined in terms of
+  /// their vertices. Connectivity represents the relationships between
+  /// entities, e.g. the cells that are connected to a given edge in the
+  /// mesh.
   ///
   /// @param[in] cell_types Types of cells.
   /// @param[in] vertex_map Index map describing the distribution of
@@ -65,21 +71,6 @@ public:
           original_cell_index
       = std::nullopt);
 
-  /// @brief Topology constructor.
-  /// @param[in] cell_type Type of cell.
-  /// @param[in] vertex_map Index map describing the distribution of
-  /// mesh vertices.
-  /// @param[in] cell_map Index map describing the distribution of mesh
-  /// cells.
-  /// @param[in] cells Cell-to-vertex connectivity.
-  /// @param[in] original_index Original index for each cell in `cells`.
-  Topology(CellType cell_type,
-           std::shared_ptr<const common::IndexMap> vertex_map,
-           std::shared_ptr<const common::IndexMap> cell_map,
-           std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells,
-           const std::optional<std::vector<std::int64_t>>& original_index
-           = std::nullopt);
-
   /// Copy constructor
   Topology(const Topology& topology) = default;
 
@@ -95,7 +86,7 @@ public:
   /// Assignment
   Topology& operator=(Topology&& topology) = default;
 
-  /// @brief Return the topological dimension of the mesh.
+  /// @brief Topological dimension of the mesh.
   int dim() const noexcept;
 
   /// @brief Entity types in the topology for a given dimension.

@@ -756,19 +756,6 @@ Topology::Topology(
   }
 }
 //-----------------------------------------------------------------------------
-Topology::Topology(
-    CellType cell_type, std::shared_ptr<const common::IndexMap> vertex_map,
-    std::shared_ptr<const common::IndexMap> cell_map,
-    std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells,
-    const std::optional<std::vector<std::int64_t>>& original_index)
-    : Topology(std::vector{cell_type}, vertex_map, {cell_map}, {cells},
-               original_index
-                   ? std::vector<std::vector<std::int64_t>>{*original_index}
-                   : std::optional<std::vector<std::vector<std::int64_t>>>(
-                         std::nullopt))
-{
-}
-//-----------------------------------------------------------------------------
 int Topology::dim() const noexcept
 {
   return mesh::cell_dim(_entity_types.back().front());
@@ -1349,7 +1336,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
   auto sub_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       std::move(sub_e_to_v_vec), std::move(sub_e_to_v_offsets));
 
-  return {Topology(entity_type, submap0, submap, sub_e_to_v),
+  return {Topology({entity_type}, submap0, {submap}, {sub_e_to_v}),
           std::move(subentities), std::move(subvertices0)};
 }
 //-----------------------------------------------------------------------------
