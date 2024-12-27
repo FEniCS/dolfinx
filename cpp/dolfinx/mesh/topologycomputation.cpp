@@ -776,14 +776,16 @@ mesh::compute_entities(const Topology& topology, int dim, CellType entity_type)
             nullptr, nullptr, std::vector<std::int32_t>()};
   }
 
-  auto idx = std::ranges::find(topology.entity_types(dim), entity_type);
-  assert(idx != topology.entity_types(dim).end());
-  int index = std::distance(topology.entity_types(dim).begin(), idx);
-
-  if (topology.connectivity({dim, index}, {0, 0}))
   {
-    return {std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(),
-            nullptr, nullptr, std::vector<std::int32_t>()};
+    auto idx = std::ranges::find(topology.entity_types(dim), entity_type);
+    assert(idx != topology.entity_types(dim).end());
+    int index = std::distance(topology.entity_types(dim).begin(), idx);
+    if (topology.connectivity({dim, index}, {0, 0}))
+    {
+      return {
+          std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(),
+          nullptr, nullptr, std::vector<std::int32_t>()};
+    }
   }
 
   const int tdim = topology.dim();
@@ -809,6 +811,7 @@ mesh::compute_entities(const Topology& topology, int dim, CellType entity_type)
   auto vertex_map = topology.index_map(0);
   assert(vertex_map);
 
+  // c->e, e->v
   auto [d0, d1, im, interprocess_entities] = compute_entities_by_key_matching(
       topology.comm(), cell_lists, *vertex_map, entity_type, dim);
 

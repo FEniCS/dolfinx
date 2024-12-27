@@ -252,24 +252,28 @@ private:
 /// This function creates a Topology from cells that have been already
 /// distributed to the processes that own or ghost the cell.
 ///
-/// @param[in] comm Communicator across which the topology is
+/// @param[in] comm Communicator across which the topology will be
 /// distributed.
 /// @param[in] cell_types List of cell types in the topology.
 /// @param[in] cells Cell topology (list of vertices for each cell) for
 /// each cell type using global indices for the vertices. The cell type
-/// for `cells[i]` is `cell_types[i]`. Each `cells[i]` contains cells
-/// that have been distributed to this rank, e.g. via a graph
-/// partitioner. It must also contain all ghost cells via facet, i.e.
-/// cells that are on a neighboring process and which share a facet with
-/// a local cell. Ghost cells are the last `n` entries in `cells[i]`, where
-/// `n` is given by the length of `ghost_owners[i]`.
-/// @param[in] original_cell_index Input cell index for each cell type.
-/// @param[in] ghost_owners Owning rank for ghost cells (at end of each list of
-/// cells).
+/// for `cells[i]` is `cell_types[i]`, using row-major storage and where
+/// the row `cells[i][j]` is the vertices for cell `j` of cell type `i .
+/// Each `cells[i]` contains cells that have been distributed to this
+/// rank, e.g. via a graph partitioner. It must also contain all ghost
+/// cells via facet, i.e. cells that are on a neighboring process and
+/// which share a facet with a local cell. Ghost cells are the last `n`
+/// entries in `cells[i]`, where `n` is given by the length of
+/// `ghost_owners[i]`.
+/// @param[in] original_cell_index Input cell index for each cell type,
+/// e.g. the cell index in an input file. This index remains associated
+/// with the cell after any re-ordering and parallel (re)distribution.
+/// @param[in] ghost_owners Owning rank for ghost cells (ghost cells are
+/// at end of each list of cells).
 /// @param[in] boundary_vertices Vertices on the 'exterior' (boundary)
 /// of the local topology. These vertices might appear on other
 /// processes.
-/// @return A distributed mesh topology
+/// @return A distributed mesh topology.
 Topology
 create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
                 std::vector<std::span<const std::int64_t>> cells,
@@ -279,8 +283,10 @@ create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
 
 /// @brief Create a mesh topology for a single cell type.
 ///
+/// This function provides a simplified interface to ::create_topology
+/// for the case that a mesh has one cell type only,
 ///
-/// @param[in] comm Communicator across which the topology is
+/// @param[in] comm Communicator across which the topology will be
 /// distributed.
 /// @param[in] cells Cell topology (list of vertices for each cell)
 /// using global indices for the vertices. It contains cells that have
@@ -297,7 +303,7 @@ create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
 /// @param[in] boundary_vertices Vertices on the 'exterior' (boundary)
 /// of the local topology. These vertices might appear on other
 /// processes.
-/// @return A distributed mesh topology
+/// @return A distributed mesh topology.
 Topology create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                          std::span<const std::int64_t> original_cell_index,
                          std::span<const int> ghost_owners, CellType cell_type,
@@ -323,12 +329,11 @@ create_subtopology(const Topology& topology, int dim,
 ///
 /// @warning This function may be removed in the future.
 ///
-/// @param[in] topology The mesh topology
-/// @param[in] dim Topological dimension of the entities
-/// @param[in] entities The mesh entities defined by their vertices
-/// @return The index of the ith entity in `entities`
-/// @note If an entity cannot be found on this rank, -1 is returned as
-/// the index.
+/// @param[in] topology Mesh topology.
+/// @param[in] dim Topological dimension of the entities.
+/// @param[in] entities Mesh entities defined by their vertices.
+/// @return Index of the ith entity in `entities`, If an entity
+/// cannot be found on this rank, -1 is returned as the index.
 std::vector<std::int32_t>
 entities_to_index(const Topology& topology, int dim,
                   std::span<const std::int32_t> entities);
