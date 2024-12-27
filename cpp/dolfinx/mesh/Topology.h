@@ -258,7 +258,7 @@ private:
 /// @param[in] cells Cell topology (list of vertices for each cell) for
 /// each cell type using global indices for the vertices. The cell type
 /// for `cells[i]` is `cell_types[i]`, using row-major storage and where
-/// the row `cells[i][j]` is the vertices for cell `j` of cell type `i .
+/// the row `cells[i][j]` is the vertices for cell `j` of cell type `i`.
 /// Each `cells[i]` contains cells that have been distributed to this
 /// rank, e.g. via a graph partitioner. It must also contain all ghost
 /// cells via facet, i.e. cells that are on a neighboring process and
