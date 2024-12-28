@@ -22,6 +22,107 @@
 namespace dolfinx::fem
 {
 
+/// @brief Assemble a discrete curl operator.
+///
+/// Curl of Nedelec(k) function -> RT(k-1) function.
+///
+/// @param[in] topology Mesh topology
+/// @param[in] V0 Lagrange element and dofmap for corresponding space to
+/// interpolate the gradient from
+/// @param[in] V1 Nédélec (first kind) element and and dofmap for
+/// corresponding space to interpolate into
+/// @param[in] mat_set A functor that sets values in a matrix
+template <dolfinx::scalar T,
+          std::floating_point U = dolfinx::scalar_value_type_t<T>>
+void discrete_curl(mesh::Topology& topology,
+                   std::pair<std::reference_wrapper<const FiniteElement<U>>,
+                             std::reference_wrapper<const DofMap>>
+                       V0,
+                   std::pair<std::reference_wrapper<const FiniteElement<U>>,
+                             std::reference_wrapper<const DofMap>>
+                       V1,
+                   auto&& mat_set)
+{
+  auto& e0 = V0.first.get();
+  const DofMap& dofmap0 = V0.second.get();
+  auto& e1 = V1.first.get();
+  const DofMap& dofmap1 = V1.second.get();
+
+  using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+
+  // Check elements
+  // if (e0.map_type() != basix::maps::type::identity)
+  //   throw std::runtime_error("Wrong finite element space for V0.");
+  // if (e0.block_size() != 1)
+  //   throw std::runtime_error("Block size is greater than 1 for V0.");
+  // if (e0.reference_value_size() != 1)
+  //   throw std::runtime_error("Wrong value size for V0.");
+
+  // if (e1.map_type() != basix::maps::type::covariantPiola)
+  //   throw std::runtime_error("Wrong finite element space for V1.");
+  // if (e1.block_size() != 1)
+  //   throw std::runtime_error("Block size is greater than 1 for V1.");
+
+  // Get V1 (H(div)) space interpolation points
+  const auto [X, Xshape] = e1.interpolation_points();
+
+  // Tabulate first order derivatives of Lagrange space at V1
+  // interpolation points
+  const int ndofs0 = e0.space_dimension();
+  const int tdim = topology.dim();
+  std::array<std::size_t, 4> tshape = e0.basix_element().(1, Xshape[0]);
+  std::size_t tsize
+      = std::accumulate(tshape.begin(), tshape.end(), 1, std::multiplies{});
+  std::vector<U> phi0_b(tsize);
+  e0.tabulate(phi0_b, X, Xshape, 1);
+
+  cmdspan4_t phi0(phi0_b.data(), tshape);
+  // cmdspan4_t phi0(phi0_b.data(), tdim + 1, Xshape[0], ndofs0, 1);
+
+  // Reshape lagrange basis derivatives as a matrix of shape (tdim *
+  // num_points, num_dofs_per_cell)
+  cmdspan2_t dphi_reshaped(
+      phi0_b.data() + phi0.extent(3) * phi0.extent(2) * phi0.extent(1),
+      tdim * phi0.extent(1), phi0.extent(2));
+
+  // Get inverse DOF transform function
+  auto apply_inverse_dof_transform = e1.template dof_transformation_fn<T>(
+      doftransform::inverse_transpose, false);
+
+  // Create cell permutations
+  topology.create_entity_permutations();
+  const std::vector<std::uint32_t>& cell_info
+      = topology.get_cell_permutation_info();
+
+  // Build the element interpolation matrix
+  std::vector<T> Ab(e1.space_dimension() * ndofs0);
+  {
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+        A(Ab.data(), e1.space_dimension(), ndofs0);
+    const auto [Pi, shape] = e1.interpolation_operator();
+    cmdspan2_t _Pi(Pi.data(), shape);
+    math::dot(_Pi, dphi_reshaped, A);
+  }
+
+  // Insert local interpolation matrix for each cell
+  auto cell_map = topology.index_map(tdim);
+  assert(cell_map);
+  std::int32_t num_cells = cell_map->size_local();
+  std::vector<T> Ae(Ab.size());
+  for (std::int32_t c = 0; c < num_cells; ++c)
+  {
+    std::ranges::copy(Ab, Ae.begin());
+    apply_inverse_dof_transform(Ae, cell_info, c, ndofs0);
+    mat_set(dofmap1.cell_dofs(c), dofmap0.cell_dofs(c), Ae);
+  }
+}
+
 /// @brief Assemble a discrete gradient operator.
 ///
 /// The discrete gradient operator \f$A\f$ interpolates the gradient of
@@ -84,10 +185,10 @@ void discrete_gradient(mesh::Topology& topology,
   if (e1.block_size() != 1)
     throw std::runtime_error("Block size is greater than 1 for V1.");
 
-  // Get V0 (H(curl)) space interpolation points
+  // Get V1 (H(curl)) space interpolation points
   const auto [X, Xshape] = e1.interpolation_points();
 
-  // Tabulate first order derivatives of Lagrange space at H(curl)
+  // Tabulate first order derivatives of Lagrange space at V1
   // interpolation points
   const int ndofs0 = e0.space_dimension();
   const int tdim = topology.dim();
