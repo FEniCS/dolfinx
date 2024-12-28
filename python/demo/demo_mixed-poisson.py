@@ -177,7 +177,7 @@ A.assemble()
 # Define preconditioner
 a_p00 = inner(sigma, tau) * dx + inner(div(sigma), div(tau)) * dx
 a_p11 = inner(u, v) * dx
-a_p = fem.form([[a_p00, None], [None, a_p11]])
+a_p = fem.form([[a_p00, None], [None, a_p11]], dtype=dtype)
 P = fem.petsc.assemble_matrix_nest(a_p, bcs=bcs)
 P.assemble()
 
@@ -207,10 +207,10 @@ ksp.getPC().setFieldSplitIS(("sigma", nested_IS[0][0]), ("u", nested_IS[0][1]))
 ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
 ksp_sigma.setType("preonly")
 ksp_sigma.getPC().setType("lu")
-if PETSc.Sys().hasExternalPackage("superlu_dist"):
-    ksp_sigma.getPC().setFactorSolverType("superlu_dist")
-ksp_u.setType("preonly")
-ksp_u.getPC().setType("bjacobi")
+# if PETSc.Sys().hasExternalPackage("superlu_dist"):
+#     ksp_sigma.getPC().setFactorSolverType("superlu_dist")
+# ksp_u.setType("preonly")
+# ksp_u.getPC().setType("bjacobi")
 
 # Solve
 sigma, u = fem.Function(V, dtype=dtype), fem.Function(W, dtype=dtype)
