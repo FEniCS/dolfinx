@@ -28,12 +28,12 @@ namespace dolfinx::fem
 /// a Lagrange finite element function in \f$V_0 \subset H^1\f$ into a
 /// Nédélec (first kind) space \f$V_1 \subset H({\rm curl})\f$, i.e.
 /// \f$\nabla V_0 \rightarrow V_1\f$. If \f$u_0\f$ is the
-/// degree-of-freedom vector associated with \f$V_0\f$, the hen
+/// degree-of-freedom vector associated with \f$V_0\f$, then
 /// \f$u_1=Au_0\f$ where \f$u_1\f$ is the degrees-of-freedom vector for
 /// interpolating function in the \f$H({\rm curl})\f$ space. An example
 /// of where discrete gradient operators are used is the creation of
-/// algebraic multigrid solvers for \f$H({\rm curl})\f$  and
-/// \f$H({\rm div})\f$ problems.
+/// algebraic multigrid solvers for \f$H({\rm curl})\f$ and \f$H({\rm
+/// div})\f$ problems.
 ///
 /// @note The sparsity pattern for a discrete operator can be
 /// initialised using sparsitybuild::cells. The space `V1` should be

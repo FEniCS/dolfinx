@@ -177,7 +177,7 @@ bcs = [bc0, bc1]
 # -
 
 # The bilinear and linear forms for the Stokes equations are defined
-# using a a blocked structure:
+# using a blocked structure:
 
 # +
 # Define variational problem
