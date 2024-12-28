@@ -175,8 +175,8 @@ A = fem.petsc.assemble_matrix_nest(a, bcs=bcs)
 A.assemble()
 
 # Define preconditioner
-a_p00 = inner(sigma, tau) * dx + div(sigma) * div(tau) * dx
-a_p11 = u * v * dx
+a_p00 = inner(sigma, tau) * dx + inner(div(sigma), div(tau)) * dx
+a_p11 = inner(u, v) * dx
 a_p = fem.form([[a_p00, None], [None, a_p11]])
 P = fem.petsc.assemble_matrix_nest(a_p, bcs=bcs)
 P.assemble()
