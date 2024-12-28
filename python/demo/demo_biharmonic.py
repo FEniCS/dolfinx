@@ -127,11 +127,25 @@ from mpi4py import MPI
 
 # +
 import dolfinx
-import ufl
 from dolfinx import fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.mesh import CellType, GhostMode
-from ufl import CellDiameter, FacetNormal, avg, div, dS, dx, grad, inner, jump, pi, sin
+from ufl import (
+    CellDiameter,
+    FacetNormal,
+    SpatialCoordinate,
+    TestFunction,
+    TrialFunction,
+    avg,
+    div,
+    dS,
+    dx,
+    grad,
+    inner,
+    jump,
+    pi,
+    sin,
+)
 
 # -
 
@@ -207,9 +221,9 @@ h_avg = (h("+") + h("-")) / 2.0
 
 # +
 # Define variational problem
-u = ufl.TrialFunction(V)
-v = ufl.TestFunction(V)
-x = ufl.SpatialCoordinate(msh)
+u = TrialFunction(V)
+v = TestFunction(V)
+x = SpatialCoordinate(msh)
 f = 4.0 * pi**4 * sin(pi * x[0]) * sin(pi * x[1])
 
 a = (

@@ -39,7 +39,6 @@ except ModuleNotFoundError:
 import numpy as np
 
 import dolfinx
-import ufl
 from dolfinx.fem import (
     Function,
     assemble_scalar,
@@ -51,7 +50,7 @@ from dolfinx.fem import (
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import create_unit_square
-from ufl import FacetNormal, dot, ds, dx, grad, inner
+from ufl import FacetNormal, TestFunction, TrialFunction, dot, ds, dx, grad, inner
 
 # Wavenumber
 k0 = 4 * np.pi
@@ -78,7 +77,7 @@ V_exact = functionspace(msh, ("Lagrange", deg + 3))
 u_exact = Function(V_exact)
 
 # Define variational problem:
-u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+u, v = TrialFunction(V), TestFunction(V)
 a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
 
 # solve for plane wave with mixed Dirichlet and Neumann BCs
