@@ -9,14 +9,16 @@
 # ---
 
 # # Mixed formulation for the Poisson equation
-
+#
 # This demo illustrates how to solve Poisson equation using a mixed
-# (two-field) formulation. In particular, it illustrates how to
+# (two-field) formulation and block-preconditioned iterative solver. In
+# particular, it illustrates how to
 #
 # * Use mixed and non-continuous finite element spaces.
 # * Set essential boundary conditions for subspaces and $H(\mathrm{div})$ spaces.
+# * Construct a blocked linear system.
+# * Use a block-preconditioned iterative linear solver.
 #
-
 # ```{admonition} Download sources
 # :class: download
 #
@@ -109,88 +111,112 @@ from mpi4py import MPI
 
 import numpy as np
 
-from basix.ufl import element, mixed_element
-from dolfinx import default_real_type, fem, io, mesh
-from dolfinx.fem.petsc import LinearProblem
-from ufl import Measure, SpatialCoordinate, TestFunctions, TrialFunctions, div, exp, inner
+import dolfinx.fem.petsc
+from basix.ufl import element
+from dolfinx import default_real_type, default_scalar_type, fem, io, la, mesh
+from ufl import (
+    Measure,
+    SpatialCoordinate,
+    TestFunction,
+    TrialFunction,
+    div,
+    exp,
+    inner,
+)
 
-msh = mesh.create_unit_square(MPI.COMM_WORLD, 32, 32, mesh.CellType.quadrilateral)
+dtype = default_scalar_type
+xdtype = default_real_type
+
+# msh = mesh.create_unit_square(
+#     MPI.COMM_WORLD, 32, 32, mesh.CellType.quadrilateral, dtype=default_real_type
+# )
+msh = mesh.create_unit_square(MPI.COMM_WORLD, 32, 32, mesh.CellType.triangle, dtype=xdtype)
 
 k = 1
-Q_el = element("BDMCF", msh.basix_cell(), k, dtype=default_real_type)
-P_el = element("DG", msh.basix_cell(), k - 1, dtype=default_real_type)
-V_el = mixed_element([Q_el, P_el])
-V = fem.functionspace(msh, V_el)
+V = fem.functionspace(msh, element("RT", msh.basix_cell(), k, dtype=xdtype))
+W = fem.functionspace(msh, element("DG", msh.basix_cell(), k - 1, dtype=xdtype))
 
-(sigma, u) = TrialFunctions(V)
-(tau, v) = TestFunctions(V)
+(sigma, u) = TrialFunction(V), TrialFunction(W)
+(tau, v) = TestFunction(V), TestFunction(W)
 
 x = SpatialCoordinate(msh)
 f = 10.0 * exp(-((x[0] - 0.5) * (x[0] - 0.5) + (x[1] - 0.5) * (x[1] - 0.5)) / 0.02)
 
 dx = Measure("dx", msh)
-a = inner(sigma, tau) * dx + inner(u, div(tau)) * dx + inner(div(sigma), v) * dx
-L = -inner(f, v) * dx
+a = [[inner(sigma, tau) * dx, inner(u, div(tau)) * dx], [inner(div(sigma), v) * dx, None]]
+L = [
+    inner(fem.Constant(msh, np.zeros(2, dtype=dtype)), tau) * dx,
+    -inner(f, v) * dx,
+]
 
-# Get subspace of V
-V0 = V.sub(0)
+a, L = fem.form(a, dtype=dtype), fem.form(L, dtype=dtype)
+
 
 fdim = msh.topology.dim - 1
-facets_top = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 1.0))
-Q, _ = V0.collapse()
-dofs_top = fem.locate_dofs_topological((V0, Q), fdim, facets_top)
+dofs_top = fem.locate_dofs_topological(
+    V, fdim, mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 1.0))
+)
+f_h1 = fem.Function(V, dtype=dtype)
+f_h1.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), np.sin(5 * x[0]))))
+bc_top = fem.dirichletbc(f_h1, dofs_top)
 
 
-def f1(x):
-    values = np.zeros((2, x.shape[1]))
-    values[1, :] = np.sin(5 * x[0])
-    return values
-
-
-f_h1 = fem.Function(Q)
-f_h1.interpolate(f1)
-bc_top = fem.dirichletbc(f_h1, dofs_top, V0)
-
-
-facets_bottom = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 0.0))
-dofs_bottom = fem.locate_dofs_topological((V0, Q), fdim, facets_bottom)
-
-
-def f2(x):
-    values = np.zeros((2, x.shape[1]))
-    values[1, :] = -np.sin(5 * x[0])
-    return values
-
-
-f_h2 = fem.Function(Q)
-f_h2.interpolate(f2)
-bc_bottom = fem.dirichletbc(f_h2, dofs_bottom, V0)
-
+dofs_bottom = fem.locate_dofs_topological(
+    V, fdim, mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 0.0))
+)
+f_h2 = fem.Function(V, dtype=dtype)
+f_h2.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), -np.sin(5 * x[0]))))
+bc_bottom = fem.dirichletbc(f_h2, dofs_bottom)
 
 bcs = [bc_top, bc_bottom]
 
-problem = LinearProblem(
-    a,
-    L,
-    bcs=bcs,
-    petsc_options={
-        "ksp_type": "preonly",
-        "pc_type": "lu",
-        "pc_factor_mat_solver_type": "superlu_dist",
-    },
-)
-try:
-    w_h = problem.solve()
-except PETSc.Error as e:  # type: ignore
-    if e.ierr == 92:
-        print("The required PETSc solver/preconditioner is not available. Exiting.")
-        print(e)
-        exit(0)
-    else:
-        raise e
+# Assemble the matrix operator as a 'nested' matrix
+A = fem.petsc.assemble_matrix_nest(a, bcs=bcs)
+A.assemble()
 
-sigma_h, u_h = w_h.split()
+# Define preconditioner
+a_p00 = inner(sigma, tau) * dx + div(sigma) * div(tau) * dx
+a_p11 = u * v * dx
+a_p = fem.form([[a_p00, None], [None, a_p11]])
+P = fem.petsc.assemble_matrix_nest(a_p, bcs=bcs)
+P.assemble()
+
+# Assemble the RHS vector as a 'nested' vector and modify (apply
+# lifting) to account for non-zero Dirichlet boundary conditions
+b = fem.petsc.assemble_vector_nest(L)
+fem.petsc.apply_lifting_nest(b, a, bcs=bcs)
+for b_sub in b.getNestSubVecs():
+    b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+# Set Dirichlet boundary condition values in the RHS vector
+bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs)
+fem.petsc.set_bc_nest(b, bcs0)
+
+# Create PETSc Krylov solver
+ksp = PETSc.KSP().create(msh.comm)
+ksp.setOperators(A, P)
+ksp.setMonitor(lambda _, its, rnorm: print(f"Iteration: {its}, rel. residual: {rnorm}"))
+ksp.setType("minres")
+ksp.setTolerances(rtol=1e-8)
+
+# Set a field-split (block) preconditioner
+ksp.getPC().setType("fieldsplit")
+ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
+nested_IS = P.getNestISs()
+ksp.getPC().setFieldSplitIS(("sigma", nested_IS[0][0]), ("u", nested_IS[0][1]))
+ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
+ksp_sigma.setType("preonly")
+ksp_sigma.getPC().setType("lu")
+if PETSc.Sys().hasExternalPackage("superlu_dist"):
+    ksp_sigma.getPC().setFactorSolverType("superlu_dist")
+ksp_u.setType("preonly")
+ksp_u.getPC().setType("bjacobi")
+
+# Solve
+sigma, u = fem.Function(V, dtype=dtype), fem.Function(W, dtype=dtype)
+x = PETSc.Vec().createNest([la.create_petsc_vector_wrap(sigma.x), la.create_petsc_vector_wrap(u.x)])
+ksp.solve(b, x)
 
 with io.XDMFFile(msh.comm, "out_mixed_poisson/u.xdmf", "w") as file:
     file.write_mesh(msh)
-    file.write_function(u_h)
+    file.write_function(u)
