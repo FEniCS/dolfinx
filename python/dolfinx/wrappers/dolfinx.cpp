@@ -25,6 +25,8 @@ void la(nb::module_& m);
 void mesh(nb::module_& m);
 void nls(nb::module_& m);
 void refinement(nb::module_& m);
+void transfer(nb::module_& m);
+
 } // namespace dolfinx_wrappers
 
 NB_MODULE(cpp, m)
@@ -73,6 +75,10 @@ NB_MODULE(cpp, m)
   // Create refinement submodule
   nb::module_ refinement = m.def_submodule("refinement", "Refinement module");
   dolfinx_wrappers::refinement(refinement);
+
+  // Create transfer submodule
+  nb::module_ transfer = m.def_submodule("transfer", "Transfer module");
+  dolfinx_wrappers::transfer(transfer);
 
 #if defined(HAS_PETSC) && defined(HAS_PETSC4PY)
   // PETSc-specific wrappers

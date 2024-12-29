@@ -46,6 +46,7 @@ nanobind_add_module(
   dolfinx/wrappers/mesh.cpp
   dolfinx/wrappers/petsc.cpp
   dolfinx/wrappers/refinement.cpp
+  dolfinx/wrappers/transfer.cpp
 )
 
 set(CMAKE_CXX_EXTENSIONS OFF)
