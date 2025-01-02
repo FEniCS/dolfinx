@@ -62,6 +62,11 @@ void CHECK_inclusion_map(const dolfinx::mesh::Mesh<T>& from,
     if (local[0] == -1)
       continue;
 
+    std::cout << "(" << from.geometry().x()[3 * local[0]] << ", "
+              << from.geometry().x()[3 * local[0] + 1] << ", "
+              << from.geometry().x()[3 * local[0] + 2] << ") == ("
+              << global_x_to[3 * map[i]] << ", " << global_x_to[3 * map[i] + 1]
+              << ", " << global_x_to[3 * map[i] + 2] << ")" << std::endl;
     CHECK(std::abs(from.geometry().x()[3 * local[0]] - global_x_to[3 * map[i]])
           < std::numeric_limits<T>::epsilon());
     CHECK(std::abs(from.geometry().x()[3 * local[0] + 1]
@@ -74,7 +79,7 @@ void CHECK_inclusion_map(const dolfinx::mesh::Mesh<T>& from,
 }
 
 /// Performs one uniform refinement and checks the inclusion map between coarse
-/// and fine mesh against the (provided) list.
+/// and fine mesh.
 template <std::floating_point T>
 void TEST_inclusion(dolfinx::mesh::Mesh<T>&& mesh_coarse)
 {
@@ -101,15 +106,14 @@ TEMPLATE_TEST_CASE("Inclusion (triangle)", "[multigrid][inclusion]", double,
                    float)
 {
   TEST_inclusion(dolfinx::mesh::create_rectangle<TestType>(
-      MPI_COMM_WORLD, {{{0, 0}, {1, 1}}}, {1, 1}, mesh::CellType::triangle));
+      MPI_COMM_WORLD, {{{0, 0}, {1, 1}}}, {2, 2}, mesh::CellType::triangle));
 }
 
-// TODO: fix!
-// TEMPLATE_TEST_CASE("Inclusion (tetrahedron)", "[multigrid][inclusion]",
-// double,
-//                    float)
-// {
-//   TEST_inclusion(dolfinx::mesh::create_box<TestType>(
-//       MPI_COMM_WORLD, {{{0, 0, 0}, {1, 1, 1}}}, {1, 1, 1},
-//       mesh::CellType::tetrahedron));
-// }
+TEMPLATE_TEST_CASE("Inclusion (tetrahedron)", "[multigrid][inclusion]", double,
+                   float)
+{
+  // TODO: n = {2, 2, 2} fails
+  TEST_inclusion(dolfinx::mesh::create_box<TestType>(
+      MPI_COMM_WORLD, {{{0, 0, 0}, {1, 1, 1}}}, {1, 1, 1},
+      mesh::CellType::tetrahedron));
+}

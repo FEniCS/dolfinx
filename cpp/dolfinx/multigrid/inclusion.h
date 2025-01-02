@@ -59,7 +59,7 @@ inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
   {
     std::ranges::subrange vertex_from(std::next(x_from.begin(), 3 * i),
                                       std::next(x_from.begin(), 3 * (i + 1)));
-    for (std::int64_t j = 0; j < im_to.size_local() + im_to.num_ghosts(); j++)
+    for (std::int64_t j = 0; j < im_to.size_local(); j++) // + im_to.num_ghosts() TODO
     {
       std::ranges::subrange vertex_to(std::next(x_to.begin(), 3 * j),
                                       std::next(x_to.begin(), 3 * (j + 1)));
