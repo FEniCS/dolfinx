@@ -9,7 +9,7 @@ from mpi4py import MPI
 import pytest
 
 from dolfinx.mesh import GhostMode, create_interval, refine
-from dolfinx.transfer import inclusion_mapping
+from dolfinx.multigrid import inclusion_mapping
 
 
 @pytest.mark.parametrize(

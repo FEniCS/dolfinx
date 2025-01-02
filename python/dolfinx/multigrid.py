@@ -7,7 +7,7 @@
 import numpy as np
 from numpy.typing import NDArray
 
-from dolfinx.cpp.transfer import inclusion_mapping as _inclusion_mapping
+from dolfinx.cpp.multigrid import inclusion_mapping as _inclusion_mapping
 from dolfinx.mesh import Mesh
 
 __all__ = ["inclusion_mapping"]

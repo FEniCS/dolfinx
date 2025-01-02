@@ -20,7 +20,7 @@ namespace nb = nanobind;
 namespace dolfinx_wrappers
 {
 
-void transfer(nb::module_& m)
+void multigrid(nb::module_& m)
 {
   m.def(
       "inclusion_mapping",
