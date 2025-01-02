@@ -55,7 +55,7 @@ void CHECK_inclusion_map(const dolfinx::mesh::Mesh<T>& from,
                  displacements.data(), dolfinx::MPI::mpi_t<T>, from.comm());
 
   REQUIRE(static_cast<std::int64_t>(map.size()) == im_from.size_global());
-  for (std::int64_t i = 0; i < map.size(); i++)
+  for (std::int64_t i = 0; i < static_cast<std::int64_t>(map.size()); i++)
   {
     std::array<std::int32_t, 1> local{-1};
     im_from.global_to_local(std::array<std::int64_t, 1>{i}, local);
