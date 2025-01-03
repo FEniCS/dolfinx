@@ -14,7 +14,7 @@ import scipy
 import dolfinx.la
 import ufl
 from basix.ufl import element
-from dolfinx.fem import Expression, Function, discrete_gradient, functionspace
+from dolfinx.fem import Expression, Function, discrete_curl, discrete_gradient, functionspace
 from dolfinx.mesh import CellType, GhostMode, create_unit_cube, create_unit_square
 
 
@@ -44,6 +44,53 @@ def test_gradient(mesh):
     assert m == num_edges
     assert n == mesh.topology.index_map(0).size_global
     assert np.isclose(G.squared_norm(), 2.0 * num_edges)
+
+
+@pytest.mark.parametrize("p", range(2, 3))
+@pytest.mark.parametrize(
+    "cell_type",
+    [
+        # CellType.triangle,
+        CellType.tetrahedron,
+    ],
+)
+def test_discrete_curl(cell_type, p):
+    """Test discrete curl computation with verification using Expression."""
+    # mesh, family0, family1 = cell_type
+    msh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 2, cell_type=cell_type, dtype=np.float64)
+    dtype = msh.geometry.x.dtype
+
+    V0 = functionspace(msh, ("Nedelec 1st kind H(curl)", p))
+    V1 = functionspace(msh, ("Raviart-Thomas", p - 1))
+    G = discrete_curl(V0, V1)
+    # # N.B. do not scatter_rev G - doing so would transfer rows to other
+    # # processes where they will be summed to give an incorrect matrix
+
+    # # Vector for 'u' needs additional ghosts defined in columns of G
+    # uvec = dolfinx.la.vector(G.index_map(1), dtype=dtype)
+    # u0 = Function(V0, uvec, dtype=dtype)
+    # u0.interpolate(lambda x: 2 * x[0] ** p + 3 * x[1] ** p)
+
+    # curl_u = Expression(ufl.curl(u0), V1.element.interpolation_points, dtype=dtype)
+    # u1_expr = Function(V1, dtype=dtype)
+    # u1_expr.interpolate(curl_u)
+
+    # # Compute global matrix vector product
+    # u1 = Function(V1, dtype=dtype)
+
+    # # Get the local part of G (no ghost rows)
+    # nrlocal = G.index_map(0).size_local
+    # nnzlocal = G.indptr[nrlocal]
+    # Glocal = scipy.sparse.csr_matrix(
+    #     (G.data[:nnzlocal], G.indices[:nnzlocal], G.indptr[: nrlocal + 1])
+    # )
+
+    # # MatVec
+    # u1.x.array[:nrlocal] = Glocal @ u0.x.array
+    # u1.x.scatter_forward()
+
+    # atol = 1000 * np.finfo(dtype).resolution
+    # assert np.allclose(u1_expr.x.array, u1.x.array, atol=atol)
 
 
 @pytest.mark.parametrize("p", range(1, 4))

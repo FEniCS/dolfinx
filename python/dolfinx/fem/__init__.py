@@ -12,6 +12,7 @@ from dolfinx.cpp.fem import IntegralType, transpose_dofmap
 from dolfinx.cpp.fem import compute_integration_domains as _compute_integration_domains
 from dolfinx.cpp.fem import create_interpolation_data as _create_interpolation_data
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
+from dolfinx.cpp.fem import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem import interpolation_matrix as _interpolation_matrix
 from dolfinx.cpp.mesh import Topology
@@ -100,19 +101,36 @@ def create_interpolation_data(
     )
 
 
+def discrete_curl(V0: FunctionSpace, V1: FunctionSpace) -> _MatrixCSR:
+    """Assemble a discrete curl operator.
+
+    The discrete curl operator interpolates the curl of H(curl) finite
+    element function into a H(div) space.
+
+    Args:
+        V0: H1(curl) space to interpolate the curl from.
+        V1: H(div) space to interpolate into.
+
+    Returns:
+        Discrete curl operator.
+    """
+    return _discrete_curl(V0._cpp_object, V1._cpp_object)
+
+
 def discrete_gradient(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCSR:
     """Assemble a discrete gradient operator.
 
-    The discrete gradient operator interpolates the gradient of
-    a H1 finite element function into a H(curl) space. It is assumed that
-    the H1 space uses an identity map and the H(curl) space uses a covariant Piola map.
+    The discrete gradient operator interpolates the gradient of a H1
+    finite element function into a H(curl) space. It is assumed that the
+    H1 space uses an identity map and the H(curl) space uses a covariant
+    Piola map.
 
     Args:
-        space0: H1 space to interpolate the gradient from
-        space1: H(curl) space to interpolate into
+        space0: H1 space to interpolate the gradient from.
+        space1: H(curl) space to interpolate into.
 
     Returns:
-        Discrete gradient operator
+        Discrete gradient operator.
     """
     return _discrete_gradient(space0._cpp_object, space1._cpp_object)
 
@@ -135,13 +153,14 @@ def compute_integration_domains(
 ):
     """Given an integral type and a set of entities compute integration entities.
 
-    This function returns a list `[(id, entities)]`. For cell integrals
-    `entities` are the cell indices. For exterior facet integrals,
-    `entities` is a list of `(cell_index, local_facet_index)` pairs. For
-    interior facet integrals, `entities` is a list of `(cell_index0,
-    local_facet_index0, cell_index1, local_facet_index1)`. `id` refers
-    to the subdomain id used in the definition of the integration
-    measures of the variational form.
+    This function returns a list ``[(id, entities)]``. For cell
+    integrals ``entities`` are the cell indices. For exterior facet
+    integrals, ``entities`` is a list of ``(cell_index,
+    local_facet_index)`` pairs. For interior facet integrals,
+    ``entities`` is a list of ``(cell_index0, local_facet_index0,
+    cell_index1, local_facet_index1)``. ``id`` refers to the subdomain
+    id used in the definition of the integration measures of the
+    variational form.
 
     Note:
         Owned mesh entities only are returned. Ghost entities are not
