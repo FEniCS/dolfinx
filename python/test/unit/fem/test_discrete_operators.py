@@ -14,9 +14,9 @@ import scipy
 import dolfinx.la
 import ufl
 from basix.ufl import element
+from dolfinx import geometry
 from dolfinx.fem import Expression, Function, discrete_curl, discrete_gradient, functionspace
 from dolfinx.mesh import CellType, GhostMode, create_unit_cube, create_unit_square
-from dolfinx import geometry
 
 
 @pytest.mark.parametrize(
@@ -59,7 +59,7 @@ def test_gradient(mesh):
 def test_discrete_curl(cell_type, p):
     """Test discrete curl computation with verification using Expression."""
     # mesh, family0, family1 = cell_type
-    msh = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1, cell_type=cell_type, dtype=np.float64)
+    msh = create_unit_cube(MPI.COMM_WORLD, 3, 2, 6, cell_type=cell_type, dtype=np.float64)
     dtype = msh.geometry.x.dtype
 
     V0 = functionspace(msh, ("Nedelec 1st kind H(curl)", p))
@@ -72,9 +72,9 @@ def test_discrete_curl(cell_type, p):
     # Vector for 'u' needs additional ghosts defined in columns of G
     uvec = dolfinx.la.vector(G.index_map(1), dtype=dtype)
     u0 = Function(V0, uvec, dtype=dtype)
-    u0.interpolate(
-        lambda x: np.vstack((np.zeros_like(x[0]), np.zeros_like(x[0]), x[1]))
-    )  # Note: curl(u) = (1, 0, 0)
+
+    # Note: curl(u) = (1, 0, 0)
+    u0.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), np.zeros_like(x[0]), x[1])))
     # u0.interpolate(
     #     lambda x: np.vstack((np.zeros_like(x[0]), np.zeros_like(x[0]), np.ones_like(x[0])))
     # )
@@ -101,16 +101,16 @@ def test_discrete_curl(cell_type, p):
     u1 = Function(V1, dtype=dtype)
     u1.x.array[:nrlocal] = Glocal @ u0.x.array
     u1.x.scatter_forward()
-    print("u1 values")
-    print(u1.x.array)
+    # print("u1 values")
+    # print(u1.x.array)
 
     # Interpolate curl using Expression
     curl_u = Expression(ufl.curl(u0), V1.element.interpolation_points, dtype=dtype)
     u1_expr = Function(V1, dtype=dtype)
     u1_expr.interpolate(curl_u)
 
-    print("u1 expr values")
-    print(u1_expr.x.array)
+    # print("u1 expr values")
+    # print(u1_expr.x.array)
 
     # value = u1.eval(p, cells[0])
     # print("Curl1:", value)
