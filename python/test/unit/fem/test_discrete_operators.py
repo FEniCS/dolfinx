@@ -74,17 +74,19 @@ def test_discrete_curl(cell_type, p):
     u0 = Function(V0, uvec, dtype=dtype)
 
     # Note: curl(u) = (1, 0, 0)
-    u0.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), np.zeros_like(x[0]), x[1])))
+    u0.interpolate(
+        lambda x: np.vstack((np.zeros_like(x[0]), np.zeros_like(x[0]), x[0] ** 3 + x[1] ** 4))
+    )
     # u0.interpolate(
     #     lambda x: np.vstack((np.zeros_like(x[0]), np.zeros_like(x[0]), np.ones_like(x[0])))
     # )
 
-    p = np.array([[0.1, 0.1, 0.1]], dtype=dtype)
-    bb_tree = geometry.bb_tree(msh, 3)
-    cell_candidates = geometry.compute_collisions_points(bb_tree, p)
-    cells = geometry.compute_colliding_cells(msh, cell_candidates, p).array
-    value = u0.eval(p, cells[0])
-    print("u0 val:", value)
+    # p = np.array([[0.1, 0.1, 0.1]], dtype=dtype)
+    # bb_tree = geometry.bb_tree(msh, 3)
+    # cell_candidates = geometry.compute_collisions_points(bb_tree, p)
+    # cells = geometry.compute_colliding_cells(msh, cell_candidates, p).array
+    # value = u0.eval(p, cells[0])
+    # print("u0 val:", value)
 
     dofs0 = V0.dofmap.cell_dofs(0)
     print("u0 dofs\n", u0.x.array[dofs0])
