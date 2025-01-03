@@ -26,11 +26,8 @@ namespace dolfinx::fem
 ///
 /// Curl of Nedelec(k) function -> RT(k-1) function.
 ///
-/// @param[in] topology Mesh topology
-/// @param[in] V0 Lagrange element and dofmap for corresponding space to
-/// interpolate the gradient from
-/// @param[in] V1 Nédélec (first kind) element and and dofmap for
-/// corresponding space to interpolate into
+/// @param[in] V0
+/// @param[in] V1
 /// @param[in] mat_set A functor that sets values in a matrix
 template <dolfinx::scalar T,
           std::floating_point U = dolfinx::scalar_value_type_t<T>>
