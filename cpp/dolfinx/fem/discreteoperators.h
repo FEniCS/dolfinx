@@ -165,7 +165,7 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
   mdspan3_t Curl1(Curl1_b.data(), _dPhi0.extent(0), _dPhi0.extent(1),
                   _dPhi0.extent(3));
 
-  std::vector<T> Ab(space_dim0 * Xshape[0] * 3);
+  std::vector<T> Ab(space_dim0 * space_dim1);
   std::vector<T> local1(space_dim1);
 
   using u_t = md::mdspan<U, md::dextents<std::size_t, 2>>;
@@ -422,36 +422,36 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
 
     // Apply interpolation matrix to basis values of V0 at the
     // interpolation points of V1
-    md::mdspan<T, md::dextents<std::size_t, 2>> A(Ab.data(), space_dim0,
-                                                  Xshape[0] * 3);
-    for (std::size_t comp = 0; comp < 3; ++comp)
-    {
-      for (std::size_t i = 0; i < space_dim1; ++i)
-      {
-        for (std::size_t j = 0; j < Xshape[0]; ++j)
-        {
-          A(i, j + comp * Xshape[0]) = 0;
-          for (std::size_t k = 0; k < Xshape[0]; ++k)
-          {
-            // std::cout << "Test: " << Pi_1(i, k + comp * Xshape[0]) << ", "
-            //           << Curl1(k, i, comp) << std::endl;
-            A(i, j + comp * Xshape[0])
-                += Pi_1(i, k + comp * Xshape[0]) * Curl1(k, i, comp);
-          }
-        }
-      }
-    }
-
-    // for (std::size_t i = 0; i < Curl1.extent(1); ++i)
+    // md::mdspan<T, md::dextents<std::size_t, 2>> A(Ab.data(), space_dim1,
+    //                                               space_dim0);
+    // for (std::size_t comp = 0; comp < 3; ++comp)
     // {
-    //   auto values = md::submdspan(Curl1, md::full_extent, i,
-    //   md::full_extent); impl::interpolation_apply(Pi_1, values,
-    //   std::span(local1), 1); for (std::size_t j = 0; j < local1.size(); ++j)
-    //     Ab[space_dim0 * j + i] = local1[j];
+    //   for (std::size_t i = 0; i < space_dim1; ++i)
+    //   {
+    //     for (std::size_t j = 0; j < Xshape[0]; ++j)
+    //     {
+    //       A(i, j + comp * Xshape[0]) = 0;
+    //       for (std::size_t k = 0; k < Xshape[0]; ++k)
+    //       {
+    //         // std::cout << "Test: " << Pi_1(i, k + comp * Xshape[0]) << ", "
+    //         //           << Curl1(k, i, comp) << std::endl;
+    //         A(i, j + comp * Xshape[0])
+    //             += Pi_1(i, k + comp * Xshape[0]) * Curl1(k, i, comp);
+    //       }
+    //     }
+    //   }
     // }
 
+    for (std::size_t i = 0; i < Curl1.extent(1); ++i)
+    {
+      auto values = md::submdspan(Curl1, md::full_extent, i, md::full_extent);
+      impl::interpolation_apply(Pi_1, values, std::span(local1), 1);
+      for (std::size_t j = 0; j < local1.size(); ++j)
+        Ab[space_dim0 * j + i] = local1[j];
+    }
+
     apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
-    // mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
+    mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
   }
 }
 

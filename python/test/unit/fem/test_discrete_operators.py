@@ -59,7 +59,7 @@ def test_gradient(mesh):
 def test_discrete_curl(cell_type, p):
     """Test discrete curl computation with verification using Expression."""
     # mesh, family0, family1 = cell_type
-    msh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type=cell_type, dtype=np.float64)
+    msh = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1, cell_type=cell_type, dtype=np.float64)
     dtype = msh.geometry.x.dtype
 
     V0 = functionspace(msh, ("Nedelec 1st kind H(curl)", p))
@@ -89,35 +89,34 @@ def test_discrete_curl(cell_type, p):
     dofs0 = V0.dofmap.cell_dofs(0)
     print("u0 dofs\n", u0.x.array[dofs0])
 
-    # # Get the local part of G (no ghost rows)
-    # nrlocal = G.index_map(0).size_local
-    # nnzlocal = G.indptr[nrlocal]
-    # Glocal = scipy.sparse.csr_matrix(
-    #     (G.data[:nnzlocal], G.indices[:nnzlocal], G.indptr[: nrlocal + 1])
-    # )
-    # # print(Glocal)
+    # Get the local part of G (no ghost rows)
+    nrlocal = G.index_map(0).size_local
+    nnzlocal = G.indptr[nrlocal]
+    Glocal = scipy.sparse.csr_matrix(
+        (G.data[:nnzlocal], G.indices[:nnzlocal], G.indptr[: nrlocal + 1])
+    )
+    # print(Glocal)
 
-    # # MatVec
-    # u1 = Function(V1, dtype=dtype)
-    # u1.x.array[:nrlocal] = Glocal @ u0.x.array
-    # u1.x.scatter_forward()
+    # MatVec
+    u1 = Function(V1, dtype=dtype)
+    u1.x.array[:nrlocal] = Glocal @ u0.x.array
+    u1.x.scatter_forward()
+    print("u1 values")
+    print(u1.x.array)
 
-    # print("u1 values")
-    # print(u1.x.array)
+    # Interpolate curl using Expression
+    curl_u = Expression(ufl.curl(u0), V1.element.interpolation_points, dtype=dtype)
+    u1_expr = Function(V1, dtype=dtype)
+    u1_expr.interpolate(curl_u)
 
-    # # Interpolate curl using Expression
-    # curl_u = Expression(ufl.curl(u0), V1.element.interpolation_points, dtype=dtype)
-    # u1_expr = Function(V1, dtype=dtype)
-    # u1_expr.interpolate(curl_u)
-
-    # print("u1 expr values")
-    # print(u1_expr.x.array)
+    print("u1 expr values")
+    print(u1_expr.x.array)
 
     # value = u1.eval(p, cells[0])
     # print("Curl1:", value)
 
-    # # atol = 1000 * np.finfo(dtype).resolution
-    # # assert np.allclose(u1_expr.x.array, u1.x.array, atol=atol)
+    atol = 1000 * np.finfo(dtype).resolution
+    assert np.allclose(u1_expr.x.array, u1.x.array, atol=atol)
 
 
 @pytest.mark.parametrize("p", range(1, 4))
