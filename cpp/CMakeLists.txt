@@ -297,11 +297,11 @@ endif()
 find_package(pugixml REQUIRED)
 
 # Note: When updating Boost version, also update DOLFINXConfig.cmake.in
-if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
-  set(Boost_NO_SYSTEM_PATHS on)
-endif()
+#if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
+#  set(Boost_NO_SYSTEM_PATHS on)
+#endif()
 
-set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
+#set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_VERBOSE TRUE)
 find_package(Boost 1.70 REQUIRED)
 set_package_properties(
