@@ -66,15 +66,13 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
-  // // Get dofmaps
+  // Get dofmaps
   auto dofmap0 = V0.dofmap();
   assert(dofmap0);
   auto dofmap1 = V1.dofmap();
   assert(dofmap1);
 
-  // // Get block sizes and dof transformation operators
-  // const int bs0 = e0->block_size();
-  // const int bs1 = e1->block_size();
+  // Get dof transformation operators
   auto apply_dof_transformation0
       = e0->template dof_transformation_fn<U>(doftransform::standard, false);
   auto apply_inverse_dof_transform1 = e1->template dof_transformation_fn<T>(
@@ -83,91 +81,18 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
   // // Get sizes of elements
   const std::size_t space_dim0 = e0->space_dimension();
   const std::size_t space_dim1 = e1->space_dimension();
-  // const std::size_t dim0 = space_dim0 / bs0;
-  // const std::size_t value_size_ref0 = e0->reference_value_size();
-  // const std::size_t value_size0 = e0->reference_value_size();
-  // const std::size_t value_size1 = e1->reference_value_size();
+  const std::size_t value_size0 = e0->reference_value_size();
+  const std::size_t value_size1 = e1->reference_value_size();
 
-  // // Get geometry map
-  // const CoordinateElement<U>& cmap = mesh->geometry().cmap();
-  // auto x_dofmap = mesh->geometry().dofmap();
-  // const std::size_t num_dofs_g = cmap.dim();
-  // std::span<const U> x_g = mesh->geometry().x();
-
-  // using cmdspan2_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
-  // using cmdspan3_t = md::mdspan<const U, md::dextents<std::size_t, 3>>;
-
-  // // Evaluate coordinate map basis at reference interpolation points
+  // Evaluate coordinate map basis at reference interpolation points
   const auto [X, Xshape] = e1->interpolation_points();
-  // std::array<std::size_t, 4> phig_shape = cmap.tabulate_shape(1, Xshape[0]);
-  // std::vector<U> phig_b(
-  //     std::reduce(phig_shape.begin(), phig_shape.end(), 1,
-  //     std::multiplies{}));
-  // cmdspan4_t phig(phig_b.data(), phig_shape);
-  // cmap.tabulate(1, X, Xshape, phig_b);
+  // const std::size_t num_points = Xshape[0];
 
-  // Evaluate V0 basis function derivatives at reference interpolation
-  // points for V1
-  auto [Phi0_b, Phi0_shape] = e0->tabulate(X, Xshape, 1);
-  cmdspan4_t Phi0(Phi0_b.data(), Phi0_shape);
-  e0->tabulate(Phi0_b, X, Xshape, 1); // (deriv, pt_idx, phi_idx, comp)
-
-  // basix::indexing::idx(p, q, r) -> index to get derivative
-  // auto dPhi0 = md::submdspan(Phi0_b, 0, md::full_extent, md::full_extent,
-  //                            md::full_extent);
-
-  // // // Clamp values
-  // // std::ranges::transform(
-  // //     basis_derivatives_reference0_b,
-  // basis_derivatives_reference0_b.begin(),
-  // //     [atol = 1e-14](auto x) { return std::abs(x) < atol ? 0.0 : x; });
-
-  // // Create working arrays
-  // std::vector<U> phi0_ref_work_b(Xshape[0] * dim0 * value_size_ref0);
-  // mdspan3_t phi0_ref_work(phi0_ref_work_b.data(), Xshape[0], dim0,
-  //                         value_size_ref0);
-  // std::vector<U> J_b(Xshape[0] * gdim * tdim);
-  // mdspan3_t J(J_b.data(), Xshape[0], gdim, tdim);
-  // std::vector<U> K_b(Xshape[0] * tdim * gdim);
-  // mdspan3_t K(K_b.data(), Xshape[0], tdim, gdim);
-  // std::vector<U> detJ(Xshape[0]);
-  // std::vector<U> det_scratch(2 * tdim * gdim);
-
-  // Get the interpolation operator (matrix) `Pi` that maps a function
-  // evaluated at the interpolation points to the V1 element degrees of
-  // freedom, i.e. dofs = Pi f_x
-  const auto [_Pi_1, pi_shape] = e1->interpolation_operator();
-  cmdspan2_t Pi_1(_Pi_1.data(), pi_shape);
-
-  // bool interpolation_ident = e1->interpolation_ident();
-
-  using u_t = md::mdspan<U, md::dextents<std::size_t, 2>>;
-  using U_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
-  using J_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
-  using K_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
-  auto push_forward_fn0
-      = e0->basix_element().template map_fn<u_t, U_t, J_t, K_t>();
-
-  // // Basis values of Lagrange space unrolled for block size
-  // // (num_quadrature_points, Lagrange dof, value_size)
-  // // std::vector<U> basis_values_b(Xshape[0] * bs0 * dim0 *
-  // e1->value_size());
-  // // mdspan3_t basis_values(basis_values_b.data(), Xshape[0], bs0 * dim0,
-  // //                        e1->value_size());
-  // // std::vector<U> mapped_values_b(Xshape[0] * bs0 * dim0 *
-  // e1->value_size());
-  // // mdspan3_t mapped_values(mapped_values_b.data(), Xshape[0], bs0 * dim0,
-  // //                         e1->value_size());
-
-  // auto pull_back_fn1
-  //     = e1->basix_element().template map_fn<u_t, U_t, K_t, J_t>();
-
-  // Get geometry map
+  // Get/compute geometry map data
   const CoordinateElement<U>& cmap = mesh->geometry().cmap();
   auto x_dofmap = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();
   std::span<const U> x_g = mesh->geometry().x();
-
   std::array<std::size_t, 4> Phi_g_shape = cmap.tabulate_shape(1, Xshape[0]);
   std::vector<U> Phi_g_b(std::reduce(Phi_g_shape.begin(), Phi_g_shape.end(), 1,
                                      std::multiplies{}));
@@ -184,14 +109,17 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
   std::vector<U> detJ(Xshape[0]);
   std::vector<U> det_scratch(2 * tdim * gdim);
 
-  // std::vector<U> phi0_b(Xshape[0] * dim0 * value_size0);
-  // mdspan3_t phi0(phi0_b.data(), Xshape[0], dim0, value_size0);
+  // Evaluate V0 basis function derivatives at reference interpolation
+  // points for V1
+  auto [Phi0_b, Phi0_shape] = e0->tabulate(X, Xshape, 1);
+  cmdspan4_t Phi0(Phi0_b.data(), Phi0_shape);
+  e0->tabulate(Phi0_b, X, Xshape, 1); // (deriv, pt_idx, phi_idx, comp)
 
-  // // Buffers
-  // std::vector<T> Ab(space_dim0 * space_dim1);
-  // std::vector<T> local1(space_dim1);
+  // Clamp values
+  std::ranges::transform(Phi0_b, Phi0_b.begin(), [atol = 1e-14](auto x)
+                         { return std::abs(x) < atol ? 0 : x; });
 
-  // Create working arrays Phi0: (deriv, pt_idx, phi_idx, comp)
+  // Create working arrays Phi0: (deriv, pt_idx, phi_idx/dof, comp)
   //                      _dPhi: (point, phi, deriv, comp)
   std::vector<U> _dPhi0_b(Phi0.extent(1) * Phi0.extent(2) * (Phi0.extent(1) - 1)
                           * Phi0.extent(3));
@@ -199,32 +127,53 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
                    (Phi0.extent(1) - 1),
                    Phi0.extent(3)); // (point, phi, deriv, comp)
 
-  // Create working arrays Phi0: (pt_idx, phi_idx, deriv, comp)
+  std::vector<U> tmp_Phi0_b(Phi0.extent(1) * Phi0.extent(2) * Phi0.extent(3));
+  mdspan3_t tmp_Phi0(tmp_Phi0_b.data(), Phi0.extent(1), Phi0.extent(2),
+                     Phi0.extent(3)); // (point, phi, comp)
+
+  // Create working arrays Phi0: (pt_idx, phi_idx/dof, deriv, comp)
   std::vector<U> dphi0_int_b(_dPhi0.extent(0) * _dPhi0.extent(1)
                              * _dPhi0.extent(2) * _dPhi0.extent(3));
   mdspan4_t dphi0_int(dphi0_int_b.data(), _dPhi0.extents());
+
+  // Create working arrays Phi0: (pt_idx, phi_idx/dof, deriv, comp)
+  std::vector<U> tmp_phi0_int_b(tmp_Phi0.extent(0) * tmp_Phi0.extent(1)
+                                * tmp_Phi0.extent(2));
+  mdspan3_t tmp_phi0_int(tmp_phi0_int_b.data(), tmp_Phi0.extents());
 
   std::vector<U> dphi0_b(_dPhi0.extent(0) * _dPhi0.extent(1) * _dPhi0.extent(2)
                          * _dPhi0.extent(3));
   mdspan4_t dphi0(dphi0_b.data(), _dPhi0.extents());
 
-  // curl (pt_idx, phi_idx, comp)
-  std::vector<U> curl0_b(_dPhi0.extent(1) * _dPhi0.extent(2)
-                         * _dPhi0.extent(3));
-  mdspan3_t curl0(curl0_b.data(), _dPhi0.extent(1), _dPhi0.extent(2),
-                  _dPhi0.extent(3));
+  std::vector<U> tmp_phi0_b(tmp_Phi0.extent(0) * tmp_Phi0.extent(1)
+                            * tmp_Phi0.extent(2));
+  mdspan3_t tmp_phi0(tmp_phi0_b.data(), tmp_Phi0.extents());
 
-  std::vector<U> Curl1_b(_dPhi0.extent(1) * _dPhi0.extent(2)
-                         * _dPhi0.extent(3));
-  mdspan3_t Curl1(Curl1_b.data(), _dPhi0.extent(1), _dPhi0.extent(2),
-                  _dPhi0.extent(3));
+  // Get the interpolation operator (matrix) `Pi` that maps a function
+  // evaluated at the interpolation points to the V1 element degrees of
+  // freedom, i.e. dofs = Pi f_x
+  const auto [Pi1_b, pi_shape] = e1->interpolation_operator();
+  cmdspan2_t Pi_1(Pi1_b.data(), pi_shape);
 
-  // std::vector<U> J_b(Xshape[0] * gdim * tdim);
-  // mdspan3_t J(J_b.data(), Xshape[0], gdim, tdim);
-  // std::vector<U> K_b(Xshape[0] * tdim * gdim);
-  // mdspan3_t K(K_b.data(), Xshape[0], tdim, gdim);
+  // curl data structures (pt_idx, phi_idx/dof, comp)
+  std::vector<U> curl0_b(_dPhi0.extent(0) * _dPhi0.extent(1)
+                         * _dPhi0.extent(3));
+  mdspan3_t curl0(curl0_b.data(), _dPhi0.extent(0), _dPhi0.extent(1),
+                  _dPhi0.extent(3));
+  std::vector<U> Curl1_b(_dPhi0.extent(0) * _dPhi0.extent(1)
+                         * _dPhi0.extent(3));
+  mdspan3_t Curl1(Curl1_b.data(), _dPhi0.extent(0), _dPhi0.extent(1),
+                  _dPhi0.extent(3));
 
   std::vector<T> Ab(space_dim0 * Xshape[0] * 3);
+  std::vector<T> local1(space_dim1);
+
+  using u_t = md::mdspan<U, md::dextents<std::size_t, 2>>;
+  using U_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
+  using J_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
+  using K_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
+  auto push_forward_fn0
+      = e0->basix_element().template map_fn<u_t, U_t, J_t, K_t>();
 
   // Iterate over mesh and interpolate on each cell
   auto cell_map = mesh->topology()->index_map(tdim);
@@ -242,10 +191,10 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
     std::ranges::fill(J_b, 0);
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
-      auto dPhi
+      auto dPhi_g
           = md::submdspan(Phi_g, std::pair(1, tdim + 1), p, md::full_extent, 0);
       auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-      cmap.compute_jacobian(dPhi, coord_dofs, _J);
+      cmap.compute_jacobian(dPhi_g, coord_dofs, _J);
       auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
       cmap.compute_jacobian_inverse(_J, _K);
       detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
@@ -260,17 +209,34 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
       for (std::size_t phi = 0; phi < Phi0.extent(2); ++phi)    // phi_i
         for (std::size_t d = 0; d < Phi0.extent(3); ++d)        // Comp. of phi
           for (std::size_t dx = 0; dx < _dPhi0.extent(2); ++dx) // dx
+          {
             _dPhi0(p, phi, dx, d) = Phi0(dx + 1, p, phi, d);
-    for (std::size_t p = 0; p < _dPhi0.extent(0); ++p)
+            // std::cout << "Test: " << _dPhi0(p, phi, dx, d) << std::endl;
+          }
+
+    for (std::size_t p = 0; p < Phi0.extent(1); ++p)         // point
+      for (std::size_t phi = 0; phi < Phi0.extent(2); ++phi) // phi_i
+        for (std::size_t d = 0; d < Phi0.extent(3); ++d)     // Comp. of phi
+          tmp_Phi0(p, phi, d) = Phi0(0, p, phi, d);
+
+    for (std::size_t p = 0; p < _dPhi0.extent(0); ++p) // point
     {
       // Size: num_phi * num_derivs * num_components
       std::size_t size = _dPhi0.extent(1) * _dPhi0.extent(2) * _dPhi0.extent(3);
       std::size_t offset = p * size; // Offset for point p
 
-      // Shape: (num_phi , (num_comp * num_derivs))
+      // Shape: (num_phi , (value_size * num_derivs))
       apply_dof_transformation0(std::span(_dPhi0.data_handle() + offset, size),
                                 cell_info, c,
                                 _dPhi0.extent(2) * _dPhi0.extent(3));
+    }
+
+    for (std::size_t p = 0; p < Xshape[0]; ++p)
+    {
+      apply_dof_transformation0(
+          std::span(tmp_Phi0.data_handle() + p * space_dim0 * 3,
+                    space_dim0 * 3),
+          cell_info, c, 3);
     }
 
     // Copy evaluated basis on reference and push forward to physical
@@ -281,45 +247,78 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
       auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
 
       // _dPhi0: (pt_idx, phi_idx, deriv, comp)
-
-      std::size_t size = _dPhi0.extent(1) * _dPhi0.extent(2) * _dPhi0.extent(3);
-      std::size_t offset = p * size; // Offset for point p
-
-      // Shape: (phi_idx, (deriv, comp))
-      // mdspan2_t _u(dphi0_b.data() + offset, _dPhi0.extent(1) *
-      // _dPhi0.extent(2),
-      //              _dPhi0.extent(3));
-      // cmdspan2_t _U(_dPhi0_b.data() + offset,
-      //               _dPhi0.extent(1) * _dPhi0.extent(2), _dPhi0.extent(3));
-
-      // Push forward (Piola)
+      // XXX Push forward (contravariant Piola), (1/|J|) * J * phi
+      // Push forward (covariant Piola),  J^{-T} * phi
       // Note, push_forward_fn0(_u, _U, _J, detJ[p], _K) can't handle
       // strides (yet)
       for (std::size_t b = 0; b < dphi0_int.extent(1); ++b) // basis index
       {
         for (std::size_t d = 0; d < dphi0_int.extent(2); ++d) // derivative
         {
-          std::pair<std::size_t, std::size_t> block{3 * d, 3 * (d + 1)};
-          auto _u0 = md::submdspan(dphi0_int, p, b, d, block);
-          auto _U = md::submdspan(_dPhi0, p, b, d, block);
+          // std::pair<std::size_t, std::size_t> block{3 * d, 3 * d + 3};
+          // auto _u0 = md::submdspan(dphi0_int, p, b, d, block);
+          // auto _U = md::submdspan(_dPhi0, p, b, d, block);
+          auto _u0 = md::submdspan(dphi0_int, p, b, d, md::full_extent);
+          auto _U = md::submdspan(_dPhi0, p, b, d, md::full_extent);
           for (std::size_t i = 0; i < _J.extent(0); ++i)
           {
             _u0(i) = 0;
             for (std::size_t j = 0; j < _J.extent(1); ++j)
-              _u0(i) += _J(i, j) * _U(j);
-            _u0(i) /= detJ[p];
+              _u0(i) += _K(j, i) * _U(j);
+            // _u0(i) += _J(i, j) * _U(j);
+            // _u0(i) /= detJ[p];
           }
         }
+      }
+
+      // Testing
+      {
+        // (point, phi, comp)
+        std::vector<U> xtmp_Phi0_b(tmp_Phi0_b);
+        mdspan3_t xtmp_Phi0(xtmp_Phi0_b.data(), tmp_Phi0.extents());
+
+        std::vector<U> xtmp_phi0_int_b(tmp_Phi0_b);
+        mdspan3_t xtmp_phi0_int(xtmp_phi0_int_b.data(), tmp_Phi0.extents());
+
+        for (std::size_t b = 0; b < tmp_phi0_int.extent(1); ++b) // basis index
+        {
+          auto _U = md::submdspan(tmp_Phi0, p, b, md::full_extent);
+          auto _u0 = md::submdspan(tmp_phi0_int, p, b, md::full_extent);
+          for (std::size_t i = 0; i < _J.extent(0); ++i)
+          {
+            // _u0(i) = U(i);
+            _u0(i) = 0;
+            for (std::size_t j = 0; j < _J.extent(1); ++j)
+              _u0(i) += _K(j, i) * _U(j);
+          }
+        }
+
+        auto _U = md::submdspan(xtmp_Phi0, p, md::full_extent, md::full_extent);
+        auto _u
+            = md::submdspan(xtmp_phi0_int, p, md::full_extent, md::full_extent);
+        auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
+        auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
+        push_forward_fn0(_u, _U, _J, detJ[p], _K);
+
+        // std::cout << "Testing push-forward" << std::endl;
+        // for (std::size_t i = 0; i < _u.extent(0); ++i)
+        // {
+        //   for (std::size_t j = 0; j < _u.extent(1); ++j)
+        //   {
+        //     std::cout << _U(i, j) << ", " << _u(i, j) << ", "
+        //               << tmp_phi0_int(p, i, j) << std::endl;
+        //   }
+        // }
       }
 
       // Push forward derivatives
       for (std::size_t b = 0; b < dphi0_int.extent(1); ++b) // basis index
       {
-        std::pair<std::size_t, std::size_t> block{
-            3 * dphi0_int.extent(2), 3 * (dphi0_int.extent(2) + 1)};
-        auto du0
-            = md::submdspan(dphi0_int, p, b, block, block); // (deriv, comp)
-        auto du = md::submdspan(dphi0, p, b, block, block);
+        // std::pair<std::size_t, std::size_t> block{
+        //     3 * dphi0_int.extent(2), 3 * (dphi0_int.extent(2) + 1)};
+        auto du0 = md::submdspan(dphi0_int, p, b, md::full_extent,
+                                 md::full_extent); // (deriv, comp)
+        auto du = md::submdspan(dphi0, p, b, md::full_extent, md::full_extent);
         for (std::size_t i = 0; i < _K.extent(0); ++i) // component of phi
         {
           for (std::size_t j = 0; j < _K.extent(1); ++j) // derivative
@@ -338,36 +337,91 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
     // Compute curl on physical element
     // dphi0: (pt_idx, phi_idx, deriv, comp)
     // curl: (pt_idx, phi_idx, comp)
-    for (std::size_t p = 0; p < curl0.extent(0); ++p) // point
+    // for (std::size_t p = 0; p < curl0.extent(0); ++p) // point
+    for (std::size_t p = 0; p < tmp_phi0_int.extent(0); ++p) // point
     {
       for (std::size_t i = 0; i < curl0.extent(1); ++i) // phi_i
       {
+        // Note: should be dphi0
+        // std::cout << "dphi_int: " << dphi0_int(p, i, 1, 2) << std::endl;
         curl0(p, i, 0) = dphi0(p, i, 1, 2) - dphi0(p, i, 2, 1);
         curl0(p, i, 1) = dphi0(p, i, 2, 0) - dphi0(p, i, 0, 2);
         curl0(p, i, 2) = dphi0(p, i, 0, 1) - dphi0(p, i, 1, 0);
       }
+
+      if (c == 0)
+      {
+        // Constant (1^3)
+        // std::vector<T> dofs{
+        //     1.00000000e+00,  0.00000000e+00, 1.00000000e+00,  0.00000000e+00,
+        //     -2.03998319e-17, 0.00000000e+00, 1.00000000e+00,  0.00000000e+00,
+        //     -6.40268308e-18, 0.00000000e+00, -1.83417455e-17, 0.00000000e+00,
+        //     -1.44248595e-17, 7.07106781e-01, -4.52738063e-18, 7.07106781e-01,
+        //     -1.29695726e-17, 7.07106781e-01, -4.52738063e-18,
+        //     -1.89522401e-17};
+
+        // Linear (1^3)
+        // std::vector<T> dofs{
+        //     1.00000000e+00, 0.00000000e+00,  5.00000000e-01,  2.88675135e-01,
+        //     -1.01999160e-17,
+        //     -5.88892423e-18, 5.00000000e-01,  2.88675135e-01,
+        //     -3.20134154e-18, -1.84829540e-18, 1.01817141e-33, 0.00000000e+00,
+        //     -9.61657300e-18, 4.71404521e-01, -3.01825375e-18, 4.71404521e-01,
+        //     -4.32319088e-18, 2.35702260e-01,  -1.50912688e-18,
+        //     -6.31741338e-18};
+
+        // Linear (2^3)
+        std::vector<T> dofs{
+            2.50000000e-01,  1.38777878e-17,  1.25000000e-01,  7.21687836e-02,
+            -2.54997899e-18, -1.47223106e-18, 1.25000000e-01,  7.21687836e-02,
+            -8.00335385e-19, -4.62073850e-19, 2.54542853e-34,  0.00000000e+00,
+            -2.40414325e-18, 1.17851130e-01,  -7.54563438e-19, 1.17851130e-01,
+            -1.08079772e-18, 5.89255651e-02,  -3.77281719e-19, -1.57935334e-18};
+
+        std::vector<T> val(3, 0);
+        // for (std::size_t i = 0; i < curl0.extent(1); ++i) // phi_i
+        for (std::size_t i = 0; i < tmp_phi0_int.extent(1); ++i) // phi_i
+        {
+          val[0] += tmp_phi0_int(p, i, 0) * dofs[i];
+          val[1] += tmp_phi0_int(p, i, 1) * dofs[i];
+          val[2] += tmp_phi0_int(p, i, 2) * dofs[i];
+        }
+        std::cout << std::endl << "Value at point: " << p << std::endl;
+        std::cout << val[0] << ", " << val[1] << ", " << val[2] << std::endl;
+
+        std::vector<T> curl_val(3, 0);
+        for (std::size_t i = 0; i < curl0.extent(1); ++i) // phi_i
+        {
+          curl_val[0] += curl0(p, i, 0) * dofs[i];
+          curl_val[1] += curl0(p, i, 1) * dofs[i];
+          curl_val[2] += curl0(p, i, 2) * dofs[i];
+        }
+        std::cout << std::endl << "Curl at point: " << p << std::endl;
+        std::cout << curl_val[0] << ", " << curl_val[1] << ", " << curl_val[2]
+                  << std::endl;
+      }
     }
 
-    // Pull-back curl to V1 reference
+    // XXX Pull-back curl to V1 reference (inverse covariant map, J^T)
+    // Pull-back curl to V1 reference (inverse contravariant map, det(J) J^{-1})
     // dphi0: (pt_idx, phi_idx, deriv, comp)
     // curl: (pt_idx, phi_idx, comp)
     for (std::size_t p = 0; p < curl0.extent(0); ++p) // point
     {
       for (std::size_t b = 0; b < curl0.extent(1); ++b) // phi_i
       {
-        for (std::size_t i = 0; i < curl0.extent(2); ++i)
+        for (std::size_t i = 0; i < curl0.extent(2); ++i) // component
         {
           Curl1(p, b, i) = 0;
           for (std::size_t j = 0; j < curl0.extent(2); ++j)
-            Curl1(p, b, i) += J(p, j, i) * curl0(p, b, j);
+            Curl1(p, b, i) += detJ[p] * K(p, i, j) * curl0(p, b, j);
+          // Curl1(p, b, i) += J(p, j, i) * curl0(p, b, j);
         }
       }
     }
 
     // Apply interpolation matrix to basis values of V0 at the
     // interpolation points of V1
-    // md::mdspan<T, md::dextents<std::size_t, 2>> A(
-    //     Ab.data(), Xshape[0], V1.element()->value_size(), space_dim0);
     md::mdspan<T, md::dextents<std::size_t, 2>> A(Ab.data(), space_dim0,
                                                   Xshape[0] * 3);
     for (std::size_t comp = 0; comp < 3; ++comp)
@@ -379,15 +433,25 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
           A(i, j + comp * Xshape[0]) = 0;
           for (std::size_t k = 0; k < Xshape[0]; ++k)
           {
+            // std::cout << "Test: " << Pi_1(i, k + comp * Xshape[0]) << ", "
+            //           << Curl1(k, i, comp) << std::endl;
             A(i, j + comp * Xshape[0])
-                = Pi_1(i, k + comp * Xshape[0]) * Curl1(k, i, comp);
+                += Pi_1(i, k + comp * Xshape[0]) * Curl1(k, i, comp);
           }
         }
       }
     }
 
+    // for (std::size_t i = 0; i < Curl1.extent(1); ++i)
+    // {
+    //   auto values = md::submdspan(Curl1, md::full_extent, i,
+    //   md::full_extent); impl::interpolation_apply(Pi_1, values,
+    //   std::span(local1), 1); for (std::size_t j = 0; j < local1.size(); ++j)
+    //     Ab[space_dim0 * j + i] = local1[j];
+    // }
+
     apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
-    mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
+    // mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
   }
 }
 
