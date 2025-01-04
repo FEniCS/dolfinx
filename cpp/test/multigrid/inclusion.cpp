@@ -63,11 +63,6 @@ void CHECK_inclusion_map(const dolfinx::mesh::Mesh<T>& from,
           == im_from.size_local() + im_from.num_ghosts());
   for (std::int64_t i = 0; i < static_cast<std::int64_t>(map.size()); i++)
   {
-    std::cout << "(" << from.geometry().x()[3 * i] << ", "
-              << from.geometry().x()[3 * i + 1] << ", "
-              << from.geometry().x()[3 * i + 2] << ") == ("
-              << global_x_to[3 * map[i]] << ", " << global_x_to[3 * map[i] + 1]
-              << ", " << global_x_to[3 * map[i] + 2] << ")" << std::endl;
     CHECK(std::abs(from.geometry().x()[3 * i] - global_x_to[3 * map[i]])
           < std::numeric_limits<T>::epsilon());
     CHECK(std::abs(from.geometry().x()[3 * i + 1] - global_x_to[3 * map[i] + 1])

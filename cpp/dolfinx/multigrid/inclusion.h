@@ -108,14 +108,12 @@ inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
     return map;
   }
 
-  // map holds at this point for every original local index the corresponding
-  // mapped global index (if it was available on the same process on the to
-  // mesh).
-  MPI_Allreduce(MPI_IN_PLACE, map.data(), map.size(),
-                dolfinx::MPI::mpi_t<std::int64_t>, MPI_MAX, mesh_from.comm());
-
-  if (std::ranges::all_of(map, [](auto e) { return e >= 0; }))
-    // All vertices indentified
+  bool locally_complete
+      = std::ranges::all_of(map, [](auto e) { return e >= 0; });
+  bool globally_complete = false;
+  MPI_Allreduce(&locally_complete, &locally_complete, 1, MPI_CXX_BOOL, MPI_LAND,
+                mesh_to.comm());
+  if (globally_complete)
     return map;
 
   // Build global to vertex list
@@ -143,9 +141,6 @@ inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
       }
     }
   }
-
-  MPI_Allreduce(MPI_IN_PLACE, map.data(), map.size(),
-                dolfinx::MPI::mpi_t<std::int64_t>, MPI_MAX, mesh_from.comm());
 
   assert(std::ranges::all_of(map, [&](auto e)
                              { return e >= 0 && e < im_to.size_global(); }));
