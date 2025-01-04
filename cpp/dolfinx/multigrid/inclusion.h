@@ -23,6 +23,15 @@
 namespace dolfinx::multigrid
 {
 
+/**
+ * @brief Gathers a global vector from combination of local data.
+ * @note Performs an all-to-all communication.
+ *
+ * @param local local data
+ * @param global_size number of global data entries
+ * @param comm MPI communicator
+ * @return std::vector<T> on communicator gathered global data.
+ */
 template <std::floating_point T>
 std::vector<T> gather_global(std::span<const T> local, std::int64_t global_size,
                              MPI_Comm comm)
@@ -49,6 +58,21 @@ std::vector<T> gather_global(std::span<const T> local, std::int64_t global_size,
   return global;
 }
 
+/**
+ * @brief Computes an inclusion map, i.e. local list of global vertex indices of
+ * another mesh, between to meshes.
+ *
+ *
+ * @param mesh_from Coarser mesh (domain of the inclusion map)
+ * @param mesh_to Finer mesh (range of the inclusion map)
+ * @param allow_all_to_all If the vertices of `mesh_from` are not equally
+ * spatially parallelized as `mesh_to` an all-to-all gathering of all vertices
+ * in `mesh_to` is performed. If true, performs all-to-all gathering, otherwise
+ * throws an exception if this becomes necessary.
+ * @return std::vector<std::int64_t> Map from local vertex index in `mesh_from`
+ * to global vertex index in `mesh_to`, i.e. `mesh_from.geometry.x()[i:i+3] ==
+ * mesh_to.geometry.x()[map[i]:map[i]+3]`.
+ */
 template <std::floating_point T>
 std::vector<std::int64_t>
 inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
@@ -124,7 +148,7 @@ inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
         "Parallelization of mesh requires all to all communication to compute "
         "inclusion map, but allow_all_to_all is not set.");
   }
-  
+
   // Build global to vertex list
   std::vector<T> global_x_to
       = gather_global(mesh_to.geometry().x().subspan(0, im_to.size_local() * 3),
