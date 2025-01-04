@@ -23,7 +23,7 @@ namespace dolfinx::multigrid
 {
 
 template <std::floating_point T>
-std::vector<T> gather_global(std::span<T> local, std::int64_t global_size,
+std::vector<T> gather_global(std::span<const T> local, std::int64_t global_size,
                              MPI_Comm comm)
 {
   // 1) exchange local sizes
@@ -39,15 +39,14 @@ std::vector<T> gather_global(std::span<T> local, std::int64_t global_size,
   std::partial_sum(local_sizes.begin(), local_sizes.end(),
                    displacements.begin() + 1);
 
-  // 3) Allgather global x vector
-  std::vector<T> global_x_to(global_size);
+  // 3) Allgather global vector
+  std::vector<T> global(global_size);
   MPI_Allgatherv(local.data(), local.size(), dolfinx::MPI::mpi_t<T>,
-                 global_x_to.data(), local_sizes.data(), displacements.data(),
+                 global.data(), local_sizes.data(), displacements.data(),
                  dolfinx::MPI::mpi_t<T>, comm);
 
-  return global_x_to;
+  return global;
 }
-
 
 template <std::floating_point T>
 std::vector<std::int64_t>
@@ -120,7 +119,7 @@ inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
     return result;
 
   // Build global to vertex list
-  auto global_x_to
+  std::vector<T> global_x_to
       = gather_global(mesh_to.geometry().x().subspan(0, im_to.size_local() * 3),
                       im_to.size_global() * 3, mesh_to.comm());
 

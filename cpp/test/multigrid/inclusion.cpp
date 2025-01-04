@@ -35,13 +35,13 @@ TEMPLATE_TEST_CASE("Gather global", "[multigrid]", double, float)
   MPI_Comm comm = MPI_COMM_WORLD;
   auto comm_size = dolfinx::MPI::size(comm);
   auto rank = dolfinx::MPI::rank(comm);
-  std::vector<T> local(static_cast<T>(rank), static_cast<T>(rank + 1));
+  std::vector<T> local{static_cast<T>(rank), static_cast<T>(rank + 1)};
 
-  std::vector<T> global = multigrid::gather_global(
+  std::vector<T> global = multigrid::gather_global<T>(
       std::span(local.data(), local.size()), comm_size * 2, comm);
 
-  CHECK(global.size() == 2 * comm_size);
-  for (std::size_t i = 0; i < comm_size; i++)
+  CHECK(global.size() == static_cast<std::size_t>(2 * comm_size));
+  for (int i = 0; i < comm_size; i++)
   {
     CHECK(global[2 * i] == Catch::Approx(i));
     CHECK(global[2 * i + 1] == Catch::Approx(i + 1));
@@ -56,24 +56,9 @@ void CHECK_inclusion_map(const dolfinx::mesh::Mesh<T>& from,
   const common::IndexMap& im_from = *from.topology()->index_map(0);
   const common::IndexMap& im_to = *to.topology()->index_map(0);
 
-  // 1) exchange local sizes
-  std::vector<std::int32_t> local_sizes(dolfinx::MPI::size(from.comm()));
-  {
-    std::array<std::int32_t, 1> tmp{im_to.size_local() * 3};
-    MPI_Allgather(&tmp, 1, MPI_INT32_T, local_sizes.data(), 1, MPI_INT32_T,
-                  from.comm());
-  }
-
-  // 2) compute displacement vector
-  std::vector<std::int32_t> displacements(local_sizes.size() + 1, 0);
-  std::partial_sum(local_sizes.begin(), local_sizes.end(),
-                   displacements.begin() + 1);
-
-  // 3) Allgather global x vector
-  std::vector<T> global_x_to(im_to.size_global() * 3);
-  MPI_Allgatherv(to.geometry().x().data(), im_to.size_local() * 3,
-                 dolfinx::MPI::mpi_t<T>, global_x_to.data(), local_sizes.data(),
-                 displacements.data(), dolfinx::MPI::mpi_t<T>, from.comm());
+  std::vector<T> global_x_to = multigrid::gather_global(
+      to.geometry().x().subspan(0, im_to.size_local() * 3),
+      im_to.size_global() * 3, to.comm());
 
   REQUIRE(static_cast<std::int64_t>(map.size()) == im_from.size_global());
   for (std::int64_t i = 0; i < static_cast<std::int64_t>(map.size()); i++)
@@ -131,12 +116,12 @@ void TEST_inclusion(dolfinx::mesh::Mesh<T>&& mesh_coarse)
 //       MPI_COMM_WORLD, {{{0, 0}, {1, 1}}}, {3, 3}, mesh::CellType::triangle));
 // }
 
-// // TEMPLATE_TEST_CASE("Inclusion (tetrahedron)", "[multigrid][inclusion]",
-// // double,
-// //                    float)
-// // {
-// //   // TODO: n = {2, 2, 2} fails
-// //   TEST_inclusion(dolfinx::mesh::create_box<TestType>(
-// //       MPI_COMM_WORLD, {{{0, 0, 0}, {1, 1, 1}}}, {1, 1, 1},
-// //       mesh::CellType::tetrahedron));
-// // }
+// TEMPLATE_TEST_CASE("Inclusion (tetrahedron)", "[multigrid][inclusion]",
+// double,
+//                    float)
+// {
+//   // TODO: n = {2, 2, 2} fails
+//   TEST_inclusion(dolfinx::mesh::create_box<TestType>(
+//       MPI_COMM_WORLD, {{{0, 0, 0}, {1, 1, 1}}}, {1, 1, 1},
+//       mesh::CellType::tetrahedron));
+// }
