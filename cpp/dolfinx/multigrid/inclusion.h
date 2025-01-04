@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <iterator>
 #include <numeric>
+#include <stdexcept>
 #include <vector>
 
 #include <mpi.h>
@@ -51,7 +52,8 @@ std::vector<T> gather_global(std::span<const T> local, std::int64_t global_size,
 template <std::floating_point T>
 std::vector<std::int64_t>
 inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
-                  const dolfinx::mesh::Mesh<T>& mesh_to)
+                  const dolfinx::mesh::Mesh<T>& mesh_to,
+                  bool allow_all_to_all = false)
 {
   {
     // Check comms equal
@@ -116,6 +118,13 @@ inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
   if (globally_complete)
     return map;
 
+  if (!allow_all_to_all)
+  {
+    throw std::runtime_error(
+        "Parallelization of mesh requires all to all communication to compute "
+        "inclusion map, but allow_all_to_all is not set.");
+  }
+  
   // Build global to vertex list
   std::vector<T> global_x_to
       = gather_global(mesh_to.geometry().x().subspan(0, im_to.size_local() * 3),

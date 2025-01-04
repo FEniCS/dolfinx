@@ -84,7 +84,7 @@ void TEST_inclusion(dolfinx::mesh::Mesh<T>&& mesh_coarse)
   mesh_fine.topology()->create_connectivity(1, 0);
   mesh_fine.topology()->create_connectivity(0, 1);
   std::vector<std::int64_t> inclusion_map
-      = multigrid::inclusion_mapping(mesh_coarse, mesh_fine);
+      = multigrid::inclusion_mapping(mesh_coarse, mesh_fine, true);
 
   CHECK_inclusion_map(mesh_coarse, mesh_fine, inclusion_map);
 }
