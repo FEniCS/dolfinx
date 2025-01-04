@@ -121,6 +121,7 @@ inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
               vertex_from, vertex_to, [](T a, T b)
               { return std::abs(a - b) <= std::numeric_limits<T>::epsilon(); }))
       {
+        assert(map[i] == -1);
         map[i] = to_global_to(j);
         break;
       }
@@ -134,12 +135,10 @@ inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
     return map;
   }
 
-  bool locally_complete
-      = std::ranges::all_of(map, [](auto e) { return e >= 0; });
-  bool globally_complete = false;
-  MPI_Allreduce(&locally_complete, &locally_complete, 1, MPI_CXX_BOOL, MPI_LAND,
+  bool all_found = std::ranges::all_of(map, [](auto e) { return e >= 0; });
+  MPI_Allreduce(MPI_IN_PLACE, &all_found, 1, MPI_CXX_BOOL, MPI_LAND,
                 mesh_to.comm());
-  if (globally_complete)
+  if (all_found)
     return map;
 
   if (!allow_all_to_all)
