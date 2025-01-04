@@ -63,7 +63,8 @@ inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
   const common::IndexMap& im_from = *mesh_from.topology()->index_map(0);
   const common::IndexMap& im_to = *mesh_to.topology()->index_map(0);
 
-  std::vector<std::int64_t> map(im_from.size_global(), -1);
+  std::vector<std::int64_t> map(im_from.size_local() + im_from.num_ghosts(),
+                                -1);
 
   std::span<const T> x_from = mesh_from.geometry().x();
   std::span<const T> x_to = mesh_to.geometry().x();
@@ -94,7 +95,7 @@ inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
               vertex_from, vertex_to, [](T a, T b)
               { return std::abs(a - b) <= std::numeric_limits<T>::epsilon(); }))
       {
-        map[to_global_from(i)] = to_global_to(j);
+        map[i] = to_global_to(j);
         break;
       }
     }
@@ -123,7 +124,7 @@ inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
                       im_to.size_global() * 3, mesh_to.comm());
 
   // Recheck indices on global data structure
-  for (std::int32_t i = 0; i < im_from.size_local(); i++)
+  for (std::int32_t i = 0; i < im_from.size_local() + im_from.num_ghosts(); i++)
   {
     std::ranges::subrange vertex_from(std::next(x_from.begin(), 3 * i),
                                       std::next(x_from.begin(), 3 * (i + 1)));
@@ -137,7 +138,7 @@ inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
               vertex_from, vertex_to, [](T a, T b)
               { return std::abs(a - b) <= std::numeric_limits<T>::epsilon(); }))
       {
-        map[to_global_from(i)] = j;
+        map[i] = j;
         break;
       }
     }

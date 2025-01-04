@@ -4,7 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <array>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -60,26 +59,20 @@ void CHECK_inclusion_map(const dolfinx::mesh::Mesh<T>& from,
       to.geometry().x().subspan(0, im_to.size_local() * 3),
       im_to.size_global() * 3, to.comm());
 
-  REQUIRE(static_cast<std::int64_t>(map.size()) == im_from.size_global());
+  REQUIRE(static_cast<std::int64_t>(map.size())
+          == im_from.size_local() + im_from.num_ghosts());
   for (std::int64_t i = 0; i < static_cast<std::int64_t>(map.size()); i++)
   {
-    std::array<std::int32_t, 1> local{-1};
-    im_from.global_to_local(std::array<std::int64_t, 1>{i}, local);
-    if (local[0] == -1)
-      continue;
-
-    std::cout << "(" << from.geometry().x()[3 * local[0]] << ", "
-              << from.geometry().x()[3 * local[0] + 1] << ", "
-              << from.geometry().x()[3 * local[0] + 2] << ") == ("
+    std::cout << "(" << from.geometry().x()[3 * i] << ", "
+              << from.geometry().x()[3 * i + 1] << ", "
+              << from.geometry().x()[3 * i + 2] << ") == ("
               << global_x_to[3 * map[i]] << ", " << global_x_to[3 * map[i] + 1]
               << ", " << global_x_to[3 * map[i] + 2] << ")" << std::endl;
-    CHECK(std::abs(from.geometry().x()[3 * local[0]] - global_x_to[3 * map[i]])
+    CHECK(std::abs(from.geometry().x()[3 * i] - global_x_to[3 * map[i]])
           < std::numeric_limits<T>::epsilon());
-    CHECK(std::abs(from.geometry().x()[3 * local[0] + 1]
-                   - global_x_to[3 * map[i] + 1])
+    CHECK(std::abs(from.geometry().x()[3 * i + 1] - global_x_to[3 * map[i] + 1])
           < std::numeric_limits<T>::epsilon());
-    CHECK(std::abs(from.geometry().x()[3 * local[0] + 2]
-                   - global_x_to[3 * map[i] + 2])
+    CHECK(std::abs(from.geometry().x()[3 * i + 2] - global_x_to[3 * map[i] + 2])
           < std::numeric_limits<T>::epsilon());
   }
 }
@@ -104,9 +97,9 @@ void TEST_inclusion(dolfinx::mesh::Mesh<T>&& mesh_coarse)
 TEMPLATE_TEST_CASE("Inclusion (interval)", "[multigrid][inclusion]", double,
                    float)
 {
-  for (auto n : {1, 2, 3})
+  for (auto n : {10})
   {
-    TEST_inclusion(dolfinx::mesh::create_interval<TestType>(MPI_COMM_WORLD, 2,
+    TEST_inclusion(dolfinx::mesh::create_interval<TestType>(MPI_COMM_WORLD, n,
                                                             {0.0, 1.0}));
   }
 }
@@ -114,7 +107,7 @@ TEMPLATE_TEST_CASE("Inclusion (interval)", "[multigrid][inclusion]", double,
 TEMPLATE_TEST_CASE("Inclusion (triangle)", "[multigrid][inclusion]", double,
                    float)
 {
-  for (auto n : {1, 2, 3})
+  for (auto n : {5})
   {
     TEST_inclusion(dolfinx::mesh::create_rectangle<TestType>(
         MPI_COMM_WORLD, {{{0, 0}, {1, 1}}}, {n, n}, mesh::CellType::triangle));
@@ -124,7 +117,7 @@ TEMPLATE_TEST_CASE("Inclusion (triangle)", "[multigrid][inclusion]", double,
 TEMPLATE_TEST_CASE("Inclusion (tetrahedron)", "[multigrid][inclusion]", double,
                    float)
 {
-  for (auto n : {1, 2, 3})
+  for (auto n : {5})
   {
     TEST_inclusion(dolfinx::mesh::create_box<TestType>(
         MPI_COMM_WORLD, {{{0, 0, 0}, {1, 1, 1}}}, {n, n, n},
