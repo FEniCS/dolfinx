@@ -133,6 +133,10 @@ inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
   // Recheck indices on global data structure
   for (std::int32_t i = 0; i < im_from.size_local() + im_from.num_ghosts(); i++)
   {
+    // TODO:
+    // if (map[i] >= 0)
+    //   continue;
+
     std::ranges::subrange vertex_from(std::next(x_from.begin(), 3 * i),
                                       std::next(x_from.begin(), 3 * (i + 1)));
     for (std::int64_t j = 0; j < im_to.size_global(); j++)
