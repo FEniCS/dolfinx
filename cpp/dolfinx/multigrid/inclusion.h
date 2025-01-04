@@ -110,13 +110,12 @@ inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
   // map holds at this point for every original local index the corresponding
   // mapped global index (if it was available on the same process on the to
   // mesh).
-  std::vector<std::int64_t> result(map.size(), -1);
-  MPI_Allreduce(map.data(), result.data(), map.size(),
+  MPI_Allreduce(MPI_IN_PLACE, map.data(), map.size(),
                 dolfinx::MPI::mpi_t<std::int64_t>, MPI_MAX, mesh_from.comm());
 
-  if (std::ranges::all_of(result, [](auto e) { return e >= 0; }))
+  if (std::ranges::all_of(map, [](auto e) { return e >= 0; }))
     // All vertices indentified
-    return result;
+    return map;
 
   // Build global to vertex list
   std::vector<T> global_x_to
@@ -144,12 +143,12 @@ inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
     }
   }
 
-  MPI_Allreduce(map.data(), result.data(), map.size(),
+  MPI_Allreduce(MPI_IN_PLACE, map.data(), map.size(),
                 dolfinx::MPI::mpi_t<std::int64_t>, MPI_MAX, mesh_from.comm());
 
-  assert(std::ranges::all_of(result, [&](auto e)
+  assert(std::ranges::all_of(map, [&](auto e)
                              { return e >= 0 && e < im_to.size_global(); }));
-  return result;
+  return map;
 }
 
 } // namespace dolfinx::multigrid
