@@ -101,27 +101,33 @@ void TEST_inclusion(dolfinx::mesh::Mesh<T>&& mesh_coarse)
   CHECK_inclusion_map(mesh_coarse, mesh_fine, inclusion_map);
 }
 
-// TEMPLATE_TEST_CASE("Inclusion (interval)", "[multigrid][inclusion]", double,
-//                    float)
-// {
-//   TEST_inclusion(
-//       dolfinx::mesh::create_interval<TestType>(MPI_COMM_WORLD, 2,
-//       {0.0, 1.0}));
-// }
+TEMPLATE_TEST_CASE("Inclusion (interval)", "[multigrid][inclusion]", double,
+                   float)
+{
+  for (auto n : {1, 2, 3})
+  {
+    TEST_inclusion(dolfinx::mesh::create_interval<TestType>(MPI_COMM_WORLD, 2,
+                                                            {0.0, 1.0}));
+  }
+}
 
-// TEMPLATE_TEST_CASE("Inclusion (triangle)", "[multigrid][inclusion]", double,
-//                    float)
-// {
-//   TEST_inclusion(dolfinx::mesh::create_rectangle<TestType>(
-//       MPI_COMM_WORLD, {{{0, 0}, {1, 1}}}, {3, 3}, mesh::CellType::triangle));
-// }
+TEMPLATE_TEST_CASE("Inclusion (triangle)", "[multigrid][inclusion]", double,
+                   float)
+{
+  for (auto n : {1, 2, 3})
+  {
+    TEST_inclusion(dolfinx::mesh::create_rectangle<TestType>(
+        MPI_COMM_WORLD, {{{0, 0}, {1, 1}}}, {n, n}, mesh::CellType::triangle));
+  }
+}
 
-// TEMPLATE_TEST_CASE("Inclusion (tetrahedron)", "[multigrid][inclusion]",
-// double,
-//                    float)
-// {
-//   // TODO: n = {2, 2, 2} fails
-//   TEST_inclusion(dolfinx::mesh::create_box<TestType>(
-//       MPI_COMM_WORLD, {{{0, 0, 0}, {1, 1, 1}}}, {1, 1, 1},
-//       mesh::CellType::tetrahedron));
-// }
+TEMPLATE_TEST_CASE("Inclusion (tetrahedron)", "[multigrid][inclusion]", double,
+                   float)
+{
+  for (auto n : {1, 2, 3})
+  {
+    TEST_inclusion(dolfinx::mesh::create_box<TestType>(
+        MPI_COMM_WORLD, {{{0, 0, 0}, {1, 1, 1}}}, {n, n, n},
+        mesh::CellType::tetrahedron));
+  }
+}
