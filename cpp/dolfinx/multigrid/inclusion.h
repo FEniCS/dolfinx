@@ -23,6 +23,33 @@ namespace dolfinx::multigrid
 {
 
 template <std::floating_point T>
+std::vector<T> gather_global(std::span<T> local, std::int64_t global_size,
+                             MPI_Comm comm)
+{
+  // 1) exchange local sizes
+  std::vector<std::int32_t> local_sizes(dolfinx::MPI::size(comm));
+  {
+    std::array<std::int32_t, 1> tmp{local.size()};
+    MPI_Allgather(&tmp, 1, MPI_INT32_T, local_sizes.data(), 1, MPI_INT32_T,
+                  comm);
+  }
+
+  // 2) compute displacement vector
+  std::vector<std::int32_t> displacements(local_sizes.size() + 1, 0);
+  std::partial_sum(local_sizes.begin(), local_sizes.end(),
+                   displacements.begin() + 1);
+
+  // 3) Allgather global x vector
+  std::vector<T> global_x_to(global_size);
+  MPI_Allgatherv(local.data(), local.size(), dolfinx::MPI::mpi_t<T>,
+                 global_x_to.data(), local_sizes.data(), displacements.data(),
+                 dolfinx::MPI::mpi_t<T>, comm);
+
+  return global_x_to;
+}
+
+
+template <std::floating_point T>
 std::vector<std::int64_t>
 inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
                   const dolfinx::mesh::Mesh<T>& mesh_to)
@@ -93,32 +120,9 @@ inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
     return result;
 
   // Build global to vertex list
-
-  // 1) exchange local sizes
-  std::vector<std::int32_t> local_sizes(dolfinx::MPI::size(mesh_from.comm()));
-  {
-    std::array<std::int32_t, 1> tmp{im_to.size_local() * 3};
-    MPI_Allgather(&tmp, 1, MPI_INT32_T, local_sizes.data(), 1, MPI_INT32_T,
-                  mesh_from.comm());
-  }
-
-  // for (auto ls : local_sizes)
-  //   std::cout << ls << ", ";
-
-  // 2) compute displacement vector
-  std::vector<std::int32_t> displacements(local_sizes.size() + 1, 0);
-  std::partial_sum(local_sizes.begin(), local_sizes.end(),
-                   displacements.begin() + 1);
-
-  // for (auto ls : displacements)
-  //   std::cout << ls << ", ";
-
-  // 3) Allgather global x vector
-  std::vector<T> global_x_to(im_to.size_global() * 3);
-  MPI_Allgatherv(mesh_to.geometry().x().data(), im_to.size_local() * 3,
-                 dolfinx::MPI::mpi_t<T>, global_x_to.data(), local_sizes.data(),
-                 displacements.data(), dolfinx::MPI::mpi_t<T>,
-                 mesh_from.comm());
+  auto global_x_to
+      = gather_global(mesh_to.geometry().x().subspan(0, im_to.size_local() * 3),
+                      im_to.size_global() * 3, mesh_to.comm());
 
   // Recheck indices on global data structure
   for (std::int32_t i = 0; i < im_from.size_local(); i++)
