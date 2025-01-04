@@ -55,11 +55,11 @@ inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
   auto to_global_to = build_global_to_local(im_to);
   auto to_global_from = build_global_to_local(im_from);
 
-  for (std::int32_t i = 0; i < im_from.size_local(); i++)
+  for (std::int32_t i = 0; i < im_from.size_local() + im_from.num_ghosts(); i++)
   {
     std::ranges::subrange vertex_from(std::next(x_from.begin(), 3 * i),
                                       std::next(x_from.begin(), 3 * (i + 1)));
-    for (std::int64_t j = 0; j < im_to.size_local(); j++) // + im_to.num_ghosts() TODO
+    for (std::int64_t j = 0; j < im_to.size_local() + im_to.num_ghosts(); j++)
     {
       std::ranges::subrange vertex_to(std::next(x_to.begin(), 3 * j),
                                       std::next(x_to.begin(), 3 * (j + 1)));
