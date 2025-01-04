@@ -14,7 +14,6 @@ import scipy
 import dolfinx.la
 import ufl
 from basix.ufl import element
-from dolfinx import geometry
 from dolfinx.fem import Expression, Function, discrete_curl, discrete_gradient, functionspace
 from dolfinx.mesh import CellType, GhostMode, create_unit_cube, create_unit_square
 
@@ -48,22 +47,28 @@ def test_gradient(mesh):
 
 
 @pytest.mark.parametrize("p", range(2, 3))
-# @pytest.mark.parametrize("p", range(1, 2))
 @pytest.mark.parametrize(
-    "cell_type",
+    "element_data",
     [
         # CellType.triangle,
-        CellType.tetrahedron,
+        (CellType.tetrahedron, "Nedelec 1st kind H(curl)", "Raviart-Thomas"),
+        # (CellType.hexahedron, "Nedelec 1st kind H(curl)", "Raviart-Thomas"),
     ],
 )
-def test_discrete_curl(cell_type, p):
-    """Test discrete curl computation with verification using Expression."""
+def test_discrete_curl(element_data, p):
+    """Compute discrete curl, with verification using Expression."""
     # mesh, family0, family1 = cell_type
-    msh = create_unit_cube(MPI.COMM_WORLD, 3, 2, 6, cell_type=cell_type, dtype=np.float64)
+    celltype, E0, E1 = element_data
+    msh = create_unit_cube(MPI.COMM_WORLD, 3, 2, 6, cell_type=celltype, dtype=np.float64)
+    delta_x = 1 / (6 - 1)
+
+    rng = np.random.default_rng(0)
+    msh.geometry.x[:] = msh.geometry.x + 0.2 * delta_x * (rng.random(msh.geometry.x.shape) - 0.5)
+
     dtype = msh.geometry.x.dtype
 
-    V0 = functionspace(msh, ("Nedelec 1st kind H(curl)", p))
-    V1 = functionspace(msh, ("Raviart-Thomas", p - 1))
+    V0 = functionspace(msh, (E0, p))
+    V1 = functionspace(msh, (E1, p - 1))
     # V1 = functionspace(msh, ("Raviart-Thomas", p))
     G = discrete_curl(V0, V1)
     # # N.B. do not scatter_rev G - doing so would transfer rows to other
@@ -75,8 +80,17 @@ def test_discrete_curl(cell_type, p):
 
     # Note: curl(u) = (1, 0, 0)
     u0.interpolate(
-        lambda x: np.vstack((np.zeros_like(x[0]), np.zeros_like(x[0]), x[0] ** 3 + x[1] ** 4))
+        lambda x: np.vstack(
+            (
+                x[1] ** 4 + 3 * x[2] ** 2 + (x[1] * x[2]) ** 3,
+                3 * x[0] ** 4 + 3 * x[2] ** 2,
+                x[0] ** 3 + x[1] ** 4,
+            )
+        )
     )
+    # u0.interpolate(
+    #     lambda x: np.vstack((np.zeros_like(x[0]), np.zeros_like(x[0]), x[0] ** 3 + x[1] ** 4))
+    # )
     # u0.interpolate(
     #     lambda x: np.vstack((np.zeros_like(x[0]), np.zeros_like(x[0]), np.ones_like(x[0])))
     # )
@@ -88,8 +102,8 @@ def test_discrete_curl(cell_type, p):
     # value = u0.eval(p, cells[0])
     # print("u0 val:", value)
 
-    dofs0 = V0.dofmap.cell_dofs(0)
-    print("u0 dofs\n", u0.x.array[dofs0])
+    # dofs0 = V0.dofmap.cell_dofs(0)
+    # print("u0 dofs\n", u0.x.array[dofs0])
 
     # Get the local part of G (no ghost rows)
     nrlocal = G.index_map(0).size_local
@@ -97,27 +111,20 @@ def test_discrete_curl(cell_type, p):
     Glocal = scipy.sparse.csr_matrix(
         (G.data[:nnzlocal], G.indices[:nnzlocal], G.indptr[: nrlocal + 1])
     )
-    # print(Glocal)
 
     # MatVec
     u1 = Function(V1, dtype=dtype)
     u1.x.array[:nrlocal] = Glocal @ u0.x.array
     u1.x.scatter_forward()
-    # print("u1 values")
-    # print(u1.x.array)
 
     # Interpolate curl using Expression
     curl_u = Expression(ufl.curl(u0), V1.element.interpolation_points, dtype=dtype)
     u1_expr = Function(V1, dtype=dtype)
     u1_expr.interpolate(curl_u)
 
-    # print("u1 expr values")
-    # print(u1_expr.x.array)
-
-    # value = u1.eval(p, cells[0])
-    # print("Curl1:", value)
-
     atol = 1000 * np.finfo(dtype).resolution
+    # print(atol)
+    # print(np.linalg.norm(u1.x.array))
     assert np.allclose(u1_expr.x.array, u1.x.array, atol=atol)
 
 
