@@ -25,13 +25,14 @@ void multigrid(nb::module_& m)
   m.def(
       "inclusion_mapping",
       [](const dolfinx::mesh::Mesh<double>& mesh_from,
-         const dolfinx::mesh::Mesh<double>& mesh_to)
+         const dolfinx::mesh::Mesh<double>& mesh_to, bool allow_all_to_all)
       {
         std::vector<std::int64_t> map
-            = dolfinx::multigrid::inclusion_mapping<double>(mesh_from, mesh_to);
+            = dolfinx::multigrid::inclusion_mapping<double>(mesh_from, mesh_to,
+                                                            allow_all_to_all);
         return dolfinx_wrappers::as_nbarray(std::move(map));
       },
-      nb::arg("mesh_from"), nb::arg("mesh_to"),
+      nb::arg("mesh_from"), nb::arg("mesh_to"), nb::arg("allow_all_to_all"),
       "Computes inclusion mapping between two meshes");
 }
 

@@ -13,5 +13,7 @@ from dolfinx.mesh import Mesh
 __all__ = ["inclusion_mapping"]
 
 
-def inclusion_mapping(mesh_from: Mesh, mesh_to: Mesh) -> NDArray[np.int64]:
-    return _inclusion_mapping(mesh_from._cpp_object, mesh_to._cpp_object)
+def inclusion_mapping(
+    mesh_from: Mesh, mesh_to: Mesh, allow_all_to_all: bool = False
+) -> NDArray[np.int64]:
+    return _inclusion_mapping(mesh_from._cpp_object, mesh_to._cpp_object, allow_all_to_all)
