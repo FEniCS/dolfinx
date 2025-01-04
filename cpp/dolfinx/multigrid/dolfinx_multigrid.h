@@ -6,6 +6,6 @@ namespace dolfinx::multigrid
 {
 }
 
-// DOLFINx refinement interface
+// DOLFINx multigrid interface
 
 #include <dolfinx/multigrid/inclusion.h>
