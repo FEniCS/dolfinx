@@ -1246,8 +1246,10 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
       std::span<const T> u0_array = u0.x()->array();
 
       // Iterate over mesh and interpolate on each cell
-      const int bs0 = dofmap0->bs();
-      const int bs1 = dofmap1->bs();
+      const int bs0 = element0->block_size();
+      const int bs1 = element1->block_size();
+      // const int bs0 = dofmap0->bs();
+      // const int bs1 = dofmap1->bs();
       for (std::size_t c = 0; c < cells1.size(); ++c)
       {
         std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cells0[c]);

@@ -196,7 +196,8 @@ public:
     std::shared_ptr<const common::IndexMap> index_map = _dofmap->index_map;
     assert(index_map);
     const int index_map_bs = _dofmap->index_map_bs();
-    const int dofmap_bs = _dofmap->bs();
+    // const int dofmap_bs = _dofmap->bs();
+    const int dofmap_bs = _element->block_size();
 
     const int element_block_size = _element->block_size();
     const std::size_t scalar_dofs

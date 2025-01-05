@@ -133,7 +133,7 @@ public:
   }
 
   /// @brief Return the block size for the dofmap
-  int bs() const noexcept;
+  // int bs() const noexcept;
 
   /// @brief Extract subdofmap component
   /// @param[in] component The component indices

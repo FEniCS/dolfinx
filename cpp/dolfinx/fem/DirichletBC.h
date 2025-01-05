@@ -191,10 +191,12 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
   // Get dofmaps
   std::shared_ptr<const DofMap> dofmap0 = V0.dofmap();
   assert(dofmap0);
-  const int bs0 = dofmap0->bs();
+  const int bs0 = V0->element()->block_sizes();
+  // const int bs0 = dofmap0->bs();
   std::shared_ptr<const DofMap> dofmap1 = V1.dofmap();
   assert(dofmap1);
-  const int bs1 = dofmap1->bs();
+  const int bs1 = V1->element()->block_sizes();
+  // const int bs1 = dofmap1->bs();
 
   const int element_bs = dofmap0->element_dof_layout().block_size();
   assert(element_bs == dofmap1->element_dof_layout().block_size());

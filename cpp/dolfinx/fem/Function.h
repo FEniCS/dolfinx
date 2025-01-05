@@ -506,7 +506,8 @@ public:
     // Get dofmap
     std::shared_ptr<const DofMap> dofmap = _function_space->dofmap();
     assert(dofmap);
-    const int bs_dof = dofmap->bs();
+    const int bs_dof = element->block_size();
+    // const int bs_dof = dofmap->bs();
 
     std::span<const std::uint32_t> cell_info;
     if (element->needs_dof_transformations())
