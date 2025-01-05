@@ -309,7 +309,7 @@ ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
 
 # +
 pc_sigma = ksp_sigma.getPC()
-if PETSc.Sys().hasExternalPackage("hypre"):
+if PETSc.Sys().hasExternalPackage("hypre") and not np.issubdtype(dtype, np.complexfloating):
     pc_sigma.setType("hypre")
     pc_sigma.setHYPREType("ams")
 
