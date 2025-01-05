@@ -221,6 +221,7 @@ if np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
 
 # We also define some helper functions that will be used later
 
+
 # +
 def norm_L2(comm, v):
     """Compute the L2(Ω)-norm of v"""
@@ -258,6 +259,8 @@ def p_e_expr(x):
 def f_expr(x):
     """Expression for the applied force"""
     return np.vstack((np.zeros_like(x[0]), np.zeros_like(x[0])))
+
+
 # -
 
 # We define some simulation parameters
