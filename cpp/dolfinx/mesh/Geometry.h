@@ -268,7 +268,7 @@ create_geometry(
   spdlog::info("Got {} dof layouts", dof_layouts.size());
 
   //  Build 'geometry' dofmap on the topology
-  auto [_dof_index_map, bs, dofmaps]
+  auto [_dof_index_map, dofmaps]
       = fem::build_dofmap_data(topology.index_map(topology.dim())->comm(),
                                topology, dof_layouts, reorder_fn);
   auto dof_index_map

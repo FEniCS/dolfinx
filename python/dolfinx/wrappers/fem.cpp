@@ -1172,7 +1172,8 @@ void fem(nb::module_& m)
          const dolfinx::fem::ElementDofLayout& layout)
       {
         assert(topology.entity_types(topology.dim()).size() == 1);
-        auto [map, bs, dofmap] = dolfinx::fem::build_dofmap_data(
+        int bs = layout.block_size();
+        auto [map, dofmap] = dolfinx::fem::build_dofmap_data(
             comm.get(), topology, {layout},
             [](const dolfinx::graph::AdjacencyList<std::int32_t>& g)
             { return dolfinx::graph::reorder_gps(g); });

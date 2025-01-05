@@ -623,7 +623,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::tuple<common::IndexMap, int, std::vector<std::vector<std::int32_t>>>
+std::tuple<common::IndexMap, std::vector<std::vector<std::int32_t>>>
 fem::build_dofmap_data(
     MPI_Comm comm, const mesh::Topology& topology,
     const std::vector<ElementDofLayout>& element_dof_layouts,
@@ -673,7 +673,6 @@ fem::build_dofmap_data(
     }
   }
 
-  return {std::move(index_map), element_dof_layouts.front().block_size(),
-          std::move(dofmaps)};
+  return {std::move(index_map), std::move(dofmaps)};
 }
 //-----------------------------------------------------------------------------

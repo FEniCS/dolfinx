@@ -42,7 +42,8 @@ fem::DofMap fem::create_dofmap(
       topology.create_entities(d);
   }
 
-  auto [_index_map, bs, dofmaps]
+  int bs = layout.block_size();
+  auto [_index_map, dofmaps]
       = build_dofmap_data(comm, topology, {layout}, reorder_fn);
   auto index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
 
@@ -82,7 +83,8 @@ std::vector<fem::DofMap> fem::create_dofmaps(
       topology.create_entities(d);
   }
 
-  auto [_index_map, bs, dofmaps]
+  int bs = layouts.front().block_size();
+  auto [_index_map, dofmaps]
       = build_dofmap_data(comm, topology, layouts, reorder_fn);
   auto index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
 

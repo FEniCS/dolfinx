@@ -227,7 +227,8 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
 
       // Create new element dof layout and reset parent
       ElementDofLayout collapsed_dof_layout = layout.copy();
-      auto [_index_map, bs, dofmaps] = build_dofmap_data(
+      int bs = collapsed_dof_layout.block_size();
+      auto [_index_map, dofmaps] = build_dofmap_data(
           comm, topology, {collapsed_dof_layout}, reorder_fn);
       auto index_map
           = std::make_shared<common::IndexMap>(std::move(_index_map));
