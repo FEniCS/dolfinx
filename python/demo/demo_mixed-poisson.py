@@ -10,18 +10,21 @@
 
 # # Mixed formulation of Poisson equation with a block-preconditioner/solver
 #
-# This demo illustrates how to solve Poisson equation using a mixed
-# (two-field) formulation and block-preconditioned iterative solver. In
-# particular, it illustrates how to
+# This demo illustrates how to solve the Poisson equation using a mixed
+# (two-field) formulation and a block-preconditioned iterative solver.
+# In particular, it illustrates how to
 #
 # * Use mixed and non-continuous finite element spaces.
-# * Set essential boundary conditions for subspaces and $H(\mathrm{div})$ spaces.
+# * Set essential boundary conditions for subspaces and
+#   $H(\mathrm{div})$ spaces.
 # * Construct a blocked linear system.
-# * Construct a block-preconditioned iterative linear solver.
+# * Construct a block-preconditioned iterative linear solver using
+#   PETSc/petsc4y.
+# * Construct a Hypre Auxiliary Maxwell Space (AMS) preconditioner for
+#   $H(\mathrm{div})$ problems in two-dimensions.
 #
 # ```{admonition} Download sources
 # :class: download
-#
 # * {download}`Python script <./demo_mixed-poisson.py>`
 # * {download}`Jupyter notebook <./demo_mixed-poisson.ipynb>`
 # ```
@@ -46,16 +49,14 @@
 #   \sigma \cdot n = g \quad {\rm on} \ \Gamma_{N}.
 # $$
 #
-# The same equations arise in connection with flow in porous media, and
-# are also referred to as Darcy flow. Here $n$ denotes the outward
-# pointing normal vector on the boundary. Looking at the variational
-# form, we see that the boundary condition for the flux ($\sigma \cdot n
-# = g$) is now an essential boundary condition (which should be enforced
-# in the function space), while the other boundary condition ($u = u_0$)
-# is a natural boundary condition (which should be applied to the
-# variational form). Inserting the boundary conditions, this variational
-# problem can be phrased in the general form: find $(\sigma, u) \in
-# \Sigma_g \times V$ such that
+# where $n$ is the outward unit normal vector on the boundary. Looking
+# at the variational form, we see that the boundary condition for the
+# flux ($\sigma \cdot n = g$) is now an essential boundary condition
+# (which should be enforced in the function space), while the other
+# boundary condition ($u = u_0$) is a natural boundary condition (which
+# should be applied to the variational form). Inserting the boundary
+# conditions, this variational problem can be phrased in the general
+# form: find $(\sigma, u) \in \Sigma_g \times V$ such that
 #
 # $$
 #    a((\sigma, u), (\tau, v)) = L((\tau, v))
@@ -65,16 +66,14 @@
 # where the variational forms $a$ and $L$ are defined as
 #
 # $$
-# \begin{align}
-#   a((\sigma, u), (\tau, v)) &=
+#   a((\sigma, u), (\tau, v)) &:=
 #     \int_{\Omega} \sigma \cdot \tau + \nabla \cdot \tau \ u
 #   + \nabla \cdot \sigma \ v \ {\rm d} x, \\
-#   L((\tau, v)) &= - \int_{\Omega} f v \ {\rm d} x
+#   L((\tau, v)) &:= - \int_{\Omega} f v \ {\rm d} x
 #   + \int_{\Gamma_D} u_0 \tau \cdot n  \ {\rm d} s,
-# \end{align}
 # $$
-# and $\Sigma_g = \{ \tau \in H({\rm div})$ such that $\tau \cdot
-# n|_{\Gamma_N} = g \}$ and $V = L^2(\Omega)$.
+# and $\Sigma_g := \{ \tau \in H({\rm div})$ such that $\tau \cdot
+# n|_{\Gamma_N} = g \}$ and $V := L^2(\Omega)$.
 #
 # To discretize the above formulation, two discrete function spaces
 # $\Sigma_h \subset \Sigma$ and $V_h \subset V$ are needed to form a
@@ -83,15 +82,6 @@
 # polynomial order $k$ and let $V_h$ be discontinuous elements of
 # polynomial order $k-1$.
 #
-# We will use the same definitions of functions and boundaries as in the
-# demo for {doc}`the Poisson equation <demo_poisson>`. These are:
-#
-# * $\Omega = [0,1] \times [0,1]$ (a unit square)
-# * $\Gamma_{D} = \{(0, y) \cup (1, y) \in \partial \Omega\}$
-# * $\Gamma_{N} = \{(x, 0) \cup (x, 1) \in \partial \Omega\}$
-# * $u_0 = 0$
-# * $g = \sin(5x)$   (flux)
-# * $f = 10\exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02)$  (source term)
 #
 # ## Implementation
 #
@@ -116,7 +106,7 @@ import numpy as np
 
 import dolfinx.fem.petsc
 from basix.ufl import element
-from dolfinx import default_real_type, default_scalar_type, fem, la, mesh
+from dolfinx import fem, la, mesh
 from dolfinx.fem.petsc import discrete_gradient, interpolation_matrix
 from dolfinx.mesh import CellType, create_unit_square
 from ufl import (
@@ -129,14 +119,16 @@ from ufl import (
     inner,
 )
 
-dtype = default_scalar_type
-xdtype = default_real_type
+# Solution scalar (e.g., float32, complex128) and geometry (float32/64)
+# types
+dtype = dolfinx.default_scalar_type
+xdtype = dolfinx.default_real_type
 # -
 
 # Create mesh a mesh in two dimensions. The iterative solver constructed
 # later requires special construction that is specific to two
-# dimensions. Application in three-dimensions requires a number of
-# changes.
+# dimensions. Application in three-dimensions would require a number of
+# changes to the linear solver.
 
 # +
 msh = create_unit_square(MPI.COMM_WORLD, 48, 48, CellType.quadrilateral, dtype=xdtype)
@@ -147,7 +139,7 @@ msh = create_unit_square(MPI.COMM_WORLD, 48, 48, CellType.quadrilateral, dtype=x
 # div})$ conforming space. The `W` space is a space of discontinuous
 # Lagrange function of degree `k`.
 # ```{note}
-# The $\mathbb{RT}_{k}$ element in DOLFINx/Basix is usually denoted by
+# The $\mathbb{RT}_{k}$ element in DOLFINx/Basix is usually denoted as
 # $\mathbb{RT}_{k-1}$ in the literature.
 # ```
 # In the lowest-order case $k=1$. It can be increased, by the
@@ -172,17 +164,18 @@ W = fem.functionspace(msh, element("Discontinuous Lagrange", msh.basix_cell(), k
 
 # +
 x = SpatialCoordinate(msh)
-f = 10.0 * exp(-((x[0] - 0.5) * (x[0] - 0.5) + (x[1] - 0.5) * (x[1] - 0.5)) / 0.02)
+f = 10 * exp(-((x[0] - 0.5) * (x[0] - 0.5) + (x[1] - 0.5) * (x[1] - 0.5)) / 0.02)
 # -
 
-# We now declare the bocked bilinar and linear forms. The rows of `a`
+# We now declare the blocked bilinear and linear forms. The rows of `a`
 # and `L` correspond to the $\tau$ and $v$ test functions, respectively.
 # The columns of `a` correspond to the $\sigma$ and $u$ trial functions,
 # respectively. Note that `a[1][1]` is empty, which is denoted by
 # `None`. This zero block is typical of a saddle-point problem. In the
 # `L[0]` block, the test function $\tau$ is multiplied by a zero
 # `Constant`, which is evaluated at runtime. We do this to preserve
-# knowledge of the test space in the block.
+# knowledge of the test space in the block. *Note that the defined `L`
+# corresponds to $u_{0} = 0$ on $\Gamma_{D}$.*
 
 # +
 dx = Measure("dx", msh)
@@ -291,7 +284,7 @@ ksp.setGMRESRestart(100)
 # -
 
 # To apply different solvers/preconditioners to the blocks of `P`, we
-# set the preconditioer to be a `fieldsplit` (block) type and set the
+# set the preconditioner to be a `fieldsplit` (block) type and set the
 # 'splits' between the $\sigma$ and $u$ fields.
 
 # +
@@ -303,7 +296,7 @@ ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
 # -
 
 # For the $P_{11}$ block, which is the discontinuous Lagrange mass
-# matrix, we let the preconditoner be the default, which is incomplete
+# matrix, we let the preconditioner be the default, which is incomplete
 # LU factorisation and which can solve the block exactly in one
 # iteration. The $P_{00}$ requires careful handling as $H({\rm div})$
 # problems require special preconditioners to be efficient.
@@ -313,7 +306,7 @@ ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
 # AMS for this $H({\rm div})$-type problem in two-dimensions because
 # $H({\rm div})$ and $H({\rm curl})$ spaces are effectively the same in
 # two-dimensions, just rotated by $\pi/2.
-#
+
 # +
 pc_sigma = ksp_sigma.getPC()
 if PETSc.Sys().hasExternalPackage("hypre"):
@@ -363,7 +356,8 @@ else:
     pc_sigma.setType("lu")
 # -
 
-# Create finite element functions that will hold the solutions
+# We create finite element functions that will hold the $\sigma$ and $u$
+# solutions:
 
 # +
 sigma, u = fem.Function(V, dtype=dtype), fem.Function(W, dtype=dtype)
@@ -381,10 +375,10 @@ ksp.view()
 # -
 
 # We save the solution `u` in VTX format. DOLFINx VTX output support
-# visualisation of discontinuous Lagrange element, hence the finte
+# visualisation of discontinuous Lagrange element, hence the finite
 # element field can be visualised exactly. However, VTX does not support
 # cell-wise data, so for the lowest-order `u` case we interpolate to a
-# degree 1 discotintious space.
+# degree 1 discontinuous space.
 
 # +
 try:
@@ -393,7 +387,7 @@ try:
     if k == 1:
         gdim = msh.geometry.dim
         V0 = fem.functionspace(msh, ("Discontinuous Lagrange", k))
-        u0 = fem.Function(V0, dtype=default_scalar_type)
+        u0 = fem.Function(V0, dtype=dtype)
         u0.interpolate(u)
         with VTXWriter(msh.comm, "output_mixed_poisson.bp", u0, "bp4") as f:
             f.write(0.0)
