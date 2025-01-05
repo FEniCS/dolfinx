@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2020 Anders Logg, Garth N. Wells and Chris Richardson
+// Copyright (C) 2006-2024 Anders Logg, Garth N. Wells and Chris Richardson
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -17,6 +17,7 @@
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
+#include <mpi.h>
 #include <numeric>
 #include <random>
 #include <string>
@@ -753,6 +754,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
       connections.push_back(it->second);
     }
   }
+
   connections.shrink_to_fit();
   return graph::AdjacencyList(std::move(connections), std::move(offsets));
 }
@@ -763,27 +765,30 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>>
-mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim,
-                       int index)
+mesh::compute_entities(const Topology& topology, int dim, CellType entity_type)
 {
   spdlog::info("Computing mesh entities of dimension {}", dim);
-  const int tdim = topology.dim();
 
   // Vertices must always exist
   if (dim == 0)
-    return {std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(),
-            nullptr, nullptr, std::vector<std::int32_t>()};
-
-  if (topology.connectivity({dim, index}, {0, 0}))
   {
     return {std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(),
             nullptr, nullptr, std::vector<std::int32_t>()};
   }
 
-  auto vertex_map = topology.index_map(0);
-  assert(vertex_map);
+  {
+    auto idx = std::ranges::find(topology.entity_types(dim), entity_type);
+    assert(idx != topology.entity_types(dim).end());
+    int index = std::distance(topology.entity_types(dim).begin(), idx);
+    if (topology.connectivity({dim, index}, {0, 0}))
+    {
+      return {
+          std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(),
+          nullptr, nullptr, std::vector<std::int32_t>()};
+    }
+  }
 
-  CellType entity_type = topology.entity_types(dim)[index];
+  const int tdim = topology.dim();
 
   // Lists of all cells by cell type
   std::vector<CellType> cell_types = topology.entity_types(tdim);
@@ -803,8 +808,12 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim,
     cell_lists[i] = {cell_types[i], cells, cell_map};
   }
 
+  auto vertex_map = topology.index_map(0);
+  assert(vertex_map);
+
+  // c->e, e->v
   auto [d0, d1, im, interprocess_entities] = compute_entities_by_key_matching(
-      comm, cell_lists, *vertex_map, entity_type, dim);
+      topology.comm(), cell_lists, *vertex_map, entity_type, dim);
 
   return {d0,
           std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(d1)),
