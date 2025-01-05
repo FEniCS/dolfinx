@@ -809,8 +809,8 @@ FunctionSpace<T> create_functionspace(
   std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
       = e->needs_dof_permutations() ? e->dof_permutation_fn(true, true)
                                     : nullptr;
-  auto dofmap = std::make_shared<const DofMap>(create_dofmap(
-      mesh->comm(), layout, *mesh->topology(), permute_inv, reorder_fn));
+  auto dofmap = std::make_shared<const DofMap>(
+      create_dofmap(layout, *mesh->topology(), permute_inv, reorder_fn));
 
   return FunctionSpace(mesh, e, dofmap);
 }
