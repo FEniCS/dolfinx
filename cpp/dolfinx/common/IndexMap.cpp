@@ -416,7 +416,7 @@ compute_submap_indices(const IndexMap& imap,
   // If required, preserve the order of the ghost indices
   if (order == IndexMapOrder::preserve)
   {
-    // Build (old postion, new position) list for ghosts and sort
+    // Build (old position, new position) list for ghosts and sort
     std::vector<std::pair<std::int32_t, std::int32_t>> pos;
     pos.reserve(submap_ghost.size());
     for (std::int32_t idx : submap_ghost)
