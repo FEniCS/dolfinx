@@ -344,7 +344,7 @@ void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
 
 /// @brief Test if basis is orthonormal.
 ///
-/// Returns true if ||x_i - x_j|| - delta_{ij} < eps fro all i, j, and
+/// Returns true if ||x_i - x_j|| - delta_{ij} < eps for all i, j, and
 /// otherwise false.
 ///
 /// @param[in] basis Set of vectors to check.
@@ -361,7 +361,7 @@ bool is_orthonormal(
   for (std::size_t i = 0; i < basis.size(); i++)
   {
     for (std::size_t j = i; j < basis.size(); j++)
-    {
+  {
       T delta_ij = (i == j) ? T(1) : T(0);
       auto dot_ij = inner_product(basis[i].get(), basis[j].get());
       if (std::norm(delta_ij - dot_ij) > eps)

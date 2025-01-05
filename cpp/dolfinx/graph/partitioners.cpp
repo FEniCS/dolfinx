@@ -634,7 +634,7 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
     // KaHIP internally relies on an unsigned long long int type, which is not
     // easily convertible to a general mpi type due to platform specific
     // differences. So we can not rely on the general mpi_t<> mapping and do it
-    // by hand in this sole occurence.
+    // by hand in this sole occurrence.
     MPI_Allgather(&num_local_nodes, 1, MPI_UNSIGNED_LONG_LONG,
                   node_disp.data() + 1, 1, MPI_UNSIGNED_LONG_LONG, comm);
     std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());

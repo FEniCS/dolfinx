@@ -422,7 +422,7 @@ std::pair<mesh::CellType, int> XDMFFile::read_cell_type(std::string grid_name,
   const std::pair<std::string, int> cell_type_str
       = xdmf_utils::get_cell_type(topology_node);
 
-  // Get toplogical dimensions
+  // Get topological dimensions
   mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
 
   return {cell_type, cell_type_str.second};
