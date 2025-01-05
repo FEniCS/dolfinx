@@ -141,13 +141,12 @@ public:
   DofMap extract_sub_dofmap(std::span<const int> component) const;
 
   /// @brief Create a "collapsed" dofmap (collapses a sub-dofmap)
-  /// @param[in] comm MPI Communicator
   /// @param[in] topology Mesh topology that the dofmap is defined on
   /// @param[in] reorder_fn Graph re-ordering function to apply to the
   /// dof data
   /// @return The collapsed dofmap
   std::pair<DofMap, std::vector<std::int32_t>>
-  collapse(MPI_Comm comm, const mesh::Topology& topology,
+  collapse(const mesh::Topology& topology,
            std::function<std::vector<int>(
                const graph::AdjacencyList<std::int32_t>&)>&& reorder_fn
            = nullptr) const;

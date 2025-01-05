@@ -207,7 +207,7 @@ DofMap DofMap::extract_sub_dofmap(std::span<const int> component) const
 }
 //-----------------------------------------------------------------------------
 std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
-    MPI_Comm comm, const mesh::Topology& topology,
+    const mesh::Topology& topology,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>&&
         reorder_fn) const
 {
@@ -217,8 +217,8 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
     { return graph::reorder_gps(g); };
   }
   // Create new dofmap
-  auto create_subdofmap = [](MPI_Comm comm, auto index_map_bs, auto& layout,
-                             auto& topology, auto& reorder_fn, auto& dmap)
+  auto create_subdofmap = [](auto index_map_bs, auto& layout, auto& topology,
+                             auto& reorder_fn, auto& dmap)
   {
     if (index_map_bs == 1 and layout.block_size() > 1)
     {
@@ -228,8 +228,8 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
       // Create new element dof layout and reset parent
       ElementDofLayout collapsed_dof_layout = layout.copy();
       int bs = collapsed_dof_layout.block_size();
-      auto [_index_map, dofmaps] = build_dofmap_data(
-          comm, topology, {collapsed_dof_layout}, reorder_fn);
+      auto [_index_map, dofmaps]
+          = build_dofmap_data(topology, {collapsed_dof_layout}, reorder_fn);
       auto index_map
           = std::make_shared<common::IndexMap>(std::move(_index_map));
       return DofMap(layout, index_map, bs, std::move(dofmaps.front()), bs);
@@ -241,8 +241,8 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
     }
   };
 
-  DofMap dofmap_new = create_subdofmap(
-      comm, index_map_bs(), _element_dof_layout, topology, reorder_fn, *this);
+  DofMap dofmap_new = create_subdofmap(index_map_bs(), _element_dof_layout,
+                                       topology, reorder_fn, *this);
 
   // Build map from collapsed dof index to original dof index
   auto index_map_new = dofmap_new.index_map;

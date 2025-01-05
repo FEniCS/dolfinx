@@ -277,7 +277,6 @@ ElementDofLayout create_element_dof_layout(const fem::FiniteElement<T>& element,
 }
 
 /// @brief Create a dof map on mesh
-/// @param[in] comm MPI communicator
 /// @param[in] layout Dof layout on an element
 /// @param[in] topology Mesh topology
 /// @param[in] permute_inv Function to un-permute dofs. `nullptr`
@@ -285,13 +284,12 @@ ElementDofLayout create_element_dof_layout(const fem::FiniteElement<T>& element,
 /// @param[in] reorder_fn Graph reordering function called on the dofmap
 /// @return A new dof map
 DofMap create_dofmap(
-    MPI_Comm comm, const ElementDofLayout& layout, mesh::Topology& topology,
+    const ElementDofLayout& layout, mesh::Topology& topology,
     std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn);
 
 /// @brief Create a set of dofmaps on a given topology
-/// @param[in] comm MPI communicator
 /// @param[in] layouts Dof layout on each element type
 /// @param[in] topology Mesh topology
 /// @param[in] permute_inv Function to un-permute dofs. `nullptr`
@@ -301,8 +299,7 @@ DofMap create_dofmap(
 /// @note The number of layouts must match the number of cell types in the
 /// topology
 std::vector<DofMap> create_dofmaps(
-    MPI_Comm comm, const std::vector<ElementDofLayout>& layouts,
-    mesh::Topology& topology,
+    const std::vector<ElementDofLayout>& layouts, mesh::Topology& topology,
     std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn);

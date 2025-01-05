@@ -29,7 +29,7 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 fem::DofMap fem::create_dofmap(
-    MPI_Comm comm, const ElementDofLayout& layout, mesh::Topology& topology,
+    const ElementDofLayout& layout, mesh::Topology& topology,
     std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn)
@@ -44,7 +44,7 @@ fem::DofMap fem::create_dofmap(
 
   int bs = layout.block_size();
   auto [_index_map, dofmaps]
-      = build_dofmap_data(comm, topology, {layout}, reorder_fn);
+      = build_dofmap_data(topology, {layout}, reorder_fn);
   auto index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
 
   // If the element's DOF transformations are permutations, permute the
@@ -67,8 +67,7 @@ fem::DofMap fem::create_dofmap(
 }
 //-----------------------------------------------------------------------------
 std::vector<fem::DofMap> fem::create_dofmaps(
-    MPI_Comm comm, const std::vector<ElementDofLayout>& layouts,
-    mesh::Topology& topology,
+    const std::vector<ElementDofLayout>& layouts, mesh::Topology& topology,
     std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn)
@@ -84,8 +83,7 @@ std::vector<fem::DofMap> fem::create_dofmaps(
   }
 
   int bs = layouts.front().block_size();
-  auto [_index_map, dofmaps]
-      = build_dofmap_data(comm, topology, layouts, reorder_fn);
+  auto [_index_map, dofmaps] = build_dofmap_data(topology, layouts, reorder_fn);
   auto index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
 
   // If the element's DOF transformations are permutations, permute the
