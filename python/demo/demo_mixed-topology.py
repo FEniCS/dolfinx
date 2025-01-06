@@ -109,15 +109,12 @@ ffi = a_form.module[0].ffi
 
 # Create a sparsity pattern
 sp = create_sparsity_pattern(a_form)
+sp.finalize()
+
+A = matrix_csr(sp)
+print(f"Assembling into matrix of size {len(A.data)} non-zeros")
 
 exit()
-
-# # Add to sparsity pattern for form 1
-# build_sparsity_pattern(sp, aforms[1])
-# sp.finalize()
-
-# A = matrix_csr(sp)
-# print(f"Assembling into matrix of size {len(A.data)} non-zeros")
 
 # # Assemble
 # assemble_matrix(A, aforms[0])

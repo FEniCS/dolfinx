@@ -231,9 +231,14 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
         std::cout << "Domains0: " << domains0.size() << std::endl;
         std::cout << "Domains1: " << domains1.size() << std::endl;
 
-        sparsitybuild::cells(
-            pattern, {a.domain(type, id, *mesh0), a.domain(type, id, *mesh1)},
-            {{dofmaps[0], dofmaps[1]}});
+        std::cout << domains0[0].size() << " " << domains0[1].size()
+                  << std::endl;
+
+        for (int i = 0; i < domains0.size(); ++i)
+        {
+          sparsitybuild::cells(pattern, {domains0[i], domains1[i]},
+                               {{dofmaps[0], dofmaps[1]}});
+        }
       }
       break;
     case IntegralType::interior_facet:
