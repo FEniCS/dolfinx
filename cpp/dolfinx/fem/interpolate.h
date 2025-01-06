@@ -396,8 +396,8 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   auto dofmap0 = V0->dofmap();
 
   // Get block sizes and dof transformation operators
-  const int bs1 = dofmap1->bs();
-  const int bs0 = dofmap0->bs();
+  const int bs1 = dofmap1->element_dof_layout().block_size();
+  const int bs0 = dofmap0->element_dof_layout().block_size();
   auto apply_dof_transformation = element0->template dof_transformation_fn<T>(
       doftransform::transpose, false);
   auto apply_inverse_dof_transform
@@ -642,7 +642,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
     }
 
     // Copy expansion coefficients for v into local array
-    const int dof_bs0 = dofmap0->bs();
+    const int dof_bs0 = dofmap0->element_dof_layout().block_size();
     std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cells0[c]);
     for (std::size_t i = 0; i < dofs0.size(); ++i)
       for (int k = 0; k < dof_bs0; ++k)
@@ -689,7 +689,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
     apply_inverse_dof_transform1(local1, cell_info1, cells1[c], 1);
 
     // Copy local coefficients to the correct position in u dof array
-    const int dof_bs1 = dofmap1->bs();
+    const int dof_bs1 = dofmap1->element_dof_layout().block_size();
     std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(c);
     for (std::size_t i = 0; i < dofs1.size(); ++i)
       for (int k = 0; k < dof_bs1; ++k)
@@ -750,7 +750,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   // Get dofmap
   const auto dofmap = u.function_space()->dofmap();
   assert(dofmap);
-  const int dofmap_bs = dofmap->bs();
+  const int dofmap_bs = dofmap->element_dof_layout().block_size();
 
   // Loop over cells and compute interpolation dofs
   const int num_scalar_dofs = element->space_dimension() / element_bs;
@@ -1246,8 +1246,10 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
       std::span<const T> u0_array = u0.x()->array();
 
       // Iterate over mesh and interpolate on each cell
-      const int bs0 = element0->block_size();
-      const int bs1 = element1->block_size();
+      // const int bs0 = element0->block_size();
+      // const int bs1 = element1->block_size();
+      const int bs0 = dofmap0->element_dof_layout().block_size();
+      const int bs1 = dofmap1->element_dof_layout().block_size();
       // const int bs0 = dofmap0->bs();
       // const int bs1 = dofmap1->bs();
       for (std::size_t c = 0; c < cells1.size(); ++c)

@@ -904,7 +904,8 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
   // degrees-of-freedom
   auto transformation
       = element->template dof_transformation_fn<T>(doftransform::transpose);
-  const int bs = dofmap.bs();
+  // const int bs = dofmap.bs();
+  const int bs = dofmap.element_dof_layout().block_size();
   switch (bs)
   {
   case 1:

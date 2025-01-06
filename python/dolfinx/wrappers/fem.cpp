@@ -1253,7 +1253,7 @@ void fem(nb::module_& m)
                                                               {dofs.size()});
           },
           nb::rv_policy::reference_internal, nb::arg("cell"))
-      .def_prop_ro("bs", &dolfinx::fem::DofMap::bs)
+    //   .def_prop_ro("bs", &dolfinx::fem::DofMap::bs)
       .def(
           "map",
           [](const dolfinx::fem::DofMap& self)

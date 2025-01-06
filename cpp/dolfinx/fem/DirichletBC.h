@@ -343,7 +343,8 @@ public:
           "Rank mismatch between Constant and function space in DirichletBC");
     }
 
-    if (g->value.size() != _function_space->dofmap()->bs())
+    if (g->value.size()
+        != _function_space->dofmap()->element_dof_layout().block_size())
     {
       throw std::runtime_error(
           "Creating a DirichletBC using a Constant is not supported when the "
@@ -358,7 +359,7 @@ public:
     }
 
     // Unroll _dofs0 if dofmap block size > 1
-    if (const int bs = V->dofmap()->bs(); bs > 1)
+    if (const int bs = V->dofmap()->element_dof_layout().block_size(); bs > 1)
     {
       _owned_indices0 *= bs;
       _dofs0 = unroll_dofs(_dofs0, bs);
@@ -388,7 +389,9 @@ public:
     assert(_function_space);
 
     // Unroll _dofs0 if dofmap block size > 1
-    if (const int bs = _function_space->dofmap()->bs(); bs > 1)
+    if (const int bs
+        = _function_space->dofmap()->element_dof_layout().block_size();
+        bs > 1)
     {
       _owned_indices0 *= bs;
       _dofs0 = unroll_dofs(_dofs0, bs);
@@ -556,7 +559,8 @@ public:
     {
       auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
       const std::vector<T>& value = g->value;
-      std::int32_t bs = _function_space->dofmap()->bs();
+      std::int32_t bs
+          = _function_space->dofmap()->element_dof_layout().block_size();
       if (x0)
       {
         assert(x.size() <= x0->size());

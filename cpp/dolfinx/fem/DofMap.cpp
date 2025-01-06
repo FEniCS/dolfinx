@@ -170,7 +170,7 @@ bool DofMap::operator==(const DofMap& map) const
          and this->_dofmap == map._dofmap and this->_bs == map._bs;
 }
 //-----------------------------------------------------------------------------
-int DofMap::bs() const noexcept { return _bs; }
+// int DofMap::bs() const noexcept { return _bs; }
 //-----------------------------------------------------------------------------
 DofMap DofMap::extract_sub_dofmap(std::span<const int> component) const
 {
@@ -186,7 +186,8 @@ DofMap DofMap::extract_sub_dofmap(std::span<const int> component) const
   // FIXME X: how does sub_element_map_view hand block sizes?
   const std::int32_t dofs_per_cell = sub_element_map_view.size();
   std::vector<std::int32_t> dofmap(num_cells * dofs_per_cell);
-  const int bs_parent = this->bs();
+  const int bs_parent = this->element_dof_layout().block_size();
+  // const int bs_parent = this->bs();
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     auto cell_dmap_parent = this->cell_dofs(c);
@@ -254,7 +255,8 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
   const int tdim = topology.dim();
   auto cells = topology.connectivity(tdim, 0);
   assert(cells);
-  const int bs = dofmap_new.bs();
+  const int bs = dofmap_new.element_dof_layout().block_size();
+  // const int bs = dofmap_new.bs();
   for (std::int32_t c = 0; c < cells->num_nodes(); ++c)
   {
     std::span<const std::int32_t> cell_dofs_view = this->cell_dofs(c);

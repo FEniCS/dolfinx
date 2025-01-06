@@ -494,7 +494,8 @@ void write_function(
       pugi::xml_node data_node = piece_node.child("CellData");
       assert(!data_node.empty());
       auto dofmap = V->dofmap();
-      int bs = dofmap->bs();
+      int bs = dofmap->element_dof_layout().block_size();
+      // int bs = dofmap->bs();
       std::vector<T> data(cshape[0] * num_components, 0);
       auto u_vector = _u.get().x()->array();
       for (std::size_t c = 0; c < cshape[0]; ++c)
@@ -520,7 +521,8 @@ void write_function(
       auto pad_data = [num_components](auto&& V, auto u)
       {
         auto dofmap = V.dofmap();
-        int bs = dofmap->bs();
+        int bs = dofmap->element_dof_layout().block_size();
+        // int bs = dofmap->bs();
         auto map = dofmap->index_map;
         int map_bs = dofmap->index_map_bs();
         std::int32_t num_dofs_block
@@ -559,7 +561,8 @@ void write_function(
         assert(dofmap0);
         auto dofmap = V->dofmap();
         assert(dofmap);
-        int bs = dofmap->bs();
+        int bs = dofmap->element_dof_layout().block_size();
+        // int bs = dofmap->bs();
 
         // Get data on each cell
         auto u_vector = _u.get().x()->array();

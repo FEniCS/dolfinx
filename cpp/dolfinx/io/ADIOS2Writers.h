@@ -225,7 +225,8 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
   std::shared_ptr<const common::IndexMap> index_map = dofmap->index_map;
   assert(index_map);
   int index_map_bs = dofmap->index_map_bs();
-  int dofmap_bs = dofmap->bs();
+  const int dofmap_bs = dofmap->element_dof_layout().block_size();
+  // int dofmap_bs = dofmap->bs();
   std::uint32_t num_dofs = index_map_bs
                            * (index_map->size_local() + index_map->num_ghosts())
                            / dofmap_bs;

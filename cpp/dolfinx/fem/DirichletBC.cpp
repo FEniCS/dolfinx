@@ -210,11 +210,12 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
 
   // V is a sub space we need to take the block size of the dofmap and
   // the index map into account as they can differ
-  const int bs = dofmap.bs();
-  const int element_bs = dofmap.element_dof_layout().block_size();
+  // const int bs = dofmap.bs();
+  // const int element_bs = dofmap.element_dof_layout().block_size();
+  const int bs = dofmap.element_dof_layout().block_size();
 
   // Iterate over marked facets
-  if (element_bs == bs)
+  // if (element_bs == bs)
   {
     // Work with blocks
     for (auto [cell, entity_local_index] : entity_indices)
@@ -225,26 +226,26 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
         dofs.push_back(cell_dofs[index]);
     }
   }
-  else if (bs == 1)
-  {
-    // Space is not blocked, unroll dofs
-    for (auto [cell, entity_local_index] : entity_indices)
-    {
-      // Get cell dofmap and loop over facet dofs and 'unpack' blocked
-      // dofs
-      std::span<const std::int32_t> cell_dofs = dofmap.cell_dofs(cell);
-      for (int index : entity_dofs[entity_local_index])
-      {
-        for (int k = 0; k < element_bs; ++k)
-        {
-          const std::div_t pos = std::div(element_bs * index + k, bs);
-          dofs.push_back(bs * cell_dofs[pos.quot] + pos.rem);
-        }
-      }
-    }
-  }
-  else
-    throw std::runtime_error("Block size combination not supported");
+  // else if (bs == 1)
+  // {
+  //   // Space is not blocked, unroll dofs
+  //   for (auto [cell, entity_local_index] : entity_indices)
+  //   {
+  //     // Get cell dofmap and loop over facet dofs and 'unpack' blocked
+  //     // dofs
+  //     std::span<const std::int32_t> cell_dofs = dofmap.cell_dofs(cell);
+  //     for (int index : entity_dofs[entity_local_index])
+  //     {
+  //       for (int k = 0; k < element_bs; ++k)
+  //       {
+  //         const std::div_t pos = std::div(element_bs * index + k, bs);
+  //         dofs.push_back(bs * cell_dofs[pos.quot] + pos.rem);
+  //       }
+  //     }
+  //   }
+  // }
+  // else
+  //   throw std::runtime_error("Block size combination not supported");
 
   // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates
@@ -316,7 +317,9 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
         dofmap0.element_dof_layout().entity_closure_dofs(dim, i));
   }
 
-  const std::array bs = {dofmap0.bs(), dofmap1.bs()};
+  const std::array bs = {dofmap0.element_dof_layout().block_size(),
+                         dofmap1.element_dof_layout().block_size()};
+  // const std::array bs = {dofmap0.bs(), dofmap1.bs()};
 
   // Get cell index and local entity index
   std::vector<std::pair<std::int32_t, int>> entity_indices

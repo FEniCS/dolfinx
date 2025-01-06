@@ -950,10 +950,12 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
   assert(a.function_spaces().at(0));
   assert(a.function_spaces().at(1));
   auto dofmap0 = a.function_spaces()[0]->dofmap()->map();
-  const int bs0 = a.function_spaces()[0]->dofmap()->bs();
+  const int bs0
+      = a.function_spaces()[0]->dofmap()->element_dof_layout().block_size();
   auto element0 = a.function_spaces()[0]->element();
   auto dofmap1 = a.function_spaces()[1]->dofmap()->map();
-  const int bs1 = a.function_spaces()[1]->dofmap()->bs();
+  const int bs1
+      = a.function_spaces()[1]->dofmap()->element_dof_layout().block_size();
   auto element1 = a.function_spaces()[1]->element();
   assert(element0);
 
@@ -1167,7 +1169,8 @@ void assemble_vector(
       = L.function_spaces().at(0)->dofmap();
   assert(dofmap);
   auto dofs = dofmap->map();
-  const int bs = dofmap->bs();
+  const int bs = dofmap->element_dof_layout().block_size();
+  // const int bs = dofmap->bs();
 
   fem::DofTransformKernel<T> auto P0
       = element->template dof_transformation_fn<T>(doftransform::standard);

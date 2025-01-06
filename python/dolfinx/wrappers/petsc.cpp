@@ -288,8 +288,10 @@ void petsc_fem_module(nb::module_& m)
         if (unrolled)
         {
           auto set_fn = dolfinx::la::petsc::Matrix::set_block_expand_fn(
-              A, a.function_spaces()[0]->dofmap()->bs(),
-              a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
+              A,
+              a.function_spaces()[0]->dofmap()->element_dof_layout().block_size(),
+              a.function_spaces()[1]->dofmap()->element_dof_layout().block_size(),
+              ADD_VALUES);
           dolfinx::fem::assemble_matrix(
               set_fn, a, std::span(constants.data(), constants.size()),
               py_to_cpp_coeffs(coefficients), _bcs);
@@ -323,8 +325,16 @@ void petsc_fem_module(nb::module_& m)
         if (unrolled)
         {
           set_fn = dolfinx::la::petsc::Matrix::set_block_expand_fn(
-              A, a.function_spaces()[0]->dofmap()->bs(),
-              a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
+              A,
+              a.function_spaces()[0]
+                  ->dofmap()
+                  ->element_dof_layout()
+                  .block_size(),
+              a.function_spaces()[1]
+                  ->dofmap()
+                  ->element_dof_layout()
+                  .block_size(),
+              ADD_VALUES);
         }
         else
           set_fn = dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES);

@@ -72,7 +72,8 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   auto map_dofs = dofmap->index_map;
   assert(map_dofs);
   const int index_map_bs = dofmap->index_map_bs();
-  const int dofmap_bs = dofmap->bs();
+  const int dofmap_bs = dofmap->element_dof_layout().block_size();
+  //  const int dofmap_bs = dofmap->bs();
 
   // Get element data
   auto element = V.element();

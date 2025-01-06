@@ -71,7 +71,7 @@ Mat create_matrix_block(
   for (std::size_t i = 0; i < 2; ++i)
   {
     for (auto& _V : V[i])
-      bs_dofs[i].push_back(_V->dofmap()->bs());
+      bs_dofs[i].push_back(_V->dofmap()->element_dof_layout().block_size());
   }
 
   // Build sparsity pattern for each block
@@ -462,7 +462,8 @@ void apply_lifting(
 template <std::floating_point T>
 void set_bc(
     Vec b,
-    const std::vector<std::reference_wrapper<const DirichletBC<PetscScalar, T>>> bcs,
+    const std::vector<std::reference_wrapper<const DirichletBC<PetscScalar, T>>>
+        bcs,
     const Vec x0, PetscScalar alpha = 1)
 {
   PetscInt n = 0;

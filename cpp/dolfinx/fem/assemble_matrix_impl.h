@@ -518,9 +518,11 @@ void assemble_matrix(
   assert(dofmap0);
   assert(dofmap1);
   auto dofs0 = dofmap0->map();
-  const int bs0 = dofmap0->bs();
+  const int bs0 = dofmap0->element_dof_layout().block_size();
+  // const int bs0 = dofmap0->bs();
   auto dofs1 = dofmap1->map();
-  const int bs1 = dofmap1->bs();
+  const int bs1 = dofmap1->element_dof_layout().block_size();
+  // const int bs1 = dofmap1->bs();
 
   auto element0 = a.function_spaces().at(0)->element();
   assert(element0);

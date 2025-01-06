@@ -73,7 +73,8 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
 
   auto dofmap = u.function_space()->dofmap();
   assert(dofmap);
-  const int bs = dofmap->bs();
+  const int bs = dofmap->element_dof_layout().block_size();
+  // const int bs = dofmap->bs();
 
   // Pad to 3D if vector/tensor is product of dimensions is smaller than 3**rank
   // to ensure that we can visualize them correctly in Paraview
