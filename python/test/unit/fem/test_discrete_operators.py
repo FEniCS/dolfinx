@@ -46,13 +46,13 @@ def test_gradient(mesh):
     assert np.isclose(G.squared_norm(), 2.0 * num_edges)
 
 
-@pytest.mark.parametrize("p", range(2, 3))
+@pytest.mark.parametrize("p", range(2, 4))
 @pytest.mark.parametrize(
     "element_data",
     [
         # CellType.triangle,
         (CellType.tetrahedron, "Nedelec 1st kind H(curl)", "Raviart-Thomas"),
-        # (CellType.hexahedron, "Nedelec 1st kind H(curl)", "Raviart-Thomas"),
+        (CellType.hexahedron, "Nedelec 1st kind H(curl)", "Raviart-Thomas"),
     ],
 )
 def test_discrete_curl(element_data, p):
