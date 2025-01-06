@@ -92,88 +92,90 @@ dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, cpp_elements)
 cppV = _cpp.fem.FunctionSpace_float64(mesh, cpp_elements, dofmaps)
 # Both dofmaps have the same IndexMap, but different cell_dofs
 
-# Compile forms for each cell type
-aforms = []
+# Create forms for each cell type
+a = []
 for i, cell_name in enumerate(["hexahedron", "prism"]):
-    print(f"Compiling form for {cell_name}")
+    print(f"Creating form for {cell_name}")
     element = basix.ufl.element("Lagrange", cell_name, 1)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_name, 1, shape=(3,)))
     # cppV = _cpp.fem.FunctionSpace_float64(mesh, cpp_elements[i], dofmaps[i])
     V = FunctionSpace(Mesh(mesh, domain), element, cppV)
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     k = 12.0
-    a = (ufl.inner(ufl.grad(u), ufl.grad(v)) - k**2 * u * v) * ufl.dx
-    aforms += [a]
+    a += [(ufl.inner(ufl.grad(u), ufl.grad(v)) - k**2 * u * v) * ufl.dx]
 
-aforms = form(aforms)
-ffi = aforms[0].module.ffi
+a_form = form(a)
 
-# Create a sparsity patter for form 0
-sp = create_sparsity_pattern(aforms[0])
-# Add to sparsity pattern for form 1
-build_sparsity_pattern(sp, aforms[1])
-sp.finalize()
+ffi = a_form.module[0].ffi
+exit()
 
-A = matrix_csr(sp)
-print(f"Assembling into matrix of size {len(A.data)} non-zeros")
 
-# Assemble
-assemble_matrix(A, aforms[0])
-assemble_matrix(A, aforms[1])
+# # Create a sparsity patter for form 0
+# sp = create_sparsity_pattern(aforms[0])
+# # Add to sparsity pattern for form 1
+# build_sparsity_pattern(sp, aforms[1])
+# sp.finalize()
 
-# Quick solve
-A_scipy = A.to_scipy()
-b_scipy = np.ones(A_scipy.shape[1])
+# A = matrix_csr(sp)
+# print(f"Assembling into matrix of size {len(A.data)} non-zeros")
 
-x = spsolve(A_scipy, b_scipy)
-print(f"Solution vector norm {np.linalg.norm(x)}")
+# # Assemble
+# assemble_matrix(A, aforms[0])
+# assemble_matrix(A, aforms[1])
 
-# I/O
-# Save to XDMF
-xdmf = """<?xml version="1.0"?>
-<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
-<Xdmf Version="3.0" xmlns:xi="https://www.w3.org/2001/XInclude">
-  <Domain>
-    <Grid Name="mesh" GridType="Collection" CollectionType="spatial">
+# # Quick solve
+# A_scipy = A.to_scipy()
+# b_scipy = np.ones(A_scipy.shape[1])
 
-"""
+# x = spsolve(A_scipy, b_scipy)
+# print(f"Solution vector norm {np.linalg.norm(x)}")
 
-perm = [cell_perm_vtk(CellType.hexahedron, 8), cell_perm_vtk(CellType.prism, 6)]
-topologies = ["Hexahedron", "Wedge"]
+# # I/O
+# # Save to XDMF
+# xdmf = """<?xml version="1.0"?>
+# <!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
+# <Xdmf Version="3.0" xmlns:xi="https://www.w3.org/2001/XInclude">
+#   <Domain>
+#     <Grid Name="mesh" GridType="Collection" CollectionType="spatial">
 
-for j in range(2):
-    vtk_topology = []
-    geom_dm = mesh.geometry.dofmaps(j)
-    for c in geom_dm:
-        vtk_topology += list(c[perm[j]])
-    topology_type = topologies[j]
+# """
 
-    xdmf += f"""
-      <Grid Name="{topology_type}" GridType="Uniform">
-        <Topology TopologyType="{topology_type}">
-          <DataItem Dimensions="{geom_dm.shape[0]} {geom_dm.shape[1]}"
-           Precision="4" NumberType="Int" Format="XML">
-          {" ".join(str(val) for val in vtk_topology)}
-          </DataItem>
-        </Topology>
-        <Geometry GeometryType="XYZ" NumberType="float" Rank="2" Precision="8">
-          <DataItem Dimensions="{mesh.geometry.x.shape[0]} 3" Format="XML">
-            {" ".join(str(val) for val in mesh.geometry.x.flatten())}
-          </DataItem>
-        </Geometry>
-        <Attribute Name="u" Center="Node" NumberType="float" Precision="8">
-          <DataItem Dimensions="{len(x)}" Format="XML">
-            {" ".join(str(val) for val in x)}
-          </DataItem>
-       </Attribute>
-      </Grid>"""
+# perm = [cell_perm_vtk(CellType.hexahedron, 8), cell_perm_vtk(CellType.prism, 6)]
+# topologies = ["Hexahedron", "Wedge"]
 
-xdmf += """
-    </Grid>
-  </Domain>
-</Xdmf>
-"""
+# for j in range(2):
+#     vtk_topology = []
+#     geom_dm = mesh.geometry.dofmaps(j)
+#     for c in geom_dm:
+#         vtk_topology += list(c[perm[j]])
+#     topology_type = topologies[j]
 
-fd = open("mixed-mesh.xdmf", "w")
-fd.write(xdmf)
-fd.close()
+#     xdmf += f"""
+#       <Grid Name="{topology_type}" GridType="Uniform">
+#         <Topology TopologyType="{topology_type}">
+#           <DataItem Dimensions="{geom_dm.shape[0]} {geom_dm.shape[1]}"
+#            Precision="4" NumberType="Int" Format="XML">
+#           {" ".join(str(val) for val in vtk_topology)}
+#           </DataItem>
+#         </Topology>
+#         <Geometry GeometryType="XYZ" NumberType="float" Rank="2" Precision="8">
+#           <DataItem Dimensions="{mesh.geometry.x.shape[0]} 3" Format="XML">
+#             {" ".join(str(val) for val in mesh.geometry.x.flatten())}
+#           </DataItem>
+#         </Geometry>
+#         <Attribute Name="u" Center="Node" NumberType="float" Precision="8">
+#           <DataItem Dimensions="{len(x)}" Format="XML">
+#             {" ".join(str(val) for val in x)}
+#           </DataItem>
+#        </Attribute>
+#       </Grid>"""
+
+# xdmf += """
+#     </Grid>
+#   </Domain>
+# </Xdmf>
+# """
+
+# fd = open("mixed-mesh.xdmf", "w")
+# fd.write(xdmf)
+# fd.close()

@@ -351,7 +351,8 @@ def form(
             entity_maps,
             mesh,
         )
-        print(f)
+        print(f"Created mixed-topo form {f}")
+        return Form(f, ufcx_forms, codes, modules)
 
     def _create_form(form):
         """Recursively convert ufl.Forms to dolfinx.fem.Form.
@@ -374,7 +375,7 @@ def form(
             (domain,) = list(sd.keys())
             mesh = domain.ufl_cargo()
             if len(mesh.topology.cell_types) > 1:
-                _form_mixed_topo(form)
+                return _form_mixed_topo(form)
             else:
                 return list(map(lambda sub_form: _create_form(sub_form), form))
         else:
