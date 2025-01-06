@@ -282,10 +282,9 @@ def model_to_mesh(
 
     Note:
         For performance, this function should only be called once for
-        large problems. For re-use, it is recommended to save the mesh
+        large problems. For reuse, it is recommended to save the mesh
         and corresponding tags using :class:`dolfinx.io.XDMFFile` after
         creation for efficient access.
-
     """
     if comm.rank == rank:
         assert model is not None, "Gmsh model is None on rank responsible for mesh creation."
