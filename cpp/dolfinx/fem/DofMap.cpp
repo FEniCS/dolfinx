@@ -217,6 +217,7 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
     reorder_fn = [](const graph::AdjacencyList<std::int32_t>& g)
     { return graph::reorder_gps(g); };
   }
+
   // Create new dofmap
   auto create_subdofmap = [](auto index_map_bs, auto& layout, auto& topology,
                              auto& reorder_fn, auto& dmap)

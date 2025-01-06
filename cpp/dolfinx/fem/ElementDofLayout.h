@@ -112,7 +112,7 @@ public:
   const ElementDofLayout& sub_layout(std::span<const int> component) const;
 
   /// Get view for a sub-layout, defined by the component list (as for
-  /// sub_layour()), into this dofmap. I.e., the dofs in this dofmap
+  /// sub_layout()), into this dofmap. I.e., the dofs in this dofmap
   /// that are the sub-dofs.
   std::vector<int> sub_view(std::span<const int> component) const;
 
