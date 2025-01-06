@@ -59,8 +59,8 @@ struct integral_data
                                            std::vector<std::int32_t>>
                  and std::is_convertible_v<std::remove_cvref_t<W>,
                                            std::vector<int>>
-  integral_data(int id, K&& kernel, V&& entities, W&& coeffs)
-      : id(id), kernel(std::forward<K>(kernel)),
+  integral_data(int id, mesh::CellType cell_type, K&& kernel, V&& entities, W&& coeffs)
+      : id(id), cell_type(cell_type), kernel(std::forward<K>(kernel)),
         entities(std::forward<V>(entities)), coeffs(std::forward<W>(coeffs))
   {
   }
@@ -82,9 +82,9 @@ struct integral_data
                                     const int*, const uint8_t*)>>
                  and std::is_convertible_v<std::remove_cvref_t<W>,
                                            std::vector<int>>
-  integral_data(int id, K&& kernel, std::span<const std::int32_t> entities,
+  integral_data(int id, mesh::CellType cell_type, K&& kernel, std::span<const std::int32_t> entities,
                 W&& coeffs)
-      : id(id), kernel(std::forward<K>(kernel)),
+      : id(id), cell_type(cell_type), kernel(std::forward<K>(kernel)),
         entities(entities.begin(), entities.end()),
         coeffs(std::forward<W>(coeffs))
   {
@@ -92,6 +92,9 @@ struct integral_data
 
   /// @brief Integral ID.
   int id;
+
+  /// @brief Cell type.
+  mesh::CellType cell_type;
 
   /// @brief The integration kernel.
   std::function<void(T*, const T*, const T*, const U*, const int*,
@@ -218,8 +221,8 @@ public:
 
       std::vector<integral_data<scalar_type, geometry_type>>& itg
           = _integrals[static_cast<std::size_t>(domain_type)];
-      for (auto&& [id, kern, e, c] : data)
-        itg.emplace_back(id, kern, std::move(e), std::move(c));
+      for (auto&& [id, cell_type, kern, e, c] : data)
+        itg.emplace_back(id, cell_type, kern, std::move(e), std::move(c));
     }
 
     // Store entity maps
