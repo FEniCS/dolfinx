@@ -371,26 +371,22 @@ Form<T, U> create_form_factory(
       throw std::runtime_error("Wrong number of argument spaces for Form.");
     if (ufcx_form.num_coefficients != (int)coefficients.size())
     {
-      throw std::runtime_error(
-          "Mismatch between number of expected and provided Form coefficients.");
+      throw std::runtime_error("Mismatch between number of expected and "
+                               "provided Form coefficients.");
     }
     if (ufcx_form.num_constants != (int)constants.size())
     {
       throw std::runtime_error(
           "Mismatch between number of expected and provided Form constants.");
     }
-
   }
-
-  // TODO REMOVE
-  const ufcx_form& ufcx_form = ufcx_forms[0];
 
   // Check argument function spaces
   // TODO Fix for mixed topology
   for (std::size_t i = 0; i < spaces.size(); ++i)
   {
     assert(spaces[i]->element());
-    if (auto element_hash = ufcx_form.finite_element_hashes[i];
+    if (auto element_hash = ufcx_forms[0].get().finite_element_hashes[i];
         element_hash != 0
         and element_hash != spaces[i]->element()->basix_element().hash())
     {
@@ -415,7 +411,7 @@ Form<T, U> create_form_factory(
   assert(topology);
   const int tdim = topology->dim();
 
-  const int* integral_offsets = ufcx_form.form_integral_offsets;
+  const int* integral_offsets = ufcx_forms[0].get().form_integral_offsets;
   std::vector<int> num_integrals_type(3);
   for (int i = 0; i < 3; ++i)
     num_integrals_type[i] = integral_offsets[i + 1] - integral_offsets[i];
@@ -435,284 +431,289 @@ Form<T, U> create_form_factory(
                                     const int*, const std::uint8_t*)>;
   std::map<IntegralType, std::vector<integral_data<T, U>>> integrals;
 
-  // TODO REMOVE
-  mesh::CellType cell_type = mesh->topology()->cell_type();
-
   // Attach cell kernels
   bool needs_facet_permutations = false;
-  std::vector<std::int32_t> default_cells;
   {
-    std::span<const int> ids(ufcx_form.form_integral_ids
+    std::vector<std::int32_t> default_cells;
+    std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
                                  + integral_offsets[cell],
                              num_integrals_type[cell]);
     auto itg = integrals.insert({IntegralType::cell, {}});
     auto sd = subdomains.find(IntegralType::cell);
-    for (int i = 0; i < num_integrals_type[cell]; ++i)
+    for (int form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
     {
-      const int id = ids[i];
-      ufcx_integral* integral
-          = ufcx_form.form_integrals[integral_offsets[cell] + i];
-      assert(integral);
-
-      // Build list of active coefficients
-      std::vector<int> active_coeffs;
-      for (int j = 0; j < ufcx_form.num_coefficients; ++j)
+      const ufcx_form& ufcx_form = ufcx_forms[form_idx];
+      for (int i = 0; i < num_integrals_type[cell]; ++i)
       {
-        if (integral->enabled_coefficients[j])
-          active_coeffs.push_back(j);
-      }
+        const int id = ids[i];
+        ufcx_integral* integral
+            = ufcx_form.form_integrals[integral_offsets[cell] + i];
+        assert(integral);
 
-      kern_t k = nullptr;
-      if constexpr (std::is_same_v<T, float>)
-        k = integral->tabulate_tensor_float32;
+        // Build list of active coefficients
+        std::vector<int> active_coeffs;
+        for (int j = 0; j < ufcx_form.num_coefficients; ++j)
+        {
+          if (integral->enabled_coefficients[j])
+            active_coeffs.push_back(j);
+        }
+
+        kern_t k = nullptr;
+        if constexpr (std::is_same_v<T, float>)
+          k = integral->tabulate_tensor_float32;
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-      else if constexpr (std::is_same_v<T, std::complex<float>>)
-      {
-        k = reinterpret_cast<void (*)(
-            T*, const T*, const T*,
-            const typename scalar_value_type<T>::value_type*, const int*,
-            const unsigned char*)>(integral->tabulate_tensor_complex64);
-      }
+        else if constexpr (std::is_same_v<T, std::complex<float>>)
+        {
+          k = reinterpret_cast<void (*)(
+              T*, const T*, const T*,
+              const typename scalar_value_type<T>::value_type*, const int*,
+              const unsigned char*)>(integral->tabulate_tensor_complex64);
+        }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-      else if constexpr (std::is_same_v<T, double>)
-        k = integral->tabulate_tensor_float64;
+        else if constexpr (std::is_same_v<T, double>)
+          k = integral->tabulate_tensor_float64;
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-      else if constexpr (std::is_same_v<T, std::complex<double>>)
-      {
-        k = reinterpret_cast<void (*)(
-            T*, const T*, const T*,
-            const typename scalar_value_type<T>::value_type*, const int*,
-            const unsigned char*)>(integral->tabulate_tensor_complex128);
-      }
+        else if constexpr (std::is_same_v<T, std::complex<double>>)
+        {
+          k = reinterpret_cast<void (*)(
+              T*, const T*, const T*,
+              const typename scalar_value_type<T>::value_type*, const int*,
+              const unsigned char*)>(integral->tabulate_tensor_complex128);
+        }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
 
-      if (!k)
-      {
-        throw std::runtime_error(
-            "UFCx kernel function is NULL. Check requested types.");
-      }
+        if (!k)
+        {
+          throw std::runtime_error(
+              "UFCx kernel function is NULL. Check requested types.");
+        }
 
-      // Build list of entities to assemble over
-      if (id == -1)
-      {
-        // FIXME Can't get cell_type from function space. For example, for
-        // assemble scalar, a.function_spaces() will be empty.
         std::vector<mesh::CellType> cell_types
             = mesh->topology()->entity_types(tdim);
-        mesh::CellType cell_type = spaces[0]->element()->cell_type();
-        auto it = std::ranges::find(cell_types, cell_type);
-        assert(it != cell_types.end());
-        const int cell_type_idx = std::distance(cell_types.begin(), it);
+        mesh::CellType cell_type = cell_types[form_idx];
+        // Build list of entities to assemble over
+        if (id == -1)
+        {
 
-        // Default kernel, operates on all (owned) cells
-        assert(topology->index_maps(tdim)[cell_type_idx]);
-        default_cells.resize(
-            topology->index_maps(tdim)[cell_type_idx]->size_local(), 0);
-        std::iota(default_cells.begin(), default_cells.end(), 0);
-        itg.first->second.emplace_back(id, cell_type, k, default_cells, active_coeffs);
-      }
-      else if (sd != subdomains.end())
-      {
-        // NOTE: This requires that pairs are sorted
-        auto it
-            = std::ranges::lower_bound(sd->second, id, std::less<>{},
-                                       [](const auto& a) { return a.first; });
-        if (it != sd->second.end() and it->first == id)
-          itg.first->second.emplace_back(id, cell_type, k, it->second, active_coeffs);
-      }
+          // Default kernel, operates on all (owned) cells
+          assert(topology->index_maps(tdim)[form_idx]);
+          default_cells.resize(
+              topology->index_maps(tdim)[form_idx]->size_local(), 0);
+          std::iota(default_cells.begin(), default_cells.end(), 0);
+          itg.first->second.emplace_back(id, cell_type, k, default_cells,
+                                         active_coeffs);
+        }
+        else if (sd != subdomains.end())
+        {
+          // NOTE: This requires that pairs are sorted
+          auto it
+              = std::ranges::lower_bound(sd->second, id, std::less<>{},
+                                         [](const auto& a) { return a.first; });
+          if (it != sd->second.end() and it->first == id)
+            itg.first->second.emplace_back(id, cell_type, k, it->second,
+                                           active_coeffs);
+        }
 
-      if (integral->needs_facet_permutations)
-        needs_facet_permutations = true;
+        if (integral->needs_facet_permutations)
+          needs_facet_permutations = true;
+      }
     }
   }
 
-//   // Attach exterior facet kernels
-//   std::vector<std::int32_t> default_facets_ext;
-//   {
-//     std::span<const int> ids(ufcx_form.form_integral_ids
-//                                  + integral_offsets[exterior_facet],
-//                              num_integrals_type[exterior_facet]);
-//     auto itg = integrals.insert({IntegralType::exterior_facet, {}});
-//     auto sd = subdomains.find(IntegralType::exterior_facet);
-//     for (int i = 0; i < num_integrals_type[exterior_facet]; ++i)
-//     {
-//       const int id = ids[i];
-//       ufcx_integral* integral
-//           = ufcx_form.form_integrals[integral_offsets[exterior_facet] + i];
-//       assert(integral);
-//       std::vector<int> active_coeffs;
-//       for (int j = 0; j < ufcx_form.num_coefficients; ++j)
-//       {
-//         if (integral->enabled_coefficients[j])
-//           active_coeffs.push_back(j);
-//       }
+  //   // Attach exterior facet kernels
+  //   std::vector<std::int32_t> default_facets_ext;
+  //   {
+  //     std::span<const int> ids(ufcx_form.form_integral_ids
+  //                                  + integral_offsets[exterior_facet],
+  //                              num_integrals_type[exterior_facet]);
+  //     auto itg = integrals.insert({IntegralType::exterior_facet, {}});
+  //     auto sd = subdomains.find(IntegralType::exterior_facet);
+  //     for (int i = 0; i < num_integrals_type[exterior_facet]; ++i)
+  //     {
+  //       const int id = ids[i];
+  //       ufcx_integral* integral
+  //           = ufcx_form.form_integrals[integral_offsets[exterior_facet] + i];
+  //       assert(integral);
+  //       std::vector<int> active_coeffs;
+  //       for (int j = 0; j < ufcx_form.num_coefficients; ++j)
+  //       {
+  //         if (integral->enabled_coefficients[j])
+  //           active_coeffs.push_back(j);
+  //       }
 
-//       kern_t k = nullptr;
-//       if constexpr (std::is_same_v<T, float>)
-//         k = integral->tabulate_tensor_float32;
-// #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-//       else if constexpr (std::is_same_v<T, std::complex<float>>)
-//       {
-//         k = reinterpret_cast<void (*)(
-//             T*, const T*, const T*,
-//             const typename scalar_value_type<T>::value_type*, const int*,
-//             const unsigned char*)>(integral->tabulate_tensor_complex64);
-//       }
-// #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-//       else if constexpr (std::is_same_v<T, double>)
-//         k = integral->tabulate_tensor_float64;
-// #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-//       else if constexpr (std::is_same_v<T, std::complex<double>>)
-//       {
-//         k = reinterpret_cast<void (*)(
-//             T*, const T*, const T*,
-//             const typename scalar_value_type<T>::value_type*, const int*,
-//             const unsigned char*)>(integral->tabulate_tensor_complex128);
-//       }
-// #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-//       assert(k);
+  //       kern_t k = nullptr;
+  //       if constexpr (std::is_same_v<T, float>)
+  //         k = integral->tabulate_tensor_float32;
+  // #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
+  //       else if constexpr (std::is_same_v<T, std::complex<float>>)
+  //       {
+  //         k = reinterpret_cast<void (*)(
+  //             T*, const T*, const T*,
+  //             const typename scalar_value_type<T>::value_type*, const int*,
+  //             const unsigned char*)>(integral->tabulate_tensor_complex64);
+  //       }
+  // #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
+  //       else if constexpr (std::is_same_v<T, double>)
+  //         k = integral->tabulate_tensor_float64;
+  // #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
+  //       else if constexpr (std::is_same_v<T, std::complex<double>>)
+  //       {
+  //         k = reinterpret_cast<void (*)(
+  //             T*, const T*, const T*,
+  //             const typename scalar_value_type<T>::value_type*, const int*,
+  //             const unsigned char*)>(integral->tabulate_tensor_complex128);
+  //       }
+  // #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
+  //       assert(k);
 
-//       // Build list of entities to assembler over
-//       const std::vector bfacets = mesh::exterior_facet_indices(*topology);
-//       auto f_to_c = topology->connectivity(tdim - 1, tdim);
-//       assert(f_to_c);
-//       auto c_to_f = topology->connectivity(tdim, tdim - 1);
-//       assert(c_to_f);
-//       if (id == -1)
-//       {
-//         // Default kernel, operates on all (owned) exterior facets
-//         default_facets_ext.reserve(2 * bfacets.size());
-//         for (std::int32_t f : bfacets)
-//         {
-//           // There will only be one pair for an exterior facet integral
-//           auto pair
-//               = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
-//           default_facets_ext.insert(default_facets_ext.end(), pair.begin(),
-//                                     pair.end());
-//         }
-//         itg.first->second.emplace_back(id, k, default_facets_ext,
-//                                        active_coeffs);
-//       }
-//       else if (sd != subdomains.end())
-//       {
-//         // NOTE: This requires that pairs are sorted
-//         auto it
-//             = std::ranges::lower_bound(sd->second, id, std::less<>{},
-//                                        [](const auto& a) { return a.first; });
-//         if (it != sd->second.end() and it->first == id)
-//           itg.first->second.emplace_back(id, k, it->second, active_coeffs);
-//       }
+  //       // Build list of entities to assembler over
+  //       const std::vector bfacets = mesh::exterior_facet_indices(*topology);
+  //       auto f_to_c = topology->connectivity(tdim - 1, tdim);
+  //       assert(f_to_c);
+  //       auto c_to_f = topology->connectivity(tdim, tdim - 1);
+  //       assert(c_to_f);
+  //       if (id == -1)
+  //       {
+  //         // Default kernel, operates on all (owned) exterior facets
+  //         default_facets_ext.reserve(2 * bfacets.size());
+  //         for (std::int32_t f : bfacets)
+  //         {
+  //           // There will only be one pair for an exterior facet integral
+  //           auto pair
+  //               = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f),
+  //               *c_to_f);
+  //           default_facets_ext.insert(default_facets_ext.end(), pair.begin(),
+  //                                     pair.end());
+  //         }
+  //         itg.first->second.emplace_back(id, k, default_facets_ext,
+  //                                        active_coeffs);
+  //       }
+  //       else if (sd != subdomains.end())
+  //       {
+  //         // NOTE: This requires that pairs are sorted
+  //         auto it
+  //             = std::ranges::lower_bound(sd->second, id, std::less<>{},
+  //                                        [](const auto& a) { return a.first;
+  //                                        });
+  //         if (it != sd->second.end() and it->first == id)
+  //           itg.first->second.emplace_back(id, k, it->second, active_coeffs);
+  //       }
 
-//       if (integral->needs_facet_permutations)
-//         needs_facet_permutations = true;
-//     }
-//   }
+  //       if (integral->needs_facet_permutations)
+  //         needs_facet_permutations = true;
+  //     }
+  //   }
 
-//   // Attach interior facet kernels
-//   std::vector<std::int32_t> default_facets_int;
-//   {
-//     std::span<const int> ids(ufcx_form.form_integral_ids
-//                                  + integral_offsets[interior_facet],
-//                              num_integrals_type[interior_facet]);
-//     auto itg = integrals.insert({IntegralType::interior_facet, {}});
-//     auto sd = subdomains.find(IntegralType::interior_facet);
+  //   // Attach interior facet kernels
+  //   std::vector<std::int32_t> default_facets_int;
+  //   {
+  //     std::span<const int> ids(ufcx_form.form_integral_ids
+  //                                  + integral_offsets[interior_facet],
+  //                              num_integrals_type[interior_facet]);
+  //     auto itg = integrals.insert({IntegralType::interior_facet, {}});
+  //     auto sd = subdomains.find(IntegralType::interior_facet);
 
-//     // Create indicator for interprocess facets
-//     std::vector<std::int8_t> interprocess_marker;
-//     if (num_integrals_type[interior_facet] > 0)
-//     {
-//       assert(topology->index_map(tdim - 1));
-//       const std::vector<std::int32_t>& interprocess_facets
-//           = topology->interprocess_facets();
-//       std::int32_t num_facets = topology->index_map(tdim - 1)->size_local()
-//                                 + topology->index_map(tdim - 1)->num_ghosts();
-//       interprocess_marker.resize(num_facets, 0);
-//       std::ranges::for_each(interprocess_facets, [&interprocess_marker](auto f)
-//                             { interprocess_marker[f] = 1; });
-//     }
+  //     // Create indicator for interprocess facets
+  //     std::vector<std::int8_t> interprocess_marker;
+  //     if (num_integrals_type[interior_facet] > 0)
+  //     {
+  //       assert(topology->index_map(tdim - 1));
+  //       const std::vector<std::int32_t>& interprocess_facets
+  //           = topology->interprocess_facets();
+  //       std::int32_t num_facets = topology->index_map(tdim - 1)->size_local()
+  //                                 + topology->index_map(tdim -
+  //                                 1)->num_ghosts();
+  //       interprocess_marker.resize(num_facets, 0);
+  //       std::ranges::for_each(interprocess_facets,
+  //       [&interprocess_marker](auto f)
+  //                             { interprocess_marker[f] = 1; });
+  //     }
 
-//     for (int i = 0; i < num_integrals_type[interior_facet]; ++i)
-//     {
-//       const int id = ids[i];
-//       ufcx_integral* integral
-//           = ufcx_form.form_integrals[integral_offsets[interior_facet] + i];
-//       assert(integral);
-//       std::vector<int> active_coeffs;
-//       for (int j = 0; j < ufcx_form.num_coefficients; ++j)
-//       {
-//         if (integral->enabled_coefficients[j])
-//           active_coeffs.push_back(j);
-//       }
+  //     for (int i = 0; i < num_integrals_type[interior_facet]; ++i)
+  //     {
+  //       const int id = ids[i];
+  //       ufcx_integral* integral
+  //           = ufcx_form.form_integrals[integral_offsets[interior_facet] + i];
+  //       assert(integral);
+  //       std::vector<int> active_coeffs;
+  //       for (int j = 0; j < ufcx_form.num_coefficients; ++j)
+  //       {
+  //         if (integral->enabled_coefficients[j])
+  //           active_coeffs.push_back(j);
+  //       }
 
-//       kern_t k = nullptr;
-//       if constexpr (std::is_same_v<T, float>)
-//         k = integral->tabulate_tensor_float32;
-// #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-//       else if constexpr (std::is_same_v<T, std::complex<float>>)
-//       {
-//         k = reinterpret_cast<void (*)(
-//             T*, const T*, const T*,
-//             const typename scalar_value_type<T>::value_type*, const int*,
-//             const unsigned char*)>(integral->tabulate_tensor_complex64);
-//       }
-// #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-//       else if constexpr (std::is_same_v<T, double>)
-//         k = integral->tabulate_tensor_float64;
-// #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-//       else if constexpr (std::is_same_v<T, std::complex<double>>)
-//       {
-//         k = reinterpret_cast<void (*)(
-//             T*, const T*, const T*,
-//             const typename scalar_value_type<T>::value_type*, const int*,
-//             const unsigned char*)>(integral->tabulate_tensor_complex128);
-//       }
-// #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-//       assert(k);
+  //       kern_t k = nullptr;
+  //       if constexpr (std::is_same_v<T, float>)
+  //         k = integral->tabulate_tensor_float32;
+  // #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
+  //       else if constexpr (std::is_same_v<T, std::complex<float>>)
+  //       {
+  //         k = reinterpret_cast<void (*)(
+  //             T*, const T*, const T*,
+  //             const typename scalar_value_type<T>::value_type*, const int*,
+  //             const unsigned char*)>(integral->tabulate_tensor_complex64);
+  //       }
+  // #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
+  //       else if constexpr (std::is_same_v<T, double>)
+  //         k = integral->tabulate_tensor_float64;
+  // #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
+  //       else if constexpr (std::is_same_v<T, std::complex<double>>)
+  //       {
+  //         k = reinterpret_cast<void (*)(
+  //             T*, const T*, const T*,
+  //             const typename scalar_value_type<T>::value_type*, const int*,
+  //             const unsigned char*)>(integral->tabulate_tensor_complex128);
+  //       }
+  // #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
+  //       assert(k);
 
-//       // Build list of entities to assembler over
-//       auto f_to_c = topology->connectivity(tdim - 1, tdim);
-//       assert(f_to_c);
-//       auto c_to_f = topology->connectivity(tdim, tdim - 1);
-//       assert(c_to_f);
-//       if (id == -1)
-//       {
-//         // Default kernel, operates on all (owned) interior facets
-//         assert(topology->index_map(tdim - 1));
-//         std::int32_t num_facets = topology->index_map(tdim - 1)->size_local();
-//         default_facets_int.reserve(4 * num_facets);
-//         for (std::int32_t f = 0; f < num_facets; ++f)
-//         {
-//           if (f_to_c->num_links(f) == 2)
-//           {
-//             auto pairs
-//                 = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
-//             default_facets_int.insert(default_facets_int.end(), pairs.begin(),
-//                                       pairs.end());
-//           }
-//           else if (interprocess_marker[f])
-//           {
-//             throw std::runtime_error(
-//                 "Cannot compute interior facet integral over interprocess "
-//                 "facet. Please use ghost mode shared facet when creating the "
-//                 "mesh");
-//           }
-//         }
-//         itg.first->second.emplace_back(id, k, default_facets_int,
-//                                        active_coeffs);
-//       }
-//       else if (sd != subdomains.end())
-//       {
-//         auto it
-//             = std::ranges::lower_bound(sd->second, id, std::less<>{},
-//                                        [](const auto& a) { return a.first; });
-//         if (it != sd->second.end() and it->first == id)
-//           itg.first->second.emplace_back(id, k, it->second, active_coeffs);
-//       }
+  //       // Build list of entities to assembler over
+  //       auto f_to_c = topology->connectivity(tdim - 1, tdim);
+  //       assert(f_to_c);
+  //       auto c_to_f = topology->connectivity(tdim, tdim - 1);
+  //       assert(c_to_f);
+  //       if (id == -1)
+  //       {
+  //         // Default kernel, operates on all (owned) interior facets
+  //         assert(topology->index_map(tdim - 1));
+  //         std::int32_t num_facets = topology->index_map(tdim -
+  //         1)->size_local(); default_facets_int.reserve(4 * num_facets); for
+  //         (std::int32_t f = 0; f < num_facets; ++f)
+  //         {
+  //           if (f_to_c->num_links(f) == 2)
+  //           {
+  //             auto pairs
+  //                 = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f),
+  //                 *c_to_f);
+  //             default_facets_int.insert(default_facets_int.end(),
+  //             pairs.begin(),
+  //                                       pairs.end());
+  //           }
+  //           else if (interprocess_marker[f])
+  //           {
+  //             throw std::runtime_error(
+  //                 "Cannot compute interior facet integral over interprocess "
+  //                 "facet. Please use ghost mode shared facet when creating
+  //                 the " "mesh");
+  //           }
+  //         }
+  //         itg.first->second.emplace_back(id, k, default_facets_int,
+  //                                        active_coeffs);
+  //       }
+  //       else if (sd != subdomains.end())
+  //       {
+  //         auto it
+  //             = std::ranges::lower_bound(sd->second, id, std::less<>{},
+  //                                        [](const auto& a) { return a.first;
+  //                                        });
+  //         if (it != sd->second.end() and it->first == id)
+  //           itg.first->second.emplace_back(id, k, it->second, active_coeffs);
+  //       }
 
-//       if (integral->needs_facet_permutations)
-//         needs_facet_permutations = true;
-//     }
-//   }
+  //       if (integral->needs_facet_permutations)
+  //         needs_facet_permutations = true;
+  //     }
+  //   }
 
   std::map<IntegralType,
            std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>
