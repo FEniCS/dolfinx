@@ -101,6 +101,8 @@ public:
         _shape1(_element_dof_layout.num_dofs()
                 * _element_dof_layout.block_size() / _bs)
   {
+    if (_bs != _element_dof_layout.block_size())
+      throw std::runtime_error("Block size issues.");
     // Do nothing
   }
 
