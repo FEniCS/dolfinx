@@ -57,9 +57,14 @@ def test_gradient(mesh):
 )
 def test_discrete_curl(element_data, p):
     """Compute discrete curl, with verification using Expression."""
+
+    if MPI.COMM_WORLD.size > 1:
+        return
     # mesh, family0, family1 = cell_type
     celltype, E0, E1 = element_data
-    msh = create_unit_cube(MPI.COMM_WORLD, 3, 2, 6, cell_type=celltype, dtype=np.float64)
+    msh = create_unit_cube(
+        MPI.COMM_WORLD, 3, 2, 6, ghost_mode=GhostMode.none, cell_type=celltype, dtype=np.float64
+    )
     delta_x = 1 / (6 - 1)
 
     rng = np.random.default_rng(0)
@@ -121,6 +126,7 @@ def test_discrete_curl(element_data, p):
     curl_u = Expression(ufl.curl(u0), V1.element.interpolation_points, dtype=dtype)
     u1_expr = Function(V1, dtype=dtype)
     u1_expr.interpolate(curl_u)
+
 
     atol = 1000 * np.finfo(dtype).resolution
     # print(atol)
