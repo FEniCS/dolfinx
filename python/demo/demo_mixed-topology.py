@@ -98,7 +98,6 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
     print(f"Creating form for {cell_name}")
     element = basix.ufl.element("Lagrange", cell_name, 1)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_name, 1, shape=(3,)))
-    # cppV = _cpp.fem.FunctionSpace_float64(mesh, cpp_elements[i], dofmaps[i])
     V = FunctionSpace(Mesh(mesh, domain), element, cppV)
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     k = 12.0
