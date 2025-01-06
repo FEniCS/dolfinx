@@ -127,7 +127,6 @@ def test_discrete_curl(element_data, p):
     u1_expr = Function(V1, dtype=dtype)
     u1_expr.interpolate(curl_u)
 
-
     atol = 1000 * np.finfo(dtype).resolution
     # print(atol)
     # print(np.linalg.norm(u1.x.array))
