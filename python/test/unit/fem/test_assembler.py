@@ -1057,7 +1057,7 @@ class TestPETScAssemblers:
         )
 
         def partitioner(comm, nparts, local_graph, num_ghost_nodes):
-            """Leave cells on the curent rank"""
+            """Leave cells on the current rank."""
             dest = np.full(len(cells), comm.rank, dtype=np.int32)
             return graph.adjacencylist(dest)._cpp_object
 
