@@ -106,11 +106,12 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
 a_form = form(a)
 
 ffi = a_form.module[0].ffi
+
+# Create a sparsity pattern
+sp = create_sparsity_pattern(a_form)
+
 exit()
 
-
-# # Create a sparsity patter for form 0
-# sp = create_sparsity_pattern(aforms[0])
 # # Add to sparsity pattern for form 1
 # build_sparsity_pattern(sp, aforms[1])
 # sp.finalize()

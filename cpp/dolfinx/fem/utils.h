@@ -175,6 +175,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
 template <dolfinx::scalar T, std::floating_point U>
 void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
 {
+  std::cout << "Building sparsity pattern" << std::endl;
   if (a.rank() != 2)
   {
     throw std::runtime_error(
@@ -218,11 +219,18 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
   for (auto type : types)
   {
     std::vector<int> ids = a.integral_ids(type);
+    std::cout << "Number of ids: " << ids.size() << std::endl;
     switch (type)
     {
     case IntegralType::cell:
       for (int id : ids)
       {
+        std::cout << "ID = " << id << std::endl;
+        auto domains0 = a.domains(type, id, *mesh0);
+        auto domains1 = a.domains(type, id, *mesh1);
+        std::cout << "Domains0: " << domains0.size() << std::endl;
+        std::cout << "Domains1: " << domains1.size() << std::endl;
+
         sparsitybuild::cells(
             pattern, {a.domain(type, id, *mesh0), a.domain(type, id, *mesh1)},
             {{dofmaps[0], dofmaps[1]}});
