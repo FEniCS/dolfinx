@@ -247,5 +247,5 @@ TEMPLATE_TEST_CASE("Interval uniform refinement", "[refinement][interva]",
                                                            {0.0, 1.0});
   auto [refined, parent_edge, parent_facet]
       = dolfinx::refinement::refine(interval, std::nullopt);
-  CHECK(refined.topology()->index_map(0)->size_global() == 5);
+  CHECK(refined.topology()->index_map(0)->size_global() == 41);
 }
