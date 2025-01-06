@@ -104,7 +104,8 @@ void declare_function_space(nb::module_& m, std::string type)
             [](dolfinx::fem::FiniteElement<T>* self,
                basix::FiniteElement<T>& element,
                std::optional<std::vector<std::size_t>> block_shape,
-               bool symmetric) {
+               bool symmetric)
+            {
               new (self) dolfinx::fem::FiniteElement<T>(element, block_shape,
                                                         symmetric);
             },
@@ -378,7 +379,7 @@ void declare_objects(nb::module_& m, const std::string& type)
              std::optional<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>> x0,
              T alpha)
           {
-            auto _b = std::span(b.data(), b.size());
+            std::span _b(b.data(), b.size());
             if (x0.has_value())
             {
               self.set(_b, std::span(x0.value().data(), x0.value().shape(0)),
