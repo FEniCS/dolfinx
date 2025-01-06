@@ -176,7 +176,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   }
 
   assert(cell_topology.size() == 2 * refined_cell_count);
-  assert((!compute_parent_cell) || (parent_cell->size() == refined_cell_count));
+  assert(!compute_parent_cell or parent_cell->size() == refined_cell_count);
 
   std::vector<std::int32_t> offsets(refined_cell_count + 1);
   std::ranges::generate(offsets, [i = 0]() mutable { return 2 * i++; });
