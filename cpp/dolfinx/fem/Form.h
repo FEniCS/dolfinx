@@ -50,8 +50,6 @@ struct integral_data
   /// @param[in] entities Indices of entities to integrate over.
   /// @param[in] coeffs Indicies of the coefficients are present
   /// (active) in `kernel`.
-  // FIXME cell_type should be renamed to something like "kernel_id", since
-  // for interior facet integrals, we will have multiple cell types.
   template <typename K, typename V, typename W>
     requires std::is_convertible_v<
                  std::remove_cvref_t<K>,
@@ -61,9 +59,8 @@ struct integral_data
                                            std::vector<std::int32_t>>
                  and std::is_convertible_v<std::remove_cvref_t<W>,
                                            std::vector<int>>
-  integral_data(int id, mesh::CellType cell_type, K&& kernel, V&& entities,
-                W&& coeffs)
-      : id(id), cell_type(cell_type), kernel(std::forward<K>(kernel)),
+  integral_data(int id, K&& kernel, V&& entities, W&& coeffs)
+      : id(id), kernel(std::forward<K>(kernel)),
         entities(std::forward<V>(entities)), coeffs(std::forward<W>(coeffs))
   {
   }
@@ -85,9 +82,9 @@ struct integral_data
                                     const int*, const uint8_t*)>>
                  and std::is_convertible_v<std::remove_cvref_t<W>,
                                            std::vector<int>>
-  integral_data(int id, mesh::CellType cell_type, K&& kernel,
-                std::span<const std::int32_t> entities, W&& coeffs)
-      : id(id), cell_type(cell_type), kernel(std::forward<K>(kernel)),
+  integral_data(int id, K&& kernel, std::span<const std::int32_t> entities,
+                W&& coeffs)
+      : id(id), kernel(std::forward<K>(kernel)),
         entities(entities.begin(), entities.end()),
         coeffs(std::forward<W>(coeffs))
   {
@@ -95,9 +92,6 @@ struct integral_data
 
   /// @brief Integral ID.
   int id;
-
-  /// @brief Cell type.
-  mesh::CellType cell_type;
 
   /// @brief The integration kernel.
   std::function<void(T*, const T*, const T*, const U*, const int*,
@@ -224,8 +218,8 @@ public:
 
       std::vector<integral_data<scalar_type, geometry_type>>& itg
           = _integrals[static_cast<std::size_t>(domain_type)];
-      for (auto&& [id, cell_type, kern, e, c] : data)
-        itg.emplace_back(id, cell_type, kern, std::move(e), std::move(c));
+      for (auto&& [id, kern, e, c] : data)
+        itg.emplace_back(id, kern, std::move(e), std::move(c));
     }
 
     // Store entity maps
@@ -379,7 +373,8 @@ public:
   }
 
   // TODO Add cell_type_idx and return single list
-  std::vector<std::int32_t> domain(IntegralType type, int i, int cell_type_idx) const
+  std::vector<std::int32_t> domain(IntegralType type, int i,
+                                   int cell_type_idx) const
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
     auto it = std::ranges::lower_bound(integrals, i, std::less<>{},

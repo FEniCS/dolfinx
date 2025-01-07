@@ -492,20 +492,15 @@ Form<T, U> create_form_factory(
               "UFCx kernel function is NULL. Check requested types.");
         }
 
-        std::vector<mesh::CellType> cell_types
-            = mesh->topology()->entity_types(tdim);
-        mesh::CellType cell_type = cell_types[form_idx];
         // Build list of entities to assemble over
         if (id == -1)
         {
-
           // Default kernel, operates on all (owned) cells
           assert(topology->index_maps(tdim)[form_idx]);
           default_cells.resize(
               topology->index_maps(tdim)[form_idx]->size_local(), 0);
           std::iota(default_cells.begin(), default_cells.end(), 0);
-          itg.first->second.emplace_back(id, cell_type, k, default_cells,
-                                         active_coeffs);
+          itg.first->second.emplace_back(id, k, default_cells, active_coeffs);
         }
         else if (sd != subdomains.end())
         {
@@ -514,8 +509,7 @@ Form<T, U> create_form_factory(
               = std::ranges::lower_bound(sd->second, id, std::less<>{},
                                          [](const auto& a) { return a.first; });
           if (it != sd->second.end() and it->first == id)
-            itg.first->second.emplace_back(id, cell_type, k, it->second,
-                                           active_coeffs);
+            itg.first->second.emplace_back(id, k, it->second, active_coeffs);
         }
 
         if (integral->needs_facet_permutations)
@@ -579,7 +573,6 @@ Form<T, U> create_form_factory(
         assert(f_to_c);
         auto c_to_f = topology->connectivity(tdim, tdim - 1);
         assert(c_to_f);
-        mesh::CellType cell_type = mesh->topology()->cell_types()[form_idx];
         if (id == -1)
         {
           // Default kernel, operates on all (owned) exterior facets
@@ -592,7 +585,7 @@ Form<T, U> create_form_factory(
             default_facets_ext.insert(default_facets_ext.end(), pair.begin(),
                                       pair.end());
           }
-          itg.first->second.emplace_back(id, cell_type, k, default_facets_ext,
+          itg.first->second.emplace_back(id, k, default_facets_ext,
                                          active_coeffs);
         }
         else if (sd != subdomains.end())
@@ -602,7 +595,7 @@ Form<T, U> create_form_factory(
               = std::ranges::lower_bound(sd->second, id, std::less<>{},
                                          [](const auto& a) { return a.first; });
           if (it != sd->second.end() and it->first == id)
-            itg.first->second.emplace_back(id, cell_type, k, it->second, active_coeffs);
+            itg.first->second.emplace_back(id, k, it->second, active_coeffs);
         }
 
         if (integral->needs_facet_permutations)
