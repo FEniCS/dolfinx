@@ -211,57 +211,51 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
     return cells;
   };
 
-  std::array<std::reference_wrapper<const DofMap>, 2> dofmaps{
-      *a.function_spaces().at(0)->dofmap(),
-      *a.function_spaces().at(1)->dofmap()};
-
-  // Create and build sparsity pattern
-  for (auto type : types)
+  const int num_cell_types = mesh->topology()->cell_types().size();
+  for (int cell_type_idx = 0; cell_type_idx < num_cell_types; ++cell_type_idx)
   {
-    std::vector<int> ids = a.integral_ids(type);
-    std::cout << "Number of ids: " << ids.size() << std::endl;
-    switch (type)
+    std::array<std::reference_wrapper<const DofMap>, 2> dofmaps{
+        *a.function_spaces().at(0)->dofmaps().at(cell_type_idx),
+        *a.function_spaces().at(1)->dofmaps().at(cell_type_idx)};
+
+    // Create and build sparsity pattern
+    for (auto type : types)
     {
-    case IntegralType::cell:
-      for (int id : ids)
+      std::vector<int> ids = a.integral_ids(type);
+      std::cout << "Number of ids: " << ids.size() << std::endl;
+      switch (type)
       {
-        std::cout << "ID = " << id << std::endl;
-        auto domains0 = a.domains(type, id, *mesh0);
-        auto domains1 = a.domains(type, id, *mesh1);
-        std::cout << "Domains0: " << domains0.size() << std::endl;
-        std::cout << "Domains1: " << domains1.size() << std::endl;
-
-        std::cout << domains0[0].size() << " " << domains0[1].size()
-                  << std::endl;
-
-        for (int i = 0; i < domains0.size(); ++i)
+      case IntegralType::cell:
+        for (int id : ids)
         {
-          sparsitybuild::cells(pattern, {domains0[i], domains1[i]},
+          auto domains0 = a.domains(type, id, *mesh0).at(cell_type_idx);
+          auto domains1 = a.domains(type, id, *mesh1).at(cell_type_idx);
+          sparsitybuild::cells(pattern, {domains0, domains1},
                                {{dofmaps[0], dofmaps[1]}});
         }
+        break;
+      case IntegralType::interior_facet:
+        for (int id : ids)
+        {
+          sparsitybuild::interior_facets(
+              pattern,
+              {extract_cells(a.domain(type, id, *mesh0)),
+               extract_cells(a.domain(type, id, *mesh1))},
+              {{dofmaps[0], dofmaps[1]}});
+        }
+        break;
+      case IntegralType::exterior_facet:
+        for (int id : ids)
+        {
+          sparsitybuild::cells(pattern,
+                               {extract_cells(a.domain(type, id, *mesh0)),
+                                extract_cells(a.domain(type, id, *mesh1))},
+                               {{dofmaps[0], dofmaps[1]}});
+        }
+        break;
+      default:
+        throw std::runtime_error("Unsupported integral type");
       }
-      break;
-    case IntegralType::interior_facet:
-      for (int id : ids)
-      {
-        sparsitybuild::interior_facets(
-            pattern,
-            {extract_cells(a.domain(type, id, *mesh0)),
-             extract_cells(a.domain(type, id, *mesh1))},
-            {{dofmaps[0], dofmaps[1]}});
-      }
-      break;
-    case IntegralType::exterior_facet:
-      for (int id : ids)
-      {
-        sparsitybuild::cells(pattern,
-                             {extract_cells(a.domain(type, id, *mesh0)),
-                              extract_cells(a.domain(type, id, *mesh1))},
-                             {{dofmaps[0], dofmaps[1]}});
-      }
-      break;
-    default:
-      throw std::runtime_error("Unsupported integral type");
     }
   }
 

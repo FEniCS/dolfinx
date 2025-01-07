@@ -377,6 +377,7 @@ public:
   }
 
 
+  // TODO Add cell_type_idx and return single list
   std::vector<std::vector<std::int32_t>> domains(IntegralType type, int i) const
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
