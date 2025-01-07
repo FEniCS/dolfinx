@@ -48,8 +48,8 @@ struct integral_data
   /// @param[in] id Domain ID.
   /// @param[in] kernel Integration kernel.
   /// @param[in] entities Indices of entities to integrate over.
-  /// @param[in] coeffs Indicies of the coefficients are present
-  /// (active) in `kernel`.
+  /// @param[in] coeffs Indices of the coefficients are present (active)
+  /// in `kernel`.
   template <typename K, typename V, typename W>
     requires std::is_convertible_v<
                  std::remove_cvref_t<K>,
@@ -70,11 +70,11 @@ struct integral_data
   /// @param[in] id Domain ID.
   /// @param[in] kernel Integration kernel.
   /// @param[in] entities Indices of entities to integrate over.
-  /// @param[in] coeffs Indicies of the coefficients that are active in
+  /// @param[in] coeffs Indices of the coefficients that are active in
   /// the `kernel`.
   ///
-  /// @note This version allows `entities` to be passed as a std::span,
-  /// which is then copied.
+  /// @note This version allows `entities` to be passed as a
+  /// `std::span`, which is then copied.
   template <typename K, typename W>
     requires std::is_convertible_v<
                  std::remove_cvref_t<K>,

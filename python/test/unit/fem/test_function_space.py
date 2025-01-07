@@ -123,7 +123,7 @@ def test_sub(Q, W):
     assert W.element.num_sub_elements == X.element.num_sub_elements
     assert W.element.space_dimension == X.element.space_dimension
     assert W.value_shape == X.value_shape
-    assert W.element.interpolation_points().shape == X.element.interpolation_points().shape
+    assert W.element.interpolation_points.shape == X.element.interpolation_points.shape
     assert W.element == X.element
 
 

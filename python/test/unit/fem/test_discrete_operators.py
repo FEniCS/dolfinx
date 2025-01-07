@@ -169,7 +169,7 @@ def test_gradient_interpolation(cell_type, p, q):
     u = Function(V, uvec, dtype=dtype)
     u.interpolate(lambda x: 2 * x[0] ** p + 3 * x[1] ** p)
 
-    grad_u = Expression(ufl.grad(u), W.element.interpolation_points(), dtype=dtype)
+    grad_u = Expression(ufl.grad(u), W.element.interpolation_points, dtype=dtype)
     w_expr = Function(W, dtype=dtype)
     w_expr.interpolate(grad_u)
 

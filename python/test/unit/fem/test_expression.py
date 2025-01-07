@@ -48,7 +48,7 @@ def test_rank0(dtype):
     f.interpolate(lambda x: x[0] ** 2 + 2.0 * x[1] ** 2)
 
     ufl_expr = ufl.grad(f)
-    points = vdP1.element.interpolation_points()
+    points = vdP1.element.interpolation_points
 
     compiled_expr = Expression(ufl_expr, points, dtype=dtype)
     num_cells = mesh.topology.index_map(2).size_local
@@ -98,7 +98,7 @@ def test_rank1_hdiv(dtype):
     RT1 = functionspace(mesh, ("RT", 2))
     f = ufl.TrialFunction(RT1)
 
-    points = vdP1.element.interpolation_points()
+    points = vdP1.element.interpolation_points
     compiled_expr = Expression(f, points, dtype=dtype)
     num_cells = mesh.topology.index_map(2).size_local
     array_evaluated = compiled_expr.eval(mesh, np.arange(num_cells, dtype=np.int32))
@@ -355,7 +355,7 @@ def test_expression_eval_cells_subset(dtype):
     u = dolfinx.fem.Function(V, dtype=dtype)
     u.x.array[:] = dofs_to_cells
     u.x.scatter_forward()
-    e = dolfinx.fem.Expression(u, V.element.interpolation_points())
+    e = dolfinx.fem.Expression(u, V.element.interpolation_points)
 
     # Test eval on single cell
     for c in range(cells_imap.size_local):
@@ -387,8 +387,8 @@ def test_expression_comm(dtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=xtype)
     v = Constant(mesh, dtype(1))
     u = Function(functionspace(mesh, ("Lagrange", 1)), dtype=dtype)
-    Expression(v, u.function_space.element.interpolation_points(), comm=MPI.COMM_WORLD)
-    Expression(v, u.function_space.element.interpolation_points(), comm=MPI.COMM_SELF)
+    Expression(v, u.function_space.element.interpolation_points, comm=MPI.COMM_WORLD)
+    Expression(v, u.function_space.element.interpolation_points, comm=MPI.COMM_SELF)
 
 
 def compute_exterior_facet_entities(mesh, facets):

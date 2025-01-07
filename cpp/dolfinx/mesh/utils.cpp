@@ -46,8 +46,8 @@ mesh::extract_topology(CellType cell_type, const fem::ElementDofLayout& layout,
   for (std::size_t c = 0; c < cells.size() / num_node_per_cell; ++c)
   {
     auto p = cells.subspan(c * num_node_per_cell, num_node_per_cell);
-    auto t = std::span(topology.data() + c * num_vertices_per_cell,
-                       num_vertices_per_cell);
+    std::span t(topology.data() + c * num_vertices_per_cell,
+                num_vertices_per_cell);
     for (int j = 0; j < num_vertices_per_cell; ++j)
       t[j] = p[local_vertices[j]];
   }

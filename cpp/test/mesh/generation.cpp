@@ -112,7 +112,7 @@ TEMPLATE_TEST_CASE("Interval mesh (parallel)", "[mesh][interval]", float,
               {2}, {2}, {2, 0}, {0, 2}, {0},    {0},    {0}};
     }
     else
-      FAIL("Test only supports <= 3 processes");
+      SKIP("Test only supports <= 3 processes");
 
     return graph::AdjacencyList<std::int32_t>(std::move(data));
   };

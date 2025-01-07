@@ -128,7 +128,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
 namespace impl
 {
-/// @brief Convenience typdef
+/// @brief Convenience typedef
 template <typename T, std::size_t D>
 using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
     T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, D>>;

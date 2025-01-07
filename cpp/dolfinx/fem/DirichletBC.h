@@ -338,7 +338,7 @@ public:
     if (g->shape.size() != V->element()->value_shape().size())
     {
       throw std::runtime_error(
-          "Rank mis-match between Constant and function space in DirichletBC");
+          "Rank mismatch between Constant and function space in DirichletBC");
     }
 
     if (g->value.size() != _function_space->dofmap()->bs())

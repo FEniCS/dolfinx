@@ -12,6 +12,7 @@
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/io/VTKFile.h>
+#include <dolfinx/io/VTKHDF.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/io/vtk_utils.h>
@@ -216,6 +217,17 @@ void io(nb::module_& m)
       nb::arg("dofmap"), nb::arg("celltype"),
       "Extract the mesh topology with VTK ordering using "
       "geometry indices");
+
+  m.def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<double>)
+      .def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<float>);
+  m.def("read_vtkhdf_mesh_float64",
+        [](MPICommWrapper comm, std::string filename) {
+          return dolfinx::io::VTKHDF::read_mesh<double>(comm.get(), filename);
+        });
+  m.def("read_vtkhdf_mesh_float32",
+        [](MPICommWrapper comm, std::string filename) {
+          return dolfinx::io::VTKHDF::read_mesh<float>(comm.get(), filename);
+        });
 
   // dolfinx::io::cell permutation functions
   m.def("perm_vtk", &dolfinx::io::cells::perm_vtk, nb::arg("type"),

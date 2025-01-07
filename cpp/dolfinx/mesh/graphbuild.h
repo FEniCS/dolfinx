@@ -26,23 +26,26 @@ enum class CellType;
 /// connections via facets) and facets with only one attached cell.
 ///
 /// @param[in] celltypes List of cell types.
-/// @param[in] cells Lists of cell vertices (stored as flattened lists, one for
-/// each cell type).
+/// @param[in] cells Lists of cell vertices (stored as flattened lists,
+/// one for each cell type).
 /// @return
 /// 1. Local dual graph
-/// 2. Facets, defined by their vertices, that are shared by only one
-/// cell on this rank. The logically 2D array is flattened (row-major).
-/// 3. The number of columns for the facet data array (2).
-/// 4. The attached cell (local index) to each returned facet in (2).
+/// 2. Facets, defined by their sorted vertices, that are shared by only
+/// one cell on this rank. The logically 2D array is flattened
+/// (row-major).
+/// 3. Facet data array (2) number of columns
+/// 4. Attached cell (local index) to each returned facet in (2).
 ///
 /// Each row of the returned data (2) contains `[v0, ... v_(n-1), x, ..,
-/// x]`, where `v_i` is a vertex global index, `x` is a padding value
-/// (all padding values will be equal).
+/// x]`, where `v_i` is a vertex global index, `x` is a negative value
+/// (all padding values will be equal). The vertex global indices are
+/// sorted for each facet.
 ///
-/// @note The cells of each cell type are numbered locally consecutively,
-/// i.e. if there are `n` cells of type `0` and `m` cells of type `1`, then
-/// cells of type `0` are numbered `0..(n-1)` and cells of type `1` are numbered
-/// `n..(n+m-1)` respectively, in the returned dual graph.
+/// @note The cells of each cell type are numbered locally
+/// consecutively, i.e. if there are `n` cells of type `0` and `m` cells
+/// of type `1`, then cells of type `0` are numbered `0..(n-1)` and
+/// cells of type `1` are numbered `n..(n+m-1)` respectively, in the
+/// returned dual graph.
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
 build_local_dual_graph(std::span<const CellType> celltypes,
@@ -58,8 +61,8 @@ build_local_dual_graph(std::span<const CellType> celltypes,
 /// @param[in] comm The MPI communicator
 /// @param[in] celltypes List of cell types
 /// @param[in] cells Collections of cells, defined by the cell vertices
-/// from which to build the dual graph, as flattened arrays for each cell type
-/// in `celltypes`.
+/// from which to build the dual graph, as flattened arrays for each
+/// cell type in `celltypes`.
 /// @note `cells` and `celltypes` must have the same size.
 /// @return The dual graph
 graph::AdjacencyList<std::int64_t>

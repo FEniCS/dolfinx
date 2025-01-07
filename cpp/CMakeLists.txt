@@ -382,7 +382,7 @@ if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
   find_package(ufcx 0.10 REQUIRED CONFIG)
 else()
-  # Check in MODULE mode (using FindUFCX.cmake) using Python intepreter.
+  # Check in MODULE mode (using FindUFCX.cmake) using Python interpreter.
   find_package(
     Python3
     COMPONENTS Interpreter

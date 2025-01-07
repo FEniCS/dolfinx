@@ -250,7 +250,7 @@ sigma_vm = ufl.sqrt((3 / 2) * inner(sigma_dev, sigma_dev))
 
 # +
 W = functionspace(msh, ("Discontinuous Lagrange", 0))
-sigma_vm_expr = Expression(sigma_vm, W.element.interpolation_points())
+sigma_vm_expr = Expression(sigma_vm, W.element.interpolation_points)
 sigma_vm_h = Function(W)
 sigma_vm_h.interpolate(sigma_vm_expr)
 # -

@@ -442,7 +442,9 @@ if MPI.COMM_WORLD.rank == 0:
     )
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
-domain, cell_tags, facet_tags = io.gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
+mesh_data = io.gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
+assert mesh_data.cell_tags is not None, "Cell tags are missing"
+assert mesh_data.facet_tags is not None, "Facet tags are missing"
 
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()
@@ -451,11 +453,13 @@ MPI.COMM_WORLD.barrier()
 # The mesh is visualized with [PyVista](https://docs.pyvista.org/)
 
 if have_pyvista:
-    topology, cell_types, geometry = plot.vtk_mesh(domain, 2)
+    topology, cell_types, geometry = plot.vtk_mesh(mesh_data.mesh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     plotter = pyvista.Plotter()
-    num_local_cells = domain.topology.index_map(domain.topology.dim).size_local
-    grid.cell_data["Marker"] = cell_tags.values[cell_tags.indices < num_local_cells]
+    num_local_cells = mesh_data.mesh.topology.index_map(mesh_data.mesh.topology.dim).size_local
+    grid.cell_data["Marker"] = mesh_data.cell_tags.values[
+        mesh_data.cell_tags.indices < num_local_cells
+    ]
     grid.set_active_scalars("Marker")
     plotter.add_mesh(grid, show_edges=True)
     plotter.view_xy()
@@ -478,8 +482,8 @@ theta = np.pi / 4  # Angle of incidence of the background field
 # represent the electric field
 
 degree = 3
-curl_el = element("N1curl", domain.basix_cell(), degree, dtype=default_real_type)
-V = fem.functionspace(domain, curl_el)
+curl_el = element("N1curl", mesh_data.mesh.basix_cell(), degree, dtype=default_real_type)
+V = fem.functionspace(mesh_data.mesh, curl_el)
 
 # Next, we can interpolate $\mathbf{E}_b$ into the function space $V$:
 
@@ -488,7 +492,7 @@ f = BackgroundElectricField(theta, n_bkg, k0)
 Eb = fem.Function(V)
 Eb.interpolate(f.eval)
 
-x = ufl.SpatialCoordinate(domain)
+x = ufl.SpatialCoordinate(mesh_data.mesh)
 r = radial_distance(x)
 
 # Create test and trial functions
@@ -500,13 +504,13 @@ Es_3d = ufl.as_vector((Es[0], Es[1], 0))
 v_3d = ufl.as_vector((v[0], v[1], 0))
 
 # Measures for subdomains
-dx = ufl.Measure("dx", domain, subdomain_data=cell_tags)
-ds = ufl.Measure("ds", domain, subdomain_data=facet_tags)
+dx = ufl.Measure("dx", mesh_data.mesh, subdomain_data=mesh_data.cell_tags)
+ds = ufl.Measure("ds", mesh_data.mesh, subdomain_data=mesh_data.facet_tags)
 dDom = dx((au_tag, bkg_tag))
 dsbc = ds(boundary_tag)
 
 # Normal to the boundary
-n = ufl.FacetNormal(domain)
+n = ufl.FacetNormal(mesh_data.mesh)
 n_3d = ufl.as_vector((n[0], n[1], 0))
 # -
 
@@ -523,10 +527,10 @@ eps_au = -1.0782 + 1j * 5.8089
 # of the gold permittivity $\varepsilon_m$ for cells inside the wire,
 # while it takes the value of the background permittivity otherwise:
 
-D = fem.functionspace(domain, ("DG", 0))
+D = fem.functionspace(mesh_data.mesh, ("DG", 0))
 eps = fem.Function(D)
-au_cells = cell_tags.find(au_tag)
-bkg_cells = cell_tags.find(bkg_tag)
+au_cells = mesh_data.cell_tags.find(au_tag)
+bkg_cells = mesh_data.cell_tags.find(bkg_tag)
 eps.x.array[au_cells] = np.full_like(au_cells, eps_au, dtype=eps.x.array.dtype)
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=eps.x.array.dtype)
 eps.x.scatter_forward()
@@ -633,12 +637,12 @@ Esh = problem.solve()
 # Lagrange space.
 
 # +
-gdim = domain.geometry.dim
-V_dg = fem.functionspace(domain, ("Discontinuous Lagrange", degree, (gdim,)))
+gdim = mesh_data.mesh.geometry.dim
+V_dg = fem.functionspace(mesh_data.mesh, ("Discontinuous Lagrange", degree, (gdim,)))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 
-with io.VTXWriter(domain.comm, "Esh.bp", Esh_dg) as vtx:
+with io.VTXWriter(mesh_data.mesh.comm, "Esh.bp", Esh_dg) as vtx:
     vtx.write(0.0)
 # -
 
@@ -652,8 +656,8 @@ if have_pyvista:
     V_cells, V_types, V_x = plot.vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
     Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
-    Esh_values[:, : domain.topology.dim] = Esh_dg.x.array.reshape(
-        V_x.shape[0], domain.topology.dim
+    Esh_values[:, : mesh_data.mesh.topology.dim] = Esh_dg.x.array.reshape(
+        V_x.shape[0], mesh_data.mesh.topology.dim
     ).real
 
     V_grid.point_data["u"] = Esh_values
@@ -677,7 +681,7 @@ E = fem.Function(V)
 E.x.array[:] = Eb.x.array[:] + Esh.x.array[:]
 E_dg = fem.Function(V_dg)
 E_dg.interpolate(E)
-with io.VTXWriter(domain.comm, "E.bp", E_dg) as vtx:
+with io.VTXWriter(mesh_data.mesh.comm, "E.bp", E_dg) as vtx:
     vtx.write(0.0)
 # -
 
@@ -751,11 +755,11 @@ dAu = dx(au_tag)
 
 # Normalized absorption efficiency
 q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / gcs / I0).real
-q_abs_fenics = domain.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
+q_abs_fenics = mesh_data.mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
 # Normalized scattering efficiency
 q_sca_fenics_proc = (fem.assemble_scalar(fem.form(P * dsbc)) / gcs / I0).real
-q_sca_fenics = domain.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
+q_sca_fenics = mesh_data.mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
 # Extinction efficiency
 q_ext_fenics = q_abs_fenics + q_sca_fenics
@@ -770,7 +774,7 @@ assert err_abs < 0.01
 assert err_sca < 0.01
 assert err_ext < 0.01
 
-if domain.comm.rank == 0:
+if mesh_data.mesh.comm.rank == 0:
     print()
     print(f"The analytical absorption efficiency is {q_abs_analyt}")
     print(f"The numerical absorption efficiency is {q_abs_fenics}")
