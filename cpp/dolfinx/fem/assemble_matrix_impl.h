@@ -493,8 +493,7 @@ void assemble_interior_facets(
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     la::MatSet<T> auto mat_set, const Form<T, U>& a,
-    std::span<const scalar_value_type_t<T>> x,
-    std::span<const T> constants,
+    std::span<const scalar_value_type_t<T>> x, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
     std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1)
@@ -511,6 +510,11 @@ void assemble_matrix(
   auto mesh1 = a.function_spaces().at(1)->mesh();
   assert(mesh1);
 
+  // TODO Mixed topology with exterior and interior facet integrals.
+  // NOTE: Can't just loop over cell types for interior facet integrals
+  // because we have a kernel per combination of comparable cell types,
+  // rather than one per cell type. Also, we need the dofmaps for
+  // two different cell types at the same time.
   const int num_cell_types = mesh->topology()->cell_types().size();
   for (int cell_type_idx = 0; cell_type_idx < num_cell_types; ++cell_type_idx)
   {
@@ -578,6 +582,9 @@ void assemble_matrix(
         = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
     for (int i : a.integral_ids(IntegralType::exterior_facet))
     {
+      if (num_cell_types > 1)
+        throw std::runtime_error("Exterior facet integrals with mixed "
+                                 "topology aren't supported yet");
       auto fn = a.kernel(IntegralType::exterior_facet, i);
       assert(fn);
       auto& [coeffs, cstride]
@@ -593,6 +600,9 @@ void assemble_matrix(
 
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {
+      if (num_cell_types > 1)
+        throw std::runtime_error("Interior facet integrals with mixed "
+                                 "topology aren't supported yet");
       const std::vector<int> c_offsets = a.coefficient_offsets();
       auto fn = a.kernel(IntegralType::interior_facet, i);
       assert(fn);
