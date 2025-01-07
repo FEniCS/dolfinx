@@ -262,6 +262,8 @@ public:
   /// type.
   /// @param[in] type Integral type.
   /// @param[in] i Domain identifier (index).
+  /// @param[in] kernel_idx Index of the kernel (we may have multiple kernels for
+  /// a given ID in mixed-topology meshes).
   /// @return Function to call for `tabulate_tensor`.
   std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
                      const geometry_type*, const int*, const uint8_t*)>
