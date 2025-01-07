@@ -269,15 +269,23 @@ public:
   /// @return Function to call for `tabulate_tensor`.
   std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
                      const geometry_type*, const int*, const uint8_t*)>
-  kernel(IntegralType type, int i) const
+  kernel(IntegralType type, int i, int cell_type_idx) const
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
     auto it = std::ranges::lower_bound(integrals, i, std::less<>{},
                                        [](const auto& a) { return a.id; });
+    // FIXME Do this properly
     if (it != integrals.end() and it->id == i)
-      return it->kernel;
+      return (it + cell_type_idx)->kernel;
     else
       throw std::runtime_error("No kernel for requested domain index.");
+  }
+
+  std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
+                     const geometry_type*, const int*, const uint8_t*)>
+  kernel(IntegralType type, int i) const
+  {
+    return kernel(type, i, 0);
   }
 
   /// @brief Get types of integrals in the form.

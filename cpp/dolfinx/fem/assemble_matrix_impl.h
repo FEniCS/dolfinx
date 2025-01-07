@@ -555,7 +555,7 @@ void assemble_matrix(
     for (int i : a.integral_ids(IntegralType::cell))
     {
       // TODO Multiple kernels
-      auto fn = a.kernel(IntegralType::cell, i);
+      auto fn = a.kernel(IntegralType::cell, i, cell_type_idx);
       assert(fn);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
 
