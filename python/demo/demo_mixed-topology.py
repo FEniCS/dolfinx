@@ -1,3 +1,4 @@
+import basix.ufl
 from mpi4py import MPI
 
 import numpy as np
@@ -89,18 +90,18 @@ elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
 
-cpp_elements = [_cpp.fem.FiniteElement_float64(e._e, None, True) for e in elements]
-dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, cpp_elements)
-cppV = _cpp.fem.FunctionSpace_float64(mesh, cpp_elements, dofmaps)
+elements_cpp = [_cpp.fem.FiniteElement_float64(e._e, None, True) for e in elements]
+dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, elements_cpp)
+V_cpp = _cpp.fem.FunctionSpace_float64(mesh, elements_cpp, dofmaps)
 # Both dofmaps have the same IndexMap, but different cell_dofs
 
 # Create forms for each cell type
 a = []
 for i, cell_name in enumerate(["hexahedron", "prism"]):
     print(f"Creating form for {cell_name}")
-    element = basix.ufl.element("Lagrange", cell_name, 1)
+    element = basix.ufl.wrap_element(elements[i])
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_name, 1, shape=(3,)))
-    V = FunctionSpace(Mesh(mesh, domain), element, cppV)
+    V = FunctionSpace(Mesh(mesh, domain), element, V_cpp)
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     k = 12.0
     a += [(ufl.inner(ufl.grad(u), ufl.grad(v)) - k**2 * u * v) * ufl.dx]
