@@ -1045,6 +1045,7 @@ def discrete_curl(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:
     """
     return _discrete_curl(space0._cpp_object, space1._cpp_object)
 
+
 def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:
     """Assemble a discrete gradient operator.
 

@@ -132,7 +132,7 @@ def discrete_gradient(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCS
     Returns:
         Discrete gradient operator.
     """
-    return _discrete_gradient(space0._cpp_object, space1._cpp_object)
+    return _MatrixCSR(_discrete_gradient(space0._cpp_object, space1._cpp_object))
 
 
 def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCSR:

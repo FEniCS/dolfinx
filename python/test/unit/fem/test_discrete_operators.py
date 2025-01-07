@@ -1,24 +1,20 @@
-# Copyright (C) 2015-2022 Garth N. Wells, Jørgen S. Dokken
+# Copyright (C) 2015-2025 Garth N. Wells, Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for the DiscreteOperator class"""
+"""Unit tests for the discrete operators."""
 
 from mpi4py import MPI
 
 import numpy as np
 import pytest
-import scipy
 
 import dolfinx.la
 import ufl
-from dolfinx import fem
 from basix.ufl import element
 from dolfinx.fem import Expression, Function, discrete_curl, discrete_gradient, functionspace
 from dolfinx.mesh import CellType, GhostMode, create_unit_cube, create_unit_square
-
-from dolfinx.fem.petsc import discrete_curl as petsc_discrete_curl
 
 
 @pytest.mark.parametrize(
@@ -50,7 +46,7 @@ def test_gradient(mesh):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.complex64, np.float64, np.complex128])
-@pytest.mark.parametrize("p", range(2, 4))
+@pytest.mark.parametrize("p", range(2, 5))
 @pytest.mark.parametrize(
     "element_data",
     [
@@ -59,7 +55,7 @@ def test_gradient(mesh):
     ],
 )
 def test_discrete_curl(element_data, p, dtype):
-    """Compute discrete curl, with verification using Expression."""
+    """Compute discrete curl operator, with verification using Expression."""
     xdtype = dtype(0).real.dtype
 
     celltype, E0, E1 = element_data
@@ -246,14 +242,10 @@ def test_gradient_interpolation(cell_type, p, q):
     w = Function(W, dtype=dtype)
 
     # Get the local part of G (no ghost rows)
-    nrlocal = G.index_map(0).size_local
-    nnzlocal = G.indptr[nrlocal]
-    Glocal = scipy.sparse.csr_matrix(
-        (G.data[:nnzlocal], G.indices[:nnzlocal], G.indptr[: nrlocal + 1])
-    )
+    Glocal = G.to_scipy(ghosted=False)
 
     # MatVec
-    w.x.array[:nrlocal] = Glocal @ u.x.array
+    w.x.array[: Glocal.shape[0]] = Glocal @ u.x.array
     w.x.scatter_forward()
 
     atol = 1000 * np.finfo(dtype).resolution
@@ -304,14 +296,13 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
     W = functionspace(mesh, el1)
     G = interpolation_matrix(V, W).to_scipy()
 
-    u = Function(V)
-
     def f(x):
         if mesh.geometry.dim == 2:
             return (x[1] ** p, x[0] ** p)
         else:
             return (x[0] ** p, x[2] ** p, x[1] ** p)
 
+    u = Function(V)
     u.interpolate(f)
     w_vec = Function(W)
     w_vec.interpolate(u)
