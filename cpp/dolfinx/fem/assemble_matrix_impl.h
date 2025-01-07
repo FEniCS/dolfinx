@@ -492,8 +492,8 @@ void assemble_interior_facets(
 /// are applied. Matrix is not finalised.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
-    la::MatSet<T> auto mat_set, const Form<T, U>& a, mdspan2_t x_dofmap,
-    std::span<const scalar_value_type_t<T>> x, std::span<const T> constants,
+    la::MatSet<T> auto mat_set, const Form<T, U>& a,
+    std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
     std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1)
@@ -509,6 +509,10 @@ void assemble_matrix(
   // Trial function mesh
   auto mesh1 = a.function_spaces().at(1)->mesh();
   assert(mesh1);
+
+  // Geometry dofmap and data
+  mdspan2_t x_dofmap = mesh->geometry().dofmap(0);
+  std::span<const scalar_value_type_t<T>> x = mesh->geometry().x();
 
   // Get dofmap data
   std::shared_ptr<const fem::DofMap> dofmap0

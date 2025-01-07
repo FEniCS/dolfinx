@@ -111,13 +111,16 @@ ffi = a_form.module[0].ffi
 sp = create_sparsity_pattern(a_form)
 sp.finalize()
 
+
+# FIXME Call just assembler
 A = matrix_csr(sp)
 print(f"Assembling into matrix of size {len(A.data)} non-zeros")
 
+# Assemble
+assemble_matrix(A, a_form)
+
 exit()
 
-# # Assemble
-# assemble_matrix(A, aforms[0])
 # assemble_matrix(A, aforms[1])
 
 # # Quick solve
