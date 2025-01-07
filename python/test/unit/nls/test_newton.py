@@ -93,7 +93,13 @@ class NonlinearPDE_SNESProblem:
 
     def J(self, snes, x, J, P):
         """Assemble Jacobian matrix."""
+        from petsc4py import PETSc
+
         from dolfinx.fem.petsc import assemble_matrix
+
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        x.copy(self.u.x.petsc_vec)
+        self.u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         J.zeroEntries()
         assemble_matrix(J, self.a, bcs=[self.bc])

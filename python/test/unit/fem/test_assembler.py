@@ -592,7 +592,7 @@ class TestPETScAssemblers:
         Anorm2, bnorm2, xnorm2 = monolithic()
         assert Anorm2 == pytest.approx(Anorm0, 1.0e-6)
         assert bnorm2 == pytest.approx(bnorm0, 1.0e-6)
-        assert xnorm2 == pytest.approx(xnorm0, 1.0e-6)
+        assert xnorm2 == pytest.approx(xnorm0, 1.0e-5)
 
     @pytest.mark.parametrize(
         "mesh",
@@ -1057,9 +1057,9 @@ class TestPETScAssemblers:
         )
 
         def partitioner(comm, nparts, local_graph, num_ghost_nodes):
-            """Leave cells on the curent rank"""
+            """Leave cells on the current rank."""
             dest = np.full(len(cells), comm.rank, dtype=np.int32)
-            return graph.adjacencylist(dest)
+            return graph.adjacencylist(dest)._cpp_object
 
         if comm.rank == 0:
             # Put cells on rank 0

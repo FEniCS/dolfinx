@@ -33,6 +33,7 @@ from dolfinx.cpp.mesh import (
 from dolfinx.cpp.refinement import RefinementOption
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem import coordinate_element as _coordinate_element
+from dolfinx.graph import AdjacencyList
 
 __all__ = [
     "CellType",
@@ -108,22 +109,23 @@ class Topology:
         return self._cpp_object.comm
 
     def create_connectivity(self, d0: int, d1: int):
-        """Create connectivity between given pair of dimensions, ``d0`` and  ``d1``.
+        """Build entity connectivity ``d0 -> d1``.
 
         Args:
-            d0: Dimension of entities one is mapping from
-            d1: Dimension of entities one is mapping to
+            d0: Dimension of entities connectivity is from.
+            d1: Dimension of entities connectivity is to.
         """
         self._cpp_object.create_connectivity(d0, d1)
 
-    def create_entities(self, dim: int) -> int:
+    def create_entities(self, dim: int) -> bool:
         """Create entities of given topological dimension.
 
         Args:
-            dim: Topological dimension
+            dim: Topological dimension of entities to create.
 
         Returns:
-            Number of newly created entities, returns -1 if entities already existed
+            ``True` is entities are created, ``False`` is if entities
+            already existed.
         """
         return self._cpp_object.create_entities(dim)
 
@@ -167,10 +169,10 @@ class Topology:
         return self._cpp_object.get_facet_permutations()
 
     def index_map(self, dim: int) -> _cpp.common.IndexMap:
-        """Get the IndexMap that described the parallel distribution of the mesh entities.
+        """Get the IndexMap that describes the parallel distribution of the mesh entities.
 
         Args:
-            dim: Topological dimension
+            dim: Topological dimension.
 
         Returns:
             Index map for the entities of dimension ``dim``.
@@ -192,28 +194,9 @@ class Topology:
         """Get the original cell index"""
         return self._cpp_object.original_cell_index
 
-    def set_connectivity(self, graph: _cpp.graph.AdjacencyList_int32, d0: int, d1: int):
-        """Set connectivity for given pair of topological dimensions.
-
-        Args:
-            graph: Connectivity graph
-            d0: Topological dimension mapping from
-            d1: Topological dimension mapping to
-        """
-        self._cpp_object.set_connectivity(graph, d0, d1)
-
-    def set_index_map(self, dim: int, index_map: _cpp.common.IndexMap):
-        """Set the IndexMap for dimension ``dim``.
-
-        Args:
-            dim: Topological dimension of entity.
-            index_map: Index map to store.
-        """
-        return self._cpp_object.set_index_map(dim, index_map)
-
     @property
     def cell_type(self) -> CellType:
-        """Get the cell type of the topology"""
+        """Get the cell type of the topology."""
         return self._cpp_object.cell_type
 
 
@@ -429,7 +412,7 @@ def compute_incident_entities(
 
     Args:
         topology: The topology.
-        entities: List of entities fo dimension ``d0``.
+        entities: List of entities of dimension ``d0``.
         d0: Topological dimension.
         d1: Topological dimension to map to.
 
@@ -694,7 +677,8 @@ def meshtags(
     entities: npt.NDArray[np.int32],
     values: typing.Union[np.ndarray, int, float],
 ) -> MeshTags:
-    """Create a MeshTags object that associates data with a subset of mesh entities.
+    """Create a MeshTags object that associates data with a subset of
+    mesh entities.
 
     Args:
         msh: The mesh.
@@ -735,7 +719,7 @@ def meshtags(
 
 
 def meshtags_from_entities(
-    msh: Mesh, dim: int, entities: _cpp.graph.AdjacencyList_int32, values: npt.NDArray[typing.Any]
+    msh: Mesh, dim: int, entities: AdjacencyList, values: npt.NDArray[typing.Any]
 ):
     """Create a :class:dolfinx.mesh.MeshTags` object that associates
     data with a subset of mesh entities, where the entities are defined
@@ -762,7 +746,9 @@ def meshtags_from_entities(
     elif isinstance(values, float):
         values = np.full(entities.num_nodes, values, dtype=np.double)
     values = np.asarray(values)
-    return MeshTags(_cpp.mesh.create_meshtags(msh.topology._cpp_object, dim, entities, values))
+    return MeshTags(
+        _cpp.mesh.create_meshtags(msh.topology._cpp_object, dim, entities._cpp_object, values)
+    )
 
 
 def create_interval(
@@ -842,8 +828,8 @@ def create_rectangle(
 
     Args:
         comm: MPI communicator.
-        points: Coordinates of the lower - left and upper - right corners of
-            the rectangle.
+        points: Coordinates of the lower - left and upper - right
+            corners of the rectangle.
         n: Number of cells in each direction.
         cell_type: Mesh cell type.
         dtype: Float type for the mesh geometry(``numpy.float32``
@@ -897,7 +883,7 @@ def create_unit_square(
             Direction of diagonal.
 
     Returns:
-        A mesh of a square with corners at (0, 0) and (1, 1).
+        A mesh of a square with corners at ``(0, 0)`` and ``(1, 1)``.
     """
     return create_rectangle(
         comm,
@@ -992,7 +978,8 @@ def create_unit_cube(
 def entities_to_geometry(
     msh: Mesh, dim: int, entities: npt.NDArray[np.int32], permute=False
 ) -> npt.NDArray[np.int32]:
-    """Compute the geometric DOFs associated with the closure of the given mesh entities.
+    """Compute the geometric DOFs associated with the closure of the
+    given mesh entities.
 
     Args:
         msh: The mesh.
