@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2022 Garth N. Wells, Jørgen S. Dokken
+// Copyright (C) 2015-2025 Garth N. Wells, Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -24,11 +24,37 @@ namespace dolfinx::fem
 
 /// @brief Assemble a discrete curl operator.
 ///
-/// Curl of Nedelec(k) function -> RT(k-1) function.
+/// For vector-valued finite functions \f$u \in V_{0} \f$ and \f$v \in V_{1}\f$,
+/// consider the interpolation of the curl of \f$u\f$ in the space \f$V_{1}\f$, i.e.
+/// \f$\Pi_{V_{1}}: \nabla \times u \rightarrow v\f$, where \f$\Pi_{V_{1}}\f$
+/// is the interpolation operator associated with \f$V_{1}\f$. This
+/// interpolation of \f$\nabla \times u\f$ into \f$V_{1}\f$ is properly
+/// posed and exact for specific choices of function spaces. If \f$V_{0}\f$
+/// is a Nédélec (\f$H({\rm curl})\f$) space of degree \f$k > 1\f$ and
+/// \f$V_{1}\f$ is a Raviart-Thomas (\f$H({\rm div})\f$) space of degree of
+/// at least \f$k - 1\f$, then the interpolation is exact.
 ///
-/// @param[in] V0
-/// @param[in] V1
-/// @param[in] mat_set A functor that sets values in a matrix
+/// This function builds a matrix \f$C\f$ (the 'discrete curl'), which
+/// when applied to the degrees-of-freedom of \f$u\f$ gives the
+/// degrees-of-freedom of \f$v\f$ such that \f$v = \nabla \times u\f$.
+/// If the finite element degrees-of-freedom vectors associated with
+/// \f$u\f$ and \f$v\f$ are \f$a\f$ and \f$b\f$, respectively, then \f$b
+/// = C a\f$, which yields \f$v = \Pi_{V} \nabla \times u\f$. It
+/// essential maps that curl of a function in a degree \f$k > 1\f$
+/// Nédélec space into a degree \f$k - 1\f$ Raviart-Thomas space.
+///
+/// The discerete curl is typically used in constructing algebraic
+/// multigrid preconditioners for \f$H({\rm div})\f$, e.g. when using the Hypre Auxiliary-space Divergence Solver (ADS).
+///
+/// @pre `V0` and `V1` must be vector-valued and in three spatial
+/// dimensions.
+///
+/// @param[in] V0 Space that \f$u\f$ is from. It is normally an
+/// \f$H({\rm curl})\f$-conforming Nédélec space.
+/// @param[in] V1 Space that \f$v\f$ is from. It is normally an
+/// \f$H({\rm div})\f$-conforming Raviart-Thomas space of one degree
+/// lower than `V0`.
+/// @param[in] mat_set A functor that sets values in a matrix \f$C\f$.
 template <dolfinx::scalar T,
           std::floating_point U = dolfinx::scalar_value_type_t<T>>
 void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
