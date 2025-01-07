@@ -14,6 +14,7 @@
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/math.h>
+#include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
 #include <span>
@@ -25,7 +26,8 @@ namespace dolfinx::fem
 /// @brief Assemble a discrete curl operator.
 ///
 /// For vector-valued finite functions \f$u \in V_{0} \f$ and \f$v \in V_{1}\f$,
-/// consider the interpolation of the curl of \f$u\f$ in the space \f$V_{1}\f$, i.e.
+/// consider the interpolation of the curl of \f$u\f$ in the space \f$V_{1}\f$,
+/// i.e.
 /// \f$\Pi_{V_{1}}: \nabla \times u \rightarrow v\f$, where \f$\Pi_{V_{1}}\f$
 /// is the interpolation operator associated with \f$V_{1}\f$. This
 /// interpolation of \f$\nabla \times u\f$ into \f$V_{1}\f$ is properly
@@ -37,14 +39,15 @@ namespace dolfinx::fem
 /// This function builds a matrix \f$C\f$ (the 'discrete curl'), which
 /// when applied to the degrees-of-freedom of \f$u\f$ gives the
 /// degrees-of-freedom of \f$v\f$ such that \f$v = \nabla \times u\f$.
-/// If the finite element degrees-of-freedom vectors associated with
+/// If the finite element degree-of-freedom vectors associated with
 /// \f$u\f$ and \f$v\f$ are \f$a\f$ and \f$b\f$, respectively, then \f$b
 /// = C a\f$, which yields \f$v = \Pi_{V} \nabla \times u\f$. It
 /// essential maps that curl of a function in a degree \f$k > 1\f$
 /// Nédélec space into a degree \f$k - 1\f$ Raviart-Thomas space.
 ///
 /// The discerete curl is typically used in constructing algebraic
-/// multigrid preconditioners for \f$H({\rm div})\f$, e.g. when using the Hypre Auxiliary-space Divergence Solver (ADS).
+/// multigrid preconditioners for \f$H({\rm div})\f$, e.g. when using the Hypre
+/// Auxiliary-space Divergence Solver (ADS).
 ///
 /// @pre `V0` and `V1` must be vector-valued and in three spatial
 /// dimensions.
@@ -54,11 +57,12 @@ namespace dolfinx::fem
 /// @param[in] V1 Space that \f$v\f$ is from. It is normally an
 /// \f$H({\rm div})\f$-conforming Raviart-Thomas space of one degree
 /// lower than `V0`.
-/// @param[in] mat_set A functor that sets values in a matrix \f$C\f$.
+/// @param[in] mat_set A functor that sets (not add) values in a matrix
+/// \f$C\f$.
 template <dolfinx::scalar T,
           std::floating_point U = dolfinx::scalar_value_type_t<T>>
 void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
-                   auto&& mat_set)
+                   la::MatSet<T> auto&& mat_set)
 {
   namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
   using mdspan2_t = md::mdspan<U, md::dextents<std::size_t, 2>>;
@@ -112,7 +116,8 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
   // Get the V1 reference interpolation points
   const auto [X, Xshape] = e1->interpolation_points();
 
-  // TODO: warn for non-affine cells
+  // TODO: check map types
+  // TODO: extend or warn for non-affine cells
 
   // Get/compute geometry map and evaluate at interpolation points
   const CoordinateElement<U>& cmap = mesh->geometry().cmap();
@@ -140,8 +145,6 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
   const auto [Phi0_b, Phi0_shape] = e0->tabulate(X, Xshape, 1);
   cmdspan4_t Phi0(Phi0_b.data(),
                   Phi0_shape); // (deriv, pt_idx, phi (dof), comp)
-  // std::cout << "Phi0(0): " << Phi0.extent(0) << ", " << Phi0_shape[0]
-  //           << std::endl;
 
   // Create working arrays, (point, phi (dof), deriv, comp)
   md::dextents<std::size_t, 4> dphi_ext(Phi0.extent(1), Phi0.extent(2),
@@ -177,22 +180,17 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
   // auto push_forward_fn0
   //     = e0->basix_element().template map_fn<u_t, U_t, J_t, K_t>();
 
-  // std::cout << "Stage 0" << std::endl;
-
   // Iterate over mesh and interpolate on each cell
   auto cell_map = mesh->topology()->index_map(tdim);
   assert(cell_map);
   for (std::int32_t c = 0; c < cell_map->size_local(); ++c)
   {
-    // std::cout << "Stage a" << std::endl;
-
     // Get cell geometry (coordinate dofs)
     auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
       for (std::size_t j = 0; j < gdim; ++j)
         coord_dofs(i, j) = x_g[3 * x_dofs[i] + j];
 
-    // std::cout << "Stage b" << std::endl;
     // Compute Jacobians at reference points for current cell
     std::ranges::fill(J_b, 0);
     for (std::size_t p = 0; p < Xshape[0]; ++p)
@@ -206,9 +204,7 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
       detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
     }
 
-    // std::cout << "Stage c" << std::endl;
-
-    // TODO: re-order loops and/or re-pack Phi0
+    // TODO: re-order loops and/or re-pack Phi0?
 
     // Copy (d)Phi0 (on reference) and apply DOF transformation
     // Phi0:  (deriv, pt_idx, phi (dof), comp)
@@ -218,21 +214,16 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
         for (std::size_t d = 0; d < Phi0.extent(3); ++d)       // Comp. of phi
           for (std::size_t dx = 0; dx < dPhi0.extent(2); ++dx) // dx
           {
-            assert(p < dPhi0.extent(0));
-            assert(phi < dPhi0.extent(1));
-            assert(dx < dPhi0.extent(2));
-            assert(d < dPhi0.extent(3));
-
-            // std::cout << "dx+1: " << dx + 1 << ", " << Phi0.extent(0)
-            //           << std::endl;
-            assert(dx + 1 < Phi0.extent(0));
-            assert(p < Phi0.extent(1));
-            assert(phi < Phi0.extent(2));
-            assert(d < Phi0.extent(3));
+            // assert(p < dPhi0.extent(0));
+            // assert(phi < dPhi0.extent(1));
+            // assert(dx < dPhi0.extent(2));
+            // assert(d < dPhi0.extent(3));
+            // assert(dx + 1 < Phi0.extent(0));
+            // assert(p < Phi0.extent(1));
+            // assert(phi < Phi0.extent(2));
+            // assert(d < Phi0.extent(3));
             dPhi0(p, phi, dx, d) = Phi0(dx + 1, p, phi, d);
           }
-
-    // std::cout << "Stage d" << std::endl;
 
     for (std::size_t p = 0; p < dPhi0.extent(0); ++p) // point
     {
@@ -245,7 +236,6 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
                                 cell_info, c,
                                 dPhi0.extent(2) * dPhi0.extent(3));
     }
-    // std::cout << "Stage e" << std::endl;
 
     // Copy evaluated basis on reference and push forward to physical
     // element
@@ -294,8 +284,6 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
       }
     }
 
-    // std::cout << "Stage f" << std::endl;
-
     // Compute curl on physical element (3D)
     // dphi0: (pt_idx, phi_idx, deriv, comp)
     // curl0: (pt_idx, phi_idx, comp)
@@ -308,8 +296,6 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
         curl0(p, i, 2) = dphi0(p, i, 0, 1) - dphi0(p, i, 1, 0);
       }
     }
-
-    // std::cout << "Stage g" << std::endl;
 
     // Pull-back curl to V1 reference (inverse contravariant map, det(J) J^{-1})
     // dphi0: (pt_idx, phi_idx, deriv, comp)
@@ -327,8 +313,6 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
       }
     }
 
-    // std::cout << "Stage h" << std::endl;
-
     // Apply interpolation matrix to basis derivatives values of V0 at
     // the interpolation points of V1
     for (std::size_t i = 0; i < Curl1.extent(1); ++i)
@@ -339,12 +323,9 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
         Ab[space_dim0 * j + i] = local1[j];
     }
 
-    // std::cout << "Stage i" << std::endl;
-
     apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
     mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
   }
-  // std::cout << "Stage 1" << std::endl;
 }
 
 /// @brief Assemble a discrete gradient operator.
