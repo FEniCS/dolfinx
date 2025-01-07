@@ -284,7 +284,7 @@ void declare_function_space(nb::module_& m, std::string type)
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def_prop_ro("needs_dof_transformations",
                      &dolfinx::fem::FiniteElement<T>::needs_dof_transformations)
-        .def("signature", &dolfinx::fem::FiniteElement<T>::signature);
+        .def_prop_ro("signature", &dolfinx::fem::FiniteElement<T>::signature);
   }
 }
 
@@ -375,7 +375,7 @@ void declare_objects(nb::module_& m, const std::string& type)
              std::optional<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>> x0,
              T alpha)
           {
-            auto _b = std::span(b.data(), b.size());
+            std::span _b(b.data(), b.size());
             if (x0.has_value())
             {
               self.set(_b, std::span(x0.value().data(), x0.value().shape(0)),

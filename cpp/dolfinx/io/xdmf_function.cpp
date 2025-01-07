@@ -128,7 +128,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     if (cmap.degree() > 2
         and element->basix_element().lagrange_variant() != cmap.variant())
     {
-      throw std::runtime_error("Mis-match in Lagrange family. Maybe the "
+      throw std::runtime_error("Mismatch in Lagrange family. Maybe the "
                                "Function needs to be interpolated?");
     }
 

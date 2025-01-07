@@ -334,6 +334,43 @@ template void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>&,
 /// @endcond
 //-----------------------------------------------------------------------------
 template <typename T>
+struct xdmf_data
+{
+};
+
+template <>
+struct xdmf_data<std::int32_t>
+{
+  static const std::string data_type;
+  static const std::size_t precision = 4;
+};
+const std::string xdmf_data<std::int32_t>::data_type = "Int";
+
+template <>
+struct xdmf_data<std::int64_t>
+{
+  static const std::string data_type;
+  static const std::size_t precision = 8;
+};
+const std::string xdmf_data<std::int64_t>::data_type = "Int";
+
+template <>
+struct xdmf_data<float>
+{
+  static const std::string data_type;
+  static const std::size_t precision = 4;
+};
+const std::string xdmf_data<float>::data_type = "Float";
+
+template <>
+struct xdmf_data<double>
+{
+  static const std::string data_type;
+  static const std::size_t precision = 8;
+};
+const std::string xdmf_data<double>::data_type = "Float";
+//-----------------------------------------------------------------------------
+template <typename T>
 mesh::MeshTags<T>
 XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
                         std::optional<std::string> attribute_name,
@@ -366,6 +403,17 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
     else
       values_data_node = attribute_node.child("DataItem");
   }
+  const std::string data_type = values_data_node.attribute("DataType").value();
+  const auto precision
+      = std::stol(values_data_node.attribute("Precision").value());
+
+  if (xdmf_data<T>::data_type != data_type
+      || xdmf_data<T>::precision != precision)
+  {
+    throw std::runtime_error(
+        "The data in the XDMF file does not match the required data type.");
+  }
+
   const std::vector values
       = xdmf_utils::get_dataset<T>(_comm.comm(), values_data_node, _h5_id);
 
@@ -435,7 +483,7 @@ std::pair<mesh::CellType, int> XDMFFile::read_cell_type(std::string grid_name,
   const std::pair<std::string, int> cell_type_str
       = xdmf_utils::get_cell_type(topology_node);
 
-  // Get toplogical dimensions
+  // Get topological dimensions
   mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
 
   return {cell_type, cell_type_str.second};

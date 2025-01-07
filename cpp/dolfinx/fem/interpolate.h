@@ -128,7 +128,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
 namespace impl
 {
-/// @brief Convenience typdef
+/// @brief Convenience typedef
 template <typename T, std::size_t D>
 using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
     T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, D>>;
@@ -274,9 +274,9 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
   std::vector<T> values(recv_offsets.back());
   values.reserve(1);
   MPI_Neighbor_alltoallv(send_values.data_handle(), send_sizes.data(),
-                         send_offsets.data(), dolfinx::MPI::mpi_type<T>(),
+                         send_offsets.data(), dolfinx::MPI::mpi_t<T>,
                          values.data(), recv_sizes.data(), recv_offsets.data(),
-                         dolfinx::MPI::mpi_type<T>(), reverse_comm);
+                         dolfinx::MPI::mpi_t<T>, reverse_comm);
   MPI_Comm_free(&reverse_comm);
 
   // Insert values received from neighborhood communicator in output
