@@ -493,6 +493,7 @@ void assemble_interior_facets(
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     la::MatSet<T> auto mat_set, const Form<T, U>& a,
+    std::span<const scalar_value_type_t<T>> x,
     std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
@@ -509,8 +510,6 @@ void assemble_matrix(
   // Trial function mesh
   auto mesh1 = a.function_spaces().at(1)->mesh();
   assert(mesh1);
-
-  std::span<const scalar_value_type_t<T>> x = mesh->geometry().x();
 
   const int num_cell_types = mesh->topology()->cell_types().size();
   for (int cell_type_idx = 0; cell_type_idx < num_cell_types; ++cell_type_idx)
