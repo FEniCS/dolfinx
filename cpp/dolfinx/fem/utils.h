@@ -524,89 +524,92 @@ Form<T, U> create_form_factory(
     }
   }
 
-  //   // Attach exterior facet kernels
-  //   std::vector<std::int32_t> default_facets_ext;
-  //   {
-  //     std::span<const int> ids(ufcx_form.form_integral_ids
-  //                                  + integral_offsets[exterior_facet],
-  //                              num_integrals_type[exterior_facet]);
-  //     auto itg = integrals.insert({IntegralType::exterior_facet, {}});
-  //     auto sd = subdomains.find(IntegralType::exterior_facet);
-  //     for (int i = 0; i < num_integrals_type[exterior_facet]; ++i)
-  //     {
-  //       const int id = ids[i];
-  //       ufcx_integral* integral
-  //           = ufcx_form.form_integrals[integral_offsets[exterior_facet] + i];
-  //       assert(integral);
-  //       std::vector<int> active_coeffs;
-  //       for (int j = 0; j < ufcx_form.num_coefficients; ++j)
-  //       {
-  //         if (integral->enabled_coefficients[j])
-  //           active_coeffs.push_back(j);
-  //       }
+  // Attach exterior facet kernels
+  std::vector<std::int32_t> default_facets_ext;
+  {
+    std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
+                                 + integral_offsets[exterior_facet],
+                             num_integrals_type[exterior_facet]);
+    auto itg = integrals.insert({IntegralType::exterior_facet, {}});
+    auto sd = subdomains.find(IntegralType::exterior_facet);
+    for (int form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
+    {
+      const ufcx_form& ufcx_form = ufcx_forms[form_idx];
+      for (int i = 0; i < num_integrals_type[exterior_facet]; ++i)
+      {
+        const int id = ids[i];
+        ufcx_integral* integral
+            = ufcx_form.form_integrals[integral_offsets[exterior_facet] + i];
+        assert(integral);
+        std::vector<int> active_coeffs;
+        for (int j = 0; j < ufcx_form.num_coefficients; ++j)
+        {
+          if (integral->enabled_coefficients[j])
+            active_coeffs.push_back(j);
+        }
 
-  //       kern_t k = nullptr;
-  //       if constexpr (std::is_same_v<T, float>)
-  //         k = integral->tabulate_tensor_float32;
-  // #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-  //       else if constexpr (std::is_same_v<T, std::complex<float>>)
-  //       {
-  //         k = reinterpret_cast<void (*)(
-  //             T*, const T*, const T*,
-  //             const typename scalar_value_type<T>::value_type*, const int*,
-  //             const unsigned char*)>(integral->tabulate_tensor_complex64);
-  //       }
-  // #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-  //       else if constexpr (std::is_same_v<T, double>)
-  //         k = integral->tabulate_tensor_float64;
-  // #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-  //       else if constexpr (std::is_same_v<T, std::complex<double>>)
-  //       {
-  //         k = reinterpret_cast<void (*)(
-  //             T*, const T*, const T*,
-  //             const typename scalar_value_type<T>::value_type*, const int*,
-  //             const unsigned char*)>(integral->tabulate_tensor_complex128);
-  //       }
-  // #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-  //       assert(k);
+        kern_t k = nullptr;
+        if constexpr (std::is_same_v<T, float>)
+          k = integral->tabulate_tensor_float32;
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
+        else if constexpr (std::is_same_v<T, std::complex<float>>)
+        {
+          k = reinterpret_cast<void (*)(
+              T*, const T*, const T*,
+              const typename scalar_value_type<T>::value_type*, const int*,
+              const unsigned char*)>(integral->tabulate_tensor_complex64);
+        }
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
+        else if constexpr (std::is_same_v<T, double>)
+          k = integral->tabulate_tensor_float64;
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
+        else if constexpr (std::is_same_v<T, std::complex<double>>)
+        {
+          k = reinterpret_cast<void (*)(
+              T*, const T*, const T*,
+              const typename scalar_value_type<T>::value_type*, const int*,
+              const unsigned char*)>(integral->tabulate_tensor_complex128);
+        }
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
+        assert(k);
 
-  //       // Build list of entities to assembler over
-  //       const std::vector bfacets = mesh::exterior_facet_indices(*topology);
-  //       auto f_to_c = topology->connectivity(tdim - 1, tdim);
-  //       assert(f_to_c);
-  //       auto c_to_f = topology->connectivity(tdim, tdim - 1);
-  //       assert(c_to_f);
-  //       if (id == -1)
-  //       {
-  //         // Default kernel, operates on all (owned) exterior facets
-  //         default_facets_ext.reserve(2 * bfacets.size());
-  //         for (std::int32_t f : bfacets)
-  //         {
-  //           // There will only be one pair for an exterior facet integral
-  //           auto pair
-  //               = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f),
-  //               *c_to_f);
-  //           default_facets_ext.insert(default_facets_ext.end(), pair.begin(),
-  //                                     pair.end());
-  //         }
-  //         itg.first->second.emplace_back(id, k, default_facets_ext,
-  //                                        active_coeffs);
-  //       }
-  //       else if (sd != subdomains.end())
-  //       {
-  //         // NOTE: This requires that pairs are sorted
-  //         auto it
-  //             = std::ranges::lower_bound(sd->second, id, std::less<>{},
-  //                                        [](const auto& a) { return a.first;
-  //                                        });
-  //         if (it != sd->second.end() and it->first == id)
-  //           itg.first->second.emplace_back(id, k, it->second, active_coeffs);
-  //       }
+        // Build list of entities to assembler over
+        const std::vector bfacets = mesh::exterior_facet_indices(*topology);
+        auto f_to_c = topology->connectivity(tdim - 1, tdim);
+        assert(f_to_c);
+        auto c_to_f = topology->connectivity(tdim, tdim - 1);
+        assert(c_to_f);
+        mesh::CellType cell_type = mesh->topology()->cell_types()[form_idx];
+        if (id == -1)
+        {
+          // Default kernel, operates on all (owned) exterior facets
+          default_facets_ext.reserve(2 * bfacets.size());
+          for (std::int32_t f : bfacets)
+          {
+            // There will only be one pair for an exterior facet integral
+            auto pair
+                = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
+            default_facets_ext.insert(default_facets_ext.end(), pair.begin(),
+                                      pair.end());
+          }
+          itg.first->second.emplace_back(id, cell_type, k, default_facets_ext,
+                                         active_coeffs);
+        }
+        else if (sd != subdomains.end())
+        {
+          // NOTE: This requires that pairs are sorted
+          auto it
+              = std::ranges::lower_bound(sd->second, id, std::less<>{},
+                                         [](const auto& a) { return a.first; });
+          if (it != sd->second.end() and it->first == id)
+            itg.first->second.emplace_back(id, cell_type, k, it->second, active_coeffs);
+        }
 
-  //       if (integral->needs_facet_permutations)
-  //         needs_facet_permutations = true;
-  //     }
-  //   }
+        if (integral->needs_facet_permutations)
+          needs_facet_permutations = true;
+      }
+    }
+  }
 
   //   // Attach interior facet kernels
   //   std::vector<std::int32_t> default_facets_int;
