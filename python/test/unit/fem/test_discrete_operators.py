@@ -50,7 +50,6 @@ def test_gradient(mesh):
 @pytest.mark.parametrize(
     "element_data",
     [
-        # CellType.triangle,
         (CellType.tetrahedron, "Nedelec 1st kind H(curl)", "Raviart-Thomas"),
         (CellType.hexahedron, "Nedelec 1st kind H(curl)", "Raviart-Thomas"),
     ],
