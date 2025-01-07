@@ -50,6 +50,8 @@ struct integral_data
   /// @param[in] entities Indices of entities to integrate over.
   /// @param[in] coeffs Indicies of the coefficients are present
   /// (active) in `kernel`.
+  // FIXME cell_type should be renamed to something like "kernel_id", since
+  // for interior facet integrals, we will have multiple cell types.
   template <typename K, typename V, typename W>
     requires std::is_convertible_v<
                  std::remove_cvref_t<K>,
