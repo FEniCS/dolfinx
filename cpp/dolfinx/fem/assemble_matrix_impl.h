@@ -520,9 +520,9 @@ void assemble_matrix(
 
     // Get dofmap data
     std::shared_ptr<const fem::DofMap> dofmap0
-        = a.function_spaces().at(0)->dofmaps().at(cell_type_idx);
+        = a.function_spaces().at(0)->dofmaps(cell_type_idx);
     std::shared_ptr<const fem::DofMap> dofmap1
-        = a.function_spaces().at(1)->dofmaps().at(cell_type_idx);
+        = a.function_spaces().at(1)->dofmaps(cell_type_idx);
     assert(dofmap0);
     assert(dofmap1);
     auto dofs0 = dofmap0->map();

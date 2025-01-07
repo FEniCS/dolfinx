@@ -215,8 +215,8 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
   for (int cell_type_idx = 0; cell_type_idx < num_cell_types; ++cell_type_idx)
   {
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps{
-        *a.function_spaces().at(0)->dofmaps().at(cell_type_idx),
-        *a.function_spaces().at(1)->dofmaps().at(cell_type_idx)};
+        *a.function_spaces().at(0)->dofmaps(cell_type_idx),
+        *a.function_spaces().at(1)->dofmaps(cell_type_idx)};
 
     // Create and build sparsity pattern
     for (auto type : types)

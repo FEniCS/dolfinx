@@ -55,9 +55,10 @@ public:
   /// @param[in] mesh Mesh that the space is defined on.
   /// @param[in] elements Finite element for the space.
   /// @param[in] dofmaps Degree-of-freedom map for the space.
-  FunctionSpace(std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
-                std::vector<std::shared_ptr<const FiniteElement<geometry_type>>> elements,
-                std::vector<std::shared_ptr<const DofMap>> dofmaps)
+  FunctionSpace(
+      std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
+      std::vector<std::shared_ptr<const FiniteElement<geometry_type>>> elements,
+      std::vector<std::shared_ptr<const DofMap>> dofmaps)
       : _mesh(mesh), _dofmaps(dofmaps), _elements(elements),
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
   {
@@ -330,16 +331,24 @@ public:
   }
 
   /// The finite elements
-  std::vector<std::shared_ptr<const FiniteElement<geometry_type>>> elements() const
+  std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>
+  elements() const
   {
     return _elements;
   }
 
   /// The dofmap
-  std::shared_ptr<const DofMap> dofmap() const { return _dofmaps.front(); }
+  std::shared_ptr<const DofMap> dofmap() const
+  {
+    // TODO Check only one cell_type
+    return dofmaps(0);
+  }
 
   /// The dofmaps
-  std::vector<std::shared_ptr<const DofMap>> dofmaps() const { return _dofmaps; }
+  std::shared_ptr<const DofMap> dofmaps(int cell_type_idx) const
+  {
+    return _dofmaps.at(cell_type_idx);
+  }
 
 private:
   // The mesh
