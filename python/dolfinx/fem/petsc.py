@@ -31,6 +31,7 @@ import ufl
 from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
+from dolfinx.cpp.fem.petsc import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem.petsc import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem.petsc import interpolation_matrix as _interpolation_matrix
 from dolfinx.fem import assemble as _assemble
@@ -60,6 +61,7 @@ __all__ = [
     "create_vector",
     "create_vector_block",
     "create_vector_nest",
+    "discrete_curl",
     "discrete_gradient",
     "interpolation_matrix",
     "set_bc",
@@ -1030,6 +1032,18 @@ class NonlinearProblem:
         assemble_matrix_mat(A, self._a, self.bcs)
         A.assemble()
 
+
+def discrete_curl(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:
+    """Assemble a discrete curl operator.
+
+    Args:
+        space0: H1 space to interpolate the gradient from.
+        space1: H(curl) space to interpolate into.
+
+    Returns:
+        Discrete curl operator.
+    """
+    return _discrete_curl(space0._cpp_object, space1._cpp_object)
 
 def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:
     """Assemble a discrete gradient operator.
