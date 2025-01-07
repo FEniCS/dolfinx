@@ -228,9 +228,9 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
       case IntegralType::cell:
         for (int id : ids)
         {
-          auto domains0 = a.domains(type, id, *mesh0).at(cell_type_idx);
-          auto domains1 = a.domains(type, id, *mesh1).at(cell_type_idx);
-          sparsitybuild::cells(pattern, {domains0, domains1},
+          sparsitybuild::cells(pattern,
+                               {a.domains(type, id, cell_type_idx, *mesh0),
+                                a.domains(type, id, cell_type_idx, *mesh1)},
                                {{dofmaps[0], dofmaps[1]}});
         }
         break;

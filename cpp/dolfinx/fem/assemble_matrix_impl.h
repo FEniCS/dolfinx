@@ -559,15 +559,14 @@ void assemble_matrix(
       assert(fn);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
 
-      auto cells = a.domains(IntegralType::cell, i);
-      auto cells0 = a.domains(IntegralType::cell, i, *mesh0);
-      auto cells1 = a.domains(IntegralType::cell, i, *mesh1);
-
       impl::assemble_cells(
           mat_set, mesh->geometry().dofmap(cell_type_idx), x,
-          cells[cell_type_idx], {dofs0, bs0, cells0[cell_type_idx]}, P0,
-          {dofs1, bs1, cells1[cell_type_idx]}, P1T, bc0, bc1, fn, coeffs,
-          cstride, constants, cell_info0, cell_info1);
+          a.domains(IntegralType::cell, i, cell_type_idx),
+          {dofs0, bs0, a.domains(IntegralType::cell, i, cell_type_idx, *mesh0)},
+          P0,
+          {dofs1, bs1, a.domains(IntegralType::cell, i, cell_type_idx, *mesh1)},
+          P1T, bc0, bc1, fn, coeffs, cstride, constants, cell_info0,
+          cell_info1);
     }
   }
 
