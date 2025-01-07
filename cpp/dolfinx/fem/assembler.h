@@ -260,10 +260,11 @@ void assemble_matrix(
   }
   else
   {
-    auto x = mesh->geometry().x();
-    std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
-    impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap(geom_idx), _x,
-                          constants, coefficients, dof_marker0, dof_marker1);
+    // TODO
+    // auto x = mesh->geometry().x();
+    // std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
+    // impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap(geom_idx), _x,
+    //                       constants, coefficients, dof_marker0, dof_marker1);
   }
 }
 
