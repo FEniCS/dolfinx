@@ -327,14 +327,15 @@ public:
   /// The finite element
   std::shared_ptr<const FiniteElement<geometry_type>> element() const
   {
-    return _elements.front();
+    // TODO Check only one cell type
+    return elements(0);
   }
 
   /// The finite elements
-  std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>
-  elements() const
+  std::shared_ptr<const FiniteElement<geometry_type>>
+  elements(int cell_type_idx) const
   {
-    return _elements;
+    return _elements.at(cell_type_idx);
   }
 
   /// The dofmap

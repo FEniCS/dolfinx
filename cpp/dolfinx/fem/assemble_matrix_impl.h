@@ -510,13 +510,13 @@ void assemble_matrix(
   auto mesh1 = a.function_spaces().at(1)->mesh();
   assert(mesh1);
 
-  const int num_cell_types = mesh->topology()->cell_types().size();
+  std::span<const scalar_value_type_t<T>> x = mesh->geometry().x();
 
+  const int num_cell_types = mesh->topology()->cell_types().size();
   for (int cell_type_idx = 0; cell_type_idx < num_cell_types; ++cell_type_idx)
   {
     // Geometry dofmap and data
     mdspan2_t x_dofmap = mesh->geometry().dofmap(cell_type_idx);
-    std::span<const scalar_value_type_t<T>> x = mesh->geometry().x();
 
     // Get dofmap data
     std::shared_ptr<const fem::DofMap> dofmap0
@@ -530,9 +530,9 @@ void assemble_matrix(
     auto dofs1 = dofmap1->map();
     const int bs1 = dofmap1->bs();
 
-    auto element0 = a.function_spaces().at(0)->elements().at(cell_type_idx);
+    auto element0 = a.function_spaces().at(0)->elements(cell_type_idx);
     assert(element0);
-    auto element1 = a.function_spaces().at(1)->elements().at(cell_type_idx);
+    auto element1 = a.function_spaces().at(1)->elements(cell_type_idx);
     assert(element1);
     fem::DofTransformKernel<T> auto P0
         = element0->template dof_transformation_fn<T>(doftransform::standard);
