@@ -243,9 +243,9 @@ TEMPLATE_TEST_CASE("Interval Refinement (parallel)",
 TEMPLATE_TEST_CASE("Interval uniform refinement", "[refinement][interva]",
                    double, float)
 {
-  auto interval
-      = dolfinx::mesh::create_interval<TestType>(MPI_COMM_WORLD, 2, {0.0, 1.0});
+  auto interval = dolfinx::mesh::create_interval<TestType>(MPI_COMM_WORLD, 20,
+                                                           {0.0, 1.0});
   auto [refined, parent_edge, parent_facet]
       = dolfinx::refinement::refine(interval, std::nullopt);
-  CHECK(refined.topology()->index_map(0)->size_global() == 5);
+  CHECK(refined.topology()->index_map(0)->size_global() == 41);
 }
