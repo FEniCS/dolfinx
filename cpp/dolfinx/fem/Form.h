@@ -265,14 +265,14 @@ public:
   /// @return Function to call for `tabulate_tensor`.
   std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
                      const geometry_type*, const int*, const uint8_t*)>
-  kernel(IntegralType type, int i, int cell_type_idx) const
+  kernel(IntegralType type, int i, int kernel_idx) const
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
     auto it = std::ranges::lower_bound(integrals, i, std::less<>{},
                                        [](const auto& a) { return a.id; });
     // FIXME Do this properly
     if (it != integrals.end() and it->id == i)
-      return (it + cell_type_idx)->kernel;
+      return (it + kernel_idx)->kernel;
     else
       throw std::runtime_error("No kernel for requested domain index.");
   }
@@ -372,16 +372,15 @@ public:
       throw std::runtime_error("No mesh entities for requested domain index.");
   }
 
-  // TODO Add cell_type_idx and return single list
   std::vector<std::int32_t> domain(IntegralType type, int i,
-                                   int cell_type_idx) const
+                                   int kernel_idx) const
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
     auto it = std::ranges::lower_bound(integrals, i, std::less<>{},
                                        [](const auto& a) { return a.id; });
     if (it != integrals.end() and it->id == i)
       // FIXME Do this properly
-      return (it + cell_type_idx)->entities;
+      return (it + kernel_idx)->entities;
     else
       throw std::runtime_error("No mesh entities for requested domain index.");
   }
@@ -394,14 +393,14 @@ public:
   /// @param i Integral ID, i.e. the (sub)domain index.
   /// @param mesh The mesh the entities are numbered with respect to.
   /// @return List of active entities in `mesh` for the given integral.
-  std::vector<std::int32_t> domain(IntegralType type, int i, int cell_type_idx,
+  std::vector<std::int32_t> domain(IntegralType type, int i, int kernel_idx,
                                    const mesh::Mesh<geometry_type>& mesh) const
   {
     // Hack to avoid passing shared pointer to this function
     std::shared_ptr<const mesh::Mesh<geometry_type>> msh_ptr(
         &mesh, [](const mesh::Mesh<geometry_type>*) {});
 
-    std::span<const std::int32_t> entities = domain(type, i, cell_type_idx);
+    std::span<const std::int32_t> entities = domain(type, i, kernel_idx);
     if (msh_ptr == _mesh)
       return std::vector(entities.begin(), entities.end());
     else
