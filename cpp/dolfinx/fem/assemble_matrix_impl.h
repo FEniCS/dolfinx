@@ -554,63 +554,61 @@ void assemble_matrix(
 
     for (int i : a.integral_ids(IntegralType::cell))
     {
-      // TODO Multiple kernels
       auto fn = a.kernel(IntegralType::cell, i, cell_type_idx);
       assert(fn);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
 
       impl::assemble_cells(
-          mat_set, mesh->geometry().dofmap(cell_type_idx), x,
-          a.domain(IntegralType::cell, i, cell_type_idx),
+          mat_set, x_dofmap, x, a.domain(IntegralType::cell, i, cell_type_idx),
           {dofs0, bs0, a.domain(IntegralType::cell, i, cell_type_idx, *mesh0)},
           P0,
           {dofs1, bs1, a.domain(IntegralType::cell, i, cell_type_idx, *mesh1)},
           P1T, bc0, bc1, fn, coeffs, cstride, constants, cell_info0,
           cell_info1);
     }
+
+    std::span<const std::uint8_t> perms;
+    if (a.needs_facet_permutations())
+    {
+      mesh->topology_mutable()->create_entity_permutations();
+      perms = std::span(mesh->topology()->get_facet_permutations());
+    }
+
+    mesh::CellType cell_type = mesh->topology()->cell_type();
+    int num_facets_per_cell
+        = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
+    for (int i : a.integral_ids(IntegralType::exterior_facet))
+    {
+      auto fn = a.kernel(IntegralType::exterior_facet, i);
+      assert(fn);
+      auto& [coeffs, cstride]
+          = coefficients.at({IntegralType::exterior_facet, i});
+      impl::assemble_exterior_facets(
+          mat_set, x_dofmap, x, num_facets_per_cell,
+          a.domain(IntegralType::exterior_facet, i),
+          {dofs0, bs0, a.domain(IntegralType::exterior_facet, i, *mesh0)}, P0,
+          {dofs1, bs1, a.domain(IntegralType::exterior_facet, i, *mesh1)}, P1T,
+          bc0, bc1, fn, coeffs, cstride, constants, cell_info0, cell_info1,
+          perms);
+    }
+
+    for (int i : a.integral_ids(IntegralType::interior_facet))
+    {
+      const std::vector<int> c_offsets = a.coefficient_offsets();
+      auto fn = a.kernel(IntegralType::interior_facet, i);
+      assert(fn);
+      auto& [coeffs, cstride]
+          = coefficients.at({IntegralType::interior_facet, i});
+      impl::assemble_interior_facets(
+          mat_set, x_dofmap, x, num_facets_per_cell,
+          a.domain(IntegralType::interior_facet, i),
+          {*dofmap0, bs0, a.domain(IntegralType::interior_facet, i, *mesh0)},
+          P0,
+          {*dofmap1, bs1, a.domain(IntegralType::interior_facet, i, *mesh1)},
+          P1T, bc0, bc1, fn, coeffs, cstride, c_offsets, constants, cell_info0,
+          cell_info1, perms);
+    }
   }
-
-  // std::span<const std::uint8_t> perms;
-  // if (a.needs_facet_permutations())
-  // {
-  //   mesh->topology_mutable()->create_entity_permutations();
-  //   perms = std::span(mesh->topology()->get_facet_permutations());
-  // }
-
-  // mesh::CellType cell_type = mesh->topology()->cell_type();
-  // int num_facets_per_cell
-  //     = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
-  // for (int i : a.integral_ids(IntegralType::exterior_facet))
-  // {
-  //   auto fn = a.kernel(IntegralType::exterior_facet, i);
-  //   assert(fn);
-  //   auto& [coeffs, cstride]
-  //       = coefficients.at({IntegralType::exterior_facet, i});
-  //   impl::assemble_exterior_facets(
-  //       mat_set, x_dofmap, x, num_facets_per_cell,
-  //       a.domain(IntegralType::exterior_facet, i),
-  //       {dofs0, bs0, a.domain(IntegralType::exterior_facet, i, *mesh0)}, P0,
-  //       {dofs1, bs1, a.domain(IntegralType::exterior_facet, i, *mesh1)}, P1T,
-  //       bc0, bc1, fn, coeffs, cstride, constants, cell_info0, cell_info1,
-  //       perms);
-  // }
-
-  // for (int i : a.integral_ids(IntegralType::interior_facet))
-  // {
-  //   const std::vector<int> c_offsets = a.coefficient_offsets();
-  //   auto fn = a.kernel(IntegralType::interior_facet, i);
-  //   assert(fn);
-  //   auto& [coeffs, cstride]
-  //       = coefficients.at({IntegralType::interior_facet, i});
-  //   impl::assemble_interior_facets(
-  //       mat_set, x_dofmap, x, num_facets_per_cell,
-  //       a.domain(IntegralType::interior_facet, i),
-  //       {*dofmap0, bs0, a.domain(IntegralType::interior_facet, i, *mesh0)},
-  //       P0,
-  //       {*dofmap1, bs1, a.domain(IntegralType::interior_facet, i, *mesh1)},
-  //       P1T, bc0, bc1, fn, coeffs, cstride, c_offsets, constants, cell_info0,
-  //       cell_info1, perms);
-  // }
 }
 
 } // namespace dolfinx::fem::impl
