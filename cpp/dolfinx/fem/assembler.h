@@ -243,16 +243,6 @@ void assemble_matrix(
 {
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
-
-  // FIXME Can't get cell_type from function space. For example, for assemble
-  // scalar, a.function_spaces() will be empty.
-  const int tdim = mesh->topology()->dim();
-  std::vector<mesh::CellType> cell_types = mesh->topology()->entity_types(tdim);
-  mesh::CellType cell_type = a.function_spaces()[0]->element()->cell_type();
-  auto it = std::ranges::find(cell_types, cell_type);
-  assert(it != cell_types.end());
-  const int geom_idx = std::distance(cell_types.begin(), it);
-
   if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
   {
     impl::assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,

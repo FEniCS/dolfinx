@@ -18,6 +18,8 @@ from dolfinx.fem import (
 from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.la import matrix_csr
 from dolfinx.mesh import CellType, Mesh
+from petsc4py import PETSc
+
 
 if MPI.COMM_WORLD.size > 1:
     print("Not yet running in parallel")
@@ -105,18 +107,7 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
 
 a_form = form(a)
 
-ffi = a_form.module[0].ffi
-
-# Create a sparsity pattern
-sp = create_sparsity_pattern(a_form)
-sp.finalize()
-
-# FIXME Call just assembler
-A = matrix_csr(sp)
-print(f"Assembling into matrix of size {len(A.data)} non-zeros")
-
-# Assemble
-assemble_matrix(A, a_form)
+A = assemble_matrix(a_form)
 
 # Quick solve
 A_scipy = A.to_scipy()

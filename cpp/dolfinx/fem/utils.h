@@ -222,7 +222,6 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
     for (auto type : types)
     {
       std::vector<int> ids = a.integral_ids(type);
-      std::cout << "Number of ids: " << ids.size() << std::endl;
       switch (type)
       {
       case IntegralType::cell:
@@ -370,8 +369,6 @@ Form<T, U> create_form_factory(
                    std::span<const std::int32_t>>& entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
-  std::cout << "create_form_factory" << std::endl;
-
   for (const ufcx_form& ufcx_form : ufcx_forms)
   {
     if (ufcx_form.rank != (int)spaces.size())
