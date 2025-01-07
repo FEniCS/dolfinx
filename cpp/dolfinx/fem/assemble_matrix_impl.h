@@ -574,7 +574,7 @@ void assemble_matrix(
       perms = std::span(mesh->topology()->get_facet_permutations());
     }
 
-    mesh::CellType cell_type = mesh->topology()->cell_type();
+    mesh::CellType cell_type = mesh->topology()->cell_types()[cell_type_idx];
     int num_facets_per_cell
         = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
     for (int i : a.integral_ids(IntegralType::exterior_facet))
