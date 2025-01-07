@@ -114,7 +114,7 @@ def discrete_curl(V0: FunctionSpace, V1: FunctionSpace) -> _MatrixCSR:
     Returns:
         Discrete curl operator.
     """
-    return _discrete_curl(V0._cpp_object, V1._cpp_object)
+    return _MatrixCSR(_discrete_curl(V0._cpp_object, V1._cpp_object))
 
 
 def discrete_gradient(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCSR:

@@ -13,6 +13,7 @@ import scipy
 
 import dolfinx.la
 import ufl
+from dolfinx import fem
 from basix.ufl import element
 from dolfinx.fem import Expression, Function, discrete_curl, discrete_gradient, functionspace
 from dolfinx.mesh import CellType, GhostMode, create_unit_cube, create_unit_square
@@ -48,45 +49,41 @@ def test_gradient(mesh):
     assert np.isclose(G.squared_norm(), 2.0 * num_edges)
 
 
-@pytest.mark.parametrize("p", range(2, 3))
+@pytest.mark.parametrize("dtype", [np.float32, np.complex64, np.float64, np.complex128])
+@pytest.mark.parametrize("p", range(2, 4))
 @pytest.mark.parametrize(
     "element_data",
     [
         (CellType.tetrahedron, "Nedelec 1st kind H(curl)", "Raviart-Thomas"),
-        # (CellType.hexahedron, "Nedelec 1st kind H(curl)", "Raviart-Thomas"),
+        (CellType.hexahedron, "Nedelec 1st kind H(curl)", "Raviart-Thomas"),
     ],
 )
-def test_discrete_curl(element_data, p):
+def test_discrete_curl(element_data, p, dtype):
     """Compute discrete curl, with verification using Expression."""
+    xdtype = dtype(0).real.dtype
 
-    # if MPI.COMM_WORLD.size > 1:
-    #     return
-    # mesh, family0, family1 = cell_type
     celltype, E0, E1 = element_data
+    N = 3
     msh = create_unit_cube(
-        MPI.COMM_WORLD, 3, 2, 6, ghost_mode=GhostMode.none, cell_type=celltype, dtype=np.float64
+        MPI.COMM_WORLD,
+        N,
+        N // 2,
+        2 * N,
+        ghost_mode=GhostMode.none,
+        cell_type=celltype,
+        dtype=xdtype,
     )
-    delta_x = 1 / (6 - 1)
 
+    # Perturb mesh (making hexahedral cells no longer affine) in serial.
+    # Do not perturb in parallel - would make mesh con-conforming.
     rng = np.random.default_rng(0)
+    delta_x = 1 / (2 * N - 1) if MPI.COMM_WORLD.size == 1 else 0
     msh.geometry.x[:] = msh.geometry.x + 0.2 * delta_x * (rng.random(msh.geometry.x.shape) - 0.5)
-
-    dtype = msh.geometry.x.dtype
 
     V0 = functionspace(msh, (E0, p))
     V1 = functionspace(msh, (E1, p - 1))
-    # V1 = functionspace(msh, ("Raviart-Thomas", p))
-    G = discrete_curl(V0, V1)
-    G_petsc = petsc_discrete_curl(V0, V1)
-    G_petsc.assemble()
-    # # N.B. do not scatter_rev G - doing so would transfer rows to other
-    # # processes where they will be summed to give an incorrect matrix
 
-    # Vector for 'u' needs additional ghosts defined in columns of G
-    uvec = dolfinx.la.vector(G.index_map(1), dtype=dtype)
-    u0 = Function(V0, uvec, dtype=dtype)
-
-    # Note: curl(u) = (1, 0, 0)
+    u0 = Function(V0, dtype=dtype)
     u0.interpolate(
         lambda x: np.vstack(
             (
@@ -96,50 +93,26 @@ def test_discrete_curl(element_data, p):
             )
         )
     )
-    u0.x.scatter_reverse(dolfinx.la.InsertMode.insert)
-    print("u0 norm:", dolfinx.la.norm(u0.x))
-    # u0.interpolate(
-    #     lambda x: np.vstack((np.zeros_like(x[0]), np.zeros_like(x[0]), x[0] ** 3 + x[1] ** 4))
-    # )
-    # u0.interpolate(
-    #     lambda x: np.vstack((np.zeros_like(x[0]), np.zeros_like(x[0]), np.ones_like(x[0])))
-    # )
 
-    # p = np.array([[0.1, 0.1, 0.1]], dtype=dtype)
-    # bb_tree = geometry.bb_tree(msh, 3)
-    # cell_candidates = geometry.compute_collisions_points(bb_tree, p)
-    # cells = geometry.compute_colliding_cells(msh, cell_candidates, p).array
-    # value = u0.eval(p, cells[0])
-    # print("u0 val:", value)
+    # Create discrete curl operator and get local part of G (including
+    # ghost rows) as a SciPy sparse matrix
+    # Note: do not 'assemble' (scatter_rev) G. This would wrongly
+    # accumulate data for ghost entries.
+    G = discrete_curl(V0, V1)
+    Glocal = G.to_scipy(ghosted=True)
 
-    # dofs0 = V0.dofmap.cell_dofs(0)
-    # print("u0 dofs\n", u0.x.array[dofs0])
-
-    # Get the local part of G (no ghost rows)
-    nrlocal = G.index_map(0).size_local
-    nnzlocal = G.indptr[nrlocal]
-    Glocal = scipy.sparse.csr_matrix(
-        (G.data[:nnzlocal], G.indices[:nnzlocal], G.indptr[: nrlocal + 1])
-    )
-
-    # MatVec
+    # Apply discrete curl operator to the u0 vector
     u1 = Function(V1, dtype=dtype)
-    u1.x.array[:nrlocal] = Glocal @ u0.x.array
-    u1.x.scatter_forward()
+    x0 = u0.x.array
+    u1.x.array[:] = Glocal[:, : x0.shape[0]] @ x0
 
-    # Interpolate curl using Expression
+    # Interpolate curl of u0 using Expression
     curl_u = Expression(ufl.curl(u0), V1.element.interpolation_points, dtype=dtype)
     u1_expr = Function(V1, dtype=dtype)
     u1_expr.interpolate(curl_u)
-    # u1_expr.x.scatter_reverse(dolfinx.la.InsertMode.insert)
-
-    y = G_petsc @ u0.x.petsc_vec
-    # print(y.array_r - u1_expr.x.array[:nrlocal])
 
     atol = 1000 * np.finfo(dtype).resolution
-    # print(atol)
-    # print(np.linalg.norm(u1.x.array))
-    # assert np.allclose(u1_expr.x.array, u1.x.array, atol=atol)
+    assert np.allclose(u1_expr.x.array, u1.x.array, atol=atol)
 
 
 @pytest.mark.parametrize("p", range(1, 4))
