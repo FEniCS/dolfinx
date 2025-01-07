@@ -377,7 +377,7 @@ public:
   }
 
   // TODO Add cell_type_idx and return single list
-  std::vector<std::int32_t> domains(IntegralType type, int i, int cell_type_idx) const
+  std::vector<std::int32_t> domain(IntegralType type, int i, int cell_type_idx) const
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
     auto it = std::ranges::lower_bound(integrals, i, std::less<>{},
@@ -397,14 +397,14 @@ public:
   /// @param i Integral ID, i.e. the (sub)domain index.
   /// @param mesh The mesh the entities are numbered with respect to.
   /// @return List of active entities in `mesh` for the given integral.
-  std::vector<std::int32_t> domains(IntegralType type, int i, int cell_type_idx,
+  std::vector<std::int32_t> domain(IntegralType type, int i, int cell_type_idx,
                                    const mesh::Mesh<geometry_type>& mesh) const
   {
     // Hack to avoid passing shared pointer to this function
     std::shared_ptr<const mesh::Mesh<geometry_type>> msh_ptr(
         &mesh, [](const mesh::Mesh<geometry_type>*) {});
 
-    std::span<const std::int32_t> entities = domains(type, i, cell_type_idx);
+    std::span<const std::int32_t> entities = domain(type, i, cell_type_idx);
     if (msh_ptr == _mesh)
       return std::vector(entities.begin(), entities.end());
     else
@@ -502,7 +502,7 @@ public:
   std::vector<std::int32_t> domain(IntegralType type, int i,
                                    const mesh::Mesh<geometry_type>& mesh) const
   {
-    return domains(type, i, 0, mesh);
+    return domain(type, i, 0, mesh);
   }
 
   /// @brief Access coefficients.

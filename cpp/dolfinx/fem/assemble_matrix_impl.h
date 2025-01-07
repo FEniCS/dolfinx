@@ -561,10 +561,10 @@ void assemble_matrix(
 
       impl::assemble_cells(
           mat_set, mesh->geometry().dofmap(cell_type_idx), x,
-          a.domains(IntegralType::cell, i, cell_type_idx),
-          {dofs0, bs0, a.domains(IntegralType::cell, i, cell_type_idx, *mesh0)},
+          a.domain(IntegralType::cell, i, cell_type_idx),
+          {dofs0, bs0, a.domain(IntegralType::cell, i, cell_type_idx, *mesh0)},
           P0,
-          {dofs1, bs1, a.domains(IntegralType::cell, i, cell_type_idx, *mesh1)},
+          {dofs1, bs1, a.domain(IntegralType::cell, i, cell_type_idx, *mesh1)},
           P1T, bc0, bc1, fn, coeffs, cstride, constants, cell_info0,
           cell_info1);
     }

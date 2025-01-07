@@ -229,8 +229,8 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
         for (int id : ids)
         {
           sparsitybuild::cells(pattern,
-                               {a.domains(type, id, cell_type_idx, *mesh0),
-                                a.domains(type, id, cell_type_idx, *mesh1)},
+                               {a.domain(type, id, cell_type_idx, *mesh0),
+                                a.domain(type, id, cell_type_idx, *mesh1)},
                                {{dofmaps[0], dofmaps[1]}});
         }
         break;
