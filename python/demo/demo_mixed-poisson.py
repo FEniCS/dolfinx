@@ -125,7 +125,7 @@ dtype = dolfinx.default_scalar_type
 xdtype = dolfinx.default_real_type
 # -
 
-# Create mesh a mesh in two dimensions. The iterative solver constructed
+# Create a two-dimensional mesh. The iterative solver constructed
 # later requires special construction that is specific to two
 # dimensions. Application in three-dimensions would require a number of
 # changes to the linear solver.
