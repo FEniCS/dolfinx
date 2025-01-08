@@ -153,9 +153,13 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
 {
   std::shared_ptr mesh = a.mesh();
   assert(mesh);
+
+  // Get index maps and block sizes from the DOF maps. Note that in
+  // mixed-topology meshes, despite there being multiple DOF maps, the
+  // index maps and block sizes are the same.
   std::array<std::reference_wrapper<const DofMap>, 2> dofmaps{
-      *a.function_spaces().at(0)->dofmap(),
-      *a.function_spaces().at(1)->dofmap()};
+      *a.function_spaces().at(0)->dofmaps(0),
+      *a.function_spaces().at(1)->dofmaps(0)};
 
   const std::array index_maps{dofmaps[0].get().index_map,
                               dofmaps[1].get().index_map};
@@ -386,16 +390,21 @@ Form<T, U> create_form_factory(
   }
 
   // Check argument function spaces
-  // TODO Fix for mixed topology
-  for (std::size_t i = 0; i < spaces.size(); ++i)
+  for (int form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
   {
-    assert(spaces[i]->element());
-    if (auto element_hash = ufcx_forms[0].get().finite_element_hashes[i];
-        element_hash != 0
-        and element_hash != spaces[i]->element()->basix_element().hash())
+    for (std::size_t i = 0; i < spaces.size(); ++i)
     {
-      throw std::runtime_error("Cannot create form. Elements are different to "
-                               "those used to compile the form.");
+      assert(spaces[i]->elements(form_idx));
+      if (auto element_hash
+          = ufcx_forms[form_idx].get().finite_element_hashes[i];
+          element_hash != 0
+          and element_hash
+                  != spaces[i]->elements(form_idx)->basix_element().hash())
+      {
+        throw std::runtime_error(
+            "Cannot create form. Elements are different to "
+            "those used to compile the form.");
+      }
     }
   }
 

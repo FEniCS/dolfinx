@@ -327,7 +327,9 @@ public:
   /// The finite element
   std::shared_ptr<const FiniteElement<geometry_type>> element() const
   {
-    // TODO Check only one cell type
+    if (_elements.size() > 1)
+      throw std::runtime_error(
+          "FunctionSpace has multiple elements, call `elements` instead.");
     return elements(0);
   }
 
@@ -341,7 +343,9 @@ public:
   /// The dofmap
   std::shared_ptr<const DofMap> dofmap() const
   {
-    // TODO Check only one cell_type
+    if (_dofmaps.size() > 1)
+      throw std::runtime_error(
+          "FunctionSpace has multiple dofmaps, call `dofmaps` instead.");
     return dofmaps(0);
   }
 

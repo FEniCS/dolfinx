@@ -195,8 +195,7 @@ void declare_assembly_functions(nb::module_& m)
       nb::arg("form"), "Pack coefficients for a Form.");
   m.def(
       "pack_constants",
-      [](const dolfinx::fem::Form<T, U>& form)
-      {
+      [](const dolfinx::fem::Form<T, U>& form) {
         return dolfinx_wrappers::as_nbarray(dolfinx::fem::pack_constants(form));
       },
       nb::arg("form"), "Pack constants for a Form.");
@@ -258,9 +257,11 @@ void declare_assembly_functions(nb::module_& m)
           _bcs.push_back(*bc);
         }
 
+        // Get index map block size. Note that mixed-topology meshes
+        // will have multiple DOF maps, but the block sizes are the same.
         const std::array<int, 2> data_bs
-            = {a.function_spaces().at(0)->dofmap()->index_map_bs(),
-               a.function_spaces().at(1)->dofmap()->index_map_bs()};
+            = {a.function_spaces().at(0)->dofmaps(0)->index_map_bs(),
+               a.function_spaces().at(1)->dofmaps(0)->index_map_bs()};
 
         if (data_bs[0] != data_bs[1])
         {
