@@ -322,7 +322,7 @@ if PETSc.Sys().hasExternalPackage("hypre") and not np.issubdtype(dtype, np.compl
     # to a H(curl) space
     V_H1 = fem.functionspace(msh, element("Lagrange", msh.basix_cell(), k, dtype=xdtype))
     V_curl = fem.functionspace(msh, element("N1curl", msh.basix_cell(), k, dtype=xdtype))
-    G = discrete_gradient(V_H1, V_curl)  #
+    G = discrete_gradient(V_H1, V_curl)
     G.assemble()
     pc_sigma.setHYPREDiscreteGradient(G)
 
