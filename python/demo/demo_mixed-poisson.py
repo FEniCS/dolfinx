@@ -376,9 +376,7 @@ ksp.view()
 
 # We save the solution `u` in VTX format. DOLFINx VTX output support
 # visualisation of discontinuous Lagrange element, hence the finite
-# element field can be visualised exactly. However, VTX does not support
-# cell-wise data, so for the lowest-order `u` case we interpolate to a
-# degree 1 discontinuous space.
+This is not True any longer, ref: https://github.com/FEniCS/dolfinx/blob/fb0b99447b96434a48b44c4a256c29330ffac7c6/cpp/dolfinx/io/ADIOS2Writers.h#L587-L599
 
 # +
 try:
