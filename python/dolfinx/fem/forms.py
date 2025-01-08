@@ -330,7 +330,10 @@ def form(
         codes = []
         for form in forms:
             ufcx_form, module, code = jit.ffcx_jit(
-                mesh.comm, form, form_compiler_options=form_compiler_options, jit_options=jit_options
+                mesh.comm,
+                form,
+                form_compiler_options=form_compiler_options,
+                jit_options=jit_options,
             )
             ufcx_forms.append(ufcx_form)
             modules.append(module)
@@ -345,8 +348,10 @@ def form(
         subdomains = {}
         entity_maps = {}
         f = ftype(
-            [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form))
-             for ufcx_form in ufcx_forms],
+            [
+                module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form))
+                for ufcx_form in ufcx_forms
+            ],
             V,
             coeffs,
             constants,
