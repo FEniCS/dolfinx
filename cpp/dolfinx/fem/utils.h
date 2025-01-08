@@ -424,6 +424,9 @@ Form<T, U> create_form_factory(
   assert(topology);
   const int tdim = topology->dim();
 
+  // NOTE: This assumes all forms in mixed-topology meshes have the same
+  // integral offsets. Since the UFL forms for each type of cell should be
+  // the same, I think this assumption is OK.
   const int* integral_offsets = ufcx_forms[0].get().form_integral_offsets;
   std::vector<int> num_integrals_type(3);
   for (int i = 0; i < 3; ++i)
@@ -505,9 +508,9 @@ Form<T, U> create_form_factory(
         if (id == -1)
         {
           // Default kernel, operates on all (owned) cells
-          assert(topology->index_maps(tdim)[form_idx]);
+          assert(topology->index_maps(tdim).at(form_idx));
           default_cells.resize(
-              topology->index_maps(tdim)[form_idx]->size_local(), 0);
+              topology->index_maps(tdim).at(form_idx)->size_local(), 0);
           std::iota(default_cells.begin(), default_cells.end(), 0);
           itg.first->second.emplace_back(id, k, default_cells, active_coeffs);
         }
