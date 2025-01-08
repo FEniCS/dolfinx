@@ -42,7 +42,7 @@ namespace dolfinx::fem
 /// If the finite element degree-of-freedom vectors associated with
 /// \f$u\f$ and \f$v\f$ are \f$a\f$ and \f$b\f$, respectively, then \f$b
 /// = C a\f$, which yields \f$v = \Pi_{V} \nabla \times u\f$. It
-/// essential maps that curl of a function in a degree \f$k > 1\f$
+/// essentially maps that curl of a function in a degree \f$k > 1\f$
 /// Nédélec space into a degree \f$k - 1\f$ Raviart-Thomas space.
 ///
 /// The discerete curl is typically used in constructing algebraic
