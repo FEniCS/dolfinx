@@ -79,7 +79,7 @@
 # $\Sigma_h \subset \Sigma$ and $V_h \subset V$ are needed to form a
 # mixed function space $\Sigma_h \times V_h$. A stable choice of finite
 # element spaces is to let $\Sigma_h$ be the Raviart-Thomas elements of
-# polynomial order $k$ and let $V_h$ be discontinuous elements of
+# polynomial order $k$ and let $V_h$ be discontinuous Lagrange elements of
 # polynomial order $k-1$.
 #
 #
