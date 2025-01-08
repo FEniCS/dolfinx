@@ -284,6 +284,11 @@ public:
     return std::next(start, kernel_idx)->kernel;
   }
 
+  /// @brief Get the kernel function for integral `i` on given domain
+  /// type.
+  /// @param[in] type Integral type.
+  /// @param[in] i Domain identifier (index).
+  /// @return Function to call for `tabulate_tensor`.
   std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
                      const geometry_type*, const int*, const uint8_t*)>
   kernel(IntegralType type, int i) const
@@ -364,12 +369,12 @@ public:
   /// local_facet_index_1)`. Data is flattened with row-major layout,
   /// `shape=(num_facets, 4)`.
   ///
-  /// @param[in] type Integral domain type.
+  /// @param[in] type Integral type.
   /// @param[in] i Integral ID, i.e. (sub)domain index.
   /// @return List of active entities for the given integral (kernel).
   std::span<const std::int32_t> domain(IntegralType type, int i) const
   {
-    // FIXME Call domains
+    // FIXME This should call domain with kernel_idx=0
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
     auto it = std::ranges::lower_bound(integrals, i, std::less<>{},
                                        [](const auto& a) { return a.id; });
@@ -379,17 +384,28 @@ public:
       throw std::runtime_error("No mesh entities for requested domain index.");
   }
 
+  /// @brief Get the list of mesh entity indices for the ith integral
+  /// (kernel) of a given type.
+  /// @param[in] type Integral type.
+  /// @param[in] i Integral ID, i.e. (sub)domain index.
+  /// @param[in] kernel_idx Index of the kernel (we may have multiple kernels
+  /// for a given ID in mixed-topology meshes).
+  /// @return List of active entities for the given integral (kernel).
   std::vector<std::int32_t> domain(IntegralType type, int i,
                                    int kernel_idx) const
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
-    auto it = std::ranges::lower_bound(integrals, i, std::less<>{},
-                                       [](const auto& a) { return a.id; });
-    if (it != integrals.end() and it->id == i)
-      // FIXME Do this properly
-      return (it + kernel_idx)->entities;
-    else
-      throw std::runtime_error("No mesh entities for requested domain index.");
+
+    auto get_id = [](const auto& a) { return a.id; };
+    auto start = std::ranges::lower_bound(integrals, i, std::less<>{}, get_id);
+    auto end = std::ranges::upper_bound(integrals, i, std::less<>{}, get_id);
+
+    // Check that the kernel is valid and return it if so
+    if (start == integrals.end() || start->id != i
+        or std::distance(start, end) <= kernel_idx)
+      throw std::runtime_error("No kernel for requested domain index.");
+
+    return std::next(start, kernel_idx)->entities;
   }
 
   /// @brief Compute the list of entity indices in `mesh` for the ith
@@ -398,6 +414,8 @@ public:
   ///
   /// @param type Integral type.
   /// @param i Integral ID, i.e. the (sub)domain index.
+  /// @param kernel_idx Index of the kernel (we may have multiple kernels
+  /// for a given ID in mixed-topology meshes).
   /// @param mesh The mesh the entities are numbered with respect to.
   /// @return List of active entities in `mesh` for the given integral.
   std::vector<std::int32_t> domain(IntegralType type, int i, int kernel_idx,
@@ -502,6 +520,14 @@ public:
     }
   }
 
+  /// @brief Compute the list of entity indices in `mesh` for the ith
+  /// integral (kernel) of a given type (i.e. cell, exterior facet, or
+  /// interior facet).
+  ///
+  /// @param type Integral type.
+  /// @param i Integral ID, i.e. the (sub)domain index.
+  /// @param mesh The mesh the entities are numbered with respect to.
+  /// @return List of active entities in `mesh` for the given integral.
   std::vector<std::int32_t> domain(IntegralType type, int i,
                                    const mesh::Mesh<geometry_type>& mesh) const
   {
