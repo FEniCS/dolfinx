@@ -29,7 +29,7 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 fem::DofMap fem::create_dofmap(
-    MPI_Comm comm, const ElementDofLayout& layout, mesh::Topology& topology,
+    const ElementDofLayout& layout, mesh::Topology& topology,
     std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn)
@@ -42,8 +42,9 @@ fem::DofMap fem::create_dofmap(
       topology.create_entities(d);
   }
 
-  auto [_index_map, bs, dofmaps]
-      = build_dofmap_data(comm, topology, {layout}, reorder_fn);
+  int bs = layout.block_size();
+  auto [_index_map, dofmaps]
+      = build_dofmap_data(topology, {layout}, reorder_fn);
   auto index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
 
   // If the element's DOF transformations are permutations, permute the
@@ -66,8 +67,7 @@ fem::DofMap fem::create_dofmap(
 }
 //-----------------------------------------------------------------------------
 std::vector<fem::DofMap> fem::create_dofmaps(
-    MPI_Comm comm, const std::vector<ElementDofLayout>& layouts,
-    mesh::Topology& topology,
+    const std::vector<ElementDofLayout>& layouts, mesh::Topology& topology,
     std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn)
@@ -82,8 +82,9 @@ std::vector<fem::DofMap> fem::create_dofmaps(
       topology.create_entities(d);
   }
 
-  auto [_index_map, bs, dofmaps]
-      = build_dofmap_data(comm, topology, layouts, reorder_fn);
+  int bs = layouts.front().block_size();
+  auto [_index_map, dofmaps_data]
+      = build_dofmap_data(topology, layouts, reorder_fn);
   auto index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
 
   // If the element's DOF transformations are permutations, permute the
@@ -95,6 +96,7 @@ std::vector<fem::DofMap> fem::create_dofmaps(
       throw std::runtime_error(
           "DOF transformations not yet supported in mixed topology.");
     }
+
     std::int32_t num_cells = topology.connectivity(D, 0)->num_nodes();
     topology.create_entity_permutations();
     const std::vector<std::uint32_t>& cell_info
@@ -102,16 +104,20 @@ std::vector<fem::DofMap> fem::create_dofmaps(
     std::int32_t dim = layouts.front().num_dofs();
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
     {
-      std::span<std::int32_t> dofs(dofmaps.front().data() + cell * dim, dim);
+      std::span<std::int32_t> dofs(dofmaps_data.front().data() + cell * dim,
+                                   dim);
       permute_inv(dofs, cell_info[cell]);
     }
   }
 
-  std::vector<DofMap> dms;
-  for (std::size_t i = 0; i < dofmaps.size(); ++i)
-    dms.emplace_back(layouts[i], index_map, bs, std::move(dofmaps[i]), bs);
+  std::vector<DofMap> dofmaps;
+  for (std::size_t i = 0; i < dofmaps_data.size(); ++i)
+  {
+    dofmaps.emplace_back(layouts[i], index_map, bs, std::move(dofmaps_data[i]),
+                         bs);
+  }
 
-  return dms;
+  return dofmaps;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::string> fem::get_coefficient_names(const ufcx_form& ufcx_form)

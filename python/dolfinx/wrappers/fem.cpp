@@ -996,8 +996,7 @@ void declare_real_functions(nb::module_& m)
       "Create ElementDofLayout object from a ufc dofmap.");
   m.def(
       "create_dofmap",
-      [](const dolfinx_wrappers::MPICommWrapper comm,
-         dolfinx::mesh::Topology& topology,
+      [](dolfinx::mesh::Topology& topology,
          const dolfinx::fem::FiniteElement<T>& element)
       {
         dolfinx::fem::ElementDofLayout layout
@@ -1007,15 +1006,14 @@ void declare_real_functions(nb::module_& m)
             = nullptr;
         if (element.needs_dof_permutations())
           permute_inv = element.dof_permutation_fn(true, true);
-        return dolfinx::fem::create_dofmap(comm.get(), layout, topology,
-                                           permute_inv, nullptr);
+        return dolfinx::fem::create_dofmap(layout, topology, permute_inv,
+                                           nullptr);
       },
-      nb::arg("comm"), nb::arg("topology"), nb::arg("element"),
+      nb::arg("topology"), nb::arg("element"),
       "Create DofMap object from an element.");
   m.def(
       "create_dofmaps",
-      [](const dolfinx_wrappers::MPICommWrapper comm,
-         dolfinx::mesh::Topology& topology,
+      [](dolfinx::mesh::Topology& topology,
          std::vector<std::shared_ptr<const dolfinx::fem::FiniteElement<T>>>
              elements)
       {
@@ -1028,10 +1026,10 @@ void declare_real_functions(nb::module_& m)
               dolfinx::fem::create_element_dof_layout(*elements[i]));
         }
 
-        return dolfinx::fem::create_dofmaps(comm.get(), layouts, topology,
-                                            nullptr, nullptr);
+        return dolfinx::fem::create_dofmaps(layouts, topology, nullptr,
+                                            nullptr);
       },
-      nb::arg("comm"), nb::arg("topology"), nb::arg("elements"),
+      nb::arg("topology"), nb::arg("elements"),
       "Create DofMap objects on a mixed topology mesh from pointers to "
       "FiniteElements.");
 
@@ -1168,18 +1166,18 @@ void fem(nb::module_& m)
 
   m.def(
       "build_dofmap",
-      [](MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
+      [](const dolfinx::mesh::Topology& topology,
          const dolfinx::fem::ElementDofLayout& layout)
       {
         assert(topology.entity_types(topology.dim()).size() == 1);
-        auto [map, bs, dofmap] = dolfinx::fem::build_dofmap_data(
-            comm.get(), topology, {layout},
+        int bs = layout.block_size();
+        auto [map, dofmap] = dolfinx::fem::build_dofmap_data(
+            topology, {layout},
             [](const dolfinx::graph::AdjacencyList<std::int32_t>& g)
             { return dolfinx::graph::reorder_gps(g); });
         return std::tuple(std::move(map), bs, std::move(dofmap));
       },
-      nb::arg("comm"), nb::arg("topology"), nb::arg("layout"),
-      "Build a dofmap on a mesh.");
+      nb::arg("topology"), nb::arg("layout"), "Build a dofmap on a mesh.");
   m.def(
       "transpose_dofmap",
       [](nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> dofmap,
