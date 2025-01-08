@@ -312,7 +312,8 @@ def form(
         )
         return Form(f, ufcx_form, code, module)
 
-    # Temporary hack for mixed topo
+    # Temporary hack for mixed-topology meshes. This is needed because UFL
+    # does not know about mixed-topology meshes yet.
     def _form_mixed_topo(forms):
         # Extract subdomain data from UFL form
         sd = forms[0].subdomain_data()
@@ -335,6 +336,8 @@ def form(
             modules.append(module)
             codes.append(code)
 
+        # In a mixed-topology mesh, each form has the same C++ function space,
+        # so we can extract it from any of them
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
 
         coeffs = []
@@ -351,7 +354,6 @@ def form(
             entity_maps,
             mesh,
         )
-        print(f"Created mixed-topo form {f}")
         return Form(f, ufcx_forms, codes, modules)
 
     def _create_form(form):
@@ -370,7 +372,9 @@ def form(
             else:
                 return _form(form)
         elif isinstance(form, collections.abc.Iterable):
-            # FIXME Temporary hack for mixed-topo
+            # FIXME Temporary hack for mixed-topology meshes. This is needed
+            # because UFL does not know about mixed-topology meshes, so we need
+            # to pass a list of forms for each cell type.
             sd = form[0].subdomain_data()
             (domain,) = list(sd.keys())
             mesh = domain.ufl_cargo()

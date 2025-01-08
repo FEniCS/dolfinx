@@ -168,15 +168,6 @@ public:
   /// @return The cell types
   std::vector<CellType> cell_types() const;
 
-  /// @brief Create connectivity between given pair of dimensions, `d0
-  /// -> d1`.
-  /// @param[in] d0 Topological dimension
-  /// @param[in] d1 Topological dimension
-  void create_connectivity(int d0, int d1);
-
-  /// @brief Compute entity permutations and reflections.
-  void create_entity_permutations();
-
   /// @brief List of inter-process facets of a given type.
   ///
   /// "Inter-process" facets are facets that are connected (1) to a cell
@@ -206,6 +197,15 @@ public:
   /// @return True if entities are created, false if entities already
   /// existed.
   bool create_entities(int dim);
+
+    /// @brief Create connectivity between given pair of dimensions, `d0
+  /// -> d1`.
+  /// @param[in] d0 Topological dimension.
+  /// @param[in] d1 Topological dimension.
+  void create_connectivity(int d0, int d1);
+
+  /// @brief Compute entity permutations and reflections.
+  void create_entity_permutations();
 
   /// Original cell index for each cell type
   std::vector<std::vector<std::int64_t>> original_cell_index;
