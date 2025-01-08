@@ -21,7 +21,7 @@ if MPI.COMM_WORLD.size > 1:
     exit(0)
 
 
-# Create a mesh
+# Create a mixed-topology mesh
 nx = 16
 ny = 16
 nz = 16
@@ -79,19 +79,22 @@ mesh = create_mesh(
         hexahedron._cpp_object, prism._cpp_object], geomx, part
 )
 
-# Create order 1 dofmaps on mesh
+# Create elements and dofmaps for each cell type
 elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.hexahedron, 1),
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
-
 elements_cpp = [_cpp.fem.FiniteElement_float64(
     e._e, None, True) for e in elements]
+# NOTE: Both dofmaps have the same IndexMap, but different cell_dofs
 dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, elements_cpp)
-V_cpp = _cpp.fem.FunctionSpace_float64(mesh, elements_cpp, dofmaps)
-# Both dofmaps have the same IndexMap, but different cell_dofs
 
-# Create forms for each cell type
+# Create C++ function space
+V_cpp = _cpp.fem.FunctionSpace_float64(mesh, elements_cpp, dofmaps)
+
+# Create forms for each cell type.
+# FIXME This hack is required at the moment because UFL does not yet know about
+# mixed topology meshes.
 a = []
 for i, cell_name in enumerate(["hexahedron", "prism"]):
     print(f"Creating form for {cell_name}")
@@ -102,11 +105,13 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
     k = 12.0
     a += [(ufl.inner(ufl.grad(u), ufl.grad(v)) - k**2 * u * v) * ufl.dx]
 
+# Compile the form
 a_form = form(a)
 
+# Assemble the matrix
 A = assemble_matrix(a_form)
 
-# Quick solve
+# Solve
 A_scipy = A.to_scipy()
 b_scipy = np.ones(A_scipy.shape[1])
 
