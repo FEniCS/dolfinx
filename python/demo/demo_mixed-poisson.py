@@ -374,24 +374,14 @@ assert reason > 0, f"Krylov solver has not converged {reason}."
 ksp.view()
 # -
 
-# We save the solution `u` in VTX format. DOLFINx VTX output support
-# visualisation of discontinuous Lagrange element, hence the finite
-This is not True any longer, ref: https://github.com/FEniCS/dolfinx/blob/fb0b99447b96434a48b44c4a256c29330ffac7c6/cpp/dolfinx/io/ADIOS2Writers.h#L587-L599
+# We save the solution `u` in VTX format:
 
 # +
 try:
     from dolfinx.io import VTXWriter
 
-    if k == 1:
-        gdim = msh.geometry.dim
-        V0 = fem.functionspace(msh, ("Discontinuous Lagrange", k))
-        u0 = fem.Function(V0, dtype=dtype)
-        u0.interpolate(u)
-        with VTXWriter(msh.comm, "output_mixed_poisson.bp", u0, "bp4") as f:
-            f.write(0.0)
-    else:
-        with VTXWriter(msh.comm, "output_mixed_poisson.bp", u, "bp4") as f:
-            f.write(0.0)
+    with VTXWriter(msh.comm, "output_mixed_poisson.bp", u, "bp4") as f:
+        f.write(0.0)
 except ImportError:
     print("ADIOS2 required for VTX output.")
 # -
