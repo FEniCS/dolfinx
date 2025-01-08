@@ -317,7 +317,7 @@ if PETSc.Sys().hasExternalPackage("hypre") and not np.issubdtype(dtype, np.compl
     opts[f"{ksp_sigma.prefix}pc_hypre_ams_cycle_type"] = 7
     opts[f"{ksp_sigma.prefix}pc_hypre_ams_relax_times"] = 2
 
-    # Construct at set the 'discrete gradient' operator, which maps
+    # Construct and set the 'discrete gradient' operator, which maps
     # grad H1 -> H(curl), i.e. the gradient of a scalar Lagrange space
     # to a H(curl) space
     V_H1 = fem.functionspace(msh, element("Lagrange", msh.basix_cell(), k, dtype=xdtype))
