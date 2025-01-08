@@ -179,7 +179,6 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
 template <dolfinx::scalar T, std::floating_point U>
 void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
 {
-  std::cout << "Building sparsity pattern" << std::endl;
   if (a.rank() != 2)
   {
     throw std::runtime_error(
