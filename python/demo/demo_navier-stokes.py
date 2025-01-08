@@ -34,10 +34,10 @@
 # \end{align}
 # $$
 #
-# where $u: \Omega_t \to \mathbb{R}^d$ is the velocity field,
-# $p: \Omega_t \to \mathbb{R}$ is the pressure field,
-# $f: \Omega_t \to \mathbb{R}^d$ is a prescribed force, $\nu \in \mathbb{R}^+$
-# is the kinematic viscosity, and $\Omega_t := \Omega \times (0, \infty)$.
+# where $u: \Omega_t \to \mathbb{R}^d$ is the velocity field, $p:
+# \Omega_t \to \mathbb{R}$ is the pressure field, $f: \Omega_t \to
+# \mathbb{R}^d$ is a prescribed force, $\nu \in \mathbb{R}^+$ is the
+# kinematic viscosity, and $\Omega_t := \Omega \times (0, \infty)$.
 #
 # The problem is supplemented with the initial condition
 #
@@ -51,15 +51,14 @@
 #     u = u_D \text{ on } \partial \Omega \times (0, \infty),
 # $$
 #
-# where $u_0: \Omega \to \mathbb{R}^d$ is a prescribed initial velocity field
-# which satisfies the divergence free condition. The pressure field is only
-# determined up to a constant, so we seek the unique pressure field satisfying
+# where $u_0: \Omega \to \mathbb{R}^d$ is a prescribed initial velocity
+# field which satisfies the divergence free condition. The pressure
+# field is only determined up to a constant, so we seek the unique
+# pressure field satisfying
 #
 # $$
 #     \int_\Omega p = 0.
 # $$
-#
-#
 #
 # ## Discrete problem
 #
@@ -220,7 +219,6 @@ if np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
     exit(0)
 # -
 
-
 # We also define some helper functions that will be used later
 
 
@@ -267,7 +265,6 @@ def f_expr(x):
 
 # We define some simulation parameters
 
-
 n = 16
 num_time_steps = 25
 t_end = 10
@@ -275,8 +272,8 @@ Re = 25  # Reynolds Number
 k = 1  # Polynomial degree
 
 # Next, we create a mesh and the required functions spaces over it.
-# Since the velocity uses an $H(\text{div})$-conforming function
-# space, we also create a vector valued discontinuous Lagrange space to
+# Since the velocity uses an $H(\text{div})$-conforming function space,
+# we also create a vector valued discontinuous Lagrange space to
 # interpolate into for artifact free visualisation.
 
 # +
@@ -287,7 +284,7 @@ V = fem.functionspace(msh, ("Raviart-Thomas", k + 1))
 Q = fem.functionspace(msh, ("Discontinuous Lagrange", k))
 VQ = MixedFunctionSpace(V, Q)
 
-# Funcion space for visualising the velocity field
+# Function space for visualising the velocity field
 gdim = msh.geometry.dim
 W = fem.functionspace(msh, ("Discontinuous Lagrange", k + 1, (gdim,)))
 
@@ -311,7 +308,6 @@ def jump(phi, n):
 
 # We solve the Stokes problem for the initial condition, omitting the
 # convective term:
-
 
 # +
 a = (1.0 / Re) * (

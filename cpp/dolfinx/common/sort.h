@@ -32,7 +32,7 @@ struct __radix_sort
   /// dolfixn::radix_sort(a); // a = {1, 2, 3}
   /// @endcode
   /// Additionally the projection based approach of the STL library is
-  /// adpated, which allows for versatile usage, for example the easy
+  /// adapted, which allows for versatile usage, for example the easy
   /// realization of an argsort
   /// @code
   /// std::array<std::int16_t, 3> a{2, 3, 1};

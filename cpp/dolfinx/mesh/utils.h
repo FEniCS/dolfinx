@@ -975,7 +975,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       auto [unique_end, range_end] = std::ranges::unique(vertices);
       vertices.erase(unique_end, range_end);
 
-      // Remove -1 if it appears as first entity. This can happend in
+      // Remove -1 if it appears as first entity. This can happen in
       // mixed topology meshes where '-1' is used to pad facet data when
       // cells facets have differing numbers of vertices.
       if (!vertices.empty() and vertices.front() == -1)
@@ -1003,7 +1003,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         }
       }
 
-      // Compute row permutaion
+      // Compute row permutation
       const std::vector<std::int32_t> perm = dolfinx::sort_by_perm(
           std::span<const std::int64_t>(facets0), max_v);
 
@@ -1132,7 +1132,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// rank for each cell. If not callable, cells are not redistributed.
 /// @return A mesh distributed on the communicator `comm`.
 ///
-/// This constructor provdes a simplified interface to the more general
+/// This constructor provides a simplified interface to the more general
 /// ::create_mesh constructor, which supports meshes with more than one
 /// cell type.
 template <typename U>
