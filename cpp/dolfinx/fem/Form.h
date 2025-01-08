@@ -271,10 +271,12 @@ public:
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
 
+    // Get the range of integrals with a given ID
     auto get_id = [](const auto& a) { return a.id; };
     auto start = std::ranges::lower_bound(integrals, i, std::less<>{}, get_id);
     auto end = std::ranges::upper_bound(integrals, i, std::less<>{}, get_id);
 
+    // Check that the kernel is valid and return it if so
     if (start == integrals.end() || start->id != i
         or std::distance(start, end) <= kernel_idx)
       throw std::runtime_error("No kernel for requested domain index.");
