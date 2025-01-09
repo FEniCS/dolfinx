@@ -3,9 +3,9 @@ project(dolfinx-tests)
 
 project(${PROJECT_NAME} LANGUAGES C CXX)
 set(CMAKE_C_STANDARD 17) # For FFCx generated .c files.
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+# set(CMAKE_CXX_STANDARD 20)
+# set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Find DOLFINx config file
 find_package(DOLFINX REQUIRED)
@@ -76,6 +76,5 @@ target_compile_options(
 
 # Enable testing
 enable_testing()
-
 # Test target
 add_test(unittests unittests)

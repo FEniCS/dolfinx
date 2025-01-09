@@ -100,14 +100,12 @@ void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
                            const X& x, const Y& xrows, const Y& xcols, OP op,
                            typename Y::value_type num_rows, int bs0, int bs1);
 
-} // namespace impl
-
 //-----------------------------------------------------------------------------
 template <int BS0, int BS1, typename OP, typename U, typename V, typename W,
           typename X, typename Y>
-void impl::insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
-                      const Y& xrows, const Y& xcols, OP op,
-                      [[maybe_unused]] typename Y::value_type num_rows)
+void insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
+                const Y& xrows, const Y& xcols, OP op,
+                [[maybe_unused]] typename Y::value_type num_rows)
 {
   const std::size_t nc = xcols.size();
   assert(x.size() == xrows.size() * xcols.size() * BS0 * BS1);
@@ -151,9 +149,9 @@ void impl::insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 // Insert with block insertion into a regular CSR (block size 1)
 template <int BS0, int BS1, typename OP, typename U, typename V, typename W,
           typename X, typename Y>
-void impl::insert_blocked_csr(U&& data, const V& cols, const W& row_ptr,
-                              const X& x, const Y& xrows, const Y& xcols, OP op,
-                              [[maybe_unused]] typename Y::value_type num_rows)
+void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
+                        const Y& xrows, const Y& xcols, OP op,
+                        [[maybe_unused]] typename Y::value_type num_rows)
 {
   const std::size_t nc = xcols.size();
   assert(x.size() == xrows.size() * xcols.size() * BS0 * BS1);
@@ -195,12 +193,10 @@ void impl::insert_blocked_csr(U&& data, const V& cols, const W& row_ptr,
 // Add individual entries in block-CSR storage
 template <typename OP, typename U, typename V, typename W, typename X,
           typename Y>
-void impl::insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
-                                 const X& x, const Y& xrows, const Y& xcols,
-                                 OP op,
-                                 [[maybe_unused]]
-                                 typename Y::value_type num_rows,
-                                 int bs0, int bs1)
+void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
+                           const X& x, const Y& xrows, const Y& xcols, OP op,
+                           [[maybe_unused]] typename Y::value_type num_rows,
+                           int bs0, int bs1)
 {
   const std::size_t nc = xcols.size();
   const int nbs = bs0 * bs1;
@@ -237,4 +233,23 @@ void impl::insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
   }
 }
 //-----------------------------------------------------------------------------
+
+template <typename T>
+void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
+          std::span<const std::int64_t> row_end,
+          std::span<const std::int32_t> indices, std::span<const T> x,
+          std::span<T> y)
+{
+  assert(row_begin.size() == row_end.size());
+  for (std::size_t i = 0; i < row_begin.size(); i++)
+  {
+    y[i] += std::inner_product(
+        std::next(values.begin(), row_begin[i]),
+        std::next(values.begin(), row_end[i]),
+        std::next(indices.begin(), row_begin[i]), T(0.0), std::plus<T>(),
+        [&x](T val, std::int32_t i) { return val * x[i]; });
+  }
+}
+
+} // namespace impl
 } // namespace dolfinx::la
