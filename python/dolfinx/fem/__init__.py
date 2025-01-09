@@ -42,6 +42,7 @@ from dolfinx.fem.forms import (
     extract_function_spaces,
     form,
     form_cpp_class,
+    mixed_topology_form,
 )
 from dolfinx.fem.function import (
     Constant,
@@ -219,6 +220,7 @@ __all__ = [
     "functionspace",
     "locate_dofs_geometrical",
     "locate_dofs_topological",
+    "mixed_topology_form",
     "set_bc",
     "transpose_dofmap",
 ]

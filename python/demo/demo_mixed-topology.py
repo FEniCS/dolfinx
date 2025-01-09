@@ -11,7 +11,7 @@ from dolfinx.fem import (
     FunctionSpace,
     assemble_matrix,
     coordinate_element,
-    form,
+    mixed_topology_form,
 )
 from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.mesh import CellType, Mesh
@@ -104,7 +104,7 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
     a += [(ufl.inner(ufl.grad(u), ufl.grad(v)) - k**2 * u * v) * ufl.dx]
 
 # Compile the form
-a_form = form(a)
+a_form = mixed_topology_form(a)
 
 # Assemble the matrix
 A = assemble_matrix(a_form)
