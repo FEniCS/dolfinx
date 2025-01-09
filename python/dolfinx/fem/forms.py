@@ -302,7 +302,7 @@ def form(
             _entity_maps = {msh._cpp_object: emap for (msh, emap) in entity_maps.items()}
 
         f = ftype(
-            module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)),
+            [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form))],
             V,
             coeffs,
             constants,
