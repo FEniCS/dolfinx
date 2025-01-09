@@ -425,9 +425,9 @@ public:
     std::shared_ptr<const mesh::Mesh<geometry_type>> msh_ptr(
         &mesh, [](const mesh::Mesh<geometry_type>*) {});
 
-    std::span<const std::int32_t> entities = domain(type, i, kernel_idx);
+    std::vector<std::int32_t> entities = domain(type, i, kernel_idx);
     if (msh_ptr == _mesh)
-      return std::vector(entities.begin(), entities.end());
+      return entities;
     else
     {
       std::span<const std::int32_t> entity_map = _entity_maps.at(msh_ptr);
