@@ -104,6 +104,8 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
     a += [(ufl.inner(ufl.grad(u), ufl.grad(v)) - k**2 * u * v) * ufl.dx]
 
 # Compile the form
+# FIXME: For the time being, since UFL doesn't understand mixed topology meshes,
+# we have to call mixed_topology_form instead of form.
 a_form = mixed_topology_form(a)
 
 # Assemble the matrix
