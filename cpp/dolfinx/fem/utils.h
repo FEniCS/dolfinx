@@ -346,7 +346,7 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// Use fem::create_form to create a fem::Form with coefficients and
 /// constants associated with the name/string.
 ///
-/// @param[in] ufcx_form The UFCx form.
+/// @param[in] ufcx_forms A list of UFCx forms, one for each cell type.
 /// @param[in] spaces Vector of function spaces. The number of spaces is
 /// equal to the rank of the form.
 /// @param[in] coefficients Coefficient fields in the form.
