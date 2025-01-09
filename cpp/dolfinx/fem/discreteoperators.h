@@ -78,16 +78,31 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
   if (mesh != V1.mesh())
     throw std::runtime_error("Meshes must be the same.");
 
-  // Mesh dims
-  const int tdim = mesh->topology()->dim();
   const int gdim = mesh->geometry().dim();
+  if (gdim != mesh->topology()->dim())
+  {
+    throw std::runtime_error(
+        "Geometric and topological dimensions must be equal.");
+  }
 
   // Get elements
   std::shared_ptr<const FiniteElement<U>> e0 = V0.element();
   assert(e0);
+  if (e0->map_type() != basix::maps::type::covariantPiola)
+  {
+    throw std::runtime_error(
+        "Finite element for parent space must be covariant Piola.");
+  }
+
   std::shared_ptr<const FiniteElement<U>> e1 = V1.element();
   assert(e1);
+  if (e1->map_type() != basix::maps::type::contracovariantPiola)
+  {
+    throw std::runtime_error(
+        "Finite element for target space must be contracovariant Piola.");
+  }
 
+  // Get cell orientation information
   std::span<const std::uint32_t> cell_info;
   if (e1->needs_dof_transformations() or e0->needs_dof_transformations())
   {
@@ -107,17 +122,16 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
   auto apply_inverse_dof_transform1 = e1->template dof_transformation_fn<T>(
       doftransform::inverse_transpose, false);
 
-  // // Get sizes of elements
+  // Get sizes of elements
   const std::size_t space_dim0 = e0->space_dimension();
   const std::size_t space_dim1 = e1->space_dimension();
-  const std::size_t value_size0 = e0->reference_value_size();
-  const std::size_t value_size1 = e1->reference_value_size();
+  if (e0->reference_value_size() != 3)
+    throw std::runtime_error("Value size for parent space should be 3.");
+  if (e1->reference_value_size() != 3)
+    throw std::runtime_error("Value size for target space should be 3.");
 
   // Get the V1 reference interpolation points
   const auto [X, Xshape] = e1->interpolation_points();
-
-  // TODO: check map types
-  // TODO: extend or warn for non-affine cells
 
   // Get/compute geometry map and evaluate at interpolation points
   const CoordinateElement<U>& cmap = mesh->geometry().cmap();
@@ -133,12 +147,12 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
   // Geometry data structures
   std::vector<U> coord_dofs_b(num_dofs_g * gdim);
   mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
-  std::vector<U> J_b(Xshape[0] * gdim * tdim);
-  mdspan3_t J(J_b.data(), Xshape[0], gdim, tdim);
-  std::vector<U> K_b(Xshape[0] * tdim * gdim);
-  mdspan3_t K(K_b.data(), Xshape[0], tdim, gdim);
+  std::vector<U> J_b(Xshape[0] * gdim * gdim);
+  mdspan3_t J(J_b.data(), Xshape[0], gdim, gdim);
+  std::vector<U> K_b(Xshape[0] * gdim * gdim);
+  mdspan3_t K(K_b.data(), Xshape[0], gdim, gdim);
   std::vector<U> detJ(Xshape[0]);
-  std::vector<U> det_scratch(2 * tdim * gdim);
+  std::vector<U> det_scratch(2 * gdim * gdim);
 
   // Evaluate V0 basis function derivatives at reference interpolation
   // points for V1
@@ -170,13 +184,6 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
 
   std::vector<T> Ab(space_dim0 * space_dim1);
   std::vector<T> local1(space_dim1);
-
-  // using u_t = md::mdspan<U, md::dextents<std::size_t, 2>>;
-  // using U_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
-  // using J_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
-  // using K_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
-  // auto push_forward_fn0
-  //     = e0->basix_element().template map_fn<u_t, U_t, J_t, K_t>();
 
   // Iterate over mesh and interpolate on each cell
   auto cell_map = mesh->topology()->index_map(tdim);
