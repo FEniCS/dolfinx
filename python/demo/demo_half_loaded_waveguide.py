@@ -461,7 +461,7 @@ for i, kz in vals:
         # Verify if kz is consistent with the analytical equations
         assert verify_mode(kz, w, h, d, lmbd0, eps_d, eps_v, threshold=1e-4)
 
-        print(f"eigenvalue: {-kz**2}")
+        print(f"eigenvalue: {-(kz**2)}")
         print(f"kz: {kz}")
         print(f"kz/k0: {kz / k0}")
 
