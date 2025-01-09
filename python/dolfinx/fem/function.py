@@ -316,9 +316,9 @@ class Function(ufl.Coefficient):
             if dtype is None:
                 dtype = default_scalar_type
 
-        assert np.issubdtype(
-            V.element.dtype, np.dtype(dtype).type(0).real.dtype
-        ), "Incompatible FunctionSpace dtype and requested dtype."
+        assert np.issubdtype(V.element.dtype, np.dtype(dtype).type(0).real.dtype), (
+            "Incompatible FunctionSpace dtype and requested dtype."
+        )
 
         # Create cpp Function
         def functiontype(dtype):
@@ -592,9 +592,9 @@ def functionspace(
     element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)
     cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, element._cpp_object)
 
-    assert np.issubdtype(
-        mesh.geometry.x.dtype, element.dtype
-    ), "Mesh and element dtype are not compatible."
+    assert np.issubdtype(mesh.geometry.x.dtype, element.dtype), (
+        "Mesh and element dtype are not compatible."
+    )
 
     # Initialize the cpp.FunctionSpace
     try:
