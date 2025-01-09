@@ -148,7 +148,7 @@ void declare_discrete_operators(nb::module_& m)
 
         // Build operator
         dolfinx::la::MatrixCSR<T> A(sp);
-        dolfinx::fem::discrete_curl<T, U>(V0, V1, A.mat_set_values());
+        dolfinx::fem::discrete_curl<U, T>(V0, V1, A.mat_set_values());
         return A;
       },
       nb::arg("V0"), nb::arg("V1"));

@@ -36,6 +36,19 @@ namespace dolfinx::fem
 /// \f$V_{1}\f$ is a Raviart-Thomas (\f$H({\rm div})\f$) space of degree of
 /// at least \f$k - 1\f$, then the interpolation is exact.
 ///
+/// The implementation of this function exploits the result:
+///
+/// \f[
+///   \hat{\nabla} \times \psi_{C}(\boldsymbol{u}) = \psi_{D}(\nabla \times \boldsymbol{u}),
+/// \f]
+///
+/// where \f$\psi_{C}\f$ is the covariant pull-back (to the reference
+/// cell) and \f$\psi_{D}\f$ is the contravariant pull-back. See Ern and
+/// Guermond (2021), Finite Elements I, Springer Nature,
+/// https://doi.org/10.1007/978-3-030-56341-7 [Corollary 9.9 (Commuting
+/// properties)]. Hence, the spaces `V0` and `V1` must used covariant
+/// and contravariant maps, respectively.
+///
 /// This function builds a matrix \f$C\f$ (the 'discrete curl'), which
 /// when applied to the degrees-of-freedom of \f$u\f$ gives the
 /// degrees-of-freedom of \f$v\f$ such that \f$v = \nabla \times u\f$.
@@ -46,23 +59,30 @@ namespace dolfinx::fem
 /// Nédélec space into a degree \f$k - 1\f$ Raviart-Thomas space.
 ///
 /// The discerete curl is typically used in constructing algebraic
-/// multigrid preconditioners for \f$H({\rm div})\f$, e.g. when using the Hypre
-/// Auxiliary-space Divergence Solver (ADS).
+/// multigrid preconditioners for \f$H({\rm div})\f$, e.g. when using
+/// the Hypre Auxiliary-space Divergence Solver (ADS).
 ///
 /// @pre `V0` and `V1` must be vector-valued and in three spatial
 /// dimensions.
 ///
-/// @param[in] V0 Space that \f$u\f$ is from. It is normally an
-/// \f$H({\rm curl})\f$-conforming Nédélec space.
-/// @param[in] V1 Space that \f$v\f$ is from. It is normally an
-/// \f$H({\rm div})\f$-conforming Raviart-Thomas space of one degree
-/// lower than `V0`.
+/// @tparam T Scalar type of the mesh and elements.
+/// @tparam U Scalar type of the matrix being inserted into. This is
+/// usually the same as `T`, but may differ for matrix backends that
+/// support only a specific type, e.g. PETSc which support only one
+/// scalar type for a build of PETSc.
+///
+/// @param[in] V0 Space that \f$u\f$ is from. It must be a covariant
+/// Piola mapped element. It is normally an \f$H({\rm
+/// curl})\f$-conforming Nédélec space.
+/// @param[in] V1 Space that \f$v\f$ is from. It must be a contravariant
+/// Piola mapped element. It is normally an \f$H({\rm
+/// div})\f$-conforming Raviart-Thomas space of one degree lower than
+/// `V0`.
 /// @param[in] mat_set A functor that sets (not add) values in a matrix
 /// \f$C\f$.
-template <dolfinx::scalar T,
-          std::floating_point U = dolfinx::scalar_value_type_t<T>>
-void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
-                   la::MatSet<T> auto&& mat_set)
+template <std::floating_point T, dolfinx::scalar U = T>
+void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
+                   la::MatSet<U> auto&& mat_set)
 {
   namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
@@ -81,7 +101,7 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
   }
 
   // Get elements
-  std::shared_ptr<const FiniteElement<U>> e0 = V0.element();
+  std::shared_ptr<const FiniteElement<T>> e0 = V0.element();
   assert(e0);
   if (e0->map_type() != basix::maps::type::covariantPiola)
   {
@@ -89,7 +109,7 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
         "Finite element for parent space must be covariant Piola.");
   }
 
-  std::shared_ptr<const FiniteElement<U>> e1 = V1.element();
+  std::shared_ptr<const FiniteElement<T>> e1 = V1.element();
   assert(e1);
   if (e1->map_type() != basix::maps::type::contravariantPiola)
   {
@@ -113,8 +133,8 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
 
   // Get dof transformation operators
   auto apply_dof_transformation0
-      = e0->template dof_transformation_fn<U>(doftransform::standard, false);
-  auto apply_inverse_dof_transform1 = e1->template dof_transformation_fn<T>(
+      = e0->template dof_transformation_fn<T>(doftransform::standard, false);
+  auto apply_inverse_dof_transform1 = e1->template dof_transformation_fn<U>(
       doftransform::inverse_transpose, false);
 
   // Get sizes of elements
@@ -129,65 +149,65 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
   const auto [X, Xshape] = e1->interpolation_points();
 
   // Get/compute geometry map and evaluate at interpolation points
-  const CoordinateElement<U>& cmap = mesh->geometry().cmap();
+  const CoordinateElement<T>& cmap = mesh->geometry().cmap();
   auto x_dofmap = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();
-  std::span<const U> x_g = mesh->geometry().x();
+  std::span<const T> x_g = mesh->geometry().x();
   std::array<std::size_t, 4> Phi_g_shape = cmap.tabulate_shape(1, Xshape[0]);
-  std::vector<U> Phi_g_b(std::reduce(Phi_g_shape.begin(), Phi_g_shape.end(), 1,
+  std::vector<T> Phi_g_b(std::reduce(Phi_g_shape.begin(), Phi_g_shape.end(), 1,
                                      std::multiplies{}));
-  md::mdspan<const U, md::dextents<std::size_t, 4>> Phi_g(Phi_g_b.data(),
+  md::mdspan<const T, md::dextents<std::size_t, 4>> Phi_g(Phi_g_b.data(),
                                                           Phi_g_shape);
   cmap.tabulate(1, X, Xshape, Phi_g_b);
 
   // Geometry data structures
-  std::vector<U> coord_dofs_b(num_dofs_g * gdim);
-  md::mdspan<U, md::dextents<std::size_t, 2>> coord_dofs(coord_dofs_b.data(),
+  std::vector<T> coord_dofs_b(num_dofs_g * gdim);
+  md::mdspan<T, md::dextents<std::size_t, 2>> coord_dofs(coord_dofs_b.data(),
                                                          num_dofs_g, gdim);
-  std::vector<U> J_b(Xshape[0] * gdim * gdim);
-  md::mdspan<U, md::dextents<std::size_t, 3>> J(J_b.data(), Xshape[0], gdim,
+  std::vector<T> J_b(Xshape[0] * gdim * gdim);
+  md::mdspan<T, md::dextents<std::size_t, 3>> J(J_b.data(), Xshape[0], gdim,
                                                 gdim);
-  std::vector<U> K_b(Xshape[0] * gdim * gdim);
-  md::mdspan<U, md::dextents<std::size_t, 3>> K(K_b.data(), Xshape[0], gdim,
+  std::vector<T> K_b(Xshape[0] * gdim * gdim);
+  md::mdspan<T, md::dextents<std::size_t, 3>> K(K_b.data(), Xshape[0], gdim,
                                                 gdim);
-  std::vector<U> detJ(Xshape[0]);
-  std::vector<U> det_scratch(2 * gdim * gdim);
+  std::vector<T> detJ(Xshape[0]);
+  std::vector<T> det_scratch(2 * gdim * gdim);
 
   // Evaluate V0 basis function derivatives at reference interpolation
   // points for V1
   const auto [Phi0_b, Phi0_shape] = e0->tabulate(X, Xshape, 1);
-  md::mdspan<const U, md::dextents<std::size_t, 4>> Phi0(
+  md::mdspan<const T, md::dextents<std::size_t, 4>> Phi0(
       Phi0_b.data(),
       Phi0_shape); // (deriv, pt_idx, phi (dof), comp)
 
   // Create working arrays, (point, phi (dof), deriv, comp)
   md::dextents<std::size_t, 4> dphi_ext(Phi0.extent(1), Phi0.extent(2),
                                         Phi0.extent(0) - 1, Phi0.extent(3));
-  std::vector<U> dPhi0_b(dphi_ext.extent(0) * dphi_ext.extent(1)
+  std::vector<T> dPhi0_b(dphi_ext.extent(0) * dphi_ext.extent(1)
                          * dphi_ext.extent(2) * dphi_ext.extent(3));
-  md::mdspan<U, md::dextents<std::size_t, 4>> dPhi0(dPhi0_b.data(), dphi_ext);
-  std::vector<U> dphi0_int_b(dPhi0.size());
-  md::mdspan<U, md::dextents<std::size_t, 4>> dphi0_int(dphi0_int_b.data(),
+  md::mdspan<T, md::dextents<std::size_t, 4>> dPhi0(dPhi0_b.data(), dphi_ext);
+  std::vector<T> dphi0_int_b(dPhi0.size());
+  md::mdspan<T, md::dextents<std::size_t, 4>> dphi0_int(dphi0_int_b.data(),
                                                         dPhi0.extents());
-  std::vector<U> dphi0_b(dPhi0.size());
-  md::mdspan<U, md::dextents<std::size_t, 4>> dphi0(dphi0_b.data(),
+  std::vector<T> dphi0_b(dPhi0.size());
+  md::mdspan<T, md::dextents<std::size_t, 4>> dphi0(dphi0_b.data(),
                                                     dPhi0.extents());
 
   // Get the interpolation operator (matrix) Pi that maps a function
   // evaluated at the interpolation points to the V1 element degrees of
   // freedom, i.e. dofs = Pi f_x
   const auto [Pi1_b, pi_shape] = e1->interpolation_operator();
-  md::mdspan<const U, md::dextents<std::size_t, 2>> Pi_1(Pi1_b.data(),
+  md::mdspan<const T, md::dextents<std::size_t, 2>> Pi_1(Pi1_b.data(),
                                                          pi_shape);
 
   // curl data structure
-  std::vector<U> curl_b(dPhi0.extent(0) * dPhi0.extent(1) * dPhi0.extent(3));
-  md::mdspan<U, md::dextents<std::size_t, 3>> curl(
+  std::vector<T> curl_b(dPhi0.extent(0) * dPhi0.extent(1) * dPhi0.extent(3));
+  md::mdspan<T, md::dextents<std::size_t, 3>> curl(
       curl_b.data(), dPhi0.extent(0), dPhi0.extent(1),
       dPhi0.extent(3)); // (pt_idx, phi (dof), comp)
 
-  std::vector<T> Ab(space_dim0 * space_dim1);
-  std::vector<T> local1(space_dim1);
+  std::vector<U> Ab(space_dim0 * space_dim1);
+  std::vector<U> local1(space_dim1);
 
   // Iterate over mesh and interpolate on each cell
   auto cell_map = mesh->topology()->index_map(gdim);
@@ -213,7 +233,8 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
       detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
     }
 
-    // TODO: re-order loops and/or re-pack Phi0?
+    // TODO: re-order loops and/or re-pack Phi0 to allow a simple flat
+    // copy?
 
     // Copy (d)Phi0 (on reference) and apply DOF transformation
     // Phi0:  (deriv, pt_idx, phi (dof), comp)
@@ -236,7 +257,7 @@ void discrete_curl(const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
                                 dPhi0.extent(2) * dPhi0.extent(3));
     }
 
-    // Compute curl on physical element
+    // Compute curl
     // dPhi0: (pt_idx, phi_idx, deriv, comp)
     // curl: (pt_idx, phi_idx, comp)
     for (std::size_t p = 0; p < curl.extent(0); ++p) // point
