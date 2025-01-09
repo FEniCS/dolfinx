@@ -7,6 +7,7 @@
 #pragma once
 
 #include "SparsityPattern.h"
+#include "Vector.h"
 #include "matrix_csr_impl.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>

@@ -132,6 +132,7 @@ void declare_objects(nb::module_& m, const std::string& type)
                &dolfinx::la::MatrixCSR<T>::set),
            nb::arg("x"))
       .def("scatter_reverse", &dolfinx::la::MatrixCSR<T>::scatter_rev)
+      .def("spmv", &dolfinx::la::MatrixCSR<T>::spmv)
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {
