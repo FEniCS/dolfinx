@@ -127,7 +127,7 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
 a_form = mixed_topology_form(a)
 
 # Assemble the matrix
-A = assemble_matrix(a_form)
+A = assemble_matrix(a_form, dtype=np.float64)
 
 # Solve
 A_scipy = A.to_scipy()
