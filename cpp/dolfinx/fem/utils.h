@@ -389,7 +389,7 @@ Form<T, U> create_form_factory(
   }
 
   // Check argument function spaces
-  for (int form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
+  for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
   {
     for (std::size_t i = 0; i < spaces.size(); ++i)
     {
@@ -455,7 +455,7 @@ Form<T, U> create_form_factory(
                              num_integrals_type[cell]);
     auto itg = integrals.insert({IntegralType::cell, {}});
     auto sd = subdomains.find(IntegralType::cell);
-    for (int form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
+    for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
     {
       const ufcx_form& ufcx_form = ufcx_forms[form_idx];
       for (int i = 0; i < num_integrals_type[cell]; ++i)
@@ -537,7 +537,7 @@ Form<T, U> create_form_factory(
                              num_integrals_type[exterior_facet]);
     auto itg = integrals.insert({IntegralType::exterior_facet, {}});
     auto sd = subdomains.find(IntegralType::exterior_facet);
-    for (int form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
+    for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
     {
       const ufcx_form& ufcx_form = ufcx_forms[form_idx];
       for (int i = 0; i < num_integrals_type[exterior_facet]; ++i)
@@ -623,7 +623,7 @@ Form<T, U> create_form_factory(
                              num_integrals_type[interior_facet]);
     auto itg = integrals.insert({IntegralType::interior_facet, {}});
     auto sd = subdomains.find(IntegralType::interior_facet);
-    for (int form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
+    for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
     {
       const ufcx_form& ufcx_form = ufcx_forms[form_idx];
       // Create indicator for interprocess facets
