@@ -36,7 +36,7 @@ class Form:
         _cpp.fem.Form_float32,
         _cpp.fem.Form_float64,
     ]
-    _code: typing.Optional[str]
+    _code: typing.Optional[typing.Union[str, list[str]]]
 
     def __init__(
         self,
@@ -47,8 +47,8 @@ class Form:
             _cpp.fem.Form_float64,
         ],
         ufcx_form=None,
-        code: typing.Optional[str] = None,
-        module: typing.Optional[types.ModuleType] = None,
+        code: typing.Optional[typing.Union[str, list[str]]] = None,
+        module: typing.Optional[typing.Union[types.ModuleType, list[types.ModuleType]]] = None,
     ):
         """A finite element form.
 
@@ -75,12 +75,12 @@ class Form:
         return self._ufcx_form
 
     @property
-    def code(self) -> typing.Union[str, None]:
+    def code(self) -> typing.Union[str, list[str], None]:
         """C code strings."""
         return self._code
 
     @property
-    def module(self) -> typing.Union[types.ModuleType, None]:
+    def module(self) -> typing.Union[types.ModuleType, list[types.ModuleType], None]:
         """The CFFI module"""
         return self._module
 
@@ -197,7 +197,7 @@ _ufl_to_dolfinx_domain = {
 
 
 def mixed_topology_form(
-    forms: typing.Union[typing.Iterable[ufl.Form]],
+    forms: typing.Iterable[ufl.Form],
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
@@ -237,7 +237,7 @@ def mixed_topology_form(
     ftype = form_cpp_class(dtype)
 
     # Extract subdomain data from UFL form
-    sd = forms[0].subdomain_data()
+    sd = next(iter(forms)).subdomain_data()
     (domain,) = list(sd.keys())  # Assuming single domain
 
     # Check that subdomain data for each integral type is the same
@@ -264,17 +264,14 @@ def mixed_topology_form(
     # so we can extract it from any of them
     V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
 
-    coeffs = []
-    constants = []
-    subdomains = {}
-    entity_maps = {}
+    # TODO coeffs, constants, subdomains, entity_maps
     f = ftype(
         [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)) for ufcx_form in ufcx_forms],
         V,
-        coeffs,
-        constants,
-        subdomains,
-        entity_maps,
+        [],
+        [],
+        {},
+        {},
         mesh,
     )
     return Form(f, ufcx_forms, codes, modules)
