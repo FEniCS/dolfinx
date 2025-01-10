@@ -37,6 +37,7 @@ PDEs (advanced)
    demos/demo_poisson_matrix_free.md
    demos/demo_pyamg.md
    demos/demo_hdg.md
+   demos/demo_mixed-topology.md
 
 
 Nonlinear problems
@@ -114,3 +115,4 @@ List of all demos
    demos/demo_mixed-poisson.md
    demos/demo_pyamg.md
    demos/demo_hdg.md
+   demos/demo_mixed-topology.md

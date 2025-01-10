@@ -1,3 +1,21 @@
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.13.6
+# ---
+
+# # Poisson equation
+#
+# This demo illustrates how to solve a simple Helmholtz problem on a
+# mixed-topology mesh.
+#
+# NOTE: Mixed-topology meshes are a work in progress and are not yet fully
+# supported in DOLFINx.
+
 from mpi4py import MPI
 
 import numpy as np
