@@ -764,10 +764,9 @@ double MatrixCSR<U, V, W, X>::squared_norm() const
 //                       |   x[1]  |
 //
 /// Computes y += A*x for a parallel CSR matrix A and parallel dense vectors x,y
-/// @param[in] x Input vector
-/// @param[in, out] y Output vector
-template <typename U, typename V, typename W, typename X>
-void MatrixCSR<U, V, W, X>::spmv(la::Vector<U>& x, la::Vector<U>& y)
+template <typename Scalar, typename V, typename W, typename X>
+void MatrixCSR<Scalar, V, W, X>::spmv(la::Vector<Scalar>& x,
+                                      la::Vector<Scalar>& y)
 {
   // start communication (update ghosts)
   x.scatter_fwd_begin();
@@ -777,10 +776,10 @@ void MatrixCSR<U, V, W, X>::spmv(la::Vector<U>& x, la::Vector<U>& y)
   std::span<const std::int32_t> Acols(cols().data(), Arow_ptr[nrowslocal]);
   std::span<const std::int64_t> Aoff_diag_offset(off_diag_offset().data(),
                                                  nrowslocal);
-  std::span<const U> Avalues(values().data(), Arow_ptr[nrowslocal]);
+  std::span<const Scalar> Avalues(values().data(), Arow_ptr[nrowslocal]);
 
-  std::span<const U> _x = x.array();
-  std::span<U> _y = y.mutable_array();
+  std::span<const Scalar> _x = x.array();
+  std::span<Scalar> _y = y.mutable_array();
 
   std::span<const std::int64_t> Arow_begin(Arow_ptr.data(), nrowslocal);
   std::span<const std::int64_t> Arow_end(Arow_ptr.data() + 1, nrowslocal);
@@ -788,11 +787,11 @@ void MatrixCSR<U, V, W, X>::spmv(la::Vector<U>& x, la::Vector<U>& y)
   // First stage:  spmv - diagonal
   // yi[0] += Ai[0] * xi[0]
   if (_bs[1] == 1)
-    impl::spmv<U, 1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
-                     _bs[0], 1);
+    impl::spmv<Scalar, 1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                          _bs[0], 1);
   else
-    impl::spmv<U, -1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
-                      _bs[0], _bs[1]);
+    impl::spmv<Scalar, -1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                           _bs[0], _bs[1]);
 
   // finalize ghost update
   x.scatter_fwd_end();
@@ -800,11 +799,11 @@ void MatrixCSR<U, V, W, X>::spmv(la::Vector<U>& x, la::Vector<U>& y)
   // Second stage:  spmv - off-diagonal
   // yi[0] += Ai[1] * xi[1]
   if (_bs[1] == 1)
-    impl::spmv<U, 1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y, _bs[0],
-                     1);
+    impl::spmv<Scalar, 1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                          _bs[0], 1);
   else
-    impl::spmv<U, -1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
-                      _bs[0], _bs[1]);
+    impl::spmv<Scalar, -1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                           _bs[0], _bs[1]);
 }
 
 } // namespace dolfinx::la
