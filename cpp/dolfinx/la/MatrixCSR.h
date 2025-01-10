@@ -787,14 +787,24 @@ void MatrixCSR<U, V, W, X>::spmv(la::Vector<U>& x, la::Vector<U>& y)
 
   // First stage:  spmv - diagonal
   // yi[0] += Ai[0] * xi[0]
-  impl::spmv<U>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y);
+  if (_bs[1] == 1)
+    impl::spmv<U, 1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                     _bs[0], 1);
+  else
+    impl::spmv<U, -1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                      _bs[0], _bs[1]);
 
   // finalize ghost update
   x.scatter_fwd_end();
 
   // Second stage:  spmv - off-diagonal
   // yi[0] += Ai[1] * xi[1]
-  impl::spmv<U>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y);
+  if (_bs[1] == 1)
+    impl::spmv<U, 1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y, _bs[0],
+                     1);
+  else
+    impl::spmv<U, -1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                      _bs[0], _bs[1]);
 }
 
 } // namespace dolfinx::la

@@ -51,6 +51,38 @@ def test_create_matrix_csr():
         np.float64,
         np.complex64,
         np.complex128,
+    ],
+)
+def test_matvec(dtype):
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    imap = mesh.topology.index_map(0)
+    sp = _cpp.la.SparsityPattern(mesh.comm, [imap, imap], [1, 1])
+    rows = np.arange(0, imap.size_local)
+    cols = np.arange(0, imap.size_local)
+    sp.insert(rows, cols)
+    sp.finalize()
+
+    # Identity
+    A = la.matrix_csr(sp, dtype=dtype)
+    for i in range(imap.size_local):
+        A.add([2.0], [i], [i])
+    A.scatter_reverse()
+
+    b = la.vector(imap, dtype=dtype)
+    u = la.vector(imap, dtype=dtype)
+    b.array[:] = 1.0
+    A.spmv(b, u)
+    u.scatter_forward()
+    assert np.allclose(u.array[: imap.size_local], 2.0)
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        np.complex64,
+        np.complex128,
         np.int8,
         np.int32,
         np.int64,

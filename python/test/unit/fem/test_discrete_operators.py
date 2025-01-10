@@ -233,9 +233,10 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
 
     V = functionspace(mesh, el0)
     W = functionspace(mesh, el1)
-    G = interpolation_matrix(V, W).to_scipy()
+    G = interpolation_matrix(V, W)
 
-    u = Function(V)
+    uvec = dolfinx.la.vector(G.index_map(1), bs=G.block_size[1])
+    u = Function(V, uvec)
 
     def f(x):
         if mesh.geometry.dim == 2:
@@ -249,10 +250,10 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
 
     # Compute global matrix vector product
     w = Function(W)
-    ux = np.zeros(G.shape[1])
-    ux[: len(u.x.array)] = u.x.array[:]
-    w.x.array[: G.shape[0]] = G @ ux
+    w.x.array[:] = 0.0
+    G.spmv(u.x, w.x)
     w.x.scatter_forward()
 
     atol = 100 * np.finfo(default_real_type).resolution
+
     assert np.allclose(w_vec.x.array, w.x.array, atol=atol)
