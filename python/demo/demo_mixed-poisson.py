@@ -82,6 +82,11 @@
 # polynomial order $k$ and let $V_h$ be discontinuous Lagrange elements of
 # polynomial order $k-1$.
 #
+# To solve the linear system for the mixed problem, we will use am
+# iterative method with a block-diagonal preconditioner that is based on
+# the Riesz map, see for example this
+# [paper](https://doi.org/10.1002/(SICI)1099-1506(199601/02)3:1%3C1::AID-NLA67%3E3.0.CO;2-E).
+
 #
 # ## Implementation
 #
@@ -135,9 +140,9 @@ msh = create_unit_square(MPI.COMM_WORLD, 48, 48, CellType.quadrilateral, dtype=x
 # -
 #
 # Here we construct compatible function spaces for the mixed Poisson
-# problem. The `V` Raviart-Thomas ($\mathbb{RT}$) space is a vector-valued $H({\rm
-# div})$ conforming space. The `W` space is a space of discontinuous
-# Lagrange function of degree `k`.
+# problem. The `V` Raviart-Thomas ($\mathbb{RT}$) space is a
+# vector-valued $H({\rm div})$ conforming space. The `W` space is a
+# space of discontinuous Lagrange function of degree `k`.
 # ```{note}
 # The $\mathbb{RT}_{k}$ element in DOLFINx/Basix is usually denoted as
 # $\mathbb{RT}_{k-1}$ in the literature.
@@ -284,8 +289,9 @@ ksp.setGMRESRestart(100)
 # -
 
 # To apply different solvers/preconditioners to the blocks of `P`, we
-# set the preconditioner to be a `fieldsplit` (block) type and set the
-# 'splits' between the $\sigma$ and $u$ fields.
+# set the preconditioner to be a PETSc
+# [`fieldsplit`](https://petsc.org/release/manual/ksp/#sec-block-matrices)
+# (block) type and set the 'splits' between the $\sigma$ and $u$ fields.
 
 # +
 ksp.getPC().setType("fieldsplit")
