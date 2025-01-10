@@ -136,7 +136,7 @@ xdtype = dolfinx.default_real_type
 # changes to the linear solver.
 
 # +
-msh = create_unit_square(MPI.COMM_WORLD, 48, 48, CellType.quadrilateral, dtype=xdtype)
+msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.quadrilateral, dtype=xdtype)
 # -
 #
 # Here we construct compatible function spaces for the mixed Poisson
@@ -208,27 +208,22 @@ a, L = fem.form(a, dtype=dtype), fem.form(L, dtype=dtype)
 
 # +
 fdim = msh.topology.dim - 1
-dofs_top = fem.locate_dofs_topological(
-    V, fdim, mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 1.0))
-)
-dofs_bottom = fem.locate_dofs_topological(
-    V, fdim, mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 0.0))
-)
+facets_top = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 1.0))
+facets_bottom = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 0.0))
+dofs_top = fem.locate_dofs_topological(V, fdim, facets_top)
+dofs_bottom = fem.locate_dofs_topological(V, fdim, facets_bottom)
 # -
 
 # Now, we create Dirichlet boundary objects for the condition $\sigma
 # \cdot n = \sin(5 x_(0)$ on the top and bottom boundaries:
 
 # +
-f_h1 = fem.Function(V, dtype=dtype)
-f_h1.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), np.sin(5 * x[0]))))
-bc_top = fem.dirichletbc(f_h1, dofs_top)
-
-f_h2 = fem.Function(V, dtype=dtype)
-f_h2.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), -np.sin(5 * x[0]))))
-bc_bottom = fem.dirichletbc(f_h2, dofs_bottom)
-
-bcs = [bc_top, bc_bottom]
+cells_top_ = mesh.compute_incident_entities(msh.topology, facets_top, fdim, fdim + 1)
+cells_bottom = mesh.compute_incident_entities(msh.topology, facets_bottom, fdim, fdim + 1)
+g = fem.Function(V, dtype=dtype)
+g.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), np.sin(5 * x[0]))), cells0=cells_top_)
+g.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), -np.sin(5 * x[0]))), cells0=cells_bottom)
+bcs = [fem.dirichletbc(g, dofs_top), fem.dirichletbc(g, dofs_bottom)]
 # -
 
 # Assemble the matrix operator `A` into a PETSc 'nested matrix', zero
@@ -386,6 +381,7 @@ ksp.view()
 try:
     from dolfinx.io import VTXWriter
 
+    u.name = "u"
     with VTXWriter(msh.comm, "output_mixed_poisson.bp", u, "bp4") as f:
         f.write(0.0)
 except ImportError:
