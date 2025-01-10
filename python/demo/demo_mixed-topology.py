@@ -124,10 +124,10 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
 # Compile the form
 # FIXME: For the time being, since UFL doesn't understand mixed topology meshes,
 # we have to call mixed_topology_form instead of form.
-a_form = mixed_topology_form(a)
+a_form = mixed_topology_form(a, dtype=np.float64)
 
 # Assemble the matrix
-A = assemble_matrix(a_form, dtype=np.float64)
+A = assemble_matrix(a_form)
 
 # Solve
 A_scipy = A.to_scipy()
