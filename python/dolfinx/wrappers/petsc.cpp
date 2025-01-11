@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2023 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2025 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -10,6 +10,7 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include "pycoeff.h"
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/DofMap.h>
@@ -41,7 +42,7 @@
 namespace
 {
 // Declare assembler function that have multiple scalar types
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 void declare_petsc_discrete_operators(nb::module_& m)
 {
   m.def(
@@ -53,7 +54,6 @@ void declare_petsc_discrete_operators(nb::module_& m)
         auto mesh = V0.mesh();
         assert(V1.mesh());
         assert(mesh == V1.mesh());
-        MPI_Comm comm = mesh->comm();
 
         auto dofmap0 = V0.dofmap();
         assert(dofmap0);
@@ -63,6 +63,7 @@ void declare_petsc_discrete_operators(nb::module_& m)
         // Create and build  sparsity pattern
         assert(dofmap0->index_map);
         assert(dofmap1->index_map);
+        MPI_Comm comm = mesh->comm();
         dolfinx::la::SparsityPattern sp(
             comm, {dofmap1->index_map, dofmap0->index_map},
             {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
@@ -78,7 +79,7 @@ void declare_petsc_discrete_operators(nb::module_& m)
         // Build operator
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
         MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
-        dolfinx::fem::discrete_curl<T, U>(
+        dolfinx::fem::discrete_curl<U, T>(
             V0, V1, dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
         return A;
       },
@@ -93,7 +94,6 @@ void declare_petsc_discrete_operators(nb::module_& m)
         auto mesh = V0.mesh();
         assert(V1.mesh());
         assert(mesh == V1.mesh());
-        MPI_Comm comm = mesh->comm();
 
         auto dofmap0 = V0.dofmap();
         assert(dofmap0);
@@ -103,6 +103,7 @@ void declare_petsc_discrete_operators(nb::module_& m)
         // Create and build  sparsity pattern
         assert(dofmap0->index_map);
         assert(dofmap1->index_map);
+        MPI_Comm comm = mesh->comm();
         dolfinx::la::SparsityPattern sp(
             comm, {dofmap1->index_map, dofmap0->index_map},
             {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
@@ -134,7 +135,6 @@ void declare_petsc_discrete_operators(nb::module_& m)
         auto mesh = V0.mesh();
         assert(V1.mesh());
         assert(mesh == V1.mesh());
-        MPI_Comm comm = mesh->comm();
 
         auto dofmap0 = V0.dofmap();
         assert(dofmap0);
@@ -144,6 +144,7 @@ void declare_petsc_discrete_operators(nb::module_& m)
         // Create and build  sparsity pattern
         assert(dofmap0->index_map);
         assert(dofmap1->index_map);
+        MPI_Comm comm = mesh->comm();
         dolfinx::la::SparsityPattern sp(
             comm, {dofmap1->index_map, dofmap0->index_map},
             {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
