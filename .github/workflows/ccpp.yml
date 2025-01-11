@@ -94,7 +94,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install catch2 cmake g++ libblas-dev libboost-dev libhdf5-mpi-dev \
-             liblapck-dev libparmetis-dev libpugixml-dev libspdlog-dev mpi-default-dev \
+             liblapack-dev libparmetis-dev libpugixml-dev libspdlog-dev mpi-default-dev \
              ninja-build pkg-config
       - name: Set up Python
         uses: actions/setup-python@v5
