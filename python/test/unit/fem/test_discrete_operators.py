@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2025 Garth N. Wells, Jørgen S. Dokken
+# Copyright (C) 2015-2025 Garth N. Wells and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -34,15 +34,58 @@ def test_gradient(mesh):
     """Test discrete gradient computation for lowest order elements."""
     V = functionspace(mesh, ("Lagrange", 1))
     W = functionspace(mesh, ("Nedelec 1st kind H(curl)", 1))
+
+    # N.B. do not scatter_rev G - doing so would transfer rows to other
+    # processes where they will be summed to give an incorrect matrix
     G = discrete_gradient(V, W)
-    # N.B. do not scatter_rev G - doing so would transfer rows to other processes
-    # where they will be summed to give an incorrect matrix
 
     num_edges = mesh.topology.index_map(1).size_global
     m, n = G.index_map(0).size_global, G.index_map(1).size_global
     assert m == num_edges
     assert n == mesh.topology.index_map(0).size_global
     assert np.isclose(G.squared_norm(), 2.0 * num_edges)
+
+
+@pytest.mark.parametrize("cell", [CellType.triangle, CellType.quadrilateral])
+def test_discrete_curl_gdim_raises(cell):
+    """Test that discrete curl function raises for gdim != 3."""
+    msh = create_unit_square(MPI.COMM_WORLD, 3, 3, cell_type=cell, dtype=np.float64)
+    E0 = element("N1curl", msh.basix_cell(), 2, dtype=np.float64)
+    E1 = element("RT", msh.basix_cell(), 2, dtype=np.float64)
+    V0, V1 = functionspace(msh, E0), functionspace(msh, E1)
+    with pytest.raises(RuntimeError):
+        discrete_curl(V0, V1)
+
+
+@pytest.mark.parametrize(
+    "elements",
+    [
+        (
+            element("Lagrange", "tetrahedron", 2, shape=(3,), dtype=np.float64),
+            element("Lagrange", "tetrahedron", 2, shape=(3,), dtype=np.float64),
+        ),
+        (
+            element("N1curl", "tetrahedron", 2, dtype=np.float64),
+            element("N1curl", "tetrahedron", 2, dtype=np.float64),
+        ),
+        (
+            element("RT", "tetrahedron", 2, dtype=np.float64),
+            element("N1curl", "tetrahedron", 2, dtype=np.float64),
+        ),
+        (
+            element("RT", "tetrahedron", 2, dtype=np.float64),
+            element("RT", "tetrahedron", 2, dtype=np.float64),
+        ),
+    ],
+)
+def test_discrete_curl_map_raises(elements):
+    """Test that discrete curl function raises for incorrect spaces."""
+    msh = create_unit_cube(
+        MPI.COMM_WORLD, 3, 3, 3, cell_type=CellType.tetrahedron, dtype=np.float64
+    )
+    V0, V1 = functionspace(msh, elements[0]), functionspace(msh, elements[1])
+    with pytest.raises(RuntimeError):
+        discrete_curl(V0, V1)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.complex64, np.float64, np.complex128])
@@ -252,6 +295,7 @@ def test_gradient_interpolation(cell_type, p, q):
     assert np.allclose(w_expr.x.array, w.x.array, atol=atol)
 
 
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("p", range(1, 4))
 @pytest.mark.parametrize("q", range(1, 4))
 @pytest.mark.parametrize("from_lagrange", [True, False])
@@ -259,32 +303,38 @@ def test_gradient_interpolation(cell_type, p, q):
     "cell_type",
     [CellType.quadrilateral, CellType.triangle, CellType.tetrahedron, CellType.hexahedron],
 )
-def test_interpolation_matrix(cell_type, p, q, from_lagrange):
+def test_interpolation_matrix(dtype, cell_type, p, q, from_lagrange):
     """Test that discrete interpolation matrix yields the same result as interpolation."""
-    from dolfinx import default_real_type
     from dolfinx.fem import interpolation_matrix
 
     comm = MPI.COMM_WORLD
     if cell_type == CellType.triangle:
-        mesh = create_unit_square(comm, 7, 5, ghost_mode=GhostMode.none, cell_type=cell_type)
+        mesh = create_unit_square(
+            comm, 7, 5, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=dtype
+        )
         lagrange = "Lagrange" if from_lagrange else "DG"
         nedelec = "Nedelec 1st kind H(curl)"
     elif cell_type == CellType.quadrilateral:
-        mesh = create_unit_square(comm, 11, 6, ghost_mode=GhostMode.none, cell_type=cell_type)
+        mesh = create_unit_square(
+            comm, 11, 6, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=dtype
+        )
         lagrange = "Q" if from_lagrange else "DQ"
         nedelec = "RTCE"
     elif cell_type == CellType.hexahedron:
-        mesh = create_unit_cube(comm, 3, 2, 1, ghost_mode=GhostMode.none, cell_type=cell_type)
+        mesh = create_unit_cube(
+            comm, 3, 2, 1, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=dtype
+        )
         lagrange = "Q" if from_lagrange else "DQ"
         nedelec = "NCE"
     elif cell_type == CellType.tetrahedron:
-        mesh = create_unit_cube(comm, 3, 2, 2, ghost_mode=GhostMode.none, cell_type=cell_type)
+        mesh = create_unit_cube(
+            comm, 3, 2, 2, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=dtype
+        )
         lagrange = "Lagrange" if from_lagrange else "DG"
         nedelec = "Nedelec 1st kind H(curl)"
-    v_el = element(
-        lagrange, mesh.basix_cell(), p, shape=(mesh.geometry.dim,), dtype=default_real_type
-    )
-    s_el = element(nedelec, mesh.basix_cell(), q, dtype=default_real_type)
+
+    v_el = element(lagrange, mesh.basix_cell(), p, shape=(mesh.geometry.dim,), dtype=dtype)
+    s_el = element(nedelec, mesh.basix_cell(), q, dtype=dtype)
     if from_lagrange:
         el0 = v_el
         el1 = s_el
@@ -292,8 +342,7 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
         el0 = s_el
         el1 = v_el
 
-    V = functionspace(mesh, el0)
-    W = functionspace(mesh, el1)
+    V, W = functionspace(mesh, el0), functionspace(mesh, el1)
     G = interpolation_matrix(V, W).to_scipy()
 
     def f(x):
@@ -302,17 +351,17 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
         else:
             return (x[0] ** p, x[2] ** p, x[1] ** p)
 
-    u = Function(V)
+    u = Function(V, dtype=dtype)
     u.interpolate(f)
-    w_vec = Function(W)
+    w_vec = Function(W, dtype=dtype)
     w_vec.interpolate(u)
 
     # Compute global matrix vector product
-    w = Function(W)
+    w = Function(W, dtype=dtype)
     ux = np.zeros(G.shape[1])
     ux[: len(u.x.array)] = u.x.array[:]
     w.x.array[: G.shape[0]] = G @ ux
     w.x.scatter_forward()
 
-    atol = 100 * np.finfo(default_real_type).resolution
+    atol = 100 * np.finfo(dtype).resolution
     assert np.allclose(w_vec.x.array, w.x.array, atol=atol)
