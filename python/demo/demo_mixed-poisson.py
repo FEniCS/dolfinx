@@ -109,10 +109,10 @@ from mpi4py import MPI
 
 import numpy as np
 
+import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, fem, io, mesh
 from dolfinx.fem.petsc import LinearProblem
-from ufl import Measure, SpatialCoordinate, TestFunctions, TrialFunctions, div, exp, inner
 
 msh = mesh.create_unit_square(MPI.COMM_WORLD, 32, 32, mesh.CellType.quadrilateral)
 
@@ -122,15 +122,15 @@ P_el = element("DG", msh.basix_cell(), k - 1, dtype=default_real_type)
 V_el = mixed_element([Q_el, P_el])
 V = fem.functionspace(msh, V_el)
 
-(sigma, u) = TrialFunctions(V)
-(tau, v) = TestFunctions(V)
+(sigma, u) = ufl.TrialFunctions(V)
+(tau, v) = ufl.TestFunctions(V)
 
-x = SpatialCoordinate(msh)
-f = 10.0 * exp(-((x[0] - 0.5) * (x[0] - 0.5) + (x[1] - 0.5) * (x[1] - 0.5)) / 0.02)
+x = ufl.SpatialCoordinate(msh)
+f = 10.0 * ufl.exp(-((x[0] - 0.5) * (x[0] - 0.5) + (x[1] - 0.5) * (x[1] - 0.5)) / 0.02)
 
-dx = Measure("dx", msh)
-a = inner(sigma, tau) * dx + inner(u, div(tau)) * dx + inner(div(sigma), v) * dx
-L = -inner(f, v) * dx
+dx = ufl.Measure("dx", msh)
+a = ufl.inner(sigma, tau) * dx + ufl.inner(u, ufl.div(tau)) * dx + ufl.inner(ufl.div(sigma), v) * dx
+L = -ufl.inner(f, v) * dx
 
 # Get subspace of V
 V0 = V.sub(0)

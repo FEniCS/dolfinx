@@ -36,6 +36,7 @@ except (ImportError, AttributeError):
     exit(0)
 
 
+import ufl
 from dolfinx import fem, io
 from dolfinx.fem import (
     apply_lifting,
@@ -47,21 +48,6 @@ from dolfinx.fem import (
     locate_dofs_topological,
 )
 from dolfinx.mesh import CellType, create_box, locate_entities_boundary
-from ufl import (
-    Identity,
-    SpatialCoordinate,
-    TestFunction,
-    TrialFunction,
-    as_vector,
-    ds,
-    dx,
-    exp,
-    grad,
-    inner,
-    sin,
-    sym,
-    tr,
-)
 
 # -
 
@@ -97,12 +83,12 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str):
 
     bc = dirichletbc(value=dtype(0), dofs=dofs, V=V)
 
-    u, v = TrialFunction(V), TestFunction(V)
-    x = SpatialCoordinate(mesh)
-    f = 10 * exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
-    g = sin(5 * x[0])
-    a = form(inner(grad(u), grad(v)) * dx, dtype=dtype)
-    L = form(inner(f, v) * dx + inner(g, v) * ds, dtype=dtype)
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    x = ufl.SpatialCoordinate(mesh)
+    f = 10 * ufl.exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
+    g = ufl.sin(5 * x[0])
+    a = form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx, dtype=dtype)
+    L = form(ufl.inner(f, v) * ufl.dx + ufl.inner(g, v) * ufl.ds, dtype=dtype)
 
     A = assemble_matrix(a, [bc]).to_scipy()
     b = assemble_vector(L)
@@ -194,8 +180,8 @@ def elasticity_problem(dtype):
     )
 
     ω, ρ = 300.0, 10.0
-    x = SpatialCoordinate(mesh)
-    f = as_vector((ρ * ω**2 * x[0], ρ * ω**2 * x[1], 0.0))
+    x = ufl.SpatialCoordinate(mesh)
+    f = ufl.as_vector((ρ * ω**2 * x[0], ρ * ω**2 * x[1], 0.0))
 
     # Define the elasticity parameters and create a function that
     # computes an expression for the stress given a displacement field.
@@ -206,12 +192,14 @@ def elasticity_problem(dtype):
 
     def σ(v):
         """Return an expression for the stress σ given a displacement field"""
-        return 2.0 * μ * sym(grad(v)) + λ * tr(sym(grad(v))) * Identity(len(v))
+        return 2.0 * μ * ufl.sym(ufl.grad(v)) + λ * ufl.tr(ufl.sym(ufl.grad(v))) * ufl.Identity(
+            len(v)
+        )
 
     V = functionspace(mesh, ("Lagrange", 1, (mesh.geometry.dim,)))
-    u, v = TrialFunction(V), TestFunction(V)
-    a = form(inner(σ(u), grad(v)) * dx, dtype=dtype)
-    L = form(inner(f, v) * dx, dtype=dtype)
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = form(ufl.inner(σ(u), ufl.grad(v)) * ufl.dx, dtype=dtype)
+    L = form(ufl.inner(f, v) * ufl.dx, dtype=dtype)
 
     tdim = mesh.topology.dim
     dofs = locate_dofs_topological(V=V, entity_dim=tdim - 1, entities=facets)

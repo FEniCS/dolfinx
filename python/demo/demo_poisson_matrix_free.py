@@ -80,8 +80,8 @@ from mpi4py import MPI
 import numpy as np
 
 import dolfinx
+import ufl
 from dolfinx import fem, la
-from ufl import SpatialCoordinate, TestFunction, TrialFunction, action, dx, grad, inner
 
 # We begin by using {py:func}`create_rectangle
 # <dolfinx.mesh.create_rectangle>` to create a rectangular
@@ -132,12 +132,12 @@ bc = fem.dirichletbc(value=uD, dofs=dofs)
 
 # Next, we express the variational problem using UFL.
 
-x = SpatialCoordinate(mesh)
-u = TrialFunction(V)
-v = TestFunction(V)
+x = ufl.SpatialCoordinate(mesh)
+u = ufl.TrialFunction(V)
+v = ufl.TestFunction(V)
 f = fem.Constant(mesh, dtype(-6.0))
-a = inner(grad(u), grad(v)) * dx
-L = inner(f, v) * dx
+a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+L = ufl.inner(f, v) * ufl.dx
 L_fem = fem.form(L, dtype=dtype)
 
 # For the matrix-free solvers we also define a second linear form `M` as
@@ -150,7 +150,7 @@ L_fem = fem.form(L, dtype=dtype)
 # $$
 
 ui = fem.Function(V, dtype=dtype)
-M = action(a, ui)
+M = ufl.action(a, ui)
 M_fem = fem.form(M, dtype=dtype)
 
 # ### Matrix-free conjugate gradient solver
@@ -251,7 +251,7 @@ bc.set(u.x.array, alpha=1.0)
 
 
 def L2Norm(u):
-    val = fem.assemble_scalar(fem.form(inner(u, u) * dx, dtype=dtype))
+    val = fem.assemble_scalar(fem.form(ufl.inner(u, u) * ufl.dx, dtype=dtype))
     return np.sqrt(comm.allreduce(val, op=MPI.SUM))
 
 

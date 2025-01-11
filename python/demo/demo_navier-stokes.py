@@ -180,27 +180,9 @@ from mpi4py import MPI
 # +
 import numpy as np
 
+import ufl
 from dolfinx import default_real_type, fem, io, mesh
 from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
-from ufl import (
-    CellDiameter,
-    FacetNormal,
-    MixedFunctionSpace,
-    TestFunctions,
-    TrialFunctions,
-    avg,
-    conditional,
-    div,
-    dot,
-    dS,
-    ds,
-    dx,
-    extract_blocks,
-    grad,
-    gt,
-    inner,
-    outer,
-)
 
 try:
     from petsc4py import PETSc
@@ -227,15 +209,18 @@ if np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
 # +
 def norm_L2(comm, v):
     """Compute the L2(Ω)-norm of v"""
-    return np.sqrt(comm.allreduce(fem.assemble_scalar(fem.form(inner(v, v) * dx)), op=MPI.SUM))
+    return np.sqrt(
+        comm.allreduce(fem.assemble_scalar(fem.form(ufl.inner(v, v) * ufl.dx)), op=MPI.SUM)
+    )
 
 
 def domain_average(msh, v):
     """Compute the average of a function over the domain"""
     vol = msh.comm.allreduce(
-        fem.assemble_scalar(fem.form(fem.Constant(msh, default_real_type(1.0)) * dx)), op=MPI.SUM
+        fem.assemble_scalar(fem.form(fem.Constant(msh, default_real_type(1.0)) * ufl.dx)),
+        op=MPI.SUM,
     )
-    return (1 / vol) * msh.comm.allreduce(fem.assemble_scalar(fem.form(v * dx)), op=MPI.SUM)
+    return (1 / vol) * msh.comm.allreduce(fem.assemble_scalar(fem.form(v * ufl.dx)), op=MPI.SUM)
 
 
 def u_e_expr(x):
@@ -285,7 +270,7 @@ msh = mesh.create_unit_square(MPI.COMM_WORLD, n, n)
 # Function spaces for the velocity and for the pressure
 V = fem.functionspace(msh, ("Raviart-Thomas", k + 1))
 Q = fem.functionspace(msh, ("Discontinuous Lagrange", k))
-VQ = MixedFunctionSpace(V, Q)
+VQ = ufl.MixedFunctionSpace(V, Q)
 
 # Funcion space for visualising the velocity field
 gdim = msh.geometry.dim
@@ -293,18 +278,18 @@ W = fem.functionspace(msh, ("Discontinuous Lagrange", k + 1, (gdim,)))
 
 # Define trial and test functions
 
-u, p = TrialFunctions(VQ)
-v, q = TestFunctions(VQ)
+u, p = ufl.TrialFunctions(VQ)
+v, q = ufl.TestFunctions(VQ)
 
 delta_t = fem.Constant(msh, default_real_type(t_end / num_time_steps))
 alpha = fem.Constant(msh, default_real_type(6.0 * k**2))
 
-h = CellDiameter(msh)
-n = FacetNormal(msh)
+h = ufl.CellDiameter(msh)
+n = ufl.FacetNormal(msh)
 
 
 def jump(phi, n):
-    return outer(phi("+"), n("+")) + outer(phi("-"), n("-"))
+    return ufl.outer(phi("+"), n("+")) + ufl.outer(phi("-"), n("-"))
 
 
 # -
@@ -315,27 +300,28 @@ def jump(phi, n):
 
 # +
 a = (1.0 / Re) * (
-    inner(grad(u), grad(v)) * dx
-    - inner(avg(grad(u)), jump(v, n)) * dS
-    - inner(jump(u, n), avg(grad(v))) * dS
-    + (alpha / avg(h)) * inner(jump(u, n), jump(v, n)) * dS
-    - inner(grad(u), outer(v, n)) * ds
-    - inner(outer(u, n), grad(v)) * ds
-    + (alpha / h) * inner(outer(u, n), outer(v, n)) * ds
+    ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+    - ufl.inner(ufl.avg(ufl.grad(u)), jump(v, n)) * ufl.dS
+    - ufl.inner(jump(u, n), ufl.avg(ufl.grad(v))) * ufl.dS
+    + (alpha / ufl.avg(h)) * ufl.inner(jump(u, n), jump(v, n)) * ufl.dS
+    - ufl.inner(ufl.grad(u), ufl.outer(v, n)) * ufl.ds
+    - ufl.inner(ufl.outer(u, n), ufl.grad(v)) * ufl.ds
+    + (alpha / h) * ufl.inner(ufl.outer(u, n), ufl.outer(v, n)) * ufl.ds
 )
-a -= inner(p, div(v)) * dx
-a -= inner(div(u), q) * dx
+a -= ufl.inner(p, ufl.div(v)) * ufl.dx
+a -= ufl.inner(ufl.div(u), q) * ufl.dx
 
-a_blocked = fem.form(extract_blocks(a))
+a_blocked = fem.form(ufl.extract_blocks(a))
 
 f = fem.Function(W)
 u_D = fem.Function(V)
 u_D.interpolate(u_e_expr)
-L = inner(f, v) * dx + (1 / Re) * (
-    -inner(outer(u_D, n), grad(v)) * ds + (alpha / h) * inner(outer(u_D, n), outer(v, n)) * ds
+L = ufl.inner(f, v) * ufl.dx + (1 / Re) * (
+    -ufl.inner(ufl.outer(u_D, n), ufl.grad(v)) * ufl.ds
+    + (alpha / h) * ufl.inner(ufl.outer(u_D, n), ufl.outer(v, n)) * ufl.ds
 )
-L += inner(fem.Constant(msh, default_real_type(0.0)), q) * dx
-L_blocked = fem.form(extract_blocks(L))
+L += ufl.inner(fem.Constant(msh, default_real_type(0.0)), q) * ufl.dx
+L_blocked = fem.form(ufl.extract_blocks(L))
 
 # Boundary conditions
 boundary_facets = mesh.exterior_facet_indices(msh.topology)
@@ -408,19 +394,22 @@ u_n.x.array[:] = u_h.x.array
 # Now we add the time stepping and convective terms
 
 # +
-lmbda = conditional(gt(dot(u_n, n), 0), 1, 0)
+lmbda = ufl.conditional(ufl.gt(ufl.dot(u_n, n), 0), 1, 0)
 u_uw = lmbda("+") * u("+") + lmbda("-") * u("-")
 a += (
-    inner(u / delta_t, v) * dx
-    - inner(u, div(outer(v, u_n))) * dx
-    + inner((dot(u_n, n))("+") * u_uw, v("+")) * dS
-    + inner((dot(u_n, n))("-") * u_uw, v("-")) * dS
-    + inner(dot(u_n, n) * lmbda * u, v) * ds
+    ufl.inner(u / delta_t, v) * ufl.dx
+    - ufl.inner(u, ufl.div(ufl.outer(v, u_n))) * ufl.dx
+    + ufl.inner((ufl.dot(u_n, n))("+") * u_uw, v("+")) * ufl.dS
+    + ufl.inner((ufl.dot(u_n, n))("-") * u_uw, v("-")) * ufl.dS
+    + ufl.inner(ufl.dot(u_n, n) * lmbda * u, v) * ufl.ds
 )
-a_blocked = fem.form(extract_blocks(a))
+a_blocked = fem.form(ufl.extract_blocks(a))
 
-L += inner(u_n / delta_t, v) * dx - inner(dot(u_n, n) * (1 - lmbda) * u_D, v) * ds
-L_blocked = fem.form(extract_blocks(L))
+L += (
+    ufl.inner(u_n / delta_t, v) * ufl.dx
+    - ufl.inner(ufl.dot(u_n, n) * (1 - lmbda) * u_D, v) * ufl.ds
+)
+L_blocked = fem.form(ufl.extract_blocks(L))
 
 # Time stepping loop
 for n in range(num_time_steps):
@@ -477,7 +466,7 @@ p_e.interpolate(p_e_expr)
 
 # Compute errors
 e_u = norm_L2(msh.comm, u_h - u_e)
-e_div_u = norm_L2(msh.comm, div(u_h))
+e_div_u = norm_L2(msh.comm, ufl.div(u_h))
 
 # This scheme conserves mass exactly, so check this
 assert np.isclose(e_div_u, 0.0, atol=float(1.0e5 * np.finfo(default_real_type).eps))
