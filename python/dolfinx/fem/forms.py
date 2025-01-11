@@ -117,17 +117,17 @@ def get_integration_domains(
 ) -> list[tuple[int, np.ndarray]]:
     """Get integration domains from subdomain data.
 
-    The subdomain data is a meshtags object consisting of markers, or a
-    None object. If it is a None object we do not pack any integration
+    The subdomain data is a MeshTags object consisting of markers, or
+    ``None``. If it is ``None``, we do not pack any integration
     entities. Integration domains are defined as a list of tuples, where
-    each input `subdomain_ids` is mapped to an array of integration
+    each input ``subdomain_ids`` is mapped to an array of integration
     entities, where an integration entity for a cell integral is the
     list of cells. For an exterior facet integral each integration
-    entity is a tuple (cell_index, local_facet_index). For an interior
-    facet integral each integration entity is a uple (cell_index0,
-    local_facet_index0, cell_index1, local_facet_index1). Where the
-    first cell-facet pair is the '+' restriction, the second the '-'
-    restriction.
+    entity is a tuple ``(cell_index, local_facet_index)``. For an
+    interior facet integral each integration entity is a tuple
+    ``(cell_index0, local_facet_index0, cell_index1,
+    local_facet_index1)``. Where the first cell-facet pair is the
+    ``'+'`` restriction, the second the ``'-'`` restriction.
 
     Args:
         integral_type: The type of integral to pack integration
@@ -217,9 +217,9 @@ def form(
             For each key (a mesh, different to the integration domain
             mesh) a map should be provided relating the entities in the
             integration domain mesh to the entities in the key mesh e.g.
-            for a key-value pair (msh, emap) in `entity_maps`, `emap[i]`
-            is the entity in `msh` corresponding to entity `i` in the
-            integration domain mesh.
+            for a key-value pair ``(msh, emap)`` in ``entity_maps``,
+            ``emap[i]`` is the entity in ``msh`` corresponding to entity
+            ``i`` in the integration domain mesh.
 
     Returns:
         Compiled finite element Form.
@@ -247,11 +247,11 @@ def form(
         for data in sd.get(domain).values():
             assert all([d is data[0] for d in data if d is not None])
 
-        mesh = domain.ufl_cargo()
-        if mesh is None:
+        msh = domain.ufl_cargo()
+        if msh is None:
             raise RuntimeError("Expecting to find a Mesh in the form.")
         ufcx_form, module, code = jit.ffcx_jit(
-            mesh.comm, form, form_compiler_options=form_compiler_options, jit_options=jit_options
+            msh.comm, form, form_compiler_options=form_compiler_options, jit_options=jit_options
         )
 
         # For each argument in form extract its function space
@@ -309,12 +309,12 @@ def form(
             constants,
             subdomains,
             _entity_maps,
-            mesh,
+            msh,
         )
         return Form(f, ufcx_form, code, module)
 
     def _zero_form(form):
-        """Compile a single UFL form."""
+        """Compile a single 'zero' UFL form, i.e. a form with no integrals."""
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
         if entity_maps is None:
             _entity_maps = dict()
@@ -342,20 +342,12 @@ def form(
             A ``dolfinx.fem.Form`` or a list of ``dolfinx.fem.Form``.
         """
         if isinstance(form, ufl.Form):
-            if form.empty():
-                raise RuntimeError("oops")
-                # print("Empty:", form, type(form))
-                # return None
-            else:
-                print("Not Empty:", form, type(form))
-                return _form(form)
-            # return _form(form)
+            return _form(form)
         elif isinstance(form, ufl.ZeroBaseForm):
             return _zero_form(form)
         elif isinstance(form, collections.abc.Iterable):
             return list(map(lambda sub_form: _create_form(sub_form), form))
         else:
-            print("Not Empty:", form, type(form))
             return form
 
     return _create_form(form)
@@ -370,11 +362,11 @@ def extract_function_spaces(
 ) -> typing.Iterable[typing.Union[None, function.FunctionSpace]]:
     """Extract common function spaces from an array of forms.
 
-    If `forms` is a list of linear form, this function returns of list
-    of the corresponding test functions. If `forms` is a 2D array of
-    bilinear forms, for index=0 the list common test function space for
-    each row is returned, and if index=1 the common trial function
-    spaces for each column are returned.
+    If ``forms`` is a list of linear form, this function returns of list
+    of the corresponding test functions. If ``forms`` is a 2D array of
+    bilinear forms, for ``index=0`` the list common test function space
+    for each row is returned, and if ``index=1`` the common trial
+    function spaces for each column are returned.
     """
     _forms = np.array(forms)
     if _forms.ndim == 0:
@@ -482,7 +474,7 @@ def form_cpp_creator(
 def create_form(
     form: CompiledForm,
     function_spaces: list[function.FunctionSpace],
-    mesh: Mesh,
+    msh: Mesh,
     subdomains: dict[IntegralType, list[tuple[int, np.ndarray]]],
     coefficient_map: dict[ufl.Function, function.Function],
     constant_map: dict[ufl.Constant, function.Constant],
@@ -495,7 +487,7 @@ def create_form(
         form: Compiled ufl form
         function_spaces: List of function spaces associated with the
             form. Should match the number of arguments in the form.
-        mesh: Mesh to associate form with
+        msh: Mesh to associate form with
         subdomains: A map from integral type to a list of pairs, where
             each pair corresponds to a subdomain id and the set of of
             integration entities to integrate over. Can be computed with
@@ -503,9 +495,9 @@ def create_form(
         coefficient_map: Map from UFL coefficient to function with data.
         constant_map: Map from UFL constant to constant with data.
         entity_map: A map where each key corresponds to a mesh different
-            to the integration domain `mesh`. The value of the map is an
-            array of integers, where the i-th entry is the entity in the
-            key mesh.
+            to the integration domain ``msh``. The value of the map is
+            an array of integers, where the i-th entry is the entity in
+            the key mesh.
     """
     if entity_maps is None:
         _entity_maps = {}
@@ -532,6 +524,6 @@ def create_form(
         constants,
         _subdomain_data,
         _entity_maps,
-        mesh._cpp_object,
+        msh._cpp_object,
     )
     return Form(f, form.ufcx_form, form.code)

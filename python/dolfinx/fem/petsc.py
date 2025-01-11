@@ -143,7 +143,8 @@ def create_vector_block(L: list[Form]) -> PETSc.Vec:
 
 
 def create_vector_nest(L: list[Form]) -> PETSc.Vec:
-    """Create a PETSc nested vector (``VecNest``) that is compatible with a list of linear forms.
+    """Create a PETSc nested vector (``VecNest``) that is compatible
+    with a list of linear forms.
 
     Args:
         L: List of linear forms.
@@ -319,9 +320,8 @@ def _assemble_vector_nest_vec(
     constants = [None] * len(L) if constants is None else constants
     coeffs = [None] * len(L) if coeffs is None else coeffs
     for b_sub, L_sub, const, coeff in zip(b.getNestSubVecs(), L, constants, coeffs):
-        if not isinstance(L_sub, ufl.ZeroBaseForm):
-            with b_sub.localForm() as b_local:
-                _assemble._assemble_vector_array(b_local.array_w, L_sub, const, coeff)
+        with b_sub.localForm() as b_local:
+            _assemble._assemble_vector_array(b_local.array_w, L_sub, const, coeff)
     return b
 
 

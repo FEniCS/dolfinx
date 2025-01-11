@@ -137,7 +137,7 @@ xdtype = dolfinx.default_real_type
 # changes to the linear solver.
 
 # +
-msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.quadrilateral, dtype=xdtype)
+msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle, dtype=xdtype)
 # -
 #
 # Here we construct compatible function spaces for the mixed Poisson
