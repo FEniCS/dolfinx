@@ -1,4 +1,5 @@
-# Copyright (C) 2017-2024 Chris N. Richardson, Garth N. Wells, Michal Habera and Jørgen S. Dokken
+# Copyright (C) 2017-2024 Chris N. Richardson, Garth N. Wells,
+# Michal Habera and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -312,6 +313,24 @@ def form(
         )
         return Form(f, ufcx_form, code, module)
 
+    def _zero_form(form):
+        """Compile a single UFL form."""
+        V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
+        if entity_maps is None:
+            _entity_maps = dict()
+        else:
+            _entity_maps = {msh._cpp_object: emap for (msh, emap) in entity_maps.items()}
+        f = ftype(
+            spaces=V,
+            integrals={},
+            coefficients=[],
+            constants=[],
+            need_permutation_data=False,
+            entity_maps=_entity_maps,
+            mesh=None,
+        )
+        return Form(f)
+
     def _create_form(form):
         """Recursively convert ufl.Forms to dolfinx.fem.Form.
 
@@ -324,12 +343,19 @@ def form(
         """
         if isinstance(form, ufl.Form):
             if form.empty():
-                return None
+                raise RuntimeError("oops")
+                # print("Empty:", form, type(form))
+                # return None
             else:
+                print("Not Empty:", form, type(form))
                 return _form(form)
+            # return _form(form)
+        elif isinstance(form, ufl.ZeroBaseForm):
+            return _zero_form(form)
         elif isinstance(form, collections.abc.Iterable):
             return list(map(lambda sub_form: _create_form(sub_form), form))
         else:
+            print("Not Empty:", form, type(form))
             return form
 
     return _create_form(form)

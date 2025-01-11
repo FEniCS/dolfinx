@@ -114,6 +114,7 @@ from ufl import (
     SpatialCoordinate,
     TestFunction,
     TrialFunction,
+    ZeroBaseForm,
     div,
     exp,
     inner,
@@ -134,10 +135,10 @@ xdtype = dolfinx.default_real_type
 msh = create_unit_square(MPI.COMM_WORLD, 48, 48, CellType.quadrilateral, dtype=xdtype)
 # -
 #
-# Here we construct compatible function spaces for the mixed Poisson
-# problem. The `V` Raviart-Thomas ($\mathbb{RT}$) space is a vector-valued $H({\rm
-# div})$ conforming space. The `W` space is a space of discontinuous
-# Lagrange function of degree `k`.
+# Here we construct the function spaces. The `V`  space is a
+# Raviart-Thomas ($\mathbb{RT}$) space - a vector-valued $H({\rm div})$
+# conforming space. The `W` space is a space of discontinuous Lagrange
+# function of degree `k`.
 # ```{note}
 # The $\mathbb{RT}_{k}$ element in DOLFINx/Basix is usually denoted as
 # $\mathbb{RT}_{k-1}$ in the literature.
@@ -180,10 +181,7 @@ f = 10 * exp(-((x[0] - 0.5) * (x[0] - 0.5) + (x[1] - 0.5) * (x[1] - 0.5)) / 0.02
 # +
 dx = Measure("dx", msh)
 a = [[inner(sigma, tau) * dx, inner(u, div(tau)) * dx], [inner(div(sigma), v) * dx, None]]
-L = [
-    inner(fem.Constant(msh, np.zeros(2, dtype=dtype)), tau) * dx,
-    -inner(f, v) * dx,
-]
+L = [ZeroBaseForm((tau,)), -inner(f, v) * dx]
 # -
 
 # We now compile the abstract/symbolic forms in `a` and `L` into

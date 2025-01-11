@@ -285,14 +285,16 @@ def _assemble_vector_vec(b: PETSc.Vec, L: Form, constants=None, coeffs=None) -> 
 def assemble_vector_nest(L: typing.Any, constants=None, coeffs=None) -> PETSc.Vec:
     """Assemble linear forms into a new nested PETSc (``VecNest``) vector.
 
-    Note:
-        Due to subtle issues in the interaction between petsc4py memory management
-        and the Python garbage collector, it is recommended that the method ``PETSc.Vec.destroy()``
-        is called on the returned object once the object is no longer required. Note that
-        ``PETSc.Vec.destroy()`` is collective over the object's MPI communicator.
-
     The returned vector is not finalised, i.e. ghost values are not
     accumulated on the owning processes.
+
+    Note:
+        Due to subtle issues in the interaction between petsc4py memory
+        management and the Python garbage collector, it is recommended
+        that the method ``PETSc.Vec.destroy()`` is called on the
+        returned object once the object is no longer required. Note that
+        ``PETSc.Vec.destroy()`` is collective over the object's MPI
+        communicator.
     """
     maps = [
         (form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
@@ -317,8 +319,9 @@ def _assemble_vector_nest_vec(
     constants = [None] * len(L) if constants is None else constants
     coeffs = [None] * len(L) if coeffs is None else coeffs
     for b_sub, L_sub, const, coeff in zip(b.getNestSubVecs(), L, constants, coeffs):
-        with b_sub.localForm() as b_local:
-            _assemble._assemble_vector_array(b_local.array_w, L_sub, const, coeff)
+        if not isinstance(L_sub, ufl.ZeroBaseForm):
+            with b_sub.localForm() as b_local:
+                _assemble._assemble_vector_array(b_local.array_w, L_sub, const, coeff)
     return b
 
 
@@ -337,13 +340,15 @@ def assemble_vector_block(
 ) -> PETSc.Vec:
     """Assemble linear forms into a monolithic vector.
 
-    Note:
-        Due to subtle issues in the interaction between petsc4py memory management
-        and the Python garbage collector, it is recommended that the method ``PETSc.Vec.destroy()``
-        is called on the returned object once the object is no longer required. Note that
-        ``PETSc.Vec.destroy()`` is collective over the object's MPI communicator.
-
     The vector is not finalised, i.e. ghost values are not accumulated.
+
+    Note:
+        Due to subtle issues in the interaction between petsc4py memory
+        management and the Python garbage collector, it is recommended
+        that the method ``PETSc.Vec.destroy()`` is called on the
+        returned object once the object is no longer required. Note that
+        ``PETSc.Vec.destroy()`` is collective over the object's MPI
+        communicator.
     """
     maps = [
         (form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
@@ -460,10 +465,12 @@ def assemble_matrix(
         have not been communicated.
 
     Note:
-        Due to subtle issues in the interaction between petsc4py memory management
-        and the Python garbage collector, it is recommended that the method ``PETSc.Mat.destroy()``
-        is called on the returned object once the object is no longer required. Note that
-        ``PETSc.Mat.destroy()`` is collective over the object's MPI communicator.
+        Due to subtle issues in the interaction between petsc4py memory
+        management and the Python garbage collector, it is recommended
+        that the method ``PETSc.Mat.destroy()`` is called on the
+        returned object once the object is no longer required. Note that
+        ``PETSc.Mat.destroy()`` is collective over the object's MPI
+        communicator.
 
     Args:
         a: Bilinear form to assembled into a matrix.
@@ -520,10 +527,12 @@ def assemble_matrix_nest(
     """Create a nested matrix and assemble bilinear forms into the matrix.
 
     Note:
-        Due to subtle issues in the interaction between petsc4py memory management
-        and the Python garbage collector, it is recommended that the method ``PETSc.Mat.destroy()``
-        is called on the returned object once the object is no longer required. Note that
-        ``PETSc.Mat.destroy()`` is collective over the object's MPI communicator.
+        Due to subtle issues in the interaction between petsc4py memory
+        management and the Python garbage collector, it is recommended
+        that the method ``PETSc.Mat.destroy()`` is called on the
+        returned object once the object is no longer required. Note that
+        ``PETSc.Mat.destroy()`` is collective over the object's MPI
+        communicator.
 
     Args:
         a: Rectangular (list-of-lists) array for bilinear forms.
@@ -615,11 +624,12 @@ def assemble_matrix_block(
     """Assemble bilinear forms into a blocked matrix.
 
     Note:
-        Due to subtle issues in the interaction between petsc4py memory management
-        and the Python garbage collector, it is recommended that the method ``PETSc.Mat.destroy()``
-        is called on the returned object once the object is no longer required. Note that
-        ``PETSc.Mat.destroy()`` is collective over the object's MPI communicator.
-
+        Due to subtle issues in the interaction between petsc4py memory
+        management and the Python garbage collector, it is recommended
+        that the method ``PETSc.Mat.destroy()`` is called on the
+        returned object once the object is no longer required. Note that
+        ``PETSc.Mat.destroy()`` is collective over the object's MPI
+        communicator.
     """
     _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
     A = _cpp.fem.petsc.create_matrix_block(_a)
@@ -777,7 +787,9 @@ def set_bc_nest(
     x0: typing.Optional[PETSc.Vec] = None,
     alpha: float = 1,
 ) -> None:
-    """Apply the function :func:`dolfinx.fem.set_bc` to each sub-vector of a nested PETSc Vector."""
+    """Apply the function :func:`dolfinx.fem.set_bc` to each sub-vector
+    of a nested PETSc Vector.
+    """
     _b = b.getNestSubVecs()
     x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()
     for b_sub, bc, x_sub in zip(_b, bcs, x0):
@@ -962,8 +974,8 @@ class NonlinearProblem:
                 command line to see all available options.
             jit_options: Options used in CFFI JIT compilation of C
                 code generated by FFCx. See ``python/dolfinx/jit.py``
-                for all available options. Takes priority over all
-                other option values.
+                for all available options. Takes priority over all other
+                option values.
 
         Example::
 
