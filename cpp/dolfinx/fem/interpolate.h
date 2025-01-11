@@ -45,7 +45,7 @@ concept MDSpan = requires(T x, std::size_t idx) {
 /// @param[in] cells Indices of the cells in the mesh to compute
 /// interpolation coordinates for.
 /// @return The coordinates in the physical space at which to evaluate
-/// an expression. The shape is (3, num_points) and storage is
+/// an expression. The shape is `(3, num_points)` and storage is
 /// row-major.
 template <std::floating_point T>
 std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
@@ -108,18 +108,19 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
 /// @brief Interpolate an evaluated expression f(x) in a finite element
 /// space.
 ///
-/// @tparam T Scalar type
-/// @tparam U Mesh geometry type
-/// @param[out] u Function object to interpolate into
+/// @tparam T Scalar type.
+/// @tparam U Mesh geometry type.
+///
+/// @param[out] u Function object to interpolate into.
 /// @param[in] f Evaluation of the function `f(x)` at the physical
-/// points `x` given by \ref interpolation_coords. The element used in
-/// \ref interpolation_coords should be the same element as associated
-/// with `u`. The shape of `f` is  `(value_size, num_points)`, with
-/// row-major storage.
+/// points `x` given by `interpolation_coords`. The element used in
+/// `interpolation_coords` should be the same element as associated with
+/// `u`. The shape of `f` is  `(value_size, num_points)`, with row-major
+/// storage.
 /// @param[in] fshape Shape of `f`.
 /// @param[in] cells Indices of the cells in the mesh on which to
 /// interpolate. Should be the same as the list of cells used when
-/// calling \ref interpolation_coords.
+/// calling `interpolation_coords`.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
@@ -291,11 +292,11 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
 
 /// @brief Apply interpolation operator Pi to data to evaluate the dof
 /// coefficients.
-/// @param[in] Pi The interpolation matrix (shape = (num dofs,
-/// num_points * value_size)).
+/// @param[in] Pi The interpolation matrix (`shape=(num dofs, num_points
+/// * value_size)`).
 /// @param[in] data Function evaluations, by point, e.g. (f0(x0),
 /// f1(x0), f0(x1), f1(x1), ...).
-/// @param[out] coeffs The degrees of freedom to compute.
+/// @param[out] coeffs Degrees of freedom to compute.
 /// @param[in] bs The block size.
 template <MDSpan U, MDSpan V, dolfinx::scalar T>
 void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
@@ -1030,15 +1031,15 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   }
 }
 
-/// @brief Generate data needed to interpolate finite element Functions
-/// across different meshes.
+/// @brief Generate data needed to interpolate finite element
+/// fem::Function's across different meshes.
 ///
-/// @param[in] geometry0 Mesh geometry of the space to interpolate into
-/// @param[in] element0 Element of the space to interpolate into
-/// @param[in] mesh1 Mesh of the function to interpolate from
+/// @param[in] geometry0 Mesh geometry of the space to interpolate into.
+/// @param[in] element0 Element of the space to interpolate into.
+/// @param[in] mesh1 Mesh of the function to interpolate from.
 /// @param[in] cells Indices of the cells in the destination mesh on
 /// which to interpolate. Should be the same as the list used when
-/// calling \ref interpolation_coords.
+/// calling `interpolation_coords`.
 /// @param[in] padding Absolute padding of bounding boxes of all
 /// entities on `mesh1`. This is used avoid floating point issues when
 /// an interpolation point from `mesh0` is on the surface of a cell in
@@ -1070,6 +1071,7 @@ geometry::PointOwnershipData<T> create_interpolation_data(
 
 /// @brief Interpolate a finite element Function defined on a mesh to a
 /// finite element Function defined on different (non-matching) mesh.
+///
 /// @tparam T Function scalar type.
 /// @tparam U mesh::Mesh geometry scalar type.
 /// @param u Function to interpolate into.
