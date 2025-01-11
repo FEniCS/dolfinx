@@ -53,7 +53,6 @@ from dolfinx.fem import (
 from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode, create_box, locate_entities_boundary
-from ufl import dx, grad, inner
 
 dtype = PETSc.ScalarType  # type: ignore
 # -
@@ -135,7 +134,7 @@ E = 1.0e9
 
 def σ(v):
     """Return an expression for the stress σ given a displacement field"""
-    return 2.0 * μ * ufl.sym(grad(v)) + λ * ufl.tr(ufl.sym(grad(v))) * ufl.Identity(len(v))
+    return 2.0 * μ * ufl.sym(ufl.grad(v)) + λ * ufl.tr(ufl.sym(ufl.grad(v))) * ufl.Identity(len(v))
 
 
 # -
@@ -146,8 +145,8 @@ def σ(v):
 
 V = functionspace(msh, ("Lagrange", 1, (msh.geometry.dim,)))
 u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-a = form(inner(σ(u), grad(v)) * dx)
-L = form(inner(f, v) * dx)
+a = form(ufl.inner(σ(u), ufl.grad(v)) * ufl.dx)
+L = form(ufl.inner(f, v) * ufl.dx)
 
 # A homogeneous (zero) boundary condition is created on $x_0 = 0$ and
 # $x_1 = 1$ by finding all facets on these boundaries, and then creating
@@ -240,7 +239,7 @@ uh.x.scatter_forward()
 
 # +
 sigma_dev = σ(uh) - (1 / 3) * ufl.tr(σ(uh)) * ufl.Identity(len(uh))
-sigma_vm = ufl.sqrt((3 / 2) * inner(sigma_dev, sigma_dev))
+sigma_vm = ufl.sqrt((3 / 2) * ufl.inner(sigma_dev, sigma_dev))
 # -
 
 # Next, the Von Mises stress is interpolated in a piecewise-constant
