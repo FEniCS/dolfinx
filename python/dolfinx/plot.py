@@ -103,7 +103,8 @@ def _(V: fem.FunctionSpace, entities=None):
         "P",
     ]:
         raise RuntimeError(
-            "Can only create meshes from continuous or discontinuous Lagrange spaces"
+            "Can only create meshes from continuous or discontinuous Lagrange"
+            "spaces, not {V.ufl_element().family_name}."
         )
 
     degree = V.ufl_element().degree

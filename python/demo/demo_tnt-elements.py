@@ -41,9 +41,9 @@ import numpy as np
 
 import basix
 import basix.ufl
+import ufl
 from dolfinx import default_real_type, fem, mesh
 from dolfinx.fem.petsc import LinearProblem
-from ufl import SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx, grad, inner, sin
 
 mpl.use("agg")
 # -
@@ -256,14 +256,14 @@ def create_tnt_quad(degree):
 
 def poisson_error(V: fem.FunctionSpace):
     msh = V.mesh
-    u, v = TrialFunction(V), TestFunction(V)
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
-    x = SpatialCoordinate(msh)
-    u_exact = sin(10 * x[1]) * cos(15 * x[0])
-    f = -div(grad(u_exact))
+    x = ufl.SpatialCoordinate(msh)
+    u_exact = ufl.sin(10 * x[1]) * ufl.cos(15 * x[0])
+    f = -ufl.div(ufl.grad(u_exact))
 
-    a = inner(grad(u), grad(v)) * dx
-    L = inner(f, v) * dx
+    a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+    L = ufl.inner(f, v) * ufl.dx
 
     # Create Dirichlet boundary condition
     u_bc = fem.Function(V)
@@ -278,7 +278,7 @@ def poisson_error(V: fem.FunctionSpace):
     problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_rtol": 1e-12})
     uh = problem.solve()
 
-    M = (u_exact - uh) ** 2 * dx
+    M = (u_exact - uh) ** 2 * ufl.dx
     M = fem.form(M)
     error = msh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
     return error**0.5

@@ -8,10 +8,10 @@ from dolfinx import cpp as _cpp
 
 
 class DofMap:
-    """Degree-of-freedom map
+    """Degree-of-freedom map.
 
-    This class handles the mapping of degrees of freedom. It builds
-    a dof map based on a FiniteElement on a specific mesh.
+    This class handles the mapping of degrees of freedom. It builds a
+    dof map based on a FiniteElement on a specific mesh.
     """
 
     _cpp_object: _cpp.fem.DofMap
@@ -26,13 +26,14 @@ class DofMap:
             cell: The cell index.
 
         Returns:
-            Local-global dof map for the cell (using process-local indices).
+            Local-global dof map for the cell (using process-local
+            indices).
         """
         return self._cpp_object.cell_dofs(cell_index)
 
     @property
     def bs(self):
-        """Returns the block size of the dofmap"""
+        """Block size of the dofmap."""
         return self._cpp_object.bs
 
     @property

@@ -48,6 +48,9 @@ class AdjacencyList:
         """
         self._cpp_object = cpp_object
 
+    def __repr__(self):
+        return self._cpp_object.__repr__
+
     def links(self, node: Union[np.int32, np.int64]) -> npt.NDArray[Union[np.int32, np.int64]]:
         """Retrieve the links of a node.
 

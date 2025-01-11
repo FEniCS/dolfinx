@@ -131,7 +131,6 @@ import ufl
 from dolfinx import fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.mesh import CellType, GhostMode
-from ufl import CellDiameter, FacetNormal, avg, div, dS, dx, grad, inner, jump, pi, sin
 
 # -
 
@@ -192,8 +191,8 @@ bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 # sides of a facet.
 
 alpha = ScalarType(8.0)
-h = CellDiameter(msh)
-n = FacetNormal(msh)
+h = ufl.CellDiameter(msh)
+n = ufl.FacetNormal(msh)
 h_avg = (h("+") + h("-")) / 2.0
 
 # After that, we can define the variational problem consisting of the bilinear
@@ -210,15 +209,15 @@ h_avg = (h("+") + h("-")) / 2.0
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
 x = ufl.SpatialCoordinate(msh)
-f = 4.0 * pi**4 * sin(pi * x[0]) * sin(pi * x[1])
+f = 4.0 * ufl.pi**4 * ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])
 
 a = (
-    inner(div(grad(u)), div(grad(v))) * dx
-    - inner(avg(div(grad(u))), jump(grad(v), n)) * dS
-    - inner(jump(grad(u), n), avg(div(grad(v)))) * dS
-    + alpha / h_avg * inner(jump(grad(u), n), jump(grad(v), n)) * dS
+    ufl.inner(ufl.div(ufl.grad(u)), ufl.div(ufl.grad(v))) * ufl.dx
+    - ufl.inner(ufl.avg(ufl.div(ufl.grad(u))), ufl.jump(ufl.grad(v), n)) * ufl.dS
+    - ufl.inner(ufl.jump(ufl.grad(u), n), ufl.avg(ufl.div(ufl.grad(v)))) * ufl.dS
+    + alpha / h_avg * ufl.inner(ufl.jump(ufl.grad(u), n), ufl.jump(ufl.grad(v), n)) * ufl.dS
 )
-L = inner(f, v) * dx
+L = ufl.inner(f, v) * ufl.dx
 # -
 
 # We create a {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>`

@@ -85,7 +85,6 @@ import numpy as np
 import ufl
 from dolfinx import fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
-from ufl import ds, dx, grad, inner
 
 # -
 
@@ -146,8 +145,8 @@ v = ufl.TestFunction(V)
 x = ufl.SpatialCoordinate(msh)
 f = 10 * ufl.exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
 g = ufl.sin(5 * x[0])
-a = inner(grad(u), grad(v)) * dx
-L = inner(f, v) * dx + inner(g, v) * ds
+a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+L = ufl.inner(f, v) * ufl.dx + ufl.inner(g, v) * ufl.ds
 # -
 
 # A {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>` object is
@@ -190,6 +189,6 @@ try:
     else:
         plotter.show()
 except ModuleNotFoundError:
-    print("'pyvista' is required to visualise the solution")
-    print("Install 'pyvista' with pip: 'python3 -m pip install pyvista'")
+    print("'pyvista' is required to visualise the solution.")
+    print("To install pyvista with pip: 'python3 -m pip install pyvista'.")
 # -

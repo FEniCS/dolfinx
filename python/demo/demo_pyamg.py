@@ -48,7 +48,6 @@ from dolfinx.fem import (
     locate_dofs_topological,
 )
 from dolfinx.mesh import CellType, create_box, locate_entities_boundary
-from ufl import ds, dx, grad, inner
 
 # -
 
@@ -88,8 +87,8 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str):
     x = ufl.SpatialCoordinate(mesh)
     f = 10 * ufl.exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
     g = ufl.sin(5 * x[0])
-    a = form(inner(grad(u), grad(v)) * dx, dtype=dtype)
-    L = form(inner(f, v) * dx + inner(g, v) * ds, dtype=dtype)
+    a = form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx, dtype=dtype)
+    L = form(ufl.inner(f, v) * ufl.dx + ufl.inner(g, v) * ufl.ds, dtype=dtype)
 
     A = assemble_matrix(a, [bc]).to_scipy()
     b = assemble_vector(L)
@@ -193,12 +192,14 @@ def elasticity_problem(dtype):
 
     def σ(v):
         """Return an expression for the stress σ given a displacement field"""
-        return 2.0 * μ * ufl.sym(grad(v)) + λ * ufl.tr(ufl.sym(grad(v))) * ufl.Identity(len(v))
+        return 2.0 * μ * ufl.sym(ufl.grad(v)) + λ * ufl.tr(ufl.sym(ufl.grad(v))) * ufl.Identity(
+            len(v)
+        )
 
     V = functionspace(mesh, ("Lagrange", 1, (mesh.geometry.dim,)))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    a = form(inner(σ(u), grad(v)) * dx, dtype=dtype)
-    L = form(inner(f, v) * dx, dtype=dtype)
+    a = form(ufl.inner(σ(u), ufl.grad(v)) * ufl.dx, dtype=dtype)
+    L = form(ufl.inner(f, v) * ufl.dx, dtype=dtype)
 
     tdim = mesh.topology.dim
     dofs = locate_dofs_topological(V=V, entity_dim=tdim - 1, entities=facets)

@@ -20,7 +20,7 @@ jobs:
 
   mac-os-build:
     name: macOS Homebrew install and test
-    runs-on: macos-14
+    runs-on: macos-15
     needs: fenicsx-refs
     env:
       PETSC_ARCH: arch-darwin-c-opt
