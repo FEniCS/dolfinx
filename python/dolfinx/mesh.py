@@ -412,7 +412,7 @@ def compute_incident_entities(
 
     Args:
         topology: The topology.
-        entities: List of entities fo dimension ``d0``.
+        entities: List of entities of dimension ``d0``.
         d0: Topological dimension.
         d1: Topological dimension to map to.
 

@@ -165,11 +165,13 @@ L_blocked = dolfinx.fem.form(ufl.extract_blocks(L))
 # Apply Dirichlet boundary conditions
 # We begin by locating the boundary facets of msh
 msh_boundary_facets = mesh.exterior_facet_indices(msh.topology)
+
 # Since the boundary condition is enforced in the facet space, we must
 # use the mesh_to_facet_mesh map to get the corresponding facets in
 # facet_mesh
 facet_mesh_boundary_facets = mesh_to_facet_mesh[msh_boundary_facets]
-# Get the dofs and apply the bondary condition
+
+# Get the dofs and apply the boundary condition
 facet_mesh.topology.create_connectivity(fdim, fdim)
 dofs = fem.locate_dofs_topological(Vbar, fdim, facet_mesh_boundary_facets)
 bc = fem.dirichletbc(dtype(0.0), dofs, Vbar)

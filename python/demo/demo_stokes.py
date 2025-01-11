@@ -204,7 +204,7 @@ a_p = [[a[0][0], None], [None, a_p11]]
 # We assemble the bilinear form into a nested matrix `A`, and call the
 # `assemble()` method to communicate shared entries in parallel. Rows
 # and columns in `A` that correspond to degrees-of-freedom with
-# Dirichlet boundary conditions wil be zeroed by the assembler, and a
+# Dirichlet boundary conditions will be zeroed by the assembler, and a
 # value of 1 will be set on the diagonal for these rows.
 
 

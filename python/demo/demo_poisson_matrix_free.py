@@ -16,13 +16,12 @@
 #
 # This demo illustrates how to solve the Poisson equation using a
 # matrix-free conjugate gradient (CG) solver. In particular, it
-# illustrates how to
+# illustrates how to:
 #
 # - Solve a linear partial differential equation using a matrix-free
-# conjugate gradient (CG) solver
-# - Create and apply Dirichlet boundary conditions
-# - Compute approximation error as compared with a known exact
-# solution,
+#   conjugate gradient (CG) solver.
+# - Create and apply Dirichlet boundary conditions.
+# - Compute approximation error as compared with a known exact solution.
 #
 # {download}`Python script <./demo_poisson_matrix_free.py>`\
 # {download}`Jupyter notebook <./demo_poisson_matrix_free.ipynb>`
@@ -36,7 +35,8 @@
 # ## Problem definition
 #
 # For a domain $\Omega \subset \mathbb{R}^n$ with boundary $\partial
-# \Omega$, the Poisson equation with Dirichlet boundary conditions reads:
+# \Omega$, the Poisson equation with Dirichlet boundary conditions
+# reads:
 #
 # $$
 # \begin{align}
@@ -69,7 +69,8 @@
 # - $u_{\rm D} = 1 + x^2 + 2y^2$
 # - $f = -6$
 #
-# The function $u_{\rm D}$ is futher the exact solution of the posed problem.
+# The function $u_{\rm D}$ is further the exact solution of the posed
+# problem.
 #
 # ## Implementation
 #
@@ -171,13 +172,14 @@ b.scatter_reverse(la.InsertMode.add)
 bc.set(b.array, alpha=0.0)
 b.scatter_forward()
 
-# To implement the matrix-free CG solver using *DOLFINx* vectors, we define the
-# function `action_A` to compute the matrix-vector product $y = A x$.
+# To implement the matrix-free CG solver using *DOLFINx* vectors, we
+# define the function `action_A` to compute the matrix-vector product $y
+# = A x$.
 
 
 def action_A(x, y):
-    # Set coefficient vector of the linear form M and ensure it is updated
-    # across processes
+    # Set coefficient vector of the linear form M and ensure it is
+    # updated across processes
     ui.x.array[:] = x.array
     ui.x.scatter_forward()
 
@@ -192,10 +194,10 @@ def action_A(x, y):
 
 # ### Basic conjugate gradient solver
 #
-# Solves the problem `A x = b`, using the function `action_A` as the operator,
-# `x` as an initial guess of the solution, and `b` as the right hand side
-# vector. `comm` is the MPI Communicator, `max_iter` is the maximum number of
-# iterations, `rtol` is the relative tolerance.
+# Solves the problem `A x = b`, using the function `action_A` as the
+# operator, `x` as an initial guess of the solution, and `b` as the
+# right hand side vector. `comm` is the MPI Communicator, `max_iter` is
+# the maximum number of iterations, `rtol` is the relative tolerance.
 
 
 def cg(comm, action_A, x: la.Vector, b: la.Vector, max_iter: int = 200, rtol: float = 1e-6):
@@ -238,9 +240,9 @@ def cg(comm, action_A, x: la.Vector, b: la.Vector, max_iter: int = 200, rtol: fl
     raise RuntimeError(f"Solver exceeded max iterations ({max_iter}).")
 
 
-# This matrix-free solver is now used to compute the finite element solution.
-# The finite element solution's approximation error as compared with the
-# exact solution is measured in the $L_2$-norm.
+# This matrix-free solver is now used to compute the finite element
+# solution. The finite element solution's approximation error as
+# compared with the exact solution is measured in the $L_2$-norm.
 
 rtol = 1e-6
 u = fem.Function(V, dtype=dtype)
@@ -259,5 +261,5 @@ def L2Norm(u):
 error_L2_cg1 = L2Norm(u - uD)
 if mesh.comm.rank == 0:
     print("Matrix-free CG solver using DOLFINx vectors:")
-    print(f"CG iterations until convergence:  {iter_cg1}")
-    print(f"L2 approximation error:  {error_L2_cg1:.4e}")
+    print(f"CG iterations until convergence: {iter_cg1}")
+    print(f"L2 approximation error: {error_L2_cg1:.4e}")
