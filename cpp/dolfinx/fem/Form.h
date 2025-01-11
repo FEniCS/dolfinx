@@ -277,9 +277,11 @@ public:
     auto end = std::ranges::upper_bound(integrals, i, std::less<>{}, get_id);
 
     // Check that the kernel is valid and return it if so
-    if (start == integrals.end() || start->id != i
+    if (start == integrals.end() or start->id != i
         or std::distance(start, end) <= kernel_idx)
+    {
       throw std::runtime_error("No kernel for requested domain index.");
+    }
 
     return std::next(start, kernel_idx)->kernel;
   }
@@ -395,15 +397,16 @@ public:
                                    int kernel_idx) const
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
-
     auto get_id = [](const auto& a) { return a.id; };
     auto start = std::ranges::lower_bound(integrals, i, std::less<>{}, get_id);
     auto end = std::ranges::upper_bound(integrals, i, std::less<>{}, get_id);
 
     // Check that the kernel is valid and return it if so
-    if (start == integrals.end() || start->id != i
+    if (start == integrals.end() or start->id != i
         or std::distance(start, end) <= kernel_idx)
+    {
       throw std::runtime_error("No kernel for requested domain index.");
+    }
 
     return std::next(start, kernel_idx)->entities;
   }
@@ -414,8 +417,8 @@ public:
   ///
   /// @param type Integral type.
   /// @param i Integral ID, i.e. the (sub)domain index.
-  /// @param kernel_idx Index of the kernel (we may have multiple kernels
-  /// for a given ID in mixed-topology meshes).
+  /// @param kernel_idx Index of the kernel (we may have multiple
+  /// kernels for a given ID in mixed-topology meshes).
   /// @param mesh The mesh the entities are numbered with respect to.
   /// @return List of active entities in `mesh` for the given integral.
   std::vector<std::int32_t> domain(IntegralType type, int i, int kernel_idx,
@@ -468,6 +471,7 @@ public:
             // Get the facet index
             const std::int32_t facet
                 = c_to_f->links(entities[i])[entities[i + 1]];
+
             // Add cell and the local facet index
             mapped_entities.insert(mapped_entities.end(),
                                    {entity_map[facet], entities[i + 1]});
@@ -495,9 +499,9 @@ public:
         }
         else if (codim == 1)
         {
-          // In this case, the entity maps take facets in (`_mesh`) to cells in
-          // `mesh`, so we need to get the facet number from the (cell,
-          // local_facet pair) first.
+          // In this case, the entity maps take facets in (`_mesh`) to
+          // cells in `mesh`, so we need to get the facet number from
+          // the (cell, local_facet pair) first.
           auto c_to_f = _mesh->topology()->connectivity(tdim, tdim - 1);
           assert(c_to_f);
           for (std::size_t i = 0; i < entities.size(); i += 2)
@@ -505,6 +509,7 @@ public:
             // Get the facet index
             const std::int32_t facet
                 = c_to_f->links(entities[i])[entities[i + 1]];
+
             // Add cell and the local facet index
             mapped_entities.insert(mapped_entities.end(),
                                    {entity_map[facet], entities[i + 1]});
@@ -597,5 +602,5 @@ private:
   std::map<std::shared_ptr<const mesh::Mesh<geometry_type>>,
            std::vector<std::int32_t>>
       _entity_maps;
-}; // namespace dolfinx::fem
+};
 } // namespace dolfinx::fem
