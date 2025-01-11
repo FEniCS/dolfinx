@@ -333,7 +333,6 @@ class TestPETScAssemblers:
         # Define variational problem
         u, p, r = ufl.TrialFunction(V0), ufl.TrialFunction(V1), ufl.TrialFunction(V2)
         v, q, s = ufl.TestFunction(V0), ufl.TestFunction(V1), ufl.TestFunction(V2)
-        f = 1.0
         g = -3.0
 
         a00 = inner(u, v) * dx
