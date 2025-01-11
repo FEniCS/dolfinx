@@ -44,9 +44,9 @@ namespace dolfinx::fem
 ///
 /// @param[in] topology Mesh topology
 /// @param[in] V0 Lagrange element and dofmap for corresponding space to
-/// interpolate the gradient from
-/// @param[in] V1 Nédélec (first kind) element and and dofmap for
-/// corresponding space to interpolate into
+/// interpolate the gradient from.
+/// @param[in] V1 Nédélec (first kind) element and dofmap for
+/// corresponding space to interpolate into.
 /// @param[in] mat_set A functor that sets values in a matrix
 template <dolfinx::scalar T,
           std::floating_point U = dolfinx::scalar_value_type_t<T>>
@@ -148,9 +148,9 @@ void discrete_gradient(mesh::Topology& topology,
 /// initialised using sparsitybuild::cells. The space `V1` should be
 /// used for the rows of the sparsity pattern, `V0` for the columns.
 ///
-/// @param[in] V0 The space to interpolate from
-/// @param[in] V1 The space to interpolate to
-/// @param[in] mat_set A functor that sets values in a matrix
+/// @param[in] V0 Space to interpolate from.
+/// @param[in] V1 Space to interpolate to.
+/// @param[in] mat_set Functor that sets values in a matrix.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolation_matrix(const FunctionSpace<U>& V0,
                           const FunctionSpace<U>& V1, auto&& mat_set)
