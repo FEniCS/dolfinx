@@ -25,16 +25,16 @@ namespace dolfinx::fem
 
 /// @brief Assemble a discrete curl operator.
 ///
-/// For vector-valued finite functions \f$u \in V_{0} \f$ and \f$v \in V_{1}\f$,
-/// consider the interpolation of the curl of \f$u\f$ in the space \f$V_{1}\f$,
-/// i.e.
-/// \f$\Pi_{V_{1}}: \nabla \times u \rightarrow v\f$, where \f$\Pi_{V_{1}}\f$
-/// is the interpolation operator associated with \f$V_{1}\f$. This
-/// interpolation of \f$\nabla \times u\f$ into \f$V_{1}\f$ is properly
-/// posed and exact for specific choices of function spaces. If \f$V_{0}\f$
-/// is a Nédélec (\f$H({\rm curl})\f$) space of degree \f$k > 1\f$ and
-/// \f$V_{1}\f$ is a Raviart-Thomas (\f$H({\rm div})\f$) space of degree of
-/// at least \f$k - 1\f$, then the interpolation is exact.
+/// For vector-valued finite functions \f$u \in V_{0} \f$ and \f$v \in
+/// V_{1}\f$, consider the interpolation of the curl of \f$u\f$ in the
+/// space \f$V_{1}\f$, i.e. \f$\Pi_{V_{1}}: \nabla \times u \rightarrow
+/// v\f$, where \f$\Pi_{V_{1}}\f$ is the interpolation operator
+/// associated with \f$V_{1}\f$. This interpolation of \f$\nabla \times
+/// u\f$ into \f$V_{1}\f$ is properly posed and exact for specific
+/// choices of function spaces. If \f$V_{0}\f$ is a Nédélec (\f$H({\rm
+/// curl})\f$) space of degree \f$k > 1\f$ and \f$V_{1}\f$ is a
+/// Raviart-Thomas (\f$H({\rm div})\f$) space of degree of at least \f$k
+/// - 1\f$, then the interpolation is exact.
 ///
 /// The implementation of this function exploits the result:
 ///
@@ -45,10 +45,10 @@ namespace dolfinx::fem
 ///
 /// where \f$\psi_{C}\f$ is the covariant pull-back (to the reference
 /// cell) and \f$\psi_{D}\f$ is the contravariant pull-back. See Ern and
-/// Guermond (2021), Finite Elements I, Springer Nature,
+/// Guermond (2021), *Finite Elements I*, Springer Nature,
 /// https://doi.org/10.1007/978-3-030-56341-7 [Corollary 9.9 (Commuting
-/// properties)]. Hence, the spaces `V0` and `V1` must used covariant
-/// and contravariant maps, respectively.
+/// properties)]. Consequently, the spaces `V0` and `V1` must use
+/// covariant and contravariant maps, respectively.
 ///
 /// This function builds a matrix \f$C\f$ (the 'discrete curl'), which
 /// when applied to the degrees-of-freedom of \f$u\f$ gives the
@@ -60,17 +60,18 @@ namespace dolfinx::fem
 /// Nédélec space into a degree \f$k - 1\f$ Raviart-Thomas space.
 ///
 /// The discerete curl is typically used in constructing algebraic
-/// multigrid preconditioners for \f$H({\rm div})\f$, e.g. when using
-/// the Hypre Auxiliary-space Divergence Solver (ADS).
+/// multigrid preconditioners for \f$H({\rm div})\f$ problems, e.g. when
+/// using the Hypre Auxiliary-space Divergence Solver (ADS) to solve a
+/// mixed Poisson in three-dimension.
 ///
-/// @pre `V0` and `V1` must be vector-valued and in three spatial
-/// dimensions.
+/// @pre `V0` and `V1` must be vector-valued, in three spatial
+/// dimensions, and use covariant and contravariant maps, respectively.
 ///
-/// @tparam T Scalar type of the mesh and elements.
-/// @tparam U Scalar type of the matrix being inserted into. This is
-/// usually the same as `T`, but may differ for matrix backends that
-/// support only a specific type, e.g. PETSc which support only one
-/// scalar type for a build of PETSc.
+/// @tparam T Scalar type of the mesh and elements. @tparam U Scalar
+/// type of the matrix being inserted into. This is usually the same as
+/// `T`, but may differ for matrix backends that support only a specific
+/// type, e.g. PETSc which supports only one scalar type for a build of
+/// PETSc.
 ///
 /// @param[in] V0 Space that \f$u\f$ is from. It must be a covariant
 /// Piola mapped element. It is normally an \f$H({\rm
