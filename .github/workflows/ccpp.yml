@@ -78,7 +78,7 @@ jobs:
           find . -type f \( -name "*.cmake" -o -name "*.cmake.in" -o -name "CMakeLists.txt" \) | xargs cmake-format --check
 
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [fenicsx-refs, lint]
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -93,7 +93,8 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install catch2 cmake g++ libboost-dev libhdf5-mpi-dev libparmetis-dev libpugixml-dev libspdlog-dev mpi-default-dev ninja-build pkg-config
+          sudo apt-get install catch2 cmake g++ libblas-dev libboost-dev libhdf5-mpi-dev \
+            libparmetis-dev libpugixml-dev libspdlog-dev mpi-default-dev ninja-build pkg-config
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
