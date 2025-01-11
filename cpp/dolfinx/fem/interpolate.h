@@ -686,10 +686,6 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 {
   namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
-  using cmdspan2_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
-  using cmdspan4_t = md::mdspan<const U, md::dextents<std::size_t, 4>>;
-  using mdspan2_t = md::mdspan<U, md::dextents<std::size_t, 2>>;
-  using mdspan3_t = md::mdspan<U, md::dextents<std::size_t, 3>>;
   auto element = u.function_space()->element();
   assert(element);
   const int element_bs = element->block_size();
@@ -837,7 +833,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
     // Get interpolation operator
     const auto [_Pi, pi_shape] = element->interpolation_operator();
-    cmdspan2_t Pi(_Pi.data(), pi_shape);
+    md::mdspan<const U, std::dextents<std::size_t, 2>> Pi(_Pi.data(), pi_shape);
     const std::size_t num_interp_points = Pi.extent(1);
     assert(Pi.extent(0) == num_scalar_dofs);
 
@@ -903,14 +899,17 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
     // Create data structures for Jacobian info
     std::vector<U> J_b(Xshape[0] * gdim * tdim);
-    mdspan3_t J(J_b.data(), Xshape[0], gdim, tdim);
+    md::mdspan<U, std::dextents<std::size_t, 3>> J(J_b.data(), Xshape[0], gdim,
+                                                   tdim);
     std::vector<U> K_b(Xshape[0] * tdim * gdim);
-    mdspan3_t K(K_b.data(), Xshape[0], tdim, gdim);
+    md::mdspan<U, std::dextents<std::size_t, 3>> K(K_b.data(), Xshape[0], tdim,
+                                                   gdim);
     std::vector<U> detJ(Xshape[0]);
     std::vector<U> det_scratch(2 * gdim * tdim);
 
     std::vector<U> coord_dofs_b(num_dofs_g * gdim);
-    mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
+    md::mdspan<U, std::dextents<std::size_t, 2>> coord_dofs(coord_dofs_b.data(),
+                                                            num_dofs_g, gdim);
     const std::size_t value_size_ref = element->reference_value_size();
     std::vector<T> ref_data_b(Xshape[0] * 1 * value_size_ref);
     md::mdspan<T, md::dextents<std::size_t, 3>> ref_data(
@@ -925,7 +924,9 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(1, Xshape[0]);
     std::vector<U> phi_b(
         std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
-    cmdspan4_t phi(phi_b.data(), phi_shape);
+    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent,
+                                    md::dynamic_extent, md::dynamic_extent, 1>>
+        phi(phi_b.data(), phi_shape);
     cmap.tabulate(1, X, Xshape, phi_b);
     auto dphi = md::submdspan(phi, std::pair(1, tdim + 1), md::full_extent,
                               md::full_extent, 0);
@@ -938,7 +939,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
     // Get interpolation operator
     const auto [_Pi, pi_shape] = element->interpolation_operator();
-    cmdspan2_t Pi(_Pi.data(), pi_shape);
+    md::mdspan<const U, std::dextents<std::size_t, 2>> Pi(_Pi.data(), pi_shape);
 
     using u_t = md::mdspan<const T, md::dextents<std::size_t, 2>>;
     using U_t = md::mdspan<T, md::dextents<std::size_t, 2>>;
@@ -1110,11 +1111,11 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
                        std::span(values_b));
 
   // Transpose received data
-  md::mdspan<const T, dextents2> values(
-      values_b.data(), dest_ranks.size(), value_size);
+  md::mdspan<const T, dextents2> values(values_b.data(), dest_ranks.size(),
+                                        value_size);
   std::vector<T> valuesT_b(value_size * dest_ranks.size());
-  md::mdspan<T, dextents2> valuesT(
-      valuesT_b.data(), value_size, dest_ranks.size());
+  md::mdspan<T, dextents2> valuesT(valuesT_b.data(), value_size,
+                                   dest_ranks.size());
   for (std::size_t i = 0; i < values.extent(0); ++i)
     for (std::size_t j = 0; j < values.extent(1); ++j)
       valuesT(j, i) = values(i, j);
