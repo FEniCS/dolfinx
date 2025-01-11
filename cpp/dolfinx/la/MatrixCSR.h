@@ -7,6 +7,7 @@
 #pragma once
 
 #include "SparsityPattern.h"
+#include "Vector.h"
 #include "matrix_csr_impl.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
@@ -321,6 +322,15 @@ public:
   /// @brief Compute the Frobenius norm squared across all processes.
   /// @note MPI Collective
   double squared_norm() const;
+
+  /// @brief Compute the product `y += Ax`.
+  ///
+  /// The vectors `x` and `y` must have parallel layouts that are
+  /// compatible with `A`.
+  ///
+  /// @param[in] x Vector to be apply `A` to.
+  /// @param[in,out] y Vector to accumulate the result into.
+  void mult(Vector<value_type>& x, Vector<value_type>& y);
 
   /// @brief Index maps for the row and column space.
   ///
@@ -733,5 +743,78 @@ double MatrixCSR<U, V, W, X>::squared_norm() const
   return norm_sq;
 }
 //-----------------------------------------------------------------------------
+
+// The matrix A is distributed across P  processes by blocks of rows:
+//  A = |   A_0  |
+//      |   A_1  |
+//      |   ...  |
+//      |  A_P-1 |
+//
+// Each submatrix A_i is owned by a single process "i" and can be further
+// decomposed into diagonal (Ai[0]) and off diagonal (Ai[1]) blocks:
+//  Ai = |Ai[0] Ai[1]|
+//
+// If A is square, the diagonal block Ai[0] is also square and contains
+// only owned columns and rows. The block Ai[1] contains ghost columns
+// (unowned dofs).
+
+// Likewise, a local vector x can be decomposed into owned and ghost blocks:
+// xi = |   x[0]  |
+//      |   x[1]  |
+//
+// So the product y = Ax can be computed into two separate steps:
+//  y[0] = |Ai[0] Ai[1]| |   x[0]  | = Ai[0] x[0] + Ai[1] x[1]
+//                       |   x[1]  |
+//
+/// Computes y += A*x for a parallel CSR matrix A and parallel dense vectors x,y
+template <typename Scalar, typename V, typename W, typename X>
+void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
+                                      la::Vector<Scalar>& y)
+{
+  // start communication (update ghosts)
+  x.scatter_fwd_begin();
+
+  const std::int32_t nrowslocal = num_owned_rows();
+  std::span<const std::int64_t> Arow_ptr(row_ptr().data(), nrowslocal + 1);
+  std::span<const std::int32_t> Acols(cols().data(), Arow_ptr[nrowslocal]);
+  std::span<const std::int64_t> Aoff_diag_offset(off_diag_offset().data(),
+                                                 nrowslocal);
+  std::span<const Scalar> Avalues(values().data(), Arow_ptr[nrowslocal]);
+
+  std::span<const Scalar> _x = x.array();
+  std::span<Scalar> _y = y.mutable_array();
+
+  std::span<const std::int64_t> Arow_begin(Arow_ptr.data(), nrowslocal);
+  std::span<const std::int64_t> Arow_end(Arow_ptr.data() + 1, nrowslocal);
+
+  // First stage:  spmv - diagonal
+  // yi[0] += Ai[0] * xi[0]
+  if (_bs[1] == 1)
+  {
+    impl::spmv<Scalar, 1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                          _bs[0], 1);
+  }
+  else
+  {
+    impl::spmv<Scalar, -1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                           _bs[0], _bs[1]);
+  }
+
+  // finalize ghost update
+  x.scatter_fwd_end();
+
+  // Second stage:  spmv - off-diagonal
+  // yi[0] += Ai[1] * xi[1]
+  if (_bs[1] == 1)
+  {
+    impl::spmv<Scalar, 1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                          _bs[0], 1);
+  }
+  else
+  {
+    impl::spmv<Scalar, -1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                           _bs[0], _bs[1]);
+  }
+}
 
 } // namespace dolfinx::la
