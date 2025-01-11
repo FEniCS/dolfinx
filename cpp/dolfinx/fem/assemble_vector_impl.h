@@ -473,20 +473,20 @@ void _lift_bc_interior_facets(
     }
 
     // Get dof maps for cells and pack
-    auto dmap0_cell0
-        = std::span(dmap0.data_handle() + cells0[0] * num_dofs0, num_dofs0);
-    auto dmap0_cell1
-        = std::span(dmap0.data_handle() + cells0[1] * num_dofs0, num_dofs0);
+    std::span dmap0_cell0(dmap0.data_handle() + cells0[0] * num_dofs0,
+                          num_dofs0);
+    std::span dmap0_cell1(dmap0.data_handle() + cells0[1] * num_dofs0,
+                          num_dofs0);
 
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
     std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
     std::ranges::copy(dmap0_cell1,
                       std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
-    auto dmap1_cell0
-        = std::span(dmap1.data_handle() + cells1[0] * num_dofs1, num_dofs1);
-    auto dmap1_cell1
-        = std::span(dmap1.data_handle() + cells1[1] * num_dofs1, num_dofs1);
+    std::span dmap1_cell0(dmap1.data_handle() + cells1[0] * num_dofs1,
+                          num_dofs1);
+    std::span dmap1_cell1(dmap1.data_handle() + cells1[1] * num_dofs1,
+                          num_dofs1);
 
     dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
     std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
@@ -1295,8 +1295,10 @@ void assemble_vector(
   std::shared_ptr<const mesh::Mesh<U>> mesh = L.mesh();
   assert(mesh);
   if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
+  {
     assemble_vector(b, L, mesh->geometry().dofmap(), mesh->geometry().x(),
                     constants, coefficients);
+  }
   else
   {
     auto x = mesh->geometry().x();

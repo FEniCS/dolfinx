@@ -225,7 +225,7 @@ class FiniteElement:
             the points will typically be the quadrature points used to evaluate moment degrees of
             freedom.
         """
-        return self._cpp_object.interpolation_points
+        return self._cpp_object.interpolation_points()
 
     @property
     def interpolation_ident(self) -> bool:
@@ -263,13 +263,15 @@ class FiniteElement:
         """String identifying the finite element."""
         return self._cpp_object.signature
 
-    def T_apply(self, x: npt.NDArray[np.floating], cell_permutations: np.int32, dim: int) -> None:
+    def T_apply(
+        self, x: npt.NDArray[np.floating], cell_permutations: npt.NDArray[np.uint32], dim: int
+    ) -> None:
         """Transform basis functions from the reference element ordering and orientation to the
         globally consistent physical element ordering and orientation.
 
         Args:
-            x: Data to transform (in place). The shape is ``(m, n)``, where `m` is the number of
-            dgerees-of-freedom and the storage is row-major.
+            x: Data to transform (in place). The shape is ``(num_cells, n, dim)``, where ``n`` is
+                the number degrees-of-freedom and the data is flattened (row-major).
             cell_permutations: Permutation data for the cell.
             dim: Number of columns in ``data``.
 
@@ -279,37 +281,31 @@ class FiniteElement:
         """
         self._cpp_object.T_apply(x, cell_permutations, dim)
 
-    def Tt_apply(self, x: npt.NDArray[np.floating], cell_permutations: np.int32, dim: int) -> None:
+    def Tt_apply(
+        self, x: npt.NDArray[np.floating], cell_permutations: npt.NDArray[np.uint32], dim: int
+    ) -> None:
         """Apply the transpose of the operator applied by T_apply().
 
         Args:
-            x: Data to transform (in place). The shape is ``(m, n)``, where `m` is the number of
-            dgerees-of-freedom and the storage is row-major.
-            cell_permutations: Permutation data for the cell.
-            dim: Number of columns in `data`.
-
-        Note:
-            Exposed for testing. Function is not vectorised across multiple cells. Please see
-            `basix.numba_helpers` for performant versions.
+            x: Data to transform (in place). The shape is ``(num_cells, n, dim)``, where ``n`` is
+                the number degrees-of-freedom and the data is flattened (row-major).
+            cell_permutations: Permutation data for the cells
+            dim: Number of columns in ``data``.
         """
         self._cpp_object.Tt_apply(x, cell_permutations, dim)
 
     def Tt_inv_apply(
-        self, x: npt.NDArray[np.floating], cell_permutations: np.int32, dim: int
+        self, x: npt.NDArray[np.floating], cell_permutations: npt.NDArray[np.uint32], dim: int
     ) -> None:
         """Apply the inverse transpose of the operator applied by T_apply().
 
         Args:
-            x: Data to transform (in place). The shape is ``(m, n)``, where ``m`` is the number of
-            dgerees-of-freedom and the storage is row-major.
-            cell_permutations: Permutation data for the cell.
-            dim: Number of columns in `data`.
-
-        Note:
-            Exposed for testing. Function is not vectorised across multiple cells. Please see
-            ``basix.numba_helpers`` for performant versions.
+            x: Data to transform (in place). The shape is ``(num_cells, n, dim)``, where ``n`` is
+                the number degrees-of-freedom and the data is flattened (row-major).
+            cell_permutations: Permutation data for the cells
+            dim: Number of columns in ``data``.
         """
-        self._cpp_object.Tt_apply(x, cell_permutations, dim)
+        self._cpp_object.Tt_inv_apply(x, cell_permutations, dim)
 
 
 def finiteelement(
