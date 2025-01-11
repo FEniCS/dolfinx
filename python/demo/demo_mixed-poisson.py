@@ -82,6 +82,11 @@
 # polynomial order $k$ and let $V_h$ be discontinuous Lagrange elements of
 # polynomial order $k-1$.
 #
+# To solve the linear system for the mixed problem, we will use am
+# iterative method with a block-diagonal preconditioner that is based on
+# the Riesz map, see for example this
+# [paper](https://doi.org/10.1002/(SICI)1099-1506(199601/02)3:1%3C1::AID-NLA67%3E3.0.CO;2-E).
+
 #
 # ## Implementation
 #
@@ -132,13 +137,13 @@ xdtype = dolfinx.default_real_type
 # changes to the linear solver.
 
 # +
-msh = create_unit_square(MPI.COMM_WORLD, 48, 48, CellType.quadrilateral, dtype=xdtype)
+msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.quadrilateral, dtype=xdtype)
 # -
 #
-# Here we construct the function spaces. The `V`  space is a
-# Raviart-Thomas ($\mathbb{RT}$) space - a vector-valued $H({\rm div})$
-# conforming space. The `W` space is a space of discontinuous Lagrange
-# function of degree `k`.
+# Here we construct compatible function spaces for the mixed Poisson
+# problem. The `V` Raviart-Thomas ($\mathbb{RT}$) space is a
+# vector-valued $H({\rm div})$ conforming space. The `W` space is a
+# space of discontinuous Lagrange function of degree `k`.
 # ```{note}
 # The $\mathbb{RT}_{k}$ element in DOLFINx/Basix is usually denoted as
 # $\mathbb{RT}_{k-1}$ in the literature.
@@ -201,27 +206,22 @@ a, L = fem.form(a, dtype=dtype), fem.form(L, dtype=dtype)
 
 # +
 fdim = msh.topology.dim - 1
-dofs_top = fem.locate_dofs_topological(
-    V, fdim, mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 1.0))
-)
-dofs_bottom = fem.locate_dofs_topological(
-    V, fdim, mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 0.0))
-)
+facets_top = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 1.0))
+facets_bottom = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 0.0))
+dofs_top = fem.locate_dofs_topological(V, fdim, facets_top)
+dofs_bottom = fem.locate_dofs_topological(V, fdim, facets_bottom)
 # -
 
 # Now, we create Dirichlet boundary objects for the condition $\sigma
 # \cdot n = \sin(5 x_(0)$ on the top and bottom boundaries:
 
 # +
-f_h1 = fem.Function(V, dtype=dtype)
-f_h1.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), np.sin(5 * x[0]))))
-bc_top = fem.dirichletbc(f_h1, dofs_top)
-
-f_h2 = fem.Function(V, dtype=dtype)
-f_h2.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), -np.sin(5 * x[0]))))
-bc_bottom = fem.dirichletbc(f_h2, dofs_bottom)
-
-bcs = [bc_top, bc_bottom]
+cells_top_ = mesh.compute_incident_entities(msh.topology, facets_top, fdim, fdim + 1)
+cells_bottom = mesh.compute_incident_entities(msh.topology, facets_bottom, fdim, fdim + 1)
+g = fem.Function(V, dtype=dtype)
+g.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), np.sin(5 * x[0]))), cells0=cells_top_)
+g.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), -np.sin(5 * x[0]))), cells0=cells_bottom)
+bcs = [fem.dirichletbc(g, dofs_top), fem.dirichletbc(g, dofs_bottom)]
 # -
 
 # Assemble the matrix operator `A` into a PETSc 'nested matrix', zero
@@ -282,8 +282,9 @@ ksp.setGMRESRestart(100)
 # -
 
 # To apply different solvers/preconditioners to the blocks of `P`, we
-# set the preconditioner to be a `fieldsplit` (block) type and set the
-# 'splits' between the $\sigma$ and $u$ fields.
+# set the preconditioner to be a PETSc
+# [`fieldsplit`](https://petsc.org/release/manual/ksp/#sec-block-matrices)
+# (block) type and set the 'splits' between the $\sigma$ and $u$ fields.
 
 # +
 ksp.getPC().setType("fieldsplit")
@@ -378,6 +379,7 @@ ksp.view()
 try:
     from dolfinx.io import VTXWriter
 
+    u.name = "u"
     with VTXWriter(msh.comm, "output_mixed_poisson.bp", u, "bp4") as f:
         f.write(0.0)
 except ImportError:
