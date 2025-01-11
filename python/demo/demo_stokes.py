@@ -116,7 +116,6 @@ from dolfinx.fem import (
 from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
-from ufl import ZeroBaseForm, div, dx, grad, inner
 
 # We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions for
 # locating geometrically subsets of the boundary, and define a function
@@ -185,14 +184,19 @@ bcs = [bc0, bc1]
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
 f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))  # type: ignore
 
-a = form([[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx], [inner(div(u), q) * dx, None]])
-L = form([inner(f, v) * dx, ZeroBaseForm((q,))])
+a = form(
+    [
+        [ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx, ufl.inner(p, ufl.div(v)) * ufl.dx],
+        [ufl.inner(ufl.div(u), q) * ufl.dx, None],
+    ]
+)
+L = form([ufl.inner(f, v) * ufl.dx, ufl.ZeroBaseForm((q,))])
 # -
 
 # A block-diagonal preconditioner will be used with the iterative
 # solvers for this problem:
 
-a_p11 = form(inner(p, q) * dx)
+a_p11 = form(ufl.inner(p, q) * ufl.dx)
 a_p = [[a[0][0], None], [None, a_p11]]
 
 # ### Nested matrix solver
@@ -503,8 +507,11 @@ def mixed_direct():
     (u, p) = ufl.TrialFunctions(W)
     (v, q) = ufl.TestFunctions(W)
     f = Function(Q)
-    a = form((inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx)
-    L = form(inner(f, v) * dx)
+    a = form(
+        (ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(p, ufl.div(v)) + ufl.inner(ufl.div(u), q))
+        * ufl.dx
+    )
+    L = form(ufl.inner(f, v) * ufl.dx)
 
     # Assemble LHS matrix and RHS vector
     A = fem.petsc.assemble_matrix(a, bcs=bcs)
