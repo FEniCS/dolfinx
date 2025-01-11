@@ -116,7 +116,7 @@ from dolfinx.fem import (
 from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
-from ufl import div, dx, grad, inner
+from ufl import ZeroBaseForm, div, dx, grad, inner
 
 # We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions for
 # locating geometrically subsets of the boundary, and define a function
@@ -177,7 +177,7 @@ bcs = [bc0, bc1]
 # -
 
 # The bilinear and linear forms for the Stokes equations are defined
-# using a a blocked structure:
+# using a blocked structure:
 
 # +
 # Define variational problem
@@ -186,7 +186,7 @@ bcs = [bc0, bc1]
 f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))  # type: ignore
 
 a = form([[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx], [inner(div(u), q) * dx, None]])
-L = form([inner(f, v) * dx, inner(Constant(msh, PETSc.ScalarType(0)), q) * dx])  # type: ignore
+L = form([inner(f, v) * dx, ZeroBaseForm((q,))])
 # -
 
 # A block-diagonal preconditioner will be used with the iterative
@@ -440,9 +440,8 @@ def block_direct_solver():
     # handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    sys = PETSc.Sys()  # type: ignore
     use_superlu = PETSc.IntType == np.int64
-    if sys.hasExternalPackage("mumps") and not use_superlu:
+    if PETSc.Sys().hasExternalPackage("mumps") and not use_superlu:
         pc.setFactorSolverType("mumps")
         pc.setFactorSetUpSolverType()
         pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
@@ -527,9 +526,8 @@ def mixed_direct():
     # Configure MUMPS to handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    sys = PETSc.Sys()  # type: ignore
     use_superlu = PETSc.IntType == np.int64
-    if sys.hasExternalPackage("mumps") and not use_superlu:
+    if PETSc.Sys().hasExternalPackage("mumps") and not use_superlu:
         pc.setFactorSolverType("mumps")
         pc.setFactorSetUpSolverType()
         pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)

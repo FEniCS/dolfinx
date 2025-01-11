@@ -190,6 +190,6 @@ try:
     else:
         plotter.show()
 except ModuleNotFoundError:
-    print("'pyvista' is required to visualise the solution")
-    print("Install 'pyvista' with pip: 'python3 -m pip install pyvista'")
+    print("'pyvista' is required to visualise the solution.")
+    print("To install pyvista with pip: 'python3 -m pip install pyvista'.")
 # -
