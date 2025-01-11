@@ -252,14 +252,18 @@ void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
         if constexpr (BS1 == -1)
         {
           for (int k1 = 0; k1 < bs1; ++k1)
+          {
             vi += values[j * bs1 * bs0 + k1 * bs0 + k0]
                   * x[indices[j] * bs1 + k1];
+          }
         }
         else
         {
           for (int k1 = 0; k1 < BS1; ++k1)
+          {
             vi += values[j * BS1 * bs0 + k1 * bs0 + k0]
                   * x[indices[j] * BS1 + k1];
+          }
         }
       }
 

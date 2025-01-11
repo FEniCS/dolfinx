@@ -113,7 +113,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
 
   // Matrix A represents the action of the Laplace operator, so when
   // applied to a constant vector the result should be zero
-  A.spmv(x, y);
+  A.mult(x, y);
 
   std::ranges::for_each(y.array(),
                         [](auto a) { REQUIRE(std::abs(a) < 1e-13); });

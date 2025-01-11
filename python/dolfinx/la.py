@@ -63,14 +63,14 @@ class MatrixCSR:
         """
         return self._cpp_object.index_map(i)
 
-    def spmv(self, x, y):
-        """Sparse matvec with DOLFINx Vectors
+    def mult(self, x, y):
+        """Compute ``y += Ax``.
 
         Args:
             x: Input Vector
             y: Output Vector
         """
-        self._cpp_object.spmv(x._cpp_object, y._cpp_object)
+        self._cpp_object.mult(x._cpp_object, y._cpp_object)
 
     @property
     def block_size(self):

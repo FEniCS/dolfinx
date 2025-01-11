@@ -323,11 +323,14 @@ public:
   /// @note MPI Collective
   double squared_norm() const;
 
-  /// @brief Computes y += Ax for the local CSR matrix and local dense vectors
+  /// @brief Compute the product `y += Ax`.
   ///
-  /// @param[in] x Input Vector
-  /// @param[out] y Output vector
-  void spmv(Vector<value_type>& x, Vector<value_type>& y);
+  /// The vectors `x` and `y` must have parallel layouts that are
+  /// compatible with `A`.
+  ///
+  /// @param[in] x Vector to be apply `A` to.
+  /// @param[in,out] y Vector to accumulate the result into.
+  void mult(Vector<value_type>& x, Vector<value_type>& y);
 
   /// @brief Index maps for the row and column space.
   ///
@@ -765,7 +768,7 @@ double MatrixCSR<U, V, W, X>::squared_norm() const
 //
 /// Computes y += A*x for a parallel CSR matrix A and parallel dense vectors x,y
 template <typename Scalar, typename V, typename W, typename X>
-void MatrixCSR<Scalar, V, W, X>::spmv(la::Vector<Scalar>& x,
+void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
                                       la::Vector<Scalar>& y)
 {
   // start communication (update ghosts)
@@ -787,11 +790,15 @@ void MatrixCSR<Scalar, V, W, X>::spmv(la::Vector<Scalar>& x,
   // First stage:  spmv - diagonal
   // yi[0] += Ai[0] * xi[0]
   if (_bs[1] == 1)
+  {
     impl::spmv<Scalar, 1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
                           _bs[0], 1);
+  }
   else
+  {
     impl::spmv<Scalar, -1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
                            _bs[0], _bs[1]);
+  }
 
   // finalize ghost update
   x.scatter_fwd_end();
@@ -799,11 +806,15 @@ void MatrixCSR<Scalar, V, W, X>::spmv(la::Vector<Scalar>& x,
   // Second stage:  spmv - off-diagonal
   // yi[0] += Ai[1] * xi[1]
   if (_bs[1] == 1)
+  {
     impl::spmv<Scalar, 1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
                           _bs[0], 1);
+  }
   else
+  {
     impl::spmv<Scalar, -1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
                            _bs[0], _bs[1]);
+  }
 }
 
 } // namespace dolfinx::la

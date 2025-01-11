@@ -71,7 +71,7 @@ def test_matvec(dtype):
     b = la.vector(imap, dtype=dtype)
     u = la.vector(imap, dtype=dtype)
     b.array[:] = 1.0
-    A.spmv(b, u)
+    A.mult(b, u)
     u.scatter_forward()
     assert np.allclose(u.array[: imap.size_local], 2.0)
 

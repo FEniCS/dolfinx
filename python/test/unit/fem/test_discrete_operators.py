@@ -251,7 +251,7 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
     # Compute global matrix vector product
     w = Function(W)
     w.x.array[:] = 0.0
-    G.spmv(u.x, w.x)
+    G.mult(u.x, w.x)
     w.x.scatter_forward()
 
     atol = 100 * np.finfo(default_real_type).resolution
