@@ -69,8 +69,9 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
   std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(0, Xshape[0]);
   std::vector<T> phi_b(
       std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
-  md::mdspan<const T, md::dextents<std::size_t, 4>> phi_full(phi_b.data(),
-                                                             phi_shape);
+  md::mdspan<const T, md::extents<std::size_t, 1, md::dynamic_extent,
+                                  md::dynamic_extent, 1>>
+      phi_full(phi_b.data(), phi_shape);
   cmap.tabulate(0, X, Xshape, phi_b);
   auto phi = md::submdspan(phi_full, 0, md::full_extent, md::full_extent, 0);
 
@@ -515,46 +516,60 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   const std::size_t num_dofs_g = cmap.dim();
   std::span<const U> x_g = mesh0->geometry().x();
 
+  // (0) is derivative index, (1) is the point index, (2) is the basis
+  // function index and (3) is the basis function component.
+
   // Evaluate coordinate map basis at reference interpolation points
   const std::array<std::size_t, 4> phi_shape
       = cmap.tabulate_shape(1, Xshape[0]);
   std::vector<U> phi_b(
       std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
-  mdspan_t<const U, 4> phi(phi_b.data(), phi_shape);
+  md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent,
+                                  md::dynamic_extent, md::dynamic_extent, 1>>
+      phi(phi_b.data(), phi_shape);
   cmap.tabulate(1, X, Xshape, phi_b);
 
   // Evaluate v basis functions at reference interpolation points
   const auto [_basis_derivatives_reference0, b0shape]
       = element0->tabulate(X, Xshape, 0);
-  mdspan_t<const U, 4> basis_derivatives_reference0(
-      _basis_derivatives_reference0.data(), b0shape);
+  md::mdspan<const U, std::extents<std::size_t, 1, md::dynamic_extent,
+                                   md::dynamic_extent, md::dynamic_extent>>
+      basis_derivatives_reference0(_basis_derivatives_reference0.data(),
+                                   b0shape);
 
   // Create working arrays
   std::vector<T> local1(element1->space_dimension());
   std::vector<T> coeffs0(element0->space_dimension());
 
   std::vector<U> basis0_b(Xshape[0] * dim0 * value_size0);
-  impl::mdspan_t<U, 3> basis0(basis0_b.data(), Xshape[0], dim0, value_size0);
+  md::mdspan<U, std::dextents<std::size_t, 3>> basis0(
+      basis0_b.data(), Xshape[0], dim0, value_size0);
 
   std::vector<U> basis_reference0_b(Xshape[0] * dim0 * value_size_ref0);
-  impl::mdspan_t<U, 3> basis_reference0(basis_reference0_b.data(), Xshape[0],
-                                        dim0, value_size_ref0);
+  md::mdspan<U, std::dextents<std::size_t, 3>> basis_reference0(
+      basis_reference0_b.data(), Xshape[0], dim0, value_size_ref0);
 
   std::vector<T> values0_b(Xshape[0] * 1 * V1->element()->value_size());
-  impl::mdspan_t<T, 3> values0(values0_b.data(), Xshape[0], 1,
-                               V1->element()->value_size());
+  md::mdspan<
+      T, md::extents<std::size_t, md::dynamic_extent, 1, md::dynamic_extent>>
+      values0(values0_b.data(), Xshape[0], 1, V1->element()->value_size());
 
   std::vector<T> mapped_values_b(Xshape[0] * 1 * V1->element()->value_size());
-  impl::mdspan_t<T, 3> mapped_values0(mapped_values_b.data(), Xshape[0], 1,
-                                      V1->element()->value_size());
+  md::mdspan<
+      T, md::extents<std::size_t, md::dynamic_extent, 1, md::dynamic_extent>>
+      mapped_values0(mapped_values_b.data(), Xshape[0], 1,
+                     V1->element()->value_size());
 
   std::vector<U> coord_dofs_b(num_dofs_g * gdim);
-  impl::mdspan_t<U, 2> coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
+  md::mdspan<U, std::dextents<std::size_t, 2>> coord_dofs(coord_dofs_b.data(),
+                                                          num_dofs_g, gdim);
 
   std::vector<U> J_b(Xshape[0] * gdim * tdim);
-  impl::mdspan_t<U, 3> J(J_b.data(), Xshape[0], gdim, tdim);
+  md::mdspan<U, std::dextents<std::size_t, 3>> J(J_b.data(), Xshape[0], gdim,
+                                                 tdim);
   std::vector<U> K_b(Xshape[0] * tdim * gdim);
-  impl::mdspan_t<U, 3> K(K_b.data(), Xshape[0], tdim, gdim);
+  md::mdspan<U, std::dextents<std::size_t, 3>> K(K_b.data(), Xshape[0], tdim,
+                                                 gdim);
   std::vector<U> detJ(Xshape[0]);
   std::vector<U> det_scratch(2 * gdim * tdim);
 
@@ -562,15 +577,16 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   const auto [_Pi_1, pi_shape] = element1->interpolation_operator();
   impl::mdspan_t<const U, 2> Pi_1(_Pi_1.data(), pi_shape);
 
-  using u_t = impl::mdspan_t<U, 2>;
-  using U_t = impl::mdspan_t<const U, 2>;
-  using J_t = impl::mdspan_t<const U, 2>;
-  using K_t = impl::mdspan_t<const U, 2>;
+  using u_t = md::mdspan<U, std::dextents<std::size_t, 2>>;
+  using U_t = md::mdspan<const U, std::dextents<std::size_t, 2>>;
+  using J_t = md::mdspan<const U, std::dextents<std::size_t, 2>>;
+  using K_t = md::mdspan<const U, std::dextents<std::size_t, 2>>;
   auto push_forward_fn0
       = element0->basix_element().template map_fn<u_t, U_t, J_t, K_t>();
 
-  using v_t = impl::mdspan_t<const T, 2>;
-  using V_t = impl::mdspan_t<T, 2>;
+  using v_t = md::mdspan<const T, std::dextents<std::size_t, 2>>;
+  using V_t = decltype(md::submdspan(mapped_values0, 0, md::full_extent,
+                                     md::full_extent));
   auto pull_back_fn1
       = element1->basix_element().template map_fn<V_t, v_t, K_t, J_t>();
 
@@ -594,7 +610,6 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
     {
       auto dphi
           = md::submdspan(phi, std::pair(1, tdim + 1), p, md::full_extent, 0);
-
       auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
       cmap.compute_jacobian(dphi, coord_dofs, _J);
       auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
@@ -912,12 +927,14 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
                                                             num_dofs_g, gdim);
     const std::size_t value_size_ref = element->reference_value_size();
     std::vector<T> ref_data_b(Xshape[0] * 1 * value_size_ref);
-    md::mdspan<T, md::dextents<std::size_t, 3>> ref_data(
-        ref_data_b.data(), Xshape[0], 1, value_size_ref);
+    md::mdspan<
+        T, md::extents<std::size_t, md::dynamic_extent, 1, md::dynamic_extent>>
+        ref_data(ref_data_b.data(), Xshape[0], 1, value_size_ref);
 
     std::vector<T> _vals_b(Xshape[0] * 1 * value_size);
-    md::mdspan<T, md::dextents<std::size_t, 3>> _vals(_vals_b.data(), Xshape[0],
-                                                      1, value_size);
+    md::mdspan<
+        T, md::extents<std::size_t, md::dynamic_extent, 1, md::dynamic_extent>>
+        _vals(_vals_b.data(), Xshape[0], 1, value_size);
 
     // Tabulate 1st derivative of shape functions at interpolation
     // coords
@@ -942,7 +959,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     md::mdspan<const U, std::dextents<std::size_t, 2>> Pi(_Pi.data(), pi_shape);
 
     using u_t = md::mdspan<const T, md::dextents<std::size_t, 2>>;
-    using U_t = md::mdspan<T, md::dextents<std::size_t, 2>>;
+    using U_t = decltype(md::submdspan(ref_data, 0, md::full_extent,
+                                       md::full_extent));
     using J_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
     using K_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
     auto pull_back_fn
@@ -1101,21 +1119,19 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
   v.eval(recv_points, {recv_points.size() / 3, (std::size_t)3},
          evaluation_cells, send_values, {recv_points.size() / 3, value_size});
 
-  using dextents2 = md::dextents<std::size_t, 2>;
-
   // Send values back to owning process
   std::vector<T> values_b(dest_ranks.size() * value_size);
-  md::mdspan<const T, dextents2> _send_values(send_values.data(),
-                                              src_ranks.size(), value_size);
+  md::mdspan<const T, md::dextents<std::size_t, 2>> _send_values(
+      send_values.data(), src_ranks.size(), value_size);
   impl::scatter_values(comm, src_ranks, dest_ranks, _send_values,
                        std::span(values_b));
 
   // Transpose received data
-  md::mdspan<const T, dextents2> values(values_b.data(), dest_ranks.size(),
-                                        value_size);
+  md::mdspan<const T, md::dextents<std::size_t, 2>> values(
+      values_b.data(), dest_ranks.size(), value_size);
   std::vector<T> valuesT_b(value_size * dest_ranks.size());
-  md::mdspan<T, dextents2> valuesT(valuesT_b.data(), value_size,
-                                   dest_ranks.size());
+  md::mdspan<T, md::dextents<std::size_t, 2>> valuesT(
+      valuesT_b.data(), value_size, dest_ranks.size());
   for (std::size_t i = 0; i < values.extent(0); ++i)
     for (std::size_t j = 0; j < values.extent(1); ++j)
       valuesT(j, i) = values(i, j);
