@@ -353,6 +353,9 @@ else:
     # If Hypre is not available, use LU factorisation on the $P_{00}$
     # block
     pc_sigma.setType("lu")
+    if PETSc.Sys().hasExternalPackage("superlu_dist"):
+        pc_sigma.setFactorSolverType("superlu_dist")
+
 # -
 
 # We create finite element functions that will hold the $\sigma$ and $u$
