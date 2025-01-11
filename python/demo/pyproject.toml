@@ -2,4 +2,4 @@
 extend = "../pyproject.toml"
 
 [tool.ruff.lint.flake8-import-conventions]
-banned-from = ["ufl"] # "basix", "ffcx", 
+banned-from = ["ufl"]
