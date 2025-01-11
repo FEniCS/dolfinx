@@ -110,20 +110,11 @@ from mpi4py import MPI
 import numpy as np
 
 import dolfinx.fem.petsc
+import ufl
 from basix.ufl import element
 from dolfinx import fem, la, mesh
 from dolfinx.fem.petsc import discrete_gradient, interpolation_matrix
 from dolfinx.mesh import CellType, create_unit_square
-from ufl import (
-    Measure,
-    SpatialCoordinate,
-    TestFunction,
-    TrialFunction,
-    ZeroBaseForm,
-    div,
-    exp,
-    inner,
-)
 
 # Solution scalar (e.g., float32, complex128) and geometry (float32/64)
 # types
@@ -161,16 +152,16 @@ W = fem.functionspace(msh, element("Discontinuous Lagrange", msh.basix_cell(), k
 # $W$, with corresponding test functions $\tau$ and $v$:
 
 # +
-(sigma, u) = TrialFunction(V), TrialFunction(W)
-(tau, v) = TestFunction(V), TestFunction(W)
+(sigma, u) = ufl.TrialFunction(V), ufl.TrialFunction(W)
+(tau, v) = ufl.TestFunction(V), ufl.TestFunction(W)
 # -
 
 # The source function is set to be $f = 10\exp(-((x_{0} - 0.5)^2 +
 # (x_{1} - 0.5)^2) / 0.02)$:
 
 # +
-x = SpatialCoordinate(msh)
-f = 10 * exp(-((x[0] - 0.5) * (x[0] - 0.5) + (x[1] - 0.5) * (x[1] - 0.5)) / 0.02)
+x = ufl.SpatialCoordinate(msh)
+f = 10 * ufl.exp(-((x[0] - 0.5) * (x[0] - 0.5) + (x[1] - 0.5) * (x[1] - 0.5)) / 0.02)
 # -
 
 # We now declare the blocked bilinear and linear forms. The rows of `a`
@@ -184,9 +175,12 @@ f = 10 * exp(-((x[0] - 0.5) * (x[0] - 0.5) + (x[1] - 0.5) * (x[1] - 0.5)) / 0.02
 # corresponds to $u_{0} = 0$ on $\Gamma_{D}$.*
 
 # +
-dx = Measure("dx", msh)
-a = [[inner(sigma, tau) * dx, inner(u, div(tau)) * dx], [inner(div(sigma), v) * dx, None]]
-L = [ZeroBaseForm((tau,)), -inner(f, v) * dx]
+dx = ufl.Measure("dx", msh)
+a = [
+    [ufl.inner(sigma, tau) * dx, ufl.inner(u, ufl.div(tau)) * dx],
+    [ufl.inner(ufl.div(sigma), v) * dx, None],
+]
+L = [ufl.ZeroBaseForm((tau,)), -ufl.inner(f, v) * dx]
 # -
 
 # We now compile the abstract/symbolic forms in `a` and `L` into
@@ -263,7 +257,10 @@ fem.petsc.set_bc_nest(b, bcs0)
 
 # +
 a_p = fem.form(
-    [[inner(sigma, tau) * dx + inner(div(sigma), div(tau)) * dx, None], [None, inner(u, v) * dx]],
+    [
+        [ufl.inner(sigma, tau) * dx + ufl.inner(ufl.div(sigma), ufl.div(tau)) * dx, None],
+        [None, ufl.inner(u, v) * dx],
+    ],
     dtype=dtype,
 )
 P = fem.petsc.assemble_matrix_nest(a_p, bcs=bcs)
