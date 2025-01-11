@@ -249,8 +249,8 @@ fem.petsc.set_bc_nest(b, bcs0)
 # -
 
 # Rather than solving the linear system $A x = b$, we will solve the
-# preconditioned problem $P^{-1} A x = P^{-1} b$. Commonly $P = A$, but this
-# does not lead to efficient solvers for saddle point problems.
+# preconditioned problem $P^{-1} A x = P^{-1} b$. Commonly $P = A$, but
+# this does not lead to efficient solvers for saddle point problems.
 #
 # For this problem, we introduce the preconditioner
 # $$
@@ -262,9 +262,10 @@ fem.petsc.set_bc_nest(b, bcs0)
 # and assemble it into the matrix `P`:
 
 # +
-a_p00 = inner(sigma, tau) * dx + inner(div(sigma), div(tau)) * dx
-a_p11 = inner(u, v) * dx
-a_p = fem.form([[a_p00, None], [None, a_p11]], dtype=dtype)
+a_p = fem.form(
+    [[inner(sigma, tau) * dx + inner(div(sigma), div(tau)) * dx, None], [None, inner(u, v) * dx]],
+    dtype=dtype,
+)
 P = fem.petsc.assemble_matrix_nest(a_p, bcs=bcs)
 P.assemble()
 # -
@@ -356,7 +357,7 @@ else:
     use_superlu = PETSc.IntType == np.int64
     if PETSc.Sys().hasExternalPackage("mumps") and not use_superlu:
         pc_sigma.setFactorSolverType("mumps")
-    elif PETSc.Sys().sys.hasExternalPackage("superlu_dist"):
+    elif PETSc.Sys().hasExternalPackage("superlu_dist"):
         pc_sigma.setFactorSolverType("superlu_dist")
 # -
 
