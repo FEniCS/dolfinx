@@ -78,7 +78,9 @@ public:
   /// compute. Use 0 for the basis functions only
   /// @param[in] num_points Number of points at which to evaluate the
   /// basis functions.
-  /// @return Shape of the array to be filled by `tabulate`.
+  /// @return Shape of the array to be filled by `tabulate`, where (0)
+  /// is derivative index, (1) is the point index, (2) is the basis
+  /// function index and (3) is the basis function component.
   std::array<std::size_t, 4> tabulate_shape(std::size_t nd,
                                             std::size_t num_points) const;
 

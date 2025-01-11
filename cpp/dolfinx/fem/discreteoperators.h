@@ -151,7 +151,6 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   // Get the V1 reference interpolation points
   const auto [X, Xshape] = e1->interpolation_points();
 
-  // Get/compute geometry map and evaluate at interpolation points
   const CoordinateElement<T>& cmap = mesh->geometry().cmap();
   auto x_dofmap = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();
@@ -159,8 +158,10 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   std::array<std::size_t, 4> Phi_g_shape = cmap.tabulate_shape(1, Xshape[0]);
   std::vector<T> Phi_g_b(std::reduce(Phi_g_shape.begin(), Phi_g_shape.end(), 1,
                                      std::multiplies{}));
-  md::mdspan<const T, md::dextents<std::size_t, 4>> Phi_g(Phi_g_b.data(),
-                                                          Phi_g_shape);
+  // (derivs (3+1), point, basis function, component (3))
+  md::mdspan<const T, md::extents<std::size_t, 4, md::dynamic_extent,
+                                  md::dynamic_extent, 3>>
+      Phi_g(Phi_g_b.data(), Phi_g_shape);
   cmap.tabulate(1, X, Xshape, Phi_g_b);
 
   // Geometry data structures
@@ -171,21 +172,19 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   md::mdspan<T, md::extents<std::size_t, md::dynamic_extent, 3, 3>> J(
       J_b.data(), Xshape[0], gdim, gdim);
   std::vector<T> K_b(Xshape[0] * gdim * gdim);
-  md::mdspan<T, md::extents<std::size_t, md::dynamic_extent, 3, 3>> K(
-      K_b.data(), Xshape[0], gdim, gdim);
+  md::mdspan<T, typename decltype(J)::extents_type> K(K_b.data(), J.extents());
   std::vector<T> detJ(Xshape[0]);
   std::vector<T> det_scratch(2 * gdim * gdim);
 
   // Evaluate V0 basis function derivatives at reference interpolation
   // points for V1
   const auto [Phi0_b, Phi0_shape] = e0->tabulate(X, Xshape, 1);
-  md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent,
-                                  md::dynamic_extent, md::dynamic_extent, 3>>
+  md::mdspan<const T, md::extents<std::size_t, 4, md::dynamic_extent,
+                                  md::dynamic_extent, 3>>
       Phi0(Phi0_b.data(),
            Phi0_shape); // (deriv, pt_idx, phi (dof), comp)
 
   // Create working arrays, (point, phi (dof), deriv, comp)
-  // md::dextents<std::size_t, 4>
   md::extents<std::size_t, md::dynamic_extent, md::dynamic_extent, 3, 3>
       dphi_ext(Phi0.extent(1), Phi0.extent(2), Phi0.extent(0) - 1,
                Phi0.extent(3));
@@ -194,14 +193,6 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   md::mdspan<
       T, md::extents<std::size_t, md::dynamic_extent, md::dynamic_extent, 3, 3>>
       dPhi0(dPhi0_b.data(), dphi_ext);
-  std::vector<T> dphi0_int_b(dPhi0.size());
-  md::mdspan<
-      T, md::extents<std::size_t, md::dynamic_extent, md::dynamic_extent, 3, 3>>
-      dphi0_int(dphi0_int_b.data(), dPhi0.extents());
-  std::vector<T> dphi0_b(dPhi0.size());
-  md::mdspan<
-      T, md::extents<std::size_t, md::dynamic_extent, md::dynamic_extent, 3, 3>>
-      dphi0(dphi0_b.data(), dPhi0.extents());
 
   // Get the interpolation operator (matrix) Pi that maps a function
   // evaluated at the interpolation points to the V1 element degrees of
