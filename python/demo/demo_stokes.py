@@ -176,7 +176,7 @@ bcs = [bc0, bc1]
 # -
 
 # The bilinear and linear forms for the Stokes equations are defined
-# using a a blocked structure:
+# using a blocked structure:
 
 # +
 # Define variational problem
@@ -190,7 +190,7 @@ a = form(
         [ufl.inner(ufl.div(u), q) * ufl.dx, None],
     ]
 )
-L = form([ufl.inner(f, v) * ufl.dx, ufl.inner(Constant(msh, PETSc.ScalarType(0)), q) * ufl.dx])  # type: ignore
+L = form([ufl.inner(f, v) * ufl.dx, ufl.ZeroBaseForm((q,))])
 # -
 
 # A block-diagonal preconditioner will be used with the iterative
@@ -444,9 +444,8 @@ def block_direct_solver():
     # handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    sys = PETSc.Sys()  # type: ignore
     use_superlu = PETSc.IntType == np.int64
-    if sys.hasExternalPackage("mumps") and not use_superlu:
+    if PETSc.Sys().hasExternalPackage("mumps") and not use_superlu:
         pc.setFactorSolverType("mumps")
         pc.setFactorSetUpSolverType()
         pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
@@ -534,9 +533,8 @@ def mixed_direct():
     # Configure MUMPS to handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    sys = PETSc.Sys()  # type: ignore
     use_superlu = PETSc.IntType == np.int64
-    if sys.hasExternalPackage("mumps") and not use_superlu:
+    if PETSc.Sys().hasExternalPackage("mumps") and not use_superlu:
         pc.setFactorSolverType("mumps")
         pc.setFactorSetUpSolverType()
         pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
