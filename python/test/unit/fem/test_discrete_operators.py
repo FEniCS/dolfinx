@@ -250,7 +250,7 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
 
     # Compute global matrix vector product
     w = Function(W)
-    w.x.array[:] = 0.0
+    w.x.array[:] = 0
     G.mult(u.x, w.x)
     w.x.scatter_forward()
 
