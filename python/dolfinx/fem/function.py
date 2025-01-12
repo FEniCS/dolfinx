@@ -590,7 +590,7 @@ def functionspace(
 
     # Create DOLFINx objects
     element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)
-    cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, element._cpp_object)
+    cpp_dofmap = _cpp.fem.create_dofmap(mesh.topology._cpp_object, element._cpp_object)
 
     assert np.issubdtype(mesh.geometry.x.dtype, element.dtype), (
         "Mesh and element dtype are not compatible."
