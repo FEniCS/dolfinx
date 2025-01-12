@@ -37,7 +37,7 @@ class Form:
         _cpp.fem.Form_float32,
         _cpp.fem.Form_float64,
     ]
-    _code: typing.Optional[str]
+    _code: typing.Optional[typing.Union[str, list[str]]]
 
     def __init__(
         self,
@@ -48,8 +48,8 @@ class Form:
             _cpp.fem.Form_float64,
         ],
         ufcx_form=None,
-        code: typing.Optional[str] = None,
-        module: typing.Optional[types.ModuleType] = None,
+        code: typing.Optional[typing.Union[str, list[str]]] = None,
+        module: typing.Optional[typing.Union[types.ModuleType, list[types.ModuleType]]] = None,
     ):
         """A finite element form.
 
@@ -76,12 +76,12 @@ class Form:
         return self._ufcx_form
 
     @property
-    def code(self) -> typing.Union[str, None]:
+    def code(self) -> typing.Union[str, list[str], None]:
         """C code strings."""
         return self._code
 
     @property
-    def module(self) -> typing.Union[types.ModuleType, None]:
+    def module(self) -> typing.Union[types.ModuleType, list[types.ModuleType], None]:
         """The CFFI module"""
         return self._module
 
@@ -197,6 +197,87 @@ _ufl_to_dolfinx_domain = {
 }
 
 
+def mixed_topology_form(
+    forms: typing.Iterable[ufl.Form],
+    dtype: npt.DTypeLike = default_scalar_type,
+    form_compiler_options: typing.Optional[dict] = None,
+    jit_options: typing.Optional[dict] = None,
+    entity_maps: typing.Optional[dict[Mesh, np.typing.NDArray[np.int32]]] = None,
+):
+    """
+    Create a mixed-topology from from an array of Forms.
+
+    # FIXME: This function is a temporary hack for mixed-topology meshes. It is needed
+    # because UFL does not know about mixed-topology meshes, so we need
+    # to pass a list of forms for each cell type.
+
+    Args:
+        form: A list of UFL forms. Each form should be the same, just
+            defined on different cell types.
+        dtype: Scalar type to use for the compiled form.
+        form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
+        jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
+        entity_maps: If any trial functions, test functions, or
+            coefficients in the form are not defined over the same mesh
+            as the integration domain, `entity_maps` must be supplied.
+            For each key (a mesh, different to the integration domain
+            mesh) a map should be provided relating the entities in the
+            integration domain mesh to the entities in the key mesh e.g.
+            for a key-value pair (msh, emap) in `entity_maps`, `emap[i]`
+            is the entity in `msh` corresponding to entity `i` in the
+            integration domain mesh.
+
+    Returns:
+        Compiled finite element Form.
+    """
+
+    if form_compiler_options is None:
+        form_compiler_options = dict()
+
+    form_compiler_options["scalar_type"] = dtype
+    ftype = form_cpp_class(dtype)
+
+    # Extract subdomain data from UFL form
+    sd = next(iter(forms)).subdomain_data()
+    (domain,) = list(sd.keys())  # Assuming single domain
+
+    # Check that subdomain data for each integral type is the same
+    for data in sd.get(domain).values():
+        assert all([d is data[0] for d in data if d is not None])
+
+    mesh = domain.ufl_cargo()
+
+    ufcx_forms = []
+    modules = []
+    codes = []
+    for form in forms:
+        ufcx_form, module, code = jit.ffcx_jit(
+            mesh.comm,
+            form,
+            form_compiler_options=form_compiler_options,
+            jit_options=jit_options,
+        )
+        ufcx_forms.append(ufcx_form)
+        modules.append(module)
+        codes.append(code)
+
+    # In a mixed-topology mesh, each form has the same C++ function space,
+    # so we can extract it from any of them
+    V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
+
+    # TODO coeffs, constants, subdomains, entity_maps
+    f = ftype(
+        [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)) for ufcx_form in ufcx_forms],
+        V,
+        [],
+        [],
+        {},
+        {},
+        mesh,
+    )
+    return Form(f, ufcx_forms, codes, modules)
+
+
 def form(
     form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
     dtype: npt.DTypeLike = default_scalar_type,
@@ -303,7 +384,7 @@ def form(
             _entity_maps = {msh._cpp_object: emap for (msh, emap) in entity_maps.items()}
 
         f = ftype(
-            module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)),
+            [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form))],
             V,
             coeffs,
             constants,

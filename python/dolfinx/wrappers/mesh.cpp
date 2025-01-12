@@ -650,6 +650,7 @@ void mesh(nb::module_& m)
       .def("index_map", &dolfinx::mesh::Topology::index_map, nb::arg("dim"))
       .def("index_maps", &dolfinx::mesh::Topology::index_maps, nb::arg("dim"))
       .def_prop_ro("cell_type", &dolfinx::mesh::Topology::cell_type)
+      .def_prop_ro("cell_types", &dolfinx::mesh::Topology::cell_types)
       .def_prop_ro(
           "entity_types",
           [](const dolfinx::mesh::Topology& self)
