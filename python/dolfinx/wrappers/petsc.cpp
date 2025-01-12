@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2023 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2025 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -10,6 +10,7 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include "pycoeff.h"
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/DofMap.h>
@@ -41,11 +42,11 @@
 namespace
 {
 // Declare assembler function that have multiple scalar types
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 void declare_petsc_discrete_operators(nb::module_& m)
 {
   m.def(
-      "discrete_gradient",
+      "discrete_curl",
       [](const dolfinx::fem::FunctionSpace<U>& V0,
          const dolfinx::fem::FunctionSpace<U>& V1)
       {
@@ -53,7 +54,6 @@ void declare_petsc_discrete_operators(nb::module_& m)
         auto mesh = V0.mesh();
         assert(V1.mesh());
         assert(mesh == V1.mesh());
-        MPI_Comm comm = mesh->comm();
 
         auto dofmap0 = V0.dofmap();
         assert(dofmap0);
@@ -63,6 +63,47 @@ void declare_petsc_discrete_operators(nb::module_& m)
         // Create and build  sparsity pattern
         assert(dofmap0->index_map);
         assert(dofmap1->index_map);
+        MPI_Comm comm = mesh->comm();
+        dolfinx::la::SparsityPattern sp(
+            comm, {dofmap1->index_map, dofmap0->index_map},
+            {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
+
+        int tdim = mesh->topology()->dim();
+        auto map = mesh->topology()->index_map(tdim);
+        assert(map);
+        std::vector<std::int32_t> c(map->size_local(), 0);
+        std::iota(c.begin(), c.end(), 0);
+        dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
+        sp.finalize();
+
+        // Build operator
+        Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
+        MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
+        dolfinx::fem::discrete_curl<U, T>(
+            V0, V1, dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
+        return A;
+      },
+      nb::rv_policy::take_ownership, nb::arg("V0"), nb::arg("V1"));
+
+  m.def(
+      "discrete_gradient",
+      [](const dolfinx::fem::FunctionSpace<U>& V0,
+         const dolfinx::fem::FunctionSpace<U>& V1)
+      {
+        assert(V0.mesh());
+        auto mesh = V0.mesh();
+        assert(V1.mesh());
+        assert(mesh == V1.mesh());
+
+        auto dofmap0 = V0.dofmap();
+        assert(dofmap0);
+        auto dofmap1 = V1.dofmap();
+        assert(dofmap1);
+
+        // Create and build  sparsity pattern
+        assert(dofmap0->index_map);
+        assert(dofmap1->index_map);
+        MPI_Comm comm = mesh->comm();
         dolfinx::la::SparsityPattern sp(
             comm, {dofmap1->index_map, dofmap0->index_map},
             {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
@@ -94,7 +135,6 @@ void declare_petsc_discrete_operators(nb::module_& m)
         auto mesh = V0.mesh();
         assert(V1.mesh());
         assert(mesh == V1.mesh());
-        MPI_Comm comm = mesh->comm();
 
         auto dofmap0 = V0.dofmap();
         assert(dofmap0);
@@ -104,6 +144,7 @@ void declare_petsc_discrete_operators(nb::module_& m)
         // Create and build  sparsity pattern
         assert(dofmap0->index_map);
         assert(dofmap1->index_map);
+        MPI_Comm comm = mesh->comm();
         dolfinx::la::SparsityPattern sp(
             comm, {dofmap1->index_map, dofmap0->index_map},
             {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
