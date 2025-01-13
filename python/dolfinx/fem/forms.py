@@ -528,7 +528,7 @@ def create_form(
         original_index = form.ufcx_form.original_coefficient_positions[c]
         original_const = original_constants[original_index]
         try:
-            constants[f"w{c}"] = constant_map[original_const]._cpp_object
+            constants[f"c{c}"] = constant_map[original_const]._cpp_object
         except KeyError:
             raise RuntimeError(f"Missing constant {original_const}")
 
