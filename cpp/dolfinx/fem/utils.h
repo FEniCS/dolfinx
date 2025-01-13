@@ -253,8 +253,8 @@ ElementDofLayout create_element_dof_layout(const fem::FiniteElement<T>& element,
   int bs = element.block_size();
   if (bs > 1 and element.num_sub_elements() != bs)
   {
-    raise std::runtime_error("For blocked elements, the number of sub-elements "
-                             "must be equal to the block size.")
+    throw std::runtime_error("For blocked elements, the number of sub-elements "
+                             "must be equal to the block size.");
   }
 
   for (int i = 0; i < element.num_sub_elements(); ++i)
