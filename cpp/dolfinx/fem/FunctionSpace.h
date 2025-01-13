@@ -344,8 +344,11 @@ public:
   std::shared_ptr<const FiniteElement<geometry_type>> element() const
   {
     if (_elements.size() > 1)
+    {
       throw std::runtime_error(
           "FunctionSpace has multiple elements, call `elements` instead.");
+    }
+
     return elements(0);
   }
 
@@ -360,8 +363,11 @@ public:
   std::shared_ptr<const DofMap> dofmap() const
   {
     if (_dofmaps.size() > 1)
+    {
       throw std::runtime_error(
           "FunctionSpace has multiple dofmaps, call `dofmaps` instead.");
+    }
+
     return dofmaps(0);
   }
 
