@@ -16,12 +16,14 @@ using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 ElementDofLayout::ElementDofLayout(
+    int block_size,
     const std::vector<std::vector<std::vector<int>>>& entity_dofs,
     const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
     const std::vector<int>& parent_map,
     const std::vector<ElementDofLayout>& sub_layouts)
-    : _parent_map(parent_map), _num_dofs(0), _entity_dofs(entity_dofs),
-      _entity_closure_dofs(entity_closure_dofs), _sub_dofmaps(sub_layouts)
+    : _block_size(block_size), _parent_map(parent_map), _num_dofs(0),
+      _entity_dofs(entity_dofs), _entity_closure_dofs(entity_closure_dofs),
+      _sub_dofmaps(sub_layouts)
 {
   // TODO: Handle global support dofs
 
@@ -80,8 +82,7 @@ ElementDofLayout::entity_closure_dofs(int dim, int entity_index) const
   return _entity_closure_dofs.at(dim).at(entity_index);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::vector<std::vector<int>>>&
-ElementDofLayout::entity_dofs_all() const
+const std::vector<std::vector<std::vector<int>>>& ElementDofLayout::entity_dofs_all() const
 {
   return _entity_dofs;
 }
