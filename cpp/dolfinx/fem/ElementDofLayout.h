@@ -31,8 +31,6 @@ class ElementDofLayout
 public:
   /// @brief Constructor
   ///
-  /// @param[in] block_size Number of times each degree-of-freedom is
-  /// 'replicated', e.g. number of DOFs 'co-located' at each 'point'.
   /// @param[in] entity_dofs Dofs on each entity, in the format
   /// `entity_dofs[entity_dim][entity_number]=[dof0, dof1, ...]`.
   /// @param[in] entity_closure_dofs Dofs on the closure of each entity,
@@ -42,7 +40,6 @@ public:
   /// @param[in] parent_map TODO
   /// @param[in] sub_layouts TODO
   ElementDofLayout(
-      int block_size,
       const std::vector<std::vector<std::vector<int>>>& entity_dofs,
       const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
       const std::vector<int>& parent_map,
@@ -70,8 +67,7 @@ public:
 
   /// @brief Equality operator
   ///
-  /// Sub- and parent dof layout data is not compared. The block sizes
-  /// of the layouts are not compared.
+  /// Sub- and parent dof layout data is not compared.
   ///
   /// @return True if the layout data is the same, false otherwise.
   bool operator==(const ElementDofLayout& layout) const;
@@ -131,18 +127,12 @@ public:
   /// dofmap that are the sub-dofs.
   std::vector<int> sub_view(std::span<const int> component) const;
 
-  /// @brief Block size.
-  int block_size() const;
-
   /// @brief True iff dof map is a view into another map.
   /// @returns bool True if the dof map is a sub-dof map (a view into
   /// another map).
   bool is_view() const;
 
 private:
-  // Block size
-  int _block_size;
-
   // Mapping of dofs to this ElementDofLayout's immediate parent
   std::vector<int> _parent_map;
 

@@ -247,21 +247,28 @@ ElementDofLayout create_element_dof_layout(const fem::FiniteElement<T>& element,
                                            const std::vector<int>& parent_map
                                            = {})
 {
-  // Create subdofmaps and compute offset
+  // Create sub-dofmaps and compute offset
   std::vector<int> offsets(1, 0);
   std::vector<dolfinx::fem::ElementDofLayout> sub_doflayout;
   int bs = element.block_size();
+  if (bs > 1 and element.num_sub_elements() != bs)
+  {
+    raise std::runtime_error("For blocked elements, the number of sub-elements "
+                             "must be equal to the block size.")
+  }
+
   for (int i = 0; i < element.num_sub_elements(); ++i)
   {
-    // The ith sub-element. For mixed elements this is subelements()[i]. For
-    // blocked elements, the sub-element will always be the same, so we'll use
-    // sub_elements()[0]
+    // The ith sub-element. For mixed elements this is subelements()[i].
+    // For blocked elements, the sub-element will always be the same, so
+    // we'll use sub_elements()[0]
     std::shared_ptr<const fem::FiniteElement<T>> sub_e
         = element.sub_elements()[bs > 1 ? 0 : i];
 
-    // In a mixed element DOFs are ordered element by element, so the offset to
-    // the next sub-element is sub_e->space_dimension(). Blocked elements use
-    // xxyyzz ordering, so the offset to the next sub-element is 1
+    // In a mixed element DOFs are ordered element by element, so the
+    // offset to the next sub-element is sub_e->space_dimension().
+    // Blocked elements use xxyyzz ordering, so the offset to the next
+    // sub-element is 1
 
     std::vector<int> parent_map_sub(sub_e->space_dimension(), offsets.back());
     for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
