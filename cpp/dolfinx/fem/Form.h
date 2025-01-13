@@ -261,7 +261,7 @@ public:
   /// @brief Get the kernel function for integral `i` on given domain
   /// type.
   /// @param[in] type Integral type.
-  /// @param[in] i Domain identifier (index).
+  /// @param[in] i The subdomain ID.
   /// @param[in] kernel_idx Index of the kernel (we may have multiple kernels
   /// for a given ID in mixed-topology meshes).
   /// @return Function to call for `tabulate_tensor`.
