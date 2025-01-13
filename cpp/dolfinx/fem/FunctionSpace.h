@@ -53,8 +53,11 @@ public:
   /// @brief Create function space for given mesh, elements and
   /// degree-of-freedom maps.
   /// @param[in] mesh Mesh that the space is defined on.
-  /// @param[in] elements Finite element for the space.
-  /// @param[in] dofmaps Degree-of-freedom map for the space.
+  /// @param[in] elements Finite elements for the space, one for each cell type.
+  /// The elements must be ordered to be consistent with
+  /// mesh->topology()->cell_types().
+  /// @param[in] dofmaps Degree-of-freedom maps for the space, one for each
+  /// element. The dofmaps must be ordered in the same way as the elements.
   FunctionSpace(
       std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
       std::vector<std::shared_ptr<const FiniteElement<geometry_type>>> elements,
@@ -62,7 +65,20 @@ public:
       : _mesh(mesh), _dofmaps(dofmaps), _elements(elements),
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
   {
-    // Do nothing
+    std::vector<mesh::CellType> cell_types = mesh->topology()->cell_types();
+    int num_cell_types = cell_types.size();
+    if (elements.size() != num_cell_types)
+      throw std::runtime_error(
+          "Number of elements must match number of cell types");
+    if (dofmaps.size() != num_cell_types)
+      throw std::runtime_error(
+          "Number of dofmaps must match number of cell types");
+    for (std::size_t i = 0; i < num_cell_types; ++i)
+    {
+      if (elements.at(i)->cell_type() != cell_types.at(i))
+        throw std::runtime_error(
+            "Element cell types must match mesh cell types");
+    }
   }
 
   // Copy constructor (deleted)
