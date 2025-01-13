@@ -55,7 +55,7 @@ public:
   /// @param[in] mesh Mesh that the space is defined on.
   /// @param[in] elements Finite elements for the space, one for each cell type.
   /// The elements must be ordered to be consistent with
-  /// mesh->topology()->cell_types().
+  /// mesh::topology::cell_types.
   /// @param[in] dofmaps Degree-of-freedom maps for the space, one for each
   /// element. The dofmaps must be ordered in the same way as the elements.
   FunctionSpace(
