@@ -521,16 +521,21 @@ def create_form(
             raise RuntimeError(f"Missing coefficient {original_coeff}")
 
     # Extract all constants of the compiled form in correct order
-    constants = {}
+    # NOTE: Constants are not eliminated
     original_constants = ufl.algorithms.analysis.extract_constants(form.ufl_form)
     num_constants = form.ufcx_form.num_constants
-    for c in range(num_constants):
-        original_index = form.ufcx_form.original_coefficient_positions[c]
-        original_const = original_constants[original_index]
+    if num_constants != len(original_constants):
+        raise RuntimeError(
+            f"Number of constants in compiled form ({num_constants})",
+            f"does not match the original form {len(original_constants)}",
+        )
+    constants = {}
+    for counter, constant in enumerate(original_constants):
         try:
-            constants[f"c{c}"] = constant_map[original_const]._cpp_object
+            mapped_constant = constant_map[constant]
+            constants[f"c{counter}"] = mapped_constant._cpp_object
         except KeyError:
-            raise RuntimeError(f"Missing constant {original_const}")
+            raise RuntimeError(f"Missing constant {constant}")
 
     ftype = form_cpp_creator(form.dtype)
     f = ftype(
