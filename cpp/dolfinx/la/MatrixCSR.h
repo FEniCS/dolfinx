@@ -289,7 +289,31 @@ public:
   /// expanded.
   /// @return Dense copy of the part of the matrix on the calling rank.
   /// Storage is row-major.
-  std::vector<value_type> to_dense() const;
+  std::vector<value_type> to_dense() const
+  {
+    const std::size_t nrows = num_all_rows();
+    const std::size_t ncols = _index_maps[1]->size_global();
+    std::vector<value_type> A(nrows * ncols * _bs[0] * _bs[1], 0.0);
+    for (std::size_t r = 0; r < nrows; ++r)
+    {
+      for (std::int32_t j = _row_ptr[r]; j < _row_ptr[r + 1]; ++j)
+      {
+        for (int i0 = 0; i0 < _bs[0]; ++i0)
+        {
+          for (int i1 = 0; i1 < _bs[1]; ++i1)
+          {
+            std::array<std::int32_t, 1> local_col{_cols[j]};
+            std::array<std::int64_t, 1> global_col{0};
+            _index_maps[1]->local_to_global(local_col, global_col);
+            A[(r * _bs[1] + i0) * ncols * _bs[0] + global_col[0] * _bs[1] + i1]
+                = _data[j * _bs[0] * _bs[1] + i0 * _bs[1] + i1];
+          }
+        }
+      }
+    }
+
+    return A;
+  }
 
   /// @brief Transfer ghost row data to the owning ranks accumulating
   /// received values on the owned rows, and zeroing any existing data
@@ -310,18 +334,93 @@ public:
   /// must not be changed.
   /// @note This function does not change the matrix data. Data update
   /// only occurs with `scatter_rev_end()`.
-  void scatter_rev_begin();
+  void scatter_rev_begin()
+  {
+    const std::int32_t local_size0 = _index_maps[0]->size_local();
+    const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
+    const int bs2 = _bs[0] * _bs[1];
+
+    // For each ghost row, pack and send values to send to neighborhood
+    std::vector<int> insert_pos = _val_send_disp;
+    _ghost_value_data.resize(_val_send_disp.back());
+    for (int i = 0; i < num_ghosts0; ++i)
+    {
+      const int rank = _ghost_row_to_rank[i];
+
+      // Get position in send buffer to place data to send to this
+      // neighbour
+      const std::int32_t val_pos = insert_pos[rank];
+      std::copy(std::next(_data.data(), _row_ptr[local_size0 + i] * bs2),
+                std::next(_data.data(), _row_ptr[local_size0 + i + 1] * bs2),
+                std::next(_ghost_value_data.begin(), val_pos));
+      insert_pos[rank]
+          += bs2 * (_row_ptr[local_size0 + i + 1] - _row_ptr[local_size0 + i]);
+    }
+
+    _ghost_value_data_in.resize(_val_recv_disp.back());
+
+    // Compute data sizes for send and receive from displacements
+    std::vector<int> val_send_count(_val_send_disp.size() - 1);
+    std::adjacent_difference(std::next(_val_send_disp.begin()),
+                             _val_send_disp.end(), val_send_count.begin());
+
+    std::vector<int> val_recv_count(_val_recv_disp.size() - 1);
+    std::adjacent_difference(std::next(_val_recv_disp.begin()),
+                             _val_recv_disp.end(), val_recv_count.begin());
+
+    int status = MPI_Ineighbor_alltoallv(
+        _ghost_value_data.data(), val_send_count.data(), _val_send_disp.data(),
+        dolfinx::MPI::mpi_t<value_type>, _ghost_value_data_in.data(),
+        val_recv_count.data(), _val_recv_disp.data(),
+        dolfinx::MPI::mpi_t<value_type>, _comm.comm(), &_request);
+    assert(status == MPI_SUCCESS);
+  }
 
   /// @brief End transfer of ghost row data to owning ranks.
   /// @note Must be preceded by MatrixCSR::scatter_rev_begin().
   /// @note Matrix data received from other processes will be
   /// accumulated into locally owned rows, and ghost rows will be
   /// zeroed.
-  void scatter_rev_end();
+  void scatter_rev_end()
+  {
+    int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
+    assert(status == MPI_SUCCESS);
+
+    _ghost_value_data.clear();
+    _ghost_value_data.shrink_to_fit();
+
+    // Add to local rows
+    const int bs2 = _bs[0] * _bs[1];
+    assert(_ghost_value_data_in.size() == _unpack_pos.size() * bs2);
+    for (std::size_t i = 0; i < _unpack_pos.size(); ++i)
+      for (int j = 0; j < bs2; ++j)
+        _data[_unpack_pos[i] * bs2 + j] += _ghost_value_data_in[i * bs2 + j];
+
+    _ghost_value_data_in.clear();
+    _ghost_value_data_in.shrink_to_fit();
+
+    // Set ghost row data to zero
+    const std::int32_t local_size0 = _index_maps[0]->size_local();
+    std::fill(std::next(_data.begin(), _row_ptr[local_size0] * bs2),
+              _data.end(), 0);
+  }
 
   /// @brief Compute the Frobenius norm squared across all processes.
   /// @note MPI Collective
-  double squared_norm() const;
+  double squared_norm() const
+  {
+    const std::size_t num_owned_rows = _index_maps[0]->size_local();
+    const int bs2 = _bs[0] * _bs[1];
+    assert(num_owned_rows < _row_ptr.size());
+    double norm_sq_local = std::accumulate(
+        _data.cbegin(),
+        std::next(_data.cbegin(), _row_ptr[num_owned_rows] * bs2), double(0),
+        [](auto norm, value_type y) { return norm + std::norm(y); });
+    double norm_sq;
+    MPI_Allreduce(&norm_sq_local, &norm_sq, 1, MPI_DOUBLE, MPI_SUM,
+                  _comm.comm());
+    return norm_sq;
+  }
 
   /// @brief Compute the product `y += Ax`.
   ///
@@ -434,7 +533,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
     for (int i = 0; i < 2; ++i)
     {
       const auto im = _index_maps[i];
-      const int size_local = im->size_local() * _bs[i];
+      const std::int32_t size_local = im->size_local() * _bs[i];
       std::span ghost_i = im->ghosts();
       std::vector<std::int64_t> ghosts;
       const std::vector<int> ghost_owner_i(im->owners().begin(),
@@ -448,7 +547,8 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
           src_rank.push_back(ghost_owner_i[j]);
         }
       }
-      const std::array<std::vector<int>, 2> src_dest0
+
+      std::array<std::vector<int>, 2> src_dest0
           = {std::vector(_index_maps[i]->src().begin(),
                          _index_maps[i]->src().end()),
              std::vector(_index_maps[i]->dest().begin(),
@@ -520,7 +620,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
   {
     auto it = std::ranges::lower_bound(src_ranks, r);
     assert(it != src_ranks.end() and *it == r);
-    int pos = std::distance(src_ranks.begin(), it);
+    std::size_t pos = std::distance(src_ranks.begin(), it);
     _ghost_row_to_rank.push_back(pos);
   }
 
@@ -545,7 +645,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
     for (std::size_t i = 0; i < _ghost_row_to_rank.size(); ++i)
     {
       const int rank = _ghost_row_to_rank[i];
-      int row_id = local_size[0] + i;
+      std::int32_t row_id = local_size[0] + i;
       for (int j = _row_ptr[row_id]; j < _row_ptr[row_id + 1]; ++j)
       {
         // Get position in send buffer
@@ -639,110 +739,6 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
   }
 }
 //-----------------------------------------------------------------------------
-template <typename U, typename V, typename W, typename X>
-std::vector<typename MatrixCSR<U, V, W, X>::value_type>
-MatrixCSR<U, V, W, X>::to_dense() const
-{
-  const std::size_t nrows = num_all_rows();
-  const std::size_t ncols = _index_maps[1]->size_global();
-  std::vector<value_type> A(nrows * ncols * _bs[0] * _bs[1], 0.0);
-  for (std::size_t r = 0; r < nrows; ++r)
-    for (std::int32_t j = _row_ptr[r]; j < _row_ptr[r + 1]; ++j)
-      for (int i0 = 0; i0 < _bs[0]; ++i0)
-        for (int i1 = 0; i1 < _bs[1]; ++i1)
-        {
-          std::array<std::int32_t, 1> local_col{_cols[j]};
-          std::array<std::int64_t, 1> global_col{0};
-          _index_maps[1]->local_to_global(local_col, global_col);
-          A[(r * _bs[1] + i0) * ncols * _bs[0] + global_col[0] * _bs[1] + i1]
-              = _data[j * _bs[0] * _bs[1] + i0 * _bs[1] + i1];
-        }
-
-  return A;
-}
-//-----------------------------------------------------------------------------
-template <typename U, typename V, typename W, typename X>
-void MatrixCSR<U, V, W, X>::scatter_rev_begin()
-{
-  const std::int32_t local_size0 = _index_maps[0]->size_local();
-  const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
-  const int bs2 = _bs[0] * _bs[1];
-
-  // For each ghost row, pack and send values to send to neighborhood
-  std::vector<int> insert_pos = _val_send_disp;
-  _ghost_value_data.resize(_val_send_disp.back());
-  for (int i = 0; i < num_ghosts0; ++i)
-  {
-    const int rank = _ghost_row_to_rank[i];
-
-    // Get position in send buffer to place data to send to this
-    // neighbour
-    const std::int32_t val_pos = insert_pos[rank];
-    std::copy(std::next(_data.data(), _row_ptr[local_size0 + i] * bs2),
-              std::next(_data.data(), _row_ptr[local_size0 + i + 1] * bs2),
-              std::next(_ghost_value_data.begin(), val_pos));
-    insert_pos[rank]
-        += bs2 * (_row_ptr[local_size0 + i + 1] - _row_ptr[local_size0 + i]);
-  }
-
-  _ghost_value_data_in.resize(_val_recv_disp.back());
-
-  // Compute data sizes for send and receive from displacements
-  std::vector<int> val_send_count(_val_send_disp.size() - 1);
-  std::adjacent_difference(std::next(_val_send_disp.begin()),
-                           _val_send_disp.end(), val_send_count.begin());
-
-  std::vector<int> val_recv_count(_val_recv_disp.size() - 1);
-  std::adjacent_difference(std::next(_val_recv_disp.begin()),
-                           _val_recv_disp.end(), val_recv_count.begin());
-
-  int status = MPI_Ineighbor_alltoallv(
-      _ghost_value_data.data(), val_send_count.data(), _val_send_disp.data(),
-      dolfinx::MPI::mpi_t<value_type>, _ghost_value_data_in.data(),
-      val_recv_count.data(), _val_recv_disp.data(),
-      dolfinx::MPI::mpi_t<value_type>, _comm.comm(), &_request);
-  assert(status == MPI_SUCCESS);
-}
-//-----------------------------------------------------------------------------
-template <typename U, typename V, typename W, typename X>
-void MatrixCSR<U, V, W, X>::scatter_rev_end()
-{
-  int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
-  assert(status == MPI_SUCCESS);
-
-  _ghost_value_data.clear();
-  _ghost_value_data.shrink_to_fit();
-
-  // Add to local rows
-  const int bs2 = _bs[0] * _bs[1];
-  assert(_ghost_value_data_in.size() == _unpack_pos.size() * bs2);
-  for (std::size_t i = 0; i < _unpack_pos.size(); ++i)
-    for (int j = 0; j < bs2; ++j)
-      _data[_unpack_pos[i] * bs2 + j] += _ghost_value_data_in[i * bs2 + j];
-
-  _ghost_value_data_in.clear();
-  _ghost_value_data_in.shrink_to_fit();
-
-  // Set ghost row data to zero
-  const std::int32_t local_size0 = _index_maps[0]->size_local();
-  std::fill(std::next(_data.begin(), _row_ptr[local_size0] * bs2), _data.end(),
-            0);
-}
-//-----------------------------------------------------------------------------
-template <typename U, typename V, typename W, typename X>
-double MatrixCSR<U, V, W, X>::squared_norm() const
-{
-  const std::size_t num_owned_rows = _index_maps[0]->size_local();
-  const int bs2 = _bs[0] * _bs[1];
-  assert(num_owned_rows < _row_ptr.size());
-  double norm_sq_local = std::accumulate(
-      _data.cbegin(), std::next(_data.cbegin(), _row_ptr[num_owned_rows] * bs2),
-      double(0), [](auto norm, value_type y) { return norm + std::norm(y); });
-  double norm_sq;
-  MPI_Allreduce(&norm_sq_local, &norm_sq, 1, MPI_DOUBLE, MPI_SUM, _comm.comm());
-  return norm_sq;
-}
-//-----------------------------------------------------------------------------
 
 // The matrix A is distributed across P  processes by blocks of rows:
 //  A = |   A_0  |
@@ -766,7 +762,8 @@ double MatrixCSR<U, V, W, X>::squared_norm() const
 //  y[0] = |Ai[0] Ai[1]| |   x[0]  | = Ai[0] x[0] + Ai[1] x[1]
 //                       |   x[1]  |
 //
-/// Computes y += A*x for a parallel CSR matrix A and parallel dense vectors x,y
+/// Computes y += A*x for a parallel CSR matrix A and parallel dense vectors
+/// x,y
 template <typename Scalar, typename V, typename W, typename X>
 void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
                                       la::Vector<Scalar>& y)
