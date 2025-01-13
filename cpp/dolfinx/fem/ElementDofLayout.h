@@ -107,7 +107,7 @@ public:
 
   /// @brief Direct access to all entity dofs.
   ///
-  /// Storage is `dof=_entity_dofs[dim][entity][i]).
+  /// Storage is `dof=_entity_dofs[dim][entity][i])`.
   /// @return Entity dofs data structure.
   const std::vector<std::vector<std::vector<int>>>& entity_dofs_all() const;
 

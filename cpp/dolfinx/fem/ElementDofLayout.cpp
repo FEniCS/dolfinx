@@ -82,8 +82,7 @@ ElementDofLayout::entity_closure_dofs(int dim, int entity_index) const
   return _entity_closure_dofs.at(dim).at(entity_index);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::vector<std::vector<int>>>&
-ElementDofLayout::entity_dofs_all() const
+const std::vector<std::vector<std::vector<int>>>& ElementDofLayout::entity_dofs_all() const
 {
   return _entity_dofs;
 }
