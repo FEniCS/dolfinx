@@ -269,7 +269,8 @@ public:
                      const geometry_type*, const int*, const uint8_t*)>
   kernel(IntegralType type, int i, int kernel_idx) const
   {
-    const auto& integrals = _integrals[static_cast<std::size_t>(type)];
+    const std::vector<integral_data<scalar_type, geometry_type>>& integrals
+        = _integrals[static_cast<std::size_t>(type)];
 
     // Get the range of integrals with a given ID
     auto get_id = [](const auto& a) { return a.id; };
@@ -332,8 +333,7 @@ public:
   /// @param[in] i Index of the integral.
   std::vector<int> active_coeffs(IntegralType type, std::size_t i) const
   {
-    assert(i < _integrals[static_cast<std::size_t>(type)].size());
-    return _integrals[static_cast<std::size_t>(type)][i].coeffs;
+    return _integrals[static_cast<std::size_t>(type)].at(i).coeffs;
   }
 
   /// @brief Get the IDs for integrals (kernels) for given integral type.
@@ -346,7 +346,8 @@ public:
   std::vector<int> integral_ids(IntegralType type) const
   {
     std::vector<int> ids;
-    const auto& integrals = _integrals[static_cast<std::size_t>(type)];
+    const std::vector<integral_data<scalar_type, geometry_type>>& integrals
+        = _integrals[static_cast<std::size_t>(type)];
     std::ranges::transform(integrals, std::back_inserter(ids),
                            [](auto& integral) { return integral.id; });
 
@@ -377,7 +378,8 @@ public:
   std::span<const std::int32_t> domain(IntegralType type, int i) const
   {
     // FIXME This should call domain with kernel_idx=0
-    const auto& integrals = _integrals[static_cast<std::size_t>(type)];
+    const std::vector<integral_data<scalar_type, geometry_type>>& integrals
+        = _integrals[static_cast<std::size_t>(type)];
     auto it = std::ranges::lower_bound(integrals, i, std::less<>{},
                                        [](const auto& a) { return a.id; });
     if (it != integrals.end() and it->id == i)
@@ -396,7 +398,8 @@ public:
   std::vector<std::int32_t> domain(IntegralType type, int i,
                                    int kernel_idx) const
   {
-    const auto& integrals = _integrals[static_cast<std::size_t>(type)];
+    const std::vector<integral_data<scalar_type, geometry_type>>& integrals
+        = _integrals[static_cast<std::size_t>(type)];
     auto get_id = [](const auto& a) { return a.id; };
     auto start = std::ranges::lower_bound(integrals, i, std::less<>{}, get_id);
     auto end = std::ranges::upper_bound(integrals, i, std::less<>{}, get_id);

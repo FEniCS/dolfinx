@@ -68,11 +68,15 @@ public:
     std::vector<mesh::CellType> cell_types = mesh->topology()->cell_types();
     int num_cell_types = cell_types.size();
     if (elements.size() != num_cell_types)
+    {
       throw std::runtime_error(
           "Number of elements must match number of cell types");
+    }
     if (dofmaps.size() != num_cell_types)
+    {
       throw std::runtime_error(
           "Number of dofmaps must match number of cell types");
+    }
     for (std::size_t i = 0; i < num_cell_types; ++i)
     {
       if (elements.at(i)->cell_type() != cell_types.at(i))
