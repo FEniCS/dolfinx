@@ -589,13 +589,34 @@ def create_form(
     for _, idomain in _subdomain_data.items():
         idomain.sort(key=lambda x: x[0])
 
-    # Extract name of ufl objects and map them to their corresponding C++ object
-    ufl_coefficients = ufl.algorithms.extract_coefficients(form.ufl_form)
-    coefficients = {
-        f"w{ufl_coefficients.index(u)}": uh._cpp_object for (u, uh) in coefficient_map.items()
-    }
-    ufl_constants = ufl.algorithms.analysis.extract_constants(form.ufl_form)
-    constants = {f"c{ufl_constants.index(u)}": uh._cpp_object for (u, uh) in constant_map.items()}
+    # Extract all coefficients of the compiled form in correct order
+    coefficients = {}
+    original_coefficients = ufl.algorithms.extract_coefficients(form.ufl_form)
+    num_coefficients = form.ufcx_form.num_coefficients
+    for c in range(num_coefficients):
+        original_index = form.ufcx_form.original_coefficient_positions[c]
+        original_coeff = original_coefficients[original_index]
+        try:
+            coefficients[f"w{c}"] = coefficient_map[original_coeff]._cpp_object
+        except KeyError:
+            raise RuntimeError(f"Missing coefficient {original_coeff}")
+
+    # Extract all constants of the compiled form in correct order
+    # NOTE: Constants are not eliminated
+    original_constants = ufl.algorithms.analysis.extract_constants(form.ufl_form)
+    num_constants = form.ufcx_form.num_constants
+    if num_constants != len(original_constants):
+        raise RuntimeError(
+            f"Number of constants in compiled form ({num_constants})",
+            f"does not match the original form {len(original_constants)}",
+        )
+    constants = {}
+    for counter, constant in enumerate(original_constants):
+        try:
+            mapped_constant = constant_map[constant]
+            constants[f"c{counter}"] = mapped_constant._cpp_object
+        except KeyError:
+            raise RuntimeError(f"Missing constant {constant}")
 
     ftype = form_cpp_creator(form.dtype)
     f = ftype(
