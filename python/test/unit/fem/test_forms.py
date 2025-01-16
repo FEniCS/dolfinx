@@ -89,7 +89,7 @@ def test_incorrect_element():
     )
 
     f = ftype(
-        module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)),
+        [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form))],
         [space._cpp_object, space._cpp_object],
         [],
         [],
@@ -101,7 +101,7 @@ def test_incorrect_element():
 
     with pytest.raises(RuntimeError):
         f = ftype(
-            module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)),
+            [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form))],
             [incorrect_space._cpp_object, incorrect_space._cpp_object],
             [],
             [],

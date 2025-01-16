@@ -269,7 +269,7 @@ create_geometry(
 
   //  Build 'geometry' dofmap on the topology
   auto [_dof_index_map, bs, dofmaps]
-      = fem::build_dofmap_data(topology.index_map(topology.dim())->comm(),
+      = fem::build_dofmap_data(topology.index_maps(topology.dim())[0]->comm(),
                                topology, dof_layouts, reorder_fn);
   auto dof_index_map
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
