@@ -768,7 +768,17 @@ const std::vector<CellType>& Topology::entity_types(int dim) const
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const
 {
-  return _entity_types.back().at(0);
+  std::vector<CellType> cell_types = entity_types(dim());
+  if (cell_types.size() > 1)
+    throw std::runtime_error(
+        "Multiple cell types of this dimension. Call cell_types "
+        "instead.");
+  return cell_types.front();
+}
+//-----------------------------------------------------------------------------
+std::vector<mesh::CellType> Topology::cell_types() const
+{
+  return entity_types(dim());
 }
 //-----------------------------------------------------------------------------
 std::vector<std::shared_ptr<const common::IndexMap>>
@@ -786,6 +796,9 @@ Topology::index_maps(int dim) const
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
+  if (_entity_types[dim].size() > 1)
+    throw std::runtime_error(
+        "Multiple index maps of this dimension. Call index_maps instead.");
   return this->index_maps(dim).at(0);
 }
 //-----------------------------------------------------------------------------

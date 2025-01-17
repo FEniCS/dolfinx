@@ -164,6 +164,10 @@ public:
   /// computed
   const std::vector<std::uint8_t>& get_facet_permutations() const;
 
+  /// @brief Get the types of cells in the topology
+  /// @return The cell types
+  std::vector<CellType> cell_types() const;
+
   /// @brief List of inter-process facets of a given type.
   ///
   /// "Inter-process" facets are facets that are connected (1) to a cell
@@ -194,7 +198,7 @@ public:
   /// existed.
   bool create_entities(int dim);
 
-  /// @brief Create connectivity between given pair of dimensions, `d0
+    /// @brief Create connectivity between given pair of dimensions, `d0
   /// -> d1`.
   /// @param[in] d0 Topological dimension.
   /// @param[in] d1 Topological dimension.
