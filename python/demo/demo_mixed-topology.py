@@ -103,7 +103,7 @@ elements = [
 ]
 elements_cpp = [_cpp.fem.FiniteElement_float64(e._e, None, True) for e in elements]
 # NOTE: Both dofmaps have the same IndexMap, but different cell_dofs
-dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, elements_cpp)
+dofmaps = _cpp.fem.create_dofmaps(mesh.topology, elements_cpp)
 
 # Create C++ function space
 V_cpp = _cpp.fem.FunctionSpace_float64(mesh, elements_cpp, dofmaps)

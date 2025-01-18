@@ -292,10 +292,10 @@ ElementDofLayout create_element_dof_layout(const fem::FiniteElement<T>& element,
     std::shared_ptr<const fem::FiniteElement<T>> sub_e
         = element.sub_elements()[bs > 1 ? 0 : i];
 
-    // In a mixed element DOFs are ordered element by element, so the
+    // In a mixed element DOFs are ordered element-by-element, so the
     // offset to the next sub-element is sub_e->space_dimension().
     // Blocked elements use xxyyzz ordering, so the offset to the next
-    // sub-element is 1
+    // sub-element is 1.
 
     std::vector<int> parent_map_sub(sub_e->space_dimension(), offset);
     // std::vector<int> parent_map_sub(sub_e->space_dimension(),
