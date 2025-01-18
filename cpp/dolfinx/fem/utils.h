@@ -271,17 +271,19 @@ ElementDofLayout create_element_dof_layout(const fem::FiniteElement<T>& element,
                                            = {})
 {
   // Create sub-dofmaps and compute offset
-  std::vector<int> offsets(1, 0);
+  // std::vector<int> offsets(1, 0);
   std::vector<dolfinx::fem::ElementDofLayout> sub_doflayout;
   int bs = element.block_size();
-  if (bs > 1 and element.num_sub_elements() != bs)
-  {
-    throw std::runtime_error("For blocked elements, the number of sub-elements "
-                             "must be equal to the block size, "
-                             + std::to_string(bs) + ", "
-                             + std::to_string(element.num_sub_elements()));
-  }
+  // if (bs > 1 and element.num_sub_elements() != bs)
+  // {
+  //   throw std::runtime_error("For blocked elements, the number of
+  //   sub-elements "
+  //                            "must be equal to the block size, "
+  //                            + std::to_string(bs) + ", "
+  //                            + std::to_string(element.num_sub_elements()));
+  // }
 
+  std::size_t offset = 0;
   for (int i = 0; i < element.num_sub_elements(); ++i)
   {
     // The ith sub-element. For mixed elements this is subelements()[i].
@@ -295,12 +297,16 @@ ElementDofLayout create_element_dof_layout(const fem::FiniteElement<T>& element,
     // Blocked elements use xxyyzz ordering, so the offset to the next
     // sub-element is 1
 
-    std::vector<int> parent_map_sub(sub_e->space_dimension(), offsets.back());
+    std::vector<int> parent_map_sub(sub_e->space_dimension(), offset);
+    // std::vector<int> parent_map_sub(sub_e->space_dimension(),
+    // offsets.back());
     for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
       parent_map_sub[j] += bs * j;
-    offsets.push_back(offsets.back() + (bs > 1 ? 1 : sub_e->space_dimension()));
+    // offsets.push_back(offsets.back() + (bs > 1 ? 1 :
+    // sub_e->space_dimension()));
+    offset += (bs > 1 ? 1 : sub_e->space_dimension());
     sub_doflayout.push_back(
-        dolfinx::fem::create_element_dof_layout(*sub_e, parent_map_sub));
+        fem::create_element_dof_layout(*sub_e, parent_map_sub));
   }
 
   return ElementDofLayout(bs, element.entity_dofs(),
