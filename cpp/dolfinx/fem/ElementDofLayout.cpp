@@ -125,9 +125,7 @@ ElementDofLayout::sub_view(std::span<const int> component) const
       throw std::runtime_error("Invalid component.");
     element_dofmap_current = &_sub_dofmaps.at(i);
 
-    std::vector<int> dof_list_new(element_dofmap_current->_num_dofs
-                                  * element_dofmap_current->_block_size);
-    assert(element_dofmap_current->_parent_map.size() == dof_list_new.size());
+    std::vector<int> dof_list_new(element_dofmap_current->_parent_map.size());
     for (std::size_t j = 0; j < dof_list_new.size(); ++j)
       dof_list_new[j] = dof_list[element_dofmap_current->_parent_map[j]];
     dof_list = dof_list_new;
