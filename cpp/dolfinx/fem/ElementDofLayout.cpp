@@ -82,7 +82,8 @@ ElementDofLayout::entity_closure_dofs(int dim, int entity_index) const
   return _entity_closure_dofs.at(dim).at(entity_index);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::vector<std::vector<int>>>& ElementDofLayout::entity_dofs_all() const
+const std::vector<std::vector<std::vector<int>>>&
+ElementDofLayout::entity_dofs_all() const
 {
   return _entity_dofs;
 }
@@ -101,7 +102,7 @@ ElementDofLayout::sub_layout(std::span<const int> component) const
   if (component.empty())
     throw std::runtime_error("No sub dofmap specified");
   std::reference_wrapper<const ElementDofLayout> current
-      = _sub_dofmaps.at(component[0]);
+      = _sub_dofmaps.at(component.front());
   for (std::size_t i = 1; i < component.size(); ++i)
     current = _sub_dofmaps.at(component[i]);
 
@@ -111,7 +112,7 @@ ElementDofLayout::sub_layout(std::span<const int> component) const
 std::vector<int>
 ElementDofLayout::sub_view(std::span<const int> component) const
 {
-  // Fill up a list of parent dofs, from which subdofmap will select
+  // Fill up a list of parent dofs, from which sub-dofmap will select
   std::vector<int> dof_list(_num_dofs * _block_size);
   std::iota(dof_list.begin(), dof_list.end(), 0);
 
@@ -121,11 +122,12 @@ ElementDofLayout::sub_view(std::span<const int> component) const
     // Switch to sub-dofmap
     assert(element_dofmap_current);
     if (i >= (int)element_dofmap_current->_sub_dofmaps.size())
-      throw std::runtime_error("Invalid component");
+      throw std::runtime_error("Invalid component.");
     element_dofmap_current = &_sub_dofmaps.at(i);
 
     std::vector<int> dof_list_new(element_dofmap_current->_num_dofs
                                   * element_dofmap_current->_block_size);
+    assert(element_dofmap_current->_parent_map.size() == dof_list_new.size());
     for (std::size_t j = 0; j < dof_list_new.size(); ++j)
       dof_list_new[j] = dof_list[element_dofmap_current->_parent_map[j]];
     dof_list = dof_list_new;
