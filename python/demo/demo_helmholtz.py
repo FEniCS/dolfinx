@@ -51,7 +51,6 @@ from dolfinx.fem import (
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import create_unit_square
-from ufl import FacetNormal, dot, ds, dx, grad, inner
 
 # Wavenumber
 k0 = 4 * np.pi
@@ -79,14 +78,14 @@ u_exact = Function(V_exact)
 
 # Define variational problem:
 u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
+a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx - k0**2 * ufl.inner(u, v) * ufl.dx
 
 # solve for plane wave with mixed Dirichlet and Neumann BCs
 theta = np.pi / 4
 u_exact.interpolate(lambda x: A * np.exp(1j * k0 * (np.cos(theta) * x[0] + np.sin(theta) * x[1])))
-n = FacetNormal(msh)
-g = -dot(n, grad(u_exact))
-L = -inner(g, v) * ds
+n = ufl.FacetNormal(msh)
+g = -ufl.dot(n, ufl.grad(u_exact))
+L = -ufl.inner(g, v) * ufl.ds
 
 
 dofs_D = locate_dofs_geometrical(
@@ -122,13 +121,17 @@ with XDMFFile(
 
 # H1 errors
 diff = uh - u_exact
-H1_diff = msh.comm.allreduce(assemble_scalar(form(inner(grad(diff), grad(diff)) * dx)), op=MPI.SUM)
+H1_diff = msh.comm.allreduce(
+    assemble_scalar(form(ufl.inner(ufl.grad(diff), ufl.grad(diff)) * ufl.dx)), op=MPI.SUM
+)
 H1_exact = msh.comm.allreduce(
-    assemble_scalar(form(inner(grad(u_exact), grad(u_exact)) * dx)), op=MPI.SUM
+    assemble_scalar(form(ufl.inner(ufl.grad(u_exact), ufl.grad(u_exact)) * ufl.dx)), op=MPI.SUM
 )
 print("Relative H1 error of FEM solution:", abs(np.sqrt(H1_diff) / np.sqrt(H1_exact)))
 
 # L2 errors
-L2_diff = msh.comm.allreduce(assemble_scalar(form(inner(diff, diff) * dx)), op=MPI.SUM)
-L2_exact = msh.comm.allreduce(assemble_scalar(form(inner(u_exact, u_exact) * dx)), op=MPI.SUM)
+L2_diff = msh.comm.allreduce(assemble_scalar(form(ufl.inner(diff, diff) * ufl.dx)), op=MPI.SUM)
+L2_exact = msh.comm.allreduce(
+    assemble_scalar(form(ufl.inner(u_exact, u_exact) * ufl.dx)), op=MPI.SUM
+)
 print("Relative L2 error of FEM solution:", abs(np.sqrt(L2_diff) / np.sqrt(L2_exact)))

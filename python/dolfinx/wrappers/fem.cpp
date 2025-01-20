@@ -74,6 +74,10 @@ void declare_function_space(nb::module_& m, std::string type)
                       std::shared_ptr<const dolfinx::fem::FiniteElement<T>>,
                       std::shared_ptr<const dolfinx::fem::DofMap>>(),
              nb::arg("mesh"), nb::arg("element"), nb::arg("dofmap"))
+        .def(nb::init<std::shared_ptr<const dolfinx::mesh::Mesh<T>>,
+                      std::vector<std::shared_ptr<const dolfinx::fem::FiniteElement<T>>>,
+                      std::vector<std::shared_ptr<const dolfinx::fem::DofMap>>>(),
+             nb::arg("mesh"), nb::arg("elements"), nb::arg("dofmaps"))
         .def("collapse", &dolfinx::fem::FunctionSpace<T>::collapse)
         .def("component", &dolfinx::fem::FunctionSpace<T>::component)
         .def("contains", &dolfinx::fem::FunctionSpace<T>::contains,
@@ -688,7 +692,7 @@ void declare_form(nb::module_& m, std::string type)
           nb::arg("entity_maps"), nb::arg("mesh").none())
       .def(
           "__init__",
-          [](dolfinx::fem::Form<T, U>* fp, std::uintptr_t form,
+          [](dolfinx::fem::Form<T, U>* fp, std::vector<std::uintptr_t> forms,
              const std::vector<
                  std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>>& spaces,
              const std::vector<std::shared_ptr<
@@ -724,10 +728,12 @@ void declare_form(nb::module_& m, std::string type)
                 _entity_maps;
             for (auto& [msh, map] : entity_maps)
               _entity_maps.emplace(msh, std::span(map.data(), map.size()));
-            ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
+            std::vector<std::reference_wrapper<const ufcx_form>> ps;
+            for (auto form : forms)
+                ps.push_back(*(reinterpret_cast<ufcx_form*>(form)));
             new (fp)
                 dolfinx::fem::Form<T, U>(dolfinx::fem::create_form_factory<T>(
-                    *p, spaces, coefficients, constants, sd, _entity_maps,
+                    ps, spaces, coefficients, constants, sd, _entity_maps,
                     mesh));
           },
           nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
@@ -807,7 +813,7 @@ void declare_form(nb::module_& m, std::string type)
         }
 
         ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
-        return dolfinx::fem::create_form_factory<T>(*p, spaces, coefficients,
+        return dolfinx::fem::create_form_factory<T>({*p}, spaces, coefficients,
                                                     constants, sd, {}, mesh);
       },
       nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
@@ -858,9 +864,11 @@ void declare_form(nb::module_& m, std::string type)
       nb::arg("constants"), nb::arg("subdomains"), nb::arg("entity_maps"),
       nb::arg("mesh"), "Create Form from a pointer to ufcx_form.");
 
-  m.def("create_sparsity_pattern",
-        &dolfinx::fem ::create_sparsity_pattern<T, U>, nb::arg("a"),
-        "Create a sparsity pattern.");
+  m.def("create_sparsity_pattern", &dolfinx::fem::create_sparsity_pattern<T, U>,
+        nb::arg("a"), "Create a sparsity pattern.");
+
+  m.def("build_sparsity_pattern", &dolfinx::fem::build_sparsity_pattern<T, U>,
+        nb::arg("pattern"), nb::arg("a"), "Build a sparsity pattern.");
 }
 
 template <typename T>
