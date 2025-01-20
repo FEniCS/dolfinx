@@ -140,6 +140,20 @@ void declare_discrete_operators(nb::module_& m)
         });
 
   m.def(
+      "discrete_curl",
+      [](const dolfinx::fem::FunctionSpace<U>& V0,
+         const dolfinx::fem::FunctionSpace<U>& V1)
+      {
+        dolfinx::la::SparsityPattern sp = create_sparsity(V0, V1);
+
+        // Build operator
+        dolfinx::la::MatrixCSR<T> A(sp);
+        dolfinx::fem::discrete_curl<U, T>(V0, V1, A.mat_set_values());
+        return A;
+      },
+      nb::arg("V0"), nb::arg("V1"));
+
+  m.def(
       "discrete_gradient",
       [](const dolfinx::fem::FunctionSpace<U>& V0,
          const dolfinx::fem::FunctionSpace<U>& V1)
@@ -195,8 +209,7 @@ void declare_assembly_functions(nb::module_& m)
       nb::arg("form"), "Pack coefficients for a Form.");
   m.def(
       "pack_constants",
-      [](const dolfinx::fem::Form<T, U>& form)
-      {
+      [](const dolfinx::fem::Form<T, U>& form) {
         return dolfinx_wrappers::as_nbarray(dolfinx::fem::pack_constants(form));
       },
       nb::arg("form"), "Pack constants for a Form.");
@@ -258,9 +271,11 @@ void declare_assembly_functions(nb::module_& m)
           _bcs.push_back(*bc);
         }
 
+        // Get index map block size. Note that mixed-topology meshes
+        // will have multiple DOF maps, but the block sizes are the same.
         const std::array<int, 2> data_bs
-            = {a.function_spaces().at(0)->dofmap()->index_map_bs(),
-               a.function_spaces().at(1)->dofmap()->index_map_bs()};
+            = {a.function_spaces().at(0)->dofmaps(0)->index_map_bs(),
+               a.function_spaces().at(1)->dofmaps(0)->index_map_bs()};
 
         if (data_bs[0] != data_bs[1])
         {
