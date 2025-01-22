@@ -74,9 +74,11 @@ void declare_function_space(nb::module_& m, std::string type)
                       std::shared_ptr<const dolfinx::fem::FiniteElement<T>>,
                       std::shared_ptr<const dolfinx::fem::DofMap>>(),
              nb::arg("mesh"), nb::arg("element"), nb::arg("dofmap"))
-        .def(nb::init<std::shared_ptr<const dolfinx::mesh::Mesh<T>>,
-                      std::vector<std::shared_ptr<const dolfinx::fem::FiniteElement<T>>>,
-                      std::vector<std::shared_ptr<const dolfinx::fem::DofMap>>>(),
+        .def(nb::init<
+                 std::shared_ptr<const dolfinx::mesh::Mesh<T>>,
+                 std::vector<
+                     std::shared_ptr<const dolfinx::fem::FiniteElement<T>>>,
+                 std::vector<std::shared_ptr<const dolfinx::fem::DofMap>>>(),
              nb::arg("mesh"), nb::arg("elements"), nb::arg("dofmaps"))
         .def("collapse", &dolfinx::fem::FunctionSpace<T>::collapse)
         .def("component", &dolfinx::fem::FunctionSpace<T>::component)
@@ -85,6 +87,7 @@ void declare_function_space(nb::module_& m, std::string type)
         .def_prop_ro("element", &dolfinx::fem::FunctionSpace<T>::element)
         .def_prop_ro("mesh", &dolfinx::fem::FunctionSpace<T>::mesh)
         .def_prop_ro("dofmap", &dolfinx::fem::FunctionSpace<T>::dofmap)
+        .def("dofmaps", &dolfinx::fem::FunctionSpace<T>::dofmaps)
         .def("sub", &dolfinx::fem::FunctionSpace<T>::sub, nb::arg("component"))
         .def("tabulate_dof_coordinates",
              [](const dolfinx::fem::FunctionSpace<T>& self)

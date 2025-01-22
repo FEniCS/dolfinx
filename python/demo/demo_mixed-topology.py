@@ -17,9 +17,10 @@
 # supported in DOLFINx.
 
 from mpi4py import MPI
+from petsc4py import PETSc
 
+import h5py
 import numpy as np
-from scipy.sparse.linalg import spsolve
 
 import basix
 import dolfinx.cpp as _cpp
@@ -27,17 +28,13 @@ import ufl
 from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner, create_mesh
 from dolfinx.fem import (
     FunctionSpace,
-    assemble_matrix,
     coordinate_element,
     mixed_topology_form,
 )
-from dolfinx.io.utils import cell_perm_vtk
+from dolfinx.fem.petsc import assemble_matrix
+from dolfinx.io.vtkhdf import write_mesh
+from dolfinx.la import create_petsc_vector
 from dolfinx.mesh import CellType, Mesh
-
-if MPI.COMM_WORLD.size > 1:
-    print("Not yet running in parallel")
-    exit(0)
-
 
 # Create a mixed-topology mesh
 nx = 16
@@ -85,9 +82,11 @@ if MPI.COMM_WORLD.rank == 0:
         iy = p // (nx + 1)
         ix = p % (nx + 1)
         geom += [[ix / nx, iy / ny, iz / nz]]
+    geomx = np.array(geom, dtype=np.float64)
+else:
+    geomx = np.zeros((0, 3), dtype=np.float64)
 
 cells_np = [np.array(c) for c in cells]
-geomx = np.array(geom, dtype=np.float64)
 hexahedron = coordinate_element(CellType.hexahedron, 1)
 prism = coordinate_element(CellType.prism, 1)
 
@@ -112,6 +111,7 @@ V_cpp = _cpp.fem.FunctionSpace_float64(mesh, elements_cpp, dofmaps)
 # FIXME This hack is required at the moment because UFL does not yet know about
 # mixed topology meshes.
 a = []
+L = []
 for i, cell_name in enumerate(["hexahedron", "prism"]):
     print(f"Creating form for {cell_name}")
     element = basix.ufl.wrap_element(elements[i])
@@ -120,68 +120,35 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     k = 12.0
     a += [(ufl.inner(ufl.grad(u), ufl.grad(v)) - k**2 * u * v) * ufl.dx]
+    L += [v * ufl.dx]
 
 # Compile the form
 # FIXME: For the time being, since UFL doesn't understand mixed topology meshes,
 # we have to call mixed_topology_form instead of form.
 a_form = mixed_topology_form(a, dtype=np.float64)
+L_form = mixed_topology_form(L, dtype=np.float64)
 
 # Assemble the matrix
 A = assemble_matrix(a_form)
+# b = assemble_vector(L_form)
+A.assemble()
+im = V_cpp.dofmaps(0).index_map
+u = create_petsc_vector(im, 1)
+b = create_petsc_vector(im, 1)
 
-# Solve
-A_scipy = A.to_scipy()
-b_scipy = np.ones(A_scipy.shape[1])
+b.array[:] = 1.0
 
-x = spsolve(A_scipy, b_scipy)
-print(f"Solution vector norm {np.linalg.norm(x)}")
+ksp = PETSc.KSP().create(mesh.comm)
+ksp.setOperators(A)
+ksp.solve(b, u)
 
-# I/O
-# Save to XDMF
-xdmf = """<?xml version="1.0"?>
-<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
-<Xdmf Version="3.0" xmlns:xi="https://www.w3.org/2001/XInclude">
-  <Domain>
-    <Grid Name="mesh" GridType="Collection" CollectionType="spatial">
+print(u.norm())
 
-"""
-
-perm = [cell_perm_vtk(CellType.hexahedron, 8), cell_perm_vtk(CellType.prism, 6)]
-topologies = ["Hexahedron", "Wedge"]
-
-for j in range(2):
-    vtk_topology = []
-    geom_dm = mesh.geometry.dofmaps(j)
-    for c in geom_dm:
-        vtk_topology += list(c[perm[j]])
-    topology_type = topologies[j]
-
-    xdmf += f"""
-      <Grid Name="{topology_type}" GridType="Uniform">
-        <Topology TopologyType="{topology_type}">
-          <DataItem Dimensions="{geom_dm.shape[0]} {geom_dm.shape[1]}"
-           Precision="4" NumberType="Int" Format="XML">
-          {" ".join(str(val) for val in vtk_topology)}
-          </DataItem>
-        </Topology>
-        <Geometry GeometryType="XYZ" NumberType="float" Rank="2" Precision="8">
-          <DataItem Dimensions="{mesh.geometry.x.shape[0]} 3" Format="XML">
-            {" ".join(str(val) for val in mesh.geometry.x.flatten())}
-          </DataItem>
-        </Geometry>
-        <Attribute Name="u" Center="Node" NumberType="float" Precision="8">
-          <DataItem Dimensions="{len(x)}" Format="XML">
-            {" ".join(str(val) for val in x)}
-          </DataItem>
-       </Attribute>
-      </Grid>"""
-
-xdmf += """
-    </Grid>
-  </Domain>
-</Xdmf>
-"""
-
-fd = open("mixed-mesh.xdmf", "w")
-fd.write(xdmf)
-fd.close()
+write_mesh("aa.vtkhdf", Mesh(mesh, None))
+b = h5py.File("aa.vtkhdf", "a", driver="mpio", comm=mesh.comm)
+vtkhdf = b["VTKHDF"]
+pd = vtkhdf.create_group("PointData")
+uvtk = pd.create_dataset("u", (im.size_global,))
+r = im.local_range
+uvtk[r[0] : r[1]] = u.array[: im.size_local]
+b.close()
