@@ -1300,8 +1300,6 @@ void assemble_vector(
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
-  std::cout << "IN ASSEMBLE VEC\n";
-
   std::shared_ptr<const mesh::Mesh<U>> mesh = L.mesh();
   assert(mesh);
   if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
