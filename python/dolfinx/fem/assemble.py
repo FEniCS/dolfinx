@@ -89,7 +89,7 @@ def pack_coefficients(form: typing.Union[Form, typing.Sequence[Form]]):
 
 def create_vector(L: Form) -> la.Vector:
     """Create a Vector that is compatible with a given linear form"""
-    dofmap = L.function_spaces[0].dofmap
+    dofmap = L.function_spaces[0].dofmaps(0)
     return la.vector(dofmap.index_map, dofmap.index_map_bs, dtype=L.dtype)
 
 
