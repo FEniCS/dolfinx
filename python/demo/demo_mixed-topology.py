@@ -31,7 +31,6 @@ from dolfinx.fem import (
     assemble_vector,
     coordinate_element,
     mixed_topology_form,
-    Constant,
 )
 from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.mesh import CellType, Mesh
