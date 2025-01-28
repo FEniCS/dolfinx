@@ -28,8 +28,10 @@ from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner, create_mesh
 from dolfinx.fem import (
     FunctionSpace,
     assemble_matrix,
+    assemble_vector,
     coordinate_element,
     mixed_topology_form,
+    Constant,
 )
 from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.mesh import CellType, Mesh
@@ -93,7 +95,8 @@ prism = coordinate_element(CellType.prism, 1)
 
 part = create_cell_partitioner(GhostMode.none)
 mesh = create_mesh(
-    MPI.COMM_WORLD, cells_np, [hexahedron._cpp_object, prism._cpp_object], geomx, part
+    MPI.COMM_WORLD, cells_np, [
+        hexahedron._cpp_object, prism._cpp_object], geomx, part
 )
 
 # Create elements and dofmaps for each cell type
@@ -101,7 +104,8 @@ elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.hexahedron, 1),
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
-elements_cpp = [_cpp.fem.FiniteElement_float64(e._e, None, True) for e in elements]
+elements_cpp = [_cpp.fem.FiniteElement_float64(
+    e._e, None, True) for e in elements]
 # NOTE: Both dofmaps have the same IndexMap, but different cell_dofs
 dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, elements_cpp)
 
@@ -112,6 +116,7 @@ V_cpp = _cpp.fem.FunctionSpace_float64(mesh, elements_cpp, dofmaps)
 # FIXME This hack is required at the moment because UFL does not yet know about
 # mixed topology meshes.
 a = []
+L = []
 for i, cell_name in enumerate(["hexahedron", "prism"]):
     print(f"Creating form for {cell_name}")
     element = basix.ufl.wrap_element(elements[i])
@@ -120,14 +125,17 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     k = 12.0
     a += [(ufl.inner(ufl.grad(u), ufl.grad(v)) - k**2 * u * v) * ufl.dx]
+    L += [ufl.inner(1.0, v) * ufl.dx]
 
 # Compile the form
 # FIXME: For the time being, since UFL doesn't understand mixed topology meshes,
 # we have to call mixed_topology_form instead of form.
 a_form = mixed_topology_form(a, dtype=np.float64)
+L_form = mixed_topology_form(L, dtype=np.float64)
 
 # Assemble the matrix
 A = assemble_matrix(a_form)
+b = assemble_vector(L_form)
 
 # Solve
 A_scipy = A.to_scipy()
@@ -146,7 +154,8 @@ xdmf = """<?xml version="1.0"?>
 
 """
 
-perm = [cell_perm_vtk(CellType.hexahedron, 8), cell_perm_vtk(CellType.prism, 6)]
+perm = [cell_perm_vtk(CellType.hexahedron, 8),
+        cell_perm_vtk(CellType.prism, 6)]
 topologies = ["Hexahedron", "Wedge"]
 
 for j in range(2):
