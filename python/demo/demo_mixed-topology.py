@@ -94,8 +94,7 @@ prism = coordinate_element(CellType.prism, 1)
 
 part = create_cell_partitioner(GhostMode.none)
 mesh = create_mesh(
-    MPI.COMM_WORLD, cells_np, [
-        hexahedron._cpp_object, prism._cpp_object], geomx, part
+    MPI.COMM_WORLD, cells_np, [hexahedron._cpp_object, prism._cpp_object], geomx, part
 )
 
 # Create elements and dofmaps for each cell type
@@ -103,8 +102,7 @@ elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.hexahedron, 1),
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
-elements_cpp = [_cpp.fem.FiniteElement_float64(
-    e._e, None, True) for e in elements]
+elements_cpp = [_cpp.fem.FiniteElement_float64(e._e, None, True) for e in elements]
 # NOTE: Both dofmaps have the same IndexMap, but different cell_dofs
 dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, elements_cpp)
 
@@ -156,8 +154,7 @@ xdmf = """<?xml version="1.0"?>
 
 """
 
-perm = [cell_perm_vtk(CellType.hexahedron, 8),
-        cell_perm_vtk(CellType.prism, 6)]
+perm = [cell_perm_vtk(CellType.hexahedron, 8), cell_perm_vtk(CellType.prism, 6)]
 topologies = ["Hexahedron", "Wedge"]
 
 for j in range(2):
