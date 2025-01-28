@@ -143,11 +143,8 @@ b = assemble_vector(L_form)
 A_scipy = A.to_scipy()
 b_scipy = b.array
 
-print(b_scipy)
-
 x = spsolve(A_scipy, b_scipy)
 
-print(np.min(x), np.max(x))
 print(f"Solution vector norm {np.linalg.norm(x)}")
 
 # I/O
