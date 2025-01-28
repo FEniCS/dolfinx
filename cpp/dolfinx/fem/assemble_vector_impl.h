@@ -1190,7 +1190,7 @@ void assemble_vector(
       auto fn = L.kernel(IntegralType::cell, i, cell_type_idx);
       assert(fn);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-      std::span<const std::int32_t> cells = L.domain(IntegralType::cell, i);
+      std::vector<std::int32_t> cells = L.domain(IntegralType::cell, i, cell_type_idx);
       if (bs == 1)
       {
         impl::assemble_cells<T, 1>(
