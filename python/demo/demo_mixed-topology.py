@@ -124,8 +124,10 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
     V = FunctionSpace(Mesh(mesh, domain), element, V_cpp)
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     k = 12.0
+    x = ufl.SpatialCoordinate(domain)
     a += [(ufl.inner(ufl.grad(u), ufl.grad(v)) - k**2 * u * v) * ufl.dx]
-    L += [ufl.inner(1.0, v) * ufl.dx]
+    f = ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])
+    L += [f * v * ufl.dx]
 
 # Compile the form
 # FIXME: For the time being, since UFL doesn't understand mixed topology meshes,
@@ -139,9 +141,13 @@ b = assemble_vector(L_form)
 
 # Solve
 A_scipy = A.to_scipy()
-b_scipy = np.ones(A_scipy.shape[1])
+b_scipy = b.array
+
+print(b_scipy)
 
 x = spsolve(A_scipy, b_scipy)
+
+print(np.min(x), np.max(x))
 print(f"Solution vector norm {np.linalg.norm(x)}")
 
 # I/O
