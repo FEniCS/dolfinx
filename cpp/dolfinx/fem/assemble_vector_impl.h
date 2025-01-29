@@ -1140,7 +1140,6 @@ void apply_lifting(
 /// @param[in,out] b The vector to be assembled. It will not be zeroed
 /// before assembly.
 /// @param[in] L Linear forms to assemble into b.
-/// @param[in] x_dofmap Mesh geometry dofmap.
 /// @param[in] x Mesh coordinates.
 /// @param[in] constants Packed constants that appear in `L`.
 /// @param[in] coefficients Packed coefficients that appear in `L`.
