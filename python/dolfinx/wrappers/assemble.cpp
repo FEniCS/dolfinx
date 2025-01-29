@@ -4,8 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "array.h"
-#include "pycoeff.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/pycoeff.h"
 #include <array>
 #include <complex>
 #include <cstdint>

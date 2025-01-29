@@ -6,10 +6,10 @@
 
 #if defined(HAS_PETSC) && defined(HAS_PETSC4PY)
 
-#include "array.h"
-#include "caster_mpi.h"
-#include "caster_petsc.h"
-#include "pycoeff.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/caster_mpi.h"
+#include "dolfinx_wrappers/caster_petsc.h"
+#include "dolfinx_wrappers/pycoeff.h"
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DirichletBC.h>
