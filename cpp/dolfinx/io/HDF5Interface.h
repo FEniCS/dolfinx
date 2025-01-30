@@ -92,6 +92,12 @@ hid_t open_dataset(hid_t handle, const std::string& path);
 std::vector<std::int64_t> get_dataset_shape(hid_t handle,
                                             const std::string& dataset_path);
 
+/// Get dataset datatype
+/// @param[in] handle HDF5 file handle
+/// @param[in] dataset_path Dataset path
+/// @return The datatype of the Dataset
+hid_t get_dataset_datatype(hid_t handle, const std::string& dataset_path);
+
 /// Set MPI atomicity. See
 /// https://support.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-SetMpiAtomicity
 /// and

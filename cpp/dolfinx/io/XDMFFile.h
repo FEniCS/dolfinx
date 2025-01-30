@@ -158,8 +158,8 @@ public:
   /// @param[in] geometry_xpath XPath where Geometry is already stored
   /// in file
   /// @param[in] xpath XPath where MeshTags Grid will be inserted
-  template <std::floating_point T>
-  void write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
+  template <typename U, std::floating_point T>
+  void write_meshtags(const mesh::MeshTags<U>& meshtags,
                       const mesh::Geometry<T>& x, std::string geometry_xpath,
                       std::string xpath = "/Xdmf/Domain");
 

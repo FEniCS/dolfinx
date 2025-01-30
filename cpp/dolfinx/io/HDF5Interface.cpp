@@ -231,6 +231,24 @@ io::hdf5::get_dataset_shape(hid_t handle, const std::string& dataset_path)
   return std::vector<std::int64_t>(size.begin(), size.end());
 }
 //-----------------------------------------------------------------------------
+hid_t io::hdf5::get_dataset_datatype(hid_t handle,
+                                     const std::string& dataset_path)
+{
+  // Open named dataset
+  const hid_t dset_id = H5Dopen2(handle, dataset_path.c_str(), H5P_DEFAULT);
+  if (dset_id < 0)
+    throw std::runtime_error("Failed to open HDF5 dataset by name");
+
+  // Get datatype
+  const auto datatype = H5Dget_type(dset_id);
+
+  // Close dataspace and dataset
+  if (H5Dclose(dset_id) < 0)
+    throw std::runtime_error("Call to H5Dclose unsuccessful");
+
+  return datatype;
+}
+//-----------------------------------------------------------------------------
 void io::hdf5::set_mpi_atomicity(hid_t handle, bool atomic)
 {
   if (H5Fset_mpi_atomicity(handle, atomic) < 0)

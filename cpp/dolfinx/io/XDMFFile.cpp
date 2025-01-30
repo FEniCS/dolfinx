@@ -297,8 +297,8 @@ XDMFFile::write_function(const fem::Function<std::complex<double>, double>&,
                          double, std::string);
 /// @endcond
 //-----------------------------------------------------------------------------
-template <std::floating_point T>
-void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
+template <typename U, std::floating_point T>
+void XDMFFile::write_meshtags(const mesh::MeshTags<U>& meshtags,
                               const mesh::Geometry<T>& x,
                               std::string geometry_xpath, std::string xpath)
 {
@@ -331,6 +331,24 @@ template void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>&,
 template void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>&,
                                        const mesh::Geometry<double>& x,
                                        std::string, std::string);
+template void XDMFFile::write_meshtags(const mesh::MeshTags<std::int64_t>&,
+                                       const mesh::Geometry<float>& x,
+                                       std::string, std::string);
+template void XDMFFile::write_meshtags(const mesh::MeshTags<std::int64_t>&,
+                                       const mesh::Geometry<double>& x,
+                                       std::string, std::string);
+template void XDMFFile::write_meshtags(const mesh::MeshTags<float>&,
+                                       const mesh::Geometry<float>& x,
+                                       std::string, std::string);
+template void XDMFFile::write_meshtags(const mesh::MeshTags<float>&,
+                                       const mesh::Geometry<double>& x,
+                                       std::string, std::string);
+template void XDMFFile::write_meshtags(const mesh::MeshTags<double>&,
+                                       const mesh::Geometry<float>& x,
+                                       std::string, std::string);
+template void XDMFFile::write_meshtags(const mesh::MeshTags<double>&,
+                                       const mesh::Geometry<double>& x,
+                                       std::string, std::string);
 /// @endcond
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -342,7 +360,7 @@ template <>
 struct xdmf_data<std::int32_t>
 {
   static const std::string data_type;
-  static const std::size_t precision = 4;
+  static constexpr std::size_t precision = 4;
 };
 const std::string xdmf_data<std::int32_t>::data_type = "Int";
 
@@ -350,7 +368,7 @@ template <>
 struct xdmf_data<std::int64_t>
 {
   static const std::string data_type;
-  static const std::size_t precision = 8;
+  static constexpr std::size_t precision = 8;
 };
 const std::string xdmf_data<std::int64_t>::data_type = "Int";
 
@@ -358,7 +376,7 @@ template <>
 struct xdmf_data<float>
 {
   static const std::string data_type;
-  static const std::size_t precision = 4;
+  static constexpr std::size_t precision = 4;
 };
 const std::string xdmf_data<float>::data_type = "Float";
 
@@ -366,7 +384,7 @@ template <>
 struct xdmf_data<double>
 {
   static const std::string data_type;
-  static const std::size_t precision = 8;
+  static constexpr std::size_t precision = 8;
 };
 const std::string xdmf_data<double>::data_type = "Float";
 //-----------------------------------------------------------------------------
@@ -401,17 +419,77 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
                                + "' not found.");
     }
     else
+    {
       values_data_node = attribute_node.child("DataItem");
+    }
   }
-  const std::string data_type = values_data_node.attribute("DataType").value();
-  const auto precision
-      = std::stol(values_data_node.attribute("Precision").value());
 
-  if (xdmf_data<T>::data_type != data_type
-      || xdmf_data<T>::precision != precision)
+  // Now we need to figure out what type of data the file contains and check
+  // that it is compatible with what we are reading.
+
+  // If the data is stored in HDF format
+  if (const auto& format_attribute = values_data_node.attribute("Format");
+      format_attribute && std::string(format_attribute.value()) == "HDF")
   {
-    throw std::runtime_error(
-        "The data in the XDMF file does not match the required data type.");
+    const auto& [file_name, node_path]
+        = xdmf_utils::get_hdf5_paths(values_data_node);
+
+    // Then we need to read the data type from the .h5 file
+    const auto datatype_id
+        = io::hdf5::get_dataset_datatype(_h5_id, node_path.c_str());
+
+    if (!H5Tequal(datatype_id, io::hdf5::hdf5_type<T>()))
+    {
+      throw std::runtime_error("The data in the XDMF file does not match the required data type.");
+    }
+  }
+  else
+  {
+    // Otherwise, this information should be stored in node attributes in the
+    // XML file
+    std::string data_type;
+
+    // "DataType" is the attribute used in the current version of the
+    // standard...
+    if (const auto& data_type_attribute
+        = values_data_node.attribute("DataType");
+        data_type_attribute)
+    {
+      data_type = data_type_attribute.value();
+    }
+    // ... But "NumberType" is supported too and widely used in its place
+    else if (const auto& data_type_attribute
+             = values_data_node.attribute("NumberType");
+             data_type_attribute)
+    {
+      data_type = data_type_attribute.value();
+    }
+    // If unspecified, use the standard's implicit default
+    else
+    {
+      data_type = "Float";
+    }
+
+    int precision;
+
+    // If there is an attribute that specifies the precision, read it from there
+    if (const auto& precision_attribute
+        = values_data_node.attribute("Precision");
+        precision_attribute)
+    {
+      precision = std::stol(values_data_node.attribute("Precision").value());
+    }
+    // otherwhise use the standard's default
+    else
+    {
+      precision = 4;
+    }
+
+    if (data_type != xdmf_data<T>::data_type
+        || precision != xdmf_data<T>::precision)
+    {
+      throw std::runtime_error("The data in the XDMF file does not match the required data type.");
+    }
   }
 
   const std::vector values
@@ -455,6 +533,14 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
 // Instantiation for different types
 /// @cond
 template mesh::MeshTags<std::int32_t>
+XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
+                        std::optional<std::string> attribute_name,
+                        std::string xpath);
+template mesh::MeshTags<std::int64_t>
+XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
+                        std::optional<std::string> attribute_name,
+                        std::string xpath);
+template mesh::MeshTags<float>
 XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
                         std::optional<std::string> attribute_name,
                         std::string xpath);
