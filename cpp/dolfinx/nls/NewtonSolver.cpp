@@ -169,7 +169,10 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
   // Check convergence
   bool newton_converged = false;
   if (convergence_criterion == "residual")
+  {
     std::tie(_residual, newton_converged) = this->_converged(*this, _b);
+    _residual0 = _residual;
+  }
   else if (convergence_criterion == "incremental")
   {
     // We need to do at least one Newton step with the ||dx||-stopping
@@ -215,13 +218,6 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
     if (_system)
       _system(x);
     _fnF(x, _b);
-    // Initialize _residual0
-    if (_iteration == 1)
-    {
-      PetscReal _r = 0.0;
-      VecNorm(_dx, NORM_2, &_r);
-      _residual0 = _r;
-    }
 
     // Test for convergence
     if (convergence_criterion == "residual")
@@ -232,6 +228,9 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
       // set.
       if (_iteration == 1)
       {
+         PetscReal _r = 0.0;
+         VecNorm(_dx, NORM_2, &_r);
+         _residual0 = _r;
         _residual = 1.0;
         newton_converged = false;
       }
