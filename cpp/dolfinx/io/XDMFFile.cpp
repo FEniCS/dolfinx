@@ -354,34 +354,34 @@ template void XDMFFile::write_meshtags(const mesh::MeshTags<double>&,
 // An auxiliary struct to compare C++ types and HDF5 types
 /// @cond
 template <typename T>
-struct xdmf_data
+struct xdmf_integral_float
 {
 };
 
 // Instantiation for different types
 template <>
-struct xdmf_data<std::int32_t>
+struct xdmf_integral_float<std::int32_t>
 {
   static constexpr std::string_view data_type = "Int";
   static constexpr std::size_t precision = 4;
 };
 
 template <>
-struct xdmf_data<std::int64_t>
+struct xdmf_integral_float<std::int64_t>
 {
   static constexpr std::string_view data_type = "Int";
   static constexpr std::size_t precision = 8;
 };
 
 template <>
-struct xdmf_data<float>
+struct xdmf_integral_float<float>
 {
   static constexpr std::string_view data_type = "Float";
   static constexpr std::size_t precision = 4;
 };
 
 template <>
-struct xdmf_data<double>
+struct xdmf_integral_float<double>
 {
   static constexpr std::string_view data_type = "Float";
   static constexpr std::size_t precision = 8;
@@ -485,8 +485,8 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
       precision = 4;
     }
 
-    if (data_type != xdmf_data<T>::data_type
-        || precision != xdmf_data<T>::precision)
+    if (data_type != xdmf_integral_float<T>::data_type
+        || precision != xdmf_integral_float<T>::precision)
     {
       throw std::runtime_error("The data in the XDMF file does not match the required data type.");
     }
