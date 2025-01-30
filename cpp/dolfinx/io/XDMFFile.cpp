@@ -362,34 +362,30 @@ struct xdmf_data
 template <>
 struct xdmf_data<std::int32_t>
 {
-  static const std::string data_type;
+  static constexpr std::string_view data_type = "Int";
   static constexpr std::size_t precision = 4;
 };
-const std::string xdmf_data<std::int32_t>::data_type = "Int";
 
 template <>
 struct xdmf_data<std::int64_t>
 {
-  static const std::string data_type;
+  static constexpr std::string_view data_type = "Int";
   static constexpr std::size_t precision = 8;
 };
-const std::string xdmf_data<std::int64_t>::data_type = "Int";
 
 template <>
 struct xdmf_data<float>
 {
-  static const std::string data_type;
+  static constexpr std::string_view data_type = "Float";
   static constexpr std::size_t precision = 4;
 };
-const std::string xdmf_data<float>::data_type = "Float";
 
 template <>
 struct xdmf_data<double>
 {
-  static const std::string data_type;
+  static constexpr std::string_view data_type = "Float";
   static constexpr std::size_t precision = 8;
 };
-const std::string xdmf_data<double>::data_type = "Float";
 /// @endcond
 //-----------------------------------------------------------------------------
 template <typename T>
