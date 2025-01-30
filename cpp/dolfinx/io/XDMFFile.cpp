@@ -351,11 +351,14 @@ template void XDMFFile::write_meshtags(const mesh::MeshTags<double>&,
                                        std::string, std::string);
 /// @endcond
 //-----------------------------------------------------------------------------
+// An auxiliary struct to compare C++ types and HDF5 types
+/// @cond
 template <typename T>
 struct xdmf_data
 {
 };
 
+// Instantiation for different types
 template <>
 struct xdmf_data<std::int32_t>
 {
@@ -387,6 +390,7 @@ struct xdmf_data<double>
   static constexpr std::size_t precision = 8;
 };
 const std::string xdmf_data<double>::data_type = "Float";
+/// @endcond
 //-----------------------------------------------------------------------------
 template <typename T>
 mesh::MeshTags<T>
