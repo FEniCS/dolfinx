@@ -1140,13 +1140,12 @@ void apply_lifting(
 /// @param[in,out] b The vector to be assembled. It will not be zeroed
 /// before assembly.
 /// @param[in] L Linear forms to assemble into b.
-/// @param[in] x_dofmap Mesh geometry dofmap.
 /// @param[in] x Mesh coordinates.
 /// @param[in] constants Packed constants that appear in `L`.
 /// @param[in] coefficients Packed coefficients that appear in `L`.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_vector(
-    std::span<T> b, const Form<T, U>& L, mdspan2_t x_dofmap,
+    std::span<T> b, const Form<T, U>& L,
     std::span<const scalar_value_type_t<T>> x, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
@@ -1159,123 +1158,131 @@ void assemble_vector(
   auto mesh0 = L.function_spaces().at(0)->mesh();
   assert(mesh0);
 
-  // Get dofmap data
-  assert(L.function_spaces().at(0));
-  auto element = L.function_spaces().at(0)->element();
-  assert(element);
-  std::shared_ptr<const fem::DofMap> dofmap
-      = L.function_spaces().at(0)->dofmap();
-  assert(dofmap);
-  auto dofs = dofmap->map();
-  const int bs = dofmap->bs();
-
-  fem::DofTransformKernel<T> auto P0
-      = element->template dof_transformation_fn<T>(doftransform::standard);
-
-  std::span<const std::uint32_t> cell_info0;
-  if (element->needs_dof_transformations() or L.needs_facet_permutations())
+  const int num_cell_types = mesh->topology()->cell_types().size();
+  for (int cell_type_idx = 0; cell_type_idx < num_cell_types; ++cell_type_idx)
   {
-    mesh0->topology_mutable()->create_entity_permutations();
-    cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
-  }
+    // Geometry dofmap and data
+    mdspan2_t x_dofmap = mesh->geometry().dofmap(cell_type_idx);
 
-  for (int i : L.integral_ids(IntegralType::cell))
-  {
-    auto fn = L.kernel(IntegralType::cell, i);
-    assert(fn);
-    auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    std::span<const std::int32_t> cells = L.domain(IntegralType::cell, i);
-    if (bs == 1)
-    {
-      impl::assemble_cells<T, 1>(
-          P0, b, x_dofmap, x, cells,
-          {dofs, bs, L.domain(IntegralType::cell, i, *mesh0)}, fn, constants,
-          coeffs, cstride, cell_info0);
-    }
-    else if (bs == 3)
-    {
-      impl::assemble_cells<T, 3>(
-          P0, b, x_dofmap, x, cells,
-          {dofs, bs, L.domain(IntegralType::cell, i, *mesh0)}, fn, constants,
-          coeffs, cstride, cell_info0);
-    }
-    else
-    {
-      impl::assemble_cells(P0, b, x_dofmap, x, cells,
-                           {dofs, bs, L.domain(IntegralType::cell, i, *mesh0)},
-                           fn, constants, coeffs, cstride, cell_info0);
-    }
-  }
+    // Get dofmap data
+    assert(L.function_spaces().at(0));
+    auto element = L.function_spaces().at(0)->elements(cell_type_idx);
+    assert(element);
+    std::shared_ptr<const fem::DofMap> dofmap
+        = L.function_spaces().at(0)->dofmaps(cell_type_idx);
+    assert(dofmap);
+    auto dofs = dofmap->map();
+    const int bs = dofmap->bs();
 
-  std::span<const std::uint8_t> perms;
-  if (L.needs_facet_permutations())
-  {
-    mesh->topology_mutable()->create_entity_permutations();
-    perms = std::span(mesh->topology()->get_facet_permutations());
-  }
+    fem::DofTransformKernel<T> auto P0
+        = element->template dof_transformation_fn<T>(doftransform::standard);
 
-  mesh::CellType cell_type = mesh->topology()->cell_type();
-  int num_facets_per_cell
-      = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
-  for (int i : L.integral_ids(IntegralType::exterior_facet))
-  {
-    auto fn = L.kernel(IntegralType::exterior_facet, i);
-    assert(fn);
-    auto& [coeffs, cstride]
-        = coefficients.at({IntegralType::exterior_facet, i});
-    std::span<const std::int32_t> facets
-        = L.domain(IntegralType::exterior_facet, i);
-    if (bs == 1)
+    std::span<const std::uint32_t> cell_info0;
+    if (element->needs_dof_transformations() or L.needs_facet_permutations())
     {
-      impl::assemble_exterior_facets<T, 1>(
-          P0, b, x_dofmap, x, num_facets_per_cell, facets,
-          {dofs, bs, L.domain(IntegralType::exterior_facet, i, *mesh0)}, fn,
-          constants, coeffs, cstride, cell_info0, perms);
+      mesh0->topology_mutable()->create_entity_permutations();
+      cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
     }
-    else if (bs == 3)
-    {
-      impl::assemble_exterior_facets<T, 3>(
-          P0, b, x_dofmap, x, num_facets_per_cell, facets,
-          {dofs, bs, L.domain(IntegralType::exterior_facet, i, *mesh0)}, fn,
-          constants, coeffs, cstride, cell_info0, perms);
-    }
-    else
-    {
-      impl::assemble_exterior_facets(
-          P0, b, x_dofmap, x, num_facets_per_cell, facets,
-          {dofs, bs, L.domain(IntegralType::exterior_facet, i, *mesh0)}, fn,
-          constants, coeffs, cstride, cell_info0, perms);
-    }
-  }
 
-  for (int i : L.integral_ids(IntegralType::interior_facet))
-  {
-    auto fn = L.kernel(IntegralType::interior_facet, i);
-    assert(fn);
-    auto& [coeffs, cstride]
-        = coefficients.at({IntegralType::interior_facet, i});
-    std::span<const std::int32_t> facets
-        = L.domain(IntegralType::interior_facet, i);
-    if (bs == 1)
+    for (int i : L.integral_ids(IntegralType::cell))
     {
-      impl::assemble_interior_facets<T, 1>(
-          P0, b, x_dofmap, x, num_facets_per_cell, facets,
-          {*dofmap, bs, L.domain(IntegralType::interior_facet, i, *mesh0)}, fn,
-          constants, coeffs, cstride, cell_info0, perms);
+      auto fn = L.kernel(IntegralType::cell, i, cell_type_idx);
+      assert(fn);
+      auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
+      std::vector<std::int32_t> cells = L.domain(IntegralType::cell, i, cell_type_idx);
+      if (bs == 1)
+      {
+        impl::assemble_cells<T, 1>(
+            P0, b, x_dofmap, x, cells,
+            {dofs, bs, L.domain(IntegralType::cell, i, cell_type_idx, *mesh0)}, fn, constants,
+            coeffs, cstride, cell_info0);
+      }
+      else if (bs == 3)
+      {
+        impl::assemble_cells<T, 3>(
+            P0, b, x_dofmap, x, cells,
+            {dofs, bs, L.domain(IntegralType::cell, i, cell_type_idx, *mesh0)}, fn, constants,
+            coeffs, cstride, cell_info0);
+      }
+      else
+      {
+        impl::assemble_cells(
+            P0, b, x_dofmap, x, cells,
+            {dofs, bs, L.domain(IntegralType::cell, i, cell_type_idx, *mesh0)}, fn, constants,
+            coeffs, cstride, cell_info0);
+      }
     }
-    else if (bs == 3)
+
+    std::span<const std::uint8_t> perms;
+    if (L.needs_facet_permutations())
     {
-      impl::assemble_interior_facets<T, 3>(
-          P0, b, x_dofmap, x, num_facets_per_cell, facets,
-          {*dofmap, bs, L.domain(IntegralType::interior_facet, i, *mesh0)}, fn,
-          constants, coeffs, cstride, cell_info0, perms);
+      mesh->topology_mutable()->create_entity_permutations();
+      perms = std::span(mesh->topology()->get_facet_permutations());
     }
-    else
+
+    mesh::CellType cell_type = mesh->topology()->cell_types()[cell_type_idx];
+    int num_facets_per_cell
+        = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
+    for (int i : L.integral_ids(IntegralType::exterior_facet))
     {
-      impl::assemble_interior_facets(
-          P0, b, x_dofmap, x, num_facets_per_cell, facets,
-          {*dofmap, bs, L.domain(IntegralType::interior_facet, i, *mesh0)}, fn,
-          constants, coeffs, cstride, cell_info0, perms);
+      auto fn = L.kernel(IntegralType::exterior_facet, i);
+      assert(fn);
+      auto& [coeffs, cstride]
+          = coefficients.at({IntegralType::exterior_facet, i});
+      std::span<const std::int32_t> facets
+          = L.domain(IntegralType::exterior_facet, i);
+      if (bs == 1)
+      {
+        impl::assemble_exterior_facets<T, 1>(
+            P0, b, x_dofmap, x, num_facets_per_cell, facets,
+            {dofs, bs, L.domain(IntegralType::exterior_facet, i, *mesh0)}, fn,
+            constants, coeffs, cstride, cell_info0, perms);
+      }
+      else if (bs == 3)
+      {
+        impl::assemble_exterior_facets<T, 3>(
+            P0, b, x_dofmap, x, num_facets_per_cell, facets,
+            {dofs, bs, L.domain(IntegralType::exterior_facet, i, *mesh0)}, fn,
+            constants, coeffs, cstride, cell_info0, perms);
+      }
+      else
+      {
+        impl::assemble_exterior_facets(
+            P0, b, x_dofmap, x, num_facets_per_cell, facets,
+            {dofs, bs, L.domain(IntegralType::exterior_facet, i, *mesh0)}, fn,
+            constants, coeffs, cstride, cell_info0, perms);
+      }
+    }
+
+    for (int i : L.integral_ids(IntegralType::interior_facet))
+    {
+      auto fn = L.kernel(IntegralType::interior_facet, i);
+      assert(fn);
+      auto& [coeffs, cstride]
+          = coefficients.at({IntegralType::interior_facet, i});
+      std::span<const std::int32_t> facets
+          = L.domain(IntegralType::interior_facet, i);
+      if (bs == 1)
+      {
+        impl::assemble_interior_facets<T, 1>(
+            P0, b, x_dofmap, x, num_facets_per_cell, facets,
+            {*dofmap, bs, L.domain(IntegralType::interior_facet, i, *mesh0)},
+            fn, constants, coeffs, cstride, cell_info0, perms);
+      }
+      else if (bs == 3)
+      {
+        impl::assemble_interior_facets<T, 3>(
+            P0, b, x_dofmap, x, num_facets_per_cell, facets,
+            {*dofmap, bs, L.domain(IntegralType::interior_facet, i, *mesh0)},
+            fn, constants, coeffs, cstride, cell_info0, perms);
+      }
+      else
+      {
+        impl::assemble_interior_facets(
+            P0, b, x_dofmap, x, num_facets_per_cell, facets,
+            {*dofmap, bs, L.domain(IntegralType::interior_facet, i, *mesh0)},
+            fn, constants, coeffs, cstride, cell_info0, perms);
+      }
     }
   }
 }
@@ -1296,15 +1303,13 @@ void assemble_vector(
   assert(mesh);
   if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
   {
-    assemble_vector(b, L, mesh->geometry().dofmap(), mesh->geometry().x(),
-                    constants, coefficients);
+    assemble_vector(b, L, mesh->geometry().x(), constants, coefficients);
   }
   else
   {
     auto x = mesh->geometry().x();
     std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
-    assemble_vector(b, L, mesh->geometry().dofmap(), _x, constants,
-                    coefficients);
+    assemble_vector(b, L, _x, constants, coefficients);
   }
 }
 } // namespace dolfinx::fem::impl
