@@ -297,6 +297,144 @@ XDMFFile::write_function(const fem::Function<std::complex<double>, double>&,
                          double, std::string);
 /// @endcond
 //-----------------------------------------------------------------------------
+void XDMFFile::read_function(const mesh::Mesh<double>& mesh, std::string name,
+                             fem::Function<double, double>& u,
+                             std::optional<std::string> function_name,
+                             std::string xpath)
+{
+  /*
+   *  This routine reads a function from file. The implementation closely
+   *  follows `XDMFFile::read_meshtags` below.
+   *
+   *  For reference, we are reading an xdmf file whose header is akin to
+   *
+   *  <Xdmf Version="3.0">
+   *    <Domain>
+   *        <Grid Name="Grid">
+   *            <Geometry GeometryType="XYZ">
+   *                <DataItem DataType="Float" Dimensions="23103 3" Format="HDF"
+   * Precision="4"> power.h5:/data0</DataItem>
+   *            </Geometry>
+   *            <Topology TopologyType="Hexahedron" NumberOfElements="15000"
+   * NodesPerElement="8"> <DataItem DataType="Int" Dimensions="15000 8"
+   * Format="HDF" Precision="8"> power.h5:/data1</DataItem>
+   *            </Topology>
+   *            <Attribute Name="wall power density" AttributeType="Scalar"
+   * Center="Node"> <DataItem DataType="Float" Dimensions="23103" Format="HDF"
+   * Precision="8"> power.h5:/data2</DataItem>
+   *            </Attribute>
+   *      </Grid>
+   *  </Domain>
+   *  </Xdmf>
+   *
+   *  and that was generated saving a vtu file from Paraview and converting it
+   *  to xdmf with meshio.
+   *
+   *  The goal for now is to read a P1 function, so the degrees of freedom are
+   *  the vertexes of the mesh.
+   */
+  spdlog::info("XDMF read function ({})", name);
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+  if (!node)
+    throw std::runtime_error("XML node '" + xpath + "' not found.");
+  pugi::xml_node grid_node
+      = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
+  if (!grid_node)
+    throw std::runtime_error("<Grid> with name '" + name + "' not found.");
+
+  pugi::xml_node values_data_node
+      = grid_node.child("Attribute").child("DataItem");
+  if (function_name)
+  {
+    // Search for a child that contains an attribute with the requested name
+    pugi::xml_node function_node = grid_node.find_child(
+        [fun_name = *function_name](auto n)
+        { return n.attribute("Name").value() == fun_name; });
+    if (!function_node)
+    {
+      throw std::runtime_error("Function with name '" + *function_name
+                               + "' not found.");
+    }
+    else
+      values_data_node = function_node.child("DataItem");
+  }
+  const std::vector values
+      = xdmf_utils::get_dataset<double>(_comm.comm(), values_data_node, _h5_id);
+
+  /*
+   * Reading the cell type would read "hexahedron", so we set this
+   * manually to "point" instead.
+   */
+  mesh::CellType cell_type = mesh::CellType::point;
+
+  /*
+   * The `entities1` vector contains the global indexes of the entities
+   * [aka points] that this process owns.
+   */
+  std::int64_t num_xnodes = mesh.geometry().index_map()->size_global();
+  auto range
+      = dolfinx::MPI::local_range(dolfinx::MPI::rank(mesh.comm()), num_xnodes,
+                                  dolfinx::MPI::size(mesh.comm()));
+  std::vector<std::int64_t> entities1(range[1] - range[0]);
+  std::iota(entities1.begin(), entities1.end(), range[0]);
+
+  std::array<std::size_t, 2> shape
+      = {static_cast<std::size_t>(range[1] - range[0]), 1};
+
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const std::int64_t,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+      entities_span(entities1.data(), shape);
+
+  std::pair<std::vector<std::int32_t>, std::vector<double>> entities_values
+      = xdmf_utils::distribute_entity_data<double>(
+          *mesh.topology(), mesh.geometry().input_global_indices(),
+          mesh.geometry().index_map()->size_global(),
+          mesh.geometry().cmap().create_dof_layout(), mesh.geometry().dofmap(),
+          mesh::cell_dim(cell_type), entities_span, values);
+
+  auto num_vertices_per_cell
+      = dolfinx::mesh::num_cell_vertices(mesh.topology()->cell_type());
+  std::vector<std::int32_t> local_vertex_map(num_vertices_per_cell);
+
+  for (int i = 0; i < num_vertices_per_cell; ++i)
+  {
+    const auto v_to_d
+        = u.function_space()->dofmap()->element_dof_layout().entity_dofs(0, i);
+    assert(v_to_d.size() == 1);
+    local_vertex_map[i] = v_to_d.front();
+  }
+
+  const auto tdim = mesh.topology()->dim();
+  const auto c_to_v = mesh.topology()->connectivity(tdim, 0);
+  std::vector<std::int32_t> vertex_to_dofmap(
+      mesh.topology()->index_map(0)->size_local()
+      + mesh.topology()->index_map(0)->num_ghosts());
+
+  for (int i = 0; i < mesh.topology()->index_map(tdim)->size_local(); ++i)
+  {
+    const auto local_vertices = c_to_v->links(i);
+    const auto local_dofs = u.function_space()->dofmap()->cell_dofs(i);
+    for (int j = 0; j < num_vertices_per_cell; ++j)
+    {
+      vertex_to_dofmap[local_vertices[j]] = local_dofs[local_vertex_map[j]];
+    }
+  }
+
+  /*
+   * After the data is read and distributed, we need to place the
+   * retrieved values in the correct position in the function's array,
+   * reading values and positions from `entities_values`.
+   */
+  for (size_t i = 0; i < entities_values.first.size(); ++i)
+  {
+    u.x()->mutable_array()[vertex_to_dofmap[entities_values.first[i]]]
+        = entities_values.second[i];
+  }
+
+  u.x()->scatter_fwd();
+}
+//-----------------------------------------------------------------------------
 template <typename U, std::floating_point T>
 void XDMFFile::write_meshtags(const mesh::MeshTags<U>& meshtags,
                               const mesh::Geometry<T>& x,

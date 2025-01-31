@@ -310,7 +310,7 @@ void assemble_matrix(
 /// @param[in] mat_add The function for adding values into the matrix
 /// @param[in] a The bilinear from to assemble
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
-///  dofs the row and column are zeroed. The diagonal  entry is not set.
+///  dofs the row and column are zeroed. The diagonal entry is not set.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     auto mat_add, const Form<T, U>& a,

@@ -190,6 +190,16 @@ public:
                       std::string mesh_xpath
                       = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
 
+  /// Read Function
+  /// @param[in] mesh The Mesh that the data is defined on
+  /// @param[in] name
+  /// @param[out] u The function into which to read data
+  /// @param[in] function_name The (optional) name of the function to read from file
+  /// @param[in] xpath XPath where MeshFunction Grid is stored in file
+  void read_function(const mesh::Mesh<double>& mesh, std::string name,
+                         fem::Function<double, double>& u, std::optional<std::string> function_name,
+                         std::string xpath = "/Xdmf/Domain");
+
   /// Write MeshTags
   /// @param[in] meshtags
   /// @param[in] x Mesh geometry
