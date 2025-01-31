@@ -44,6 +44,33 @@ template <typename T, std::size_t ndim>
 using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
     const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
 
+template <typename T, typename U>
+void xdmf_def_write_meshtags(auto&& m)
+{
+  m.def(
+      "write_meshtags",
+      [](dolfinx::io::XDMFFile& self,
+         const dolfinx::mesh::MeshTags<T>& meshtags,
+         const dolfinx::mesh::Geometry<U>& x, std::string geometry_xpath,
+         std::string xpath)
+      { self.write_meshtags(meshtags, x, geometry_xpath, xpath); },
+      nb::arg("meshtags"), nb::arg("x"), nb::arg("geometry_xpath"),
+      nb::arg("xpath") = "/Xdmf/Domain");
+}
+
+template <typename T>
+void xdmf_def_read_meshtags(auto&& m)
+{
+  m.def(
+      "read_meshtags",
+      [](dolfinx::io::XDMFFile& self, const dolfinx::mesh::Mesh<double>& mesh,
+         std::string name, std::optional<std::string> attribute_name,
+         std::string xpath)
+      { return self.read_meshtags<T>(mesh, name, attribute_name, xpath); },
+      nb::arg("mesh"), nb::arg("name"), nb::arg("attribute_name").none(),
+      nb::arg("xpath"));
+}
+
 template <typename T>
 void xdmf_real_fn(auto&& m)
 {
@@ -52,15 +79,10 @@ void xdmf_real_fn(auto&& m)
       [](dolfinx::io::XDMFFile& self, const dolfinx::mesh::Mesh<T>& mesh,
          std::string xpath) { self.write_mesh(mesh, xpath); },
       nb::arg("mesh"), nb::arg("xpath") = "/Xdmf/Domain");
-  m.def(
-      "write_meshtags",
-      [](dolfinx::io::XDMFFile& self,
-         const dolfinx::mesh::MeshTags<std::int32_t>& meshtags,
-         const dolfinx::mesh::Geometry<T>& x, std::string geometry_xpath,
-         std::string xpath)
-      { self.write_meshtags(meshtags, x, geometry_xpath, xpath); },
-      nb::arg("meshtags"), nb::arg("x"), nb::arg("geometry_xpath"),
-      nb::arg("xpath") = "/Xdmf/Domain");
+  xdmf_def_write_meshtags<std::int32_t, T>(m);
+  xdmf_def_write_meshtags<std::int64_t, T>(m);
+  xdmf_def_write_meshtags<float, T>(m);
+  xdmf_def_write_meshtags<double, T>(m);
 }
 
 template <typename T, typename U>
@@ -300,6 +322,10 @@ void io(nb::module_& m)
   xdmf_scalar_fn<double, double>(xdmf_file);
   xdmf_scalar_fn<std::complex<float>, float>(xdmf_file);
   xdmf_scalar_fn<std::complex<double>, double>(xdmf_file);
+  xdmf_def_read_meshtags<std::int32_t>(xdmf_file);
+  xdmf_def_read_meshtags<std::int64_t>(xdmf_file);
+  xdmf_def_read_meshtags<float>(xdmf_file);
+  xdmf_def_read_meshtags<double>(xdmf_file);
 
   // dolfinx::io::VTKFile
   nb::class_<dolfinx::io::VTKFile> vtk_file(m, "VTKFile");
