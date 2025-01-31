@@ -351,43 +351,6 @@ template void XDMFFile::write_meshtags(const mesh::MeshTags<double>&,
                                        std::string, std::string);
 /// @endcond
 //-----------------------------------------------------------------------------
-// An auxiliary struct to compare C++ types and HDF5 types
-/// @cond
-template <typename T>
-struct xdmf_integral_float
-{
-};
-
-// Instantiation for different types
-template <>
-struct xdmf_integral_float<std::int32_t>
-{
-  static constexpr std::string_view data_type = "Int";
-  static constexpr std::size_t precision = 4;
-};
-
-template <>
-struct xdmf_integral_float<std::int64_t>
-{
-  static constexpr std::string_view data_type = "Int";
-  static constexpr std::size_t precision = 8;
-};
-
-template <>
-struct xdmf_integral_float<float>
-{
-  static constexpr std::string_view data_type = "Float";
-  static constexpr std::size_t precision = 4;
-};
-
-template <>
-struct xdmf_integral_float<double>
-{
-  static constexpr std::string_view data_type = "Float";
-  static constexpr std::size_t precision = 8;
-};
-/// @endcond
-//-----------------------------------------------------------------------------
 template <typename T>
 mesh::MeshTags<T>
 XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
@@ -440,7 +403,8 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
 
     if (!H5Tequal(datatype_id, io::hdf5::hdf5_type<T>()))
     {
-      throw std::runtime_error("The data in the XDMF file does not match the required data type.");
+      throw std::runtime_error(
+          "The data in the XDMF file does not match the required data type.");
     }
   }
   else
@@ -488,7 +452,8 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
     if (data_type != xdmf_integral_float<T>::data_type
         || precision != xdmf_integral_float<T>::precision)
     {
-      throw std::runtime_error("The data in the XDMF file does not match the required data type.");
+      throw std::runtime_error(
+          "The data in the XDMF file does not match the required data type.");
     }
   }
 

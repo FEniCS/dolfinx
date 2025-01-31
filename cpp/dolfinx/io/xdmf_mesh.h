@@ -12,6 +12,7 @@
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <hdf5.h>
 #include <mpi.h>
@@ -138,7 +139,8 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   xdmf_utils::add_data_item(
       attribute_node, h5_id, path_prefix + std::string("/Values"),
       std::span<const T>(meshtags.values().data(), num_active_entities), offset,
-      {global_num_values, 1}, "", use_mpi_io);
+      {global_num_values, 1},
+      std::string(io::xdmf_integral_float<T>::data_type), use_mpi_io);
 }
 } // namespace io::xdmf_mesh
 } // namespace dolfinx

@@ -45,6 +45,44 @@ class MeshTags;
 namespace dolfinx::io
 {
 
+// An auxiliary struct to compare C++ types and HDF5 types
+/// @cond
+template <typename T>
+struct xdmf_integral_float
+{
+};
+
+// Instantiation for different types
+template <>
+struct xdmf_integral_float<std::int32_t>
+{
+  static constexpr std::string_view data_type = "Int";
+  static constexpr std::size_t precision = 4;
+};
+
+template <>
+struct xdmf_integral_float<std::int64_t>
+{
+  static constexpr std::string_view data_type = "Int";
+  static constexpr std::size_t precision = 8;
+};
+
+template <>
+struct xdmf_integral_float<float>
+{
+  static constexpr std::string_view data_type = "Float";
+  static constexpr std::size_t precision = 4;
+};
+
+template <>
+struct xdmf_integral_float<double>
+{
+  static constexpr std::string_view data_type = "Float";
+  static constexpr std::size_t precision = 8;
+};
+/// @endcond
+//-----------------------------------------------------------------------------
+
 /// @brief Read and write mesh::Mesh, fem::Function and other objects in
 /// XDMF.
 ///
