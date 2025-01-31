@@ -117,7 +117,7 @@ def create_vector(L: Form) -> PETSc.Vec:
     Returns:
         A PETSc vector with a layout that is compatible with ``L``.
     """
-    dofmap = L.function_spaces[0].dofmap
+    dofmap = L.function_spaces[0].dofmaps(0)
     return create_petsc_vector(dofmap.index_map, dofmap.index_map_bs)
 
 
@@ -138,7 +138,10 @@ def create_vector_block(L: list[Form]) -> PETSc.Vec:
 
     """
     maps = [
-        (form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
+        (
+            form.function_spaces[0].dofmaps(0).index_map,
+            form.function_spaces[0].dofmaps(0).index_map_bs,
+        )
         for form in L
     ]
     return _cpp.fem.petsc.create_vector_block(maps)
@@ -156,7 +159,10 @@ def create_vector_nest(L: list[Form]) -> PETSc.Vec:
         compatible with ``L``.
     """
     maps = [
-        (form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
+        (
+            form.function_spaces[0].dofmaps(0).index_map,
+            form.function_spaces[0].dofmaps(0).index_map_bs,
+        )
         for form in L
     ]
     return _cpp.fem.petsc.create_vector_nest(maps)
@@ -256,7 +262,7 @@ def assemble_vector(L: typing.Any, constants=None, coeffs=None) -> PETSc.Vec:
         An assembled vector.
     """
     b = create_petsc_vector(
-        L.function_spaces[0].dofmap.index_map, L.function_spaces[0].dofmap.index_map_bs
+        L.function_spaces[0].dofmaps(0).index_map, L.function_spaces[0].dofmaps(0).index_map_bs
     )
     with b.localForm() as b_local:
         _assemble._assemble_vector_array(b_local.array_w, L, constants, coeffs)
@@ -300,7 +306,10 @@ def assemble_vector_nest(L: typing.Any, constants=None, coeffs=None) -> PETSc.Ve
         communicator.
     """
     maps = [
-        (form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
+        (
+            form.function_spaces[0].dofmaps(0).index_map,
+            form.function_spaces[0].dofmaps(0).index_map_bs,
+        )
         for form in L
     ]
     b = _cpp.fem.petsc.create_vector_nest(maps)
@@ -353,7 +362,10 @@ def assemble_vector_block(
         communicator.
     """
     maps = [
-        (form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
+        (
+            form.function_spaces[0].dofmaps(0).index_map,
+            form.function_spaces[0].dofmaps(0).index_map_bs,
+        )
         for form in L
     ]
     b = _cpp.fem.petsc.create_vector_block(maps)
@@ -383,7 +395,10 @@ def _assemble_vector_block_vec(
     are not accumulated.
     """
     maps = [
-        (form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
+        (
+            form.function_spaces[0].dofmaps(0).index_map,
+            form.function_spaces[0].dofmaps(0).index_map_bs,
+        )
         for form in L
     ]
     if x0 is not None:
@@ -672,10 +687,10 @@ def _assemble_matrix_block_mat(
 
     V = _extract_function_spaces(a)
     is_rows = _cpp.la.petsc.create_index_sets(
-        [(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[0]]
+        [(Vsub.dofmaps(0).index_map, Vsub.dofmaps(0).index_map_bs) for Vsub in V[0]]
     )
     is_cols = _cpp.la.petsc.create_index_sets(
-        [(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[1]]
+        [(Vsub.dofmaps(0).index_map, Vsub.dofmaps(0).index_map_bs) for Vsub in V[1]]
     )
 
     # Assemble form
