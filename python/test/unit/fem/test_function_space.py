@@ -250,14 +250,11 @@ def test_cell_mismatch(mesh):
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 def test_basix_element(V, W, Q, V2):
     for V_ in (V, W, V2):
-        e = V_.element.basix_element
-        assert isinstance(
-            e, (basix._basixcpp.FiniteElement_float64, basix._basixcpp.FiniteElement_float32)
-        )
+        assert isinstance(V_.element.basix_element, basix.finite_element.FiniteElement)
 
     # Mixed spaces do not yet return a basix element
     with pytest.raises(RuntimeError):
-        e = Q.element.basix_element
+        Q.element.basix_element
 
 
 @pytest.mark.skip_in_parallel
