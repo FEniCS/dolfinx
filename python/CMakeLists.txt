@@ -33,6 +33,7 @@ endif()
 # target_link_libraries
 nanobind_add_module(
   cpp
+  NB_SUPPRESS_WARNINGS
   NOMINSIZE
   dolfinx/wrappers/dolfinx.cpp
   dolfinx/wrappers/assemble.cpp
@@ -47,6 +48,13 @@ nanobind_add_module(
   dolfinx/wrappers/petsc.cpp
   dolfinx/wrappers/refinement.cpp
 )
+
+# Add strict compiler flags
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
+if(HAVE_PEDANTIC)
+  target_compile_options(cpp PRIVATE -Wall;-Werror;-Wextra;-pedantic)
+endif()
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 target_compile_definitions(cpp PRIVATE cxx_std_20)
