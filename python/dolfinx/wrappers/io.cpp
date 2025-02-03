@@ -59,19 +59,6 @@ void xdmf_def_write_meshtags(auto&& m)
 }
 
 template <typename T>
-void xdmf_def_read_meshtags(auto&& m)
-{
-  m.def(
-      "read_meshtags",
-      [](dolfinx::io::XDMFFile& self, const dolfinx::mesh::Mesh<double>& mesh,
-         std::string name, std::optional<std::string> attribute_name,
-         std::string xpath)
-      { return self.read_meshtags<T>(mesh, name, attribute_name, xpath); },
-      nb::arg("mesh"), nb::arg("name"), nb::arg("attribute_name").none(),
-      nb::arg("xpath"));
-}
-
-template <typename T>
 void xdmf_real_fn(auto&& m)
 {
   m.def(
@@ -307,7 +294,23 @@ void io(nb::module_& m)
            nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags<std::int32_t>,
            nb::arg("mesh"), nb::arg("name"), nb::arg("attribute_name").none(),
-           nb::arg("xpath"))
+           nb::arg("xpath") = "/Xdmf/Domain")
+      .def("read_meshtags_int32",
+           &dolfinx::io::XDMFFile::read_meshtags<std::int32_t>, nb::arg("mesh"),
+           nb::arg("name"), nb::arg("attribute_name").none(),
+           nb::arg("xpath") = "/Xdmf/Domain")
+      .def("read_meshtags_int64",
+           &dolfinx::io::XDMFFile::read_meshtags<std::int64_t>, nb::arg("mesh"),
+           nb::arg("name"), nb::arg("attribute_name").none(),
+           nb::arg("xpath") = "/Xdmf/Domain")
+      .def("read_meshtags_float32",
+           &dolfinx::io::XDMFFile::read_meshtags<std::float_t>, nb::arg("mesh"),
+           nb::arg("name"), nb::arg("attribute_name").none(),
+           nb::arg("xpath") = "/Xdmf/Domain")
+      .def("read_meshtags_float64",
+           &dolfinx::io::XDMFFile::read_meshtags<std::double_t>,
+           nb::arg("mesh"), nb::arg("name"), nb::arg("attribute_name").none(),
+           nb::arg("xpath") = "/Xdmf/Domain")
       .def("write_information", &dolfinx::io::XDMFFile::write_information,
            nb::arg("name"), nb::arg("value"), nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_information", &dolfinx::io::XDMFFile::read_information,
@@ -322,10 +325,6 @@ void io(nb::module_& m)
   xdmf_scalar_fn<double, double>(xdmf_file);
   xdmf_scalar_fn<std::complex<float>, float>(xdmf_file);
   xdmf_scalar_fn<std::complex<double>, double>(xdmf_file);
-  xdmf_def_read_meshtags<std::int32_t>(xdmf_file);
-  xdmf_def_read_meshtags<std::int64_t>(xdmf_file);
-  xdmf_def_read_meshtags<float>(xdmf_file);
-  xdmf_def_read_meshtags<double>(xdmf_file);
 
   // dolfinx::io::VTKFile
   nb::class_<dolfinx::io::VTKFile> vtk_file(m, "VTKFile");
