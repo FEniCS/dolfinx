@@ -279,6 +279,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         mt = super().read_meshtags_float64(mesh._cpp_object, name, attribute_name, xpath)
         return MeshTags(mt)
 
+
 def distribute_entity_data(
     mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64], values: np.ndarray
 ) -> tuple[npt.NDArray[np.int64], np.ndarray]:
