@@ -105,6 +105,7 @@ void vtk_scalar_fn(auto&& m)
       nb::arg("u"), nb::arg("t") = 0.0);
 }
 
+#ifdef HAS_ADIOS2
 template <typename T>
 void declare_vtx_writer(nb::module_& m, std::string type)
 {
@@ -148,6 +149,7 @@ void declare_vtx_writer(nb::module_& m, std::string type)
             { self.write(t); }, nb::arg("t"));
   }
 }
+#endif
 
 template <typename T>
 void declare_data_types(nb::module_& m)
