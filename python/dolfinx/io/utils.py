@@ -235,7 +235,6 @@ class XDMFFile(_cpp.io.XDMFFile):
         mt = super().read_meshtags(mesh._cpp_object, name, attribute_name, xpath)
         return MeshTags(mt)
 
-
     def read_meshtags_int32(
         self,
         mesh: Mesh,
