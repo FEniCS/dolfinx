@@ -418,21 +418,15 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
     if (const auto& data_type_attribute
         = values_data_node.attribute("DataType");
         data_type_attribute)
-    {
       data_type = data_type_attribute.value();
-    }
     // ... But "NumberType" is supported too and widely used in its place
     else if (const auto& data_type_attribute
              = values_data_node.attribute("NumberType");
              data_type_attribute)
-    {
       data_type = data_type_attribute.value();
-    }
     // If unspecified, use the standard's implicit default
     else
-    {
       data_type = "Float";
-    }
 
     int precision;
 
@@ -440,14 +434,10 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
     if (const auto& precision_attribute
         = values_data_node.attribute("Precision");
         precision_attribute)
-    {
       precision = std::stol(values_data_node.attribute("Precision").value());
-    }
     // otherwhise use the standard's default
     else
-    {
       precision = 4;
-    }
 
     if (data_type != xdmf_integral_float<T>::data_type
         || precision != xdmf_integral_float<T>::precision)
