@@ -51,6 +51,12 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install FEniCS Python components
+        run: |
+          pip install git+https://github.com/fenics/ufl.git
+          pip install git+https://github.com/fenics/basix.git
+          pip install git+https://github.com/fenics/ffcx.git
+
       - name: Configure and install C++
         run: |
           cmake -G Ninja -DDOLFINX_ENABLE_PETSC=false -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
