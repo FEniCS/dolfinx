@@ -24,7 +24,7 @@ jobs:
       DISPLAY: ":99.0"
       PYVISTA_OFF_SCREEN: true
       PYVISTA_QT_VERSION: 0.11.1
-      PYVISTA_VERSION: 0.44.1
+      PYVISTA_VERSION: 0.44.2
       QT_DEBUG_PLUGINS: 1
 
       PETSC_ARCH: ${{ matrix.petsc_arch }}

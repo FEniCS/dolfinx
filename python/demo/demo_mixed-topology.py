@@ -28,6 +28,7 @@ from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner, create_mesh
 from dolfinx.fem import (
     FunctionSpace,
     assemble_matrix,
+    assemble_vector,
     coordinate_element,
     mixed_topology_form,
 )
@@ -112,6 +113,7 @@ V_cpp = _cpp.fem.FunctionSpace_float64(mesh, elements_cpp, dofmaps)
 # FIXME This hack is required at the moment because UFL does not yet know about
 # mixed topology meshes.
 a = []
+L = []
 for i, cell_name in enumerate(["hexahedron", "prism"]):
     print(f"Creating form for {cell_name}")
     element = basix.ufl.wrap_element(elements[i])
@@ -119,21 +121,27 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
     V = FunctionSpace(Mesh(mesh, domain), element, V_cpp)
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     k = 12.0
+    x = ufl.SpatialCoordinate(domain)
     a += [(ufl.inner(ufl.grad(u), ufl.grad(v)) - k**2 * u * v) * ufl.dx]
+    f = ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])
+    L += [f * v * ufl.dx]
 
 # Compile the form
 # FIXME: For the time being, since UFL doesn't understand mixed topology meshes,
 # we have to call mixed_topology_form instead of form.
 a_form = mixed_topology_form(a, dtype=np.float64)
+L_form = mixed_topology_form(L, dtype=np.float64)
 
 # Assemble the matrix
 A = assemble_matrix(a_form)
+b = assemble_vector(L_form)
 
 # Solve
 A_scipy = A.to_scipy()
-b_scipy = np.ones(A_scipy.shape[1])
+b_scipy = b.array
 
 x = spsolve(A_scipy, b_scipy)
+
 print(f"Solution vector norm {np.linalg.norm(x)}")
 
 # I/O
