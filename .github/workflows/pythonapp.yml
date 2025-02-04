@@ -1,0 +1,66 @@
+name: DOLFINx CI
+
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - main
+  merge_group:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      ffcx_ref:
+        description: "FFCx branch or tag"
+        default: "main"
+        type: string
+      basix_ref:
+        description: "Basix branch or tag"
+        default: "main"
+        type: string
+      ufl_ref:
+        description: "UFL branch or tag"
+        default: "main"
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+      PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe   # Newer OpenMPI
+      OMPI_MCA_rmaps_base_oversubscribe: true                 # Older OpenMPI
+
+    name: Build and test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y catch2 cmake g++ libblas-dev libboost-dev libhdf5-mpi-dev \
+          liblapack-dev libparmetis-dev libpugixml-dev libspdlog-dev mpi-default-dev \
+          ninja-build pkg-config
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Configure and install C++
+        run: |
+          cmake -G Ninja -DDOLFINX_ENABLE_PETSC=false -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+          cmake --build build
+          sudo cmake --install build
+
+      - name: Install DOLFINx
+        run: pip -v install python/.[ci]
+
+      - name: Run demo
+        run: |
+          pip install pytest-xdist
+          python -m pytest -n auto -m serial --durations=10 python/demo/test.py
