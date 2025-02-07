@@ -372,7 +372,7 @@ void pack_coefficients(const Form<T, U>& form,
 
 /// @brief Pack coefficient data over a list of cells or facets.
 ///
-/// Typically used to prepare coffecient data for an ::Expression.
+/// Typically used to prepare coefficient data for an ::Expression.
 /// @tparam T
 /// @tparam U
 /// @param coeffs Coefficients to pack
@@ -444,26 +444,12 @@ template <typename U>
                             typename std::decay_t<U>::geometry_type>>
 std::vector<typename U::scalar_type> pack_constants(const U& u)
 {
-  using T = typename U::scalar_type;
-  const std::vector<std::shared_ptr<const Constant<T>>>& constants
-      = u.constants();
+  using T = typename std::decay_t<U>::scalar_type;
 
-  // Calculate size of array needed to store packed constants
-  std::int32_t size = std::accumulate(constants.cbegin(), constants.cend(), 0,
-                                      [](std::int32_t sum, auto& constant)
-                                      { return sum + constant->value.size(); });
-
-  // Pack constants
-  std::vector<T> constant_values(size);
-  std::int32_t offset = 0;
-  for (auto& constant : constants)
-  {
-    const std::vector<T>& value = constant->value;
-    std::ranges::copy(value, std::next(constant_values.begin(), offset));
-    offset += value.size();
-  }
-
-  return constant_values;
+  std::vector<std::reference_wrapper<const Constant<T>>> c;
+  std::ranges::transform(u.constants(), std::back_inserter(c),
+                         [](auto c) -> const Constant<T>& { return *c; });
+  return fem::pack_constants(c);
 }
 
 } // namespace dolfinx::fem

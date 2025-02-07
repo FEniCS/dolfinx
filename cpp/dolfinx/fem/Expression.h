@@ -179,13 +179,7 @@ public:
       fem::pack_coefficients(c, this->coefficient_offsets(), entities, estride,
                              std::span(coeffs));
     }
-
-    std::vector<std::reference_wrapper<const fem::Constant<scalar_type>>>
-        constants;
-    std::ranges::transform(this->constants(), std::back_inserter(constants),
-                           [](auto c) -> const fem::Constant<scalar_type>&
-                           { return *c; });
-    std::vector<scalar_type> constant_data = fem::pack_constants(constants);
+    std::vector<scalar_type> constant_data = fem::pack_constants(*this);
 
     auto fn = this->get_tabulate_expression();
 
