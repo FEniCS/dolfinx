@@ -1316,6 +1316,39 @@ void pack_coefficients(const Form<T, U>& form,
     pack_coefficients<T>(form, key.first, key.second, val.first, val.second);
 }
 
+/// @brief Pack coefficients data over a list of cells or facets.
+/// @tparam T
+/// @tparam U
+/// @param coeffs Coefficients to pack
+/// @param offsets Offsets
+/// @param entities Entities to pack over
+/// @param estride Stride for each entity in `entities` (1 for cells, 2
+/// for facets).
+/// @return Packed coefficents, as pair `(coeffs, cstride)`.
+template <dolfinx::scalar T, std::floating_point U>
+std::pair<std::vector<T>, int> pack_coefficients(
+    std::vector<std::reference_wrapper<const Function<T, U>>> coeffs,
+    std::span<const int> offsets, std::span<const std::int32_t> entities,
+    std::size_t estride)
+{
+  assert(!offsets.empty());
+  const int cstride = offsets.back();
+  std::vector<T> c(entities.size() / estride * offsets.back());
+
+  // Iterate over coefficients
+  for (std::size_t coeff = 0; coeff < coeffs.size(); ++coeff)
+  {
+    std::span<const std::uint32_t> cell_info
+        = impl::get_cell_orientation_info(coeffs[coeff]);
+
+    impl::pack_coefficient_entity(
+        std::span(c), cstride, coeffs[coeff], cell_info, entities, estride,
+        [](auto entity) { return entity[0]; }, offsets[coeff]);
+  }
+
+  return {std::move(c), cstride};
+}
+
 /// @brief Pack coefficients of a Expression u for a give list of active
 /// entities.
 ///
@@ -1329,28 +1362,10 @@ std::pair<std::vector<T>, int>
 pack_coefficients(const Expression<T, U>& e,
                   std::span<const std::int32_t> entities, std::size_t estride)
 {
-  // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const Function<T, U>>>& coeffs
-      = e.coefficients();
-  const std::vector<int> offsets = e.coefficient_offsets();
-
-  // Copy data into coefficient array
-  const int cstride = offsets.back();
-  std::vector<T> c(entities.size() / estride * offsets.back());
-  if (!coeffs.empty())
-  {
-    // Iterate over coefficients
-    for (std::size_t coeff = 0; coeff < coeffs.size(); ++coeff)
-    {
-      std::span<const std::uint32_t> cell_info
-          = impl::get_cell_orientation_info(*coeffs[coeff]);
-
-      impl::pack_coefficient_entity(
-          std::span(c), cstride, *coeffs[coeff], cell_info, entities, estride,
-          [](auto entity) { return entity[0]; }, offsets[coeff]);
-    }
-  }
-  return {std::move(c), cstride};
+  std::vector<std::reference_wrapper<const Function<T, U>>> coeffs;
+  std::ranges::transform(e.coefficients(), std::back_inserter(coeffs),
+                         [](auto c) -> const Function<T, U>& { return *c; });
+  return pack_coefficients(coeffs, e.coefficient_offsets(), entities, estride);
 }
 
 /// @brief Pack constants of u into a single array ready for assembly.
