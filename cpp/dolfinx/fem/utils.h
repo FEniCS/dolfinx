@@ -1061,141 +1061,6 @@ allocate_coefficient_storage(const Form<T, U>& form)
   return coeffs;
 }
 
-/// @brief Pack the coefficients of a Form for a given integral type and
-/// domain id.
-/// @param[in] form The Form
-/// @param[in] integral_type Type of integral.
-/// @param[in] id ID of the integration domain.
-/// @param[in,out] c The coefficient array.
-/// @param[in] cstride Coefficient stride.
-template <dolfinx::scalar T, std::floating_point U>
-void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
-                       int id, std::span<T> c, int cstride)
-{
-  // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
-      = form.coefficients();
-  const std::vector<int> offsets = form.coefficient_offsets();
-
-  // Indicator for packing coefficients
-  std::vector<int> active_coefficient(coefficients.size(), 0);
-  if (!coefficients.empty())
-  {
-    switch (integral_type)
-    {
-    case IntegralType::cell:
-    {
-      // Get indicator for all coefficients that are active in cell
-      // integrals
-      for (std::size_t i = 0; i < form.num_integrals(IntegralType::cell); ++i)
-      {
-        for (auto idx : form.active_coeffs(IntegralType::cell, i))
-          active_coefficient[idx] = 1;
-      }
-
-      // Iterate over coefficients
-      for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
-      {
-        if (!active_coefficient[coeff])
-          continue;
-
-        // Get coefficient mesh
-        auto mesh = coefficients[coeff]->function_space()->mesh();
-        assert(mesh);
-
-        // Other integrals in the form might have coefficients defined over
-        // entities of codim > 0, which don't make sense for cell integrals, so
-        // don't pack them.
-        if (const int codim
-            = form.mesh()->topology()->dim() - mesh->topology()->dim();
-            codim > 0)
-        {
-          throw std::runtime_error("Should not be packing coefficients with "
-                                   "codim>0 in a cell integral");
-        }
-
-        std::vector<std::int32_t> cells
-            = form.domain(IntegralType::cell, id, *mesh);
-        std::span<const std::uint32_t> cell_info
-            = impl::get_cell_orientation_info(*coefficients[coeff]);
-        impl::pack_coefficient_entity(
-            c, cstride, *coefficients[coeff], cell_info, cells, 1,
-            [](auto entity) { return entity.front(); }, offsets[coeff]);
-      }
-      break;
-    }
-    case IntegralType::exterior_facet:
-    {
-      // Get indicator for all coefficients that are active in exterior
-      // facet integrals
-      for (std::size_t i = 0;
-           i < form.num_integrals(IntegralType::exterior_facet); ++i)
-      {
-        for (auto idx : form.active_coeffs(IntegralType::exterior_facet, i))
-          active_coefficient[idx] = 1;
-      }
-
-      // Iterate over coefficients
-      for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
-      {
-        if (!active_coefficient[coeff])
-          continue;
-
-        auto mesh = coefficients[coeff]->function_space()->mesh();
-        std::vector<std::int32_t> facets
-            = form.domain(IntegralType::exterior_facet, id, *mesh);
-        std::span<const std::uint32_t> cell_info
-            = impl::get_cell_orientation_info(*coefficients[coeff]);
-        impl::pack_coefficient_entity(
-            c, cstride, *coefficients[coeff], cell_info, facets, 2,
-            [](auto entity) { return entity.front(); }, offsets[coeff]);
-      }
-      break;
-    }
-    case IntegralType::interior_facet:
-    {
-      // Get indicator for all coefficients that are active in interior
-      // facet integrals
-      for (std::size_t i = 0;
-           i < form.num_integrals(IntegralType::interior_facet); ++i)
-      {
-        for (auto idx : form.active_coeffs(IntegralType::interior_facet, i))
-          active_coefficient[idx] = 1;
-      }
-
-      // Iterate over coefficients
-      for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
-      {
-        if (!active_coefficient[coeff])
-          continue;
-
-        auto mesh = coefficients[coeff]->function_space()->mesh();
-        std::vector<std::int32_t> facets
-            = form.domain(IntegralType::interior_facet, id, *mesh);
-
-        std::span<const std::uint32_t> cell_info
-            = impl::get_cell_orientation_info(*coefficients[coeff]);
-
-        // Pack coefficient ['+']
-        impl::pack_coefficient_entity(
-            c, 2 * cstride, *coefficients[coeff], cell_info, facets, 4,
-            [](auto entity) { return entity[0]; }, 2 * offsets[coeff]);
-
-        // Pack coefficient ['-']
-        impl::pack_coefficient_entity(
-            c, 2 * cstride, *coefficients[coeff], cell_info, facets, 4,
-            [](auto entity) { return entity[2]; },
-            offsets[coeff] + offsets[coeff + 1]);
-      }
-      break;
-    }
-    default:
-      throw std::runtime_error(
-          "Could not pack coefficient. Integral type not supported.");
-    }
-  }
-}
-
 /// @brief Create Expression from UFC
 template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
 Expression<T, U> create_expression(
@@ -1297,26 +1162,157 @@ Expression<T, U> create_expression(
   return create_expression(e, coeff_map, const_map, argument_function_space);
 }
 
-/// @warning This is subject to change
-/// @brief Pack coefficients of a Form
-/// @param[in] form The Form
-/// @param[in,out] coeffs A map from an (integral_type, domain_id) pair to a
-/// (coeffs, cstride) pair. `coeffs` is a storage container representing
-/// an array of shape (num_int_entities, cstride) in which to pack the
-/// coefficient data, where num_int_entities is the number of entities
-/// being integrated over and cstride is the number of coefficient data
-/// entries per integration entity. `coeffs` is flattened into row-major
-/// layout.
+/// @brief Pack coefficients of a Form.
+///
+/// @param[in] form Form to pack the coefficients for.
+/// @param[in,out] coeffs Map from a `(integral_type, domain_id)` pair
+/// to a `(coeffs, cstride)` pair.
+/// - `coeffs` is an array of shape `(num_int_entities, cstride)` into
+/// which coefficient data will be packed.
+/// - `num_int_entities` is the number of entities over which
+/// coefficient data is packed.
+/// - `cstride` is the number of coefficient data entries per entity.
+/// - `coeffs` is flattened using  row-major layout.
 template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficients(const Form<T, U>& form,
                        std::map<std::pair<IntegralType, int>,
                                 std::pair<std::vector<T>, int>>& coeffs)
 {
-  for (auto& [key, val] : coeffs)
-    pack_coefficients<T>(form, key.first, key.second, val.first, val.second);
+  const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
+      = form.coefficients();
+  const std::vector<int> offsets = form.coefficient_offsets();
+
+  for (auto& [intergal_data, coeff_data] : coeffs)
+  {
+    IntegralType integral_type = intergal_data.first;
+    int id = intergal_data.second;
+    std::vector<T>& c = coeff_data.first;
+    int cstride = coeff_data.second;
+
+    // Indicator for packing coefficients
+    std::vector<int> active_coefficient(coefficients.size(), 0);
+    if (!coefficients.empty())
+    {
+      switch (integral_type)
+      {
+      case IntegralType::cell:
+      {
+        // Get indicator for all coefficients that are active in cell
+        // integrals
+        for (std::size_t i = 0; i < form.num_integrals(IntegralType::cell); ++i)
+        {
+          for (auto idx : form.active_coeffs(IntegralType::cell, i))
+            active_coefficient[idx] = 1;
+        }
+
+        // Iterate over coefficients
+        for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
+        {
+          if (!active_coefficient[coeff])
+            continue;
+
+          // Get coefficient mesh
+          auto mesh = coefficients[coeff]->function_space()->mesh();
+          assert(mesh);
+
+          // Other integrals in the form might have coefficients defined over
+          // entities of codim > 0, which don't make sense for cell integrals,
+          // so don't pack them.
+          if (const int codim
+              = form.mesh()->topology()->dim() - mesh->topology()->dim();
+              codim > 0)
+          {
+            throw std::runtime_error("Should not be packing coefficients with "
+                                     "codim>0 in a cell integral");
+          }
+
+          std::vector<std::int32_t> cells
+              = form.domain(IntegralType::cell, id, *mesh);
+          std::span<const std::uint32_t> cell_info
+              = impl::get_cell_orientation_info(*coefficients[coeff]);
+          impl::pack_coefficient_entity(
+              std::span(c), cstride, *coefficients[coeff], cell_info, cells, 1,
+              [](auto entity) { return entity.front(); }, offsets[coeff]);
+        }
+        break;
+      }
+      case IntegralType::exterior_facet:
+      {
+        // Get indicator for all coefficients that are active in exterior
+        // facet integrals
+        for (std::size_t i = 0;
+             i < form.num_integrals(IntegralType::exterior_facet); ++i)
+        {
+          for (auto idx : form.active_coeffs(IntegralType::exterior_facet, i))
+            active_coefficient[idx] = 1;
+        }
+
+        // Iterate over coefficients
+        for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
+        {
+          if (!active_coefficient[coeff])
+            continue;
+
+          auto mesh = coefficients[coeff]->function_space()->mesh();
+          std::vector<std::int32_t> facets
+              = form.domain(IntegralType::exterior_facet, id, *mesh);
+          std::span<const std::uint32_t> cell_info
+              = impl::get_cell_orientation_info(*coefficients[coeff]);
+          impl::pack_coefficient_entity(
+              std::span(c), cstride, *coefficients[coeff], cell_info, facets, 2,
+              [](auto entity) { return entity.front(); }, offsets[coeff]);
+        }
+        break;
+      }
+      case IntegralType::interior_facet:
+      {
+        // Get indicator for all coefficients that are active in interior
+        // facet integrals
+        for (std::size_t i = 0;
+             i < form.num_integrals(IntegralType::interior_facet); ++i)
+        {
+          for (auto idx : form.active_coeffs(IntegralType::interior_facet, i))
+            active_coefficient[idx] = 1;
+        }
+
+        // Iterate over coefficients
+        for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
+        {
+          if (!active_coefficient[coeff])
+            continue;
+
+          auto mesh = coefficients[coeff]->function_space()->mesh();
+          std::vector<std::int32_t> facets
+              = form.domain(IntegralType::interior_facet, id, *mesh);
+
+          std::span<const std::uint32_t> cell_info
+              = impl::get_cell_orientation_info(*coefficients[coeff]);
+
+          // Pack coefficient ['+']
+          impl::pack_coefficient_entity(
+              std::span(c), 2 * cstride, *coefficients[coeff], cell_info,
+              facets, 4, [](auto entity) { return entity[0]; },
+              2 * offsets[coeff]);
+
+          // Pack coefficient ['-']
+          impl::pack_coefficient_entity(
+              std::span(c), 2 * cstride, *coefficients[coeff], cell_info,
+              facets, 4, [](auto entity) { return entity[2]; },
+              offsets[coeff] + offsets[coeff + 1]);
+        }
+        break;
+      }
+      default:
+        throw std::runtime_error(
+            "Could not pack coefficient. Integral type not supported.");
+      }
+    }
+  }
 }
 
-/// @brief Pack coefficients data over a list of cells or facets.
+/// @brief Pack coefficient data over a list of cells or facets.
+///
+/// Typically used to prepare coffecient data for an ::Expression.
 /// @tparam T
 /// @tparam U
 /// @param coeffs Coefficients to pack
@@ -1326,14 +1322,16 @@ void pack_coefficients(const Form<T, U>& form,
 /// for facets).
 /// @return Packed coefficents, as pair `(coeffs, cstride)`.
 template <dolfinx::scalar T, std::floating_point U>
-std::pair<std::vector<T>, int> pack_coefficients_foo(
+void pack_coefficients(
     std::vector<std::reference_wrapper<const Function<T, U>>> coeffs,
     std::span<const int> offsets, std::span<const std::int32_t> entities,
-    std::size_t estride)
+    std::size_t estride, std::span<T> c)
 {
   assert(!offsets.empty());
   const int cstride = offsets.back();
-  std::vector<T> c((entities.size() / estride) * offsets.back());
+
+  if (c.size() < (entities.size() / estride) * offsets.back())
+    throw std::runtime_error("Coefficient packing span is too small.");
 
   // Iterate over coefficients
   for (std::size_t coeff = 0; coeff < coeffs.size(); ++coeff)
@@ -1345,8 +1343,6 @@ std::pair<std::vector<T>, int> pack_coefficients_foo(
         std::span(c), cstride, coeffs[coeff].get(), cell_info, entities,
         estride, [](auto entity) { return entity[0]; }, offsets[coeff]);
   }
-
-  return {std::move(c), cstride};
 }
 
 /// @brief Pack coefficients of a Expression over a list of entities.
@@ -1364,12 +1360,18 @@ pack_coefficients(const Expression<T, U>& e,
   std::vector<std::reference_wrapper<const Function<T, U>>> coeffs;
   std::ranges::transform(e.coefficients(), std::back_inserter(coeffs),
                          [](auto c) -> const Function<T, U>& { return *c; });
-  return pack_coefficients_foo(coeffs, e.coefficient_offsets(), entities,
-                               estride);
+  std::vector<T> c((entities.size() / estride)
+                   * e.coefficient_offsets().back());
+  pack_coefficients(coeffs, e.coefficient_offsets(), entities, estride,
+                    std::span(c));
+  return {std::move(c), e.coefficient_offsets().back()};
 }
 
-/// @brief Pack constants of u into a single array ready for assembly.
 /// @warning This function is subject to change.
+/// @brief Pack constants of u into a single array ready for assembly.
+/// @tparam U Form or Expression.
+/// @param u The Expression or Form to pack constant data for.
+/// @return Packed constants
 template <typename U>
 std::vector<typename U::scalar_type> pack_constants(const U& u)
 {
