@@ -174,11 +174,11 @@ public:
       std::ranges::transform(this->coefficients(), std::back_inserter(c),
                              [](auto c) -> const Function<T, U>&
                              { return *c; });
-      pack_coefficients(c, this->coefficient_offsets(), entities, estride,
-                        std::span(coeffs));
+      fem::pack_coefficients(c, this->coefficient_offsets(), entities, estride,
+                             std::span(coeffs));
     }
 
-    std::vector<scalar_type> constant_data = pack_constants(*this);
+    std::vector<scalar_type> constant_data = fem::pack_constants(*this);
 
     auto fn = this->get_tabulate_expression();
 

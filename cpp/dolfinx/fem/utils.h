@@ -51,6 +51,38 @@ class IndexMap;
 
 namespace dolfinx::fem
 {
+namespace impl
+{
+/// Helper function to get an array of of (cell, local_facet) pairs
+/// corresponding to a given facet index.
+/// @param[in] f Facet index
+/// @param[in] cells List of cells incident to the facet
+/// @param[in] c_to_f Cell to facet connectivity
+/// @return Vector of (cell, local_facet) pairs
+template <int num_cells>
+std::array<std::int32_t, 2 * num_cells>
+get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
+                     const graph::AdjacencyList<std::int32_t>& c_to_f)
+{
+  // Loop over cells sharing facet
+  assert(cells.size() == num_cells);
+  std::array<std::int32_t, 2 * num_cells> cell_local_facet_pairs;
+  for (int c = 0; c < num_cells; ++c)
+  {
+    // Get local index of facet with respect to the cell
+    std::int32_t cell = cells[c];
+    auto cell_facets = c_to_f.links(cell);
+    auto facet_it = std::find(cell_facets.begin(), cell_facets.end(), f);
+    assert(facet_it != cell_facets.end());
+    int local_f = std::distance(cell_facets.begin(), facet_it);
+    cell_local_facet_pairs[2 * c] = cell;
+    cell_local_facet_pairs[2 * c + 1] = local_f;
+  }
+
+  return cell_local_facet_pairs;
+}
+} // namespace impl
+
 /// @brief Given an integral type and a set of entities, computes and
 /// return data for the entities that should be integrated over.
 ///
