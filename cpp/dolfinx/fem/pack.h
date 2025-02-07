@@ -7,6 +7,7 @@
 #pragma once
 
 #include "Constant.h"
+#include "DofMap.h"
 #include "FiniteElement.h"
 #include "Form.h"
 #include "Function.h"
@@ -20,7 +21,7 @@
 #include <vector>
 
 /// @file pack.h
-/// @brief Functions supporting finite element method operations
+/// @brief Functions supporting the packing of coefficient data.
 
 namespace dolfinx::fem
 {
@@ -409,6 +410,12 @@ void pack_coefficients(
 /// @param u The Expression or Form to pack constant data for.
 /// @return Packed constants
 template <typename U>
+  requires std::convertible_to<
+               U, fem::Expression<typename std::decay_t<U>::scalar_type,
+                                  typename std::decay_t<U>::geometry_type>>
+           or std::convertible_to<
+               U, fem::Form<typename std::decay_t<U>::scalar_type,
+                            typename std::decay_t<U>::geometry_type>>
 std::vector<typename U::scalar_type> pack_constants(const U& u)
 {
   using T = typename U::scalar_type;
