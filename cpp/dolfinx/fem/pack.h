@@ -404,9 +404,8 @@ void pack_coefficients(
   }
 }
 
-/// @warning This function is subject to change.
-/// @brief Pack constants of u into a single array ready for assembly.
-/// @tparam U Form or Expression.
+/// @brief Pack constants of an Expression or Form into a single array
+/// ready for assembly.
 /// @param u The Expression or Form to pack constant data for.
 /// @return Packed constants
 template <typename U>
