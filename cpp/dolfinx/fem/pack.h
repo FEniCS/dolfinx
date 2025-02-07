@@ -34,6 +34,7 @@ get_cell_orientation_info(const Function<T, U>& coefficient)
 {
   std::span<const std::uint32_t> cell_info;
   auto element = coefficient.function_space()->element();
+  assert(element);
   if (element->needs_dof_transformations())
   {
     auto mesh = coefficient.function_space()->mesh();
@@ -50,7 +51,7 @@ void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
           std::span<const std::uint32_t> cell_info, const DofMap& dofmap,
           auto transform)
 {
-  auto dofs = dofmap.cell_dofs(cell);
+  std::span<const std::int32_t> dofs = dofmap.cell_dofs(cell);
   for (std::size_t i = 0; i < dofs.size(); ++i)
   {
     if constexpr (_bs < 0)
@@ -402,6 +403,32 @@ void pack_coefficients(
         std::span(c), cstride, coeffs[coeff].get(), cell_info, entities,
         estride, [](auto entity) { return entity[0]; }, offsets[coeff]);
   }
+}
+
+/// @brief Pack constants of an Expression or Form into a single array
+/// ready for assembly.
+/// @param c Constants to pack.
+/// @return Packed constants
+template <typename T>
+std::vector<T>
+pack_constants(std::vector<std::reference_wrapper<const fem::Constant<T>>> c)
+{
+  // Calculate size of array needed to store packed constants
+  std::int32_t size = std::accumulate(
+      c.cbegin(), c.cend(), 0, [](std::int32_t sum, auto& constant)
+      { return sum + constant.get().value.size(); });
+
+  // Pack constants
+  std::vector<T> constant_values(size);
+  std::int32_t offset = 0;
+  for (auto& constant : c)
+  {
+    const std::vector<T>& value = constant.get().value;
+    std::ranges::copy(value, std::next(constant_values.begin(), offset));
+    offset += value.size();
+  }
+
+  return constant_values;
 }
 
 /// @brief Pack constants of an Expression or Form into a single array

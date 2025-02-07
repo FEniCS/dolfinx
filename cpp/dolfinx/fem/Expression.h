@@ -170,7 +170,9 @@ public:
                           * this->coefficient_offsets().back());
     int cstride = this->coefficient_offsets().back();
     {
-      std::vector<std::reference_wrapper<const Function<T, U>>> c;
+      std::vector<
+          std::reference_wrapper<const Function<scalar_type, geometry_type>>>
+          c;
       std::ranges::transform(this->coefficients(), std::back_inserter(c),
                              [](auto c) -> const Function<T, U>&
                              { return *c; });
@@ -178,7 +180,12 @@ public:
                              std::span(coeffs));
     }
 
-    std::vector<scalar_type> constant_data = fem::pack_constants(*this);
+    std::vector<std::reference_wrapper<const fem::Constant<scalar_type>>>
+        constants;
+    std::ranges::transform(this->constants(), std::back_inserter(constants),
+                           [](auto c) -> const fem::Constant<scalar_type>&
+                           { return *c; });
+    std::vector<scalar_type> constant_data = fem::pack_constants(constants);
 
     auto fn = this->get_tabulate_expression();
 
