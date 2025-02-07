@@ -105,10 +105,10 @@ void vtk_scalar_fn(auto&& m)
       nb::arg("u"), nb::arg("t") = 0.0);
 }
 
+#ifdef HAS_ADIOS2
 template <typename T>
 void declare_vtx_writer(nb::module_& m, std::string type)
 {
-#ifdef HAS_ADIOS2
   {
     std::string pyclass_name = "VTXWriter_" + type;
     nb::class_<dolfinx::io::VTXWriter<T>>(m, pyclass_name.c_str())
@@ -148,8 +148,8 @@ void declare_vtx_writer(nb::module_& m, std::string type)
             "write", [](dolfinx::io::VTXWriter<T>& self, double t)
             { self.write(t); }, nb::arg("t"));
   }
-#endif
 }
+#endif
 
 template <typename T>
 void declare_data_types(nb::module_& m)
@@ -220,14 +220,12 @@ void io(nb::module_& m)
 
   m.def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<double>)
       .def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<float>);
-  m.def("read_vtkhdf_mesh_float64",
-        [](MPICommWrapper comm, std::string filename) {
-          return dolfinx::io::VTKHDF::read_mesh<double>(comm.get(), filename);
-        });
-  m.def("read_vtkhdf_mesh_float32",
-        [](MPICommWrapper comm, std::string filename) {
-          return dolfinx::io::VTKHDF::read_mesh<float>(comm.get(), filename);
-        });
+  m.def(
+      "read_vtkhdf_mesh_float64", [](MPICommWrapper comm, std::string filename)
+      { return dolfinx::io::VTKHDF::read_mesh<double>(comm.get(), filename); });
+  m.def(
+      "read_vtkhdf_mesh_float32", [](MPICommWrapper comm, std::string filename)
+      { return dolfinx::io::VTKHDF::read_mesh<float>(comm.get(), filename); });
 
   // dolfinx::io::cell permutation functions
   m.def("perm_vtk", &dolfinx::io::cells::perm_vtk, nb::arg("type"),
@@ -323,10 +321,10 @@ void io(nb::module_& m)
   nb::enum_<dolfinx::io::VTXMeshPolicy>(m, "VTXMeshPolicy")
       .value("update", dolfinx::io::VTXMeshPolicy::update)
       .value("reuse", dolfinx::io::VTXMeshPolicy::reuse);
-#endif
 
   declare_vtx_writer<float>(m, "float32");
   declare_vtx_writer<double>(m, "float64");
+#endif
 
   declare_data_types<std::int32_t>(m);
   declare_data_types<float>(m);

@@ -254,11 +254,6 @@ endif()
 
 # Check for some compiler flags
 include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag(-pipe HAVE_PIPE)
-
-if(HAVE_PIPE)
-  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -pipe)
-endif()
 
 # Add some strict compiler checks
 check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
