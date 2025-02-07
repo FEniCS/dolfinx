@@ -398,7 +398,6 @@ void pack_coefficients(
   {
     std::span<const std::uint32_t> cell_info
         = impl::get_cell_orientation_info(coeffs[coeff].get());
-
     impl::pack_coefficient_entity(
         std::span(c), cstride, coeffs[coeff].get(), cell_info, entities,
         estride, [](auto entity) { return entity[0]; }, offsets[coeff]);
@@ -445,7 +444,6 @@ template <typename U>
 std::vector<typename U::scalar_type> pack_constants(const U& u)
 {
   using T = typename std::decay_t<U>::scalar_type;
-
   std::vector<std::reference_wrapper<const Constant<T>>> c;
   std::ranges::transform(u.constants(), std::back_inserter(c),
                          [](auto c) -> const Constant<T>& { return *c; });
