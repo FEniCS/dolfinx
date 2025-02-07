@@ -1004,7 +1004,6 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
     break;
   }
 }
-
 } // namespace impl
 
 /// @brief Allocate storage for coefficients of a pair `(integral_type,
@@ -1343,28 +1342,6 @@ void pack_coefficients(
         std::span(c), cstride, coeffs[coeff].get(), cell_info, entities,
         estride, [](auto entity) { return entity[0]; }, offsets[coeff]);
   }
-}
-
-/// @brief Pack coefficients of a Expression over a list of entities.
-///
-/// @param[in] e The Expression
-/// @param[in] entities List of entities to pack over.
-/// @param[in] estride Stride for each entity in `entities` (1 for
-/// cells, 2 for facets)
-/// @return Pair of the form (coeffs, cstride).
-template <dolfinx::scalar T, std::floating_point U>
-std::pair<std::vector<T>, int>
-pack_coefficients(const Expression<T, U>& e,
-                  std::span<const std::int32_t> entities, std::size_t estride)
-{
-  std::vector<std::reference_wrapper<const Function<T, U>>> coeffs;
-  std::ranges::transform(e.coefficients(), std::back_inserter(coeffs),
-                         [](auto c) -> const Function<T, U>& { return *c; });
-  std::vector<T> c((entities.size() / estride)
-                   * e.coefficient_offsets().back());
-  pack_coefficients(coeffs, e.coefficient_offsets(), entities, estride,
-                    std::span(c));
-  return {std::move(c), e.coefficient_offsets().back()};
 }
 
 /// @warning This function is subject to change.
