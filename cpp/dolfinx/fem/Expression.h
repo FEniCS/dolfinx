@@ -8,6 +8,7 @@
 
 #include "Constant.h"
 #include "Function.h"
+#include "utils.h"
 #include <algorithm>
 #include <array>
 #include <concepts>
@@ -20,9 +21,6 @@
 
 namespace dolfinx::fem
 {
-template <dolfinx::scalar T>
-class Constant;
-
 /// @brief Represents a mathematical expression evaluated at a
 /// pre-defined set of points on the reference cell.
 ///
@@ -178,7 +176,6 @@ public:
       pack_coefficients(c, this->coefficient_offsets(), entities, estride,
                         std::span(coeffs));
     }
-    // auto [coeffs, cstride] = pack_coefficients(*this, entities, estride);
 
     std::vector<scalar_type> constant_data = pack_constants(*this);
 
