@@ -1061,13 +1061,13 @@ allocate_coefficient_storage(const Form<T, U>& form)
   return coeffs;
 }
 
-/// @brief Pack coefficients of a Form for a given integral type and
-/// domain id
+/// @brief Pack the coefficients of a Form for a given integral type and
+/// domain id.
 /// @param[in] form The Form
-/// @param[in] integral_type Type of integral
-/// @param[in] id The id of the integration domain
-/// @param[in,out] c The coefficient array
-/// @param[in] cstride The coefficient stride
+/// @param[in] integral_type Type of integral.
+/// @param[in] id ID of the integration domain.
+/// @param[in,out] c The coefficient array.
+/// @param[in] cstride Coefficient stride.
 template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
                        int id, std::span<T> c, int cstride)
@@ -1326,37 +1326,36 @@ void pack_coefficients(const Form<T, U>& form,
 /// for facets).
 /// @return Packed coefficents, as pair `(coeffs, cstride)`.
 template <dolfinx::scalar T, std::floating_point U>
-std::pair<std::vector<T>, int> pack_coefficients(
+std::pair<std::vector<T>, int> pack_coefficients_foo(
     std::vector<std::reference_wrapper<const Function<T, U>>> coeffs,
     std::span<const int> offsets, std::span<const std::int32_t> entities,
     std::size_t estride)
 {
   assert(!offsets.empty());
   const int cstride = offsets.back();
-  std::vector<T> c(entities.size() / estride * offsets.back());
+  std::vector<T> c((entities.size() / estride) * offsets.back());
 
   // Iterate over coefficients
   for (std::size_t coeff = 0; coeff < coeffs.size(); ++coeff)
   {
     std::span<const std::uint32_t> cell_info
-        = impl::get_cell_orientation_info(coeffs[coeff]);
+        = impl::get_cell_orientation_info(coeffs[coeff].get());
 
     impl::pack_coefficient_entity(
-        std::span(c), cstride, coeffs[coeff], cell_info, entities, estride,
-        [](auto entity) { return entity[0]; }, offsets[coeff]);
+        std::span(c), cstride, coeffs[coeff].get(), cell_info, entities,
+        estride, [](auto entity) { return entity[0]; }, offsets[coeff]);
   }
 
   return {std::move(c), cstride};
 }
 
-/// @brief Pack coefficients of a Expression u for a give list of active
-/// entities.
+/// @brief Pack coefficients of a Expression over a list of entities.
 ///
 /// @param[in] e The Expression
-/// @param[in] entities A list of active entities
-/// @param[in] estride Stride for each entity in active entities (1 for cells, 2
-/// for facets)
-/// @return A pair of the form (coeffs, cstride)
+/// @param[in] entities List of entities to pack over.
+/// @param[in] estride Stride for each entity in `entities` (1 for
+/// cells, 2 for facets)
+/// @return Pair of the form (coeffs, cstride).
 template <dolfinx::scalar T, std::floating_point U>
 std::pair<std::vector<T>, int>
 pack_coefficients(const Expression<T, U>& e,
@@ -1365,7 +1364,8 @@ pack_coefficients(const Expression<T, U>& e,
   std::vector<std::reference_wrapper<const Function<T, U>>> coeffs;
   std::ranges::transform(e.coefficients(), std::back_inserter(coeffs),
                          [](auto c) -> const Function<T, U>& { return *c; });
-  return pack_coefficients(coeffs, e.coefficient_offsets(), entities, estride);
+  return pack_coefficients_foo(coeffs, e.coefficient_offsets(), entities,
+                               estride);
 }
 
 /// @brief Pack constants of u into a single array ready for assembly.
