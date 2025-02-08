@@ -673,6 +673,18 @@ xdmf_utils::distribute_entity_data(
         const std::int64_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>,
     std::span<const std::int32_t>);
+template std::pair<std::vector<std::int32_t>, std::vector<std::int64_t>>
+xdmf_utils::distribute_entity_data(
+    const mesh::Topology&, std::span<const std::int64_t>, std::int64_t,
+    const fem::ElementDofLayout&,
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const std::int32_t,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>,
+    int,
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const std::int64_t,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>,
+    std::span<const std::int64_t>);
 template std::pair<std::vector<std::int32_t>, std::vector<std::complex<double>>>
 xdmf_utils::distribute_entity_data(
     const mesh::Topology&, std::span<const std::int64_t>, std::int64_t,

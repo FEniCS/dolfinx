@@ -212,6 +212,9 @@ class XDMFFile(_cpp.io.XDMFFile):
         xpath: str = "/Xdmf/Domain",
     ) -> MeshTags:
         """Read MeshTags with a specific name as specified in the XMDF file.
+        Variants of this function exist to read the supported data types int32,
+        int64, float32 and float64. This version reads int32 data, which is the
+        default behaviour.
 
         Args:
             mesh: Mesh that the input data is defined on.
@@ -230,6 +233,50 @@ class XDMFFile(_cpp.io.XDMFFile):
             file.
         """
         mt = super().read_meshtags(mesh._cpp_object, name, attribute_name, xpath)
+        return MeshTags(mt)
+
+    def read_meshtags_int32(
+        self,
+        mesh: Mesh,
+        name: str,
+        attribute_name: typing.Optional[str] = None,
+        xpath: str = "/Xdmf/Domain",
+    ) -> MeshTags:
+        """Specialisation of read_meshtags to read int32 data."""
+        mt = super().read_meshtags_int32(mesh._cpp_object, name, attribute_name, xpath)
+        return MeshTags(mt)
+
+    def read_meshtags_int64(
+        self,
+        mesh: Mesh,
+        name: str,
+        attribute_name: typing.Optional[str] = None,
+        xpath: str = "/Xdmf/Domain",
+    ) -> MeshTags:
+        """Specialisation of read_meshtags to read int64 data."""
+        mt = super().read_meshtags_int64(mesh._cpp_object, name, attribute_name, xpath)
+        return MeshTags(mt)
+
+    def read_meshtags_float32(
+        self,
+        mesh: Mesh,
+        name: str,
+        attribute_name: typing.Optional[str] = None,
+        xpath: str = "/Xdmf/Domain",
+    ) -> MeshTags:
+        """Specialisation of read_meshtags to read float32 data."""
+        mt = super().read_meshtags_float32(mesh._cpp_object, name, attribute_name, xpath)
+        return MeshTags(mt)
+
+    def read_meshtags_float64(
+        self,
+        mesh: Mesh,
+        name: str,
+        attribute_name: typing.Optional[str] = None,
+        xpath: str = "/Xdmf/Domain",
+    ) -> MeshTags:
+        """Specialisation of read_meshtags to read float64 data."""
+        mt = super().read_meshtags_float64(mesh._cpp_object, name, attribute_name, xpath)
         return MeshTags(mt)
 
 
