@@ -169,6 +169,14 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   return {std::move(coords), cshape, std::move(x_id), std::move(id_ghost)};
 }
 
+/// Return true if element is a cell-wise constant, otherwise false
+/// This could return a constexpr
+template <std::floating_point T>
+bool is_cellwise(const fem::FiniteElement<T>& e)
+{
+  return e.space_dimension() / e.block_size() == 1;
+}
+
 } // namespace impl
 
 /// @brief Given a FunctionSpace, create a topology and geometry based
