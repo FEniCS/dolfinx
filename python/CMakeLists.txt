@@ -49,7 +49,6 @@ nanobind_add_module(
   dolfinx/wrappers/refinement.cpp
 )
 
-
 # Add strict compiler flags
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
