@@ -27,12 +27,14 @@ class Function;
 /// @brief An Expression represents a mathematical expression evaluated
 /// at a pre-defined set of points on a reference cell.
 ///
-//// This class closely follows the concept of a UFC Expression.
+/// An Expression can be evaluated using ::assemble_expression.
 ///
 /// An example of Expressions use is to evaluate a gradient of a
 /// Function at quadrature points in cells. This evaluated gradient can
 /// then be used as input in to a non-FEniCS function that calculates a
 /// material constitutive model.
+///
+/// This class closely follows the concept of a UFC Expression.
 ///
 /// @tparam T The scalar type
 /// @tparam U The mesh geometry scalar type

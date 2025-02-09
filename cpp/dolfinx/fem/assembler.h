@@ -41,7 +41,7 @@ class FunctionSpace;
 /// @brief Evaluate an Expression on cells or facets.
 ///
 /// This function accepts packed coefficient data, which allows it be
-/// called without re-packing all coefficient data.
+/// called without re-packing all coefficient data at each evaluation.
 ///
 /// @tparam T Scalar type.
 /// @tparam U Geometry type
@@ -62,7 +62,7 @@ class FunctionSpace;
 /// @param[in] entities Mesh entities to evaluated the Expression for.
 /// @param[in] V Function space for Argument.
 template <dolfinx::scalar T, std::floating_point U>
-void assemble_expressionx(
+void assemble_expression(
     std::span<T> values, std::array<std::size_t, 2> vshape,
     const fem::Expression<T, U>& e, std::span<const T> coeffs,
     std::size_t cstride, std::span<const T> constants,
@@ -117,15 +117,15 @@ void assemble_expression(std::span<T> values, std::array<std::size_t, 2> vshape,
   if (std ::shared_ptr<const FunctionSpace<U>> V = e.argument_function_space();
       V)
   {
-    assemble_expressionx<T, U>(values, vshape, e, std::span<const T>(coeffs),
-                               cstride, std::span<const T>(constants), mesh,
-                               entities, *V);
+    assemble_expression<T, U>(values, vshape, e, std::span<const T>(coeffs),
+                              cstride, std::span<const T>(constants), mesh,
+                              entities, *V);
   }
   else
   {
-    assemble_expressionx<T, U>(values, vshape, e, std::span<const T>(coeffs),
-                               cstride, std::span<const T>(constants), mesh,
-                               entities, std::nullopt);
+    assemble_expression<T, U>(values, vshape, e, std::span<const T>(coeffs),
+                              cstride, std::span<const T>(constants), mesh,
+                              entities, std::nullopt);
   }
 }
 
