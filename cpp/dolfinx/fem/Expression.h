@@ -21,6 +21,9 @@
 
 namespace dolfinx::fem
 {
+template <dolfinx::scalar T, std::floating_point U>
+class Function;
+
 /// @brief An Expression represents a mathematical expression evaluated
 /// at a pre-defined set of points on a reference cell.
 ///

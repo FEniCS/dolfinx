@@ -26,6 +26,12 @@
 #include <span>
 #include <vector>
 
+namespace dolfinx::fem
+{
+template <dolfinx::scalar T, std::floating_point U>
+class DirichletBC;
+
+}
 namespace dolfinx::fem::impl
 {
 /// @cond
