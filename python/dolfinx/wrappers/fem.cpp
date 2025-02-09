@@ -575,18 +575,6 @@ void declare_objects(nb::module_& m, const std::string& type)
           nb::arg("coefficients"), nb::arg("constants"), nb::arg("X"),
           nb::arg("fn"), nb::arg("value_shape"),
           nb::arg("argument_function_space"))
-      .def(
-          "eval",
-          [](const dolfinx::fem::Expression<T, U>& self,
-             const dolfinx::mesh::Mesh<U>& mesh,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
-             nb::ndarray<T, nb::ndim<2>, nb::c_contig> values)
-          {
-            std::span<T> foo(values.data(), values.size());
-            self.eval(mesh, std::span(cells.data(), cells.size()), foo,
-                      {values.shape(0), values.shape(1)});
-          },
-          nb::arg("mesh"), nb::arg("active_cells"), nb::arg("values"))
       .def("X",
            [](const dolfinx::fem::Expression<T, U>& self)
            {

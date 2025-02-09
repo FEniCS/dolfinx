@@ -8,28 +8,27 @@
 
 #include "Constant.h"
 #include "Function.h"
-#include "pack.h"
-#include "utils.h"
 #include <algorithm>
 #include <array>
 #include <concepts>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
+#include <memory>
 #include <span>
 #include <utility>
 #include <vector>
 
 namespace dolfinx::fem
 {
-/// @brief Represents a mathematical expression evaluated at a
-/// pre-defined set of points on the reference cell.
+/// @brief An Expression represents a mathematical expression evaluated
+/// at a pre-defined set of points on a reference cell.
 ///
 //// This class closely follows the concept of a UFC Expression.
 ///
-/// The functionality can be used to evaluate a gradient of a Function
-/// at quadrature points in all cells. This evaluated gradient can then
-/// be used as input in to a non-FEniCS function that calculates a
+/// An example of Expressions use is to evaluate a gradient of a
+/// Function at quadrature points in cells. This evaluated gradient can
+/// then be used as input in to a non-FEniCS function that calculates a
 /// material constitutive model.
 ///
 /// @tparam T The scalar type
@@ -50,7 +49,7 @@ public:
 
   /// @brief Create an Expression.
   ///
-  /// @note Users should prefer the @ref create_expression factory
+  /// @note Users should prefer the fem::create_expression factory
   /// functions.
   ///
   /// @param[in] coefficients Coefficients in the Expression.
@@ -140,126 +139,6 @@ public:
       n.push_back(n.back() + c->function_space()->element()->space_dimension());
     }
     return n;
-  }
-
-  /// @brief Evaluate Expression on cells or facets.
-  ///
-  /// @param[in] mesh Cells on which to evaluate the Expression.
-  /// @param[in] entities List of entities to evaluate the expression
-  /// on. This could be either a list of cells or a list of (cell, local
-  /// @param[out] values A 2D array to store the result. Caller is
-  /// responsible for correct sizing which should be `(num_cells,
-  /// num_points * value_size * num_all_argument_dofs columns)`.
-  /// facet index) tuples. Array is flattened per entity.
-  /// @param[in] vshape The shape of `values` (row-major storage).
-  void eval(const mesh::Mesh<geometry_type>& mesh,
-            std::span<const std::int32_t> entities,
-            std::span<scalar_type> values,
-            std::array<std::size_t, 2> vshape) const
-  {
-    std::size_t estride;
-    if (mesh.topology()->dim() == _x_ref.second[1])
-      estride = 1;
-    else if (mesh.topology()->dim() == _x_ref.second[1] + 1)
-      estride = 2;
-    else
-      throw std::runtime_error("Invalid dimension of evaluation points.");
-
-    // Prepare coefficients and constants
-    std::vector<T> coeffs((entities.size() / estride)
-                          * this->coefficient_offsets().back());
-    int cstride = this->coefficient_offsets().back();
-    {
-      std::vector<
-          std::reference_wrapper<const Function<scalar_type, geometry_type>>>
-          c;
-      std::ranges::transform(this->coefficients(), std::back_inserter(c),
-                             [](auto c) -> const Function<T, U>&
-                             { return *c; });
-      fem::pack_coefficients(c, this->coefficient_offsets(), entities, estride,
-                             std::span(coeffs));
-    }
-    std::vector<scalar_type> constant_data = fem::pack_constants(*this);
-
-    auto fn = this->get_tabulate_expression();
-
-    // Prepare cell geometry
-    auto x_dofmap = mesh.geometry().dofmap();
-
-    // Get geometry data
-    auto& cmap = mesh.geometry().cmap();
-
-    std::size_t num_dofs_g = cmap.dim();
-    auto x_g = mesh.geometry().x();
-
-    // Create data structures used in evaluation
-    std::vector<geometry_type> coord_dofs(3 * num_dofs_g);
-
-    int num_argument_dofs = 1;
-    std::span<const std::uint32_t> cell_info;
-    std::function<void(std::span<scalar_type>, std::span<const std::uint32_t>,
-                       std::int32_t, int)>
-        post_dof_transform
-        = [](std::span<scalar_type>, std::span<const std::uint32_t>,
-             std::int32_t, int)
-    {
-      // Do nothing
-    };
-
-    if (_argument_function_space)
-    {
-      num_argument_dofs
-          = _argument_function_space->dofmap()->element_dof_layout().num_dofs();
-      auto element = _argument_function_space->element();
-      num_argument_dofs *= _argument_function_space->dofmap()->bs();
-      assert(element);
-      if (element->needs_dof_transformations())
-      {
-        mesh.topology_mutable()->create_entity_permutations();
-        cell_info = std::span(mesh.topology()->get_cell_permutation_info());
-        post_dof_transform
-            = element->template dof_transformation_right_fn<scalar_type>(
-                doftransform::transpose);
-      }
-    }
-
-    // Create get entity index function
-    std::function<const std::int32_t*(std::span<const std::int32_t>,
-                                      std::size_t)>
-        get_entity_index
-        = []([[maybe_unused]] std::span<const std::int32_t> entities,
-             [[maybe_unused]] std::size_t idx) { return nullptr; };
-    if (estride == 2)
-    {
-      get_entity_index
-          = [](std::span<const std::int32_t> entities, std::size_t idx)
-      { return entities.data() + 2 * idx + 1; };
-    }
-
-    // Iterate over cells and 'assemble' into values
-    int size0 = _x_ref.second[0] * value_size();
-    std::vector<scalar_type> values_local(size0 * num_argument_dofs, 0);
-    for (std::size_t e = 0; e < entities.size() / estride; ++e)
-    {
-      std::int32_t entity = entities[e * estride];
-      auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-          x_dofmap, entity, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
-      for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      {
-        std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), 3,
-                    std::next(coord_dofs.begin(), 3 * i));
-      }
-
-      const scalar_type* coeff_cell = coeffs.data() + e * cstride;
-      const int* entity_index = get_entity_index(entities, e);
-
-      std::ranges::fill(values_local, 0);
-      _fn(values_local.data(), coeff_cell, constant_data.data(),
-          coord_dofs.data(), entity_index, nullptr);
-      post_dof_transform(values_local, cell_info, e, size0);
-      for (std::size_t j = 0; j < values_local.size(); ++j)
-        values[e * vshape[1] + j] = values_local[j];
-    }
   }
 
   /// @brief Get function for tabulate_expression.

@@ -14,6 +14,8 @@
 
 // ## C++ program
 
+#include <dolfinx/fem/assembler.h>
+
 #include "hyperelasticity.h"
 #include <algorithm>
 #include <basix/finite-element.h>
@@ -21,7 +23,6 @@
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/la/Vector.h>

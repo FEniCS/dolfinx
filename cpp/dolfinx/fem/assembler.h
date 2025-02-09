@@ -6,6 +6,9 @@
 
 #pragma once
 
+#include "Function.h"
+#include "FunctionSpace.h"
+#include "assemble_expression_impl.h"
 #include "assemble_matrix_impl.h"
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
@@ -20,14 +23,111 @@
 #include <span>
 #include <vector>
 
+/// @file assembler.h
+/// @brief Functions supporting assembly of finite element fem::Form and
+/// fem::Expression.
+
 namespace dolfinx::fem
 {
 template <dolfinx::scalar T, std::floating_point U>
 class DirichletBC;
 template <dolfinx::scalar T, std::floating_point U>
+class Expression;
+template <dolfinx::scalar T, std::floating_point U>
 class Form;
 template <std::floating_point T>
 class FunctionSpace;
+
+/// @brief Evaluate an Expression on cells or facets.
+///
+/// This function accepts packed coefficient data, which allows it be
+/// called without re-packing all coefficient data.
+///
+/// @tparam T Scalar type.
+/// @tparam U Geometry type
+/// @param[in,out] values Array to fil with computed values. Row major
+/// storage. Sizing should be `(num_cells, num_points * value_size *
+/// num_all_argument_dofs columns)`. facet index) tuples. Array is
+/// flattened per entity.
+/// @param[in] vshape Shape of `values`.
+/// @param[in] e Expression to evaluate.
+/// @param[in] coeffs Packed coefficients for the Expressions. Typically
+/// computed using fem::pack_coefficients.
+/// @param[in] cstride Offset in `coeffs` for each mesh entity, e.g.
+/// `coeffs.data() + i * cstride` is the pointer to the coefficient data
+/// for the ith entity in `entities`.
+/// @param[in] constants Packed constant data. Typically computed using
+/// fem::pack_constants.
+/// @param[in] mesh Mesh that the Expression is evaluated on.
+/// @param[in] entities Mesh entities to evaluated the Expression for.
+/// @param[in] V Function space for Argument.
+template <dolfinx::scalar T, std::floating_point U>
+void assemble_expressionx(
+    std::span<T> values, std::array<std::size_t, 2> vshape,
+    const fem::Expression<T, U>& e, std::span<const T> coeffs,
+    std::size_t cstride, std::span<const T> constants,
+    const mesh::Mesh<U>& mesh, std::span<const std::int32_t> entities,
+    std::optional<std::reference_wrapper<const FunctionSpace<U>>> V)
+{
+  auto [X, Xshape] = e.X();
+  impl::assemble_expression(values, vshape, e.get_tabulate_expression(), Xshape,
+                            e.value_size(), coeffs, cstride, constants, mesh,
+                            entities, V);
+}
+
+/// @brief Evaluate an Expression on cells or facets.
+/// @tparam T Scalar type.
+/// @tparam U Geometry type
+/// @param[in,out] values Array to fil with computed values. Row major
+/// storage. Sizing should be `(num_cells, num_points * value_size *
+/// num_all_argument_dofs columns)`. facet index) tuples. Array is
+/// flattened per entity.
+/// @param[in] vshape Shape of `values`.
+/// @param[in] e Expression to evaluate.
+/// @param[in] mesh Mesh to compute `e` on.
+/// @param[in] entities Mesh entities to evaluate `e` on.
+template <dolfinx::scalar T, std::floating_point U>
+void assemble_expression(std::span<T> values, std::array<std::size_t, 2> vshape,
+                         const fem::Expression<T, U>& e,
+                         const mesh::Mesh<U>& mesh,
+                         std::span<const std::int32_t> entities)
+{
+  auto [X, Xshape] = e.X();
+  std::size_t estride;
+  if (mesh.topology()->dim() == Xshape[1])
+    estride = 1;
+  else if (mesh.topology()->dim() == Xshape[1] + 1)
+    estride = 2;
+  else
+    throw std::runtime_error("Invalid dimension of evaluation points.");
+
+  std::vector<int> coffsets = e.coefficient_offsets();
+  const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
+      = e.coefficients();
+  std::vector<T> coeffs((entities.size() / estride) * coffsets.back());
+  int cstride = coffsets.back();
+  {
+    std::vector<std::reference_wrapper<const Function<T, U>>> c;
+    std::ranges::transform(coefficients, std::back_inserter(c),
+                           [](auto c) -> const Function<T, U>& { return *c; });
+    fem::pack_coefficients(c, coffsets, entities, estride, std::span(coeffs));
+  }
+  std::vector<T> constants = fem::pack_constants(e);
+
+  if (std ::shared_ptr<const FunctionSpace<U>> V = e.argument_function_space();
+      V)
+  {
+    assemble_expressionx<T, U>(values, vshape, e, std::span<const T>(coeffs),
+                               cstride, std::span<const T>(constants), mesh,
+                               entities, *V);
+  }
+  else
+  {
+    assemble_expressionx<T, U>(values, vshape, e, std::span<const T>(coeffs),
+                               cstride, std::span<const T>(constants), mesh,
+                               entities, std::nullopt);
+  }
+}
 
 // -- Helper functions -----------------------------------------------------
 
@@ -407,4 +507,5 @@ void set_diagonal(
     }
   }
 }
+
 } // namespace dolfinx::fem

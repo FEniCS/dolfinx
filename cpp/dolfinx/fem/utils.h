@@ -51,6 +51,9 @@ class IndexMap;
 
 namespace dolfinx::fem
 {
+template <dolfinx::scalar T, std::floating_point U>
+class Expression;
+
 namespace impl
 {
 /// Helper function to get an array of of (cell, local_facet) pairs

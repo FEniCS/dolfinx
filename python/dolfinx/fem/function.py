@@ -241,7 +241,7 @@ class Expression:
                 raise TypeError("Passed array values does not have correct shape.")
             if values.dtype != self.dtype:
                 raise TypeError("Passed array values does not have correct dtype.")
-        self._cpp_object.eval(mesh._cpp_object, _entities, values)
+        _cpp.fem.assemble_expression(values, self._cpp_object, mesh._cpp_object, _entities)
         return values
 
     def X(self) -> np.ndarray:

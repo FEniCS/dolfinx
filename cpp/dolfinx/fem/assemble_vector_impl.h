@@ -1079,7 +1079,8 @@ void apply_lifting(
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
     const std::vector<
-        std::vector<std::reference_wrapper<const DirichletBC<T, U>>>>& bcs1,
+        std::vector<std::reference_wrapper<const fem::DirichletBC<T, U>>>>&
+        bcs1,
     const std::vector<std::span<const T>>& x0, T alpha)
 {
   if (!x0.empty() and x0.size() != a.size())
@@ -1189,27 +1190,28 @@ void assemble_vector(
       auto fn = L.kernel(IntegralType::cell, i, cell_type_idx);
       assert(fn);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-      std::vector<std::int32_t> cells = L.domain(IntegralType::cell, i, cell_type_idx);
+      std::vector<std::int32_t> cells
+          = L.domain(IntegralType::cell, i, cell_type_idx);
       if (bs == 1)
       {
         impl::assemble_cells<T, 1>(
             P0, b, x_dofmap, x, cells,
-            {dofs, bs, L.domain(IntegralType::cell, i, cell_type_idx, *mesh0)}, fn, constants,
-            coeffs, cstride, cell_info0);
+            {dofs, bs, L.domain(IntegralType::cell, i, cell_type_idx, *mesh0)},
+            fn, constants, coeffs, cstride, cell_info0);
       }
       else if (bs == 3)
       {
         impl::assemble_cells<T, 3>(
             P0, b, x_dofmap, x, cells,
-            {dofs, bs, L.domain(IntegralType::cell, i, cell_type_idx, *mesh0)}, fn, constants,
-            coeffs, cstride, cell_info0);
+            {dofs, bs, L.domain(IntegralType::cell, i, cell_type_idx, *mesh0)},
+            fn, constants, coeffs, cstride, cell_info0);
       }
       else
       {
         impl::assemble_cells(
             P0, b, x_dofmap, x, cells,
-            {dofs, bs, L.domain(IntegralType::cell, i, cell_type_idx, *mesh0)}, fn, constants,
-            coeffs, cstride, cell_info0);
+            {dofs, bs, L.domain(IntegralType::cell, i, cell_type_idx, *mesh0)},
+            fn, constants, coeffs, cstride, cell_info0);
       }
     }
 

@@ -391,7 +391,11 @@ public:
         f(fdata.data(), num_cells, num_points, value_size);
 
     // Evaluate Expression at points
-    e0.eval(*mesh0, cells0, fdata, {num_cells, num_points * value_size});
+    // e0.eval(*mesh0, cells0, fdata, {num_cells, num_points * value_size});
+    assemble_expression(
+        std::span(fdata),
+        std::array<std::size_t, 2>{num_cells, num_points * value_size}, e0,
+        *mesh0, cells0);
 
     // Reshape evaluated data to fit interpolate.
     // Expression returns matrix of shape (num_cells, num_points *

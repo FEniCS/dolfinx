@@ -209,7 +209,8 @@ void declare_assembly_functions(nb::module_& m)
       nb::arg("form"), "Pack coefficients for a Form.");
   m.def(
       "pack_constants",
-      [](const dolfinx::fem::Form<T, U>& form) {
+      [](const dolfinx::fem::Form<T, U>& form)
+      {
         return dolfinx_wrappers::as_nbarray(dolfinx::fem::pack_constants(form));
       },
       nb::arg("form"), "Pack constants for a Form.");
@@ -218,6 +219,23 @@ void declare_assembly_functions(nb::module_& m)
       { return dolfinx_wrappers::as_nbarray(dolfinx::fem::pack_constants(e)); },
       nb::arg("e"), "Pack constants for an Expression.");
 
+  // Expression
+  m.def(
+      "assemble_expression",
+      [](nb::ndarray<T, nb::ndim<2>, nb::c_contig> values,
+         const dolfinx::fem::Expression<T, U>& e,
+         const dolfinx::mesh::Mesh<U>& mesh,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells)
+      {
+        dolfinx::fem::assemble_expression<T>(
+            std::span<T>(values.data(), values.size()),
+            {values.shape(0), values.shape(1)}, e, mesh,
+            std::span(cells.data(), cells.size()));
+      },
+      nb::arg("values"), nb::arg("expression"), nb::arg("mesh"),
+      nb::arg("cells"),
+      "Assemble functional over mesh with provided constants and "
+      "coefficients");
   // Functional
   m.def(
       "assemble_scalar",
