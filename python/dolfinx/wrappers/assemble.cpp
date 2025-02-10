@@ -234,8 +234,7 @@ void declare_assembly_functions(nb::module_& m)
       },
       nb::arg("values"), nb::arg("expression"), nb::arg("mesh"),
       nb::arg("cells"),
-      "Assemble functional over mesh with provided constants and "
-      "coefficients");
+      "Evaluate an Expression of mesh entities.");
   // Functional
   m.def(
       "assemble_scalar",
