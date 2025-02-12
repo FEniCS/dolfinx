@@ -28,6 +28,6 @@ jobs:
       - name: Set FEniCSx component git refs
         id: fenicsx-refs
         run: |
-          echo "basix_ref=main" >> $GITHUB_OUTPUT
+          echo "basix_ref=jhale/intel-oneapi-complex-include_next" >> $GITHUB_OUTPUT
           echo "ufl_ref=main" >> $GITHUB_OUTPUT
           echo "ffcx_ref=main" >> $GITHUB_OUTPUT
