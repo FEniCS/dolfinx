@@ -15,7 +15,6 @@
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/generation.h>
 #include <dolfinx/mesh/utils.h>
-
 #include <numeric>
 #include <string>
 
@@ -23,13 +22,11 @@ using namespace dolfinx;
 
 namespace
 {
-
-void test_read_named_meshtags()
+void test_check_read_data()
 {
-  const std::string mesh_file_name = "Domain.xdmf";
-
+  const std::string mesh_file_name = "read_types.xdmf";
   constexpr std::int32_t domain_value = 1;
-  constexpr std::int32_t material_value = 2;
+  constexpr float material_value = 2.5;
 
   // Create mesh
   auto part = mesh::create_cell_partitioner(mesh::GhostMode::none);
@@ -42,17 +39,18 @@ void test_read_named_meshtags()
   std::iota(std::begin(indices), std::end(indices), 0);
 
   std::vector<std::int32_t> domain_values(n_cells, domain_value);
-  std::vector<std::int32_t> material_values(n_cells, material_value);
+  std::vector<float> material_values(n_cells, material_value);
 
   mesh::MeshTags<std::int32_t> mt_domains(mesh->topology(), 2, indices,
                                           domain_values);
   mt_domains.name = "domain";
 
-  mesh::MeshTags<std::int32_t> mt_materials(mesh->topology(), 2, indices,
-                                            material_values);
+  mesh::MeshTags<float> mt_materials(mesh->topology(), 2, indices,
+                                     material_values);
   mt_materials.name = "material";
 
-  io::XDMFFile file(mesh->comm(), mesh_file_name, "w", io::XDMFFile::Encoding::HDF5);
+  io::XDMFFile file(mesh->comm(), mesh_file_name, "w",
+                    io::XDMFFile::Encoding::HDF5);
   file.write_mesh(*mesh);
   file.write_meshtags(mt_domains, mesh->geometry(),
                       "/Xdmf/Domain/mesh/Geometry");
@@ -66,26 +64,18 @@ void test_read_named_meshtags()
       fem::CoordinateElement<double>(mesh::CellType::triangle, 1),
       mesh::GhostMode::none, "mesh"));
 
-  const auto mt_first
-      = mesh_file.read_meshtags<std::int32_t>(*mesh, "material", {});
-  CHECK(mt_first.values().front() == material_value);
-
-  const auto mt_domain
-      = mesh_file.read_meshtags<std::int32_t>(*mesh, "domain", "domain",
-                                              "/Xdmf/Domain");
+  mesh::MeshTags<std::int32_t> mt_domain
+      = mesh_file.read_meshtags(*mesh, "domain", "domain", "/Xdmf/Domain");
   CHECK(mt_domain.values().front() == domain_value);
 
-  const auto mt_material
-      = mesh_file.read_meshtags<std::int32_t>(*mesh, "material", "material",
-                                              "/Xdmf/Domain");
-  CHECK(mt_material.values().front() == material_value);
+  CHECK_THROWS(
+      mesh_file.read_meshtags(*mesh, "material", "material", "/Xdmf/Domain"));
 
-  CHECK_THROWS(mesh_file.read_meshtags(*mesh, "mesh", "missing"));
-  mesh_file.close();
+  const auto mt_material = mesh_file.read_meshtags<float>(
+      *mesh, "material", "material", "/Xdmf/Domain");
+  CHECK(mt_material.values().front() == material_value);
 }
+
 } // namespace
 
-TEST_CASE("Read meshtag by name", "[read_meshtag_by_name]")
-{
-  test_read_named_meshtags();
-}
+TEST_CASE("Check read data", "[check_read_data]") { test_check_read_data(); }

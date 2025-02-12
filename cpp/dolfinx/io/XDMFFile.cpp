@@ -297,8 +297,146 @@ XDMFFile::write_function(const fem::Function<std::complex<double>, double>&,
                          double, std::string);
 /// @endcond
 //-----------------------------------------------------------------------------
-template <std::floating_point T>
-void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
+void XDMFFile::read_function(const mesh::Mesh<double>& mesh, std::string name,
+                             fem::Function<double, double>& u,
+                             std::optional<std::string> function_name,
+                             std::string xpath)
+{
+  /*
+   *  This routine reads a function from file. The implementation closely
+   *  follows `XDMFFile::read_meshtags` below.
+   *
+   *  For reference, we are reading an xdmf file whose header is akin to
+   *
+   *  <Xdmf Version="3.0">
+   *    <Domain>
+   *        <Grid Name="Grid">
+   *            <Geometry GeometryType="XYZ">
+   *                <DataItem DataType="Float" Dimensions="23103 3" Format="HDF"
+   * Precision="4"> power.h5:/data0</DataItem>
+   *            </Geometry>
+   *            <Topology TopologyType="Hexahedron" NumberOfElements="15000"
+   * NodesPerElement="8"> <DataItem DataType="Int" Dimensions="15000 8"
+   * Format="HDF" Precision="8"> power.h5:/data1</DataItem>
+   *            </Topology>
+   *            <Attribute Name="wall power density" AttributeType="Scalar"
+   * Center="Node"> <DataItem DataType="Float" Dimensions="23103" Format="HDF"
+   * Precision="8"> power.h5:/data2</DataItem>
+   *            </Attribute>
+   *      </Grid>
+   *  </Domain>
+   *  </Xdmf>
+   *
+   *  and that was generated saving a vtu file from Paraview and converting it
+   *  to xdmf with meshio.
+   *
+   *  The goal for now is to read a P1 function, so the degrees of freedom are
+   *  the vertexes of the mesh.
+   */
+  spdlog::info("XDMF read function ({})", name);
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+  if (!node)
+    throw std::runtime_error("XML node '" + xpath + "' not found.");
+  pugi::xml_node grid_node
+      = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
+  if (!grid_node)
+    throw std::runtime_error("<Grid> with name '" + name + "' not found.");
+
+  pugi::xml_node values_data_node
+      = grid_node.child("Attribute").child("DataItem");
+  if (function_name)
+  {
+    // Search for a child that contains an attribute with the requested name
+    pugi::xml_node function_node = grid_node.find_child(
+        [fun_name = *function_name](auto n)
+        { return n.attribute("Name").value() == fun_name; });
+    if (!function_node)
+    {
+      throw std::runtime_error("Function with name '" + *function_name
+                               + "' not found.");
+    }
+    else
+      values_data_node = function_node.child("DataItem");
+  }
+  const std::vector values
+      = xdmf_utils::get_dataset<double>(_comm.comm(), values_data_node, _h5_id);
+
+  /*
+   * Reading the cell type would read "hexahedron", so we set this
+   * manually to "point" instead.
+   */
+  mesh::CellType cell_type = mesh::CellType::point;
+
+  /*
+   * The `entities1` vector contains the global indexes of the entities
+   * [aka points] that this process owns.
+   */
+  std::int64_t num_xnodes = mesh.geometry().index_map()->size_global();
+  auto range
+      = dolfinx::MPI::local_range(dolfinx::MPI::rank(mesh.comm()), num_xnodes,
+                                  dolfinx::MPI::size(mesh.comm()));
+  std::vector<std::int64_t> entities1(range[1] - range[0]);
+  std::iota(entities1.begin(), entities1.end(), range[0]);
+
+  std::array<std::size_t, 2> shape
+      = {static_cast<std::size_t>(range[1] - range[0]), 1};
+
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const std::int64_t,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+      entities_span(entities1.data(), shape);
+
+  std::pair<std::vector<std::int32_t>, std::vector<double>> entities_values
+      = xdmf_utils::distribute_entity_data<double>(
+          *mesh.topology(), mesh.geometry().input_global_indices(),
+          mesh.geometry().index_map()->size_global(),
+          mesh.geometry().cmap().create_dof_layout(), mesh.geometry().dofmap(),
+          mesh::cell_dim(cell_type), entities_span, values);
+
+  auto num_vertices_per_cell
+      = dolfinx::mesh::num_cell_vertices(mesh.topology()->cell_type());
+  std::vector<std::int32_t> local_vertex_map(num_vertices_per_cell);
+
+  for (int i = 0; i < num_vertices_per_cell; ++i)
+  {
+    const auto v_to_d
+        = u.function_space()->dofmap()->element_dof_layout().entity_dofs(0, i);
+    assert(v_to_d.size() == 1);
+    local_vertex_map[i] = v_to_d.front();
+  }
+
+  const auto tdim = mesh.topology()->dim();
+  const auto c_to_v = mesh.topology()->connectivity(tdim, 0);
+  std::vector<std::int32_t> vertex_to_dofmap(
+      mesh.topology()->index_map(0)->size_local()
+      + mesh.topology()->index_map(0)->num_ghosts());
+
+  for (int i = 0; i < mesh.topology()->index_map(tdim)->size_local(); ++i)
+  {
+    const auto local_vertices = c_to_v->links(i);
+    const auto local_dofs = u.function_space()->dofmap()->cell_dofs(i);
+    for (int j = 0; j < num_vertices_per_cell; ++j)
+    {
+      vertex_to_dofmap[local_vertices[j]] = local_dofs[local_vertex_map[j]];
+    }
+  }
+
+  /*
+   * After the data is read and distributed, we need to place the
+   * retrieved values in the correct position in the function's array,
+   * reading values and positions from `entities_values`.
+   */
+  for (size_t i = 0; i < entities_values.first.size(); ++i)
+  {
+    u.x()->mutable_array()[vertex_to_dofmap[entities_values.first[i]]]
+        = entities_values.second[i];
+  }
+
+  u.x()->scatter_fwd();
+}
+//-----------------------------------------------------------------------------
+template <typename U, std::floating_point T>
+void XDMFFile::write_meshtags(const mesh::MeshTags<U>& meshtags,
                               const mesh::Geometry<T>& x,
                               std::string geometry_xpath, std::string xpath)
 {
@@ -331,9 +469,28 @@ template void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>&,
 template void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>&,
                                        const mesh::Geometry<double>& x,
                                        std::string, std::string);
+template void XDMFFile::write_meshtags(const mesh::MeshTags<std::int64_t>&,
+                                       const mesh::Geometry<float>& x,
+                                       std::string, std::string);
+template void XDMFFile::write_meshtags(const mesh::MeshTags<std::int64_t>&,
+                                       const mesh::Geometry<double>& x,
+                                       std::string, std::string);
+template void XDMFFile::write_meshtags(const mesh::MeshTags<float>&,
+                                       const mesh::Geometry<float>& x,
+                                       std::string, std::string);
+template void XDMFFile::write_meshtags(const mesh::MeshTags<float>&,
+                                       const mesh::Geometry<double>& x,
+                                       std::string, std::string);
+template void XDMFFile::write_meshtags(const mesh::MeshTags<double>&,
+                                       const mesh::Geometry<float>& x,
+                                       std::string, std::string);
+template void XDMFFile::write_meshtags(const mesh::MeshTags<double>&,
+                                       const mesh::Geometry<double>& x,
+                                       std::string, std::string);
 /// @endcond
 //-----------------------------------------------------------------------------
-mesh::MeshTags<std::int32_t>
+template <typename T>
+mesh::MeshTags<T>
 XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
                         std::optional<std::string> attribute_name,
                         std::string xpath)
@@ -363,10 +520,73 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
                                + "' not found.");
     }
     else
+    {
       values_data_node = attribute_node.child("DataItem");
+    }
   }
-  const std::vector values = xdmf_utils::get_dataset<std::int32_t>(
-      _comm.comm(), values_data_node, _h5_id);
+
+  // Now we need to figure out what type of data the file contains and check
+  // that it is compatible with what we are reading.
+
+  // If the data is stored in HDF format
+  if (const auto& format_attribute = values_data_node.attribute("Format");
+      format_attribute && std::string(format_attribute.value()) == "HDF")
+  {
+    const auto& [file_name, node_path]
+        = xdmf_utils::get_hdf5_paths(values_data_node);
+
+    // Then we need to read the data type from the .h5 file
+    const auto datatype_id
+        = io::hdf5::get_dataset_datatype(_h5_id, node_path.c_str());
+
+    if (!H5Tequal(datatype_id, io::hdf5::hdf5_type<T>()))
+    {
+      throw std::runtime_error(
+          "The data in the XDMF file does not match the required data type.");
+    }
+  }
+  else
+  {
+    // Otherwise, this information should be stored in node attributes in the
+    // XML file
+    std::string data_type;
+
+    // "DataType" is the attribute used in the current version of the
+    // standard...
+    if (const auto& data_type_attribute
+        = values_data_node.attribute("DataType");
+        data_type_attribute)
+      data_type = data_type_attribute.value();
+    // ... But "NumberType" is supported too and widely used in its place
+    else if (const auto& data_type_attribute
+             = values_data_node.attribute("NumberType");
+             data_type_attribute)
+      data_type = data_type_attribute.value();
+    // If unspecified, use the standard's implicit default
+    else
+      data_type = "Float";
+
+    int precision;
+
+    // If there is an attribute that specifies the precision, read it from there
+    if (const auto& precision_attribute
+        = values_data_node.attribute("Precision");
+        precision_attribute)
+      precision = std::stol(values_data_node.attribute("Precision").value());
+    // otherwhise use the standard's default
+    else
+      precision = 4;
+
+    if (data_type != xdmf_integral_float<T>::data_type
+        || precision != xdmf_integral_float<T>::precision)
+    {
+      throw std::runtime_error(
+          "The data in the XDMF file does not match the required data type.");
+    }
+  }
+
+  const std::vector values
+      = xdmf_utils::get_dataset<T>(_comm.comm(), values_data_node, _h5_id);
 
   const std::pair<std::string, int> cell_type_str
       = xdmf_utils::get_cell_type(grid_node.child("Topology"));
@@ -380,8 +600,8 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
       const std::int64_t,
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
       entities_span(entities1.data(), eshape);
-  std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-      entities_values = xdmf_utils::distribute_entity_data<std::int32_t>(
+  std::pair<std::vector<std::int32_t>, std::vector<T>> entities_values
+      = xdmf_utils::distribute_entity_data<T>(
           *mesh.topology(), mesh.geometry().input_global_indices(),
           mesh.geometry().index_map()->size_global(),
           mesh.geometry().cmap().create_dof_layout(), mesh.geometry().dofmap(),
@@ -397,11 +617,31 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
                                       num_vertices_per_entity);
   mesh::MeshTags meshtags = mesh::create_meshtags(
       mesh.topology(), mesh::cell_dim(cell_type), entities_adj,
-      std::span<const std::int32_t>(entities_values.second));
+      std::span<const T>(entities_values.second));
   meshtags.name = name;
 
   return meshtags;
 }
+//-----------------------------------------------------------------------------
+// Instantiation for different types
+/// @cond
+template mesh::MeshTags<std::int32_t>
+XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
+                        std::optional<std::string> attribute_name,
+                        std::string xpath);
+template mesh::MeshTags<std::int64_t>
+XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
+                        std::optional<std::string> attribute_name,
+                        std::string xpath);
+template mesh::MeshTags<float>
+XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
+                        std::optional<std::string> attribute_name,
+                        std::string xpath);
+template mesh::MeshTags<double>
+XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
+                        std::optional<std::string> attribute_name,
+                        std::string xpath);
+/// @endcond
 //-----------------------------------------------------------------------------
 std::pair<mesh::CellType, int> XDMFFile::read_cell_type(std::string grid_name,
                                                         std::string xpath)

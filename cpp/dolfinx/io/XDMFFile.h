@@ -45,6 +45,44 @@ class MeshTags;
 namespace dolfinx::io
 {
 
+// An auxiliary struct to compare C++ types and HDF5 types
+/// @cond
+template <typename T>
+struct xdmf_integral_float
+{
+};
+
+// Instantiation for different types
+template <>
+struct xdmf_integral_float<std::int32_t>
+{
+  static constexpr std::string_view data_type = "Int";
+  static constexpr std::size_t precision = 4;
+};
+
+template <>
+struct xdmf_integral_float<std::int64_t>
+{
+  static constexpr std::string_view data_type = "Int";
+  static constexpr std::size_t precision = 8;
+};
+
+template <>
+struct xdmf_integral_float<float>
+{
+  static constexpr std::string_view data_type = "Float";
+  static constexpr std::size_t precision = 4;
+};
+
+template <>
+struct xdmf_integral_float<double>
+{
+  static constexpr std::string_view data_type = "Float";
+  static constexpr std::size_t precision = 8;
+};
+/// @endcond
+//-----------------------------------------------------------------------------
+
 /// @brief Read and write mesh::Mesh, fem::Function and other objects in
 /// XDMF.
 ///
@@ -152,14 +190,24 @@ public:
                       std::string mesh_xpath
                       = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
 
+  /// Read Function
+  /// @param[in] mesh The Mesh that the data is defined on
+  /// @param[in] name
+  /// @param[out] u The function into which to read data
+  /// @param[in] function_name The (optional) name of the function to read from file
+  /// @param[in] xpath XPath where MeshFunction Grid is stored in file
+  void read_function(const mesh::Mesh<double>& mesh, std::string name,
+                         fem::Function<double, double>& u, std::optional<std::string> function_name,
+                         std::string xpath = "/Xdmf/Domain");
+
   /// Write MeshTags
   /// @param[in] meshtags
   /// @param[in] x Mesh geometry
   /// @param[in] geometry_xpath XPath where Geometry is already stored
   /// in file
   /// @param[in] xpath XPath where MeshTags Grid will be inserted
-  template <std::floating_point T>
-  void write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
+  template <typename U, std::floating_point T>
+  void write_meshtags(const mesh::MeshTags<U>& meshtags,
                       const mesh::Geometry<T>& x, std::string geometry_xpath,
                       std::string xpath = "/Xdmf/Domain");
 
@@ -170,10 +218,11 @@ public:
   /// GridType="Uniform"
   /// @param[in] attribute_name Name of the attribute to read
   /// @param[in] xpath XPath where MeshTags Grid is stored in file
-  mesh::MeshTags<std::int32_t>
-  read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
-                std::optional<std::string> attribute_name,
-                std::string xpath = "/Xdmf/Domain");
+  template <typename T = std::int32_t>
+  mesh::MeshTags<T> read_meshtags(const mesh::Mesh<double>& mesh,
+                                             std::string name,
+                                             std::optional<std::string> attribute_name,
+                                             std::string xpath = "/Xdmf/Domain");
 
   /// Write Information
   /// @param[in] name
