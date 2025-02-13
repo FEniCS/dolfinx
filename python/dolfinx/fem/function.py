@@ -717,7 +717,11 @@ class FunctionSpace(ufl.FunctionSpace):
 
     @cached_property
     def element(self) -> FiniteElement:
-        """Function space finite element."""
+        """Function space finite element.
+        
+        Note:
+            Cached property: Wrapper constructed on initial call and not updated on subsequent calls.
+        """
         return FiniteElement(self._cpp_object.element)
 
     @property

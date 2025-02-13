@@ -195,6 +195,9 @@ class FiniteElement:
 
         Raises:
             Runtime error if Basix element does not exist.
+        
+        Note:
+            Cached property: Wrapper constructed on initial call and not updated on subsequent calls.
         """
         return basix.finite_element.FiniteElement(self._cpp_object.basix_element)
 
