@@ -74,9 +74,11 @@ void declare_function_space(nb::module_& m, std::string type)
                       std::shared_ptr<const dolfinx::fem::FiniteElement<T>>,
                       std::shared_ptr<const dolfinx::fem::DofMap>>(),
              nb::arg("mesh"), nb::arg("element"), nb::arg("dofmap"))
-        .def(nb::init<std::shared_ptr<const dolfinx::mesh::Mesh<T>>,
-                      std::vector<std::shared_ptr<const dolfinx::fem::FiniteElement<T>>>,
-                      std::vector<std::shared_ptr<const dolfinx::fem::DofMap>>>(),
+        .def(nb::init<
+                 std::shared_ptr<const dolfinx::mesh::Mesh<T>>,
+                 std::vector<
+                     std::shared_ptr<const dolfinx::fem::FiniteElement<T>>>,
+                 std::vector<std::shared_ptr<const dolfinx::fem::DofMap>>>(),
              nb::arg("mesh"), nb::arg("elements"), nb::arg("dofmaps"))
         .def("collapse", &dolfinx::fem::FunctionSpace<T>::collapse)
         .def("component", &dolfinx::fem::FunctionSpace<T>::component)
@@ -85,7 +87,8 @@ void declare_function_space(nb::module_& m, std::string type)
         .def_prop_ro("element", &dolfinx::fem::FunctionSpace<T>::element)
         .def_prop_ro("mesh", &dolfinx::fem::FunctionSpace<T>::mesh)
         .def_prop_ro("dofmap", &dolfinx::fem::FunctionSpace<T>::dofmap)
-        .def("dofmaps", &dolfinx::fem::FunctionSpace<T>::dofmaps, nb::arg("cell_type_index"))
+        .def("dofmaps", &dolfinx::fem::FunctionSpace<T>::dofmaps,
+             nb::arg("cell_type_index"))
         .def("sub", &dolfinx::fem::FunctionSpace<T>::sub, nb::arg("component"))
         .def("tabulate_dof_coordinates",
              [](const dolfinx::fem::FunctionSpace<T>& self)
@@ -468,8 +471,6 @@ void declare_objects(nb::module_& m, const std::string& type)
                 *element, self.function_space()->mesh()->geometry(),
                 std::span(cells.data(), cells.size()));
 
-            const int gdim = self.function_space()->mesh()->geometry().dim();
-
             // Compute value size
             auto vshape = self.function_space()->element()->value_shape();
             std::size_t value_size = std::reduce(vshape.begin(), vshape.end(),
@@ -731,7 +732,7 @@ void declare_form(nb::module_& m, std::string type)
               _entity_maps.emplace(msh, std::span(map.data(), map.size()));
             std::vector<std::reference_wrapper<const ufcx_form>> ps;
             for (auto form : forms)
-                ps.push_back(*(reinterpret_cast<ufcx_form*>(form)));
+              ps.push_back(*(reinterpret_cast<ufcx_form*>(form)));
             new (fp)
                 dolfinx::fem::Form<T, U>(dolfinx::fem::create_form_factory<T>(
                     ps, spaces, coefficients, constants, sd, _entity_maps,
@@ -1029,8 +1030,7 @@ void declare_real_functions(nb::module_& m)
              elements)
       {
         std::vector<dolfinx::fem::ElementDofLayout> layouts;
-        int D = topology.dim();
-        assert(elements.size() == topology.entity_types(D).size());
+        assert(elements.size() == topology.entity_types(topology.dim()).size());
         for (std::size_t i = 0; i < elements.size(); ++i)
         {
           layouts.push_back(

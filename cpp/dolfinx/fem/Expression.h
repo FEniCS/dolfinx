@@ -8,6 +8,8 @@
 
 #include "Constant.h"
 #include "Function.h"
+#include "pack.h"
+#include "utils.h"
 #include <algorithm>
 #include <array>
 #include <concepts>
@@ -20,9 +22,6 @@
 
 namespace dolfinx::fem
 {
-template <dolfinx::scalar T>
-class Constant;
-
 /// @brief Represents a mathematical expression evaluated at a
 /// pre-defined set of points on the reference cell.
 ///
@@ -167,8 +166,21 @@ public:
       throw std::runtime_error("Invalid dimension of evaluation points.");
 
     // Prepare coefficients and constants
-    auto [coeffs, cstride] = pack_coefficients(*this, entities, estride);
-    std::vector<scalar_type> constant_data = pack_constants(*this);
+    std::vector<T> coeffs((entities.size() / estride)
+                          * this->coefficient_offsets().back());
+    int cstride = this->coefficient_offsets().back();
+    {
+      std::vector<
+          std::reference_wrapper<const Function<scalar_type, geometry_type>>>
+          c;
+      std::ranges::transform(this->coefficients(), std::back_inserter(c),
+                             [](auto c) -> const Function<T, U>&
+                             { return *c; });
+      fem::pack_coefficients(c, this->coefficient_offsets(), entities, estride,
+                             std::span(coeffs));
+    }
+    std::vector<scalar_type> constant_data = fem::pack_constants(*this);
+
     auto fn = this->get_tabulate_expression();
 
     // Prepare cell geometry
