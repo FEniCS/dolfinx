@@ -254,7 +254,7 @@ def test_basix_element(V, W, Q, V2):
 
     # Mixed spaces do not yet return a basix element
     with pytest.raises(RuntimeError):
-        Q.element.basix_element
+        _ = Q.element.basix_element
 
 
 @pytest.mark.skip_in_parallel
