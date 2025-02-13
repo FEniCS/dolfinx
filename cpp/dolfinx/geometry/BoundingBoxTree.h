@@ -370,6 +370,20 @@ public:
   /// Return number of bounding boxes
   std::int32_t num_bboxes() const { return _bboxes.size() / 2; }
 
+  /// @brief Access coordinates of lower and upper corners of bounding boxes
+  /// (const version).
+  ///
+  /// @return The flattened row-major coordinate vector, where the shape is
+  /// `(2*num_bboxes, 3)`.
+  std::span<const T> bbox_coordinates() const { return _bbox_coordinates; }
+
+  /// @brief Access coordinates of lower and upper corners of bounding boxes
+  /// (non-const version)
+  ///
+  /// @return The flattened row-major coordinate vector, where the shape is
+  /// `(2*num_bboxes, 3)`.
+  std::span<T> bbox_coordinates() { return _bbox_coordinates; }
+
   /// Topological dimension of leaf entities
   int tdim() const { return _tdim; }
 
