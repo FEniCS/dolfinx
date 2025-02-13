@@ -720,7 +720,8 @@ class FunctionSpace(ufl.FunctionSpace):
         """Function space finite element.
 
         Note:
-            Cached property: Wrapper constructed on initial call and not updated on subsequent calls.
+            Cached property: Wrapper constructed on initial call and not updated on subsequent
+            calls.
         """
         return FiniteElement(self._cpp_object.element)
 
