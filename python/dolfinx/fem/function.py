@@ -718,7 +718,7 @@ class FunctionSpace(ufl.FunctionSpace):
     @cached_property
     def element(self) -> FiniteElement:
         """Function space finite element.
-        
+
         Note:
             Cached property: Wrapper constructed on initial call and not updated on subsequent calls.
         """
