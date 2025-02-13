@@ -996,7 +996,7 @@ class NonlinearProblem:
 
         Example::
 
-            problem = LinearProblem(F, u, [bc0, bc1])
+            problem = NonlinearProblem(F, u, [bc0, bc1])
         """
         self._L = _create_form(
             F, form_compiler_options=form_compiler_options, jit_options=jit_options
