@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Garth N. Wells
+// Copyright (C) 2025 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -21,18 +21,19 @@
 namespace dolfinx::fem::impl
 {
 /// @brief
-/// @tparam T
-/// @tparam U
+/// @tparam T Scalar type
+/// @tparam U Geometry type
 /// @param values
 /// @param vshape
-/// @param fn
+/// @param fn Expression kernel to execute.
 /// @param Xshape
 /// @param value_size
-/// @param coeffs
+/// @param coeffs Coefficient data that appears in expression.
 /// @param cstride
-/// @param constant_data
-/// @param mesh
-/// @param entities
+/// @param constant_data Constant (coefficient) data that appears in
+/// expression.
+/// @param mesh Mesh to evaluate expression on.
+/// @param entities Mesh entities to evaluate the expression over.
 /// @param V
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_expression(
