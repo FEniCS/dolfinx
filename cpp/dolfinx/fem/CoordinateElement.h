@@ -75,7 +75,7 @@ public:
 
   /// @brief Element hash.
   ///
-  /// The is the Basix element hash.s
+  /// This is the Basix element hash.
   std::uint64_t hash() const;
 
   /// @brief Shape of array to fill when calling `tabulate`.
