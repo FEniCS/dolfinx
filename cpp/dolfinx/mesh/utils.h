@@ -563,80 +563,61 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
 /// @returns List of marked entity indices (indices local to the
 /// process).
 template <std::floating_point T, MarkerFn<T> U>
-std::vector<std::int32_t>
-locate_entities_boundary(const Mesh<T>& mesh, int dim,
-                         U marker) //, int entity_type_idx)
+std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
+  U marker)
 {
-  // std::cout << "locate_entities_boundary\n";
+auto topology = mesh.topology();
+assert(topology);
+int tdim = topology->dim();
+if (dim == tdim)
+{
+throw std::runtime_error(
+"Cannot use mesh::locate_entities_boundary (boundary) for cells.");
+}
 
-  // std::cout << "Step 1\n";
+// Compute list of boundary facets
+mesh.topology_mutable()->create_entities(tdim - 1);
+mesh.topology_mutable()->create_connectivity(tdim - 1, tdim);
+std::vector<std::int32_t> boundary_facets = exterior_facet_indices(*topology);
 
-  auto topology = mesh.topology();
-  assert(topology);
-  int tdim = topology->dim();
-  if (dim == tdim)
-  {
-    throw std::runtime_error(
-        "Cannot use mesh::locate_entities_boundary (boundary) for cells.");
-  }
+using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+const T,
+MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
-  // std::cout << "Step 2\n";
+// Run marker function on the vertex coordinates
+auto [facet_entities, xdata, vertex_to_pos]
+= impl::compute_vertex_coords_boundary(mesh, dim, boundary_facets);
+cmdspan3x_t x(xdata.data(), 3, xdata.size() / 3);
+std::vector<std::int8_t> marked = marker(x);
+if (marked.size() != x.extent(1))
+throw std::runtime_error("Length of array of markers is wrong.");
 
-  // Compute list of boundary facets
-  // std::cout << "Create ents\n";
-  mesh.topology_mutable()->create_entities(tdim - 1);
-  // std::cout << "Create conn\n";
+// Loop over entities and check vertex markers
+mesh.topology_mutable()->create_entities(dim);
+auto e_to_v = topology->connectivity(dim, 0);
+assert(e_to_v);
+std::vector<std::int32_t> entities;
+for (auto e : facet_entities)
+{
+// Iterate over entity vertices
+bool all_vertices_marked = true;
+for (auto v : e_to_v->links(e))
+{
+const std::int32_t pos = vertex_to_pos[v];
+if (!marked[pos])
+{
+all_vertices_marked = false;
+break;
+}
+}
 
-  // mesh.topology_mutable()->create_connectivity(tdim - 1, tdim);
-  // std::cout << "exterior_facet_indices\n";
+// Mark facet with all vertices marked
+if (all_vertices_marked)
+entities.push_back(e);
+}
 
-  using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const T,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-          std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
-
-  std::vector<std::int32_t> entities;
-  const std::size_t num_facet_types = topology->entity_types(tdim - 1).size();
-  for (std::size_t facet_type_idx = 0;
-       facet_type_idx < num_facet_types, ++facet_type_idx)
-  {
-    std::vector<std::int32_t> boundary_facets
-        = exterior_facet_indices(*topology, facet_type_idx);
-
-    // Run marker function on the vertex coordinates
-    auto [facet_entities, xdata, vertex_to_pos]
-        = impl::compute_vertex_coords_boundary(mesh, dim, boundary_facets);
-    cmdspan3x_t x(xdata.data(), 3, xdata.size() / 3);
-    std::vector<std::int8_t> marked = marker(x);
-    if (marked.size() != x.extent(1))
-      throw std::runtime_error("Length of array of markers is wrong.");
-
-    // Loop over entities and check vertex markers
-    auto e_to_v = topology->connectivity(dim, 0);
-    assert(e_to_v);
-    for (auto e : facet_entities)
-    {
-      // Iterate over entity vertices
-      bool all_vertices_marked = true;
-      for (auto v : e_to_v->links(e))
-      {
-        const std::int32_t pos = vertex_to_pos[v];
-        if (!marked[pos])
-        {
-          all_vertices_marked = false;
-          break;
-        }
-      }
-
-      // Mark facet with all vertices marked
-      if (all_vertices_marked)
-        entities.push_back(e);
-    }
-  }
-
-  // std::cout << "Done locate_entities_boundary\n";
-
-  return entities;
+return entities;
 }
 
 /// @brief Compute the geometry degrees of freedom associated with
