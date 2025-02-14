@@ -814,6 +814,10 @@ Topology::connectivity(std::array<int, 2> d0, std::array<int, 2> d1) const
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1) const
 {
+  if (this->index_maps(d0).size() > 1 or this->index_maps(d0).size() > 1)
+    throw std::runtime_error(
+        "Multiple entity types in mesh. Call connectivity specifying entity "
+        "type");
   return this->connectivity({d0, 0}, {d1, 0});
 }
 //-----------------------------------------------------------------------------
