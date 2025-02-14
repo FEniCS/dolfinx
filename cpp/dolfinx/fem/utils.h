@@ -445,6 +445,16 @@ Form<T, U> create_form_factory(
                                     const int*, const std::uint8_t*)>;
   std::map<IntegralType, std::vector<integral_data<T, U>>> integrals;
 
+  auto check_geometry_hash
+      = [hash = mesh->geometry().cmap().hash()](const ufcx_integral& integral)
+  {
+    if (integral.coordinate_element_hash != hash)
+    {
+      throw std::runtime_error(
+          "Generated integral geometry element does not match mesh geometry.");
+    }
+  };
+
   // Attach cell kernels
   bool needs_facet_permutations = false;
   {
@@ -463,6 +473,7 @@ Form<T, U> create_form_factory(
         ufcx_integral* integral
             = ufcx_form.form_integrals[integral_offsets[cell] + i];
         assert(integral);
+        check_geometry_hash(*integral);
 
         // Build list of active coefficients
         std::vector<int> active_coeffs;
@@ -544,6 +555,8 @@ Form<T, U> create_form_factory(
         ufcx_integral* integral
             = ufcx_form.form_integrals[integral_offsets[exterior_facet] + i];
         assert(integral);
+        check_geometry_hash(*integral);
+
         std::vector<int> active_coeffs;
         for (int j = 0; j < ufcx_form.num_coefficients; ++j)
         {
@@ -644,6 +657,8 @@ Form<T, U> create_form_factory(
         ufcx_integral* integral
             = ufcx_form.form_integrals[integral_offsets[interior_facet] + i];
         assert(integral);
+        check_geometry_hash(*integral);
+
         std::vector<int> active_coeffs;
         for (int j = 0; j < ufcx_form.num_coefficients; ++j)
         {
