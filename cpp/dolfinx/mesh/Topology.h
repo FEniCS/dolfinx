@@ -357,7 +357,7 @@ entities_to_index(const Topology& topology, int dim,
 /// @note All facet-cell connectivity must be computed beforehand.
 /// @todo Remove redundant data
 
-std::vector<std::vector<std::pair<std::int32_t, std::int32_t>>>
+std::vector<std::vector<std::int32_t>>
 compute_mixed_cell_pairs(const Topology& topology, mesh::CellType facet_type);
 
 } // namespace dolfinx::mesh

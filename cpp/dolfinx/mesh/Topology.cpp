@@ -1411,7 +1411,7 @@ mesh::entities_to_index(const Topology& topology, int dim,
   return indices;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::vector<std::pair<std::int32_t, std::int32_t>>>
+std::vector<std::vector<std::int32_t>>
 mesh::compute_mixed_cell_pairs(const Topology& topology,
                                mesh::CellType facet_type)
 {
@@ -1431,14 +1431,24 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
   if (facet_index == -1)
     throw std::runtime_error("Cannot find facet type in topology");
 
-  std::vector<std::vector<std::pair<std::int32_t, std::int32_t>>>
-      facet_pair_lists;
+  std::vector<std::vector<std::int32_t>> facet_pair_lists;
   for (std::size_t i = 0; i < cell_types.size(); ++i)
     for (std::size_t j = 0; j < cell_types.size(); ++j)
     {
-      std::vector<std::pair<std::int32_t, std::int32_t>> facet_pair_ij;
+      std::vector<std::int32_t> facet_pairs_ij;
       auto fci = topology.connectivity({tdim - 1, facet_index},
                                        {tdim, static_cast<int>(i)});
+      auto cfi = topology.connectivity({tdim, static_cast<int>(i)},
+                                       {tdim - 1, facet_index});
+
+      auto local_facet = [](auto cf, std::int32_t c, std::int32_t f)
+      {
+        auto it = std::find(cf->links(c).begin(), cf->links(c).end(), f);
+        if (it == cf->links(c).end())
+          throw std::runtime_error("Bad connectivity");
+        return std::distance(cf->links(c).begin(), it);
+      };
+
       if (i == j)
       {
         if (fci)
@@ -1446,7 +1456,13 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
           for (std::int32_t k = 0; k < fci->num_nodes(); ++k)
           {
             if (fci->num_links(k) == 2)
-              facet_pair_ij.push_back({fci->links(k)[0], fci->links(k)[1]});
+            {
+              std::int32_t c0 = fci->links(k)[0], c1 = fci->links(k)[1];
+              facet_pairs_ij.push_back(c0);
+              facet_pairs_ij.push_back(local_facet(cfi, c0, k));
+              facet_pairs_ij.push_back(c1);
+              facet_pairs_ij.push_back(local_facet(cfi, c1, k));
+            }
           }
         }
       }
@@ -1454,6 +1470,8 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
       {
         auto fcj = topology.connectivity({tdim - 1, facet_index},
                                          {tdim, static_cast<int>(j)});
+        auto cfj = topology.connectivity({tdim, static_cast<int>(j)},
+                                         {tdim - 1, facet_index});
         if (fci and fcj)
         {
           assert(fci->num_nodes() == fcj->num_nodes());
@@ -1461,13 +1479,16 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
           {
             if (fci->num_links(k) == 1 and fcj->num_links(k) == 1)
             {
-              std::int32_t fi = fci->links(k)[0], fj = fcj->links(k)[0];
-              facet_pair_ij.push_back({fi, fj});
+              std::int32_t ci = fci->links(k)[0], cj = fcj->links(k)[0];
+              facet_pairs_ij.push_back(ci);
+              facet_pairs_ij.push_back(local_facet(cfi, ci, k));
+              facet_pairs_ij.push_back(cj);
+              facet_pairs_ij.push_back(local_facet(cfj, cj, k));
             }
           }
         }
       }
-      facet_pair_lists.push_back(facet_pair_ij);
+      facet_pair_lists.push_back(facet_pairs_ij);
     }
 
   return facet_pair_lists;
