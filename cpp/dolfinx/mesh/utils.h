@@ -495,10 +495,8 @@ concept MarkerFn = std::is_invocable_r<
 /// (indices local to the process).
 template <std::floating_point T, MarkerFn<T> U>
 std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
-                                          U marker)
+                                          U marker, int entity_type_idx)
 {
-  // TODO Add to signature
-  int entity_type_idx = 1;
 
   using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       const T,
@@ -544,6 +542,17 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
   }
 
   return entities;
+}
+
+template <std::floating_point T, MarkerFn<T> U>
+std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
+                                          U marker)
+{
+  const int num_entity_types = mesh.topology()->entity_types(dim).size();
+  if (num_entity_types > 1)
+    throw std::runtime_error(
+        "Multiple entity types of this dimension. Specify entity type index");
+  return locate_entities(mesh, dim, marker, 0);
 }
 
 /// @brief Compute indices of all mesh entities that are attached to an
