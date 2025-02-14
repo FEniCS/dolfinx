@@ -55,7 +55,8 @@ mesh::extract_topology(CellType cell_type, const fem::ElementDofLayout& layout,
   return topology;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
+std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology,
+                                                       int facet_type_idx)
 {
   const int tdim = topology.dim();
   auto f_to_c = topology.connectivity(tdim - 1, tdim);
@@ -66,7 +67,8 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
   }
 
   // Find all owned facets (not ghost) with only one attached cell
-  auto facet_map = topology.index_map(tdim - 1);
+  auto facet_map = topology.index_maps(tdim - 1).at(facet_type_idx);
+
   std::vector<std::int32_t> facets;
   for (std::int32_t f = 0; f < facet_map->size_local(); ++f)
   {
@@ -76,9 +78,20 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
 
   // Remove facets on internal inter-process boundary
   std::vector<std::int32_t> ext_facets;
-  std::ranges::set_difference(facets, topology.interprocess_facets(),
+  std::ranges::set_difference(facets,
+                              topology.interprocess_facets(facet_type_idx),
                               std::back_inserter(ext_facets));
+
   return ext_facets;
+}
+//------------------------------------------------------------------------------
+std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
+{
+  if (topology.index_maps(topology.dim() - 1).size() != 1)
+    throw std::runtime_error("Multiple facet types in mesh. Call "
+                             "exterior_facet_indices with facet type index.");
+
+  return mesh::exterior_facet_indices(topology, 0);
 }
 //------------------------------------------------------------------------------
 mesh::CellPartitionFunction

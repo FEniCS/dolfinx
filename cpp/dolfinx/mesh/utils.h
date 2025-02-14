@@ -169,6 +169,9 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
 /// @param[in] topology Mesh topology.
 /// @return Sorted list of owned facet indices that are exterior facets
 /// of the mesh.
+std::vector<std::int32_t> exterior_facet_indices(const Topology& topology,
+                                                 int facet_type_idx);
+
 std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 
 /// @brief Signature for the cell partitioning function. Function that
@@ -560,9 +563,14 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
 /// @returns List of marked entity indices (indices local to the
 /// process).
 template <std::floating_point T, MarkerFn<T> U>
-std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
-                                                   U marker)
+std::vector<std::int32_t>
+locate_entities_boundary(const Mesh<T>& mesh, int dim,
+                         U marker) //, int entity_type_idx)
 {
+  // std::cout << "locate_entities_boundary\n";
+
+  // std::cout << "Step 1\n";
+
   auto topology = mesh.topology();
   assert(topology);
   int tdim = topology->dim();
@@ -572,47 +580,61 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
         "Cannot use mesh::locate_entities_boundary (boundary) for cells.");
   }
 
+  // std::cout << "Step 2\n";
+
   // Compute list of boundary facets
+  // std::cout << "Create ents\n";
   mesh.topology_mutable()->create_entities(tdim - 1);
-  mesh.topology_mutable()->create_connectivity(tdim - 1, tdim);
-  std::vector<std::int32_t> boundary_facets = exterior_facet_indices(*topology);
+  // std::cout << "Create conn\n";
+
+  // mesh.topology_mutable()->create_connectivity(tdim - 1, tdim);
+  // std::cout << "exterior_facet_indices\n";
 
   using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       const T,
       MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
           std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
-  // Run marker function on the vertex coordinates
-  auto [facet_entities, xdata, vertex_to_pos]
-      = impl::compute_vertex_coords_boundary(mesh, dim, boundary_facets);
-  cmdspan3x_t x(xdata.data(), 3, xdata.size() / 3);
-  std::vector<std::int8_t> marked = marker(x);
-  if (marked.size() != x.extent(1))
-    throw std::runtime_error("Length of array of markers is wrong.");
-
-  // Loop over entities and check vertex markers
-  mesh.topology_mutable()->create_entities(dim);
-  auto e_to_v = topology->connectivity(dim, 0);
-  assert(e_to_v);
   std::vector<std::int32_t> entities;
-  for (auto e : facet_entities)
+  const std::size_t num_facet_types = topology->entity_types(tdim - 1).size();
+  for (std::size_t facet_type_idx = 0;
+       facet_type_idx < num_facet_types, ++facet_type_idx)
   {
-    // Iterate over entity vertices
-    bool all_vertices_marked = true;
-    for (auto v : e_to_v->links(e))
-    {
-      const std::int32_t pos = vertex_to_pos[v];
-      if (!marked[pos])
-      {
-        all_vertices_marked = false;
-        break;
-      }
-    }
+    std::vector<std::int32_t> boundary_facets
+        = exterior_facet_indices(*topology, facet_type_idx);
 
-    // Mark facet with all vertices marked
-    if (all_vertices_marked)
-      entities.push_back(e);
+    // Run marker function on the vertex coordinates
+    auto [facet_entities, xdata, vertex_to_pos]
+        = impl::compute_vertex_coords_boundary(mesh, dim, boundary_facets);
+    cmdspan3x_t x(xdata.data(), 3, xdata.size() / 3);
+    std::vector<std::int8_t> marked = marker(x);
+    if (marked.size() != x.extent(1))
+      throw std::runtime_error("Length of array of markers is wrong.");
+
+    // Loop over entities and check vertex markers
+    auto e_to_v = topology->connectivity(dim, 0);
+    assert(e_to_v);
+    for (auto e : facet_entities)
+    {
+      // Iterate over entity vertices
+      bool all_vertices_marked = true;
+      for (auto v : e_to_v->links(e))
+      {
+        const std::int32_t pos = vertex_to_pos[v];
+        if (!marked[pos])
+        {
+          all_vertices_marked = false;
+          break;
+        }
+      }
+
+      // Mark facet with all vertices marked
+      if (all_vertices_marked)
+        entities.push_back(e);
+    }
   }
+
+  // std::cout << "Done locate_entities_boundary\n";
 
   return entities;
 }
