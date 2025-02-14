@@ -696,6 +696,8 @@ void mesh(nb::module_& m)
               ghost_owners_span, boundary_vertices_span);
         });
 
+  m.def("compute_mixed_cell_pairs", &dolfinx::mesh::compute_mixed_cell_pairs);
+
   declare_meshtags<std::int8_t>(m, "int8");
   declare_meshtags<std::int32_t>(m, "int32");
   declare_meshtags<std::int64_t>(m, "int64");
