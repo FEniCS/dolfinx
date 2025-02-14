@@ -566,6 +566,7 @@ template <std::floating_point T, MarkerFn<T> U>
 std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
   U marker)
 {
+  // TODO Rewrite this function
 auto topology = mesh.topology();
 assert(topology);
 int tdim = topology->dim();
