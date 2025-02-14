@@ -729,6 +729,17 @@ Topology::Topology(
   _entity_types.resize(tdim + 1);
   _entity_types[0] = {mesh::CellType::point};
   _entity_types[tdim] = cell_types;
+  if (tdim > 1)
+    _entity_types[1] = {mesh::CellType::interval};
+  if (tdim > 2)
+  {
+    //  Find all facet types
+    std::set<mesh::CellType> e_types;
+    for (auto c : _entity_types[tdim])
+      for (int i = 0; i < cell_num_entities(c, 2); ++i)
+        e_types.insert(cell_facet_type(c, i));
+    _entity_types[2] = std::vector(e_types.begin(), e_types.end());
+  }
 
   // Set data
   _index_maps.insert({{0, 0}, vertex_map});
@@ -869,21 +880,13 @@ bool Topology::create_entities(int dim)
   // connectivity(this->dim(), dim)?
 
   // Skip if already computed (vertices (dim=0) should always exist)
-  if (connectivity(dim, 0))
+  bool entities_created = true;
+  const int num_ent_types = this->entity_types(dim).size();
+  for (int ent_type_idx = 0; ent_type_idx < num_ent_types; ++ent_type_idx)
+    if (!connectivity({dim, ent_type_idx}, {0, 0}))
+      entities_created = false;
+  if (entities_created)
     return false;
-
-  int tdim = this->dim();
-  if (dim == 1 and tdim > 1)
-    _entity_types[1] = {mesh::CellType::interval};
-  else if (dim == 2 and tdim > 2)
-  {
-    //  Find all facet types
-    std::set<mesh::CellType> e_types;
-    for (auto c : _entity_types[tdim])
-      for (int i = 0; i < cell_num_entities(c, dim); ++i)
-        e_types.insert(cell_facet_type(c, i));
-    _entity_types[dim] = std::vector(e_types.begin(), e_types.end());
-  }
 
   // for (std::size_t index = 0; index < this->entity_types(dim).size();
   // ++index)
