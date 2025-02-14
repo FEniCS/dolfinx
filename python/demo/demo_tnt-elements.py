@@ -51,7 +51,7 @@ mpl.use("agg")
 # ## Defining a degree 1 TNT element
 #
 # We will define [tiniest tensor
-# (TNT)](https://defelement.com/elements/tnt.html) elements on a
+# (TNT)](https://defelement.org/elements/tnt.html) elements on a
 # quadrilateral ([Commuting diagrams for the TNT elements on cubes
 # (Cockburn, Qiu,
 # 2014)](https://doi.org/10.1090/S0025-5718-2013-02729-9)).
@@ -248,7 +248,7 @@ def create_tnt_quad(degree):
 # ## Comparing TNT elements and Q elements
 #
 # We now use the code above to compare TNT elements and
-# [Q](https://defelement.com/elements/lagrange.html) elements on
+# [Q](https://defelement.org/elements/lagrange.html) elements on
 # quadrilaterals. The following function takes a DOLFINx function space
 # as input, and solves a Poisson problem and returns the $L_2$ error of
 # the solution.

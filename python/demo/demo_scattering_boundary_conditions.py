@@ -478,7 +478,7 @@ k0 = 2 * np.pi / wl0  # Wavevector of the background field
 theta = np.pi / 4  # Angle of incidence of the background field
 
 # We use a function space consisting of degree 3 [Nedelec (first
-# kind)](https://defelement.com/elements/nedelec1.html) elements to
+# kind)](https://defelement.org/elements/nedelec1.html) elements to
 # represent the electric field
 
 degree = 3
