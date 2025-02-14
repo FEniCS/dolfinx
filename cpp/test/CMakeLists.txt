@@ -11,6 +11,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(DOLFINX REQUIRED)
 
 add_custom_command(
+  OUTPUT expr.c
+  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/expr.py
+  VERBATIM
+  DEPENDS expr.py
+  COMMENT "Compile expr.py using FFCx"
+)
+
+add_custom_command(
   OUTPUT poisson.c
   COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.py
   VERBATIM
@@ -34,6 +42,7 @@ endif()
 add_executable(
   unittests
   main.cpp
+  expression.cpp
   vector.cpp
   matrix.cpp
   io.cpp
@@ -48,6 +57,7 @@ add_executable(
   mesh/refinement/interval.cpp
   mesh/refinement/option.cpp
   mesh/refinement/rectangle.cpp
+  ${CMAKE_CURRENT_BINARY_DIR}/expr.c
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )
 target_link_libraries(unittests PRIVATE Catch2::Catch2WithMain dolfinx)

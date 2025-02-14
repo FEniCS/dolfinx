@@ -870,6 +870,19 @@ Expression<T, U> create_expression(
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
     std::shared_ptr<const FunctionSpace<U>> argument_function_space = nullptr)
 {
+  if (!coefficients.empty())
+  {
+    assert(coefficients.front());
+    assert(coefficients.front()->function_space());
+    std::shared_ptr<const mesh::Mesh<U>> mesh
+        = coefficients.front()->function_space()->mesh();
+    if (mesh->geometry().cmap().hash() != e.coordinate_element_hash)
+    {
+      throw std::runtime_error(
+          "Expression and mesh geometric maps do not match.");
+    }
+  }
+
   if (e.rank > 0 and !argument_function_space)
   {
     throw std::runtime_error("Expression has Argument but no Argument "
