@@ -34,16 +34,18 @@ TEST_CASE("Create Expression (mismatch of mesh geometry)", "[expression]")
                     element, std::vector<std::size_t>{3})));
   auto u = std::make_shared<fem::Function<double>>(V);
 
-  // Create Expression that expects P2 geometry
+  std::vector<std::int32_t> cells(1);
+
+  // Create Expression that expects P1 geometry
+  dolfinx::fem::Expression<double> expr1
+      = dolfinx::fem::create_expression<double>(*expression_expr_Q6_P1,
+                                                {{"u1", u}}, {});
+  auto [Xc, Xshape] = expr1.X();
+  std::vector<double> grad_e(3 * 3 * Xshape[0] * cells.size());
+  expr1.eval(*mesh, cells, grad_e, {cells.size(), 3 * 3 * Xshape[0]});
+
+  // Create Expression that expects P2 geometry. Should throw because
+  // mesh is P1.
   CHECK_THROWS(dolfinx::fem::create_expression<double>(*expression_expr_Q6_P2,
                                                        {{"u2", u}}, {}));
-
-  //   std::size_t tdim = mesh->topology()->dim();
-  //   std::vector<std::int32_t> cells(
-  //       mesh->topology()->index_map(tdim)->size_local());
-  //   std::iota(cells.begin(), cells.end(), 0);
-
-  //   auto [Xc, Xshape] = eps_expr.X();
-  //   std::vector<double> grad_e(3 * 3 * Xshape[0] * cells.size());
-  //   eps_expr.eval(*mesh, cells, grad_e, {cells.size(), 3 * 3 * Xshape[0]});
 }

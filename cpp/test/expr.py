@@ -16,5 +16,4 @@ quadrature_rule = "default"
 u1, u2 = ufl.Coefficient(V1), ufl.Coefficient(V2)
 pts, _ = make_quadrature(CellType.hexahedron, quadrature_degree)
 Q6_P1, Q6_P2 = ufl.grad(u1), ufl.grad(u2)
-# expressions = [(Q6_P1, pts), (Q6_P2, pts)]
-expressions = [(Q6_P2, pts)]
+expressions = [(Q6_P1, pts), (Q6_P2, pts)]
