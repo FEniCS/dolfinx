@@ -65,7 +65,6 @@ if np.issubdtype(PETSc.RealType, np.float32):  # type: ignore
     print("float32 not yet supported for this demo.")
     exit(0)
 
-
 infile = XDMFFile(
     MPI.COMM_WORLD,
     Path(Path(__file__).parent, "data", "cooks_tri_mesh.xdmf"),
@@ -130,8 +129,13 @@ kernel01 = getattr(ufcx01.form_integrals[0], f"tabulate_tensor_{np.dtype(PETSc.S
 ufcx10, _, _ = ffcx_jit(msh.comm, a10, form_compiler_options={"scalar_type": PETSc.ScalarType})  # type: ignore
 kernel10 = getattr(ufcx10.form_integrals[0], f"tabulate_tensor_{np.dtype(PETSc.ScalarType).name}")  # type: ignore
 
-ffi = cffi.FFI()
-cffi_support.register_type(ffi.typeof("double _Complex"), numba.types.complex128)
+
+if np.issubdtype(PETSc.ScalarType, np.complexfloating) and cffi.__version_info__ == (1, 17, 1):
+    print("CFFI 1.17.1 has a bug for complex type.")
+    exit(0)
+else:
+    ffi = cffi.FFI()
+    cffi_support.register_type(ffi.typeof("double _Complex"), numba.types.complex128)
 
 # Get local dofmap sizes for later local tensor tabulations
 Ssize = S.element.space_dimension

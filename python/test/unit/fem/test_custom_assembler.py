@@ -235,8 +235,24 @@ def assemble_petsc_matrix(A, mesh, dofmap, num_cells, set_vals, mode):
     [
         np.float32,
         np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(
+            np.complex64,
+            marks=[
+                pytest.mark.xfail_win32_complex,
+                pytest.mark.skipif(
+                    cffi.__version_info__ == (1, 17, 1), reason="bug in cffi 1.17.1 for complex"
+                ),
+            ],
+        ),
+        pytest.param(
+            np.complex128,
+            marks=[
+                pytest.mark.xfail_win32_complex,
+                pytest.mark.skipif(
+                    cffi.__version_info__ == (1, 17, 1), reason="bug in cffi 1.17.1 for complex"
+                ),
+            ],
+        ),
     ],
 )
 def test_custom_mesh_loop_rank1(dtype):
