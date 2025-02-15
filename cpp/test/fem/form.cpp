@@ -20,7 +20,6 @@ namespace
 void test_form_cmap_compat(auto V)
 {
   fem::create_form<double>(*form_expr_L1, {V}, {}, {}, {}, {});
-  //   fem::create_form<double>(*form_expr_L2, {V}, {}, {}, {}, {});
   CHECK_THROWS(fem::create_form<double>(*form_expr_L2, {V}, {}, {}, {}, {}));
 }
 
@@ -49,7 +48,6 @@ void test_expression_cmap_compat(auto V)
 TEST_CASE("Create Expression/Form (mismatch of mesh geometry)",
           "[geometry_compat]")
 {
-  // Create P1 mesh
   auto mesh = std::make_shared<mesh::Mesh<double>>(mesh::create_box<double>(
       MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {0.96, 4.5, 2.0}}}, {2, 4, 5},
       mesh::CellType::hexahedron,
