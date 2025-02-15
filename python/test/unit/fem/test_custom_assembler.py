@@ -332,6 +332,7 @@ def test_custom_mesh_loop_rank1(dtype):
     assert np.linalg.norm(b3.x.array - b0.x.array) == pytest.approx(0.0, abs=1e-8)
 
 
+@pytest.mark.skipif(cffi.__version_info__ == (1, 17, 1), reason="bug in cffi 1.17.1 for complex")
 @pytest.mark.petsc4py
 @pytest.mark.parametrize(
     "set_vals,backend",
