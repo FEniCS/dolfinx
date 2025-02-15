@@ -12,9 +12,9 @@ find_package(DOLFINX REQUIRED)
 
 add_custom_command(
   OUTPUT expr.c
-  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/expr.py
+  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/fem/expr.py
   VERBATIM
-  DEPENDS expr.py
+  DEPENDS fem/expr.py
   COMMENT "Compile expr.py using FFCx"
 )
 
@@ -42,7 +42,6 @@ endif()
 add_executable(
   unittests
   main.cpp
-  expression.cpp
   vector.cpp
   matrix.cpp
   io.cpp
@@ -50,6 +49,7 @@ add_executable(
   common/sub_systems_manager.cpp
   common/index_map.cpp
   common/sort.cpp
+  fem/form.cpp
   fem/functionspace.cpp
   mesh/distributed_mesh.cpp
   mesh/generation.cpp
