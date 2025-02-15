@@ -408,7 +408,9 @@ Form<T, U> create_form_factory(
 
   // Extract mesh from FunctionSpace, and check they are the same
   if (!mesh and !spaces.empty())
-    mesh = spaces[0]->mesh();
+    mesh = spaces.front()->mesh();
+  if (!mesh)
+    throw std::runtime_error("No mesh could be associated with the Form.");
   for (auto& V : spaces)
   {
     if (mesh != V->mesh() and entity_maps.find(V->mesh()) == entity_maps.end())
@@ -417,8 +419,6 @@ Form<T, U> create_form_factory(
           "Incompatible mesh. entity_maps must be provided.");
     }
   }
-  if (!mesh)
-    throw std::runtime_error("No mesh could be associated with the Form.");
 
   auto topology = mesh->topology();
   assert(topology);
