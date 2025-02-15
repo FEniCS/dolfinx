@@ -41,8 +41,8 @@ TEST_CASE("Create Expression (mismatch of mesh geometry)", "[expression]")
       = dolfinx::fem::create_expression<double>(*expression_expr_Q6_P1,
                                                 {{"u1", u}}, {});
   auto [Xc, Xshape] = expr1.X();
-  std::vector<double> grad_e(3 * 3 * Xshape[0] * cells.size());
-  expr1.eval(*mesh, cells, grad_e, {cells.size(), 3 * 3 * Xshape[0]});
+  std::vector<double> grad_e(3 * Xshape[0] * cells.size());
+  expr1.eval(*mesh, cells, grad_e, {cells.size(), 3 * Xshape[0]});
 
   // Create Expression that expects P2 geometry. Should throw because
   // mesh is P1.
