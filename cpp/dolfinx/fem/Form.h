@@ -194,9 +194,11 @@ public:
   {
     // Extract _mesh from FunctionSpace, and check they are the same
     if (!_mesh and !V.empty())
+    {
       _mesh = V[0]->mesh();
-    else if (!_mesh)
-      throw std::runtime_error("No mesh could be associated with the Form.");
+      if (!_mesh)
+        throw std::runtime_error("No mesh could be associated with the Form.");
+    }
 
     for (auto& space : V)
     {
