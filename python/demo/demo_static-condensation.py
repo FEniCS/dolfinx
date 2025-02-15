@@ -130,11 +130,11 @@ ufcx10, _, _ = ffcx_jit(msh.comm, a10, form_compiler_options={"scalar_type": PET
 kernel10 = getattr(ufcx10.form_integrals[0], f"tabulate_tensor_{np.dtype(PETSc.ScalarType).name}")  # type: ignore
 
 
-if np.issubdtype(PETSc.ScalarType, np.complexfloating) and cffi.__version_info__ == (1, 17, 1):
-    print("CFFI 1.17.1 has a bug for complex type.")
-    exit(0)
-else:
-    ffi = cffi.FFI()
+ffi = cffi.FFI()
+if np.issubdtype(PETSc.ScalarType, np.complexfloating):
+    if cffi.__version_info__ == (1, 17, 1):
+        print("CFFI 1.17.1 has a bug for complex type. Exiting.")
+        exit(0)
     cffi_support.register_type(ffi.typeof("double _Complex"), numba.types.complex128)
 
 # Get local dofmap sizes for later local tensor tabulations
