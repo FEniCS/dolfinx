@@ -49,7 +49,7 @@ public:
   /// for possible types).
   CoordinateElement(mesh::CellType celltype, int degree,
                     basix::element::lagrange_variant type
-                    = basix::element::lagrange_variant::equispaced);
+                    = basix::element::lagrange_variant::unset);
 
   /// Destructor
   virtual ~CoordinateElement() = default;
