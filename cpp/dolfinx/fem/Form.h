@@ -195,6 +195,9 @@ public:
     // Extract _mesh from FunctionSpace, and check they are the same
     if (!_mesh and !V.empty())
       _mesh = V[0]->mesh();
+    else if (!_mesh)
+      throw std::runtime_error("No mesh could be associated with the Form.");
+
     for (auto& space : V)
     {
       if (_mesh != space->mesh()
@@ -204,8 +207,6 @@ public:
             "Incompatible mesh. entity_maps must be provided.");
       }
     }
-    if (!_mesh)
-      throw std::runtime_error("No mesh could be associated with the Form.");
 
     // Store kernels, looping over integrals by domain type (dimension)
     for (auto&& [domain_type, data] : integrals)
