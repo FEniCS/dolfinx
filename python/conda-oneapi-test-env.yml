@@ -1,12 +1,12 @@
 # Test environment for oneAPI compilers and Intel Python
-name: oneapi-test-env
+name: oneapi-test-env2
 channels:
   - https://software.repos.intel.com/python/conda
   - conda-forge
   - defaults
 dependencies:
   - python=3.12
-  - dpcpp_impl_linux-64
+  - dpcpp_linux-64
   - catch2
   - cffi
   - cmake
