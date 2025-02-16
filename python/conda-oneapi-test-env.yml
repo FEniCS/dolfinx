@@ -30,5 +30,6 @@ dependencies:
   - pytest
   - pytest-xdist
   - scikit-build-core
+  - scipy
   - spdlog
   - uv
