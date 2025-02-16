@@ -6,10 +6,10 @@
 
 #if defined(HAS_PETSC) && defined(HAS_PETSC4PY)
 
-#include "array.h"
-#include "caster_mpi.h"
-#include "caster_petsc.h"
-#include "pycoeff.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/caster_mpi.h"
+#include "dolfinx_wrappers/caster_petsc.h"
+#include "dolfinx_wrappers/pycoeff.h"
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DirichletBC.h>
@@ -333,14 +333,14 @@ void petsc_fem_module(nb::module_& m)
               a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
           dolfinx::fem::assemble_matrix(
               set_fn, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else
         {
           dolfinx::fem::assemble_matrix(
               dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a,
               std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
       },
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
@@ -372,7 +372,7 @@ void petsc_fem_module(nb::module_& m)
 
         dolfinx::fem::assemble_matrix(
             set_fn, a, std::span(constants.data(), constants.size()),
-            py_to_cpp_coeffs(coefficients),
+            dolfinx_wrappers::py_to_cpp_coeffs(coefficients),
             std::span(rows0.data(), rows0.size()),
             std::span(rows1.data(), rows1.size()));
       },
