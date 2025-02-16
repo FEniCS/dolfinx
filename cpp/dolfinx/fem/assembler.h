@@ -79,7 +79,6 @@ void tabulate_expression(
 /// storage. Sizing should be `(num_cells, num_points * value_size *
 /// num_all_argument_dofs columns)`. facet index) tuples. Array is
 /// flattened per entity.
-/// @param[in] vshape Shape of `values`.
 /// @param[in] e Expression to evaluate.
 /// @param[in] mesh Mesh to compute `e` on.
 /// @param[in] entities Mesh entities to evaluate `e` on.

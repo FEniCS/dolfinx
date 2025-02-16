@@ -27,7 +27,6 @@ namespace dolfinx::fem::impl
 /// @tparam T Scalar type
 /// @tparam U Geometry type
 /// @param[in,out] values
-/// @param[in] vshape
 /// @param[in] fn Expression kernel to execute.
 /// @param[in] Xshape
 /// @param[in] value_size
@@ -79,8 +78,8 @@ void tabulate_expression(
   if (V)
   {
     num_argument_dofs = V->get().dofmap()->element_dof_layout().num_dofs();
-    auto element = V->get().element();
     num_argument_dofs *= V->get().dofmap()->bs();
+    auto element = V->get().element();
     assert(element);
     if (element->needs_dof_transformations())
     {
@@ -118,10 +117,10 @@ void tabulate_expression(
 
     const T* coeff_cell = coeffs.data() + e * cstride;
     const int* entity_index = get_entity_index(entities, e);
-
     std::ranges::fill(values_local, 0);
     fn(values_local.data(), coeff_cell, constant_data.data(), coord_dofs.data(),
        entity_index, nullptr);
+
     post_dof_transform(values_local, cell_info, e, size0);
     for (std::size_t j = 0; j < values_local.size(); ++j)
       values[e * Xshape[0] + j] = values_local[j];
