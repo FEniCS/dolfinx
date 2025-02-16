@@ -134,7 +134,8 @@ ffi = cffi.FFI()
 if np.issubdtype(PETSc.ScalarType, np.complexfloating):
     if cffi.__version_info__ > (1, 16, 99) and cffi.__version_info__ <= (1, 17, 1):
         print(
-            "CFFI 1.17.0 and 1.17.1 has a bug for complex type. See https://github.com/FEniCS/dolfinx/pull/3635. Exiting."
+            "CFFI 1.17.0 and 1.17.1 has a bug for complex type."
+            "See https://github.com/FEniCS/dolfinx/pull/3635. Exiting."
         )
         exit(0)
     cffi_support.register_type(ffi.typeof("double _Complex"), numba.types.complex128)
