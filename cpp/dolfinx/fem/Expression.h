@@ -34,8 +34,6 @@ class Function;
 /// then be used as input in to a non-FEniCS function that calculates a
 /// material constitutive model.
 ///
-/// This class closely follows the concept of a UFC Expression.
-///
 /// @tparam T The scalar type
 /// @tparam U The mesh geometry scalar type
 template <dolfinx::scalar T,
