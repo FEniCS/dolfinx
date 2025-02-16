@@ -10,6 +10,7 @@
 #include <dolfinx/fem/Expression.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
+#include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
@@ -36,7 +37,8 @@ void test_expression_cmap_compat(auto V)
                                                 {{"u1", u}}, {});
   auto [Xc, Xshape] = expr1.X();
   std::vector<double> grad_e(3 * Xshape[0] * cells.size());
-  expr1.eval(*mesh, cells, grad_e, {cells.size(), 3 * Xshape[0]});
+  fem::tabulate_expression(std::span(grad_e), {cells.size(), 3 * Xshape[0]},
+                           expr1, *mesh, cells);
 
   // Create Expression that expects P2 geometry. Should throw because
   // mesh is P1.
