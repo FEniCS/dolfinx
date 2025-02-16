@@ -6,7 +6,7 @@ channels:
   - defaults
 dependencies:
   - intelpython3_core
-  - python=3.12
+  - python=3.11
   - dpcpp_linux-64
   - mkl
   - libblas=*=*mkl
