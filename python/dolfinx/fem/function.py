@@ -167,9 +167,9 @@ class Expression:
         constants = [constant._cpp_object for constant in ufl_constants]
         arguments = ufl.algorithms.extract_arguments(e)
         if len(arguments) == 0:
-            self._argument_function_space = None
+            self._argument_space = None
         elif len(arguments) == 1:
-            self._argument_function_space = arguments[0].ufl_function_space()._cpp_object
+            self._argument_space = arguments[0].ufl_function_space()._cpp_object
         else:
             raise RuntimeError("Expressions with more that one Argument not allowed.")
 
@@ -190,7 +190,7 @@ class Expression:
             ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression)),
             coeffs,
             constants,
-            self.argument_function_space,
+            self.argument_space,
         )
 
     def eval(
@@ -216,10 +216,10 @@ class Expression:
 
         """
         _entities = np.asarray(entities, dtype=np.int32)
-        if self.argument_function_space is None:
+        if self.argument_space is None:
             argument_space_dimension = 1
         else:
-            argument_space_dimension = self.argument_function_space.element.space_dimension
+            argument_space_dimension = self.argument_space.element.space_dimension
         if (tdim := mesh.topology.dim) != (expr_dim := self._cpp_object.X().shape[1]):
             assert expr_dim == tdim - 1
             assert _entities.shape[0] % 2 == 0
@@ -241,7 +241,7 @@ class Expression:
                 raise TypeError("Passed array values does not have correct shape.")
             if values.dtype != self.dtype:
                 raise TypeError("Passed array values does not have correct dtype.")
-        _cpp.fem.assemble_expression(values, self._cpp_object, mesh._cpp_object, _entities)
+        _cpp.fem.tabulate_expression(values, self._cpp_object, mesh._cpp_object, _entities)
         return values
 
     def X(self) -> np.ndarray:
@@ -259,9 +259,9 @@ class Expression:
         return self._cpp_object.value_size
 
     @property
-    def argument_function_space(self) -> typing.Optional[FunctionSpace]:
-        """The argument function space if expression has argument"""
-        return self._argument_function_space
+    def argument_space(self) -> typing.Optional[FunctionSpace]:
+        """Argument function space if Expression has argument."""
+        return self._argument_space
 
     @property
     def ufcx_expression(self):

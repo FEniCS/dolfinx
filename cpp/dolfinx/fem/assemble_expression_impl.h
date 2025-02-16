@@ -36,7 +36,7 @@ namespace dolfinx::fem::impl
 /// @param entities Mesh entities to evaluate the expression over.
 /// @param V
 template <dolfinx::scalar T, std::floating_point U>
-void assemble_expression(
+void tabulate_expression(
     std::span<T> values, std::array<std::size_t, 2> vshape,
     fem::FEkernel<T> auto fn, std::array<std::size_t, 2> Xshape,
     std::size_t value_size, std::span<const T> coeffs, std::size_t cstride,

@@ -27,7 +27,7 @@ class Function;
 /// @brief An Expression represents a mathematical expression evaluated
 /// at a pre-defined set of points on a reference cell.
 ///
-/// An Expression can be evaluated using ::assemble_expression.
+/// An Expression can be evaluated using ::tabulate_expression.
 ///
 /// An example of Expressions use is to evaluate a gradient of a
 /// Function at quadrature points in cells. This evaluated gradient can
@@ -65,7 +65,7 @@ public:
   /// @param[in] fn Function for tabulating the Expression.
   /// @param[in] value_shape Shape of Expression evaluated at single
   /// point.
-  /// @param[in] argument_function_space Function space for Argument.
+  /// @param[in] argument_space Function space for Argument.
   Expression(
       const std::vector<std::shared_ptr<
           const Function<scalar_type, geometry_type>>>& coefficients,
@@ -76,13 +76,11 @@ public:
                          const geometry_type*, const int*, const uint8_t*)>
           fn,
       const std::vector<std::size_t>& value_shape,
-      std::shared_ptr<const FunctionSpace<geometry_type>>
-          argument_function_space
+      std::shared_ptr<const FunctionSpace<geometry_type>> argument_space
       = nullptr)
       : _coefficients(coefficients), _constants(constants),
         _x_ref(std::vector<geometry_type>(X.begin(), X.end()), Xshape), _fn(fn),
-        _value_shape(value_shape),
-        _argument_function_space(argument_function_space)
+        _value_shape(value_shape), _argument_space(argument_space)
   {
     for (auto& c : _coefficients)
     {
@@ -104,10 +102,9 @@ public:
   /// @brief Get argument function space.
   /// @return The argument function space, nullptr if there is no
   /// argument.
-  std::shared_ptr<const FunctionSpace<geometry_type>>
-  argument_function_space() const
+  std::shared_ptr<const FunctionSpace<geometry_type>> argument_space() const
   {
-    return _argument_function_space;
+    return _argument_space;
   };
 
   /// @brief Get coefficients.
@@ -176,7 +173,7 @@ public:
 
 private:
   // Function space for Argument
-  std::shared_ptr<const FunctionSpace<geometry_type>> _argument_function_space;
+  std::shared_ptr<const FunctionSpace<geometry_type>> _argument_space;
 
   // Coefficients associated with the Expression
   std::vector<std::shared_ptr<const Function<scalar_type, geometry_type>>>

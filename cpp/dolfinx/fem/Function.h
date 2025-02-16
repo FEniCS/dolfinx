@@ -353,7 +353,7 @@ public:
     // Check that Function and Expression spaces are compatible
     assert(_function_space->element());
     std::size_t value_size = e0.value_size();
-    if (e0.argument_function_space())
+    if (e0.argument_space())
       throw std::runtime_error("Cannot interpolate Expression with Argument.");
     if (value_size != _function_space->element()->value_size())
     {
@@ -392,7 +392,7 @@ public:
         f(fdata.data(), num_cells, num_points, value_size);
 
     // Evaluate Expression at points
-    assemble_expression(std::span(fdata), {num_cells, num_points * value_size},
+    tabulate_expression(std::span(fdata), {num_cells, num_points * value_size},
                         e0, *mesh0, cells0);
 
     // Reshape evaluated data to fit interpolate.

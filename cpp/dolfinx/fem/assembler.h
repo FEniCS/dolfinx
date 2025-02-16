@@ -62,7 +62,7 @@ class FunctionSpace;
 /// @param[in] entities Mesh entities to evaluated the Expression for.
 /// @param[in] V Function space for Argument.
 template <dolfinx::scalar T, std::floating_point U>
-void assemble_expression(
+void tabulate_expression(
     std::span<T> values, std::array<std::size_t, 2> vshape,
     const fem::Expression<T, U>& e, std::span<const T> coeffs,
     std::size_t cstride, std::span<const T> constants,
@@ -70,7 +70,7 @@ void assemble_expression(
     std::optional<std::reference_wrapper<const FunctionSpace<U>>> V)
 {
   auto [X, Xshape] = e.X();
-  impl::assemble_expression(values, vshape, e.get_tabulate_expression(), Xshape,
+  impl::tabulate_expression(values, vshape, e.get_tabulate_expression(), Xshape,
                             e.value_size(), coeffs, cstride, constants, mesh,
                             entities, V);
 }
@@ -87,7 +87,7 @@ void assemble_expression(
 /// @param[in] mesh Mesh to compute `e` on.
 /// @param[in] entities Mesh entities to evaluate `e` on.
 template <dolfinx::scalar T, std::floating_point U>
-void assemble_expression(std::span<T> values, std::array<std::size_t, 2> vshape,
+void tabulate_expression(std::span<T> values, std::array<std::size_t, 2> vshape,
                          const fem::Expression<T, U>& e,
                          const mesh::Mesh<U>& mesh,
                          std::span<const std::int32_t> entities)
@@ -114,19 +114,11 @@ void assemble_expression(std::span<T> values, std::array<std::size_t, 2> vshape,
   }
   std::vector<T> constants = fem::pack_constants(e);
 
-  if (std ::shared_ptr<const FunctionSpace<U>> V = e.argument_function_space();
-      V)
-  {
-    assemble_expression<T, U>(values, vshape, e, std::span<const T>(coeffs),
-                              cstride, std::span<const T>(constants), mesh,
-                              entities, *V);
-  }
-  else
-  {
-    assemble_expression<T, U>(values, vshape, e, std::span<const T>(coeffs),
-                              cstride, std::span<const T>(constants), mesh,
-                              entities, std::nullopt);
-  }
+  tabulate_expression<T, U>(
+      values, vshape, e, std::span<const T>(coeffs), cstride,
+      std::span<const T>(constants), mesh, entities,
+      e.argument_space() ? std::optional(std::ref(*e.argument_space()))
+                         : std::nullopt);
 }
 
 // -- Helper functions -----------------------------------------------------
