@@ -240,7 +240,8 @@ def assemble_petsc_matrix(A, mesh, dofmap, num_cells, set_vals, mode):
             marks=[
                 pytest.mark.xfail_win32_complex,
                 pytest.mark.skipif(
-                    cffi.__version_info__ == (1, 17, 1), reason="bug in cffi 1.17.1 for complex"
+                    cffi.__version_info__ > (1, 16, 99) and cffi.__version_info__ <= (1, 17, 1),
+                    reason="bug in cffi 1.17.0/1 for complex",
                 ),
             ],
         ),
@@ -249,7 +250,8 @@ def assemble_petsc_matrix(A, mesh, dofmap, num_cells, set_vals, mode):
             marks=[
                 pytest.mark.xfail_win32_complex,
                 pytest.mark.skipif(
-                    cffi.__version_info__ == (1, 17, 1), reason="bug in cffi 1.17.1 for complex"
+                    cffi.__version_info__ > (1, 16, 99) and cffi.__version_info__ <= (1, 17, 1),
+                    reason="bug in cffi 1.17.0/1 for complex",
                 ),
             ],
         ),
