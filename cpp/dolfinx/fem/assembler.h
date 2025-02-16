@@ -70,9 +70,8 @@ void tabulate_expression(
     std::optional<std::reference_wrapper<const FunctionSpace<U>>> V)
 {
   auto [X, Xshape] = e.X();
-  impl::tabulate_expression(values, vshape, e.get_tabulate_expression(), Xshape,
-                            e.value_size(), coeffs, cstride, constants, mesh,
-                            entities, V);
+  impl::tabulate_expression(values, vshape, e.kernel(), Xshape, e.value_size(),
+                            coeffs, cstride, constants, mesh, entities, V);
 }
 
 /// @brief Evaluate an Expression on cells or facets.

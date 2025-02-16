@@ -147,7 +147,7 @@ public:
   /// @return fn Function to tabulate expression.
   const std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
                            const geometry_type*, const int*, const uint8_t*)>&
-  get_tabulate_expression() const
+  kernel() const
   {
     return _fn;
   }
