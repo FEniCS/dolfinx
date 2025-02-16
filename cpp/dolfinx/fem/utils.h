@@ -861,9 +861,8 @@ FunctionSpace<T> create_functionspace(
         reorder_fn
     = nullptr)
 {
-  assert(e);
-
   // TODO: check cell type of e (need to add method to fem::FiniteElement)
+  assert(e);
   assert(mesh);
   assert(mesh->topology());
   if (e->cell_type() != mesh->topology()->cell_type())
