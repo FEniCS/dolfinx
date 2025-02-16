@@ -900,6 +900,7 @@ void declare_cmap(nb::module_& m, std::string type)
       .def_prop_ro("dim", &dolfinx::fem::CoordinateElement<T>::dim)
       .def_prop_ro("variant", [](const dolfinx::fem::CoordinateElement<T>& self)
                    { return static_cast<int>(self.variant()); })
+      .def("hash", &dolfinx::fem::CoordinateElement<T>::hash)
       .def(
           "push_forward",
           [](const dolfinx::fem::CoordinateElement<T>& self,
