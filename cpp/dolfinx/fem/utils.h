@@ -408,15 +408,17 @@ Form<T, U> create_form_factory(
 
   // Extract mesh from FunctionSpace, and check they are the same
   if (!mesh and !spaces.empty())
-    mesh = spaces[0]->mesh();
+    mesh = spaces.front()->mesh();
+  if (!mesh)
+    throw std::runtime_error("No mesh could be associated with the Form.");
   for (auto& V : spaces)
   {
     if (mesh != V->mesh() and entity_maps.find(V->mesh()) == entity_maps.end())
+    {
       throw std::runtime_error(
           "Incompatible mesh. entity_maps must be provided.");
+    }
   }
-  if (!mesh)
-    throw std::runtime_error("No mesh could be associated with the Form.");
 
   auto topology = mesh->topology();
   assert(topology);
@@ -445,6 +447,19 @@ Form<T, U> create_form_factory(
                                     const int*, const std::uint8_t*)>;
   std::map<IntegralType, std::vector<integral_data<T, U>>> integrals;
 
+  auto check_geometry_hash
+      = [&geo = mesh->geometry()](const ufcx_integral& integral,
+                                  std::size_t cell_idx)
+  {
+    if (integral.coordinate_element_hash != geo.cmaps().at(cell_idx).hash())
+    {
+      throw std::runtime_error(
+          "Generated integral geometry element does not match mesh geometry: "
+          + std::to_string(integral.coordinate_element_hash) + ", "
+          + std::to_string(geo.cmaps().at(cell_idx).hash()));
+    }
+  };
+
   // Attach cell kernels
   bool needs_facet_permutations = false;
   {
@@ -463,6 +478,7 @@ Form<T, U> create_form_factory(
         ufcx_integral* integral
             = ufcx_form.form_integrals[integral_offsets[cell] + i];
         assert(integral);
+        check_geometry_hash(*integral, form_idx);
 
         // Build list of active coefficients
         std::vector<int> active_coeffs;
@@ -544,6 +560,8 @@ Form<T, U> create_form_factory(
         ufcx_integral* integral
             = ufcx_form.form_integrals[integral_offsets[exterior_facet] + i];
         assert(integral);
+        check_geometry_hash(*integral, form_idx);
+
         std::vector<int> active_coeffs;
         for (int j = 0; j < ufcx_form.num_coefficients; ++j)
         {
@@ -644,6 +662,8 @@ Form<T, U> create_form_factory(
         ufcx_integral* integral
             = ufcx_form.form_integrals[integral_offsets[interior_facet] + i];
         assert(integral);
+        check_geometry_hash(*integral, form_idx);
+
         std::vector<int> active_coeffs;
         for (int j = 0; j < ufcx_form.num_coefficients; ++j)
         {
@@ -841,9 +861,8 @@ FunctionSpace<T> create_functionspace(
         reorder_fn
     = nullptr)
 {
-  assert(e);
-
   // TODO: check cell type of e (need to add method to fem::FiniteElement)
+  assert(e);
   assert(mesh);
   assert(mesh->topology());
   if (e->cell_type() != mesh->topology()->cell_type())
@@ -870,6 +889,19 @@ Expression<T, U> create_expression(
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
     std::shared_ptr<const FunctionSpace<U>> argument_function_space = nullptr)
 {
+  if (!coefficients.empty())
+  {
+    assert(coefficients.front());
+    assert(coefficients.front()->function_space());
+    std::shared_ptr<const mesh::Mesh<U>> mesh
+        = coefficients.front()->function_space()->mesh();
+    if (mesh->geometry().cmap().hash() != e.coordinate_element_hash)
+    {
+      throw std::runtime_error(
+          "Expression and mesh geometric maps do not match.");
+    }
+  }
+
   if (e.rank > 0 and !argument_function_space)
   {
     throw std::runtime_error("Expression has Argument but no Argument "

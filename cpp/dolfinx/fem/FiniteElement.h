@@ -477,7 +477,8 @@ public:
         // Blocked element
         std::function<void(std::span<U>, std::span<const std::uint32_t>,
                            std::int32_t, int)>
-            sub_fn = _sub_elements[0]->template dof_transformation_fn<U>(ttype);
+            sub_fn
+            = _sub_elements.front()->template dof_transformation_fn<U>(ttype);
         const int ebs = _bs;
         return [ebs, sub_fn](std::span<U> data,
                              std::span<const std::uint32_t> cell_info,
@@ -581,7 +582,8 @@ public:
         // transformation from the left to data using xxxyyyzzz ordering
         std::function<void(std::span<U>, std::span<const std::uint32_t>,
                            std::int32_t, int)>
-            sub_fn = _sub_elements[0]->template dof_transformation_fn<U>(ttype);
+            sub_fn
+            = _sub_elements.front()->template dof_transformation_fn<U>(ttype);
         return [this, sub_fn](std::span<U> data,
                               std::span<const std::uint32_t> cell_info,
                               std::int32_t cell, int data_block_size)
