@@ -99,16 +99,15 @@ public:
   /// Destructor
   virtual ~Expression() = default;
 
-  /// @brief Get argument function space.
-  /// @return The argument function space, nullptr if there is no
-  /// argument.
+  /// @brief Aargument function space.
+  /// @return Argument function space, nullptr if there is no argument.
   std::shared_ptr<const FunctionSpace<geometry_type>> argument_space() const
   {
     return _argument_space;
   };
 
-  /// @brief Get coefficients.
-  /// @return Vector of attached coefficients.
+  /// @brief Expression coefficients.
+  /// @return List of attached coefficients.
   const std::vector<
       std::shared_ptr<const Function<scalar_type, geometry_type>>>&
   coefficients() const
@@ -117,9 +116,11 @@ public:
   }
 
   /// @brief Get constants.
+  ///
   /// @return Vector of attached constants with their names. Names are
   /// used to set constants in user's c++ code. Index in the vector is
-  /// the position of the constant in the original (nonsimplified) form.
+  /// the position of the constant in the original (non-simplified)
+  /// form.
   const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
   constants() const
   {
@@ -143,8 +144,7 @@ public:
     return n;
   }
 
-  /// @brief Get function for tabulate_expression.
-  /// @return fn Function to tabulate expression.
+  /// @brief Function for tabulating the Expression.
   const std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
                            const geometry_type*, const int*, const uint8_t*)>&
   kernel() const
@@ -152,20 +152,17 @@ public:
     return _fn;
   }
 
-  /// @brief Get value size
-  /// @return The value size.
+  /// @brief Value size of Expression result.
   int value_size() const
   {
     return std::reduce(_value_shape.begin(), _value_shape.end(), 1,
                        std::multiplies{});
   }
 
-  /// @brief Get value shape.
-  /// @return The value shape.
+  /// @brief Value shape of of Expression result.
   const std::vector<std::size_t>& value_shape() const { return _value_shape; }
 
   /// @brief Evaluation points on the reference cell.
-  /// @return Evaluation points.
   std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>> X() const
   {
     return _x_ref;
@@ -190,8 +187,7 @@ private:
   // Shape of the evaluated expression
   std::vector<std::size_t> _value_shape;
 
-  // Evaluation points on reference cell. Synonymous with X in public
-  // interface.
+  // Evaluation points on reference cell
   std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>> _x_ref;
 };
 } // namespace dolfinx::fem
