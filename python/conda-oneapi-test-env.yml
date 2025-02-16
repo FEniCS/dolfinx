@@ -1,5 +1,5 @@
 # Test environment for oneAPI compilers and Intel Python
-name: oneapi-test-env2
+name: oneapi-test-env
 channels:
   - https://software.repos.intel.com/python/conda
   - conda-forge
