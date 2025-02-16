@@ -29,13 +29,13 @@ class Function;
 ///
 /// An Expression can be evaluated using ::tabulate_expression.
 ///
-/// An example of Expressions use is to evaluate a gradient of a
-/// Function at quadrature points in cells. This evaluated gradient can
-/// then be used as input in to a non-FEniCS function that calculates a
-/// material constitutive model.
+/// An example of Expression use is to evaluate a gradient of a Function
+/// at quadrature points in cells. This evaluated gradient can then be
+/// used as input in to a non-FEniCS function that calculates a material
+/// constitutive model.
 ///
-/// @tparam T The scalar type
-/// @tparam U The mesh geometry scalar type
+/// @tparam T The scalar type.
+/// @tparam U The mesh geometry scalar type.
 template <dolfinx::scalar T,
           std::floating_point U = dolfinx::scalar_value_type_t<T>>
 class Expression
