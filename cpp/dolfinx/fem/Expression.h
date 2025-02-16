@@ -56,7 +56,7 @@ public:
   /// functions.
   ///
   /// @param[in] coefficients Coefficients in the Expression.
-  /// @param[in] constants Constants in the Expression
+  /// @param[in] constants Constants in the Expression.
   /// @param[in] X Points on the reference cell, `shape=(number of
   /// points, tdim)` and storage is row-major.
   /// @param[in] Xshape Shape of `X`.
@@ -182,7 +182,7 @@ private:
                      const geometry_type*, const int*, const uint8_t*)>
       _fn;
 
-  // Shape of the evaluated expression
+  // Shape of the evaluated Expression
   std::vector<std::size_t> _value_shape;
 
   // Evaluation points on reference cell

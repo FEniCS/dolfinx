@@ -37,8 +37,7 @@ void test_expression_cmap_compat(auto V)
                                                 {{"u1", u}}, {});
   auto [Xc, Xshape] = expr1.X();
   std::vector<double> grad_e(3 * Xshape[0] * cells.size());
-  fem::tabulate_expression(std::span(grad_e), {cells.size(), 3 * Xshape[0]},
-                           expr1, *mesh, cells);
+  fem::tabulate_expression(std::span(grad_e), expr1, *mesh, cells);
 
   // Create Expression that expects P2 geometry. Should throw because
   // mesh is P1.

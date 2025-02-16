@@ -45,11 +45,9 @@ class FunctionSpace;
 ///
 /// @tparam T Scalar type.
 /// @tparam U Geometry type
-/// @param[in,out] values Array to fil with computed values. Row major
-/// storage. Sizing should be `(num_cells, num_points * value_size *
-/// num_all_argument_dofs columns)`. facet index) tuples. Array is
-/// flattened per entity.
-/// @param[in] vshape Shape of `values`.
+/// @param[in,out] values Array to fill with computed values. Shape is
+/// `(num_entities, num_points, value_size, num_argument_dofs)` and
+/// storage is row-major.
 /// @param[in] e Expression to evaluate.
 /// @param[in] coeffs Packed coefficients for the Expressions. Typically
 /// computed using fem::pack_coefficients.
@@ -63,15 +61,15 @@ class FunctionSpace;
 /// @param[in] V Function space for Argument.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
-    std::span<T> values, std::array<std::size_t, 2> vshape,
-    const fem::Expression<T, U>& e, std::span<const T> coeffs,
-    std::size_t cstride, std::span<const T> constants,
-    const mesh::Mesh<U>& mesh, std::span<const std::int32_t> entities,
+    std::span<T> values, const fem::Expression<T, U>& e,
+    std::span<const T> coeffs, std::size_t cstride,
+    std::span<const T> constants, const mesh::Mesh<U>& mesh,
+    std::span<const std::int32_t> entities,
     std::optional<std::reference_wrapper<const FunctionSpace<U>>> V)
 {
   auto [X, Xshape] = e.X();
-  impl::tabulate_expression(values, vshape, e.kernel(), Xshape, e.value_size(),
-                            coeffs, cstride, constants, mesh, entities, V);
+  impl::tabulate_expression(values, e.kernel(), Xshape, e.value_size(), coeffs,
+                            cstride, constants, mesh, entities, V);
 }
 
 /// @brief Evaluate an Expression on cells or facets.
@@ -86,8 +84,7 @@ void tabulate_expression(
 /// @param[in] mesh Mesh to compute `e` on.
 /// @param[in] entities Mesh entities to evaluate `e` on.
 template <dolfinx::scalar T, std::floating_point U>
-void tabulate_expression(std::span<T> values, std::array<std::size_t, 2> vshape,
-                         const fem::Expression<T, U>& e,
+void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
                          const mesh::Mesh<U>& mesh,
                          std::span<const std::int32_t> entities)
 {
@@ -113,11 +110,11 @@ void tabulate_expression(std::span<T> values, std::array<std::size_t, 2> vshape,
   }
   std::vector<T> constants = fem::pack_constants(e);
 
-  tabulate_expression<T, U>(
-      values, vshape, e, std::span<const T>(coeffs), cstride,
-      std::span<const T>(constants), mesh, entities,
-      e.argument_space() ? std::optional(std::ref(*e.argument_space()))
-                         : std::nullopt);
+  tabulate_expression<T, U>(values, e, std::span<const T>(coeffs), cstride,
+                            std::span<const T>(constants), mesh, entities,
+                            e.argument_space()
+                                ? std::optional(std::ref(*e.argument_space()))
+                                : std::nullopt);
 }
 
 // -- Helper functions -----------------------------------------------------

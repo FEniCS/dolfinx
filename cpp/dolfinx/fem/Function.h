@@ -392,8 +392,7 @@ public:
         f(fdata.data(), num_cells, num_points, value_size);
 
     // Evaluate Expression at points
-    tabulate_expression(std::span(fdata), {num_cells, num_points * value_size},
-                        e0, *mesh0, cells0);
+    tabulate_expression(std::span(fdata), e0, *mesh0, cells0);
 
     // Reshape evaluated data to fit interpolate.
     // Expression returns matrix of shape (num_cells, num_points *

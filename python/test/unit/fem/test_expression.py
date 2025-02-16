@@ -37,7 +37,6 @@ def test_rank0(dtype):
 
     For a donor function f(x, y) = x^2 + 2*y^2 result is compared with the
     exact gradient grad f(x, y) = [2*x, 4*y].
-
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype(0).real.dtype)
     gdim = mesh.geometry.dim
@@ -90,7 +89,6 @@ def test_rank1_hdiv(dtype):
     Test compiles linear interpolation operator RT_2 ->
     vector DG_2 and assembles it into global matrix A. Input space RT_2
     is chosen because it requires dof permutations.
-
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=dtype(0).real.dtype)
     gdim = mesh.geometry.dim
@@ -99,9 +97,9 @@ def test_rank1_hdiv(dtype):
     f = ufl.TrialFunction(RT1)
 
     points = vdP1.element.interpolation_points
-    compiled_expr = Expression(f, points, dtype=dtype)
+    expr = Expression(f, points, dtype=dtype)
     num_cells = mesh.topology.index_map(2).size_local
-    array_evaluated = compiled_expr.eval(mesh, np.arange(num_cells, dtype=np.int32))
+    array_evaluated = expr.eval(mesh, np.arange(num_cells, dtype=np.int32))
 
     def scatter(A, array_evaluated, dofmap0, dofmap1):
         for i in range(num_cells):
@@ -169,7 +167,6 @@ def test_simple_evaluation(dtype):
     evaluating the spatial coordinates as an Expression using UFL/FFCx
     and passing the result to a numpy function that calculates the exact
     gradient.
-
     """
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=xtype)
@@ -263,7 +260,6 @@ def test_assembly_into_quadrature_function(dtype):
     In parallel, each process evaluates the Expression on both local
     cells and ghost cells so that no parallel communication is required
     after insertion into the vector.
-
     """
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 6, dtype=xtype)
@@ -489,10 +485,9 @@ def test_facet_expression(dtype):
 
 
 def test_rank1_blocked():
-    """
-    Check that a test function with tensor shape is unrolled as
-    (num_cells, num_points, num_dofs, bs) when evaluated as an expression
-    """
+    """Check that a test function with tensor shape is unrolled as
+    (num_cells, num_points, num_dofs, bs) when evaluated as an
+    expression."""
     mesh = dolfinx.mesh.create_unit_square(
         MPI.COMM_SELF, 1, 1, cell_type=dolfinx.mesh.CellType.quadrilateral
     )

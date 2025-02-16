@@ -40,9 +40,9 @@ namespace dolfinx::fem::impl
 /// @param[in] V
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
-    std::span<T> values, std::array<std::size_t, 2> vshape,
-    fem::FEkernel<T> auto fn, std::array<std::size_t, 2> Xshape,
-    std::size_t value_size, std::span<const T> coeffs, std::size_t cstride,
+    std::span<T> values, fem::FEkernel<T> auto fn,
+    std::array<std::size_t, 2> Xshape, std::size_t value_size,
+    std::span<const T> coeffs, std::size_t cstride,
     std::span<const T> constant_data, const mesh::Mesh<U>& mesh,
     std::span<const std::int32_t> entities,
     std::optional<std::reference_wrapper<const FunctionSpace<U>>> V)
@@ -124,7 +124,7 @@ void tabulate_expression(
        entity_index, nullptr);
     post_dof_transform(values_local, cell_info, e, size0);
     for (std::size_t j = 0; j < values_local.size(); ++j)
-      values[e * vshape[1] + j] = values_local[j];
+      values[e * Xshape[0] + j] = values_local[j];
   }
 }
 } // namespace dolfinx::fem::impl

@@ -228,8 +228,7 @@ void declare_assembly_functions(nb::module_& m)
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells)
       {
         dolfinx::fem::tabulate_expression<T>(
-            std::span<T>(values.data(), values.size()),
-            {values.shape(0), values.shape(1)}, e, mesh,
+            std::span<T>(values.data(), values.size()), e, mesh,
             std::span(cells.data(), cells.size()));
       },
       nb::arg("values"), nb::arg("expression"), nb::arg("mesh"),
