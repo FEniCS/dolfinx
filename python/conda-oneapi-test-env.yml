@@ -21,6 +21,7 @@ dependencies:
   - petsc
   - petsc4py
   - kahip
+  - cffi
   - catch2
   - pytest
   - pytest-xdist
