@@ -20,21 +20,24 @@
 
 namespace dolfinx::fem::impl
 {
-/// @brief
+/// @brief Tabulate an Expression at points.
+///
+/// Function executes an Expression kernel over a list of mesh entities.
+///
 /// @tparam T Scalar type
 /// @tparam U Geometry type
-/// @param values
-/// @param vshape
-/// @param fn Expression kernel to execute.
-/// @param Xshape
-/// @param value_size
-/// @param coeffs Coefficient data that appears in expression.
-/// @param cstride
-/// @param constant_data Constant (coefficient) data that appears in
+/// @param[in,out] values
+/// @param[in] vshape
+/// @param[in] fn Expression kernel to execute.
+/// @param[in] Xshape
+/// @param[in] value_size
+/// @param[in] coeffs Coefficient data that appears in expression.
+/// @param[in] cstride
+/// @param[in] constant_data Constant (coefficient) data that appears in
 /// expression.
-/// @param mesh Mesh to evaluate expression on.
-/// @param entities Mesh entities to evaluate the expression over.
-/// @param V
+/// @param[in] mesh Mesh to evaluate expression on.
+/// @param[in] entities Mesh entities to evaluate the expression over.
+/// @param[in] V
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, std::array<std::size_t, 2> vshape,
