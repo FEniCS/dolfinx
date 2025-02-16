@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2022 Garth N. Wells
+// Copyright (C) 2018-2025 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -57,7 +57,7 @@ class FunctionSpace;
 /// @param[in] constants Packed constant data. Typically computed using
 /// fem::pack_constants.
 /// @param[in] mesh Mesh that the Expression is evaluated on.
-/// @param[in] entities Mesh entities to evaluated the Expression for.
+/// @param[in] entities Mesh entities to evaluate the Expression for.
 /// @param[in] V Function space for Argument.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
@@ -168,11 +168,13 @@ T assemble_scalar(
   }
 }
 
-/// Assemble functional into scalar
+/// @brief Assemble functional into scalar.
+///
 /// @note Caller is responsible for accumulation across processes.
-/// @param[in] M The form (functional) to assemble
+///
+/// @param[in] M The form (functional) to assemble.
 /// @return The contribution to the form (functional) from the local
-///   process
+/// process.
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_scalar(const Form<T, U>& M)
 {
@@ -192,9 +194,9 @@ T assemble_scalar(const Form<T, U>& M)
 /// for multiple calls.
 /// @param[in,out] b The vector to be assembled. It will not be zeroed
 /// before assembly.
-/// @param[in] L The linear forms to assemble into b
-/// @param[in] constants The constants that appear in `L`
-/// @param[in] coefficients The coefficients that appear in `L`
+/// @param[in] L The linear forms to assemble into b.
+/// @param[in] constants The constants that appear in `L`.
+/// @param[in] coefficients The coefficients that appear in `L`.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_vector(
     std::span<T> b, const Form<T, U>& L, std::span<const T> constants,
@@ -204,10 +206,10 @@ void assemble_vector(
   impl::assemble_vector(b, L, constants, coefficients);
 }
 
-/// @brief Assemble linear form into a vector
-/// @param[in,out] b The vector to be assembled. It will not be zeroed
+/// @brief Assemble linear form into a vector.
+/// @param[in,out] b Vector to be assembled. It will not be zeroed
 /// before assembly.
-/// @param[in] L The linear forms to assemble into b
+/// @param[in] L Linear forms to assemble into b.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_vector(std::span<T> b, const Form<T, U>& L)
 {
@@ -309,10 +311,10 @@ void apply_lifting(
 
 /// @brief Assemble bilinear form into a matrix. Matrix must already be
 /// initialised. Does not zero or finalise the matrix.
-/// @param[in] mat_add The function for adding values into the matrix
-/// @param[in] a The bilinear form to assemble
-/// @param[in] constants Constants that appear in `a`
-/// @param[in] coefficients Coefficients that appear in `a`
+/// @param[in] mat_add The function for adding values into the matrix.
+/// @param[in] a The bilinear form to assemble.
+/// @param[in] constants Constants that appear in `a`.
+/// @param[in] coefficients Coefficients that appear in `a`.
 /// @param[in] dof_marker0 Boundary condition markers for the rows. If
 /// bc[i] is true then rows i in A will be zeroed. The index i is a
 /// local index.
@@ -345,12 +347,12 @@ void assemble_matrix(
   }
 }
 
-/// Assemble bilinear form into a matrix
-/// @param[in] mat_add The function for adding values into the matrix
-/// @param[in] a The bilinear from to assemble
-/// @param[in] constants Constants that appear in `a`
-/// @param[in] coefficients Coefficients that appear in `a`
-/// @param[in] bcs Boundary conditions to apply. For boundary condition
+/// @brief Assemble bilinear form into a matrix
+/// @param[in] mat_add The function for adding values into the matrix.
+/// @param[in] a The bilinear from to assemble.
+/// @param[in] constants Constants that appear in `a`.
+/// @param[in] coefficients Coefficients that appear in `a`.
+/// @param[in] bcs Boundary conditions to apply. For boundary condition.
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
@@ -394,11 +396,11 @@ void assemble_matrix(
                   dof_marker1);
 }
 
-/// Assemble bilinear form into a matrix
-/// @param[in] mat_add The function for adding values into the matrix
-/// @param[in] a The bilinear from to assemble
+/// @brief Assemble bilinear form into a matrix.
+/// @param[in] mat_add The function for adding values into the matrix.
+/// @param[in] a The bilinear from to assemble.
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
-///  dofs the row and column are zeroed. The diagonal  entry is not set.
+/// dofs the row and column are zeroed. The diagonal  entry is not set.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     auto mat_add, const Form<T, U>& a,
@@ -416,14 +418,15 @@ void assemble_matrix(
 
 /// @brief Assemble bilinear form into a matrix. Matrix must already be
 /// initialised. Does not zero or finalise the matrix.
-/// @param[in] mat_add The function for adding values into the matrix
-/// @param[in] a The bilinear form to assemble
+///
+/// @param[in] mat_add The function for adding values into the matrix.
+/// @param[in] a The bilinear form to assemble.
 /// @param[in] dof_marker0 Boundary condition markers for the rows. If
-/// bc[i] is true then rows i in A will be zeroed. The index i is a
-/// local index.
+/// `bc[i]` is `true` then rows `i` in A` `will be zeroed. The index `i`
+/// is a local index.
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
-/// If bc[i] is true then rows i in A will be zeroed. The index i is a
-/// local index.
+/// If `bc[i]` is `true` then rows `i` in `A` will be zeroed. The index
+/// `i` is a local index.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(auto mat_add, const Form<T, U>& a,
                      std::span<const std::int8_t> dof_marker0,
@@ -447,11 +450,12 @@ void assemble_matrix(auto mat_add, const Form<T, U>& a,
 /// function zeroes Dirichlet rows and columns. For block matrices, this
 /// function should normally be called only on the diagonal blocks, i.e.
 /// blocks for which the test and trial spaces are the same.
-/// @param[in] set_fn The function for setting values to a matrix
-/// @param[in] rows The row blocks, in local indices, for which to add a
-/// value to the diagonal
-/// @param[in] diagonal The value to add to the diagonal for the
-/// specified rows
+///
+/// @param[in] set_fn The function for setting values to a matrix.
+/// @param[in] rows Row blocks, in local indices, for which to add a
+/// value to the diagonal.
+/// @param[in] diagonal Value to add to the diagonal for the specified
+/// rows.
 template <dolfinx::scalar T>
 void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
                   T diagonal = 1.0)
@@ -472,13 +476,13 @@ void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
 /// create a need for parallel communication. For block matrices, this
 /// function should normally be called only on the diagonal blocks, i.e.
 /// blocks for which the test and trial spaces are the same.
-/// @param[in] set_fn The function for setting values to a matrix
+/// @param[in] set_fn The function for setting values to a matrix.
 /// @param[in] V The function space for the rows and columns of the
 /// matrix. It is used to extract only the Dirichlet boundary conditions
 /// that are define on V or subspaces of V.
-/// @param[in] bcs The Dirichlet boundary conditions
-/// @param[in] diagonal The value to add to the diagonal for rows with a
-/// boundary condition applied
+/// @param[in] bcs The Dirichlet boundary conditions.
+/// @param[in] diagonal Value to add to the diagonal for rows with a
+/// boundary condition applied.
 template <dolfinx::scalar T, std::floating_point U>
 void set_diagonal(
     auto set_fn, const FunctionSpace<U>& V,
