@@ -228,9 +228,9 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
       // set.
       if (_iteration == 1)
       {
-         PetscReal _r = 0.0;
-         VecNorm(_dx, NORM_2, &_r);
-         _residual0 = _r;
+        PetscReal _r = 0.0;
+        VecNorm(_dx, NORM_2, &_r);
+        _residual0 = _r;
         _residual = 1.0;
         newton_converged = false;
       }
