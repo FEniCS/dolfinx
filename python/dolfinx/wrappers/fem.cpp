@@ -561,7 +561,7 @@ void declare_objects(nb::module_& m, const std::string& type)
              std::uintptr_t fn_addr,
              const std::vector<std::size_t>& value_shape,
              std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>
-                 argument_function_space)
+                 argument_space)
           {
             auto tabulate_expression_ptr
                 = (void (*)(T*, const T*, const T*,
@@ -570,23 +570,10 @@ void declare_objects(nb::module_& m, const std::string& type)
             new (ex) dolfinx::fem::Expression<T, U>(
                 coefficients, constants, std::span(X.data(), X.size()),
                 {X.shape(0), X.shape(1)}, tabulate_expression_ptr, value_shape,
-                argument_function_space);
+                argument_space);
           },
           nb::arg("coefficients"), nb::arg("constants"), nb::arg("X"),
-          nb::arg("fn"), nb::arg("value_shape"),
-          nb::arg("argument_function_space"))
-      .def(
-          "eval",
-          [](const dolfinx::fem::Expression<T, U>& self,
-             const dolfinx::mesh::Mesh<U>& mesh,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
-             nb::ndarray<T, nb::ndim<2>, nb::c_contig> values)
-          {
-            std::span<T> foo(values.data(), values.size());
-            self.eval(mesh, std::span(cells.data(), cells.size()), foo,
-                      {values.shape(0), values.shape(1)});
-          },
-          nb::arg("mesh"), nb::arg("active_cells"), nb::arg("values"))
+          nb::arg("fn"), nb::arg("value_shape"), nb::arg("argument_space"))
       .def("X",
            [](const dolfinx::fem::Expression<T, U>& self)
            {
@@ -616,16 +603,15 @@ void declare_objects(nb::module_& m, const std::string& type)
              coefficients,
          const std::vector<std::shared_ptr<const dolfinx::fem::Constant<T>>>&
              constants,
-         std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>
-             argument_function_space)
+         std::shared_ptr<const dolfinx::fem::FunctionSpace<U>> argument_space)
       {
         const ufcx_expression* p
             = reinterpret_cast<const ufcx_expression*>(expression);
-        return dolfinx::fem::create_expression<T, U>(
-            *p, coefficients, constants, argument_function_space);
+        return dolfinx::fem::create_expression<T, U>(*p, coefficients,
+                                                     constants, argument_space);
       },
       nb::arg("expression"), nb::arg("coefficients"), nb::arg("constants"),
-      nb::arg("argument_function_space").none(),
+      nb::arg("argument_space").none(),
       "Create Expression from a pointer to ufc_form.");
 }
 

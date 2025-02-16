@@ -25,6 +25,9 @@
 
 namespace dolfinx::fem
 {
+template <dolfinx::scalar T, std::floating_point U>
+class Expression;
+
 namespace impl
 {
 /// @private
