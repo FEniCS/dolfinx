@@ -73,6 +73,11 @@ public:
   /// @brief Variant of the element
   basix::element::lagrange_variant variant() const;
 
+  /// @brief Element hash.
+  ///
+  /// This is the Basix element hash.
+  std::uint64_t hash() const;
+
   /// @brief Shape of array to fill when calling `tabulate`.
   /// @param[in] nd The order of derivatives, up to and including, to
   /// compute. Use 0 for the basis functions only

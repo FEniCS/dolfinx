@@ -4,8 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "array.h"
-#include "caster_mpi.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/caster_mpi.h"
 #include <basix/mdspan.hpp>
 #include <dolfinx/common/defines.h>
 #include <dolfinx/fem/Function.h>

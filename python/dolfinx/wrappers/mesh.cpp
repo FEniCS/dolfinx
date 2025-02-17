@@ -4,11 +4,11 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "mesh.h"
-#include "MPICommWrapper.h"
-#include "array.h"
-#include "caster_mpi.h"
-#include "numpy_dtype.h"
+#include "dolfinx_wrappers/mesh.h"
+#include "dolfinx_wrappers/MPICommWrapper.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/caster_mpi.h"
+#include "dolfinx_wrappers/numpy_dtype.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
@@ -695,6 +695,8 @@ void mesh(nb::module_& m)
               comm.get(), cell_type, cells_span, original_cell_index_span,
               ghost_owners_span, boundary_vertices_span);
         });
+
+  m.def("compute_mixed_cell_pairs", &dolfinx::mesh::compute_mixed_cell_pairs);
 
   declare_meshtags<std::int8_t>(m, "int8");
   declare_meshtags<std::int32_t>(m, "int32");

@@ -4,9 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "array.h"
-#include "caster_mpi.h"
-#include "numpy_dtype.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/caster_mpi.h"
+#include "dolfinx_wrappers/numpy_dtype.h"
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -900,6 +900,7 @@ void declare_cmap(nb::module_& m, std::string type)
       .def_prop_ro("dim", &dolfinx::fem::CoordinateElement<T>::dim)
       .def_prop_ro("variant", [](const dolfinx::fem::CoordinateElement<T>& self)
                    { return static_cast<int>(self.variant()); })
+      .def("hash", &dolfinx::fem::CoordinateElement<T>::hash)
       .def(
           "push_forward",
           [](const dolfinx::fem::CoordinateElement<T>& self,

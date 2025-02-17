@@ -198,7 +198,7 @@ class XDMFFile(_cpp.io.XDMFFile):
                 "Lagrange",
                 cell_shape.name,
                 cell_degree,
-                basix.LagrangeVariant.equispaced,
+                basix.LagrangeVariant.unset,
                 shape=(x.shape[1],),
             )
         )
