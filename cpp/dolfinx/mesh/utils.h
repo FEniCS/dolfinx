@@ -442,6 +442,8 @@ template <std::floating_point T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>>
 compute_vertex_coords(const mesh::Mesh<T>& mesh)
 {
+  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
   auto topology = mesh.topology();
   assert(topology);
   const int tdim = topology->dim();
@@ -462,8 +464,7 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
     assert(c_to_v);
     for (int c = 0; c < c_to_v->num_nodes(); ++c)
     {
-      auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-          x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
       auto vertices = c_to_v->links(c);
       for (std::size_t i = 0; i < vertices.size(); ++i)
         vertex_to_node[vertices[i]] = x_dofs[i];
