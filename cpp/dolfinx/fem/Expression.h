@@ -25,7 +25,7 @@ template <dolfinx::scalar T, std::floating_point U>
 class Function;
 
 /// @brief An Expression represents a mathematical expression evaluated
-/// at a pre-defined set of points on a reference cell.
+/// at a pre-defined points on a reference cell.
 ///
 /// An Expression can be evaluated using ::tabulate_expression.
 ///

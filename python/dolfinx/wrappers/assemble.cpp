@@ -265,20 +265,6 @@ void declare_assembly_functions(nb::module_& m)
       nb::arg("values"), nb::arg("expression"), nb::arg("constants"),
       nb::arg("coefficients"), nb::arg("mesh"), nb::arg("entities"),
       "Evaluate an Expression on mesh entities.");
-  // m.def(
-  //     "tabulate_expression",
-  //     [](nb::ndarray<T, nb::ndim<2>, nb::c_contig> values,
-  //        const dolfinx::fem::Expression<T, U>& e,
-  //        const dolfinx::mesh::Mesh<U>& mesh,
-  //        nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells)
-  //     {
-  //       dolfinx::fem::tabulate_expression<T>(
-  //           std::span<T>(values.data(), values.size()), e, mesh,
-  //           std::span(cells.data(), cells.size()));
-  //     },
-  //     nb::arg("values"), nb::arg("expression"), nb::arg("mesh"),
-  //     nb::arg("cells"), "Evaluate an Expression of mesh entities.");
-  // // Functional
   m.def(
       "assemble_scalar",
       [](const dolfinx::fem::Form<T, U>& M,
