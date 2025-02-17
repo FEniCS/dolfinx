@@ -4,9 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "array.h"
-#include "caster_mpi.h"
-#include "numpy_dtype.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/caster_mpi.h"
+#include "dolfinx_wrappers/numpy_dtype.h"
 #include <complex>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -132,6 +132,7 @@ void declare_objects(nb::module_& m, const std::string& type)
                &dolfinx::la::MatrixCSR<T>::set),
            nb::arg("x"))
       .def("scatter_reverse", &dolfinx::la::MatrixCSR<T>::scatter_rev)
+      .def("mult", &dolfinx::la::MatrixCSR<T>::mult)
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {

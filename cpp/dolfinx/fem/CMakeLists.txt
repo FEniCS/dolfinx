@@ -18,6 +18,7 @@ set(HEADERS_fem
     ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_fem.h
     ${CMAKE_CURRENT_SOURCE_DIR}/interpolate.h
     ${CMAKE_CURRENT_SOURCE_DIR}/petsc.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/pack.h
     ${CMAKE_CURRENT_SOURCE_DIR}/sparsitybuild.h
     ${CMAKE_CURRENT_SOURCE_DIR}/traits.h
     ${CMAKE_CURRENT_SOURCE_DIR}/utils.h

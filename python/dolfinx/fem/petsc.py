@@ -31,6 +31,7 @@ import ufl
 from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
+from dolfinx.cpp.fem.petsc import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem.petsc import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem.petsc import interpolation_matrix as _interpolation_matrix
 from dolfinx.fem import assemble as _assemble
@@ -44,26 +45,27 @@ from dolfinx.fem.function import FunctionSpace as _FunctionSpace
 from dolfinx.la import create_petsc_vector
 
 __all__ = [
-    "create_vector",
-    "create_vector_block",
-    "create_vector_nest",
+    "LinearProblem",
+    "NonlinearProblem",
+    "apply_lifting",
+    "apply_lifting_nest",
+    "assemble_matrix",
+    "assemble_matrix_block",
+    "assemble_matrix_nest",
+    "assemble_vector",
+    "assemble_vector_block",
+    "assemble_vector_nest",
     "create_matrix",
     "create_matrix_block",
     "create_matrix_nest",
-    "assemble_vector",
-    "assemble_vector_nest",
-    "assemble_vector_block",
-    "assemble_matrix",
-    "assemble_matrix_nest",
-    "assemble_matrix_block",
-    "apply_lifting",
-    "apply_lifting_nest",
-    "set_bc",
-    "set_bc_nest",
-    "LinearProblem",
-    "NonlinearProblem",
+    "create_vector",
+    "create_vector_block",
+    "create_vector_nest",
+    "discrete_curl",
     "discrete_gradient",
     "interpolation_matrix",
+    "set_bc",
+    "set_bc_nest",
 ]
 
 
@@ -103,13 +105,19 @@ def _extract_function_spaces(a: list[list[Form]]):
 def create_vector(L: Form) -> PETSc.Vec:
     """Create a PETSc vector that is compatible with a linear form.
 
+    Note:
+        Due to subtle issues in the interaction between petsc4py memory management
+        and the Python garbage collector, it is recommended that the method ``PETSc.Vec.destroy()``
+        is called on the returned object once the object is no longer required. Note that
+        ``PETSc.Vec.destroy()`` is collective over the object's MPI communicator.
+
     Args:
         L: A linear form.
 
     Returns:
         A PETSc vector with a layout that is compatible with ``L``.
     """
-    dofmap = L.function_spaces[0].dofmap
+    dofmap = L.function_spaces[0].dofmaps(0)
     return create_petsc_vector(dofmap.index_map, dofmap.index_map_bs)
 
 
@@ -130,14 +138,18 @@ def create_vector_block(L: list[Form]) -> PETSc.Vec:
 
     """
     maps = [
-        (form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
+        (
+            form.function_spaces[0].dofmaps(0).index_map,
+            form.function_spaces[0].dofmaps(0).index_map_bs,
+        )
         for form in L
     ]
     return _cpp.fem.petsc.create_vector_block(maps)
 
 
 def create_vector_nest(L: list[Form]) -> PETSc.Vec:
-    """Create a PETSc nested vector (``VecNest``) that is compatible with a list of linear forms.
+    """Create a PETSc nested vector (``VecNest``) that is compatible
+    with a list of linear forms.
 
     Args:
         L: List of linear forms.
@@ -147,7 +159,10 @@ def create_vector_nest(L: list[Form]) -> PETSc.Vec:
         compatible with ``L``.
     """
     maps = [
-        (form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
+        (
+            form.function_spaces[0].dofmaps(0).index_map,
+            form.function_spaces[0].dofmaps(0).index_map_bs,
+        )
         for form in L
     ]
     return _cpp.fem.petsc.create_vector_nest(maps)
@@ -234,6 +249,12 @@ def assemble_vector(L: typing.Any, constants=None, coeffs=None) -> PETSc.Vec:
         The returned vector is not finalised, i.e. ghost values are not
         accumulated on the owning processes.
 
+    Note:
+        Due to subtle issues in the interaction between petsc4py memory management
+        and the Python garbage collector, it is recommended that the method ``PETSc.Vec.destroy()``
+        is called on the returned object once the object is no longer required. Note that
+        ``PETSc.Vec.destroy()`` is collective over the object's MPI communicator.
+
     Args:
         L: A linear form.
 
@@ -241,7 +262,7 @@ def assemble_vector(L: typing.Any, constants=None, coeffs=None) -> PETSc.Vec:
         An assembled vector.
     """
     b = create_petsc_vector(
-        L.function_spaces[0].dofmap.index_map, L.function_spaces[0].dofmap.index_map_bs
+        L.function_spaces[0].dofmaps(0).index_map, L.function_spaces[0].dofmaps(0).index_map_bs
     )
     with b.localForm() as b_local:
         _assemble._assemble_vector_array(b_local.array_w, L, constants, coeffs)
@@ -275,9 +296,20 @@ def assemble_vector_nest(L: typing.Any, constants=None, coeffs=None) -> PETSc.Ve
 
     The returned vector is not finalised, i.e. ghost values are not
     accumulated on the owning processes.
+
+    Note:
+        Due to subtle issues in the interaction between petsc4py memory
+        management and the Python garbage collector, it is recommended
+        that the method ``PETSc.Vec.destroy()`` is called on the
+        returned object once the object is no longer required. Note that
+        ``PETSc.Vec.destroy()`` is collective over the object's MPI
+        communicator.
     """
     maps = [
-        (form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
+        (
+            form.function_spaces[0].dofmaps(0).index_map,
+            form.function_spaces[0].dofmaps(0).index_map_bs,
+        )
         for form in L
     ]
     b = _cpp.fem.petsc.create_vector_nest(maps)
@@ -320,9 +352,20 @@ def assemble_vector_block(
     """Assemble linear forms into a monolithic vector.
 
     The vector is not finalised, i.e. ghost values are not accumulated.
+
+    Note:
+        Due to subtle issues in the interaction between petsc4py memory
+        management and the Python garbage collector, it is recommended
+        that the method ``PETSc.Vec.destroy()`` is called on the
+        returned object once the object is no longer required. Note that
+        ``PETSc.Vec.destroy()`` is collective over the object's MPI
+        communicator.
     """
     maps = [
-        (form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
+        (
+            form.function_spaces[0].dofmaps(0).index_map,
+            form.function_spaces[0].dofmaps(0).index_map_bs,
+        )
         for form in L
     ]
     b = _cpp.fem.petsc.create_vector_block(maps)
@@ -352,7 +395,10 @@ def _assemble_vector_block_vec(
     are not accumulated.
     """
     maps = [
-        (form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
+        (
+            form.function_spaces[0].dofmaps(0).index_map,
+            form.function_spaces[0].dofmaps(0).index_map_bs,
+        )
         for form in L
     ]
     if x0 is not None:
@@ -435,6 +481,14 @@ def assemble_matrix(
         The returned matrix is not 'assembled', i.e. ghost contributions
         have not been communicated.
 
+    Note:
+        Due to subtle issues in the interaction between petsc4py memory
+        management and the Python garbage collector, it is recommended
+        that the method ``PETSc.Mat.destroy()`` is called on the
+        returned object once the object is no longer required. Note that
+        ``PETSc.Mat.destroy()`` is collective over the object's MPI
+        communicator.
+
     Args:
         a: Bilinear form to assembled into a matrix.
         bc: Dirichlet boundary conditions applied to the system.
@@ -488,6 +542,14 @@ def assemble_matrix_nest(
     coeffs=None,
 ) -> PETSc.Mat:
     """Create a nested matrix and assemble bilinear forms into the matrix.
+
+    Note:
+        Due to subtle issues in the interaction between petsc4py memory
+        management and the Python garbage collector, it is recommended
+        that the method ``PETSc.Mat.destroy()`` is called on the
+        returned object once the object is no longer required. Note that
+        ``PETSc.Mat.destroy()`` is collective over the object's MPI
+        communicator.
 
     Args:
         a: Rectangular (list-of-lists) array for bilinear forms.
@@ -576,7 +638,16 @@ def assemble_matrix_block(
     constants=None,
     coeffs=None,
 ) -> PETSc.Mat:  # type: ignore
-    """Assemble bilinear forms into a blocked matrix."""
+    """Assemble bilinear forms into a blocked matrix.
+
+    Note:
+        Due to subtle issues in the interaction between petsc4py memory
+        management and the Python garbage collector, it is recommended
+        that the method ``PETSc.Mat.destroy()`` is called on the
+        returned object once the object is no longer required. Note that
+        ``PETSc.Mat.destroy()`` is collective over the object's MPI
+        communicator.
+    """
     _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
     A = _cpp.fem.petsc.create_matrix_block(_a)
     return _assemble_matrix_block_mat(A, a, bcs, diagonal, constants, coeffs)
@@ -616,10 +687,10 @@ def _assemble_matrix_block_mat(
 
     V = _extract_function_spaces(a)
     is_rows = _cpp.la.petsc.create_index_sets(
-        [(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[0]]
+        [(Vsub.dofmaps(0).index_map, Vsub.dofmaps(0).index_map_bs) for Vsub in V[0]]
     )
     is_cols = _cpp.la.petsc.create_index_sets(
-        [(Vsub.dofmap.index_map, Vsub.dofmap.index_map_bs) for Vsub in V[1]]
+        [(Vsub.dofmaps(0).index_map, Vsub.dofmaps(0).index_map_bs) for Vsub in V[1]]
     )
 
     # Assemble form
@@ -733,7 +804,9 @@ def set_bc_nest(
     x0: typing.Optional[PETSc.Vec] = None,
     alpha: float = 1,
 ) -> None:
-    """Apply the function :func:`dolfinx.fem.set_bc` to each sub-vector of a nested PETSc Vector."""
+    """Apply the function :func:`dolfinx.fem.set_bc` to each sub-vector
+    of a nested PETSc Vector.
+    """
     _b = b.getNestSubVecs()
     x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()
     for b_sub, bc, x_sub in zip(_b, bcs, x0):
@@ -918,12 +991,12 @@ class NonlinearProblem:
                 command line to see all available options.
             jit_options: Options used in CFFI JIT compilation of C
                 code generated by FFCx. See ``python/dolfinx/jit.py``
-                for all available options. Takes priority over all
-                other option values.
+                for all available options. Takes priority over all other
+                option values.
 
         Example::
 
-            problem = LinearProblem(F, u, [bc0, bc1])
+            problem = NonlinearProblem(F, u, [bc0, bc1])
         """
         self._L = _create_form(
             F, form_compiler_options=form_compiler_options, jit_options=jit_options
@@ -985,6 +1058,19 @@ class NonlinearProblem:
         A.zeroEntries()
         assemble_matrix_mat(A, self._a, self.bcs)
         A.assemble()
+
+
+def discrete_curl(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:
+    """Assemble a discrete curl operator.
+
+    Args:
+        space0: H1 space to interpolate the gradient from.
+        space1: H(curl) space to interpolate into.
+
+    Returns:
+        Discrete curl operator.
+    """
+    return _discrete_curl(space0._cpp_object, space1._cpp_object)
 
 
 def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:

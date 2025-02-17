@@ -4,8 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "array.h"
-#include "pycoeff.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/pycoeff.h"
 #include <array>
 #include <complex>
 #include <cstdint>
@@ -140,6 +140,20 @@ void declare_discrete_operators(nb::module_& m)
         });
 
   m.def(
+      "discrete_curl",
+      [](const dolfinx::fem::FunctionSpace<U>& V0,
+         const dolfinx::fem::FunctionSpace<U>& V1)
+      {
+        dolfinx::la::SparsityPattern sp = create_sparsity(V0, V1);
+
+        // Build operator
+        dolfinx::la::MatrixCSR<T> A(sp);
+        dolfinx::fem::discrete_curl<U, T>(V0, V1, A.mat_set_values());
+        return A;
+      },
+      nb::arg("V0"), nb::arg("V1"));
+
+  m.def(
       "discrete_gradient",
       [](const dolfinx::fem::FunctionSpace<U>& V0,
          const dolfinx::fem::FunctionSpace<U>& V1)
@@ -216,7 +230,7 @@ void declare_assembly_functions(nb::module_& m)
       {
         return dolfinx::fem::assemble_scalar<T>(
             M, std::span(constants.data(), constants.size()),
-            py_to_cpp_coeffs(coefficients));
+            dolfinx_wrappers::py_to_cpp_coeffs(coefficients));
       },
       nb::arg("M"), nb::arg("constants"), nb::arg("coefficients"),
       "Assemble functional over mesh with provided constants and "
@@ -234,7 +248,7 @@ void declare_assembly_functions(nb::module_& m)
         dolfinx::fem::assemble_vector<T>(
             std::span(b.data(), b.size()), L,
             std::span(constants.data(), constants.size()),
-            py_to_cpp_coeffs(coefficients));
+            dolfinx_wrappers::py_to_cpp_coeffs(coefficients));
       },
       nb::arg("b"), nb::arg("L"), nb::arg("constants"), nb::arg("coeffs"),
       "Assemble linear form into an existing vector with pre-packed constants "
@@ -258,9 +272,11 @@ void declare_assembly_functions(nb::module_& m)
           _bcs.push_back(*bc);
         }
 
+        // Get index map block size. Note that mixed-topology meshes
+        // will have multiple DOF maps, but the block sizes are the same.
         const std::array<int, 2> data_bs
-            = {a.function_spaces().at(0)->dofmap()->index_map_bs(),
-               a.function_spaces().at(1)->dofmap()->index_map_bs()};
+            = {a.function_spaces().at(0)->dofmaps(0)->index_map_bs(),
+               a.function_spaces().at(1)->dofmaps(0)->index_map_bs()};
 
         if (data_bs[0] != data_bs[1])
         {
@@ -273,63 +289,63 @@ void declare_assembly_functions(nb::module_& m)
           dolfinx::fem::assemble_matrix(
               A.mat_add_values(), a,
               std::span<const T>(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 2)
         {
           auto mat_add = A.template mat_add_values<2, 2>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 3)
         {
           auto mat_add = A.template mat_add_values<3, 3>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 4)
         {
           auto mat_add = A.template mat_add_values<4, 4>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 5)
         {
           auto mat_add = A.template mat_add_values<5, 5>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 6)
         {
           auto mat_add = A.template mat_add_values<6, 6>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 7)
         {
           auto mat_add = A.template mat_add_values<7, 7>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 8)
         {
           auto mat_add = A.template mat_add_values<8, 8>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 9)
         {
           auto mat_add = A.template mat_add_values<9, 9>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else
           throw std::runtime_error("Block size not supported in Python");
@@ -453,8 +469,9 @@ void declare_assembly_functions(nb::module_& m)
         std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
                              std::pair<std::span<const T>, int>>>
             _coeffs;
-        std::ranges::transform(coeffs, std::back_inserter(_coeffs),
-                               [](auto& c) { return py_to_cpp_coeffs(c); });
+        std::ranges::transform(
+            coeffs, std::back_inserter(_coeffs),
+            [](auto& c) { return dolfinx_wrappers::py_to_cpp_coeffs(c); });
 
         dolfinx::fem::apply_lifting<T>(std::span<T>(b.data(), b.size()), _a,
                                        _constants, _coeffs, _bcs, _x0, alpha);

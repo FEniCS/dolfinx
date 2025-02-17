@@ -9,11 +9,14 @@ import numpy as np
 import numpy.typing as npt
 
 from dolfinx.cpp.fem import IntegralType, transpose_dofmap
+from dolfinx.cpp.fem import build_sparsity_pattern as _build_sparsity_pattern
 from dolfinx.cpp.fem import compute_integration_domains as _compute_integration_domains
 from dolfinx.cpp.fem import create_interpolation_data as _create_interpolation_data
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
+from dolfinx.cpp.fem import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem import interpolation_matrix as _interpolation_matrix
+from dolfinx.cpp.la import SparsityPattern
 from dolfinx.cpp.mesh import Topology
 from dolfinx.fem.assemble import (
     apply_lifting,
@@ -32,7 +35,7 @@ from dolfinx.fem.bcs import (
     locate_dofs_topological,
 )
 from dolfinx.fem.dofmap import DofMap
-from dolfinx.fem.element import CoordinateElement, coordinate_element
+from dolfinx.fem.element import CoordinateElement, FiniteElement, coordinate_element, finiteelement
 from dolfinx.fem.forms import (
     Form,
     compile_form,
@@ -40,6 +43,7 @@ from dolfinx.fem.forms import (
     extract_function_spaces,
     form,
     form_cpp_class,
+    mixed_topology_form,
 )
 from dolfinx.fem.function import (
     Constant,
@@ -69,6 +73,23 @@ def create_sparsity_pattern(a: Form):
     return _create_sparsity_pattern(a._cpp_object)
 
 
+def build_sparsity_pattern(pattern: SparsityPattern, a: Form):
+    """Build a sparsity pattern from a bilinear form.
+
+    Args:
+        pattern: The sparsity pattern to add to
+        a: Bilinear form to build a sparsity pattern for.
+
+    Returns:
+        Sparsity pattern for the form ``a``.
+
+    Note:
+        The pattern is not finalised, i.e. the caller is responsible for
+        calling ``assemble`` on the sparsity pattern.
+    """
+    return _build_sparsity_pattern(pattern, a._cpp_object)
+
+
 def create_interpolation_data(
     V_to: FunctionSpace,
     V_from: FunctionSpace,
@@ -91,26 +112,47 @@ def create_interpolation_data(
     """
     return _PointOwnershipData(
         _create_interpolation_data(
-            V_to.mesh._cpp_object.geometry, V_to.element, V_from.mesh._cpp_object, cells, padding
+            V_to.mesh._cpp_object.geometry,
+            V_to.element._cpp_object,
+            V_from.mesh._cpp_object,
+            cells,
+            padding,
         )
     )
+
+
+def discrete_curl(V0: FunctionSpace, V1: FunctionSpace) -> _MatrixCSR:
+    """Assemble a discrete curl operator.
+
+    The discrete curl operator interpolates the curl of H(curl) finite
+    element function into a H(div) space.
+
+    Args:
+        V0: H1(curl) space to interpolate the curl from.
+        V1: H(div) space to interpolate into.
+
+    Returns:
+        Discrete curl operator.
+    """
+    return _MatrixCSR(_discrete_curl(V0._cpp_object, V1._cpp_object))
 
 
 def discrete_gradient(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCSR:
     """Assemble a discrete gradient operator.
 
-    The discrete gradient operator interpolates the gradient of
-    a H1 finite element function into a H(curl) space. It is assumed that
-    the H1 space uses an identity map and the H(curl) space uses a covariant Piola map.
+    The discrete gradient operator interpolates the gradient of a H1
+    finite element function into a H(curl) space. It is assumed that the
+    H1 space uses an identity map and the H(curl) space uses a covariant
+    Piola map.
 
     Args:
-        space0: H1 space to interpolate the gradient from
-        space1: H(curl) space to interpolate into
+        space0: H1 space to interpolate the gradient from.
+        space1: H(curl) space to interpolate into.
 
     Returns:
-        Discrete gradient operator
+        Discrete gradient operator.
     """
-    return _discrete_gradient(space0._cpp_object, space1._cpp_object)
+    return _MatrixCSR(_discrete_gradient(space0._cpp_object, space1._cpp_object))
 
 
 def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCSR:
@@ -131,13 +173,14 @@ def compute_integration_domains(
 ):
     """Given an integral type and a set of entities compute integration entities.
 
-    This function returns a list `[(id, entities)]`. For cell integrals
-    `entities` are the cell indices. For exterior facet integrals,
-    `entities` is a list of `(cell_index, local_facet_index)` pairs. For
-    interior facet integrals, `entities` is a list of `(cell_index0,
-    local_facet_index0, cell_index1, local_facet_index1)`. `id` refers
-    to the subdomain id used in the definition of the integration
-    measures of the variational form.
+    This function returns a list ``[(id, entities)]``. For cell
+    integrals ``entities`` are the cell indices. For exterior facet
+    integrals, ``entities`` is a list of ``(cell_index,
+    local_facet_index)`` pairs. For interior facet integrals,
+    ``entities`` is a list of ``(cell_index0, local_facet_index0,
+    cell_index1, local_facet_index1)``. ``id`` refers to the subdomain
+    id used in the definition of the integration measures of the
+    variational form.
 
     Note:
         Owned mesh entities only are returned. Ghost entities are not
@@ -164,36 +207,39 @@ def compute_integration_domains(
 
 __all__ = [
     "Constant",
-    "Expression",
-    "Function",
-    "ElementMetaData",
-    "create_matrix",
-    "compute_integration_domains",
-    "functionspace",
-    "FunctionSpace",
-    "create_sparsity_pattern",
-    "discrete_gradient",
-    "assemble_scalar",
-    "assemble_matrix",
-    "assemble_vector",
-    "apply_lifting",
+    "CoordinateElement",
     "DirichletBC",
-    "dirichletbc",
-    "bcs_by_block",
     "DofMap",
+    "ElementMetaData",
+    "Expression",
+    "FiniteElement",
     "Form",
-    "form",
+    "Function",
+    "FunctionSpace",
     "IntegralType",
+    "apply_lifting",
+    "assemble_matrix",
+    "assemble_scalar",
+    "assemble_vector",
+    "bcs_by_block",
+    "compile_form",
+    "compute_integration_domains",
+    "coordinate_element",
+    "create_form",
+    "create_interpolation_data",
+    "create_matrix",
+    "create_sparsity_pattern",
     "create_vector",
+    "dirichletbc",
+    "discrete_gradient",
+    "extract_function_spaces",
+    "finiteelement",
+    "form",
+    "form_cpp_class",
+    "functionspace",
     "locate_dofs_geometrical",
     "locate_dofs_topological",
-    "extract_function_spaces",
-    "transpose_dofmap",
-    "create_interpolation_data",
-    "CoordinateElement",
-    "coordinate_element",
-    "form_cpp_class",
-    "create_form",
-    "compile_form",
+    "mixed_topology_form",
     "set_bc",
+    "transpose_dofmap",
 ]

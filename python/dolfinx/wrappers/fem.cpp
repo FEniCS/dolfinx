@@ -4,9 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "array.h"
-#include "caster_mpi.h"
-#include "numpy_dtype.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/caster_mpi.h"
+#include "dolfinx_wrappers/numpy_dtype.h"
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -74,6 +74,12 @@ void declare_function_space(nb::module_& m, std::string type)
                       std::shared_ptr<const dolfinx::fem::FiniteElement<T>>,
                       std::shared_ptr<const dolfinx::fem::DofMap>>(),
              nb::arg("mesh"), nb::arg("element"), nb::arg("dofmap"))
+        .def(nb::init<
+                 std::shared_ptr<const dolfinx::mesh::Mesh<T>>,
+                 std::vector<
+                     std::shared_ptr<const dolfinx::fem::FiniteElement<T>>>,
+                 std::vector<std::shared_ptr<const dolfinx::fem::DofMap>>>(),
+             nb::arg("mesh"), nb::arg("elements"), nb::arg("dofmaps"))
         .def("collapse", &dolfinx::fem::FunctionSpace<T>::collapse)
         .def("component", &dolfinx::fem::FunctionSpace<T>::component)
         .def("contains", &dolfinx::fem::FunctionSpace<T>::contains,
@@ -81,6 +87,8 @@ void declare_function_space(nb::module_& m, std::string type)
         .def_prop_ro("element", &dolfinx::fem::FunctionSpace<T>::element)
         .def_prop_ro("mesh", &dolfinx::fem::FunctionSpace<T>::mesh)
         .def_prop_ro("dofmap", &dolfinx::fem::FunctionSpace<T>::dofmap)
+        .def("dofmaps", &dolfinx::fem::FunctionSpace<T>::dofmaps,
+             nb::arg("cell_type_index"))
         .def("sub", &dolfinx::fem::FunctionSpace<T>::sub, nb::arg("component"))
         .def("tabulate_dof_coordinates",
              [](const dolfinx::fem::FunctionSpace<T>& self)
@@ -284,7 +292,7 @@ void declare_function_space(nb::module_& m, std::string type)
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def_prop_ro("needs_dof_transformations",
                      &dolfinx::fem::FiniteElement<T>::needs_dof_transformations)
-        .def("signature", &dolfinx::fem::FiniteElement<T>::signature);
+        .def_prop_ro("signature", &dolfinx::fem::FiniteElement<T>::signature);
   }
 }
 
@@ -375,7 +383,7 @@ void declare_objects(nb::module_& m, const std::string& type)
              std::optional<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>> x0,
              T alpha)
           {
-            auto _b = std::span(b.data(), b.size());
+            std::span _b(b.data(), b.size());
             if (x0.has_value())
             {
               self.set(_b, std::span(x0.value().data(), x0.value().shape(0)),
@@ -462,8 +470,6 @@ void declare_objects(nb::module_& m, const std::string& type)
             const std::vector<U> x = dolfinx::fem::interpolation_coords(
                 *element, self.function_space()->mesh()->geometry(),
                 std::span(cells.data(), cells.size()));
-
-            const int gdim = self.function_space()->mesh()->geometry().dim();
 
             // Compute value size
             auto vshape = self.function_space()->element()->value_shape();
@@ -688,7 +694,7 @@ void declare_form(nb::module_& m, std::string type)
           nb::arg("entity_maps"), nb::arg("mesh").none())
       .def(
           "__init__",
-          [](dolfinx::fem::Form<T, U>* fp, std::uintptr_t form,
+          [](dolfinx::fem::Form<T, U>* fp, std::vector<std::uintptr_t> forms,
              const std::vector<
                  std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>>& spaces,
              const std::vector<std::shared_ptr<
@@ -724,10 +730,12 @@ void declare_form(nb::module_& m, std::string type)
                 _entity_maps;
             for (auto& [msh, map] : entity_maps)
               _entity_maps.emplace(msh, std::span(map.data(), map.size()));
-            ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
+            std::vector<std::reference_wrapper<const ufcx_form>> ps;
+            for (auto form : forms)
+              ps.push_back(*(reinterpret_cast<ufcx_form*>(form)));
             new (fp)
                 dolfinx::fem::Form<T, U>(dolfinx::fem::create_form_factory<T>(
-                    *p, spaces, coefficients, constants, sd, _entity_maps,
+                    ps, spaces, coefficients, constants, sd, _entity_maps,
                     mesh));
           },
           nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
@@ -807,7 +815,7 @@ void declare_form(nb::module_& m, std::string type)
         }
 
         ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
-        return dolfinx::fem::create_form_factory<T>(*p, spaces, coefficients,
+        return dolfinx::fem::create_form_factory<T>({*p}, spaces, coefficients,
                                                     constants, sd, {}, mesh);
       },
       nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
@@ -858,9 +866,11 @@ void declare_form(nb::module_& m, std::string type)
       nb::arg("constants"), nb::arg("subdomains"), nb::arg("entity_maps"),
       nb::arg("mesh"), "Create Form from a pointer to ufcx_form.");
 
-  m.def("create_sparsity_pattern",
-        &dolfinx::fem ::create_sparsity_pattern<T, U>, nb::arg("a"),
-        "Create a sparsity pattern.");
+  m.def("create_sparsity_pattern", &dolfinx::fem::create_sparsity_pattern<T, U>,
+        nb::arg("a"), "Create a sparsity pattern.");
+
+  m.def("build_sparsity_pattern", &dolfinx::fem::build_sparsity_pattern<T, U>,
+        nb::arg("pattern"), nb::arg("a"), "Build a sparsity pattern.");
 }
 
 template <typename T>
@@ -890,6 +900,7 @@ void declare_cmap(nb::module_& m, std::string type)
       .def_prop_ro("dim", &dolfinx::fem::CoordinateElement<T>::dim)
       .def_prop_ro("variant", [](const dolfinx::fem::CoordinateElement<T>& self)
                    { return static_cast<int>(self.variant()); })
+      .def("hash", &dolfinx::fem::CoordinateElement<T>::hash)
       .def(
           "push_forward",
           [](const dolfinx::fem::CoordinateElement<T>& self,
@@ -1020,8 +1031,7 @@ void declare_real_functions(nb::module_& m)
              elements)
       {
         std::vector<dolfinx::fem::ElementDofLayout> layouts;
-        int D = topology.dim();
-        assert(elements.size() == topology.entity_types(D).size());
+        assert(elements.size() == topology.entity_types(topology.dim()).size());
         for (std::size_t i = 0; i < elements.size(); ++i)
         {
           layouts.push_back(

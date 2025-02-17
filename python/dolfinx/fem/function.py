@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 import typing
-from functools import singledispatch
+from functools import cached_property, singledispatch
 
 import numpy as np
 import numpy.typing as npt
@@ -18,6 +18,7 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
 from dolfinx.fem import dofmap
+from dolfinx.fem.element import FiniteElement, finiteelement
 from dolfinx.geometry import PointOwnershipData
 
 if typing.TYPE_CHECKING:
@@ -315,9 +316,9 @@ class Function(ufl.Coefficient):
             if dtype is None:
                 dtype = default_scalar_type
 
-        assert np.issubdtype(
-            V.element.dtype, np.dtype(dtype).type(0).real.dtype
-        ), "Incompatible FunctionSpace dtype and requested dtype."
+        assert np.issubdtype(V.element.dtype, np.dtype(dtype).type(0).real.dtype), (
+            "Incompatible FunctionSpace dtype and requested dtype."
+        )
 
         # Create cpp Function
         def functiontype(dtype):
@@ -461,7 +462,7 @@ class Function(ufl.Coefficient):
             # u0 is callable
             assert callable(u0)
             x = _cpp.fem.interpolation_coords(
-                self._V.element, self._V.mesh.geometry._cpp_object, cells0
+                self._V.element._cpp_object, self._V.mesh.geometry._cpp_object, cells0
             )
             self._cpp_object.interpolate(np.asarray(u0(x), dtype=self.dtype), cells0)  # type: ignore
 
@@ -560,47 +561,15 @@ class ElementMetaData(typing.NamedTuple):
     symmetry: typing.Optional[bool] = None
 
 
-def _create_dolfinx_element(
-    cell_type: _cpp.mesh.CellType,
-    ufl_e: ufl.FiniteElementBase,
-    dtype: np.dtype,
-) -> typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64]:
-    """Create a DOLFINx element from a basix.ufl element."""
-    if np.issubdtype(dtype, np.float32):
-        CppElement = _cpp.fem.FiniteElement_float32
-    elif np.issubdtype(dtype, np.float64):
-        CppElement = _cpp.fem.FiniteElement_float64
-    else:
-        raise ValueError(f"Unsupported dtype: {dtype}")
-
-    if ufl_e.is_mixed:
-        elements = [_create_dolfinx_element(cell_type, e, dtype) for e in ufl_e.sub_elements]
-        return CppElement(elements)
-    elif ufl_e.is_quadrature:
-        return CppElement(
-            cell_type, ufl_e.custom_quadrature()[0], [ufl_e.block_size], ufl_e.is_symmetric
-        )
-    else:
-        basix_e = ufl_e.basix_element._e
-        bs = ufl_e.reference_value_shape if ufl_e.block_size > 1 else None
-        # bs = [ufl_e.block_size] if ufl_e.block_size > 1 else None
-        # print(bs, ufl_e.reference_value_shape)
-        return CppElement(basix_e, bs, ufl_e.is_symmetric)
-
-
 def functionspace(
     mesh: Mesh,
     element: typing.Union[ufl.FiniteElementBase, ElementMetaData, tuple[str, int, tuple, bool]],
-    form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
-    jit_options: typing.Optional[dict[str, typing.Any]] = None,
 ) -> FunctionSpace:
     """Create a finite element function space.
 
     Args:
         mesh: Mesh that space is defined on.
         element: Finite element description.
-        form_compiler_options: Options passed to the form compiler.
-        jit_options: Options controlling just-in-time compilation.
 
     Returns:
         A function space.
@@ -619,26 +588,19 @@ def functionspace(
     if ufl_e.cell != mesh.ufl_domain().ufl_cell():
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
 
-    # ufl_space = ufl.FunctionSpace(mesh.ufl_domain(), ufl_e)
-    # value_shape = ufl_space.value_shape
+    # Create DOLFINx objects
+    element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)
+    cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, element._cpp_object)
 
-    # Compile dofmap and element and create DOLFINx objects
-    if form_compiler_options is None:
-        form_compiler_options = dict()
-    form_compiler_options["scalar_type"] = dtype
-
-    cpp_element = _create_dolfinx_element(mesh.topology.cell_type, ufl_e, dtype)
-    cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, cpp_element)
-
-    assert np.issubdtype(
-        mesh.geometry.x.dtype, cpp_element.dtype
-    ), "Mesh and element dtype are not compatible."
+    assert np.issubdtype(mesh.geometry.x.dtype, element.dtype), (
+        "Mesh and element dtype are not compatible."
+    )
 
     # Initialize the cpp.FunctionSpace
     try:
-        cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, cpp_element, cpp_dofmap)
+        cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, element._cpp_object, cpp_dofmap)
     except TypeError:
-        cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, cpp_element, cpp_dofmap)
+        cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, element._cpp_object, cpp_dofmap)
 
     return FunctionSpace(mesh, ufl_e, cppV)
 
@@ -705,11 +667,6 @@ class FunctionSpace(ufl.FunctionSpace):
         """Number of sub spaces."""
         return self.element.num_sub_elements
 
-    # @property
-    # def value_shape(self) -> tuple[int, ...]:
-    #     """Value shape."""
-    #     return tuple(int(i) for i in self._cpp_object.value_shape)
-
     def sub(self, i: int) -> FunctionSpace:
         """Return the i-th sub space.
 
@@ -758,12 +715,10 @@ class FunctionSpace(ufl.FunctionSpace):
         """UFL function space."""
         return self
 
-    @property
-    def element(
-        self,
-    ) -> typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64]:
+    @cached_property
+    def element(self) -> FiniteElement:
         """Function space finite element."""
-        return self._cpp_object.element  # type: ignore
+        return FiniteElement(self._cpp_object.element)
 
     @property
     def dofmap(self) -> dofmap.DofMap:

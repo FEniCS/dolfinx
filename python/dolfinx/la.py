@@ -15,191 +15,16 @@ from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
 
 __all__ = [
-    "orthonormalize",
-    "is_orthonormal",
-    "matrix_csr",
-    "vector",
+    "InsertMode",
     "MatrixCSR",
     "Norm",
-    "InsertMode",
     "Vector",
     "create_petsc_vector",
+    "is_orthonormal",
+    "matrix_csr",
+    "orthonormalize",
+    "vector",
 ]
-
-
-class MatrixCSR:
-    _cpp_object: typing.Union[
-        _cpp.la.MatrixCSR_float32,
-        _cpp.la.MatrixCSR_float64,
-        _cpp.la.MatrixCSR_complex64,
-        _cpp.la.MatrixCSR_complex128,
-    ]
-
-    def __init__(
-        self,
-        A: typing.Union[
-            _cpp.la.MatrixCSR_float32,
-            _cpp.la.MatrixCSR_float64,
-            _cpp.la.MatrixCSR_complex64,
-            _cpp.la.MatrixCSR_complex128,
-        ],
-    ):
-        """A distributed sparse matrix that uses compressed sparse row storage.
-
-        Note:
-            Objects of this type should be created using
-            :func:`matrix_csr` and not created using this initialiser.
-
-        Args:
-            A: The C++/nanobind matrix object.
-        """
-        self._cpp_object = A
-
-    def index_map(self, i: int) -> IndexMap:
-        """Index map for row/column.
-
-        Args:
-            i: 0 for row map, 1 for column map.
-        """
-        return self._cpp_object.index_map(i)
-
-    @property
-    def block_size(self):
-        """Block sizes for the matrix."""
-        return self._cpp_object.bs
-
-    def add(
-        self,
-        x: npt.NDArray[np.floating],
-        rows: npt.NDArray[np.int32],
-        cols: npt.NDArray[np.int32],
-        bs: int = 1,
-    ) -> None:
-        """Add a block of values in the matrix."""
-        self._cpp_object.add(x, rows, cols, bs)
-
-    def set(
-        self,
-        x: npt.NDArray[np.floating],
-        rows: npt.NDArray[np.int32],
-        cols: npt.NDArray[np.int32],
-        bs: int = 1,
-    ) -> None:
-        """Set a block of values in the matrix."""
-        self._cpp_object.set(x, rows, cols, bs)
-
-    def set_value(self, x: np.floating) -> None:
-        """Set all non-zero entries to a value.
-
-        Args:
-            x: The value to set all non-zero entries to.
-        """
-        self._cpp_object.set_value(x)
-
-    def scatter_reverse(self) -> None:
-        """Scatter and accumulate ghost values."""
-        self._cpp_object.scatter_reverse()
-
-    def squared_norm(self) -> np.floating:
-        """Compute the squared Frobenius norm.
-
-        Note:
-            This operation is collective and requires communication.
-        """
-        return self._cpp_object.squared_norm()
-
-    @property
-    def data(self) -> npt.NDArray[np.floating]:
-        """Underlying matrix entry data."""
-        return self._cpp_object.data
-
-    @property
-    def indices(self) -> npt.NDArray[np.int32]:
-        """Local column indices."""
-        return self._cpp_object.indices
-
-    @property
-    def indptr(self) -> npt.NDArray[np.int64]:
-        """Local row pointers."""
-        return self._cpp_object.indptr
-
-    def to_dense(self) -> npt.NDArray[np.floating]:
-        """Copy to a dense 2D array.
-
-        Note:
-            Typically used for debugging.
-
-        """
-        return self._cpp_object.to_dense()
-
-    def to_scipy(self, ghosted=False):
-        """Convert to a SciPy CSR/BSR matrix. Data is shared.
-
-        Note:
-            SciPy must be available.
-
-        Args:
-            ghosted: If ``True`` rows that are ghosted in parallel are
-                included in the returned SciPy matrix, otherwise ghost
-                rows are not included.
-
-        Returns:
-            SciPy compressed sparse row (both block sizes equal to one)
-            or a SciPy block compressed sparse row matrix.
-        """
-        bs0, bs1 = self._cpp_object.bs
-        ncols = self.index_map(1).size_local + self.index_map(1).num_ghosts
-        if ghosted:
-            nrows = self.index_map(0).size_local + self.index_map(0).num_ghosts
-            data, indices, indptr = self.data, self.indices, self.indptr
-        else:
-            nrows = self.index_map(0).size_local
-            nnzlocal = self.indptr[nrows]
-            data, indices, indptr = (
-                self.data[: (bs0 * bs1) * nnzlocal],
-                self.indices[:nnzlocal],
-                self.indptr[: nrows + 1],
-            )
-
-        if bs0 == 1 and bs1 == 1:
-            from scipy.sparse import csr_matrix as _csr
-
-            return _csr((data, indices, indptr), shape=(nrows, ncols))
-        else:
-            from scipy.sparse import bsr_matrix as _bsr
-
-            return _bsr(
-                (data.reshape(-1, bs0, bs1), indices, indptr), shape=(bs0 * nrows, bs1 * ncols)
-            )
-
-
-def matrix_csr(
-    sp: _cpp.la.SparsityPattern, block_mode=BlockMode.compact, dtype: npt.DTypeLike = np.float64
-) -> MatrixCSR:
-    """Create a distributed sparse matrix.
-
-    The matrix uses compressed sparse row storage.
-
-    Args:
-        sp: The sparsity pattern that defines the nonzero structure of
-            the matrix the parallel distribution of the matrix.
-        dtype: The scalar type.
-
-    Returns:
-        A sparse matrix.
-    """
-    if np.issubdtype(dtype, np.float32):
-        ftype = _cpp.la.MatrixCSR_float32
-    elif np.issubdtype(dtype, np.float64):
-        ftype = _cpp.la.MatrixCSR_float64
-    elif np.issubdtype(dtype, np.complex64):
-        ftype = _cpp.la.MatrixCSR_complex64
-    elif np.issubdtype(dtype, np.complex128):
-        ftype = _cpp.la.MatrixCSR_complex128
-    else:
-        raise NotImplementedError(f"Type {dtype} not supported.")
-
-    return MatrixCSR(ftype(sp, block_mode))
 
 
 class Vector:
@@ -286,6 +111,189 @@ class Vector:
         self._cpp_object.scatter_reverse(mode)
 
 
+class MatrixCSR:
+    _cpp_object: typing.Union[
+        _cpp.la.MatrixCSR_float32,
+        _cpp.la.MatrixCSR_float64,
+        _cpp.la.MatrixCSR_complex64,
+        _cpp.la.MatrixCSR_complex128,
+    ]
+
+    def __init__(
+        self,
+        A: typing.Union[
+            _cpp.la.MatrixCSR_float32,
+            _cpp.la.MatrixCSR_float64,
+            _cpp.la.MatrixCSR_complex64,
+            _cpp.la.MatrixCSR_complex128,
+        ],
+    ):
+        """A distributed sparse matrix that uses compressed sparse row storage.
+
+        Note:
+            Objects of this type should be created using
+            :func:`matrix_csr` and not created using this initialiser.
+
+        Args:
+            A: The C++/nanobind matrix object.
+        """
+        self._cpp_object = A
+
+    def index_map(self, i: int) -> IndexMap:
+        """Index map for row/column.
+
+        Args:
+            i: 0 for row map, 1 for column map.
+        """
+        return self._cpp_object.index_map(i)
+
+    def mult(self, x: Vector, y: Vector) -> None:
+        """Compute ``y += Ax``.
+
+        Args:
+            x: Input Vector
+            y: Output Vector
+        """
+        self._cpp_object.mult(x._cpp_object, y._cpp_object)
+
+    @property
+    def block_size(self) -> list:
+        """Block sizes for the matrix."""
+        return self._cpp_object.bs
+
+    def add(
+        self,
+        x: npt.NDArray[np.floating],
+        rows: npt.NDArray[np.int32],
+        cols: npt.NDArray[np.int32],
+        bs: int = 1,
+    ) -> None:
+        """Add a block of values in the matrix."""
+        self._cpp_object.add(x, rows, cols, bs)
+
+    def set(
+        self,
+        x: npt.NDArray[np.floating],
+        rows: npt.NDArray[np.int32],
+        cols: npt.NDArray[np.int32],
+        bs: int = 1,
+    ) -> None:
+        """Set a block of values in the matrix."""
+        self._cpp_object.set(x, rows, cols, bs)
+
+    def set_value(self, x: np.floating) -> None:
+        """Set all non-zero entries to a value.
+
+        Args:
+            x: The value to set all non-zero entries to.
+        """
+        self._cpp_object.set_value(x)
+
+    def scatter_reverse(self) -> None:
+        """Scatter and accumulate ghost values."""
+        self._cpp_object.scatter_reverse()
+
+    def squared_norm(self) -> np.floating:
+        """Compute the squared Frobenius norm.
+
+        Note:
+            This operation is collective and requires communication.
+        """
+        return self._cpp_object.squared_norm()
+
+    @property
+    def data(self) -> npt.NDArray[np.floating]:
+        """Underlying matrix entry data."""
+        return self._cpp_object.data
+
+    @property
+    def indices(self) -> npt.NDArray[np.int32]:
+        """Local column indices."""
+        return self._cpp_object.indices
+
+    @property
+    def indptr(self) -> npt.NDArray[np.int64]:
+        """Local row pointers."""
+        return self._cpp_object.indptr
+
+    def to_dense(self) -> npt.NDArray[np.floating]:
+        """Copy to a dense 2D array.
+
+        Note:
+            Typically used for debugging.
+        """
+        return self._cpp_object.to_dense()
+
+    def to_scipy(self, ghosted: bool = False):
+        """Convert to a SciPy CSR/BSR matrix. Data is shared.
+
+        Note:
+            SciPy must be available.
+
+        Args:
+            ghosted: If ``True`` rows that are ghosted in parallel are
+                included in the returned SciPy matrix, otherwise ghost
+                rows are not included.
+
+        Returns:
+            SciPy compressed sparse row (both block sizes equal to one)
+            or a SciPy block compressed sparse row matrix.
+        """
+        bs0, bs1 = self._cpp_object.bs
+        ncols = self.index_map(1).size_local + self.index_map(1).num_ghosts
+        if ghosted:
+            nrows = self.index_map(0).size_local + self.index_map(0).num_ghosts
+            data, indices, indptr = self.data, self.indices, self.indptr
+        else:
+            nrows = self.index_map(0).size_local
+            nnzlocal = self.indptr[nrows]
+            data, indices, indptr = (
+                self.data[: (bs0 * bs1) * nnzlocal],
+                self.indices[:nnzlocal],
+                self.indptr[: nrows + 1],
+            )
+
+        if bs0 == 1 and bs1 == 1:
+            from scipy.sparse import csr_matrix as _csr
+
+            return _csr((data, indices, indptr), shape=(nrows, ncols))
+        else:
+            from scipy.sparse import bsr_matrix as _bsr
+
+            return _bsr(
+                (data.reshape(-1, bs0, bs1), indices, indptr), shape=(bs0 * nrows, bs1 * ncols)
+            )
+
+
+def matrix_csr(
+    sp: _cpp.la.SparsityPattern, block_mode=BlockMode.compact, dtype: npt.DTypeLike = np.float64
+) -> MatrixCSR:
+    """Create a distributed sparse matrix.
+
+    The matrix uses compressed sparse row storage.
+
+    Args:
+        sp: The sparsity pattern that defines the nonzero structure of
+            the matrix the parallel distribution of the matrix.
+        dtype: The scalar type.
+
+    Returns:
+        A sparse matrix.
+    """
+    if np.issubdtype(dtype, np.float32):
+        ftype = _cpp.la.MatrixCSR_float32
+    elif np.issubdtype(dtype, np.float64):
+        ftype = _cpp.la.MatrixCSR_float64
+    elif np.issubdtype(dtype, np.complex64):
+        ftype = _cpp.la.MatrixCSR_complex64
+    elif np.issubdtype(dtype, np.complex128):
+        ftype = _cpp.la.MatrixCSR_complex128
+    else:
+        raise NotImplementedError(f"Type {dtype} not supported.")
+
+    return MatrixCSR(ftype(sp, block_mode))
+
+
 def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
     """Create a distributed vector.
 
@@ -332,7 +340,6 @@ def create_petsc_vector_wrap(x: Vector):
 
     Returns:
         A PETSc vector that shares data with ``x``.
-
     """
     from petsc4py import PETSc
 

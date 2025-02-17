@@ -335,6 +335,7 @@ template void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>&,
 //-----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t>
 XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
+                        std::optional<std::string> attribute_name,
                         std::string xpath)
 {
   spdlog::info("XDMF read meshtags ({})", name);
@@ -350,6 +351,20 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
 
   pugi::xml_node values_data_node
       = grid_node.child("Attribute").child("DataItem");
+  if (attribute_name)
+  {
+    // Search for a child that contains an attribute with the requested name
+    pugi::xml_node attribute_node = grid_node.find_child(
+        [attr_name = *attribute_name](auto n)
+        { return n.attribute("Name").value() == attr_name; });
+    if (!attribute_node)
+    {
+      throw std::runtime_error("Attribute with name '" + *attribute_name
+                               + "' not found.");
+    }
+    else
+      values_data_node = attribute_node.child("DataItem");
+  }
   const std::vector values = xdmf_utils::get_dataset<std::int32_t>(
       _comm.comm(), values_data_node, _h5_id);
 
@@ -407,7 +422,7 @@ std::pair<mesh::CellType, int> XDMFFile::read_cell_type(std::string grid_name,
   const std::pair<std::string, int> cell_type_str
       = xdmf_utils::get_cell_type(topology_node);
 
-  // Get toplogical dimensions
+  // Get topological dimensions
   mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
 
   return {cell_type, cell_type_str.second};

@@ -302,7 +302,7 @@ xdmf_mesh::read_topology_data(MPI_Comm comm, hid_t h5_id,
   const std::pair<std::string, int> cell_type_str
       = xdmf_utils::get_cell_type(topology_node);
 
-  // Get toplogical dimensions
+  // Get topological dimensions
   mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
 
   // Get topology dataset node

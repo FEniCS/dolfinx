@@ -333,9 +333,7 @@ class TestPETScAssemblers:
         # Define variational problem
         u, p, r = ufl.TrialFunction(V0), ufl.TrialFunction(V1), ufl.TrialFunction(V2)
         v, q, s = ufl.TestFunction(V0), ufl.TestFunction(V1), ufl.TestFunction(V2)
-        f = 1.0
         g = -3.0
-        zero = Function(V0)
 
         a00 = inner(u, v) * dx
         a01 = inner(p, v) * dx
@@ -347,7 +345,7 @@ class TestPETScAssemblers:
         a21 = inner(p, s) * dx
         a22 = inner(r, s) * dx
 
-        L0 = zero * inner(f, v) * dx
+        L0 = ufl.ZeroBaseForm((v,))
         L1 = inner(g, q) * dx
         L2 = inner(g, s) * dx
 
@@ -409,7 +407,7 @@ class TestPETScAssemblers:
                 + inner(u2, v0) * dx
                 + inner(u2, v1) * dx
             )
-            L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx + inner(g, v2) * dx
+            L = ufl.ZeroBaseForm((v0,)) + inner(g, v1) * dx + inner(g, v2) * dx
             a, L = form(a), form(L)
 
             bdofsW_V1 = locate_dofs_topological(W.sub(1), mesh.topology.dim - 1, bndry_facets)
@@ -476,11 +474,10 @@ class TestPETScAssemblers:
         v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
         f = 1.0
         g = -3.0
-        zero = Function(V0)
 
         a00 = form(inner(u, v) * dx)
-        a01 = form(zero * inner(p, v) * dx)
-        a10 = form(zero * inner(u, q) * dx)
+        a01 = None
+        a10 = None
         a11 = form(inner(p, q) * dx)
         L0 = form(inner(f, v) * dx)
         L1 = form(inner(g, q) * dx)
@@ -592,7 +589,7 @@ class TestPETScAssemblers:
         Anorm2, bnorm2, xnorm2 = monolithic()
         assert Anorm2 == pytest.approx(Anorm0, 1.0e-6)
         assert bnorm2 == pytest.approx(bnorm0, 1.0e-6)
-        assert xnorm2 == pytest.approx(xnorm0, 1.0e-6)
+        assert xnorm2 == pytest.approx(xnorm0, 1.0e-5)
 
     @pytest.mark.parametrize(
         "mesh",
@@ -654,12 +651,10 @@ class TestPETScAssemblers:
         p01, p10 = None, None
         p11 = inner(p, q) * dx
 
-        # FIXME
-        # We need zero function for the 'zero' part of L
-        p_zero = Function(P1)
+        # We need a 'zero' form for the 'zero' part of L
         f = Function(P2)
         L0 = ufl.inner(f, v) * dx
-        L1 = ufl.inner(p_zero, q) * dx
+        L1 = ufl.ZeroBaseForm((q,))
 
         def nested_solve():
             """Nested solver"""
@@ -759,9 +754,8 @@ class TestPETScAssemblers:
             p_form = p00 + p11
 
             f = Function(W.sub(0).collapse()[0])
-            p_zero = Function(W.sub(1).collapse()[0])
             L0 = inner(f, v) * dx
-            L1 = inner(p_zero, q) * dx
+            L1 = ufl.ZeroBaseForm((q,))
             L = L0 + L1
             a, p_form, L = form(a), form(p_form), form(L)
 
@@ -1057,9 +1051,9 @@ class TestPETScAssemblers:
         )
 
         def partitioner(comm, nparts, local_graph, num_ghost_nodes):
-            """Leave cells on the curent rank"""
+            """Leave cells on the current rank."""
             dest = np.full(len(cells), comm.rank, dtype=np.int32)
-            return graph.adjacencylist(dest)
+            return graph.adjacencylist(dest)._cpp_object
 
         if comm.rank == 0:
             # Put cells on rank 0

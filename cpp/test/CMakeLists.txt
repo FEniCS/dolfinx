@@ -11,6 +11,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(DOLFINX REQUIRED)
 
 add_custom_command(
+  OUTPUT expr.c
+  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/fem/expr.py
+  VERBATIM
+  DEPENDS fem/expr.py
+  COMMENT "Compile expr.py using FFCx"
+)
+
+add_custom_command(
   OUTPUT poisson.c
   COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.py
   VERBATIM
@@ -37,24 +45,29 @@ add_executable(
   vector.cpp
   matrix.cpp
   io.cpp
+  common/CIFailure.cpp
   common/sub_systems_manager.cpp
   common/index_map.cpp
   common/sort.cpp
+  fem/form.cpp
   fem/functionspace.cpp
   mesh/distributed_mesh.cpp
   mesh/generation.cpp
-  common/CIFailure.cpp
+  mesh/read_named_meshtags.cpp
   mesh/refinement/interval.cpp
   mesh/refinement/option.cpp
   mesh/refinement/rectangle.cpp
+  ${CMAKE_CURRENT_BINARY_DIR}/expr.c
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )
 target_link_libraries(unittests PRIVATE Catch2::Catch2WithMain dolfinx)
+
 # UUID requires bcrypt to be linked on Windows, broken in vcpkg.
 # https://github.com/microsoft/vcpkg/issues/4481
 if(WIN32)
   target_link_libraries(unittests PRIVATE bcrypt)
 endif()
+
 target_include_directories(
   unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
@@ -70,7 +83,7 @@ endif()
 target_compile_options(
   unittests
   PRIVATE
-    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+  $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
 )
 
 # Enable testing

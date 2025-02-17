@@ -3,10 +3,15 @@ from mpi4py import MPI
 import numpy as np
 
 from dolfinx.cpp.log import set_thread_name
-from dolfinx.cpp.mesh import Mesh_float64, create_geometry, create_topology
+from dolfinx.cpp.mesh import (
+    Mesh_float64,
+    compute_mixed_cell_pairs,
+    create_geometry,
+    create_topology,
+)
 from dolfinx.fem import coordinate_element
 from dolfinx.log import LogLevel, set_log_level
-from dolfinx.mesh import CellType, GhostMode, create_unit_cube
+from dolfinx.mesh import CellType, GhostMode, Mesh, create_unit_cube
 
 
 def test_mixed_topology_mesh():
@@ -28,6 +33,7 @@ def test_mixed_topology_mesh():
 
     maps = topology.index_maps(topology.dim)
     assert len(maps) == 2
+
     # Two triangles and one quad
     assert maps[0].size_local == 2
     assert maps[1].size_local == 1
@@ -39,12 +45,19 @@ def test_mixed_topology_mesh():
 
     entity_types = topology.entity_types
     assert len(entity_types[0]) == 1
+
+    topology.create_entities(1)
+    entity_types = topology.entity_types
     assert len(entity_types[1]) == 1
-    assert len(entity_types[2]) == 2
     assert CellType.interval in entity_types[1]
+
+    entity_types = topology.entity_types
+    assert len(entity_types[2]) == 2
+
     # Two triangle cells
     assert entity_types[2][0] == CellType.triangle
     assert topology.connectivity((2, 0), (0, 0)).num_nodes == 2
+
     # One quadrlilateral cell
     assert entity_types[2][1] == CellType.quadrilateral
     assert topology.connectivity((2, 1), (0, 0)).num_nodes == 1
@@ -81,8 +94,15 @@ def test_mixed_topology_mesh_3d():
 
     entity_types = topology.entity_types
     assert len(entity_types[0]) == 1
+
+    topology.create_entities(1)
+    entity_types = topology.entity_types
     assert len(entity_types[1]) == 1
+
+    topology.create_entities(2)
+    entity_types = topology.entity_types
     assert len(entity_types[2]) == 2
+
     assert len(entity_types[3]) == 3
 
     # Create triangle and quadrilateral facets
@@ -256,3 +276,27 @@ def test_create_entities():
 
     # Triangle and quad to prism (facet->cell)
     mesh.topology.create_connectivity(2, 3)
+
+
+def test_mixed_cell_pairs(mixed_topology_mesh):
+    mesh = Mesh(mixed_topology_mesh, None)
+    mesh.topology.create_entities(2)
+    mesh.topology.create_connectivity(2, 3)
+    cell_types = mesh.topology.entity_types[3]
+    facet_types = mesh.topology.entity_types[2]
+    print(cell_types, facet_types)
+
+    # For each facet type
+    for f, ft in enumerate(facet_types):
+        cell_pairs = compute_mixed_cell_pairs(mesh.topology._cpp_object, ft)
+        for i, cti in enumerate(cell_types):
+            for j, ctj in enumerate(cell_types):
+                idx = i * len(cell_types) + j
+                num_conns = len(cell_pairs[idx]) // 4
+                print(f"Connectivity ({ft}) from {cti} to {ctj} : {num_conns}")
+                if len(cell_pairs[idx]) > 0:
+                    connection = np.array(cell_pairs[idx]).reshape((num_conns, -1))
+                    f0 = mesh.topology.connectivity((3, i), (2, f))
+                    f1 = mesh.topology.connectivity((3, j), (2, f))
+                    for row in connection:
+                        assert f0.links(row[0])[row[1]] == f1.links(row[2])[row[3]]
