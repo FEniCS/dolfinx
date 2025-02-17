@@ -108,7 +108,6 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
     fem::pack_coefficients(c, coffsets, entities, estride, std::span(coeffs));
   }
   std::vector<T> constants = fem::pack_constants(e);
-
   tabulate_expression<T, U>(values, e, std::span<const T>(coeffs), cstride,
                             std::span<const T>(constants), mesh, entities,
                             e.argument_space()
