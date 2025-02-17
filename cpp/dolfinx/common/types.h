@@ -16,9 +16,10 @@ namespace dolfinx
 /// point real or complex types. Note that this concept is different to
 /// std::floating_point which does not include std::complex.
 template <class T>
-concept scalar
-    = std::is_floating_point_v<T> || std::is_same_v<T, std::complex<double>>
-      || std::is_same_v<T, std::complex<float>>;
+concept scalar = std::is_floating_point_v<T>
+                 || std::is_same_v<T, std::complex<typename T::value_type>>;
+
+
 /// @private These structs are used to get the float/value type from a
 /// template argument, including support for complex types.
 template <scalar T, typename = void>
