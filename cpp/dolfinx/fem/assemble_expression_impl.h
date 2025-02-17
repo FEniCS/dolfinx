@@ -30,34 +30,34 @@ namespace dolfinx::fem::impl
 /// @tparam estride 1 for cell expressions, 2 for facets.
 /// @tparam T Scalar type of expression.
 /// @tparam U Geometry type.
-/// @param values Array in which the tabulated expressions are set. If
-/// should have shape (`entities.size(), Xshape[0], value_size,
+/// @param[in,out] values Array in which the tabulated expressions are
+/// set. If should have shape (`entities.size(), Xshape[0], value_size,
 /// num_argument_dofs)`. Storage is row-major. Data is set in `values`,
 /// (not accumulated).
-/// @param fn Expression kernel to execute.
-/// @param Xshape Shape `(num_points, geometric dimensions)` of
+/// @param[in] fn Expression kernel to execute.
+/// @param[in] Xshape Shape `(num_points, geometric dimensions)` of
 /// points array at which the expression is evaluated by the kernel.
-/// @param value_size Value size of the evaluated expression at a point,
-/// e.g. 1 for a scalar field, 3 for a vector field in 3D, 4 for a
-/// second-order tensor in 2D.
-/// @param num_argument_dofs Dimension of an argument function. Greater
-/// than 1 when computing a 1-form expression, e.g. can be used to
-/// create a matrix that when applied to a degree-of-freedom vector
+/// @param[in] value_size Value size of the evaluated expression at a
+/// point, e.g. 1 for a scalar field, 3 for a vector field in 3D, 4 for
+/// a second-order tensor in 2D.
+/// @param[in] num_argument_dofs Dimension of an argument function.
+/// Greater than 1 when computing a 1-form expression, e.g. can be used
+/// to create a matrix that when applied to a degree-of-freedom vector
 /// gives the expression values at the evaluation points.
-/// @param x_dofmap Geometry degree-of-freedom map.
-/// @param x Geometry coordinate of the mesh.
+/// @param[in] x_dofmap Geometry degree-of-freedom map.
+/// @param[in] x Geometry coordinate of the mesh.
 /// @param[in] coeffs Coefficient data that appears in the expression.
 /// Usually packed using fem::pack_coefficients.
 /// @param[in] cstride Coefficient stride. Coefficient data for teh ith
 /// entity starts at `coeffs.data() + i*cstride`.
-/// @param constants Constant (coefficient) data that appears in
+/// @param[in] constants Constant (coefficient) data that appears in
 /// expression. Usually packed using em::pack_constants.
-/// @param entities Mesh entities to evaluate the expression over. When
-/// `estride==1` this is a list of cells. When `estride==2`, is hold
-/// (cell, local facet) index pairs, i.e. `entities=[cell0,
-/// facet_local0, cell1, facet_local1, ...]
-/// @param cell_info Cell orientation data for use in `P0`.
-/// @param P0 Degree-of-freedom transformation function. Applied when
+/// @param[in] entities Mesh entities to evaluate the expression over.
+/// When `estride==1` this is a list of cells. When `estride==2`, is
+/// hold (cell, local facet) index pairs, i.e. `entities=[cell0,
+/// facet_local0, cell1, facet_local1, ...]`.
+/// @param[in] cell_info Cell orientation data for use in `P0`.
+/// @param[in] P0 Degree-of-freedom transformation function. Applied when
 /// expressions includes an argument function that requires a
 /// transformation.
 template <std::size_t estride, dolfinx::scalar T, std::floating_point U>
