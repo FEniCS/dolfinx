@@ -841,9 +841,11 @@ std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1) const
 {
   if (this->entity_types(d0).size() > 1 or this->entity_types(d0).size() > 1)
+  {
     throw std::runtime_error(
         "Multiple entity types in mesh. Call connectivity specifying entity "
         "type");
+  }
   return this->connectivity({d0, 0}, {d1, 0});
 }
 //-----------------------------------------------------------------------------
@@ -896,13 +898,15 @@ bool Topology::create_entities(int dim)
 
   // Skip if already computed (vertices (dim=0) should always exist)
   bool entities_created = true;
-  const int num_ent_types = this->entity_types(dim).size();
-  for (int ent_type_idx = 0; ent_type_idx < num_ent_types; ++ent_type_idx)
+  for (int ent_type_idx = 0, num_ent_types = this->entity_types(dim).size();
+       ent_type_idx < num_ent_types; ++ent_type_idx)
+  {
     if (!connectivity({dim, ent_type_idx}, {0, 0}))
     {
       entities_created = false;
       break;
     }
+  }
   if (entities_created)
     return false;
 
