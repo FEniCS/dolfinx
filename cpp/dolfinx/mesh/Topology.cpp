@@ -707,7 +707,11 @@ std::vector<std::int32_t> convert_to_local_indexing(
   return data;
 }
 
-
+/// @brief Determines the types of entities in mesh give an list of
+/// cell types in the mesh.
+/// @param cell_types A list of cell types in the mesh
+/// @return A list whose dth entry is a list of entity types in the mesh of
+/// topological dimension d.
 std::vector<std::vector<CellType>>
 build_entity_types(const std::vector<CellType>& cell_types)
 {
