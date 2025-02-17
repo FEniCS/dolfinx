@@ -13,10 +13,11 @@ from dolfinx.cpp.mesh import (
     create_mesh,
     create_topology,
     locate_entities,
+    compute_mixed_cell_pairs,
 )
 from dolfinx.fem import coordinate_element
 from dolfinx.log import LogLevel, set_log_level
-from dolfinx.mesh import CellType, GhostMode, create_unit_cube
+from dolfinx.mesh import CellType, GhostMode, Mesh, create_unit_cube
 
 
 def test_mixed_topology_mesh():
@@ -347,4 +348,25 @@ def test_locate_entities():
     assert MPI.Comm.allreduce(comm, len(facets), MPI.SUM) == 0
 
 
-test_locate_entities()
+def test_mixed_cell_pairs(mixed_topology_mesh):
+    mesh = Mesh(mixed_topology_mesh, None)
+    mesh.topology.create_entities(2)
+    mesh.topology.create_connectivity(2, 3)
+    cell_types = mesh.topology.entity_types[3]
+    facet_types = mesh.topology.entity_types[2]
+    print(cell_types, facet_types)
+
+    # For each facet type
+    for f, ft in enumerate(facet_types):
+        cell_pairs = compute_mixed_cell_pairs(mesh.topology._cpp_object, ft)
+        for i, cti in enumerate(cell_types):
+            for j, ctj in enumerate(cell_types):
+                idx = i * len(cell_types) + j
+                num_conns = len(cell_pairs[idx]) // 4
+                print(f"Connectivity ({ft}) from {cti} to {ctj} : {num_conns}")
+                if len(cell_pairs[idx]) > 0:
+                    connection = np.array(cell_pairs[idx]).reshape((num_conns, -1))
+                    f0 = mesh.topology.connectivity((3, i), (2, f))
+                    f1 = mesh.topology.connectivity((3, j), (2, f))
+                    for row in connection:
+                        assert f0.links(row[0])[row[1]] == f1.links(row[2])[row[3]]

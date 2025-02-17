@@ -4,9 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "MPICommWrapper.h"
-#include "array.h"
-#include "caster_mpi.h"
+#include "dolfinx_wrappers/MPICommWrapper.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/caster_mpi.h"
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
