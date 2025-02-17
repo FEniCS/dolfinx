@@ -497,8 +497,7 @@ Form<T, U> create_form_factory(
         else if constexpr (std::is_same_v<T, std::complex<float>>)
         {
           k = reinterpret_cast<void (*)(
-              T*, const T*, const T*,
-              const typename scalar_value_type<T>::value_type*, const int*,
+              T*, const T*, const T*, const scalar_value_type_t<T>*, const int*,
               const unsigned char*)>(integral->tabulate_tensor_complex64);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
@@ -508,8 +507,7 @@ Form<T, U> create_form_factory(
         else if constexpr (std::is_same_v<T, std::complex<double>>)
         {
           k = reinterpret_cast<void (*)(
-              T*, const T*, const T*,
-              const typename scalar_value_type<T>::value_type*, const int*,
+              T*, const T*, const T*, const scalar_value_type_t<T>*, const int*,
               const unsigned char*)>(integral->tabulate_tensor_complex128);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
@@ -584,8 +582,7 @@ Form<T, U> create_form_factory(
         else if constexpr (std::is_same_v<T, std::complex<float>>)
         {
           k = reinterpret_cast<void (*)(
-              T*, const T*, const T*,
-              const typename scalar_value_type<T>::value_type*, const int*,
+              T*, const T*, const T*, const scalar_value_type_t<T>*, const int*,
               const unsigned char*)>(integral->tabulate_tensor_complex64);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
@@ -595,8 +592,7 @@ Form<T, U> create_form_factory(
         else if constexpr (std::is_same_v<T, std::complex<double>>)
         {
           k = reinterpret_cast<void (*)(
-              T*, const T*, const T*,
-              const typename scalar_value_type<T>::value_type*, const int*,
+              T*, const T*, const T*, const scalar_value_type_t<T>*, const int*,
               const unsigned char*)>(integral->tabulate_tensor_complex128);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
@@ -692,8 +688,7 @@ Form<T, U> create_form_factory(
         else if constexpr (std::is_same_v<T, std::complex<float>>)
         {
           k = reinterpret_cast<void (*)(
-              T*, const T*, const T*,
-              const typename scalar_value_type<T>::value_type*, const int*,
+              T*, const T*, const T*, const scalar_value_type_t<T>*, const int*,
               const unsigned char*)>(integral->tabulate_tensor_complex64);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
@@ -703,8 +698,7 @@ Form<T, U> create_form_factory(
         else if constexpr (std::is_same_v<T, std::complex<double>>)
         {
           k = reinterpret_cast<void (*)(
-              T*, const T*, const T*,
-              const typename scalar_value_type<T>::value_type*, const int*,
+              T*, const T*, const T*, const scalar_value_type_t<T>*, const int*,
               const unsigned char*)>(integral->tabulate_tensor_complex128);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
@@ -923,8 +917,7 @@ Expression<T, U> create_expression(
          static_cast<std::size_t>(e.entity_dimension)};
   std::vector<std::size_t> value_shape(e.value_shape,
                                        e.value_shape + e.num_components);
-  std::function<void(T*, const T*, const T*,
-                     const typename scalar_value_type<T>::value_type*,
+  std::function<void(T*, const T*, const T*, const scalar_value_type_t<T>*,
                      const int*, const std::uint8_t*)>
       tabulate_tensor = nullptr;
   if constexpr (std::is_same_v<T, float>)
@@ -933,8 +926,7 @@ Expression<T, U> create_expression(
   else if constexpr (std::is_same_v<T, std::complex<float>>)
   {
     tabulate_tensor = reinterpret_cast<void (*)(
-        T*, const T*, const T*,
-        const typename scalar_value_type<T>::value_type*, const int*,
+        T*, const T*, const T*, const scalar_value_type_t<T>*, const int*,
         const unsigned char*)>(e.tabulate_tensor_complex64);
   }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
@@ -944,8 +936,7 @@ Expression<T, U> create_expression(
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
     tabulate_tensor = reinterpret_cast<void (*)(
-        T*, const T*, const T*,
-        const typename scalar_value_type<T>::value_type*, const int*,
+        T*, const T*, const T*, const scalar_value_type_t<T>*, const int*,
         const unsigned char*)>(e.tabulate_tensor_complex128);
   }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
