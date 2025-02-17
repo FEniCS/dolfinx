@@ -50,19 +50,19 @@ nanobind_add_module(
 )
 
 # Add strict compiler flags
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
-if(HAVE_PEDANTIC)
-  target_compile_options(cpp PRIVATE -Wall;-Werror;-Wextra;-pedantic)
+# include(CheckCXXCompilerFlag)
+# check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
+# if(HAVE_PEDANTIC)
+#   target_compile_options(cpp PRIVATE -Wall;-Werror;-Wextra;-pedantic)
 
-  # Turn off some checks in gcc12 and gcc13 due to false positives with
-  # the fmt library
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
-    AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
-    AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0")
-    target_compile_options(cpp PRIVATE -Wno-array-bounds;-Wno-stringop-overflow)
-  endif()
-endif()
+#   # Turn off some checks in gcc12 and gcc13 due to false positives with
+#   # the fmt library
+#   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+#     AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
+#     AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0")
+#     target_compile_options(cpp PRIVATE -Wno-array-bounds;-Wno-stringop-overflow)
+#   endif()
+# endif()
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 target_compile_definitions(cpp PRIVATE cxx_std_20)

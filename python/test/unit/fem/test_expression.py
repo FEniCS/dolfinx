@@ -394,15 +394,15 @@ def compute_exterior_facet_entities(mesh, facets):
     mesh.topology.create_connectivity(tdim, tdim - 1)
     c_to_f = mesh.topology.connectivity(tdim, tdim - 1)
     f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
-    integration_entities = np.empty(2 * len(facets), dtype=np.int32)
+    integration_entities = np.empty((len(facets), 2), dtype=np.int32)
     for i, facet in enumerate(facets):
         cells = f_to_c.links(facet)
         assert len(cells) == 1
         cell = cells[0]
         local_facets = c_to_f.links(cell)
         local_pos = np.flatnonzero(local_facets == facet)
-        integration_entities[2 * i] = cell
-        integration_entities[2 * i + 1] = local_pos[0]
+        integration_entities[i, 0] = cell
+        integration_entities[i, 1] = local_pos[0]
     return integration_entities
 
 

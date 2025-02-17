@@ -203,9 +203,9 @@ class Expression:
 
         Args:
             mesh: Mesh to evaluate Expression on.
-            entities: Either an array of cells (index local to process)
-                or an array of integral tuples (cell index, local facet
-                index). The array is flattened.
+            entities: Entities to evaluate the Expression over. For
+                cells, it is a list of cell indices. For facets, it is a
+                2D array of (cell index, local facet index).
             values: Array to fill with evaluated values. If ``None``,
                 storage will be allocated. Otherwise must have shape
                 ``(num_entities, num_points * value_size *
@@ -213,25 +213,23 @@ class Expression:
 
         Returns:
             Expression evaluated at points for `entities`.
-
         """
         _entities = np.asarray(entities, dtype=np.int32)
-        if self.argument_space is None:
-            argument_space_dimension = 1
-        else:
-            argument_space_dimension = self.argument_space.element.space_dimension
         if (tdim := mesh.topology.dim) != (expr_dim := self._cpp_object.X().shape[1]):
             assert expr_dim == tdim - 1
-            assert _entities.shape[0] % 2 == 0
-            values_shape = (
-                _entities.shape[0] // 2,
-                self.X().shape[0] * self.value_size * argument_space_dimension,
+            assert entities.ndim == 2, (
+                "entities list should have two dimensions for expression evaluation on facets."
             )
+
+        if self.argument_space is None:
+            argument_space_dim = 1
         else:
-            values_shape = (
-                _entities.shape[0],
-                self.X().shape[0] * self.value_size * argument_space_dimension,
-            )
+            argument_space_dim = self.argument_space.element.space_dimension
+
+        values_shape = (
+            _entities.shape[0],
+            self.X().shape[0] * self.value_size * argument_space_dim,
+        )
 
         # Allocate memory for result if u was not provided
         if values is None:
@@ -241,7 +239,12 @@ class Expression:
                 raise TypeError("Passed array values does not have correct shape.")
             if values.dtype != self.dtype:
                 raise TypeError("Passed array values does not have correct dtype.")
-        _cpp.fem.tabulate_expression(values, self._cpp_object, mesh._cpp_object, _entities)
+
+        constants = _cpp.fem.pack_constants(self._cpp_object)
+        coeffs = _cpp.fem.pack_coefficients(self._cpp_object, _entities)
+        _cpp.fem.tabulate_expression(
+            values, self._cpp_object, constants, coeffs, mesh._cpp_object, _entities
+        )
         return values
 
     def X(self) -> np.ndarray:

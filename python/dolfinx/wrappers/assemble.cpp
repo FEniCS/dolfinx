@@ -208,6 +208,31 @@ void declare_assembly_functions(nb::module_& m)
       },
       nb::arg("form"), "Pack coefficients for a Form.");
   m.def(
+      "pack_coefficients",
+      [](const dolfinx::fem::Expression<T, U>& e,
+         nb::ndarray<const std::int32_t, nb::c_contig> entities)
+      {
+        std::vector<int> coffsets = e.coefficient_offsets();
+        const std::vector<std::shared_ptr<const dolfinx::fem::Function<T, U>>>&
+            coefficients
+            = e.coefficients();
+        std::vector<T> coeffs(entities.shape(0) * coffsets.back());
+        std::size_t cstride = coffsets.back();
+        std::vector<std::reference_wrapper<const dolfinx::fem::Function<T, U>>>
+            c;
+        std::ranges::transform(coefficients, std::back_inserter(c),
+                               [](auto c) -> const dolfinx::fem::Function<T, U>&
+                               { return *c; });
+        dolfinx::fem::pack_coefficients(
+            c, coffsets, std::span(entities.data(), entities.size()),
+            entities.ndim(), std::span(coeffs));
+
+        return dolfinx_wrappers::as_nbarray(std::move(coeffs),
+                                            {entities.shape(0), cstride});
+      },
+      nb::arg("expression"), nb::arg("entities"),
+      "Pack coefficients for a Expression.");
+  m.def(
       "pack_constants",
       [](const dolfinx::fem::Form<T, U>& form)
       {
@@ -224,16 +249,36 @@ void declare_assembly_functions(nb::module_& m)
       "tabulate_expression",
       [](nb::ndarray<T, nb::ndim<2>, nb::c_contig> values,
          const dolfinx::fem::Expression<T, U>& e,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
+         nb::ndarray<const T, nb::ndim<2>, nb::c_contig> coeffs,
          const dolfinx::mesh::Mesh<U>& mesh,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells)
+         nb::ndarray<const std::int32_t, nb::c_contig> entities)
       {
         dolfinx::fem::tabulate_expression<T>(
-            std::span<T>(values.data(), values.size()), e, mesh,
-            std::span(cells.data(), cells.size()));
+            std::span<T>(values.data(), values.size()), e,
+            std::span(coeffs.data(), coeffs.size()), coeffs.shape(1),
+            std::span(constants.data(), constants.size()), mesh,
+            std::span(entities.data(), entities.size()),
+            e.argument_space() ? std::optional(std::ref(*e.argument_space()))
+                               : std::nullopt);
       },
-      nb::arg("values"), nb::arg("expression"), nb::arg("mesh"),
-      nb::arg("cells"), "Evaluate an Expression of mesh entities.");
-  // Functional
+      nb::arg("values"), nb::arg("expression"), nb::arg("constants"),
+      nb::arg("coefficients"), nb::arg("mesh"), nb::arg("entities"),
+      "Evaluate an Expression on mesh entities.");
+  // m.def(
+  //     "tabulate_expression",
+  //     [](nb::ndarray<T, nb::ndim<2>, nb::c_contig> values,
+  //        const dolfinx::fem::Expression<T, U>& e,
+  //        const dolfinx::mesh::Mesh<U>& mesh,
+  //        nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells)
+  //     {
+  //       dolfinx::fem::tabulate_expression<T>(
+  //           std::span<T>(values.data(), values.size()), e, mesh,
+  //           std::span(cells.data(), cells.size()));
+  //     },
+  //     nb::arg("values"), nb::arg("expression"), nb::arg("mesh"),
+  //     nb::arg("cells"), "Evaluate an Expression of mesh entities.");
+  // // Functional
   m.def(
       "assemble_scalar",
       [](const dolfinx::fem::Form<T, U>& M,
