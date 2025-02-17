@@ -8,12 +8,12 @@ import pytest
 from dolfinx.cpp.log import set_thread_name
 from dolfinx.cpp.mesh import (
     Mesh_float64,
+    compute_mixed_cell_pairs,
     create_cell_partitioner,
     create_geometry,
     create_mesh,
     create_topology,
     locate_entities,
-    compute_mixed_cell_pairs,
 )
 from dolfinx.fem import coordinate_element
 from dolfinx.log import LogLevel, set_log_level
