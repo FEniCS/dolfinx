@@ -65,7 +65,6 @@ void tabulate_expression(
   // Create data structures used in evaluation
   std::vector<U> coord_dofs(3 * num_dofs_g);
 
-  int num_argument_dofs = 1;
   std::span<const std::uint32_t> cell_info;
   std::function<void(std::span<T>, std::span<const std::uint32_t>, std::int32_t,
                      int)>
@@ -75,6 +74,7 @@ void tabulate_expression(
     // Do nothing
   };
 
+  int num_argument_dofs = 1;
   if (V)
   {
     num_argument_dofs = V->get().dofmap()->element_dof_layout().num_dofs();
@@ -105,6 +105,8 @@ void tabulate_expression(
   // Iterate over cells and 'assemble' into values
   int size0 = Xshape[0] * value_size;
   std::vector<T> values_local(size0 * num_argument_dofs, 0);
+
+  std::size_t offset = values_local.size();
   for (std::size_t e = 0; e < entities.size() / estride; ++e)
   {
     std::int32_t entity = entities[e * estride];
@@ -123,7 +125,7 @@ void tabulate_expression(
 
     post_dof_transform(values_local, cell_info, e, size0);
     for (std::size_t j = 0; j < values_local.size(); ++j)
-      values[e * Xshape[0] + j] = values_local[j];
+      values[e * offset + j] = values_local[j];
   }
 }
 } // namespace dolfinx::fem::impl
