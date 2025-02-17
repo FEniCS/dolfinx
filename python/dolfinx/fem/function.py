@@ -212,7 +212,9 @@ class Expression:
                 num_all_argument_dofs)``
 
         Returns:
-            Expression evaluated at points for `entities`.
+            Expression evaluated at points for `entities`. Shape is
+            ``(num_entities, num_points, *value_shape,
+            argument_space_dim)``.
         """
         _entities = np.asarray(entities, dtype=np.int32)
         if (tdim := mesh.topology.dim) != (expr_dim := self._cpp_object.X().shape[1]):
@@ -222,23 +224,23 @@ class Expression:
             )
 
         if self.argument_space is None:
-            argument_space_dim = 1
+            values_shape = (_entities.shape[0], self.X().shape[0], *self.value_shape)
         else:
-            argument_space_dim = self.argument_space.element.space_dimension
-
-        values_shape = (
-            _entities.shape[0],
-            self.X().shape[0] * self.value_size * argument_space_dim,
-        )
+            values_shape = (
+                _entities.shape[0],
+                self.X().shape[0],
+                *self.value_shape,
+                self.argument_space.element.space_dimension,
+            )
 
         # Allocate memory for result if u was not provided
         if values is None:
             values = np.zeros(values_shape, dtype=self.dtype)
         else:
             if values.shape != values_shape:
-                raise TypeError("Passed array values does not have correct shape.")
+                raise TypeError("Passed values array does not have correct shape.")
             if values.dtype != self.dtype:
-                raise TypeError("Passed array values does not have correct dtype.")
+                raise TypeError("Passed values array does not have correct dtype.")
 
         constants = _cpp.fem.pack_constants(self._cpp_object)
         coeffs = _cpp.fem.pack_coefficients(self._cpp_object, _entities)
@@ -253,12 +255,17 @@ class Expression:
 
     @property
     def ufl_expression(self):
-        """Original UFL Expression"""
+        """Original UFL Expression."""
         return self._ufl_expression
 
     @property
+    def value_shape(self) -> np.ndarray:
+        """Value shape of the Expression."""
+        return self._cpp_object.value_shape
+
+    @property
     def value_size(self) -> int:
-        """Value size of the expression"""
+        """Value size of the expression."""
         return self._cpp_object.value_size
 
     @property
@@ -268,12 +275,12 @@ class Expression:
 
     @property
     def ufcx_expression(self):
-        """The compiled ufcx_expression object"""
+        """The compiled ufcx_expression object."""
         return self._ufcx_expression
 
     @property
     def code(self) -> str:
-        """C code strings"""
+        """C code strings."""
         return self._code
 
     @property
@@ -358,7 +365,7 @@ class Function(ufl.Coefficient):
 
     @property
     def function_space(self) -> FunctionSpace:
-        """The FunctionSpace that the Function is defined on"""
+        """The FunctionSpace that the Function is defined on."""
         return self._V
 
     def eval(self, x: npt.ArrayLike, cells: npt.ArrayLike, u=None) -> np.ndarray:
@@ -400,11 +407,12 @@ class Function(ufl.Coefficient):
     def interpolate_nonmatching(
         self, u0: Function, cells: npt.NDArray[np.int32], interpolation_data: PointOwnershipData
     ) -> None:
-        """Interpolate a Function defined on one mesh to a function defined on a different mesh.
+        """Interpolate a Function defined on one mesh to a function
+        defined on a different mesh.
 
         Args:
             u0: The Function to interpolate.
-            cells: The cells to interpolate over. If `None` then all
+            cells: The cells to interpolate over. If ``None`` then all
                 cells are interpolated over.
             interpolation_data: Data needed to interpolate functions
                 defined on other meshes. Created by
@@ -505,21 +513,21 @@ class Function(ufl.Coefficient):
         return self.name
 
     def sub(self, i: int) -> Function:
-        """Return a sub-function (a view into the `Function`).
+        """Return a sub-function (a view into the ``Function``).
 
-        Sub-functions are indexed `i = 0, ..., N-1`, where `N` is the
-        number of sub-spaces.
+        Sub-functions are indexed ``i = 0, ..., N-1``, where ``N`` is
+        the number of sub-spaces.
 
         Args:
             i: Index of the sub-function to extract.
 
         Returns:
-            A view into the parent `Function`.
+            A view into the parent ``Function``.
 
         Note:
             If the sub-Function is re-used, for performance reasons the
-            returned `Function` should be stored by the caller to avoid
-            repeated re-computation of the subspace.
+            returned ``Function`` should be stored by the caller to
+            avoid repeated re-computation of the subspace.
         """
         return Function(self._V.sub(i), self.x, name=f"{self!s}_{i}")
 

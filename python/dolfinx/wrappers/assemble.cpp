@@ -247,7 +247,7 @@ void declare_assembly_functions(nb::module_& m)
   // Expression
   m.def(
       "tabulate_expression",
-      [](nb::ndarray<T, nb::ndim<2>, nb::c_contig> values,
+      [](nb::ndarray<T, nb::c_contig> values,
          const dolfinx::fem::Expression<T, U>& e,
          nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
          nb::ndarray<const T, nb::ndim<2>, nb::c_contig> coeffs,
