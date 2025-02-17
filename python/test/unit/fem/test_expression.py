@@ -90,7 +90,7 @@ def test_rank1_hdiv(dtype):
     vector DG_2 and assembles it into global matrix A. Input space RT_2
     is chosen because it requires dof permutations.
     """
-    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=dtype(0).real.dtype)
+    mesh = create_unit_square(MPI.COMM_WORLD, 1, 1, dtype=dtype(0).real.dtype)
     gdim = mesh.geometry.dim
     vdP1 = functionspace(mesh, ("DG", 2, (gdim,)))
     RT1 = functionspace(mesh, ("RT", 2))
@@ -105,6 +105,7 @@ def test_rank1_hdiv(dtype):
         for i in range(num_cells):
             rows = dofmap0[i, :]
             cols = dofmap1[i, :]
+            print("test", len(rows), len(cols))
             A_local = array_evaluated[i, :].reshape(len(rows), len(cols))
             for i, row in enumerate(rows):
                 for j, col in enumerate(cols):
@@ -493,46 +494,40 @@ def test_facet_expression(dtype):
         assert np.allclose(values, exact_expr, atol=atol)
 
 
-# def test_rank1_blocked():
-#     """Check that a test function with tensor shape is unrolled as
-#     (num_cells, num_points, num_dofs, bs) when evaluated as an
-#     expression."""
-#     mesh = dolfinx.mesh.create_unit_square(
-#         MPI.COMM_SELF, 1, 1, cell_type=dolfinx.mesh.CellType.quadrilateral
-#     )
-#     value_shape = (3, 2)
-#     V = dolfinx.fem.functionspace(mesh, ("Lagrange", 2, value_shape))
-#     v = ufl.TestFunction(V)
+def test_rank1_blocked():
+    """Check that a test function with tensor shape is unrolled as
+    (num_cells, num_points, num_dofs, bs) when evaluated as an
+    expression."""
+    mesh = dolfinx.mesh.create_unit_square(
+        MPI.COMM_SELF, 1, 1, cell_type=dolfinx.mesh.CellType.quadrilateral
+    )
+    value_shape = (2, 3)
+    vs = np.prod(value_shape)
+    V = dolfinx.fem.functionspace(mesh, ("Lagrange", 2, value_shape))
+    v = ufl.TestFunction(V)
 
-#     points = np.array([[0.513, 0.317], [0.11, 0.38]], dtype=mesh.geometry.x.dtype)
-#     expr = dolfinx.fem.Expression(v, points)
+    points = np.array([[0.513, 0.317], [0.11, 0.38]], dtype=mesh.geometry.x.dtype)
+    expr = dolfinx.fem.Expression(v, points)
 
-#     values = expr.eval(mesh, np.array([0], dtype=np.int32))[0]
-#     print(values.shape)
+    values = expr.eval(mesh, np.array([0], dtype=np.int32))[0]
 
-#     # Tabulate returns (num_derivatives, num_points, num_dofs, value_size)
-#     ref_values = V.element.basix_element.tabulate(1, points)[0]
-#     print("r", ref_values.shape)
+    # Tabulate returns (num_derivatives, num_points, num_dofs, value_size)
+    ref_values = V.element.basix_element.tabulate(1, points)[0]
 
-#     num_points = points.shape[0]
-#     num_dofs = V.dofmap.dof_layout.num_dofs
-#     bs = V.dofmap.bs
-#     assert np.prod(values.shape) == num_dofs * num_points * bs * bs
-#     for p in range(num_points):
-#         # Get basis functions for all blocks for ith point
-#         point_values = values[p]
-#         # print("point vale shaoe:", point_values.shape)
-#         # print(point_values)
-#         # print(point_values[:, :, :])
-#         # point_values = values[i * num_dofs * bs * bs : (i + 1) * num_dofs * bs * bs]
-#         # for
+    num_points = points.shape[0]
+    num_dofs = V.dofmap.dof_layout.num_dofs
+    bs = V.dofmap.bs
+    value_size = np.prod(values.shape)
+    assert value_size == num_dofs * num_points * bs * bs
+    for p in range(num_points):
+        # Get basis functions for all blocks for ith point
+        point_values = values[p]
+        for i in range(value_shape[0]):
+            for j in range(value_shape[1]):
+                offset = i * value_shape[1] + j
+                vals = point_values[i, j, offset::vs]
+                np.testing.assert_allclose(vals, ref_values[p].flatten())
 
-#         for j in range(bs):
-#             block_values = point_values[j * num_dofs * bs : (j + 1) * num_dofs * bs]
-#             print(block_values[:, :, j * num_dofs :: (j + 1) * num_dofs])
-#     #         for k in range(bs):
-#     #             # Test functions are evaluated as a vector function
-#     #             if j != k:
-#     #                 np.testing.assert_allclose(block_values[k::bs], 0.0)
-#     #             else:
-#     #                 np.testing.assert_allclose(block_values[k::bs], ref_values[i].flatten())
+                mask = np.ones(point_values.shape[2], dtype=bool)
+                mask[offset::vs] = False
+                np.testing.assert_allclose(point_values[i, j, mask], 0)
