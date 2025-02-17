@@ -3,6 +3,7 @@
 from mpi4py import MPI
 
 import numpy as np
+import pytest
 
 from dolfinx.cpp.log import set_thread_name
 from dolfinx.cpp.mesh import (
@@ -312,9 +313,8 @@ def test_locate_entities():
 
     hexahedron = coordinate_element(CellType.hexahedron, 1)
     prism = coordinate_element(CellType.prism, 1)
-    mesh = create_mesh(
-        MPI.COMM_WORLD, cells, [hexahedron._cpp_object, prism._cpp_object], geom, part
-    )
+    comm = MPI.COMM_WORLD
+    mesh = create_mesh(comm, cells, [hexahedron._cpp_object, prism._cpp_object], geom, part)
 
     fdim = mesh.topology.dim - 1
 
@@ -330,19 +330,19 @@ def test_locate_entities():
 
     # Should have one quadrilateral on top
     facets = locate_entities(mesh, fdim, top, quad_idx)
-    assert len(facets) == 1
+    assert MPI.Comm.allreduce(comm, len(facets), MPI.SUM) == 1
 
     # Should have two triangles on top
     facets = locate_entities(mesh, fdim, top, tri_idx)
-    assert len(facets) == 2
+    assert MPI.Comm.allreduce(comm, len(facets), MPI.SUM) == 2
 
     # Should have two quadrilaterals at the front
     facets = locate_entities(mesh, fdim, front, quad_idx)
-    assert len(facets) == 2
+    assert MPI.Comm.allreduce(comm, len(facets), MPI.SUM) == 2
 
     # Should have no triagles at the front
     facets = locate_entities(mesh, fdim, front, tri_idx)
-    assert len(facets) == 0
+    assert MPI.Comm.allreduce(comm, len(facets), MPI.SUM) == 0
 
 
 test_locate_entities()
