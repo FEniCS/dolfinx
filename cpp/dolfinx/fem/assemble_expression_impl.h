@@ -21,7 +21,46 @@
 namespace dolfinx::fem::impl
 {
 /// @brief Tabulate an Expression at points.
-template <dolfinx::scalar T, std::floating_point U>
+
+
+/// @brief Tabulate an Expression at points.
+///
+/// Executes an Expression kernel over a list of mesh entities.
+///
+/// @tparam estride 1 for cell expressions, 2 for facets.
+/// @tparam T Scalar type of expression.
+/// @tparam U Geometry type.
+/// @param values Array in which the tabulated expressions are set. If
+/// should have shape (`entities.size(), Xshape[0], value_size,
+/// num_argument_dofs)`. Storage is row-major. Data is set in `values`,
+/// (not accumulated).
+/// @param fn Expression kernel to execute.
+/// @param Xshape Shape `(num_points, geometric dimensions)` of
+/// points array at which the expression is evaluated by the kernel.
+/// @param value_size Value size of the evaluated expression at a point,
+/// e.g. 1 for a scalar field, 3 for a vector field in 3D, 4 for a
+/// second-order tensor in 2D.
+/// @param num_argument_dofs Dimension of an argument function. Greater
+/// than 1 when computing a 1-form expression, e.g. can be used to
+/// create a matrix that when applied to a degree-of-freedom vector
+/// gives the expression values at the evaluation points.
+/// @param x_dofmap Geometry degree-of-freedom map.
+/// @param x Geometry coordinate of the mesh.
+/// @param[in] coeffs Coefficient data that appears in the expression.
+/// Usually packed using fem::pack_coefficients.
+/// @param[in] cstride Coefficient stride. Coefficient data for teh ith
+/// entity starts at `coeffs.data() + i*cstride`.
+/// @param constants Constant (coefficient) data that appears in
+/// expression. Usually packed using em::pack_constants.
+/// @param entities Mesh entities to evaluate the expression over. When
+/// `estride==1` this is a list of cells. When `estride==2`, is hold
+/// (cell, local facet) index pairs, i.e. `entities=[cell0,
+/// facet_local0, cell1, facet_local1, ...]
+/// @param cell_info Cell orientation data for use in `P0`.
+/// @param P0 Degree-of-freedom transformation function. Applied when
+/// expressions includes an argument function that requires a
+/// transformation.
+template <std::size_t estride, dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, fem::FEkernel<T> auto fn,
     std::array<std::size_t, 2> Xshape, std::size_t value_size,
@@ -31,27 +70,16 @@ void tabulate_expression(
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         x_dofmap,
     std::span<const scalar_value_type_t<T>> x, std::span<const T> coeffs,
-    std::size_t cstride, std::span<const T> constant_data,
-    std::span<const std::int32_t> entities, std::size_t estride,
+    std::size_t cstride, std::span<const T> constants,
+    std::span<const std::int32_t> entities,
     std::span<const std::uint32_t> cell_info,
     fem::DofTransformKernel<T> auto P0)
 {
   namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+  static_assert(estride == 1 or estride == 2, "estride must be 1 or 2.");
 
   // Create data structures used in evaluation
   std::vector<U> coord_dofs(3 * x_dofmap.extent(1));
-
-  // Create get entity index function
-  std::function<const std::int32_t*(std::span<const std::int32_t>, std::size_t)>
-      get_entity_index
-      = [](std::span<const std::int32_t> /*entities*/, std::size_t /*idx*/)
-  { return nullptr; };
-  if (estride == 2)
-  {
-    get_entity_index
-        = [](std::span<const std::int32_t> entities, std::size_t idx)
-    { return entities.data() + 2 * idx + 1; };
-  }
 
   // Iterate over cells and 'assemble' into values
   int size0 = Xshape[0] * value_size;
@@ -68,8 +96,16 @@ void tabulate_expression(
     }
 
     std::ranges::fill(values_local, 0);
-    fn(values_local.data(), coeffs.data() + e * cstride, constant_data.data(),
-       coord_dofs.data(), get_entity_index(entities, e), nullptr);
+    if constexpr (estride == 1)
+    {
+      fn(values_local.data(), coeffs.data() + e * cstride, constants.data(),
+         coord_dofs.data(), nullptr, nullptr);
+    }
+    else
+    {
+      fn(values_local.data(), coeffs.data() + e * cstride, constants.data(),
+         coord_dofs.data(), entities.data() + 2 * e + 1, nullptr);
+    }
 
     P0(values_local, cell_info, e, size0);
     for (std::size_t j = 0; j < values_local.size(); ++j)
@@ -139,7 +175,6 @@ void tabulate_expression(
   {
     num_argument_dofs = V->get().dofmap()->element_dof_layout().num_dofs();
     num_argument_dofs *= V->get().dofmap()->bs();
-
     auto element = V->get().element();
     assert(element);
     if (element->needs_dof_transformations())
@@ -151,9 +186,19 @@ void tabulate_expression(
     }
   }
 
-  tabulate_expression<T, U>(values, fn, Xshape, value_size, num_argument_dofs,
-                            mesh.geometry().dofmap(), mesh.geometry().x(),
-                            coeffs, cstride, constant_data, entities, estride,
-                            cell_info, post_dof_transform);
+  if (estride == 1) // cells
+  {
+    tabulate_expression<1, T, U>(
+        values, fn, Xshape, value_size, num_argument_dofs,
+        mesh.geometry().dofmap(), mesh.geometry().x(), coeffs, cstride,
+        constant_data, entities, cell_info, post_dof_transform);
+  }
+  else // facets
+  {
+    tabulate_expression<2, T, U>(
+        values, fn, Xshape, value_size, num_argument_dofs,
+        mesh.geometry().dofmap(), mesh.geometry().x(), coeffs, cstride,
+        constant_data, entities, cell_info, post_dof_transform);
+  }
 }
 } // namespace dolfinx::fem::impl
