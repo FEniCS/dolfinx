@@ -580,8 +580,10 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
 {
   const int num_entity_types = mesh.topology()->entity_types(dim).size();
   if (num_entity_types > 1)
+  {
     throw std::runtime_error(
         "Multiple entity types of this dimension. Specify entity type index");
+  }
   return locate_entities(mesh, dim, marker, 0);
 }
 
