@@ -1,9 +1,18 @@
+# TODO Clean up these tests
+
 from mpi4py import MPI
 
 import numpy as np
 
 from dolfinx.cpp.log import set_thread_name
-from dolfinx.cpp.mesh import Mesh_float64, create_geometry, create_topology
+from dolfinx.cpp.mesh import (
+    Mesh_float64,
+    create_cell_partitioner,
+    create_geometry,
+    create_mesh,
+    create_topology,
+    locate_entities,
+)
 from dolfinx.fem import coordinate_element
 from dolfinx.log import LogLevel, set_log_level
 from dolfinx.mesh import CellType, GhostMode, create_unit_cube
@@ -271,3 +280,69 @@ def test_create_entities():
 
     # Triangle and quad to prism (facet->cell)
     mesh.topology.create_connectivity(2, 3)
+
+
+def test_locate_entities():
+    # Create a unit cube mesh with one hex and two wedges
+    if MPI.COMM_WORLD.rank == 0:
+        hexes = np.array([0, 1, 3, 4, 6, 7, 9, 10])
+        wedges = np.array([1, 2, 4, 7, 8, 10, 2, 4, 5, 8, 10, 11])
+        cells = [hexes, wedges]
+        geom = np.array(
+            [
+                [0.0, 0.0, 0.0],
+                [0.5, 0.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+                [0.5, 1.0, 0.0],
+                [1.0, 1.0, 0.0],
+                [0.0, 0.0, 1.0],
+                [0.5, 0.0, 1.0],
+                [1.0, 0.0, 1.0],
+                [0.0, 1.0, 1.0],
+                [0.5, 1.0, 1.0],
+                [1.0, 1.0, 1.0],
+            ]
+        )
+    else:
+        cells = [np.array([]), np.array([])]
+        geom = np.array([])
+
+    part = create_cell_partitioner(GhostMode.none)
+
+    hexahedron = coordinate_element(CellType.hexahedron, 1)
+    prism = coordinate_element(CellType.prism, 1)
+    mesh = create_mesh(
+        MPI.COMM_WORLD, cells, [hexahedron._cpp_object, prism._cpp_object], geom, part
+    )
+
+    fdim = mesh.topology.dim - 1
+
+    def top(x):
+        return np.isclose(x[2], 1.0)
+
+    def front(x):
+        return np.isclose(x[1], 0.0)
+
+    facet_types = mesh.topology.entity_types[fdim]
+    quad_idx = facet_types.index(CellType.quadrilateral)
+    tri_idx = facet_types.index(CellType.triangle)
+
+    # Should have one quadrilateral on top
+    facets = locate_entities(mesh, fdim, top, quad_idx)
+    assert len(facets) == 1
+
+    # Should have two triangles on top
+    facets = locate_entities(mesh, fdim, top, tri_idx)
+    assert len(facets) == 2
+
+    # Should have two quadrilaterals at the front
+    facets = locate_entities(mesh, fdim, front, quad_idx)
+    assert len(facets) == 2
+
+    # Should have no triagles at the front
+    facets = locate_entities(mesh, fdim, front, tri_idx)
+    assert len(facets) == 0
+
+
+test_locate_entities()
