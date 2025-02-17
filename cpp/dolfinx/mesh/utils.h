@@ -453,8 +453,9 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
                                     + topology->index_map(0)->num_ghosts();
 
   std::vector<std::int32_t> vertex_to_node(num_vertices);
-  const int num_cell_types = topology->entity_types(tdim).size();
-  for (int cell_type_idx = 0; cell_type_idx < num_cell_types; ++cell_type_idx)
+  for (int cell_type_idx = 0,
+           num_cell_types = topology->entity_types(tdim).size();
+       cell_type_idx < num_cell_types; ++cell_type_idx)
   {
     auto x_dofmap = mesh.geometry().dofmap(cell_type_idx);
     auto c_to_v = topology->connectivity({tdim, cell_type_idx}, {0, 0});
