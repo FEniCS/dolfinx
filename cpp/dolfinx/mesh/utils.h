@@ -167,11 +167,24 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
 /// @note Collective.
 ///
 /// @param[in] topology Mesh topology.
+/// @param[in] facet_type_idx The index of the facet type in
+/// Topology::entity_types(facet_dim)
 /// @return Sorted list of owned facet indices that are exterior facets
 /// of the mesh.
 std::vector<std::int32_t> exterior_facet_indices(const Topology& topology,
                                                  int facet_type_idx);
 
+/// @brief Compute the indices of all exterior facets that are owned by
+/// the caller.
+///
+/// An exterior facet (co-dimension 1) is one that is connected globally
+/// to only one cell of co-dimension 0).
+///
+/// @note Collective.
+///
+/// @param[in] topology Mesh topology.
+/// @return Sorted list of owned facet indices that are exterior facets
+/// of the mesh.
 std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 
 /// @brief Signature for the cell partitioning function. Function that
@@ -491,6 +504,8 @@ concept MarkerFn = std::is_invocable_r<
 /// considered.
 /// @param[in] marker Marking function, returns `true` for a point that
 /// is 'marked', and `false` otherwise.
+/// @param[in] entity_type_idx The index of the entity type in
+/// Topology::entity_types(dim)
 /// @returns List of marked entity indices, including any ghost indices
 /// (indices local to the process).
 template <std::floating_point T, MarkerFn<T> U>
@@ -544,6 +559,19 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
   return entities;
 }
 
+/// @brief Compute indices of all mesh entities that evaluate to true
+/// for the provided geometric marking function.
+///
+/// An entity is considered marked if the marker function evaluates to true
+/// for all of its vertices.
+///
+/// @param[in] mesh Mesh to mark entities on.
+/// @param[in] dim Topological dimension of the entities to be
+/// considered.
+/// @param[in] marker Marking function, returns `true` for a point that
+/// is 'marked', and `false` otherwise.
+/// @returns List of marked entity indices, including any ghost indices
+/// (indices local to the process).
 template <std::floating_point T, MarkerFn<T> U>
 std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
                                           U marker)
@@ -582,7 +610,7 @@ template <std::floating_point T, MarkerFn<T> U>
 std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
                                                    U marker)
 {
-  // TODO Rewrite this function
+  // TODO Rewrite this function, it should be possible to simplify considerably
   auto topology = mesh.topology();
   assert(topology);
   int tdim = topology->dim();

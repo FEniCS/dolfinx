@@ -87,7 +87,7 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology,
 //------------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
 {
-  if (topology.index_maps(topology.dim() - 1).size() != 1)
+  if (topology.entity_types(topology.dim() - 1).size() > 1)
     throw std::runtime_error("Multiple facet types in mesh. Call "
                              "exterior_facet_indices with facet type index.");
 

@@ -726,6 +726,7 @@ Topology::Topology(
     assert(cell_dim(ct) == tdim);
 #endif
 
+  // Determine types of entities in the mesh
   _entity_types.resize(tdim + 1);
   _entity_types[0] = {mesh::CellType::point};
   _entity_types[tdim] = cell_types;
@@ -825,7 +826,7 @@ Topology::connectivity(std::array<int, 2> d0, std::array<int, 2> d1) const
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1) const
 {
-  if (this->index_maps(d0).size() > 1 or this->index_maps(d0).size() > 1)
+  if (this->entity_types(d0).size() > 1 or this->entity_types(d0).size() > 1)
     throw std::runtime_error(
         "Multiple entity types in mesh. Call connectivity specifying entity "
         "type");
@@ -884,7 +885,10 @@ bool Topology::create_entities(int dim)
   const int num_ent_types = this->entity_types(dim).size();
   for (int ent_type_idx = 0; ent_type_idx < num_ent_types; ++ent_type_idx)
     if (!connectivity({dim, ent_type_idx}, {0, 0}))
+    {
       entities_created = false;
+      break;
+    }
   if (entities_created)
     return false;
 
