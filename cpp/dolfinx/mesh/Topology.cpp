@@ -706,6 +706,31 @@ std::vector<std::int32_t> convert_to_local_indexing(
 
   return data;
 }
+
+
+std::vector<std::vector<CellType>>
+build_entity_types(const std::vector<CellType>& cell_types)
+{
+  const int tdim = cell_dim(cell_types.front());
+  std::vector<std::vector<CellType>> entity_types(tdim + 1);
+
+  // Determine types of entities in the mesh
+  entity_types[0] = {mesh::CellType::point};
+  entity_types[tdim] = cell_types;
+  if (tdim > 1)
+    entity_types[1] = {mesh::CellType::interval};
+  if (tdim > 2)
+  {
+    //  Find all facet types
+    std::set<mesh::CellType> e_types;
+    for (auto c : entity_types[tdim])
+      for (int i = 0; i < cell_num_entities(c, 2); ++i)
+        e_types.insert(cell_facet_type(c, i));
+    entity_types[2] = std::vector(e_types.begin(), e_types.end());
+  }
+  return entity_types;
+}
+
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -717,7 +742,8 @@ Topology::Topology(
     const std::optional<std::vector<std::vector<std::int64_t>>>& original_index)
     : original_cell_index(original_index
                               ? *original_index
-                              : std::vector<std::vector<std::int64_t>>())
+                              : std::vector<std::vector<std::int64_t>>()),
+      _entity_types(build_entity_types(cell_types))
 {
   assert(!cell_types.empty());
   int tdim = cell_dim(cell_types.front());
@@ -725,22 +751,6 @@ Topology::Topology(
   for (auto ct : cell_types)
     assert(cell_dim(ct) == tdim);
 #endif
-
-  // Determine types of entities in the mesh
-  _entity_types.resize(tdim + 1);
-  _entity_types[0] = {mesh::CellType::point};
-  _entity_types[tdim] = cell_types;
-  if (tdim > 1)
-    _entity_types[1] = {mesh::CellType::interval};
-  if (tdim > 2)
-  {
-    //  Find all facet types
-    std::set<mesh::CellType> e_types;
-    for (auto c : _entity_types[tdim])
-      for (int i = 0; i < cell_num_entities(c, 2); ++i)
-        e_types.insert(cell_facet_type(c, i));
-    _entity_types[2] = std::vector(e_types.begin(), e_types.end());
-  }
 
   // Set data
   _index_maps.insert({{0, 0}, vertex_map});
