@@ -105,7 +105,7 @@ std::vector<std::int32_t> compute_domain(
 /// @brief Represents integral data, containing the kernel, and a list
 /// of entities to integrate over and the indicies of the coefficient
 /// functions (relative to the Form) active for this integral.
-template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
 struct integral_data
 {
   /// @brief Create a structure to hold integral data.
@@ -170,8 +170,7 @@ struct integral_data
 /// @tparam U Float (real) type used for the finite element and
 /// geometry.
 /// @tparam Kern Element kernel.
-template <dolfinx::scalar T,
-          std::floating_point U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_t<T>>
 class Form
 {
 public:

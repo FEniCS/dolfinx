@@ -65,7 +65,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 template <dolfinx::scalar T>
 void assemble_cells(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_type_t<T>,
+    md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
     std::span<const std::int32_t> cells,
@@ -91,7 +91,7 @@ void assemble_cells(
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
   std::span<T> _Ae(Ae);
-  std::vector<scalar_value_type_t<T>> cdofs(3 * x_dofmap.extent(1));
+  std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
 
   // Iterate over active cells
   assert(cells0.size() == cells.size());
@@ -196,7 +196,7 @@ void assemble_cells(
 template <dolfinx::scalar T>
 void assemble_exterior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_type_t<T>,
+    md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
     md::mdspan<const std::int32_t,
@@ -225,7 +225,7 @@ void assemble_exterior_facets(
   const auto [dmap1, bs1, facets1] = dofmap1;
 
   // Data structures used in assembly
-  std::vector<scalar_value_type_t<T>> cdofs(3 * x_dofmap.extent(1));
+  std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
   const int num_dofs0 = dmap0.extent(1);
   const int num_dofs1 = dmap1.extent(1);
   const int ndim0 = bs0 * num_dofs0;
@@ -336,7 +336,7 @@ void assemble_exterior_facets(
 template <dolfinx::scalar T>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_type_t<T>,
+    md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
     md::mdspan<const std::int32_t,
@@ -367,7 +367,7 @@ void assemble_interior_facets(
   const auto [dmap1, bs1, facets1] = dofmap1;
 
   // Data structures used in assembly
-  using X = scalar_value_type_t<T>;
+  using X = scalar_value_t<T>;
   std::vector<X> cdofs(2 * x_dofmap.extent(1) * 3);
   std::span<X> cdofs0(cdofs.data(), x_dofmap.extent(1) * 3);
   std::span<X> cdofs1(cdofs.data() + x_dofmap.extent(1) * 3,
@@ -514,7 +514,7 @@ void assemble_interior_facets(
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     la::MatSet<T> auto mat_set, const Form<T, U>& a,
-    md::mdspan<const scalar_value_type_t<T>,
+    md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
     std::span<const T> constants,

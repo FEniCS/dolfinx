@@ -35,5 +35,5 @@ struct scalar_value<T, std::void_t<typename T::value_type>>
 };
 /// @private Convenience typedef
 template <scalar T>
-using scalar_value_type_t = typename scalar_value<T>::type;
+using scalar_value_t = typename scalar_value<T>::type;
 } // namespace dolfinx
