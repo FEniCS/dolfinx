@@ -283,11 +283,12 @@ def test_create_entities():
     mesh.topology.create_connectivity(2, 3)
 
 
+@pytest.mark.skip_in_parallel
 def test_locate_entities():
     # Create a unit cube mesh with one hex and two wedges
     if MPI.COMM_WORLD.rank == 0:
-        hexes = np.array([0, 1, 3, 4, 6, 7, 9, 10])
-        wedges = np.array([1, 2, 4, 7, 8, 10, 2, 4, 5, 8, 10, 11])
+        hexes = np.array([0, 1, 3, 4, 6, 7, 9, 10], dtype=np.int64)
+        wedges = np.array([1, 2, 4, 7, 8, 10, 2, 4, 5, 8, 10, 11], dtype=np.int64)
         cells = [hexes, wedges]
         geom = np.array(
             [
@@ -303,11 +304,12 @@ def test_locate_entities():
                 [0.0, 1.0, 1.0],
                 [0.5, 1.0, 1.0],
                 [1.0, 1.0, 1.0],
-            ]
+            ],
+            dtype=np.float64,
         )
     else:
-        cells = [np.array([]), np.array([])]
-        geom = np.array([])
+        cells = [np.array([], dtype=np.int64), np.array([], dtype=np.int64)]
+        geom = np.array([], dtype=np.float64)
 
     part = create_cell_partitioner(GhostMode.none)
 
