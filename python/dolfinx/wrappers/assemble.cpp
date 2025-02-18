@@ -274,7 +274,7 @@ void declare_assembly_functions(nb::module_& m)
         {
           dolfinx::fem::tabulate_expression<T>(
               std::span<T>(values.data(), values.size()), e,
-              std::span(coeffs.data(), coeffs.size()), coeffs.shape(1),
+              md::mdspan(coeffs.data(), coeffs.shape(0), coeffs.shape(1)),
               std::span(constants.data(), constants.size()), mesh,
               md::mdspan(entities.data(), entities.size()), element);
         }
@@ -283,7 +283,7 @@ void declare_assembly_functions(nb::module_& m)
           assert(entities.shape(1) == 2);
           dolfinx::fem::tabulate_expression<T>(
               std::span<T>(values.data(), values.size()), e,
-              std::span(coeffs.data(), coeffs.size()), coeffs.shape(1),
+              md::mdspan(coeffs.data(), coeffs.shape(0), coeffs.shape(1)),
               std::span(constants.data(), constants.size()), mesh,
               md::mdspan<const std::int32_t,
                          md::extents<std::size_t, md::dynamic_extent, 2>>(

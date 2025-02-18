@@ -52,9 +52,6 @@ class FunctionSpace;
 /// @param[in] e Expression to evaluate.
 /// @param[in] coeffs Packed coefficients for the Expressions. Typically
 /// computed using fem::pack_coefficients.
-/// @param[in] cstride Offset in `coeffs` for each mesh entity, e.g.
-/// `coeffs.data() + i * cstride` is the pointer to the coefficient data
-/// for the ith entity in `entities`.
 /// @param[in] constants Packed constant data. Typically computed using
 /// fem::pack_constants.
 /// @param[in] entities Mesh entities to evaluate the expression over.
@@ -66,7 +63,9 @@ class FunctionSpace;
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, const fem::Expression<T, U>& e,
-    std::span<const T> coeffs, std::size_t cstride,
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+        coeffs,
     std::span<const T> constants, const mesh::Mesh<U>& mesh,
     fem::MDSpan2 auto entities,
     std::optional<
@@ -75,7 +74,7 @@ void tabulate_expression(
 {
   auto [X, Xshape] = e.X();
   impl::tabulate_expression(values, e.kernel(), Xshape, e.value_size(), coeffs,
-                            cstride, constants, mesh, entities, element);
+                            constants, mesh, entities, element);
 }
 
 /// @brief Evaluate an Expression on cells or facets.
@@ -141,7 +140,7 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
   else
   {
     tabulate_expression<T, U>(
-        values, e, md::mdspan(coeffs.data(), entities.size(), cstride), cstride,
+        values, e, md::mdspan(coeffs.data(), entities.size(), cstride),
         std::span<const T>(constants), mesh,
         md::mdspan<const std::int32_t,
                    md::extents<std::size_t, md::dynamic_extent, 2>>(

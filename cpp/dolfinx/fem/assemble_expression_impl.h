@@ -64,7 +64,10 @@ void tabulate_expression(
         const std::int32_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         x_dofmap,
-    std::span<const scalar_value_type_t<T>> x, auto coeffs,
+    std::span<const scalar_value_type_t<T>> x,
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+        coeffs,
     std::span<const T> constants, fem::MDSpan2 auto entities,
     std::span<const std::uint32_t> cell_info,
     fem::DofTransformKernel<T> auto P0)
@@ -131,7 +134,7 @@ void tabulate_expression(
 /// point, e.g. 1 for a scalar field and 3 for a vector field in 3D.
 /// @param[in] coeffs Coefficient data that appears in the expression.
 /// Usually packed using fem::pack_coefficients.
-/// @param[in] constant_data Constant (coefficient) data that appears in
+/// @param[in] constants Constant (coefficient) data that appears in
 /// expression. Usually packed using fem::pack_constants.
 /// @param[in] mesh Mesh to execute the expression kernel on.
 /// @param[in] entities Mesh entities to evaluate the expression over.
@@ -142,8 +145,11 @@ void tabulate_expression(
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, fem::FEkernel<T> auto fn,
-    std::array<std::size_t, 2> Xshape, std::size_t value_size, auto coeffs,
-    std::span<const T> constant_data, const mesh::Mesh<U>& mesh,
+    std::array<std::size_t, 2> Xshape, std::size_t value_size,
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+        coeffs,
+    std::span<const T> constants, const mesh::Mesh<U>& mesh,
     fem::MDSpan2 auto entities,
     std::optional<
         std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
@@ -178,7 +184,7 @@ void tabulate_expression(
 
   tabulate_expression<T, U>(values, fn, Xshape, value_size, num_argument_dofs,
                             mesh.geometry().dofmap(), mesh.geometry().x(),
-                            coeffs, constant_data, entities, cell_info,
+                            coeffs, constants, entities, cell_info,
                             post_dof_transform);
 }
 } // namespace dolfinx::fem::impl
