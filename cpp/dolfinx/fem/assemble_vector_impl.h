@@ -10,7 +10,6 @@
 #include "DirichletBC.h"
 #include "DofMap.h"
 #include "Form.h"
-#include "FunctionSpace.h"
 #include "traits.h"
 #include "utils.h"
 #include <algorithm>
@@ -1085,8 +1084,7 @@ void apply_lifting(
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
     const std::vector<
-        std::vector<std::reference_wrapper<const fem::DirichletBC<T, U>>>>&
-        bcs1,
+        std::vector<std::reference_wrapper<const DirichletBC<T, U>>>>& bcs1,
     const std::vector<std::span<const T>>& x0, T alpha)
 {
   if (!x0.empty() and x0.size() != a.size())

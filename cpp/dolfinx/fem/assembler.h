@@ -56,8 +56,11 @@ class FunctionSpace;
 /// for the ith entity in `entities`.
 /// @param[in] constants Packed constant data. Typically computed using
 /// fem::pack_constants.
+/// @param[in] entities Mesh entities to evaluate the expression over.
+/// For cells it is a list of cell indices. For facets is is a list of
+/// (cell index, local facet index) index pairs, i.e. `entities=[cell0,
+/// facet_local0, cell1, facet_local1, ...]`.
 /// @param[in] mesh Mesh that the Expression is evaluated on.
-/// @param[in] entities Mesh entities to evaluate the Expression for.
 /// @param[in] V Function space for Argument.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
@@ -81,7 +84,10 @@ void tabulate_expression(
 /// flattened per entity.
 /// @param[in] e Expression to evaluate.
 /// @param[in] mesh Mesh to compute `e` on.
-/// @param[in] entities Mesh entities to evaluate `e` on.
+/// @param[in] entities Mesh entities to evaluate the expression over.
+/// For cells it is a list of cell indices. For facets is is a list of
+/// (cell index, local facet index) index pairs, i.e. `entities=[cell0,
+/// facet_local0, cell1, facet_local1, ...]`.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
                          const mesh::Mesh<U>& mesh,

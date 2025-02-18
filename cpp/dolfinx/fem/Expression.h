@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Jack S. Hale and Michal Habera.
+// Copyright (C) 2020-2025 Jack S. Hale, Michal Habera and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -29,10 +29,10 @@ class Function;
 ///
 /// An Expression can be evaluated using ::tabulate_expression.
 ///
-/// An example of Expression use is to evaluate a gradient of a Function
-/// at quadrature points in cells. This evaluated gradient can then be
-/// used as input in to a non-FEniCS function that calculates a material
-/// constitutive model.
+/// An example of Expression use is to evaluate the gradient of a
+/// Function at quadrature points in cells. The evaluated gradient can
+/// then be used as input in to a non-FEniCS function that evaluates a
+/// material constitutive model.
 ///
 /// @tparam T The scalar type.
 /// @tparam U The mesh geometry scalar type.
@@ -53,7 +53,7 @@ public:
   /// @brief Create an Expression.
   ///
   /// @note Users should prefer the fem::create_expression factory
-  /// functions.
+  /// functions for creating an Expression.
   ///
   /// @param[in] coefficients Coefficients in the Expression.
   /// @param[in] constants Constants in the Expression.
@@ -97,7 +97,7 @@ public:
   /// Destructor
   virtual ~Expression() = default;
 
-  /// @brief Aargument function space.
+  /// @brief Argument function space.
   /// @return Argument function space, nullptr if there is no argument.
   std::shared_ptr<const FunctionSpace<geometry_type>> argument_space() const
   {
@@ -113,12 +113,9 @@ public:
     return _coefficients;
   }
 
-  /// @brief Get constants.
+  /// @brief Expression constants.
   ///
-  /// @return Vector of attached constants with their names. Names are
-  /// used to set constants in user's c++ code. Index in the vector is
-  /// the position of the constant in the original (non-simplified)
-  /// form.
+  /// @return List of attached constants.
   const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
   constants() const
   {
@@ -127,7 +124,7 @@ public:
 
   /// @brief Offset for each coefficient expansion array on a cell.
   ///
-  /// Used to pack data for multiple coefficients in a flat array. The
+  /// Used to pack data for multiple coefficients into a flat array. The
   /// last entry is the size required to store all coefficients.
   /// @return The offsets.
   std::vector<int> coefficient_offsets() const
@@ -150,7 +147,7 @@ public:
     return _fn;
   }
 
-  /// @brief Value size of Expression result.
+  /// @brief Value size of the Expression result.
   int value_size() const
   {
     return std::reduce(_value_shape.begin(), _value_shape.end(), 1,
@@ -160,7 +157,7 @@ public:
   /// @brief Value shape of of Expression result (at a point),
   const std::vector<std::size_t>& value_shape() const { return _value_shape; }
 
-  /// @brief Evaluation points on the reference cell.
+  /// @brief Evaluation point coordinates on the reference cell.
   std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>> X() const
   {
     return _x_ref;
