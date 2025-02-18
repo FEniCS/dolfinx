@@ -207,14 +207,19 @@ class Expression:
                 cells, it is a list of cell indices. For facets, it is a
                 2D array of (cell index, local facet index).
             values: Array to fill with evaluated values. If ``None``,
-                storage will be allocated. Otherwise must have shape
-                ``(num_entities, num_points * value_size *
-                num_all_argument_dofs)``
+                storage will be allocated. Otherwise it must have shape
+                ``(entities.shape[0], num_points, *value_shape)`` if
+                there is not argument function and shape
+                ``(entities.shape[0], num_points, *value_shape,
+                argument_space_dim)`` if the Expression does have an
+                argument function.
 
         Returns:
-            Expression evaluated at points for `entities`. Shape is
-            ``(num_entities, num_points, *value_shape,
-            argument_space_dim)``.
+            Expression evaluated at points for ``entities``. Shape is
+            ``(entities.shape[0], num_points, *value_shape)`` if there
+            is no argument function, or shape is ``(entities.shape[0],
+            num_points, *value_shape, argument_space_dim)`` if the
+            Expression does have an argument function.
         """
         _entities = np.asarray(entities, dtype=np.int32)
         if (tdim := mesh.topology.dim) != (expr_dim := self._cpp_object.X().shape[1]):
