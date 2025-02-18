@@ -68,12 +68,11 @@ void tabulate_expression(
         x_dofmap,
     std::span<const scalar_value_type_t<T>> x, std::span<const T> coeffs,
     std::size_t cstride, std::span<const T> constants,
-    std::span<const std::int32_t> entities,
-    std::span<const std::uint32_t> cell_info,
+    fem::MDSpan2 auto entities, std::span<const std::uint32_t> cell_info,
     fem::DofTransformKernel<T> auto P0)
 {
   namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-  static_assert(estride == 1 or estride == 2, "estride must be 1 or 2.");
+  static_assert(entities.rank() == 1 or entities.rank() == 2);
 
   // Create data structures used in evaluation
   std::vector<U> coord_dofs(3 * x_dofmap.extent(1));
@@ -82,26 +81,32 @@ void tabulate_expression(
   int size0 = Xshape[0] * value_size;
   std::vector<T> values_local(size0 * num_argument_dofs, 0);
   std::size_t offset = values_local.size();
-  for (std::size_t e = 0; e < entities.size() / estride; ++e)
+  for (std::size_t e = 0; e < entities.extent(0); ++e)
   {
-    std::int32_t entity = entities[e * estride];
-    auto x_dofs = md::submdspan(x_dofmap, entity, md::full_extent);
-    for (std::size_t i = 0; i < x_dofs.size(); ++i)
-    {
-      std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
-                  std::next(coord_dofs.begin(), 3 * i));
-    }
-
     std::ranges::fill(values_local, 0);
-    if constexpr (estride == 1)
+    if constexpr (entities.rank() == 1)
     {
+      std::int32_t entity = entities(e);
+      auto x_dofs = md::submdspan(x_dofmap, entity, md::full_extent);
+      for (std::size_t i = 0; i < x_dofs.size(); ++i)
+      {
+        std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
+                    std::next(coord_dofs.begin(), 3 * i));
+      }
       fn(values_local.data(), coeffs.data() + e * cstride, constants.data(),
          coord_dofs.data(), nullptr, nullptr);
     }
     else
     {
+      std::int32_t entity = entities(e, 0);
+      auto x_dofs = md::submdspan(x_dofmap, entity, md::full_extent);
+      for (std::size_t i = 0; i < x_dofs.size(); ++i)
+      {
+        std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
+                    std::next(coord_dofs.begin(), 3 * i));
+      }
       fn(values_local.data(), coeffs.data() + e * cstride, constants.data(),
-         coord_dofs.data(), entities.data() + 2 * e + 1, nullptr);
+         coord_dofs.data(), &entities(e, 1), nullptr);
     }
 
     P0(values_local, cell_info, e, size0);
@@ -149,6 +154,8 @@ void tabulate_expression(
         std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
         element)
 {
+  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
   std::shared_ptr<const mesh::Topology> topology = mesh.topology();
 
   assert(topology);
@@ -188,14 +195,19 @@ void tabulate_expression(
     tabulate_expression<1, T, U>(
         values, fn, Xshape, value_size, num_argument_dofs,
         mesh.geometry().dofmap(), mesh.geometry().x(), coeffs, cstride,
-        constant_data, entities, cell_info, post_dof_transform);
+        constant_data, md::mdspan(entities.data(), entities.size()), cell_info,
+        post_dof_transform);
   }
   else // facets
   {
     tabulate_expression<2, T, U>(
         values, fn, Xshape, value_size, num_argument_dofs,
         mesh.geometry().dofmap(), mesh.geometry().x(), coeffs, cstride,
-        constant_data, entities, cell_info, post_dof_transform);
+        constant_data,
+        md::mdspan<const std::int32_t,
+                   md::extents<std::size_t, md::dynamic_extent, 2>>(
+            entities.data(), entities.size() / 2, 2),
+        cell_info, post_dof_transform);
   }
 }
 } // namespace dolfinx::fem::impl
