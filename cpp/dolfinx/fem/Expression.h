@@ -63,7 +63,10 @@ public:
   /// @param[in] fn Function for tabulating the Expression.
   /// @param[in] value_shape Shape of Expression evaluated at single
   /// point.
-  /// @param[in] argument_space Function space for Argument.
+  /// @param[in] argument_space Function space for Argument. Used to
+  /// computed a 1-form expression, e.g. can be used to create a matrix
+  /// that when applied to a degree-of-freedom vector gives the
+  /// expression values at the evaluation points.
   Expression(
       const std::vector<std::shared_ptr<
           const Function<scalar_type, geometry_type>>>& coefficients,
