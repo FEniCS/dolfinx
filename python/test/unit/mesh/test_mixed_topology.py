@@ -1,3 +1,9 @@
+# Copyright (C) 2025 Joseph P. Dean and Chris Richardson
+#
+# This file is part of DOLFINx (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
+
 # TODO Clean up these tests
 
 from mpi4py import MPI
