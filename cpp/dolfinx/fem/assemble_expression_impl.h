@@ -45,7 +45,7 @@ namespace dolfinx::fem::impl
 /// @param[in] x Geometry coordinate of the mesh.
 /// @param[in] coeffs Coefficient data that appears in the expression.
 /// Usually packed using fem::pack_coefficients.
-/// @param[in] cstride Coefficient stride. Coefficient data for teh ith
+/// @param[in] cstride Coefficient stride. Coefficient data for the ith
 /// entity starts at `coeffs.data() + i*cstride`.
 /// @param[in] constants Constant (coefficient) data that appears in
 /// expression. Usually packed using em::pack_constants.
