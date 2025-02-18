@@ -16,6 +16,8 @@
 #include <dolfinx/mesh/generation.h>
 
 using namespace dolfinx;
+namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
 namespace
 {
 void test_form_cmap_compat(auto V)
@@ -37,7 +39,8 @@ void test_expression_cmap_compat(auto V)
                                                 {{"u1", u}}, {});
   auto [Xc, Xshape] = expr1.X();
   std::vector<double> grad_e(3 * Xshape[0] * cells.size());
-  fem::tabulate_expression(std::span(grad_e), expr1, *mesh, cells);
+  fem::tabulate_expression(std::span(grad_e), expr1, *mesh,
+                           md::mdspan(cells.data(), cells.size()));
 
   // Create Expression that expects P2 geometry. Should throw because
   // mesh is P1.
