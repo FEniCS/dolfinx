@@ -7,6 +7,7 @@
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/pycoeff.h"
 #include <array>
+#include <basix/mdspan.hpp>
 #include <complex>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -254,6 +255,8 @@ void declare_assembly_functions(nb::module_& m)
          const dolfinx::mesh::Mesh<U>& mesh,
          nb::ndarray<const std::int32_t, nb::c_contig> entities)
       {
+        namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
         std::optional<std::pair<
             std::reference_wrapper<const dolfinx::fem::FiniteElement<U>>,
             std::size_t>>
@@ -267,11 +270,31 @@ void declare_assembly_functions(nb::module_& m)
           element = {std::cref(*V->element()), num_argument_dofs};
         }
 
-        dolfinx::fem::tabulate_expression<T>(
-            std::span<T>(values.data(), values.size()), e,
-            std::span(coeffs.data(), coeffs.size()), coeffs.shape(1),
-            std::span(constants.data(), constants.size()), mesh,
-            std::span(entities.data(), entities.size()), element);
+        if (entities.ndim() == 1)
+        {
+          dolfinx::fem::tabulate_expression<T>(
+              std::span<T>(values.data(), values.size()), e,
+              std::span(coeffs.data(), coeffs.size()), coeffs.shape(1),
+              std::span(constants.data(), constants.size()), mesh,
+              md::mdspan(entities.data(), entities.size()), element);
+        }
+        else if (entities.ndim() == 2)
+        {
+          assert(entities.shape(1) == 2);
+          dolfinx::fem::tabulate_expression<T>(
+              std::span<T>(values.data(), values.size()), e,
+              std::span(coeffs.data(), coeffs.size()), coeffs.shape(1),
+              std::span(constants.data(), constants.size()), mesh,
+              md::mdspan<const std::int32_t,
+                         md::extents<std::size_t, md::dynamic_extent, 2>>(
+                  entities.data(), entities.shape(0), entities.shape(1)),
+              element);
+        }
+        else
+        {
+          throw std::runtime_error(
+              "Unsupported entities rank in tabulate_expression wrapper.");
+        }
       },
       nb::arg("values"), nb::arg("expression"), nb::arg("constants"),
       nb::arg("coefficients"), nb::arg("mesh"), nb::arg("entities"),

@@ -11,6 +11,7 @@
 #include "traits.h"
 #include "utils.h"
 #include <algorithm>
+#include <basix/mdspan.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -24,7 +25,6 @@ namespace dolfinx::fem::impl
 ///
 /// Executes an Expression kernel over a list of mesh entities.
 ///
-/// @tparam estride 1 for cell expressions, 2 for facets.
 /// @tparam T Scalar type of expression.
 /// @tparam U Geometry type.
 /// @param[in,out] values Array in which the tabulated expressions are
@@ -57,7 +57,7 @@ namespace dolfinx::fem::impl
 /// @param[in] P0 Degree-of-freedom transformation function. Applied when
 /// expressions includes an argument function that requires a
 /// transformation.
-template <std::size_t estride, dolfinx::scalar T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, fem::FEkernel<T> auto fn,
     std::array<std::size_t, 2> Xshape, std::size_t value_size,
@@ -149,23 +149,12 @@ void tabulate_expression(
     std::array<std::size_t, 2> Xshape, std::size_t value_size,
     std::span<const T> coeffs, std::size_t cstride,
     std::span<const T> constant_data, const mesh::Mesh<U>& mesh,
-    std::span<const std::int32_t> entities,
+    fem::MDSpan2 auto entities,
     std::optional<
         std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
         element)
 {
   namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
-  std::shared_ptr<const mesh::Topology> topology = mesh.topology();
-
-  assert(topology);
-  std::size_t estride;
-  if (std::size_t(topology->dim()) == Xshape[1])
-    estride = 1;
-  else if (std::size_t(topology->dim()) == Xshape[1] + 1)
-    estride = 2;
-  else
-    throw std::runtime_error("Invalid dimension of evaluation points.");
 
   std::function<void(std::span<T>, std::span<const std::uint32_t>, std::int32_t,
                      int)>
@@ -175,6 +164,8 @@ void tabulate_expression(
     // Do nothing
   };
 
+  std::shared_ptr<const mesh::Topology> topology = mesh.topology();
+  assert(topology);
   std::size_t num_argument_dofs = 1;
   std::span<const std::uint32_t> cell_info;
   if (element)
@@ -190,24 +181,9 @@ void tabulate_expression(
     }
   }
 
-  if (estride == 1) // cells
-  {
-    tabulate_expression<1, T, U>(
-        values, fn, Xshape, value_size, num_argument_dofs,
-        mesh.geometry().dofmap(), mesh.geometry().x(), coeffs, cstride,
-        constant_data, md::mdspan(entities.data(), entities.size()), cell_info,
-        post_dof_transform);
-  }
-  else // facets
-  {
-    tabulate_expression<2, T, U>(
-        values, fn, Xshape, value_size, num_argument_dofs,
-        mesh.geometry().dofmap(), mesh.geometry().x(), coeffs, cstride,
-        constant_data,
-        md::mdspan<const std::int32_t,
-                   md::extents<std::size_t, md::dynamic_extent, 2>>(
-            entities.data(), entities.size() / 2, 2),
-        cell_info, post_dof_transform);
-  }
+  tabulate_expression<T, U>(values, fn, Xshape, value_size, num_argument_dofs,
+                            mesh.geometry().dofmap(), mesh.geometry().x(),
+                            coeffs, cstride, constant_data, entities, cell_info,
+                            post_dof_transform);
 }
 } // namespace dolfinx::fem::impl

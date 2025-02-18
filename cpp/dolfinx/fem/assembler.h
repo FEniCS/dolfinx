@@ -16,6 +16,7 @@
 #include "traits.h"
 #include "utils.h"
 #include <algorithm>
+#include <basix/mdspan.hpp>
 #include <cstdint>
 #include <dolfinx/common/types.h>
 #include <memory>
@@ -67,7 +68,7 @@ void tabulate_expression(
     std::span<T> values, const fem::Expression<T, U>& e,
     std::span<const T> coeffs, std::size_t cstride,
     std::span<const T> constants, const mesh::Mesh<U>& mesh,
-    std::span<const std::int32_t> entities,
+    fem::MDSpan2 auto entities,
     std::optional<
         std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
         element)
@@ -95,6 +96,8 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
                          const mesh::Mesh<U>& mesh,
                          std::span<const std::int32_t> entities)
 {
+  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
   auto [X, Xshape] = e.X();
   std::size_t estride;
   if (mesh.topology()->dim() == Xshape[1])
@@ -127,9 +130,24 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
     fem::pack_coefficients(c, coffsets, entities, estride, std::span(coeffs));
   }
   std::vector<T> constants = fem::pack_constants(e);
-  tabulate_expression<T, U>(values, e, std::span<const T>(coeffs), cstride,
-                            std::span<const T>(constants), mesh, entities,
-                            element);
+
+  if (mesh.topology()->dim() == Xshape[1])
+  {
+    tabulate_expression<T, U>(values, e, std::span<const T>(coeffs), cstride,
+                              std::span<const T>(constants), mesh,
+                              md::mdspan(entities.data(), entities.size()),
+                              element);
+  }
+  else
+  {
+    tabulate_expression<T, U>(
+        values, e, std::span<const T>(coeffs), cstride,
+        std::span<const T>(constants), mesh,
+        md::mdspan<const std::int32_t,
+                   md::extents<std::size_t, md::dynamic_extent, 2>>(
+            entities.data(), entities.size() / 2, 2),
+        element);
+  }
 }
 
 // -- Helper functions -----------------------------------------------------
