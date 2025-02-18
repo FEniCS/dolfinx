@@ -43,14 +43,17 @@ namespace dolfinx::fem::impl
 /// gives the expression values at the evaluation points.
 /// @param[in] x_dofmap Geometry degree-of-freedom map.
 /// @param[in] x Geometry coordinate of the mesh.
-/// @param[in] coeffs Coefficient data that appears in the expression.
-/// Usually packed using fem::pack_coefficients.
+/// @param[in] coeffs Coefficient data that appears in the Expression.
+/// Shape is `(num_cells, coeff data per cell)`. Usually packed using
+/// fem::pack_coefficients.
 /// @param[in] constants Constant (coefficient) data that appears in
 /// expression. Usually packed using fem::pack_constants.
 /// @param[in] entities Mesh entities to evaluate the expression over.
-/// When `estride==1` this is a list of cells. When `estride==2`, is
-/// hold (cell, local facet) index pairs, i.e. `entities=[cell0,
-/// facet_local0, cell1, facet_local1, ...]`.
+/// For expressions executed on cells, rank is 1 and size is the number
+/// of cells. For expressions executed on facets rank is 2, and shape is
+/// `(num_facets, 2)`, where `entities[i, 0]` is the cell index and
+/// `entities[i, 1]` is the local index of the facet relative to the
+/// cell.
 /// @param[in] cell_info Cell orientation data for use in `P0`.
 /// @param[in] P0 Degree-of-freedom transformation function. Applied when
 /// expressions includes an argument function that requires a
@@ -132,12 +135,18 @@ void tabulate_expression(
 /// points array at which the expression is evaluated by the kernel.
 /// @param[in] value_size Value size of the evaluated expression at a
 /// point, e.g. 1 for a scalar field and 3 for a vector field in 3D.
-/// @param[in] coeffs Coefficient data that appears in the expression.
-/// Usually packed using fem::pack_coefficients.
+/// @param[in] coeffs Coefficient data that appears in the Expression.
+/// Shape is `(num_cells, coeff data per cell)`. Usually packed using
+/// fem::pack_coefficients.
 /// @param[in] constants Constant (coefficient) data that appears in
 /// expression. Usually packed using fem::pack_constants.
 /// @param[in] mesh Mesh to execute the expression kernel on.
 /// @param[in] entities Mesh entities to evaluate the expression over.
+/// For expressions executed on cells, rank is 1 and size is the number
+/// of cells. For expressions executed on facets rank is 2, and shape is
+/// `(num_facets, 2)`, where `entities[i, 0]` is the cell index and
+/// `entities[i, 1]` is the local index of the facet relative to the
+/// cell.
 /// @param[in] element Argument element and argument space dimension.
 /// Used to computed a 1-form expression, e.g. can be used to create a
 /// matrix that when applied to a degree-of-freedom vector gives the

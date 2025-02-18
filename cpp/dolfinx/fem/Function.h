@@ -12,6 +12,7 @@
 #include "assembler.h"
 #include "interpolate.h"
 #include <algorithm>
+#include <basix/mdspan.hpp>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
@@ -316,6 +317,8 @@ public:
                    std::span<const std::int32_t> cells0,
                    std::span<const std::int32_t> cells1 = {})
   {
+    namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
     // Extract mesh
     const mesh::Mesh<geometry_type>* mesh0 = nullptr;
     for (auto& c : e0.coefficients())
@@ -392,7 +395,8 @@ public:
         f(fdata.data(), num_cells, num_points, value_size);
 
     // Evaluate Expression at points
-    tabulate_expression(std::span(fdata), e0, *mesh0, cells0);
+    tabulate_expression(std::span(fdata), e0, *mesh0,
+                        md::mdspan(cells0.data(), cells0.size()));
 
     // Reshape evaluated data to fit interpolate.
     // Expression returns matrix of shape (num_cells, num_points *

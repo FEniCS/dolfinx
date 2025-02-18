@@ -78,6 +78,7 @@ void tabulate_expression(
 }
 
 /// @brief Evaluate an Expression on cells or facets.
+///
 /// @tparam T Scalar type.
 /// @tparam U Geometry type
 /// @param[in,out] values Array to fill with computed values. Row major
@@ -87,24 +88,16 @@ void tabulate_expression(
 /// @param[in] e Expression to evaluate.
 /// @param[in] mesh Mesh to compute `e` on.
 /// @param[in] entities Mesh entities to evaluate the expression over.
-/// For cells it is a list of cell indices. For facets is is a list of
-/// (cell index, local facet index) index pairs, i.e. `entities=[cell0,
-/// facet_local0, cell1, facet_local1, ...]`.
+/// For expressions executed on cells, rank is 1 and size is the number
+/// of cells. For expressions executed on facets rank is 2, and shape is
+/// `(num_facets, 2)`, where `entities[i, 0]` is the cell index and
+/// `entities[i, 1]` is the local index of the facet relative to the
+/// cell.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
-                         const mesh::Mesh<U>& mesh,
-                         std::span<const std::int32_t> entities)
+                         const mesh::Mesh<U>& mesh, fem::MDSpan2 auto entities)
 {
   namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
-  auto [X, Xshape] = e.X();
-  std::size_t estride;
-  if (mesh.topology()->dim() == Xshape[1])
-    estride = 1;
-  else if (mesh.topology()->dim() == Xshape[1] + 1)
-    estride = 2;
-  else
-    throw std::runtime_error("Invalid dimension of evaluation points.");
 
   std::optional<
       std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
@@ -120,33 +113,19 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
   std::vector<int> coffsets = e.coefficient_offsets();
   const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
       = e.coefficients();
-  std::vector<T> coeffs((entities.size() / estride) * coffsets.back());
+  std::vector<T> coeffs(entities.extent(0) * coffsets.back());
   int cstride = coffsets.back();
   {
     std::vector<std::reference_wrapper<const Function<T, U>>> c;
     std::ranges::transform(coefficients, std::back_inserter(c),
                            [](auto c) -> const Function<T, U>& { return *c; });
-    fem::pack_coefficients(c, coffsets, entities, estride, std::span(coeffs));
+    fem::pack_coefficients(c, coffsets, entities, std::span(coeffs));
   }
   std::vector<T> constants = fem::pack_constants(e);
 
-  if (mesh.topology()->dim() == Xshape[1])
-  {
-    tabulate_expression<T, U>(
-        values, e, md::mdspan(coeffs.data(), entities.size(), cstride),
-        std::span<const T>(constants), mesh,
-        md::mdspan(entities.data(), entities.size()), element);
-  }
-  else
-  {
-    tabulate_expression<T, U>(
-        values, e, md::mdspan(coeffs.data(), entities.size(), cstride),
-        std::span<const T>(constants), mesh,
-        md::mdspan<const std::int32_t,
-                   md::extents<std::size_t, md::dynamic_extent, 2>>(
-            entities.data(), entities.size() / 2, 2),
-        element);
-  }
+  tabulate_expression<T, U>(
+      values, e, md::mdspan(coeffs.data(), entities.size(), cstride),
+      std::span<const T>(constants), mesh, entities, element);
 }
 
 // -- Helper functions -----------------------------------------------------

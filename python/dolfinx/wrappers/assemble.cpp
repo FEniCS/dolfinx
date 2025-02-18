@@ -213,6 +213,8 @@ void declare_assembly_functions(nb::module_& m)
       [](const dolfinx::fem::Expression<T, U>& e,
          nb::ndarray<const std::int32_t, nb::c_contig> entities)
       {
+        namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
         std::vector<int> coffsets = e.coefficient_offsets();
         const std::vector<std::shared_ptr<const dolfinx::fem::Function<T, U>>>&
             coefficients
@@ -224,10 +226,22 @@ void declare_assembly_functions(nb::module_& m)
         std::ranges::transform(coefficients, std::back_inserter(c),
                                [](auto c) -> const dolfinx::fem::Function<T, U>&
                                { return *c; });
-        dolfinx::fem::pack_coefficients(
-            c, coffsets, std::span(entities.data(), entities.size()),
-            entities.ndim(), std::span(coeffs));
 
+        if (entities.ndim() == 1)
+        {
+          dolfinx::fem::pack_coefficients(
+              c, coffsets, md::mdspan(entities.data(), entities.shape(0)),
+              std::span(coeffs));
+        }
+        else
+        {
+          dolfinx::fem::pack_coefficients(
+              c, coffsets,
+              md::mdspan<const std::int32_t,
+                         md::extents<std::size_t, md::dynamic_extent, 2>>(
+                  entities.data(), entities.shape(0), entities.shape(1)),
+              std::span(coeffs));
+        }
         return dolfinx_wrappers::as_nbarray(std::move(coeffs),
                                             {entities.shape(0), cstride});
       },

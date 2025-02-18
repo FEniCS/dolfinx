@@ -12,7 +12,9 @@
 #include "Form.h"
 #include "Function.h"
 #include "FunctionSpace.h"
+#include "traits.h"
 #include <array>
+#include <basix/mdspan.hpp>
 #include <concepts>
 #include <dolfinx/mesh/Topology.h>
 #include <span>
@@ -387,13 +389,12 @@ void pack_coefficients(const Form<T, U>& form,
 template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficients(
     std::vector<std::reference_wrapper<const Function<T, U>>> coeffs,
-    std::span<const int> offsets, std::span<const std::int32_t> entities,
-    std::size_t estride, std::span<T> c)
+    std::span<const int> offsets, fem::MDSpan2 auto entities, std::span<T> c)
 {
   assert(!offsets.empty());
   const int cstride = offsets.back();
 
-  if (c.size() < (entities.size() / estride) * offsets.back())
+  if (c.size() < entities.extent(0) * offsets.back())
     throw std::runtime_error("Coefficient packing span is too small.");
 
   // Iterate over coefficients
@@ -402,8 +403,9 @@ void pack_coefficients(
     std::span<const std::uint32_t> cell_info
         = impl::get_cell_orientation_info(coeffs[coeff].get());
     impl::pack_coefficient_entity(
-        std::span(c), cstride, coeffs[coeff].get(), cell_info, entities,
-        estride, [](auto entity) { return entity[0]; }, offsets[coeff]);
+        std::span(c), cstride, coeffs[coeff].get(), cell_info,
+        std::span(entities.data_handle(), entities.size()), entities.rank(),
+        [](auto entity) { return entity[0]; }, offsets[coeff]);
   }
 }
 
