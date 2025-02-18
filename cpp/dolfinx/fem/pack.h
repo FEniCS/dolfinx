@@ -383,8 +383,6 @@ void pack_coefficients(const Form<T, U>& form,
 /// @param coeffs Coefficients to pack
 /// @param offsets Offsets
 /// @param entities Entities to pack over
-/// @param estride Stride for each entity in `entities` (1 for cells, 2
-/// for facets).
 /// @param[out] c Packed coefficients.
 template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficients(
