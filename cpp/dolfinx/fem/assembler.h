@@ -61,18 +61,20 @@ class FunctionSpace;
 /// (cell index, local facet index) index pairs, i.e. `entities=[cell0,
 /// facet_local0, cell1, facet_local1, ...]`.
 /// @param[in] mesh Mesh that the Expression is evaluated on.
-/// @param[in] V Function space for Argument.
+/// @param[in] element Argument element and argument space dimension.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, const fem::Expression<T, U>& e,
     std::span<const T> coeffs, std::size_t cstride,
     std::span<const T> constants, const mesh::Mesh<U>& mesh,
     std::span<const std::int32_t> entities,
-    std::optional<std::reference_wrapper<const FunctionSpace<U>>> V)
+    std::optional<
+        std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
+        element)
 {
   auto [X, Xshape] = e.X();
   impl::tabulate_expression(values, e.kernel(), Xshape, e.value_size(), coeffs,
-                            cstride, constants, mesh, entities, V);
+                            cstride, constants, mesh, entities, element);
 }
 
 /// @brief Evaluate an Expression on cells or facets.
@@ -102,6 +104,17 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
   else
     throw std::runtime_error("Invalid dimension of evaluation points.");
 
+  std::optional<
+      std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
+      element = std::nullopt;
+  if (auto V = e.argument_space(); V)
+  {
+    std::size_t num_argument_dofs
+        = V->dofmap()->element_dof_layout().num_dofs() * V->dofmap()->bs();
+    assert(V->element());
+    element = {std::cref(*V->element()), num_argument_dofs};
+  }
+
   std::vector<int> coffsets = e.coefficient_offsets();
   const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
       = e.coefficients();
@@ -116,9 +129,7 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
   std::vector<T> constants = fem::pack_constants(e);
   tabulate_expression<T, U>(values, e, std::span<const T>(coeffs), cstride,
                             std::span<const T>(constants), mesh, entities,
-                            e.argument_space()
-                                ? std::optional(std::ref(*e.argument_space()))
-                                : std::nullopt);
+                            element);
 }
 
 // -- Helper functions -----------------------------------------------------

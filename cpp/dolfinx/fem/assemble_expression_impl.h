@@ -22,7 +22,6 @@ namespace dolfinx::fem::impl
 {
 /// @brief Tabulate an Expression at points.
 
-
 /// @brief Tabulate an Expression at points.
 ///
 /// Executes an Expression kernel over a list of mesh entities.
@@ -137,10 +136,10 @@ void tabulate_expression(
 /// expression. Usually packed using em::pack_constants.
 /// @param[in] mesh Mesh to execute the expression kernel on.
 /// @param[in] entities Mesh entities to evaluate the expression over.
-/// @param[in] V Argument space. Used to computed a 1-form expression,
-/// e.g. can be used to create a matrix that when applied to a
-/// degree-of-freedom vector gives the expression values at the
-/// evaluation points.
+/// @param[in] element Argument element and argument space dimension.
+/// Used to computed a 1-form expression, e.g. can be used to create a
+/// matrix that when applied to a degree-of-freedom vector gives the
+/// expression values at the evaluation points.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, fem::FEkernel<T> auto fn,
@@ -148,7 +147,9 @@ void tabulate_expression(
     std::span<const T> coeffs, std::size_t cstride,
     std::span<const T> constant_data, const mesh::Mesh<U>& mesh,
     std::span<const std::int32_t> entities,
-    std::optional<std::reference_wrapper<const FunctionSpace<U>>> V)
+    std::optional<
+        std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
+        element)
 {
   std::shared_ptr<const mesh::Topology> topology = mesh.topology();
 
@@ -171,18 +172,16 @@ void tabulate_expression(
 
   std::size_t num_argument_dofs = 1;
   std::span<const std::uint32_t> cell_info;
-  if (V)
+  if (element)
   {
-    num_argument_dofs = V->get().dofmap()->element_dof_layout().num_dofs();
-    num_argument_dofs *= V->get().dofmap()->bs();
-    auto element = V->get().element();
-    assert(element);
-    if (element->needs_dof_transformations())
+    num_argument_dofs = element->second;
+    if (element->first.get().needs_dof_transformations())
     {
       mesh.topology_mutable()->create_entity_permutations();
       cell_info = std::span(topology->get_cell_permutation_info());
-      post_dof_transform = element->template dof_transformation_right_fn<T>(
-          doftransform::transpose);
+      post_dof_transform
+          = element->first.get().template dof_transformation_right_fn<T>(
+              doftransform::transpose);
     }
   }
 

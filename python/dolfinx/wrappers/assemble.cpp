@@ -254,13 +254,24 @@ void declare_assembly_functions(nb::module_& m)
          const dolfinx::mesh::Mesh<U>& mesh,
          nb::ndarray<const std::int32_t, nb::c_contig> entities)
       {
+        std::optional<std::pair<
+            std::reference_wrapper<const dolfinx::fem::FiniteElement<U>>,
+            std::size_t>>
+            element = std::nullopt;
+        if (auto V = e.argument_space(); V)
+        {
+          std::size_t num_argument_dofs
+              = V->dofmap()->element_dof_layout().num_dofs()
+                * V->dofmap()->bs();
+          assert(V->element());
+          element = {std::cref(*V->element()), num_argument_dofs};
+        }
+
         dolfinx::fem::tabulate_expression<T>(
             std::span<T>(values.data(), values.size()), e,
             std::span(coeffs.data(), coeffs.size()), coeffs.shape(1),
             std::span(constants.data(), constants.size()), mesh,
-            std::span(entities.data(), entities.size()),
-            e.argument_space() ? std::optional(std::ref(*e.argument_space()))
-                               : std::nullopt);
+            std::span(entities.data(), entities.size()), element);
       },
       nb::arg("values"), nb::arg("expression"), nb::arg("constants"),
       nb::arg("coefficients"), nb::arg("mesh"), nb::arg("entities"),
