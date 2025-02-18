@@ -434,6 +434,29 @@ void declare_mesh(nb::module_& m, std::string type)
       nb::arg("mesh"), nb::arg("dim"), nb::arg("marker"));
 
   m.def(
+      "locate_entities",
+      [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
+         std::function<nb::ndarray<bool, nb::ndim<1>, nb::c_contig>(
+             nb::ndarray<const T, nb::ndim<2>, nb::numpy>)>
+             marker,
+         int entity_type_idx)
+      {
+        auto cpp_marker = [&marker](auto x)
+        {
+          nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
+              x.data_handle(), {x.extent(0), x.extent(1)});
+          auto marked = marker(x_view);
+          return std::vector<std::int8_t>(marked.data(),
+                                          marked.data() + marked.size());
+        };
+
+        return as_nbarray(dolfinx::mesh::locate_entities(mesh, dim, cpp_marker,
+                                                         entity_type_idx));
+      },
+      nb::arg("mesh"), nb::arg("dim"), nb::arg("marker"),
+      nb::arg("entity_type_idx"));
+
+  m.def(
       "locate_entities_boundary",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
          std::function<nb::ndarray<bool, nb::ndim<1>, nb::c_contig>(

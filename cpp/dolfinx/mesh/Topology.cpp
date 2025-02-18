@@ -706,6 +706,35 @@ std::vector<std::int32_t> convert_to_local_indexing(
 
   return data;
 }
+
+/// @brief Determines the types of entities in mesh give an list of
+/// cell types in the mesh.
+/// @param cell_types A list of cell types in the mesh
+/// @return A list whose dth entry is a list of entity types in the mesh of
+/// topological dimension d.
+std::vector<std::vector<CellType>>
+build_entity_types(const std::vector<CellType>& cell_types)
+{
+  const int tdim = cell_dim(cell_types.front());
+  std::vector<std::vector<CellType>> entity_types(tdim + 1);
+
+  // Determine types of entities in the mesh
+  entity_types[0] = {mesh::CellType::point};
+  entity_types[tdim] = cell_types;
+  if (tdim > 1)
+    entity_types[1] = {mesh::CellType::interval};
+  if (tdim > 2)
+  {
+    //  Find all facet types
+    std::set<mesh::CellType> e_types;
+    for (auto c : entity_types[tdim])
+      for (int i = 0; i < cell_num_entities(c, 2); ++i)
+        e_types.insert(cell_facet_type(c, i));
+    entity_types[2] = std::vector(e_types.begin(), e_types.end());
+  }
+  return entity_types;
+}
+
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -717,7 +746,8 @@ Topology::Topology(
     const std::optional<std::vector<std::vector<std::int64_t>>>& original_index)
     : original_cell_index(original_index
                               ? *original_index
-                              : std::vector<std::vector<std::int64_t>>())
+                              : std::vector<std::vector<std::int64_t>>()),
+      _entity_types(build_entity_types(cell_types))
 {
   assert(!cell_types.empty());
   int tdim = cell_dim(cell_types.front());
@@ -725,10 +755,6 @@ Topology::Topology(
   for (auto ct : cell_types)
     assert(cell_dim(ct) == tdim);
 #endif
-
-  _entity_types.resize(tdim + 1);
-  _entity_types[0] = {mesh::CellType::point};
-  _entity_types[tdim] = cell_types;
 
   // Set data
   _index_maps.insert({{0, 0}, vertex_map});
@@ -814,6 +840,12 @@ Topology::connectivity(std::array<int, 2> d0, std::array<int, 2> d1) const
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1) const
 {
+  if (this->entity_types(d0).size() > 1 or this->entity_types(d0).size() > 1)
+  {
+    throw std::runtime_error(
+        "Multiple entity types in mesh. Call connectivity specifying entity "
+        "type");
+  }
   return this->connectivity({d0, 0}, {d1, 0});
 }
 //-----------------------------------------------------------------------------
@@ -865,21 +897,18 @@ bool Topology::create_entities(int dim)
   // connectivity(this->dim(), dim)?
 
   // Skip if already computed (vertices (dim=0) should always exist)
-  if (connectivity(dim, 0))
-    return false;
-
-  int tdim = this->dim();
-  if (dim == 1 and tdim > 1)
-    _entity_types[1] = {mesh::CellType::interval};
-  else if (dim == 2 and tdim > 2)
+  bool entities_created = true;
+  for (int ent_type_idx = 0, num_ent_types = this->entity_types(dim).size();
+       ent_type_idx < num_ent_types; ++ent_type_idx)
   {
-    //  Find all facet types
-    std::set<mesh::CellType> e_types;
-    for (auto c : _entity_types[tdim])
-      for (int i = 0; i < cell_num_entities(c, dim); ++i)
-        e_types.insert(cell_facet_type(c, i));
-    _entity_types[dim] = std::vector(e_types.begin(), e_types.end());
+    if (!connectivity({dim, ent_type_idx}, {0, 0}))
+    {
+      entities_created = false;
+      break;
+    }
   }
+  if (entities_created)
+    return false;
 
   // for (std::size_t index = 0; index < this->entity_types(dim).size();
   // ++index)
