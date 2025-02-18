@@ -90,7 +90,7 @@ def test_rank1_hdiv(dtype):
     vector DG_2 and assembles it into global matrix A. Input space RT_2
     is chosen because it requires dof permutations.
     """
-    mesh = create_unit_square(MPI.COMM_WORLD, 1, 1, dtype=dtype(0).real.dtype)
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=dtype(0).real.dtype)
     gdim = mesh.geometry.dim
     vdP1 = functionspace(mesh, ("DG", 2, (gdim,)))
     RT1 = functionspace(mesh, ("RT", 2))
@@ -105,7 +105,6 @@ def test_rank1_hdiv(dtype):
         for i in range(num_cells):
             rows = dofmap0[i, :]
             cols = dofmap1[i, :]
-            print("test", len(rows), len(cols))
             A_local = array_evaluated[i, :].reshape(len(rows), len(cols))
             for i, row in enumerate(rows):
                 for j, col in enumerate(cols):
@@ -146,9 +145,9 @@ def test_rank1_hdiv(dtype):
     "dtype",
     [
         np.float32,
-        # np.float64,
-        # pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        # pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
 def test_simple_evaluation(dtype):
@@ -170,7 +169,7 @@ def test_simple_evaluation(dtype):
     gradient.
     """
     xtype = dtype(0).real.dtype
-    mesh = create_unit_square(MPI.COMM_WORLD, 2, 1, dtype=xtype)
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=xtype)
     P2 = functionspace(mesh, ("P", 2))
 
     # NOTE: The scaling by a constant factor of 3.0 to get f(x, y) is
@@ -189,9 +188,6 @@ def test_simple_evaluation(dtype):
             for p in range(x.shape[1]):
                 values[cell, p, 0] = 2 * x[cell, p, 0]
                 values[cell, p, 1] = 4 * x[cell, p, 1]
-        # print("p", x[0, 1])
-        # values[:, 0::2] = 2 * x[:, 0::2]
-        # values[:, 1::2] = 4 * x[:, 1::2]
         values *= 3.0
         return values
 
@@ -499,9 +495,9 @@ def test_rank1_blocked():
     (num_cells, num_points, num_dofs, bs) when evaluated as an
     expression."""
     mesh = dolfinx.mesh.create_unit_square(
-        MPI.COMM_SELF, 1, 1, cell_type=dolfinx.mesh.CellType.quadrilateral
+        MPI.COMM_SELF, 3, 4, cell_type=dolfinx.mesh.CellType.quadrilateral
     )
-    value_shape = (2, 3)
+    value_shape = (3, 2)
     vs = np.prod(value_shape)
     V = dolfinx.fem.functionspace(mesh, ("Lagrange", 2, value_shape))
     v = ufl.TestFunction(V)
