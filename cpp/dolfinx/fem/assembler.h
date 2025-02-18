@@ -80,7 +80,7 @@ void tabulate_expression(
 /// @brief Evaluate an Expression on cells or facets.
 /// @tparam T Scalar type.
 /// @tparam U Geometry type
-/// @param[in,out] values Array to fil with computed values. Row major
+/// @param[in,out] values Array to fill with computed values. Row major
 /// storage. Sizing should be `(num_cells, num_points * value_size *
 /// num_all_argument_dofs columns)`. facet index) tuples. Array is
 /// flattened per entity.
