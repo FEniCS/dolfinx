@@ -21,8 +21,6 @@
 namespace dolfinx::fem::impl
 {
 /// @brief Tabulate an Expression at points.
-
-/// @brief Tabulate an Expression at points.
 ///
 /// Executes an Expression kernel over a list of mesh entities.
 ///
