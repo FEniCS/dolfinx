@@ -45,8 +45,6 @@ namespace dolfinx::fem::impl
 /// @param[in] x Geometry coordinate of the mesh.
 /// @param[in] coeffs Coefficient data that appears in the expression.
 /// Usually packed using fem::pack_coefficients.
-/// @param[in] cstride Coefficient stride. Coefficient data for the ith
-/// entity starts at `coeffs.data() + i*cstride`.
 /// @param[in] constants Constant (coefficient) data that appears in
 /// expression. Usually packed using fem::pack_constants.
 /// @param[in] entities Mesh entities to evaluate the expression over.
@@ -66,9 +64,9 @@ void tabulate_expression(
         const std::int32_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         x_dofmap,
-    std::span<const scalar_value_type_t<T>> x, std::span<const T> coeffs,
-    std::size_t cstride, std::span<const T> constants,
-    fem::MDSpan2 auto entities, std::span<const std::uint32_t> cell_info,
+    std::span<const scalar_value_type_t<T>> x, auto coeffs,
+    std::span<const T> constants, fem::MDSpan2 auto entities,
+    std::span<const std::uint32_t> cell_info,
     fem::DofTransformKernel<T> auto P0)
 {
   namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
@@ -93,7 +91,7 @@ void tabulate_expression(
         std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
                     std::next(coord_dofs.begin(), 3 * i));
       }
-      fn(values_local.data(), coeffs.data() + e * cstride, constants.data(),
+      fn(values_local.data(), &coeffs(e, 0), constants.data(),
          coord_dofs.data(), nullptr, nullptr);
     }
     else
@@ -105,7 +103,7 @@ void tabulate_expression(
         std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
                     std::next(coord_dofs.begin(), 3 * i));
       }
-      fn(values_local.data(), coeffs.data() + e * cstride, constants.data(),
+      fn(values_local.data(), &coeffs(e, 0), constants.data(),
          coord_dofs.data(), &entities(e, 1), nullptr);
     }
 
@@ -133,8 +131,6 @@ void tabulate_expression(
 /// point, e.g. 1 for a scalar field and 3 for a vector field in 3D.
 /// @param[in] coeffs Coefficient data that appears in the expression.
 /// Usually packed using fem::pack_coefficients.
-/// @param[in] cstride Coefficient stride. Coefficient data for the ith
-/// entity starts at `coeffs.data() + i*cstride`.
 /// @param[in] constant_data Constant (coefficient) data that appears in
 /// expression. Usually packed using fem::pack_constants.
 /// @param[in] mesh Mesh to execute the expression kernel on.
@@ -146,8 +142,7 @@ void tabulate_expression(
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, fem::FEkernel<T> auto fn,
-    std::array<std::size_t, 2> Xshape, std::size_t value_size,
-    std::span<const T> coeffs, std::size_t cstride,
+    std::array<std::size_t, 2> Xshape, std::size_t value_size, auto coeffs,
     std::span<const T> constant_data, const mesh::Mesh<U>& mesh,
     fem::MDSpan2 auto entities,
     std::optional<
@@ -183,7 +178,7 @@ void tabulate_expression(
 
   tabulate_expression<T, U>(values, fn, Xshape, value_size, num_argument_dofs,
                             mesh.geometry().dofmap(), mesh.geometry().x(),
-                            coeffs, cstride, constant_data, entities, cell_info,
+                            coeffs, constant_data, entities, cell_info,
                             post_dof_transform);
 }
 } // namespace dolfinx::fem::impl

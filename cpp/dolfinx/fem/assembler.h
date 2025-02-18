@@ -133,15 +133,15 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
 
   if (mesh.topology()->dim() == Xshape[1])
   {
-    tabulate_expression<T, U>(values, e, std::span<const T>(coeffs), cstride,
-                              std::span<const T>(constants), mesh,
-                              md::mdspan(entities.data(), entities.size()),
-                              element);
+    tabulate_expression<T, U>(
+        values, e, md::mdspan(coeffs.data(), entities.size(), cstride),
+        std::span<const T>(constants), mesh,
+        md::mdspan(entities.data(), entities.size()), element);
   }
   else
   {
     tabulate_expression<T, U>(
-        values, e, std::span<const T>(coeffs), cstride,
+        values, e, md::mdspan(coeffs.data(), entities.size(), cstride), cstride,
         std::span<const T>(constants), mesh,
         md::mdspan<const std::int32_t,
                    md::extents<std::size_t, md::dynamic_extent, 2>>(
