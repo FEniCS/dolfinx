@@ -1,7 +1,7 @@
 # The first step is to define the variational problem at hand. We define
 # the variational problem in UFL terms in a separate form file
-# {download}`mixed-poisson/poisson.py`.  We begin by defining the finite
-# element:
+# {download}`demo_mixed_poisson/mixed_poisson.py`.  We begin by defining the
+# finite element:
 
 from basix.ufl import element, mixed_element
 from ufl import (
