@@ -167,6 +167,22 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
 /// @note Collective.
 ///
 /// @param[in] topology Mesh topology.
+/// @param[in] facet_type_idx The index of the facet type in
+/// Topology::entity_types(facet_dim)
+/// @return Sorted list of owned facet indices that are exterior facets
+/// of the mesh.
+std::vector<std::int32_t> exterior_facet_indices(const Topology& topology,
+                                                 int facet_type_idx);
+
+/// @brief Compute the indices of all exterior facets that are owned by
+/// the caller.
+///
+/// An exterior facet (co-dimension 1) is one that is connected globally
+/// to only one cell of co-dimension 0).
+///
+/// @note Collective.
+///
+/// @param[in] topology Mesh topology.
 /// @return Sorted list of owned facet indices that are exterior facets
 /// of the mesh.
 std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
@@ -426,27 +442,33 @@ template <std::floating_point T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>>
 compute_vertex_coords(const mesh::Mesh<T>& mesh)
 {
+  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
   auto topology = mesh.topology();
   assert(topology);
   const int tdim = topology->dim();
 
   // Create entities and connectivities
-  mesh.topology_mutable()->create_connectivity(tdim, 0);
 
   // Get all vertex 'node' indices
-  auto x_dofmap = mesh.geometry().dofmap();
   const std::int32_t num_vertices = topology->index_map(0)->size_local()
                                     + topology->index_map(0)->num_ghosts();
-  auto c_to_v = topology->connectivity(tdim, 0);
-  assert(c_to_v);
+
   std::vector<std::int32_t> vertex_to_node(num_vertices);
-  for (int c = 0; c < c_to_v->num_nodes(); ++c)
+  for (int cell_type_idx = 0,
+           num_cell_types = topology->entity_types(tdim).size();
+       cell_type_idx < num_cell_types; ++cell_type_idx)
   {
-    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
-    auto vertices = c_to_v->links(c);
-    for (std::size_t i = 0; i < vertices.size(); ++i)
-      vertex_to_node[vertices[i]] = x_dofs[i];
+    auto x_dofmap = mesh.geometry().dofmap(cell_type_idx);
+    auto c_to_v = topology->connectivity({tdim, cell_type_idx}, {0, 0});
+    assert(c_to_v);
+    for (int c = 0; c < c_to_v->num_nodes(); ++c)
+    {
+      auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
+      auto vertices = c_to_v->links(c);
+      for (std::size_t i = 0; i < vertices.size(); ++i)
+        vertex_to_node[vertices[i]] = x_dofs[i];
+    }
   }
 
   // Pack coordinates of vertices
@@ -484,12 +506,15 @@ concept MarkerFn = std::is_invocable_r<
 /// considered.
 /// @param[in] marker Marking function, returns `true` for a point that
 /// is 'marked', and `false` otherwise.
+/// @param[in] entity_type_idx The index of the entity type in
+/// Topology::entity_types(dim)
 /// @returns List of marked entity indices, including any ghost indices
 /// (indices local to the process).
 template <std::floating_point T, MarkerFn<T> U>
 std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
-                                          U marker)
+                                          U marker, int entity_type_idx)
 {
+
   using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       const T,
       MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
@@ -497,6 +522,7 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
 
   // Run marker function on vertex coordinates
   const auto [xdata, xshape] = impl::compute_vertex_coords(mesh);
+
   cmdspan3x_t x(xdata.data(), xshape);
   const std::vector<std::int8_t> marked = marker(x);
   if (marked.size() != x.extent(1))
@@ -507,13 +533,12 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
   const int tdim = topology->dim();
 
   mesh.topology_mutable()->create_entities(dim);
-  mesh.topology_mutable()->create_connectivity(tdim, 0);
   if (dim < tdim)
     mesh.topology_mutable()->create_connectivity(dim, 0);
 
   // Iterate over entities of dimension 'dim' to build vector of marked
   // entities
-  auto e_to_v = topology->connectivity(dim, 0);
+  auto e_to_v = topology->connectivity({dim, entity_type_idx}, {0, 0});
   assert(e_to_v);
   std::vector<std::int32_t> entities;
   for (int e = 0; e < e_to_v->num_nodes(); ++e)
@@ -534,6 +559,32 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
   }
 
   return entities;
+}
+
+/// @brief Compute indices of all mesh entities that evaluate to true
+/// for the provided geometric marking function.
+///
+/// An entity is considered marked if the marker function evaluates to true
+/// for all of its vertices.
+///
+/// @param[in] mesh Mesh to mark entities on.
+/// @param[in] dim Topological dimension of the entities to be
+/// considered.
+/// @param[in] marker Marking function, returns `true` for a point that
+/// is 'marked', and `false` otherwise.
+/// @returns List of marked entity indices, including any ghost indices
+/// (indices local to the process).
+template <std::floating_point T, MarkerFn<T> U>
+std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
+                                          U marker)
+{
+  const int num_entity_types = mesh.topology()->entity_types(dim).size();
+  if (num_entity_types > 1)
+  {
+    throw std::runtime_error(
+        "Multiple entity types of this dimension. Specify entity type index");
+  }
+  return locate_entities(mesh, dim, marker, 0);
 }
 
 /// @brief Compute indices of all mesh entities that are attached to an
@@ -563,6 +614,7 @@ template <std::floating_point T, MarkerFn<T> U>
 std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
                                                    U marker)
 {
+  // TODO Rewrite this function, it should be possible to simplify considerably
   auto topology = mesh.topology();
   assert(topology);
   int tdim = topology->dim();
