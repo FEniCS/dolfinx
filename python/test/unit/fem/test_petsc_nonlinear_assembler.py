@@ -274,7 +274,6 @@ class TestNLSPETSc:
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import (
-            create_matrix_nest,
             create_vector_block,
             create_vector_nest,
         )
@@ -351,10 +350,14 @@ class TestNLSPETSc:
             """Nested version"""
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
-            snes_options = {"snes_rtol": 1.0e-15, "snes_max_it": 10,
-                            "ksp_type":"gmres", "snes_monitor": None,
-                            "pc_type": "fieldsplit"}
-        
+            snes_options = {
+                "snes_rtol": 1.0e-15,
+                "snes_max_it": 10,
+                "ksp_type": "gmres",
+                "snes_monitor": None,
+                "pc_type": "fieldsplit",
+            }
+
             problem = dolfinx.fem.petsc.NestSNESProblem(F, [u, p], bcs=bcs, J=J)
             solver = dolfinx.nls.petsc.NestSNESSolver(problem, options=snes_options)
             converged_reason, _ = solver.solve()
@@ -483,7 +486,8 @@ class TestNLSPETSc:
             [derivative(F[1], u, du), derivative(F[1], p, dp)],
         ]
         P = [[J[0][0], None], [None, inner(dp, q) * dx]]
-        F_c =  form(F)
+        F_c = form(F)
+
         def blocked():
             """Blocked and monolithic"""
             u.interpolate(initial_guess_u)
@@ -514,11 +518,15 @@ class TestNLSPETSc:
             """Blocked and nested"""
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
-            snes_options = {"snes_rtol": 1.0e-15, "snes_max_it": 20,
-                            "ksp_type":"minres", "snes_monitor": None,
-                            "pc_type": "fieldsplit",
-                            "ksp_rtol": 1.0e-8}
-        
+            snes_options = {
+                "snes_rtol": 1.0e-15,
+                "snes_max_it": 20,
+                "ksp_type": "minres",
+                "snes_monitor": None,
+                "pc_type": "fieldsplit",
+                "ksp_rtol": 1.0e-8,
+            }
+
             problem = dolfinx.fem.petsc.NestSNESProblem(F, [u, p], bcs=bcs, P=P)
             solver = dolfinx.nls.petsc.NestSNESSolver(problem, options=snes_options)
             converged_reason, _ = solver.solve()

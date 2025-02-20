@@ -32,7 +32,7 @@ from dolfinx.fem.petsc import (
     create_vector_nest,
 )
 
-__all__ = ["NewtonSolver", "SNESSolver", "BlockedSNESSolver", "NestSNESSolver"]
+__all__ = ["BlockedSNESSolver", "NestSNESSolver", "NewtonSolver", "SNESSolver"]
 
 
 class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
@@ -151,6 +151,7 @@ class SNESSolver:
         self._x.destroy()
         if self._P is not None:
             self._P.destroy()
+
 
 class BlockedSNESSolver(SNESSolver):
     def create_data_structures(self):
