@@ -1218,7 +1218,7 @@ class SNESProblem:
         self.u.x.petsc_vec.copy(x)
 
     def F(self, snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec):
-        """Assemble the residual F into the vector b.
+        """Assemble the residual into the vector `F`.
 
         Args:
             snes: The solver instance
@@ -1394,7 +1394,7 @@ class BlockedSNESProblem(SNESProblem):
 
 class NestSNESProblem(BlockedSNESProblem):
     def F(self, snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec):
-        """Assemble the residual F into the vector b.
+        """Assemble the residual into vector `F`.
 
         Args:
             snes: The solver instance
