@@ -311,7 +311,7 @@ void pack_coefficients(const Form<T, U>& form,
           const std::vector<std::int32_t> facets_b
               = form.domain(IntegralType::exterior_facet, id, *mesh);
           md::mdspan<const std::int32_t,
-                     md::extents<std::size_t, md::dynamic_extent, 4>>
+                     md::extents<std::size_t, md::dynamic_extent, 2>>
               facets(facets_b.data(), facets_b.size() / 2, 2);
           auto cells = md::submdspan(facets, md::full_extent, 0);
 
