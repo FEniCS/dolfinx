@@ -64,6 +64,11 @@ def set_vals_ctypes(A, m, rows, n, cols, data, mode):
 
 ffi = cffi.FFI()
 
+# Register the CFFI types with Numba
+cffi_support.register_type(ffi.typeof("double *"), numba.types.CPointer(numba.float64))
+cffi_support.register_type(ffi.typeof("int *"), numba.types.CPointer(numba.int32))
+cffi_support.register_type(ffi.typeof("void *"), numba.types.voidptr)
+
 
 def get_matsetvalues_cffi_api():
     """Make MatSetValuesLocal from PETSc available via cffi in API mode.
@@ -172,7 +177,7 @@ def assemble_vector_parallel(b, v, x, dofmap_t_data, dofmap_t_offsets, num_cells
             b[index] += _b_unassembled[dofmap_t_data[p]]
 
 
-@numba.njit(fastmath=True)
+@numba.jit(fastmath=True, forceobj=True)
 def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
     """Assemble provided FFCx/UFC kernel over a mesh into the array b"""
     v, x = mesh
@@ -181,6 +186,8 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
     geometry = np.zeros((3, 3), dtype=x.dtype)
     coeffs = np.zeros(1, dtype=dtype)
     constants = np.zeros(1, dtype=dtype)
+    custom_data = np.zeros(1, dtype=x.dtype)
+    custom_data_ptr = ffi.cast("void*", ffi.from_buffer(custom_data))
 
     b_local = np.zeros(3, dtype=dtype)
     for cell in range(num_cells):
@@ -195,6 +202,7 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
             ffi.from_buffer(geometry),
             ffi.from_buffer(entity_local_index),
             ffi.from_buffer(perm),
+            custom_data_ptr,
         )
         for j in range(3):
             b[dofmap[cell, j]] += b_local[j]
@@ -323,6 +331,9 @@ def test_custom_mesh_loop_rank1(dtype):
 
     # Get the one and only kernel
     kernel = getattr(ufcx_form.form_integrals[0], f"tabulate_tensor_{np.dtype(dtype).name}")
+    custom_data = np.zeros(1, dtype=np.intc)
+    custom_data_ptr =  ffi.cast("void*", ffi.from_buffer(custom_data))
+
     for i in range(2):
         b = b3.x.array
         b[:] = 0.0
