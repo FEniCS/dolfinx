@@ -10,6 +10,7 @@ set(HEADERS_fem
     ${CMAKE_CURRENT_SOURCE_DIR}/Function.h
     ${CMAKE_CURRENT_SOURCE_DIR}/FunctionSpace.h
     ${CMAKE_CURRENT_SOURCE_DIR}/assembler.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/assemble_expression_impl.h
     ${CMAKE_CURRENT_SOURCE_DIR}/assemble_matrix_impl.h
     ${CMAKE_CURRENT_SOURCE_DIR}/assemble_scalar_impl.h
     ${CMAKE_CURRENT_SOURCE_DIR}/assemble_vector_impl.h

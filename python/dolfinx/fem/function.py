@@ -167,9 +167,9 @@ class Expression:
         constants = [constant._cpp_object for constant in ufl_constants]
         arguments = ufl.algorithms.extract_arguments(e)
         if len(arguments) == 0:
-            self._argument_function_space = None
+            self._argument_space = None
         elif len(arguments) == 1:
-            self._argument_function_space = arguments[0].ufl_function_space()._cpp_object
+            self._argument_space = arguments[0].ufl_function_space()._cpp_object
         else:
             raise RuntimeError("Expressions with more that one Argument not allowed.")
 
@@ -190,7 +190,7 @@ class Expression:
             ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression)),
             coeffs,
             constants,
-            self.argument_function_space,
+            self.argument_space,
         )
 
     def eval(
@@ -203,34 +203,39 @@ class Expression:
 
         Args:
             mesh: Mesh to evaluate Expression on.
-            entities: Either an array of cells (index local to process)
-                or an array of integral tuples (cell index, local facet
-                index). The array is flattened.
+            entities: Entities to evaluate the Expression over. For
+                cells, it is a list of cell indices. For facets, it is a
+                2D array of (cell index, local facet index).
             values: Array to fill with evaluated values. If ``None``,
-                storage will be allocated. Otherwise must have shape
-                ``(num_entities, num_points * value_size *
-                num_all_argument_dofs)``
+                storage will be allocated. Otherwise it must have shape
+                ``(entities.shape[0], num_points, *value_shape)`` if
+                there is not argument function and shape
+                ``(entities.shape[0], num_points, *value_shape,
+                argument_space_dim)`` if the Expression does have an
+                argument function.
 
         Returns:
-            Expression evaluated at points for `entities`.
-
+            Expression evaluated at points for ``entities``. Shape is
+            ``(entities.shape[0], num_points, *value_shape)`` if there
+            is no argument function, or shape is ``(entities.shape[0],
+            num_points, *value_shape, argument_space_dim)`` if the
+            Expression does have an argument function.
         """
         _entities = np.asarray(entities, dtype=np.int32)
-        if self.argument_function_space is None:
-            argument_space_dimension = 1
-        else:
-            argument_space_dimension = self.argument_function_space.element.space_dimension
         if (tdim := mesh.topology.dim) != (expr_dim := self._cpp_object.X().shape[1]):
             assert expr_dim == tdim - 1
-            assert _entities.shape[0] % 2 == 0
-            values_shape = (
-                _entities.shape[0] // 2,
-                self.X().shape[0] * self.value_size * argument_space_dimension,
+            assert entities.ndim == 2, (
+                "entities list should have two dimensions for expression evaluation on facets."
             )
+
+        if self.argument_space is None:
+            values_shape = (_entities.shape[0], self.X().shape[0], *self.value_shape)
         else:
             values_shape = (
                 _entities.shape[0],
-                self.X().shape[0] * self.value_size * argument_space_dimension,
+                self.X().shape[0],
+                *self.value_shape,
+                self.argument_space.element.space_dimension,
             )
 
         # Allocate memory for result if u was not provided
@@ -238,10 +243,15 @@ class Expression:
             values = np.zeros(values_shape, dtype=self.dtype)
         else:
             if values.shape != values_shape:
-                raise TypeError("Passed array values does not have correct shape.")
+                raise TypeError("Passed values array does not have correct shape.")
             if values.dtype != self.dtype:
-                raise TypeError("Passed array values does not have correct dtype.")
-        self._cpp_object.eval(mesh._cpp_object, _entities, values)
+                raise TypeError("Passed values array does not have correct dtype.")
+
+        constants = _cpp.fem.pack_constants(self._cpp_object)
+        coeffs = _cpp.fem.pack_coefficients(self._cpp_object, _entities)
+        _cpp.fem.tabulate_expression(
+            values, self._cpp_object, constants, coeffs, mesh._cpp_object, _entities
+        )
         return values
 
     def X(self) -> np.ndarray:
@@ -250,27 +260,32 @@ class Expression:
 
     @property
     def ufl_expression(self):
-        """Original UFL Expression"""
+        """Original UFL Expression."""
         return self._ufl_expression
 
     @property
+    def value_shape(self) -> np.ndarray:
+        """Value shape of the Expression."""
+        return self._cpp_object.value_shape
+
+    @property
     def value_size(self) -> int:
-        """Value size of the expression"""
+        """Value size of the expression."""
         return self._cpp_object.value_size
 
     @property
-    def argument_function_space(self) -> typing.Optional[FunctionSpace]:
-        """The argument function space if expression has argument"""
-        return self._argument_function_space
+    def argument_space(self) -> typing.Optional[FunctionSpace]:
+        """Argument function space if Expression has argument."""
+        return self._argument_space
 
     @property
     def ufcx_expression(self):
-        """The compiled ufcx_expression object"""
+        """The compiled ufcx_expression object."""
         return self._ufcx_expression
 
     @property
     def code(self) -> str:
-        """C code strings"""
+        """C code strings."""
         return self._code
 
     @property
@@ -355,7 +370,7 @@ class Function(ufl.Coefficient):
 
     @property
     def function_space(self) -> FunctionSpace:
-        """The FunctionSpace that the Function is defined on"""
+        """The FunctionSpace that the Function is defined on."""
         return self._V
 
     def eval(self, x: npt.ArrayLike, cells: npt.ArrayLike, u=None) -> np.ndarray:
@@ -397,11 +412,12 @@ class Function(ufl.Coefficient):
     def interpolate_nonmatching(
         self, u0: Function, cells: npt.NDArray[np.int32], interpolation_data: PointOwnershipData
     ) -> None:
-        """Interpolate a Function defined on one mesh to a function defined on a different mesh.
+        """Interpolate a Function defined on one mesh to a function
+        defined on a different mesh.
 
         Args:
             u0: The Function to interpolate.
-            cells: The cells to interpolate over. If `None` then all
+            cells: The cells to interpolate over. If ``None`` then all
                 cells are interpolated over.
             interpolation_data: Data needed to interpolate functions
                 defined on other meshes. Created by
@@ -502,21 +518,21 @@ class Function(ufl.Coefficient):
         return self.name
 
     def sub(self, i: int) -> Function:
-        """Return a sub-function (a view into the `Function`).
+        """Return a sub-function (a view into the ``Function``).
 
-        Sub-functions are indexed `i = 0, ..., N-1`, where `N` is the
-        number of sub-spaces.
+        Sub-functions are indexed ``i = 0, ..., N-1``, where ``N`` is
+        the number of sub-spaces.
 
         Args:
             i: Index of the sub-function to extract.
 
         Returns:
-            A view into the parent `Function`.
+            A view into the parent ``Function``.
 
         Note:
             If the sub-Function is re-used, for performance reasons the
-            returned `Function` should be stored by the caller to avoid
-            repeated re-computation of the subspace.
+            returned ``Function`` should be stored by the caller to
+            avoid repeated re-computation of the subspace.
         """
         return Function(self._V.sub(i), self.x, name=f"{self!s}_{i}")
 
