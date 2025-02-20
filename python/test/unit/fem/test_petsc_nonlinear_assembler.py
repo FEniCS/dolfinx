@@ -12,6 +12,8 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
+import dolfinx.fem.petsc
+import dolfinx.nls.petsc
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
@@ -249,6 +251,7 @@ class TestNLSPETSc:
             A.destroy()
             b.destroy()
             x.destroy()
+
             return Anorm, bnorm
 
         # Nested (MatNest)
@@ -334,10 +337,8 @@ class TestNLSPETSc:
 
         from dolfinx.cpp.la.petsc import scatter_local_vectors
         from dolfinx.fem.petsc import (
-            create_matrix,
             create_matrix_block,
             create_matrix_nest,
-            create_vector,
             create_vector_block,
             create_vector_nest,
         )
@@ -492,30 +493,14 @@ class TestNLSPETSc:
                 dirichletbc(u1_bc, bdofsW1_V1, W.sub(1)),
             ]
 
-            Jmat = create_matrix(J)
-            Fvec = create_vector(F)
-
-            snes = PETSc.SNES().create(MPI.COMM_WORLD)
-            snes.setTolerances(rtol=1.0e-15, max_it=10)
-
-            problem = NonlinearPDE_SNESProblem(F, J, U, bcs)
-            snes.setFunction(problem.F_mono, Fvec)
-            snes.setJacobian(problem.J_mono, J=Jmat, P=None)
-
+            snes_options = {"snes_rtol": 1.0e-15, "snes_max_it": 10}
             U.sub(0).interpolate(initial_guess_u)
             U.sub(1).interpolate(initial_guess_p)
 
-            x = create_vector(F)
-            x.array[:] = U.x.petsc_vec.array_r
-
-            snes.solve(None, x)
-            assert snes.getKSP().getConvergedReason() > 0
-            assert snes.getConvergedReason() > 0
-            xnorm = x.norm()
-            snes.destroy()
-            Jmat.destroy()
-            Fvec.destroy()
-            x.destroy()
+            snes_prob = dolfinx.fem.petsc.SNESProblem(F, U, J=J, bcs=bcs)
+            snes_solver = dolfinx.nls.petsc.SNESSolver(snes_prob, options=snes_options)
+            snes_solver.solve()
+            xnorm = snes_prob.u.x.petsc_vec.norm()
             return xnorm
 
         norm0 = blocked_solve()
@@ -545,10 +530,8 @@ class TestNLSPETSc:
 
         from dolfinx.cpp.la.petsc import scatter_local_vectors
         from dolfinx.fem.petsc import (
-            create_matrix,
             create_matrix_block,
             create_matrix_nest,
-            create_vector,
             create_vector_block,
             create_vector_nest,
         )
@@ -709,7 +692,6 @@ class TestNLSPETSc:
             )
             J = derivative(F, U, dU)
             P = inner(ufl.grad(du), ufl.grad(v)) * dx + inner(dp, q) * dx
-            F, J, P = form(F), form(J), form(P)
 
             bdofsW0_P2_0 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets0)
             bdofsW0_P2_1 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets1)
@@ -718,33 +700,22 @@ class TestNLSPETSc:
                 dirichletbc(u_bc_1, bdofsW0_P2_1, W.sub(0)),
             ]
 
-            Jmat = create_matrix(J)
-            Pmat = create_matrix(P)
-            Fvec = create_vector(F)
-
-            snes = PETSc.SNES().create(MPI.COMM_WORLD)
-            snes.setTolerances(rtol=1.0e-15, max_it=20)
-            snes.getKSP().setType("minres")
-
-            problem = NonlinearPDE_SNESProblem(F, J, U, bcs, P=P)
-            snes.setFunction(problem.F_mono, Fvec)
-            snes.setJacobian(problem.J_mono, J=Jmat, P=Pmat)
-
             U.sub(0).interpolate(initial_guess_u)
             U.sub(1).interpolate(initial_guess_p)
 
-            x = create_vector(F)
-            x.array[:] = U.x.petsc_vec.array_r
+            snes_options = {
+                "snes_rtol": 1.0e-15,
+                "snes_max_it": 20,
+                "ksp_type": "minres",
+                "snes_monitor": None,
+            }
+            snes_prob = dolfinx.fem.petsc.SNESProblem(F, U, J=J, bcs=bcs, P=P)
+            snes_solver = dolfinx.nls.petsc.SNESSolver(snes_prob, options=snes_options)
+            snes_solver.solve()
 
-            snes.solve(None, x)
-            assert snes.getConvergedReason() > 0
-            snes.destroy()
-            Jnorm = Jmat.norm()
-            Fnorm = Fvec.norm()
-            xnorm = x.norm()
-            Jmat.destroy()
-            Fvec.destroy()
-            x.destroy()
+            xnorm = snes_prob.u.x.petsc_vec.norm()
+            Jnorm = snes_solver._A.norm()
+            Fnorm = snes_solver._b.norm()
             return Jnorm, Fnorm, xnorm
 
         Jnorm0, Fnorm0, xnorm0 = blocked()

@@ -9,10 +9,10 @@ from __future__ import annotations
 
 import typing
 
-if typing.TYPE_CHECKING:
-    from mpi4py import MPI
-    from petsc4py import PETSc
+from mpi4py import MPI
+from petsc4py import PETSc
 
+if typing.TYPE_CHECKING:
     import dolfinx
 
     assert dolfinx.has_petsc4py
@@ -73,8 +73,9 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
         """
         super().setP(P, Pmat)
 
+
 class SNESSolver:
-    def __init__(self, problem: dolfinx.fem.petsc.SNESProblem, options: dict|None = None):
+    def __init__(self, problem: dolfinx.fem.petsc.SNESProblem, options: dict | None = None):
         """Initialize a PETSc-SNES solver
 
         Args:
@@ -100,36 +101,45 @@ class SNESSolver:
         self._snes.setFromOptions()
 
     def create_data_structures(self):
-        """
-        Create PETSc objects for the matrix, residual and solution
-        """
-        self._A = dolfinx.fem.petsc.create_matrix(self.problem.a)
-        self._b = dolfinx.fem.Function(self.problem.u.function_space, name="Residual")
-        self._x = dolfinx.fem.Function(self.problem.u.function_space, name="work-array")
+        """Create PETSc objects for the matrix, residual and solution"""
+        self._A = create_matrix(self.problem.a)
+        self._b = create_vector(self.problem.L)
+        self._x = create_vector(self.problem.L)
+        self._P = None if self.problem._a_prec is None else create_matrix(self.problem._a_prec)
 
-    @property
-    def _b_petsc(self):
-        return self._b.x.petsc_vec
-    
     def solve(self):
+        """Solve the problem and update the solution in the problem instance"""
         # Set function and Jacobian (in case the change in the SNES problem)
-        self._snes.setFunction(self.problem.F, self._b_petsc)
-        self._snes.setJacobian(self.problem.J, self._A)
+        self._snes.setFunction(self.problem.F, self._b)
+        self._snes.setJacobian(self.problem.J, self._A, self._P)
 
         # Move current iterate into the work array.
-        self._x.interpolate(self.problem.u)
-        self._snes.solve(None, self._x.x.petsc_vec)
-        self._x.x.scatter_forward()
+        self.problem.copy_solution(self._x)
+
+        # Solve problem
+        self._snes.solve(None, self._x)
+        self._x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         # Check for convergence
         converged_reason = self._snes.getConvergedReason()
         if self.error_if_not_converged and converged_reason < 0:
             raise RuntimeError(f"Solver did not converge. Reason: {converged_reason}")
 
-        self.problem.u.x.array[:] = self._x.x.array 
+        # Update solution in problem
+        self.problem.update_solution(self._x)
+
         return converged_reason, self._snes.getIterationNumber()
 
     def __del__(self):
         self._snes.destroy()
         self._A.destroy()
+        self._b.destroy()
+        self._x.destroy()
 
+
+class BlockedSNESSolver(SNESSolver):
+    def create_data_structures(self):
+        """Create PETSc objects for the matrix, residual and solution"""
+        self._b_petsc = dolfinx.fem.petsc.create_vector_block(self.problem.L)
+        self._x_petsc = dolfinx.fem.petsc.create_vector_block(self.problem.L)
+        self._A = dolfinx.fem.petsc.create_matrix_block(self.problem.a)

@@ -47,7 +47,7 @@ from dolfinx.la import create_petsc_vector
 __all__ = [
     "LinearProblem",
     "NonlinearProblem",
-    "SNESProblem"
+    "SNESProblem",
     "apply_lifting",
     "apply_lifting_nest",
     "assemble_matrix",
@@ -1120,12 +1120,14 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
     """
     return _interpolation_matrix(space0._cpp_object, space1._cpp_object)
 
+
 class SNESProblem:
     def __init__(
         self,
         F: typing.Union[dolfinx.fem.form, ufl.form.Form],
         u: dolfinx.fem.Function,
         J: typing.Optional[typing.Union[dolfinx.fem.form, ufl.form.Form]] = None,
+        P: typing.Optional[typing.Union[dolfinx.fem.form, ufl.form.Form]] = None,
         bcs: typing.Optional[list[dolfinx.fem.DirichletBC]] = None,
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
@@ -1137,6 +1139,7 @@ class SNESProblem:
             u: The unknown
             bcs: List of Dirichlet boundary conditions
             J: UFL representation of the Jacobian (Optional)
+            P: UFL representation of a preconditioner (Optional)
             form_compiler_options: Options used in FFCx
                 compilation of this form. Run ``ffcx --help`` at the
                 command line to see all available options.
@@ -1155,8 +1158,16 @@ class SNESProblem:
             V = u.function_space
             du = ufl.TrialFunction(V)
             J = ufl.derivative(F, u, du)
-        self._a = _create_form(J, form_compiler_options=form_compiler_options,
-                jit_options=jit_options)
+        self._a_prec = (
+            None
+            if P is None
+            else _create_form(
+                P, form_compiler_options=form_compiler_options, jit_options=jit_options
+            )
+        )
+        self._a = _create_form(
+            J, form_compiler_options=form_compiler_options, jit_options=jit_options
+        )
 
         self.bcs = bcs
         self.u = u
@@ -1171,6 +1182,24 @@ class SNESProblem:
         """Compiled bilinear form (the Jacobian form)"""
         return self._a
 
+    def update_solution(self, x: PETSc.Vec):
+        """Update the solution vector in the function used in the residual and Jacobian.
+
+        Args:
+            x: The vector containing the latest solution
+        """
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        x.copy(self.u.x.petsc_vec)
+        self.u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+    def copy_solution(self, x: PETSc.Vec):
+        """Copy the solution vector from the function used in the residual and Jacobian.
+
+        Args:
+            x: The vector containing the latest solution
+        """
+        self.u.x.petsc_vec.copy(x)
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     def F(self, snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec):
         """Assemble the residual F into the vector b.
@@ -1178,7 +1207,7 @@ class SNESProblem:
         Args:
             snes: The solver instance
             x: The vector containing the latest solution
-            F: Vector to assemble the residual into        
+            F: Vector to assemble the residual into
         """
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         x.copy(self.u.x.petsc_vec)
@@ -1186,10 +1215,7 @@ class SNESProblem:
         with F.localForm() as f_local:
             f_local.set(0.0)
         dolfinx.fem.petsc.assemble_vector(F, self.L)
-        try:
-            dolfinx.fem.petsc.apply_lifting(F, [self.a], bcs=[self.bcs], x0=[x], scale=-1.0)
-        except TypeError:
-            dolfinx.fem.petsc.apply_lifting(F, [self.a], bcs=[self.bcs], x0=[x], alpha=-1.0)
+        dolfinx.fem.petsc.apply_lifting(F, [self.a], bcs=[self.bcs], x0=[x], alpha=-1.0)
         F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         dolfinx.fem.petsc.set_bc(F, self.bcs, x, -1.0)
 
@@ -1206,8 +1232,87 @@ class SNESProblem:
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         x.copy(self.u.x.petsc_vec)
         self.u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    
+
         # Assemble Jacobian
         J.zeroEntries()
         dolfinx.fem.petsc.assemble_matrix(J, self.a, self.bcs)
         J.assemble()
+
+        if self._a_prec is not None:
+            P.zeroEntries()
+            dolfinx.fem.petsc.assemble_matrix(P, self._a_prec, self.bcs, diagonal=1.0)
+            P.assemble()
+
+
+# class BlockedSNESProblem(SNESProblem):
+#     def __init__(
+#         self,
+#         F: typing.Union[list[dolfinx.fem.form], list[ufl.form.Form]],
+#         u: list[dolfinx.fem.Function],
+#         J: typing.Optional[typing.Union[list[list[dolfinx.fem.form]], list[list[ufl.form.Form]], None]] = None,
+#         P: typing.Optional[typing.Union[list[list[dolfinx.fem.form]], list[list[ufl.form.Form]], None]] = None,
+#         bcs: typing.Optional[list[dolfinx.fem.DirichletBC]] = None,
+#         form_compiler_options: typing.Optional[dict] = None,
+#         jit_options: typing.Optional[dict] = None,
+#     ):
+#       """Initialize class for constructing the residual and Jacobian constructors for a SNES problem.
+
+#         Args:
+#             F: The PDE residual F(u, v)
+#             u: The unknown
+#             bcs: List of Dirichlet boundary conditions
+#             J: UFL representation of the Jacobian (Optional)
+#             P: UFL representation of a preconditioner (Optional)
+#             form_compiler_options: Options used in FFCx
+#                 compilation of this form. Run ``ffcx --help`` at the
+#                 command line to see all available options.
+#             jit_options: Options used in CFFI JIT compilation of C
+#                 code generated by FFCx. See ``python/dolfinx/jit.py``
+#                 for all available options. Takes priority over all other
+#                 option values.
+#         """
+
+#     def F(self, snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec):
+#         """Assemble the residual F into the vector b.
+
+#         Args:
+#             snes: The solver instance
+#             x: The vector containing the latest solution
+#             F: Vector to assemble the residual into
+#         """
+#         assert x.getType() != "nest"
+#         assert F.getType() != "nest"
+#         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+#         with F.localForm() as f_local:
+#             f_local.set(0.0)
+
+#         offset = 0
+#         x_array = x.getArray(readonly=True)
+#         for var in self.soln_vars:
+#             size_local = var.x.petsc_vec.getLocalSize()
+#             var.x.petsc_vec.array[:] = x_array[offset : offset + size_local]
+#             var.x.petsc_vec.ghostUpdate(
+#                 addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
+#             )
+#             offset += size_local
+
+#         assemble_vector_block(F, self.L, self.a, bcs=self.bcs, x0=x, alpha=-1.0)
+
+
+#     def J(self, snes, x, J, P):
+#         """Assemble the Jacobian matrix.
+
+#         Args:
+#             snes: The solver instance
+#             x: The vector containing the latest solution
+#             J: Matrix to assemble the Jacobian into
+#             P: Matrix to assemble the preconditioner into
+#         """
+#         assert x.getType() != "nest" and J.getType() != "nest" and P.getType() != "nest"
+#         J.zeroEntries()
+#         assemble_matrix_block(J, self.a, bcs=self.bcs, diagonal=1.0)
+#         J.assemble()
+#         if self.a_prec is not None:
+#             P.zeroEntries()
+#             assemble_matrix_block(P, self.a_prec, bcs=self.bcs, diagonal=1.0)
+#             P.assemble()
