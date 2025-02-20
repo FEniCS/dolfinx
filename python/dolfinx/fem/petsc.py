@@ -1210,7 +1210,7 @@ class SNESProblem:
         self.u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     def copy_solution(self, x: PETSc.Vec):
-        """Copy the solution for the unknown `u` into the vector `x`.
+        """Copy the data in `u` into the vector `x`.
 
         Args:
             x: Vector to insert data into
