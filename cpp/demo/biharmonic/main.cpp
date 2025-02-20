@@ -141,7 +141,7 @@
 
 using namespace dolfinx;
 using T = PetscScalar;
-using U = typename dolfinx::scalar_value_type_t<T>;
+using U = typename dolfinx::scalar_value_t<T>;
 
 // Inside the `main` function, we begin by defining a mesh of the
 // domain. As the unit square is a very standard domain, we can use a

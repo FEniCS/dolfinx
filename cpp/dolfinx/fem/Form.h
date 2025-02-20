@@ -41,7 +41,7 @@ enum class IntegralType : std::int8_t
 
 /// @brief Represents integral data, containing the integral ID, the
 /// kernel, and a list of entities to integrate over.
-template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
 struct integral_data
 {
   /// @brief Create a structure to hold integral data.
@@ -134,7 +134,7 @@ struct integral_data
 /// @tparam U Float (real) type used for the finite element and geometry.
 /// @tparam Kern Element kernel.
 template <dolfinx::scalar T,
-          std::floating_point U = dolfinx::scalar_value_type_t<T>>
+          std::floating_point U = dolfinx::scalar_value_t<T>>
 class Form
 {
 public:

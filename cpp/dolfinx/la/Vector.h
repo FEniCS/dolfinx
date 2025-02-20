@@ -274,7 +274,7 @@ auto norm(const V& x, Norm type = Norm::l2)
   {
     std::int32_t size_local = x.bs() * x.index_map()->size_local();
     std::span<const T> data = x.array().subspan(0, size_local);
-    using U = typename dolfinx::scalar_value_type_t<T>;
+    using U = typename dolfinx::scalar_value_t<T>;
     U local_l1
         = std::accumulate(data.begin(), data.end(), U(0),
                           [](auto norm, auto x) { return norm + std::abs(x); });
@@ -311,7 +311,7 @@ template <class V>
 void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
 {
   using T = typename V::value_type;
-  using U = typename dolfinx::scalar_value_type_t<T>;
+  using U = typename dolfinx::scalar_value_t<T>;
 
   // Loop over each vector in basis
   for (std::size_t i = 0; i < basis.size(); ++i)
@@ -353,9 +353,9 @@ void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
 template <class V>
 bool is_orthonormal(
     std::vector<std::reference_wrapper<const V>> basis,
-    dolfinx::scalar_value_type_t<typename V::value_type> eps
+    dolfinx::scalar_value_t<typename V::value_type> eps
     = std::numeric_limits<
-        dolfinx::scalar_value_type_t<typename V::value_type>>::epsilon())
+        dolfinx::scalar_value_t<typename V::value_type>>::epsilon())
 {
   using T = typename V::value_type;
   for (std::size_t i = 0; i < basis.size(); i++)

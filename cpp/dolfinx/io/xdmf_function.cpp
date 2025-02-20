@@ -184,8 +184,8 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
         = shape_to_string(value_shape).c_str();
     attr_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
-    std::span<const scalar_value_type_t<T>> u;
-    std::vector<scalar_value_type_t<T>> _data;
+    std::span<const scalar_value_t<T>> u;
+    std::vector<scalar_value_t<T>> _data;
     if constexpr (!std::is_scalar_v<T>)
     {
       // Complex-valued case
@@ -200,7 +200,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
         std::ranges::transform(data_values, _data.begin(),
                                [](auto x) { return x.imag(); });
       }
-      u = std::span<const scalar_value_type_t<T>>(_data);
+      u = std::span<const scalar_value_t<T>>(_data);
     }
     else
       u = std::span<const T>(data_values);

@@ -67,7 +67,7 @@ void tabulate_expression(
         const std::int32_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         x_dofmap,
-    std::span<const scalar_value_type_t<T>> x,
+    std::span<const scalar_value_t<T>> x,
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         coeffs,

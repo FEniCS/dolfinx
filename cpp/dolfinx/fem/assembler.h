@@ -166,7 +166,7 @@ T assemble_scalar(
 {
   std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
-  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
+  if constexpr (std::is_same_v<U, scalar_value_t<T>>)
   {
     return impl::assemble_scalar(M, mesh->geometry().dofmap(),
                                  mesh->geometry().x(), constants, coefficients);
@@ -174,7 +174,7 @@ T assemble_scalar(
   else
   {
     auto x = mesh->geometry().x();
-    std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
+    std::vector<scalar_value_t<T>> _x(x.begin(), x.end());
     return impl::assemble_scalar(M, mesh->geometry().dofmap(), _x, constants,
                                  coefficients);
   }
@@ -345,7 +345,7 @@ void assemble_matrix(
 {
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
-  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
+  if constexpr (std::is_same_v<U, scalar_value_t<T>>)
   {
     impl::assemble_matrix(mat_add, a, mesh->geometry().x(), constants,
                           coefficients, dof_marker0, dof_marker1);
@@ -353,7 +353,7 @@ void assemble_matrix(
   else
   {
     auto x = mesh->geometry().x();
-    std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
+    std::vector<scalar_value_t<T>> _x(x.begin(), x.end());
     impl::assemble_matrix(mat_add, a, _x, constants, coefficients, dof_marker0,
                           dof_marker1);
   }

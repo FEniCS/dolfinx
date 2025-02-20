@@ -301,7 +301,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
 template <MDSpan U, MDSpan V, dolfinx::scalar T>
 void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
 {
-  using X = typename dolfinx::scalar_value_type_t<T>;
+  using X = typename dolfinx::scalar_value_t<T>;
 
   // Compute coefficients = Pi * x (matrix-vector multiply)
   if (bs == 1)
@@ -413,7 +413,7 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
       = element1->create_interpolation_operator(*element0);
 
   // Iterate over mesh and interpolate on each cell
-  using X = typename dolfinx::scalar_value_type_t<T>;
+  using X = typename dolfinx::scalar_value_t<T>;
   for (std::size_t c = 0; c < cells0.size(); c++)
   {
     // Pack and transform cell dofs to reference ordering
@@ -652,7 +652,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
         coeffs0[dof_bs0 * i + k] = array0[dof_bs0 * dofs0[i] + k];
 
     // Evaluate v at the interpolation points (physical space values)
-    using X = typename dolfinx::scalar_value_type_t<T>;
+    using X = typename dolfinx::scalar_value_t<T>;
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       for (int k = 0; k < bs0; ++k)

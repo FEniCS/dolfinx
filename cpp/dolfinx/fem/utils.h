@@ -360,7 +360,7 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] mesh The mesh of the domain.
 ///
 /// @pre Each value in `subdomains` must be sorted by domain id.
-template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
 Form<T, U> create_form_factory(
     const std::vector<std::reference_wrapper<const ufcx_form>>& ufcx_forms,
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
@@ -498,8 +498,7 @@ Form<T, U> create_form_factory(
         else if constexpr (std::is_same_v<T, std::complex<float>>)
         {
           k = reinterpret_cast<void (*)(
-              T*, const T*, const T*,
-              const typename scalar_value_type<T>::value_type*, const int*,
+              T*, const T*, const T*, const scalar_value_t<T>*, const int*,
               const unsigned char*)>(integral->tabulate_tensor_complex64);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
@@ -509,8 +508,7 @@ Form<T, U> create_form_factory(
         else if constexpr (std::is_same_v<T, std::complex<double>>)
         {
           k = reinterpret_cast<void (*)(
-              T*, const T*, const T*,
-              const typename scalar_value_type<T>::value_type*, const int*,
+              T*, const T*, const T*, const scalar_value_t<T>*, const int*,
               const unsigned char*)>(integral->tabulate_tensor_complex128);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
@@ -579,8 +577,7 @@ Form<T, U> create_form_factory(
         else if constexpr (std::is_same_v<T, std::complex<float>>)
         {
           k = reinterpret_cast<void (*)(
-              T*, const T*, const T*,
-              const typename scalar_value_type<T>::value_type*, const int*,
+              T*, const T*, const T*, const scalar_value_t<T>*, const int*,
               const unsigned char*)>(integral->tabulate_tensor_complex64);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
@@ -590,8 +587,7 @@ Form<T, U> create_form_factory(
         else if constexpr (std::is_same_v<T, std::complex<double>>)
         {
           k = reinterpret_cast<void (*)(
-              T*, const T*, const T*,
-              const typename scalar_value_type<T>::value_type*, const int*,
+              T*, const T*, const T*, const scalar_value_t<T>*, const int*,
               const unsigned char*)>(integral->tabulate_tensor_complex128);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
@@ -681,8 +677,7 @@ Form<T, U> create_form_factory(
         else if constexpr (std::is_same_v<T, std::complex<float>>)
         {
           k = reinterpret_cast<void (*)(
-              T*, const T*, const T*,
-              const typename scalar_value_type<T>::value_type*, const int*,
+              T*, const T*, const T*, const scalar_value_t<T>*, const int*,
               const unsigned char*)>(integral->tabulate_tensor_complex64);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
@@ -692,8 +687,7 @@ Form<T, U> create_form_factory(
         else if constexpr (std::is_same_v<T, std::complex<double>>)
         {
           k = reinterpret_cast<void (*)(
-              T*, const T*, const T*,
-              const typename scalar_value_type<T>::value_type*, const int*,
+              T*, const T*, const T*, const scalar_value_t<T>*, const int*,
               const unsigned char*)>(integral->tabulate_tensor_complex128);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
@@ -773,7 +767,7 @@ Form<T, U> create_form_factory(
 /// @param[in] mesh Mesh of the domain. This is required if the form has
 /// no arguments, e.g. a functional.
 /// @return A Form
-template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
 Form<T, U> create_form(
     const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
@@ -833,7 +827,7 @@ Form<T, U> create_form(
 /// @param[in] mesh Mesh of the domain. This is required if the form has
 /// no arguments, e.g. a functional.
 /// @return A Form
-template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
 Form<T, U> create_form(
     ufcx_form* (*fptr)(),
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
@@ -885,7 +879,7 @@ FunctionSpace<T> create_functionspace(
 }
 
 /// @brief Create Expression from UFC
-template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
 Expression<T, U> create_expression(
     const ufcx_expression& e,
     const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
@@ -917,8 +911,7 @@ Expression<T, U> create_expression(
          static_cast<std::size_t>(e.entity_dimension)};
   std::vector<std::size_t> value_shape(e.value_shape,
                                        e.value_shape + e.num_components);
-  std::function<void(T*, const T*, const T*,
-                     const typename scalar_value_type<T>::value_type*,
+  std::function<void(T*, const T*, const T*, const scalar_value_t<T>*,
                      const int*, const std::uint8_t*)>
       tabulate_tensor = nullptr;
   if constexpr (std::is_same_v<T, float>)
@@ -927,8 +920,7 @@ Expression<T, U> create_expression(
   else if constexpr (std::is_same_v<T, std::complex<float>>)
   {
     tabulate_tensor = reinterpret_cast<void (*)(
-        T*, const T*, const T*,
-        const typename scalar_value_type<T>::value_type*, const int*,
+        T*, const T*, const T*, const scalar_value_t<T>*, const int*,
         const unsigned char*)>(e.tabulate_tensor_complex64);
   }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
@@ -938,8 +930,7 @@ Expression<T, U> create_expression(
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
     tabulate_tensor = reinterpret_cast<void (*)(
-        T*, const T*, const T*,
-        const typename scalar_value_type<T>::value_type*, const int*,
+        T*, const T*, const T*, const scalar_value_t<T>*, const int*,
         const unsigned char*)>(e.tabulate_tensor_complex128);
   }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
@@ -953,7 +944,7 @@ Expression<T, U> create_expression(
 
 /// @brief Create Expression from UFC input (with named coefficients and
 /// constants).
-template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
 Expression<T, U> create_expression(
     const ufcx_expression& e,
     const std::map<std::string, std::shared_ptr<const Function<T, U>>>&
