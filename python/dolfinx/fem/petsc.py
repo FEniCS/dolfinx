@@ -47,6 +47,7 @@ from dolfinx.la import create_petsc_vector
 __all__ = [
     "BlockedSNESProblem",
     "LinearProblem",
+    "NestSNESProblem",
     "NonlinearProblem",
     "SNESProblem",
     "apply_lifting",
@@ -1299,7 +1300,7 @@ class BlockedSNESProblem(SNESProblem):
                     V = u_j.function_space
                     du = ufl.TrialFunction(V)
                     J[i][j] = ufl.derivative(F_i, u_j, du)
-        
+
         self._a_prec = (
             None
             if P is None
@@ -1383,3 +1384,76 @@ class BlockedSNESProblem(SNESProblem):
             index_maps,
         )
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+
+class NestSNESProblem(BlockedSNESProblem):
+    def F(self, snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec):
+        """Assemble the residual F into the vector b.
+
+        Args:
+            snes: The solver instance
+            x: The vector containing the latest solution
+            F: Vector to assemble the residual into
+        """
+        assert x.getType() == "nest" and F.getType() == "nest"
+        self.update_solution(x)
+
+        bcs1 = _bcs_by_block(_extract_spaces(self.a, 1), self.bcs)
+        sub_vectors = x.getNestSubVecs()
+        for L, F_sub, a in zip(self.L, F.getNestSubVecs(), self.a):
+            with F_sub.localForm() as F_sub_local:
+                F_sub_local.set(0.0)
+            assemble_vector(F_sub, L)
+            apply_lifting(F_sub, a, bcs=bcs1, x0=sub_vectors, alpha=-1.0)
+            F_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+        # Set bc value in RHS
+        bcs0 = _bcs_by_block(_extract_spaces(self.L), self.bcs)
+        for F_sub, bc, x_sub in zip(F.getNestSubVecs(), bcs0, sub_vectors):
+            set_bc(F_sub, bc, x_sub, -1.0)
+
+        # Must assemble F here in the case of nest matrices
+        F.assemble()
+
+    def J(self, snes, x, J, P):
+        """Assemble the Jacobian matrix.
+
+        Args:
+            snes: The solver instance
+            x: The vector containing the latest solution
+            J: Matrix to assemble the Jacobian into
+            P: Matrix to assemble the preconditioner into
+        """
+        self.update_solution(x)
+        assert J.getType() == "nest" and P.getType() == "nest"
+        J.zeroEntries()
+        assemble_matrix_nest(J, self.a, bcs=self.bcs, diagonal=1.0)
+        J.assemble()
+        if self._a_prec is not None:
+            P.zeroEntries()
+            assemble_matrix_nest(P, self._a_prec, bcs=self.bcs, diagonal=1.0)
+            P.assemble()
+
+    def update_solution(self, x: PETSc.Vec):
+        """Update the solution vector in the function used in the residual and Jacobian.
+
+        Args:
+            x: The vector containing the latest solution
+        """
+        subvecs = x.getNestSubVecs()
+        for x_sub, var_sub in zip(subvecs, self.u):
+            x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+            with x_sub.localForm() as _x:
+                var_sub.x.array[:] = _x.array_r
+
+    def copy_solution(self, x: PETSc.Vec):
+        """Copy the solution vector from the function used in the residual and Jacobian.
+
+        Args:
+            x: The vector containing the latest solution
+        """
+        wrapped_sol = [la.create_petsc_vector_wrap(u_i.x) for u_i in self.u]
+        u_nest = PETSc.Vec().createNest(wrapped_sol)
+        u_nest.copy(x)
+        u_nest.destroy()
+        [wrapped.destroy() for wrapped in wrapped_sol]

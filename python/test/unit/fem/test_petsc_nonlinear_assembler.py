@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Nathan Sime
+# Copyright (C) 2019-2025 Nathan Sime, Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -51,67 +51,6 @@ class NonlinearPDE_SNESProblem:
         self.a_precon = P
         self.bcs = bcs
         self.soln_vars = soln_vars
-
-    def F_mono(self, snes, x, F):
-        from petsc4py import PETSc
-
-        from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
-
-        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        with x.localForm() as _x:
-            self.soln_vars.x.array[:] = _x.array_r
-        with F.localForm() as f_local:
-            f_local.set(0.0)
-        assemble_vector(F, self.L)
-        apply_lifting(F, [self.a], bcs=[self.bcs], x0=[x], alpha=-1.0)
-        F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        set_bc(F, self.bcs, x, -1.0)
-
-    def J_mono(self, snes, x, J, P):
-        from dolfinx.fem.petsc import assemble_matrix
-
-        J.zeroEntries()
-        assemble_matrix(J, self.a, bcs=self.bcs, diagonal=1.0)
-        J.assemble()
-        if self.a_precon is not None:
-            P.zeroEntries()
-            assemble_matrix(P, self.a_precon, bcs=self.bcs, diagonal=1.0)
-            P.assemble()
-
-    def F_block(self, snes, x, F):
-        from petsc4py import PETSc
-
-        from dolfinx.fem.petsc import assemble_vector_block
-
-        assert x.getType() != "nest"
-        assert F.getType() != "nest"
-        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        with F.localForm() as f_local:
-            f_local.set(0.0)
-
-        offset = 0
-        x_array = x.getArray(readonly=True)
-        for var in self.soln_vars:
-            size_local = var.x.petsc_vec.getLocalSize()
-            var.x.petsc_vec.array[:] = x_array[offset : offset + size_local]
-            var.x.petsc_vec.ghostUpdate(
-                addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
-            )
-            offset += size_local
-
-        assemble_vector_block(F, self.L, self.a, bcs=self.bcs, x0=x, alpha=-1.0)
-
-    def J_block(self, snes, x, J, P):
-        from dolfinx.fem.petsc import assemble_matrix_block
-
-        assert x.getType() != "nest" and J.getType() != "nest" and P.getType() != "nest"
-        J.zeroEntries()
-        assemble_matrix_block(J, self.a, bcs=self.bcs, diagonal=1.0)
-        J.assemble()
-        if self.a_precon is not None:
-            P.zeroEntries()
-            assemble_matrix_block(P, self.a_precon, bcs=self.bcs, diagonal=1.0)
-            P.assemble()
 
     def F_nest(self, snes, x, F):
         from petsc4py import PETSc
@@ -410,42 +349,20 @@ class TestNLSPETSc:
 
         def nested_solve():
             """Nested version"""
-            Jmat = create_matrix_nest(J)
-            assert Jmat.getType() == "nest"
-            Fvec = create_vector_nest(F)
-            assert Fvec.getType() == "nest"
-
-            snes = PETSc.SNES().create(MPI.COMM_WORLD)
-            snes.setTolerances(rtol=1.0e-15, max_it=10)
-            nested_IS = Jmat.getNestISs()
-            snes.getKSP().setType("gmres")
-            snes.getKSP().setTolerances(rtol=1e-12)
-            snes.getKSP().getPC().setType("fieldsplit")
-            snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
-
-            problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
-            snes.setFunction(problem.F_nest, Fvec)
-            snes.setJacobian(problem.J_nest, J=Jmat, P=None)
-
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
+            snes_options = {"snes_rtol": 1.0e-15, "snes_max_it": 10,
+                            "ksp_type":"gmres", "snes_monitor": None,
+                            "pc_type": "fieldsplit"}
+        
+            problem = dolfinx.fem.petsc.NestSNESProblem(F, [u, p], bcs=bcs, J=J)
+            solver = dolfinx.nls.petsc.NestSNESSolver(problem, options=snes_options)
+            converged_reason, _ = solver.solve()
+            assert solver.krylov_solver.getConvergedReason() > 0
+            assert converged_reason > 0
             x = create_vector_nest(F)
-            assert x.getType() == "nest"
-            for x_soln_pair in zip(x.getNestSubVecs(), (u, p)):
-                x_sub, soln_sub = x_soln_pair
-                soln_sub.x.petsc_vec.ghostUpdate(
-                    addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
-                )
-                soln_sub.x.petsc_vec.copy(result=x_sub)
-                x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-
-            snes.solve(None, x)
-            assert snes.getKSP().getConvergedReason() > 0
-            assert snes.getConvergedReason() > 0
+            problem.copy_solution(x)
             xnorm = x.norm()
-            snes.destroy()
-            Jmat.destroy()
-            Fvec.destroy()
             x.destroy()
             return xnorm
 
@@ -511,10 +428,8 @@ class TestNLSPETSc:
     )
     def test_assembly_solve_taylor_hood_nl(self, mesh):
         """Assemble Stokes problem with Taylor-Hood elements and solve."""
-        from petsc4py import PETSc
 
         from dolfinx.fem.petsc import (
-            create_matrix_nest,
             create_vector_block,
             create_vector_nest,
         )
@@ -568,8 +483,7 @@ class TestNLSPETSc:
             [derivative(F[1], u, du), derivative(F[1], p, dp)],
         ]
         P = [[J[0][0], None], [None, inner(dp, q) * dx]]
-        F_c, J_c, P_c = form(F), form(J), form(P)
-
+        F_c =  form(F)
         def blocked():
             """Blocked and monolithic"""
             u.interpolate(initial_guess_u)
@@ -598,43 +512,25 @@ class TestNLSPETSc:
 
         def nested():
             """Blocked and nested"""
-            Jmat = create_matrix_nest(J_c)
-            Pmat = create_matrix_nest(P_c)
-            Fvec = create_vector_nest(F_c)
-
-            snes = PETSc.SNES().create(MPI.COMM_WORLD)
-            snes.setTolerances(rtol=1.0e-15, max_it=20)
-            nested_IS = Jmat.getNestISs()
-            snes.getKSP().setType("minres")
-            snes.getKSP().setTolerances(rtol=1e-8)
-            snes.getKSP().getPC().setType("fieldsplit")
-            snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
-
-            problem = NonlinearPDE_SNESProblem(F_c, J_c, [u, p], bcs, P=P_c)
-            snes.setFunction(problem.F_nest, Fvec)
-            snes.setJacobian(problem.J_nest, J=Jmat, P=Pmat)
-
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
+            snes_options = {"snes_rtol": 1.0e-15, "snes_max_it": 20,
+                            "ksp_type":"minres", "snes_monitor": None,
+                            "pc_type": "fieldsplit",
+                            "ksp_rtol": 1.0e-8}
+        
+            problem = dolfinx.fem.petsc.NestSNESProblem(F, [u, p], bcs=bcs, P=P)
+            solver = dolfinx.nls.petsc.NestSNESSolver(problem, options=snes_options)
+            converged_reason, _ = solver.solve()
+            assert solver.krylov_solver.getConvergedReason() > 0
+            assert converged_reason > 0
             x = create_vector_nest(F_c)
-            for x1_soln_pair in zip(x.getNestSubVecs(), (u, p)):
-                x1_sub, soln_sub = x1_soln_pair
-                soln_sub.x.petsc_vec.ghostUpdate(
-                    addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
-                )
-                soln_sub.x.petsc_vec.copy(result=x1_sub)
-                x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-
-            x.set(0.0)
-            snes.solve(None, x)
-            assert snes.getConvergedReason() > 0
-            snes.destroy()
-            Jnorm = nest_matrix_norm(Jmat)
-            Fnorm = Fvec.norm()
+            problem.copy_solution(x)
             xnorm = x.norm()
-            Jmat.destroy(), Fvec.destroy()
+            Jnorm = nest_matrix_norm(solver._A)
+            Fnorm = solver._b.norm()
+            xnorm = x.norm()
             x.destroy()
-            Pmat.destroy()
             return Jnorm, Fnorm, xnorm
 
         def monolithic():
@@ -682,7 +578,6 @@ class TestNLSPETSc:
             snes_prob = dolfinx.fem.petsc.SNESProblem(F, U, J=J, bcs=bcs, P=P)
             snes_solver = dolfinx.nls.petsc.SNESSolver(snes_prob, options=snes_options)
             snes_solver.solve()
-
             xnorm = snes_prob.u.x.petsc_vec.norm()
             Jnorm = snes_solver._A.norm()
             Fnorm = snes_solver._b.norm()

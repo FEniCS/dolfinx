@@ -32,7 +32,7 @@ from dolfinx.fem.petsc import (
     create_vector_nest,
 )
 
-__all__ = ["NewtonSolver", "SNESSolver"]
+__all__ = ["NewtonSolver", "SNESSolver", "BlockedSNESSolver", "NestSNESSolver"]
 
 
 class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
@@ -91,21 +91,20 @@ class SNESSolver:
         """
         self.problem = problem
         self.options = options if options is not None else {}
-        self.create_solver()
         self.create_data_structures()
+        self.create_solver()
         self.error_if_not_converged = True
 
     def create_solver(self):
         """Create the PETSc SNES object and set solver options"""
         self._snes = PETSc.SNES().create(comm=self.problem.comm)
-        self._snes.setOptionsPrefix("snes_solve")
-        option_prefix = self._snes.getOptionsPrefix()
         opts = PETSc.Options()
-        opts.prefixPush(option_prefix)
         for key, v in self.options.items():
             opts[key] = v
-        opts.prefixPop()
         self._snes.setFromOptions()
+        # Delete options from handler post setting
+        for key, v in self.options.items():
+            del opts[key]
 
     def create_data_structures(self):
         """Create PETSc objects for the matrix, residual and solution"""
@@ -129,7 +128,6 @@ class SNESSolver:
 
         # Solve problem
         self._snes.solve(None, self._x)
-        self._x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         # Check for convergence
         converged_reason = self._snes.getConvergedReason()
@@ -151,7 +149,8 @@ class SNESSolver:
         self._A.destroy()
         self._b.destroy()
         self._x.destroy()
-
+        if self._P is not None:
+            self._P.destroy()
 
 class BlockedSNESSolver(SNESSolver):
     def create_data_structures(self):
@@ -164,7 +163,14 @@ class BlockedSNESSolver(SNESSolver):
         )
 
 
-class NestedSNESSolver(SNESSolver):
+class NestSNESSolver(SNESSolver):
+    def create_solver(self):
+        super().create_solver()
+        # Set index sets for fieldsplit
+        nested_is = self._A.getNestISs()
+        index_sets = [["u{i}", nested_is[i][i]] for i in range(len(nested_is))]
+        self._snes.getKSP().getPC().setFieldSplitIS(*index_sets)
+
     def create_data_structures(self):
         """Create PETSc objects for the matrix, residual and solution"""
         self._b = create_vector_nest(self.problem.L)
