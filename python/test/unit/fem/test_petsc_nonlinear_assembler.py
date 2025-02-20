@@ -329,14 +329,14 @@ class TestNLSPETSc:
             """Blocked version"""
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
-            problem = dolfinx.fem.petsc.BlockedSNESProblem(
+            problem = dolfinx.fem.petsc.BlockSNESProblem(
                 F,
                 [u, p],
                 bcs=bcs,
                 J=J,
             )
             snes_options = {"snes_rtol": 1.0e-15, "snes_max_it": 10, "snes_monitor": None}
-            solver = dolfinx.nls.petsc.BlockedSNESSolver(problem, options=snes_options)
+            solver = dolfinx.nls.petsc.BlockSNESSolver(problem, options=snes_options)
             converged_reason, _ = solver.solve()
             assert solver.krylov_solver.getConvergedReason() > 0
             assert converged_reason > 0
@@ -494,14 +494,14 @@ class TestNLSPETSc:
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
 
-            problem = dolfinx.fem.petsc.BlockedSNESProblem(F, [u, p], bcs=bcs, P=P)
+            problem = dolfinx.fem.petsc.BlockSNESProblem(F, [u, p], bcs=bcs, P=P)
             snes_options = {
                 "snes_rtol": 1.0e-15,
                 "snes_max_it": 10,
                 "snes_monitor": None,
                 "ksp_type": "minres",
             }
-            solver = dolfinx.nls.petsc.BlockedSNESSolver(problem, options=snes_options)
+            solver = dolfinx.nls.petsc.BlockSNESSolver(problem, options=snes_options)
             converged_reason, _ = solver.solve()
             assert solver.krylov_solver.getConvergedReason() > 0
             assert converged_reason > 0

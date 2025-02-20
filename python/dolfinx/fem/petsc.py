@@ -45,7 +45,7 @@ from dolfinx.fem.function import FunctionSpace as _FunctionSpace
 from dolfinx.la import create_petsc_vector
 
 __all__ = [
-    "BlockedSNESProblem",
+    "BlockSNESProblem",
     "LinearProblem",
     "NestSNESProblem",
     "NonlinearProblem",
@@ -1250,7 +1250,7 @@ class SNESProblem:
             P.assemble()
 
 
-class BlockedSNESProblem(SNESProblem):
+class BlockSNESProblem(SNESProblem):
     def __init__(
         self,
         F: typing.Union[list[dolfinx.fem.Form], list[ufl.form.Form]],
@@ -1389,7 +1389,7 @@ class BlockedSNESProblem(SNESProblem):
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
 
-class NestSNESProblem(BlockedSNESProblem):
+class NestSNESProblem(BlockSNESProblem):
     def F(self, snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec):
         """Assemble the residual into vector `F`.
 

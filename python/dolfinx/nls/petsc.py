@@ -32,7 +32,7 @@ from dolfinx.fem.petsc import (
     create_vector_nest,
 )
 
-__all__ = ["BlockedSNESSolver", "NestSNESSolver", "NewtonSolver", "SNESSolver"]
+__all__ = ["BlockSNESSolver", "NestSNESSolver", "NewtonSolver", "SNESSolver"]
 
 
 class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
@@ -157,7 +157,7 @@ class SNESSolver:
             self._P.destroy()
 
 
-class BlockedSNESSolver(SNESSolver):
+class BlockSNESSolver(SNESSolver):
     def create_data_structures(self):
         """Create PETSc objects for the matrix, residual and solution"""
         self._b = create_vector_block(self.problem.L)
