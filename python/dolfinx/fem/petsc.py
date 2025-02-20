@@ -1190,6 +1190,11 @@ class SNESProblem:
         """Compiled bilinear form (the Jacobian form)"""
         return self._a
 
+    @property
+    def P(self) -> Form:
+        """Compiled bilinear form (the preconditioner form)"""
+        return self._a_prec
+
     def update_solution(self, x: PETSc.Vec):
         """Update the solution vector in the function used in the residual and Jacobian.
 
