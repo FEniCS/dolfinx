@@ -1273,12 +1273,16 @@ class BlockedSNESProblem(SNESProblem):
     ):
         """Class for constructing the residual and Jacobian constructors for a SNES problem.
 
+        Solves problems of the form :math:`F_i(u, v) = 0, i=0,...N\\ \\forall v \\in V`
+        where :math:`u=(u_0,...,u_N), v=(v_0,...,v_n)` using PETSc SNES as the non-linear solver.
+
         Args:
-            F: List of PDE residuals F_i(u, v), i=0,...N
-            u: List of unknowns of the block system
-            bcs: List of Dirichlet boundary conditions
-            J: Rectangular array of bi-linear forms representing the Jacobian (Optional)
-            P: Rectangular array of bi-linear forms representing the preconditioner (Optional)
+            F: List of PDE residuals :math:`F_i`.
+            u: List of unknowns of the block system.
+            bcs: List of Dirichlet boundary conditions.
+            J: Rectangular array of bi-linear forms representing the
+                Jacobian :math:`J_ij = dF_i/du_j`.
+            P: Rectangular array of bi-linear forms representing the preconditioner.
             form_compiler_options: Options used in FFCx
                 compilation of this form. Run ``ffcx --help`` at the
                 command line to see all available options.
@@ -1322,7 +1326,7 @@ class BlockedSNESProblem(SNESProblem):
         self.u = u
 
     def F(self, snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec):
-        """Assemble the residual F into the vector b.
+        """Assemble the residual into the vector F.
 
         Args:
             snes: The solver instance
