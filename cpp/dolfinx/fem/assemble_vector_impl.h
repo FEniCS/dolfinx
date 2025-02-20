@@ -267,10 +267,27 @@ template <dolfinx::scalar T, int _bs = -1>
 void _lift_bc_exterior_facets(
     std::span<T> b, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, int num_facets_per_cell,
-    FEkernel<T> auto kernel, std::span<const std::int32_t> facets,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
+    FEkernel<T> auto kernel,
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const std::int32_t,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+            std::size_t, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent, 2>>
+        facets,
+    std::tuple<mdspan2_t, int,
+               MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                   const std::int32_t,
+                   MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+                       std::size_t,
+                       MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent, 2>>>
+        dofmap0,
     fem::DofTransformKernel<T> auto P0,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
+    std::tuple<mdspan2_t, int,
+               MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                   const std::int32_t,
+                   MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+                       std::size_t,
+                       MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent, 2>>>
+        dofmap1,
     fem::DofTransformKernel<T> auto P1T, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info0,
@@ -278,6 +295,8 @@ void _lift_bc_exterior_facets(
     std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T alpha,
     std::span<const std::uint8_t> perms)
 {
+  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
   if (facets.empty())
     return;
 
@@ -287,24 +306,21 @@ void _lift_bc_exterior_facets(
   // Data structures used in bc application
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
   std::vector<T> Ae, be;
-  assert(facets.size() % 2 == 0);
-  assert(facets0.size() == facets.size());
-  assert(facets1.size() == facets.size());
-  for (std::size_t index = 0; index < facets.size(); index += 2)
+  assert(facets0.extents() == facets.extents());
+  assert(facets1.extents() == facets.extents());
+  for (std::size_t index = 0; index < facets.extent(0); ++index)
   {
-    // Cell in integration domain mesh
-    std::int32_t cell = facets[index];
-    // Cell in test function mesh
-    std::int32_t cell0 = facets0[index];
-    // Cell in trial function mesh
-    std::int32_t cell1 = facets1[index];
+    // Cell in integration domain mesh,  in test function mesh, and in
+    // trial function mesh
+    std::int32_t cell = facets(index, 0);
+    std::int32_t cell0 = facets0(index, 0);
+    std::int32_t cell1 = facets1(index, 0);
 
     // Local facet index
-    std::int32_t local_facet = facets[index + 1];
+    std::int32_t local_facet = facets(index, 1);
 
     // Get dof maps for cell
-    auto dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dmap1, cell1, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs1 = md::submdspan(dmap1, cell1, md::full_extent);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -324,8 +340,7 @@ void _lift_bc_exterior_facets(
       continue;
 
     // Get cell coordinates/geometry
-    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -333,8 +348,7 @@ void _lift_bc_exterior_facets(
     }
 
     // Size data structure for assembly
-    auto dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dmap0, cell0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs0 = md::submdspan(dmap0, cell0, md::full_extent);
 
     const int num_rows = bs0 * dofs0.size();
     const int num_cols = bs1 * dofs1.size();
@@ -343,7 +357,7 @@ void _lift_bc_exterior_facets(
     std::uint8_t perm
         = perms.empty() ? 0 : perms[cell * num_facets_per_cell + local_facet];
 
-    const T* coeff_array = coeffs.data() + index / 2 * cstride;
+    const T* coeff_array = coeffs.data() + index * cstride;
     Ae.resize(num_rows * num_cols);
     std::ranges::fill(Ae, 0);
     kernel(Ae.data(), coeff_array, constants.data(), coordinate_dofs.data(),
@@ -724,13 +738,25 @@ template <dolfinx::scalar T, int _bs = -1>
 void assemble_exterior_facets(
     fem::DofTransformKernel<T> auto P0, std::span<T> b, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, int num_facets_per_cell,
-    std::span<const std::int32_t> facets,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap,
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const std::int32_t,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+            std::size_t, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent, 2>>
+        facets,
+    std::tuple<mdspan2_t, int,
+               MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                   const std::int32_t,
+                   MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+                       std::size_t,
+                       MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent, 2>>>
+        dofmap,
     FEkernel<T> auto fn, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint8_t> perms)
 {
+  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
   if (facets.empty())
     return;
 
@@ -743,15 +769,15 @@ void assemble_exterior_facets(
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
   std::vector<T> be(bs * num_dofs);
   std::span<T> _be(be);
-  assert(facets.size() % 2 == 0);
-  assert(facets0.size() == facets.size());
-  for (std::size_t index = 0; index < facets.size(); index += 2)
+  assert(facets0.extents() == facets.extents());
+  for (std::size_t index = 0; index < facets.extent(0); ++index)
   {
     // Cell in the integration domain, local facet index relative to the
+
     // integration domain cell, and cell in the test function mesh
-    std::int32_t cell = facets[index];
-    std::int32_t local_facet = facets[index + 1];
-    std::int32_t cell0 = facets0[index];
+    std::int32_t cell = facets(index, 0);
+    std::int32_t local_facet = facets(index, 1);
+    std::int32_t cell0 = facets0(index, 0);
 
     // Get cell coordinates/geometry
     auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
@@ -768,14 +794,13 @@ void assemble_exterior_facets(
 
     // Tabulate element vector
     std::ranges::fill(be, 0);
-    fn(be.data(), coeffs.data() + index / 2 * cstride, constants.data(),
+    fn(be.data(), coeffs.data() + index * cstride, constants.data(),
        coordinate_dofs.data(), &local_facet, &perm);
 
     P0(_be, cell_info0, cell0, 1);
 
     // Add element vector to global vector
-    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dmap, cell0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs = md::submdspan(dmap, cell0, md::full_extent);
     if constexpr (_bs > 0)
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
@@ -939,6 +964,8 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
              std::span<const std::int8_t> bc_markers1, std::span<const T> x0,
              T alpha)
 {
+  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
   // Integration domain mesh
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
@@ -1031,12 +1058,29 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
     assert(kernel);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
+
+    std::span<const std::int32_t> facets
+        = a.domain(IntegralType::exterior_facet, i);
+    std::vector<std::int32_t> facets0
+        = a.domain(IntegralType::exterior_facet, i, *mesh0);
+    std::vector<std::int32_t> facets1
+        = a.domain(IntegralType::exterior_facet, i, *mesh1);
+
     _lift_bc_exterior_facets(
         b, x_dofmap, x, num_facets_per_cell, kernel,
-        a.domain(IntegralType::exterior_facet, i),
-        {dofmap0, bs0, a.domain(IntegralType::exterior_facet, i, *mesh0)}, P0,
-        {dofmap1, bs1, a.domain(IntegralType::exterior_facet, i, *mesh1)}, P1T,
-        constants, coeffs, cstride, cell_info0, cell_info1, bc_values1,
+        md::mdspan<const std::int32_t,
+                   md::extents<std::size_t, md::dynamic_extent, 2>>(
+            facets.data(), facets.size() / 2, 2),
+        {dofmap0, bs0,
+         md::mdspan<const std::int32_t,
+                    md::extents<std::size_t, md::dynamic_extent, 2>>(
+             facets0.data(), facets0.size() / 2, 2)},
+        P0,
+        {dofmap1, bs1,
+         md::mdspan<const std::int32_t,
+                    md::extents<std::size_t, md::dynamic_extent, 2>>(
+             facets1.data(), facets1.size() / 2, 2)},
+        P1T, constants, coeffs, cstride, cell_info0, cell_info1, bc_values1,
         bc_markers1, x0, alpha, perms);
   }
 
@@ -1155,6 +1199,8 @@ void assemble_vector(
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
+  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
   // Integration domain mesh
   std::shared_ptr<const mesh::Mesh<U>> mesh = L.mesh();
   assert(mesh);
@@ -1235,28 +1281,39 @@ void assemble_vector(
       assert(fn);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::exterior_facet, i});
-      std::span<const std::int32_t> facets
+
+      std::span<const std::int32_t> facets_b
           = L.domain(IntegralType::exterior_facet, i);
+      md::mdspan<const std::int32_t,
+                 md::extents<std::size_t, md::dynamic_extent, 2>>
+          facets(facets_b.data(), facets_b.size() / 2, 2);
+
+      std::vector<std::int32_t> facets0_b
+          = L.domain(IntegralType::exterior_facet, i, *mesh0);
+      md::mdspan<const std::int32_t,
+                 md::extents<std::size_t, md::dynamic_extent, 2>>
+          facets0(facets0_b.data(), facets0_b.size() / 2, 2);
+
       if (bs == 1)
       {
         impl::assemble_exterior_facets<T, 1>(
             P0, b, x_dofmap, x, num_facets_per_cell, facets,
-            {dofs, bs, L.domain(IntegralType::exterior_facet, i, *mesh0)}, fn,
-            constants, coeffs, cstride, cell_info0, perms);
+            {dofs, bs, facets0}, fn, constants, coeffs, cstride, cell_info0,
+            perms);
       }
       else if (bs == 3)
       {
         impl::assemble_exterior_facets<T, 3>(
             P0, b, x_dofmap, x, num_facets_per_cell, facets,
-            {dofs, bs, L.domain(IntegralType::exterior_facet, i, *mesh0)}, fn,
-            constants, coeffs, cstride, cell_info0, perms);
+            {dofs, bs, facets0}, fn, constants, coeffs, cstride, cell_info0,
+            perms);
       }
       else
       {
-        impl::assemble_exterior_facets(
-            P0, b, x_dofmap, x, num_facets_per_cell, facets,
-            {dofs, bs, L.domain(IntegralType::exterior_facet, i, *mesh0)}, fn,
-            constants, coeffs, cstride, cell_info0, perms);
+        impl::assemble_exterior_facets(P0, b, x_dofmap, x, num_facets_per_cell,
+                                       facets, {dofs, bs, facets0}, fn,
+                                       constants, coeffs, cstride, cell_info0,
+                                       perms);
       }
     }
 
