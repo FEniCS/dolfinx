@@ -1143,7 +1143,7 @@ class SNESProblem:
             F: The PDE residual F(u, v)
             u: The unknown
             bcs: List of Dirichlet boundary conditions
-            J: UFL representation of the Jacobian. If not supplied, it is derived through 
+            J: UFL representation of the Jacobian. If not supplied, it is derived through
                 symbolic differntiation of ``F``.
             P: UFL representation of a preconditioner. If not supplied, no preconditioner is used.
             form_compiler_options: Options used in FFCx
