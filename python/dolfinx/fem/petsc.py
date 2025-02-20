@@ -1154,7 +1154,6 @@ class SNESProblem:
                 for all available options. Takes priority over all other
                 option values.
         """
-        self._comm = u.function_space.mesh.comm
         form_compiler_options = {} if form_compiler_options is None else form_compiler_options
         jit_options = {} if jit_options is None else jit_options
 
@@ -1178,11 +1177,6 @@ class SNESProblem:
 
         self.bcs = bcs
         self.u = u
-
-    @property
-    def comm(self):
-        """The MPI communicator associated with the problem"""
-        return self._comm
 
     @property
     def L(self) -> Form:
@@ -1299,7 +1293,6 @@ class BlockedSNESProblem(SNESProblem):
         self._L = _create_form(
             F, form_compiler_options=form_compiler_options, jit_options=jit_options
         )
-        self._comm = u[0].function_space.mesh.comm
 
         if J is None:
             J = [[None for i in range(len(F))] for j in range(len(F))]

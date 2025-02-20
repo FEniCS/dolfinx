@@ -97,7 +97,11 @@ class SNESSolver:
 
     def create_solver(self):
         """Create the PETSc SNES object and set solver options"""
-        self._snes = PETSc.SNES().create(comm=self.problem.comm)
+        try:
+            comm = self.problem.u.function_space.mesh.comm
+        except AttributeError:
+            comm = self.problem.u[0].function_space.mesh.comm
+        self._snes = PETSc.SNES().create(comm=comm)
         opts = PETSc.Options()
         for key, v in self.options.items():
             opts[key] = v
