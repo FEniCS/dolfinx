@@ -12,8 +12,6 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-import dolfinx.fem.petsc
-import dolfinx.nls.petsc
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
@@ -273,6 +271,8 @@ class TestNLSPETSc:
         matrix approaches and test that solution is the same."""
         from petsc4py import PETSc
 
+        import dolfinx.fem.petsc
+        import dolfinx.nls.petsc
         from dolfinx.fem.petsc import (
             create_vector_block,
             create_vector_nest,
@@ -431,7 +431,8 @@ class TestNLSPETSc:
     )
     def test_assembly_solve_taylor_hood_nl(self, mesh):
         """Assemble Stokes problem with Taylor-Hood elements and solve."""
-
+        import dolfinx.fem.petsc
+        import dolfinx.nls.petsc
         from dolfinx.fem.petsc import (
             create_vector_block,
             create_vector_nest,
