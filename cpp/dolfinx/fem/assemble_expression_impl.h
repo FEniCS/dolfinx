@@ -28,7 +28,7 @@ namespace dolfinx::fem::impl
 /// @tparam T Scalar type of expression.
 /// @tparam U Geometry type.
 /// @param[in,out] values Array in which the tabulated expressions are
-/// set. It should have shape `(entities.size(/estride, Xshape[0],
+/// set. It should have shape `(entities.extent(0), Xshape[0],
 /// value_size, num_argument_dofs)`. Storage is row-major. Data is set
 /// in `values` (not accumulated).
 /// @param[in] fn Expression kernel to execute.
@@ -126,9 +126,9 @@ void tabulate_expression(
 /// @tparam T Scalar type
 /// @tparam U Geometry type
 /// @param[in,out] values Array in which the tabulated expressions are
-/// set. If `V` is available, it should have shape (`entities.size(),
+/// set. If `V` is available, it should have shape (`entities.extent(0),
 /// Xshape[0], value_size, dim(V))`. Otherwise is has shape
-/// (`entities.size(), Xshape[0], value_size)`. Storage is row-major.
+/// (`entities.extent(0), Xshape[0], value_size)`. Storage is row-major.
 /// Data is set (not accumulated).
 /// @param[in] fn Expression kernel to execute.
 /// @param[in] Xshape Shape `(num_points, geometric dimensions)` of
