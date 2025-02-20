@@ -11,6 +11,7 @@
 #include "FunctionSpace.h"
 #include "utils.h"
 #include <algorithm>
+#include <basix/mdspan.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -58,14 +59,19 @@ T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
 
 /// Execute kernel over exterior facets and accumulate result
 template <dolfinx::scalar T>
-T assemble_exterior_facets(mdspan2_t x_dofmap,
-                           std::span<const scalar_value_type_t<T>> x,
-                           int num_facets_per_cell,
-                           std::span<const std::int32_t> facets,
-                           FEkernel<T> auto fn, std::span<const T> constants,
-                           std::span<const T> coeffs, int cstride,
-                           std::span<const std::uint8_t> perms)
+T assemble_exterior_facets(
+    mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
+    int num_facets_per_cell,
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const std::int32_t,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+            std::size_t, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent, 2>>
+        facets,
+    FEkernel<T> auto fn, std::span<const T> constants,
+    std::span<const T> coeffs, int cstride, std::span<const std::uint8_t> perms)
 {
+  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
   T value(0);
   if (facets.empty())
     return value;
@@ -74,15 +80,13 @@ T assemble_exterior_facets(mdspan2_t x_dofmap,
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
 
   // Iterate over all facets
-  assert(facets.size() % 2 == 0);
-  for (std::size_t index = 0; index < facets.size(); index += 2)
+  for (std::size_t index = 0; index < facets.extent(0); ++index)
   {
-    std::int32_t cell = facets[index];
-    std::int32_t local_facet = facets[index + 1];
+    std::int32_t cell = facets(index, 0);
+    std::int32_t local_facet = facets(index, 1);
 
     // Get cell coordinates/geometry
-    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -102,15 +106,20 @@ T assemble_exterior_facets(mdspan2_t x_dofmap,
 
 /// Assemble functional over interior facets
 template <dolfinx::scalar T>
-T assemble_interior_facets(mdspan2_t x_dofmap,
-                           std::span<const scalar_value_type_t<T>> x,
-                           int num_facets_per_cell,
-                           std::span<const std::int32_t> facets,
-                           FEkernel<T> auto fn, std::span<const T> constants,
-                           std::span<const T> coeffs, int cstride,
-                           std::span<const int> offsets,
-                           std::span<const std::uint8_t> perms)
+T assemble_interior_facets(
+    mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
+    int num_facets_per_cell,
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const std::int32_t,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+            std::size_t, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent, 4>>
+        facets,
+    FEkernel<T> auto fn, std::span<const T> constants,
+    std::span<const T> coeffs, int cstride, std::span<const int> offsets,
+    std::span<const std::uint8_t> perms)
 {
+  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
   T value(0);
   if (facets.empty())
     return value;
@@ -126,23 +135,19 @@ T assemble_interior_facets(mdspan2_t x_dofmap,
   assert(offsets.back() == cstride);
 
   // Iterate over all facets
-  assert(facets.size() % 4 == 0);
-  for (std::size_t index = 0; index < facets.size(); index += 4)
+  for (std::size_t index = 0; index < facets.extent(0); ++index)
   {
-    std::array<std::int32_t, 2> cells = {facets[index], facets[index + 2]};
-    std::array<std::int32_t, 2> local_facet
-        = {facets[index + 1], facets[index + 3]};
+    std::array cells = {facets(index, 0), facets(index, 2)};
+    std::array local_facet = {facets(index, 1), facets(index, 3)};
 
     // Get cell geometry
-    auto x_dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cells[0], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs0 = md::submdspan(x_dofmap, cells[0], md::full_extent);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs0[i]), 3,
                   std::next(cdofs0.begin(), 3 * i));
     }
-    auto x_dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cells[1], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs1 = md::submdspan(x_dofmap, cells[1], md::full_extent);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs1[i]), 3,
@@ -170,6 +175,8 @@ T assemble_scalar(
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
+  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
   std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
 
@@ -200,10 +207,15 @@ T assemble_scalar(
     assert(fn);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
+
+    std::span<const std::int32_t> facets
+        = M.domain(IntegralType::exterior_facet, i);
     value += impl::assemble_exterior_facets(
         x_dofmap, x, num_facets_per_cell,
-        M.domain(IntegralType::exterior_facet, i), fn, constants, coeffs,
-        cstride, perms);
+        md::mdspan<const std::int32_t,
+                   md::extents<std::size_t, md::dynamic_extent, 2>>(
+            facets.data(), facets.size() / 2, 2),
+        fn, constants, coeffs, cstride, perms);
   }
 
   for (int i : M.integral_ids(IntegralType::interior_facet))
@@ -213,10 +225,15 @@ T assemble_scalar(
     assert(fn);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::interior_facet, i});
+
+    std::span<const std::int32_t> facets
+        = M.domain(IntegralType::interior_facet, i);
     value += impl::assemble_interior_facets(
         x_dofmap, x, num_facets_per_cell,
-        M.domain(IntegralType::interior_facet, i), fn, constants, coeffs,
-        cstride, c_offsets, perms);
+        md::mdspan<const std::int32_t,
+                   md::extents<std::size_t, md::dynamic_extent, 4>>(
+            facets.data(), facets.size() / 4, 4),
+        fn, constants, coeffs, cstride, c_offsets, perms);
   }
 
   return value;
