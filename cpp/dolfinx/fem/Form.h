@@ -20,6 +20,7 @@
 #include <span>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 namespace dolfinx::fem
@@ -226,6 +227,14 @@ public:
     // Store entity maps
     for (auto [msh, map] : entity_maps)
       _entity_maps.insert({msh, std::vector(map.begin(), map.end())});
+
+    std::transform(entity_maps.begin(), entity_maps.end(),
+                   std::back_inserter(_entity_maps_new),
+                   [](auto& e)
+                   {
+                     return std::pair(e.first, std::vector(e.second.begin(),
+                                                           e.second.end()));
+                   });
   }
 
   /// Copy constructor
@@ -428,16 +437,17 @@ public:
   std::vector<std::int32_t> domain(IntegralType type, int i, int kernel_idx,
                                    const mesh::Mesh<geometry_type>& mesh) const
   {
-    // Hack to avoid passing shared pointer to this function
-    std::shared_ptr<const mesh::Mesh<geometry_type>> msh_ptr(
-        &mesh, [](const mesh::Mesh<geometry_type>*) {});
-
-    std::vector<std::int32_t> entities = domain(type, i, kernel_idx);
-    if (msh_ptr == _mesh)
-      return entities;
+    if (&mesh == _mesh.get())
+      return domain(type, i, kernel_idx);
     else
     {
-      std::span<const std::int32_t> entity_map = _entity_maps.at(msh_ptr);
+      std::vector<std::int32_t> entities = domain(type, i, kernel_idx);
+
+      auto it = std::ranges::find_if(_entity_maps_new, [adr = &mesh](auto& x)
+                                     { return x.first.get() == adr; });
+      assert(it != _entity_maps_new.end());
+      std::span<const std::int32_t> entity_map = it->second;
+
       std::vector<std::int32_t> mapped_entities;
       mapped_entities.reserve(entities.size());
       switch (type)
@@ -606,5 +616,10 @@ private:
   std::map<std::shared_ptr<const mesh::Mesh<geometry_type>>,
            std::vector<std::int32_t>>
       _entity_maps;
+
+  // Entity maps (see Form documentation)
+  std::vector<std::pair<std::shared_ptr<const mesh::Mesh<geometry_type>>,
+                        std::vector<std::int32_t>>>
+      _entity_maps_new;
 };
 } // namespace dolfinx::fem
