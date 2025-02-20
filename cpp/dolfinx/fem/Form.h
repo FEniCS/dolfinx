@@ -483,8 +483,7 @@ public:
           for (std::size_t i = 0; i < entities.size(); i += 2)
           {
             // Get the facet index
-            const std::int32_t facet
-                = c_to_f->links(entities[i])[entities[i + 1]];
+            std::int32_t facet = c_to_f->links(entities[i])[entities[i + 1]];
 
             // Add cell and the local facet index
             mapped_entities.insert(mapped_entities.end(),
@@ -521,8 +520,7 @@ public:
           for (std::size_t i = 0; i < entities.size(); i += 2)
           {
             // Get the facet index
-            const std::int32_t facet
-                = c_to_f->links(entities[i])[entities[i + 1]];
+            std::int32_t facet = c_to_f->links(entities[i])[entities[i + 1]];
 
             // Add cell and the local facet index
             mapped_entities.insert(mapped_entities.end(),
