@@ -135,7 +135,7 @@ class SNESSolver:
             raise RuntimeError(f"Solver did not converge. Reason: {converged_reason}")
 
         # Update solution in problem
-        self.problem.update_solution(self._x)
+        self.problem.replace_solution(self._x)
 
         return converged_reason, self._snes.getIterationNumber()
 

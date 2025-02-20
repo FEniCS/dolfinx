@@ -942,12 +942,12 @@ class LinearProblem:
 
     @property
     def L(self) -> Form:
-        """The compiled linear form"""
+        """The compiled linear form `F`."""
         return self._L
 
     @property
     def a(self) -> Form:
-        """The compiled bilinear form"""
+        """The compiled bilinear form of `a`."""
         return self._a
 
     @property
@@ -1018,12 +1018,12 @@ class NonlinearProblem:
 
     @property
     def L(self) -> Form:
-        """Compiled linear form (the residual form)"""
+        """The compiled linear form `F`."""
         return self._L
 
     @property
     def a(self) -> Form:
-        """Compiled bilinear form (the Jacobian form)"""
+        """The compiled bilinear form of the Jacobian `J`"""
         return self._a
 
     def form(self, x: PETSc.Vec) -> None:
@@ -1136,12 +1136,16 @@ class SNESProblem:
     ):
         """Class for constructing the residual and Jacobian constructors for a SNES problem.
 
+        Solves problems of the form :math:`F(u, v) = 0 \\ \\forall v \\in V` using
+        PETSc SNES as the non-lienar solver.
+
         Args:
             F: The PDE residual F(u, v)
             u: The unknown
             bcs: List of Dirichlet boundary conditions
-            J: UFL representation of the Jacobian (Optional)
-            P: UFL representation of a preconditioner (Optional)
+            J: UFL representation of the Jacobian. If not supplied, it is derived through 
+                symbolic differntiation of ``F``.
+            P: UFL representation of a preconditioner. If not supplied, no preconditioner is used.
             form_compiler_options: Options used in FFCx
                 compilation of this form. Run ``ffcx --help`` at the
                 command line to see all available options.
@@ -1182,37 +1186,36 @@ class SNESProblem:
 
     @property
     def L(self) -> Form:
-        """Compiled linear form (the residual form)"""
+        """Compiled linear form of the residual `F(u, v)`"""
         return self._L
 
     @property
     def a(self) -> Form:
-        """Compiled bilinear form (the Jacobian form)"""
+        """Compiled bilinear form of the Jacobian `J`"""
         return self._a
 
     @property
     def P(self) -> Form:
-        """Compiled bilinear form (the preconditioner form)"""
+        """Compiled bilinear form of the preconditioner `P`"""
         return self._a_prec
 
-    def update_solution(self, x: PETSc.Vec):
-        """Update the solution vector in the function used in the residual and Jacobian.
+    def replace_solution(self, x: PETSc.Vec):
+        """Update the solution for the unknown `u` with the values in `x`.
 
         Args:
-            x: The vector containing the latest solution
+            x: Data that is inserted into the solution vector
         """
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         x.copy(self.u.x.petsc_vec)
         self.u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     def copy_solution(self, x: PETSc.Vec):
-        """Copy the solution vector from the function used in the residual and Jacobian.
+        """Copy the solution for the unknown `u` into the vector `x`.
 
         Args:
-            x: The vector containing the latest solution
+            x: Vector to insert data into
         """
         self.u.x.petsc_vec.copy(x)
-        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     def F(self, snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec):
         """Assemble the residual F into the vector b.
@@ -1222,9 +1225,7 @@ class SNESProblem:
             x: The vector containing the point to evaluate the residual at.
             F: Vector to assemble the residual into
         """
-        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        x.copy(self.u.x.petsc_vec)
-        self.u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        self.replace_solution(x)
         with F.localForm() as f_local:
             f_local.set(0.0)
         dolfinx.fem.petsc.assemble_vector(F, self.L)
@@ -1242,7 +1243,7 @@ class SNESProblem:
             P: Matrix to assemble the preconditioner into
         """
         # Copy existing soultion into the function used in the residual and Jacobian
-        self.update_solution(x)
+        self.replace_solution(x)
 
         # Assemble Jacobian
         J.zeroEntries()
@@ -1330,11 +1331,10 @@ class BlockedSNESProblem(SNESProblem):
         """
         assert x.getType() != "nest"
         assert F.getType() != "nest"
-        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         with F.localForm() as f_local:
             f_local.set(0.0)
 
-        self.update_solution(x)
+        self.replace_solution(x)
         assemble_vector_block(F, self.L, self.a, bcs=self.bcs, x0=x, alpha=-1.0)
 
     def J(self, snes, x, J, P):
@@ -1346,7 +1346,7 @@ class BlockedSNESProblem(SNESProblem):
             J: Matrix to assemble the Jacobian into
             P: Matrix to assemble the preconditioner into
         """
-        self.update_solution(x)
+        self.replace_solution(x)
         assert x.getType() != "nest" and J.getType() != "nest" and P.getType() != "nest"
         J.zeroEntries()
         assemble_matrix_block(J, self.a, bcs=self.bcs, diagonal=1.0)
@@ -1356,12 +1356,13 @@ class BlockedSNESProblem(SNESProblem):
             assemble_matrix_block(P, self._a_prec, bcs=self.bcs, diagonal=1.0)
             P.assemble()
 
-    def update_solution(self, x: PETSc.Vec):
-        """Update the solution vector in the function used in the residual and Jacobian.
+    def replace_solution(self, x: PETSc.Vec):
+        """Update the solution for the unknown `u` with the values in `x`.
 
         Args:
-            x: The vector containing the latest solution
+            x: Data that is inserted into the solution vector
         """
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         offset_start = 0
         for ui in self.u:
             Vi = ui.function_space
@@ -1373,10 +1374,10 @@ class BlockedSNESProblem(SNESProblem):
             offset_start += num_sub_dofs
 
     def copy_solution(self, x: PETSc.Vec):
-        """Copy the solution vector from the function used in the residual and Jacobian.
+        """Copy the solution for the unknown `u` into the vector `x`.
 
         Args:
-            x: The vector containing the latest solution
+            x: Vector to insert data into
         """
         u_petsc = [ui.x.petsc_vec.array_r for ui in self.u]
         index_maps = [
@@ -1401,7 +1402,7 @@ class NestSNESProblem(BlockedSNESProblem):
             F: Vector to assemble the residual into
         """
         assert x.getType() == "nest" and F.getType() == "nest"
-        self.update_solution(x)
+        self.replace_solution(x)
 
         bcs1 = _bcs_by_block(_extract_spaces(self.a, 1), self.bcs)
         sub_vectors = x.getNestSubVecs()
@@ -1429,7 +1430,7 @@ class NestSNESProblem(BlockedSNESProblem):
             J: Matrix to assemble the Jacobian into
             P: Matrix to assemble the preconditioner into
         """
-        self.update_solution(x)
+        self.replace_solution(x)
         assert J.getType() == "nest" and P.getType() == "nest"
         J.zeroEntries()
         assemble_matrix_nest(J, self.a, bcs=self.bcs, diagonal=1.0)
@@ -1439,11 +1440,11 @@ class NestSNESProblem(BlockedSNESProblem):
             assemble_matrix_nest(P, self._a_prec, bcs=self.bcs, diagonal=1.0)
             P.assemble()
 
-    def update_solution(self, x: PETSc.Vec):
-        """Update the solution vector in the function used in the residual and Jacobian.
+    def replace_solution(self, x: PETSc.Vec):
+        """Update the solution for the unknown `u` with the values in `x`.
 
         Args:
-            x: The vector containing the latest solution
+            x: Data that is inserted into the solution vector
         """
         subvecs = x.getNestSubVecs()
         for x_sub, var_sub in zip(subvecs, self.u):
@@ -1452,10 +1453,10 @@ class NestSNESProblem(BlockedSNESProblem):
                 var_sub.x.array[:] = _x.array_r
 
     def copy_solution(self, x: PETSc.Vec):
-        """Copy the solution vector from the function used in the residual and Jacobian.
+        """Copy the solution for the unknown `u` into the vector `x`.
 
         Args:
-            x: The vector containing the latest solution
+            x: Vector to insert data into
         """
         wrapped_sol = [la.create_petsc_vector_wrap(u_i.x) for u_i in self.u]
         u_nest = PETSc.Vec().createNest(wrapped_sol)
