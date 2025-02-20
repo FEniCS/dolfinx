@@ -27,6 +27,6 @@ concept DofTransformKernel
 template <class U, class T>
 concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
                                        const scalar_value_type_t<T>*,
-                                       const int*, const std::uint8_t*>;
+                                       const int*, const std::uint8_t*, void*>;
 
 } // namespace dolfinx::fem

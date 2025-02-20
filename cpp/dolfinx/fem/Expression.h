@@ -69,7 +69,7 @@ public:
           constants,
       std::span<const geometry_type> X, std::array<std::size_t, 2> Xshape,
       std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
-                         const geometry_type*, const int*, const uint8_t*)>
+                         const geometry_type*, const int*, const uint8_t*, void*)>
           fn,
       const std::vector<std::size_t>& value_shape,
       std::shared_ptr<const FunctionSpace<geometry_type>>
@@ -255,7 +255,7 @@ public:
 
       std::ranges::fill(values_local, 0);
       _fn(values_local.data(), coeff_cell, constant_data.data(),
-          coord_dofs.data(), entity_index, nullptr);
+          coord_dofs.data(), entity_index, nullptr, nullptr);
       post_dof_transform(values_local, cell_info, e, size0);
       for (std::size_t j = 0; j < values_local.size(); ++j)
         values[e * vshape[1] + j] = values_local[j];
@@ -265,7 +265,7 @@ public:
   /// @brief Get function for tabulate_expression.
   /// @return fn Function to tabulate expression.
   const std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
-                           const geometry_type*, const int*, const uint8_t*)>&
+                           const geometry_type*, const int*, const uint8_t*, void*)>&
   get_tabulate_expression() const
   {
     return _fn;
@@ -303,7 +303,7 @@ private:
 
   // Function to evaluate the Expression
   std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
-                     const geometry_type*, const int*, const uint8_t*)>
+                     const geometry_type*, const int*, const uint8_t*, void*)>
       _fn;
 
   // Shape of the evaluated expression

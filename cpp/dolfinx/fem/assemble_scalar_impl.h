@@ -50,7 +50,7 @@ T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
 
     const T* coeff_cell = coeffs.data() + index * cstride;
     fn(&value, coeff_cell, constants.data(), coordinate_dofs.data(), nullptr,
-       nullptr);
+       nullptr, nullptr);
   }
 
   return value;
@@ -94,7 +94,7 @@ T assemble_exterior_facets(mdspan2_t x_dofmap,
         = perms.empty() ? 0 : perms[cell * num_facets_per_cell + local_facet];
     const T* coeff_cell = coeffs.data() + index / 2 * cstride;
     fn(&value, coeff_cell, constants.data(), coordinate_dofs.data(),
-       &local_facet, &perm);
+       &local_facet, &perm, nullptr);
   }
 
   return value;
@@ -156,7 +156,7 @@ T assemble_interior_facets(mdspan2_t x_dofmap,
                     perms[cells[0] * num_facets_per_cell + local_facet[0]],
                     perms[cells[1] * num_facets_per_cell + local_facet[1]]};
     fn(&value, coeffs.data() + index / 2 * cstride, constants.data(),
-       coordinate_dofs.data(), local_facet.data(), perm.data());
+       coordinate_dofs.data(), local_facet.data(), perm.data(), nullptr);
   }
 
   return value;

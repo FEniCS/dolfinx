@@ -163,7 +163,7 @@ void _lift_bc_cells(
     Ae.resize(num_rows * num_cols);
     std::ranges::fill(Ae, 0);
     kernel(Ae.data(), coeff_array, constants.data(), coordinate_dofs.data(),
-           nullptr, nullptr);
+           nullptr, nullptr, nullptr);
     P0(Ae, cell_info0, c0, num_cols);
     P1T(Ae, cell_info1, c1, num_rows);
 
@@ -342,7 +342,7 @@ void _lift_bc_exterior_facets(
     Ae.resize(num_rows * num_cols);
     std::ranges::fill(Ae, 0);
     kernel(Ae.data(), coeff_array, constants.data(), coordinate_dofs.data(),
-           &local_facet, &perm);
+           &local_facet, &perm, nullptr);
     P0(Ae, cell_info0, cell0, num_cols);
     P1T(Ae, cell_info1, cell1, num_rows);
 
@@ -536,7 +536,7 @@ void _lift_bc_interior_facets(
                     perms[cells[0] * num_facets_per_cell + local_facet[0]],
                     perms[cells[1] * num_facets_per_cell + local_facet[1]]};
     kernel(Ae.data(), coeffs.data() + index / 2 * cstride, constants.data(),
-           coordinate_dofs.data(), local_facet.data(), perm.data());
+           coordinate_dofs.data(), local_facet.data(), perm.data(), nullptr);
 
     std::span<T> _Ae(Ae);
     std::span<T> sub_Ae0 = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
@@ -669,7 +669,7 @@ void assemble_cells(
     // Tabulate vector for cell
     std::ranges::fill(be, 0);
     kernel(be.data(), coeffs.data() + index * cstride, constants.data(),
-           coordinate_dofs.data(), nullptr, nullptr);
+           coordinate_dofs.data(), nullptr, nullptr, nullptr);
     P0(_be, cell_info0, c0, 1);
 
     // Scatter cell vector to 'global' vector array
@@ -764,7 +764,7 @@ void assemble_exterior_facets(
     // Tabulate element vector
     std::ranges::fill(be, 0);
     fn(be.data(), coeffs.data() + index / 2 * cstride, constants.data(),
-       coordinate_dofs.data(), &local_facet, &perm);
+       coordinate_dofs.data(), &local_facet, &perm, nullptr);
 
     P0(_be, cell_info0, cell0, 1);
 
@@ -878,7 +878,7 @@ void assemble_interior_facets(
                     perms[cells[0] * num_facets_per_cell + local_facet[0]],
                     perms[cells[1] * num_facets_per_cell + local_facet[1]]};
     fn(be.data(), coeffs.data() + index / 2 * cstride, constants.data(),
-       coordinate_dofs.data(), local_facet.data(), perm.data());
+       coordinate_dofs.data(), local_facet.data(), perm.data(), nullptr);
 
     std::span<T> _be(be);
     std::span<T> sub_be = _be.subspan(bs * dmap0.size(), bs * dmap1.size());

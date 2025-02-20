@@ -109,7 +109,7 @@ void assemble_cells(
     // Tabulate tensor
     std::ranges::fill(Ae, 0);
     kernel(Ae.data(), coeffs.data() + index * cstride, constants.data(),
-           coordinate_dofs.data(), nullptr, nullptr);
+           coordinate_dofs.data(), nullptr, nullptr, nullptr);
 
     // Compute A = P_0 \tilde{A} P_1^T (dof transformation)
     P0(_Ae, cell_info0, c0, ndim1);  // B = P0 \tilde{A}
@@ -249,7 +249,7 @@ void assemble_exterior_facets(
     // Tabulate tensor
     std::ranges::fill(Ae, 0);
     kernel(Ae.data(), coeffs.data() + index / 2 * cstride, constants.data(),
-           coordinate_dofs.data(), &local_facet, &perm);
+           coordinate_dofs.data(), &local_facet, &perm, nullptr);
 
     P0(_Ae, cell_info0, cell0, ndim1);
     P1T(_Ae, cell_info1, cell1, ndim0);
@@ -423,7 +423,7 @@ void assemble_interior_facets(
                     perms[cells[0] * num_facets_per_cell + local_facet[0]],
                     perms[cells[1] * num_facets_per_cell + local_facet[1]]};
     kernel(Ae.data(), coeffs.data() + index / 2 * cstride, constants.data(),
-           coordinate_dofs.data(), local_facet.data(), perm.data());
+           coordinate_dofs.data(), local_facet.data(), perm.data(), nullptr);
 
     // Local element layout is a 2x2 block matrix with structure
     //

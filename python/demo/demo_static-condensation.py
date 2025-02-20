@@ -146,7 +146,7 @@ Usize = U.element.space_dimension
 
 
 @numba.cfunc(ufcx_signature(PETSc.ScalarType, PETSc.RealType), nopython=True)  # type: ignore
-def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL):
+def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL, custom_data=ffi.NULL):
     """Element kernel that applies static condensation."""
 
     # Prepare target condensed local element tensor
@@ -154,13 +154,13 @@ def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL):
 
     # Tabulate all sub blocks locally
     A00 = np.zeros((Ssize, Ssize), dtype=PETSc.ScalarType)
-    kernel00(ffi.from_buffer(A00), w_, c_, coords_, entity_local_index, permutation)
+    kernel00(ffi.from_buffer(A00), w_, c_, coords_, entity_local_index, permutation, custom_data)
 
     A01 = np.zeros((Ssize, Usize), dtype=PETSc.ScalarType)
-    kernel01(ffi.from_buffer(A01), w_, c_, coords_, entity_local_index, permutation)
+    kernel01(ffi.from_buffer(A01), w_, c_, coords_, entity_local_index, permutation, custom_data)
 
     A10 = np.zeros((Usize, Ssize), dtype=PETSc.ScalarType)
-    kernel10(ffi.from_buffer(A10), w_, c_, coords_, entity_local_index, permutation)
+    kernel10(ffi.from_buffer(A10), w_, c_, coords_, entity_local_index, permutation, custom_data)
 
     # A = - A10 * A00^{-1} * A01
     A[:, :] = -A10 @ np.linalg.solve(A00, A01)
