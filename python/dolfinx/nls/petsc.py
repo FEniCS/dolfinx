@@ -23,7 +23,14 @@ import types
 
 from dolfinx import cpp as _cpp
 from dolfinx import fem
-from dolfinx.fem.petsc import create_matrix, create_vector
+from dolfinx.fem.petsc import (
+    create_matrix,
+    create_matrix_block,
+    create_matrix_nest,
+    create_vector,
+    create_vector_block,
+    create_vector_nest,
+)
 
 __all__ = ["NewtonSolver", "SNESSolver"]
 
@@ -90,7 +97,7 @@ class SNESSolver:
 
     def create_solver(self):
         """Create the PETSc SNES object and set solver options"""
-        self._snes = PETSc.SNES().create(comm=self.problem.u.function_space.mesh.comm)
+        self._snes = PETSc.SNES().create(comm=self.problem.comm)
         self._snes.setOptionsPrefix("snes_solve")
         option_prefix = self._snes.getOptionsPrefix()
         opts = PETSc.Options()
@@ -107,8 +114,12 @@ class SNESSolver:
         self._x = create_vector(self.problem.L)
         self._P = None if self.problem._a_prec is None else create_matrix(self.problem._a_prec)
 
-    def solve(self):
-        """Solve the problem and update the solution in the problem instance"""
+    def solve(self) -> tuple[int, int]:
+        """Solve the problem and update the solution in the problem instance
+
+        Returns:
+            Convergence reason and number of iterations
+        """
         # Set function and Jacobian (in case the change in the SNES problem)
         self._snes.setFunction(self.problem.F, self._b)
         self._snes.setJacobian(self.problem.J, self._A, self._P)
@@ -130,6 +141,11 @@ class SNESSolver:
 
         return converged_reason, self._snes.getIterationNumber()
 
+    @property
+    def krylov_solver(self):
+        """Return the KSP object associated with the SNES object"""
+        return self._snes.getKSP()
+
     def __del__(self):
         self._snes.destroy()
         self._A.destroy()
@@ -140,6 +156,18 @@ class SNESSolver:
 class BlockedSNESSolver(SNESSolver):
     def create_data_structures(self):
         """Create PETSc objects for the matrix, residual and solution"""
-        self._b_petsc = dolfinx.fem.petsc.create_vector_block(self.problem.L)
-        self._x_petsc = dolfinx.fem.petsc.create_vector_block(self.problem.L)
-        self._A = dolfinx.fem.petsc.create_matrix_block(self.problem.a)
+        self._b = create_vector_block(self.problem.L)
+        self._x = create_vector_block(self.problem.L)
+        self._A = create_matrix_block(self.problem.a)
+        self._P = (
+            None if self.problem._a_prec is None else create_matrix_block(self.problem._a_prec)
+        )
+
+
+class NestedSNESSolver(SNESSolver):
+    def create_data_structures(self):
+        """Create PETSc objects for the matrix, residual and solution"""
+        self._b = create_vector_nest(self.problem.L)
+        self._x = create_vector_nest(self.problem.L)
+        self._A = create_matrix_nest(self.problem.a)
+        self._P = None if self.problem._a_prec is None else create_matrix_nest(self.problem._a_prec)
