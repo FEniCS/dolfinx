@@ -706,6 +706,35 @@ std::vector<std::int32_t> convert_to_local_indexing(
 
   return data;
 }
+
+/// @brief Determines the types of entities in mesh give an list of
+/// cell types in the mesh.
+/// @param cell_types A list of cell types in the mesh
+/// @return A list whose dth entry is a list of entity types in the mesh of
+/// topological dimension d.
+std::vector<std::vector<CellType>>
+build_entity_types(const std::vector<CellType>& cell_types)
+{
+  const int tdim = cell_dim(cell_types.front());
+  std::vector<std::vector<CellType>> entity_types(tdim + 1);
+
+  // Determine types of entities in the mesh
+  entity_types[0] = {mesh::CellType::point};
+  entity_types[tdim] = cell_types;
+  if (tdim > 1)
+    entity_types[1] = {mesh::CellType::interval};
+  if (tdim > 2)
+  {
+    //  Find all facet types
+    std::set<mesh::CellType> e_types;
+    for (auto c : entity_types[tdim])
+      for (int i = 0; i < cell_num_entities(c, 2); ++i)
+        e_types.insert(cell_facet_type(c, i));
+    entity_types[2] = std::vector(e_types.begin(), e_types.end());
+  }
+  return entity_types;
+}
+
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -717,7 +746,8 @@ Topology::Topology(
     const std::optional<std::vector<std::vector<std::int64_t>>>& original_index)
     : original_cell_index(original_index
                               ? *original_index
-                              : std::vector<std::vector<std::int64_t>>())
+                              : std::vector<std::vector<std::int64_t>>()),
+      _entity_types(build_entity_types(cell_types))
 {
   assert(!cell_types.empty());
   int tdim = cell_dim(cell_types.front());
@@ -725,10 +755,6 @@ Topology::Topology(
   for (auto ct : cell_types)
     assert(cell_dim(ct) == tdim);
 #endif
-
-  _entity_types.resize(tdim + 1);
-  _entity_types[0] = {mesh::CellType::point};
-  _entity_types[tdim] = cell_types;
 
   // Set data
   _index_maps.insert({{0, 0}, vertex_map});
@@ -814,6 +840,12 @@ Topology::connectivity(std::array<int, 2> d0, std::array<int, 2> d1) const
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1) const
 {
+  if (this->entity_types(d0).size() > 1 or this->entity_types(d0).size() > 1)
+  {
+    throw std::runtime_error(
+        "Multiple entity types in mesh. Call connectivity specifying entity "
+        "type");
+  }
   return this->connectivity({d0, 0}, {d1, 0});
 }
 //-----------------------------------------------------------------------------
@@ -865,21 +897,18 @@ bool Topology::create_entities(int dim)
   // connectivity(this->dim(), dim)?
 
   // Skip if already computed (vertices (dim=0) should always exist)
-  if (connectivity(dim, 0))
-    return false;
-
-  int tdim = this->dim();
-  if (dim == 1 and tdim > 1)
-    _entity_types[1] = {mesh::CellType::interval};
-  else if (dim == 2 and tdim > 2)
+  bool entities_created = true;
+  for (int ent_type_idx = 0, num_ent_types = this->entity_types(dim).size();
+       ent_type_idx < num_ent_types; ++ent_type_idx)
   {
-    //  Find all facet types
-    std::set<mesh::CellType> e_types;
-    for (auto c : _entity_types[tdim])
-      for (int i = 0; i < cell_num_entities(c, dim); ++i)
-        e_types.insert(cell_facet_type(c, i));
-    _entity_types[dim] = std::vector(e_types.begin(), e_types.end());
+    if (!connectivity({dim, ent_type_idx}, {0, 0}))
+    {
+      entities_created = false;
+      break;
+    }
   }
+  if (entities_created)
+    return false;
 
   // for (std::size_t index = 0; index < this->entity_types(dim).size();
   // ++index)
@@ -1411,3 +1440,85 @@ mesh::entities_to_index(const Topology& topology, int dim,
   return indices;
 }
 //-----------------------------------------------------------------------------
+std::vector<std::vector<std::int32_t>>
+mesh::compute_mixed_cell_pairs(const Topology& topology,
+                               mesh::CellType facet_type)
+{
+  int tdim = topology.dim();
+  std::vector<mesh::CellType> cell_types = topology.entity_types(tdim);
+  std::vector<mesh::CellType> facet_types = topology.entity_types(tdim - 1);
+
+  int facet_index = -1;
+  for (std::size_t i = 0; i < facet_types.size(); ++i)
+  {
+    if (facet_types[i] == facet_type)
+    {
+      facet_index = i;
+      break;
+    }
+  }
+  if (facet_index == -1)
+    throw std::runtime_error("Cannot find facet type in topology");
+
+  std::vector<std::vector<std::int32_t>> facet_pair_lists;
+  for (std::size_t i = 0; i < cell_types.size(); ++i)
+    for (std::size_t j = 0; j < cell_types.size(); ++j)
+    {
+      std::vector<std::int32_t> facet_pairs_ij;
+      auto fci = topology.connectivity({tdim - 1, facet_index},
+                                       {tdim, static_cast<int>(i)});
+      auto cfi = topology.connectivity({tdim, static_cast<int>(i)},
+                                       {tdim - 1, facet_index});
+
+      auto local_facet = [](auto cf, std::int32_t c, std::int32_t f)
+      {
+        auto it = std::find(cf->links(c).begin(), cf->links(c).end(), f);
+        if (it == cf->links(c).end())
+          throw std::runtime_error("Bad connectivity");
+        return std::distance(cf->links(c).begin(), it);
+      };
+
+      if (i == j)
+      {
+        if (fci)
+        {
+          for (std::int32_t k = 0; k < fci->num_nodes(); ++k)
+          {
+            if (fci->num_links(k) == 2)
+            {
+              std::int32_t c0 = fci->links(k)[0], c1 = fci->links(k)[1];
+              facet_pairs_ij.push_back(c0);
+              facet_pairs_ij.push_back(local_facet(cfi, c0, k));
+              facet_pairs_ij.push_back(c1);
+              facet_pairs_ij.push_back(local_facet(cfi, c1, k));
+            }
+          }
+        }
+      }
+      else
+      {
+        auto fcj = topology.connectivity({tdim - 1, facet_index},
+                                         {tdim, static_cast<int>(j)});
+        auto cfj = topology.connectivity({tdim, static_cast<int>(j)},
+                                         {tdim - 1, facet_index});
+        if (fci and fcj)
+        {
+          assert(fci->num_nodes() == fcj->num_nodes());
+          for (std::int32_t k = 0; k < fci->num_nodes(); ++k)
+          {
+            if (fci->num_links(k) == 1 and fcj->num_links(k) == 1)
+            {
+              std::int32_t ci = fci->links(k)[0], cj = fcj->links(k)[0];
+              facet_pairs_ij.push_back(ci);
+              facet_pairs_ij.push_back(local_facet(cfi, ci, k));
+              facet_pairs_ij.push_back(cj);
+              facet_pairs_ij.push_back(local_facet(cfj, cj, k));
+            }
+          }
+        }
+      }
+      facet_pair_lists.push_back(facet_pairs_ij);
+    }
+
+  return facet_pair_lists;
+}

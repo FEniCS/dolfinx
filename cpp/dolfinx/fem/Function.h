@@ -9,8 +9,10 @@
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
+#include "assembler.h"
 #include "interpolate.h"
 #include <algorithm>
+#include <basix/mdspan.hpp>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
@@ -315,6 +317,8 @@ public:
                    std::span<const std::int32_t> cells0,
                    std::span<const std::int32_t> cells1 = {})
   {
+    namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
     // Extract mesh
     const mesh::Mesh<geometry_type>* mesh0 = nullptr;
     for (auto& c : e0.coefficients())
@@ -352,7 +356,7 @@ public:
     // Check that Function and Expression spaces are compatible
     assert(_function_space->element());
     std::size_t value_size = e0.value_size();
-    if (e0.argument_function_space())
+    if (e0.argument_space())
       throw std::runtime_error("Cannot interpolate Expression with Argument.");
     if (value_size != _function_space->element()->value_size())
     {
@@ -391,7 +395,8 @@ public:
         f(fdata.data(), num_cells, num_points, value_size);
 
     // Evaluate Expression at points
-    e0.eval(*mesh0, cells0, fdata, {num_cells, num_points * value_size});
+    tabulate_expression(std::span(fdata), e0, *mesh0,
+                        md::mdspan(cells0.data(), cells0.size()));
 
     // Reshape evaluated data to fit interpolate.
     // Expression returns matrix of shape (num_cells, num_points *
