@@ -1137,7 +1137,7 @@ class SNESProblem:
         """Class for constructing the residual and Jacobian constructors for a SNES problem.
 
         Solves problems of the form :math:`F(u, v) = 0 \\ \\forall v \\in V` using
-        PETSc SNES as the non-lienar solver.
+        PETSc SNES as the non-linear solver.
 
         Args:
             F: The PDE residual F(u, v)
