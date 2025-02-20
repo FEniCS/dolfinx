@@ -51,6 +51,9 @@ class IndexMap;
 
 namespace dolfinx::fem
 {
+template <dolfinx::scalar T, std::floating_point U>
+class Expression;
+
 namespace impl
 {
 /// Helper function to get an array of of (cell, local_facet) pairs
@@ -887,7 +890,7 @@ Expression<T, U> create_expression(
     const ufcx_expression& e,
     const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
-    std::shared_ptr<const FunctionSpace<U>> argument_function_space = nullptr)
+    std::shared_ptr<const FunctionSpace<U>> argument_space = nullptr)
 {
   if (!coefficients.empty())
   {
@@ -902,7 +905,7 @@ Expression<T, U> create_expression(
     }
   }
 
-  if (e.rank > 0 and !argument_function_space)
+  if (e.rank > 0 and !argument_space)
   {
     throw std::runtime_error("Expression has Argument but no Argument "
                              "function space was provided.");
@@ -945,7 +948,7 @@ Expression<T, U> create_expression(
 
   assert(tabulate_tensor);
   return Expression(coefficients, constants, std::span<const U>(X), Xshape,
-                    tabulate_tensor, value_shape, argument_function_space);
+                    tabulate_tensor, value_shape, argument_space);
 }
 
 /// @brief Create Expression from UFC input (with named coefficients and
@@ -956,7 +959,7 @@ Expression<T, U> create_expression(
     const std::map<std::string, std::shared_ptr<const Function<T, U>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    std::shared_ptr<const FunctionSpace<U>> argument_function_space = nullptr)
+    std::shared_ptr<const FunctionSpace<U>> argument_space = nullptr)
 {
   // Place coefficients in appropriate order
   std::vector<std::shared_ptr<const Function<T, U>>> coeff_map;
@@ -992,7 +995,7 @@ Expression<T, U> create_expression(
     }
   }
 
-  return create_expression(e, coeff_map, const_map, argument_function_space);
+  return create_expression(e, coeff_map, const_map, argument_space);
 }
 
 } // namespace dolfinx::fem
