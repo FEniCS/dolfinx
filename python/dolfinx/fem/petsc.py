@@ -1219,7 +1219,7 @@ class SNESProblem:
 
         Args:
             snes: The solver instance
-            x: The vector containing the latest solution
+            x: The vector containing the point to evaluate the residual at.
             F: Vector to assemble the residual into
         """
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
@@ -1233,11 +1233,11 @@ class SNESProblem:
         dolfinx.fem.petsc.set_bc(F, self.bcs, x, -1.0)
 
     def J(self, snes, x, J, P):
-        """Assemble the Jacobian matrix.
+        """Assemble the Jacobian matrix and preconditioner.
 
         Args:
             snes: The solver instance
-            x: The vector containing the latest solution
+            x: The vector containing the point to evaluate at
             J: Matrix to assemble the Jacobian into
             P: Matrix to assemble the preconditioner into
         """
