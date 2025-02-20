@@ -1134,7 +1134,7 @@ class SNESProblem:
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
     ):
-        """Initialize class for constructing the residual and Jacobian constructors for a SNES problem.
+        """Class for constructing the residual and Jacobian constructors for a SNES problem.
 
         Args:
             F: The PDE residual F(u, v)
@@ -1265,7 +1265,7 @@ class BlockedSNESProblem(SNESProblem):
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
     ):
-        """Initialize class for constructing the residual and Jacobian constructors for a SNES problem.
+        """Class for constructing the residual and Jacobian constructors for a SNES problem.
 
         Args:
             F: List of PDE residuals F_i(u, v), i=0,...N
