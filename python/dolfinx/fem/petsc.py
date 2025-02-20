@@ -1374,7 +1374,7 @@ class BlockedSNESProblem(SNESProblem):
             offset_start += num_sub_dofs
 
     def copy_solution(self, x: PETSc.Vec):
-        """Copy the solution for the unknown `u` into the vector `x`.
+        """Copy the data in `u` into the vector `x`.
 
         Args:
             x: Vector to insert data into
@@ -1453,7 +1453,7 @@ class NestSNESProblem(BlockedSNESProblem):
                 var_sub.x.array[:] = _x.array_r
 
     def copy_solution(self, x: PETSc.Vec):
-        """Copy the solution for the unknown `u` into the vector `x`.
+        """Copy the data in `u` into the vector `x`.
 
         Args:
             x: Vector to insert data into
