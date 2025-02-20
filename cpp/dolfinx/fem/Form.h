@@ -384,7 +384,10 @@ public:
     auto it = std::ranges::lower_bound(integrals, i, std::less<>{},
                                        [](const auto& a) { return a.id; });
     if (it != integrals.end() and it->id == i)
+    {
+      // std::cout << "Returning entities: " << it->entities.size() << std::endl;
       return it->entities;
+    }
     else
       throw std::runtime_error("No mesh entities for requested domain index.");
   }

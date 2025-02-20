@@ -28,6 +28,8 @@ T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
                  std::span<const T> constants, std::span<const T> coeffs,
                  int cstride)
 {
+  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
   T value(0);
   if (cells.empty())
     return value;
@@ -41,8 +43,7 @@ T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
     std::int32_t c = cells[index];
 
     // Get cell coordinates/geometry
-    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -80,10 +81,10 @@ T assemble_exterior_facets(
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
 
   // Iterate over all facets
-  for (std::size_t index = 0; index < facets.extent(0); ++index)
+  for (std::size_t f = 0; f < facets.extent(0); ++f)
   {
-    std::int32_t cell = facets(index, 0);
-    std::int32_t local_facet = facets(index, 1);
+    std::int32_t cell = facets(f, 0);
+    std::int32_t local_facet = facets(f, 1);
 
     // Get cell coordinates/geometry
     auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
@@ -96,7 +97,7 @@ T assemble_exterior_facets(
     // Permutations
     std::uint8_t perm
         = perms.empty() ? 0 : perms[cell * num_facets_per_cell + local_facet];
-    const T* coeff_cell = coeffs.data() + index / 2 * cstride;
+    const T* coeff_cell = coeffs.data() + f * cstride;
     fn(&value, coeff_cell, constants.data(), coordinate_dofs.data(),
        &local_facet, &perm);
   }
@@ -135,10 +136,10 @@ T assemble_interior_facets(
   assert(offsets.back() == cstride);
 
   // Iterate over all facets
-  for (std::size_t index = 0; index < facets.extent(0); ++index)
+  for (std::size_t f = 0; f < facets.extent(0); ++f)
   {
-    std::array cells = {facets(index, 0), facets(index, 2)};
-    std::array local_facet = {facets(index, 1), facets(index, 3)};
+    std::array cells = {facets(f, 0), facets(f, 2)};
+    std::array local_facet = {facets(f, 1), facets(f, 3)};
 
     // Get cell geometry
     auto x_dofs0 = md::submdspan(x_dofmap, cells[0], md::full_extent);
@@ -160,7 +161,7 @@ T assemble_interior_facets(
               : std::array{
                     perms[cells[0] * num_facets_per_cell + local_facet[0]],
                     perms[cells[1] * num_facets_per_cell + local_facet[1]]};
-    fn(&value, coeffs.data() + index / 2 * cstride, constants.data(),
+    fn(&value, coeffs.data() + 2 * f * cstride, constants.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data());
   }
 
