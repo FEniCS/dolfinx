@@ -1263,7 +1263,7 @@ class SNESProblem:
 
         # Assemble Jacobian
         J.zeroEntries()
-        dolfinx.fem.petsc.assemble_matrix(J, self.a, self.bcs)
+        dolfinx.fem.petsc.assemble_matrix(J, self.a, self.bcs, diagonal=1.0)
         J.assemble()
 
         if self._a_prec is not None:
@@ -1356,8 +1356,8 @@ class BlockSNESProblem:
             x: The vector containing the latest solution
             F: Vector to assemble the residual into
         """
-        assert x.getType() != "nest"
-        assert F.getType() != "nest"
+        assert x.getType() != "nest", "Vector x should be non-nested"
+        assert F.getType() != "nest", "Vector F should be non-nested"
         with F.localForm() as f_local:
             f_local.set(0.0)
 
@@ -1374,7 +1374,9 @@ class BlockSNESProblem:
             P: Matrix to assemble the preconditioner into
         """
         self.replace_solution(x)
-        assert x.getType() != "nest" and J.getType() != "nest" and P.getType() != "nest"
+        assert x.getType() != "nest", "Vector x should be non-nested"
+        assert J.getType() != "nest", "Matrix J should be non-nested"
+        assert P.getType() != "nest", "Matrix P should be non-nested"
         J.zeroEntries()
         assemble_matrix_block(J, self.a, bcs=self.bcs, diagonal=1.0)
         J.assemble()
