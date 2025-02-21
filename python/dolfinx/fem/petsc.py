@@ -1265,10 +1265,10 @@ class BlockSNESProblem(SNESProblem):
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
     ):
-        """Class for constructing the residual and Jacobian constructors for a SNES problem.
+        """Class for constructing the residual and Jacobian callbacks for a SNES problem.
 
         Solves problems of the form :math:`F_i(u, v) = 0, i=0,...N\\ \\forall v \\in V`
-        where :math:`u=(u_0,...,u_N), v=(v_0,...,v_n)` using PETSc SNES as the non-linear solver.
+        where :math:`u=(u_0,...,u_N), v=(v_0,...,v_N)` using PETSc SNES as the non-linear solver.
 
         Args:
             F: List of PDE residuals :math:`F_i`.
