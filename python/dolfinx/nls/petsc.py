@@ -83,8 +83,8 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
 
 
 class setSNESFunctions(typing.Protocol):
-    def F(self, snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec): ...
-    def J(self, snes: PETSc.SNES, x: PETSc.Vec, J: PETSc.Mat, P: PETSc.Mat): ...
+    def F(self, snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec): ...  # type: ignore
+    def J(self, snes: PETSc.SNES, x: PETSc.Vec, J: PETSc.Mat, P: PETSc.Mat): ...  # type: ignore
 
 
 class SNESProblemProtocol(setSNESFunctions, typing.Protocol):
@@ -101,11 +101,11 @@ class SNESProblemProtocol(setSNESFunctions, typing.Protocol):
     def P(self) -> fem.Form | list[list[fem.Form]] | None: ...
 
     @property
-    def F(self) -> PETSc.Mat: ...
+    def F(self) -> PETSc.Mat: ...  # type: ignore
 
-    def copy_solution(self, x: PETSc.Vec): ...
+    def copy_solution(self, x: PETSc.Vec): ...  # type: ignore
 
-    def replace_solution(self, x: PETSc.Vec): ...
+    def replace_solution(self, x: PETSc.Vec): ...  # type: ignore
 
 
 class SnesType(Enum):
@@ -119,7 +119,7 @@ def create_data_structures(
     L: typing.Union[list[fem.Form], fem.Form],
     P: typing.Union[list[list[fem.Form]], list[fem.Form], fem.Form, None],
     snes_type: SnesType,
-) -> tuple[PETSc.Mat, PETSc.Vec, PETSc.Vec, PETSc.Mat | None]:
+) -> tuple[PETSc.Mat, PETSc.Vec, PETSc.Vec, PETSc.Mat | None]:  # type: ignore
     """Create data-structures used in PETSc NEST solvers
 
     Args:
@@ -131,8 +131,8 @@ def create_data_structures(
         PETSc datastructures for the matrix A, vectors x and b, and preconditioner P
     """
 
-    matrix_creator = None
-    vector_creator = None
+    matrix_creator: typing.Union[None, typing.Callable[[PETSc.Mat], typing.Any]] = None  # type: ignore
+    vector_creator: typing.Union[None, typing.Callable[[PETSc.Vec], typing.Any]] = None  # type: ignore
     if snes_type == SnesType.default:
         matrix_creator = create_matrix
         vector_creator = create_vector
@@ -142,10 +142,12 @@ def create_data_structures(
     elif snes_type == SnesType.nest:
         matrix_creator = create_matrix_nest
         vector_creator = create_vector_nest
-    A = matrix_creator(a)
-    b = vector_creator(L)
-    x = vector_creator(L)
-    P = None if P is None else matrix_creator(P)
+    else:
+        raise ValueError("Unsupported SNES type")
+    A = matrix_creator(a)  # type: ignore
+    b = vector_creator(L)  # type: ignore
+    x = vector_creator(L)  # type: ignore
+    P = None if P is None else matrix_creator(P)  # type: ignore
     return A, x, b, P
 
 
