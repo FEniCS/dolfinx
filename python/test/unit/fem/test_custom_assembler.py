@@ -172,6 +172,22 @@ def assemble_vector_parallel(b, v, x, dofmap_t_data, dofmap_t_offsets, num_cells
             b[index] += _b_unassembled[dofmap_t_data[p]]
 
 
+@numba.extending.intrinsic
+def get_void_pointer(typingctx, arr):
+    """Custom intrinsic to get a void* pointer from a NumPy array."""
+    if not isinstance(arr, numba.types.Array):
+        raise TypeError("Expected a NumPy array")
+
+    def codegen(context, builder, signature, args):
+        [arr] = args
+        raw_ptr = numba.core.cgutils.alloca_once_value(builder, arr)
+        void_ptr = builder.bitcast(raw_ptr, context.get_value_type(numba.types.voidptr))
+        return void_ptr
+
+    sig = numba.types.voidptr(arr)
+    return sig, codegen
+
+
 @numba.njit(fastmath=True)
 def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
     """Assemble provided FFCx/UFC kernel over a mesh into the array b"""
@@ -181,6 +197,8 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
     geometry = np.zeros((3, 3), dtype=x.dtype)
     coeffs = np.zeros(1, dtype=dtype)
     constants = np.zeros(1, dtype=dtype)
+    custom_data = np.zeros(1, dtype=np.int64)
+    custom_data_ptr = get_void_pointer(custom_data)
 
     b_local = np.zeros(3, dtype=dtype)
     for cell in range(num_cells):
@@ -195,6 +213,7 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
             ffi.from_buffer(geometry),
             ffi.from_buffer(entity_local_index),
             ffi.from_buffer(perm),
+            custom_data_ptr,
         )
         for j in range(3):
             b[dofmap[cell, j]] += b_local[j]
@@ -323,6 +342,7 @@ def test_custom_mesh_loop_rank1(dtype):
 
     # Get the one and only kernel
     kernel = getattr(ufcx_form.form_integrals[0], f"tabulate_tensor_{np.dtype(dtype).name}")
+
     for i in range(2):
         b = b3.x.array
         b[:] = 0.0

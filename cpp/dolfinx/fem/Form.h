@@ -54,7 +54,7 @@ struct integral_data
     requires std::is_convertible_v<
                  std::remove_cvref_t<K>,
                  std::function<void(T*, const T*, const T*, const U*,
-                                    const int*, const uint8_t*)>>
+                                    const int*, const uint8_t*, void*)>>
                  and std::is_convertible_v<std::remove_cvref_t<V>,
                                            std::vector<std::int32_t>>
                  and std::is_convertible_v<std::remove_cvref_t<W>,
@@ -79,7 +79,7 @@ struct integral_data
     requires std::is_convertible_v<
                  std::remove_cvref_t<K>,
                  std::function<void(T*, const T*, const T*, const U*,
-                                    const int*, const uint8_t*)>>
+                                    const int*, const uint8_t*, void*)>>
                  and std::is_convertible_v<std::remove_cvref_t<W>,
                                            std::vector<int>>
   integral_data(int id, K&& kernel, std::span<const std::int32_t> entities,
@@ -95,7 +95,7 @@ struct integral_data
 
   /// @brief The integration kernel.
   std::function<void(T*, const T*, const T*, const U*, const int*,
-                     const uint8_t*)>
+                     const uint8_t*, void*)>
       kernel;
 
   /// @brief The entities to integrate over.
@@ -267,7 +267,7 @@ public:
   /// for a given ID in mixed-topology meshes).
   /// @return Function to call for `tabulate_tensor`.
   std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
-                     const geometry_type*, const int*, const uint8_t*)>
+                     const geometry_type*, const int*, const uint8_t*, void*)>
   kernel(IntegralType type, int i, int kernel_idx) const
   {
     const std::vector<integral_data<scalar_type, geometry_type>>& integrals
@@ -294,7 +294,7 @@ public:
   /// @param[in] i Domain identifier (index).
   /// @return Function to call for `tabulate_tensor`.
   std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
-                     const geometry_type*, const int*, const uint8_t*)>
+                     const geometry_type*, const int*, const uint8_t*, void*)>
   kernel(IntegralType type, int i) const
   {
     return kernel(type, i, 0);

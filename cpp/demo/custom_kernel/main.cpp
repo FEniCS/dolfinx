@@ -239,7 +239,7 @@ void assemble(MPI_Comm comm)
   std::array<T, 9> A_hat_b = A_ref<T>(phi, weights);
   auto kernel_a
       = [A_hat = mdspan2_t<T, 3, 3>(A_hat_b.data()),
-         detJ](T* A, const T*, const T*, const T* x, const int*, const uint8_t*)
+         detJ](T* A, const T*, const T*, const T* x, const int*, const uint8_t*, void*)
   {
     T scale = detJ(mdspan2_t<const T, 3, 3>(x));
     mdspan2_t<T, 3, 3> _A(A);
@@ -251,7 +251,7 @@ void assemble(MPI_Comm comm)
   // Finite element RHS (f=1) kernel function
   auto kernel_L
       = [b_hat = b_ref<T>(phi, weights),
-         detJ](T* b, const T*, const T*, const T* x, const int*, const uint8_t*)
+         detJ](T* b, const T*, const T*, const T* x, const int*, const uint8_t*, void*)
   {
     T scale = detJ(mdspan2_t<const T, 3, 3>(x));
     for (std::size_t i = 0; i < 3; ++i)
