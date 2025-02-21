@@ -81,8 +81,34 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
         super().setP(P, Pmat)
 
 
+class setSNESFunctions(typing.Protocol):
+    def F(self, snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec): ...
+    def J(self, snes: PETSc.SNES, x: PETSc.Vec, J: PETSc.Mat, P: PETSc.Mat): ...
+
+
+class SNESProblemProtocol(setSNESFunctions, typing.Protocol):
+    @property
+    def u(self) -> fem.Function | list[fem.Function]: ...
+
+    @property
+    def a(self) -> fem.Form | list[list[fem.Form]]: ...
+
+    @property
+    def L(self) -> fem.Form | list[fem.Form]: ...
+
+    @property
+    def P(self) -> fem.Form | list[list[fem.Form]] | None: ...
+
+    @property
+    def F(self) -> PETSc.Mat: ...
+
+    def copy_solution(self, x: PETSc.Vec): ...
+
+    def replace_solution(self, x: PETSc.Vec): ...
+
+
 class SNESSolver:
-    def __init__(self, problem: dolfinx.fem.petsc.SNESProblem, options: dict | None = None):
+    def __init__(self, problem: SNESProblemProtocol, options: dict | None = None):
         """Initialize a PETSc-SNES solver
 
         Args:
@@ -115,7 +141,7 @@ class SNESSolver:
         self._A = create_matrix(self.problem.a)
         self._b = create_vector(self.problem.L)
         self._x = create_vector(self.problem.L)
-        self._P = None if self.problem._a_prec is None else create_matrix(self.problem._a_prec)
+        self._P = None if self.problem.P is None else create_matrix(self.problem.P)
 
     def solve(self) -> tuple[int, int]:
         """Solve the problem and update the solution in the problem instance
