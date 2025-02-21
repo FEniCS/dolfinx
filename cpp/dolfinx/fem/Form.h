@@ -46,9 +46,8 @@ namespace impl
 /// integral (kernel) of a given type (i.e. cell, exterior facet, or
 /// interior facet).
 inline std::vector<std::int32_t>
-compute_domain(IntegralType type, const mesh::Topology& topology,
-               //  const mesh::Topology& topology1,
-               int codim, std::span<std::int32_t> entities,
+compute_domain(IntegralType type, const mesh::Topology& topology, int codim,
+               std::span<const std::int32_t> entities,
                std::span<const std::int32_t> entity_map)
 {
   assert(codim >= 0);
@@ -328,6 +327,7 @@ public:
       _entity_maps.insert({msh, std::vector(map.begin(), map.end())});
 
     // New
+    // TODO: also need tp store shared_ptr meshes in  entity_maps
     std::transform(entity_maps.begin(), entity_maps.end(),
                    std::back_inserter(_entity_maps_new),
                    [](auto& e)
@@ -335,6 +335,47 @@ public:
                      return std::pair(e.first, std::vector(e.second.begin(),
                                                            e.second.end()));
                    });
+
+    for (auto V : this->function_spaces())
+    {
+      if (auto mesh0 = V->mesh(); mesh0 != _mesh)
+      {
+        assert(mesh0);
+        int tdim = _mesh->topology()->dim();
+        int codim = tdim - mesh0->topology()->dim();
+
+        auto it = std::ranges::find_if(_entity_maps_new,
+                                       [adr = mesh0.get()](auto& x)
+                                       { return x.first.get() == adr; });
+        assert(it != _entity_maps_new.end());
+        std::span<const std::int32_t> entity_map = it->second;
+
+        if (_mesh != mesh0)
+        {
+          for (int i : this->integral_ids(IntegralType::cell))
+          {
+            std::span<const std::int32_t> entities
+                = this->domain(IntegralType::cell, i);
+            impl::compute_domain(IntegralType::cell, *_mesh->topology(), codim,
+                                 entities, entity_map);
+          }
+
+          // for (int i : this->integral_ids(IntegralType::exterior_facet))
+          // {
+          // }
+
+          // for (int i : this->integral_ids(IntegralType::interior_facet))
+          // {
+          // }
+        }
+      }
+    }
+    // for (auto [msh, map] : entity_maps)
+    // {
+    //   impl::compute_domain(IntegralType type, const mesh::Topology& topology,
+    //                        int codim, std::span<std::int32_t> entities,
+    //                        std::span<const std::int32_t> entity_map)
+    // }
   }
 
   /// Copy constructor
