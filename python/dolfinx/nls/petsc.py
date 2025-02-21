@@ -183,11 +183,11 @@ class SNESSolver:
         for key, v in self.options.items():
             del opts[key]
 
-    def solve(self) -> tuple[int, int]:
-        """Solve the problem and update the solution in the problem instance
+    def solve(self) -> tuple[PETSc.Vec, int, int]:  # type: ignore
+        """Solve the problem and update the solution in the problem instance.
 
         Returns:
-            Convergence reason and number of iterations
+            The solution, convergence reason and number of iterations
         """
         # Set function and Jacobian (in case the change in the SNES problem)
         self._snes.setFunction(self.problem.F, self._b)
@@ -199,10 +199,28 @@ class SNESSolver:
         # Solve problem
         self._snes.solve(None, self._x)
 
-        # Update solution in problem
-        self.problem.replace_solution(self._x)
         converged_reason = self._snes.getConvergedReason()
-        return converged_reason, self._snes.getIterationNumber()
+        return self._x, converged_reason, self._snes.getIterationNumber()
+
+    @property
+    def A(self) -> PETSc.Mat:  # type: ignore
+        """Return the matrix associated with the SNES object"""
+        return self._A
+
+    @property
+    def P(self) -> PETSc.Mat | None:  # type: ignore
+        """Return the preconditioner matrix associated with the SNES object"""
+        return self._P
+
+    @property
+    def x(self) -> PETSc.Vec:  # type: ignore
+        """Return the solution vector associated with the SNES object"""
+        return self._x
+
+    @property
+    def b(self) -> PETSc.Vec:  # type: ignore
+        """Return the right hand side vector associated with the SNES object"""
+        return self._b
 
     @property
     def krylov_solver(self):

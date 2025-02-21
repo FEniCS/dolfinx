@@ -273,10 +273,6 @@ class TestNLSPETSc:
 
         import dolfinx.fem.petsc
         import dolfinx.nls.petsc
-        from dolfinx.fem.petsc import (
-            create_vector_block,
-            create_vector_nest,
-        )
 
         mesh = create_unit_square(MPI.COMM_WORLD, 12, 11)
         p = 1
@@ -339,13 +335,11 @@ class TestNLSPETSc:
             solver = dolfinx.nls.petsc.SNESSolver(
                 problem, dolfinx.nls.petsc.SnesType.block, options=snes_options
             )
-            converged_reason, _ = solver.solve()
+            x, converged_reason, _ = solver.solve()
             assert solver.krylov_solver.getConvergedReason() > 0
             assert converged_reason > 0
-            x = create_vector_block(F)
-            problem.copy_solution(x)
+            problem.replace_solution(x)
             xnorm = x.norm()
-            x.destroy()
             return xnorm
 
         def nested_solve():
@@ -364,13 +358,10 @@ class TestNLSPETSc:
             solver = dolfinx.nls.petsc.SNESSolver(
                 problem, dolfinx.nls.petsc.SnesType.nest, options=snes_options
             )
-            converged_reason, _ = solver.solve()
+            x, converged_reason, _ = solver.solve()
             assert solver.krylov_solver.getConvergedReason() > 0
             assert converged_reason > 0
-            x = create_vector_nest(F)
-            problem.copy_solution(x)
             xnorm = x.norm()
-            x.destroy()
             return xnorm
 
         def monolithic_solve():
@@ -410,8 +401,10 @@ class TestNLSPETSc:
             snes_solver = dolfinx.nls.petsc.SNESSolver(
                 snes_prob, dolfinx.nls.petsc.SnesType.default, options=snes_options
             )
-            snes_solver.solve()
-            xnorm = snes_prob.u.x.petsc_vec.norm()
+            x, converged_reason, _ = snes_solver.solve()
+            assert converged_reason > 0
+            snes_prob.replace_solution(x)
+            xnorm = x.norm()
             return xnorm
 
         norm0 = blocked_solve()
@@ -439,10 +432,6 @@ class TestNLSPETSc:
         """Assemble Stokes problem with Taylor-Hood elements and solve."""
         import dolfinx.fem.petsc
         import dolfinx.nls.petsc
-        from dolfinx.fem.petsc import (
-            create_vector_block,
-            create_vector_nest,
-        )
 
         gdim = mesh.geometry.dim
         P2 = functionspace(mesh, ("Lagrange", 2, (gdim,)))
@@ -493,7 +482,6 @@ class TestNLSPETSc:
             [derivative(F[1], u, du), derivative(F[1], p, dp)],
         ]
         P = [[J[0][0], None], [None, inner(dp, q) * dx]]
-        F_c = form(F)
 
         def blocked():
             """Blocked and monolithic"""
@@ -510,17 +498,13 @@ class TestNLSPETSc:
             solver = dolfinx.nls.petsc.SNESSolver(
                 problem, dolfinx.nls.petsc.SnesType.block, options=snes_options
             )
-            converged_reason, _ = solver.solve()
+            x, converged_reason, _ = solver.solve()
             assert solver.krylov_solver.getConvergedReason() > 0
             assert converged_reason > 0
-
-            x = create_vector_block(problem.L)
-            problem.copy_solution(x)
-
+            problem.replace_solution(x)
             Jnorm = solver._A.norm()
             Fnorm = solver._b.norm()
             xnorm = x.norm()
-            x.destroy()
             return Jnorm, Fnorm, xnorm
 
         def nested():
@@ -540,16 +524,13 @@ class TestNLSPETSc:
             solver = dolfinx.nls.petsc.SNESSolver(
                 problem, dolfinx.nls.petsc.SnesType.nest, options=snes_options
             )
-            converged_reason, _ = solver.solve()
+            x, converged_reason, _ = solver.solve()
             assert solver.krylov_solver.getConvergedReason() > 0
             assert converged_reason > 0
-            x = create_vector_nest(F_c)
-            problem.copy_solution(x)
+            problem.replace_solution(x)
             xnorm = x.norm()
             Jnorm = nest_matrix_norm(solver._A)
             Fnorm = solver._b.norm()
-            xnorm = x.norm()
-            x.destroy()
             return Jnorm, Fnorm, xnorm
 
         def monolithic():
@@ -598,8 +579,10 @@ class TestNLSPETSc:
             snes_solver = dolfinx.nls.petsc.SNESSolver(
                 snes_prob, dolfinx.nls.petsc.SnesType.default, options=snes_options
             )
-            snes_solver.solve()
-            xnorm = snes_prob.u.x.petsc_vec.norm()
+            x, converged_reason, _ = snes_solver.solve()
+            assert converged_reason > 0
+            snes_prob.replace_solution(x)
+            xnorm = x.norm()
             Jnorm = snes_solver._A.norm()
             Fnorm = snes_solver._b.norm()
             return Jnorm, Fnorm, xnorm
