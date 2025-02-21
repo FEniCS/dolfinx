@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import typing
+from enum import Enum
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -106,17 +107,21 @@ class SNESProblemProtocol(setSNESFunctions, typing.Protocol):
 
     def replace_solution(self, x: PETSc.Vec): ...
 
-from enum import Enum
+
 class SnesType(Enum):
-    default=  0
-    block=1
-    nest= 2
+    default = 0
+    block = 1
+    nest = 2
 
 
-
-def create_data_structures(a: typing.Union[list[list[fem.Form]], fem.Form], L: typing.Union[list[fem.Form], fem.Form], P: typing.Union[list[list[fem.Form]], list[fem.Form], fem.Form, None], snes_type: SnesType) -> tuple[PETSc.Mat, PETSc.Vec, PETSc.Vec, PETSc.Mat | None]:
+def create_data_structures(
+    a: typing.Union[list[list[fem.Form]], fem.Form],
+    L: typing.Union[list[fem.Form], fem.Form],
+    P: typing.Union[list[list[fem.Form]], list[fem.Form], fem.Form, None],
+    snes_type: SnesType,
+) -> tuple[PETSc.Mat, PETSc.Vec, PETSc.Vec, PETSc.Mat | None]:
     """Create data-structures used in PETSc NEST solvers
-    
+
     Args:
         a: The compiled bi-linear form(s)
         L: The compiled linear form(s)
@@ -143,8 +148,11 @@ def create_data_structures(a: typing.Union[list[list[fem.Form]], fem.Form], L: t
     P = None if P is None else matrix_creator(P)
     return A, x, b, P
 
+
 class SNESSolver:
-    def __init__(self, problem: SNESProblemProtocol, snes_type: SnesType, options: dict | None = None):
+    def __init__(
+        self, problem: SNESProblemProtocol, snes_type: SnesType, options: dict | None = None
+    ):
         """Initialize a PETSc-SNES solver
 
         Args:
@@ -153,7 +161,9 @@ class SNESSolver:
         """
         self.problem = problem
         self.options = options if options is not None else {}
-        self._A, self._x, self._b, self._P = create_data_structures(problem.a, problem.L, problem.P, snes_type)
+        self._A, self._x, self._b, self._P = create_data_structures(
+            problem.a, problem.L, problem.P, snes_type
+        )
         self.create_solver()
         self.error_if_not_converged = True
 
@@ -171,7 +181,6 @@ class SNESSolver:
         # Delete options from handler post setting
         for key, v in self.options.items():
             del opts[key]
-
 
     def solve(self) -> tuple[int, int]:
         """Solve the problem and update the solution in the problem instance

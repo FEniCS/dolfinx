@@ -336,7 +336,9 @@ class TestNLSPETSc:
                 J=J,
             )
             snes_options = {"snes_rtol": 1.0e-15, "snes_max_it": 10, "snes_monitor": None}
-            solver = dolfinx.nls.petsc.SNESSolver(problem, dolfinx.nls.petsc.SnesType.block, options=snes_options)
+            solver = dolfinx.nls.petsc.SNESSolver(
+                problem, dolfinx.nls.petsc.SnesType.block, options=snes_options
+            )
             converged_reason, _ = solver.solve()
             assert solver.krylov_solver.getConvergedReason() > 0
             assert converged_reason > 0
@@ -359,7 +361,9 @@ class TestNLSPETSc:
             }
 
             problem = dolfinx.fem.petsc.NestSNESProblem(F, [u, p], bcs=bcs, J=J)
-            solver = dolfinx.nls.petsc.SNESSolver(problem, dolfinx.nls.petsc.SnesType.nest, options=snes_options)
+            solver = dolfinx.nls.petsc.SNESSolver(
+                problem, dolfinx.nls.petsc.SnesType.nest, options=snes_options
+            )
             converged_reason, _ = solver.solve()
             assert solver.krylov_solver.getConvergedReason() > 0
             assert converged_reason > 0
@@ -403,7 +407,9 @@ class TestNLSPETSc:
             U.sub(1).interpolate(initial_guess_p)
 
             snes_prob = dolfinx.fem.petsc.SNESProblem(F, U, J=J, bcs=bcs)
-            snes_solver = dolfinx.nls.petsc.SNESSolver(snes_prob, dolfinx.nls.petsc.SnesType.default, options=snes_options)
+            snes_solver = dolfinx.nls.petsc.SNESSolver(
+                snes_prob, dolfinx.nls.petsc.SnesType.default, options=snes_options
+            )
             snes_solver.solve()
             xnorm = snes_prob.u.x.petsc_vec.norm()
             return xnorm
@@ -501,7 +507,9 @@ class TestNLSPETSc:
                 "snes_monitor": None,
                 "ksp_type": "minres",
             }
-            solver = dolfinx.nls.petsc.SNESSolver(problem, dolfinx.nls.petsc.SnesType.block, options=snes_options)
+            solver = dolfinx.nls.petsc.SNESSolver(
+                problem, dolfinx.nls.petsc.SnesType.block, options=snes_options
+            )
             converged_reason, _ = solver.solve()
             assert solver.krylov_solver.getConvergedReason() > 0
             assert converged_reason > 0
@@ -529,7 +537,9 @@ class TestNLSPETSc:
             }
 
             problem = dolfinx.fem.petsc.NestSNESProblem(F, [u, p], bcs=bcs, P=P)
-            solver = dolfinx.nls.petsc.SNESSolver(problem, dolfinx.nls.petsc.SnesType.nest, options=snes_options)
+            solver = dolfinx.nls.petsc.SNESSolver(
+                problem, dolfinx.nls.petsc.SnesType.nest, options=snes_options
+            )
             converged_reason, _ = solver.solve()
             assert solver.krylov_solver.getConvergedReason() > 0
             assert converged_reason > 0
@@ -585,7 +595,9 @@ class TestNLSPETSc:
                 "snes_monitor": None,
             }
             snes_prob = dolfinx.fem.petsc.SNESProblem(F, U, J=J, bcs=bcs, P=P)
-            snes_solver = dolfinx.nls.petsc.SNESSolver(snes_prob, dolfinx.nls.petsc.SnesType.default, options=snes_options)
+            snes_solver = dolfinx.nls.petsc.SNESSolver(
+                snes_prob, dolfinx.nls.petsc.SnesType.default, options=snes_options
+            )
             snes_solver.solve()
             xnorm = snes_prob.u.x.petsc_vec.norm()
             Jnorm = snes_solver._A.norm()
