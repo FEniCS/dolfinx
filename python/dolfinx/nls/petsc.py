@@ -32,7 +32,7 @@ from dolfinx.fem.petsc import (
     create_vector_nest,
 )
 
-__all__ = ["BlockSNESSolver", "NestSNESSolver", "NewtonSolver", "SNESSolver"]
+__all__ = ["NewtonSolver", "SNESSolver", "SnesType"]
 
 
 class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
@@ -106,9 +106,45 @@ class SNESProblemProtocol(setSNESFunctions, typing.Protocol):
 
     def replace_solution(self, x: PETSc.Vec): ...
 
+from enum import Enum
+class SnesType(Enum):
+    default=  0
+    block=1
+    nest= 2
+
+
+
+def create_data_structures(a: typing.Union[list[list[fem.Form]], fem.Form], L: typing.Union[list[fem.Form], fem.Form], P: typing.Union[list[list[fem.Form]], list[fem.Form], fem.Form, None], snes_type: SnesType) -> tuple[PETSc.Mat, PETSc.Vec, PETSc.Vec, PETSc.Mat | None]:
+    """Create data-structures used in PETSc NEST solvers
+    
+    Args:
+        a: The compiled bi-linear form(s)
+        L: The compiled linear form(s)
+        P: The compiled preconditioner form(s)
+        snes_type: The type of NEST solver to use
+    Returns:
+        PETSc datastructures for the matrix A, vectors x and b, and preconditioner P
+    """
+
+    matrix_creator = None
+    vector_creator = None
+    if snes_type == SnesType.default:
+        matrix_creator = create_matrix
+        vector_creator = create_vector
+    elif snes_type == SnesType.block:
+        matrix_creator = create_matrix_block
+        vector_creator = create_vector_block
+    elif snes_type == SnesType.nest:
+        matrix_creator = create_matrix_nest
+        vector_creator = create_vector_nest
+    A = matrix_creator(a)
+    b = vector_creator(L)
+    x = vector_creator(L)
+    P = None if P is None else matrix_creator(P)
+    return A, x, b, P
 
 class SNESSolver:
-    def __init__(self, problem: SNESProblemProtocol, options: dict | None = None):
+    def __init__(self, problem: SNESProblemProtocol, snes_type: SnesType, options: dict | None = None):
         """Initialize a PETSc-SNES solver
 
         Args:
@@ -117,7 +153,7 @@ class SNESSolver:
         """
         self.problem = problem
         self.options = options if options is not None else {}
-        self.create_data_structures()
+        self._A, self._x, self._b, self._P = create_data_structures(problem.a, problem.L, problem.P, snes_type)
         self.create_solver()
         self.error_if_not_converged = True
 
@@ -136,12 +172,6 @@ class SNESSolver:
         for key, v in self.options.items():
             del opts[key]
 
-    def create_data_structures(self):
-        """Create PETSc objects for the matrix, residual and solution"""
-        self._A = create_matrix(self.problem.a)
-        self._b = create_vector(self.problem.L)
-        self._x = create_vector(self.problem.L)
-        self._P = None if self.problem.P is None else create_matrix(self.problem.P)
 
     def solve(self) -> tuple[int, int]:
         """Solve the problem and update the solution in the problem instance
@@ -158,7 +188,6 @@ class SNESSolver:
 
         # Solve problem
         self._snes.solve(None, self._x)
-
         # Check for convergence
         converged_reason = self._snes.getConvergedReason()
         if self.error_if_not_converged and converged_reason < 0:
@@ -181,30 +210,3 @@ class SNESSolver:
         self._x.destroy()
         if self._P is not None:
             self._P.destroy()
-
-
-class BlockSNESSolver(SNESSolver):
-    def create_data_structures(self):
-        """Create PETSc objects for the matrix, residual and solution"""
-        self._b = create_vector_block(self.problem.L)
-        self._x = create_vector_block(self.problem.L)
-        self._A = create_matrix_block(self.problem.a)
-        self._P = (
-            None if self.problem._a_prec is None else create_matrix_block(self.problem._a_prec)
-        )
-
-
-class NestSNESSolver(SNESSolver):
-    def create_solver(self):
-        super().create_solver()
-        # Set index sets for fieldsplit
-        nested_is = self._A.getNestISs()
-        index_sets = [["u{i}", nested_is[i][i]] for i in range(len(nested_is))]
-        self._snes.getKSP().getPC().setFieldSplitIS(*index_sets)
-
-    def create_data_structures(self):
-        """Create PETSc objects for the matrix, residual and solution"""
-        self._b = create_vector_nest(self.problem.L)
-        self._x = create_vector_nest(self.problem.L)
-        self._A = create_matrix_nest(self.problem.a)
-        self._P = None if self.problem._a_prec is None else create_matrix_nest(self.problem._a_prec)
