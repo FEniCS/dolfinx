@@ -16,7 +16,7 @@ on:
     inputs:
       ffcx_ref:
         description: "FFCx branch or tag"
-        default: "sclaus/add-void-to-kernels"
+        default: "main"
         type: string
       basix_ref:
         description: "Basix branch or tag"

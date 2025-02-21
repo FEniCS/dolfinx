@@ -30,4 +30,4 @@ jobs:
         run: |
           echo "basix_ref=main" >> $GITHUB_OUTPUT
           echo "ufl_ref=main" >> $GITHUB_OUTPUT
-          echo "ffcx_ref=main" >> $GITHUB_OUTPUT
+          echo "ffcx_ref=sclaus/add-void-to-kernels" >> $GITHUB_OUTPUT
