@@ -180,14 +180,14 @@ jobs:
         run: |
           pip install git+https://github.com/FEniCS/ufl.git@${{ needs.fenicsx-refs.outputs.ufl_ref }}
           pip install git+https://github.com/FEniCS/basix.git@${{ needs.fenicsx-refs.outputs.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@${{ needs.fenicsx-refs.outputs.ffcx_ref }}
+          pip install git+https://github.com/sclaus2/ffcx.git@${{ needs.fenicsx-refs.outputs.ffcx_ref }}
 
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
           pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
           pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
+          pip install git+https://github.com/sclaus2/ffcx.git@${{ github.event.inputs.ffcx_ref }}
 
       - name: Configure, build and install C++ library
         run: |
@@ -259,13 +259,13 @@ jobs:
         run: |
           pip install git+https://github.com/FEniCS/ufl.git@${{ needs.fenicsx-refs.outputs.ufl_ref }}
           pip install git+https://github.com/FEniCS/basix.git@${{ needs.fenicsx-refs.outputs.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@${{ needs.fenicsx-refs.outputs.ffcx_ref }}
+          pip install git+https://github.com/sclaus2/ffcx.git@${{ needs.fenicsx-refs.outputs.ffcx_ref }}
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
           pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
           pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
+          pip install git+https://github.com/sclaus2/ffcx.git@${{ github.event.inputs.ffcx_ref }}
 
       - name: Configure C++
         run: |
