@@ -64,11 +64,6 @@ def set_vals_ctypes(A, m, rows, n, cols, data, mode):
 
 ffi = cffi.FFI()
 
-# Register the CFFI types with Numba
-cffi_support.register_type(ffi.typeof("double *"), numba.types.CPointer(numba.float64))
-cffi_support.register_type(ffi.typeof("int *"), numba.types.CPointer(numba.int32))
-cffi_support.register_type(ffi.typeof("void *"), numba.types.voidptr)
-
 
 def get_matsetvalues_cffi_api():
     """Make MatSetValuesLocal from PETSc available via cffi in API mode.
@@ -177,7 +172,23 @@ def assemble_vector_parallel(b, v, x, dofmap_t_data, dofmap_t_offsets, num_cells
             b[index] += _b_unassembled[dofmap_t_data[p]]
 
 
-@numba.jit(fastmath=True, forceobj=True)
+@numba.extending.intrinsic
+def get_void_pointer(typingctx, arr):
+    """Custom intrinsic to get a void* pointer from a NumPy array."""
+    if not isinstance(arr, numba.types.Array):
+        raise TypeError("Expected a NumPy array")
+
+    def codegen(context, builder, signature, args):
+        [arr] = args
+        raw_ptr = numba.core.cgutils.alloca_once_value(builder, arr)
+        void_ptr = builder.bitcast(raw_ptr, context.get_value_type(numba.types.voidptr))
+        return void_ptr
+
+    sig = numba.types.voidptr(arr)
+    return sig, codegen
+
+
+@numba.njit(fastmath=True)
 def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
     """Assemble provided FFCx/UFC kernel over a mesh into the array b"""
     v, x = mesh
@@ -186,8 +197,8 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
     geometry = np.zeros((3, 3), dtype=x.dtype)
     coeffs = np.zeros(1, dtype=dtype)
     constants = np.zeros(1, dtype=dtype)
-    custom_data = np.zeros(1, dtype=x.dtype)
-    custom_data_ptr = ffi.cast("void*", ffi.from_buffer(custom_data))
+    custom_data = np.zeros(1, dtype=np.int64)
+    custom_data_ptr = get_void_pointer(custom_data)
 
     b_local = np.zeros(3, dtype=dtype)
     for cell in range(num_cells):
@@ -331,8 +342,6 @@ def test_custom_mesh_loop_rank1(dtype):
 
     # Get the one and only kernel
     kernel = getattr(ufcx_form.form_integrals[0], f"tabulate_tensor_{np.dtype(dtype).name}")
-    custom_data = np.zeros(1, dtype=np.intc)
-    custom_data_ptr =  ffi.cast("void*", ffi.from_buffer(custom_data))
 
     for i in range(2):
         b = b3.x.array
