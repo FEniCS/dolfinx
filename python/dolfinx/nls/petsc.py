@@ -167,7 +167,6 @@ class SNESSolver:
             problem.a, problem.L, problem.P, snes_type
         )
         self.create_solver()
-        self.error_if_not_converged = True
 
     def create_solver(self):
         """Create the PETSc SNES object and set solver options"""
@@ -199,14 +198,10 @@ class SNESSolver:
 
         # Solve problem
         self._snes.solve(None, self._x)
-        # Check for convergence
-        converged_reason = self._snes.getConvergedReason()
-        if self.error_if_not_converged and converged_reason < 0:
-            raise RuntimeError(f"Solver did not converge. Reason: {converged_reason}")
 
         # Update solution in problem
         self.problem.replace_solution(self._x)
-
+        converged_reason = self._snes.getConvergedReason()
         return converged_reason, self._snes.getIterationNumber()
 
     @property
