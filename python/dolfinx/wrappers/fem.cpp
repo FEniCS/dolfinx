@@ -748,7 +748,7 @@ void declare_form(nb::module_& m, std::string type)
           [](const dolfinx::fem::Form<T, U>& self,
              dolfinx::fem::IntegralType type, int i)
           {
-            std::span<const std::int32_t> _d = self.domain(type, i);
+            std::span<const std::int32_t> _d = self.domain(type, i, 0);
             switch (type)
             {
             case dolfinx::fem::IntegralType::cell:

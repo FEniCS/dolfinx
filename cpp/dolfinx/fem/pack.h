@@ -180,7 +180,7 @@ allocate_coefficient_storage(const Form<T, U>& form, IntegralType integral_type,
   if (!coefficients.empty())
   {
     cstride = offsets.back();
-    num_entities = form.domain(integral_type, id).size();
+    num_entities = form.domain(integral_type, id, 0).size();
     if (integral_type == IntegralType::exterior_facet
         or integral_type == IntegralType::interior_facet)
     {
@@ -280,7 +280,7 @@ void pack_coefficients(const Form<T, U>& form,
           }
 
           const std::vector<std::int32_t> cells_b
-              = form.xdomain(IntegralType::cell, id, *mesh);
+              = form.xdomain(IntegralType::cell, id, 0, *mesh);
           md::mdspan cells(cells_b.data(), cells_b.size());
           std::span<const std::uint32_t> cell_info
               = impl::get_cell_orientation_info(*coefficients[coeff]);
@@ -309,7 +309,7 @@ void pack_coefficients(const Form<T, U>& form,
 
           auto mesh = coefficients[coeff]->function_space()->mesh();
           const std::vector<std::int32_t> facets_b
-              = form.xdomain(IntegralType::exterior_facet, id, *mesh);
+              = form.xdomain(IntegralType::exterior_facet, id, 0, *mesh);
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>
               facets(facets_b.data(), facets_b.size() / 2, 2);
@@ -342,7 +342,7 @@ void pack_coefficients(const Form<T, U>& form,
 
           auto mesh = coefficients[coeff]->function_space()->mesh();
           const std::vector<std::int32_t> facets_b
-              = form.xdomain(IntegralType::interior_facet, id, *mesh);
+              = form.xdomain(IntegralType::interior_facet, id, 0, *mesh);
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 4>>
               facets(facets_b.data(), facets_b.size() / 4, 4);

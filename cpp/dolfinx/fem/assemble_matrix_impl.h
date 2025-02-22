@@ -595,10 +595,11 @@ void assemble_matrix(
           = coefficients.at({IntegralType::exterior_facet, i});
       impl::assemble_exterior_facets(
           mat_set, x_dofmap, x, num_facets_per_cell,
-          a.domain(IntegralType::exterior_facet, i),
-          {dofs0, bs0, a.xdomain(IntegralType::exterior_facet, i, *mesh0)}, P0,
-          {dofs1, bs1, a.xdomain(IntegralType::exterior_facet, i, *mesh1)}, P1T,
-          bc0, bc1, fn, coeffs, cstride, constants, cell_info0, cell_info1,
+          a.domain(IntegralType::exterior_facet, i, 0),
+          {dofs0, bs0, a.xdomain(IntegralType::exterior_facet, i, 0, *mesh0)},
+          P0,
+          {dofs1, bs1, a.xdomain(IntegralType::exterior_facet, i, 0, *mesh1)},
+          P1T, bc0, bc1, fn, coeffs, cstride, constants, cell_info0, cell_info1,
           perms);
     }
 
@@ -617,10 +618,12 @@ void assemble_matrix(
           = coefficients.at({IntegralType::interior_facet, i});
       impl::assemble_interior_facets(
           mat_set, x_dofmap, x, num_facets_per_cell,
-          a.domain(IntegralType::interior_facet, i),
-          {*dofmap0, bs0, a.xdomain(IntegralType::interior_facet, i, *mesh0)},
+          a.domain(IntegralType::interior_facet, i, 0),
+          {*dofmap0, bs0,
+           a.xdomain(IntegralType::interior_facet, i, 0, *mesh0)},
           P0,
-          {*dofmap1, bs1, a.xdomain(IntegralType::interior_facet, i, *mesh1)},
+          {*dofmap1, bs1,
+           a.xdomain(IntegralType::interior_facet, i, 0, *mesh1)},
           P1T, bc0, bc1, fn, coeffs, cstride, c_offsets, constants, cell_info0,
           cell_info1, perms);
     }

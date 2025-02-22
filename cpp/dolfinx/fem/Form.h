@@ -582,24 +582,6 @@ public:
   ///
   /// @param[in] type Integral type.
   /// @param[in] i Integral ID, i.e. (sub)domain index.
-  /// @return List of active entities for the given integral (kernel).
-  std::span<const std::int32_t> domain(IntegralType type, int i) const
-  {
-    // FIXME This should call domain with kernel_idx=0
-    const std::vector<integral_data<scalar_type, geometry_type>>& integrals
-        = _integrals[static_cast<std::size_t>(type)];
-    auto it = std::ranges::lower_bound(integrals, i, std::less<>{},
-                                       [](const auto& a) { return a.id; });
-    if (it != integrals.end() and it->id == i)
-      return it->entities;
-    else
-      throw std::runtime_error("No mesh entities for requested domain index.");
-  }
-
-  /// @brief Get the list of mesh entity indices for the ith integral
-  /// (kernel) of a given type.
-  /// @param[in] type Integral type.
-  /// @param[in] i Integral ID, i.e. (sub)domain index.
   /// @param[in] kernel_idx Index of the kernel (we may have multiple kernels
   /// for a given ID in mixed-topology meshes).
   /// @return List of active entities for the given integral (kernel).
@@ -682,20 +664,6 @@ public:
     // }
   }
   */
-
-  /// @brief Compute the list of entity indices in `mesh` for the ith
-  /// integral (kernel) of a given type (i.e. cell, exterior facet, or
-  /// interior facet).
-  ///
-  /// @param type Integral type.
-  /// @param i Integral ID, i.e. the (sub)domain index.
-  /// @param mesh The mesh the entities are numbered with respect to.
-  /// @return List of active entities in `mesh` for the given integral.
-  std::vector<std::int32_t> xdomain(IntegralType type, int i,
-                                    const mesh::Mesh<geometry_type>& mesh) const
-  {
-    return xdomain(type, i, 0, mesh);
-  }
 
   /// @brief Access coefficients.
   const std::vector<
