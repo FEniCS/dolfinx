@@ -36,6 +36,8 @@ cffi = pytest.importorskip("cffi")
 cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
 numba = pytest.importorskip("numba")
 
+from ffcx.codegeneration.utils import get_void_pointer
+
 # Get PETSc MatSetValuesLocal interfaces
 try:
     MatSetValuesLocal = petsc_numba.MatSetValuesLocal
@@ -170,22 +172,6 @@ def assemble_vector_parallel(b, v, x, dofmap_t_data, dofmap_t_offsets, num_cells
     for index in numba.prange(dofmap_t_offsets.shape[0] - 1):
         for p in range(dofmap_t_offsets[index], dofmap_t_offsets[index + 1]):
             b[index] += _b_unassembled[dofmap_t_data[p]]
-
-
-@numba.extending.intrinsic
-def get_void_pointer(typingctx, arr):
-    """Custom intrinsic to get a void* pointer from a NumPy array."""
-    if not isinstance(arr, numba.types.Array):
-        raise TypeError("Expected a NumPy array")
-
-    def codegen(context, builder, signature, args):
-        [arr] = args
-        raw_ptr = numba.core.cgutils.alloca_once_value(builder, arr)
-        void_ptr = builder.bitcast(raw_ptr, context.get_value_type(numba.types.voidptr))
-        return void_ptr
-
-    sig = numba.types.voidptr(arr)
-    return sig, codegen
 
 
 @numba.njit(fastmath=True)

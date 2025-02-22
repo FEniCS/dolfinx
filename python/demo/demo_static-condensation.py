@@ -60,6 +60,7 @@ from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import locate_entities_boundary, meshtags
 from ffcx.codegeneration.utils import numba_ufcx_kernel_signature as ufcx_signature
+from ffcx.codegeneration.utils import empty_void_pointer
 
 if np.issubdtype(PETSc.RealType, np.float32):  # type: ignore
     print("float32 not yet supported for this demo.")
@@ -143,18 +144,6 @@ if np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # Get local dofmap sizes for later local tensor tabulations
 Ssize = S.element.space_dimension
 Usize = U.element.space_dimension
-
-
-@numba.extending.intrinsic
-def empty_void_pointer(typingctx):
-    """Custom intrinsic to return an empty void* pointer."""
-
-    def codegen(context, builder, signature, args):
-        null_ptr = context.get_constant(numba.types.voidptr, 0)
-        return null_ptr
-
-    sig = numba.types.voidptr()
-    return sig, codegen
 
 
 @numba.cfunc(ufcx_signature(PETSc.ScalarType, PETSc.RealType), nopython=True)  # type: ignore
