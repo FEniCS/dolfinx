@@ -77,17 +77,15 @@ compute_domain(IntegralType type, const mesh::Topology& topology, int codim,
     }
     else if (codim == 1)
     {
-      // In this case, the entity maps take facets in (`_mesh`) to cells in
-      // `mesh`, so we need to get the facet number from the (cell,
+      // In this case, the entity maps take facets in (`_mesh`) to cells
+      // in `mesh`, so we need to get the facet number from the (cell,
       // local_facet pair) first.
       auto c_to_f = topology.connectivity(tdim, tdim - 1);
       assert(c_to_f);
       for (std::size_t i = 0; i < entities.size(); i += 2)
       {
-        // Get the facet index
+        // Get the facet index, and add cell and the local facet index
         std::int32_t facet = c_to_f->links(entities[i])[entities[i + 1]];
-
-        // Add cell and the local facet index
         mapped_entities.insert(mapped_entities.end(),
                                {entity_map[facet], entities[i + 1]});
       }
@@ -118,10 +116,8 @@ compute_domain(IntegralType type, const mesh::Topology& topology, int codim,
       assert(c_to_f);
       for (std::size_t i = 0; i < entities.size(); i += 2)
       {
-        // Get the facet index
+        // Get the facet index, and add cell and the local facet index
         std::int32_t facet = c_to_f->links(entities[i])[entities[i + 1]];
-
-        // Add cell and the local facet index
         mapped_entities.insert(mapped_entities.end(),
                                {entity_map[facet], entities[i + 1]});
       }
@@ -355,19 +351,11 @@ public:
 
     for (auto V : this->function_spaces())
     {
-      // [IntegralType][integral(id)] -> entity data
-      // std::vector<std::map<std::size_t, std::vector<std::int32_t>>> foo(
-      //     _integrals.size());
-
+      // [IntegralType][(integral(id), cell_type)] -> entity data
       std::vector<std::map<std::array<int, 2>, std::vector<std::int32_t>>> foo(
           _integrals.size());
-
-      // std::vector<std::map<std::size_t,
-      //                      std::map<std::size_t, std::vector<std::int32_t>>>>
-      //     foo(_integrals.size());
       if (auto mesh0 = V->mesh(); mesh0 == _mesh)
       {
-        // std::cout << "Meshes are the same" << std::endl;
         // [IntegralType][integral(id)] -> entity data]
         for (std::size_t d = 0; d < _integrals.size(); ++d)
         {
@@ -375,28 +363,40 @@ public:
           std::size_t cell_id = 0;
           for (const auto& integral : _integrals[d])
           {
-            // std::cout << "  Old (A): " << tmp_id << std::endl;
             if (integral.id != tmp_id)
             {
-              // std::cout << "   Resetting cell_id" << std::endl;
               cell_id = 0;
               tmp_id = integral.id;
             }
-            // std::cout << "  Old (B): " << tmp_id << std::endl;
-            // std::cout << "  Insertion: " << integral.id << " " << cell_id
-            //           << std::endl;
             foo[d].insert({{integral.id, cell_id++}, integral.entities});
           }
         }
       }
       else
       {
+        auto get_domain = [&integrals = _integrals](
+                              IntegralType type, int i,
+                              int kernel_idx) -> std::span<const std::int32_t>
+        {
+          const std::vector<integral_data<scalar_type, geometry_type>>& itg
+              = integrals[static_cast<std::size_t>(type)];
+          auto get_id = [](const auto& a) { return a.id; };
+          auto it0 = std::ranges::lower_bound(itg, i, std::less{}, get_id);
+          auto it1 = std::ranges::upper_bound(itg, i, std::less{}, get_id);
+
+          // Check that the kernel is valid and return it if so
+          if (it0 == itg.end() or it0->id != i
+              or std::distance(it0, it1) <= kernel_idx)
+          {
+            throw std::runtime_error("No kernel for requested domain index.");
+          }
+          return std::next(it0, kernel_idx)->entities;
+        };
+
         const mesh::Topology topology = *_mesh->topology();
         int tdim = topology.dim();
-
         assert(mesh0);
         int codim = tdim - mesh0->topology()->dim();
-
         auto it = std::ranges::find_if(_entity_maps_new,
                                        [adr = mesh0.get()](auto& x)
                                        { return x.first.get() == adr; });
@@ -405,30 +405,25 @@ public:
 
         for (int i : this->integral_ids(IntegralType::cell))
         {
-          std::span<const std::int32_t> entities
-              = this->domain(IntegralType::cell, i, 0);
           std::vector<std::int32_t> e = impl::compute_domain(
-              IntegralType::cell, topology, codim, entities, entity_map);
+              IntegralType::cell, topology, codim,
+              get_domain(IntegralType::cell, i, 0), entity_map);
           foo[0].insert({{i, 0}, e});
         }
 
         for (int i : this->integral_ids(IntegralType::exterior_facet))
         {
-          std::span<const std::int32_t> entities
-              = this->domain(IntegralType::exterior_facet, i, 0);
-          std::vector<std::int32_t> e
-              = impl::compute_domain(IntegralType::exterior_facet, topology,
-                                     codim, entities, entity_map);
+          std::vector<std::int32_t> e = impl::compute_domain(
+              IntegralType::exterior_facet, topology, codim,
+              get_domain(IntegralType::exterior_facet, i, 0), entity_map);
           foo[1].insert({{i, 0}, e});
         }
 
         for (int i : this->integral_ids(IntegralType::interior_facet))
         {
-          std::span<const std::int32_t> entities
-              = this->domain(IntegralType::interior_facet, i, 0);
-          std::vector<std::int32_t> e
-              = impl::compute_domain(IntegralType::interior_facet, topology,
-                                     codim, entities, entity_map);
+          std::vector<std::int32_t> e = impl::compute_domain(
+              IntegralType::interior_facet, topology, codim,
+              get_domain(IntegralType::interior_facet, i, 0), entity_map);
           foo[2].insert({{i, 0}, e});
         }
       }
@@ -656,36 +651,6 @@ public:
     }
   }
 
-  /// @brief NEW: Compute the list of entity indices in `mesh` for the ith
-  /// integral (kernel) of a given type (i.e. cell, exterior facet, or
-  /// interior facet).
-  /*
-  std::vector<std::int32_t> domain_new(IntegralType type, int rank, int i,
-                                       int kernel_idx) const
-  {
-    // std::vector<std::int32_t> entities = domain(type, i, kernel_idx);
-    // if (&mesh == _mesh.get())
-    //   return entities;
-    // else
-    // {
-    auto it = _edata.at(rank).at(static_cast<std::size_t>(type)).find(i);
-    if (it == _edata[rank][static_cast<std::size_t>(type)].end())
-      throw std::runtime_error("No entity data for requested domain index.");
-
-    // return it->second;
-    // auto it = std::ranges::find_if(_entity_maps_new, [adr = &mesh](auto& x)
-    //                                { return x.first.get() == adr; });
-    // assert(it != _entity_maps_new.end());
-    // std::span<const std::int32_t> entity_map = it->second;
-
-    // const int tdim = _mesh->topology()->dim();
-    // const int codim = tdim - mesh.topology()->dim();
-    // return impl::compute_domain(type, *_mesh->topology(), codim, entities,
-    //                             entity_map);
-    // }
-  }
-  */
-
   /// @brief Access coefficients.
   const std::vector<
       std::shared_ptr<const Function<scalar_type, geometry_type>>>&
@@ -755,12 +720,10 @@ private:
                         std::vector<std::int32_t>>>
       _entity_maps_new;
 
-  // NEW [rank_i][IntegralType][integral(id)]  // [cell_type]
+  // NEW: For argument functions:
+  //  [rank_i][IntegralType][(integral(id), cell_type] -> entity map
   std::vector<
       std::vector<std::map<std::array<int, 2>, std::vector<std::int32_t>>>>
       _edata;
-  // std::vector<std::vector<
-  //     std::map<std::size_t, std::map<std::size_t,
-  //     std::vector<std::int32_t>>>>> _edata;
 };
 } // namespace dolfinx::fem
