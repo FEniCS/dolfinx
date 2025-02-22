@@ -744,17 +744,6 @@ Form<T, U> create_form_factory(
     }
   }
 
-  std::map<IntegralType,
-           std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>
-      sd;
-  for (auto& [itg, data] : subdomains)
-  {
-    std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>> x;
-    for (auto& [id, idx] : data)
-      x.emplace_back(id, std::vector(idx.data(), idx.data() + idx.size()));
-    sd.insert({itg, std::move(x)});
-  }
-
   return Form<T, U>(spaces, integrals, coefficients, constants,
                     needs_facet_permutations, entity_maps, mesh);
 }

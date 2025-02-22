@@ -291,28 +291,13 @@ public:
       bool needs_facet_permutations,
       const std::map<std::shared_ptr<const mesh::Mesh<geometry_type>>,
                      std::span<const std::int32_t>>& entity_maps,
-      std::shared_ptr<const mesh::Mesh<geometry_type>> mesh = nullptr)
+      std::shared_ptr<const mesh::Mesh<geometry_type>> mesh)
       : _function_spaces(V), _coefficients(coefficients), _constants(constants),
         _mesh(mesh), _needs_facet_permutations(needs_facet_permutations)
   {
-    if (!_mesh and !V.empty())
-    {
-      // If mesh is nullptr, extract the mesh from the first argument's
-      // function space (if available) and check that it is common for
-      // all spaces and coefficients
-      _mesh = V.front()->mesh();
-      for (auto& space : V)
-      {
-        if (space->mesh() != _mesh)
-          throw std::runtime_error("Incompatible meshes in arguments.");
-      }
-      for (auto& c : coefficients)
-      {
-        if (c->function_space()->mesh() != _mesh)
-          throw std::runtime_error("Incompatible meshes in coefficients.");
-      }
-    }
-    else if (_mesh)
+    if (!_mesh)
+      throw std::runtime_error("Form Mesh is null.");
+
     {
       // Integration domain mesh is passed, so check that it is (1)
       // common for spaces and coefficients (2) or an entity_map is
@@ -336,9 +321,6 @@ public:
         }
       }
     }
-
-    if (!_mesh)
-      throw std::runtime_error("No mesh could be associated with the Form.");
 
     // Store kernels, looping over integrals by domain type (dimension)
     for (auto&& [domain_type, data] : integrals)
