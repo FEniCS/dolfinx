@@ -294,7 +294,7 @@ def form(
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
         entity_maps: If any trial functions, test functions, or
             coefficients in the form are not defined over the same mesh
-            as the integration domain, `entity_maps` must be supplied.
+            as the integration domain, ``entity_maps`` must be supplied.
             For each key (a mesh, different to the integration domain
             mesh) a map should be provided relating the entities in the
             integration domain mesh to the entities in the key mesh e.g.

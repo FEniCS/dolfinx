@@ -136,11 +136,11 @@ def create_measure(msh, integral_type):
     tdim = msh.topology.dim
     fdim = tdim - 1
     if integral_type == "dx":
-        cells = locate_entities(msh, msh.topology.dim, lambda x: x[0] <= 0.5)
+        cells = locate_entities(msh, tdim, lambda x: x[0] <= 0.5)
         mt = create_meshtags(msh, tdim, cells)
     elif integral_type == "ds":
         facets = locate_entities_boundary(
-            msh, msh.topology.dim - 1, lambda x: np.isclose(x[1], 0.0) & (x[0] <= 0.5)
+            msh, tdim - 1, lambda x: np.isclose(x[1], 0.0) & (x[0] <= 0.5)
         )
         mt = create_meshtags(msh, fdim, facets)
     else:
