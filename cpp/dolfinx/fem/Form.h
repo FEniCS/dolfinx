@@ -322,7 +322,8 @@ public:
       }
     }
 
-    // Store kernels, looping over integrals by domain type (dimension)
+    // Store kernels, looping over integrals by integration domain type
+    // (dimension)
     for (auto&& [domain_type, data] : integrals)
     {
       if (!std::ranges::is_sorted(data,
@@ -352,19 +353,27 @@ public:
                                                            e.second.end()));
                    });
 
-    /*
     // edata[rank_i][IntegralType][integral(i)]
     // std::vector<std::vector<std::map<std::size_t,
     // std::vector<std::int32_t>>>>
     //     _edata;
     for (auto V : this->function_spaces())
     {
-      // edata.p
-
-      std::vector<std::map<std::size_t, std::vector<std::int32_t>>> foo(3);
-
-      // auto mesh0 = V->mesh();
-      if (auto mesh0 = V->mesh(); mesh0 != _mesh)
+      // [IntegralType][integral(id)] -> entity data
+      std::vector<std::map<std::size_t, std::vector<std::int32_t>>> foo(
+          _integrals.size());
+      if (auto mesh0 = V->mesh(); mesh0 == _mesh)
+      {
+        // [IntegralType][integral(id)] -> entity data
+        for (std::size_t d = 0; d < _integrals.size(); ++d)
+        {
+          for (const auto& integral : _integrals[d])
+          {
+            foo[d].insert({integral.id, integral.entities});
+          }
+        }
+      }
+      else
       {
         const mesh::Topology topology = *_mesh->topology();
         int tdim = topology.dim();
@@ -381,7 +390,7 @@ public:
         for (int i : this->integral_ids(IntegralType::cell))
         {
           std::span<const std::int32_t> entities
-              = this->domain(IntegralType::cell, i);
+              = this->domain(IntegralType::cell, i, 0);
           std::vector<std::int32_t> e = impl::compute_domain(
               IntegralType::cell, topology, codim, entities, entity_map);
           foo[0].insert({i, e});
@@ -390,7 +399,7 @@ public:
         for (int i : this->integral_ids(IntegralType::exterior_facet))
         {
           std::span<const std::int32_t> entities
-              = this->domain(IntegralType::exterior_facet, i);
+              = this->domain(IntegralType::exterior_facet, i, 0);
           std::vector<std::int32_t> e
               = impl::compute_domain(IntegralType::exterior_facet, topology,
                                      codim, entities, entity_map);
@@ -400,7 +409,7 @@ public:
         for (int i : this->integral_ids(IntegralType::interior_facet))
         {
           std::span<const std::int32_t> entities
-              = this->domain(IntegralType::interior_facet, i);
+              = this->domain(IntegralType::interior_facet, i, 0);
           std::vector<std::int32_t> e
               = impl::compute_domain(IntegralType::interior_facet, topology,
                                      codim, entities, entity_map);
@@ -410,7 +419,6 @@ public:
 
       _edata.push_back(foo);
     }
-  */
   }
 
   /// Copy constructor
@@ -587,6 +595,18 @@ public:
     return std::next(it_start, kernel_idx)->entities;
   }
 
+  /// @brief Argument domain.
+  std::span<const std::int32_t> domain_arg(IntegralType type, int rank, int i,
+                                           int kernel_idx) const
+  {
+    if (kernel_idx != 0)
+      throw std::runtime_error("Only kernel_idx=0 is supported.");
+    auto it = _edata[rank][static_cast<std::size_t>(type)].find(i);
+    if (it == _edata[rank][static_cast<std::size_t>(type)].end())
+      throw std::runtime_error("No entity data for requested domain index.");
+    return it->second;
+  }
+
   /// @brief Compute the list of entity indices in `mesh` for the ith
   /// integral (kernel) of a given type (i.e. cell, exterior facet, or
   /// interior facet).
@@ -716,8 +736,8 @@ private:
                         std::vector<std::int32_t>>>
       _entity_maps_new;
 
-  // // NEW
-  // std::vector<std::vector<std::map<std::size_t, std::vector<std::int32_t>>>>
-  //     _edata;
+  // NEW [rank_i][IntegralType][integral(id)]  // [cell_type]
+  std::vector<std::vector<std::map<std::size_t, std::vector<std::int32_t>>>>
+      _edata;
 };
 } // namespace dolfinx::fem

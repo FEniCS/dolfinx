@@ -397,6 +397,8 @@ def form(
     def _zero_form(form):
         """Compile a single 'zero' UFL form, i.e. a form with no integrals."""
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
+        assert len(V) > 0
+        msh = V[0].mesh
         if entity_maps is None:
             _entity_maps = dict()
         else:
@@ -408,7 +410,7 @@ def form(
             constants=[],
             need_permutation_data=False,
             entity_maps=_entity_maps,
-            mesh=None,
+            mesh=msh,
         )
         return Form(f)
 
