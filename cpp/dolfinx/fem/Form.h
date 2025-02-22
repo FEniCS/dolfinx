@@ -603,8 +603,8 @@ public:
   /// @param[in] kernel_idx Index of the kernel (we may have multiple kernels
   /// for a given ID in mixed-topology meshes).
   /// @return List of active entities for the given integral (kernel).
-  std::vector<std::int32_t> domain(IntegralType type, int i,
-                                   int kernel_idx) const
+  std::span<const std::int32_t> domain(IntegralType type, int i,
+                                       int kernel_idx) const
   {
     const std::vector<integral_data<scalar_type, geometry_type>>& integrals
         = _integrals[static_cast<std::size_t>(type)];
@@ -633,12 +633,12 @@ public:
   /// kernels for a given ID in mixed-topology meshes).
   /// @param mesh The mesh the entities are numbered with respect to.
   /// @return List of active entities in `mesh` for the given integral.
-  std::vector<std::int32_t> domain(IntegralType type, int i, int kernel_idx,
-                                   const mesh::Mesh<geometry_type>& mesh) const
+  std::vector<std::int32_t> xdomain(IntegralType type, int i, int kernel_idx,
+                                    const mesh::Mesh<geometry_type>& mesh) const
   {
-    std::vector<std::int32_t> entities = domain(type, i, kernel_idx);
+    std::span<const std::int32_t> entities = domain(type, i, kernel_idx);
     if (&mesh == _mesh.get())
-      return entities;
+      return std::vector(entities.begin(), entities.end());
     else
     {
       auto it = std::ranges::find_if(_entity_maps_new, [adr = &mesh](auto& x)
@@ -691,10 +691,10 @@ public:
   /// @param i Integral ID, i.e. the (sub)domain index.
   /// @param mesh The mesh the entities are numbered with respect to.
   /// @return List of active entities in `mesh` for the given integral.
-  std::vector<std::int32_t> domain(IntegralType type, int i,
-                                   const mesh::Mesh<geometry_type>& mesh) const
+  std::vector<std::int32_t> xdomain(IntegralType type, int i,
+                                    const mesh::Mesh<geometry_type>& mesh) const
   {
-    return domain(type, i, 0, mesh);
+    return xdomain(type, i, 0, mesh);
   }
 
   /// @brief Access coefficients.

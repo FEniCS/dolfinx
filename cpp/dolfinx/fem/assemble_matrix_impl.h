@@ -564,9 +564,9 @@ void assemble_matrix(
 
       impl::assemble_cells(
           mat_set, x_dofmap, x, a.domain(IntegralType::cell, i, cell_type_idx),
-          {dofs0, bs0, a.domain(IntegralType::cell, i, cell_type_idx, *mesh0)},
+          {dofs0, bs0, a.xdomain(IntegralType::cell, i, cell_type_idx, *mesh0)},
           P0,
-          {dofs1, bs1, a.domain(IntegralType::cell, i, cell_type_idx, *mesh1)},
+          {dofs1, bs1, a.xdomain(IntegralType::cell, i, cell_type_idx, *mesh1)},
           P1T, bc0, bc1, fn, coeffs, cstride, constants, cell_info0,
           cell_info1);
     }
@@ -596,8 +596,8 @@ void assemble_matrix(
       impl::assemble_exterior_facets(
           mat_set, x_dofmap, x, num_facets_per_cell,
           a.domain(IntegralType::exterior_facet, i),
-          {dofs0, bs0, a.domain(IntegralType::exterior_facet, i, *mesh0)}, P0,
-          {dofs1, bs1, a.domain(IntegralType::exterior_facet, i, *mesh1)}, P1T,
+          {dofs0, bs0, a.xdomain(IntegralType::exterior_facet, i, *mesh0)}, P0,
+          {dofs1, bs1, a.xdomain(IntegralType::exterior_facet, i, *mesh1)}, P1T,
           bc0, bc1, fn, coeffs, cstride, constants, cell_info0, cell_info1,
           perms);
     }
@@ -618,9 +618,9 @@ void assemble_matrix(
       impl::assemble_interior_facets(
           mat_set, x_dofmap, x, num_facets_per_cell,
           a.domain(IntegralType::interior_facet, i),
-          {*dofmap0, bs0, a.domain(IntegralType::interior_facet, i, *mesh0)},
+          {*dofmap0, bs0, a.xdomain(IntegralType::interior_facet, i, *mesh0)},
           P0,
-          {*dofmap1, bs1, a.domain(IntegralType::interior_facet, i, *mesh1)},
+          {*dofmap1, bs1, a.xdomain(IntegralType::interior_facet, i, *mesh1)},
           P1T, bc0, bc1, fn, coeffs, cstride, c_offsets, constants, cell_info0,
           cell_info1, perms);
     }

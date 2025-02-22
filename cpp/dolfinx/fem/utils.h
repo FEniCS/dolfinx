@@ -233,8 +233,8 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
         for (int id : ids)
         {
           sparsitybuild::cells(pattern,
-                               {a.domain(type, id, cell_type_idx, *mesh0),
-                                a.domain(type, id, cell_type_idx, *mesh1)},
+                               {a.xdomain(type, id, cell_type_idx, *mesh0),
+                                a.xdomain(type, id, cell_type_idx, *mesh1)},
                                {{dofmaps[0], dofmaps[1]}});
         }
         break;
@@ -243,8 +243,8 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
         {
           sparsitybuild::interior_facets(
               pattern,
-              {extract_cells(a.domain(type, id, *mesh0)),
-               extract_cells(a.domain(type, id, *mesh1))},
+              {extract_cells(a.xdomain(type, id, *mesh0)),
+               extract_cells(a.xdomain(type, id, *mesh1))},
               {{dofmaps[0], dofmaps[1]}});
         }
         break;
@@ -252,8 +252,8 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
         for (int id : ids)
         {
           sparsitybuild::cells(pattern,
-                               {extract_cells(a.domain(type, id, *mesh0)),
-                                extract_cells(a.domain(type, id, *mesh1))},
+                               {extract_cells(a.xdomain(type, id, *mesh0)),
+                                extract_cells(a.xdomain(type, id, *mesh1))},
                                {{dofmaps[0], dofmaps[1]}});
         }
         break;
