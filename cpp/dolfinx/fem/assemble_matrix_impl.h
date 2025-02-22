@@ -562,24 +562,11 @@ void assemble_matrix(
       assert(fn);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
 
-      auto tmp0 = a.xdomain(IntegralType::cell, i, cell_type_idx, *mesh0);
-      auto tmp1 = a.xdomain(IntegralType::cell, i, cell_type_idx, *mesh1);
-
-      auto tmpn0 = a.domain_arg(IntegralType::cell, 0, i, cell_type_idx);
-      auto tmpn1 = a.domain_arg(IntegralType::cell, 1, i, cell_type_idx);
-
-      if (!std::ranges::equal(tmp0, tmpn0))
-        throw std::runtime_error(
-            "Mismatch in domain arguments for cell integral 0");
-      if (!std::ranges::equal(tmp1, tmpn1))
-        throw std::runtime_error(
-            "Mismatch in domain arguments for cell integral 1");
-
       impl::assemble_cells(
           mat_set, x_dofmap, x, a.domain(IntegralType::cell, i, cell_type_idx),
-          {dofs0, bs0, a.xdomain(IntegralType::cell, i, cell_type_idx, *mesh0)},
+          {dofs0, bs0, a.domain_arg(IntegralType::cell, 0, i, cell_type_idx)},
           P0,
-          {dofs1, bs1, a.xdomain(IntegralType::cell, i, cell_type_idx, *mesh1)},
+          {dofs1, bs1, a.domain_arg(IntegralType::cell, 1, i, cell_type_idx)},
           P1T, bc0, bc1, fn, coeffs, cstride, constants, cell_info0,
           cell_info1);
     }
@@ -609,9 +596,8 @@ void assemble_matrix(
       impl::assemble_exterior_facets(
           mat_set, x_dofmap, x, num_facets_per_cell,
           a.domain(IntegralType::exterior_facet, i, 0),
-          {dofs0, bs0, a.xdomain(IntegralType::exterior_facet, i, 0, *mesh0)},
-          P0,
-          {dofs1, bs1, a.xdomain(IntegralType::exterior_facet, i, 0, *mesh1)},
+          {dofs0, bs0, a.domain_arg(IntegralType::exterior_facet, 0, i, 0)}, P0,
+          {dofs1, bs1, a.domain_arg(IntegralType::exterior_facet, 1, i, 0)},
           P1T, bc0, bc1, fn, coeffs, cstride, constants, cell_info0, cell_info1,
           perms);
     }
@@ -632,11 +618,9 @@ void assemble_matrix(
       impl::assemble_interior_facets(
           mat_set, x_dofmap, x, num_facets_per_cell,
           a.domain(IntegralType::interior_facet, i, 0),
-          {*dofmap0, bs0,
-           a.xdomain(IntegralType::interior_facet, i, 0, *mesh0)},
+          {*dofmap0, bs0, a.domain_arg(IntegralType::interior_facet, 0, i, 0)},
           P0,
-          {*dofmap1, bs1,
-           a.xdomain(IntegralType::interior_facet, i, 0, *mesh1)},
+          {*dofmap1, bs1, a.domain_arg(IntegralType::interior_facet, 1, i, 0)},
           P1T, bc0, bc1, fn, coeffs, cstride, c_offsets, constants, cell_info0,
           cell_info1, perms);
     }

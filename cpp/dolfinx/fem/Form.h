@@ -353,23 +353,39 @@ public:
                                                            e.second.end()));
                    });
 
-    // edata[rank_i][IntegralType][integral(i)]
-    // std::vector<std::vector<std::map<std::size_t,
-    // std::vector<std::int32_t>>>>
-    //     _edata;
     for (auto V : this->function_spaces())
     {
       // [IntegralType][integral(id)] -> entity data
-      std::vector<std::map<std::size_t, std::vector<std::int32_t>>> foo(
+      // std::vector<std::map<std::size_t, std::vector<std::int32_t>>> foo(
+      //     _integrals.size());
+
+      std::vector<std::map<std::array<int, 2>, std::vector<std::int32_t>>> foo(
           _integrals.size());
+
+      // std::vector<std::map<std::size_t,
+      //                      std::map<std::size_t, std::vector<std::int32_t>>>>
+      //     foo(_integrals.size());
       if (auto mesh0 = V->mesh(); mesh0 == _mesh)
       {
-        // [IntegralType][integral(id)] -> entity data
+        // std::cout << "Meshes are the same" << std::endl;
+        // [IntegralType][integral(id)] -> entity data]
         for (std::size_t d = 0; d < _integrals.size(); ++d)
         {
+          int tmp_id = -1000;
+          std::size_t cell_id = 0;
           for (const auto& integral : _integrals[d])
           {
-            foo[d].insert({integral.id, integral.entities});
+            // std::cout << "  Old (A): " << tmp_id << std::endl;
+            if (integral.id != tmp_id)
+            {
+              // std::cout << "   Resetting cell_id" << std::endl;
+              cell_id = 0;
+              tmp_id = integral.id;
+            }
+            // std::cout << "  Old (B): " << tmp_id << std::endl;
+            // std::cout << "  Insertion: " << integral.id << " " << cell_id
+            //           << std::endl;
+            foo[d].insert({{integral.id, cell_id++}, integral.entities});
           }
         }
       }
@@ -393,7 +409,7 @@ public:
               = this->domain(IntegralType::cell, i, 0);
           std::vector<std::int32_t> e = impl::compute_domain(
               IntegralType::cell, topology, codim, entities, entity_map);
-          foo[0].insert({i, e});
+          foo[0].insert({{i, 0}, e});
         }
 
         for (int i : this->integral_ids(IntegralType::exterior_facet))
@@ -403,7 +419,7 @@ public:
           std::vector<std::int32_t> e
               = impl::compute_domain(IntegralType::exterior_facet, topology,
                                      codim, entities, entity_map);
-          foo[1].insert({i, e});
+          foo[1].insert({{i, 0}, e});
         }
 
         for (int i : this->integral_ids(IntegralType::interior_facet))
@@ -413,7 +429,7 @@ public:
           std::vector<std::int32_t> e
               = impl::compute_domain(IntegralType::interior_facet, topology,
                                      codim, entities, entity_map);
-          foo[2].insert({i, e});
+          foo[2].insert({{i, 0}, e});
         }
       }
 
@@ -599,11 +615,14 @@ public:
   std::span<const std::int32_t> domain_arg(IntegralType type, int rank, int i,
                                            int kernel_idx) const
   {
-    if (kernel_idx != 0)
-      throw std::runtime_error("Only kernel_idx=0 is supported.");
-    auto it = _edata[rank][static_cast<std::size_t>(type)].find(i);
+    // if (kernel_idx != 0)
+    //   throw std::runtime_error("Only kernel_idx=0 is supported.");
+    auto it
+        = _edata[rank][static_cast<std::size_t>(type)].find({i, kernel_idx});
     if (it == _edata[rank][static_cast<std::size_t>(type)].end())
-      throw std::runtime_error("No entity data for requested domain index.");
+      throw std::runtime_error("No entity data for requested domain index. "
+                               + std::to_string(i) + ", "
+                               + std::to_string(kernel_idx));
     return it->second;
   }
 
@@ -737,7 +756,11 @@ private:
       _entity_maps_new;
 
   // NEW [rank_i][IntegralType][integral(id)]  // [cell_type]
-  std::vector<std::vector<std::map<std::size_t, std::vector<std::int32_t>>>>
+  std::vector<
+      std::vector<std::map<std::array<int, 2>, std::vector<std::int32_t>>>>
       _edata;
+  // std::vector<std::vector<
+  //     std::map<std::size_t, std::map<std::size_t,
+  //     std::vector<std::int32_t>>>>> _edata;
 };
 } // namespace dolfinx::fem
