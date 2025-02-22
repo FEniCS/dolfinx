@@ -20,6 +20,13 @@ try:
 except ImportError:
     pass
 
+try:
+    import numba
+
+    from ffcx.codegeneration.utils import get_void_pointer
+except ImportError:
+    pass
+
 import numpy as np
 import pytest
 
@@ -35,8 +42,6 @@ from dolfinx.utils import numba_utils as petsc_numba
 cffi = pytest.importorskip("cffi")
 cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
 numba = pytest.importorskip("numba")
-
-from ffcx.codegeneration.utils import get_void_pointer
 
 # Get PETSc MatSetValuesLocal interfaces
 try:
