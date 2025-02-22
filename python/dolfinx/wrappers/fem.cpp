@@ -677,7 +677,7 @@ void declare_form(nb::module_& m, std::string type)
           },
           nb::arg("spaces"), nb::arg("integrals"), nb::arg("coefficients"),
           nb::arg("constants"), nb::arg("need_permutation_data"),
-          nb::arg("entity_maps"), nb::arg("mesh").none())
+          nb::arg("entity_maps"), nb::arg("mesh"))
       .def(
           "__init__",
           [](dolfinx::fem::Form<T, U>* fp, std::vector<std::uintptr_t> forms,
