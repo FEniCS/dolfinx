@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023 Garth N. Wells and Chris Richardson
+// Copyright (C) 2019-2025 Garth N. Wells and Chris Richardson
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -251,12 +251,14 @@ public:
 
     for (auto V : _function_spaces)
     {
-      std::map<std::tuple<IntegralType, int, int>, std::vector<std::int32_t>>
+      std::map<std::tuple<IntegralType, int, int>,
+               std::variant<std::vector<std::int32_t>,
+                            std::span<const std::int32_t>>>
           vdata;
       if (auto mesh0 = V->mesh(); mesh0 == _mesh)
       {
         for (auto& [key, integral] : _integrals)
-          vdata.insert({key, integral.entities});
+          vdata.insert({key, std::span(integral.entities)});
       }
       else
       {
@@ -307,7 +309,7 @@ public:
         if (auto mesh0 = coefficients.at(c)->function_space()->mesh();
             mesh0 == _mesh)
         {
-          _cdata.insert({{type, id, c}, integral.entities});
+          _cdata.insert({{type, id, c}, std::span(integral.entities)});
         }
         else
         {
@@ -488,8 +490,15 @@ public:
   {
     auto it = _edata.at(rank).find({type, id, kernel_idx});
     if (it == _edata.at(rank).end())
-      throw std::runtime_error("No kernel for requested domain index.");
-    return it->second;
+      throw std::runtime_error("No domain for requested integral.");
+    try
+    {
+      return std::get<std::span<const std::int32_t>>(it->second);
+    }
+    catch (std::bad_variant_access& e)
+    {
+      return std::get<std::vector<std::int32_t>>(it->second);
+    }
   }
 
   /// @brief Argument domain.
@@ -498,13 +507,15 @@ public:
   {
     auto it = _cdata.find({type, id, c});
     if (it == _cdata.end())
+      throw std::runtime_error("No domain for requested integral.");
+    try
     {
-      throw std::runtime_error("No coefficient entity data for requested "
-                               "domain index (type, id, coeff_idx). "
-                               + std::to_string(static_cast<int>(type)) + " "
-                               + std::to_string(id) + ", " + std::to_string(c));
+      return std::get<std::span<const std::int32_t>>(it->second);
     }
-    return it->second;
+    catch (std::bad_variant_access& e)
+    {
+      return std::get<std::vector<std::int32_t>>(it->second);
+    }
   }
 
   /// @brief Access coefficients.
@@ -568,13 +579,16 @@ private:
 
   // Domain data for argument functions
   //  [rank_i][IntegralType, integral(id), cell_type] -> entity map
-  std::vector<
-      std::map<std::tuple<IntegralType, int, int>, std::vector<std::int32_t>>>
+  std::vector<std::map<
+      std::tuple<IntegralType, int, int>,
+      std::variant<std::vector<std::int32_t>, std::span<const std::int32_t>>>>
       _edata;
 
   // Domain data for coefficients
   //  [IntegralType, integral(id), cell_type] -> entity map
-  std::map<std::tuple<IntegralType, int, int>, std::vector<std::int32_t>>
+  std::map<
+      std::tuple<IntegralType, int, int>,
+      std::variant<std::vector<std::int32_t>, std::span<const std::int32_t>>>
       _cdata;
 };
 } // namespace dolfinx::fem
