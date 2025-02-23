@@ -252,13 +252,7 @@ void pack_coefficients(const Form<T, U>& form,
       {
         // Get indicator for all coefficients that are active in cell
         // integrals
-        // for (std::size_t i = 0; i < form.num_integrals(IntegralType::cell);
-        // ++i)
-        // {
-        //   for (auto idx : form.active_coeffs(IntegralType::cell, i))
-        //     active_coefficient[idx] = 1;
-        // }
-        for (auto idx : form.active_coeffs_new(IntegralType::cell, id))
+        for (auto idx : form.active_coeffs(IntegralType::cell, id))
           active_coefficient[idx] = 1;
 
         // Iterate over coefficients
@@ -297,18 +291,8 @@ void pack_coefficients(const Form<T, U>& form,
       {
         // Get indicator for all coefficients that are active in
         // exterior facet integrals
-        // for (std::size_t i = 0;
-        //      i < form.num_integrals(IntegralType::exterior_facet); ++i)
-        // {
-        //   for (auto idx : form.active_coeffs(IntegralType::exterior_facet,
-        //   i))
-        //     active_coefficient[idx] = 1;
-        // }
-        for (auto idx :
-             form.active_coeffs_new(IntegralType::exterior_facet, id))
-        {
+        for (auto idx : form.active_coeffs(IntegralType::exterior_facet, id))
           active_coefficient[idx] = 1;
-        }
 
         // Iterate over coefficients
         for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
@@ -336,19 +320,8 @@ void pack_coefficients(const Form<T, U>& form,
       {
         // Get indicator for all coefficients that are active in interior
         // facet integrals
-        // for (std::size_t i = 0;
-        //      i < form.num_integrals(IntegralType::interior_facet); ++i)
-        // {
-        //   for (auto idx : form.active_coeffs(IntegralType::interior_facet,
-        //   i))
-        //     active_coefficient[idx] = 1;
-        // }
-
-        for (auto idx :
-             form.active_coeffs_new(IntegralType::interior_facet, id))
-        {
+        for (auto idx : form.active_coeffs(IntegralType::interior_facet, id))
           active_coefficient[idx] = 1;
-        }
 
         // Iterate over coefficients
         for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
