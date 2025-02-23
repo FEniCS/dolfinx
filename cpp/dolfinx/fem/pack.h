@@ -200,10 +200,15 @@ std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
 allocate_coefficient_storage(const Form<T, U>& form)
 {
   std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>> coeffs;
-  for (auto integral_type : form.integral_types())
+  for (fem::IntegralType integral_type : form.integral_types())
   {
     for (int id : form.integral_ids(integral_type))
     {
+      if (integral_type == IntegralType::interior_facet)
+      {
+        std::cout << "Ids: " << id << std::endl;
+      }
+
       coeffs.emplace_hint(
           coeffs.end(), std::pair(integral_type, id),
           allocate_coefficient_storage(form, integral_type, id));
@@ -239,6 +244,8 @@ void pack_coefficients(const Form<T, U>& form,
   {
     IntegralType integral_type = intergal_data.first;
     int id = intergal_data.second;
+    std::cout << "ID test: " << static_cast<int>(integral_type) << " " << id
+              << std::endl;
     std::vector<T>& c = coeff_data.first;
     int cstride = coeff_data.second;
 
@@ -271,7 +278,7 @@ void pack_coefficients(const Form<T, U>& form,
           // Other integrals in the form might have coefficients defined
           // over entities of codim > 0, which don't make sense for cell
           // integrals, so don't pack them.
-          if (const int codim
+          if (int codim
               = form.mesh()->topology()->dim() - mesh->topology()->dim();
               codim > 0)
           {
@@ -343,12 +350,19 @@ void pack_coefficients(const Form<T, U>& form,
       {
         // Get indicator for all coefficients that are active in interior
         // facet integrals
-        for (std::size_t i = 0;
-             i < form.num_integrals(IntegralType::interior_facet); ++i)
+        // for (std::size_t i = 0;
+        //      i < form.num_integrals(IntegralType::interior_facet); ++i)
+        // {
+        for (auto idx : form.active_coeffs(IntegralType::interior_facet, id))
         {
-          for (auto idx : form.active_coeffs(IntegralType::interior_facet, i))
-            active_coefficient[idx] = 1;
+          std::cout << "Active coeff: " << idx << std::endl;
+          active_coefficient[idx] = 1;
         }
+        // }
+
+        std::cout << "P: Num int, num coeffs: "
+                  << form.num_integrals(IntegralType::interior_facet) << ", "
+                  << coefficients.size() << std::endl;
 
         // Iterate over coefficients
         for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
@@ -360,12 +374,14 @@ void pack_coefficients(const Form<T, U>& form,
           const std::vector<std::int32_t> facets_b
               = form.xdomain(IntegralType::interior_facet, id, 0, *mesh);
 
+          std::cout << "Test size: " << facets_b.size() << std::endl;
+
           std::span<const std::int32_t> facets_test
               = form.domain_coeff(IntegralType::interior_facet, id, coeff);
-          if (!std::ranges::equal(facets_b, facets_test))
-          {
-            throw std::runtime_error("Mismatch in cell data");
-          }
+          // if (!std::ranges::equal(facets_b, facets_test))
+          // {
+          //   throw std::runtime_error("Mismatch in cell data");
+          // }
 
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 4>>

@@ -370,13 +370,9 @@ public:
 
     constexpr std::array integral_types
         = {IntegralType::cell, IntegralType::exterior_facet,
-           IntegralType::interior_facet, IntegralType::vertex};
+           IntegralType::interior_facet};
     for (auto V : _function_spaces)
     {
-      // [IntegralType][(integral(id), cell_type)] -> entity data
-      // std::vector<std::map<std::array<int, 2>, std::vector<std::int32_t>>>
-      // foo(
-      //     _integrals.size());
       std::map<std::tuple<IntegralType, int, int>, std::vector<std::int32_t>>
           vdata;
       if (auto mesh0 = V->mesh(); mesh0 == _mesh)
@@ -415,8 +411,7 @@ public:
           for (int i : this->integral_ids(type))
           {
             std::vector<std::int32_t> e = impl::compute_domain(
-                IntegralType::cell, topology, codim,
-                get_domain(IntegralType::cell, i, 0), entity_map);
+                type, topology, codim, get_domain(type, i, 0), entity_map);
             vdata.insert({{type, i, 0}, e});
           }
         }
@@ -425,18 +420,44 @@ public:
       _edata.push_back(vdata);
     }
 
+    {
+      std::cout << std::endl;
+      std::cout << "Num integrals, num coeffs: "
+                << this->num_integrals(IntegralType::interior_facet) << ", "
+                << coefficients.size() << std::endl;
+
+      for (std::size_t j = 0; j < num_integrals(IntegralType::interior_facet);
+           ++j)
+      {
+        {
+          std::cout << "Num active coeffs (A): "
+                    << active_coeffs(IntegralType::interior_facet, j).size()
+                    << std::endl;
+        }
+      }
+    }
+
     // std::map<std::pair<IntegralType, int, int>, std::vector<std::size_t>>
     // cdata;
-    for (std::size_t i = 0; i < _integrals.size(); ++i)
+    for (std::size_t i = 0; i < _integrals.size(); ++i) // IntegralType
     {
       IntegralType type = static_cast<IntegralType>(i);
       for (const auto& integral : _integrals[i])
       {
+        if (i == 2)
+        {
+          std::cout << "Integral ID: " << integral.id << std::endl;
+          std::cout << "Num active coeffs (B): " << integral.coeffs.size()
+                    << std::endl;
+        }
+
         for (int c : integral.coeffs)
         {
           if (auto mesh0 = coefficients.at(c)->function_space()->mesh();
               mesh0 == _mesh)
           {
+            std::cout << "Match: " << i << " " << integral.id << " " << c
+                      << std::endl;
             _cdata.insert({{type, integral.id, c}, integral.entities});
           }
           else
@@ -451,8 +472,11 @@ public:
             assert(it != _entity_maps_new.end());
             std::span<const std::int32_t> entity_map = it->second;
             std::vector<std::int32_t> e = impl::compute_domain(
-                IntegralType::cell, topology, codim,
-                get_domain(type, integral.id, 0), entity_map);
+                type, topology, codim, get_domain(type, integral.id, 0),
+                entity_map);
+
+            std::cout << "No match: " << i << " " << integral.id << " " << c
+                      << std::endl;
             _cdata.insert({{type, integral.id, c}, e});
           }
         }
@@ -652,12 +676,15 @@ public:
   std::span<const std::int32_t> domain_coeff(IntegralType type, int i,
                                              int c) const
   {
+    std::cout << "DC (type, id, coeff): " << static_cast<int>(type) << " " << i
+              << " " << c << std::endl;
     auto it = _cdata.find({type, i, c});
     if (it == _cdata.end())
     {
-      throw std::runtime_error(
-          "No coefficient entity data for requested domain index. "
-          + std::to_string(i) + ", " + std::to_string(c));
+      throw std::runtime_error("No coefficient entity data for requested "
+                               "domain index (type, id, coeff). "
+                               + std::to_string(static_cast<int>(type)) + " "
+                               + std::to_string(i) + ", " + std::to_string(c));
     }
     return it->second;
   }

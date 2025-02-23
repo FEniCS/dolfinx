@@ -393,7 +393,6 @@ def test_mixed_dom_codim_1(n, k):
 
 def test_disjoint_submeshes():
     """Test assembly with multiple disjoint submeshes in same variational form"""
-
     N = 10
     tol = 1e-14
     mesh = create_unit_interval(MPI.COMM_WORLD, N, ghost_mode=GhostMode.shared_facet)
@@ -426,7 +425,8 @@ def test_disjoint_submeshes():
         mesh.topology, cell_tag.find(right_tag), tdim, tdim - 1
     )
 
-    # Create parent facet tag where left interface is tagged with 4, right with 5
+    # Create parent facet tag where left interface is tagged with 4,
+    # right with 5
     left_interface = np.intersect1d(left_facets, center_facets)
     right_interface = np.intersect1d(right_facets, center_facets)
     facet_map = mesh.topology.index_map(tdim)
@@ -440,11 +440,12 @@ def test_disjoint_submeshes():
     left_mesh, left_to_parent, _, _ = create_submesh(mesh, tdim, cell_tag.find(left_tag))
     right_mesh, right_to_parent, _, _ = create_submesh(mesh, tdim, cell_tag.find(right_tag))
 
-    # One sided interface integral uses only "+" restriction. Sort integration entities such that
-    # this is always satisfied
+    # One sided interface integral uses only "+" restriction. Sort
+    # integration entities such that this is always satisfied
     def compute_mapped_interior_facet_data(mesh, facet_tag, value, parent_to_sub_map):
-        """Compute integration data for interior facet integrals, where the positive restriction is
-        always taken on the side that has a cell in the sub mesh.
+        """Compute integration data for interior facet integrals, where
+        the positive restriction is always taken on the side that has a
+        cell in the sub mesh.
 
         Args:
             mesh: Parent mesh
@@ -678,7 +679,8 @@ def test_interior_facet_codim_1(msh):
     def f(x):
         return 2 + x[0] + 3 * x[1]
 
-    # Compare evaluation of finite element formulations on the submesh and the parent mesh
+    # Compare evaluation of finite element formulations on the submesh
+    # and the parent mesh
     metadata = {"quadrature_degree": 4}
     v = ufl.TestFunction(fem.functionspace(msh, ("DG", 2)))
 
@@ -692,7 +694,8 @@ def test_interior_facet_codim_1(msh):
         ufl.inner(j, ufl.jump(v)) * dS_submesh, entity_maps
     )
 
-    # Assemble reference value forms on the parent mesh using function defined with UFL
+    # Assemble reference value forms on the parent mesh using function
+    # defined with UFL
     x = ufl.SpatialCoordinate(msh)
     J_ref = assemble_interior_facet_formulation(ufl.avg(f(x)) * ufl.dS(metadata=metadata), None)
     b_ref = assemble_interior_facet_formulation(
