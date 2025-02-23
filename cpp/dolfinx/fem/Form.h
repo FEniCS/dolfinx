@@ -9,7 +9,7 @@
 #include "FunctionSpace.h"
 #include "traits.h"
 #include <algorithm>
-#include <array>
+#include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -18,15 +18,14 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <span>
-#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
 
 namespace dolfinx::fem
 {
-
 template <dolfinx::scalar T>
 class Constant;
 template <dolfinx::scalar T, std::floating_point U>
@@ -46,46 +45,47 @@ namespace impl
 /// @brief Compute the list of entity indices in `mesh` for the ith
 /// integral (kernel) of a given type (i.e. cell, exterior facet, or
 /// interior facet).
-inline std::vector<std::int32_t>
-compute_domain(IntegralType type, const mesh::Topology& topology, int codim,
-               std::span<const std::int32_t> entities,
-               std::span<const std::int32_t> entity_map)
+std::vector<std::int32_t> compute_domain(
+    auto entities, std::span<const std::int32_t> entity_map,
+    std::optional<int> codim = std::nullopt,
+    std::optional<
+        std::reference_wrapper<const graph::AdjacencyList<std::int32_t>>>
+        c_to_f
+    = std::nullopt)
 {
+  static_assert(entities.rank() == 1 or entities.rank() == 2);
   std::vector<std::int32_t> mapped_entities;
   mapped_entities.reserve(entities.size());
-  if (type == IntegralType::cell)
+  if constexpr (entities.rank() == 1)
   {
-    std::ranges::transform(entities, std::back_inserter(mapped_entities),
+    std::span ents(entities.data_handle(), entities.size());
+    std::ranges::transform(ents, std::back_inserter(mapped_entities),
                            [&entity_map](auto e) { return entity_map[e]; });
   }
-  else if (type == IntegralType::exterior_facet
-           or type == IntegralType::interior_facet)
+  else if (entities.rank() == 2)
   {
-    assert(codim >= 0);
-    const int tdim = topology.dim();
-
-    if (codim == 0)
+    assert(codim.value() >= 0);
+    if (codim.value() == 0)
     {
-      for (std::size_t i = 0; i < entities.size(); i += 2)
+      for (std::size_t i = 0; i < entities.extent(0); ++i)
       {
         // Add cell and the local facet index
         mapped_entities.insert(mapped_entities.end(),
-                               {entity_map[entities[i]], entities[i + 1]});
+                               {entity_map[entities(i, 0)], entities(i, 1)});
       }
     }
-    else if (codim == 1)
+    else if (codim.value() == 1)
     {
       // In this case, the entity maps take facets in (`_mesh`) to cells
       // in `mesh`, so we need to get the facet number from the (cell,
       // local_facet pair) first.
-      auto c_to_f = topology.connectivity(tdim, tdim - 1);
-      assert(c_to_f);
-      for (std::size_t i = 0; i < entities.size(); i += 2)
+      for (std::size_t i = 0; i < entities.extent(0); ++i)
       {
         // Get the facet index, and add cell and the local facet index
-        std::int32_t facet = c_to_f->links(entities[i])[entities[i + 1]];
+        std::int32_t facet
+            = c_to_f->get().links(entities(i, 0))[entities(i, 1)];
         mapped_entities.insert(mapped_entities.end(),
-                               {entity_map[facet], entities[i + 1]});
+                               {entity_map[facet], entities(i, 1)});
       }
     }
     else
@@ -220,6 +220,7 @@ public:
         _coefficients(coefficients), _constants(constants), _mesh(mesh),
         _needs_facet_permutations(needs_facet_permutations)
   {
+    namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
     if (!_mesh)
       throw std::runtime_error("Form Mesh is null.");
 
@@ -264,15 +265,33 @@ public:
           throw std::runtime_error("No entity map for the mesh.");
         std::span<const std::int32_t> entity_map = it->second;
 
-        const mesh::Topology topology = *_mesh->topology();
-        int tdim = topology.dim();
-        assert(mesh0);
-        int codim = tdim - mesh0->topology()->dim();
-        for (auto& [key, integral] : _integrals)
+        for (auto& [key, itg] : _integrals)
         {
           auto [type, id, kernel_idx] = key;
-          std::vector<std::int32_t> e = impl::compute_domain(
-              type, topology, codim, integral.entities, entity_map);
+          std::vector<std::int32_t> e;
+          if (type == IntegralType::cell)
+          {
+            e = impl::compute_domain(
+                md::mdspan(itg.entities.data(), itg.entities.size()),
+                entity_map);
+          }
+          else if (type == IntegralType::exterior_facet
+                   or type == IntegralType::interior_facet)
+          {
+            const mesh::Topology topology = *_mesh->topology();
+            int tdim = topology.dim();
+            assert(mesh0);
+            int codim = tdim - mesh0->topology()->dim();
+            auto c_to_f = topology.connectivity(tdim, tdim - 1);
+            assert(c_to_f);
+            e = impl::compute_domain(
+                md::mdspan<const std::int32_t,
+                           md::extents<std::size_t, md::dynamic_extent, 2>>(
+                    itg.entities.data(), itg.entities.size() / 2, 2),
+                entity_map, codim, *c_to_f);
+          }
+          else
+            throw std::runtime_error("Integral type not supported.");
           vdata.insert({key, std::move(e)});
         }
       }
@@ -297,12 +316,30 @@ public:
             throw std::runtime_error("No entity map for the mesh.");
           std::span<const std::int32_t> entity_map = it->second;
 
-          const mesh::Topology topology = *_mesh->topology();
-          int tdim = topology.dim();
-          assert(mesh0);
-          int codim = tdim - mesh0->topology()->dim();
-          std::vector<std::int32_t> e = impl::compute_domain(
-              type, topology, codim, integral.entities, entity_map);
+          std::vector<std::int32_t> e;
+          if (type == IntegralType::cell)
+          {
+            e = impl::compute_domain(
+                md::mdspan(integral.entities.data(), integral.entities.size()),
+                entity_map);
+          }
+          else if (type == IntegralType::exterior_facet
+                   or type == IntegralType::interior_facet)
+          {
+            const mesh::Topology topology = *_mesh->topology();
+            int tdim = topology.dim();
+            assert(mesh0);
+            int codim = tdim - mesh0->topology()->dim();
+            auto c_to_f = topology.connectivity(tdim, tdim - 1);
+            assert(c_to_f);
+            e = impl::compute_domain(
+                md::mdspan<const std::int32_t,
+                           md::extents<std::size_t, md::dynamic_extent, 2>>(
+                    integral.entities.data(), integral.entities.size() / 2, 2),
+                entity_map, codim, *c_to_f);
+          }
+          else
+            throw std::runtime_error("Integral type not supported.");
           _cdata.insert({{type, id, c}, std::move(e)});
         }
       }
