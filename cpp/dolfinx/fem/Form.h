@@ -42,9 +42,13 @@ enum class IntegralType : std::int8_t
 
 namespace impl
 {
-/// @brief Compute the list of entity indices in `mesh` for the ith
-/// integral (kernel) of a given type (i.e. cell, exterior facet, or
-/// interior facet).
+/// @brief Compute "`entity_map[entities[i]]`", with suitable handling
+/// for facets.
+/// @param entities
+/// @param entity_map
+/// @param codim
+/// @param c_to_f
+/// @return entity_map[entities[i]]
 std::vector<std::int32_t> compute_domain(
     auto entities, std::span<const std::int32_t> entity_map,
     std::optional<int> codim = std::nullopt,
@@ -188,13 +192,13 @@ public:
   /// @param[in] needs_facet_permutations Set to `true` is any of the
   /// integration kernels require cell permutation data.
   /// @param[in] entity_maps If any trial functions, test functions, or
-  /// coefficients in the form are not defined over the same mesh as the
-  /// integration domain, `entity_maps` must be supplied. For each key
-  /// (a mesh, different to the integration domain mesh) a map should be
-  /// provided relating the entities in the integration domain mesh to
-  /// the entities in the key mesh e.g. for a pair (msh, emap) in
-  /// `entity_maps`, `emap[i]` is the entity in `msh` corresponding to
-  /// entity `i` in the integration domain mesh.
+  /// coefficients in the form are not defined on `mesh` (the
+  /// 'integration domain'),`entity_maps` must be supplied. For each key
+  /// (a mesh, which different to `mesh`) an array map must be provided
+  /// which relates the entities in `mesh` to the entities in the key
+  /// mesh e.g. for a key/value pair `(mesh0, emap)` in `entity_maps`,
+  /// `emap[i]` is the entity in `mesh0` corresponding to entity `i` in
+  /// `mesh`.
   /// @param[in] mesh Mesh of the domain to integrate over (the
   /// 'integration domain').
   ///
@@ -361,11 +365,11 @@ public:
   ///
   /// bilinear form = 2, linear form = 1, functional = 0, etc.
   ///
-  /// @return The rank of the form
+  /// @return The rank of the form.
   int rank() const { return _function_spaces.size(); }
 
-  /// @brief Extract common mesh for the form.
-  /// @return The mesh.
+  /// @brief Common mesh for the form (the 'integration domain').
+  /// @return The integration domain mesh.
   std::shared_ptr<const mesh::Mesh<geometry_type>> mesh() const
   {
     return _mesh;
@@ -379,10 +383,9 @@ public:
     return _function_spaces;
   }
 
-  /// @brief Get the kernel function for integral `i` on given domain
-  /// type.
+  /// @brief Get the kernel function for an integral.
   /// @param[in] type Integral type.
-  /// @param[in] id The subdomain ID.
+  /// @param[in] id Integral subdomain ID.
   /// @param[in] kernel_idx Index of the kernel (we may have multiple
   /// kernels for a given ID in mixed-topology meshes).
   /// @return Function to call for `tabulate_tensor`.
@@ -472,9 +475,9 @@ public:
   ///
   /// @param[in] type Integral type.
   /// @param[in] id Integral ID, i.e. (sub)domain index.
-  /// @param[in] kernel_idx Index of the kernel (we may have multiple kernels
-  /// for a given ID in mixed-topology meshes).
-  /// @return List of active entities for the given integral (kernel).
+  /// @param[in] kernel_idx Index of the kernel (we may have multiple
+  /// kernels for a given ID in mixed-topology meshes).
+  /// @return Entity indices in the 'integration domain' mesh.
   std::span<const std::int32_t> domain(IntegralType type, int id,
                                        int kernel_idx) const
   {
@@ -484,7 +487,23 @@ public:
     return it->second.entities;
   }
 
-  /// @brief Argument domain.
+  /// @brief Argument domain indices.
+  ///
+  /// The indices in the integration domain mesh that the argument
+  /// function, e.g. a test or trial function, is defined on.
+  ///
+  /// @param type Integral type.
+  /// @param rank Argument index, e.g. `0` for test function space, `1`
+  /// for trial function space.
+  /// @param id Integral identifier index.
+  /// @param kernel_idx Kernel index (cell type).
+  /// @return An array `domain`, such that:
+  /// - For cell integrals, `domain[i]` is the index of the ith cell `i`
+  /// in the integration domain mesh.
+  /// - For exterior/interior facet integrals, `domain[2*i]` is the
+  /// index of a cell in the integration domain mesh attached to the
+  /// facets `i`, and `domain[2*i + 1]` is the local index of the facet
+  /// relative to the cell.
   std::span<const std::int32_t> domain_arg(IntegralType type, int rank, int id,
                                            int kernel_idx) const
   {
@@ -501,7 +520,17 @@ public:
     }
   }
 
-  /// @brief Argument domain.
+  /// @brief
+
+  /// @brief Coefficient function domain.
+  ///
+  /// The indices in the integration domain mesh that the argument
+  /// function, e.g. a test or trial function, is defined on.
+  ///
+  /// @param type Integral type.
+  /// @param id Integral identifier index.
+  /// @param c Coefficient index.
+  /// @return Domain indices for the coefficient function.
   std::span<const std::int32_t> domain_coeff(IntegralType type, int id,
                                              int c) const
   {
