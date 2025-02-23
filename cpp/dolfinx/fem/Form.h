@@ -51,9 +51,6 @@ compute_domain(IntegralType type, const mesh::Topology& topology, int codim,
                std::span<const std::int32_t> entities,
                std::span<const std::int32_t> entity_map)
 {
-  assert(codim >= 0);
-  const int tdim = topology.dim();
-
   std::vector<std::int32_t> mapped_entities;
   mapped_entities.reserve(entities.size());
   if (type == IntegralType::cell)
@@ -64,6 +61,9 @@ compute_domain(IntegralType type, const mesh::Topology& topology, int codim,
   else if (type == IntegralType::exterior_facet
            or type == IntegralType::interior_facet)
   {
+    assert(codim >= 0);
+    const int tdim = topology.dim();
+
     if (codim == 0)
     {
       for (std::size_t i = 0; i < entities.size(); i += 2)
@@ -95,83 +95,7 @@ compute_domain(IntegralType type, const mesh::Topology& topology, int codim,
     throw std::runtime_error("Integral type not supported.");
 
   return mapped_entities;
-
-  // switch (type)
-  // {
-  // case IntegralType::cell:
-  // {
-  //   std::ranges::transform(entities, std::back_inserter(mapped_entities),
-  //                          [&entity_map](auto e) { return entity_map[e]; });
-  //   break;
-  // }
-  // case IntegralType::exterior_facet:
-  // {
-  //   if (codim == 0)
-  //   {
-  //     for (std::size_t i = 0; i < entities.size(); i += 2)
-  //     {
-  //       // Add cell and the local facet index
-  //       mapped_entities.insert(mapped_entities.end(),
-  //                              {entity_map[entities[i]], entities[i + 1]});
-  //     }
-  //   }
-  //   else if (codim == 1)
-  //   {
-  //     // In this case, the entity maps take facets in (`_mesh`) to cells
-  //     // in `mesh`, so we need to get the facet number from the (cell,
-  //     // local_facet pair) first.
-  //     auto c_to_f = topology.connectivity(tdim, tdim - 1);
-  //     assert(c_to_f);
-  //     for (std::size_t i = 0; i < entities.size(); i += 2)
-  //     {
-  //       // Get the facet index, and add cell and the local facet index
-  //       std::int32_t facet = c_to_f->links(entities[i])[entities[i + 1]];
-  //       mapped_entities.insert(mapped_entities.end(),
-  //                              {entity_map[facet], entities[i + 1]});
-  //     }
-  //   }
-  //   else
-  //     throw std::runtime_error("Codimension > 1 not supported.");
-
-  //   break;
-  // }
-  // case IntegralType::interior_facet:
-  // {
-  //   // Get the codimension of the mesh
-  //   if (codim == 0)
-  //   {
-  //     for (std::size_t i = 0; i < entities.size(); i += 2)
-  //     {
-  //       // Add cell and the local facet index
-  //       mapped_entities.insert(mapped_entities.end(),
-  //                              {entity_map[entities[i]], entities[i + 1]});
-  //     }
-  //   }
-  //   else if (codim == 1)
-  //   {
-  //     // In this case, the entity maps take facets in (`_mesh`) to
-  //     // cells in `mesh`, so we need to get the facet number from
-  //     // the (cell, local_facet pair) first.
-  //     auto c_to_f = topology.connectivity(tdim, tdim - 1);
-  //     assert(c_to_f);
-  //     for (std::size_t i = 0; i < entities.size(); i += 2)
-  //     {
-  //       // Get the facet index, and add cell and the local facet index
-  //       std::int32_t facet = c_to_f->links(entities[i])[entities[i + 1]];
-  //       mapped_entities.insert(mapped_entities.end(),
-  //                              {entity_map[facet], entities[i + 1]});
-  //     }
-  //   }
-
-  //   break;
-  // }
-  // default:
-  //   throw std::runtime_error("Integral type not supported.");
-  // }
-
-  // return mapped_entities;
 }
-
 } // namespace impl
 
 /// @brief Represents integral data, containing the kernel, and a list
