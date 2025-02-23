@@ -589,7 +589,7 @@ void assemble_matrix(
                                  "topology aren't supported yet");
       }
 
-      auto fn = a.kernel(IntegralType::exterior_facet, i);
+      auto fn = a.kernel(IntegralType::exterior_facet, i, 0);
       assert(fn);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::exterior_facet, i});
@@ -611,7 +611,7 @@ void assemble_matrix(
       }
 
       const std::vector<int> c_offsets = a.coefficient_offsets();
-      auto fn = a.kernel(IntegralType::interior_facet, i);
+      auto fn = a.kernel(IntegralType::interior_facet, i, 0);
       assert(fn);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});

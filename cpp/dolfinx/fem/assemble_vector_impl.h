@@ -982,7 +982,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
 
   for (int i : a.integral_ids(IntegralType::cell))
   {
-    auto kernel = a.kernel(IntegralType::cell, i);
+    auto kernel = a.kernel(IntegralType::cell, i, 0);
     assert(kernel);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     std::span cells = a.domain(IntegralType::cell, i, 0);
@@ -1023,7 +1023,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
       = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
-    auto kernel = a.kernel(IntegralType::exterior_facet, i);
+    auto kernel = a.kernel(IntegralType::exterior_facet, i, 0);
     assert(kernel);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
@@ -1038,7 +1038,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
 
   for (int i : a.integral_ids(IntegralType::interior_facet))
   {
-    auto kernel = a.kernel(IntegralType::interior_facet, i);
+    auto kernel = a.kernel(IntegralType::interior_facet, i, 0);
     assert(kernel);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::interior_facet, i});
@@ -1223,7 +1223,7 @@ void assemble_vector(
         = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
     for (int i : L.integral_ids(IntegralType::exterior_facet))
     {
-      auto fn = L.kernel(IntegralType::exterior_facet, i);
+      auto fn = L.kernel(IntegralType::exterior_facet, i, 0);
       assert(fn);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::exterior_facet, i});
@@ -1255,7 +1255,7 @@ void assemble_vector(
 
     for (int i : L.integral_ids(IntegralType::interior_facet))
     {
-      auto fn = L.kernel(IntegralType::interior_facet, i);
+      auto fn = L.kernel(IntegralType::interior_facet, i, 0);
       assert(fn);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});

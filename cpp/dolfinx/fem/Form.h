@@ -290,16 +290,6 @@ public:
       }
     }
 
-    auto get_domain = [&integrals = _integrals](
-                          IntegralType type, int i,
-                          int kernel_idx) -> std::span<const std::int32_t>
-    {
-      auto it = integrals.find({type, i, kernel_idx});
-      if (it == integrals.end())
-        throw std::runtime_error("No kernel for requested domain index.");
-      return it->second.entities;
-    };
-
     for (auto V : _function_spaces)
     {
       std::map<std::tuple<IntegralType, int, int>, std::vector<std::int32_t>>
@@ -319,11 +309,11 @@ public:
         if (it == entity_maps.end())
           throw std::runtime_error("No entity map for the mesh.");
         std::span<const std::int32_t> entity_map = it->second;
-        for (auto& [key, data] : _integrals)
+        for (auto& [key, integral] : _integrals)
         {
           auto [type, i, kernel_idx] = key;
           std::vector<std::int32_t> e = impl::compute_domain(
-              type, topology, codim, get_domain(type, i, 0), entity_map);
+              type, topology, codim, integral.entities, entity_map);
           vdata.insert({key, std::move(e)});
         }
       }
@@ -334,7 +324,6 @@ public:
     for (auto& [key, integral] : _integrals)
     {
       auto [type, id, kernel_idx] = key;
-
       for (int c : integral.coeffs)
       {
         if (auto mesh0 = coefficients.at(c)->function_space()->mesh();
@@ -353,7 +342,7 @@ public:
             throw std::runtime_error("No entity map for the mesh.");
           std::span<const std::int32_t> entity_map = it->second;
           std::vector<std::int32_t> e = impl::compute_domain(
-              type, topology, codim, get_domain(type, id, 0), entity_map);
+              type, topology, codim, integral.entities, entity_map);
           _cdata.insert({{type, id, c}, std::move(e)});
         }
       }
@@ -408,29 +397,13 @@ public:
     return it->second.kernel;
   }
 
-  /// @brief Get the kernel function for integral `i` on given domain
-  /// type.
-  /// @param[in] type Integral type.
-  /// @param[in] i Domain identifier (index).
-  /// @return Function to call for `tabulate_tensor`.
-  std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
-                     const geometry_type*, const int*, const uint8_t*)>
-  kernel(IntegralType type, int i) const
-  {
-    return kernel(type, i, 0);
-  }
-
   /// @brief Get types of integrals in the form.
   /// @return Integrals types.
   std::set<IntegralType> integral_types() const
   {
     std::set<IntegralType> set;
-    for (auto& [key, data] : _integrals)
-    {
-      auto [type, id, kernel_idx] = key;
-      set.insert(type);
-    }
-
+    std::ranges::for_each(_integrals, [&set](auto& x)
+                          { set.insert(std::get<0>(x.first)); });
     return set;
   }
 
@@ -530,7 +503,7 @@ public:
     if (it == _cdata.end())
     {
       throw std::runtime_error("No coefficient entity data for requested "
-                               "domain index (type, id, coeff). "
+                               "domain index (type, id, coeff_idx). "
                                + std::to_string(static_cast<int>(type)) + " "
                                + std::to_string(i) + ", " + std::to_string(c));
     }
@@ -595,11 +568,6 @@ private:
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
-
-  // NEW: Entity maps (see Form documentation)
-  // std::vector<std::pair<std::shared_ptr<const mesh::Mesh<geometry_type>>,
-  //                       std::vector<std::int32_t>>>
-  //     _entity_maps_new;
 
   // Domain data for argument functions
   //  [rank_i][IntegralType, integral(id), cell_type] -> entity map
