@@ -419,9 +419,9 @@ pack_constants(std::vector<std::reference_wrapper<const fem::Constant<T>>> c)
   std::int32_t offset = 0;
   for (auto& constant : c)
   {
-    const std::vector<T>& value = constant.get().value;
-    std::ranges::copy(value, std::next(constant_values.begin(), offset));
-    offset += value.size();
+    std::ranges::copy(constant.get().value,
+                      std::next(constant_values.begin(), offset));
+    offset += constant.get().value.size();
   }
 
   return constant_values;
