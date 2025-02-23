@@ -324,6 +324,19 @@ public:
 
   /// @brief Indices of coefficients that are active for a given
   /// integral (kernel).
+  std::vector<int> active_coeffs_new(IntegralType type, int id) const
+  {
+    for (auto& integral : _integrals[static_cast<std::size_t>(type)])
+    {
+      if (integral.id == id)
+        return integral.coeffs;
+    }
+
+    throw std::runtime_error("No active coeffs for integral/domain.");
+  }
+
+  /// @brief Indices of coefficients that are active for a given
+  /// integral (kernel).
   ///
   /// A form is split into multiple integrals (kernels) and each
   /// integral might container only a subset of all coefficients in the
