@@ -529,7 +529,7 @@ Form<T, U> create_form_factory(
               topology->index_maps(tdim).at(form_idx)->size_local(), 0);
           std::iota(default_cells.begin(), default_cells.end(), 0);
           integrals.insert({{IntegralType::cell, id, form_idx},
-                            {id, k, default_cells, active_coeffs}});
+                            {k, default_cells, active_coeffs}});
         }
         else if (sd != subdomains.end())
         {
@@ -539,7 +539,7 @@ Form<T, U> create_form_factory(
           if (it != sd->second.end() and it->first == id)
           {
             integrals.insert({{IntegralType::cell, id, form_idx},
-                              {id, k,
+                              {k,
                                std::vector<std::int32_t>(it->second.begin(),
                                                          it->second.end()),
                                active_coeffs}});
@@ -621,7 +621,7 @@ Form<T, U> create_form_factory(
                                       pair.end());
           }
           integrals.insert({{IntegralType::exterior_facet, id, form_idx},
-                            {id, k, default_facets_ext, active_coeffs}});
+                            {k, default_facets_ext, active_coeffs}});
         }
         else if (sd != subdomains.end())
         {
@@ -631,7 +631,7 @@ Form<T, U> create_form_factory(
           if (it != sd->second.end() and it->first == id)
           {
             integrals.insert({{IntegralType::exterior_facet, id, form_idx},
-                              {id, k,
+                              {k,
                                std::vector<std::int32_t>(it->second.begin(),
                                                          it->second.end()),
                                active_coeffs}});
@@ -739,7 +739,7 @@ Form<T, U> create_form_factory(
             }
           }
           integrals.insert({{IntegralType::interior_facet, id, form_idx},
-                            {id, k, default_facets_int, active_coeffs}});
+                            {k, default_facets_int, active_coeffs}});
         }
         else if (sd != subdomains.end())
         {
@@ -748,7 +748,7 @@ Form<T, U> create_form_factory(
           if (it != sd->second.end() and it->first == id)
           {
             integrals.insert({{IntegralType::interior_facet, id, form_idx},
-                              {id, k,
+                              {k,
                                std::vector<std::int32_t>(it->second.begin(),
                                                          it->second.end()),
                                active_coeffs}});
