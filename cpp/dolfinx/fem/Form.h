@@ -349,50 +349,58 @@ public:
                                                            e.second.end()));
                    });
 
-    for (auto V : this->function_spaces())
+    auto get_domain = [&integrals = _integrals](
+                          IntegralType type, int i,
+                          int kernel_idx) -> std::span<const std::int32_t>
+    {
+      const std::vector<integral_data<scalar_type, geometry_type>>& itg
+          = integrals[static_cast<std::size_t>(type)];
+      auto get_id = [](const auto& a) { return a.id; };
+      auto it0 = std::ranges::lower_bound(itg, i, std::less{}, get_id);
+      auto it1 = std::ranges::upper_bound(itg, i, std::less{}, get_id);
+
+      // Check that the kernel is valid and return it if so
+      if (it0 == itg.end() or it0->id != i
+          or std::distance(it0, it1) <= kernel_idx)
+      {
+        throw std::runtime_error("NEW: No kernel for requested domain index.");
+      }
+      return std::next(it0, kernel_idx)->entities;
+    };
+
+    constexpr std::array integral_types
+        = {IntegralType::cell, IntegralType::exterior_facet,
+           IntegralType::interior_facet, IntegralType::vertex};
+    for (auto V : _function_spaces)
     {
       // [IntegralType][(integral(id), cell_type)] -> entity data
-      std::vector<std::map<std::array<int, 2>, std::vector<std::int32_t>>> foo(
-          _integrals.size());
+      // std::vector<std::map<std::array<int, 2>, std::vector<std::int32_t>>>
+      // foo(
+      //     _integrals.size());
+      std::map<std::tuple<IntegralType, int, int>, std::vector<std::int32_t>>
+          vdata;
       if (auto mesh0 = V->mesh(); mesh0 == _mesh)
       {
         // [IntegralType][integral(id)] -> entity data]
-        for (std::size_t d = 0; d < _integrals.size(); ++d)
+        // for (std::size_t d = 0; d < _integrals.size(); ++d)
+        for (IntegralType type : integral_types)
         {
           int tmp_id = -1000;
           std::size_t cell_id = 0;
-          for (const auto& integral : _integrals[d])
+          for (const auto& integral :
+               _integrals[static_cast<std::size_t>(type)])
           {
             if (integral.id != tmp_id)
             {
               cell_id = 0;
               tmp_id = integral.id;
             }
-            foo[d].insert({{integral.id, cell_id++}, integral.entities});
+            vdata.insert({{type, integral.id, cell_id++}, integral.entities});
           }
         }
       }
       else
       {
-        auto get_domain = [&integrals = _integrals](
-                              IntegralType type, int i,
-                              int kernel_idx) -> std::span<const std::int32_t>
-        {
-          const std::vector<integral_data<scalar_type, geometry_type>>& itg
-              = integrals[static_cast<std::size_t>(type)];
-          auto get_id = [](const auto& a) { return a.id; };
-          auto it0 = std::ranges::lower_bound(itg, i, std::less{}, get_id);
-          auto it1 = std::ranges::upper_bound(itg, i, std::less{}, get_id);
-
-          // Check that the kernel is valid and return it if so
-          if (it0 == itg.end() or it0->id != i
-              or std::distance(it0, it1) <= kernel_idx)
-          {
-            throw std::runtime_error("No kernel for requested domain index.");
-          }
-          return std::next(it0, kernel_idx)->entities;
-        };
-
         const mesh::Topology topology = *_mesh->topology();
         int tdim = topology.dim();
         assert(mesh0);
@@ -402,33 +410,53 @@ public:
                                        { return x.first.get() == adr; });
         assert(it != _entity_maps_new.end());
         std::span<const std::int32_t> entity_map = it->second;
-
-        for (int i : this->integral_ids(IntegralType::cell))
+        for (IntegralType type : integral_types)
         {
-          std::vector<std::int32_t> e = impl::compute_domain(
-              IntegralType::cell, topology, codim,
-              get_domain(IntegralType::cell, i, 0), entity_map);
-          foo[0].insert({{i, 0}, e});
-        }
-
-        for (int i : this->integral_ids(IntegralType::exterior_facet))
-        {
-          std::vector<std::int32_t> e = impl::compute_domain(
-              IntegralType::exterior_facet, topology, codim,
-              get_domain(IntegralType::exterior_facet, i, 0), entity_map);
-          foo[1].insert({{i, 0}, e});
-        }
-
-        for (int i : this->integral_ids(IntegralType::interior_facet))
-        {
-          std::vector<std::int32_t> e = impl::compute_domain(
-              IntegralType::interior_facet, topology, codim,
-              get_domain(IntegralType::interior_facet, i, 0), entity_map);
-          foo[2].insert({{i, 0}, e});
+          for (int i : this->integral_ids(type))
+          {
+            std::vector<std::int32_t> e = impl::compute_domain(
+                IntegralType::cell, topology, codim,
+                get_domain(IntegralType::cell, i, 0), entity_map);
+            vdata.insert({{type, i, 0}, e});
+          }
         }
       }
 
-      _edata.push_back(foo);
+      _edata.push_back(vdata);
+    }
+
+    // std::map<std::pair<IntegralType, int, int>, std::vector<std::size_t>>
+    // cdata;
+    for (std::size_t i = 0; i < _integrals.size(); ++i)
+    {
+      IntegralType type = static_cast<IntegralType>(i);
+      for (const auto& integral : _integrals[i])
+      {
+        for (int c : integral.coeffs)
+        {
+          if (auto mesh0 = coefficients.at(c)->function_space()->mesh();
+              mesh0 == _mesh)
+          {
+            _cdata.insert({{type, integral.id, c}, integral.entities});
+          }
+          else
+          {
+            const mesh::Topology topology = *_mesh->topology();
+            int tdim = topology.dim();
+            assert(mesh0);
+            int codim = tdim - mesh0->topology()->dim();
+            auto it = std::ranges::find_if(_entity_maps_new,
+                                           [adr = mesh0.get()](auto& x)
+                                           { return x.first.get() == adr; });
+            assert(it != _entity_maps_new.end());
+            std::span<const std::int32_t> entity_map = it->second;
+            std::vector<std::int32_t> e = impl::compute_domain(
+                IntegralType::cell, topology, codim,
+                get_domain(type, integral.id, 0), entity_map);
+            _cdata.insert({{type, integral.id, c}, e});
+          }
+        }
+      }
     }
   }
 
@@ -612,12 +640,25 @@ public:
   {
     // if (kernel_idx != 0)
     //   throw std::runtime_error("Only kernel_idx=0 is supported.");
-    auto it
-        = _edata[rank][static_cast<std::size_t>(type)].find({i, kernel_idx});
-    if (it == _edata[rank][static_cast<std::size_t>(type)].end())
+    auto it = _edata[rank].find({type, i, kernel_idx});
+    if (it == _edata[rank].end())
       throw std::runtime_error("No entity data for requested domain index. "
                                + std::to_string(i) + ", "
                                + std::to_string(kernel_idx));
+    return it->second;
+  }
+
+  /// @brief Argument domain.
+  std::span<const std::int32_t> domain_coeff(IntegralType type, int i,
+                                             int c) const
+  {
+    auto it = _cdata.find({type, i, c});
+    if (it == _cdata.end())
+    {
+      throw std::runtime_error(
+          "No coefficient entity data for requested domain index. "
+          + std::to_string(i) + ", " + std::to_string(c));
+    }
     return it->second;
   }
 
@@ -723,7 +764,12 @@ private:
   // NEW: For argument functions:
   //  [rank_i][IntegralType][(integral(id), cell_type] -> entity map
   std::vector<
-      std::vector<std::map<std::array<int, 2>, std::vector<std::int32_t>>>>
+      std::map<std::tuple<IntegralType, int, int>, std::vector<std::int32_t>>>
       _edata;
+
+  // NEW: For coefficient functions:
+  //  [IntegralType, integral(id), coeff_t] -> entity map
+  std::map<std::tuple<IntegralType, int, int>, std::vector<std::int32_t>>
+      _cdata;
 };
 } // namespace dolfinx::fem
