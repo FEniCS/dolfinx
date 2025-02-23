@@ -420,23 +420,6 @@ public:
       _edata.push_back(vdata);
     }
 
-    {
-      std::cout << std::endl;
-      std::cout << "Num integrals, num coeffs: "
-                << this->num_integrals(IntegralType::interior_facet) << ", "
-                << coefficients.size() << std::endl;
-
-      for (std::size_t j = 0; j < num_integrals(IntegralType::interior_facet);
-           ++j)
-      {
-        {
-          std::cout << "Num active coeffs (A): "
-                    << active_coeffs(IntegralType::interior_facet, j).size()
-                    << std::endl;
-        }
-      }
-    }
-
     // std::map<std::pair<IntegralType, int, int>, std::vector<std::size_t>>
     // cdata;
     for (std::size_t i = 0; i < _integrals.size(); ++i) // IntegralType
@@ -444,20 +427,11 @@ public:
       IntegralType type = static_cast<IntegralType>(i);
       for (const auto& integral : _integrals[i])
       {
-        if (i == 2)
-        {
-          std::cout << "Integral ID: " << integral.id << std::endl;
-          std::cout << "Num active coeffs (B): " << integral.coeffs.size()
-                    << std::endl;
-        }
-
         for (int c : integral.coeffs)
         {
           if (auto mesh0 = coefficients.at(c)->function_space()->mesh();
               mesh0 == _mesh)
           {
-            std::cout << "Match: " << i << " " << integral.id << " " << c
-                      << std::endl;
             _cdata.insert({{type, integral.id, c}, integral.entities});
           }
           else
@@ -474,9 +448,6 @@ public:
             std::vector<std::int32_t> e = impl::compute_domain(
                 type, topology, codim, get_domain(type, integral.id, 0),
                 entity_map);
-
-            std::cout << "No match: " << i << " " << integral.id << " " << c
-                      << std::endl;
             _cdata.insert({{type, integral.id, c}, e});
           }
         }
@@ -587,10 +558,14 @@ public:
   /// integral kernel that signifies which coefficients are present.
   ///
   /// @param[in] type Integral type.
-  /// @param[in] i Index of the integral.
-  std::vector<int> active_coeffs(IntegralType type, std::size_t i) const
+  /// @param[in] id Domain index (identifier) of the integral.
+  std::vector<int> active_coeffs(IntegralType type, int id) const
   {
-    return _integrals[static_cast<std::size_t>(type)].at(i).coeffs;
+    auto it = std::ranges::find_if(_integrals[static_cast<std::size_t>(type)],
+                                   [id](auto& x) { return x.id == id; });
+    if (it == _integrals[static_cast<std::size_t>(type)].end())
+      throw std::runtime_error("Could not find active coefficient list.");
+    return it->coeffs;
   }
 
   /// @brief Get the IDs for integrals (kernels) for given integral
@@ -606,7 +581,6 @@ public:
   {
     const std::vector<integral_data<scalar_type, geometry_type>>& integrals
         = _integrals[static_cast<std::size_t>(type)];
-
     std::vector<int> ids;
     std::ranges::transform(integrals, std::back_inserter(ids),
                            [](auto& integral) { return integral.id; });
@@ -676,8 +650,6 @@ public:
   std::span<const std::int32_t> domain_coeff(IntegralType type, int i,
                                              int c) const
   {
-    std::cout << "DC (type, id, coeff): " << static_cast<int>(type) << " " << i
-              << " " << c << std::endl;
     auto it = _cdata.find({type, i, c});
     if (it == _cdata.end())
     {
