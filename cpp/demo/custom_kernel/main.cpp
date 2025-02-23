@@ -18,7 +18,9 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <functional>
+#include <map>
 #include <stdint.h>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -72,17 +74,16 @@ std::array<T, 3> b_ref(mdspand_t<const T, 4> phi, std::span<const T> w)
 /// @param cells Cells to execute the kernel over.
 /// @return Frobenius norm squared of the matrix.
 template <std::floating_point T>
-double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
+double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V,
+                        [[maybe_unused]] auto kernel,
                         std::span<const std::int32_t> cells)
 {
   // Kernel data (ID, kernel function, cell indices to execute over)
-  std::vector kernel_data{
-      fem::integral_data<T>(-1, kernel, cells, std::vector<int>{})};
+  std::map integrals{
+      std::pair{std::tuple{fem::IntegralType::cell, -1, 0},
+                fem::integral_data<T>(-1, kernel, cells, std::vector<int>{})}};
 
-  // Associate kernel with cells (as opposed to facets, etc)
-  std::map integrals{std::pair{fem::IntegralType::cell, kernel_data}};
-
-  fem::Form<T> a({V, V}, integrals, {}, {}, false, {}, V->mesh());
+  fem::Form<T, T> a({V, V}, integrals, {}, {}, false, {}, V->mesh());
   auto dofmap = V->dofmap();
   auto sp = la::SparsityPattern(
       V->mesh()->comm(), {dofmap->index_map, dofmap->index_map},
@@ -104,13 +105,14 @@ double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
 /// @param cells Cells to execute the kernel over.
 /// @return l2 norm squared of the vector.
 template <std::floating_point T>
-double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
-                        std::span<const std::int32_t> cells)
+double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V,
+                        [[maybe_unused]] auto kernel,
+                        [[maybe_unused]] std::span<const std::int32_t> cells)
 {
   auto mesh = V->mesh();
-  std::vector kernal_data{
-      fem::integral_data<T>(-1, kernel, cells, std::vector<int>{})};
-  std::map integrals{std::pair{fem::IntegralType::cell, kernal_data}};
+  std::map integrals{
+      std::pair{std::tuple{fem::IntegralType::cell, -1, 0},
+                fem::integral_data<T>(-1, kernel, cells, std::vector<int>{})}};
   fem::Form<T> L({V}, integrals, {}, {}, false, {}, mesh);
   auto dofmap = V->dofmap();
   la::Vector<T> b(dofmap->index_map, 1);

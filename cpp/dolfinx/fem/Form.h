@@ -273,10 +273,10 @@ public:
   /// @pre The integral data in integrals must be sorted by domain
   /// (domain id).
   template <typename X>
-  // requires std::is_convertible_v<
-  //              std::remove_cvref_t<X>,
-  //              std::map<IntegralType, std::vector<integral_data<
-  //                                         scalar_type, geometry_type>>>>
+    requires std::is_convertible_v<
+                 std::remove_cvref_t<X>,
+                 std::map<std::tuple<IntegralType, int, int>,
+                          integral_data<scalar_type, geometry_type>>>
   Form(
       const std::vector<std::shared_ptr<const FunctionSpace<geometry_type>>>& V,
       X&& integrals,
@@ -289,8 +289,8 @@ public:
       const std::map<std::shared_ptr<const mesh::Mesh<geometry_type>>,
                      std::span<const std::int32_t>>& entity_maps,
       std::shared_ptr<const mesh::Mesh<geometry_type>> mesh)
-      : _function_spaces(V), _integrals(std::forward<X>(integrals)),
-        _coefficients(coefficients), _constants(constants), _mesh(mesh),
+      : _function_spaces(V), _integrals(integrals), _coefficients(coefficients),
+        _constants(constants), _mesh(mesh),
         _needs_facet_permutations(needs_facet_permutations)
   {
     if (!_mesh)
