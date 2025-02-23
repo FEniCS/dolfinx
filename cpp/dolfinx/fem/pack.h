@@ -276,16 +276,8 @@ void pack_coefficients(const Form<T, U>& form,
                                      "codim>0 in a cell integral");
           }
 
-          const std::vector<std::int32_t> cells_b
-              = form.xdomain(IntegralType::cell, id, 0, *mesh);
-
-          std::span<const std::int32_t> cells_test
+          std::span<const std::int32_t> cells_b
               = form.domain_coeff(IntegralType::cell, id, coeff);
-          if (!std::ranges::equal(cells_b, cells_test))
-          {
-            throw std::runtime_error("Mismatch in cell data");
-          }
-
           md::mdspan cells(cells_b.data(), cells_b.size());
           std::span<const std::uint32_t> cell_info
               = impl::get_cell_orientation_info(*coefficients[coeff]);
@@ -308,17 +300,8 @@ void pack_coefficients(const Form<T, U>& form,
           if (!active_coefficient[coeff])
             continue;
 
-          auto mesh = coefficients[coeff]->function_space()->mesh();
-          const std::vector<std::int32_t> facets_b
-              = form.xdomain(IntegralType::exterior_facet, id, 0, *mesh);
-
-          std::span<const std::int32_t> facets_test
+          std::span<const std::int32_t> facets_b
               = form.domain_coeff(IntegralType::exterior_facet, id, coeff);
-          if (!std::ranges::equal(facets_b, facets_test))
-          {
-            throw std::runtime_error("Mismatch in cell data");
-          }
-
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>
               facets(facets_b.data(), facets_b.size() / 2, 2);
@@ -345,17 +328,8 @@ void pack_coefficients(const Form<T, U>& form,
           if (!active_coefficient[coeff])
             continue;
 
-          auto mesh = coefficients[coeff]->function_space()->mesh();
-          const std::vector<std::int32_t> facets_b
-              = form.xdomain(IntegralType::interior_facet, id, 0, *mesh);
-
-          std::span<const std::int32_t> facets_test
+          std::span<const std::int32_t> facets_b
               = form.domain_coeff(IntegralType::interior_facet, id, coeff);
-          if (!std::ranges::equal(facets_b, facets_test))
-          {
-            throw std::runtime_error("Mismatch in cell data");
-          }
-
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 4>>
               facets(facets_b.data(), facets_b.size() / 4, 4);

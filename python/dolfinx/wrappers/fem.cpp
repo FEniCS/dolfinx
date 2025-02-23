@@ -28,6 +28,7 @@
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
+#include <map>
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
@@ -45,6 +46,7 @@
 #include <nanobind/stl/vector.h>
 #include <span>
 #include <string>
+#include <tuple>
 #include <ufcx.h>
 #include <utility>
 
@@ -646,8 +648,8 @@ void declare_form(nb::module_& m, std::string type)
                                         nb::c_contig>>& entity_maps,
              std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh)
           {
-            std::map<dolfinx::fem::IntegralType,
-                     std::vector<dolfinx::fem::integral_data<T>>>
+            std::map<std::tuple<dolfinx::fem::IntegralType, int, int>,
+                     dolfinx::fem::integral_data<T>>
                 _integrals;
 
             // Loop over kernel for each entity type
@@ -659,10 +661,11 @@ void declare_form(nb::module_& m, std::string type)
                     = (void (*)(T*, const T*, const T*,
                                 const typename geom_type<T>::value_type*,
                                 const int*, const std::uint8_t*))ptr;
-                _integrals[type].emplace_back(
-                    id, kn_ptr,
-                    std::span<const std::int32_t>(e.data(), e.size()),
-                    std::vector<int>(c.data(), c.data() + c.size()));
+                _integrals.insert(
+                    {{type, id, 0},
+                     {id, kn_ptr,
+                      std::span<const std::int32_t>(e.data(), e.size()),
+                      std::vector<int>(c.data(), c.data() + c.size())}});
               }
             }
 
