@@ -448,10 +448,7 @@ Form<T, U> create_form_factory(
   // each
   using kern_t = std::function<void(T*, const T*, const T*, const U*,
                                     const int*, const std::uint8_t*)>;
-  std::map<IntegralType, std::vector<integral_data<T, U>>> integrals;
-
-  std::map<std::tuple<IntegralType, int, int>, integral_data<T, U>>
-      integrals_new;
+  std::map<std::tuple<IntegralType, int, int>, integral_data<T, U>> integrals;
 
   auto check_geometry_hash
       = [&geo = mesh->geometry()](const ufcx_integral& integral,
@@ -473,7 +470,6 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
                                  + integral_offsets[cell],
                              num_integrals_type[cell]);
-    auto itg = integrals.insert({IntegralType::cell, {}});
     auto sd = subdomains.find(IntegralType::cell);
     for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
     {
@@ -532,10 +528,8 @@ Form<T, U> create_form_factory(
           default_cells.resize(
               topology->index_maps(tdim).at(form_idx)->size_local(), 0);
           std::iota(default_cells.begin(), default_cells.end(), 0);
-          itg.first->second.emplace_back(id, k, default_cells, active_coeffs);
-
-          integrals_new.insert({{IntegralType::cell, id, form_idx},
-                                {id, k, default_cells, active_coeffs}});
+          integrals.insert({{IntegralType::cell, id, form_idx},
+                            {id, k, default_cells, active_coeffs}});
         }
         else if (sd != subdomains.end())
         {
@@ -544,9 +538,11 @@ Form<T, U> create_form_factory(
                                              [](auto& a) { return a.first; });
           if (it != sd->second.end() and it->first == id)
           {
-            itg.first->second.emplace_back(id, k, it->second, active_coeffs);
-            integrals_new.insert({{IntegralType::cell, id, form_idx},
-                                  {id, k, it->second, active_coeffs}});
+            integrals.insert({{IntegralType::cell, id, form_idx},
+                              {id, k,
+                               std::vector<std::int32_t>(it->second.begin(),
+                                                         it->second.end()),
+                               active_coeffs}});
           }
         }
 
@@ -562,7 +558,6 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
                                  + integral_offsets[exterior_facet],
                              num_integrals_type[exterior_facet]);
-    auto itg = integrals.insert({IntegralType::exterior_facet, {}});
     auto sd = subdomains.find(IntegralType::exterior_facet);
     for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
     {
@@ -625,11 +620,8 @@ Form<T, U> create_form_factory(
             default_facets_ext.insert(default_facets_ext.end(), pair.begin(),
                                       pair.end());
           }
-          itg.first->second.emplace_back(id, k, default_facets_ext,
-                                         active_coeffs);
-
-          integrals_new.insert({{IntegralType::exterior_facet, id, form_idx},
-                                {id, k, default_facets_ext, active_coeffs}});
+          integrals.insert({{IntegralType::exterior_facet, id, form_idx},
+                            {id, k, default_facets_ext, active_coeffs}});
         }
         else if (sd != subdomains.end())
         {
@@ -638,9 +630,11 @@ Form<T, U> create_form_factory(
                                              [](auto& a) { return a.first; });
           if (it != sd->second.end() and it->first == id)
           {
-            itg.first->second.emplace_back(id, k, it->second, active_coeffs);
-            integrals_new.insert({{IntegralType::exterior_facet, id, form_idx},
-                                  {id, k, it->second, active_coeffs}});
+            integrals.insert({{IntegralType::exterior_facet, id, form_idx},
+                              {id, k,
+                               std::vector<std::int32_t>(it->second.begin(),
+                                                         it->second.end()),
+                               active_coeffs}});
           }
         }
 
@@ -656,11 +650,11 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
                                  + integral_offsets[interior_facet],
                              num_integrals_type[interior_facet]);
-    auto itg = integrals.insert({IntegralType::interior_facet, {}});
     auto sd = subdomains.find(IntegralType::interior_facet);
     for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
     {
       const ufcx_form& ufcx_form = ufcx_forms[form_idx];
+
       // Create indicator for interprocess facets
       std::vector<std::int8_t> interprocess_marker;
       if (num_integrals_type[interior_facet] > 0)
@@ -744,10 +738,8 @@ Form<T, U> create_form_factory(
                   "mesh");
             }
           }
-          itg.first->second.emplace_back(id, k, default_facets_int,
-                                         active_coeffs);
-          integrals_new.insert({{IntegralType::interior_facet, id, form_idx},
-                                {id, k, default_facets_int, active_coeffs}});
+          integrals.insert({{IntegralType::interior_facet, id, form_idx},
+                            {id, k, default_facets_int, active_coeffs}});
         }
         else if (sd != subdomains.end())
         {
@@ -755,9 +747,11 @@ Form<T, U> create_form_factory(
                                              [](auto& a) { return a.first; });
           if (it != sd->second.end() and it->first == id)
           {
-            itg.first->second.emplace_back(id, k, it->second, active_coeffs);
-            integrals_new.insert({{IntegralType::interior_facet, id, form_idx},
-                                  {id, k, it->second, active_coeffs}});
+            integrals.insert({{IntegralType::interior_facet, id, form_idx},
+                              {id, k,
+                               std::vector<std::int32_t>(it->second.begin(),
+                                                         it->second.end()),
+                               active_coeffs}});
           }
         }
 
@@ -767,10 +761,8 @@ Form<T, U> create_form_factory(
     }
   }
 
-  return Form<T, U>(spaces, integrals_new, coefficients, constants,
+  return Form<T, U>(spaces, std::move(integrals), coefficients, constants,
                     needs_facet_permutations, entity_maps, mesh);
-  // return Form<T, U>(spaces, integrals, coefficients, constants,
-  //                     needs_facet_permutations, entity_maps, mesh);
 }
 
 /// @brief Create a Form from UFC input with coefficients and constants

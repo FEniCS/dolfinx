@@ -161,31 +161,6 @@ struct integral_data
   {
   }
 
-  /// @brief Create a structure to hold integral data.
-  ///
-  /// @param[in] id Domain ID.
-  /// @param[in] kernel Integration kernel.
-  /// @param[in] entities Indices of entities to integrate over.
-  /// @param[in] coeffs Indices of the coefficients that are active in
-  /// the `kernel`.
-  ///
-  /// @note This version allows `entities` to be passed as a
-  /// `std::span`, which is then copied.
-  template <typename K, typename W>
-    requires std::is_convertible_v<
-                 std::remove_cvref_t<K>,
-                 std::function<void(T*, const T*, const T*, const U*,
-                                    const int*, const uint8_t*)>>
-                 and std::is_convertible_v<std::remove_cvref_t<W>,
-                                           std::vector<int>>
-  integral_data(int id, K&& kernel, std::span<const std::int32_t> entities,
-                W&& coeffs)
-      : id(id), kernel(std::forward<K>(kernel)),
-        entities(entities.begin(), entities.end()),
-        coeffs(std::forward<W>(coeffs))
-  {
-  }
-
   /// @brief Integral ID.
   int id;
 
@@ -289,8 +264,8 @@ public:
       const std::map<std::shared_ptr<const mesh::Mesh<geometry_type>>,
                      std::span<const std::int32_t>>& entity_maps,
       std::shared_ptr<const mesh::Mesh<geometry_type>> mesh)
-      : _function_spaces(V), _integrals(integrals), _coefficients(coefficients),
-        _constants(constants), _mesh(mesh),
+      : _function_spaces(V), _integrals(std::forward<X>(integrals)),
+        _coefficients(coefficients), _constants(constants), _mesh(mesh),
         _needs_facet_permutations(needs_facet_permutations)
   {
     if (!_mesh)
@@ -320,9 +295,9 @@ public:
       }
     }
 
-    // Store mesh entity maps
-    for (auto [msh, map] : entity_maps)
-      _entity_maps.insert({msh, std::vector(map.begin(), map.end())});
+    // // Store mesh entity maps
+    // for (auto [msh, map] : entity_maps)
+    //   _entity_maps.insert({msh, std::vector(map.begin(), map.end())});
 
     // -- New
 
@@ -482,9 +457,9 @@ public:
     return set;
   }
 
-  /// @brief Number of integrals on given domain type.
-  /// @param[in] type Integral type.
-  /// @return Number of integrals.
+  // @brief Number of integrals on given domain type.
+  // @param[in] type Integral type.
+  // @return Number of integrals.
   // int num_integrals(IntegralType type) const
   // {
   //   return _integrals[static_cast<std::size_t>(type)].size();
@@ -652,10 +627,10 @@ private:
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
 
-  // Entity maps (see Form documentation)
-  std::map<std::shared_ptr<const mesh::Mesh<geometry_type>>,
-           std::vector<std::int32_t>>
-      _entity_maps;
+  // // Entity maps (see Form documentation)
+  // std::map<std::shared_ptr<const mesh::Mesh<geometry_type>>,
+  //          std::vector<std::int32_t>>
+  //     _entity_maps;
 
   // NEW: Entity maps (see Form documentation)
   std::vector<std::pair<std::shared_ptr<const mesh::Mesh<geometry_type>>,

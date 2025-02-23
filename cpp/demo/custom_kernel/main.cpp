@@ -74,9 +74,8 @@ std::array<T, 3> b_ref(mdspand_t<const T, 4> phi, std::span<const T> w)
 /// @param cells Cells to execute the kernel over.
 /// @return Frobenius norm squared of the matrix.
 template <std::floating_point T>
-double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V,
-                        [[maybe_unused]] auto kernel,
-                        std::span<const std::int32_t> cells)
+double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
+                        const std::vector<std::int32_t> cells)
 {
   // Kernel data (ID, kernel function, cell indices to execute over)
   std::map integrals{
@@ -105,9 +104,8 @@ double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V,
 /// @param cells Cells to execute the kernel over.
 /// @return l2 norm squared of the vector.
 template <std::floating_point T>
-double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V,
-                        [[maybe_unused]] auto kernel,
-                        [[maybe_unused]] std::span<const std::int32_t> cells)
+double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
+                        const std::vector<std::int32_t>& cells)
 {
   auto mesh = V->mesh();
   std::map integrals{
