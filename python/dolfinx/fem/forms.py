@@ -21,7 +21,7 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType
-from dolfinx.fem.function import FunctionSpace
+from dolfinx.fem.function import FunctionSpace, Function
 
 if typing.TYPE_CHECKING:
     from mpi4py import MPI
@@ -629,3 +629,28 @@ def create_form(
         msh._cpp_object,
     )
     return Form(f, form.ufcx_form, form.code)
+
+def compute_jacobian(
+    F: typing.Union[ufl.Form | list[Form]],
+    u: typing.Union[Function | list[Function]],
+    du: typing.Optional[typing.Union[ufl.Argument, list[ufl.Argument]]] = None,
+) -> typing.Union[ufl.Form, list[list[ufl.Form]]]:
+    """Compute the Jacobian :math:`J = \\frac{\\partial F}{\\partial u}[\\delta u]`.
+
+    If `F` is a list of forms, the Jacobian is computed as
+    :math:`J_{ij} = \\frac{\\partial F_i}{u_j}[\\delta u_j]`.
+    """
+    if isinstance(F, ufl.Form):
+        if du is None:
+            du = ufl.TrialFunction(u.function_space)
+        return ufl.derivative(F, u, du)
+    else:
+        assert [isinstance(Fi, ufl.Form) for Fi in F], "F must be a list of UFL forms"
+        assert len(F) == len(u), "Number of forms and functions must be equal"
+        if du is not None:
+            assert len(F) == len(du), "Number of forms and du must be equal"
+        else:
+            du = [ufl.TrialFunction(u_i.function_space) for u_i in u]
+        return [[ufl.derivative(Fi, u_j, du_j) for u_j, du_j in zip(u, du)] for Fi in F]
+
+
