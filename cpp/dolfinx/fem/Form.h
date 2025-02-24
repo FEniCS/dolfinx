@@ -513,8 +513,8 @@ public:
   /// for the trial function space.
   /// @param id Integral domain identifier.
   /// @param kernel_idx Kernel index (cell type).
-  /// @return Entity indices in the argument function space mesh that
-  /// are integrated over.
+  /// @return Entity indices in the argument function space mesh that is
+  /// integrated over.
   /// - For cell integrals it has shape `(num_cells,)`.
   /// - For exterior/interior facet integrals, it has shape `(num_facts, 2)`
   /// (row-major storage), where `[i, 0]` is the index of a cell and
@@ -544,7 +544,12 @@ public:
   /// @param type Integral type.
   /// @param id Integral identifier index.
   /// @param c Coefficient index.
-  /// @return Domain indices for the coefficient function.
+  /// @return Entity indices in the coefficient function space mesh that
+  /// is integrated over.
+  /// - For cell integrals it has shape `(num_cells,)`.
+  /// - For exterior/interior facet integrals, it has shape `(num_facts, 2)`
+  /// (row-major storage), where `[i, 0]` is the index of a cell and
+  /// `[i, 1]` is the local index of the facet relative to the cell.
   std::span<const std::int32_t> domain_coeff(IntegralType type, int id,
                                              int c) const
   {
