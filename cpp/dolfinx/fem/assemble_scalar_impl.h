@@ -27,8 +27,8 @@ namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 template <dolfinx::scalar T>
 T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
                  std::span<const std::int32_t> cells, FEkernel<T> auto fn,
-                 std::span<const T> constants, std::span<const T> coeffs,
-                 int cstride)
+                 std::span<const T> constants,
+                 md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs)
 {
 
   T value(0);
@@ -51,9 +51,8 @@ T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
                   std::next(coordinate_dofs.begin(), 3 * i));
     }
 
-    const T* coeff_cell = coeffs.data() + index * cstride;
-    fn(&value, coeff_cell, constants.data(), coordinate_dofs.data(), nullptr,
-       nullptr);
+    fn(&value, &coeffs(index, 0), constants.data(), coordinate_dofs.data(),
+       nullptr, nullptr);
   }
 
   return value;
@@ -68,7 +67,8 @@ T assemble_exterior_facets(
                md::extents<std::size_t, md::dynamic_extent, 2>>
         facets,
     FEkernel<T> auto fn, std::span<const T> constants,
-    std::span<const T> coeffs, int cstride, std::span<const std::uint8_t> perms)
+    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+    std::span<const std::uint8_t> perms)
 {
   T value(0);
   if (facets.empty())
@@ -94,8 +94,7 @@ T assemble_exterior_facets(
     // Permutations
     std::uint8_t perm
         = perms.empty() ? 0 : perms[cell * num_facets_per_cell + local_facet];
-    const T* coeff_cell = coeffs.data() + f * cstride;
-    fn(&value, coeff_cell, constants.data(), coordinate_dofs.data(),
+    fn(&value, &coeffs(f, 0), constants.data(), coordinate_dofs.data(),
        &local_facet, &perm);
   }
 
@@ -179,8 +178,9 @@ T assemble_scalar(
     assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     std::span<const std::int32_t> cells = M.domain(IntegralType::cell, i, 0);
-    value += impl::assemble_cells(x_dofmap, x, cells, fn, constants, coeffs,
-                                  cstride);
+    value += impl::assemble_cells(
+        x_dofmap, x, cells, fn, constants,
+        md::mdspan(coeffs.data(), coeffs.size() / cstride, cstride));
   }
 
   std::span<const std::uint8_t> perms;
@@ -207,7 +207,8 @@ T assemble_scalar(
         md::mdspan<const std::int32_t,
                    md::extents<std::size_t, md::dynamic_extent, 2>>(
             facets.data(), facets.size() / 2, 2),
-        fn, constants, coeffs, cstride, perms);
+        fn, constants,
+        md::mdspan(coeffs.data(), coeffs.size() / cstride, cstride), perms);
   }
 
   for (int i : M.integral_ids(IntegralType::interior_facet))
