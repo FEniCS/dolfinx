@@ -488,31 +488,33 @@ public:
     return it->second.entities;
   }
 
-  /// @brief Argument function mesh entity domain indices.
+  /// @brief Argument function mesh integration entity indices.
   ///
   /// Consider:
   /// ```cpp
-  /// entities = this->domain(integral_type, id, kernel_idx];
-  /// entities0 = this->domain_arg(integral_type, 0, id, kernel_idx];
+  /// auto mesh = this->mesh();
+  /// auto entities = this->domain(type, id, kernel_idx);
+  /// auto entities0 = this->domain_arg(type, rank, id, kernel_idx);
   /// ```
   ///
-  /// Assembly is performed over `entities`. `entities[i]` is a mesh
-  /// entity index (e.g., cell index) in the `mesh` that is being
-  /// integrated over, and `entities0[i]` is the index of the same
-  /// entity but in the mesh associated with the argument function.
+  /// Assembly is performed over `entities`, where `entities[i]` is an
+  /// entity index (e.g., cell index) in `mesh`. The `entities0` holds
+  /// the corresponding entity indices but in the mesh associated with
+  /// the argument function (test/trial function) space. `entities[i]`
+  /// and `entities0[i]` point to the same mesh entity, but with respect
+  /// to different mesh views.
   ///
   /// @param type Integral type.
-  /// @param rank Argument index, e.g. `0` for test function space, `1`
-  /// for trial function space.
-  /// @param id Integral identifier index.
+  /// @param rank Argument index, e.g. `0` for the test function space, `1`
+  /// for the trial function space.
+  /// @param id Integral domain identifier.
   /// @param kernel_idx Kernel index (cell type).
-  /// @return An array `domain`, such that:
-  /// - For cell integrals, `domain[i]` is the index of the ith cell `i`
-  /// in the integration domain mesh.
-  /// - For exterior/interior facet integrals, `domain[2*i]` is the
-  /// index of a cell in the integration domain mesh attached to the
-  /// facets `i`, and `domain[2*i + 1]` is the local index of the facet
-  /// relative to the cell.
+  /// @return Entity indices in the argument function space mesh that
+  /// are integrated over.
+  /// - For cell integrals it has shape `(num_cells,)`.
+  /// - For exterior/interior facet integrals, it has shape `(num_facts, 2)`
+  /// (row-major storage), where `[i, 0]` is the index of a cell and
+  /// `[i, 1]` is the local index of the facet relative to the cell.
   std::span<const std::int32_t> domain_arg(IntegralType type, int rank, int id,
                                            int kernel_idx) const
   {
