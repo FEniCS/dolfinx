@@ -258,10 +258,12 @@ public:
 
     for (auto& space : _function_spaces)
     {
+      // Working array: [intgral type, domain ID, kernel_idx]->entities
       std::map<std::tuple<IntegralType, int, int>,
                std::variant<std::vector<std::int32_t>,
                             std::span<const std::int32_t>>>
           vdata;
+
       if (auto mesh0 = space->mesh(); mesh0 == _mesh)
       {
         for (auto& [key, integral] : _integrals)
@@ -486,10 +488,18 @@ public:
     return it->second.entities;
   }
 
-  /// @brief Argument domain indices.
+  /// @brief Argument function mesh entity domain indices.
   ///
-  /// The indices in the integration domain mesh that the argument
-  /// function, e.g. a test or trial function, is defined on.
+  /// Consider:
+  /// ```cpp
+  /// entities = this->domain(integral_type, id, kernel_idx];
+  /// entities0 = this->domain_arg(integral_type, 0, id, kernel_idx];
+  /// ```
+  ///
+  /// Assembly is performed over `entities`. `entities[i]` is a mesh
+  /// entity index (e.g., cell index) in the `mesh` that is being
+  /// integrated over, and `entities0[i]` is the index of the same
+  /// entity but in the mesh associated with the argument function.
   ///
   /// @param type Integral type.
   /// @param rank Argument index, e.g. `0` for test function space, `1`
