@@ -331,10 +331,14 @@ public:
   /// integral kernel that signifies which coefficients are present.
   ///
   /// @param[in] type Integral type.
-  /// @param[in] i Index of the integral.
-  std::vector<int> active_coeffs(IntegralType type, std::size_t i) const
+  /// @param[in] id Domain index (identifier) of the integral.
+  std::vector<int> active_coeffs(IntegralType type, int id) const
   {
-    return _integrals[static_cast<std::size_t>(type)].at(i).coeffs;
+    auto it = std::ranges::find_if(_integrals[static_cast<std::size_t>(type)],
+                                   [id](auto& x) { return x.id == id; });
+    if (it == _integrals[static_cast<std::size_t>(type)].end())
+      throw std::runtime_error("No active coeffs for integral/domain.");
+    return it->coeffs;
   }
 
   /// @brief Get the IDs for integrals (kernels) for given integral type.
