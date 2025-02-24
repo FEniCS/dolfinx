@@ -171,7 +171,10 @@ class SNESSolver:
         b: PETSc.Vec,  # type: ignore
         P: PETSc.Mat,  # type: ignore
     ):
-        """Initialize a PETSc-SNES solver
+        """Initialize a PETSc-SNES solver.
+
+        Note:
+            Do not use this constructor directly. Instead use :func:`create_snes_solver`.
 
         Args:
             J: PETSc matrix that will hold the Jacobian
@@ -201,7 +204,7 @@ class SNESSolver:
         Returns:
             The solution, convergence reason and number of iterations
         """
-        # Set function and Jacobian (in case the change in the SNES problem)
+        # Set function and Jacobian
         self._snes.setFunction(self.F, self._b)
         self._snes.setJacobian(self.J, self._A, self._P)
 
