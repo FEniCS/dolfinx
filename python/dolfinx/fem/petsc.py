@@ -47,7 +47,6 @@ from dolfinx.la import create_petsc_vector
 __all__ = [
     "LinearProblem",
     "NonlinearProblem",
-    "SNESProblem",
     "apply_lifting",
     "apply_lifting_nest",
     "assemble_matrix",
