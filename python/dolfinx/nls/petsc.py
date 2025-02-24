@@ -352,7 +352,7 @@ def create_snes_solver(
 
         # Assemble Jacobian
         J.zeroEntries()
-        dolfinx.fem.assemble_matrix(J, jacobian, bcs, diagonal=1.0)  # type: ignore
+        dolfinx.fem.petsc.assemble_matrix(J, jacobian, bcs, diagonal=1.0)  # type: ignore
         J.assemble()
 
         if preconditioner is not None:
