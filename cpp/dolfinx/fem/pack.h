@@ -200,13 +200,12 @@ std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
 allocate_coefficient_storage(const Form<T, U>& form)
 {
   std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>> coeffs;
-  for (auto integral_type : form.integral_types())
+  for (fem::IntegralType type : form.integral_types())
   {
-    for (int id : form.integral_ids(integral_type))
+    for (int id : form.integral_ids(type))
     {
-      coeffs.emplace_hint(
-          coeffs.end(), std::pair(integral_type, id),
-          allocate_coefficient_storage(form, integral_type, id));
+      coeffs.emplace_hint(coeffs.end(), std::pair{type, id},
+                          allocate_coefficient_storage(form, type, id));
     }
   }
 
@@ -237,30 +236,18 @@ void pack_coefficients(const Form<T, U>& form,
 
   for (auto& [intergal_data, coeff_data] : coeffs)
   {
-    IntegralType integral_type = intergal_data.first;
-    int id = intergal_data.second;
+    auto [integral_type, id] = intergal_data;
     std::vector<T>& c = coeff_data.first;
     int cstride = coeff_data.second;
-
-    // Indicator for packing coefficients
-    std::vector<int> active_coefficient(coefficients.size(), 0);
     if (!coefficients.empty())
     {
       switch (integral_type)
       {
       case IntegralType::cell:
       {
-        // Get indicator for all coefficients that are active in cell
-        // integrals
-        for (auto idx : form.active_coeffs(IntegralType::cell, id))
-          active_coefficient[idx] = 1;
-
-        // Iterate over coefficients
-        for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
+        // Iterate over coefficients that are active in cell integrals
+        for (int coeff : form.active_coeffs(IntegralType::cell, id))
         {
-          if (!active_coefficient[coeff])
-            continue;
-
           // Get coefficient mesh
           auto mesh = coefficients[coeff]->function_space()->mesh();
           assert(mesh);
@@ -268,7 +255,7 @@ void pack_coefficients(const Form<T, U>& form,
           // Other integrals in the form might have coefficients defined
           // over entities of codim > 0, which don't make sense for cell
           // integrals, so don't pack them.
-          if (const int codim
+          if (int codim
               = form.mesh()->topology()->dim() - mesh->topology()->dim();
               codim > 0)
           {
@@ -289,17 +276,10 @@ void pack_coefficients(const Form<T, U>& form,
       }
       case IntegralType::exterior_facet:
       {
-        // Get indicator for all coefficients that are active in
+        // Iterate over coefficients coefficients that are active in
         // exterior facet integrals
-        for (auto idx : form.active_coeffs(IntegralType::exterior_facet, id))
-          active_coefficient[idx] = 1;
-
-        // Iterate over coefficients
-        for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
+        for (int coeff : form.active_coeffs(IntegralType::exterior_facet, id))
         {
-          if (!active_coefficient[coeff])
-            continue;
-
           auto mesh = coefficients[coeff]->function_space()->mesh();
           const std::vector<std::int32_t> facets_b
               = form.domain(IntegralType::exterior_facet, id, *mesh);
@@ -318,17 +298,10 @@ void pack_coefficients(const Form<T, U>& form,
       }
       case IntegralType::interior_facet:
       {
-        // Get indicator for all coefficients that are active in interior
+        // Iterate over coefficients that are active in interior
         // facet integrals
-        for (auto idx : form.active_coeffs(IntegralType::interior_facet, id))
-          active_coefficient[idx] = 1;
-
-        // Iterate over coefficients
-        for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
+        for (int coeff : form.active_coeffs(IntegralType::interior_facet, id))
         {
-          if (!active_coefficient[coeff])
-            continue;
-
           auto mesh = coefficients[coeff]->function_space()->mesh();
           const std::vector<std::int32_t> facets_b
               = form.domain(IntegralType::interior_facet, id, *mesh);
