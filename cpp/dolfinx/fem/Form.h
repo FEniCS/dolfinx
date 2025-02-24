@@ -133,7 +133,7 @@ struct integral_data
                      const uint8_t*)>
       kernel;
 
-  /// @brief The entities to integrate over.
+  /// @brief The entities to integrate over for this integral.
   std::vector<std::int32_t> entities;
 
   /// @brief Indices of coefficients (from the form) that are in this
@@ -197,11 +197,11 @@ public:
   /// @param[in] entity_maps If any trial functions, test functions, or
   /// coefficients in the form are not defined on `mesh` (the
   /// 'integration domain'),`entity_maps` must be supplied. For each key
-  /// (a mesh, which different to `mesh`) an array map must be provided
-  /// which relates the entities in `mesh` to the entities in the key
-  /// mesh e.g. for a key/value pair `(mesh0, emap)` in `entity_maps`,
-  /// `emap[i]` is the entity in `mesh0` corresponding to entity `i` in
-  /// `mesh`.
+  /// (a mesh, which is different to `mesh`) an array map must be
+  /// provided which relates the entities in `mesh` to the entities in
+  /// the key mesh e.g. for a key/value pair `(mesh0, emap)` in
+  /// `entity_maps`, `emap[i]` is the entity in `mesh0` corresponding to
+  /// entity `i` in `mesh`.
   /// @param[in] mesh Mesh of the domain to integrate over (the
   /// 'integration domain').
   ///
@@ -458,8 +458,8 @@ public:
     return ids;
   }
 
-  /// @brief Get the list of mesh entity indices for the ith integral
-  /// (kernel) of a given type.
+  /// @brief Get the list of mesh entity indices (in the integration
+  /// domain 'mesh') for a given integral (kernel).
   ///
   /// For IntegralType::cell, returns a list of cell indices.
   ///
@@ -605,15 +605,31 @@ private:
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
 
-  // Domain data for argument functions
-  //  [rank_i][IntegralType, integral(id), cell_type] -> entity map
+  // Mapped domain index data for argument functions.
+  //
+  // Consider:
+  //
+  // entities  = this->domain(IntegralType, integral(id), kernel_idx];
+  // entities0 = _edata[0][IntegralType, integral(id), coefficient_index];
+  //
+  // Then `entities[i]` is a mesh entity index (e.g., cell index) in
+  // `_mesh`, and  `entities0[i]` is the index of the same entity but in
+  // the mesh associated with the argument 0 (test function) space.
   std::vector<std::map<
       std::tuple<IntegralType, int, int>,
       std::variant<std::vector<std::int32_t>, std::span<const std::int32_t>>>>
       _edata;
 
-  // Domain data for coefficients
-  //  [IntegralType, integral(id), cell_type] -> entity map
+  // Mapped domain index data for coefficient functions.
+  //
+  // Consider:
+  //
+  // entities  = this->domain(IntegralType, integral(id), kernel_idx];
+  // entities0 = _cdata[IntegralType, integral(id), coefficient_index];
+  //
+  // Then `entities[i]` is a mesh entity index (e.g., cell index) in
+  // `_mesh`, and  `entities0[i]` is the index of the same entity but in
+  // the mesh associated with the coefficient Function.
   std::map<
       std::tuple<IntegralType, int, int>,
       std::variant<std::vector<std::int32_t>, std::span<const std::int32_t>>>
