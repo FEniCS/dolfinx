@@ -25,14 +25,11 @@
 #include <vector>
 
 using namespace dolfinx;
-
+namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 template <typename T, std::size_t ndim>
-using mdspand_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-    T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
+using mdspand_t = md::mdspan<T, md::dextents<std::size_t, ndim>>;
 template <typename T, std::size_t n0, std::size_t n1>
-using mdspan2_t
-    = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<T,
-                                             std::extents<std::size_t, n0, n1>>;
+using mdspan2_t = md::mdspan<T, std::extents<std::size_t, n0, n1>>;
 
 /// @brief Compute the P1 element mass matrix on the reference cell.
 /// @tparam T Scalar type.
@@ -74,8 +71,8 @@ std::array<T, 3> b_ref(mdspand_t<const T, 4> phi, std::span<const T> w)
 /// @param cells Cells to execute the kernel over.
 /// @return Frobenius norm squared of the matrix.
 template <std::floating_point T>
-double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
-                        const std::vector<std::int32_t> cells)
+double assemble_matrix0(std::shared_ptr<const fem::FunctionSpace<T>> V,
+                        auto kernel, const std::vector<std::int32_t>& cells)
 {
   // Kernel data (ID, kernel function, cell indices to execute over)
   std::map integrals{
@@ -104,8 +101,8 @@ double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
 /// @param cells Cells to execute the kernel over.
 /// @return l2 norm squared of the vector.
 template <std::floating_point T>
-double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
-                        const std::vector<std::int32_t>& cells)
+double assemble_vector0(std::shared_ptr<const fem::FunctionSpace<T>> V,
+                        auto kernel, const std::vector<std::int32_t>& cells)
 {
   auto mesh = V->mesh();
   std::map integrals{
