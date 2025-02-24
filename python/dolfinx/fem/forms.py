@@ -21,7 +21,7 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType
-from dolfinx.fem.function import FunctionSpace, Function
+from dolfinx.fem.function import Function, FunctionSpace
 
 if typing.TYPE_CHECKING:
     from mpi4py import MPI
@@ -630,6 +630,7 @@ def create_form(
     )
     return Form(f, form.ufcx_form, form.code)
 
+
 def compute_jacobian(
     F: typing.Union[ufl.Form | list[Form]],
     u: typing.Union[Function | list[Function]],
@@ -652,5 +653,3 @@ def compute_jacobian(
         else:
             du = [ufl.TrialFunction(u_i.function_space) for u_i in u]
         return [[ufl.derivative(Fi, u_j, du_j) for u_j, du_j in zip(u, du)] for Fi in F]
-
-

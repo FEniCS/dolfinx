@@ -13,11 +13,12 @@ from enum import Enum
 from mpi4py import MPI
 from petsc4py import PETSc
 
-import ufl
 import dolfinx.la
+import ufl
 from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
 from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.petsc import set_bc
+
 if typing.TYPE_CHECKING:
     import dolfinx
 
@@ -26,19 +27,23 @@ if typing.TYPE_CHECKING:
     from dolfinx.fem.problem import NonlinearProblem
 
 import types
-from dolfinx.fem.forms import form as _create_form
 
 from dolfinx import cpp as _cpp
 from dolfinx import fem
+from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.petsc import (
+    apply_lifting,
+    assemble_matrix,
+    assemble_matrix_block,
+    assemble_matrix_nest,
+    assemble_vector,
+    assemble_vector_block,
     create_matrix,
     create_matrix_block,
     create_matrix_nest,
     create_vector,
     create_vector_block,
-    create_vector_nest, apply_lifting,
-    assemble_matrix_block,assemble_vector_block,assemble_matrix_nest,assemble_vector,
-    assemble_matrix
+    create_vector_nest,
 )
 
 __all__ = ["NewtonSolver", "SNESSolver", "SnesType", "create_snes_solver"]
@@ -161,7 +166,7 @@ def create_data_structures(
 
 class SNESSolver:
     def __init__(
-        self, 
+        self,
         J: PETSc.Mat,
         x: PETSc.Vec,
         b: PETSc.Vec,
@@ -176,12 +181,11 @@ class SNESSolver:
             P: PETSc matrix that will hold the preconditioner
             options: PETSc options to set for the SNES solver
         """
-        self._A = J 
+        self._A = J
         self._b = b
         self._P = P
         self._x = x
         self._snes = PETSc.SNES().create(comm=self._A.comm)
-
 
     def set_options(self, options: dict):
         opts = PETSc.Options()
@@ -255,7 +259,7 @@ class SNESSolver:
         self._J = J
 
     @property
-    def snes(self)->PETSc.SNES:  # type: ignore
+    def snes(self) -> PETSc.SNES:  # type: ignore
         return self._snes
 
     @property
@@ -268,7 +272,6 @@ class SNESSolver:
     @property
     def copy_solution(self):
         return self._copy_solution
-    
 
     def set_replace_solution(self, replace_solution):
         self._replace_solution = replace_solution
@@ -277,33 +280,29 @@ class SNESSolver:
     def replace_solution(self):
         return self._replace_solution
 
-def create_snes_solver(F: typing.Union[dolfinx.fem.Form, ufl.form.Form],
-        u: dolfinx.fem.Function,
-        J: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
-        P: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
-        snes_type: SnesType = SnesType.default,
-        bcs: typing.Optional[list[dolfinx.fem.DirichletBC]] = None,
-        form_compiler_options: typing.Optional[dict] = None,
-        jit_options: typing.Optional[dict] = None,
-        )->SNESSolver:
 
+def create_snes_solver(
+    F: typing.Union[dolfinx.fem.Form, ufl.form.Form],
+    u: dolfinx.fem.Function,
+    J: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
+    P: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
+    snes_type: SnesType = SnesType.default,
+    bcs: typing.Optional[list[dolfinx.fem.DirichletBC]] = None,
+    form_compiler_options: typing.Optional[dict] = None,
+    jit_options: typing.Optional[dict] = None,
+) -> SNESSolver:
     # Compile all forms
     form_compiler_options = {} if form_compiler_options is None else form_compiler_options
     jit_options = {} if jit_options is None else jit_options
-    residual = _create_form(
-        F, form_compiler_options=form_compiler_options, jit_options=jit_options
-    )
+    residual = _create_form(F, form_compiler_options=form_compiler_options, jit_options=jit_options)
     if J is None:
         J = fem.forms.compute_jacobian(F, u)
-    jacobian = _create_form(
-        J, form_compiler_options=form_compiler_options, jit_options=jit_options
-    )
+    jacobian = _create_form(J, form_compiler_options=form_compiler_options, jit_options=jit_options)
     preconditioner = None
     if P is not None:
         preconditioner = _create_form(
             P, form_compiler_options=form_compiler_options, jit_options=jit_options
         )
-
 
     def replace_solution(x: PETSc.Vec):
         """Update the solution for the unknown `u` with the values in `x`.
@@ -360,7 +359,6 @@ def create_snes_solver(F: typing.Union[dolfinx.fem.Form, ufl.form.Form],
             P.zeroEntries()
             dolfinx.fem.petsc.assemble_matrix(P, preconditioner, bcs, diagonal=1.0)
             P.assemble()
-
 
     def F_block(snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec):
         """Assemble the residual into the vector F.
@@ -424,8 +422,7 @@ def create_snes_solver(F: typing.Union[dolfinx.fem.Form, ufl.form.Form],
         """
         u_petsc = [ui.x.petsc_vec.array_r for ui in u]
         index_maps = [
-            (ui.function_space.dofmap.index_map, ui.function_space.dofmap.index_map_bs)
-            for ui in u
+            (ui.function_space.dofmap.index_map, ui.function_space.dofmap.index_map_bs) for ui in u
         ]
         _cpp.la.petsc.scatter_local_vectors(
             x,
@@ -433,7 +430,6 @@ def create_snes_solver(F: typing.Union[dolfinx.fem.Form, ufl.form.Form],
             index_maps,
         )
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-
 
     def F_nest(snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec):
         """Assemble the residual into vector `F`.
@@ -476,7 +472,7 @@ def create_snes_solver(F: typing.Union[dolfinx.fem.Form, ufl.form.Form],
         J.zeroEntries()
         assemble_matrix_nest(J, jacobian, bcs=bcs, diagonal=1.0)
         J.assemble()
-        
+
         if preconditioner is not None:
             P.zeroEntries()
             assemble_matrix_nest(P, preconditioner, bcs=bcs, diagonal=1.0)
@@ -506,8 +502,8 @@ def create_snes_solver(F: typing.Union[dolfinx.fem.Form, ufl.form.Form],
         u_nest.destroy()
         [wrapped.destroy() for wrapped in wrapped_sol]
 
-    A,x, b, P = create_data_structures(jacobian, residual, preconditioner, snes_type)
-    snes_solver = SNESSolver(A,x, b, P)
+    A, x, b, P = create_data_structures(jacobian, residual, preconditioner, snes_type)
+    snes_solver = SNESSolver(A, x, b, P)
     if snes_type == SnesType.default:
         snes_solver.set_F(F)
         snes_solver.set_J(J)
