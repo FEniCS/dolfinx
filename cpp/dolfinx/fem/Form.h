@@ -258,7 +258,7 @@ public:
 
     for (auto& space : _function_spaces)
     {
-      // Working array: [intgral type, domain ID, kernel_idx]->entities
+      // Working map: [integral type, domain ID, kernel_idx]->entities
       std::map<std::tuple<IntegralType, int, int>,
                std::variant<std::vector<std::int32_t>,
                             std::span<const std::int32_t>>>
@@ -460,25 +460,30 @@ public:
     return ids;
   }
 
-  /// @brief Get the list of mesh entity indices (in the integration
-  /// domain 'mesh') for a given integral (kernel).
+  /// @brief Mesh entity indices to integrate over for a given integral
+  /// (kernel).
   ///
-  /// For IntegralType::cell, returns a list of cell indices.
+  /// These are the entities in the mesh returned by ::mesh that are
+  /// integrated over by a given integral (kernel).
   ///
-  /// For IntegralType::exterior_facet, returns a list of (cell_index,
-  /// local_facet_index) pairs. Data is flattened with row-major layout,
-  /// `shape=(num_facets, 2)`.
-  ///
-  /// For IntegralType::interior_facet, returns list of tuples of the
-  /// form `(cell_index_0, local_facet_index_0, cell_index_1,
-  /// local_facet_index_1)`. Data is flattened with row-major layout,
-  /// `shape=(num_facets, 4)`.
+  /// - For IntegralType::cell, returns a list of cell indices.
+  /// - For IntegralType::exterior_facet, returns a list with shape
+  /// `(num_facets, 2)`, where `[cell_index, 0]` is the cell index and
+  /// `[cell_index, 1]` is the local facet index relative to the cell.
+  /// - For IntegralType::interior_facet the shape is `(num_facets, 4)`,
+  /// where `[cell_index, 0]` is one attached cell and `[cell_index, 1]`
+  /// is the is the local facet index relative to the cell, and
+  /// `[cell_index, 2]` is the other one attached cell and `[cell_index, 1]`
+  /// is the is the local facet index relative to this cell. Storage
+  /// is row-major.
   ///
   /// @param[in] type Integral type.
-  /// @param[in] id Integral ID, i.e. (sub)domain index.
-  /// @param[in] kernel_idx Index of the kernel (we may have multiple
-  /// kernels for a given ID in mixed-topology meshes).
-  /// @return Entity indices in the 'integration domain' mesh.
+  /// @param[in] id Integral domain identifier.
+  /// @param[in] kernel_idx Index of the kernel with in the domain (we
+  /// may have multiple kernels for a given ID in mixed-topology
+  /// meshes).
+  /// @return Entity indices in the mesh::Mesh returned by mesh() to
+  /// integrate over.
   std::span<const std::int32_t> domain(IntegralType type, int id,
                                        int kernel_idx) const
   {
