@@ -186,7 +186,10 @@ public:
   ///
   /// @param[in] V Function spaces for the form arguments, e.g. test and
   /// trial function spaces.
-  /// @param[in] integrals Integrals in the form.
+  /// @param[in] integrals Integrals in the form, where
+  /// `integrals[IntegralType, domain ID, kernel index]` returns the
+  /// integral (`integral_data`) of type `IntegralType` over domain `ID`
+  /// with kernel index `kernel index`.
   /// @param[in] coefficients Coefficients in the form.
   /// @param[in] constants Constants in the form.
   /// @param[in] needs_facet_permutations Set to `true` is any of the
