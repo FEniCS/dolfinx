@@ -280,7 +280,7 @@ void pack_coefficients(const Form<T, U>& form,
         {
           auto mesh = coefficients[coeff]->function_space()->mesh();
           std::span<const std::int32_t> facets_b
-              = form.domain(IntegralType::exterior_facet, id, coeff);
+              = form.domain_coeff(IntegralType::exterior_facet, id, coeff);
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>
               facets(facets_b.data(), facets_b.size() / 2, 2);
@@ -302,7 +302,7 @@ void pack_coefficients(const Form<T, U>& form,
         {
           auto mesh = coefficients[coeff]->function_space()->mesh();
           std::span<const std::int32_t> facets_b
-              = form.domain(IntegralType::interior_facet, id, coeff);
+              = form.domain_coeff(IntegralType::interior_facet, id, coeff);
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 4>>
               facets(facets_b.data(), facets_b.size() / 4, 4);

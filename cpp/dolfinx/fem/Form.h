@@ -395,7 +395,7 @@ public:
   {
     auto it = _integrals.find({type, id, kernel_idx});
     if (it == _integrals.end())
-      throw std::runtime_error("No kernel for requested domain index.");
+      throw std::runtime_error("Requested integral kernel not found.");
     return it->second.kernel;
   }
 
@@ -483,7 +483,7 @@ public:
   {
     auto it = _integrals.find({type, id, kernel_idx});
     if (it == _integrals.end())
-      throw std::runtime_error("No kernel for requested domain index.");
+      throw std::runtime_error("Requested domain not found.");
     return it->second.entities;
   }
 
@@ -509,7 +509,7 @@ public:
   {
     auto it = _edata.at(rank).find({type, id, kernel_idx});
     if (it == _edata.at(rank).end())
-      throw std::runtime_error("No domain for requested integral.");
+      throw std::runtime_error("Requested domain for argument not found.");
     try
     {
       return std::get<std::span<const std::int32_t>>(it->second);
