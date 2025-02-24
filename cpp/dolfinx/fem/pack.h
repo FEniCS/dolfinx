@@ -170,15 +170,13 @@ std::pair<std::vector<T>, int>
 allocate_coefficient_storage(const Form<T, U>& form, IntegralType integral_type,
                              int id)
 {
-  // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
-      = form.coefficients();
-  const std::vector<int> offsets = form.coefficient_offsets();
-
   std::size_t num_entities = 0;
   int cstride = 0;
-  if (!coefficients.empty())
+  if (const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
+      = form.coefficients();
+      !coefficients.empty())
   {
+    const std::vector<int> offsets = form.coefficient_offsets();
     cstride = offsets.back();
     num_entities = form.domain(integral_type, id).size();
     if (integral_type == IntegralType::exterior_facet
