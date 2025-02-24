@@ -45,9 +45,7 @@ from dolfinx.fem.function import FunctionSpace as _FunctionSpace
 from dolfinx.la import create_petsc_vector
 
 __all__ = [
-    "BlockSNESProblem",
     "LinearProblem",
-    "NestSNESProblem",
     "NonlinearProblem",
     "SNESProblem",
     "apply_lifting",
