@@ -445,8 +445,8 @@ class TestNLSPETSc:
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
             solver.replace_solution(x)
-            Jnorm = solver._A.norm()
-            Fnorm = solver._b.norm()
+            Jnorm = solver.A.norm()
+            Fnorm = solver.b.norm()
             xnorm = x.norm()
             return Jnorm, Fnorm, xnorm
 
@@ -471,8 +471,8 @@ class TestNLSPETSc:
             assert converged_reason > 0
             solver.replace_solution(x)
             xnorm = x.norm()
-            Jnorm = nest_matrix_norm(solver._A)
-            Fnorm = solver._b.norm()
+            Jnorm = nest_matrix_norm(solver.A)
+            Fnorm = solver.b.norm()
             return Jnorm, Fnorm, xnorm
 
         def monolithic():
