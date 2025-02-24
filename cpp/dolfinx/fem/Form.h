@@ -236,7 +236,7 @@ public:
       // Integration domain mesh is passed, so check that it is (1)
       // common for spaces and coefficients (2) or an entity_map is
       // available
-      for (auto& space : V)
+      for (auto& space : _function_spaces)
       {
         if (auto mesh0 = space->mesh();
             mesh0 != _mesh and !entity_maps.contains(mesh0))
@@ -256,13 +256,13 @@ public:
       }
     }
 
-    for (auto V : _function_spaces)
+    for (auto& space : _function_spaces)
     {
       std::map<std::tuple<IntegralType, int, int>,
                std::variant<std::vector<std::int32_t>,
                             std::span<const std::int32_t>>>
           vdata;
-      if (auto mesh0 = V->mesh(); mesh0 == _mesh)
+      if (auto mesh0 = space->mesh(); mesh0 == _mesh)
       {
         for (auto& [key, integral] : _integrals)
           vdata.insert({key, std::span(integral.entities)});
@@ -270,10 +270,8 @@ public:
       else
       {
         auto it = entity_maps.find(mesh0);
-        if (it == entity_maps.end())
-          throw std::runtime_error("No entity map for the mesh.");
+        assert(it != entity_maps.end());
         std::span<const std::int32_t> entity_map = it->second;
-
         for (auto& [key, itg] : _integrals)
         {
           auto [type, id, kernel_idx] = key;
@@ -321,10 +319,8 @@ public:
         else
         {
           auto it = entity_maps.find(mesh0);
-          if (it == entity_maps.end())
-            throw std::runtime_error("No entity map for the mesh.");
+          assert(it != entity_maps.end());
           std::span<const std::int32_t> entity_map = it->second;
-
           std::vector<std::int32_t> e;
           if (type == IntegralType::cell)
           {
