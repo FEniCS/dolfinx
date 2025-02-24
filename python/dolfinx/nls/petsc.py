@@ -255,7 +255,7 @@ class SNESSolver:
         self._J = J
 
     @property
-    def solver(self)->PETSc.SNES:  # type: ignore
+    def snes(self)->PETSc.SNES:  # type: ignore
         return self._snes
 
     @property

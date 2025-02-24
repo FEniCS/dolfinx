@@ -41,58 +41,6 @@ def nest_matrix_norm(A):
                 norm += _norm * _norm
     return math.sqrt(norm)
 
-
-class NonlinearPDE_SNESProblem:
-    def __init__(self, F, J, soln_vars, bcs, P=None):
-        self.L = F
-        self.a = J
-        self.a_precon = P
-        self.bcs = bcs
-        self.soln_vars = soln_vars
-
-    def F_nest(self, snes, x, F):
-        from petsc4py import PETSc
-
-        from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
-
-        assert x.getType() == "nest" and F.getType() == "nest"
-        # Update solution
-        x = x.getNestSubVecs()
-        for x_sub, var_sub in zip(x, self.soln_vars):
-            x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-            with x_sub.localForm() as _x:
-                var_sub.x.array[:] = _x.array_r
-
-        # Assemble
-        bcs1 = bcs_by_block(extract_function_spaces(self.a, 1), self.bcs)
-        for L, F_sub, a in zip(self.L, F.getNestSubVecs(), self.a):
-            with F_sub.localForm() as F_sub_local:
-                F_sub_local.set(0.0)
-            assemble_vector(F_sub, L)
-            apply_lifting(F_sub, a, bcs=bcs1, x0=x, alpha=-1.0)
-            F_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-
-        # Set bc value in RHS
-        bcs0 = bcs_by_block(extract_function_spaces(self.L), self.bcs)
-        for F_sub, bc, x_sub in zip(F.getNestSubVecs(), bcs0, x):
-            set_bc(F_sub, bc, x_sub, -1.0)
-
-        # Must assemble F here in the case of nest matrices
-        F.assemble()
-
-    def J_nest(self, snes, x, J, P):
-        from dolfinx.fem.petsc import assemble_matrix_nest
-
-        assert J.getType() == "nest" and P.getType() == "nest"
-        J.zeroEntries()
-        assemble_matrix_nest(J, self.a, bcs=self.bcs, diagonal=1.0)
-        J.assemble()
-        if self.a_precon is not None:
-            P.zeroEntries()
-            assemble_matrix_nest(P, self.a_precon, bcs=self.bcs, diagonal=1.0)
-            P.assemble()
-
-
 @pytest.mark.petsc4py
 class TestNLSPETSc:
     def test_matrix_assembly_block_nl(self):
@@ -341,17 +289,14 @@ class TestNLSPETSc:
             """Nested version"""
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
-            snes_options = {
-                "snes_rtol": 1.0e-15,
-                "snes_max_it": 10,
-                "ksp_type": "gmres",
-                "snes_monitor": None,
-                "pc_type": "fieldsplit",
-            }
-
             solver = dolfinx.nls.petsc.create_snes_solver(F, [u,p],J=J, bcs=bcs,
             snes_type=dolfinx.nls.petsc.SnesType.nest)
-            solver.set_options(snes_options)
+            
+            nested_IS = solver.A.getNestISs()
+            solver.snes.getKSP().setType("gmres")
+            solver.snes.getKSP().setTolerances(rtol=1e-12)
+            solver.snes.getKSP().getPC().setType("fieldsplit")
+            solver.snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
             x, converged_reason, _ = solver.solve()
             solver.replace_solution(x)
             assert solver.krylov_solver.getConvergedReason() > 0
@@ -503,18 +448,16 @@ class TestNLSPETSc:
             """Blocked and nested"""
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
-            snes_options = {
-                "snes_rtol": 1.0e-15,
-                "snes_max_it": 20,
-                "ksp_type": "minres",
-                "snes_monitor": None,
-                "pc_type": "fieldsplit",
-                "ksp_rtol": 1.0e-8,
-            }
 
             solver = dolfinx.nls.petsc.create_snes_solver(F, [u,p],J=J, bcs=bcs,
-               snes_type=dolfinx.nls.petsc.SnesType.nest)
-            solver.set_options(snes_options)
+               snes_type=dolfinx.nls.petsc.SnesType.nest, P=P)
+            nested_IS = solver.A.getNestISs()
+            solver.snes.setTolerances(rtol=1.0e-15, max_it=20)
+            solver.snes.getKSP().setType("minres")
+            solver.snes.getKSP().setTolerances(rtol=1e-8)
+            solver.snes.getKSP().getPC().setType("fieldsplit")
+            solver.snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
+
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
             solver.replace_solution(x)
@@ -565,7 +508,7 @@ class TestNLSPETSc:
                 "ksp_type": "minres",
                 "snes_monitor": None,
             }
-            solver = dolfinx.nls.petsc.create_snes_solver(F, U,J=J, bcs=bcs,
+            solver = dolfinx.nls.petsc.create_snes_solver(F, U,J=J, bcs=bcs,P=P,
             snes_type=dolfinx.nls.petsc.SnesType.default )
             solver.set_options(snes_options)
             x, converged_reason, _ = solver.solve()
