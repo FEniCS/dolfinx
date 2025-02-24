@@ -675,8 +675,8 @@ void declare_form(nb::module_& m, std::string type)
             for (auto& [msh, map] : entity_maps)
               _entity_maps.emplace(msh, std::span(map.data(), map.size()));
             new (fp) dolfinx::fem::Form<T, U>(
-                spaces, std::move(_integrals), coefficients, constants,
-                needs_permutation_data, _entity_maps, mesh);
+                spaces, std::move(_integrals), mesh, coefficients, constants,
+                needs_permutation_data, _entity_maps);
           },
           nb::arg("spaces"), nb::arg("integrals"), nb::arg("coefficients"),
           nb::arg("constants"), nb::arg("need_permutation_data"),

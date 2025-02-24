@@ -192,6 +192,8 @@ public:
   /// with kernel index `kernel index`.
   /// @param[in] coefficients Coefficients in the form.
   /// @param[in] constants Constants in the form.
+  /// @param[in] mesh Mesh of the domain to integrate over (the
+  /// 'integration domain').
   /// @param[in] needs_facet_permutations Set to `true` is any of the
   /// integration kernels require cell permutation data.
   /// @param[in] entity_maps If any trial functions, test functions, or
@@ -202,8 +204,6 @@ public:
   /// the key mesh e.g. for a key/value pair `(mesh0, emap)` in
   /// `entity_maps`, `emap[i]` is the entity in `mesh0` corresponding to
   /// entity `i` in `mesh`.
-  /// @param[in] mesh Mesh of the domain to integrate over (the
-  /// 'integration domain').
   ///
   /// @note For the single domain case, pass an empty `entity_maps`.
   template <typename X>
@@ -213,7 +213,7 @@ public:
                           integral_data<scalar_type, geometry_type>>>
   Form(
       const std::vector<std::shared_ptr<const FunctionSpace<geometry_type>>>& V,
-      X&& integrals,
+      X&& integrals, std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
       const std::vector<
           std::shared_ptr<const Function<scalar_type, geometry_type>>>&
           coefficients,
@@ -221,10 +221,9 @@ public:
           constants,
       bool needs_facet_permutations,
       const std::map<std::shared_ptr<const mesh::Mesh<geometry_type>>,
-                     std::span<const std::int32_t>>& entity_maps,
-      std::shared_ptr<const mesh::Mesh<geometry_type>> mesh)
+                     std::span<const std::int32_t>>& entity_maps)
       : _function_spaces(V), _integrals(std::forward<X>(integrals)),
-        _coefficients(coefficients), _constants(constants), _mesh(mesh),
+        _mesh(mesh), _coefficients(coefficients), _constants(constants),
         _needs_facet_permutations(needs_facet_permutations)
   {
     namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
@@ -540,7 +539,6 @@ public:
     }
   }
 
-
   /// @brief Coefficient function mesh integration entity indices.
   ///
   /// This method is equivalent to ::domain_arg, but returns mesh entity
@@ -617,15 +615,15 @@ private:
            integral_data<scalar_type, geometry_type>>
       _integrals;
 
+  // The mesh
+  std::shared_ptr<const mesh::Mesh<geometry_type>> _mesh;
+
   // Form coefficients
   std::vector<std::shared_ptr<const Function<scalar_type, geometry_type>>>
       _coefficients;
 
   // Constants associated with the Form
   std::vector<std::shared_ptr<const Constant<scalar_type>>> _constants;
-
-  // The mesh
-  std::shared_ptr<const mesh::Mesh<geometry_type>> _mesh;
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;

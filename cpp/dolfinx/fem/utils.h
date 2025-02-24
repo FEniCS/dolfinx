@@ -761,8 +761,8 @@ Form<T, U> create_form_factory(
     }
   }
 
-  return Form<T, U>(spaces, std::move(integrals), coefficients, constants,
-                    needs_facet_permutations, entity_maps, mesh);
+  return Form<T, U>(spaces, std::move(integrals), mesh, coefficients, constants,
+                    needs_facet_permutations, entity_maps);
 }
 
 /// @brief Create a Form from UFC input with coefficients and constants
