@@ -490,7 +490,11 @@ public:
 
   /// @brief Argument function mesh integration entity indices.
   ///
-  /// Consider:
+  /// Integration can be performed over cells/facets involving functions
+  /// that are defined on different meshes but which share common cells,
+  /// i.e. meshes can be 'views' into a common mesh. Meshes can share
+  /// some cells but a common cell will have a different index in each
+  /// mesh::Mesh. Consider:
   /// ```cpp
   /// auto mesh = this->mesh();
   /// auto entities = this->domain(type, id, kernel_idx);
@@ -498,11 +502,11 @@ public:
   /// ```
   ///
   /// Assembly is performed over `entities`, where `entities[i]` is an
-  /// entity index (e.g., cell index) in `mesh`. The `entities0` holds
-  /// the corresponding entity indices but in the mesh associated with
-  /// the argument function (test/trial function) space. `entities[i]`
-  /// and `entities0[i]` point to the same mesh entity, but with respect
-  /// to different mesh views.
+  /// entity index (e.g., cell index) in `mesh`. `entities0` holds the
+  /// corresponding entity indices but in the mesh associated with the
+  /// argument function (test/trial function) space. `entities[i]` and
+  /// `entities0[i]` point to the same mesh entity, but with respect to
+  /// different mesh views.
   ///
   /// @param type Integral type.
   /// @param rank Argument index, e.g. `0` for the test function space, `1`
@@ -531,12 +535,11 @@ public:
     }
   }
 
-  /// @brief
 
-  /// @brief Coefficient function domain.
+  /// @brief Coefficient function mesh integration entity indices.
   ///
-  /// The indices in the integration domain mesh that the argument
-  /// function, e.g. a test or trial function, is defined on.
+  /// This method is equivalent to ::domain_arg, but returns mesh entity
+  /// indices for coefficient \link Function Functions. \endlink
   ///
   /// @param type Integral type.
   /// @param id Integral identifier index.
