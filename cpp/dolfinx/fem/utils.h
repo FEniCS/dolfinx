@@ -233,8 +233,8 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
         for (int id : ids)
         {
           sparsitybuild::cells(pattern,
-                               {a.domain(type, id, cell_type_idx, *mesh0),
-                                a.domain(type, id, cell_type_idx, *mesh1)},
+                               {a.domain_arg(type, 0, id, cell_type_idx),
+                                a.domain_arg(type, 1, id, cell_type_idx)},
                                {{dofmaps[0], dofmaps[1]}});
         }
         break;
@@ -243,8 +243,8 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
         {
           sparsitybuild::interior_facets(
               pattern,
-              {extract_cells(a.domain(type, id, *mesh0)),
-               extract_cells(a.domain(type, id, *mesh1))},
+              {extract_cells(a.domain_arg(type, 0, id, 0)),
+               extract_cells(a.domain_arg(type, 1, id, 0))},
               {{dofmaps[0], dofmaps[1]}});
         }
         break;
@@ -252,8 +252,8 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
         for (int id : ids)
         {
           sparsitybuild::cells(pattern,
-                               {extract_cells(a.domain(type, id, *mesh0)),
-                                extract_cells(a.domain(type, id, *mesh1))},
+                               {extract_cells(a.domain_arg(type, 0, id, 0)),
+                                extract_cells(a.domain_arg(type, 1, id, 0))},
                                {{dofmaps[0], dofmaps[1]}});
         }
         break;
@@ -448,7 +448,7 @@ Form<T, U> create_form_factory(
   // each
   using kern_t = std::function<void(T*, const T*, const T*, const U*,
                                     const int*, const std::uint8_t*)>;
-  std::map<IntegralType, std::vector<integral_data<T, U>>> integrals;
+  std::map<std::tuple<IntegralType, int, int>, integral_data<T, U>> integrals;
 
   auto check_geometry_hash
       = [&geo = mesh->geometry()](const ufcx_integral& integral,
@@ -470,7 +470,6 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
                                  + integral_offsets[cell],
                              num_integrals_type[cell]);
-    auto itg = integrals.insert({IntegralType::cell, {}});
     auto sd = subdomains.find(IntegralType::cell);
     for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
     {
@@ -529,7 +528,8 @@ Form<T, U> create_form_factory(
           default_cells.resize(
               topology->index_maps(tdim).at(form_idx)->size_local(), 0);
           std::iota(default_cells.begin(), default_cells.end(), 0);
-          itg.first->second.emplace_back(id, k, default_cells, active_coeffs);
+          integrals.insert({{IntegralType::cell, id, form_idx},
+                            {k, default_cells, active_coeffs}});
         }
         else if (sd != subdomains.end())
         {
@@ -537,7 +537,13 @@ Form<T, U> create_form_factory(
           auto it = std::ranges::lower_bound(sd->second, id, std::less<>{},
                                              [](auto& a) { return a.first; });
           if (it != sd->second.end() and it->first == id)
-            itg.first->second.emplace_back(id, k, it->second, active_coeffs);
+          {
+            integrals.insert({{IntegralType::cell, id, form_idx},
+                              {k,
+                               std::vector<std::int32_t>(it->second.begin(),
+                                                         it->second.end()),
+                               active_coeffs}});
+          }
         }
 
         if (integral->needs_facet_permutations)
@@ -552,7 +558,6 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
                                  + integral_offsets[exterior_facet],
                              num_integrals_type[exterior_facet]);
-    auto itg = integrals.insert({IntegralType::exterior_facet, {}});
     auto sd = subdomains.find(IntegralType::exterior_facet);
     for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
     {
@@ -615,8 +620,8 @@ Form<T, U> create_form_factory(
             default_facets_ext.insert(default_facets_ext.end(), pair.begin(),
                                       pair.end());
           }
-          itg.first->second.emplace_back(id, k, default_facets_ext,
-                                         active_coeffs);
+          integrals.insert({{IntegralType::exterior_facet, id, form_idx},
+                            {k, default_facets_ext, active_coeffs}});
         }
         else if (sd != subdomains.end())
         {
@@ -624,7 +629,13 @@ Form<T, U> create_form_factory(
           auto it = std::ranges::lower_bound(sd->second, id, std::less<>{},
                                              [](auto& a) { return a.first; });
           if (it != sd->second.end() and it->first == id)
-            itg.first->second.emplace_back(id, k, it->second, active_coeffs);
+          {
+            integrals.insert({{IntegralType::exterior_facet, id, form_idx},
+                              {k,
+                               std::vector<std::int32_t>(it->second.begin(),
+                                                         it->second.end()),
+                               active_coeffs}});
+          }
         }
 
         if (integral->needs_facet_permutations)
@@ -639,11 +650,11 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
                                  + integral_offsets[interior_facet],
                              num_integrals_type[interior_facet]);
-    auto itg = integrals.insert({IntegralType::interior_facet, {}});
     auto sd = subdomains.find(IntegralType::interior_facet);
     for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
     {
       const ufcx_form& ufcx_form = ufcx_forms[form_idx];
+
       // Create indicator for interprocess facets
       std::vector<std::int8_t> interprocess_marker;
       if (num_integrals_type[interior_facet] > 0)
@@ -727,15 +738,21 @@ Form<T, U> create_form_factory(
                   "mesh");
             }
           }
-          itg.first->second.emplace_back(id, k, default_facets_int,
-                                         active_coeffs);
+          integrals.insert({{IntegralType::interior_facet, id, form_idx},
+                            {k, default_facets_int, active_coeffs}});
         }
         else if (sd != subdomains.end())
         {
           auto it = std::ranges::lower_bound(sd->second, id, std::less{},
                                              [](auto& a) { return a.first; });
           if (it != sd->second.end() and it->first == id)
-            itg.first->second.emplace_back(id, k, it->second, active_coeffs);
+          {
+            integrals.insert({{IntegralType::interior_facet, id, form_idx},
+                              {k,
+                               std::vector<std::int32_t>(it->second.begin(),
+                                                         it->second.end()),
+                               active_coeffs}});
+          }
         }
 
         if (integral->needs_facet_permutations)
@@ -744,19 +761,8 @@ Form<T, U> create_form_factory(
     }
   }
 
-  std::map<IntegralType,
-           std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>
-      sd;
-  for (auto& [itg, data] : subdomains)
-  {
-    std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>> x;
-    for (auto& [id, idx] : data)
-      x.emplace_back(id, std::vector(idx.data(), idx.data() + idx.size()));
-    sd.insert({itg, std::move(x)});
-  }
-
-  return Form<T, U>(spaces, integrals, coefficients, constants,
-                    needs_facet_permutations, entity_maps, mesh);
+  return Form<T, U>(spaces, std::move(integrals), mesh, coefficients, constants,
+                    needs_facet_permutations, entity_maps);
 }
 
 /// @brief Create a Form from UFC input with coefficients and constants

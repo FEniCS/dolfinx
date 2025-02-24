@@ -176,10 +176,10 @@ T assemble_scalar(
   T value = 0;
   for (int i : M.integral_ids(IntegralType::cell))
   {
-    auto fn = M.kernel(IntegralType::cell, i);
+    auto fn = M.kernel(IntegralType::cell, i, 0);
     assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    std::span<const std::int32_t> cells = M.domain(IntegralType::cell, i);
+    std::span<const std::int32_t> cells = M.domain(IntegralType::cell, i, 0);
     value += impl::assemble_cells(x_dofmap, x, cells, fn, constants, coeffs,
                                   cstride);
   }
@@ -196,26 +196,26 @@ T assemble_scalar(
       = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
   for (int i : M.integral_ids(IntegralType::exterior_facet))
   {
-    auto fn = M.kernel(IntegralType::exterior_facet, i);
+    auto fn = M.kernel(IntegralType::exterior_facet, i, 0);
     assert(fn);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     value += impl::assemble_exterior_facets(
         x_dofmap, x, num_facets_per_cell,
-        M.domain(IntegralType::exterior_facet, i), fn, constants, coeffs,
+        M.domain(IntegralType::exterior_facet, i, 0), fn, constants, coeffs,
         cstride, perms);
   }
 
   for (int i : M.integral_ids(IntegralType::interior_facet))
   {
     const std::vector<int> c_offsets = M.coefficient_offsets();
-    auto fn = M.kernel(IntegralType::interior_facet, i);
+    auto fn = M.kernel(IntegralType::interior_facet, i, 0);
     assert(fn);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::interior_facet, i});
     value += impl::assemble_interior_facets(
         x_dofmap, x, num_facets_per_cell,
-        M.domain(IntegralType::interior_facet, i), fn, constants, coeffs,
+        M.domain(IntegralType::interior_facet, i, 0), fn, constants, coeffs,
         cstride, c_offsets, perms);
   }
 

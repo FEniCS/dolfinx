@@ -178,7 +178,7 @@ allocate_coefficient_storage(const Form<T, U>& form, IntegralType integral_type,
   {
     const std::vector<int> offsets = form.coefficient_offsets();
     cstride = offsets.back();
-    num_entities = form.domain(integral_type, id).size();
+    num_entities = form.domain(integral_type, id, 0).size();
     if (integral_type == IntegralType::exterior_facet
         or integral_type == IntegralType::interior_facet)
     {
@@ -261,8 +261,8 @@ void pack_coefficients(const Form<T, U>& form,
                                      "codim>0 in a cell integral");
           }
 
-          const std::vector<std::int32_t> cells_b
-              = form.domain(IntegralType::cell, id, *mesh);
+          std::span<const std::int32_t> cells_b
+              = form.domain_coeff(IntegralType::cell, id, coeff);
           md::mdspan cells(cells_b.data(), cells_b.size());
           std::span<const std::uint32_t> cell_info
               = impl::get_cell_orientation_info(*coefficients[coeff]);
@@ -279,8 +279,8 @@ void pack_coefficients(const Form<T, U>& form,
         for (int coeff : form.active_coeffs(IntegralType::exterior_facet, id))
         {
           auto mesh = coefficients[coeff]->function_space()->mesh();
-          const std::vector<std::int32_t> facets_b
-              = form.domain(IntegralType::exterior_facet, id, *mesh);
+          std::span<const std::int32_t> facets_b
+              = form.domain_coeff(IntegralType::exterior_facet, id, coeff);
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>
               facets(facets_b.data(), facets_b.size() / 2, 2);
@@ -301,8 +301,8 @@ void pack_coefficients(const Form<T, U>& form,
         for (int coeff : form.active_coeffs(IntegralType::interior_facet, id))
         {
           auto mesh = coefficients[coeff]->function_space()->mesh();
-          const std::vector<std::int32_t> facets_b
-              = form.domain(IntegralType::interior_facet, id, *mesh);
+          std::span<const std::int32_t> facets_b
+              = form.domain_coeff(IntegralType::interior_facet, id, coeff);
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 4>>
               facets(facets_b.data(), facets_b.size() / 4, 4);
@@ -392,9 +392,9 @@ pack_constants(std::vector<std::reference_wrapper<const fem::Constant<T>>> c)
   std::int32_t offset = 0;
   for (auto& constant : c)
   {
-    const std::vector<T>& value = constant.get().value;
-    std::ranges::copy(value, std::next(constant_values.begin(), offset));
-    offset += value.size();
+    std::ranges::copy(constant.get().value,
+                      std::next(constant_values.begin(), offset));
+    offset += constant.get().value.size();
   }
 
   return constant_values;

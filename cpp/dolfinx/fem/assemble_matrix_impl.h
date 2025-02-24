@@ -564,9 +564,9 @@ void assemble_matrix(
 
       impl::assemble_cells(
           mat_set, x_dofmap, x, a.domain(IntegralType::cell, i, cell_type_idx),
-          {dofs0, bs0, a.domain(IntegralType::cell, i, cell_type_idx, *mesh0)},
+          {dofs0, bs0, a.domain_arg(IntegralType::cell, 0, i, cell_type_idx)},
           P0,
-          {dofs1, bs1, a.domain(IntegralType::cell, i, cell_type_idx, *mesh1)},
+          {dofs1, bs1, a.domain_arg(IntegralType::cell, 1, i, cell_type_idx)},
           P1T, bc0, bc1, fn, coeffs, cstride, constants, cell_info0,
           cell_info1);
     }
@@ -589,16 +589,16 @@ void assemble_matrix(
                                  "topology aren't supported yet");
       }
 
-      auto fn = a.kernel(IntegralType::exterior_facet, i);
+      auto fn = a.kernel(IntegralType::exterior_facet, i, 0);
       assert(fn);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::exterior_facet, i});
       impl::assemble_exterior_facets(
           mat_set, x_dofmap, x, num_facets_per_cell,
-          a.domain(IntegralType::exterior_facet, i),
-          {dofs0, bs0, a.domain(IntegralType::exterior_facet, i, *mesh0)}, P0,
-          {dofs1, bs1, a.domain(IntegralType::exterior_facet, i, *mesh1)}, P1T,
-          bc0, bc1, fn, coeffs, cstride, constants, cell_info0, cell_info1,
+          a.domain(IntegralType::exterior_facet, i, 0),
+          {dofs0, bs0, a.domain_arg(IntegralType::exterior_facet, 0, i, 0)}, P0,
+          {dofs1, bs1, a.domain_arg(IntegralType::exterior_facet, 1, i, 0)},
+          P1T, bc0, bc1, fn, coeffs, cstride, constants, cell_info0, cell_info1,
           perms);
     }
 
@@ -611,16 +611,16 @@ void assemble_matrix(
       }
 
       const std::vector<int> c_offsets = a.coefficient_offsets();
-      auto fn = a.kernel(IntegralType::interior_facet, i);
+      auto fn = a.kernel(IntegralType::interior_facet, i, 0);
       assert(fn);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
       impl::assemble_interior_facets(
           mat_set, x_dofmap, x, num_facets_per_cell,
-          a.domain(IntegralType::interior_facet, i),
-          {*dofmap0, bs0, a.domain(IntegralType::interior_facet, i, *mesh0)},
+          a.domain(IntegralType::interior_facet, i, 0),
+          {*dofmap0, bs0, a.domain_arg(IntegralType::interior_facet, 0, i, 0)},
           P0,
-          {*dofmap1, bs1, a.domain(IntegralType::interior_facet, i, *mesh1)},
+          {*dofmap1, bs1, a.domain_arg(IntegralType::interior_facet, 1, i, 0)},
           P1T, bc0, bc1, fn, coeffs, cstride, c_offsets, constants, cell_info0,
           cell_info1, perms);
     }
