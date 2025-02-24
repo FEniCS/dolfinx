@@ -632,7 +632,7 @@ def create_form(
 
 
 def compute_jacobian(
-    F: typing.Union[ufl.Form | list[Form]],
+    F: typing.Union[ufl.Form | list[ufl.Form]],
     u: typing.Union[Function | list[Function]],
     du: typing.Optional[typing.Union[ufl.Argument, list[ufl.Argument]]] = None,
 ) -> typing.Union[ufl.Form, list[list[ufl.Form]]]:
@@ -643,7 +643,7 @@ def compute_jacobian(
     """
     if isinstance(F, ufl.Form):
         if du is None:
-            du = ufl.TrialFunction(u.function_space)
+            du = ufl.TrialFunction(u.function_space)  # type: ignore
         return ufl.derivative(F, u, du)
     else:
         assert [isinstance(Fi, ufl.Form) for Fi in F], "F must be a list of UFL forms"

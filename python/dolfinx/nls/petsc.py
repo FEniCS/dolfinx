@@ -33,7 +33,6 @@ from dolfinx import fem
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.petsc import (
     apply_lifting,
-    assemble_matrix,
     assemble_matrix_block,
     assemble_matrix_nest,
     assemble_vector,
@@ -167,10 +166,10 @@ def create_data_structures(
 class SNESSolver:
     def __init__(
         self,
-        J: PETSc.Mat,
-        x: PETSc.Vec,
-        b: PETSc.Vec,
-        P: PETSc.Mat,
+        J: PETSc.Mat,  # type: ignore
+        x: PETSc.Vec,  # type: ignore
+        b: PETSc.Vec,  # type: ignore
+        P: PETSc.Mat,  # type: ignore
     ):
         """Initialize a PETSc-SNES solver
 
@@ -185,10 +184,10 @@ class SNESSolver:
         self._b = b
         self._P = P
         self._x = x
-        self._snes = PETSc.SNES().create(comm=self._A.comm)
+        self._snes = PETSc.SNES().create(comm=self._A.comm)  # type: ignore
 
     def set_options(self, options: dict):
-        opts = PETSc.Options()
+        opts = PETSc.Options()  # type: ignore
         for key, v in options.items():
             opts[key] = v
         self._snes.setFromOptions()
@@ -292,6 +291,7 @@ def create_snes_solver(
     jit_options: typing.Optional[dict] = None,
 ) -> SNESSolver:
     # Compile all forms
+    bcs = [] if bcs is None else bcs
     form_compiler_options = {} if form_compiler_options is None else form_compiler_options
     jit_options = {} if jit_options is None else jit_options
     residual = _create_form(F, form_compiler_options=form_compiler_options, jit_options=jit_options)
@@ -304,17 +304,17 @@ def create_snes_solver(
             P, form_compiler_options=form_compiler_options, jit_options=jit_options
         )
 
-    def replace_solution(x: PETSc.Vec):
+    def replace_solution(x: PETSc.Vec):  # type: ignore
         """Update the solution for the unknown `u` with the values in `x`.
 
         Args:
             x: Data that is inserted into the solution vector
         """
-        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
         x.copy(u.x.petsc_vec)
-        u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
 
-    def copy_solution(x: PETSc.Vec):
+    def copy_solution(x: PETSc.Vec):  # type: ignore
         """Copy the data in `u` into the vector `x`.
 
         Args:
@@ -322,7 +322,7 @@ def create_snes_solver(
         """
         u.x.petsc_vec.copy(x)
 
-    def F(snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec):
+    def F(snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec):  # type: ignore
         """Assemble the residual into the vector `F`.
 
         Args:
@@ -335,10 +335,10 @@ def create_snes_solver(
             f_local.set(0.0)
         assemble_vector(F, residual)
         apply_lifting(F, [jacobian], bcs=[bcs], x0=[x], alpha=-1.0)
-        F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
         set_bc(F, bcs, x, -1.0)
 
-    def J(snes, x, J, P):
+    def J(snes: PETSc.SNES, x: PETSc.Vec, J: PETSc.Mat, P: PETSc.Mat):  # type: ignore
         """Assemble the Jacobian matrix and preconditioner.
 
         Args:
@@ -352,15 +352,15 @@ def create_snes_solver(
 
         # Assemble Jacobian
         J.zeroEntries()
-        assemble_matrix(J, jacobian, bcs, diagonal=1.0)
+        dolfinx.fem.assemble_matrix(J, jacobian, bcs, diagonal=1.0)  # type: ignore
         J.assemble()
 
         if preconditioner is not None:
             P.zeroEntries()
-            dolfinx.fem.petsc.assemble_matrix(P, preconditioner, bcs, diagonal=1.0)
+            dolfinx.fem.petsc.assemble_matrix(P, preconditioner, bcs, diagonal=1.0)  # type: ignore
             P.assemble()
 
-    def F_block(snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec):
+    def F_block(snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec):  # type: ignore
         """Assemble the residual into the vector F.
 
         Args:
@@ -374,9 +374,9 @@ def create_snes_solver(
             f_local.set(0.0)
 
         replace_solution_block(x)
-        assemble_vector_block(F, residual, jacobian, bcs=bcs, x0=x, alpha=-1.0)
+        assemble_vector_block(F, residual, jacobian, bcs=bcs, x0=x, alpha=-1.0)  # type: ignore
 
-    def J_block(snes, x, J, P):
+    def J_block(snes: PETSc.SNES, x: PETSc.Vec, J: PETSc.Mat, P: PETSc.Mat):  # type: ignore
         """Assemble the Jacobian matrix.
 
         Args:
@@ -390,20 +390,20 @@ def create_snes_solver(
         assert J.getType() != "nest", "Matrix J should be non-nested"
         assert P.getType() != "nest", "Matrix P should be non-nested"
         J.zeroEntries()
-        assemble_matrix_block(J, jacobian, bcs=bcs, diagonal=1.0)
+        assemble_matrix_block(J, jacobian, bcs=bcs, diagonal=1.0)  # type: ignore
         J.assemble()
         if preconditioner is not None:
             P.zeroEntries()
-            assemble_matrix_block(P, preconditioner, bcs=bcs, diagonal=1.0)
+            assemble_matrix_block(P, preconditioner, bcs=bcs, diagonal=1.0)  # type: ignore
             P.assemble()
 
-    def replace_solution_block(x: PETSc.Vec):
+    def replace_solution_block(x: PETSc.Vec):  # type: ignore
         """Update the solution for the unknown `u` with the values in `x`.
 
         Args:
             x: Data that is inserted into the solution vector
         """
-        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
         offset_start = 0
         for ui in u:
             Vi = ui.function_space
@@ -411,10 +411,10 @@ def create_snes_solver(
             ui.x.petsc_vec.array_w[:num_sub_dofs] = x.array_r[
                 offset_start : offset_start + num_sub_dofs
             ]
-            ui.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+            ui.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
             offset_start += num_sub_dofs
 
-    def copy_solution_block(x: PETSc.Vec):
+    def copy_solution_block(x: PETSc.Vec):  # type: ignore
         """Copy the data in `u` into the vector `x`.
 
         Args:
@@ -429,9 +429,9 @@ def create_snes_solver(
             u_petsc,
             index_maps,
         )
-        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
 
-    def F_nest(snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec):
+    def F_nest(snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec):  # type: ignore
         """Assemble the residual into vector `F`.
 
         Args:
@@ -448,7 +448,7 @@ def create_snes_solver(
                 F_sub_local.set(0.0)
             assemble_vector(F_sub, L)
             apply_lifting(F_sub, a, bcs=bcs1, x0=sub_vectors, alpha=-1.0)
-            F_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+            F_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
 
         # Set bc value in RHS
         bcs0 = _bcs_by_block(_extract_spaces(residual), bcs)
@@ -458,7 +458,7 @@ def create_snes_solver(
         # Must assemble F here in the case of nest matrices
         F.assemble()
 
-    def J_nest(snes, x, J, P):
+    def J_nest(snes: PETSc.SNES, x: PETSc.Vec, J: PETSc.Mat, P: PETSc.Mat):  # type: ignore
         """Assemble the Jacobian matrix.
 
         Args:
@@ -470,15 +470,15 @@ def create_snes_solver(
         replace_solution_nest(x)
         assert J.getType() == "nest" and P.getType() == "nest"
         J.zeroEntries()
-        assemble_matrix_nest(J, jacobian, bcs=bcs, diagonal=1.0)
+        assemble_matrix_nest(J, jacobian, bcs=bcs, diagonal=1.0)  # type: ignore
         J.assemble()
 
         if preconditioner is not None:
             P.zeroEntries()
-            assemble_matrix_nest(P, preconditioner, bcs=bcs, diagonal=1.0)
+            assemble_matrix_nest(P, preconditioner, bcs=bcs, diagonal=1.0)  # type: ignore
             P.assemble()
 
-    def replace_solution_nest(x: PETSc.Vec):
+    def replace_solution_nest(x: PETSc.Vec):  # type: ignore
         """Update the solution for the unknown `u` with the values in `x`.
 
         Args:
@@ -486,18 +486,18 @@ def create_snes_solver(
         """
         subvecs = x.getNestSubVecs()
         for x_sub, var_sub in zip(subvecs, u):
-            x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+            x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
             with x_sub.localForm() as _x:
                 var_sub.x.array[:] = _x.array_r
 
-    def copy_solution_nest(x: PETSc.Vec):
+    def copy_solution_nest(x: PETSc.Vec):  # type: ignore
         """Copy the data in `u` into the vector `x`.
 
         Args:
             x: Vector to insert data into
         """
         wrapped_sol = [dolfinx.la.create_petsc_vector_wrap(u_i.x) for u_i in u]
-        u_nest = PETSc.Vec().createNest(wrapped_sol)
+        u_nest = PETSc.Vec().createNest(wrapped_sol)  # type: ignore
         u_nest.copy(x)
         u_nest.destroy()
         [wrapped.destroy() for wrapped in wrapped_sol]
