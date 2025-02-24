@@ -965,6 +965,75 @@ class LinearProblem:
         """Linear solver object"""
         return self._solver
 
+# TODO: This is a sketch, to complete.
+def create_snes_assemblers(F, J, P, bcs, mat_vec_type):
+    # TODO: Compile UFL/differentiate UFL forms? Or require precompiled -
+    # consistent with existing interface in this file.
+
+    # TODO: These could change based on mat_vec_type. Another option would be
+    # to replicate what we have elsewhere e.g. create_snes_assemblers_block?
+
+    # NOTE: As this doesn't use F or J it could probably be placed elsewhere.
+    def form_function(self, x: PETSc.Vec) -> None:
+        """This function is called before the residual or Jacobian is
+        computed. This is usually used to update ghost values.
+
+        Args:
+           x: The vector containing the latest solution
+        """
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+
+    def F_function(self, x: PETSc.Vec, b: PETSc.Vec) -> None:
+        """Assemble the residual F into the vector b.
+
+        Args:
+            x: The vector containing the latest solution
+            b: Vector to assemble the residual into
+        """
+        # Reset the residual vector
+        with b.localForm() as b_local:
+            b_local.set(0.0)
+        assemble_vector(b, F)
+
+        # Apply boundary condition
+        apply_lifting(b, [J], bcs=[bcs], x0=[x], alpha=-1.0)
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        set_bc(b, bcs, x, -1.0)
+
+
+    def J_function(self, x: PETSc.Vec, A: PETSc.Mat) -> None:
+        """Assemble the Jacobian matrix.
+
+        Args:
+            x: The vector containing the latest solution
+        """
+        A.zeroEntries()
+        assemble_matrix_mat(A, J, bcs)
+        A.assemble()
+    
+    # TODO: This could also be a named tuple.
+    return (form_function, F_function, J_function)
+
+# NOTE: This would go in nls. snes_type should probably be mat_vec_type?
+# NOTE: We don't have mat_vec_type in the regular interface - user selects type
+# via function name.
+def create_snes(F, J, P, bcs, mat_vec_type):
+    # NOTE: These functions can be used separately
+    form_function, F_function, J_function = create_snes_assemblers(F, J, P, bcs, mat_vec_type) 
+
+    A, b, P, x = create_data_structures(
+        J, F, P, mat_vec_type
+    )
+
+    # TODO: Get comm
+    snes = PETSc.SNES().create(comm=comm)
+    snes.setFunction(F, b)
+    snes.setJacobian(J, A, P)
+
+    # User gets the native snes and some memory to solve into.
+    return snes, x
+
 
 class NonlinearProblem:
     """Nonlinear problem class for solving the non-linear problems.
