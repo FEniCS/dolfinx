@@ -982,36 +982,32 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
 
   for (int i : a.integral_ids(IntegralType::cell))
   {
-    auto kernel = a.kernel(IntegralType::cell, i);
+    auto kernel = a.kernel(IntegralType::cell, i, 0);
     assert(kernel);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    std::span<const std::int32_t> cells = a.domain(IntegralType::cell, i);
+    std::span cells = a.domain(IntegralType::cell, i, 0);
+    std::span cells0 = a.domain_arg(IntegralType::cell, 0, i, 0);
+    std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, 0);
     if (bs0 == 1 and bs1 == 1)
     {
       _lift_bc_cells<T, 1, 1>(
-          b, x_dofmap, x, kernel, cells,
-          {dofmap0, bs0, a.domain(IntegralType::cell, i, *mesh0)}, P0,
-          {dofmap1, bs1, a.domain(IntegralType::cell, i, *mesh1)}, P1T,
-          constants, coeffs, cstride, cell_info0, cell_info1, bc_values1,
-          bc_markers1, x0, alpha);
+          b, x_dofmap, x, kernel, cells, {dofmap0, bs0, cells0}, P0,
+          {dofmap1, bs1, cells1}, P1T, constants, coeffs, cstride, cell_info0,
+          cell_info1, bc_values1, bc_markers1, x0, alpha);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
       _lift_bc_cells<T, 3, 3>(
-          b, x_dofmap, x, kernel, cells,
-          {dofmap0, bs0, a.domain(IntegralType::cell, i, *mesh0)}, P0,
-          {dofmap1, bs1, a.domain(IntegralType::cell, i, *mesh1)}, P1T,
-          constants, coeffs, cstride, cell_info0, cell_info1, bc_values1,
-          bc_markers1, x0, alpha);
+          b, x_dofmap, x, kernel, cells, {dofmap0, bs0, cells0}, P0,
+          {dofmap1, bs1, cells1}, P1T, constants, coeffs, cstride, cell_info0,
+          cell_info1, bc_values1, bc_markers1, x0, alpha);
     }
     else
     {
-      _lift_bc_cells(b, x_dofmap, x, kernel, cells,
-                     {dofmap0, bs0, a.domain(IntegralType::cell, i, *mesh0)},
-                     P0,
-                     {dofmap1, bs1, a.domain(IntegralType::cell, i, *mesh1)},
-                     P1T, constants, coeffs, cstride, cell_info0, cell_info1,
-                     bc_values1, bc_markers1, x0, alpha);
+      _lift_bc_cells(b, x_dofmap, x, kernel, cells, {dofmap0, bs0, cells0}, P0,
+                     {dofmap1, bs1, cells1}, P1T, constants, coeffs, cstride,
+                     cell_info0, cell_info1, bc_values1, bc_markers1, x0,
+                     alpha);
     }
   }
 
@@ -1027,32 +1023,32 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
       = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
-    auto kernel = a.kernel(IntegralType::exterior_facet, i);
+    auto kernel = a.kernel(IntegralType::exterior_facet, i, 0);
     assert(kernel);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     _lift_bc_exterior_facets(
         b, x_dofmap, x, num_facets_per_cell, kernel,
-        a.domain(IntegralType::exterior_facet, i),
-        {dofmap0, bs0, a.domain(IntegralType::exterior_facet, i, *mesh0)}, P0,
-        {dofmap1, bs1, a.domain(IntegralType::exterior_facet, i, *mesh1)}, P1T,
-        constants, coeffs, cstride, cell_info0, cell_info1, bc_values1,
+        a.domain(IntegralType::exterior_facet, i, 0),
+        {dofmap0, bs0, a.domain_arg(IntegralType::exterior_facet, 0, i, 0)}, P0,
+        {dofmap1, bs1, a.domain_arg(IntegralType::exterior_facet, 1, i, 0)},
+        P1T, constants, coeffs, cstride, cell_info0, cell_info1, bc_values1,
         bc_markers1, x0, alpha, perms);
   }
 
   for (int i : a.integral_ids(IntegralType::interior_facet))
   {
-    auto kernel = a.kernel(IntegralType::interior_facet, i);
+    auto kernel = a.kernel(IntegralType::interior_facet, i, 0);
     assert(kernel);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::interior_facet, i});
     _lift_bc_interior_facets(
         b, x_dofmap, x, num_facets_per_cell, kernel,
-        a.domain(IntegralType::interior_facet, i),
-        {dofmap0, bs0, a.domain(IntegralType::interior_facet, i, *mesh0)}, P0,
-        {dofmap1, bs1, a.domain(IntegralType::interior_facet, i, *mesh1)}, P1T,
-        constants, coeffs, cstride, cell_info0, cell_info1, perms, bc_values1,
-        bc_markers1, x0, alpha);
+        a.domain(IntegralType::interior_facet, i, 0),
+        {dofmap0, bs0, a.domain_arg(IntegralType::interior_facet, 0, i, 0)}, P0,
+        {dofmap1, bs1, a.domain_arg(IntegralType::interior_facet, 1, i, 0)},
+        P1T, constants, coeffs, cstride, cell_info0, cell_info1, perms,
+        bc_values1, bc_markers1, x0, alpha);
   }
 }
 
@@ -1194,28 +1190,24 @@ void assemble_vector(
       auto fn = L.kernel(IntegralType::cell, i, cell_type_idx);
       assert(fn);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-      std::vector<std::int32_t> cells
-          = L.domain(IntegralType::cell, i, cell_type_idx);
+      std::span cells = L.domain(IntegralType::cell, i, cell_type_idx);
+      std::span cells0 = L.domain_arg(IntegralType::cell, 0, i, cell_type_idx);
       if (bs == 1)
       {
-        impl::assemble_cells<T, 1>(
-            P0, b, x_dofmap, x, cells,
-            {dofs, bs, L.domain(IntegralType::cell, i, cell_type_idx, *mesh0)},
-            fn, constants, coeffs, cstride, cell_info0);
+        impl::assemble_cells<T, 1>(P0, b, x_dofmap, x, cells,
+                                   {dofs, bs, cells0}, fn, constants, coeffs,
+                                   cstride, cell_info0);
       }
       else if (bs == 3)
       {
-        impl::assemble_cells<T, 3>(
-            P0, b, x_dofmap, x, cells,
-            {dofs, bs, L.domain(IntegralType::cell, i, cell_type_idx, *mesh0)},
-            fn, constants, coeffs, cstride, cell_info0);
+        impl::assemble_cells<T, 3>(P0, b, x_dofmap, x, cells,
+                                   {dofs, bs, cells0}, fn, constants, coeffs,
+                                   cstride, cell_info0);
       }
       else
       {
-        impl::assemble_cells(
-            P0, b, x_dofmap, x, cells,
-            {dofs, bs, L.domain(IntegralType::cell, i, cell_type_idx, *mesh0)},
-            fn, constants, coeffs, cstride, cell_info0);
+        impl::assemble_cells(P0, b, x_dofmap, x, cells, {dofs, bs, cells0}, fn,
+                             constants, coeffs, cstride, cell_info0);
       }
     }
 
@@ -1231,63 +1223,64 @@ void assemble_vector(
         = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
     for (int i : L.integral_ids(IntegralType::exterior_facet))
     {
-      auto fn = L.kernel(IntegralType::exterior_facet, i);
+      auto fn = L.kernel(IntegralType::exterior_facet, i, 0);
       assert(fn);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::exterior_facet, i});
       std::span<const std::int32_t> facets
-          = L.domain(IntegralType::exterior_facet, i);
+          = L.domain(IntegralType::exterior_facet, i, 0);
+      std::span facets1 = L.domain_arg(IntegralType::exterior_facet, 0, i, 0);
       if (bs == 1)
       {
         impl::assemble_exterior_facets<T, 1>(
             P0, b, x_dofmap, x, num_facets_per_cell, facets,
-            {dofs, bs, L.domain(IntegralType::exterior_facet, i, *mesh0)}, fn,
-            constants, coeffs, cstride, cell_info0, perms);
+            {dofs, bs, facets1}, fn, constants, coeffs, cstride, cell_info0,
+            perms);
       }
       else if (bs == 3)
       {
         impl::assemble_exterior_facets<T, 3>(
             P0, b, x_dofmap, x, num_facets_per_cell, facets,
-            {dofs, bs, L.domain(IntegralType::exterior_facet, i, *mesh0)}, fn,
-            constants, coeffs, cstride, cell_info0, perms);
+            {dofs, bs, facets1}, fn, constants, coeffs, cstride, cell_info0,
+            perms);
       }
       else
       {
-        impl::assemble_exterior_facets(
-            P0, b, x_dofmap, x, num_facets_per_cell, facets,
-            {dofs, bs, L.domain(IntegralType::exterior_facet, i, *mesh0)}, fn,
-            constants, coeffs, cstride, cell_info0, perms);
+        impl::assemble_exterior_facets(P0, b, x_dofmap, x, num_facets_per_cell,
+                                       facets, {dofs, bs, facets1}, fn,
+                                       constants, coeffs, cstride, cell_info0,
+                                       perms);
       }
     }
 
     for (int i : L.integral_ids(IntegralType::interior_facet))
     {
-      auto fn = L.kernel(IntegralType::interior_facet, i);
+      auto fn = L.kernel(IntegralType::interior_facet, i, 0);
       assert(fn);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
-      std::span<const std::int32_t> facets
-          = L.domain(IntegralType::interior_facet, i);
+      std::span facets = L.domain(IntegralType::interior_facet, i, 0);
+      std::span facets1 = L.domain_arg(IntegralType::interior_facet, 0, i, 0);
       if (bs == 1)
       {
         impl::assemble_interior_facets<T, 1>(
             P0, b, x_dofmap, x, num_facets_per_cell, facets,
-            {*dofmap, bs, L.domain(IntegralType::interior_facet, i, *mesh0)},
-            fn, constants, coeffs, cstride, cell_info0, perms);
+            {*dofmap, bs, facets1}, fn, constants, coeffs, cstride, cell_info0,
+            perms);
       }
       else if (bs == 3)
       {
         impl::assemble_interior_facets<T, 3>(
             P0, b, x_dofmap, x, num_facets_per_cell, facets,
-            {*dofmap, bs, L.domain(IntegralType::interior_facet, i, *mesh0)},
-            fn, constants, coeffs, cstride, cell_info0, perms);
+            {*dofmap, bs, facets1}, fn, constants, coeffs, cstride, cell_info0,
+            perms);
       }
       else
       {
-        impl::assemble_interior_facets(
-            P0, b, x_dofmap, x, num_facets_per_cell, facets,
-            {*dofmap, bs, L.domain(IntegralType::interior_facet, i, *mesh0)},
-            fn, constants, coeffs, cstride, cell_info0, perms);
+        impl::assemble_interior_facets(P0, b, x_dofmap, x, num_facets_per_cell,
+                                       facets, {*dofmap, bs, facets1}, fn,
+                                       constants, coeffs, cstride, cell_info0,
+                                       perms);
       }
     }
   }

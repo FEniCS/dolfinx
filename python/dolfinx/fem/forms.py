@@ -301,7 +301,7 @@ def form(
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
         entity_maps: If any trial functions, test functions, or
             coefficients in the form are not defined over the same mesh
-            as the integration domain, `entity_maps` must be supplied.
+            as the integration domain, ``entity_maps`` must be supplied.
             For each key (a mesh, different to the integration domain
             mesh) a map should be provided relating the entities in the
             integration domain mesh to the entities in the key mesh e.g.
@@ -404,6 +404,8 @@ def form(
     def _zero_form(form):
         """Compile a single 'zero' UFL form, i.e. a form with no integrals."""
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
+        assert len(V) > 0
+        msh = V[0].mesh
         if entity_maps is None:
             _entity_maps = dict()
         else:
@@ -415,7 +417,7 @@ def form(
             constants=[],
             need_permutation_data=False,
             entity_maps=_entity_maps,
-            mesh=None,
+            mesh=msh,
         )
         return Form(f)
 
