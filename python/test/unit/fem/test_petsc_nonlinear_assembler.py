@@ -384,7 +384,7 @@ class TestNLSPETSc:
             and mesh.comm.size > 1
         ):
             norm1 = nested_solve()
-            tol = 50*np.finfo(PETSc.ScalarType).eps
+            tol = 50 * np.finfo(PETSc.ScalarType).eps
             assert norm1 == pytest.approx(norm0, tol)
         assert norm2 == pytest.approx(norm0, 1.0e-6)
 
