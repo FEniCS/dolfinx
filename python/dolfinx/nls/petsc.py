@@ -147,7 +147,7 @@ class SNESSolver:
     def __init__(
         self,
         F: typing.Union[dolfinx.fem.Form, ufl.form.Form],
-        u: dolfinx.fem.Function,
+        u: typing.Union[dolfinx.fem.Function, list[dolfinx.fem.Function]],
         bcs: typing.Optional[list[dolfinx.fem.DirichletBC]] = None,
         J: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
         P: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
