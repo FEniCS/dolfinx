@@ -110,14 +110,14 @@ T assemble_interior_facets(
                md::extents<std::size_t, md::dynamic_extent, 4>>
         facets,
     FEkernel<T> auto fn, std::span<const T> constants,
-    std::span<const T> coeffs, int cstride, std::span<const int> offsets,
+    md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
+                                    md::dynamic_extent>>
+        coeffs,
     std::span<const std::uint8_t> perms)
 {
   T value(0);
   if (facets.empty())
     return value;
-
-  assert(offsets.back() == cstride);
 
   // Create data structures used in assembly
   using X = scalar_value_type_t<T>;
@@ -152,8 +152,8 @@ T assemble_interior_facets(
               : std::array{
                     perms[cells[0] * num_facets_per_cell + local_facet[0]],
                     perms[cells[1] * num_facets_per_cell + local_facet[1]]};
-    fn(&value, coeffs.data() + 2 * f * cstride, constants.data(),
-       coordinate_dofs.data(), local_facet.data(), perm.data());
+    fn(&value, &coeffs(f, 0, 0), constants.data(), coordinate_dofs.data(),
+       local_facet.data(), perm.data());
   }
 
   return value;
@@ -213,20 +213,22 @@ T assemble_scalar(
 
   for (int i : M.integral_ids(IntegralType::interior_facet))
   {
-    const std::vector<int> c_offsets = M.coefficient_offsets();
     auto fn = M.kernel(IntegralType::interior_facet, i, 0);
     assert(fn);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::interior_facet, i});
-
     std::span facets = M.domain(IntegralType::interior_facet, i, 0);
-
+    assert((facets.size() / 4) * 2 * cstride == coeffs.size());
     value += impl::assemble_interior_facets(
         x_dofmap, x, num_facets_per_cell,
         md::mdspan<const std::int32_t,
                    md::extents<std::size_t, md::dynamic_extent, 4>>(
             facets.data(), facets.size() / 4, 4),
-        fn, constants, coeffs, cstride, c_offsets, perms);
+        fn, constants,
+        md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
+                                        md::dynamic_extent>>(
+            coeffs.data(), facets.size() / 4, 2, cstride),
+        perms);
   }
 
   return value;

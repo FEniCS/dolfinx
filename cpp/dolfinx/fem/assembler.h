@@ -191,8 +191,11 @@ template <dolfinx::scalar T, std::floating_point U>
 T assemble_scalar(const Form<T, U>& M)
 {
   const std::vector<T> constants = pack_constants(M);
+  std::cout << "Allocate storage" << std::endl;
   auto coefficients = allocate_coefficient_storage(M);
+  std::cout << "Pack coefss" << std::endl;
   pack_coefficients(M, coefficients);
+  std::cout << "End Pack coefss" << std::endl;
   return assemble_scalar(M, std::span(constants),
                          make_coefficients_span(coefficients));
 }
