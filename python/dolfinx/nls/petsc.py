@@ -93,32 +93,6 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
         super().setP(P, Pmat)
 
 
-class setSNESFunctions(typing.Protocol):
-    def F(self, snes: PETSc.SNES, x: PETSc.Vec, F: PETSc.Vec): ...  # type: ignore
-    def J(self, snes: PETSc.SNES, x: PETSc.Vec, J: PETSc.Mat, P: PETSc.Mat): ...  # type: ignore
-
-
-class SNESProblemProtocol(setSNESFunctions, typing.Protocol):
-    @property
-    def u(self) -> fem.Function | list[fem.Function]: ...
-
-    @property
-    def a(self) -> fem.Form | list[list[fem.Form]]: ...
-
-    @property
-    def L(self) -> fem.Form | list[fem.Form]: ...
-
-    @property
-    def P(self) -> fem.Form | list[list[fem.Form]] | None: ...
-
-    @property
-    def F(self) -> PETSc.Mat: ...  # type: ignore
-
-    def copy_solution(self, x: PETSc.Vec): ...  # type: ignore
-
-    def replace_solution(self, x: PETSc.Vec): ...  # type: ignore
-
-
 def create_data_structures(
     a: typing.Union[list[list[fem.Form]], fem.Form],
     L: typing.Union[list[fem.Form], fem.Form],
