@@ -36,6 +36,12 @@ from dolfinx.fem.petsc import (
     assemble_matrix_nest,
     assemble_vector,
     assemble_vector_block,
+    copy_block_vec_to_functions,
+    copy_function_to_vec,
+    copy_functions_to_block_vec,
+    copy_functions_to_nest_vec,
+    copy_nest_vec_to_functions,
+    copy_vec_to_function,
     create_matrix,
     create_matrix_block,
     create_matrix_nest,
@@ -228,28 +234,6 @@ class SNESSolver:
         return self._copy_vec_to_function
 
 
-def copy_vec_to_function(u: dolfinx.fem.Function, x: PETSc.Vec):  # type: ignore
-    """Update the solution for the unknown `u` with the values in `x`.
-
-    Args:
-        u: Function data should be inserted into.
-        x: Data that is inserted into the solution vector.
-    """
-    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
-    x.copy(u.x.petsc_vec)
-    u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
-
-
-def copy_function_to_vec(u: dolfinx.fem.Function, x: PETSc.Vec):  # type: ignore
-    """Copy the data in `u` into the vector `x`.
-
-    Args:
-        u: Function to copy data from.
-        x: Vector to insert data into.
-    """
-    u.x.petsc_vec.copy(x)
-
-
 def F_default(
     u: dolfinx.fem.Function,
     residual: dolfinx.fem.Form,
@@ -379,44 +363,6 @@ def J_block(
         P.assemble()
 
 
-def copy_block_vec_to_functions(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
-    """Update the data in a list of functions `u` with the values in `x`.
-
-    Args:
-        u: List of function to insert data into.
-        x: Vector to copy data from.
-    """
-    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
-    offset_start = 0
-    for ui in u:
-        Vi = ui.function_space
-        num_sub_dofs = Vi.dofmap.index_map.size_local * Vi.dofmap.index_map_bs
-        ui.x.petsc_vec.array_w[:num_sub_dofs] = x.array_r[
-            offset_start : offset_start + num_sub_dofs
-        ]
-        ui.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
-        offset_start += num_sub_dofs
-
-
-def copy_functions_to_block_vec(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
-    """Copy the data in `u` into the vector `x`.
-
-    Args:
-        u: List of vectors to copy data from
-        x: Vector to insert data into
-    """
-    u_petsc = [ui.x.petsc_vec.array_r for ui in u]
-    index_maps = [
-        (ui.function_space.dofmap.index_map, ui.function_space.dofmap.index_map_bs) for ui in u
-    ]
-    _cpp.la.petsc.scatter_local_vectors(
-        x,
-        u_petsc,
-        index_maps,
-    )
-    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
-
-
 def F_nest(
     u: list[dolfinx.fem.Function],
     residual: list[dolfinx.fem.Form],
@@ -489,34 +435,6 @@ def J_nest(
         P.zeroEntries()
         assemble_matrix_nest(P, preconditioner, bcs=bcs, diagonal=1.0)  # type: ignore
         P.assemble()
-
-
-def copy_nest_vec_to_functions(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
-    """Update the data in a list of functions `u` with the values in `x`.
-
-    Args:
-        u: List of function to insert data into.
-        x: Vector to copy data from.
-    """
-    subvecs = x.getNestSubVecs()
-    for x_sub, var_sub in zip(subvecs, u):
-        x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
-        with x_sub.localForm() as _x:
-            var_sub.x.array[:] = _x.array_r
-
-
-def copy_functions_to_nest_vec(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
-    """Copy the data in `u` into the vector `x`.
-
-    Args:
-        u: List of functions to copy data from.
-        x: Vector to insert data into.
-    """
-    wrapped_sol = [dolfinx.la.create_petsc_vector_wrap(u_i.x) for u_i in u]
-    u_nest = PETSc.Vec().createNest(wrapped_sol)  # type: ignore
-    u_nest.copy(x)
-    u_nest.destroy()
-    [wrapped.destroy() for wrapped in wrapped_sol]
 
 
 def create_snes_solver(
