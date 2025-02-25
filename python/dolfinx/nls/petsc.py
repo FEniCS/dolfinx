@@ -16,7 +16,6 @@ import dolfinx.la
 import ufl
 from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
 from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
-from dolfinx.fem.petsc import set_bc
 
 if typing.TYPE_CHECKING:
     import dolfinx
@@ -42,6 +41,7 @@ from dolfinx.fem.petsc import (
     create_vector,
     create_vector_block,
     create_vector_nest,
+    set_bc,
 )
 
 __all__ = ["NewtonSolver", "SNESSolver", "create_snes_solver"]
