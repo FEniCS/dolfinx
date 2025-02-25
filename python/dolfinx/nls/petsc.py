@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import typing
+from functools import partial
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -574,20 +575,14 @@ def create_snes_solver(
 
     # Set function and Jacobian
     if assembly_type == fem.AssemblyType.default:
-        snes.setFunction(lambda snes, x, F: F_default(u, residual, jacobian, bcs, snes, x, F), b)
-        snes.setJacobian(
-            lambda snes, x, J, P,: J_default(u, jacobian, preconditioner, bcs, snes, x, J, P), A, P
-        )
+        snes.setFunction(partial(F_default, u, residual, jacobian, bcs), b)
+        snes.setJacobian(partial(J_default, u, jacobian, preconditioner, bcs), A, P)
     elif assembly_type == fem.AssemblyType.block:
-        snes.setFunction(lambda snes, x, F: F_block(u, residual, jacobian, bcs, snes, x, F), b)
-        snes.setJacobian(
-            lambda snes, x, J, P: J_block(u, jacobian, preconditioner, bcs, snes, x, J, P), A, P
-        )
+        snes.setFunction(partial(F_block, u, residual, jacobian, bcs), b)
+        snes.setJacobian(partial(J_block, u, jacobian, preconditioner, bcs), A, P)
     elif assembly_type == fem.AssemblyType.nest:
-        snes.setFunction(lambda snes, x, F: F_nest(u, residual, jacobian, bcs, snes, x, F), b)
-        snes.setJacobian(
-            lambda snes, x, J, P: J_nest(u, jacobian, preconditioner, bcs, snes, x, J, P), A, P
-        )
+        snes.setFunction(partial(F_nest, u, residual, jacobian, bcs), b)
+        snes.setJacobian(partial(J_nest, u, jacobian, preconditioner, bcs), A, P)
     else:
         raise ValueError(f"Unsupported SNES type {assembly_type}")
     return snes, x
