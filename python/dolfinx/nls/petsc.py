@@ -197,15 +197,21 @@ class SNESSolver:
         else:
             raise ValueError("Unsupported Assembly type")
 
-        snes_options = {} if snes_options is None else snes_options
-        opts = PETSc.Options()  # type: ignore
-        for key, v in snes_options.items():
-            opts[key] = v
-        self._snes.setFromOptions()
+        # Set PETSc options
+        if snes_options is not None:
+            problem_prefix = f"snes_{id(self)}"
+            self._snes.setOptionsPrefix(problem_prefix)
 
-        # Delete options from handler post setting
-        for key, _ in snes_options.items():
-            del opts[key]
+            opts = PETSc.Options()  # type: ignore
+            opts.prefixPush(problem_prefix)
+            for k, v in snes_options.items():
+                opts[k] = v
+            self._snes.setFromOptions()
+            opts.prefixPop()
+
+            # Delete options from handler post setting
+            for k in snes_options.keys():
+                del opts[k]
 
     def solve(self) -> tuple[PETSc.Vec, int, int]:  # type: ignore
         """Solve the problem and update the solution in the problem instance.
