@@ -315,7 +315,7 @@ class TestNLSPETSc:
 
             nested_IS = snes.getJacobian()[0].getNestISs()
             snes.getKSP().setType("gmres")
-            snes.getKSP().setTolerances(rtol=1e-12)
+            snes.getKSP().setTolerances(rtol=1e-15)
             snes.getKSP().getPC().setType("fieldsplit")
             snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
             snes.solve(None, x)
