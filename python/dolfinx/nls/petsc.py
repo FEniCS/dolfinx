@@ -94,7 +94,7 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
         super().setP(P, Pmat)
 
 
-def create_nest_data_structures(
+def create_nest_matrices_and_vectors(
     a: typing.Union[list[list[fem.Form]], fem.Form],
     L: typing.Union[list[fem.Form], fem.Form],
     P: typing.Union[list[list[fem.Form]], list[fem.Form], fem.Form, None],
@@ -573,7 +573,7 @@ def create_snes_solver(
             P, form_compiler_options=form_compiler_options, jit_options=jit_options
         )
 
-    A, x, b, P = create_nest_data_structures(jacobian, residual, preconditioner, assembly_type)
+    A, x, b, P = create_nest_matrices_and_vectors(jacobian, residual, preconditioner, assembly_type)
     snes = PETSc.SNES().create(comm=A.comm)  # type: ignore
 
     # Set function and Jacobian
