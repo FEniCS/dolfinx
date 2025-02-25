@@ -37,6 +37,7 @@ from dolfinx.fem.bcs import (
 from dolfinx.fem.dofmap import DofMap
 from dolfinx.fem.element import CoordinateElement, FiniteElement, coordinate_element, finiteelement
 from dolfinx.fem.forms import (
+    AssemblyType,
     Form,
     compile_form,
     create_form,
@@ -206,6 +207,7 @@ def compute_integration_domains(
 
 
 __all__ = [
+    "AssemblyType",
     "Constant",
     "CoordinateElement",
     "DirichletBC",

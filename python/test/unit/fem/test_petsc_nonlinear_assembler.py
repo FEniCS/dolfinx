@@ -275,26 +275,32 @@ class TestNLSPETSc:
             p.interpolate(initial_guess_p)
 
             snes_options = {"snes_rtol": 1.0e-15, "snes_max_it": 10, "snes_monitor": None}
-            solver = dolfinx.nls.petsc.create_snes_solver(
-                F, [u, p], J=J, bcs=bcs, snes_type=dolfinx.nls.petsc.SnesType.block
+            snes, x = dolfinx.nls.petsc.create_snes_solver(
+                F, [u, p], J=J, bcs=bcs, assembly_type=dolfinx.fem.AssemblyType.block
             )
-            solver.set_options(snes_options)
-            x, converged_reason, _ = solver.solve()
-            assert solver.krylov_solver.getConvergedReason() > 0
-            assert converged_reason > 0
-            solver.replace_solution(x)
+            opts = PETSc.Options()
+            for k, v in snes_options.items():
+                opts[k] = v
+            snes.setFromOptions()
+            for k, _ in snes_options.items():
+                del opts[k]
+
+            snes.solve(None, x)
+            assert snes.getConvergedReason() > 0
+            assert snes.getKSP().getConvergedReason() > 0
+            dolfinx.nls.petsc.replace_solution_block([u, p], x)
             xnorm = x.norm()
+            x.destroy()
             return xnorm
 
         def nested_solve():
             """Nested version"""
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
-            solver = dolfinx.nls.petsc.create_snes_solver(
-                F, [u, p], J=J, bcs=bcs, snes_type=dolfinx.nls.petsc.SnesType.nest
+            solver = dolfinx.nls.petsc.SNESSolver(
+                F, [u, p], J=J, bcs=bcs, assembly_type=dolfinx.fem.AssemblyType.nest
             )
-
-            nested_IS = solver.A.getNestISs()
+            nested_IS = solver.snes.getJacobian()[0].getNestISs()
             solver.snes.getKSP().setType("gmres")
             solver.snes.getKSP().setTolerances(rtol=1e-12)
             solver.snes.getKSP().getPC().setType("fieldsplit")
@@ -302,8 +308,9 @@ class TestNLSPETSc:
                 ["u", nested_IS[0][0]], ["p", nested_IS[1][1]]
             )
             x, converged_reason, _ = solver.solve()
-            solver.replace_solution(x)
-            assert solver.krylov_solver.getConvergedReason() > 0
+            solver.replace_solution([u, p], x)
+            assert solver.snes.getConvergedReason() > 0
+            assert solver.snes.getKSP().getConvergedReason() > 0
             assert converged_reason > 0
             xnorm = x.norm()
             return xnorm
@@ -341,13 +348,13 @@ class TestNLSPETSc:
             U.sub(0).interpolate(initial_guess_u)
             U.sub(1).interpolate(initial_guess_p)
 
-            solver = dolfinx.nls.petsc.create_snes_solver(
-                F, U, J=J, bcs=bcs, snes_type=dolfinx.nls.petsc.SnesType.default
+            solver = dolfinx.nls.petsc.SNESSolver(
+                F, U, J=J, bcs=bcs, assembly_type=dolfinx.fem.AssemblyType.default
             )
             solver.set_options(snes_options)
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
-            solver.replace_solution(x)
+            solver.replace_solution(U, x)
             xnorm = x.norm()
             return xnorm
 
@@ -438,15 +445,15 @@ class TestNLSPETSc:
                 "snes_monitor": None,
                 "ksp_type": "minres",
             }
-            solver = dolfinx.nls.petsc.create_snes_solver(
-                F, [u, p], bcs=bcs, P=P, snes_type=dolfinx.nls.petsc.SnesType.block
+            solver = dolfinx.nls.petsc.SNESSolver(
+                F, [u, p], bcs=bcs, P=P, assembly_type=dolfinx.fem.AssemblyType.block
             )
             solver.set_options(snes_options)
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
-            solver.replace_solution(x)
-            Jnorm = solver.A.norm()
-            Fnorm = solver.b.norm()
+            solver.replace_solution([u, p], x)
+            Jnorm = solver.snes.getJacobian()[0].norm()
+            Fnorm = solver.snes.getFunction()[0].norm()
             xnorm = x.norm()
             return Jnorm, Fnorm, xnorm
 
@@ -455,10 +462,10 @@ class TestNLSPETSc:
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
 
-            solver = dolfinx.nls.petsc.create_snes_solver(
-                F, [u, p], J=J, bcs=bcs, snes_type=dolfinx.nls.petsc.SnesType.nest, P=P
+            solver = dolfinx.nls.petsc.SNESSolver(
+                F, [u, p], J=J, bcs=bcs, assembly_type=dolfinx.fem.AssemblyType.nest, P=P
             )
-            nested_IS = solver.A.getNestISs()
+            nested_IS = solver.snes.getJacobian()[0].getNestISs()
             solver.snes.setTolerances(rtol=1.0e-15, max_it=20)
             solver.snes.getKSP().setType("minres")
             solver.snes.getKSP().setTolerances(rtol=1e-8)
@@ -469,10 +476,10 @@ class TestNLSPETSc:
 
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
-            solver.replace_solution(x)
+            solver.replace_solution([u, p], x)
             xnorm = x.norm()
-            Jnorm = nest_matrix_norm(solver.A)
-            Fnorm = solver.b.norm()
+            Jnorm = nest_matrix_norm(solver.snes.getJacobian()[0])
+            Fnorm = solver.snes.getFunction()[0].norm()
             return Jnorm, Fnorm, xnorm
 
         def monolithic():
@@ -517,16 +524,16 @@ class TestNLSPETSc:
                 "ksp_type": "minres",
                 "snes_monitor": None,
             }
-            solver = dolfinx.nls.petsc.create_snes_solver(
-                F, U, J=J, bcs=bcs, P=P, snes_type=dolfinx.nls.petsc.SnesType.default
+            solver = dolfinx.nls.petsc.SNESSolver(
+                F, U, J=J, bcs=bcs, P=P, assembly_type=dolfinx.fem.AssemblyType.default
             )
             solver.set_options(snes_options)
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
-            solver.replace_solution(x)
+            solver.replace_solution(U, x)
             xnorm = x.norm()
-            Jnorm = solver._A.norm()
-            Fnorm = solver._b.norm()
+            Jnorm = solver.snes.getJacobian()[0].norm()
+            Fnorm = solver.snes.getFunction()[0].norm()
             return Jnorm, Fnorm, xnorm
 
         Jnorm0, Fnorm0, xnorm0 = blocked()
