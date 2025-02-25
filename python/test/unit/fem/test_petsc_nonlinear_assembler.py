@@ -289,7 +289,7 @@ class TestNLSPETSc:
             snes.solve(None, x)
             assert snes.getConvergedReason() > 0
             assert snes.getKSP().getConvergedReason() > 0
-            dolfinx.nls.petsc.copy_block_vec_to_functions([u, p], x)
+            dolfinx.nls.petsc.copy_block_vec_to_functions(x, [u, p])
             xnorm = x.norm()
             x.destroy()
             return xnorm
@@ -320,7 +320,7 @@ class TestNLSPETSc:
             snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
             dolfinx.fem.petsc.copy_functions_to_nest_vec([u, p], x)
             snes.solve(None, x)
-            dolfinx.fem.petsc.copy_nest_vec_to_functions([u, p], x)
+            dolfinx.fem.petsc.copy_nest_vec_to_functions(x, [u, p])
             assert snes.getConvergedReason() > 0
             assert snes.getKSP().getConvergedReason() > 0
             assert snes.getConvergedReason() > 0
@@ -366,13 +366,13 @@ class TestNLSPETSc:
                 U,
                 J=J,
                 bcs=bcs,
-                assembly_type=dolfinx.fem.petsc.AssemblyType.default,
+                assembly_type=dolfinx.fem.petsc.AssemblyType.standard,
                 snes_options=snes_options,
             )
 
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
-            solver.copy_vec_to_function(U, x)
+            solver.copy_vec_to_function(x, U)
             xnorm = x.norm()
             return xnorm
 
@@ -473,7 +473,7 @@ class TestNLSPETSc:
             )
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
-            solver.copy_vec_to_function([u, p], x)
+            solver.copy_vec_to_function(x, [u, p])
             Jnorm = solver.snes.getJacobian()[0].norm()
             Fnorm = solver.snes.getFunction()[0].norm()
             xnorm = x.norm()
@@ -498,7 +498,7 @@ class TestNLSPETSc:
 
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
-            solver.copy_vec_to_function([u, p], x)
+            solver.copy_vec_to_function(x, [u, p])
             xnorm = x.norm()
             Jnorm = nest_matrix_norm(solver.snes.getJacobian()[0])
             Fnorm = solver.snes.getFunction()[0].norm()
@@ -552,12 +552,12 @@ class TestNLSPETSc:
                 J=J,
                 bcs=bcs,
                 P=P,
-                assembly_type=dolfinx.fem.petsc.AssemblyType.default,
+                assembly_type=dolfinx.fem.petsc.AssemblyType.standard,
                 snes_options=snes_options,
             )
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
-            solver.copy_vec_to_function(U, x)
+            solver.copy_vec_to_function(x, U)
             xnorm = x.norm()
             Jnorm = solver.snes.getJacobian()[0].norm()
             Fnorm = solver.snes.getFunction()[0].norm()

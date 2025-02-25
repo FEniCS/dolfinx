@@ -72,7 +72,7 @@ __all__ = [
 
 
 class AssemblyType(Enum):
-    default = 0
+    standard = 0
     block = 1
     nest = 2
 
@@ -1128,12 +1128,15 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
     return _interpolation_matrix(space0._cpp_object, space1._cpp_object)
 
 
-def copy_vec_to_function(u: dolfinx.fem.Function, x: PETSc.Vec):  # type: ignore
+def copy_vec_to_function(
+    x: PETSc.Vec,
+    u: dolfinx.fem.Function,
+):  # type: ignore
     """Update the solution for the unknown `u` with the values in `x`.
 
     Args:
-        u: Function data should be inserted into.
         x: Data that is inserted into the solution vector.
+        u: Function data should be inserted into.
     """
     x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
     x.copy(u.x.petsc_vec)
@@ -1150,12 +1153,12 @@ def copy_function_to_vec(u: dolfinx.fem.Function, x: PETSc.Vec):  # type: ignore
     u.x.petsc_vec.copy(x)
 
 
-def copy_block_vec_to_functions(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
+def copy_block_vec_to_functions(x: PETSc.Vec, u: list[dolfinx.fem.Function]):  # type: ignore
     """Update the data in a list of functions `u` with the values in `x`.
 
     Args:
-        u: List of function to insert data into.
         x: Vector to copy data from.
+        u: List of function to insert data into.
     """
     x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
     offset_start = 0
@@ -1188,12 +1191,12 @@ def copy_functions_to_block_vec(u: list[dolfinx.fem.Function], x: PETSc.Vec):  #
     x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
 
 
-def copy_nest_vec_to_functions(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
+def copy_nest_vec_to_functions(x: PETSc.Vec, u: list[dolfinx.fem.Function]):  # type: ignore
     """Update the data in a list of functions `u` with the values in `x`.
 
     Args:
-        u: List of function to insert data into.
         x: Vector to copy data from.
+        u: List of function to insert data into.
     """
     subvecs = x.getNestSubVecs()
     for x_sub, var_sub in zip(subvecs, u):

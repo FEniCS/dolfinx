@@ -125,7 +125,7 @@ def create_snes_matrices_and_vectors(
 
     matrix_creator: typing.Union[None, typing.Callable[[PETSc.Mat], typing.Any]] = None  # type: ignore
     vector_creator: typing.Union[None, typing.Callable[[PETSc.Vec], typing.Any]] = None  # type: ignore
-    if assembly_type == fem.petsc.AssemblyType.default:
+    if assembly_type == fem.petsc.AssemblyType.standard:
         matrix_creator = create_matrix
         vector_creator = create_vector
     elif assembly_type == fem.petsc.AssemblyType.block:
@@ -151,7 +151,7 @@ class SNESSolver:
         bcs: typing.Optional[list[dolfinx.fem.DirichletBC]] = None,
         J: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
         P: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
-        assembly_type: fem.petsc.AssemblyType = fem.petsc.AssemblyType.default,
+        assembly_type: fem.petsc.AssemblyType = fem.petsc.AssemblyType.standard,
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
         snes_options: typing.Optional[dict] = None,
@@ -185,7 +185,7 @@ class SNESSolver:
         self._snes, self._x = create_snes_solver(
             F, self._u, bcs, J, P, assembly_type, form_compiler_options, jit_options
         )
-        if assembly_type == fem.petsc.AssemblyType.default:
+        if assembly_type == fem.petsc.AssemblyType.standard:
             self._copy_function_to_vec = copy_function_to_vec
             self._copy_vec_to_function = copy_vec_to_function
         elif assembly_type == fem.petsc.AssemblyType.block:
@@ -260,7 +260,7 @@ def F_default(
         x: The vector containing the point to evaluate the residual at.
         F: Vector to assemble the residual into.
     """
-    copy_vec_to_function(u, x)
+    copy_vec_to_function(x, u)
     with F.localForm() as f_local:
         f_local.set(0.0)
     assemble_vector(F, residual)
@@ -292,7 +292,7 @@ def J_default(
         P: Matrix to assemble the preconditioner into
     """
     # Copy existing soultion into the function used in the residual and Jacobian
-    copy_vec_to_function(u, x)
+    copy_vec_to_function(x, u)
 
     # Assemble Jacobian
     J.zeroEntries()
@@ -330,7 +330,7 @@ def F_block(
     with F.localForm() as f_local:
         f_local.set(0.0)
 
-    copy_block_vec_to_functions(u, x)
+    copy_block_vec_to_functions(x, u)
     assemble_vector_block(F, residual, jacobian, bcs=bcs, x0=x, alpha=-1.0)  # type: ignore
 
 
@@ -356,7 +356,7 @@ def J_block(
         J: Matrix to assemble the Jacobian into
         P: Matrix to assemble the preconditioner into
     """
-    copy_block_vec_to_functions(u, x)
+    copy_block_vec_to_functions(x, u)
     assert x.getType() != "nest", "Vector x should be non-nested"
     assert J.getType() != "nest", "Matrix J should be non-nested"
     assert P.getType() != "nest", "Matrix P should be non-nested"
@@ -390,7 +390,7 @@ def F_nest(
         F: Vector to assemble the residual into
     """
     assert x.getType() == "nest" and F.getType() == "nest"
-    copy_nest_vec_to_functions(u, x)
+    copy_nest_vec_to_functions(x, u)
     bcs1 = _bcs_by_block(_extract_spaces(jacobian, 1), bcs)
     sub_vectors = x.getNestSubVecs()
     for L, F_sub, a in zip(residual, F.getNestSubVecs(), jacobian):
@@ -431,7 +431,7 @@ def J_nest(
         J: Matrix to assemble the Jacobian into
         P: Matrix to assemble the preconditioner into
     """
-    copy_nest_vec_to_functions(u, x)
+    copy_nest_vec_to_functions(x, u)
     assert J.getType() == "nest" and P.getType() == "nest"
     J.zeroEntries()
     assemble_matrix_nest(J, jacobian, bcs=bcs, diagonal=1.0)  # type: ignore
@@ -449,7 +449,7 @@ def create_snes_solver(
     bcs: typing.Optional[list[dolfinx.fem.DirichletBC]] = None,
     J: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
     P: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
-    assembly_type: fem.petsc.AssemblyType = fem.petsc.AssemblyType.default,
+    assembly_type: fem.petsc.AssemblyType = fem.petsc.AssemblyType.standard,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
 ) -> tuple[PETSc.SNES, PETSc.Vec]:  # type: ignore
@@ -501,7 +501,7 @@ def create_snes_solver(
     snes = PETSc.SNES().create(comm=A.comm)  # type: ignore
 
     # Set function and Jacobian
-    if assembly_type == fem.petsc.AssemblyType.default:
+    if assembly_type == fem.petsc.AssemblyType.standard:
         snes.setFunction(partial(F_default, u, residual, jacobian, bcs), b)
         snes.setJacobian(partial(J_default, u, jacobian, preconditioner, bcs), A, P)
     elif assembly_type == fem.petsc.AssemblyType.block:
