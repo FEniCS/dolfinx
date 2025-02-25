@@ -67,7 +67,8 @@ T assemble_exterior_facets(
                md::extents<std::size_t, md::dynamic_extent, 2>>
         facets,
     FEkernel<T> auto fn, std::span<const T> constants,
-    std::span<const T> coeffs, int cstride, std::span<const std::uint8_t> perms)
+    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+    std::span<const std::uint8_t> perms)
 {
   T value(0);
   if (facets.empty())
@@ -93,8 +94,7 @@ T assemble_exterior_facets(
     // Permutations
     std::uint8_t perm
         = perms.empty() ? 0 : perms[cell * num_facets_per_cell + local_facet];
-    const T* coeff_cell = coeffs.data() + f * cstride;
-    fn(&value, coeff_cell, constants.data(), coordinate_dofs.data(),
+    fn(&value, &coeffs(f, 0), constants.data(), coordinate_dofs.data(),
        &local_facet, &perm);
   }
 
@@ -177,12 +177,7 @@ T assemble_scalar(
     assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     std::span<const std::int32_t> cells = M.domain(IntegralType::cell, i, 0);
-    if (cstride <= 0)
-    {
-      std::cout << "Foo: " << cells.size() << ", " << cstride << ", "
-                << coeffs.size() << std::endl;
-    }
-    // assert(cstride > 0);
+    assert(cells.size() * cstride == coeffs.size());
     value += impl::assemble_cells(
         x_dofmap, x, cells, fn, constants,
         md::mdspan(coeffs.data(), cells.size(), cstride));
@@ -206,12 +201,14 @@ T assemble_scalar(
         = coefficients.at({IntegralType::exterior_facet, i});
 
     std::span facets = M.domain(IntegralType::exterior_facet, i, 0);
+    assert((facets.size() / 2) * cstride == coeffs.size());
     value += impl::assemble_exterior_facets(
         x_dofmap, x, num_facets_per_cell,
         md::mdspan<const std::int32_t,
                    md::extents<std::size_t, md::dynamic_extent, 2>>(
             facets.data(), facets.size() / 2, 2),
-        fn, constants, coeffs, cstride, perms);
+        fn, constants, md::mdspan(coeffs.data(), facets.size() / 2, cstride),
+        perms);
   }
 
   for (int i : M.integral_ids(IntegralType::interior_facet))
