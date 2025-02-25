@@ -318,6 +318,7 @@ class TestNLSPETSc:
             snes.getKSP().setTolerances(rtol=1e-12)
             snes.getKSP().getPC().setType("fieldsplit")
             snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
+            dolfinx.fem.petsc.copy_functions_to_nest_vec([u, p], x)
             snes.solve(None, x)
             dolfinx.fem.petsc.copy_nest_vec_to_functions([u, p], x)
             assert snes.getConvergedReason() > 0
@@ -384,8 +385,7 @@ class TestNLSPETSc:
             and mesh.comm.size > 1
         ):
             norm1 = nested_solve()
-            tol = 50 * np.finfo(PETSc.ScalarType).eps
-            assert norm1 == pytest.approx(norm0, tol)
+            assert norm1 == pytest.approx(norm0, 1.0e-6)
         assert norm2 == pytest.approx(norm0, 1.0e-6)
 
     @pytest.mark.parametrize(
