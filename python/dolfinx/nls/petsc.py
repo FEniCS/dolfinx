@@ -104,7 +104,7 @@ def create_snes_matrices_and_vectors(
     a: typing.Union[list[list[fem.Form]], fem.Form],
     L: typing.Union[list[fem.Form], fem.Form],
     P: typing.Union[list[list[fem.Form]], list[fem.Form], fem.Form, None],
-    assembly_type: fem.AssemblyType,
+    assembly_type: fem.petsc.AssemblyType,
 ) -> tuple[  # type: ignore
     PETSc.Mat,
     PETSc.Vec,
@@ -125,13 +125,13 @@ def create_snes_matrices_and_vectors(
 
     matrix_creator: typing.Union[None, typing.Callable[[PETSc.Mat], typing.Any]] = None  # type: ignore
     vector_creator: typing.Union[None, typing.Callable[[PETSc.Vec], typing.Any]] = None  # type: ignore
-    if assembly_type == fem.AssemblyType.default:
+    if assembly_type == fem.petsc.AssemblyType.default:
         matrix_creator = create_matrix
         vector_creator = create_vector
-    elif assembly_type == fem.AssemblyType.block:
+    elif assembly_type == fem.petsc.AssemblyType.block:
         matrix_creator = create_matrix_block
         vector_creator = create_vector_block
-    elif assembly_type == fem.AssemblyType.nest:
+    elif assembly_type == fem.petsc.AssemblyType.nest:
         matrix_creator = create_matrix_nest
         vector_creator = create_vector_nest
     else:
@@ -151,7 +151,7 @@ class SNESSolver:
         bcs: typing.Optional[list[dolfinx.fem.DirichletBC]] = None,
         J: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
         P: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
-        assembly_type: fem.AssemblyType = fem.AssemblyType.default,
+        assembly_type: fem.petsc.AssemblyType = fem.petsc.AssemblyType.default,
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
         snes_options: typing.Optional[dict] = None,
@@ -185,13 +185,13 @@ class SNESSolver:
         self._snes, self._x = create_snes_solver(
             F, self._u, bcs, J, P, assembly_type, form_compiler_options, jit_options
         )
-        if assembly_type == fem.AssemblyType.default:
+        if assembly_type == fem.petsc.AssemblyType.default:
             self._copy_function_to_vec = copy_function_to_vec
             self._copy_vec_to_function = copy_vec_to_function
-        elif assembly_type == fem.AssemblyType.block:
+        elif assembly_type == fem.petsc.AssemblyType.block:
             self._copy_function_to_vec = copy_functions_to_block_vec
             self._copy_vec_to_function = copy_block_vec_to_functions
-        elif assembly_type == fem.AssemblyType.nest:
+        elif assembly_type == fem.petsc.AssemblyType.nest:
             self._copy_function_to_vec = copy_functions_to_nest_vec
             self._copy_vec_to_function = copy_nest_vec_to_functions
         else:
@@ -449,7 +449,7 @@ def create_snes_solver(
     bcs: typing.Optional[list[dolfinx.fem.DirichletBC]] = None,
     J: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
     P: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
-    assembly_type: fem.AssemblyType = fem.AssemblyType.default,
+    assembly_type: fem.petsc.AssemblyType = fem.petsc.AssemblyType.default,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
 ) -> tuple[PETSc.SNES, PETSc.Vec]:  # type: ignore
@@ -501,13 +501,13 @@ def create_snes_solver(
     snes = PETSc.SNES().create(comm=A.comm)  # type: ignore
 
     # Set function and Jacobian
-    if assembly_type == fem.AssemblyType.default:
+    if assembly_type == fem.petsc.AssemblyType.default:
         snes.setFunction(partial(F_default, u, residual, jacobian, bcs), b)
         snes.setJacobian(partial(J_default, u, jacobian, preconditioner, bcs), A, P)
-    elif assembly_type == fem.AssemblyType.block:
+    elif assembly_type == fem.petsc.AssemblyType.block:
         snes.setFunction(partial(F_block, u, residual, jacobian, bcs), b)
         snes.setJacobian(partial(J_block, u, jacobian, preconditioner, bcs), A, P)
-    elif assembly_type == fem.AssemblyType.nest:
+    elif assembly_type == fem.petsc.AssemblyType.nest:
         snes.setFunction(partial(F_nest, u, residual, jacobian, bcs), b)
         snes.setJacobian(partial(J_nest, u, jacobian, preconditioner, bcs), A, P)
     else:

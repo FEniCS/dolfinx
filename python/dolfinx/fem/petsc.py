@@ -16,6 +16,7 @@ from __future__ import annotations
 import contextlib
 import functools
 import typing
+from enum import Enum
 
 from petsc4py import PETSc
 
@@ -45,6 +46,7 @@ from dolfinx.fem.function import FunctionSpace as _FunctionSpace
 from dolfinx.la import create_petsc_vector
 
 __all__ = [
+    "AssemblyType",
     "LinearProblem",
     "NonlinearProblem",
     "apply_lifting",
@@ -67,6 +69,12 @@ __all__ = [
     "set_bc",
     "set_bc_nest",
 ]
+
+
+class AssemblyType(Enum):
+    default = 0
+    block = 1
+    nest = 2
 
 
 def _extract_function_spaces(a: list[list[Form]]):

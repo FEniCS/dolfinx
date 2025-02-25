@@ -28,13 +28,6 @@ if typing.TYPE_CHECKING:
 
     from dolfinx.fem import function
     from dolfinx.mesh import Mesh, MeshTags
-from enum import Enum
-
-
-class AssemblyType(Enum):
-    default = 0
-    block = 1
-    nest = 2
 
 
 class Form:

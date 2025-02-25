@@ -277,7 +277,7 @@ class TestNLSPETSc:
 
             snes_options = {"snes_rtol": 1.0e-15, "snes_max_it": 10, "snes_monitor": None}
             snes, x = dolfinx.nls.petsc.create_snes_solver(
-                F, [u, p], J=J, bcs=bcs, assembly_type=dolfinx.fem.AssemblyType.block
+                F, [u, p], J=J, bcs=bcs, assembly_type=dolfinx.fem.petsc.AssemblyType.block
             )
             opts = PETSc.Options()
             for k, v in snes_options.items():
@@ -306,7 +306,7 @@ class TestNLSPETSc:
             jacobian = dolfinx.fem.form(J)
             preconditioner = None
             A, b, P, x = dolfinx.nls.petsc.create_snes_matrices_and_vectors(
-                jacobian, residual, preconditioner, dolfinx.fem.AssemblyType.nest
+                jacobian, residual, preconditioner, dolfinx.fem.petsc.AssemblyType.nest
             )
             snes.setFunction(partial(dolfinx.nls.petsc.F_nest, [u, p], residual, jacobian, bcs), b)
             snes.setJacobian(
@@ -366,7 +366,7 @@ class TestNLSPETSc:
                 U,
                 J=J,
                 bcs=bcs,
-                assembly_type=dolfinx.fem.AssemblyType.default,
+                assembly_type=dolfinx.fem.petsc.AssemblyType.default,
                 snes_options=snes_options,
             )
 
@@ -468,7 +468,7 @@ class TestNLSPETSc:
                 [u, p],
                 bcs=bcs,
                 P=P,
-                assembly_type=dolfinx.fem.AssemblyType.block,
+                assembly_type=dolfinx.fem.petsc.AssemblyType.block,
                 snes_options=snes_options,
             )
             x, converged_reason, _ = solver.solve()
@@ -485,7 +485,7 @@ class TestNLSPETSc:
             p.interpolate(initial_guess_p)
 
             solver = dolfinx.nls.petsc.SNESSolver(
-                F, [u, p], J=J, bcs=bcs, assembly_type=dolfinx.fem.AssemblyType.nest, P=P
+                F, [u, p], J=J, bcs=bcs, assembly_type=dolfinx.fem.petsc.AssemblyType.nest, P=P
             )
             nested_IS = solver.snes.getJacobian()[0].getNestISs()
             solver.snes.setTolerances(rtol=1.0e-15, max_it=20)
@@ -552,7 +552,7 @@ class TestNLSPETSc:
                 J=J,
                 bcs=bcs,
                 P=P,
-                assembly_type=dolfinx.fem.AssemblyType.default,
+                assembly_type=dolfinx.fem.petsc.AssemblyType.default,
                 snes_options=snes_options,
             )
             x, converged_reason, _ = solver.solve()
