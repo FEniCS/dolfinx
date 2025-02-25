@@ -450,11 +450,19 @@ def J_nest(
 
 
 def create_snes_solver(
-    F: typing.Union[dolfinx.fem.Form, ufl.form.Form],
-    u: dolfinx.fem.Function,
+    F: typing.Union[dolfinx.fem.Form, ufl.form.Form, list[dolfinx.fem.Form], list[ufl.form.Form]],
+    u: typing.Union[dolfinx.fem.Function, list[dolfinx.fem.Function]],
     bcs: typing.Optional[list[dolfinx.fem.DirichletBC]] = None,
-    J: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
-    P: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
+    J: typing.Optional[
+        typing.Union[
+            dolfinx.fem.Form, ufl.form.Form, list[list[dolfinx.fem.Form]], list[list[ufl.Form]]
+        ]
+    ] = None,
+    P: typing.Optional[
+        typing.Union[
+            dolfinx.fem.Form, ufl.form.Form, list[list[dolfinx.fem.Form]], list[list[ufl.Form]]
+        ]
+    ] = None,
     assembly_type: fem.petsc.AssemblyType = fem.petsc.AssemblyType.standard,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
@@ -508,8 +516,8 @@ def create_snes_solver(
 
     # Set function and Jacobian
     if assembly_type == fem.petsc.AssemblyType.standard:
-        snes.setFunction(partial(F_default, u, residual, jacobian, bcs), b)
-        snes.setJacobian(partial(J_default, u, jacobian, preconditioner, bcs), A, P)
+        snes.setFunction(partial(F_default, u, residual, jacobian, bcs), b)  # type: ignore
+        snes.setJacobian(partial(J_default, u, jacobian, preconditioner, bcs), A, P)  # type: ignore
     elif assembly_type == fem.petsc.AssemblyType.block:
         snes.setFunction(partial(F_block, u, residual, jacobian, bcs), b)
         snes.setJacobian(partial(J_block, u, jacobian, preconditioner, bcs), A, P)
