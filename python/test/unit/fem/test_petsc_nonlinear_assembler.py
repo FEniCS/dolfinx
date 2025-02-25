@@ -315,7 +315,7 @@ class TestNLSPETSc:
 
             nested_IS = snes.getJacobian()[0].getNestISs()
             snes.getKSP().setType("gmres")
-            snes.getKSP().setTolerances(rtol=1e-15)
+            snes.getKSP().setTolerances(rtol=1e-12)
             snes.getKSP().getPC().setType("fieldsplit")
             snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
             snes.solve(None, x)
@@ -384,7 +384,8 @@ class TestNLSPETSc:
             and mesh.comm.size > 1
         ):
             norm1 = nested_solve()
-            assert norm1 == pytest.approx(norm0, 1.0e-6)
+            tol = 50*np.finfo(PETSc.ScalarType).eps
+            assert norm1 == pytest.approx(norm0, tol)
         assert norm2 == pytest.approx(norm0, 1.0e-6)
 
     @pytest.mark.parametrize(
