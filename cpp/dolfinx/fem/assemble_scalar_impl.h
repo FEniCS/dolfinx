@@ -117,15 +117,14 @@ T assemble_interior_facets(
   if (facets.empty())
     return value;
 
+  assert(offsets.back() == cstride);
+
   // Create data structures used in assembly
   using X = scalar_value_type_t<T>;
   std::vector<X> coordinate_dofs(2 * x_dofmap.extent(1) * 3);
   std::span<X> cdofs0(coordinate_dofs.data(), x_dofmap.extent(1) * 3);
   std::span<X> cdofs1(coordinate_dofs.data() + x_dofmap.extent(1) * 3,
                       x_dofmap.extent(1) * 3);
-
-  std::vector<T> coeff_array(2 * offsets.back());
-  assert(offsets.back() == cstride);
 
   // Iterate over all facets
   for (std::size_t f = 0; f < facets.extent(0); ++f)
@@ -200,13 +199,12 @@ T assemble_scalar(
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
 
+    using Ext2 = md::extents<std::size_t, md::dynamic_extent, 2>;
     std::span facets = M.domain(IntegralType::exterior_facet, i, 0);
     value += impl::assemble_exterior_facets(
         x_dofmap, x, num_facets_per_cell,
-        /// M.domain(IntegralType::exterior_facet, i, 0),
-        md::mdspan<const std::int32_t,
-                   md::extents<std::size_t, md::dynamic_extent, 2>>(
-            facets.data(), facets.size() / 2, 2),
+        md::mdspan<const std::int32_t, Ext2>(facets.data(), facets.size() / 2,
+                                             2),
         fn, constants,
         md::mdspan(coeffs.data(), coeffs.size() / cstride, cstride), perms);
   }
