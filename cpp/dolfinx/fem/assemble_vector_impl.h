@@ -33,10 +33,10 @@ class DirichletBC;
 }
 namespace dolfinx::fem::impl
 {
+namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
 /// @cond
-using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-    const std::int32_t,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// @endcond
 
 /// @brief Apply boundary condition lifting for cell integrals.
@@ -85,7 +85,7 @@ void _lift_bc_cells(
     fem::DofTransformKernel<T> auto P0,
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
     fem::DofTransformKernel<T> auto P1T, std::span<const T> constants,
-    std::span<const T> coeffs, int cstride,
+    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1, std::span<const T> bc_values1,
     std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T alpha)
@@ -112,8 +112,7 @@ void _lift_bc_cells(
     std::int32_t c1 = cells1[index];
 
     // Get dof maps for cell
-    auto dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dmap1, c1, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs1 = md::submdspan(dmap1, c1, md::full_extent);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -149,8 +148,7 @@ void _lift_bc_cells(
       continue;
 
     // Get cell coordinates/geometry
-    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -158,17 +156,15 @@ void _lift_bc_cells(
     }
 
     // Size data structure for assembly
-    auto dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dmap0, c0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs0 = md::submdspan(dmap0, c0, md::full_extent);
 
     const int num_rows = bs0 * dofs0.size();
     const int num_cols = bs1 * dofs1.size();
 
-    const T* coeff_array = coeffs.data() + index * cstride;
     Ae.resize(num_rows * num_cols);
     std::ranges::fill(Ae, 0);
-    kernel(Ae.data(), coeff_array, constants.data(), coordinate_dofs.data(),
-           nullptr, nullptr);
+    kernel(Ae.data(), &coeffs(index, 0), constants.data(),
+           coordinate_dofs.data(), nullptr, nullptr);
     P0(Ae, cell_info0, c0, num_cols);
     P1T(Ae, cell_info1, c1, num_rows);
 
@@ -303,8 +299,7 @@ void _lift_bc_exterior_facets(
     std::int32_t local_facet = facets[index + 1];
 
     // Get dof maps for cell
-    auto dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dmap1, cell1, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs1 = md::submdspan(dmap1, cell1, md::full_extent);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -324,8 +319,7 @@ void _lift_bc_exterior_facets(
       continue;
 
     // Get cell coordinates/geometry
-    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -333,8 +327,7 @@ void _lift_bc_exterior_facets(
     }
 
     // Size data structure for assembly
-    auto dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dmap0, cell0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs0 = md::submdspan(dmap0, cell0, md::full_extent);
 
     const int num_rows = bs0 * dofs0.size();
     const int num_cols = bs1 * dofs1.size();
@@ -462,15 +455,13 @@ void _lift_bc_interior_facets(
         = {facets[index + 1], facets[index + 3]};
 
     // Get cell geometry
-    auto x_dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cells[0], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs0 = md::submdspan(x_dofmap, cells[0], md::full_extent);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs0[i]), 3,
                   std::next(cdofs0.begin(), 3 * i));
     }
-    auto x_dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cells[1], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs1 = md::submdspan(x_dofmap, cells[1], md::full_extent);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs1[i]), 3,
@@ -663,8 +654,7 @@ void assemble_cells(
     std::int32_t c0 = cells0[index];
 
     // Get cell coordinates/geometry
-    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -678,8 +668,7 @@ void assemble_cells(
     P0(_be, cell_info0, c0, 1);
 
     // Scatter cell vector to 'global' vector array
-    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dmap, c0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs = md::submdspan(dmap, c0, md::full_extent);
     if constexpr (_bs > 0)
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
@@ -754,8 +743,7 @@ void assemble_exterior_facets(
     std::int32_t cell0 = facets0[index];
 
     // Get cell coordinates/geometry
-    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -774,8 +762,7 @@ void assemble_exterior_facets(
     P0(_be, cell_info0, cell0, 1);
 
     // Add element vector to global vector
-    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dmap, cell0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs = md::submdspan(dmap, cell0, md::full_extent);
     if constexpr (_bs > 0)
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
@@ -854,15 +841,13 @@ void assemble_interior_facets(
                                             facets[index + 3]};
 
     // Get cell geometry
-    auto x_dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cells[0], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs0 = md::submdspan(x_dofmap, cells[0], md::full_extent);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs0[i]), 3,
                   std::next(cdofs0.begin(), 3 * i));
     }
-    auto x_dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cells[1], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs1 = md::submdspan(x_dofmap, cells[1], md::full_extent);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs1[i]), 3,
@@ -984,30 +969,31 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
   {
     auto kernel = a.kernel(IntegralType::cell, i, 0);
     assert(kernel);
-    auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
+    auto& [_coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     std::span cells = a.domain(IntegralType::cell, i, 0);
     std::span cells0 = a.domain_arg(IntegralType::cell, 0, i, 0);
     std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, 0);
+    assert(_coeffs.size() == cells.size() * cstride);
+    auto coeffs = md::mdspan(_coeffs.data(), cells.size(), cstride);
     if (bs0 == 1 and bs1 == 1)
     {
       _lift_bc_cells<T, 1, 1>(
           b, x_dofmap, x, kernel, cells, {dofmap0, bs0, cells0}, P0,
-          {dofmap1, bs1, cells1}, P1T, constants, coeffs, cstride, cell_info0,
+          {dofmap1, bs1, cells1}, P1T, constants, coeffs, cell_info0,
           cell_info1, bc_values1, bc_markers1, x0, alpha);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
       _lift_bc_cells<T, 3, 3>(
           b, x_dofmap, x, kernel, cells, {dofmap0, bs0, cells0}, P0,
-          {dofmap1, bs1, cells1}, P1T, constants, coeffs, cstride, cell_info0,
+          {dofmap1, bs1, cells1}, P1T, constants, coeffs, cell_info0,
           cell_info1, bc_values1, bc_markers1, x0, alpha);
     }
     else
     {
       _lift_bc_cells(b, x_dofmap, x, kernel, cells, {dofmap0, bs0, cells0}, P0,
-                     {dofmap1, bs1, cells1}, P1T, constants, coeffs, cstride,
-                     cell_info0, cell_info1, bc_values1, bc_markers1, x0,
-                     alpha);
+                     {dofmap1, bs1, cells1}, P1T, constants, coeffs, cell_info0,
+                     cell_info1, bc_values1, bc_markers1, x0, alpha);
     }
   }
 
