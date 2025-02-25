@@ -67,8 +67,7 @@ T assemble_exterior_facets(
                md::extents<std::size_t, md::dynamic_extent, 2>>
         facets,
     FEkernel<T> auto fn, std::span<const T> constants,
-    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-    std::span<const std::uint8_t> perms)
+    std::span<const T> coeffs, int cstride, std::span<const std::uint8_t> perms)
 {
   T value(0);
   if (facets.empty())
@@ -94,7 +93,8 @@ T assemble_exterior_facets(
     // Permutations
     std::uint8_t perm
         = perms.empty() ? 0 : perms[cell * num_facets_per_cell + local_facet];
-    fn(&value, &coeffs(f, 0), constants.data(), coordinate_dofs.data(),
+    const T* coeff_cell = coeffs.data() + f * cstride;
+    fn(&value, coeff_cell, constants.data(), coordinate_dofs.data(),
        &local_facet, &perm);
   }
 
@@ -110,15 +110,14 @@ T assemble_interior_facets(
                md::extents<std::size_t, md::dynamic_extent, 4>>
         facets,
     FEkernel<T> auto fn, std::span<const T> constants,
-    // std::span<const T> coeffs, int cstride,
-    md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
-                                    md::dynamic_extent>>
-        coeffs,
+    std::span<const T> coeffs, int cstride, std::span<const int> offsets,
     std::span<const std::uint8_t> perms)
 {
   T value(0);
   if (facets.empty())
     return value;
+
+  assert(offsets.back() == cstride);
 
   // Create data structures used in assembly
   using X = scalar_value_type_t<T>;
@@ -153,10 +152,8 @@ T assemble_interior_facets(
               : std::array{
                     perms[cells[0] * num_facets_per_cell + local_facet[0]],
                     perms[cells[1] * num_facets_per_cell + local_facet[1]]};
-    fn(&value, &coeffs(f, 0, 0), constants.data(), coordinate_dofs.data(),
-       local_facet.data(), perm.data());
-    // fn(&value, coeffs.data() + 2 * f * cstride, constants.data(),
-    //    coordinate_dofs.data(), local_facet.data(), perm.data());
+    fn(&value, coeffs.data() + 2 * f * cstride, constants.data(),
+       coordinate_dofs.data(), local_facet.data(), perm.data());
   }
 
   return value;
@@ -180,9 +177,15 @@ T assemble_scalar(
     assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     std::span<const std::int32_t> cells = M.domain(IntegralType::cell, i, 0);
+    if (cstride <= 0)
+    {
+      std::cout << "Foo: " << cells.size() << ", " << cstride << ", "
+                << coeffs.size() << std::endl;
+    }
+    // assert(cstride > 0);
     value += impl::assemble_cells(
         x_dofmap, x, cells, fn, constants,
-        md::mdspan(coeffs.data(), coeffs.size() / cstride, cstride));
+        md::mdspan(coeffs.data(), cells.size(), cstride));
   }
 
   std::span<const std::uint8_t> perms;
@@ -202,14 +205,13 @@ T assemble_scalar(
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
 
-    using Ext2 = md::extents<std::size_t, md::dynamic_extent, 2>;
     std::span facets = M.domain(IntegralType::exterior_facet, i, 0);
     value += impl::assemble_exterior_facets(
         x_dofmap, x, num_facets_per_cell,
-        md::mdspan<const std::int32_t, Ext2>(facets.data(), facets.size() / 2,
-                                             2),
-        fn, constants,
-        md::mdspan(coeffs.data(), coeffs.size() / cstride, cstride), perms);
+        md::mdspan<const std::int32_t,
+                   md::extents<std::size_t, md::dynamic_extent, 2>>(
+            facets.data(), facets.size() / 2, 2),
+        fn, constants, coeffs, cstride, perms);
   }
 
   for (int i : M.integral_ids(IntegralType::interior_facet))
@@ -227,12 +229,7 @@ T assemble_scalar(
         md::mdspan<const std::int32_t,
                    md::extents<std::size_t, md::dynamic_extent, 4>>(
             facets.data(), facets.size() / 4, 4),
-        fn, constants,
-        // coeffs, cstride,
-        md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
-                                        md::dynamic_extent>>(
-            coeffs.data(), coeffs.size() / (2 * cstride), 2, cstride),
-        perms);
+        fn, constants, coeffs, cstride, c_offsets, perms);
   }
 
   return value;
