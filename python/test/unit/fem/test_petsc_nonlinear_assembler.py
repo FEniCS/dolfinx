@@ -288,7 +288,7 @@ class TestNLSPETSc:
             snes.solve(None, x)
             assert snes.getConvergedReason() > 0
             assert snes.getKSP().getConvergedReason() > 0
-            dolfinx.nls.petsc.replace_solution_block([u, p], x)
+            dolfinx.nls.petsc.copy_block_vec_to_functions([u, p], x)
             xnorm = x.norm()
             x.destroy()
             return xnorm
@@ -308,7 +308,7 @@ class TestNLSPETSc:
                 ["u", nested_IS[0][0]], ["p", nested_IS[1][1]]
             )
             x, converged_reason, _ = solver.solve()
-            solver.replace_solution([u, p], x)
+            solver.copy_vec_to_function([u, p], x)
             assert solver.snes.getConvergedReason() > 0
             assert solver.snes.getKSP().getConvergedReason() > 0
             assert converged_reason > 0
@@ -359,7 +359,7 @@ class TestNLSPETSc:
 
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
-            solver.replace_solution(U, x)
+            solver.copy_vec_to_function(U, x)
             xnorm = x.norm()
             return xnorm
 
@@ -460,7 +460,7 @@ class TestNLSPETSc:
             )
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
-            solver.replace_solution([u, p], x)
+            solver.copy_vec_to_function([u, p], x)
             Jnorm = solver.snes.getJacobian()[0].norm()
             Fnorm = solver.snes.getFunction()[0].norm()
             xnorm = x.norm()
@@ -485,7 +485,7 @@ class TestNLSPETSc:
 
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
-            solver.replace_solution([u, p], x)
+            solver.copy_vec_to_function([u, p], x)
             xnorm = x.norm()
             Jnorm = nest_matrix_norm(solver.snes.getJacobian()[0])
             Fnorm = solver.snes.getFunction()[0].norm()
@@ -544,7 +544,7 @@ class TestNLSPETSc:
             )
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
-            solver.replace_solution(U, x)
+            solver.copy_vec_to_function(U, x)
             xnorm = x.norm()
             Jnorm = solver.snes.getJacobian()[0].norm()
             Fnorm = solver.snes.getFunction()[0].norm()

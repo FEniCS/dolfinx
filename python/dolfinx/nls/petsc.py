@@ -174,14 +174,14 @@ class SNESSolver:
             F, self._u, bcs, J, P, assembly_type, form_compiler_options, jit_options
         )
         if assembly_type == fem.AssemblyType.default:
-            self._copy_solution = copy_solution
-            self._replace_solution = replace_solution
+            self._copy_function_to_vec = copy_function_to_vec
+            self._copy_vec_to_function = copy_vec_to_function
         elif assembly_type == fem.AssemblyType.block:
-            self._copy_solution = copy_solution_block
-            self._replace_solution = replace_solution_block
+            self._copy_function_to_vec = copy_functions_to_block_vec
+            self._copy_vec_to_function = copy_block_vec_to_functions
         elif assembly_type == fem.AssemblyType.nest:
-            self._copy_solution = copy_solution_nest
-            self._replace_solution = replace_solution_nest
+            self._copy_function_to_vec = copy_functions_to_nest_vec
+            self._copy_vec_to_function = copy_nest_vec_to_functions
         else:
             raise ValueError("Unsupported Assembly type")
 
@@ -203,7 +203,7 @@ class SNESSolver:
         """
 
         # Move current iterate into the work array.
-        self.copy_solution(self._u, self._x)
+        self.copy_function_to_vec(self._u, self._x)
 
         # Solve problem
         self._snes.solve(None, self._x)
@@ -220,32 +220,32 @@ class SNESSolver:
         return self._snes
 
     @property
-    def copy_solution(self):
-        return self._copy_solution
+    def copy_function_to_vec(self):
+        return self._copy_function_to_vec
 
     @property
-    def replace_solution(self):
-        return self._replace_solution
+    def copy_vec_to_function(self):
+        return self._copy_vec_to_function
 
 
-def replace_solution(u: dolfinx.fem.Function, x: PETSc.Vec):  # type: ignore
+def copy_vec_to_function(u: dolfinx.fem.Function, x: PETSc.Vec):  # type: ignore
     """Update the solution for the unknown `u` with the values in `x`.
 
     Args:
-        u: Function data should be inserted into
-        x: Data that is inserted into the solution vector
+        u: Function data should be inserted into.
+        x: Data that is inserted into the solution vector.
     """
     x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
     x.copy(u.x.petsc_vec)
     u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
 
 
-def copy_solution(u: dolfinx.fem.Function, x: PETSc.Vec):  # type: ignore
+def copy_function_to_vec(u: dolfinx.fem.Function, x: PETSc.Vec):  # type: ignore
     """Copy the data in `u` into the vector `x`.
 
     Args:
-        u: Function to copy data from
-        x: Vector to insert data into
+        u: Function to copy data from.
+        x: Vector to insert data into.
     """
     u.x.petsc_vec.copy(x)
 
@@ -262,15 +262,15 @@ def F_default(
     """Assemble the residual into the vector `F`.
 
     Args:
-        u: Function tied to the solution vector within the residual and Jacobian
-        residual: Form of the residual
-        jacobian: Form of the Jacobian
-        bcs: List of Dirichlet boundary conditions
-        snes: The solver instance
+        u: Function tied to the solution vector within the residual and Jacobian.
+        residual: Form of the residual.
+        jacobian: Form of the Jacobian.
+        bcs: List of Dirichlet boundary conditions.
+        snes: The solver instance.
         x: The vector containing the point to evaluate the residual at.
-        F: Vector to assemble the residual into
+        F: Vector to assemble the residual into.
     """
-    replace_solution(u, x)
+    copy_vec_to_function(u, x)
     with F.localForm() as f_local:
         f_local.set(0.0)
     assemble_vector(F, residual)
@@ -302,7 +302,7 @@ def J_default(
         P: Matrix to assemble the preconditioner into
     """
     # Copy existing soultion into the function used in the residual and Jacobian
-    replace_solution(u, x)
+    copy_vec_to_function(u, x)
 
     # Assemble Jacobian
     J.zeroEntries()
@@ -340,7 +340,7 @@ def F_block(
     with F.localForm() as f_local:
         f_local.set(0.0)
 
-    replace_solution_block(u, x)
+    copy_block_vec_to_functions(u, x)
     assemble_vector_block(F, residual, jacobian, bcs=bcs, x0=x, alpha=-1.0)  # type: ignore
 
 
@@ -366,7 +366,7 @@ def J_block(
         J: Matrix to assemble the Jacobian into
         P: Matrix to assemble the preconditioner into
     """
-    replace_solution_block(u, x)
+    copy_block_vec_to_functions(u, x)
     assert x.getType() != "nest", "Vector x should be non-nested"
     assert J.getType() != "nest", "Matrix J should be non-nested"
     assert P.getType() != "nest", "Matrix P should be non-nested"
@@ -379,12 +379,12 @@ def J_block(
         P.assemble()
 
 
-def replace_solution_block(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
-    """Update the solution for the unknown `u` with the values in `x`.
+def copy_block_vec_to_functions(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
+    """Update the data in a list of functions `u` with the values in `x`.
 
     Args:
-        u: List of function to insert data into
-        x: Vector to copy data from0
+        u: List of function to insert data into.
+        x: Vector to copy data from.
     """
     x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
     offset_start = 0
@@ -398,7 +398,7 @@ def replace_solution_block(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type
         offset_start += num_sub_dofs
 
 
-def copy_solution_block(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
+def copy_functions_to_block_vec(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
     """Copy the data in `u` into the vector `x`.
 
     Args:
@@ -438,7 +438,7 @@ def F_nest(
         F: Vector to assemble the residual into
     """
     assert x.getType() == "nest" and F.getType() == "nest"
-    replace_solution_nest(u, x)
+    copy_nest_vec_to_functions(u, x)
     bcs1 = _bcs_by_block(_extract_spaces(jacobian, 1), bcs)
     sub_vectors = x.getNestSubVecs()
     for L, F_sub, a in zip(residual, F.getNestSubVecs(), jacobian):
@@ -479,7 +479,7 @@ def J_nest(
         J: Matrix to assemble the Jacobian into
         P: Matrix to assemble the preconditioner into
     """
-    replace_solution_nest(u, x)
+    copy_nest_vec_to_functions(u, x)
     assert J.getType() == "nest" and P.getType() == "nest"
     J.zeroEntries()
     assemble_matrix_nest(J, jacobian, bcs=bcs, diagonal=1.0)  # type: ignore
@@ -491,12 +491,12 @@ def J_nest(
         P.assemble()
 
 
-def replace_solution_nest(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
-    """Update the solution for the unknown `u` with the values in `x`.
+def copy_nest_vec_to_functions(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
+    """Update the data in a list of functions `u` with the values in `x`.
 
     Args:
-        u: List of function to insert data into
-        x: Vector to copy data from0
+        u: List of function to insert data into.
+        x: Vector to copy data from.
     """
     subvecs = x.getNestSubVecs()
     for x_sub, var_sub in zip(subvecs, u):
@@ -505,12 +505,12 @@ def replace_solution_nest(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type:
             var_sub.x.array[:] = _x.array_r
 
 
-def copy_solution_nest(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
+def copy_functions_to_nest_vec(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
     """Copy the data in `u` into the vector `x`.
 
     Args:
-        u: List of vectors to copy data from
-        x: Vector to insert data into
+        u: List of functions to copy data from.
+        x: Vector to insert data into.
     """
     wrapped_sol = [dolfinx.la.create_petsc_vector_wrap(u_i.x) for u_i in u]
     u_nest = PETSc.Vec().createNest(wrapped_sol)  # type: ignore
