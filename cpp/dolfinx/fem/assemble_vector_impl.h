@@ -421,9 +421,15 @@ void _lift_bc_interior_facets(
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2, 2>>
         facets,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
+    std::tuple<mdspan2_t, int,
+               md::mdspan<const std::int32_t,
+                          md::extents<std::size_t, md::dynamic_extent, 2, 2>>>
+        dofmap0,
     fem::DofTransformKernel<T> auto P0,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
+    std::tuple<mdspan2_t, int,
+               md::mdspan<const std::int32_t,
+                          md::extents<std::size_t, md::dynamic_extent, 2, 2>>>
+        dofmap1,
     fem::DofTransformKernel<T> auto P1T, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info0,
@@ -447,7 +453,6 @@ void _lift_bc_interior_facets(
 
   // Temporaries for joint dofmaps
   std::vector<std::int32_t> dmapjoint0, dmapjoint1;
-  assert(facets.size() % 4 == 0);
 
   const int num_dofs0 = dmap0.extent(1);
   const int num_dofs1 = dmap1.extent(1);
@@ -458,8 +463,8 @@ void _lift_bc_interior_facets(
     // Cells in integration domain, test function domain and trial
     // function domain meshes
     std::array cells{facets(index, 0, 0), facets(index, 1, 0)};
-    std::array cells0{facets0[4 * index], facets0[4 * index + 2]};
-    std::array cells1{facets1[4 * index], facets1[4 * index + 2]};
+    std::array cells0{facets0(index, 0, 0), facets0(index, 1, 0)};
+    std::array cells1{facets1(index, 0, 0), facets1(index, 1, 0)};
 
     // Local facet indices
     std::array<std::int32_t, 2> local_facet
@@ -1053,13 +1058,16 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
                      md::extents<std::size_t, md::dynamic_extent, 2, 2>>;
     std::span f = a.domain(IntegralType::interior_facet, i, 0);
     mdspanx22_t facets(f.data(), f.size() / 4, 2, 2);
+    std::span f0 = a.domain_arg(IntegralType::interior_facet, 0, i, 0);
+    mdspanx22_t facets0(f0.data(), f0.size() / 4, 2, 2);
+    std::span f1 = a.domain_arg(IntegralType::interior_facet, 1, i, 0);
+    mdspanx22_t facets1(f1.data(), f1.size() / 4, 2, 2);
 
-    _lift_bc_interior_facets(
-        b, x_dofmap, x, num_facets_per_cell, kernel, facets,
-        {dofmap0, bs0, a.domain_arg(IntegralType::interior_facet, 0, i, 0)}, P0,
-        {dofmap1, bs1, a.domain_arg(IntegralType::interior_facet, 1, i, 0)},
-        P1T, constants, coeffs, cstride, cell_info0, cell_info1, perms,
-        bc_values1, bc_markers1, x0, alpha);
+    _lift_bc_interior_facets(b, x_dofmap, x, num_facets_per_cell, kernel,
+                             facets, {dofmap0, bs0, facets0}, P0,
+                             {dofmap1, bs1, facets1}, P1T, constants, coeffs,
+                             cstride, cell_info0, cell_info1, perms, bc_values1,
+                             bc_markers1, x0, alpha);
   }
 }
 
