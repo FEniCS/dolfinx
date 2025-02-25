@@ -205,7 +205,6 @@ class SNESSolver:
         self._snes.solve(None, self._x)
 
         converged_reason = self._snes.getConvergedReason()
-        self.replace_solution(self._u, self._x)
         return self._x, converged_reason, self._snes.getIterationNumber()
 
     def __del__(self):
