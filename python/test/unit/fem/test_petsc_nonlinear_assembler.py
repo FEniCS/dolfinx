@@ -349,9 +349,14 @@ class TestNLSPETSc:
             U.sub(1).interpolate(initial_guess_p)
 
             solver = dolfinx.nls.petsc.SNESSolver(
-                F, U, J=J, bcs=bcs, assembly_type=dolfinx.fem.AssemblyType.default
+                F,
+                U,
+                J=J,
+                bcs=bcs,
+                assembly_type=dolfinx.fem.AssemblyType.default,
+                snes_options=snes_options,
             )
-            solver.set_options(snes_options)
+
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
             solver.replace_solution(U, x)
@@ -446,9 +451,13 @@ class TestNLSPETSc:
                 "ksp_type": "minres",
             }
             solver = dolfinx.nls.petsc.SNESSolver(
-                F, [u, p], bcs=bcs, P=P, assembly_type=dolfinx.fem.AssemblyType.block
+                F,
+                [u, p],
+                bcs=bcs,
+                P=P,
+                assembly_type=dolfinx.fem.AssemblyType.block,
+                snes_options=snes_options,
             )
-            solver.set_options(snes_options)
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
             solver.replace_solution([u, p], x)
@@ -525,9 +534,14 @@ class TestNLSPETSc:
                 "snes_monitor": None,
             }
             solver = dolfinx.nls.petsc.SNESSolver(
-                F, U, J=J, bcs=bcs, P=P, assembly_type=dolfinx.fem.AssemblyType.default
+                F,
+                U,
+                J=J,
+                bcs=bcs,
+                P=P,
+                assembly_type=dolfinx.fem.AssemblyType.default,
+                snes_options=snes_options,
             )
-            solver.set_options(snes_options)
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
             solver.replace_solution(U, x)
