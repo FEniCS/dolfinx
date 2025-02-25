@@ -6,6 +6,7 @@
 """Unit tests for assembly."""
 
 import math
+from functools import partial
 
 from mpi4py import MPI
 
@@ -294,25 +295,36 @@ class TestNLSPETSc:
             return xnorm
 
         def nested_solve():
-            """Nested version"""
+            """Nested version
+
+            Illustrates how to work directly with the snes object (no wrapping).
+            """
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
-            solver = dolfinx.nls.petsc.SNESSolver(
-                F, [u, p], J=J, bcs=bcs, assembly_type=dolfinx.fem.AssemblyType.nest
+            snes = PETSc.SNES().create(mesh.comm)
+            residual = dolfinx.fem.form(F)
+            jacobian = dolfinx.fem.form(J)
+            preconditioner = None
+            A, b, P, x = dolfinx.nls.petsc.create_snes_matrices_and_vectors(
+                jacobian, residual, preconditioner, dolfinx.fem.AssemblyType.nest
             )
-            nested_IS = solver.snes.getJacobian()[0].getNestISs()
-            solver.snes.getKSP().setType("gmres")
-            solver.snes.getKSP().setTolerances(rtol=1e-12)
-            solver.snes.getKSP().getPC().setType("fieldsplit")
-            solver.snes.getKSP().getPC().setFieldSplitIS(
-                ["u", nested_IS[0][0]], ["p", nested_IS[1][1]]
+            snes.setFunction(partial(dolfinx.nls.petsc.F_nest, [u, p], residual, jacobian, bcs), b)
+            snes.setJacobian(
+                partial(dolfinx.nls.petsc.J_nest, [u, p], jacobian, preconditioner, bcs), A, P
             )
-            x, converged_reason, _ = solver.solve()
-            solver.copy_vec_to_function([u, p], x)
-            assert solver.snes.getConvergedReason() > 0
-            assert solver.snes.getKSP().getConvergedReason() > 0
-            assert converged_reason > 0
+
+            nested_IS = snes.getJacobian()[0].getNestISs()
+            snes.getKSP().setType("gmres")
+            snes.getKSP().setTolerances(rtol=1e-12)
+            snes.getKSP().getPC().setType("fieldsplit")
+            snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
+            snes.solve(None, x)
+            dolfinx.fem.petsc.copy_nest_vec_to_functions([u, p], x)
+            assert snes.getConvergedReason() > 0
+            assert snes.getKSP().getConvergedReason() > 0
+            assert snes.getConvergedReason() > 0
             xnorm = x.norm()
+            snes.destroy()
             return xnorm
 
         def monolithic_solve():

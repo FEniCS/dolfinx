@@ -100,12 +100,17 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
         super().setP(P, Pmat)
 
 
-def create_nest_matrices_and_vectors(
+def create_snes_matrices_and_vectors(
     a: typing.Union[list[list[fem.Form]], fem.Form],
     L: typing.Union[list[fem.Form], fem.Form],
     P: typing.Union[list[list[fem.Form]], list[fem.Form], fem.Form, None],
     assembly_type: fem.AssemblyType,
-) -> tuple[PETSc.Mat, PETSc.Vec, PETSc.Vec, PETSc.Mat | None]:  # type: ignore
+) -> tuple[  # type: ignore
+    PETSc.Mat,
+    PETSc.Vec,
+    PETSc.Mat | None,
+    PETSc.Vec,
+]:
     """Create data-structures used in PETSc NEST solvers.
 
     Args:
@@ -114,7 +119,8 @@ def create_nest_matrices_and_vectors(
         P: The compiled preconditioner form(s).
         assembly_type: The type of matrix to use.
     Returns:
-        PETSc datastructures for the matrix A, vectors x and b, and preconditioner P
+        PETSc datastructures for the matrix A, b, and preconditioner P relating to the input,
+        as well as a work-vector `x`.
     """
 
     matrix_creator: typing.Union[None, typing.Callable[[PETSc.Mat], typing.Any]] = None  # type: ignore
@@ -134,7 +140,7 @@ def create_nest_matrices_and_vectors(
     b = vector_creator(L)  # type: ignore
     x = vector_creator(L)  # type: ignore
     P = None if P is None else matrix_creator(P)  # type: ignore
-    return A, x, b, P
+    return A, b, P, x
 
 
 class SNESSolver:
@@ -491,7 +497,7 @@ def create_snes_solver(
             P, form_compiler_options=form_compiler_options, jit_options=jit_options
         )
 
-    A, x, b, P = create_nest_matrices_and_vectors(jacobian, residual, preconditioner, assembly_type)
+    A, b, P, x = create_snes_matrices_and_vectors(jacobian, residual, preconditioner, assembly_type)
     snes = PETSc.SNES().create(comm=A.comm)  # type: ignore
 
     # Set function and Jacobian
