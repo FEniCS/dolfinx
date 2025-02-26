@@ -304,13 +304,12 @@ class TestNLSPETSc:
             snes = PETSc.SNES().create(mesh.comm)
             residual = dolfinx.fem.form(F)
             jacobian = dolfinx.fem.form(J)
-            preconditioner = None
-            A, b, P, x = dolfinx.nls.petsc.create_snes_matrices_and_vectors(
-                jacobian, residual, preconditioner, dolfinx.fem.petsc.AssemblyType.nest
-            )
+            A = dolfinx.fem.petsc.create_matrix_nest(jacobian)
+            b = dolfinx.fem.petsc.create_vector_nest(residual)
+            x = dolfinx.fem.petsc.create_vector_nest(residual)
             snes.setFunction(partial(dolfinx.nls.petsc.F_nest, [u, p], residual, jacobian, bcs), b)
             snes.setJacobian(
-                partial(dolfinx.nls.petsc.J_nest, [u, p], jacobian, preconditioner, bcs), A, P
+                partial(dolfinx.nls.petsc.J_nest, [u, p], jacobian, None, bcs), A, None
             )
 
             nested_IS = snes.getJacobian()[0].getNestISs()
