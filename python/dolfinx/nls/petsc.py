@@ -246,7 +246,7 @@ class SNESSolver:
         return self._copy_vec_to_function
 
 
-def F_default(
+def F_standard(
     u: dolfinx.fem.Function,
     residual: dolfinx.fem.Form,
     jacobian: dolfinx.fem.Form,
@@ -275,7 +275,7 @@ def F_default(
     set_bc(F, bcs, x, -1.0)
 
 
-def J_default(
+def J_standard(
     u: dolfinx.fem.Function,
     jacobian: dolfinx.fem.Form,
     preconditioner: typing.Optional[dolfinx.fem.Form],
@@ -516,8 +516,8 @@ def create_snes_solver(
 
     # Set function and Jacobian
     if assembly_type == fem.petsc.AssemblyType.standard:
-        snes.setFunction(partial(F_default, u, residual, jacobian, bcs), b)  # type: ignore
-        snes.setJacobian(partial(J_default, u, jacobian, preconditioner, bcs), A, P)  # type: ignore
+        snes.setFunction(partial(F_standard, u, residual, jacobian, bcs), b)  # type: ignore
+        snes.setJacobian(partial(J_standard, u, jacobian, preconditioner, bcs), A, P)  # type: ignore
     elif assembly_type == fem.petsc.AssemblyType.block:
         snes.setFunction(partial(F_block, u, residual, jacobian, bcs), b)
         snes.setJacobian(partial(J_block, u, jacobian, preconditioner, bcs), A, P)
