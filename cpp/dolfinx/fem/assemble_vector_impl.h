@@ -1252,8 +1252,7 @@ void assemble_vector(
       assert(fn);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::exterior_facet, i});
-      std::span<const std::int32_t> f
-          = L.domain(IntegralType::exterior_facet, i, 0);
+      std::span f = L.domain(IntegralType::exterior_facet, i, 0);
       mdspanx2_t facets(f.data(), f.size() / 2, 2);
       std::span f1 = L.domain_arg(IntegralType::exterior_facet, 0, i, 0);
       mdspanx2_t facets1(f1.data(), f1.size() / 2, 2);

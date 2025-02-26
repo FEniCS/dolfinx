@@ -27,9 +27,7 @@ namespace dolfinx::fem::impl
 namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
 /// @brief Typedef
-using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-    const std::int32_t,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 
 /// @brief Execute kernel over cells and accumulate result in matrix.
 /// @tparam T Matrix/form scalar type.
@@ -51,9 +49,7 @@ using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
 /// @param bc0 Marker for rows with Dirichlet boundary conditions applied
 /// @param bc1 Marker for columns with Dirichlet boundary conditions applied
 /// @param kernel Kernel function to execute over each cell.
-/// @param coeffs The coefficient data array of shape (cells.size(), cstride),
-/// flattened into row-major format.
-/// @param cstride The coefficient stride
+/// @param coeffs The coefficient data array of shape (cells.size(), cstride).
 /// @param constants The constant data
 /// @param cell_info0 The cell permutation information for the test function
 /// mesh
@@ -69,8 +65,8 @@ void assemble_cells(
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
     fem::DofTransformKernel<T> auto P1T, std::span<const std::int8_t> bc0,
     std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
-    std::span<const T> coeffs, int cstride, std::span<const T> constants,
-    std::span<const std::uint32_t> cell_info0,
+    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+    std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1)
 {
   if (cells.empty())
@@ -91,17 +87,16 @@ void assemble_cells(
   // Iterate over active cells
   assert(cells0.size() == cells.size());
   assert(cells1.size() == cells.size());
-  for (std::size_t index = 0; index < cells.size(); ++index)
+  for (std::size_t c = 0; c < cells.size(); ++c)
   {
     // Cell index in integration domain mesh (c), test function mesh
     // (c0) and trial function mesh (c1)
-    std::int32_t c = cells[index];
-    std::int32_t c0 = cells0[index];
-    std::int32_t c1 = cells1[index];
+    std::int32_t cell = cells[c];
+    std::int32_t cell0 = cells0[c];
+    std::int32_t cell1 = cells1[c];
 
     // Get cell coordinates/geometry
-    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -110,16 +105,16 @@ void assemble_cells(
 
     // Tabulate tensor
     std::ranges::fill(Ae, 0);
-    kernel(Ae.data(), coeffs.data() + index * cstride, constants.data(),
-           coordinate_dofs.data(), nullptr, nullptr);
+    kernel(Ae.data(), &coeffs(c, 0), constants.data(), coordinate_dofs.data(),
+           nullptr, nullptr);
 
     // Compute A = P_0 \tilde{A} P_1^T (dof transformation)
-    P0(_Ae, cell_info0, c0, ndim1);  // B = P0 \tilde{A}
-    P1T(_Ae, cell_info1, c1, ndim0); // A =  B P1_T
+    P0(_Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
+    P1T(_Ae, cell_info1, cell1, ndim0); // A =  B P1_T
 
     // Zero rows/columns for essential bcs
-    std::span dofs0(dmap0.data_handle() + c0 * num_dofs0, num_dofs0);
-    std::span dofs1(dmap1.data_handle() + c1 * num_dofs1, num_dofs1);
+    std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
+    std::span dofs1(dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
 
     if (!bc0.empty())
     {
@@ -200,13 +195,19 @@ void assemble_exterior_facets(
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2>>
         facets,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
+    std::tuple<mdspan2_t, int,
+               md::mdspan<const std::int32_t,
+                          std::extents<std::size_t, md::dynamic_extent, 2>>>
+        dofmap0,
     fem::DofTransformKernel<T> auto P0,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
+    std::tuple<mdspan2_t, int,
+               md::mdspan<const std::int32_t,
+                          std::extents<std::size_t, md::dynamic_extent, 2>>>
+        dofmap1,
     fem::DofTransformKernel<T> auto P1T, std::span<const std::int8_t> bc0,
     std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
-    std::span<const T> coeffs, int cstride, std::span<const T> constants,
-    std::span<const std::uint32_t> cell_info0,
+    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+    std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
     std::span<const std::uint8_t> perms)
 {
@@ -233,8 +234,8 @@ void assemble_exterior_facets(
     // meshes
     std::int32_t cell = facets(f, 0);
     std::int32_t local_facet = facets(f, 1);
-    std::int32_t cell0 = facets0[2 * f];
-    std::int32_t cell1 = facets1[2 * f];
+    std::int32_t cell0 = facets0(f, 0);
+    std::int32_t cell1 = facets1(f, 0);
 
     // Get cell coordinates/geometry
     auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
@@ -250,8 +251,8 @@ void assemble_exterior_facets(
 
     // Tabulate tensor
     std::ranges::fill(Ae, 0);
-    kernel(Ae.data(), coeffs.data() + f * cstride, constants.data(),
-           coordinate_dofs.data(), &local_facet, &perm);
+    kernel(Ae.data(), &coeffs(f, 0), constants.data(), coordinate_dofs.data(),
+           &local_facet, &perm);
 
     P0(_Ae, cell_info0, cell0, ndim1);
     P1T(_Ae, cell_info1, cell1, ndim0);
@@ -381,15 +382,13 @@ void assemble_interior_facets(
     std::array local_facet{facets[index + 1], facets[index + 3]};
 
     // Get cell geometry
-    auto x_dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cells[0], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs0 = md::submdspan(x_dofmap, cells[0], md::full_extent);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs0[i]), 3,
                   std::next(cdofs0.begin(), 3 * i));
     }
-    auto x_dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cells[1], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs1 = md::submdspan(x_dofmap, cells[1], md::full_extent);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs1[i]), 3,
@@ -562,15 +561,15 @@ void assemble_matrix(
     {
       auto fn = a.kernel(IntegralType::cell, i, cell_type_idx);
       assert(fn);
+      std::span cells = a.domain(IntegralType::cell, i, cell_type_idx);
+      std::span cells0 = a.domain_arg(IntegralType::cell, 0, i, cell_type_idx);
+      std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, cell_type_idx);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-
-      impl::assemble_cells(
-          mat_set, x_dofmap, x, a.domain(IntegralType::cell, i, cell_type_idx),
-          {dofs0, bs0, a.domain_arg(IntegralType::cell, 0, i, cell_type_idx)},
-          P0,
-          {dofs1, bs1, a.domain_arg(IntegralType::cell, 1, i, cell_type_idx)},
-          P1T, bc0, bc1, fn, coeffs, cstride, constants, cell_info0,
-          cell_info1);
+      assert(cells.size() * cstride == coeffs.size());
+      impl::assemble_cells(mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0},
+                           P0, {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
+                           md::mdspan(coeffs.data(), cells.size(), cstride),
+                           constants, cell_info0, cell_info1);
     }
 
     std::span<const std::uint8_t> perms;
@@ -599,16 +598,19 @@ void assemble_matrix(
       assert(fn);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::exterior_facet, i});
-      std::span<const std::int32_t> facets
-          = a.domain(IntegralType::exterior_facet, i, 0);
+
+      std::span f = a.domain(IntegralType::exterior_facet, i, 0);
+      mdspanx2_t facets(f.data(), f.size() / 2, 2);
+      std::span f0 = a.domain_arg(IntegralType::exterior_facet, 0, i, 0);
+      mdspanx2_t facets0(f0.data(), f0.size() / 2, 2);
+      std::span f1 = a.domain_arg(IntegralType::exterior_facet, 1, i, 0);
+      mdspanx2_t facets1(f1.data(), f1.size() / 2, 2);
       assert((facets.size() / 2) * cstride == coeffs.size());
       impl::assemble_exterior_facets(
-          mat_set, x_dofmap, x, num_facets_per_cell,
-          mdspanx2_t(facets.data(), facets.size() / 2, 2),
-          {dofs0, bs0, a.domain_arg(IntegralType::exterior_facet, 0, i, 0)}, P0,
-          {dofs1, bs1, a.domain_arg(IntegralType::exterior_facet, 1, i, 0)},
-          P1T, bc0, bc1, fn, coeffs, cstride, constants, cell_info0, cell_info1,
-          perms);
+          mat_set, x_dofmap, x, num_facets_per_cell, facets,
+          {dofs0, bs0, facets0}, P0, {dofs1, bs1, facets1}, P1T, bc0, bc1, fn,
+          md::mdspan(coeffs.data(), facets.extent(0), cstride), constants,
+          cell_info0, cell_info1, perms);
     }
 
     for (int i : a.integral_ids(IntegralType::interior_facet))
