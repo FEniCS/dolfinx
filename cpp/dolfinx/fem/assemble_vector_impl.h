@@ -1041,7 +1041,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
     mdspanx2_t facets1(f1.data(), f1.size() / 2, 2);
     _lift_bc_exterior_facets(b, x_dofmap, x, num_facets_per_cell, kernel,
                              facets, {dofmap0, bs0, facets0}, P0,
-                             {dofmap1, bs1, facets0}, P1T, constants, coeffs,
+                             {dofmap1, bs1, facets1}, P1T, constants, coeffs,
                              cstride, cell_info0, cell_info1, bc_values1,
                              bc_markers1, x0, alpha, perms);
   }
