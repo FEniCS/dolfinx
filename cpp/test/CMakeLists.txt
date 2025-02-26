@@ -51,6 +51,7 @@ add_executable(
   common/sort.cpp
   fem/form.cpp
   fem/functionspace.cpp
+  mesh/check_read_data.cpp
   mesh/distributed_mesh.cpp
   mesh/generation.cpp
   mesh/read_named_meshtags.cpp

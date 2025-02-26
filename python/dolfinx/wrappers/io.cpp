@@ -44,6 +44,20 @@ template <typename T, std::size_t ndim>
 using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
     const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
 
+template <typename T, typename U>
+void xdmf_def_write_meshtags(auto&& m)
+{
+  m.def(
+      "write_meshtags",
+      [](dolfinx::io::XDMFFile& self,
+         const dolfinx::mesh::MeshTags<T>& meshtags,
+         const dolfinx::mesh::Geometry<U>& x, std::string geometry_xpath,
+         std::string xpath)
+      { self.write_meshtags(meshtags, x, geometry_xpath, xpath); },
+      nb::arg("meshtags"), nb::arg("x"), nb::arg("geometry_xpath"),
+      nb::arg("xpath") = "/Xdmf/Domain");
+}
+
 template <typename T>
 void xdmf_real_fn(auto&& m)
 {
@@ -52,15 +66,10 @@ void xdmf_real_fn(auto&& m)
       [](dolfinx::io::XDMFFile& self, const dolfinx::mesh::Mesh<T>& mesh,
          std::string xpath) { self.write_mesh(mesh, xpath); },
       nb::arg("mesh"), nb::arg("xpath") = "/Xdmf/Domain");
-  m.def(
-      "write_meshtags",
-      [](dolfinx::io::XDMFFile& self,
-         const dolfinx::mesh::MeshTags<std::int32_t>& meshtags,
-         const dolfinx::mesh::Geometry<T>& x, std::string geometry_xpath,
-         std::string xpath)
-      { self.write_meshtags(meshtags, x, geometry_xpath, xpath); },
-      nb::arg("meshtags"), nb::arg("x"), nb::arg("geometry_xpath"),
-      nb::arg("xpath") = "/Xdmf/Domain");
+  xdmf_def_write_meshtags<std::int32_t, T>(m);
+  xdmf_def_write_meshtags<std::int64_t, T>(m);
+  xdmf_def_write_meshtags<float, T>(m);
+  xdmf_def_write_meshtags<double, T>(m);
 }
 
 template <typename T, typename U>
@@ -281,9 +290,25 @@ void io(nb::module_& m)
            nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_cell_type", &dolfinx::io::XDMFFile::read_cell_type,
            nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
-      .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
+      .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags<std::int32_t>,
            nb::arg("mesh"), nb::arg("name"), nb::arg("attribute_name").none(),
-           nb::arg("xpath"))
+           nb::arg("xpath") = "/Xdmf/Domain")
+      .def("read_meshtags_int32",
+           &dolfinx::io::XDMFFile::read_meshtags<std::int32_t>, nb::arg("mesh"),
+           nb::arg("name"), nb::arg("attribute_name").none(),
+           nb::arg("xpath") = "/Xdmf/Domain")
+      .def("read_meshtags_int64",
+           &dolfinx::io::XDMFFile::read_meshtags<std::int64_t>, nb::arg("mesh"),
+           nb::arg("name"), nb::arg("attribute_name").none(),
+           nb::arg("xpath") = "/Xdmf/Domain")
+      .def("read_meshtags_float32",
+           &dolfinx::io::XDMFFile::read_meshtags<std::float_t>, nb::arg("mesh"),
+           nb::arg("name"), nb::arg("attribute_name").none(),
+           nb::arg("xpath") = "/Xdmf/Domain")
+      .def("read_meshtags_float64",
+           &dolfinx::io::XDMFFile::read_meshtags<std::double_t>,
+           nb::arg("mesh"), nb::arg("name"), nb::arg("attribute_name").none(),
+           nb::arg("xpath") = "/Xdmf/Domain")
       .def("write_information", &dolfinx::io::XDMFFile::write_information,
            nb::arg("name"), nb::arg("value"), nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_information", &dolfinx::io::XDMFFile::read_information,
