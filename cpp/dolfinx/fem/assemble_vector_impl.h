@@ -809,9 +809,8 @@ void assemble_exterior_facets(
 /// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
 /// @param[in] fn Kernel function to execute over each cell.
 /// @param[in] constants The constant data
-/// @param[in] coeffs The coefficient data array of shape (cells.size(),
-/// cstride), flattened into row-major format.
-/// @param[in] cstride The coefficient stride
+/// @param[in] coeffs Coefficient data array, withshape (cells.size(),
+/// cstride).
 /// @param[in] cell_info0 The cell permutation information for the test
 /// function mesh.
 /// @param[in] perms Facet permutation integer. Empty if facet
