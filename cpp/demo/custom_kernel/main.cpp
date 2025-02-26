@@ -140,10 +140,9 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   la::MatrixCSR<T> A(sp);
   auto ident = [](auto, auto, auto, auto) {}; // DOF permutation not required
   common::Timer timer("Assembler1 lambda (matrix)");
-  fem::impl::assemble_cells(A.mat_add_values(), g.dofmap(), g.x(), cells,
-                            {dofmap.map(), 1, cells}, ident,
-                            {dofmap.map(), 1, cells}, ident, {}, {}, kernel,
-                            std::span<const T>(), 0, {}, {}, {});
+  fem::impl::assemble_cells<T>(
+      A.mat_add_values(), g.dofmap(), g.x(), cells, {dofmap.map(), 1, cells},
+      ident, {dofmap.map(), 1, cells}, ident, {}, {}, kernel, {}, {}, {}, {});
   A.scatter_rev();
   return A.squared_norm();
 }
