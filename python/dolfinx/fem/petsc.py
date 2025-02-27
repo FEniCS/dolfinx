@@ -1123,62 +1123,34 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
 def copy_vec_to_function(
     x: PETSc.Vec, u: typing.Union[dolfinx.fem.Function, list[dolfinx.fem.Function]]
 ):  # type: ignore
-    if x.getType() == PETSc.Vec.Type().NEST:
-        _copy_functions_to_nest_vec(u, x)
-    elif isinstance(u, list):
-        # Block Vec cannot be discerned from standard SEQ and MPI types
-        _copy_functions_to_block_vec(u, x)
-    else:
-        # Always try standard copy
-        _copy_function_to_vec(u, x)
+    """Copy values of x into vectors backing function(s) u.
 
-
-def copy_function_to_vec(
-    u: typing.Union[dolfinx.fem.Function, list[dolfinx.fem.Function]], x: PETSc.Vec
-):  # type: ignore
-    if x.getType() == PETSc.Vec.Type().NEST:
-        assert isinstance(u, list)
-        _copy_functions_to_nest_vec(u, x)
-    elif isinstance(u, list):
-        # Block Vec cannot be discerned from standard SEQ and MPI types
-        _copy_functions_to_block_vec(u, x)
-    else:
-        # Always try standard copy
-        _copy_function_to_vec(u, x)
-
-
-def _copy_vec_to_function(
-    x: PETSc.Vec,
-    u: dolfinx.fem.Function,
-):  # type: ignore
-    """Update the solution for the unknown `u` with the values in `x`.
+    MPI collective operation. Modifies u in place.
 
     Args:
-        x: Data that is inserted into the solution vector.
-        u: Function data should be inserted into.
+        x: A vector, can be nested, blocked or normal.
+        u: A function or list of functions.
     """
+    if x.getType() == PETSc.Vec.Type().NEST:
+        _copy_nest_vec_to_functions(x, u)
+    elif isinstance(u, list):
+        # DOLFINx-created block Vec cannot be discerned from standard SEQ and
+        # MPI types
+        _copy_block_vec_to_functions(x, u)
+    else:
+        # Fall through to standard copy
+        _copy_vec_to_function(x, u)
+
+
+def _copy_vec_to_function(x: PETSc.Vec, u: dolfinx.fem.Function):  # type: ignore
+    """Copy values of x into vectors backing function(s) u. Normal version."""
     x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
     x.copy(u.x.petsc_vec)
     u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
 
 
-def _copy_function_to_vec(u: dolfinx.fem.Function, x: PETSc.Vec):  # type: ignore
-    """Copy the data in `u` into the vector `x`.
-
-    Args:
-        u: Function to copy data from.
-        x: Vector to insert data into.
-    """
-    u.x.petsc_vec.copy(x)
-
-
 def _copy_block_vec_to_functions(x: PETSc.Vec, u: list[dolfinx.fem.Function]):  # type: ignore
-    """Update the data in a list of functions `u` with the values in `x`.
-
-    Args:
-        x: Vector to copy data from.
-        u: List of function to insert data into.
-    """
+    """Copy values of x into vectors backing function(s) u. Block version."""
     x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
     offset_start = 0
     for ui in u:
@@ -1191,13 +1163,45 @@ def _copy_block_vec_to_functions(x: PETSc.Vec, u: list[dolfinx.fem.Function]):  
         offset_start += num_sub_dofs
 
 
-def _copy_functions_to_block_vec(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
-    """Copy the data in `u` into the vector `x`.
+def _copy_nest_vec_to_functions(x: PETSc.Vec, u: list[dolfinx.fem.Function]):  # type: ignore
+    """Copy values of x into vectors backing function(s) u. Nest version."""
+    subvecs = x.getNestSubVecs()
+    for x_sub, var_sub in zip(subvecs, u):
+        x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
+        with x_sub.localForm() as _x:
+            var_sub.x.array[:] = _x.array_r
+
+
+def copy_function_to_vec(
+    u: typing.Union[dolfinx.fem.Function, list[dolfinx.fem.Function]], x: PETSc.Vec
+):  # type: ignore
+    """Copy vectors backing function(s) u into vector x.
+
+    MPI collective operation. Modifies x in place.
 
     Args:
-        u: List of vectors to copy data from
-        x: Vector to insert data into
+        u: A function or list of functions.
+        x: A vector, can be nested, blocked or normal.
     """
+    if x.getType() == PETSc.Vec.Type().NEST:
+        assert isinstance(u, list)
+        _copy_functions_to_nest_vec(u, x)
+    elif isinstance(u, list):
+        # DOLFINx-created block Vec cannot be discerned from standard SEQ and
+        # MPI types
+        _copy_functions_to_block_vec(u, x)
+    else:
+        # Fall through to standard copy
+        _copy_function_to_vec(u, x)
+
+
+def _copy_function_to_vec(u: dolfinx.fem.Function, x: PETSc.Vec):  # type: ignore
+    """Copy vectors backing function u into vector x. Normal version."""
+    u.x.petsc_vec.copy(x)
+
+
+def _copy_functions_to_block_vec(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
+    """Copy vectors backing function(s) u into vector x. Block version."""
     u_petsc = [ui.x.petsc_vec.array_r for ui in u]
     index_maps = [
         (ui.function_space.dofmap.index_map, ui.function_space.dofmap.index_map_bs) for ui in u
@@ -1210,27 +1214,8 @@ def _copy_functions_to_block_vec(u: list[dolfinx.fem.Function], x: PETSc.Vec):  
     x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
 
 
-def _copy_nest_vec_to_functions(x: PETSc.Vec, u: list[dolfinx.fem.Function]):  # type: ignore
-    """Update the data in a list of functions `u` with the values in `x`.
-
-    Args:
-        x: Vector to copy data from.
-        u: List of function to insert data into.
-    """
-    subvecs = x.getNestSubVecs()
-    for x_sub, var_sub in zip(subvecs, u):
-        x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
-        with x_sub.localForm() as _x:
-            var_sub.x.array[:] = _x.array_r
-
-
 def _copy_functions_to_nest_vec(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
-    """Copy the data in `u` into the vector `x`.
-
-    Args:
-        u: List of functions to copy data from.
-        x: Vector to insert data into.
-    """
+    """Copy vectors backing function u into vector x. Nest version."""
     wrapped_sol = [dolfinx.la.create_petsc_vector_wrap(u_i.x) for u_i in u]
     u_nest = PETSc.Vec().createNest(wrapped_sol)  # type: ignore
     u_nest.copy(x)
