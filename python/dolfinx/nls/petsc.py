@@ -251,7 +251,7 @@ def F_standard(
     residual: dolfinx.fem.Form,
     jacobian: dolfinx.fem.Form,
     bcs: list[dolfinx.fem.DirichletBC],
-    snes: PETSc.SNES,  # type: ignore
+    _snes: PETSc.SNES,  # type: ignore
     x: PETSc.Vec,  # type: ignore
     F: PETSc.Vec,  # type: ignore
 ):
@@ -262,7 +262,7 @@ def F_standard(
         residual: Form of the residual.
         jacobian: Form of the Jacobian.
         bcs: List of Dirichlet boundary conditions.
-        snes: The solver instance.
+        _snes: The solver instance.
         x: The vector containing the point to evaluate the residual at.
         F: Vector to assemble the residual into.
     """
@@ -280,7 +280,7 @@ def J_standard(
     jacobian: dolfinx.fem.Form,
     preconditioner: typing.Optional[dolfinx.fem.Form],
     bcs: list[dolfinx.fem.DirichletBC],
-    snes: PETSc.SNES,  # type: ignore
+    _snes: PETSc.SNES,  # type: ignore
     x: PETSc.Vec,  # type: ignore
     J: PETSc.Mat,  # type: ignore
     P: PETSc.Mat,  # type: ignore
@@ -292,7 +292,7 @@ def J_standard(
         jacobian: Form of the Jacobian
         preconditioner: Form of the preconditioner
         bcs: List of Dirichlet boundary conditions
-        snes: The solver instance
+        _snes: The solver instance
         x: The vector containing the point to evaluate at
         J: Matrix to assemble the Jacobian into
         P: Matrix to assemble the preconditioner into
@@ -316,7 +316,7 @@ def F_block(
     residual: list[dolfinx.fem.Form],
     jacobian: list[list[dolfinx.fem.Form]],
     bcs: list[dolfinx.fem.DirichletBC],
-    snes: PETSc.SNES,  # type: ignore
+    _snes: PETSc.SNES,  # type: ignore
     x: PETSc.Vec,  # type: ignore
     F: PETSc.Vec,  # type: ignore
 ):
@@ -327,7 +327,7 @@ def F_block(
         residual: List of forms of the residual
         jacobian: List of list of forms of the Jacobian
         bcs: List of Dirichlet boundary conditions
-        snes: The solver instance
+        _snes: The solver instance
         x: The vector containing the latest solution
         F: Vector to assemble the residual into
     """
@@ -345,7 +345,7 @@ def J_block(
     jacobian: list[list[dolfinx.fem.Form]],
     preconditioner: typing.Optional[list[dolfinx.fem.Form]],
     bcs: list[dolfinx.fem.DirichletBC],
-    snes: PETSc.SNES,  # type: ignore
+    _snes: PETSc.SNES,  # type: ignore
     x: PETSc.Vec,  # type: ignore
     J: PETSc.Mat,  # type: ignore
     P: PETSc.Mat,  # type: ignore
@@ -357,7 +357,7 @@ def J_block(
         jacobian: List of list of forms of the Jacobian
         preconditioner: List of forms of the preconditioner
         bcs: List of Dirichlet boundary conditions
-        snes: The solver instance
+        _snes: The solver instance
         x: The vector containing the latest solution
         J: Matrix to assemble the Jacobian into
         P: Matrix to assemble the preconditioner into
@@ -380,7 +380,7 @@ def F_nest(
     residual: list[dolfinx.fem.Form],
     jacobian: list[list[dolfinx.fem.Form]],
     bcs: list[dolfinx.fem.DirichletBC],
-    snes: PETSc.SNES,  # type: ignore
+    _snes: PETSc.SNES,  # type: ignore
     x: PETSc.Vec,  # type: ignore
     F: PETSc.Vec,  # type: ignore
 ):
@@ -391,7 +391,7 @@ def F_nest(
         residual: List of forms of the residual
         jacobian: List of list of forms of the Jacobian
         bcs: List of Dirichlet boundary conditions
-        snes: The solver instance
+        _snes: The solver instance
         x: The vector containing the latest solution
         F: Vector to assemble the residual into
     """
@@ -420,7 +420,7 @@ def J_nest(
     jacobian: list[list[dolfinx.fem.Form]],
     preconditioner: typing.Optional[list[dolfinx.fem.Form]],
     bcs: list[dolfinx.fem.DirichletBC],
-    snes: PETSc.SNES,  # type: ignore
+    _snes: PETSc.SNES,  # type: ignore
     x: PETSc.Vec,  # type: ignore
     J: PETSc.Mat,  # type: ignore
     P: PETSc.Mat,  # type: ignore
@@ -432,7 +432,7 @@ def J_nest(
         jacobian: List of list of forms of the Jacobian
         preconditioner: List of forms of the preconditioner
         bcs: List of Dirichlet boundary conditions
-        snes: The solver instance
+        _snes: The solver instance
         x: The vector containing the latest solution
         J: Matrix to assemble the Jacobian into
         P: Matrix to assemble the preconditioner into

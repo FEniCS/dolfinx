@@ -1139,8 +1139,8 @@ def copy_vec_to_function(
         u: Function data should be inserted into.
     """
     x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
-    x.copy(u.x.petsc_vec)
-    u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
+    with u.x.petsc_vec.localForm() as u_local, x.localForm() as x_local:
+        u_local.array_w[:] = x_local.array_r
 
 
 def copy_function_to_vec(u: dolfinx.fem.Function, x: PETSc.Vec):  # type: ignore
