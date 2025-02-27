@@ -1123,39 +1123,28 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
 def copy_vec_to_function(
     x: PETSc.Vec, u: typing.Union[dolfinx.fem.Function, list[dolfinx.fem.Function]]
 ):  # type: ignore
-    if isinstance(u, list):
-        if x.getType() == PETSc.Vec.Type().SEQ or x.getType() == PETSc.Vec.Type().MPI:
-            # IS-based standard
-            pass
-        elif x.getType() == PETSc.Vec.Type().NEST:
-            # Nest
-            pass
-        else:
-            raise ValueError(f"Unsupported PETSc Vec type: {x.getType()}")
-    elif isinstance(u, dolfinx.fem.Function):
-        # Standard
-        pass
+    if x.getType() == PETSc.Vec.Type().NEST:
+        _copy_functions_to_nest_vec(u, x)
+    elif isinstance(u, list):
+        # Block Vec cannot be discerned from standard SEQ and MPI types
+        _copy_functions_to_block_vec(u, x)
     else:
-        raise ValueError("Unsupported Function(s): {u}")
+        # Always try standard copy
+        _copy_function_to_vec(u, x)
 
 
 def copy_function_to_vec(
     u: typing.Union[dolfinx.fem.Function, list[dolfinx.fem.Function]], x: PETSc.Vec
 ):  # type: ignore
-    if isinstance(u, list):
-        if x.getType() == PETSc.Vec.Type().SEQ or x.getType() == PETSc.Vec.Type().MPI:
-            # IS-based standard
-            pass
-        elif x.getType() == PETSc.Vec.Type().NEST:
-            # Nest
-            pass
-        else:
-            raise ValueError(f"Unsupported PETSc Vec type: {x.getType()}")
-    elif isinstance(u, dolfinx.fem.Function):
-        # Standard
-        pass
+    if x.getType() == PETSc.Vec.Type().NEST:
+        assert isinstance(u, list)
+        _copy_functions_to_nest_vec(u, x)
+    elif isinstance(u, list):
+        # Block Vec cannot be discerned from standard SEQ and MPI types
+        _copy_functions_to_block_vec(u, x)
     else:
-        raise ValueError("Unsupported Function(s): {u}")
+        # Always try standard copy
+        _copy_function_to_vec(u, x)
 
 
 def _copy_vec_to_function(
