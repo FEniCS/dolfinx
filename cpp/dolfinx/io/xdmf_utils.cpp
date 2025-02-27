@@ -5,18 +5,11 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "xdmf_utils.h"
-#include <algorithm>
 #include <array>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include <dolfinx/la/utils.h>
-#include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/cell_types.h>
-#include <dolfinx/mesh/utils.h>
-#include <filesystem>
 #include <map>
 #include <pugixml.hpp>
-#include <span>
 #include <vector>
 
 using namespace dolfinx;
