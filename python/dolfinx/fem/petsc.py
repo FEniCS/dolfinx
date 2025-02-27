@@ -1140,8 +1140,7 @@ def copy_vec_to_function(
 
 
 def copy_function_to_vec(
-    u: typing.Union[dolfinx.fem.Function, list[dolfinx.fem.Function]],
-    x: PETSc.Vec,
+    u: typing.Union[dolfinx.fem.Function, list[dolfinx.fem.Function]], x: PETSc.Vec
 ):  # type: ignore
     if isinstance(u, list):
         if x.getType() == PETSc.Vec.Type().SEQ or x.getType() == PETSc.Vec.Type().MPI:
