@@ -6,43 +6,23 @@
 
 #pragma once
 
-#include "HDF5Interface.h"
 #include <array>
 #include <basix/mdspan.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
-#include <complex>
-#include <concepts>
-#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
-#include <dolfinx/mesh/cell_types.h>
-#include <filesystem>
-#include <numeric>
-#include <pugixml.hpp>
 #include <span>
-#include <string>
 #include <utility>
 #include <vector>
 
 namespace dolfinx
 {
-namespace fem
-{
-template <dolfinx::scalar T, std::floating_point U>
-class Function;
-} // namespace fem
 
 namespace fem
 {
-template <std::floating_point T>
-class CoordinateElement;
 class ElementDofLayout;
 } // namespace fem
 
 namespace mesh
 {
-template <std::floating_point T>
-class Mesh;
 class Topology;
 } // namespace mesh
 
