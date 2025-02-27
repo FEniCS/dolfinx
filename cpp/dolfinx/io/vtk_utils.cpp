@@ -50,3 +50,36 @@ io::extract_vtk_connectivity(
   return {std::move(topology), shape};
 }
 //-----------------------------------------------------------------------------
+std::int8_t io::get_vtk_cell_type(mesh::CellType cell, int dim)
+{
+  if (cell == mesh::CellType::prism and dim == 2)
+    throw std::runtime_error("More work needed for prism cell");
+
+  // Get cell type
+  mesh::CellType cell_type = mesh::cell_entity_type(cell, dim, 0);
+
+  // Determine VTK cell type (arbitrary Lagrange elements)
+  // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
+  switch (cell_type)
+  {
+  case mesh::CellType::point:
+    return 1;
+  case mesh::CellType::interval:
+    return 68;
+  case mesh::CellType::triangle:
+    return 69;
+  case mesh::CellType::quadrilateral:
+    return 70;
+  case mesh::CellType::tetrahedron:
+    return 71;
+  case mesh::CellType::hexahedron:
+    return 72;
+  case mesh::CellType::pyramid:
+    return 14;
+  case mesh::CellType::prism:
+    return 73;
+  default:
+    throw std::runtime_error("Unknown cell type");
+  }
+}
+//-----------------------------------------------------------------------------

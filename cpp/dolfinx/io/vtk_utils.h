@@ -255,5 +255,12 @@ extract_vtk_connectivity(
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         dofmap_x,
     mesh::CellType cell_type);
+
+/// Get VTK cell identifier
+/// @param[in] cell The cell type
+/// @param[in] dim The topological dimension of the cell
+/// @return The VTK cell identifier
+std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim);
+
 } // namespace io
 } // namespace dolfinx

@@ -226,7 +226,7 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   type_node.append_attribute("type") = "Int8";
   type_node.append_attribute("Name") = "types";
   type_node.append_attribute("format") = "ascii";
-  int vtk_celltype = io::cells::get_vtk_cell_type(celltype, tdim);
+  int vtk_celltype = io::get_vtk_cell_type(celltype, tdim);
   {
     std::stringstream ss;
     for (std::size_t c = 0; c < cshape[0]; ++c)

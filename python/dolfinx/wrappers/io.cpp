@@ -15,6 +15,7 @@
 #include <dolfinx/io/VTKHDF.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
+#include <dolfinx/io/utils.h>
 #include <dolfinx/io/vtk_utils.h>
 #include <dolfinx/io/xdmf_utils.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -174,7 +175,7 @@ void declare_data_types(nb::module_& m)
         std::span<const std::int64_t> input_global_indices_span(
             input_global_indices.data(), input_global_indices.size());
         std::pair<std::vector<std::int32_t>, std::vector<T>> entities_values
-            = dolfinx::io::xdmf_utils::distribute_entity_data<T>(
+            = dolfinx::io::distribute_entity_data<T>(
                 topology, input_global_indices_span, num_nodes_g,
                 cmap_dof_layout, xdofmap_span, entity_dim, entities_span,
                 std::span(values.data(), values.size()));
@@ -200,8 +201,8 @@ void declare_data_types(nb::module_& m)
 void io(nb::module_& m)
 {
   // dolfinx::io::cell vtk cell type converter
-  m.def("get_vtk_cell_type", &dolfinx::io::cells::get_vtk_cell_type,
-        nb::arg("cell"), nb::arg("dim"), "Get VTK cell identifier");
+  m.def("get_vtk_cell_type", &dolfinx::io::get_vtk_cell_type, nb::arg("cell"),
+        nb::arg("dim"), "Get VTK cell identifier");
 
   m.def(
       "extract_vtk_connectivity",

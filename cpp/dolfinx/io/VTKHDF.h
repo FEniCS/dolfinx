@@ -123,7 +123,7 @@ void io::VTKHDF::write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
 
     vtkcelltypes.insert(
         vtkcelltypes.end(), cell_index_maps[i]->size_local(),
-        io::cells::get_vtk_cell_type(cell_types[i], mesh.topology()->dim()));
+        io::get_vtk_cell_type(cell_types[i], mesh.topology()->dim()));
   }
   // Create topo_offsets
   std::partial_sum(topology_offsets.cbegin(), topology_offsets.cend(),
@@ -233,9 +233,9 @@ mesh::Mesh<U> io::VTKHDF::read_mesh(MPI_Comm comm, std::string filename)
          mesh::CellType::pyramid,     mesh::CellType::hexahedron};
   for (auto dolfinx_type : dolfinx_cells)
   {
-    vtk_to_dolfinx.insert({io::cells::get_vtk_cell_type(
-                               dolfinx_type, mesh::cell_dim(dolfinx_type)),
-                           dolfinx_type});
+    vtk_to_dolfinx.insert(
+        {io::get_vtk_cell_type(dolfinx_type, mesh::cell_dim(dolfinx_type)),
+         dolfinx_type});
   }
 
   // Map from VTKCellType to index in list of cell types
