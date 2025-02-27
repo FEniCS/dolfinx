@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2022 Garth N. Wells and Jørgen S. Dokken
+# Copyright (C) 2018-2025 Garth N. Wells, Nathan Sime and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -16,6 +16,7 @@ from __future__ import annotations
 import contextlib
 import functools
 import typing
+from enum import Enum
 
 from petsc4py import PETSc
 
@@ -45,6 +46,7 @@ from dolfinx.fem.function import FunctionSpace as _FunctionSpace
 from dolfinx.la import create_petsc_vector
 
 __all__ = [
+    "AssemblyType",
     "LinearProblem",
     "NonlinearProblem",
     "apply_lifting",
@@ -67,6 +69,12 @@ __all__ = [
     "set_bc",
     "set_bc_nest",
 ]
+
+
+class AssemblyType(Enum):
+    standard = 0
+    block = 1
+    nest = 2
 
 
 def _extract_function_spaces(a: list[list[Form]]):
@@ -939,12 +947,12 @@ class LinearProblem:
 
     @property
     def L(self) -> Form:
-        """The compiled linear form"""
+        """The compiled linear form `F`."""
         return self._L
 
     @property
     def a(self) -> Form:
-        """The compiled bilinear form"""
+        """The compiled bilinear form of `a`."""
         return self._a
 
     @property
@@ -1015,12 +1023,12 @@ class NonlinearProblem:
 
     @property
     def L(self) -> Form:
-        """Compiled linear form (the residual form)"""
+        """The compiled linear form `F`."""
         return self._L
 
     @property
     def a(self) -> Form:
-        """Compiled bilinear form (the Jacobian form)"""
+        """The compiled bilinear form of the Jacobian `J`"""
         return self._a
 
     def form(self, x: PETSc.Vec) -> None:
@@ -1118,3 +1126,94 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
         Interpolation matrix.
     """
     return _interpolation_matrix(space0._cpp_object, space1._cpp_object)
+
+
+def copy_vec_to_function(
+    x: PETSc.Vec,
+    u: dolfinx.fem.Function,
+):  # type: ignore
+    """Update the solution for the unknown `u` with the values in `x`.
+
+    Args:
+        x: Data that is inserted into the solution vector.
+        u: Function data should be inserted into.
+    """
+    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
+    x.copy(u.x.petsc_vec)
+    u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
+
+
+def copy_function_to_vec(u: dolfinx.fem.Function, x: PETSc.Vec):  # type: ignore
+    """Copy the data in `u` into the vector `x`.
+
+    Args:
+        u: Function to copy data from.
+        x: Vector to insert data into.
+    """
+    u.x.petsc_vec.copy(x)
+
+
+def copy_block_vec_to_functions(x: PETSc.Vec, u: list[dolfinx.fem.Function]):  # type: ignore
+    """Update the data in a list of functions `u` with the values in `x`.
+
+    Args:
+        x: Vector to copy data from.
+        u: List of function to insert data into.
+    """
+    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
+    offset_start = 0
+    for ui in u:
+        Vi = ui.function_space
+        num_sub_dofs = Vi.dofmap.index_map.size_local * Vi.dofmap.index_map_bs
+        ui.x.petsc_vec.array_w[:num_sub_dofs] = x.array_r[
+            offset_start : offset_start + num_sub_dofs
+        ]
+        ui.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
+        offset_start += num_sub_dofs
+
+
+def copy_functions_to_block_vec(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
+    """Copy the data in `u` into the vector `x`.
+
+    Args:
+        u: List of vectors to copy data from
+        x: Vector to insert data into
+    """
+    u_petsc = [ui.x.petsc_vec.array_r for ui in u]
+    index_maps = [
+        (ui.function_space.dofmap.index_map, ui.function_space.dofmap.index_map_bs) for ui in u
+    ]
+    _cpp.la.petsc.scatter_local_vectors(
+        x,
+        u_petsc,
+        index_maps,
+    )
+    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
+
+
+def copy_nest_vec_to_functions(x: PETSc.Vec, u: list[dolfinx.fem.Function]):  # type: ignore
+    """Update the data in a list of functions `u` with the values in `x`.
+
+    Args:
+        x: Vector to copy data from.
+        u: List of function to insert data into.
+    """
+    subvecs = x.getNestSubVecs()
+    for x_sub, var_sub in zip(subvecs, u):
+        x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
+        with x_sub.localForm() as _x:
+            var_sub.x.array[:] = _x.array_r
+
+
+def copy_functions_to_nest_vec(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
+    """Copy the data in `u` into the vector `x`.
+
+    Args:
+        u: List of functions to copy data from.
+        x: Vector to insert data into.
+    """
+    wrapped_sol = [dolfinx.la.create_petsc_vector_wrap(u_i.x) for u_i in u]
+    u_nest = PETSc.Vec().createNest(wrapped_sol)  # type: ignore
+    u_nest.copy(x)
+    u_nest.destroy()
+    [wrapped.destroy() for wrapped in wrapped_sol]
