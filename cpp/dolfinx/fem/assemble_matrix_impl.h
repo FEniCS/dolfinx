@@ -29,31 +29,34 @@ namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 /// @brief Typedef
 using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 
-/// @brief Execute kernel over cells and accumulate result in matrix.
+/// @brief Execute kernel over cells and accumulate result in a matrix.
+///
 /// @tparam T Matrix/form scalar type.
 /// @param mat_set Function that accumulates computed entries into a
 /// matrix.
-/// @param x_dofmap Dofmap for the mesh geometry.
-/// @param x Mesh geometry (coordinates).
-/// @param cells Cell indices (in the integration domain mesh) to
-/// execute the kernel over. These are the indices into the geometry
-/// dofmap.
-/// @param dofmap0 Test function (row) degree-of-freedom data holding
-/// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
-/// @param P0 Function that applies transformation P_0 A in-place to
-/// transform test degrees-of-freedom.
-/// @param dofmap1 Trial function (column) degree-of-freedom data
+/// @param[in] x_dofmap Degree-of-freedom map for the mesh geometry.
+/// @param[in] x Mesh geometry (coordinates).
+/// @param[in] cells Cell indices to execute the kernel over. These are
+/// the indices into the geometry dofmap `x_dofmap`.
+/// @param[in] dofmap0 Test function (row) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
 /// indices.
-/// @param P1T Function that applies transformation A P_1^T in-place to
-/// transform trial degrees-of-freedom.
+/// @param[in] P0 Function that applies transformation `P_0 A` in-place
+/// to the computed tensor `A` to transform its test degrees-of-freedom.
+/// @param[in] dofmap1 Trial function (column) degree-of-freedom data
+/// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
+/// indices.
+/// @param[in] P1T Function that applies transformation `A P_1^T`
+/// in-place to to the computed tensor `A` to transform trial
+/// degrees-of-freedom.
 /// @param bc0 Marker for rows with Dirichlet boundary conditions
 /// applied.
 /// @param bc1 Marker for columns with Dirichlet boundary conditions
 /// applied.
 /// @param kernel Kernel function to execute over each cell.
-/// @param coeffs Coefficient data array of shape (cells.size(),
-/// cstride).
+/// @param[in] coeffs Coefficient data in the kernel. It has shape
+/// `(cells.size(), num_cell_coeffs)`. `coeffs(i, j)` is the `j`th
+/// coefficient for cell `i`.
 /// @param constants Constant data.
 /// @param cell_info0 Cell permutation information for the test
 /// function mesh.
@@ -159,6 +162,7 @@ void assemble_cells(
 
 /// @brief Execute kernel over exterior facets and accumulate result in
 /// a matrix.
+///
 /// @tparam T Matrix/form scalar type.
 /// @param[in] mat_set Function that accumulates computed entries into a
 /// matrix.
@@ -299,6 +303,7 @@ void assemble_exterior_facets(
 
 /// @brief Execute kernel over interior facets and accumulate result in
 /// a matrix.
+///
 /// @tparam T Matrix/form scalar type.
 /// @param mat_set Function that accumulates computed entries into a
 /// matrix.
@@ -493,6 +498,25 @@ void assemble_interior_facets(
 /// local indices. Rows (bc0) and columns (bc1) with Dirichlet
 /// conditions are zeroed. Markers (bc0 and bc1) can be empty if no bcs
 /// are applied. Matrix is not finalised.
+
+/// @brief Assemble (accumulate) into a matrix.
+///
+/// Rows (bc0) and columns (bc1) with Dirichlet conditions are zeroed.
+/// Markers (bc0 and bc1) can be empty if no Dirichlet conditions are
+/// applied.
+///
+/// @tparam T Scalar type.
+/// @tparam U Geometry type.
+/// @param[in] mat_set Function that accumulates computed entries into a
+/// matrix.
+/// @param[in] a Bilinear form to assemble.
+/// @param[in] x Mesh geometry (coordinates).
+/// @param[in] constants Constants that appear in `a`.
+/// @param[in] coefficients Coefficients that appear in `a`.
+/// @param bc0 Marker for rows with Dirichlet boundary conditions
+/// applied.
+/// @param bc1 Marker for columns with Dirichlet boundary conditions
+/// applied.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     la::MatSet<T> auto mat_set, const Form<T, U>& a,
