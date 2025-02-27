@@ -1128,7 +1128,7 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
     return _interpolation_matrix(space0._cpp_object, space1._cpp_object)
 
 
-def copy_vec_to_function(
+def _copy_vec_to_function(
     x: PETSc.Vec,
     u: dolfinx.fem.Function,
 ):  # type: ignore
@@ -1143,7 +1143,7 @@ def copy_vec_to_function(
     u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
 
 
-def copy_function_to_vec(u: dolfinx.fem.Function, x: PETSc.Vec):  # type: ignore
+def _copy_function_to_vec(u: dolfinx.fem.Function, x: PETSc.Vec):  # type: ignore
     """Copy the data in `u` into the vector `x`.
 
     Args:
@@ -1153,7 +1153,7 @@ def copy_function_to_vec(u: dolfinx.fem.Function, x: PETSc.Vec):  # type: ignore
     u.x.petsc_vec.copy(x)
 
 
-def copy_block_vec_to_functions(x: PETSc.Vec, u: list[dolfinx.fem.Function]):  # type: ignore
+def _copy_block_vec_to_functions(x: PETSc.Vec, u: list[dolfinx.fem.Function]):  # type: ignore
     """Update the data in a list of functions `u` with the values in `x`.
 
     Args:
@@ -1172,7 +1172,7 @@ def copy_block_vec_to_functions(x: PETSc.Vec, u: list[dolfinx.fem.Function]):  #
         offset_start += num_sub_dofs
 
 
-def copy_functions_to_block_vec(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
+def _copy_functions_to_block_vec(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
     """Copy the data in `u` into the vector `x`.
 
     Args:
@@ -1191,7 +1191,7 @@ def copy_functions_to_block_vec(u: list[dolfinx.fem.Function], x: PETSc.Vec):  #
     x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
 
 
-def copy_nest_vec_to_functions(x: PETSc.Vec, u: list[dolfinx.fem.Function]):  # type: ignore
+def _copy_nest_vec_to_functions(x: PETSc.Vec, u: list[dolfinx.fem.Function]):  # type: ignore
     """Update the data in a list of functions `u` with the values in `x`.
 
     Args:
@@ -1205,7 +1205,7 @@ def copy_nest_vec_to_functions(x: PETSc.Vec, u: list[dolfinx.fem.Function]):  # 
             var_sub.x.array[:] = _x.array_r
 
 
-def copy_functions_to_nest_vec(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
+def _copy_functions_to_nest_vec(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
     """Copy the data in `u` into the vector `x`.
 
     Args:
