@@ -947,12 +947,12 @@ class LinearProblem:
 
     @property
     def L(self) -> Form:
-        """The compiled linear form `F`."""
+        """The compiled linear form."""
         return self._L
 
     @property
     def a(self) -> Form:
-        """The compiled bilinear form of `a`."""
+        """The compiled bilinear form."""
         return self._a
 
     @property
@@ -1023,7 +1023,7 @@ class NonlinearProblem:
 
     @property
     def L(self) -> Form:
-        """The compiled linear form `F`."""
+        """The compiled linear form (the residual form)."""
         return self._L
 
     @property
