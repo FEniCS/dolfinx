@@ -1135,7 +1135,7 @@ def copy_vec_to_function(
     """Update the solution for the unknown `u` with the values in `x`.
 
     Args:
-        x: Data that is inserted into the solution vector.
+        x: Data that is copied to the vector ``u``.
         u: Function data should be inserted into.
     """
     x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
