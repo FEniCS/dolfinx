@@ -1,28 +1,39 @@
-// Copyright(C) 2012 - 2025 Chris N.Richardson, Jørgen S.Dokken
+// Copyright (C) 2012-2025 Chris N. Richardson, Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
+
+#pragma once
+
+#include <array>
 #include <basix/mdspan.hpp>
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/mesh/cell_types.h>
+#include <span>
+#include <vector>
 
 namespace dolfinx
 {
 namespace fem
 {
-template <std::floating_point T>
-class CoordinateElement;
+template <dolfinx::scalar T, std::floating_point U>
+class Function;
+} // namespace fem
+
+namespace fem
+{
 class ElementDofLayout;
 } // namespace fem
 
 namespace mesh
 {
-template <std::floating_point T>
-class Mesh;
 class Topology;
 } // namespace mesh
 
 namespace io
 {
+
 /// @brief Get owned entities and associated data from input entities
 /// defined by global 'node' indices.
 ///
@@ -71,5 +82,6 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         entities,
     std::span<const T> data);
+
 } // namespace io
 } // namespace dolfinx
