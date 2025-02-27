@@ -328,6 +328,7 @@ void io(nb::module_& m)
 #endif
 
   declare_data_types<std::int32_t>(m);
+  declare_data_types<std::int64_t>(m);
   declare_data_types<float>(m);
   declare_data_types<std::complex<float>>(m);
   declare_data_types<double>(m);
