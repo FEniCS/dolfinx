@@ -158,10 +158,4 @@ std::vector<std::int64_t> apply_permutation(std::span<const std::int64_t> cells,
                                             std::array<std::size_t, 2> shape,
                                             std::span<const std::uint16_t> p);
 
-/// Get VTK cell identifier
-/// @param[in] cell The cell type
-/// @param[in] dim The topological dimension of the cell
-/// @return The VTK cell identifier
-std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim);
-
 } // namespace dolfinx::io::cells
