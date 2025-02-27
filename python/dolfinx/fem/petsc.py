@@ -16,7 +16,6 @@ from __future__ import annotations
 import contextlib
 import functools
 import typing
-from enum import Enum
 
 from petsc4py import PETSc
 
@@ -46,7 +45,6 @@ from dolfinx.fem.function import FunctionSpace as _FunctionSpace
 from dolfinx.la import create_petsc_vector
 
 __all__ = [
-    "AssemblyType",
     "LinearProblem",
     "NonlinearProblem",
     "apply_lifting",
@@ -69,12 +67,6 @@ __all__ = [
     "set_bc",
     "set_bc_nest",
 ]
-
-
-class AssemblyType(Enum):
-    standard = 0
-    block = 1
-    nest = 2
 
 
 def _extract_function_spaces(a: list[list[Form]]):
@@ -1126,6 +1118,45 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
         Interpolation matrix.
     """
     return _interpolation_matrix(space0._cpp_object, space1._cpp_object)
+
+
+def copy_vec_to_function(
+    x: PETSc.Vec, u: typing.Union[dolfinx.fem.Function, list[dolfinx.fem.Function]]
+):  # type: ignore
+    if isinstance(u, list):
+        if x.getType() == PETSc.Vec.Type().SEQ or x.getType() == PETSc.Vec.Type().MPI:
+            # IS-based standard
+            pass
+        elif x.getType() == PETSc.Vec.Type().NEST:
+            # Nest
+            pass
+        else:
+            raise ValueError(f"Unsupported PETSc Vec type: {x.getType()}")
+    elif isinstance(u, dolfinx.fem.Function):
+        # Standard
+        pass
+    else:
+        raise ValueError("Unsupported Function(s): {u}")
+
+
+def copy_function_to_vec(
+    u: typing.Union[dolfinx.fem.Function, list[dolfinx.fem.Function]],
+    x: PETSc.Vec,
+):  # type: ignore
+    if isinstance(u, list):
+        if x.getType() == PETSc.Vec.Type().SEQ or x.getType() == PETSc.Vec.Type().MPI:
+            # IS-based standard
+            pass
+        elif x.getType() == PETSc.Vec.Type().NEST:
+            # Nest
+            pass
+        else:
+            raise ValueError(f"Unsupported PETSc Vec type: {x.getType()}")
+    elif isinstance(u, dolfinx.fem.Function):
+        # Standard
+        pass
+    else:
+        raise ValueError("Unsupported Function(s): {u}")
 
 
 def _copy_vec_to_function(
