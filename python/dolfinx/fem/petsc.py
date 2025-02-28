@@ -25,6 +25,7 @@ import dolfinx
 assert dolfinx.has_petsc4py
 
 import numpy as np
+import numpy.typing as npt
 
 import dolfinx.cpp as _cpp
 import ufl
@@ -1118,6 +1119,48 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
         Interpolation matrix.
     """
     return _interpolation_matrix(space0._cpp_object, space1._cpp_object)
+
+
+def assign(
+    x0: typing.Union[npt.NDArray[np.floating], list[npt.NDArray[np.floating]]], x1: PETSc.Vec
+):
+    """Assign x0 to x1.
+
+    Assigns values in ``x0``, which is possibly blocked, to ``x1``. When
+    ``x0`` holds a list of arrays, the arrays in ``x0`` are 'stacked'
+    and assigned to ``x1``, i.e.::
+
+              [x0[0]]
+        x1 =  [x0[1]]
+              [.....]
+              [x0[n-1]]
+
+    Args:
+        x0: An array or list of array that will be assigned to ``x1``.
+        x1: Vector to assign to.
+    """
+    try:
+        # Nested PETSc matrix
+        x1_nest = x1.getNestSubVecs()
+        for _x0, _x1 in zip(x0, x1_nest):
+            with _x1.localForm() as x:
+                x.array_w[:] = _x0
+    except AttributeError:
+        with x1.localForm() as _x:
+            try:
+                start = 0
+                for _x0 in x0:
+                    end = start + _x0.shape[0]
+                    _x.array_w[start:end] = _x0
+                    start = end
+
+                # The above doesn't update ghost values, so we need to
+                # do it here. We should handle ghost by packing them at
+                # the end of x0.
+                x1.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+            except:  # noqa: E722
+                # TODO: add correct exception
+                _x.array_w[:] = _x0
 
 
 def copy_vec_to_function(
