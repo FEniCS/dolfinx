@@ -1155,11 +1155,6 @@ def assign(
                     end = start + _x0.shape[0]
                     _x.array_w[start:end] = _x0
                     start = end
-
-                # The above doesn't update ghost values, so we need to
-                # do it here. We should handle ghost by packing them at
-                # the end of x0.
-                x1.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
             except:  # noqa: E722
                 # TODO: add correct exception
                 _x.array_w[:] = _x0
