@@ -78,7 +78,7 @@ T assemble_exterior_facets(
     return value;
 
   // Create data structures used in assembly
-  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
+  std::vector<scalar_value_type_t<T>> cdofs(3 * x_dofmap.extent(1));
 
   // Iterate over all facets
   for (std::size_t f = 0; f < facets.extent(0); ++f)
@@ -89,15 +89,12 @@ T assemble_exterior_facets(
     // Get cell coordinates/geometry
     auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
-    {
-      std::copy_n(&x(x_dofs[i], 3), 3,
-                  std::next(coordinate_dofs.begin(), 3 * i));
-    }
+      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs.begin(), 3 * i));
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_facet);
-    fn(&value, &coeffs(f, 0), constants.data(), coordinate_dofs.data(),
-       &local_facet, &perm);
+    fn(&value, &coeffs(f, 0), constants.data(), cdofs.data(), &local_facet,
+       &perm);
   }
 
   return value;
@@ -125,9 +122,9 @@ T assemble_interior_facets(
 
   // Create data structures used in assembly
   using X = scalar_value_type_t<T>;
-  std::vector<X> coordinate_dofs(2 * x_dofmap.extent(1) * 3);
-  std::span<X> cdofs0(coordinate_dofs.data(), x_dofmap.extent(1) * 3);
-  std::span<X> cdofs1(coordinate_dofs.data() + x_dofmap.extent(1) * 3,
+  std::vector<X> cdofs(2 * x_dofmap.extent(1) * 3);
+  std::span<X> cdofs0(cdofs.data(), x_dofmap.extent(1) * 3);
+  std::span<X> cdofs1(cdofs.data() + x_dofmap.extent(1) * 3,
                       x_dofmap.extent(1) * 3);
 
   // Iterate over all facets
@@ -148,7 +145,7 @@ T assemble_interior_facets(
                           ? std::array<std::uint8_t, 2>{0, 0}
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
-    fn(&value, &coeffs(f, 0, 0), constants.data(), coordinate_dofs.data(),
+    fn(&value, &coeffs(f, 0, 0), constants.data(), cdofs.data(),
        local_facet.data(), perm.data());
   }
 
