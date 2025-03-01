@@ -15,12 +15,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  fenicsx-refs:
-    uses: ./.github/workflows/fenicsx-refs.yml
-
   build:
     runs-on: ubuntu-latest
-    needs: fenicsx-refs
     container: fenicsproject/test-env:current-redhat
 
     name: Rocky build and test
@@ -28,15 +24,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Load environment variables
+        run: cat .github/workflows/.env >> $GITHUB_ENV
+
       - name: Install Python build dependencies
         run: |
           python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
       - name: Install FEniCS Python components
         run: |
-          python3 -m pip install git+https://github.com/fenics/ufl.git@${{ needs.fenicsx-refs.outputs.ufl_ref }}
-          python3 -m pip install git+https://github.com/fenics/basix.git@${{ needs.fenicsx-refs.outputs.basix_ref }}
-          python3 -m pip install git+https://github.com/fenics/ffcx.git@${{ needs.fenicsx-refs.outputs.ffcx_ref }}
+          python3 -m pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
+          python3 -m pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
+          python3 -m pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/

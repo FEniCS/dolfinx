@@ -28,8 +28,6 @@ on:
         type: string
 
 jobs:
-  fenicsx-refs:
-    uses: ./.github/workflows/fenicsx-refs.yml
 
   lint:
     runs-on: ubuntu-latest
@@ -42,6 +40,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
+      - name: Load environment variables
+        run: cat .github/workflows/.env >> $GITHUB_ENV
+
       - name: Install linting tools
         run: pip install clang-format cmake-format[YAML] mypy ruff
       - name: ruff .py files in C++ code
@@ -79,7 +81,7 @@ jobs:
 
   build:
     runs-on: ubuntu-24.04
-    needs: [fenicsx-refs, lint]
+    needs: [lint]
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
@@ -89,6 +91,9 @@ jobs:
     name: Build and test
     steps:
       - uses: actions/checkout@v4
+
+      - name: Load environment variables
+        run: cat .github/workflows/.env >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
@@ -108,15 +113,15 @@ jobs:
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/fenics/ufl.git@${{ needs.fenicsx-refs.outputs.ufl_ref }}
-          pip install git+https://github.com/fenics/basix.git@${{ needs.fenicsx-refs.outputs.basix_ref }}
-          pip install git+https://github.com/fenics/ffcx.git@${{ needs.fenicsx-refs.outputs.ffcx_ref }}
+          pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
+          pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
-          pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
+          pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Configure and install C++
         run: |
@@ -154,7 +159,7 @@ jobs:
 
   build-with-petsc:
     runs-on: ubuntu-latest
-    needs: [fenicsx-refs, lint]
+    needs: [lint]
     strategy:
       matrix:
         petsc_arch: [linux-gnu-real32-32, linux-gnu-real64-32, linux-gnu-complex64-32, linux-gnu-complex128-32, linux-gnu-real64-64, linux-gnu-complex128-64]
@@ -175,19 +180,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Load environment variables
+        run: cat .github/workflows/.env >> $GITHUB_ENV
+
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git@${{ needs.fenicsx-refs.outputs.ufl_ref }}
-          pip install git+https://github.com/FEniCS/basix.git@${{ needs.fenicsx-refs.outputs.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@${{ needs.fenicsx-refs.outputs.ffcx_ref }}
+          pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
-          pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
+          pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Configure, build and install C++ library
         run: |
@@ -242,7 +250,7 @@ jobs:
 
   build-and-publish-docs:
     runs-on: ubuntu-latest
-    needs: [fenicsx-refs, lint]
+    needs: [lint]
     container: "ghcr.io/fenics/test-env:current-openmpi"
     env:
       PETSC_ARCH: linux-gnu-real64-32
@@ -254,18 +262,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Load environment variables
+        run: cat .github/workflows/.env >> $GITHUB_ENV
+
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git@${{ needs.fenicsx-refs.outputs.ufl_ref }}
-          pip install git+https://github.com/FEniCS/basix.git@${{ needs.fenicsx-refs.outputs.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@${{ needs.fenicsx-refs.outputs.ffcx_ref }}
+          pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
-          pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
+          pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Configure C++
         run: |

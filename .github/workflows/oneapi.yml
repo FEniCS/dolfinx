@@ -15,12 +15,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  fenicsx-refs:
-    uses: ./.github/workflows/fenicsx-refs.yml
-
   build:
     runs-on: ubuntu-latest
-    needs: fenicsx-refs
     container: ubuntu:24.04
 
     env:
@@ -45,6 +41,9 @@ jobs:
           apt-get -y install binutils libstdc++-14-dev
 
       - uses: actions/checkout@v4
+      
+      - name: Load environment variables
+        run: cat .github/workflows/.env >> $GITHUB_ENV
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
@@ -56,14 +55,14 @@ jobs:
           conda list
 
       - name: Install Basix
-        run: uv pip install --no-build-isolation git+https://github.com/FEniCS/basix.git@${{ needs.fenicsx-refs.outputs.basix_ref }}
+        run: uv pip install --no-build-isolation git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
 
       - name: Clone FFCx
         uses: actions/checkout@v4
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: ${{ needs.fenicsx-refs.outputs.ffcx_ref }}
+          ref: ${{ env.ffcx_ref }}
 
       - name: Install UFCx C interface
         run: |
@@ -82,7 +81,7 @@ jobs:
 
       - name: Install UFL and FFCx modules
         run: |
-          uv pip install --no-build-isolation git+https://github.com/FEniCS/ufl.git@${{ needs.fenicsx-refs.outputs.ufl_ref }}
+          uv pip install --no-build-isolation git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
           uv pip install --no-build-isolation ffcx/
 
       - name: Build and run DOLFINx C++ unit tests (serial and MPI)
