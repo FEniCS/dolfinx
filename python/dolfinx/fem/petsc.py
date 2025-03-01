@@ -1121,10 +1121,11 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
     return _interpolation_matrix(space0._cpp_object, space1._cpp_object)
 
 
+@functools.singledispatch
 def assign(
     x0: typing.Union[npt.NDArray[np.floating], list[npt.NDArray[np.floating]]], x1: PETSc.Vec
 ):
-    """Assign x0 to x1.
+    """Assign ``x0`` to PETSc vedctor ``x1``.
 
     Assigns values in ``x0``, which is possibly blocked, to ``x1``. When
     ``x0`` holds a list of arrays, the arrays in ``x0`` are 'stacked'
@@ -1139,6 +1140,7 @@ def assign(
         x0: An array or list of array that will be assigned to ``x1``.
         x1: Vector to assign to.
     """
+    print("Assign arrays to PETSc")
     try:
         # Nested PETSc matrix
         x1_nest = x1.getNestSubVecs()
@@ -1161,6 +1163,40 @@ def assign(
             except:  # noqa: E722
                 # TODO: add correct exception
                 _x.array_w[:] = _x0
+
+
+@assign.register(PETSc.Vec)
+def assign(
+    x0: PETSc.Vec,
+    x1: typing.Union[npt.NDArray[np.floating], list[npt.NDArray[np.floating]]],
+):
+    """Assign PETSc vector ``x0`` to arrays ``x1``.
+
+    Args:
+        x0: Vector that will be assigned to ``x1``.
+        x1: An array or list of array to assing to.
+    """
+    try:
+        # Nested PETSc matrix
+        x0_nest = x0.getNestSubVecs()
+        for _x0, _x1 in zip(x0_nest, x1):
+            with _x0.localForm() as x:
+                _x1[:] = x.array_r[:]
+    except PETSc.Error:
+        with x0.localForm() as _x0:
+            try:
+                start = 0
+                for _x1 in x1:
+                    end = start + _x1.shape[0]
+                    _x1[:] = _x0.array_r[start:end]
+                    start = end
+
+                # The above doesn't update ghost values, so we need to
+                # do it here. We should handle ghost by packing them at
+                # the end of x0.
+                x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+            except IndexError:
+                x1[:] = _x0.array_w[:]
 
 
 def copy_vec_to_function(
