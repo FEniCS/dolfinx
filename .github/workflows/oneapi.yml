@@ -40,12 +40,6 @@ jobs:
           apt-get -y update
           apt-get -y install binutils libstdc++-14-dev
 
-      - uses: actions/checkout@v4
-      - run: ls ./.github/
-      - run: ls ./.github/workflows
-      - name: Load environment variables
-        run: cat ./.github/workflows/.env >> $GITHUB_ENV
-
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: oneapi-test-env
@@ -54,6 +48,12 @@ jobs:
       - run: |
           conda info
           conda list
+
+      - uses: actions/checkout@v4
+      - run: ls ./.github/
+      - run: ls ./.github/workflows
+      - name: Load environment variables
+        run: cat ./.github/workflows/.env >> $GITHUB_ENV
 
       - name: Install Basix
         run: uv pip install --no-build-isolation git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
