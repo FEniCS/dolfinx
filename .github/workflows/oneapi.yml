@@ -44,7 +44,7 @@ jobs:
       - run: ls . -al
 
       - name: Load environment variables
-        run: cat /.github/workflows/.env >> $GITHUB_ENV
+        run: cat .github/workflows/.env >> $GITHUB_ENV
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
