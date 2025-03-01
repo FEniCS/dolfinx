@@ -29,9 +29,9 @@ jobs:
 
     name: oneAPI build and test
 
-    # defaults:
-      # run:
-      #   shell: bash -el {0}
+    defaults:
+      run:
+        shell: bash -el {0}
 
     steps:
       - name: Install compiler dependencies
@@ -44,7 +44,7 @@ jobs:
       - run: ls . -al
 
       - name: Load environment variables
-        run: cat dolfinx/.github/workflows/.env >> $GITHUB_ENV
+        run: cat /.github/workflows/.env >> $GITHUB_ENV
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
