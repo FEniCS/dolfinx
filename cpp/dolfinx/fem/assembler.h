@@ -164,19 +164,26 @@ T assemble_scalar(
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
+  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+  using mdspanx3_t
+      = md::mdspan<const scalar_value_type_t<T>,
+                   md::extents<std::size_t, md::dynamic_extent, 3>>;
+
   std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
+  std::span x = mesh->geometry().x();
   if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
   {
     return impl::assemble_scalar(M, mesh->geometry().dofmap(),
-                                 mesh->geometry().x(), constants, coefficients);
+                                 mdspanx3_t(x.data(), x.size() / 3, 3),
+                                 constants, coefficients);
   }
   else
   {
-    auto x = mesh->geometry().x();
     std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
-    return impl::assemble_scalar(M, mesh->geometry().dofmap(), _x, constants,
-                                 coefficients);
+    return impl::assemble_scalar(M, mesh->geometry().dofmap(),
+                                 mdspanx3_t(_x.data(), _x.size() / 3, 3),
+                                 constants, coefficients);
   }
 }
 
@@ -343,19 +350,24 @@ void assemble_matrix(
     std::span<const std::int8_t> dof_marker1)
 
 {
+  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+  using mdspanx3_t
+      = md::mdspan<const scalar_value_type_t<T>,
+                   md::extents<std::size_t, md::dynamic_extent, 3>>;
+
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
+  std::span x = mesh->geometry().x();
   if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
   {
-    impl::assemble_matrix(mat_add, a, mesh->geometry().x(), constants,
-                          coefficients, dof_marker0, dof_marker1);
+    impl::assemble_matrix(mat_add, a, mdspanx3_t(x.data(), x.size() / 3, 3),
+                          constants, coefficients, dof_marker0, dof_marker1);
   }
   else
   {
-    auto x = mesh->geometry().x();
     std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
-    impl::assemble_matrix(mat_add, a, _x, constants, coefficients, dof_marker0,
-                          dof_marker1);
+    impl::assemble_matrix(mat_add, a, mdspanx3_t(_x.data(), _x.size() / 3, 3),
+                          constants, coefficients, dof_marker0, dof_marker1);
   }
 }
 
