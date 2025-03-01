@@ -140,9 +140,11 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   la::MatrixCSR<T> A(sp);
   auto ident = [](auto, auto, auto, auto) {}; // DOF permutation not required
   common::Timer timer("Assembler1 lambda (matrix)");
+  md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 3>> x(
+      g.x().data(), g.x().size() / 3, 3);
   fem::impl::assemble_cells<T>(
-      A.mat_add_values(), g.dofmap(), g.x(), cells, {dofmap.map(), 1, cells},
-      ident, {dofmap.map(), 1, cells}, ident, {}, {}, kernel, {}, {}, {}, {});
+      A.mat_add_values(), g.dofmap(), x, cells, {dofmap.map(), 1, cells}, ident,
+      {dofmap.map(), 1, cells}, ident, {}, {}, kernel, {}, {}, {}, {});
   A.scatter_rev();
   return A.squared_norm();
 }
@@ -163,9 +165,11 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
                         auto kernel, const std::vector<std::int32_t>& cells)
 {
   la::Vector<T> b(dofmap.index_map, 1);
+  md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 3>> x(
+      g.x().data(), g.x().size() / 3, 3);
   common::Timer timer("Assembler1 lambda (vector)");
   fem::impl::assemble_cells<T, 1>([](auto, auto, auto, auto) {},
-                                  b.mutable_array(), g.dofmap(), g.x(), cells,
+                                  b.mutable_array(), g.dofmap(), x, cells,
                                   {dofmap.map(), 1, cells}, kernel, {}, {}, {});
   b.scatter_rev(std::plus<T>());
   return la::squared_norm(b);
