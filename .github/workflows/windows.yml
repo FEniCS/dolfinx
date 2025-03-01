@@ -31,7 +31,7 @@ jobs:
             core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
       - name: Load environment variables
-        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+        run: cat dolfinx/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Set up Python
         uses: actions/setup-python@v5
