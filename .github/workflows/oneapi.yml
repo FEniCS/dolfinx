@@ -67,7 +67,7 @@ jobs:
         run: |
           cmake -G Ninja -B ufcx-build-dir -S ffcx/cmake/
           cmake --build ufcx-build-dir
-          cmake --install ufcx-build-dir
+          sudo cmake --install ufcx-build-dir
 
       - name: Configure DOLFINx C++
         run: |
