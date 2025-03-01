@@ -479,10 +479,10 @@ void _lift_bc_interior_facets(
     // Get cell geometry
     auto x_dofs0 = md::submdspan(x_dofmap, cells[0], md::full_extent);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
-      std::copy_n(&x(x_dofs0[i], 3), 3, std::next(cdofs0.begin(), 3 * i));
+      std::copy_n(&x(x_dofs0[i], 0), 3, std::next(cdofs0.begin(), 3 * i));
     auto x_dofs1 = md::submdspan(x_dofmap, cells[1], md::full_extent);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
-      std::copy_n(&x(x_dofs1[i], 3), 3, std::next(cdofs1.begin(), 3 * i));
+      std::copy_n(&x(x_dofs1[i], 0), 3, std::next(cdofs1.begin(), 3 * i));
 
     // Get dof maps for cells and pack
     std::span dmap0_cell0(dmap0.data_handle() + cells0[0] * num_dofs0,
