@@ -41,10 +41,10 @@ jobs:
           apt-get -y install binutils libstdc++-14-dev
 
       - uses: actions/checkout@v4
-      - run: ls .github/
-      - run: ls .github/workflows
+      - run: ls ./.github/
+      - run: ls ./.github/workflows
       - name: Load environment variables
-        run: cat .github/workflows/.env >> $GITHUB_ENV
+        run: cat ./.github/workflows/.env >> $GITHUB_ENV
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
