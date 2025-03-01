@@ -31,8 +31,8 @@ jobs:
     name: oneAPI build and test
 
     defaults:
-      run:
-        shell: bash -el {0}
+      # run:
+      #   shell: bash -el {0}
 
     steps:
       - name: Install compiler dependencies
