@@ -96,7 +96,7 @@ jobs:
           path: dolfinx
 
       - name: Load environment variables
-        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+        run: cat dolfinx/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Insert add_dll_directory calls into DOLFINx
         working-directory: dolfinx/python/dolfinx
