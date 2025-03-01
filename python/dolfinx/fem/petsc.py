@@ -1185,11 +1185,6 @@ def assign(
                     end = start + _x1.shape[0]
                     _x1[:] = _x0.array_r[start:end]
                     start = end
-
-                # The above doesn't update ghost values, so we need to
-                # do it here. We should handle ghost by packing them at
-                # the end of x0.
-                x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
             except IndexError:
                 x1[:] = _x0.array_w[:]
 
