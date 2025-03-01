@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Load environment variables
-        run: cat .github/workflows/.env >> $GITHUB_ENV
+        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Set up Python
         uses: actions/setup-python@v5
