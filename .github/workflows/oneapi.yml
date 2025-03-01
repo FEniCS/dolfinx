@@ -40,6 +40,8 @@ jobs:
           apt-get -y update
           apt-get -y install binutils libstdc++-14-dev
 
+      - uses: actions/checkout@v4
+
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: oneapi-test-env
@@ -49,7 +51,6 @@ jobs:
           conda info
           conda list
 
-      - uses: actions/checkout@v4
       - run: ls ./.github/
       - run: ls ./.github/workflows
       - name: Load environment variables
