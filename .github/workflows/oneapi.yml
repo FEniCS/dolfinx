@@ -30,7 +30,7 @@ jobs:
 
     name: oneAPI build and test
 
-    defaults:
+    # defaults:
       # run:
       #   shell: bash -el {0}
 
