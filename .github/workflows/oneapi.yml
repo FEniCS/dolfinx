@@ -36,8 +36,8 @@ jobs:
     steps:
       - name: Install compiler dependencies
         run: |
-          apt-get -y update
-          apt-get -y install binutils libstdc++-14-dev
+          sudo apt-get -y update
+          sudo apt-get -y install binutils libstdc++-14-dev
 
       - uses: actions/checkout@v4
 
