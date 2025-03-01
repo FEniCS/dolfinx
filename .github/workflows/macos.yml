@@ -24,13 +24,17 @@ jobs:
       PETSC_DIR: ${{ github.workspace }}/petsc
 
     steps:
+      - uses: actions/checkout@v4
+        with:
+          path: dolfinx
+
+      - name: Load environment variables
+        run: cat .github/workflows/.env >> $GITHUB_ENV
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      - name: Load environment variables
-        run: cat .github/workflows/.env >> $GITHUB_ENV
 
       - name: Install Homebrew dependencies
         run: |
@@ -69,10 +73,6 @@ jobs:
           python -m pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
           python -m pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
           python -m pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
-
-      - uses: actions/checkout@v4
-        with:
-          path: dolfinx
 
       - name: Build and install DOLFINx C++ library
         working-directory: dolfinx
