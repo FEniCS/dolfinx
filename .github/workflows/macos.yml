@@ -25,8 +25,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: dolfinx
 
       - name: Load environment variables
         run: cat .github/workflows/.env >> $GITHUB_ENV
@@ -75,31 +73,26 @@ jobs:
           python -m pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Build and install DOLFINx C++ library
-        working-directory: dolfinx
         run: |
           cmake -G Ninja -B build -S cpp/
           cmake --build build
           sudo cmake --install build
 
       - name: Build C++ unit tests
-        working-directory: dolfinx
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
           cmake --build build/test --parallel 3
 
       - name: Run C++ unit tests (serial)
-        working-directory: dolfinx
         run: |
           cd build/test
           mpiexec -np 1 ctest -V --output-on-failure -R unittests
       - name: Run C++ unit tests (MPI)
-        working-directory: dolfinx
         run: |
           cd build/test
           mpiexec -np 3 ctest -V --output-on-failure -R unittests
 
       - name: Build and install DOLFINx Python interface
-        working-directory: dolfinx
         run: |
           python -m pip install -r python/build-requirements.txt
           python -m pip install --check-build-dependencies --no-build-isolation 'python/[test]'
@@ -110,11 +103,9 @@ jobs:
           mpiexec -np 2 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
 
       - name: Run Python unit tests (serial)
-        working-directory: dolfinx
         run: |
           python -m pip install pytest-xdist
           mpiexec -np 1 python3 -m pytest -n=auto --durations=50 python/test/unit/
       - name: Run Python unit tests (MPI, np=3)
-        working-directory: dolfinx
         run: |
           mpiexec -np 3 python3 -m pytest python/test/unit/
