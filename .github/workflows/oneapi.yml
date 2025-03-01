@@ -76,7 +76,7 @@ jobs:
       - name: Build and install DOLFINx C++ library
         run: |
           cmake --build build
-          cmake --install build
+          sudo cmake --install build
 
       - name: Install UFL and FFCx modules
         run: |
