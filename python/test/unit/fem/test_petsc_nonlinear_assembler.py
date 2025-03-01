@@ -83,11 +83,17 @@ class NonlinearPDE_SNESProblem:
 
         assert x.getType() != "nest"
         assert F.getType() != "nest"
-        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         with F.localForm() as f_local:
             f_local.set(0.0)
 
-        assign(x, [u.x.array for u in self.soln_vars])
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        data0, data1 = [], []
+        for u in self.soln_vars:
+            bs = u.function_space.dofmap.bs
+            size_local = u.function_space.dofmap.index_map.size_local
+            data0.append(u.x.array[: bs * size_local])
+            data1.append(u.x.array[bs * size_local :])
+        assign(x, data0 + data1)
 
         assemble_vector_block(F, self.L, self.a, bcs=self.bcs, x0=x, alpha=-1.0)
 
@@ -111,10 +117,18 @@ class NonlinearPDE_SNESProblem:
         assert x.getType() == "nest" and F.getType() == "nest"
 
         # Update solution
+        for x_sub in x.getNestSubVecs():
+            x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         assign(x, [u.x.array for u in self.soln_vars])
+        # x = x.getNestSubVecs()
+        # for x_sub, var_sub in zip(x, self.soln_vars):
+        #     x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        #     with x_sub.localForm() as _x:
+        #         var_sub.x.array[:] = _x.array_r
+
+        x = x.getNestSubVecs()
 
         # Assemble
-        x = x.getNestSubVecs()
         bcs1 = bcs_by_block(extract_function_spaces(self.a, 1), self.bcs)
         for L, F_sub, a in zip(self.L, F.getNestSubVecs(), self.a):
             with F_sub.localForm() as F_sub_local:
