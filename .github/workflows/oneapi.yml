@@ -43,8 +43,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Load environment variables
-        shell: bash {0}
-        run: cat ./.github/workflows/.env >> $GITHUB_ENV
+        run: cat dolfinx/.github/workflows/.env >> $GITHUB_ENV
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
