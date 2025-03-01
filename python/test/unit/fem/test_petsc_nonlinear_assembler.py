@@ -166,7 +166,6 @@ class TestNLSPETSc:
         in the nonlinear setting."""
         from petsc4py import PETSc
 
-        from dolfinx.cpp.la.petsc import scatter_local_vectors
         from dolfinx.fem.petsc import (
             apply_lifting,
             apply_lifting_nest,
@@ -176,6 +175,7 @@ class TestNLSPETSc:
             assemble_vector,
             assemble_vector_block,
             assemble_vector_nest,
+            assign,
             create_vector_block,
             create_vector_nest,
             set_bc,
@@ -233,15 +233,13 @@ class TestNLSPETSc:
         def blocked():
             """Monolithic blocked"""
             x = create_vector_block(L_block)
-            scatter_local_vectors(
-                x,
-                [u.x.petsc_vec.array_r, p.x.petsc_vec.array_r],
-                [
-                    (u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
-                    (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs),
-                ],
-            )
-            x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+            data0, data1 = [], []
+            for v in (u, p):
+                bs = v.function_space.dofmap.bs
+                size_local = v.function_space.dofmap.index_map.size_local
+                data0.append(v.x.array[: bs * size_local])
+                data1.append(v.x.array[bs * size_local :])
+            assign(data0 + data1, x)
 
             # Ghosts are updated inside assemble_vector_block
             A = assemble_matrix_block(a_block, bcs=[bc])
@@ -259,13 +257,9 @@ class TestNLSPETSc:
         def nested():
             """Nested (MatNest)"""
             x = create_vector_nest(L_block)
-            for x1_soln_pair in zip(x.getNestSubVecs(), (u, p)):
-                x1_sub, soln_sub = x1_soln_pair
-                soln_sub.x.petsc_vec.ghostUpdate(
-                    addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
-                )
-                soln_sub.x.petsc_vec.copy(result=x1_sub)
-                x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+            # Assign (u, p) values to x
+            assign([u.x.array for u in (u, p)], x)
 
             A = assemble_matrix_nest(a_block, bcs=[bc])
             b = assemble_vector_nest(L_block)
@@ -547,8 +541,8 @@ class TestNLSPETSc:
         """Assemble Stokes problem with Taylor-Hood elements and solve."""
         from petsc4py import PETSc
 
-        from dolfinx.cpp.la.petsc import scatter_local_vectors
         from dolfinx.fem.petsc import (
+            assign,
             create_matrix,
             create_matrix_block,
             create_matrix_nest,
@@ -625,16 +619,15 @@ class TestNLSPETSc:
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
             x = create_vector_block(F)
-            with u.x.petsc_vec.localForm() as _u, p.x.petsc_vec.localForm() as _p:
-                scatter_local_vectors(
-                    x,
-                    [_u.array_r, _p.array_r],
-                    [
-                        (u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
-                        (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs),
-                    ],
-                )
-            x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+            # Assign (u, p) values to x
+            data0, data1 = [], []
+            for v in (u, p):
+                bs = v.function_space.dofmap.bs
+                size_local = v.function_space.dofmap.index_map.size_local
+                data0.append(v.x.array[: bs * size_local])
+                data1.append(v.x.array[bs * size_local :])
+            assign(data0 + data1, x)
 
             snes.solve(None, x)
             assert snes.getConvergedReason() > 0
@@ -668,13 +661,9 @@ class TestNLSPETSc:
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
             x = create_vector_nest(F)
-            for x1_soln_pair in zip(x.getNestSubVecs(), (u, p)):
-                x1_sub, soln_sub = x1_soln_pair
-                soln_sub.x.petsc_vec.ghostUpdate(
-                    addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
-                )
-                soln_sub.x.petsc_vec.copy(result=x1_sub)
-                x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+            # Assign (u, p) values to x
+            assign([u.x.array for u in (u, p)], x)
 
             x.set(0.0)
             snes.solve(None, x)

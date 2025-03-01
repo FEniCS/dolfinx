@@ -1140,14 +1140,12 @@ def assign(
         x0: An array or list of array that will be assigned to ``x1``.
         x1: Vector to assign to.
     """
-    print("Assign arrays to PETSc")
     try:
-        # Nested PETSc matrix
         x1_nest = x1.getNestSubVecs()
         for _x0, _x1 in zip(x0, x1_nest):
             with _x1.localForm() as x:
                 x.array_w[:] = _x0
-    except AttributeError:
+    except PETSc.Error:
         with x1.localForm() as _x:
             try:
                 start = 0
@@ -1155,24 +1153,19 @@ def assign(
                     end = start + _x0.shape[0]
                     _x.array_w[start:end] = _x0
                     start = end
-            except:  # noqa: E722
-                # TODO: add correct exception
+            except IndexError:
                 _x.array_w[:] = _x0
 
 
 @assign.register(PETSc.Vec)
-def assign(
-    x0: PETSc.Vec,
-    x1: typing.Union[npt.NDArray[np.floating], list[npt.NDArray[np.floating]]],
-):
-    """Assign PETSc vector ``x0`` to arrays ``x1``.
+def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.floating], list[npt.NDArray[np.floating]]]):
+    """Assign PETSc vector ``x0`` values to arrays ``x1``.
 
     Args:
         x0: Vector that will be assigned to ``x1``.
         x1: An array or list of array to assing to.
     """
     try:
-        # Nested PETSc matrix
         x0_nest = x0.getNestSubVecs()
         for _x0, _x1 in zip(x0_nest, x1):
             with _x0.localForm() as x:
