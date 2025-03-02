@@ -17,6 +17,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container: ubuntu:24.04
 
     env:
       CC: icx
@@ -36,8 +37,8 @@ jobs:
     steps:
       - name: Install compiler dependencies
         run: |
-          sudo apt-get -y update
-          sudo apt-get -y install binutils libstdc++-14-dev
+          apt-get -y update
+          apt-get -y install binutils libstdc++-14-dev
 
       - uses: actions/checkout@v4
 
@@ -67,7 +68,7 @@ jobs:
         run: |
           cmake -G Ninja -B ufcx-build-dir -S ffcx/cmake/
           cmake --build ufcx-build-dir
-          sudo cmake --install ufcx-build-dir
+          cmake --install ufcx-build-dir
 
       - name: Configure DOLFINx C++
         run: |
@@ -76,7 +77,7 @@ jobs:
       - name: Build and install DOLFINx C++ library
         run: |
           cmake --build build
-          sudo cmake --install build
+          cmake --install build
 
       - name: Install UFL and FFCx modules
         run: |
