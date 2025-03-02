@@ -9,7 +9,6 @@
 #include <complex>
 #include <concepts>
 #include <type_traits>
-
 #include <basix/mdspan.hpp>
 
 namespace dolfinx
