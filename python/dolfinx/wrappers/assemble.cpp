@@ -213,8 +213,6 @@ void declare_assembly_functions(nb::module_& m)
       [](const dolfinx::fem::Expression<T, U>& e,
          nb::ndarray<const std::int32_t, nb::c_contig> entities)
       {
-        namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
         std::vector<int> coffsets = e.coefficient_offsets();
         const std::vector<std::shared_ptr<const dolfinx::fem::Function<T, U>>>&
             coefficients
@@ -269,8 +267,6 @@ void declare_assembly_functions(nb::module_& m)
          const dolfinx::mesh::Mesh<U>& mesh,
          nb::ndarray<const std::int32_t, nb::c_contig> entities)
       {
-        namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
         std::optional<std::pair<
             std::reference_wrapper<const dolfinx::fem::FiniteElement<U>>,
             std::size_t>>

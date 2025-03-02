@@ -43,7 +43,7 @@ class Expression;
 /// @tparam T The function scalar type.
 /// @tparam U The mesh geometry scalar type.
 template <dolfinx::scalar T,
-          std::floating_point U = dolfinx::scalar_value_type_t<T>>
+          std::floating_point U = dolfinx::scalar_value_t<T>>
 class Function
 {
 public:
@@ -317,8 +317,6 @@ public:
                    std::span<const std::int32_t> cells0,
                    std::span<const std::int32_t> cells1 = {})
   {
-    namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
     // Extract mesh
     const mesh::Mesh<geometry_type>* mesh0 = nullptr;
     for (auto& c : e0.coefficients())
