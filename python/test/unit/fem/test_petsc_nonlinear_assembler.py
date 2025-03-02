@@ -119,16 +119,11 @@ class NonlinearPDE_SNESProblem:
         # Update solution
         for x_sub in x.getNestSubVecs():
             x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        assign(x, [u.x.array for u in self.soln_vars])
-        # x = x.getNestSubVecs()
-        # for x_sub, var_sub in zip(x, self.soln_vars):
-        #     x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        #     with x_sub.localForm() as _x:
-        #         var_sub.x.array[:] = _x.array_r
 
-        x = x.getNestSubVecs()
+        assign(x, [u.x.array for u in self.soln_vars])
 
         # Assemble
+        x = x.getNestSubVecs()
         bcs1 = bcs_by_block(extract_function_spaces(self.a, 1), self.bcs)
         for L, F_sub, a in zip(self.L, F.getNestSubVecs(), self.a):
             with F_sub.localForm() as F_sub_local:
@@ -332,6 +327,7 @@ class TestNLSPETSc:
 
         from dolfinx.cpp.la.petsc import scatter_local_vectors
         from dolfinx.fem.petsc import (
+            assign,
             create_matrix,
             create_matrix_block,
             create_matrix_nest,
@@ -504,7 +500,7 @@ class TestNLSPETSc:
             U.sub(1).interpolate(initial_guess_p)
 
             x = create_vector(F)
-            x.array[:] = U.x.petsc_vec.array_r
+            assign(U.x.array, x)
 
             snes.solve(None, x)
             assert snes.getKSP().getConvergedReason() > 0
@@ -727,7 +723,7 @@ class TestNLSPETSc:
             U.sub(1).interpolate(initial_guess_p)
 
             x = create_vector(F)
-            x.array[:] = U.x.petsc_vec.array_r
+            assign(U.x.array, x)
 
             snes.solve(None, x)
             assert snes.getConvergedReason() > 0
