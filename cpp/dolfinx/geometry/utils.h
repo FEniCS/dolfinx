@@ -197,15 +197,16 @@ constexpr bool is_leaf(std::array<int, 2> bbox)
 /// the bounds of the bounding box, b(0,i) <= x[i] <= b(1,i) for i = 0,
 /// 1, 2
 template <std::floating_point T>
-constexpr bool point_in_bbox(const std::array<T, 6>& b, std::span<const T, 3> x)
+constexpr bool point_in_bbox(std::span<const T, 6> b, std::span<const T, 3> x)
 {
   constexpr T rtol = 1e-14;
   bool in = true;
   for (std::size_t i = 0; i < 3; i++)
   {
     T eps = rtol * (b[i + 3] - b[i]);
-    in &= x[i] >= (b[i] - eps);
-    in &= x[i] <= (b[i + 3] + eps);
+    in &= (x[i] >= (b[i] - eps)) && (x[i] <= (b[i + 3] + eps));
+    if (!in)
+      break;
   }
 
   return in;
@@ -287,9 +288,8 @@ _compute_closest_entity(const geometry::BoundingBoxTree<T>& tree,
     if (r2 > R2)
       return {closest_entity, R2};
 
-    // Check both children
-    // We use R2 (as opposed to r2), as a bounding box can be closer
-    // than the actual entity
+    // Check both children. We use R2 (as opposed to r2), as a bounding
+    // box can be closer than the actual entity.
     std::pair<int, T> p0 = _compute_closest_entity(tree, point, bbox.front(),
                                                    mesh, closest_entity, R2);
     std::pair<int, T> p1 = _compute_closest_entity(tree, point, bbox.back(),
@@ -299,10 +299,10 @@ _compute_closest_entity(const geometry::BoundingBoxTree<T>& tree,
 }
 
 /// @brief Compute collisions with a single point.
-/// @param[in] tree The bounding box tree
-/// @param[in] points The points (`shape=(num_points, 3)`)
-/// @param[in, out] entities The list of colliding entities (local to
-/// process)
+/// @param[in] tree Bounding box tree.
+/// @param[in] points The points (`shape=(num_points, 3)`).
+/// @param[in, out] entities List of colliding entities (local to
+/// process).
 template <std::floating_point T>
 void _compute_collisions_point(const geometry::BoundingBoxTree<T>& tree,
                                std::span<const T, 3> p,
@@ -310,10 +310,13 @@ void _compute_collisions_point(const geometry::BoundingBoxTree<T>& tree,
 {
   std::deque<std::int32_t> stack;
   std::int32_t next = tree.num_bboxes() - 1;
+  std::span<const T> coords = tree.bbox_coordinates();
+  auto view_bbox = [&coords](std::size_t node)
+  { return std::span<const T, 6>(coords.data() + 6 * node, 6); };
   while (next != -1)
   {
-    const std::array<int, 2> bbox = tree.bbox(next);
-    if (is_leaf(bbox) and point_in_bbox(tree.get_bbox(next), p))
+    if (std::array bbox = tree.bbox(next);
+        is_leaf(bbox) and point_in_bbox(view_bbox(next), p))
     {
       // If box is a leaf node then add it to the list of colliding
       // entities
@@ -324,8 +327,8 @@ void _compute_collisions_point(const geometry::BoundingBoxTree<T>& tree,
     {
       // Check whether the point collides with child nodes (left and
       // right)
-      bool left = point_in_bbox(tree.get_bbox(bbox[0]), p);
-      bool right = point_in_bbox(tree.get_bbox(bbox[1]), p);
+      bool left = point_in_bbox(view_bbox(bbox[0]), p);
+      bool right = point_in_bbox(view_bbox(bbox[1]), p);
       if (left and right)
       {
         // If the point collides with both child nodes, add the right
