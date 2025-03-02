@@ -226,8 +226,6 @@ void pack_coefficients(const Form<T, U>& form,
                        std::map<std::pair<IntegralType, int>,
                                 std::pair<std::vector<T>, int>>& coeffs)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
       = form.coefficients();
   const std::vector<int> offsets = form.coefficient_offsets();
@@ -346,8 +344,6 @@ void pack_coefficients(
     std::vector<std::reference_wrapper<const Function<T, U>>> coeffs,
     std::span<const int> offsets, fem::MDSpan2 auto entities, std::span<T> c)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   assert(!offsets.empty());
   const int cstride = offsets.back();
 
