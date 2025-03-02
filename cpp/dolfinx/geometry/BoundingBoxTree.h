@@ -279,8 +279,10 @@ public:
 
     // Recursively build the bounding box tree from the leaves
     if (!leaf_bboxes.empty())
+    {
       std::tie(_bboxes, _bbox_coordinates)
           = impl_bb::build_from_leaf(leaf_bboxes);
+    }
 
     spdlog::info("Computed bounding box tree with {} nodes for {} entities",
                  num_bboxes(), entities_span.size());
@@ -377,14 +379,25 @@ public:
   ///
   /// @return The flattened row-major coordinate vector, where the shape is
   /// `(2*num_bboxes, 3)`.
-  std::span<const T> bbox_coordinates() const { return _bbox_coordinates; }
+  md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2, 3>>
+  bbox_coordinates() const
+  {
+    return md::mdspan<const T,
+                      md::extents<std::size_t, md::dynamic_extent, 2, 3>>(
+        _bbox_coordinates.data(), _bbox_coordinates.size() / 6, 2, 3);
+  }
 
   /// @brief Access coordinates of lower and upper corners of bounding boxes
   /// (non-const version)
   ///
   /// @return The flattened row-major coordinate vector, where the shape is
   /// `(2*num_bboxes, 3)`.
-  std::span<T> bbox_coordinates() { return _bbox_coordinates; }
+  md::mdspan<T, md::extents<std::size_t, md::dynamic_extent, 2, 3>>
+  bbox_coordinates()
+  {
+    return md::mdspan<T, md::extents<std::size_t, md::dynamic_extent, 2, 3>>(
+        _bbox_coordinates.data(), _bbox_coordinates.size() / 6, 2, 3);
+  }
 
   /// Topological dimension of leaf entities
   int tdim() const { return _tdim; }

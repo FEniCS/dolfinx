@@ -59,9 +59,10 @@ void declare_bbtree(nb::module_& m, std::string type)
           "bbox_coordinates",
           [](dolfinx::geometry::BoundingBoxTree<T>& self)
           {
-            std::span<T> bbox_coordinates = self.bbox_coordinates();
+            auto bbox_coordinates = self.bbox_coordinates();
             return nb::ndarray<T, nb::shape<-1, 2, 3>, nb::numpy>(
-                bbox_coordinates.data(), {bbox_coordinates.size() / 6, 2, 3});
+                bbox_coordinates.data_handle(),
+                {bbox_coordinates.extent(0), 2, 3});
           },
           nb::rv_policy::reference_internal,
           "Return coordinates of bounding boxes."

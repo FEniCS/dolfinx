@@ -197,14 +197,16 @@ constexpr bool is_leaf(std::array<int, 2> bbox)
 /// the bounds of the bounding box, b(0,i) <= x[i] <= b(1,i) for i = 0,
 /// 1, 2
 template <std::floating_point T>
-constexpr bool point_in_bbox(std::span<const T, 6> b, std::span<const T, 3> x)
+constexpr bool
+point_in_bbox(md::mdspan<const T, md::extents<std::size_t, 2, 3>> b,
+              std::span<const T, 3> x)
 {
   constexpr T rtol = 1e-14;
   bool in = true;
   for (std::size_t i = 0; i < 3; i++)
   {
-    T eps = rtol * (b[i + 3] - b[i]);
-    in &= (x[i] >= (b[i] - eps)) && (x[i] <= (b[i + 3] + eps));
+    T eps = rtol * (b(1, i) - b(0, i));
+    in &= (x[i] >= (b(0, i) - eps)) && (x[i] <= (b(1, i) + eps));
     if (!in)
       break;
   }
@@ -310,9 +312,13 @@ void _compute_collisions_point(const geometry::BoundingBoxTree<T>& tree,
 {
   std::deque<std::int32_t> stack;
   std::int32_t next = tree.num_bboxes() - 1;
-  std::span<const T> coords = tree.bbox_coordinates();
+  md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2, 3>> coords
+      = tree.bbox_coordinates();
   auto view_bbox = [&coords](std::size_t node)
-  { return std::span<const T, 6>(coords.data() + 6 * node, 6); };
+  {
+    return md::mdspan<const T, md::extents<std::size_t, 2, 3>>(
+        coords.data_handle() + 6 * node, 2, 3);
+  };
   while (next != -1)
   {
     if (std::array bbox = tree.bbox(next);
