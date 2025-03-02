@@ -33,8 +33,6 @@ class DirichletBC;
 }
 namespace dolfinx::fem::impl
 {
-namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
 /// @cond
 using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// @endcond
@@ -81,7 +79,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 template <dolfinx::scalar T, int _bs0 = -1, int _bs1 = -1>
 void _lift_bc_cells(
     std::span<T> b, mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_type_t<T>,
+    md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
     FEkernel<T> auto kernel, std::span<const std::int32_t> cells,
@@ -103,7 +101,7 @@ void _lift_bc_cells(
   assert(_bs1 < 0 or _bs1 == bs1);
 
   // Data structures used in bc application
-  std::vector<scalar_value_type_t<T>> cdofs(3 * x_dofmap.extent(1));
+  std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
   std::vector<T> Ae, be;
   assert(cells0.size() == cells.size());
   assert(cells1.size() == cells.size());
@@ -265,7 +263,7 @@ void _lift_bc_cells(
 template <dolfinx::scalar T>
 void _lift_bc_exterior_facets(
     std::span<T> b, mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_type_t<T>,
+    md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
     FEkernel<T> auto kernel,
@@ -295,7 +293,7 @@ void _lift_bc_exterior_facets(
   const auto [dmap1, bs1, facets1] = dofmap1;
 
   // Data structures used in bc application
-  std::vector<scalar_value_type_t<T>> cdofs(3 * x_dofmap.extent(1));
+  std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
   std::vector<T> Ae, be;
   assert(facets0.size() == facets.size());
   assert(facets1.size() == facets.size());
@@ -419,7 +417,7 @@ void _lift_bc_exterior_facets(
 template <dolfinx::scalar T>
 void _lift_bc_interior_facets(
     std::span<T> b, mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_type_t<T>,
+    md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
     FEkernel<T> auto kernel,
@@ -451,7 +449,7 @@ void _lift_bc_interior_facets(
   const auto [dmap1, bs1, facets1] = dofmap1;
 
   // Data structures used in assembly
-  using X = scalar_value_type_t<T>;
+  using X = scalar_value_t<T>;
   std::vector<X> cdofs(2 * x_dofmap.extent(1) * 3);
   std::span<X> cdofs0(cdofs.data(), x_dofmap.extent(1) * 3);
   std::span<X> cdofs1(cdofs.data() + x_dofmap.extent(1) * 3,
@@ -643,7 +641,7 @@ void _lift_bc_interior_facets(
 template <dolfinx::scalar T, int _bs = -1>
 void assemble_cells(
     fem::DofTransformKernel<T> auto P0, std::span<T> b, mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_type_t<T>,
+    md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
     std::span<const std::int32_t> cells,
@@ -659,7 +657,7 @@ void assemble_cells(
   assert(_bs < 0 or _bs == bs);
 
   // Create data structures used in assembly
-  std::vector<scalar_value_type_t<T>> cdofs(3 * x_dofmap.extent(1));
+  std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
   std::vector<T> be(bs * dmap.extent(1));
   std::span<T> _be(be);
 
@@ -725,7 +723,7 @@ void assemble_cells(
 template <dolfinx::scalar T, int _bs = -1>
 void assemble_exterior_facets(
     fem::DofTransformKernel<T> auto P0, std::span<T> b, mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_type_t<T>,
+    md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
     md::mdspan<const std::int32_t,
@@ -748,7 +746,7 @@ void assemble_exterior_facets(
 
   // Create data structures used in assembly
   const int num_dofs = dmap.extent(1);
-  std::vector<scalar_value_type_t<T>> cdofs(3 * x_dofmap.extent(1));
+  std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
   std::vector<T> be(bs * num_dofs);
   std::span<T> _be(be);
   assert(facets0.size() == facets.size());
@@ -818,7 +816,7 @@ void assemble_exterior_facets(
 template <dolfinx::scalar T, int _bs = -1>
 void assemble_interior_facets(
     fem::DofTransformKernel<T> auto P0, std::span<T> b, mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_type_t<T>,
+    md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
     md::mdspan<const std::int32_t,
@@ -842,7 +840,7 @@ void assemble_interior_facets(
   assert(_bs < 0 or _bs == bs);
 
   // Create data structures used in assembly
-  using X = scalar_value_type_t<T>;
+  using X = scalar_value_t<T>;
   std::vector<X> cdofs(2 * x_dofmap.extent(1) * 3);
   std::span<X> cdofs0(cdofs.data(), x_dofmap.extent(1) * 3);
   std::span<X> cdofs1(cdofs.data() + x_dofmap.extent(1) * 3,
@@ -927,7 +925,7 @@ void assemble_interior_facets(
 /// @param[in] alpha Scaling to apply
 template <dolfinx::scalar T, std::floating_point U>
 void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
-             md::mdspan<const scalar_value_type_t<T>,
+             md::mdspan<const scalar_value_t<T>,
                         md::extents<std::size_t, md::dynamic_extent, 3>>
                  x,
              std::span<const T> constants,
@@ -1129,7 +1127,7 @@ void apply_lifting(
         throw std::runtime_error("Unable to extract a mesh.");
       mdspan2_t x_dofmap = mesh->geometry().dofmap();
       std::span _x = mesh->geometry().x();
-      md::mdspan<const scalar_value_type_t<T>,
+      md::mdspan<const scalar_value_t<T>,
                  md::extents<std::size_t, md::dynamic_extent, 3>>
           x(_x.data(), _x.size() / 3, 3);
 
@@ -1172,7 +1170,7 @@ void apply_lifting(
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_vector(
     std::span<T> b, const Form<T, U>& L,
-    md::mdspan<const scalar_value_type_t<T>,
+    md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
     std::span<const T> constants,
@@ -1357,22 +1355,21 @@ void assemble_vector(
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
   using mdspanx3_t
-      = md::mdspan<const scalar_value_type_t<T>,
+      = md::mdspan<const scalar_value_t<T>,
                    md::extents<std::size_t, md::dynamic_extent, 3>>;
 
   std::shared_ptr<const mesh::Mesh<U>> mesh = L.mesh();
   assert(mesh);
   auto x = mesh->geometry().x();
-  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
+  if constexpr (std::is_same_v<U, scalar_value_t<T>>)
   {
     assemble_vector(b, L, mdspanx3_t(x.data(), x.size() / 3, 3), constants,
                     coefficients);
   }
   else
   {
-    std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
+    std::vector<scalar_value_t<T>> _x(x.begin(), x.end());
     assemble_vector(b, L, mdspanx3_t(_x.data(), _x.size() / 3, 3), constants,
                     coefficients);
   }
