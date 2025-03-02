@@ -216,6 +216,13 @@ basix::element::lagrange_variant CoordinateElement<T>::variant() const
   return _element->lagrange_variant();
 }
 //-----------------------------------------------------------------------------
+template <std::floating_point T>
+std::uint64_t CoordinateElement<T>::hash() const
+{
+  assert(_element);
+  return _element->hash();
+}
+//-----------------------------------------------------------------------------
 template class fem::CoordinateElement<float>;
 template class fem::CoordinateElement<double>;
 //-----------------------------------------------------------------------------

@@ -341,4 +341,25 @@ create_subtopology(const Topology& topology, int dim,
 std::vector<std::int32_t>
 entities_to_index(const Topology& topology, int dim,
                   std::span<const std::int32_t> entities);
+
+/// @brief Compute a list of cell-cell connections for each possible combination
+/// in the topology which have the same connecting facet type.
+/// @param topology A mesh topology
+/// @param facet_type Type of facet connection between cells
+/// @return A list for each possible cell-cell connection, arranged
+/// in the ordering given by `cell_types()` in the topology. i.e. if the cell
+/// types are tet, prism, hex, and the facet_type is quadrilateral, then the
+/// lists returned are: tet-tet (empty), tet-prism (empty), tet-hex (empty),
+/// prism-tet (empty), prism-prism, prism-hex, hex-tet (empty), hex-prism,
+/// hex-hex. Note there are empty lists for the invalid cases, and also that
+/// there is currently redundant data, since the transpose is also computed,
+/// i.e. prism-hex as well as hex-prism.
+/// Each list contains a flattened array with data in the order (cell0, local
+/// facet0, cell1, local facet1) for each connection between cells.
+/// @note All facet-cell connectivity and cell-facet connectivity must be
+/// computed beforehand in the topology.
+/// @todo Remove redundant data.
+std::vector<std::vector<std::int32_t>>
+compute_mixed_cell_pairs(const Topology& topology, mesh::CellType facet_type);
+
 } // namespace dolfinx::mesh
