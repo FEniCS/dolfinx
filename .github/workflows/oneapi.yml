@@ -42,7 +42,6 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - run: ls -al
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
