@@ -442,8 +442,6 @@ template <std::floating_point T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>>
 compute_vertex_coords(const mesh::Mesh<T>& mesh)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   auto topology = mesh.topology();
   assert(topology);
   const int tdim = topology->dim();

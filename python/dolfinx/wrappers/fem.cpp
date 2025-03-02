@@ -28,6 +28,7 @@
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
+#include <map>
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
@@ -45,6 +46,7 @@
 #include <nanobind/stl/vector.h>
 #include <span>
 #include <string>
+#include <tuple>
 #include <ufcx.h>
 #include <utility>
 
@@ -300,7 +302,7 @@ void declare_function_space(nb::module_& m, std::string type)
 template <typename T>
 void declare_objects(nb::module_& m, const std::string& type)
 {
-  using U = typename dolfinx::scalar_value_type_t<T>;
+  using U = typename dolfinx::scalar_value_t<T>;
 
   // dolfinx::fem::DirichletBC
   std::string pyclass_name = std::string("DirichletBC_") + type;
@@ -618,7 +620,7 @@ void declare_objects(nb::module_& m, const std::string& type)
 template <typename T>
 void declare_form(nb::module_& m, std::string type)
 {
-  using U = typename dolfinx::scalar_value_type_t<T>;
+  using U = typename dolfinx::scalar_value_t<T>;
 
   // dolfinx::fem::Form
   std::string pyclass_name_form = std::string("Form_") + type;
@@ -646,8 +648,8 @@ void declare_form(nb::module_& m, std::string type)
                                         nb::c_contig>>& entity_maps,
              std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh)
           {
-            std::map<dolfinx::fem::IntegralType,
-                     std::vector<dolfinx::fem::integral_data<T>>>
+            std::map<std::tuple<dolfinx::fem::IntegralType, int, int>,
+                     dolfinx::fem::integral_data<T>>
                 _integrals;
 
             // Loop over kernel for each entity type
@@ -659,10 +661,11 @@ void declare_form(nb::module_& m, std::string type)
                     = (void (*)(T*, const T*, const T*,
                                 const typename geom_type<T>::value_type*,
                                 const int*, const std::uint8_t*))ptr;
-                _integrals[type].emplace_back(
-                    id, kn_ptr,
-                    std::span<const std::int32_t>(e.data(), e.size()),
-                    std::vector<int>(c.data(), c.data() + c.size()));
+                _integrals.insert(
+                    {{type, id, 0},
+                     {kn_ptr,
+                      std::vector<std::int32_t>(e.data(), e.data() + e.size()),
+                      std::vector<int>(c.data(), c.data() + c.size())}});
               }
             }
 
@@ -672,12 +675,12 @@ void declare_form(nb::module_& m, std::string type)
             for (auto& [msh, map] : entity_maps)
               _entity_maps.emplace(msh, std::span(map.data(), map.size()));
             new (fp) dolfinx::fem::Form<T, U>(
-                spaces, std::move(_integrals), coefficients, constants,
-                needs_permutation_data, _entity_maps, mesh);
+                spaces, std::move(_integrals), mesh, coefficients, constants,
+                needs_permutation_data, _entity_maps);
           },
           nb::arg("spaces"), nb::arg("integrals"), nb::arg("coefficients"),
           nb::arg("constants"), nb::arg("need_permutation_data"),
-          nb::arg("entity_maps"), nb::arg("mesh").none())
+          nb::arg("entity_maps"), nb::arg("mesh"))
       .def(
           "__init__",
           [](dolfinx::fem::Form<T, U>* fp, std::vector<std::uintptr_t> forms,
@@ -748,7 +751,7 @@ void declare_form(nb::module_& m, std::string type)
           [](const dolfinx::fem::Form<T, U>& self,
              dolfinx::fem::IntegralType type, int i)
           {
-            std::span<const std::int32_t> _d = self.domain(type, i);
+            std::span<const std::int32_t> _d = self.domain(type, i, 0);
             switch (type)
             {
             case dolfinx::fem::IntegralType::cell:

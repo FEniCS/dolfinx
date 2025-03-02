@@ -16,7 +16,6 @@
 #include <dolfinx/mesh/generation.h>
 
 using namespace dolfinx;
-namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
 namespace
 {

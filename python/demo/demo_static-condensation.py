@@ -170,7 +170,9 @@ def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL):
 formtype = form_cpp_class(PETSc.ScalarType)  # type: ignore
 cells = np.arange(msh.topology.index_map(msh.topology.dim).size_local)
 integrals = {IntegralType.cell: [(-1, tabulate_A.address, cells, np.array([], dtype=np.int8))]}
-a_cond = Form(formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, {}, None))
+a_cond = Form(
+    formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, {}, mesh=msh._cpp_object)
+)
 
 A_cond = assemble_matrix(a_cond, bcs=[bc])
 A_cond.assemble()
