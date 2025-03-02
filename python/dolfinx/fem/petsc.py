@@ -57,6 +57,8 @@ __all__ = [
     "assemble_vector",
     "assemble_vector_block",
     "assemble_vector_nest",
+    "assign",
+    "assign_function",
     "create_matrix",
     "create_matrix_block",
     "create_matrix_nest",
@@ -1126,20 +1128,34 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
 def assign(
     x0: typing.Union[npt.NDArray[np.floating], list[npt.NDArray[np.floating]]], x1: PETSc.Vec
 ):
-    """Assign ``x0`` to PETSc vedctor ``x1``.
+    """Assign ``x0`` values to a PETSc vector ``x1``.
 
-    Assigns values in ``x0``, which is possibly blocked, to ``x1``. When
-    ``x0`` holds a list of arrays, the arrays in ``x0`` are 'stacked'
-    and assigned to ``x1``, i.e.::
+    Todo:
+        * This is just linear algebra, so should probably go in
+          ``dolfinx.la.petsc``.
+
+    Values in ``x0``, which is possibly a stacked collection of arrays,
+    are assigned ``x1``. When ``x0`` holds a collection of ``n``` arrays
+    and ``x1`` has type ``NEST``, the assignment is::
 
               [x0[0]]
         x1 =  [x0[1]]
               [.....]
               [x0[n-1]]
 
+    When ``x0`` holds a collection of ``n`` arrays and ``x1`` **does
+    not** have type ``NEST``, the assignment is::
+
+              [x0_owned[0]]
+        x1 =  [.....]
+              [x0_owned[n-1]]
+              [x0_ghost[0]]
+              [.....]
+              [x0_owned[n-1]]
+
     Args:
-        x0: An array or list of array that will be assigned to ``x1``.
-        x1: Vector to assign to.
+        x0: An array or list of arrays that will be assigned to ``x1``.
+        x1: Vector to assign values to.
     """
     try:
         x1_nest = x1.getNestSubVecs()
@@ -1160,11 +1176,15 @@ def assign(
 
 @assign.register(PETSc.Vec)
 def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.floating], list[npt.NDArray[np.floating]]]):
-    """Assign PETSc vector ``x0`` values to arrays ``x1``.
+    """Assign PETSc vector ``x0`` values to (blocked) array(s) ``x1``.
+
+    This function performs the reverse of the assigment performed by the
+    version of :func:`.assign(x0: typing.Union[npt.NDArray[np.floating],
+    list[npt.NDArray[np.floating]]], x1: PETSc.Vec)`.
 
     Args:
-        x0: Vector that will be assigned to ``x1``.
-        x1: An array or list of array to assing to.
+        x0: Vector that will have its values assigned to ``x1``.
+        x1: An array or list of arrays to assign to.
     """
     try:
         x0_nest = x0.getNestSubVecs()
@@ -1180,25 +1200,22 @@ def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.floating], list[npt.NDArray
                     _x1[:] = _x0.array_r[start:end]
                     start = end
             except IndexError:
-                x1[:] = _x0.array_w[:]
+                x1[:] = _x0.array_r[:]
 
 
 @functools.singledispatch
 def assign_function(u: typing.Union[_Function, list[_Function]], x: PETSc.Vec):
-    """Assign Function degrees-of-freedom to to a vector.
+    """Assign :class:`.Function` degrees-of-freedom to to a vector.
 
-    Assigns values in ``x0``, which is possibly blocked, to ``x1``. When
-    ``x0`` holds a list of arrays, the arrays in ``x0`` are 'stacked'
-    and assigned to ``x1``, i.e.::
-
-              [x0[0]]
-        x1 =  [x0[1]]
-              [.....]
-              [x0[n-1]]
+    Assigns degree-of-freedom values in values of ``u``, which is
+    possibly a collection of ``Functions``s, to ``x``. When ``u`` holds
+    a list of ``Functions``s, degrees-of-freedom for the ``Functions``s
+    in ``u`` are 'stacked' and assigned to ``x``. See :func:`assign` for
+    documentation on how stacked assignement is handled.
 
     Args:
-        x0: An array or list of array that will be assigned to ``x1``.
-        x1: Vector to assign to.
+        u: ``Function``(s) to assign degree-of-freedom value from.
+        x1: Vector to assign degree-of-freedom values in ``u` to.
     """
     if x.getType() == PETSc.Vec.Type().NEST:
         assign([v.x.array for v in u], x)
@@ -1207,9 +1224,9 @@ def assign_function(u: typing.Union[_Function, list[_Function]], x: PETSc.Vec):
             data0, data1 = [], []
             for v in u:
                 bs = v.function_space.dofmap.bs
-                size_local = v.function_space.dofmap.index_map.size_local
-                data0.append(v.x.array[: bs * size_local])
-                data1.append(v.x.array[bs * size_local :])
+                n = v.function_space.dofmap.index_map.size_local
+                data0.append(v.x.array[: bs * n])
+                data1.append(v.x.array[bs * n :])
             assign(data0 + data1, x)
         else:
             assign(u.x.array, x)
@@ -1217,20 +1234,18 @@ def assign_function(u: typing.Union[_Function, list[_Function]], x: PETSc.Vec):
 
 @assign_function.register(PETSc.Vec)
 def _(x: PETSc.Vec, u: typing.Union[_Function, list[_Function]]):
-    """Assign Function degrees-of-freedom to to a vector.
+    """Assign vector entries to :class:`.Function` degrees-of-freedom.
 
-    Assigns values in ``x0``, which is possibly blocked, to ``x1``. When
-    ``x0`` holds a list of arrays, the arrays in ``x0`` are 'stacked'
-    and assigned to ``x1``, i.e.::
-
-              [x0[0]]
-        x1 =  [x0[1]]
-              [.....]
-              [x0[n-1]]
+    Assigns values in ``x`` to the degrees-of-freedom of ``u``, which is
+    possibly a collection of ``Functions``s. When ``u`` is a collecion
+    of ``Functions``s, values in ``x`` are assigned block-wise ro the
+    ``Functions``s. See :func:`assign` for documentation on how stacked
+    assignement is handled.
 
     Args:
-        x0: An array or list of array that will be assigned to ``x1``.
-        x1: Vector to assign to.
+        x: Vector with values to assign to ``u` degrees-of-freedom.
+        u: ``Function``(s) to assign values to (to the ``Function``
+            degrees-of-freedom).
     """
     if x.getType() == PETSc.Vec.Type().NEST:
         assign(x, [v.x.array for v in u])
@@ -1239,9 +1254,9 @@ def _(x: PETSc.Vec, u: typing.Union[_Function, list[_Function]]):
             data0, data1 = [], []
             for v in u:
                 bs = v.function_space.dofmap.bs
-                size_local = v.function_space.dofmap.index_map.size_local
-                data0.append(v.x.array[: bs * size_local])
-                data1.append(v.x.array[bs * size_local :])
+                n = v.function_space.dofmap.index_map.size_local
+                data0.append(v.x.array[: bs * n])
+                data1.append(v.x.array[bs * n :])
             assign(x, data0 + data1)
         else:
             assign(x, u.x.array)
