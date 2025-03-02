@@ -227,7 +227,6 @@ public:
         _mesh(mesh), _coefficients(coefficients), _constants(constants),
         _needs_facet_permutations(needs_facet_permutations)
   {
-    namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
     if (!_mesh)
       throw std::runtime_error("Form Mesh is null.");
 

@@ -86,8 +86,6 @@ template <std::floating_point T, dolfinx::scalar U = T>
 void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
                    la::MatSet<U> auto&& mat_set)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   // Get mesh
   auto mesh = V0.mesh();
   assert(mesh);
@@ -322,8 +320,6 @@ void discrete_gradient(mesh::Topology& topology,
                            V1,
                        auto&& mat_set)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   auto& e0 = V0.first.get();
   const DofMap& dofmap0 = V0.second.get();
   auto& e1 = V1.first.get();
@@ -416,8 +412,6 @@ template <dolfinx::scalar T, std::floating_point U>
 void interpolation_matrix(const FunctionSpace<U>& V0,
                           const FunctionSpace<U>& V1, auto&& mat_set)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   // Get mesh
   auto mesh = V0.mesh();
   assert(mesh);

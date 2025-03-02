@@ -97,8 +97,6 @@ template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
                          const mesh::Mesh<U>& mesh, fem::MDSpan2 auto entities)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   std::optional<
       std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
       element = std::nullopt;
@@ -164,7 +162,6 @@ T assemble_scalar(
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
   using mdspanx3_t
       = md::mdspan<const scalar_value_t<T>,
                    md::extents<std::size_t, md::dynamic_extent, 3>>;
@@ -350,7 +347,6 @@ void assemble_matrix(
     std::span<const std::int8_t> dof_marker1)
 
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
   using mdspanx3_t
       = md::mdspan<const scalar_value_t<T>,
                    md::extents<std::size_t, md::dynamic_extent, 3>>;

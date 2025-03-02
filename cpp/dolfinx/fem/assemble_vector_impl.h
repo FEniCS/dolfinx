@@ -33,8 +33,6 @@ class DirichletBC;
 }
 namespace dolfinx::fem::impl
 {
-namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
 /// @cond
 using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// @endcond
@@ -1357,7 +1355,6 @@ void assemble_vector(
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
   using mdspanx3_t
       = md::mdspan<const scalar_value_t<T>,
                    md::extents<std::size_t, md::dynamic_extent, 3>>;

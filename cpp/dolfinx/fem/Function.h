@@ -317,8 +317,6 @@ public:
                    std::span<const std::int32_t> cells0,
                    std::span<const std::int32_t> cells1 = {})
   {
-    namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
     // Extract mesh
     const mesh::Mesh<geometry_type>* mesh0 = nullptr;
     for (auto& c : e0.coefficients())

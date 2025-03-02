@@ -10,6 +10,8 @@
 #include <concepts>
 #include <type_traits>
 
+#include <basix/mdspan.hpp>
+
 namespace dolfinx
 {
 /// @private This concept is used to constrain the a template type to floating
@@ -36,4 +38,8 @@ struct scalar_value<T, std::void_t<typename T::value_type>>
 /// @private Convenience typedef
 template <scalar T>
 using scalar_value_t = typename scalar_value<T>::type;
+
+/// @private mdspan/mdarray namespace
+namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
 } // namespace dolfinx

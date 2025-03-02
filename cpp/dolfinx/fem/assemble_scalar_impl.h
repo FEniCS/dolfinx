@@ -21,8 +21,6 @@
 
 namespace dolfinx::fem::impl
 {
-namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
 /// Assemble functional over cells
 template <dolfinx::scalar T>
 T assemble_cells(mdspan2_t x_dofmap,

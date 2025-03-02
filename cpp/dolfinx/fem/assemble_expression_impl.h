@@ -75,7 +75,6 @@ void tabulate_expression(
     std::span<const std::uint32_t> cell_info,
     fem::DofTransformKernel<T> auto P0)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
   static_assert(entities.rank() == 1 or entities.rank() == 2);
 
   // Create data structures used in evaluation
@@ -164,8 +163,6 @@ void tabulate_expression(
         std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
         element)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   std::function<void(std::span<T>, std::span<const std::uint32_t>, std::int32_t,
                      int)>
       post_dof_transform

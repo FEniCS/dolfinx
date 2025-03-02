@@ -52,8 +52,6 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
                                     const mesh::Geometry<T>& geometry,
                                     std::span<const std::int32_t> cells)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   // Get geometry data and the element coordinate map
   const std::size_t gdim = geometry.dim();
   auto x_dofmap = geometry.dofmap();
@@ -459,8 +457,6 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
                                   const Function<T, U>& u0,
                                   std::span<const std::int32_t> cells0)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   // Get mesh
   auto V0 = u0.function_space();
   assert(V0);
@@ -700,8 +696,6 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
                  std::span<const std::int32_t> cells)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   auto element = u.function_space()->element();
   assert(element);
   const int element_bs = element->block_size();
@@ -1086,8 +1080,6 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
                  std::span<const std::int32_t> cells,
                  const geometry::PointOwnershipData<U>& interpolation_data)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   auto mesh = u.function_space()->mesh();
   assert(mesh);
   MPI_Comm comm = mesh->comm();

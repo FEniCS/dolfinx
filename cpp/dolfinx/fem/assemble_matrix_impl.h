@@ -24,8 +24,6 @@
 
 namespace dolfinx::fem::impl
 {
-namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
 /// @brief Typedef
 using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 
