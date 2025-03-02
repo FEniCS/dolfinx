@@ -83,8 +83,6 @@ class NonlinearPDE_SNESProblem:
 
         assert x.getType() != "nest"
         assert F.getType() != "nest"
-        with F.localForm() as f_local:
-            f_local.set(0.0)
 
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         data0, data1 = [], []
@@ -95,6 +93,8 @@ class NonlinearPDE_SNESProblem:
             data1.append(u.x.array[bs * size_local :])
         assign(x, data0 + data1)
 
+        with F.localForm() as f_local:
+            f_local.set(0.0)
         assemble_vector_block(F, self.L, self.a, bcs=self.bcs, x0=x, alpha=-1.0)
 
     def J_block(self, snes, x, J, P):
@@ -325,7 +325,6 @@ class TestNLSPETSc:
         matrix approaches and test that solution is the same."""
         from petsc4py import PETSc
 
-        from dolfinx.cpp.la.petsc import scatter_local_vectors
         from dolfinx.fem.petsc import (
             assign,
             create_matrix,
@@ -397,15 +396,16 @@ class TestNLSPETSc:
             p.interpolate(initial_guess_p)
 
             x = create_vector_block(F)
-            scatter_local_vectors(
-                x,
-                [u.x.petsc_vec.array_r, p.x.petsc_vec.array_r],
-                [
-                    (u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
-                    (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs),
-                ],
-            )
-            x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+            # Assign u, p values to x
+            data0, data1 = [], []
+            for v in (u, p):
+                bs = v.function_space.dofmap.bs
+                size_local = v.function_space.dofmap.index_map.size_local
+                data0.append(v.x.array[: bs * size_local])
+                data1.append(v.x.array[bs * size_local :])
+            assign(data0 + data1, x)
+
             snes.solve(None, x)
             assert snes.getKSP().getConvergedReason() > 0
             assert snes.getConvergedReason() > 0
@@ -439,13 +439,9 @@ class TestNLSPETSc:
             p.interpolate(initial_guess_p)
             x = create_vector_nest(F)
             assert x.getType() == "nest"
-            for x_soln_pair in zip(x.getNestSubVecs(), (u, p)):
-                x_sub, soln_sub = x_soln_pair
-                soln_sub.x.petsc_vec.ghostUpdate(
-                    addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
-                )
-                soln_sub.x.petsc_vec.copy(result=x_sub)
-                x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+            # Assign u, p values to x
+            assign([v.x.array for v in (u, p)], x)
 
             snes.solve(None, x)
             assert snes.getKSP().getConvergedReason() > 0
