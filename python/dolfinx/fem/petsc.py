@@ -1214,8 +1214,8 @@ def assign_function(u: typing.Union[_Function, list[_Function]], x: PETSc.Vec):
     documentation on how stacked assignement is handled.
 
     Args:
-        u: ``Function``(s) to assign degree-of-freedom value from.
-        x1: Vector to assign degree-of-freedom values in ``u` to.
+        u: Function(s) to assign degree-of-freedom value from.
+        x1: Vector to assign degree-of-freedom values in ``u`` to.
     """
     if x.getType() == PETSc.Vec.Type().NEST:
         assign([v.x.array for v in u], x)
@@ -1243,7 +1243,7 @@ def _(x: PETSc.Vec, u: typing.Union[_Function, list[_Function]]):
     assignement is handled.
 
     Args:
-        x: Vector with values to assign to ``u` degrees-of-freedom.
+        x: Vector with values to assign to ``u`` degrees-of-freedom.
         u: ``Function``(s) to assign values to (to the ``Function``
             degrees-of-freedom).
     """
