@@ -53,16 +53,10 @@ class NonlinearPDE_SNESProblem:
     def F_mono(self, snes, x, F):
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import (
-            apply_lifting,
-            assemble_vector,
-            assign,
-            # assign_function,
-            set_bc,
-        )
+        from dolfinx.fem.petsc import apply_lifting, assemble_vector, assign_function, set_bc
 
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        assign(x, self.soln_vars.x.array)
+        assign_function(x, self.soln_vars)
 
         with F.localForm() as f_local:
             f_local.set(0.0)
@@ -85,19 +79,13 @@ class NonlinearPDE_SNESProblem:
     def F_block(self, snes, x, F):
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import assemble_vector_block, assign  # , assign_function
+        from dolfinx.fem.petsc import assemble_vector_block, assign_function
 
         assert x.getType() != "nest"
         assert F.getType() != "nest"
 
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        data0, data1 = [], []
-        for u in self.soln_vars:
-            bs = u.function_space.dofmap.bs
-            size_local = u.function_space.dofmap.index_map.size_local
-            data0.append(u.x.array[: bs * size_local])
-            data1.append(u.x.array[bs * size_local :])
-        assign(x, data0 + data1)
+        assign_function(x, self.soln_vars)
 
         with F.localForm() as f_local:
             f_local.set(0.0)
@@ -118,7 +106,7 @@ class NonlinearPDE_SNESProblem:
     def F_nest(self, snes, x, F):
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import apply_lifting, assemble_vector, assign, set_bc
+        from dolfinx.fem.petsc import apply_lifting, assemble_vector, assign_function, set_bc
 
         assert x.getType() == "nest" and F.getType() == "nest"
 
@@ -126,7 +114,7 @@ class NonlinearPDE_SNESProblem:
         for x_sub in x.getNestSubVecs():
             x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-        assign(x, [u.x.array for u in self.soln_vars])
+        assign_function(x, self.soln_vars)
 
         # Assemble
         x = x.getNestSubVecs()
