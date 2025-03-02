@@ -53,7 +53,13 @@ class NonlinearPDE_SNESProblem:
     def F_mono(self, snes, x, F):
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import apply_lifting, assemble_vector, assign, set_bc
+        from dolfinx.fem.petsc import (
+            apply_lifting,
+            assemble_vector,
+            assign,
+            # assign_function,
+            set_bc,
+        )
 
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         assign(x, self.soln_vars.x.array)
@@ -79,7 +85,7 @@ class NonlinearPDE_SNESProblem:
     def F_block(self, snes, x, F):
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import assemble_vector_block, assign
+        from dolfinx.fem.petsc import assemble_vector_block, assign  # , assign_function
 
         assert x.getType() != "nest"
         assert F.getType() != "nest"
@@ -170,7 +176,7 @@ class TestNLSPETSc:
             assemble_vector,
             assemble_vector_block,
             assemble_vector_nest,
-            assign,
+            assign_function,
             create_vector_block,
             create_vector_nest,
             set_bc,
@@ -228,13 +234,8 @@ class TestNLSPETSc:
         def blocked():
             """Monolithic blocked"""
             x = create_vector_block(L_block)
-            data0, data1 = [], []
-            for v in (u, p):
-                bs = v.function_space.dofmap.bs
-                size_local = v.function_space.dofmap.index_map.size_local
-                data0.append(v.x.array[: bs * size_local])
-                data1.append(v.x.array[bs * size_local :])
-            assign(data0 + data1, x)
+
+            assign_function((u, p), x)
 
             # Ghosts are updated inside assemble_vector_block
             A = assemble_matrix_block(a_block, bcs=[bc])
@@ -254,7 +255,7 @@ class TestNLSPETSc:
             x = create_vector_nest(L_block)
 
             # Assign (u, p) values to x
-            assign([u.x.array for u in (u, p)], x)
+            assign_function((u, p), x)
 
             A = assemble_matrix_nest(a_block, bcs=[bc])
             b = assemble_vector_nest(L_block)
@@ -326,7 +327,7 @@ class TestNLSPETSc:
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import (
-            assign,
+            assign_function,
             create_matrix,
             create_matrix_block,
             create_matrix_nest,
@@ -398,13 +399,7 @@ class TestNLSPETSc:
             x = create_vector_block(F)
 
             # Assign u, p values to x
-            data0, data1 = [], []
-            for v in (u, p):
-                bs = v.function_space.dofmap.bs
-                size_local = v.function_space.dofmap.index_map.size_local
-                data0.append(v.x.array[: bs * size_local])
-                data1.append(v.x.array[bs * size_local :])
-            assign(data0 + data1, x)
+            assign_function((u, p), x)
 
             snes.solve(None, x)
             assert snes.getKSP().getConvergedReason() > 0
@@ -441,7 +436,7 @@ class TestNLSPETSc:
             assert x.getType() == "nest"
 
             # Assign u, p values to x
-            assign([v.x.array for v in (u, p)], x)
+            assign_function((u, p), x)
 
             snes.solve(None, x)
             assert snes.getKSP().getConvergedReason() > 0
@@ -496,7 +491,7 @@ class TestNLSPETSc:
             U.sub(1).interpolate(initial_guess_p)
 
             x = create_vector(F)
-            assign(U.x.array, x)
+            assign_function(U, x)
 
             snes.solve(None, x)
             assert snes.getKSP().getConvergedReason() > 0
@@ -534,7 +529,7 @@ class TestNLSPETSc:
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import (
-            assign,
+            assign_function,
             create_matrix,
             create_matrix_block,
             create_matrix_nest,
@@ -613,13 +608,7 @@ class TestNLSPETSc:
             x = create_vector_block(F)
 
             # Assign (u, p) values to x
-            data0, data1 = [], []
-            for v in (u, p):
-                bs = v.function_space.dofmap.bs
-                size_local = v.function_space.dofmap.index_map.size_local
-                data0.append(v.x.array[: bs * size_local])
-                data1.append(v.x.array[bs * size_local :])
-            assign(data0 + data1, x)
+            assign_function((u, p), x)
 
             snes.solve(None, x)
             assert snes.getConvergedReason() > 0
@@ -655,7 +644,7 @@ class TestNLSPETSc:
             x = create_vector_nest(F)
 
             # Assign (u, p) values to x
-            assign([u.x.array for u in (u, p)], x)
+            assign_function((u, p), x)
 
             x.set(0.0)
             snes.solve(None, x)
@@ -719,7 +708,7 @@ class TestNLSPETSc:
             U.sub(1).interpolate(initial_guess_p)
 
             x = create_vector(F)
-            assign(U.x.array, x)
+            assign_function(U, x)
 
             snes.solve(None, x)
             assert snes.getConvergedReason() > 0
