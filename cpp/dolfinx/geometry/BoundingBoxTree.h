@@ -9,8 +9,10 @@
 
 #include <algorithm>
 #include <array>
+#include <basix/mdspan.hpp>
 #include <cassert>
 #include <cstdint>
+#include <dolfinx/common/types.h>
 #include <dolfinx/mesh/utils.h>
 #include <mpi.h>
 #include <optional>
