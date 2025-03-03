@@ -13,7 +13,6 @@
 #include <utility>
 #include <vector>
 
-
 namespace dolfinx
 {
 
@@ -68,21 +67,13 @@ template <typename T>
 std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
     const mesh::Topology& topology, std::span<const std::int64_t> nodes_g,
     std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-        xdofmap,
+    md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> xdofmap,
     int entity_dim,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int64_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-        entities,
+    md::mdspan<const std::int64_t, md::dextents<std::size_t, 2>> entities,
     std::span<const T> data)
 {
   assert(entities.extent(0) == data.size());
-  template <typename T, std::size_t ndim>
-  using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-    T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
+
   spdlog::info("XDMF distribute entity data");
   mesh::CellType cell_type = topology.cell_type();
 
@@ -134,7 +125,9 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
   };
   const auto [entities_v_b, shapev] = to_vertex_entities(
       cmap_dof_layout, entity_dim, cell_vertex_dofs, cell_type, entities);
-  mdspan_t<const std::int64_t, 2> entities_v(entities_v_b.data(), shapev);
+
+  md::mdspan<const std::int64_t, md::dextents<std::size_t, 2>> entities_v(
+      entities_v_b.data(), shapev);
 
   MPI_Comm comm = topology.comm();
   MPI_Datatype compound_type;
@@ -246,7 +239,8 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
   };
   const auto [entitiesp_b, entitiesp_v, shapep] = send_entities_to_postmaster(
       comm, compound_type, num_nodes_g, entities_v, data);
-  mdspan_t<const std::int64_t, 2> entitiesp(entitiesp_b.data(), shapep);
+  md::mdspan<const std::int64_t, md::dextents<std::size_t, 2>> entitiesp(
+      entitiesp_b.data(), shapep);
 
   // -- C. Send mesh global indices to postmaster
   auto indices_to_postoffice = [](MPI_Comm comm, std::int64_t num_nodes,
@@ -424,8 +418,8 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
   const auto [entities_data_b, entities_values, shape_eb]
       = candidate_ranks(comm, compound_type, nodes_g_p, recv_disp, dest, src,
                         entitiesp, std::span(entitiesp_v));
-  mdspan_t<const std::int64_t, 2> entities_data(entities_data_b.data(),
-                                                shape_eb);
+  md::mdspan<const std::int64_t, md::dextents<std::size_t, 2>> entities_data(
+      entities_data_b.data(), shape_eb);
 
   // -- E. From the received (key, value) data, determine which keys
   //    (entities) are on this process.
