@@ -13,12 +13,6 @@
 #include <utility>
 #include <vector>
 
-namespace
-{
-template <typename T, std::size_t ndim>
-using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-    T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
-} // namespace
 
 namespace dolfinx
 {
@@ -86,6 +80,9 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
     std::span<const T> data)
 {
   assert(entities.extent(0) == data.size());
+  template <typename T, std::size_t ndim>
+  using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
   spdlog::info("XDMF distribute entity data");
   mesh::CellType cell_type = topology.cell_type();
 
