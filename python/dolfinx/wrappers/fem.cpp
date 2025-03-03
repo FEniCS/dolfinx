@@ -302,7 +302,7 @@ void declare_function_space(nb::module_& m, std::string type)
 template <typename T>
 void declare_objects(nb::module_& m, const std::string& type)
 {
-  using U = typename dolfinx::scalar_value_type_t<T>;
+  using U = typename dolfinx::scalar_value_t<T>;
 
   // dolfinx::fem::DirichletBC
   std::string pyclass_name = std::string("DirichletBC_") + type;
@@ -620,7 +620,7 @@ void declare_objects(nb::module_& m, const std::string& type)
 template <typename T>
 void declare_form(nb::module_& m, std::string type)
 {
-  using U = typename dolfinx::scalar_value_type_t<T>;
+  using U = typename dolfinx::scalar_value_t<T>;
 
   // dolfinx::fem::Form
   std::string pyclass_name_form = std::string("Form_") + type;
