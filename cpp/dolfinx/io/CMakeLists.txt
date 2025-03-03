@@ -25,5 +25,4 @@ target_sources(
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_function.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_mesh.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_utils.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
 )
