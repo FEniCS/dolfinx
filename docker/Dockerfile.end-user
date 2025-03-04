@@ -34,7 +34,7 @@
 #    echo "FROM dolfinx/dolfinx-onbuild:nightly" | docker build -f- .
 #
 
-ARG PYVISTA_VERSION=0.44.1
+ARG PYVISTA_VERSION=0.44.2
 
 # Used to set the correct PYTHONPATH for the real and complex install of
 # DOLFINx
@@ -172,11 +172,11 @@ RUN apt-get -qq update && \
 RUN dpkgArch="$(dpkg --print-architecture)"; \
     pip install matplotlib; \
     case "$dpkgArch" in amd64) \
-      pip install --no-cache-dir pyvista[trame]==${PYVISTA_VERSION} ;; \
+      pip install --no-cache-dir pyvista[jupyter]==${PYVISTA_VERSION} ;; \
     esac; \
     case "$dpkgArch" in arm64) \
       pip install --no-cache-dir https://github.com/finsberg/vtk-aarch64/releases/download/vtk-9.3.0-cp312/vtk-9.3.0.dev0-cp312-cp312-linux_aarch64.whl && \
-      pip install --no-cache-dir pyvista[trame]==${PYVISTA_VERSION} ;; \
+      pip install --no-cache-dir pyvista[jupyter]==${PYVISTA_VERSION} ;; \
     esac; \
     pip cache purge
 

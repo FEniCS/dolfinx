@@ -254,11 +254,6 @@ endif()
 
 # Check for some compiler flags
 include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag(-pipe HAVE_PIPE)
-
-if(HAVE_PIPE)
-  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -pipe)
-endif()
 
 # Add some strict compiler checks
 check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
@@ -401,9 +396,9 @@ set_package_properties(
 # ------------------------------------------------------------------------------
 # Find optional packages
 if(DOLFINX_ENABLE_ADIOS2 AND _REQUIRE_ADIOS2)
-  find_package(ADIOS2 2.8.1 REQUIRED)
+  find_package(ADIOS2 2.8.1 REQUIRED COMPONENTS CXX)
 elseif(DOLFINX_ENABLE_ADIOS2)
-  find_package(ADIOS2 2.8.1)
+  find_package(ADIOS2 2.8.1 COMPONENTS CXX)
 endif()
 if(ADIOS2_FOUND AND NOT ADIOS2_HAVE_MPI)
   message(

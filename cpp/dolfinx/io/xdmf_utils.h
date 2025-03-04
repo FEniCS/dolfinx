@@ -107,15 +107,9 @@ template <typename T>
 std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
     const mesh::Topology& topology, std::span<const std::int64_t> nodes_g,
     std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-        xdofmap,
+    md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> xdofmap,
     int entity_dim,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int64_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-        entities,
+    md::mdspan<const std::int64_t, md::dextents<std::size_t, 2>> entities,
     std::span<const T> data);
 
 /// TODO: Document

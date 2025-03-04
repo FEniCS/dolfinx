@@ -43,7 +43,7 @@ def read_mesh(
                 "Lagrange",
                 cell_types[0].name,
                 cell_degree,
-                basix.LagrangeVariant.equispaced,
+                basix.LagrangeVariant.unset,
                 shape=(mesh_cpp.geometry.dim,),
             )
         )

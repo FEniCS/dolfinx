@@ -33,8 +33,7 @@ using namespace dolfinx::io;
 namespace
 {
 template <typename T, std::size_t ndim>
-using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-    T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
+using mdspan_t = md::mdspan<T, md::dextents<std::size_t, ndim>>;
 } // namespace
 
 //----------------------------------------------------------------------------
@@ -217,15 +216,9 @@ std::pair<std::vector<std::int32_t>, std::vector<T>>
 xdmf_utils::distribute_entity_data(
     const mesh::Topology& topology, std::span<const std::int64_t> nodes_g,
     std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-        xdofmap,
+    md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> xdofmap,
     int entity_dim,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int64_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-        entities,
+    md::mdspan<const std::int64_t, md::dextents<std::size_t, 2>> entities,
     std::span<const T> data)
 {
   assert(entities.extent(0) == data.size());
@@ -641,61 +634,36 @@ template std::pair<std::vector<std::int32_t>, std::vector<double>>
 xdmf_utils::distribute_entity_data(
     const mesh::Topology&, std::span<const std::int64_t>, std::int64_t,
     const fem::ElementDofLayout&,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>,
-    int,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int64_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>,
+    md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>, int,
+    md::mdspan<const std::int64_t, md::dextents<std::size_t, 2>>,
     std::span<const double>);
 template std::pair<std::vector<std::int32_t>, std::vector<float>>
 xdmf_utils::distribute_entity_data(
     const mesh::Topology&, std::span<const std::int64_t>, std::int64_t,
     const fem::ElementDofLayout&,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>,
-    int,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int64_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>,
+    md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>, int,
+    md::mdspan<const std::int64_t, md::dextents<std::size_t, 2>>,
     std::span<const float>);
 template std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
 xdmf_utils::distribute_entity_data(
     const mesh::Topology&, std::span<const std::int64_t>, std::int64_t,
     const fem::ElementDofLayout&,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>,
-    int,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int64_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>,
+    md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>, int,
+    md::mdspan<const std::int64_t, md::dextents<std::size_t, 2>>,
     std::span<const std::int32_t>);
 template std::pair<std::vector<std::int32_t>, std::vector<std::complex<double>>>
 xdmf_utils::distribute_entity_data(
     const mesh::Topology&, std::span<const std::int64_t>, std::int64_t,
     const fem::ElementDofLayout&,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>,
-    int,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int64_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>,
+    md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>, int,
+    md::mdspan<const std::int64_t, md::dextents<std::size_t, 2>>,
     std::span<const std::complex<double>>);
 template std::pair<std::vector<std::int32_t>, std::vector<std::complex<float>>>
 xdmf_utils::distribute_entity_data(
     const mesh::Topology&, std::span<const std::int64_t>, std::int64_t,
     const fem::ElementDofLayout&,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>,
-    int,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int64_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>,
+    md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>, int,
+    md::mdspan<const std::int64_t, md::dextents<std::size_t, 2>>,
     std::span<const std::complex<float>>);
 
 /// @endcond
