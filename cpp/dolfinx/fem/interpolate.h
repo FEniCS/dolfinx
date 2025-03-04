@@ -128,8 +128,7 @@ namespace impl
 {
 /// @brief Convenience typedef
 template <typename T, std::size_t D>
-using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-    T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, D>>;
+using mdspan_t = md::mdspan<T, md::dextents<std::size_t, D>>;
 
 /// @brief Scatter data into non-contiguous memory.
 ///

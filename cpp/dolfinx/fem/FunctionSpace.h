@@ -262,12 +262,9 @@ public:
     const std::size_t shape_c1 = transpose ? num_dofs : 3;
     std::vector<geometry_type> coords(shape_c0 * shape_c1, 0);
 
-    using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        geometry_type,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-    using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const geometry_type,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+    using mdspan2_t = md::mdspan<geometry_type, md::dextents<std::size_t, 2>>;
+    using cmdspan4_t
+        = md::mdspan<const geometry_type, md::dextents<std::size_t, 4>>;
 
     // Loop over cells and tabulate dofs
     std::vector<geometry_type> x_b(scalar_dofs * gdim);
@@ -293,9 +290,7 @@ public:
         std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
     cmdspan4_t phi_full(phi_b.data(), phi_shape);
     cmap.tabulate(0, X, Xshape, phi_b);
-    auto phi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
+    auto phi = md::submdspan(phi_full, 0, md::full_extent, md::full_extent, 0);
 
     // TODO: Check transform
     // Basis function reference-to-conforming transformation function
@@ -306,8 +301,7 @@ public:
     for (int c = 0; c < num_cells; ++c)
     {
       // Extract cell geometry 'dofs'
-      auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-          x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)
         for (std::size_t j = 0; j < gdim; ++j)
           coordinate_dofs(i, j) = x_g[3 * x_dofs[i] + j];
