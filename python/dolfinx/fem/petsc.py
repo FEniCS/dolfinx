@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2022 Garth N. Wells and Jørgen S. Dokken
+# Copyright (C) 2018-2025 Garth N. Wells, Nathan Sime and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -16,6 +16,7 @@ from __future__ import annotations
 import contextlib
 import functools
 import typing
+from collections.abc import Collection
 
 from petsc4py import PETSc
 
@@ -25,6 +26,7 @@ import dolfinx
 assert dolfinx.has_petsc4py
 
 import numpy as np
+import numpy.typing as npt
 
 import dolfinx.cpp as _cpp
 import ufl
@@ -55,6 +57,8 @@ __all__ = [
     "assemble_vector",
     "assemble_vector_block",
     "assemble_vector_nest",
+    "assign",
+    "assign_function",
     "create_matrix",
     "create_matrix_block",
     "create_matrix_nest",
@@ -939,12 +943,12 @@ class LinearProblem:
 
     @property
     def L(self) -> Form:
-        """The compiled linear form"""
+        """The compiled linear form `F`."""
         return self._L
 
     @property
     def a(self) -> Form:
-        """The compiled bilinear form"""
+        """The compiled bilinear form of `a`."""
         return self._a
 
     @property
@@ -1015,12 +1019,12 @@ class NonlinearProblem:
 
     @property
     def L(self) -> Form:
-        """Compiled linear form (the residual form)"""
+        """The compiled linear form `F`."""
         return self._L
 
     @property
     def a(self) -> Form:
-        """Compiled bilinear form (the Jacobian form)"""
+        """The compiled bilinear form of the Jacobian `J`"""
         return self._a
 
     def form(self, x: PETSc.Vec) -> None:
@@ -1118,3 +1122,141 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
         Interpolation matrix.
     """
     return _interpolation_matrix(space0._cpp_object, space1._cpp_object)
+
+
+@functools.singledispatch
+def assign(
+    x0: typing.Union[npt.NDArray[np.floating], list[npt.NDArray[np.floating]]], x1: PETSc.Vec
+):
+    """Assign ``x0`` values to a PETSc vector ``x1``.
+
+    Todo:
+        * This is just linear algebra, so should probably go in
+          ``dolfinx.la.petsc``.
+
+    Values in ``x0``, which is possibly a stacked collection of arrays,
+    are assigned ``x1``. When ``x0`` holds a collection of ``n``` arrays
+    and ``x1`` has type ``NEST``, the assignment is::
+
+              [x0[0]]
+        x1 =  [x0[1]]
+              [.....]
+              [x0[n-1]]
+
+    When ``x0`` holds a collection of ``n`` arrays and ``x1`` **does
+    not** have type ``NEST``, the assignment is::
+
+              [x0_owned[0]]
+        x1 =  [.....]
+              [x0_owned[n-1]]
+              [x0_ghost[0]]
+              [.....]
+              [x0_owned[n-1]]
+
+    Args:
+        x0: An array or list of arrays that will be assigned to ``x1``.
+        x1: Vector to assign values to.
+    """
+    try:
+        x1_nest = x1.getNestSubVecs()
+        for _x0, _x1 in zip(x0, x1_nest):
+            with _x1.localForm() as x:
+                x.array_w[:] = _x0
+    except PETSc.Error:
+        with x1.localForm() as _x:
+            try:
+                start = 0
+                for _x0 in x0:
+                    end = start + _x0.shape[0]
+                    _x.array_w[start:end] = _x0
+                    start = end
+            except IndexError:
+                _x.array_w[:] = _x0
+
+
+@assign.register(PETSc.Vec)
+def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.floating], list[npt.NDArray[np.floating]]]):
+    """Assign PETSc vector ``x0`` values to (blocked) array(s) ``x1``.
+
+    This function performs the reverse of the assigment performed by the
+    version of :func:`.assign(x0: typing.Union[npt.NDArray[np.floating],
+    list[npt.NDArray[np.floating]]], x1: PETSc.Vec)`.
+
+    Args:
+        x0: Vector that will have its values assigned to ``x1``.
+        x1: An array or list of arrays to assign to.
+    """
+    try:
+        x0_nest = x0.getNestSubVecs()
+        for _x0, _x1 in zip(x0_nest, x1):
+            with _x0.localForm() as x:
+                _x1[:] = x.array_r[:]
+    except PETSc.Error:
+        with x0.localForm() as _x0:
+            try:
+                start = 0
+                for _x1 in x1:
+                    end = start + _x1.shape[0]
+                    _x1[:] = _x0.array_r[start:end]
+                    start = end
+            except IndexError:
+                x1[:] = _x0.array_r[:]
+
+
+@functools.singledispatch
+def assign_function(u: typing.Union[_Function, list[_Function]], x: PETSc.Vec):
+    """Assign :class:`.Function` degrees-of-freedom to to a vector.
+
+    Assigns degree-of-freedom values in values of ``u``, which is
+    possibly a collection of ``Functions``s, to ``x``. When ``u`` holds
+    a list of ``Functions``s, degrees-of-freedom for the ``Functions``s
+    in ``u`` are 'stacked' and assigned to ``x``. See :func:`assign` for
+    documentation on how stacked assignement is handled.
+
+    Args:
+        u: Function(s) to assign degree-of-freedom value from.
+        x1: Vector to assign degree-of-freedom values in ``u`` to.
+    """
+    if x.getType() == PETSc.Vec.Type().NEST:
+        assign([v.x.array for v in u], x)
+    else:
+        if isinstance(u, Collection):
+            data0, data1 = [], []
+            for v in u:
+                bs = v.function_space.dofmap.bs
+                n = v.function_space.dofmap.index_map.size_local
+                data0.append(v.x.array[: bs * n])
+                data1.append(v.x.array[bs * n :])
+            assign(data0 + data1, x)
+        else:
+            assign(u.x.array, x)
+
+
+@assign_function.register(PETSc.Vec)
+def _(x: PETSc.Vec, u: typing.Union[_Function, list[_Function]]):
+    """Assign vector entries to :class:`.Function` degrees-of-freedom.
+
+    Assigns values in ``x`` to the degrees-of-freedom of ``u``, which is
+    possibly a collection of ``Functions``s. When ``u`` is a collecion
+    of ``Functions``s, values in ``x`` are assigned block-wise ro the
+    ``Functions``s. See :func:`assign` for documentation on how stacked
+    assignement is handled.
+
+    Args:
+        x: Vector with values to assign to ``u`` degrees-of-freedom.
+        u: ``Function``(s) to assign values to (to the ``Function``
+            degrees-of-freedom).
+    """
+    if x.getType() == PETSc.Vec.Type().NEST:
+        assign(x, [v.x.array for v in u])
+    else:
+        if isinstance(u, Collection):
+            data0, data1 = [], []
+            for v in u:
+                bs = v.function_space.dofmap.bs
+                n = v.function_space.dofmap.index_map.size_local
+                data0.append(v.x.array[: bs * n])
+                data1.append(v.x.array[bs * n :])
+            assign(x, data0 + data1)
+        else:
+            assign(x, u.x.array)
