@@ -155,14 +155,11 @@ public:
 
   /// @brief Interpolate an expression f(x) on the whole domain.
   /// @param[in] f Expression to be interpolated.
-  void
-  interpolate(const std::function<
-              std::pair<std::vector<value_type>, std::vector<std::size_t>>(
-                  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-                      const geometry_type,
-                      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-                          std::size_t, 3,
-                          MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>)>& f)
+  void interpolate(
+      const std::function<
+          std::pair<std::vector<value_type>, std::vector<std::size_t>>(
+              md::mdspan<const geometry_type,
+                         md::extents<std::size_t, 3, md::dynamic_extent>>)>& f)
   {
     assert(_function_space);
     assert(_function_space->mesh());
@@ -180,11 +177,8 @@ public:
   void interpolate(
       const std::function<
           std::pair<std::vector<value_type>, std::vector<std::size_t>>(
-              MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-                  const geometry_type,
-                  MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-                      std::size_t, 3,
-                      MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>)>& f,
+              md::mdspan<const geometry_type,
+                         md::extents<std::size_t, 3, md::dynamic_extent>>)>& f,
       std::span<const std::int32_t> cells)
   {
     assert(_function_space);
@@ -194,10 +188,8 @@ public:
         = fem::interpolation_coords<geometry_type>(
             *_function_space->element(), _function_space->mesh()->geometry(),
             cells);
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const geometry_type,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-            std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
+    md::mdspan<const geometry_type,
+               md::extents<std::size_t, 3, md::dynamic_extent>>
         _x(x.data(), 3, x.size() / 3);
 
     const auto [fx, fshape] = f(_x);
@@ -387,10 +379,8 @@ public:
     std::size_t num_cells = cells0.size();
     std::size_t num_points = e0.X().second[0];
     std::vector<value_type> fdata(num_cells * num_points * value_size);
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const value_type,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
-        f(fdata.data(), num_cells, num_points, value_size);
+    md::mdspan<const value_type, md::dextents<std::size_t, 3>> f(
+        fdata.data(), num_cells, num_points, value_size);
 
     // Evaluate Expression at points
     tabulate_expression(std::span(fdata), e0, *mesh0,
@@ -402,9 +392,8 @@ public:
     // point. The interpolation uses xxyyzz input, ordered for all
     // points of each cell, i.e. (value_size, num_cells*num_points).
     std::vector<value_type> fdata1(num_cells * num_points * value_size);
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        value_type, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
-        f1(fdata1.data(), value_size, num_cells, num_points);
+    md::mdspan<value_type, md::dextents<std::size_t, 3>> f1(
+        fdata1.data(), value_size, num_cells, num_points);
     for (std::size_t i = 0; i < f.extent(0); ++i)
       for (std::size_t j = 0; j < f.extent(1); ++j)
         for (std::size_t k = 0; k < f.extent(2); ++k)
@@ -535,9 +524,8 @@ public:
         phi0_shape.begin(), phi0_shape.end(), 1, std::multiplies{}));
     impl::mdspan_t<const geometry_type, 4> phi0(phi0_b.data(), phi0_shape);
     cmap.tabulate(1, std::vector<geometry_type>(tdim), {1, tdim}, phi0_b);
-    auto dphi0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        phi0, std::pair(1, tdim + 1), 0,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
+    auto dphi0
+        = md::submdspan(phi0, std::pair(1, tdim + 1), 0, md::full_extent, 0);
 
     // Data structure for evaluating geometry basis at specific points.
     // Used in non-affine case.
@@ -545,9 +533,8 @@ public:
     std::vector<geometry_type> phi_b(
         std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
     impl::mdspan_t<const geometry_type, 4> phi(phi_b.data(), phi_shape);
-    auto dphi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        phi, std::pair(1, tdim + 1), 0,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
+    auto dphi
+        = md::submdspan(phi, std::pair(1, tdim + 1), 0, md::full_extent, 0);
 
     // Reference coordinates for each point
     std::vector<geometry_type> Xb(xshape[0] * tdim);
@@ -571,8 +558,7 @@ public:
         continue;
 
       // Get cell geometry (coordinate dofs)
-      auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-          x_dofmap, cell_index, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto x_dofs = md::submdspan(x_dofmap, cell_index, md::full_extent);
       assert(x_dofs.size() == num_dofs_g);
       for (std::size_t i = 0; i < num_dofs_g; ++i)
       {
@@ -584,18 +570,11 @@ public:
       for (std::size_t j = 0; j < gdim; ++j)
         xp(0, j) = x[p * xshape[1] + j];
 
-      auto _J = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-          J, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
-      auto _K = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-          K, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
+      auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
 
       std::array<geometry_type, 3> Xpb = {0, 0, 0};
-      MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-          geometry_type,
-          MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-              std::size_t, 1, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
+      md::mdspan<geometry_type, md::extents<std::size_t, 1, md::dynamic_extent>>
           Xp(Xpb.data(), 1, tdim);
 
       // Compute reference coordinates X, and J, detJ and K
@@ -681,16 +660,10 @@ public:
           cell_info, cell_index, reference_value_size);
 
       {
-        auto _U = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-            basis_derivatives_reference_values, 0, p,
-            MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-            MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
-        auto _J = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-            J, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-            MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
-        auto _K = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-            K, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-            MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        auto _U = md::submdspan(basis_derivatives_reference_values, 0, p,
+                                md::full_extent, md::full_extent);
+        auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
+        auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
         push_forward_fn(basis_values, _U, _J, detJ[p], _K);
       }
 

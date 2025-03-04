@@ -35,13 +35,9 @@ template <class T>
 concept MDSpan2
     = std::is_convertible_v<
           std::remove_cvref_t<T>,
-          MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-              const std::int32_t,
-              MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>>
+          md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>>
       or std::is_convertible_v<
           std::remove_cvref_t<T>,
-          MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-              const std::int32_t,
-              MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 1>>>;
+          md::mdspan<const std::int32_t, md::dextents<std::size_t, 1>>>;
 
 } // namespace dolfinx::fem
