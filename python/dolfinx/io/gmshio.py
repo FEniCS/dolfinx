@@ -48,6 +48,7 @@ class TopologyDict(typing.TypedDict):
 
     topology: npt.NDArray[typing.Any]
     cell_data: npt.NDArray[typing.Any]
+    entity_tags: npt.NDArray[typing.Any]
 
 
 # Map from Gmsh cell type identifier (integer) to DOLFINx cell type and
