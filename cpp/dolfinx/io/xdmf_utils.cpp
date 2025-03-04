@@ -18,8 +18,7 @@ using namespace dolfinx::io;
 namespace
 {
 template <typename T, std::size_t ndim>
-using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-    T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
+using mdspan_t = md::mdspan<T, md::dextents<std::size_t, ndim>>;
 } // namespace
 
 //----------------------------------------------------------------------------
