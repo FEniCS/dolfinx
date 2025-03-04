@@ -9,22 +9,15 @@
 #include <array>
 #include <basix/mdspan.hpp>
 #include <dolfinx/common/types.h>
+#include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/mesh/Topology.h>
+#include <mpi.h>
 #include <span>
 #include <utility>
 #include <vector>
 
 namespace dolfinx
 {
-
-namespace fem
-{
-class ElementDofLayout;
-} // namespace fem
-
-namespace mesh
-{
-class Topology;
-} // namespace mesh
 
 namespace io
 {
