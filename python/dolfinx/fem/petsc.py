@@ -1024,7 +1024,7 @@ class NonlinearProblem:
 
     @property
     def a(self) -> Form:
-        """The compiled bilinear form of the Jacobian `J`"""
+        """The compiled bilinear form (the Jacobian form)."""
         return self._a
 
     def form(self, x: PETSc.Vec) -> None:
