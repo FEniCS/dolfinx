@@ -948,7 +948,7 @@ class LinearProblem:
 
     @property
     def a(self) -> Form:
-        """The compiled bilinear form of `a`."""
+        """The compiled bilinear form."""
         return self._a
 
     @property
