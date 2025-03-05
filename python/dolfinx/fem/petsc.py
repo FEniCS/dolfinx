@@ -42,7 +42,7 @@ from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
 from dolfinx.fem.function import FunctionSpace as _FunctionSpace
-from dolfinx.la.petsc import assign, create_vector, create_vector_wrap
+import dolfinx.la.petsc
 
 __all__ = [
     "LinearProblem",
@@ -119,7 +119,7 @@ def create_vector(L: Form) -> PETSc.Vec:
         A PETSc vector with a layout that is compatible with ``L``.
     """
     dofmap = L.function_spaces[0].dofmaps(0)
-    return create_vector(dofmap.index_map, dofmap.index_map_bs)
+    return dolfinx.la.petsc.create_vector(dofmap.index_map, dofmap.index_map_bs)
 
 
 def create_vector_block(L: list[Form]) -> PETSc.Vec:
@@ -262,7 +262,7 @@ def assemble_vector(L: typing.Any, constants=None, coeffs=None) -> PETSc.Vec:
     Returns:
         An assembled vector.
     """
-    b = create_vector(
+    b = dolfinx.la.petsc.create_vector(
         L.function_spaces[0].dofmaps(0).index_map, L.function_spaces[0].dofmaps(0).index_map_bs
     )
     with b.localForm() as b_local:
@@ -882,7 +882,7 @@ class LinearProblem:
         else:
             self.u = u
 
-        self._x = create_vector_wrap(self.u.x)
+        self._x = dolfinx.la.petsc.create_vector_wrap(self.u.x)
         self.bcs = bcs
 
         self._solver = PETSc.KSP().create(self.u.function_space.mesh.comm)
@@ -1136,7 +1136,7 @@ def assign_function(u: typing.Union[_Function, Sequence[_Function]], x: PETSc.Ve
         x: Vector to assign degree-of-freedom values in ``u`` to.
     """
     if x.getType() == PETSc.Vec.Type().NEST:
-        assign([v.x.array for v in u], x)
+        dolfinx.la.petsc.assign([v.x.array for v in u], x)
     else:
         if isinstance(u, Sequence):
             data0, data1 = [], []
@@ -1145,9 +1145,9 @@ def assign_function(u: typing.Union[_Function, Sequence[_Function]], x: PETSc.Ve
                 n = v.function_space.dofmap.index_map.size_local
                 data0.append(v.x.array[: bs * n])
                 data1.append(v.x.array[bs * n :])
-            assign(data0 + data1, x)
+            dolfinx.la.petsc.assign(data0 + data1, x)
         else:
-            assign(u.x.array, x)
+            dolfinx.la.petsc.assign(u.x.array, x)
 
 
 @assign_function.register(PETSc.Vec)
@@ -1165,7 +1165,7 @@ def _(x: PETSc.Vec, u: typing.Union[_Function, Sequence[_Function]]):
         u: ``Function`` (s) to assign degree-of-freedom values to.
     """
     if x.getType() == PETSc.Vec.Type().NEST:
-        assign(x, [v.x.array for v in u])
+        dolfinx.la.petsc.assign(x, [v.x.array for v in u])
     else:
         if isinstance(u, Sequence):
             data0, data1 = [], []
@@ -1174,6 +1174,6 @@ def _(x: PETSc.Vec, u: typing.Union[_Function, Sequence[_Function]]):
                 n = v.function_space.dofmap.index_map.size_local
                 data0.append(v.x.array[: bs * n])
                 data1.append(v.x.array[bs * n :])
-            assign(x, data0 + data1)
+            dolfinx.la.petsc.assign(x, data0 + data1)
         else:
-            assign(x, u.x.array)
+            dolfinx.la.petsc.assign(x, u.x.array)
