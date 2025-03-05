@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2025 Garth N. Wells, Nathan Sime and Jørgen S. Dokken
+# Copyright (C) 2018-2025 Garth N. Wells and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
