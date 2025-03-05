@@ -1212,7 +1212,7 @@ def assign_function(u: typing.Union[_Function, Sequence[_Function]], x: PETSc.Ve
     how stacked assignment is handled.
 
     Args:
-        u: ``Function``(s) to assign degree-of-freedom value from.
+        u: ``Function`` (s) to assign degree-of-freedom value from.
         x1: Vector to assign degree-of-freedom values in ``u`` to.
     """
     if x.getType() == PETSc.Vec.Type().NEST:
