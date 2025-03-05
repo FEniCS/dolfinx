@@ -1,4 +1,4 @@
-# Copyright (C) 2025 Jack S. Hale
+# Copyright (C) 2017-2025 Garth N. Wells, Jack S. Hale
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
