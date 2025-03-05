@@ -44,7 +44,7 @@ from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
 from dolfinx.fem.function import FunctionSpace as _FunctionSpace
-from dolfinx.la import create_petsc_vector
+from dolfinx.la.petsc import create_petsc_vector
 
 __all__ = [
     "LinearProblem",

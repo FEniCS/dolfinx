@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2021 Garth N. Wells
+# Copyright (C) 2025 Jack S. Hale
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -10,6 +10,7 @@ import typing
 import numpy as np
 import numpy.typing as npt
 
+import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
@@ -19,9 +20,9 @@ __all__ = [
     "MatrixCSR",
     "Norm",
     "Vector",
-    "create_petsc_vector",
     "is_orthonormal",
     "matrix_csr",
+    "norm",
     "orthonormalize",
     "vector",
 ]
@@ -93,6 +94,10 @@ class Vector:
           When the object is destroyed it will destroy the underlying petsc4py
           vector automatically.
         """
+        assert dolfinx.has_petsc4py
+
+        from dolfinx.la.petsc import create_petsc_vector_wrap
+
         if self._petsc_x is None:
             self._petsc_x = create_petsc_vector_wrap(self)
         return self._petsc_x
@@ -326,56 +331,8 @@ def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
     return Vector(vtype(map, bs))
 
 
-def create_petsc_vector_wrap(x: Vector):
-    """Wrap a distributed DOLFINx vector as a PETSc vector.
-
-    Note:
-        Due to subtle issues in the interaction between petsc4py memory management
-        and the Python garbage collector, it is recommended that the method ``PETSc.Vec.destroy()``
-        is called on the returned object once the object is no longer required. Note that
-        ``PETSc.Vec.destroy()`` is collective over the object's MPI communicator.
-
-    Args:
-        x: The vector to wrap as a PETSc vector.
-
-    Returns:
-        A PETSc vector that shares data with ``x``.
-    """
-    from petsc4py import PETSc
-
-    map = x.index_map
-    ghosts = map.ghosts.astype(PETSc.IntType)  # type: ignore
-    bs = x.block_size
-    size = (map.size_local * bs, map.size_global * bs)
-    return PETSc.Vec().createGhostWithArray(ghosts, x.array, size=size, bsize=bs, comm=map.comm)  # type: ignore
-
-
-def create_petsc_vector(map, bs: int):
-    """Create a distributed PETSc vector.
-
-    Note:
-        Due to subtle issues in the interaction between petsc4py memory management
-        and the Python garbage collector, it is recommended that the method ``PETSc.Vec.destroy()``
-        is called on the returned object once the object is no longer required. Note that
-        ``PETSc.Vec.destroy()`` is collective over the object's MPI communicator.
-
-    Args:
-        map: Index map that describes the size and parallel layout of
-            the vector to create.
-        bs: Block size of the vector.
-
-    Returns:
-        PETSc Vec object.
-    """
-    from petsc4py import PETSc
-
-    ghosts = map.ghosts.astype(PETSc.IntType)  # type: ignore
-    size = (map.size_local * bs, map.size_global * bs)
-    return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=map.comm)  # type: ignore
-
-
 def orthonormalize(basis: list[Vector]):
-    """Orthogonalise set of PETSc vectors in-place."""
+    """Orthogonalise set of vectors in-place."""
     _cpp.la.orthonormalize([x._cpp_object for x in basis])
 
 
