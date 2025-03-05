@@ -1019,7 +1019,7 @@ class NonlinearProblem:
 
     @property
     def L(self) -> Form:
-        """The compiled linear form (the residual form).
+        """The compiled linear form (the residual form)."""
         return self._L
 
     @property
