@@ -30,7 +30,6 @@ import numpy.typing as npt
 
 import dolfinx.cpp as _cpp
 import ufl
-from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
 from dolfinx.cpp.fem.petsc import discrete_curl as _discrete_curl
