@@ -44,7 +44,7 @@ from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
 from dolfinx.fem.function import FunctionSpace as _FunctionSpace
-from dolfinx.la.petsc import create_petsc_vector
+from dolfinx.la.petsc import create_petsc_vector, create_petsc_vector_wrap
 
 __all__ = [
     "LinearProblem",
@@ -885,7 +885,7 @@ class LinearProblem:
         else:
             self.u = u
 
-        self._x = la.create_petsc_vector_wrap(self.u.x)
+        self._x = create_petsc_vector_wrap(self.u.x)
         self.bcs = bcs
 
         self._solver = PETSc.KSP().create(self.u.function_space.mesh.comm)

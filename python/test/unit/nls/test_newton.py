@@ -201,7 +201,7 @@ class TestNLS:
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import create_matrix
-        from dolfinx.la import create_petsc_vector
+        from dolfinx.la.petsc import create_petsc_vector
 
         mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
         V = functionspace(mesh, ("Lagrange", 1))
