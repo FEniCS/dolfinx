@@ -943,7 +943,7 @@ class LinearProblem:
 
     @property
     def L(self) -> Form:
-        """The compiled linear form `F`."""
+        """The compiled linear form."""
         return self._L
 
     @property
