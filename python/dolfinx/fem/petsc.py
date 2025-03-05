@@ -42,7 +42,7 @@ from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
 from dolfinx.fem.function import FunctionSpace as _FunctionSpace
-from dolfinx.la.petsc import assign, create_petsc_vector, create_petsc_vector_wrap
+from dolfinx.la.petsc import assign, create_vector, create_vector_wrap
 
 __all__ = [
     "LinearProblem",
@@ -119,7 +119,7 @@ def create_vector(L: Form) -> PETSc.Vec:
         A PETSc vector with a layout that is compatible with ``L``.
     """
     dofmap = L.function_spaces[0].dofmaps(0)
-    return create_petsc_vector(dofmap.index_map, dofmap.index_map_bs)
+    return create_vector(dofmap.index_map, dofmap.index_map_bs)
 
 
 def create_vector_block(L: list[Form]) -> PETSc.Vec:
@@ -262,7 +262,7 @@ def assemble_vector(L: typing.Any, constants=None, coeffs=None) -> PETSc.Vec:
     Returns:
         An assembled vector.
     """
-    b = create_petsc_vector(
+    b = create_vector(
         L.function_spaces[0].dofmaps(0).index_map, L.function_spaces[0].dofmaps(0).index_map_bs
     )
     with b.localForm() as b_local:
@@ -882,7 +882,7 @@ class LinearProblem:
         else:
             self.u = u
 
-        self._x = create_petsc_vector_wrap(self.u.x)
+        self._x = create_vector_wrap(self.u.x)
         self.bcs = bcs
 
         self._solver = PETSc.KSP().create(self.u.function_space.mesh.comm)

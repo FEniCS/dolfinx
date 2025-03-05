@@ -96,10 +96,10 @@ class Vector:
         """
         assert dolfinx.has_petsc4py
 
-        from dolfinx.la.petsc import create_petsc_vector_wrap
+        from dolfinx.la.petsc import create_vector_wrap
 
         if self._petsc_x is None:
-            self._petsc_x = create_petsc_vector_wrap(self)
+            self._petsc_x = create_vector_wrap(self)
         return self._petsc_x
 
     def scatter_forward(self) -> None:

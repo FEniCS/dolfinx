@@ -20,10 +20,10 @@ assert dolfinx.has_petsc4py
 import numpy as np
 import numpy.typing as npt
 
-__all__ = ["assign", "create_petsc_vector", "create_petsc_vector_wrap"]
+__all__ = ["assign", "create_vector", "create_vector_wrap"]
 
 
-def create_petsc_vector(map, bs: int):
+def create_vector(map, bs: int):
     """Create a distributed PETSc vector.
 
     Note:
@@ -45,7 +45,7 @@ def create_petsc_vector(map, bs: int):
     return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=map.comm)  # type: ignore
 
 
-def create_petsc_vector_wrap(x: Vector):
+def create_vector_wrap(x: Vector):
     """Wrap a distributed DOLFINx vector as a PETSc vector.
 
     Note:
