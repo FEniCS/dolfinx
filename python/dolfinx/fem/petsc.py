@@ -1133,7 +1133,7 @@ def assign_function(u: typing.Union[_Function, Sequence[_Function]], x: PETSc.Ve
 
     Args:
         u: ``Function``(s) to assign degree-of-freedom value from.
-        x1: Vector to assign degree-of-freedom values in ``u`` to.
+        x: Vector to assign degree-of-freedom values in ``u`` to.
     """
     if x.getType() == PETSc.Vec.Type().NEST:
         assign([v.x.array for v in u], x)
