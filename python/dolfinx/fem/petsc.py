@@ -26,7 +26,6 @@ import dolfinx
 assert dolfinx.has_petsc4py
 
 import numpy as np
-import numpy.typing as npt
 
 import dolfinx.cpp as _cpp
 import ufl
@@ -43,7 +42,7 @@ from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
 from dolfinx.fem.function import FunctionSpace as _FunctionSpace
-from dolfinx.la.petsc import create_petsc_vector, create_petsc_vector_wrap
+from dolfinx.la.petsc import assign, create_petsc_vector, create_petsc_vector_wrap
 
 __all__ = [
     "LinearProblem",
@@ -56,7 +55,6 @@ __all__ = [
     "assemble_vector",
     "assemble_vector_block",
     "assemble_vector_nest",
-    "assign",
     "assign_function",
     "create_matrix",
     "create_matrix_block",
@@ -1121,83 +1119,6 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
         Interpolation matrix.
     """
     return _interpolation_matrix(space0._cpp_object, space1._cpp_object)
-
-
-@functools.singledispatch
-def assign(x0: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact]]], x1: PETSc.Vec):
-    """Assign ``x0`` values to a PETSc vector ``x1``.
-
-    Todo:
-        * This is just linear algebra, so should probably go in
-          ``dolfinx.la.petsc``.
-
-    Values in ``x0``, which is possibly a stacked collection of arrays,
-    are assigned ``x1``. When ``x0`` holds a sequence of ``n``` arrays
-    and ``x1`` has type ``NEST``, the assignment is::
-
-              [x0[0]]
-        x1 =  [x0[1]]
-              [.....]
-              [x0[n-1]]
-
-    When ``x0`` holds a sequence of ``n`` arrays and ``x1`` **does
-    not** have type ``NEST``, the assignment is::
-
-              [x0_owned[0]]
-        x1 =  [.....]
-              [x0_owned[n-1]]
-              [x0_ghost[0]]
-              [.....]
-              [x0_owned[n-1]]
-
-    Args:
-        x0: An array or list of arrays that will be assigned to ``x1``.
-        x1: Vector to assign values to.
-    """
-    try:
-        x1_nest = x1.getNestSubVecs()
-        for _x0, _x1 in zip(x0, x1_nest):
-            with _x1.localForm() as x:
-                x.array_w[:] = _x0
-    except PETSc.Error:
-        with x1.localForm() as _x:
-            try:
-                start = 0
-                for _x0 in x0:
-                    end = start + _x0.shape[0]
-                    _x.array_w[start:end] = _x0
-                    start = end
-            except IndexError:
-                _x.array_w[:] = _x0
-
-
-@assign.register(PETSc.Vec)
-def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact]]]):
-    """Assign PETSc vector ``x0`` values to (blocked) array(s) ``x1``.
-
-    This function performs the reverse of the assigment performed by the
-    version of :func:`.assign(x0: typing.Union[npt.NDArray[np.inexact],
-    list[npt.NDArray[np.inexact]]], x1: PETSc.Vec)`.
-
-    Args:
-        x0: Vector that will have its values assigned to ``x1``.
-        x1: An array or list of arrays to assign to.
-    """
-    try:
-        x0_nest = x0.getNestSubVecs()
-        for _x0, _x1 in zip(x0_nest, x1):
-            with _x0.localForm() as x:
-                _x1[:] = x.array_r[:]
-    except PETSc.Error:
-        with x0.localForm() as _x0:
-            try:
-                start = 0
-                for _x1 in x1:
-                    end = start + _x1.shape[0]
-                    _x1[:] = _x0.array_r[start:end]
-                    start = end
-            except IndexError:
-                x1[:] = _x0.array_r[:]
 
 
 @functools.singledispatch
