@@ -16,7 +16,7 @@ from __future__ import annotations
 import contextlib
 import functools
 import typing
-from collections.abc import Collection
+from collections.abc import Sequence
 
 from petsc4py import PETSc
 
@@ -1125,9 +1125,7 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
 
 
 @functools.singledispatch
-def assign(
-    x0: typing.Union[npt.NDArray[np.floating], list[npt.NDArray[np.floating]]], x1: PETSc.Vec
-):
+def assign(x0: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact]]], x1: PETSc.Vec):
     """Assign ``x0`` values to a PETSc vector ``x1``.
 
     Todo:
@@ -1135,7 +1133,7 @@ def assign(
           ``dolfinx.la.petsc``.
 
     Values in ``x0``, which is possibly a stacked collection of arrays,
-    are assigned ``x1``. When ``x0`` holds a collection of ``n``` arrays
+    are assigned ``x1``. When ``x0`` holds a sequence of ``n``` arrays
     and ``x1`` has type ``NEST``, the assignment is::
 
               [x0[0]]
@@ -1143,7 +1141,7 @@ def assign(
               [.....]
               [x0[n-1]]
 
-    When ``x0`` holds a collection of ``n`` arrays and ``x1`` **does
+    When ``x0`` holds a sequence of ``n`` arrays and ``x1`` **does
     not** have type ``NEST``, the assignment is::
 
               [x0_owned[0]]
@@ -1175,12 +1173,12 @@ def assign(
 
 
 @assign.register(PETSc.Vec)
-def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.floating], list[npt.NDArray[np.floating]]]):
+def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact]]]):
     """Assign PETSc vector ``x0`` values to (blocked) array(s) ``x1``.
 
     This function performs the reverse of the assigment performed by the
-    version of :func:`.assign(x0: typing.Union[npt.NDArray[np.floating],
-    list[npt.NDArray[np.floating]]], x1: PETSc.Vec)`.
+    version of :func:`.assign(x0: typing.Union[npt.NDArray[np.inexact],
+    list[npt.NDArray[np.inexact]]], x1: PETSc.Vec)`.
 
     Args:
         x0: Vector that will have its values assigned to ``x1``.
@@ -1204,23 +1202,23 @@ def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.floating], list[npt.NDArray
 
 
 @functools.singledispatch
-def assign_function(u: typing.Union[_Function, list[_Function]], x: PETSc.Vec):
-    """Assign :class:`.Function` degrees-of-freedom to to a vector.
+def assign_function(u: typing.Union[_Function, Sequence[_Function]], x: PETSc.Vec):
+    """Assign :class:`Function` degrees-of-freedom to to a vector.
 
-    Assigns degree-of-freedom values in values of ``u``, which is
-    possibly a collection of ``Functions``s, to ``x``. When ``u`` holds
-    a list of ``Functions``s, degrees-of-freedom for the ``Functions``s
-    in ``u`` are 'stacked' and assigned to ``x``. See :func:`assign` for
-    documentation on how stacked assignement is handled.
+    Assigns degree-of-freedom values in values of ``u``, which is possibly a
+    Sequence of ``Functions``s, to ``x``. When ``u`` is a Sequence of
+    ``Function``s, degrees-of-freedom for the ``Function``s in ``u`` are
+    'stacked' and assigned to ``x``. See :func:`assign` for documentation on
+    how stacked assignment is handled.
 
     Args:
-        u: Function(s) to assign degree-of-freedom value from.
+        u: ``Function``(s) to assign degree-of-freedom value from.
         x1: Vector to assign degree-of-freedom values in ``u`` to.
     """
     if x.getType() == PETSc.Vec.Type().NEST:
         assign([v.x.array for v in u], x)
     else:
-        if isinstance(u, Collection):
+        if isinstance(u, Sequence):
             data0, data1 = [], []
             for v in u:
                 bs = v.function_space.dofmap.bs
@@ -1233,24 +1231,23 @@ def assign_function(u: typing.Union[_Function, list[_Function]], x: PETSc.Vec):
 
 
 @assign_function.register(PETSc.Vec)
-def _(x: PETSc.Vec, u: typing.Union[_Function, list[_Function]]):
-    """Assign vector entries to :class:`.Function` degrees-of-freedom.
+def _(x: PETSc.Vec, u: typing.Union[_Function, Sequence[_Function]]):
+    """Assign vector entries to :class:`Function` degrees-of-freedom.
 
     Assigns values in ``x`` to the degrees-of-freedom of ``u``, which is
-    possibly a collection of ``Functions``s. When ``u`` is a collecion
-    of ``Functions``s, values in ``x`` are assigned block-wise ro the
-    ``Functions``s. See :func:`assign` for documentation on how stacked
-    assignement is handled.
+    possibly a Sequence of ``Function``s. When ``u`` is a Sequence of
+    ``Function``s, values in ``x`` are assigned block-wise to the
+    ``Function``s. See :func:`assign` for documentation on how blocked
+    assignment is handled.
 
     Args:
-        x: Vector with values to assign to ``u`` degrees-of-freedom.
-        u: ``Function``(s) to assign values to (to the ``Function``
-            degrees-of-freedom).
+        x: Vector with values to assign values from.
+        u: ``Function``(s) to assign degree-of-freedom values to.
     """
     if x.getType() == PETSc.Vec.Type().NEST:
         assign(x, [v.x.array for v in u])
     else:
-        if isinstance(u, Collection):
+        if isinstance(u, Sequence):
             data0, data1 = [], []
             for v in u:
                 bs = v.function_space.dofmap.bs
