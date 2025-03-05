@@ -28,6 +28,7 @@ assert dolfinx.has_petsc4py
 import numpy as np
 
 import dolfinx.cpp as _cpp
+import dolfinx.la.petsc
 import ufl
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
@@ -42,7 +43,6 @@ from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
 from dolfinx.fem.function import FunctionSpace as _FunctionSpace
-import dolfinx.la.petsc
 
 __all__ = [
     "LinearProblem",
