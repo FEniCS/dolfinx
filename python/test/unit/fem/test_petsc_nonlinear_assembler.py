@@ -53,10 +53,10 @@ class NonlinearPDE_SNESProblem:
     def F_mono(self, snes, x, F):
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import apply_lifting, assemble_vector, assign_function, set_bc
+        from dolfinx.fem.petsc import apply_lifting, assemble_vector, assign, set_bc
 
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        assign_function(x, self.soln_vars)
+        assign(x, self.soln_vars)
 
         with F.localForm() as f_local:
             f_local.set(0.0)
@@ -79,13 +79,13 @@ class NonlinearPDE_SNESProblem:
     def F_block(self, snes, x, F):
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import assemble_vector_block, assign_function
+        from dolfinx.fem.petsc import assemble_vector_block, assign
 
         assert x.getType() != "nest"
         assert F.getType() != "nest"
 
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        assign_function(x, self.soln_vars)
+        assign(x, self.soln_vars)
 
         with F.localForm() as f_local:
             f_local.set(0.0)
@@ -106,7 +106,7 @@ class NonlinearPDE_SNESProblem:
     def F_nest(self, snes, x, F):
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import apply_lifting, assemble_vector, assign_function, set_bc
+        from dolfinx.fem.petsc import apply_lifting, assemble_vector, assign, set_bc
 
         assert x.getType() == "nest" and F.getType() == "nest"
 
@@ -114,7 +114,7 @@ class NonlinearPDE_SNESProblem:
         for x_sub in x.getNestSubVecs():
             x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-        assign_function(x, self.soln_vars)
+        assign(x, self.soln_vars)
 
         # Assemble
         x = x.getNestSubVecs()
@@ -164,7 +164,7 @@ class TestNLSPETSc:
             assemble_vector,
             assemble_vector_block,
             assemble_vector_nest,
-            assign_function,
+            assign,
             create_vector_block,
             create_vector_nest,
             set_bc,
@@ -223,7 +223,7 @@ class TestNLSPETSc:
             """Monolithic blocked"""
             x = create_vector_block(L_block)
 
-            assign_function((u, p), x)
+            assign((u, p), x)
 
             # Ghosts are updated inside assemble_vector_block
             A = assemble_matrix_block(a_block, bcs=[bc])
@@ -243,7 +243,7 @@ class TestNLSPETSc:
             x = create_vector_nest(L_block)
 
             # Assign (u, p) values to x
-            assign_function((u, p), x)
+            assign((u, p), x)
 
             A = assemble_matrix_nest(a_block, bcs=[bc])
             b = assemble_vector_nest(L_block)
@@ -315,7 +315,7 @@ class TestNLSPETSc:
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import (
-            assign_function,
+            assign,
             create_matrix,
             create_matrix_block,
             create_matrix_nest,
@@ -387,7 +387,7 @@ class TestNLSPETSc:
             x = create_vector_block(F)
 
             # Assign u, p values to x
-            assign_function((u, p), x)
+            assign((u, p), x)
 
             snes.solve(None, x)
             assert snes.getKSP().getConvergedReason() > 0
@@ -424,7 +424,7 @@ class TestNLSPETSc:
             assert x.getType() == "nest"
 
             # Assign u, p values to x
-            assign_function((u, p), x)
+            assign((u, p), x)
 
             snes.solve(None, x)
             assert snes.getKSP().getConvergedReason() > 0
@@ -479,7 +479,7 @@ class TestNLSPETSc:
             U.sub(1).interpolate(initial_guess_p)
 
             x = create_vector(F)
-            assign_function(U, x)
+            assign(U, x)
 
             snes.solve(None, x)
             assert snes.getKSP().getConvergedReason() > 0
@@ -517,7 +517,7 @@ class TestNLSPETSc:
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import (
-            assign_function,
+            assign,
             create_matrix,
             create_matrix_block,
             create_matrix_nest,
@@ -596,7 +596,7 @@ class TestNLSPETSc:
             x = create_vector_block(F)
 
             # Assign (u, p) values to x
-            assign_function((u, p), x)
+            assign((u, p), x)
 
             snes.solve(None, x)
             assert snes.getConvergedReason() > 0
@@ -632,7 +632,7 @@ class TestNLSPETSc:
             x = create_vector_nest(F)
 
             # Assign (u, p) values to x
-            assign_function((u, p), x)
+            assign((u, p), x)
 
             x.set(0.0)
             snes.solve(None, x)
@@ -696,7 +696,7 @@ class TestNLSPETSc:
             U.sub(1).interpolate(initial_guess_p)
 
             x = create_vector(F)
-            assign_function(U, x)
+            assign(U, x)
 
             snes.solve(None, x)
             assert snes.getConvergedReason() > 0

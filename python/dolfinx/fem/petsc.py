@@ -55,7 +55,7 @@ __all__ = [
     "assemble_vector",
     "assemble_vector_block",
     "assemble_vector_nest",
-    "assign_function",
+    "assign",
     "create_matrix",
     "create_matrix_block",
     "create_matrix_nest",
@@ -1122,7 +1122,7 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
 
 
 @functools.singledispatch
-def assign_function(u: typing.Union[_Function, Sequence[_Function]], x: PETSc.Vec):
+def assign(u: typing.Union[_Function, Sequence[_Function]], x: PETSc.Vec):
     """Assign :class:`Function` degrees-of-freedom to to a vector.
 
     Assigns degree-of-freedom values in values of ``u``, which is possibly a
@@ -1150,7 +1150,7 @@ def assign_function(u: typing.Union[_Function, Sequence[_Function]], x: PETSc.Ve
             dolfinx.la.petsc.assign(u.x.array, x)
 
 
-@assign_function.register(PETSc.Vec)
+@assign.register(PETSc.Vec)
 def _(x: PETSc.Vec, u: typing.Union[_Function, Sequence[_Function]]):
     """Assign vector entries to :class:`Function` degrees-of-freedom.
 
