@@ -63,19 +63,13 @@ void tabulate_expression(
     std::span<T> values, fem::FEkernel<T> auto fn,
     std::array<std::size_t, 2> Xshape, std::size_t value_size,
     std::size_t num_argument_dofs,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-        x_dofmap,
-    std::span<const scalar_value_type_t<T>> x,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-        coeffs,
+    md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> x_dofmap,
+    std::span<const scalar_value_t<T>> x,
+    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, fem::MDSpan2 auto entities,
     std::span<const std::uint32_t> cell_info,
     fem::DofTransformKernel<T> auto P0)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
   static_assert(entities.rank() == 1 or entities.rank() == 2);
 
   // Create data structures used in evaluation
@@ -155,17 +149,13 @@ template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, fem::FEkernel<T> auto fn,
     std::array<std::size_t, 2> Xshape, std::size_t value_size,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-        coeffs,
+    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, const mesh::Mesh<U>& mesh,
     fem::MDSpan2 auto entities,
     std::optional<
         std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
         element)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   std::function<void(std::span<T>, std::span<const std::uint32_t>, std::int32_t,
                      int)>
       post_dof_transform

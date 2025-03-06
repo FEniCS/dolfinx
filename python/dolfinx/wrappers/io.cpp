@@ -15,6 +15,7 @@
 #include <dolfinx/io/VTKHDF.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
+#include <dolfinx/io/utils.h>
 #include <dolfinx/io/vtk_utils.h>
 #include <dolfinx/io/xdmf_utils.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -41,8 +42,7 @@ namespace dolfinx_wrappers
 namespace
 {
 template <typename T, std::size_t ndim>
-using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-    const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
+using mdspan_t = md::mdspan<const T, md::dextents<std::size_t, ndim>>;
 
 template <typename T>
 void xdmf_real_fn(auto&& m)
@@ -174,7 +174,7 @@ void declare_data_types(nb::module_& m)
         std::span<const std::int64_t> input_global_indices_span(
             input_global_indices.data(), input_global_indices.size());
         std::pair<std::vector<std::int32_t>, std::vector<T>> entities_values
-            = dolfinx::io::xdmf_utils::distribute_entity_data<T>(
+            = dolfinx::io::distribute_entity_data<T>(
                 topology, input_global_indices_span, num_nodes_g,
                 cmap_dof_layout, xdofmap_span, entity_dim, entities_span,
                 std::span(values.data(), values.size()));
@@ -327,6 +327,7 @@ void io(nb::module_& m)
 #endif
 
   declare_data_types<std::int32_t>(m);
+  declare_data_types<std::int64_t>(m);
   declare_data_types<float>(m);
   declare_data_types<std::complex<float>>(m);
   declare_data_types<double>(m);
