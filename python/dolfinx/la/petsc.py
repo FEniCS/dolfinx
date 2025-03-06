@@ -108,7 +108,7 @@ def assign(x0: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact
                     _x.array_w[start:end] = _x0
                     start = end
             except IndexError:
-                _x.array_w[:] = _x0  # type: ignore[attr-defined]
+                _x.array_w[:] = x0
 
 
 @assign.register(PETSc.Vec)  # type: ignore[attr-defined]
