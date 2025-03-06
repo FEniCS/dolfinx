@@ -5,7 +5,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Functions for working with PETSc linear algebra objects"""
 
-# mypy: ignore-errors
 import functools
 import typing
 
@@ -15,16 +14,14 @@ import numpy as np
 import numpy.typing as npt
 
 import dolfinx
-
-if typing.TYPE_CHECKING:
-    from dolfinx.la import IndexMap, Vector
+from dolfinx.la import IndexMap, Vector
 
 assert dolfinx.has_petsc4py
 
 __all__ = ["assign", "create_vector", "create_vector_wrap"]
 
 
-def create_vector(index_map: IndexMap, bs: int) -> PETSc.Vec:
+def create_vector(index_map: IndexMap, bs: int) -> PETSc.Vec:  # type: ignore[name-defined]
     """Create a distributed PETSc vector.
 
     Note:
@@ -41,12 +38,12 @@ def create_vector(index_map: IndexMap, bs: int) -> PETSc.Vec:
     Returns:
         PETSc Vec object.
     """
-    ghosts = index_map.ghosts.astype(PETSc.IntType)  # type: ignore
+    ghosts = index_map.ghosts.astype(PETSc.IntType)  # type: ignore[attr-defined]
     size = (index_map.size_local * bs, index_map.size_global * bs)
     return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=index_map.comm)  # type: ignore
 
 
-def create_vector_wrap(x: Vector) -> PETSc.Vec:
+def create_vector_wrap(x: Vector) -> PETSc.Vec:  # type: ignore[name-defined]
     """Wrap a distributed DOLFINx vector as a PETSc vector.
 
     Note:
@@ -62,12 +59,12 @@ def create_vector_wrap(x: Vector) -> PETSc.Vec:
         A PETSc vector that shares data with ``x``.
     """
     index_map = x.index_map
-    ghosts = index_map.ghosts.astype(PETSc.IntType)  # type: ignore
+    ghosts = index_map.ghosts.astype(PETSc.IntType)  # type: ignore[attr-defined]
     bs = x.block_size
     size = (index_map.size_local * bs, index_map.size_global * bs)
-    return PETSc.Vec().createGhostWithArray(
+    return PETSc.Vec().createGhostWithArray(  # type: ignore[attr-defined]
         ghosts, x.array, size=size, bsize=bs, comm=index_map.comm
-    )  # type: ignore
+    )
 
 
 @functools.singledispatch
@@ -102,7 +99,7 @@ def assign(x0: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact
         for _x0, _x1 in zip(x0, x1_nest):
             with _x1.localForm() as x:
                 x.array_w[:] = _x0
-    except PETSc.Error:
+    except PETSc.Error:  # type: ignore[attr-defined]
         with x1.localForm() as _x:
             try:
                 start = 0
@@ -111,10 +108,10 @@ def assign(x0: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact
                     _x.array_w[start:end] = _x0
                     start = end
             except IndexError:
-                _x.array_w[:] = _x0
+                _x.array_w[:] = _x0  # type: ignore[attr-defined]
 
 
-@assign.register(PETSc.Vec)
+@assign.register(PETSc.Vec)  # type: ignore[attr-defined]
 def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact]]]):  # type: ignore
     """Assign PETSc vector ``x0`` values to (blocked) array(s) ``x1``.
 
@@ -131,7 +128,7 @@ def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[
         for _x0, _x1 in zip(x0_nest, x1):
             with _x0.localForm() as x:
                 _x1[:] = x.array_r[:]
-    except PETSc.Error:
+    except PETSc.Error:  # type: ignore[attr-defined]
         with x0.localForm() as _x0:
             try:
                 start = 0
