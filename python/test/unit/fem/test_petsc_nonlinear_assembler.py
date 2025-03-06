@@ -242,7 +242,6 @@ class TestNLSPETSc:
             """Nested (MatNest)"""
             x = create_vector_nest(L_block)
 
-            # Assign (u, p) values to x
             assign((u, p), x)
 
             A = assemble_matrix_nest(a_block, bcs=[bc])
@@ -386,7 +385,6 @@ class TestNLSPETSc:
 
             x = create_vector_block(F)
 
-            # Assign u, p values to x
             assign((u, p), x)
 
             snes.solve(None, x)
@@ -423,7 +421,6 @@ class TestNLSPETSc:
             x = create_vector_nest(F)
             assert x.getType() == "nest"
 
-            # Assign u, p values to x
             assign((u, p), x)
 
             snes.solve(None, x)
@@ -595,7 +592,6 @@ class TestNLSPETSc:
             p.interpolate(initial_guess_p)
             x = create_vector_block(F)
 
-            # Assign (u, p) values to x
             assign((u, p), x)
 
             snes.solve(None, x)
@@ -631,7 +627,6 @@ class TestNLSPETSc:
             p.interpolate(initial_guess_p)
             x = create_vector_nest(F)
 
-            # Assign (u, p) values to x
             assign((u, p), x)
 
             x.set(0.0)
