@@ -90,7 +90,7 @@ def assign(x0: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact
               [x0_owned[n-1]]
               [x0_ghost[0]]
               [.....]
-              [x0_owned[n-1]]
+              [x0_ghost[n-1]]
 
     Args:
         x0: An array or list of arrays that will be assigned to ``x1``.
