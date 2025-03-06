@@ -1123,7 +1123,7 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
 
 @functools.singledispatch
 def assign(u: typing.Union[_Function, Sequence[_Function]], x: PETSc.Vec):
-    """Assign :class:`Function` degrees-of-freedom to to a vector.
+    """Assign :class:`Function` degrees-of-freedom to a vector.
 
     Assigns degree-of-freedom values in values of ``u``, which is possibly a
     Sequence of ``Functions``s, to ``x``. When ``u`` is a Sequence of
