@@ -427,3 +427,174 @@ TEMPLATE_TEST_CASE("Rectangle triangle mesh (crossed)",
                                        /* e_6 */ {2, 4},
                                        /* e_7 */ {3, 4}});
 }
+
+TEMPLATE_TEST_CASE("Box hexahedron mesh", "[mesh][box][hexahedron]", float,
+                   double)
+{
+  using T = TestType;
+
+  mesh::Mesh<T> mesh
+      = dolfinx::mesh::create_box<T>(MPI_COMM_SELF, {{{0, 0, 0}, {1, 1, 1}}},
+                                     {1, 1, 1}, mesh::CellType::hexahedron);
+
+  // front (z=0) vertex layout
+  // 2---3
+  // |   |
+  // |   |
+  // |   |
+  // 0---1
+
+  // back (z=1) vertex layout
+  // 6---7
+  // |   |
+  // |   |
+  // |   |
+  // 4---5
+  std::vector<T> expected_x = {
+      /* v_0 */ 0, 0, 0,
+      /* v_1 */ 1, 0, 0,
+      /* v_2 */ 0, 1, 0,
+      /* v_3 */ 1, 1, 0,
+      /* v_4 */ 0, 0, 1,
+      /* v_5 */ 1, 0, 1,
+      /* v_6 */ 0, 1, 1,
+      /* v_7 */ 1, 1, 1,
+  };
+
+  CHECK_THAT(mesh.geometry().x(),
+             RangeEquals(expected_x, [](auto a, auto b)
+                         { return std::abs(a - b) <= EPS<T>; }));
+
+  mesh.topology()->create_connectivity(1, 0);
+  auto e_to_v = mesh.topology()->connectivity(1, 0);
+  REQUIRE(e_to_v);
+
+  CHECK_adjacency_list_equal(*e_to_v, {/* e_0 */ {0, 1},
+                                       /* e_1 */ {0, 2},
+                                       /* e_2 */ {0, 4},
+                                       /* e_3 */ {1, 3},
+                                       /* e_4 */ {1, 5},
+                                       /* e_5 */ {2, 3},
+                                       /* e_6 */ {2, 6},
+                                       /* e_7 */ {3, 7},
+                                       /* e_8 */ {4, 5},
+                                       /* e_9 */ {4, 6},
+                                       /* e_10 */ {5, 7},
+                                       /* e_11 */ {6, 7}});
+
+  mesh.topology()->create_connectivity(2, 0);
+  auto f_to_v = mesh.topology()->connectivity(2, 0);
+  REQUIRE(f_to_v);
+
+  CHECK_adjacency_list_equal(*f_to_v, {
+                                          /* f_0 */ {0, 1, 2, 3},
+                                          /* f_1 */ {0, 1, 4, 5},
+                                          /* f_2 */ {0, 2, 4, 6},
+                                          /* f_3 */ {1, 3, 5, 7},
+                                          /* f_4 */ {2, 3, 6, 7},
+                                          /* f_5 */ {4, 5, 6, 7},
+                                      });
+
+  mesh.topology()->create_connectivity(3, 0);
+  auto c_to_v = mesh.topology()->connectivity(3, 0);
+  REQUIRE(c_to_v);
+
+  CHECK_adjacency_list_equal(*c_to_v, {/* c_0 */ {0, 1, 2, 3, 4, 5, 6, 7}});
+}
+
+TEMPLATE_TEST_CASE("Box tetrahedron mesh", "[mesh][box][tetrahedron]", float,
+                   double)
+{
+  using T = TestType;
+
+  mesh::Mesh<T> mesh
+      = dolfinx::mesh::create_box<T>(MPI_COMM_SELF, {{{0, 0, 0}, {1, 1, 1}}},
+                                     {1, 1, 1}, mesh::CellType::tetrahedron);
+
+  // front (z=0) vertex layout
+  // 5---2
+  // |  /|
+  // | / |
+  // |/  |
+  // 0---1
+
+  // back (z=1) vertex layout
+  // 7---3
+  // |  /|
+  // | / |
+  // |/  |
+  // 6---4
+
+  std::vector<T> expected_x = {
+      /* v_0 */ 0, 0, 0,
+      /* v_1 */ 1, 0, 0,
+      /* v_2 */ 1, 1, 0,
+      /* v_3 */ 1, 1, 1,
+      /* v_4 */ 1, 0, 1,
+      /* v_5 */ 0, 1, 0,
+      /* v_6 */ 0, 0, 1,
+      /* v_7 */ 0, 1, 1,
+  };
+
+  CHECK_THAT(mesh.geometry().x(),
+             RangeEquals(expected_x, [](auto a, auto b)
+                         { return std::abs(a - b) <= EPS<T>; }));
+
+  mesh.topology()->create_connectivity(1, 0);
+  auto e_to_v = mesh.topology()->connectivity(1, 0);
+  REQUIRE(e_to_v);
+
+  CHECK_adjacency_list_equal(*e_to_v, {/* e_0 */ {0, 1},
+                                       /* e_1 */ {0, 2},
+                                       /* e_2 */ {0, 3},
+                                       /* e_3 */ {0, 4},
+                                       /* e_4 */ {0, 5},
+                                       /* e_5 */ {0, 6},
+                                       /* e_6 */ {0, 7},
+                                       /* e_7 */ {1, 2},
+                                       /* e_8 */ {1, 3},
+                                       /* e_9 */ {1, 4},
+                                       /* e_10 */ {2, 3},
+                                       /* e_11 */ {2, 5},
+                                       /* e_12 */ {3, 4},
+                                       /* e_13 */ {3, 5},
+                                       /* e_14 */ {3, 6},
+                                       /* e_15 */ {3, 7},
+                                       /* e_16 */ {4, 6},
+                                       /* e_17 */ {5, 7},
+                                       /* e_18 */ {6, 7}});
+
+  mesh.topology()->create_connectivity(2, 0);
+  auto f_to_v = mesh.topology()->connectivity(2, 0);
+  REQUIRE(f_to_v);
+
+  CHECK_adjacency_list_equal(*f_to_v, {/* f_0 */ {0, 1, 2},
+                                       /* f_1 */ {0, 1, 3},
+                                       /* f_2 */ {0, 1, 4},
+                                       /* f_3 */ {0, 2, 3},
+                                       /* f_4 */ {0, 2, 5},
+                                       /* f_5 */ {0, 3, 4},
+                                       /* f_6 */ {0, 3, 5},
+                                       /* f_7 */ {0, 3, 6},
+                                       /* f_8 */ {0, 3, 7},
+                                       /* f_9 */ {0, 4, 6},
+                                       /* f_10 */ {0, 5, 7},
+                                       /* f_11 */ {0, 6, 7},
+                                       /* f_12 */ {1, 2, 3},
+                                       /* f_13 */ {1, 3, 4},
+                                       /* f_14 */ {2, 3, 5},
+                                       /* f_15 */ {3, 4, 6},
+                                       /* f_16 */ {3, 5, 7},
+                                       /* f_17 */ {3, 6, 7}});
+
+  mesh.topology()->create_connectivity(3, 0);
+  auto c_to_v = mesh.topology()->connectivity(3, 0);
+  REQUIRE(c_to_v);
+
+  CHECK_adjacency_list_equal(*c_to_v, {/* c_0 */ {0, 1, 2, 3},
+                                       /* c_1 */ {0, 1, 3, 4},
+                                       /* c_2 */ {0, 2, 5, 3},
+                                       /* c_3 */ {0, 4, 3, 6},
+                                       /* c_4 */ {0, 5, 7, 3},
+                                       /* c_5 */ {0, 7, 6, 3}});
+}

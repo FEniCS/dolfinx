@@ -110,7 +110,7 @@
 
 using namespace dolfinx;
 using T = PetscScalar;
-using U = typename dolfinx::scalar_value_type_t<T>;
+using U = typename dolfinx::scalar_value_t<T>;
 
 int main(int argc, char* argv[])
 {
@@ -180,10 +180,8 @@ int main(int argc, char* argv[])
     g->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
-          using mspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-              T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-                     std::size_t, 2,
-                     MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
+          using mspan_t
+              = md::mdspan<T, md::extents<std::size_t, 2, md::dynamic_extent>>;
 
           std::vector<T> fdata(2 * x.extent(1), 0);
           mspan_t f(fdata.data(), 2, x.extent(1));

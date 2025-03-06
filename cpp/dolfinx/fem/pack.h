@@ -170,17 +170,15 @@ std::pair<std::vector<T>, int>
 allocate_coefficient_storage(const Form<T, U>& form, IntegralType integral_type,
                              int id)
 {
-  // Get form coefficient offsets and dofmaps
-  const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
-      = form.coefficients();
-  const std::vector<int> offsets = form.coefficient_offsets();
-
   std::size_t num_entities = 0;
   int cstride = 0;
-  if (!coefficients.empty())
+  if (const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
+      = form.coefficients();
+      !coefficients.empty())
   {
+    const std::vector<int> offsets = form.coefficient_offsets();
     cstride = offsets.back();
-    num_entities = form.domain(integral_type, id).size();
+    num_entities = form.domain(integral_type, id, 0).size();
     if (integral_type == IntegralType::exterior_facet
         or integral_type == IntegralType::interior_facet)
     {
@@ -200,13 +198,12 @@ std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
 allocate_coefficient_storage(const Form<T, U>& form)
 {
   std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>> coeffs;
-  for (auto integral_type : form.integral_types())
+  for (fem::IntegralType type : form.integral_types())
   {
-    for (int id : form.integral_ids(integral_type))
+    for (int id : form.integral_ids(type))
     {
-      coeffs.emplace_hint(
-          coeffs.end(), std::pair(integral_type, id),
-          allocate_coefficient_storage(form, integral_type, id));
+      coeffs.emplace_hint(coeffs.end(), std::pair{type, id},
+                          allocate_coefficient_storage(form, type, id));
     }
   }
 
@@ -229,41 +226,24 @@ void pack_coefficients(const Form<T, U>& form,
                        std::map<std::pair<IntegralType, int>,
                                 std::pair<std::vector<T>, int>>& coeffs)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients
       = form.coefficients();
   const std::vector<int> offsets = form.coefficient_offsets();
 
   for (auto& [intergal_data, coeff_data] : coeffs)
   {
-    IntegralType integral_type = intergal_data.first;
-    int id = intergal_data.second;
+    auto [integral_type, id] = intergal_data;
     std::vector<T>& c = coeff_data.first;
     int cstride = coeff_data.second;
-
-    // Indicator for packing coefficients
-    std::vector<int> active_coefficient(coefficients.size(), 0);
     if (!coefficients.empty())
     {
       switch (integral_type)
       {
       case IntegralType::cell:
       {
-        // Get indicator for all coefficients that are active in cell
-        // integrals
-        for (std::size_t i = 0; i < form.num_integrals(IntegralType::cell); ++i)
+        // Iterate over coefficients that are active in cell integrals
+        for (int coeff : form.active_coeffs(IntegralType::cell, id))
         {
-          for (auto idx : form.active_coeffs(IntegralType::cell, i))
-            active_coefficient[idx] = 1;
-        }
-
-        // Iterate over coefficients
-        for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
-        {
-          if (!active_coefficient[coeff])
-            continue;
-
           // Get coefficient mesh
           auto mesh = coefficients[coeff]->function_space()->mesh();
           assert(mesh);
@@ -271,7 +251,7 @@ void pack_coefficients(const Form<T, U>& form,
           // Other integrals in the form might have coefficients defined
           // over entities of codim > 0, which don't make sense for cell
           // integrals, so don't pack them.
-          if (const int codim
+          if (int codim
               = form.mesh()->topology()->dim() - mesh->topology()->dim();
               codim > 0)
           {
@@ -279,8 +259,8 @@ void pack_coefficients(const Form<T, U>& form,
                                      "codim>0 in a cell integral");
           }
 
-          const std::vector<std::int32_t> cells_b
-              = form.domain(IntegralType::cell, id, *mesh);
+          std::span<const std::int32_t> cells_b
+              = form.domain_coeff(IntegralType::cell, id, coeff);
           md::mdspan cells(cells_b.data(), cells_b.size());
           std::span<const std::uint32_t> cell_info
               = impl::get_cell_orientation_info(*coefficients[coeff]);
@@ -292,24 +272,13 @@ void pack_coefficients(const Form<T, U>& form,
       }
       case IntegralType::exterior_facet:
       {
-        // Get indicator for all coefficients that are active in
+        // Iterate over coefficients coefficients that are active in
         // exterior facet integrals
-        for (std::size_t i = 0;
-             i < form.num_integrals(IntegralType::exterior_facet); ++i)
+        for (int coeff : form.active_coeffs(IntegralType::exterior_facet, id))
         {
-          for (auto idx : form.active_coeffs(IntegralType::exterior_facet, i))
-            active_coefficient[idx] = 1;
-        }
-
-        // Iterate over coefficients
-        for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
-        {
-          if (!active_coefficient[coeff])
-            continue;
-
           auto mesh = coefficients[coeff]->function_space()->mesh();
-          const std::vector<std::int32_t> facets_b
-              = form.domain(IntegralType::exterior_facet, id, *mesh);
+          std::span<const std::int32_t> facets_b
+              = form.domain_coeff(IntegralType::exterior_facet, id, coeff);
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>
               facets(facets_b.data(), facets_b.size() / 2, 2);
@@ -325,24 +294,13 @@ void pack_coefficients(const Form<T, U>& form,
       }
       case IntegralType::interior_facet:
       {
-        // Get indicator for all coefficients that are active in interior
+        // Iterate over coefficients that are active in interior
         // facet integrals
-        for (std::size_t i = 0;
-             i < form.num_integrals(IntegralType::interior_facet); ++i)
+        for (int coeff : form.active_coeffs(IntegralType::interior_facet, id))
         {
-          for (auto idx : form.active_coeffs(IntegralType::interior_facet, i))
-            active_coefficient[idx] = 1;
-        }
-
-        // Iterate over coefficients
-        for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
-        {
-          if (!active_coefficient[coeff])
-            continue;
-
           auto mesh = coefficients[coeff]->function_space()->mesh();
-          const std::vector<std::int32_t> facets_b
-              = form.domain(IntegralType::interior_facet, id, *mesh);
+          std::span<const std::int32_t> facets_b
+              = form.domain_coeff(IntegralType::interior_facet, id, coeff);
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 4>>
               facets(facets_b.data(), facets_b.size() / 4, 4);
@@ -386,8 +344,6 @@ void pack_coefficients(
     std::vector<std::reference_wrapper<const Function<T, U>>> coeffs,
     std::span<const int> offsets, fem::MDSpan2 auto entities, std::span<T> c)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   assert(!offsets.empty());
   const int cstride = offsets.back();
 
@@ -432,9 +388,9 @@ pack_constants(std::vector<std::reference_wrapper<const fem::Constant<T>>> c)
   std::int32_t offset = 0;
   for (auto& constant : c)
   {
-    const std::vector<T>& value = constant.get().value;
-    std::ranges::copy(value, std::next(constant_values.begin(), offset));
-    offset += value.size();
+    std::ranges::copy(constant.get().value,
+                      std::next(constant_values.begin(), offset));
+    offset += constant.get().value.size();
   }
 
   return constant_values;

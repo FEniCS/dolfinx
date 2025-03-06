@@ -63,9 +63,7 @@ class FunctionSpace;
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, const fem::Expression<T, U>& e,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-        coeffs,
+    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, const mesh::Mesh<U>& mesh,
     fem::MDSpan2 auto entities,
     std::optional<
@@ -97,8 +95,6 @@ template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
                          const mesh::Mesh<U>& mesh, fem::MDSpan2 auto entities)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   std::optional<
       std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
       element = std::nullopt;
@@ -138,10 +134,10 @@ make_coefficients_span(const std::map<std::pair<IntegralType, int>,
 {
   using Key = typename std::remove_reference_t<decltype(coeffs)>::key_type;
   std::map<Key, std::pair<std::span<const T>, int>> c;
-  std::ranges::transform(
-      coeffs, std::inserter(c, c.end()),
-      [](auto& e) -> typename decltype(c)::value_type
-      { return {e.first, {e.second.first, e.second.second}}; });
+  std::ranges::transform(coeffs, std::inserter(c, c.end()),
+                         [](auto& e) -> typename decltype(c)::value_type {
+                           return {e.first, {e.second.first, e.second.second}};
+                         });
   return c;
 }
 
@@ -164,19 +160,25 @@ T assemble_scalar(
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
+  using mdspanx3_t
+      = md::mdspan<const scalar_value_t<T>,
+                   md::extents<std::size_t, md::dynamic_extent, 3>>;
+
   std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
-  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
+  std::span x = mesh->geometry().x();
+  if constexpr (std::is_same_v<U, scalar_value_t<T>>)
   {
     return impl::assemble_scalar(M, mesh->geometry().dofmap(),
-                                 mesh->geometry().x(), constants, coefficients);
+                                 mdspanx3_t(x.data(), x.size() / 3, 3),
+                                 constants, coefficients);
   }
   else
   {
-    auto x = mesh->geometry().x();
-    std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
-    return impl::assemble_scalar(M, mesh->geometry().dofmap(), _x, constants,
-                                 coefficients);
+    std::vector<scalar_value_t<T>> _x(x.begin(), x.end());
+    return impl::assemble_scalar(M, mesh->geometry().dofmap(),
+                                 mdspanx3_t(_x.data(), _x.size() / 3, 3),
+                                 constants, coefficients);
   }
 }
 
@@ -343,19 +345,23 @@ void assemble_matrix(
     std::span<const std::int8_t> dof_marker1)
 
 {
+  using mdspanx3_t
+      = md::mdspan<const scalar_value_t<T>,
+                   md::extents<std::size_t, md::dynamic_extent, 3>>;
+
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
-  if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
+  std::span x = mesh->geometry().x();
+  if constexpr (std::is_same_v<U, scalar_value_t<T>>)
   {
-    impl::assemble_matrix(mat_add, a, mesh->geometry().x(), constants,
-                          coefficients, dof_marker0, dof_marker1);
+    impl::assemble_matrix(mat_add, a, mdspanx3_t(x.data(), x.size() / 3, 3),
+                          constants, coefficients, dof_marker0, dof_marker1);
   }
   else
   {
-    auto x = mesh->geometry().x();
-    std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
-    impl::assemble_matrix(mat_add, a, _x, constants, coefficients, dof_marker0,
-                          dof_marker1);
+    std::vector<scalar_value_t<T>> _x(x.begin(), x.end());
+    impl::assemble_matrix(mat_add, a, mdspanx3_t(_x.data(), _x.size() / 3, 3),
+                          constants, coefficients, dof_marker0, dof_marker1);
   }
 }
 
