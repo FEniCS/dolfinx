@@ -208,7 +208,7 @@ class SNESSolver:
 
         # Solve problem
         self._snes.solve(None, self._x)
-        
+
         # Move solution back to function
         dolfinx.fem.petsc.assign(self._x, self._u)
 

@@ -16,8 +16,8 @@ from __future__ import annotations
 import contextlib
 import functools
 import typing
-from enum import Enum
 from collections.abc import Sequence
+from enum import Enum
 
 from petsc4py import PETSc
 

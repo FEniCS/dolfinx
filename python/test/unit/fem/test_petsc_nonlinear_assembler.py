@@ -208,8 +208,8 @@ class TestNLSPETSc:
         matrix approaches and test that solution is the same."""
         from petsc4py import PETSc
 
-        import dolfinx.nls.petsc
         import dolfinx.fem.petsc
+        import dolfinx.nls.petsc
 
         mesh = create_unit_square(MPI.COMM_WORLD, 12, 11)
         p = 1
