@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2022 Garth N. Wells and Jørgen S. Dokken
+# Copyright (C) 2018-2025 Garth N. Wells and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -16,6 +16,7 @@ from __future__ import annotations
 import contextlib
 import functools
 import typing
+from collections.abc import Sequence
 
 from petsc4py import PETSc
 
@@ -27,8 +28,8 @@ assert dolfinx.has_petsc4py
 import numpy as np
 
 import dolfinx.cpp as _cpp
+import dolfinx.la.petsc
 import ufl
-from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
 from dolfinx.cpp.fem.petsc import discrete_curl as _discrete_curl
@@ -42,7 +43,6 @@ from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
 from dolfinx.fem.function import FunctionSpace as _FunctionSpace
-from dolfinx.la import create_petsc_vector
 
 __all__ = [
     "LinearProblem",
@@ -55,6 +55,7 @@ __all__ = [
     "assemble_vector",
     "assemble_vector_block",
     "assemble_vector_nest",
+    "assign",
     "create_matrix",
     "create_matrix_block",
     "create_matrix_nest",
@@ -118,7 +119,7 @@ def create_vector(L: Form) -> PETSc.Vec:
         A PETSc vector with a layout that is compatible with ``L``.
     """
     dofmap = L.function_spaces[0].dofmaps(0)
-    return create_petsc_vector(dofmap.index_map, dofmap.index_map_bs)
+    return dolfinx.la.petsc.create_vector(dofmap.index_map, dofmap.index_map_bs)
 
 
 def create_vector_block(L: list[Form]) -> PETSc.Vec:
@@ -261,7 +262,7 @@ def assemble_vector(L: typing.Any, constants=None, coeffs=None) -> PETSc.Vec:
     Returns:
         An assembled vector.
     """
-    b = create_petsc_vector(
+    b = dolfinx.la.petsc.create_vector(
         L.function_spaces[0].dofmaps(0).index_map, L.function_spaces[0].dofmaps(0).index_map_bs
     )
     with b.localForm() as b_local:
@@ -881,7 +882,7 @@ class LinearProblem:
         else:
             self.u = u
 
-        self._x = la.create_petsc_vector_wrap(self.u.x)
+        self._x = dolfinx.la.petsc.create_vector_wrap(self.u.x)
         self.bcs = bcs
 
         self._solver = PETSc.KSP().create(self.u.function_space.mesh.comm)
@@ -939,12 +940,12 @@ class LinearProblem:
 
     @property
     def L(self) -> Form:
-        """The compiled linear form"""
+        """The compiled linear form."""
         return self._L
 
     @property
     def a(self) -> Form:
-        """The compiled bilinear form"""
+        """The compiled bilinear form."""
         return self._a
 
     @property
@@ -1015,12 +1016,12 @@ class NonlinearProblem:
 
     @property
     def L(self) -> Form:
-        """Compiled linear form (the residual form)"""
+        """The compiled linear form (the residual form)."""
         return self._L
 
     @property
     def a(self) -> Form:
-        """Compiled bilinear form (the Jacobian form)"""
+        """The compiled bilinear form (the Jacobian form)."""
         return self._a
 
     def form(self, x: PETSc.Vec) -> None:
@@ -1118,3 +1119,61 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
         Interpolation matrix.
     """
     return _interpolation_matrix(space0._cpp_object, space1._cpp_object)
+
+
+@functools.singledispatch
+def assign(u: typing.Union[_Function, Sequence[_Function]], x: PETSc.Vec):
+    """Assign :class:`Function` degrees-of-freedom to a vector.
+
+    Assigns degree-of-freedom values in values of ``u``, which is possibly a
+    Sequence of ``Functions``s, to ``x``. When ``u`` is a Sequence of
+    ``Function``s, degrees-of-freedom for the ``Function``s in ``u`` are
+    'stacked' and assigned to ``x``. See :func:`assign` for documentation on
+    how stacked assignment is handled.
+
+    Args:
+        u: ``Function`` (s) to assign degree-of-freedom value from.
+        x: Vector to assign degree-of-freedom values in ``u`` to.
+    """
+    if x.getType() == PETSc.Vec.Type().NEST:
+        dolfinx.la.petsc.assign([v.x.array for v in u], x)
+    else:
+        if isinstance(u, Sequence):
+            data0, data1 = [], []
+            for v in u:
+                bs = v.function_space.dofmap.bs
+                n = v.function_space.dofmap.index_map.size_local
+                data0.append(v.x.array[: bs * n])
+                data1.append(v.x.array[bs * n :])
+            dolfinx.la.petsc.assign(data0 + data1, x)
+        else:
+            dolfinx.la.petsc.assign(u.x.array, x)
+
+
+@assign.register(PETSc.Vec)
+def _(x: PETSc.Vec, u: typing.Union[_Function, Sequence[_Function]]):
+    """Assign vector entries to :class:`Function` degrees-of-freedom.
+
+    Assigns values in ``x`` to the degrees-of-freedom of ``u``, which is
+    possibly a Sequence of ``Function``s. When ``u`` is a Sequence of
+    ``Function``s, values in ``x`` are assigned block-wise to the
+    ``Function``s. See :func:`assign` for documentation on how blocked
+    assignment is handled.
+
+    Args:
+        x: Vector with values to assign values from.
+        u: ``Function`` (s) to assign degree-of-freedom values to.
+    """
+    if x.getType() == PETSc.Vec.Type().NEST:
+        dolfinx.la.petsc.assign(x, [v.x.array for v in u])
+    else:
+        if isinstance(u, Sequence):
+            data0, data1 = [], []
+            for v in u:
+                bs = v.function_space.dofmap.bs
+                n = v.function_space.dofmap.index_map.size_local
+                data0.append(v.x.array[: bs * n])
+                data1.append(v.x.array[bs * n :])
+            dolfinx.la.petsc.assign(x, data0 + data1)
+        else:
+            dolfinx.la.petsc.assign(x, u.x.array)
