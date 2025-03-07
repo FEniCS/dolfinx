@@ -17,6 +17,7 @@ import contextlib
 import functools
 import typing
 from enum import Enum
+from collections.abc import Sequence
 
 from petsc4py import PETSc
 
@@ -28,8 +29,8 @@ assert dolfinx.has_petsc4py
 import numpy as np
 
 import dolfinx.cpp as _cpp
+import dolfinx.la.petsc
 import ufl
-from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
 from dolfinx.cpp.fem.petsc import discrete_curl as _discrete_curl
@@ -43,7 +44,6 @@ from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
 from dolfinx.fem.function import FunctionSpace as _FunctionSpace
-from dolfinx.la import create_petsc_vector
 
 __all__ = [
     "AssemblyType",
@@ -57,6 +57,7 @@ __all__ = [
     "assemble_vector",
     "assemble_vector_block",
     "assemble_vector_nest",
+    "assign",
     "create_matrix",
     "create_matrix_block",
     "create_matrix_nest",
@@ -126,7 +127,7 @@ def create_vector(L: Form) -> PETSc.Vec:
         A PETSc vector with a layout that is compatible with ``L``.
     """
     dofmap = L.function_spaces[0].dofmaps(0)
-    return create_petsc_vector(dofmap.index_map, dofmap.index_map_bs)
+    return dolfinx.la.petsc.create_vector(dofmap.index_map, dofmap.index_map_bs)
 
 
 def create_vector_block(L: list[Form]) -> PETSc.Vec:
@@ -269,7 +270,7 @@ def assemble_vector(L: typing.Any, constants=None, coeffs=None) -> PETSc.Vec:
     Returns:
         An assembled vector.
     """
-    b = create_petsc_vector(
+    b = dolfinx.la.petsc.create_vector(
         L.function_spaces[0].dofmaps(0).index_map, L.function_spaces[0].dofmaps(0).index_map_bs
     )
     with b.localForm() as b_local:
@@ -889,7 +890,7 @@ class LinearProblem:
         else:
             self.u = u
 
-        self._x = la.create_petsc_vector_wrap(self.u.x)
+        self._x = dolfinx.la.petsc.create_vector_wrap(self.u.x)
         self.bcs = bcs
 
         self._solver = PETSc.KSP().create(self.u.function_space.mesh.comm)
@@ -1028,7 +1029,7 @@ class NonlinearProblem:
 
     @property
     def a(self) -> Form:
-        """The compiled bilinear form of the Jacobian `J`"""
+        """The compiled bilinear form (the Jacobian form)."""
         return self._a
 
     def form(self, x: PETSc.Vec) -> None:
@@ -1128,92 +1129,59 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
     return _interpolation_matrix(space0._cpp_object, space1._cpp_object)
 
 
-def copy_vec_to_function(
-    x: PETSc.Vec,
-    u: dolfinx.fem.Function,
-):  # type: ignore
-    """Update the solution for the unknown `u` with the values in `x`.
+@functools.singledispatch
+def assign(u: typing.Union[_Function, Sequence[_Function]], x: PETSc.Vec):
+    """Assign :class:`Function` degrees-of-freedom to a vector.
+
+    Assigns degree-of-freedom values in values of ``u``, which is possibly a
+    Sequence of ``Functions``s, to ``x``. When ``u`` is a Sequence of
+    ``Function``s, degrees-of-freedom for the ``Function``s in ``u`` are
+    'stacked' and assigned to ``x``. See :func:`assign` for documentation on
+    how stacked assignment is handled.
 
     Args:
-        x: Data that is copied to the vector ``u``.
-        u: Function data should be inserted into.
+        u: ``Function`` (s) to assign degree-of-freedom value from.
+        x: Vector to assign degree-of-freedom values in ``u`` to.
     """
-    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
-    with u.x.petsc_vec.localForm() as u_local, x.localForm() as x_local:
-        u_local.array_w[:] = x_local.array_r
+    if x.getType() == PETSc.Vec.Type().NEST:
+        dolfinx.la.petsc.assign([v.x.array for v in u], x)
+    else:
+        if isinstance(u, Sequence):
+            data0, data1 = [], []
+            for v in u:
+                bs = v.function_space.dofmap.bs
+                n = v.function_space.dofmap.index_map.size_local
+                data0.append(v.x.array[: bs * n])
+                data1.append(v.x.array[bs * n :])
+            dolfinx.la.petsc.assign(data0 + data1, x)
+        else:
+            dolfinx.la.petsc.assign(u.x.array, x)
 
 
-def copy_function_to_vec(u: dolfinx.fem.Function, x: PETSc.Vec):  # type: ignore
-    """Copy the data in `u` into the vector `x`.
+@assign.register(PETSc.Vec)
+def _(x: PETSc.Vec, u: typing.Union[_Function, Sequence[_Function]]):
+    """Assign vector entries to :class:`Function` degrees-of-freedom.
+
+    Assigns values in ``x`` to the degrees-of-freedom of ``u``, which is
+    possibly a Sequence of ``Function``s. When ``u`` is a Sequence of
+    ``Function``s, values in ``x`` are assigned block-wise to the
+    ``Function``s. See :func:`assign` for documentation on how blocked
+    assignment is handled.
 
     Args:
-        u: Function to copy data from.
-        x: Vector to insert data into.
+        x: Vector with values to assign values from.
+        u: ``Function`` (s) to assign degree-of-freedom values to.
     """
-    u.x.petsc_vec.copy(x)
-
-
-def copy_block_vec_to_functions(x: PETSc.Vec, u: list[dolfinx.fem.Function]):  # type: ignore
-    """Update the data in a list of functions `u` with the values in `x`.
-
-    Args:
-        x: Vector to copy data from.
-        u: List of function to insert data into.
-    """
-    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
-    offset_start = 0
-    for ui in u:
-        Vi = ui.function_space
-        num_sub_dofs = Vi.dofmap.index_map.size_local * Vi.dofmap.index_map_bs
-        ui.x.petsc_vec.array_w[:num_sub_dofs] = x.array_r[
-            offset_start : offset_start + num_sub_dofs
-        ]
-        ui.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
-        offset_start += num_sub_dofs
-
-
-def copy_functions_to_block_vec(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
-    """Copy the data in `u` into the vector `x`.
-
-    Args:
-        u: List of vectors to copy data from
-        x: Vector to insert data into
-    """
-    u_petsc = [ui.x.petsc_vec.array_r for ui in u]
-    index_maps = [
-        (ui.function_space.dofmap.index_map, ui.function_space.dofmap.index_map_bs) for ui in u
-    ]
-    _cpp.la.petsc.scatter_local_vectors(
-        x,
-        u_petsc,
-        index_maps,
-    )
-    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
-
-
-def copy_nest_vec_to_functions(x: PETSc.Vec, u: list[dolfinx.fem.Function]):  # type: ignore
-    """Update the data in a list of functions `u` with the values in `x`.
-
-    Args:
-        x: Vector to copy data from.
-        u: List of function to insert data into.
-    """
-    subvecs = x.getNestSubVecs()
-    for x_sub, var_sub in zip(subvecs, u):
-        x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
-        with x_sub.localForm() as _x:
-            var_sub.x.array[:] = _x.array_r
-
-
-def copy_functions_to_nest_vec(u: list[dolfinx.fem.Function], x: PETSc.Vec):  # type: ignore
-    """Copy the data in `u` into the vector `x`.
-
-    Args:
-        u: List of functions to copy data from.
-        x: Vector to insert data into.
-    """
-    wrapped_sol = [dolfinx.la.create_petsc_vector_wrap(u_i.x) for u_i in u]
-    u_nest = PETSc.Vec().createNest(wrapped_sol)  # type: ignore
-    u_nest.copy(x)
-    u_nest.destroy()
-    [wrapped.destroy() for wrapped in wrapped_sol]
+    if x.getType() == PETSc.Vec.Type().NEST:
+        dolfinx.la.petsc.assign(x, [v.x.array for v in u])
+    else:
+        if isinstance(u, Sequence):
+            data0, data1 = [], []
+            for v in u:
+                bs = v.function_space.dofmap.bs
+                n = v.function_space.dofmap.index_map.size_local
+                data0.append(v.x.array[: bs * n])
+                data1.append(v.x.array[bs * n :])
+            dolfinx.la.petsc.assign(x, data0 + data1)
+        else:
+            dolfinx.la.petsc.assign(x, u.x.array)

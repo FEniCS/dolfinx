@@ -50,7 +50,6 @@ class TestNLSPETSc:
         in the nonlinear setting."""
         from petsc4py import PETSc
 
-        from dolfinx.cpp.la.petsc import scatter_local_vectors
         from dolfinx.fem.petsc import (
             apply_lifting,
             apply_lifting_nest,
@@ -60,6 +59,7 @@ class TestNLSPETSc:
             assemble_vector,
             assemble_vector_block,
             assemble_vector_nest,
+            assign,
             create_vector_block,
             create_vector_nest,
             set_bc,
@@ -117,15 +117,8 @@ class TestNLSPETSc:
         def blocked():
             """Monolithic blocked"""
             x = create_vector_block(L_block)
-            scatter_local_vectors(
-                x,
-                [u.x.petsc_vec.array_r, p.x.petsc_vec.array_r],
-                [
-                    (u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
-                    (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs),
-                ],
-            )
-            x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+            assign((u, p), x)
 
             # Ghosts are updated inside assemble_vector_block
             A = assemble_matrix_block(a_block, bcs=[bc])
@@ -143,13 +136,8 @@ class TestNLSPETSc:
         def nested():
             """Nested (MatNest)"""
             x = create_vector_nest(L_block)
-            for x1_soln_pair in zip(x.getNestSubVecs(), (u, p)):
-                x1_sub, soln_sub = x1_soln_pair
-                soln_sub.x.petsc_vec.ghostUpdate(
-                    addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
-                )
-                soln_sub.x.petsc_vec.copy(result=x1_sub)
-                x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+            assign((u, p), x)
 
             A = assemble_matrix_nest(a_block, bcs=[bc])
             b = assemble_vector_nest(L_block)
@@ -220,8 +208,8 @@ class TestNLSPETSc:
         matrix approaches and test that solution is the same."""
         from petsc4py import PETSc
 
-        import dolfinx.fem.petsc
         import dolfinx.nls.petsc
+        import dolfinx.fem.petsc
 
         mesh = create_unit_square(MPI.COMM_WORLD, 12, 11)
         p = 1
@@ -285,11 +273,11 @@ class TestNLSPETSc:
             snes.setFromOptions()
             for k, _ in snes_options.items():
                 del opts[k]
-
+            dolfinx.fem.petsc.assign([u, p], x)
             snes.solve(None, x)
             assert snes.getConvergedReason() > 0
             assert snes.getKSP().getConvergedReason() > 0
-            dolfinx.nls.petsc.copy_block_vec_to_functions(x, [u, p])
+            dolfinx.fem.petsc.assign(x, [u, p])
             xnorm = x.norm()
             x.destroy()
             return xnorm
@@ -317,9 +305,9 @@ class TestNLSPETSc:
             snes.getKSP().setTolerances(rtol=1e-12)
             snes.getKSP().getPC().setType("fieldsplit")
             snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
-            dolfinx.fem.petsc.copy_functions_to_nest_vec([u, p], x)
+            dolfinx.fem.petsc.assign([u, p], x)
             snes.solve(None, x)
-            dolfinx.fem.petsc.copy_nest_vec_to_functions(x, [u, p])
+            dolfinx.fem.petsc.assign(x, [u, p])
             assert snes.getConvergedReason() > 0
             assert snes.getKSP().getConvergedReason() > 0
             assert snes.getConvergedReason() > 0
@@ -371,7 +359,6 @@ class TestNLSPETSc:
 
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
-            solver.copy_vec_to_function(x, U)
             xnorm = x.norm()
             return xnorm
 
@@ -472,7 +459,6 @@ class TestNLSPETSc:
             )
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
-            solver.copy_vec_to_function(x, [u, p])
             Jnorm = solver.snes.getJacobian()[0].norm()
             Fnorm = solver.snes.getFunction()[0].norm()
             xnorm = x.norm()
@@ -497,7 +483,6 @@ class TestNLSPETSc:
 
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
-            solver.copy_vec_to_function(x, [u, p])
             xnorm = x.norm()
             Jnorm = nest_matrix_norm(solver.snes.getJacobian()[0])
             Fnorm = solver.snes.getFunction()[0].norm()
@@ -556,7 +541,6 @@ class TestNLSPETSc:
             )
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0
-            solver.copy_vec_to_function(x, U)
             xnorm = x.norm()
             Jnorm = solver.snes.getJacobian()[0].norm()
             Fnorm = solver.snes.getFunction()[0].norm()
