@@ -115,13 +115,13 @@ jobs:
         run: |
           pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
           pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
-          pip install git+https://github.com/sclaus2/ffcx.git@${{ env.ffcx_ref }}
+          pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
           pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
           pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
-          pip install git+https://github.com/sclaus2/ffcx.git@${{ env.ffcx_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Configure and install C++
         run: |
@@ -188,14 +188,14 @@ jobs:
         run: |
           pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
           pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
-          pip install git+https://github.com/sclaus2/ffcx.git@${{ env.ffcx_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
           pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
           pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
-          pip install git+https://github.com/sclaus2/ffcx.git@${{ env.ffcx_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Configure, build and install C++ library
         run: |
@@ -270,13 +270,13 @@ jobs:
         run: |
           pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
           pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
-          pip install git+https://github.com/sclaus2/ffcx.git@${{ env.ffcx_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
           pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
           pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
-          pip install git+https://github.com/sclaus2/ffcx.git@${{ env.ffcx_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Configure C++
         run: |
