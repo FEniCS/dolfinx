@@ -112,8 +112,9 @@ import numpy as np
 import dolfinx.fem.petsc
 import ufl
 from basix.ufl import element
-from dolfinx import fem, la, mesh
+from dolfinx import fem, mesh
 from dolfinx.fem.petsc import discrete_gradient, interpolation_matrix
+from dolfinx.la.petsc import create_vector_wrap
 from dolfinx.mesh import CellType, create_unit_square
 
 # Solution scalar (e.g., float32, complex128) and geometry (float32/64)
@@ -369,7 +370,7 @@ sigma, u = fem.Function(V, dtype=dtype), fem.Function(W, dtype=dtype)
 # `u` solution (degree-of-freedom) vectors and solve.
 
 # +
-x = PETSc.Vec().createNest([la.create_petsc_vector_wrap(sigma.x), la.create_petsc_vector_wrap(u.x)])
+x = PETSc.Vec().createNest([create_vector_wrap(sigma.x), create_vector_wrap(u.x)])
 ksp.solve(b, x)
 reason = ksp.getConvergedReason()
 assert reason > 0, f"Krylov solver has not converged {reason}."
