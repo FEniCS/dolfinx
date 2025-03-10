@@ -94,7 +94,6 @@ except ModuleNotFoundError:
 # $\mathrm{TM}_x$ modes, and the possible $k_z$ can be found by solving
 # a set of transcendental equations, which is shown here below:
 #
-#
 # $$
 # \textrm{For TE}_x \textrm{ modes}:
 # \begin{cases}
@@ -234,7 +233,7 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=scalar_type)
 # wavelength, which we consider fixed at $\lambda = h/0.2$. If we focus
 # on non-magnetic material only, we can also use $\mu_r=1$.
 #
-# Now we can assume a known dependance on $z$:
+# Now we can assume a known dependence on $z$:
 #
 # $$
 # \mathbf{E}(x, y, z)=\left[\mathbf{E}_{t}(x, y)+\hat{z} E_{z}(x, y)\right]
@@ -462,7 +461,7 @@ for i, kz in vals:
         # Verify if kz is consistent with the analytical equations
         assert verify_mode(kz, w, h, d, lmbd0, eps_d, eps_v, threshold=1e-4)
 
-        print(f"eigenvalue: {-kz**2}")
+        print(f"eigenvalue: {-(kz**2)}")
         print(f"kz: {kz}")
         print(f"kz/k0: {kz / k0}")
 

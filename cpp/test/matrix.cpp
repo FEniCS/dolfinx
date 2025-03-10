@@ -23,88 +23,6 @@ using namespace dolfinx;
 
 namespace
 {
-/// Computes y += A*x for a local CSR matrix A and local dense vectors x,y
-/// @param[in] values Nonzero values of A
-/// @param[in] row_begin First index of each row in the arrays values and
-/// indices.
-/// @param[in] row_end Last index of each row in the arrays values and indices.
-/// @param[in] indices Column indices for each non-zero element of the matrix A
-/// @param[in] x Input vector
-/// @param[in, out] x Output vector
-template <typename T>
-void spmv_impl(std::span<const T> values,
-               std::span<const std::int64_t> row_begin,
-               std::span<const std::int64_t> row_end,
-               std::span<const std::int32_t> indices, std::span<const T> x,
-               std::span<T> y)
-{
-  assert(row_begin.size() == row_end.size());
-  for (std::size_t i = 0; i < row_begin.size(); i++)
-  {
-    double vi{0};
-    for (std::int32_t j = row_begin[i]; j < row_end[i]; j++)
-      vi += values[j] * x[indices[j]];
-    y[i] += vi;
-  }
-}
-
-// The matrix A is distributed across P  processes by blocks of rows:
-//  A = |   A_0  |
-//      |   A_1  |
-//      |   ...  |
-//      |  A_P-1 |
-//
-// Each submatrix A_i is owned by a single process "i" and can be further
-// decomposed into diagonal (Ai[0]) and off diagonal (Ai[1]) blocks:
-//  Ai = |Ai[0] Ai[1]|
-//
-// If A is square, the diagonal block Ai[0] is also square and contains
-// only owned columns and rows. The block Ai[1] contains ghost columns
-// (unowned dofs).
-
-// Likewise, a local vector x can be decomposed into owned and ghost blocks:
-// xi = |   x[0]  |
-//      |   x[1]  |
-//
-// So the product y = Ax can be computed into two separate steps:
-//  y[0] = |Ai[0] Ai[1]| |   x[0]  | = Ai[0] x[0] + Ai[1] x[1]
-//                       |   x[1]  |
-//
-/// Computes y += A*x for a parallel CSR matrix A and parallel dense vectors x,y
-/// @param[in] A Parallel CSR matrix
-/// @param[in] x Input vector
-/// @param[in, out] y Output vector
-template <typename T>
-void spmv(la::MatrixCSR<T>& A, la::Vector<T>& x, la::Vector<T>& y)
-{
-  // start communication (update ghosts)
-  x.scatter_fwd_begin();
-
-  const std::int32_t nrowslocal = A.num_owned_rows();
-  std::span<const std::int64_t> row_ptr(A.row_ptr().data(), nrowslocal + 1);
-  std::span<const std::int32_t> cols(A.cols().data(), row_ptr[nrowslocal]);
-  std::span<const std::int64_t> off_diag_offset(A.off_diag_offset().data(),
-                                                nrowslocal);
-  std::span<const T> values(A.values().data(), row_ptr[nrowslocal]);
-
-  std::span<const T> _x = x.array();
-  std::span<T> _y = y.mutable_array();
-
-  std::span<const std::int64_t> row_begin(row_ptr.data(), nrowslocal);
-  std::span<const std::int64_t> row_end(row_ptr.data() + 1, nrowslocal);
-
-  // First stage:  spmv - diagonal
-  // yi[0] += Ai[0] * xi[0]
-  spmv_impl<T>(values, row_begin, off_diag_offset, cols, _x, _y);
-
-  // finalize ghost update
-  x.scatter_fwd_end();
-
-  // Second stage:  spmv - off-diagonal
-  // yi[0] += Ai[1] * xi[1]
-  spmv_impl<T>(values, off_diag_offset, row_end, cols, _x, _y);
-}
-
 /// @brief Create a matrix operator
 /// @param comm The communicator to builf the matrix on
 /// @return The assembled matrix
@@ -195,7 +113,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
 
   // Matrix A represents the action of the Laplace operator, so when
   // applied to a constant vector the result should be zero
-  spmv(A, x, y);
+  A.mult(x, y);
 
   std::ranges::for_each(y.array(),
                         [](auto a) { REQUIRE(std::abs(a) < 1e-13); });
@@ -222,17 +140,12 @@ void test_matrix()
   // Note: we cut off the ghost rows by intent here! But therefore we are not
   // able to work with the dimensions of Adense0 to compute indices, these
   // contain the ghost rows, which also vary between processes.
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const T,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-          std::size_t, 8, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
-      Adense(Adense0.data(), 8, A.index_map(1)->size_global());
+  md::mdspan<const T, md::extents<std::size_t, 8, md::dynamic_extent>> Adense(
+      Adense0.data(), 8, A.index_map(1)->size_global());
 
   std::vector<T> Aref_data(8 * A.index_map(1)->size_global(), 0);
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-             std::size_t, 8, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
-      Aref(Aref_data.data(), 8, A.index_map(1)->size_global());
+  md::mdspan<T, md::extents<std::size_t, 8, md::dynamic_extent>> Aref(
+      Aref_data.data(), 8, A.index_map(1)->size_global());
 
   auto to_global_col = [&](auto col)
   {

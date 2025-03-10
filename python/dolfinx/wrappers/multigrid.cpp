@@ -11,24 +11,25 @@
 #include <nanobind/stl/vector.h>
 
 #include <dolfinx/la/MatrixCSR.h>
-#include <dolfinx/multigrid/transfer_matrix.h>
+#include <dolfinx/multigrid/inclusion.h>
 
-#include "array.h"
+#include "dolfinx_wrappers/array.h"
 
 namespace nb = nanobind;
 
 namespace dolfinx_wrappers
 {
 
-void transfer(nb::module_& m)
+void multigrid(nb::module_& m)
 {
   m.def(
       "inclusion_mapping",
       [](const dolfinx::mesh::Mesh<double>& mesh_from,
-         const dolfinx::mesh::Mesh<double>& mesh_to)
+         const dolfinx::mesh::Mesh<double>& mesh_to, bool allow_all_to_all)
       {
         std::vector<std::int64_t> map
-            = dolfinx::multigrid::inclusion_mapping<double>(mesh_from, mesh_to);
+            = dolfinx::multigrid::inclusion_mapping<double>(mesh_from, mesh_to,
+                                                            allow_all_to_all);
         return dolfinx_wrappers::as_nbarray(std::move(map));
       },
       nb::arg("mesh_from"), nb::arg("mesh_to"),
@@ -44,7 +45,7 @@ void transfer(nb::module_& m)
         auto vec = std::vector(inclusion_map.data(),
                                inclusion_map.data() + inclusion_map.size());
         return dolfinx::multigrid::create_sparsity_pattern<double>(V_from, V_to,
-                                                                  vec);
+                                                                   vec);
       },
       nb::arg("V_from"), nb::arg("V_to"), nb::arg("inclusion_map"));
 

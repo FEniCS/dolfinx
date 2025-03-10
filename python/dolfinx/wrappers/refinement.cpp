@@ -4,9 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "MPICommWrapper.h"
-#include "array.h"
-#include "mesh.h"
+#include "dolfinx_wrappers/MPICommWrapper.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/mesh.h"
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/mesh/Mesh.h>

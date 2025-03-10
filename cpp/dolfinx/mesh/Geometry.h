@@ -77,7 +77,7 @@ public:
   {
     assert(_x.size() % 3 == 0);
     if (_x.size() / 3 != _input_global_indices.size())
-      throw std::runtime_error("Geometry size mis-match");
+      throw std::runtime_error("Geometry size mismatch.");
 
     if (_dofmaps.size() != _cmaps.size())
     {
@@ -108,10 +108,7 @@ public:
 
   /// @brief DofMap for the geometry.
   /// @return A 2D array with shape `(num_cells, dofs_per_cell)`.
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const std::int32_t,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-  dofmap() const
+  md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> dofmap() const
   {
     if (_dofmaps.size() != 1)
       throw std::runtime_error("Multiple dofmaps");
@@ -124,15 +121,11 @@ public:
   /// degree-of-freedom map corresponds to the geometry element
   /// `cmaps()[i]`.
   /// @return A dofmap array, with shape `(num_cells, dofs_per_cell)`.
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const std::int32_t,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+  md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>
   dofmap(std::size_t i) const
   {
     std::size_t ndofs = _cmaps.at(i).dim();
-    return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
+    return md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>(
         _dofmaps.at(i).data(), _dofmaps.at(i).size() / ndofs, ndofs);
   }
 
@@ -269,7 +262,7 @@ create_geometry(
 
   //  Build 'geometry' dofmap on the topology
   auto [_dof_index_map, bs, dofmaps]
-      = fem::build_dofmap_data(topology.index_map(topology.dim())->comm(),
+      = fem::build_dofmap_data(topology.index_maps(topology.dim())[0]->comm(),
                                topology, dof_layouts, reorder_fn);
   auto dof_index_map
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));

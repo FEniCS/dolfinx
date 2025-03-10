@@ -39,7 +39,7 @@ struct BasixElementData
       element; ///< Finite element.
   std::optional<std::vector<std::size_t>> value_shape
       = std::nullopt;    ///< Value shape. Can only be set for scalar `element`.
-  bool symmetry = false; ///< Symmetry. Should ony set set for 2nd-order tensor
+  bool symmetry = false; ///< Symmetry. Should only set set for 2nd-order tensor
                          ///< blocked elements.
 };
 
@@ -65,8 +65,8 @@ public:
   /// for a vector in 3D or `{2, 2}` for a rank-2 tensor in 2D. Can only
   /// be set for blocked scalar `element`. For other elements and scalar
   /// elements it should be `std::nullopt`.
-  /// @param[in] symmetric Is the element a symmetric tensor? Should ony
-  /// set for 2nd-order tensor blocked elements.
+  /// @param[in] symmetric Is the element a symmetric tensor? Should
+  /// only set for 2nd-order tensor blocked elements.
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
                 std::optional<std::vector<std::size_t>> value_shape
                 = std::nullopt,
@@ -477,7 +477,8 @@ public:
         // Blocked element
         std::function<void(std::span<U>, std::span<const std::uint32_t>,
                            std::int32_t, int)>
-            sub_fn = _sub_elements[0]->template dof_transformation_fn<U>(ttype);
+            sub_fn
+            = _sub_elements.front()->template dof_transformation_fn<U>(ttype);
         const int ebs = _bs;
         return [ebs, sub_fn](std::span<U> data,
                              std::span<const std::uint32_t> cell_info,
@@ -581,7 +582,8 @@ public:
         // transformation from the left to data using xxxyyyzzz ordering
         std::function<void(std::span<U>, std::span<const std::uint32_t>,
                            std::int32_t, int)>
-            sub_fn = _sub_elements[0]->template dof_transformation_fn<U>(ttype);
+            sub_fn
+            = _sub_elements.front()->template dof_transformation_fn<U>(ttype);
         return [this, sub_fn](std::span<U> data,
                               std::span<const std::uint32_t> cell_info,
                               std::int32_t cell, int data_block_size)
@@ -792,7 +794,7 @@ public:
   /// consistent physical element degree-of-freedom ordering. The
   /// permutation is computed in-place.
   ///
-  /// @param[in,out] doflist Indicies associated with the
+  /// @param[in,out] doflist Indices associated with the
   /// degrees-of-freedom. Size=`num_dofs`.
   /// @param[in] cell_permutation Permutation data for the cell.
   void permute(std::span<std::int32_t> doflist,
@@ -811,7 +813,7 @@ public:
   /// element degree-of-freedom ordering. The permutation is computed
   /// in-place.
   ///
-  /// @param[in,out] doflist Indicies associated with the
+  /// @param[in,out] doflist Indices associated with the
   /// degrees-of-freedom. Size=`num_dofs`.
   /// @param[in] cell_permutation Permutation data for the cell.
   void permute_inv(std::span<std::int32_t> doflist,

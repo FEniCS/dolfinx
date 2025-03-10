@@ -4,8 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "array.h"
-#include "caster_mpi.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/caster_mpi.h"
 #include <basix/mdspan.hpp>
 #include <dolfinx/common/defines.h>
 #include <dolfinx/fem/Function.h>
@@ -15,6 +15,7 @@
 #include <dolfinx/io/VTKHDF.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
+#include <dolfinx/io/utils.h>
 #include <dolfinx/io/vtk_utils.h>
 #include <dolfinx/io/xdmf_utils.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -41,8 +42,7 @@ namespace dolfinx_wrappers
 namespace
 {
 template <typename T, std::size_t ndim>
-using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-    const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
+using mdspan_t = md::mdspan<const T, md::dextents<std::size_t, ndim>>;
 
 template <typename T>
 void xdmf_real_fn(auto&& m)
@@ -105,10 +105,10 @@ void vtk_scalar_fn(auto&& m)
       nb::arg("u"), nb::arg("t") = 0.0);
 }
 
+#ifdef HAS_ADIOS2
 template <typename T>
 void declare_vtx_writer(nb::module_& m, std::string type)
 {
-#ifdef HAS_ADIOS2
   {
     std::string pyclass_name = "VTXWriter_" + type;
     nb::class_<dolfinx::io::VTXWriter<T>>(m, pyclass_name.c_str())
@@ -148,8 +148,8 @@ void declare_vtx_writer(nb::module_& m, std::string type)
             "write", [](dolfinx::io::VTXWriter<T>& self, double t)
             { self.write(t); }, nb::arg("t"));
   }
-#endif
 }
+#endif
 
 template <typename T>
 void declare_data_types(nb::module_& m)
@@ -174,7 +174,7 @@ void declare_data_types(nb::module_& m)
         std::span<const std::int64_t> input_global_indices_span(
             input_global_indices.data(), input_global_indices.size());
         std::pair<std::vector<std::int32_t>, std::vector<T>> entities_values
-            = dolfinx::io::xdmf_utils::distribute_entity_data<T>(
+            = dolfinx::io::distribute_entity_data<T>(
                 topology, input_global_indices_span, num_nodes_g,
                 cmap_dof_layout, xdofmap_span, entity_dim, entities_span,
                 std::span(values.data(), values.size()));
@@ -220,14 +220,12 @@ void io(nb::module_& m)
 
   m.def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<double>)
       .def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<float>);
-  m.def("read_vtkhdf_mesh_float64",
-        [](MPICommWrapper comm, std::string filename) {
-          return dolfinx::io::VTKHDF::read_mesh<double>(comm.get(), filename);
-        });
-  m.def("read_vtkhdf_mesh_float32",
-        [](MPICommWrapper comm, std::string filename) {
-          return dolfinx::io::VTKHDF::read_mesh<float>(comm.get(), filename);
-        });
+  m.def(
+      "read_vtkhdf_mesh_float64", [](MPICommWrapper comm, std::string filename)
+      { return dolfinx::io::VTKHDF::read_mesh<double>(comm.get(), filename); });
+  m.def(
+      "read_vtkhdf_mesh_float32", [](MPICommWrapper comm, std::string filename)
+      { return dolfinx::io::VTKHDF::read_mesh<float>(comm.get(), filename); });
 
   // dolfinx::io::cell permutation functions
   m.def("perm_vtk", &dolfinx::io::cells::perm_vtk, nb::arg("type"),
@@ -323,12 +321,13 @@ void io(nb::module_& m)
   nb::enum_<dolfinx::io::VTXMeshPolicy>(m, "VTXMeshPolicy")
       .value("update", dolfinx::io::VTXMeshPolicy::update)
       .value("reuse", dolfinx::io::VTXMeshPolicy::reuse);
-#endif
 
   declare_vtx_writer<float>(m, "float32");
   declare_vtx_writer<double>(m, "float64");
+#endif
 
   declare_data_types<std::int32_t>(m);
+  declare_data_types<std::int64_t>(m);
   declare_data_types<float>(m);
   declare_data_types<std::complex<float>>(m);
   declare_data_types<double>(m);
