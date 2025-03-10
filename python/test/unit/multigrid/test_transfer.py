@@ -9,8 +9,9 @@ from mpi4py import MPI
 import pytest
 
 from dolfinx.fem import functionspace
+from dolfinx.la import matrix_csr
 from dolfinx.mesh import GhostMode, create_interval, refine
-from dolfinx.multigrid import create_sparsity_pattern, inclusion_mapping
+from dolfinx.multigrid import assemble_transfer_matrix, create_sparsity_pattern, inclusion_mapping
 
 
 @pytest.mark.parametrize(
@@ -25,15 +26,15 @@ def test_1d(ghost_mode):
     assert V.element == V_fine.element
     V_fine.mesh.topology.create_connectivity(1, 0)
     V_fine.mesh.topology.create_connectivity(0, 1)
-    create_sparsity_pattern(V, V_fine, inclusion_map)
-    # T = matrix_csr(sp)
-    # assemble_transfer_matrix(
-    #     T._cpp_object,
-    #     V._cpp_object,
-    #     V_fine._cpp_object,
-    #     inclusion_map,
-    #     lambda i: 1.0 if i == 0 else 0.5,
-    # )
+    sp = create_sparsity_pattern(V, V_fine, inclusion_map)
+    T = matrix_csr(sp)
+    assemble_transfer_matrix(
+        T._cpp_object,
+        V._cpp_object,
+        V_fine._cpp_object,
+        inclusion_map,
+        lambda i: 1.0 if i == 0 else 0.5,
+    )
     # continue with assembly of matrix
 
 

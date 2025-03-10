@@ -8,6 +8,7 @@
 #include <vector>
 
 #include <nanobind/nanobind.h>
+#include <nanobind/stl/function.h>
 #include <nanobind/stl/vector.h>
 
 #include <dolfinx/fem/FunctionSpace.h>
