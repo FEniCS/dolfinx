@@ -10,8 +10,10 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/vector.h>
 
+#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/multigrid/inclusion.h>
+#include <dolfinx/multigrid/transfer_matrix.h>
 
 #include "dolfinx_wrappers/array.h"
 
@@ -32,7 +34,7 @@ void multigrid(nb::module_& m)
                                                             allow_all_to_all);
         return dolfinx_wrappers::as_nbarray(std::move(map));
       },
-      nb::arg("mesh_from"), nb::arg("mesh_to"),
+      nb::arg("mesh_from"), nb::arg("mesh_to"), nb::arg("allow_all_to_all"),
       "Computes inclusion mapping between two meshes");
 
   m.def(
