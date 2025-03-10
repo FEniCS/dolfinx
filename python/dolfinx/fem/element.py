@@ -6,7 +6,7 @@
 """Finite elements."""
 
 import typing
-from functools import singledispatch
+from functools import cached_property, singledispatch
 
 import numpy as np
 import numpy.typing as npt
@@ -193,14 +193,18 @@ class FiniteElement:
         """Geometry type of the Mesh that the FunctionSpace is defined on."""
         return self._cpp_object.dtype
 
-    @property
+    @cached_property
     def basix_element(self) -> basix.finite_element.FiniteElement:
         """Return underlying Basix C++ element (if it exists).
 
         Raises:
             Runtime error if Basix element does not exist.
+
+        Note:
+            Cached property: Wrapper constructed on initial call and not updated on subsequent
+            calls.
         """
-        return self._cpp_object.basix_element
+        return basix.finite_element.FiniteElement(self._cpp_object.basix_element)
 
     @property
     def num_sub_elements(self) -> int:
