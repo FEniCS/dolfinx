@@ -13,7 +13,7 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/multigrid/inclusion.h>
 
-#include "array.h"
+#include "dolfinx_wrappers/array.h"
 
 namespace nb = nanobind;
 
