@@ -4,9 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "array.h"
-#include "pycoeff.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/pycoeff.h"
 #include <array>
+#include <basix/mdspan.hpp>
 #include <complex>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -208,8 +209,46 @@ void declare_assembly_functions(nb::module_& m)
       },
       nb::arg("form"), "Pack coefficients for a Form.");
   m.def(
+      "pack_coefficients",
+      [](const dolfinx::fem::Expression<T, U>& e,
+         nb::ndarray<const std::int32_t, nb::c_contig> entities)
+      {
+        std::vector<int> coffsets = e.coefficient_offsets();
+        const std::vector<std::shared_ptr<const dolfinx::fem::Function<T, U>>>&
+            coefficients
+            = e.coefficients();
+        std::vector<T> coeffs(entities.shape(0) * coffsets.back());
+        std::size_t cstride = coffsets.back();
+        std::vector<std::reference_wrapper<const dolfinx::fem::Function<T, U>>>
+            c;
+        std::ranges::transform(coefficients, std::back_inserter(c),
+                               [](auto c) -> const dolfinx::fem::Function<T, U>&
+                               { return *c; });
+
+        if (entities.ndim() == 1)
+        {
+          dolfinx::fem::pack_coefficients(
+              c, coffsets, md::mdspan(entities.data(), entities.shape(0)),
+              std::span(coeffs));
+        }
+        else
+        {
+          dolfinx::fem::pack_coefficients(
+              c, coffsets,
+              md::mdspan<const std::int32_t,
+                         md::extents<std::size_t, md::dynamic_extent, 2>>(
+                  entities.data(), entities.shape(0), entities.shape(1)),
+              std::span(coeffs));
+        }
+        return dolfinx_wrappers::as_nbarray(std::move(coeffs),
+                                            {entities.shape(0), cstride});
+      },
+      nb::arg("expression"), nb::arg("entities"),
+      "Pack coefficients for a Expression.");
+  m.def(
       "pack_constants",
-      [](const dolfinx::fem::Form<T, U>& form) {
+      [](const dolfinx::fem::Form<T, U>& form)
+      {
         return dolfinx_wrappers::as_nbarray(dolfinx::fem::pack_constants(form));
       },
       nb::arg("form"), "Pack constants for a Form.");
@@ -218,7 +257,58 @@ void declare_assembly_functions(nb::module_& m)
       { return dolfinx_wrappers::as_nbarray(dolfinx::fem::pack_constants(e)); },
       nb::arg("e"), "Pack constants for an Expression.");
 
-  // Functional
+  // Expression
+  m.def(
+      "tabulate_expression",
+      [](nb::ndarray<T, nb::c_contig> values,
+         const dolfinx::fem::Expression<T, U>& e,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
+         nb::ndarray<const T, nb::ndim<2>, nb::c_contig> coeffs,
+         const dolfinx::mesh::Mesh<U>& mesh,
+         nb::ndarray<const std::int32_t, nb::c_contig> entities)
+      {
+        std::optional<std::pair<
+            std::reference_wrapper<const dolfinx::fem::FiniteElement<U>>,
+            std::size_t>>
+            element = std::nullopt;
+        if (auto V = e.argument_space(); V)
+        {
+          std::size_t num_argument_dofs
+              = V->dofmap()->element_dof_layout().num_dofs()
+                * V->dofmap()->bs();
+          assert(V->element());
+          element = {std::cref(*V->element()), num_argument_dofs};
+        }
+
+        if (entities.ndim() == 1)
+        {
+          dolfinx::fem::tabulate_expression<T>(
+              std::span<T>(values.data(), values.size()), e,
+              md::mdspan(coeffs.data(), coeffs.shape(0), coeffs.shape(1)),
+              std::span(constants.data(), constants.size()), mesh,
+              md::mdspan(entities.data(), entities.size()), element);
+        }
+        else if (entities.ndim() == 2)
+        {
+          assert(entities.shape(1) == 2);
+          dolfinx::fem::tabulate_expression<T>(
+              std::span<T>(values.data(), values.size()), e,
+              md::mdspan(coeffs.data(), coeffs.shape(0), coeffs.shape(1)),
+              std::span(constants.data(), constants.size()), mesh,
+              md::mdspan<const std::int32_t,
+                         md::extents<std::size_t, md::dynamic_extent, 2>>(
+                  entities.data(), entities.shape(0), entities.shape(1)),
+              element);
+        }
+        else
+        {
+          throw std::runtime_error(
+              "Unsupported entities rank in tabulate_expression wrapper.");
+        }
+      },
+      nb::arg("values"), nb::arg("expression"), nb::arg("constants"),
+      nb::arg("coefficients"), nb::arg("mesh"), nb::arg("entities"),
+      "Evaluate an Expression on mesh entities.");
   m.def(
       "assemble_scalar",
       [](const dolfinx::fem::Form<T, U>& M,
@@ -229,7 +319,7 @@ void declare_assembly_functions(nb::module_& m)
       {
         return dolfinx::fem::assemble_scalar<T>(
             M, std::span(constants.data(), constants.size()),
-            py_to_cpp_coeffs(coefficients));
+            dolfinx_wrappers::py_to_cpp_coeffs(coefficients));
       },
       nb::arg("M"), nb::arg("constants"), nb::arg("coefficients"),
       "Assemble functional over mesh with provided constants and "
@@ -247,7 +337,7 @@ void declare_assembly_functions(nb::module_& m)
         dolfinx::fem::assemble_vector<T>(
             std::span(b.data(), b.size()), L,
             std::span(constants.data(), constants.size()),
-            py_to_cpp_coeffs(coefficients));
+            dolfinx_wrappers::py_to_cpp_coeffs(coefficients));
       },
       nb::arg("b"), nb::arg("L"), nb::arg("constants"), nb::arg("coeffs"),
       "Assemble linear form into an existing vector with pre-packed constants "
@@ -288,63 +378,63 @@ void declare_assembly_functions(nb::module_& m)
           dolfinx::fem::assemble_matrix(
               A.mat_add_values(), a,
               std::span<const T>(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 2)
         {
           auto mat_add = A.template mat_add_values<2, 2>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 3)
         {
           auto mat_add = A.template mat_add_values<3, 3>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 4)
         {
           auto mat_add = A.template mat_add_values<4, 4>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 5)
         {
           auto mat_add = A.template mat_add_values<5, 5>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 6)
         {
           auto mat_add = A.template mat_add_values<6, 6>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 7)
         {
           auto mat_add = A.template mat_add_values<7, 7>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 8)
         {
           auto mat_add = A.template mat_add_values<8, 8>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else if (data_bs[0] == 9)
         {
           auto mat_add = A.template mat_add_values<9, 9>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else
           throw std::runtime_error("Block size not supported in Python");
@@ -468,8 +558,9 @@ void declare_assembly_functions(nb::module_& m)
         std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
                              std::pair<std::span<const T>, int>>>
             _coeffs;
-        std::ranges::transform(coeffs, std::back_inserter(_coeffs),
-                               [](auto& c) { return py_to_cpp_coeffs(c); });
+        std::ranges::transform(
+            coeffs, std::back_inserter(_coeffs),
+            [](auto& c) { return dolfinx_wrappers::py_to_cpp_coeffs(c); });
 
         dolfinx::fem::apply_lifting<T>(std::span<T>(b.data(), b.size()), _a,
                                        _constants, _coeffs, _bcs, _x0, alpha);

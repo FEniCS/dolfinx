@@ -57,6 +57,10 @@ class CoordinateElement:
         """
         return self._cpp_object.dim
 
+    def hash(self) -> int:
+        """Hash identifier of the coordinate element."""
+        return self._cpp_object.hash()
+
     def create_dof_layout(self) -> _cpp.fem.ElementDofLayout:
         """Compute and return the dof layout"""
         return self._cpp_object.create_dof_layout()

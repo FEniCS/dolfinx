@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/types.h>
@@ -26,7 +27,17 @@ concept DofTransformKernel
 /// must satisfy this concept.
 template <class U, class T>
 concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
-                                       const scalar_value_type_t<T>*,
+                                       const scalar_value_t<T>*,
                                        const int*, const std::uint8_t*>;
+
+/// @brief Concept for mdspan of rank 1 or 2.
+template <class T>
+concept MDSpan2
+    = std::is_convertible_v<
+          std::remove_cvref_t<T>,
+          md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>>
+      or std::is_convertible_v<
+          std::remove_cvref_t<T>,
+          md::mdspan<const std::int32_t, md::dextents<std::size_t, 1>>>;
 
 } // namespace dolfinx::fem

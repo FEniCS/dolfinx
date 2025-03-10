@@ -82,6 +82,16 @@ class BoundingBoxTree:
         """Number of bounding boxes."""
         return self._cpp_object.num_bboxes
 
+    @property
+    def bbox_coordinates(self) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
+        """Coordinates of lower and upper corners of bounding boxes.
+
+        Note:
+            Rows `2*ibbox` and `2*ibbox+1` correspond to the lower
+            and upper corners of bounding box `ibbox`, respectively.
+        """
+        return self._cpp_object.bbox_coordinates
+
     def get_bbox(self, i) -> npt.NDArray[np.floating]:
         """Get lower and upper corners of the ith bounding box.
 

@@ -11,12 +11,8 @@ on:
   workflow_dispatch: ~
 
 jobs:
-  fenicsx-refs:
-    uses: ./.github/workflows/fenicsx-refs.yml
-
   pyvista:
     runs-on: ubuntu-latest
-    needs: fenicsx-refs
     container: ghcr.io/fenics/test-env:current-openmpi
 
     env:
@@ -38,11 +34,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Load environment variables
+        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+
       - name: Install FEniCS Python components
         run: |
-          python -m pip install git+https://github.com/fenics/ufl.git@${{ needs.fenicsx-refs.outputs.ufl_ref }}
-          python -m pip install git+https://github.com/fenics/basix.git@${{ needs.fenicsx-refs.outputs.basix_ref }}
-          python -m pip install git+https://github.com/fenics/ffcx.git@${{ needs.fenicsx-refs.outputs.ffcx_ref }}
+          python -m pip install git+https://github.com/fenics/ufl.git@${{ env..ufl_ref }}
+          python -m pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
+          python -m pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
           apt-get update
           apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb  # pyvista
           apt-get install -y --no-install-recommends libqt5gui5t64 libgl1 # pyvistaqt

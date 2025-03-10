@@ -11,6 +11,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(DOLFINX REQUIRED)
 
 add_custom_command(
+  OUTPUT expr.c
+  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/fem/expr.py
+  VERBATIM
+  DEPENDS fem/expr.py
+  COMMENT "Compile expr.py using FFCx"
+)
+
+add_custom_command(
   OUTPUT poisson.c
   COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.py
   VERBATIM
@@ -41,6 +49,7 @@ add_executable(
   common/sub_systems_manager.cpp
   common/index_map.cpp
   common/sort.cpp
+  fem/form.cpp
   fem/functionspace.cpp
   mesh/distributed_mesh.cpp
   mesh/generation.cpp
@@ -49,6 +58,7 @@ add_executable(
   mesh/refinement/option.cpp
   mesh/refinement/rectangle.cpp
   multigrid/inclusion.cpp
+  ${CMAKE_CURRENT_BINARY_DIR}/expr.c
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )
 target_link_libraries(unittests PRIVATE Catch2::Catch2WithMain dolfinx)
