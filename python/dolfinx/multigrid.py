@@ -33,7 +33,7 @@ def assemble_transfer_matrix(
     inclusion_map: NDArray[np.int64],
     weight: Callable[[int], float],
 ):
-    return _assemble_transfer_matrix(
+    _assemble_transfer_matrix(
         T._cpp_object, V_from._cpp_object, V_to._cpp_object, inclusion_map, weight
     )
 
