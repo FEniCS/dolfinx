@@ -84,4 +84,34 @@ refine(const mesh::Mesh<T>& mesh,
 
   return {std::move(mesh1), std::move(parent_cell), std::move(parent_facet)};
 }
+
+template <std::floating_point T>
+mesh::CellPartitionFunction
+create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
+                            std::vector<std::int32_t> parent_cell)
+{
+  // for every non ghost index maintain_coarse_partitioner below should be doing
+  // the correct thing. ghost cells need to given the rank, which previously the
+  // COARSE cell was assigned. These ranks can be computed for parent_mesh with
+  // compute_destination_ranks and the parent_cell[i] is the cell idx in
+  // parent_mesh to access it.
+
+  return
+      [&](MPI_Comm comm, int /*nparts*/, std::vector<mesh::CellType> cell_types,
+          std::vector<std::span<const std::int64_t>> cells)
+          -> graph::AdjacencyList<std::int32_t>
+  {
+    int num_cell_vertices = mesh::num_cell_vertices(cell_types.front());
+    std::int32_t num_cells = cells.front().size() / num_cell_vertices;
+    std::vector<std::int32_t> destinations(num_cells, dolfinx::MPI::rank(comm));
+    // TODO: iterate over previous ghost cells here and replace destination
+    // ranks with previous coarse ranks, i.e. do not change ownership of ghosts
+    // cells to local process
+    std::vector<std::int32_t> dest_offsets(num_cells + 1);
+    std::iota(dest_offsets.begin(), dest_offsets.end(), 0);
+    return graph::AdjacencyList(std::move(destinations),
+                                std::move(dest_offsets));
+  };
+}
+
 } // namespace dolfinx::refinement
