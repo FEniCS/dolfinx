@@ -14,6 +14,7 @@ generated documentation is `here <doxygen>`_.
    io
    la
    mesh
+   multigrid
    refinement
 
 * :ref:`genindex`

@@ -37,6 +37,8 @@ hid_t hdf5_type()
     return H5T_NATIVE_INT64;
   else if constexpr (std::is_same_v<T, std::uint64_t>)
     return H5T_NATIVE_UINT64;
+  else if constexpr (std::is_same_v<T, std::uint8_t>)
+    return H5T_NATIVE_UINT8;
   else if constexpr (std::is_same_v<T, std::size_t>)
   {
     throw std::runtime_error(

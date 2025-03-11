@@ -12,7 +12,9 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <string>
+#include <utility>
 #include <variant>
 
 namespace pugi
@@ -43,7 +45,7 @@ class MeshTags;
 namespace dolfinx::io
 {
 
-/// Read and write mesh::Mesh, fem::Function and other objects in
+/// @brief Read and write mesh::Mesh, fem::Function and other objects in
 /// XDMF.
 ///
 /// This class supports the output of meshes and functions in XDMF
@@ -51,8 +53,8 @@ namespace dolfinx::io
 /// the data and points to a HDF5 file that stores the actual problem
 /// data. Output of data in parallel is supported.
 ///
-/// XDMF is not suitable for higher order geometries, as their currently
-/// only supports 1st and 2nd order geometries.
+/// XDMF is not suitable for higher-order geometries; it only supports
+/// 1st- and 2nd-order geometries.
 class XDMFFile
 {
 public:
@@ -63,12 +65,9 @@ public:
     ASCII
   };
 
-  /// Default encoding type
-  static const Encoding default_encoding = Encoding::HDF5;
-
   /// Constructor
   XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
-           std::string file_mode, Encoding encoding = default_encoding);
+           std::string file_mode, Encoding encoding = Encoding::HDF5);
 
   /// Move constructor
   XDMFFile(XDMFFile&&) = default;
@@ -97,10 +96,10 @@ public:
   void write_geometry(const mesh::Geometry<double>& geometry, std::string name,
                       std::string xpath = "/Xdmf/Domain");
 
-  /// Read in Mesh
+  /// Read Mesh
   /// @param[in] element Element that describes the geometry of a cell
   /// @param[in] mode The type of ghosting/halo to use for the mesh when
-  ///   distributed in parallel
+  /// distributed in parallel
   /// @param[in] name
   /// @param[in] xpath XPath where Mesh Grid is located
   /// @return A Mesh distributed on the same communicator as the
@@ -148,7 +147,7 @@ public:
   /// @param[in] t Time stamp to associate with `u`.
   /// @param[in] mesh_xpath XPath for a Grid under which `u` will be
   /// inserted.
-  template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
+  template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
   void write_function(const fem::Function<T, U>& u, double t,
                       std::string mesh_xpath
                       = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
@@ -165,11 +164,15 @@ public:
                       std::string xpath = "/Xdmf/Domain");
 
   /// Read MeshTags
-  /// @param[in] mesh The Mesh that the data is defined on
-  /// @param[in] name
+  /// @param[in] mesh Mesh that the input data is defined on
+  /// @param[in] name Name of the grid node in the xml-scheme of the
+  /// XDMF-file. E.g. "Material" in Grid Name="Material"
+  /// GridType="Uniform"
+  /// @param[in] attribute_name Name of the attribute to read
   /// @param[in] xpath XPath where MeshTags Grid is stored in file
   mesh::MeshTags<std::int32_t>
   read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
+                std::optional<std::string> attribute_name,
                 std::string xpath = "/Xdmf/Domain");
 
   /// Write Information

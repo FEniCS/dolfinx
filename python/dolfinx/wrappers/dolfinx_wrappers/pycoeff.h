@@ -10,6 +10,8 @@
 #include <nanobind/ndarray.h>
 #include <span>
 
+namespace dolfinx_wrappers
+{
 template <typename T>
 std::map<std::pair<dolfinx::fem::IntegralType, int>,
          std::pair<std::span<const T>, int>>
@@ -23,10 +25,11 @@ py_to_cpp_coeffs(
       coeffs, std::inserter(c, c.end()),
       [](auto& e) -> typename decltype(c)::value_type
       {
-        return {e.first,
-                {std::span(static_cast<const T*>(e.second.data()),
-                           e.second.shape(0)),
-                 e.second.shape(1)}};
+        return {
+            e.first,
+            {std::span(static_cast<const T*>(e.second.data()), e.second.size()),
+             e.second.shape(1)}};
       });
   return c;
 }
+} // namespace dolfinx_wrappers

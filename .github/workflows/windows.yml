@@ -15,6 +15,7 @@ on:
   workflow_dispatch:
 
 jobs:
+
   windows-build:
     name: Windows vcpkg build
     runs-on: windows-latest
@@ -35,13 +36,14 @@ jobs:
           python-version: "3.12"
 
       - name: Install UFL
-        run: pip install git+https://github.com/FEniCS/ufl.git
+        run: pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
 
       - name: Checkout Basix
         uses: actions/checkout@v4
         with:
           repository: "fenics/basix"
           path: basix
+          ref: ${{ env.basix_ref }}
 
       - name: Insert add_dll_directory calls into Basix
         working-directory: basix/python/basix
@@ -74,6 +76,7 @@ jobs:
         with:
           repository: "fenics/ffcx"
           path: ffcx
+          ref: ${{ env.ffcx_ref }}
 
       - name: Install UFCx header
         working-directory: ffcx
@@ -92,13 +95,16 @@ jobs:
         with:
           path: dolfinx
 
+      - name: Load environment variables
+        run: cat dolfinx/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+
       - name: Insert add_dll_directory calls into DOLFINx
         working-directory: dolfinx/python/dolfinx
         run: |
           (Get-Content __init__.py).Replace('# WINDOWSDLL', 'import os; os.add_dll_directory("D:/a/dolfinx/dolfinx-install/bin"); os.add_dll_directory("C:/Program Files (x86)/Intel/oneAPI/mpi/2021.12/opt/mpi/libfabric/bin")') | Set-Content __init__.py
           Get-Content __init__.py
 
-      - uses: mpi4py/setup-mpi@v1.2.7
+      - uses: mpi4py/setup-mpi@v1.2.8
         with:
           mpi: "intelmpi"
 

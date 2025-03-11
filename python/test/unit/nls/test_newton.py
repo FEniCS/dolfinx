@@ -93,7 +93,13 @@ class NonlinearPDE_SNESProblem:
 
     def J(self, snes, x, J, P):
         """Assemble Jacobian matrix."""
+        from petsc4py import PETSc
+
         from dolfinx.fem.petsc import assemble_matrix
+
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        x.copy(self.u.x.petsc_vec)
+        self.u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         J.zeroEntries()
         assemble_matrix(J, self.a, bcs=[self.bc])
@@ -195,7 +201,7 @@ class TestNLS:
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import create_matrix
-        from dolfinx.la import create_petsc_vector
+        from dolfinx.la.petsc import create_vector
 
         mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
         V = functionspace(mesh, ("Lagrange", 1))
@@ -214,7 +220,7 @@ class TestNLS:
         problem = NonlinearPDE_SNESProblem(F, u, bc)
 
         u.x.array[:] = 0.9
-        b = create_petsc_vector(V.dofmap.index_map, V.dofmap.index_map_bs)
+        b = create_vector(V.dofmap.index_map, V.dofmap.index_map_bs)
         J = create_matrix(problem.a)
 
         # Create Newton solver and solve

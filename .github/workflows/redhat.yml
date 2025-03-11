@@ -24,15 +24,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Load environment variables
+        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+
       - name: Install Python build dependencies
         run: |
           python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
       - name: Install FEniCS Python components
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+          python3 -m pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
+          python3 -m pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
+          python3 -m pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/

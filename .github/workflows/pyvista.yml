@@ -12,7 +12,6 @@ on:
 
 jobs:
   pyvista:
-    if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
     runs-on: ubuntu-latest
     container: ghcr.io/fenics/test-env:current-openmpi
 
@@ -21,7 +20,7 @@ jobs:
       DISPLAY: ":99.0"
       PYVISTA_OFF_SCREEN: true
       PYVISTA_QT_VERSION: 0.11.1
-      PYVISTA_VERSION: 0.44.1
+      PYVISTA_VERSION: 0.44.2
       QT_DEBUG_PLUGINS: 1
 
       PETSC_ARCH: ${{ matrix.petsc_arch }}
@@ -30,17 +29,19 @@ jobs:
 
     strategy:
       matrix:
-        # petsc_arch: [real, complex]
         petsc_arch: [linux-gnu-real64-32, linux-gnu-complex128-32]
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Load environment variables
+        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+
       - name: Install FEniCS Python components
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git
-          pip install git+https://github.com/FEniCS/basix.git
-          pip install git+https://github.com/FEniCS/ffcx.git
+          python -m pip install git+https://github.com/fenics/ufl.git@${{ env..ufl_ref }}
+          python -m pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
+          python -m pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
           apt-get update
           apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb  # pyvista
           apt-get install -y --no-install-recommends libqt5gui5t64 libgl1 # pyvistaqt

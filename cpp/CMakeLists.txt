@@ -254,11 +254,6 @@ endif()
 
 # Check for some compiler flags
 include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag(-pipe HAVE_PIPE)
-
-if(HAVE_PIPE)
-  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -pipe)
-endif()
 
 # Add some strict compiler checks
 check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
@@ -382,7 +377,7 @@ if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
   find_package(ufcx 0.10 REQUIRED CONFIG)
 else()
-  # Check in MODULE mode (using FindUFCX.cmake) using Python intepreter.
+  # Check in MODULE mode (using FindUFCX.cmake) using Python interpreter.
   find_package(
     Python3
     COMPONENTS Interpreter
@@ -401,9 +396,9 @@ set_package_properties(
 # ------------------------------------------------------------------------------
 # Find optional packages
 if(DOLFINX_ENABLE_ADIOS2 AND _REQUIRE_ADIOS2)
-  find_package(ADIOS2 2.8.1 REQUIRED)
+  find_package(ADIOS2 2.8.1 REQUIRED COMPONENTS CXX)
 elseif(DOLFINX_ENABLE_ADIOS2)
-  find_package(ADIOS2 2.8.1)
+  find_package(ADIOS2 2.8.1 COMPONENTS CXX)
 endif()
 if(ADIOS2_FOUND AND NOT ADIOS2_HAVE_MPI)
   message(

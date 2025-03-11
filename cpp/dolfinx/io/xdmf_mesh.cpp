@@ -73,8 +73,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     for (std::int32_t c : entities)
     {
       assert(c < (std::int32_t)x_dofmap.extent(0));
-      auto xdofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-          x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto xdofs = md::submdspan(x_dofmap, c, md::full_extent);
       for (std::size_t i = 0; i < x_dofmap.extent(1); ++i)
       {
         std::int64_t global_index = xdofs[vtk_map[i]];
@@ -116,8 +115,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
       // Get geometry dofs for the entity
       const std::vector<int>& entity_dofs_e = entity_dofs[local_cell_entity];
 
-      auto xdofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-          x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto xdofs = md::submdspan(x_dofmap, c, md::full_extent);
       for (std::size_t i = 0; i < entity_dofs_e.size(); ++i)
       {
         std::int64_t global_index = xdofs[entity_dofs_e[vtk_map[i]]];
@@ -302,7 +300,7 @@ xdmf_mesh::read_topology_data(MPI_Comm comm, hid_t h5_id,
   const std::pair<std::string, int> cell_type_str
       = xdmf_utils::get_cell_type(topology_node);
 
-  // Get toplogical dimensions
+  // Get topological dimensions
   mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
 
   // Get topology dataset node

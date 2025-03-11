@@ -35,11 +35,3 @@ Advanced
    :maxdepth: 1
 
    demos/demo_custom_kernel.md
-
-Experimental
-------------
-
-.. toctree::
-   :maxdepth: 1
-
-   demos/demo_mixed_topology.md

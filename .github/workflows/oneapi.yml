@@ -38,9 +38,12 @@ jobs:
       - name: Install compiler dependencies
         run: |
           apt-get -y update
-          apt-get -y install binutils libstdc++-14-dev
+          apt-get -y install binutils libstdc++-14-dev git
 
       - uses: actions/checkout@v4
+
+      - name: Load environment variables
+        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
@@ -52,15 +55,16 @@ jobs:
           conda list
 
       - name: Install Basix
-        run: pip install --no-build-isolation git+https://github.com/FEniCS/basix.git
+        run: uv pip install --no-build-isolation git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
 
       - name: Clone FFCx
         uses: actions/checkout@v4
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: main
-      - name: Install FFCx C interface
+          ref: ${{ env.ffcx_ref }}
+
+      - name: Install UFCx C interface
         run: |
           cmake -G Ninja -B ufcx-build-dir -S ffcx/cmake/
           cmake --build ufcx-build-dir
@@ -77,8 +81,8 @@ jobs:
 
       - name: Install UFL and FFCx modules
         run: |
-          pip install --no-build-isolation git+https://github.com/FEniCS/ufl.git
-          pip install --no-build-isolation ffcx/
+          uv pip install --no-build-isolation git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
+          uv pip install --no-build-isolation ffcx/
 
       - name: Build and run DOLFINx C++ unit tests (serial and MPI)
         run: |
@@ -97,7 +101,7 @@ jobs:
           ctest -R demo -R mpi_2
 
       - name: Build DOLFINx Python interface
-        run: pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" python/
+        run: uv pip -v install --no-build-isolation --config-settings=cmake.build-type="Developer" python/
       - name: Run DOLFINx demos (Python, serial)
         run: python -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
       - name: Run DOLFINx demos (Python, MPI (np=2))

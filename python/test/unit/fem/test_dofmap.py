@@ -327,7 +327,7 @@ def test_higher_order_coordinate_map(points, celltype, order):
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     V = functionspace(mesh, ("Lagrange", 2))
-    X = V.element.interpolation_points()
+    X = V.element.interpolation_points
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
     cmap = mesh.geometry.cmap
@@ -402,7 +402,7 @@ def test_higher_order_tetra_coordinate_map(order):
     )
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     V = functionspace(mesh, ("Lagrange", order))
-    X = V.element.interpolation_points()
+    X = V.element.interpolation_points
     x_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
 
@@ -436,7 +436,8 @@ def test_empty_rank_collapse():
     def self_partitioner(comm: MPI.Intracomm, n, m, topo):
         dests = np.full(len(topo[0]) // 2, comm.rank, dtype=np.int32)
         offsets = np.arange(len(topo[0]) // 2 + 1, dtype=np.int32)
-        return dolfinx.graph.adjacencylist(dests, offsets)
+        # TODO: can we improve on this interface? I.e. warp to do cpp type conversion automatically
+        return dolfinx.graph.adjacencylist(dests, offsets)._cpp_object
 
     mesh = create_mesh(MPI.COMM_WORLD, cells, nodes, c_el, partitioner=self_partitioner)
 
