@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include "common/MPI.h"
+#include "dolfinx/common/MPI.h"
 #include "dolfinx/graph/AdjacencyList.h"
 #include "dolfinx/mesh/Mesh.h"
 #include "dolfinx/mesh/Topology.h"
 #include "dolfinx/mesh/cell_types.h"
+#include "dolfinx/mesh/graphbuild.h"
 #include "dolfinx/mesh/utils.h"
 #include "interval.h"
-#include "mesh/graphbuild.h"
 #include "plaza.h"
 #include <algorithm>
 #include <concepts>
@@ -22,6 +22,7 @@
 #include <utility>
 
 // TODO: Remove once works
+namespace dolfinx {
 namespace
 {
 /// @todo Is it un-documented that the owning rank must come first in
@@ -190,9 +191,63 @@ graph::AdjacencyList<int> compute_destination_ranks(
   return g;
 }
 } // namespace
+}
 
 namespace dolfinx::refinement
 {
+
+template <std::floating_point T>
+mesh::CellPartitionFunction
+create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
+                            std::span<std::int32_t> parent_cell)
+{
+  // TODO: optimize for non ghosted mesh?
+
+  return
+      [&](MPI_Comm comm, int /*nparts*/, std::vector<mesh::CellType> cell_types,
+          std::vector<std::span<const std::int64_t>> cells)
+          -> graph::AdjacencyList<std::int32_t>
+  {
+    auto parent_top = parent_mesh.topology();
+    auto parent_cell_im = parent_top->index_map(parent_top->dim());
+
+    int num_cell_vertices = mesh::num_cell_vertices(cell_types.front());
+    std::int32_t num_cells = cells.front().size() / num_cell_vertices;
+    std::vector<std::int32_t> destinations(num_cells);
+
+    std::vector<std::int32_t> dest_offsets(num_cells + 1);
+    int rank = dolfinx::MPI::rank(comm);
+    for (std::int32_t i = 0; i < destinations.size(); i++)
+    {
+      bool ghost_parent_cell = parent_cell[i] > parent_cell_im->size_local();
+      if (ghost_parent_cell)
+      {
+        destinations[i]
+            = parent_cell_im->owners()[parent_cell[i] - parent_cell_im->size_local()];
+      }
+      else
+      {
+        destinations[i] = rank;
+      }
+    }
+
+    auto dual_graph = mesh::build_dual_graph(comm, cell_types, cells);
+    std::vector<std::int32_t> node_disp;
+    node_disp = std::vector<std::int32_t>(MPI::size(comm) + 1, 0);
+    std::int32_t local_size = cells.front().size();
+    MPI_Allgather(&local_size, 1, dolfinx::MPI::mpi_t<std::int32_t>,
+                  node_disp.data() + 1, 1, dolfinx::MPI::mpi_t<std::int32_t>,
+                  comm);
+    std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
+
+    return compute_destination_ranks(comm, dual_graph, node_disp, destinations);
+
+    // std::iota(dest_offsets.begin(), dest_offsets.end(), 0);
+    // return graph::AdjacencyList(std::move(destinations),
+    //                             std::move(dest_offsets));
+  };
+}
+
 /// @brief Refine a mesh with markers.
 ///
 /// The refined mesh can be optionally re-partitioned across processes.
@@ -228,7 +283,7 @@ std::tuple<mesh::Mesh<T>, std::optional<std::vector<std::int32_t>>,
            std::optional<std::vector<std::int8_t>>>
 refine(const mesh::Mesh<T>& mesh,
        std::optional<std::span<const std::int32_t>> edges,
-       const mesh::CellPartitionFunction& partitioner = nullptr,
+       mesh::CellPartitionFunction partitioner = nullptr,
        Option option = Option::none)
 {
   auto topology = mesh.topology();
@@ -243,7 +298,8 @@ refine(const mesh::Mesh<T>& mesh,
 
   if (!partitioner)
   {
-    partitioner = create_identity_partitioner(mesh, parent_cell);
+    assert(parent_cell);
+    partitioner = create_identity_partitioner(mesh, parent_cell.value());
   }
 
   mesh::Mesh<T> mesh1 = mesh::create_mesh(
@@ -259,58 +315,6 @@ refine(const mesh::Mesh<T>& mesh,
       100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0));
 
   return {std::move(mesh1), std::move(parent_cell), std::move(parent_facet)};
-}
-
-template <std::floating_point T>
-mesh::CellPartitionFunction
-create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
-                            std::span<std::int32_t> parent_cell)
-{
-  // TODO: optimize for non ghosted mesh?
-
-  return
-      [&](MPI_Comm comm, int /*nparts*/, std::vector<mesh::CellType> cell_types,
-          std::vector<std::span<const std::int64_t>> cells)
-          -> graph::AdjacencyList<std::int32_t>
-  {
-    auto parent_top = parent_mesh.topology();
-    auto parent_cell_im = parent_top.index_map(parent_top.dim());
-
-    int num_cell_vertices = mesh::num_cell_vertices(cell_types.front());
-    std::int32_t num_cells = cells.front().size() / num_cell_vertices;
-    std::vector<std::int32_t> destinations(num_cells);
-
-    std::vector<std::int32_t> dest_offsets(num_cells + 1);
-    int rank = dolfinx::MPI::rank(comm);
-    for (std::int32_t i = 0; i < destinations.size(); i++)
-    {
-      bool ghost_parent_cell = parent_cell[i] > parent_cell_im.size_local();
-      if (ghost_parent_cell)
-      {
-        destinations[i]
-            = parent_cell_im
-                  .owners()[parent_cell[i] - parent_cell_im.size_local()];
-      }
-      else
-      {
-        destinations[i] = rank;
-      }
-    }
-
-    auto dual_graph = mesh::build_dual_graph(comm, cell_types, cells);
-    std::vector<std::int32_t> node_disp;
-    node_disp = std::vector<std::int64_t>(MPI::size(comm) + 1, 0);
-    MPI_Allgather(&cells.front().size(), 1, dolfinx::MPI::mpi_t<std::int32_t>,
-                  node_disp.data() + 1, 1, dolfinx::MPI::mpi_t<std::int32_t>,
-                  comm);
-    std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
-
-    return compute_destination_ranks(comm, dual_graph, node_disp, destinations);
-
-    // std::iota(dest_offsets.begin(), dest_offsets.end(), 0);
-    // return graph::AdjacencyList(std::move(destinations),
-    //                             std::move(dest_offsets));
-  };
 }
 
 } // namespace dolfinx::refinement
