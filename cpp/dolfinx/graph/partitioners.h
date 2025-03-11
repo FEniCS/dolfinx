@@ -11,6 +11,12 @@
 
 namespace dolfinx::graph
 {
+
+template <typename T>
+graph::AdjacencyList<int> compute_destination_ranks(
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& graph,
+    const std::vector<T>& node_disp, const std::vector<T>& part);
+
 namespace scotch
 {
 #ifdef HAS_PTSCOTCH
