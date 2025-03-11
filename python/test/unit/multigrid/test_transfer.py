@@ -20,7 +20,7 @@ from dolfinx.multigrid import assemble_transfer_matrix, create_sparsity_pattern,
 def test_1d(ghost_mode):
     mesh = create_interval(MPI.COMM_WORLD, 10, (0, 1), ghost_mode=ghost_mode)
     mesh_fine, _, _ = refine(mesh)
-    inclusion_map = inclusion_mapping(mesh, mesh_fine)
+    inclusion_map = inclusion_mapping(mesh, mesh_fine, True)
     V = functionspace(mesh, ("Lagrange", 1, (1,)))
     V_fine = functionspace(mesh_fine, ("Lagrange", 1, (1,)))
     assert V.element == V_fine.element
@@ -28,13 +28,7 @@ def test_1d(ghost_mode):
     V_fine.mesh.topology.create_connectivity(0, 1)
     sp = create_sparsity_pattern(V, V_fine, inclusion_map)
     T = matrix_csr(sp)
-    assemble_transfer_matrix(
-        T._cpp_object,
-        V._cpp_object,
-        V_fine._cpp_object,
-        inclusion_map,
-        lambda i: 1.0 if i == 0 else 0.5,
-    )
+    assemble_transfer_matrix(T, V, V_fine, inclusion_map, lambda i: 1.0 if i == 0 else 0.5)
     # continue with assembly of matrix
 
 
@@ -47,7 +41,7 @@ def test_1d_higher_order(degree, ghost_mode):
     mesh_fine, _, _ = refine(mesh)
 
     # this is a strictly geometric operation, and thus should pass
-    inclusion_map = inclusion_mapping(mesh, mesh_fine)
+    inclusion_map = inclusion_mapping(mesh, mesh_fine, True)
 
     V = functionspace(mesh, ("Lagrange", degree, (1,)))
     V_fine = functionspace(mesh_fine, ("Lagrange", degree, (1,)))
