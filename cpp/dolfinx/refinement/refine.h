@@ -22,7 +22,8 @@
 #include <utility>
 
 // TODO: Remove once works
-namespace dolfinx {
+namespace dolfinx
+{
 namespace
 {
 /// @todo Is it un-documented that the owning rank must come first in
@@ -191,7 +192,7 @@ graph::AdjacencyList<int> compute_destination_ranks(
   return g;
 }
 } // namespace
-}
+} // namespace dolfinx
 
 namespace dolfinx::refinement
 {
@@ -203,10 +204,11 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
 {
   // TODO: optimize for non ghosted mesh?
 
-  return
-      [&](MPI_Comm comm, int /*nparts*/, std::vector<mesh::CellType> cell_types,
-          std::vector<std::span<const std::int64_t>> cells)
-          -> graph::AdjacencyList<std::int32_t>
+  return [&parent_mesh,
+          parent_cell](MPI_Comm comm, int /*nparts*/,
+                       std::vector<mesh::CellType> cell_types,
+                       std::vector<std::span<const std::int64_t>> cells)
+             -> graph::AdjacencyList<std::int32_t>
   {
     auto parent_top = parent_mesh.topology();
     auto parent_cell_im = parent_top->index_map(parent_top->dim());
@@ -215,7 +217,6 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
     std::int32_t num_cells = cells.front().size() / num_cell_vertices;
     std::vector<std::int32_t> destinations(num_cells);
 
-    std::vector<std::int32_t> dest_offsets(num_cells + 1);
     int rank = dolfinx::MPI::rank(comm);
     for (std::int32_t i = 0; i < destinations.size(); i++)
     {
@@ -223,7 +224,8 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
       if (ghost_parent_cell)
       {
         destinations[i]
-            = parent_cell_im->owners()[parent_cell[i] - parent_cell_im->size_local()];
+            = parent_cell_im
+                  ->owners()[parent_cell[i] - parent_cell_im->size_local()];
       }
       else
       {
@@ -234,7 +236,7 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
     auto dual_graph = mesh::build_dual_graph(comm, cell_types, cells);
     std::vector<std::int32_t> node_disp;
     node_disp = std::vector<std::int32_t>(MPI::size(comm) + 1, 0);
-    std::int32_t local_size = cells.front().size();
+    std::int32_t local_size = dual_graph.num_nodes();
     MPI_Allgather(&local_size, 1, dolfinx::MPI::mpi_t<std::int32_t>,
                   node_disp.data() + 1, 1, dolfinx::MPI::mpi_t<std::int32_t>,
                   comm);
