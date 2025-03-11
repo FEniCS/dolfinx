@@ -988,6 +988,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       const std::vector<std::int32_t> remap = graph::reorder_gps(graph);
 
       // Update 'original' indices
+      // FIXME Need to reorder this twice as well
       const std::vector<std::int64_t>& orig_idx = original_idx1[i];
       std::vector<std::int64_t> _original_idx(orig_idx.size());
       std::copy_n(orig_idx.rbegin(), ghost_owners[i].size(),
@@ -1005,6 +1006,13 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       impl::reorder_list(
           std::span(cells1[i].data(), remap.size() * doflayouts[i].num_dofs()),
           remap);
+      // Reorder cells
+      impl::reorder_list(
+        std::span(cells1_v[i].data(), remap.size() * num_cell_vertices),
+        remap);
+      impl::reorder_list(
+        std::span(cells1[i].data(), remap.size() * doflayouts[i].num_dofs()),
+        remap);
     }
 
     if (facets.size() == 1) // Optimisation for single cell type
