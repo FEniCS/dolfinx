@@ -48,7 +48,6 @@ nanobind_add_module(
   dolfinx/wrappers/multigrid.cpp
   dolfinx/wrappers/petsc.cpp
   dolfinx/wrappers/refinement.cpp
-  dolfinx/wrappers/transfer.cpp
 )
 
 # Add strict compiler flags

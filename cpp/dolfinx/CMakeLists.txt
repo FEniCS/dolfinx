@@ -20,7 +20,6 @@ set(DOLFINX_DIRS
     multigrid
     nls
     refinement
-    transfer
 )
 
 # Add source to dolfinx target, and get sets of header files
