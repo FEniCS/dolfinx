@@ -48,6 +48,7 @@ class TopologyDict(typing.TypedDict):
 
     topology: npt.NDArray[typing.Any]
     cell_data: npt.NDArray[typing.Any]
+    entity_tags: npt.NDArray[typing.Any]
 
 
 # Map from Gmsh cell type identifier (integer) to DOLFINx cell type and
@@ -200,6 +201,9 @@ def extract_topology_and_markers(
             # Create marker array of length of number of tagged cells
             marker = np.full_like(entity_tags[0], tag)
 
+            # Keep track of entity tags to check tag consistency
+            entity_tags = entity_tags[0]
+
             # Group element topology and markers of the same entity type
             entity_type = entity_types[0]
             if entity_type in topologies.keys():
@@ -209,8 +213,15 @@ def extract_topology_and_markers(
                 topologies[entity_type]["cell_data"] = np.hstack(
                     [topologies[entity_type]["cell_data"], marker]
                 )
+                topologies[entity_type]["entity_tags"] = np.hstack(
+                    [topologies[entity_type]["entity_tags"], entity_tags]
+                )
             else:
-                topologies[entity_type] = {"topology": topology, "cell_data": marker}
+                topologies[entity_type] = {
+                    "topology": topology,
+                    "cell_data": marker,
+                    "entity_tags": entity_tags,
+                }
 
         physical_groups[model.getPhysicalName(dim, tag)] = (dim, tag)
 
@@ -304,6 +315,23 @@ def model_to_mesh(
 
         # Sort elements by ascending dimension
         perm_sort = np.argsort(cell_dimensions)
+
+        # Check that all cells are tagged once
+        _d = model.getDimension()
+        _elementTypes, _elementTags, _nodeTags = model.mesh.getElements(dim=_d, tag=-1)
+        _elementType_dim = _elementTypes[0]
+        if _elementType_dim not in topologies.keys():
+            raise RuntimeError("All cells are expected to be tagged once; none found")
+        num_cells = len(_elementTags[0])
+        num_cells_tagged = len(topologies[_elementType_dim]["entity_tags"])
+        if num_cells != num_cells_tagged:
+            raise RuntimeError(
+                "All cells are expected to be tagged once;"
+                f"found: {num_cells_tagged}, expected: {num_cells}"
+            )
+        num_cells_tagged_once = len(np.unique(topologies[_elementType_dim]["entity_tags"]))
+        if num_cells_tagged != num_cells_tagged_once:
+            raise RuntimeError("All cells are expected to be tagged once; found duplicates")
 
         # Broadcast cell type data and geometric dimension
         cell_id = cell_information[perm_sort[-1]]["id"]
