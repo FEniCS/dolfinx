@@ -987,10 +987,28 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       // Compute re-ordering of graph
       const std::vector<std::int32_t> remap_0 = graph::reorder_gps(graph);
 
-      dolfinx::graph::AdjacencyList<int32_t> new_graph(graph);
-      std::transform(new_graph.array().begin(), new_graph.array().end(),
-                     new_graph.array().begin(),
-                     [&](std::int32_t cell) { return remap_0[cell]; });
+      std::map<std::int32_t, std::vector<std::int32_t>> new_graph_map;
+      for (std::size_t old_cell = 0; old_cell < remap_0.size(); ++old_cell)
+      {
+        std::int32_t new_cell = remap_0[old_cell];
+        for (std::int32_t old_linked_cell : graph.links(old_cell))
+          new_graph_map[new_cell].push_back(remap_0[old_linked_cell]);
+      }
+
+      std::vector<std::int32_t> new_graph_array;
+      std::vector<std::int32_t> new_graph_offsets(1, 0);
+      for (std::size_t cell = 0; cell < remap_0.size(); ++cell)
+      {
+        auto linked_cells = new_graph_map[cell];
+        for (auto linked_cell : linked_cells)
+        {
+          new_graph_array.push_back(linked_cell);
+        }
+        new_graph_offsets.push_back(new_graph_array.size());
+      }
+
+      dolfinx::graph::AdjacencyList<std::int32_t> new_graph(new_graph_array,
+                                                            new_graph_offsets);
 
       const std::vector<std::int32_t> remap = graph::reorder_gps(new_graph);
 
