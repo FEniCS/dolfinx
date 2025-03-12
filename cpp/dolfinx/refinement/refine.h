@@ -21,6 +21,7 @@
 #include <mpi.h>
 #include <optional>
 #include <spdlog/spdlog.h>
+#include <stdexcept>
 #include <utility>
 
 namespace dolfinx::refinement
@@ -53,7 +54,8 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
     auto cell_im
         = parent_mesh.topology()->index_map(parent_mesh.topology()->dim());
 
-    std::int32_t num_cells = cells.front().size() / mesh::num_cell_vertices(cell_types.front());
+    std::int32_t num_cells
+        = cells.front().size() / mesh::num_cell_vertices(cell_types.front());
     std::vector<std::int32_t> destinations(num_cells);
 
     int rank = dolfinx::MPI::rank(comm);
@@ -123,7 +125,7 @@ std::tuple<mesh::Mesh<T>, std::optional<std::vector<std::int32_t>>,
 refine(const mesh::Mesh<T>& mesh,
        std::optional<std::span<const std::int32_t>> edges,
        mesh::CellPartitionFunction partitioner = nullptr,
-       Option option = Option::none)
+       Option option = Option::parent_cell)
 {
   auto topology = mesh.topology();
   assert(topology);
@@ -137,6 +139,11 @@ refine(const mesh::Mesh<T>& mesh,
 
   if (!partitioner)
   {
+    if (!parent_cell)
+    {
+      throw std::runtime_error(
+          "Identity partitioner relies on parent cell computation");
+    }
     assert(parent_cell);
     partitioner = create_identity_partitioner(mesh, parent_cell.value());
   }
