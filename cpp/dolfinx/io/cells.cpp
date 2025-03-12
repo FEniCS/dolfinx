@@ -414,7 +414,17 @@ std::vector<std::uint16_t> vtk_pyramid(int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t> vtk_quadrilateral(int num_nodes)
 {
-  const int n = cell_degree(mesh::CellType::quadrilateral, num_nodes);
+
+  // Special handling for second order serendipity
+  int edge_nodes;
+  if (num_nodes == 8)
+    edge_nodes = 1;
+  else
+  {
+    const int n = cell_degree(mesh::CellType::quadrilateral, num_nodes);
+    edge_nodes = n - 1;
+  }
+
   std::vector<std::uint16_t> map(num_nodes);
 
   // Vertices
@@ -424,8 +434,6 @@ std::vector<std::uint16_t> vtk_quadrilateral(int num_nodes)
   map[3] = 2;
 
   int j = 4;
-
-  const int edge_nodes = n - 1;
 
   // Edges
   for (int k = 0; k < edge_nodes; ++k)
@@ -445,8 +453,25 @@ std::vector<std::uint16_t> vtk_quadrilateral(int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t> vtk_hexahedron(int num_nodes)
 {
-  std::uint16_t n = cell_degree(mesh::CellType::hexahedron, num_nodes);
 
+  int edge_nodes;
+  int face_nodes;
+  int volume_nodes;
+
+  // Special handling for second order serendipity
+  if (num_nodes == 20)
+  {
+    edge_nodes = 1;
+    face_nodes = 0;
+    volume_nodes = 0;
+  }
+  else
+  {
+    const std::uint8_t n = cell_degree(mesh::CellType::hexahedron, num_nodes);
+    edge_nodes = n - 1;
+    face_nodes = edge_nodes * edge_nodes;
+    volume_nodes = face_nodes * edge_nodes;
+  }
   std::vector<std::uint16_t> map(num_nodes);
 
   // Vertices
@@ -462,7 +487,6 @@ std::vector<std::uint16_t> vtk_hexahedron(int num_nodes)
   // Edges
   int j = 8;
   int base = 8;
-  const int edge_nodes = n - 1;
   const std::vector<int> edges = {0, 3, 5, 1, 8, 10, 11, 9, 2, 4, 7, 6};
   for (int e : edges)
   {
@@ -471,7 +495,6 @@ std::vector<std::uint16_t> vtk_hexahedron(int num_nodes)
   }
   base += 12 * edge_nodes;
 
-  const int face_nodes = edge_nodes * edge_nodes;
   const std::vector<int> faces = {2, 3, 1, 4, 0, 5};
   for (int f : faces)
   {
@@ -480,7 +503,6 @@ std::vector<std::uint16_t> vtk_hexahedron(int num_nodes)
   }
   base += 6 * face_nodes;
 
-  const int volume_nodes = face_nodes * edge_nodes;
   for (int i = 0; i < volume_nodes; ++i)
     map[j++] = base + i;
 
