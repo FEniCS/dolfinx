@@ -103,20 +103,17 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
 /// refined mesh will **not** include ghosts cells (cells connected by
 /// facet to an owned cell) even if the parent mesh is ghosted.
 ///
-/// @warning Passing `nullptr` for `partitioner`, the refined mesh will
-/// **not** have ghosts cells even if the parent mesh is ghosted. The
-/// possibility to not re-partition the refined mesh and include ghost
-/// cells in the refined mesh will be added in a future release.
 ///
 /// @param[in] mesh Input mesh to be refined.
 /// @param[in] edges Indices of the edges that should be split in the
 /// refinement. If not provided (`std::nullopt`), uniform refinement is
 /// performed.
-/// @param[in] partitioner Partitioner to be used to distribute the
-/// refined mesh. If not callable, refined cells will be on the same
+/// @param[in] partitioner (Optional) partitioner to be used to distribute the
+/// refined mesh. If not provided (`std::nullopt`) the partition of the coarse
+/// mesh will be maintained. If not callable, refined cells will be on the same
 /// process as the parent cell.
 /// @param[in] option Control the computation of parent facets, parent
-/// cells. If an option is not selected, an empty list is returned.
+/// cells.
 /// @return New mesh, and optional parent cell indices and parent facet
 /// indices.
 template <std::floating_point T>
