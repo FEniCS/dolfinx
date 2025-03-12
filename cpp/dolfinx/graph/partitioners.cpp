@@ -201,6 +201,7 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
   return g;
 }
 
+/// @cond
 template graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& graph,
     const std::vector<int>& node_disp, const std::vector<int>& part);
@@ -209,6 +210,7 @@ template graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& graph,
     const std::vector<unsigned long long>& node_disp,
     const std::vector<unsigned long long>& part);
+/// @endcond
 
 //-----------------------------------------------------------------------------
 #ifdef HAS_PARMETIS
