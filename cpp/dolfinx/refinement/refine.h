@@ -25,6 +25,17 @@
 namespace dolfinx::refinement
 {
 
+/**
+ * @brief Create a cell partitioner which maintains the partition of a coarse
+ * mesh.
+ *
+ * @tparam T floating point type of mesh geometry.
+ * @param parent_mesh mesh indicating the partition scheme to use, i.e. the
+ * coarse mesh.
+ * @param parent_cell list of cell indices mapping cells of the new refined mesh
+ * into the coarse mesh, usually output of `refinement::refine`.
+ * @return The created cell partition function.
+ */
 template <std::floating_point T>
 mesh::CellPartitionFunction
 create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
@@ -71,10 +82,6 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
     std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
 
     return compute_destination_ranks(comm, dual_graph, node_disp, destinations);
-
-    // std::iota(dest_offsets.begin(), dest_offsets.end(), 0);
-    // return graph::AdjacencyList(std::move(destinations),
-    //                             std::move(dest_offsets));
   };
 }
 
