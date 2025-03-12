@@ -18,6 +18,7 @@
 #include "plaza.h"
 #include <algorithm>
 #include <concepts>
+#include <mpi.h>
 #include <optional>
 #include <spdlog/spdlog.h>
 #include <utility>
@@ -49,22 +50,20 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
                        std::vector<std::span<const std::int64_t>> cells)
              -> graph::AdjacencyList<std::int32_t>
   {
-    auto parent_top = parent_mesh.topology();
-    auto parent_cell_im = parent_top->index_map(parent_top->dim());
+    auto cell_im
+        = parent_mesh.topology()->index_map(parent_mesh.topology()->dim());
 
-    int num_cell_vertices = mesh::num_cell_vertices(cell_types.front());
-    std::int32_t num_cells = cells.front().size() / num_cell_vertices;
+    std::int32_t num_cells = cells.front().size() / mesh::num_cell_vertices(cell_types.front());
     std::vector<std::int32_t> destinations(num_cells);
 
     int rank = dolfinx::MPI::rank(comm);
     for (std::int32_t i = 0; i < destinations.size(); i++)
     {
-      bool ghost_parent_cell = parent_cell[i] > parent_cell_im->size_local();
+      bool ghost_parent_cell = parent_cell[i] > cell_im->size_local();
       if (ghost_parent_cell)
       {
         destinations[i]
-            = parent_cell_im
-                  ->owners()[parent_cell[i] - parent_cell_im->size_local()];
+            = cell_im->owners()[parent_cell[i] - cell_im->size_local()];
       }
       else
       {
@@ -72,15 +71,18 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
       }
     }
 
+    if (comm == MPI_COMM_NULL)
+    {
+      return graph::regular_adjacency_list(std::move(destinations), 1);
+    }
+
     auto dual_graph = mesh::build_dual_graph(comm, cell_types, cells);
-    std::vector<std::int32_t> node_disp;
-    node_disp = std::vector<std::int32_t>(MPI::size(comm) + 1, 0);
+    std::vector<std::int32_t> node_disp(MPI::size(comm) + 1, 0);
     std::int32_t local_size = dual_graph.num_nodes();
     MPI_Allgather(&local_size, 1, dolfinx::MPI::mpi_t<std::int32_t>,
                   node_disp.data() + 1, 1, dolfinx::MPI::mpi_t<std::int32_t>,
                   comm);
     std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
-
     return compute_destination_ranks(comm, dual_graph, node_disp, destinations);
   };
 }
