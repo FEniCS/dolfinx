@@ -124,7 +124,7 @@ std::tuple<mesh::Mesh<T>, std::optional<std::vector<std::int32_t>>,
            std::optional<std::vector<std::int8_t>>>
 refine(const mesh::Mesh<T>& mesh,
        std::optional<std::span<const std::int32_t>> edges,
-       mesh::CellPartitionFunction partitioner = nullptr,
+       std::optional<mesh::CellPartitionFunction> partitioner = std::nullopt,
        Option option = Option::parent_cell)
 {
   auto topology = mesh.topology();
@@ -137,7 +137,7 @@ refine(const mesh::Mesh<T>& mesh,
             ? interval::compute_refinement_data(mesh, edges, option)
             : plaza::compute_refinement_data(mesh, edges, option);
 
-  if (!partitioner)
+  if (!partitioner.has_value())
   {
     if (!parent_cell)
     {
@@ -150,7 +150,7 @@ refine(const mesh::Mesh<T>& mesh,
 
   mesh::Mesh<T> mesh1 = mesh::create_mesh(
       mesh.comm(), mesh.comm(), cell_adj.array(), mesh.geometry().cmap(),
-      mesh.comm(), new_vertex_coords, xshape, partitioner);
+      mesh.comm(), new_vertex_coords, xshape, *partitioner);
 
   // Report the number of refined cells
   const int D = topology->dim();
