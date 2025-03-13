@@ -984,8 +984,120 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       // Store unmatched_facets for current cell type
       facets.emplace_back(std::move(unmatched_facets), max_v);
 
+      // std::cout << "Dual graph:\n";
+      // for (std::int32_t i = 0; i < graph.num_nodes(); ++i)
+      // {
+      //   std::cout << "  " << i << ": ";
+      //   auto cs = graph.links(i);
+      //   std::cout << "[";
+      //   for (auto c : cs)
+      //   {
+      //     std::cout << c << " ";
+      //   }
+      //   std::cout << "]  ";
+      //   std::cout << "\n";
+      // }
+
       // Compute re-ordering of graph
-      const std::vector<std::int32_t> remap = graph::reorder_gps(graph);
+      // const std::vector<std::int32_t> remap_0 = graph::reorder_gps(graph);
+
+      // std::map<std::int32_t, std::vector<std::int32_t>> new_graph_map;
+      // for (std::size_t old_cell = 0; old_cell < remap_0.size(); ++old_cell)
+      // {
+      //   std::int32_t new_cell = remap_0[old_cell];
+      //   for (std::int32_t old_linked_cell : graph.links(old_cell))
+      //   {
+      //     new_graph_map[new_cell].push_back(remap_0[old_linked_cell]);
+      //   }
+      // }
+
+      // for (const auto& [cell, linked_cells] : new_graph_map)
+      // {
+      //   std::cout << cell << ": ";
+      //   for (auto linked_cell : linked_cells)
+      //   {
+      //     std::cout << linked_cell << " ";
+      //   }
+      //   std::cout << "\n";
+      // }
+
+      // std::vector<std::int32_t> new_graph_array;
+      // std::vector<std::int32_t> new_graph_offsets(1, 0);
+      // for (std::size_t cell = 0; cell < remap_0.size(); ++cell)
+      // {
+      //   auto linked_cells = new_graph_map[cell];
+      //   for (auto linked_cell : linked_cells)
+      //   {
+      //     new_graph_array.push_back(linked_cell);
+      //   }
+      //   new_graph_offsets.push_back(new_graph_array.size());
+      // }
+
+      // dolfinx::graph::AdjacencyList<std::int32_t> new_graph(new_graph_array,
+      // new_graph_offsets);
+
+      // const std::vector<std::int32_t> remap = graph::reorder_gps(new_graph);
+
+      // std::cout << "remap = ";
+      // for (auto i : remap)
+      // {
+      //   std::cout << i << " ";
+      // }
+      // std::cout << "\n";
+
+      // const std::vector<std::int32_t> remap = graph::reorder_gps(graph);
+
+      // Assume n x n x n cube
+      const int n = round(std::pow(graph.num_nodes(), 1.0 / 3.0));
+
+      std::vector<std::int32_t> remap(graph.num_nodes(), -1);
+
+      std::cout << "n = " << n << "\n";
+
+      std::vector<std::tuple<uint32_t, std::int32_t>> space_filling_cells;
+      for (uint32_t i = 0; i < n; ++i)
+      {
+        for (uint32_t j = 0; j < n; ++j)
+        {
+          for (uint32_t k = 0; k < n; ++k)
+          {
+            const int old_cell_idx = i + j * n + k * n * n;
+
+            std::cout << "(i, j, k) = (" << i << ", " << j << ", " << k << ")";
+
+            std::cout << "  old_cell_idx = " << old_cell_idx;
+
+            uint32_t morton_code = 0;
+            for (int l = 0; l < 32; l++)
+            {
+              morton_code |= ((i >> l) & 1) << (3 * l + 0);
+              morton_code |= ((j >> l) & 1) << (3 * l + 1);
+              morton_code |= ((k >> l) & 1) << (3 * l + 2);
+            }
+
+            std::cout << "  morton_code = " << morton_code << "\n";
+
+            space_filling_cells.emplace_back(morton_code, old_cell_idx);
+          }
+        }
+      }
+
+      std::sort(space_filling_cells.begin(), space_filling_cells.end());
+
+      for (std::size_t new_cell_idx = 0;
+           new_cell_idx < space_filling_cells.size(); ++new_cell_idx)
+      {
+        const auto& [morton_index, old_cell_idx]
+            = space_filling_cells[new_cell_idx];
+        remap[old_cell_idx] = new_cell_idx;
+      }
+
+      std::cout << "remap = ";
+      for (auto i : remap)
+      {
+        std::cout << i << " ";
+      }
+      std::cout << "\n";
 
       // Update 'original' indices
       const std::vector<std::int64_t>& orig_idx = original_idx1[i];
