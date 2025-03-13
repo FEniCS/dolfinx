@@ -1052,7 +1052,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
       std::vector<std::int32_t> remap(graph.num_nodes(), -1);
 
-      std::cout << "n = " << n << "\n";
+      // std::cout << "n = " << n << "\n";
 
       std::vector<std::tuple<uint32_t, std::int32_t>> space_filling_cells;
       for (uint32_t i = 0; i < n; ++i)
@@ -1063,9 +1063,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
           {
             const int old_cell_idx = i + j * n + k * n * n;
 
-            std::cout << "(i, j, k) = (" << i << ", " << j << ", " << k << ")";
+            // std::cout << "(i, j, k) = (" << i << ", " << j << ", " << k << ")";
 
-            std::cout << "  old_cell_idx = " << old_cell_idx;
+            // std::cout << "  old_cell_idx = " << old_cell_idx;
 
             uint32_t morton_code = 0;
             for (int l = 0; l < 32; l++)
@@ -1075,7 +1075,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
               morton_code |= ((k >> l) & 1) << (3 * l + 2);
             }
 
-            std::cout << "  morton_code = " << morton_code << "\n";
+            // std::cout << "  morton_code = " << morton_code << "\n";
 
             space_filling_cells.emplace_back(morton_code, old_cell_idx);
           }
@@ -1092,12 +1092,12 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         remap[old_cell_idx] = new_cell_idx;
       }
 
-      std::cout << "remap = ";
-      for (auto i : remap)
-      {
-        std::cout << i << " ";
-      }
-      std::cout << "\n";
+      // std::cout << "remap = ";
+      // for (auto i : remap)
+      // {
+      //   std::cout << i << " ";
+      // }
+      // std::cout << "\n";
 
       // Update 'original' indices
       const std::vector<std::int64_t>& orig_idx = original_idx1[i];
