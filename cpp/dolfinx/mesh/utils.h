@@ -1192,10 +1192,13 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     const fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
-    const CellPartitionFunction& partitioner)
+    const CellPartitionFunction& partitioner,
+    const std::function<std::vector<std::int32_t>(
+        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+    = graph::reorder_gps)
 {
   return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
-                     commg, x, xshape, partitioner);
+                     commg, x, xshape, partitioner, reorder_fn);
 }
 
 /// @brief Create a distributed mesh from mesh data using the default
