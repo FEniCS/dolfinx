@@ -839,10 +839,10 @@ compute_incident_entities(const Topology& topology,
 /// @param[in] partitioner Graph partitioner that computes the owning
 /// rank for each cell in `cells`. If not callable, cells are not
 /// redistributed.
-/// @param[in] reorder_fn A function that reorders local cells that are
-/// owned by this process. The function should take the mesh (local)
-/// dual graph as input and return a list whose ith entry is the new index
-/// of cell i.
+/// @param[in] reorder_fn Function that reorders (locally) cells that
+/// are owned by this process. It takes the local mesh dual graph as an
+/// argument and return a list whose `i`th entry is the new index of
+/// cell `i`.
 /// @return A mesh distributed on the communicator `comm`.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
@@ -1163,6 +1163,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// not callable, i.e. it does not store a callable function, no
 /// re-distribution of cells is done.
 ///
+/// This constructor provides a simplified interface to the more general
+/// ::create_mesh constructor, which supports meshes with more than one
+/// cell type.
+///
 /// @param[in] comm Communicator to build the mesh on.
 /// @param[in] commt Communicator that the topology data (`cells`) is
 /// distributed on. This should be `MPI_COMM_NULL` for ranks that should
@@ -1182,11 +1186,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// @param[in] xshape Shape of the `x` data.
 /// @param[in] partitioner Graph partitioner that computes the owning
 /// rank for each cell. If not callable, cells are not redistributed.
+/// @param[in] reorder_fn Function that reorders (locally) cells that
+/// are owned by this process. It takes the local mesh dual graph as an
+/// argument and return a list whose `i`th entry is the new index of
+/// cell `i`.
 /// @return A mesh distributed on the communicator `comm`.
-///
-/// This constructor provides a simplified interface to the more general
-/// ::create_mesh constructor, which supports meshes with more than one
-/// cell type.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt, std::span<const std::int64_t> cells,
