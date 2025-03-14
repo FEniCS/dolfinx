@@ -848,8 +848,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
-    std::function<
-        std::vector<std::int32_t>(const graph::AdjacencyList<std::int32_t>&)>
+    const std::function<
+        std::vector<std::int32_t>(const graph::AdjacencyList<std::int32_t>&)>&
         reorder_fn
     = graph::reorder_gps)
 {
