@@ -958,15 +958,15 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // Build local dual graph for owned cells to (i) get list of vertices
   // on the process boundary and (ii) apply re-ordering to cells for
   // locality
-  auto boundary_v_fn = [](const std::vector<CellType>& celltypes,
-                          const std::vector<fem::ElementDofLayout>& doflayouts,
-                          const std::vector<std::vector<int>>& ghost_owners,
-                          std::vector<std::vector<std::int64_t>>& cells1,
-                          std::vector<std::vector<std::int64_t>>& cells1_v,
-                          std::vector<std::vector<std::int64_t>>& original_idx1,
-                          std::function<std::vector<std::int32_t>(
-                              const graph::AdjacencyList<std::int32_t>&)>
-                              reorder_fn)
+  auto boundary_v_fn
+      = [](const std::vector<CellType>& celltypes,
+           const std::vector<fem::ElementDofLayout>& doflayouts,
+           const std::vector<std::vector<int>>& ghost_owners,
+           std::vector<std::vector<std::int64_t>>& cells1,
+           std::vector<std::vector<std::int64_t>>& cells1_v,
+           std::vector<std::vector<std::int64_t>>& original_idx1,
+           const std::function<std::vector<std::int32_t>(
+               const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
   {
     spdlog::info("Build local dual graphs, re-order cells, and compute process "
                  "boundary vertices.");
