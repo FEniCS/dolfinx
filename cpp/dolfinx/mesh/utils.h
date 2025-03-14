@@ -839,6 +839,9 @@ compute_incident_entities(const Topology& topology,
 /// @param[in] partitioner Graph partitioner that computes the owning
 /// rank for each cell in `cells`. If not callable, cells are not
 /// redistributed.
+/// @param[in] reorder_fn A function that reorders cells in the mesh.
+/// It should take the mesh dual graph as input and return a list whose
+/// ith entry is the new index of cell i.
 /// @return A mesh distributed on the communicator `comm`.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
