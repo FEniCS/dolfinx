@@ -847,7 +847,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
-    const CellPartitionFunction& partitioner)
+    const CellPartitionFunction& partitioner,
+    std::function<
+        std::vector<std::int32_t>(const graph::AdjacencyList<std::int32_t>&)>
+        reorder_fn
+    = graph::reorder_gps)
 {
   assert(cells.size() == elements.size());
   std::vector<CellType> celltypes;
@@ -959,7 +963,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                           const std::vector<std::vector<int>>& ghost_owners,
                           std::vector<std::vector<std::int64_t>>& cells1,
                           std::vector<std::vector<std::int64_t>>& cells1_v,
-                          std::vector<std::vector<std::int64_t>>& original_idx1)
+                          std::vector<std::vector<std::int64_t>>& original_idx1,
+                          std::function<std::vector<std::int32_t>(
+                              const graph::AdjacencyList<std::int32_t>&)>
+                              reorder_fn)
   {
     spdlog::info("Build local dual graphs, re-order cells, and compute process "
                  "boundary vertices.");
@@ -985,7 +992,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       facets.emplace_back(std::move(unmatched_facets), max_v);
 
       // Compute re-ordering of graph
-      const std::vector<std::int32_t> remap = graph::reorder_gps(graph);
+      const std::vector<std::int32_t> remap = reorder_fn(graph);
 
       // Update 'original' indices
       const std::vector<std::int64_t>& orig_idx = original_idx1[i];
@@ -1087,8 +1094,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     }
   };
 
-  const std::vector<std::int64_t> boundary_v = boundary_v_fn(
-      celltypes, doflayouts, ghost_owners, cells1, cells1_v, original_idx1);
+  const std::vector<std::int64_t> boundary_v
+      = boundary_v_fn(celltypes, doflayouts, ghost_owners, cells1, cells1_v,
+                      original_idx1, reorder_fn);
 
   spdlog::debug("Got {} boundary vertices", boundary_v.size());
 
