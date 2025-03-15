@@ -446,24 +446,12 @@ std::vector<std::uint16_t> vtk_quadrilateral(int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t> vtk_hexahedron(int num_nodes)
 {
-  int edge_nodes;
-  int face_nodes;
-  int volume_nodes;
-
   // Special handling for second order serendipity
-  if (num_nodes == 20)
-  {
-    edge_nodes = 1;
-    face_nodes = 0;
-    volume_nodes = 0;
-  }
-  else
-  {
-    const std::uint8_t n = cell_degree(mesh::CellType::hexahedron, num_nodes);
-    edge_nodes = n - 1;
-    face_nodes = edge_nodes * edge_nodes;
-    volume_nodes = face_nodes * edge_nodes;
-  }
+  constexpr mesh::CellType cell = mesh::CellType::hexahedron;
+  int edge_nodes = num_nodes == 20 ? 1 : cell_degree(cell, num_nodes) - 1;
+  int face_nodes = num_nodes == 20 ? 0 : edge_nodes * edge_nodes;
+  int volume_nodes = face_nodes * edge_nodes;
+
   std::vector<std::uint16_t> map(num_nodes);
 
   // Vertices
