@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2025 Garth N. Wells and Jørgen S. Dokken
+# Copyright (C) 2018-2025 Garth N. Wells, Nathan Sime and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -17,6 +17,7 @@ import contextlib
 import functools
 import typing
 from collections.abc import Sequence
+from enum import Enum
 
 from petsc4py import PETSc
 
@@ -45,6 +46,7 @@ from dolfinx.fem.function import Function as _Function
 from dolfinx.fem.function import FunctionSpace as _FunctionSpace
 
 __all__ = [
+    "AssemblyType",
     "LinearProblem",
     "NonlinearProblem",
     "apply_lifting",
@@ -68,6 +70,12 @@ __all__ = [
     "set_bc",
     "set_bc_nest",
 ]
+
+
+class AssemblyType(Enum):
+    standard = 0
+    block = 1
+    nest = 2
 
 
 def _extract_function_spaces(a: list[list[Form]]):
