@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Jorgen S. Dokken
+// Copyright (C) 2019-2025 Jorgen S. Dokken and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -9,9 +9,9 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/log.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <numeric>
+#include <span>
 #include <stdexcept>
 #include <vector>
 
@@ -160,7 +160,7 @@ std::vector<std::uint16_t> vtk_triangle(int num_nodes)
   if (degree < 3)
     return map;
 
-  // Interior VTK is ordered as a lower order triangle, while DOLFINx
+  // Interior VTK is ordered as a lower-order triangle, while DOLFINx
   // orders them lexicographically
   std::vector<std::uint16_t> rem(num_nodes - map.size());
   std::iota(rem.begin(), rem.end(), 3 * degree);
@@ -620,7 +620,7 @@ std::vector<std::uint16_t> io::cells::perm_vtk(mesh::CellType type,
     throw std::runtime_error("Unknown cell type.");
   }
 
-  return io::cells::transpose(map);
+  return cells::transpose(map);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t> io::cells::perm_gmsh(mesh::CellType type,
@@ -658,7 +658,7 @@ std::vector<std::uint16_t> io::cells::perm_gmsh(mesh::CellType type,
     throw std::runtime_error("Unknown cell type.");
   }
 
-  return io::cells::transpose(map);
+  return cells::transpose(map);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t>
