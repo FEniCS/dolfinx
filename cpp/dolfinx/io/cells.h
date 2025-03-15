@@ -133,9 +133,10 @@ std::vector<std::uint16_t> perm_vtk(mesh::CellType type, int num_nodes);
 /// @param[in] type Cell shape.
 /// @param[in] num_nodes Number of cell 'nodes'
 /// @return Permutation array `p` for permuting from Gmsh ordering to
-/// DOLFINx ordering, i.e. `a_dolfin[i] = a_gmsh[p[i]]`. @details If `p
-/// = [0, 2, 1, 3]` and `a = [10, 3, 4, 7]`, then `a_p =[a[p[0]],
-/// a[p[1]], a[p[2]], a[p[3]]] = [10, 4, 3, 7]`.
+/// DOLFINx ordering, i.e. `a_dolfin[i] = a_gmsh[p[i]]`.
+///
+/// @details If `p = [0, 2, 1, 3]` and `a = [10, 3, 4, 7]`, then `a_p
+/// =[a[p[0]], a[p[1]], a[p[2]], a[p[3]]] = [10, 4, 3, 7]`.
 std::vector<std::uint16_t> perm_gmsh(mesh::CellType type, int num_nodes);
 
 /// @brief Compute the transpose of a re-ordering map.
