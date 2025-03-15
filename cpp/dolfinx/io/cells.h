@@ -117,40 +117,43 @@ Pyramid:                     Pyramid13:
 */
 namespace dolfinx::io::cells
 {
-
 /// @brief Permutation array to map from VTK to DOLFINx node ordering.
 ///
-/// @param[in] type The cell shape
-/// @param[in] num_nodes The number of cell 'nodes'
-/// @return Permutation array @p for permuting from VTK ordering to
+/// @param[in] type Cell shape.
+/// @param[in] num_nodes Number of cell 'nodes'
+/// @return Permutation array `p` for permuting from VTK ordering to
 /// DOLFINx ordering, i.e. `a_dolfin[i] = a_vtk[p[i]]`.
-/// @details If `p = [0, 2, 1, 3]` and `a = [10, 3, 4, 7]`, then `a_p
-/// =[a[p[0]], a[p[1]], a[p[2]], a[p[3]]] = [10, 4, 3, 7]`
+///
+/// @details If `p = [0, 2, 1, 3]` and `a = [10, 3, 4, 7]`, then `a_p =
+/// [a[p[0]], a[p[1]], a[p[2]], a[p[3]]] = [10, 4, 3, 7]`.
 std::vector<std::uint16_t> perm_vtk(mesh::CellType type, int num_nodes);
 
 /// @brief Permutation array to map from Gmsh to DOLFINx node ordering.
 ///
-/// @param[in] type The cell shape
-/// @param[in] num_nodes
-/// @return Permutation array @p for permuting from Gmsh ordering to
+/// @param[in] type Cell shape.
+/// @param[in] num_nodes Number of cell 'nodes'
+/// @return Permutation array `p` for permuting from Gmsh ordering to
 /// DOLFINx ordering, i.e. `a_dolfin[i] = a_gmsh[p[i]]`.
+///
 /// @details If `p = [0, 2, 1, 3]` and `a = [10, 3, 4, 7]`, then `a_p
-/// =[a[p[0]], a[p[1]], a[p[2]], a[p[3]]] = [10, 4, 3, 7]`
+/// =[a[p[0]], a[p[1]], a[p[2]], a[p[3]]] = [10, 4, 3, 7]`.
 std::vector<std::uint16_t> perm_gmsh(mesh::CellType type, int num_nodes);
 
 /// @brief Compute the transpose of a re-ordering map.
 ///
-/// @param[in] map A re-ordering map
+/// @param[in] map A re-ordering map.
 /// @return Transpose of the `map`. E.g., is `map = {1, 2, 3, 0}`, the
 /// transpose will be `{3 , 0, 1, 2 }`.
 std::vector<std::uint16_t> transpose(std::span<const std::uint16_t> map);
 
-/// Permute cell topology by applying a permutation array for each cell
+/// @brief Permute cell topology by applying a permutation array for
+/// each cell.
+///
 /// @param[in] cells Array of cell topologies, with each row
-/// representing a cell (row-major storage)
-/// @param[in] shape The shape of the `cells` array
-/// @param[in] p The permutation array that maps `a_p[i] = a[p[i]]`,
-/// where `a_p` is the permuted array
+/// representing a cell (row-major storage).
+/// @param[in] shape Shape of the `cells` array.
+/// @param[in] p Permutation array that maps `a_p[i] = a[p[i]]`, where
+/// `a_p` is the permuted array.
 /// @return Permuted cell topology, where for a cell `v_new[i] =
 /// v_old[map[i]]`. The storage is row-major and the shape is the same
 /// as `cells`.
@@ -158,10 +161,11 @@ std::vector<std::int64_t> apply_permutation(std::span<const std::int64_t> cells,
                                             std::array<std::size_t, 2> shape,
                                             std::span<const std::uint16_t> p);
 
-/// Get VTK cell identifier
-/// @param[in] cell The cell type
-/// @param[in] dim The topological dimension of the cell
-/// @return The VTK cell identifier
+/// @brief Get VTK cell identifier.
+///
+/// @param[in] cell Cell type.
+/// @param[in] dim Topological dimension of the cell.
+/// @return VTK cell identifier.
 std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim);
 
 } // namespace dolfinx::io::cells
