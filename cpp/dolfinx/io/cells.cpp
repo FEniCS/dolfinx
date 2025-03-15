@@ -195,108 +195,133 @@ vtk_tetrahedron_remainders(std::vector<std::uint16_t> remainders)
       for (int i = 0; i < deg - 2; ++i)
         map.push_back(vec_pop(remainders, 0));
 
-      int d = deg - 2;
-      for (int i = 0; i < deg - 2; ++i)
       {
-        map.push_back(vec_pop(remainders, d));
-        d += (deg - 3 - i);
+        int d = deg - 2;
+        for (int i = 0; i < deg - 2; ++i)
+        {
+          map.push_back(vec_pop(remainders, d));
+          d += (deg - 3 - i);
+        }
       }
 
-      d = (deg - 2) * (deg - 1) / 2 - 1;
-      for (int i = 0; i < deg - 2; ++i)
       {
-        map.push_back(vec_pop(remainders, d));
-        d -= (2 + i);
+        int d = (deg - 2) * (deg - 1) / 2 - 1;
+        for (int i = 0; i < deg - 2; ++i)
+        {
+          map.push_back(vec_pop(remainders, d));
+          d -= (2 + i);
+        }
       }
 
-      d = (deg - 3) * (deg - 2) / 2;
-      for (int i = 0; i < deg - 2; ++i)
       {
-        map.push_back(vec_pop(remainders, d));
-        d += ((deg - i) * (deg - i - 1) / 2 - 1);
+        int d = (deg - 3) * (deg - 2) / 2;
+        for (int i = 0; i < deg - 2; ++i)
+        {
+          map.push_back(vec_pop(remainders, d));
+          d += ((deg - i) * (deg - i - 1) / 2 - 1);
+        }
       }
 
-      d = (deg - 3) * (deg - 2) / 2 + deg - 3;
-      for (int i = 0; i < deg - 2; ++i)
       {
-        map.push_back(vec_pop(remainders, d));
-        d += ((deg - 2 - i) * (deg - 1 - i) / 2 + deg - 4 - i);
+        int d = (deg - 3) * (deg - 2) / 2 + deg - 3;
+        for (int i = 0; i < deg - 2; ++i)
+        {
+          map.push_back(vec_pop(remainders, d));
+          d += ((deg - 2 - i) * (deg - 1 - i) / 2 + deg - 4 - i);
+        }
       }
 
-      d = (deg - 3) * (deg - 2) / 2 + deg - 3 + (deg - 2) * (deg - 1) / 2 - 1;
-      for (int i = 0; i < deg - 2; ++i)
       {
-        map.push_back(vec_pop(remainders, d));
-        d += ((deg - 3 - i) * (deg - 2 - i) / 2 + deg - i - 5);
+        int d = (deg - 3) * (deg - 2) / 2 + deg - 3 + (deg - 2) * (deg - 1) / 2
+                - 1;
+        for (int i = 0; i < deg - 2; ++i)
+        {
+          map.push_back(vec_pop(remainders, d));
+          d += ((deg - 3 - i) * (deg - 2 - i) / 2 + deg - i - 5);
+        }
       }
     }
 
     if (deg > 3)
     {
-      std::vector<std::uint16_t> dofs((deg - 3) * (deg - 2) / 2);
-      int di = 0;
-      int d = (deg - 3) * (deg - 2) / 2;
-      for (int i = 0; i < deg - 3; ++i)
       {
-        for (int ii = 0; ii < deg - 3 - i; ++ii)
-          dofs[di++] = vec_pop(remainders, d);
-        d += ((deg - 2 - i) * (deg - 1 - i) / 2 - 1);
-      }
-
-      std::ranges::copy(vtk_triangle_remainders(dofs), std::back_inserter(map));
-
-      di = 0;
-      int start = deg * deg - 4 * deg + 2;
-      int sub_i_start = deg - 3;
-      for (int i = 0; i < deg - 3; ++i)
-      {
-        d = start;
-        int sub_i = sub_i_start;
-        for (int ii = 0; ii < deg - 3 - i; ++ii)
+        std::vector<std::uint16_t> dofs;
+        int d = (deg - 3) * (deg - 2) / 2;
+        for (int i = 0; i < deg - 3; ++i)
         {
-          dofs[di++] = vec_pop(remainders, d);
-          d += sub_i * (sub_i + 1) / 2 - 2 - i;
-          sub_i -= 1;
+          for (int ii = 0; ii < deg - 3 - i; ++ii)
+            dofs.push_back(vec_pop(remainders, d));
+          d += ((deg - 2 - i) * (deg - 1 - i) / 2 - 1);
         }
-        start -= (2 + i);
+
+        std::ranges::copy(vtk_triangle_remainders(dofs),
+                          std::back_inserter(map));
       }
 
-      std::ranges::copy(vtk_triangle_remainders(dofs), std::back_inserter(map));
-
-      di = 0;
-      start = (deg - 3) * (deg - 2) / 2;
-      sub_i_start = deg - 3;
-      for (int i = 0; i < deg - 3; ++i)
       {
-        d = start;
-        int sub_i = sub_i_start;
-        for (int ii = 0; ii < deg - 3 - i; ++ii)
+        std::vector<std::uint16_t> dofs;
+        int start = deg * deg - 4 * deg + 2;
+        int sub_i_start = deg - 3;
+        for (int i = 0; i < deg - 3; ++i)
         {
-          dofs[di++] = vec_pop(remainders, d);
-          d += sub_i * (sub_i + 1) / 2 - 1 - 2 * i;
-          sub_i -= 1;
+          int d = start;
+          int sub_i = sub_i_start;
+          for (int ii = 0; ii < deg - 3 - i; ++ii)
+          {
+            dofs.push_back(vec_pop(remainders, d));
+            d += sub_i * (sub_i + 1) / 2 - 2 - i;
+            sub_i -= 1;
+          }
+
+          start -= (2 + i);
         }
-        start += (deg - 4 - i);
+
+        std::ranges::copy(vtk_triangle_remainders(dofs),
+                          std::back_inserter(map));
       }
 
-      std::ranges::copy(vtk_triangle_remainders(dofs), std::back_inserter(map));
-
-      di = 0;
-      int add_start = deg - 4;
-      for (int i = 0; i < deg - 3; ++i)
       {
-        d = 0;
-        int add = add_start;
-        for (int ii = 0; ii < deg - 3 - i; ++ii)
+        std::vector<std::uint16_t> dofs;
+        int start = (deg - 3) * (deg - 2) / 2;
+        int sub_i_start = deg - 3;
+        for (int i = 0; i < deg - 3; ++i)
         {
-          dofs[di++] = vec_pop(remainders, d);
-          d += add;
-          add -= 1;
+          int d = start;
+          int sub_i = sub_i_start;
+          for (int ii = 0; ii < deg - 3 - i; ++ii)
+          {
+            dofs.push_back(vec_pop(remainders, d));
+            d += sub_i * (sub_i + 1) / 2 - 1 - 2 * i;
+            sub_i -= 1;
+          }
+
+          start += (deg - 4 - i);
         }
-        add_start -= 1;
+
+        std::ranges::copy(vtk_triangle_remainders(dofs),
+                          std::back_inserter(map));
       }
 
-      std::ranges::copy(vtk_triangle_remainders(dofs), std::back_inserter(map));
+      {
+        std::vector<std::uint16_t> dofs;
+        int add_start = deg - 4;
+        for (int i = 0; i < deg - 3; ++i)
+        {
+          int d = 0;
+          int add = add_start;
+          for (int ii = 0; ii < deg - 3 - i; ++ii)
+          {
+            dofs.push_back(vec_pop(remainders, d));
+            d += add;
+            add -= 1;
+          }
+
+          add_start -= 1;
+        }
+
+        std::ranges::copy(vtk_triangle_remainders(dofs),
+                          std::back_inserter(map));
+      }
     }
   }
 
