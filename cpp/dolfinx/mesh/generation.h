@@ -232,7 +232,10 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 template <std::floating_point T = double>
 Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
                         mesh::GhostMode ghost_mode = mesh::GhostMode::none,
-                        CellPartitionFunction partitioner = nullptr)
+                        CellPartitionFunction partitioner = nullptr,
+                        const std::function<std::vector<std::int32_t>(
+                            const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                        = graph::reorder_gps)
 {
   if (n < 1)
     throw std::runtime_error("At least one cell is required.");
@@ -254,12 +257,12 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
   {
     auto [x, cells] = impl::create_interval_cells<T>(p, n);
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                       {x.size(), 1}, partitioner);
+                       {x.size(), 1}, partitioner, reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, 1}, partitioner);
+                       std::vector<T>{}, {0, 1}, partitioner, reorder_fn);
   }
 }
 
