@@ -68,7 +68,9 @@ template <std::floating_point T>
 Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
                   std::array<std::array<T, 3>, 2> p,
                   std::array<std::int64_t, 3> n,
-                  const CellPartitionFunction& partitioner);
+                  const CellPartitionFunction& partitioner,
+                  const std::function<std::vector<std::int32_t>(
+                      const graph::AdjacencyList<std::int32_t>&)>& reorder_fn);
 
 template <std::floating_point T>
 Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
@@ -123,7 +125,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
   case CellType::tetrahedron:
     return impl::build_tet<T>(comm, subcomm, p, n, partitioner, reorder_fn);
   case CellType::hexahedron:
-    return impl::build_hex<T>(comm, subcomm, p, n, partitioner);
+    return impl::build_hex<T>(comm, subcomm, p, n, partitioner, reorder_fn);
   case CellType::prism:
     return impl::build_prism<T>(comm, subcomm, p, n, partitioner);
   default:
@@ -400,7 +402,9 @@ template <std::floating_point T>
 mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
                         std::array<std::array<T, 3>, 2> p,
                         std::array<std::int64_t, 3> n,
-                        const CellPartitionFunction& partitioner)
+                        const CellPartitionFunction& partitioner,
+                        const std::function<std::vector<std::int32_t>(
+                            const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   common::Timer timer("Build BoxMesh (hexahedra)");
   std::vector<T> x;
