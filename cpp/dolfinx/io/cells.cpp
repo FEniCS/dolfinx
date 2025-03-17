@@ -5,11 +5,14 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "cells.h"
+#include <array>
+#include <cstdint>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <numeric>
 #include <stdexcept>
+#include <vector>
 
 using namespace dolfinx;
 namespace
@@ -414,38 +417,40 @@ std::vector<std::uint16_t> vtk_pyramid(int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t> vtk_quadrilateral(int num_nodes)
 {
-  const int n = cell_degree(mesh::CellType::quadrilateral, num_nodes);
-  std::vector<std::uint16_t> map(num_nodes);
+  std::vector<std::uint16_t> map;
+  map.reserve(num_nodes);
 
   // Vertices
-  map[0] = 0;
-  map[1] = 1;
-  map[2] = 3;
-  map[3] = 2;
+  map.insert(map.begin(), {0, 1, 3, 2});
 
-  int j = 4;
-
-  const int edge_nodes = n - 1;
+  // Special handling for second-order serendipity
+  constexpr mesh::CellType cell = mesh::CellType::quadrilateral;
+  int edge_nodes = num_nodes == 8 ? 1 : cell_degree(cell, num_nodes) - 1;
 
   // Edges
   for (int k = 0; k < edge_nodes; ++k)
-    map[j++] = 4 + k;
+    map.push_back(4 + k);
   for (int k = 0; k < edge_nodes; ++k)
-    map[j++] = 4 + 2 * edge_nodes + k;
+    map.push_back(4 + 2 * edge_nodes + k);
   for (int k = 0; k < edge_nodes; ++k)
-    map[j++] = 4 + 3 * edge_nodes + k;
+    map.push_back(4 + 3 * edge_nodes + k);
   for (int k = 0; k < edge_nodes; ++k)
-    map[j++] = 4 + edge_nodes + k;
+    map.push_back(4 + edge_nodes + k);
 
   // Face
   for (int k = 0; k < edge_nodes * edge_nodes; ++k)
-    map[j++] = 4 + edge_nodes * 4 + k;
+    map.push_back(4 + edge_nodes * 4 + k);
+
   return map;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t> vtk_hexahedron(int num_nodes)
 {
-  std::uint16_t n = cell_degree(mesh::CellType::hexahedron, num_nodes);
+  // Special handling for second order serendipity
+  constexpr mesh::CellType cell = mesh::CellType::hexahedron;
+  int edge_nodes = num_nodes == 20 ? 1 : cell_degree(cell, num_nodes) - 1;
+  int face_nodes = num_nodes == 20 ? 0 : edge_nodes * edge_nodes;
+  int volume_nodes = face_nodes * edge_nodes;
 
   std::vector<std::uint16_t> map(num_nodes);
 
@@ -462,8 +467,7 @@ std::vector<std::uint16_t> vtk_hexahedron(int num_nodes)
   // Edges
   int j = 8;
   int base = 8;
-  const int edge_nodes = n - 1;
-  const std::vector<int> edges = {0, 3, 5, 1, 8, 10, 11, 9, 2, 4, 7, 6};
+  const std::array edges = {0, 3, 5, 1, 8, 10, 11, 9, 2, 4, 7, 6};
   for (int e : edges)
   {
     for (int i = 0; i < edge_nodes; ++i)
@@ -471,7 +475,6 @@ std::vector<std::uint16_t> vtk_hexahedron(int num_nodes)
   }
   base += 12 * edge_nodes;
 
-  const int face_nodes = edge_nodes * edge_nodes;
   const std::vector<int> faces = {2, 3, 1, 4, 0, 5};
   for (int f : faces)
   {
@@ -480,7 +483,6 @@ std::vector<std::uint16_t> vtk_hexahedron(int num_nodes)
   }
   base += 6 * face_nodes;
 
-  const int volume_nodes = face_nodes * edge_nodes;
   for (int i = 0; i < volume_nodes; ++i)
     map[j++] = base + i;
 
