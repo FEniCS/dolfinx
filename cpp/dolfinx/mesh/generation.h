@@ -146,8 +146,8 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
 /// @param[in] n Number of cells in each direction.
 /// @param[in] celltype Cell shape.
 /// @param[in] partitioner Partitioning function for distributing cells
-/// @param[in] reorder_fn Function for (locally) reordering cells
 /// across MPI ranks.
+/// @param[in] reorder_fn Function for (locally) reordering cells
 /// @return Mesh
 template <std::floating_point T = double>
 Mesh<T> create_box(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
@@ -239,8 +239,8 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 /// @param[in] p End points of the interval.
 /// @param[in] ghost_mode ghost mode of the created mesh, defaults to none
 /// @param[in] partitioner Partitioning function for distributing cells
-/// @param[in] reorder_fn Function for (locally) reordering cells
 /// across MPI ranks.
+/// @param[in] reorder_fn Function for (locally) reordering cells
 /// @return A mesh.
 template <std::floating_point T = double>
 Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,

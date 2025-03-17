@@ -209,7 +209,7 @@ using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
 
 /// @brief Function that reorders (locally) cells that
 /// are owned by this process. It takes the local mesh dual graph as an
-/// argument and return a list whose `i`th entry is the new index of
+/// argument and returns a list whose `i`th entry is the new index of
 /// cell `i`.
 using CellReorderFunction = std::function<std::vector<std::int32_t>(
     const graph::AdjacencyList<std::int32_t>&)>;
@@ -847,9 +847,7 @@ compute_incident_entities(const Topology& topology,
 /// rank for each cell in `cells`. If not callable, cells are not
 /// redistributed.
 /// @param[in] reorder_fn Function that reorders (locally) cells that
-/// are owned by this process. It takes the local mesh dual graph as an
-/// argument and return a list whose `i`th entry is the new index of
-/// cell `i`.
+/// are owned by this process.
 /// @return A mesh distributed on the communicator `comm`.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
@@ -1190,9 +1188,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// @param[in] partitioner Graph partitioner that computes the owning
 /// rank for each cell. If not callable, cells are not redistributed.
 /// @param[in] reorder_fn Function that reorders (locally) cells that
-/// are owned by this process. It takes the local mesh dual graph as an
-/// argument and return a list whose `i`th entry is the new index of
-/// cell `i`.
+/// are owned by this process.
 /// @return A mesh distributed on the communicator `comm`.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
