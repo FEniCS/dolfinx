@@ -9,6 +9,7 @@
 #include "Mesh.h"
 #include "cell_types.h"
 #include "utils.h"
+#include <dolfinx/graph/ordering.h>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -59,7 +60,9 @@ template <std::floating_point T>
 Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
                   std::array<std::array<T, 3>, 2> p,
                   std::array<std::int64_t, 3> n,
-                  const CellPartitionFunction& partitioner);
+                  const CellPartitionFunction& partitioner,
+                  const std::function<std::vector<std::int32_t>(
+                      const graph::AdjacencyList<std::int32_t>&)>& reorder_fn);
 
 template <std::floating_point T>
 Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
@@ -98,7 +101,10 @@ template <std::floating_point T = double>
 Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
                    std::array<std::array<T, 3>, 2> p,
                    std::array<std::int64_t, 3> n, CellType celltype,
-                   CellPartitionFunction partitioner = nullptr)
+                   CellPartitionFunction partitioner = nullptr,
+                   const std::function<std::vector<std::int32_t>(
+                       const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                   = graph::reorder_gps)
 {
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
     throw std::runtime_error("At least one cell per dimension is required");
@@ -115,7 +121,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
   switch (celltype)
   {
   case CellType::tetrahedron:
-    return impl::build_tet<T>(comm, subcomm, p, n, partitioner);
+    return impl::build_tet<T>(comm, subcomm, p, n, partitioner, reorder_fn);
   case CellType::hexahedron:
     return impl::build_hex<T>(comm, subcomm, p, n, partitioner);
   case CellType::prism:
@@ -344,7 +350,9 @@ template <std::floating_point T>
 Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
                   std::array<std::array<T, 3>, 2> p,
                   std::array<std::int64_t, 3> n,
-                  const CellPartitionFunction& partitioner)
+                  const CellPartitionFunction& partitioner,
+                  const std::function<std::vector<std::int32_t>(
+                      const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   common::Timer timer("Build BoxMesh (tetrahedra)");
   std::vector<T> x;
