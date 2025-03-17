@@ -52,7 +52,9 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<T, 2>, 2> p,
                    std::array<std::int64_t, 2> n,
-                   const CellPartitionFunction& partitioner);
+                   const CellPartitionFunction& partitioner,
+                   const std::function<std::vector<std::int32_t>(
+                       const graph::AdjacencyList<std::int32_t>&)>& reorder_fn);
 
 template <std::floating_point T>
 std::vector<T> create_geom(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
@@ -156,9 +158,12 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
 template <std::floating_point T = double>
 Mesh<T> create_box(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
                    std::array<std::int64_t, 3> n, CellType celltype,
-                   const CellPartitionFunction& partitioner = nullptr)
+                   const CellPartitionFunction& partitioner = nullptr,
+                   const std::function<std::vector<std::int32_t>(
+                       const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                   = graph::reorder_gps)
 {
-  return create_box<T>(comm, comm, p, n, celltype, partitioner);
+  return create_box<T>(comm, comm, p, n, celltype, partitioner, reorder_fn);
 }
 
 /// @brief Create a uniform mesh::Mesh over the rectangle spanned by the
@@ -204,7 +209,7 @@ create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
   case CellType::triangle:
     return impl::build_tri<T>(comm, p, n, partitioner, diagonal, reorder_fn);
   case CellType::quadrilateral:
-    return impl::build_quad<T>(comm, p, n, partitioner);
+    return impl::build_quad<T>(comm, p, n, partitioner, reorder_fn);
   default:
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
   }
@@ -651,19 +656,21 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     }
 
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                       {x.size() / 2, 2}, partitioner);
+                       {x.size() / 2, 2}, partitioner, reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, 2}, partitioner);
+                       std::vector<T>{}, {0, 2}, partitioner, reorder_fn);
   }
 }
 
 template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<T, 2>, 2> p,
                    std::array<std::int64_t, 2> n,
-                   const CellPartitionFunction& partitioner)
+                   const CellPartitionFunction& partitioner,
+                   const std::function<std::vector<std::int32_t>(
+                       const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
   if (dolfinx::MPI::rank(comm) == 0)
@@ -700,12 +707,12 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<T, 2>, 2> p,
     }
 
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                       {x.size() / 2, 2}, partitioner);
+                       {x.size() / 2, 2}, partitioner, reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, 2}, partitioner);
+                       std::vector<T>{}, {0, 2}, partitioner, reorder_fn);
   }
 }
 } // namespace impl
