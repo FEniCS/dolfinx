@@ -72,11 +72,11 @@ Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
                   const CellReorderFunction& reorder_fn);
 
 template <std::floating_point T>
-Mesh<T>
-build_prism(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
-            std::array<std::int64_t, 3> n,
-            const CellPartitionFunction& partitioner,
-            const CellReorderFunction& reorder_fn);
+Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
+                    std::array<std::array<T, 3>, 2> p,
+                    std::array<std::int64_t, 3> n,
+                    const CellPartitionFunction& partitioner,
+                    const CellReorderFunction& reorder_fn);
 } // namespace impl
 
 /// @brief Create a uniform mesh::Mesh over rectangular prism spanned by
@@ -98,14 +98,14 @@ build_prism(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
 /// @param[in] celltype Cell shape.
 /// @param[in] partitioner Partitioning function for distributing cells
 /// across MPI ranks.
+/// @param[in] reorder_fn Function for (locally) reordering cells
 /// @return Mesh
 template <std::floating_point T = double>
 Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
                    std::array<std::array<T, 3>, 2> p,
                    std::array<std::int64_t, 3> n, CellType celltype,
                    CellPartitionFunction partitioner = nullptr,
-                   const CellReorderFunction& reorder_fn
-                   = graph::reorder_gps)
+                   const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
     throw std::runtime_error("At least one cell per dimension is required");
@@ -146,14 +146,14 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
 /// @param[in] n Number of cells in each direction.
 /// @param[in] celltype Cell shape.
 /// @param[in] partitioner Partitioning function for distributing cells
+/// @param[in] reorder_fn Function for (locally) reordering cells
 /// across MPI ranks.
 /// @return Mesh
 template <std::floating_point T = double>
 Mesh<T> create_box(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
                    std::array<std::int64_t, 3> n, CellType celltype,
                    const CellPartitionFunction& partitioner = nullptr,
-                   const CellReorderFunction& reorder_fn
-                   = graph::reorder_gps)
+                   const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   return create_box<T>(comm, comm, p, n, celltype, partitioner, reorder_fn);
 }
@@ -173,15 +173,15 @@ Mesh<T> create_box(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
 /// @param[in] partitioner Partitioning function for distributing cells
 /// across MPI ranks.
 /// @param[in] diagonal Direction of diagonals
+/// @param[in] reorder_fn Function for (locally) reordering cells
 /// @return Mesh
 template <std::floating_point T = double>
-Mesh<T>
-create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
-                 std::array<std::int64_t, 2> n, CellType celltype,
-                 CellPartitionFunction partitioner,
-                 DiagonalType diagonal = DiagonalType::right,
-                 const CellReorderFunction& reorder_fn
-                 = graph::reorder_gps)
+Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
+                         std::array<std::int64_t, 2> n, CellType celltype,
+                         CellPartitionFunction partitioner,
+                         DiagonalType diagonal = DiagonalType::right,
+                         const CellReorderFunction& reorder_fn
+                         = graph::reorder_gps)
 {
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
     throw std::runtime_error("At least one cell per dimension is required");
@@ -239,15 +239,15 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 /// @param[in] p End points of the interval.
 /// @param[in] ghost_mode ghost mode of the created mesh, defaults to none
 /// @param[in] partitioner Partitioning function for distributing cells
+/// @param[in] reorder_fn Function for (locally) reordering cells
 /// across MPI ranks.
 /// @return A mesh.
 template <std::floating_point T = double>
-Mesh<T>
-create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
-                mesh::GhostMode ghost_mode = mesh::GhostMode::none,
-                CellPartitionFunction partitioner = nullptr,
-                const CellReorderFunction& reorder_fn
-                = graph::reorder_gps)
+Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
+                        mesh::GhostMode ghost_mode = mesh::GhostMode::none,
+                        CellPartitionFunction partitioner = nullptr,
+                        const CellReorderFunction& reorder_fn
+                        = graph::reorder_gps)
 {
   if (n < 1)
     throw std::runtime_error("At least one cell is required.");
@@ -498,8 +498,7 @@ template <std::floating_point T>
 Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                   std::array<std::int64_t, 2> n,
                   const CellPartitionFunction& partitioner,
-                  DiagonalType diagonal,
-                  const CellReorderFunction& reorder_fn)
+                  DiagonalType diagonal, const CellReorderFunction& reorder_fn)
 {
   fem::CoordinateElement<T> element(CellType::triangle, 1);
   if (dolfinx::MPI::rank(comm) == 0)
