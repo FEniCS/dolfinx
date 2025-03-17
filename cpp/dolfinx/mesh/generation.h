@@ -76,7 +76,9 @@ template <std::floating_point T>
 Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
                     std::array<std::array<T, 3>, 2> p,
                     std::array<std::int64_t, 3> n,
-                    const CellPartitionFunction& partitioner);
+                    const CellPartitionFunction& partitioner,
+                    const std::function<std::vector<std::int32_t>(
+                        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn);
 } // namespace impl
 
 /// @brief Create a uniform mesh::Mesh over rectangular prism spanned by
@@ -127,7 +129,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
   case CellType::hexahedron:
     return impl::build_hex<T>(comm, subcomm, p, n, partitioner, reorder_fn);
   case CellType::prism:
-    return impl::build_prism<T>(comm, subcomm, p, n, partitioner);
+    return impl::build_prism<T>(comm, subcomm, p, n, partitioner, reorder_fn);
   default:
     throw std::runtime_error("Generate box mesh. Wrong cell type");
   }
@@ -395,7 +397,7 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3}, partitioner);
+                     {x.size() / 3, 3}, partitioner, reorder_fn);
 }
 
 template <std::floating_point T>
@@ -440,14 +442,16 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3}, partitioner);
+                     {x.size() / 3, 3}, partitioner, reorder_fn);
 }
 
 template <std::floating_point T>
 Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
                     std::array<std::array<T, 3>, 2> p,
                     std::array<std::int64_t, 3> n,
-                    const CellPartitionFunction& partitioner)
+                    const CellPartitionFunction& partitioner,
+                    const std::function<std::vector<std::int32_t>(
+                        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   std::vector<T> x;
   std::vector<std::int64_t> cells;
@@ -487,7 +491,7 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3}, partitioner);
+                     {x.size() / 3, 3}, partitioner, reorder_fn);
 }
 
 template <std::floating_point T>
