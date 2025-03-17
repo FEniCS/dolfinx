@@ -207,6 +207,13 @@ using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
     const std::vector<std::span<const std::int64_t>>& cells)>;
 
+/// @brief Function that reorders (locally) cells that
+/// are owned by this process. It takes the local mesh dual graph as an
+/// argument and return a list whose `i`th entry is the new index of
+/// cell `i`.
+using CellReorderFunction = std::function<std::vector<std::int32_t>(
+    const graph::AdjacencyList<std::int32_t>&)>;
+
 /// @brief Extract topology from cell data, i.e. extract cell vertices.
 /// @param[in] cell_type Cell shape.
 /// @param[in] layout Layout of geometry 'degrees-of-freedom' on the
@@ -852,9 +859,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
-    const std::function<std::vector<std::int32_t>(
-        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
-    = graph::reorder_gps)
+    const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   assert(cells.size() == elements.size());
   std::vector<CellType> celltypes;
@@ -961,15 +966,13 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // Build local dual graph for owned cells to (i) get list of vertices
   // on the process boundary and (ii) apply re-ordering to cells for
   // locality
-  auto boundary_v_fn
-      = [](const std::vector<CellType>& celltypes,
-           const std::vector<fem::ElementDofLayout>& doflayouts,
-           const std::vector<std::vector<int>>& ghost_owners,
-           std::vector<std::vector<std::int64_t>>& cells1,
-           std::vector<std::vector<std::int64_t>>& cells1_v,
-           std::vector<std::vector<std::int64_t>>& original_idx1,
-           const std::function<std::vector<std::int32_t>(
-               const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
+  auto boundary_v_fn = [](const std::vector<CellType>& celltypes,
+                          const std::vector<fem::ElementDofLayout>& doflayouts,
+                          const std::vector<std::vector<int>>& ghost_owners,
+                          std::vector<std::vector<std::int64_t>>& cells1,
+                          std::vector<std::vector<std::int64_t>>& cells1_v,
+                          std::vector<std::vector<std::int64_t>>& original_idx1,
+                          const CellReorderFunction& reorder_fn)
   {
     spdlog::info("Build local dual graphs, re-order cells, and compute process "
                  "boundary vertices.");
@@ -1198,9 +1201,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
-    const std::function<std::vector<std::int32_t>(
-        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
-    = graph::reorder_gps)
+    const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
                      commg, x, xshape, partitioner, reorder_fn);
