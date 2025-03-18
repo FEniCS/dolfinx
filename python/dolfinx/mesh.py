@@ -519,7 +519,7 @@ def refine(
     msh: Mesh,
     edges: typing.Optional[np.ndarray] = None,
     partitioner: typing.Optional[typing.Callable] = None,
-    option: RefinementOption = RefinementOption.none,
+    option: RefinementOption = RefinementOption.parent_cell,
 ) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.
 
