@@ -92,7 +92,7 @@ void tabulate_expression(
                     std::next(coord_dofs.begin(), 3 * i));
       }
       fn(values_local.data(), &coeffs(e, 0), constants.data(),
-         coord_dofs.data(), nullptr, nullptr);
+         coord_dofs.data(), nullptr, nullptr, nullptr);
     }
     else
     {
@@ -104,7 +104,7 @@ void tabulate_expression(
                     std::next(coord_dofs.begin(), 3 * i));
       }
       fn(values_local.data(), &coeffs(e, 0), constants.data(),
-         coord_dofs.data(), &entities(e, 1), nullptr);
+         coord_dofs.data(), &entities(e, 1), nullptr, nullptr);
     }
 
     P0(values_local, cell_info, e, size0);
