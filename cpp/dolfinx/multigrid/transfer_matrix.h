@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <concepts>
 #include <cstdint>
-#include <iterator>
 #include <stdexcept>
 #include <vector>
 
@@ -19,74 +18,9 @@
 #include "dolfinx/fem/FunctionSpace.h"
 #include "dolfinx/la/SparsityPattern.h"
 #include "dolfinx/la/utils.h"
-#include "dolfinx/mesh/Mesh.h"
 
 namespace dolfinx::multigrid
 {
-
-template <std::floating_point T>
-std::vector<std::int64_t>
-inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
-                  const dolfinx::mesh::Mesh<T>& mesh_to)
-{
-
-  const common::IndexMap& im_from = *mesh_from.topology()->index_map(0);
-  const common::IndexMap& im_to = *mesh_to.topology()->index_map(0);
-
-  std::vector<std::int64_t> map(im_from.size_global(), -1);
-
-  std::span<const T> x_from = mesh_from.geometry().x();
-  std::span<const T> x_to = mesh_to.geometry().x();
-
-  auto build_global_to_local = [&](const auto& im)
-  {
-    return [&](std::int32_t idx)
-    {
-      std::array<std::int64_t, 1> tmp;
-      im.local_to_global(std::vector<std::int32_t>{idx}, tmp);
-      return tmp[0];
-    };
-  };
-
-  auto to_global_to = build_global_to_local(im_to);
-  auto to_global_from = build_global_to_local(im_from);
-
-  for (std::int32_t i = 0; i < im_from.size_local(); i++)
-  {
-    std::ranges::subrange vertex_from(std::next(x_from.begin(), 3 * i),
-                                      std::next(x_from.begin(), 3 * (i + 1)));
-    for (std::int64_t j = 0; j < im_to.size_local() + im_to.num_ghosts(); j++)
-    {
-      std::ranges::subrange vertex_to(std::next(x_to.begin(), 3 * j),
-                                      std::next(x_to.begin(), 3 * (j + 1)));
-
-      if (std::ranges::equal(
-              vertex_from, vertex_to, [](T a, T b)
-              { return std::abs(a - b) <= std::numeric_limits<T>::epsilon(); }))
-      {
-        map[to_global_from(i)] = to_global_to(j);
-        break;
-      }
-    }
-  }
-
-  if (dolfinx::MPI::size(mesh_to.comm()) == 1)
-  {
-    // no communication required
-    assert(std::ranges::all_of(map, [](auto e) { return e >= 0; }));
-    return map;
-  }
-
-  // map holds at this point for every original local index the corresponding
-  // mapped global index. All other entries are still -1, but are available on
-  // other processes.
-  std::vector<std::int64_t> result(map.size(), -1);
-  MPI_Allreduce(map.data(), result.data(), map.size(),
-                dolfinx::MPI::mpi_t<std::int64_t>, MPI_MAX, mesh_from.comm());
-
-  assert(std::ranges::all_of(result, [](auto e) { return e >= 0; }));
-  return result;
-}
 
 template <std::floating_point T>
 la::SparsityPattern
@@ -256,4 +190,4 @@ void assemble_transfer_matrix(la::MatSet<T> auto mat_set,
   }
 }
 
-} // namespace dolfinx::transfer
+} // namespace dolfinx::multigrid
