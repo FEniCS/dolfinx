@@ -28,7 +28,7 @@ concept DofTransformKernel
 template <class U, class T>
 concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
                                        const scalar_value_t<T>*,
-                                       const int*, const std::uint8_t*>;
+                                       const int*, const std::uint8_t*, void*>;
 
 /// @brief Concept for mdspan of rank 1 or 2.
 template <class T>

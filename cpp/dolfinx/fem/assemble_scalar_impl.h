@@ -51,7 +51,7 @@ T assemble_cells(mdspan2_t x_dofmap,
     }
 
     fn(&value, &coeffs(index, 0), constants.data(), cdofs.data(), nullptr,
-       nullptr);
+       nullptr, nullptr);
   }
 
   return value;
@@ -92,7 +92,7 @@ T assemble_exterior_facets(
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_facet);
     fn(&value, &coeffs(f, 0), constants.data(), cdofs.data(), &local_facet,
-       &perm);
+       &perm, nullptr);
   }
 
   return value;
@@ -144,7 +144,7 @@ T assemble_interior_facets(
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
     fn(&value, &coeffs(f, 0, 0), constants.data(), cdofs.data(),
-       local_facet.data(), perm.data());
+       local_facet.data(), perm.data(), nullptr);
   }
 
   return value;

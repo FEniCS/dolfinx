@@ -31,7 +31,7 @@ sys.path.append(os.getcwd())
 
 def tabulate_rank2(dtype, xdtype):
     @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
-    def tabulate(A_, w_, c_, coords_, entity_local_index, cell_orientation):
+    def tabulate(A_, w_, c_, coords_, entity_local_index, cell_orientation, custom_data):
         A = numba.carray(A_, (3, 3), dtype=dtype)
         coordinate_dofs = numba.carray(coords_, (3, 3), dtype=xdtype)
 
@@ -52,7 +52,7 @@ def tabulate_rank2(dtype, xdtype):
 
 def tabulate_rank1(dtype, xdtype):
     @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
-    def tabulate(b_, w_, c_, coords_, local_index, orientation):
+    def tabulate(b_, w_, c_, coords_, local_index, orientation, custom_data):
         b = numba.carray(b_, (3), dtype=dtype)
         coordinate_dofs = numba.carray(coords_, (3, 3), dtype=xdtype)
         x0, y0 = coordinate_dofs[0, :2]
@@ -68,7 +68,7 @@ def tabulate_rank1(dtype, xdtype):
 
 def tabulate_rank1_coeff(dtype, xdtype):
     @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
-    def tabulate(b_, w_, c_, coords_, local_index, orientation):
+    def tabulate(b_, w_, c_, coords_, local_index, orientation, custom_data):
         b = numba.carray(b_, (3), dtype=dtype)
         w = numba.carray(w_, (1), dtype=dtype)
         coordinate_dofs = numba.carray(coords_, (3, 3), dtype=xdtype)
@@ -168,7 +168,8 @@ def test_cffi_assembly():
                                     const double* c,
                                     const double* restrict coordinate_dofs,
                                     const int* entity_local_index,
-                                    const int* cell_orientation)
+                                    const int* cell_orientation,
+                                    void* custom_data)
         {
         // Precomputed values of basis functions and precomputations
         // FE* dimensions: [entities][points][dofs]
@@ -221,7 +222,8 @@ def test_cffi_assembly():
                                       const double* c,
                                       const double* restrict coordinate_dofs,
                                       const int* entity_local_index,
-                                      const int* cell_orientation)
+                                      const int* cell_orientation,
+                                      void* custom_data)
         {
         // Precomputed values of basis functions and precomputations
         // FE* dimensions: [entities][points][dofs]
@@ -254,12 +256,14 @@ def test_cffi_assembly():
                                     const double* c,
                                     const double* restrict coordinate_dofs,
                                     const int* entity_local_index,
-                                    const int* cell_orientation);
+                                    const int* cell_orientation,
+                                    void* custom_data);
         void tabulate_tensor_poissonL(double* restrict A, const double* w,
                                     const double* c,
                                     const double* restrict coordinate_dofs,
                                     const int* entity_local_index,
-                                    const int* cell_orientation);
+                                    const int* cell_orientation,
+                                    void* custom_data);
         """
         )
 
