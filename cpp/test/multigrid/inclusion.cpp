@@ -79,8 +79,9 @@ void TEST_inclusion(dolfinx::mesh::Mesh<T>&& mesh_coarse)
 {
   mesh_coarse.topology()->create_entities(1);
 
-  auto [mesh_fine, parent_cell, parent_facet]
-      = refinement::refine(mesh_coarse, std::nullopt);
+  auto [mesh_fine, parent_cell, parent_facet] = refinement::refine(
+      mesh_coarse, std::nullopt,
+      mesh::create_cell_partitioner(mesh::GhostMode::none));
   mesh_fine.topology()->create_connectivity(1, 0);
   mesh_fine.topology()->create_connectivity(0, 1);
   std::vector<std::int64_t> inclusion_map
