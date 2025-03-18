@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <array>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -22,6 +23,7 @@
 
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
+#include <dolfinx/mesh/utils.h>
 #include <dolfinx/multigrid/inclusion.h>
 #include <dolfinx/refinement/refine.h>
 
@@ -63,6 +65,15 @@ void CHECK_inclusion_map(const dolfinx::mesh::Mesh<T>& from,
           == im_from.size_local() + im_from.num_ghosts());
   for (std::int64_t i = 0; i < static_cast<std::int64_t>(map.size()); i++)
   {
+    CHECK(0 <= map[i]);
+    CHECK(map[i] <= im_to.size_global());
+    // std::cout << (i > im_from.size_local()) << std::endl;
+    // std::cout << "(" << from.geometry().x()[3 * i] << ", "
+    //           << from.geometry().x()[3 * i + 1] << ", "
+    //           << from.geometry().x()[3 * i + 2] << ")  - ("
+    //           << global_x_to[3 * map[i]] << ", " << global_x_to[3 * map[i] +
+    //           1]
+    //           << ", " << global_x_to[3 * map[i] + 2] << ")" << std::endl;
     CHECK(std::abs(from.geometry().x()[3 * i] - global_x_to[3 * map[i]])
           < std::numeric_limits<T>::epsilon());
     CHECK(std::abs(from.geometry().x()[3 * i + 1] - global_x_to[3 * map[i] + 1])
@@ -79,15 +90,24 @@ void TEST_inclusion(dolfinx::mesh::Mesh<T>&& mesh_coarse)
 {
   mesh_coarse.topology()->create_entities(1);
 
-  auto [mesh_fine, parent_cell, parent_facet] = refinement::refine(
-      mesh_coarse, std::nullopt,
-      mesh::create_cell_partitioner(mesh::GhostMode::none));
-  mesh_fine.topology()->create_connectivity(1, 0);
-  mesh_fine.topology()->create_connectivity(0, 1);
-  std::vector<std::int64_t> inclusion_map
-      = multigrid::inclusion_mapping(mesh_coarse, mesh_fine, true);
+  std::array<std::optional<mesh::GhostMode>, 3> ghost_modes
+      = {mesh::GhostMode::none, mesh::GhostMode::shared_vertex,
+         mesh::GhostMode::shared_facet};
+  // TODO: std::nullopt,
+  for (auto ghost_mode : ghost_modes)
+  {
+    auto [mesh_fine, parent_cell, parent_facet]
+        = ghost_mode.has_value()
+              ? refinement::refine(mesh_coarse, std::nullopt,
+                                   mesh::create_cell_partitioner(*ghost_mode))
+              : refinement::refine(mesh_coarse, std::nullopt);
+    mesh_fine.topology()->create_connectivity(1, 0);
+    mesh_fine.topology()->create_connectivity(0, 1);
+    std::vector<std::int64_t> inclusion_map = multigrid::inclusion_mapping(
+        mesh_coarse, mesh_fine, ghost_mode.has_value());
 
-  CHECK_inclusion_map(mesh_coarse, mesh_fine, inclusion_map);
+    CHECK_inclusion_map(mesh_coarse, mesh_fine, inclusion_map);
+  }
 }
 
 TEMPLATE_TEST_CASE("Inclusion (interval)", "[multigrid][inclusion]", double,
