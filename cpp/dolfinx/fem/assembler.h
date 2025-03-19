@@ -63,9 +63,7 @@ class FunctionSpace;
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, const fem::Expression<T, U>& e,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-        coeffs,
+    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, const mesh::Mesh<U>& mesh,
     fem::MDSpan2 auto entities,
     std::optional<

@@ -198,11 +198,8 @@ int main(int argc, char* argv[])
 
           // New coordinates
           std::vector<U> fdata(3 * x.extent(1), 0.0);
-          MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-              U, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-                     std::size_t, 3,
-                     MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
-              f(fdata.data(), 3, x.extent(1));
+          md::mdspan<U, md::extents<std::size_t, 3, md::dynamic_extent>> f(
+              fdata.data(), 3, x.extent(1));
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
             U x1 = x(1, p);

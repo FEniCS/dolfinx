@@ -115,6 +115,7 @@ from dolfinx.fem import (
 )
 from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
 from dolfinx.io import XDMFFile
+from dolfinx.la.petsc import create_vector_wrap
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 
 # We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions for
@@ -291,7 +292,7 @@ def nested_iterative_solver():
     # space `Q`). The vectors for `u` and `p` are combined to form a
     # nested vector and the system is solved.
     u, p = Function(V), Function(Q)
-    x = PETSc.Vec().createNest([la.create_petsc_vector_wrap(u.x), la.create_petsc_vector_wrap(p.x)])
+    x = PETSc.Vec().createNest([create_vector_wrap(u.x), create_vector_wrap(p.x)])
     ksp.solve(b, x)
 
     # Save solution to file in XDMF format for visualization, e.g. with

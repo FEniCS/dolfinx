@@ -480,9 +480,9 @@ void declare_objects(nb::module_& m, const std::string& type)
 
             std::array<std::size_t, 2> shape{value_size, x.size() / 3};
             std::vector<T> values(shape[0] * shape[1]);
-            std::function<void(T*, int, int, const U*)> f
-                = reinterpret_cast<void (*)(T*, int, int, const U*)>(addr);
-            f(values.data(), shape[1], shape[0], x.data());
+            std::function<void(T*, int, int, const U*, void*)> f
+                = reinterpret_cast<void (*)(T*, int, int, const U*, void*)>(addr);
+            f(values.data(), shape[1], shape[0], x.data(), nullptr);
             dolfinx::fem::interpolate(self, std::span<const T>(values), shape,
                                       std::span(cells.data(), cells.size()));
           },
@@ -568,7 +568,7 @@ void declare_objects(nb::module_& m, const std::string& type)
             auto tabulate_expression_ptr
                 = (void (*)(T*, const T*, const T*,
                             const typename geom_type<T>::value_type*,
-                            const int*, const std::uint8_t*))fn_addr;
+                            const int*, const std::uint8_t*, void*))fn_addr;
             new (ex) dolfinx::fem::Expression<T, U>(
                 coefficients, constants, std::span(X.data(), X.size()),
                 {X.shape(0), X.shape(1)}, tabulate_expression_ptr, value_shape,
@@ -660,7 +660,7 @@ void declare_form(nb::module_& m, std::string type)
                 auto kn_ptr
                     = (void (*)(T*, const T*, const T*,
                                 const typename geom_type<T>::value_type*,
-                                const int*, const std::uint8_t*))ptr;
+                                const int*, const std::uint8_t*, void*))ptr;
                 _integrals.insert(
                     {{type, id, 0},
                      {kn_ptr,
@@ -896,14 +896,11 @@ void declare_cmap(nb::module_& m, std::string type)
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> X,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> cell_x)
           {
-            using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-                T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-            using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-                const T,
-                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-            using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-                const T,
-                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+            using mdspan2_t = md::mdspan<T, md::dextents<std::size_t, 2>>;
+            using cmdspan2_t
+                = md::mdspan<const T, md::dextents<std::size_t, 2>>;
+            using cmdspan4_t
+                = md::mdspan<const T, md::dextents<std::size_t, 4>>;
 
             std::array<std::size_t, 2> Xshape{X.shape(0), X.shape(1)};
             std::array<std::size_t, 4> phi_shape
@@ -912,9 +909,8 @@ void declare_cmap(nb::module_& m, std::string type)
                                              1, std::multiplies{}));
             cmdspan4_t phi_full(phi_b.data(), phi_shape);
             self.tabulate(0, std::span(X.data(), X.size()), Xshape, phi_b);
-            auto phi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-                phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-                MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
+            auto phi = md::submdspan(phi_full, 0, md::full_extent,
+                                     md::full_extent, 0);
 
             std::array<std::size_t, 2> shape = {X.shape(0), cell_x.shape(1)};
             std::vector<T> xb(shape[0] * shape[1]);
@@ -936,14 +932,11 @@ void declare_cmap(nb::module_& m, std::string type)
             std::size_t gdim = x.shape(1);
             std::size_t tdim = dolfinx::mesh::cell_dim(self.cell_shape());
 
-            using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-                T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-            using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-                const T,
-                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-            using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-                const T,
-                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+            using mdspan2_t = md::mdspan<T, md::dextents<std::size_t, 2>>;
+            using cmdspan2_t
+                = md::mdspan<const T, md::dextents<std::size_t, 2>>;
+            using cmdspan4_t
+                = md::mdspan<const T, md::dextents<std::size_t, 4>>;
 
             std::vector<T> Xb(num_points * tdim);
             mdspan2_t X(Xb.data(), num_points, tdim);
@@ -964,9 +957,8 @@ void declare_cmap(nb::module_& m, std::string type)
               cmdspan4_t phi(phi_b.data(), phi_shape);
 
               self.tabulate(1, std::vector<T>(tdim), {1, tdim}, phi_b);
-              auto dphi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-                  phi, std::pair(1, tdim + 1), 0,
-                  MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
+              auto dphi = md::submdspan(phi, std::pair(1, tdim + 1), 0,
+                                        md::full_extent, 0);
 
               self.compute_jacobian(dphi, g, J);
               self.compute_jacobian_inverse(J, K);
@@ -1184,10 +1176,8 @@ void fem(nb::module_& m)
       [](nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> dofmap,
          int num_cells)
       {
-        MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-            const std::int32_t,
-            MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-            _dofmap(dofmap.data(), dofmap.shape(0), dofmap.shape(1));
+        md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> _dofmap(
+            dofmap.data(), dofmap.shape(0), dofmap.shape(1));
         return dolfinx::fem::transpose_dofmap(_dofmap, num_cells);
       },
       "Build the index to (cell, local index) map from a dofmap ((cell, local "

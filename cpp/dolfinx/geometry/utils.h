@@ -67,8 +67,7 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
       // Check that we have sent in valid entities, i.e. that they exist in the
       // local dofmap. One gets a cryptical memory segfault if entities is -1
       assert(entities[e] >= 0);
-      auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-          x_dofmap, entities[e], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto dofs = md::submdspan(x_dofmap, entities[e], md::full_extent);
       std::vector<T> nodes(3 * dofs.size());
       for (std::size_t i = 0; i < dofs.size(); ++i)
       {
@@ -105,8 +104,7 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
       const int local_cell_entity = std::distance(cell_entities.begin(), it0);
 
       // Tabulate geometry dofs for the entity
-      auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-          x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto dofs = md::submdspan(x_dofmap, c, md::full_extent);
       const std::vector<int> entity_dofs
           = geometry.cmap().create_dof_layout().entity_closure_dofs(
               dim, local_cell_entity);
@@ -535,8 +533,7 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
     std::vector<T> coordinate_dofs(num_nodes * 3);
     for (auto cell : cells)
     {
-      auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-          x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto dofs = md::submdspan(x_dofmap, cell, md::full_extent);
       for (std::size_t i = 0; i < num_nodes; ++i)
       {
         std::copy_n(std::next(geom_dofs.begin(), 3 * dofs[i]), 3,
@@ -878,8 +875,7 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
       std::int32_t closest_cell = -1;
       for (auto cell : candidate_collisions.links(i))
       {
-        auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-            x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        auto dofs = md::submdspan(x_dofmap, cell, md::full_extent);
         std::vector<T> nodes(3 * dofs.size());
         for (std::size_t j = 0; j < dofs.size(); ++j)
         {

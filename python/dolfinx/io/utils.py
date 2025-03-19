@@ -21,7 +21,7 @@ from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
 from dolfinx.cpp.io import perm_vtk as cell_perm_vtk
 from dolfinx.fem import Function
-from dolfinx.mesh import Geometry, GhostMode, Mesh, MeshTags
+from dolfinx.mesh import CellType, Geometry, GhostMode, Mesh, MeshTags
 
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
 
@@ -187,21 +187,34 @@ class XDMFFile(_cpp.io.XDMFFile):
         cells = super().read_topology_data(name, xpath)
         x = super().read_geometry_data(name, xpath)
 
-        # Build the mesh
-        cmap = _cpp.fem.CoordinateElement_float64(cell_shape, cell_degree)
-        msh = _cpp.mesh.create_mesh(
-            self.comm, cells, cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode)
-        )
-        msh.name = name
-        domain = ufl.Mesh(
-            basix.ufl.element(
+        # Get coordinate element, special handling for second order serendipity.
+        num_nodes_per_cell = cells.shape[1]
+        if (cell_shape == CellType.quadrilateral and num_nodes_per_cell == 8) or (
+            cell_shape == CellType.hexahedron and num_nodes_per_cell == 20
+        ):
+            el = basix.ufl.element(
+                basix.ElementFamily.serendipity,
+                cell_shape.name,
+                2,
+            )
+            cmap = _cpp.fem.CoordinateElement_float64(el.basix_element._e)
+            basix_el = basix.ufl.blocked_element(el, shape=(x.shape[1],))
+        else:
+            basix_el = basix.ufl.element(
                 "Lagrange",
                 cell_shape.name,
                 cell_degree,
                 basix.LagrangeVariant.unset,
                 shape=(x.shape[1],),
             )
+            cmap = _cpp.fem.CoordinateElement_float64(cell_shape, cell_degree)
+
+        # Build the mesh
+        msh = _cpp.mesh.create_mesh(
+            self.comm, cells, cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode)
         )
+        msh.name = name
+        domain = ufl.Mesh(basix_el)
         return Mesh(msh, domain)
 
     def read_meshtags(

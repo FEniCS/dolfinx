@@ -146,8 +146,7 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
     assert(it != cell_vertices.end());
     const std::size_t local_pos = std::distance(cell_vertices.begin(), it);
 
-    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs = md::submdspan(x_dofmap, c, md::full_extent);
     for (std::size_t j = 0; j < 3; ++j)
       x_vertices[j * vertices.size() + i] = x_nodes[3 * dofs[local_pos] + j];
     vertex_to_pos[v] = i;
@@ -207,6 +206,13 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
     const std::vector<std::span<const std::int64_t>>& cells)>;
+
+/// @brief Function that reorders (locally) cells that
+/// are owned by this process. It takes the local mesh dual graph as an
+/// argument and returns a list whose `i`th entry is the new index of
+/// cell `i`.
+using CellReorderFunction = std::function<std::vector<std::int32_t>(
+    const graph::AdjacencyList<std::int32_t>&)>;
 
 /// @brief Extract topology from cell data, i.e. extract cell vertices.
 /// @param[in] cell_type Cell shape.
@@ -488,10 +494,8 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
 template <typename Fn, typename T>
 concept MarkerFn = std::is_invocable_r<
     std::vector<std::int8_t>, Fn,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-                     std::size_t, 3,
-                     MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>>::value;
+    md::mdspan<const T,
+               md::extents<std::size_t, 3, md::dynamic_extent>>>::value;
 
 /// @brief Compute indices of all mesh entities that evaluate to true
 /// for the provided geometric marking function.
@@ -513,10 +517,8 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
                                           U marker, int entity_type_idx)
 {
 
-  using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const T,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-          std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
+  using cmdspan3x_t
+      = md::mdspan<const T, md::extents<std::size_t, 3, md::dynamic_extent>>;
 
   // Run marker function on vertex coordinates
   const auto [xdata, xshape] = impl::compute_vertex_coords(mesh);
@@ -627,10 +629,8 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
   mesh.topology_mutable()->create_connectivity(tdim - 1, tdim);
   std::vector<std::int32_t> boundary_facets = exterior_facet_indices(*topology);
 
-  using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const T,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-          std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
+  using cmdspan3x_t
+      = md::mdspan<const T, md::extents<std::size_t, 3, md::dynamic_extent>>;
 
   // Run marker function on the vertex coordinates
   auto [facet_entities, xdata, vertex_to_pos]
@@ -722,8 +722,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
     {
       const std::int32_t c = entities[i];
       // Extract degrees of freedom
-      auto x_c = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-          xdofs, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto x_c = md::submdspan(xdofs, c, md::full_extent);
       for (std::int32_t entity_dof : closure_dofs_all[tdim][0])
         entity_xdofs.push_back(x_c[entity_dof]);
     }
@@ -780,8 +779,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
     }
 
     // Extract degrees of freedom
-    auto x_c = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        xdofs, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_c = md::submdspan(xdofs, c, md::full_extent);
     for (std::int32_t entity_dof : closure_dofs)
       entity_xdofs.push_back(x_c[entity_dof]);
   }
@@ -848,6 +846,8 @@ compute_incident_entities(const Topology& topology,
 /// @param[in] partitioner Graph partitioner that computes the owning
 /// rank for each cell in `cells`. If not callable, cells are not
 /// redistributed.
+/// @param[in] reorder_fn Function that reorders (locally) cells that
+/// are owned by this process.
 /// @return A mesh distributed on the communicator `comm`.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
@@ -856,7 +856,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
-    const CellPartitionFunction& partitioner)
+    const CellPartitionFunction& partitioner,
+    const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   assert(cells.size() == elements.size());
   std::vector<CellType> celltypes;
@@ -968,7 +969,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                           const std::vector<std::vector<int>>& ghost_owners,
                           std::vector<std::vector<std::int64_t>>& cells1,
                           std::vector<std::vector<std::int64_t>>& cells1_v,
-                          std::vector<std::vector<std::int64_t>>& original_idx1)
+                          std::vector<std::vector<std::int64_t>>& original_idx1,
+                          const CellReorderFunction& reorder_fn)
   {
     spdlog::info("Build local dual graphs, re-order cells, and compute process "
                  "boundary vertices.");
@@ -994,7 +996,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       facets.emplace_back(std::move(unmatched_facets), max_v);
 
       // Compute re-ordering of graph
-      const std::vector<std::int32_t> remap = graph::reorder_gps(graph);
+      const std::vector<std::int32_t> remap = reorder_fn(graph);
 
       // Update 'original' indices
       const std::vector<std::int64_t>& orig_idx = original_idx1[i];
@@ -1096,8 +1098,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     }
   };
 
-  const std::vector<std::int64_t> boundary_v = boundary_v_fn(
-      celltypes, doflayouts, ghost_owners, cells1, cells1_v, original_idx1);
+  const std::vector<std::int64_t> boundary_v
+      = boundary_v_fn(celltypes, doflayouts, ghost_owners, cells1, cells1_v,
+                      original_idx1, reorder_fn);
 
   spdlog::debug("Got {} boundary vertices", boundary_v.size());
 
@@ -1161,6 +1164,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// not callable, i.e. it does not store a callable function, no
 /// re-distribution of cells is done.
 ///
+/// This constructor provides a simplified interface to the more general
+/// ::create_mesh constructor, which supports meshes with more than one
+/// cell type.
+///
 /// @param[in] comm Communicator to build the mesh on.
 /// @param[in] commt Communicator that the topology data (`cells`) is
 /// distributed on. This should be `MPI_COMM_NULL` for ranks that should
@@ -1180,21 +1187,20 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// @param[in] xshape Shape of the `x` data.
 /// @param[in] partitioner Graph partitioner that computes the owning
 /// rank for each cell. If not callable, cells are not redistributed.
+/// @param[in] reorder_fn Function that reorders (locally) cells that
+/// are owned by this process.
 /// @return A mesh distributed on the communicator `comm`.
-///
-/// This constructor provides a simplified interface to the more general
-/// ::create_mesh constructor, which supports meshes with more than one
-/// cell type.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt, std::span<const std::int64_t> cells,
     const fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
-    const CellPartitionFunction& partitioner)
+    const CellPartitionFunction& partitioner,
+    const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
-                     commg, x, xshape, partitioner);
+                     commg, x, xshape, partitioner, reorder_fn);
 }
 
 /// @brief Create a distributed mesh from mesh data using the default
