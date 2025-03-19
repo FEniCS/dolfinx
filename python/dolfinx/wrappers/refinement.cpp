@@ -51,11 +51,14 @@ void export_refinement(nb::module_& m)
               std::span(edges.value().data(), edges.value().size()));
         }
 
-        dolfinx_wrappers::part::impl::CppCellPartitionFunction cpp_partitioner
-            = partitioner.has_value()
-                  ? dolfinx_wrappers::part::impl::create_cell_partitioner_cpp(
-                        partitioner.value())
-                  : nullptr;
+        std::optional<dolfinx_wrappers::part::impl::CppCellPartitionFunction>
+            cpp_partitioner(std::nullopt);
+        if (partitioner.has_value())
+        {
+          cpp_partitioner
+              = dolfinx_wrappers::part::impl::create_cell_partitioner_cpp(
+                  partitioner.value());
+        }
         auto [mesh1, cell, facet] = dolfinx::refinement::refine(
             mesh, cpp_edges, cpp_partitioner, option);
 
