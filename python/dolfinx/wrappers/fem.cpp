@@ -480,9 +480,9 @@ void declare_objects(nb::module_& m, const std::string& type)
 
             std::array<std::size_t, 2> shape{value_size, x.size() / 3};
             std::vector<T> values(shape[0] * shape[1]);
-            std::function<void(T*, int, int, const U*)> f
-                = reinterpret_cast<void (*)(T*, int, int, const U*)>(addr);
-            f(values.data(), shape[1], shape[0], x.data());
+            std::function<void(T*, int, int, const U*, void*)> f
+                = reinterpret_cast<void (*)(T*, int, int, const U*, void*)>(addr);
+            f(values.data(), shape[1], shape[0], x.data(), nullptr);
             dolfinx::fem::interpolate(self, std::span<const T>(values), shape,
                                       std::span(cells.data(), cells.size()));
           },
@@ -568,7 +568,7 @@ void declare_objects(nb::module_& m, const std::string& type)
             auto tabulate_expression_ptr
                 = (void (*)(T*, const T*, const T*,
                             const typename geom_type<T>::value_type*,
-                            const int*, const std::uint8_t*))fn_addr;
+                            const int*, const std::uint8_t*, void*))fn_addr;
             new (ex) dolfinx::fem::Expression<T, U>(
                 coefficients, constants, std::span(X.data(), X.size()),
                 {X.shape(0), X.shape(1)}, tabulate_expression_ptr, value_shape,
@@ -660,7 +660,7 @@ void declare_form(nb::module_& m, std::string type)
                 auto kn_ptr
                     = (void (*)(T*, const T*, const T*,
                                 const typename geom_type<T>::value_type*,
-                                const int*, const std::uint8_t*))ptr;
+                                const int*, const std::uint8_t*, void*))ptr;
                 _integrals.insert(
                     {{type, id, 0},
                      {kn_ptr,

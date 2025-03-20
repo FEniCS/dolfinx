@@ -74,7 +74,7 @@ public:
           constants,
       std::span<const geometry_type> X, std::array<std::size_t, 2> Xshape,
       std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
-                         const geometry_type*, const int*, const uint8_t*)>
+                         const geometry_type*, const int*, const uint8_t*, void*)>
           fn,
       const std::vector<std::size_t>& value_shape,
       std::shared_ptr<const FunctionSpace<geometry_type>> argument_space
@@ -144,7 +144,7 @@ public:
 
   /// @brief Function for tabulating the Expression.
   const std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
-                           const geometry_type*, const int*, const uint8_t*)>&
+                           const geometry_type*, const int*, const uint8_t*, void*)>&
   kernel() const
   {
     return _fn;
@@ -179,7 +179,7 @@ private:
 
   // Function to evaluate the Expression
   std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
-                     const geometry_type*, const int*, const uint8_t*)>
+                     const geometry_type*, const int*, const uint8_t*, void*)>
       _fn;
 
   // Shape of the evaluated Expression
