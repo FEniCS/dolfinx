@@ -57,11 +57,7 @@ __all__ = [
     "assemble_vector_nest",
     "assign",
     "create_matrix",
-    "create_matrix_block",
-    "create_matrix_nest",
     "create_vector",
-    "create_vector_block",
-    "create_vector_nest",
     "discrete_curl",
     "discrete_gradient",
     "interpolation_matrix",
@@ -103,7 +99,9 @@ def _extract_function_spaces(a: list[list[Form]]):
 # -- Vector instantiation ----------------------------------------------------
 
 
-def create_vector(L: Form) -> PETSc.Vec:
+def create_vector(
+    L: Form, vec_type: typing.Optional[typing.Union[str, PETSc.Vec.Type]] = None
+) -> PETSc.Vec:
     """Create a PETSc vector that is compatible with a linear form.
 
     Note:
@@ -113,67 +111,44 @@ def create_vector(L: Form) -> PETSc.Vec:
         ``PETSc.Vec.destroy()`` is collective over the object's MPI communicator.
 
     Args:
-        L: A linear form.
+        L: A linear form or a list of linear forms.
+        vec_type: PETSc vector type (``VecType``). If ``None`` and ``L`` is a form, create a
+            ghosted PETSc vector. If ``L`` is a list of forms, create a blocked PETSc vector.
+            If ``vec_type`` is ``PETSc.Vec.Type.NEST`` or ``"nest"``, create a nested PETSc vector.
 
     Returns:
         A PETSc vector with a layout that is compatible with ``L``.
     """
-    dofmap = L.function_spaces[0].dofmaps(0)
-    return dolfinx.la.petsc.create_vector(dofmap.index_map, dofmap.index_map_bs)
+    # Try normal vector creation
+    try:
+        dofmap = L.function_spaces[0].dofmaps(0)
+        return dolfinx.la.petsc.create_vector(dofmap.index_map, dofmap.index_map_bs)
+    except AttributeError:
+        maps = [
+            (
+                form.function_spaces[0].dofmaps(0).index_map,
+                form.function_spaces[0].dofmaps(0).index_map_bs,
+            )
+            for form in L
+        ]
 
-
-def create_vector_block(L: list[Form]) -> PETSc.Vec:
-    """Create a PETSc vector (blocked) that is compatible with a list of linear forms.
-
-    Note:
-        Due to subtle issues in the interaction between petsc4py memory management
-        and the Python garbage collector, it is recommended that the method ``PETSc.Vec.destroy()``
-        is called on the returned object once the object is no longer required. Note that
-        ``PETSc.Vec.destroy()`` is collective over the object's MPI communicator.
-
-    Args:
-        L: List of linear forms.
-
-    Returns:
-        A PETSc vector with a layout that is compatible with ``L``.
-
-    """
-    maps = [
-        (
-            form.function_spaces[0].dofmaps(0).index_map,
-            form.function_spaces[0].dofmaps(0).index_map_bs,
-        )
-        for form in L
-    ]
-    return _cpp.fem.petsc.create_vector_block(maps)
-
-
-def create_vector_nest(L: list[Form]) -> PETSc.Vec:
-    """Create a PETSc nested vector (``VecNest``) that is compatible
-    with a list of linear forms.
-
-    Args:
-        L: List of linear forms.
-
-    Returns:
-        A PETSc nested vector (``VecNest``) with a layout that is
-        compatible with ``L``.
-    """
-    maps = [
-        (
-            form.function_spaces[0].dofmaps(0).index_map,
-            form.function_spaces[0].dofmaps(0).index_map_bs,
-        )
-        for form in L
-    ]
-    return _cpp.fem.petsc.create_vector_nest(maps)
+        if vec_type is None:
+            # Create block vector
+            return _cpp.fem.petsc.create_vector_block(maps)
+        elif vec_type == PETSc.Vec.Type.NEST or vec_type == "nest":
+            return _cpp.fem.petsc.create_vector_nest(maps)
+        else:
+            raise NotImplementedError(f"Vector type '{vec_type}' not supported.")
 
 
 # -- Matrix instantiation ----------------------------------------------------
 
 
-def create_matrix(a: Form, mat_type=None) -> PETSc.Mat:
-    """Create a PETSc matrix that is compatible with a bilinear form.
+def create_matrix(
+    a: typing.Union[Form, list[list[Form]]],
+    mat_type: typing.Optional[typing.Union[str, list[list[str]]], PETSc.Mat.Type] = None,
+) -> PETSc.Mat:
+    """Create a PETSc matrix that is compatible with the (sequence) of bilinear form(s).
 
     Note:
         Due to subtle issues in the interaction between petsc4py memory
@@ -184,59 +159,39 @@ def create_matrix(a: Form, mat_type=None) -> PETSc.Mat:
         communicator.
 
     Args:
-        a: A bilinear form.
-        mat_type: The PETSc matrix type (``MatType``).
-
-    Returns:
-        A PETSc matrix with a layout that is compatible with ``a``.
+        a: A bilinear form or a nested list of bilinear forms.
+        mat_type: The PETSc matrix type (``MatType``). If not supplied and the bilinear form
+            ``a`` is not a nested list, create a standard PETSc matrix.
+            If both ``a`` and ``mat_type`` iare a nested lists, create a nested PETSc matrix
+            where each block ``A[i][j]`` is of type ``mat_type[i][j]``.
+            If ``mat_type`` is ``PETSc.Mat.Type.NEST``, create a PETSc nest matrix.
+            If ``mat_type`` is not supplied and ``a`` is a nested list create a blocked matrix.
     """
     if mat_type is None:
-        return _cpp.fem.petsc.create_matrix(a._cpp_object)
+        # If no mat-type provided create a standard (blocked) matrix
+        try:
+            return _cpp.fem.petsc.create_matrix(a._cpp_object)
+        except AttributeError:
+            # If `a` is a nested list create blocked matrix
+            _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
+            return _cpp.fem.petsc.create_matrix_block(_a)
     else:
-        return _cpp.fem.petsc.create_matrix(a._cpp_object, mat_type)
+        if mat_type == PETSc.Mat.Type.NEST or mat_type == "nest":
+            # If nest is supplied specifically, create nest with standard types
+            _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
+            return _cpp.fem.petsc.create_matrix_nest(_a)
 
-
-def create_matrix_block(a: list[list[Form]]) -> PETSc.Mat:
-    """Create a PETSc matrix that is compatible with a rectangular array of bilinear forms.
-
-    Note:
-        Due to subtle issues in the interaction between petsc4py memory
-        management and the Python garbage collector, it is recommended
-        that the method ``PETSc.Mat.destroy()`` is called on the
-        returned object once the object is no longer required. Note that
-        ``PETSc.Mat.destroy()`` is collective over the object's MPI
-        communicator.
-
-    Args:
-        a: Rectangular array of bilinear forms.
-
-    Returns:
-        A PETSc matrix with a blocked layout that is compatible with
-        ``a``.
-    """
-    _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
-    return _cpp.fem.petsc.create_matrix_block(_a)
-
-
-def create_matrix_nest(a: list[list[Form]]) -> PETSc.Mat:
-    """Create a PETSc matrix (``MatNest``) that is compatible with an array of bilinear forms.
-
-    Note:
-        Due to subtle issues in the interaction between petsc4py memory
-        management and the Python garbage collector, it is recommended
-        that the method ``PETSc.Mat.destroy()`` is called on the
-        returned object once the object is no longer required. Note that
-        ``PETSc.Mat.destroy()`` is collective over the object's MPI
-        communicator.
-
-    Args:
-        a: Rectangular array of bilinear forms.
-
-    Returns:
-        A PETSc matrix (``MatNest``) that is compatible with ``a``.
-    """
-    _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
-    return _cpp.fem.petsc.create_matrix_nest(_a)
+        try:
+            # If mat type is supplied, try creating a matrix with the given type
+            return _cpp.fem.petsc.create_matrix(a._cpp_object, mat_type)
+        except AttributeError:
+            # If `a` is a nested list try first to create a blocked matrix
+            _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
+            try:
+                return _cpp.fem.petsc.create_matrix_block(_a, mat_type)
+            except TypeError:
+                # If `mat_type` is a nested list, create a nest matrix
+                return _cpp.fem.petsc.create_matrix_nest(_a, mat_type)
 
 
 # -- Vector assembly ---------------------------------------------------------
