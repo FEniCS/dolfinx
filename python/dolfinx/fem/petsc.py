@@ -119,8 +119,8 @@ def create_vector(
     Returns:
         A PETSc vector with a layout that is compatible with ``L``.
     """
-    # Try normal vector creation
     try:
+        # Non-blocked vector creation
         dofmap = L.function_spaces[0].dofmaps(0)
         return dolfinx.la.petsc.create_vector(dofmap.index_map, dofmap.index_map_bs)
     except AttributeError:
@@ -136,6 +136,7 @@ def create_vector(
             # Create block vector
             return _cpp.fem.petsc.create_vector_block(maps)
         elif vec_type == PETSc.Vec.Type.NEST or vec_type == "nest":
+            # Create nest vector
             return _cpp.fem.petsc.create_vector_nest(maps)
         else:
             raise NotImplementedError(f"Vector type '{vec_type}' not supported.")
