@@ -165,8 +165,7 @@ class TestNLSPETSc:
             assemble_vector_block,
             assemble_vector_nest,
             assign,
-            create_vector_block,
-            create_vector_nest,
+            create_vector,
             set_bc,
             set_bc_nest,
         )
@@ -221,7 +220,7 @@ class TestNLSPETSc:
 
         def blocked():
             """Monolithic blocked"""
-            x = create_vector_block(L_block)
+            x = create_vector(L_block)
 
             assign((u, p), x)
 
@@ -240,7 +239,7 @@ class TestNLSPETSc:
         # Nested (MatNest)
         def nested():
             """Nested (MatNest)"""
-            x = create_vector_nest(L_block)
+            x = create_vector(L_block, kind=PETSc.Vec.Type.NEST)
 
             assign((u, p), x)
 
@@ -316,11 +315,7 @@ class TestNLSPETSc:
         from dolfinx.fem.petsc import (
             assign,
             create_matrix,
-            create_matrix_block,
-            create_matrix_nest,
             create_vector,
-            create_vector_block,
-            create_vector_nest,
         )
 
         mesh = create_unit_square(MPI.COMM_WORLD, 12, 11)
@@ -372,8 +367,8 @@ class TestNLSPETSc:
 
         def blocked_solve():
             """Blocked version"""
-            Jmat = create_matrix_block(J)
-            Fvec = create_vector_block(F)
+            Jmat = create_matrix(J)
+            Fvec = create_vector(F)
             snes = PETSc.SNES().create(MPI.COMM_WORLD)
             snes.setTolerances(rtol=1.0e-15, max_it=10)
             problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
@@ -383,7 +378,7 @@ class TestNLSPETSc:
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
 
-            x = create_vector_block(F)
+            x = create_vector(F)
 
             assign((u, p), x)
 
@@ -399,9 +394,9 @@ class TestNLSPETSc:
 
         def nested_solve():
             """Nested version"""
-            Jmat = create_matrix_nest(J)
+            Jmat = create_matrix(J, kind=[["baij", "aij"], ["aij", "baij"]])
             assert Jmat.getType() == "nest"
-            Fvec = create_vector_nest(F)
+            Fvec = create_vector(F, kind="nest")
             assert Fvec.getType() == "nest"
 
             snes = PETSc.SNES().create(MPI.COMM_WORLD)
@@ -418,7 +413,7 @@ class TestNLSPETSc:
 
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
-            x = create_vector_nest(F)
+            x = create_vector(F, kind=PETSc.Vec.Type.NEST)
             assert x.getType() == "nest"
 
             assign((u, p), x)
@@ -516,11 +511,7 @@ class TestNLSPETSc:
         from dolfinx.fem.petsc import (
             assign,
             create_matrix,
-            create_matrix_block,
-            create_matrix_nest,
             create_vector,
-            create_vector_block,
-            create_vector_nest,
         )
 
         gdim = mesh.geometry.dim
@@ -576,9 +567,9 @@ class TestNLSPETSc:
 
         def blocked():
             """Blocked and monolithic"""
-            Jmat = create_matrix_block(J)
-            Pmat = create_matrix_block(P)
-            Fvec = create_vector_block(F)
+            Jmat = create_matrix(J)
+            Pmat = create_matrix(P)
+            Fvec = create_vector(F)
 
             snes = PETSc.SNES().create(MPI.COMM_WORLD)
             snes.setTolerances(rtol=1.0e-15, max_it=20)
@@ -590,7 +581,7 @@ class TestNLSPETSc:
 
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
-            x = create_vector_block(F)
+            x = create_vector(F)
 
             assign((u, p), x)
 
@@ -607,9 +598,9 @@ class TestNLSPETSc:
 
         def nested():
             """Blocked and nested"""
-            Jmat = create_matrix_nest(J)
-            Pmat = create_matrix_nest(P)
-            Fvec = create_vector_nest(F)
+            Jmat = create_matrix(J, kind=PETSc.Mat.Type.NEST)
+            Pmat = create_matrix(P, kind=PETSc.Mat.Type.NEST)
+            Fvec = create_vector(F, kind=PETSc.Vec.Type.NEST)
 
             snes = PETSc.SNES().create(MPI.COMM_WORLD)
             snes.setTolerances(rtol=1.0e-15, max_it=20)
@@ -625,7 +616,7 @@ class TestNLSPETSc:
 
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
-            x = create_vector_nest(F)
+            x = create_vector(F, "nest")
 
             assign((u, p), x)
 
