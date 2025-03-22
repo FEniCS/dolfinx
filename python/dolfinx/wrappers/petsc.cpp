@@ -31,6 +31,7 @@
 #include <nanobind/stl/complex.h>
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/map.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
@@ -174,14 +175,14 @@ void petsc_la_module(nb::module_& m)
   m.def(
       "create_matrix",
       [](dolfinx_wrappers::MPICommWrapper comm,
-         const dolfinx::la::SparsityPattern& p, const std::string& type)
+         const dolfinx::la::SparsityPattern& p, std::optional<std::string> type)
       {
         Mat A = dolfinx::la::petsc::create_matrix(comm.get(), p, type);
         PyObject* obj = PyPetscMat_New(A);
         PetscObjectDereference((PetscObject)A);
         return nb::borrow(obj);
       },
-      nb::arg("comm"), nb::arg("p"), nb::arg("type") = std::string(),
+      nb::arg("comm"), nb::arg("p"), nb::arg("type") = nb::none(),
       "Create a PETSc Mat from sparsity pattern.");
 
   m.def(
@@ -291,18 +292,15 @@ void petsc_fem_module(nb::module_& m)
       nb::rv_policy::take_ownership, nb::arg("maps"),
       "Create nested vector for multiple (stacked) linear forms.");
   m.def("create_matrix", dolfinx::fem::petsc::create_matrix<PetscReal>,
-        nb::rv_policy::take_ownership, nb::arg("a"),
-        nb::arg("type") = std::string(),
+        nb::rv_policy::take_ownership, nb::arg("a"), nb::arg("type").none(),
         "Create a PETSc Mat for bilinear form.");
   m.def("create_matrix_block",
         &dolfinx::fem::petsc::create_matrix_block<PetscReal>,
-        nb::rv_policy::take_ownership, nb::arg("a"),
-        nb::arg("type") = std::string(),
+        nb::rv_policy::take_ownership, nb::arg("a"), nb::arg("type").none(),
         "Create monolithic sparse matrix for stacked bilinear forms.");
   m.def("create_matrix_nest",
         &dolfinx::fem::petsc::create_matrix_nest<PetscReal>,
-        nb::rv_policy::take_ownership, nb::arg("a"),
-        nb::arg("types") = std::vector<std::vector<std::string>>(),
+        nb::rv_policy::take_ownership, nb::arg("a"), nb::arg("types").none(),
         "Create nested sparse matrix for bilinear forms.");
 
   // PETSc Matrices

@@ -373,7 +373,7 @@ class TestPETScAssemblers:
             A = petsc_assemble_matrix_nest(
                 a_block,
                 bcs=[bc],
-                mat_types=[["baij", "aij", "aij"], ["aij", "", "aij"], ["aij", "aij", "aij"]],
+                kind=[["baij", "aij", "aij"], ["aij", "", "aij"], ["aij", "aij", "aij"]],
             )
             A.assemble()
             with pytest.raises(RuntimeError):
@@ -659,15 +659,11 @@ class TestPETScAssemblers:
         def nested_solve():
             """Nested solver"""
             A = petsc_assemble_matrix_nest(
-                form([[a00, a01], [a10, a11]]),
-                bcs=[bc0, bc1],
-                mat_types=[["baij", "aij"], ["aij", ""]],
+                form([[a00, a01], [a10, a11]]), bcs=[bc0, bc1], kind=[["baij", "aij"], ["aij", ""]]
             )
             A.assemble()
             P = petsc_assemble_matrix_nest(
-                form([[p00, p01], [p10, p11]]),
-                bcs=[bc0, bc1],
-                mat_types=[["aij", "aij"], ["aij", ""]],
+                form([[p00, p01], [p10, p11]]), bcs=[bc0, bc1], kind=[["aij", "aij"], ["aij", ""]]
             )
             P.assemble()
             b = petsc_assemble_vector_nest(form([L0, L1]))

@@ -16,6 +16,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <petscmat.h>
 #include <petscvec.h>
 #include <span>
@@ -43,7 +44,7 @@ namespace petsc
 /// object.
 template <std::floating_point T>
 Mat create_matrix(const Form<PetscScalar, T>& a,
-                  std::string type = std::string())
+                  std::optional<std::string> type = std::nullopt)
 {
   la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
   pattern.finalize();
@@ -52,6 +53,7 @@ Mat create_matrix(const Form<PetscScalar, T>& a,
 
 /// @brief Initialise a monolithic matrix for an array of bilinear
 /// forms.
+///
 /// @param[in] a Rectangular array of bilinear forms. The `a(i, j)` form
 /// will correspond to the `(i, j)` block in the returned matrix
 /// @param[in] type The type of PETSc Mat. If empty the PETSc default is
@@ -62,7 +64,7 @@ Mat create_matrix(const Form<PetscScalar, T>& a,
 template <std::floating_point T>
 Mat create_matrix_block(
     const std::vector<std::vector<const Form<PetscScalar, T>*>>& a,
-    std::string type = std::string())
+    std::optional<std::string> type = std::nullopt)
 {
   // Extract and check row/column ranges
   std::array<std::vector<std::shared_ptr<const FunctionSpace<T>>>, 2> V
@@ -191,15 +193,10 @@ Mat create_matrix_block(
 template <std::floating_point T>
 Mat create_matrix_nest(
     const std::vector<std::vector<const Form<PetscScalar, T>*>>& a,
-    const std::vector<std::vector<std::string>>& types)
+    std::optional<std::vector<std::vector<std::optional<std::string>>>> types)
 {
   // Extract and check row/column ranges
   auto V = fem::common_function_spaces(extract_function_spaces(a));
-
-  std::vector<std::vector<std::string>> _types(
-      a.size(), std::vector<std::string>(a.front().size()));
-  if (!types.empty())
-    _types = types;
 
   // Loop over each form and create matrix
   int rows = a.size();
@@ -212,7 +209,10 @@ Mat create_matrix_nest(
     {
       if (const Form<PetscScalar, T>* form = a[i][j]; form)
       {
-        mats[i * cols + j] = create_matrix(*form, _types[i][j]);
+        if (types)
+          mats[i * cols + j] = create_matrix(*form, types->at(i).at(j));
+        else
+          mats[i * cols + j] = create_matrix(*form, std::nullopt);
         mesh = form->mesh();
       }
     }
@@ -238,14 +238,14 @@ Mat create_matrix_nest(
   return A;
 }
 
-/// Initialise monolithic vector. Vector is not zeroed.
+/// @brief Initialise monolithic vector. Vector is not zeroed.
 ///
 /// The caller is responsible for destroying the Mat object
 Vec create_vector_block(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
-/// Create nested (VecNest) vector. Vector is not zeroed.
+/// @brief Create nested (VecNest) vector. Vector is not zeroed.
 Vec create_vector_nest(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
@@ -283,15 +283,16 @@ void assemble_vector(
   VecGhostRestoreLocalForm(b, &b_local);
 }
 
-/// Assemble linear form into an already allocated PETSc vector. Ghost
-/// contributions are not accumulated (not sent to owner). Caller is
-/// responsible for calling VecGhostUpdateBegin/End.
+/// @brief Assemble linear form into an already allocated PETSc vector.
 ///
-/// @param[in,out] b The PETsc vector to assemble the form into. The
-/// vector must already be initialised with the correct size. The
-/// process-local contribution of the form is assembled into this
-/// vector. It is not zeroed before assembly.
-/// @param[in] L The linear form to assemble
+/// Ghost contributions are not accumulated (not sent to owner). Caller
+/// is responsible for calling `VecGhostUpdateBegin`/`End`.
+///
+/// @param[in,out] b Vector to assemble the form into. The vector must
+/// already be initialised with the correct size. The process-local
+/// contribution of the form is assembled into this vector. It is not
+/// zeroed before assembly.
+/// @param[in] L Linear form to assemble.
 template <std::floating_point T>
 void assemble_vector(Vec b, const Form<PetscScalar, T>& L)
 {
@@ -462,7 +463,8 @@ void apply_lifting(
 template <std::floating_point T>
 void set_bc(
     Vec b,
-    const std::vector<std::reference_wrapper<const DirichletBC<PetscScalar, T>>> bcs,
+    const std::vector<std::reference_wrapper<const DirichletBC<PetscScalar, T>>>
+        bcs,
     const Vec x0, PetscScalar alpha = 1)
 {
   PetscInt n = 0;
