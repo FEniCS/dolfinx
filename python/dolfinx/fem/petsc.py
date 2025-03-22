@@ -566,7 +566,7 @@ def _assemble_matrix_block_mat(
 
 def apply_lifting(
     b: PETSc.Vec,
-    a: Iterable[Form],
+    a: typing.Union[Form, Iterable[Form]],
     bcs: typing.Union[Iterable[DirichletBC], Iterable[Iterable[DirichletBC]]],
     x0: typing.Optional[Iterable[PETSc.Vec]] = None,
     alpha: float = 1,
