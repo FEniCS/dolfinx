@@ -13,8 +13,8 @@ Note:
     Due to subtle issues in the interaction between petsc4py memory
     management and the Python garbage collector, it is recommended that
     the PETSc method ``destroy()`` is called on returned PETSc objects
-    once the object is no longer required. Note that ``destroy()`` may
-    be collective over the object's MPI communicator.
+    once the object is no longer required. Note that ``destroy()`` is
+    collective over the object's MPI communicator.
 """
 
 # mypy: ignore-errors
@@ -183,12 +183,19 @@ def assemble_vector(
 ) -> PETSc.Vec:
     """Assemble linear form into a new PETSc vector.
 
+    If a single linear form is passed, the form is assembled into a
+    ghosted PETSc vector. If multiple forms are passed, the forms are
+    assembled into a PETSc ``VECTNEST`` vector, where each nest block is
+    a ghosted PETSc vector.
+
     Note:
         The returned vector is not finalised, i.e. ghost values are not
         accumulated on the owning processes.
 
     Args:
-        L: A linear form.
+        L: A linear form or list of linear forms.
+        constants: Constants appearing in the form.
+        coeffs: Coefficients appearing in the form.
 
     Returns:
         An assembled vector.
@@ -197,18 +204,9 @@ def assemble_vector(
         b = dolfinx.la.petsc.create_vector(
             L.function_spaces[0].dofmaps(0).index_map, L.function_spaces[0].dofmaps(0).index_map_bs
         )
-        with b.localForm() as b_local:
-            _assemble._assemble_vector_array(b_local.array_w, L, constants, coeffs)
-        return b
+        return assemble_vector(b, L, constants, coeffs)
     except AttributeError:
-        maps = [
-            (
-                form.function_spaces[0].dofmaps(0).index_map,
-                form.function_spaces[0].dofmaps(0).index_map_bs,
-            )
-            for form in L
-        ]
-        b = _cpp.fem.petsc.create_vector_nest(maps)
+        b = create_vector(L, "nest")
         for b_sub in b.getNestSubVecs():
             with b_sub.localForm() as b_local:
                 b_local.set(0.0)
@@ -219,7 +217,12 @@ def assemble_vector(
 def _assemble_vector_vec(
     b: PETSc.Vec, L: typing.Union[Form, Iterable[Form]], constants=None, coeffs=None
 ) -> PETSc.Vec:
-    """Assemble linear form into an existing PETSc vector.
+    """Assemble linear form(s) into a PETSc vector.
+
+    The vector ``b`` must have been initialized with a size/layout that
+    is consistent with the linear form. If a single form is passed, then
+    ``b`` should be a ghosted PETSc vector. If multiple forms are
+    passed, then ``b`  must have type ``VECNEST``.
 
     Note:
         The vector is not zeroed before assembly and it is not
@@ -228,10 +231,12 @@ def _assemble_vector_vec(
 
     Args:
         b: Vector to assemble the contribution of the linear form into.
-        L: A linear form to assemble into ``b``.
+        L: A linear form or list of linear forms to assemble into ``b``.
+        constants: Constants appearing in the form.
+        coeffs: Coefficients appearing in the form.
 
     Returns:
-        An assembled vector.
+        Assembled vector.
     """
     if b.getType() == PETSc.Vec.Type.NEST:
         constants = [None] * len(L) if constants is None else constants
@@ -382,9 +387,6 @@ def assemble_matrix(
     kind=None,
 ):
     """Assemble bilinear form into a matrix.
-
-    The returned matrix is not finalised, i.e. ghost values are not
-    accumulated.
 
     Note:
         The returned matrix is not 'assembled', i.e. ghost contributions
@@ -924,11 +926,11 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
 def assign(u: typing.Union[_Function, Sequence[_Function]], x: PETSc.Vec):
     """Assign :class:`Function` degrees-of-freedom to a vector.
 
-    Assigns degree-of-freedom values in values of ``u``, which is possibly a
-    Sequence of ``Functions``s, to ``x``. When ``u`` is a Sequence of
+    Assigns degree-of-freedom values in ``u``, which is possibly a
+    sequence of ``Function``s, to ``x``. When ``u`` is a sequence of
     ``Function``s, degrees-of-freedom for the ``Function``s in ``u`` are
-    'stacked' and assigned to ``x``. See :func:`assign` for documentation on
-    how stacked assignment is handled.
+    'stacked' and assigned to ``x``. See :func:`assign` for
+    documentation on how stacked assignment is handled.
 
     Args:
         u: ``Function`` (s) to assign degree-of-freedom value from.
