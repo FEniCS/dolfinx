@@ -193,7 +193,7 @@ Mat create_matrix_block(
 template <std::floating_point T>
 Mat create_matrix_nest(
     const std::vector<std::vector<const Form<PetscScalar, T>*>>& a,
-    std::optional<std::vector<std::vector<std::string>>> types)
+    std::optional<std::vector<std::vector<std::optional<std::string>>>> types)
 {
   // Extract and check row/column ranges
   auto V = fem::common_function_spaces(extract_function_spaces(a));
@@ -286,7 +286,7 @@ void assemble_vector(
 /// @brief Assemble linear form into an already allocated PETSc vector.
 ///
 /// Ghost contributions are not accumulated (not sent to owner). Caller
-/// is responsible for calling `VecGhostUpdateBegin/End`.
+/// is responsible for calling `VecGhostUpdateBegin`/`End`.
 ///
 /// @param[in,out] b Vector to assemble the form into. The vector must
 /// already be initialised with the correct size. The process-local
