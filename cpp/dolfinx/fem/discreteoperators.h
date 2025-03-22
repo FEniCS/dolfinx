@@ -309,8 +309,7 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
 /// @param[in] V1 Nédélec (first kind) element and dofmap for
 /// corresponding space to interpolate into.
 /// @param[in] mat_set A functor that sets values in a matrix
-template <dolfinx::scalar T,
-          std::floating_point U = dolfinx::scalar_value_t<T>>
+template <dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_t<T>>
 void discrete_gradient(mesh::Topology& topology,
                        std::pair<std::reference_wrapper<const FiniteElement<U>>,
                                  std::reference_wrapper<const DofMap>>
