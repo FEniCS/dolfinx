@@ -108,25 +108,25 @@ def _extract_function_spaces(a: Iterable[Iterable[Form]]):
 
 
 def create_vector(
-    L: typing.Union[Form, Iterable[Form]],
-    vec_type: typing.Optional[typing.Union[str, PETSc.Vec.Type]] = None,
+    L: typing.Union[Form, Iterable[Form]], kind: typing.Optional[str] = None
 ) -> PETSc.Vec:
-    """Create a PETSc vector that is compatible with a linear form.
+    """Create a PETSc vector that is compatible with a linear form(s).
+
+    If the vector type is not specified (``kind=None``) or is
+    ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is compatible
+    with ``L`` is created. If the vector type is
+    ``PETSc.Vec.Type.NEST``, a PETSc nested vector (a nest of ghosted
+    PETSc vectors) which is compatible with ``L`` is created.
 
     Args:
-        L: A linear form or a list of linear forms.
-        vec_type: PETSc vector type (``VecType``). If ``None`` and ``L``
-            is a form, create a ghosted PETSc vector. If ``L`` is a list
-            of forms, create a blocked PETSc vector. If ``vec_type`` is
-            ``PETSc.Vec.Type.NEST`` or ``"nest"``, create a nested PETSc
-            vector.
+        L: Linear form or a list of linear forms.
+        kind: PETSc vector type (``VecType``) to create.
 
     Returns:
         A PETSc vector with a layout that is compatible with ``L``.
     """
     try:
-        # Non-blocked vector creation
-        dofmap = L.function_spaces[0].dofmaps(0)
+        dofmap = L.function_spaces[0].dofmaps(0)  # Single form case
         return dolfinx.la.petsc.create_vector(dofmap.index_map, dofmap.index_map_bs)
     except AttributeError:
         maps = [
@@ -136,15 +136,12 @@ def create_vector(
             )
             for form in L
         ]
-
-        if vec_type is None:
-            # Create block vector
-            return _cpp.fem.petsc.create_vector_block(maps)
-        elif vec_type == PETSc.Vec.Type.NEST or vec_type == "nest":
-            # Create nest vector
+        if kind == PETSc.Vec.Type.NEST:
             return _cpp.fem.petsc.create_vector_nest(maps)
+        elif kind in (None, PETSc.Vec.Type.NEST, PETSc.Vec.Type.MPI):
+            return _cpp.fem.petsc.create_vector_block(maps)
         else:
-            raise NotImplementedError(f"Vector type '{vec_type}' not supported.")
+            raise NotImplementedError(f"Vector type '{kind}' not supported.")
 
 
 # -- Matrix instantiation ----------------------------------------------------
@@ -152,46 +149,33 @@ def create_vector(
 
 def create_matrix(
     a: typing.Union[Form, Iterable[Iterable[Form]]],
-    mat_type: typing.Optional[typing.Union[str, Iterable[Iterable[str]]], PETSc.Mat.Type] = None,
+    kind: typing.Optional[typing.Union[str, Iterable[Iterable[str]]]] = None,
 ) -> PETSc.Mat:
     """Create a PETSc matrix that is compatible with the (sequence) of bilinear form(s).
 
     Args:
         a: A bilinear form or a nested list of bilinear forms.
-        mat_type: The PETSc matrix type (``MatType``). If not supplied
+        kind: The PETSc matrix type (``MatType``). If not supplied
             and the bilinear form ``a`` is not a nested list, create a
-            standard PETSc matrix. If both ``a`` and ``mat_type`` iare a
+            standard PETSc matrix. If both ``a`` and ``kind`` are a
             nested lists, create a nested PETSc matrix where each block
-            ``A[i][j]`` is of type ``mat_type[i][j]``. If ``mat_type``
-            is ``PETSc.Mat.Type.NEST``, create a PETSc nest matrix. If
-            ``mat_type`` is not supplied and ``a`` is a nested list
-            create a blocked matrix.
+            ``A[i][j]`` is of type ``kind[i][j]``. If ``kind`` is
+            ``PETSc.Mat.Type.NEST``, create a PETSc nest matrix. If
+            ``kind`` is not supplied and ``a`` is a nested list create a
+            blocked matrix.
     """
-    if mat_type is None:
-        # If no mat-type provided create a standard (blocked) matrix
-        try:
-            return _cpp.fem.petsc.create_matrix(a._cpp_object)
-        except AttributeError:
-            # If `a` is a nested list create blocked matrix
-            _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
-            return _cpp.fem.petsc.create_matrix_block(_a)
-    else:
-        if mat_type == PETSc.Mat.Type.NEST or mat_type == "nest":
-            # If nest is supplied specifically, create nest with standard types
-            _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
-            return _cpp.fem.petsc.create_matrix_nest(_a)
+    try:
+        return _cpp.fem.petsc.create_matrix(a._cpp_object, kind)  # Single form
+    except AttributeError:  # ``a``` is a nested list
+        _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
 
-        try:
-            # If mat type is supplied, try creating a matrix with the given type
-            return _cpp.fem.petsc.create_matrix(a._cpp_object, mat_type)
-        except AttributeError:
-            # If `a` is a nested list try first to create a blocked matrix
-            _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
+        if kind == PETSc.Mat.Type.NEST:  # Create nest matrix with default types
+            return _cpp.fem.petsc.create_matrix_nest(_a, None)
+        else:
             try:
-                return _cpp.fem.petsc.create_matrix_block(_a, mat_type)
+                return _cpp.fem.petsc.create_matrix_block(_a, kind)  # Single 'kind' type
             except TypeError:
-                # If `mat_type` is a nested list, create a nest matrix
-                return _cpp.fem.petsc.create_matrix_nest(_a, mat_type)
+                return _cpp.fem.petsc.create_matrix_nest(_a, kind)  # Array of 'kind' types
 
 
 # -- Vector assembly ---------------------------------------------------------
@@ -335,6 +319,7 @@ def _assemble_vector_block_vec(
         )
         for form in L
     ]
+
     if x0 is not None:
         x0_local = _cpp.la.petsc.get_local_vectors(x0, maps)
         x0_sub = x0_local
@@ -347,6 +332,7 @@ def _assemble_vector_block_vec(
         if constants_L is None
         else constants_L
     )
+
     coeffs_L = (
         [{} if form is None else _pack_coefficients(form._cpp_object) for form in L]
         if coeffs_L is None
@@ -466,7 +452,7 @@ def assemble_matrix_mat(
 def assemble_matrix_nest(
     a: Iterable[Iterable[Form]],
     bcs: Iterable[DirichletBC] = [],
-    mat_types=[],
+    kind=None,
     diagonal: float = 1.0,
     constants=None,
     coeffs=None,
@@ -476,7 +462,7 @@ def assemble_matrix_nest(
     Args:
         a: Rectangular (list-of-lists) array for bilinear forms.
         bcs: Dirichlet boundary conditions.
-        mat_types: PETSc matrix type for each matrix block.
+        kind: PETSc matrix type for each matrix block.
         diagonal: Value to set on the matrix diagonal for Dirichlet
             boundary condition constrained degrees-of-freedom belonging
             to the same trial and test space.
@@ -488,7 +474,7 @@ def assemble_matrix_nest(
         forms.
     """
     _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
-    A = _cpp.fem.petsc.create_matrix_nest(_a, mat_types)
+    A = _cpp.fem.petsc.create_matrix_nest(_a, kind)
     _assemble_matrix_nest_mat(A, a, bcs, diagonal, constants, coeffs)
     return A
 
@@ -509,7 +495,7 @@ def _assemble_matrix_nest_mat(
             initialized for the bilinear forms.
         a: Rectangular (list-of-lists) array for bilinear forms.
         bcs: Dirichlet boundary conditions.
-        mat_types: PETSc matrix type for each matrix block.
+        kind: PETSc matrix type for each matrix block.
         diagonal: Value to set on the matrix diagonal for Dirichlet
             boundary condition constrained degrees-of-freedom belonging
             to the same trial and test space.

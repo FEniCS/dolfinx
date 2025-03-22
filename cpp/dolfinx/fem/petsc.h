@@ -16,6 +16,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <petscmat.h>
 #include <petscvec.h>
 #include <span>
@@ -43,7 +44,7 @@ namespace petsc
 /// object.
 template <std::floating_point T>
 Mat create_matrix(const Form<PetscScalar, T>& a,
-                  std::string type = std::string())
+                  std::optional<std::string> type = std::nullopt)
 {
   la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
   pattern.finalize();
@@ -62,7 +63,7 @@ Mat create_matrix(const Form<PetscScalar, T>& a,
 template <std::floating_point T>
 Mat create_matrix_block(
     const std::vector<std::vector<const Form<PetscScalar, T>*>>& a,
-    std::string type = std::string())
+    std::optional<std::string> type = std::nullopt)
 {
   // Extract and check row/column ranges
   std::array<std::vector<std::shared_ptr<const FunctionSpace<T>>>, 2> V
@@ -191,15 +192,15 @@ Mat create_matrix_block(
 template <std::floating_point T>
 Mat create_matrix_nest(
     const std::vector<std::vector<const Form<PetscScalar, T>*>>& a,
-    const std::vector<std::vector<std::string>>& types)
+    std::optional<std::vector<std::vector<std::string>>> types)
 {
   // Extract and check row/column ranges
   auto V = fem::common_function_spaces(extract_function_spaces(a));
 
   std::vector<std::vector<std::string>> _types(
       a.size(), std::vector<std::string>(a.front().size()));
-  if (!types.empty())
-    _types = types;
+  if (types)
+    _types = *types;
 
   // Loop over each form and create matrix
   int rows = a.size();
@@ -462,7 +463,8 @@ void apply_lifting(
 template <std::floating_point T>
 void set_bc(
     Vec b,
-    const std::vector<std::reference_wrapper<const DirichletBC<PetscScalar, T>>> bcs,
+    const std::vector<std::reference_wrapper<const DirichletBC<PetscScalar, T>>>
+        bcs,
     const Vec x0, PetscScalar alpha = 1)
 {
   PetscInt n = 0;

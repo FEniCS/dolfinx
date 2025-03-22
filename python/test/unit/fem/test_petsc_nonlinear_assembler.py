@@ -239,7 +239,7 @@ class TestNLSPETSc:
         # Nested (MatNest)
         def nested():
             """Nested (MatNest)"""
-            x = create_vector(L_block, vec_type=PETSc.Vec.Type.NEST)
+            x = create_vector(L_block, kind=PETSc.Vec.Type.NEST)
 
             assign((u, p), x)
 
@@ -394,9 +394,9 @@ class TestNLSPETSc:
 
         def nested_solve():
             """Nested version"""
-            Jmat = create_matrix(J, mat_type=[["baij", "aij"], ["aij", "baij"]])
+            Jmat = create_matrix(J, kind=[["baij", "aij"], ["aij", "baij"]])
             assert Jmat.getType() == "nest"
-            Fvec = create_vector(F, vec_type="nest")
+            Fvec = create_vector(F, kind="nest")
             assert Fvec.getType() == "nest"
 
             snes = PETSc.SNES().create(MPI.COMM_WORLD)
@@ -413,7 +413,7 @@ class TestNLSPETSc:
 
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
-            x = create_vector(F, vec_type=PETSc.Vec.Type.NEST)
+            x = create_vector(F, kind=PETSc.Vec.Type.NEST)
             assert x.getType() == "nest"
 
             assign((u, p), x)
@@ -598,9 +598,9 @@ class TestNLSPETSc:
 
         def nested():
             """Blocked and nested"""
-            Jmat = create_matrix(J, mat_type=PETSc.Mat.Type.NEST)
-            Pmat = create_matrix(P, mat_type=PETSc.Mat.Type.NEST)
-            Fvec = create_vector(F, vec_type=PETSc.Vec.Type.NEST)
+            Jmat = create_matrix(J, kind=PETSc.Mat.Type.NEST)
+            Pmat = create_matrix(P, kind=PETSc.Mat.Type.NEST)
+            Fvec = create_vector(F, kind=PETSc.Vec.Type.NEST)
 
             snes = PETSc.SNES().create(MPI.COMM_WORLD)
             snes.setTolerances(rtol=1.0e-15, max_it=20)
