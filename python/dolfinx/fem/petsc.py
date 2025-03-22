@@ -613,7 +613,7 @@ def apply_lifting(
 
 def set_bc(
     b: PETSc.Vec,
-    bcs: Iterable[DirichletBC],
+    bcs: typing.Union[Iterable[DirichletBC], Iterable[Iterable[DirichletBC]]],
     x0: typing.Optional[PETSc.Vec] = None,
     alpha: float = 1,
 ) -> None:
