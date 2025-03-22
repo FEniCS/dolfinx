@@ -225,7 +225,7 @@ bcs = [fem.dirichletbc(g, dofs_top), fem.dirichletbc(g, dofs_bottom)]
 # degrees-of-freedom:
 
 # +
-A = fem.petsc.assemble_matrix_nest(a, bcs=bcs)
+A = fem.petsc.assemble_matrix(a, bcs=bcs)
 A.assemble()
 # -
 
@@ -234,7 +234,7 @@ A.assemble()
 # conditions. Then set Dirichlet boundary values in the RHS vector `b`:
 
 # +
-b = fem.petsc.assemble_vector_nest(L)
+b = fem.petsc.assemble_vector(L)
 fem.petsc.apply_lifting_nest(b, a, bcs=bcs)
 for b_sub in b.getNestSubVecs():
     b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -264,7 +264,7 @@ a_p = fem.form(
     ],
     dtype=dtype,
 )
-P = fem.petsc.assemble_matrix_nest(a_p, bcs=bcs)
+P = fem.petsc.assemble_matrix(a_p, bcs=bcs)
 P.assemble()
 # -
 

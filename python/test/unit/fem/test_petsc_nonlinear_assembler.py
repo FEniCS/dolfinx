@@ -135,15 +135,15 @@ class NonlinearPDE_SNESProblem:
         F.assemble()
 
     def J_nest(self, snes, x, J, P):
-        from dolfinx.fem.petsc import assemble_matrix_nest
+        from dolfinx.fem.petsc import assemble_matrix
 
         assert J.getType() == "nest" and P.getType() == "nest"
         J.zeroEntries()
-        assemble_matrix_nest(J, self.a, bcs=self.bcs, diagonal=1.0)
+        assemble_matrix(J, self.a, bcs=self.bcs, diagonal=1.0)
         J.assemble()
         if self.a_precon is not None:
             P.zeroEntries()
-            assemble_matrix_nest(P, self.a_precon, bcs=self.bcs, diagonal=1.0)
+            assemble_matrix(P, self.a_precon, bcs=self.bcs, diagonal=1.0)
             P.assemble()
 
 
@@ -160,10 +160,8 @@ class TestNLSPETSc:
             apply_lifting_nest,
             assemble_matrix,
             assemble_matrix_block,
-            assemble_matrix_nest,
             assemble_vector,
             assemble_vector_block,
-            assemble_vector_nest,
             assign,
             create_vector,
             set_bc,
@@ -243,8 +241,8 @@ class TestNLSPETSc:
 
             assign((u, p), x)
 
-            A = assemble_matrix_nest(a_block, bcs=[bc])
-            b = assemble_vector_nest(L_block)
+            A = assemble_matrix(a_block, bcs=[bc])
+            b = assemble_vector(L_block)
             apply_lifting_nest(b, a_block, bcs=[bc], x0=x, alpha=-1.0)
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)

@@ -84,7 +84,7 @@ def test_assemble_functional_ds(mode, dtype):
 def test_assemble_derivatives(dtype):
     """This test checks the original_coefficient_positions, which may change
     under differentiation (some coefficients and constants are
-    eliminated)"""
+    eliminated)."""
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, dtype=dtype(0).real.dtype)
     Q = functionspace(mesh, ("Lagrange", 1))
     u = Function(Q, dtype=dtype)
@@ -305,10 +305,8 @@ class TestPETScAssemblers:
         from dolfinx.fem.petsc import apply_lifting_nest as petsc_apply_lifting_nest
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
-        from dolfinx.fem.petsc import assemble_matrix_nest as petsc_assemble_matrix_nest
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
         from dolfinx.fem.petsc import assemble_vector_block as petsc_assemble_vector_block
-        from dolfinx.fem.petsc import assemble_vector_nest as petsc_assemble_vector_nest
         from dolfinx.fem.petsc import set_bc as petsc_set_bc
         from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
 
@@ -370,16 +368,16 @@ class TestPETScAssemblers:
 
         def nest():
             """Nested (MatNest)"""
-            A = petsc_assemble_matrix_nest(
+            A = petsc_assemble_matrix(
                 a_block,
                 bcs=[bc],
                 kind=[["baij", "aij", "aij"], ["aij", "", "aij"], ["aij", "aij", "aij"]],
             )
             A.assemble()
             with pytest.raises(RuntimeError):
-                petsc_assemble_matrix_nest(a_block_none, bcs=[bc])
+                petsc_assemble_matrix(a_block_none, bcs=[bc])
 
-            b = petsc_assemble_vector_nest(L_block)
+            b = petsc_assemble_vector(L_block)
             petsc_apply_lifting_nest(b, a_block, bcs=[bc])
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -444,10 +442,8 @@ class TestPETScAssemblers:
         from dolfinx.fem.petsc import apply_lifting_nest as petsc_apply_lifting_nest
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
-        from dolfinx.fem.petsc import assemble_matrix_nest as petsc_assemble_matrix_nest
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
         from dolfinx.fem.petsc import assemble_vector_block as petsc_assemble_vector_block
-        from dolfinx.fem.petsc import assemble_vector_nest as petsc_assemble_vector_nest
         from dolfinx.fem.petsc import set_bc as petsc_set_bc
         from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
 
@@ -509,9 +505,9 @@ class TestPETScAssemblers:
 
         def nested():
             """Nested (MatNest)"""
-            A = petsc_assemble_matrix_nest([[a00, a01], [a10, a11]], bcs=bcs, diagonal=1.0)
+            A = petsc_assemble_matrix([[a00, a01], [a10, a11]], bcs=bcs, diagonal=1.0)
             A.assemble()
-            b = petsc_assemble_vector_nest([L0, L1])
+            b = petsc_assemble_vector([L0, L1])
             petsc_apply_lifting_nest(b, [[a00, a01], [a10, a11]], bcs=bcs)
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -608,10 +604,8 @@ class TestPETScAssemblers:
         from dolfinx.fem.petsc import apply_lifting_nest as petsc_apply_lifting_nest
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
-        from dolfinx.fem.petsc import assemble_matrix_nest as petsc_assemble_matrix_nest
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
         from dolfinx.fem.petsc import assemble_vector_block as petsc_assemble_vector_block
-        from dolfinx.fem.petsc import assemble_vector_nest as petsc_assemble_vector_nest
         from dolfinx.fem.petsc import set_bc as petsc_set_bc
         from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
 
@@ -658,15 +652,15 @@ class TestPETScAssemblers:
 
         def nested_solve():
             """Nested solver"""
-            A = petsc_assemble_matrix_nest(
+            A = petsc_assemble_matrix(
                 form([[a00, a01], [a10, a11]]), bcs=[bc0, bc1], kind=[["baij", "aij"], ["aij", ""]]
             )
             A.assemble()
-            P = petsc_assemble_matrix_nest(
+            P = petsc_assemble_matrix(
                 form([[p00, p01], [p10, p11]]), bcs=[bc0, bc1], kind=[["aij", "aij"], ["aij", ""]]
             )
             P.assemble()
-            b = petsc_assemble_vector_nest(form([L0, L1]))
+            b = petsc_assemble_vector(form([L0, L1]))
             petsc_apply_lifting_nest(b, form([[a00, a01], [a10, a11]]), [bc0, bc1])
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -1098,7 +1092,6 @@ class TestPETScAssemblers:
         """Test assembly of block rectangular block matrices."""
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
-        from dolfinx.fem.petsc import assemble_matrix_nest as petsc_assemble_matrix_nest
 
         msh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
         V0 = functionspace(msh, ("Lagrange", 1))
@@ -1116,7 +1109,7 @@ class TestPETScAssemblers:
             a = form([[ufl.inner(u, v0) * ufl.dx], [ufl.inner(u, v1) * ufl.dx]])
             A0 = petsc_assemble_matrix_block(a, bcs=[])
             A0.assemble()
-            A1 = petsc_assemble_matrix_nest(a, bcs=[])
+            A1 = petsc_assemble_matrix(a, bcs=[])
             A1.assemble()
             return A0, A1
 

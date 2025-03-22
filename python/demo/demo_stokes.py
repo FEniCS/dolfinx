@@ -213,7 +213,7 @@ def nested_iterative_solver():
     """Solve the Stokes problem using nest matrices and an iterative solver."""
 
     # Assemble nested matrix operators
-    A = fem.petsc.assemble_matrix_nest(a, bcs=bcs)
+    A = fem.petsc.assemble_matrix(a, bcs=bcs)
     A.assemble()
 
     # Create a nested matrix P to use as the preconditioner. The
@@ -231,7 +231,7 @@ def nested_iterative_solver():
     P11.setOption(PETSc.Mat.Option.SPD, True)
 
     # Assemble right-hand side vector
-    b = fem.petsc.assemble_vector_nest(L)
+    b = fem.petsc.assemble_vector(L)
 
     # Modify ('lift') the RHS for Dirichlet boundary conditions
     fem.petsc.apply_lifting_nest(b, a, bcs=bcs)
