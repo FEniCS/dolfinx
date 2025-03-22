@@ -349,15 +349,15 @@ def _assemble_vector_block_vec(
     _bcs = [bc._cpp_object for bc in bcs]
     bcs1 = _bcs_by_block(_extract_spaces(a, 1), _bcs)
     b_local = _cpp.la.petsc.get_local_vectors(b, maps)
-    for b_sub, L_sub, a_sub, const_L, coeff_L, const_a, coeff_a in zip(
+    for b_, L_, a_, const_L, coeff_L, const_a, coeff_a in zip(
         b_local, L, a, constants_L, coeffs_L, constants_a, coeffs_a
     ):
-        _cpp.fem.assemble_vector(b_sub, L_sub._cpp_object, const_L, coeff_L)
-        _a_sub = [None if form is None else form._cpp_object for form in a_sub]
+        _cpp.fem.assemble_vector(b_, L_._cpp_object, const_L, coeff_L)
+        _a_sub = [None if form is None else form._cpp_object for form in a_]
         const_a_ = list(
             map(lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x, const_a)
         )
-        _cpp.fem.apply_lifting(b_sub, _a_sub, const_a_, coeff_a, bcs1, x0_local, alpha)
+        _cpp.fem.apply_lifting(b_, _a_sub, const_a_, coeff_a, bcs1, x0_local, alpha)
 
     _cpp.la.petsc.scatter_local_vectors(b, b_local, maps)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -487,18 +487,7 @@ def _assemble_matrix_block_mat(
     coeffs=None,
 ) -> PETSc.Mat:
     """Assemble bilinear forms into a blocked matrix."""
-    constants = (
-        [
-            [
-                pack_constants(form) if form is not None else np.array([], dtype=PETSc.ScalarType)
-                for form in forms
-            ]
-            for forms in a
-        ]
-        if constants is None
-        else constants
-    )
-
+    constants = [pack_constants(forms) for forms in a] if constants is None else constants
     coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
 
     V = _extract_function_spaces(a)
@@ -561,22 +550,13 @@ def apply_lifting(
     if b.getType() == PETSc.Vec.Type.NEST:
         x0 = [] if x0 is None else x0.getNestSubVecs()
         bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
-        constants = (
-            [
-                [
-                    _pack_constants(form._cpp_object)
-                    if form is not None
-                    else np.array([], dtype=PETSc.ScalarType)
-                    for form in forms
-                ]
-                for forms in a
-            ]
-            if constants is None
-            else constants
-        )
+        constants = [pack_constants(forms) for forms in a] if constants is None else constants
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
         for b_sub, a_sub, const, coeff in zip(b.getNestSubVecs(), a, constants, coeffs):
-            apply_lifting(b_sub, a_sub, bcs1, x0, alpha, const, coeff)
+            const_ = list(
+                map(lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x, const)
+            )
+            apply_lifting(b_sub, a_sub, bcs1, x0, alpha, const_, coeff)
         return b
     else:
         with contextlib.ExitStack() as stack:
