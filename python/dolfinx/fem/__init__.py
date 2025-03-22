@@ -25,6 +25,8 @@ from dolfinx.fem.assemble import (
     assemble_vector,
     create_matrix,
     create_vector,
+    pack_coefficients,
+    pack_constants,
     set_bc,
 )
 from dolfinx.fem.bcs import (
@@ -240,6 +242,8 @@ __all__ = [
     "locate_dofs_geometrical",
     "locate_dofs_topological",
     "mixed_topology_form",
+    "pack_coefficients",
+    "pack_constants",
     "set_bc",
     "transpose_dofmap",
 ]

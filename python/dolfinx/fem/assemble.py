@@ -13,6 +13,7 @@ import typing
 import warnings
 
 import numpy as np
+import numpy.typing as npt
 
 import dolfinx
 from dolfinx import cpp as _cpp
@@ -21,6 +22,7 @@ from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.forms import Form
+from dolfinx.fem import IntegralType
 
 
 def pack_constants(
@@ -40,7 +42,7 @@ def pack_constants(
         form: A single form or array of forms to pack the constants for.
 
     Returns:
-        A `constant` array for each form.
+        A ``constant`` array for each form.
     """
 
     def _pack(form):
@@ -49,18 +51,22 @@ def pack_constants(
         elif isinstance(form, collections.abc.Iterable):
             return list(map(lambda sub_form: _pack(sub_form), form))
         else:
-            return _pack_constants(form)
+            return _pack_constants(form._cpp_object)
 
     return _pack(form)
 
 
-def pack_coefficients(form: typing.Union[Form, typing.Sequence[Form]]):
+def pack_coefficients(
+    form: typing.Union[Form, typing.Sequence[Form]],
+) -> typing.Union[
+    dict[tuple[IntegralType, int], npt.NDArray], list[dict[tuple[IntegralType, int], npt.NDArray]]
+]:
     """Compute form coefficients.
 
-    Pack the `coefficients` that appear in forms. The packed
-    coefficients can be passed to an assembler. This is a
-    performance optimisation for cases where a form is assembled
-    multiple times and (some) coefficients do not change.
+    Pack the ``coefficients`` that appear in forms. The packed
+    coefficients can be passed to an assembler. This is a performance
+    optimisation for cases where a form is assembled multiple times and
+    (some) coefficients do not change.
 
     If ``form`` is an array of forms, this function returns an array of
     form coefficients with the same shape as form.
@@ -70,7 +76,6 @@ def pack_coefficients(form: typing.Union[Form, typing.Sequence[Form]]):
 
     Returns:
         Coefficients for each form.
-
     """
 
     def _pack(form):
@@ -79,7 +84,7 @@ def pack_coefficients(form: typing.Union[Form, typing.Sequence[Form]]):
         elif isinstance(form, collections.abc.Iterable):
             return list(map(lambda sub_form: _pack(sub_form), form))
         else:
-            return _pack_coefficients(form)
+            return _pack_coefficients(form._cpp_object)
 
     return _pack(form)
 
@@ -139,8 +144,8 @@ def assemble_scalar(M: Form, constants=None, coeffs=None):
         To compute the functional value on the whole domain, the output
         of this function is typically summed across all MPI ranks.
     """
-    constants = constants or _pack_constants(M._cpp_object)
-    coeffs = coeffs or _pack_coefficients(M._cpp_object)
+    constants = constants or pack_constants(M)
+    coeffs = coeffs or pack_coefficients(M)
     return _cpp.fem.assemble_scalar(M._cpp_object, constants, coeffs)
 
 
@@ -179,8 +184,8 @@ def _assemble_vector_form(L: Form, constants=None, coeffs=None) -> la.Vector:
     """
     b = create_vector(L)
     b.array[:] = 0
-    constants = constants or _pack_constants(L._cpp_object)
-    coeffs = coeffs or _pack_coefficients(L._cpp_object)
+    constants = constants or pack_constants(L)
+    coeffs = coeffs or pack_coefficients(L)
     _assemble_vector_array(b.array, L, constants, coeffs)
     return b
 
@@ -209,8 +214,8 @@ def _assemble_vector_array(b: np.ndarray, L: Form, constants=None, coeffs=None):
         :func:`dolfinx.la.Vector.scatter_reverse` on the
         return vector can accumulate ghost contributions.
     """
-    constants = _pack_constants(L._cpp_object) if constants is None else constants
-    coeffs = _pack_coefficients(L._cpp_object) if coeffs is None else coeffs
+    constants = pack_constants(L) if constants is None else constants
+    coeffs = pack_coefficients(L) if coeffs is None else coeffs
     _cpp.fem.assemble_vector(b, L._cpp_object, constants, coeffs)
     return b
 
@@ -289,8 +294,8 @@ def _assemble_matrix_csr(
         accumulated.
     """
     bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
-    constants = _pack_constants(a._cpp_object) if constants is None else constants
-    coeffs = _pack_coefficients(a._cpp_object) if coeffs is None else coeffs
+    constants = pack_constants(a) if constants is None else constants
+    coeffs = pack_coefficients(a) if coeffs is None else coeffs
     _cpp.fem.assemble_matrix(A._cpp_object, a._cpp_object, constants, coeffs, bcs)
 
     # If matrix is a 'diagonal'block, set diagonal entry for constrained
@@ -333,15 +338,12 @@ def apply_lifting(
     """
     x0 = [] if x0 is None else x0
     constants = (
-        [
-            _pack_constants(form._cpp_object) if form is not None else np.array([], dtype=b.dtype)
-            for form in a
-        ]
+        [pack_constants(form) if form is not None else np.array([], dtype=b.dtype) for form in a]
         if constants is None
         else constants
     )
     coeffs = (
-        [{} if form is None else _pack_coefficients(form._cpp_object) for form in a]
+        [{} if form is None else pack_coefficients(form) for form in a]
         if coeffs is None
         else coeffs
     )

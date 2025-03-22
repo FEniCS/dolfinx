@@ -34,16 +34,17 @@ import dolfinx
 assert dolfinx.has_petsc4py
 
 import numpy as np
+from numpy import typing as npt
 
 import dolfinx.cpp as _cpp
 import dolfinx.la.petsc
 import ufl
-from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
 from dolfinx.cpp.fem.petsc import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem.petsc import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem.petsc import interpolation_matrix as _interpolation_matrix
 from dolfinx.fem import assemble as _assemble
+from dolfinx.fem import pack_coefficients, pack_constants
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
 from dolfinx.fem.forms import Form
@@ -179,14 +180,22 @@ def create_matrix(
 
 @functools.singledispatch
 def assemble_vector(
-    L: typing.Union[Form, Iterable[Form]], constants=None, coeffs=None
+    L: typing.Union[Form, Iterable[Form]],
+    constants: typing.Optional[npt.NDArray, Iterable[npt.NDArray]] = None,
+    coeffs: typing.Optional[npt.NDArray, Iterable[npt.NDArray]] = None,
 ) -> PETSc.Vec:
     """Assemble linear form into a new PETSc vector.
 
     If a single linear form is passed, the form is assembled into a
     ghosted PETSc vector. If multiple forms are passed, the forms are
     assembled into a PETSc ``VECTNEST`` vector, where each nest block is
-    a ghosted PETSc vector.
+    a ghosted PETSc vector. In this case the ``b.getNestSubVec(i)`` is
+    the assembled vector for ``L[i]``.
+
+    Constants and coefficients that appear in the forms(s) can be passed
+    to avoid re-computation of constants and coefficients. The functions
+    :func:`dolfinx.fem.pack_constants` and
+    :func:`dolfinx.fem.pack_coefficients` can be called
 
     Note:
         The returned vector is not finalised, i.e. ghost values are not
@@ -194,8 +203,12 @@ def assemble_vector(
 
     Args:
         L: A linear form or list of linear forms.
-        constants: Constants appearing in the form.
-        coeffs: Coefficients appearing in the form.
+        constants: Constants appearing in the form. For a single form,
+            ``constants.ndim==1``. For multiple forms, the constants for
+            form ``L[i]`` are  ``constants[i]``.
+        coeffs: Coefficients appearing in the form. For a single form,
+            ``coeffs.shape=(num_cells, n)``. For multiple forms, the
+            coefficients for form ``L[i]`` are  ``coeffs[i]``.
 
     Returns:
         An assembled vector.
@@ -215,7 +228,10 @@ def assemble_vector(
 
 @assemble_vector.register(PETSc.Vec)
 def _assemble_vector_vec(
-    b: PETSc.Vec, L: typing.Union[Form, Iterable[Form]], constants=None, coeffs=None
+    b: PETSc.Vec,
+    L: typing.Union[Form, Iterable[Form]],
+    constants: typing.Optional[npt.NDArray, Iterable[npt.NDArray]] = None,
+    coeffs: typing.Optional[npt.NDArray, Iterable[npt.NDArray]] = None,
 ) -> PETSc.Vec:
     """Assemble linear form(s) into a PETSc vector.
 
@@ -223,6 +239,11 @@ def _assemble_vector_vec(
     is consistent with the linear form. If a single form is passed, then
     ``b`` should be a ghosted PETSc vector. If multiple forms are
     passed, then ``b`  must have type ``VECNEST``.
+
+    Constants and coefficients that appear in the forms(s) can be passed
+    to avoid re-computation of constants and coefficients. The functions
+    :func:`dolfinx.fem.assemble.pack_constants` and
+    :func:`dolfinx.fem.assemble.pack_coefficients` can be called
 
     Note:
         The vector is not zeroed before assembly and it is not
@@ -232,8 +253,12 @@ def _assemble_vector_vec(
     Args:
         b: Vector to assemble the contribution of the linear form into.
         L: A linear form or list of linear forms to assemble into ``b``.
-        constants: Constants appearing in the form.
-        coeffs: Coefficients appearing in the form.
+        constants: Constants appearing in the form. For a single form,
+            ``constants.ndim==1``. For multiple forms, the constants for
+            form ``L[i]`` are  ``constants[i]``.
+        coeffs: Coefficients appearing in the form. For a single form,
+            ``coeffs.shape=(num_cells, n)``. For multiple forms, the
+            coefficients for form ``L[i]`` are  ``coeffs[i]``.
 
     Returns:
         Assembled vector.
@@ -316,40 +341,10 @@ def _assemble_vector_block_vec(
         x0_local = []
         x0_sub = [None] * len(maps)
 
-    constants_L = (
-        [form and _pack_constants(form._cpp_object) for form in L]
-        if constants_L is None
-        else constants_L
-    )
-
-    coeffs_L = (
-        [{} if form is None else _pack_coefficients(form._cpp_object) for form in L]
-        if coeffs_L is None
-        else coeffs_L
-    )
-
-    constants_a = (
-        [
-            [
-                _pack_constants(form._cpp_object)
-                if form is not None
-                else np.array([], dtype=PETSc.ScalarType)
-                for form in forms
-            ]
-            for forms in a
-        ]
-        if constants_a is None
-        else constants_a
-    )
-
-    coeffs_a = (
-        [
-            [{} if form is None else _pack_coefficients(form._cpp_object) for form in forms]
-            for forms in a
-        ]
-        if coeffs_a is None
-        else coeffs_a
-    )
+    constants_L = pack_constants(L) if constants_L is None else constants_L
+    coeffs_L = pack_coefficients(L) if coeffs_L is None else coeffs_L
+    constants_a = [pack_constants(forms) for forms in a] if constants_a is None else constants_a
+    coeffs_a = [pack_coefficients(forms) for forms in a] if coeffs_a is None else coeffs_a
 
     _bcs = [bc._cpp_object for bc in bcs]
     bcs1 = _bcs_by_block(_extract_spaces(a, 1), _bcs)
@@ -359,7 +354,10 @@ def _assemble_vector_block_vec(
     ):
         _cpp.fem.assemble_vector(b_sub, L_sub._cpp_object, const_L, coeff_L)
         _a_sub = [None if form is None else form._cpp_object for form in a_sub]
-        _cpp.fem.apply_lifting(b_sub, _a_sub, const_a, coeff_a, bcs1, x0_local, alpha)
+        const_a_ = list(
+            map(lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x, const_a)
+        )
+        _cpp.fem.apply_lifting(b_sub, _a_sub, const_a_, coeff_a, bcs1, x0_local, alpha)
 
     _cpp.la.petsc.scatter_local_vectors(b, b_local, maps)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -431,18 +429,11 @@ def assemble_matrix_mat(
     """
     if A.getType() == PETSc.Mat.Type.NEST:
         constants = (
-            [[form and _pack_constants(form._cpp_object) for form in forms] for forms in a]
+            [[form and pack_constants(form) for form in forms] for forms in a]
             if constants is None
             else constants
         )
-        coeffs = (
-            [
-                [{} if form is None else _pack_coefficients(form._cpp_object) for form in forms]
-                for forms in a
-            ]
-            if coeffs is None
-            else coeffs
-        )
+        coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
         for i, (a_row, const_row, coeff_row) in enumerate(zip(a, constants, coeffs)):
             for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row)):
                 if a_block is not None:
@@ -460,8 +451,8 @@ def assemble_matrix_mat(
                             )
         return A
     else:
-        constants = _pack_constants(a._cpp_object) if constants is None else constants
-        coeffs = _pack_coefficients(a._cpp_object) if coeffs is None else coeffs
+        constants = pack_constants(a) if constants is None else constants
+        coeffs = pack_coefficients(a) if coeffs is None else coeffs
         _bcs = [bc._cpp_object for bc in bcs]
         _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs)
         if a.function_spaces[0] is a.function_spaces[1]:
@@ -499,9 +490,7 @@ def _assemble_matrix_block_mat(
     constants = (
         [
             [
-                _pack_constants(form._cpp_object)
-                if form is not None
-                else np.array([], dtype=PETSc.ScalarType)
+                pack_constants(form) if form is not None else np.array([], dtype=PETSc.ScalarType)
                 for form in forms
             ]
             for forms in a
@@ -510,14 +499,7 @@ def _assemble_matrix_block_mat(
         else constants
     )
 
-    coeffs = (
-        [
-            [{} if form is None else _pack_coefficients(form._cpp_object) for form in forms]
-            for forms in a
-        ]
-        if coeffs is None
-        else coeffs
-    )
+    coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
 
     V = _extract_function_spaces(a)
     is_rows = _cpp.la.petsc.create_index_sets(
@@ -592,14 +574,7 @@ def apply_lifting(
             if constants is None
             else constants
         )
-        coeffs = (
-            [
-                [{} if form is None else _pack_coefficients(form._cpp_object) for form in forms]
-                for forms in a
-            ]
-            if coeffs is None
-            else coeffs
-        )
+        coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
         for b_sub, a_sub, const, coeff in zip(b.getNestSubVecs(), a, constants, coeffs):
             apply_lifting(b_sub, a_sub, bcs1, x0, alpha, const, coeff)
         return b
