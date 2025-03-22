@@ -138,7 +138,7 @@ def create_vector(
         ]
         if kind == PETSc.Vec.Type.NEST:
             return _cpp.fem.petsc.create_vector_nest(maps)
-        elif kind in (None, PETSc.Vec.Type.NEST, PETSc.Vec.Type.MPI):
+        elif kind in (None, PETSc.Vec.Type.MPI):
             return _cpp.fem.petsc.create_vector_block(maps)
         else:
             raise NotImplementedError(f"Vector type '{kind}' not supported.")

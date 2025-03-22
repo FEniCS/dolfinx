@@ -292,17 +292,15 @@ void petsc_fem_module(nb::module_& m)
       nb::rv_policy::take_ownership, nb::arg("maps"),
       "Create nested vector for multiple (stacked) linear forms.");
   m.def("create_matrix", dolfinx::fem::petsc::create_matrix<PetscReal>,
-        nb::rv_policy::take_ownership, nb::arg("a"),
-        nb::arg("type") = nb::none(), "Create a PETSc Mat for bilinear form.");
+        nb::rv_policy::take_ownership, nb::arg("a"), nb::arg("type").none(),
+        "Create a PETSc Mat for bilinear form.");
   m.def("create_matrix_block",
         &dolfinx::fem::petsc::create_matrix_block<PetscReal>,
-        nb::rv_policy::take_ownership, nb::arg("a"),
-        nb::arg("type") = nb::none(),
+        nb::rv_policy::take_ownership, nb::arg("a"), nb::arg("type").none(),
         "Create monolithic sparse matrix for stacked bilinear forms.");
   m.def("create_matrix_nest",
         &dolfinx::fem::petsc::create_matrix_nest<PetscReal>,
-        nb::rv_policy::take_ownership, nb::arg("a"),
-        nb::arg("types") = nb::none(),
+        nb::rv_policy::take_ownership, nb::arg("a"), nb::arg("types").none(),
         "Create nested sparse matrix for bilinear forms.");
 
   // PETSc Matrices
