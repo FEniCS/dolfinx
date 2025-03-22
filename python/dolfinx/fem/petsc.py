@@ -56,7 +56,6 @@ __all__ = [
     "LinearProblem",
     "NonlinearProblem",
     "apply_lifting",
-    "apply_lifting_nest",
     "assemble_matrix",
     "assemble_matrix_block",
     "assemble_vector",
