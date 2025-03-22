@@ -68,7 +68,6 @@ __all__ = [
     "discrete_gradient",
     "interpolation_matrix",
     "set_bc",
-    "set_bc_nest",
 ]
 
 
@@ -570,56 +569,47 @@ def apply_lifting(
     b: PETSc.Vec,
     a: Iterable[Form],
     bcs: Iterable[Iterable[DirichletBC]],
-    x0: Iterable[PETSc.Vec] = [],
+    x0: typing.Optional[Iterable[PETSc.Vec]] = None,
     alpha: float = 1,
     constants=None,
     coeffs=None,
 ) -> None:
     """Apply the function :func:`dolfinx.fem.apply_lifting` to a PETSc Vector."""
-    with contextlib.ExitStack() as stack:
-        x0 = [stack.enter_context(x.localForm()) for x in x0]
-        x0_r = [x.array_r for x in x0]
-        b_local = stack.enter_context(b.localForm())
-        _assemble.apply_lifting(b_local.array_w, a, bcs, x0_r, alpha, constants, coeffs)
-
-
-def apply_lifting_nest(
-    b: PETSc.Vec,
-    a: Iterable[Iterable[Form]],
-    bcs: Iterable[DirichletBC],
-    x0: typing.Optional[PETSc.Vec] = None,
-    alpha: float = 1,
-    constants=None,
-    coeffs=None,
-) -> PETSc.Vec:
-    """Apply the function :func:`dolfinx.fem.apply_lifting` to each sub-vector
-    in a nested PETSc Vector."""
-    x0 = [] if x0 is None else x0.getNestSubVecs()
-    bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
-    constants = (
-        [
+    if b.getType() == PETSc.Vec.Type.NEST:
+        x0 = [] if x0 is None else x0.getNestSubVecs()
+        bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
+        constants = (
             [
-                _pack_constants(form._cpp_object)
-                if form is not None
-                else np.array([], dtype=PETSc.ScalarType)
-                for form in forms
+                [
+                    _pack_constants(form._cpp_object)
+                    if form is not None
+                    else np.array([], dtype=PETSc.ScalarType)
+                    for form in forms
+                ]
+                for forms in a
             ]
-            for forms in a
-        ]
-        if constants is None
-        else constants
-    )
-    coeffs = (
-        [
-            [{} if form is None else _pack_coefficients(form._cpp_object) for form in forms]
-            for forms in a
-        ]
-        if coeffs is None
-        else coeffs
-    )
-    for b_sub, a_sub, const, coeff in zip(b.getNestSubVecs(), a, constants, coeffs):
-        apply_lifting(b_sub, a_sub, bcs1, x0, alpha, const, coeff)
-    return b
+            if constants is None
+            else constants
+        )
+        coeffs = (
+            [
+                [{} if form is None else _pack_coefficients(form._cpp_object) for form in forms]
+                for forms in a
+            ]
+            if coeffs is None
+            else coeffs
+        )
+        for b_sub, a_sub, const, coeff in zip(b.getNestSubVecs(), a, constants, coeffs):
+            apply_lifting(b_sub, a_sub, bcs1, x0, alpha, const, coeff)
+        return b
+    else:
+        with contextlib.ExitStack() as stack:
+            x0 = [] if x0 is None else x0
+            x0 = [stack.enter_context(x.localForm()) for x in x0]
+            x0_r = [x.array_r for x in x0]
+            b_local = stack.enter_context(b.localForm())
+            _assemble.apply_lifting(b_local.array_w, a, bcs, x0_r, alpha, constants, coeffs)
+        return b
 
 
 def set_bc(
@@ -629,25 +619,15 @@ def set_bc(
     alpha: float = 1,
 ) -> None:
     """Apply the function :func:`dolfinx.fem.set_bc` to a PETSc Vector."""
-    if x0 is not None:
-        x0 = x0.array_r
-    for bc in bcs:
-        bc.set(b.array_w, x0, alpha)
-
-
-def set_bc_nest(
-    b: PETSc.Vec,
-    bcs: Iterable[Iterable[DirichletBC]],
-    x0: typing.Optional[PETSc.Vec] = None,
-    alpha: float = 1,
-) -> None:
-    """Apply the function :func:`dolfinx.fem.set_bc` to each sub-vector
-    of a nested PETSc Vector.
-    """
-    _b = b.getNestSubVecs()
-    x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()
-    for b_sub, bc, x_sub in zip(_b, bcs, x0):
-        set_bc(b_sub, bc, x_sub, alpha)
+    if b.getType() == PETSc.Vec.Type.NEST:
+        _b = b.getNestSubVecs()
+        x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()
+        for b_sub, bc, x_sub in zip(_b, bcs, x0):
+            set_bc(b_sub, bc, x_sub, alpha)
+    else:
+        x0 = x0.array_r if x0 is not None else None
+        for bc in bcs:
+            bc.set(b.array_w, x0, alpha)
 
 
 class LinearProblem:

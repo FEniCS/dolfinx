@@ -235,12 +235,12 @@ A.assemble()
 
 # +
 b = fem.petsc.assemble_vector(L)
-fem.petsc.apply_lifting_nest(b, a, bcs=bcs)
+fem.petsc.apply_lifting(b, a, bcs=bcs)
 for b_sub in b.getNestSubVecs():
     b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
 bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs)
-fem.petsc.set_bc_nest(b, bcs0)
+fem.petsc.set_bc(b, bcs0)
 # -
 
 # Rather than solving the linear system $A x = b$, we will solve the

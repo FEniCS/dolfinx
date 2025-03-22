@@ -234,7 +234,7 @@ def nested_iterative_solver():
     b = fem.petsc.assemble_vector(L)
 
     # Modify ('lift') the RHS for Dirichlet boundary conditions
-    fem.petsc.apply_lifting_nest(b, a, bcs=bcs)
+    fem.petsc.apply_lifting(b, a, bcs=bcs)
 
     # Sum contributions for vector entries that are share across
     # parallel processes
@@ -243,7 +243,7 @@ def nested_iterative_solver():
 
     # Set Dirichlet boundary condition values in the RHS vector
     bcs0 = fem.bcs_by_block(extract_function_spaces(L), bcs)
-    fem.petsc.set_bc_nest(b, bcs0)
+    fem.petsc.set_bc(b, bcs0)
 
     # The pressure field is determined only up to a constant. We supply
     # a vector that spans the nullspace to the solver, and any component

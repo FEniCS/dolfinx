@@ -302,13 +302,11 @@ class TestPETScAssemblers:
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
-        from dolfinx.fem.petsc import apply_lifting_nest as petsc_apply_lifting_nest
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
         from dolfinx.fem.petsc import assemble_vector_block as petsc_assemble_vector_block
         from dolfinx.fem.petsc import set_bc as petsc_set_bc
-        from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
 
         mesh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
         p0, p1 = 1, 2
@@ -378,11 +376,11 @@ class TestPETScAssemblers:
                 petsc_assemble_matrix(a_block_none, bcs=[bc])
 
             b = petsc_assemble_vector(L_block)
-            petsc_apply_lifting_nest(b, a_block, bcs=[bc])
+            petsc_apply_lifting(b, a_block, bcs=[bc])
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
-            petsc_set_bc_nest(b, bcs0)
+            petsc_set_bc(b, bcs0)
             b.assemble()
             bnorm = math.sqrt(sum([x.norm() ** 2 for x in b.getNestSubVecs()]))
             Anorm = nest_matrix_norm(A)
@@ -439,13 +437,11 @@ class TestPETScAssemblers:
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
-        from dolfinx.fem.petsc import apply_lifting_nest as petsc_apply_lifting_nest
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
         from dolfinx.fem.petsc import assemble_vector_block as petsc_assemble_vector_block
         from dolfinx.fem.petsc import set_bc as petsc_set_bc
-        from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
 
         mesh = create_unit_square(MPI.COMM_WORLD, 32, 31, ghost_mode=mode)
         P = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
@@ -508,11 +504,11 @@ class TestPETScAssemblers:
             A = petsc_assemble_matrix([[a00, a01], [a10, a11]], bcs=bcs, diagonal=1.0)
             A.assemble()
             b = petsc_assemble_vector([L0, L1])
-            petsc_apply_lifting_nest(b, [[a00, a01], [a10, a11]], bcs=bcs)
+            petsc_apply_lifting(b, [[a00, a01], [a10, a11]], bcs=bcs)
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = bcs_by_block([L0.function_spaces[0], L1.function_spaces[0]], bcs)
-            petsc_set_bc_nest(b, bcs0)
+            petsc_set_bc(b, bcs0)
             b.assemble()
 
             x = b.copy()
@@ -601,13 +597,11 @@ class TestPETScAssemblers:
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
-        from dolfinx.fem.petsc import apply_lifting_nest as petsc_apply_lifting_nest
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
         from dolfinx.fem.petsc import assemble_vector_block as petsc_assemble_vector_block
         from dolfinx.fem.petsc import set_bc as petsc_set_bc
-        from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
 
         gdim = mesh.geometry.dim
         P2 = functionspace(mesh, ("Lagrange", 2, (gdim,)))
@@ -661,11 +655,11 @@ class TestPETScAssemblers:
             )
             P.assemble()
             b = petsc_assemble_vector(form([L0, L1]))
-            petsc_apply_lifting_nest(b, form([[a00, a01], [a10, a11]]), [bc0, bc1])
+            petsc_apply_lifting(b, form([[a00, a01], [a10, a11]]), [bc0, bc1])
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs = bcs_by_block(extract_function_spaces(form([L0, L1])), [bc0, bc1])
-            petsc_set_bc_nest(b, bcs)
+            petsc_set_bc(b, bcs)
             b.assemble()
 
             ksp = PETSc.KSP()
