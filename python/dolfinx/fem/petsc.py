@@ -39,7 +39,6 @@ from numpy import typing as npt
 import dolfinx.cpp as _cpp
 import dolfinx.la.petsc
 import ufl
-from dolfinx.cpp.fem import pack_constants as _pack_constants
 from dolfinx.cpp.fem.petsc import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem.petsc import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem.petsc import interpolation_matrix as _interpolation_matrix
