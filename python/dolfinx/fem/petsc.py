@@ -417,7 +417,7 @@ def assemble_matrix(
     Returns:
         Matrix representing the bilinear form.
     """
-    A = _cpp.fem.petsc.create_matrix(a._cpp_object)
+    A = _cpp.fem.petsc.create_matrix(a._cpp_object, None)
     assemble_matrix_mat(A, a, bcs, diagonal, constants, coeffs)
     return A
 
@@ -548,7 +548,7 @@ def assemble_matrix_block(
 ) -> PETSc.Mat:
     """Assemble bilinear forms into a blocked matrix."""
     _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
-    A = _cpp.fem.petsc.create_matrix_block(_a)
+    A = _cpp.fem.petsc.create_matrix_block(_a, None)
     return _assemble_matrix_block_mat(A, a, bcs, diagonal, constants, coeffs)
 
 
