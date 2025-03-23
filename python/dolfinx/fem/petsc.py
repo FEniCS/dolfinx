@@ -42,8 +42,9 @@ import ufl
 from dolfinx.cpp.fem.petsc import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem.petsc import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem.petsc import interpolation_matrix as _interpolation_matrix
-from dolfinx.fem import assemble as _assemble
 from dolfinx.fem import pack_coefficients, pack_constants
+from dolfinx.fem.assemble import _assemble_vector_array
+from dolfinx.fem.assemble import apply_lifting as _apply_lifting
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
 from dolfinx.fem.forms import Form
@@ -70,7 +71,9 @@ __all__ = [
 ]
 
 
-def _extract_function_spaces(a: Iterable[Iterable[Form]]):
+def _extract_function_spaces(
+    a: Iterable[Iterable[Form]],
+) -> tuple[list[_FunctionSpace], list[_FunctionSpace]]:
     """From a rectangular array of bilinear forms, extract the function
     spaces for each block row and block column.
     """
@@ -267,11 +270,11 @@ def _assemble_vector_vec(
         coeffs = [None] * len(L) if coeffs is None else coeffs
         for b_sub, L_sub, const, coeff in zip(b.getNestSubVecs(), L, constants, coeffs):
             with b_sub.localForm() as b_local:
-                _assemble._assemble_vector_array(b_local.array_w, L_sub, const, coeff)
+                _assemble_vector_array(b_local.array_w, L_sub, const, coeff)
         return b
     else:
         with b.localForm() as b_local:
-            _assemble._assemble_vector_array(b_local.array_w, L, constants, coeffs)
+            _assemble_vector_array(b_local.array_w, L, constants, coeffs)
         return b
 
 
@@ -290,7 +293,28 @@ def assemble_vector_block(
 ) -> PETSc.Vec:
     """Assemble linear forms into a monolithic vector.
 
-    The vector is not finalised, i.e. ghost values are not accumulated.
+    The vector ``b`` is assembled such that locally ``b = [b_0, b_1,
+    ..., b_n, b_0g, b_1g, ..., b_ng]`` where ``b_i`` is the assembled
+    vector for the 'owned' degrees-of-freedom for ``L[i]`` and ``b_ig``
+    are the 'unowned' (ghost) entries for ``L[i]``.
+
+    Note:
+        The vector is not finalised, i.e. ghost values are not
+        accumulated.
+
+    Args:
+        L: Linear forms to assemble into a monolithic vector.
+        a: Bilinear forms to apply lifting from.
+        bcs: Dirichlet boundary conditions applied to the system.
+        x0: Initial guess for the solution.
+        alpha: Coefficient for the lifting term.
+        constants_L: Constants appearing in the linear forms.
+        coeffs_L: Coefficients appearing in the linear forms.
+        constants_a: Constants appearing in the bilinear forms.
+        constants_a: Coefficients appearing in the bilinear forms.
+
+    Returns:
+        Assembled vector.
     """
     maps = [
         (
@@ -302,7 +326,7 @@ def assemble_vector_block(
     b = _cpp.fem.petsc.create_vector_block(maps)
     with b.localForm() as b_local:
         b_local.set(0.0)
-    return _assemble_vector_block_vec(
+    return assemble_vector_block(
         b, L, a, bcs, x0, alpha, constants_L, coeffs_L, constants_a, coeffs_a
     )
 
@@ -320,10 +344,34 @@ def _assemble_vector_block_vec(
     constants_a=None,
     coeffs_a=None,
 ) -> PETSc.Vec:
-    """Assemble linear forms into a monolithic vector.
+    """Assemble linear forms into a monolithic vector ``b``.
 
-    The vector is not zeroed and it is not finalised, i.e. ghost values
-    are not accumulated.
+    The vector ``b`` is assembled such that locally ``b = [b_0, b_1,
+    ..., b_n, b_0g, b_1g, ..., b_ng]`` where ``b_i`` is the assembled
+    vector for the 'owned' degrees-of-freedom for ``L[i]`` and ``b_ig``
+    are the 'unowned' (ghost) entries for ``L[i]``.
+
+    The vector ``b`` must have been initialized with a appropriate
+    size/layout.
+
+    Note:
+        The vector is not zeroed and it is not finalised, i.e. ghost values
+        are not accumulated.
+
+    Args:
+        b: Vector to assemble linear forms into.
+        L: Linear forms to assemble into a monolithic vector.
+        a: Bilinear forms to apply lifting from.
+        bcs: Dirichlet boundary conditions applied to the system.
+        x0: Initial guess for the solution.
+        alpha: Coefficient for the lifting term.
+        constants_L: Constants appearing in the linear forms.
+        coeffs_L: Coefficients appearing in the linear forms.
+        constants_a: Constants appearing in the bilinear forms.
+        constants_a: Coefficients appearing in the bilinear forms.
+
+    Returns:
+        Assembled vector.
     """
     maps = [
         (
@@ -347,6 +395,7 @@ def _assemble_vector_block_vec(
 
     _bcs = [bc._cpp_object for bc in bcs]
     bcs1 = _bcs_by_block(_extract_spaces(a, 1), _bcs)
+
     b_local = _cpp.la.petsc.get_local_vectors(b, maps)
     for b_, L_, a_, const_L, coeff_L, const_a, coeff_a in zip(
         b_local, L, a, constants_L, coeffs_L, constants_a, coeffs_a
@@ -408,7 +457,7 @@ def assemble_matrix(
         return A
     except TypeError:
         A = _cpp.fem.petsc.create_matrix(a._cpp_object, kind)
-        assemble_matrix_mat(A, a, bcs, diagonal, constants, coeffs)
+        assemble_matrix(A, a, bcs, diagonal, constants, coeffs)
         return A
 
 
@@ -427,17 +476,13 @@ def assemble_matrix_mat(
     accumulated.
     """
     if A.getType() == PETSc.Mat.Type.NEST:
-        constants = (
-            [[form and pack_constants(form) for form in forms] for forms in a]
-            if constants is None
-            else constants
-        )
+        constants = [pack_constants(forms) for forms in a] if constants is None else constants
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
         for i, (a_row, const_row, coeff_row) in enumerate(zip(a, constants, coeffs)):
             for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row)):
                 if a_block is not None:
                     Asub = A.getNestSubMatrix(i, j)
-                    assemble_matrix_mat(Asub, a_block, bcs, diagonal, const, coeff)
+                    assemble_matrix(Asub, a_block, bcs, diagonal, const, coeff)
                 elif i == j:
                     for bc in bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
@@ -563,7 +608,7 @@ def apply_lifting(
             x0 = [stack.enter_context(x.localForm()) for x in x0]
             x0_r = [x.array_r for x in x0]
             b_local = stack.enter_context(b.localForm())
-            _assemble.apply_lifting(b_local.array_w, a, bcs, x0_r, alpha, constants, coeffs)
+            _apply_lifting(b_local.array_w, a, bcs, x0_r, alpha, constants, coeffs)
         return b
 
 
