@@ -381,36 +381,41 @@ def _assemble_vector_block_vec(
         for form in L
     ]
 
-    if x0 is not None:
-        x0_local = _cpp.la.petsc.get_local_vectors(x0, maps)
-        x0_sub = x0_local
-    else:
-        x0_local = []
-        x0_sub = [None] * len(maps)
+    x0_local = _cpp.la.petsc.get_local_vectors(x0, maps) if x0 is not None else None
 
     constants_L = pack_constants(L) if constants_L is None else constants_L
     coeffs_L = pack_coefficients(L) if coeffs_L is None else coeffs_L
     constants_a = [pack_constants(forms) for forms in a] if constants_a is None else constants_a
     coeffs_a = [pack_coefficients(forms) for forms in a] if coeffs_a is None else coeffs_a
 
-    _bcs = [bc._cpp_object for bc in bcs]
-    bcs1 = _bcs_by_block(_extract_spaces(a, 1), _bcs)
+    bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
+    offset0 = 0
+    offset1 = functools.reduce(lambda x, y: x + y, map(lambda m: m[0].size_local * m[1], maps))
+    with b.localForm() as b_l:
+        for size, L_, a_, const_L, coeff_L, const_a, coeff_a in zip(
+            maps, L, a, constants_L, coeffs_L, constants_a, coeffs_a
+        ):
+            # Assemble
+            idxmap, bs = size
+            bx_ = np.zeros((idxmap.size_local + idxmap.num_ghosts) * bs, dtype=PETSc.ScalarType)
+            _assemble_vector_array(bx_, L_, const_L, coeff_L)
 
-    b_local = _cpp.la.petsc.get_local_vectors(b, maps)
-    for b_, L_, a_, const_L, coeff_L, const_a, coeff_a in zip(
-        b_local, L, a, constants_L, coeffs_L, constants_a, coeffs_a
-    ):
-        _cpp.fem.assemble_vector(b_, L_._cpp_object, const_L, coeff_L)
-        _a_sub = [None if form is None else form._cpp_object for form in a_]
-        const_a_ = list(
-            map(lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x, const_a)
-        )
-        _cpp.fem.apply_lifting(b_, _a_sub, const_a_, coeff_a, bcs1, x0_local, alpha)
+            # Lift bcs
+            const_a_ = [
+                np.empty(0, dtype=PETSc.ScalarType) if val is None else val for val in const_a
+            ]
+            _apply_lifting(bx_, a_, bcs1, x0_local, float(alpha), const_a_, coeff_a)
 
-    _cpp.la.petsc.scatter_local_vectors(b, b_local, maps)
+            # Add to parent vector
+            b_l.array_w[offset0 : offset0 + idxmap.size_local * bs] += bx_[: idxmap.size_local * bs]
+            b_l.array_w[offset1 : offset1 + idxmap.num_ghosts * bs] += bx_[idxmap.size_local * bs :]
+            offset0 += idxmap.size_local * bs
+            offset1 += idxmap.num_ghosts * bs
+
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    bcs0 = _bcs_by_block(_extract_spaces(L), _bcs)
+    x0_sub = x0_local if x0 is not None else [None] * len(maps)
+    bcs0 = _bcs_by_block(_extract_spaces(L), bcs)
     offset = 0
     b_array = b.getArray(readonly=False)
     for submap, bcs, _x0 in zip(maps, bcs0, x0_sub):
