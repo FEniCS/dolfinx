@@ -94,6 +94,14 @@ void refinement(nb::module_& m)
   export_refinement<float>(m);
   export_refinement<double>(m);
 
+  m.def("empty_partitioner",
+        [&]
+        {
+          return std::make_optional<
+              dolfinx_wrappers::part::impl::PythonCellPartitionFunction>(
+              nullptr);
+        });
+
   nb::enum_<dolfinx::refinement::Option>(m, "RefinementOption")
       .value("none", dolfinx::refinement::Option::none)
       .value("parent_facet", dolfinx::refinement::Option::parent_facet)

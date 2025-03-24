@@ -30,7 +30,7 @@ from dolfinx.cpp.mesh import (
     to_string,
     to_type,
 )
-from dolfinx.cpp.refinement import RefinementOption
+from dolfinx.cpp.refinement import RefinementOption, empty_partitioner
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem import coordinate_element as _coordinate_element
 from dolfinx.graph import AdjacencyList
@@ -56,6 +56,7 @@ __all__ = [
     "create_unit_cube",
     "create_unit_interval",
     "create_unit_square",
+    "empty_partitioner",
     "entities_to_geometry",
     "exterior_facet_indices",
     "locate_entities",
