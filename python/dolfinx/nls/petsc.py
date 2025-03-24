@@ -99,7 +99,7 @@ class SNESSolver:
         J: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
         P: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
         mat_kind: typing.Optional[typing.Union[str, typing.Iterable[typing.Iterable[str]]]] = None,
-        vec_kind: typing.Optional[typing.Union[str, typing.Iterable[str]]] = None,
+        vec_kind: typing.Optional[str] = None,
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
         snes_options: typing.Optional[dict] = None,
@@ -420,7 +420,7 @@ def create_snes_solver(
         ]
     ] = None,
     mat_kind: typing.Optional[typing.Union[str, typing.Iterable[typing.Iterable[str]]]] = None,
-    vec_kind: typing.Optional[typing.Union[str, typing.Iterable[str]]] = None,
+    vec_kind: typing.Optional[str] = None,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
 ) -> tuple[PETSc.SNES, PETSc.Vec]:  # type: ignore
