@@ -249,7 +249,7 @@ def nested_iterative_solver():
     # a vector that spans the nullspace to the solver, and any component
     # of the solution in this direction will be eliminated during the
     # solution process.
-    null_vec = fem.petsc.create_vector_nest(L)
+    null_vec = fem.petsc.create_vector(L, "nest")
 
     # Set velocity part to zero and the pressure part to a non-zero
     # constant
