@@ -198,7 +198,7 @@ public:
   /// existed.
   bool create_entities(int dim);
 
-    /// @brief Create connectivity between given pair of dimensions, `d0
+  /// @brief Create connectivity between given pair of dimensions, `d0
   /// -> d1`.
   /// @param[in] d0 Topological dimension.
   /// @param[in] d1 Topological dimension.

@@ -49,7 +49,8 @@ void test_read_named_meshtags()
                                             material_values);
   mt_materials.name = "material";
 
-  io::XDMFFile file(mesh->comm(), mesh_file_name, "w", io::XDMFFile::Encoding::HDF5);
+  io::XDMFFile file(mesh->comm(), mesh_file_name, "w",
+                    io::XDMFFile::Encoding::HDF5);
   file.write_mesh(*mesh);
   file.write_meshtags(mt_domains, mesh->geometry(),
                       "/Xdmf/Domain/mesh/Geometry");
@@ -58,7 +59,7 @@ void test_read_named_meshtags()
   file.close();
 
   io::XDMFFile mesh_file(MPI_COMM_WORLD, mesh_file_name, "r",
-                        io::XDMFFile::Encoding::HDF5);
+                         io::XDMFFile::Encoding::HDF5);
   mesh = std::make_shared<mesh::Mesh<double>>(mesh_file.read_mesh(
       fem::CoordinateElement<double>(mesh::CellType::triangle, 1),
       mesh::GhostMode::none, "mesh"));
