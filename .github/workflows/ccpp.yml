@@ -62,12 +62,12 @@ jobs:
           mypy dolfinx
           mypy demo
           mypy test
-      - name: clang-format C++ checks (non-blocking)
+      - name: clang-format C++ checks
         run: |
           cd cpp
           clang-format --version
           find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
-      - name: clang-format Python binding checks (non-blocking)
+      - name: clang-format Python binding checks
         run: |
           cd python/dolfinx/wrappers
           clang-format --version
