@@ -60,8 +60,7 @@ class TestNLSPETSc:
             assemble_vector_block,
             assemble_vector_nest,
             assign,
-            create_vector_block,
-            create_vector_nest,
+            create_vector,
             set_bc,
             set_bc_nest,
         )
@@ -116,7 +115,7 @@ class TestNLSPETSc:
 
         def blocked():
             """Monolithic blocked"""
-            x = create_vector_block(L_block)
+            x = create_vector(L_block)
 
             assign((u, p), x)
 
@@ -135,7 +134,7 @@ class TestNLSPETSc:
         # Nested (MatNest)
         def nested():
             """Nested (MatNest)"""
-            x = create_vector_nest(L_block)
+            x = create_vector(L_block, kind=PETSc.Vec.Type.NEST)
 
             assign((u, p), x)
 
@@ -265,7 +264,7 @@ class TestNLSPETSc:
 
             snes_options = {"snes_rtol": 1.0e-15, "snes_max_it": 10, "snes_monitor": None}
             snes, x = dolfinx.nls.petsc.create_snes_solver(
-                F, [u, p], J=J, bcs=bcs, assembly_type=dolfinx.fem.petsc.AssemblyType.block
+                F, [u, p], J=J, bcs=bcs, mat_kind="nest", vec_kind="nest"
             )
             opts = PETSc.Options()
             for k, v in snes_options.items():
@@ -292,9 +291,9 @@ class TestNLSPETSc:
             snes = PETSc.SNES().create(mesh.comm)
             residual = dolfinx.fem.form(F)
             jacobian = dolfinx.fem.form(J)
-            A = dolfinx.fem.petsc.create_matrix_nest(jacobian)
-            b = dolfinx.fem.petsc.create_vector_nest(residual)
-            x = dolfinx.fem.petsc.create_vector_nest(residual)
+            A = dolfinx.fem.petsc.create_matrix(jacobian, "nest")
+            b = dolfinx.fem.petsc.create_vector(residual, "nest")
+            x = dolfinx.fem.petsc.create_vector(residual, "nest")
             snes.setFunction(partial(dolfinx.nls.petsc.F_nest, [u, p], residual, jacobian, bcs), b)
             snes.setJacobian(
                 partial(dolfinx.nls.petsc.J_nest, [u, p], jacobian, None, bcs), A, None
@@ -353,7 +352,6 @@ class TestNLSPETSc:
                 U,
                 J=J,
                 bcs=bcs,
-                assembly_type=dolfinx.fem.petsc.AssemblyType.standard,
                 snes_options=snes_options,
             )
 
@@ -454,7 +452,6 @@ class TestNLSPETSc:
                 [u, p],
                 bcs=bcs,
                 P=P,
-                assembly_type=dolfinx.fem.petsc.AssemblyType.block,
                 snes_options=snes_options,
             )
             x, converged_reason, _ = solver.solve()
@@ -470,7 +467,7 @@ class TestNLSPETSc:
             p.interpolate(initial_guess_p)
 
             solver = dolfinx.nls.petsc.SNESSolver(
-                F, [u, p], J=J, bcs=bcs, assembly_type=dolfinx.fem.petsc.AssemblyType.nest, P=P
+                F, [u, p], J=J, bcs=bcs, mat_kind="nest", vec_kind="nest", P=P
             )
             nested_IS = solver.snes.getJacobian()[0].getNestISs()
             solver.snes.setTolerances(rtol=1.0e-15, max_it=20)
@@ -536,7 +533,6 @@ class TestNLSPETSc:
                 J=J,
                 bcs=bcs,
                 P=P,
-                assembly_type=dolfinx.fem.petsc.AssemblyType.standard,
                 snes_options=snes_options,
             )
             x, converged_reason, _ = solver.solve()

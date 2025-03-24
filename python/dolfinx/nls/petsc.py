@@ -37,11 +37,7 @@ from dolfinx.fem.petsc import (
     assemble_vector,
     assemble_vector_block,
     create_matrix,
-    create_matrix_block,
-    create_matrix_nest,
     create_vector,
-    create_vector_block,
-    create_vector_nest,
     set_bc,
 )
 
@@ -94,49 +90,6 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
         super().setP(P, Pmat)
 
 
-def _create_snes_matrices_and_vectors(
-    a: typing.Union[list[list[fem.Form]], fem.Form],
-    L: typing.Union[list[fem.Form], fem.Form],
-    P: typing.Union[list[list[fem.Form]], list[fem.Form], fem.Form, None],
-    assembly_type: fem.petsc.AssemblyType,
-) -> tuple[  # type: ignore
-    PETSc.Mat,
-    PETSc.Vec,
-    PETSc.Mat | None,
-    PETSc.Vec,
-]:
-    """Create data-structures used in PETSc NEST solvers.
-
-    Args:
-        a: The compiled bi-linear form(s), the Jacobian.
-        L: The compiled linear form(s), the residual.
-        P: The compiled preconditioner form(s).
-        assembly_type: The type of matrix to use.
-    Returns:
-        PETSc datastructures for the matrix A, b, and preconditioner P relating to the input,
-        as well as a work-vector `x`.
-    """
-
-    matrix_creator: typing.Union[None, typing.Callable[[PETSc.Mat], typing.Any]] = None  # type: ignore
-    vector_creator: typing.Union[None, typing.Callable[[PETSc.Vec], typing.Any]] = None  # type: ignore
-    if assembly_type == fem.petsc.AssemblyType.standard:
-        matrix_creator = create_matrix
-        vector_creator = create_vector
-    elif assembly_type == fem.petsc.AssemblyType.block:
-        matrix_creator = create_matrix_block
-        vector_creator = create_vector_block
-    elif assembly_type == fem.petsc.AssemblyType.nest:
-        matrix_creator = create_matrix_nest
-        vector_creator = create_vector_nest
-    else:
-        raise ValueError("Unsupported SNES type")
-    A = matrix_creator(a)  # type: ignore
-    b = vector_creator(L)  # type: ignore
-    x = vector_creator(L)  # type: ignore
-    P = None if P is None else matrix_creator(P)  # type: ignore
-    return A, b, P, x
-
-
 class SNESSolver:
     def __init__(
         self,
@@ -145,7 +98,8 @@ class SNESSolver:
         bcs: typing.Optional[list[dolfinx.fem.DirichletBC]] = None,
         J: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
         P: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
-        assembly_type: fem.petsc.AssemblyType = fem.petsc.AssemblyType.standard,
+        mat_kind: typing.Optional[typing.Union[str, typing.Iterable[typing.Iterable[str]]]] = None,
+        vec_kind: typing.Optional[typing.Union[str, typing.Iterable[str]]] = None,
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
         snes_options: typing.Optional[dict] = None,
@@ -162,9 +116,10 @@ class SNESSolver:
             J: Rectangular array of bi-linear forms representing the
                 Jacobian :math:`J_ij = dF_i/du_j`.
             P: Rectangular array of bi-linear forms representing the preconditioner.
-            assembly_type: Determines what kind of matrix the problem is assembled into.
-                If `N=0`, i.e one is solving for a single form, the assembly type is `default`.
-                For blocked, the assembly type is `block` or `nest`.
+            mat_kind: The PETSc matrix type (``MatType``).
+                See :func:`dolfinx.fem.petsc.create_matrix` for more information.
+            vec_kind: The PETSc vector type (``VecType``).
+                See :func:`dolfinx.fem.petsc.create_vector` for more information.
             form_compiler_options: Options used in FFCx
                 compilation of this form. Run ``ffcx --help`` at the
                 command line to see all available options.
@@ -177,7 +132,15 @@ class SNESSolver:
 
         self._u = u
         self._snes, self._x = create_snes_solver(
-            F, self._u, bcs, J, P, assembly_type, form_compiler_options, jit_options
+            F,
+            self._u,
+            bcs,
+            J,
+            P,
+            mat_kind=mat_kind,
+            vec_kind=vec_kind,
+            form_compiler_options=form_compiler_options,
+            jit_options=jit_options,
         )
 
         # Set PETSc options
@@ -456,7 +419,8 @@ def create_snes_solver(
             dolfinx.fem.Form, ufl.form.Form, list[list[dolfinx.fem.Form]], list[list[ufl.Form]]
         ]
     ] = None,
-    assembly_type: fem.petsc.AssemblyType = fem.petsc.AssemblyType.standard,
+    mat_kind: typing.Optional[typing.Union[str, typing.Iterable[typing.Iterable[str]]]] = None,
+    vec_kind: typing.Optional[typing.Union[str, typing.Iterable[str]]] = None,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
 ) -> tuple[PETSc.SNES, PETSc.Vec]:  # type: ignore
@@ -475,9 +439,10 @@ def create_snes_solver(
         J: Rectangular array of bi-linear forms representing the
             Jacobian :math:`J_ij = dF_i/du_j`.
         P: Rectangular array of bi-linear forms representing the preconditioner.
-        assembly_type: Determines what kind of matrix the problem is assembled into.
-            If `N=0`, i.e one is solving for a single form, the assembly type is `default`.
-            For blocked, the assembly type is `block` or `nest`.
+        mat_kind: The PETSc matrix type (``MatType``).
+            See :func:`dolfinx.fem.petsc.create_matrix` for more information.
+        vec_kind: The PETSc vector type (``VecType``).
+            See :func:`dolfinx.fem.petsc.create_vector` for more information.
         form_compiler_options: Options used in FFCx
             compilation of this form. Run ``ffcx --help`` at the
             command line to see all available options.
@@ -499,26 +464,27 @@ def create_snes_solver(
         J = fem.forms.compute_jacobian(F, u)
     jacobian = _create_form(J, form_compiler_options=form_compiler_options, jit_options=jit_options)
     preconditioner = None
+    P_mat = None
     if P is not None:
         preconditioner = _create_form(
             P, form_compiler_options=form_compiler_options, jit_options=jit_options
         )
+        P_mat = create_matrix(preconditioner, kind=mat_kind)
+    A = create_matrix(jacobian, kind=mat_kind)
+    b = create_vector(residual, kind=vec_kind)
+    x = create_vector(residual, kind=vec_kind)
 
-    A, b, P, x = _create_snes_matrices_and_vectors(
-        jacobian, residual, preconditioner, assembly_type
-    )
     snes = PETSc.SNES().create(comm=A.comm)  # type: ignore
-
-    # Set function and Jacobian
-    if assembly_type == fem.petsc.AssemblyType.standard:
-        snes.setFunction(partial(F_standard, u, residual, jacobian, bcs), b)  # type: ignore
-        snes.setJacobian(partial(J_standard, u, jacobian, preconditioner, bcs), A, P)  # type: ignore
-    elif assembly_type == fem.petsc.AssemblyType.block:
-        snes.setFunction(partial(F_block, u, residual, jacobian, bcs), b)
-        snes.setJacobian(partial(J_block, u, jacobian, preconditioner, bcs), A, P)
-    elif assembly_type == fem.petsc.AssemblyType.nest:
+    if mat_kind == PETSc.Mat.Type.NEST or mat_kind == "nest":
+        # Check for SNES consistency
+        assert vec_kind == PETSc.Vec.Type.NEST or vec_kind == "nest"
         snes.setFunction(partial(F_nest, u, residual, jacobian, bcs), b)
-        snes.setJacobian(partial(J_nest, u, jacobian, preconditioner, bcs), A, P)
+        snes.setJacobian(partial(J_nest, u, jacobian, preconditioner, bcs), A, P_mat)
+    elif isinstance(residual, dolfinx.fem.Form):
+        snes.setFunction(partial(F_standard, u, residual, jacobian, bcs), b)  # type: ignore
+        snes.setJacobian(partial(J_standard, u, jacobian, preconditioner, bcs), A, P_mat)  # type: ignore
     else:
-        raise ValueError(f"Unsupported SNES type {assembly_type}")
+        snes.setFunction(partial(F_block, u, residual, jacobian, bcs), b)
+        snes.setJacobian(partial(J_block, u, jacobian, preconditioner, bcs), A, P_mat)
+
     return snes, x
