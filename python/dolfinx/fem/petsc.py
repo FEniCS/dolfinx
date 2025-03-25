@@ -364,7 +364,27 @@ def apply_lifting_block(
             offset1 += idxmap.num_ghosts * bs
 
 
-def _assemble_vector_block_vec_new(
+def set_bc_block(
+    V,
+    b: PETSc.Vec,
+    bcs: Iterable[DirichletBC],
+    x0: typing.Optional[PETSc.Vec] = None,
+    alpha: float = 1,
+) -> None:
+    maps = [(_V.dofmaps(0).index_map, _V.dofmaps(0).index_map_bs) for _V in V]
+
+    x0_sub = _cpp.la.petsc.get_local_vectors(x0, maps) if x0 is not None else [None] * len(maps)
+    bcs0 = _bcs_by_block(V, bcs)
+    offset = 0
+    b_array = b.getArray(readonly=False)
+    for submap, bcs, _x0 in zip(maps, bcs0, x0_sub):
+        size = submap[0].size_local * submap[1]
+        for bc in bcs:
+            bc.set(b_array[offset : offset + size], _x0, alpha)
+        offset += size
+
+
+def assemble_vector_block_vec_new(
     b: PETSc.Vec, L: Iterable[Form], a: Iterable[Iterable[Form]], constants_L=None, coeffs_L=None
 ) -> PETSc.Vec:
     """Assemble linear forms into a monolithic vector ``b``.
@@ -468,60 +488,16 @@ def _assemble_vector_block_vec(
         Assembled vector.
     """
     # Assemble vector
-    _assemble_vector_block_vec_new(b, L, a, constants_L, coeffs_L)
+    assemble_vector_block_vec_new(b, L, a, constants_L, coeffs_L)
 
-    maps = [
-        (
-            form.function_spaces[0].dofmaps(0).index_map,
-            form.function_spaces[0].dofmaps(0).index_map_bs,
-        )
-        for form in L
-    ]
+    V = [form.function_spaces[0] for form in L]
+    maps = [(_V.dofmaps(0).index_map, _V.dofmaps(0).index_map_bs) for _V in V]
 
     apply_lifting_block(maps, b, a, bcs, x0, alpha, constants_a, coeffs_a)
 
-    x0_local = _cpp.la.petsc.get_local_vectors(x0, maps) if x0 is not None else None
-    # constants_L = pack_constants(L) if constants_L is None else constants_L
-    # coeffs_L = pack_coefficients(L) if coeffs_L is None else coeffs_L
-    # constants_a = [pack_constants(forms) for forms in a] if constants_a is None else constants_a
-    # coeffs_a = [pack_coefficients(forms) for forms in a] if coeffs_a is None else coeffs_a
-
-    # b_local = _cpp.la.petsc.get_local_vectors(b, maps)
-
-    # bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
-    # offset0 = 0
-    # offset1 = functools.reduce(lambda x, y: x +
-    # y, map(lambda m: m[0].size_local * m[1], maps))
-    # with b.localForm() as b_l:
-    #     for bx_, size, L_, a_, const_L, coeff_L, const_a, coeff_a in zip(
-    #         b_local, maps, L, a, constants_L, coeffs_L, constants_a, coeffs_a
-    #     ):
-    #         idxmap, bs = size
-    #         const_a_ = [
-    #             np.empty(0, dtype=PETSc.ScalarType) if val is None else
-    # val for val in const_a
-    #         ]
-    #         _apply_lifting(bx_, a_, bcs1, x0_local, float(alpha), const_a_, coeff_a)
-    #
-    #         # Add to parent vector
-    #         b_l.array_w[offset0 : offset0 + idxmap.size_local * bs]
-    # += bx_[: idxmap.size_local * bs]
-    #         b_l.array_w[offset1 : offset1 + idxmap.num_ghosts * bs]
-    # += bx_[idxmap.size_local * bs :]
-    #         offset0 += idxmap.size_local * bs
-    #         offset1 += idxmap.num_ghosts * bs
-
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    x0_sub = x0_local if x0 is not None else [None] * len(maps)
-    bcs0 = _bcs_by_block(_extract_spaces(L), bcs)
-    offset = 0
-    b_array = b.getArray(readonly=False)
-    for submap, bcs, _x0 in zip(maps, bcs0, x0_sub):
-        size = submap[0].size_local * submap[1]
-        for bc in bcs:
-            bc.set(b_array[offset : offset + size], _x0, alpha)
-        offset += size
+    set_bc_block(V, b, bcs, x0, alpha)
 
     return b
 
