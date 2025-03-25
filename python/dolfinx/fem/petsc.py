@@ -488,24 +488,28 @@ def _assemble_vector_block_vec(
 
     # b_local = _cpp.la.petsc.get_local_vectors(b, maps)
 
-# bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
-# offset0 = 0
-# offset1 = functools.reduce(lambda x, y: x + y, map(lambda m: m[0].size_local * m[1], maps))
-# with b.localForm() as b_l:
-#     for bx_, size, L_, a_, const_L, coeff_L, const_a, coeff_a in zip(
-#         b_local, maps, L, a, constants_L, coeffs_L, constants_a, coeffs_a
-#     ):
-#         idxmap, bs = size
-#         const_a_ = [
-#             np.empty(0, dtype=PETSc.ScalarType) if val is None else val for val in const_a
-#         ]
-#         _apply_lifting(bx_, a_, bcs1, x0_local, float(alpha), const_a_, coeff_a)
-
-#         # Add to parent vector
-#         b_l.array_w[offset0 : offset0 + idxmap.size_local * bs] += bx_[: idxmap.size_local * bs]
-#         b_l.array_w[offset1 : offset1 + idxmap.num_ghosts * bs] += bx_[idxmap.size_local * bs :]
-#         offset0 += idxmap.size_local * bs
-#         offset1 += idxmap.num_ghosts * bs
+    # bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
+    # offset0 = 0
+    # offset1 = functools.reduce(lambda x, y: x +
+    # y, map(lambda m: m[0].size_local * m[1], maps))
+    # with b.localForm() as b_l:
+    #     for bx_, size, L_, a_, const_L, coeff_L, const_a, coeff_a in zip(
+    #         b_local, maps, L, a, constants_L, coeffs_L, constants_a, coeffs_a
+    #     ):
+    #         idxmap, bs = size
+    #         const_a_ = [
+    #             np.empty(0, dtype=PETSc.ScalarType) if val is None else
+    # val for val in const_a
+    #         ]
+    #         _apply_lifting(bx_, a_, bcs1, x0_local, float(alpha), const_a_, coeff_a)
+    #
+    #         # Add to parent vector
+    #         b_l.array_w[offset0 : offset0 + idxmap.size_local * bs]
+    # += bx_[: idxmap.size_local * bs]
+    #         b_l.array_w[offset1 : offset1 + idxmap.num_ghosts * bs]
+    # += bx_[idxmap.size_local * bs :]
+    #         offset0 += idxmap.size_local * bs
+    #         offset1 += idxmap.num_ghosts * bs
 
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
