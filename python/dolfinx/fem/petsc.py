@@ -272,6 +272,8 @@ def _assemble_vector_vec(
             with b_sub.localForm() as b_local:
                 _assemble_vector_array(b_local.array_w, L_sub, const, coeff)
         return b
+    elif isinstance(L, Iterable):
+        assemble_vector_block_vec_new(b, L, constants, coeffs)
     else:
         with b.localForm() as b_local:
             _assemble_vector_array(b_local.array_w, L, constants, coeffs)
@@ -342,25 +344,23 @@ def apply_lifting_block(
     coeffs=None,
 ) -> None:
     x0_local = _cpp.la.petsc.get_local_vectors(x0, maps) if x0 is not None else None
-
-    constants_a = [pack_constants(forms) for forms in a] if constants is None else constants
-    coeffs_a = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
-
     b_local = _cpp.la.petsc.get_local_vectors(b, maps)
-
     bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
     offset0 = 0
     offset1 = functools.reduce(lambda x, y: x + y, map(lambda m: m[0].size_local * m[1], maps))
     with b.localForm() as b_l:
-        for bx_, size, a_, const, coeff in zip(b_local, maps, a, constants_a, coeffs_a):
+        for bx_, size, a_ in zip(b_local, maps, a):
+            const = pack_constants(a_) if constants is None else constants
+            coeff = pack_coefficients(a_) if coeffs is None else coeffs
+
             idxmap, bs = size
             const_ = [np.empty(0, dtype=PETSc.ScalarType) if val is None else val for val in const]
             _apply_lifting(bx_, a_, bcs1, x0_local, float(alpha), const_, coeff)
 
             # Add to parent vector
             b_l.array_w[offset0 : offset0 + idxmap.size_local * bs] = bx_[: idxmap.size_local * bs]
-            b_l.array_w[offset1 : offset1 + idxmap.num_ghosts * bs] = bx_[idxmap.size_local * bs :]
             offset0 += idxmap.size_local * bs
+            b_l.array_w[offset1 : offset1 + idxmap.num_ghosts * bs] = bx_[idxmap.size_local * bs :]
             offset1 += idxmap.num_ghosts * bs
 
 
@@ -385,7 +385,7 @@ def set_bc_block(
 
 
 def assemble_vector_block_vec_new(
-    b: PETSc.Vec, L: Iterable[Form], a: Iterable[Iterable[Form]], constants_L=None, coeffs_L=None
+    b: PETSc.Vec, L: Iterable[Form], constants_L=None, coeffs_L=None
 ) -> PETSc.Vec:
     """Assemble linear forms into a monolithic vector ``b``.
 
@@ -487,8 +487,7 @@ def _assemble_vector_block_vec(
     Returns:
         Assembled vector.
     """
-    # Assemble vector
-    assemble_vector_block_vec_new(b, L, a, constants_L, coeffs_L)
+    assemble_vector(b, L, constants_L, coeffs_L)
 
     V = [form.function_spaces[0] for form in L]
     maps = [(_V.dofmaps(0).index_map, _V.dofmaps(0).index_map_bs) for _V in V]

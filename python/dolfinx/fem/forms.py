@@ -450,6 +450,12 @@ def extract_function_spaces(
     bilinear forms, for ``index=0`` the list common test function space
     for each row is returned, and if ``index=1`` the common trial
     function spaces for each column are returned.
+
+    Args:
+        forms: A list of forms or a 2D array of forms.
+        index: Index of the function space to extract. If ``index=0``,
+            the test function spaces are extracted, if ``index=1`` the
+            trial function spaces are extracted.
     """
     _forms = np.array(forms)
     if _forms.ndim == 0:
