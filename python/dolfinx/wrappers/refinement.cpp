@@ -25,6 +25,7 @@
 #include <nanobind/stl/vector.h>
 #include <optional>
 #include <span>
+#include <stdexcept>
 
 namespace nb = nanobind;
 
@@ -95,11 +96,18 @@ void refinement(nb::module_& m)
   export_refinement<double>(m);
 
   m.def("empty_partitioner",
-        [&]
+        []() -> std::optional<
+                 dolfinx_wrappers::part::impl::PythonCellPartitionFunction>
         {
-          return std::make_optional<
+          auto empty_partitioner = std::make_optional<
               dolfinx_wrappers::part::impl::PythonCellPartitionFunction>(
               nullptr);
+          assert(empty_partitioner.has_value());
+          if (!empty_partitioner.has_value())
+          {
+            throw std::runtime_error("empty_partitioner has no value!");
+          }
+          return empty_partitioner;
         });
 
   nb::enum_<dolfinx::refinement::Option>(m, "RefinementOption")

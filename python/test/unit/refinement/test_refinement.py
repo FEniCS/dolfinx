@@ -30,6 +30,10 @@ from dolfinx.mesh import (
 )
 
 
+def test_empty_partitioner():
+    assert empty_partitioner() is not None
+
+
 def test_refine_create_unit_square():
     """Refine mesh of unit square."""
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 7, ghost_mode=GhostMode.none)
