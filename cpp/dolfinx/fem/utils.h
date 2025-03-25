@@ -496,9 +496,10 @@ Form<T, U> create_form_factory(
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, std::complex<float>>)
         {
-          k = reinterpret_cast<void (*)(
-              T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-              const unsigned char*, void*)>(integral->tabulate_tensor_complex64);
+          k = reinterpret_cast<void (*)(T*, const T*, const T*,
+                                        const scalar_value_t<T>*, const int*,
+                                        const unsigned char*, void*)>(
+              integral->tabulate_tensor_complex64);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, double>)
@@ -506,9 +507,10 @@ Form<T, U> create_form_factory(
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, std::complex<double>>)
         {
-          k = reinterpret_cast<void (*)(
-              T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-              const unsigned char*, void*)>(integral->tabulate_tensor_complex128);
+          k = reinterpret_cast<void (*)(T*, const T*, const T*,
+                                        const scalar_value_t<T>*, const int*,
+                                        const unsigned char*, void*)>(
+              integral->tabulate_tensor_complex128);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
 
@@ -581,9 +583,10 @@ Form<T, U> create_form_factory(
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, std::complex<float>>)
         {
-          k = reinterpret_cast<void (*)(
-              T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-              const unsigned char*, void*)>(integral->tabulate_tensor_complex64);
+          k = reinterpret_cast<void (*)(T*, const T*, const T*,
+                                        const scalar_value_t<T>*, const int*,
+                                        const unsigned char*, void*)>(
+              integral->tabulate_tensor_complex64);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, double>)
@@ -591,9 +594,10 @@ Form<T, U> create_form_factory(
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, std::complex<double>>)
         {
-          k = reinterpret_cast<void (*)(
-              T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-              const unsigned char*, void*)>(integral->tabulate_tensor_complex128);
+          k = reinterpret_cast<void (*)(T*, const T*, const T*,
+                                        const scalar_value_t<T>*, const int*,
+                                        const unsigned char*, void*)>(
+              integral->tabulate_tensor_complex128);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
         assert(k);
@@ -687,9 +691,10 @@ Form<T, U> create_form_factory(
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, std::complex<float>>)
         {
-          k = reinterpret_cast<void (*)(
-              T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-              const unsigned char*, void*)>(integral->tabulate_tensor_complex64);
+          k = reinterpret_cast<void (*)(T*, const T*, const T*,
+                                        const scalar_value_t<T>*, const int*,
+                                        const unsigned char*, void*)>(
+              integral->tabulate_tensor_complex64);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, double>)
@@ -697,9 +702,10 @@ Form<T, U> create_form_factory(
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, std::complex<double>>)
         {
-          k = reinterpret_cast<void (*)(
-              T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-              const unsigned char*, void*)>(integral->tabulate_tensor_complex128);
+          k = reinterpret_cast<void (*)(T*, const T*, const T*,
+                                        const scalar_value_t<T>*, const int*,
+                                        const unsigned char*, void*)>(
+              integral->tabulate_tensor_complex128);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
         assert(k);

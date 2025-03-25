@@ -293,8 +293,8 @@ auto norm(const V& x, Norm type = Norm::l2)
         data, [](T a, T b) { return std::norm(a) < std::norm(b); });
     auto local_linf = std::abs(*max_pos);
     decltype(local_linf) linf = 0;
-    MPI_Allreduce(&local_linf, &linf, 1, MPI::mpi_t<decltype(linf)>,
-                  MPI_MAX, x.index_map()->comm());
+    MPI_Allreduce(&local_linf, &linf, 1, MPI::mpi_t<decltype(linf)>, MPI_MAX,
+                  x.index_map()->comm());
     return linf;
   }
   default:
@@ -353,15 +353,14 @@ void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
 template <class V>
 bool is_orthonormal(
     std::vector<std::reference_wrapper<const V>> basis,
-    dolfinx::scalar_value_t<typename V::value_type> eps
-    = std::numeric_limits<
+    dolfinx::scalar_value_t<typename V::value_type> eps = std::numeric_limits<
         dolfinx::scalar_value_t<typename V::value_type>>::epsilon())
 {
   using T = typename V::value_type;
   for (std::size_t i = 0; i < basis.size(); i++)
   {
     for (std::size_t j = i; j < basis.size(); j++)
-  {
+    {
       T delta_ij = (i == j) ? T(1) : T(0);
       auto dot_ij = inner_product(basis[i].get(), basis[j].get());
       if (std::norm(delta_ij - dot_ij) > eps)
