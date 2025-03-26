@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly."""
 
+import itertools
 import math
 
 from mpi4py import MPI
@@ -79,7 +80,10 @@ class NonlinearPDE_SNESProblem:
     def F_block(self, snes, x, F):
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import assemble_vector_block, assign
+        from dolfinx.fem.petsc import (
+            assemble_vector_block,
+            assign,
+        )
 
         assert x.getType() != "nest"
         assert F.getType() != "nest"
@@ -89,7 +93,32 @@ class NonlinearPDE_SNESProblem:
 
         with F.localForm() as f_local:
             f_local.set(0.0)
+
+        maps = [
+            (
+                form.function_spaces[0].dofmaps(0).index_map,
+                form.function_spaces[0].dofmaps(0).index_map_bs,
+            )
+            for form in self.L
+        ]
+        off_owned = tuple(
+            itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
+        )
+        off_ghost = tuple(
+            itertools.accumulate(
+                maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
+            )
+        )
+
+        # b = _cpp.fem.petsc.create_vector_block(maps)
+        F.setAttr("_blocks", (off_owned, off_ghost))
+
         assemble_vector_block(F, self.L, self.a, bcs=self.bcs, x0=x, alpha=-1.0)
+        # assemble_vector_block_new(F, self.L)
+        # # apply_lifting_block(F, self.a, bcs=self.bcs)
+        # # F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        # # bcs0 = bcs_by_block(extract_function_spaces(F), self.bcs)
+        # # set_bc_block(F, bcs0)
 
     def J_block(self, snes, x, J, P):
         from dolfinx.fem.petsc import assemble_matrix_block
@@ -216,7 +245,7 @@ class TestNLSPETSc:
 
         def blocked():
             """Monolithic blocked"""
-            x = create_vector(L_block)
+            x = create_vector(L_block, kind="mpi")
 
             assign((u, p), x)
 
@@ -364,7 +393,7 @@ class TestNLSPETSc:
         def blocked_solve():
             """Blocked version"""
             Jmat = create_matrix(J)
-            Fvec = create_vector(F)
+            Fvec = create_vector(F, kind="mpi")
             snes = PETSc.SNES().create(MPI.COMM_WORLD)
             snes.setTolerances(rtol=1.0e-15, max_it=10)
             problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
@@ -374,7 +403,7 @@ class TestNLSPETSc:
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
 
-            x = create_vector(F)
+            x = create_vector(F, kind="mpi")
 
             assign((u, p), x)
 
@@ -565,7 +594,7 @@ class TestNLSPETSc:
             """Blocked and monolithic"""
             Jmat = create_matrix(J)
             Pmat = create_matrix(P)
-            Fvec = create_vector(F)
+            Fvec = create_vector(F, kind="mpi")
 
             snes = PETSc.SNES().create(MPI.COMM_WORLD)
             snes.setTolerances(rtol=1.0e-15, max_it=20)
@@ -577,7 +606,7 @@ class TestNLSPETSc:
 
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
-            x = create_vector(F)
+            x = create_vector(F, kind="mpi")
 
             assign((u, p), x)
 

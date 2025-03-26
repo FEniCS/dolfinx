@@ -369,14 +369,17 @@ def apply_lifting_block(
 
     offset0, offset1 = b.getAttr("_blocks")
 
+    print("OOOOO", offset0, offset1)
     # FIXME
     if x0 is not None:
         x0_local = [
-            np.concat((x[off0:off1], x[offg0:offg1]))
-            for (x, off0, off1, offg0, offg1) in zip(x0, offset0, offset0[1:], offset1, offset1[1:])
+            np.concat((x0[off0:off1], x0[offg0:offg1]))
+            for (off0, off1, offg0, offg1) in zip(offset0, offset0[1:], offset1, offset1[1:])
         ]
     else:
         x0_local = None
+
+    print("---------")
 
     with b.localForm() as b_l:
         for a_, off0, off1, offg0, offg1 in zip(a, offset0, offset0[1:], offset1, offset1[1:]):
