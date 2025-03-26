@@ -25,7 +25,7 @@ from dolfinx.fem import (
     functionspace,
     locate_dofs_topological,
 )
-from dolfinx.mesh import GhostMode, create_unit_cube, create_unit_square, locate_entities_boundary
+from dolfinx.mesh import GhostMode, create_unit_square, locate_entities_boundary
 from ufl import derivative, dx, inner
 
 
