@@ -437,32 +437,19 @@ def assemble_vector_block_vec_new(
     Returns:
         Assembled vector.
     """
-    maps = [
-        (
-            form.function_spaces[0].dofmaps(0).index_map,
-            form.function_spaces[0].dofmaps(0).index_map_bs,
-        )
-        for form in L
-    ]
-
     constants_L = pack_constants(L) if constants_L is None else constants_L
     coeffs_L = pack_coefficients(L) if coeffs_L is None else coeffs_L
-
-    offset0 = 0
-    offset1 = functools.reduce(lambda x, y: x + y, map(lambda m: m[0].size_local * m[1], maps))
+    offset0, offset1 = b.getAttr("_blocks")
     with b.localForm() as b_l:
-        for size, L_, const_L, coeff_L in zip(maps, L, constants_L, coeffs_L):
-            # Assemble
-            idxmap, bs = size
-            bx_ = np.zeros((idxmap.size_local + idxmap.num_ghosts) * bs, dtype=PETSc.ScalarType)
+        for L_, const_L, coeff_L, off0, off1, offg0, offg1 in zip(
+            L, constants_L, coeffs_L, offset0, offset0[1:], offset1, offset1[1:]
+        ):
+            bx_ = np.zeros((off1 - off0) + (offg1 - offg0), dtype=PETSc.ScalarType)
             _assemble_vector_array(bx_, L_, const_L, coeff_L)
 
-            # Add to parent vector
-            b_l.array_w[offset0 : offset0 + idxmap.size_local * bs] += bx_[: idxmap.size_local * bs]
-            b_l.array_w[offset1 : offset1 + idxmap.num_ghosts * bs] += bx_[idxmap.size_local * bs :]
-            offset0 += idxmap.size_local * bs
-            offset1 += idxmap.num_ghosts * bs
-
+            size = off1 - off0
+            b_l.array_w[off0:off1] += bx_[:size]
+            b_l.array_w[offg0:offg1] += bx_[size:]
     return b
 
 
