@@ -33,7 +33,6 @@ if importlib.util.find_spec("petsc4py") is not None:
         assemble_vector_block_new,
         create_vector,
         set_bc_block,
-        assemble_vector_block,
     )
 
 else:

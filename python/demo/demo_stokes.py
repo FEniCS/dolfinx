@@ -113,7 +113,13 @@ from dolfinx.fem import (
     functionspace,
     locate_dofs_topological,
 )
-from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
+from dolfinx.fem.petsc import (
+    apply_lifting_block,
+    assemble_matrix_block,
+    assemble_vector_block_new,
+    create_vector,
+    set_bc_block,
+)
 from dolfinx.io import XDMFFile
 from dolfinx.la.petsc import create_vector_wrap
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
@@ -331,8 +337,7 @@ def nested_iterative_solver():
 
 
 def block_operators():
-    """Return block operators and block RHS vector for the Stokes
-    problem"""
+    """Return block operators and block RHS vector for the Stokes problem."""
 
     # Assembler matrix operator, preconditioner and RHS vector into
     # single objects but preserving block structure
@@ -340,7 +345,13 @@ def block_operators():
     A.assemble()
     P = assemble_matrix_block(a_p, bcs=bcs)
     P.assemble()
-    b = assemble_vector_block(L, a, bcs=bcs)
+
+    b = create_vector(L, kind=PETSc.Vec.Type.MPI)
+    b = assemble_vector_block_new(b, L)
+    apply_lifting_block(b, a, bcs=bcs)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs)
+    set_bc_block(b, bcs0)
 
     # Set the nullspace for pressure (since pressure is determined only
     # up to a constant)

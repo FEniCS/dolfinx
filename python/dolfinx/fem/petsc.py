@@ -492,15 +492,12 @@ def _assemble_vector_block_vec(
         Assembled vector.
     """
     assemble_vector(b, L, constants_L, coeffs_L)
-    print("Old (0):", b.norm())
 
     apply_lifting_block(b, a, bcs, x0, alpha, constants_a, coeffs_a)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    print("Old (1):", b.norm())
 
     bcs0 = _bcs_by_block(_extract_spaces(L), bcs)
     set_bc_block(b, bcs0, x0, alpha)
-    print("Old (2):", b.norm())
 
     return b
 

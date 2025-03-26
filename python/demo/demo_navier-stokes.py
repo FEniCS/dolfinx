@@ -181,7 +181,13 @@ import numpy as np
 
 import ufl
 from dolfinx import default_real_type, fem, io, mesh
-from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
+from dolfinx.fem.petsc import (
+    apply_lifting_block,
+    assemble_matrix_block,
+    assemble_vector_block_new,
+    create_vector,
+    set_bc_block,
+)
 
 try:
     from petsc4py import PETSc
@@ -328,7 +334,13 @@ bcs = [bc_u]
 # Assemble Stokes problem
 A = assemble_matrix_block(a_blocked, bcs=bcs)
 A.assemble()
-b = assemble_vector_block(L_blocked, a_blocked, bcs=bcs)
+
+b = create_vector(L_blocked, kind=PETSc.Vec.Type.MPI)
+b = assemble_vector_block_new(b, L_blocked)
+apply_lifting_block(b, a_blocked, bcs=bcs)
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L_blocked), bcs)
+set_bc_block(b, bcs0)
 
 # Create and configure solver
 ksp = PETSc.KSP().create(msh.comm)  # type: ignore
@@ -417,7 +429,10 @@ for n in range(num_time_steps):
 
     with b.localForm() as b_loc:
         b_loc.set(0)
-    fem.petsc.assemble_vector_block(b, L_blocked, a_blocked, bcs=bcs)  # type: ignore
+    assemble_vector_block_new(b, L_blocked)
+    apply_lifting_block(b, a_blocked, bcs=bcs)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    set_bc_block(b, bcs0)
 
     # Compute solution
     ksp.solve(b, x)
