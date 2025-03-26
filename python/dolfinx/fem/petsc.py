@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import contextlib
 import functools
+import itertools
 import typing
 from collections.abc import Iterable, Sequence
 
@@ -138,7 +139,18 @@ def create_vector(
         if kind == PETSc.Vec.Type.NEST:
             return _cpp.fem.petsc.create_vector_nest(maps)
         elif kind in (None, PETSc.Vec.Type.MPI):
-            return _cpp.fem.petsc.create_vector_block(maps)
+            off_owned = tuple(
+                itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
+            )
+            off_ghost = tuple(
+                itertools.accumulate(
+                    maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
+                )
+            )
+
+            b = _cpp.fem.petsc.create_vector_block(maps)
+            b.setAttr("_blocks", (off_owned, off_ghost))
+            return b
         else:
             raise NotImplementedError(f"Vector type '{kind}' not supported.")
 
@@ -325,7 +337,18 @@ def assemble_vector_block(
         )
         for form in L
     ]
+
+    off_owned = tuple(
+        itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
+    )
+    off_ghost = tuple(
+        itertools.accumulate(
+            maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
+        )
+    )
     b = _cpp.fem.petsc.create_vector_block(maps)
+    b.setAttr("_blocks", (off_owned, off_ghost))
+
     with b.localForm() as b_local:
         b_local.set(0.0)
     return assemble_vector_block(
@@ -334,7 +357,6 @@ def assemble_vector_block(
 
 
 def apply_lifting_block(
-    maps,
     b: PETSc.Vec,
     a: typing.Union[Iterable[Form], Iterable[Iterable[Form]]],
     bcs: typing.Union[Iterable[DirichletBC], Iterable[Iterable[DirichletBC]]],
@@ -343,25 +365,30 @@ def apply_lifting_block(
     constants=None,
     coeffs=None,
 ) -> None:
-    x0_local = _cpp.la.petsc.get_local_vectors(x0, maps) if x0 is not None else None
-    b_local = _cpp.la.petsc.get_local_vectors(b, maps)
     bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
-    offset0 = 0
-    offset1 = functools.reduce(lambda x, y: x + y, map(lambda m: m[0].size_local * m[1], maps))
+
+    offset0, offset1 = b.getAttr("_blocks")
+
+    if x0 is not None:
+        x0_local = [
+            np.concat((x[off0:off1], x[offg0:offg1]))
+            for (x, off0, off1, offg0, offg1) in zip(x0, offset0, offset0[1:], offset1, offset1[1:])
+        ]
+    else:
+        x0_local = None
+
     with b.localForm() as b_l:
-        for bx_, size, a_ in zip(b_local, maps, a):
+        for a_, off0, off1, offg0, offg1 in zip(a, offset0, offset0[1:], offset1, offset1[1:]):
+            bx_ = np.concat((b_l[off0:off1], b_l[offg0:offg1]))
+
             const = pack_constants(a_) if constants is None else constants
             coeff = pack_coefficients(a_) if coeffs is None else coeffs
-
-            idxmap, bs = size
             const_ = [np.empty(0, dtype=PETSc.ScalarType) if val is None else val for val in const]
             _apply_lifting(bx_, a_, bcs1, x0_local, float(alpha), const_, coeff)
 
             # Add to parent vector
-            b_l.array_w[offset0 : offset0 + idxmap.size_local * bs] = bx_[: idxmap.size_local * bs]
-            offset0 += idxmap.size_local * bs
-            b_l.array_w[offset1 : offset1 + idxmap.num_ghosts * bs] = bx_[idxmap.size_local * bs :]
-            offset1 += idxmap.num_ghosts * bs
+            b_l.array_w[off0:off1] = bx_[: (off1 - off0)]
+            b_l.array_w[offg0:offg1] = bx_[(off1 - off0) :]
 
 
 def set_bc_block(
@@ -490,9 +517,8 @@ def _assemble_vector_block_vec(
     assemble_vector(b, L, constants_L, coeffs_L)
 
     V = [form.function_spaces[0] for form in L]
-    maps = [(_V.dofmaps(0).index_map, _V.dofmaps(0).index_map_bs) for _V in V]
 
-    apply_lifting_block(maps, b, a, bcs, x0, alpha, constants_a, coeffs_a)
+    apply_lifting_block(b, a, bcs, x0, alpha, constants_a, coeffs_a)
 
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
