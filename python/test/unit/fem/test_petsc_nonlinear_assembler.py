@@ -81,7 +81,9 @@ class NonlinearPDE_SNESProblem:
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import (
+            apply_lifting_block,
             assemble_vector_block,
+            assemble_vector_block_new,
             assign,
         )
 
@@ -113,8 +115,15 @@ class NonlinearPDE_SNESProblem:
         # b = _cpp.fem.petsc.create_vector_block(maps)
         F.setAttr("_blocks", (off_owned, off_ghost))
 
+        assemble_vector_block_new(F, self.L)
+        apply_lifting_block(F, self.a, bcs=self.bcs)
+        F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        print("New (0):", F.norm())
+
+        with F.localForm() as f_local:
+            f_local.set(0.0)
+
         assemble_vector_block(F, self.L, self.a, bcs=self.bcs, x0=x, alpha=-1.0)
-        # assemble_vector_block_new(F, self.L)
         # # apply_lifting_block(F, self.a, bcs=self.bcs)
         # # F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         # # bcs0 = bcs_by_block(extract_function_spaces(F), self.bcs)
