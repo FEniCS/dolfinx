@@ -114,7 +114,6 @@ class NonlinearPDE_SNESProblem:
 
         with F.localForm() as f_local:
             f_local.set(0.0)
-
         F.setAttr("_blocks", (off_owned, off_ghost))
         assemble_vector_block_new(F, self.L)
         apply_lifting_block(F, self.a, bcs=self.bcs, x0=x, alpha=-1.0)
@@ -188,13 +187,15 @@ class TestNLSPETSc:
 
         from dolfinx.fem.petsc import (
             apply_lifting,
+            apply_lifting_block,
             assemble_matrix,
             assemble_matrix_block,
             assemble_vector,
-            assemble_vector_block,
+            assemble_vector_block_new,
             assign,
             create_vector,
             set_bc,
+            set_bc_block,
         )
 
         mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
@@ -253,8 +254,17 @@ class TestNLSPETSc:
 
             # Ghosts are updated inside assemble_vector_block
             A = assemble_matrix_block(a_block, bcs=[bc])
-            b = assemble_vector_block(L_block, a_block, bcs=[bc], x0=x, alpha=-1.0)
             A.assemble()
+
+            b = create_vector(L_block, kind="mpi")
+            with b.localForm() as b_local:
+                b_local.set(0.0)
+            assemble_vector_block_new(b, L_block)
+            apply_lifting_block(b, a_block, bcs=[bc], x0=x, alpha=-1.0)
+            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+            bcs0 = bcs_by_block(extract_function_spaces(L_block), [bc])
+            set_bc_block(b, bcs0, x0=x, alpha=-1)
+
             assert A.getType() != "nest"
             Anorm = A.norm()
             bnorm = b.norm()
