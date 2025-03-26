@@ -26,7 +26,15 @@ if importlib.util.find_spec("petsc4py") is not None:
         exit(0)
     from petsc4py import PETSc
 
-    from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
+    from dolfinx.fem import extract_function_spaces
+    from dolfinx.fem.petsc import (
+        apply_lifting_block,
+        assemble_matrix_block,
+        assemble_vector_block_new,
+        create_vector,
+        set_bc_block,
+        assemble_vector_block,
+    )
 
 else:
     print("This demo requires petsc4py.")
@@ -179,7 +187,13 @@ bc = fem.dirichletbc(dtype(0.0), dofs, Vbar)
 # Assemble the matrix and vector
 A = assemble_matrix_block(a_blocked, bcs=[bc])
 A.assemble()
-b = assemble_vector_block(L_blocked, a_blocked, bcs=[bc])
+
+b = create_vector(L_blocked, kind=PETSc.Vec.Type.MPI)
+b = assemble_vector_block_new(b, L_blocked)
+apply_lifting_block(b, a_blocked, bcs=[bc])
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+bcs0 = fem.bcs_by_block(extract_function_spaces(L_blocked), [bc])
+set_bc_block(b, bcs0)
 
 # Setup the solver
 ksp = PETSc.KSP().create(msh.comm)

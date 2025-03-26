@@ -285,7 +285,7 @@ def _assemble_vector_vec(
                 _assemble_vector_array(b_local.array_w, L_sub, const, coeff)
         return b
     elif isinstance(L, Iterable):
-        assemble_vector_block_vec_new(b, L, constants, coeffs)
+        assemble_vector_block_new(b, L, constants, coeffs)
     else:
         with b.localForm() as b_local:
             _assemble_vector_array(b_local.array_w, L, constants, coeffs)
@@ -369,6 +369,7 @@ def apply_lifting_block(
 
     offset0, offset1 = b.getAttr("_blocks")
 
+    # FIXME
     if x0 is not None:
         x0_local = [
             np.concat((x[off0:off1], x[offg0:offg1]))
@@ -387,8 +388,9 @@ def apply_lifting_block(
             _apply_lifting(bx_, a_, bcs1, x0_local, float(alpha), const_, coeff)
 
             # Assign to parent vector
-            b_l.array_w[off0:off1] = bx_[: (off1 - off0)]
-            b_l.array_w[offg0:offg1] = bx_[(off1 - off0) :]
+            size = off1 - off0
+            b_l.array_w[off0:off1] = bx_[:size]
+            b_l.array_w[offg0:offg1] = bx_[size:]
 
 
 def set_bc_block(
@@ -405,7 +407,7 @@ def set_bc_block(
             bc.set(b_array[off0:off1], x0_sub, alpha)
 
 
-def assemble_vector_block_vec_new(
+def assemble_vector_block_new(
     b: PETSc.Vec, L: Iterable[Form], constants_L=None, coeffs_L=None
 ) -> PETSc.Vec:
     """Assemble linear forms into a monolithic vector ``b``.
@@ -425,14 +427,8 @@ def assemble_vector_block_vec_new(
     Args:
         b: Vector to assemble linear forms into.
         L: Linear forms to assemble into a monolithic vector.
-        a: Bilinear forms to apply lifting from.
-        bcs: Dirichlet boundary conditions applied to the system.
-        x0: Initial guess for the solution.
-        alpha: Coefficient for the lifting term.
         constants_L: Constants appearing in the linear forms.
         coeffs_L: Coefficients appearing in the linear forms.
-        constants_a: Constants appearing in the bilinear forms.
-        constants_a: Coefficients appearing in the bilinear forms.
 
     Returns:
         Assembled vector.
@@ -496,15 +492,15 @@ def _assemble_vector_block_vec(
         Assembled vector.
     """
     assemble_vector(b, L, constants_L, coeffs_L)
-
-    V = [form.function_spaces[0] for form in L]
+    print("Old (0):", b.norm())
 
     apply_lifting_block(b, a, bcs, x0, alpha, constants_a, coeffs_a)
-
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    print("Old (1):", b.norm())
 
-    bcs0 = _bcs_by_block(V, bcs)
+    bcs0 = _bcs_by_block(_extract_spaces(L), bcs)
     set_bc_block(b, bcs0, x0, alpha)
+    print("Old (2):", b.norm())
 
     return b
 
@@ -681,9 +677,12 @@ def apply_lifting(
     if b.getType() == PETSc.Vec.Type.NEST:
         x0 = [] if x0 is None else x0.getNestSubVecs()
         bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
+
+        # print(bcs1)
         constants = [pack_constants(forms) for forms in a] if constants is None else constants
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
         for b_sub, a_sub, const, coeff in zip(b.getNestSubVecs(), a, constants, coeffs):
+            # print(bcs1, a_sub)
             const_ = list(
                 map(lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x, const)
             )
