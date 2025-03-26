@@ -393,8 +393,6 @@ def apply_lifting_block(
             b_l.array_w[off0:off1] = bx_[:size]
             b_l.array_w[offg0:offg1] = bx_[size:]
 
-    print("End lifting")
-
 
 def set_bc_block(
     b: PETSc.Vec,
@@ -402,25 +400,13 @@ def set_bc_block(
     x0: typing.Optional[PETSc.Vec] = None,
     alpha: float = 1,
 ) -> None:
-    # if x0 is not None:
-    #     offset0, offset1 = x0.getAttr("_blocks")
-    #     with x0.localForm() as x_l:
-    #         x0_local = [
-    #             np.concat((x_l[off0:off1], x_l[offg0:offg1]))
-    #             for (off0, off1, offg0, offg1) in zip(offset0, offset0[1:], offset1, offset1[1:])
-    #         ]
-    # else:
-    #     x0_local = None
-
     offset0, _ = b.getAttr("_blocks")
     b_array = b.getArray(readonly=False)
     x_array = x0.getArray(readonly=True) if x0 is not None else None
-    print("Start ste loop")
     for bcs, off0, off1 in zip(bcs, offset0, offset0[1:]):
         x0_sub = x_array[off0:off1] if x0 is not None else None
         for bc in bcs:
             bc.set(b_array[off0:off1], x0_sub, alpha)
-    print("End ste loop")
 
 
 def assemble_vector_block_new(
@@ -691,11 +677,9 @@ def apply_lifting(
         x0 = [] if x0 is None else x0.getNestSubVecs()
         bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
 
-        # print(bcs1)
         constants = [pack_constants(forms) for forms in a] if constants is None else constants
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
         for b_sub, a_sub, const, coeff in zip(b.getNestSubVecs(), a, constants, coeffs):
-            # print(bcs1, a_sub)
             const_ = list(
                 map(lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x, const)
             )
