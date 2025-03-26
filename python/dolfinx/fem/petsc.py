@@ -395,7 +395,7 @@ def apply_lifting_block(
 
 def set_bc_block(
     b: PETSc.Vec,
-    bcs: Iterable[DirichletBC],
+    bcs: Iterable[Iterable[DirichletBC]],
     x0: typing.Optional[PETSc.Vec] = None,
     alpha: float = 1,
 ) -> None:
