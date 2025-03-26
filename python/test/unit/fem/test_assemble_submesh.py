@@ -564,7 +564,7 @@ def test_mixed_measures():
     block may be different"""
     from petsc4py import PETSc
 
-    from dolfinx.fem.petsc import assemble_vector_block, assemble_vector_block_new, create_vector
+    from dolfinx.fem.petsc import assemble_vector_block_new, create_vector
 
     comm = MPI.COMM_WORLD
     msh = create_unit_square(comm, 16, 21, ghost_mode=GhostMode.none)
@@ -583,20 +583,20 @@ def test_mixed_measures():
     dx_smsh = ufl.Measure("dx", smsh)
 
     # Trial and test functions
-    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    p, q = ufl.TrialFunction(Q), ufl.TestFunction(Q)
+    _, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    _, q = ufl.TrialFunction(Q), ufl.TestFunction(Q)
 
     # First, assemble a block vector using both dx_msh and dx_smsh
-    a = [
-        [
-            fem.form(ufl.inner(u, v) * dx_msh),
-            fem.form(ufl.inner(p, v) * dx_smsh, entity_maps={msh: smsh_to_msh}),
-        ],
-        [
-            fem.form(ufl.inner(u, q) * dx_smsh, entity_maps={msh: smsh_to_msh}),
-            fem.form(ufl.inner(p, q) * dx_smsh),
-        ],
-    ]
+    # a = [
+    #     [
+    #         fem.form(ufl.inner(u, v) * dx_msh),
+    #         fem.form(ufl.inner(p, v) * dx_smsh, entity_maps={msh: smsh_to_msh}),
+    #     ],
+    #     [
+    #         fem.form(ufl.inner(u, q) * dx_smsh, entity_maps={msh: smsh_to_msh}),
+    #         fem.form(ufl.inner(p, q) * dx_smsh),
+    #     ],
+    # ]
     L = [fem.form(ufl.inner(2.3, v) * dx_msh), fem.form(ufl.inner(1.3, q) * dx_smsh)]
     b0 = create_vector(L, kind=PETSc.Vec.Type.MPI)
     assemble_vector_block_new(b0, L)
