@@ -82,9 +82,9 @@ class NonlinearPDE_SNESProblem:
 
         from dolfinx.fem.petsc import (
             apply_lifting_block,
-            assemble_vector_block,
             assemble_vector_block_new,
             assign,
+            set_bc_block,
         )
 
         assert x.getType() != "nest"
@@ -112,22 +112,15 @@ class NonlinearPDE_SNESProblem:
             )
         )
 
-        # b = _cpp.fem.petsc.create_vector_block(maps)
-        F.setAttr("_blocks", (off_owned, off_ghost))
-
-        assemble_vector_block_new(F, self.L)
-        apply_lifting_block(F, self.a, bcs=self.bcs)
-        F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        print("New (0):", F.norm())
-
         with F.localForm() as f_local:
             f_local.set(0.0)
 
-        assemble_vector_block(F, self.L, self.a, bcs=self.bcs, x0=x, alpha=-1.0)
-        # # apply_lifting_block(F, self.a, bcs=self.bcs)
-        # # F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        # # bcs0 = bcs_by_block(extract_function_spaces(F), self.bcs)
-        # # set_bc_block(F, bcs0)
+        F.setAttr("_blocks", (off_owned, off_ghost))
+        assemble_vector_block_new(F, self.L)
+        apply_lifting_block(F, self.a, bcs=self.bcs, x0=x, alpha=-1.0)
+        F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        bcs0 = bcs_by_block(extract_function_spaces(self.L), self.bcs)
+        set_bc_block(F, bcs0, x0=x, alpha=-1)
 
     def J_block(self, snes, x, J, P):
         from dolfinx.fem.petsc import assemble_matrix_block

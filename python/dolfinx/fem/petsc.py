@@ -369,7 +369,7 @@ def apply_lifting_block(
 
     offset0, offset1 = b.getAttr("_blocks")
 
-    print("OOOOO", offset0, offset1)
+    # print("OOOOO", offset0, offset1)
     # FIXME
     if x0 is not None:
         x0_local = [
@@ -379,7 +379,7 @@ def apply_lifting_block(
     else:
         x0_local = None
 
-    print("---------")
+    # print("---------")
 
     with b.localForm() as b_l:
         for a_, off0, off1, offg0, offg1 in zip(a, offset0, offset0[1:], offset1, offset1[1:]):
