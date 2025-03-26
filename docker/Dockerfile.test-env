@@ -116,7 +116,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 RUN wget -nc --quiet https://github.com/gabime/spdlog/archive/refs/tags/v${SPDLOG_VERSION}.tar.gz && \
     tar xfz v${SPDLOG_VERSION}.tar.gz && \
     cd spdlog-${SPDLOG_VERSION} && \
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir . && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DSPDLOG_BUILD_SHARED=ON -DSPDLOG_BUILD_PIC=ON -B build-dir . && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     rm -rf /tmp/*
