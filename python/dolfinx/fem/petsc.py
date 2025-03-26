@@ -412,7 +412,6 @@ def set_bc_block(
     # else:
     #     x0_local = None
 
-
     offset0, _ = b.getAttr("_blocks")
     b_array = b.getArray(readonly=False)
     x_array = x0.getArray(readonly=True) if x0 is not None else None
