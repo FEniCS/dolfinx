@@ -379,36 +379,30 @@ def apply_lifting_block(
 
     with b.localForm() as b_l:
         for a_, off0, off1, offg0, offg1 in zip(a, offset0, offset0[1:], offset1, offset1[1:]):
-            bx_ = np.concat((b_l[off0:off1], b_l[offg0:offg1]))
-
             const = pack_constants(a_) if constants is None else constants
             coeff = pack_coefficients(a_) if coeffs is None else coeffs
             const_ = [np.empty(0, dtype=PETSc.ScalarType) if val is None else val for val in const]
+
+            bx_ = np.concat((b_l[off0:off1], b_l[offg0:offg1]))
             _apply_lifting(bx_, a_, bcs1, x0_local, float(alpha), const_, coeff)
 
-            # Add to parent vector
+            # Assign to parent vector
             b_l.array_w[off0:off1] = bx_[: (off1 - off0)]
             b_l.array_w[offg0:offg1] = bx_[(off1 - off0) :]
 
 
 def set_bc_block(
-    V,
     b: PETSc.Vec,
     bcs: Iterable[DirichletBC],
     x0: typing.Optional[PETSc.Vec] = None,
     alpha: float = 1,
 ) -> None:
-    maps = [(_V.dofmaps(0).index_map, _V.dofmaps(0).index_map_bs) for _V in V]
-
-    x0_sub = _cpp.la.petsc.get_local_vectors(x0, maps) if x0 is not None else [None] * len(maps)
-    bcs0 = _bcs_by_block(V, bcs)
-    offset = 0
+    offset0, _ = b.getAttr("_blocks")
     b_array = b.getArray(readonly=False)
-    for submap, bcs, _x0 in zip(maps, bcs0, x0_sub):
-        size = submap[0].size_local * submap[1]
+    for bcs, off0, off1 in zip(bcs, offset0, offset0[1:]):
+        x0_sub = x0[off0:off1] if x0 is not None else None
         for bc in bcs:
-            bc.set(b_array[offset : offset + size], _x0, alpha)
-        offset += size
+            bc.set(b_array[off0:off1], x0_sub, alpha)
 
 
 def assemble_vector_block_vec_new(
@@ -522,7 +516,8 @@ def _assemble_vector_block_vec(
 
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    set_bc_block(V, b, bcs, x0, alpha)
+    bcs0 = _bcs_by_block(V, bcs)
+    set_bc_block(b, bcs0, x0, alpha)
 
     return b
 
