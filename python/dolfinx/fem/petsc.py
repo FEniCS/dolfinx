@@ -527,7 +527,7 @@ def apply_lifting(
                         size = off1 - off0
                         b_l.array_w[off0:off1] = bx_[:size]
                         b_l.array_w[offg0:offg1] = bx_[size:]
-            except AttributeError:
+            except (AttributeError, AssertionError):
                 x0 = [] if x0 is None else x0
                 x0 = [stack.enter_context(x.localForm()) for x in x0]
                 x0_r = [x.array_r for x in x0]
