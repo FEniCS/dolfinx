@@ -27,12 +27,7 @@ if importlib.util.find_spec("petsc4py") is not None:
     from petsc4py import PETSc
 
     from dolfinx.fem import extract_function_spaces
-    from dolfinx.fem.petsc import (
-        apply_lifting_block,
-        assemble_matrix_block,
-        assemble_vector,
-        set_bc,
-    )
+    from dolfinx.fem.petsc import apply_lifting, assemble_matrix_block, assemble_vector, set_bc
 
 else:
     print("This demo requires petsc4py.")
@@ -187,7 +182,7 @@ A = assemble_matrix_block(a_blocked, bcs=[bc])
 A.assemble()
 
 b = assemble_vector(L_blocked, kind=PETSc.Vec.Type.MPI)
-apply_lifting_block(b, a_blocked, bcs=[bc])
+apply_lifting(b, a_blocked, bcs=[bc])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 bcs0 = fem.bcs_by_block(extract_function_spaces(L_blocked), [bc])
 set_bc(b, bcs0)

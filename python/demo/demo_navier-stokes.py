@@ -181,12 +181,7 @@ import numpy as np
 
 import ufl
 from dolfinx import default_real_type, fem, io, mesh
-from dolfinx.fem.petsc import (
-    apply_lifting_block,
-    assemble_matrix_block,
-    assemble_vector,
-    set_bc,
-)
+from dolfinx.fem.petsc import apply_lifting, assemble_matrix_block, assemble_vector, set_bc
 
 try:
     from petsc4py import PETSc
@@ -335,7 +330,7 @@ A = assemble_matrix_block(a_blocked, bcs=bcs)
 A.assemble()
 
 b = assemble_vector(L_blocked, kind=PETSc.Vec.Type.MPI)
-apply_lifting_block(b, a_blocked, bcs=bcs)
+apply_lifting(b, a_blocked, bcs=bcs)
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L_blocked), bcs)
 set_bc(b, bcs0)
@@ -428,7 +423,7 @@ for n in range(num_time_steps):
     with b.localForm() as b_loc:
         b_loc.set(0)
     assemble_vector(b, L_blocked)
-    apply_lifting_block(b, a_blocked, bcs=bcs)
+    apply_lifting(b, a_blocked, bcs=bcs)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     set_bc(b, bcs0)
 

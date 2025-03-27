@@ -113,12 +113,7 @@ from dolfinx.fem import (
     functionspace,
     locate_dofs_topological,
 )
-from dolfinx.fem.petsc import (
-    apply_lifting_block,
-    assemble_matrix_block,
-    assemble_vector,
-    set_bc,
-)
+from dolfinx.fem.petsc import apply_lifting, assemble_matrix_block, assemble_vector, set_bc
 from dolfinx.io import XDMFFile
 from dolfinx.la.petsc import create_vector_wrap
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
@@ -346,7 +341,7 @@ def block_operators():
     P.assemble()
 
     b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
-    apply_lifting_block(b, a, bcs=bcs)
+    apply_lifting(b, a, bcs=bcs)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs)
     set_bc(b, bcs0)

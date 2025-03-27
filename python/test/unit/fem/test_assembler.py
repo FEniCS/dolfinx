@@ -301,8 +301,8 @@ class TestPETScAssemblers:
         """
         from petsc4py import PETSc
 
+        from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
-        from dolfinx.fem.petsc import apply_lifting_block, assemble_vector, set_bc
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
@@ -356,7 +356,7 @@ class TestPETScAssemblers:
             A = petsc_assemble_matrix_block(a_block, bcs=[bc])
             A.assemble()
             b = assemble_vector(L_block, kind=PETSc.Vec.Type.MPI)
-            apply_lifting_block(b, a_block, bcs=[bc])
+            apply_lifting(b, a_block, bcs=[bc])
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L_block), [bc])
             set_bc(b, bcs0)
@@ -441,8 +441,8 @@ class TestPETScAssemblers:
         """
         from petsc4py import PETSc
 
+        from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
-        from dolfinx.fem.petsc import apply_lifting_block, assemble_vector, set_bc
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
@@ -487,7 +487,7 @@ class TestPETScAssemblers:
             """Blocked"""
             A = petsc_assemble_matrix_block([[a00, a01], [a10, a11]], bcs=bcs)
             b = assemble_vector([L0, L1], kind=PETSc.Vec.Type.MPI)
-            apply_lifting_block(b, [[a00, a01], [a10, a11]], bcs=bcs)
+            apply_lifting(b, [[a00, a01], [a10, a11]], bcs=bcs)
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = fem.bcs_by_block(fem.extract_function_spaces([L0, L1]), bcs)
             set_bc(b, bcs0)
@@ -606,8 +606,8 @@ class TestPETScAssemblers:
         """Assemble Stokes problem with Taylor-Hood elements and solve."""
         from petsc4py import PETSc
 
+        from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
-        from dolfinx.fem.petsc import apply_lifting_block, assemble_vector, set_bc
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
@@ -708,7 +708,7 @@ class TestPETScAssemblers:
             P.assemble()
             L, a = form([L0, L1]), form([[a00, a01], [a10, a11]])
             b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
-            apply_lifting_block(b, a, bcs=[bc0, bc1])
+            apply_lifting(b, a, bcs=[bc0, bc1])
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs=[bc0, bc1])
             set_bc(b, bcs0)
@@ -844,7 +844,7 @@ class TestPETScAssemblers:
     def test_symmetry_interior_facet_assembly(self, mesh):
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import apply_lifting_block, assemble_vector, set_bc
+        from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
         from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
 
         def bc(V):
@@ -876,7 +876,7 @@ class TestPETScAssemblers:
         bcs = [bc(V0), bc(V1)]
         A = petsc_assemble_matrix_block(a, bcs=bcs)
         b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
-        apply_lifting_block(b, a, bcs=bcs)
+        apply_lifting(b, a, bcs=bcs)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs=bcs)
         set_bc(b, bcs0)
@@ -912,7 +912,7 @@ class TestPETScAssemblers:
         bcs = [bc(V0), bc(V1)]
         A = petsc_assemble_matrix_block(a, bcs=bcs)
         b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
-        apply_lifting_block(b, a, bcs=bcs)
+        apply_lifting(b, a, bcs=bcs)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs=bcs)
         set_bc(b, bcs0)

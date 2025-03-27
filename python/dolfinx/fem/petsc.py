@@ -316,39 +316,6 @@ def _assemble_vector_vec(
         return b
 
 
-def apply_lifting_block(
-    b: PETSc.Vec,
-    a: typing.Union[Iterable[Form], Iterable[Iterable[Form]]],
-    bcs: typing.Union[Iterable[DirichletBC], Iterable[Iterable[DirichletBC]]],
-    x0: typing.Optional[PETSc.Vec] = None,
-    alpha: float = 1,
-    constants=None,
-    coeffs=None,
-) -> None:
-    if x0 is not None:
-        offset0, offset1 = x0.getAttr("_blocks")
-        with x0.localForm() as x_l:
-            x0_local = [
-                np.concat((x_l[off0:off1], x_l[offg0:offg1]))
-                for (off0, off1, offg0, offg1) in zip(offset0, offset0[1:], offset1, offset1[1:])
-            ]
-    else:
-        x0_local = None
-
-    bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
-    offset0, offset1 = b.getAttr("_blocks")
-    with b.localForm() as b_l:
-        for a_, off0, off1, offg0, offg1 in zip(a, offset0, offset0[1:], offset1, offset1[1:]):
-            const = pack_constants(a_) if constants is None else constants
-            coeff = pack_coefficients(a_) if coeffs is None else coeffs
-            const_ = [np.empty(0, dtype=PETSc.ScalarType) if val is None else val for val in const]
-            bx_ = np.concat((b_l[off0:off1], b_l[offg0:offg1]))
-            _apply_lifting(bx_, a_, bcs1, x0_local, float(alpha), const_, coeff)
-            size = off1 - off0
-            b_l.array_w[off0:off1] = bx_[:size]
-            b_l.array_w[offg0:offg1] = bx_[size:]
-
-
 # -- Matrix assembly ---------------------------------------------------------
 @functools.singledispatch
 def assemble_matrix(
@@ -521,7 +488,6 @@ def apply_lifting(
     if b.getType() == PETSc.Vec.Type.NEST:
         x0 = [] if x0 is None else x0.getNestSubVecs()
         bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
-
         constants = [pack_constants(forms) for forms in a] if constants is None else constants
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
         for b_sub, a_sub, const, coeff in zip(b.getNestSubVecs(), a, constants, coeffs):
@@ -529,15 +495,46 @@ def apply_lifting(
                 map(lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x, const)
             )
             apply_lifting(b_sub, a_sub, bcs1, x0, alpha, const_, coeff)
-        return b
     else:
         with contextlib.ExitStack() as stack:
-            x0 = [] if x0 is None else x0
-            x0 = [stack.enter_context(x.localForm()) for x in x0]
-            x0_r = [x.array_r for x in x0]
-            b_local = stack.enter_context(b.localForm())
-            _apply_lifting(b_local.array_w, a, bcs, x0_r, alpha, constants, coeffs)
-        return b
+            try:
+                if x0 is not None:
+                    offset0, offset1 = x0.getAttr("_blocks")
+                    xl = stack.enter_context(x0.localForm())
+                    xlocal = [
+                        np.concat((xl[off0:off1], xl[offg0:offg1]))
+                        for (off0, off1, offg0, offg1) in zip(
+                            offset0, offset0[1:], offset1, offset1[1:]
+                        )
+                    ]
+                else:
+                    xlocal = None
+
+                bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
+                offset0, offset1 = b.getAttr("_blocks")
+                with b.localForm() as b_l:
+                    for a_, off0, off1, offg0, offg1 in zip(
+                        a, offset0, offset0[1:], offset1, offset1[1:]
+                    ):
+                        const = pack_constants(a_) if constants is None else constants
+                        coeff = pack_coefficients(a_) if coeffs is None else coeffs
+                        const_ = [
+                            np.empty(0, dtype=PETSc.ScalarType) if val is None else val
+                            for val in const
+                        ]
+                        bx_ = np.concat((b_l[off0:off1], b_l[offg0:offg1]))
+                        _apply_lifting(bx_, a_, bcs1, xlocal, float(alpha), const_, coeff)
+                        size = off1 - off0
+                        b_l.array_w[off0:off1] = bx_[:size]
+                        b_l.array_w[offg0:offg1] = bx_[size:]
+            except AttributeError:
+                x0 = [] if x0 is None else x0
+                x0 = [stack.enter_context(x.localForm()) for x in x0]
+                x0_r = [x.array_r for x in x0]
+                b_local = stack.enter_context(b.localForm())
+                _apply_lifting(b_local.array_w, a, bcs, x0_r, alpha, constants, coeffs)
+
+    return b
 
 
 def set_bc(

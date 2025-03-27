@@ -80,12 +80,7 @@ class NonlinearPDE_SNESProblem:
     def F_block(self, snes, x, F):
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import (
-            apply_lifting_block,
-            assemble_vector,
-            assign,
-            set_bc,
-        )
+        from dolfinx.fem.petsc import apply_lifting, assemble_vector, assign, set_bc
 
         assert x.getType() != "nest"
         assert F.getType() != "nest"
@@ -119,7 +114,7 @@ class NonlinearPDE_SNESProblem:
         x.setAttr("_blocks", (off_owned, off_ghost))
 
         assemble_vector(F, self.L)
-        apply_lifting_block(F, self.a, bcs=self.bcs, x0=x, alpha=-1.0)
+        apply_lifting(F, self.a, bcs=self.bcs, x0=x, alpha=-1.0)
         F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         bcs0 = bcs_by_block(extract_function_spaces(self.L), self.bcs)
         set_bc(F, bcs0, x0=x, alpha=-1)
@@ -190,7 +185,6 @@ class TestNLSPETSc:
 
         from dolfinx.fem.petsc import (
             apply_lifting,
-            apply_lifting_block,
             assemble_matrix,
             assemble_matrix_block,
             assemble_vector,
@@ -258,7 +252,7 @@ class TestNLSPETSc:
             A.assemble()
 
             b = assemble_vector(L_block, kind="mpi")
-            apply_lifting_block(b, a_block, bcs=[bc], x0=x, alpha=-1.0)
+            apply_lifting(b, a_block, bcs=[bc], x0=x, alpha=-1.0)
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = bcs_by_block(extract_function_spaces(L_block), [bc])
 
