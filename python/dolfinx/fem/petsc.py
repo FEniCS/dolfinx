@@ -61,7 +61,6 @@ __all__ = [
     "assemble_matrix",
     "assemble_matrix_block",
     "assemble_vector",
-    "assemble_vector_block",
     "assign",
     "create_matrix",
     "create_vector",
@@ -285,75 +284,11 @@ def _assemble_vector_vec(
                 _assemble_vector_array(b_local.array_w, L_sub, const, coeff)
         return b
     elif isinstance(L, Iterable):
-        assemble_vector_block_new(b, L, constants, coeffs)
+        return assemble_vector_block_new(b, L, constants, coeffs)
     else:
         with b.localForm() as b_local:
             _assemble_vector_array(b_local.array_w, L, constants, coeffs)
         return b
-
-
-# FIXME: Revise this interface
-@functools.singledispatch
-def assemble_vector_block(
-    L: Iterable[Form],
-    a: Iterable[Iterable[Form]],
-    bcs: Iterable[DirichletBC] = [],
-    x0: typing.Optional[PETSc.Vec] = None,
-    alpha: float = 1,
-    constants_L=None,
-    coeffs_L=None,
-    constants_a=None,
-    coeffs_a=None,
-) -> PETSc.Vec:
-    """Assemble linear forms into a monolithic vector.
-
-    The vector ``b`` is assembled such that locally ``b = [b_0, b_1,
-    ..., b_n, b_0g, b_1g, ..., b_ng]`` where ``b_i`` is the assembled
-    vector for the 'owned' degrees-of-freedom for ``L[i]`` and ``b_ig``
-    are the 'unowned' (ghost) entries for ``L[i]``.
-
-    Note:
-        The vector is not finalised, i.e. ghost values are not
-        accumulated.
-
-    Args:
-        L: Linear forms to assemble into a monolithic vector.
-        a: Bilinear forms to apply lifting from.
-        bcs: Dirichlet boundary conditions applied to the system.
-        x0: Initial guess for the solution.
-        alpha: Coefficient for the lifting term.
-        constants_L: Constants appearing in the linear forms.
-        coeffs_L: Coefficients appearing in the linear forms.
-        constants_a: Constants appearing in the bilinear forms.
-        constants_a: Coefficients appearing in the bilinear forms.
-
-    Returns:
-        Assembled vector.
-    """
-    maps = [
-        (
-            form.function_spaces[0].dofmaps(0).index_map,
-            form.function_spaces[0].dofmaps(0).index_map_bs,
-        )
-        for form in L
-    ]
-
-    off_owned = tuple(
-        itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
-    )
-    off_ghost = tuple(
-        itertools.accumulate(
-            maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
-        )
-    )
-    b = _cpp.fem.petsc.create_vector_block(maps)
-    b.setAttr("_blocks", (off_owned, off_ghost))
-
-    with b.localForm() as b_local:
-        b_local.set(0.0)
-    return assemble_vector_block(
-        b, L, a, bcs, x0, alpha, constants_L, coeffs_L, constants_a, coeffs_a
-    )
 
 
 def apply_lifting_block(
@@ -448,59 +383,6 @@ def assemble_vector_block_new(
             size = off1 - off0
             b_l.array_w[off0:off1] += bx_[:size]
             b_l.array_w[offg0:offg1] += bx_[size:]
-    return b
-
-
-@assemble_vector_block.register
-def _assemble_vector_block_vec(
-    b: PETSc.Vec,
-    L: Iterable[Form],
-    a: Iterable[Iterable[Form]],
-    bcs: Iterable[DirichletBC] = [],
-    x0: typing.Optional[PETSc.Vec] = None,
-    alpha: float = 1,
-    constants_L=None,
-    coeffs_L=None,
-    constants_a=None,
-    coeffs_a=None,
-) -> PETSc.Vec:
-    """Assemble linear forms into a monolithic vector ``b``.
-
-    The vector ``b`` is assembled such that locally ``b = [b_0, b_1,
-    ..., b_n, b_0g, b_1g, ..., b_ng]`` where ``b_i`` is the assembled
-    vector for the 'owned' degrees-of-freedom for ``L[i]`` and ``b_ig``
-    are the 'unowned' (ghost) entries for ``L[i]``.
-
-    The vector ``b`` must have been initialized with a appropriate
-    size/layout.
-
-    Note:
-        The vector is not zeroed and it is not finalised, i.e. ghost values
-        are not accumulated.
-
-    Args:
-        b: Vector to assemble linear forms into.
-        L: Linear forms to assemble into a monolithic vector.
-        a: Bilinear forms to apply lifting from.
-        bcs: Dirichlet boundary conditions applied to the system.
-        x0: Initial guess for the solution.
-        alpha: Coefficient for the lifting term.
-        constants_L: Constants appearing in the linear forms.
-        coeffs_L: Coefficients appearing in the linear forms.
-        constants_a: Constants appearing in the bilinear forms.
-        constants_a: Coefficients appearing in the bilinear forms.
-
-    Returns:
-        Assembled vector.
-    """
-    assemble_vector(b, L, constants_L, coeffs_L)
-
-    apply_lifting_block(b, a, bcs, x0, alpha, constants_a, coeffs_a)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-
-    bcs0 = _bcs_by_block(_extract_spaces(L), bcs)
-    set_bc_block(b, bcs0, x0, alpha)
-
     return b
 
 

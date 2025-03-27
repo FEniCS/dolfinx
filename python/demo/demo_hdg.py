@@ -30,7 +30,7 @@ if importlib.util.find_spec("petsc4py") is not None:
     from dolfinx.fem.petsc import (
         apply_lifting_block,
         assemble_matrix_block,
-        assemble_vector_block_new,
+        assemble_vector,
         create_vector,
         set_bc_block,
     )
@@ -188,7 +188,7 @@ A = assemble_matrix_block(a_blocked, bcs=[bc])
 A.assemble()
 
 b = create_vector(L_blocked, kind=PETSc.Vec.Type.MPI)
-b = assemble_vector_block_new(b, L_blocked)
+assemble_vector(b, L_blocked)
 apply_lifting_block(b, a_blocked, bcs=[bc])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 bcs0 = fem.bcs_by_block(extract_function_spaces(L_blocked), [bc])
