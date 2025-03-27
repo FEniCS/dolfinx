@@ -25,7 +25,7 @@ from dolfinx.fem import (
     functionspace,
     locate_dofs_topological,
 )
-from dolfinx.mesh import GhostMode, create_unit_square, locate_entities_boundary
+from dolfinx.mesh import GhostMode, create_unit_cube, create_unit_square, locate_entities_boundary
 from ufl import derivative, dx, inner
 
 
@@ -82,7 +82,7 @@ class NonlinearPDE_SNESProblem:
 
         from dolfinx.fem.petsc import (
             apply_lifting_block,
-            assemble_vector_block_new,
+            assemble_vector,
             assign,
             set_bc_block,
         )
@@ -118,7 +118,7 @@ class NonlinearPDE_SNESProblem:
         F.setAttr("_blocks", (off_owned, off_ghost))
         x.setAttr("_blocks", (off_owned, off_ghost))
 
-        assemble_vector_block_new(F, self.L)
+        assemble_vector(F, self.L)
         apply_lifting_block(F, self.a, bcs=self.bcs, x0=x, alpha=-1.0)
         F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         bcs0 = bcs_by_block(extract_function_spaces(self.L), self.bcs)
@@ -194,7 +194,6 @@ class TestNLSPETSc:
             assemble_matrix,
             assemble_matrix_block,
             assemble_vector,
-            assemble_vector_block_new,
             assign,
             create_vector,
             set_bc,
@@ -259,10 +258,7 @@ class TestNLSPETSc:
             A = assemble_matrix_block(a_block, bcs=[bc])
             A.assemble()
 
-            b = create_vector(L_block, kind="mpi")
-            with b.localForm() as b_local:
-                b_local.set(0.0)
-            assemble_vector_block_new(b, L_block)
+            b = assemble_vector(L_block, kind="mpi")
             apply_lifting_block(b, a_block, bcs=[bc], x0=x, alpha=-1.0)
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = bcs_by_block(extract_function_spaces(L_block), [bc])
@@ -542,9 +538,9 @@ class TestNLSPETSc:
         "mesh",
         [
             create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
-            # create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.shared_facet),
-            # create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.none),
-            # create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet),
+            create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.shared_facet),
+            create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.none),
+            create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet),
         ],
     )
     def test_assembly_solve_taylor_hood_nl(self, mesh):
@@ -739,12 +735,12 @@ class TestNLSPETSc:
             return Jnorm, Fnorm, xnorm
 
         Jnorm0, Fnorm0, xnorm0 = blocked()
-        # Jnorm1, Fnorm1, xnorm1 = nested()
-        # assert Jnorm1 == pytest.approx(Jnorm0, 1.0e-3, abs=1.0e-6)
-        # assert Fnorm1 == pytest.approx(Fnorm0, 1.0e-6, abs=1.0e-5)
-        # assert xnorm1 == pytest.approx(xnorm0, 1.0e-6, abs=1.0e-5)
+        Jnorm1, Fnorm1, xnorm1 = nested()
+        assert Jnorm1 == pytest.approx(Jnorm0, 1.0e-3, abs=1.0e-6)
+        assert Fnorm1 == pytest.approx(Fnorm0, 1.0e-6, abs=1.0e-5)
+        assert xnorm1 == pytest.approx(xnorm0, 1.0e-6, abs=1.0e-5)
 
-        # Jnorm2, Fnorm2, xnorm2 = monolithic()
-        # assert Jnorm2 == pytest.approx(Jnorm1, rel=1.0e-3, abs=1.0e-6)
-        # assert Fnorm2 == pytest.approx(Fnorm0, 1.0e-6, abs=1.0e-5)
-        # assert xnorm2 == pytest.approx(xnorm0, 1.0e-6, abs=1.0e-6)
+        Jnorm2, Fnorm2, xnorm2 = monolithic()
+        assert Jnorm2 == pytest.approx(Jnorm1, rel=1.0e-3, abs=1.0e-6)
+        assert Fnorm2 == pytest.approx(Fnorm0, 1.0e-6, abs=1.0e-5)
+        assert xnorm2 == pytest.approx(xnorm0, 1.0e-6, abs=1.0e-6)

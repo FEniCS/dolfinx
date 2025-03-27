@@ -564,7 +564,7 @@ def test_mixed_measures():
     block may be different"""
     from petsc4py import PETSc
 
-    from dolfinx.fem.petsc import assemble_vector_block_new, create_vector
+    from dolfinx.fem.petsc import assemble_vector
 
     comm = MPI.COMM_WORLD
     msh = create_unit_square(comm, 16, 21, ghost_mode=GhostMode.none)
@@ -598,8 +598,7 @@ def test_mixed_measures():
     #     ],
     # ]
     L = [fem.form(ufl.inner(2.3, v) * dx_msh), fem.form(ufl.inner(1.3, q) * dx_smsh)]
-    b0 = create_vector(L, kind=PETSc.Vec.Type.MPI)
-    assemble_vector_block_new(b0, L)
+    b0 = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
     b0.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     # Now, assemble the same vector using only dx_msh
@@ -612,8 +611,7 @@ def test_mixed_measures():
         fem.form(ufl.inner(2.3, v) * dx_msh),
         fem.form(ufl.inner(1.3, q) * dx_msh(1), entity_maps=entity_maps),
     ]
-    b1 = create_vector(L, kind=PETSc.Vec.Type.MPI)
-    assemble_vector_block_new(b1, L)
+    b1 = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
     b1.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     # Check the results are the same
