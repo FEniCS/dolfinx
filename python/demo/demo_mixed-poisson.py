@@ -234,7 +234,7 @@ A.assemble()
 # conditions. Then set Dirichlet boundary values in the RHS vector `b`:
 
 # +
-b = fem.petsc.assemble_vector(L)
+b = fem.petsc.assemble_vector(L, kind="nest")
 fem.petsc.apply_lifting(b, a, bcs=bcs)
 for b_sub in b.getNestSubVecs():
     b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)

@@ -236,7 +236,7 @@ def nested_iterative_solver():
     P11.setOption(PETSc.Mat.Option.SPD, True)
 
     # Assemble right-hand side vector
-    b = fem.petsc.assemble_vector(L)
+    b = fem.petsc.assemble_vector(L, kind="nest")
 
     # Modify ('lift') the RHS for Dirichlet boundary conditions
     fem.petsc.apply_lifting(b, a, bcs=bcs)
