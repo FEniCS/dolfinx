@@ -134,7 +134,7 @@ L_form = mixed_topology_form(L, dtype=np.float64)
 
 # Assemble the matrix
 A = assemble_matrix(a_form)
-b = assemble_vector(L_form, kind="mpi")
+b = assemble_vector(L_form)
 
 # Solve
 A_scipy = A.to_scipy()
