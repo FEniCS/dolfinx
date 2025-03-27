@@ -117,7 +117,6 @@ from dolfinx.fem.petsc import (
     apply_lifting_block,
     assemble_matrix_block,
     assemble_vector,
-    create_vector,
     set_bc_block,
 )
 from dolfinx.io import XDMFFile
