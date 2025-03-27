@@ -346,8 +346,7 @@ def block_operators():
     P = assemble_matrix_block(a_p, bcs=bcs)
     P.assemble()
 
-    b = create_vector(L, kind=PETSc.Vec.Type.MPI)
-    b = assemble_vector(b, L)
+    b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
     apply_lifting_block(b, a, bcs=bcs)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs)

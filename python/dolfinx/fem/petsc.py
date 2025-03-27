@@ -196,6 +196,7 @@ def assemble_vector(
     L: typing.Union[Form, Iterable[Form]],
     constants: typing.Optional[npt.NDArray, Iterable[npt.NDArray]] = None,
     coeffs: typing.Optional[npt.NDArray, Iterable[npt.NDArray]] = None,
+    kind: typing.Optional[str] = None,
 ) -> PETSc.Vec:
     """Assemble linear form into a new PETSc vector.
 
@@ -222,21 +223,27 @@ def assemble_vector(
         coeffs: Coefficients appearing in the form. For a single form,
             ``coeffs.shape=(num_cells, n)``. For multiple forms, the
             coefficients for form ``L[i]`` are  ``coeffs[i]``.
+        kind: PETSc vector type.
 
     Returns:
         An assembled vector.
     """
-    try:
-        b = dolfinx.la.petsc.create_vector(
-            L.function_spaces[0].dofmaps(0).index_map, L.function_spaces[0].dofmaps(0).index_map_bs
-        )
-        return assemble_vector(b, L, constants, coeffs)
-    except AttributeError:
+    if kind == PETSc.Vec.Type.NEST:
         b = create_vector(L, "nest")
         for b_sub in b.getNestSubVecs():
             with b_sub.localForm() as b_local:
                 b_local.set(0.0)
         return assemble_vector(b, L, constants, coeffs)
+    else:
+        try:
+            b = dolfinx.la.petsc.create_vector(
+                L.function_spaces[0].dofmaps(0).index_map,
+                L.function_spaces[0].dofmaps(0).index_map_bs,
+            )
+            return assemble_vector(b, L, constants, coeffs)
+        except AttributeError:
+            b = create_vector(L, kind=kind)
+            return assemble_vector(b, L)
 
 
 @assemble_vector.register(PETSc.Vec)

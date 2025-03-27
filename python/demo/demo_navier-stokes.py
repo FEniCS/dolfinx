@@ -335,8 +335,7 @@ bcs = [bc_u]
 A = assemble_matrix_block(a_blocked, bcs=bcs)
 A.assemble()
 
-b = create_vector(L_blocked, kind=PETSc.Vec.Type.MPI)
-assemble_vector(b, L_blocked)
+b = assemble_vector(L_blocked, kind=PETSc.Vec.Type.MPI)
 apply_lifting_block(b, a_blocked, bcs=bcs)
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L_blocked), bcs)
