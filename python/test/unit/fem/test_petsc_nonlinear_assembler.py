@@ -287,7 +287,7 @@ class TestNLSPETSc:
             assign((u, p), x)
 
             A = assemble_matrix(a_block, bcs=[bc])
-            b = assemble_vector(L_block)
+            b = assemble_vector(L_block, kind="nest")
             apply_lifting(b, a_block, bcs=[bc], x0=x, alpha=-1.0)
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)

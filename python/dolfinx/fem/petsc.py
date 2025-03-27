@@ -137,21 +137,23 @@ def create_vector(
         ]
         if kind == PETSc.Vec.Type.NEST:
             return _cpp.fem.petsc.create_vector_nest(maps)
-        elif kind in (None, PETSc.Vec.Type.MPI):
-            off_owned = tuple(
-                itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
+        elif kind == PETSc.Vec.Type.MPI:
+            off_owned = itertools.accumulate(
+                maps, lambda off, m: off + m[0].size_local * m[1], initial=0
             )
-            off_ghost = tuple(
-                itertools.accumulate(
-                    maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
-                )
+            off_ghost = itertools.accumulate(
+                maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
             )
 
             b = _cpp.fem.petsc.create_vector_block(maps)
-            b.setAttr("_blocks", (off_owned, off_ghost))
+            b.setAttr("_blocks", (tuple(off_owned), tuple(off_ghost)))
             return b
         else:
-            raise NotImplementedError(f"Vector type '{kind}' not supported.")
+            raise NotImplementedError(
+                "Vector type must be specified for blocked/nested assembly."
+                f"Vector type '{kind}' not supported."
+                "Did you mean 'nest' or 'mpi'?"
+            )
 
 
 # -- Matrix instantiation ----------------------------------------------------
