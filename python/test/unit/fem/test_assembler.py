@@ -386,7 +386,7 @@ class TestPETScAssemblers:
             with pytest.raises(RuntimeError):
                 petsc_assemble_matrix(a_block_none, bcs=[bc])
 
-            b = petsc_assemble_vector(L_block)
+            b = petsc_assemble_vector(L_block, kind="nest")
             petsc_apply_lifting(b, a_block, bcs=[bc])
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -525,7 +525,7 @@ class TestPETScAssemblers:
             """Nested (MatNest)"""
             A = petsc_assemble_matrix([[a00, a01], [a10, a11]], bcs=bcs, diagonal=1.0)
             A.assemble()
-            b = petsc_assemble_vector([L0, L1])
+            b = petsc_assemble_vector([L0, L1], kind="nest")
             petsc_apply_lifting(b, [[a00, a01], [a10, a11]], bcs=bcs)
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -681,7 +681,7 @@ class TestPETScAssemblers:
                 form([[p00, p01], [p10, p11]]), bcs=[bc0, bc1], kind=[["aij", "aij"], ["aij", ""]]
             )
             P.assemble()
-            b = petsc_assemble_vector(form([L0, L1]))
+            b = petsc_assemble_vector(form([L0, L1]), kind="nest")
             petsc_apply_lifting(b, form([[a00, a01], [a10, a11]]), [bc0, bc1])
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
