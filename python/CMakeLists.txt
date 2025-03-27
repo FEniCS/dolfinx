@@ -25,6 +25,10 @@ find_package(nanobind CONFIG REQUIRED)
 
 find_package(DOLFINX REQUIRED CONFIG)
 
+set(CMAKE_MODULE_PATH /Users/chrisrichardson/Work/dolfinx/cpp/cmake/modules)
+
+find_package(GMP)
+
 if(DOLFINX_FOUND)
   message(STATUS "Found DOLFINx at ${DOLFINX_DIR}")
 endif()

@@ -103,6 +103,9 @@ target_link_libraries(dolfinx PUBLIC MPI::MPI_CXX)
 
 target_link_libraries(dolfinx PUBLIC spdlog::spdlog)
 
+target_link_libraries(dolfinx PUBLIC GMP::gmp)
+target_link_libraries(dolfinx PUBLIC GMP::gmpxx)
+
 # HDF5
 target_link_libraries(dolfinx PUBLIC hdf5::hdf5)
 
