@@ -349,21 +349,6 @@ def apply_lifting_block(
             b_l.array_w[offg0:offg1] = bx_[size:]
 
 
-def set_bc_block(
-    b: PETSc.Vec,
-    bcs: Iterable[Iterable[DirichletBC]],
-    x0: typing.Optional[PETSc.Vec] = None,
-    alpha: float = 1,
-) -> None:
-    offset0, _ = b.getAttr("_blocks")
-    b_array = b.getArray(readonly=False)
-    x_array = x0.getArray(readonly=True) if x0 is not None else None
-    for bcs, off0, off1 in zip(bcs, offset0, offset0[1:]):
-        x0_sub = x_array[off0:off1] if x0 is not None else None
-        for bc in bcs:
-            bc.set(b_array[off0:off1], x0_sub, alpha)
-
-
 # -- Matrix assembly ---------------------------------------------------------
 @functools.singledispatch
 def assemble_matrix(
@@ -568,9 +553,18 @@ def set_bc(
         for b_sub, bc, x_sub in zip(_b, bcs, x0):
             set_bc(b_sub, bc, x_sub, alpha)
     else:
-        x0 = x0.array_r if x0 is not None else None
-        for bc in bcs:
-            bc.set(b.array_w, x0, alpha)
+        try:
+            offset0, _ = b.getAttr("_blocks")
+            b_array = b.getArray(readonly=False)
+            x_array = x0.getArray(readonly=True) if x0 is not None else None
+            for bcs, off0, off1 in zip(bcs, offset0, offset0[1:]):
+                x0_sub = x_array[off0:off1] if x0 is not None else None
+                for bc in bcs:
+                    bc.set(b_array[off0:off1], x0_sub, alpha)
+        except TypeError:
+            x0 = x0.array_r if x0 is not None else None
+            for bc in bcs:
+                bc.set(b.array_w, x0, alpha)
 
 
 class LinearProblem:

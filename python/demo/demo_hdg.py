@@ -31,7 +31,7 @@ if importlib.util.find_spec("petsc4py") is not None:
         apply_lifting_block,
         assemble_matrix_block,
         assemble_vector,
-        set_bc_block,
+        set_bc,
     )
 
 else:
@@ -190,7 +190,7 @@ b = assemble_vector(L_blocked, kind=PETSc.Vec.Type.MPI)
 apply_lifting_block(b, a_blocked, bcs=[bc])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 bcs0 = fem.bcs_by_block(extract_function_spaces(L_blocked), [bc])
-set_bc_block(b, bcs0)
+set_bc(b, bcs0)
 
 # Setup the solver
 ksp = PETSc.KSP().create(msh.comm)

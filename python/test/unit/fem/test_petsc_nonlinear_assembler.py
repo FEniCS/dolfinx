@@ -84,7 +84,7 @@ class NonlinearPDE_SNESProblem:
             apply_lifting_block,
             assemble_vector,
             assign,
-            set_bc_block,
+            set_bc,
         )
 
         assert x.getType() != "nest"
@@ -122,7 +122,7 @@ class NonlinearPDE_SNESProblem:
         apply_lifting_block(F, self.a, bcs=self.bcs, x0=x, alpha=-1.0)
         F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         bcs0 = bcs_by_block(extract_function_spaces(self.L), self.bcs)
-        set_bc_block(F, bcs0, x0=x, alpha=-1)
+        set_bc(F, bcs0, x0=x, alpha=-1)
 
     def J_block(self, snes, x, J, P):
         from dolfinx.fem.petsc import assemble_matrix_block
@@ -197,7 +197,7 @@ class TestNLSPETSc:
             assign,
             create_vector,
             set_bc,
-            set_bc_block,
+            set_bc,
         )
 
         mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
@@ -265,7 +265,7 @@ class TestNLSPETSc:
 
             offset0, offset1 = x.getAttr("_blocks")
 
-            set_bc_block(b, bcs0, x0=x, alpha=-1)
+            set_bc(b, bcs0, x0=x, alpha=-1)
 
             assert A.getType() != "nest"
             Anorm = A.norm()

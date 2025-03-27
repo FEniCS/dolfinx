@@ -302,7 +302,7 @@ class TestPETScAssemblers:
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
-        from dolfinx.fem.petsc import apply_lifting_block, assemble_vector, set_bc_block
+        from dolfinx.fem.petsc import apply_lifting_block, assemble_vector, set_bc
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
@@ -359,7 +359,7 @@ class TestPETScAssemblers:
             apply_lifting_block(b, a_block, bcs=[bc])
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L_block), [bc])
-            set_bc_block(b, bcs0)
+            set_bc(b, bcs0)
 
             assert A.getType() != "nest"
             Anorm = A.norm()
@@ -442,7 +442,7 @@ class TestPETScAssemblers:
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
-        from dolfinx.fem.petsc import apply_lifting_block, assemble_vector, set_bc_block
+        from dolfinx.fem.petsc import apply_lifting_block, assemble_vector, set_bc
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
@@ -490,7 +490,7 @@ class TestPETScAssemblers:
             apply_lifting_block(b, [[a00, a01], [a10, a11]], bcs=bcs)
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = fem.bcs_by_block(fem.extract_function_spaces([L0, L1]), bcs)
-            set_bc_block(b, bcs0)
+            set_bc(b, bcs0)
 
             A.assemble()
             x = A.createVecLeft()
@@ -607,7 +607,7 @@ class TestPETScAssemblers:
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
-        from dolfinx.fem.petsc import apply_lifting_block, assemble_vector, set_bc_block
+        from dolfinx.fem.petsc import apply_lifting_block, assemble_vector, set_bc
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
@@ -711,7 +711,7 @@ class TestPETScAssemblers:
             apply_lifting_block(b, a, bcs=[bc0, bc1])
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs=[bc0, bc1])
-            set_bc_block(b, bcs0)
+            set_bc(b, bcs0)
 
             ksp = PETSc.KSP()
             ksp.create(mesh.comm)
@@ -844,7 +844,7 @@ class TestPETScAssemblers:
     def test_symmetry_interior_facet_assembly(self, mesh):
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import apply_lifting_block, assemble_vector, set_bc_block
+        from dolfinx.fem.petsc import apply_lifting_block, assemble_vector, set_bc
         from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
 
         def bc(V):
@@ -879,7 +879,7 @@ class TestPETScAssemblers:
         apply_lifting_block(b, a, bcs=bcs)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs=bcs)
-        set_bc_block(b, bcs0)
+        set_bc(b, bcs0)
 
         A.assemble()
         b.assemble()
@@ -915,7 +915,7 @@ class TestPETScAssemblers:
         apply_lifting_block(b, a, bcs=bcs)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs=bcs)
-        set_bc_block(b, bcs0)
+        set_bc(b, bcs0)
 
         A.assemble()
         b.assemble()

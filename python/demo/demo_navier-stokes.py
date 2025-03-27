@@ -185,7 +185,7 @@ from dolfinx.fem.petsc import (
     apply_lifting_block,
     assemble_matrix_block,
     assemble_vector,
-    set_bc_block,
+    set_bc,
 )
 
 try:
@@ -338,7 +338,7 @@ b = assemble_vector(L_blocked, kind=PETSc.Vec.Type.MPI)
 apply_lifting_block(b, a_blocked, bcs=bcs)
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L_blocked), bcs)
-set_bc_block(b, bcs0)
+set_bc(b, bcs0)
 
 # Create and configure solver
 ksp = PETSc.KSP().create(msh.comm)  # type: ignore
@@ -430,7 +430,7 @@ for n in range(num_time_steps):
     assemble_vector(b, L_blocked)
     apply_lifting_block(b, a_blocked, bcs=bcs)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    set_bc_block(b, bcs0)
+    set_bc(b, bcs0)
 
     # Compute solution
     ksp.solve(b, x)

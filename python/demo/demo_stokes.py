@@ -117,7 +117,7 @@ from dolfinx.fem.petsc import (
     apply_lifting_block,
     assemble_matrix_block,
     assemble_vector,
-    set_bc_block,
+    set_bc,
 )
 from dolfinx.io import XDMFFile
 from dolfinx.la.petsc import create_vector_wrap
@@ -349,7 +349,7 @@ def block_operators():
     apply_lifting_block(b, a, bcs=bcs)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs)
-    set_bc_block(b, bcs0)
+    set_bc(b, bcs0)
 
     # Set the nullspace for pressure (since pressure is determined only
     # up to a constant)
