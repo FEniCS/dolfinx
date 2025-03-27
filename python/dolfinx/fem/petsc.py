@@ -257,6 +257,15 @@ def _assemble_vector_vec(
     ``b`` should be a ghosted PETSc vector. If multiple forms are
     passed, then ``b`  must have type ``VECNEST``.
 
+    The vector ``b`` is assembled such that locally ``b = [b_0, b_1,
+    ..., b_n, b_0g, b_1g, ..., b_ng]`` where ``b_i`` is the assembled
+    vector for the 'owned' degrees-of-freedom for ``L[i]`` and ``b_ig``
+    are the 'unowned' (ghost) entries for ``L[i]``.
+
+    The vector ``b`` must have been initialized with a appropriate
+    size/layout.
+
+
     Constants and coefficients that appear in the forms(s) can be passed
     to avoid re-computation of constants and coefficients. The functions
     :func:`dolfinx.fem.assemble.pack_constants` and
@@ -288,7 +297,19 @@ def _assemble_vector_vec(
                 _assemble_vector_array(b_local.array_w, L_sub, const, coeff)
         return b
     elif isinstance(L, Iterable):
-        return assemble_vector_block_new(b, L, constants, coeffs)
+        constants = pack_constants(L) if constants is None else constants
+        coeffs = pack_coefficients(L) if coeffs is None else coeffs
+        offset0, offset1 = b.getAttr("_blocks")
+        with b.localForm() as b_l:
+            for L_, const, coeff, off0, off1, offg0, offg1 in zip(
+                L, constants, coeffs, offset0, offset0[1:], offset1, offset1[1:]
+            ):
+                bx_ = np.zeros((off1 - off0) + (offg1 - offg0), dtype=PETSc.ScalarType)
+                _assemble_vector_array(bx_, L_, const, coeff)
+                size = off1 - off0
+                b_l.array_w[off0:off1] += bx_[:size]
+                b_l.array_w[offg0:offg1] += bx_[size:]
+        return b
     else:
         with b.localForm() as b_local:
             _assemble_vector_array(b_local.array_w, L, constants, coeffs)
@@ -304,7 +325,6 @@ def apply_lifting_block(
     constants=None,
     coeffs=None,
 ) -> None:
-    bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
 
     if x0 is not None:
         offset0, offset1 = x0.getAttr("_blocks")
@@ -316,18 +336,15 @@ def apply_lifting_block(
     else:
         x0_local = None
 
+    bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
     offset0, offset1 = b.getAttr("_blocks")
-
     with b.localForm() as b_l:
         for a_, off0, off1, offg0, offg1 in zip(a, offset0, offset0[1:], offset1, offset1[1:]):
             const = pack_constants(a_) if constants is None else constants
             coeff = pack_coefficients(a_) if coeffs is None else coeffs
             const_ = [np.empty(0, dtype=PETSc.ScalarType) if val is None else val for val in const]
-
             bx_ = np.concat((b_l[off0:off1], b_l[offg0:offg1]))
             _apply_lifting(bx_, a_, bcs1, x0_local, float(alpha), const_, coeff)
-
-            # Assign to parent vector
             size = off1 - off0
             b_l.array_w[off0:off1] = bx_[:size]
             b_l.array_w[offg0:offg1] = bx_[size:]
@@ -346,48 +363,6 @@ def set_bc_block(
         x0_sub = x_array[off0:off1] if x0 is not None else None
         for bc in bcs:
             bc.set(b_array[off0:off1], x0_sub, alpha)
-
-
-def assemble_vector_block_new(
-    b: PETSc.Vec, L: Iterable[Form], constants_L=None, coeffs_L=None
-) -> PETSc.Vec:
-    """Assemble linear forms into a monolithic vector ``b``.
-
-    The vector ``b`` is assembled such that locally ``b = [b_0, b_1,
-    ..., b_n, b_0g, b_1g, ..., b_ng]`` where ``b_i`` is the assembled
-    vector for the 'owned' degrees-of-freedom for ``L[i]`` and ``b_ig``
-    are the 'unowned' (ghost) entries for ``L[i]``.
-
-    The vector ``b`` must have been initialized with a appropriate
-    size/layout.
-
-    Note:
-        The vector is not zeroed and it is not finalised, i.e. ghost values
-        are not accumulated.
-
-    Args:
-        b: Vector to assemble linear forms into.
-        L: Linear forms to assemble into a monolithic vector.
-        constants_L: Constants appearing in the linear forms.
-        coeffs_L: Coefficients appearing in the linear forms.
-
-    Returns:
-        Assembled vector.
-    """
-    constants_L = pack_constants(L) if constants_L is None else constants_L
-    coeffs_L = pack_coefficients(L) if coeffs_L is None else coeffs_L
-    offset0, offset1 = b.getAttr("_blocks")
-    with b.localForm() as b_l:
-        for L_, const_L, coeff_L, off0, off1, offg0, offg1 in zip(
-            L, constants_L, coeffs_L, offset0, offset0[1:], offset1, offset1[1:]
-        ):
-            bx_ = np.zeros((off1 - off0) + (offg1 - offg0), dtype=PETSc.ScalarType)
-            _assemble_vector_array(bx_, L_, const_L, coeff_L)
-
-            size = off1 - off0
-            b_l.array_w[off0:off1] += bx_[:size]
-            b_l.array_w[offg0:offg1] += bx_[size:]
-    return b
 
 
 # -- Matrix assembly ---------------------------------------------------------
