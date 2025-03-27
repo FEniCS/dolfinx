@@ -325,7 +325,6 @@ def apply_lifting_block(
     constants=None,
     coeffs=None,
 ) -> None:
-
     if x0 is not None:
         offset0, offset1 = x0.getAttr("_blocks")
         with x0.localForm() as x_l:
