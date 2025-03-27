@@ -197,7 +197,6 @@ class TestNLSPETSc:
             assign,
             create_vector,
             set_bc,
-            set_bc,
         )
 
         mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
