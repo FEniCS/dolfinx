@@ -59,7 +59,6 @@ __all__ = [
     "NonlinearProblem",
     "apply_lifting",
     "assemble_matrix",
-    "assemble_matrix_block",
     "assemble_vector",
     "assign",
     "create_matrix",
@@ -353,61 +352,13 @@ def assemble_matrix(
         return A
 
 
-@assemble_matrix.register
-def assemble_matrix_mat(
-    A: PETSc.Mat,
-    a: typing.Union[Form, Iterable[Iterable[Form]]],
-    bcs: Iterable[DirichletBC] = [],
-    diagonal: float = 1,
-    constants=None,
-    coeffs=None,
-) -> PETSc.Mat:
-    """Assemble bilinear form into a matrix.
-
-    The returned matrix is not finalised, i.e. ghost values are not
-    accumulated.
-    """
-    if A.getType() == PETSc.Mat.Type.NEST:
-        constants = [pack_constants(forms) for forms in a] if constants is None else constants
-        coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
-        for i, (a_row, const_row, coeff_row) in enumerate(zip(a, constants, coeffs)):
-            for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row)):
-                if a_block is not None:
-                    Asub = A.getNestSubMatrix(i, j)
-                    assemble_matrix(Asub, a_block, bcs, diagonal, const, coeff)
-                elif i == j:
-                    for bc in bcs:
-                        row_forms = [row_form for row_form in a_row if row_form is not None]
-                        assert len(row_forms) > 0
-                        if row_forms[0].function_spaces[0].contains(bc.function_space):
-                            raise RuntimeError(
-                                f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
-                                " and have DirichletBC applied."
-                                " Consider assembling a zero block."
-                            )
-        return A
-    elif isinstance(a, Iterable):
-        _assemble_matrix_block_mat(A, a, bcs, diagonal, constants, coeffs)
-        return A
-    else:  # Non-blocked
-        constants = pack_constants(a) if constants is None else constants
-        coeffs = pack_coefficients(a) if coeffs is None else coeffs
-        _bcs = [bc._cpp_object for bc in bcs]
-        _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs)
-        if a.function_spaces[0] is a.function_spaces[1]:
-            A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
-            A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
-            _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], _bcs, diagonal)
-        return A
-
-
 def _assemble_matrix_block_mat(
     A: PETSc.Mat,
     a: Iterable[Iterable[Form]],
-    bcs: Iterable[DirichletBC] = [],
-    diagonal: float = 1,
-    constants=None,
-    coeffs=None,
+    bcs: Iterable[DirichletBC],
+    diagonal: float,
+    constants,
+    coeffs,
 ) -> PETSc.Mat:
     """Assemble bilinear forms into a blocked matrix."""
     consts = [pack_constants(forms) for forms in a] if constants is None else constants
@@ -454,6 +405,54 @@ def _assemble_matrix_block_mat(
                 A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
 
     return A
+
+
+@assemble_matrix.register
+def assemble_matrix_mat(
+    A: PETSc.Mat,
+    a: typing.Union[Form, Iterable[Iterable[Form]]],
+    bcs: Iterable[DirichletBC] = [],
+    diagonal: float = 1,
+    constants=None,
+    coeffs=None,
+) -> PETSc.Mat:
+    """Assemble bilinear form into a matrix.
+
+    The returned matrix is not finalised, i.e. ghost values are not
+    accumulated.
+    """
+    if A.getType() == PETSc.Mat.Type.NEST:
+        constants = [pack_constants(forms) for forms in a] if constants is None else constants
+        coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
+        for i, (a_row, const_row, coeff_row) in enumerate(zip(a, constants, coeffs)):
+            for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row)):
+                if a_block is not None:
+                    Asub = A.getNestSubMatrix(i, j)
+                    assemble_matrix(Asub, a_block, bcs, diagonal, const, coeff)
+                elif i == j:
+                    for bc in bcs:
+                        row_forms = [row_form for row_form in a_row if row_form is not None]
+                        assert len(row_forms) > 0
+                        if row_forms[0].function_spaces[0].contains(bc.function_space):
+                            raise RuntimeError(
+                                f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
+                                " and have DirichletBC applied."
+                                " Consider assembling a zero block."
+                            )
+        return A
+    elif isinstance(a, Iterable):
+        _assemble_matrix_block_mat(A, a, bcs, diagonal, constants, coeffs)
+        return A
+    else:  # Non-blocked
+        constants = pack_constants(a) if constants is None else constants
+        coeffs = pack_coefficients(a) if coeffs is None else coeffs
+        _bcs = [bc._cpp_object for bc in bcs]
+        _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs)
+        if a.function_spaces[0] is a.function_spaces[1]:
+            A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
+            A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
+            _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], _bcs, diagonal)
+        return A
 
 
 # -- Modifiers for Dirichlet conditions ---------------------------------------
