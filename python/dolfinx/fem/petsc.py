@@ -236,13 +236,29 @@ def assemble_vector(
     coeffs: typing.Optional[npt.NDArray, Iterable[npt.NDArray]] = None,
     kind: typing.Optional[str] = None,
 ) -> PETSc.Vec:
-    """Assemble linear form into a new PETSc vector.
+    """Assemble linear form(s) into a new PETSc vector.
 
-    If a single linear form is passed, the form is assembled into a
-    ghosted PETSc vector. If multiple forms are passed, the forms are
-    assembled into a PETSc ``VECTNEST`` vector, where each nest block is
-    a ghosted PETSc vector. In this case the ``b.getNestSubVec(i)`` is
-    the assembled vector for ``L[i]``.
+    Three cases are supported:
+
+    1. If ``L`` is a single linear form, the form is assembled into a
+       ghosted PETSc vector.
+
+    2. If ``L`` is a sequence of linear forms and ``kind`` is ``None``
+       or is ``PETSc.Vec.Type.MPI``, the forms are assembled into a
+       vector ``b`` such that ``b = [b_0, b_1, ..., b_n, b_0g, b_1g,
+       ..., b_ng]`` where ``b_i`` are the entries associated with the
+       'owned' degrees-of-freedom for ``L[i]`` and ``b_ig`` are the
+       'unowned' (ghost) entries for ``L[i]``.
+
+       For this case, the returned vector has an attribute ``_blocks``
+       that holds the local offsets into ``b`` or the (i) owned and (ii)
+       ghost entries for each ``L[i]``. It can be accessed by
+       ``b.getAttr("_blocks")``.
+
+    3. If ``L`` is a sequence of linear forms and ``kind`` is
+       ``PETSc.Vec.Type.NEST``, the forms are assembled into a PETSc
+       nested vector ``b`` (a nest of ghosted PETSc vectors) such that
+       ``L[i]`` is assembled into into the ith nested matrix in ``b``.
 
     Constants and coefficients that appear in the forms(s) can be passed
     to avoid re-computation of constants and coefficients. The functions
@@ -287,23 +303,13 @@ def _assemble_vector_vec(
     """Assemble linear form(s) into a PETSc vector.
 
     The vector ``b`` must have been initialized with a size/layout that
-    is consistent with the linear form. If a single form is passed, then
-    ``b`` should be a ghosted PETSc vector. If multiple forms are
-    passed, then ``b`  must have type ``VECNEST``.
-
-    The vector ``b`` is assembled such that locally ``b = [b_0, b_1,
-    ..., b_n, b_0g, b_1g, ..., b_ng]`` where ``b_i`` is the assembled
-    vector for the 'owned' degrees-of-freedom for ``L[i]`` and ``b_ig``
-    are the 'unowned' (ghost) entries for ``L[i]``.
-
-    The vector ``b`` must have been initialized with a appropriate
-    size/layout.
-
+    is consistent with the linear form. The PETSc vector ``b`` is
+    normally created by :func:`create_vector`.
 
     Constants and coefficients that appear in the forms(s) can be passed
     to avoid re-computation of constants and coefficients. The functions
     :func:`dolfinx.fem.assemble.pack_constants` and
-    :func:`dolfinx.fem.assemble.pack_coefficients` can be called
+    :func:`dolfinx.fem.assemble.pack_coefficients` can be called.
 
     Note:
         The vector is not zeroed before assembly and it is not
@@ -329,7 +335,6 @@ def _assemble_vector_vec(
         for b_sub, L_sub, const, coeff in zip(b.getNestSubVecs(), L, constants, coeffs):
             with b_sub.localForm() as b_local:
                 _assemble_vector_array(b_local.array_w, L_sub, const, coeff)
-        return b
     elif isinstance(L, Iterable):
         constants = pack_constants(L) if constants is None else constants
         coeffs = pack_coefficients(L) if coeffs is None else coeffs
@@ -343,11 +348,11 @@ def _assemble_vector_vec(
                 size = off1 - off0
                 b_l.array_w[off0:off1] += bx_[:size]
                 b_l.array_w[offg0:offg1] += bx_[size:]
-        return b
     else:
         with b.localForm() as b_local:
             _assemble_vector_array(b_local.array_w, L, constants, coeffs)
-        return b
+
+    return b
 
 
 # -- Matrix assembly ---------------------------------------------------------
@@ -355,21 +360,48 @@ def _assemble_vector_vec(
 def assemble_matrix(
     a: typing.Union[Form, Iterable[Iterable[Form]]],
     bcs: Iterable[DirichletBC] = [],
-    diagonal: float = 1.0,
+    diag: float = 1.0,
     constants=None,
     coeffs=None,
     kind=None,
 ):
     """Assemble bilinear form into a matrix.
 
+    The following cases are supported:
+
+    1. If ``a`` is a single bilinear form, the form is assembled
+       into PETSc matrix of type ``kind``.
+    #. If ``a`` is a rectangular array of forms the forms in ``a`` are
+       assembled into a matrix such that::
+
+            A = [a_00 ... a_0n]
+                [a_10 ... a_1n]
+                [     ...     ]
+                [a_m0 ..  a_mn]
+
+       a. If ``kind`` is a ``PETSc.Mat.Type`` (other than
+          ``PETSc.Mat.Type.NEST``) or is ``None``, the matrix type is
+          ``kind`` of the default type (if ``kind`` is ``None``).
+       #. If ``kind`` is ``PETSc.Mat.Type.NEST`` or a rectangular array
+          of PETSc matrix types, the returned matrix has type
+          ``PETSc.Mat.Type.NEST``.
+
+    Rows/columns that are constrained by a Dirichlet boundary condition
+    are zeroed, with the diagonal to set to `diag``.
+
+    Constants and coefficients that appear in the forms(s) can be passed
+    to avoid re-computation of constants and coefficients. The functions
+    :func:`dolfinx.fem.assemble.pack_constants` and
+    :func:`dolfinx.fem.assemble.pack_coefficients` can be called.
+
     Note:
         The returned matrix is not 'assembled', i.e. ghost contributions
         have not been communicated.
 
     Args:
-        a: Bilinear form to assembled into a matrix.
+        a: Bilinear form(s) to assembled into a matrix.
         bc: Dirichlet boundary conditions applied to the system.
-        diagonal: Value to set on the matrix diagonal for Dirichlet
+        diag: Value to set on the matrix diagonal for Dirichlet
             boundary condition constrained degrees-of-freedom belonging
             to the same trial and test space.
         constants: Constants appearing the in the form.
@@ -380,12 +412,10 @@ def assemble_matrix(
     """
     try:
         A = _cpp.fem.petsc.create_matrix(a._cpp_object, kind)
-        assemble_matrix(A, a, bcs, diagonal, constants, coeffs)
-        return A
     except AttributeError:
         A = create_matrix(a, kind)
-        assemble_matrix(A, a, bcs, diagonal, constants, coeffs)
-        return A
+    assemble_matrix(A, a, bcs, diag, constants, coeffs)
+    return A
 
 
 def _assemble_matrix_block_mat(
@@ -453,6 +483,10 @@ def assemble_matrix_mat(
     coeffs=None,
 ) -> PETSc.Mat:
     """Assemble bilinear form into a matrix.
+
+    The matrix vector ``A`` must have been initialized with a
+    size/layout that is consistent with the bilinear form(s). The PETSc
+    matrix ``A`` is normally created by :func:`create_matrix`.
 
     The returned matrix is not finalised, i.e. ghost values are not
     accumulated.
