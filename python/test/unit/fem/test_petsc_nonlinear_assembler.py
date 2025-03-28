@@ -70,11 +70,11 @@ class NonlinearPDE_SNESProblem:
         from dolfinx.fem.petsc import assemble_matrix
 
         J.zeroEntries()
-        assemble_matrix(J, self.a, bcs=self.bcs, diagonal=1.0)
+        assemble_matrix(J, self.a, bcs=self.bcs, diag=1.0)
         J.assemble()
         if self.a_precon is not None:
             P.zeroEntries()
-            assemble_matrix(P, self.a_precon, bcs=self.bcs, diagonal=1.0)
+            assemble_matrix(P, self.a_precon, bcs=self.bcs, diag=1.0)
             P.assemble()
 
     def F_block(self, snes, x, F):
@@ -124,11 +124,11 @@ class NonlinearPDE_SNESProblem:
 
         assert x.getType() != "nest" and J.getType() != "nest" and P.getType() != "nest"
         J.zeroEntries()
-        assemble_matrix(J, self.a, bcs=self.bcs, diagonal=1.0)
+        assemble_matrix(J, self.a, bcs=self.bcs, diag=1.0)
         J.assemble()
         if self.a_precon is not None:
             P.zeroEntries()
-            assemble_matrix(P, self.a_precon, bcs=self.bcs, diagonal=1.0)
+            assemble_matrix(P, self.a_precon, bcs=self.bcs, diag=1.0)
             P.assemble()
 
     def F_nest(self, snes, x, F):
@@ -167,11 +167,11 @@ class NonlinearPDE_SNESProblem:
 
         assert J.getType() == "nest" and P.getType() == "nest"
         J.zeroEntries()
-        assemble_matrix(J, self.a, bcs=self.bcs, diagonal=1.0)
+        assemble_matrix(J, self.a, bcs=self.bcs, diag=1.0)
         J.assemble()
         if self.a_precon is not None:
             P.zeroEntries()
-            assemble_matrix(P, self.a_precon, bcs=self.bcs, diagonal=1.0)
+            assemble_matrix(P, self.a_precon, bcs=self.bcs, diag=1.0)
             P.assemble()
 
 

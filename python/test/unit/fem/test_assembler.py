@@ -509,7 +509,7 @@ class TestPETScAssemblers:
 
         def nested():
             """Nested (MatNest)"""
-            A = petsc_assemble_matrix([[a00, a01], [a10, a11]], bcs=bcs, diagonal=1.0, kind="nest")
+            A = petsc_assemble_matrix([[a00, a01], [a10, a11]], bcs=bcs, diag=1.0, kind="nest")
             A.assemble()
             b = petsc_assemble_vector([L0, L1], kind="nest")
             petsc_apply_lifting(b, [[a00, a01], [a10, a11]], bcs=bcs)

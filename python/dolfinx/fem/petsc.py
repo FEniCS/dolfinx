@@ -422,7 +422,7 @@ def _assemble_matrix_block_mat(
     A: PETSc.Mat,
     a: Iterable[Iterable[Form]],
     bcs: Iterable[DirichletBC],
-    diagonal: float,
+    diag: float,
     constants,
     coeffs,
 ) -> PETSc.Mat:
@@ -467,7 +467,7 @@ def _assemble_matrix_block_mat(
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is0[i], is1[j])
                 if a_sub.function_spaces[0] is a_sub.function_spaces[1]:
-                    _cpp.fem.petsc.insert_diagonal(Asub, a_sub.function_spaces[0], _bcs, diagonal)
+                    _cpp.fem.petsc.insert_diagonal(Asub, a_sub.function_spaces[0], _bcs, diag)
                 A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
 
     return A
@@ -478,7 +478,7 @@ def assemble_matrix_mat(
     A: PETSc.Mat,
     a: typing.Union[Form, Iterable[Iterable[Form]]],
     bcs: Iterable[DirichletBC] = [],
-    diagonal: float = 1,
+    diag: float = 1,
     constants=None,
     coeffs=None,
 ) -> PETSc.Mat:
@@ -498,7 +498,7 @@ def assemble_matrix_mat(
             for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row)):
                 if a_block is not None:
                     Asub = A.getNestSubMatrix(i, j)
-                    assemble_matrix(Asub, a_block, bcs, diagonal, const, coeff)
+                    assemble_matrix(Asub, a_block, bcs, diag, const, coeff)
                 elif i == j:
                     for bc in bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
@@ -511,7 +511,7 @@ def assemble_matrix_mat(
                             )
         return A
     elif isinstance(a, Iterable):
-        _assemble_matrix_block_mat(A, a, bcs, diagonal, constants, coeffs)
+        _assemble_matrix_block_mat(A, a, bcs, diag, constants, coeffs)
         return A
     else:  # Non-blocked
         constants = pack_constants(a) if constants is None else constants
@@ -521,7 +521,7 @@ def assemble_matrix_mat(
         if a.function_spaces[0] is a.function_spaces[1]:
             A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
             A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
-            _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], _bcs, diagonal)
+            _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], _bcs, diag)
         return A
 
 
