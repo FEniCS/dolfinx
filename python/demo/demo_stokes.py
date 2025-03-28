@@ -113,7 +113,7 @@ from dolfinx.fem import (
     functionspace,
     locate_dofs_topological,
 )
-from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
+from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfinx.io import XDMFFile
 from dolfinx.la.petsc import create_vector_wrap
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
@@ -213,7 +213,7 @@ def nested_iterative_solver():
     """Solve the Stokes problem using nest matrices and an iterative solver."""
 
     # Assemble nested matrix operators
-    A = fem.petsc.assemble_matrix_nest(a, bcs=bcs)
+    A = fem.petsc.assemble_matrix(a, bcs=bcs, kind="nest")
     A.assemble()
 
     # Create a nested matrix P to use as the preconditioner. The
@@ -231,10 +231,10 @@ def nested_iterative_solver():
     P11.setOption(PETSc.Mat.Option.SPD, True)
 
     # Assemble right-hand side vector
-    b = fem.petsc.assemble_vector_nest(L)
+    b = fem.petsc.assemble_vector(L, kind="nest")
 
     # Modify ('lift') the RHS for Dirichlet boundary conditions
-    fem.petsc.apply_lifting_nest(b, a, bcs=bcs)
+    fem.petsc.apply_lifting(b, a, bcs=bcs)
 
     # Sum contributions for vector entries that are share across
     # parallel processes
@@ -243,7 +243,7 @@ def nested_iterative_solver():
 
     # Set Dirichlet boundary condition values in the RHS vector
     bcs0 = fem.bcs_by_block(extract_function_spaces(L), bcs)
-    fem.petsc.set_bc_nest(b, bcs0)
+    fem.petsc.set_bc(b, bcs0)
 
     # The pressure field is determined only up to a constant. We supply
     # a vector that spans the nullspace to the solver, and any component
@@ -331,16 +331,20 @@ def nested_iterative_solver():
 
 
 def block_operators():
-    """Return block operators and block RHS vector for the Stokes
-    problem"""
+    """Return block operators and block RHS vector for the Stokes problem."""
 
     # Assembler matrix operator, preconditioner and RHS vector into
     # single objects but preserving block structure
-    A = assemble_matrix_block(a, bcs=bcs)
+    A = assemble_matrix(a, bcs=bcs)
     A.assemble()
-    P = assemble_matrix_block(a_p, bcs=bcs)
+    P = assemble_matrix(a_p, bcs=bcs)
     P.assemble()
-    b = assemble_vector_block(L, a, bcs=bcs)
+
+    b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
+    apply_lifting(b, a, bcs=bcs)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs)
+    set_bc(b, bcs0)
 
     # Set the nullspace for pressure (since pressure is determined only
     # up to a constant)

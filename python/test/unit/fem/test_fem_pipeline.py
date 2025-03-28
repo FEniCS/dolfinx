@@ -261,7 +261,7 @@ def test_petsc_curl_curl_eigenvalue(family, order):
     a, b = form(a), form(b)
     A = petsc_assemble_matrix(a, bcs=bcs)
     A.assemble()
-    B = petsc_assemble_matrix(b, bcs=bcs, diagonal=0.01)
+    B = petsc_assemble_matrix(b, bcs=bcs, diag=0.01)
     B.assemble()
 
     eps = SLEPc.EPS().create()

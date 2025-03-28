@@ -359,7 +359,7 @@ bool is_orthonormal(
   using T = typename V::value_type;
   for (std::size_t i = 0; i < basis.size(); i++)
   {
-    for (std::size_t j = i; j < basis.size(); j++)
+    for (std::size_t j = i; j < basis.size(); ++j)
     {
       T delta_ij = (i == j) ? T(1) : T(0);
       auto dot_ij = inner_product(basis[i].get(), basis[j].get());
