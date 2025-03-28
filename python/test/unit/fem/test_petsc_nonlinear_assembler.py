@@ -275,7 +275,7 @@ class TestNLSPETSc:
 
             assign((u, p), x)
 
-            A = assemble_matrix(a_block, bcs=[bc])
+            A = assemble_matrix(a_block, bcs=[bc], kind="nest")
             b = assemble_vector(L_block, kind="nest")
             apply_lifting(b, a_block, bcs=[bc], x0=x, alpha=-1.0)
             for b_sub in b.getNestSubVecs():

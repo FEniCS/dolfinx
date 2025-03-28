@@ -348,7 +348,7 @@ def assemble_matrix(
         assemble_matrix(A, a, bcs, diagonal, constants, coeffs)
         return A
     except AttributeError:
-        A = create_matrix(a, "nest")
+        A = create_matrix(a, kind)
         assemble_matrix(A, a, bcs, diagonal, constants, coeffs)
         return A
 
@@ -386,7 +386,10 @@ def assemble_matrix_mat(
                                 " Consider assembling a zero block."
                             )
         return A
-    else:
+    elif isinstance(a, Iterable):
+        _assemble_matrix_block_mat(A, a, bcs, diagonal, constants, coeffs)
+        return A
+    else:  # Non-blocked
         constants = pack_constants(a) if constants is None else constants
         coeffs = pack_coefficients(a) if coeffs is None else coeffs
         _bcs = [bc._cpp_object for bc in bcs]

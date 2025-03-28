@@ -225,7 +225,7 @@ bcs = [fem.dirichletbc(g, dofs_top), fem.dirichletbc(g, dofs_bottom)]
 # degrees-of-freedom:
 
 # +
-A = fem.petsc.assemble_matrix(a, bcs=bcs)
+A = fem.petsc.assemble_matrix(a, bcs=bcs, kind="nest")
 A.assemble()
 # -
 
@@ -264,7 +264,7 @@ a_p = fem.form(
     ],
     dtype=dtype,
 )
-P = fem.petsc.assemble_matrix(a_p, bcs=bcs)
+P = fem.petsc.assemble_matrix(a_p, bcs=bcs, kind="nest")
 P.assemble()
 # -
 

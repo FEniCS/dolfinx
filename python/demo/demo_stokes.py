@@ -213,7 +213,7 @@ def nested_iterative_solver():
     """Solve the Stokes problem using nest matrices and an iterative solver."""
 
     # Assemble nested matrix operators
-    A = fem.petsc.assemble_matrix(a, bcs=bcs)
+    A = fem.petsc.assemble_matrix(a, bcs=bcs, kind="nest")
     A.assemble()
 
     # Create a nested matrix P to use as the preconditioner. The
