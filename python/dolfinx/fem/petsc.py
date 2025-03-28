@@ -110,11 +110,30 @@ def create_vector(
 ) -> PETSc.Vec:
     """Create a PETSc vector that is compatible with a linear form(s).
 
-    If the vector type is not specified (``kind=None``) or is
-    ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is compatible
-    with ``L`` is created. If the vector type is
-    ``PETSc.Vec.Type.NEST``, a PETSc nested vector (a nest of ghosted
-    PETSc vectors) which is compatible with ``L`` is created.
+    Three cases are supported:
+
+    1. For a single linear form ``L``, if ``kind`` is ``None`` or is
+       ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is
+       compatible with ``L`` is created.
+
+    2. For a sequence of linear forms ``L``, if ``kind`` is ``None`` or is
+       ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is
+       compatible with ``L`` is created.
+
+       The creates vector ``b`` allocated such that locally ``b = [b_0,
+       b_1, ..., b_n, b_0g, b_1g, ..., b_ng]`` where ``b_i`` are the
+       entries associated with the 'owned' degrees-of-freedom for
+       ``L[i]`` and ``b_ig`` are the 'unowned' (ghost) entries for
+       ``L[i]``.
+
+       For this case, the returned vector has an attribute ``_blocks``
+       that holds the local offsets into ``b`` or the (i) owned and (ii)
+       ghost entries for each ``L[i]``. It can be accessed by
+       ``b.getAttr("_blocks")``.
+
+    3. If ``kind`` is ``PETSc.Vec.Type.NEST``, a PETSc nested vector (a
+       nest of ghosted PETSc vectors) which is compatible with ``L`` is
+       created.
 
     Args:
         L: Linear form or a list of linear forms.
@@ -166,20 +185,37 @@ def create_matrix(
 ) -> PETSc.Mat:
     """Create a PETSc matrix that is compatible with the (sequence) of bilinear form(s).
 
+    Three cases are supported:
+
+    1. For a single bilinear form, it creates a compatible PETSc matrix
+       of type ``kind``.
+    2. For a rectangular array of bilinear forms, if ``kind`` is
+       ``PETSc.Mat.Type.NEST`` or ``kind`` is an array of PETSc ``Mat``
+       types (with the same shape as ``a``), a matrix of type
+       ``PETSc.Mat.Type.NEST`` is created. The matrix is compatible
+       with the forms ``a``.
+    3. For a rectangular array of bilinear forms, it create a single
+       (non-nested) matrix of type ``kind`` that is compatible with the
+       array of for forms ``a``. If ``kind`` is ``None``, then the
+       matrix is the default type.
+
+       In this case, the matrix is arranged::
+
+             A = [a_00 ... a_0n]
+                 [a_10 ... a_1n]
+                 [     ...     ]
+                 [a_m0 ..  a_mn]
+
     Args:
         a: A bilinear form or a nested list of bilinear forms.
-        kind: The PETSc matrix type (``MatType``). If not supplied
-            and the bilinear form ``a`` is not a nested list, create a
-            standard PETSc matrix. If both ``a`` and ``kind`` are a
-            nested lists, create a nested PETSc matrix where each block
-            ``A[i][j]`` is of type ``kind[i][j]``. If ``kind`` is
-            ``PETSc.Mat.Type.NEST``, create a PETSc nest matrix. If
-            ``kind`` is not supplied and ``a`` is a nested list create a
-            blocked matrix.
+        kind: The PETSc matrix type (``MatType``).
+
+    Returns:
+        A PETSc matrix.
     """
     try:
         return _cpp.fem.petsc.create_matrix(a._cpp_object, kind)  # Single form
-    except AttributeError:  # ``a``` is a nested list
+    except AttributeError:  # ``a`` is a nested list
         _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
         if kind == PETSc.Mat.Type.NEST:  # Create nest matrix with default types
             return _cpp.fem.petsc.create_matrix_nest(_a, None)
