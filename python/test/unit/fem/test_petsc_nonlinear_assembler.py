@@ -120,15 +120,15 @@ class NonlinearPDE_SNESProblem:
         set_bc(F, bcs0, x0=x, alpha=-1)
 
     def J_block(self, snes, x, J, P):
-        from dolfinx.fem.petsc import assemble_matrix_block
+        from dolfinx.fem.petsc import assemble_matrix
 
         assert x.getType() != "nest" and J.getType() != "nest" and P.getType() != "nest"
         J.zeroEntries()
-        assemble_matrix_block(J, self.a, bcs=self.bcs, diagonal=1.0)
+        assemble_matrix(J, self.a, bcs=self.bcs, diagonal=1.0)
         J.assemble()
         if self.a_precon is not None:
             P.zeroEntries()
-            assemble_matrix_block(P, self.a_precon, bcs=self.bcs, diagonal=1.0)
+            assemble_matrix(P, self.a_precon, bcs=self.bcs, diagonal=1.0)
             P.assemble()
 
     def F_nest(self, snes, x, F):
@@ -186,7 +186,6 @@ class TestNLSPETSc:
         from dolfinx.fem.petsc import (
             apply_lifting,
             assemble_matrix,
-            assemble_matrix_block,
             assemble_vector,
             assign,
             create_vector,
@@ -248,7 +247,7 @@ class TestNLSPETSc:
             assign((u, p), x)
 
             # Ghosts are updated inside assemble_vector_block
-            A = assemble_matrix_block(a_block, bcs=[bc])
+            A = assemble_matrix(a_block, bcs=[bc])
             A.assemble()
 
             b = assemble_vector(L_block, kind="mpi")

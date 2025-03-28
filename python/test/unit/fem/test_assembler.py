@@ -304,7 +304,6 @@ class TestPETScAssemblers:
         from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
-        from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
         from dolfinx.fem.petsc import set_bc as petsc_set_bc
 
@@ -353,7 +352,7 @@ class TestPETScAssemblers:
 
         def blocked():
             """Monolithic blocked"""
-            A = petsc_assemble_matrix_block(a_block, bcs=[bc])
+            A = petsc_assemble_matrix(a_block, bcs=[bc])
             A.assemble()
             b = assemble_vector(L_block, kind=PETSc.Vec.Type.MPI)
             apply_lifting(b, a_block, bcs=[bc])
@@ -366,7 +365,7 @@ class TestPETScAssemblers:
             bnorm = b.norm()
             A.destroy(), b.destroy()
             with pytest.raises(RuntimeError):
-                petsc_assemble_matrix_block(a_block_none, bcs=[bc])
+                petsc_assemble_matrix(a_block_none, bcs=[bc])
             return Anorm, bnorm
 
         def nest():
@@ -444,7 +443,6 @@ class TestPETScAssemblers:
         from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
-        from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
         from dolfinx.fem.petsc import set_bc as petsc_set_bc
 
@@ -485,7 +483,7 @@ class TestPETScAssemblers:
 
         def blocked():
             """Blocked"""
-            A = petsc_assemble_matrix_block([[a00, a01], [a10, a11]], bcs=bcs)
+            A = petsc_assemble_matrix([[a00, a01], [a10, a11]], bcs=bcs)
             b = assemble_vector([L0, L1], kind=PETSc.Vec.Type.MPI)
             apply_lifting(b, [[a00, a01], [a10, a11]], bcs=bcs)
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -609,7 +607,6 @@ class TestPETScAssemblers:
         from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
-        from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
         from dolfinx.fem.petsc import set_bc as petsc_set_bc
 
@@ -702,9 +699,9 @@ class TestPETScAssemblers:
 
         def blocked_solve():
             """Blocked (monolithic) solver"""
-            A = petsc_assemble_matrix_block(form([[a00, a01], [a10, a11]]), bcs=[bc0, bc1])
+            A = petsc_assemble_matrix(form([[a00, a01], [a10, a11]]), bcs=[bc0, bc1])
             A.assemble()
-            P = petsc_assemble_matrix_block(form([[p00, p01], [p10, p11]]), bcs=[bc0, bc1])
+            P = petsc_assemble_matrix(form([[p00, p01], [p10, p11]]), bcs=[bc0, bc1])
             P.assemble()
             L, a = form([L0, L1]), form([[a00, a01], [a10, a11]])
             b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
@@ -845,7 +842,7 @@ class TestPETScAssemblers:
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
-        from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
+        from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
 
         def bc(V):
             facetdim = mesh.topology.dim - 1
@@ -867,14 +864,14 @@ class TestPETScAssemblers:
         L1 = inner(ufl.unit_vector(1, mesh.geometry.dim), ufl.avg(v1)) * dS
         L = form([L0, L1])
         # without boundary conditions
-        A = petsc_assemble_matrix_block(a)
+        A = petsc_assemble_matrix(a)
         A.assemble()
         assert isinstance(A, PETSc.Mat)
         assert A.isSymmetric(tol=1.0e-4)
         A.destroy()
         # with boundary conditions
         bcs = [bc(V0), bc(V1)]
-        A = petsc_assemble_matrix_block(a, bcs=bcs)
+        A = petsc_assemble_matrix(a, bcs=bcs)
         b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
         apply_lifting(b, a, bcs=bcs)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -903,14 +900,14 @@ class TestPETScAssemblers:
         L1 = inner(ufl.unit_matrix(1, 1, mesh.geometry.dim), ufl.avg(v1)) * dS
         L = form([L0, L1])
         # without boundary conditions
-        A = petsc_assemble_matrix_block(a)
+        A = petsc_assemble_matrix(a)
         A.assemble()
         assert isinstance(A, PETSc.Mat)
         assert A.isSymmetric(tol=1.0e-4)
         A.destroy()
         # with boundary conditions
         bcs = [bc(V0), bc(V1)]
-        A = petsc_assemble_matrix_block(a, bcs=bcs)
+        A = petsc_assemble_matrix(a, bcs=bcs)
         b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
         apply_lifting(b, a, bcs=bcs)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -1108,7 +1105,6 @@ class TestPETScAssemblers:
     def test_matrix_assembly_rectangular(self, mode):
         """Test assembly of block rectangular block matrices."""
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
-        from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
 
         msh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
         V0 = functionspace(msh, ("Lagrange", 1))
@@ -1124,7 +1120,7 @@ class TestPETScAssemblers:
 
         def block():
             a = form([[ufl.inner(u, v0) * ufl.dx], [ufl.inner(u, v1) * ufl.dx]])
-            A0 = petsc_assemble_matrix_block(a, bcs=[])
+            A0 = petsc_assemble_matrix(a, bcs=[])
             A0.assemble()
             A1 = petsc_assemble_matrix(a, bcs=[], kind="nest")
             A1.assemble()

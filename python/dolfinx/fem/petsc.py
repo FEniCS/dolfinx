@@ -401,22 +401,6 @@ def assemble_matrix_mat(
         return A
 
 
-# FIXME: Revise this interface
-@functools.singledispatch
-def assemble_matrix_block(
-    a: Iterable[Iterable[Form]],
-    bcs: Iterable[DirichletBC] = [],
-    diagonal: float = 1,
-    constants=None,
-    coeffs=None,
-) -> PETSc.Mat:
-    """Assemble bilinear forms into a blocked matrix."""
-    A = create_matrix(a)
-    assert A.getType() != PETSc.Mat.Type.NEST
-    return _assemble_matrix_block_mat(A, a, bcs, diagonal, constants, coeffs)
-
-
-@assemble_matrix_block.register
 def _assemble_matrix_block_mat(
     A: PETSc.Mat,
     a: Iterable[Iterable[Form]],
@@ -437,7 +421,6 @@ def _assemble_matrix_block_mat(
         [(Vsub.dofmaps(0).index_map, Vsub.dofmaps(0).index_map_bs) for Vsub in V[1]]
     )
 
-    # Assemble form
     _bcs = [bc._cpp_object for bc in bcs]
     for i, a_row in enumerate(a):
         for j, a_sub in enumerate(a_row):

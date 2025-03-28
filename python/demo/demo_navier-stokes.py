@@ -181,7 +181,7 @@ import numpy as np
 
 import ufl
 from dolfinx import default_real_type, fem, io, mesh
-from dolfinx.fem.petsc import apply_lifting, assemble_matrix_block, assemble_vector, set_bc
+from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector, set_bc
 
 try:
     from petsc4py import PETSc
@@ -326,7 +326,7 @@ bc_u = fem.dirichletbc(u_D, boundary_vel_dofs)
 bcs = [bc_u]
 
 # Assemble Stokes problem
-A = assemble_matrix_block(a_blocked, bcs=bcs)
+A = assemble_matrix(a_blocked, bcs=bcs)
 A.assemble()
 
 b = assemble_vector(L_blocked, kind=PETSc.Vec.Type.MPI)
@@ -417,7 +417,7 @@ for n in range(num_time_steps):
     t += delta_t.value
 
     A.zeroEntries()
-    fem.petsc.assemble_matrix_block(A, a_blocked, bcs=bcs)  # type: ignore
+    fem.petsc.assemble_matrix(A, a_blocked, bcs=bcs)  # type: ignore
     A.assemble()
 
     with b.localForm() as b_loc:

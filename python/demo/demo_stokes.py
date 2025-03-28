@@ -113,7 +113,7 @@ from dolfinx.fem import (
     functionspace,
     locate_dofs_topological,
 )
-from dolfinx.fem.petsc import apply_lifting, assemble_matrix_block, assemble_vector, set_bc
+from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfinx.io import XDMFFile
 from dolfinx.la.petsc import create_vector_wrap
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
@@ -335,9 +335,9 @@ def block_operators():
 
     # Assembler matrix operator, preconditioner and RHS vector into
     # single objects but preserving block structure
-    A = assemble_matrix_block(a, bcs=bcs)
+    A = assemble_matrix(a, bcs=bcs)
     A.assemble()
-    P = assemble_matrix_block(a_p, bcs=bcs)
+    P = assemble_matrix(a_p, bcs=bcs)
     P.assemble()
 
     b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
