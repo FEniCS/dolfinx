@@ -240,18 +240,61 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 // FIXME: need to pass an array of Vec for x0?
 // FIXME: clarify zeroing of vector
 
-/// Modify b such that:
+/// @brief Modify the right-hand side vector to account for constraints
+/// (Dirichlet boundary conditions constraints).
 ///
-///   b <- b - alpha * A_j (g_j - x0_j)
+/// This modification is referred to as 'lifting'.
 ///
+/// Consider the discrete algebraic system
+/// \f[
+/// \begin{bmatrix}
+/// A_{0} & A_{1} & A_{2} & A_{3}
+/// \end{bmatrix}
+/// \begin{bmatrix}
+/// x_{0} \\ \alpha(g_{1} - z_{1}) \\ x_{2} \\ \alpha(g_{3} - z_{3})
+/// \end{bmatrix}
+/// = b,
+/// \f]
+/// where \f$A_{i}\f$ is a matrix, \f$x_{i}\f$ and \f$z_{i}\f$ are
+/// vectors and \f$\alpha\f$ is a constant. The vectors \f$z_{i}\f$ are
+/// given. If \f$g_{1}\f$ and \f$g_{3}\f$ are specifed (boundary
+/// condition values),
+/// \f[
+/// \begin{bmatrix}
+/// A_{00} & A_{02}
+/// \end{bmatrix}
+/// \begin{bmatrix}
+/// x_{0} \\ x_{2}
+/// \end{bmatrix}
+/// = b - \alpha A_{1} (g_{1} - z_{1}) - \alpha A_{3} (g_{3} - z_{3}).
+/// \f]
+///
+/// The modified  \f$b_{0}\f$ vector is
+/// \f[
+///  b \leftarrow b - \alpha A_{1} (g_{1} - z_{1}) - \alpha A_{3} (g_{3} - z_{3})
+/// \f]
+/// More generally,
+/// \f[
+///  b \leftarrow b - \alpha A_{j} (g_{j} - z_{j})
+/// \f]
+///
+/// This function before the above inplace modification of \f$b\f$.
 /// where j is a block (nest) index. For a non-blocked problem j = 0. The
 /// boundary conditions bcs1 are on the trial spaces V_j. The forms in
 /// [a] must have the same test space as L (from which b was built), but the
 /// trial space may differ. If x0 is not supplied, then it is treated as
 /// zero.
 ///
-/// Ghost contributions are not accumulated (not sent to owner). Caller
-/// is responsible for calling VecGhostUpdateBegin/End.
+/// @note Ghost contributions are not accumulated (not sent to owner).
+/// Caller is responsible for calling VecGhostUpdateBegin/End.
+///
+/// @param[in,out] b
+/// @param[in] a
+/// @param[in] constants
+/// @param[in] coeffs
+/// @param[in] x0
+/// @param[in] bcs1
+/// @param[in] alpha
 template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
     std::span<T> b,
