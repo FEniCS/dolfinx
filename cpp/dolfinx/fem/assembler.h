@@ -271,7 +271,8 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 ///
 /// The modified  \f$b_{0}\f$ vector is
 /// \f[
-///  b \leftarrow b - \alpha A_{1} (g_{1} - z_{1}) - \alpha A_{3} (g_{3} - z_{3})
+///  b \leftarrow b - \alpha A_{1} (g_{1} - z_{1}) - \alpha A_{3} (g_{3} -
+///  z_{3})
 /// \f]
 /// More generally,
 /// \f[
