@@ -20,6 +20,7 @@
 #include <concepts>
 #include <dolfinx/common/types.h>
 #include <dolfinx/la/SparsityPattern.h>
+#include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/utils.h>
@@ -370,8 +371,7 @@ Form<T, U> create_form_factory(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
         subdomains,
-    const std::map<std::shared_ptr<const mesh::Mesh<U>>,
-                   std::span<const std::int32_t>>& entity_maps,
+    const std::vector<std::shared_ptr<const mesh::EntityMap<U>>>& entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   for (const ufcx_form& ufcx_form : ufcx_forms)
@@ -414,14 +414,6 @@ Form<T, U> create_form_factory(
     mesh = spaces.front()->mesh();
   if (!mesh)
     throw std::runtime_error("No mesh could be associated with the Form.");
-  for (auto& V : spaces)
-  {
-    if (mesh != V->mesh() and entity_maps.find(V->mesh()) == entity_maps.end())
-    {
-      throw std::runtime_error(
-          "Incompatible mesh. entity_maps must be provided.");
-    }
-  }
 
   auto topology = mesh->topology();
   assert(topology);
@@ -790,8 +782,7 @@ Form<T, U> create_form(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
         subdomains,
-    const std::map<std::shared_ptr<const mesh::Mesh<U>>,
-                   std::span<const std::int32_t>>& entity_maps,
+    const std::vector<std::shared_ptr<const mesh::EntityMap<U>>>& entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   // Place coefficients in appropriate order
@@ -850,8 +841,7 @@ Form<T, U> create_form(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
         subdomains,
-    const std::map<std::shared_ptr<const mesh::Mesh<U>>,
-                   std::span<const std::int32_t>>& entity_maps,
+    const std::vector<std::shared_ptr<const mesh::EntityMap<U>>>& entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   ufcx_form* form = fptr();
