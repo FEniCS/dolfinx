@@ -73,7 +73,11 @@ std::vector<std::int32_t> compute_domain(
   {
     std::span ents(entities.data_handle(), entities.size());
     std::ranges::transform(ents, std::back_inserter(mapped_entities),
-                           [&entity_map](auto e) { return entity_map[e]; });
+                           [&entity_map](auto e)
+                           {
+                             assert(e < entity_map.size());
+                             return entity_map[e];
+                           });
   }
   else if (entities.rank() == 2)
   {
@@ -83,6 +87,7 @@ std::vector<std::int32_t> compute_domain(
       for (std::size_t i = 0; i < entities.extent(0); ++i)
       {
         // Add cell and the local facet index
+        assert(entities(i, 0) < entity_map.size());
         mapped_entities.insert(mapped_entities.end(),
                                {entity_map[entities(i, 0)], entities(i, 1)});
       }
@@ -97,6 +102,7 @@ std::vector<std::int32_t> compute_domain(
         // Get the facet index, and add cell and the local facet index
         std::int32_t facet
             = c_to_f->get().links(entities(i, 0))[entities(i, 1)];
+        assert(facet < entity_map.size());
         mapped_entities.insert(mapped_entities.end(),
                                {entity_map[facet], entities(i, 1)});
       }
@@ -107,12 +113,15 @@ std::vector<std::int32_t> compute_domain(
   else
     throw std::runtime_error("Integral type not supported.");
   // Check that there are no negative values in the mapped entities
-  auto min_val
-      = std::min_element(mapped_entities.begin(), mapped_entities.end());
-  if (*min_val < 0)
+  if (!mapped_entities.empty())
   {
-    throw std::runtime_error(
-        "Mapped entities contain negative values, check entity map.");
+    auto min_val
+        = std::min_element(mapped_entities.begin(), mapped_entities.end());
+    if (*min_val < 0)
+    {
+      throw std::runtime_error(
+          "Mapped entities contain negative values, check entity map.");
+    }
   }
   return mapped_entities;
 }
@@ -295,7 +304,6 @@ public:
         }
       }
     }
-
     for (std::size_t i = 0; i < _function_spaces.size(); ++i)
     {
       // Working map: [integral type, domain ID, kernel_idx]->entities
@@ -327,7 +335,6 @@ public:
             e_imap->size_local() + e_imap->num_ghosts(), -1);
         for (std::size_t i = 0; i < entities0.size(); ++i)
           entity_map[entities[i]] = entities0[i];
-
         for (auto& [key, itg] : _integrals)
         {
           auto [type, id, kernel_idx] = key;

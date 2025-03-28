@@ -102,7 +102,8 @@ int main(int argc, char* argv[])
     // `submesh_to_mesh`.
 
     const mesh::EntityMap<U> entity_map(mesh, submesh, tdim, submesh_to_mesh);
-
+    std::vector<std::shared_ptr<const mesh::EntityMap<U>>> entity_maps
+        = {std::make_shared<const mesh::EntityMap<T>>(entity_map)};
     // Next we compute the integration entities on the integration
     // domain `mesh`
     std::vector<std::int32_t> integration_entities
@@ -115,9 +116,9 @@ int main(int argc, char* argv[])
         = {{fem::IntegralType::cell, {{3, integration_entities}}}};
 
     // We can now create the bilinear form
-    fem::Form<T> a_mixed = fem::create_form<T>(
-        *form_mixed_codim0_a_mixed, {V, W}, {}, {}, subdomain_data,
-        {std::make_shared<const mesh::EntityMap<T>>(entity_map)}, V->mesh());
+    fem::Form<T> a_mixed
+        = fem::create_form<T>(*form_mixed_codim0_a_mixed, {V, W}, {}, {},
+                              subdomain_data, entity_maps, V->mesh());
 
     la::SparsityPattern sp_mixed = fem::create_sparsity_pattern(a_mixed);
     sp_mixed.finalize();
