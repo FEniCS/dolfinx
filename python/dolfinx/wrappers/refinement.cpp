@@ -25,6 +25,7 @@
 #include <nanobind/stl/vector.h>
 #include <optional>
 #include <span>
+#include <stdexcept>
 
 namespace nb = nanobind;
 
@@ -51,11 +52,14 @@ void export_refinement(nb::module_& m)
               std::span(edges.value().data(), edges.value().size()));
         }
 
-        dolfinx_wrappers::part::impl::CppCellPartitionFunction cpp_partitioner
-            = partitioner.has_value()
-                  ? dolfinx_wrappers::part::impl::create_cell_partitioner_cpp(
-                        partitioner.value())
-                  : nullptr;
+        std::optional<dolfinx_wrappers::part::impl::CppCellPartitionFunction>
+            cpp_partitioner(std::nullopt);
+        if (partitioner.has_value())
+        {
+          cpp_partitioner
+              = dolfinx_wrappers::part::impl::create_cell_partitioner_cpp(
+                  partitioner.value());
+        }
         auto [mesh1, cell, facet] = dolfinx::refinement::refine(
             mesh, cpp_edges, cpp_partitioner, option);
 
@@ -90,6 +94,21 @@ void refinement(nb::module_& m)
 {
   export_refinement<float>(m);
   export_refinement<double>(m);
+
+  m.def("empty_partitioner",
+        []() -> std::optional<
+                 dolfinx_wrappers::part::impl::PythonCellPartitionFunction>
+        {
+          auto empty_partitioner = std::make_optional<
+              dolfinx_wrappers::part::impl::PythonCellPartitionFunction>(
+              nullptr);
+          assert(empty_partitioner.has_value());
+          if (!empty_partitioner.has_value())
+          {
+            throw std::runtime_error("empty_partitioner has no value!");
+          }
+          return empty_partitioner;
+        });
 
   nb::enum_<dolfinx::refinement::Option>(m, "RefinementOption")
       .value("none", dolfinx::refinement::Option::none)
