@@ -537,11 +537,11 @@ def apply_lifting(
     constants=None,
     coeffs=None,
 ) -> None:
-    """Apply the function :func:`dolfinx.fem.apply_lifting` to a PETSc Vector.
+    """Modify an assembled vector to account for constraints (Dirichlet boundary conitions).
 
     Args:
-        b:
-        a:
+        b: Vector to modify in-place.
+        a: Bilinear forms
         bcs:
         x0:
         alpha:
@@ -606,7 +606,9 @@ def set_bc(
     x0: typing.Optional[PETSc.Vec] = None,
     alpha: float = 1,
 ) -> None:
-    """Apply the function :func:`dolfinx.fem.set_bc` to a PETSc Vector.
+    """Set constraint (Dirchlet boundary condition) values in an vector.
+
+    This function modifies locally owned entries in the vector only.
 
     Args:
         b:
