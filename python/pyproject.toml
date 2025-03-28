@@ -5,7 +5,7 @@
 # list it here.
 # pip install -r build-requirements.txt
 [build-system]
-requires = ["scikit-build-core[pyproject]>=0.10", "nanobind>=2.5.0", "mpi4py"]
+requires = ["scikit-build-core[pyproject]>=0.10", "nanobind==2.5.0", "mpi4py"]
 build-backend = "scikit_build_core.build"
 
 [project]
