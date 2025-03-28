@@ -352,10 +352,12 @@ set_package_properties(
   URL "https://github.com/fenics/basix"
 )
 
+message(STATUS "Configure HDF5")
+
 # Check for HDF5
 set(HDF5_PREFER_PARALLEL TRUE)
 set(HDF5_FIND_DEBUG TRUE)
-find_package(HDF5)
+find_package(HDF5 REQUIRED COMPONENTS C)
 
 if(NOT HDF5_IS_PARALLEL)
   message(
