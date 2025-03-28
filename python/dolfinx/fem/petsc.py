@@ -182,7 +182,6 @@ def create_matrix(
         return _cpp.fem.petsc.create_matrix(a._cpp_object, kind)  # Single form
     except AttributeError:  # ``a``` is a nested list
         _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
-
         if kind == PETSc.Mat.Type.NEST:  # Create nest matrix with default types
             return _cpp.fem.petsc.create_matrix_nest(_a, None)
         else:
@@ -345,12 +344,11 @@ def assemble_matrix(
         Matrix representing the bilinear form.
     """
     try:
-        _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
-        A = _cpp.fem.petsc.create_matrix_nest(_a, kind)
+        A = _cpp.fem.petsc.create_matrix(a._cpp_object, kind)
         assemble_matrix(A, a, bcs, diagonal, constants, coeffs)
         return A
-    except TypeError:
-        A = _cpp.fem.petsc.create_matrix(a._cpp_object, kind)
+    except AttributeError:
+        A = create_matrix(a, "nest")
         assemble_matrix(A, a, bcs, diagonal, constants, coeffs)
         return A
 
@@ -360,7 +358,7 @@ def assemble_matrix_mat(
     A: PETSc.Mat,
     a: typing.Union[Form, Iterable[Iterable[Form]]],
     bcs: Iterable[DirichletBC] = [],
-    diagonal: float = 1.0,
+    diagonal: float = 1,
     constants=None,
     coeffs=None,
 ) -> PETSc.Mat:
@@ -405,13 +403,13 @@ def assemble_matrix_mat(
 def assemble_matrix_block(
     a: Iterable[Iterable[Form]],
     bcs: Iterable[DirichletBC] = [],
-    diagonal: float = 1.0,
+    diagonal: float = 1,
     constants=None,
     coeffs=None,
 ) -> PETSc.Mat:
     """Assemble bilinear forms into a blocked matrix."""
-    _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
-    A = _cpp.fem.petsc.create_matrix_block(_a, None)
+    A = create_matrix(a)
+    assert A.getType() != PETSc.Mat.Type.NEST
     return _assemble_matrix_block_mat(A, a, bcs, diagonal, constants, coeffs)
 
 
@@ -420,19 +418,19 @@ def _assemble_matrix_block_mat(
     A: PETSc.Mat,
     a: Iterable[Iterable[Form]],
     bcs: Iterable[DirichletBC] = [],
-    diagonal: float = 1.0,
+    diagonal: float = 1,
     constants=None,
     coeffs=None,
 ) -> PETSc.Mat:
     """Assemble bilinear forms into a blocked matrix."""
-    constants = [pack_constants(forms) for forms in a] if constants is None else constants
+    consts = [pack_constants(forms) for forms in a] if constants is None else constants
     coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
 
     V = _extract_function_spaces(a)
-    is_rows = _cpp.la.petsc.create_index_sets(
+    is0 = _cpp.la.petsc.create_index_sets(
         [(Vsub.dofmaps(0).index_map, Vsub.dofmaps(0).index_map_bs) for Vsub in V[0]]
     )
-    is_cols = _cpp.la.petsc.create_index_sets(
+    is1 = _cpp.la.petsc.create_index_sets(
         [(Vsub.dofmaps(0).index_map, Vsub.dofmaps(0).index_map_bs) for Vsub in V[1]]
     )
 
@@ -441,11 +439,11 @@ def _assemble_matrix_block_mat(
     for i, a_row in enumerate(a):
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
-                Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
+                Asub = A.getLocalSubMatrix(is0[i], is1[j])
                 _cpp.fem.petsc.assemble_matrix(
-                    Asub, a_sub._cpp_object, constants[i][j], coeffs[i][j], _bcs, True
+                    Asub, a_sub._cpp_object, consts[i][j], coeffs[i][j], _bcs, True
                 )
-                A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
+                A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
             elif i == j:
                 for bc in bcs:
                     row_forms = [row_form for row_form in a_row if row_form is not None]
@@ -464,10 +462,10 @@ def _assemble_matrix_block_mat(
     for i, a_row in enumerate(a):
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
-                Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
+                Asub = A.getLocalSubMatrix(is0[i], is1[j])
                 if a_sub.function_spaces[0] is a_sub.function_spaces[1]:
                     _cpp.fem.petsc.insert_diagonal(Asub, a_sub.function_spaces[0], _bcs, diagonal)
-                A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
+                A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
 
     return A
 
@@ -484,7 +482,17 @@ def apply_lifting(
     constants=None,
     coeffs=None,
 ) -> None:
-    """Apply the function :func:`dolfinx.fem.apply_lifting` to a PETSc Vector."""
+    """Apply the function :func:`dolfinx.fem.apply_lifting` to a PETSc Vector.
+
+    Args:
+        b:
+        a:
+        bcs:
+        x0:
+        alpha:
+        constants:
+        coeffs
+    """
     if b.getType() == PETSc.Vec.Type.NEST:
         x0 = [] if x0 is None else x0.getNestSubVecs()
         bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
@@ -543,7 +551,14 @@ def set_bc(
     x0: typing.Optional[PETSc.Vec] = None,
     alpha: float = 1,
 ) -> None:
-    """Apply the function :func:`dolfinx.fem.set_bc` to a PETSc Vector."""
+    """Apply the function :func:`dolfinx.fem.set_bc` to a PETSc Vector.
+
+    Args:
+        b:
+        bcs:
+        x0:
+        alpha:
+    """
     if b.getType() == PETSc.Vec.Type.NEST:
         _b = b.getNestSubVecs()
         x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()
