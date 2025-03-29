@@ -249,7 +249,7 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 /// = b,
 /// \f]
 /// where \f$A_{i}\f$ is a matrix. Partitioning vector entries into
-/// 'unknown' (\f$x_{i}^{(0)}\f$) and prescribed (\f$x_{i}^{(1)}\f$)
+/// 'unknown' (\f$u_{i}^{(0)}\f$) and prescribed (\f$u_{i}^{(1)}\f$)
 /// groups,
 /// \f[
 /// \begin{bmatrix}
@@ -260,9 +260,9 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 /// \end{bmatrix}
 /// = b.
 /// \f]
-/// If \f$u_{i}^{(1)} = \alpha(g_{i} - x_{i})\f$, which is prescribed,
-/// in which \f$g_{i}\f$ is the Dirichlet boundary condition value,
-/// \f$x_{i}\f$ is provided and \f$\alpha\f$ is a constant, then
+/// If \f$u_{i}^{(1)} = \alpha(g_{i} - x_{i})\f$, in which \f$g_{i}\f$
+/// is the Dirichlet boundary condition value, \f$x_{i}\f$ is provided
+/// and \f$\alpha\f$ is a constant, then
 /// \f[
 /// \begin{bmatrix}
 /// A_{0}^{(0)} & A_{0}^{(1)} & A_{1}^{(0)} & A_{1}^{(1)}
@@ -284,9 +284,9 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 /// x_{1}).
 /// \f]
 ///
-/// The modified  \f$b_{0}\f$ vector is
+/// The modified  \f$b\f$ vector is
 /// \f[
-///  b \leftarrow b - \alpha A_{0}^{(0)} (g_{0} - x_{0}) - \alpha A_{1}^{(1)}
+///  b \leftarrow b - \alpha A_{0}^{(1)} (g_{0} - x_{0}) - \alpha A_{1}^{(1)}
 ///  (g_{1} - x_{1})
 /// \f]
 /// More generally,
@@ -302,7 +302,7 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 ///
 /// @param[in,out] b The vector to modify inplace.
 /// @param[in] a List of bilinear forms, where `a[i]` is the form that
-/// generates the matrix \f$A_{i}\f$. All forms is `a` must share the
+/// generates the matrix \f$A_{i}\f$. All forms in `a` must share the
 /// same test function space. The trial function spaces can differ.
 /// @param[in] constants Constant data appearing in the forms `a`.
 /// @param[in] coeffs Coefficient data appearing in the forms `a`.
@@ -346,7 +346,7 @@ void apply_lifting(
 ///
 /// @param[in,out] b The vector to modify inplace.
 /// @param[in] a List of bilinear forms, where `a[i]` is the form that
-/// generates the matrix \f$A_{i}\f$ (see apply_lifting()). All forms is
+/// generates the matrix \f$A_{i}\f$ (see apply_lifting()). All forms in
 /// `a` must share the same test function space. The trial function
 /// spaces can differ.
 /// @param[in] x0 The vector \f$x_{i}\f$ described in apply_lifting().
