@@ -234,12 +234,6 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
                   make_coefficients_span(coefficients));
 }
 
-// FIXME: clarify how x0 is used
-// FIXME: if bcs entries are set
-
-// FIXME: need to pass an array of Vec for x0?
-// FIXME: clarify zeroing of vector
-
 /// @brief Modify the right-hand side vector to account for constraints
 /// (Dirichlet boundary conditions constraints).
 ///
