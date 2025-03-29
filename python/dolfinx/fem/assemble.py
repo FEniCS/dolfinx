@@ -317,24 +317,81 @@ def apply_lifting(
     constants=None,
     coeffs=None,
 ) -> None:
-    """Modify RHS vector b for lifting of Dirichlet boundary conditions.
+    """Modify right-hand side vector ``b`` for lifting of Dirichlet boundary conditions.
 
-    It modifies b such that:
+    Consider the discrete algebraic system:
 
     .. math::
 
-        b \\leftarrow  b - \\text{scale} * A_j (g_j - x0_j)
+       \\begin{bmatrix} A_{0} & A_{1} \\end{bmatrix}
+       \\begin{bmatrix}u_{0} \\\ u_{1}\\end{bmatrix}
+       = b,
 
-    where j is a block (nest) index. For a non-blocked problem j = 0.
-    The boundary conditions bcs are on the trial spaces V_j. The forms
-    in [a] must have the same test space as L (from which b was built),
-    but the trial space may differ. If x0 is not supplied, then it is
-    treated as zero.
+    where :math:`A_{i}` is a matrix. Partitioning each vector
+    :math:`u_{i}` into 'unknown' (:math:`u_{i}^{(0)}`) and prescribed
+    (:math:`u_{i}^{(1)}`) groups,
+
+    .. math::
+
+        \\begin{bmatrix} A_{0}^{(0)} & A_{0}^{(1)} & A_{1}^{(0)} & A_{1}^{(1)}\\end{bmatrix}
+        \\begin{bmatrix}u_{0}^{(0)} \\\ u_{0}^{(1)} \\\ u_{1}^{(0)} \\\ u_{1}^{(1)}\\end{bmatrix}
+        = b.
+
+    If :math:`u_{i}^{(1)} = \\alpha(g_{i} - x_{i})`, where :math:`g_{i}`
+    is the Dirichlet boundary condition value, :math:`x_{i}` is provided
+    and :math:`\\alpha` is a constant, then
+
+    .. math::
+
+        \\begin{bmatrix}A_{0}^{(0)} & A_{0}^{(1)} & A_{1}^{(0)} & A_{1}^{(1)} \\end{bmatrix}
+        \\begin{bmatrix}u_{0}^{(0)} \\\ \\alpha(g_{0} - x_{0}) \\\ u_{1}^{(0)} \\\ \\alpha(g_{1} - x_{1})\\end{bmatrix}
+        = b.
+
+    Rearranging,
+
+    .. math::
+
+        \\begin{bmatrix}A_{0}^{(0)} & A_{1}^{(0)}\\end{bmatrix}
+        \\begin{bmatrix}u_{0}^{(0)} \\\ u_{1}^{(0)}\\end{bmatrix}
+        = b - \\alpha A_{0}^{(1)} (g_{0} - x_{0}) - \\alpha A_{1}^{(1)} (g_{1} - x_{1}).
+
+    The modified  :math:`b` vector is
+
+    .. math::
+
+        b \\leftarrow b - \\alpha A_{0}^{(1)} (g_{0} - x_{0}) - \\alpha A_{1}^{(1)} (g_{1} - x_{1})
+
+    More generally,
+
+    .. math::
+        b \\leftarrow b - \\alpha A_{i}^{(1)} (g_{i} - x_{i}).
+
+    Args:
+        b: The array to modify inplace.
+        a: List of bilinear forms, where ``a[i]`` is the form that
+            generates the matrix :math"`A_{i}`. All forms in ``a`` must
+            share the same test function space. The trial function
+            spaces can differ.
+        bcs: Boundary conditions that provide the :math:`g_{i}` values.
+            ``bcs1[i]`` is the list of boundary conditions on
+            :math:`u_{i}`.
+        x0: The array :math:`x_{i}` above. If ``None`` it is set to
+            zero.
+        alpha: Scalar used in the modification of ``b``.
+        constants: Packed constant data appearing in the forms ``a``. If
+            ``None``, the constant data will be packed by the function.
+        coeffs: Packed coefficient data appearing in the forms ``a``. If
+            ``None``, the coefficient data will be packed by the
+            function.
 
     Note:
         Ghost contributions are not accumulated (not sent to owner).
-        Caller is responsible for calling VecGhostUpdateBegin/End.
+        Caller is responsible for reverse-scatter to update the ghosts.
 
+    Note:
+        Boundary condition values are *not* set in ``b`` by this
+        function. Use :func:`dolfinx.fem.DirichletBC.set` to set values
+        in ``b``.
     """
     x0 = [] if x0 is None else x0
     constants = (

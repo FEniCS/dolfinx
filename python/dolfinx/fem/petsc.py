@@ -531,22 +531,44 @@ def assemble_matrix_mat(
 def apply_lifting(
     b: PETSc.Vec,
     a: typing.Union[Iterable[Form], Iterable[Iterable[Form]]],
-    bcs: typing.Union[Iterable[DirichletBC], Iterable[Iterable[DirichletBC]]],
+    bcs: Iterable[DirichletBC],
     x0: typing.Optional[Iterable[PETSc.Vec]] = None,
     alpha: float = 1,
     constants=None,
     coeffs=None,
 ) -> None:
-    """Modify an assembled vector to account for constraints (Dirichlet boundary conitions).
+    """Modify the right-hand side PETSc vector ``b`` to account for
+    constraints (Dirichlet boundary conitions).
+
+    See :func:`dolfinx.fem.apply_lifting` for a mathematical
+    descriptions of the lifting operation.
 
     Args:
         b: Vector to modify in-place.
-        a: Bilinear forms
-        bcs:
-        x0:
-        alpha:
-        constants:
-        coeffs
+        a: List of bilinear forms. If ``b`` is not blocked or a nest,
+            then ``a`` is a 1D sequence. If ``b`` is blocked or a nest
+            then ``a`` is  a 2D array of forms, with ``a[i]`` used to
+            modify block/nest vector ``b[i]``.
+        bcs: Boundary conditions to use to modify ``b`` (see
+            :func:`dolfinx.fem.apply_lifting`).
+        x0: Vector to use in modify ``b`` (see
+            :func:`dolfinx.fem.apply_lifting`). Zero if ``None``.
+        alpha: Scalar parameter in lifting (see
+            :func:`dolfinx.fem.apply_lifting`).
+        constants: Packed constant data appearing in the forms ``a``. If
+            ``None``, the constant data will be packed by the function.
+        coeffs: Packed coefficient data appearing in the forms ``a``. If
+            ``None``, the coefficient data will be packed by the
+            function.
+
+    Note:
+        Ghost contributions are not accumulated (not sent to owner).
+        Caller is responsible for reverse-scatter to update the ghosts.
+
+    Note:
+        Boundary condition values are *not* set in ``b`` by this
+        function. Use :func:`dolfinx.fem.DirichletBC.set` to set values in
+        ``b``.
     """
     if b.getType() == PETSc.Vec.Type.NEST:
         x0 = [] if x0 is None else x0.getNestSubVecs()

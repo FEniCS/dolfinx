@@ -235,10 +235,10 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 }
 
 /// @brief Modify the right-hand side vector to account for constraints
-/// (Dirichlet boundary conditions constraints).
+/// (Dirichlet boundary condition constraints). This modification is
+/// known as 'lifting'.
 ///
-/// This modification is referred to as 'lifting'. Consider the discrete
-/// algebraic system
+/// Consider the discrete algebraic system
 /// \f[
 /// \begin{bmatrix}
 /// A_{0} & A_{1}
@@ -248,9 +248,9 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 /// \end{bmatrix}
 /// = b,
 /// \f]
-/// where \f$A_{i}\f$ is a matrix. Partitioning vector entries into
-/// 'unknown' (\f$u_{i}^{(0)}\f$) and prescribed (\f$u_{i}^{(1)}\f$)
-/// groups,
+/// where \f$A_{i}\f$ is a matrix. Partitioning each vector \f$u_{i}\f$
+/// into 'unknown' (\f$u_{i}^{(0)}\f$) and prescribed
+/// (\f$u_{i}^{(1)}\f$) groups,
 /// \f[
 /// \begin{bmatrix}
 /// A_{0}^{(0)} & A_{0}^{(1)} & A_{1}^{(0)} & A_{1}^{(1)}
@@ -260,9 +260,9 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 /// \end{bmatrix}
 /// = b.
 /// \f]
-/// If \f$u_{i}^{(1)} = \alpha(g_{i} - x_{i})\f$, in which \f$g_{i}\f$
-/// is the Dirichlet boundary condition value, \f$x_{i}\f$ is provided
-/// and \f$\alpha\f$ is a constant, then
+/// If \f$u_{i}^{(1)} = \alpha(g_{i} - x_{i})\f$, where \f$g_{i}\f$ is
+/// the Dirichlet boundary condition value, \f$x_{i}\f$ is provided and
+/// \f$\alpha\f$ is a constant, then
 /// \f[
 /// \begin{bmatrix}
 /// A_{0}^{(0)} & A_{0}^{(1)} & A_{1}^{(0)} & A_{1}^{(1)}
@@ -295,7 +295,7 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 /// \f]
 ///
 /// @note Ghost contributions are not accumulated (not sent to owner).
-/// Caller is responsible for updating the ghosts.
+/// Caller is responsible for reverse-scatter to update the ghosts.
 ///
 /// @note Boundary condition values are *not* set in `b` by this
 /// function. Use DirichletBC::set to set values in `b`.
@@ -306,11 +306,11 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 /// same test function space. The trial function spaces can differ.
 /// @param[in] constants Constant data appearing in the forms `a`.
 /// @param[in] coeffs Coefficient data appearing in the forms `a`.
-/// @param[in] x0 The vector \f$x_{i}\f$ above. If empty is is set to
+/// @param[in] x0 The vector \f$x_{i}\f$ above. If empty it is set to
 /// zero.
 /// @param[in] bcs1 Boundary conditions that provide the \f$g_{i}\f$
-/// values. `bcs1[i]` is the list of boundary conditions \f$u_{i}\f$.
-/// @param[in] alpha Constant used in the modification of `b`.
+/// values. `bcs1[i]` is the list of boundary conditions on \f$u_{i}\f$.
+/// @param[in] alpha Scalar used in the modification of `b`.
 template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
     std::span<T> b,
@@ -330,16 +330,17 @@ void apply_lifting(
 }
 
 /// @brief Modify the right-hand side vector to account for constraints
-/// (Dirichlet boundary conditions constraints).
+/// (Dirichlet boundary conditions constraints). This modification is
+/// known as 'lifting'.
 ///
-/// See apply_lifting() for an explanation of lifting. The difference
-/// between this function and apply_lifting() is that apply_lifting()
-/// requires constant and coefficient form data to be passed to the
-/// function, whereas thus function packs the constant and coefficient
-/// form data and then calls apply_lifting().
+/// See apply_lifting() for a detailed explanation of the lifting. The
+/// difference between this function and apply_lifting() is that
+/// apply_lifting() requires packed form constant and coefficient data
+/// to be passed to the function, whereas this function packs the
+/// constant and coefficient form data and then calls apply_lifting().
 ///
 /// @note Ghost contributions are not accumulated (not sent to owner).
-/// Caller is responsible for updating the ghosts,
+/// Caller is responsible for reverse-scatter to update the ghosts.
 ///
 /// @note Boundary condition values are *not* set in `b` by this
 /// function. Use DirichletBC::set to set values in `b`.
@@ -350,11 +351,11 @@ void apply_lifting(
 /// `a` must share the same test function space. The trial function
 /// spaces can differ.
 /// @param[in] x0 The vector \f$x_{i}\f$ described in apply_lifting().
-/// If empty is is set to zero.
+/// If empty it is set to zero.
 /// @param[in] bcs1 Boundary conditions that provide the \f$g_{i}\f$
 /// values described in apply_lifting(). `bcs1[i]` is the list of
-/// boundary conditions \f$u_{i}\f$.
-/// @param[in] alpha Constant used in the modification of `b` (see
+/// boundary conditions on \f$u_{i}\f$.
+/// @param[in] alpha Scalar used in the modification of `b` (see
 /// described in apply_lifting()).
 template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
