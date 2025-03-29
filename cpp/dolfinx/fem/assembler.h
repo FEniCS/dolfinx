@@ -243,59 +243,76 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 /// @brief Modify the right-hand side vector to account for constraints
 /// (Dirichlet boundary conditions constraints).
 ///
-/// This modification is referred to as 'lifting'.
-///
-/// Consider the discrete algebraic system
+/// This modification is referred to as 'lifting'. Consider the discrete
+/// algebraic system
 /// \f[
 /// \begin{bmatrix}
-/// A_{0} & A_{1} & A_{2} & A_{3}
+/// A_{0} & A_{1}
 /// \end{bmatrix}
 /// \begin{bmatrix}
-/// x_{0} \\ \alpha(g_{1} - z_{1}) \\ x_{2} \\ \alpha(g_{3} - z_{3})
+/// u_{0} \\ u_{1}
 /// \end{bmatrix}
 /// = b,
 /// \f]
-/// where \f$A_{i}\f$ is a matrix, \f$x_{i}\f$ and \f$z_{i}\f$ are
-/// vectors and \f$\alpha\f$ is a constant. The vectors \f$z_{i}\f$ are
-/// given. If \f$g_{1}\f$ and \f$g_{3}\f$ are specifed (boundary
-/// condition values),
+/// where \f$A_{i}\f$ is a matrix. Partitioning vector entries into
+/// 'unknown' (\f$x_{i}^{(0)}\f$) and prescribed (\f$x_{i}^{(1)}\f$)
+/// groups,
 /// \f[
 /// \begin{bmatrix}
-/// A_{00} & A_{02}
+/// A_{0}^{(0)} & A_{0}^{(1)} & A_{1}^{(0)} & A_{1}^{(1)}
 /// \end{bmatrix}
 /// \begin{bmatrix}
-/// x_{0} \\ x_{2}
+/// u_{0}^{(0)} \\ u_{0}^{(1)} \\ u_{1}^{(0)} \\ u_{1}^{(1)}
 /// \end{bmatrix}
-/// = b - \alpha A_{1} (g_{1} - z_{1}) - \alpha A_{3} (g_{3} - z_{3}).
+/// = b.
+/// \f]
+/// If \f$u_{i}^{(1)} = \alpha(g_{i} - x_{i})\f$, which is prescribed,
+/// in which \f$g_{i}\f$ is the Dirichlet boundary condition value,
+/// \f$x_{i}\f$ is provided and \f$\alpha\f$ is a constant, then
+/// \f[
+/// \begin{bmatrix}
+/// A_{0}^{(0)} & A_{0}^{(1)} & A_{1}^{(0)} & A_{1}^{(1)}
+/// \end{bmatrix}
+/// \begin{bmatrix}
+/// u_{0}^{(0)} \\ \alpha(g_{0} - x_{0}) \\ u_{1}^{(0)} \\ \alpha(g_{1} - x_{1})
+/// \end{bmatrix}
+/// = b.
+/// \f]
+/// Rearranging,
+/// \f[
+/// \begin{bmatrix}
+/// A_{0}^{(0)} & A_{1}^{(0)}
+/// \end{bmatrix}
+/// \begin{bmatrix}
+/// u_{0}^{(0)} \\ u_{1}^{(0)}
+/// \end{bmatrix}
+/// = b - \alpha A_{0}^{(1)} (g_{0} - x_{0}) - \alpha A_{1}^{(1)} (g_{1} - x_{1}).
 /// \f]
 ///
 /// The modified  \f$b_{0}\f$ vector is
 /// \f[
-///  b \leftarrow b - \alpha A_{1} (g_{1} - z_{1}) - \alpha A_{3} (g_{3} -
-///  z_{3})
+///  b \leftarrow b - \alpha A_{0}^{(0)} (g_{0} - x_{0}) - \alpha A_{1}^{(1)} (g_{1} -
+///  x_{1})
 /// \f]
 /// More generally,
 /// \f[
-///  b \leftarrow b - \alpha A_{j} (g_{j} - z_{j})
+///  b \leftarrow b - \alpha A_{i}^{(1)} (g_{i} - x_{i}).
 /// \f]
 ///
-/// This function before the above inplace modification of \f$b\f$.
-/// where j is a block (nest) index. For a non-blocked problem j = 0. The
-/// boundary conditions bcs1 are on the trial spaces V_j. The forms in
-/// [a] must have the same test space as L (from which b was built), but the
-/// trial space may differ. If x0 is not supplied, then it is treated as
-/// zero.
-///
 /// @note Ghost contributions are not accumulated (not sent to owner).
-/// Caller is responsible for calling VecGhostUpdateBegin/End.
+/// Caller is responsible for updating the ghosts
 ///
-/// @param[in,out] b
-/// @param[in] a
-/// @param[in] constants
-/// @param[in] coeffs
-/// @param[in] x0
-/// @param[in] bcs1
-/// @param[in] alpha
+/// @param[in,out] b The vector to modify inplace.
+/// @param[in] a List of bilinear forms, where `a[i]` is the form that
+/// generates the matrix \f$A_{i}\f$. All forms is `a` must share the
+/// same test function space. The trial function spaces can differ.
+/// @param[in] constants Constant data appearing in the forms `a`.
+/// @param[in] coeffs Coefficient data appearing in the forms `a`.
+/// @param[in] x0 The vector \f$x_{i}\f$ above. If empty is is set to
+/// zero.
+/// @param[in] bcs1 Boundary conditions that provide the \f$g_{i}\f$
+/// values. `bcs1[i]` is the list of boundary conditions \f$u_{i}\f$.
+/// @param[in] alpha Constant used in the modification of `b`.
 template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
     std::span<T> b,
@@ -314,18 +331,30 @@ void apply_lifting(
   impl::apply_lifting<T>(b, a, constants, coeffs, bcs1, x0, alpha);
 }
 
-/// Modify b such that:
+/// @brief Modify the right-hand side vector to account for constraints
+/// (Dirichlet boundary conditions constraints).
 ///
-///   b <- b - alpha * A_j.(g_j - x0_j)
+/// See apply_lifting() for an explanation of lifting. The difference
+/// between this function and apply_lifting() is that apply_lifting()
+/// requires constant and coefficient form data to be passed to the
+/// function, whereas thus function packs the constant and coefficient
+/// form data and then calls apply_lifting().
 ///
-/// where j is a block (nest) index. For a non-blocked problem j = 0. The
-/// boundary conditions bcs1 are on the trial spaces V_j. The forms in
-/// [a] must have the same test space as L (from which b was built), but the
-/// trial space may differ. If x0 is not supplied, then it is treated as
-/// zero.
+/// @note Ghost contributions are not accumulated (not sent to owner).
+/// Caller is responsible for updating the ghosts
 ///
-/// Ghost contributions are not accumulated (not sent to owner). Caller
-/// is responsible for calling VecGhostUpdateBegin/End.
+/// @param[in,out] b The vector to modify inplace.
+/// @param[in] a List of bilinear forms, where `a[i]` is the form that
+/// generates the matrix \f$A_{i}\f$ (see apply_lifting()). All forms is
+/// `a` must share the same test function space. The trial function
+/// spaces can differ.
+/// @param[in] x0 The vector \f$x_{i}\f$ described in apply_lifting().
+/// If empty is is set to zero.
+/// @param[in] bcs1 Boundary conditions that provide the \f$g_{i}\f$
+/// values described in apply_lifting(). `bcs1[i]` is the list of
+/// boundary conditions \f$u_{i}\f$.
+/// @param[in] alpha Constant used in the modification of `b` (see
+/// described in apply_lifting()).
 template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
     std::span<T> b,
