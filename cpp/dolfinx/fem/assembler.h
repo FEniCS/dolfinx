@@ -294,7 +294,10 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 /// \f]
 ///
 /// @note Ghost contributions are not accumulated (not sent to owner).
-/// Caller is responsible for updating the ghosts
+/// Caller is responsible for updating the ghosts.
+///
+/// @note Boundary condition values are *not* set in `b` by this
+/// function. Use DirichletBC::set to set values in `b`.
 ///
 /// @param[in,out] b The vector to modify inplace.
 /// @param[in] a List of bilinear forms, where `a[i]` is the form that
@@ -335,7 +338,10 @@ void apply_lifting(
 /// form data and then calls apply_lifting().
 ///
 /// @note Ghost contributions are not accumulated (not sent to owner).
-/// Caller is responsible for updating the ghosts
+/// Caller is responsible for updating the ghosts,
+///
+/// @note Boundary condition values are *not* set in `b` by this
+/// function. Use DirichletBC::set to set values in `b`.
 ///
 /// @param[in,out] b The vector to modify inplace.
 /// @param[in] a List of bilinear forms, where `a[i]` is the form that
