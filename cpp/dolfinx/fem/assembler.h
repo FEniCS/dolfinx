@@ -280,13 +280,14 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 /// \begin{bmatrix}
 /// u_{0}^{(0)} \\ u_{1}^{(0)}
 /// \end{bmatrix}
-/// = b - \alpha A_{0}^{(1)} (g_{0} - x_{0}) - \alpha A_{1}^{(1)} (g_{1} - x_{1}).
+/// = b - \alpha A_{0}^{(1)} (g_{0} - x_{0}) - \alpha A_{1}^{(1)} (g_{1} -
+/// x_{1}).
 /// \f]
 ///
 /// The modified  \f$b_{0}\f$ vector is
 /// \f[
-///  b \leftarrow b - \alpha A_{0}^{(0)} (g_{0} - x_{0}) - \alpha A_{1}^{(1)} (g_{1} -
-///  x_{1})
+///  b \leftarrow b - \alpha A_{0}^{(0)} (g_{0} - x_{0}) - \alpha A_{1}^{(1)}
+///  (g_{1} - x_{1})
 /// \f]
 /// More generally,
 /// \f[
