@@ -196,7 +196,7 @@ except ModuleNotFoundError:
     exit(0)
 
 
-if np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
+if np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx real mode")
     exit(0)
 # -
@@ -338,7 +338,7 @@ bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L_blocked), bcs)
 set_bc(b, bcs0)
 
 # Create and configure solver
-ksp = PETSc.KSP().create(msh.comm)  # type: ignore
+ksp = PETSc.KSP().create(msh.comm)
 ksp.setOperators(A)
 ksp.setType("preonly")
 ksp.getPC().setType("lu")

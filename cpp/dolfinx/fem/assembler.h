@@ -284,7 +284,7 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 /// x_{1}).
 /// \f]
 ///
-/// The modified  \f$b\f$ vector is
+/// The modified \f$b\f$ vector is
 /// \f[
 ///  b \leftarrow b - \alpha A_{0}^{(1)} (g_{0} - x_{0}) - \alpha A_{1}^{(1)}
 ///  (g_{1} - x_{1})

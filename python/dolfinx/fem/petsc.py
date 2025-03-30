@@ -799,10 +799,13 @@ class LinearProblem:
         assemble_vector(self._b, self._L)
 
         # Apply boundary conditions to the rhs
-        apply_lifting(self._b, [self._a], bcs=[self.bcs])
-        self._b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        for bc in self.bcs:
-            bc.set(self._b.array_w)
+        if self.bcs is not None:
+            apply_lifting(self._b, [self._a], bcs=[self.bcs])
+            self._b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+            for bc in self.bcs:
+                bc.set(self._b.array_w)
+        else:
+            self._b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
         # Solve linear system and update ghost values in the solution
         self._solver.solve(self._b, self._x)
