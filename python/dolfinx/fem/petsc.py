@@ -960,7 +960,7 @@ def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.M
 
 
 def interpolation_matrix(V0: _FunctionSpace, V1: _FunctionSpace) -> PETSc.Mat:
-    """Assemble an interpolation operator matrix for discreye
+    r"""Assemble an interpolation operator matrix for discreye
     interpolation between finite element spaces.
 
     Consider is the vector of degrees-of-freedom  :math:`u_{i}`
@@ -978,7 +978,7 @@ def interpolation_matrix(V0: _FunctionSpace, V1: _FunctionSpace) -> PETSc.Mat:
     Returns:
         The interpolation matrix :math:`\Pi`.
     """
-    return _interpolation_matrix(space0._cpp_object, space1._cpp_object)
+    return _interpolation_matrix(V0._cpp_object, V1._cpp_object)
 
 
 @functools.singledispatch
