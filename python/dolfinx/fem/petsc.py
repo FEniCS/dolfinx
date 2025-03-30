@@ -142,15 +142,16 @@ def create_vector(
 
 
     3. If ``kind`` is ``PETSc.Vec.Type.NEST``, a PETSc nested vector (a
-       nest of ghosted PETSc vectors) which is compatible with ``L`` is
-       created.
+       'nest' of ghosted PETSc vectors) which is compatible with ``L``
+       is created.
 
     Args:
-        L: Linear form or a list of linear forms.
+        L: Linear form or a sequence of linear forms.
         kind: PETSc vector type (``VecType``) to create.
 
     Returns:
-        A PETSc vector with a layout that is compatible with ``L``.
+        A PETSc vector with a layout that is compatible with ``L``. The
+        vector is not initialised to zero.
     """
     try:
         dofmap = L.function_spaces[0].dofmaps(0)  # Single form case
@@ -541,7 +542,7 @@ def assemble_matrix_mat(
 def apply_lifting(
     b: PETSc.Vec,
     a: typing.Union[Iterable[Form], Iterable[Iterable[Form]]],
-    bcs: Iterable[DirichletBC],
+    bcs: Iterable[Iterable[DirichletBC]],
     x0: typing.Optional[Iterable[PETSc.Vec]] = None,
     alpha: float = 1,
     constants=None,

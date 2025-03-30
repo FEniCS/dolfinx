@@ -202,7 +202,7 @@ a_cond = Form(
 A_cond = assemble_matrix(a_cond, bcs=[bc])
 A_cond.assemble()
 b = assemble_vector(b1)
-apply_lifting(b, [a_cond], bcs=[bc])
+apply_lifting(b, [a_cond], bcs=[[bc]])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
 bc.set(b)
 
