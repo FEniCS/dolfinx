@@ -180,7 +180,7 @@ A.assemble()
 
 # +
 b = assemble_vector(L)
-apply_lifting(b, [a], bcs=[[bc]])
+apply_lifting(b, [a], bcs=[bc])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
 bc.set(b.array_w)
 # -
