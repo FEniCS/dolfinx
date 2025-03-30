@@ -28,18 +28,18 @@ from dolfinx.fem.forms import Form
 def pack_constants(
     form: typing.Union[Form, typing.Sequence[Form]],
 ) -> typing.Union[np.ndarray, typing.Sequence[np.ndarray]]:
-    """Compute form constants.
+    """Pack form constants for use in assembly.
 
-    Pack the `constants` that appear in forms. The packed constants can
-    be passed to an assembler. This is a performance optimisation for
-    cases where a form is assembled multiple times and (some) constants
-    do not change.
+    Pack the 'constants' that appear in forms. The packed constants can
+    then be passed to an assembler. This is a performance optimisation
+    for cases where a form is assembled multiple times and (some)
+    constants do not change.
 
-    If ``form`` is an array of forms, this function returns an array of
-    form constants with the same shape as form.
+    If ``form`` is a sequence of forms, this function returns an array
+    of form constants with the same shape as ``form``.
 
     Args:
-        form: A single form or array of forms to pack the constants for.
+        form: Single form or sequence  of forms to pack the constants for.
 
     Returns:
         A ``constant`` array for each form.
@@ -61,7 +61,7 @@ def pack_coefficients(
 ) -> typing.Union[
     dict[tuple[IntegralType, int], npt.NDArray], list[dict[tuple[IntegralType, int], npt.NDArray]]
 ]:
-    """Compute form coefficients.
+    """Pack form coefficients for use in assembly.
 
     Pack the ``coefficients`` that appear in forms. The packed
     coefficients can be passed to an assembler. This is a performance
@@ -69,10 +69,11 @@ def pack_coefficients(
     (some) coefficients do not change.
 
     If ``form`` is an array of forms, this function returns an array of
-    form coefficients with the same shape as form.
+    form coefficients with the same shape as ``form``.
 
     Args:
-        form: A single form or array of forms to pack the constants for.
+        form: A form or a sequence of forms to pack the coefficients
+        for.
 
     Returns:
         Coefficients for each form.
@@ -93,7 +94,14 @@ def pack_coefficients(
 
 
 def create_vector(L: Form) -> la.Vector:
-    """Create a Vector that is compatible with a given linear form"""
+    """Create a Vector that is compatible with a given linear form.
+
+    Args:
+        L: A linear form.
+
+    Returns:
+        A vector that the form can be assembled into.
+    """
     # Can just take the first dofmap here, since all dof maps have the same
     # index map in mixed-topology meshes
     dofmap = L.function_spaces[0].dofmaps(0)
@@ -104,12 +112,12 @@ def create_matrix(a: Form, block_mode: typing.Optional[la.BlockMode] = None) -> 
     """Create a sparse matrix that is compatible with a given bilinear form.
 
     Args:
-        a: Bilinear form to assemble.
+        a: Bilinear form.
         block_mode: Block mode of the CSR matrix. If ``None``, default
             is used.
 
     Returns:
-        Assembled sparse matrix.
+        A sparse matrix that the form can be assembled into.
     """
     sp = dolfinx.fem.create_sparsity_pattern(a)
     sp.finalize()
@@ -179,8 +187,8 @@ def _assemble_vector_form(L: Form, constants=None, coeffs=None) -> la.Vector:
     Note:
         The returned vector is not finalised, i.e. ghost values are not
         accumulated on the owning processes. Calling
-        :func:`dolfinx.la.Vector.scatter_reverse` on the
-        return vector can accumulate ghost contributions.
+        :func:`dolfinx.la.Vector.scatter_reverse` on the return vector
+        can accumulate ghost contributions.
     """
     b = create_vector(L)
     b.array[:] = 0
@@ -211,8 +219,8 @@ def _assemble_vector_array(b: np.ndarray, L: Form, constants=None, coeffs=None):
     Note:
         The returned vector is not finalised, i.e. ghost values are not
         accumulated on the owning processes. Calling
-        :func:`dolfinx.la.Vector.scatter_reverse` on the
-        return vector can accumulate ghost contributions.
+        :func:`dolfinx.la.Vector.scatter_reverse` on the return vector
+        can accumulate ghost contributions.
     """
     constants = pack_constants(L) if constants is None else constants
     coeffs = pack_coefficients(L) if coeffs is None else coeffs
@@ -240,8 +248,9 @@ def assemble_matrix(
             Degrees-of-freedom constrained by a boundary condition will
             have their rows/columns zeroed and the value ``diagonal``
             set on on the matrix diagonal.
-        diagonal: Value to set on the matrix diagonal for Dirichlet boundary
-            condition constrained degrees-of-freedom belonging to the same trial and test space.
+        diagonal: Value to set on the matrix diagonal for Dirichlet
+            boundary condition constrained degrees-of-freedom belonging
+            to the same trial and test space.
         constants: Constants that appear in the form. If not provided,
             any required constants will be computed.
         coeffs: Coefficients that appear in the form. If not provided,
@@ -280,12 +289,13 @@ def _assemble_matrix_csr(
         bcs: Boundary conditions that affect the assembled matrix.
             Degrees-of-freedom constrained by a boundary condition will
             have their rows/columns zeroed and the value ``diagonal``
-            set on on
-        diagonal: Value to set on the matrix diagonal for Dirichlet boundary
-            condition constrained degrees-of-freedom belonging to the same trial and test space.
+            set on the diagonal.
+        diagonal: Value to set on the matrix diagonal for Dirichlet
+            boundary condition constrained degrees-of-freedom belonging
+            to the same trial and test space.
         constants: Constants that appear in the form. If not provided,
-            any required constants will be computed.
-            the matrix diagonal.
+            any required constants will be computed. the matrix
+            diagonal.
         coeffs: Coefficients that appear in the form. If not provided,
             any required coefficients will be computed.
 
@@ -324,7 +334,7 @@ def apply_lifting(
     .. math::
 
        \\begin{bmatrix} A_{0} & A_{1} \\end{bmatrix}
-       \\begin{bmatrix}u_{0} \\\ u_{1}\\end{bmatrix}
+       \\begin{bmatrix}u_{0} \\\\ u_{1}\\end{bmatrix}
        = b,
 
     where :math:`A_{i}` is a matrix. Partitioning each vector
@@ -334,7 +344,8 @@ def apply_lifting(
     .. math::
 
         \\begin{bmatrix} A_{0}^{(0)} & A_{0}^{(1)} & A_{1}^{(0)} & A_{1}^{(1)}\\end{bmatrix}
-        \\begin{bmatrix}u_{0}^{(0)} \\\ u_{0}^{(1)} \\\ u_{1}^{(0)} \\\ u_{1}^{(1)}\\end{bmatrix}
+        \\begin{bmatrix}u_{0}^{(0)} \\\\ u_{0}^{(1)}
+        \\\\ u_{1}^{(0)} \\\\ u_{1}^{(1)}\\end{bmatrix}
         = b.
 
     If :math:`u_{i}^{(1)} = \\alpha(g_{i} - x_{i})`, where :math:`g_{i}`
@@ -344,7 +355,8 @@ def apply_lifting(
     .. math::
 
         \\begin{bmatrix}A_{0}^{(0)} & A_{0}^{(1)} & A_{1}^{(0)} & A_{1}^{(1)} \\end{bmatrix}
-        \\begin{bmatrix}u_{0}^{(0)} \\\ \\alpha(g_{0} - x_{0}) \\\ u_{1}^{(0)} \\\ \\alpha(g_{1} - x_{1})\\end{bmatrix}
+        \\begin{bmatrix}u_{0}^{(0)} \\\\ \\alpha(g_{0} - x_{0})
+        \\\\ u_{1}^{(0)} \\\\ \\alpha(g_{1} - x_{1})\\end{bmatrix}
         = b.
 
     Rearranging,
@@ -352,14 +364,15 @@ def apply_lifting(
     .. math::
 
         \\begin{bmatrix}A_{0}^{(0)} & A_{1}^{(0)}\\end{bmatrix}
-        \\begin{bmatrix}u_{0}^{(0)} \\\ u_{1}^{(0)}\\end{bmatrix}
+        \\begin{bmatrix}u_{0}^{(0)} \\\\ u_{1}^{(0)}\\end{bmatrix}
         = b - \\alpha A_{0}^{(1)} (g_{0} - x_{0}) - \\alpha A_{1}^{(1)} (g_{1} - x_{1}).
 
     The modified  :math:`b` vector is
 
     .. math::
 
-        b \\leftarrow b - \\alpha A_{0}^{(1)} (g_{0} - x_{0}) - \\alpha A_{1}^{(1)} (g_{1} - x_{1})
+        b \\leftarrow b - \\alpha A_{0}^{(1)} (g_{0} - x_{0})
+        - \\alpha A_{1}^{(1)} (g_{1} - x_{1})
 
     More generally,
 

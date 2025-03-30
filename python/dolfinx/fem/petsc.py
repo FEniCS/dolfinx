@@ -365,7 +365,7 @@ def assemble_matrix(
     coeffs=None,
     kind=None,
 ):
-    """Assemble bilinear form into a matrix.
+    """Assemble a bilinear form into a matrix.
 
     The following cases are supported:
 
@@ -387,12 +387,12 @@ def assemble_matrix(
           ``PETSc.Mat.Type.NEST``.
 
     Rows/columns that are constrained by a Dirichlet boundary condition
-    are zeroed, with the diagonal to set to `diag``.
+    are zeroed, with the diagonal to set to ``diag``.
 
     Constants and coefficients that appear in the forms(s) can be passed
     to avoid re-computation of constants and coefficients. The functions
-    :func:`dolfinx.fem.assemble.pack_constants` and
-    :func:`dolfinx.fem.assemble.pack_coefficients` can be called.
+    :func:`dolfinx.fem.pack_constants` and
+    :func:`dolfinx.fem.pack_coefficients` can be called.
 
     Note:
         The returned matrix is not 'assembled', i.e. ghost contributions
@@ -546,13 +546,14 @@ def apply_lifting(
     Args:
         b: Vector to modify in-place.
         a: List of bilinear forms. If ``b`` is not blocked or a nest,
-            then ``a`` is a 1D sequence. If ``b`` is blocked or a nest
+            then ``a`` is a 1D sequence. If ``b`` is blocked or a nest,
             then ``a`` is  a 2D array of forms, with ``a[i]`` used to
-            modify block/nest vector ``b[i]``.
+            modify the block/nest vector ``b[i]``.
         bcs: Boundary conditions to use to modify ``b`` (see
             :func:`dolfinx.fem.apply_lifting`).
         x0: Vector to use in modify ``b`` (see
-            :func:`dolfinx.fem.apply_lifting`). Zero if ``None``.
+            :func:`dolfinx.fem.apply_lifting`). Treated as zero if
+            ``None``.
         alpha: Scalar parameter in lifting (see
             :func:`dolfinx.fem.apply_lifting`).
         constants: Packed constant data appearing in the forms ``a``. If
@@ -567,8 +568,8 @@ def apply_lifting(
 
     Note:
         Boundary condition values are *not* set in ``b`` by this
-        function. Use :func:`dolfinx.fem.DirichletBC.set` to set values in
-        ``b``.
+        function. Use :func:`dolfinx.fem.DirichletBC.set` to set values
+        in ``b``.
     """
     if b.getType() == PETSc.Vec.Type.NEST:
         x0 = [] if x0 is None else x0.getNestSubVecs()
