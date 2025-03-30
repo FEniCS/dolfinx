@@ -11,6 +11,7 @@ import collections
 import functools
 import typing
 import warnings
+from collections.abc import Iterable
 
 import numpy as np
 import numpy.typing as npt
@@ -320,9 +321,9 @@ def _assemble_matrix_csr(
 
 def apply_lifting(
     b: np.ndarray,
-    a: list[Form],
-    bcs: list[list[DirichletBC]],
-    x0: typing.Optional[list[np.ndarray]] = None,
+    a: Iterable[Form],
+    bcs: Iterable[Iterable[DirichletBC]],
+    x0: typing.Optional[Iterable[np.ndarray]] = None,
     alpha: float = 1,
     constants=None,
     coeffs=None,
@@ -386,7 +387,7 @@ def apply_lifting(
             share the same test function space. The trial function
             spaces can differ.
         bcs: Boundary conditions that provide the :math:`g_{i}` values.
-            ``bcs1[i]`` is the list of boundary conditions on
+            ``bcs1[i]`` is the sequence of boundary conditions on
             :math:`u_{i}`.
         x0: The array :math:`x_{i}` above. If ``None`` it is set to
             zero.

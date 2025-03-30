@@ -556,10 +556,12 @@ def apply_lifting(
         b: Vector to modify in-place.
         a: List of bilinear forms. If ``b`` is not blocked or a nest,
             then ``a`` is a 1D sequence. If ``b`` is blocked or a nest,
-            then ``a`` is  a 2D array of forms, with ``a[i]`` used to
-            modify the block/nest vector ``b[i]``.
+            then ``a`` is  a 2D array of forms, with the ``a[i]`` forms
+            used to modify the block/nest vector ``b[i]``.
         bcs: Boundary conditions to use to modify ``b`` (see
-            :func:`dolfinx.fem.apply_lifting`).
+            :func:`dolfinx.fem.apply_lifting`). The boundary conditions
+            in ``bcs[j]`` are associated with the forms in the ``j``th
+            colulmn of ``a``.
         x0: Vector to use in modify ``b`` (see
             :func:`dolfinx.fem.apply_lifting`). Treated as zero if
             ``None``.
