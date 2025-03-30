@@ -47,9 +47,7 @@ from dolfinx.fem import pack_coefficients, pack_constants
 from dolfinx.fem.assemble import _assemble_vector_array
 from dolfinx.fem.assemble import apply_lifting as _apply_lifting
 from dolfinx.fem.bcs import DirichletBC
-from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
 from dolfinx.fem.forms import Form
-from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
 from dolfinx.fem.function import FunctionSpace as _FunctionSpace
