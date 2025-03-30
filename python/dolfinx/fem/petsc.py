@@ -368,8 +368,8 @@ def _assemble_vector_vec(
 @functools.singledispatch
 def assemble_matrix(
     a: typing.Union[Form, Iterable[Iterable[Form]]],
-    bcs: Iterable[DirichletBC] = [],
-    diag: float = 1.0,
+    bcs: typing.Optional[Iterable[DirichletBC]] = None,
+    diag: float = 1,
     constants: typing.Optional[
         typing.Union[Iterable[np.ndarray], Iterable[Iterable[np.ndarray]]]
     ] = None,
@@ -432,7 +432,7 @@ def assemble_matrix(
 def _assemble_matrix_block_mat(
     A: PETSc.Mat,
     a: Iterable[Iterable[Form]],
-    bcs: Iterable[DirichletBC],
+    bcs: typing.Optional[Iterable[DirichletBC]],
     diag: float,
     constants,
     coeffs,
@@ -488,7 +488,7 @@ def _assemble_matrix_block_mat(
 def assemble_matrix_mat(
     A: PETSc.Mat,
     a: typing.Union[Form, Iterable[Iterable[Form]]],
-    bcs: Iterable[DirichletBC] = [],
+    bcs: typing.Optional[Iterable[DirichletBC]] = None,
     diag: float = 1,
     constants: typing.Optional[
         typing.Union[Iterable[np.ndarray], Iterable[Iterable[np.ndarray]]]
@@ -522,10 +522,8 @@ def assemble_matrix_mat(
                                 " and have DirichletBC applied."
                                 " Consider assembling a zero block."
                             )
-        return A
-    elif isinstance(a, Iterable):
+    elif isinstance(a, Iterable):  # Blocked
         _assemble_matrix_block_mat(A, a, bcs, diag, constants, coeffs)
-        return A
     else:  # Non-blocked
         constants = pack_constants(a) if constants is None else constants
         coeffs = pack_coefficients(a) if coeffs is None else coeffs
@@ -535,7 +533,8 @@ def assemble_matrix_mat(
             A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
             A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
             _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], _bcs, diag)
-        return A
+
+    return A
 
 
 # -- Modifiers for Dirichlet conditions ---------------------------------------
@@ -544,7 +543,7 @@ def assemble_matrix_mat(
 def apply_lifting(
     b: PETSc.Vec,
     a: typing.Union[Iterable[Form], Iterable[Iterable[Form]]],
-    bcs: Iterable[Iterable[DirichletBC]],
+    bcs: typing.Optional[Iterable[Iterable[DirichletBC]]],
     x0: typing.Optional[Iterable[PETSc.Vec]] = None,
     alpha: float = 1,
     constants: typing.Optional[
@@ -697,7 +696,7 @@ class LinearProblem:
         self,
         a: ufl.Form,
         L: ufl.Form,
-        bcs: Iterable[DirichletBC] = [],
+        bcs: typing.Optional[Iterable[DirichletBC]] = None,
         u: typing.Optional[_Function] = None,
         petsc_options: typing.Optional[dict] = None,
         form_compiler_options: typing.Optional[dict] = None,
@@ -706,12 +705,13 @@ class LinearProblem:
         """Initialize solver for a linear variational problem.
 
         Args:
-            a: A bilinear UFL form, the left hand side of the
+            a: Bilinear UFL form, the left hand side of the
                 variational problem.
-            L: A linear UFL form, the right hand side of the variational
+            L: Linear UFL form, the right hand side of the variational
                 problem.
-            bcs: A list of Dirichlet boundary conditions.
-            u: The solution function. It will be created if not provided.
+            bcs: Sequecne of Dirichlet boundary conditions.
+            u: Solution function. It is be created if not
+                provided.
             petsc_options: Options that are passed to the linear
                 algebra backend PETSc. For available choices for the
                 'petsc_options' kwarg, see the `PETSc documentation
@@ -847,7 +847,7 @@ class NonlinearProblem:
         self,
         F: ufl.form.Form,
         u: _Function,
-        bcs: Iterable[DirichletBC] = [],
+        bcs: typing.Optional[Iterable[DirichletBC]] = None,
         J: ufl.form.Form = None,
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
@@ -855,10 +855,10 @@ class NonlinearProblem:
         """Initialize solver for solving a non-linear problem using Newton's method`.
 
         Args:
-            F: The PDE residual F(u, v)
-            u: The unknown
-            bcs: List of Dirichlet boundary conditions
-            J: UFL representation of the Jacobian (Optional)
+            F: The PDE residual F(u, v).
+            u: The unknown.
+            bcs: List of Dirichlet boundary conditions.
+            J: UFL representation of the Jacobian (optional)
             form_compiler_options: Options used in FFCx
                 compilation of this form. Run ``ffcx --help`` at the
                 command line to see all available options.
@@ -969,8 +969,8 @@ def interpolation_matrix(V0: _FunctionSpace, V1: _FunctionSpace) -> PETSc.Mat:
     interpolation between finite element spaces.
 
     Consider is the vector of degrees-of-freedom  :math:`u_{i}`
-    associated with a function in :math:`V_{i}`. This function returns the
-    matrix :math:`\Pi` sucht that
+    associated with a function in :math:`V_{i}`. This function returns
+    the matrix :math:`\Pi` sucht that
 
     .. math::
 

@@ -446,7 +446,7 @@ void assemble_matrix(
 /// @param[in] constants Constants that appear in `a`.
 /// @param[in] coefficients Coefficients that appear in `a`.
 /// @param[in] bcs Boundary conditions to apply. For boundary condition.
-///  dofs the row and column are zeroed. The diagonal  entry is not set.
+/// dofs the row and column are zeroed. The diagonal  entry is not set.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     auto mat_add, const Form<T, U>& a, std::span<const T> constants,
