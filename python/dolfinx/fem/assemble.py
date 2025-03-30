@@ -153,7 +153,7 @@ def assemble_scalar(M: Form, constants: typing.Optional[np.ndarray] = None, coef
         To compute the functional value on the whole domain, the output
         of this function is typically summed across all MPI ranks.
     """
-    constants = constants or pack_constants(M)
+    constants = pack_constants(M) if constants is None else constants  # type: ignore
     coeffs = coeffs or pack_coefficients(M)
     return _cpp.fem.assemble_scalar(M._cpp_object, constants, coeffs)
 
@@ -195,7 +195,7 @@ def _assemble_vector_form(
     """
     b = create_vector(L)
     b.array[:] = 0
-    constants = constants or pack_constants(L)
+    constants = constants or pack_constants(L)  # type: ignore
     coeffs = coeffs or pack_coefficients(L)
     _assemble_vector_array(b.array, L, constants, coeffs)
     return b
@@ -227,7 +227,7 @@ def _assemble_vector_array(
         :func:`dolfinx.la.Vector.scatter_reverse` on the return vector
         can accumulate ghost contributions.
     """
-    constants = pack_constants(L) if constants is None else constants
+    constants = pack_constants(L) if constants is None else constants  # type: ignore
     coeffs = pack_coefficients(L) if coeffs is None else coeffs
     _cpp.fem.assemble_vector(b, L._cpp_object, constants, coeffs)
     return b
@@ -238,7 +238,7 @@ def _assemble_vector_array(
 
 @functools.singledispatch
 def assemble_matrix(
-    a: Form,
+    a: typing.Any,
     bcs: typing.Optional[list[DirichletBC]] = None,
     diagonal: float = 1.0,
     constants: typing.Optional[np.ndarray] = None,
@@ -276,7 +276,7 @@ def assemble_matrix(
     return A
 
 
-@assemble_matrix.register
+@assemble_matrix.register(la.MatrixCSR)
 def _assemble_matrix_csr(
     A: la.MatrixCSR,
     a: Form,
@@ -309,7 +309,7 @@ def _assemble_matrix_csr(
         accumulated.
     """
     bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
-    constants = pack_constants(a) if constants is None else constants
+    constants = pack_constants(a) if constants is None else constants  # type: ignore
     coeffs = pack_coefficients(a) if coeffs is None else coeffs
     _cpp.fem.assemble_matrix(A._cpp_object, a._cpp_object, constants, coeffs, bcs)
 
@@ -413,7 +413,7 @@ def apply_lifting(
     """
     x0 = [] if x0 is None else x0
     constants = (
-        [pack_constants(form) if form is not None else np.array([], dtype=b.dtype) for form in a]
+        [pack_constants(form) if form is not None else np.array([], dtype=b.dtype) for form in a]  # type: ignore
         if constants is None
         else constants
     )
