@@ -449,7 +449,7 @@ def _assemble_matrix_block_mat(
         [(Vsub.dofmaps(0).index_map, Vsub.dofmaps(0).index_map_bs) for Vsub in V[1]]
     )
 
-    _bcs = [bc._cpp_object for bc in bcs]
+    _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
     for i, a_row in enumerate(a):
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
@@ -527,7 +527,7 @@ def assemble_matrix_mat(
     else:  # Non-blocked
         constants = pack_constants(a) if constants is None else constants
         coeffs = pack_coefficients(a) if coeffs is None else coeffs
-        _bcs = [bc._cpp_object for bc in bcs]
+        _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
         _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs)
         if a.function_spaces[0] is a.function_spaces[1]:
             A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
@@ -918,9 +918,12 @@ class NonlinearProblem:
         assemble_vector(b, self._L)
 
         # Apply boundary condition
-        apply_lifting(b, [self._a], bcs=[self.bcs], x0=[x], alpha=-1.0)
-        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        set_bc(b, self.bcs, x, -1.0)
+        if self.bcs is not None:
+            apply_lifting(b, [self._a], bcs=[self.bcs], x0=[x], alpha=-1.0)
+            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+            set_bc(b, self.bcs, x, -1.0)
+        else:
+            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     def J(self, x: PETSc.Vec, A: PETSc.Mat) -> None:
         """Assemble the Jacobian matrix.
