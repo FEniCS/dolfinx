@@ -116,20 +116,30 @@ def create_vector(
        ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is
        compatible with ``L`` is created.
 
-    2. For a sequence of linear forms ``L``, if ``kind`` is ``None`` or is
-       ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is
-       compatible with ``L`` is created.
-
-       The creates vector ``b`` allocated such that locally ``b = [b_0,
-       b_1, ..., b_n, b_0g, b_1g, ..., b_ng]`` where ``b_i`` are the
-       entries associated with the 'owned' degrees-of-freedom for
-       ``L[i]`` and ``b_ig`` are the 'unowned' (ghost) entries for
-       ``L[i]``.
+    2. For a sequence of linear forms ``L``, if ``kind`` is ``None`` or
+       is ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is
+       compatible with ``L`` is created. The created vector ``b`` is
+       initialized such that on each MPI process ``b = [b_0, b_1, ...,
+       b_n, b_0g, b_1g, ..., b_ng]``, where ``b_i`` are the entries
+       associated with the 'owned' degrees-of-freedom for ``L[i]`` and
+       ``b_ig`` are the 'unowned' (ghost) entries for ``L[i]``.
 
        For this case, the returned vector has an attribute ``_blocks``
-       that holds the local offsets into ``b`` or the (i) owned and (ii)
-       ghost entries for each ``L[i]``. It can be accessed by
-       ``b.getAttr("_blocks")``.
+       that holds the local offsets into ``b`` for the (i) owned and
+       (ii) ghost entries for each ``L[i]``. It can be accessed by
+       ``b.getAttr("_blocks")``. The offsets can be used to get views
+       into ``b`` for blocks, e.g.::
+
+           >>> offsets0, offsets1, = b.getAttr("_blocks")
+           >>> offsets0
+           (0, 12, 28)
+           >>> offsets1
+           (28, 32, 35)
+           >>> b0_owned = b.array[offsets0[0]:offsets0[1]]
+           >>> b0_ghost = b.array[offsets1[0]:offsets1[1]]
+           >>> b1_owned = b.array[offsets0[1]:offsets0[2]]
+           >>> b1_ghost = b.array[offsets1[1]:offsets1[2]]
+
 
     3. If ``kind`` is ``PETSc.Vec.Type.NEST``, a PETSc nested vector (a
        nest of ghosted PETSc vectors) which is compatible with ``L`` is
@@ -251,9 +261,9 @@ def assemble_vector(
        'unowned' (ghost) entries for ``L[i]``.
 
        For this case, the returned vector has an attribute ``_blocks``
-       that holds the local offsets into ``b`` or the (i) owned and (ii)
-       ghost entries for each ``L[i]``. It can be accessed by
-       ``b.getAttr("_blocks")``.
+       that holds the local offsets into ``b`` for the (i) owned and
+       (ii) ghost entries for each ``L[i]``. See :func:`create_vector`
+       for a description of the offset blocks.
 
     3. If ``L`` is a sequence of linear forms and ``kind`` is
        ``PETSc.Vec.Type.NEST``, the forms are assembled into a PETSc
@@ -629,15 +639,27 @@ def set_bc(
     x0: typing.Optional[PETSc.Vec] = None,
     alpha: float = 1,
 ) -> None:
-    """Set constraint (Dirchlet boundary condition) values in an vector.
+    r"""Set constraint (Dirchlet boundary condition) values in an vector.
 
-    This function modifies locally owned entries in the vector only.
+    For degrees-of-freedoms that are constrained by a Dirichlet boundary
+    condition, this function sets that degrees-of-freedom to ``alpha *
+    (g - x0)``, where ``g`` is the boundary condition value.
+
+    Only owned entries in ``b`` (owned by the MPI process) are modified
+    by this function.
 
     Args:
-        b:
-        bcs:
-        x0:
-        alpha:
+        b: Vector to modify by setting  boundary condition values.
+        bcs: Boundary conditions to apply. If ``b`` is nested or
+            blocked, ``bcs`` is a 2D array and ``bcs[i]`` are the
+            boundary conditions to apply to block/nest ``i``. Otherwise
+            ``bcs`` should be a sequence of ``DirichletBC``\s. For
+            block/nest problems, :func:`dolfinx.fem.bcs_by_block` can be
+            used to prepare the 2D array of ``DirichletBC`` objects.
+        x0: Vector used in the value that constrained entries are set
+            to. If ``None``, ``x0`` is treated as zero.
+        alpha: Scalar value used in the value that constrained entries
+            are set to.
     """
     if b.getType() == PETSc.Vec.Type.NEST:
         _b = b.getNestSubVecs()
