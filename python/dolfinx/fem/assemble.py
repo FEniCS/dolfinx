@@ -131,14 +131,14 @@ def create_matrix(a: Form, block_mode: typing.Optional[la.BlockMode] = None) -> 
 # -- Scalar assembly ---------------------------------------------------------
 
 
-def assemble_scalar(M: Form, constants=None, coeffs=None):
+def assemble_scalar(M: Form, constants: typing.Optional[np.ndarray] = None, coeffs=None):
     """Assemble functional. The returned value is local and not
     accumulated across processes.
 
     Args:
         M: The functional to compute.
-        constants: Constants that appear in the form. If not provided,
-            any required constants will be computed.
+        constants: Constants that appear in the form. If ``None``, any
+            required constants will be computed.
         coeffs: Coefficients that appear in the form. If not provided,
             any required coefficients will be computed.
 
@@ -162,17 +162,19 @@ def assemble_scalar(M: Form, constants=None, coeffs=None):
 
 
 @functools.singledispatch
-def assemble_vector(L: typing.Any, constants=None, coeffs=None):
+def assemble_vector(L: typing.Any, constants: typing.Optional[np.ndarray] = None, coeffs=None):
     return _assemble_vector_form(L, constants, coeffs)
 
 
 @assemble_vector.register(Form)
-def _assemble_vector_form(L: Form, constants=None, coeffs=None) -> la.Vector:
+def _assemble_vector_form(
+    L: Form, constants: typing.Optional[np.ndarray] = None, coeffs=None
+) -> la.Vector:
     """Assemble linear form into a new Vector.
 
     Args:
         L: The linear form to assemble.
-        constants: Constants that appear in the form. If not provided,
+        constants: Constants that appear in the form. If ``None``,
             any required constants will be computed.
         coeffs: Coefficients that appear in the form. If not provided,
             any required coefficients will be computed.
@@ -200,14 +202,16 @@ def _assemble_vector_form(L: Form, constants=None, coeffs=None) -> la.Vector:
 
 
 @assemble_vector.register(np.ndarray)
-def _assemble_vector_array(b: np.ndarray, L: Form, constants=None, coeffs=None):
+def _assemble_vector_array(
+    b: np.ndarray, L: Form, constants: typing.Optional[np.ndarray] = None, coeffs=None
+):
     """Assemble linear form into an existing array.
 
     Args:
         b: The array to assemble the contribution from the calling MPI
             rank into. It must have the required size.
         L: The linear form assemble.
-        constants: Constants that appear in the form. If not provided,
+        constants: Constants that appear in the form. If ``None``,
             any required constants will be computed.
         coeffs: Coefficients that appear in the form. If not provided,
             any required coefficients will be computed.
@@ -234,10 +238,10 @@ def _assemble_vector_array(b: np.ndarray, L: Form, constants=None, coeffs=None):
 
 @functools.singledispatch
 def assemble_matrix(
-    a: typing.Any,
+    a: Form,
     bcs: typing.Optional[list[DirichletBC]] = None,
     diagonal: float = 1.0,
-    constants=None,
+    constants: typing.Optional[np.ndarray] = None,
     coeffs=None,
     block_mode: typing.Optional[la.BlockMode] = None,
 ):
@@ -252,7 +256,7 @@ def assemble_matrix(
         diagonal: Value to set on the matrix diagonal for Dirichlet
             boundary condition constrained degrees-of-freedom belonging
             to the same trial and test space.
-        constants: Constants that appear in the form. If not provided,
+        constants: Constants that appear in the form. If ``None``,
             any required constants will be computed.
         coeffs: Coefficients that appear in the form. If not provided,
             any required coefficients will be computed.
@@ -278,7 +282,7 @@ def _assemble_matrix_csr(
     a: Form,
     bcs: typing.Optional[list[DirichletBC]] = None,
     diagonal: float = 1.0,
-    constants=None,
+    constants: typing.Optional[np.ndarray] = None,
     coeffs=None,
 ) -> la.MatrixCSR:
     """Assemble bilinear form into a matrix.
@@ -325,7 +329,7 @@ def apply_lifting(
     bcs: Iterable[Iterable[DirichletBC]],
     x0: typing.Optional[Iterable[np.ndarray]] = None,
     alpha: float = 1,
-    constants=None,
+    constants: typing.Optional[Iterable[np.ndarray]] = None,
     coeffs=None,
 ) -> None:
     """Modify right-hand side vector ``b`` for lifting of Dirichlet boundary conditions.

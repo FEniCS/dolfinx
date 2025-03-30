@@ -370,7 +370,9 @@ def assemble_matrix(
     a: typing.Union[Form, Iterable[Iterable[Form]]],
     bcs: Iterable[DirichletBC] = [],
     diag: float = 1.0,
-    constants=None,
+    constants: typing.Optional[
+        typing.Union[Iterable[np.ndarray], Iterable[Iterable[np.ndarray]]]
+    ] = None,
     coeffs=None,
     kind=None,
 ):
@@ -488,7 +490,9 @@ def assemble_matrix_mat(
     a: typing.Union[Form, Iterable[Iterable[Form]]],
     bcs: Iterable[DirichletBC] = [],
     diag: float = 1,
-    constants=None,
+    constants: typing.Optional[
+        typing.Union[Iterable[np.ndarray], Iterable[Iterable[np.ndarray]]]
+    ] = None,
     coeffs=None,
 ) -> PETSc.Mat:
     """Assemble bilinear form into a matrix.
@@ -543,7 +547,9 @@ def apply_lifting(
     bcs: Iterable[Iterable[DirichletBC]],
     x0: typing.Optional[Iterable[PETSc.Vec]] = None,
     alpha: float = 1,
-    constants=None,
+    constants: typing.Optional[
+        typing.Union[Iterable[np.ndarray], Iterable[Iterable[np.ndarray]]]
+    ] = None,
     coeffs=None,
 ) -> None:
     """Modify the right-hand side PETSc vector ``b`` to account for
