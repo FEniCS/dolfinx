@@ -959,15 +959,24 @@ def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.M
     return _discrete_gradient(space0._cpp_object, space1._cpp_object)
 
 
-def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:
-    """Assemble an interpolation operator matrix.
+def interpolation_matrix(V0: _FunctionSpace, V1: _FunctionSpace) -> PETSc.Mat:
+    """Assemble an interpolation operator matrix for discreye
+    interpolation between finite element spaces.
+
+    Consider is the vector of degrees-of-freedom  :math:`u_{i}`
+    associated with a function in :math:`V_{i}`. This function returns the
+    matrix :math:`\Pi` sucht that
+
+    .. math::
+
+        u_{1} = \Pi u_{0}.
 
     Args:
-        space0: Space to interpolate from.
-        space1: Space to interpolate into.
+        V0: Space to interpolate from.
+        V1: Space to interpolate into.
 
     Returns:
-        Interpolation matrix.
+        The interpolation matrix :math:`\Pi`.
     """
     return _interpolation_matrix(space0._cpp_object, space1._cpp_object)
 
