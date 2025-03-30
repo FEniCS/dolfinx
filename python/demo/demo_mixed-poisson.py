@@ -235,7 +235,8 @@ A.assemble()
 
 # +
 b = fem.petsc.assemble_vector(L, kind="nest")
-fem.petsc.apply_lifting(b, a, bcs=bcs)
+bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), bcs)
+fem.petsc.apply_lifting(b, a, bcs=bcs1)
 for b_sub in b.getNestSubVecs():
     b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 

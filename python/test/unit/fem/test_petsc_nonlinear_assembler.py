@@ -114,7 +114,8 @@ class NonlinearPDE_SNESProblem:
         x.setAttr("_blocks", (off_owned, off_ghost))
 
         assemble_vector(F, self.L)
-        apply_lifting(F, self.a, bcs=self.bcs, x0=x, alpha=-1.0)
+        bcs1 = bcs_by_block(extract_function_spaces(self.a, 1), bcs=self.bcs)
+        apply_lifting(F, self.a, bcs=bcs1, x0=x, alpha=-1.0)
         F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         bcs0 = bcs_by_block(extract_function_spaces(self.L), self.bcs)
         set_bc(F, bcs0, x0=x, alpha=-1)
@@ -251,12 +252,10 @@ class TestNLSPETSc:
             A.assemble()
 
             b = assemble_vector(L_block, kind="mpi")
-            apply_lifting(b, a_block, bcs=[bc], x0=x, alpha=-1.0)
+            bcs1 = bcs_by_block(extract_function_spaces(a_block, 1), bcs=[bc])
+            apply_lifting(b, a_block, bcs=bcs1, x0=x, alpha=-1.0)
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = bcs_by_block(extract_function_spaces(L_block), [bc])
-
-            offset0, offset1 = x.getAttr("_blocks")
-
             set_bc(b, bcs0, x0=x, alpha=-1)
 
             assert A.getType() != "nest"
@@ -276,7 +275,8 @@ class TestNLSPETSc:
 
             A = assemble_matrix(a_block, bcs=[bc], kind="nest")
             b = assemble_vector(L_block, kind="nest")
-            apply_lifting(b, a_block, bcs=[bc], x0=x, alpha=-1.0)
+            bcs1 = bcs_by_block(extract_function_spaces(a_block, 1), bcs=[bc])
+            apply_lifting(b, a_block, bcs=bcs1, x0=x, alpha=-1.0)
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = bcs_by_block([L.function_spaces[0] for L in L_block], [bc])

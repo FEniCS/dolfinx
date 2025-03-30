@@ -584,17 +584,16 @@ def apply_lifting(
     """
     if b.getType() == PETSc.Vec.Type.NEST:
         x0 = [] if x0 is None else x0.getNestSubVecs()
-        bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
         constants = [pack_constants(forms) for forms in a] if constants is None else constants
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
         for b_sub, a_sub, const, coeff in zip(b.getNestSubVecs(), a, constants, coeffs):
             const_ = list(
                 map(lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x, const)
             )
-            apply_lifting(b_sub, a_sub, bcs1, x0, alpha, const_, coeff)
+            apply_lifting(b_sub, a_sub, bcs, x0, alpha, const_, coeff)
     else:
         with contextlib.ExitStack() as stack:
-            try:
+            if b.getAttr("_blocks") is not None:
                 if x0 is not None:
                     offset0, offset1 = x0.getAttr("_blocks")
                     xl = stack.enter_context(x0.localForm())
@@ -607,7 +606,6 @@ def apply_lifting(
                 else:
                     xlocal = None
 
-                bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
                 offset0, offset1 = b.getAttr("_blocks")
                 with b.localForm() as b_l:
                     for a_, off0, off1, offg0, offg1 in zip(
@@ -620,11 +618,11 @@ def apply_lifting(
                             for val in const
                         ]
                         bx_ = np.concat((b_l[off0:off1], b_l[offg0:offg1]))
-                        _apply_lifting(bx_, a_, bcs1, xlocal, float(alpha), const_, coeff)
+                        _apply_lifting(bx_, a_, bcs, xlocal, float(alpha), const_, coeff)
                         size = off1 - off0
                         b_l.array_w[off0:off1] = bx_[:size]
                         b_l.array_w[offg0:offg1] = bx_[size:]
-            except (AttributeError, AssertionError):
+            else:
                 x0 = [] if x0 is None else x0
                 x0 = [stack.enter_context(x.localForm()) for x in x0]
                 x0_r = [x.array_r for x in x0]

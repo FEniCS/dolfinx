@@ -355,7 +355,8 @@ class TestPETScAssemblers:
             A = petsc_assemble_matrix(a_block, bcs=[bc])
             A.assemble()
             b = assemble_vector(L_block, kind=PETSc.Vec.Type.MPI)
-            apply_lifting(b, a_block, bcs=[bc])
+            bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a_block, 1), bcs=[bc])
+            apply_lifting(b, a_block, bcs=bcs1)
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L_block), [bc])
             set_bc(b, bcs0)
@@ -380,7 +381,8 @@ class TestPETScAssemblers:
                 petsc_assemble_matrix(a_block_none, bcs=[bc])
 
             b = petsc_assemble_vector(L_block, kind="nest")
-            petsc_apply_lifting(b, a_block, bcs=[bc])
+            bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a_block, 1), bcs=[bc])
+            petsc_apply_lifting(b, a_block, bcs=bcs1)
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
@@ -483,9 +485,11 @@ class TestPETScAssemblers:
 
         def blocked():
             """Blocked"""
-            A = petsc_assemble_matrix([[a00, a01], [a10, a11]], bcs=bcs)
+            a = [[a00, a01], [a10, a11]]
+            A = petsc_assemble_matrix(a, bcs=bcs)
             b = assemble_vector([L0, L1], kind=PETSc.Vec.Type.MPI)
-            apply_lifting(b, [[a00, a01], [a10, a11]], bcs=bcs)
+            bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), bcs=bcs)
+            apply_lifting(b, a, bcs=bcs1)
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = fem.bcs_by_block(fem.extract_function_spaces([L0, L1]), bcs)
             set_bc(b, bcs0)
@@ -509,10 +513,12 @@ class TestPETScAssemblers:
 
         def nested():
             """Nested (MatNest)"""
-            A = petsc_assemble_matrix([[a00, a01], [a10, a11]], bcs=bcs, diag=1.0, kind="nest")
+            a = [[a00, a01], [a10, a11]]
+            A = petsc_assemble_matrix(a, bcs=bcs, diag=1.0, kind="nest")
             A.assemble()
             b = petsc_assemble_vector([L0, L1], kind="nest")
-            petsc_apply_lifting(b, [[a00, a01], [a10, a11]], bcs=bcs)
+            bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), bcs=bcs)
+            petsc_apply_lifting(b, a, bcs=bcs1)
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = bcs_by_block([L0.function_spaces[0], L1.function_spaces[0]], bcs)
@@ -653,20 +659,22 @@ class TestPETScAssemblers:
 
         def nested_solve():
             """Nested solver"""
-            A = petsc_assemble_matrix(
-                form([[a00, a01], [a10, a11]]), bcs=[bc0, bc1], kind=[["baij", "aij"], ["aij", ""]]
-            )
+            a = form([[a00, a01], [a10, a11]])
+            L = form([L0, L1])
+            A = petsc_assemble_matrix(a, bcs=[bc0, bc1], kind=[["baij", "aij"], ["aij", ""]])
             A.assemble()
             P = petsc_assemble_matrix(
                 form([[p00, p01], [p10, p11]]), bcs=[bc0, bc1], kind=[["aij", "aij"], ["aij", ""]]
             )
             P.assemble()
-            b = petsc_assemble_vector(form([L0, L1]), kind="nest")
-            petsc_apply_lifting(b, form([[a00, a01], [a10, a11]]), [bc0, bc1])
+            b = petsc_assemble_vector(L, kind="nest")
+
+            bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), [bc0, bc1])
+            petsc_apply_lifting(b, a, bcs1)
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-            bcs = bcs_by_block(extract_function_spaces(form([L0, L1])), [bc0, bc1])
-            petsc_set_bc(b, bcs)
+            bcs0 = bcs_by_block(extract_function_spaces(L), [bc0, bc1])
+            petsc_set_bc(b, bcs0)
             b.assemble()
 
             ksp = PETSc.KSP()
@@ -705,7 +713,8 @@ class TestPETScAssemblers:
             P.assemble()
             L, a = form([L0, L1]), form([[a00, a01], [a10, a11]])
             b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
-            apply_lifting(b, a, bcs=[bc0, bc1])
+            bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), [bc0, bc1])
+            apply_lifting(b, a, bcs=bcs1)
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs=[bc0, bc1])
             set_bc(b, bcs0)
@@ -873,7 +882,8 @@ class TestPETScAssemblers:
         bcs = [bc(V0), bc(V1)]
         A = petsc_assemble_matrix(a, bcs=bcs)
         b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
-        apply_lifting(b, a, bcs=bcs)
+        bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), bcs)
+        apply_lifting(b, a, bcs=bcs1)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs=bcs)
         set_bc(b, bcs0)
@@ -909,7 +919,8 @@ class TestPETScAssemblers:
         bcs = [bc(V0), bc(V1)]
         A = petsc_assemble_matrix(a, bcs=bcs)
         b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
-        apply_lifting(b, a, bcs=bcs)
+        bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), bcs=bcs)
+        apply_lifting(b, a, bcs=bcs1)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs=bcs)
         set_bc(b, bcs0)

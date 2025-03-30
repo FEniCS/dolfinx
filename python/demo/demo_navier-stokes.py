@@ -325,12 +325,14 @@ boundary_vel_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, boundar
 bc_u = fem.dirichletbc(u_D, boundary_vel_dofs)
 bcs = [bc_u]
 
+
 # Assemble Stokes problem
 A = assemble_matrix(a_blocked, bcs=bcs)
 A.assemble()
 
 b = assemble_vector(L_blocked, kind=PETSc.Vec.Type.MPI)
-apply_lifting(b, a_blocked, bcs=bcs)
+bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a_blocked, 1), bcs)
+apply_lifting(b, a_blocked, bcs=bcs1)
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L_blocked), bcs)
 set_bc(b, bcs0)
@@ -413,6 +415,7 @@ L += (
 L_blocked = fem.form(ufl.extract_blocks(L))
 
 # Time stepping loop
+bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a_blocked, 1), bcs)
 for n in range(num_time_steps):
     t += delta_t.value
 
@@ -423,7 +426,7 @@ for n in range(num_time_steps):
     with b.localForm() as b_loc:
         b_loc.set(0)
     assemble_vector(b, L_blocked)
-    apply_lifting(b, a_blocked, bcs=bcs)
+    apply_lifting(b, a_blocked, bcs=bcs1)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     set_bc(b, bcs0)
 
