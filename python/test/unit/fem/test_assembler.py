@@ -21,7 +21,9 @@ from dolfinx import default_real_type, fem, graph, la
 from dolfinx.fem import (
     Constant,
     Function,
+    assemble_matrix,
     assemble_scalar,
+    assemble_vector,
     bcs_by_block,
     dirichletbc,
     extract_function_spaces,
@@ -102,10 +104,10 @@ def test_assemble_derivatives(dtype):
     L = ufl.inner(c1, c1) * v * dx + c2 * b * inner(u, v) * dx
     a = form(derivative(L, u, du), dtype=dtype)
 
-    A1 = fem.assemble_matrix(a)
+    A1 = assemble_matrix(a)
     A1.scatter_reverse()
     a = form(c2 * b * inner(du, v) * dx, dtype=dtype)
-    A2 = fem.assemble_matrix(a)
+    A2 = assemble_matrix(a)
     A2.scatter_reverse()
     assert np.allclose(A1.data, A2.data)
 
@@ -124,34 +126,34 @@ def test_basic_assembly(mode, dtype):
     a, L = form(a, dtype=dtype), form(L, dtype=dtype)
 
     # Initial assembly
-    A = fem.assemble_matrix(a)
+    A = assemble_matrix(a)
     A.scatter_reverse()
     assert isinstance(A, la.MatrixCSR)
-    b = fem.assemble_vector(L)
+    b = assemble_vector(L)
     b.scatter_reverse(la.InsertMode.add)
     assert isinstance(b, la.Vector)
 
     # Second assembly
     normA = A.squared_norm()
     A.set_value(0)
-    A = fem.assemble_matrix(A, a)
+    A = assemble_matrix(A, a)
     A.scatter_reverse()
     assert isinstance(A, la.MatrixCSR)
     assert normA == pytest.approx(A.squared_norm())
     normb = la.norm(b)
     b.array[:] = 0
-    fem.assemble_vector(b.array, L)
+    assemble_vector(b.array, L)
     b.scatter_reverse(la.InsertMode.add)
     assert normb == pytest.approx(la.norm(b))
 
     # Vector re-assembly - no zeroing (but need to zero ghost entries)
     b.array[b.index_map.size_local * b.block_size :] = 0
-    fem.assemble_vector(b.array, L)
+    assemble_vector(b.array, L)
     b.scatter_reverse(la.InsertMode.add)
     assert 2 * normb == pytest.approx(la.norm(b))
 
     # Matrix re-assembly (no zeroing)
-    fem.assemble_matrix(A, a)
+    assemble_matrix(A, a)
     A.scatter_reverse()
     assert 4 * normA == pytest.approx(A.squared_norm())
 
@@ -183,7 +185,7 @@ class TestPETScAssemblers:
         u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
         a = form(inner(u, v) * dx + inner(u, v) * ds)
 
-        A0 = fem.assemble_matrix(a)
+        A0 = assemble_matrix(a)
         A0.scatter_reverse()
         assert isinstance(A0, la.MatrixCSR)
         A1 = petsc_assemble_matrix(a)
@@ -196,7 +198,7 @@ class TestPETScAssemblers:
         V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
         u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
         a = form(inner(u, v) * dx + inner(u, v) * ds)
-        A0 = fem.assemble_matrix(a)
+        A0 = assemble_matrix(a)
         A0.scatter_reverse()
         assert isinstance(A0, la.MatrixCSR)
         A1 = petsc_assemble_matrix(a)
@@ -1183,19 +1185,19 @@ def test_basic_assembly_constant(mode, dtype):
     a, L = form(a, dtype=dtype), form(L, dtype=dtype)
 
     # Initial assembly
-    A1 = fem.assemble_matrix(a)
+    A1 = assemble_matrix(a)
     A1.scatter_reverse()
 
-    b1 = fem.assemble_vector(L)
+    b1 = assemble_vector(L)
     b1.scatter_reverse(la.InsertMode.add)
 
     c.value = [[1.0, 2.0], [3.0, 4.0]]
 
-    A2 = fem.assemble_matrix(a)
+    A2 = assemble_matrix(a)
     A2.scatter_reverse()
     assert np.linalg.norm(A1.data * 3.0 - A2.data * 5.0) == pytest.approx(0.0, abs=1.0e-5)
 
-    b2 = fem.assemble_vector(L)
+    b2 = assemble_vector(L)
     b2.scatter_reverse(la.InsertMode.add)
     assert np.linalg.norm(b1.array * 3.0 - b2.array * 5.0) == pytest.approx(0.0, abs=1.0e-5)
 
@@ -1245,7 +1247,7 @@ def test_vector_types():
     L = form(L, dtype=x0.array.dtype)
     c0 = pack_constants(L)
     c1 = pack_coefficients(L)
-    _cpp.fem.assemble_vector(x0.array, L._cpp_object, c0, c1)
+    assemble_vector(x0.array, L, c0, c1)
     x0.scatter_reverse(la.InsertMode.add)
 
     c = Constant(mesh1, np.complex128(1))
@@ -1254,7 +1256,7 @@ def test_vector_types():
     L = form(L, dtype=x1.array.dtype)
     c0 = pack_constants(L)
     c1 = pack_coefficients(L)
-    _cpp.fem.assemble_vector(x1.array, L._cpp_object, c0, c1)
+    assemble_vector(x1.array, L, c0, c1)
     x1.scatter_reverse(la.InsertMode.add)
 
     c = Constant(mesh0, np.float32(1))
@@ -1263,7 +1265,7 @@ def test_vector_types():
     L = form(L, dtype=x2.array.dtype)
     c0 = pack_constants(L)
     c1 = pack_coefficients(L)
-    _cpp.fem.assemble_vector(x2.array, L._cpp_object, c0, c1)
+    assemble_vector(x2.array, L, c0, c1)
     x2.scatter_reverse(la.InsertMode.add)
 
     assert np.linalg.norm(x0.array - x1.array) == pytest.approx(0.0)
