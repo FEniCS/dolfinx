@@ -40,7 +40,8 @@ def pack_constants(
     of form constants with the same shape as ``form``.
 
     Args:
-        form: Single form or sequence  of forms to pack the constants for.
+        form: Single form or sequence of forms to pack the constants
+            for.
 
     Returns:
         A ``constant`` array for each form.

@@ -43,7 +43,7 @@ import ufl
 from dolfinx.cpp.fem.petsc import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem.petsc import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem.petsc import interpolation_matrix as _interpolation_matrix
-from dolfinx.fem import pack_coefficients, pack_constants
+from dolfinx.fem import IntegralType, pack_coefficients, pack_constants
 from dolfinx.fem.assemble import _assemble_vector_array
 from dolfinx.fem.assemble import apply_lifting as _apply_lifting
 from dolfinx.fem.bcs import DirichletBC
@@ -242,7 +242,12 @@ def create_matrix(
 def assemble_vector(
     L: typing.Union[Form, Iterable[Form]],
     constants: typing.Optional[npt.NDArray, Iterable[npt.NDArray]] = None,
-    coeffs: typing.Optional[npt.NDArray, Iterable[npt.NDArray]] = None,
+    coeffs: typing.Optional[
+        typing.Union[
+            dict[tuple[IntegralType, int], npt.NDArray],
+            Iterable[dict[tuple[IntegralType, int], npt.NDArray]],
+        ]
+    ] = None,
     kind: typing.Optional[str] = None,
 ) -> PETSc.Vec:
     """Assemble linear form(s) into a new PETSc vector.
@@ -307,7 +312,12 @@ def _assemble_vector_vec(
     b: PETSc.Vec,
     L: typing.Union[Form, Iterable[Form]],
     constants: typing.Optional[npt.NDArray, Iterable[npt.NDArray]] = None,
-    coeffs: typing.Optional[npt.NDArray, Iterable[npt.NDArray]] = None,
+    coeffs: typing.Optional[
+        typing.Union[
+            dict[tuple[IntegralType, int], npt.NDArray],
+            Iterable[dict[tuple[IntegralType, int], npt.NDArray]],
+        ]
+    ] = None,
 ) -> PETSc.Vec:
     """Assemble linear form(s) into a PETSc vector.
 
@@ -373,7 +383,12 @@ def assemble_matrix(
     constants: typing.Optional[
         typing.Union[Iterable[np.ndarray], Iterable[Iterable[np.ndarray]]]
     ] = None,
-    coeffs=None,
+    coeffs: typing.Optional[
+        typing.Union[
+            dict[tuple[IntegralType, int], npt.NDArray],
+            Iterable[dict[tuple[IntegralType, int], npt.NDArray]],
+        ]
+    ] = None,
     kind=None,
 ):
     """Assemble a bilinear form into a matrix.
@@ -434,13 +449,12 @@ def _assemble_matrix_block_mat(
     a: Iterable[Iterable[Form]],
     bcs: typing.Optional[Iterable[DirichletBC]],
     diag: float,
-    constants,
-    coeffs,
+    constants: typing.Optional[Iterable[npt.NDArray]] = None,
+    coeffs: typing.Optional[Iterable[Iterable[dict[tuple[IntegralType, int], npt.NDArray]]]] = None,
 ) -> PETSc.Mat:
     """Assemble bilinear forms into a blocked matrix."""
     consts = [pack_constants(forms) for forms in a] if constants is None else constants
     coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
-
     V = _extract_function_spaces(a)
     is0 = _cpp.la.petsc.create_index_sets(
         [(Vsub.dofmaps(0).index_map, Vsub.dofmaps(0).index_map_bs) for Vsub in V[0]]
@@ -490,10 +504,13 @@ def assemble_matrix_mat(
     a: typing.Union[Form, Iterable[Iterable[Form]]],
     bcs: typing.Optional[Iterable[DirichletBC]] = None,
     diag: float = 1,
-    constants: typing.Optional[
-        typing.Union[Iterable[np.ndarray], Iterable[Iterable[np.ndarray]]]
+    constants: typing.Optional[typing.Union[np.ndarray, Iterable[Iterable[np.ndarray]]]] = None,
+    coeffs: typing.Optional[
+        typing.Union[
+            dict[tuple[IntegralType, int], npt.NDArray],
+            Iterable[Iterable[dict[tuple[IntegralType, int], npt.NDArray]]],
+        ]
     ] = None,
-    coeffs=None,
 ) -> PETSc.Mat:
     """Assemble bilinear form into a matrix.
 
@@ -790,7 +807,7 @@ class LinearProblem:
 
         # Assemble lhs
         self._A.zeroEntries()
-        assemble_matrix_mat(self._A, self._a, bcs=self.bcs)
+        assemble_matrix(self._A, self._a, bcs=self.bcs)
         self._A.assemble()
 
         # Assemble rhs
@@ -935,7 +952,7 @@ class NonlinearProblem:
             x: The vector containing the latest solution
         """
         A.zeroEntries()
-        assemble_matrix_mat(A, self._a, self.bcs)
+        assemble_matrix(A, self._a, self.bcs)
         A.assemble()
 
 
