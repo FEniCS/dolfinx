@@ -583,8 +583,8 @@ def test_mixed_measures():
     dx_smsh = ufl.Measure("dx", smsh)
 
     # Trial and test functions
-    _, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    _, q = ufl.TrialFunction(Q), ufl.TestFunction(Q)
+    v = ufl.TestFunction(V)
+    q = ufl.TestFunction(Q)
 
     # First, assemble a block vector using both dx_msh and dx_smsh
     L = [fem.form(ufl.inner(2.3, v) * dx_msh), fem.form(ufl.inner(1.3, q) * dx_smsh)]
