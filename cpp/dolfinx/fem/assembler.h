@@ -445,7 +445,7 @@ void assemble_matrix(
 /// @param[in] a The bilinear from to assemble.
 /// @param[in] constants Constants that appear in `a`.
 /// @param[in] coefficients Coefficients that appear in `a`.
-/// @param[in] bcs Boundary conditions to apply. For boundary condition.
+/// @param[in] bcs Boundary conditions to apply. For boundary condition
 /// dofs the row and column are zeroed. The diagonal  entry is not set.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
