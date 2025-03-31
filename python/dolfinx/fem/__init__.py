@@ -16,6 +16,7 @@ from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.cpp.fem import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem import interpolation_matrix as _interpolation_matrix
+from dolfinx.cpp.fem import transpose_dofmap
 from dolfinx.cpp.la import SparsityPattern
 from dolfinx.cpp.mesh import Topology
 from dolfinx.fem.assemble import (
