@@ -56,7 +56,6 @@ __all__ = [
     "create_unit_cube",
     "create_unit_interval",
     "create_unit_square",
-    "empty_partitioner",
     "entities_to_geometry",
     "exterior_facet_indices",
     "locate_entities",
