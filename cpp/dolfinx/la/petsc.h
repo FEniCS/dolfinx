@@ -13,6 +13,7 @@
 #include "utils.h"
 #include <boost/lexical_cast.hpp>
 #include <functional>
+#include <optional>
 #include <petscksp.h>
 #include <petscmat.h>
 #include <petscoptions.h>
@@ -118,7 +119,7 @@ void scatter_local_vectors(
 /// Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
 Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
-                  std::string type = std::string());
+                  std::optional<std::string> type = std::nullopt);
 
 /// Create PETSc MatNullSpace. Caller is responsible for destruction
 /// returned object.
@@ -390,7 +391,7 @@ public:
 
   /// Create holder for a PETSc Mat object from a sparsity pattern
   Matrix(MPI_Comm comm, const SparsityPattern& sp,
-         std::string type = std::string());
+         std::optional<std::string> type = std::nullopt);
 
   /// Create holder of a PETSc Mat object/pointer. The Mat A object
   /// should already be created. If inc_ref_count is true, the reference

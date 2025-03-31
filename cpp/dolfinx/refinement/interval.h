@@ -80,7 +80,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
 
   // Mark cells for refinement
   std::vector<std::vector<std::int32_t>> marked_for_update(ranks.size());
-  if (cells.has_value())
+  if (cells)
   {
     std::ranges::for_each(cells.value(),
                           [&](auto cell)
@@ -102,7 +102,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
 
   // Communicate ghost cells that might have been marked. This is not
   // necessary for a uniform refinement.
-  if (cells.has_value())
+  if (cells)
   {
     update_logical_edgefunction(neighbor_comm, marked_for_update,
                                 refinement_marker, *map_c);
@@ -176,7 +176,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   }
 
   assert(cell_topology.size() == 2 * refined_cell_count);
-  assert(parent_cell->size() == (compute_parent_cell ? refined_cell_count : 0));
+  assert(!compute_parent_cell or parent_cell->size() == refined_cell_count);
 
   std::vector<std::int32_t> offsets(refined_cell_count + 1);
   std::ranges::generate(offsets, [i = 0]() mutable { return 2 * i++; });

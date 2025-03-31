@@ -145,7 +145,6 @@ from dolfinx.fem.petsc import NonlinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_square
 from dolfinx.nls.petsc import NewtonSolver
-from ufl import dx, grad, inner
 
 try:
     import pyvista as pv
@@ -200,7 +199,7 @@ c, mu = ufl.split(u)
 c0, mu0 = ufl.split(u0)
 # -
 
-# The line `c, mu = ufl.split(u)` permits direct access to the
+# The line `c, mu = split(u)` permits direct access to the
 # components of a mixed function. Note that `c` and `mu` are references
 # for components of `u`, and not copies.
 #
@@ -249,8 +248,16 @@ mu_mid = (1.0 - theta) * mu0 + theta * mu
 # which is then used in the definition of the variational forms:
 
 # Weak statement of the equations
-F0 = inner(c, q) * dx - inner(c0, q) * dx + dt * inner(grad(mu_mid), grad(q)) * dx
-F1 = inner(mu, v) * dx - inner(dfdc, v) * dx - lmbda * inner(grad(c), grad(v)) * dx
+F0 = (
+    ufl.inner(c, q) * ufl.dx
+    - ufl.inner(c0, q) * ufl.dx
+    + dt * ufl.inner(ufl.grad(mu_mid), ufl.grad(q)) * ufl.dx
+)
+F1 = (
+    ufl.inner(mu, v) * ufl.dx
+    - ufl.inner(dfdc, v) * ufl.dx
+    - lmbda * ufl.inner(ufl.grad(c), ufl.grad(v)) * ufl.dx
+)
 F = F0 + F1
 
 # This is a statement of the time-discrete equations presented as part
@@ -278,11 +285,12 @@ option_prefix = ksp.getOptionsPrefix()
 opts[f"{option_prefix}ksp_type"] = "preonly"
 opts[f"{option_prefix}pc_type"] = "lu"
 sys = PETSc.Sys()  # type: ignore
-# For factorisation prefer superlu_dist, then MUMPS, then default
-if sys.hasExternalPackage("superlu_dist"):
-    opts[f"{option_prefix}pc_factor_mat_solver_type"] = "superlu_dist"
-elif sys.hasExternalPackage("mumps"):
+# For factorisation prefer MUMPS, then superlu_dist, then default
+use_superlu = PETSc.IntType == np.int64  # or PETSc.ScalarType == np.complex64
+if sys.hasExternalPackage("mumps") and not use_superlu:
     opts[f"{option_prefix}pc_factor_mat_solver_type"] = "mumps"
+elif sys.hasExternalPackage("superlu_dist"):
+    opts[f"{option_prefix}pc_factor_mat_solver_type"] = "superlu_dist"
 ksp.setFromOptions()
 # -
 

@@ -41,7 +41,6 @@ import numpy as np
 import ufl
 from dolfinx import fem, mesh
 from dolfinx.cpp.mesh import cell_num_entities
-from ufl import div, dot, grad, inner
 
 
 def par_print(comm, string):
@@ -147,21 +146,17 @@ gamma = 16.0 * k**2 / h  # Scaled penalty parameter
 x = ufl.SpatialCoordinate(msh)
 c = 1.0 + 0.1 * ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])
 a = (
-    inner(c * grad(u), grad(v)) * dx_c
-    - inner(c * u, dot(grad(v), n)) * ds_c(cell_boundaries)
-    - inner(dot(grad(u), n), c * v) * ds_c(cell_boundaries)
-    + gamma * inner(c * u, v) * ds_c(cell_boundaries)
+    ufl.inner(c * ufl.grad(u), ufl.grad(v)) * dx_c
+    - ufl.inner(c * (u - ubar), ufl.dot(ufl.grad(v), n)) * ds_c(cell_boundaries)
+    - ufl.inner(ufl.dot(ufl.grad(u), n), c * (v - vbar)) * ds_c(cell_boundaries)
+    + gamma * ufl.inner(c * (u - ubar), v - vbar) * ds_c(cell_boundaries)
 )
 
-a += inner(dot(grad(u), n) - gamma * u, c * vbar) * ds_c(cell_boundaries)
-a += inner(c * ubar, dot(grad(v), n) - gamma * v) * ds_c(cell_boundaries)
-a += gamma * inner(c * ubar, vbar) * ds_c(cell_boundaries)
-
 # Manufacture a source term
-f = -div(c * grad(u_e(x)))
+f = -ufl.div(c * ufl.grad(u_e(x)))
 
-L = inner(f, v) * dx_c
-L += inner(fem.Constant(facet_mesh, dtype(0.0)), vbar) * dx_f
+L = ufl.inner(f, v) * dx_c
+L += ufl.inner(fem.Constant(facet_mesh, dtype(0.0)), vbar) * dx_f
 
 # Define block structure
 a_blocked = dolfinx.fem.form(ufl.extract_blocks(a), entity_maps=entity_maps)
@@ -170,11 +165,13 @@ L_blocked = dolfinx.fem.form(ufl.extract_blocks(L))
 # Apply Dirichlet boundary conditions
 # We begin by locating the boundary facets of msh
 msh_boundary_facets = mesh.exterior_facet_indices(msh.topology)
+
 # Since the boundary condition is enforced in the facet space, we must
 # use the mesh_to_facet_mesh map to get the corresponding facets in
 # facet_mesh
 facet_mesh_boundary_facets = mesh_to_facet_mesh[msh_boundary_facets]
-# Get the dofs and apply the bondary condition
+
+# Get the dofs and apply the boundary condition
 facet_mesh.topology.create_connectivity(fdim, fdim)
 dofs = fem.locate_dofs_topological(Vbar, fdim, facet_mesh_boundary_facets)
 bc = fem.dirichletbc(dtype(0.0), dofs, Vbar)

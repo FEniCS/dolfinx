@@ -42,7 +42,7 @@ struct dofmap_t
 /// [0:owned_size).
 /// @param[in] dofmaps The local dofmaps (cell -> dofs)
 /// @param[in] owned_size Number of dofs owned by this process
-/// @param[in] original_to_contiguous Map from dof indices in @p dofmap
+/// @param[in] original_to_contiguous Map from dof indices in `dofmap`.
 /// to new indices that are ordered such that owned indices are [0,
 /// owned_size)
 /// @param[in] reorder_fn The graph reordering function to apply
@@ -209,7 +209,9 @@ build_basic_dofmaps(
                 local_entity_offsets.back()
                 + num_entity_dofs * (im->size_local() + im->num_ghosts()));
 
-            if (d < D and !topology.connectivity({D, i}, {d, et_index}))
+            if (d < D
+                and !topology.connectivity({int(D), int(i)},
+                                           {int(d), int(et_index)}))
             {
               throw std::runtime_error("Missing needed connectivity. Cell type:"
                                        + std::to_string(i)
@@ -279,10 +281,17 @@ build_basic_dofmaps(
 
         const std::vector<std::vector<int>>& e_dofs_d = entity_dofs[d];
 
+        // Skip over undefined topology, e.g. quad facets of tetrahedra
+        if (d < D
+            and !topology.connectivity({int(D), int(i)}, {int(d), int(et)}))
+          continue;
+
         // Iterate over each entity of current dimension d and type et
         std::span<const std::int32_t> c_to_e
-            = d < D ? topology.connectivity({D, i}, {d, et})->links(c)
-                    : std::span<const std::int32_t>(&c, 1);
+            = d < D
+                  ? topology.connectivity({int(D), int(i)}, {int(d), int(et)})
+                        ->links(c)
+                  : std::span<const std::int32_t>(&c, 1);
 
         int w = 0;
         for (std::size_t e = 0; e < e_dofs_d.size(); ++e)
@@ -370,9 +379,10 @@ build_basic_dofmaps(
 /// same range
 /// @param [in] dof_entity Map from dof index to (index_map, entity_index),
 /// where entity_index is the local mesh entity index in the given index_map
-/// @param [in] index_maps The set of IndexMaps, one for each topological
-/// entity type used in the dofmap. The location in this array is referred to by
-/// the first item in each entry of @p dof_entity
+/// @param [in] index_maps The set of IndexMaps, one for each
+/// topological entity type used in the dofmap. The location in this
+/// array is referred to by the first item in each entry of
+/// `dof_entity`.
 /// @param [in] reorder_fn Graph reordering function that is applied for
 /// dof re-ordering
 /// @return The pair (old-to-new local index map, M), where M is the
@@ -510,6 +520,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   std::vector<MPI_Request> requests(index_maps.size());
   std::vector<MPI_Comm> comm(index_maps.size(), MPI_COMM_NULL);
   std::vector<std::vector<std::int64_t>> all_dofs_received(index_maps.size());
+  std::vector<std::vector<int>> size_recv(index_maps.size());
   std::vector<std::vector<int>> disp_recv(index_maps.size());
   for (std::size_t d = 0; d < index_maps.size(); ++d)
   {
@@ -524,23 +535,22 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
     // Number and values to send and receive
     const int num_indices = global[d].size();
-    std::vector<int> size_recv;
-    size_recv.reserve(1); // ensure data is not a nullptr
-    size_recv.resize(src.size());
-    MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, size_recv.data(), 1,
+    size_recv[d].reserve(1); // ensure data is not a nullptr
+    size_recv[d].resize(src.size());
+    MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, size_recv[d].data(), 1,
                            MPI_INT, comm[d]);
 
     // Compute displacements for data to receive. Last entry has total
     // number of received items.
     disp_recv[d].resize(src.size() + 1);
-    std::partial_sum(size_recv.begin(), size_recv.begin() + src.size(),
+    std::partial_sum(size_recv[d].begin(), size_recv[d].begin() + src.size(),
                      disp_recv[d].begin() + 1);
 
     // TODO: use MPI_Ineighbor_alltoallv
     // Send global index of dofs to neighbors
     all_dofs_received[d].resize(disp_recv[d].back());
     MPI_Ineighbor_allgatherv(global[d].data(), global[d].size(), MPI_INT64_T,
-                             all_dofs_received[d].data(), size_recv.data(),
+                             all_dofs_received[d].data(), size_recv[d].data(),
                              disp_recv[d].data(), MPI_INT64_T, comm[d],
                              &requests[requests_dim.size()]);
     requests_dim.push_back(d);

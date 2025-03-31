@@ -52,7 +52,7 @@ try:
         print("This demo requires DOLFINx to be compiled with PETSc enabled.")
         exit(0)
     if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
-        print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
+        print("This solver fails with PETSc and 64-bit integers because of memory errors in MUMPS.")
         # Note: when PETSc.IntType == np.int32, superlu_dist is used
         # rather than MUMPS and does not trigger memory failures.
         exit(0)
@@ -93,7 +93,6 @@ except ModuleNotFoundError:
 # mention that the problem can be decoupled into $\mathrm{TE}_x$ and
 # $\mathrm{TM}_x$ modes, and the possible $k_z$ can be found by solving
 # a set of transcendental equations, which is shown here below:
-#
 #
 # $$
 # \textrm{For TE}_x \textrm{ modes}:
@@ -234,7 +233,7 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=scalar_type)
 # wavelength, which we consider fixed at $\lambda = h/0.2$. If we focus
 # on non-magnetic material only, we can also use $\mu_r=1$.
 #
-# Now we can assume a known dependance on $z$:
+# Now we can assume a known dependence on $z$:
 #
 # $$
 # \mathbf{E}(x, y, z)=\left[\mathbf{E}_{t}(x, y)+\hat{z} E_{z}(x, y)\right]
@@ -462,7 +461,7 @@ for i, kz in vals:
         # Verify if kz is consistent with the analytical equations
         assert verify_mode(kz, w, h, d, lmbd0, eps_d, eps_v, threshold=1e-4)
 
-        print(f"eigenvalue: {-kz**2}")
+        print(f"eigenvalue: {-(kz**2)}")
         print(f"kz: {kz}")
         print(f"kz/k0: {kz / k0}")
 

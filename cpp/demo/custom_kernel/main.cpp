@@ -18,19 +18,17 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <functional>
+#include <map>
 #include <stdint.h>
+#include <tuple>
 #include <utility>
 #include <vector>
 
 using namespace dolfinx;
-
 template <typename T, std::size_t ndim>
-using mdspand_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-    T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
+using mdspand_t = md::mdspan<T, md::dextents<std::size_t, ndim>>;
 template <typename T, std::size_t n0, std::size_t n1>
-using mdspan2_t
-    = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<T,
-                                             std::extents<std::size_t, n0, n1>>;
+using mdspan2_t = md::mdspan<T, std::extents<std::size_t, n0, n1>>;
 
 /// @brief Compute the P1 element mass matrix on the reference cell.
 /// @tparam T Scalar type.
@@ -72,17 +70,15 @@ std::array<T, 3> b_ref(mdspand_t<const T, 4> phi, std::span<const T> w)
 /// @param cells Cells to execute the kernel over.
 /// @return Frobenius norm squared of the matrix.
 template <std::floating_point T>
-double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
-                        std::span<const std::int32_t> cells)
+double assemble_matrix0(std::shared_ptr<const fem::FunctionSpace<T>> V,
+                        auto kernel, const std::vector<std::int32_t>& cells)
 {
   // Kernel data (ID, kernel function, cell indices to execute over)
-  std::vector kernel_data{
-      fem::integral_data<T>(-1, kernel, cells, std::vector<int>{})};
+  std::map integrals{
+      std::pair{std::tuple{fem::IntegralType::cell, -1, 0},
+                fem::integral_data<T>(kernel, cells, std::vector<int>{})}};
 
-  // Associate kernel with cells (as opposed to facets, etc)
-  std::map integrals{std::pair{fem::IntegralType::cell, kernel_data}};
-
-  fem::Form<T> a({V, V}, integrals, {}, {}, false, {}, V->mesh());
+  fem::Form<T, T> a({V, V}, integrals, V->mesh(), {}, {}, false, {});
   auto dofmap = V->dofmap();
   auto sp = la::SparsityPattern(
       V->mesh()->comm(), {dofmap->index_map, dofmap->index_map},
@@ -104,14 +100,14 @@ double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
 /// @param cells Cells to execute the kernel over.
 /// @return l2 norm squared of the vector.
 template <std::floating_point T>
-double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
-                        std::span<const std::int32_t> cells)
+double assemble_vector0(std::shared_ptr<const fem::FunctionSpace<T>> V,
+                        auto kernel, const std::vector<std::int32_t>& cells)
 {
   auto mesh = V->mesh();
-  std::vector kernal_data{
-      fem::integral_data<T>(-1, kernel, cells, std::vector<int>{})};
-  std::map integrals{std::pair{fem::IntegralType::cell, kernal_data}};
-  fem::Form<T> L({V}, integrals, {}, {}, false, {}, mesh);
+  std::map integrals{
+      std::pair{std::tuple{fem::IntegralType::cell, -1, 0},
+                fem::integral_data<T>(kernel, cells, std::vector<int>{})}};
+  fem::Form<T> L({V}, integrals, mesh, {}, {}, false, {});
   auto dofmap = V->dofmap();
   la::Vector<T> b(dofmap->index_map, 1);
   common::Timer timer("Assembler0 std::function (vector)");
@@ -143,10 +139,11 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   la::MatrixCSR<T> A(sp);
   auto ident = [](auto, auto, auto, auto) {}; // DOF permutation not required
   common::Timer timer("Assembler1 lambda (matrix)");
-  fem::impl::assemble_cells(A.mat_add_values(), g.dofmap(), g.x(), cells,
-                            {dofmap.map(), 1, cells}, ident,
-                            {dofmap.map(), 1, cells}, ident, {}, {}, kernel,
-                            std::span<const T>(), 0, {}, {}, {});
+  md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 3>> x(
+      g.x().data(), g.x().size() / 3, 3);
+  fem::impl::assemble_cells<T>(
+      A.mat_add_values(), g.dofmap(), x, cells, {dofmap.map(), 1, cells}, ident,
+      {dofmap.map(), 1, cells}, ident, {}, {}, kernel, {}, {}, {}, {});
   A.scatter_rev();
   return A.squared_norm();
 }
@@ -167,10 +164,12 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
                         auto kernel, const std::vector<std::int32_t>& cells)
 {
   la::Vector<T> b(dofmap.index_map, 1);
+  md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 3>> x(
+      g.x().data(), g.x().size() / 3, 3);
   common::Timer timer("Assembler1 lambda (vector)");
-  fem::impl::assemble_cells<T, 1>(
-      [](auto, auto, auto, auto) {}, b.mutable_array(), g.dofmap(), g.x(),
-      cells, {dofmap.map(), 1, cells}, kernel, {}, {}, 0, {});
+  fem::impl::assemble_cells<T, 1>([](auto, auto, auto, auto) {},
+                                  b.mutable_array(), g.dofmap(), x, cells,
+                                  {dofmap.map(), 1, cells}, kernel, {}, {}, {});
   b.scatter_rev(std::plus<T>());
   return la::squared_norm(b);
 }
@@ -209,8 +208,8 @@ void assemble(MPI_Comm comm)
   mdspand_t<const T, 2> X(X_b.data(), weights.size(), 2);
 
   // Create a scalar function space
-  auto V = std::make_shared<fem::FunctionSpace<T>>(
-      fem::create_functionspace(mesh, e));
+  auto V = std::make_shared<fem::FunctionSpace<T>>(fem::create_functionspace<T>(
+      mesh, std::make_shared<fem::FiniteElement<T>>(e)));
 
   // Build list of cells to assembler over (all cells owned by this
   // rank)
@@ -237,9 +236,9 @@ void assemble(MPI_Comm comm)
 
   // Finite element mass matrix kernel function
   std::array<T, 9> A_hat_b = A_ref<T>(phi, weights);
-  auto kernel_a
-      = [A_hat = mdspan2_t<T, 3, 3>(A_hat_b.data()),
-         detJ](T* A, const T*, const T*, const T* x, const int*, const uint8_t*)
+  auto kernel_a = [A_hat = mdspan2_t<T, 3, 3>(A_hat_b.data()),
+                   detJ](T* A, const T*, const T*, const T* x, const int*,
+                         const uint8_t*, void*)
   {
     T scale = detJ(mdspan2_t<const T, 3, 3>(x));
     mdspan2_t<T, 3, 3> _A(A);
@@ -249,9 +248,9 @@ void assemble(MPI_Comm comm)
   };
 
   // Finite element RHS (f=1) kernel function
-  auto kernel_L
-      = [b_hat = b_ref<T>(phi, weights),
-         detJ](T* b, const T*, const T*, const T* x, const int*, const uint8_t*)
+  auto kernel_L = [b_hat = b_ref<T>(phi, weights),
+                   detJ](T* b, const T*, const T*, const T* x, const int*,
+                         const uint8_t*, void*)
   {
     T scale = detJ(mdspan2_t<const T, 3, 3>(x));
     for (std::size_t i = 0; i < 3; ++i)

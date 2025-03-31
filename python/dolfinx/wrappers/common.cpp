@@ -4,9 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "MPICommWrapper.h"
-#include "array.h"
-#include "caster_mpi.h"
+#include "dolfinx_wrappers/MPICommWrapper.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/caster_mpi.h"
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
@@ -82,14 +82,15 @@ void common(nb::module_& m)
           [](dolfinx::common::IndexMap* self, MPICommWrapper comm,
              std::int32_t local_size,
              nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> ghosts,
-             nb::ndarray<const int, nb::ndim<1>, nb::c_contig> ghost_owners)
+             nb::ndarray<const int, nb::ndim<1>, nb::c_contig> ghost_owners,
+             int tag)
           {
             new (self) dolfinx::common::IndexMap(
                 comm.get(), local_size, std::span(ghosts.data(), ghosts.size()),
-                std::span(ghost_owners.data(), ghost_owners.size()));
+                std::span(ghost_owners.data(), ghost_owners.size()), tag);
           },
           nb::arg("comm"), nb::arg("local_size"), nb::arg("ghosts"),
-          nb::arg("ghost_owners"))
+          nb::arg("ghost_owners"), nb::arg("tag"))
       .def(
           "__init__",
           [](dolfinx::common::IndexMap* self, MPICommWrapper comm,

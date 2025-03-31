@@ -13,23 +13,22 @@ import numpy as np
 import numpy.typing as npt
 
 if typing.TYPE_CHECKING:
-    from dolfinx.cpp.graph import AdjacencyList_int32
     from dolfinx.mesh import Mesh
 
-
 from dolfinx import cpp as _cpp
+from dolfinx.graph import AdjacencyList
 
 __all__ = [
     "BoundingBoxTree",
+    "PointOwnershipData",
     "bb_tree",
-    "compute_colliding_cells",
-    "squared_distance",
     "compute_closest_entity",
-    "compute_collisions_trees",
+    "compute_colliding_cells",
     "compute_collisions_points",
+    "compute_collisions_trees",
     "compute_distance_gjk",
     "create_midpoint_tree",
-    "PointOwnershipData",
+    "squared_distance",
 ]
 
 
@@ -83,6 +82,16 @@ class BoundingBoxTree:
         """Number of bounding boxes."""
         return self._cpp_object.num_bboxes
 
+    @property
+    def bbox_coordinates(self) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
+        """Coordinates of lower and upper corners of bounding boxes.
+
+        Note:
+            Rows `2*ibbox` and `2*ibbox+1` correspond to the lower
+            and upper corners of bounding box `ibbox`, respectively.
+        """
+        return self._cpp_object.bbox_coordinates
+
     def get_bbox(self, i) -> npt.NDArray[np.floating]:
         """Get lower and upper corners of the ith bounding box.
 
@@ -122,8 +131,6 @@ def bb_tree(
     map = mesh.topology.index_map(dim)
     if map is None:
         raise RuntimeError(f"Mesh entities of dimension {dim} have not been created.")
-    if entities is None:
-        entities = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
 
     dtype = mesh.geometry.x.dtype
     if np.issubdtype(dtype, np.float32):
@@ -155,9 +162,7 @@ def compute_collisions_trees(
     return _cpp.geometry.compute_collisions_trees(tree0._cpp_object, tree1._cpp_object)
 
 
-def compute_collisions_points(
-    tree: BoundingBoxTree, x: npt.NDArray[np.floating]
-) -> _cpp.graph.AdjacencyList_int32:
+def compute_collisions_points(tree: BoundingBoxTree, x: npt.NDArray[np.floating]) -> AdjacencyList:
     """Compute collisions between points and leaf bounding boxes.
 
     Bounding boxes can overlap, therefore points can collide with more
@@ -172,7 +177,7 @@ def compute_collisions_points(
        point.
 
     """
-    return _cpp.geometry.compute_collisions_points(tree._cpp_object, x)
+    return AdjacencyList(_cpp.geometry.compute_collisions_points(tree._cpp_object, x))
 
 
 def compute_closest_entity(
@@ -216,8 +221,8 @@ def create_midpoint_tree(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]) 
 
 
 def compute_colliding_cells(
-    mesh: Mesh, candidates: AdjacencyList_int32, x: npt.NDArray[np.floating]
-):
+    mesh: Mesh, candidates: AdjacencyList, x: npt.NDArray[np.floating]
+) -> AdjacencyList:
     """From a mesh, find which cells collide with a set of points.
 
     Args:
@@ -231,10 +236,14 @@ def compute_colliding_cells(
         collide with the ith point.
 
     """
-    return _cpp.geometry.compute_colliding_cells(mesh._cpp_object, candidates, x)
+    return AdjacencyList(
+        _cpp.geometry.compute_colliding_cells(mesh._cpp_object, candidates._cpp_object, x)
+    )
 
 
-def squared_distance(mesh: Mesh, dim: int, entities: list[int], points: npt.NDArray[np.floating]):
+def squared_distance(
+    mesh: Mesh, dim: int, entities: npt.NDArray[np.int32], points: npt.NDArray[np.floating]
+) -> npt.NDArray[np.floating]:
     """Compute the squared distance between a point and a mesh entity.
 
     The distance is computed between the ith input points and the ith

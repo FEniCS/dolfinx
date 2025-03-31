@@ -29,7 +29,7 @@ jobs:
       matrix:
         variant: ["test-env", "dev-env"]
         mpi: ["openmpi", "mpich"]
-        os: ["ubuntu-latest", "buildjet-4vcpu-ubuntu-2204-arm"]
+        os: ["ubuntu-latest", "ubuntu-24.04-arm"]
 
     runs-on: ${{ matrix.os }}
     steps:

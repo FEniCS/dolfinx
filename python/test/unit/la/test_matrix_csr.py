@@ -122,7 +122,7 @@ def test_distributed_csr(dtype):
     ghosts = np.array(range(n * nbr, n * nbr + nghost), dtype=np.int64)
     owner = np.ones_like(ghosts, dtype=np.int32) * nbr
 
-    im = IndexMap(MPI.COMM_WORLD, n, ghosts, owner)
+    im = IndexMap(MPI.COMM_WORLD, n, ghosts, owner, 0)
     sp = SparsityPattern(MPI.COMM_WORLD, [im, im], [1, 1])
     for i in range(n):
         for j in range(n + nghost):
@@ -222,7 +222,7 @@ def test_set_diagonal_distributed(dtype):
     nlocal = index_map.size_local
     assert (diag[nlocal:] == dtype(0.0)).all()
 
-    shared_dofs = index_map.index_to_dest_ranks()
+    shared_dofs = index_map.index_to_dest_ranks(0)
     for dof in range(nlocal):
         owners = shared_dofs.links(dof)
         assert diag[dof] == len(owners) + 1

@@ -77,7 +77,8 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
 
   // Pad to 3D if vector/tensor is product of dimensions is smaller than 3**rank
   // to ensure that we can visualize them correctly in Paraview
-  std::span<const std::size_t> value_shape = u.function_space()->value_shape();
+  std::span<const std::size_t> value_shape
+      = u.function_space()->element()->value_shape();
   int rank = value_shape.size();
   int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
                                    std::multiplies{});
@@ -127,7 +128,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     if (cmap.degree() > 2
         and element->basix_element().lagrange_variant() != cmap.variant())
     {
-      throw std::runtime_error("Mis-match in Lagrange family. Maybe the "
+      throw std::runtime_error("Mismatch in Lagrange family. Maybe the "
                                "Function needs to be interpolated?");
     }
 
@@ -140,8 +141,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     for (std::int32_t c = 0; c < num_cells; ++c)
     {
       auto dofs = dofmap->cell_dofs(c);
-      auto dofs_x = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-          dofmap_x, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto dofs_x = md::submdspan(dofmap_x, c, md::full_extent);
       assert(dofs.size() == dofs_x.size());
       for (std::size_t i = 0; i < dofs.size(); ++i)
       {
@@ -183,8 +183,8 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
         = shape_to_string(value_shape).c_str();
     attr_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
-    std::span<const scalar_value_type_t<T>> u;
-    std::vector<scalar_value_type_t<T>> _data;
+    std::span<const scalar_value_t<T>> u;
+    std::vector<scalar_value_t<T>> _data;
     if constexpr (!std::is_scalar_v<T>)
     {
       // Complex-valued case
@@ -199,7 +199,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
         std::ranges::transform(data_values, _data.begin(),
                                [](auto x) { return x.imag(); });
       }
-      u = std::span<const scalar_value_type_t<T>>(_data);
+      u = std::span<const scalar_value_t<T>>(_data);
     }
     else
       u = std::span<const T>(data_values);

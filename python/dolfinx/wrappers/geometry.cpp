@@ -4,8 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "array.h"
-#include "caster_mpi.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/caster_mpi.h"
 #include <array>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
@@ -16,8 +16,10 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
+#include <optional>
 #include <span>
 
 namespace nb = nanobind;
@@ -34,19 +36,37 @@ void declare_bbtree(nb::module_& m, std::string type)
           "__init__",
           [](dolfinx::geometry::BoundingBoxTree<T>* bbt,
              const dolfinx::mesh::Mesh<T>& mesh, int dim,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
+             std::optional<
+                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
                  entities,
              double padding)
           {
-            new (bbt) dolfinx::geometry::BoundingBoxTree<T>(
-                mesh, dim,
-                std::span<const std::int32_t>(entities.data(), entities.size()),
-                padding);
+            std::optional<std::span<const std::int32_t>> ents
+                = entities ? std::span<const std::int32_t>(
+                                 entities->data(),
+                                 entities->data() + entities->size())
+                           : std::optional<std::span<const std::int32_t>>(
+                                 std::nullopt);
+
+            new (bbt)
+                dolfinx::geometry::BoundingBoxTree<T>(mesh, dim, ents, padding);
           },
-          nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"),
+          nb::arg("mesh"), nb::arg("dim"), nb::arg("entities").none(),
           nb::arg("padding") = 0.0)
       .def_prop_ro("num_bboxes",
                    &dolfinx::geometry::BoundingBoxTree<T>::num_bboxes)
+      .def_prop_ro(
+          "bbox_coordinates",
+          [](dolfinx::geometry::BoundingBoxTree<T>& self)
+          {
+            std::span<T> bbox_coordinates = self.bbox_coordinates();
+            return nb::ndarray<T, nb::shape<-1, 3>, nb::numpy>(
+                bbox_coordinates.data(), {bbox_coordinates.size() / 3, 3});
+          },
+          nb::rv_policy::reference_internal,
+          "Return coordinates of bounding boxes."
+          "Row `2*ibbox` and `2*ibbox+1` correspond "
+          "to the lower and upper corners of bounding box `ibbox`.")
       .def(
           "get_bbox",
           [](const dolfinx::geometry::BoundingBoxTree<T>& self,

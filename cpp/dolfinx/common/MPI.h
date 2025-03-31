@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2023 Magnus Vikstrøm and Garth N. Wells
+// Copyright (C) 2007-2023 Magnus Vikstrøm, Garth N. Wells and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -33,8 +33,9 @@ namespace dolfinx::MPI
 /// MPI communication tags
 enum class tag : int
 {
-  consensus_pcx,
-  consensus_pex
+  consensus_pcx = 1200,
+  consensus_pex = 1201,
+  consensus_nbx = 1202,
 };
 
 /// @brief A duplicate MPI communicator and manage lifetime of the
@@ -72,22 +73,21 @@ private:
 int rank(MPI_Comm comm);
 
 /// Return size of the group (number of processes) associated with the
-/// communicator
+/// communicator.
 int size(MPI_Comm comm);
 
 /// @brief Check MPI error code. If the error code is not equal to
 /// MPI_SUCCESS, then std::abort is called.
-/// @param[in] comm MPI communicator
-/// @param[in] code Error code returned by an MPI function call
+/// @param[in] comm MPI communicator.
+/// @param[in] code Error code returned by an MPI function call.
 void check_error(MPI_Comm comm, int code);
 
 /// @brief Return local range for the calling process, partitioning the
 /// global [0, N - 1] range across all ranks into partitions of almost
 /// equal size.
 /// @param[in] rank MPI rank of the caller
-/// @param[in] N The value to partition
-/// @param[in] size The number of MPI ranks across which to partition
-/// `N`
+/// @param[in] N The value to partition.
+/// @param[in] size Number of MPI ranks across which to partition `N`.
 constexpr std::array<std::int64_t, 2> local_range(int rank, std::int64_t N,
                                                   int size)
 {
@@ -108,10 +108,10 @@ constexpr std::array<std::int64_t, 2> local_range(int rank, std::int64_t N,
 
 /// @brief Return which rank owns index in global range [0, N - 1]
 /// (inverse of MPI::local_range).
-/// @param[in] size Number of MPI ranks
-/// @param[in] index The index to determine owning rank
-/// @param[in] N Total number of indices
-/// @return The rank of the owning process
+/// @param[in] size Number of MPI ranks.
+/// @param[in] index The index to determine the owning rank of.
+/// @param[in] N Total number of indices.
+/// @return Rank of the owning process.
 constexpr int index_owner(int size, std::size_t index, std::size_t N)
 {
   assert(index < N);
@@ -171,19 +171,21 @@ std::vector<int> compute_graph_edges_pcx(MPI_Comm comm,
 /// implements the NBX algorithm presented in
 /// https://dx.doi.org/10.1145/1837853.1693476.
 ///
-/// @note For sparse graphs, this function has \f$O(\log p)\f$ cost,
-/// where \f$p\f$is the number of MPI ranks. It is suitable for modest
-/// MPI rank counts.
-///
 /// @note The order of the returned ranks is not deterministic.
 ///
 /// @note Collective.
 ///
 /// @param[in] comm MPI communicator
 /// @param[in] edges Edges (ranks) from this rank (the caller).
-/// @return Ranks that have defined edges from them to this rank.
-std::vector<int> compute_graph_edges_nbx(MPI_Comm comm,
-                                         std::span<const int> edges);
+/// @param[in] tag Tag used in non-blocking MPI calls. A tag can be
+/// required when this function is called a second time on some ranks
+/// before a previous call has completed on all other ranks. @return
+/// Ranks that have defined edges from them to this rank. @note An
+/// alternative to passing a tag is to ensure that there is an implicit
+/// or explicit barrier before and after the call to this function.
+std::vector<int>
+compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
+                        int tag = static_cast<int>(tag::consensus_nbx));
 
 /// @brief Distribute row data to 'post office' ranks.
 ///
@@ -269,39 +271,42 @@ struct dependent_false : std::false_type
 };
 
 /// MPI Type
+
+/// @brief Type trait for MPI type conversions.
 template <typename T>
-constexpr MPI_Datatype mpi_type()
-{
-  if constexpr (std::is_same_v<T, float>)
-    return MPI_FLOAT;
-  else if constexpr (std::is_same_v<T, double>)
-    return MPI_DOUBLE;
-  else if constexpr (std::is_same_v<T, std::complex<double>>)
-    return MPI_C_DOUBLE_COMPLEX;
-  else if constexpr (std::is_same_v<T, std::complex<float>>)
-    return MPI_C_FLOAT_COMPLEX;
-  else if constexpr (std::is_same_v<T, short int>)
-    return MPI_SHORT;
-  else if constexpr (std::is_same_v<T, int>)
-    return MPI_INT;
-  else if constexpr (std::is_same_v<T, unsigned int>)
-    return MPI_UNSIGNED;
-  else if constexpr (std::is_same_v<T, long int>)
-    return MPI_LONG;
-  else if constexpr (std::is_same_v<T, unsigned long>)
-    return MPI_UNSIGNED_LONG;
-  else if constexpr (std::is_same_v<T, long long>)
-    return MPI_LONG_LONG;
-  else if constexpr (std::is_same_v<T, unsigned long long>)
-    return MPI_UNSIGNED_LONG_LONG;
-  else if constexpr (std::is_same_v<T, bool>)
-    return MPI_C_BOOL;
-  else if constexpr (std::is_same_v<T, std::int8_t>)
-    return MPI_INT8_T;
-  else
-    // Issue compile time error
-    static_assert(!std::is_same_v<T, T>);
-}
+struct mpi_type_mapping;
+
+/// @brief Retrieves the MPI data type associated to the provided type.
+/// @tparam T cpp type to map
+template <typename T>
+MPI_Datatype mpi_t = mpi_type_mapping<T>::type;
+
+/// @brief Registers for cpp_t the corresponding mpi_t which can then be
+/// retrieved with mpi_t<cpp_t> from here on.
+#define MAP_TO_MPI_TYPE(cpp_t, mpi_t)                                          \
+  template <>                                                                  \
+  struct mpi_type_mapping<cpp_t>                                               \
+  {                                                                            \
+    static inline MPI_Datatype type = mpi_t;                                   \
+  };
+
+/// @defgroup MPI type mappings
+/// @{
+/// @cond
+MAP_TO_MPI_TYPE(float, MPI_FLOAT)
+MAP_TO_MPI_TYPE(double, MPI_DOUBLE)
+MAP_TO_MPI_TYPE(std::complex<float>, MPI_C_FLOAT_COMPLEX)
+MAP_TO_MPI_TYPE(std::complex<double>, MPI_C_DOUBLE_COMPLEX)
+MAP_TO_MPI_TYPE(std::int8_t, MPI_INT8_T)
+MAP_TO_MPI_TYPE(std::int16_t, MPI_INT16_T)
+MAP_TO_MPI_TYPE(std::int32_t, MPI_INT32_T)
+MAP_TO_MPI_TYPE(std::int64_t, MPI_INT64_T)
+MAP_TO_MPI_TYPE(std::uint8_t, MPI_UINT8_T)
+MAP_TO_MPI_TYPE(std::uint16_t, MPI_UINT16_T)
+MAP_TO_MPI_TYPE(std::uint32_t, MPI_UINT32_T)
+MAP_TO_MPI_TYPE(std::uint64_t, MPI_UINT64_T)
+/// @endcond
+/// @}
 
 //---------------------------------------------------------------------------
 template <typename U>
@@ -432,7 +437,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
 
   // Send/receive data (x)
   MPI_Datatype compound_type;
-  MPI_Type_contiguous(shape[1], dolfinx::MPI::mpi_type<T>(), &compound_type);
+  MPI_Type_contiguous(shape[1], dolfinx::MPI::mpi_t<T>, &compound_type);
   MPI_Type_commit(&compound_type);
   std::vector<T> recv_buffer_data(shape[1] * recv_disp.back());
   err = MPI_Neighbor_alltoallv(
@@ -614,7 +619,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   dolfinx::MPI::check_error(comm, err);
 
   MPI_Datatype compound_type0;
-  MPI_Type_contiguous(shape[1], dolfinx::MPI::mpi_type<T>(), &compound_type0);
+  MPI_Type_contiguous(shape[1], dolfinx::MPI::mpi_t<T>, &compound_type0);
   MPI_Type_commit(&compound_type0);
 
   std::vector<T> recv_buffer_data(shape[1] * send_disp.back());
@@ -689,8 +694,8 @@ distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
   if (comm1 != MPI_COMM_NULL)
   {
     rank_offset = 0;
-    err = MPI_Exscan(&shape0_local, &rank_offset, 1, MPI_INT64_T, MPI_SUM,
-                     comm1);
+    err = MPI_Exscan(&shape0_local, &rank_offset, 1,
+                     dolfinx::MPI::mpi_t<std::int64_t>, MPI_SUM, comm1);
     dolfinx::MPI::check_error(comm1, err);
   }
   else

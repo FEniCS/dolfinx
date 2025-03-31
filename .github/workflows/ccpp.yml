@@ -28,16 +28,22 @@ on:
         type: string
 
 jobs:
+
   lint:
     runs-on: ubuntu-latest
     name: Lint
     steps:
-      - uses: actions/checkout@v4
-      
+      - name: Checkout DOLFINx
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
+      - name: Load environment variables
+        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+
       - name: Install linting tools
         run: pip install clang-format cmake-format[YAML] mypy ruff
       - name: ruff .py files in C++ code
@@ -56,14 +62,12 @@ jobs:
           mypy dolfinx
           mypy demo
           mypy test
-      - name: clang-format C++ checks (non-blocking)
-        continue-on-error: true
+      - name: clang-format C++ checks
         run: |
           cd cpp
           clang-format --version
           find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
-      - name: clang-format Python binding checks (non-blocking)
-        continue-on-error: true
+      - name: clang-format Python binding checks
         run: |
           cd python/dolfinx/wrappers
           clang-format --version
@@ -74,8 +78,8 @@ jobs:
           find . -type f \( -name "*.cmake" -o -name "*.cmake.in" -o -name "CMakeLists.txt" \) | xargs cmake-format --check
 
   build:
-    runs-on: ubuntu-latest
-    needs: lint
+    runs-on: ubuntu-24.04
+    needs: [lint]
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
@@ -85,11 +89,16 @@ jobs:
     name: Build and test
     steps:
       - uses: actions/checkout@v4
-      
+
+      - name: Load environment variables
+        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install catch2 cmake g++ libboost-dev libhdf5-mpi-dev libparmetis-dev libpugixml-dev libspdlog-dev mpi-default-dev ninja-build pkg-config
+          sudo apt-get install catch2 cmake g++ libblas-dev libboost-dev libhdf5-mpi-dev \
+             liblapack-dev libparmetis-dev libpugixml-dev libspdlog-dev mpi-default-dev \
+             ninja-build pkg-config
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -102,15 +111,15 @@ jobs:
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git
-          pip install git+https://github.com/FEniCS/basix.git
-          pip install git+https://github.com/FEniCS/ffcx.git
+          pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
+          pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
-          pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
+          pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Configure and install C++
         run: |
@@ -148,7 +157,7 @@ jobs:
 
   build-with-petsc:
     runs-on: ubuntu-latest
-    needs: lint
+    needs: [lint]
     strategy:
       matrix:
         petsc_arch: [linux-gnu-real32-32, linux-gnu-real64-32, linux-gnu-complex64-32, linux-gnu-complex128-32, linux-gnu-real64-64, linux-gnu-complex128-64]
@@ -169,19 +178,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Load environment variables
+        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git
-          pip install git+https://github.com/FEniCS/basix.git
-          pip install git+https://github.com/FEniCS/ffcx.git
+          pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
-          pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
+          pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Configure, build and install C++ library
         run: |
@@ -207,10 +219,10 @@ jobs:
           cmake --build build/demo --parallel 3
           cd build/demo
           ctest -V -R demo -R serial
-          ctest -V -R demo -R mpi_2
+          ctest --output-on-failure -V -R demo -R mpi_2
 
-      - name: Install Python build dependencies 
-        run: pip install -r python/build-requirements.txt 
+      - name: Install Python build dependencies
+        run: pip install -r python/build-requirements.txt
 
       - name: Build Python interface
         run: |
@@ -236,6 +248,7 @@ jobs:
 
   build-and-publish-docs:
     runs-on: ubuntu-latest
+    needs: [lint]
     container: "ghcr.io/fenics/test-env:current-openmpi"
     env:
       PETSC_ARCH: linux-gnu-real64-32
@@ -247,18 +260,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Load environment variables
+        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git
-          pip install git+https://github.com/FEniCS/basix.git
-          pip install git+https://github.com/FEniCS/ffcx.git
+          pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
-          pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
+          pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Configure C++
         run: |
@@ -282,15 +298,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: docs-cpp-doxygen
-          path: cpp/doc/html 
-          retention-days: 2 
+          path: cpp/doc/html
+          retention-days: 2
       - name: Upload C++ Sphinx documentation artifact
         uses: actions/upload-artifact@v4
         with:
           name: docs-cpp-sphinx
-          path: cpp/doc/build/html 
-          retention-days: 2 
-      
+          path: cpp/doc/build/html
+          retention-days: 2
+
       - name: Build Python interface documentation
         run: |
           cd python/doc
@@ -299,8 +315,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: docs-python
-          path: python/doc/build/html 
-          retention-days: 2 
+          path: python/doc/build/html
+          retention-days: 2
 
       - name: Checkout FEniCS/docs
         if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}

@@ -245,7 +245,7 @@ auto inner_product(const V& a, const V& b)
       });
 
   T result;
-  MPI_Allreduce(&local, &result, 1, dolfinx::MPI::mpi_type<T>(), MPI_SUM,
+  MPI_Allreduce(&local, &result, 1, dolfinx::MPI::mpi_t<T>, MPI_SUM,
                 a.index_map()->comm());
   return result;
 }
@@ -274,12 +274,12 @@ auto norm(const V& x, Norm type = Norm::l2)
   {
     std::int32_t size_local = x.bs() * x.index_map()->size_local();
     std::span<const T> data = x.array().subspan(0, size_local);
-    using U = typename dolfinx::scalar_value_type_t<T>;
+    using U = typename dolfinx::scalar_value_t<T>;
     U local_l1
         = std::accumulate(data.begin(), data.end(), U(0),
                           [](auto norm, auto x) { return norm + std::abs(x); });
     U l1(0);
-    MPI_Allreduce(&local_l1, &l1, 1, MPI::mpi_type<U>(), MPI_SUM,
+    MPI_Allreduce(&local_l1, &l1, 1, MPI::mpi_t<U>, MPI_SUM,
                   x.index_map()->comm());
     return l1;
   }
@@ -293,8 +293,8 @@ auto norm(const V& x, Norm type = Norm::l2)
         data, [](T a, T b) { return std::norm(a) < std::norm(b); });
     auto local_linf = std::abs(*max_pos);
     decltype(local_linf) linf = 0;
-    MPI_Allreduce(&local_linf, &linf, 1, MPI::mpi_type<decltype(linf)>(),
-                  MPI_MAX, x.index_map()->comm());
+    MPI_Allreduce(&local_linf, &linf, 1, MPI::mpi_t<decltype(linf)>, MPI_MAX,
+                  x.index_map()->comm());
     return linf;
   }
   default:
@@ -311,7 +311,7 @@ template <class V>
 void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
 {
   using T = typename V::value_type;
-  using U = typename dolfinx::scalar_value_type_t<T>;
+  using U = typename dolfinx::scalar_value_t<T>;
 
   // Loop over each vector in basis
   for (std::size_t i = 0; i < basis.size(); ++i)
@@ -344,7 +344,7 @@ void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
 
 /// @brief Test if basis is orthonormal.
 ///
-/// Returns true if ||x_i - x_j|| - delta_{ij} < eps fro all i, j, and
+/// Returns true if ||x_i - x_j|| - delta_{ij} < eps for all i, j, and
 /// otherwise false.
 ///
 /// @param[in] basis Set of vectors to check.
@@ -353,9 +353,8 @@ void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
 template <class V>
 bool is_orthonormal(
     std::vector<std::reference_wrapper<const V>> basis,
-    dolfinx::scalar_value_type_t<typename V::value_type> eps
-    = std::numeric_limits<
-        dolfinx::scalar_value_type_t<typename V::value_type>>::epsilon())
+    dolfinx::scalar_value_t<typename V::value_type> eps = std::numeric_limits<
+        dolfinx::scalar_value_t<typename V::value_type>>::epsilon())
 {
   using T = typename V::value_type;
   for (std::size_t i = 0; i < basis.size(); i++)

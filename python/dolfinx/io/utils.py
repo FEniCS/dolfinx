@@ -21,7 +21,7 @@ from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
 from dolfinx.cpp.io import perm_vtk as cell_perm_vtk
 from dolfinx.fem import Function
-from dolfinx.mesh import Geometry, GhostMode, Mesh, MeshTags
+from dolfinx.mesh import CellType, Geometry, GhostMode, Mesh, MeshTags
 
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
 
@@ -34,11 +34,11 @@ def _extract_cpp_objects(functions: typing.Union[Mesh, Function, tuple[Function]
         return [getattr(functions, "_cpp_object", functions)]
 
 
-# FidesWriter and VTXWriter require ADIOS2
+# VTXWriter requires ADIOS2
 if _cpp.common.has_adios2:
-    from dolfinx.cpp.io import FidesMeshPolicy, VTXMeshPolicy  # F401
+    from dolfinx.cpp.io import VTXMeshPolicy  # F401
 
-    __all__ = [*__all__, "FidesWriter", "VTXWriter", "FidesMeshPolicy", "VTXMeshPolicy"]
+    __all__ = [*__all__, "VTXWriter", "VTXMeshPolicy"]
 
     class VTXWriter:
         """Writer for VTX files, using ADIOS2 to create the files.
@@ -115,77 +115,6 @@ if _cpp.common.has_adios2:
         def close(self):
             self._cpp_object.close()
 
-    class FidesWriter:
-        """Writer for Fides files, using ADIOS2 to create the files.
-
-        Fides (https://fides.readthedocs.io/) supports first order
-        Lagrange finite elements for the geometry description and first
-        order Lagrange finite elements for functions. All functions have
-        to be of the same element family and same order.
-
-        The files can be displayed by Paraview.
-        """
-
-        _cpp_object: typing.Union[_cpp.io.FidesWriter_float32, _cpp.io.FidesWriter_float64]
-
-        def __init__(
-            self,
-            comm: _MPI.Comm,
-            filename: typing.Union[str, Path],
-            output: typing.Union[Mesh, list[Function], Function],
-            engine: str = "BPFile",
-            mesh_policy: FidesMeshPolicy = FidesMeshPolicy.update,
-        ):
-            """Initialize a writer for outputting a mesh, a single Lagrange
-            function or list of Lagrange functions sharing the same
-            element family and degree
-
-            Args:
-                comm: MPI communicator.
-                filename: Output filename.
-                output: Data to output. Either a mesh, a single degree one
-                    Lagrange function or list of degree one Lagrange functions.
-                engine: ADIOS2 engine to use for output. See
-                    ADIOS2 documentation for options.
-                mesh_policy: Controls if the mesh is written to file at
-                    the first time step only when a ``Function`` is
-                    written to file, or is re-written (updated) at each
-                    time step. Has an effect only for ``Function``
-                    output.
-            """
-            # Get geometry type
-            try:
-                dtype = output.geometry.x.dtype  # type: ignore
-            except AttributeError:
-                try:
-                    dtype = output.function_space.mesh.geometry.x.dtype  # type: ignore
-                except AttributeError:
-                    dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
-
-            if np.issubdtype(dtype, np.float32):
-                _fides_writer = _cpp.io.FidesWriter_float32
-            elif np.issubdtype(dtype, np.float64):
-                _fides_writer = _cpp.io.FidesWriter_float64
-
-            try:
-                self._cpp_object = _fides_writer(comm, filename, output._cpp_object, engine)  # type: ignore
-            except (NotImplementedError, TypeError, AttributeError):
-                self._cpp_object = _fides_writer(
-                    comm, filename, _extract_cpp_objects(output), engine, mesh_policy
-                )  # type: ignore[arg-type]
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, exception_type, exception_value, traceback):
-            self.close()
-
-        def write(self, t: float):
-            self._cpp_object.write(t)
-
-        def close(self):
-            self._cpp_object.close()
-
 
 class VTKFile(_cpp.io.VTKFile):
     """Interface to VTK files.
@@ -193,7 +122,6 @@ class VTKFile(_cpp.io.VTKFile):
     VTK supports arbitrary order Lagrange finite elements for the
     geometry description. XDMF is the preferred format for geometry
     order <= 2.
-
     """
 
     def __enter__(self):
@@ -259,25 +187,62 @@ class XDMFFile(_cpp.io.XDMFFile):
         cells = super().read_topology_data(name, xpath)
         x = super().read_geometry_data(name, xpath)
 
+        # Get coordinate element, special handling for second order serendipity.
+        num_nodes_per_cell = cells.shape[1]
+        if (cell_shape == CellType.quadrilateral and num_nodes_per_cell == 8) or (
+            cell_shape == CellType.hexahedron and num_nodes_per_cell == 20
+        ):
+            el = basix.ufl.element(
+                basix.ElementFamily.serendipity,
+                cell_shape.name,
+                2,
+            )
+            cmap = _cpp.fem.CoordinateElement_float64(el.basix_element._e)
+            basix_el = basix.ufl.blocked_element(el, shape=(x.shape[1],))
+        else:
+            basix_el = basix.ufl.element(
+                "Lagrange",
+                cell_shape.name,
+                cell_degree,
+                basix.LagrangeVariant.unset,
+                shape=(x.shape[1],),
+            )
+            cmap = _cpp.fem.CoordinateElement_float64(cell_shape, cell_degree)
+
         # Build the mesh
-        cmap = _cpp.fem.CoordinateElement_float64(cell_shape, cell_degree)
         msh = _cpp.mesh.create_mesh(
             self.comm, cells, cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode)
         )
         msh.name = name
-        domain = ufl.Mesh(
-            basix.ufl.element(
-                "Lagrange",
-                cell_shape.name,
-                cell_degree,
-                basix.LagrangeVariant.equispaced,
-                shape=(x.shape[1],),
-            )
-        )
+        domain = ufl.Mesh(basix_el)
         return Mesh(msh, domain)
 
-    def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
-        mt = super().read_meshtags(mesh._cpp_object, name, xpath)
+    def read_meshtags(
+        self,
+        mesh: Mesh,
+        name: str,
+        attribute_name: typing.Optional[str] = None,
+        xpath: str = "/Xdmf/Domain",
+    ) -> MeshTags:
+        """Read MeshTags with a specific name as specified in the XMDF file.
+
+        Args:
+            mesh: Mesh that the input data is defined on.
+            name: Name of the grid node in the xml-scheme of the
+                XDMF-file.
+            attribute_name: The name of the attribute to read. If
+                ``attribute_name`` is empty, reads the first attribute in
+                the file. If ``attribute_name`` is not empty but no
+                attributes have the provided name, throws an error. If
+                multiple attributes have the provided name, reads the
+                first one found.
+            xpath: XPath where MeshTags Grid is stored in file.
+
+        Returns:
+            A MeshTags object containing the requested data read from
+            file.
+        """
+        mt = super().read_meshtags(mesh._cpp_object, name, attribute_name, xpath)
         return MeshTags(mt)
 
 
@@ -286,12 +251,12 @@ def distribute_entity_data(
 ) -> tuple[npt.NDArray[np.int64], np.ndarray]:
     """Given a set of mesh entities and values, distribute them to the process that owns the entity.
 
-    The entities are described by the global vertex indices of the mesh. These entity indices are
-    using the original input ordering.
+    The entities are described by the global vertex indices of the mesh.
+    These entity indices are using the original input ordering.
 
     Returns:
-        Entities owned by the process (and their local entity-to-vertex indices) and the
-        corresponding values.
+        Entities owned by the process (and their local entity-to-vertex
+        indices) and the corresponding values.
     """
     return _cpp.io.distribute_entity_data(
         mesh.topology._cpp_object,

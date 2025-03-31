@@ -45,8 +45,9 @@ void test_scatter_fwd(int n)
   // Scatter values to ghost and check value is correctly received
   sct.scatter_fwd<std::int64_t>(data_local, data_ghost);
   CHECK((int)data_ghost.size() == n * num_ghosts);
-  CHECK(std::all_of(data_ghost.begin(), data_ghost.end(), [=](auto i)
-                    { return i == val * ((mpi_rank + 1) % mpi_size); }));
+  CHECK(
+      std::ranges::all_of(data_ghost, [=](auto i)
+                          { return i == val * ((mpi_rank + 1) % mpi_size); }));
 
   std::vector<MPI_Request> requests
       = sct.create_request_vector(decltype(sct)::type::p2p);
@@ -56,8 +57,9 @@ void test_scatter_fwd(int n)
                                       decltype(sct)::type::p2p);
   sct.scatter_fwd_end(requests);
 
-  CHECK(std::all_of(data_ghost.begin(), data_ghost.end(), [=](auto i)
-                    { return i == val * ((mpi_rank + 1) % mpi_size); }));
+  CHECK(
+      std::ranges::all_of(data_ghost, [=](auto i)
+                          { return i == val * ((mpi_rank + 1) % mpi_size); }));
 }
 
 void test_scatter_rev()

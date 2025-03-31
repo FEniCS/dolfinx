@@ -4,11 +4,11 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "mesh.h"
-#include "MPICommWrapper.h"
-#include "array.h"
-#include "caster_mpi.h"
-#include "numpy_dtype.h"
+#include "dolfinx_wrappers/mesh.h"
+#include "dolfinx_wrappers/MPICommWrapper.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/caster_mpi.h"
+#include "dolfinx_wrappers/numpy_dtype.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
@@ -26,6 +26,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/function.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
@@ -151,8 +152,10 @@ void declare_mesh(nb::module_& m, std::string type)
 
             new (self) dolfinx::mesh::Geometry<T>(
                 index_map,
-                std::vector(dofmap.data(), dofmap.data() + dofmap.size()),
-                element, std::move(x_vec), shape1,
+                std::vector<std::vector<std::int32_t>>(
+                    1, std::vector<std::int32_t>(
+                           dofmap.data(), dofmap.data() + dofmap.size())),
+                {element}, std::move(x_vec), shape1,
                 std::vector(input_global_indices.data(),
                             input_global_indices.data()
                                 + input_global_indices.size()));
@@ -198,7 +201,7 @@ void declare_mesh(nb::module_& m, std::string type)
           "The coordinate map")
       .def(
           "cmaps", [](dolfinx::mesh::Geometry<T>& self, int i)
-          { return self.cmap(i); }, "The ith coordinate map")
+          { return self.cmaps()[i]; }, "The ith coordinate map")
       .def_prop_ro(
           "input_global_indices",
           [](const dolfinx::mesh::Geometry<T>& self)
@@ -431,6 +434,29 @@ void declare_mesh(nb::module_& m, std::string type)
       nb::arg("mesh"), nb::arg("dim"), nb::arg("marker"));
 
   m.def(
+      "locate_entities",
+      [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
+         std::function<nb::ndarray<bool, nb::ndim<1>, nb::c_contig>(
+             nb::ndarray<const T, nb::ndim<2>, nb::numpy>)>
+             marker,
+         int entity_type_idx)
+      {
+        auto cpp_marker = [&marker](auto x)
+        {
+          nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
+              x.data_handle(), {x.extent(0), x.extent(1)});
+          auto marked = marker(x_view);
+          return std::vector<std::int8_t>(marked.data(),
+                                          marked.data() + marked.size());
+        };
+
+        return as_nbarray(dolfinx::mesh::locate_entities(mesh, dim, cpp_marker,
+                                                         entity_type_idx));
+      },
+      nb::arg("mesh"), nb::arg("dim"), nb::arg("marker"),
+      nb::arg("entity_type_idx"));
+
+  m.def(
       "locate_entities_boundary",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
          std::function<nb::ndarray<bool, nb::ndim<1>, nb::c_contig>(
@@ -556,13 +582,10 @@ void mesh(nb::module_& m)
   // dolfinx::mesh::TopologyComputation
   m.def(
       "compute_entities",
-      [](MPICommWrapper comm, const dolfinx::mesh::Topology& topology, int dim,
-         int index)
-      {
-        return dolfinx::mesh::compute_entities(comm.get(), topology, dim,
-                                               index);
-      },
-      nb::arg("comm"), nb::arg("topology"), nb::arg("dim"), nb::arg("index"));
+      [](const dolfinx::mesh::Topology& topology, int dim,
+         dolfinx::mesh::CellType entity_type)
+      { return dolfinx::mesh::compute_entities(topology, dim, entity_type); },
+      nb::arg("topology"), nb::arg("dim"), nb::arg("entity_type"));
   m.def("compute_connectivity", &dolfinx::mesh::compute_connectivity,
         nb::arg("topology"), nb::arg("d0"), nb::arg("d1"));
 
@@ -571,20 +594,26 @@ void mesh(nb::module_& m)
                                       "Topology object")
       .def(
           "__init__",
-          [](dolfinx::mesh::Topology* t, MPICommWrapper comm,
-             dolfinx::mesh::CellType cell_type)
-          { new (t) dolfinx::mesh::Topology(comm.get(), cell_type); },
-          nb::arg("comm"), nb::arg("cell_type"))
-      .def("set_connectivity",
-           nb::overload_cast<
-               std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>>,
-               int, int>(&dolfinx::mesh::Topology::set_connectivity),
-           nb::arg("c"), nb::arg("d0"), nb::arg("d1"))
-      .def("set_index_map",
-           nb::overload_cast<int,
-                             std::shared_ptr<const dolfinx::common::IndexMap>>(
-               &dolfinx::mesh::Topology::set_index_map),
-           nb::arg("dim"), nb::arg("map"))
+          [](dolfinx::mesh::Topology* t, dolfinx::mesh::CellType cell_type,
+             std::shared_ptr<const dolfinx::common::IndexMap> vertex_map,
+             std::shared_ptr<const dolfinx::common::IndexMap> cell_map,
+             std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>> cells,
+             std::optional<
+                 nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>
+                 original_index)
+          {
+            using U = std::vector<std::vector<std::int64_t>>;
+            using V = std::optional<U>;
+            V idx = original_index
+                        ? U(1, std::vector(original_index->data(),
+                                           original_index->data()
+                                               + original_index->size()))
+                        : V(std::nullopt);
+            new (t) dolfinx::mesh::Topology({cell_type}, vertex_map, {cell_map},
+                                            {cells}, idx);
+          },
+          nb::arg("cell_type"), nb::arg("vertex_map"), nb::arg("cell_map"),
+          nb::arg("cells"), nb::arg("original_index").none())
       .def("create_entities", &dolfinx::mesh::Topology::create_entities,
            nb::arg("dim"))
       .def("create_entity_permutations",
@@ -612,30 +641,39 @@ void mesh(nb::module_& m)
           nb::rv_policy::reference_internal)
       .def_prop_ro("dim", &dolfinx::mesh::Topology::dim,
                    "Topological dimension")
-      .def_prop_ro(
+      .def_prop_rw(
           "original_cell_index",
           [](const dolfinx::mesh::Topology& self)
           {
             if (self.original_cell_index.size() != 1)
-              throw std::runtime_error("Mixed topology unsupported");
+              throw std::runtime_error("Mixed topology unsupported.");
             const std::vector<std::vector<std::int64_t>>& idx
                 = self.original_cell_index;
-            return nb::ndarray<const std::int64_t, nb::numpy>(idx[0].data(),
-                                                              {idx[0].size()});
+            return nb::ndarray<const std::int64_t, nb::numpy>(
+                idx.front().data(), {idx.front().size()});
           },
-          nb::rv_policy::reference_internal)
+          [](dolfinx::mesh::Topology& self,
+             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
+                 original_cell_indices)
+          {
+            self.original_cell_index.resize(1);
+            self.original_cell_index.front().assign(
+                original_cell_indices.data(),
+                original_cell_indices.data() + original_cell_indices.size());
+          },
+          nb::arg("original_cell_indices"))
       .def("connectivity",
            nb::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        nb::const_),
            nb::arg("d0"), nb::arg("d1"))
       .def("connectivity",
-           nb::overload_cast<std::pair<std::int8_t, std::int8_t>,
-                             std::pair<std::int8_t, std::int8_t>>(
+           nb::overload_cast<std::array<int, 2>, std::array<int, 2>>(
                &dolfinx::mesh::Topology::connectivity, nb::const_),
            nb::arg("d0"), nb::arg("d1"))
       .def("index_map", &dolfinx::mesh::Topology::index_map, nb::arg("dim"))
       .def("index_maps", &dolfinx::mesh::Topology::index_maps, nb::arg("dim"))
       .def_prop_ro("cell_type", &dolfinx::mesh::Topology::cell_type)
+      .def_prop_ro("cell_types", &dolfinx::mesh::Topology::cell_types)
       .def_prop_ro(
           "entity_types",
           [](const dolfinx::mesh::Topology& self)
@@ -680,6 +718,8 @@ void mesh(nb::module_& m)
               comm.get(), cell_type, cells_span, original_cell_index_span,
               ghost_owners_span, boundary_vertices_span);
         });
+
+  m.def("compute_mixed_cell_pairs", &dolfinx::mesh::compute_mixed_cell_pairs);
 
   declare_meshtags<std::int8_t>(m, "int8");
   declare_meshtags<std::int32_t>(m, "int32");

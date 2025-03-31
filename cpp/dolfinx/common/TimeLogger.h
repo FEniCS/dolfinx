@@ -16,21 +16,16 @@
 
 namespace dolfinx::common
 {
-/// Timer logging
+/// @brief Time logger maintaining data collected by Timer, if registered.
+///
+/// @note This is a monotstate, i.e. the data members are static and thus
+/// timings are aggregated into a single map.
 class TimeLogger
 {
 public:
-  /// Constructor
-  TimeLogger() = default;
-
-  // This class is used as a singleton and thus should not allow copies.
-  TimeLogger(const TimeLogger&) = delete;
-
-  // This class is used as a singleton and thus should not allow copies.
-  TimeLogger& operator=(const TimeLogger&) = delete;
-
-  /// Destructor
-  ~TimeLogger() = default;
+  /// @brief Singleton access.
+  /// @return Unique time logger object.
+  static TimeLogger& instance();
 
   /// Register timing (for later summary)
   void register_timing(std::string task,
@@ -58,6 +53,18 @@ public:
   timings() const;
 
 private:
+  /// Constructor
+  TimeLogger() = default;
+
+  // This class is used as a singleton and thus should not allow copies.
+  TimeLogger(const TimeLogger&) = delete;
+
+  // This class is used as a singleton and thus should not allow copies.
+  TimeLogger& operator=(const TimeLogger&) = delete;
+
+  /// Destructor
+  ~TimeLogger() = default;
+
   // List of timings for tasks, map from string to (num_timings,
   // total_wall_time)
   std::map<std::string,

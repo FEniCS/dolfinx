@@ -1,3 +1,9 @@
+# Copyright (C) 2024-2025 Jørgen S. Dokken
+#
+# This file is part of DOLFINx (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
+
 from mpi4py import MPI
 
 import numpy as np
@@ -122,10 +128,7 @@ def test_submesh_assembly(dtype):
         wh.interpolate(g)
 
         facet_entities = dolfinx.fem.compute_integration_domains(
-            dolfinx.fem.IntegralType.exterior_facet,
-            mesh.topology,
-            sub_to_parent,
-            mesh.topology.dim - 1,
+            dolfinx.fem.IntegralType.exterior_facet, mesh.topology, sub_to_parent
         )
         subdomains = {dolfinx.fem.IntegralType.exterior_facet: [(subdomain_id, facet_entities)]}
         form = dolfinx.fem.create_form(
@@ -155,3 +158,70 @@ def test_submesh_assembly(dtype):
     # to dolfinx functions and constants
     for i in range(1, 4):
         create_and_integrate(i, compiled_form)
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+def test_eliminated_data(dtype):
+    """
+    Test that mesh independent compilation handles the re-ordering of coefficients and constants
+    when removed through differentiation
+    """
+
+    cell_name = "triangle"
+    real_type = dtype(0).real.dtype
+    c_el = basix.ufl.element("Lagrange", cell_name, 1, shape=(2,), dtype=real_type)
+    domain = ufl.Mesh(c_el)
+    el = basix.ufl.element("Lagrange", cell_name, 2, dtype=real_type)
+
+    V = ufl.FunctionSpace(domain, el)
+
+    c = ufl.Constant(domain)
+    d = ufl.Constant(domain)
+    u = ufl.Coefficient(V)
+    v = ufl.Coefficient(V)
+
+    J = (c * u**2 + d * v**2) * ufl.dx
+    dv = ufl.conj(ufl.TestFunction(V))
+    L = ufl.derivative(J, v, dv)
+
+    # Compile form using dolfinx.jit.ffcx_jit
+    compiled_form = dolfinx.fem.compile_form(
+        MPI.COMM_WORLD, L, form_compiler_options={"scalar_type": dtype}
+    )
+
+    # Pack discrete data
+    cell_type = dolfinx.mesh.to_type(cell_name)
+    mesh = dolfinx.mesh.create_unit_square(
+        MPI.COMM_WORLD, 5, 2, dtype=real_type, cell_type=cell_type
+    )
+    Vh = dolfinx.fem.functionspace(mesh, el)
+    uh = dolfinx.fem.Function(Vh, dtype=dtype)
+    uh.interpolate(lambda x: x[0])
+    vh = dolfinx.fem.Function(Vh, dtype=dtype)
+    vh.interpolate(lambda x: x[1])
+    dh = dolfinx.fem.Constant(mesh, dtype(3.0))
+    ch = dolfinx.fem.Constant(mesh, dtype(2.0))
+
+    # Assemble discrete vector
+    form = dolfinx.fem.create_form(compiled_form, [Vh], mesh, {}, {u: uh, v: vh}, {c: ch, d: dh})
+    b = dolfinx.fem.assemble_vector(form)
+    b.scatter_reverse(dolfinx.la.InsertMode.add)
+    b.scatter_forward()
+
+    # Compare to reference solution
+    dvh = ufl.conj(ufl.TestFunction(Vh))
+    exact_form = 2 * dh * vh * dvh * ufl.dx
+    b_exact = dolfinx.fem.assemble_vector(dolfinx.fem.form(exact_form, dtype=dtype))
+    b_exact.scatter_reverse(dolfinx.la.InsertMode.add)
+    b_exact.scatter_forward()
+
+    tol = np.finfo(dtype).resolution * 1e3
+    np.testing.assert_allclose(b.array, b_exact.array, atol=tol)

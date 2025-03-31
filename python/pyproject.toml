@@ -5,7 +5,7 @@
 # list it here.
 # pip install -r build-requirements.txt
 [build-system]
-requires = ["scikit-build-core[pyproject]>=0.10", "nanobind>=2.0.0", "mpi4py"]
+requires = ["scikit-build-core[pyproject]>=0.10", "nanobind>=2.5.0", "mpi4py"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -21,7 +21,7 @@ authors = [
 ]
 dependencies = [
       "numpy>=1.21",
-      "cffi<1.17",                           # See https://github.com/FEniCS/dolfinx/issues/3340
+      "cffi",
       "mpi4py",
       "fenics-basix>=0.10.0.dev0,<0.11.0",
       "fenics-ffcx>=0.10.0.dev0,<0.11.0",

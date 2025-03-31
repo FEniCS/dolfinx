@@ -22,7 +22,7 @@
 
 using namespace dolfinx;
 using T = PetscScalar;
-using U = typename dolfinx::scalar_value_type_t<T>;
+using U = typename dolfinx::scalar_value_t<T>;
 
 int main(int argc, char* argv[])
 {
@@ -41,8 +41,9 @@ int main(int argc, char* argv[])
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, false);
 
-    auto V = std::make_shared<fem::FunctionSpace<U>>(
-        fem::create_functionspace(mesh, element));
+    auto V
+        = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+            mesh, std::make_shared<fem::FiniteElement<U>>(element)));
 
     // Next we find all cells of the mesh with y<0.5
     const int tdim = mesh->topology()->dim();
@@ -85,8 +86,9 @@ int main(int argc, char* argv[])
     }
 
     // We create the function space used for the trial space
-    auto W = std::make_shared<fem::FunctionSpace<U>>(
-        fem::create_functionspace(submesh, element, {}));
+    auto W
+        = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+            submesh, std::make_shared<fem::FiniteElement<U>>(element)));
 
     // A mixed-domain form has functions defined over different meshes.
     // The mesh associated with the measure (dx, ds, etc.) is called the
@@ -108,9 +110,8 @@ int main(int argc, char* argv[])
     // Next we compute the integration entities on the integration
     // domain `mesh`
     std::vector<std::int32_t> integration_entities
-        = fem::compute_integration_domains(fem::IntegralType::cell,
-                                           *mesh->topology(),
-                                           cell_marker.find(2), tdim);
+        = fem::compute_integration_domains(
+            fem::IntegralType::cell, *mesh->topology(), cell_marker.find(2));
     std::map<
         fem::IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>
@@ -118,23 +119,23 @@ int main(int argc, char* argv[])
         = {{fem::IntegralType::cell, {{3, integration_entities}}}};
 
     // We can now create the bilinear form
-    auto a_mixed = std::make_shared<fem::Form<T>>(
-        fem::create_form<T>(*form_mixed_codim0_a_mixed, {V, W}, {}, {},
-                            subdomain_data, entity_maps, V->mesh()));
+    fem::Form<T> a_mixed
+        = fem::create_form<T>(*form_mixed_codim0_a_mixed, {V, W}, {}, {},
+                              subdomain_data, entity_maps, V->mesh());
 
-    la::SparsityPattern sp_mixed = fem::create_sparsity_pattern(*a_mixed);
+    la::SparsityPattern sp_mixed = fem::create_sparsity_pattern(a_mixed);
     sp_mixed.finalize();
     la::MatrixCSR<PetscScalar> A_mixed(sp_mixed);
-    fem::assemble_matrix(A_mixed.mat_add_values(), *a_mixed, {});
+    fem::assemble_matrix(A_mixed.mat_add_values(), a_mixed, {});
     A_mixed.scatter_rev();
 
-    auto a = std::make_shared<fem::Form<T>>(
-        fem::create_form<T>(*form_mixed_codim0_a, {W, W}, {}, {}, {}, {}));
+    fem::Form<T> a
+        = fem::create_form<T>(*form_mixed_codim0_a, {W, W}, {}, {}, {}, {});
 
-    la::SparsityPattern sp = fem::create_sparsity_pattern(*a);
+    la::SparsityPattern sp = fem::create_sparsity_pattern(a);
     sp.finalize();
     la::MatrixCSR<PetscScalar> A(sp);
-    fem::assemble_matrix(A.mat_add_values(), *a, {});
+    fem::assemble_matrix(A.mat_add_values(), a, {});
     A.scatter_rev();
 
     std::vector<T> A_mixed_flattened = A_mixed.to_dense();

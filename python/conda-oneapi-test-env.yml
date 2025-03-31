@@ -1,33 +1,35 @@
 # Test environment for oneAPI compilers and Intel Python
 name: oneapi-test-env
 channels:
-  - https://software.repos.intel.com/python/conda/
+  - https://software.repos.intel.com/python/conda
   - conda-forge
   - defaults
 dependencies:
-  - intelpython3_core
-  - python=3.11
+  - python=3.12
   - dpcpp_linux-64
-  - mkl
-  - libblas=*=*mkl
-  - mpich
-  - mpi4py
+  - catch2
+  - cffi
+  - cmake
+  - git
   - hdf5=*=mpi*
-  - spdlog
-  - pugixml
+  - kahip
+  - libblas=*=*mkl
   - libboost-devel
+  - matplotlib
+  - mkl
+  - mpi4py
+  - mpich
   - nanobind
-  - scikit-build-core
+  - ninja
+  - numba
+  - numpy
   - petsc
   - petsc4py
-  - kahip
-  - catch2
+  - pkg-config
+  - pugixml
   - pytest
   - pytest-xdist
-  - matplotlib
-  - numba
-  - cmake
-  - ninja
-  - pkg-config
-  - pip
-  - git
+  - scikit-build-core
+  - scipy
+  - spdlog
+  - uv
