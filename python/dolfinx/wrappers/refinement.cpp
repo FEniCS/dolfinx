@@ -40,11 +40,16 @@ void export_refinement(nb::module_& m)
          std::optional<
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
              edges,
-         std::optional<
-             dolfinx_wrappers::part::impl::PythonCellPartitionFunction>
-             partitioner,
+         bool redistribute,
+         dolfinx_wrappers::part::impl::PythonCellPartitionFunction partitioner,
          dolfinx::refinement::Option option)
       {
+        if (!redistribute && partitioner)
+        {
+          throw std::runtime_error("Providing a partitioner and passing "
+                                   "redistribute=False is bugprone.");
+        }
+
         std::optional<std::span<const std::int32_t>> cpp_edges(std::nullopt);
         if (edges.has_value())
         {
@@ -54,12 +59,13 @@ void export_refinement(nb::module_& m)
 
         std::optional<dolfinx_wrappers::part::impl::CppCellPartitionFunction>
             cpp_partitioner(std::nullopt);
-        if (partitioner.has_value())
+        if (redistribute)
         {
           cpp_partitioner
               = dolfinx_wrappers::part::impl::create_cell_partitioner_cpp(
-                  partitioner.value());
+                  partitioner);
         }
+
         auto [mesh1, cell, facet] = dolfinx::refinement::refine(
             mesh, cpp_edges, cpp_partitioner, option);
 
@@ -82,8 +88,8 @@ void export_refinement(nb::module_& m)
         return std::tuple{std::move(mesh1), std::move(python_cell),
                           std::move(python_facet)};
       },
-      nb::arg("mesh"), nb::arg("edges").none(), nb::arg("partitioner").none(),
-      nb::arg("option"));
+      nb::arg("mesh"), nb::arg("edges").none(), nb::arg("redistribute"),
+      nb::arg("partitioner").none(), nb::arg("option"));
 }
 } // namespace
 
@@ -94,21 +100,6 @@ void refinement(nb::module_& m)
 {
   export_refinement<float>(m);
   export_refinement<double>(m);
-
-  m.def("empty_partitioner",
-        []() -> std::optional<
-                 dolfinx_wrappers::part::impl::PythonCellPartitionFunction>
-        {
-          auto empty_partitioner = std::make_optional<
-              dolfinx_wrappers::part::impl::PythonCellPartitionFunction>(
-              nullptr);
-          assert(empty_partitioner.has_value());
-          if (!empty_partitioner.has_value())
-          {
-            throw std::runtime_error("empty_partitioner has no value!");
-          }
-          return empty_partitioner;
-        });
 
   nb::enum_<dolfinx::refinement::Option>(m, "RefinementOption")
       .value("none", dolfinx::refinement::Option::none)

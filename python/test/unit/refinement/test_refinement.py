@@ -21,24 +21,19 @@ from dolfinx.mesh import (
     compute_incident_entities,
     create_unit_cube,
     create_unit_square,
-    empty_partitioner,
     locate_entities,
     locate_entities_boundary,
-    # meshtags,
+    meshtags,
     refine,
-    # transfer_meshtag,
+    transfer_meshtag,
 )
-
-
-def test_empty_partitioner():
-    assert empty_partitioner() is not None
 
 
 def test_refine_create_unit_square():
     """Refine mesh of unit square."""
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 7, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
-    mesh_refined, _, _ = refine(mesh, partitioner=empty_partitioner())
+    mesh_refined, _, _ = refine(mesh)
     assert mesh_refined.topology.index_map(0).size_global == 165
     assert mesh_refined.topology.index_map(2).size_global == 280
 
@@ -52,7 +47,7 @@ def test_refine_create_unit_cube(ghost_mode, redistribute):
     """Refine mesh of unit cube."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=ghost_mode)
     mesh.topology.create_entities(1)
-    mesh, _, _ = refine(mesh, partitioner=create_cell_partitioner(ghost_mode))
+    mesh, _, _ = refine(mesh, partitioner=create_cell_partitioner(ghost_mode), redistribute=True)
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
 
@@ -64,7 +59,7 @@ def test_refine_create_form():
     """Check that forms can be assembled on refined mesh"""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     mesh.topology.create_entities(1)
-    mesh, _, _ = refine(mesh, partitioner=empty_partitioner())
+    mesh, _, _ = refine(mesh)
     V = functionspace(mesh, ("Lagrange", 1))
 
     # Define variational problem
@@ -88,7 +83,7 @@ def test_sub_refine():
     if MPI.COMM_WORLD.size == 1:
         assert edges == 1
 
-    msh1, _, _ = refine(msh, edges, partitioner=empty_partitioner())
+    msh1, _, _ = refine(msh, edges)
     assert msh.topology.index_map(2).size_global + 3 == msh1.topology.index_map(2).size_global
 
 
@@ -110,7 +105,7 @@ def test_refine_from_cells():
     edges = compute_incident_entities(msh.topology, cells, 2, 1)
     if MPI.COMM_WORLD.size == 1:
         assert len(edges) == Nx // 2 * (2 * Ny + 1) + (Nx // 2 + 1) * Ny
-    mesh2, _, _ = refine(msh, edges, partitioner=empty_partitioner())
+    mesh2, _, _ = refine(msh, edges)
 
     num_cells_global = mesh2.topology.index_map(2).size_global
     actual_cells = 3 * (Nx * Ny) + 3 * Ny + 2 * Nx * Ny
@@ -121,13 +116,10 @@ def test_refine_from_cells():
 @pytest.mark.parametrize(
     "refine_plaza_wrapper",
     [
-        lambda msh: refine(
-            msh, partitioner=empty_partitioner(), option=RefinementOption.parent_cell_and_facet
-        ),
+        lambda msh: refine(msh, option=RefinementOption.parent_cell_and_facet),
         lambda msh: refine(
             msh,
             edges=np.arange(msh.topology.index_map(1).size_local),
-            partitioner=empty_partitioner(),
             option=RefinementOption.parent_cell_and_facet,
         ),
     ],
@@ -147,49 +139,45 @@ def test_refine_facet_meshtag(tdim, refine_plaza_wrapper):
     for f in range(msh.topology.index_map(tdim - 1).size_local):
         if len(f_to_c.links(f)) == 1:
             facet_indices += [f]
-    # meshtag = meshtags(
-    #     msh,
-    #     tdim - 1,
-    #     np.array(facet_indices, dtype=np.int32),
-    #     np.arange(len(facet_indices), dtype=np.int32),
-    # )
+    meshtag = meshtags(
+        msh,
+        tdim - 1,
+        np.array(facet_indices, dtype=np.int32),
+        np.arange(len(facet_indices), dtype=np.int32),
+    )
 
     msh1, parent_cell, parent_facet = refine_plaza_wrapper(msh)
 
     msh1.topology.create_entities(tdim - 1)
-    # TODO: crashes below
-    # new_meshtag = transfer_meshtag(meshtag, msh1, parent_cell, parent_facet)
-    # assert len(new_meshtag.indices) == (tdim * 2 - 2) * len(meshtag.indices)
+    new_meshtag = transfer_meshtag(meshtag, msh1, parent_cell, parent_facet)
+    assert len(new_meshtag.indices) == (tdim * 2 - 2) * len(meshtag.indices)
 
-    # # New tags should be on facets with one cell (i.e. exterior)
-    # msh1.topology.create_connectivity(tdim - 1, tdim)
-    # new_f_to_c = msh1.topology.connectivity(tdim - 1, tdim)
-    # for f in new_meshtag.indices:
-    #     assert len(new_f_to_c.links(f)) == 1
+    # New tags should be on facets with one cell (i.e. exterior)
+    msh1.topology.create_connectivity(tdim - 1, tdim)
+    new_f_to_c = msh1.topology.connectivity(tdim - 1, tdim)
+    for f in new_meshtag.indices:
+        assert len(new_f_to_c.links(f)) == 1
 
-    # # Now mark all facets (including internal)
-    # facet_indices = np.arange(msh.topology.index_map(tdim - 1).size_local)
-    # meshtag = meshtags(
-    #     msh,
-    #     tdim - 1,
-    #     np.array(facet_indices, dtype=np.int32),
-    #     np.arange(len(facet_indices), dtype=np.int32),
-    # )
-    # new_meshtag = transfer_meshtag(meshtag, msh1, parent_cell, parent_facet)
-    # assert len(new_meshtag.indices) == (tdim * 2 - 2) * len(meshtag.indices)
+    # Now mark all facets (including internal)
+    facet_indices = np.arange(msh.topology.index_map(tdim - 1).size_local)
+    meshtag = meshtags(
+        msh,
+        tdim - 1,
+        np.array(facet_indices, dtype=np.int32),
+        np.arange(len(facet_indices), dtype=np.int32),
+    )
+    new_meshtag = transfer_meshtag(meshtag, msh1, parent_cell, parent_facet)
+    assert len(new_meshtag.indices) == (tdim * 2 - 2) * len(meshtag.indices)
 
 
 @pytest.mark.parametrize("tdim", [2, 3])
 @pytest.mark.parametrize(
     "refine_plaza_wrapper",
     [
-        lambda msh: refine(
-            msh, partitioner=empty_partitioner(), option=RefinementOption.parent_cell_and_facet
-        ),
+        lambda msh: refine(msh, option=RefinementOption.parent_cell_and_facet),
         lambda msh: refine(
             msh,
             np.arange(msh.topology.index_map(1).size_local),
-            partitioner=empty_partitioner(),
             option=RefinementOption.parent_cell_and_facet,
         ),
     ],
@@ -203,23 +191,22 @@ def test_refine_cell_meshtag(tdim, refine_plaza_wrapper):
         msh = create_unit_square(MPI.COMM_WORLD, 2, 5, CellType.triangle, ghost_mode=GhostMode.none)
 
     msh.topology.create_entities(1)
-    # cell_indices = np.arange(msh.topology.index_map(tdim).size_local)
-    # meshtag = meshtags(
-    #     msh,
-    #     tdim,
-    #     np.array(cell_indices, dtype=np.int32),
-    #     np.arange(len(cell_indices), dtype=np.int32),
-    # )
+    cell_indices = np.arange(msh.topology.index_map(tdim).size_local)
+    meshtag = meshtags(
+        msh,
+        tdim,
+        np.array(cell_indices, dtype=np.int32),
+        np.arange(len(cell_indices), dtype=np.int32),
+    )
 
     msh1, parent_cell, _ = refine_plaza_wrapper(msh)
-    # TODO: crashes below
-    # new_meshtag = transfer_meshtag(meshtag, msh1, parent_cell)
-    # assert sum(new_meshtag.values) == (tdim * 4 - 4) * sum(meshtag.values)
-    # assert len(new_meshtag.indices) == (tdim * 4 - 4) * len(meshtag.indices)
+    new_meshtag = transfer_meshtag(meshtag, msh1, parent_cell)
+    assert sum(new_meshtag.values) == (tdim * 4 - 4) * sum(meshtag.values)
+    assert len(new_meshtag.indices) == (tdim * 4 - 4) * len(meshtag.indices)
 
 
 def test_refine_ufl_cargo():
     msh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 3)
     msh.topology.create_entities(1)
-    msh1, _, _ = refine(msh, partitioner=empty_partitioner())
+    msh1, _, _ = refine(msh)
     assert msh1.ufl_domain().ufl_cargo() != msh.ufl_domain().ufl_cargo()
