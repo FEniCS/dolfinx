@@ -54,7 +54,7 @@ from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode, create_box, locate_entities_boundary
 
-dtype = PETSc.ScalarType  # type: ignore
+dtype = PETSc.ScalarType
 # -
 
 # ## Create the operator near-nullspace
@@ -195,7 +195,7 @@ A.setOption(PETSc.Mat.Option.SPD, True)
 
 # +
 # Set solver options
-opts = PETSc.Options()  # type: ignore
+opts = PETSc.Options()
 opts["ksp_type"] = "cg"
 opts["ksp_rtol"] = 1.0e-8
 opts["pc_type"] = "gamg"
@@ -208,7 +208,7 @@ opts["mg_levels_pc_type"] = "jacobi"
 opts["mg_levels_ksp_chebyshev_esteig_steps"] = 10
 
 # Create PETSc Krylov solver and turn convergence monitoring on
-solver = PETSc.KSP().create(msh.comm)  # type: ignore
+solver = PETSc.KSP().create(msh.comm)
 solver.setFromOptions()
 
 # Set matrix operator
