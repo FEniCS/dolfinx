@@ -585,7 +585,7 @@ def apply_lifting(
         bcs: Boundary conditions to use to modify ``b`` (see
             :func:`dolfinx.fem.apply_lifting`). The boundary conditions
             in ``bcs[j]`` are associated with the forms in the ``j``th
-            colulmn of ``a``.
+            column of ``a``.
         x0: Vector to use in modify ``b`` (see
             :func:`dolfinx.fem.apply_lifting`). Treated as zero if
             ``None``.
