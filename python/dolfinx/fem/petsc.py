@@ -450,7 +450,9 @@ def _assemble_matrix_block_mat(
     bcs: typing.Optional[Iterable[DirichletBC]],
     diag: float,
     constants: typing.Optional[Iterable[npt.NDArray]] = None,
-    coeffs: typing.Optional[Iterable[Iterable[dict[tuple[IntegralType, int], npt.NDArray]]]] = None,
+    coeffs: typing.Optional[
+        Iterable[Iterable[dict[tuple[IntegralType, int], npt.NDArray]]]
+    ] = None,
 ) -> PETSc.Mat:
     """Assemble bilinear forms into a blocked matrix."""
     consts = [pack_constants(forms) for forms in a] if constants is None else constants

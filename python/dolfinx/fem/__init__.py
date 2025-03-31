@@ -8,7 +8,7 @@
 import numpy as np
 import numpy.typing as npt
 
-from dolfinx.cpp.fem import IntegralType, transpose_dofmap
+from dolfinx.cpp.fem import _IntegralType as IntegralType
 from dolfinx.cpp.fem import build_sparsity_pattern as _build_sparsity_pattern
 from dolfinx.cpp.fem import compute_integration_domains as _compute_integration_domains
 from dolfinx.cpp.fem import create_interpolation_data as _create_interpolation_data
