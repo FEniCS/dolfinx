@@ -97,10 +97,9 @@ def build_nullspace(V: FunctionSpace):
     la.orthonormalize(basis)
 
     basis_petsc = [
-        PETSc.Vec().createWithArray(x[: bs * length0], bsize=3, comm=V.mesh.comm)  # type: ignore
-        for x in b
+        PETSc.Vec().createWithArray(x[: bs * length0], bsize=3, comm=V.mesh.comm) for x in b
     ]
-    return PETSc.NullSpace().create(vectors=basis_petsc)  # type: ignore
+    return PETSc.NullSpace().create(vectors=basis_petsc)
 
 
 # ## Problem definition
@@ -180,8 +179,8 @@ A.assemble()
 
 # +
 b = assemble_vector(L)
-apply_lifting(b, [a], bcs=[[bc]])
-b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
+apply_lifting(b, [a], bcs=[bc])
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 bc.set(b.array_w)
 # -
 
@@ -189,7 +188,7 @@ bc.set(b.array_w)
 
 ns = build_nullspace(V)
 A.setNearNullSpace(ns)
-A.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore
+A.setOption(PETSc.Mat.Option.SPD, True)
 
 # Set PETSc solver options, create a PETSc Krylov solver, and attach the
 # matrix `A` to the solver:

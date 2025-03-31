@@ -234,8 +234,7 @@ def nested_iterative_solver():
     b = fem.petsc.assemble_vector(L, kind="nest")
 
     # Modify ('lift') the RHS for Dirichlet boundary conditions
-    bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), bcs)
-    fem.petsc.apply_lifting(b, a, bcs=bcs1)
+    fem.petsc.apply_lifting(b, a, bcs=bcs)
 
     # Sum contributions for vector entries that are share across
     # parallel processes
@@ -342,8 +341,7 @@ def block_operators():
     P.assemble()
 
     b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
-    bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), bcs)
-    apply_lifting(b, a, bcs=bcs1)
+    apply_lifting(b, a, bcs=bcs)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs)
     set_bc(b, bcs0)
