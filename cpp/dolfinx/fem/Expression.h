@@ -36,8 +36,7 @@ class Function;
 ///
 /// @tparam T The scalar type.
 /// @tparam U The mesh geometry scalar type.
-template <dolfinx::scalar T,
-          std::floating_point U = dolfinx::scalar_value_t<T>>
+template <dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_t<T>>
 class Expression
 {
 public:
@@ -67,18 +66,19 @@ public:
   /// computed a 1-form expression, e.g. can be used to create a matrix
   /// that when applied to a degree-of-freedom vector gives the
   /// expression values at the evaluation points.
-  Expression(
-      const std::vector<std::shared_ptr<
-          const Function<scalar_type, geometry_type>>>& coefficients,
-      const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
-          constants,
-      std::span<const geometry_type> X, std::array<std::size_t, 2> Xshape,
-      std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
-                         const geometry_type*, const int*, const uint8_t*, void*)>
-          fn,
-      const std::vector<std::size_t>& value_shape,
-      std::shared_ptr<const FunctionSpace<geometry_type>> argument_space
-      = nullptr)
+  Expression(const std::vector<std::shared_ptr<
+                 const Function<scalar_type, geometry_type>>>& coefficients,
+             const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
+                 constants,
+             std::span<const geometry_type> X,
+             std::array<std::size_t, 2> Xshape,
+             std::function<void(scalar_type*, const scalar_type*,
+                                const scalar_type*, const geometry_type*,
+                                const int*, const uint8_t*, void*)>
+                 fn,
+             const std::vector<std::size_t>& value_shape,
+             std::shared_ptr<const FunctionSpace<geometry_type>> argument_space
+             = nullptr)
       : _coefficients(coefficients), _constants(constants),
         _x_ref(std::vector<geometry_type>(X.begin(), X.end()), Xshape), _fn(fn),
         _value_shape(value_shape), _argument_space(argument_space)
@@ -144,7 +144,8 @@ public:
 
   /// @brief Function for tabulating the Expression.
   const std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
-                           const geometry_type*, const int*, const uint8_t*, void*)>&
+                           const geometry_type*, const int*, const uint8_t*,
+                           void*)>&
   kernel() const
   {
     return _fn;

@@ -6,10 +6,10 @@
 
 #pragma once
 
+#include <basix/mdspan.hpp>
 #include <complex>
 #include <concepts>
 #include <type_traits>
-#include <basix/mdspan.hpp>
 
 namespace dolfinx
 {
