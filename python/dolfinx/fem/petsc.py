@@ -116,8 +116,8 @@ def create_vector(
        ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is
        compatible with ``L`` is created.
 
-    2. For a sequence of linear forms ``L``, if ``kind`` is ``None`` or
-       is ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is
+    2. If ``L`` is a sequence of linear forms and ``kind`` is ``None``
+       or is ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is
        compatible with ``L`` is created. The created vector ``b`` is
        initialized such that on each MPI process ``b = [b_0, b_1, ...,
        b_n, b_0g, b_1g, ..., b_ng]``, where ``b_i`` are the entries
@@ -140,10 +140,9 @@ def create_vector(
            >>> b1_owned = b.array[offsets0[1]:offsets0[2]]
            >>> b1_ghost = b.array[offsets1[1]:offsets1[2]]
 
-
-    3. If ``kind`` is ``PETSc.Vec.Type.NEST``, a PETSc nested vector (a
-       'nest' of ghosted PETSc vectors) which is compatible with ``L``
-       is created.
+    3. If ``L`` is a sequence of linear forms and ``kind`` is
+       ``PETSc.Vec.Type.NEST``, a PETSc nested vector (a 'nest' of
+       ghosted PETSc vectors) which is compatible with ``L`` is created.
 
     Args:
         L: Linear form or a sequence of linear forms.
@@ -276,10 +275,11 @@ def assemble_vector(
        nested vector ``b`` (a nest of ghosted PETSc vectors) such that
        ``L[i]`` is assembled into into the ith nested matrix in ``b``.
 
-    Constants and coefficients that appear in the forms(s) can be passed
-    to avoid re-computation of constants and coefficients. The functions
-    :func:`dolfinx.fem.pack_constants` and
-    :func:`dolfinx.fem.pack_coefficients` can be called
+    Constant and coefficient data that appear in the forms(s) can be
+    packed outside of this function to avoid re-packing by this
+    function. The functions :func:`dolfinx.fem.pack_constants` and
+    :func:`dolfinx.fem.pack_coefficients` can be used to 'pre-pack' the
+    data.
 
     Note:
         The returned vector is not finalised, i.e. ghost values are not
@@ -324,8 +324,8 @@ def _assemble_vector_vec(
     """Assemble linear form(s) into a PETSc vector.
 
     The vector ``b`` must have been initialized with a size/layout that
-    is consistent with the linear form. The PETSc vector ``b`` is
-    normally created by :func:`create_vector`.
+    is consistent with the linear form. The vector ``b`` is normally
+    created by :func:`create_vector`.
 
     Constants and coefficients that appear in the forms(s) can be passed
     to avoid re-computation of constants and coefficients. The functions
@@ -399,13 +399,16 @@ def assemble_matrix(
 
     1. If ``a`` is a single bilinear form, the form is assembled
        into PETSc matrix of type ``kind``.
-    #. If ``a`` is a rectangular array of forms the forms in ``a`` are
-       assembled into a matrix such that::
+    #. If ``a`` is a :math:`m \times n` rectangular array of forms the
+       forms in ``a`` are assembled into a matrix such that::
 
-            A = [a_00 ... a_0n]
-                [a_10 ... a_1n]
+            A = [A_00 ... A_0n]
+                [A_10 ... A_1n]
                 [     ...     ]
-                [a_m0 ..  a_mn]
+                [A_m0 ..  A_mn]
+
+       where ``A_ij`` is the matrix associated with the form
+       ``a[i][j]``.
 
        a. If ``kind`` is a ``PETSc.Mat.Type`` (other than
           ``PETSc.Mat.Type.NEST``) or is ``None``, the matrix type is
@@ -417,14 +420,15 @@ def assemble_matrix(
     Rows/columns that are constrained by a Dirichlet boundary condition
     are zeroed, with the diagonal to set to ``diag``.
 
-    Constants and coefficients that appear in the forms(s) can be passed
-    to avoid re-computation of constants and coefficients. The functions
-    :func:`dolfinx.fem.pack_constants` and
-    :func:`dolfinx.fem.pack_coefficients` can be called.
+    Constant and coefficient data that appear in the forms(s) can be
+    packed outside of this function to avoid re-packing by this
+    function. The functions :func:`dolfinx.fem.pack_constants` and
+    :func:`dolfinx.fem.pack_coefficients` can be used to 'pre-pack' the
+    data.
 
     Note:
         The returned matrix is not 'assembled', i.e. ghost contributions
-        have not been communicated.
+        are not accumulated.
 
     Args:
         a: Bilinear form(s) to assembled into a matrix.
