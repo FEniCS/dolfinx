@@ -73,11 +73,7 @@ std::vector<std::int32_t> compute_domain(
   {
     std::span ents(entities.data_handle(), entities.size());
     std::ranges::transform(ents, std::back_inserter(mapped_entities),
-                           [&entity_map](auto e)
-                           {
-                             assert(e < entity_map.size());
-                             return entity_map[e];
-                           });
+                           [&entity_map](auto e) { return entity_map[e]; });
   }
   else if (entities.rank() == 2)
   {
@@ -382,7 +378,7 @@ public:
         }
         else
         {
-          std::int32_t cpos = argument_position[c];
+          std::int32_t cpos = coefficient_position[c];
           assert(cpos != -1);
           // Create an entity map from mesh0 to the integration domain
           auto emap = entity_maps[cpos];

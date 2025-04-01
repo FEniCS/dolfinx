@@ -40,7 +40,7 @@ import numpy as np
 
 import ufl
 from dolfinx import fem, mesh
-from dolfinx.cpp.mesh import cell_num_entities
+from dolfinx.cpp.mesh import EntityMap, cell_num_entities
 
 
 def par_print(comm, string):
@@ -131,12 +131,16 @@ ds_c = ufl.Measure("ds", subdomain_data=[(cell_boundaries, cell_boundary_facets)
 # Create a cell integral measure over the facet mesh
 dx_f = ufl.Measure("dx", domain=facet_mesh)
 
-# We write the mixed domain forms as integrals over msh. Hence, we must
-# provide a map from facets in msh to cells in facet_mesh. This is the
-# 'inverse' of facet_mesh_to_mesh, which we compute as follows:
-mesh_to_facet_mesh = np.full(num_facets, -1)
-mesh_to_facet_mesh[facet_mesh_to_mesh] = np.arange(len(facet_mesh_to_mesh))
-entity_maps = {facet_mesh: mesh_to_facet_mesh}
+# We write the mixed domain forms as integrals over msh.
+# We create the relation between the entities that we can pass to the form constructor
+entity_maps = [
+    EntityMap(
+        msh.topology._cpp_object,
+        facet_mesh.topology._cpp_object,
+        facet_mesh.topology.dim,
+        facet_mesh_to_mesh,
+    )
+]
 
 # Define forms
 h = ufl.CellDiameter(msh)
@@ -169,6 +173,9 @@ msh_boundary_facets = mesh.exterior_facet_indices(msh.topology)
 # Since the boundary condition is enforced in the facet space, we must
 # use the mesh_to_facet_mesh map to get the corresponding facets in
 # facet_mesh
+
+mesh_to_facet_mesh = np.full(num_facets, -1)
+mesh_to_facet_mesh[facet_mesh_to_mesh] = np.arange(len(facet_mesh_to_mesh))
 facet_mesh_boundary_facets = mesh_to_facet_mesh[msh_boundary_facets]
 
 # Get the dofs and apply the boundary condition

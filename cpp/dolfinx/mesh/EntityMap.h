@@ -63,12 +63,11 @@ public:
           "No index map for entities, call `Topology::create_entities("
           + std::to_string(dim) + ")");
     }
-    std::cout << e_map->size_local() + e_map->num_ghosts()
-              << " == " << _entities0.size() << "\n";
     if (e_map->size_local() + e_map->num_ghosts() != _entities0.size())
       throw std::runtime_error("Size mismatch between entities and index map.");
-    _entities1.resize(entities0.size());
+    _entities1.resize(_entities0.size());
     std::iota(_entities1.begin(), _entities1.end(), 0);
+    assert(_entities1.size() == _entities0.size());
   }
 
   /// Copy constructor
@@ -92,18 +91,20 @@ public:
     else if (topology == _topology1)
       return 1;
     else
-      throw std::runtime_error("Mesh not in the map.");
+      throw std::runtime_error("Topology not in the map.");
   }
 
   std::span<const std::int32_t>
   get_entities(std::shared_ptr<const Topology> topology) const
   {
     if (topology == _topology0)
-      return std::span<const std::int32_t>(_entities0);
+      return std::span<const std::int32_t>(_entities0.data(),
+                                           _entities0.size());
     else if (topology == _topology1)
-      return std::span<const std::int32_t>(_entities1);
+      return std::span<const std::int32_t>(_entities1.data(),
+                                           _entities1.size());
     else
-      throw std::runtime_error("Mesh not in the map.");
+      throw std::runtime_error("Topology not in the map.");
   }
 
   std::size_t dim() const { return _dim; }

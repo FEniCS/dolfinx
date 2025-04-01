@@ -621,8 +621,6 @@ void mesh(nb::module_& m)
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
                  entities0)
           {
-            std::cout << "Creating entity map with only entities0"
-                      << entities0.size() << std::endl;
             new (self) dolfinx::mesh::EntityMap(
                 topology0, topology1, dim,
                 std::vector(entities0.data(),

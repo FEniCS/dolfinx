@@ -13,6 +13,7 @@ import pytest
 
 import ufl
 from dolfinx import default_scalar_type, fem, la
+from dolfinx.cpp.mesh import EntityMap
 from dolfinx.fem import compute_integration_domains
 from dolfinx.mesh import (
     CellType,
@@ -250,25 +251,21 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     c = msh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
 
     # Assemble a mixed-domain form using msh as integration domain.
-    # Entity maps must map cells in msh (the integration domain mesh,
-    # defined by the integration measure) to cells in smsh.
-    cell_imap = msh.topology.index_map(tdim)
-    num_cells = cell_imap.size_local + cell_imap.num_ghosts
-    msh_to_smsh = np.full(num_cells, -1)
-    msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
-    entity_maps = {smsh: np.array(msh_to_smsh, dtype=np.int32)}
-    a0 = fem.form(a_ufl(u, q, f, g, measure_msh), entity_maps=entity_maps)
+    # We create an entity map that relates the entities in the submesh to those of the parent mesh
+    entity_map = EntityMap(
+        msh.topology._cpp_object, smsh.topology._cpp_object, smsh.topology.dim, smsh_to_msh
+    )
+    a0 = fem.form(a_ufl(u, q, f, g, measure_msh), entity_maps=[entity_map])
     A0 = fem.assemble_matrix(a0, bcs=[bc])
     A0.scatter_reverse()
     assert np.isclose(A0.squared_norm(), A.squared_norm())
 
-    L0 = fem.form(L_ufl(q, f, g, measure_msh), entity_maps=entity_maps)
+    L0 = fem.form(L_ufl(q, f, g, measure_msh), entity_maps=[entity_map])
     b0 = fem.assemble_vector(L0)
     fem.apply_lifting(b0.array, [a0], bcs=[[bc]])
     b0.scatter_reverse(la.InsertMode.add)
     assert np.isclose(la.norm(b0), la.norm(b))
-
-    M0 = fem.form(M_ufl(f, g, measure_msh), entity_maps=entity_maps)
+    M0 = fem.form(M_ufl(f, g, measure_msh), entity_maps=[entity_map])
     c0 = msh.comm.allreduce(fem.assemble_scalar(M0), op=MPI.SUM)
     assert np.isclose(c0, c)
 
@@ -278,21 +275,18 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     # Create the measure (this time defined over the submesh)
     measure_smsh = create_measure(smsh, integral_type)
 
-    # Entity maps must map cells in smsh (the integration domain mesh) to
-    # cells in msh
-    entity_maps = {msh: np.array(smsh_to_msh, dtype=np.int32)}
-    a1 = fem.form(a_ufl(u, q, f, g, measure_smsh), entity_maps=entity_maps)
+    a1 = fem.form(a_ufl(u, q, f, g, measure_smsh), entity_maps=[entity_map])
     A1 = fem.assemble_matrix(a1, bcs=[bc])
     A1.scatter_reverse()
     assert np.isclose(A1.squared_norm(), A.squared_norm())
 
-    L1 = fem.form(L_ufl(q, f, g, measure_smsh), entity_maps=entity_maps)
+    L1 = fem.form(L_ufl(q, f, g, measure_smsh), entity_maps=[entity_map])
     b1 = fem.assemble_vector(L1)
     fem.apply_lifting(b1.array, [a1], bcs=[[bc]])
     b1.scatter_reverse(la.InsertMode.add)
     assert np.isclose(la.norm(b1), la.norm(b))
 
-    M1 = fem.form(M_ufl(f, g, measure_smsh), entity_maps=entity_maps)
+    M1 = fem.form(M_ufl(f, g, measure_smsh), entity_maps=[entity_map])
     c1 = msh.comm.allreduce(fem.assemble_scalar(M1), op=MPI.SUM)
     assert np.isclose(c1, c)
 
@@ -360,29 +354,26 @@ def test_mixed_dom_codim_1(n, k):
     M = fem.form(M_ufl(f, f, ds))
     c = msh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
 
-    # Since msh is the integration domain, we must pass entity maps taking
-    # facets in msh to cells in smsh. This is simply the inverse of smsh_to_msh.
-    facet_imap = msh.topology.index_map(tdim - 1)
-    num_facets = facet_imap.size_local + facet_imap.num_ghosts
-    msh_to_smsh = np.full(num_facets, -1)
-    msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
-    entity_maps = {smsh: msh_to_smsh}
+    # We create the realation between the submesh and the parent mesh
+    entity_map = EntityMap(
+        msh.topology._cpp_object, smsh.topology._cpp_object, smsh.topology.dim, smsh_to_msh
+    )
 
     # Create forms and compare
-    a1 = fem.form(a_ufl(u, vbar, f, g, ds), entity_maps=entity_maps)
+    a1 = fem.form(a_ufl(u, vbar, f, g, ds), entity_maps=[entity_map])
     A1 = fem.assemble_matrix(a1, bcs=[bc])
     A1.scatter_reverse()
 
     assert np.isclose(A.squared_norm(), A1.squared_norm())
 
-    L1 = fem.form(L_ufl(vbar, f, g, ds), entity_maps=entity_maps)
+    L1 = fem.form(L_ufl(vbar, f, g, ds), entity_maps=[entity_map])
     b1 = fem.assemble_vector(L1)
     fem.apply_lifting(b1.array, [a1], bcs=[[bc]])
     b1.scatter_reverse(la.InsertMode.add)
 
     assert np.isclose(la.norm(b), la.norm(b1))
 
-    M1 = fem.form(M_ufl(f, g, ds), entity_maps=entity_maps)
+    M1 = fem.form(M_ufl(f, g, ds), entity_maps=[entity_map])
     c1 = msh.comm.allreduce(fem.assemble_scalar(M1), op=MPI.SUM)
 
     assert np.isclose(c, c1)
@@ -505,23 +496,57 @@ def test_disjoint_submeshes():
     )
 
     # We create an entity map from the parent mesh to the submesh, where
-    # the cell on either side of the interface is mapped to the same cell
+    # the cell on either side of the interface is mapped to the same cell.
     mesh.topology.create_connectivity(tdim - 1, tdim)
     f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
     parent_to_left = np.full(num_cells_local, -1, dtype=np.int32)
     parent_to_right = np.full(num_cells_local, -1, dtype=np.int32)
     parent_to_left[left_to_parent] = np.arange(len(left_to_parent))
     parent_to_right[right_to_parent] = np.arange(len(right_to_parent))
+    left_cells = []
+    right_cells = []
+    parent_left_cells = []
+    parent_right_cells = []
+    # FIXME: this would be way easier if we transfer the meshtag to the relevant submesh(es)
     for tag in [4, 5]:
+        # Loop through facets of the parent mesh
         for facet in facet_tag.find(tag):
+            # Find cells on the interface
             cells = f_to_c.links(facet)
             assert len(cells) == 2
-            left_map = parent_to_left[cells]
-            right_map = parent_to_right[cells]
-            parent_to_left[cells] = max(left_map)
-            parent_to_right[cells] = max(right_map)
 
-    entity_maps = {left_mesh: parent_to_left, right_mesh: parent_to_right}
+            # Map cells to submesh(es)
+            # Not every submesh has a cell on the interface
+            left_map = parent_to_left[cells]
+            if (left_val := max(left_map)) > -1:
+                left_cells.extend([left_val for _ in left_map])
+                parent_left_cells.extend(cells)
+            right_map = parent_to_right[cells]
+            if (right_val := max(right_map)) > -1:
+                right_cells.extend([right_val for _ in right_map])
+                parent_right_cells.extend(cells)
+
+    # Create entity maps
+    parent_left_cells = np.asarray(parent_left_cells, dtype=np.int32)
+    parent_right_cells = np.asarray(parent_right_cells, dtype=np.int32)
+    left_cells = np.asarray(left_cells, dtype=np.int32)
+    right_cells = np.asarray(right_cells, dtype=np.int32)
+    entity_map_left = EntityMap(
+        mesh.topology._cpp_object,
+        left_mesh.topology._cpp_object,
+        tdim,
+        parent_left_cells,
+        left_cells,
+    )
+    entity_map_right = EntityMap(
+        mesh.topology._cpp_object,
+        right_mesh.topology._cpp_object,
+        tdim,
+        parent_right_cells,
+        right_cells,
+    )
+    entity_maps = [entity_map_left, entity_map_right]
+
     J_compiled = fem.form(J, entity_maps=entity_maps)
     J_local = fem.assemble_scalar(J_compiled)
     J_sum = mesh.comm.allreduce(J_local, op=MPI.SUM)
@@ -584,14 +609,17 @@ def test_mixed_measures():
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     p, q = ufl.TrialFunction(Q), ufl.TestFunction(Q)
 
+    entity_maps = [
+        EntityMap(msh.topology._cpp_object, smsh.topology._cpp_object, tdim, smsh_to_msh)
+    ]
     # First, assemble a block vector using both dx_msh and dx_smsh
     a = [
         [
             fem.form(ufl.inner(u, v) * dx_msh),
-            fem.form(ufl.inner(p, v) * dx_smsh, entity_maps={msh: smsh_to_msh}),
+            fem.form(ufl.inner(p, v) * dx_smsh, entity_maps=entity_maps),
         ],
         [
-            fem.form(ufl.inner(u, q) * dx_smsh, entity_maps={msh: smsh_to_msh}),
+            fem.form(ufl.inner(u, q) * dx_smsh, entity_maps=entity_maps),
             fem.form(ufl.inner(p, q) * dx_smsh),
         ],
     ]
@@ -599,11 +627,6 @@ def test_mixed_measures():
     b0 = assemble_vector_block(L, a)
 
     # Now, assemble the same vector using only dx_msh
-    cell_imap = msh.topology.index_map(tdim)
-    num_cells = cell_imap.size_local + cell_imap.num_ghosts
-    msh_to_smsh = np.full(num_cells, -1)
-    msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
-    entity_maps = {smsh: msh_to_smsh}
     L = [
         fem.form(ufl.inner(2.3, v) * dx_msh),
         fem.form(ufl.inner(1.3, q) * dx_msh(1), entity_maps=entity_maps),
@@ -647,7 +670,6 @@ def test_interior_facet_codim_1(msh):
     fdim = tdim - 1
     msh.topology.create_connectivity(fdim, tdim)
     facet_imap = msh.topology.index_map(fdim)
-    num_facets = facet_imap.size_local + facet_imap.num_ghosts
 
     # Mark all local and owned interior facets and "unmark" exterior facets
     facet_vector = la.vector(facet_imap, 1, dtype=np.int32)
@@ -661,9 +683,9 @@ def test_interior_facet_codim_1(msh):
     submesh, sub_to_parent, _, _ = create_submesh(msh, fdim, interior_facets)
 
     # Create inverse map
-    mesh_to_submesh = np.full(num_facets, -1)
-    mesh_to_submesh[sub_to_parent] = np.arange(len(sub_to_parent))
-    entity_maps = {submesh: mesh_to_submesh}
+    entity_maps = [
+        EntityMap(msh.topology._cpp_object, submesh.topology._cpp_object, fdim, sub_to_parent)
+    ]
 
     def assemble_interior_facet_formulation(formulation, entity_maps):
         F = fem.form(formulation, entity_maps=entity_maps)
