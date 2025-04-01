@@ -101,9 +101,10 @@ int main(int argc, char* argv[])
     // entities in `submesh`. This is simply the "inverse" of
     // `submesh_to_mesh`.
 
-    const mesh::EntityMap<U> entity_map(mesh, submesh, tdim, submesh_to_mesh);
-    std::vector<std::shared_ptr<const mesh::EntityMap<U>>> entity_maps
-        = {std::make_shared<const mesh::EntityMap<T>>(entity_map)};
+    const mesh::EntityMap entity_map(mesh->topology(), submesh->topology(),
+                                     tdim, submesh_to_mesh);
+    std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps
+        = {std::make_shared<const mesh::EntityMap>(entity_map)};
     // Next we compute the integration entities on the integration
     // domain `mesh`
     std::vector<std::int32_t> integration_entities

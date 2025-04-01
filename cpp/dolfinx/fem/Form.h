@@ -246,8 +246,7 @@ public:
       const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
           constants,
       bool needs_facet_permutations,
-      const std::vector<std::shared_ptr<const mesh::EntityMap<geometry_type>>>&
-          entity_maps)
+      const std::vector<std::shared_ptr<const mesh::EntityMap>>& entity_maps)
       : _function_spaces(V), _integrals(std::forward<X>(integrals)),
         _mesh(mesh), _coefficients(coefficients), _constants(constants),
         _needs_facet_permutations(needs_facet_permutations)
@@ -270,7 +269,7 @@ public:
         for (std::size_t j = 0; j < entity_maps.size(); ++j)
         {
           assert(entity_maps[j]);
-          if (entity_maps[j]->contains(mesh0))
+          if (entity_maps[j]->contains(mesh0->topology()))
           {
             argument_position[i] = j;
             mesh_found = true;
@@ -290,7 +289,7 @@ public:
         for (std::size_t j = 0; j < entity_maps.size(); ++j)
         {
           assert(entity_maps[j]);
-          if (entity_maps[j]->contains(mesh0))
+          if (entity_maps[j]->contains(mesh0->topology()))
           {
             coefficient_position[i] = j;
             mesh_found = true;
@@ -324,8 +323,10 @@ public:
         auto emap = entity_maps[apos];
         assert(emap);
         // Create an entity map from mesh0 to the integration domain
-        std::span<const std::int32_t> entities0 = emap->get_entities(mesh0);
-        std::span<const std::int32_t> entities = emap->get_entities(_mesh);
+        std::span<const std::int32_t> entities0
+            = emap->get_entities(mesh0->topology());
+        std::span<const std::int32_t> entities
+            = emap->get_entities(_mesh->topology());
         auto e_imap = _mesh->topology()->index_map(emap->dim());
         if (!e_imap)
           throw std::runtime_error(
@@ -386,8 +387,10 @@ public:
           // Create an entity map from mesh0 to the integration domain
           auto emap = entity_maps[cpos];
           assert(emap);
-          std::span<const std::int32_t> entities0 = emap->get_entities(mesh0);
-          std::span<const std::int32_t> entities = emap->get_entities(_mesh);
+          std::span<const std::int32_t> entities0
+              = emap->get_entities(mesh0->topology());
+          std::span<const std::int32_t> entities
+              = emap->get_entities(_mesh->topology());
           auto e_imap = _mesh->topology()->index_map(emap->dim());
           if (!e_imap)
             throw std::runtime_error(

@@ -379,9 +379,9 @@ def form(
         }
 
         if entity_maps is None:
-            _entity_maps = dict()
+            _entity_maps = []
         else:
-            _entity_maps = {msh._cpp_object: emap for (msh, emap) in entity_maps.items()}
+            _entity_maps = entity_maps
 
         f = ftype(
             [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form))],
@@ -400,9 +400,9 @@ def form(
         assert len(V) > 0
         msh = V[0].mesh
         if entity_maps is None:
-            _entity_maps = dict()
+            _entity_maps = []
         else:
-            _entity_maps = {msh._cpp_object: emap for (msh, emap) in entity_maps.items()}
+            _entity_maps = entity_maps
         f = ftype(
             spaces=V,
             integrals={},
