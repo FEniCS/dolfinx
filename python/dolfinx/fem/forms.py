@@ -202,7 +202,7 @@ def mixed_topology_form(
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
-    entity_maps: typing.Optional[dict[Mesh, np.typing.NDArray[np.int32]]] = None,
+    entity_maps: typing.Optional[typing.Iterable[_cpp.mesh.EntityMap]] = None,
 ):
     """
     Create a mixed-topology from from an array of Forms.
@@ -220,12 +220,9 @@ def mixed_topology_form(
         entity_maps: If any trial functions, test functions, or
             coefficients in the form are not defined over the same mesh
             as the integration domain, `entity_maps` must be supplied.
-            For each key (a mesh, different to the integration domain
-            mesh) a map should be provided relating the entities in the
-            integration domain mesh to the entities in the key mesh e.g.
-            for a key-value pair (msh, emap) in `entity_maps`, `emap[i]`
-            is the entity in `msh` corresponding to entity `i` in the
-            integration domain mesh.
+            Each map is a relation between the a subset of entities for
+            two different mesh topologies.
+
 
     Returns:
         Compiled finite element Form.
@@ -283,7 +280,7 @@ def form(
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
-    entity_maps: typing.Optional[dict[Mesh, np.typing.NDArray[np.int32]]] = None,
+    entity_maps: typing.Optional[typing.Iterable[_cpp.mesh.EntityMap]] = None,
 ):
     """Create a Form or an array of Forms.
 
@@ -295,12 +292,8 @@ def form(
         entity_maps: If any trial functions, test functions, or
             coefficients in the form are not defined over the same mesh
             as the integration domain, ``entity_maps`` must be supplied.
-            For each key (a mesh, different to the integration domain
-            mesh) a map should be provided relating the entities in the
-            integration domain mesh to the entities in the key mesh e.g.
-            for a key-value pair ``(msh, emap)`` in ``entity_maps``,
-            ``emap[i]`` is the entity in ``msh`` corresponding to entity
-            ``i`` in the integration domain mesh.
+            Each map is a relation between the a subset of entities for two
+            different mesh topologies.
 
     Returns:
         Compiled finite element Form.
