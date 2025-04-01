@@ -562,7 +562,9 @@ def test_disjoint_submeshes():
 def test_mixed_measures():
     """Test block assembly of forms where the integration measure in each
     block may be different"""
-    from dolfinx.fem.petsc import assemble_vector_block
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import assemble_vector
 
     comm = MPI.COMM_WORLD
     msh = create_unit_square(comm, 16, 21, ghost_mode=GhostMode.none)
@@ -581,22 +583,13 @@ def test_mixed_measures():
     dx_smsh = ufl.Measure("dx", smsh)
 
     # Trial and test functions
-    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    p, q = ufl.TrialFunction(Q), ufl.TestFunction(Q)
+    v = ufl.TestFunction(V)
+    q = ufl.TestFunction(Q)
 
     # First, assemble a block vector using both dx_msh and dx_smsh
-    a = [
-        [
-            fem.form(ufl.inner(u, v) * dx_msh),
-            fem.form(ufl.inner(p, v) * dx_smsh, entity_maps={msh: smsh_to_msh}),
-        ],
-        [
-            fem.form(ufl.inner(u, q) * dx_smsh, entity_maps={msh: smsh_to_msh}),
-            fem.form(ufl.inner(p, q) * dx_smsh),
-        ],
-    ]
     L = [fem.form(ufl.inner(2.3, v) * dx_msh), fem.form(ufl.inner(1.3, q) * dx_smsh)]
-    b0 = assemble_vector_block(L, a)
+    b0 = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
+    b0.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     # Now, assemble the same vector using only dx_msh
     cell_imap = msh.topology.index_map(tdim)
@@ -608,7 +601,8 @@ def test_mixed_measures():
         fem.form(ufl.inner(2.3, v) * dx_msh),
         fem.form(ufl.inner(1.3, q) * dx_msh(1), entity_maps=entity_maps),
     ]
-    b1 = assemble_vector_block(L, a)
+    b1 = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
+    b1.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     # Check the results are the same
     assert np.allclose(b0.norm(), b1.norm())
