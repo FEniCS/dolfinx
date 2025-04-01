@@ -269,7 +269,7 @@ def mixed_topology_form(
         [],
         [],
         {},
-        {},
+        [],
         mesh,
     )
     return Form(f, ufcx_forms, codes, modules)
