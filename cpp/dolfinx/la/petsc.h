@@ -104,7 +104,7 @@ std::vector<IS> create_index_sets(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
-/// Copy blocks from Vec into local vectors
+/// Copy blocks from Vec into local arrays
 std::vector<std::vector<PetscScalar>> get_local_vectors(
     const Vec x,
     const std::vector<
