@@ -17,7 +17,7 @@ import basix
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import cpp as _cpp
-from dolfinx import default_real_type, fem, graph, la
+from dolfinx import default_real_type, default_scalar_type, fem, graph, la
 from dolfinx.fem import (
     Constant,
     Function,
@@ -1091,7 +1091,7 @@ class TestPETScAssemblers:
         mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
         bndry_facets = exterior_facet_indices(mesh.topology)
         bndry_dofs = locate_dofs_topological(V, mesh.topology.dim - 1, bndry_facets)
-        bcs = [dirichletbc(2.0, bndry_dofs, V)]
+        bcs = [dirichletbc(default_scalar_type(2.0), bndry_dofs, V)]
 
         if kind == "mpi":
             bcs1 = bcs_by_block(extract_function_spaces(J, 1), bcs)
