@@ -479,7 +479,7 @@ def _assemble_matrix_block_mat(
                 )
                 A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
             elif i == j:
-                for bc in bcs:
+                for bc in _bcs:
                     row_forms = [row_form for row_form in a_row if row_form is not None]
                     assert len(row_forms) > 0
                     if row_forms[0].function_spaces[0].contains(bc.function_space):
