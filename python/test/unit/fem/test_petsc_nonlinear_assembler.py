@@ -297,7 +297,7 @@ class TestNLSPETSc:
             A = dolfinx.fem.petsc.create_matrix(jacobian, "nest")
             b = dolfinx.fem.petsc.create_vector(residual, "nest")
             x = dolfinx.fem.petsc.create_vector(residual, "nest")
-            snes.setFunction(partial(dolfinx.nls.petsc.F_nest, [u, p], residual, jacobian, bcs), b)
+            snes.setFunction(partial(dolfinx.nls.petsc.assemble_residual, [u, p], residual, jacobian, bcs), b)
             snes.setJacobian(
                 partial(dolfinx.nls.petsc.assemble_jacobian, [u, p], jacobian, None, bcs), A, None
             )
