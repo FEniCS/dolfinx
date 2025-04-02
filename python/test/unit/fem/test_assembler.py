@@ -41,6 +41,7 @@ from dolfinx.mesh import (
     create_rectangle,
     create_unit_cube,
     create_unit_square,
+    exterior_facet_indices,
     locate_entities_boundary,
 )
 from ufl import derivative, dS, ds, dx, inner
@@ -937,7 +938,8 @@ class TestPETScAssemblers:
         A.destroy()
         b.destroy()
 
-    def test_pack_coefficients(self):
+    @pytest.mark.parametrize("kind", ["nest", "mpi", None])
+    def test_pack_coefficients(self, kind):
         """Test packing of form coefficients ahead of main assembly call."""
         from petsc4py import PETSc
 
@@ -945,64 +947,169 @@ class TestPETScAssemblers:
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
 
         mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
-        V = functionspace(mesh, ("Lagrange", 1))
 
-        # Non-blocked
-        u = Function(V)
-        v = ufl.TestFunction(V)
-        c = Constant(mesh, PETSc.ScalarType(12.0))
-        F = ufl.inner(c, v) * dx - c * ufl.sqrt(u * u) * ufl.inner(u, v) * dx
-        u.x.array[:] = 10.0
-        _F = form(F)
+        if kind is None:
+            # Non-blocked
+            V = functionspace(mesh, ("Lagrange", 1))
+            u = Function(V)
+            v = ufl.TestFunction(V)
+            c = Constant(mesh, PETSc.ScalarType(12.0))
+            F = ufl.inner(c, v) * dx - c * ufl.sqrt(u * u) * ufl.inner(u, v) * dx
+            u.x.array[:] = 10.0
+            _F = form(F)
+        else:
+            V = functionspace(mesh, ("Lagrange", 1))
+            V2 = V.clone()
+            u = Function(V)
+            u.interpolate(lambda x: x[0] * x[1])
+            v = ufl.TestFunction(V)
+            u2 = Function(V2)
+            v2 = ufl.TestFunction(V2)
+            c = Constant(mesh, PETSc.ScalarType(12.0))
+            u2.interpolate(lambda x: x[0] + x[1])
+            F = [c**2 * ufl.inner(u * u2, v2) * dx, c * ufl.inner(u * u2 * u2, v2) * dx]
+            _F = form(F)
 
         # -- Test vector
-        b0 = petsc_assemble_vector(_F)
+        b0 = petsc_assemble_vector(_F, kind=kind)
         b0.assemble()
         constants = pack_constants(_F)
         coeffs = pack_coefficients(_F)
         with b0.localForm() as _b0:
             for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
-                b = petsc_assemble_vector(_F, c[0], c[1])
+                b = petsc_assemble_vector(_F, c[0], c[1], kind=kind)
                 b.assemble()
                 with b.localForm() as _b:
                     assert (_b0.array_r == _b.array_r).all()
 
-        # Change coefficients
-        constants *= 5.0
-        for coeff in coeffs.values():
-            coeff *= 5.0
-        with b0.localForm() as _b0:
-            for c in [(None, coeffs), (constants, None), (constants, coeffs)]:
-                b = petsc_assemble_vector(_F, c[0], c[1])
-                b.assemble()
-                with b.localForm() as _b:
-                    assert (_b0 - _b).norm() > 1.0e-5
+        # Change coefficients and constants, check that it reflected in the vector
+        if kind is None:
+            constants *= 5.0
+        else:
+            for const in constants:
+                const *= 5.0
+        if kind is None:
+            for coeff in coeffs.values():
+                coeff *= 5.0
+        else:
+            for coeff in coeffs:
+                for c in coeff.values():
+                    c *= 5.0
+
+        for c in [(constants, None), (None, coeffs), (constants, coeffs)]:
+            b = petsc_assemble_vector(_F, c[0], c[1], kind=kind)
+            b.assemble()
+            diff = b0.copy()
+            diff.axpy(-1.0, b)
+            assert diff.norm() > 1.0e-5
 
         # -- Test matrix
-        du = ufl.TrialFunction(V)
-        J = ufl.derivative(F, u, du)
-        J = form(J)
+        if kind is None:
+            du = ufl.TrialFunction(V)
+            _J = ufl.derivative(F, u, du)
+        else:
+            du = [ufl.TrialFunction(V), ufl.TrialFunction(V2)]
+            us = [u, u2]
+            _J = [
+                [ufl.derivative(F[j], us[i], du[i]) for i in range(len(F))] for j in range(len(du))
+            ]
 
-        A0 = petsc_assemble_matrix(J)
+        J = form(_J)
+        A0 = petsc_assemble_matrix(J, kind=kind)
         A0.assemble()
 
         constants = pack_constants(J)
         coeffs = pack_coefficients(J)
         for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
-            A = petsc_assemble_matrix(J, constants=c[0], coeffs=c[1])
+            A = petsc_assemble_matrix(J, constants=c[0], coeffs=c[1], kind=kind)
             A.assemble()
-        assert 0.0 == pytest.approx((A - A0).norm(), abs=1.0e-12)  # /NOSONAR
+            if kind == "nest":
+                # Nest does not have norm implemented
+                for i in range(2):
+                    for j in range(2):
+                        Asub = A.getNestSubMatrix(i, j)
+                        A0sub = A0.getNestSubMatrix(i, j)
+                        assert 0.0 == pytest.approx((Asub - A0sub).norm(), abs=1.0e-12)  # /NOSONAR
+                        Asub.destroy()
+                        A0sub.destroy()
+            else:
+                assert 0.0 == pytest.approx((A - A0).norm(), abs=1.0e-12)  # /NOSONAR
 
-        # Change coefficients
-        constants *= 5.0
-        for coeff in coeffs.values():
-            coeff *= 5.0
+        # Change coefficients and constants
+        if kind is None:
+            constants *= 5.0
+        else:
+            for ci in constants:
+                for cij in ci:
+                    cij *= 5.0
+        if kind is None:
+            for coeff in coeffs.values():
+                coeff *= 5.0
+        else:
+            for ci in coeffs:
+                for cij in ci:
+                    for c in cij.values():
+                        c *= 5.0
+        # Re-assemble with either new coefficients, new constants or both and check that
+        # the matrix changes
         for c in [(None, coeffs), (constants, None), (constants, coeffs)]:
-            A = petsc_assemble_matrix(J, constants=c[0], coeffs=c[1])
+            A = petsc_assemble_matrix(J, constants=c[0], coeffs=c[1], kind=kind)
             A.assemble()
-            assert (A - A0).norm() > 1.0e-5
+            if kind == "nest":
+                # Nest does not have norm implemented
+                for i in range(2):
+                    for j in range(2):
+                        Asub = A.getNestSubMatrix(i, j)
+                        A0sub = A0.getNestSubMatrix(i, j)
+                        assert (Asub - A0sub).norm() > 1.0e-5  # /NOSONAR
+                        Asub.destroy()
+                        A0sub.destroy()
+            else:
+                assert (A - A0).norm() > 1.0e-5  # /NOSONAR
+            A.destroy()
+        A0.destroy()
 
-        A.destroy(), A0.destroy()
+    @pytest.mark.parametrize("kind", ["nest", "mpi"])
+    def test_lifting_coefficients(self, kind):
+        from dolfinx.fem.petsc import apply_lifting, create_vector
+
+        mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
+        V = functionspace(mesh, ("Lagrange", 1))
+        Q = V.clone()
+        k = Function(V)
+        k.interpolate(lambda x: x[0] * x[1])
+        u = ufl.TrialFunction(V)
+        v = ufl.TestFunction(V)
+        p = ufl.TrialFunction(Q)
+        q = ufl.TestFunction(Q)
+
+        L = form([ufl.ZeroBaseForm((v,)), ufl.ZeroBaseForm((q,))])
+        J = form(
+            [[k * ufl.inner(u, v) * dx, None], [ufl.inner(u, q) * dx, k * ufl.inner(p, q) * dx]]
+        )
+
+        mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
+        bndry_facets = exterior_facet_indices(mesh.topology)
+        bndry_dofs = locate_dofs_topological(V, mesh.topology.dim - 1, bndry_facets)
+        bcs = [dirichletbc(2.0, bndry_dofs, V)]
+
+        if kind == "mpi":
+            bcs1 = bcs_by_block(extract_function_spaces(J, 1), bcs)
+        else:
+            bcs1 = bcs
+
+        # Apply lifting with input coefficient
+        coeffs = pack_coefficients(J)
+        b = create_vector(L, kind=kind)
+        apply_lifting(b, J, bcs=bcs1, coeffs=coeffs)
+        b.assemble()
+
+        # Reference lifting
+        b_ref = create_vector(L, kind=kind)
+        apply_lifting(b_ref, J, bcs=bcs1)
+        b_ref.assemble()
+
+        np.testing.assert_allclose(b.array_r, b_ref.array_r, rtol=1e-12)
 
     def test_coefficents_non_constant(self):
         """Test packing coefficients with non-constant values."""
