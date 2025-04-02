@@ -1271,6 +1271,19 @@ class TestPETScAssemblers:
         b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
+    def test_zero_diagonal_block_no_bcs(self):
+        from dolfinx.fem.petsc import assemble_matrix
+        msh = create_unit_square(MPI.COMM_WORLD, 2, 2)
+        V = functionspace(msh, ("Lagrange", 1))
+        W = functionspace(msh, ("Lagrange", 2))
+        u, p = ufl.TrialFunction(V), ufl.TrialFunction(W)
+        v, q = ufl.TestFunction(V), ufl.TestFunction(W)
+        a = form([[ufl.inner(u, v) * ufl.dx, ufl.inner(p, v)*ufl.dx], [ufl.inner(u, q) * ufl.dx, None]])
+        A = assemble_matrix(a, kind="mpi")
+        A.assemble()
+
+
+
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 @dtype_parametrize
