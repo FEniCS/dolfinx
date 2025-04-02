@@ -657,11 +657,11 @@ def apply_lifting(
                     pass
                 offset0, offset1 = b.getAttr("_blocks")
                 with b.localForm() as b_l:
-                    for a_, off0, off1, offg0, offg1 in zip(
-                        a, offset0, offset0[1:], offset1, offset1[1:]
+                    for i, (a_, off0, off1, offg0, offg1) in enumerate(
+                        zip(a, offset0, offset0[1:], offset1, offset1[1:])
                     ):
-                        const = pack_constants(a_) if constants is None else constants
-                        coeff = pack_coefficients(a_) if coeffs is None else coeffs
+                        const = pack_constants(a_) if constants is None else constants[i]
+                        coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]
                         const_ = [
                             np.empty(0, dtype=PETSc.ScalarType) if val is None else val
                             for val in const
