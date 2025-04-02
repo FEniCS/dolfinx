@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2024 Chris N Richardson and Jørgen S. Dokken
+# Copyright (C) 2018-2025 Chris N Richardson, Jørgen S. Dokken and Paul T. Kühner
 
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -20,6 +20,7 @@ from dolfinx.mesh import (
     RefinementOption,
     compute_incident_entities,
     create_unit_cube,
+    create_unit_interval,
     create_unit_square,
     locate_entities,
     locate_entities_boundary,
@@ -212,3 +213,32 @@ def test_refine_ufl_cargo():
     msh.topology.create_entities(1)
     msh1, _, _ = refine(msh)
     assert msh1.ufl_domain().ufl_cargo() != msh.ufl_domain().ufl_cargo()
+
+
+@pytest.mark.parametrize("tdim", [1, 2, 3])
+@pytest.mark.parametrize(
+    "ghost_mode", [GhostMode.none, GhostMode.shared_vertex, GhostMode.shared_facet]
+)
+def test_identity_partitioner(tdim, ghost_mode):
+    n = 2
+    if tdim == 1:
+        mesh = create_unit_interval(MPI.COMM_WORLD, n)
+    elif tdim == 2:
+        mesh = create_unit_square(MPI.COMM_WORLD, n, n)
+    else:
+        mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n)
+
+    cells = mesh.topology.index_map(mesh.topology.dim)
+    owning_process = np.full(cells.size_local + cells.num_ghosts, MPI.COMM_WORLD.rank)
+    owning_process[cells.size_local :] = cells.owners
+
+    mesh.topology.create_entities(1)
+    [mesh_fine, parent_cells, _] = refine(mesh, redistribute=False, partitioner=None)
+
+    cells_fine = mesh_fine.topology.index_map(mesh.topology.dim)
+    owning_process_fine = np.full(
+        cells_fine.size_local + cells_fine.num_ghosts, MPI.COMM_WORLD.rank
+    )
+    owning_process_fine[cells_fine.size_local :] = cells_fine.owners
+
+    assert np.all(owning_process_fine[: cells_fine.size_local] == owning_process[parent_cells])
