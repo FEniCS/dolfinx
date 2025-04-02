@@ -393,7 +393,12 @@ def apply_lifting(
             spaces can differ.
         bcs: Boundary conditions that provide the :math:`g_{i}` values.
             ``bcs1[i]`` is the sequence of boundary conditions on
-            :math:`u_{i}`.
+            :math:`u_{i}`. Helper functions exist to build a
+            list-of-lists of `DirichletBC` from a list of forms ``a``
+            and a flat list of `DirichletBC` objects ``bcs``::
+
+                bcs1 = fem.bcs_by_block(fem.extract_function_spaces([a], 1), bcs)
+
         x0: The array :math:`x_{i}` above. If ``None`` it is set to
             zero.
         alpha: Scalar used in the modification of ``b``.
