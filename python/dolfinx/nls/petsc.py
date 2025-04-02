@@ -224,10 +224,12 @@ def F_standard(
 
 
 def assemble_jacobian(
-    u: dolfinx.fem.Function,
-    jacobian: dolfinx.fem.Form,
-    preconditioner: typing.Optional[dolfinx.fem.Form],
-    bcs: list[dolfinx.fem.DirichletBC],
+    u: typing.Union[list[dolfinx.fem.Function], dolfinx.fem.Function],
+    jacobian: typing.Union[dolfinx.fem.Form, typing.Iterable[typing.Iterable[dolfinx.fem.Form]]],
+    preconditioner: typing.Optional[
+        typing.Union[dolfinx.fem.Form, typing.Iterable[typing.Iterable[dolfinx.fem.Form]]]
+    ],
+    bcs: typing.Iterable[dolfinx.fem.DirichletBC],
     _snes: PETSc.SNES,  # type: ignore
     x: PETSc.Vec,  # type: ignore
     J: PETSc.Mat,  # type: ignore
