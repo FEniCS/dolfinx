@@ -140,7 +140,6 @@ def create_vector(
            >>> b1_owned = b.array[offsets0[1]:offsets0[2]]
            >>> b1_ghost = b.array[offsets1[1]:offsets1[2]]
 
-
     3. If ``L`` is a sequence of linear forms and ``kind`` is
        ``PETSc.Vec.Type.NEST``, a PETSc nested vector (a 'nest' of
        ghosted PETSc vectors) which is compatible with ``L`` is created.
