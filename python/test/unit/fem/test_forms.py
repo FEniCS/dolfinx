@@ -14,7 +14,7 @@ import pytest
 import basix
 import basix.ufl
 import dolfinx
-from dolfinx.fem import extract_function_spaces, form, functionspace
+from dolfinx.fem import IntegralType, extract_function_spaces, form, functionspace
 from dolfinx.fem.forms import form_cpp_class
 from dolfinx.mesh import create_unit_square
 from ufl import Measure, SpatialCoordinate, TestFunction, TrialFunction, dx, inner
@@ -93,7 +93,7 @@ def test_incorrect_element():
         [space._cpp_object, space._cpp_object],
         [],
         [],
-        {dolfinx.cpp.fem.IntegralType.cell: []},
+        {IntegralType.cell: []},
         {},
         mesh._cpp_object,
     )
@@ -105,7 +105,7 @@ def test_incorrect_element():
             [incorrect_space._cpp_object, incorrect_space._cpp_object],
             [],
             [],
-            {dolfinx.cpp.fem.IntegralType.cell: []},
+            {IntegralType.cell: []},
             {},
             mesh._cpp_object,
         )

@@ -3,7 +3,15 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Functions for working with PETSc linear algebra objects"""
+"""Functions for working with PETSc linear algebra objects.
+
+Note:
+    Due to subtle issues in the interaction between petsc4py memory
+    management and the Python garbage collector, it is recommended that
+    the PETSc method ``destroy()`` is called on returned PETSc objects
+    once the object is no longer required. Note that ``destroy()`` is
+    collective over the object's MPI communicator.
+"""
 
 import functools
 import typing
@@ -24,12 +32,6 @@ __all__ = ["assign", "create_vector", "create_vector_wrap"]
 def create_vector(index_map: IndexMap, bs: int) -> PETSc.Vec:  # type: ignore[name-defined]
     """Create a distributed PETSc vector.
 
-    Note:
-        Due to subtle issues in the interaction between petsc4py memory management
-        and the Python garbage collector, it is recommended that the method ``PETSc.Vec.destroy()``
-        is called on the returned object once the object is no longer required. Note that
-        ``PETSc.Vec.destroy()`` is collective over the object's MPI communicator.
-
     Args:
         index_map: Index map that describes the size and parallel layout of
             the vector to create.
@@ -45,12 +47,6 @@ def create_vector(index_map: IndexMap, bs: int) -> PETSc.Vec:  # type: ignore[na
 
 def create_vector_wrap(x: Vector) -> PETSc.Vec:  # type: ignore[name-defined]
     """Wrap a distributed DOLFINx vector as a PETSc vector.
-
-    Note:
-        Due to subtle issues in the interaction between petsc4py memory management
-        and the Python garbage collector, it is recommended that the method ``PETSc.Vec.destroy()``
-        is called on the returned object once the object is no longer required. Note that
-        ``PETSc.Vec.destroy()`` is collective over the object's MPI communicator.
 
     Args:
         x: The vector to wrap as a PETSc vector.
@@ -115,8 +111,9 @@ def assign(x0: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact
 def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact]]]):  # type: ignore
     """Assign PETSc vector ``x0`` values to (blocked) array(s) ``x1``.
 
-    This function performs the reverse of the assigment performed by the
-    version of :func:`.assign(x0: typing.Union[npt.NDArray[np.inexact],
+    This function performs the reverse of the assignment performed by
+    the version of :func:`.assign(x0:
+    typing.Union[npt.NDArray[np.inexact],
     list[npt.NDArray[np.inexact]]], x1: PETSc.Vec)`.
 
     Args:
