@@ -248,9 +248,9 @@ def assemble_jacobian(
         P: Matrix to assemble the preconditioner into
     """
     # Copy existing soultion into the function used in the residual and Jacobian
-    if x.getType() != "nest":
+    try:
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    else:
+    except PETSc.Error:
         for x_sub in x.getNestSubVecs():
             x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     dolfinx.fem.petsc.assign(x, u)
