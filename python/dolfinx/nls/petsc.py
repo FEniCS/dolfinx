@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import itertools
 import typing
 from functools import partial
 
@@ -32,10 +33,7 @@ from dolfinx import fem
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.petsc import (
     apply_lifting,
-    assemble_matrix_block,
-    assemble_matrix_nest,
     assemble_vector,
-    assemble_vector_block,
     create_matrix,
     create_vector,
     set_bc,
@@ -225,7 +223,7 @@ def F_standard(
     set_bc(F, bcs, x, -1.0)
 
 
-def J_standard(
+def assemble_jacobian(
     u: dolfinx.fem.Function,
     jacobian: dolfinx.fem.Form,
     preconditioner: typing.Optional[dolfinx.fem.Form],
@@ -248,17 +246,20 @@ def J_standard(
         P: Matrix to assemble the preconditioner into
     """
     # Copy existing soultion into the function used in the residual and Jacobian
-    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    if x.getType() != "nest":
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    else:
+        for x_sub in x.getNestSubVecs():
+            x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     dolfinx.fem.petsc.assign(x, u)
 
     # Assemble Jacobian
     J.zeroEntries()
-    dolfinx.fem.petsc.assemble_matrix(J, jacobian, bcs, diagonal=1.0)  # type: ignore
+    dolfinx.fem.petsc.assemble_matrix(J, jacobian, bcs, diag=1.0)  # type: ignore
     J.assemble()
-
     if preconditioner is not None:
         P.zeroEntries()
-        dolfinx.fem.petsc.assemble_matrix(P, preconditioner, bcs, diagonal=1.0)  # type: ignore
+        dolfinx.fem.petsc.assemble_matrix(P, preconditioner, bcs, diag=1.0)  # type: ignore
         P.assemble()
 
 
@@ -288,43 +289,39 @@ def F_block(
         f_local.set(0.0)
     x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     dolfinx.fem.petsc.assign(x, u)
-    assemble_vector_block(F, residual, jacobian, bcs=bcs, x0=x, alpha=-1.0)  # type: ignore
 
+    # Assign blocks variable to the vectors
+    maps = [
+        (
+            form.function_spaces[0].dofmaps(0).index_map,
+            form.function_spaces[0].dofmaps(0).index_map_bs,
+        )
+        for form in residual
+    ]
+    off_owned = tuple(
+        itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
+    )
+    off_ghost = tuple(
+        itertools.accumulate(
+            maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
+        )
+    )
+    F.setAttr("_blocks", (off_owned, off_ghost))
+    x.setAttr("_blocks", (off_owned, off_ghost))
 
-def J_block(
-    u: list[dolfinx.fem.Function],
-    jacobian: list[list[dolfinx.fem.Form]],
-    preconditioner: typing.Optional[list[dolfinx.fem.Form]],
-    bcs: list[dolfinx.fem.DirichletBC],
-    _snes: PETSc.SNES,  # type: ignore
-    x: PETSc.Vec,  # type: ignore
-    J: PETSc.Mat,  # type: ignore
-    P: PETSc.Mat,  # type: ignore
-):
-    """Assemble the Jacobian matrix.
-
-    Args:
-        u: List of functions tied to the solution vector within the residual and jacobian
-        jacobian: List of list of forms of the Jacobian
-        preconditioner: List of forms of the preconditioner
-        bcs: List of Dirichlet boundary conditions
-        _snes: The solver instance
-        x: The vector containing the latest solution
-        J: Matrix to assemble the Jacobian into
-        P: Matrix to assemble the preconditioner into
-    """
-    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    dolfinx.fem.petsc.assign(x, u)
-    assert x.getType() != "nest", "Vector x should be non-nested"
-    assert J.getType() != "nest", "Matrix J should be non-nested"
-    assert P.getType() != "nest", "Matrix P should be non-nested"
-    J.zeroEntries()
-    assemble_matrix_block(J, jacobian, bcs=bcs, diagonal=1.0)  # type: ignore
-    J.assemble()
-    if preconditioner is not None:
-        P.zeroEntries()
-        assemble_matrix_block(P, preconditioner, bcs=bcs, diagonal=1.0)  # type: ignore
-        P.assemble()
+    assemble_vector(F, residual)
+    bcs1 = dolfinx.fem.bcs_by_block(dolfinx.fem.extract_function_spaces(jacobian, 1), bcs)
+    dolfinx.fem.petsc.apply_lifting(
+        F,
+        jacobian,
+        bcs=bcs1,
+        x0=x,
+        alpha=-1.0,
+    )
+    F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    bcs0 = dolfinx.fem.bcs_by_block(dolfinx.fem.extract_function_spaces(residual), bcs)
+    dolfinx.fem.petsc.set_bc(F, bcs0, x0=x, alpha=-1.0)
+    F.ghostUpdate(PETSc.InsertMode.INSERT_VALUES, PETSc.ScatterMode.FORWARD)
 
 
 def F_nest(
@@ -359,7 +356,6 @@ def F_nest(
         assemble_vector(F_sub, L)
         apply_lifting(F_sub, a, bcs=bcs1, x0=sub_vectors, alpha=-1.0)
         F_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
-
     # Set bc value in RHS
     bcs0 = _bcs_by_block(_extract_spaces(residual), bcs)
     for F_sub, bc, x_sub in zip(F.getNestSubVecs(), bcs0, sub_vectors):
@@ -367,42 +363,6 @@ def F_nest(
 
     # Must assemble F here in the case of nest matrices
     F.assemble()
-
-
-def J_nest(
-    u: list[dolfinx.fem.Function],
-    jacobian: list[list[dolfinx.fem.Form]],
-    preconditioner: typing.Optional[list[dolfinx.fem.Form]],
-    bcs: list[dolfinx.fem.DirichletBC],
-    _snes: PETSc.SNES,  # type: ignore
-    x: PETSc.Vec,  # type: ignore
-    J: PETSc.Mat,  # type: ignore
-    P: PETSc.Mat,  # type: ignore
-):
-    """Assemble the Jacobian matrix.
-
-    Args:
-        u: List of functions tied to the solution vector within the residual and jacobian
-        jacobian: List of list of forms of the Jacobian
-        preconditioner: List of forms of the preconditioner
-        bcs: List of Dirichlet boundary conditions
-        _snes: The solver instance
-        x: The vector containing the latest solution
-        J: Matrix to assemble the Jacobian into
-        P: Matrix to assemble the preconditioner into
-    """
-    for x_sub in x.getNestSubVecs():
-        x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    dolfinx.fem.petsc.assign(x, u)
-    assert J.getType() == "nest" and P.getType() == "nest"
-    J.zeroEntries()
-    assemble_matrix_nest(J, jacobian, bcs=bcs, diagonal=1.0)  # type: ignore
-    J.assemble()
-
-    if preconditioner is not None:
-        P.zeroEntries()
-        assemble_matrix_nest(P, preconditioner, bcs=bcs, diagonal=1.0)  # type: ignore
-        P.assemble()
 
 
 def create_snes_solver(
@@ -453,16 +413,23 @@ def create_snes_solver(
     Returns:
         A PETSc SNES solver instance and a vector to store solutions in.
     """
-    # Compile all forms
+    # Set default values if not supplied
     bcs = [] if bcs is None else bcs
     form_compiler_options = {} if form_compiler_options is None else form_compiler_options
     jit_options = {} if jit_options is None else jit_options
 
-    # Compile forms
+    # Compile residual and Jacobian forms
     residual = _create_form(F, form_compiler_options=form_compiler_options, jit_options=jit_options)
     if J is None:
         J = fem.forms.compute_jacobian(F, u)
     jacobian = _create_form(J, form_compiler_options=form_compiler_options, jit_options=jit_options)
+
+    # Create PETSc structures for the residual, Jacobian and solution vector
+    A = create_matrix(jacobian, kind=mat_kind)
+    b = create_vector(residual, kind=vec_kind)
+    x = create_vector(residual, kind=vec_kind)
+
+    # Compile and create preconditioner structure if provided
     preconditioner = None
     P_mat = None
     if P is not None:
@@ -470,21 +437,18 @@ def create_snes_solver(
             P, form_compiler_options=form_compiler_options, jit_options=jit_options
         )
         P_mat = create_matrix(preconditioner, kind=mat_kind)
-    A = create_matrix(jacobian, kind=mat_kind)
-    b = create_vector(residual, kind=vec_kind)
-    x = create_vector(residual, kind=vec_kind)
 
+    # Create the SNES solver and attach the corresponding jacobian and residual
+    # computation functions
     snes = PETSc.SNES().create(comm=A.comm)  # type: ignore
-    if mat_kind == PETSc.Mat.Type.NEST or mat_kind == "nest":
+    snes.setJacobian(partial(assemble_jacobian, u, jacobian, preconditioner, bcs), A, P_mat)
+
+    if A.getType() == PETSc.Mat.Type.NEST:
         # Check for SNES consistency
-        assert vec_kind == PETSc.Vec.Type.NEST or vec_kind == "nest"
+        assert b.getType() == PETSc.Vec.Type.NEST
         snes.setFunction(partial(F_nest, u, residual, jacobian, bcs), b)
-        snes.setJacobian(partial(J_nest, u, jacobian, preconditioner, bcs), A, P_mat)
     elif isinstance(residual, dolfinx.fem.Form):
         snes.setFunction(partial(F_standard, u, residual, jacobian, bcs), b)  # type: ignore
-        snes.setJacobian(partial(J_standard, u, jacobian, preconditioner, bcs), A, P_mat)  # type: ignore
     else:
         snes.setFunction(partial(F_block, u, residual, jacobian, bcs), b)
-        snes.setJacobian(partial(J_block, u, jacobian, preconditioner, bcs), A, P_mat)
-
     return snes, x

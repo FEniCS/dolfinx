@@ -481,7 +481,8 @@ void declare_objects(nb::module_& m, const std::string& type)
             std::array<std::size_t, 2> shape{value_size, x.size() / 3};
             std::vector<T> values(shape[0] * shape[1]);
             std::function<void(T*, int, int, const U*, void*)> f
-                = reinterpret_cast<void (*)(T*, int, int, const U*, void*)>(addr);
+                = reinterpret_cast<void (*)(T*, int, int, const U*, void*)>(
+                    addr);
             f(values.data(), shape[1], shape[0], x.data(), nullptr);
             dolfinx::fem::interpolate(self, std::span<const T>(values), shape,
                                       std::span(cells.data(), cells.size()));
@@ -1255,7 +1256,7 @@ void fem(nb::module_& m)
           },
           nb::rv_policy::reference_internal);
 
-  nb::enum_<dolfinx::fem::IntegralType>(m, "IntegralType")
+  nb::enum_<dolfinx::fem::IntegralType>(m, "_IntegralType")
       .value("cell", dolfinx::fem::IntegralType::cell, "cell integral")
       .value("exterior_facet", dolfinx::fem::IntegralType::exterior_facet,
              "exterior facet integral")

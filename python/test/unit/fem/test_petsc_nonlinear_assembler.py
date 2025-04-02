@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2025 Nathan Sime, Jørgen S. Dokken
+# Copyright (C) 2019-2025 Nathan Sime, Garth N. Wells, Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -20,6 +20,7 @@ from dolfinx.fem import (
     Function,
     bcs_by_block,
     dirichletbc,
+    extract_function_spaces,
     form,
     functionspace,
     locate_dofs_topological,
@@ -52,17 +53,11 @@ class TestNLSPETSc:
 
         from dolfinx.fem.petsc import (
             apply_lifting,
-            apply_lifting_nest,
             assemble_matrix,
-            assemble_matrix_block,
-            assemble_matrix_nest,
             assemble_vector,
-            assemble_vector_block,
-            assemble_vector_nest,
             assign,
             create_vector,
             set_bc,
-            set_bc_nest,
         )
 
         mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
@@ -115,14 +110,21 @@ class TestNLSPETSc:
 
         def blocked():
             """Monolithic blocked"""
-            x = create_vector(L_block)
+            x = create_vector(L_block, kind="mpi")
 
             assign((u, p), x)
 
             # Ghosts are updated inside assemble_vector_block
-            A = assemble_matrix_block(a_block, bcs=[bc])
-            b = assemble_vector_block(L_block, a_block, bcs=[bc], x0=x, alpha=-1.0)
+            A = assemble_matrix(a_block, bcs=[bc])
             A.assemble()
+
+            b = assemble_vector(L_block, kind="mpi")
+            bcs1 = bcs_by_block(extract_function_spaces(a_block, 1), bcs=[bc])
+            apply_lifting(b, a_block, bcs=bcs1, x0=x, alpha=-1.0)
+            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+            bcs0 = bcs_by_block(extract_function_spaces(L_block), [bc])
+            set_bc(b, bcs0, x0=x, alpha=-1)
+
             assert A.getType() != "nest"
             Anorm = A.norm()
             bnorm = b.norm()
@@ -138,14 +140,15 @@ class TestNLSPETSc:
 
             assign((u, p), x)
 
-            A = assemble_matrix_nest(a_block, bcs=[bc])
-            b = assemble_vector_nest(L_block)
-            apply_lifting_nest(b, a_block, bcs=[bc], x0=x, alpha=-1.0)
+            A = assemble_matrix(a_block, bcs=[bc], kind="nest")
+            b = assemble_vector(L_block, kind="nest")
+            bcs1 = bcs_by_block(extract_function_spaces(a_block, 1), bcs=[bc])
+            apply_lifting(b, a_block, bcs=bcs1, x0=x, alpha=-1.0)
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
 
-            set_bc_nest(b, bcs0, x, alpha=-1.0)
+            set_bc(b, bcs0, x, alpha=-1.0)
             A.assemble()
             assert A.getType() == "nest"
             Anorm = nest_matrix_norm(A)
@@ -264,7 +267,7 @@ class TestNLSPETSc:
 
             snes_options = {"snes_rtol": 1.0e-15, "snes_max_it": 10, "snes_monitor": None}
             snes, x = dolfinx.nls.petsc.create_snes_solver(
-                F, [u, p], J=J, bcs=bcs, mat_kind="nest", vec_kind="nest"
+                F, [u, p], J=J, bcs=bcs, mat_kind="mpi", vec_kind="mpi"
             )
             opts = PETSc.Options()
             for k, v in snes_options.items():
@@ -296,7 +299,7 @@ class TestNLSPETSc:
             x = dolfinx.fem.petsc.create_vector(residual, "nest")
             snes.setFunction(partial(dolfinx.nls.petsc.F_nest, [u, p], residual, jacobian, bcs), b)
             snes.setJacobian(
-                partial(dolfinx.nls.petsc.J_nest, [u, p], jacobian, None, bcs), A, None
+                partial(dolfinx.nls.petsc.assemble_jacobian, [u, p], jacobian, None, bcs), A, None
             )
 
             nested_IS = snes.getJacobian()[0].getNestISs()
@@ -440,7 +443,6 @@ class TestNLSPETSc:
             """Blocked and monolithic"""
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
-
             snes_options = {
                 "snes_rtol": 1.0e-15,
                 "snes_max_it": 10,
@@ -453,6 +455,8 @@ class TestNLSPETSc:
                 bcs=bcs,
                 P=P,
                 snes_options=snes_options,
+                mat_kind="mpi",
+                vec_kind="mpi",
             )
             x, converged_reason, _ = solver.solve()
             assert converged_reason > 0

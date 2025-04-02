@@ -15,19 +15,20 @@
 ARG ADIOS2_VERSION=2.10.2
 ARG DOXYGEN_VERSION=1_13_2
 ARG GMSH_VERSION=4_13_1
-ARG HDF5_VERSION=1.14.5
+ARG HDF5_VERSION=1.14.6
 ARG KAHIP_VERSION=3.18
 # NOTE: The NumPy version (https://pypi.org/project/numpy/#history)
 # should be pinned to the most recent NumPy release that is supported by
 # the most recent Numba release, see
 # https://numba.readthedocs.io/en/stable/user/installing.html#version-support-information
 ARG NUMPY_VERSION=2.1.3
-ARG PETSC_VERSION=3.22.3
+ARG PETSC_VERSION=3.22.4
 ARG SLEPC_VERSION=3.22.2
+ARG SPDLOG_VERSION=1.15.1
 
 ARG MPICH_VERSION=4.2.3
 ARG OPENMPI_SERIES=5.0
-ARG OPENMPI_PATCH=6
+ARG OPENMPI_PATCH=7
 
 ########################################
 
@@ -35,13 +36,14 @@ FROM ubuntu:24.04 AS dev-env
 LABEL maintainer="FEniCS Steering Council <fenics-steering-council@googlegroups.com>"
 LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
+ARG ADIOS2_VERSION
 ARG DOXYGEN_VERSION
 ARG GMSH_VERSION
 ARG HDF5_VERSION
+ARG KAHIP_VERSION
 ARG PETSC_VERSION
 ARG SLEPC_VERSION
-ARG ADIOS2_VERSION
-ARG KAHIP_VERSION
+ARG SPDLOG_VERSION
 ARG NUMPY_VERSION
 ARG MPICH_VERSION
 ARG OPENMPI_SERIES
@@ -83,7 +85,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     liblapack-dev \
     libopenblas-dev \
     libpugixml-dev \
-    libspdlog-dev \
     ninja-build \
     pkg-config \
     python3-dev \
@@ -111,6 +112,15 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Install spdlog from source - Ubuntu version is incompatible with CUDA 12.
+RUN wget -nc --quiet https://github.com/gabime/spdlog/archive/refs/tags/v${SPDLOG_VERSION}.tar.gz && \
+    tar xfz v${SPDLOG_VERSION}.tar.gz && \
+    cd spdlog-${SPDLOG_VERSION} && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DSPDLOG_BUILD_SHARED=ON -DSPDLOG_BUILD_PIC=ON -B build-dir . && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    rm -rf /tmp/*
+
 # Install Doxygen
 RUN apt-get -qq update && \
     apt-get -y install bison flex && \
@@ -118,7 +128,7 @@ RUN apt-get -qq update && \
     tar xfz Release_${DOXYGEN_VERSION}.tar.gz && \
     cd doxygen-Release_${DOXYGEN_VERSION} && \
     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir . && \
-    cmake --build build-dir  -j 2 && \
+    cmake --build build-dir && \
     cmake --install build-dir && \
     apt-get -y purge bison flex && \
     apt-get -y autoremove && \
