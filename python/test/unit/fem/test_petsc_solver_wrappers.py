@@ -80,7 +80,7 @@ class TestPETScSolverWrappers:
         from petsc4py import PETSc
 
         msh = dolfinx.mesh.create_unit_square(
-            MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=PETSc.ScalarType
+            MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=PETSc.RealType
         )
 
         def top_bc(x):
