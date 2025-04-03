@@ -563,7 +563,7 @@ def create_form(
     subdomains: dict[IntegralType, list[tuple[int, np.ndarray]]],
     coefficient_map: dict[ufl.Function, function.Function],
     constant_map: dict[ufl.Constant, function.Constant],
-    entity_maps: dict[Mesh, np.typing.NDArray[np.int32]] | None = None,
+    entity_maps: list[_cpp.mesh.EntityMap] | None = None,
 ) -> Form:
     """
     Create a Form object from a data-independent compiled form.
@@ -584,10 +584,7 @@ def create_form(
             an array of integers, where the i-th entry is the entity in
             the key mesh.
     """
-    if entity_maps is None:
-        _entity_maps = {}
-    else:
-        _entity_maps = {m._cpp_object: emap for (m, emap) in entity_maps.items()}
+    _entity_maps = [] if entity_maps is None else entity_maps
 
     _subdomain_data = subdomains.copy()
     for _, idomain in _subdomain_data.items():
