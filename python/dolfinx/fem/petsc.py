@@ -797,13 +797,11 @@ class LinearProblem:
             jit_options=jit_options,
         )
         self._A = create_matrix(self._a, kind=kind)
-        if self._A.getType() == PETSc.Mat.Type.NEST:
-            # Nest can be specified as 'nest' or a nested list of mat-types
-            self._b = create_vector(self._L, kind="nest")
-            self._x = create_vector(self._L, kind="nest")
-        else:
-            self._b = create_vector(self._L, kind=kind)
-            self._x = create_vector(self._L, kind=kind)
+
+        # For nest matrices kind can be a nested list.
+        kind = "nest" if self._A.getType() == PETSc.Mat.Type.NEST else kind
+        self._b = create_vector(self._L, kind=kind)
+        self._x = create_vector(self._L, kind=kind)
 
         if u is None:
             try:
