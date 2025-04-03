@@ -78,7 +78,10 @@ class TestPETScSolverWrappers:
     @pytest.mark.parametrize("kind", [None, "mpi", "nest"])
     def test_mixed_system(self, mode, kind):
         from petsc4py import PETSc
-        msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=PETSc.ScalarType)
+
+        msh = dolfinx.mesh.create_unit_square(
+            MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=PETSc.ScalarType
+        )
 
         def top_bc(x):
             return np.isclose(x[1], 1.0)
