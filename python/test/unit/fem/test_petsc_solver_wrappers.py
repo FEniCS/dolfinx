@@ -107,12 +107,11 @@ class TestPETScSolverWrappers:
 
         a00 = ufl.inner(u, v) * ufl.dx
         a11 = ufl.inner(p, q) * ufl.dx
-
         x = ufl.SpatialCoordinate(msh)
         f = x[0] + 3 * x[1]
         g = -(x[1] ** 2) + x[0]
-        L0 = f * v * ufl.dx
-        L1 = g * q * ufl.dx
+        L0 = ufl.inner(f, v) * ufl.dx
+        L1 = ufl.inner(g, q) * ufl.dx
 
         f_expr = dolfinx.fem.Expression(f, V.element.interpolation_points)
         g_expr = dolfinx.fem.Expression(g, Q.element.interpolation_points)
