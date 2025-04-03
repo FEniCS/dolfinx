@@ -75,7 +75,7 @@ class TestPETScSolverWrappers:
     @pytest.mark.parametrize(
         "mode", [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet]
     )
-    @pytest.mark.parametrize("kind", [None, "mpi", "nest"])
+    @pytest.mark.parametrize("kind", [None, "mpi", "nest", [["aij", None], [None, "baij"]]])
     def test_mixed_system(self, mode, kind):
         from petsc4py import PETSc
 
