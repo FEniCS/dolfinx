@@ -77,7 +77,8 @@ class TestPETScSolverWrappers:
     )
     @pytest.mark.parametrize("kind", [None, "mpi", "nest"])
     def test_mixed_system(self, mode, kind):
-        msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+        from petsc4py import PETSc
+        msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=PETSc.ScalarType)
 
         def top_bc(x):
             return np.isclose(x[1], 1.0)
@@ -85,8 +86,8 @@ class TestPETScSolverWrappers:
         msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
         bndry_facets = dolfinx.mesh.locate_entities_boundary(msh, msh.topology.dim - 1, top_bc)
 
-        el_0 = basix.ufl.element("Lagrange", msh.basix_cell(), 1)
-        el_1 = basix.ufl.element("Lagrange", msh.basix_cell(), 2)
+        el_0 = basix.ufl.element("Lagrange", msh.basix_cell(), 1, dtype=PETSc.RealType)
+        el_1 = basix.ufl.element("Lagrange", msh.basix_cell(), 2, dtype=PETSc.RealType)
 
         if kind is None:
             me = basix.ufl.mixed_element([el_0, el_1])
