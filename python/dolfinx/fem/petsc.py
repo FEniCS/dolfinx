@@ -140,7 +140,6 @@ def create_vector(
            >>> b1_owned = b.array[offsets0[1]:offsets0[2]]
            >>> b1_ghost = b.array[offsets1[1]:offsets1[2]]
 
-
     3. If ``L`` is a sequence of linear forms and ``kind`` is
        ``PETSc.Vec.Type.NEST``, a PETSc nested vector (a 'nest' of
        ghosted PETSc vectors) which is compatible with ``L`` is created.
@@ -480,7 +479,7 @@ def _assemble_matrix_block_mat(
                 )
                 A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
             elif i == j:
-                for bc in bcs:
+                for bc in _bcs:
                     row_forms = [row_form for row_form in a_row if row_form is not None]
                     assert len(row_forms) > 0
                     if row_forms[0].function_spaces[0].contains(bc.function_space):
@@ -658,11 +657,11 @@ def apply_lifting(
                     pass
                 offset0, offset1 = b.getAttr("_blocks")
                 with b.localForm() as b_l:
-                    for a_, off0, off1, offg0, offg1 in zip(
-                        a, offset0, offset0[1:], offset1, offset1[1:]
+                    for i, (a_, off0, off1, offg0, offg1) in enumerate(
+                        zip(a, offset0, offset0[1:], offset1, offset1[1:])
                     ):
-                        const = pack_constants(a_) if constants is None else constants
-                        coeff = pack_coefficients(a_) if coeffs is None else coeffs
+                        const = pack_constants(a_) if constants is None else constants[i]
+                        coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]
                         const_ = [
                             np.empty(0, dtype=PETSc.ScalarType) if val is None else val
                             for val in const
