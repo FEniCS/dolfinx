@@ -807,10 +807,8 @@ class LinearProblem:
 
         if u is None:
             try:
-                # Extract function space from TrialFunction (which is at the
-                # end of the argument list as it is numbered as 1, while the
-                # Test function is numbered as 0)
-                self._u = _Function(a.arguments()[-1].ufl_function_space())
+                # Extract function space for unknown from the right hand side of the equation.
+                self._u = _Function(L.arguments()[0].ufl_function_space())
             except AttributeError:
                 self._u = [_Function(Li.arguments()[0].ufl_function_space()) for Li in L]
         else:
