@@ -29,6 +29,15 @@ assert dolfinx.has_petsc4py
 __all__ = ["assign", "create_vector", "create_vector_wrap"]
 
 
+def ghostUpdate(x: PETSc.Vec, insert_mode: PETSc.InsertMode, scatter_mode: PETSc.ScatterMode):  # type: ignore
+    """Helper function for ghost updating PETSc vectors"""
+    if x.getType() == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
+        for x_sub in x.getNestSubVecs():
+            x_sub.ghostUpdate(addv=insert_mode, mode=scatter_mode)
+    else:
+        x.ghostUpdate(addv=insert_mode, mode=scatter_mode)
+
+
 def create_vector(index_map: IndexMap, bs: int) -> PETSc.Vec:  # type: ignore[name-defined]
     """Create a distributed PETSc vector.
 

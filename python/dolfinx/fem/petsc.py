@@ -871,42 +871,25 @@ class LinearProblem:
         if self.bcs is not None:
             try:
                 apply_lifting(self._b, [self._a], bcs=[self.bcs])
-                if self._b.getType() == PETSc.Vec.Type.NEST:
-                    for b_sub in self._b.getNestSubVecs():
-                        b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-                else:
-                    self._b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+                dolfinx.la.petsc.ghostUpdate(
+                    self._b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE
+                )
                 for bc in self.bcs:
                     bc.set(self._b.array_w)
             except RuntimeError:
                 bcs1 = _bcs_by_block(_extract_spaces(self._a, 1), self.bcs)  # type: ignore
                 apply_lifting(self._b, self._a, bcs=bcs1)  # type: ignore
-                if self._b.getType() == PETSc.Vec.Type.NEST:
-                    for b_sub in self._b.getNestSubVecs():
-                        b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-                else:
-                    self._b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+                dolfinx.la.petsc.ghostUpdate(
+                    self._b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE
+                )
                 bcs0 = _bcs_by_block(_extract_spaces(self._L), self.bcs)  # type: ignore
                 dolfinx.fem.petsc.set_bc(self._b, bcs0)
         else:
-            if self._b.getType() == PETSc.Vec.Type.NEST:
-                for b_sub in self._b.getNestSubVecs():
-                    b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-            else:
-                self._b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        if self._b.getType() == PETSc.Vec.Type.NEST:
-            for b_sub in self._b.getNestSubVecs():
-                b_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        else:
-            self._b.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+            dolfinx.la.petsc.ghostUpdate(self._b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
 
         # Solve linear system and update ghost values in the solution
         self._solver.solve(self._b, self._x)
-        if self._x.getType() == PETSc.Vec.Type.NEST:
-            for x_sub in self._x.getNestSubVecs():
-                x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        else:
-            self._x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        dolfinx.la.petsc.ghostUpdate(self._x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
         dolfinx.fem.petsc.assign(self._x, self._u)
         return self._u
 
