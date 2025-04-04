@@ -869,7 +869,7 @@ class LinearProblem:
         if self.bcs is not None:
             try:
                 apply_lifting(self._b, [self._a], bcs=[self.bcs])
-                dolfinx.la.petsc.ghostUpdate(
+                dolfinx.la.petsc._ghost_update(
                     self._b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE
                 )
                 for bc in self.bcs:
@@ -877,17 +877,17 @@ class LinearProblem:
             except RuntimeError:
                 bcs1 = _bcs_by_block(_extract_spaces(self._a, 1), self.bcs)  # type: ignore
                 apply_lifting(self._b, self._a, bcs=bcs1)  # type: ignore
-                dolfinx.la.petsc.ghostUpdate(
+                dolfinx.la.petsc._ghost_update(
                     self._b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE
                 )
                 bcs0 = _bcs_by_block(_extract_spaces(self._L), self.bcs)  # type: ignore
                 dolfinx.fem.petsc.set_bc(self._b, bcs0)
         else:
-            dolfinx.la.petsc.ghostUpdate(self._b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
+            dolfinx.la.petsc._ghost_update(self._b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
 
         # Solve linear system and update ghost values in the solution
         self._solver.solve(self._b, self._x)
-        dolfinx.la.petsc.ghostUpdate(self._x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
+        dolfinx.la.petsc._ghost_update(self._x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
         dolfinx.fem.petsc.assign(self._x, self._u)
         return self._u
 
