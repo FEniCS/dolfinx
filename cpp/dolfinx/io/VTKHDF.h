@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Chris Richardson
+// Copyright (C) 2024-2025 Chris Richardson, Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -108,9 +108,10 @@ void io::VTKHDF::write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
     std::vector<std::int32_t> local_dm;
     local_dm.reserve(g_dofmap.extent(1) * num_cells[i]);
     auto perm = io::cells::perm_vtk(cell_types[i], g_dofmap.extent(1));
+    auto inverse_perm = io::cells::transpose(perm);
     for (int j = 0; j < num_cells[i]; ++j)
       for (int k = 0; k < g_dofmap.extent(1); ++k)
-        local_dm.push_back(g_dofmap(j, perm[k]));
+        local_dm.push_back(g_dofmap(j, inverse_perm[k]));
 
     std::vector<std::int64_t> global_dm(local_dm.size());
     geom_imap->local_to_global(local_dm, global_dm);
@@ -305,7 +306,6 @@ mesh::Mesh<U> io::VTKHDF::read_mesh(MPI_Comm comm, std::string filename)
     std::int32_t type_index = type_to_index.at({types[j], cell_degrees[j]});
     mesh::CellType cell_type = dolfinx_cell_type[type_index];
     auto perm = io::cells::perm_vtk(cell_type, offsets[j + 1] - offsets[j]);
-
     for (std::size_t k = 0; k < offsets[j + 1] - offsets[j]; ++k)
       cells_local[type_index].push_back(topology[perm[k] + offsets[j]]);
   }
