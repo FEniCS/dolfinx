@@ -39,7 +39,7 @@ jobs:
 
       - name: Install FEniCS Python components
         run: |
-          python -m pip install git+https://github.com/fenics/ufl.git@${{ env..ufl_ref }}
+          python -m pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
           python -m pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
           python -m pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
           apt-get update
