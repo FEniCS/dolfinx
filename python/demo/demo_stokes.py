@@ -10,9 +10,16 @@
 
 # # Stokes equations using Taylor-Hood elements
 #
-# This demo is implemented in {download}`demo_stokes.py`. It shows how
-# to solve the Stokes problem using Taylor-Hood elements using different
+# This demo shows how to solve the Stokes problem using 
+# Taylor-Hood elements using different
 # linear solvers.
+#
+#```{admonition} Download sources
+#:class: download
+
+#* {download}`Python script <./demo_stokes.py>`
+#* {download}`Jupyter notebook <./demo_stokes.ipynb>`
+#```
 #
 # ## Equation and problem definition
 #
