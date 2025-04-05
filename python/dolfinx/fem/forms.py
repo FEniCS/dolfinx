@@ -459,7 +459,7 @@ def extract_function_spaces(
     """
     _forms = np.array(forms)
     if _forms.ndim == 0:
-        return [forms.function_spaces[index]] if forms is not None else [None]
+        return [forms.function_spaces[index]] if forms is not None else [None]  # type: ignore[union-attr]
     elif _forms.ndim == 1:
         assert index == 0, "Expected index=0 for 1D array of forms"
         for form in _forms:
