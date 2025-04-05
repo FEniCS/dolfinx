@@ -24,8 +24,8 @@ class TestPETScSolverWrappers:
         """Test that the wrapper for Linear problem and NonlinearProblem give the same result"""
         from petsc4py import PETSc
 
-        import dolfinx.fem.petsc
         import dolfinx.nls.petsc
+        from dolfinx.fem.petsc import LinearProblem, NonlinearProblem
 
         msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
         V = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
@@ -52,12 +52,10 @@ class TestPETScSolverWrappers:
             "pc_type": "lu",
             "pc_factor_mat_solver_type": factor_type,
         }
-        linear_problem = dolfinx.fem.petsc.LinearProblem(
-            ufl.lhs(a), ufl.rhs(a), petsc_options=petsc_options
-        )
+        linear_problem = LinearProblem(ufl.lhs(a), ufl.rhs(a), petsc_options=petsc_options)
         u_lin = linear_problem.solve()
 
-        nonlinear_problem = dolfinx.fem.petsc.NonlinearProblem(F, uh)
+        nonlinear_problem = NonlinearProblem(F, uh)
 
         solver = dolfinx.nls.petsc.NewtonSolver(msh.comm, nonlinear_problem)
         ksp = solver.krylov_solver
@@ -78,6 +76,8 @@ class TestPETScSolverWrappers:
     @pytest.mark.parametrize("kind", [None, "mpi", "nest", [["aij", None], [None, "baij"]]])
     def test_mixed_system(self, mode, kind):
         from petsc4py import PETSc
+
+        from dolfinx.fem.petsc import LinearProblem
 
         msh = dolfinx.mesh.create_unit_square(
             MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=PETSc.RealType
@@ -150,9 +150,7 @@ class TestPETScSolverWrappers:
             "ksp_error_if_not_converged": True,
         }
 
-        problem = dolfinx.fem.petsc.LinearProblem(
-            a, L, bcs=bcs, petsc_options=petsc_options, kind=kind
-        )
+        problem = LinearProblem(a, L, bcs=bcs, petsc_options=petsc_options, kind=kind)
         wh = problem.solve()
         if kind is None:
             uh, ph = wh.split()
