@@ -7,9 +7,9 @@
 
 from __future__ import annotations
 
-import collections
 import types
 import typing
+from collections.abc import Iterable
 from dataclasses import dataclass
 from itertools import chain
 
@@ -279,7 +279,7 @@ def mixed_topology_form(
 
 
 def form(
-    form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
+    form: typing.Union[ufl.Form, Iterable[ufl.Form]],
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
@@ -428,7 +428,7 @@ def form(
             return _form(form)
         elif isinstance(form, ufl.ZeroBaseForm):
             return _zero_form(form)
-        elif isinstance(form, collections.abc.Iterable):
+        elif isinstance(form, Iterable):
             return list(map(lambda sub_form: _create_form(sub_form), form))
         else:
             return form
@@ -437,10 +437,7 @@ def form(
 
 
 def extract_function_spaces(
-    forms: typing.Union[
-        typing.Iterable[Form],  # type: ignore [return]
-        typing.Iterable[typing.Iterable[Form]],
-    ],
+    forms: typing.Union[Form, Iterable[Form], Iterable[Iterable[Form]]],
     index: int = 0,
 ) -> list[typing.Union[None, function.FunctionSpace]]:
     """Extract common function spaces from an array of forms.
@@ -463,7 +460,6 @@ def extract_function_spaces(
     _forms = np.array(forms)
     if _forms.ndim == 0:
         return [forms.function_spaces[index]] if forms is not None else [None]
-        # raise RuntimeError("Expected an array for forms, not a single form")
     elif _forms.ndim == 1:
         assert index == 0, "Expected index=0 for 1D array of forms"
         for form in _forms:

@@ -875,7 +875,7 @@ class LinearProblem:
         # Apply boundary conditions to the rhs
         if self.bcs is not None:
             try:
-                apply_lifting(self._b, [self._a], self._bcs1)
+                apply_lifting(self._b, [self._a], bcs=self._bcs1)
                 dolfinx.la.petsc._ghost_update(
                     self._b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE
                 )
