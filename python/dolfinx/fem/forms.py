@@ -461,11 +461,11 @@ def extract_function_spaces(
     if _forms.ndim == 0:
         return [forms.function_spaces[index]] if forms is not None else [None]  # type: ignore[union-attr]
     elif _forms.ndim == 1:
-        assert index == 0, "Expected index=0 for 1D array of forms"
-        for form in _forms:
-            if form is not None:
-                assert form.rank == 1, "Expected linear form"
-        return [form.function_spaces[0] if form is not None else None for form in forms]  # type: ignore[union-attr]
+        # assert index == 0, "Expected index=0 for 1D array of forms"
+        # for form in _forms:
+        #     if form is not None:
+        #         assert form.rank == 1, "Expected linear form"
+        return [form.function_spaces[index] if form is not None else None for form in forms]  # type: ignore[union-attr]
     elif _forms.ndim == 2:
         assert index == 0 or index == 1, "Expected index=0 or index=1 for 2D array of forms"
         extract_spaces = np.vectorize(

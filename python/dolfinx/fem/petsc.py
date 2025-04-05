@@ -565,7 +565,7 @@ def assemble_matrix_mat(
 
 def apply_lifting(
     b: PETSc.Vec,
-    a: typing.Union[Iterable[Form], Iterable[Iterable[Form]]],
+    a: typing.Union[Form, Iterable[Form], Iterable[Iterable[Form]]],
     bcs: typing.Optional[typing.Union[Iterable[DirichletBC], Iterable[Iterable[DirichletBC]]]],
     x0: typing.Optional[Iterable[PETSc.Vec]] = None,
     alpha: float = 1,
@@ -639,6 +639,7 @@ def apply_lifting(
     else:
         with contextlib.ExitStack() as stack:
             if b.getAttr("_blocks") is not None:
+                print("LLLb:")
                 if x0 is not None:
                     offset0, offset1 = x0.getAttr("_blocks")
                     xl = stack.enter_context(x0.localForm())
@@ -672,16 +673,20 @@ def apply_lifting(
                         b_l.array_w[off0:off1] = bx_[:size]
                         b_l.array_w[offg0:offg1] = bx_[size:]
             else:
-                try:
-                    bcs = _bcs_by_block(_extract_spaces([a], 1), bcs)
-                except AttributeError:
-                    pass
                 x0 = [] if x0 is None else x0
                 x0 = [stack.enter_context(x.localForm()) for x in x0]
                 x0_r = [x.array_r for x in x0]
                 b_local = stack.enter_context(b.localForm())
-                _apply_lifting(b_local.array_w, a, bcs, x0_r, alpha, constants, coeffs)
-
+                try:
+                    # print("\n a:", a)
+                    # print("\n bs:", bcs)
+                    bcs = _bcs_by_block(_extract_spaces(a, 0), bcs)
+                except AttributeError:
+                    pass
+                try:
+                    _apply_lifting(b_local.array_w, a, bcs, x0_r, alpha, constants, coeffs)
+                except TypeError:
+                    _apply_lifting(b_local.array_w, [a], bcs, x0_r, alpha, constants, coeffs)
     return b
 
 
@@ -806,14 +811,13 @@ class LinearProblem:
         kind = "nest" if self._A.getType() == PETSc.Mat.Type.NEST else kind
         self._b = create_vector(self._L, kind=kind)
         self._x = create_vector(self._L, kind=kind)
-
         if u is None:
             try:
                 # Extract function space for unknown from the right hand
                 # side of the equation.
                 self._u = _Function(L.arguments()[0].ufl_function_space())
             except AttributeError:
-                self._u = [_Function(Li.arguments()[0].ufl_function_space()) for Li in L]
+                self._u = [_Function(_L.arguments()[0].ufl_function_space()) for _L in L]
         else:
             self._u = u
 
@@ -874,20 +878,10 @@ class LinearProblem:
 
         # Apply boundary conditions to the rhs
         if self.bcs is not None:
-            try:
-                apply_lifting(self._b, [self._a], bcs=self._bcs1)
-                dolfinx.la.petsc._ghost_update(
-                    self._b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE
-                )
-            except RuntimeError:
-                apply_lifting(self._b, self._a, bcs=self._bcs1)
-                dolfinx.la.petsc._ghost_update(
-                    self._b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE
-                )
-
+            apply_lifting(self._b, self._a, bcs=self._bcs1)
+        dolfinx.la.petsc._ghost_update(self._b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
+        if self.bcs is not None:
             dolfinx.fem.petsc.set_bc(self._b, self._bcs0)
-        else:
-            dolfinx.la.petsc._ghost_update(self._b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
 
         # Solve linear system and update ghost values in the solution
         self._solver.solve(self._b, self._x)
