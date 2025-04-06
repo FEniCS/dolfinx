@@ -400,8 +400,9 @@ void apply_lifting(
 
 /// @brief Assemble bilinear form into a matrix. Matrix must already be
 /// initialised. Does not zero or finalise the matrix.
-/// @param[in] mat_add The function for adding values into the matrix.
-/// @param[in] a The bilinear form to assemble.
+///
+/// @param[in] mat_add Function for adding values into the matrix.
+/// @param[in] a Bilinear form to assemble.
 /// @param[in] constants Constants that appear in `a`.
 /// @param[in] coefficients Coefficients that appear in `a`.
 /// @param[in] dof_marker0 Boundary condition markers for the rows. If
@@ -440,7 +441,7 @@ void assemble_matrix(
   }
 }
 
-/// @brief Assemble bilinear form into a matrix
+/// @brief Assemble bilinear form into a matrix.
 /// @param[in] mat_add The function for adding values into the matrix.
 /// @param[in] a The bilinear from to assemble.
 /// @param[in] constants Constants that appear in `a`.

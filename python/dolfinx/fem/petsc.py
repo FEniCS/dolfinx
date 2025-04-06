@@ -44,8 +44,8 @@ from dolfinx.cpp.fem.petsc import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem.petsc import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem.petsc import interpolation_matrix as _interpolation_matrix
 from dolfinx.fem import IntegralType, pack_coefficients, pack_constants
-from dolfinx.fem.assemble import _assemble_vector_array
 from dolfinx.fem.assemble import apply_lifting as _apply_lifting
+from dolfinx.fem.assemble import assemble_vector as _assemble_vector
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
 from dolfinx.fem.forms import Form
@@ -165,7 +165,7 @@ def create_vector(
         ]
         if kind == PETSc.Vec.Type.NEST:
             return _cpp.fem.petsc.create_vector_nest(maps)
-        elif kind == PETSc.Vec.Type.MPI:
+        elif kind == PETSc.Vec.Type.MPI or kind is None:
             off_owned = tuple(
                 itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
             )
@@ -199,11 +199,13 @@ def create_matrix(
 
     1. For a single bilinear form, it creates a compatible PETSc matrix
        of type ``kind``.
+
     2. For a rectangular array of bilinear forms, if ``kind`` is
        ``PETSc.Mat.Type.NEST`` or ``kind`` is an array of PETSc ``Mat``
        types (with the same shape as ``a``), a matrix of type
        ``PETSc.Mat.Type.NEST`` is created. The matrix is compatible
        with the forms ``a``.
+
     3. For a rectangular array of bilinear forms, it create a single
        (non-nested) matrix of type ``kind`` that is compatible with the
        array of for forms ``a``. If ``kind`` is ``None``, then the
@@ -355,7 +357,7 @@ def _assemble_vector_vec(
         coeffs = [None] * len(L) if coeffs is None else coeffs
         for b_sub, L_sub, const, coeff in zip(b.getNestSubVecs(), L, constants, coeffs):
             with b_sub.localForm() as b_local:
-                _assemble_vector_array(b_local.array_w, L_sub, const, coeff)
+                _assemble_vector(b_local.array_w, L_sub, const, coeff)
     elif isinstance(L, Iterable):
         constants = pack_constants(L) if constants is None else constants
         coeffs = pack_coefficients(L) if coeffs is None else coeffs
@@ -365,13 +367,13 @@ def _assemble_vector_vec(
                 L, constants, coeffs, offset0, offset0[1:], offset1, offset1[1:]
             ):
                 bx_ = np.zeros((off1 - off0) + (offg1 - offg0), dtype=PETSc.ScalarType)
-                _assemble_vector_array(bx_, L_, const, coeff)
+                _assemble_vector(bx_, L_, const, coeff)
                 size = off1 - off0
                 b_l.array_w[off0:off1] += bx_[:size]
                 b_l.array_w[offg0:offg1] += bx_[size:]
     else:
         with b.localForm() as b_local:
-            _assemble_vector_array(b_local.array_w, L, constants, coeffs)
+            _assemble_vector(b_local.array_w, L, constants, coeffs)
 
     return b
 
@@ -455,8 +457,8 @@ def _assemble_matrix_block_mat(
     a: Iterable[Iterable[Form]],
     bcs: typing.Optional[Iterable[DirichletBC]],
     diag: float,
-    constants: typing.Optional[Iterable[npt.NDArray]] = None,
-    coeffs: typing.Optional[Iterable[Iterable[dict[tuple[IntegralType, int], npt.NDArray]]]] = None,
+    constants: typing.Optional[Iterable[npt.NDArray]],
+    coeffs: typing.Optional[Iterable[Iterable[dict[tuple[IntegralType, int], npt.NDArray]]]],
 ) -> PETSc.Mat:
     """Assemble bilinear forms into a blocked matrix."""
     consts = [pack_constants(forms) for forms in a] if constants is None else constants
@@ -479,9 +481,9 @@ def _assemble_matrix_block_mat(
                 )
                 A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
             elif i == j:
+                row_forms = [row_form for row_form in a_row if row_form is not None]
+                assert len(row_forms) > 0
                 for bc in _bcs:
-                    row_forms = [row_form for row_form in a_row if row_form is not None]
-                    assert len(row_forms) > 0
                     if row_forms[0].function_spaces[0].contains(bc.function_space):
                         raise RuntimeError(
                             f"Diagonal sub-block ({i}, {j}) cannot be 'None' "
@@ -536,9 +538,9 @@ def assemble_matrix_mat(
                     Asub = A.getNestSubMatrix(i, j)
                     assemble_matrix(Asub, a_block, bcs, diag, const, coeff)
                 elif i == j:
+                    row_forms = [row_form for row_form in a_row if row_form is not None]
+                    assert len(row_forms) > 0
                     for bc in bcs:
-                        row_forms = [row_form for row_form in a_row if row_form is not None]
-                        assert len(row_forms) > 0
                         if row_forms[0].function_spaces[0].contains(bc.function_space):
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
@@ -633,13 +635,12 @@ def apply_lifting(
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
         for b_sub, a_sub, const, coeff in zip(b.getNestSubVecs(), a, constants, coeffs):
             const_ = list(
-                map(lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x, const)
+                map(lambda c: np.array([], dtype=PETSc.ScalarType) if c is None else c, const)
             )
             apply_lifting(b_sub, a_sub, bcs, x0, alpha, const_, coeff)
     else:
         with contextlib.ExitStack() as stack:
             if b.getAttr("_blocks") is not None:
-                print("LLLb:")
                 if x0 is not None:
                     offset0, offset1 = x0.getAttr("_blocks")
                     xl = stack.enter_context(x0.localForm())
@@ -746,8 +747,15 @@ def set_bc(
 class LinearProblem:
     """Class for solving a linear variational problem.
 
-    Solves of the form :math:`a(u, v) = L(v) \\,  \\forall v \\in V`
-    using PETSc as a linear algebra backend.
+    Represents a problem of the form: find :math:`u \\in V` such that
+
+    .. math::
+
+        a(u, v) = L(v) \\forall v \\in W.
+
+    where ``a`` is a bilinear form, ``L`` is a linear form.
+
+    PETSc is used as a thelinear algebra backend.
     """
 
     def __init__(
@@ -764,25 +772,24 @@ class LinearProblem:
         """Initialize solver for a linear variational problem.
 
         Args:
-            a: Bilinear UFL form or a rectangular array of bilinear
-                forms, the left hand side of the variational problem.
-            L: Linear UFL form or a sequence of lienar forms, the right
-                hand side of the variational problem.
-            bcs: Sequecne of Dirichlet boundary conditions.
+            a: Bilinear form or a rectangular array of bilinear
+                forms.
+            L: Linear form or a sequence of lienar forms.
+            bcs: Sequence of Dirichlet boundary conditions.
             u: Solution function. It is be created if not provided.
-            petsc_options: Options that are passed to the linear
-                algebra backend PETSc. For available choices for the
-                'petsc_options' kwarg, see the `PETSc documentation
+            petsc_options: Options that are passed to the PETSc linear
+                solver. For available opions see the `PETSc
+                documentation
                 <https://petsc4py.readthedocs.io/en/stable/manual/ksp/>`_.
             form_compiler_options: Options used in FFCx compilation of
                 this form. Run ``ffcx --help`` at the commandline to see
-                all available options.
+                available options.
             jit_options: Options used in CFFI JIT compilation of C
-                code generated by FFCx. See `python/dolfinx/jit.py` for
-                all available options. Takes priority over all other
+                code generated by FFCx. See ``python/dolfinx/jit.py``
+                for all available options. Takes priority over all other
                 option values.
-            kind: The PETSc matrix and vector type. See
-                :func:`create_matrix` for options.
+            kind: The PETSc matrix. See :func:`create_matrix` for
+                options.
 
         Example::
 
@@ -812,16 +819,14 @@ class LinearProblem:
         self._b = create_vector(self._L, kind=kind)
         self._x = create_vector(self._L, kind=kind)
         if u is None:
+            # Extract function space(s) for u from L
             try:
-                # Extract function space for unknown from the right hand
-                # side of the equation.
                 self._u = _Function(L.arguments()[0].ufl_function_space())
             except AttributeError:
                 self._u = [_Function(_L.arguments()[0].ufl_function_space()) for _L in L]
         else:
             self._u = u
 
-        self.bcs = bcs
         self._bcs0 = _bcs_by_block(_extract_spaces(self._L), bcs) if bcs is not None else None
         self._bcs1 = _bcs_by_block(_extract_spaces(self._a, 1), bcs) if bcs is not None else None
 
@@ -837,7 +842,7 @@ class LinearProblem:
         problem_prefix = f"dolfinx_solve_{id(self)}"
         self._solver.setOptionsPrefix(problem_prefix)
 
-        # Set PETSc options
+        # Set PETSc options on the solver
         opts = PETSc.Options()
         opts.prefixPush(problem_prefix)
         if petsc_options is not None:
@@ -862,11 +867,15 @@ class LinearProblem:
         """Solve the problem."""
 
         # Assemble lhs
+        # TODO: support bcs0, bcs1 in assemble_matrix
+        bc0 = [bc for bcs in self._bcs0 for bc in bcs] if self._bcs0 is not None else []
+        bc1 = [bc for bcs in self._bcs1 for bc in bcs] if self._bcs0 is not None else []
+        bcs = list(set(bc0 + bc1))
         self._A.zeroEntries()
-        assemble_matrix(self._A, self._a, bcs=self.bcs)
+        assemble_matrix(self._A, self._a, bcs=bcs)
         self._A.assemble()
 
-        # Assemble rhs
+        # Zero b and assemble
         if self._b.getType() == PETSc.Vec.Type.NEST:
             for b_sub in self._b.getNestSubVecs():
                 with b_sub.localForm() as b_local:
@@ -876,11 +885,11 @@ class LinearProblem:
                 b_loc.set(0)
         assemble_vector(self._b, self._L)
 
-        # Apply boundary conditions to the rhs
-        if self.bcs is not None:
+        # Apply boundary conditions to the RHS
+        if self._bcs1 is not None:
             apply_lifting(self._b, self._a, bcs=self._bcs1)
         dolfinx.la.petsc._ghost_update(self._b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
-        if self.bcs is not None:
+        if self._bcs0 is not None:
             dolfinx.fem.petsc.set_bc(self._b, self._bcs0)
 
         # Solve linear system and update ghost values in the solution
