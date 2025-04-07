@@ -14,6 +14,7 @@ Note:
 """
 
 import functools
+import itertools
 import typing
 
 from petsc4py import PETSc
@@ -22,27 +23,12 @@ import numpy as np
 import numpy.typing as npt
 
 import dolfinx
-from dolfinx.la import IndexMap, Vector
+from dolfinx.fem.function import FunctionSpace
+from dolfinx.la import Vector
 
 assert dolfinx.has_petsc4py
 
 __all__ = ["assign", "create_vector", "create_vector_wrap"]
-
-
-def create_vector(index_map: IndexMap, bs: int) -> PETSc.Vec:  # type: ignore[name-defined]
-    """Create a distributed PETSc vector.
-
-    Args:
-        index_map: Index map that describes the size and parallel layout of
-            the vector to create.
-        bs: Block size of the vector.
-
-    Returns:
-        PETSc Vec object.
-    """
-    ghosts = index_map.ghosts.astype(PETSc.IntType)  # type: ignore[attr-defined]
-    size = (index_map.size_local * bs, index_map.size_global * bs)
-    return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=index_map.comm)  # type: ignore
 
 
 def create_vector_wrap(x: Vector) -> PETSc.Vec:  # type: ignore[name-defined]
@@ -61,6 +47,90 @@ def create_vector_wrap(x: Vector) -> PETSc.Vec:  # type: ignore[name-defined]
     return PETSc.Vec().createGhostWithArray(  # type: ignore[attr-defined]
         ghosts, x.array, size=size, bsize=bs, comm=index_map.comm
     )
+
+
+def create_vector(
+    V: typing.Union[list[FunctionSpace]],
+    kind: typing.Optional[str] = None,
+) -> PETSc.Vec:
+    """Create a PETSc vector that is compatible with a Functionspace
+    or a list of Functionspace(s).
+
+    Three cases are supported:
+
+    1. For a single functionspace ``V``, if ``kind`` is ``None`` or is
+       ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is
+       compatible with ``V`` is created.
+
+    2. If ``V=[V_0, ..., V_n]`` is a sequence of function spaces and ``kind`` is ``None``
+       or is ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is
+       compatible with ``V`` is created. The created vector ``b`` is
+       initialized such that on each MPI process ``b = [b_0, b_1, ...,
+       b_n, b_0g, b_1g, ..., b_ng]``, where ``b_i`` are the entries
+       associated with the 'owned' degrees-of-freedom for ``V[i]`` and
+       ``b_ig`` are the 'unowned' (ghost) entries for ``V[i]``.
+
+       For this case, the returned vector has an attribute ``_blocks``
+       that holds the local offsets into ``b`` for the (i) owned and
+       (ii) ghost entries for each ``V[i]``. It can be accessed by
+       ``b.getAttr("_blocks")``. The offsets can be used to get views
+       into ``b`` for blocks, e.g.::
+
+           >>> offsets0, offsets1, = b.getAttr("_blocks")
+           >>> offsets0
+           (0, 12, 28)
+           >>> offsets1
+           (28, 32, 35)
+           >>> b0_owned = b.array[offsets0[0]:offsets0[1]]
+           >>> b0_ghost = b.array[offsets1[0]:offsets1[1]]
+           >>> b1_owned = b.array[offsets0[1]:offsets0[2]]
+           >>> b1_ghost = b.array[offsets1[1]:offsets1[2]]
+
+    3. If `V=[V_0, ..., V_n]`` is a sequence of function space and ``kind`` is
+       ``PETSc.Vec.Type.NEST``, a PETSc nested vector (a 'nest' of
+       ghosted PETSc vectors) which is compatible with ``V`` is created.
+
+    Args:
+        V: Functionspace or a sequence of functionspaces.
+        kind: PETSc vector type (``VecType``) to create.
+
+    Returns:
+        A PETSc vector with a layout that is compatible with ````. The
+        vector is not initialised to zero.
+    """
+    if len(V) == 1:
+        # Single space case
+        index_map = V[0].dofmap.index_map
+        bs = V[0].dofmap.index_map_bs
+        ghosts = index_map.ghosts.astype(PETSc.IntType)  # type: ignore[attr-defined]
+        size = (index_map.size_local * bs, index_map.size_global * bs)
+        return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=index_map.comm)  # type: ignore
+
+    maps = [(_V.dofmaps(0).index_map, _V.dofmaps(0).index_map_bs) for _V in V]
+
+    if kind is None or kind == PETSc.Vec.Type.MPI:
+        off_owned = tuple(
+            itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
+        )
+        off_ghost = tuple(
+            itertools.accumulate(
+                maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
+            )
+        )
+
+        b = dolfinx.cpp.fem.petsc.create_vector_block(maps)
+        b.setAttr("_blocks", (off_owned, off_ghost))
+        return b
+
+    elif kind == PETSc.Vec.Type.NEST:
+        return dolfinx.cpp.fem.petsc.create_vector_nest(maps)
+
+    else:
+        raise NotImplementedError(
+            "Vector type must be specified for blocked/nested assembly."
+            f"Vector type '{kind}' not supported."
+            "Did you mean 'nest' or 'mpi'?"
+        )
 
 
 @functools.singledispatch
