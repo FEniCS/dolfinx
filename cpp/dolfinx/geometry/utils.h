@@ -13,6 +13,7 @@
 #include <concepts>
 #include <cstdint>
 #include <deque>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <map>

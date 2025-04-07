@@ -39,6 +39,32 @@ class Form;
 template <std::floating_point T>
 class FunctionSpace;
 
+namespace impl
+{
+// Partition DirichletBCs into test/trial two groups based on the
+// function spaces
+template <dolfinx::scalar T, std::floating_point U>
+std::array<std::vector<std::reference_wrapper<const DirichletBC<T, U>>>, 2>
+bcs_partition(
+    const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
+    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
+{
+  std::array<std::vector<std::reference_wrapper<const DirichletBC<T, U>>>, 2>
+      _bcs;
+  for (auto bc : bcs)
+  {
+    auto V = bc.get().function_space();
+    assert(V);
+    if (V0.contains(*V))
+      _bcs[0].push_back(bc);
+    if (V1.contains(*V))
+      _bcs[1].push_back(bc);
+  }
+  return _bcs;
+}
+
+} // namespace impl
+
 /// @brief Evaluate an Expression on cells or facets.
 ///
 /// This function accepts packed coefficient data, which allows it be
@@ -400,9 +426,8 @@ void apply_lifting(
 
 /// @brief Assemble bilinear form into a matrix. Matrix must already be
 /// initialised. Does not zero or finalise the matrix.
-///
-/// @param[in] mat_add Function for adding values into the matrix.
-/// @param[in] a Bilinear form to assemble.
+/// @param[in] mat_add The function for adding values into the matrix.
+/// @param[in] a The bilinear form to assemble.
 /// @param[in] constants Constants that appear in `a`.
 /// @param[in] coefficients Coefficients that appear in `a`.
 /// @param[in] dof_marker0 Boundary condition markers for the rows. If
@@ -442,12 +467,78 @@ void assemble_matrix(
 }
 
 /// @brief Assemble bilinear form into a matrix.
+///
 /// @param[in] mat_add The function for adding values into the matrix.
 /// @param[in] a The bilinear from to assemble.
 /// @param[in] constants Constants that appear in `a`.
 /// @param[in] coefficients Coefficients that appear in `a`.
-/// @param[in] bcs Boundary conditions to apply. For boundary condition
-/// dofs the row and column are zeroed. The diagonal  entry is not set.
+/// @param[in] bcs0 Boundary conditions to apply to the test space
+/// (rows). For boundary condition dofs the row and column are zeroed.
+/// The diagonal  entry is not set.
+/// @param[in] bcs1 Boundary conditions to apply to the trial space
+/// (columns). For boundary condition dofs the row and column are
+/// zeroed. The diagonal  entry is not set.
+template <dolfinx::scalar T, std::floating_point U>
+void assemble_matrix(
+    auto mat_add, const Form<T, U>& a, std::span<const T> constants,
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<std::span<const T>, int>>& coefficients,
+    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs0,
+    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs1)
+{
+  // NOTE: For mixed-topology meshes, there will be multiple DOF maps,
+  // but the index maps are the same.
+
+  // Build dof markers
+  auto map0 = a.function_spaces().at(0)->dofmaps(0)->index_map;
+  assert(map0);
+  auto bs0 = a.function_spaces().at(0)->dofmaps(0)->index_map_bs();
+  std::int32_t dim0 = bs0 * (map0->size_local() + map0->num_ghosts());
+  std::vector<std::int8_t> dof_marker0;
+  for (auto bc : bcs0)
+  {
+    assert(bc.get().function_space());
+    assert(a.function_spaces().at(0)->contains(*bc.get().function_space()));
+    dof_marker0.resize(dim0, false);
+    bc.get().mark_dofs(dof_marker0);
+  }
+
+  auto map1 = a.function_spaces().at(1)->dofmaps(0)->index_map;
+  assert(map1);
+  auto bs1 = a.function_spaces().at(1)->dofmaps(0)->index_map_bs();
+  std::int32_t dim1 = bs1 * (map1->size_local() + map1->num_ghosts());
+  std::vector<std::int8_t> dof_marker1;
+  for (std::size_t k = 0; k < bcs1.size(); ++k)
+  {
+    assert(bcs1[k].get().function_space());
+    assert(
+        a.function_spaces().at(0)->contains(*bcs1[k].get().function_space()));
+    dof_marker1.resize(dim1, false);
+    bcs1[k].get().mark_dofs(dof_marker1);
+  }
+
+  assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
+                  dof_marker1);
+}
+
+/// @brief Assemble bilinear form into a matrix.
+///
+/// Rows are zeroed for test space degrees-of-freedom that are
+/// constrained by a Dirichlet boundary condition. Columns are zeroed
+/// for trial space degrees-of-freedom that are constrained by a
+/// Dirichlet boundary condition.
+///
+/// This function internally partitions the test and trial space
+/// Dirichlet boundary conditions. Dirichlet boundary conditions that do
+/// not constrain either space are ignored. It is recommended to use the
+/// version of `assemble_matrix` that takes (1) test and (2) trial
+/// Dirichlet boundary arguments.
+///
+/// @param[in] mat_add The function for adding values into the matrix.
+/// @param[in] a The bilinear from to assemble.
+/// @param[in] constants Constants that appear in `a`.
+/// @param[in] coefficients Coefficients that appear in `a`.
+/// @param[in] bcs Boundary conditions to apply.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     auto mat_add, const Form<T, U>& a, std::span<const T> constants,
@@ -455,39 +546,11 @@ void assemble_matrix(
                    std::pair<std::span<const T>, int>>& coefficients,
     const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
 {
-  // Index maps for dof ranges
-  // NOTE: For mixed-topology meshes, there will be multiple DOF maps,
-  // but the index maps are the same.
-  auto map0 = a.function_spaces().at(0)->dofmaps(0)->index_map;
-  auto map1 = a.function_spaces().at(1)->dofmaps(0)->index_map;
-  auto bs0 = a.function_spaces().at(0)->dofmaps(0)->index_map_bs();
-  auto bs1 = a.function_spaces().at(1)->dofmaps(0)->index_map_bs();
-
-  // Build dof markers
-  std::vector<std::int8_t> dof_marker0, dof_marker1;
-  assert(map0);
-  std::int32_t dim0 = bs0 * (map0->size_local() + map0->num_ghosts());
-  assert(map1);
-  std::int32_t dim1 = bs1 * (map1->size_local() + map1->num_ghosts());
-  for (std::size_t k = 0; k < bcs.size(); ++k)
-  {
-    assert(bcs[k].get().function_space());
-    if (a.function_spaces().at(0)->contains(*bcs[k].get().function_space()))
-    {
-      dof_marker0.resize(dim0, false);
-      bcs[k].get().mark_dofs(dof_marker0);
-    }
-
-    if (a.function_spaces().at(1)->contains(*bcs[k].get().function_space()))
-    {
-      dof_marker1.resize(dim1, false);
-      bcs[k].get().mark_dofs(dof_marker1);
-    }
-  }
-
-  // Assemble
-  assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
-                  dof_marker1);
+  assert(a.function_spaces().at(0));
+  assert(a.function_spaces().at(1));
+  auto [bcs0, bcs1] = impl::bcs_partition(*a.function_spaces().at(0),
+                                          *a.function_spaces().at(1), bcs);
+  assemble_matrix(mat_add, a, constants, coefficients, bcs0, bcs1);
 }
 
 /// @brief Assemble bilinear form into a matrix.
@@ -527,12 +590,9 @@ void assemble_matrix(auto mat_add, const Form<T, U>& a,
                      std::span<const std::int8_t> dof_marker1)
 
 {
-  // Prepare constants and coefficients
   const std::vector<T> constants = pack_constants(a);
   auto coefficients = allocate_coefficient_storage(a);
   pack_coefficients(a, coefficients);
-
-  // Assemble
   assemble_matrix(mat_add, a, std::span(constants),
                   make_coefficients_span(coefficients), dof_marker0,
                   dof_marker1);

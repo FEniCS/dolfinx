@@ -11,6 +11,7 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/mesh/utils.h>
 #include <mpi.h>
 #include <optional>
