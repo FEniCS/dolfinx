@@ -41,7 +41,7 @@ class FunctionSpace;
 
 namespace impl
 {
-// Filter DirichletBCs by function spaces
+/// @private Filter DirichletBCs by function spaces
 template <dolfinx::scalar T, std::floating_point U>
 std::vector<std::reference_wrapper<const DirichletBC<T, U>>> bcs_partition(
     const FunctionSpace<U>& V,
@@ -473,11 +473,9 @@ void assemble_matrix(
 /// @param[in] constants Constants that appear in `a`.
 /// @param[in] coefficients Coefficients that appear in `a`.
 /// @param[in] bcs0 Boundary conditions to apply to the test space
-/// (rows). For boundary condition dofs the row and column are zeroed.
-/// The diagonal  entry is not set.
+/// (rows).
 /// @param[in] bcs1 Boundary conditions to apply to the trial space
-/// (columns). For boundary condition dofs the row and column are
-/// zeroed. The diagonal  entry is not set.
+/// (columns).
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     auto mat_add, const Form<T, U>& a, std::span<const T> constants,
@@ -520,10 +518,12 @@ void assemble_matrix(
 
 /// @brief Assemble bilinear form into a matrix.
 ///
+/// Rows and columns constrained by a Dirichlet boundary condition are
+/// zeroed.
+///
 /// @param[in] mat_add The function for adding values into the matrix.
 /// @param[in] a The bilinear from to assemble.
-/// @param[in] bcs Boundary conditions to apply. For boundary condition
-/// dofs the row and column are zeroed.
+/// @param[in] bcs Boundary conditions to apply.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     auto mat_add, const Form<T, U>& a,
@@ -532,14 +532,12 @@ void assemble_matrix(
   const std::vector<T> constants = pack_constants(a);
   auto coefficients = allocate_coefficient_storage(a);
   pack_coefficients(a, coefficients);
-
   assert(a.function_spaces().at(0));
   assert(a.function_spaces().at(1));
   std::vector<std::reference_wrapper<const DirichletBC<T, U>>> bcs0
       = impl::bcs_partition(*a.function_spaces().at(0), bcs);
   std::vector<std::reference_wrapper<const DirichletBC<T, U>>> bcs1
       = impl::bcs_partition(*a.function_spaces().at(1), bcs);
-
   assemble_matrix(mat_add, a, std::span(constants),
                   make_coefficients_span(coefficients), bcs0, bcs1);
 }
