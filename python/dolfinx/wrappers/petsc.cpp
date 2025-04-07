@@ -323,6 +323,10 @@ void petsc_fem_module(nb::module_& m)
           assert(bc);
           _bcs.push_back(*bc);
         }
+        auto bcs0 = dolfinx::fem::impl::bcs_partition(
+            *a.function_spaces().at(0), _bcs);
+        auto bcs1 = dolfinx::fem::impl::bcs_partition(
+            *a.function_spaces().at(1), _bcs);
 
         if (unrolled)
         {
@@ -331,14 +335,14 @@ void petsc_fem_module(nb::module_& m)
               a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
           dolfinx::fem::assemble_matrix(
               set_fn, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), bcs0, bcs1);
         }
         else
         {
           dolfinx::fem::assemble_matrix(
               dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a,
               std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), bcs0, bcs1);
         }
       },
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),

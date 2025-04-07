@@ -41,24 +41,19 @@ class FunctionSpace;
 
 namespace impl
 {
-// Partition DirichletBCs into test/trial two groups based on the
-// function spaces
+// Filter DirichletBCs by function spaces
 template <dolfinx::scalar T, std::floating_point U>
-std::array<std::vector<std::reference_wrapper<const DirichletBC<T, U>>>, 2>
-bcs_partition(
-    const FunctionSpace<U>& V0, const FunctionSpace<U>& V1,
+std::vector<std::reference_wrapper<const DirichletBC<T, U>>> bcs_partition(
+    const FunctionSpace<U>& V,
     const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
 {
-  std::array<std::vector<std::reference_wrapper<const DirichletBC<T, U>>>, 2>
-      _bcs;
+  std::vector<std::reference_wrapper<const DirichletBC<T, U>>> _bcs;
   for (auto bc : bcs)
   {
-    auto V = bc.get().function_space();
-    assert(V);
-    if (V0.contains(*V))
-      _bcs[0].push_back(bc);
-    if (V1.contains(*V))
-      _bcs[1].push_back(bc);
+    auto V_bc = bc.get().function_space();
+    assert(V_bc);
+    if (V.contains(*V_bc))
+      _bcs.push_back(bc);
   }
   return _bcs;
 }
@@ -426,6 +421,7 @@ void apply_lifting(
 
 /// @brief Assemble bilinear form into a matrix. Matrix must already be
 /// initialised. Does not zero or finalise the matrix.
+///
 /// @param[in] mat_add The function for adding values into the matrix.
 /// @param[in] a The bilinear form to assemble.
 /// @param[in] constants Constants that appear in `a`.
@@ -449,7 +445,6 @@ void assemble_matrix(
   using mdspanx3_t
       = md::mdspan<const scalar_value_t<T>,
                    md::extents<std::size_t, md::dynamic_extent, 3>>;
-
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
   std::span x = mesh->geometry().x();
@@ -467,6 +462,11 @@ void assemble_matrix(
 }
 
 /// @brief Assemble bilinear form into a matrix.
+///
+/// For test space degrees-of-freedom that are constrained by a
+/// Dirichlet boundary condition, the corresponding rows are zeroed. For
+/// trial space degrees-of-freedom that are constrained by a Dirichlet
+/// boundary condition, the corresponding columns are zeroed.
 ///
 /// @param[in] mat_add The function for adding values into the matrix.
 /// @param[in] a The bilinear from to assemble.
@@ -490,31 +490,28 @@ void assemble_matrix(
   // but the index maps are the same.
 
   // Build dof markers
-  auto map0 = a.function_spaces().at(0)->dofmaps(0)->index_map;
-  assert(map0);
-  auto bs0 = a.function_spaces().at(0)->dofmaps(0)->index_map_bs();
-  std::int32_t dim0 = bs0 * (map0->size_local() + map0->num_ghosts());
   std::vector<std::int8_t> dof_marker0;
-  for (auto bc : bcs0)
+  if (!bcs0.empty())
   {
-    assert(bc.get().function_space());
-    assert(a.function_spaces().at(0)->contains(*bc.get().function_space()));
+    auto map0 = a.function_spaces().at(0)->dofmaps(0)->index_map;
+    assert(map0);
+    auto bs0 = a.function_spaces().at(0)->dofmaps(0)->index_map_bs();
+    std::int32_t dim0 = bs0 * (map0->size_local() + map0->num_ghosts());
     dof_marker0.resize(dim0, false);
-    bc.get().mark_dofs(dof_marker0);
+    for (auto bc : bcs0)
+      bc.get().mark_dofs(dof_marker0);
   }
 
-  auto map1 = a.function_spaces().at(1)->dofmaps(0)->index_map;
-  assert(map1);
-  auto bs1 = a.function_spaces().at(1)->dofmaps(0)->index_map_bs();
-  std::int32_t dim1 = bs1 * (map1->size_local() + map1->num_ghosts());
   std::vector<std::int8_t> dof_marker1;
-  for (std::size_t k = 0; k < bcs1.size(); ++k)
+  if (!bcs1.empty())
   {
-    assert(bcs1[k].get().function_space());
-    assert(
-        a.function_spaces().at(0)->contains(*bcs1[k].get().function_space()));
+    auto map1 = a.function_spaces().at(1)->dofmaps(0)->index_map;
+    assert(map1);
+    auto bs1 = a.function_spaces().at(1)->dofmaps(0)->index_map_bs();
+    std::int32_t dim1 = bs1 * (map1->size_local() + map1->num_ghosts());
     dof_marker1.resize(dim1, false);
-    bcs1[k].get().mark_dofs(dof_marker1);
+    for (auto bc : bcs1)
+      bc.get().mark_dofs(dof_marker1);
   }
 
   assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
@@ -523,79 +520,28 @@ void assemble_matrix(
 
 /// @brief Assemble bilinear form into a matrix.
 ///
-/// Rows are zeroed for test space degrees-of-freedom that are
-/// constrained by a Dirichlet boundary condition. Columns are zeroed
-/// for trial space degrees-of-freedom that are constrained by a
-/// Dirichlet boundary condition.
-///
-/// This function internally partitions the test and trial space
-/// Dirichlet boundary conditions. Dirichlet boundary conditions that do
-/// not constrain either space are ignored. It is recommended to use the
-/// version of `assemble_matrix` that takes (1) test and (2) trial
-/// Dirichlet boundary arguments.
-///
-/// @param[in] mat_add The function for adding values into the matrix.
-/// @param[in] a The bilinear from to assemble.
-/// @param[in] constants Constants that appear in `a`.
-/// @param[in] coefficients Coefficients that appear in `a`.
-/// @param[in] bcs Boundary conditions to apply.
-template <dolfinx::scalar T, std::floating_point U>
-void assemble_matrix(
-    auto mat_add, const Form<T, U>& a, std::span<const T> constants,
-    const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::span<const T>, int>>& coefficients,
-    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
-{
-  assert(a.function_spaces().at(0));
-  assert(a.function_spaces().at(1));
-  auto [bcs0, bcs1] = impl::bcs_partition(*a.function_spaces().at(0),
-                                          *a.function_spaces().at(1), bcs);
-  assemble_matrix(mat_add, a, constants, coefficients, bcs0, bcs1);
-}
-
-/// @brief Assemble bilinear form into a matrix.
 /// @param[in] mat_add The function for adding values into the matrix.
 /// @param[in] a The bilinear from to assemble.
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
-/// dofs the row and column are zeroed. The diagonal  entry is not set.
+/// dofs the row and column are zeroed.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     auto mat_add, const Form<T, U>& a,
     const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
 {
-  // Prepare constants and coefficients
   const std::vector<T> constants = pack_constants(a);
   auto coefficients = allocate_coefficient_storage(a);
   pack_coefficients(a, coefficients);
 
-  // Assemble
-  assemble_matrix(mat_add, a, std::span(constants),
-                  make_coefficients_span(coefficients), bcs);
-}
+  assert(a.function_spaces().at(0));
+  assert(a.function_spaces().at(1));
+  std::vector<std::reference_wrapper<const DirichletBC<T, U>>> bcs0
+      = impl::bcs_partition(*a.function_spaces().at(0), bcs);
+  std::vector<std::reference_wrapper<const DirichletBC<T, U>>> bcs1
+      = impl::bcs_partition(*a.function_spaces().at(1), bcs);
 
-/// @brief Assemble bilinear form into a matrix. Matrix must already be
-/// initialised. Does not zero or finalise the matrix.
-///
-/// @param[in] mat_add The function for adding values into the matrix.
-/// @param[in] a The bilinear form to assemble.
-/// @param[in] dof_marker0 Boundary condition markers for the rows. If
-/// `bc[i]` is `true` then rows `i` in A` `will be zeroed. The index `i`
-/// is a local index.
-/// @param[in] dof_marker1 Boundary condition markers for the columns.
-/// If `bc[i]` is `true` then rows `i` in `A` will be zeroed. The index
-/// `i` is a local index.
-template <dolfinx::scalar T, std::floating_point U>
-void assemble_matrix(auto mat_add, const Form<T, U>& a,
-                     std::span<const std::int8_t> dof_marker0,
-                     std::span<const std::int8_t> dof_marker1)
-
-{
-  const std::vector<T> constants = pack_constants(a);
-  auto coefficients = allocate_coefficient_storage(a);
-  pack_coefficients(a, coefficients);
   assemble_matrix(mat_add, a, std::span(constants),
-                  make_coefficients_span(coefficients), dof_marker0,
-                  dof_marker1);
+                  make_coefficients_span(coefficients), bcs0, bcs1);
 }
 
 /// @brief Sets a value to the diagonal of a matrix for specified rows.
