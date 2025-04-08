@@ -19,7 +19,9 @@ from dolfinx.mesh import Mesh
 
 
 def read_mesh(
-    comm: _MPI.Comm, filename: typing.Union[str, Path], dtype: npt.DTypeLike = np.float64,
+    comm: _MPI.Comm,
+    filename: typing.Union[str, Path],
+    dtype: npt.DTypeLike = np.float64,
     gdim: int = 3,
 ):
     """Read a mesh from a VTKHDF format file
