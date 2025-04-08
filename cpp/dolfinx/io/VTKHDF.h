@@ -85,9 +85,8 @@ void io::VTKHDF::write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
 
   // Geometry dofmap and points
   auto geom_imap = mesh.geometry().index_map();
-  std::int32_t gdim = mesh.geometry().dim();
   std::int64_t size_global = geom_imap->size_global();
-  std::vector<std::int64_t> geom_global_shape = {size_global, gdim};
+  std::vector<std::int64_t> geom_global_shape = {size_global, 3};
   auto geom_irange = geom_imap->local_range();
 
   io::hdf5::write_dataset(h5file, "/VTKHDF/Points", mesh.geometry().x().data(),
@@ -186,7 +185,8 @@ void io::VTKHDF::write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
 }
 
 template <typename U>
-mesh::Mesh<U> io::VTKHDF::read_mesh(MPI_Comm comm, std::string filename)
+mesh::Mesh<U> io::VTKHDF ::read_mesh(MPI_Comm comm, std::string filename,
+                                     std::size_t gdim = 3)
 {
   hid_t h5file = io::hdf5::open_file(comm, filename, "r", true);
 
@@ -312,6 +312,16 @@ mesh::Mesh<U> io::VTKHDF::read_mesh(MPI_Comm comm, std::string filename)
       = io::hdf5::read_dataset<U>(dset_id, local_point_range, true);
   H5Dclose(dset_id);
 
+  // Remove coordinates if gdim!=3
+  assert(gdim < 4);
+  std::vector<U> points_pruned((local_point_range[1] - local_point_range[0])
+                               * gdim);
+  for (std::size_t i = 0; i < local_point_range[1] - local_point_range[0]; ++i)
+  {
+    std::copy_n(points_local.begin() + i * 3, gdim,
+                points_pruned.begin() + i * gdim);
+  }
+
   dset_id = io::hdf5::open_dataset(h5file, "/VTKHDF/Connectivity");
   std::vector<std::int64_t> topology = io::hdf5::read_dataset<std::int64_t>(
       dset_id, {offsets.front(), offsets.back()}, true);
@@ -334,18 +344,23 @@ mesh::Mesh<U> io::VTKHDF::read_mesh(MPI_Comm comm, std::string filename)
 
   // Make coordinate elements
   std::vector<fem::CoordinateElement<U>> coordinate_elements;
-  std::transform(dolfinx_cell_type.cbegin(), dolfinx_cell_type.cend(),
-                 dolfinx_cell_degree.cbegin(),
-                 std::back_inserter(coordinate_elements),
-                 [](const auto& cell_type, const auto& cell_degree)
-                 { return fem::CoordinateElement<U>(cell_type, cell_degree); });
+  std::transform(
+      dolfinx_cell_type.cbegin(), dolfinx_cell_type.cend(),
+      dolfinx_cell_degree.cbegin(), std::back_inserter(coordinate_elements),
+      [](const auto& cell_type, const auto& cell_degree)
+      {
+        basix::element::lagrange_variant variant
+            = basix::element::lagrange_variant::unset;
+        if (cell_degree > 2)
+          variant = basix::element::lagrange_variant::equispaced;
+        return fem::CoordinateElement<U>(cell_type, cell_degree, variant);
+      });
 
   auto part = create_cell_partitioner(mesh::GhostMode::none);
   std::vector<std::span<const std::int64_t>> cells_span;
   for (auto& cells : cells_local)
     cells_span.push_back(cells);
-  std::array<std::size_t, 2> xs
-      = {(std::size_t)x_shape[0], (std::size_t)x_shape[1]};
+  std::array<std::size_t, 2> xs = {(std::size_t)x_shape[0], (std::size_t)gdim};
   return create_mesh(comm, comm, cells_span, coordinate_elements, comm,
-                     points_local, xs, part);
+                     points_pruned, xs, part);
 }

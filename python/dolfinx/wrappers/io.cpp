@@ -220,12 +220,18 @@ void io(nb::module_& m)
 
   m.def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<double>)
       .def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<float>);
-  m.def(
-      "read_vtkhdf_mesh_float64", [](MPICommWrapper comm, std::string filename)
-      { return dolfinx::io::VTKHDF::read_mesh<double>(comm.get(), filename); });
-  m.def(
-      "read_vtkhdf_mesh_float32", [](MPICommWrapper comm, std::string filename)
-      { return dolfinx::io::VTKHDF::read_mesh<float>(comm.get(), filename); });
+  m.def("read_vtkhdf_mesh_float64",
+        [](MPICommWrapper comm, std::string filename, std::size_t gdim)
+        {
+          return dolfinx::io::VTKHDF::read_mesh<double>(comm.get(), filename,
+                                                        gdim);
+        });
+  m.def("read_vtkhdf_mesh_float32",
+        [](MPICommWrapper comm, std::string filename, std::size_t gdim)
+        {
+          return dolfinx::io::VTKHDF::read_mesh<float>(comm.get(), filename,
+                                                       gdim);
+        });
 
   // dolfinx::io::cell permutation functions
   m.def("perm_vtk", &dolfinx::io::cells::perm_vtk, nb::arg("type"),
