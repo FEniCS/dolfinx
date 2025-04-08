@@ -473,12 +473,12 @@ def _assemble_matrix_block_mat(
 
     _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
 
-    bcs0 = _bcs_by_block(_extract_spaces(a, 0), bcs) #if bcs is not None else []
-    bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs) #if bcs is not None else []
+    bcs0 = _bcs_by_block(_extract_spaces(a, 0), bcs)  # if bcs is not None else []
+    bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)  # if bcs is not None else []
     for i, a_row in enumerate(a):
         for j, a_sub in enumerate(a_row):
-            _bcs0 =[bc._cpp_object for bc in bcs0[i]]
-            _bcs1 =[bc._cpp_object for bc in bcs1[j]]
+            _bcs0 = [bc._cpp_object for bc in bcs0[i]]
+            _bcs1 = [bc._cpp_object for bc in bcs1[j]]
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is0[i], is1[j])
                 _cpp.fem.petsc.assemble_matrix(
@@ -490,7 +490,6 @@ def _assemble_matrix_block_mat(
                     f"Diagonal sub-block ({i}, {j}) cannot be 'None' and have DirichletBC applied."
                     " Consider assembling a zero block."
                 )
-
 
     # Flush to enable switch from add to set in the matrix
     A.assemble(PETSc.Mat.AssemblyType.FLUSH)
