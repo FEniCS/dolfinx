@@ -29,9 +29,10 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh);
 /// @tparam U Scalar type of mesh
 /// @param comm MPI Communicator for reading mesh
 /// @param filename Filename
+/// @param gdim Geometric dimension
 /// @return a mesh
 template <typename U>
-mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename);
+mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename.std::size_t gdim);
 
 } // namespace dolfinx::io::VTKHDF
 
