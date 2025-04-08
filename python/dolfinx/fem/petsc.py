@@ -475,8 +475,8 @@ def _assemble_matrix_block_mat(
 
     bcs0 = _bcs_by_block(_extract_spaces(a, 0), bcs) if bcs is not None else []
     bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs) if bcs is not None else []
-    print("**** Test0:", bcs0)
-    print("**** Test1:", bcs1)
+    # print("**** Test0:", bcs0)
+    # print("**** Test1:", bcs1)
 
     for i, a_row in enumerate(a):
         for j, a_sub in enumerate(a_row):
@@ -499,7 +499,7 @@ def _assemble_matrix_block_mat(
                 )
                 A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
             elif i == j:
-                print("Test:", bcs0[i], bcs1[i])
+                print("\nTest:", bcs0[i], bcs1[i])
                 # row_forms = [row_form for row_form in a_row if row_form is not None]
                 # assert len(row_forms) > 0
                 # for bc in _bcs:
@@ -548,7 +548,10 @@ def assemble_matrix_mat(
     The returned matrix is not finalised, i.e. ghost values are not
     accumulated.
     """
+
     if A.getType() == PETSc.Mat.Type.NEST:
+        bcs0 = _bcs_by_block(_extract_spaces(a, 0), bcs) if bcs is not None else []
+        bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs) if bcs is not None else []
         constants = [pack_constants(forms) for forms in a] if constants is None else constants
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
         for i, (a_row, const_row, coeff_row) in enumerate(zip(a, constants, coeffs)):
@@ -557,6 +560,7 @@ def assemble_matrix_mat(
                     Asub = A.getNestSubMatrix(i, j)
                     assemble_matrix(Asub, a_block, bcs, diag, const, coeff)
                 elif i == j:
+                    print("\nTestX:", bcs0[i], bcs1[i])
                     row_forms = [row_form for row_form in a_row if row_form is not None]
                     assert len(row_forms) > 0
                     for bc in bcs:
@@ -569,6 +573,7 @@ def assemble_matrix_mat(
     elif isinstance(a, Iterable):  # Blocked
         _assemble_matrix_block_mat(A, a, bcs, diag, constants, coeffs)
     else:  # Non-blocked
+        print("A0000")
         constants = pack_constants(a) if constants is None else constants
         coeffs = pack_coefficients(a) if coeffs is None else coeffs
         V0, V1 = a.function_spaces[0], a.function_spaces[0]
@@ -584,11 +589,13 @@ def assemble_matrix_mat(
         )
         print("bc", bcs0, bcs1)
         _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, bcs0, bcs1)
+        print("bc-posy")
         if V0 is V1:
             A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
             A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
             _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
             _cpp.fem.petsc.insert_diagonal(A, V0, _bcs, diag)
+        print("B0000")
 
     return A
 

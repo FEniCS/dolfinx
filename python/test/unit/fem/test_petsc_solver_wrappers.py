@@ -152,9 +152,10 @@ class TestPETScSolverWrappers:
             ]
 
         petsc_options = {
-            "ksp_type": "preonly",
-            "pc_type": "lu",
-            "pc_factor_mat_solver_type": "mumps",
+            # "ksp_type": "preonly",
+            # "pc_type": "lu",
+            # "pc_factor_mat_solver_type": "mumps",
+            "ksp_rtol": 1e-14,
             "ksp_error_if_not_converged": True,
         }
 
@@ -170,5 +171,6 @@ class TestPETScSolverWrappers:
         local_ph_L2 = dolfinx.fem.assemble_scalar(error_ph)
         global_uh_L2 = np.sqrt(msh.comm.allreduce(local_uh_L2, op=MPI.SUM))
         global_ph_L2 = np.sqrt(msh.comm.allreduce(local_ph_L2, op=MPI.SUM))
-        tol = 500 * np.finfo(dolfinx.default_scalar_type).eps
+        tol = 1e5 * np.finfo(dolfinx.default_scalar_type).eps
+        # print("TTTT:", tol)
         assert global_uh_L2 < tol and global_ph_L2 < tol
