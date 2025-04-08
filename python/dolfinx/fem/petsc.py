@@ -473,43 +473,24 @@ def _assemble_matrix_block_mat(
 
     _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
 
-    bcs0 = _bcs_by_block(_extract_spaces(a, 0), bcs) if bcs is not None else []
-    bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs) if bcs is not None else []
-    # print("**** Test0:", bcs0)
-    # print("**** Test1:", bcs1)
-
+    bcs0 = _bcs_by_block(_extract_spaces(a, 0), bcs) #if bcs is not None else []
+    bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs) #if bcs is not None else []
     for i, a_row in enumerate(a):
         for j, a_sub in enumerate(a_row):
+            _bcs0 =[bc._cpp_object for bc in bcs0[i]]
+            _bcs1 =[bc._cpp_object for bc in bcs1[j]]
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is0[i], is1[j])
-                V0, V1 = a_sub.function_spaces[0], a_sub.function_spaces[1]
-                bcs0 = (
-                    [bc._cpp_object for bc in bcs if V0.contains(bc.function_space)]
-                    if bcs is not None
-                    else []
-                )
-                bcs1 = (
-                    [bc._cpp_object for bc in bcs if V1.contains(bc.function_space)]
-                    if bcs is not None
-                    else []
-                )
-
                 _cpp.fem.petsc.assemble_matrix(
-                    Asub, a_sub._cpp_object, consts[i][j], coeffs[i][j], bcs0, bcs1, True
+                    Asub, a_sub._cpp_object, consts[i][j], coeffs[i][j], _bcs0, _bcs1, True
                 )
                 A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
-            elif i == j:
-                pass
-                # print("\nTest:", bcs0[i], bcs1[i])
-                # row_forms = [row_form for row_form in a_row if row_form is not None]
-                # assert len(row_forms) > 0
-                # for bc in _bcs:
-                #     if row_forms[0].function_spaces[0].contains(bc.function_space):
-                #         raise RuntimeError(
-                #             f"Diagonal sub-block ({i}, {j}) cannot be 'None' "
-                #             " and have DirichletBC applied."
-                #             " Consider assembling a zero block."
-                #         )
+            elif i == j and (len(_bcs0) > 0 or len(_bcs1) > 0):
+                raise RuntimeError(
+                    f"Diagonal sub-block ({i}, {j}) cannot be 'None' and have DirichletBC applied."
+                    " Consider assembling a zero block."
+                )
+
 
     # Flush to enable switch from add to set in the matrix
     A.assemble(PETSc.Mat.AssemblyType.FLUSH)
@@ -560,12 +541,11 @@ def assemble_matrix_mat(
                 if a_block is not None:
                     Asub = A.getNestSubMatrix(i, j)
                     assemble_matrix(Asub, a_block, bcs, diag, const, coeff)
-                elif i == j:
-                    if len(bcs0[i]) > 0 or len(bcs1[i]) > 0:
-                        raise RuntimeError(
-                            f"Diagonal sub-block ({i}, {j}) cannot be 'None' and have DirichletBC"
-                            " applied. Consider assembling a zero block."
-                        )
+                elif i == j and (len(bcs0[i]) > 0 or len(bcs1[i]) > 0):
+                    raise RuntimeError(
+                        f"Diagonal sub-block ({i}, {j}) cannot be 'None' and have DirichletBC"
+                        " applied. Consider assembling a zero block."
+                    )
     elif isinstance(a, Iterable):  # Blocked
         _assemble_matrix_block_mat(A, a, bcs, diag, constants, coeffs)
     else:  # Non-blocked

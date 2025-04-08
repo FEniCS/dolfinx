@@ -251,6 +251,6 @@ def bcs_by_block(
 
     def _bc_space(V, bcs):
         """Return list of bcs that have the same space as V"""
-        return [bc for bc in bcs if V.contains(bc.function_space)]
+        return [bc for bc in bcs if V.contains(bc.function_space)] if bcs is not None else []
 
     return [_bc_space(V, bcs) if V is not None else [] for V in spaces]
