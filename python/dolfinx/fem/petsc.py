@@ -482,7 +482,7 @@ def _assemble_matrix_block_mat(
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is0[i], is1[j])
-                V0, V1 = a_sub.function_spaces[0], a_sub.function_spaces[0]
+                V0, V1 = a_sub.function_spaces[0], a_sub.function_spaces[1]
                 bcs0 = (
                     [bc._cpp_object for bc in bcs if V0.contains(bc.function_space)]
                     if bcs is not None
@@ -499,7 +499,8 @@ def _assemble_matrix_block_mat(
                 )
                 A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
             elif i == j:
-                print("\nTest:", bcs0[i], bcs1[i])
+                pass
+                # print("\nTest:", bcs0[i], bcs1[i])
                 # row_forms = [row_form for row_form in a_row if row_form is not None]
                 # assert len(row_forms) > 0
                 # for bc in _bcs:
@@ -560,23 +561,17 @@ def assemble_matrix_mat(
                     Asub = A.getNestSubMatrix(i, j)
                     assemble_matrix(Asub, a_block, bcs, diag, const, coeff)
                 elif i == j:
-                    print("\nTestX:", bcs0[i], bcs1[i])
-                    row_forms = [row_form for row_form in a_row if row_form is not None]
-                    assert len(row_forms) > 0
-                    for bc in bcs:
-                        if row_forms[0].function_spaces[0].contains(bc.function_space):
-                            raise RuntimeError(
-                                f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
-                                " and have DirichletBC applied."
-                                " Consider assembling a zero block."
-                            )
+                    if len(bcs0) > 0 or len(bcs1) > 1:
+                        raise RuntimeError(
+                            f"Diagonal sub-block ({i}, {j}) cannot be 'None' and have DirichletBC"
+                            " applied. Consider assembling a zero block."
+                        )
     elif isinstance(a, Iterable):  # Blocked
         _assemble_matrix_block_mat(A, a, bcs, diag, constants, coeffs)
     else:  # Non-blocked
-        print("A0000")
         constants = pack_constants(a) if constants is None else constants
         coeffs = pack_coefficients(a) if coeffs is None else coeffs
-        V0, V1 = a.function_spaces[0], a.function_spaces[0]
+        V0, V1 = a.function_spaces[0], a.function_spaces[1]
         bcs0 = (
             [bc._cpp_object for bc in bcs if V0.contains(bc.function_space)]
             if bcs is not None
@@ -587,15 +582,12 @@ def assemble_matrix_mat(
             if bcs is not None
             else []
         )
-        print("bc", bcs0, bcs1)
         _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, bcs0, bcs1)
-        print("bc-posy")
         if V0 is V1:
             A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
             A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
             _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
             _cpp.fem.petsc.insert_diagonal(A, V0, _bcs, diag)
-        print("B0000")
 
     return A
 
