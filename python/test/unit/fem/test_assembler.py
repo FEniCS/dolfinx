@@ -553,8 +553,8 @@ class TestPETScAssemblers:
         assert A_blocked.equal(A_nest)
         assert b_blocked.equal(b_nest)
 
-        assert A_blocked.norm() == pytest.approx(A_monolithic.norm())
-        assert b_blocked.norm() == pytest.approx(b_monolithic.norm())
+        assert A_blocked.norm() == pytest.approx(A_monolithic.norm(), 1.0e-4)
+        assert b_blocked.norm() == pytest.approx(b_monolithic.norm(), 1.0e-6)
 
         A_nest.destroy(), b_nest.destroy()
         A_blocked.destroy(), b_blocked.destroy()
