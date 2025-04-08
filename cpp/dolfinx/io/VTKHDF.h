@@ -32,7 +32,7 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh);
 /// @param gdim Geometric dimension
 /// @return a mesh
 template <typename U>
-mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename.std::size_t gdim);
+mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename, std::size_t gdim);
 
 } // namespace dolfinx::io::VTKHDF
 
