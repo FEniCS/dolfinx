@@ -377,9 +377,9 @@ def block_iterative_solver():
     offset_u = V_map.local_range[0] * V.dofmap.index_map_bs + Q_map.local_range[0]
     offset_p = offset_u + V_map.size_local * V.dofmap.index_map_bs
     is_u = PETSc.IS().createStride(
-        V_map.size_local * V.dofmap.index_map_bs, offset_u, 1, comm=PETSc.COMM_SELF
+        V_map.size_local * V.dofmap.index_map_bs, offset_u, 1, comm=msh.comm
     )
-    is_p = PETSc.IS().createStride(Q_map.size_local, offset_p, 1, comm=PETSc.COMM_SELF)
+    is_p = PETSc.IS().createStride(Q_map.size_local, offset_p, 1, comm=msh.comm)
 
     # Create a MINRES Krylov solver and a block-diagonal preconditioner
     # using PETSc's additive fieldsplit preconditioner
