@@ -188,7 +188,7 @@ void io::VTKHDF::write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
 
 template <typename U>
 mesh::Mesh<U> io::VTKHDF ::read_mesh(MPI_Comm comm, std::string filename,
-                                     std::size_t gdim = 3)
+                                     std::size_t gdim)
 {
   hid_t h5file = io::hdf5::open_file(comm, filename, "r", true);
 
