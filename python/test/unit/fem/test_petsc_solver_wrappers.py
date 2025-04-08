@@ -151,7 +151,7 @@ class TestPETScSolverWrappers:
                 dolfinx.fem.dirichletbc(p_bc, dofs_Q),
             ]
 
-        eps = 1e3 * np.finfo(PETSc.RealType()).eps
+        eps = 1e2 * np.finfo(PETSc.RealType()).eps
         petsc_options = {
             # "ksp_type": "preonly",
             # "pc_type": "lu",
