@@ -561,7 +561,7 @@ def assemble_matrix_mat(
                     Asub = A.getNestSubMatrix(i, j)
                     assemble_matrix(Asub, a_block, bcs, diag, const, coeff)
                 elif i == j:
-                    if len(bcs0) > 0 or len(bcs1) > 1:
+                    if len(bcs0[i]) > 0 or len(bcs1[i]) > 0:
                         raise RuntimeError(
                             f"Diagonal sub-block ({i}, {j}) cannot be 'None' and have DirichletBC"
                             " applied. Consider assembling a zero block."
