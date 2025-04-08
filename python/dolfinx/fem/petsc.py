@@ -472,24 +472,43 @@ def _assemble_matrix_block_mat(
     )
 
     _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
+
+    bcs0 = _bcs_by_block(_extract_spaces(a, 0), bcs) if bcs is not None else []
+    bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs) if bcs is not None else []
+    print("**** Test0:", bcs0)
+    print("**** Test1:", bcs1)
+
     for i, a_row in enumerate(a):
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is0[i], is1[j])
+                V0, V1 = a_sub.function_spaces[0], a_sub.function_spaces[0]
+                bcs0 = (
+                    [bc._cpp_object for bc in bcs if V0.contains(bc.function_space)]
+                    if bcs is not None
+                    else []
+                )
+                bcs1 = (
+                    [bc._cpp_object for bc in bcs if V1.contains(bc.function_space)]
+                    if bcs is not None
+                    else []
+                )
+
                 _cpp.fem.petsc.assemble_matrix(
-                    Asub, a_sub._cpp_object, consts[i][j], coeffs[i][j], _bcs, True
+                    Asub, a_sub._cpp_object, consts[i][j], coeffs[i][j], bcs0, bcs1, True
                 )
                 A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
             elif i == j:
-                row_forms = [row_form for row_form in a_row if row_form is not None]
-                assert len(row_forms) > 0
-                for bc in _bcs:
-                    if row_forms[0].function_spaces[0].contains(bc.function_space):
-                        raise RuntimeError(
-                            f"Diagonal sub-block ({i}, {j}) cannot be 'None' "
-                            " and have DirichletBC applied."
-                            " Consider assembling a zero block."
-                        )
+                print("Test:", bcs0[i], bcs1[i])
+                # row_forms = [row_form for row_form in a_row if row_form is not None]
+                # assert len(row_forms) > 0
+                # for bc in _bcs:
+                #     if row_forms[0].function_spaces[0].contains(bc.function_space):
+                #         raise RuntimeError(
+                #             f"Diagonal sub-block ({i}, {j}) cannot be 'None' "
+                #             " and have DirichletBC applied."
+                #             " Consider assembling a zero block."
+                #         )
 
     # Flush to enable switch from add to set in the matrix
     A.assemble(PETSc.Mat.AssemblyType.FLUSH)
@@ -524,7 +543,7 @@ def assemble_matrix_mat(
 
     The matrix vector ``A`` must have been initialized with a
     size/layout that is consistent with the bilinear form(s). The PETSc
-    matrix ``A`` is normally created by :func:`create_matrix`.
+    matrix ``A`` is normally created by :func:`create_matrix`.bcs
 
     The returned matrix is not finalised, i.e. ghost values are not
     accumulated.
@@ -552,12 +571,24 @@ def assemble_matrix_mat(
     else:  # Non-blocked
         constants = pack_constants(a) if constants is None else constants
         coeffs = pack_coefficients(a) if coeffs is None else coeffs
-        _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
-        _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs)
-        if a.function_spaces[0] is a.function_spaces[1]:
+        V0, V1 = a.function_spaces[0], a.function_spaces[0]
+        bcs0 = (
+            [bc._cpp_object for bc in bcs if V0.contains(bc.function_space)]
+            if bcs is not None
+            else []
+        )
+        bcs1 = (
+            [bc._cpp_object for bc in bcs if V1.contains(bc.function_space)]
+            if bcs is not None
+            else []
+        )
+        print("bc", bcs0, bcs1)
+        _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, bcs0, bcs1)
+        if V0 is V1:
             A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
             A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
-            _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], _bcs, diag)
+            _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
+            _cpp.fem.petsc.insert_diagonal(A, V0, _bcs, diag)
 
     return A
 
