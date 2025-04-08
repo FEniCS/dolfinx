@@ -381,6 +381,8 @@ class TestPETScAssemblers:
                 kind=[["baij", "aij", "aij"], ["aij", "", "aij"], ["aij", "aij", "aij"]],
             )
             A.assemble()
+            assert A.type == "nest"
+
             with pytest.raises(RuntimeError):
                 petsc_assemble_matrix(a_block_none, bcs=[bc])
 
@@ -502,12 +504,10 @@ class TestPETScAssemblers:
 
         def nest():
             """Nested (MatNest)"""
-            A = petsc_assemble_matrix(
-                a_block,
-                bcs=[bc],
-                kind=[["baij", "aij", "aij"], ["aij", "", "aij"], ["aij", "aij", "aij"]],
-            )
+            A = petsc_assemble_matrix(a_block, bcs=[bc], kind="nest")
             A.assemble()
+
+            assert A.type == "nest"
 
             b = petsc_assemble_vector(L_block, kind="nest")
             bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a_block, 1), bcs=[bc])
