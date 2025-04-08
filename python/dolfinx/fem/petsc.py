@@ -455,7 +455,8 @@ def assemble_matrix(
 def _assemble_matrix_block_mat(
     A: PETSc.Mat,
     a: Iterable[Iterable[Form]],
-    bcs: typing.Optional[Iterable[DirichletBC]],
+    bcs0: typing.Optional[Iterable[Iterable[DirichletBC]]],
+    bcs1: typing.Optional[Iterable[Iterable[DirichletBC]]],
     diag: float,
     constants: typing.Optional[Iterable[npt.NDArray]],
     coeffs: typing.Optional[Iterable[Iterable[dict[tuple[IntegralType, int], npt.NDArray]]]],
@@ -470,15 +471,10 @@ def _assemble_matrix_block_mat(
     is1 = _cpp.la.petsc.create_index_sets(
         [(Vsub.dofmaps(0).index_map, Vsub.dofmaps(0).index_map_bs) for Vsub in V[1]]
     )
-
-    _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
-
-    bcs0 = _bcs_by_block(_extract_spaces(a, 0), bcs)  # if bcs is not None else []
-    bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)  # if bcs is not None else []
-    for i, a_row in enumerate(a):
-        for j, a_sub in enumerate(a_row):
-            _bcs0 = [bc._cpp_object for bc in bcs0[i]]
-            _bcs1 = [bc._cpp_object for bc in bcs1[j]]
+    for i, (a_row, bc0) in enumerate(zip(a, bcs0)):
+        _bcs0 = [bc._cpp_object for bc in bc0]
+        for j, (a_sub, bc1) in enumerate(zip(a_row, bcs1)):
+            _bcs1 = [bc._cpp_object for bc in bc1]
             if a_sub is not None:
                 Asub = A.getLocalSubMatrix(is0[i], is1[j])
                 _cpp.fem.petsc.assemble_matrix(
@@ -496,12 +492,13 @@ def _assemble_matrix_block_mat(
 
     # Set diagonal
     for i, a_row in enumerate(a):
+        _bcs0 = [bc._cpp_object for bc in bc0]
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
-                Asub = A.getLocalSubMatrix(is0[i], is1[j])
                 if a_sub.function_spaces[0] is a_sub.function_spaces[1]:
-                    _cpp.fem.petsc.insert_diagonal(Asub, a_sub.function_spaces[0], _bcs, diag)
-                A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
+                    Asub = A.getLocalSubMatrix(is0[i], is1[j])
+                    _cpp.fem.petsc.insert_diagonal(Asub, a_sub.function_spaces[0], _bcs0, diag)
+                    A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
 
     return A
 
@@ -546,7 +543,10 @@ def assemble_matrix_mat(
                         " applied. Consider assembling a zero block."
                     )
     elif isinstance(a, Iterable):  # Blocked
-        _assemble_matrix_block_mat(A, a, bcs, diag, constants, coeffs)
+        # _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
+        bcs0 = _bcs_by_block(_extract_spaces(a, 0), bcs)
+        bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
+        _assemble_matrix_block_mat(A, a, bcs0, bcs1, diag, constants, coeffs)
     else:  # Non-blocked
         constants = pack_constants(a) if constants is None else constants
         coeffs = pack_coefficients(a) if coeffs is None else coeffs
