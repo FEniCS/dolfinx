@@ -367,12 +367,11 @@ class TestPETScAssemblers:
             set_bc(b, bcs0)
 
             assert A.getType() != "nest"
-            Anorm = A.norm()
-            bnorm = b.norm()
-            A.destroy(), b.destroy()
+
             with pytest.raises(RuntimeError):
                 petsc_assemble_matrix(a_block_none, bcs=[bc])
-            return Anorm, bnorm
+
+            return A, b
 
         def nest():
             """Nested (MatNest)"""
@@ -393,10 +392,8 @@ class TestPETScAssemblers:
             bcs0 = bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
             petsc_set_bc(b, bcs0)
             b.assemble()
-            bnorm = math.sqrt(sum([x.norm() ** 2 for x in b.getNestSubVecs()]))
-            Anorm = nest_matrix_norm(A)
-            A.destroy(), b.destroy()
-            return Anorm, bnorm
+
+            return A, b
 
         def monolithic():
             """Monolithic version"""
@@ -426,19 +423,22 @@ class TestPETScAssemblers:
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             petsc_set_bc(b, [bc])
             assert A.getType() != "nest"
-            Anorm = A.norm()
-            bnorm = b.norm()
-            A.destroy(), b.destroy()
-            return Anorm, bnorm
 
-        Anorm0, bnorm0 = blocked()
-        Anorm1, bnorm1 = nest()
-        assert Anorm1 == pytest.approx(Anorm0, 1.0e-4)
-        assert bnorm1 == pytest.approx(bnorm0, 1.0e-6)
+            return A, b
 
-        Anorm2, bnorm2 = monolithic()
-        assert Anorm2 == pytest.approx(Anorm0, 1.0e-4)
-        assert bnorm2 == pytest.approx(bnorm0, 1.0e-6)
+        A_blocked, b_blocked = blocked()
+        A_nest, b_nest = nest()
+        A_monolithic, b_monolithic = monolithic()
+
+        assert A_blocked.equal(A_nest)
+        assert b_blocked.equal(b_nest)
+
+        assert A_blocked.norm() == pytest.approx(A_monolithic.norm(), 1.0e-4)
+        assert b_blocked.norm() == pytest.approx(b_monolithic.norm(), 1.0e-6)
+
+        A_nest.destroy(), b_nest.destroy()
+        A_blocked.destroy(), b_blocked.destroy()
+        A_monolithic.destroy(), b_monolithic.destroy()
 
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
     def test_assembly_solve_block(self, mode):
