@@ -750,6 +750,7 @@ class LinearProblem:
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
         kind: typing.Optional[typing.Union[str, Iterable[Iterable[str]]]] = None,
+        P: typing.Optional[typing.Union[ufl.Form, Iterable[Iterable[ufl.Form]]]] = None,
     ) -> None:
         """Initialize solver for a linear variational problem.
 
@@ -773,6 +774,7 @@ class LinearProblem:
                 all available options. Takes priority over all other
                 option values.
             kind: The PETSc matrix and vector type. See :func:`create_matrix` for options.
+            P: UFL form or a rectangular array of bilinear forms used as a preconditioner.
 
         Example::
 
@@ -781,7 +783,7 @@ class LinearProblem:
                                                                      "pc_factor_mat_solver_type":
                                                                        "mumps"})
 
-            problem = LinearProblem([[a00,a01],[None, a11]], [L0, L1], bcs=[bc0, bc1],
+            problem = LinearProblem([[a00, a01], [None, a11]], [L0, L1], bcs=[bc0, bc1],
                                     u=[uh0, uh1])
         """
         self._a = _create_form(
@@ -797,6 +799,15 @@ class LinearProblem:
             jit_options=jit_options,
         )
         self._A = create_matrix(self._a, kind=kind)
+        self._preconditioner = _create_form(
+            P,
+            dtype=PETSc.ScalarType,
+            form_compiler_options=form_compiler_options,
+            jit_options=jit_options,
+        )
+        self._P = (
+            create_matrix(self._preconditioner, kind=kind) if self._preconditioner is not None else None
+        )
 
         # For nest matrices kind can be a nested list.
         kind = "nest" if self._A.getType() == PETSc.Mat.Type.NEST else kind
@@ -820,7 +831,7 @@ class LinearProblem:
             comm = self._u[0].function_space.mesh.comm
 
         self._solver = PETSc.KSP().create(comm)
-        self._solver.setOperators(self._A)
+        self._solver.setOperators(self._A, self._P)
 
         # Give PETSc solver options a unique prefix
         problem_prefix = f"dolfinx_solve_{id(self)}"
@@ -854,6 +865,12 @@ class LinearProblem:
         self._A.zeroEntries()
         assemble_matrix(self._A, self._a, bcs=self.bcs)
         self._A.assemble()
+
+        # Assemble preconditioner
+        if self._P is not None:
+            self._P.zeroEntries()
+            assemble_matrix(self._P, self._preconditioner, bcs=self.bcs)
+            self._P.assemble()
 
         # Assemble rhs
         if self._b.getType() == PETSc.Vec.Type.NEST:
