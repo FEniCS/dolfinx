@@ -200,21 +200,21 @@ jobs:
               /bin/bash -c "source /usr/local/bin/dolfinx-complex-mode && python3 -c $'import dolfinx; from dolfinx.fem import functionspace; from dolfinx.mesh import create_unit_square; from mpi4py import MPI; mesh = create_unit_square(MPI.COMM_WORLD, 10, 10); V = functionspace(mesh, (\"Lagrange\", 1));'"
 
       - name: Login to Docker Hub
-        if: ${publish}
+        if: $publish
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Push to the DockerHub registry
-        if: ${publish}
+        if: $publish
         run: |
           docker push docker.io/dolfinx/dolfinx-onbuild:${{ env.TAG }}
           docker push docker.io/dolfinx/dolfinx:${{ env.TAG }}
           docker push docker.io/dolfinx/lab:${{ env.TAG }}
 
       - name: Cleanup
-        if: ${publish}
+        if: $publish
         run: |
           docker rmi docker.io/dolfinx/lab:${{ env.TAG }}
           docker rmi docker.io/dolfinx/dolfinx:${{ env.TAG }}
@@ -222,7 +222,7 @@ jobs:
 
   create_multiarch_end_user_images:
     name: Create multiarch end-user images
-    if: ${{ github.repository == 'FEniCS/dolfinx' }} && ${publish}
+    if: ${{ github.repository == 'FEniCS/dolfinx' }} && $publish
     runs-on: ubuntu-latest
     needs:
       - create_end_user_images
