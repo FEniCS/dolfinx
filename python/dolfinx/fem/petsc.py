@@ -806,7 +806,9 @@ class LinearProblem:
             jit_options=jit_options,
         )
         self._P = (
-            create_matrix(self._preconditioner, kind=kind) if self._preconditioner is not None else None
+            create_matrix(self._preconditioner, kind=kind)
+            if self._preconditioner is not None
+            else None
         )
 
         # For nest matrices kind can be a nested list.
