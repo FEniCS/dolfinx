@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2025 Garth N. Wells and Jørgen S. Dokken
+# Copyright (C) 2018-2025 Garth N. Wells, Jørgen S. Dokken and Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -23,7 +23,6 @@ from __future__ import annotations
 
 import contextlib
 import functools
-import itertools
 import typing
 from collections.abc import Iterable, Sequence
 
@@ -48,7 +47,7 @@ from dolfinx.fem.assemble import _assemble_vector_array
 from dolfinx.fem.assemble import apply_lifting as _apply_lifting
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
-from dolfinx.fem.forms import Form
+from dolfinx.fem.forms import Form, extract_function_spaces
 from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
@@ -152,38 +151,10 @@ def create_vector(
         A PETSc vector with a layout that is compatible with ``L``. The
         vector is not initialised to zero.
     """
-    try:
-        dofmap = L.function_spaces[0].dofmaps(0)  # Single form case
-        return dolfinx.la.petsc.create_vector(dofmap.index_map, dofmap.index_map_bs)
-    except AttributeError:
-        maps = [
-            (
-                form.function_spaces[0].dofmaps(0).index_map,
-                form.function_spaces[0].dofmaps(0).index_map_bs,
-            )
-            for form in L
-        ]
-        if kind == PETSc.Vec.Type.NEST:
-            return _cpp.fem.petsc.create_vector_nest(maps)
-        elif kind == PETSc.Vec.Type.MPI:
-            off_owned = tuple(
-                itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
-            )
-            off_ghost = tuple(
-                itertools.accumulate(
-                    maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
-                )
-            )
+    if isinstance(L, Form):
+        L = [L]
 
-            b = _cpp.fem.petsc.create_vector_block(maps)
-            b.setAttr("_blocks", (off_owned, off_ghost))
-            return b
-        else:
-            raise NotImplementedError(
-                "Vector type must be specified for blocked/nested assembly."
-                f"Vector type '{kind}' not supported."
-                "Did you mean 'nest' or 'mpi'?"
-            )
+    return dolfinx.la.petsc.create_vector(extract_function_spaces(L), kind)
 
 
 # -- Matrix instantiation ----------------------------------------------------
@@ -299,6 +270,7 @@ def assemble_vector(
         An assembled vector.
     """
     b = create_vector(L, kind=kind)
+
     if kind == PETSc.Vec.Type.NEST:
         for b_sub in b.getNestSubVecs():
             with b_sub.localForm() as b_local:
