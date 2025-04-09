@@ -10,6 +10,17 @@ on:
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 1 * * *"
+  push:
+    branches:
+      - "**"
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - main
+  merge_group:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       tag_prefix:
@@ -52,6 +63,12 @@ on:
         description: "ffcx git ref to checkout"
         default: "main"
         type: string
+        required: true
+
+      publish:
+        description: "Should the container be uploaded to docker hub (use false for testing purposes)"
+        default: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
+        type: bool
         required: true
 
 jobs:
@@ -100,18 +117,21 @@ jobs:
           repository: "FEniCS/basix"
           path: "basix"
           ref: ${{ env.BASIX_REF }}
+
       - name: Checkout UFL
         uses: actions/checkout@v4
         with:
           repository: "FEniCS/ufl"
           path: "ufl"
           ref: ${{ env.UFL_REF }}
+
       - name: Checkout FFCx
         uses: actions/checkout@v4
         with:
           repository: "FEniCS/ffcx"
           path: "ffcx"
           ref: ${{ env.FFCX_REF }}
+
       - name: Checkout DOLFINx
         uses: actions/checkout@v4
         with:
@@ -122,6 +142,7 @@ jobs:
       - name: Set default FFCx options
         run: |
           echo '{ }' > dolfinx/docker/ffcx_options.json
+
       - name: Set default DOLFINx JIT options
         run: |
           echo '{ "cffi_extra_compile_args" : ["-O2"] } ' > dolfinx/docker/dolfinx_jit_options.json
@@ -182,17 +203,21 @@ jobs:
               /bin/bash -c "source /usr/local/bin/dolfinx-complex-mode && python3 -c $'import dolfinx; from dolfinx.fem import functionspace; from dolfinx.mesh import create_unit_square; from mpi4py import MPI; mesh = create_unit_square(MPI.COMM_WORLD, 10, 10); V = functionspace(mesh, (\"Lagrange\", 1));'"
 
       - name: Login to Docker Hub
+        if: ${{ github.event.inputs.publish }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Push to the DockerHub registry
+        if: ${{ github.event.inputs.publish }}
         run: |
           docker push docker.io/dolfinx/dolfinx-onbuild:${{ env.TAG }}
           docker push docker.io/dolfinx/dolfinx:${{ env.TAG }}
           docker push docker.io/dolfinx/lab:${{ env.TAG }}
 
       - name: Cleanup
+        if: ${{ github.event.inputs.publish }}
         run: |
           docker rmi docker.io/dolfinx/lab:${{ env.TAG }}
           docker rmi docker.io/dolfinx/dolfinx:${{ env.TAG }}
@@ -200,7 +225,7 @@ jobs:
 
   create_multiarch_end_user_images:
     name: Create multiarch end-user images
-    if: ${{ github.repository == 'FEniCS/dolfinx' }}
+    if: ${{ github.repository == 'FEniCS/dolfinx' }} && ${{ github.event.inputs.publish }}
     runs-on: ubuntu-latest
     needs:
       - create_end_user_images
