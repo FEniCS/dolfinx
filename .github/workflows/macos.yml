@@ -37,7 +37,7 @@ jobs:
       - name: Install Homebrew dependencies
         run: |
           brew install adios2 boost cmake hdf5-mpi make ninja open-mpi pkgconf pugixml spdlog # FEniCS
-          brew install bison flex gfortran # PETSc
+          brew install bison flex gfortran scalapack # PETSc
 
       - name: Install Python dependencies (petsc4py)
         run: |
@@ -56,10 +56,12 @@ jobs:
             --with-scalar-type=real \
             --with-shared-libraries \
             --with-scalar-type=real \
+            --with-ptscotch-dir=/opt/homebrew \
+            --with-scalapack-dir=/opt/homebrew \
             --download-metis \
+            --download-metis-commit=08c3082720ff9114b8e3cbaa4484a26739cd7d2d \
             --download-parmetis \
-            --download-ptscotch \
-            --download-scalapack \
+            --download-parmetis-commit=53c9341b6c1ba876c97567cb52ddfc87c159dc36 \
             --download-mumps \
             --download-mumps-avoid-mpi-in-place
           make all
