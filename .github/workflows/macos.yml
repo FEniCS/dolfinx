@@ -56,8 +56,8 @@ jobs:
             --with-scalar-type=real \
             --with-shared-libraries \
             --with-scalar-type=real \
-            --with-ptscotch-dir=/opt/homebrew \
-            --with-scalapack-dir=/opt/homebrew \
+            --with-ptscotch-dir=$(brew --prefix scotch) \
+            --with-scalapack-dir=$(brew --prefix scalapack) \
             --download-metis \
             --download-metis-commit=08c3082720ff9114b8e3cbaa4484a26739cd7d2d \
             --download-parmetis \
