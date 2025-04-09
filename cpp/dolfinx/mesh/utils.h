@@ -311,7 +311,6 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
   const auto [geometry_entities, eshape]
       = entities_to_geometry(mesh, dim, entities, false);
 
-  const std::size_t shape1 = eshape[1];
   std::vector<T> n(entities.size() * 3);
   switch (type)
   {
@@ -322,8 +321,8 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
     for (std::size_t i = 0; i < entities.size(); ++i)
     {
       // Get the two vertices as points
-      std::array vertices{geometry_entities[i * shape1],
-                          geometry_entities[i * shape1 + 1]};
+      std::array vertices{geometry_entities[i * eshape[1]],
+                          geometry_entities[i * eshape[1] + 1]};
       std::array p = {std::span<const T, 3>(x.data() + 3 * vertices[0], 3),
                       std::span<const T, 3>(x.data() + 3 * vertices[1], 3)};
 
@@ -345,9 +344,9 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
     for (std::size_t i = 0; i < entities.size(); ++i)
     {
       // Get the three vertices as points
-      std::array vertices = {geometry_entities[i * shape1 + 0],
-                             geometry_entities[i * shape1 + 1],
-                             geometry_entities[i * shape1 + 2]};
+      std::array vertices = {geometry_entities[i * eshape[1] + 0],
+                             geometry_entities[i * eshape[1] + 1],
+                             geometry_entities[i * eshape[1] + 2]};
       std::array p = {std::span<const T, 3>(x.data() + 3 * vertices[0], 3),
                       std::span<const T, 3>(x.data() + 3 * vertices[1], 3),
                       std::span<const T, 3>(x.data() + 3 * vertices[2], 3)};
@@ -374,9 +373,9 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
     for (std::size_t i = 0; i < entities.size(); ++i)
     {
       // Get the three vertices as points
-      std::array vertices = {geometry_entities[i * shape1 + 0],
-                             geometry_entities[i * shape1 + 1],
-                             geometry_entities[i * shape1 + 2]};
+      std::array vertices = {geometry_entities[i * eshape[1] + 0],
+                             geometry_entities[i * eshape[1] + 1],
+                             geometry_entities[i * eshape[1] + 2]};
       std::array p = {std::span<const T, 3>(x.data() + 3 * vertices[0], 3),
                       std::span<const T, 3>(x.data() + 3 * vertices[1], 3),
                       std::span<const T, 3>(x.data() + 3 * vertices[2], 3)};
@@ -726,7 +725,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
       for (std::int32_t entity_dof : closure_dofs_all[tdim][0])
         entity_xdofs.push_back(x_c[entity_dof]);
     }
-    return {entity_xdofs, eshape};
+    return {std::move(entity_xdofs), eshape};
   }
 
   assert(dim != tdim);
@@ -783,7 +782,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
     for (std::int32_t entity_dof : closure_dofs)
       entity_xdofs.push_back(x_c[entity_dof]);
   }
-  return {entity_xdofs, eshape};
+  return {std::move(entity_xdofs), eshape};
 }
 
 /// @brief Create a function that computes destination rank for mesh
@@ -1261,8 +1260,8 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
   // sub-geometry
   const fem::ElementDofLayout layout = geometry.cmap().create_dof_layout();
 
-  [[maybe_unused]] const auto [x_indices, xshape]
-      = entities_to_geometry(mesh, dim, subentity_to_entity, true);
+  const std::vector<std::int32_t> x_indices
+      = entities_to_geometry(mesh, dim, subentity_to_entity, true).first;
 
   std::vector<std::int32_t> sub_x_dofs = x_indices;
   std::ranges::sort(sub_x_dofs);
