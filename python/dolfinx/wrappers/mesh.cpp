@@ -482,10 +482,10 @@ void declare_mesh(nb::module_& m, std::string type)
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities,
          bool permute)
       {
-        std::vector<std::int32_t> idx = dolfinx::mesh::entities_to_geometry(
+        auto [geom_indices, idx_shape] = dolfinx::mesh::entities_to_geometry(
             mesh, dim, std::span(entities.data(), entities.size()), permute);
-        return as_nbarray(std::move(idx),
-                          {entities.size(), idx.size() / entities.size()});
+        return as_nbarray(std::move(geom_indices),
+                          {idx_shape[0], idx_shape[1]});
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"), nb::arg("permute"));
 
