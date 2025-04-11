@@ -245,10 +245,9 @@ std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
     return std::vector<T>(entities.size(), 0);
 
   // Get the geometry dofs for the vertices of each entity
-  const std::vector<std::int32_t> vertex_xdofs
+  const auto [vertex_xdofs, xdof_shape]
       = entities_to_geometry(mesh, dim, entities, false);
-  assert(!entities.empty());
-  const std::size_t num_vertices = vertex_xdofs.size() / entities.size();
+  const std::size_t num_vertices = xdof_shape[1];
 
   // Get the  geometry coordinate
   std::span<const T> x = mesh.geometry().x();
@@ -309,10 +308,9 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
 
   // Find geometry nodes for topology entities
   std::span<const T> x = mesh.geometry().x();
-  std::vector<std::int32_t> geometry_entities
+  const auto [geometry_entities, eshape]
       = entities_to_geometry(mesh, dim, entities, false);
 
-  const std::size_t shape1 = geometry_entities.size() / entities.size();
   std::vector<T> n(entities.size() * 3);
   switch (type)
   {
@@ -323,8 +321,8 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
     for (std::size_t i = 0; i < entities.size(); ++i)
     {
       // Get the two vertices as points
-      std::array vertices{geometry_entities[i * shape1],
-                          geometry_entities[i * shape1 + 1]};
+      std::array vertices{geometry_entities[i * eshape[1]],
+                          geometry_entities[i * eshape[1] + 1]};
       std::array p = {std::span<const T, 3>(x.data() + 3 * vertices[0], 3),
                       std::span<const T, 3>(x.data() + 3 * vertices[1], 3)};
 
@@ -346,9 +344,9 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
     for (std::size_t i = 0; i < entities.size(); ++i)
     {
       // Get the three vertices as points
-      std::array vertices = {geometry_entities[i * shape1 + 0],
-                             geometry_entities[i * shape1 + 1],
-                             geometry_entities[i * shape1 + 2]};
+      std::array vertices = {geometry_entities[i * eshape[1] + 0],
+                             geometry_entities[i * eshape[1] + 1],
+                             geometry_entities[i * eshape[1] + 2]};
       std::array p = {std::span<const T, 3>(x.data() + 3 * vertices[0], 3),
                       std::span<const T, 3>(x.data() + 3 * vertices[1], 3),
                       std::span<const T, 3>(x.data() + 3 * vertices[2], 3)};
@@ -375,9 +373,9 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
     for (std::size_t i = 0; i < entities.size(); ++i)
     {
       // Get the three vertices as points
-      std::array vertices = {geometry_entities[i * shape1 + 0],
-                             geometry_entities[i * shape1 + 1],
-                             geometry_entities[i * shape1 + 2]};
+      std::array vertices = {geometry_entities[i * eshape[1] + 0],
+                             geometry_entities[i * eshape[1] + 1],
+                             geometry_entities[i * eshape[1] + 2]};
       std::array p = {std::span<const T, 3>(x.data() + 3 * vertices[0], 3),
                       std::span<const T, 3>(x.data() + 3 * vertices[1], 3),
                       std::span<const T, 3>(x.data() + 3 * vertices[2], 3)};
@@ -417,9 +415,9 @@ std::vector<T> compute_midpoints(const Mesh<T>& mesh, int dim,
   std::span<const T> x = mesh.geometry().x();
 
   // Build map from entity -> geometry dof
-  const std::vector<std::int32_t> e_to_g
+  const auto [e_to_g, eshape]
       = entities_to_geometry(mesh, dim, entities, false);
-  std::size_t shape1 = e_to_g.size() / entities.size();
+  std::size_t shape1 = eshape[1];
 
   std::vector<T> x_mid(entities.size() * 3, 0);
   for (std::size_t e = 0; e < entities.size(); ++e)
@@ -676,17 +674,17 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 /// @param[in] permute If `true`, permute the DOFs such that they are
 /// consistent with the orientation of `dim`-dimensional mesh entities.
 /// This requires `create_entity_permutations` to be called first.
-/// @return The geometry DOFs associated with the closure of each entity
-/// in `entities`. The shape is `(num_entities, num_xdofs_per_entity)`
-/// and the storage is row-major. The index `indices[i, j]` is the
-/// position in the geometry array of the `j`-th vertex of the
+/// @return Returns The geometry DOFs associated with the closure of each entity
+/// in `entities` and the shape. The shape is `(num_entities,
+/// num_xdofs_per_entity)` and the storage is row-major. The index `indices[i,
+/// j]` is the position in the geometry array of the `j`-th vertex of the
 /// `entity[i]`.
 ///
 /// @pre The mesh connectivities `dim -> mesh.topology().dim()` and
 /// `mesh.topology().dim() -> dim` must have been computed. Otherwise an
 /// exception is thrown.
 template <std::floating_point T>
-std::vector<std::int32_t>
+std::pair<std::vector<std::int32_t>, std::array<std::size_t, 2>>
 entities_to_geometry(const Mesh<T>& mesh, int dim,
                      std::span<const std::int32_t> entities,
                      bool permute = false)
@@ -710,6 +708,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
   std::vector<std::int32_t> entity_xdofs;
   entity_xdofs.reserve(entities.size() * num_entity_dofs);
+  std::array<std::size_t, 2> eshape{entities.size(), num_entity_dofs};
 
   // Get the element's closure DOFs
   const std::vector<std::vector<std::vector<int>>>& closure_dofs_all
@@ -726,7 +725,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
       for (std::int32_t entity_dof : closure_dofs_all[tdim][0])
         entity_xdofs.push_back(x_c[entity_dof]);
     }
-    return entity_xdofs;
+    return {std::move(entity_xdofs), eshape};
   }
 
   assert(dim != tdim);
@@ -783,8 +782,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
     for (std::int32_t entity_dof : closure_dofs)
       entity_xdofs.push_back(x_c[entity_dof]);
   }
-
-  return entity_xdofs;
+  return {std::move(entity_xdofs), eshape};
 }
 
 /// @brief Create a function that computes destination rank for mesh
@@ -1262,8 +1260,8 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
   // sub-geometry
   const fem::ElementDofLayout layout = geometry.cmap().create_dof_layout();
 
-  std::vector<std::int32_t> x_indices
-      = entities_to_geometry(mesh, dim, subentity_to_entity, true);
+  const std::vector<std::int32_t> x_indices
+      = entities_to_geometry(mesh, dim, subentity_to_entity, true).first;
 
   std::vector<std::int32_t> sub_x_dofs = x_indices;
   std::ranges::sort(sub_x_dofs);
