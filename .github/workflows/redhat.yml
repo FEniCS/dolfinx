@@ -38,7 +38,7 @@ jobs:
           python3 -m pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Configure C++
-        run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_SCOTCH=ON -B build -S cpp/
+        run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_PETSC=ON -DDOLFINX_ENABLE_SCOTCH=ON -B build -S cpp/
       - name: Build and install C++ library
         run: |
           cmake --build build
