@@ -110,7 +110,19 @@ add_feature_info(
 
 # ------------------------------------------------------------------------------
 # Enable or disable optional packages
-option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2." OFF)
+
+if(DOLFINX_ENABLE_ADIOS2)
+  set(_REQUIRE_ADIOS2
+      TRUE
+      CACHE BOOL "Is ADIOS2 REQUIRED?"
+  )
+else()
+  set(_REQUIRE_ADIOS2
+      FALSE
+      CACHE BOOL "Is ADIOS2 REQUIRED?"
+  )
+endif()
+option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2." ON)
 set_package_properties(
   ADIOS2 PROPERTIES
   TYPE OPTIONAL
@@ -119,7 +131,19 @@ set_package_properties(
   PURPOSE "IO, including in parallel"
 )
 
-option(DOLFINX_ENABLE_PETSC "Compile with support for PETSc." OFF)
+if(DOLFINX_ENABLE_PETSC)
+  set(_REQUIRE_PETSC
+      TRUE
+      CACHE BOOL "Is PETSc REQUIRED?" INTERNAL
+  )
+else()
+  set(_REQUIRE_PETSC
+      FALSE
+      CACHE BOOL "Is PETSc REQUIRED?" INTERNAL
+  )
+endif()
+
+option(DOLFINX_ENABLE_PETSC "Compile with support for PETSc." ON)
 set_package_properties(
   PETSc PROPERTIES
   TYPE RECOMMENDED
@@ -128,7 +152,18 @@ set_package_properties(
   PURPOSE "Linear and nonlinear solvers"
 )
 
-option(DOLFINX_ENABLE_PARMETIS "Compile with support for ParMETIS." OFF)
+if(DOLFINX_ENABLE_PARMETIS)
+  set(_REQUIRE_PARMETIS
+      TRUE
+      CACHE BOOL "Is Parmetis REQUIRED?" INTERNAL
+  )
+else()
+  set(_REQUIRE_PARMETIS
+      FALSE
+      CACHE BOOL "Is Parmetis REQUIRED?" INTERNAL
+  )
+endif()
+option(DOLFINX_ENABLE_PARMETIS "Compile with support for ParMETIS." ON)
 set_package_properties(
   ParMETIS PROPERTIES
   TYPE RECOMMENDED
@@ -137,7 +172,18 @@ set_package_properties(
   PURPOSE "Parallel graph partitioning"
 )
 
-option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH." OFF)
+if(DOLFINX_ENABLE_SCOTCH)
+  set(_REQUIRE_SCOTCH
+      TRUE
+      CACHE BOOL "Is SCOTCH REQUIRED?" INTERNAL
+  )
+else()
+  set(_REQUIRE_SCOTCH
+      FALSE
+      CACHE BOOL "Is SCOTCH REQUIRED?" INTERNAL
+  )
+endif()
+option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH." ON)
 set_package_properties(
   SCOTCH PROPERTIES
   TYPE OPTIONAL
@@ -147,7 +193,18 @@ set_package_properties(
   PURPOSE "Parallel graph partitioning"
 )
 
-option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc." OFF)
+if(DOLFINX_ENABLE_SLEPC)
+  set(_REQUIRE_SLEPC
+      TRUE
+      CACHE BOOL "Is SLEPc REQUIRED?" INTERNAL
+  )
+else()
+  set(_REQUIRE_SLEPC
+      FALSE
+      CACHE BOOL "Is SLEPc REQUIRED?" INTERNAL
+  )
+endif()
+option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc." ON)
 set_package_properties(
   SLEPc PROPERTIES
   TYPE RECOMMENDED
@@ -156,7 +213,18 @@ set_package_properties(
   PURPOSE "Eigenvalue computation"
 )
 
-option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." OFF)
+if(DOLFINX_ENABLE_KAHIP)
+  set(_REQUIRE_KAHIP
+      TRUE
+      CACHE BOOL "Is KaHIP REQUIRED?" INTERNAL
+  )
+else()
+  set(_REQUIRE_KAHIP
+      FALSE
+      CACHE BOOL "Is KaHIP REQUIRED?" INTERNAL
+  )
+endif()
+option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." ON)
 set_package_properties(
   KaHIP PROPERTIES
   TYPE OPTIONAL
@@ -327,8 +395,10 @@ set_package_properties(
 
 # ------------------------------------------------------------------------------
 # Find optional packages
-if(DOLFINX_ENABLE_ADIOS2)
+if(DOLFINX_ENABLE_ADIOS2 AND _REQUIRE_ADIOS2)
   find_package(ADIOS2 2.8.1 REQUIRED COMPONENTS CXX)
+elseif(DOLFINX_ENABLE_ADIOS2)
+  find_package(ADIOS2 2.8.1 COMPONENTS CXX)
 endif()
 if(ADIOS2_FOUND AND NOT ADIOS2_HAVE_MPI)
   message(
@@ -342,7 +412,11 @@ if(DOLFINX_ENABLE_PETSC)
   set(ENV{PKG_CONFIG_PATH}
       "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
   )
-  pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
+  if(_REQUIRE_PETSC)
+    pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
+  else()
+    pkg_search_module(PETSC OPTIONAL IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
+  endif()
 
   # Setting for FeatureSummary
   if(PETSC_FOUND)
@@ -366,7 +440,11 @@ if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
   set(ENV{PKG_CONFIG_PATH}
       "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}:$ENV{PETSC_DIR}:$ENV{PKG_CONFIG_PATH}"
   )
-  pkg_search_module(SLEPC REQUIRED IMPORTED_TARGET slepc>=3.15)
+  if(_REQUIRE_SLEPC)
+    pkg_search_module(SLEPC REQUIRED IMPORTED_TARGET slepc>=3.15)
+  else()
+    pkg_search_module(SLEPC IMPORTED_TARGET slepc>=3.15)
+  endif()
 
   # Setting for FeatureSummary
   if(SLEPC_FOUND)
@@ -377,7 +455,7 @@ if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
   else()
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SLEPc)
   endif()
-elseif(DOLFINX_ENABLE_SLEPC)
+elseif(_REQUIRE_SLEPC AND NOT PETSC_FOUND)
   message(
     FATAL_ERROR
       "SLEPc requested, but no configured because PETSc was not found."
@@ -394,12 +472,16 @@ if(DOLFINX_ENABLE_SCOTCH)
   endif()
 endif()
 
-if(DOLFINX_ENABLE_PARMETIS)
+if(DOLFINX_ENABLE_PARMETIS AND _REQUIRE_PARMETIS)
   find_package(ParMETIS 4.0.2 REQUIRED)
+elseif(DOLFINX_ENABLE_PARMETIS)
+  find_package(ParMETIS 4.0.2)
 endif()
 
-if(DOLFINX_ENABLE_KAHIP)
+if(DOLFINX_ENABLE_KAHIP AND _REQUIRE_KAHIP)
   find_package(KaHIP REQUIRED)
+elseif(DOLFINX_ENABLE_KAHIP)
+  find_package(KaHIP)
 endif()
 
 # ------------------------------------------------------------------------------
