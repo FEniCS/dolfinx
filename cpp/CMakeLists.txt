@@ -237,7 +237,6 @@ set_package_properties(
 # Check for MPI
 find_package(MPI 3 REQUIRED)
 
-find_package(spdlog REQUIRED)
 # ------------------------------------------------------------------------------
 # Compiler flags
 
@@ -290,8 +289,8 @@ endif()
 # ------------------------------------------------------------------------------
 # Find required packages
 
-# pugixml
 find_package(pugixml REQUIRED)
+find_package(spdlog REQUIRED)
 
 # Note: When updating Boost version, also update DOLFINXConfig.cmake.in
 if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
@@ -466,7 +465,8 @@ endif()
 
 if(DOLFINX_ENABLE_SCOTCH AND _REQUIRE_SCOTCH)
   find_package(
-    SCOTCH REQUIRED CONFIG HINTS $ENV{PETSC_DIR}/$ENV{PETSC_ARCH} $ENV{PETSC_DIR}
+    SCOTCH REQUIRED CONFIG HINTS $ENV{PETSC_DIR}/$ENV{PETSC_ARCH}
+    $ENV{PETSC_DIR}
   )
 elseif(DOLFINX_ENABLE_SCOTCH)
   find_package(
