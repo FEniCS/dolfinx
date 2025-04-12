@@ -110,7 +110,7 @@ add_feature_info(
 
 # ------------------------------------------------------------------------------
 # Enable or disable optional packages
-option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2." ON)
+option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2." OFF)
 set_package_properties(
   ADIOS2 PROPERTIES
   TYPE OPTIONAL
@@ -119,7 +119,7 @@ set_package_properties(
   PURPOSE "IO, including in parallel"
 )
 
-option(DOLFINX_ENABLE_PETSC "Compile with support for PETSc." ON)
+option(DOLFINX_ENABLE_PETSC "Compile with support for PETSc." OFF)
 set_package_properties(
   PETSc PROPERTIES
   TYPE RECOMMENDED
@@ -128,7 +128,7 @@ set_package_properties(
   PURPOSE "Linear and nonlinear solvers"
 )
 
-option(DOLFINX_ENABLE_PARMETIS "Compile with support for ParMETIS." ON)
+option(DOLFINX_ENABLE_PARMETIS "Compile with support for ParMETIS." OFF)
 set_package_properties(
   ParMETIS PROPERTIES
   TYPE RECOMMENDED
@@ -137,7 +137,7 @@ set_package_properties(
   PURPOSE "Parallel graph partitioning"
 )
 
-option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH." ON)
+option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH." OFF)
 set_package_properties(
   SCOTCH PROPERTIES
   TYPE OPTIONAL
@@ -147,7 +147,7 @@ set_package_properties(
   PURPOSE "Parallel graph partitioning"
 )
 
-option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc." ON)
+option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc." OFF)
 set_package_properties(
   SLEPc PROPERTIES
   TYPE RECOMMENDED
@@ -156,7 +156,7 @@ set_package_properties(
   PURPOSE "Eigenvalue computation"
 )
 
-option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." ON)
+option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." OFF)
 set_package_properties(
   KaHIP PROPERTIES
   TYPE OPTIONAL
