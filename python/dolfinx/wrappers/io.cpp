@@ -36,6 +36,7 @@
 #include <vector>
 
 namespace nb = nanobind;
+namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
 namespace dolfinx_wrappers
 {
@@ -159,7 +160,7 @@ void declare_data_types(nb::module_& m)
       [](const dolfinx::mesh::Topology topology,
          nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
              input_global_indices,
-         std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
+         std::int64_t num_nodes_g, const dolfinx::fem::ElementDofLayout& cmap_dof_layout,
          nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> xdofmap,
          int entity_dim,
          nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> entities,

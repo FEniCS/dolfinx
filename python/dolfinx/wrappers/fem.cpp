@@ -51,6 +51,7 @@
 #include <utility>
 
 namespace nb = nanobind;
+namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
 namespace
 {
@@ -127,8 +128,9 @@ void declare_function_space(nb::module_& m, std::string type)
             nb::arg("elements"), "Mixed-element constructor.")
         .def(
             "__init__",
-            [](dolfinx::fem::FiniteElement<T>* self, mesh::CellType cell_type,
-               nb::ndarray<T, nb::ndim<2>, nb::numpy> points,
+            [](dolfinx::fem::FiniteElement<T>* self,
+               dolfinx::mesh::CellType cell_type,
+               nb::ndarray<T, nb::ndim<2>, nb::c_contig> points,
                std::vector<std::size_t> block_shape, bool symmetry)
             {
               std::span<T> pdata(points.data(), points.size());

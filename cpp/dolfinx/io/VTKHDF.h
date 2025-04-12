@@ -51,7 +51,6 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
   attr_id
       = H5Acreate(vtk_group, "Type", atype, space_id, H5P_DEFAULT, H5P_DEFAULT);
   H5Awrite(attr_id, atype, "UnstructuredGrid");
-
   H5Aclose(attr_id);
   H5Sclose(space_id);
   H5Gclose(vtk_group);
@@ -78,12 +77,11 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
   std::array<std::int64_t, 2> geom_irange = geom_imap->local_range();
   hdf5::write_dataset(h5file, "/VTKHDF/Points", mesh.geometry().x().data(),
                       geom_irange, geom_global_shape, true, false);
-
   hdf5::write_dataset(h5file, "VTKHDF/NumberOfPoints", &size_global, {0, 1},
                       {1}, true, false);
 
-  // Note: VTKHDFstores the cells as an adjacency list, where cell types
-  // might be jumbled up
+  // Note: VTKHDF stores the cells as an adjacency list, where cell
+  // types might be jumbled up
   std::vector<std::int64_t> topology_flattened;
   std::vector<std::int64_t> topology_offsets;
   std::vector<std::uint8_t> vtkcelltypes;
@@ -200,11 +198,10 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
   // Create reverse map (VTK -> DOLFINx cell type)
   std::map<std::uint8_t, mesh::CellType> vtk_to_dolfinx;
   {
-    for (mesh::CellType type :
-         {mesh::CellType::point, mesh::CellType::interval,
-          mesh::CellType::triangle, mesh::CellType::quadrilateral,
-          mesh::CellType::tetrahedron, mesh::CellType::prism,
-          mesh::CellType::pyramid, mesh::CellType::hexahedron})
+    for (auto type : {mesh::CellType::point, mesh::CellType::interval,
+                      mesh::CellType::triangle, mesh::CellType::quadrilateral,
+                      mesh::CellType::tetrahedron, mesh::CellType::prism,
+                      mesh::CellType::pyramid, mesh::CellType::hexahedron})
     {
       vtk_to_dolfinx.insert(
           {cells::get_vtk_cell_type(type, mesh::cell_dim(type)), type});
@@ -337,9 +334,8 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
   auto part = create_cell_partitioner(mesh::GhostMode::none);
   std::vector<std::span<const std::int64_t>> cells_span(cells_local.begin(),
                                                         cells_local.end());
-  std::array xs = {(std::size_t)x_shape[0], gdim};
   return mesh::create_mesh(comm, comm, cells_span, coordinate_elements, comm,
-                           points_pruned, xs, part);
+                           points_pruned, {x_shape[0], gdim},
+                           part);
 }
-
 } // namespace dolfinx::io::VTKHDF
