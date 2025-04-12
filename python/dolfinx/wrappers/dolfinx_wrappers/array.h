@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Garth N. Wells
+// Copyright (C) 2021-2025 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -16,11 +16,17 @@ namespace nb = nanobind;
 
 namespace dolfinx_wrappers
 {
-/// Create an n-dimensional nb::ndarray that shares data with a
-/// std::vector.
+/// @brief Create a multi-dimensional `nb::ndarray` that shares data
+/// with a `std::vector`.
 ///
-/// The std::vector owns the data, and the nb::ndarray object keeps the
-/// std::vector alive.
+/// The `std::vector` owns the data, and the `nb::ndarray` object keeps
+/// the `std::vector` alive. Layout is row-major.
+///
+/// @tparam V `std::vector` type.
+/// @param x `std::vector` to move into the `nb::ndarray`.
+/// @param ndim Number of array dimensions (rank).
+/// @param shape Shape of the array.
+/// @return An n-dimensional array that shares data with `x`.
 template <typename V>
   requires std::movable<V>
 auto as_nbarray(V&& x, std::size_t ndim, const std::size_t* shape)
@@ -32,11 +38,16 @@ auto as_nbarray(V&& x, std::size_t ndim, const std::size_t* shape)
       nb::capsule(ptr, [](void* p) noexcept { delete (_V*)p; }));
 }
 
-/// Create an n-dimensional nb::ndarray that shares data with a
-/// std::vector.
+/// @brief Create a multi-dimensional `nb::ndarray` that shares data
+/// with a `std::vector`.
 ///
-/// The std::vector owns the data, and the nb::ndarray object keeps the
-/// std::vector alive.
+/// The `std::vector` owns the data, and the `nb::ndarray` object keeps
+/// the `std::vector` alive. Layout is row-major.
+///
+/// @tparam V `std::vector` type.
+/// @param x `std::vector` to move into the `nb::ndarray`.
+/// @param shape Shape of the array.
+/// @return An n-dimensional array that shares data with `x`.
 template <typename V>
   requires std::movable<V>
 auto as_nbarray(V&& x, std::initializer_list<std::size_t> shape)
@@ -44,10 +55,17 @@ auto as_nbarray(V&& x, std::initializer_list<std::size_t> shape)
   return as_nbarray(std::forward<V>(x), shape.size(), shape.begin());
 }
 
-/// Create a 1D nb::ndarray that shares data with a std::vector.
+/// @brief Create a multi-dimensional `nb::ndarray` that shares data
+/// with a `std::vector`.
 ///
-/// The std::vector owns the data, and the nb::ndarray object keeps the
-/// std::vector alive.
+/// The `std::vector` owns the data, and the `nb::ndarray` object keeps
+/// the `std::vector` alive. Layout is row-major.
+///
+/// @tparam V `std::vector` type.
+/// @tparam W Shape container type.
+/// @param x `std::vector` to move into the `nb::ndarray`.
+/// @param shape Container that hold the shape of the array.
+/// @return An n-dimensional array that shares data with `x`.
 template <typename V, typename W>
   requires std::movable<V>
 auto as_nbarray(V&& x, W&& shape)
@@ -55,10 +73,15 @@ auto as_nbarray(V&& x, W&& shape)
   return as_nbarray(std::forward<V>(x), shape.size(), shape.begin());
 }
 
-/// Create a 1D nb::ndarray that shares data with a std::vector.
+/// @brief Create a 1D `nb::ndarray` that shares data with a
+/// `std::vector`.
 ///
 /// The std::vector owns the data, and the nb::ndarray object keeps the
 /// std::vector alive.
+///
+/// @tparam V `std::vector` type.
+/// @param x `std::vector` to move into the `nb::ndarray`.
+/// @return An 1D array that shares data with `x`.
 template <typename V>
   requires std::movable<V>
 auto as_nbarray(V&& x)
