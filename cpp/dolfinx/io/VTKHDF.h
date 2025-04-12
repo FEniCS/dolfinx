@@ -96,7 +96,7 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
     std::vector<std::int32_t> local_dm;
     local_dm.reserve(g_dofmap.extent(1) * num_cells[i]);
     for (int j = 0; j < num_cells[i]; ++j)
-      for (int k = 0; k < g_dofmap.extent(1); ++k)
+      for (std::size_t k = 0; k < g_dofmap.extent(1); ++k)
         local_dm.push_back(g_dofmap(j, inverse_perm[k]));
 
     std::vector<std::int64_t> global_dm(local_dm.size());
@@ -220,7 +220,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
   for (std::size_t i = 0; i < types.size(); ++i)
   {
     std::int64_t num_nodes = offsets[i + 1] - offsets[i];
-    int cell_degree
+    std::uint8_t cell_degree
         = cells::cell_degree(vtk_to_dolfinx.at(types[i]), num_nodes);
     types_unique.push_back({types[i], cell_degree});
     cell_degrees.push_back(cell_degree);
@@ -292,7 +292,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
   assert(gdim <= 3);
   std::vector<U> points_pruned((local_point_range[1] - local_point_range[0])
                                * gdim);
-  for (std::size_t i = 0; i < local_point_range[1] - local_point_range[0]; ++i)
+  for (std::int64_t i = 0; i < local_point_range[1] - local_point_range[0]; ++i)
   {
     std::copy_n(points_local.begin() + i * 3, gdim,
                 points_pruned.begin() + i * gdim);
@@ -314,7 +314,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
     mesh::CellType cell_type = dolfinx_cell_type[type_index];
     std::vector<std::uint16_t> perm
         = cells::perm_vtk(cell_type, offsets[j + 1] - offsets[j]);
-    for (std::size_t k = 0; k < offsets[j + 1] - offsets[j]; ++k)
+    for (std::int64_t k = 0; k < offsets[j + 1] - offsets[j]; ++k)
       cells_local[type_index].push_back(topology[perm[k] + offsets[j]]);
   }
 

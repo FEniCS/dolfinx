@@ -44,7 +44,7 @@ public:
   FunctionSpace(std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
                 std::shared_ptr<const FiniteElement<geometry_type>> element,
                 std::shared_ptr<const DofMap> dofmap)
-      : _mesh(mesh), _dofmaps{dofmap}, _elements{element},
+      : _mesh(mesh), _elements{element}, _dofmaps{dofmap},
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
   {
     // Do nothing
