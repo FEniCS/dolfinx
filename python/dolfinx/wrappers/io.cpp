@@ -212,7 +212,7 @@ void io(nb::module_& m)
                                                 dofmap.shape(1));
         auto [cells, shape]
             = dolfinx::io::extract_vtk_connectivity(_dofmap, cell);
-        return as_nbarray(std::move(cells), shape.size(), shape.data());
+        return as_nbarray(std::move(cells), shape);
       },
       nb::arg("dofmap"), nb::arg("celltype"),
       "Extract the mesh topology with VTK ordering using "
@@ -271,7 +271,7 @@ void io(nb::module_& m)
           [](dolfinx::io::XDMFFile& self, std::string name, std::string xpath)
           {
             auto [cells, shape] = self.read_topology_data(name, xpath);
-            return as_nbarray(std::move(cells), shape.size(), shape.data());
+            return as_nbarray(std::move(cells), shape);
           },
           nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def(
@@ -280,7 +280,7 @@ void io(nb::module_& m)
           {
             auto [x, shape] = self.read_geometry_data(name, xpath);
             std::vector<double>& _x = std::get<std::vector<double>>(x);
-            return as_nbarray(std::move(_x), shape.size(), shape.data());
+            return as_nbarray(std::move(_x), shape);
           },
           nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_geometry_data", &dolfinx::io::XDMFFile::read_geometry_data,

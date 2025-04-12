@@ -674,13 +674,13 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 /// @param[in] permute If `true`, permute the DOFs such that they are
 /// consistent with the orientation of `dim`-dimensional mesh entities.
 /// This requires `create_entity_permutations` to be called first.
-/// @return Returns The geometry DOFs associated with the closure of each entity
-/// in `entities` and the shape. The shape is `(num_entities,
-/// num_xdofs_per_entity)` and the storage is row-major. The index `indices[i,
-/// j]` is the position in the geometry array of the `j`-th vertex of the
-/// `entity[i]`.
+/// @return Geometry DOFs associated with the closure of each entity in
+/// `entities` and the shape. The shape is `(num_entities,
+/// num_xdofs_per_entity)` and the storage is row-major. The index
+/// `indices[i, j]` is the position in the geometry array of the `j`-th
+/// vertex of the `entity[i]`.
 ///
-/// @pre The mesh connectivities `dim -> mesh.topology().dim()` and
+/// @pre Mesh connectivities `dim -> mesh.topology().dim()` and
 /// `mesh.topology().dim() -> dim` must have been computed. Otherwise an
 /// exception is thrown.
 template <std::floating_point T>
@@ -1307,15 +1307,13 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
                            return x_to_subx_dof_map[x_dof];
                          });
 
-  // Create sub-geometry coordinate element
-  CellType sub_coord_cell
-      = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
-  // Special handling if point meshes, as they only support constant basis
-  // functions
-  int degree = geometry.cmap().degree();
-  if (sub_coord_cell == CellType::point)
-    degree = 0;
-  fem::CoordinateElement<T> sub_cmap(sub_coord_cell, degree,
+  // Sub-geometry coordinate element
+  CellType sub_xcell = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
+
+  // Special handling of point meshes, as they only support constant
+  // basis functions
+  int degree = (sub_xcell == CellType::point) ? 0 : geometry.cmap().degree();
+  fem::CoordinateElement<T> sub_cmap(sub_xcell, degree,
                                      geometry.cmap().variant());
 
   // Sub-geometry input_global_indices

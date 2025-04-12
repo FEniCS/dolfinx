@@ -11,7 +11,6 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <utility>
-#include <vector>
 
 namespace nb = nanobind;
 
@@ -40,7 +39,18 @@ auto as_nbarray(V&& x, std::size_t ndim, const std::size_t* shape)
 /// std::vector alive.
 template <typename V>
   requires std::movable<V>
-auto as_nbarray(V&& x, const std::initializer_list<std::size_t> shape)
+auto as_nbarray(V&& x, std::initializer_list<std::size_t> shape)
+{
+  return as_nbarray(std::forward<V>(x), shape.size(), shape.begin());
+}
+
+/// Create a 1D nb::ndarray that shares data with a std::vector.
+///
+/// The std::vector owns the data, and the nb::ndarray object keeps the
+/// std::vector alive.
+template <typename V, typename W>
+  requires std::movable<V>
+auto as_nbarray(V&& x, W&& shape)
 {
   return as_nbarray(std::forward<V>(x), shape.size(), shape.begin());
 }
