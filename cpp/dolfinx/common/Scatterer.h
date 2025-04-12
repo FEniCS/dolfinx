@@ -18,8 +18,6 @@
 #include <type_traits>
 #include <vector>
 
-using namespace dolfinx;
-
 namespace dolfinx::common
 {
 /// @brief A Scatterer supports the MPI scattering and gathering of data

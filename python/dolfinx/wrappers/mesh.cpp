@@ -484,8 +484,7 @@ void declare_mesh(nb::module_& m, std::string type)
       {
         auto [geom_indices, idx_shape] = dolfinx::mesh::entities_to_geometry(
             mesh, dim, std::span(entities.data(), entities.size()), permute);
-        return as_nbarray(std::move(geom_indices),
-                          {idx_shape[0], idx_shape[1]});
+        return as_nbarray(std::move(geom_indices), idx_shape);
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"), nb::arg("permute"));
 
