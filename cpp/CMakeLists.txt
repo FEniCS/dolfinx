@@ -134,12 +134,12 @@ set_package_properties(
 if(DOLFINX_ENABLE_PETSC)
   set(_REQUIRE_PETSC
       TRUE
-      CACHE BOOL "Is PETSc REQUIRED?"
+      CACHE BOOL "Is PETSc REQUIRED?" INTERNAL
   )
 else()
   set(_REQUIRE_PETSC
       FALSE
-      CACHE BOOL "Is PETSc REQUIRED?"
+      CACHE BOOL "Is PETSc REQUIRED?" INTERNAL
   )
 endif()
 
@@ -155,12 +155,12 @@ set_package_properties(
 if(DOLFINX_ENABLE_PARMETIS)
   set(_REQUIRE_PARMETIS
       TRUE
-      CACHE BOOL "Is Parmetis REQUIRED?"
+      CACHE BOOL "Is Parmetis REQUIRED?" INTERNAL
   )
 else()
   set(_REQUIRE_PARMETIS
       FALSE
-      CACHE BOOL "Is Parmetis REQUIRED?"
+      CACHE BOOL "Is Parmetis REQUIRED?" INTERNAL
   )
 endif()
 option(DOLFINX_ENABLE_PARMETIS "Compile with support for ParMETIS." ON)
@@ -175,12 +175,12 @@ set_package_properties(
 if(DOLFINX_ENABLE_SCOTCH)
   set(_REQUIRE_SCOTCH
       TRUE
-      CACHE BOOL "Is SCOTCH REQUIRED?"
+      CACHE BOOL "Is SCOTCH REQUIRED?" INTERNAL
   )
 else()
   set(_REQUIRE_SCOTCH
       FALSE
-      CACHE BOOL "Is SCOTCH REQUIRED?"
+      CACHE BOOL "Is SCOTCH REQUIRED?" INTERNAL
   )
 endif()
 option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH." ON)
@@ -196,12 +196,12 @@ set_package_properties(
 if(DOLFINX_ENABLE_SLEPC)
   set(_REQUIRE_SLEPC
       TRUE
-      CACHE BOOL "Is SLEPc REQUIRED?"
+      CACHE BOOL "Is SLEPc REQUIRED?" INTERNAL
   )
 else()
   set(_REQUIRE_SLEPC
       FALSE
-      CACHE BOOL "Is SLEPc REQUIRED?"
+      CACHE BOOL "Is SLEPc REQUIRED?" INTERNAL
   )
 endif()
 option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc." ON)
@@ -216,12 +216,12 @@ set_package_properties(
 if(DOLFINX_ENABLE_KAHIP)
   set(_REQUIRE_KAHIP
       TRUE
-      CACHE BOOL "Is KaHIP REQUIRED?"
+      CACHE BOOL "Is KaHIP REQUIRED?" INTERNAL
   )
 else()
   set(_REQUIRE_KAHIP
       FALSE
-      CACHE BOOL "Is KaHIP REQUIRED?"
+      CACHE BOOL "Is KaHIP REQUIRED?" INTERNAL
   )
 endif()
 option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." ON)
