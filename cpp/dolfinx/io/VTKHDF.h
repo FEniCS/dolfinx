@@ -335,7 +335,6 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
   std::vector<std::span<const std::int64_t>> cells_span(cells_local.begin(),
                                                         cells_local.end());
   return mesh::create_mesh(comm, comm, cells_span, coordinate_elements, comm,
-                           points_pruned, {x_shape[0], gdim},
-                           part);
+                           points_pruned, {x_shape[0], gdim}, part);
 }
 } // namespace dolfinx::io::VTKHDF
