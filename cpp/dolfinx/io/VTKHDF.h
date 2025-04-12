@@ -17,10 +17,13 @@
 
 namespace dolfinx::io::VTKHDF
 {
-/// @brief Write a mesh to VTKHDF format
+/// @brief Write a mesh to VTKHDF format.
+///
+/// The mesh is written on the MPI communicator of the mesh.
+///
 /// @tparam U Scalar type of the mesh
-/// @param filename File to write to
-/// @param mesh Mesh
+/// @param filename Name of file to write to.
+/// @param mesh Mesh to write to file.
 template <std::floating_point U>
 void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
 {
@@ -139,8 +142,6 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
   std::transform(topology_offsets.cbegin(), topology_offsets.cend(),
                  topology_offsets.begin(),
                  [topology_start](auto x) { return x + topology_start; });
-  // std::for_each(topology_offsets.begin(), topology_offsets.end(),
-  //               [topology_start](std::int64_t& t) { t += topology_start; });
 
   std::int64_t num_all_cells_global
       = std::accumulate(num_cells_global.begin(), num_cells_global.end(), 0);
@@ -169,12 +170,15 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
   hdf5::close_file(h5file);
 }
 
-/// @brief  Read a mesh from VTKHDF format file
+/// @brief Read a mesh from a VTKHDF format file.
+///
 /// @tparam U Scalar type of mesh
 /// @param comm MPI Communicator for reading mesh
-/// @param filename Filename
-/// @param gdim Geometric dimension
-/// @return a mesh
+/// @param filename Name of the file to read from.
+/// @param gdim Geometric dimension of the mesh. All VTK meshes are
+/// embedded in 3D. Use this argument for meshes that should be in 1D or
+/// 2D.
+/// @return The mesh read from file.
 template <std::floating_point U>
 mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
                         std::size_t gdim = 3)
@@ -209,7 +213,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
 
   // Read in offsets to determine the different cell-types in the mesh
   dset_id = hdf5::open_dataset(h5file, "/VTKHDF/Offsets");
-  std::vector<std::int64_t> offsets = io::hdf5::read_dataset<std::int64_t>(
+  std::vector<std::int64_t> offsets = hdf5::read_dataset<std::int64_t>(
       dset_id, {local_cell_range[0], local_cell_range[1] + 1}, true);
   H5Dclose(dset_id);
 
@@ -280,14 +284,15 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
   std::array<std::int64_t, 2> local_point_range
       = dolfinx::MPI::local_range(rank, npoints[0], mpi_size);
 
-  std::vector x_shape = hdf5::get_dataset_shape(h5file, "/VTKHDF/Points");
+  std::vector<std::int64_t> x_shape
+      = hdf5::get_dataset_shape(h5file, "/VTKHDF/Points");
   dset_id = hdf5::open_dataset(h5file, "/VTKHDF/Points");
   std::vector<U> points_local
       = hdf5::read_dataset<U>(dset_id, local_point_range, true);
   H5Dclose(dset_id);
 
-  // Remove coordinates if gdim!=3
-  assert(gdim < 4);
+  // Remove coordinates if gdim != 3
+  assert(gdim <= 3);
   std::vector<U> points_pruned((local_point_range[1] - local_point_range[0])
                                * gdim);
   for (std::size_t i = 0; i < local_point_range[1] - local_point_range[0]; ++i)
@@ -324,16 +329,15 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
       [](auto cell_type, auto cell_degree)
       {
         basix::element::lagrange_variant variant
-            = basix::element::lagrange_variant::unset;
-        if (cell_degree > 2)
-          variant = basix::element::lagrange_variant::equispaced;
+            = (cell_degree > 2) ? basix::element::lagrange_variant::equispaced
+                                : basix::element::lagrange_variant::unset;
         return fem::CoordinateElement<U>(cell_type, cell_degree, variant);
       });
 
   auto part = create_cell_partitioner(mesh::GhostMode::none);
   std::vector<std::span<const std::int64_t>> cells_span(cells_local.begin(),
                                                         cells_local.end());
-  std::array<std::size_t, 2> xs = {(std::size_t)x_shape[0], (std::size_t)gdim};
+  std::array xs = {(std::size_t)x_shape[0], gdim};
   return mesh::create_mesh(comm, comm, cells_span, coordinate_elements, comm,
                            points_pruned, xs, part);
 }
