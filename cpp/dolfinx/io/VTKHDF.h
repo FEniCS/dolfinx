@@ -5,19 +5,16 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "HDF5Interface.h"
-
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/utils.h>
-
 #include <map>
 #include <vector>
 
 namespace dolfinx::io::VTKHDF
 {
-
 /// @brief Write a mesh to VTKHDF format
 /// @tparam U Scalar type of the mesh
 /// @param filename File to write to
@@ -36,8 +33,6 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
                         std::size_t gdim = 3);
 
 } // namespace dolfinx::io::VTKHDF
-
-using namespace dolfinx;
 
 template <typename U>
 void io::VTKHDF::write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
@@ -73,23 +68,25 @@ void io::VTKHDF::write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
   H5Gclose(vtk_group);
 
   // Extract topology information for each cell type
-  auto cell_types = mesh.topology()->entity_types(mesh.topology()->dim());
+  std::vector<mesh::CellType> cell_types
+      = mesh.topology()->entity_types(mesh.topology()->dim());
 
   std::vector cell_index_maps
       = mesh.topology()->index_maps(mesh.topology()->dim());
   std::vector<std::int32_t> num_cells;
   std::vector<std::int64_t> num_cells_global;
-  for (auto im : cell_index_maps)
+  for (auto& im : cell_index_maps)
   {
     num_cells.push_back(im->size_local());
     num_cells_global.push_back(im->size_global());
   }
 
   // Geometry dofmap and points
-  auto geom_imap = mesh.geometry().index_map();
+  std::shared_ptr<const common::IndexMap> geom_imap
+      = mesh.geometry().index_map();
   std::int64_t size_global = geom_imap->size_global();
   std::vector<std::int64_t> geom_global_shape = {size_global, 3};
-  auto geom_irange = geom_imap->local_range();
+  std::array<std::int64_t, 2> geom_irange = geom_imap->local_range();
 
   io::hdf5::write_dataset(h5file, "/VTKHDF/Points", mesh.geometry().x().data(),
                           geom_irange, geom_global_shape, true, false);
@@ -97,19 +94,21 @@ void io::VTKHDF::write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
   io::hdf5::write_dataset(h5file, "VTKHDF/NumberOfPoints", &size_global, {0, 1},
                           {1}, true, false);
 
-  // VTKHDF stores the cells as an adjacency list,                                \
-  //        where cell types might be jumbled up.
+  // Note: VTKHDFstores the cells as an adjacency list, where cell types
+  // might be jumbled up
   std::vector<std::int64_t> topology_flattened;
   std::vector<std::int64_t> topology_offsets;
   std::vector<std::uint8_t> vtkcelltypes;
   for (int i = 0; i < cell_index_maps.size(); ++i)
   {
-    auto g_dofmap = mesh.geometry().dofmap(i);
+    md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> g_dofmap
+        = mesh.geometry().dofmap(i);
 
+    std::vector<std::uint16_t> perm
+        = io::cells::perm_vtk(cell_types[i], g_dofmap.extent(1));
+    std::vector<std::uint16_t> inverse_perm = io::cells::transpose(perm);
     std::vector<std::int32_t> local_dm;
     local_dm.reserve(g_dofmap.extent(1) * num_cells[i]);
-    auto perm = io::cells::perm_vtk(cell_types[i], g_dofmap.extent(1));
-    auto inverse_perm = io::cells::transpose(perm);
     for (int j = 0; j < num_cells[i]; ++j)
       for (int k = 0; k < g_dofmap.extent(1); ++k)
         local_dm.push_back(g_dofmap(j, inverse_perm[k]));
@@ -127,6 +126,7 @@ void io::VTKHDF::write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
         vtkcelltypes.end(), cell_index_maps[i]->size_local(),
         io::cells::get_vtk_cell_type(cell_types[i], mesh.topology()->dim()));
   }
+
   // Create topo_offsets
   std::partial_sum(topology_offsets.cbegin(), topology_offsets.cend(),
                    topology_offsets.begin());
@@ -137,7 +137,7 @@ void io::VTKHDF::write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
   for (int i = 0; i < cell_index_maps.size(); ++i)
   {
     num_nodes_per_cell.push_back(mesh.geometry().cmaps()[i].dim());
-    auto r = cell_index_maps[i]->local_range();
+    std::array<std::int64_t, 2> r = cell_index_maps[i]->local_range();
     cell_start_pos.push_back(r[0]);
     cell_stop_pos.push_back(r[1]);
   }
@@ -153,8 +153,11 @@ void io::VTKHDF::write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
       = std::inner_product(num_nodes_per_cell.begin(), num_nodes_per_cell.end(),
                            cell_start_pos.begin(), 0);
 
-  std::for_each(topology_offsets.begin(), topology_offsets.end(),
-                [topology_start](std::int64_t& t) { t += topology_start; });
+  std::transform(topology_offsets.cbegin(), topology_offsets.cend(),
+                 topology_offsets.begin(),
+                 [topology_start](auto x) { return x + topology_start; });
+  // std::for_each(topology_offsets.begin(), topology_offsets.end(),
+  //               [topology_start](std::int64_t& t) { t += topology_start; });
 
   std::int64_t num_all_cells_global
       = std::accumulate(num_cells_global.begin(), num_cells_global.end(), 0);
@@ -187,36 +190,34 @@ void io::VTKHDF::write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
 }
 
 template <typename U>
-mesh::Mesh<U> io::VTKHDF ::read_mesh(MPI_Comm comm, std::string filename,
-                                     std::size_t gdim)
+mesh::Mesh<U> io::VTKHDF::read_mesh(MPI_Comm comm, std::string filename,
+                                    std::size_t gdim)
 {
   hid_t h5file = io::hdf5::open_file(comm, filename, "r", true);
 
   std::vector<std::int64_t> shape
       = io::hdf5::get_dataset_shape(h5file, "/VTKHDF/Types");
-  int rank = MPI::rank(comm);
-  int size = MPI::size(comm);
-  auto local_cell_range = dolfinx::MPI::local_range(rank, shape[0], size);
+  int rank = dolfinx::MPI::rank(comm);
+  int mpi_size = dolfinx::MPI::size(comm);
+  std::array<std::int64_t, 2> local_cell_range
+      = dolfinx::MPI::local_range(rank, shape[0], mpi_size);
 
   hid_t dset_id = io::hdf5::open_dataset(h5file, "/VTKHDF/Types");
   std::vector<std::uint8_t> types
       = io::hdf5::read_dataset<std::uint8_t>(dset_id, local_cell_range, true);
   H5Dclose(dset_id);
-  std::vector<std::array<std::uint8_t, 2>> types_unique;
-  types_unique.reserve(types.size());
 
-  // Create reverse map from VTK to dolfinx cell types
+  // Create reverse map (VTK -> DOLFINx cell type)
   std::map<std::uint8_t, mesh::CellType> vtk_to_dolfinx;
-  constexpr std::array<mesh::CellType, 8> dolfinx_cells
-      = {mesh::CellType::point,       mesh::CellType::interval,
-         mesh::CellType::triangle,    mesh::CellType::quadrilateral,
-         mesh::CellType::tetrahedron, mesh::CellType::prism,
-         mesh::CellType::pyramid,     mesh::CellType::hexahedron};
-  for (auto dolfinx_type : dolfinx_cells)
+  constexpr std::array dolfinx_cells{
+      mesh::CellType::point,       mesh::CellType::interval,
+      mesh::CellType::triangle,    mesh::CellType::quadrilateral,
+      mesh::CellType::tetrahedron, mesh::CellType::prism,
+      mesh::CellType::pyramid,     mesh::CellType::hexahedron};
+  for (mesh::CellType type : dolfinx_cells)
   {
-    vtk_to_dolfinx.insert({io::cells::get_vtk_cell_type(
-                               dolfinx_type, mesh::cell_dim(dolfinx_type)),
-                           dolfinx_type});
+    vtk_to_dolfinx.insert(
+        {io::cells::get_vtk_cell_type(type, mesh::cell_dim(type)), type});
   }
 
   // Read in offsets to determine the different cell-types in the mesh
@@ -226,12 +227,12 @@ mesh::Mesh<U> io::VTKHDF ::read_mesh(MPI_Comm comm, std::string filename,
   H5Dclose(dset_id);
 
   // Convert cell offsets to cell type and cell degree tuples
+  std::vector<std::array<std::uint8_t, 2>> types_unique;
   std::vector<std::uint8_t> cell_degrees;
-  cell_degrees.reserve(types.size());
   for (std::size_t i = 0; i < types.size(); ++i)
   {
-    std::uint8_t num_nodes = offsets[i + 1] - offsets[i];
-    std::uint8_t cell_degree
+    std::int64_t num_nodes = offsets[i + 1] - offsets[i];
+    int cell_degree
         = io::cells::cell_degree(vtk_to_dolfinx.at(types[i]), num_nodes);
     types_unique.push_back({types[i], cell_degree});
     cell_degrees.push_back(cell_degree);
@@ -242,21 +243,21 @@ mesh::Mesh<U> io::VTKHDF ::read_mesh(MPI_Comm comm, std::string filename,
     types_unique.erase(unique_end, range_end);
   }
 
-  // Share cell types with all processes to make global list of cell types
-  // FIXME: amount of data is small, but number of connections does not scale.
-  std::int32_t count = 2 * types_unique.size();
-  std::vector<std::int32_t> recv_count(size);
-  std::vector<std::int32_t> recv_offsets(size + 1, 0);
+  // Share cell types with all processes to make global list of cell
+  // types
+  // FIXME: amount of data is small, but number of connections does not
+  // scale
+  int count = 2 * types_unique.size();
+  std::vector<std::int32_t> recv_count(mpi_size);
   MPI_Allgather(&count, 1, MPI_INT32_T, recv_count.data(), 1, MPI_INT32_T,
                 comm);
+  std::vector<std::int32_t> recv_offsets(mpi_size + 1, 0);
   std::partial_sum(recv_count.begin(), recv_count.end(),
                    recv_offsets.begin() + 1);
 
   std::vector<std::array<std::uint8_t, 2>> recv_types;
-  recv_types.reserve(recv_offsets.back());
   {
     std::vector<std::uint8_t> send_types;
-    send_types.reserve(count);
     std::for_each(types_unique.begin(), types_unique.end(),
                   [&send_types](const auto& t)
                   {
@@ -305,7 +306,8 @@ mesh::Mesh<U> io::VTKHDF ::read_mesh(MPI_Comm comm, std::string filename,
       = io::hdf5::read_dataset<std::int64_t>(dset_id, {0, 1}, true);
   H5Dclose(dset_id);
   spdlog::info("Mesh with {} points", npoints[0]);
-  auto local_point_range = MPI::local_range(rank, npoints[0], size);
+  std::array<std::int64_t, 2> local_point_range
+      = dolfinx::MPI::local_range(rank, npoints[0], mpi_size);
 
   std::vector<std::int64_t> x_shape
       = io::hdf5::get_dataset_shape(h5file, "/VTKHDF/Points");
@@ -330,7 +332,7 @@ mesh::Mesh<U> io::VTKHDF ::read_mesh(MPI_Comm comm, std::string filename,
   H5Dclose(dset_id);
   const std::int64_t offset0 = offsets.front();
   std::for_each(offsets.begin(), offsets.end(),
-                [&offset0](std::int64_t& v) { v -= offset0; });
+                [offset0](std::int64_t& v) { v -= offset0; });
   io::hdf5::close_file(h5file);
 
   // Create cell topologies for each celltype in mesh
@@ -339,7 +341,8 @@ mesh::Mesh<U> io::VTKHDF ::read_mesh(MPI_Comm comm, std::string filename,
   {
     std::int32_t type_index = type_to_index.at({types[j], cell_degrees[j]});
     mesh::CellType cell_type = dolfinx_cell_type[type_index];
-    auto perm = io::cells::perm_vtk(cell_type, offsets[j + 1] - offsets[j]);
+    std::vector<std::uint16_t> perm
+        = io::cells::perm_vtk(cell_type, offsets[j + 1] - offsets[j]);
     for (std::size_t k = 0; k < offsets[j + 1] - offsets[j]; ++k)
       cells_local[type_index].push_back(topology[perm[k] + offsets[j]]);
   }
@@ -349,7 +352,7 @@ mesh::Mesh<U> io::VTKHDF ::read_mesh(MPI_Comm comm, std::string filename,
   std::transform(
       dolfinx_cell_type.cbegin(), dolfinx_cell_type.cend(),
       dolfinx_cell_degree.cbegin(), std::back_inserter(coordinate_elements),
-      [](const auto& cell_type, const auto& cell_degree)
+      [](auto cell_type, auto cell_degree)
       {
         basix::element::lagrange_variant variant
             = basix::element::lagrange_variant::unset;
@@ -359,9 +362,8 @@ mesh::Mesh<U> io::VTKHDF ::read_mesh(MPI_Comm comm, std::string filename,
       });
 
   auto part = create_cell_partitioner(mesh::GhostMode::none);
-  std::vector<std::span<const std::int64_t>> cells_span;
-  for (auto& cells : cells_local)
-    cells_span.push_back(cells);
+  std::vector<std::span<const std::int64_t>> cells_span(cells_local.begin(),
+                                                        cells_local.end());
   std::array<std::size_t, 2> xs = {(std::size_t)x_shape[0], (std::size_t)gdim};
   return create_mesh(comm, comm, cells_span, coordinate_elements, comm,
                      points_pruned, xs, part);
