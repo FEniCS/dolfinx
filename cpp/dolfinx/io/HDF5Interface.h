@@ -20,7 +20,6 @@
 
 namespace dolfinx::io::hdf5
 {
-
 /// C++ type to HDF5 data type
 template <typename T>
 hid_t hdf5_type()
