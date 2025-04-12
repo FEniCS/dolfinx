@@ -247,7 +247,6 @@ std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
   // Get the geometry dofs for the vertices of each entity
   const auto [vertex_xdofs, xdof_shape]
       = entities_to_geometry(mesh, dim, entities, false);
-  const std::size_t num_vertices = xdof_shape[1];
 
   // Get the  geometry coordinate
   std::span<const T> x = mesh.geometry().x();
@@ -268,7 +267,7 @@ std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
   {
     // Get geometry 'dof' for each vertex of entity e
     std::span<const std::int32_t> e_vertices(
-        vertex_xdofs.data() + e * num_vertices, num_vertices);
+        vertex_xdofs.data() + e * xdof_shape[1], xdof_shape[1]);
 
     // Compute maximum distance between any two vertices
     for (std::size_t i = 0; i < e_vertices.size(); ++i)
@@ -417,13 +416,13 @@ std::vector<T> compute_midpoints(const Mesh<T>& mesh, int dim,
   // Build map from entity -> geometry dof
   const auto [e_to_g, eshape]
       = entities_to_geometry(mesh, dim, entities, false);
-  std::size_t shape1 = eshape[1];
 
   std::vector<T> x_mid(entities.size() * 3, 0);
   for (std::size_t e = 0; e < entities.size(); ++e)
   {
     std::span<T, 3> p(x_mid.data() + 3 * e, 3);
-    std::span<const std::int32_t> rows(e_to_g.data() + e * shape1, shape1);
+    std::span<const std::int32_t> rows(e_to_g.data() + e * eshape[1],
+                                       eshape[1]);
     for (auto row : rows)
     {
       std::span<const T, 3> xg(x.data() + 3 * row, 3);
@@ -717,14 +716,14 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   // Special case when dim == tdim (cells)
   if (dim == tdim)
   {
-    for (std::size_t i = 0; i < entities.size(); ++i)
+    for (std::int32_t c : entities)
     {
-      const std::int32_t c = entities[i];
       // Extract degrees of freedom
       auto x_c = md::submdspan(xdofs, c, md::full_extent);
       for (std::int32_t entity_dof : closure_dofs_all[tdim][0])
         entity_xdofs.push_back(x_c[entity_dof]);
     }
+
     return {std::move(entity_xdofs), eshape};
   }
 
@@ -751,10 +750,8 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   if (permute)
     cell_info = std::span(mesh.topology()->get_cell_permutation_info());
 
-  for (std::size_t i = 0; i < entities.size(); ++i)
+  for (std::int32_t e : entities)
   {
-    const std::int32_t e = entities[i];
-
     // Get a cell connected to the entity
     assert(!e_to_c->links(e).empty());
     std::int32_t c = e_to_c->links(e).front();
@@ -765,10 +762,9 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
     assert(it != cell_entities.end());
     std::size_t local_entity = std::distance(cell_entities.begin(), it);
 
-    std::vector<std::int32_t> closure_dofs(closure_dofs_all[dim][local_entity]);
-
     // Cell sub-entities must be permuted so that their local
     // orientation agrees with their global orientation
+    std::vector<std::int32_t> closure_dofs(closure_dofs_all[dim][local_entity]);
     if (permute)
     {
       mesh::CellType entity_type
@@ -782,6 +778,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
     for (std::int32_t entity_dof : closure_dofs)
       entity_xdofs.push_back(x_c[entity_dof]);
   }
+
   return {std::move(entity_xdofs), eshape};
 }
 
