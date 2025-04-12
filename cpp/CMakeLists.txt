@@ -110,18 +110,6 @@ add_feature_info(
 
 # ------------------------------------------------------------------------------
 # Enable or disable optional packages
-
-if(DOLFINX_ENABLE_ADIOS2)
-  set(_REQUIRE_ADIOS2
-      TRUE
-      CACHE BOOL "Is ADIOS2 REQUIRED?"
-  )
-else()
-  set(_REQUIRE_ADIOS2
-      FALSE
-      CACHE BOOL "Is ADIOS2 REQUIRED?"
-  )
-endif()
 option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2." ON)
 set_package_properties(
   ADIOS2 PROPERTIES
@@ -395,10 +383,8 @@ set_package_properties(
 
 # ------------------------------------------------------------------------------
 # Find optional packages
-if(DOLFINX_ENABLE_ADIOS2 AND _REQUIRE_ADIOS2)
+if(DOLFINX_ENABLE_ADIOS2)
   find_package(ADIOS2 2.8.1 REQUIRED COMPONENTS CXX)
-elseif(DOLFINX_ENABLE_ADIOS2)
-  find_package(ADIOS2 2.8.1 COMPONENTS CXX)
 endif()
 if(ADIOS2_FOUND AND NOT ADIOS2_HAVE_MPI)
   message(
