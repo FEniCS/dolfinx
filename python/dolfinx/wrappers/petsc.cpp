@@ -187,10 +187,11 @@ void petsc_la_module(nb::module_& m)
 
   m.def(
       "create_index_sets",
-      [](const std::vector<std::pair<const common::IndexMap*, int>>& maps)
+      [](const std::vector<std::pair<const dolfinx::common::IndexMap*, int>>&
+             maps)
       {
-        using X = std::vector<
-            std::pair<std::reference_wrapper<const common::IndexMap>, int>>;
+        using X = std::vector<std::pair<
+            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
         X _maps;
         std::ranges::transform(maps, std::back_inserter(_maps),
                                [](auto m) -> typename X::value_type
@@ -263,11 +264,11 @@ void petsc_fem_module(nb::module_& m)
   // Create PETSc vectors and matrices
   m.def(
       "create_vector_block",
-      [](const std::vector<
-          std::pair<std::shared_ptr<const common::IndexMap>, int>>& maps)
+      [](const std::vector<std::pair<
+             std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
       {
-        using X = std::vector<
-            std::pair<std::reference_wrapper<const common::IndexMap>, int>>;
+        using X = std::vector<std::pair<
+            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
         X _maps;
         std::ranges::transform(maps, std::back_inserter(_maps),
                                [](auto q) -> typename X::value_type
@@ -278,11 +279,11 @@ void petsc_fem_module(nb::module_& m)
       "Create a monolithic vector for multiple (stacked) linear forms.");
   m.def(
       "create_vector_nest",
-      [](const std::vector<
-          std::pair<std::shared_ptr<const common::IndexMap>, int>>& maps)
+      [](const std::vector<std::pair<
+             std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
       {
-        using X = std::vector<
-            std::pair<std::reference_wrapper<const common::IndexMap>, int>>;
+        using X = std::vector<std::pair<
+            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
         X _maps;
         std::ranges::transform(maps, std::back_inserter(_maps),
                                [](auto m) -> typename X::value_type

@@ -29,7 +29,6 @@
 /// @brief MPI support functionality
 namespace dolfinx::MPI
 {
-
 /// MPI communication tags
 enum class tag : int
 {

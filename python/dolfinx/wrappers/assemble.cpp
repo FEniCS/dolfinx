@@ -42,6 +42,7 @@
 #include <utility>
 
 namespace nb = nanobind;
+namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
 namespace
 {

@@ -537,7 +537,6 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     cells.reserve(nc * 3);
 
     // Create main vertices
-    std::int64_t vertex = 0;
     for (std::int64_t iy = 0; iy <= ny; iy++)
     {
       T x1 = c + cd * static_cast<T>(iy);
@@ -670,7 +669,6 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<T, 2>, 2> p,
     // Create vertices
     std::vector<T> x;
     x.reserve((nx + 1) * (ny + 1) * 2);
-    std::int64_t vertex = 0;
     for (std::int64_t ix = 0; ix <= nx; ix++)
     {
       T x0 = a + ab * static_cast<T>(ix);

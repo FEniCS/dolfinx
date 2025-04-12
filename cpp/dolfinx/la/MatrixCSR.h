@@ -628,7 +628,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
   std::vector<std::int32_t> data_per_proc(src_ranks.size(), 0);
   for (std::size_t i = 0; i < _ghost_row_to_rank.size(); ++i)
   {
-    assert(_ghost_row_to_rank[i] < data_per_proc.size());
+    assert(_ghost_row_to_rank[i] < (int)data_per_proc.size());
     std::size_t pos = local_size[0] + i;
     data_per_proc[_ghost_row_to_rank[i]] += _row_ptr[pos + 1] - _row_ptr[pos];
   }

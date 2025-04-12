@@ -214,9 +214,9 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
   // 3**rank to ensure that we can visualize them correctly in Paraview
   std::span<const std::size_t> value_shape
       = u.function_space()->element()->value_shape();
-  int rank = value_shape.size();
-  int num_comp = std::reduce(value_shape.begin(), value_shape.end(), 1,
-                             std::multiplies{});
+  std::size_t rank = value_shape.size();
+  std::size_t num_comp = std::reduce(value_shape.begin(), value_shape.end(), 1,
+                                     std::multiplies{});
   if (num_comp < std::pow(3, rank))
     num_comp = std::pow(3, rank);
 
@@ -462,8 +462,8 @@ public:
             const typename adios2_writer::U<T>& u, std::string engine,
             VTXMeshPolicy mesh_policy = VTXMeshPolicy::update)
       : ADIOS2Writer(comm, filename, "VTX function writer", engine),
-        _mesh(impl_adios2::extract_common_mesh<T>(u)),
-        _mesh_reuse_policy(mesh_policy), _u(u), _is_piecewise_constant(false)
+        _mesh(impl_adios2::extract_common_mesh<T>(u)), _u(u),
+        _mesh_reuse_policy(mesh_policy), _is_piecewise_constant(false)
   {
     if (u.empty())
       throw std::runtime_error("VTXWriter fem::Function list is empty.");

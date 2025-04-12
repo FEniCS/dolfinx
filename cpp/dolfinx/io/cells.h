@@ -117,6 +117,15 @@ Pyramid:                     Pyramid13:
 */
 namespace dolfinx::io::cells
 {
+
+/// @brief Get the Lagrange order of a given cell with a given number of
+/// nodes.
+///
+/// @param[in] type Cell shape.
+/// @param[in] num_nodes Number of cell 'nodes'
+/// @return Lagrange order of the cell type.
+int cell_degree(mesh::CellType type, int num_nodes);
+
 /// @brief Permutation array to map from VTK to DOLFINx node ordering.
 ///
 /// @param[in] type Cell shape.
