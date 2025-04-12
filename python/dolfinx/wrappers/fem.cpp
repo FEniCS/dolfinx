@@ -51,6 +51,7 @@
 #include <utility>
 
 namespace nb = nanobind;
+namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
 namespace
 {
@@ -127,8 +128,9 @@ void declare_function_space(nb::module_& m, std::string type)
             nb::arg("elements"), "Mixed-element constructor.")
         .def(
             "__init__",
-            [](dolfinx::fem::FiniteElement<T>* self, mesh::CellType cell_type,
-               nb::ndarray<T, nb::ndim<2>, nb::numpy> points,
+            [](dolfinx::fem::FiniteElement<T>* self,
+               dolfinx::mesh::CellType cell_type,
+               nb::ndarray<T, nb::ndim<2>, nb::c_contig> points,
                std::vector<std::size_t> block_shape, bool symmetry)
             {
               std::span<T> pdata(points.data(), points.size());
@@ -159,8 +161,7 @@ void declare_function_space(nb::module_& m, std::string type)
              [](const dolfinx::fem::FiniteElement<T>& self)
              {
                auto [X, shape] = self.interpolation_points();
-               return dolfinx_wrappers::as_nbarray(std::move(X), shape.size(),
-                                                   shape.data());
+               return dolfinx_wrappers::as_nbarray(std::move(X), shape);
              })
         .def_prop_ro("interpolation_ident",
                      &dolfinx::fem::FiniteElement<T>::interpolation_ident)
@@ -480,9 +481,10 @@ void declare_objects(nb::module_& m, const std::string& type)
 
             std::array<std::size_t, 2> shape{value_size, x.size() / 3};
             std::vector<T> values(shape[0] * shape[1]);
-            std::function<void(T*, int, int, const U*)> f
-                = reinterpret_cast<void (*)(T*, int, int, const U*)>(addr);
-            f(values.data(), shape[1], shape[0], x.data());
+            std::function<void(T*, int, int, const U*, void*)> f
+                = reinterpret_cast<void (*)(T*, int, int, const U*, void*)>(
+                    addr);
+            f(values.data(), shape[1], shape[0], x.data(), nullptr);
             dolfinx::fem::interpolate(self, std::span<const T>(values), shape,
                                       std::span(cells.data(), cells.size()));
           },
@@ -568,7 +570,7 @@ void declare_objects(nb::module_& m, const std::string& type)
             auto tabulate_expression_ptr
                 = (void (*)(T*, const T*, const T*,
                             const typename geom_type<T>::value_type*,
-                            const int*, const std::uint8_t*))fn_addr;
+                            const int*, const std::uint8_t*, void*))fn_addr;
             new (ex) dolfinx::fem::Expression<T, U>(
                 coefficients, constants, std::span(X.data(), X.size()),
                 {X.shape(0), X.shape(1)}, tabulate_expression_ptr, value_shape,
@@ -580,8 +582,7 @@ void declare_objects(nb::module_& m, const std::string& type)
            [](const dolfinx::fem::Expression<T, U>& self)
            {
              auto [X, shape] = self.X();
-             return dolfinx_wrappers::as_nbarray(std::move(X), shape.size(),
-                                                 shape.data());
+             return dolfinx_wrappers::as_nbarray(std::move(X), shape);
            })
       .def_prop_ro("dtype", [](const dolfinx::fem::Expression<T, U>&)
                    { return dolfinx_wrappers::numpy_dtype<T>(); })
@@ -660,7 +661,7 @@ void declare_form(nb::module_& m, std::string type)
                 auto kn_ptr
                     = (void (*)(T*, const T*, const T*,
                                 const typename geom_type<T>::value_type*,
-                                const int*, const std::uint8_t*))ptr;
+                                const int*, const std::uint8_t*, void*))ptr;
                 _integrals.insert(
                     {{type, id, 0},
                      {kn_ptr,
@@ -1255,7 +1256,7 @@ void fem(nb::module_& m)
           },
           nb::rv_policy::reference_internal);
 
-  nb::enum_<dolfinx::fem::IntegralType>(m, "IntegralType")
+  nb::enum_<dolfinx::fem::IntegralType>(m, "_IntegralType")
       .value("cell", dolfinx::fem::IntegralType::cell, "cell integral")
       .value("exterior_facet", dolfinx::fem::IntegralType::exterior_facet,
              "exterior facet integral")
