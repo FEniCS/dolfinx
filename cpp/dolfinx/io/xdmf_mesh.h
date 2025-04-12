@@ -7,11 +7,8 @@
 #pragma once
 
 #include "xdmf_utils.h"
-#include <algorithm>
 #include <array>
-#include <concepts>
 #include <cstdint>
-#include <dolfinx/common/MPI.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <hdf5.h>
 #include <mpi.h>

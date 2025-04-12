@@ -10,6 +10,7 @@ set(HEADERS_io
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_function.h
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_mesh.h
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_utils.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
   PARENT_SCOPE
 )
 

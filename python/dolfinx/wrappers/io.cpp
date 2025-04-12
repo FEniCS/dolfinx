@@ -15,6 +15,7 @@
 #include <dolfinx/io/VTKHDF.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
+#include <dolfinx/io/utils.h>
 #include <dolfinx/io/vtk_utils.h>
 #include <dolfinx/io/xdmf_utils.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -35,6 +36,7 @@
 #include <vector>
 
 namespace nb = nanobind;
+namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
 namespace dolfinx_wrappers
 {
@@ -158,7 +160,8 @@ void declare_data_types(nb::module_& m)
       [](const dolfinx::mesh::Topology topology,
          nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
              input_global_indices,
-         std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
+         std::int64_t num_nodes_g,
+         const dolfinx::fem::ElementDofLayout& cmap_dof_layout,
          nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> xdofmap,
          int entity_dim,
          nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> entities,
@@ -173,7 +176,7 @@ void declare_data_types(nb::module_& m)
         std::span<const std::int64_t> input_global_indices_span(
             input_global_indices.data(), input_global_indices.size());
         std::pair<std::vector<std::int32_t>, std::vector<T>> entities_values
-            = dolfinx::io::xdmf_utils::distribute_entity_data<T>(
+            = dolfinx::io::distribute_entity_data<T>(
                 topology, input_global_indices_span, num_nodes_g,
                 cmap_dof_layout, xdofmap_span, entity_dim, entities_span,
                 std::span(values.data(), values.size()));
@@ -211,7 +214,7 @@ void io(nb::module_& m)
                                                 dofmap.shape(1));
         auto [cells, shape]
             = dolfinx::io::extract_vtk_connectivity(_dofmap, cell);
-        return as_nbarray(std::move(cells), shape.size(), shape.data());
+        return as_nbarray(std::move(cells), shape);
       },
       nb::arg("dofmap"), nb::arg("celltype"),
       "Extract the mesh topology with VTK ordering using "
@@ -219,12 +222,18 @@ void io(nb::module_& m)
 
   m.def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<double>)
       .def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<float>);
-  m.def(
-      "read_vtkhdf_mesh_float64", [](MPICommWrapper comm, std::string filename)
-      { return dolfinx::io::VTKHDF::read_mesh<double>(comm.get(), filename); });
-  m.def(
-      "read_vtkhdf_mesh_float32", [](MPICommWrapper comm, std::string filename)
-      { return dolfinx::io::VTKHDF::read_mesh<float>(comm.get(), filename); });
+  m.def("read_vtkhdf_mesh_float64",
+        [](MPICommWrapper comm, std::string filename, std::size_t gdim)
+        {
+          return dolfinx::io::VTKHDF::read_mesh<double>(comm.get(), filename,
+                                                        gdim);
+        });
+  m.def("read_vtkhdf_mesh_float32",
+        [](MPICommWrapper comm, std::string filename, std::size_t gdim)
+        {
+          return dolfinx::io::VTKHDF::read_mesh<float>(comm.get(), filename,
+                                                       gdim);
+        });
 
   // dolfinx::io::cell permutation functions
   m.def("perm_vtk", &dolfinx::io::cells::perm_vtk, nb::arg("type"),
@@ -264,7 +273,7 @@ void io(nb::module_& m)
           [](dolfinx::io::XDMFFile& self, std::string name, std::string xpath)
           {
             auto [cells, shape] = self.read_topology_data(name, xpath);
-            return as_nbarray(std::move(cells), shape.size(), shape.data());
+            return as_nbarray(std::move(cells), shape);
           },
           nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def(
@@ -273,7 +282,7 @@ void io(nb::module_& m)
           {
             auto [x, shape] = self.read_geometry_data(name, xpath);
             std::vector<double>& _x = std::get<std::vector<double>>(x);
-            return as_nbarray(std::move(_x), shape.size(), shape.data());
+            return as_nbarray(std::move(_x), shape);
           },
           nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_geometry_data", &dolfinx::io::XDMFFile::read_geometry_data,
@@ -326,6 +335,7 @@ void io(nb::module_& m)
 #endif
 
   declare_data_types<std::int32_t>(m);
+  declare_data_types<std::int64_t>(m);
   declare_data_types<float>(m);
   declare_data_types<std::complex<float>>(m);
   declare_data_types<double>(m);

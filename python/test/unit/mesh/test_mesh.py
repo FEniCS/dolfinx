@@ -91,6 +91,19 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
                 )
 
 
+@pytest.mark.parametrize("cell_type", [_mesh.CellType.triangle, _mesh.CellType.quadrilateral])
+def test_empty_entities_to_geometry(cell_type):
+    """Test entities_to_geometry with empty entity list"""
+    mesh = _mesh.create_unit_square(MPI.COMM_WORLD, 10, 12, cell_type=cell_type)
+
+    mesh.topology.create_connectivity(0, mesh.topology.dim)
+    mesh.topology.create_entity_permutations()
+    e_to_g = entities_to_geometry(mesh, 0, np.array([], dtype=np.int32), True)
+    assert e_to_g.shape == (0, 1)
+    e_to_g = entities_to_geometry(mesh, mesh.topology.dim, np.array([], dtype=np.int32), True)
+    assert e_to_g.shape == (0, _cpp.mesh.cell_num_vertices(cell_type))
+
+
 def mesh_1d(dtype):
     """Create 1D mesh with degenerate cell"""
     mesh1d = create_unit_interval(MPI.COMM_WORLD, 4, dtype=dtype)
