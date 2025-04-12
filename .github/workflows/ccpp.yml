@@ -123,7 +123,7 @@ jobs:
 
       - name: Configure and install C++
         run: |
-          cmake -G Ninja -DDOLFINX_ENABLE_PETSC=false -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+          cmake -G Ninja -DDOLFINX_ENABLE_PARMETIS=ON -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
           cmake --build build
           sudo cmake --install build
       - name: Build C++ unit tests
@@ -278,7 +278,7 @@ jobs:
 
       - name: Configure C++
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_SCOTCH=ON -DOLFINX_ENABLE_KAHIP=ON -B build -S cpp/
           cmake --build build
           cmake --install build
 
