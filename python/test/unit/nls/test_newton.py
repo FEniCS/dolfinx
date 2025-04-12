@@ -220,7 +220,7 @@ class TestNLS:
         problem = NonlinearPDE_SNESProblem(F, u, bc)
 
         u.x.array[:] = 0.9
-        b = create_vector([V])
+        b = create_vector(V)
         J = create_matrix(problem.a)
 
         # Create Newton solver and solve
