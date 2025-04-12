@@ -59,6 +59,7 @@ from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import locate_entities_boundary, meshtags
+from ffcx.codegeneration.utils import empty_void_pointer
 from ffcx.codegeneration.utils import numba_ufcx_kernel_signature as ufcx_signature
 
 if np.issubdtype(PETSc.RealType, np.float32):  # type: ignore
@@ -146,7 +147,7 @@ Usize = U.element.space_dimension
 
 
 @numba.cfunc(ufcx_signature(PETSc.ScalarType, PETSc.RealType), nopython=True)  # type: ignore
-def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL):
+def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL, custom_data=None):
     """Element kernel that applies static condensation."""
 
     # Prepare target condensed local element tensor
@@ -154,13 +155,37 @@ def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL):
 
     # Tabulate all sub blocks locally
     A00 = np.zeros((Ssize, Ssize), dtype=PETSc.ScalarType)
-    kernel00(ffi.from_buffer(A00), w_, c_, coords_, entity_local_index, permutation)
+    kernel00(
+        ffi.from_buffer(A00),
+        w_,
+        c_,
+        coords_,
+        entity_local_index,
+        permutation,
+        empty_void_pointer(),
+    )
 
     A01 = np.zeros((Ssize, Usize), dtype=PETSc.ScalarType)
-    kernel01(ffi.from_buffer(A01), w_, c_, coords_, entity_local_index, permutation)
+    kernel01(
+        ffi.from_buffer(A01),
+        w_,
+        c_,
+        coords_,
+        entity_local_index,
+        permutation,
+        empty_void_pointer(),
+    )
 
     A10 = np.zeros((Usize, Ssize), dtype=PETSc.ScalarType)
-    kernel10(ffi.from_buffer(A10), w_, c_, coords_, entity_local_index, permutation)
+    kernel10(
+        ffi.from_buffer(A10),
+        w_,
+        c_,
+        coords_,
+        entity_local_index,
+        permutation,
+        empty_void_pointer(),
+    )
 
     # A = - A10 * A00^{-1} * A01
     A[:, :] = -A10 @ np.linalg.solve(A00, A01)
