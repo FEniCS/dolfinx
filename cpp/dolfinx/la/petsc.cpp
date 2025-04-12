@@ -215,12 +215,10 @@ void la::petsc::scatter_local_vectors(
   int offset_ghost = offset_owned; // Ghost DoFs start after owned
   for (std::size_t i = 0; i < maps.size(); ++i)
   {
-    const std::int32_t size_owned
-        = maps[i].first.get().size_local() * maps[i].second;
-    const std::int32_t size_ghost
-        = maps[i].first.get().num_ghosts() * maps[i].second;
-
+    std::int32_t size_owned = maps[i].first.get().size_local() * maps[i].second;
     std::copy_n(x_b[i].begin(), size_owned, std::next(_x.begin(), offset));
+
+    std::int32_t size_ghost = maps[i].first.get().num_ghosts() * maps[i].second;
     std::copy_n(std::next(x_b[i].begin(), size_owned), size_ghost,
                 std::next(_x.begin(), offset_ghost));
 
@@ -233,7 +231,7 @@ void la::petsc::scatter_local_vectors(
 }
 //-----------------------------------------------------------------------------
 Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
-                             std::string type)
+                             std::optional<std::string> type)
 {
   PetscErrorCode ierr;
   Mat A;
@@ -245,8 +243,8 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   std::array maps = {sp.index_map(0), sp.index_map(1)};
   const std::array bs = {sp.block_size(0), sp.block_size(1)};
 
-  if (!type.empty())
-    MatSetType(A, type.c_str());
+  if (type)
+    MatSetType(A, type->c_str());
 
   // Get global and local dimensions
   const std::int64_t M = bs[0] * maps[0]->size_global();
@@ -563,7 +561,7 @@ Mat petsc::Operator::mat() const { return _matA; }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 petsc::Matrix::Matrix(MPI_Comm comm, const SparsityPattern& sp,
-                      std::string type)
+                      std::optional<std::string> type)
     : Operator(petsc::create_matrix(comm, sp, type), false)
 {
   // Do nothing

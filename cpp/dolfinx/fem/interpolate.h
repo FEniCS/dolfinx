@@ -52,8 +52,6 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
                                     const mesh::Geometry<T>& geometry,
                                     std::span<const std::int32_t> cells)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   // Get geometry data and the element coordinate map
   const std::size_t gdim = geometry.dim();
   auto x_dofmap = geometry.dofmap();
@@ -130,8 +128,7 @@ namespace impl
 {
 /// @brief Convenience typedef
 template <typename T, std::size_t D>
-using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-    T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, D>>;
+using mdspan_t = md::mdspan<T, md::dextents<std::size_t, D>>;
 
 /// @brief Scatter data into non-contiguous memory.
 ///
@@ -301,7 +298,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
 template <MDSpan U, MDSpan V, dolfinx::scalar T>
 void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
 {
-  using X = typename dolfinx::scalar_value_type_t<T>;
+  using X = typename dolfinx::scalar_value_t<T>;
 
   // Compute coefficients = Pi * x (matrix-vector multiply)
   if (bs == 1)
@@ -413,7 +410,7 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
       = element1->create_interpolation_operator(*element0);
 
   // Iterate over mesh and interpolate on each cell
-  using X = typename dolfinx::scalar_value_type_t<T>;
+  using X = typename dolfinx::scalar_value_t<T>;
   for (std::size_t c = 0; c < cells0.size(); c++)
   {
     // Pack and transform cell dofs to reference ordering
@@ -459,8 +456,6 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
                                   const Function<T, U>& u0,
                                   std::span<const std::int32_t> cells0)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   // Get mesh
   auto V0 = u0.function_space();
   assert(V0);
@@ -652,7 +647,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
         coeffs0[dof_bs0 * i + k] = array0[dof_bs0 * dofs0[i] + k];
 
     // Evaluate v at the interpolation points (physical space values)
-    using X = typename dolfinx::scalar_value_type_t<T>;
+    using X = typename dolfinx::scalar_value_t<T>;
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       for (int k = 0; k < bs0; ++k)
@@ -700,8 +695,6 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
                  std::span<const std::int32_t> cells)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   auto element = u.function_space()->element();
   assert(element);
   const int element_bs = element->block_size();
@@ -1086,8 +1079,6 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
                  std::span<const std::int32_t> cells,
                  const geometry::PointOwnershipData<U>& interpolation_data)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   auto mesh = u.function_space()->mesh();
   assert(mesh);
   MPI_Comm comm = mesh->comm();

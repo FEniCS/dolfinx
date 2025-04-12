@@ -73,6 +73,11 @@ public:
   /// @brief Variant of the element
   basix::element::lagrange_variant variant() const;
 
+  /// @brief Element hash.
+  ///
+  /// This is the Basix element hash.
+  std::uint64_t hash() const;
+
   /// @brief Shape of array to fill when calling `tabulate`.
   /// @param[in] nd The order of derivatives, up to and including, to
   /// compute. Use 0 for the basis functions only
@@ -160,8 +165,7 @@ public:
     {
       assert(w.size() >= 2 * J.extent(0) * J.extent(1));
       using X = typename U::element_type;
-      using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-          X, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+      using mdspan2_t = md::mdspan<X, md::dextents<std::size_t, 2>>;
       mdspan2_t B(w.data(), J.extent(1), J.extent(0));
       mdspan2_t BA(w.data() + J.extent(0) * J.extent(1), B.extent(0),
                    J.extent(1));
@@ -227,8 +231,7 @@ public:
 
   /// mdspan typedef
   template <typename X>
-  using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      X, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  using mdspan2_t = md::mdspan<X, md::dextents<std::size_t, 2>>;
 
   /// @brief Compute reference coordinates `X` for physical coordinates
   /// `x` for a non-affine map.

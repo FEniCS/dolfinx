@@ -777,7 +777,16 @@ def create_interval(
     """
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    domain = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(1,), dtype=dtype))  # type: ignore
+    domain = ufl.Mesh(
+        basix.ufl.element(
+            "Lagrange",
+            "interval",
+            1,
+            lagrange_variant=basix.LagrangeVariant.unset,
+            shape=(1,),
+            dtype=dtype,
+        )
+    )  # type: ignore
     if np.issubdtype(dtype, np.float32):
         msh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, partitioner)
     elif np.issubdtype(dtype, np.float64):
@@ -846,7 +855,16 @@ def create_rectangle(
     """
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, shape=(2,), dtype=dtype))  # type: ignore
+    domain = ufl.Mesh(
+        basix.ufl.element(
+            "Lagrange",
+            cell_type.name,
+            1,
+            lagrange_variant=basix.LagrangeVariant.unset,
+            shape=(2,),
+            dtype=dtype,
+        )
+    )  # type: ignore
     if np.issubdtype(dtype, np.float32):
         msh = _cpp.mesh.create_rectangle_float32(comm, points, n, cell_type, partitioner, diagonal)
     elif np.issubdtype(dtype, np.float64):
@@ -925,7 +943,16 @@ def create_box(
     """
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, shape=(3,), dtype=dtype))  # type: ignore
+    domain = ufl.Mesh(
+        basix.ufl.element(
+            "Lagrange",
+            cell_type.name,
+            1,
+            lagrange_variant=basix.LagrangeVariant.unset,
+            shape=(3,),
+            dtype=dtype,
+        )
+    )  # type: ignore
     if np.issubdtype(dtype, np.float32):
         msh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner)
     elif np.issubdtype(dtype, np.float64):

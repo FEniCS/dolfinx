@@ -4,9 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "array.h"
-#include "caster_mpi.h"
-#include "numpy_dtype.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/caster_mpi.h"
+#include "dolfinx_wrappers/numpy_dtype.h"
 #include <complex>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -196,7 +196,7 @@ void declare_functions(nb::module_& m)
   m.def(
       "is_orthonormal",
       [](std::vector<const dolfinx::la::Vector<T>*> basis,
-         dolfinx::scalar_value_type_t<T> eps)
+         dolfinx::scalar_value_t<T> eps)
       {
         std::vector<std::reference_wrapper<const dolfinx::la::Vector<T>>>
             _basis;

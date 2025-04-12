@@ -94,7 +94,7 @@
 
 using namespace dolfinx;
 using T = PetscScalar;
-using U = typename dolfinx::scalar_value_type_t<T>;
+using U = typename dolfinx::scalar_value_t<T>;
 
 // Then follows the definition of the coefficient functions (for $f$ and
 // $g$), which are derived from the {cpp:class}`Expression` class in

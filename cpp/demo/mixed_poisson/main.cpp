@@ -10,7 +10,7 @@
 //   over subsets of the boundary.
 //
 // The full implementation is in
-// {download}`demo_hyperelasticity/main.cpp`.
+// {download}`demo_mixed_poisson/main.cpp`.
 //
 //
 // # Mixed formulation for the Poisson equation
@@ -83,14 +83,14 @@
 // ## UFL form file
 //
 // The UFL file is implemented in
-// {download}`demo_mixed_poisson/poisson.py`.
+// {download}`demo_mixed_poisson/mixed_poisson.py`.
 // ````{admonition} UFL form implemented in python
 // :class: dropdown
 // ![ufl-code]
 // ````
 //
 
-#include "poisson.h"
+#include "mixed_poisson.h"
 #include <basix/finite-element.h>
 #include <basix/mdspan.hpp>
 #include <cmath>
@@ -110,7 +110,7 @@
 
 using namespace dolfinx;
 using T = PetscScalar;
-using U = typename dolfinx::scalar_value_type_t<T>;
+using U = typename dolfinx::scalar_value_t<T>;
 
 int main(int argc, char* argv[])
 {
@@ -180,10 +180,8 @@ int main(int argc, char* argv[])
     g->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
-          using mspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-              T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-                     std::size_t, 2,
-                     MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
+          using mspan_t
+              = md::mdspan<T, md::extents<std::size_t, 2, md::dynamic_extent>>;
 
           std::vector<T> fdata(2 * x.extent(1), 0);
           mspan_t f(fdata.data(), 2, x.extent(1));
@@ -246,10 +244,11 @@ int main(int argc, char* argv[])
         subdomain_data{{fem::IntegralType::exterior_facet, {{1, domains}}}};
 
     // Define variational forms and attach he required data
-    fem::Form<T> a = fem::create_form<T>(*form_poisson_a, {V, V}, {}, {},
+    fem::Form<T> a = fem::create_form<T>(*form_mixed_poisson_a, {V, V}, {}, {},
                                          subdomain_data, {});
-    fem::Form<T> L = fem::create_form<T>(
-        *form_poisson_L, {V}, {{"f", f}, {"u0", u0}}, {}, subdomain_data, {});
+    fem::Form<T> L
+        = fem::create_form<T>(*form_mixed_poisson_L, {V},
+                              {{"f", f}, {"u0", u0}}, {}, subdomain_data, {});
 
     // Create solution finite element Function
     auto u = std::make_shared<fem::Function<T>>(V);

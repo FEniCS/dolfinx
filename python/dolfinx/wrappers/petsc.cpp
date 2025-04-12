@@ -6,10 +6,10 @@
 
 #if defined(HAS_PETSC) && defined(HAS_PETSC4PY)
 
-#include "array.h"
-#include "caster_mpi.h"
-#include "caster_petsc.h"
-#include "pycoeff.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/caster_mpi.h"
+#include "dolfinx_wrappers/caster_petsc.h"
+#include "dolfinx_wrappers/pycoeff.h"
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DirichletBC.h>
@@ -31,6 +31,7 @@
 #include <nanobind/stl/complex.h>
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/map.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
@@ -174,22 +175,23 @@ void petsc_la_module(nb::module_& m)
   m.def(
       "create_matrix",
       [](dolfinx_wrappers::MPICommWrapper comm,
-         const dolfinx::la::SparsityPattern& p, const std::string& type)
+         const dolfinx::la::SparsityPattern& p, std::optional<std::string> type)
       {
         Mat A = dolfinx::la::petsc::create_matrix(comm.get(), p, type);
         PyObject* obj = PyPetscMat_New(A);
         PetscObjectDereference((PetscObject)A);
         return nb::borrow(obj);
       },
-      nb::arg("comm"), nb::arg("p"), nb::arg("type") = std::string(),
+      nb::arg("comm"), nb::arg("p"), nb::arg("type") = nb::none(),
       "Create a PETSc Mat from sparsity pattern.");
 
   m.def(
       "create_index_sets",
-      [](const std::vector<std::pair<const common::IndexMap*, int>>& maps)
+      [](const std::vector<std::pair<const dolfinx::common::IndexMap*, int>>&
+             maps)
       {
-        using X = std::vector<
-            std::pair<std::reference_wrapper<const common::IndexMap>, int>>;
+        using X = std::vector<std::pair<
+            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
         X _maps;
         std::ranges::transform(maps, std::back_inserter(_maps),
                                [](auto m) -> typename X::value_type
@@ -262,11 +264,11 @@ void petsc_fem_module(nb::module_& m)
   // Create PETSc vectors and matrices
   m.def(
       "create_vector_block",
-      [](const std::vector<
-          std::pair<std::shared_ptr<const common::IndexMap>, int>>& maps)
+      [](const std::vector<std::pair<
+             std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
       {
-        using X = std::vector<
-            std::pair<std::reference_wrapper<const common::IndexMap>, int>>;
+        using X = std::vector<std::pair<
+            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
         X _maps;
         std::ranges::transform(maps, std::back_inserter(_maps),
                                [](auto q) -> typename X::value_type
@@ -277,11 +279,11 @@ void petsc_fem_module(nb::module_& m)
       "Create a monolithic vector for multiple (stacked) linear forms.");
   m.def(
       "create_vector_nest",
-      [](const std::vector<
-          std::pair<std::shared_ptr<const common::IndexMap>, int>>& maps)
+      [](const std::vector<std::pair<
+             std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
       {
-        using X = std::vector<
-            std::pair<std::reference_wrapper<const common::IndexMap>, int>>;
+        using X = std::vector<std::pair<
+            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
         X _maps;
         std::ranges::transform(maps, std::back_inserter(_maps),
                                [](auto m) -> typename X::value_type
@@ -291,18 +293,15 @@ void petsc_fem_module(nb::module_& m)
       nb::rv_policy::take_ownership, nb::arg("maps"),
       "Create nested vector for multiple (stacked) linear forms.");
   m.def("create_matrix", dolfinx::fem::petsc::create_matrix<PetscReal>,
-        nb::rv_policy::take_ownership, nb::arg("a"),
-        nb::arg("type") = std::string(),
+        nb::rv_policy::take_ownership, nb::arg("a"), nb::arg("type").none(),
         "Create a PETSc Mat for bilinear form.");
   m.def("create_matrix_block",
         &dolfinx::fem::petsc::create_matrix_block<PetscReal>,
-        nb::rv_policy::take_ownership, nb::arg("a"),
-        nb::arg("type") = std::string(),
+        nb::rv_policy::take_ownership, nb::arg("a"), nb::arg("type").none(),
         "Create monolithic sparse matrix for stacked bilinear forms.");
   m.def("create_matrix_nest",
         &dolfinx::fem::petsc::create_matrix_nest<PetscReal>,
-        nb::rv_policy::take_ownership, nb::arg("a"),
-        nb::arg("types") = std::vector<std::vector<std::string>>(),
+        nb::rv_policy::take_ownership, nb::arg("a"), nb::arg("types").none(),
         "Create nested sparse matrix for bilinear forms.");
 
   // PETSc Matrices
@@ -333,14 +332,14 @@ void petsc_fem_module(nb::module_& m)
               a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
           dolfinx::fem::assemble_matrix(
               set_fn, a, std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
         else
         {
           dolfinx::fem::assemble_matrix(
               dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a,
               std::span(constants.data(), constants.size()),
-              py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
         }
       },
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
@@ -372,7 +371,7 @@ void petsc_fem_module(nb::module_& m)
 
         dolfinx::fem::assemble_matrix(
             set_fn, a, std::span(constants.data(), constants.size()),
-            py_to_cpp_coeffs(coefficients),
+            dolfinx_wrappers::py_to_cpp_coeffs(coefficients),
             std::span(rows0.data(), rows0.size()),
             std::span(rows1.data(), rows1.size()));
       },

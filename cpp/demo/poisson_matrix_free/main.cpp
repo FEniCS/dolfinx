@@ -245,7 +245,7 @@ void solver(MPI_Comm comm)
 int main(int argc, char* argv[])
 {
   using T = PetscScalar;
-  using U = typename dolfinx::scalar_value_type_t<T>;
+  using U = typename dolfinx::scalar_value_t<T>;
   init_logging(argc, argv);
   MPI_Init(&argc, &argv);
   solver<T, U>(MPI_COMM_WORLD);

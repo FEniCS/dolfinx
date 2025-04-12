@@ -35,7 +35,7 @@ std::array<T, 6> compute_bbox_of_entity(const mesh::Mesh<T>& mesh, int dim,
   // FIXME: return of small dynamic array is expensive
   std::span<const std::int32_t> entity(&index, 1);
   const std::vector<std::int32_t> vertex_indices
-      = mesh::entities_to_geometry(mesh, dim, entity, false);
+      = mesh::entities_to_geometry(mesh, dim, entity, false).first;
 
   std::array<T, 6> b;
   std::span<T, 3> b0(b.data(), 3);
@@ -369,6 +369,20 @@ public:
 
   /// Return number of bounding boxes
   std::int32_t num_bboxes() const { return _bboxes.size() / 2; }
+
+  /// @brief Access coordinates of lower and upper corners of bounding boxes
+  /// (const version).
+  ///
+  /// @return The flattened row-major coordinate vector, where the shape is
+  /// `(2*num_bboxes, 3)`.
+  std::span<const T> bbox_coordinates() const { return _bbox_coordinates; }
+
+  /// @brief Access coordinates of lower and upper corners of bounding boxes
+  /// (non-const version)
+  ///
+  /// @return The flattened row-major coordinate vector, where the shape is
+  /// `(2*num_bboxes, 3)`.
+  std::span<T> bbox_coordinates() { return _bbox_coordinates; }
 
   /// Topological dimension of leaf entities
   int tdim() const { return _tdim; }
