@@ -50,7 +50,7 @@ def create_vector_wrap(x: Vector) -> PETSc.Vec:  # type: ignore[name-defined]
 
 
 def create_vector(
-    maps: typing.Seqence[tuple[IndexMap, int]], kind: typing.Optional[str] = None
+    maps: typing.Sequence[tuple[IndexMap, int]], kind: typing.Optional[str] = None
 ) -> PETSc.Vec:
     """Create a PETSc vector from a sequence of maps and blocksizes.
 
