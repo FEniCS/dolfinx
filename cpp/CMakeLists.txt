@@ -472,6 +472,13 @@ if(DOLFINX_ENABLE_SCOTCH)
   endif()
 endif()
 
+if(_REQUIRE_SCOTCH AND NOT SCOTCH_FOUND)
+  message(
+    FATAL_ERROR
+      "SCOTCH requested, but not found."
+  )
+endif()
+
 if(DOLFINX_ENABLE_PARMETIS AND _REQUIRE_PARMETIS)
   find_package(ParMETIS 4.0.2 REQUIRED)
 elseif(DOLFINX_ENABLE_PARMETIS)
