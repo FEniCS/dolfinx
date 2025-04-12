@@ -3,7 +3,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 if(POLICY CMP0167)
-  cmake_policy(SET CMP0167 NEW)  # Boost CONFIG mode
+  cmake_policy(SET CMP0167 NEW) # Boost CONFIG mode
 endif()
 
 # ------------------------------------------------------------------------------
@@ -280,9 +280,11 @@ endif()
 # library
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
    AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
-   AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0")
+   AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
+)
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS
-       -Wno-array-bounds;-Wno-stringop-overflow)
+       -Wno-array-bounds;-Wno-stringop-overflow
+  )
 endif()
 
 # ------------------------------------------------------------------------------
@@ -463,12 +465,21 @@ elseif(_REQUIRE_SLEPC AND NOT PETSC_FOUND)
 endif()
 
 if(DOLFINX_ENABLE_SCOTCH)
-  find_package(SCOTCH CONFIG HINTS $ENV{PETSC_DIR}/$ENV{PETSC_ARCH} $ENV{PETSC_DIR}) # Find in CONFIG mode
+  find_package(
+    SCOTCH CONFIG HINTS $ENV{PETSC_DIR}/$ENV{PETSC_ARCH} $ENV{PETSC_DIR}
+  )
   if(TARGET SCOTCH::scotch AND NOT TARGET SCOTCH::ptscotch)
     message(
       STATUS "SCOTCH found, but not PT-SCOTCH (parallel). Not enabling SCOTCH."
     )
     set(SCOTCH_FOUND FALSE)
+  endif()
+
+  if(SCOTCH_FOUND)
+    message(
+      STATUS
+        "Found PT-SCOTCH version ${SCOTCH_VERSION}, include dir: ${SCOTCH_INCLUDE_DIR}, lib dir: ${SCOTCH_LIBRARY_DIR}"
+    )
   endif()
 endif()
 
