@@ -91,7 +91,7 @@ ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_
 ONBUILD RUN cd dolfinx && \
     mkdir -p build-real && \
     cd build-real && \
-    PETSC_ARCH=linux-gnu-real64-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -D_REQUIRE_PETSC=ON -D_REQUIRE_SLEPC=ON -D_REQUIRE_SCOTCH=ON -D_REQUIRE_KAHIP=ON -D_REQUIRE_ADIOS2=ON ../cpp && \
+    PETSC_ARCH=linux-gnu-real64-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DDOLFINX_ENABLE_PETSC=ON -DDOLFINX_ENABLE_SLEPC=ON -DDOLFINX_ENABLE_SCOTCH=ON -DDOLFINX_ENABLE_KAHIP=ON -DDOLFINX_ENABLE_ADIOS2=ON ../cpp && \
     ninja install && \
     cd ../python && \
     PETSC_ARCH=linux-gnu-real64-32 pip -v install \
