@@ -464,29 +464,30 @@ elseif(_REQUIRE_SLEPC AND NOT PETSC_FOUND)
   )
 endif()
 
-if(DOLFINX_ENABLE_SCOTCH)
+if(DOLFINX_ENABLE_SCOTCH AND _REQUIRE_SCOTCH)
+  find_package(
+    SCOTCH REQUIRED CONFIG HINTS $ENV{PETSC_DIR}/$ENV{PETSC_ARCH} $ENV{PETSC_DIR}
+  )
+elseif(DOLFINX_ENABLE_SCOTCH)
   find_package(
     SCOTCH CONFIG HINTS $ENV{PETSC_DIR}/$ENV{PETSC_ARCH} $ENV{PETSC_DIR}
   )
-  if(TARGET SCOTCH::scotch AND NOT TARGET SCOTCH::ptscotch)
-    message(
-      STATUS "SCOTCH found, but not PT-SCOTCH (parallel). Not enabling SCOTCH."
-    )
-    set(SCOTCH_FOUND FALSE)
-  endif()
+endif()
 
-  if(SCOTCH_FOUND)
-    message(
-      STATUS
-        "Found PT-SCOTCH version ${SCOTCH_VERSION}, include dir: ${SCOTCH_INCLUDE_DIR}, lib dir: ${SCOTCH_LIBRARY_DIR}"
-    )
+if(TARGET SCOTCH::scotch AND NOT TARGET SCOTCH::ptscotch)
+  message(
+    STATUS "SCOTCH found, but not PT-SCOTCH (parallel). Not enabling SCOTCH."
+  )
+  set(SCOTCH_FOUND FALSE)
+  if(_REQUIRE_SCOTCH AND NOT SCOTCH_FOUND)
+    message(FATAL_ERROR "SCOTCH requested, but not found.")
   endif()
 endif()
 
-if(_REQUIRE_SCOTCH AND NOT SCOTCH_FOUND)
+if(SCOTCH_FOUND)
   message(
-    FATAL_ERROR
-      "SCOTCH requested, but not found."
+    STATUS
+      "Found PT-SCOTCH version ${SCOTCH_VERSION}, include dir: ${SCOTCH_INCLUDE_DIR}, lib dir: ${SCOTCH_LIBRARY_DIR}"
   )
 endif()
 
