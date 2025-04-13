@@ -102,7 +102,7 @@ def _extract_function_spaces(
     return rows, cols
 
 
-# -- Vector instantiation ----------------------------------------------------
+# -- Vector instantiation -------------------------------------------------
 
 
 def create_vector(
@@ -186,14 +186,15 @@ def create_vector(
             )
 
 
-# -- Matrix instantiation ----------------------------------------------------
+# -- Matrix instantiation -------------------------------------------------
 
 
 def create_matrix(
     a: typing.Union[Form, Iterable[Iterable[Form]]],
     kind: typing.Optional[typing.Union[str, Iterable[Iterable[str]]]] = None,
 ) -> PETSc.Mat:
-    """Create a PETSc matrix that is compatible with the (sequence) of bilinear form(s).
+    """Create a PETSc matrix that is compatible with the (sequence) of
+    bilinear form(s).
 
     Three cases are supported:
 
@@ -236,7 +237,7 @@ def create_matrix(
                 return _cpp.fem.petsc.create_matrix_nest(_a, kind)  # Array of 'kind' types
 
 
-# -- Vector assembly ---------------------------------------------------------
+# -- Vector assembly ------------------------------------------------------
 
 
 @functools.singledispatch
@@ -376,7 +377,7 @@ def _assemble_vector_vec(
     return b
 
 
-# -- Matrix assembly ---------------------------------------------------------
+# -- Matrix assembly ------------------------------------------------------
 @functools.singledispatch
 def assemble_matrix(
     a: typing.Union[Form, Iterable[Iterable[Form]]],
@@ -560,7 +561,7 @@ def assemble_matrix_mat(
     return A
 
 
-# -- Modifiers for Dirichlet conditions ---------------------------------------
+# -- Modifiers for Dirichlet conditions -----------------------------------
 
 
 def apply_lifting(
@@ -596,7 +597,9 @@ def apply_lifting(
                of `DirichletBC` from the 2D ``a`` and a flat list of
                `DirichletBC` objects ``bcs``::
 
-                   bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), bcs)
+                   bcs1 = fem.bcs_by_block(
+                    fem.extract_function_spaces(a, 1), bcs
+                   )
 
             2. ``bcs`` is a sequence of :class:`dolfinx.fem.DirichletBC`
                objects. The function deduces which `DiricletBC` objects
@@ -774,10 +777,11 @@ class LinearProblem:
 
         Example::
 
-            problem = LinearProblem(a, L, [bc0, bc1], petsc_options={"ksp_type": "preonly",
-                                                                     "pc_type": "lu",
-                                                                     "pc_factor_mat_solver_type":
-                                                                       "mumps"})
+            problem = LinearProblem(a, L, [bc0, bc1], petsc_options={
+                "ksp_type": "preonly",
+                "pc_type": "lu",
+                "pc_factor_mat_solver_type": "mumps"
+            })
         """
         self._a = _create_form(
             a,
@@ -890,8 +894,8 @@ class LinearProblem:
 class NonlinearProblem:
     """Nonlinear problem class for solving the non-linear problems.
 
-    Solves problems of the form :math:`F(u, v) = 0 \\ \\forall v \\in V` using
-    PETSc as the linear algebra backend.
+    Solves problems of the form :math:`F(u, v) = 0 \\ \\forall v \\in V`
+    using PETSc as the linear algebra backend.
     """
 
     def __init__(
@@ -903,7 +907,8 @@ class NonlinearProblem:
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
     ):
-        """Initialize solver for solving a non-linear problem using Newton's method`.
+        """Initialize solver for solving a non-linear problem using
+        Newton's method`.
 
         Args:
             F: The PDE residual F(u, v).

@@ -43,7 +43,8 @@ class DofMap:
 
     @property
     def index_map(self):
-        """Index map that described the parallel distribution of the dofmap."""
+        """Index map that described the parallel distribution of the
+        dofmap."""
         return self._cpp_object.index_map
 
     @property

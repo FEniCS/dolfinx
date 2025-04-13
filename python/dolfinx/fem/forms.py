@@ -165,7 +165,8 @@ def form_cpp_class(
 ) -> typing.Union[
     _cpp.fem.Form_float32, _cpp.fem.Form_float64, _cpp.fem.Form_complex64, _cpp.fem.Form_complex128
 ]:
-    """Return the wrapped C++ class of a variational form of a specific scalar type.
+    """Return the wrapped C++ class of a variational form of a specific
+    scalar type.
 
     Args:
         dtype: Scalar type of the required form class.
@@ -207,9 +208,9 @@ def mixed_topology_form(
     """
     Create a mixed-topology from from an array of Forms.
 
-    # FIXME: This function is a temporary hack for mixed-topology meshes. It is needed
-    # because UFL does not know about mixed-topology meshes, so we need
-    # to pass a list of forms for each cell type.
+    # FIXME: This function is a temporary hack for mixed-topology meshes.
+    # It is needed because UFL does not know about mixed-topology meshes,
+    # so we need to pass a list of forms for each cell type.
 
     Args:
         form: A list of UFL forms. Each form should be the same, just
@@ -395,7 +396,8 @@ def form(
         return Form(f, ufcx_form, code, module)
 
     def _zero_form(form):
-        """Compile a single 'zero' UFL form, i.e. a form with no integrals."""
+        """Compile a single 'zero' UFL form, i.e. a form with no
+        integrals."""
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
         assert len(V) > 0
         msh = V[0].mesh
@@ -540,7 +542,8 @@ def form_cpp_creator(
     _cpp.fem.Form_complex64,
     _cpp.fem.Form_complex128,
 ]:
-    """Return the wrapped C++ constructor for creating a variational form of a specific scalar type.
+    """Return the wrapped C++ constructor for creating a variational form
+    of a specific scalar type.
 
     Args:
         dtype: Scalar type of the required form class.
