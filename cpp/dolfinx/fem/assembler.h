@@ -64,7 +64,7 @@ std::vector<std::int8_t> bc_dof_markers(
     const common::IndexMap& map, int bs,
     const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
 {
-  if (!bcs.empty())
+  if (bcs.empty())
     return std::vector<std::int8_t>();
   else
   {
