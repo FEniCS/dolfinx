@@ -348,7 +348,7 @@ void petsc_fem_module(nb::module_& m)
         }
       },
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
-      nb::arg("bc0"), nb::arg("unrolled") = false,
+      nb::arg("bcs"), nb::arg("unrolled") = false,
       "Assemble bilinear form into an existing PETSc matrix");
   m.def(
       "assemble_matrix",
