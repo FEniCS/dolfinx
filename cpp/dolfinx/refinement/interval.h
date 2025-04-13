@@ -129,7 +129,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
       = adjust_indices(*mesh.topology()->index_map(0), number_of_refined_cells);
 
   // Build the topology on the new vertices
-  const std::int32_t refined_cell_count
+  std::size_t refined_cell_count
       = mesh.topology()->index_map(1)->size_local() + number_of_refined_cells;
 
   std::vector<std::int64_t> cell_topology;

@@ -247,7 +247,6 @@ std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
   // Get the geometry dofs for the vertices of each entity
   const auto [vertex_xdofs, xdof_shape]
       = entities_to_geometry(mesh, dim, entities, false);
-  const std::size_t num_vertices = xdof_shape[1];
 
   // Get the  geometry coordinate
   std::span<const T> x = mesh.geometry().x();
@@ -268,7 +267,7 @@ std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
   {
     // Get geometry 'dof' for each vertex of entity e
     std::span<const std::int32_t> e_vertices(
-        vertex_xdofs.data() + e * num_vertices, num_vertices);
+        vertex_xdofs.data() + e * xdof_shape[1], xdof_shape[1]);
 
     // Compute maximum distance between any two vertices
     for (std::size_t i = 0; i < e_vertices.size(); ++i)
@@ -417,13 +416,13 @@ std::vector<T> compute_midpoints(const Mesh<T>& mesh, int dim,
   // Build map from entity -> geometry dof
   const auto [e_to_g, eshape]
       = entities_to_geometry(mesh, dim, entities, false);
-  std::size_t shape1 = eshape[1];
 
   std::vector<T> x_mid(entities.size() * 3, 0);
   for (std::size_t e = 0; e < entities.size(); ++e)
   {
     std::span<T, 3> p(x_mid.data() + 3 * e, 3);
-    std::span<const std::int32_t> rows(e_to_g.data() + e * shape1, shape1);
+    std::span<const std::int32_t> rows(e_to_g.data() + e * eshape[1],
+                                       eshape[1]);
     for (auto row : rows)
     {
       std::span<const T, 3> xg(x.data() + 3 * row, 3);
@@ -674,13 +673,13 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 /// @param[in] permute If `true`, permute the DOFs such that they are
 /// consistent with the orientation of `dim`-dimensional mesh entities.
 /// This requires `create_entity_permutations` to be called first.
-/// @return Returns The geometry DOFs associated with the closure of each entity
-/// in `entities` and the shape. The shape is `(num_entities,
-/// num_xdofs_per_entity)` and the storage is row-major. The index `indices[i,
-/// j]` is the position in the geometry array of the `j`-th vertex of the
-/// `entity[i]`.
+/// @return Geometry DOFs associated with the closure of each entity in
+/// `entities` and the shape. The shape is `(num_entities,
+/// num_xdofs_per_entity)` and the storage is row-major. The index
+/// `indices[i, j]` is the position in the geometry array of the `j`-th
+/// vertex of the `entity[i]`.
 ///
-/// @pre The mesh connectivities `dim -> mesh.topology().dim()` and
+/// @pre Mesh connectivities `dim -> mesh.topology().dim()` and
 /// `mesh.topology().dim() -> dim` must have been computed. Otherwise an
 /// exception is thrown.
 template <std::floating_point T>
@@ -717,14 +716,14 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   // Special case when dim == tdim (cells)
   if (dim == tdim)
   {
-    for (std::size_t i = 0; i < entities.size(); ++i)
+    for (std::int32_t c : entities)
     {
-      const std::int32_t c = entities[i];
       // Extract degrees of freedom
       auto x_c = md::submdspan(xdofs, c, md::full_extent);
       for (std::int32_t entity_dof : closure_dofs_all[tdim][0])
         entity_xdofs.push_back(x_c[entity_dof]);
     }
+
     return {std::move(entity_xdofs), eshape};
   }
 
@@ -751,10 +750,8 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   if (permute)
     cell_info = std::span(mesh.topology()->get_cell_permutation_info());
 
-  for (std::size_t i = 0; i < entities.size(); ++i)
+  for (std::int32_t e : entities)
   {
-    const std::int32_t e = entities[i];
-
     // Get a cell connected to the entity
     assert(!e_to_c->links(e).empty());
     std::int32_t c = e_to_c->links(e).front();
@@ -765,10 +762,9 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
     assert(it != cell_entities.end());
     std::size_t local_entity = std::distance(cell_entities.begin(), it);
 
-    std::vector<std::int32_t> closure_dofs(closure_dofs_all[dim][local_entity]);
-
     // Cell sub-entities must be permuted so that their local
     // orientation agrees with their global orientation
+    std::vector<std::int32_t> closure_dofs(closure_dofs_all[dim][local_entity]);
     if (permute)
     {
       mesh::CellType entity_type
@@ -782,6 +778,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
     for (std::int32_t entity_dof : closure_dofs)
       entity_xdofs.push_back(x_c[entity_dof]);
   }
+
   return {std::move(entity_xdofs), eshape};
 }
 
@@ -1307,15 +1304,13 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
                            return x_to_subx_dof_map[x_dof];
                          });
 
-  // Create sub-geometry coordinate element
-  CellType sub_coord_cell
-      = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
-  // Special handling if point meshes, as they only support constant basis
-  // functions
-  int degree = geometry.cmap().degree();
-  if (sub_coord_cell == CellType::point)
-    degree = 0;
-  fem::CoordinateElement<T> sub_cmap(sub_coord_cell, degree,
+  // Sub-geometry coordinate element
+  CellType sub_xcell = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
+
+  // Special handling of point meshes, as they only support constant
+  // basis functions
+  int degree = (sub_xcell == CellType::point) ? 0 : geometry.cmap().degree();
+  fem::CoordinateElement<T> sub_cmap(sub_xcell, degree,
                                      geometry.cmap().variant());
 
   // Sub-geometry input_global_indices

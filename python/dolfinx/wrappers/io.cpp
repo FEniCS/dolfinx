@@ -36,6 +36,7 @@
 #include <vector>
 
 namespace nb = nanobind;
+namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
 namespace dolfinx_wrappers
 {
@@ -159,7 +160,8 @@ void declare_data_types(nb::module_& m)
       [](const dolfinx::mesh::Topology topology,
          nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
              input_global_indices,
-         std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
+         std::int64_t num_nodes_g,
+         const dolfinx::fem::ElementDofLayout& cmap_dof_layout,
          nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> xdofmap,
          int entity_dim,
          nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> entities,
@@ -212,7 +214,7 @@ void io(nb::module_& m)
                                                 dofmap.shape(1));
         auto [cells, shape]
             = dolfinx::io::extract_vtk_connectivity(_dofmap, cell);
-        return as_nbarray(std::move(cells), shape.size(), shape.data());
+        return as_nbarray(std::move(cells), shape);
       },
       nb::arg("dofmap"), nb::arg("celltype"),
       "Extract the mesh topology with VTK ordering using "
@@ -271,7 +273,7 @@ void io(nb::module_& m)
           [](dolfinx::io::XDMFFile& self, std::string name, std::string xpath)
           {
             auto [cells, shape] = self.read_topology_data(name, xpath);
-            return as_nbarray(std::move(cells), shape.size(), shape.data());
+            return as_nbarray(std::move(cells), shape);
           },
           nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def(
@@ -280,7 +282,7 @@ void io(nb::module_& m)
           {
             auto [x, shape] = self.read_geometry_data(name, xpath);
             std::vector<double>& _x = std::get<std::vector<double>>(x);
-            return as_nbarray(std::move(_x), shape.size(), shape.data());
+            return as_nbarray(std::move(_x), shape);
           },
           nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_geometry_data", &dolfinx::io::XDMFFile::read_geometry_data,
