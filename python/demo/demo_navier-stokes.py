@@ -8,7 +8,7 @@
 #       jupytext_version: 1.13.6
 # ---
 
-# # Divergence conforming discontinuous Galerkin method for the Navier--Stokes equations
+# # Divergence conforming discontinuous Galerkin method for the Navier--Stokes equations # noqa
 #
 # This demo ({download}`demo_navier-stokes.py`) illustrates how to
 # implement a divergence conforming discontinuous Galerkin method for
@@ -29,7 +29,8 @@
 #
 # $$
 # \begin{align}
-# \partial_t u - \nu \Delta u + (u \cdot \nabla)u + \nabla p &= f \text{ in } \Omega_t, \\
+# \partial_t u - \nu \Delta u + (u \cdot \nabla)u + \nabla p &= f
+# \text{ in } \Omega_t, \\
 # \nabla \cdot u &= 0 \text{ in } \Omega_t,
 # \end{align}
 # $$
@@ -124,7 +125,8 @@
 #     \end{cases}
 # $$
 #
-# where $\Gamma^\psi = \left\{x \in \Gamma; \; \psi(x) \cdot n(x) < 0\right\}$.
+# where $\Gamma^\psi = \left\{x \in \Gamma; \; \psi(x) \cdot n(x) < 0
+# \right\}$.
 #
 # The semi-discrete version problem (in dimensionless form) is: find
 # $(u_h, p_h) \in V_h^{u_D} \times Q_h$ such that
@@ -132,8 +134,8 @@
 # $$
 # \begin{align}
 #   \int_\Omega \partial_t u_h \cdot v + a_h(u_h, v_h) + c_h(u_h; u_h, v_h)
-#   + b_h(v_h, p_h) &= \int_\Omega f \cdot v_h + L_{a_h}(v_h) + L_{c_h}(v_h)
-#   \quad \forall v_h \in V_h^0, \\
+#   + b_h(v_h, p_h) &= \int_\Omega f \cdot v_h + L_{a_h}(v_h) +
+#   L_{c_h}(v_h) \quad \forall v_h \in V_h^0, \\
 #   b_h(u_h, q_h) &= 0 \quad \forall q_h \in Q_h,
 # \end{align}
 # $$
@@ -151,8 +153,10 @@
 #   c_h(w; u, v) &= - \sumK \int_K u \cdot \nabla \cdot (v \otimes w)
 #   + \sumK \int_{\partial_K} w \cdot n \hat{u}^{w} \cdot v, \\
 #   L_{a_h}(v_h) &= Re^{-1} \left(- \int_{\partial \Omega} u_D \otimes n :
-#   \nabla_h v_h + \frac{\alpha}{h} u_D \otimes n : v_h \otimes n \right), \\
-#   L_{c_h}(v_h) &= - \int_{\partial \Omega} u_D \cdot n \hat{u}_D \cdot v_h, \\
+#   \nabla_h v_h + \frac{\alpha}{h} u_D \otimes n : v_h \otimes n \right),
+#   \\
+#   L_{c_h}(v_h) &= - \int_{\partial \Omega} u_D \cdot n \hat{u}_D \cdot
+#   v_h, \\
 #   b_h(v, q) &= - \int_K \nabla \cdot v q.
 # \end{align}
 # $$

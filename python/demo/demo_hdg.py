@@ -103,8 +103,8 @@ num_facets = facet_imap.size_local + facet_imap.num_ghosts
 facets = np.arange(num_facets, dtype=np.int32)
 
 # Create the sub-mesh
-# NOTE Despite all facets being present in the submesh, the entity map isn't
-# necessarily the identity in parallel
+# NOTE Despite all facets being present in the submesh, the entity map
+# isn't necessarily the identity in parallel
 facet_mesh, facet_mesh_to_mesh = mesh.create_submesh(msh, fdim, facets)[:2]
 
 # Define function spaces
