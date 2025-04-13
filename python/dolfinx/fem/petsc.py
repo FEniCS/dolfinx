@@ -496,10 +496,10 @@ def _assemble_matrix_block_mat(
     for i, a_row in enumerate(a):
         for j, a_sub in enumerate(a_row):
             if a_sub is not None:
-                Asub = A.getLocalSubMatrix(is0[i], is1[j])
                 if a_sub.function_spaces[0] is a_sub.function_spaces[1]:
+                    Asub = A.getLocalSubMatrix(is0[i], is1[j])
                     _cpp.fem.petsc.insert_diagonal(Asub, a_sub.function_spaces[0], _bcs, diag)
-                A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
+                    A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
 
     return A
 

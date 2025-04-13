@@ -58,6 +58,24 @@ std::vector<std::reference_wrapper<const DirichletBC<T, U>>> bcs_partition(
   return _bcs;
 }
 
+/// @private Mark constrained degrees-of-freedom
+template <dolfinx::scalar T, std::floating_point U>
+std::vector<std::int8_t> bc_dof_markers(
+    const common::IndexMap& map, int bs,
+    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
+{
+  if (!bcs.empty())
+    return std::vector<std::int8_t>();
+  else
+  {
+    std::vector<std::int8_t> marker(bs * (map.size_local() + map.num_ghosts()),
+                                    false);
+    for (auto bc : bcs)
+      bc.get().mark_dofs(marker);
+    return marker;
+  }
+}
+
 } // namespace impl
 
 /// @brief Evaluate an Expression on cells or facets.
@@ -419,19 +437,28 @@ void apply_lifting(
 
 // -- Matrices ---------------------------------------------------------------
 
-/// @brief Assemble bilinear form into a matrix. Matrix must already be
-/// initialised. Does not zero or finalise the matrix.
+/// @brief Assemble bilinear form into a matrix with pre-computed
+/// coefficient and boundary constraint data.
 ///
-/// @param[in] mat_add The function for adding values into the matrix.
-/// @param[in] a The bilinear form to assemble.
+/// This is the preferred matrix assembly function when assembling more
+/// than once for performance reasons. It performs less preparatory.
+/// computation than the other interfaces.
+///
+/// The boundary condition marker arguments determine rows and columns
+/// of the matrix that will be zeroed.
+///
+/// Does not zero or finalise the matrix.
+///
+/// @param[in] mat_add Function for adding values into the matrix.
+/// @param[in] a Bilinear form to assemble.
 /// @param[in] constants Constants that appear in `a`.
 /// @param[in] coefficients Coefficients that appear in `a`.
 /// @param[in] dof_marker0 Boundary condition markers for the rows. If
-/// bc[i] is true then rows i in A will be zeroed. The index i is a
-/// local index.
+/// `bc[i]` is `true`, then row `i` in `A` will be zeroed. Index `i` is
+/// a local index.
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
-/// If bc[i] is true then rows i in A will be zeroed. The index i is a
-/// local index.
+/// If `bc[i]` is `true`, then column `i` in `A` will be zeroed. Index
+/// `i` is a local index.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     la::MatSet<T> auto mat_add, const Form<T, U>& a,
@@ -487,31 +514,12 @@ void assemble_matrix(
   // NOTE: For mixed-topology meshes, there will be multiple DOF maps,
   // but the index maps are the same.
 
-  // Build dof markers
-  std::vector<std::int8_t> dof_marker0;
-  if (!bcs0.empty())
-  {
-    auto map0 = a.function_spaces().at(0)->dofmaps(0)->index_map;
-    assert(map0);
-    auto bs0 = a.function_spaces().at(0)->dofmaps(0)->index_map_bs();
-    std::int32_t dim0 = bs0 * (map0->size_local() + map0->num_ghosts());
-    dof_marker0.resize(dim0, false);
-    for (auto bc : bcs0)
-      bc.get().mark_dofs(dof_marker0);
-  }
-
-  std::vector<std::int8_t> dof_marker1;
-  if (!bcs1.empty())
-  {
-    auto map1 = a.function_spaces().at(1)->dofmaps(0)->index_map;
-    assert(map1);
-    auto bs1 = a.function_spaces().at(1)->dofmaps(0)->index_map_bs();
-    std::int32_t dim1 = bs1 * (map1->size_local() + map1->num_ghosts());
-    dof_marker1.resize(dim1, false);
-    for (auto bc : bcs1)
-      bc.get().mark_dofs(dof_marker1);
-  }
-
+  std::vector<std::int8_t> dof_marker0 = impl::bc_dof_markers(
+      *a.function_spaces().at(0)->dofmaps(0)->index_map,
+      a.function_spaces().at(0)->dofmaps(0)->index_map_bs(), bcs0);
+  std::vector<std::int8_t> dof_marker1 = impl::bc_dof_markers(
+      *a.function_spaces().at(1)->dofmaps(0)->index_map,
+      a.function_spaces().at(1)->dofmaps(0)->index_map_bs(), bcs1);
   assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
                   dof_marker1);
 }
@@ -542,14 +550,14 @@ void assemble_matrix(
                   make_coefficients_span(coefficients), bcs0, bcs1);
 }
 
-/// @brief Sets a value to the diagonal of a matrix for specified rows.
+/// @brief Set a value on the diagonal of a matrix for specified rows.
 ///
 /// This function is typically called after assembly. The assembly
 /// function zeroes Dirichlet rows and columns. For block matrices, this
 /// function should normally be called only on the diagonal blocks, i.e.
 /// blocks for which the test and trial spaces are the same.
 ///
-/// @param[in] set_fn The function for setting values to a matrix.
+/// @param[in] set_fn Function for setting values to a matrix.
 /// @param[in] rows Row blocks, in local indices, for which to add a
 /// value to the diagonal.
 /// @param[in] diagonal Value to add to the diagonal for the specified
@@ -574,10 +582,11 @@ void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
 /// create a need for parallel communication. For block matrices, this
 /// function should normally be called only on the diagonal blocks, i.e.
 /// blocks for which the test and trial spaces are the same.
+///
 /// @param[in] set_fn The function for setting values to a matrix.
 /// @param[in] V The function space for the rows and columns of the
 /// matrix. It is used to extract only the Dirichlet boundary conditions
-/// that are define on V or subspaces of V.
+/// that are define on `V` or subspaces of `V`.
 /// @param[in] bcs The Dirichlet boundary conditions.
 /// @param[in] diagonal Value to add to the diagonal for rows with a
 /// boundary condition applied.
