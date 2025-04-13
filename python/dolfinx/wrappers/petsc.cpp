@@ -313,24 +313,22 @@ void petsc_fem_module(nb::module_& m)
                         nb::ndarray<const PetscScalar, nb::ndim<2>,
                                     nb::c_contig>>& coefficients,
          std::vector<const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>*>
-             bcs0,
-         std::vector<const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>*>
-             bcs1,
+             bcs,
          bool unrolled)
       {
         std::vector<std::reference_wrapper<
             const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>>>
-            _bcs0, _bcs1;
-        for (auto bc : bcs0)
+            _bcs;
+        for (auto bc : bcs)
         {
           assert(bc);
-          _bcs0.push_back(*bc);
+          _bcs.push_back(*bc);
         }
-        for (auto bc : bcs1)
-        {
-          assert(bc);
-          _bcs1.push_back(*bc);
-        }
+
+        auto _bcs0 = dolfinx::fem::impl::bcs_partition(
+            *a.function_spaces().at(0), _bcs);
+        auto _bcs1 = dolfinx::fem::impl::bcs_partition(
+            *a.function_spaces().at(1), _bcs);
 
         if (unrolled)
         {
@@ -350,7 +348,7 @@ void petsc_fem_module(nb::module_& m)
         }
       },
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
-      nb::arg("bcs0"), nb::arg("bcs1"), nb::arg("unrolled") = false,
+      nb::arg("bc0"), nb::arg("unrolled") = false,
       "Assemble bilinear form into an existing PETSc matrix");
   m.def(
       "assemble_matrix",
