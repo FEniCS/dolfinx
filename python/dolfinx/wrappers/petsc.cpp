@@ -313,16 +313,23 @@ void petsc_fem_module(nb::module_& m)
                         nb::ndarray<const PetscScalar, nb::ndim<2>,
                                     nb::c_contig>>& coefficients,
          std::vector<const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>*>
-             bcs,
+             bcs0,
+         std::vector<const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>*>
+             bcs1,
          bool unrolled)
       {
         std::vector<std::reference_wrapper<
             const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>>>
-            _bcs;
-        for (auto bc : bcs)
+            _bcs0, _bcs1;
+        for (auto bc : bcs0)
         {
           assert(bc);
-          _bcs.push_back(*bc);
+          _bcs0.push_back(*bc);
+        }
+        for (auto bc : bcs1)
+        {
+          assert(bc);
+          _bcs1.push_back(*bc);
         }
 
         if (unrolled)
@@ -332,18 +339,18 @@ void petsc_fem_module(nb::module_& m)
               a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
           dolfinx::fem::assemble_matrix(
               set_fn, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs0, _bcs1);
         }
         else
         {
           dolfinx::fem::assemble_matrix(
               dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a,
               std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs0, _bcs1);
         }
       },
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
-      nb::arg("bcs"), nb::arg("unrolled") = false,
+      nb::arg("bcs0"), nb::arg("bcs1"), nb::arg("unrolled") = false,
       "Assemble bilinear form into an existing PETSc matrix");
   m.def(
       "assemble_matrix",
