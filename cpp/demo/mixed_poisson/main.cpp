@@ -277,8 +277,7 @@ int main(int argc, char* argv[])
 
     // Since we are doing a ds(1) integral on mesh and u0 is defined on the
     // submesh, we must provide an "entity map" relating cells in submesh to
-    // entities in mesh. This is simply the "inverse" of submesh_to_mesh, which
-    // we create here:
+    // entities in mesh. This is simply the "inverse" of submesh_to_mesh:
     auto facet_imap = mesh->topology()->index_map(fdim);
     assert(facet_imap);
     std::size_t num_facets = mesh->topology()->index_map(fdim)->size_local()
