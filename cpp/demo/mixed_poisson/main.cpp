@@ -217,12 +217,12 @@ int main(int argc, char* argv[])
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, true);
 
-    auto W
+    auto Q
         = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
             submesh, std::make_shared<fem::FiniteElement<U>>(Q_ele)));
 
     // Boundary condition value for u and interpolate 20y + 1
-    auto u0 = std::make_shared<fem::Function<T>>(W);
+    auto u0 = std::make_shared<fem::Function<T>>(Q);
     u0->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {

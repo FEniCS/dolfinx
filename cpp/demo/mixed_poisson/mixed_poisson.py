@@ -16,18 +16,20 @@ from ufl import (
     inner,
 )
 
-shape = "triangle"
-RT = element("RT", shape, 1)
-P = element("DP", shape, 0)
-Q = element("Discontinuous Lagrange", "interval", 1)
+msh_cell = "triangle"
+submsh_cell = "interval"
+
+RT = element("RT", msh_cell, 1)
+P = element("DP", msh_cell, 0)
 ME = mixed_element([RT, P])
 
-msh = Mesh(element("Lagrange", shape, 1, shape=(2,)))
+msh = Mesh(element("Lagrange", msh_cell, 1, shape=(2,)))
+submsh = Mesh(element("Lagrange", submsh_cell, 1, shape=(2,)))
+
 n = FacetNormal(msh)
 V = FunctionSpace(msh, ME)
 
-submsh = Mesh(element("Lagrange", "interval", 1, shape=(2,)))
-W = FunctionSpace(submsh, Q)
+Q = FunctionSpace(submsh, element("DP", submsh_cell, 1))
 
 (sigma, u) = TrialFunctions(V)
 (tau, v) = TestFunctions(V)
@@ -35,7 +37,7 @@ W = FunctionSpace(submsh, Q)
 V0 = FunctionSpace(msh, P)
 f = Coefficient(V0)
 
-u0 = Coefficient(W)
+u0 = Coefficient(Q)
 
 dx = Measure("dx", msh)
 ds = Measure("ds", msh)
