@@ -286,7 +286,7 @@ int main(int argc, char* argv[])
     for (std::size_t i = 0; i < submesh_to_mesh.size(); ++i)
       mesh_to_submesh[submesh_to_mesh[i]] = i;
 
-    // Create the entity map
+    // Create the entity map to pass to create_form
     std::map<std::shared_ptr<const mesh::Mesh<U>>,
              std::span<const std::int32_t>>
         entity_maps = {{submesh, mesh_to_submesh}};
