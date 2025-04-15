@@ -29,14 +29,13 @@ submsh = Mesh(element("Lagrange", submsh_cell, 1, shape=(2,)))
 n = FacetNormal(msh)
 V = FunctionSpace(msh, ME)
 
-Q = FunctionSpace(submsh, element("DP", submsh_cell, 1))
-
 (sigma, u) = TrialFunctions(V)
 (tau, v) = TestFunctions(V)
 
 V0 = FunctionSpace(msh, P)
 f = Coefficient(V0)
 
+Q = FunctionSpace(submsh, element("DP", submsh_cell, 1))
 u0 = Coefficient(Q)
 
 dx = Measure("dx", msh)
