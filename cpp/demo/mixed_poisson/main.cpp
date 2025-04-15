@@ -213,7 +213,7 @@ int main(int argc, char* argv[])
     }
 
     auto Q_ele = basix::create_element<U>(
-        basix::element::family::P, basix::cell::type::interval, 0,
+        basix::element::family::P, basix::cell::type::interval, 1,
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, true);
 
@@ -232,8 +232,8 @@ int main(int argc, char* argv[])
           return {f, {f.size()}};
         });
 
-    // io::VTKFile test_file(MPI_COMM_WORLD, "u0.pvd", "w");
-    // test_file.write<T>({*u0}, 0);
+    io::VTKFile test_file(MPI_COMM_WORLD, "u0.pvd", "w");
+    test_file.write<T>({*u0}, 0);
 
     // Compute facets with \sigma (flux) boundary condition facets, which is
     // {all boundary facet} - {u0 boundary facets }
