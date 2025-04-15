@@ -8,6 +8,7 @@
 // * Apply boundary conditions to different fields in a mixed problem.
 // * Create integration domain data to execute finite element kernels.
 //   over subsets of the boundary.
+// * Use a submesh to represent boundary data
 //
 // The full implementation is in
 // {download}`demo_mixed_poisson/main.cpp`.
@@ -200,9 +201,12 @@ int main(int argc, char* argv[])
           return marker;
         });
 
+    // We'd like to represent u_0 using a function space defined only
+    // on the facets in dfacets. To do so, we begin by calling create_submesh
+    // to get a submesh of those facets. It also returns a map submesh_to_mesh
+    // whose ith entry is the facet in mesh corresponding to cell i in submesh.
     const int tdim = mesh->topology()->dim();
     const int fdim = tdim - 1;
-
     std::shared_ptr<mesh::Mesh<U>> submesh;
     std::vector<std::int32_t> submesh_to_mesh;
     {
@@ -212,11 +216,14 @@ int main(int argc, char* argv[])
       submesh_to_mesh = std::move(_submesh_to_mesh);
     }
 
+    // Create an element for u_0. Since the cells in submesh are intervals, we
+    // use the interval cell type.
     auto Q_ele = basix::create_element<U>(
         basix::element::family::P, basix::cell::type::interval, 1,
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, true);
 
+    // Create a function space for u_0 on the submesh
     auto Q
         = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
             submesh, std::make_shared<fem::FiniteElement<U>>(Q_ele)));
@@ -232,8 +239,9 @@ int main(int argc, char* argv[])
           return {f, {f.size()}};
         });
 
-    io::VTKFile test_file(MPI_COMM_WORLD, "u0.pvd", "w");
-    test_file.write<T>({*u0}, 0);
+    // Write u0 to file to visualise
+    io::VTKFile u0_file(MPI_COMM_WORLD, "u0.pvd", "w");
+    u0_file.write<T>({*u0}, 0);
 
     // Compute facets with \sigma (flux) boundary condition facets, which is
     // {all boundary facet} - {u0 boundary facets }
@@ -267,6 +275,10 @@ int main(int argc, char* argv[])
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>
         subdomain_data{{fem::IntegralType::exterior_facet, {{1, domains}}}};
 
+    // Since we are doing a ds(1) integral on mesh and u0 is defined on the
+    // submesh, we must provide an "entity map" relating cells in submesh to
+    // entities in mesh. This is simply the "inverse" of submesh_to_mesh, which
+    // we create here:
     auto facet_imap = mesh->topology()->index_map(fdim);
     assert(facet_imap);
     std::size_t num_facets = mesh->topology()->index_map(fdim)->size_local()
@@ -275,6 +287,7 @@ int main(int argc, char* argv[])
     for (std::size_t i = 0; i < submesh_to_mesh.size(); ++i)
       mesh_to_submesh[submesh_to_mesh[i]] = i;
 
+    // Create the entity map
     std::map<std::shared_ptr<const mesh::Mesh<U>>,
              std::span<const std::int32_t>>
         entity_maps = {{submesh, mesh_to_submesh}};
