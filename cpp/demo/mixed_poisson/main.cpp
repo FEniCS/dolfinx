@@ -163,17 +163,6 @@ int main(int argc, char* argv[])
           return {f, {f.size()}};
         });
 
-    // Boundary condition value for u and interpolate 20y + 1
-    auto u0 = std::make_shared<fem::Function<T>>(W1);
-    u0->interpolate(
-        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
-        {
-          std::vector<T> f;
-          for (std::size_t p = 0; p < x.extent(1); ++p)
-            f.push_back(20 * x(1, p) + 1);
-          return {f, {f.size()}};
-        });
-
     // Create boundary condition for \sigma and interpolate such that
     // flux = 10 (for top and bottom boundaries)
     auto g = std::make_shared<fem::Function<T>>(W0);
@@ -211,6 +200,41 @@ int main(int argc, char* argv[])
           return marker;
         });
 
+    const int tdim = mesh->topology()->dim();
+    const int fdim = tdim - 1;
+
+    std::shared_ptr<mesh::Mesh<U>> submesh;
+    std::vector<std::int32_t> submesh_to_mesh;
+    {
+      auto [_submesh, _submesh_to_mesh, v_map, g_map]
+          = mesh::create_submesh(*mesh, fdim, dfacets);
+      submesh = std::make_shared<mesh::Mesh<U>>(std::move(_submesh));
+      submesh_to_mesh = std::move(_submesh_to_mesh);
+    }
+
+    auto Q_ele = basix::create_element<U>(
+        basix::element::family::P, basix::cell::type::interval, 0,
+        basix::element::lagrange_variant::unset,
+        basix::element::dpc_variant::unset, true);
+
+    auto W
+        = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+            submesh, std::make_shared<fem::FiniteElement<U>>(Q_ele)));
+
+    // Boundary condition value for u and interpolate 20y + 1
+    auto u0 = std::make_shared<fem::Function<T>>(W);
+    u0->interpolate(
+        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
+        {
+          std::vector<T> f;
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+            f.push_back(20 * x(1, p) + 1);
+          return {f, {f.size()}};
+        });
+
+    // io::VTKFile test_file(MPI_COMM_WORLD, "u0.pvd", "w");
+    // test_file.write<T>({*u0}, 0);
+
     // Compute facets with \sigma (flux) boundary condition facets, which is
     // {all boundary facet} - {u0 boundary facets }
     std::vector<std::int32_t> nfacets;
@@ -243,12 +267,24 @@ int main(int argc, char* argv[])
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>
         subdomain_data{{fem::IntegralType::exterior_facet, {{1, domains}}}};
 
+    auto facet_imap = mesh->topology()->index_map(fdim);
+    assert(facet_imap);
+    std::size_t num_facets = mesh->topology()->index_map(fdim)->size_local()
+                             + mesh->topology()->index_map(fdim)->num_ghosts();
+    std::vector<std::int32_t> mesh_to_submesh(num_facets, -1);
+    for (std::size_t i = 0; i < submesh_to_mesh.size(); ++i)
+      mesh_to_submesh[submesh_to_mesh[i]] = i;
+
+    std::map<std::shared_ptr<const mesh::Mesh<U>>,
+             std::span<const std::int32_t>>
+        entity_maps = {{submesh, mesh_to_submesh}};
+
     // Define variational forms and attach he required data
     fem::Form<T> a = fem::create_form<T>(*form_mixed_poisson_a, {V, V}, {}, {},
                                          subdomain_data, {});
-    fem::Form<T> L
-        = fem::create_form<T>(*form_mixed_poisson_L, {V},
-                              {{"f", f}, {"u0", u0}}, {}, subdomain_data, {});
+    fem::Form<T> L = fem::create_form<T>(
+        *form_mixed_poisson_L, {V}, {{"f", f}, {"u0", u0}}, {}, subdomain_data,
+        entity_maps, V->mesh());
 
     // Create solution finite element Function
     auto u = std::make_shared<fem::Function<T>>(V);
