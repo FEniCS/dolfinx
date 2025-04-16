@@ -88,7 +88,7 @@ public:
     std::size_t n = std::count(_values.begin(), _values.end(), value);
     std::vector<std::int32_t> indices;
     indices.reserve(n);
-    for (std::int32_t i = 0; i < _values.size(); ++i)
+    for (std::size_t i = 0; i < _values.size(); ++i)
     {
       if (_values[i] == value)
         indices.push_back(_indices[i]);

@@ -373,7 +373,7 @@ public:
         dolfinx::MPI::mpi_t<value_type>, _ghost_value_data_in.data(),
         val_recv_count.data(), _val_recv_disp.data(),
         dolfinx::MPI::mpi_t<value_type>, _comm.comm(), &_request);
-    assert(status == MPI_SUCCESS);
+    dolfinx::MPI::check_error(_comm.comm(), status);
   }
 
   /// @brief End transfer of ghost row data to owning ranks.
@@ -384,7 +384,7 @@ public:
   void scatter_rev_end()
   {
     int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
-    assert(status == MPI_SUCCESS);
+    dolfinx::MPI::check_error(_comm.comm(), status);
 
     _ghost_value_data.clear();
     _ghost_value_data.shrink_to_fit();

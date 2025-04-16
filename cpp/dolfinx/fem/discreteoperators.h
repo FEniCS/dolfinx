@@ -542,7 +542,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
     auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      for (std::size_t j = 0; j < gdim; ++j)
+      for (int j = 0; j < gdim; ++j)
         coord_dofs(i, j) = x_g[3 * x_dofs[i] + j];
     }
 
