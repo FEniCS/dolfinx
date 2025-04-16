@@ -201,7 +201,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
     // Compute receive sizes
     std::ranges::for_each(
         dest_ranks,
-        [&dest_ranks, &rank_to_neighbor, &recv_sizes, block_size](auto rank)
+        [&rank_to_neighbor, &recv_sizes, block_size](auto rank)
         {
           if (rank >= 0)
           {
@@ -596,7 +596,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
     for (std::size_t i = 0; i < num_dofs_g; ++i)
     {
       const int pos = 3 * x_dofs[i];
-      for (std::size_t j = 0; j < gdim; ++j)
+      for (int j = 0; j < gdim; ++j)
         coord_dofs(i, j) = x_g[pos + j];
     }
 
