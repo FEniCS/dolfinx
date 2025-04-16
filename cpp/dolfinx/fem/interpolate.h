@@ -201,7 +201,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
     // Compute receive sizes
     std::ranges::for_each(
         dest_ranks,
-        [&dest_ranks, &rank_to_neighbor, &recv_sizes, block_size](auto rank)
+        [&rank_to_neighbor, &recv_sizes, block_size](auto rank)
         {
           if (rank >= 0)
           {
