@@ -7,9 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Find DOLFINx config file
-set(CMAKE_FIND_DEBUG_MODE TRUE)
 find_package(DOLFINX REQUIRED)
-set(CMAKE_FIND_DEBUG_MODE FALSE)
 
 # Add shared library paths so shared libs in non-system paths are found
 option(CMAKE_INSTALL_RPATH_USE_LINK_PATH
