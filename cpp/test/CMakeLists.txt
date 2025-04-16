@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
-project(dolfinx-tests)
 
-project(${PROJECT_NAME} LANGUAGES C CXX)
+project(dolfinx-tests LANGUAGES C CXX)
 set(CMAKE_C_STANDARD 17) # For FFCx generated .c files.
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -9,6 +8,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Find DOLFINx config file
 find_package(DOLFINX REQUIRED)
+
+# Add shared library paths so shared libs in non-system paths are found
+option(CMAKE_INSTALL_RPATH_USE_LINK_PATH
+       "Add paths to linker search and installed rpath." ON
+)
 
 add_custom_command(
   OUTPUT expr.c

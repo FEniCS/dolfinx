@@ -85,7 +85,7 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
   std::vector<std::int64_t> topology_flattened;
   std::vector<std::int64_t> topology_offsets;
   std::vector<std::uint8_t> vtkcelltypes;
-  for (int i = 0; i < cell_index_maps.size(); ++i)
+  for (std::size_t i = 0; i < cell_index_maps.size(); ++i)
   {
     md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> g_dofmap
         = mesh.geometry().dofmap(i);
@@ -118,7 +118,7 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
   std::vector<int> num_nodes_per_cell;
   std::vector<std::int64_t> cell_start_pos;
   std::vector<std::int64_t> cell_stop_pos;
-  for (int i = 0; i < cell_index_maps.size(); ++i)
+  for (std::size_t i = 0; i < cell_index_maps.size(); ++i)
   {
     num_nodes_per_cell.push_back(mesh.geometry().cmaps()[i].dim());
     std::array<std::int64_t, 2> r = cell_index_maps[i]->local_range();
@@ -335,6 +335,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
   std::vector<std::span<const std::int64_t>> cells_span(cells_local.begin(),
                                                         cells_local.end());
   return mesh::create_mesh(comm, comm, cells_span, coordinate_elements, comm,
-                           points_pruned, {x_shape[0], gdim}, part);
+                           points_pruned, {(std::size_t)x_shape[0], gdim},
+                           part);
 }
 } // namespace dolfinx::io::VTKHDF
