@@ -121,8 +121,8 @@ int main(int argc, char* argv[])
   {
     // Create mesh
     auto mesh = std::make_shared<mesh::Mesh<U>>(
-        mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
-                                  {32, 32}, mesh::CellType::triangle));
+        mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0, 0}, {1, 1}}}, {32, 32},
+                                  mesh::CellType::triangle));
 
     // Create Basix elements
     auto RT = basix::create_element<U>(
@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
         [](auto x)
         {
           using U = typename decltype(x)::value_type;
-          constexpr U eps = 1.0e-8;
+          constexpr U eps = 1e-8;
           std::vector<std::int8_t> marker(x.extent(1), false);
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
@@ -206,8 +206,8 @@ int main(int argc, char* argv[])
     // `create_submesh` to get a submesh of those facets. It also
     // returns a map `submesh_to_mesh` whose `i`th entry is the facet in
     // mesh corresponding to cell `i` in submesh.
-    const int tdim = mesh->topology()->dim();
-    const int fdim = tdim - 1;
+    int tdim = mesh->topology()->dim();
+    int fdim = tdim - 1;
     std::shared_ptr<mesh::Mesh<U>> submesh;
     std::vector<std::int32_t> submesh_to_mesh;
     {
@@ -219,15 +219,14 @@ int main(int argc, char* argv[])
 
     // Create an element for `u_0`. Since the cells in submesh are
     // intervals, we use the interval cell type.
-    auto Q_ele = basix::create_element<U>(
+    auto Qe = std::make_shared<fem::FiniteElement<U>>(basix::create_element<U>(
         basix::element::family::P, basix::cell::type::interval, 1,
         basix::element::lagrange_variant::unset,
-        basix::element::dpc_variant::unset, true);
+        basix::element::dpc_variant::unset, true));
 
     // Create a function space for `u_0` on the submesh
-    auto Q
-        = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
-            submesh, std::make_shared<fem::FiniteElement<U>>(Q_ele)));
+    auto Q = std::make_shared<fem::FunctionSpace<U>>(
+        fem::create_functionspace<U>(submesh, Qe));
 
     // Boundary condition value for u and interpolate $20 y + 1$
     auto u0 = std::make_shared<fem::Function<T>>(Q);

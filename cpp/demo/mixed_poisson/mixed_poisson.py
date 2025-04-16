@@ -3,6 +3,8 @@
 # {download}`demo_mixed_poisson/mixed_poisson.py`.  We begin by defining the
 # finite element:
 
+from basix import CellType
+from basix.cell import sub_entity_type
 from basix.ufl import element, mixed_element
 from ufl import (
     Coefficient,
@@ -16,8 +18,8 @@ from ufl import (
     inner,
 )
 
-msh_cell = "triangle"
-submsh_cell = "interval"
+msh_cell = CellType.triangle
+submsh_cell = sub_entity_type(msh_cell, dim=1, index=0)
 
 RT = element("RT", msh_cell, 1)
 P = element("DP", msh_cell, 0)
