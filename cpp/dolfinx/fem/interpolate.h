@@ -596,7 +596,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
     for (std::size_t i = 0; i < num_dofs_g; ++i)
     {
       const int pos = 3 * x_dofs[i];
-      for (std::size_t j = 0; j < gdim; ++j)
+      for (int j = 0; j < gdim; ++j)
         coord_dofs(i, j) = x_g[pos + j];
     }
 

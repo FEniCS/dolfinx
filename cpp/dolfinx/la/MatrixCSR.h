@@ -368,7 +368,7 @@ public:
     std::adjacent_difference(std::next(_val_recv_disp.begin()),
                              _val_recv_disp.end(), val_recv_count.begin());
 
-    int status = MPI_Ineighbor_alltoallv(
+    [[maybe_unused]] int status = MPI_Ineighbor_alltoallv(
         _ghost_value_data.data(), val_send_count.data(), _val_send_disp.data(),
         dolfinx::MPI::mpi_t<value_type>, _ghost_value_data_in.data(),
         val_recv_count.data(), _val_recv_disp.data(),
@@ -383,7 +383,7 @@ public:
   /// zeroed.
   void scatter_rev_end()
   {
-    int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
+    [[maybe_unused]] int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
     assert(status == MPI_SUCCESS);
 
     _ghost_value_data.clear();
