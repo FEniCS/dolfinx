@@ -6,7 +6,7 @@ on:
       - main
   push:
     branches:
-      - "**"
+      - "main"
     tags:
       - "v*"
   merge_group:
@@ -81,7 +81,7 @@ jobs:
       - name: Build and install DOLFINx C++ library
         run: |
           cmake -G Ninja -B build -S cpp/
-          VERBOSE=1 cmake --build build
+          cmake --build build
           sudo cmake --install build
 
       - name: Build C++ unit tests
@@ -91,7 +91,6 @@ jobs:
 
       - name: Run C++ unit tests (serial)
         run: |
-          echo $DYLD_LIBRARY_PATH
           cd build/test
           mpiexec -np 1 ctest -V --output-on-failure -R unittests
       - name: Run C++ unit tests (MPI)
