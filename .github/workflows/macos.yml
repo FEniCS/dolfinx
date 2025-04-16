@@ -88,7 +88,7 @@ jobs:
 
       - name: Run C++ unit tests (serial)
         run: |
-          export DYLD_LIBRARY_PATH=/usr/local/lib
+          echo DYLD_LIBRARY_PATH=/usr/local/lib >> $GITHUB_ENV
           echo $DYLD_LIBRARY_PATH
           cd build/test
           mpiexec -np 1 ctest -V --output-on-failure -R unittests
