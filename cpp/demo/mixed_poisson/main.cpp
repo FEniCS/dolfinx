@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
     auto W0 = std::make_shared<fem::FunctionSpace<U>>(V0->collapse().first);
     auto W1 = std::make_shared<fem::FunctionSpace<U>>(V1->collapse().first);
 
-    // Create source function and interpolate sin(5x) + 1
+    // Create source function and interpolate $\sin(5x) + 1$
     auto f = std::make_shared<fem::Function<T>>(W1);
     f->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
@@ -164,7 +164,7 @@ int main(int argc, char* argv[])
           return {f, {f.size()}};
         });
 
-    // Create boundary condition for \sigma and interpolate such that
+    // Create boundary condition for $\sigma$ and interpolate such that
     // flux = 10 (for top and bottom boundaries)
     auto g = std::make_shared<fem::Function<T>>(W0);
     g->interpolate(
@@ -201,10 +201,11 @@ int main(int argc, char* argv[])
           return marker;
         });
 
-    // We'd like to represent u_0 using a function space defined only
-    // on the facets in dfacets. To do so, we begin by calling create_submesh
-    // to get a submesh of those facets. It also returns a map submesh_to_mesh
-    // whose ith entry is the facet in mesh corresponding to cell i in submesh.
+    // We'd like to represent `u_0` using a function space defined only
+    // on the facets in dfacets. To do so, we begin by calling
+    // `create_submesh` to get a submesh of those facets. It also
+    // returns a map `submesh_to_mesh` whose `i`th entry is the facet in
+    // mesh corresponding to cell `i` in submesh.
     const int tdim = mesh->topology()->dim();
     const int fdim = tdim - 1;
     std::shared_ptr<mesh::Mesh<U>> submesh;
@@ -216,19 +217,19 @@ int main(int argc, char* argv[])
       submesh_to_mesh = std::move(_submesh_to_mesh);
     }
 
-    // Create an element for u_0. Since the cells in submesh are intervals, we
-    // use the interval cell type.
+    // Create an element for `u_0`. Since the cells in submesh are
+    // intervals, we use the interval cell type.
     auto Q_ele = basix::create_element<U>(
         basix::element::family::P, basix::cell::type::interval, 1,
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, true);
 
-    // Create a function space for u_0 on the submesh
+    // Create a function space for `u_0` on the submesh
     auto Q
         = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
             submesh, std::make_shared<fem::FiniteElement<U>>(Q_ele)));
 
-    // Boundary condition value for u and interpolate 20y + 1
+    // Boundary condition value for u and interpolate $20 y + 1$
     auto u0 = std::make_shared<fem::Function<T>>(Q);
     u0->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
@@ -243,8 +244,8 @@ int main(int argc, char* argv[])
     io::VTKFile u0_file(MPI_COMM_WORLD, "u0.pvd", "w");
     u0_file.write<T>({*u0}, 0);
 
-    // Compute facets with \sigma (flux) boundary condition facets, which is
-    // {all boundary facet} - {u0 boundary facets }
+    // Compute facets with $\sigma$ (flux) boundary condition facets,
+    // which is `{all boundary facet} - {u0 boundary facets}`
     std::vector<std::int32_t> nfacets;
     std::ranges::set_difference(bfacets, dfacets, std::back_inserter(nfacets));
 
@@ -253,31 +254,32 @@ int main(int argc, char* argv[])
         = fem::locate_dofs_topological(
             *mesh->topology(), {*V0->dofmap(), *W0->dofmap()}, 1, nfacets);
 
-    // Create boundary condition for \sigma. \sigma \cdot n will be
-    // constrained to to be equal to the normal component of g. The
+    // Create boundary condition for $\sigma. $\sigma \cdot n$ will be
+    // constrained to to be equal to the normal component of $g$. The
     // boundary conditions are applied to degrees-of-freedom ndofs, and
-    // V0 is the subspace that is constrained.
+    // `V0` is the subspace that is constrained.
     fem::DirichletBC<T> bc(g, ndofs, V0);
 
-    // Create integration domain data for u0 boundary condition (applied
-    // on the ds(1) in the UFL file). First we get facet data
+    // Create integration domain data for `u`0 boundary condition
+    // (applied on the `ds(1)` in the UFL file). First we get facet data
     // integration data for facets in dfacets.
     std::vector<std::int32_t> domains = fem::compute_integration_domains(
         fem::IntegralType::exterior_facet, *mesh->topology(), dfacets);
 
-    // Create data structure for the ds(1) integration domain in form
+    // Create data structure for the `ds(1)` integration domain in form
     // (see the UFL file). It is for en exterior facet integral (the key
     // in the map), and exterior facet domain marked as '1' in the UFL
-    // file, and 'domains' holds the necessary data to perform
+    // file, and `domains` holds the necessary data to perform
     // integration of selected facets.
     std::map<
         fem::IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>
         subdomain_data{{fem::IntegralType::exterior_facet, {{1, domains}}}};
 
-    // Since we are doing a ds(1) integral on mesh and u0 is defined on the
-    // submesh, we must provide an "entity map" relating cells in submesh to
-    // entities in mesh. This is simply the "inverse" of submesh_to_mesh:
+    // Since we are doing a `ds(1)` integral on mesh and u0 is defined
+    // on the `submesh`, we must provide an "entity map" relating cells
+    // in `submesh` to entities in `mesh`. This is simply the "inverse"
+    // of `submesh_to_mesh`:
     auto facet_imap = mesh->topology()->index_map(fdim);
     assert(facet_imap);
     std::size_t num_facets = mesh->topology()->index_map(fdim)->size_local()
@@ -286,7 +288,7 @@ int main(int argc, char* argv[])
     for (std::size_t i = 0; i < submesh_to_mesh.size(); ++i)
       mesh_to_submesh[submesh_to_mesh[i]] = i;
 
-    // Create the entity map to pass to create_form
+    // Create the entity map to pass to `create_form`
     std::map<std::shared_ptr<const mesh::Mesh<U>>,
              std::span<const std::int32_t>>
         entity_maps = {{submesh, mesh_to_submesh}};
@@ -320,7 +322,7 @@ int main(int argc, char* argv[])
     MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
-    // Assemble the linear form L into RHS vector
+    // Assemble the linear form `L` into RHS vector
     b.set(0);
     fem::assemble_vector(b.mutable_array(), L);
 
