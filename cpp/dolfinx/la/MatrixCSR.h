@@ -368,12 +368,12 @@ public:
     std::adjacent_difference(std::next(_val_recv_disp.begin()),
                              _val_recv_disp.end(), val_recv_count.begin());
 
-    [[maybe_unused]] int status = MPI_Ineighbor_alltoallv(
+    int status = MPI_Ineighbor_alltoallv(
         _ghost_value_data.data(), val_send_count.data(), _val_send_disp.data(),
         dolfinx::MPI::mpi_t<value_type>, _ghost_value_data_in.data(),
         val_recv_count.data(), _val_recv_disp.data(),
         dolfinx::MPI::mpi_t<value_type>, _comm.comm(), &_request);
-    assert(status == MPI_SUCCESS);
+    dolfinx::MPI::check_error(_comm.comm(), status);
   }
 
   /// @brief End transfer of ghost row data to owning ranks.
@@ -383,8 +383,8 @@ public:
   /// zeroed.
   void scatter_rev_end()
   {
-    [[maybe_unused]] int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
-    assert(status == MPI_SUCCESS);
+    int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
+    dolfinx::MPI::check_error(_comm.comm(), status);
 
     _ghost_value_data.clear();
     _ghost_value_data.shrink_to_fit();
