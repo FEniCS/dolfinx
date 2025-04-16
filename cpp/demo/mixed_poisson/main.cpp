@@ -203,7 +203,7 @@ int main(int argc, char* argv[])
 
     // We'd like to represent `u_0` using a function space defined only
     // on the facets in dfacets. To do so, we begin by calling
-    // `create_submesh` to get a submesh of those facets. It also
+    // `create_submesh` to get a `submesh` of those facets. It also
     // returns a map `submesh_to_mesh` whose `i`th entry is the facet in
     // mesh corresponding to cell `i` in submesh.
     int tdim = mesh->topology()->dim();
