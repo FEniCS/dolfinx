@@ -148,6 +148,7 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
   _iteration = 0;
   _krylov_iterations = 0;
   _residual = -1;
+  _residual0 = 0.0;
 
   if (!_fnF)
   {
