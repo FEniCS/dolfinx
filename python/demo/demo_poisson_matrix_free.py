@@ -107,9 +107,10 @@ V = fem.functionspace(mesh, ("Lagrange", degree))
 #
 # Next, we locate the mesh facets that lie on the domain boundary
 # $\partial\Omega$. We do this by first calling
-# {py:func}`create_connectivity <dolfinx.mesh.topology.create_connectivity>`
-# and then retrieving all facets on the boundary using
-# {py:func}`exterior_facet_indices <dolfinx.mesh.exterior_facet_indices>`.
+# {py:func}`create_connectivity
+# <dolfinx.mesh.topology.create_connectivity>`  and then retrieving all
+# facets on the boundary using {py:func}`exterior_facet_indices
+# <dolfinx.mesh.exterior_facet_indices>`.
 
 tdim = mesh.topology.dim
 mesh.topology.create_connectivity(tdim - 1, tdim)
@@ -156,10 +157,11 @@ M_fem = fem.form(M, dtype=dtype)
 
 # ### Matrix-free conjugate gradient solver
 #
-# The right hand side vector $b - A x_{\rm bc}$ is the assembly of the linear
-# form $L$ where the essential Dirichlet boundary conditions are implemented
-# using lifting. Since we want to avoid assembling the matrix `A`, we compute
-# the necessary matrix-vector product using the linear form `M` explicitly.
+# The right hand side vector $b - A x_{\rm bc}$ is the assembly of the
+# linear form $L$ where the essential Dirichlet boundary conditions are
+# implemented using lifting. Since we want to avoid assembling the matrix
+# `A`, we compute the necessary matrix-vector product using the linear form
+# `M` explicitly.
 
 # Apply lifting: b <- b - A * x_bc
 b = fem.assemble_vector(L_fem)
