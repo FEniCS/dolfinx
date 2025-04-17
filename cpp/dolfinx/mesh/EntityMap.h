@@ -16,10 +16,11 @@ namespace dolfinx::mesh
 class EntityMap
 {
 public:
-  /// @brief Constructor of a map between a set of entities belonging to two
-  /// meshes.
+  /// @brief Constructor of a map between a set of entities belonging to
+  /// two meshes.
+  /// @tparam U
   /// @param topology0 The first topology in the mapping relation
-  /// @param mesh1 The second topology in the mapping relation
+  /// @param topology1
   /// @param dim Topological dimension of the mapped entities
   /// @param entities0 The entities belonging to the first mesh
   /// @param entities1 The entities belonging to the second mesh
@@ -44,9 +45,10 @@ public:
   ///
   /// Entity `i` in mesh1 is assumed to map to `entities0[i]`.
   ///
-  /// @param mesh0 The first mesh in the mapping relation
-  /// @param mesh1 The second mesh in the mapping relation
-  /// @param dim Topological dimension of the mapped entities
+  /// @tparam U
+  /// @param topology0 The first topology in the mapping relation
+  /// @param topology1 The second topology in the mapping relation
+  /// @param dim  Topological dimension of the mapped entities
   /// @param entities0 The entities belonging to the first mesh
   template <typename U>
     requires std::is_convertible_v<std::remove_cvref_t<U>,
@@ -79,11 +81,13 @@ public:
   // Destructor
   ~EntityMap() = default;
 
+  /// TODO
   bool contains(std::shared_ptr<const Topology> topology) const
   {
-    return topology == _topology0 || topology == _topology1;
+    return topology == _topology0 or topology == _topology1;
   }
 
+  /// TODO
   std::uint8_t topology_index(std::shared_ptr<const Topology> topology) const
   {
     if (topology == _topology0)
@@ -94,6 +98,7 @@ public:
       throw std::runtime_error("Topology not in the map.");
   }
 
+  /// TODO
   std::span<const std::int32_t>
   get_entities(std::shared_ptr<const Topology> topology) const
   {
@@ -107,6 +112,7 @@ public:
       throw std::runtime_error("Topology not in the map.");
   }
 
+  /// TODO
   std::size_t dim() const { return _dim; }
 
 private:
