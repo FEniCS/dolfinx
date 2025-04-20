@@ -62,11 +62,11 @@ public:
       std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
       std::vector<std::shared_ptr<const FiniteElement<geometry_type>>> elements,
       std::vector<std::shared_ptr<const DofMap>> dofmaps)
-      : _mesh(mesh), _dofmaps(dofmaps), _elements(elements),
+      : _mesh(mesh), _elements(elements), _dofmaps(dofmaps),
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
   {
     std::vector<mesh::CellType> cell_types = mesh->topology()->cell_types();
-    int num_cell_types = cell_types.size();
+    std::size_t num_cell_types = cell_types.size();
     if (elements.size() != num_cell_types)
     {
       throw std::runtime_error(
