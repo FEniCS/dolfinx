@@ -136,12 +136,14 @@ def test_read_write_higher_order_mesh(order):
     gmsh.finalize()
 
     ref_volume_form = dolfinx.fem.form(
-        1 * ufl.dx(domain=ref_mesh), form_compiler_options={"scalar_type": ref_mesh.geometry.x.dtype}
+        1 * ufl.dx(domain=ref_mesh),
+        form_compiler_options={"scalar_type": ref_mesh.geometry.x.dtype},
     )
     ref_volume = comm.allreduce(dolfinx.fem.assemble_scalar(ref_volume_form), op=MPI.SUM)
 
     ref_surface_form = dolfinx.fem.form(
-        1 * ufl.ds(domain=ref_mesh), form_compiler_options={"scalar_type": ref_mesh.geometry.x.dtype}
+        1 * ufl.ds(domain=ref_mesh),
+        form_compiler_options={"scalar_type": ref_mesh.geometry.x.dtype},
     )
     ref_surface = comm.allreduce(dolfinx.fem.assemble_scalar(ref_surface_form), op=MPI.SUM)
 
