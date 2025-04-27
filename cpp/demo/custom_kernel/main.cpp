@@ -21,6 +21,7 @@
 #include <map>
 #include <stdint.h>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -167,9 +168,10 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 3>> x(
       g.x().data(), g.x().size() / 3, 3);
   common::Timer timer("Assembler1 lambda (vector)");
-  fem::impl::assemble_cells<T, 1>([](auto, auto, auto, auto) {},
-                                  b.mutable_array(), g.dofmap(), x, cells,
-                                  {dofmap.map(), 1, cells}, kernel, {}, {}, {});
+  fem::impl::assemble_cells<T, std::integral_constant<int, 1>>(
+      [](auto, auto, auto, auto) {}, b.mutable_array(), g.dofmap(), x, cells,
+      {dofmap.map(), std::integral_constant<int, 1>(), cells}, kernel, {}, {},
+      {});
   b.scatter_rev(std::plus<T>());
   return la::squared_norm(b);
 }
