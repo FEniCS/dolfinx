@@ -41,4 +41,35 @@ using scalar_value_t = typename scalar_value<T>::type;
 /// @private mdspan/mdarray namespace
 namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
+/// @private Constant of maximum compile time optimized block sizes.
+constexpr int MaxOptimizedBlockSize = 3;
+
+/// @private Concept capturing both compile time defined block sizes and runtime
+/// ones.
+template <typename T>
+concept BlockSize
+    = std::is_same_v<T, int> || (requires {
+        typename T::value_type;
+        requires std::is_same_v<typename T::value_type, int>;
+        requires T::value >= 1 && T::value <= MaxOptimizedBlockSize;
+      });
+
+/// @private Check if block size is a compile time constant.
+template <BlockSize T>
+constexpr bool is_compile_time_v = !std::is_same_v<T, int>;
+
+/// @private Check if block size is a run time constant.
+template <BlockSize T>
+constexpr bool is_runtime_v = std::is_same_v<T, int>;
+
+/// @private Retrieves the integral block size of a runtime or compile time
+/// block size.
+int block_size(BlockSize auto bs)
+{
+  if constexpr (is_compile_time_v<decltype(bs)>)
+    return decltype(bs)::value;
+
+  return bs;
+}
+
 } // namespace dolfinx
