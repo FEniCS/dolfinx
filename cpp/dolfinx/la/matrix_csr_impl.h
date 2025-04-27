@@ -222,7 +222,7 @@ void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
 /// @param x
 /// @param y
 /// @param bs0
-/// @param bs1
+/// @param _bs1
 template <typename T, BlockSize BS1>
 void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
           std::span<const std::int64_t> row_end,
