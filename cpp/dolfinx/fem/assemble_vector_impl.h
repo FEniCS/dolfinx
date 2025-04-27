@@ -920,21 +920,17 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
     auto coeffs = md::mdspan(_coeffs.data(), cells.size(), cstride);
     if (bs0 == 1 and bs1 == 1)
     {
-      _lift_bc_cells<T, std::integral_constant<int, 1>,
-                     std::integral_constant<int, 1>>(
-          b, x_dofmap, x, kernel, cells,
-          {dofmap0, std::integral_constant<int, 1>(), cells0}, P0,
-          {dofmap1, std::integral_constant<int, 1>(), cells1}, P1T, constants,
-          coeffs, cell_info0, cell_info1, bc_values1, bc_markers1, x0, alpha);
+      _lift_bc_cells<T, BS<1>, BS<1>>(
+          b, x_dofmap, x, kernel, cells, {dofmap0, BS<1>(), cells0}, P0,
+          {dofmap1, BS<1>(), cells1}, P1T, constants, coeffs, cell_info0,
+          cell_info1, bc_values1, bc_markers1, x0, alpha);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
-      _lift_bc_cells<T, std::integral_constant<int, 3>,
-                     std::integral_constant<int, 3>>(
-          b, x_dofmap, x, kernel, cells,
-          {dofmap0, std::integral_constant<int, 3>(), cells0}, P0,
-          {dofmap1, std::integral_constant<int, 3>(), cells1}, P1T, constants,
-          coeffs, cell_info0, cell_info1, bc_values1, bc_markers1, x0, alpha);
+      _lift_bc_cells<T, BS<3>, BS<3>>(
+          b, x_dofmap, x, kernel, cells, {dofmap0, BS<3>(), cells0}, P0,
+          {dofmap1, BS<3>(), cells1}, P1T, constants, coeffs, cell_info0,
+          cell_info1, bc_values1, bc_markers1, x0, alpha);
     }
     else
     {
@@ -1158,16 +1154,14 @@ void assemble_vector(
       assert(cells.size() * cstride == coeffs.size());
       if (bs == 1)
       {
-        impl::assemble_cells<T, std::integral_constant<int, 1>>(
-            P0, b, x_dofmap, x, cells,
-            {dofs, std::integral_constant<int, 1>(), cells0}, fn, constants,
+        impl::assemble_cells<T, BS<1>>(
+            P0, b, x_dofmap, x, cells, {dofs, BS<1>(), cells0}, fn, constants,
             md::mdspan(coeffs.data(), cells.size(), cstride), cell_info0);
       }
       else if (bs == 3)
       {
-        impl::assemble_cells<T, std::integral_constant<int, 3>>(
-            P0, b, x_dofmap, x, cells,
-            {dofs, std::integral_constant<int, 3>(), cells0}, fn, constants,
+        impl::assemble_cells<T, BS<3>>(
+            P0, b, x_dofmap, x, cells, {dofs, BS<3>(), cells0}, fn, constants,
             md::mdspan(coeffs.data(), cells.size(), cstride), cell_info0);
       }
       else
@@ -1209,17 +1203,15 @@ void assemble_vector(
       if (bs == 1)
       {
 
-        impl::assemble_exterior_facets<T, std::integral_constant<int, 1>>(
-            P0, b, x_dofmap, x, facets,
-            {dofs, std::integral_constant<int, 1>(), facets1}, fn, constants,
+        impl::assemble_exterior_facets<T, BS<1>>(
+            P0, b, x_dofmap, x, facets, {dofs, BS<1>(), facets1}, fn, constants,
             md::mdspan(coeffs.data(), facets.extent(0), cstride), cell_info0,
             perms);
       }
       else if (bs == 3)
       {
-        impl::assemble_exterior_facets<T, std::integral_constant<int, 3>>(
-            P0, b, x_dofmap, x, facets,
-            {dofs, std::integral_constant<int, 3>(), facets1}, fn, constants,
+        impl::assemble_exterior_facets<T, BS<3>>(
+            P0, b, x_dofmap, x, facets, {dofs, BS<3>(), facets1}, fn, constants,
             md::mdspan(coeffs.data(), facets.size() / 2, cstride), cell_info0,
             perms);
       }
@@ -1250,10 +1242,10 @@ void assemble_vector(
       assert((facets.size() / 4) * 2 * cstride == coeffs.size());
       if (bs == 1)
       {
-        impl::assemble_interior_facets<T, std::integral_constant<int, 1>>(
+        impl::assemble_interior_facets<T, BS<1>>(
             P0, b, x_dofmap, x,
             mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
-            {*dofmap, std::integral_constant<int, 1>(),
+            {*dofmap, BS<1>(),
              mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
             fn, constants,
             mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
@@ -1261,10 +1253,10 @@ void assemble_vector(
       }
       else if (bs == 3)
       {
-        impl::assemble_interior_facets<T, std::integral_constant<int, 3>>(
+        impl::assemble_interior_facets<T, BS<3>>(
             P0, b, x_dofmap, x,
             mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
-            {*dofmap, std::integral_constant<int, 3>(),
+            {*dofmap, BS<3>(),
              mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
             fn, constants,
             mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),

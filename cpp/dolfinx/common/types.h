@@ -54,6 +54,10 @@ concept BlockSize
         requires T::value >= 1 && T::value <= MaxOptimizedBlockSize;
       });
 
+/// @private Short notation for a compile time block size.
+template <int N>
+using BS = std::integral_constant<int, N>;
+
 /// @private Check if block size is a compile time constant.
 template <BlockSize T>
 constexpr bool is_compile_time_v = !std::is_same_v<T, int>;

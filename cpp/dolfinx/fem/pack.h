@@ -108,8 +108,8 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
       if (std::int32_t cell = cells(e); cell >= 0)
       {
         auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
-        pack_impl(cell_coeff, cell, std::integral_constant<int, 1>(), v,
-                  cell_info, dofmap, transformation);
+        pack_impl(cell_coeff, cell, BS<1>(), v, cell_info, dofmap,
+                  transformation);
       }
     }
     break;
@@ -119,8 +119,8 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
       if (std::int32_t cell = cells(e); cell >= 0)
       {
         auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
-        pack_impl(cell_coeff, cell, std::integral_constant<int, 2>(), v,
-                  cell_info, dofmap, transformation);
+        pack_impl(cell_coeff, cell, BS<2>(), v, cell_info, dofmap,
+                  transformation);
       }
     }
     break;
@@ -130,8 +130,8 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
       if (std::int32_t cell = cells(e); cell >= 0)
       {
         auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
-        pack_impl(cell_coeff, cell, std::integral_constant<int, 3>(), v,
-                  cell_info, dofmap, transformation);
+        pack_impl(cell_coeff, cell, BS<3>(), v, cell_info, dofmap,
+                  transformation);
       }
     }
     break;
