@@ -12,6 +12,7 @@
 #include "Form.h"
 #include "Function.h"
 #include "FunctionSpace.h"
+#include "dolfinx/common/types.h"
 #include "traits.h"
 #include <array>
 #include <basix/mdspan.hpp>
@@ -51,29 +52,19 @@ get_cell_orientation_info(const Function<T, U>& coefficient)
 }
 
 /// Pack a single coefficient for a single cell
-template <int _bs, dolfinx::scalar T>
-void pack_impl(std::span<T> coeffs, std::int32_t cell, int bs,
+template <dolfinx::scalar T>
+void pack_impl(std::span<T> coeffs, std::int32_t cell, BlockSize auto _bs,
                std::span<const T> v, std::span<const std::uint32_t> cell_info,
                const DofMap& dofmap, auto transform)
 {
   std::span<const std::int32_t> dofs = dofmap.cell_dofs(cell);
   for (std::size_t i = 0; i < dofs.size(); ++i)
   {
-    if constexpr (_bs < 0)
-    {
-      const int pos_c = bs * i;
-      const int pos_v = bs * dofs[i];
-      for (int k = 0; k < bs; ++k)
-        coeffs[pos_c + k] = v[pos_v + k];
-    }
-    else
-    {
-      assert(_bs == bs);
-      const int pos_c = _bs * i;
-      const int pos_v = _bs * dofs[i];
-      for (int k = 0; k < _bs; ++k)
-        coeffs[pos_c + k] = v[pos_v + k];
-    }
+    int bs = block_size(_bs);
+    const int pos_c = bs * i;
+    const int pos_v = bs * dofs[i];
+    for (int k = 0; k < bs; ++k)
+      coeffs[pos_c + k] = v[pos_v + k];
   }
 
   transform(coeffs, cell_info, cell, 1);
@@ -117,8 +108,8 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
       if (std::int32_t cell = cells(e); cell >= 0)
       {
         auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
-        pack_impl<1>(cell_coeff, cell, bs, v, cell_info, dofmap,
-                     transformation);
+        pack_impl(cell_coeff, cell, std::integral_constant<int, 1>(), v,
+                  cell_info, dofmap, transformation);
       }
     }
     break;
@@ -128,8 +119,8 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
       if (std::int32_t cell = cells(e); cell >= 0)
       {
         auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
-        pack_impl<2>(cell_coeff, cell, bs, v, cell_info, dofmap,
-                     transformation);
+        pack_impl(cell_coeff, cell, std::integral_constant<int, 2>(), v,
+                  cell_info, dofmap, transformation);
       }
     }
     break;
@@ -139,8 +130,8 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
       if (std::int32_t cell = cells(e); cell >= 0)
       {
         auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
-        pack_impl<3>(cell_coeff, cell, bs, v, cell_info, dofmap,
-                     transformation);
+        pack_impl(cell_coeff, cell, std::integral_constant<int, 3>(), v,
+                  cell_info, dofmap, transformation);
       }
     }
     break;
@@ -150,8 +141,7 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
       if (std::int32_t cell = cells(e); cell >= 0)
       {
         auto cell_coeff = c.subspan(e * cstride + offset, space_dim);
-        pack_impl<-1>(cell_coeff, cell, bs, v, cell_info, dofmap,
-                      transformation);
+        pack_impl(cell_coeff, cell, bs, v, cell_info, dofmap, transformation);
       }
     }
     break;
