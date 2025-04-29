@@ -44,33 +44,48 @@ namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 /// @private Constant of maximum compile time optimized block sizes.
 constexpr int MaxOptimizedBlockSize = 3;
 
+/// @private Concept defining a variadic compile time or runtime variable. T
+/// indicates the type that is stored and V the value. Either V equals T, i.e.
+/// it is a runtime variable or V defines a compile time value V::value of type
+/// T.
+template <typename T, typename V>
+concept ConstexprType = std::is_same_v<T, V> || (requires {
+                          typename V::value_type;
+                          requires std::is_same_v<typename V::value_type, T>;
+                        });
+
+/// @private Check if ConstexprType holds a compile time constant.
+template <typename T, typename V>
+  requires ConstexprType<T, V>
+constexpr bool is_compile_time_v = !std::is_same_v<T, V>;
+
+/// @private Check if ConstexprType holds a run time variable.
+template <typename T, typename V>
+  requires ConstexprType<T, V>
+constexpr bool is_runtime_v = std::is_same_v<T, V>;
+
 /// @private Concept capturing both compile time defined block sizes and runtime
 /// ones.
-template <typename T>
-concept BlockSize
-    = std::is_same_v<T, int> || (requires {
-        typename T::value_type;
-        requires std::is_same_v<typename T::value_type, int>;
-        requires T::value >= 1 && T::value <= MaxOptimizedBlockSize;
-      });
+template <typename V>
+concept BlockSize = ConstexprType<int, V>;
 
 /// @private Short notation for a compile time block size.
 template <int N>
 using BS = std::integral_constant<int, N>;
 
 /// @private Check if block size is a compile time constant.
-template <BlockSize T>
-constexpr bool is_compile_time_v = !std::is_same_v<T, int>;
+template <BlockSize V>
+constexpr bool is_compile_time_bs_v = is_compile_time_v<int, V>;
 
 /// @private Check if block size is a run time constant.
-template <BlockSize T>
-constexpr bool is_runtime_v = std::is_same_v<T, int>;
+template <BlockSize V>
+constexpr bool is_runtime_bs_v = is_runtime_v<int, V>;
 
 /// @private Retrieves the integral block size of a runtime or compile time
 /// block size.
 int block_size(BlockSize auto bs)
 {
-  if constexpr (is_compile_time_v<decltype(bs)>)
+  if constexpr (is_compile_time_bs_v<decltype(bs)>)
     return decltype(bs)::value;
 
   return bs;
