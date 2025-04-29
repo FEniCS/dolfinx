@@ -23,9 +23,9 @@ dependencies = [
       "numpy>=1.21",
       "cffi",
       "mpi4py",
-      "fenics-basix>=0.10.0.dev0,<0.11.0",
-      "fenics-ffcx>=0.10.0.dev0,<0.11.0",
-      "fenics-ufl>=2024.3.0.dev0,<2024.4.0",
+      "fenics-basix>=0.10.0.dev0",
+      "fenics-ffcx>=0.10.0.dev0",
+      "fenics-ufl>=2025.2.0.dev0",
 ]
 
 [project.optional-dependencies]
