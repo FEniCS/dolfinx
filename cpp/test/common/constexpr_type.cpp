@@ -8,8 +8,10 @@
 
 #include <cassert>
 #include <cstdint>
-#include <dolfinx/common/types.h>
+#include <dolfinx/common/constexpr_type.h>
 #include <type_traits>
+
+using namespace dolfinx::common;
 
 namespace
 {
@@ -17,14 +19,14 @@ template <typename T>
 void test()
 {
   using V_runtime = T;
-  static_assert(!dolfinx::is_compile_time_v<T, V_runtime>);
-  static_assert(dolfinx::is_runtime_v<T, V_runtime>);
-  assert((dolfinx::value<T, V_runtime>(V_runtime(1)) == T(1)));
+  static_assert(!is_compile_time_v<T, V_runtime>);
+  static_assert(is_runtime_v<T, V_runtime>);
+  assert((value<T, V_runtime>(V_runtime(1)) == T(1)));
 
   using V_compile_time = std::integral_constant<T, T(1)>;
-  static_assert(dolfinx::is_compile_time_v<T, V_compile_time>);
-  static_assert(!dolfinx::is_runtime_v<T, V_compile_time>);
-  static_assert((dolfinx::value<T, V_compile_time>(V_compile_time()) == T(1)));
+  static_assert(is_compile_time_v<T, V_compile_time>);
+  static_assert(!is_runtime_v<T, V_compile_time>);
+  static_assert((value<T, V_compile_time>(V_compile_time()) == T(1)));
 }
 } // namespace
 

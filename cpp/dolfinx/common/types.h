@@ -9,6 +9,7 @@
 #include <basix/mdspan.hpp>
 #include <complex>
 #include <concepts>
+#include <dolfinx/common/constexpr_type.h>
 #include <type_traits>
 
 namespace dolfinx
@@ -41,63 +42,30 @@ using scalar_value_t = typename scalar_value<T>::type;
 /// @private mdspan/mdarray namespace
 namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
-/// @private Constant of maximum compile time optimized block sizes.
-constexpr int MaxOptimizedBlockSize = 3;
-
-/// @private Concept defining a variadic compile time or runtime variable. T
-/// indicates the type that is stored and V the value. Either V equals T, i.e.
-/// it is a runtime variable or V defines a compile time value V::value of type
-/// T.
-template <typename T, typename V>
-concept ConstexprType = std::is_same_v<T, V> || (requires {
-                          typename V::value_type;
-                          requires std::is_same_v<typename V::value_type, T>;
-                        });
-
-/// @private Check if ConstexprType holds a compile time constant.
-template <typename T, typename V>
-  requires ConstexprType<T, V>
-constexpr bool is_compile_time_v = !std::is_same_v<T, V>;
-
-/// @private Check if ConstexprType holds a run time variable.
-template <typename T, typename V>
-  requires ConstexprType<T, V>
-constexpr bool is_runtime_v = std::is_same_v<T, V>;
-
-template <typename T, typename V>
-  requires ConstexprType<T, V>
-constexpr T value(V container,
-                  typename std::enable_if_t<is_compile_time_v<T, V>>* = 0)
-{
-  return V::value;
-}
-
-template <typename T, typename V>
-  requires ConstexprType<T, V>
-T value(V container, typename std::enable_if_t<is_runtime_v<T, V>>* = 0)
-{
-  return container;
-}
-
 /// @private Concept capturing both compile time defined block sizes and runtime
 /// ones.
 template <typename V>
-concept BlockSize = ConstexprType<int, V>;
+concept BlockSize = common::ConstexprType<int, V>;
 
 /// @private Short notation for a compile time block size.
 template <int N>
 using BS = std::integral_constant<int, N>;
 
-/// @private Check if block size is a compile time constant.
+/// @private Retrieves the integral block size of a compile time block size.
 template <BlockSize V>
-constexpr bool is_compile_time_bs_v = is_compile_time_v<int, V>;
+constexpr int
+block_size(V bs,
+           typename std::enable_if_t<common::is_compile_time_v<int, V>>* = 0)
+{
+  return common::value<int, V>(bs);
+}
 
-/// @private Check if block size is a run time constant.
+/// @private Retrieves the integral block size of a runtime block size.
 template <BlockSize V>
-constexpr bool is_runtime_bs_v = is_runtime_v<int, V>;
-
-/// @private Retrieves the integral block size of a runtime or compile time
-/// block size.
-int block_size(BlockSize auto bs) { return value<int, decltype(bs)>(bs); }
+int block_size(V bs,
+               typename std::enable_if_t<common::is_runtime_v<int, V>>* = 0)
+{
+  return common::value<int, V>(bs);
+}
 
 } // namespace dolfinx
