@@ -35,6 +35,11 @@ TEST_CASE("Test constexpr type", "[constexpr_type]")
   test<std::int16_t>();
   test<std::int32_t>();
   test<std::int64_t>();
+
+// is C++ 20, but some compilers do not fully support, see
+// https://en.cppreference.com/w/cpp/compiler_support/20#cpp_nontype_template_args_201911L
+#if defined(__cpp_nontype_template_args)
   test<float>();
   test<double>();
+#endif
 }
