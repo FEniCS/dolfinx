@@ -93,9 +93,6 @@ constexpr bool is_runtime_bs_v = is_runtime_v<int, V>;
 
 /// @private Retrieves the integral block size of a runtime or compile time
 /// block size.
-int block_size(BlockSize auto bs)
-{
-  return value<int, decltype(bs)>(bs);
-}
+int block_size(BlockSize auto bs) { return value<int, decltype(bs)>(bs); }
 
 } // namespace dolfinx
