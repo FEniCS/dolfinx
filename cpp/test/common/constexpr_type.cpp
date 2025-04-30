@@ -24,7 +24,7 @@ void test()
   using V_compile_time = std::integral_constant<T, T(1)>;
   static_assert(dolfinx::is_compile_time_v<T, V_compile_time>);
   static_assert(!dolfinx::is_runtime_v<T, V_compile_time>);
-  assert((dolfinx::value<T, V_runtime>(V_compile_time()) == T(1)));
+  static_assert((dolfinx::value<T, V_compile_time>(V_compile_time()) == T(1)));
 }
 } // namespace
 
