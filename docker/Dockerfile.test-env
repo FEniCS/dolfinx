@@ -22,8 +22,8 @@ ARG KAHIP_VERSION=3.18
 # the most recent Numba release, see
 # https://numba.readthedocs.io/en/stable/user/installing.html#version-support-information
 ARG NUMPY_VERSION=2.1.3
-ARG PETSC_VERSION=3.23.1
-ARG SLEPC_VERSION=3.23.1
+ARG PETSC_VERSION=3.23.0
+ARG SLEPC_VERSION=3.23.0
 ARG SPDLOG_VERSION=1.15.1
 
 ARG MPICH_VERSION=4.2.3
