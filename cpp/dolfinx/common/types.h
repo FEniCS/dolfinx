@@ -66,7 +66,8 @@ constexpr bool is_runtime_v = std::is_same_v<T, V>;
 
 template <typename T, typename V>
   requires ConstexprType<T, V>
-constexpr T value(V container, typename std::enable_if_t<is_compile_time_v<T, V>>* = 0)
+constexpr T value(V container,
+                  typename std::enable_if_t<is_compile_time_v<T, V>>* = 0)
 {
   return V::value;
 }
