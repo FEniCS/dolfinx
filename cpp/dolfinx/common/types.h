@@ -64,6 +64,16 @@ template <typename T, typename V>
   requires ConstexprType<T, V>
 constexpr bool is_runtime_v = std::is_same_v<T, V>;
 
+template <typename T, typename V>
+  requires ConstexprType<T, V>
+T value(V container)
+{
+  if constexpr (is_compile_time_v<T, V>)
+    return V::value;
+
+  return container;
+}
+
 /// @private Concept capturing both compile time defined block sizes and runtime
 /// ones.
 template <typename V>
@@ -85,10 +95,7 @@ constexpr bool is_runtime_bs_v = is_runtime_v<int, V>;
 /// block size.
 int block_size(BlockSize auto bs)
 {
-  if constexpr (is_compile_time_bs_v<decltype(bs)>)
-    return decltype(bs)::value;
-
-  return bs;
+  return value<int, decltype(bs)>(bs);
 }
 
 } // namespace dolfinx
