@@ -20,6 +20,7 @@ Public user interface
    dolfinx.io.gmshio
    dolfinx.jit
    dolfinx.la
+   dolfinx.la.petsc
    dolfinx.mesh
    dolfinx.nls.petsc
    dolfinx.pkgconfig
