@@ -1,0 +1,6 @@
+WarningsAsErrors: "*"
+UseColor: true
+HeaderFilterRegex: '.*'
+Checks: >
+  -*,
+  performance*
