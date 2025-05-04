@@ -18,7 +18,7 @@ using namespace dolfinx::fem;
 template <std::floating_point T>
 CoordinateElement<T>::CoordinateElement(
     std::shared_ptr<const basix::FiniteElement<T>> element)
-    : _element(element)
+    : _element(std::move(element))
 {
   int degree = _element->degree();
   mesh::CellType cell = this->cell_shape();

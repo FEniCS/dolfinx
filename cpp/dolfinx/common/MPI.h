@@ -30,7 +30,7 @@
 namespace dolfinx::MPI
 {
 /// MPI communication tags
-enum class tag : int
+enum class tag : std::uint16_t
 {
   consensus_pcx = 1200,
   consensus_pex = 1201,

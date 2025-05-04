@@ -148,7 +148,7 @@ public:
       s << "  " << e << ": [";
       for (auto link : this->links(e))
         s << link << " ";
-      s << "]" << std::endl;
+      s << "]" << '\n';
     }
     return s.str();
   }
