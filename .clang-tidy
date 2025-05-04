@@ -1,6 +1,8 @@
 WarningsAsErrors: "*"
 UseColor: true
 HeaderFilterRegex: '.*'
+ExtraArgsBefore:
+  - '-Wno-unknown-warning-option'
 Checks: >
   -*,
   performance*
