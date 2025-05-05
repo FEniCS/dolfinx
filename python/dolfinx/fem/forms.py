@@ -294,7 +294,7 @@ def form(
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
         entity_maps: If any trial functions, test functions, or
             coefficients in the form are not defined over the same mesh
-            as the integration domain, `entity_maps` must be supplied.
+            as the integration domain, ``entity_maps`` must be supplied.
             For each key (a mesh, different to the integration domain
             mesh) a map should be provided relating the entities in the
             integration domain mesh to the entities in the key mesh e.g.
@@ -397,6 +397,8 @@ def form(
     def _zero_form(form):
         """Compile a single 'zero' UFL form, i.e. a form with no integrals."""
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
+        assert len(V) > 0
+        msh = V[0].mesh
         if entity_maps is None:
             _entity_maps = dict()
         else:
@@ -408,7 +410,7 @@ def form(
             constants=[],
             need_permutation_data=False,
             entity_maps=_entity_maps,
-            mesh=None,
+            mesh=msh,
         )
         return Form(f)
 
@@ -440,26 +442,35 @@ def extract_function_spaces(
         typing.Iterable[typing.Iterable[Form]],
     ],
     index: int = 0,
-) -> typing.Iterable[typing.Union[None, function.FunctionSpace]]:
+) -> list[typing.Union[None, function.FunctionSpace]]:
     """Extract common function spaces from an array of forms.
 
     If ``forms`` is a list of linear form, this function returns of list
-    of the corresponding test functions. If ``forms`` is a 2D array of
-    bilinear forms, for ``index=0`` the list common test function space
-    for each row is returned, and if ``index=1`` the common trial
-    function spaces for each column are returned.
+    of the corresponding test function spaces. If ``forms`` is a 2D
+    array of bilinear forms, for ``index=0`` the list common test
+    function spaces for each row is returned, and if ``index=1`` the
+    common trial function spaces for each column are returned.
+
+    Args:
+        forms: A list of forms or a 2D array of forms.
+        index: Index of the function space to extract. If ``index=0``,
+            the test function spaces are extracted, if ``index=1`` the
+            trial function spaces are extracted.
+
+    Returns:
+        List of function spaces.
     """
     _forms = np.array(forms)
     if _forms.ndim == 0:
         raise RuntimeError("Expected an array for forms, not a single form")
     elif _forms.ndim == 1:
-        assert index == 0
+        assert index == 0, "Expected index=0 for 1D array of forms"
         for form in _forms:
             if form is not None:
                 assert form.rank == 1, "Expected linear form"
         return [form.function_spaces[0] if form is not None else None for form in forms]  # type: ignore[union-attr]
     elif _forms.ndim == 2:
-        assert index == 0 or index == 1
+        assert index == 0 or index == 1, "Expected index=0 or index=1 for 2D array of forms"
         extract_spaces = np.vectorize(
             lambda form: form.function_spaces[index] if form is not None else None
         )
@@ -517,7 +528,8 @@ def compile_form(
     p_ffcx = ffcx.get_options(form_compiler_options)
     p_jit = jit.get_options(jit_options)
     ufcx_form, module, code = jit.ffcx_jit(comm, form, p_ffcx, p_jit)
-    return CompiledForm(form, ufcx_form, module, code, p_ffcx["scalar_type"])
+    scalar_type: npt.DTypeLike = p_ffcx["scalar_type"]  # type: ignore
+    return CompiledForm(form, ufcx_form, module, code, scalar_type)
 
 
 def form_cpp_creator(

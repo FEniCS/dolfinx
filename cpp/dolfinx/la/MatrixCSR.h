@@ -21,7 +21,7 @@
 
 namespace dolfinx::la
 {
-/// @brief Modes for representing block structured matrices
+/// @brief Modes for representing block structured matrices.
 enum class BlockMode : int
 {
   compact = 0, /// Each entry in the sparsity pattern of the matrix refers to a
@@ -373,7 +373,7 @@ public:
         dolfinx::MPI::mpi_t<value_type>, _ghost_value_data_in.data(),
         val_recv_count.data(), _val_recv_disp.data(),
         dolfinx::MPI::mpi_t<value_type>, _comm.comm(), &_request);
-    assert(status == MPI_SUCCESS);
+    dolfinx::MPI::check_error(_comm.comm(), status);
   }
 
   /// @brief End transfer of ghost row data to owning ranks.
@@ -384,7 +384,7 @@ public:
   void scatter_rev_end()
   {
     int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
-    assert(status == MPI_SUCCESS);
+    dolfinx::MPI::check_error(_comm.comm(), status);
 
     _ghost_value_data.clear();
     _ghost_value_data.shrink_to_fit();
@@ -628,7 +628,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
   std::vector<std::int32_t> data_per_proc(src_ranks.size(), 0);
   for (std::size_t i = 0; i < _ghost_row_to_rank.size(); ++i)
   {
-    assert(_ghost_row_to_rank[i] < data_per_proc.size());
+    assert(_ghost_row_to_rank[i] < (int)data_per_proc.size());
     std::size_t pos = local_size[0] + i;
     data_per_proc[_ghost_row_to_rank[i]] += _row_ptr[pos + 1] - _row_ptr[pos];
   }

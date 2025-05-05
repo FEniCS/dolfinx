@@ -496,3 +496,23 @@ def test_surface_bbtree_collision(dtype):
 
     collisions = compute_collisions_trees(bbtree1, bbtree2)
     assert len(collisions) == 1
+
+
+@pytest.mark.parametrize("ct", [CellType.tetrahedron])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_shift_bbtree(ct, dtype):
+    tdim = 3
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, ct, dtype=dtype)
+    bbtree = bb_tree(mesh, tdim, padding=0.0)
+    rng = np.random.default_rng(0)
+    points = rng.random((10, 3))
+
+    # Point-tree collisions pre-motion
+    collisions_pre = compute_collisions_points(bbtree, points)
+    # Shift everything
+    shift = np.array([1.0, 2.0, 3.0], dtype=dtype)
+    points[:] += shift
+    bbtree.bbox_coordinates[:] += shift
+
+    collisions_post = compute_collisions_points(bbtree, points)
+    assert (collisions_pre.array == collisions_post.array).all()

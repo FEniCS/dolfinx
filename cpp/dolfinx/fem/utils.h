@@ -51,6 +51,9 @@ class IndexMap;
 
 namespace dolfinx::fem
 {
+template <dolfinx::scalar T, std::floating_point U>
+class Expression;
+
 namespace impl
 {
 /// Helper function to get an array of of (cell, local_facet) pairs
@@ -230,8 +233,8 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
         for (int id : ids)
         {
           sparsitybuild::cells(pattern,
-                               {a.domain(type, id, cell_type_idx, *mesh0),
-                                a.domain(type, id, cell_type_idx, *mesh1)},
+                               {a.domain_arg(type, 0, id, cell_type_idx),
+                                a.domain_arg(type, 1, id, cell_type_idx)},
                                {{dofmaps[0], dofmaps[1]}});
         }
         break;
@@ -240,8 +243,8 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
         {
           sparsitybuild::interior_facets(
               pattern,
-              {extract_cells(a.domain(type, id, *mesh0)),
-               extract_cells(a.domain(type, id, *mesh1))},
+              {extract_cells(a.domain_arg(type, 0, id, 0)),
+               extract_cells(a.domain_arg(type, 1, id, 0))},
               {{dofmaps[0], dofmaps[1]}});
         }
         break;
@@ -249,8 +252,8 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
         for (int id : ids)
         {
           sparsitybuild::cells(pattern,
-                               {extract_cells(a.domain(type, id, *mesh0)),
-                                extract_cells(a.domain(type, id, *mesh1))},
+                               {extract_cells(a.domain_arg(type, 0, id, 0)),
+                                extract_cells(a.domain_arg(type, 1, id, 0))},
                                {{dofmaps[0], dofmaps[1]}});
         }
         break;
@@ -357,7 +360,7 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] mesh The mesh of the domain.
 ///
 /// @pre Each value in `subdomains` must be sorted by domain id.
-template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
 Form<T, U> create_form_factory(
     const std::vector<std::reference_wrapper<const ufcx_form>>& ufcx_forms,
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
@@ -444,8 +447,8 @@ Form<T, U> create_form_factory(
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
   using kern_t = std::function<void(T*, const T*, const T*, const U*,
-                                    const int*, const std::uint8_t*)>;
-  std::map<IntegralType, std::vector<integral_data<T, U>>> integrals;
+                                    const int*, const std::uint8_t*, void*)>;
+  std::map<std::tuple<IntegralType, int, int>, integral_data<T, U>> integrals;
 
   auto check_geometry_hash
       = [&geo = mesh->geometry()](const ufcx_integral& integral,
@@ -467,7 +470,6 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
                                  + integral_offsets[cell],
                              num_integrals_type[cell]);
-    auto itg = integrals.insert({IntegralType::cell, {}});
     auto sd = subdomains.find(IntegralType::cell);
     for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
     {
@@ -494,10 +496,10 @@ Form<T, U> create_form_factory(
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, std::complex<float>>)
         {
-          k = reinterpret_cast<void (*)(
-              T*, const T*, const T*,
-              const typename scalar_value_type<T>::value_type*, const int*,
-              const unsigned char*)>(integral->tabulate_tensor_complex64);
+          k = reinterpret_cast<void (*)(T*, const T*, const T*,
+                                        const scalar_value_t<T>*, const int*,
+                                        const unsigned char*, void*)>(
+              integral->tabulate_tensor_complex64);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, double>)
@@ -505,10 +507,10 @@ Form<T, U> create_form_factory(
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, std::complex<double>>)
         {
-          k = reinterpret_cast<void (*)(
-              T*, const T*, const T*,
-              const typename scalar_value_type<T>::value_type*, const int*,
-              const unsigned char*)>(integral->tabulate_tensor_complex128);
+          k = reinterpret_cast<void (*)(T*, const T*, const T*,
+                                        const scalar_value_t<T>*, const int*,
+                                        const unsigned char*, void*)>(
+              integral->tabulate_tensor_complex128);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
 
@@ -526,7 +528,8 @@ Form<T, U> create_form_factory(
           default_cells.resize(
               topology->index_maps(tdim).at(form_idx)->size_local(), 0);
           std::iota(default_cells.begin(), default_cells.end(), 0);
-          itg.first->second.emplace_back(id, k, default_cells, active_coeffs);
+          integrals.insert({{IntegralType::cell, id, form_idx},
+                            {k, default_cells, active_coeffs}});
         }
         else if (sd != subdomains.end())
         {
@@ -534,7 +537,13 @@ Form<T, U> create_form_factory(
           auto it = std::ranges::lower_bound(sd->second, id, std::less<>{},
                                              [](auto& a) { return a.first; });
           if (it != sd->second.end() and it->first == id)
-            itg.first->second.emplace_back(id, k, it->second, active_coeffs);
+          {
+            integrals.insert({{IntegralType::cell, id, form_idx},
+                              {k,
+                               std::vector<std::int32_t>(it->second.begin(),
+                                                         it->second.end()),
+                               active_coeffs}});
+          }
         }
 
         if (integral->needs_facet_permutations)
@@ -549,7 +558,6 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
                                  + integral_offsets[exterior_facet],
                              num_integrals_type[exterior_facet]);
-    auto itg = integrals.insert({IntegralType::exterior_facet, {}});
     auto sd = subdomains.find(IntegralType::exterior_facet);
     for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
     {
@@ -575,10 +583,10 @@ Form<T, U> create_form_factory(
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, std::complex<float>>)
         {
-          k = reinterpret_cast<void (*)(
-              T*, const T*, const T*,
-              const typename scalar_value_type<T>::value_type*, const int*,
-              const unsigned char*)>(integral->tabulate_tensor_complex64);
+          k = reinterpret_cast<void (*)(T*, const T*, const T*,
+                                        const scalar_value_t<T>*, const int*,
+                                        const unsigned char*, void*)>(
+              integral->tabulate_tensor_complex64);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, double>)
@@ -586,10 +594,10 @@ Form<T, U> create_form_factory(
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, std::complex<double>>)
         {
-          k = reinterpret_cast<void (*)(
-              T*, const T*, const T*,
-              const typename scalar_value_type<T>::value_type*, const int*,
-              const unsigned char*)>(integral->tabulate_tensor_complex128);
+          k = reinterpret_cast<void (*)(T*, const T*, const T*,
+                                        const scalar_value_t<T>*, const int*,
+                                        const unsigned char*, void*)>(
+              integral->tabulate_tensor_complex128);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
         assert(k);
@@ -612,8 +620,8 @@ Form<T, U> create_form_factory(
             default_facets_ext.insert(default_facets_ext.end(), pair.begin(),
                                       pair.end());
           }
-          itg.first->second.emplace_back(id, k, default_facets_ext,
-                                         active_coeffs);
+          integrals.insert({{IntegralType::exterior_facet, id, form_idx},
+                            {k, default_facets_ext, active_coeffs}});
         }
         else if (sd != subdomains.end())
         {
@@ -621,7 +629,13 @@ Form<T, U> create_form_factory(
           auto it = std::ranges::lower_bound(sd->second, id, std::less<>{},
                                              [](auto& a) { return a.first; });
           if (it != sd->second.end() and it->first == id)
-            itg.first->second.emplace_back(id, k, it->second, active_coeffs);
+          {
+            integrals.insert({{IntegralType::exterior_facet, id, form_idx},
+                              {k,
+                               std::vector<std::int32_t>(it->second.begin(),
+                                                         it->second.end()),
+                               active_coeffs}});
+          }
         }
 
         if (integral->needs_facet_permutations)
@@ -636,11 +650,11 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
                                  + integral_offsets[interior_facet],
                              num_integrals_type[interior_facet]);
-    auto itg = integrals.insert({IntegralType::interior_facet, {}});
     auto sd = subdomains.find(IntegralType::interior_facet);
     for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
     {
       const ufcx_form& ufcx_form = ufcx_forms[form_idx];
+
       // Create indicator for interprocess facets
       std::vector<std::int8_t> interprocess_marker;
       if (num_integrals_type[interior_facet] > 0)
@@ -677,10 +691,10 @@ Form<T, U> create_form_factory(
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, std::complex<float>>)
         {
-          k = reinterpret_cast<void (*)(
-              T*, const T*, const T*,
-              const typename scalar_value_type<T>::value_type*, const int*,
-              const unsigned char*)>(integral->tabulate_tensor_complex64);
+          k = reinterpret_cast<void (*)(T*, const T*, const T*,
+                                        const scalar_value_t<T>*, const int*,
+                                        const unsigned char*, void*)>(
+              integral->tabulate_tensor_complex64);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, double>)
@@ -688,10 +702,10 @@ Form<T, U> create_form_factory(
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, std::complex<double>>)
         {
-          k = reinterpret_cast<void (*)(
-              T*, const T*, const T*,
-              const typename scalar_value_type<T>::value_type*, const int*,
-              const unsigned char*)>(integral->tabulate_tensor_complex128);
+          k = reinterpret_cast<void (*)(T*, const T*, const T*,
+                                        const scalar_value_t<T>*, const int*,
+                                        const unsigned char*, void*)>(
+              integral->tabulate_tensor_complex128);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
         assert(k);
@@ -724,15 +738,21 @@ Form<T, U> create_form_factory(
                   "mesh");
             }
           }
-          itg.first->second.emplace_back(id, k, default_facets_int,
-                                         active_coeffs);
+          integrals.insert({{IntegralType::interior_facet, id, form_idx},
+                            {k, default_facets_int, active_coeffs}});
         }
         else if (sd != subdomains.end())
         {
           auto it = std::ranges::lower_bound(sd->second, id, std::less{},
                                              [](auto& a) { return a.first; });
           if (it != sd->second.end() and it->first == id)
-            itg.first->second.emplace_back(id, k, it->second, active_coeffs);
+          {
+            integrals.insert({{IntegralType::interior_facet, id, form_idx},
+                              {k,
+                               std::vector<std::int32_t>(it->second.begin(),
+                                                         it->second.end()),
+                               active_coeffs}});
+          }
         }
 
         if (integral->needs_facet_permutations)
@@ -741,19 +761,8 @@ Form<T, U> create_form_factory(
     }
   }
 
-  std::map<IntegralType,
-           std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>
-      sd;
-  for (auto& [itg, data] : subdomains)
-  {
-    std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>> x;
-    for (auto& [id, idx] : data)
-      x.emplace_back(id, std::vector(idx.data(), idx.data() + idx.size()));
-    sd.insert({itg, std::move(x)});
-  }
-
-  return Form<T, U>(spaces, integrals, coefficients, constants,
-                    needs_facet_permutations, entity_maps, mesh);
+  return Form<T, U>(spaces, std::move(integrals), mesh, coefficients, constants,
+                    needs_facet_permutations, entity_maps);
 }
 
 /// @brief Create a Form from UFC input with coefficients and constants
@@ -770,7 +779,7 @@ Form<T, U> create_form_factory(
 /// @param[in] mesh Mesh of the domain. This is required if the form has
 /// no arguments, e.g. a functional.
 /// @return A Form
-template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
 Form<T, U> create_form(
     const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
@@ -830,7 +839,7 @@ Form<T, U> create_form(
 /// @param[in] mesh Mesh of the domain. This is required if the form has
 /// no arguments, e.g. a functional.
 /// @return A Form
-template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
 Form<T, U> create_form(
     ufcx_form* (*fptr)(),
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
@@ -882,12 +891,12 @@ FunctionSpace<T> create_functionspace(
 }
 
 /// @brief Create Expression from UFC
-template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
 Expression<T, U> create_expression(
     const ufcx_expression& e,
     const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
-    std::shared_ptr<const FunctionSpace<U>> argument_function_space = nullptr)
+    std::shared_ptr<const FunctionSpace<U>> argument_space = nullptr)
 {
   if (!coefficients.empty())
   {
@@ -902,7 +911,7 @@ Expression<T, U> create_expression(
     }
   }
 
-  if (e.rank > 0 and !argument_function_space)
+  if (e.rank > 0 and !argument_space)
   {
     throw std::runtime_error("Expression has Argument but no Argument "
                              "function space was provided.");
@@ -914,9 +923,8 @@ Expression<T, U> create_expression(
          static_cast<std::size_t>(e.entity_dimension)};
   std::vector<std::size_t> value_shape(e.value_shape,
                                        e.value_shape + e.num_components);
-  std::function<void(T*, const T*, const T*,
-                     const typename scalar_value_type<T>::value_type*,
-                     const int*, const std::uint8_t*)>
+  std::function<void(T*, const T*, const T*, const scalar_value_t<T>*,
+                     const int*, const std::uint8_t*, void*)>
       tabulate_tensor = nullptr;
   if constexpr (std::is_same_v<T, float>)
     tabulate_tensor = e.tabulate_tensor_float32;
@@ -924,9 +932,8 @@ Expression<T, U> create_expression(
   else if constexpr (std::is_same_v<T, std::complex<float>>)
   {
     tabulate_tensor = reinterpret_cast<void (*)(
-        T*, const T*, const T*,
-        const typename scalar_value_type<T>::value_type*, const int*,
-        const unsigned char*)>(e.tabulate_tensor_complex64);
+        T*, const T*, const T*, const scalar_value_t<T>*, const int*,
+        const unsigned char*, void*)>(e.tabulate_tensor_complex64);
   }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
   else if constexpr (std::is_same_v<T, double>)
@@ -935,9 +942,8 @@ Expression<T, U> create_expression(
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
     tabulate_tensor = reinterpret_cast<void (*)(
-        T*, const T*, const T*,
-        const typename scalar_value_type<T>::value_type*, const int*,
-        const unsigned char*)>(e.tabulate_tensor_complex128);
+        T*, const T*, const T*, const scalar_value_t<T>*, const int*,
+        const unsigned char*, void*)>(e.tabulate_tensor_complex128);
   }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
   else
@@ -945,18 +951,18 @@ Expression<T, U> create_expression(
 
   assert(tabulate_tensor);
   return Expression(coefficients, constants, std::span<const U>(X), Xshape,
-                    tabulate_tensor, value_shape, argument_function_space);
+                    tabulate_tensor, value_shape, argument_space);
 }
 
 /// @brief Create Expression from UFC input (with named coefficients and
 /// constants).
-template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
 Expression<T, U> create_expression(
     const ufcx_expression& e,
     const std::map<std::string, std::shared_ptr<const Function<T, U>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    std::shared_ptr<const FunctionSpace<U>> argument_function_space = nullptr)
+    std::shared_ptr<const FunctionSpace<U>> argument_space = nullptr)
 {
   // Place coefficients in appropriate order
   std::vector<std::shared_ptr<const Function<T, U>>> coeff_map;
@@ -992,7 +998,7 @@ Expression<T, U> create_expression(
     }
   }
 
-  return create_expression(e, coeff_map, const_map, argument_function_space);
+  return create_expression(e, coeff_map, const_map, argument_space);
 }
 
 } // namespace dolfinx::fem

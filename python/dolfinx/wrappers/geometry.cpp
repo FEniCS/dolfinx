@@ -55,6 +55,18 @@ void declare_bbtree(nb::module_& m, std::string type)
           nb::arg("padding") = 0.0)
       .def_prop_ro("num_bboxes",
                    &dolfinx::geometry::BoundingBoxTree<T>::num_bboxes)
+      .def_prop_ro(
+          "bbox_coordinates",
+          [](dolfinx::geometry::BoundingBoxTree<T>& self)
+          {
+            std::span<T> bbox_coordinates = self.bbox_coordinates();
+            return nb::ndarray<T, nb::shape<-1, 3>, nb::numpy>(
+                bbox_coordinates.data(), {bbox_coordinates.size() / 3, 3});
+          },
+          nb::rv_policy::reference_internal,
+          "Return coordinates of bounding boxes."
+          "Row `2*ibbox` and `2*ibbox+1` correspond "
+          "to the lower and upper corners of bounding box `ibbox`.")
       .def(
           "get_bbox",
           [](const dolfinx::geometry::BoundingBoxTree<T>& self,

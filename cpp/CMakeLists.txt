@@ -3,7 +3,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 if(POLICY CMP0167)
-  cmake_policy(SET CMP0167 NEW)  # Boost CONFIG mode
+  cmake_policy(SET CMP0167 NEW) # Boost CONFIG mode
 endif()
 
 # ------------------------------------------------------------------------------
@@ -237,7 +237,6 @@ set_package_properties(
 # Check for MPI
 find_package(MPI 3 REQUIRED)
 
-find_package(spdlog REQUIRED)
 # ------------------------------------------------------------------------------
 # Compiler flags
 
@@ -280,16 +279,18 @@ endif()
 # library
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
    AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
-   AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0")
+   AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
+)
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS
-       -Wno-array-bounds;-Wno-stringop-overflow)
+       -Wno-array-bounds;-Wno-stringop-overflow
+  )
 endif()
 
 # ------------------------------------------------------------------------------
 # Find required packages
 
-# pugixml
 find_package(pugixml REQUIRED)
+find_package(spdlog REQUIRED)
 
 # Note: When updating Boost version, also update DOLFINXConfig.cmake.in
 if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
@@ -462,22 +463,32 @@ elseif(_REQUIRE_SLEPC AND NOT PETSC_FOUND)
   )
 endif()
 
-if(DOLFINX_ENABLE_SCOTCH)
-  find_package(SCOTCH CONFIG) # Attempt to find in CONFIG mode
-  if(NOT SCOTCH_FOUND)
-    if(_REQUIRE_SCOTCH) # If not found in CONFIG mode, try MODULE mode
-      find_package(SCOTCH REQUIRED)
-    else()
-      find_package(SCOTCH)
-    endif()
-  endif()
+if(DOLFINX_ENABLE_SCOTCH AND _REQUIRE_SCOTCH)
+  find_package(
+    SCOTCH REQUIRED CONFIG HINTS $ENV{PETSC_DIR}/$ENV{PETSC_ARCH}
+    $ENV{PETSC_DIR}
+  )
+elseif(DOLFINX_ENABLE_SCOTCH)
+  find_package(
+    SCOTCH CONFIG HINTS $ENV{PETSC_DIR}/$ENV{PETSC_ARCH} $ENV{PETSC_DIR}
+  )
+endif()
 
-  if(TARGET SCOTCH::scotch AND NOT TARGET SCOTCH::ptscotch)
-    message(
-      STATUS "SCOTCH found, but not PT-SCOTCH (parallel). Not enabling SCOTCH."
-    )
-    set(SCOTCH_FOUND FALSE)
+if(TARGET SCOTCH::scotch AND NOT TARGET SCOTCH::ptscotch)
+  message(
+    STATUS "SCOTCH found, but not PT-SCOTCH (parallel). Not enabling SCOTCH."
+  )
+  set(SCOTCH_FOUND FALSE)
+  if(_REQUIRE_SCOTCH AND NOT SCOTCH_FOUND)
+    message(FATAL_ERROR "SCOTCH requested, but not found.")
   endif()
+endif()
+
+if(SCOTCH_FOUND)
+  message(
+    STATUS
+      "Found PT-SCOTCH version ${SCOTCH_VERSION}, include dir: ${SCOTCH_INCLUDE_DIR}, lib dir: ${SCOTCH_LIBRARY_DIR}"
+  )
 endif()
 
 if(DOLFINX_ENABLE_PARMETIS AND _REQUIRE_PARMETIS)

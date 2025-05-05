@@ -15,18 +15,22 @@ on:
   workflow_dispatch:
 
 jobs:
-  fenicsx-refs:
-    uses: ./.github/workflows/fenicsx-refs.yml
 
   mac-os-build:
     name: macOS Homebrew install and test
     runs-on: macos-15
-    needs: fenicsx-refs
     env:
       PETSC_ARCH: arch-darwin-c-opt
       PETSC_DIR: ${{ github.workspace }}/petsc
 
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Load environment variables
+        run: |
+          cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+          echo DYLD_LIBRARY_PATH=/usr/local/lib >> $GITHUB_ENV
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -34,8 +38,8 @@ jobs:
 
       - name: Install Homebrew dependencies
         run: |
-          brew install adios2 boost cmake hdf5-mpi make ninja open-mpi pkgconf pugixml spdlog # FEniCS
-          brew install bison flex gfortran # PETSc
+          brew install adios2 boost catch2 cmake hdf5-mpi make ninja open-mpi pkgconf pugixml spdlog # FEniCS
+          brew install bison flex gfortran scalapack scotch # PETSc
 
       - name: Install Python dependencies (petsc4py)
         run: |
@@ -45,6 +49,7 @@ jobs:
       - name: Install minimal PETSc and petsc4py
         run: |
           export PATH="$(brew --prefix gfortran)/bin:$(brew --prefix bison)/bin:$PATH"
+          export PATH="$(brew --prefix make)/libexec/gnubin:$PATH"
           git clone -b release https://gitlab.com/petsc/petsc.git petsc
           cd petsc
           python ./configure \
@@ -54,10 +59,12 @@ jobs:
             --with-scalar-type=real \
             --with-shared-libraries \
             --with-scalar-type=real \
+            --with-ptscotch-dir=$(brew --prefix scotch) \
+            --with-scalapack-dir=$(brew --prefix scalapack) \
             --download-metis \
+            --download-metis-commit=08c3082720ff9114b8e3cbaa4484a26739cd7d2d \
             --download-parmetis \
-            --download-ptscotch \
-            --download-scalapack \
+            --download-parmetis-commit=53c9341b6c1ba876c97567cb52ddfc87c159dc36 \
             --download-mumps \
             --download-mumps-avoid-mpi-in-place
           make all
@@ -66,40 +73,31 @@ jobs:
 
       - name: Install FEniCSx dependencies
         run: |
-          python -m pip install git+https://github.com/fenics/ufl.git@${{ needs.fenicsx-refs.outputs.ufl_ref }}
-          python -m pip install git+https://github.com/fenics/basix.git@${{ needs.fenicsx-refs.outputs.basix_ref }}
-          python -m pip install git+https://github.com/fenics/ffcx.git@${{ needs.fenicsx-refs.outputs.ffcx_ref }}
-
-      - uses: actions/checkout@v4
-        with:
-          path: dolfinx
+          python -m pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
+          python -m pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
+          python -m pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Build and install DOLFINx C++ library
-        working-directory: dolfinx
         run: |
           cmake -G Ninja -B build -S cpp/
           cmake --build build
           sudo cmake --install build
 
       - name: Build C++ unit tests
-        working-directory: dolfinx
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
-          cmake --build build/test --parallel 3
+          cmake --build build/test
 
       - name: Run C++ unit tests (serial)
-        working-directory: dolfinx
         run: |
           cd build/test
           mpiexec -np 1 ctest -V --output-on-failure -R unittests
       - name: Run C++ unit tests (MPI)
-        working-directory: dolfinx
         run: |
           cd build/test
           mpiexec -np 3 ctest -V --output-on-failure -R unittests
 
       - name: Build and install DOLFINx Python interface
-        working-directory: dolfinx
         run: |
           python -m pip install -r python/build-requirements.txt
           python -m pip install --check-build-dependencies --no-build-isolation 'python/[test]'
@@ -110,11 +108,9 @@ jobs:
           mpiexec -np 2 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
 
       - name: Run Python unit tests (serial)
-        working-directory: dolfinx
         run: |
           python -m pip install pytest-xdist
           mpiexec -np 1 python3 -m pytest -n=auto --durations=50 python/test/unit/
       - name: Run Python unit tests (MPI, np=3)
-        working-directory: dolfinx
         run: |
           mpiexec -np 3 python3 -m pytest python/test/unit/
