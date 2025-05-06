@@ -485,7 +485,7 @@ def create_snes_solver(
         # Check for SNES consistency
         assert b.getType() == PETSc.Vec.Type.NEST
         snes.setFunction(partial(F_nest, u, residual, jacobian, bcs), b)
-    elif isinstance(residual, dolfinx.fem.Form):
+    elif isinstance(residual, fem.Form):
         snes.setFunction(partial(F_standard, u, residual, jacobian, bcs), b)  # type: ignore
     else:
         snes.setFunction(partial(F_block, u, residual, jacobian, bcs), b)
