@@ -35,7 +35,9 @@ from dolfinx import fem
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.petsc import (
     apply_lifting,
+    assemble_matrix,
     assemble_vector,
+    assign,
     create_matrix,
     create_vector,
     set_bc,
@@ -94,10 +96,10 @@ class SNESSolver:
     def __init__(
         self,
         F: typing.Union[dolfinx.fem.Form, ufl.form.Form],
-        u: typing.Union[dolfinx.fem.Function, list[dolfinx.fem.Function]],
-        bcs: typing.Optional[list[dolfinx.fem.DirichletBC]] = None,
-        J: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
-        P: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
+        u: typing.Union[fem.Function, list[fem.Function]],
+        bcs: typing.Optional[list[fem.DirichletBC]] = None,
+        J: typing.Optional[typing.Union[fem.Form, ufl.form.Form]] = None,
+        P: typing.Optional[typing.Union[fem.Form, ufl.form.Form]] = None,
         mat_kind: typing.Optional[typing.Union[str, typing.Iterable[typing.Iterable[str]]]] = None,
         vec_kind: typing.Optional[str] = None,
         form_compiler_options: typing.Optional[dict] = None,
@@ -178,13 +180,13 @@ class SNESSolver:
         """
 
         # Move current iterate into the work array.
-        dolfinx.fem.petsc.assign(self._u, self._x)
+        assign(self._u, self._x)
 
         # Solve problem
         self._snes.solve(None, self._x)
 
         # Move solution back to function
-        dolfinx.fem.petsc.assign(self._x, self._u)
+        assign(self._x, self._u)
 
         converged_reason = self._snes.getConvergedReason()
         return self._x, converged_reason, self._snes.getIterationNumber()
@@ -207,10 +209,10 @@ class SNESSolver:
 
 
 def F_standard(
-    u: dolfinx.fem.Function,
-    residual: dolfinx.fem.Form,
-    jacobian: dolfinx.fem.Form,
-    bcs: list[dolfinx.fem.DirichletBC],
+    u: fem.Function,
+    residual: fem.Form,
+    jacobian: fem.Form,
+    bcs: list[fem.DirichletBC],
     _snes: PETSc.SNES,  # type: ignore
     x: PETSc.Vec,  # type: ignore
     F: PETSc.Vec,  # type: ignore
@@ -227,7 +229,7 @@ def F_standard(
         F: Vector to assemble the residual into.
     """
     x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    dolfinx.fem.petsc.assign(x, u)
+    assign(x, u)
     with F.localForm() as f_local:
         f_local.set(0.0)
     assemble_vector(F, residual)
@@ -237,12 +239,12 @@ def F_standard(
 
 
 def assemble_jacobian(
-    u: typing.Union[list[dolfinx.fem.Function], dolfinx.fem.Function],
-    jacobian: typing.Union[dolfinx.fem.Form, typing.Iterable[typing.Iterable[dolfinx.fem.Form]]],
+    u: typing.Union[list[fem.Function], fem.Function],
+    jacobian: typing.Union[fem.Form, typing.Iterable[typing.Iterable[fem.Form]]],
     preconditioner: typing.Optional[
-        typing.Union[dolfinx.fem.Form, typing.Iterable[typing.Iterable[dolfinx.fem.Form]]]
+        typing.Union[fem.Form, typing.Iterable[typing.Iterable[fem.Form]]]
     ],
-    bcs: typing.Iterable[dolfinx.fem.DirichletBC],
+    bcs: typing.Iterable[fem.DirichletBC],
     _snes: PETSc.SNES,  # type: ignore
     x: PETSc.Vec,  # type: ignore
     J: PETSc.Mat,  # type: ignore
@@ -266,15 +268,15 @@ def assemble_jacobian(
     except PETSc.Error:
         for x_sub in x.getNestSubVecs():
             x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    dolfinx.fem.petsc.assign(x, u)
+    assign(x, u)
 
     # Assemble Jacobian
     J.zeroEntries()
-    dolfinx.fem.petsc.assemble_matrix(J, jacobian, bcs, diag=1.0)  # type: ignore
+    assemble_matrix(J, jacobian, bcs, diag=1.0)  # type: ignore
     J.assemble()
     if preconditioner is not None:
         P.zeroEntries()
-        dolfinx.fem.petsc.assemble_matrix(P, preconditioner, bcs, diag=1.0)  # type: ignore
+        assemble_matrix(P, preconditioner, bcs, diag=1.0)  # type: ignore
         P.assemble()
 
 
@@ -303,7 +305,7 @@ def F_block(
     with F.localForm() as f_local:
         f_local.set(0.0)
     x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    dolfinx.fem.petsc.assign(x, u)
+    assign(x, u)
 
     # Assign blocks variable to the vectors
     maps = [
@@ -325,8 +327,8 @@ def F_block(
     x.setAttr("_blocks", (off_owned, off_ghost))
 
     assemble_vector(F, residual)
-    bcs1 = dolfinx.fem.bcs_by_block(dolfinx.fem.extract_function_spaces(jacobian, 1), bcs)
-    dolfinx.fem.petsc.apply_lifting(
+    bcs1 = _bcs_by_block(fem.extract_function_spaces(jacobian, 1), bcs)
+    apply_lifting(
         F,
         jacobian,
         bcs=bcs1,
@@ -334,8 +336,8 @@ def F_block(
         alpha=-1.0,
     )
     F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = dolfinx.fem.bcs_by_block(dolfinx.fem.extract_function_spaces(residual), bcs)
-    dolfinx.fem.petsc.set_bc(F, bcs0, x0=x, alpha=-1.0)
+    bcs0 = _bcs_by_block(fem.extract_function_spaces(residual), bcs)
+    set_bc(F, bcs0, x0=x, alpha=-1.0)
     F.ghostUpdate(PETSc.InsertMode.INSERT_VALUES, PETSc.ScatterMode.FORWARD)
 
 
@@ -362,7 +364,7 @@ def F_nest(
     assert x.getType() == "nest" and F.getType() == "nest"
     for x_sub in x.getNestSubVecs():
         x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    dolfinx.fem.petsc.assign(x, u)
+    assign(x, u)
     bcs1 = _bcs_by_block(_extract_spaces(jacobian, 1), bcs)
     sub_vectors = x.getNestSubVecs()
     for L, F_sub, a in zip(residual, F.getNestSubVecs(), jacobian):
