@@ -118,6 +118,6 @@ TEST_CASE("bug")
   {
     auto P = [&cells](auto index) { return cells[index]; };
     dolfinx::radix_sort(perm, P);
-    REQUIRE(std::ranges::is_sorted(cells, std::less{}, P));
+    REQUIRE(std::ranges::is_sorted(perm, std::less{}, P));
   }
 }
