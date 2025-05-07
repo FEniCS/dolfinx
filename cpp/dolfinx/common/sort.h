@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <numeric>
 #include <span>
 #include <type_traits>
@@ -20,17 +21,6 @@
 
 namespace dolfinx
 {
-// namespace impl
-// {
-
-// template <std::integral T> requires std::is_signed_v<T>
-// std::make_unsigned_t<T> _shift_to_unsigned(T a)
-// {
-//   using uT = std::make_unsigned_t<T>;
-//   return static_cast<uT>(a) +
-//   static_cast<uT>(-(std::numeric_limits<T>::min()+1)) + 1;
-// }
-// } // namespace impl
 
 struct __radix_sort
 {
@@ -84,9 +74,18 @@ struct __radix_sort
         return projected;
       else
       {
-        // return impl::_shift_to_unsigned(projected);
+        // Transforms the projected value to an unsigned int while maintaining
+        // relative order by
+        //    x |-> x + |std::numeric_limits<I>::min()|
+        //        = x - std::numeric_limits<I>::min()
+        // However, since
+        //    |std::numeric_limits<I>::min()| > |std::numeric_limits<I>::max()|
+        // this needs to be done carefully to avoid an overflow.
+        static_assert(static_cast<uI>(std::numeric_limits<I>::min())
+                          + static_cast<uI>(std::numeric_limits<I>::max())
+                      == static_cast<uI>(I(-1)));
         return static_cast<uI>(projected)
-               + static_cast<uI>(-(std::numeric_limits<I>::min() + 1)) + 1;
+               + static_cast<uI>(-(std::numeric_limits<I>::min() + 1)) + uI(1);
       }
     };
 

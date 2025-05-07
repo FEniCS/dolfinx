@@ -16,10 +16,12 @@
 #include <iostream>
 #include <numeric>
 #include <random>
+#include <type_traits>
 #include <vector>
 
-TEMPLATE_TEST_CASE("Test radix sort", "[vector][template]", std::int32_t,
-                   std::int64_t, std::uint32_t, std::uint64_t)
+TEMPLATE_TEST_CASE("Test radix sort", "[vector][template]", std::int16_t,
+                   std::int32_t, std::int64_t, std::uint16_t, std::uint32_t,
+                   std::uint64_t)
 {
   auto vec_size = GENERATE(100, 1000, 10000);
   std::vector<TestType> vec;
@@ -39,11 +41,17 @@ TEMPLATE_TEST_CASE("Test radix sort", "[vector][template]", std::int32_t,
 }
 
 TEMPLATE_TEST_CASE("Test radix sort (projection)", "[radix]", std::int16_t,
-                   std::int32_t, std::int64_t)
+                   std::int32_t, std::int64_t, std::uint16_t, std::uint32_t,
+                   std::uint64_t)
 {
   // Check projection into same type array
   {
     std::vector<TestType> vec = {3, 6, 2, 1, 5, 4, 0};
+    if constexpr (std::is_signed_v<TestType>)
+    {
+      vec[1] *= -1;
+      vec[4] *= -1;
+    }
     std::vector<TestType> indices(vec.size());
     std::iota(indices.begin(), indices.end(), 0);
 
@@ -56,6 +64,11 @@ TEMPLATE_TEST_CASE("Test radix sort (projection)", "[radix]", std::int16_t,
   {
     std::vector<std::array<TestType, 1>> vec_array{{3}, {6}, {2}, {1},
                                                    {5}, {4}, {0}};
+    if constexpr (std::is_signed_v<TestType>)
+    {
+      vec_array[1][0] *= -1;
+      vec_array[4][0] *= -1;
+    }
     std::vector<TestType> indices(vec_array.size());
     std::iota(indices.begin(), indices.end(), 0);
 
@@ -102,22 +115,5 @@ TEST_CASE("Test argsort bitset")
     REQUIRE(std::equal(arr.data() + shape1 * perm[i],
                        arr.data() + shape1 * perm[i] + shape1,
                        arr.data() + shape1 * index[i]));
-  }
-}
-
-TEST_CASE("bug")
-{
-  std::vector<std::int32_t> cells = {-1, 2, -3};
-  std::vector<std::int32_t> perm = {0, 1, 2};
-
-  {
-    dolfinx::radix_sort(cells);
-    REQUIRE(std::ranges::is_sorted(cells));
-  }
-
-  {
-    auto P = [&cells](auto index) { return cells[index]; };
-    dolfinx::radix_sort(perm, P);
-    REQUIRE(std::ranges::is_sorted(perm, std::less{}, P));
   }
 }
