@@ -69,6 +69,20 @@ void common(nb::module_& m)
       .value("min", dolfinx::Table::Reduction::min)
       .value("average", dolfinx::Table::Reduction::average);
 
+  nb::class_<dolfinx::common::Scatterer<>>(m, "Scatterer")
+      .def("__init__",
+           [](dolfinx::common::Scatterer<>* self, dolfinx::common::IndexMap& im,
+              int bs) { new (self) dolfinx::common::Scatterer<>(im, bs); })
+      .def(
+          "scatter_fwd",
+          [](dolfinx::common::Scatterer<>& self,
+             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> data_in,
+             nb::ndarray<std::int64_t, nb::ndim<1>, nb::c_contig> data_out)
+          {
+            self.scatter_fwd(std::span(data_in.data(), data_in.size()),
+                             std::span(data_out.data(), data_out.size()));
+          });
+
   // dolfinx::common::IndexMap
   nb::class_<dolfinx::common::IndexMap>(m, "IndexMap")
       .def(
@@ -113,8 +127,10 @@ void common(nb::module_& m)
           nb::arg("comm"), nb::arg("local_size"), nb::arg("dest_src"),
           nb::arg("ghosts"), nb::arg("ghost_owners"))
       .def_prop_ro(
-          "comm", [](const dolfinx::common::IndexMap& self)
-          { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>())
+          "comm",
+          [](const dolfinx::common::IndexMap& self)
+          { return MPICommWrapper(self.comm()); },
+          nb::keep_alive<0, 1>())
       .def_prop_ro("size_local", &dolfinx::common::IndexMap::size_local)
       .def_prop_ro("size_global", &dolfinx::common::IndexMap::size_global)
       .def_prop_ro("num_ghosts", &dolfinx::common::IndexMap::num_ghosts)
