@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Igor Baratta
+// Copyright (C) 2021-2025 Igor Baratta and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -58,14 +58,25 @@ struct __radix_sort
 
     // index type (if no projection is provided it holds I == T)
     using I = std::remove_cvref_t<std::invoke_result_t<P, T>>;
+    using uI = std::make_unsigned_t<I>;
 
     if (range.size() <= 1)
       return;
 
-    T max_value = proj(*std::ranges::max_element(range, std::less{}, proj));
+    auto _proj = [&](auto&& e) -> uI
+    {
+      auto&& projected = proj(e);
+
+      if constexpr (std::is_same_v<uI, I>)
+        return projected;
+
+      return static_cast<uI>(projected - std::numeric_limits<I>::min());
+    };
+
+    uI max_value = _proj(*std::ranges::max_element(range, std::less{}, proj));
 
     // Sort N bits at a time
-    constexpr I bucket_size = 1 << BITS;
+    constexpr uI bucket_size = 1 << BITS;
     T mask = (T(1) << BITS) - 1;
 
     // Compute number of iterations, most significant digit (N bits) of
@@ -81,7 +92,7 @@ struct __radix_sort
     std::array<I, bucket_size> counter;
     std::array<I, bucket_size + 1> offset;
 
-    I mask_offset = 0;
+    uI mask_offset = 0;
     std::vector<T> buffer(range.size());
     std::span<T> current_perm = range;
     std::span<T> next_perm = buffer;
@@ -92,7 +103,7 @@ struct __radix_sort
 
       // Count number of elements per bucket
       for (const auto& c : current_perm)
-        counter[(proj(c) & mask) >> mask_offset]++;
+        counter[(_proj(c) & mask) >> mask_offset]++;
 
       // Prefix sum to get the inserting position
       offset[0] = 0;
@@ -100,7 +111,7 @@ struct __radix_sort
                        std::next(offset.begin()));
       for (const auto& c : current_perm)
       {
-        I bucket = (proj(c) & mask) >> mask_offset;
+        I bucket = (_proj(c) & mask) >> mask_offset;
         I new_pos = offset[bucket + 1] - counter[bucket];
         next_perm[new_pos] = c;
         counter[bucket]--;

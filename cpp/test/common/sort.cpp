@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Igor A. Baratta
+// Copyright (C) 2021-2025 Igor A. Baratta and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -6,11 +6,14 @@
 
 #include <algorithm>
 #include <array>
+#include <bitset>
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
+#include <cstdint>
 #include <dolfinx/common/sort.h>
 #include <functional>
+#include <iostream>
 #include <numeric>
 #include <random>
 #include <vector>
@@ -99,5 +102,22 @@ TEST_CASE("Test argsort bitset")
     REQUIRE(std::equal(arr.data() + shape1 * perm[i],
                        arr.data() + shape1 * perm[i] + shape1,
                        arr.data() + shape1 * index[i]));
+  }
+}
+
+TEST_CASE("bug")
+{
+  std::vector<std::int32_t> cells = {-1, 2, -3};
+  std::vector<std::int32_t> perm = {0, 1, 2};
+
+  {
+    dolfinx::radix_sort(cells);
+    REQUIRE(std::ranges::is_sorted(cells));
+  }
+
+  {
+    auto P = [&cells](auto index) { return cells[index]; };
+    dolfinx::radix_sort(perm, P);
+    REQUIRE(std::ranges::is_sorted(cells, std::less{}, P));
   }
 }
