@@ -70,14 +70,15 @@ struct __radix_sort
       if constexpr (std::is_same_v<uI, I>)
         return projected;
 
-      return static_cast<uI>(projected) + std::numeric_limits<I>::min();
+      return static_cast<uI>(projected)
+             + std::abs(std::numeric_limits<I>::min());
     };
 
     uI max_value = _proj(*std::ranges::max_element(range, std::less{}, proj));
 
     // Sort N bits at a time
     constexpr uI bucket_size = 1 << BITS;
-    T mask = (T(1) << BITS) - 1;
+    uI mask = (uI(1) << BITS) - 1;
 
     // Compute number of iterations, most significant digit (N bits) of
     // maxvalue
@@ -111,8 +112,8 @@ struct __radix_sort
                        std::next(offset.begin()));
       for (const auto& c : current_perm)
       {
-        I bucket = (_proj(c) & mask) >> mask_offset;
-        I new_pos = offset[bucket + 1] - counter[bucket];
+        uI bucket = (_proj(c) & mask) >> mask_offset;
+        uI new_pos = offset[bucket + 1] - counter[bucket];
         next_perm[new_pos] = c;
         counter[bucket]--;
       }
