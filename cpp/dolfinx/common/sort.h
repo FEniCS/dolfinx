@@ -70,7 +70,7 @@ struct __radix_sort
       if constexpr (std::is_same_v<uI, I>)
         return projected;
 
-      return static_cast<uI>(projected - std::numeric_limits<I>::min());
+      return static_cast<uI>(projected) + std::numeric_limits<I>::min();
     };
 
     uI max_value = _proj(*std::ranges::max_element(range, std::less{}, proj));
