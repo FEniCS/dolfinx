@@ -66,6 +66,20 @@ struct __radix_sort
     if (range.size() <= 1)
       return;
 
+    // Transforms the projected value to an unsigned int while maintaining
+    // relative order by
+    //    x |-> x + |std::numeric_limits<I>::min()|
+    //        = x -  std::numeric_limits<I>::min()
+    // However, since
+    //    |std::numeric_limits<I>::min()| > |std::numeric_limits<I>::max()|
+    // this needs to be done carefully to avoid an overflow. A solution is the
+    // following:
+    //    x = static_cast<uI>(x) +
+    //    static_cast<uI>(-(std::numeric_limits<I>::min() + 1)) + uI(1);
+    // Given the underlying binary strucutre of integers and the difference
+    // between in unsigned and singed integral being the leading sign bit for
+    // same overall width this can also be expressed as a flip of the most
+    // significant bit in binary representation.
     auto _proj = [&](auto&& e) -> uI
     {
       I projected = proj(e);
@@ -74,18 +88,15 @@ struct __radix_sort
         return projected;
       else
       {
-        // Transforms the projected value to an unsigned int while maintaining
-        // relative order by
-        //    x |-> x + |std::numeric_limits<I>::min()|
-        //        = x - std::numeric_limits<I>::min()
-        // However, since
-        //    |std::numeric_limits<I>::min()| > |std::numeric_limits<I>::max()|
-        // this needs to be done carefully to avoid an overflow.
         static_assert(static_cast<uI>(std::numeric_limits<I>::min())
                           + static_cast<uI>(std::numeric_limits<I>::max())
                       == static_cast<uI>(I(-1)));
-        return static_cast<uI>(projected)
-               + static_cast<uI>(-(std::numeric_limits<I>::min() + 1)) + uI(1);
+        static_assert(std::numeric_limits<uI>::digits
+                      == std::numeric_limits<I>::digits + 1);
+        static_assert(std::bit_cast<uI>(std::numeric_limits<I>::min())
+                      == (uI(1) << (sizeof(I) * 8 - 1)));
+
+        return std::bit_cast<uI>(projected) ^ (uI(1) << (sizeof(I) * 8 - 1));
       }
     };
 

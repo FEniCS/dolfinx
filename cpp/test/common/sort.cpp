@@ -14,6 +14,7 @@
 #include <dolfinx/common/sort.h>
 #include <functional>
 #include <iostream>
+#include <limits>
 #include <numeric>
 #include <random>
 #include <type_traits>
@@ -38,6 +39,19 @@ TEMPLATE_TEST_CASE("Test radix sort", "[vector][template]", std::int16_t,
 
   // Check if vector is sorted
   REQUIRE(std::ranges::is_sorted(vec));
+}
+
+TEMPLATE_TEST_CASE("Test radix sort (limits)", "[vector][template]",
+                   std::int16_t, std::int32_t, std::int64_t, std::uint16_t,
+                   std::uint32_t, std::uint64_t)
+{
+  std::vector<TestType> vec{0, std::numeric_limits<TestType>::max(),
+                            std::numeric_limits<TestType>::min()};
+  dolfinx::radix_sort(vec);
+  REQUIRE(std::ranges::is_sorted(vec));
+  REQUIRE(std::ranges::equal(
+      vec, std::vector<TestType>{std::numeric_limits<TestType>::min(), 0,
+                                 std::numeric_limits<TestType>::max()}));
 }
 
 TEMPLATE_TEST_CASE("Test radix sort (projection)", "[radix]", std::int16_t,
