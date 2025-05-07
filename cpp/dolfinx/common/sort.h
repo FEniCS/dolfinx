@@ -46,10 +46,11 @@ struct __radix_sort
   /// @tparam BITS The number of bits to sort at a time.
   /// @param[in, out] range The range to sort.
   /// @param[in] P Element projection.
-  template <
-      std::ranges::random_access_range R, typename P = std::identity,
-      std::remove_cvref_t<std::invoke_result_t<P, std::iter_value_t<R>>> BITS
-      = 8>
+  template <std::ranges::random_access_range R, typename P = std::identity,
+            std::make_unsigned_t<std::remove_cvref_t<
+                std::invoke_result_t<P, std::iter_value_t<R>>>>
+                BITS
+            = 8>
     requires std::integral<decltype(BITS)>
   constexpr void operator()(R&& range, P proj = {}) const
   {
@@ -65,13 +66,15 @@ struct __radix_sort
 
     auto _proj = [&](auto&& e) -> uI
     {
-      auto&& projected = proj(e);
+      I projected = proj(e);
 
       if constexpr (std::is_same_v<uI, I>)
         return projected;
-
-      return static_cast<uI>(projected)
-             + std::abs(std::numeric_limits<I>::min());
+      else
+      {
+        return static_cast<uI>(projected)
+               + std::abs(std::numeric_limits<I>::min());
+      }
     };
 
     uI max_value = _proj(*std::ranges::max_element(range, std::less{}, proj));

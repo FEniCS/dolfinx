@@ -19,14 +19,14 @@
 #include <vector>
 
 TEMPLATE_TEST_CASE("Test radix sort", "[vector][template]", std::int32_t,
-                   std::int64_t)
+                   std::int64_t, std::uint32_t, std::uint64_t)
 {
   auto vec_size = GENERATE(100, 1000, 10000);
   std::vector<TestType> vec;
   vec.reserve(vec_size);
 
   // Generate a vector of ints with a Uniform Int distribution
-  std::uniform_int_distribution<TestType> distribution(0, 10000);
+  std::uniform_int_distribution<TestType> distribution(-10000, 10000);
   std::mt19937 engine;
   auto generator = std::bind(distribution, engine);
   std::generate_n(std::back_inserter(vec), vec_size, generator);
