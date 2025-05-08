@@ -47,6 +47,29 @@ consteval bool has_petsc4py()
 #endif
 }
 
+template <typename T>
+void add_scatter_functions(nb::class_<dolfinx::common::Scatterer<>>& sc)
+{
+  sc.def("scatter_fwd",
+         [](dolfinx::common::Scatterer<>& self,
+            nb::ndarray<const T, nb::ndim<1>, nb::c_contig> local_data,
+            nb::ndarray<T, nb::ndim<1>, nb::c_contig> remote_data)
+         {
+           self.scatter_fwd(std::span(local_data.data(), local_data.size()),
+                            std::span(remote_data.data(), remote_data.size()));
+         });
+
+  sc.def("scatter_rev",
+         [](dolfinx::common::Scatterer<>& self,
+            nb::ndarray<T, nb::ndim<1>, nb::c_contig> local_data,
+            nb::ndarray<const T, nb::ndim<1>, nb::c_contig> remote_data)
+         {
+           self.scatter_rev(std::span(local_data.data(), local_data.size()),
+                            std::span(remote_data.data(), remote_data.size()),
+                            std::plus<T>());
+         });
+}
+
 // Interface for dolfinx/common
 void common(nb::module_& m)
 {
@@ -69,19 +92,11 @@ void common(nb::module_& m)
       .value("min", dolfinx::Table::Reduction::min)
       .value("average", dolfinx::Table::Reduction::average);
 
-  nb::class_<dolfinx::common::Scatterer<>>(m, "Scatterer")
-      .def("__init__",
-           [](dolfinx::common::Scatterer<>* self, dolfinx::common::IndexMap& im,
-              int bs) { new (self) dolfinx::common::Scatterer<>(im, bs); })
-      .def(
-          "scatter_fwd",
-          [](dolfinx::common::Scatterer<>& self,
-             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> data_in,
-             nb::ndarray<std::int64_t, nb::ndim<1>, nb::c_contig> data_out)
-          {
-            self.scatter_fwd(std::span(data_in.data(), data_in.size()),
-                             std::span(data_out.data(), data_out.size()));
-          });
+  auto sc = nb::class_<dolfinx::common::Scatterer<>>(m, "Scatterer")
+                .def(nb::init<dolfinx::common::IndexMap&, int>());
+  add_scatter_functions<std::int64_t>(sc);
+  add_scatter_functions<double>(sc);
+  add_scatter_functions<float>(sc);
 
   // dolfinx::common::IndexMap
   nb::class_<dolfinx::common::IndexMap>(m, "IndexMap")
