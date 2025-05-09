@@ -9,6 +9,7 @@
 #include "Constant.h"
 #include "Form.h"
 #include "FunctionSpace.h"
+#include "fem/assemble_matrix_impl.h"
 #include "utils.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
@@ -51,6 +52,43 @@ T assemble_cells(mdspan2_t x_dofmap,
     }
 
     fn(&value, &coeffs(index, 0), constants.data(), cdofs.data(), nullptr,
+       nullptr, nullptr);
+  }
+
+  return value;
+}
+
+template <dolfinx::scalar T>
+T assemble_vertices(mdspan2_t x_dofmap,
+                    md::mdspan<const scalar_value_t<T>,
+                               md::extents<std::size_t, md::dynamic_extent, 3>>
+                        x,
+                    std::span<const std::int32_t> local_vertices,
+                    std::span<const std::int32_t> cells, FEkernel<T> auto fn,
+                    std::span<const T> constants,
+                    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs)
+{
+  T value(0);
+  if (cells.empty())
+    return value;
+
+  // Create data structures used in assembly
+  std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
+
+  // Iterate over all cells
+  for (std::size_t index = 0; index < cells.size(); ++index)
+  {
+    std::int32_t c = cells[index];
+
+    // Get cell coordinates/geometry
+    auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+    {
+      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs.begin(), 3 * i));
+    }
+
+    std::int32_t vertex = local_vertices[index];
+    fn(&value, &coeffs(index, 0), constants.data(), cdofs.data(), &vertex,
        nullptr, nullptr);
   }
 
@@ -226,6 +264,16 @@ T assemble_scalar(
                                         md::dynamic_extent>>(
             coeffs.data(), facets.size() / 4, 2, cstride),
         perms);
+  }
+
+  for (int i : M.integral_ids(IntegralType::vertex))
+  {
+    auto fn = M.kernel(IntegralType::vertex, i, 0);
+    assert(fn);
+
+    // 1 get data
+
+    // 2 call assemble_vertices
   }
 
   return value;
