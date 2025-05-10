@@ -84,13 +84,12 @@ def test_point_source_rank_0_full_domain_1D(cell_type, ghost_mode):
     value = comm.allreduce(value_l)
     assert expected_value == pytest.approx(value)
 
-    # TODO: failing
     # Test dp(1) + dp(2)
-    # F = fem.form(x[0] * (dP(1) + dP(2)))
-    # expected_value_l = np.sum(msh.geometry.x[:msh.topology.index_map(0).size_local, 0])
-    # value_l = fem.assemble_scalar(F)
-    # assert expected_value_l == pytest.approx(value_l)
+    F = fem.form(x[0] * (dP(1) + dP(2)))
+    expected_value_l = np.sum(msh.geometry.x[: msh.topology.index_map(0).size_local, 0])
+    value_l = fem.assemble_scalar(F)
+    assert expected_value_l == pytest.approx(value_l)
 
-    # expected_value = comm.allreduce(expected_value_l)
-    # value = comm.allreduce(value_l)
-    # assert expected_value == pytest.approx(value)
+    expected_value = comm.allreduce(expected_value_l)
+    value = comm.allreduce(value_l)
+    assert expected_value == pytest.approx(value)
