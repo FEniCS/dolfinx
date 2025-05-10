@@ -134,7 +134,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
                                  std::span<const std::int32_t> entities)
 {
   const int tdim = topology.dim();
-  const int dim = integral_type == IntegralType::cell ? tdim : tdim - 1;
+  const int dim = integral_type == IntegralType::cell ? tdim : ((integral_type == IntegralType::vertex) ? 0 : tdim - 1);
 
   {
     // Create span of the owned entities (leaves off any ghosts)
@@ -148,6 +148,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   switch (integral_type)
   {
   case IntegralType::cell:
+  case IntegralType::vertex:
   {
     entity_data.insert(entity_data.begin(), entities.begin(), entities.end());
     break;

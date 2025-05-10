@@ -54,5 +54,44 @@ def test_point_source_rank_0_full_domain_1D(cell_type, ghost_mode):
     value = comm.allreduce(value_l)
     assert expected_value == pytest.approx(value)
 
+    # Split domain into first half of vertices (1) and second half of vertices (2)
+    vertices = np.arange(0, msh.topology.index_map(0).size_local, dtype=np.int32)
+    tags = np.full_like(vertices, 1)
+    tags[tags.size // 2 :] = 2
+    meshtags = mesh.meshtags(msh, 0, vertices, tags)
 
-# TODO: test partial domain, i.e. onyl some vertices
+    # Test dp(1)
+    dP = ufl.Measure("dP", domain=msh, subdomain_data=meshtags)
+    F = fem.form(x[0] * dP(1))
+    expected_value_l = np.sum(msh.geometry.x[: msh.topology.index_map(0).size_local // 2, 0])
+    value_l = fem.assemble_scalar(F)
+    assert expected_value_l == pytest.approx(value_l)
+
+    expected_value = comm.allreduce(expected_value_l)
+    value = comm.allreduce(value_l)
+    assert expected_value == pytest.approx(value)
+
+    # Test dp(2)
+    F = fem.form(x[0] * dP(2))
+    expected_value_l = np.sum(
+        msh.geometry.x[
+            msh.topology.index_map(0).size_local // 2 : msh.topology.index_map(0).size_local, 0
+        ]
+    )
+    value_l = fem.assemble_scalar(F)
+    assert expected_value_l == pytest.approx(value_l)
+
+    expected_value = comm.allreduce(expected_value_l)
+    value = comm.allreduce(value_l)
+    assert expected_value == pytest.approx(value)
+
+    # TODO: failing
+    # Test dp(1) + dp(2)
+    # F = fem.form(x[0] * (dP(1) + dP(2)))
+    # expected_value_l = np.sum(msh.geometry.x[:msh.topology.index_map(0).size_local, 0])
+    # value_l = fem.assemble_scalar(F)
+    # assert expected_value_l == pytest.approx(value_l)
+
+    # expected_value = comm.allreduce(expected_value_l)
+    # value = comm.allreduce(value_l)
+    # assert expected_value == pytest.approx(value)

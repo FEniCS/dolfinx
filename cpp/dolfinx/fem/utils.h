@@ -779,7 +779,7 @@ Form<T, U> create_form_factory(
       std::span<const int> ids(form.form_integral_ids
                                    + integral_offsets[vertex],
                                num_integrals_type[vertex]);
-
+      auto sd = subdomains.find(IntegralType::vertex);
       for (int i = 0; i < num_integrals_type[vertex]; ++i)
       {
         const int id = ids[i];
@@ -852,7 +852,34 @@ Form<T, U> create_form_factory(
         }
         else
         {
-          throw std::runtime_error("Not implemented.");
+          // NOTE: This requires that pairs are sorted
+          auto it = std::ranges::lower_bound(sd->second, id, std::less<>{},
+                                             [](auto& a) { return a.first; });
+          if (it != sd->second.end() and it->first == id)
+          {
+            // TODO: tidy up code duplication
+            for (std::int32_t v : it->second)
+            {
+              auto cells = v_to_c->links(v);
+            assert(cells.size() > 0);
+
+            // Use first cell for assembly over by default
+            std::int32_t cell = cells[0];
+            default_vertices.push_back(cell);
+
+            // Find local index of vertex within cell
+            auto cell_vertices = c_to_v->links(cell);
+            auto it = std::ranges::find(cell_vertices, v);
+            assert(it != cell_vertices.end());
+            std::int32_t local_index = std::distance(cell_vertices.begin(), it);
+            default_vertices.push_back(local_index);
+            }
+
+            integrals.insert({{IntegralType::vertex, id, form_idx},
+                              {k,
+                               default_vertices,
+                               active_coeffs}});
+          }
         }
       }
     }
