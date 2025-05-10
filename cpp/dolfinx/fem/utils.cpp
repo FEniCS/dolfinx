@@ -150,7 +150,8 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     dim = 0;
     break;
   default:
-    throw std::runtime_error("Cannot compute integration domains. Integral type not supported.");
+    throw std::runtime_error(
+        "Cannot compute integration domains. Integral type not supported.");
   }
 
   {
@@ -239,9 +240,9 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     }
     break;
   }
-  // C++ 23
-  // default:
-  //   std::unreachable();
+    // C++ 23
+    // default:
+    //   std::unreachable();
   }
 
   return entity_data;
