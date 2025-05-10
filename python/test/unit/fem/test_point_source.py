@@ -29,19 +29,18 @@ from dolfinx import default_scalar_type, fem, mesh
 def test_point_source_rank_0_full_domain_1D(cell_type, ghost_mode):
     comm = MPI.COMM_WORLD
 
-    match mesh.cell_dim(cell_type):
-        case 1:
-            msh = mesh.create_unit_interval(
-                comm, 4, dtype=default_scalar_type, ghost_mode=ghost_mode
-            )
-        case 2:
-            msh = mesh.create_unit_square(
-                comm, 4, 4, cell_type=cell_type, dtype=default_scalar_type, ghost_mode=ghost_mode
-            )
-        case 3:
-            msh = mesh.create_unit_cube(
-                comm, 4, 4, 4, cell_type=cell_type, dtype=default_scalar_type, ghost_mode=ghost_mode
-            )
+    msh = None
+    cell_dim = mesh.cell_dim(cell_type)
+    if cell_dim == 1:
+        msh = mesh.create_unit_interval(comm, 4, dtype=default_scalar_type, ghost_mode=ghost_mode)
+    elif cell_dim == 2:
+        msh = mesh.create_unit_square(
+            comm, 4, 4, cell_type=cell_type, dtype=default_scalar_type, ghost_mode=ghost_mode
+        )
+    elif cell_dim == 3:
+        msh = mesh.create_unit_cube(
+            comm, 4, 4, 4, cell_type=cell_type, dtype=default_scalar_type, ghost_mode=ghost_mode
+        )
 
     x = ufl.SpatialCoordinate(msh)
     F = fem.form(x[0] * ufl.dP)
