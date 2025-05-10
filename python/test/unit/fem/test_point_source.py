@@ -42,54 +42,28 @@ def test_point_source_rank_0_full_domain_1D(cell_type, ghost_mode):
             comm, 4, 4, 4, cell_type=cell_type, dtype=default_scalar_type, ghost_mode=ghost_mode
         )
 
+    def check(form, coordinate_range):
+        expected_value_l = np.sum(msh.geometry.x[coordinate_range[0] : coordinate_range[1], 0])
+        value_l = fem.assemble_scalar(form)
+        assert expected_value_l == pytest.approx(value_l)
+
+        expected_value = comm.allreduce(expected_value_l)
+        value = comm.allreduce(value_l)
+        assert expected_value == pytest.approx(value)
+
+    num_vertices = msh.topology.index_map(0).size_local
     x = ufl.SpatialCoordinate(msh)
-    F = fem.form(x[0] * ufl.dP)
 
-    expected_value_l = np.sum(msh.geometry.x[: msh.topology.index_map(0).size_local, 0])
-    value_l = fem.assemble_scalar(F)
-    assert expected_value_l == pytest.approx(value_l)
-
-    expected_value = comm.allreduce(expected_value_l)
-    value = comm.allreduce(value_l)
-    assert expected_value == pytest.approx(value)
+    # Full domain
+    check(fem.form(x[0] * ufl.dP), (0, num_vertices))
 
     # Split domain into first half of vertices (1) and second half of vertices (2)
     vertices = np.arange(0, msh.topology.index_map(0).size_local, dtype=np.int32)
     tags = np.full_like(vertices, 1)
     tags[tags.size // 2 :] = 2
     meshtags = mesh.meshtags(msh, 0, vertices, tags)
-
-    # Test dp(1)
     dP = ufl.Measure("dP", domain=msh, subdomain_data=meshtags)
-    F = fem.form(x[0] * dP(1))
-    expected_value_l = np.sum(msh.geometry.x[: msh.topology.index_map(0).size_local // 2, 0])
-    value_l = fem.assemble_scalar(F)
-    assert expected_value_l == pytest.approx(value_l)
 
-    expected_value = comm.allreduce(expected_value_l)
-    value = comm.allreduce(value_l)
-    assert expected_value == pytest.approx(value)
-
-    # Test dp(2)
-    F = fem.form(x[0] * dP(2))
-    expected_value_l = np.sum(
-        msh.geometry.x[
-            msh.topology.index_map(0).size_local // 2 : msh.topology.index_map(0).size_local, 0
-        ]
-    )
-    value_l = fem.assemble_scalar(F)
-    assert expected_value_l == pytest.approx(value_l)
-
-    expected_value = comm.allreduce(expected_value_l)
-    value = comm.allreduce(value_l)
-    assert expected_value == pytest.approx(value)
-
-    # Test dp(1) + dp(2)
-    F = fem.form(x[0] * (dP(1) + dP(2)))
-    expected_value_l = np.sum(msh.geometry.x[: msh.topology.index_map(0).size_local, 0])
-    value_l = fem.assemble_scalar(F)
-    assert expected_value_l == pytest.approx(value_l)
-
-    expected_value = comm.allreduce(expected_value_l)
-    value = comm.allreduce(value_l)
-    assert expected_value == pytest.approx(value)
+    check(fem.form(x[0] * dP(1)), (0, num_vertices // 2))
+    check(fem.form(x[0] * dP(2)), (num_vertices // 2, num_vertices))
+    check(fem.form(x[0] * (dP(1) + dP(2))), (0, num_vertices))
