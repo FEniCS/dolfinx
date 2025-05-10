@@ -1,4 +1,5 @@
-// Copyright (C) 2013-2020 Johan Hake, Jan Blechta and Garth N. Wells
+// Copyright (C) 2013-2025 Johan Hake, Jan Blechta, Garth N. Wells and Paul T.
+// Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -431,9 +432,16 @@ Form<T, U> create_form_factory(
   // integral offsets. Since the UFL forms for each type of cell should be
   // the same, I think this assumption is OK.
   const int* integral_offsets = ufcx_forms[0].get().form_integral_offsets;
-  std::vector<int> num_integrals_type(3);
-  for (int i = 0; i < 3; ++i)
+  std::array<int, 4> num_integrals_type;
+  for (int i = 0; i < num_integrals_type.size(); ++i)
     num_integrals_type[i] = integral_offsets[i + 1] - integral_offsets[i];
+
+  // Create vertices, if required
+  if (num_integrals_type[vertex] > 0)
+  {
+    mesh->topology_mutable()->create_connectivity(0, tdim);
+    mesh->topology_mutable()->create_connectivity(tdim, 0);
+  }
 
   // Create facets, if required
   if (num_integrals_type[exterior_facet] > 0
@@ -757,6 +765,94 @@ Form<T, U> create_form_factory(
 
         if (integral->needs_facet_permutations)
           needs_facet_permutations = true;
+      }
+    }
+  }
+
+  // Attach vertex kernels
+  // TODO: create_form_factory silenty assumens ufc_forms.size() == 1?
+  //       either generalize or make explicit for all other integral cases
+  {
+    std::vector<std::int32_t> default_vertices;
+    std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
+                                 + integral_offsets[vertex],
+                             num_integrals_type[vertex]);
+    assert(ufcx_forms.size() == 1);
+
+    int form_idx = 0;
+    const ufcx_form& form = ufcx_forms[form_idx];
+
+    for (int i = 0; i < num_integrals_type[vertex]; ++i)
+    {
+      const int id = ids[i];
+      ufcx_integral* integral
+          = form.form_integrals[integral_offsets[vertex] + i];
+      assert(integral);
+      check_geometry_hash(*integral, form_idx);
+
+      std::vector<int> active_coeffs;
+      for (int j = 0; j < form.num_coefficients; ++j)
+      {
+        if (integral->enabled_coefficients[j])
+          active_coeffs.push_back(j);
+      }
+
+      kern_t k = nullptr;
+      if constexpr (std::is_same_v<T, float>)
+        k = integral->tabulate_tensor_float32;
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
+      else if constexpr (std::is_same_v<T, std::complex<float>>)
+      {
+        k = reinterpret_cast<void (*)(
+            T*, const T*, const T*, const scalar_value_t<T>*, const int*,
+            const unsigned char*, void*)>(integral->tabulate_tensor_complex64);
+      }
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
+      else if constexpr (std::is_same_v<T, double>)
+        k = integral->tabulate_tensor_float64;
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
+      else if constexpr (std::is_same_v<T, std::complex<double>>)
+      {
+        k = reinterpret_cast<void (*)(
+            T*, const T*, const T*, const scalar_value_t<T>*, const int*,
+            const unsigned char*, void*)>(integral->tabulate_tensor_complex128);
+      }
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
+      assert(k);
+
+      // Build list of entities to assembler over
+      auto v_to_c = topology->connectivity(0, tdim);
+      assert(v_to_c);
+      auto c_to_v = topology->connectivity(tdim, 0);
+      assert(c_to_v);
+      if (id == -1)
+      {
+        // Default vertex kernel operates on all (owned) vertices
+        std::int32_t num_vertices = topology->index_map(0)->size_local();
+        default_vertices.reserve(2 * num_vertices);
+        for (std::int32_t v = 0; v < num_vertices; v++)
+        {
+          auto cells = v_to_c->links(v);
+          assert(cells.size() > 0);
+
+          // Use first cell for assembly over by default
+          std::int32_t cell = cells[0];
+          default_vertices.push_back(cell);
+
+          // Find local index of vertex within cell
+          auto cell_vertices = c_to_v->links(cell);
+          auto it = std::ranges::find(cell_vertices, v);
+          assert(it != cell_vertices.end());
+          std::int32_t local_index = std::distance(cell_vertices.begin(), it);
+          default_vertices.push_back(local_index);
+        }
+
+        integrals.insert({{IntegralType::vertex, id, form_idx},
+                          {k, default_vertices, active_coeffs}});
+      }
+      else
+      {
+        throw std::runtime_error("Not implemented.");
       }
     }
   }
