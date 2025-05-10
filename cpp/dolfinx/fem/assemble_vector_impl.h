@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2021 Garth N. Wells
+// Copyright (C) 2018-2025 Garth N. Wells and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -907,6 +907,94 @@ void assemble_interior_facets(
   }
 }
 
+/// @brief Execute kernel over cells and accumulate result in vector.
+///
+/// @tparam T  Scalar type
+/// @tparam _bs Block size of the form test function dof map. If less
+/// than zero the block size is determined at runtime. If `_bs` is
+/// positive the block size is used as a compile-time constant, which
+/// has performance benefits.
+/// @param[in] P0 Function that applies transformation `P0.b` in-place
+/// to `b` to transform test degrees-of-freedom.
+/// @param[in,out] b Aray to accumulate into.
+/// @param[in] x_dofmap Dofmap for the mesh geometry.
+/// @param[in] x Mesh geometry (coordinates).
+/// @param[in] vertices Vertex indices `(vertices.size(), 2)` - first entry
+/// holds the cell index over which the vertex is to evaluated, and the second
+/// stores the local index of the vertex within the cell.
+/// @param[in] dofmap Test function (row) degree-of-freedom data holding
+/// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
+/// @param[in] kernel Kernel function to execute over each cell.
+/// @param[in] constants Constant coefficient data in the kernel.
+/// @param[in] coeffs Coefficient data in the kernel. It has shape
+/// `(cells.size(), num_cell_coeffs)`. `coeffs(i, j)` is the `j`th
+/// coefficient for cell `i`.
+/// @param[in] cell_info0 Cell permutation information for the test
+/// function mesh.
+template <dolfinx::scalar T, int _bs = -1>
+void assemble_vertices(
+    fem::DofTransformKernel<T> auto P0, std::span<T> b, mdspan2_t x_dofmap,
+    md::mdspan<const scalar_value_t<T>,
+               md::extents<std::size_t, md::dynamic_extent, 3>>
+        x,
+    md::mdspan<const std::int32_t,
+               md::extents<std::size_t, md::dynamic_extent, 2>>
+        vertices,
+    std::tuple<mdspan2_t, int,
+               md::mdspan<const std::int32_t,
+                          md::extents<std::size_t, md::dynamic_extent, 2>>>
+        dofmap,
+    FEkernel<T> auto kernel, std::span<const T> constants,
+    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+    std::span<const std::uint32_t> cell_info0)
+{
+  if (vertices.empty())
+    return;
+
+  const auto [dmap, bs, vertices0] = dofmap;
+  assert(_bs < 0 or _bs == bs);
+
+  // Create data structures used in assembly
+  std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
+  std::vector<T> be(bs * dmap.extent(1));
+  std::span<T> _be(be);
+
+  // Iterate over active cells
+  for (std::size_t index = 0; index < vertices.extent(0); ++index)
+  {
+    // Integration domain cell, local index, and test function cell
+    std::int32_t cell = vertices(index, 0);
+    std::int32_t local_index = vertices(index, 1);
+    std::int32_t c0 = vertices0(index, 0);
+
+    // Get cell coordinates/geometry
+    auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs.begin(), 3 * i));
+
+    // Tabulate vector for cell
+    std::ranges::fill(be, 0);
+    kernel(be.data(), &coeffs(index, 0), constants.data(), cdofs.data(),
+           &local_index, nullptr, nullptr);
+    P0(_be, cell_info0, c0, 1);
+
+    // Scatter cell vector to 'global' vector array
+    auto dofs = md::submdspan(dmap, c0, md::full_extent);
+    if constexpr (_bs > 0)
+    {
+      for (std::size_t i = 0; i < dofs.size(); ++i)
+        for (int k = 0; k < _bs; ++k)
+          b[_bs * dofs[i] + k] += be[_bs * i + k];
+    }
+    else
+    {
+      for (std::size_t i = 0; i < dofs.size(); ++i)
+        for (int k = 0; k < bs; ++k)
+          b[bs * dofs[i] + k] += be[bs * i + k];
+    }
+  }
+}
+
 /// Modify RHS vector to account for boundary condition such that:
 ///
 /// b <- b - alpha * A.(x_bc - x0)
@@ -1339,6 +1427,32 @@ void assemble_vector(
             mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
             cell_info0, perms);
       }
+    }
+
+    for (int i : L.integral_ids(IntegralType::vertex))
+    {
+      auto fn = L.kernel(IntegralType::vertex, i, 0);
+      assert(fn);
+
+      std::span vertices = L.domain(IntegralType::vertex, i, cell_type_idx);
+      std::span vertices0
+          = L.domain_arg(IntegralType::vertex, 0, i, cell_type_idx);
+
+      auto& [coeffs, cstride] = coefficients.at({IntegralType::vertex, i});
+
+      assert((vertices.size() / 2) * cstride == coeffs.size());
+
+      impl::assemble_vertices<T>(
+          P0, b, x_dofmap, x,
+          md::mdspan<const std::int32_t,
+                     md::extents<std::size_t, md::dynamic_extent, 2>>(
+              vertices.data(), vertices.size() / 2, 2),
+          {dofs, bs,
+           md::mdspan<const std::int32_t,
+                      md::extents<std::size_t, md::dynamic_extent, 2>>(
+               vertices0.data(), vertices0.size() / 2, 2)},
+          fn, constants,
+          md::mdspan(coeffs.data(), vertices.size() / 2, cstride), cell_info0);
     }
   }
 }
