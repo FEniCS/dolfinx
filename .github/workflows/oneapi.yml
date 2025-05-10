@@ -55,7 +55,7 @@ jobs:
           conda list
 
       - name: Install Basix
-        run: uv pip install --no-build-isolation git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
+        run: uv pip install --no-build-isolation git+${{ env.basix_ref }}
 
       - name: Clone FFCx
         uses: actions/checkout@v4

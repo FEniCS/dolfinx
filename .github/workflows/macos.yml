@@ -73,9 +73,9 @@ jobs:
 
       - name: Install FEniCSx dependencies
         run: |
-          python -m pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
-          python -m pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
-          python -m pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
+          python -m pip install git+${{ env.ufl_ref }}
+          python -m pip install git+${{ env.basix_ref }}
+          python -m pip install git+${{ env.ffcx_ref }}
 
       - name: Build and install DOLFINx C++ library
         run: |
