@@ -50,24 +50,28 @@ consteval bool has_petsc4py()
 template <typename T>
 void add_scatter_functions(nb::class_<dolfinx::common::Scatterer<>>& sc)
 {
-  sc.def("scatter_fwd",
-         [](dolfinx::common::Scatterer<>& self,
-            nb::ndarray<const T, nb::ndim<1>, nb::c_contig> local_data,
-            nb::ndarray<T, nb::ndim<1>, nb::c_contig> remote_data)
-         {
-           self.scatter_fwd(std::span(local_data.data(), local_data.size()),
-                            std::span(remote_data.data(), remote_data.size()));
-         });
+  sc.def(
+      "scatter_fwd",
+      [](dolfinx::common::Scatterer<>& self,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> local_data,
+         nb::ndarray<T, nb::ndim<1>, nb::c_contig> remote_data)
+      {
+        self.scatter_fwd(std::span(local_data.data(), local_data.size()),
+                         std::span(remote_data.data(), remote_data.size()));
+      },
+      nb::arg("local_data"), nb::arg("remote_data"));
 
-  sc.def("scatter_rev",
-         [](dolfinx::common::Scatterer<>& self,
-            nb::ndarray<T, nb::ndim<1>, nb::c_contig> local_data,
-            nb::ndarray<const T, nb::ndim<1>, nb::c_contig> remote_data)
-         {
-           self.scatter_rev(std::span(local_data.data(), local_data.size()),
-                            std::span(remote_data.data(), remote_data.size()),
-                            std::plus<T>());
-         });
+  sc.def(
+      "scatter_rev",
+      [](dolfinx::common::Scatterer<>& self,
+         nb::ndarray<T, nb::ndim<1>, nb::c_contig> local_data,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> remote_data)
+      {
+        self.scatter_rev(std::span(local_data.data(), local_data.size()),
+                         std::span(remote_data.data(), remote_data.size()),
+                         std::plus<T>());
+      },
+      nb::arg("local_data"), nb::arg("remote_data"));
 }
 
 // Interface for dolfinx/common
@@ -93,7 +97,8 @@ void common(nb::module_& m)
       .value("average", dolfinx::Table::Reduction::average);
 
   auto sc = nb::class_<dolfinx::common::Scatterer<>>(m, "Scatterer")
-                .def(nb::init<dolfinx::common::IndexMap&, int>());
+                .def(nb::init<dolfinx::common::IndexMap&, int>(),
+                     nb::arg("index_map"), nb::arg("block_size"));
   add_scatter_functions<std::int64_t>(sc);
   add_scatter_functions<double>(sc);
   add_scatter_functions<float>(sc);
