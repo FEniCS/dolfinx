@@ -41,9 +41,7 @@ def test_scatter_reverse(dtype):
     # Create an index map sharing first entry with other processes
     local_size = 50
     dest = np.delete(np.arange(0, comm.size, dtype=np.int32), comm.rank)
-    map_ghosts = np.array(
-        [local_size * dest[r] for r in range(len(dest))], dtype=np.int64
-    )
+    map_ghosts = np.array([local_size * dest[r] for r in range(len(dest))], dtype=np.int64)
     src = dest
     map = dolfinx.common.IndexMap(comm, local_size, [dest, src], map_ghosts, src)
     assert map.size_global == local_size * comm.size
