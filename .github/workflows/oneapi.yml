@@ -60,6 +60,10 @@ jobs:
           uv pip install --no-build-isolation git+${{ env.basix_ref }}
           uv pip install --no-build-isolation git+${{ env.ffcx_ref }}
 
+      - name: Debug
+        run: |
+          uv pip list
+          python -c "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_include_path())"
       # - name: Install UFCx C interface
       #   run: |
       #     cmake -G Ninja -B ufcx-build-dir -S ffcx/cmake/
