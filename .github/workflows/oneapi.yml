@@ -54,11 +54,15 @@ jobs:
           conda info
           conda list
 
+      - name: Install ufl
+        run: uv pip install --no-build-isolation git+${{ env.ufl_ref }}
+
       - name: Install Basix
         run: uv pip install --no-build-isolation git+${{ env.basix_ref }}
 
-      - name: Clone FFCx
-        run: git clone --depth 1 ${{ env.ffcx_ref }} ffcx
+      - name: Install FFCx
+        run: uv pip install --no-build-isolation ${{ env.ffcx_ref }}
+        # run: git clone --depth 1 ${{ env.ffcx_ref }} ffcx
         # uses: actions/checkout@v4
         # with:
         #   path: ./ffcx
@@ -80,10 +84,9 @@ jobs:
           cmake --build build
           cmake --install build
 
-      - name: Install UFL and FFCx modules
-        run: |
-          uv pip install --no-build-isolation git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
-          uv pip install --no-build-isolation ffcx/
+      # - name: Install UFL and FFCx modules
+      #   run: |
+      #     uv pip install --no-build-isolation git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
 
       - name: Build and run DOLFINx C++ unit tests (serial and MPI)
         run: |
