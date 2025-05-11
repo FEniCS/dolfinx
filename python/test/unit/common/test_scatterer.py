@@ -33,7 +33,7 @@ def test_scatter_forward(dtype):
     assert np.all(v[map.size_local :] == map.owners)
 
 
-@pytest.mark.parametrize("dtype", [np.int64])
+@pytest.mark.parametrize("dtype", [np.int64, np.float32, np.float64])
 def test_scatter_reverse(dtype):
     """Test forward and reverse scatter."""
     comm = MPI.COMM_WORLD
