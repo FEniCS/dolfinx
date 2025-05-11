@@ -135,10 +135,16 @@ def test_read_write_higher_order_mesh(order):
     ref_mesh = dolfinx.io.gmshio.model_to_mesh(gmsh.model, comm, rank).mesh
     gmsh.finalize()
 
-    ref_volume_form = dolfinx.fem.form(1 * ufl.dx(domain=ref_mesh))
+    ref_volume_form = dolfinx.fem.form(
+        1 * ufl.dx(domain=ref_mesh),
+        dtype=ref_mesh.geometry.x.dtype,
+    )
     ref_volume = comm.allreduce(dolfinx.fem.assemble_scalar(ref_volume_form), op=MPI.SUM)
 
-    ref_surface_form = dolfinx.fem.form(1 * ufl.ds(domain=ref_mesh))
+    ref_surface_form = dolfinx.fem.form(
+        1 * ufl.ds(domain=ref_mesh),
+        dtype=ref_mesh.geometry.x.dtype,
+    )
     ref_surface = comm.allreduce(dolfinx.fem.assemble_scalar(ref_surface_form), op=MPI.SUM)
 
     # Write to file
@@ -150,10 +156,10 @@ def test_read_write_higher_order_mesh(order):
     mesh = read_mesh(comm, filename)
 
     # Compare surface and volume metrics
-    volume_form = dolfinx.fem.form(1 * ufl.dx(domain=mesh))
+    volume_form = dolfinx.fem.form(1 * ufl.dx(domain=mesh), dtype=mesh.geometry.x.dtype)
     volume = comm.allreduce(dolfinx.fem.assemble_scalar(volume_form), op=MPI.SUM)
     assert np.isclose(ref_volume, volume)
 
-    surface_form = dolfinx.fem.form(1 * ufl.ds(domain=mesh))
+    surface_form = dolfinx.fem.form(1 * ufl.ds(domain=mesh), dtype=mesh.geometry.x.dtype)
     surface = comm.allreduce(dolfinx.fem.assemble_scalar(surface_form), op=MPI.SUM)
     assert np.isclose(ref_surface, surface)
