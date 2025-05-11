@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <array>
 #include <concepts>
+#include <cstddef>
 #include <dolfinx/common/types.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Topology.h>
@@ -433,7 +434,7 @@ Form<T, U> create_form_factory(
   // the same, I think this assumption is OK.
   const int* integral_offsets = ufcx_forms[0].get().form_integral_offsets;
   std::array<int, 4> num_integrals_type;
-  for (int i = 0; i < num_integrals_type.size(); ++i)
+  for (std::size_t i = 0; i < num_integrals_type.size(); ++i)
     num_integrals_type[i] = integral_offsets[i + 1] - integral_offsets[i];
 
   // Create vertices, if required
