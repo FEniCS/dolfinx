@@ -58,11 +58,12 @@ jobs:
         run: uv pip install --no-build-isolation git+${{ env.basix_ref }}
 
       - name: Clone FFCx
-        uses: actions/checkout@v4
-        with:
-          path: ./ffcx
-          repository: FEniCS/ffcx
-          ref: ${{ env.ffcx_ref }}
+        run: git clone --depth 1 ${{ env.ffcx_ref }} ffcx
+        # uses: actions/checkout@v4
+        # with:
+        #   path: ./ffcx
+        #   repository: FEniCS/ffcx
+        #   ref: ${{ env.ffcx_ref }}
 
       - name: Install UFCx C interface
         run: |
