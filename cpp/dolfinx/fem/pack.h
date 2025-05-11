@@ -322,6 +322,39 @@ void pack_coefficients(const Form<T, U>& form,
         }
         break;
       }
+      case IntegralType::vertex:
+      {
+        // Iterate over coefficients that are active in cell integrals
+        for (int coeff : form.active_coeffs(IntegralType::vertex, id))
+        {
+          // Get coefficient mesh
+          auto mesh = coefficients[coeff]->function_space()->mesh();
+          assert(mesh);
+
+          // Other integrals in the form might have coefficients defined
+          // over entities of codim > 0, which don't make sense for vertex
+          // integrals, so don't pack them.
+          if (int codim
+              = form.mesh()->topology()->dim() - mesh->topology()->dim();
+              codim > 0)
+          {
+            throw std::runtime_error("Should not be packing coefficients with "
+                                     "codim>0 in a vertex integral");
+          }
+
+          std::span<const std::int32_t> vertices_b
+              = form.domain_coeff(IntegralType::vertex, id, coeff);
+          md::mdspan<const std::int32_t,
+                     md::extents<std::size_t, md::dynamic_extent, 2>>
+              vertices(vertices_b.data(), vertices_b.size() / 2, 2);
+          std::span<const std::uint32_t> cell_info
+              = impl::get_cell_orientation_info(*coefficients[coeff]);
+          impl::pack_coefficient_entity(
+              std::span(c), cstride, *coefficients[coeff], cell_info,
+              std::submdspan(vertices, md::full_extent, 0), offsets[coeff]);
+        }
+        break;
+      }
       default:
         throw std::runtime_error(
             "Could not pack coefficient. Integral type not supported.");

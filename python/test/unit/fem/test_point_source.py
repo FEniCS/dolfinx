@@ -68,6 +68,15 @@ def test_point_source_rank_0(cell_type, ghost_mode):
     check(fem.form(x[0] * dP(2)), (num_vertices // 2, num_vertices))
     check(fem.form(x[0] * (dP(1) + dP(2))), (0, num_vertices))
 
+    V = fem.functionspace(msh, ("P", 1))
+    u = fem.Function(V)
+    u.x.array[:] = 1
+
+    check(fem.form(u * x[0] * ufl.dP), (0, num_vertices))
+    check(fem.form(u * x[0] * dP(1)), (0, num_vertices // 2))
+    check(fem.form(u * x[0] * dP(2)), (num_vertices // 2, num_vertices))
+    check(fem.form(u * x[0] * (dP(1) + dP(2))), (0, num_vertices))
+
 
 @pytest.mark.parametrize(
     "cell_type",
@@ -126,3 +135,12 @@ def test_point_source_rank_1(cell_type, ghost_mode):
     check(fem.form(x[0] * v * dP(1)), (0, num_vertices // 2))
     check(fem.form(x[0] * v * dP(2)), (num_vertices // 2, num_vertices))
     check(fem.form(x[0] * v * (dP(1) + dP(2))), (0, num_vertices))
+
+    V = fem.functionspace(msh, ("P", 1))
+    u = fem.Function(V)
+    u.x.array[:] = 1
+
+    check(fem.form(u * x[0] * v * ufl.dP), (0, num_vertices))
+    check(fem.form(u * x[0] * v * dP(1)), (0, num_vertices // 2))
+    check(fem.form(u * x[0] * v * dP(2)), (num_vertices // 2, num_vertices))
+    check(fem.form(u * x[0] * v * (dP(1) + dP(2))), (0, num_vertices))
