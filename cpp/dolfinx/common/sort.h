@@ -7,6 +7,7 @@
 #pragma once
 
 #include <algorithm>
+#include <bit>
 #include <cassert>
 #include <concepts>
 #include <cstdint>
@@ -109,6 +110,15 @@ struct __radix_sort
     // Compute number of iterations, most significant digit (N bits) of
     // maxvalue
     I its = 0;
+
+    // optimize for case where all first bits are set - then order will not
+    // depend on it
+    bool all_first_bit = std::ranges::all_of(
+        range, [&](const auto& e)
+        { return proj(e) & (uI(1) << (sizeof(uI) * 8 - 1)); });
+    if (all_first_bit)
+      max_value = max_value & ~(uI(1) << (sizeof(uI) * 8 - 1));
+
     while (max_value)
     {
       max_value >>= BITS;
