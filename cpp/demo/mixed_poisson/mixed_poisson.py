@@ -52,6 +52,5 @@ u0 = Coefficient(Q)
 # Specify the weak form of the problem
 dx = Measure("dx", msh)
 ds = Measure("ds", msh)
-a = inner(sigma, tau) * dx + inner(u, div(tau)) * \
-    dx + inner(div(sigma), v) * dx
+a = inner(sigma, tau) * dx + inner(u, div(tau)) * dx + inner(div(sigma), v) * dx
 L = -inner(f, v) * dx + inner(u0 * n, tau) * ds(1)
