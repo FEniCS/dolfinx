@@ -275,7 +275,7 @@ int main(int argc, char* argv[])
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>
         subdomain_data{{fem::IntegralType::exterior_facet, {{1, domains}}}};
 
-    // Since we are doing a `ds(1)` integral on mesh and u0 is defined
+    // Since we are doing a `ds(1)` integral on mesh and `u0` is defined
     // on the `submesh`, we must provide an "entity map" relating cells
     // in `submesh` to entities in `mesh`. This is simply the "inverse"
     // of `submesh_to_mesh`:
