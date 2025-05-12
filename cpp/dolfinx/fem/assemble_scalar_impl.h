@@ -276,7 +276,7 @@ T assemble_scalar(
 
     std::span<const std::int32_t> vertices
         = M.domain(IntegralType::vertex, i, 0);
-    assert((vertices.size() / 2) * cstride == coeffs.size());
+    assert(vertices.size() * cstride == coeffs.size());
     value += impl::assemble_vertices(
         x_dofmap, x,
         md::mdspan<const std::int32_t,

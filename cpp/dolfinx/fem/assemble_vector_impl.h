@@ -1440,7 +1440,7 @@ void assemble_vector(
 
       auto& [coeffs, cstride] = coefficients.at({IntegralType::vertex, i});
 
-      assert((vertices.size() / 2) * cstride == coeffs.size());
+      assert(vertices.size() * cstride == coeffs.size());
 
       impl::assemble_vertices<T>(
           P0, b, x_dofmap, x,

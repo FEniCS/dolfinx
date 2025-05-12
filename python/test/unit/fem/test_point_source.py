@@ -42,8 +42,11 @@ def test_point_source_rank_0(cell_type, ghost_mode):
             comm, 4, 4, 4, cell_type=cell_type, dtype=default_scalar_type, ghost_mode=ghost_mode
         )
 
-    def check(form, coordinate_range):
-        expected_value_l = np.sum(msh.geometry.x[coordinate_range[0] : coordinate_range[1], 0])
+    def check(form, coordinate_range, weighted=False):
+        a, b = coordinate_range
+        weights = np.arange(a, b) if weighted else np.ones(b - a, dtype=default_scalar_type)
+
+        expected_value_l = np.sum(msh.geometry.x[a:b, 0] * weights)
         value_l = fem.assemble_scalar(form)
         assert expected_value_l == pytest.approx(value_l)
 
@@ -70,12 +73,12 @@ def test_point_source_rank_0(cell_type, ghost_mode):
 
     V = fem.functionspace(msh, ("P", 1))
     u = fem.Function(V)
-    u.x.array[:] = 1
+    u.x.array[:] = np.arange(0, u.x.array.size)
 
-    check(fem.form(u * x[0] * ufl.dP), (0, num_vertices))
-    check(fem.form(u * x[0] * dP(1)), (0, num_vertices // 2))
-    check(fem.form(u * x[0] * dP(2)), (num_vertices // 2, num_vertices))
-    check(fem.form(u * x[0] * (dP(1) + dP(2))), (0, num_vertices))
+    check(fem.form(u * x[0] * ufl.dP), (0, num_vertices), weighted=True)
+    check(fem.form(u * x[0] * dP(1)), (0, num_vertices // 2), weighted=True)
+    check(fem.form(u * x[0] * dP(2)), (num_vertices // 2, num_vertices), weighted=True)
+    check(fem.form(u * x[0] * (dP(1) + dP(2))), (0, num_vertices), weighted=True)
 
 
 @pytest.mark.parametrize(
@@ -109,10 +112,11 @@ def test_point_source_rank_1(cell_type, ghost_mode):
 
     num_vertices = msh.topology.index_map(0).size_local
 
-    def check(form, coordinate_range):
+    def check(form, coordinate_range, weighted=False):
         a, b = coordinate_range
+        weights = np.arange(a, b) if weighted else np.ones(b - a, dtype=default_scalar_type)
         expected_value_l = np.zeros(num_vertices)
-        expected_value_l[a:b] = msh.geometry.x[a:b, 0]
+        expected_value_l[a:b] = msh.geometry.x[a:b, 0] * weights
         value_l = fem.assemble_vector(form)
         equal_l = np.allclose(expected_value_l, value_l.array[:num_vertices])
         assert equal_l
@@ -138,9 +142,9 @@ def test_point_source_rank_1(cell_type, ghost_mode):
 
     V = fem.functionspace(msh, ("P", 1))
     u = fem.Function(V)
-    u.x.array[:] = 1
+    u.x.array[:] = np.arange(u.x.array.size)
 
-    check(fem.form(u * x[0] * v * ufl.dP), (0, num_vertices))
-    check(fem.form(u * x[0] * v * dP(1)), (0, num_vertices // 2))
-    check(fem.form(u * x[0] * v * dP(2)), (num_vertices // 2, num_vertices))
-    check(fem.form(u * x[0] * v * (dP(1) + dP(2))), (0, num_vertices))
+    check(fem.form(u * x[0] * v * ufl.dP), (0, num_vertices), weighted=True)
+    check(fem.form(u * x[0] * v * dP(1)), (0, num_vertices // 2), weighted=True)
+    check(fem.form(u * x[0] * v * dP(2)), (num_vertices // 2, num_vertices), weighted=True)
+    check(fem.form(u * x[0] * v * (dP(1) + dP(2))), (0, num_vertices), weighted=True)
