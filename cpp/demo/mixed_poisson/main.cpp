@@ -92,6 +92,7 @@
 //
 
 #include "mixed_poisson.h"
+#include <basix/cell.h>
 #include <basix/finite-element.h>
 #include <basix/mdspan.hpp>
 #include <cmath>
@@ -119,20 +120,23 @@ int main(int argc, char* argv[])
   PetscInitialize(&argc, &argv, nullptr, nullptr);
 
   {
+    mesh::CellType cell_type = mesh::CellType::triangle;
+
     // Create mesh
-    auto mesh = std::make_shared<mesh::Mesh<U>>(
-        mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0, 0}, {1, 1}}}, {32, 32},
-                                  mesh::CellType::triangle));
+    auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_rectangle<U>(
+        MPI_COMM_WORLD, {{{0, 0}, {1, 1}}}, {32, 32}, cell_type));
 
     // Create Basix elements
-    auto RT = basix::create_element<U>(
-        basix::element::family::RT, basix::cell::type::triangle, 1,
-        basix::element::lagrange_variant::unset,
-        basix::element::dpc_variant::unset, false);
-    auto P0 = basix::create_element<U>(
-        basix::element::family::P, basix::cell::type::triangle, 0,
-        basix::element::lagrange_variant::unset,
-        basix::element::dpc_variant::unset, true);
+    basix::cell::type basix_cell_type
+        = dolfinx::mesh::cell_type_to_basix_type(cell_type);
+    auto RT
+        = basix::create_element<U>(basix::element::family::RT, basix_cell_type,
+                                   1, basix::element::lagrange_variant::unset,
+                                   basix::element::dpc_variant::unset, false);
+    auto P0
+        = basix::create_element<U>(basix::element::family::P, basix_cell_type,
+                                   0, basix::element::lagrange_variant::unset,
+                                   basix::element::dpc_variant::unset, true);
 
     // Create DOLFINx mixed element
     auto ME = std::make_shared<fem::FiniteElement<U>>(
@@ -217,12 +221,15 @@ int main(int argc, char* argv[])
       submesh_to_mesh = std::move(_submesh_to_mesh);
     }
 
-    // Create an element for `u_0`. Since the cells in submesh are
-    // intervals, we use the interval cell type.
-    auto Qe = std::make_shared<fem::FiniteElement<U>>(basix::create_element<U>(
-        basix::element::family::P, basix::cell::type::interval, 1,
-        basix::element::lagrange_variant::unset,
-        basix::element::dpc_variant::unset, true));
+    // Create an element for `u_0`
+    basix::cell::type submesh_cell_type
+        = dolfinx::mesh::cell_type_to_basix_type(
+            submesh->topology()->cell_type());
+
+    auto Qe = std::make_shared<fem::FiniteElement<U>>(
+        basix::create_element<U>(basix::element::family::P, submesh_cell_type,
+                                 1, basix::element::lagrange_variant::unset,
+                                 basix::element::dpc_variant::unset, true));
 
     // Create a function space for `u_0` on the submesh
     auto Q = std::make_shared<fem::FunctionSpace<U>>(
