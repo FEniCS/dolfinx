@@ -22,6 +22,33 @@
 namespace dolfinx
 {
 
+struct __unsigned_projection
+{
+  // Transforms the projected value to an unsigned int (if signed), while
+  // maintaining relative order by
+  //    x ↦ x + |std::numeric_limits<I>::min()|
+  template <std::signed_integral T>
+  constexpr std::make_unsigned_t<T> operator()(T e) const noexcept
+  {
+    using uT = std::make_unsigned_t<T>;
+
+    // Assert binary structure for bit shift
+    static_assert(static_cast<uT>(std::numeric_limits<T>::min())
+                      + static_cast<uT>(std::numeric_limits<T>::max())
+                  == static_cast<uT>(T(-1)));
+    static_assert(std::numeric_limits<uT>::digits
+                  == std::numeric_limits<T>::digits + 1);
+    static_assert(std::bit_cast<uT>(std::numeric_limits<T>::min())
+                  == (uT(1) << (sizeof(T) * 8 - 1)));
+
+    return std::bit_cast<uT>(std::forward<T>(e))
+           ^ (uT(1) << (sizeof(T) * 8 - 1));
+  }
+};
+
+/// Projection from signed to signed int
+inline constexpr __unsigned_projection unsigned_projection{};
+
 struct __radix_sort
 {
   /// @brief Sort a range with radix sorting algorithm. The bucket size
@@ -63,35 +90,17 @@ struct __radix_sort
     using I = std::remove_cvref_t<std::invoke_result_t<P, T>>;
     using uI = std::make_unsigned_t<I>;
 
-    // Assert binary structure for bit shift in _proj
     if constexpr (!std::is_same_v<uI, I>)
     {
-      static_assert(static_cast<uI>(std::numeric_limits<I>::min())
-                        + static_cast<uI>(std::numeric_limits<I>::max())
-                    == static_cast<uI>(I(-1)));
-      static_assert(std::numeric_limits<uI>::digits
-                    == std::numeric_limits<I>::digits + 1);
-      static_assert(std::bit_cast<uI>(std::numeric_limits<I>::min())
-                    == (uI(1) << (sizeof(I) * 8 - 1)));
+      __radix_sort()(std::forward<R>(range), [&](const T& e) -> uI
+                     { return unsigned_projection(proj(e)); });
+      return;
     }
 
     if (range.size() <= 1)
       return;
 
-    // Transforms the projected value to an unsigned int (if signed), while
-    // maintaining relative order by
-    //    x ↦ x + |std::numeric_limits<I>::min()|
-    auto _proj = [&](auto&& e) -> uI
-    {
-      I projected = proj(std::forward<decltype(e)>(e));
-
-      if constexpr (std::is_same_v<uI, I>)
-        return projected;
-      else
-        return std::bit_cast<uI>(projected) ^ (uI(1) << (sizeof(I) * 8 - 1));
-    };
-
-    uI max_value = _proj(*std::ranges::max_element(range, std::less{}, proj));
+    uI max_value = proj(*std::ranges::max_element(range, std::less{}, proj));
 
     // Sort N bits at a time
     constexpr uI bucket_size = 1 << BITS;
@@ -121,7 +130,7 @@ struct __radix_sort
 
       // Count number of elements per bucket
       for (const auto& c : current_perm)
-        counter[(_proj(c) & mask) >> mask_offset]++;
+        counter[(proj(c) & mask) >> mask_offset]++;
 
       // Prefix sum to get the inserting position
       offset[0] = 0;
@@ -129,7 +138,7 @@ struct __radix_sort
                        std::next(offset.begin()));
       for (const auto& c : current_perm)
       {
-        uI bucket = (_proj(c) & mask) >> mask_offset;
+        uI bucket = (proj(c) & mask) >> mask_offset;
         uI new_pos = offset[bucket + 1] - counter[bucket];
         next_perm[new_pos] = c;
         counter[bucket]--;
