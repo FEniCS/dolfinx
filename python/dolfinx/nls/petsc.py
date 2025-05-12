@@ -40,7 +40,7 @@ from dolfinx.fem.petsc import (
     assign,
     create_matrix,
     create_vector,
-    set_bc
+    set_bc,
 )
 
 __all__ = ["NewtonSolver", "SNESSolver", "create_snes_solver"]
