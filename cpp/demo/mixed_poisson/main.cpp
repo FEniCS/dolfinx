@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
         });
 
     // We'd like to represent `u_0` using a function space defined only
-    // on the facets in dfacets. To do so, we begin by calling
+    // on the facets in `dfacets`. To do so, we begin by calling
     // `create_submesh` to get a `submesh` of those facets. It also
     // returns a map `submesh_to_mesh` whose `i`th entry is the facet in
     // mesh corresponding to cell `i` in submesh.
@@ -266,7 +266,7 @@ int main(int argc, char* argv[])
     // `V0` is the subspace that is constrained.
     fem::DirichletBC<T> bc(g, ndofs, V0);
 
-    // Create integration domain data for `u`0 boundary condition
+    // Create integration domain data for `u0` boundary condition
     // (applied on the `ds(1)` in the UFL file). First we get facet data
     // integration data for facets in dfacets.
     std::vector<std::int32_t> domains = fem::compute_integration_domains(
@@ -282,7 +282,7 @@ int main(int argc, char* argv[])
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>
         subdomain_data{{fem::IntegralType::exterior_facet, {{1, domains}}}};
 
-    // Since we are doing a `ds(1)` integral on mesh and u0 is defined
+    // Since we are doing a `ds(1)` integral on mesh and `u0` is defined
     // on the `submesh`, we must provide an "entity map" relating cells
     // in `submesh` to entities in `mesh`. This is simply the "inverse"
     // of `submesh_to_mesh`:
