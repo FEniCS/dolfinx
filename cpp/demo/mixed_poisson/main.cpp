@@ -259,7 +259,7 @@ int main(int argc, char* argv[])
     // `V0` is the subspace that is constrained.
     fem::DirichletBC<T> bc(g, ndofs, V0);
 
-    // Create integration domain data for `u`0 boundary condition
+    // Create integration domain data for `u0` boundary condition
     // (applied on the `ds(1)` in the UFL file). First we get facet data
     // integration data for facets in dfacets.
     std::vector<std::int32_t> domains = fem::compute_integration_domains(
