@@ -40,6 +40,7 @@ from dolfinx.fem.petsc import (
     assign,
     create_matrix,
     create_vector,
+    set_bc
 )
 
 __all__ = ["NewtonSolver", "SNESSolver", "create_snes_solver"]
@@ -249,8 +250,9 @@ def assemble_residual(
     """
     # Update input vector before assigning
     _ghostUpdate(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
+
     # Assign the input vector to the unknowns
-    dolfinx.fem.petsc.assign(x, u)
+    assign(x, u)
 
     # Assemble the residual
     _zero_vector(F)
@@ -283,11 +285,11 @@ def assemble_residual(
         apply_lifting(F, jacobian, bcs=bcs1, x0=x, alpha=-1.0)  # type: ignore
         _ghostUpdate(F, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
         bcs0 = _bcs_by_block(_extract_spaces(residual), bcs)  # type: ignore
-        dolfinx.fem.petsc.set_bc(F, bcs0, x0=x, alpha=-1.0)
+        set_bc(F, bcs0, x0=x, alpha=-1.0)
     except RuntimeError:
         apply_lifting(F, [jacobian], bcs=[bcs], x0=[x], alpha=-1.0)  # type: ignore
         _ghostUpdate(F, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
-        dolfinx.fem.petsc.set_bc(F, bcs, x0=x, alpha=-1.0)
+        set_bc(F, bcs, x0=x, alpha=-1.0)
     _ghostUpdate(F, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
 
 
@@ -321,7 +323,7 @@ def assemble_jacobian(
     except PETSc.Error:  # type: ignore
         for x_sub in x.getNestSubVecs():
             x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
-    dolfinx.fem.petsc.assign(x, u)
+    assign(x, u)
 
     # Assemble Jacobian
     J.zeroEntries()
