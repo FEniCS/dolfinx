@@ -14,7 +14,9 @@ from functools import partial
 from mpi4py import MPI
 from petsc4py import PETSc
 
-import dolfinx.la
+import numpy as np
+import numpy.typing as npt
+
 import ufl
 from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
 from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
@@ -33,7 +35,9 @@ from dolfinx import fem
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.petsc import (
     apply_lifting,
+    assemble_matrix,
     assemble_vector,
+    assign,
     create_matrix,
     create_vector,
 )
@@ -91,15 +95,16 @@ class SNESSolver:
     def __init__(
         self,
         F: typing.Union[dolfinx.fem.Form, ufl.form.Form],
-        u: typing.Union[dolfinx.fem.Function, list[dolfinx.fem.Function]],
-        bcs: typing.Optional[list[dolfinx.fem.DirichletBC]] = None,
-        J: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
-        P: typing.Optional[typing.Union[dolfinx.fem.Form, ufl.form.Form]] = None,
+        u: typing.Union[fem.Function, list[fem.Function]],
+        bcs: typing.Optional[list[fem.DirichletBC]] = None,
+        J: typing.Optional[typing.Union[fem.Form, ufl.form.Form]] = None,
+        P: typing.Optional[typing.Union[fem.Form, ufl.form.Form]] = None,
         mat_kind: typing.Optional[typing.Union[str, typing.Iterable[typing.Iterable[str]]]] = None,
         vec_kind: typing.Optional[str] = None,
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
         snes_options: typing.Optional[dict] = None,
+        entity_maps: typing.Optional[dict[dolfinx.mesh.Mesh, npt.NDArray[np.int32]]] = None,
     ):
         """Class for interfacing with SNES.
 
@@ -125,6 +130,15 @@ class SNESSolver:
                 for all available options. Takes priority over all other
                 option values.
             snes_options: Options to pass to the PETSc SNES object.
+            entity_maps: If any trial functions, test functions, or
+                coefficients in the form are not defined over the same mesh
+                as the integration domain, ``entity_maps`` must be supplied.
+                For each key (a mesh, different to the integration domain
+                mesh) a map should be provided relating the entities in the
+                integration domain mesh to the entities in the key mesh e.g.
+                for a key-value pair ``(msh, emap)`` in ``entity_maps``,
+                ``emap[i]`` is the entity in ``msh`` corresponding to entity
+                ``i`` in the integration domain mesh.
         """
 
         self._u = u
@@ -138,6 +152,7 @@ class SNESSolver:
             vec_kind=vec_kind,
             form_compiler_options=form_compiler_options,
             jit_options=jit_options,
+            entity_maps=entity_maps,
         )
 
         # Set PETSc options
@@ -164,13 +179,13 @@ class SNESSolver:
         """
 
         # Move current iterate into the work array.
-        dolfinx.fem.petsc.assign(self._u, self._x)
+        assign(self._u, self._x)
 
         # Solve problem
         self._snes.solve(None, self._x)
 
         # Move solution back to function
-        dolfinx.fem.petsc.assign(self._x, self._u)
+        assign(self._x, self._u)
 
         converged_reason = self._snes.getConvergedReason()
         return self._x, converged_reason, self._snes.getIterationNumber()
@@ -277,12 +292,12 @@ def assemble_residual(
 
 
 def assemble_jacobian(
-    u: typing.Union[list[dolfinx.fem.Function], dolfinx.fem.Function],
-    jacobian: typing.Union[dolfinx.fem.Form, typing.Iterable[typing.Iterable[dolfinx.fem.Form]]],
+    u: typing.Union[list[fem.Function], fem.Function],
+    jacobian: typing.Union[fem.Form, typing.Iterable[typing.Iterable[fem.Form]]],
     preconditioner: typing.Optional[
-        typing.Union[dolfinx.fem.Form, typing.Iterable[typing.Iterable[dolfinx.fem.Form]]]
+        typing.Union[fem.Form, typing.Iterable[typing.Iterable[fem.Form]]]
     ],
-    bcs: typing.Iterable[dolfinx.fem.DirichletBC],
+    bcs: typing.Iterable[fem.DirichletBC],
     _snes: PETSc.SNES,  # type: ignore
     x: PETSc.Vec,  # type: ignore
     J: PETSc.Mat,  # type: ignore
@@ -310,11 +325,11 @@ def assemble_jacobian(
 
     # Assemble Jacobian
     J.zeroEntries()
-    dolfinx.fem.petsc.assemble_matrix(J, jacobian, bcs, diag=1.0)  # type: ignore
+    assemble_matrix(J, jacobian, bcs, diag=1.0)  # type: ignore
     J.assemble()
     if preconditioner is not None:
         P.zeroEntries()
-        dolfinx.fem.petsc.assemble_matrix(P, preconditioner, bcs, diag=1.0)  # type: ignore
+        assemble_matrix(P, preconditioner, bcs, diag=1.0)  # type: ignore
         P.assemble()
 
 
@@ -336,6 +351,7 @@ def create_snes_solver(
     vec_kind: typing.Optional[str] = None,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
+    entity_maps: typing.Optional[dict[dolfinx.mesh.Mesh, npt.NDArray[np.int32]]] = None,
 ) -> tuple[PETSc.SNES, PETSc.Vec]:  # type: ignore
     """Create a PETSc SNES solver instance and a vector to store solutions in.
 
@@ -363,6 +379,15 @@ def create_snes_solver(
             code generated by FFCx. See ``python/dolfinx/jit.py``
             for all available options. Takes priority over all other
             option values.
+        entity_maps: If any trial functions, test functions, or
+            coefficients in the form are not defined over the same mesh
+            as the integration domain, ``entity_maps`` must be supplied.
+            For each key (a mesh, different to the integration domain
+            mesh) a map should be provided relating the entities in the
+            integration domain mesh to the entities in the key mesh e.g.
+            for a key-value pair ``(msh, emap)`` in ``entity_maps``,
+            ``emap[i]`` is the entity in ``msh`` corresponding to entity
+            ``i`` in the integration domain mesh.
     Returns:
         A PETSc SNES solver instance and a vector to store solutions in.
     """
@@ -372,10 +397,20 @@ def create_snes_solver(
     jit_options = {} if jit_options is None else jit_options
 
     # Compile residual and Jacobian forms
-    residual = _create_form(F, form_compiler_options=form_compiler_options, jit_options=jit_options)
+    residual = _create_form(
+        F,
+        form_compiler_options=form_compiler_options,
+        jit_options=jit_options,
+        entity_maps=entity_maps,
+    )
     if J is None:
         J = fem.forms.compute_jacobian(F, u)
-    jacobian = _create_form(J, form_compiler_options=form_compiler_options, jit_options=jit_options)
+    jacobian = _create_form(
+        J,
+        form_compiler_options=form_compiler_options,
+        jit_options=jit_options,
+        entity_maps=entity_maps,
+    )
 
     # Create PETSc structures for the residual, Jacobian and solution vector
     A = create_matrix(jacobian, kind=mat_kind)
@@ -387,7 +422,10 @@ def create_snes_solver(
     P_mat = None
     if P is not None:
         preconditioner = _create_form(
-            P, form_compiler_options=form_compiler_options, jit_options=jit_options
+            P,
+            form_compiler_options=form_compiler_options,
+            jit_options=jit_options,
+            entity_maps=entity_maps,
         )
         P_mat = create_matrix(preconditioner, kind=mat_kind)
 
