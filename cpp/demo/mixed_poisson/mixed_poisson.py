@@ -18,13 +18,20 @@ from ufl import (
     inner,
 )
 
+# Cell type for the mesh
 msh_cell = CellType.triangle
+
+# Weakly enforced boundary data will be represented using a function space
+# defined over a submesh of the boundary. We get the submesh cell type from
+# then mesh cell type.
 submsh_cell = sub_entity_type(msh_cell, dim=1, index=0)
 
+# Define finite elements for the problem
 RT = element("RT", msh_cell, 1)
 P = element("DP", msh_cell, 0)
 ME = mixed_element([RT, P])
 
+# Define UFL mesh and submesh
 msh = Mesh(element("Lagrange", msh_cell, 1, shape=(2,)))
 submsh = Mesh(element("Lagrange", submsh_cell, 1, shape=(2,)))
 
@@ -37,10 +44,14 @@ V = FunctionSpace(msh, ME)
 V0 = FunctionSpace(msh, P)
 f = Coefficient(V0)
 
+# We represent boundary data using a first-degree discontinuous Lagrange space
+# defined over a submesh of the boundary
 Q = FunctionSpace(submsh, element("DP", submsh_cell, 1))
 u0 = Coefficient(Q)
 
+# Specify the weak form of the problem
 dx = Measure("dx", msh)
 ds = Measure("ds", msh)
-a = inner(sigma, tau) * dx + inner(u, div(tau)) * dx + inner(div(sigma), v) * dx
+a = inner(sigma, tau) * dx + inner(u, div(tau)) * \
+    dx + inner(div(sigma), v) * dx
 L = -inner(f, v) * dx + inner(u0 * n, tau) * ds(1)
