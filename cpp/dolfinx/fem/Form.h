@@ -98,7 +98,7 @@ std::vector<std::int32_t> compute_domain(
         // Get the facet index, and add cell and the local facet index
         std::int32_t facet
             = c_to_f->get().links(entities(i, 0))[entities(i, 1)];
-        assert(facet < entity_map.size());
+        assert(static_cast<std::size_t>(facet) < entity_map.size());
         mapped_entities.insert(mapped_entities.end(),
                                {entity_map[facet], entities(i, 1)});
       }
