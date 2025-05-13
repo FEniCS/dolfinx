@@ -217,17 +217,28 @@ using CellReorderFunction = std::function<std::vector<std::int32_t>(
 
 /// @brief Function that computes the process boundary vertices of a mesh during
 /// creation.
-/// TODO: argument doc!
+/// @param[in] celltypes List of celltypes in mesh.
+/// @param[in] doflayouts List of DOF layouts in mesh.
+/// @param[in] ghost_owners List of ghost owner per cell per celltype.
+/// @param[out] cells List of cells per celltpye. Reorderd during call.
+/// @param[out] cells_v List of vertices (no higher order nodes) of cell per
+/// celltype. Reordered during call.
+/// @param[out] original_idx Contains the permutation applied to the cells per
+/// celltype.
+/// @return Boundary vetices (for all cell types).
 using BoundaryVertexFunction = std::function<std::vector<std::int64_t>(
-    const std::vector<CellType>&, const std::vector<fem::ElementDofLayout>&,
-    const std::vector<std::vector<int>>&,
-    std::vector<std::vector<std::int64_t>>&,
-    std::vector<std::vector<std::int64_t>>&,
-    std::vector<std::vector<std::int64_t>>&)>;
+    const std::vector<CellType>& celltypes,
+    const std::vector<fem::ElementDofLayout>& doflayouts,
+    const std::vector<std::vector<int>>& ghost_owners,
+    std::vector<std::vector<std::int64_t>>& cells,
+    std::vector<std::vector<std::int64_t>>& cells_v,
+    std::vector<std::vector<std::int64_t>>& original_idx)>;
 
 /// @brief Creates the default boundary vertices routine for a given reorder
 /// function.
-/// TODO: argument doc!
+/// @param[in] reorder_fn A cell reorder funciton which will be applied to
+/// reorder the cells.
+/// @return Boundary vertices function which can be passed to `create_mesh`.
 /// TODO: offload to cpp?
 inline BoundaryVertexFunction
 create_boundary_vertices_fn(const CellReorderFunction& reorder_fn)
@@ -235,9 +246,9 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn)
   return [&](const std::vector<CellType>& celltypes,
              const std::vector<fem::ElementDofLayout>& doflayouts,
              const std::vector<std::vector<int>>& ghost_owners,
-             std::vector<std::vector<std::int64_t>>& cells1,
-             std::vector<std::vector<std::int64_t>>& cells1_v,
-             std::vector<std::vector<std::int64_t>>& original_idx1)
+             std::vector<std::vector<std::int64_t>>& cells,
+             std::vector<std::vector<std::int64_t>>& cells_v,
+             std::vector<std::vector<std::int64_t>>& original_idx)
              -> std::vector<std::int64_t>
   {
     // Build local dual graph for owned cells to (i) get list of vertices
@@ -255,8 +266,8 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn)
     {
       int num_cell_vertices = mesh::num_cell_vertices(celltypes[i]);
       std::size_t num_owned_cells
-          = cells1_v[i].size() / num_cell_vertices - ghost_owners[i].size();
-      cells1_v_local.emplace_back(cells1_v[i].data(),
+          = cells_v[i].size() / num_cell_vertices - ghost_owners[i].size();
+      cells1_v_local.emplace_back(cells_v[i].data(),
                                   num_owned_cells * num_cell_vertices);
 
       // Build local dual graph for cell type
@@ -271,7 +282,7 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn)
       const std::vector<std::int32_t> remap = reorder_fn(graph);
 
       // Update 'original' indices
-      const std::vector<std::int64_t>& orig_idx = original_idx1[i];
+      const std::vector<std::int64_t>& orig_idx = original_idx[i];
       std::vector<std::int64_t> _original_idx(orig_idx.size());
       std::copy_n(orig_idx.rbegin(), ghost_owners[i].size(),
                   _original_idx.rbegin());
@@ -279,14 +290,14 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn)
         for (std::size_t j = 0; j < remap.size(); ++j)
           _original_idx[remap[j]] = orig_idx[j];
       }
-      original_idx1[i] = _original_idx;
+      original_idx[i] = _original_idx;
 
       // Reorder cells
       impl::reorder_list(
-          std::span(cells1_v[i].data(), remap.size() * num_cell_vertices),
+          std::span(cells_v[i].data(), remap.size() * num_cell_vertices),
           remap);
       impl::reorder_list(
-          std::span(cells1[i].data(), remap.size() * doflayouts[i].num_dofs()),
+          std::span(cells[i].data(), remap.size() * doflayouts[i].num_dofs()),
           remap);
     }
 
@@ -334,6 +345,7 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn)
       // For facets in facets0 that appear only once, store the facet
       // vertices
       std::vector<std::int64_t> vertices;
+      // TODO: allocate memory for vertices
       auto it = perm.begin();
       while (it != perm.end())
       {
@@ -1200,9 +1212,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// the process offset  on`comm`, The offset  is the sum of `x` rows on
 /// all processed with a lower rank than the caller.
 /// @param[in] xshape Shape of the `x` data.
-/// @param[in] partitioner Graph partitioner that computes the owning
-/// rank for each cell. If not callable, cells are not redistributed.
-/// @param[in] reorder_fn Function that reorders (locally) cells that
+/// @param[in] boundary_v_fn Boundary vertex computation callback, see
+/// `BoundaryVertexFunction` and `create_boundary_vertices_fn`.
+/// @param[in] b Function that reorders (locally) cells that
 /// are owned by this process.
 /// @return A mesh distributed on the communicator `comm`.
 template <typename U>
