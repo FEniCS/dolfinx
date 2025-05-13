@@ -9,7 +9,7 @@ from dolfinx import cpp as _cpp
 
 @pytest.mark.parametrize("dtype", [np.int64, np.float64, np.float32])
 def test_scatter_forward(dtype):
-    """Test forward and reverse scatter."""
+    """Test forward scatter."""
     comm = MPI.COMM_WORLD
 
     # Create an index map with shared entries across all processes
@@ -35,7 +35,7 @@ def test_scatter_forward(dtype):
 
 @pytest.mark.parametrize("dtype", [np.int64, np.float32, np.float64])
 def test_scatter_reverse(dtype):
-    """Test forward and reverse scatter."""
+    """Test reverse scatter."""
     comm = MPI.COMM_WORLD
 
     # Create an index map sharing first entry with other processes
