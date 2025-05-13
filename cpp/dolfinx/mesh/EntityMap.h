@@ -30,8 +30,8 @@ public:
   EntityMap(std::shared_ptr<const Topology> topology0,
             std::shared_ptr<const Topology> topology1, int dim, U&& entities0,
             U&& entities1)
-      : _topology0(topology0), _topology1(topology1), _dim(dim),
-        _entities0(std::forward<U>(entities0)),
+      : _dim(dim), _topology0(topology0),
+        _entities0(std::forward<U>(entities0)), _topology1(topology1),
         _entities1(std::forward<U>(entities1))
   {
     if (_entities0.size() != _entities1.size())
@@ -55,8 +55,8 @@ public:
                                    std::vector<std::int32_t>>
   EntityMap(std::shared_ptr<const Topology> topology0,
             std::shared_ptr<const Topology> topology1, int dim, U&& entities0)
-      : _topology0(topology0), _topology1(topology1), _dim(dim),
-        _entities0(std::forward<U>(entities0))
+      : _dim(dim), _topology0(topology0),
+        _entities0(std::forward<U>(entities0)), _topology1(topology1)
   {
     auto e_map = topology1->index_map(dim);
     if (!e_map)
