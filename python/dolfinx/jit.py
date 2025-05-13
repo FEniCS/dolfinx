@@ -193,7 +193,8 @@ def ffcx_jit(
         -  **$XDG_CONFIG_HOME/ffcx/ffcx_options.json** (user options)
         -  **FFCX_DEFAULT_OPTIONS** in `ffcx.options`
 
-        `$XDG_CONFIG_HOME` is `~/.config/` if the environment variable is not set.
+        `$XDG_CONFIG_HOME` is `~/.config/` if the environment variable is
+        not set.
 
         The contents of the `dolfinx_options.json` files are cached
         on the first call. Subsequent calls to this function use this
@@ -201,7 +202,8 @@ def ffcx_jit(
 
         Example `dolfinx_jit_options.json` file:
 
-            **{ "cffi_extra_compile_args": ["-O2", "-march=native" ],  "cffi_verbose": True }**
+            **{ "cffi_extra_compile_args": ["-O2", "-march=native" ],
+            "cffi_verbose": True }**
 
     """
     p_ffcx = ffcx.get_options(form_compiler_options)

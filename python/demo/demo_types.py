@@ -182,7 +182,8 @@ def elasticity(dtype) -> fem.Function:
     μ, λ = E / (2.0 * (1.0 + ν)), E * ν / ((1.0 + ν) * (1.0 - 2.0 * ν))
 
     def σ(v):
-        """Return an expression for the stress σ given a displacement field"""
+        """Return an expression for the stress σ given a displacement
+        field"""
         return 2.0 * μ * ufl.sym(ufl.grad(v)) + λ * ufl.tr(ufl.sym(ufl.grad(v))) * ufl.Identity(
             len(v)
         )

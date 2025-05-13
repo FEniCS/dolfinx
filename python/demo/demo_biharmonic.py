@@ -33,23 +33,23 @@
 # \nabla^{4} u = f \quad {\rm in} \ \Omega,
 # $$
 #
-# where $\nabla^{4} \equiv \nabla^{2} \nabla^{2}$ is the biharmonic operator
-# and $f$ is a prescribed source term.
+# where $\nabla^{4} \equiv \nabla^{2} \nabla^{2}$ is the biharmonic
+# operator and $f$ is a prescribed source term.
 # To formulate a complete boundary value problem, the biharmonic equation
 # must be complemented by suitable boundary conditions.
 #
 # ### Weak formulation
 #
 # Multiplying the biharmonic equation by a test function and integrating
-# by parts twice leads to a problem of second-order derivatives, which would
-# require $H^{2}$ conforming (roughly $C^{1}$ continuous) basis functions.
-# To solve the biharmonic equation using Lagrange finite element basis
-# functions, the biharmonic equation can be split into two second-order
-# equations (see the Mixed Poisson demo for a mixed method for the Poisson
-# equation), or a variational formulation can be constructed that imposes
-# weak continuity of normal derivatives between finite element cells.
-# This demo uses a discontinuous Galerkin approach to impose continuity
-# of the normal derivative weakly.
+# by parts twice leads to a problem of second-order derivatives, which
+# would require $H^{2}$ conforming (roughly $C^{1}$ continuous) basis
+# functions. To solve the biharmonic equation using Lagrange finite element
+# basis functions, the biharmonic equation can be split into two second-
+# order equations (see the Mixed Poisson demo for a mixed method for the
+# Poisson equation), or a variational formulation can be constructed that
+# imposes weak continuity of normal derivatives between finite element
+# cells. This demo uses a discontinuous Galerkin approach to impose
+# continuity of the normal derivative weakly.
 #
 # Consider a triangulation $\mathcal{T}$ of the domain $\Omega$, where
 # the set of interior facets is denoted by $\mathcal{E}_h^{\rm int}$.
@@ -71,7 +71,8 @@
 # \end{align}
 # $$
 #
-# a weak formulation of the biharmonic problem reads: find $u \in V$ such that
+# a weak formulation of the biharmonic problem reads: find $u \in V$ such
+# that
 #
 # $$
 # a(u,v)=L(v) \quad \forall \ v \in V,
@@ -158,8 +159,9 @@ V = fem.functionspace(msh, ("Lagrange", 2))
 # Next, we locate the mesh facets that lie on the boundary
 # $\Gamma_D = \partial\Omega$.
 # We do this using using {py:func}`exterior_facet_indices
-# <dolfinx.mesh.exterior_facet_indices>` which returns all mesh boundary facets
-# (Note: if we are only interested in a subset of those, consider {py:func}`locate_entities_boundary
+# <dolfinx.mesh.exterior_facet_indices>` which returns all mesh boundary
+# facets (Note: if we are only interested in a subset of those, consider
+# {py:func}`locate_entities_boundary
 # <dolfinx.mesh.locate_entities_boundary>`).
 
 tdim = msh.topology.dim
@@ -182,8 +184,8 @@ bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 
 # Next, we express the variational problem using UFL.
 #
-# First, the penalty parameter $\alpha$ is defined. In addition, we define a
-# variable `h` for the cell diameter $h_E$, a variable `n`for the
+# First, the penalty parameter $\alpha$ is defined. In addition, we define
+# a variable `h` for the cell diameter $h_E$, a variable `n`for the
 # outward-facing normal vector $n$ and a variable `h_avg` for the
 # average size of cells sharing a facet
 # $\left< h \right> = \frac{1}{2} (h_{+} + h_{-})$. Here, the UFL syntax
@@ -195,12 +197,12 @@ h = ufl.CellDiameter(msh)
 n = ufl.FacetNormal(msh)
 h_avg = (h("+") + h("-")) / 2.0
 
-# After that, we can define the variational problem consisting of the bilinear
-# form $a$ and the linear form $L$. The source term is prescribed as
-# $f = 4.0 \pi^4\sin(\pi x)\sin(\pi y)$. Note that with `dS`, integration is
-# carried out over all the interior facets $\mathcal{E}_h^{\rm int}$, whereas
-# with `ds` it would be only the facets on the boundary of the domain, i.e.
-# $\partial\Omega$. The jump operator
+# After that, we can define the variational problem consisting of the
+# bilinear form $a$ and the linear form $L$. The source term is prescribed
+# as $f = 4.0 \pi^4\sin(\pi x)\sin(\pi y)$. Note that with `dS`,
+# integration is carried out over all the interior facets
+# $\mathcal{E}_h^{\rm int}$, whereas with `ds` it would be only the facets
+# on the boundary of the domain, i.e. $\partial\Omega$. The jump operator
 # $[\!\![ w ]\!\!] = w_{+} \cdot n_{+} + w_{-} \cdot n_{-}$ w.r.t. the
 # outward-facing normal vector $n$ is in UFL available as `jump(w, n)`.
 

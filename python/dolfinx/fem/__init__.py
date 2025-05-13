@@ -99,7 +99,8 @@ def create_interpolation_data(
     cells: npt.NDArray[np.int32],
     padding: float = 1e-14,
 ) -> _PointOwnershipData:
-    """Generate data needed to interpolate discrete functions across different meshes.
+    """Generate data needed to interpolate discrete functions across
+    different meshes.
 
     Args:
         V_to: Function space to interpolate into
@@ -159,7 +160,8 @@ def discrete_gradient(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCS
 
 
 def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCSR:
-    """Assemble an interpolation matrix for two function spaces on the same mesh.
+    """Assemble an interpolation matrix for two function spaces on the same
+    mesh.
 
     Args:
         space0: space to interpolate from
@@ -174,7 +176,8 @@ def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _Matri
 def compute_integration_domains(
     integral_type: IntegralType, topology: Topology, entities: np.ndarray
 ):
-    """Given an integral type and a set of entities compute integration entities.
+    """Given an integral type and a set of entities compute integration
+    entities.
 
     This function returns a list ``[(id, entities)]``. For cell
     integrals ``entities`` are the cell indices. For exterior facet
