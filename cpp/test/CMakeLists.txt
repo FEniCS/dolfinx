@@ -57,6 +57,7 @@ add_executable(
   fem/functionspace.cpp
   mesh/distributed_mesh.cpp
   mesh/generation.cpp
+  mesh/manifold.cpp
   mesh/read_named_meshtags.cpp
   mesh/refinement/interval.cpp
   mesh/refinement/option.cpp
