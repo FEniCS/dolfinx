@@ -83,7 +83,7 @@ std::vector<std::int32_t> compute_domain(
       for (std::size_t i = 0; i < entities.extent(0); ++i)
       {
         // Add cell and the local facet index
-        assert(entities(i, 0) < entity_map.size());
+        assert(static_cast<std::size_t>(entities(i, 0)) < entity_map.size());
         mapped_entities.insert(mapped_entities.end(),
                                {entity_map[entities(i, 0)], entities(i, 1)});
       }
