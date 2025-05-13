@@ -65,7 +65,9 @@ public:
           "No index map for entities, call `Topology::create_entities("
           + std::to_string(dim) + ")");
     }
-    if (e_map->size_local() + e_map->num_ghosts() != _entities0.size())
+    std::size_t num_ents
+        = static_cast<std::size_t>(e_map->size_local() + e_map->num_ghosts());
+    if (num_ents != _entities0.size())
       throw std::runtime_error("Size mismatch between entities and index map.");
     _entities1.resize(_entities0.size());
     std::iota(_entities1.begin(), _entities1.end(), 0);
