@@ -184,7 +184,13 @@ def extract_topology_and_markers(
             # one cell-type,
             # i.e. facets of prisms and pyramid meshes are not supported
             (entity_types, entity_tags, entity_topologies) = model.mesh.getElements(dim, tag=entity)
-            assert len(entity_types) == 1
+
+            if len(entity_types) == 2:
+                raise RuntimeError(
+                    f"Unsupported mesh with multiple cell types {entity_types} for entity {entity}"
+                )
+            elif len(entity_types) == 0:
+                continue
 
             # Determine number of local nodes per element to create the
             # topology of the elements
