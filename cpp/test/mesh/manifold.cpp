@@ -53,11 +53,11 @@ TEST_CASE("debug")
 
   auto branching_manifold_boundary_v_fn
       = [](const std::vector<mesh::CellType>& celltypes,
-           const std::vector<fem::ElementDofLayout>& doflayouts,
+           const std::vector<fem::ElementDofLayout>& /* doflayouts */,
            const std::vector<std::vector<int>>& ghost_owners,
-           std::vector<std::vector<std::int64_t>>& cells,
+           std::vector<std::vector<std::int64_t>>& /* cells */,
            std::vector<std::vector<std::int64_t>>& cells_v,
-           std::vector<std::vector<std::int64_t>>& original_idx)
+           std::vector<std::vector<std::int64_t>>& /* original_idx */)
       -> std::vector<std::int64_t>
   {
     std::vector<std::int64_t> all_vertices;
@@ -84,9 +84,9 @@ TEST_CASE("debug")
   auto rank = dolfinx::MPI::rank(comm);
   // std::cout << "num vertices: " << x.size() / 2 << std::endl;
   auto my_partitioner
-      = [&](MPI_Comm comm, int nparts,
-            const std::vector<dolfinx::mesh::CellType>& cell_types,
-            const std::vector<std::span<const std::int64_t>>& cells)
+      = [&](MPI_Comm /* comm */, int /* nparts */,
+            const std::vector<dolfinx::mesh::CellType>& /* cell_types */,
+            const std::vector<std::span<const std::int64_t>>& /* cells */)
   {
     if (rank == 0)
     {
