@@ -300,60 +300,61 @@ def model_to_mesh(
         x = extract_geometry(model)
         topologies, physical_groups = extract_topology_and_markers(model)
 
-        # Extract Gmsh cell id, dimension of cell and number of nodes to
-        # cell for each
+        # Extract Gmsh cell id, dimension of cell and number of nodes in cell
         num_cell_types = len(topologies.keys())
-        cell_information = dict()
-        cell_dimensions = np.zeros(num_cell_types, dtype=np.int32)
+        element_ids = np.zeros(num_cell_types, dtype=np.int32)
+        element_dimensions = np.zeros(num_cell_types, dtype=np.int32)
+        num_nodes_per_element = np.zeros(num_cell_types, dtype=np.int32)
         for i, element in enumerate(topologies.keys()):
             _, dim, _, num_nodes, _, _ = model.mesh.getElementProperties(element)
-            cell_information[i] = {"id": element, "dim": dim, "num_nodes": num_nodes}
-            cell_dimensions[i] = dim
+            element_ids[i] = element
+            element_dimensions[i] = dim
+            num_nodes_per_element[i] = num_nodes
 
-        # Sort elements by ascending dimension
-        perm_sort = np.argsort(cell_dimensions)
-
-        # Broadcast cell type data and geometric dimension
-        cell_id = cell_information[perm_sort[-1]]["id"]
-        tdim = cell_information[perm_sort[-1]]["dim"]
-        num_nodes = cell_information[perm_sort[-1]]["num_nodes"]
-        cell_id, num_nodes = comm.bcast([cell_id, num_nodes], root=rank)
-
-        physical_groups = comm.bcast(physical_groups, root=rank)
+        # Broadcast information to all other ranks
+        element_dimensions, element_ids, num_nodes_per_element = comm.bcast(
+            (element_dimensions, element_ids, num_nodes_per_element), root=rank
+        )
     else:
-        physical_groups = comm.bcast(None, root=rank)
+        element_dimensions, element_ids, num_nodes_per_element = comm.bcast(
+            (None, None, None), root=rank
+        )
 
-    # Check for facet, edge and vertex data and broadcast relevant info if True
+    # Sort elements by descending dimension
+    assert len(np.unique(element_dimensions)) == len(element_dimensions)
+    perm_sort = np.argsort(element_dimensions)[::-1]
+    tdim = int(element_dimensions[perm_sort[0]])
+
     meshtags: dict[int, tuple[npt.NDArray[np.int32], npt.NDArray[np.int32]]] = {}
-    for codim in [0, 1, 2, 3]:
-        # Check if we have any tagged entities on root process and distribute
-        if comm.bcast(tdim - codim in cell_dimensions, root=rank):
-            if comm.rank == rank:
-                position = -1 - codim
-                gmsh_entity_id = cell_information[perm_sort[position]]["id"]
-                marked_entities = np.asarray(topologies[gmsh_entity_id]["topology"], dtype=np.int64)
-                entity_values = np.asarray(topologies[gmsh_entity_id]["cell_data"], dtype=np.int32)
-                num_entity_nodes = comm.bcast(
-                    cell_information[perm_sort[position]]["num_nodes"], root=rank
-                )
-                meshtags[codim] = (marked_entities, entity_values)
-            else:
-                num_entity_nodes = comm.bcast(None, root=rank)
-                marked_entities = np.empty((0, num_entity_nodes), dtype=np.int32)
-                entity_values = np.empty((0,), dtype=np.int32)
-                meshtags[codim] = (marked_entities, entity_values)
+    for position in perm_sort:
+        # Extract entity data for tagged codim entities
+        codim = tdim - element_dimensions[position]
+        if comm.rank == rank:
+            gmsh_entity_id = element_ids[position]
+            marked_entities = np.asarray(topologies[gmsh_entity_id]["topology"], dtype=np.int64)
+            entity_values = np.asarray(topologies[gmsh_entity_id]["cell_data"], dtype=np.int32)
+            meshtags[codim] = (marked_entities, entity_values)
+        else:
+            marked_entities = np.empty((0, num_nodes_per_element[position]), dtype=np.int32)
+            entity_values = np.empty((0,), dtype=np.int32)
+            meshtags[codim] = (marked_entities, entity_values)
 
     # Create distributed mesh
-    ufl_domain = ufl_mesh(cell_id, gdim, dtype=dtype)
+    ufl_domain = ufl_mesh(element_ids[perm_sort[0]], gdim, dtype=dtype)
+    num_nodes = num_nodes_per_element[perm_sort[0]]
     gmsh_cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), num_nodes)
     cells = meshtags[0][0][:, gmsh_cell_perm].copy()
+    if comm.rank != rank:
+        x = np.empty([0, gdim], dtype=dtype)  # No nodes on other than root rank
     mesh = create_mesh(comm, cells, x[:, :gdim].astype(dtype, copy=False), ufl_domain, partitioner)
+    assert tdim == mesh.topology.dim, (
+        f"{mesh.topology.dim=} does not match Gmsh model dimension {tdim}"
+    )
 
+    # Create MeshTags for entity data extracted from GMSH
+    topology = mesh.topology
     codim_to_name = {0: "cell", 1: "facet", 2: "ridge", 3: "peak"}
     dolfinx_meshtags: dict[str, typing.Optional[MeshTags]] = {}
-    # Create MeshTags for facets
-    topology = mesh.topology
-    tdim = topology.dim
     for codim in [0, 1, 2, 3]:
         key = f"{codim_to_name[codim]}_tags"
         if (
@@ -366,12 +367,14 @@ def model_to_mesh(
             dolfinx_meshtags[key] = None
             continue
 
+        # Distribute entity data [[e0_v0, e0_v1, ...], [e1_v0, e1_v1, ...], ...]
+        # which is made in global input indices to local indices on the
+        # owning process
         (marked_entities, entity_values) = meshtag_data
-
-        # Create MeshTags for cells
         local_entities, local_values = distribute_entity_data(
             mesh, tdim - codim, marked_entities, entity_values
         )
+        # Create MeshTags object from the local entities
         mesh.topology.create_connectivity(tdim - codim, tdim)
         adj = adjacencylist(local_entities)
         et = meshtags_from_entities(
@@ -379,6 +382,12 @@ def model_to_mesh(
         )
         et.name = key
         dolfinx_meshtags[key] = et
+
+    # Broadcast physical groups (string to integer mapping) to all ranks
+    if comm.rank == rank:
+        physical_groups = comm.bcast(physical_groups, root=rank)
+    else:
+        physical_groups = comm.bcast(None, root=rank)
 
     return MeshData(mesh, physical_groups=physical_groups, **dolfinx_meshtags)
 
