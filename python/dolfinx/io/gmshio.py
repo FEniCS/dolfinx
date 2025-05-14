@@ -318,7 +318,7 @@ def model_to_mesh(
         physical_groups = comm.bcast(None, root=rank)
 
     # Check for facet, edge and vertex data and broadcast relevant info if True
-    meshtags: dict[int, tuple[bool, npt.NDArray[np.int32], npt.NDArray[np.int32]]] = {}
+    meshtags: dict[int, tuple[npt.NDArray[np.int32], npt.NDArray[np.int32]]] = {}
     for codim in [0, 1, 2, 3]:
         # Check if we have any tagged entities on root process and distribute
         if comm.bcast(tdim - codim in cell_dimensions, root=rank):
@@ -344,7 +344,7 @@ def model_to_mesh(
     mesh = create_mesh(comm, cells, x[:, :gdim].astype(dtype, copy=False), ufl_domain, partitioner)
 
     codim_to_name = {0: "cell", 1: "facet", 2: "ridge", 3: "peak"}
-    dolfinx_meshtags: dict[int, MeshTags] = {}
+    dolfinx_meshtags: dict[str, MeshTags] = {}
     # Create MeshTags for facets
     topology = mesh.topology
     tdim = topology.dim
@@ -374,7 +374,7 @@ def model_to_mesh(
         et.name = key
         dolfinx_meshtags[key] = et
 
-    return MeshData(mesh, **dolfinx_meshtags, physical_groups=physical_groups)
+    return MeshData(mesh, physical_groups=physical_groups, **dolfinx_meshtags)
 
 
 def read_from_msh(
