@@ -14,6 +14,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partitioners.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/generation.h>
 #include <dolfinx/mesh/utils.h>
 #include <iterator>
@@ -113,4 +114,28 @@ TEST_CASE("debug")
   }
   std::cout << std::endl;
   // CHECK(false);
+}
+
+TEST_CASE("debug-dual")
+{
+  std::vector<mesh::CellType> celltypes{mesh::CellType::interval};
+  std::vector<std::int64_t> cells{{0, 1, 0, 2, 0, 3, 2, 4}};
+  /// 1. Local dual graph
+  /// 2. Facets, defined by their sorted vertices, that are shared by only
+  /// one cell on this rank. The logically 2D array is flattened
+  /// (row-major).
+  /// 3. Facet data array (2) number of columns
+  /// 4. Attached cell (local index) to each returned facet in (2).
+  auto [local_dual_graph, facets, facet_data, cell_data] =
+
+      mesh::build_local_dual_graph(celltypes, {cells});
+
+  for (int i = 0; i < local_dual_graph.num_nodes(); i++)
+  {
+    std::cout << "[" << i << "] ";
+    for (auto link : local_dual_graph.links(i))
+      std::cout << link << ", ";
+    std::cout << "\n";
+  }
+  std::cout << std::endl;
 }
