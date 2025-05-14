@@ -414,9 +414,9 @@ mesh::build_local_dual_graph(
 
   // 2) Build a list of (all) facets, defined by sorted vertices, with the
   // connected cell index after the vertices. For v_ij the j-th vertex of the
-  // i-th facet:
+  // i-th facet. The last index is the cell index (non unique).
   // facets = [v_11, v_12, v_13, -1, ..., -1, 0,
-  //           v_21, v_22, v_23, -1, ..., -1, 1,
+  //           v_21, v_22, v_23, -1, ..., -1, 0,
   //             ⋮     ⋮      ⋮    ⋮   ⋱    ⋮  ⋮
   //           v_n1, v_n2,   -1, -1, ..., -1, n]
 
@@ -467,7 +467,7 @@ mesh::build_local_dual_graph(
                                                   it1, std::next(it1, shape1));
             });
 
-  // Iterate over sorted list of facets. Facets shared by more than one
+  // 4) Iterate over sorted list of facets. Facets shared by more than one
   // cell lead to a graph edge to be added. Facets that are not shared
   // are stored as these might be shared by a cell on another process.
   std::vector<std::int64_t> unmatched_facets;
@@ -477,41 +477,50 @@ mesh::build_local_dual_graph(
     auto it = perm.begin();
     while (it != perm.end())
     {
-      std::span f0(facets.data() + (*it) * shape1, shape1);
+      std::size_t facet_index = *it;
+      std::span facet(facets.data() + facet_index * shape1, shape1);
 
-      // Find iterator to next facet different from f0
-      auto it1 = std::find_if_not(
+      // Find iterator to next facet different from f0 -> all facets in [it,
+      // it_next_facet) describe the same facet
+      auto it_next_facet = std::find_if_not(
           it, perm.end(),
-          [f0, &facets, shape1](auto idx) -> bool
+          [facet, &facets, shape1](auto idx) -> bool
           {
             auto f1_it = std::next(facets.begin(), idx * shape1);
-            return std::equal(f0.begin(), std::prev(f0.end()), f1_it);
+            return std::equal(facet.begin(), std::prev(facet.end()), f1_it);
           });
 
       // Add dual graph edges (one direction only, other direction is
-      // added later)
-      std::int32_t cell0 = f0.back();
-      for (auto itx = std::next(it); itx != it1; ++itx)
+      // added later). For the list [it, it_next_facet), all combinations are
+      // added.
+      std::int32_t cell0 = facet.back();
+      for (auto itx = std::next(it); itx != it_next_facet; ++itx)
       {
-        std::span f1(facets.data() + *itx * shape1, shape1);
-        std::int32_t cell1 = f1.back();
-        edges.push_back({cell0, cell1});
+        for (std::size_t facet_before : std::ranges::subrange(it, itx))
+        {
+          std::span f1(facets.data() + facet_before * shape1, shape1);
+          std::int32_t cell1 = f1.back();
+          edges.push_back({cell0, cell1});
+        }
       }
 
+      // TODO: check before loop.
       // Store unmatched facets and the attached cell
-      if (std::distance(it, it1) == 1)
+      if (std::distance(it, it_next_facet) == 1)
       {
-        unmatched_facets.insert(unmatched_facets.end(), f0.begin(),
-                                std::prev(f0.end()));
+        unmatched_facets.insert(unmatched_facets.end(), facet.begin(),
+                                std::prev(facet.end()));
         local_cells.push_back(cell0);
       }
 
       // Update iterator
-      it = it1;
+      it = it_next_facet;
     }
   }
 
-  // -- Build adjacency list data
+  // 5) Build adjacency list data. Prepare data structure and assemble into.
+  // Important: we have only computed one direction of the dual edges, we add
+  // both forward and backward to the final data structure.
 
   std::vector<std::int32_t> sizes(cell_offsets.back(), 0);
   for (auto e : edges)
