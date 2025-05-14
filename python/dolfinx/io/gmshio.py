@@ -351,10 +351,8 @@ def model_to_mesh(
     for codim in [0, 1, 2, 3]:
         key = f"{codim_to_name[codim]}_tags"
         if (
-            (codim == 1
-            and topology.cell_type == CellType.prism)
-            or topology.cell_type == CellType.pyramid
-        ):
+            codim == 1 and topology.cell_type == CellType.prism
+        ) or topology.cell_type == CellType.pyramid:
             raise RuntimeError(f"Unsupported facet tag for type {topology.cell_type}")
 
         meshtag_data = meshtags.get(codim, None)
