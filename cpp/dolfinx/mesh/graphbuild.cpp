@@ -375,24 +375,34 @@ mesh::build_local_dual_graph(
         "Number of cell types must match number of cell arrays.");
   };
 
-  constexpr std::int32_t padding_value = -1;
+  int tdim = mesh::cell_dim(celltypes.front());
 
-  // Create indexing offset for each cell type and determine max number
-  // of vertices per facet
+  // 1) Create indexing offset for each cell type and determine max number
+  // of vertices per facet -> size computations for later on used data
+  // structures
+
+  // TODO: cell_offsets can be removed?
   std::vector<std::int32_t> cell_offsets = {0};
+  cell_offsets.reserve(cells.size() + 1);
+
   int max_vertices_per_facet = 0;
   int facet_count = 0;
-  int tdim = mesh::cell_dim(celltypes.front());
   for (std::size_t j = 0; j < cells.size(); ++j)
   {
-    assert(tdim == mesh::cell_dim(celltypes[j]));
-    int num_cell_vertices = mesh::cell_num_entities(celltypes[j], 0);
-    std::int32_t num_cells = cells[j].size() / num_cell_vertices;
+    const auto& cell_type = celltypes[j];
+    const auto& _cells = cells[j];
+
+    assert(tdim == mesh::cell_dim(cell_type));
+
+    int num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
+    int num_cell_facets = mesh::cell_num_entities(cell_type, tdim - 1);
+
+    std::int32_t num_cells = _cells.size() / num_cell_vertices;
     cell_offsets.push_back(cell_offsets.back() + num_cells);
-    facet_count += mesh::cell_num_entities(celltypes[j], tdim - 1) * num_cells;
+    facet_count += num_cell_facets * num_cells;
 
     graph::AdjacencyList<std::int32_t> cell_facets
-        = mesh::get_entity_vertices(celltypes[j], tdim - 1);
+        = mesh::get_entity_vertices(cell_type, tdim - 1);
 
     // Determine maximum number of vertices for facet
     for (std::int32_t i = 0; i < cell_facets.num_nodes(); ++i)
@@ -402,28 +412,39 @@ mesh::build_local_dual_graph(
     }
   }
 
+  // 2) Build a list of (all) facets, defined by sorted vertices, with the
+  // connected cell index after the vertices. For v_ij the j-th vertex of the
+  // i-th facet:
+  // facets = [v_11, v_12, v_13, -1, ..., -1, 0,
+  //           v_21, v_22, v_23, -1, ..., -1, 1,
+  //             ⋮     ⋮      ⋮    ⋮   ⋱    ⋮  ⋮
+  //           v_n1, v_n2,   -1, -1, ..., -1, n]
+
   const int shape1 = max_vertices_per_facet + 1;
   std::vector<std::int64_t> facets;
   facets.reserve(facet_count * shape1);
+  constexpr std::int32_t padding_value = -1;
 
   for (std::size_t j = 0; j < cells.size(); ++j)
   {
-    // Build a list of facets, defined by sorted vertices, with the connected
-    // cell index after the vertices
-    int num_cell_vertices = mesh::cell_num_entities(celltypes[j], 0);
-    std::int32_t num_cells = cells[j].size() / num_cell_vertices;
+    const CellType& cell_type = celltypes[j];
+    std::span _cells = cells[j];
+
+    int num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
+    std::int32_t num_cells = _cells.size() / num_cell_vertices;
     graph::AdjacencyList<int> cell_facets
-        = mesh::get_entity_vertices(celltypes[j], tdim - 1);
+        = mesh::get_entity_vertices(cell_type, tdim - 1);
 
     for (std::int32_t c = 0; c < num_cells; ++c)
     {
       // Loop over cell facets
-      auto v = cells[j].subspan(num_cell_vertices * c, num_cell_vertices);
+      auto v = _cells.subspan(num_cell_vertices * c, num_cell_vertices);
       for (int f = 0; f < cell_facets.num_nodes(); ++f)
       {
         auto facet_vertices = cell_facets.links(f);
         std::ranges::transform(facet_vertices, std::back_inserter(facets),
                                [v](auto idx) { return v[idx]; });
+        // TODO: radix_sort?
         std::sort(std::prev(facets.end(), facet_vertices.size()), facets.end());
         facets.insert(facets.end(),
                       max_vertices_per_facet - facet_vertices.size(),
@@ -433,9 +454,10 @@ mesh::build_local_dual_graph(
     }
   }
 
-  // Sort facets by vertex key
+  // 3) Sort facets by vertex key
   std::vector<std::size_t> perm(facets.size() / shape1, 0);
   std::iota(perm.begin(), perm.end(), 0);
+  // TODO: radix_sort?
   std::sort(perm.begin(), perm.end(),
             [&facets, shape1](auto f0, auto f1)
             {
