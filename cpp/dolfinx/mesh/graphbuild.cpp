@@ -490,27 +490,45 @@ mesh::build_local_dual_graph(
             return std::equal(facet.begin(), std::prev(facet.end()), f1_it);
           });
 
-      // Add dual graph edges (one direction only, other direction is
-      // added later). For the list [it, it_next_facet), all combinations are
-      // added.
       std::int32_t cell0 = facet.back();
-      for (auto itx = std::next(it); itx != it_next_facet; ++itx)
-      {
-        for (std::size_t facet_before : std::ranges::subrange(it, itx))
-        {
-          std::span f1(facets.data() + facet_before * shape1, shape1);
-          std::int32_t cell1 = f1.back();
-          edges.push_back({cell0, cell1});
-        }
-      }
 
-      // TODO: check before loop.
-      // Store unmatched facets and the attached cell
-      if (std::distance(it, it_next_facet) == 1)
+      auto cell_count = std::distance(it, it_next_facet);
+      assert(cell_count >= 1);
+      if (cell_count == 1)
       {
+        // Store unmatched facets and the attached cell
         unmatched_facets.insert(unmatched_facets.end(), facet.begin(),
                                 std::prev(facet.end()));
         local_cells.push_back(cell0);
+      }
+      else
+      {
+
+        // Add dual graph edges (one direction only, other direction is
+        // added later). In the range [it, it_next_facet), all combinations are
+        // added.
+        for (auto facet_a_it = it; facet_a_it != it_next_facet; facet_a_it++)
+        {
+          std::span facet_a(facets.data() + *facet_a_it * shape1, shape1);
+          std::int32_t cell_a = facet_a.back();
+          // TODO: move into for loop
+          for (auto facet_b_it = std::next(facet_a_it);
+               facet_b_it != it_next_facet; facet_b_it++)
+          {
+            std::span facet_b(facets.data() + *facet_b_it * shape1, shape1);
+            std::int32_t cell_b = facet_b.back();
+            edges.push_back({cell_a, cell_b});
+          }
+        }
+
+        //   for (auto itx = std::next(it); itx != it_next_facet; ++itx)
+        //   {
+        //     for (std::size_t facet_before : std::ranges::subrange(it, itx))
+        //     {
+        //       std::span f1(facets.data() + facet_before * shape1, shape1);
+        //       std::int32_t cell1 = f1.back();
+        //       edges.push_back({cell0, cell1});
+        //     }
       }
 
       // Update iterator
