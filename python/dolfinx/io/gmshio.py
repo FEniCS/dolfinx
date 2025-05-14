@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Jørgen S. Dokken
+# Copyright (C) 2022-2025 Jørgen S. Dokken, Henrik N. T. Finsberg and Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -78,9 +78,9 @@ class MeshData(typing.NamedTuple):
     Args:
         mesh: Mesh.
         cell_tags: MeshTags for cells.
-        facet_tags: MeshTags for facets.
-        edge_tags: MeshTags for edges.
-        vertex_tags: MeshTags for vertices.
+        facet_tags: MeshTags for facets (codim 1).
+        ridge_tags: MeshTags for edges (codim 2).
+        peak_tags: MeshTags for vertices (codim 3).
         physical_groups: Physical groups in the mesh, where the key
             is the physical name and the value is a tuple with the
             dimension and tag.
@@ -89,8 +89,8 @@ class MeshData(typing.NamedTuple):
     mesh: Mesh
     cell_tags: typing.Optional[MeshTags]
     facet_tags: typing.Optional[MeshTags]
-    edge_tags: typing.Optional[MeshTags]
-    vertex_tags: typing.Optional[MeshTags]
+    ridge_tags: typing.Optional[MeshTags]
+    peak_tags: typing.Optional[MeshTags]
     physical_groups: dict[str, tuple[int, int]]
 
 
@@ -277,8 +277,10 @@ def model_to_mesh(
             distribution of cells across MPI ranks.
 
     Returns:
-        MeshData with mesh, cell tags, facet tags, edge tags,
-        vertex tags and physical groups.
+        MeshData with mesh and tags of corresponding entities by codimension.
+        Codimension 0 is the cell tags, codimension 1 is the facet tags,
+        codimension 2 is the ridge tags and codimension 3 is the peak tags
+        as well as a lookup table from the physical groups by name to integer.
 
     Note:
         For performance, this function should only be called once for
@@ -311,139 +313,70 @@ def model_to_mesh(
         num_nodes = cell_information[perm_sort[-1]]["num_nodes"]
         cell_id, num_nodes = comm.bcast([cell_id, num_nodes], root=rank)
 
-        # Check for facet, edge and vertex data and broadcast relevant info if True
-        has_facet_data = (tdim - 1) in cell_dimensions
-        has_edge_data = (tdim - 2) in cell_dimensions
-        has_vertex_data = (tdim - 3) in cell_dimensions
-
-        has_facet_data = comm.bcast(has_facet_data, root=rank)
-        if has_facet_data:
-            num_facet_nodes = comm.bcast(cell_information[perm_sort[-2]]["num_nodes"], root=rank)
-            gmsh_facet_id = cell_information[perm_sort[-2]]["id"]
-            marked_facets = np.asarray(topologies[gmsh_facet_id]["topology"], dtype=np.int64)
-            facet_values = np.asarray(topologies[gmsh_facet_id]["cell_data"], dtype=np.int32)
-
-        has_edge_data = comm.bcast(has_edge_data, root=rank)
-        if has_edge_data:
-            num_edge_nodes = comm.bcast(cell_information[perm_sort[-3]]["num_nodes"], root=rank)
-            gmsh_edge_id = cell_information[perm_sort[-3]]["id"]
-            marked_edges = np.asarray(topologies[gmsh_edge_id]["topology"], dtype=np.int64)
-            edge_values = np.asarray(topologies[gmsh_edge_id]["cell_data"], dtype=np.int32)
-
-        has_vertex_data = comm.bcast(has_vertex_data, root=rank)
-        if has_vertex_data:
-            num_vertex_nodes = comm.bcast(cell_information[perm_sort[-4]]["num_nodes"], root=rank)
-            gmsh_vertex_id = cell_information[perm_sort[-4]]["id"]
-            marked_vertices = np.asarray(topologies[gmsh_vertex_id]["topology"], dtype=np.int64)
-            vertex_values = np.asarray(topologies[gmsh_vertex_id]["cell_data"], dtype=np.int32)
-
-        cells = np.asarray(topologies[cell_id]["topology"], dtype=np.int64)
-        cell_values = np.asarray(topologies[cell_id]["cell_data"], dtype=np.int32)
         physical_groups = comm.bcast(physical_groups, root=rank)
     else:
-        cell_id, num_nodes = comm.bcast([None, None], root=rank)
-        cells, x = np.empty([0, num_nodes], dtype=np.int32), np.empty([0, gdim], dtype=dtype)
-        cell_values = np.empty((0,), dtype=np.int32)
-
-        has_facet_data = comm.bcast(None, root=rank)
-        if has_facet_data:
-            num_facet_nodes = comm.bcast(None, root=rank)
-            marked_facets = np.empty((0, num_facet_nodes), dtype=np.int32)
-            facet_values = np.empty((0,), dtype=np.int32)
-
-        has_edge_data = comm.bcast(None, root=rank)
-        if has_edge_data:
-            num_edge_nodes = comm.bcast(None, root=rank)
-            marked_edges = np.empty((0, num_edge_nodes), dtype=np.int32)
-            edge_values = np.empty((0,), dtype=np.int32)
-
-        has_vertex_data = comm.bcast(None, root=rank)
-        if has_vertex_data:
-            num_vertex_nodes = comm.bcast(None, root=rank)
-            marked_vertices = np.empty((0, num_vertex_nodes), dtype=np.int32)
-            vertex_values = np.empty((0,), dtype=np.int32)
-
         physical_groups = comm.bcast(None, root=rank)
+
+    # Check for facet, edge and vertex data and broadcast relevant info if True
+    meshtags: dict[int, tuple[bool, npt.NDArray[np.int32], npt.NDArray[np.int32]]] = {}
+    for codim in [0, 1, 2, 3]:
+        # Check if we have any tagged entities on root process and distribute
+        if comm.bcast(tdim - codim in cell_dimensions, root=rank):
+            if comm.rank == rank:
+                position = -1 - codim
+                gmsh_entity_id = cell_information[perm_sort[position]]["id"]
+                marked_entities = np.asarray(topologies[gmsh_entity_id]["topology"], dtype=np.int64)
+                entity_values = np.asarray(topologies[gmsh_entity_id]["cell_data"], dtype=np.int32)
+                num_entity_nodes = comm.bcast(
+                    cell_information[perm_sort[position]]["num_nodes"], root=rank
+                )
+                meshtags[codim] = (marked_entities, entity_values)
+            else:
+                num_entity_nodes = comm.bcast(None, root=rank)
+                marked_entities = np.empty((0, num_entity_nodes), dtype=np.int32)
+                entity_values = np.empty((0,), dtype=np.int32)
+                meshtags[codim] = (marked_entities, entity_values)
 
     # Create distributed mesh
     ufl_domain = ufl_mesh(cell_id, gdim, dtype=dtype)
     gmsh_cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), num_nodes)
-    cells = cells[:, gmsh_cell_perm].copy()
+    cells = meshtags[0][0][:, gmsh_cell_perm].copy()
     mesh = create_mesh(comm, cells, x[:, :gdim].astype(dtype, copy=False), ufl_domain, partitioner)
 
-    # Create MeshTags for cells
-    local_entities, local_values = distribute_entity_data(
-        mesh, mesh.topology.dim, cells, cell_values
-    )
-    mesh.topology.create_connectivity(mesh.topology.dim, 0)
-    adj = adjacencylist(local_entities)
-    ct = meshtags_from_entities(
-        mesh, mesh.topology.dim, adj, local_values.astype(np.int32, copy=False)
-    )
-    ct.name = "Cell tags"
-
+    codim_to_name = {0: "cell", 1: "facet", 2: "ridge", 3: "peak"}
+    dolfinx_meshtags: dict[int, MeshTags] = {}
     # Create MeshTags for facets
     topology = mesh.topology
     tdim = topology.dim
-    if has_facet_data:
-        # Permute facets from MSH to DOLFINx ordering
-        # FIXME: This does not work for prism meshes
-        if topology.cell_type == CellType.prism or topology.cell_type == CellType.pyramid:
-            raise RuntimeError(f"Unsupported cell type {topology.cell_type}")
+    for codim in [0, 1, 2, 3]:
+        key = f"{codim_to_name[codim]}_tags"
+        if (
+            (codim == 1
+            and topology.cell_type == CellType.prism)
+            or topology.cell_type == CellType.pyramid
+        ):
+            raise RuntimeError(f"Unsupported facet tag for type {topology.cell_type}")
 
-        facet_type = _cpp.mesh.cell_entity_type(
-            _cpp.mesh.to_type(str(ufl_domain.ufl_cell())), tdim - 1, 0
-        )
-        gmsh_facet_perm = cell_perm_array(facet_type, num_facet_nodes)
-        marked_facets = marked_facets[:, gmsh_facet_perm]
+        meshtag_data = meshtags.get(codim, None)
+        if meshtag_data is None:
+            dolfinx_meshtags[key] = None
+            continue
 
+        (marked_entities, entity_values) = meshtag_data
+
+        # Create MeshTags for cells
         local_entities, local_values = distribute_entity_data(
-            mesh, tdim - 1, marked_facets, facet_values
+            mesh, tdim - codim, marked_entities, entity_values
         )
-        mesh.topology.create_connectivity(topology.dim - 1, tdim)
+        mesh.topology.create_connectivity(tdim - codim, 0)
         adj = adjacencylist(local_entities)
-        ft = meshtags_from_entities(mesh, tdim - 1, adj, local_values.astype(np.int32, copy=False))
-        ft.name = "Facet tags"
-    else:
-        ft = None
-
-    if has_edge_data:
-        # Permute edges from MSH to DOLFINx ordering
-        edge_type = _cpp.mesh.cell_entity_type(
-            _cpp.mesh.to_type(str(ufl_domain.ufl_cell())), tdim - 2, 0
+        et = meshtags_from_entities(
+            mesh, tdim - codim, adj, local_values.astype(np.int32, copy=False)
         )
-        gmsh_edge_perm = cell_perm_array(edge_type, num_edge_nodes)
-        marked_edges = marked_edges[:, gmsh_edge_perm]
+        et.name = key
+        dolfinx_meshtags[key] = et
 
-        local_entities, local_values = distribute_entity_data(
-            mesh, tdim - 2, marked_edges, edge_values
-        )
-        mesh.topology.create_connectivity(topology.dim - 2, tdim)
-        adj = adjacencylist(local_entities)
-        et = meshtags_from_entities(mesh, tdim - 2, adj, local_values.astype(np.int32, copy=False))
-        et.name = "Edge tags"
-    else:
-        et = None
-
-    if has_vertex_data:
-        # Permute vertices from MSH to DOLFINx ordering
-        vertex_type = _cpp.mesh.cell_entity_type(
-            _cpp.mesh.to_type(str(ufl_domain.ufl_cell())), tdim - 3, 0
-        )
-        gmsh_vertex_perm = cell_perm_array(vertex_type, num_vertex_nodes)
-        marked_vertices = marked_vertices[:, gmsh_vertex_perm]
-
-        local_entities, local_values = distribute_entity_data(
-            mesh, tdim - 3, marked_vertices, vertex_values
-        )
-        mesh.topology.create_connectivity(topology.dim - 3, tdim)
-        adj = adjacencylist(local_entities)
-        vt = meshtags_from_entities(mesh, tdim - 3, adj, local_values.astype(np.int32, copy=False))
-        vt.name = "Vertex tags"
-    else:
-        vt = None
-
-    return MeshData(mesh, ct, ft, et, vt, physical_groups)
+    return MeshData(mesh, **dolfinx_meshtags, physical_groups=physical_groups)
 
 
 def read_from_msh(
