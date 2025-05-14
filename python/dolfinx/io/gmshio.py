@@ -366,7 +366,7 @@ def model_to_mesh(
         local_entities, local_values = distribute_entity_data(
             mesh, tdim - codim, marked_entities, entity_values
         )
-        mesh.topology.create_connectivity(tdim - codim, 0)
+        mesh.topology.create_connectivity(tdim - codim, tdim)
         adj = adjacencylist(local_entities)
         et = meshtags_from_entities(
             mesh, tdim - codim, adj, local_values.astype(np.int32, copy=False)
