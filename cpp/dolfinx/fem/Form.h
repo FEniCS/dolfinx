@@ -47,11 +47,11 @@ namespace impl
 /// @brief Compute "`entity_map[entities[i]]`", with suitable handling
 /// for facets.
 /// @param entities List of integration entities. For cells this is a list of
-/// local cell indices. For facets this is a  mdspan of shape (num_facets, 2),
-/// where the first column is the local cell index, while the second column is
-/// the local facet index, relative to the cell.
+/// local cell indices. For facets this is an mdspan of shape (num_facets, 2),
+/// where the first column is the local cell index and the second column is
+/// the local facet index (relative to the cell).
 /// @param entity_map A map from an entity (local index relative to the process)
-/// to a set# of local entities in another domain.
+/// to a set of local entities in another domain.
 /// @param codim The codimension of the mapped entities. If 0, the other domain
 /// consists of cells of the input domain. If 1, the other domain consists of
 /// facets of the input domain.
@@ -71,18 +71,22 @@ std::vector<std::int32_t> compute_domain(
   mapped_entities.reserve(entities.size());
   if constexpr (entities.rank() == 1)
   {
+    // Map cells from integration mesh to argument/coefficient mesh
     std::span ents(entities.data_handle(), entities.size());
     std::ranges::transform(ents, std::back_inserter(mapped_entities),
                            [&entity_map](auto e) { return entity_map[e]; });
   }
   else if (entities.rank() == 2)
   {
+    // Map facets from integration mesh to argument/coefficient mesh
     assert(codim.value() >= 0);
     if (codim.value() == 0)
     {
+      // Codim 0 case
       for (std::size_t i = 0; i < entities.extent(0); ++i)
       {
-        // Add cell and the local facet index
+        // Local facet index is preserved in submesh creation, so we just map
+        // the cell from the integration mesh to the argument/coefficient mesh
         assert(static_cast<std::size_t>(entities(i, 0)) < entity_map.size());
         mapped_entities.insert(mapped_entities.end(),
                                {entity_map[entities(i, 0)], entities(i, 1)});
@@ -90,6 +94,8 @@ std::vector<std::int32_t> compute_domain(
     }
     else if (codim.value() == 1)
     {
+      // Codim 1 case
+
       // In this case, the entity maps take facets in (`_mesh`) to cells
       // in `mesh`, so we need to get the facet number from the (cell,
       // local_facet pair) first.
