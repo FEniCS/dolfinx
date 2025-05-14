@@ -4,33 +4,65 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-// #include "dolfinx/mesh/generation.h"
-// #include <algorithm>
-// #include <basix/finite-element.h>
-// #include <catch2/catch_template_test_macros.hpp>
-// #include <catch2/catch_test_macros.hpp>
-// #include <catch2/matchers/catch_matchers_range_equals.hpp>
-// #include <cstdint>
-// #include <dolfinx/common/IndexMap.h>
-// #include <dolfinx/graph/AdjacencyList.h>
-// #include <dolfinx/graph/partitioners.h>
-// #include <dolfinx/mesh/cell_types.h>
-// #include <dolfinx/mesh/generation.h>
-// #include <dolfinx/mesh/utils.h>
-// #include <iterator>
-// #include <mpi.h>
-// #include <numeric>
-// #include <ostream>
-// #include <vector>
+#include <algorithm>
+#include <basix/finite-element.h>
+#include <catch2/catch_template_test_macros.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_range_equals.hpp>
+#include <cstdint>
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/partitioners.h>
+#include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/generation.h>
+#include <dolfinx/mesh/utils.h>
+#include <iterator>
+#include <mpi.h>
+#include <ostream>
+#include <vector>
 
-// using namespace dolfinx;
+using namespace dolfinx;
 
+// branching graph G
+//
 //          (3)
 //           |
 //           |[2]
 //           |
 //  (1)-----(0)-----(2) ----- (4)
 //      [0]     [1]      [3]
+//
+// its dual G'
+//
+//          [2]
+//         /   \
+//        /     \
+//      [0] --- [1] --- [3]
+//
+
+TEST_CASE("dual_graph_branching_mesh")
+{
+  std::vector<mesh::CellType> celltypes{mesh::CellType::interval};
+  std::vector<std::int64_t> cells{{0, 1, 0, 2, 0, 3, 2, 4}};
+  auto [dual_graph, facets, facet_data, cell_data]
+      = mesh::build_local_dual_graph(celltypes, {cells});
+
+  CHECK(dual_graph.num_nodes() == 4);
+  CHECK(dual_graph.num_links(0) == 2);
+  CHECK_THAT(dual_graph.links(0),
+             Catch::Matchers::RangeEquals(std::array{1, 2}));
+  CHECK(dual_graph.num_links(1) == 3);
+  CHECK_THAT(dual_graph.links(1),
+             Catch::Matchers::RangeEquals(std::array{0, 2, 3}));
+
+  CHECK(dual_graph.num_links(2) == 2);
+  CHECK_THAT(dual_graph.links(2),
+             Catch::Matchers::RangeEquals(std::array{0, 1}));
+
+  CHECK(dual_graph.num_links(3) == 1);
+  CHECK_THAT(dual_graph.links(3), Catch::Matchers::RangeEquals(std::array{1}));
+}
+
 // TEST_CASE("debug")
 // {
 //   // spdlog::set_level(spdlog::level::debug);
@@ -116,28 +148,4 @@
 //   }
 //   std::cout << std::endl;
 //   // CHECK(false);
-// }
-
-// TEST_CASE("debug-dual")
-// {
-//   std::vector<mesh::CellType> celltypes{mesh::CellType::interval};
-//   std::vector<std::int64_t> cells{{0, 1, 0, 2, 0, 3, 2, 4}};
-//   /// 1. Local dual graph
-//   /// 2. Facets, defined by their sorted vertices, that are shared by only
-//   /// one cell on this rank. The logically 2D array is flattened
-//   /// (row-major).
-//   /// 3. Facet data array (2) number of columns
-//   /// 4. Attached cell (local index) to each returned facet in (2).
-//   auto [local_dual_graph, facets, facet_data, cell_data] =
-
-//       mesh::build_local_dual_graph(celltypes, {cells});
-
-//   for (int i = 0; i < local_dual_graph.num_nodes(); i++)
-//   {
-//     std::cout << "[" << i << "] ";
-//     for (auto link : local_dual_graph.links(i))
-//       std::cout << link << ", ";
-//     std::cout << "\n";
-//   }
-//   std::cout << std::endl;
 // }
