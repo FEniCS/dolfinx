@@ -344,7 +344,7 @@ def model_to_mesh(
     mesh = create_mesh(comm, cells, x[:, :gdim].astype(dtype, copy=False), ufl_domain, partitioner)
 
     codim_to_name = {0: "cell", 1: "facet", 2: "ridge", 3: "peak"}
-    dolfinx_meshtags: dict[str, MeshTags] = {}
+    dolfinx_meshtags: dict[str, typing.Optional[MeshTags]] = {}
     # Create MeshTags for facets
     topology = mesh.topology
     tdim = topology.dim
