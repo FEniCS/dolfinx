@@ -223,17 +223,17 @@ using CellReorderFunction = std::function<std::vector<std::int32_t>(
 /// TODO: offload to cpp?
 inline auto create_boundary_vertices_fn(const CellReorderFunction& reorder_fn)
 {
-  /// @brief Function that computes the process boundary vertices of a mesh
+  /// brief Function that computes the process boundary vertices of a mesh
   /// during creation.
-  /// @param[in] celltypes List of celltypes in mesh.
-  /// @param[in] doflayouts List of DOF layouts in mesh.
-  /// @param[in] ghost_owners List of ghost owner per cell per celltype.
-  /// @param[out] cells List of cells per celltpye. Reorderd during call.
-  /// @param[out] cells_v List of vertices (no higher order nodes) of cell per
+  /// param[in] celltypes List of celltypes in mesh.
+  /// param[in] doflayouts List of DOF layouts in mesh.
+  /// param[in] ghost_owners List of ghost owner per cell per celltype.
+  /// param[out] cells List of cells per celltpye. Reorderd during call.
+  /// param[out] cells_v List of vertices (no higher order nodes) of cell per
   /// celltype. Reordered during call.
-  /// @param[out] original_idx Contains the permutation applied to the cells per
+  /// param[out] original_idx Contains the permutation applied to the cells per
   /// celltype.
-  /// @return Boundary vetices (for all cell types).
+  /// return Boundary vetices (for all cell types).
   return [&](const std::vector<CellType>& celltypes,
              const std::vector<fem::ElementDofLayout>& doflayouts,
              const std::vector<std::vector<int>>& ghost_owners,
