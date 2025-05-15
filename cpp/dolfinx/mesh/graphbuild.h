@@ -64,7 +64,7 @@ build_local_dual_graph(std::span<const CellType> celltypes,
 /// from which to build the dual graph, as flattened arrays for each
 /// cell type in `celltypes`.
 /// @return The dual graph
-/// 
+///
 /// @note `cells` and `celltypes` must have the same size.
 ///
 /// @note The assumption in `build_loacl_dual_graph` on how unmatched facets are
