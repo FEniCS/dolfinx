@@ -67,7 +67,7 @@ build_local_dual_graph(std::span<const CellType> celltypes,
 ///
 /// @note `cells` and `celltypes` must have the same size.
 ///
-/// @note The assumption in `build_loacl_dual_graph` on how unmatched facets are
+/// @note The assumption in `build_local_dual_graph` on how unmatched facets are
 /// identified will not allow for T-joints (or any other higher branching)
 /// across process boundaries to be picked up by the dual graph. If the joints
 /// do not live on the process boundary this is not a problem.
