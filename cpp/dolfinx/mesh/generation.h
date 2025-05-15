@@ -269,14 +269,12 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
   {
     auto [x, cells] = impl::create_interval_cells<T>(p, n);
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                       {x.size(), 1}, partitioner,
-                       create_boundary_vertices_fn(reorder_fn));
+                       {x.size(), 1}, partitioner, reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, 1}, partitioner,
-                       create_boundary_vertices_fn(reorder_fn));
+                       std::vector<T>{}, {0, 1}, partitioner, reorder_fn);
   }
 }
 
@@ -400,8 +398,7 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3}, partitioner,
-                     create_boundary_vertices_fn(reorder_fn));
+                     {x.size() / 3, 3}, partitioner, reorder_fn);
 }
 
 template <std::floating_point T>
@@ -446,8 +443,7 @@ build_hex(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3}, partitioner,
-                     create_boundary_vertices_fn(reorder_fn));
+                     {x.size() / 3, 3}, partitioner, reorder_fn);
 }
 
 template <std::floating_point T>
@@ -495,8 +491,7 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3}, partitioner,
-                     create_boundary_vertices_fn(reorder_fn));
+                     {x.size() / 3, 3}, partitioner, reorder_fn);
 }
 
 template <std::floating_point T>
@@ -646,14 +641,12 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     }
 
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                       {x.size() / 2, 2}, partitioner,
-                       create_boundary_vertices_fn(reorder_fn));
+                       {x.size() / 2, 2}, partitioner, reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, 2}, partitioner,
-                       create_boundary_vertices_fn(reorder_fn));
+                       std::vector<T>{}, {0, 2}, partitioner, reorder_fn);
   }
 }
 
@@ -697,14 +690,12 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<T, 2>, 2> p,
     }
 
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                       {x.size() / 2, 2}, partitioner,
-                       create_boundary_vertices_fn(reorder_fn));
+                       {x.size() / 2, 2}, partitioner, reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, 2}, partitioner,
-                       create_boundary_vertices_fn(reorder_fn));
+                       std::vector<T>{}, {0, 2}, partitioner, reorder_fn);
   }
 }
 } // namespace impl

@@ -215,34 +215,25 @@ using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
 using CellReorderFunction = std::function<std::vector<std::int32_t>(
     const graph::AdjacencyList<std::int32_t>&)>;
 
-/// @brief Function that computes the process boundary vertices of a mesh during
-/// creation.
-/// @param[in] celltypes List of celltypes in mesh.
-/// @param[in] doflayouts List of DOF layouts in mesh.
-/// @param[in] ghost_owners List of ghost owner per cell per celltype.
-/// @param[out] cells List of cells per celltpye. Reorderd during call.
-/// @param[out] cells_v List of vertices (no higher order nodes) of cell per
-/// celltype. Reordered during call.
-/// @param[out] original_idx Contains the permutation applied to the cells per
-/// celltype.
-/// @return Boundary vetices (for all cell types).
-using BoundaryVertexFunction = std::function<std::vector<std::int64_t>(
-    const std::vector<CellType>& celltypes,
-    const std::vector<fem::ElementDofLayout>& doflayouts,
-    const std::vector<std::vector<int>>& ghost_owners,
-    std::vector<std::vector<std::int64_t>>& cells,
-    std::vector<std::vector<std::int64_t>>& cells_v,
-    std::vector<std::vector<std::int64_t>>& original_idx)>;
-
 /// @brief Creates the default boundary vertices routine for a given reorder
 /// function.
 /// @param[in] reorder_fn A cell reorder funciton which will be applied to
 /// reorder the cells.
 /// @return Boundary vertices function which can be passed to `create_mesh`.
 /// TODO: offload to cpp?
-inline BoundaryVertexFunction
-create_boundary_vertices_fn(const CellReorderFunction& reorder_fn)
+inline auto create_boundary_vertices_fn(const CellReorderFunction& reorder_fn)
 {
+  /// @brief Function that computes the process boundary vertices of a mesh
+  /// during creation.
+  /// @param[in] celltypes List of celltypes in mesh.
+  /// @param[in] doflayouts List of DOF layouts in mesh.
+  /// @param[in] ghost_owners List of ghost owner per cell per celltype.
+  /// @param[out] cells List of cells per celltpye. Reorderd during call.
+  /// @param[out] cells_v List of vertices (no higher order nodes) of cell per
+  /// celltype. Reordered during call.
+  /// @param[out] original_idx Contains the permutation applied to the cells per
+  /// celltype.
+  /// @return Boundary vetices (for all cell types).
   return [&](const std::vector<CellType>& celltypes,
              const std::vector<fem::ElementDofLayout>& doflayouts,
              const std::vector<std::vector<int>>& ghost_owners,
@@ -1021,8 +1012,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
-    const BoundaryVertexFunction& boundary_v_fn
-    = create_boundary_vertices_fn(graph::reorder_gps))
+    const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   assert(cells.size() == elements.size());
   std::vector<CellType> celltypes;
@@ -1126,6 +1116,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                  cells1_v[i].size());
   }
 
+  auto boundary_v_fn = create_boundary_vertices_fn(reorder_fn);
   const std::vector<std::int64_t> boundary_v = boundary_v_fn(
       celltypes, doflayouts, ghost_owners, cells1, cells1_v, original_idx1);
 
@@ -1224,11 +1215,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
-    const BoundaryVertexFunction& boundary_v_fn
-    = create_boundary_vertices_fn(graph::reorder_gps))
+    const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
-                     commg, x, xshape, partitioner, boundary_v_fn);
+                     commg, x, xshape, partitioner, reorder_fn);
 }
 
 /// @brief Create a distributed mesh from mesh data using the default
