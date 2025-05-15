@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Igor Baratta
+// Copyright (C) 2021-2025 Igor Baratta and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -7,11 +7,13 @@
 #pragma once
 
 #include <algorithm>
+#include <bit>
 #include <cassert>
 #include <concepts>
 #include <cstdint>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <numeric>
 #include <span>
 #include <type_traits>
@@ -20,6 +22,34 @@
 
 namespace dolfinx
 {
+
+struct __unsigned_projection
+{
+  // Transforms the projected value to an unsigned int (if signed), while
+  // maintaining relative order by
+  //    x ↦ x + |std::numeric_limits<I>::min()|
+  template <std::signed_integral T>
+  constexpr std::make_unsigned_t<T> operator()(T e) const noexcept
+  {
+    using uT = std::make_unsigned_t<T>;
+
+    // Assert binary structure for bit shift
+    static_assert(static_cast<uT>(std::numeric_limits<T>::min())
+                      + static_cast<uT>(std::numeric_limits<T>::max())
+                  == static_cast<uT>(T(-1)));
+    static_assert(std::numeric_limits<uT>::digits
+                  == std::numeric_limits<T>::digits + 1);
+    static_assert(std::bit_cast<uT>(std::numeric_limits<T>::min())
+                  == (uT(1) << (sizeof(T) * 8 - 1)));
+
+    return std::bit_cast<uT>(std::forward<T>(e))
+           ^ (uT(1) << (sizeof(T) * 8 - 1));
+  }
+};
+
+/// Projection from signed to signed int
+inline constexpr __unsigned_projection unsigned_projection{};
+
 struct __radix_sort
 {
   /// @brief Sort a range with radix sorting algorithm. The bucket size
@@ -46,10 +76,11 @@ struct __radix_sort
   /// @tparam BITS The number of bits to sort at a time.
   /// @param[in, out] range The range to sort.
   /// @param[in] P Element projection.
-  template <
-      std::ranges::random_access_range R, typename P = std::identity,
-      std::remove_cvref_t<std::invoke_result_t<P, std::iter_value_t<R>>> BITS
-      = 8>
+  template <std::ranges::random_access_range R, typename P = std::identity,
+            std::make_unsigned_t<std::remove_cvref_t<
+                std::invoke_result_t<P, std::iter_value_t<R>>>>
+                BITS
+            = 8>
     requires std::integral<decltype(BITS)>
   constexpr void operator()(R&& range, P proj = {}) const
   {
@@ -58,19 +89,36 @@ struct __radix_sort
 
     // index type (if no projection is provided it holds I == T)
     using I = std::remove_cvref_t<std::invoke_result_t<P, T>>;
+    using uI = std::make_unsigned_t<I>;
+
+    if constexpr (!std::is_same_v<uI, I>)
+    {
+      __radix_sort()(std::forward<R>(range), [&](const T& e) -> uI
+                     { return unsigned_projection(proj(e)); });
+      return;
+    }
 
     if (range.size() <= 1)
       return;
 
-    T max_value = proj(*std::ranges::max_element(range, std::less{}, proj));
+    uI max_value = proj(*std::ranges::max_element(range, std::less{}, proj));
 
     // Sort N bits at a time
-    constexpr I bucket_size = 1 << BITS;
-    T mask = (T(1) << BITS) - 1;
+    constexpr uI bucket_size = 1 << BITS;
+    uI mask = (uI(1) << BITS) - 1;
 
     // Compute number of iterations, most significant digit (N bits) of
     // maxvalue
     I its = 0;
+
+    // optimize for case where all first bits are set - then order will not
+    // depend on it
+    bool all_first_bit = std::ranges::all_of(
+        range, [&](const auto& e)
+        { return proj(e) & (uI(1) << (sizeof(uI) * 8 - 1)); });
+    if (all_first_bit)
+      max_value = max_value & ~(uI(1) << (sizeof(uI) * 8 - 1));
+
     while (max_value)
     {
       max_value >>= BITS;
@@ -81,7 +129,7 @@ struct __radix_sort
     std::array<I, bucket_size> counter;
     std::array<I, bucket_size + 1> offset;
 
-    I mask_offset = 0;
+    uI mask_offset = 0;
     std::vector<T> buffer(range.size());
     std::span<T> current_perm = range;
     std::span<T> next_perm = buffer;
@@ -100,8 +148,8 @@ struct __radix_sort
                        std::next(offset.begin()));
       for (const auto& c : current_perm)
       {
-        I bucket = (proj(c) & mask) >> mask_offset;
-        I new_pos = offset[bucket + 1] - counter[bucket];
+        uI bucket = (proj(c) & mask) >> mask_offset;
+        uI new_pos = offset[bucket + 1] - counter[bucket];
         next_perm[new_pos] = c;
         counter[bucket]--;
       }
