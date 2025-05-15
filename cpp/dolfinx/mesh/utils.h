@@ -1205,7 +1205,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// @param[in] xshape Shape of the `x` data.
 /// @param[in] partitioner Graph partitioner that computes the owning
 /// rank for each cell. If not callable, cells are not redistributed.
-/// @param[in] b Function that reorders (locally) cells that
+/// @param[in] reorder_fn Function that reorders (locally) cells that
 /// are owned by this process.
 /// @return A mesh distributed on the communicator `comm`.
 template <typename U>
