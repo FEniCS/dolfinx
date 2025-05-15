@@ -55,9 +55,9 @@ add_executable(
   common/sort.cpp
   fem/form.cpp
   fem/functionspace.cpp
+  mesh/branching_manifold.cpp
   mesh/distributed_mesh.cpp
   mesh/generation.cpp
-  mesh/manifold.cpp
   mesh/read_named_meshtags.cpp
   mesh/refinement/interval.cpp
   mesh/refinement/option.cpp
