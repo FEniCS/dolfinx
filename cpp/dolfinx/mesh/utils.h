@@ -1203,8 +1203,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// the process offset  on`comm`, The offset  is the sum of `x` rows on
 /// all processed with a lower rank than the caller.
 /// @param[in] xshape Shape of the `x` data.
-/// @param[in] boundary_v_fn Boundary vertex computation callback, see
-/// `BoundaryVertexFunction` and `create_boundary_vertices_fn`.
+/// @param[in] partitioner Graph partitioner that computes the owning
+/// rank for each cell. If not callable, cells are not redistributed.
 /// @param[in] b Function that reorders (locally) cells that
 /// are owned by this process.
 /// @return A mesh distributed on the communicator `comm`.
