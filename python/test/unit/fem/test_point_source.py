@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx import default_scalar_type, fem, mesh
+from dolfinx import fem, mesh
 
 
 @pytest.mark.parametrize(
@@ -26,29 +26,31 @@ from dolfinx import default_scalar_type, fem, mesh
     ],
 )
 @pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
-def test_point_source_rank_0(cell_type, ghost_mode):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_point_source_rank_0(cell_type, ghost_mode, dtype):
     comm = MPI.COMM_WORLD
+    rdtype = np.real(dtype(0)).dtype
 
     msh = None
     cell_dim = mesh.cell_dim(cell_type)
     if cell_dim == 1:
-        msh = mesh.create_unit_interval(comm, 4, dtype=default_scalar_type, ghost_mode=ghost_mode)
+        msh = mesh.create_unit_interval(comm, 4, dtype=rdtype, ghost_mode=ghost_mode)
     elif cell_dim == 2:
         msh = mesh.create_unit_square(
-            comm, 4, 4, cell_type=cell_type, dtype=default_scalar_type, ghost_mode=ghost_mode
+            comm, 4, 4, cell_type=cell_type, dtype=rdtype, ghost_mode=ghost_mode
         )
     elif cell_dim == 3:
         msh = mesh.create_unit_cube(
-            comm, 4, 4, 4, cell_type=cell_type, dtype=default_scalar_type, ghost_mode=ghost_mode
+            comm, 4, 4, 4, cell_type=cell_type, dtype=rdtype, ghost_mode=ghost_mode
         )
 
     def check(form, coordinate_range, weighted=False):
         a, b = coordinate_range
-        weights = np.arange(a, b) if weighted else np.ones(b - a, dtype=default_scalar_type)
+        weights = np.arange(a, b, dtype=rdtype) if weighted else np.ones(b - a, dtype=rdtype)
 
         expected_value_l = np.sum(msh.geometry.x[a:b, 0] * weights)
         value_l = fem.assemble_scalar(form)
-        assert expected_value_l == pytest.approx(value_l)
+        assert expected_value_l == pytest.approx(value_l, rel=1e2 * np.finfo(dtype).eps)
 
         expected_value = comm.allreduce(expected_value_l)
         value = comm.allreduce(value_l)
@@ -58,7 +60,7 @@ def test_point_source_rank_0(cell_type, ghost_mode):
     x = ufl.SpatialCoordinate(msh)
 
     # Full domain
-    check(fem.form(x[0] * ufl.dP), (0, num_vertices))
+    check(fem.form(x[0] * ufl.dP, dtype=dtype), (0, num_vertices))
 
     # Split domain into first half of vertices (1) and second half of vertices (2)
     vertices = np.arange(0, msh.topology.index_map(0).size_local, dtype=np.int32)
@@ -67,18 +69,18 @@ def test_point_source_rank_0(cell_type, ghost_mode):
     meshtags = mesh.meshtags(msh, 0, vertices, tags)
     dP = ufl.Measure("dP", domain=msh, subdomain_data=meshtags)
 
-    check(fem.form(x[0] * dP(1)), (0, num_vertices // 2))
-    check(fem.form(x[0] * dP(2)), (num_vertices // 2, num_vertices))
-    check(fem.form(x[0] * (dP(1) + dP(2))), (0, num_vertices))
+    check(fem.form(x[0] * dP(1), dtype=dtype), (0, num_vertices // 2))
+    check(fem.form(x[0] * dP(2), dtype=dtype), (num_vertices // 2, num_vertices))
+    check(fem.form(x[0] * (dP(1) + dP(2)), dtype=dtype), (0, num_vertices))
 
     V = fem.functionspace(msh, ("P", 1))
-    u = fem.Function(V)
-    u.x.array[:] = np.arange(0, u.x.array.size)
+    u = fem.Function(V, dtype=dtype)
+    u.x.array[:] = np.arange(0, u.x.array.size, dtype=dtype)
 
-    check(fem.form(u * x[0] * ufl.dP), (0, num_vertices), weighted=True)
-    check(fem.form(u * x[0] * dP(1)), (0, num_vertices // 2), weighted=True)
-    check(fem.form(u * x[0] * dP(2)), (num_vertices // 2, num_vertices), weighted=True)
-    check(fem.form(u * x[0] * (dP(1) + dP(2))), (0, num_vertices), weighted=True)
+    check(fem.form(u * x[0] * ufl.dP, dtype=dtype), (0, num_vertices), weighted=True)
+    check(fem.form(u * x[0] * dP(1), dtype=dtype), (0, num_vertices // 2), weighted=True)
+    check(fem.form(u * x[0] * dP(2), dtype=dtype), (num_vertices // 2, num_vertices), weighted=True)
+    check(fem.form(u * x[0] * (dP(1) + dP(2)), dtype=dtype), (0, num_vertices), weighted=True)
 
 
 @pytest.mark.parametrize(
@@ -94,40 +96,44 @@ def test_point_source_rank_0(cell_type, ghost_mode):
     ],
 )
 @pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
-def test_point_source_rank_1(cell_type, ghost_mode):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_point_source_rank_1(cell_type, ghost_mode, dtype):
     comm = MPI.COMM_WORLD
+    rdtype = np.real(dtype(0)).dtype
 
     msh = None
     cell_dim = mesh.cell_dim(cell_type)
     if cell_dim == 1:
-        msh = mesh.create_unit_interval(comm, 4, dtype=default_scalar_type, ghost_mode=ghost_mode)
+        msh = mesh.create_unit_interval(comm, 4, ghost_mode=ghost_mode, dtype=rdtype)
     elif cell_dim == 2:
         msh = mesh.create_unit_square(
-            comm, 4, 4, cell_type=cell_type, dtype=default_scalar_type, ghost_mode=ghost_mode
+            comm, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
         )
     elif cell_dim == 3:
         msh = mesh.create_unit_cube(
-            comm, 4, 4, 4, cell_type=cell_type, dtype=default_scalar_type, ghost_mode=ghost_mode
+            comm, 4, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
         )
 
     num_vertices = msh.topology.index_map(0).size_local
 
     def check(form, coordinate_range, weighted=False):
         a, b = coordinate_range
-        weights = np.arange(a, b) if weighted else np.ones(b - a, dtype=default_scalar_type)
-        expected_value_l = np.zeros(num_vertices)
+        weights = np.arange(a, b, dtype=rdtype) if weighted else np.ones(b - a, dtype=rdtype)
+        expected_value_l = np.zeros(num_vertices, dtype=rdtype)
         expected_value_l[a:b] = msh.geometry.x[a:b, 0] * weights
         value_l = fem.assemble_vector(form)
-        equal_l = np.allclose(expected_value_l, value_l.array[:num_vertices])
+        equal_l = np.allclose(
+            expected_value_l, np.real(value_l.array[:num_vertices]), atol=1e3 * np.finfo(rdtype).eps
+        )
         assert equal_l
         assert comm.allreduce(equal_l, MPI.BAND)
 
     x = ufl.SpatialCoordinate(msh)
     V = fem.functionspace(msh, ("P", 1))
-    v = ufl.TestFunction(V)
+    v = ufl.conj(ufl.TestFunction(V))
 
     # Full domain
-    check(fem.form(x[0] * v * ufl.dP), (0, num_vertices))
+    check(fem.form(x[0] * v * ufl.dP, dtype=dtype), (0, num_vertices))
 
     # Split domain into first half of vertices (1) and second half of vertices (2)
     vertices = np.arange(0, msh.topology.index_map(0).size_local, dtype=np.int32)
@@ -136,15 +142,19 @@ def test_point_source_rank_1(cell_type, ghost_mode):
     meshtags = mesh.meshtags(msh, 0, vertices, tags)
     dP = ufl.Measure("dP", domain=msh, subdomain_data=meshtags)
 
-    check(fem.form(x[0] * v * dP(1)), (0, num_vertices // 2))
-    check(fem.form(x[0] * v * dP(2)), (num_vertices // 2, num_vertices))
-    check(fem.form(x[0] * v * (dP(1) + dP(2))), (0, num_vertices))
+    check(fem.form(x[0] * v * dP(1), dtype=dtype), (0, num_vertices // 2))
+    check(fem.form(x[0] * v * dP(2), dtype=dtype), (num_vertices // 2, num_vertices))
+    check(fem.form(x[0] * v * (dP(1) + dP(2)), dtype=dtype), (0, num_vertices))
 
     V = fem.functionspace(msh, ("P", 1))
-    u = fem.Function(V)
+    u = fem.Function(V, dtype=dtype)
     u.x.array[:] = np.arange(u.x.array.size)
 
-    check(fem.form(u * x[0] * v * ufl.dP), (0, num_vertices), weighted=True)
-    check(fem.form(u * x[0] * v * dP(1)), (0, num_vertices // 2), weighted=True)
-    check(fem.form(u * x[0] * v * dP(2)), (num_vertices // 2, num_vertices), weighted=True)
-    check(fem.form(u * x[0] * v * (dP(1) + dP(2))), (0, num_vertices), weighted=True)
+    check(fem.form(u * x[0] * v * ufl.dP, dtype=dtype), (0, num_vertices), weighted=True)
+    check(fem.form(u * x[0] * v * dP(1), dtype=dtype), (0, num_vertices // 2), weighted=True)
+    check(
+        fem.form(u * x[0] * v * dP(2), dtype=dtype),
+        (num_vertices // 2, num_vertices),
+        weighted=True,
+    )
+    check(fem.form(u * x[0] * v * (dP(1) + dP(2)), dtype=dtype), (0, num_vertices), weighted=True)
