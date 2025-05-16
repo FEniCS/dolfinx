@@ -781,7 +781,7 @@ Form<T, U> create_form_factory(
         // pack for a range of vertices a flattened list of cell index c_i and
         // local vertex index l_i:
         //  [c_0, l_0, ..., c_n, l_n]
-        auto get_cells_and_vertices = [v_to_c](auto vertices_range)
+        auto get_cells_and_vertices = [v_to_c, c_to_v](auto vertices_range)
         {
           std::vector<std::int32_t> cell_and_vertex;
           cell_and_vertex.reserve(2 * vertices_range.size());
