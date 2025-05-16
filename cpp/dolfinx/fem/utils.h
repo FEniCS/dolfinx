@@ -86,6 +86,40 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
 
   return cell_local_facet_pairs;
 }
+
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
+using kern_t = std::function<void(T*, const T*, const T*, const U*, const int*,
+                                  const std::uint8_t*, void*)>;
+
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
+constexpr kern_t<T> extract_kernel(const ufcx_integral* integral)
+{
+  kern_t<T, U> kernel = nullptr;
+
+  if constexpr (std::is_same_v<T, float>)
+    kernel = integral->tabulate_tensor_float32;
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
+  else if constexpr (std::is_same_v<T, std::complex<float>>)
+  {
+    kernel = reinterpret_cast<void (*)(
+        T*, const T*, const T*, const scalar_value_t<T>*, const int*,
+        const unsigned char*, void*)>(integral->tabulate_tensor_complex64);
+  }
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
+  else if constexpr (std::is_same_v<T, double>)
+    kernel = integral->tabulate_tensor_float64;
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
+  else if constexpr (std::is_same_v<T, std::complex<double>>)
+  {
+    kernel = reinterpret_cast<void (*)(
+        T*, const T*, const T*, const scalar_value_t<T>*, const int*,
+        const unsigned char*, void*)>(integral->tabulate_tensor_complex128);
+  }
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
+
+  assert(k);
+  return kernel;
+}
 } // namespace impl
 
 /// @brief Given an integral type and a set of entities, computes and
@@ -455,8 +489,6 @@ Form<T, U> create_form_factory(
 
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
-  using kern_t = std::function<void(T*, const T*, const T*, const U*,
-                                    const int*, const std::uint8_t*, void*)>;
   std::map<std::tuple<IntegralType, int, int>, integral_data<T, U>> integrals;
 
   auto check_geometry_hash
@@ -499,30 +531,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        kern_t k = nullptr;
-        if constexpr (std::is_same_v<T, float>)
-          k = integral->tabulate_tensor_float32;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, std::complex<float>>)
-        {
-          k = reinterpret_cast<void (*)(T*, const T*, const T*,
-                                        const scalar_value_t<T>*, const int*,
-                                        const unsigned char*, void*)>(
-              integral->tabulate_tensor_complex64);
-        }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, double>)
-          k = integral->tabulate_tensor_float64;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, std::complex<double>>)
-        {
-          k = reinterpret_cast<void (*)(T*, const T*, const T*,
-                                        const scalar_value_t<T>*, const int*,
-                                        const unsigned char*, void*)>(
-              integral->tabulate_tensor_complex128);
-        }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-
+        impl::kern_t k = impl::extract_kernel<T>(integral);
         if (!k)
         {
           throw std::runtime_error(
@@ -586,30 +595,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        kern_t k = nullptr;
-        if constexpr (std::is_same_v<T, float>)
-          k = integral->tabulate_tensor_float32;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, std::complex<float>>)
-        {
-          k = reinterpret_cast<void (*)(T*, const T*, const T*,
-                                        const scalar_value_t<T>*, const int*,
-                                        const unsigned char*, void*)>(
-              integral->tabulate_tensor_complex64);
-        }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, double>)
-          k = integral->tabulate_tensor_float64;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, std::complex<double>>)
-        {
-          k = reinterpret_cast<void (*)(T*, const T*, const T*,
-                                        const scalar_value_t<T>*, const int*,
-                                        const unsigned char*, void*)>(
-              integral->tabulate_tensor_complex128);
-        }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-        assert(k);
+        impl::kern_t<T> k = impl::extract_kernel<T>(integral);
 
         // Build list of entities to assembler over
         const std::vector bfacets = mesh::exterior_facet_indices(*topology);
@@ -694,29 +680,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        kern_t k = nullptr;
-        if constexpr (std::is_same_v<T, float>)
-          k = integral->tabulate_tensor_float32;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, std::complex<float>>)
-        {
-          k = reinterpret_cast<void (*)(T*, const T*, const T*,
-                                        const scalar_value_t<T>*, const int*,
-                                        const unsigned char*, void*)>(
-              integral->tabulate_tensor_complex64);
-        }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, double>)
-          k = integral->tabulate_tensor_float64;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, std::complex<double>>)
-        {
-          k = reinterpret_cast<void (*)(T*, const T*, const T*,
-                                        const scalar_value_t<T>*, const int*,
-                                        const unsigned char*, void*)>(
-              integral->tabulate_tensor_complex128);
-        }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
+        impl::kern_t<T> k = impl::extract_kernel<T>(integral);
         assert(k);
 
         // Build list of entities to assembler over
@@ -795,29 +759,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        kern_t k = nullptr;
-        if constexpr (std::is_same_v<T, float>)
-          k = integral->tabulate_tensor_float32;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, std::complex<float>>)
-        {
-          k = reinterpret_cast<void (*)(T*, const T*, const T*,
-                                        const scalar_value_t<T>*, const int*,
-                                        const unsigned char*, void*)>(
-              integral->tabulate_tensor_complex64);
-        }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, double>)
-          k = integral->tabulate_tensor_float64;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, std::complex<double>>)
-        {
-          k = reinterpret_cast<void (*)(T*, const T*, const T*,
-                                        const scalar_value_t<T>*, const int*,
-                                        const unsigned char*, void*)>(
-              integral->tabulate_tensor_complex128);
-        }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
+        impl::kern_t<T> k = impl::extract_kernel<T>(integral);
         assert(k);
 
         // Build list of entities to assembler over
