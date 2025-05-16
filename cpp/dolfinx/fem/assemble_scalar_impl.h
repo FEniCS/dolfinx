@@ -280,8 +280,8 @@ T assemble_scalar(
         cell_and_vertex(data.data(), data.size() / 2, 2);
 
     value += impl::assemble_vertices(
-        x_dofmap, x, cell_and_vertex,
-        fn, constants, md::mdspan(coeffs.data(), data.size() / 2, cstride));
+        x_dofmap, x, cell_and_vertex, fn, constants,
+        md::mdspan(coeffs.data(), data.size() / 2, cstride));
   }
 
   return value;
