@@ -541,7 +541,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        impl::kern_t k = impl::extract_kernel<T>(integral);
+        impl::kern_t<T, U> k = impl::extract_kernel<T>(integral);
         if (!k)
         {
           throw std::runtime_error(
@@ -605,7 +605,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        impl::kern_t<T> k = impl::extract_kernel<T>(integral);
+        impl::kern_t<T, U> k = impl::extract_kernel<T>(integral);
 
         // Build list of entities to assembler over
         const std::vector bfacets = mesh::exterior_facet_indices(*topology);
@@ -690,7 +690,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        impl::kern_t<T> k = impl::extract_kernel<T>(integral);
+        impl::kern_t<T, U> k = impl::extract_kernel<T>(integral);
         assert(k);
 
         // Build list of entities to assembler over
@@ -769,7 +769,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        impl::kern_t<T> k = impl::extract_kernel<T>(integral);
+        impl::kern_t<T, U> k = impl::extract_kernel<T>(integral);
         assert(k);
 
         // Build list of entities to assembler over
