@@ -79,8 +79,8 @@ class MeshData(typing.NamedTuple):
         mesh: Mesh.
         cell_tags: MeshTags for cells.
         facet_tags: MeshTags for facets (codim 1).
-        ridge_tags: MeshTags for edges (codim 2).
-        peak_tags: MeshTags for vertices (codim 3).
+        ridge_tags: MeshTags for ridges (codim 2).
+        peak_tags: MeshTags for peaks (codim 3).
         physical_groups: Physical groups in the mesh, where the key
             is the physical name and the value is a tuple with the
             dimension and tag.
