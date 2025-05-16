@@ -20,6 +20,7 @@
 #include <array>
 #include <concepts>
 #include <cstddef>
+#include <dolfinx/common/defines.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Topology.h>
@@ -98,24 +99,22 @@ constexpr kern_t<T> extract_kernel(const ufcx_integral* integral)
 
   if constexpr (std::is_same_v<T, float>)
     kernel = integral->tabulate_tensor_float32;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-  else if constexpr (std::is_same_v<T, std::complex<float>>)
+  else if constexpr (has_complex_ufcx_kernels()
+                     && std::is_same_v<T, std::complex<float>>)
   {
     kernel = reinterpret_cast<void (*)(
         T*, const T*, const T*, const scalar_value_t<T>*, const int*,
         const unsigned char*, void*)>(integral->tabulate_tensor_complex64);
   }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
   else if constexpr (std::is_same_v<T, double>)
     kernel = integral->tabulate_tensor_float64;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-  else if constexpr (std::is_same_v<T, std::complex<double>>)
+  else if constexpr (has_complex_ufcx_kernels()
+                     && std::is_same_v<T, std::complex<double>>)
   {
     kernel = reinterpret_cast<void (*)(
         T*, const T*, const T*, const scalar_value_t<T>*, const int*,
         const unsigned char*, void*)>(integral->tabulate_tensor_complex128);
   }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
 
   assert(k);
   return kernel;
