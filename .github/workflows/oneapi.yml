@@ -55,21 +55,21 @@ jobs:
           conda info
           conda list
 
-      - name: Install UFL/Basix/FFCx
-        run: |
-          uv pip install --no-build-isolation git+${{ env.ufl_ref }}
-          uv pip install --no-build-isolation git+${{ env.basix_ref }}
-          uv pip install --no-build-isolation git+${{ env.ffcx_ref }}
+      - name: Install Basix
+        run: uv pip install --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
 
-      - name: Debug
+      - name: Clone FFCx
+        uses: actions/checkout@v4
+        with:
+          path: ./ffcx
+          repository: ${{ env.ffcx_repository }}
+          ref: ${{ env.ffcx_ref }}
+
+      - name: Install UFCx C interface
         run: |
-          uv pip list
-          python -c "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_include_path())"
-      # - name: Install UFCx C interface
-      #   run: |
-      #     cmake -G Ninja -B ufcx-build-dir -S ffcx/cmake/
-      #     cmake --build ufcx-build-dir
-      #     cmake --install ufcx-build-dir
+          cmake -G Ninja -B ufcx-build-dir -S ffcx/cmake/
+          cmake --build ufcx-build-dir
+          cmake --install ufcx-build-dir
 
       - name: Configure DOLFINx C++
         run: |
@@ -79,6 +79,11 @@ jobs:
         run: |
           cmake --build build
           cmake --install build
+
+      - name: Install UFL and FFCx modules
+        run: |
+          uv pip install --no-build-isolation git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
+          uv pip install --no-build-isolation ffcx/
 
       - name: Build and run DOLFINx C++ unit tests (serial and MPI)
         run: |

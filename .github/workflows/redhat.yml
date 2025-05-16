@@ -33,9 +33,9 @@ jobs:
 
       - name: Install FEniCS Python components
         run: |
-          python3 -m pip install git+${{ env.ufl_ref }}
-          python3 -m pip install git+${{ env.basix_ref }}
-          python3 -m pip install git+${{ env.ffcx_ref }}
+          pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
+          pip install git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
