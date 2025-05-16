@@ -907,7 +907,8 @@ void assemble_interior_facets(
   }
 }
 
-/// @brief Execute kernel over a set of vertices and accumulate result in vector.
+/// @brief Execute kernel over a set of vertices and accumulate result in
+/// vector.
 ///
 /// @tparam T  Scalar type
 /// @tparam _bs Block size of the form test function dof map. If less
