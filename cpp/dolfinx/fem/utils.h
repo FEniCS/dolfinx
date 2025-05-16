@@ -89,35 +89,34 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
 }
 
 template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
+using kern_c_t = void (*)(T*, const T*, const T*, const U*, const int*,
+                          const std::uint8_t*, void*);
+
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
 using kern_t = std::function<void(T*, const T*, const T*, const U*, const int*,
                                   const std::uint8_t*, void*)>;
 
 template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
-constexpr kern_t<T> extract_kernel(const ufcx_integral* integral)
+constexpr kern_t<T, U> extract_kernel(const ufcx_integral* integral)
 {
-  kern_t<T, U> kernel = nullptr;
-
   if constexpr (std::is_same_v<T, float>)
-    kernel = integral->tabulate_tensor_float32;
-  else if constexpr (has_complex_ufcx_kernels()
-                     && std::is_same_v<T, std::complex<float>>)
+    return integral->tabulate_tensor_float32;
+  else if constexpr (std::is_same_v<T, std::complex<float>>
+                     && has_complex_ufcx_kernels())
   {
-    kernel = reinterpret_cast<void (*)(
-        T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-        const unsigned char*, void*)>(integral->tabulate_tensor_complex64);
+    return reinterpret_cast<kern_c_t<T, U>>(
+        integral->tabulate_tensor_complex64);
   }
   else if constexpr (std::is_same_v<T, double>)
-    kernel = integral->tabulate_tensor_float64;
-  else if constexpr (has_complex_ufcx_kernels()
-                     && std::is_same_v<T, std::complex<double>>)
+    return integral->tabulate_tensor_float64;
+  else if constexpr (std::is_same_v<T, std::complex<double>>
+                     && has_complex_ufcx_kernels())
   {
-    kernel = reinterpret_cast<void (*)(
-        T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-        const unsigned char*, void*)>(integral->tabulate_tensor_complex128);
+    return reinterpret_cast<kern_c_t<T, U>>(
+        integral->tabulate_tensor_complex128);
   }
-
-  assert(k);
-  return kernel;
+  else
+    throw std::runtime_error("Could not extract kernel from ufcx integral.");
 }
 } // namespace impl
 
