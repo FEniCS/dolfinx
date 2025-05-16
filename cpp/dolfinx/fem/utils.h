@@ -29,6 +29,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <set>
 #include <span>
 #include <stdexcept>
@@ -776,32 +777,44 @@ Form<T, U> create_form_factory(
         assert(v_to_c);
         auto c_to_v = topology->connectivity(tdim, 0);
         assert(c_to_v);
+
+        // pack for a range of vertices a flattened list of cell index c_i and
+        // local vertex index l_i:
+        //  [c_0, l_0, ..., c_n, l_n]
+        auto get_cells_and_vertices = [v_to_c](auto vertices_range)
+        {
+          std::vector<std::int32_t> cell_and_vertex;
+          cell_and_vertex.reserve(2 * vertices_range.size());
+          for (std::int32_t vertex : vertices_range)
+          {
+            auto cells = v_to_c->links(vertex);
+            assert(cells.size() > 0);
+
+            // Use first cell for assembly over by default
+            // TODO: controllability?
+            std::int32_t cell = cells[0];
+            cell_and_vertex.push_back(cell);
+
+            // Find local index of vertex within cell
+            auto cell_vertices = c_to_v->links(cell);
+            auto it = std::ranges::find(cell_vertices, vertex);
+            assert(it != cell_vertices.end());
+            std::int32_t local_index = std::distance(cell_vertices.begin(), it);
+            cell_and_vertex.push_back(local_index);
+          }
+          assert(cell_and_vertex.size() == 2 * vertices_range.size());
+          return cell_and_vertex;
+        };
+
         if (id == -1)
         {
           // Default vertex kernel operates on all (owned) vertices
           std::int32_t num_vertices = topology->index_map(0)->size_local();
-          std::vector<std::int32_t> default_vertices;
-          default_vertices.reserve(2 * num_vertices);
-          for (std::int32_t v = 0; v < num_vertices; v++)
-          {
-            auto cells = v_to_c->links(v);
-            assert(cells.size() > 0);
-
-            // Use first cell for assembly over by default
-            // TODO: user control in general for this?
-            std::int32_t cell = cells[0];
-            default_vertices.push_back(cell);
-
-            // Find local index of vertex within cell
-            auto cell_vertices = c_to_v->links(cell);
-            auto it = std::ranges::find(cell_vertices, v);
-            assert(it != cell_vertices.end());
-            std::int32_t local_index = std::distance(cell_vertices.begin(), it);
-            default_vertices.push_back(local_index);
-          }
+          std::vector<std::int32_t> cells_and_vertices = get_cells_and_vertices(
+              std::ranges::views::iota(0, num_vertices));
 
           integrals.insert({{IntegralType::vertex, id, form_idx},
-                            {k, default_vertices, active_coeffs}});
+                            {k, cells_and_vertices, active_coeffs}});
         }
         else
         {
@@ -810,29 +823,11 @@ Form<T, U> create_form_factory(
                                              [](auto& a) { return a.first; });
           if (it != sd->second.end() and it->first == id)
           {
-            std::vector<std::int32_t> default_vertices;
-            // TODO: tidy up code duplication
-            for (std::int32_t v : it->second)
-            {
-              auto cells = v_to_c->links(v);
-              assert(cells.size() > 0);
-
-              // Use first cell for assembly over by default
-              // TODO: user control in general for this?
-              std::int32_t cell = cells[0];
-              default_vertices.push_back(cell);
-
-              // Find local index of vertex within cell
-              auto cell_vertices = c_to_v->links(cell);
-              auto it = std::ranges::find(cell_vertices, v);
-              assert(it != cell_vertices.end());
-              std::int32_t local_index
-                  = std::distance(cell_vertices.begin(), it);
-              default_vertices.push_back(local_index);
-            }
+            std::vector<std::int32_t> cells_and_vertices
+                = get_cells_and_vertices(it->second);
 
             integrals.insert({{IntegralType::vertex, id, form_idx},
-                              {k, default_vertices, active_coeffs}});
+                              {k, cells_and_vertices, active_coeffs}});
           }
         }
       }

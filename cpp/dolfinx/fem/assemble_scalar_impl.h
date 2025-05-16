@@ -173,17 +173,15 @@ T assemble_vertices(mdspan2_t x_dofmap,
   for (std::size_t index = 0; index < vertices.extent(0); ++index)
   {
     std::int32_t cell = vertices(index, 0);
-    std::int32_t local_index = vertices(index, 1);
+    std::int32_t local_vertex_index = vertices(index, 1);
 
     // Get cell coordinates/geometry
     auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
-    {
       std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs.begin(), 3 * i));
-    }
 
-    fn(&value, &coeffs(index, 0), constants.data(), cdofs.data(), &local_index,
-       nullptr, nullptr);
+    fn(&value, &coeffs(index, 0), constants.data(), cdofs.data(),
+       &local_vertex_index, nullptr, nullptr);
   }
 
   return value;
@@ -274,15 +272,16 @@ T assemble_scalar(
 
     auto& [coeffs, cstride] = coefficients.at({IntegralType::vertex, i});
 
-    std::span<const std::int32_t> vertices
-        = M.domain(IntegralType::vertex, i, 0);
-    assert(vertices.size() * cstride == coeffs.size());
+    std::span<const std::int32_t> data = M.domain(IntegralType::vertex, i, 0);
+    assert(data.size() * cstride == coeffs.size());
+
+    md::mdspan<const std::int32_t,
+               md::extents<std::size_t, md::dynamic_extent, 2>>
+        cell_and_vertex(data.data(), data.size() / 2, 2);
+
     value += impl::assemble_vertices(
-        x_dofmap, x,
-        md::mdspan<const std::int32_t,
-                   md::extents<std::size_t, md::dynamic_extent, 2>>(
-            vertices.data(), vertices.size() / 2, 2),
-        fn, constants, md::mdspan(coeffs.data(), vertices.size() / 2, cstride));
+        x_dofmap, x, cell_and_vertex,
+        fn, constants, md::mdspan(coeffs.data(), data.size() / 2, cstride));
   }
 
   return value;
