@@ -88,14 +88,25 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
   return cell_local_facet_pairs;
 }
 
+/// @brief Kernel C-pointer type.
+/// @tparam T scalar type.
+/// @tparam U geometry type.
 template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
 using kern_c_t = void (*)(T*, const T*, const T*, const U*, const int*,
                           const std::uint8_t*, void*);
 
+/// @brief Kernel callback type.
+/// @tparam T scalar type.
+/// @tparam U geometry type.
 template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
 using kern_t = std::function<void(T*, const T*, const T*, const U*, const int*,
                                   const std::uint8_t*, void*)>;
 
+/// @brief Extract correct kernel by type from UFCx integral.
+/// @tparam T scalar type of kernel to extract.s
+/// @tparam U geometry type of kernel to extract.
+/// @param integral UFCx integral to retrieve the kernel from.
+/// @return Kernel callback.
 template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
 constexpr kern_t<T, U> extract_kernel(const ufcx_integral* integral)
 {
