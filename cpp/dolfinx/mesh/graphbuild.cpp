@@ -375,24 +375,34 @@ mesh::build_local_dual_graph(
         "Number of cell types must match number of cell arrays.");
   };
 
-  constexpr std::int32_t padding_value = -1;
+  int tdim = mesh::cell_dim(celltypes.front());
 
-  // Create indexing offset for each cell type and determine max number
-  // of vertices per facet
+  // 1) Create indexing offset for each cell type and determine max number
+  // of vertices per facet -> size computations for later on used data
+  // structures
+
+  // TODO: cell_offsets can be removed?
   std::vector<std::int32_t> cell_offsets = {0};
+  cell_offsets.reserve(cells.size() + 1);
+
   int max_vertices_per_facet = 0;
   int facet_count = 0;
-  int tdim = mesh::cell_dim(celltypes.front());
   for (std::size_t j = 0; j < cells.size(); ++j)
   {
-    assert(tdim == mesh::cell_dim(celltypes[j]));
-    int num_cell_vertices = mesh::cell_num_entities(celltypes[j], 0);
-    std::int32_t num_cells = cells[j].size() / num_cell_vertices;
+    const auto& cell_type = celltypes[j];
+    const auto& _cells = cells[j];
+
+    assert(tdim == mesh::cell_dim(cell_type));
+
+    int num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
+    int num_cell_facets = mesh::cell_num_entities(cell_type, tdim - 1);
+
+    std::int32_t num_cells = _cells.size() / num_cell_vertices;
     cell_offsets.push_back(cell_offsets.back() + num_cells);
-    facet_count += mesh::cell_num_entities(celltypes[j], tdim - 1) * num_cells;
+    facet_count += num_cell_facets * num_cells;
 
     graph::AdjacencyList<std::int32_t> cell_facets
-        = mesh::get_entity_vertices(celltypes[j], tdim - 1);
+        = mesh::get_entity_vertices(cell_type, tdim - 1);
 
     // Determine maximum number of vertices for facet
     for (std::int32_t i = 0; i < cell_facets.num_nodes(); ++i)
@@ -402,28 +412,39 @@ mesh::build_local_dual_graph(
     }
   }
 
+  // 2) Build a list of (all) facets, defined by sorted vertices, with the
+  // connected cell index after the vertices. For v_ij the j-th vertex of the
+  // i-th facet. The last index is the cell index (non unique).
+  // facets = [v_11, v_12, v_13, -1, ..., -1, 0,
+  //           v_21, v_22, v_23, -1, ..., -1, 0,
+  //             ⋮     ⋮      ⋮    ⋮   ⋱    ⋮  ⋮
+  //           v_n1, v_n2,   -1, -1, ..., -1, n]
+
   const int shape1 = max_vertices_per_facet + 1;
   std::vector<std::int64_t> facets;
   facets.reserve(facet_count * shape1);
+  constexpr std::int32_t padding_value = -1;
 
   for (std::size_t j = 0; j < cells.size(); ++j)
   {
-    // Build a list of facets, defined by sorted vertices, with the connected
-    // cell index after the vertices
-    int num_cell_vertices = mesh::cell_num_entities(celltypes[j], 0);
-    std::int32_t num_cells = cells[j].size() / num_cell_vertices;
+    const CellType& cell_type = celltypes[j];
+    std::span _cells = cells[j];
+
+    int num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
+    std::int32_t num_cells = _cells.size() / num_cell_vertices;
     graph::AdjacencyList<int> cell_facets
-        = mesh::get_entity_vertices(celltypes[j], tdim - 1);
+        = mesh::get_entity_vertices(cell_type, tdim - 1);
 
     for (std::int32_t c = 0; c < num_cells; ++c)
     {
       // Loop over cell facets
-      auto v = cells[j].subspan(num_cell_vertices * c, num_cell_vertices);
+      auto v = _cells.subspan(num_cell_vertices * c, num_cell_vertices);
       for (int f = 0; f < cell_facets.num_nodes(); ++f)
       {
         auto facet_vertices = cell_facets.links(f);
         std::ranges::transform(facet_vertices, std::back_inserter(facets),
                                [v](auto idx) { return v[idx]; });
+        // TODO: radix_sort?
         std::sort(std::prev(facets.end(), facet_vertices.size()), facets.end());
         facets.insert(facets.end(),
                       max_vertices_per_facet - facet_vertices.size(),
@@ -433,9 +454,10 @@ mesh::build_local_dual_graph(
     }
   }
 
-  // Sort facets by vertex key
+  // 3) Sort facets by vertex key
   std::vector<std::size_t> perm(facets.size() / shape1, 0);
   std::iota(perm.begin(), perm.end(), 0);
+  // TODO: radix_sort?
   std::sort(perm.begin(), perm.end(),
             [&facets, shape1](auto f0, auto f1)
             {
@@ -445,7 +467,7 @@ mesh::build_local_dual_graph(
                                                   it1, std::next(it1, shape1));
             });
 
-  // Iterate over sorted list of facets. Facets shared by more than one
+  // 4) Iterate over sorted list of facets. Facets shared by more than one
   // cell lead to a graph edge to be added. Facets that are not shared
   // are stored as these might be shared by a cell on another process.
   std::vector<std::int64_t> unmatched_facets;
@@ -455,41 +477,58 @@ mesh::build_local_dual_graph(
     auto it = perm.begin();
     while (it != perm.end())
     {
-      std::span f0(facets.data() + (*it) * shape1, shape1);
+      std::size_t facet_index = *it;
+      std::span facet(facets.data() + facet_index * shape1, shape1);
 
-      // Find iterator to next facet different from f0
-      auto it1 = std::find_if_not(
+      // Find iterator to next facet different from f0 -> all facets in [it,
+      // it_next_facet) describe the same facet
+      auto it_next_facet = std::find_if_not(
           it, perm.end(),
-          [f0, &facets, shape1](auto idx) -> bool
+          [facet, &facets, shape1](auto idx) -> bool
           {
             auto f1_it = std::next(facets.begin(), idx * shape1);
-            return std::equal(f0.begin(), std::prev(f0.end()), f1_it);
+            return std::equal(facet.begin(), std::prev(facet.end()), f1_it);
           });
 
-      // Add dual graph edges (one direction only, other direction is
-      // added later)
-      std::int32_t cell0 = f0.back();
-      for (auto itx = std::next(it); itx != it1; ++itx)
-      {
-        std::span f1(facets.data() + *itx * shape1, shape1);
-        std::int32_t cell1 = f1.back();
-        edges.push_back({cell0, cell1});
-      }
+      std::int32_t cell0 = facet.back();
 
-      // Store unmatched facets and the attached cell
-      if (std::distance(it, it1) == 1)
+      auto cell_count = std::distance(it, it_next_facet);
+      assert(cell_count >= 1);
+      // TODO: this constant as user control?
+      if (cell_count == 1)
       {
-        unmatched_facets.insert(unmatched_facets.end(), f0.begin(),
-                                std::prev(f0.end()));
+        // Store unmatched facets and the attached cell
+        unmatched_facets.insert(unmatched_facets.end(), facet.begin(),
+                                std::prev(facet.end()));
         local_cells.push_back(cell0);
+      }
+      else
+      {
+        // Add dual graph edges (one direction only, other direction is
+        // added later). In the range [it, it_next_facet), all combinations are
+        // added.
+        for (auto facet_a_it = it; facet_a_it != it_next_facet; facet_a_it++)
+        {
+          std::span facet_a(facets.data() + *facet_a_it * shape1, shape1);
+          std::int32_t cell_a = facet_a.back();
+          for (auto facet_b_it = std::next(facet_a_it);
+               facet_b_it != it_next_facet; facet_b_it++)
+          {
+            std::span facet_b(facets.data() + *facet_b_it * shape1, shape1);
+            std::int32_t cell_b = facet_b.back();
+            edges.push_back({cell_a, cell_b});
+          }
+        }
       }
 
       // Update iterator
-      it = it1;
+      it = it_next_facet;
     }
   }
 
-  // -- Build adjacency list data
+  // 5) Build adjacency list data. Prepare data structure and assemble into.
+  // Important: we have only computed one direction of the dual edges, we add
+  // both forward and backward to the final data structure.
 
   std::vector<std::int32_t> sizes(cell_offsets.back(), 0);
   for (auto e : edges)
