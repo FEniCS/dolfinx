@@ -907,7 +907,7 @@ void assemble_interior_facets(
   }
 }
 
-/// @brief Execute kernel over cells and accumulate result in vector.
+/// @brief Execute kernel over a set of vertices and accumulate result in vector.
 ///
 /// @tparam T  Scalar type
 /// @tparam _bs Block size of the form test function dof map. If less
@@ -916,7 +916,7 @@ void assemble_interior_facets(
 /// has performance benefits.
 /// @param[in] P0 Function that applies transformation `P0.b` in-place
 /// to `b` to transform test degrees-of-freedom.
-/// @param[in,out] b Aray to accumulate into.
+/// @param[in,out] b Array to accumulate into.
 /// @param[in] x_dofmap Dofmap for the mesh geometry.
 /// @param[in] x Mesh geometry (coordinates).
 /// @param[in] vertices Vertex indices `(vertices.size(), 2)` - first entry
@@ -927,7 +927,7 @@ void assemble_interior_facets(
 /// @param[in] kernel Kernel function to execute over each cell.
 /// @param[in] constants Constant coefficient data in the kernel.
 /// @param[in] coeffs Coefficient data in the kernel. It has shape
-/// `(cells.size(), num_cell_coeffs)`. `coeffs(i, j)` is the `j`th
+/// `(vertices.size(), num_cell_coeffs)`. `coeffs(i, j)` is the `j`th
 /// coefficient for cell `i`.
 /// @param[in] cell_info0 Cell permutation information for the test
 /// function mesh.
