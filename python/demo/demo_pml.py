@@ -721,6 +721,7 @@ problem = LinearProblem(
     },
 )
 Esh = problem.solve()
+assert isinstance(Esh, fem.Function)
 assert problem.solver.getConvergedReason() > 0, "Solver did not converge!"
 # -
 
