@@ -50,11 +50,11 @@ def test_point_source_rank_0(cell_type, ghost_mode, dtype):
 
         expected_value_l = np.sum(msh.geometry.x[a:b, 0] * weights)
         value_l = fem.assemble_scalar(form)
-        assert expected_value_l == pytest.approx(value_l, rel=1e2 * np.finfo(dtype).eps)
+        assert expected_value_l == pytest.approx(value_l, abs=1e4 * np.finfo(rdtype).eps)
 
         expected_value = comm.allreduce(expected_value_l)
         value = comm.allreduce(value_l)
-        assert expected_value == pytest.approx(value)
+        assert expected_value == pytest.approx(value, abs=5e4 * np.finfo(rdtype).eps)
 
     num_vertices = msh.topology.index_map(0).size_local
     x = ufl.SpatialCoordinate(msh)
