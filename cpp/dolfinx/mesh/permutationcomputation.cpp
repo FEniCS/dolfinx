@@ -123,11 +123,11 @@ std::vector<std::bitset<BITSETSIZE>>
 compute_triangle_quad_face_permutations(const mesh::Topology& topology,
                                         int cell_index)
 {
-  std::vector<mesh::CellType> cell_types = topology.entity_types(3);
+  const std::vector<mesh::CellType>& cell_types = topology.entity_types(3);
   mesh::CellType cell_type = cell_types.at(cell_index);
 
   // Get face types of the cell and mesh
-  std::vector<mesh::CellType> mesh_face_types = topology.entity_types(2);
+  const std::vector<mesh::CellType>& mesh_face_types = topology.entity_types(2);
   std::vector<mesh::CellType> cell_face_types(
       mesh::cell_num_entities(cell_type, 2));
   for (std::size_t i = 0; i < cell_face_types.size(); ++i)

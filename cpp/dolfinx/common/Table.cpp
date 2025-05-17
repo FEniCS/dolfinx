@@ -31,12 +31,12 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 Table::Table(std::string title, bool right_justify)
-    : name(title), _right_justify(right_justify)
+    : name(std::move(title)), _right_justify(right_justify)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Table::set(std::string row, std::string col,
+void Table::set(const std::string& row, const std::string& col,
                 std::variant<std::string, int, double> value)
 {
   // Add row
@@ -49,11 +49,11 @@ void Table::set(std::string row, std::string col,
 
   // Store value
   std::pair<std::string, std::string> key(row, col);
-  _values[key] = value;
+  _values[key] = std::move(value);
 }
 //-----------------------------------------------------------------------------
-std::variant<std::string, int, double> Table::get(std::string row,
-                                                  std::string col) const
+std::variant<std::string, int, double> Table::get(const std::string& row,
+                                                  const std::string& col) const
 {
   std::pair<std::string, std::string> key(row, col);
   auto it = _values.find(key);
