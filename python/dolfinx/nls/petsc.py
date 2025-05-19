@@ -203,22 +203,22 @@ class SNESSolver:
 def _ghostUpdate(x: PETSc.Vec, insert_mode: PETSc.InsertMode, scatter_mode: PETSc.ScatterMode):  # type: ignore
     """Helper function for ghost updating PETSc vectors"""
     try:
-        x.ghostUpdate(addv=insert_mode, mode=scatter_mode)
-    except PETSc.Error:  # type: ignore
         for x_sub in x.getNestSubVecs():
             x_sub.ghostUpdate(addv=insert_mode, mode=scatter_mode)
+    except PETSc.Error:  # type: ignore
+        x.ghostUpdate(addv=insert_mode, mode=scatter_mode)
 
 
 def _zero_vector(x: PETSc.Vec):  # type: ignore
     """Helper function for zeroing out PETSc vectors"""
     try:
-        with x.localForm() as x_local:
-            x_local.set(0.0)
-    except PETSc.Error:  # type: ignore
         for x_sub in x.getNestSubVecs():
             with x_sub.localForm() as x_sub_local:
                 x_sub_local.set(0.0)
-
+    except PETSc.Error:  # type: ignore        
+        with x.localForm() as x_local:
+            x_local.set(0.0)
+        
 
 def _assign_block_data(forms: typing.Iterable[dolfinx.fem.Form], vec: PETSc.Vec):
     """Assign block data to a PETSc vector.
