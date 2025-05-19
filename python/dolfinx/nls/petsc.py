@@ -199,14 +199,6 @@ class SNESSolver:
     def snes(self) -> PETSc.SNES:  # type: ignore
         return self._snes
 
-    @property
-    def copy_function_to_vec(self):
-        return self._copy_function_to_vec
-
-    @property
-    def copy_vec_to_function(self):
-        return self._copy_vec_to_function
-
 
 def _ghostUpdate(x: PETSc.Vec, insert_mode: PETSc.InsertMode, scatter_mode: PETSc.ScatterMode):  # type: ignore
     """Helper function for ghost updating PETSc vectors"""
