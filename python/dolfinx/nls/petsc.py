@@ -215,10 +215,10 @@ def _zero_vector(x: PETSc.Vec):  # type: ignore
         for x_sub in x.getNestSubVecs():
             with x_sub.localForm() as x_sub_local:
                 x_sub_local.set(0.0)
-    except PETSc.Error:  # type: ignore        
+    except PETSc.Error:  # type: ignore
         with x.localForm() as x_local:
             x_local.set(0.0)
-        
+
 
 def _assign_block_data(forms: typing.Iterable[dolfinx.fem.Form], vec: PETSc.Vec):
     """Assign block data to a PETSc vector.
