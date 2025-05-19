@@ -220,7 +220,7 @@ def _zero_vector(x: PETSc.Vec):  # type: ignore
                 x_sub_local.set(0.0)
 
 
-def _assign_block_data(forms: typing.Sequence[dolfinx.fem.Form], vec: PETSc.Vec):
+def _assign_block_data(forms: typing.Iterable[dolfinx.fem.Form], vec: PETSc.Vec):
     """Assign block data to a PETSc vector.
 
     Args:
@@ -282,14 +282,14 @@ def assemble_residual(
         assemble_vector(F, residual)
     except TypeError:
         # Block assembly
-        _assign_block_data(residual, F)
+        _assign_block_data(residual, F)  # type: ignore
         assemble_vector(F, residual)  # type: ignore
 
     # Lift vector
     try:
         # Nest and blocked lifting
         bcs1 = _bcs_by_block(_extract_spaces(jacobian, 1), bcs)  # type: ignore
-        _assign_block_data(residual, x)
+        _assign_block_data(residual, x)  # type: ignore
         apply_lifting(F, jacobian, bcs=bcs1, x0=x, alpha=-1.0)  # type: ignore
         _ghostUpdate(F, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
         bcs0 = _bcs_by_block(_extract_spaces(residual), bcs)  # type: ignore
