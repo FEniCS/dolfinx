@@ -220,6 +220,35 @@ def _zero_vector(x: PETSc.Vec):  # type: ignore
                 x_sub_local.set(0.0)
 
 
+def _assign_block_data(forms: typing.Sequence[dolfinx.fem.Form], vec: PETSc.Vec):
+    """Assign block data to a PETSc vector.
+
+    Args:
+        forms: List of forms to extract block data from.
+        vec: PETSc vector to assign block data to.
+    """
+    # Early exit if the vector already has block data or is a nest vector
+    if vec.getAttr("_blocks") is not None or vec.getType() == "nest":
+        return
+
+    maps = [
+        (
+            form.function_spaces[0].dofmaps(0).index_map,
+            form.function_spaces[0].dofmaps(0).index_map_bs,
+        )
+        for form in forms  # type: ignore
+    ]
+    off_owned = tuple(
+        itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
+    )
+    off_ghost = tuple(
+        itertools.accumulate(
+            maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
+        )
+    )
+    vec.setAttr("_blocks", (off_owned, off_ghost))
+
+
 def assemble_residual(
     u: typing.Union[dolfinx.fem.Function, list[dolfinx.fem.Function]],
     residual: typing.Union[dolfinx.fem.Form, typing.Iterable[dolfinx.fem.Form]],
@@ -249,36 +278,24 @@ def assemble_residual(
     # Assemble the residual
     _zero_vector(F)
     try:
+        # Single form and nest assembly
         assemble_vector(F, residual)
     except TypeError:
-        # Assign blocks variable to the vectors
-        maps = [
-            (
-                form.function_spaces[0].dofmaps(0).index_map,
-                form.function_spaces[0].dofmaps(0).index_map_bs,
-            )
-            for form in residual  # type: ignore
-        ]
-        off_owned = tuple(
-            itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
-        )
-        off_ghost = tuple(
-            itertools.accumulate(
-                maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
-            )
-        )
-        F.setAttr("_blocks", (off_owned, off_ghost))
-        x.setAttr("_blocks", (off_owned, off_ghost))
-        assemble_vector(F, residual)
+        # Block assembly
+        _assign_block_data(residual, F)
+        assemble_vector(F, residual)  # type: ignore
 
     # Lift vector
     try:
+        # Nest and blocked lifting
         bcs1 = _bcs_by_block(_extract_spaces(jacobian, 1), bcs)  # type: ignore
+        _assign_block_data(residual, x)
         apply_lifting(F, jacobian, bcs=bcs1, x0=x, alpha=-1.0)  # type: ignore
         _ghostUpdate(F, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
         bcs0 = _bcs_by_block(_extract_spaces(residual), bcs)  # type: ignore
         set_bc(F, bcs0, x0=x, alpha=-1.0)
     except RuntimeError:
+        # Single form lifting
         apply_lifting(F, [jacobian], bcs=[bcs], x0=[x], alpha=-1.0)  # type: ignore
         _ghostUpdate(F, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
         set_bc(F, bcs, x0=x, alpha=-1.0)
