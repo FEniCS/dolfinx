@@ -200,11 +200,60 @@ class SNESSolver:
         return self._snes
 
 
-def F_standard(
-    u: fem.Function,
-    residual: fem.Form,
-    jacobian: fem.Form,
-    bcs: list[fem.DirichletBC],
+def _ghostUpdate(x: PETSc.Vec, insert_mode: PETSc.InsertMode, scatter_mode: PETSc.ScatterMode):  # type: ignore
+    """Helper function for ghost updating PETSc vectors"""
+    try:
+        x.ghostUpdate(addv=insert_mode, mode=scatter_mode)
+    except PETSc.Error:  # type: ignore
+        for x_sub in x.getNestSubVecs():
+            x_sub.ghostUpdate(addv=insert_mode, mode=scatter_mode)
+
+
+def _zero_vector(x: PETSc.Vec):  # type: ignore
+    """Helper function for zeroing out PETSc vectors"""
+    try:
+        with x.localForm() as x_local:
+            x_local.set(0.0)
+    except PETSc.Error:  # type: ignore
+        for x_sub in x.getNestSubVecs():
+            with x_sub.localForm() as x_sub_local:
+                x_sub_local.set(0.0)
+
+
+def _assign_block_data(forms: typing.Iterable[dolfinx.fem.Form], vec: PETSc.Vec):
+    """Assign block data to a PETSc vector.
+
+    Args:
+        forms: List of forms to extract block data from.
+        vec: PETSc vector to assign block data to.
+    """
+    # Early exit if the vector already has block data or is a nest vector
+    if vec.getAttr("_blocks") is not None or vec.getType() == "nest":
+        return
+
+    maps = [
+        (
+            form.function_spaces[0].dofmaps(0).index_map,
+            form.function_spaces[0].dofmaps(0).index_map_bs,
+        )
+        for form in forms  # type: ignore
+    ]
+    off_owned = tuple(
+        itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
+    )
+    off_ghost = tuple(
+        itertools.accumulate(
+            maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
+        )
+    )
+    vec.setAttr("_blocks", (off_owned, off_ghost))
+
+
+def assemble_residual(
+    u: typing.Union[dolfinx.fem.Function, list[dolfinx.fem.Function]],
+    residual: typing.Union[dolfinx.fem.Form, typing.Iterable[dolfinx.fem.Form]],
+    jacobian: typing.Union[dolfinx.fem.Form, typing.Iterable[typing.Iterable[dolfinx.fem.Form]]],
+    bcs: typing.Iterable[dolfinx.fem.DirichletBC],
     _snes: PETSc.SNES,  # type: ignore
     x: PETSc.Vec,  # type: ignore
     F: PETSc.Vec,  # type: ignore
@@ -212,22 +261,45 @@ def F_standard(
     """Assemble the residual into the vector `F`.
 
     Args:
-        u: Function tied to the solution vector within the residual and Jacobian.
-        residual: Form of the residual.
-        jacobian: Form of the Jacobian.
+        u: Function(s) tied to the solution vector within the residual and Jacobian.
+        residual: Form of the residual. It can be an list of forms.
+        jacobian: Form of the Jacobian. It can be a nested list of forms.
         bcs: List of Dirichlet boundary conditions.
         _snes: The solver instance.
         x: The vector containing the point to evaluate the residual at.
         F: Vector to assemble the residual into.
     """
-    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    # Update input vector before assigning
+    _ghostUpdate(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
+
+    # Assign the input vector to the unknowns
     assign(x, u)
-    with F.localForm() as f_local:
-        f_local.set(0.0)
-    assemble_vector(F, residual)
-    apply_lifting(F, [jacobian], bcs=[bcs], x0=[x], alpha=-1.0)
-    F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
-    set_bc(F, bcs, x, -1.0)
+
+    # Assemble the residual
+    _zero_vector(F)
+    try:
+        # Single form and nest assembly
+        assemble_vector(F, residual)
+    except TypeError:
+        # Block assembly
+        _assign_block_data(residual, F)  # type: ignore
+        assemble_vector(F, residual)  # type: ignore
+
+    # Lift vector
+    try:
+        # Nest and blocked lifting
+        bcs1 = _bcs_by_block(_extract_spaces(jacobian, 1), bcs)  # type: ignore
+        _assign_block_data(residual, x)  # type: ignore
+        apply_lifting(F, jacobian, bcs=bcs1, x0=x, alpha=-1.0)  # type: ignore
+        _ghostUpdate(F, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
+        bcs0 = _bcs_by_block(_extract_spaces(residual), bcs)  # type: ignore
+        set_bc(F, bcs0, x0=x, alpha=-1.0)
+    except RuntimeError:
+        # Single form lifting
+        apply_lifting(F, [jacobian], bcs=[bcs], x0=[x], alpha=-1.0)  # type: ignore
+        _ghostUpdate(F, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
+        set_bc(F, bcs, x0=x, alpha=-1.0)
+    _ghostUpdate(F, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
 
 
 def assemble_jacobian(
@@ -256,10 +328,10 @@ def assemble_jacobian(
     """
     # Copy existing soultion into the function used in the residual and Jacobian
     try:
-        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    except PETSc.Error:
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
+    except PETSc.Error:  # type: ignore
         for x_sub in x.getNestSubVecs():
-            x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+            x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
     assign(x, u)
 
     # Assemble Jacobian
@@ -270,108 +342,6 @@ def assemble_jacobian(
         P.zeroEntries()
         assemble_matrix(P, preconditioner, bcs, diag=1.0)  # type: ignore
         P.assemble()
-
-
-def F_block(
-    u: list[dolfinx.fem.Function],
-    residual: list[dolfinx.fem.Form],
-    jacobian: list[list[dolfinx.fem.Form]],
-    bcs: list[dolfinx.fem.DirichletBC],
-    _snes: PETSc.SNES,  # type: ignore
-    x: PETSc.Vec,  # type: ignore
-    F: PETSc.Vec,  # type: ignore
-):
-    """Assemble the residual into the vector F.
-
-    Args:
-        u: List of functions tied to the solution vector within the residual and jacobian
-        residual: List of forms of the residual
-        jacobian: List of list of forms of the Jacobian
-        bcs: List of Dirichlet boundary conditions
-        _snes: The solver instance
-        x: The vector containing the latest solution
-        F: Vector to assemble the residual into
-    """
-    assert x.getType() != "nest", "Vector x should be non-nested"
-    assert F.getType() != "nest", "Vector F should be non-nested"
-    with F.localForm() as f_local:
-        f_local.set(0.0)
-    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    assign(x, u)
-
-    # Assign blocks variable to the vectors
-    maps = [
-        (
-            form.function_spaces[0].dofmaps(0).index_map,
-            form.function_spaces[0].dofmaps(0).index_map_bs,
-        )
-        for form in residual
-    ]
-    off_owned = tuple(
-        itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
-    )
-    off_ghost = tuple(
-        itertools.accumulate(
-            maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
-        )
-    )
-    F.setAttr("_blocks", (off_owned, off_ghost))
-    x.setAttr("_blocks", (off_owned, off_ghost))
-
-    assemble_vector(F, residual)
-    bcs1 = _bcs_by_block(fem.extract_function_spaces(jacobian, 1), bcs)
-    apply_lifting(
-        F,
-        jacobian,
-        bcs=bcs1,
-        x0=x,
-        alpha=-1.0,
-    )
-    F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = _bcs_by_block(fem.extract_function_spaces(residual), bcs)
-    set_bc(F, bcs0, x0=x, alpha=-1.0)
-    F.ghostUpdate(PETSc.InsertMode.INSERT_VALUES, PETSc.ScatterMode.FORWARD)
-
-
-def F_nest(
-    u: list[dolfinx.fem.Function],
-    residual: list[dolfinx.fem.Form],
-    jacobian: list[list[dolfinx.fem.Form]],
-    bcs: list[dolfinx.fem.DirichletBC],
-    _snes: PETSc.SNES,  # type: ignore
-    x: PETSc.Vec,  # type: ignore
-    F: PETSc.Vec,  # type: ignore
-):
-    """Assemble the residual into the vector F.
-
-    Args:
-        u: List of functions tied to the solution vector within the residual and jacobian
-        residual: List of forms of the residual
-        jacobian: List of list of forms of the Jacobian
-        bcs: List of Dirichlet boundary conditions
-        _snes: The solver instance
-        x: The vector containing the latest solution
-        F: Vector to assemble the residual into
-    """
-    assert x.getType() == "nest" and F.getType() == "nest"
-    for x_sub in x.getNestSubVecs():
-        x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    assign(x, u)
-    bcs1 = _bcs_by_block(_extract_spaces(jacobian, 1), bcs)
-    sub_vectors = x.getNestSubVecs()
-    for L, F_sub, a in zip(residual, F.getNestSubVecs(), jacobian):
-        with F_sub.localForm() as F_sub_local:
-            F_sub_local.set(0.0)
-        assemble_vector(F_sub, L)
-        apply_lifting(F_sub, a, bcs=bcs1, x0=sub_vectors, alpha=-1.0)
-        F_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
-    # Set bc value in RHS
-    bcs0 = _bcs_by_block(_extract_spaces(residual), bcs)
-    for F_sub, bc, x_sub in zip(F.getNestSubVecs(), bcs0, sub_vectors):
-        set_bc(F_sub, bc, x_sub, -1.0)
-
-    # Must assemble F here in the case of nest matrices
-    F.assemble()
 
 
 def create_snes_solver(
@@ -474,13 +444,5 @@ def create_snes_solver(
     # computation functions
     snes = PETSc.SNES().create(comm=A.comm)  # type: ignore
     snes.setJacobian(partial(assemble_jacobian, u, jacobian, preconditioner, bcs), A, P_mat)
-
-    if A.getType() == PETSc.Mat.Type.NEST:
-        # Check for SNES consistency
-        assert b.getType() == PETSc.Vec.Type.NEST
-        snes.setFunction(partial(F_nest, u, residual, jacobian, bcs), b)
-    elif isinstance(residual, fem.Form):
-        snes.setFunction(partial(F_standard, u, residual, jacobian, bcs), b)  # type: ignore
-    else:
-        snes.setFunction(partial(F_block, u, residual, jacobian, bcs), b)
+    snes.setFunction(partial(assemble_residual, u, residual, jacobian, bcs), b)
     return snes, x
