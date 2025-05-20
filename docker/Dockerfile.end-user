@@ -175,7 +175,7 @@ RUN dpkgArch="$(dpkg --print-architecture)"; \
       pip install --no-cache-dir pyvista[jupyter]==${PYVISTA_VERSION} ;; \
     esac; \
     case "$dpkgArch" in arm64) \
-      pip install --no-cache-dir https://github.com/finsberg/vtk-aarch64/releases/download/vtk-9.3.0-cp312/vtk-9.3.0.dev0-cp312-cp312-linux_aarch64.whl && \
+      pip install --no-cache-dir https://github.com/scientificcomputing/vtk-aarch64/releases/download/v9.4.1-py3.12/vtk-9.4.1.dev0-cp312-cp312-linux_aarch64.whl && \
       pip install --no-cache-dir pyvista[jupyter]==${PYVISTA_VERSION} ;; \
     esac; \
     pip cache purge
