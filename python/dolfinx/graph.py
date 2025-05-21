@@ -41,7 +41,8 @@ class AdjacencyList:
         """Creates a Python wrapper for the exported adjacency list class.
 
         Note:
-            Do not use this constructor directly. Instead use :func:`adjacencylist`.
+            Do not use this constructor directly. Instead use
+            :func:`adjacencylist`.
 
         Args:
             The underlying cpp instance that this object will wrap.
@@ -104,7 +105,8 @@ def adjacencylist(
     Returns:
         An adjacency list.
     """
-    # TODO: Switch to np.isdtype(data.dtype, np.int32) once numpy >= 2.0 is enforced
+    # TODO: Switch to np.isdtype(data.dtype, np.int32) once numpy >= 2.0 is
+    # enforced
     if data.dtype == np.int32:
         cpp_t = _cpp.graph.AdjacencyList_int32
     elif data.dtype == np.int64:

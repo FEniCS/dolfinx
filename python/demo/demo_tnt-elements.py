@@ -74,10 +74,10 @@ wcoeffs = np.eye(8, 9)
 # For elements where the coefficients matrix is not an identity, we can
 # use the properties of orthonormal polynomials to compute `wcoeffs`.
 # Let $\{q_0, q_1,\dots\}$ be the orthonormal polynomials of a given
-# degree for a given cell, and suppose that we're trying to represent a function
-# $f_i\in\operatorname{span}\{q_1, q_2,\dots\}$ (as $\{f_0, f_1,\dots\}$ is a
-# basis of the polynomial space for our element). Using the properties of
-# orthonormal polynomials, we see that
+# degree for a given cell, and suppose that we're trying to represent a
+# function $f_i\in\operatorname{span}\{q_1, q_2,\dots\}$ (as
+# $\{f_0, f_1,\dots\}$ is a basis of the polynomial space for our element).
+# Using the properties of orthonormal polynomials, we see that
 # $f_i = \sum_j\left(\int_R f_iq_j\,\mathrm{d}\mathbf{x}\right)q_j$,
 # and so the coefficients are given by
 # $a_{ij}=\int_R f_iq_j\,\mathrm{d}\mathbf{x}$.

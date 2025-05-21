@@ -34,7 +34,8 @@ __all__ = [
 
 
 class TopologyDict(typing.TypedDict):
-    """TopologyDict is a TypedDict for storing the topology of the marked cell.
+    """TopologyDict is a TypedDict for storing the topology of the marked
+    cell.
 
     Args:
         topology: 2D array containing the topology of the marked cell.
@@ -95,7 +96,8 @@ class MeshData(typing.NamedTuple):
 
 
 def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
-    """Create a UFL mesh from a Gmsh cell identifier and geometric dimension.
+    """Create a UFL mesh from a Gmsh cell identifier and geometric
+    dimension.
 
     See https://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format.
 
@@ -126,7 +128,8 @@ def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
 
 
 def cell_perm_array(cell_type: CellType, num_nodes: int) -> list[int]:
-    """The permutation array for permuting Gmsh ordering to DOLFINx ordering.
+    """The permutation array for permuting Gmsh ordering to DOLFINx
+    ordering.
 
     Args:
         cell_type: DOLFINx cell type.
@@ -142,7 +145,8 @@ def cell_perm_array(cell_type: CellType, num_nodes: int) -> list[int]:
 def extract_topology_and_markers(
     model, name: typing.Optional[str] = None
 ) -> tuple[dict[int, TopologyDict], dict[str, tuple[int, int]]]:
-    """Extract all entities tagged with a physical marker in the gmsh model.
+    """Extract all entities tagged with a physical marker in the gmsh
+    model.
 
     Returns a nested dictionary where the first key is the gmsh MSH
     element type integer. Each element type present in the model
@@ -155,13 +159,12 @@ def extract_topology_and_markers(
             model will be used.
 
     Returns:
-        A tuple ``(topologies, physical_groups)``, where ``topologies`` is a
-        nested dictionary where each key corresponds to a gmsh cell
-        type. Each cell type found in the mesh has a 2D array containing
-        the topology of the marked cell and a list with the
-        corresponding markers. ``physical_groups`` is a dictionary where the key
-        is the physical name and the value is a tuple with the dimension
-        and tag.
+        A tuple ``(topologies, physical_groups)``, where ``topologies`` is
+        a nested dictionary where each key corresponds to a gmsh cell type.
+        Each cell type found in the mesh has a 2D array containing the
+        topology of the marked cell and a list with the corresponding
+        markers. ``physical_groups`` is a dictionary where the key is the
+        physical name and the value is a tuple with the dimension and tag.
 
     """
     if name is not None:
@@ -311,7 +314,8 @@ def model_to_mesh(
         num_nodes = cell_information[perm_sort[-1]]["num_nodes"]
         cell_id, num_nodes = comm.bcast([cell_id, num_nodes], root=rank)
 
-        # Check for facet, edge and vertex data and broadcast relevant info if True
+        # Check for facet, edge and vertex data and broadcast relevant info
+        # if True
         has_facet_data = (tdim - 1) in cell_dimensions
         has_edge_data = (tdim - 2) in cell_dimensions
         has_vertex_data = (tdim - 3) in cell_dimensions
@@ -455,7 +459,8 @@ def read_from_msh(
         typing.Callable[[_MPI.Comm, int, int, AdjacencyList], AdjacencyList_int32]
     ] = None,
 ) -> MeshData:
-    """Read a Gmsh .msh file and return a :class:`dolfinx.mesh.Mesh` and cell facet markers.
+    """Read a Gmsh .msh file and return a :class:`dolfinx.mesh.Mesh` and
+    cell facet markers.
 
     Note:
         This function requires the Gmsh Python module.

@@ -107,7 +107,8 @@ E, nu = 1.0, 1.0 / 3.0
 
 
 def sigma_u(u):
-    """Constitutive relation for stress-strain. Assuming plane-stress in XY"""
+    """Constitutive relation for stress-strain. Assuming plane-stress in
+    XY"""
     eps = 0.5 * (ufl.grad(u) + ufl.grad(u).T)
     sigma = E / (1.0 - nu**2) * ((1.0 - nu) * eps + nu * ufl.Identity(2) * ufl.tr(eps))
     return sigma

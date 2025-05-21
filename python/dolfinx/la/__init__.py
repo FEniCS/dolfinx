@@ -91,8 +91,8 @@ class Vector:
         cached and the cached ``Vec`` is returned upon subsequent calls.
 
         Note:
-          When the object is destroyed it will destroy the underlying petsc4py
-          vector automatically.
+          When the object is destroyed it will destroy the underlying
+          petsc4py vector automatically.
         """
         assert dolfinx.has_petsc4py
 
@@ -133,7 +133,8 @@ class MatrixCSR:
             _cpp.la.MatrixCSR_complex128,
         ],
     ):
-        """A distributed sparse matrix that uses compressed sparse row storage.
+        """A distributed sparse matrix that uses compressed sparse row
+        storage.
 
         Note:
             Objects of this type should be created using
