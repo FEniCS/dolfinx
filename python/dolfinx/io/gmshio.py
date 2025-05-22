@@ -300,58 +300,69 @@ def model_to_mesh(
         x = extract_geometry(model)
         topologies, physical_groups = extract_topology_and_markers(model)
 
-        # Extract Gmsh cell id, dimension of cell and number of nodes in cell
-        num_cell_types = len(topologies.keys())
-        element_ids = np.zeros(num_cell_types, dtype=np.int32)
-        element_dimensions = np.zeros(num_cell_types, dtype=np.int32)
-        num_nodes_per_element = np.zeros(num_cell_types, dtype=np.int32)
+        # Extract Gmsh entity (cell) id, topological dimension and number of nodes
+        # which is used to create an appropriate coordinate element, and seperate
+        # higher topological entities from lower topological entities (e.g. facets,
+        # ridges and peaks).
+        num_unique_entities = len(topologies.keys())
+        element_ids = np.zeros(num_unique_entities, dtype=np.int32)
+        entity_tdim = np.zeros(num_unique_entities, dtype=np.int32)
+        num_nodes_per_element = np.zeros(num_unique_entities, dtype=np.int32)
         for i, element in enumerate(topologies.keys()):
             _, dim, _, num_nodes, _, _ = model.mesh.getElementProperties(element)
             element_ids[i] = element
-            element_dimensions[i] = dim
+            entity_tdim[i] = dim
             num_nodes_per_element[i] = num_nodes
 
         # Broadcast information to all other ranks
-        element_dimensions, element_ids, num_nodes_per_element = comm.bcast(
-            (element_dimensions, element_ids, num_nodes_per_element), root=rank
+        entity_tdim, element_ids, num_nodes_per_element = comm.bcast(
+            (entity_tdim, element_ids, num_nodes_per_element), root=rank
         )
     else:
-        element_dimensions, element_ids, num_nodes_per_element = comm.bcast(
-            (None, None, None), root=rank
-        )
+        entity_tdim, element_ids, num_nodes_per_element = comm.bcast((None, None, None), root=rank)
 
     # Sort elements by descending dimension
-    assert len(np.unique(element_dimensions)) == len(element_dimensions)
-    perm_sort = np.argsort(element_dimensions)[::-1]
-    tdim = int(element_dimensions[perm_sort[0]])
+    assert len(np.unique(entity_tdim)) == len(entity_tdim)
+    perm_sort = np.argsort(entity_tdim)[::-1]
 
+    # Extract position of the highest topological entity and its topological dimension
+    cell_position = perm_sort[0]
+    tdim = int(entity_tdim[cell_position])
+
+    # Extract entity -> node connectivity for all cells and sub-entities marked in the GMSH model
     meshtags: dict[int, tuple[npt.NDArray[np.int32], npt.NDArray[np.int32]]] = {}
     for position in perm_sort:
-        # Extract entity data for tagged codim entities
-        codim = tdim - element_dimensions[position]
+        codim = tdim - entity_tdim[position]
         if comm.rank == rank:
             gmsh_entity_id = element_ids[position]
             marked_entities = np.asarray(topologies[gmsh_entity_id]["topology"], dtype=np.int64)
             entity_values = np.asarray(topologies[gmsh_entity_id]["cell_data"], dtype=np.int32)
             meshtags[codim] = (marked_entities, entity_values)
         else:
+            # Any other process than input rank does not have any entities
             marked_entities = np.empty((0, num_nodes_per_element[position]), dtype=np.int32)
             entity_values = np.empty((0,), dtype=np.int32)
             meshtags[codim] = (marked_entities, entity_values)
 
-    # Create distributed mesh
-    ufl_domain = ufl_mesh(element_ids[perm_sort[0]], gdim, dtype=dtype)
-    num_nodes = num_nodes_per_element[perm_sort[0]]
+    # Create a UFL Mesh object for the GMSH element with the highest topoligcal dimension
+    ufl_domain = ufl_mesh(element_ids[cell_position], gdim, dtype=dtype)
+
+    # Get cell->node connectivity and  permute to FEniCS ordering
+    num_nodes = num_nodes_per_element[cell_position]
     gmsh_cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), num_nodes)
-    cells = meshtags[0][0][:, gmsh_cell_perm].copy()
+    cell_connectivity = meshtags[0][0][:, gmsh_cell_perm].copy()
+
+    # Create a distributed mesh, where mesh nodes are only destributed from the input rank
     if comm.rank != rank:
         x = np.empty([0, gdim], dtype=dtype)  # No nodes on other than root rank
-    mesh = create_mesh(comm, cells, x[:, :gdim].astype(dtype, copy=False), ufl_domain, partitioner)
+    mesh = create_mesh(
+        comm, cell_connectivity, x[:, :gdim].astype(dtype, copy=False), ufl_domain, partitioner
+    )
     assert tdim == mesh.topology.dim, (
         f"{mesh.topology.dim=} does not match Gmsh model dimension {tdim}"
     )
 
-    # Create MeshTags for entity data extracted from GMSH
+    # Create MeshTags for all sub entities
     topology = mesh.topology
     codim_to_name = {0: "cell", 1: "facet", 2: "ridge", 3: "peak"}
     dolfinx_meshtags: dict[str, typing.Optional[MeshTags]] = {}
