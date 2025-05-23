@@ -75,7 +75,7 @@ double assemble_matrix0(std::shared_ptr<const fem::FunctionSpace<T>> V,
 {
   // Kernel data (ID, kernel function, cell indices to execute over)
   std::map integrals{
-      std::pair{std::tuple{fem::IntegralType::cell, -1, 0},
+      std::pair{std::tuple{fem::IntegralType::cell, 0, 0},
                 fem::integral_data<T>(kernel, cells, std::vector<int>{})}};
 
   fem::Form<T, T> a({V, V}, integrals, V->mesh(), {}, {}, false, {});
@@ -105,7 +105,7 @@ double assemble_vector0(std::shared_ptr<const fem::FunctionSpace<T>> V,
 {
   auto mesh = V->mesh();
   std::map integrals{
-      std::pair{std::tuple{fem::IntegralType::cell, -1, 0},
+      std::pair{std::tuple{fem::IntegralType::cell, 0, 0},
                 fem::integral_data<T>(kernel, cells, std::vector<int>{})}};
   fem::Form<T> L({V}, integrals, mesh, {}, {}, false, {});
   auto dofmap = V->dofmap();
