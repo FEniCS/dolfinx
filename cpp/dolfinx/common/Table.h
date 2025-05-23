@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <mpi.h>
 #include <string>
@@ -29,7 +30,7 @@ class Table
 public:
   /// Types of MPI reduction available for Table, to get the max, min or
   /// average values over an MPI_Comm
-  enum class Reduction
+  enum class Reduction : std::uint8_t
   {
     average,
     max,
@@ -58,15 +59,15 @@ public:
   /// @param[in] row Row name
   /// @param[in] col Column name
   /// @param[in] value The value to set
-  void set(std::string row, std::string col,
+  void set(const std::string& row, const std::string& col,
            std::variant<std::string, int, double> value);
 
   /// Get value of table entry
   /// @param[in] row Row name
   /// @param[in] col Column name
   /// @returns Returns the entry for requested row and columns
-  std::variant<std::string, int, double> get(std::string row,
-                                             std::string col) const;
+  std::variant<std::string, int, double> get(const std::string& row,
+                                             const std::string& col) const;
 
   /// Do MPI reduction on Table
   /// @param[in] comm MPI communicator

@@ -108,6 +108,10 @@ add_feature_info(
   "Ask Python FFCx module where to find ufcx.h header using MODULE mode. Otherwise use CONFIG mode."
 )
 
+# clang-tidy
+option(ENABLE_CLANG_TIDY "Run clang-tidy while building" OFF)
+add_feature_info(ENABLE_CLANG_TIDY ENABLE_CLANG_TIDY "Run clang-tidy while building")
+
 # ------------------------------------------------------------------------------
 # Enable or disable optional packages
 

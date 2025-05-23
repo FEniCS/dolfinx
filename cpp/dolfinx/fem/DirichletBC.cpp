@@ -154,6 +154,7 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
   // NOTE: Should we use map here or just one vector with ghosts and
   // std::distance?
   std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
+  global_local_ghosts.reserve(ghosts.size());
   const std::int32_t local_size = range[1] - range[0];
   for (std::size_t i = 0; i < ghosts.size(); ++i)
     global_local_ghosts.emplace_back(ghosts[i], i + local_size);
@@ -194,6 +195,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
   // entity_dim
   const int num_cell_entities = mesh::cell_num_entities(cell_type, dim);
   std::vector<std::vector<int>> entity_dofs;
+  entity_dofs.reserve(num_cell_entities);
   for (int i = 0; i < num_cell_entities; ++i)
   {
     entity_dofs.push_back(
@@ -310,6 +312,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   // Build vector of local dofs for each cell entity
   const int num_cell_entities = mesh::cell_num_entities(cell_type, dim);
   std::vector<std::vector<int>> entity_dofs;
+  entity_dofs.reserve(num_cell_entities);
   for (int i = 0; i < num_cell_entities; ++i)
   {
     entity_dofs.push_back(
