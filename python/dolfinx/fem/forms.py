@@ -11,7 +11,6 @@ import collections
 import types
 import typing
 from dataclasses import dataclass
-from itertools import chain
 
 import numpy as np
 import numpy.typing as npt
@@ -353,9 +352,7 @@ def form(
         for i in range(3):
             integral_type = IntegralType(i)
             for j in range(integral_offsets[i], integral_offsets[i + 1]):
-                subdomain_ids[integral_type.name].append(
-                    ufcx_form.form_integral_ids[j]
-                )
+                subdomain_ids[integral_type.name].append(ufcx_form.form_integral_ids[j])
 
         # Subdomain markers (possibly empty list for some integral
         # types)

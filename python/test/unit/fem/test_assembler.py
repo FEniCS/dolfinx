@@ -42,9 +42,9 @@ from dolfinx.mesh import (
     create_unit_cube,
     create_unit_square,
     exterior_facet_indices,
-    locate_entities_boundary,
     locate_entities,
-    meshtags
+    locate_entities_boundary,
+    meshtags,
 )
 from ufl import derivative, dS, ds, dx, inner
 from ufl.geometry import SpatialCoordinate
@@ -1405,18 +1405,21 @@ def test_mixed_quadrature(dtype):
     u.interpolate(lambda x: x[0])
 
     tol = 500 * np.finfo(dtype).eps
-    num_cells_local = mesh.topology.index_map(mesh.topology.dim).size_local + mesh.topology.index_map(mesh.topology.dim).num_ghosts
+    num_cells_local = (
+        mesh.topology.index_map(mesh.topology.dim).size_local
+        + mesh.topology.index_map(mesh.topology.dim).num_ghosts
+    )
     values = np.full(num_cells_local, 1, dtype=np.int32)
     left_cells = locate_entities(mesh, mesh.topology.dim, lambda x: x[0] <= 0.5 + tol)
     values[left_cells] = 2
     top_cells = locate_entities(mesh, mesh.topology.dim, lambda x: x[1] >= 0.5 - tol)
-    values[top_cells] = 3    
-    ct = meshtags(mesh, mesh.topology.dim, np.arange(num_cells_local,dtype=np.int32), values)
+    values[top_cells] = 3
+    ct = meshtags(mesh, mesh.topology.dim, np.arange(num_cells_local, dtype=np.int32), values)
 
     dx = ufl.Measure("dx", domain=mesh, subdomain_data=ct)
-    dx_2 = dx(subdomain_id=(1, 2),degree=2)
-    dx_1 = dx(subdomain_id=(1,),degree=1)
-    dx_3 = dx(subdomain_id=(2,3),degree=3)
+    dx_2 = dx(subdomain_id=(1, 2), degree=2)
+    dx_1 = dx(subdomain_id=(1,), degree=1)
+    dx_3 = dx(subdomain_id=(2, 3), degree=3)
 
     form_1 = u * dx_1
     form_2 = u * dx_2
@@ -1433,4 +1436,3 @@ def test_mixed_quadrature(dtype):
     local_sum = assemble_scalar(compiled_form)
     global_sum = mesh.comm.allreduce(local_sum, op=MPI.SUM)
     assert np.isclose(global_contribution, global_sum, rtol=tol, atol=tol)
-
