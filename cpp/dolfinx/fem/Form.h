@@ -437,9 +437,9 @@ public:
   /// @param[in] type Integral type.
   /// @param[in] kernel_idx Index of the kernel (we may have multiple
   /// kernels for a integral type in mixed-topology meshes).
-  std::size_t num_integrals(IntegralType type, int kernel_idx) const
+  int num_integrals(IntegralType type, int kernel_idx) const
   {
-    std::size_t count = 0;
+    int count = 0;
     for (auto& [key, integral] : _integrals)
     {
       auto [t, id, k_idx] = key;
