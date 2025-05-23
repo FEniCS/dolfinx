@@ -1396,7 +1396,8 @@ def test_vector_types():
 
 
 @dtype_parametrize
-def test_mixed_quadrature(dtype):
+@pytest.mark.parametrize("method", ["degree", "metadata"])
+def test_mixed_quadrature(dtype, method):
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, dtype=xtype)
 
@@ -1417,10 +1418,17 @@ def test_mixed_quadrature(dtype):
     ct = meshtags(mesh, mesh.topology.dim, np.arange(num_cells_local, dtype=np.int32), values)
 
     dx = ufl.Measure("dx", domain=mesh, subdomain_data=ct)
-    dx_2 = dx(subdomain_id=(1, 2), degree=2)
-    dx_1 = dx(subdomain_id=(1,), degree=1)
-    dx_3 = dx(subdomain_id=(2, 3), degree=3)
 
+    if method == "degree":
+        dx_1 = dx(subdomain_id=(1,), degree=1)
+        dx_2 = dx(subdomain_id=(1, 2), degree=2)
+        dx_3 = dx(subdomain_id=(2, 3), degree=3)
+    elif method == "metadata":
+        dx_1 = dx(subdomain_id=(1,), metadata={"quadrature_degree": 1})
+        dx_2 = dx(subdomain_id=(1, 2), metadata={"quadrature_degree": 2})
+        dx_3 = dx(subdomain_id=(2, 3), metadata={"quadrature_degree": 3})
+    else:
+        raise ValueError(f"Invalid method {method}")
     form_1 = u * dx_1
     form_2 = u * dx_2
     form_3 = u * dx_3
