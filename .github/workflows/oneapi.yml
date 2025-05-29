@@ -27,6 +27,7 @@ jobs:
       I_MPI_OFI_LIBRARY_INTERNAL: 0
       OMP_NUM_THREADS: 1
       OPENBLAS_NUM_THREADS: 1
+      KMP_DUPLICATE_LIB_OK: 1 # Silences error on multiple openMP installs found
 
     name: oneAPI build and test
 

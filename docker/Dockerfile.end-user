@@ -34,7 +34,7 @@
 #    echo "FROM dolfinx/dolfinx-onbuild:nightly" | docker build -f- .
 #
 
-ARG PYVISTA_VERSION=0.44.2
+ARG PYVISTA_VERSION=0.45.2
 
 # Used to set the correct PYTHONPATH for the real and complex install of
 # DOLFINx
@@ -91,7 +91,7 @@ ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_
 ONBUILD RUN cd dolfinx && \
     mkdir -p build-real && \
     cd build-real && \
-    PETSC_ARCH=linux-gnu-real64-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} ../cpp && \
+    PETSC_ARCH=linux-gnu-real64-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DDOLFINX_ENABLE_PETSC=ON -DDOLFINX_ENABLE_SLEPC=ON -DDOLFINX_ENABLE_SCOTCH=ON -DDOLFINX_ENABLE_KAHIP=ON -DDOLFINX_ENABLE_ADIOS2=ON ../cpp && \
     ninja install && \
     cd ../python && \
     PETSC_ARCH=linux-gnu-real64-32 pip -v install \
@@ -175,7 +175,7 @@ RUN dpkgArch="$(dpkg --print-architecture)"; \
       pip install --no-cache-dir pyvista[jupyter]==${PYVISTA_VERSION} ;; \
     esac; \
     case "$dpkgArch" in arm64) \
-      pip install --no-cache-dir https://github.com/finsberg/vtk-aarch64/releases/download/vtk-9.3.0-cp312/vtk-9.3.0.dev0-cp312-cp312-linux_aarch64.whl && \
+      pip install --no-cache-dir https://github.com/scientificcomputing/vtk-aarch64/releases/download/v9.4.2-py3.12/vtk-9.4.2.dev0-cp312-cp312-linux_aarch64.whl && \
       pip install --no-cache-dir pyvista[jupyter]==${PYVISTA_VERSION} ;; \
     esac; \
     pip cache purge

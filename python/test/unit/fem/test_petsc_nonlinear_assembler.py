@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly."""
 
+import itertools
 import math
 
 from mpi4py import MPI
@@ -69,17 +70,17 @@ class NonlinearPDE_SNESProblem:
         from dolfinx.fem.petsc import assemble_matrix
 
         J.zeroEntries()
-        assemble_matrix(J, self.a, bcs=self.bcs, diagonal=1.0)
+        assemble_matrix(J, self.a, bcs=self.bcs, diag=1.0)
         J.assemble()
         if self.a_precon is not None:
             P.zeroEntries()
-            assemble_matrix(P, self.a_precon, bcs=self.bcs, diagonal=1.0)
+            assemble_matrix(P, self.a_precon, bcs=self.bcs, diag=1.0)
             P.assemble()
 
     def F_block(self, snes, x, F):
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import assemble_vector_block, assign
+        from dolfinx.fem.petsc import apply_lifting, assemble_vector, assign, set_bc
 
         assert x.getType() != "nest"
         assert F.getType() != "nest"
@@ -89,18 +90,46 @@ class NonlinearPDE_SNESProblem:
 
         with F.localForm() as f_local:
             f_local.set(0.0)
-        assemble_vector_block(F, self.L, self.a, bcs=self.bcs, x0=x, alpha=-1.0)
+
+        maps = [
+            (
+                form.function_spaces[0].dofmaps(0).index_map,
+                form.function_spaces[0].dofmaps(0).index_map_bs,
+            )
+            for form in self.L
+        ]
+        off_owned = tuple(
+            itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
+        )
+        off_ghost = tuple(
+            itertools.accumulate(
+                maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
+            )
+        )
+
+        with F.localForm() as f_local:
+            f_local.set(0.0)
+
+        F.setAttr("_blocks", (off_owned, off_ghost))
+        x.setAttr("_blocks", (off_owned, off_ghost))
+
+        assemble_vector(F, self.L)
+        bcs1 = bcs_by_block(extract_function_spaces(self.a, 1), bcs=self.bcs)
+        apply_lifting(F, self.a, bcs=bcs1, x0=x, alpha=-1.0)
+        F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        bcs0 = bcs_by_block(extract_function_spaces(self.L), self.bcs)
+        set_bc(F, bcs0, x0=x, alpha=-1)
 
     def J_block(self, snes, x, J, P):
-        from dolfinx.fem.petsc import assemble_matrix_block
+        from dolfinx.fem.petsc import assemble_matrix
 
         assert x.getType() != "nest" and J.getType() != "nest" and P.getType() != "nest"
         J.zeroEntries()
-        assemble_matrix_block(J, self.a, bcs=self.bcs, diagonal=1.0)
+        assemble_matrix(J, self.a, bcs=self.bcs, diag=1.0)
         J.assemble()
         if self.a_precon is not None:
             P.zeroEntries()
-            assemble_matrix_block(P, self.a_precon, bcs=self.bcs, diagonal=1.0)
+            assemble_matrix(P, self.a_precon, bcs=self.bcs, diag=1.0)
             P.assemble()
 
     def F_nest(self, snes, x, F):
@@ -135,15 +164,15 @@ class NonlinearPDE_SNESProblem:
         F.assemble()
 
     def J_nest(self, snes, x, J, P):
-        from dolfinx.fem.petsc import assemble_matrix_nest
+        from dolfinx.fem.petsc import assemble_matrix
 
         assert J.getType() == "nest" and P.getType() == "nest"
         J.zeroEntries()
-        assemble_matrix_nest(J, self.a, bcs=self.bcs, diagonal=1.0)
+        assemble_matrix(J, self.a, bcs=self.bcs, diag=1.0)
         J.assemble()
         if self.a_precon is not None:
             P.zeroEntries()
-            assemble_matrix_nest(P, self.a_precon, bcs=self.bcs, diagonal=1.0)
+            assemble_matrix(P, self.a_precon, bcs=self.bcs, diag=1.0)
             P.assemble()
 
 
@@ -157,17 +186,11 @@ class TestNLSPETSc:
 
         from dolfinx.fem.petsc import (
             apply_lifting,
-            apply_lifting_nest,
             assemble_matrix,
-            assemble_matrix_block,
-            assemble_matrix_nest,
             assemble_vector,
-            assemble_vector_block,
-            assemble_vector_nest,
             assign,
             create_vector,
             set_bc,
-            set_bc_nest,
         )
 
         mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
@@ -220,14 +243,21 @@ class TestNLSPETSc:
 
         def blocked():
             """Monolithic blocked"""
-            x = create_vector(L_block)
+            x = create_vector(L_block, kind="mpi")
 
             assign((u, p), x)
 
             # Ghosts are updated inside assemble_vector_block
-            A = assemble_matrix_block(a_block, bcs=[bc])
-            b = assemble_vector_block(L_block, a_block, bcs=[bc], x0=x, alpha=-1.0)
+            A = assemble_matrix(a_block, bcs=[bc])
             A.assemble()
+
+            b = assemble_vector(L_block, kind="mpi")
+            bcs1 = bcs_by_block(extract_function_spaces(a_block, 1), bcs=[bc])
+            apply_lifting(b, a_block, bcs=bcs1, x0=x, alpha=-1.0)
+            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+            bcs0 = bcs_by_block(extract_function_spaces(L_block), [bc])
+            set_bc(b, bcs0, x0=x, alpha=-1)
+
             assert A.getType() != "nest"
             Anorm = A.norm()
             bnorm = b.norm()
@@ -243,14 +273,15 @@ class TestNLSPETSc:
 
             assign((u, p), x)
 
-            A = assemble_matrix_nest(a_block, bcs=[bc])
-            b = assemble_vector_nest(L_block)
-            apply_lifting_nest(b, a_block, bcs=[bc], x0=x, alpha=-1.0)
+            A = assemble_matrix(a_block, bcs=[bc], kind="nest")
+            b = assemble_vector(L_block, kind="nest")
+            bcs1 = bcs_by_block(extract_function_spaces(a_block, 1), bcs=[bc])
+            apply_lifting(b, a_block, bcs=bcs1, x0=x, alpha=-1.0)
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
 
-            set_bc_nest(b, bcs0, x, alpha=-1.0)
+            set_bc(b, bcs0, x, alpha=-1.0)
             A.assemble()
             assert A.getType() == "nest"
             Anorm = nest_matrix_norm(A)
@@ -368,7 +399,7 @@ class TestNLSPETSc:
         def blocked_solve():
             """Blocked version"""
             Jmat = create_matrix(J)
-            Fvec = create_vector(F)
+            Fvec = create_vector(F, kind="mpi")
             snes = PETSc.SNES().create(MPI.COMM_WORLD)
             snes.setTolerances(rtol=1.0e-15, max_it=10)
             problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
@@ -378,7 +409,7 @@ class TestNLSPETSc:
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
 
-            x = create_vector(F)
+            x = create_vector(F, kind="mpi")
 
             assign((u, p), x)
 
@@ -569,7 +600,7 @@ class TestNLSPETSc:
             """Blocked and monolithic"""
             Jmat = create_matrix(J)
             Pmat = create_matrix(P)
-            Fvec = create_vector(F)
+            Fvec = create_vector(F, kind="mpi")
 
             snes = PETSc.SNES().create(MPI.COMM_WORLD)
             snes.setTolerances(rtol=1.0e-15, max_it=20)
@@ -581,7 +612,7 @@ class TestNLSPETSc:
 
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
-            x = create_vector(F)
+            x = create_vector(F, kind="mpi")
 
             assign((u, p), x)
 
