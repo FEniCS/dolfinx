@@ -229,7 +229,7 @@ int main(int argc, char* argv[])
     auto Qe = std::make_shared<fem::FiniteElement<U>>(
         basix::create_element<U>(basix::element::family::P, submesh_cell_type,
                                  1, basix::element::lagrange_variant::unset,
-                                 basix::element::dpc_variant::unset, true));
+                                 basix::element::dpc_variant::unset, false));
 
     // Create a function space for `u_0` on the submesh
     auto Q = std::make_shared<fem::FunctionSpace<U>>(

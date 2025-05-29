@@ -44,9 +44,9 @@ V = FunctionSpace(msh, ME)
 V0 = FunctionSpace(msh, P)
 f = Coefficient(V0)
 
-# We represent boundary data using a first-degree discontinuous Lagrange space
+# We represent boundary data using a first-degree Lagrange space
 # defined over a submesh of the boundary
-Q = FunctionSpace(submsh, element("DP", submsh_cell, 1))
+Q = FunctionSpace(submsh, element("Lagrange", submsh_cell, 1))
 u0 = Coefficient(Q)
 
 # Specify the weak form of the problem
