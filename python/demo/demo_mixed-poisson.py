@@ -376,6 +376,9 @@ ksp.solve(b, x)
 reason = ksp.getConvergedReason()
 assert reason > 0, f"Krylov solver has not converged {reason}."
 ksp.view()
+
+sigma.x.scatter_forward()
+u.x.scatter_forward()
 # -
 
 # We save the solution `u` in VTX format:
