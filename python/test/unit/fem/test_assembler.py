@@ -367,12 +367,11 @@ class TestPETScAssemblers:
             set_bc(b, bcs0)
 
             assert A.getType() != "nest"
-            Anorm = A.norm()
-            bnorm = b.norm()
-            A.destroy(), b.destroy()
+
             with pytest.raises(RuntimeError):
                 petsc_assemble_matrix(a_block_none, bcs=[bc])
-            return Anorm, bnorm
+
+            return A, b
 
         def nest():
             """Nested (MatNest)"""
@@ -382,6 +381,8 @@ class TestPETScAssemblers:
                 kind=[["baij", "aij", "aij"], ["aij", "", "aij"], ["aij", "aij", "aij"]],
             )
             A.assemble()
+            assert A.type == "nest"
+
             with pytest.raises(RuntimeError):
                 petsc_assemble_matrix(a_block_none, bcs=[bc])
 
@@ -393,10 +394,8 @@ class TestPETScAssemblers:
             bcs0 = bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
             petsc_set_bc(b, bcs0)
             b.assemble()
-            bnorm = math.sqrt(sum([x.norm() ** 2 for x in b.getNestSubVecs()]))
-            Anorm = nest_matrix_norm(A)
-            A.destroy(), b.destroy()
-            return Anorm, bnorm
+
+            return A, b
 
         def monolithic():
             """Monolithic version"""
@@ -426,19 +425,140 @@ class TestPETScAssemblers:
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             petsc_set_bc(b, [bc])
             assert A.getType() != "nest"
-            Anorm = A.norm()
-            bnorm = b.norm()
-            A.destroy(), b.destroy()
-            return Anorm, bnorm
 
-        Anorm0, bnorm0 = blocked()
-        Anorm1, bnorm1 = nest()
-        assert Anorm1 == pytest.approx(Anorm0, 1.0e-4)
-        assert bnorm1 == pytest.approx(bnorm0, 1.0e-6)
+            return A, b
 
-        Anorm2, bnorm2 = monolithic()
-        assert Anorm2 == pytest.approx(Anorm0, 1.0e-4)
-        assert bnorm2 == pytest.approx(bnorm0, 1.0e-6)
+        A_blocked, b_blocked = blocked()
+        A_nest, b_nest = nest()
+        A_monolithic, b_monolithic = monolithic()
+
+        assert A_blocked.equal(A_nest)
+        assert b_blocked.equal(b_nest)
+
+        assert A_blocked.norm() == pytest.approx(A_monolithic.norm(), 1.0e-4)
+        assert b_blocked.norm() == pytest.approx(b_monolithic.norm(), 1.0e-6)
+
+        A_nest.destroy(), b_nest.destroy()
+        A_blocked.destroy(), b_blocked.destroy()
+        A_monolithic.destroy(), b_monolithic.destroy()
+
+    @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
+    def test_matrix_assembly_block_vector(self, mode):
+        """Test assembly of block matrices and vectors into (a) monolithic
+        blocked structures, PETSc Nest structures, and monolithic
+        structures.
+        """
+        from petsc4py import PETSc
+
+        from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
+        from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
+        from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
+        from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
+        from dolfinx.fem.petsc import set_bc as petsc_set_bc
+
+        mesh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
+
+        P0 = element("Lagrange", mesh.basix_cell(), 2, dtype=default_real_type, shape=(2,))
+        P1 = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
+        V0 = functionspace(mesh, P0)
+        V1 = functionspace(mesh, P1)
+
+        # Locate facets on boundary
+        facetdim = mesh.topology.dim - 1
+        bndry_facets = locate_entities_boundary(
+            mesh, facetdim, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)
+        )
+        bdofsV1 = locate_dofs_topological(V1, facetdim, bndry_facets)
+        u_bc = PETSc.ScalarType(50.0)
+        bc = dirichletbc(u_bc, bdofsV1, V1)
+
+        # Define variational problem
+        u, p = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
+        v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
+        g = -3.0
+
+        a00 = inner(u, v) * dx
+        a01 = inner(p, v[0] + v[1]) * dx
+        a10 = inner(u[0] + u[1], q) * dx
+        a11 = inner(p, q) * dx
+
+        L0 = ufl.ZeroBaseForm((v,))
+        L1 = inner(g, q) * dx
+
+        a_block = form([[a00, a01], [a10, a11]])
+        L_block = form([L0, L1])
+
+        def blocked():
+            """Monolithic blocked"""
+            A = petsc_assemble_matrix(a_block, bcs=[bc])
+            A.assemble()
+            b = assemble_vector(L_block, kind=PETSc.Vec.Type.MPI)
+            bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a_block, 1), bcs=[bc])
+            apply_lifting(b, a_block, bcs=bcs1)
+            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+            bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L_block), [bc])
+            set_bc(b, bcs0)
+
+            assert A.getType() != "nest"
+            return A, b
+
+        def nest():
+            """Nested (MatNest)"""
+            A = petsc_assemble_matrix(a_block, bcs=[bc], kind="nest")
+            A.assemble()
+
+            assert A.type == "nest"
+
+            b = petsc_assemble_vector(L_block, kind="nest")
+            bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a_block, 1), bcs=[bc])
+            petsc_apply_lifting(b, a_block, bcs=bcs1)
+            for b_sub in b.getNestSubVecs():
+                b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+            bcs0 = bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
+            petsc_set_bc(b, bcs0)
+            b.assemble()
+
+            return A, b
+
+        def monolithic():
+            """Monolithic version"""
+            W = functionspace(mesh, mixed_element([P0, P1]))
+            u0, u1 = ufl.TrialFunctions(W)
+            v0, v1 = ufl.TestFunctions(W)
+            a = (
+                inner(u0, v0) * dx
+                + inner(u1, v1) * dx
+                + inner(u0[0] + u0[1], v1) * dx
+                + inner(u1, v0[0] + v0[1]) * dx
+            )
+            L = ufl.ZeroBaseForm((v0,)) + inner(g, v1) * dx
+            a, L = form(a), form(L)
+
+            bdofsW_V1 = locate_dofs_topological(W.sub(1), mesh.topology.dim - 1, bndry_facets)
+            bc = dirichletbc(u_bc, bdofsW_V1, W.sub(1))
+            A = petsc_assemble_matrix(a, bcs=[bc])
+            A.assemble()
+            b = petsc_assemble_vector(L)
+            petsc_apply_lifting(b, [a], bcs=[[bc]])
+            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+            petsc_set_bc(b, [bc])
+            assert A.getType() != "nest"
+
+            return A, b
+
+        A_blocked, b_blocked = blocked()
+        A_nest, b_nest = nest()
+        A_monolithic, b_monolithic = monolithic()
+
+        assert A_blocked.equal(A_nest)
+        assert b_blocked.equal(b_nest)
+
+        assert A_blocked.norm() == pytest.approx(A_monolithic.norm(), 1.0e-4)
+        assert b_blocked.norm() == pytest.approx(b_monolithic.norm(), 1.0e-6)
+
+        A_nest.destroy(), b_nest.destroy()
+        A_blocked.destroy(), b_blocked.destroy()
+        A_monolithic.destroy(), b_monolithic.destroy()
 
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
     def test_assembly_solve_block(self, mode):
