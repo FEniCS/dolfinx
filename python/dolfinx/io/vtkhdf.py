@@ -26,10 +26,10 @@ def read_mesh(
 ):
     """Read a mesh from a VTKHDF format file
     Args:
-           comm: An MPI communicator.
-           filename: File to read from.
-           dtype: Scalar type of mesh geometry (need not match dtype in file)
-           gdim: Geometric dimension of the mesh.
+        comm: An MPI communicator.
+        filename: File to read from.
+        dtype: Scalar type of mesh geometry (need not match dtype in file)
+        gdim: Geometric dimension of the mesh.
     """
     if dtype == np.float64:
         mesh_cpp = read_vtkhdf_mesh_float64(comm, filename, gdim)
@@ -58,7 +58,7 @@ def read_mesh(
 def write_mesh(filename: typing.Union[str, Path], mesh: Mesh):
     """Write a mesh to file in VTKHDF format
     Args:
-           filename: File to write to.
-           mesh: Mesh.
+        filename: File to write to.
+        mesh: Mesh.
     """
     write_vtkhdf_mesh(filename, mesh._cpp_object)

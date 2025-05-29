@@ -57,7 +57,8 @@ def gmsh_sphere(model: gmsh.model, name: str) -> gmsh.model:
     # Add physical tag for sphere
     model.add_physical_group(dim=3, tags=[sphere], tag=1)
 
-    # Embed all sub-entities from the GMSH model into the sphere and tag them
+    # Embed all sub-entities from the GMSH model into the sphere and tag
+    # them
     for dim in [0, 1, 2]:
         entities = model.getEntities(dim)
         entity_ids = [entity[1] for entity in entities]
