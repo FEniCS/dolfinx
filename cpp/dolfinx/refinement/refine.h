@@ -59,7 +59,7 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
     std::vector<std::int32_t> destinations(num_cells);
 
     int rank = dolfinx::MPI::rank(comm);
-    for (std::int32_t i = 0; i < destinations.size(); i++)
+    for (std::size_t i = 0; i < destinations.size(); i++)
     {
       bool ghost_parent_cell = parent_cell[i] > cell_im->size_local();
       if (ghost_parent_cell)
