@@ -51,8 +51,10 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
                        std::vector<std::span<const std::int64_t>> cells)
              -> graph::AdjacencyList<std::int32_t>
   {
-    auto cell_im
+    const auto parent_cell_im
         = parent_mesh.topology()->index_map(parent_mesh.topology()->dim());
+    std::int32_t parent_num_cells = parent_cell_im->size_local();
+    std::span parent_cell_owners = parent_cell_im->owners();
 
     std::int32_t num_cells
         = cells.front().size() / mesh::num_cell_vertices(cell_types.front());
@@ -61,22 +63,15 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
     int rank = dolfinx::MPI::rank(comm);
     for (std::size_t i = 0; i < destinations.size(); i++)
     {
-      bool ghost_parent_cell = parent_cell[i] > cell_im->size_local();
-      if (ghost_parent_cell)
-      {
-        destinations[i]
-            = cell_im->owners()[parent_cell[i] - cell_im->size_local()];
-      }
+      bool parent_is_ghost_cell = parent_cell[i] > parent_num_cells;
+      if (parent_is_ghost_cell)
+        destinations[i] = parent_cell_owners[parent_cell[i] - parent_num_cells];
       else
-      {
         destinations[i] = rank;
-      }
     }
 
     if (comm == MPI_COMM_NULL)
-    {
       return graph::regular_adjacency_list(std::move(destinations), 1);
-    }
 
     auto dual_graph = mesh::build_dual_graph(comm, cell_types, cells);
     std::vector<std::int32_t> node_disp(MPI::size(comm) + 1, 0);
