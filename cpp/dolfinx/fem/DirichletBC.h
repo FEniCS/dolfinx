@@ -336,7 +336,7 @@ public:
           "Rank mismatch between Constant and function space in DirichletBC");
     }
 
-    if (g->value.size() != _function_space->dofmap()->bs())
+    if (g->value.size() != (std::size_t)_function_space->dofmap()->bs())
     {
       throw std::runtime_error(
           "Creating a DirichletBC using a Constant is not supported when the "

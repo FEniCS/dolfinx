@@ -79,9 +79,10 @@ public:
              const std::vector<std::size_t>& value_shape,
              std::shared_ptr<const FunctionSpace<geometry_type>> argument_space
              = nullptr)
-      : _coefficients(coefficients), _constants(constants),
-        _x_ref(std::vector<geometry_type>(X.begin(), X.end()), Xshape), _fn(fn),
-        _value_shape(value_shape), _argument_space(argument_space)
+      : _argument_space(argument_space), _coefficients(coefficients),
+        _constants(constants), _fn(fn), _value_shape(value_shape),
+        _x_ref(std::vector<geometry_type>(X.begin(), X.end()), Xshape)
+
   {
     for (auto& c : _coefficients)
     {

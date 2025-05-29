@@ -325,7 +325,6 @@ void discrete_gradient(mesh::Topology& topology,
   const DofMap& dofmap1 = V1.second.get();
 
   using cmdspan2_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
-  using mdspan2_t = md::mdspan<U, md::dextents<std::size_t, 2>>;
   using cmdspan4_t = md::mdspan<const U, md::dextents<std::size_t, 4>>;
 
   // Check elements
@@ -461,7 +460,6 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
 
   using mdspan2_t = md::mdspan<U, md::dextents<std::size_t, 2>>;
   using cmdspan2_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
-  using cmdspan3_t = md::mdspan<const U, md::dextents<std::size_t, 3>>;
   using cmdspan4_t = md::mdspan<const U, md::dextents<std::size_t, 4>>;
   using mdspan3_t = md::mdspan<U, md::dextents<std::size_t, 3>>;
 
@@ -544,7 +542,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
     auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      for (std::size_t j = 0; j < gdim; ++j)
+      for (int j = 0; j < gdim; ++j)
         coord_dofs(i, j) = x_g[3 * x_dofs[i] + j];
     }
 
