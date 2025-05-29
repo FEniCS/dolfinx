@@ -168,19 +168,20 @@ std::stringstream create_vtk_schema(const std::vector<std::string>& point_data,
 
 /// Extract name of functions and split into real and imaginary component
 template <std::floating_point T>
-std::tuple<std::vector<std::string>,std::vector<std::string>>
+std::tuple<std::vector<std::string>, std::vector<std::string>>
 extract_function_names(const typename adios2_writer::U<T>& u)
 {
   std::vector<std::string> names, dg0_names;
   for (auto& v : u)
   {
     std::visit(
-        [&names,&dg0_names](auto&& u)
+        [&names, &dg0_names](auto&& u)
         {
           using U = std::decay_t<decltype(u)>;
           using X = typename U::element_type;
           std::vector<std::string>* fnames = &names;
-          if (impl::is_cellwise(*(u->function_space()->element()))) {
+          if (impl::is_cellwise(*(u->function_space()->element())))
+          {
             fnames = &dg0_names;
           }
           if constexpr (std::is_floating_point_v<typename X::value_type>)
@@ -440,7 +441,8 @@ public:
             std::shared_ptr<const mesh::Mesh<T>> mesh,
             std::string engine = "BPFile")
       : ADIOS2Writer(comm, filename, "VTX mesh writer", engine), _mesh(mesh),
-        _mesh_reuse_policy(VTXMeshPolicy::update), _has_piecewise_constant(false)
+        _mesh_reuse_policy(VTXMeshPolicy::update),
+        _has_piecewise_constant(false)
   {
     // Define VTK scheme attribute for mesh
     std::string vtk_scheme = impl_vtx::create_vtk_schema({}, {}).str();
@@ -480,7 +482,7 @@ public:
     for (auto& v : u)
     {
       std::visit(
-          [&V0,&has_V0_changed](auto& u)
+          [&V0, &has_V0_changed](auto& u)
           {
             auto V = u->function_space().get();
             assert(V);
@@ -491,7 +493,8 @@ public:
             }
           },
           v);
-      if (has_V0_changed) break;
+      if (has_V0_changed)
+        break;
     }
     auto element0 = V0->element().get();
     assert(element0);
@@ -517,12 +520,13 @@ public:
     for (auto& v : _u)
     {
       std::visit(
-          [V0,this](auto& u)
+          [V0, this](auto& u)
           {
             auto element = u->function_space()->element();
             assert(element);
             bool is_piecewise_constant = impl::is_cellwise(*element);
-            _has_piecewise_constant = _has_piecewise_constant || is_piecewise_constant;
+            _has_piecewise_constant
+                = _has_piecewise_constant || is_piecewise_constant;
             if (*element != *V0->element().get() and !is_piecewise_constant)
             {
               throw std::runtime_error("All functions in VTXWriter must have "
@@ -532,9 +536,9 @@ public:
             auto dmap0 = V0->dofmap()->map();
             auto dmap = u->function_space()->dofmap()->map();
             if ((dmap0.size() != dmap.size()
-                or !std::equal(dmap0.data_handle(),
-                               dmap0.data_handle() + dmap0.size(),
-                               dmap.data_handle()))
+                 or !std::equal(dmap0.data_handle(),
+                                dmap0.data_handle() + dmap0.size(),
+                                dmap.data_handle()))
                 and !is_piecewise_constant)
             {
               throw std::runtime_error(
@@ -632,13 +636,12 @@ public:
         _engine->Put(ghost, _x_ghost.data());
         _engine->PerformPuts();
       }
-
     }
     // Write function data for each function to file
     for (auto& v : _u)
     {
-      std::visit([&](auto& u)
-                 { impl_vtx::vtx_write_data(*_io, *_engine, *u); }, v);
+      std::visit([&](auto& u) { impl_vtx::vtx_write_data(*_io, *_engine, *u); },
+                 v);
     }
 
     _engine->EndStep();
