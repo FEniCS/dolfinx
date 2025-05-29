@@ -290,6 +290,9 @@ int main(int argc, char* argv[])
     assert(facet_imap);
     std::size_t num_facets = mesh->topology()->index_map(fdim)->size_local()
                              + mesh->topology()->index_map(fdim)->num_ghosts();
+    // Since not all facets in the mesh appear in the submesh, `submesh_to_mesh`
+    // is only injective. We therefore map nonexistent facets to -1 when
+    // creating the "inverse" map mesh_to_submesh 
     std::vector<std::int32_t> mesh_to_submesh(num_facets, -1);
     for (std::size_t i = 0; i < submesh_to_mesh.size(); ++i)
       mesh_to_submesh[submesh_to_mesh[i]] = i;
