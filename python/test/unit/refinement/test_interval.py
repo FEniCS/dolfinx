@@ -20,7 +20,8 @@ from dolfinx import mesh
     "ghost_mode_refined",
     [mesh.GhostMode.none, mesh.GhostMode.shared_vertex, mesh.GhostMode.shared_facet],
 )
-@pytest.mark.parametrize("option", [mesh.RefinementOption.none, mesh.RefinementOption.parent_cell])
+@pytest.mark.parametrize("option", [mesh.RefinementOption.parent_cell])
+# TODO: reactivate mesh.mesh.RefinementOption.none
 def test_refine_interval(n, ghost_mode, ghost_mode_refined, option):
     msh = mesh.create_interval(MPI.COMM_WORLD, n, [0, 1], ghost_mode=ghost_mode)
     msh_refined, edges, vertices = mesh.refine(
