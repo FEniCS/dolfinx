@@ -1,0 +1,58 @@
+name: clang-tidy
+
+on:
+  schedule:
+    # daily at 1am
+    - cron: "0 1 * * *"
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - "**"
+    tags:
+      - "v*"
+  merge_group:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  clang-tidy:
+    runs-on: ubuntu-latest
+    container: "ghcr.io/fenics/test-env:current-openmpi"
+    env:
+      PETSC_ARCH: linux-gnu-real64-32
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+      PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y clang-tidy
+
+      - name: Load environment variables
+        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+
+      - name: Install FEniCS Python components (default branches/tags)
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
+
+      - name: Install FEniCS Python components
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
+
+      - name: Configure, build and install C++ library
+        run: |
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_ADIOS2=true -DDOLFINX_ENABLE_KAHIP=true -DDOLFINX_ENABLE_PARMETIS=false -DDOLFINX_ENABLE_PETSC=true -DDOLFINX_ENABLE_SCOTCH=true -DDOLFINX_ENABLE_SLEPC=true -DENABLE_CLANG_TIDY=ON -B build -S cpp/
+          cmake --build build
+          cmake --install build

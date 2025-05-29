@@ -34,7 +34,7 @@ class FunctionSpace;
 
 namespace mesh
 {
-enum class CellType;
+enum class CellType : std::int8_t;
 template <std::floating_point T>
 class Geometry;
 } // namespace mesh

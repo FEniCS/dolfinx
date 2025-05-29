@@ -21,7 +21,7 @@ void dolfinx::list_timings(MPI_Comm comm, Table::Reduction reduction)
 }
 //-----------------------------------------------------------------------------
 std::pair<int, std::chrono::duration<double, std::ratio<1>>>
-dolfinx::timing(std::string task)
+dolfinx::timing(const std::string& task)
 {
   return dolfinx::common::TimeLogger::instance().timing(task);
 }
