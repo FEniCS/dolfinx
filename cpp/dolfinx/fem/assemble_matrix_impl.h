@@ -29,6 +29,9 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 
 /// @brief Execute kernel over cells and accumulate result in a matrix.
 ///
+/// @note This function does no dynamic memory allocation. Developers
+/// must make any changes that introduce a dynamic memory allocation.
+///
 /// @tparam T Matrix/form scalar type.
 /// @param mat_set Function that accumulates computed entries into a
 /// matrix.
@@ -60,6 +63,10 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// function mesh.
 /// @param cell_info1 Cell permutation information for the trial
 /// function mesh.
+/// @param[in] Ae Buffer array with size at least `bs0 * dmap0.extent(1) *
+/// bs1 * dmap1.extent(1)`.
+/// @param[in] cdofs Buffer array with size at least `3 *
+/// x_dofmap.extent(1)`.
 template <dolfinx::scalar T>
 void assemble_cells(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
@@ -74,7 +81,8 @@ void assemble_cells(
     std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
-    std::span<const std::uint32_t> cell_info1)
+    std::span<const std::uint32_t> cell_info1, std::span<T> Ae,
+    std::span<scalar_value_t<T>> cdofs)
 {
   if (cells.empty())
     return;
@@ -87,9 +95,9 @@ void assemble_cells(
   const int num_dofs1 = dmap1.extent(1);
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
-  std::vector<T> Ae(ndim0 * ndim1);
-  std::span<T> _Ae(Ae);
-  std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
+
+  assert(Ae.size() >= ndim0 * ndim1);
+  assert(cdofs.size() >= 3 * x_dofmap.extent(1));
 
   // Iterate over active cells
   assert(cells0.size() == cells.size());
@@ -113,8 +121,8 @@ void assemble_cells(
            nullptr, nullptr);
 
     // Compute A = P_0 \tilde{A} P_1^T (dof transformation)
-    P0(_Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
-    P1T(_Ae, cell_info1, cell1, ndim0); // A =  B P1_T
+    P0(Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
+    P1T(Ae, cell_info1, cell1, ndim0); // A =  B P1_T
 
     // Zero rows/columns for essential bcs
     std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
@@ -160,6 +168,9 @@ void assemble_cells(
 /// @brief Execute kernel over exterior facets and accumulate result in
 /// a matrix.
 ///
+/// @note This function does no dynamic memory allocation. Developers
+/// must make any changes that introduce a dynamic memory allocation.
+
 /// @tparam T Matrix/form scalar type.
 /// @param[in] mat_set Function that accumulates computed entries into a
 /// matrix.
@@ -191,6 +202,10 @@ void assemble_cells(
 /// function mesh.
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
+/// @param[in] Ae Buffer array with size at least `bs0 * dmap0.extent(1) *
+/// bs1 * dmap1.extent(1)`.
+/// @param[in] cdofs Buffer array with size at least `3 *
+/// x_dofmap.extent(1)`.
 template <dolfinx::scalar T>
 void assemble_exterior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
@@ -214,7 +229,8 @@ void assemble_exterior_facets(
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
+    std::span<T> Ae, std::span<scalar_value_t<T>> cdofs)
 {
   if (facets.empty())
     return;
@@ -223,13 +239,10 @@ void assemble_exterior_facets(
   const auto [dmap1, bs1, facets1] = dofmap1;
 
   // Data structures used in assembly
-  std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
   const int num_dofs0 = dmap0.extent(1);
   const int num_dofs1 = dmap1.extent(1);
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
-  std::vector<T> Ae(ndim0 * ndim1);
-  std::span<T> _Ae(Ae);
   assert(facets0.size() == facets.size());
   assert(facets1.size() == facets.size());
   for (std::size_t f = 0; f < facets.extent(0); ++f)
@@ -255,8 +268,8 @@ void assemble_exterior_facets(
     kernel(Ae.data(), &coeffs(f, 0), constants.data(), cdofs.data(),
            &local_facet, &perm, nullptr);
 
-    P0(_Ae, cell_info0, cell0, ndim1);
-    P1T(_Ae, cell_info1, cell1, ndim0);
+    P0(Ae, cell_info0, cell0, ndim1);
+    P1T(Ae, cell_info1, cell1, ndim0);
 
     // Zero rows/columns for essential bcs
     std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
@@ -331,6 +344,9 @@ void assemble_exterior_facets(
 /// function mesh.
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
+/// @param[in] Ae Buffer array with size at least `......`.
+/// @param[in] cdofs Buffer array with size at least `6 *
+/// x_dofmap.extent(1)`.
 template <dolfinx::scalar T>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
@@ -340,12 +356,12 @@ void assemble_interior_facets(
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2, 2>>
         facets,
-    std::tuple<const DofMap&, int,
+    std::tuple<mdspan2_t, int,
                md::mdspan<const std::int32_t,
                           std::extents<std::size_t, md::dynamic_extent, 2, 2>>>
         dofmap0,
     fem::DofTransformKernel<T> auto P0,
-    std::tuple<const DofMap&, int,
+    std::tuple<mdspan2_t&, int,
                md::mdspan<const std::int32_t,
                           std::extents<std::size_t, md::dynamic_extent, 2, 2>>>
         dofmap1,
@@ -356,7 +372,8 @@ void assemble_interior_facets(
         coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
+    std::span<T> Ae, std::span<scalar_value_t<T>> cdofs)
 {
   if (facets.empty())
     return;
@@ -364,14 +381,19 @@ void assemble_interior_facets(
   const auto [dmap0, bs0, facets0] = dofmap0;
   const auto [dmap1, bs1, facets1] = dofmap1;
 
+  // Iterate over active cells
+  const int num_dofs0 = dmap0.extent(1);
+  const int num_dofs1 = dmap1.extent(1);
+  // const int ndim0 = bs0 * num_dofs0;
+  // const int ndim1 = bs1 * num_dofs1;
+
   // Data structures used in assembly
   using X = scalar_value_t<T>;
-  std::vector<X> cdofs(2 * x_dofmap.extent(1) * 3);
   std::span<X> cdofs0(cdofs.data(), x_dofmap.extent(1) * 3);
   std::span<X> cdofs1(cdofs.data() + x_dofmap.extent(1) * 3,
                       x_dofmap.extent(1) * 3);
 
-  std::vector<T> Ae, be;
+  std::vector<T> be;
 
   // Temporaries for joint dofmaps
   std::vector<std::int32_t> dmapjoint0, dmapjoint1;
@@ -397,15 +419,26 @@ void assemble_interior_facets(
       std::copy_n(&x(x_dofs1[i], 0), 3, std::next(cdofs1.begin(), 3 * i));
 
     // Get dof maps for cells and pack
-    std::span<const std::int32_t> dmap0_cell0 = dmap0.cell_dofs(cells0[0]);
-    std::span<const std::int32_t> dmap0_cell1 = dmap0.cell_dofs(cells0[1]);
+
+    std::span dmap0_cell0(dmap0.data_handle() + cells0[0] * num_dofs0,
+                          num_dofs0);
+    std::span dmap0_cell1(dmap0.data_handle() + cells0[1] * num_dofs0,
+                          num_dofs0);
+    // std::span<const std::int32_t> dmap0_cell0 = dmap0.cell_dofs(cells0[0]);
+    // std::span<const std::int32_t> dmap0_cell1 = dmap0.cell_dofs(cells0[1]);
+
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
     std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
     std::ranges::copy(dmap0_cell1,
                       std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
-    std::span<const std::int32_t> dmap1_cell0 = dmap1.cell_dofs(cells1[0]);
-    std::span<const std::int32_t> dmap1_cell1 = dmap1.cell_dofs(cells1[1]);
+    // std::span<const std::int32_t> dmap1_cell0 = dmap1.cell_dofs(cells1[0]);
+    // std::span<const std::int32_t> dmap1_cell1 = dmap1.cell_dofs(cells1[1]);
+    std::span dmap1_cell0(dmap1.data_handle() + cells1[0] * num_dofs1,
+                          num_dofs1);
+    std::span dmap1_cell1(dmap1.data_handle() + cells1[1] * num_dofs1,
+                          num_dofs1);
+
     dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
     std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
     std::ranges::copy(dmap1_cell1,
@@ -415,7 +448,7 @@ void assemble_interior_facets(
     const int num_cols = bs1 * dmapjoint1.size();
 
     // Tabulate tensor
-    Ae.resize(num_rows * num_cols);
+    // Ae.resize(num_rows * num_cols);
     std::ranges::fill(Ae, 0);
 
     std::array perm = perms.empty()
@@ -432,19 +465,18 @@ void assemble_interior_facets(
     //
     // where each block is element tensor of size (dmap0, dmap1).
 
-    std::span<T> _Ae(Ae);
-    std::span<T> sub_Ae0 = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
-                                       bs0 * dmap0_cell1.size() * num_cols);
+    std::span<T> sub_Ae0 = Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
+                                      bs0 * dmap0_cell1.size() * num_cols);
 
-    P0(_Ae, cell_info0, cells0[0], num_cols);
+    P0(Ae, cell_info0, cells0[0], num_cols);
     P0(sub_Ae0, cell_info0, cells0[1], num_cols);
-    P1T(_Ae, cell_info1, cells1[0], num_rows);
+    P1T(Ae, cell_info1, cells1[0], num_rows);
 
     for (int row = 0; row < num_rows; ++row)
     {
       // DOFs for dmap1 and cell1 are not stored contiguously in
       // the block matrix, so each row needs a separate span access
-      std::span<T> sub_Ae1 = _Ae.subspan(
+      std::span<T> sub_Ae1 = Ae.subspan(
           row * num_cols + bs1 * dmap1_cell0.size(), bs1 * dmap1_cell1.size());
       P1T(sub_Ae1, cell_info1, cells1[1], 1);
     }
@@ -578,6 +610,10 @@ void assemble_matrix(
       cell_info1 = std::span(mesh1->topology()->get_cell_permutation_info());
     }
 
+    // Buffers
+    std::vector<T> Ae_b(bs0 * dofs0.extent(1) * bs1 * dofs1.extent(1));
+    std::vector<scalar_value_t<T>> cdofs_b(3 * x_dofmap.extent(1));
+
     for (int i : a.integral_ids(IntegralType::cell))
     {
       auto fn = a.kernel(IntegralType::cell, i, cell_type_idx);
@@ -590,7 +626,8 @@ void assemble_matrix(
       impl::assemble_cells(mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0},
                            P0, {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
                            md::mdspan(coeffs.data(), cells.size(), cstride),
-                           constants, cell_info0, cell_info1);
+                           constants, cell_info0, cell_info1, std::span(Ae_b),
+                           std::span(cdofs_b));
     }
 
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
@@ -634,8 +671,12 @@ void assemble_matrix(
           mat_set, x_dofmap, x, facets, {dofs0, bs0, facets0}, P0,
           {dofs1, bs1, facets1}, P1T, bc0, bc1, fn,
           md::mdspan(coeffs.data(), facets.extent(0), cstride), constants,
-          cell_info0, cell_info1, perms);
+          cell_info0, cell_info1, perms, std::span(Ae_b), std::span(cdofs_b));
     }
+
+    // Buffers
+    std::vector<T> Ae1_b(2 * bs0 * dofs0.extent(1) * 2 * bs1 * dofs1.extent(1));
+    std::vector<scalar_value_t<T>> cdofs1_b(6 * x_dofmap.extent(1));
 
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {
@@ -664,14 +705,12 @@ void assemble_matrix(
       impl::assemble_interior_facets(
           mat_set, x_dofmap, x,
           mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
-          {*dofmap0, bs0,
-           mdspanx22_t(facets0.data(), facets0.size() / 4, 2, 2)},
+          {dofs0, bs0, mdspanx22_t(facets0.data(), facets0.size() / 4, 2, 2)},
           P0,
-          {*dofmap1, bs1,
-           mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
+          {dofs1, bs1, mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
           P1T, bc0, bc1, fn,
           mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride), constants,
-          cell_info0, cell_info1, perms);
+          cell_info0, cell_info1, perms, std::span(Ae1_b), std::span(cdofs1_b));
     }
   }
 }
