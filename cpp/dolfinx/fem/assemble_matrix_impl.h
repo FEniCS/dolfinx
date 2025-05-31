@@ -69,15 +69,15 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// x_dofmap.extent(1)`.
 template <dolfinx::scalar T>
 void assemble_cells(
-    la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
+    la::MatSet<T> auto&& mat_set, mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
     std::span<const std::int32_t> cells,
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
-    fem::DofTransformKernel<T> auto P0,
+    fem::DofTransformKernel<T> auto&& P0,
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
-    fem::DofTransformKernel<T> auto P1T, std::span<const std::int8_t> bc0,
+    fem::DofTransformKernel<T> auto&& P1T, std::span<const std::int8_t> bc0,
     std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
@@ -208,7 +208,7 @@ void assemble_cells(
 /// x_dofmap.extent(1)`.
 template <dolfinx::scalar T>
 void assemble_exterior_facets(
-    la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
+    la::MatSet<T> auto&& mat_set, mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
@@ -219,12 +219,12 @@ void assemble_exterior_facets(
                md::mdspan<const std::int32_t,
                           std::extents<std::size_t, md::dynamic_extent, 2>>>
         dofmap0,
-    fem::DofTransformKernel<T> auto P0,
+    fem::DofTransformKernel<T> auto&& P0,
     std::tuple<mdspan2_t, int,
                md::mdspan<const std::int32_t,
                           std::extents<std::size_t, md::dynamic_extent, 2>>>
         dofmap1,
-    fem::DofTransformKernel<T> auto P1T, std::span<const std::int8_t> bc0,
+    fem::DofTransformKernel<T> auto&& P1T, std::span<const std::int8_t> bc0,
     std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
@@ -373,7 +373,8 @@ void assemble_interior_facets(
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<T> Ae, std::span<scalar_value_t<T>> cdofs)
+    std::span<T> Ae, std::span<std::int32_t> dmapjoint_b,
+    std::span<scalar_value_t<T>> cdofs)
 {
   if (facets.empty())
     return;
@@ -393,10 +394,10 @@ void assemble_interior_facets(
   std::span<X> cdofs1(cdofs.data() + x_dofmap.extent(1) * 3,
                       x_dofmap.extent(1) * 3);
 
-  std::vector<T> be;
+  // Holder for 'joint' dofmaps
+  auto dmapjoint0 = dmapjoint_b.subspan(0, 2 * num_dofs0);
+  auto dmapjoint1 = dmapjoint_b.subspan(2 * num_dofs0, 2 * num_dofs0);
 
-  // Temporaries for joint dofmaps
-  std::vector<std::int32_t> dmapjoint0, dmapjoint1;
   assert(facets0.size() == facets.size());
   assert(facets1.size() == facets.size());
   for (std::size_t f = 0; f < facets.extent(0); ++f)
@@ -424,22 +425,16 @@ void assemble_interior_facets(
                           num_dofs0);
     std::span dmap0_cell1(dmap0.data_handle() + cells0[1] * num_dofs0,
                           num_dofs0);
-    // std::span<const std::int32_t> dmap0_cell0 = dmap0.cell_dofs(cells0[0]);
-    // std::span<const std::int32_t> dmap0_cell1 = dmap0.cell_dofs(cells0[1]);
 
-    dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
     std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
     std::ranges::copy(dmap0_cell1,
                       std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
-    // std::span<const std::int32_t> dmap1_cell0 = dmap1.cell_dofs(cells1[0]);
-    // std::span<const std::int32_t> dmap1_cell1 = dmap1.cell_dofs(cells1[1]);
     std::span dmap1_cell0(dmap1.data_handle() + cells1[0] * num_dofs1,
                           num_dofs1);
     std::span dmap1_cell1(dmap1.data_handle() + cells1[1] * num_dofs1,
                           num_dofs1);
 
-    dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
     std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
     std::ranges::copy(dmap1_cell1,
                       std::next(dmapjoint1.begin(), dmap1_cell0.size()));
@@ -448,7 +443,7 @@ void assemble_interior_facets(
     const int num_cols = bs1 * dmapjoint1.size();
 
     // Tabulate tensor
-    // Ae.resize(num_rows * num_cols);
+    assert(Ae.size() >= num_rows * num_cols);
     std::ranges::fill(Ae, 0);
 
     std::array perm = perms.empty()
@@ -543,7 +538,7 @@ void assemble_interior_facets(
 /// applied.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
-    la::MatSet<T> auto mat_set, const Form<T, U>& a,
+    la::MatSet<T> auto&& mat_set, const Form<T, U>& a,
     md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
@@ -676,7 +671,9 @@ void assemble_matrix(
 
     // Buffers
     std::vector<T> Ae1_b(2 * bs0 * dofs0.extent(1) * 2 * bs1 * dofs1.extent(1));
-    std::vector<scalar_value_t<T>> cdofs1_b(6 * x_dofmap.extent(1));
+    std::vector<scalar_value_t<T>> cdofs1_b(2 * 3 * x_dofmap.extent(1));
+    std::vector<std::int32_t> dmapjoint_b(
+        2 * (dofs0.extent(1) + dofs1.extent(1)));
 
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {
@@ -710,7 +707,8 @@ void assemble_matrix(
           {dofs1, bs1, mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
           P1T, bc0, bc1, fn,
           mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride), constants,
-          cell_info0, cell_info1, perms, std::span(Ae1_b), std::span(cdofs1_b));
+          cell_info0, cell_info1, perms, std::span(Ae1_b),
+          std::span(dmapjoint_b), std::span(cdofs1_b));
     }
   }
 }
