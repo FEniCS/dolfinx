@@ -393,7 +393,7 @@ void assemble_interior_facets(
 
   // Holder for 'joint' dofmaps
   auto dmapjoint0 = dmapjoint_b.subspan(0, 2 * num_dofs0);
-  auto dmapjoint1 = dmapjoint_b.subspan(2 * num_dofs0, 2 * num_dofs0);
+  auto dmapjoint1 = dmapjoint_b.subspan(2 * num_dofs0, 2 * num_dofs1);
 
   assert(facets0.size() == facets.size());
   assert(facets1.size() == facets.size());
