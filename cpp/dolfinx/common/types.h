@@ -53,7 +53,7 @@ using BS = std::integral_constant<int, N>;
 
 /// @private Retrieves the integral block size of a compile time block size.
 template <BlockSize V>
-constexpr int
+consteval int
 block_size(V bs,
            typename std::enable_if_t<common::is_compile_time_v<int, V>>* = 0)
 {
