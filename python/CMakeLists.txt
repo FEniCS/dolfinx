@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(dolfinx_nanobind LANGUAGES CXX)
+project(dolfinx_nanobind LANGUAGES C CXX)
 
 if(WIN32)
   # Windows requires all symbols to be manually exported. This flag exports all
