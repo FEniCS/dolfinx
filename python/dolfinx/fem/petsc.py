@@ -53,6 +53,7 @@ from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
 from dolfinx.fem.function import FunctionSpace as _FunctionSpace
+from dolfinx.mesh import Mesh as _Mesh
 
 __all__ = [
     "LinearProblem",
@@ -751,6 +752,7 @@ class LinearProblem:
         jit_options: typing.Optional[dict] = None,
         kind: typing.Optional[typing.Union[str, Iterable[Iterable[str]]]] = None,
         P: typing.Optional[typing.Union[ufl.Form, Iterable[Iterable[ufl.Form]]]] = None,
+        entity_maps: typing.Optional[dict[_Mesh, npt.NDArray[np.int32]]] = None,
     ) -> None:
         """Initialize solver for a linear variational problem.
 
@@ -775,6 +777,15 @@ class LinearProblem:
                 option values.
             kind: The PETSc matrix and vector type. See :func:`create_matrix` for options.
             P: UFL form or a rectangular array of bilinear forms used as a preconditioner.
+            entity_maps: If any trial functions, test functions, or
+                coefficients in the form are not defined over the same mesh
+                as the integration domain, `entity_maps` must be supplied.
+                For each key (a mesh, different to the integration domain
+                mesh) a map should be provided relating the entities in the
+                integration domain mesh to the entities in the key mesh e.g.
+                for a key-value pair (msh, emap) in `entity_maps`, `emap[i]`
+                is the entity in `msh` corresponding to entity `i` in the
+                integration domain mesh.
 
         Example::
 
@@ -791,12 +802,14 @@ class LinearProblem:
             dtype=PETSc.ScalarType,
             form_compiler_options=form_compiler_options,
             jit_options=jit_options,
+            entity_maps=entity_maps,
         )
         self._L = _create_form(
             L,
             dtype=PETSc.ScalarType,
             form_compiler_options=form_compiler_options,
             jit_options=jit_options,
+            entity_maps=entity_maps,
         )
         self._A = create_matrix(self._a, kind=kind)
         self._preconditioner = _create_form(
@@ -804,6 +817,7 @@ class LinearProblem:
             dtype=PETSc.ScalarType,
             form_compiler_options=form_compiler_options,
             jit_options=jit_options,
+            entity_maps=entity_maps,
         )
         self._P = (
             create_matrix(self._preconditioner, kind=kind)
