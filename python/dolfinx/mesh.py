@@ -185,6 +185,24 @@ class Topology:
                 f"Call `dolfinx.mesh.Topology.create_entities({dim}) first."
             )
 
+    def index_maps(self, dim: int) -> list[_cpp.common.IndexMap]:
+        """Get the IndexMaps that describes the parallel distribution of the mesh entities,
+           for each entity type of the dimension.
+
+        Args:
+            dim: Topological dimension.
+
+        Returns:
+            List of IndexMaps for the entities of dimension ``dim``.
+        """
+        if (imaps := self._cpp_object.index_maps(dim)) is not None:
+            return imaps
+        else:
+            raise RuntimeError(
+                f"Entities of dimension {dim} have not been computed."
+                f"Call `dolfinx.mesh.Topology.create_entities({dim}) first."
+            )
+
     def interprocess_facets(self) -> npt.NDArray[np.int32]:
         """List of inter-process facets, if facet topology has been computed."""
         return self._cpp_object.interprocess_facets()
