@@ -50,7 +50,7 @@ T assemble_cells(mdspan2_t x_dofmap,
   if (cells.empty())
     return value;
 
-  assert(cdofs.sieze() >= 3 * x_dofmap.extent(1));
+  assert(cdofs.size() >= 3 * x_dofmap.extent(1));
 
   // Iterate over all cells
   for (std::size_t index = 0; index < cells.size(); ++index)
@@ -100,7 +100,7 @@ T assemble_exterior_facets(
   if (facets.empty())
     return value;
 
-  assert(cdofs.sieze() >= 3 * x_dofmap.extent(1));
+  assert(cdofs.size() >= 3 * x_dofmap.extent(1));
 
   // Iterate over all facets
   for (std::size_t f = 0; f < facets.extent(0); ++f)
