@@ -46,7 +46,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// has performance benefits.
 /// @tparam _bs1 The block size of the trial function dof map.
 /// @param[in,out] b Vector to modify.
-/// @param x_dofmap Dofmap for the mesh geometry.
+/// @param[in] x_dofmap Dofmap for the mesh geometry.
 /// @param[in] x Mesh geometry (coordinates).
 /// @param[in] kernel Kernel function to execute over each cell.
 /// @param[in] cells Cell indices to execute the kernel over. These are
@@ -808,8 +808,8 @@ void assemble_exterior_facets(
 /// the kernel over.
 /// @param[in] dofmap Test function (row) degree-of-freedom data holding
 /// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
-/// @param[in] fn Kernel function to execute over each cell.
-/// @param[in] constants The constant data
+/// @param[in] fn Kernel function to execute over each facet.
+/// @param[in] constants Constant data in the kernel.
 /// @param[in] coeffs Coefficient data array, withshape (cells.size(),
 /// cstride).
 /// @param[in] cell_info0 The cell permutation information for the test

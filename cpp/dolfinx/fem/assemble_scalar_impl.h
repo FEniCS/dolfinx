@@ -21,7 +21,21 @@
 
 namespace dolfinx::fem::impl
 {
-/// Assemble functional over cells
+/// @brief Assemble functional over cells.
+/// @tparam T Scalar type.
+/// @param[in] x_dofmap Dofmap for the mesh geometry.
+/// @param[in] x Mesh geometry (coordinates).
+/// @param[in] cells Cell indices to execute the kernel over. These are
+/// the indices into the geometry dofmap `x_dofmap`.
+/// @param[in] fn Kernel function to execute over each cell.
+/// @param[in] constants Constant data in the kernel.
+/// @param[in] coeffs Coefficient data in the kernel. It has shape
+/// `(cells.size(), num_cell_coeffs)`. `coeffs(i, j)` is the `j`th
+/// coefficient for cell `i`.
+/// @param[in] cdofs Buffer array with size at least `3 *
+/// x_dofmap.extent(1)`.
+/// @return The contribution to the form (functional) from the cells
+/// local to the process.
 template <dolfinx::scalar T>
 T assemble_cells(mdspan2_t x_dofmap,
                  md::mdspan<const scalar_value_t<T>,
@@ -35,6 +49,8 @@ T assemble_cells(mdspan2_t x_dofmap,
   T value(0);
   if (cells.empty())
     return value;
+
+  assert(cdofs.sieze() >= 3 * x_dofmap.extent(1));
 
   // Iterate over all cells
   for (std::size_t index = 0; index < cells.size(); ++index)
@@ -50,7 +66,22 @@ T assemble_cells(mdspan2_t x_dofmap,
   return value;
 }
 
-/// Execute kernel over exterior facets and accumulate result
+/// @brief  Execute kernel over exterior facets and accumulate result.
+/// @tparam T Scalar type.
+/// @param[in] x_dofmap Dofmap for the mesh geometry.
+/// @param[in] x Mesh geometry (coordinates).
+/// @param[in] facets Facets (in the integration domain mesh) to execute
+/// the kernel over.
+/// @param[in] fn Kernel function to execute over each cell.
+/// @param[in] constants Constant data in the kernel.
+/// @param[in] coeffs The coefficient data array of shape
+/// `(cells.size(), coeffs_per_cell)`.
+/// @param[in] perms Facet permutation data. Empty if facet
+/// permutations are not required.
+/// @param[in] cdofs  Buffer array with size at least `3 *
+/// x_dofmap.extent(1)`.
+/// @return The contribution to the form (functional) from the exterior
+/// cells local to the process.
 template <dolfinx::scalar T>
 T assemble_exterior_facets(
     mdspan2_t x_dofmap,
@@ -68,6 +99,8 @@ T assemble_exterior_facets(
   T value(0);
   if (facets.empty())
     return value;
+
+  assert(cdofs.sieze() >= 3 * x_dofmap.extent(1));
 
   // Iterate over all facets
   for (std::size_t f = 0; f < facets.extent(0); ++f)
@@ -89,7 +122,22 @@ T assemble_exterior_facets(
   return value;
 }
 
-/// Assemble functional over interior facets
+/// @brief Assemble functional over interior facets.
+/// @tparam T Scalar type.
+/// @param[in] x_dofmap Dofmap for the mesh geometry.
+/// @param[in] x  Mesh geometry (coordinates).
+/// @param[in] facets Facets (in the integration domain mesh) to execute
+/// the kernel over.
+/// @param[in] fn Kernel function to execute over each facet.
+/// @param[in] constants Constant data in the kernel.
+/// @param[in] coeffsCoefficient data array of shape `(cells.size(),
+/// coeffs_per_cell)`.
+/// @param[in] perms Facet permutation data. Empty if facet
+/// permutations are not required.
+/// @param[in] cdofs Buffer array with size at least `6 *
+/// x_dofmap.extent(1)`.
+/// @return The contribution to the form (functional) from the interior
+/// cells local to the process.
 template <dolfinx::scalar T>
 T assemble_interior_facets(
     mdspan2_t x_dofmap,
@@ -168,6 +216,7 @@ T assemble_scalar(
   }
 
   T value = 0;
+
   {
     std::vector<scalar_value_t<T>> cdofs_b(3 * x_dofmap.extent(1));
 
