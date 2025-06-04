@@ -106,13 +106,16 @@ void _lift_bc_cells(
   assert(_bs0 < 0 or _bs0 == bs0);
   assert(_bs1 < 0 or _bs1 == bs1);
 
+  assert(be.size() >= bs0 * dmap0.extent(1));
+  assert(cdofs.size() >= 3 * x_dofmap.extent(1));
+
   // Data structures used in bc application
   assert(cells0.size() == cells.size());
   assert(cells1.size() == cells.size());
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
-    // Cell index in integration domain mesh, test function mesh, and trial
-    // function mesh
+    // Cell index in 'integration domain' mesh, test function mesh, and
+    // trial function mesh
     std::int32_t c = cells[index];
     std::int32_t c0 = cells0[index];
     std::int32_t c1 = cells1[index];
@@ -300,12 +303,16 @@ void _lift_bc_exterior_facets(
   const auto [dmap0, bs0, facets0] = dofmap0;
   const auto [dmap1, bs1, facets1] = dofmap1;
 
+  assert(Ae.size() >= bs0 * dmap0.extent(1) * bs1 * dmap1.extent(1));
+  assert(be.size() >= bs0 * dmap0.extent(1));
+  assert(cdofs.size() >= 3 * x_dofmap.extent(1));
+
   // Data structures used in bc application
   assert(facets0.size() == facets.size());
   assert(facets1.size() == facets.size());
   for (std::size_t index = 0; index < facets.extent(0); ++index)
   {
-    // Cell in integration domain, test function and trial function
+    // Cell in 'integration domain', test function and trial function
     // meshes
     std::int32_t cell = facets(index, 0);
     std::int32_t cell0 = facets0(index, 0);
@@ -459,6 +466,10 @@ void _lift_bc_interior_facets(
   const auto [dmap0, bs0, facets0] = dofmap0;
   const auto [dmap1, bs1, facets1] = dofmap1;
 
+  assert(Ae.size() >= 2 * bs0 * dmap0.extent(1) * 2 * bs1 * dmap1.extent(1));
+  assert(be.size() >= 2 * bs0 * dmap0.extent(1));
+  assert(cdofs.size() >= 2 * 3 * x_dofmap.extent(1));
+
   // Data structures used in assembly
   auto cdofs0 = cdofs.subspan(0, 3 * x_dofmap.extent(1));
   auto cdofs1 = cdofs.subspan(3 * x_dofmap.extent(1), 3 * x_dofmap.extent(1));
@@ -472,7 +483,7 @@ void _lift_bc_interior_facets(
   assert(facets1.size() == facets.size());
   for (std::size_t f = 0; f < facets.extent(0); ++f)
   {
-    // Cells in integration domain, test function domain and trial
+    // Cells in 'integration domain', test function domain and trial
     // function domain meshes
     std::array cells{facets(f, 0, 0), facets(f, 1, 0)};
     std::array cells0{facets0(f, 0, 0), facets0(f, 1, 0)};
@@ -664,10 +675,13 @@ void assemble_cells(
   const auto [dmap, bs, cells0] = dofmap;
   assert(_bs < 0 or _bs == bs);
 
+  assert(be.size() >= bs * dmap.extent(1));
+  assert(cdofs.size() >= 3 * x_dofmap.extent(1));
+
   // Iterate over active cells
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
-    // Integration domain celland test function cell
+    // 'Integration domain' cell and test function cell
     std::int32_t c = cells[index];
     std::int32_t c0 = cells0[index];
 
@@ -711,8 +725,9 @@ void assemble_cells(
 /// @param[in,out] b The vector to accumulate into.
 /// @param[in] x_dofmap Dofmap for the mesh geometry.
 /// @param[in] x Mesh geometry (coordinates).
-/// @param[in] facets Facets (in the integration domain mesh) to execute
-/// the kernel over.
+/// @param[in] facets Facets to execute the kernel over. Facets are
+/// defined by the (cell index, local facet index) pair, where the cell
+/// index is the index into `x_dofmap`.
 /// @param[in] dofmap Test function (row) degree-of-freedom data holding
 /// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
 /// @param[in] fn Kernel function to execute over each cell.
@@ -751,12 +766,15 @@ void assemble_exterior_facets(
   const auto [dmap, bs, facets0] = dofmap;
   assert(_bs < 0 or _bs == bs);
 
+  assert(be.size() >= bs * dmap.extent(1));
+  assert(cdofs.size() >= 3 * x_dofmap.extent(1));
+
   // Create data structures used in assembly
   assert(facets0.size() == facets.size());
   for (std::size_t f = 0; f < facets.extent(0); ++f)
   {
-    // Cell in the integration domain, local facet index relative to the
-    // integration domain cell, and cell in the test function mesh
+    // Cell in the 'integration domain', local facet index relative to
+    // the integration domain cell, and cell in the test function mesh
     std::int32_t cell = facets(f, 0);
     std::int32_t local_facet = facets(f, 1);
     std::int32_t cell0 = facets0(f, 0);
@@ -804,8 +822,10 @@ void assemble_exterior_facets(
 /// @param[in,out] b The vector to accumulate into.
 /// @param[in] x_dofmap Dofmap for the mesh geometry.
 /// @param[in] x Mesh geometry (coordinates).
-/// @param[in] facets Facets (in the integration domain mesh) to execute
-/// the kernel over.
+/// @param[in] facets Facets to execute the kernel over. Facets are
+/// defined by the ((cell0 index, local facet index), (cell1 index,
+/// local facet index)) pair, where cell0 and cell1 are indices into
+/// `x_dofmap`.
 /// @param[in] dofmap Test function (row) degree-of-freedom data holding
 /// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
 /// @param[in] fn Kernel function to execute over each facet.
@@ -846,6 +866,9 @@ void assemble_interior_facets(
   const auto [dmap, bs, facets0] = dofmap;
   assert(_bs < 0 or _bs == bs);
 
+  assert(be.size() >= 2 * bs * dmap.map().extent(1));
+  assert(cdofs.size() >= 2 * 3 * x_dofmap.extent(1));
+
   // Create data structures used in assembly
   auto cdofs0 = cdofs.subspan(0, 3 * x_dofmap.extent(1));
   auto cdofs1 = cdofs.subspan(3 * x_dofmap.extent(1), 3 * x_dofmap.extent(1));
@@ -853,7 +876,7 @@ void assemble_interior_facets(
   assert(facets0.size() == facets.size());
   for (std::size_t f = 0; f < facets.extent(0); ++f)
   {
-    // Cells in integration domain and test function domain meshes
+    // Cells in 'integration domain' and test function domain meshes
     std::array<std::int32_t, 2> cells{facets(f, 0, 0), facets(f, 1, 0)};
     std::array<std::int32_t, 2> cells0{facets0(f, 0, 0), facets0(f, 1, 0)};
 
@@ -934,7 +957,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
              std::span<const std::int8_t> bc_markers1, std::span<const T> x0,
              T alpha)
 {
-  // Integration domain mesh
+  // 'Integration domain' mesh
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
 
@@ -1196,7 +1219,7 @@ void assemble_vector(
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
-  // Integration domain mesh
+  // 'Integration domain' mesh
   std::shared_ptr<const mesh::Mesh<U>> mesh = L.mesh();
   assert(mesh);
 
