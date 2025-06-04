@@ -152,10 +152,10 @@ def create_vector(
         A PETSc vector with a layout that is compatible with ``L``. The
         vector is not initialised to zero.
     """
-    try:
+    if isinstance(L, Form):
         dofmap = L.function_spaces[0].dofmaps(0)  # Single form case
         return dolfinx.la.petsc.create_vector(dofmap.index_map, dofmap.index_map_bs)
-    except AttributeError:
+    else:
         maps = [
             (
                 form.function_spaces[0].dofmaps(0).index_map,
@@ -223,9 +223,9 @@ def create_matrix(
     Returns:
         A PETSc matrix.
     """
-    try:
+    if isinstance(a, Form):
         return _cpp.fem.petsc.create_matrix(a._cpp_object, kind)  # Single form
-    except AttributeError:  # ``a`` is a nested list
+    else:  # ``a`` is a nested list
         _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
         if kind == PETSc.Mat.Type.NEST:  # Create nest matrix with default types
             return _cpp.fem.petsc.create_matrix_nest(_a, None)

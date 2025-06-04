@@ -47,9 +47,9 @@ def locate_dofs_geometrical(
         Returned degree-of-freedom indices are unique and ordered by the
         first column.
     """
-    try:
+    if isinstance(V, dolfinx.fem.FunctionSpace):
         return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)  # type: ignore
-    except AttributeError:
+    else:
         _V = [space._cpp_object for space in V]
         return _cpp.fem.locate_dofs_geometrical(_V, marker)
 
@@ -83,9 +83,9 @@ def locate_dofs_topological(
         first column.
     """
     _entities = np.asarray(entities, dtype=np.int32)
-    try:
+    if isinstance(V, dolfinx.fem.FunctionSpace):
         return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)  # type: ignore
-    except AttributeError:
+    else:
         _V = [space._cpp_object for space in V]
         return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
 
