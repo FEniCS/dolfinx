@@ -66,7 +66,7 @@ T assemble_cells(mdspan2_t x_dofmap,
   return value;
 }
 
-/// @brief  Execute kernel over exterior facets and accumulate result.
+/// @brief Assemble functional over exterior facets.
 /// @tparam T Scalar type.
 /// @param[in] x_dofmap Dofmap for the mesh geometry.
 /// @param[in] x Mesh geometry (coordinates).
