@@ -130,7 +130,7 @@ T assemble_exterior_facets(
 /// the kernel over.
 /// @param[in] fn Kernel function to execute over each facet.
 /// @param[in] constants Constant data in the kernel.
-/// @param[in] coeffsCoefficient data array of shape `(cells.size(),
+/// @param[in] coeffs Coefficient data array of shape `(cells.size(),
 /// coeffs_per_cell)`.
 /// @param[in] perms Facet permutation data. Empty if facet
 /// permutations are not required.
