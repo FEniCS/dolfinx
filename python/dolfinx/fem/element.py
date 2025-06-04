@@ -26,7 +26,9 @@ class CoordinateElement:
 
     def __init__(
         self,
-        cmap: typing.Union[_cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64],
+        cmap: typing.Union[
+            _cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64
+        ],
     ):
         """Create a coordinate map element.
 
@@ -39,7 +41,8 @@ class CoordinateElement:
             cmap: A C++ CoordinateElement.
         """
         assert isinstance(
-            cmap, (_cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64)
+            cmap,
+            (_cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64),
         )
         self._cpp_object = cmap
 
@@ -143,9 +146,13 @@ def coordinate_element(
         A coordinate element.
     """
     if np.issubdtype(dtype, np.float32):
-        return CoordinateElement(_cpp.fem.CoordinateElement_float32(celltype, degree, variant))
+        return CoordinateElement(
+            _cpp.fem.CoordinateElement_float32(celltype, degree, variant)
+        )
     elif np.issubdtype(dtype, np.float64):
-        return CoordinateElement(_cpp.fem.CoordinateElement_float64(celltype, degree, variant))
+        return CoordinateElement(
+            _cpp.fem.CoordinateElement_float64(celltype, degree, variant)
+        )
     else:
         raise RuntimeError("Unsupported dtype.")
 
@@ -169,11 +176,15 @@ def _(e: basix.finite_element.FiniteElement):
 
 
 class FiniteElement:
-    _cpp_object: typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64]
+    _cpp_object: typing.Union[
+        _cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64
+    ]
 
     def __init__(
         self,
-        cpp_object: typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64],
+        cpp_object: typing.Union[
+            _cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64
+        ],
     ):
         """Creates a Python wrapper for the exported finite element class.
 
@@ -268,7 +279,10 @@ class FiniteElement:
         return self._cpp_object.signature
 
     def T_apply(
-        self, x: npt.NDArray[np.floating], cell_permutations: npt.NDArray[np.uint32], dim: int
+        self,
+        x: npt.NDArray[np.floating],
+        cell_permutations: npt.NDArray[np.uint32],
+        dim: int,
     ) -> None:
         """Transform basis functions from the reference element ordering and orientation to the
         globally consistent physical element ordering and orientation.
@@ -286,7 +300,10 @@ class FiniteElement:
         self._cpp_object.T_apply(x, cell_permutations, dim)
 
     def Tt_apply(
-        self, x: npt.NDArray[np.floating], cell_permutations: npt.NDArray[np.uint32], dim: int
+        self,
+        x: npt.NDArray[np.floating],
+        cell_permutations: npt.NDArray[np.uint32],
+        dim: int,
     ) -> None:
         """Apply the transpose of the operator applied by T_apply().
 
@@ -299,7 +316,10 @@ class FiniteElement:
         self._cpp_object.Tt_apply(x, cell_permutations, dim)
 
     def Tt_inv_apply(
-        self, x: npt.NDArray[np.floating], cell_permutations: npt.NDArray[np.uint32], dim: int
+        self,
+        x: npt.NDArray[np.floating],
+        cell_permutations: npt.NDArray[np.uint32],
+        dim: int,
     ) -> None:
         """Apply the inverse transpose of the operator applied by T_apply().
 
@@ -333,7 +353,8 @@ def finiteelement(
 
     if ufl_e.is_mixed:
         elements = [
-            finiteelement(cell_type, e, FiniteElement_dtype)._cpp_object for e in ufl_e.sub_elements
+            finiteelement(cell_type, e, FiniteElement_dtype)._cpp_object
+            for e in ufl_e.sub_elements
         ]
         return FiniteElement(CppElement(elements))
     elif ufl_e.is_quadrature:
@@ -348,4 +369,11 @@ def finiteelement(
     else:
         basix_e = ufl_e.basix_element._e
         value_shape = ufl_e.reference_value_shape if ufl_e.block_size > 1 else None
-        return FiniteElement(CppElement(basix_e, value_shape, ufl_e.is_symmetric))
+        return FiniteElement(
+            CppElement(
+                basix_e,
+                ufl_e.reference_value_shape,
+                value_shape,
+                ufl_e.is_symmetric,
+            )
+        )

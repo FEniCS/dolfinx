@@ -1182,8 +1182,17 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
     auto fs1 = u1.function_space();
     auto element1 = fs1->element();
     assert(element1);
-    if (!std::ranges::equal(fs0->element()->value_shape(),
-                            fs1->element()->value_shape()))
+
+    const bool embedded_manifold
+        = mesh->geometry().dim() != mesh->topology()->dim();
+    const auto& shape0 = embedded_manifold
+                             ? fs0->element()->reference_value_shape()
+                             : fs0->element()->value_shape();
+    const auto& shape1 = embedded_manifold
+                             ? fs1->element()->reference_value_shape()
+                             : fs1->element()->value_shape();
+
+    if (!std::ranges::equal(shape0, shape1))
     {
       throw std::runtime_error(
           "Interpolation: elements have different value dimensions");

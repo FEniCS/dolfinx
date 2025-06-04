@@ -110,14 +110,16 @@ void declare_function_space(nb::module_& m, std::string type)
             "__init__",
             [](dolfinx::fem::FiniteElement<T>* self,
                basix::FiniteElement<T>& element,
+               std::optional<std::vector<std::size_t>> reference_value_shape,
                std::optional<std::vector<std::size_t>> block_shape,
                bool symmetric)
             {
-              new (self) dolfinx::fem::FiniteElement<T>(element, block_shape,
-                                                        symmetric);
+              new (self) dolfinx::fem::FiniteElement<T>(
+                  element, reference_value_shape, block_shape, symmetric);
             },
-            nb::arg("element"), nb::arg("block_shape").none(),
-            nb::arg("symmetric"), "Single Basix element constructor.")
+            nb::arg("element"), nb::arg("reference_value_shape").none(),
+            nb::arg("block_shape").none(), nb::arg("symmetric"),
+            "Single Basix element constructor.")
         .def(
             "__init__",
             [](dolfinx::fem::FiniteElement<T>* self,

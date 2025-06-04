@@ -34,9 +34,9 @@ _build_element_list(std::vector<BasixElementData<T>> elements)
   std::ranges::transform(elements, std::back_inserter(_e),
                          [](auto data)
                          {
-                           auto& [e, bs, symm] = data;
-                           return std::make_shared<fem::FiniteElement<T>>(e, bs,
-                                                                          symm);
+                           auto& [e, reference_value_shape, bs, symm] = data;
+                           return std::make_shared<fem::FiniteElement<T>>(
+                               e, reference_value_shape, bs, symm);
                          });
   return _e;
 }
@@ -110,12 +110,15 @@ int _compute_block_size(std::optional<std::vector<std::size_t>> value_shape,
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(
     const basix::FiniteElement<T>& element,
+    std::optional<std::vector<std::size_t>> reference_value_shape,
     std::optional<std::vector<std::size_t>> value_shape, bool symmetric)
-    : _value_shape(value_shape.value_or(element.value_shape())),
+    : _value_shape(value_shape.value_or(
+          reference_value_shape.value_or(element.value_shape()))),
       _bs(_compute_block_size(value_shape, symmetric)),
       _cell_type(mesh::cell_type_from_basix_type(element.cell_type())),
       _space_dim(_bs * element.dim()),
-      _reference_value_shape(element.value_shape()),
+      _reference_value_shape(
+          reference_value_shape.value_or(element.value_shape())),
       _element(std::make_unique<basix::FiniteElement<T>>(element)),
       _symmetric(symmetric),
       _needs_dof_permutations(

@@ -37,6 +37,8 @@ struct BasixElementData
 {
   std::reference_wrapper<const basix::FiniteElement<T>>
       element; ///< Finite element.
+  std::optional<std::vector<std::size_t>> reference_value_shape
+      = std::nullopt; ///< Shape of values on the reference cell.
   std::optional<std::vector<std::size_t>> value_shape
       = std::nullopt;    ///< Value shape. Can only be set for scalar `element`.
   bool symmetry = false; ///< Symmetry. Should only set set for 2nd-order tensor
@@ -44,8 +46,8 @@ struct BasixElementData
 };
 
 /// Type deduction helper
-template <typename U, typename V, typename W>
-BasixElementData(U element, V bs, W symmetry)
+template <typename U, typename V, typename W, typename X>
+BasixElementData(U element, V reference_value_shape, W value_shape, X symmetry)
     -> BasixElementData<typename std::remove_cvref<U>::type::scalar_type>;
 
 /// @brief Model of a finite element.
@@ -61,13 +63,17 @@ public:
 
   /// @brief Create a finite element from a Basix finite element.
   /// @param[in] element Basix finite element.
-  /// @param[in] value_shape Value shape for blocked element, e.g. `{3}`
-  /// for a vector in 3D or `{2, 2}` for a rank-2 tensor in 2D. Can only
+  /// @param[in] reference_value_shape Value shape of the basis functions on the
+  /// reference cell.
+  /// @param[in] value_shape Value shape of the element in physical space, e.g.
+  /// `{3}` for a vector in 3D or `{2, 2}` for a rank-2 tensor in 2D. Can only
   /// be set for blocked scalar `element`. For other elements and scalar
   /// elements it should be `std::nullopt`.
-  /// @param[in] symmetric Is the element a symmetric tensor? Should
-  /// only set for 2nd-order tensor blocked elements.
+  /// @param[in] symmetric Is the element a symmetric tensor? Should only be set
+  /// for 2nd-order tensor blocked elements.
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
+                std::optional<std::vector<std::size_t>> reference_value_shape
+                = std::nullopt,
                 std::optional<std::vector<std::size_t>> value_shape
                 = std::nullopt,
                 bool symmetric = false);
@@ -222,12 +228,13 @@ public:
   /// @return The value size.
   int reference_value_size() const;
 
-  /// @brief Value shape of the base (non-blocked) finite element field.
+  /// @brief Value shape of the element before mapping to the physical
+  /// configuration.
   ///
   /// For non-blocked elements, this function returns the same as
-  /// FiniteElement::value_shape. For blocked and quadrature elements
-  /// the returned shape will be `{}`.
-  ///
+  /// FiniteElement::value_shape. On embedded manifolds, the returned
+  /// shape is in the tangential space of the reference element. For
+  /// blocked and quadrature elements the returned shape will be `{}`.
   /// Mixed elements do not have a reference value shape.
   ///
   /// @throws Exception is thrown for a mixed element as mixed elements
@@ -860,8 +867,9 @@ private:
   std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>
       _sub_elements;
 
-  // Value space shape, e.g. {} for a scalar, {3, 3} for a tensor in 3D.
-  // For a mixed element it is std::nullopt.
+  // Value space shape on the reference element, e.g. {} for a scalar or {2}
+  // for a tangential vector on a triangle. For a mixed element it is
+  // std::nullopt.
   std::optional<std::vector<std::size_t>> _reference_value_shape;
 
   // Basix Element (nullptr for mixed elements)
