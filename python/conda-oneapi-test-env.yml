@@ -22,7 +22,7 @@ dependencies:
   - nanobind
   - ninja
   - numba
-  - numpy
+  - numpy<=2.2
   - petsc
   - petsc4py
   - pkg-config
