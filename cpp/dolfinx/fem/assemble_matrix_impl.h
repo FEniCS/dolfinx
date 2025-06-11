@@ -169,7 +169,7 @@ void assemble_cells(
 /// a matrix.
 ///
 /// @note This function does no dynamic memory allocation. Developers
-/// must make any changes that introduce a dynamic memory allocation.
+/// must not make any changes that introduce a dynamic memory allocation.
 
 /// @tparam T Matrix/form scalar type.
 /// @param[in] mat_set Function that accumulates computed entries into a
