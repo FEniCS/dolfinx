@@ -96,7 +96,7 @@ void assemble_cells(
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
 
-  assert(Ae.size() >= ndim0 * ndim1);
+  assert(Ae.size() >= (std::size_t)ndim0 * ndim1);
   assert(cdofs.size() >= 3 * x_dofmap.extent(1));
 
   // Iterate over active cells
