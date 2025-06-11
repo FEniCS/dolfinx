@@ -458,9 +458,7 @@ void _lift_bc_interior_facets(
     std::span<const std::uint32_t> cell_info1, std::span<const T> bc_values1,
     std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T alpha,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<T> Ae, std::span<T> be,
-    // std::span<std::int32_t> dmapjoint_b,
-    std::span<scalar_value_t<T>> cdofs)
+    std::span<T> Ae, std::span<T> be, std::span<scalar_value_t<T>> cdofs)
 {
   if (facets.empty())
     return;

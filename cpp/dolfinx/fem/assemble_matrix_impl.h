@@ -444,7 +444,7 @@ void assemble_interior_facets(
     const int num_cols = bs1 * dmapjoint1.size();
 
     // Tabulate tensor
-    assert(Ae.size() >= num_rows * num_cols);
+    assert(Ae.size() >= (std::size_t)num_rows * num_cols);
     std::ranges::fill(Ae, 0);
 
     std::array perm = perms.empty()
