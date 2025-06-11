@@ -337,7 +337,7 @@ def model_to_mesh(
 
     # Extract entity -> node connectivity for all cells and sub-entities
     # marked in the GMSH model
-    meshtags: dict[int, tuple[npt.NDArray[np.int32], npt.NDArray[np.int32]]] = {}
+    meshtags: dict[int, tuple[npt.NDArray[np.int64], npt.NDArray[np.int32]]] = {}
     for position in perm_sort:
         codim = tdim - entity_tdim[position]
         if comm.rank == rank:
