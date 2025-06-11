@@ -458,7 +458,9 @@ void _lift_bc_interior_facets(
     std::span<const std::uint32_t> cell_info1, std::span<const T> bc_values1,
     std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T alpha,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<T> Ae, std::span<T> be, std::span<scalar_value_t<T>> cdofs)
+    std::span<T> Ae, std::span<T> be,
+    // std::span<std::int32_t> dmapjoint_b,
+    std::span<scalar_value_t<T>> cdofs)
 {
   if (facets.empty())
     return;
@@ -474,11 +476,10 @@ void _lift_bc_interior_facets(
   auto cdofs0 = cdofs.subspan(0, 3 * x_dofmap.extent(1));
   auto cdofs1 = cdofs.subspan(3 * x_dofmap.extent(1), 3 * x_dofmap.extent(1));
 
-  // Temporaries for joint dofmaps
-  std::vector<std::int32_t> dmapjoint0, dmapjoint1;
-
   const int num_dofs0 = dmap0.extent(1);
   const int num_dofs1 = dmap1.extent(1);
+  const int num_rows = 2 * bs0 * num_dofs0;
+  const int num_cols = 2 * bs1 * num_dofs1;
   assert(facets0.size() == facets.size());
   assert(facets1.size() == facets.size());
   for (std::size_t f = 0; f < facets.extent(0); ++f)
@@ -506,20 +507,10 @@ void _lift_bc_interior_facets(
     std::span dmap0_cell1(dmap0.data_handle() + cells0[1] * num_dofs0,
                           num_dofs0);
 
-    dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
-    std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
-    std::ranges::copy(dmap0_cell1,
-                      std::next(dmapjoint0.begin(), dmap0_cell0.size()));
-
     std::span dmap1_cell0(dmap1.data_handle() + cells1[0] * num_dofs1,
                           num_dofs1);
     std::span dmap1_cell1(dmap1.data_handle() + cells1[1] * num_dofs1,
                           num_dofs1);
-
-    dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
-    std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
-    std::ranges::copy(dmap1_cell1,
-                      std::next(dmapjoint1.begin(), dmap1_cell0.size()));
 
     // Check if bc is applied to cell0
     bool has_bc = false;
@@ -550,9 +541,6 @@ void _lift_bc_interior_facets(
 
     if (!has_bc)
       continue;
-
-    const int num_rows = bs0 * dmapjoint0.size();
-    const int num_cols = bs1 * dmapjoint1.size();
 
     // Tabulate tensor
     std::ranges::fill(Ae, 0);
