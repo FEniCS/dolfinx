@@ -152,6 +152,7 @@ graph::AdjacencyList<int> compute_destination_ranks(
   // Prepare (local node index, destination rank) array. Add local data,
   // then add the received data, and the make unique.
   std::vector<std::array<int, 2>> local_node_to_dest;
+  local_node_to_dest.reserve(2 * part.size() + 2 * recv_buffer.size());
   for (auto d : part)
   {
     local_node_to_dest.push_back(
