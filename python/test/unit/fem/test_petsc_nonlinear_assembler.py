@@ -266,7 +266,7 @@ class TestNLSPETSc:
             p.interpolate(initial_guess_p)
 
             snes_options = {"snes_rtol": 1.0e-15, "snes_max_it": 10, "snes_monitor": None}
-            snes, x = dolfinx.nls.petsc.create_snes_solver(
+            snes, x = dolfinx.fem.petsc.create_snes_solver(
                 F, [u, p], J=J, bcs=bcs, mat_kind="mpi", vec_kind="mpi"
             )
             opts = PETSc.Options()
@@ -298,10 +298,10 @@ class TestNLSPETSc:
             b = dolfinx.fem.petsc.create_vector(residual, "nest")
             x = dolfinx.fem.petsc.create_vector(residual, "nest")
             snes.setFunction(
-                partial(dolfinx.nls.petsc.assemble_residual, [u, p], residual, jacobian, bcs), b
+                partial(dolfinx.fem.petsc.assemble_residual, [u, p], residual, jacobian, bcs), b
             )
             snes.setJacobian(
-                partial(dolfinx.nls.petsc.assemble_jacobian, [u, p], jacobian, None, bcs), A, None
+                partial(dolfinx.fem.petsc.assemble_jacobian, [u, p], jacobian, None, bcs), A, None
             )
 
             nested_IS = snes.getJacobian()[0].getNestISs()
@@ -352,7 +352,7 @@ class TestNLSPETSc:
             U.sub(0).interpolate(initial_guess_u)
             U.sub(1).interpolate(initial_guess_p)
 
-            solver = dolfinx.nls.petsc.SNESSolver(
+            solver = dolfinx.fem.petsc.NonlinearProblem(
                 F,
                 U,
                 J=J,
@@ -451,7 +451,7 @@ class TestNLSPETSc:
                 "snes_monitor": None,
                 "ksp_type": "minres",
             }
-            solver = dolfinx.nls.petsc.SNESSolver(
+            solver = dolfinx.fem.petsc.NonlinearProblem(
                 F,
                 [u, p],
                 bcs=bcs,
@@ -472,7 +472,7 @@ class TestNLSPETSc:
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
 
-            solver = dolfinx.nls.petsc.SNESSolver(
+            solver = dolfinx.fem.petsc.NonlinearProblem(
                 F, [u, p], J=J, bcs=bcs, mat_kind="nest", vec_kind="nest", P=P
             )
             nested_IS = solver.snes.getJacobian()[0].getNestISs()
@@ -533,7 +533,7 @@ class TestNLSPETSc:
                 "ksp_type": "minres",
                 "snes_monitor": None,
             }
-            solver = dolfinx.nls.petsc.SNESSolver(
+            solver = dolfinx.fem.petsc.NonlinearProblem(
                 F,
                 U,
                 J=J,
