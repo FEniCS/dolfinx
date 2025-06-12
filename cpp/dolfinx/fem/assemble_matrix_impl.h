@@ -389,7 +389,7 @@ void assemble_interior_facets(
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
 
-  assert(Ae.size() >= 2 * ndim0 * 2 * ndim1);
+  assert(Ae.size() >= (std::size_t)2 * ndim0 * 2 * ndim1);
 
   // Data structures used in assembly
   auto cdofs0 = cdofs.subspan(0, 3 * x_dofmap.extent(1));
