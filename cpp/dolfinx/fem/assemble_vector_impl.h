@@ -466,9 +466,10 @@ void _lift_bc_interior_facets(
   const auto [dmap0, bs0, facets0] = dofmap0;
   const auto [dmap1, bs1, facets1] = dofmap1;
 
-  assert(Ae.size() >= 2 * bs0 * dmap0.extent(1) * 2 * bs1 * dmap1.extent(1));
-  assert(be.size() >= 2 * bs0 * dmap0.extent(1));
-  assert(cdofs.size() >= 2 * 3 * x_dofmap.extent(1));
+  assert(Ae.size()
+         >= (std::size_t)2 * bs0 * dmap0.extent(1) * 2 * bs1 * dmap1.extent(1));
+  assert(be.size() >= (std::size_t)2 * bs0 * dmap0.extent(1));
+  assert(cdofs.size() >= (std::size_t)2 * 3 * x_dofmap.extent(1));
 
   // Data structures used in assembly
   auto cdofs0 = cdofs.subspan(0, 3 * x_dofmap.extent(1));
