@@ -3,7 +3,7 @@
 # interface.
 #
 # docker run -ti -v docker.io/fenicsproject/test-env:current-redhat
-FROM rockylinux/rockylinux:9
+FROM rockylinux/rockylinux:10
 
 ARG BUILD_NP=4
 
