@@ -30,7 +30,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// @brief Execute kernel over cells and accumulate result in a matrix.
 ///
 /// @note This function does no dynamic memory allocation. Developers
-/// must make any changes that introduce a dynamic memory allocation.
+/// must not make any changes that introduce a dynamic memory allocation.
 ///
 /// @tparam T Matrix/form scalar type.
 /// @param mat_set Function that accumulates computed entries into a
