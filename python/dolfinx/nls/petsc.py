@@ -45,7 +45,7 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
         warnings.warn(
             (
                 "dolfinx.nls.petsc.NewtonSolver is deprecated. "
-                + "Use dolfinx.fem.NonlinearProblem, a high level interface to PETSc SNES, instead."
+                + "Use dolfinx.fem.petsc.NonlinearProblem, a high level interface to PETSc SNES, instead."
             ),
             DeprecationWarning,
         )
