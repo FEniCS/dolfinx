@@ -655,7 +655,7 @@ def derivative_block(
     If `F_i` is a list of forms, the Jacobian is a list of lists with
     :math:`J_{ij} = \\frac{\\partial F_i}{u_j}[\\delta u_j]` using
     `ufl.derivative` called component-wise.
-    
+
     If `F` is a form, the Jacobian is computed as :math:`J = \\frac{\\partial
     F}{\\partial u}[\\delta u]`. This is identical to calling `ufl.derivative`
     directly.
