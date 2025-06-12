@@ -1175,7 +1175,7 @@ class NonlinearProblem:
         where :math:`u=(u_0,...,u_N), v=(v_0,...,v_N)` using PETSc SNES as the non-linear solver.
 
         Note:
-            The previous and now deprecated version of this class for use with
+            The previous and deprecated version of this class for use with
             NewtonSolver has been renamed NewtonSolverNonlinearProblem.
 
         Args:
@@ -1314,7 +1314,8 @@ class NewtonSolverNonlinearProblem:
         warnings.warn(
             (
                 "dolfinx.nls.petsc.NewtonSolver is deprecated. "
-                + "Use dolfinx.fem.petsc.NonlinearProblem, a high level interface to PETSc SNES, instead."
+                + "Use dolfinx.fem.petsc.NonlinearProblem, "
+                + "a high level interface to PETSc SNES, instead."
             ),
             DeprecationWarning,
         )
