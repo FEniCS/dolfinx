@@ -386,10 +386,7 @@ void assemble_interior_facets(
   // Iterate over active cells
   const int num_dofs0 = dmap0.extent(1);
   const int num_dofs1 = dmap1.extent(1);
-  const int ndim0 = bs0 * num_dofs0;
-  const int ndim1 = bs1 * num_dofs1;
-
-  assert(Ae.size() >= (std::size_t)2 * ndim0 * 2 * ndim1);
+  assert(Ae.size() >= (std::size_t)2 * bs0 * num_dofs0 * 2 * bs1 * num_dofs1);
 
   // Data structures used in assembly
   auto cdofs0 = cdofs.subspan(0, 3 * x_dofmap.extent(1));
