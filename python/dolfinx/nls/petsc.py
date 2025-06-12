@@ -49,7 +49,12 @@ __all__ = ["NewtonSolver", "create_snes_solver"]
 
 class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
     def __init__(self, comm: MPI.Intracomm, problem: NonlinearProblem):
-        """A Newton solver for non-linear problems."""
+        """A Newton solver for non-linear problems.
+
+        Note:
+            This class is deprecated in favour of dolfinx.fem.NonlinearProblem,
+            a high level interface to PETSc SNES.
+        """
         super().__init__(comm)
 
         warnings.warn(
