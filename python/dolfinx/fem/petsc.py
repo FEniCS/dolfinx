@@ -51,7 +51,7 @@ from dolfinx.fem.assemble import _assemble_vector_array
 from dolfinx.fem.assemble import apply_lifting as _apply_lifting
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
-from dolfinx.fem.forms import Form, compute_jacobian
+from dolfinx.fem.forms import Form, derivative_block
 from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
@@ -1121,7 +1121,7 @@ def create_snes_solver(
         entity_maps=entity_maps,
     )
     if J is None:
-        J = compute_jacobian(F, u)
+        J = derivative_block(F, u)
     jacobian = _create_form(
         J,
         form_compiler_options=form_compiler_options,

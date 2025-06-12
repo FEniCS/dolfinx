@@ -643,15 +643,22 @@ def create_form(
     return Form(f, form.ufcx_form, form.code)
 
 
-def compute_jacobian(
+def derivative_block(
     F: typing.Union[ufl.Form | list[ufl.Form]],
     u: typing.Union[Function | list[Function]],
     du: typing.Optional[typing.Union[ufl.Argument, list[ufl.Argument]]] = None,
 ) -> typing.Union[ufl.Form, list[list[ufl.Form]]]:
-    """Compute the Jacobian :math:`J = \\frac{\\partial F}{\\partial u}[\\delta u]`.
+    """Return the UFL derivative of a (list of) UFL rank one form(s).
 
-    If `F` is a list of forms, the Jacobian is computed as
-    :math:`J_{ij} = \\frac{\\partial F_i}{u_j}[\\delta u_j]`.
+    This is commonly used to derive a block Jacobian from a block residual.
+
+    If `F_i` is a list of forms, the Jacobian is a list of lists with
+    :math:`J_{ij} = \\frac{\\partial F_i}{u_j}[\\delta u_j]` using
+    `ufl.derivative` called component-wise.
+    
+    If `F` is a form, the Jacobian is computed as :math:`J = \\frac{\\partial
+    F}{\\partial u}[\\delta u]`. This is identical to calling `ufl.derivative`
+    directly.
     """
     if isinstance(F, ufl.Form):
         if du is None:
