@@ -181,7 +181,6 @@ import numpy as np
 
 import ufl
 from dolfinx import default_real_type, fem, io, mesh
-from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector, set_bc
 
 try:
     from petsc4py import PETSc
@@ -195,6 +194,7 @@ except ModuleNotFoundError:
     print("This demo requires petsc4py.")
     exit(0)
 
+from dolfinx.fem.petsc import LinearProblem
 
 if np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx real mode")
@@ -307,7 +307,6 @@ a = (1.0 / Re) * (
 a -= ufl.inner(p, ufl.div(v)) * ufl.dx
 a -= ufl.inner(ufl.div(u), q) * ufl.dx
 
-a_blocked = fem.form(ufl.extract_blocks(a))
 
 f = fem.Function(W)
 u_D = fem.Function(V)
@@ -317,9 +316,9 @@ L = ufl.inner(f, v) * ufl.dx + (1 / Re) * (
     + (alpha / h) * ufl.inner(ufl.outer(u_D, n), ufl.outer(v, n)) * ufl.ds
 )
 L += ufl.inner(fem.Constant(msh, default_real_type(0.0)), q) * ufl.dx
-L_blocked = fem.form(ufl.extract_blocks(L))
 
 # Boundary conditions
+msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
 boundary_facets = mesh.exterior_facet_indices(msh.topology)
 boundary_vel_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, boundary_facets)
 bc_u = fem.dirichletbc(u_D, boundary_vel_dofs)
@@ -327,33 +326,29 @@ bcs = [bc_u]
 
 
 # Assemble Stokes problem
-A = assemble_matrix(a_blocked, bcs=bcs)
-A.assemble()
+solver_options = {
+    "ksp_type": "preonly",
+    "pc_type": "lu",
+    "pc_factor_mat_solver_type": "mumps",
+    "mat_mumps_icntl_14": 80,  # Increase MUMPS working memory
+    "mat_mumps_icntl_24": 1,  # Option to support solving a singular matrix (pressure nullspace)
+    "mat_mumps_icntl_25": 0,  # Option to support solving a singular matrix (pressure nullspace)
+    "ksp_error_if_not_converged": 1,
+}
+u_h = fem.Function(V)
+p_h = fem.Function(Q)
+p_h.name = "p"
+stokes_problem = LinearProblem(
+    ufl.extract_blocks(a),
+    ufl.extract_blocks(L),
+    u=[u_h, p_h],
+    bcs=bcs,
+    kind="mpi",
+    petsc_options=solver_options,
+)
 
-b = assemble_vector(L_blocked, kind=PETSc.Vec.Type.MPI)
-bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a_blocked, 1), bcs)
-apply_lifting(b, a_blocked, bcs=bcs1)
-b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L_blocked), bcs)
-set_bc(b, bcs0)
-
-# Create and configure solver
-ksp = PETSc.KSP().create(msh.comm)
-ksp.setOperators(A)
-ksp.setType("preonly")
-ksp.getPC().setType("lu")
-ksp.getPC().setFactorSolverType("mumps")
-opts = PETSc.Options()  # type: ignore
-opts["mat_mumps_icntl_14"] = 80  # Increase MUMPS working memory
-opts["mat_mumps_icntl_24"] = 1  # Option to support solving a singular matrix (pressure nullspace)
-opts["mat_mumps_icntl_25"] = 0  # Option to support solving a singular matrix (pressure nullspace)
-opts["ksp_error_if_not_converged"] = 1
-ksp.setFromOptions()
-
-# Solve Stokes for initial condition
-x = A.createVecRight()
 try:
-    ksp.solve(b, x)
+    stokes_problem.solve()
 except PETSc.Error as e:  # type: ignore
     if e.ierr == 92:
         print("The required PETSc solver/preconditioner is not available. Exiting.")
@@ -362,15 +357,6 @@ except PETSc.Error as e:  # type: ignore
     else:
         raise e
 
-# Split the solution
-u_h = fem.Function(V)
-p_h = fem.Function(Q)
-p_h.name = "p"
-offset = V.dofmap.index_map.size_local * V.dofmap.index_map_bs
-u_h.x.array[:offset] = x.array_r[:offset]
-u_h.x.scatter_forward()
-p_h.x.array[: (len(x.array_r) - offset)] = x.array_r[offset:]
-p_h.x.scatter_forward()
 # Subtract the average of the pressure since it is only determined up to
 # a constant
 p_h.x.array[:] -= domain_average(msh, p_h)
@@ -406,37 +392,26 @@ a += (
     + ufl.inner((ufl.dot(u_n, n))("-") * u_uw, v("-")) * ufl.dS
     + ufl.inner(ufl.dot(u_n, n) * lmbda * u, v) * ufl.ds
 )
-a_blocked = fem.form(ufl.extract_blocks(a))
 
 L += (
     ufl.inner(u_n / delta_t, v) * ufl.dx
     - ufl.inner(ufl.dot(u_n, n) * (1 - lmbda) * u_D, v) * ufl.ds
 )
-L_blocked = fem.form(ufl.extract_blocks(L))
+
+navier_stokes_problem = LinearProblem(
+    ufl.extract_blocks(a),
+    ufl.extract_blocks(L),
+    u=[u_h, p_h],
+    bcs=bcs,
+    kind="mpi",
+    petsc_options=solver_options,
+)
 
 # Time stepping loop
-bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a_blocked, 1), bcs)
 for n in range(num_time_steps):
     t += delta_t.value
 
-    A.zeroEntries()
-    fem.petsc.assemble_matrix(A, a_blocked, bcs=bcs)  # type: ignore
-    A.assemble()
-
-    with b.localForm() as b_loc:
-        b_loc.set(0)
-    assemble_vector(b, L_blocked)
-    apply_lifting(b, a_blocked, bcs=bcs1)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    set_bc(b, bcs0)
-
-    # Compute solution
-    ksp.solve(b, x)
-
-    u_h.x.array[:offset] = x.array_r[:offset]
-    u_h.x.scatter_forward()
-    p_h.x.array[: (len(x.array_r) - offset)] = x.array_r[offset:]
-    p_h.x.scatter_forward()
+    navier_stokes_problem.solve()
     p_h.x.array[:] -= domain_average(msh, p_h)
 
     u_vis.interpolate(u_h)
