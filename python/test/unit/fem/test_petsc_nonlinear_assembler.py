@@ -265,23 +265,33 @@ class TestNLSPETSc:
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
 
-            snes_options = {"snes_rtol": 1.0e-15, "snes_max_it": 10, "snes_monitor": None}
-            snes, x = dolfinx.fem.petsc.create_snes_solver(
+            problem = dolfinx.fem.petsc.NonlinearProblem(
                 F, [u, p], J=J, bcs=bcs, mat_kind="mpi", vec_kind="mpi"
             )
+
+            snes_options = {"snes_rtol": 1.0e-15, "snes_max_it": 10, "snes_monitor": None}
+
+            snes = problem.solver
             opts = PETSc.Options()
+            opts.prefixPush(snes.getOptionsPrefix())
             for k, v in snes_options.items():
                 opts[k] = v
+            opts.prefixPop()
             snes.setFromOptions()
-            for k, _ in snes_options.items():
+            for k in snes_options.keys():
                 del opts[k]
+
+            x = problem.x
             dolfinx.fem.petsc.assign([u, p], x)
             snes.solve(None, x)
+
             assert snes.getConvergedReason() > 0
             assert snes.getKSP().getConvergedReason() > 0
+
             dolfinx.fem.petsc.assign(x, [u, p])
             xnorm = x.norm()
             x.destroy()
+
             return xnorm
 
         def nested_solve():
@@ -352,7 +362,7 @@ class TestNLSPETSc:
             U.sub(0).interpolate(initial_guess_u)
             U.sub(1).interpolate(initial_guess_p)
 
-            solver = dolfinx.fem.petsc.NonlinearProblem(
+            problem = dolfinx.fem.petsc.NonlinearProblem(
                 F,
                 U,
                 J=J,
@@ -360,7 +370,7 @@ class TestNLSPETSc:
                 snes_options=snes_options,
             )
 
-            x, converged_reason, _ = solver.solve()
+            x, converged_reason, _ = problem.solve()
             assert converged_reason > 0
             xnorm = x.norm()
             return xnorm
@@ -451,7 +461,7 @@ class TestNLSPETSc:
                 "snes_monitor": None,
                 "ksp_type": "minres",
             }
-            solver = dolfinx.fem.petsc.NonlinearProblem(
+            problem = dolfinx.fem.petsc.NonlinearProblem(
                 F,
                 [u, p],
                 bcs=bcs,
@@ -460,10 +470,10 @@ class TestNLSPETSc:
                 mat_kind="mpi",
                 vec_kind="mpi",
             )
-            x, converged_reason, _ = solver.solve()
+            x, converged_reason, _ = problem.solve()
             assert converged_reason > 0
-            Jnorm = solver.snes.getJacobian()[0].norm()
-            Fnorm = solver.snes.getFunction()[0].norm()
+            Jnorm = problem.solver.getJacobian()[0].norm()
+            Fnorm = problem.solver.getFunction()[0].norm()
             xnorm = x.norm()
             return Jnorm, Fnorm, xnorm
 
@@ -472,23 +482,23 @@ class TestNLSPETSc:
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
 
-            solver = dolfinx.fem.petsc.NonlinearProblem(
+            problem = dolfinx.fem.petsc.NonlinearProblem(
                 F, [u, p], J=J, bcs=bcs, mat_kind="nest", vec_kind="nest", P=P
             )
-            nested_IS = solver.snes.getJacobian()[0].getNestISs()
-            solver.snes.setTolerances(rtol=1.0e-15, max_it=20)
-            solver.snes.getKSP().setType("minres")
-            solver.snes.getKSP().setTolerances(rtol=1e-8)
-            solver.snes.getKSP().getPC().setType("fieldsplit")
-            solver.snes.getKSP().getPC().setFieldSplitIS(
+            nested_IS = problem.solver.getJacobian()[0].getNestISs()
+            problem.solver.setTolerances(rtol=1.0e-15, max_it=20)
+            problem.solver.getKSP().setType("minres")
+            problem.solver.getKSP().setTolerances(rtol=1e-8)
+            problem.solver.getKSP().getPC().setType("fieldsplit")
+            problem.solver.getKSP().getPC().setFieldSplitIS(
                 ["u", nested_IS[0][0]], ["p", nested_IS[1][1]]
             )
 
-            x, converged_reason, _ = solver.solve()
+            x, converged_reason, _ = problem.solve()
             assert converged_reason > 0
             xnorm = x.norm()
-            Jnorm = nest_matrix_norm(solver.snes.getJacobian()[0])
-            Fnorm = solver.snes.getFunction()[0].norm()
+            Jnorm = nest_matrix_norm(problem.solver.getJacobian()[0])
+            Fnorm = problem.solver.getFunction()[0].norm()
             return Jnorm, Fnorm, xnorm
 
         def monolithic():
@@ -533,7 +543,7 @@ class TestNLSPETSc:
                 "ksp_type": "minres",
                 "snes_monitor": None,
             }
-            solver = dolfinx.fem.petsc.NonlinearProblem(
+            problem = dolfinx.fem.petsc.NonlinearProblem(
                 F,
                 U,
                 J=J,
@@ -541,11 +551,11 @@ class TestNLSPETSc:
                 P=P,
                 snes_options=snes_options,
             )
-            x, converged_reason, _ = solver.solve()
+            x, converged_reason, _ = problem.solve()
             assert converged_reason > 0
             xnorm = x.norm()
-            Jnorm = solver.snes.getJacobian()[0].norm()
-            Fnorm = solver.snes.getFunction()[0].norm()
+            Jnorm = problem.solver.getJacobian()[0].norm()
+            Fnorm = problem.solver.getFunction()[0].norm()
             return Jnorm, Fnorm, xnorm
 
         Jnorm0, Fnorm0, xnorm0 = blocked()
