@@ -261,7 +261,11 @@ class TestNLSPETSc:
         F, J = form(F), form(J)
 
         def blocked_solve():
-            """Blocked version"""
+            """Blocked version
+
+            Illustrates how to use high-level class and then drop down to SNES
+            for options and solve.
+            """
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
 
@@ -288,16 +292,17 @@ class TestNLSPETSc:
             assert snes.getConvergedReason() > 0
             assert snes.getKSP().getConvergedReason() > 0
 
+            # NOTE: snes.solve does not assign x back into [u, p]
+            # automatically.
             dolfinx.fem.petsc.assign(x, [u, p])
             xnorm = x.norm()
-            x.destroy()
 
             return xnorm
 
         def nested_solve():
             """Nested version
 
-            Illustrates how to work directly with the snes object (no wrapping).
+            Illustrates how to work directly with the SNES object (no NonlinearProblem).
             """
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
@@ -330,7 +335,10 @@ class TestNLSPETSc:
             return xnorm
 
         def monolithic_solve():
-            """Monolithic version"""
+            """Monolithic version
+
+            Uses high level NonlinearProblem class only.
+            """
             E = mixed_element([P, P])
             W = functionspace(mesh, E)
             U = Function(W)
@@ -478,7 +486,10 @@ class TestNLSPETSc:
             return Jnorm, Fnorm, xnorm
 
         def nested():
-            """Blocked and nested"""
+            """Blocked and nested
+
+            Shows how to setup some SNES options programatically.
+            """
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
 
