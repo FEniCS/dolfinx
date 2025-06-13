@@ -194,6 +194,7 @@ except ModuleNotFoundError:
     print("This demo requires petsc4py.")
     exit(0)
 
+from dolfinx.fem.petsc import LinearProblem
 
 if np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx real mode")
@@ -337,7 +338,7 @@ solver_options = {
 u_h = fem.Function(V)
 p_h = fem.Function(Q)
 p_h.name = "p"
-stokes_problem = dolfinx.fem.petsc.LinearProblem(
+stokes_problem = LinearProblem(
     ufl.extract_blocks(a),
     ufl.extract_blocks(L),
     u=[u_h, p_h],
@@ -397,7 +398,7 @@ L += (
     - ufl.inner(ufl.dot(u_n, n) * (1 - lmbda) * u_D, v) * ufl.ds
 )
 
-navier_stokes_problem = dolfinx.fem.petsc.LinearProblem(
+navier_stokes_problem = LinearProblem(
     ufl.extract_blocks(a),
     ufl.extract_blocks(L),
     u=[u_h, p_h],
