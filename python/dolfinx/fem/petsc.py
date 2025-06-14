@@ -1199,37 +1199,37 @@ class NonlinearProblem:
             self._P_mat.destroy()
 
     @property
-    def F(self) -> typing.Union[Form, list[Form]]:
+    def F(self) -> typing.Union[Form, Iterable[Form]]:
         """The compiled residual."""
         return self._F
 
     @property
-    def J(self) -> Form:
+    def J(self) -> typing.Union[Form, Iterable[Iterable[Form]]]:
         """The compiled Jacobian."""
         return self._J
 
     @property
-    def P(self) -> typing.Optional[Form]:
+    def P(self) -> typing.Optional[typing.Union[Form, Iterable[Iterable[Form]]]]:
         """The compiled preconditioner."""
         return self._P
 
     @property
-    def A(self) -> PETSc.Mat:
+    def A(self) -> PETSc.Mat:  # type: ignore
         """Jacobian matrix."""
         return self._A
 
     @property
-    def b(self) -> PETSc.Vec:
+    def b(self) -> PETSc.Vec:  # type: ignore
         """Residual vector."""
         return self._b
 
     @property
-    def x(self) -> PETSc.Vec:
+    def x(self) -> PETSc.Vec:  # type: ignore
         """Solution vector"""
         return self._x
 
     @property
-    def P_mat(self) -> typing.Optional[PETSc.Vec]:
+    def P_mat(self) -> typing.Optional[PETSc.Vec]:  # type: ignore
         """Preconditioner matrix."""
         return self._P_mat
 
