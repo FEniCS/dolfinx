@@ -1084,9 +1084,9 @@ class NonlinearProblem:
             bcs: Dirichlet boundary conditions.
             J: UFL form(s) representing the Jacobian :math:`J_ij = dF_i/du_j`.
             P: UFL form(s) representing the preconditioner.
-            mat_kind: The PETSc matrix type (``MatType``).
+            mat_kind: The PETSc matrix type for the Jacobian and preconditioner (``MatType``).
                 See :func:`dolfinx.fem.petsc.create_matrix` for more information.
-            vec_kind: The PETSc vector type (``VecType``).
+            vec_kind: The PETSc vector type for the residual and solution (``VecType``).
                 See :func:`dolfinx.fem.petsc.create_vector` for more information.
             form_compiler_options: Options used in FFCx
                 compilation of this form. Run ``ffcx --help`` at the
