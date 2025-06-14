@@ -77,7 +77,7 @@ __all__ = [
 
 def _extract_function_spaces(
     a: Iterable[Iterable[Form]],
-) -> tuple[list[_FunctionSpace], list[_FunctionSpace]]:
+) -> tuple[Sequence[_FunctionSpace], Sequence[_FunctionSpace]]:
     """From a rectangular array of bilinear forms, extract the function
     spaces for each block row and block column.
     """
@@ -92,8 +92,8 @@ def _extract_function_spaces(
     Vblock: typing.Iterable = map(partial(map, fn), a)
 
     # Compute spaces for each row/column block
-    rows: list[set] = [set() for i in range(len(a))]
-    cols: list[set] = [set() for i in range(len(a[0]))]
+    rows: Sequence[set] = [set() for i in range(len(a))]
+    cols: Sequence[set] = [set() for i in range(len(a[0]))]
     for i, Vrow in enumerate(Vblock):
         for j, V in enumerate(Vrow):
             if V is not None:
@@ -222,7 +222,7 @@ def create_matrix(
                  [a_m0 ..  a_mn]
 
     Args:
-        a: A bilinear form or a nested list of bilinear forms.
+        a: A bilinear form or a nested sequence of bilinear forms.
         kind: The PETSc matrix type (``MatType``).
 
     Returns:
@@ -230,7 +230,7 @@ def create_matrix(
     """
     try:
         return _cpp.fem.petsc.create_matrix(a._cpp_object, kind)  # Single form
-    except AttributeError:  # ``a`` is a nested list
+    except AttributeError:  # ``a`` is a nested sequence
         _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
         if kind == PETSc.Mat.Type.NEST:  # Create nest matrix with default types
             return _cpp.fem.petsc.create_matrix_nest(_a, None)
@@ -291,7 +291,7 @@ def assemble_vector(
         accumulated on the owning processes.
 
     Args:
-        L: A linear form or list of linear forms.
+        L: A linear form or sequence of linear forms.
         constants: Constants appearing in the form. For a single form,
             ``constants.ndim==1``. For multiple forms, the constants for
             form ``L[i]`` are  ``constants[i]``.
@@ -344,7 +344,7 @@ def _assemble_vector_vec(
 
     Args:
         b: Vector to assemble the contribution of the linear form into.
-        L: A linear form or list of linear forms to assemble into ``b``.
+        L: A linear form or sequence of linear forms to assemble into ``b``.
         constants: Constants appearing in the form. For a single form,
             ``constants.ndim==1``. For multiple forms, the constants for
             form ``L[i]`` are  ``constants[i]``.
@@ -594,11 +594,11 @@ def apply_lifting(
         bcs: Boundary conditions used to modify ``b`` (see
             :func:`dolfinx.fem.apply_lifting`). Two cases are supported:
 
-            1. The boundary conditions ``bcs`` is a 'list-of-lists' such
+            1. The boundary conditions ``bcs`` are a 'sequence-of-sequences' such
                that ``bcs[j]`` are the Dirichlet boundary conditionns
                associated with the forms in the ``j`` th colulmn of
-               ``a``. Helper functions exist to create a list-of-lists
-               of `DirichletBC` from the 2D ``a`` and a flat list of
+               ``a``. Helper functions exist to create a sequence-of-sequences
+               of `DirichletBC` from the 2D ``a`` and a flat Sequence of
                `DirichletBC` objects ``bcs``::
 
                    bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), bcs)
@@ -804,7 +804,7 @@ class LinearProblem:
 
         if u is None:
             # Extract function space from TrialFunction (which is at the
-            # end of the argument list as it is numbered as 1, while the
+            # end of the argument sequence as it is numbered as 1, while the
             # Test function is numbered as 0)
             self.u = _Function(a.arguments()[-1].ufl_function_space())
         else:
@@ -952,7 +952,7 @@ def _assign_block_data(forms: typing.Iterable[dolfinx.fem.Form], vec: PETSc.Vec)
 
 
 def assemble_residual(
-    u: typing.Union[_Function, list[_Function]],
+    u: typing.Union[_Function, Sequence[_Function]],
     residual: typing.Union[Form, typing.Iterable[Form]],
     jacobian: typing.Union[Form, typing.Iterable[typing.Iterable[Form]]],
     bcs: typing.Iterable[DirichletBC],
@@ -969,8 +969,8 @@ def assemble_residual(
 
     Args:
         u: Function(s) tied to the solution vector within the residual and Jacobian.
-        residual: Form of the residual. It can be an list of forms.
-        jacobian: Form of the Jacobian. It can be a nested list of forms.
+        residual: Form of the residual. It can be a sequence of forms.
+        jacobian: Form of the Jacobian. It can be a nested sequence of forms.
         bcs: List of Dirichlet boundary conditions.
         _snes: The solver instance.
         x: The vector containing the point to evaluate the residual at.
@@ -1010,7 +1010,7 @@ def assemble_residual(
 
 
 def assemble_jacobian(
-    u: typing.Union[list[_Function], _Function],
+    u: typing.Union[Sequence[_Function], _Function],
     jacobian: typing.Union[Form, typing.Iterable[typing.Iterable[Form]]],
     preconditioner: typing.Optional[typing.Union[Form, typing.Iterable[typing.Iterable[Form]]]],
     bcs: typing.Iterable[DirichletBC],
@@ -1057,11 +1057,11 @@ def assemble_jacobian(
 class NonlinearProblem:
     def __init__(
         self,
-        F: ufl.form.Form,
-        u: typing.Union[_Function, list[_Function]],
-        bcs: typing.Optional[list[DirichletBC]] = None,
-        J: typing.Optional[ufl.form.Form] = None,
-        P: typing.Optional[ufl.form.Form] = None,
+        F: typing.Union[ufl.form.Form, Sequence[ufl.form.Form]],
+        u: typing.Union[_Function, Sequence[_Function]],
+        bcs: typing.Optional[Sequence[DirichletBC]] = None,
+        J: typing.Optional[typing.Union[ufl.form.Form, Sequence[Sequence[ufl.form.Form]]]] = None,
+        P: typing.Optional[typing.Union[ufl.form.Form, Sequence[Sequence[ufl.form.Form]]]] = None,
         mat_kind: typing.Optional[typing.Union[str, typing.Iterable[typing.Iterable[str]]]] = None,
         vec_kind: typing.Optional[str] = None,
         form_compiler_options: typing.Optional[dict] = None,
@@ -1079,12 +1079,11 @@ class NonlinearProblem:
             been renamed NewtonSolverNonlinearProblem.
 
         Args:
-            F: Single or list of PDE residuals :math:`F_i`.
-            u: Single or list of unknowns of the block system.
-            bcs: List of Dirichlet boundary conditions.
-            J: Single or list of lists of forms representing the
-                Jacobian :math:`J_ij = dF_i/du_j`.
-            P: Single or list of lists of forms representing the preconditioner.
+            F: UFL form(s) of residual :math:`F_i`.
+            u: Function used to define the residual and Jacobian.
+            bcs: Dirichlet boundary conditions.
+            J: UFL form(s) representing the Jacobian :math:`J_ij = dF_i/du_j`.
+            P: UFL form(s) representing the preconditioner.
             mat_kind: The PETSc matrix type (``MatType``).
                 See :func:`dolfinx.fem.petsc.create_matrix` for more information.
             vec_kind: The PETSc vector type (``VecType``).
