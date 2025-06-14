@@ -284,7 +284,7 @@ def form(
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
     entity_maps: typing.Optional[dict[Mesh, np.typing.NDArray[np.int32]]] = None,
-) -> typing.Union[Form, typing.Iterable[Form]]:
+):
     """Create a Form or list of Forms.
 
     Args:
