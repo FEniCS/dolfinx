@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Jørgen S. Dokken
+# Copyright (C) 2021-2025 Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -8,30 +8,48 @@
 from __future__ import annotations
 
 import typing
+import warnings
+
+from mpi4py import MPI
+from petsc4py import PETSc
 
 if typing.TYPE_CHECKING:
-    from mpi4py import MPI
-    from petsc4py import PETSc
-
     import dolfinx
 
     assert dolfinx.has_petsc4py
 
-    from dolfinx.fem.problem import NonlinearProblem
+    from dolfinx.fem.petsc import NewtonSolverNonlinearProblem
 
 import types
 
 from dolfinx import cpp as _cpp
 from dolfinx import fem
-from dolfinx.fem.petsc import create_matrix, create_vector
+from dolfinx.fem.petsc import (
+    create_matrix,
+    create_vector,
+)
 
 __all__ = ["NewtonSolver"]
 
 
 class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
-    def __init__(self, comm: MPI.Intracomm, problem: NonlinearProblem):
-        """A Newton solver for non-linear problems."""
+    def __init__(self, comm: MPI.Intracomm, problem: NewtonSolverNonlinearProblem):
+        """A Newton solver for non-linear problems.
+
+        Note:
+            This class is deprecated in favour of dolfinx.fem.petsc.NonlinearProblem,
+            a high level interface to PETSc SNES.
+        """
         super().__init__(comm)
+
+        warnings.warn(
+            (
+                "dolfinx.nls.petsc.NewtonSolver is deprecated. "
+                + "Use dolfinx.fem.petsc.NonlinearProblem, "
+                + "a high level interface to PETSc SNES, instead."
+            ),
+            DeprecationWarning,
+        )
 
         # Create matrix and vector to be used for assembly
         # of the non-linear problem
