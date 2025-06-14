@@ -141,7 +141,7 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, log, plot
 from dolfinx.fem import Function, functionspace
-from dolfinx.fem.petsc import NonlinearProblem
+from dolfinx.fem.petsc import NewtonSolverNonlinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_square
 from dolfinx.nls.petsc import NewtonSolver
@@ -272,7 +272,7 @@ F = F0 + F1
 
 # +
 # Create nonlinear problem and Newton solver
-problem = NonlinearProblem(F, u)
+problem = NewtonSolverNonlinearProblem(F, u)
 solver = NewtonSolver(MPI.COMM_WORLD, problem)
 solver.convergence_criterion = "incremental"
 solver.rtol = np.sqrt(np.finfo(default_real_type).eps) * 1e-2

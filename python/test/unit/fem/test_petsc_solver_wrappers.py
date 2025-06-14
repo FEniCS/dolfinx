@@ -56,7 +56,7 @@ class TestPETScSolverWrappers:
         )
         u_lin = linear_problem.solve()
 
-        nonlinear_problem = dolfinx.fem.petsc.NonlinearProblem(F, uh)
+        nonlinear_problem = dolfinx.fem.petsc.NewtonSolverNonlinearProblem(F, uh)
 
         solver = dolfinx.nls.petsc.NewtonSolver(msh.comm, nonlinear_problem)
         ksp = solver.krylov_solver
