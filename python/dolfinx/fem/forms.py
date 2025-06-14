@@ -284,11 +284,11 @@ def form(
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
     entity_maps: typing.Optional[dict[Mesh, np.typing.NDArray[np.int32]]] = None,
-):
-    """Create a Form or an array of Forms.
+) -> typing.Union[Form, list[Form]]:
+    """Create a Form or list of Forms.
 
     Args:
-        form: A UFL form or list(s) of UFL forms.
+        form: A UFL form or iterable (list) of UFL forms.
         dtype: Scalar type to use for the compiled form.
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
