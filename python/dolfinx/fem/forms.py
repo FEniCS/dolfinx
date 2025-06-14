@@ -644,10 +644,10 @@ def create_form(
 
 
 def derivative_block(
-    F: typing.Union[ufl.Form | list[ufl.Form]],
-    u: typing.Union[Function | list[Function]],
-    du: typing.Optional[typing.Union[ufl.Argument, list[ufl.Argument]]] = None,
-) -> typing.Union[ufl.Form, list[list[ufl.Form]]]:
+    F: typing.Union[ufl.Form, typing.Sequence[ufl.Form]],
+    u: typing.Union[Function, typing.Sequence[Function]],
+    du: typing.Optional[typing.Union[ufl.Argument, typing.Sequence[ufl.Argument]]] = None,
+) -> typing.Union[ufl.Form, typing.Iterable[typing.Iterable[ufl.Form]]]:
     """Return the UFL derivative of a (list of) UFL rank one form(s).
 
     This is commonly used to derive a block Jacobian from a block residual.
