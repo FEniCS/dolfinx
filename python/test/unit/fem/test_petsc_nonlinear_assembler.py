@@ -273,16 +273,16 @@ class TestNLSPETSc:
                 F, [u, p], J=J, bcs=bcs, mat_kind="mpi", vec_kind="mpi"
             )
 
-            snes_options = {"snes_rtol": 1.0e-15, "snes_max_it": 10, "snes_monitor": None}
+            petsc_options = {"snes_rtol": 1.0e-15, "snes_max_it": 10, "snes_monitor": None}
 
             snes = problem.solver
             opts = PETSc.Options()
             opts.prefixPush(snes.getOptionsPrefix())
-            for k, v in snes_options.items():
+            for k, v in petsc_options.items():
                 opts[k] = v
             opts.prefixPop()
             snes.setFromOptions()
-            for k in snes_options.keys():
+            for k in petsc_options.keys():
                 del opts[k]
 
             x = problem.x
@@ -366,7 +366,7 @@ class TestNLSPETSc:
                 dirichletbc(u1_bc, bdofsW1_V1, W.sub(1)),
             ]
 
-            snes_options = {"snes_rtol": 1.0e-15, "snes_max_it": 10}
+            petsc_options = {"snes_rtol": 1.0e-15, "snes_max_it": 10}
             U.sub(0).interpolate(initial_guess_u)
             U.sub(1).interpolate(initial_guess_p)
 
@@ -375,7 +375,7 @@ class TestNLSPETSc:
                 U,
                 J=J,
                 bcs=bcs,
-                snes_options=snes_options,
+                petsc_options=petsc_options,
             )
 
             x, converged_reason, _ = problem.solve()
@@ -463,7 +463,7 @@ class TestNLSPETSc:
             """Blocked and monolithic"""
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
-            snes_options = {
+            petsc_options = {
                 "snes_rtol": 1.0e-15,
                 "snes_max_it": 10,
                 "snes_monitor": None,
@@ -474,7 +474,7 @@ class TestNLSPETSc:
                 [u, p],
                 bcs=bcs,
                 P=P,
-                snes_options=snes_options,
+                petsc_options=petsc_options,
                 mat_kind="mpi",
                 vec_kind="mpi",
             )
@@ -548,7 +548,7 @@ class TestNLSPETSc:
             U.sub(0).interpolate(initial_guess_u)
             U.sub(1).interpolate(initial_guess_p)
 
-            snes_options = {
+            petsc_options = {
                 "snes_rtol": 1.0e-15,
                 "snes_max_it": 20,
                 "ksp_type": "minres",
@@ -560,7 +560,7 @@ class TestNLSPETSc:
                 J=J,
                 bcs=bcs,
                 P=P,
-                snes_options=snes_options,
+                petsc_options=petsc_options,
             )
             x, converged_reason, _ = problem.solve()
             assert converged_reason > 0
