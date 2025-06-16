@@ -641,6 +641,7 @@ Esh = problem.solve()
 gdim = mesh_data.mesh.geometry.dim
 V_dg = fem.functionspace(mesh_data.mesh, ("Discontinuous Lagrange", degree, (gdim,)))
 Esh_dg = fem.Function(V_dg)
+assert isinstance(Esh, fem.Function)
 Esh_dg.interpolate(Esh)
 
 with io.VTXWriter(mesh_data.mesh.comm, "Esh.bp", Esh_dg) as vtx:
