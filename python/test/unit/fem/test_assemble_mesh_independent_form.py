@@ -113,10 +113,6 @@ def test_submesh_assembly(dtype):
         submesh, sub_to_parent, _, _ = dolfinx.mesh.create_submesh(
             mesh, mesh.topology.dim - 1, facets
         )
-        imap = mesh.topology.index_map(mesh.topology.dim - 1)
-        num_facets = imap.size_local + imap.num_ghosts
-        parent_to_sub = np.full(num_facets, -1, dtype=np.int32)
-        parent_to_sub[sub_to_parent] = np.arange(sub_to_parent.size, dtype=np.int32)
 
         def g(x):
             return -3 * x[1] ** 3 + x[0]
@@ -131,8 +127,14 @@ def test_submesh_assembly(dtype):
             dolfinx.fem.IntegralType.exterior_facet, mesh.topology, sub_to_parent
         )
         subdomains = {dolfinx.fem.IntegralType.exterior_facet: [(subdomain_id, facet_entities)]}
+        entity_map = dolfinx.cpp.mesh.EntityMap(
+            mesh.topology._cpp_object,
+            submesh.topology._cpp_object,
+            submesh.topology.dim,
+            sub_to_parent,
+        )
         form = dolfinx.fem.create_form(
-            compiled_form, [Vh], mesh, subdomains, {w: wh}, {}, {submesh: parent_to_sub}
+            compiled_form, [Vh], mesh, subdomains, {w: wh}, {}, [entity_map]
         )
 
         # Compute exact solution
