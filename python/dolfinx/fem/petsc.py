@@ -1102,9 +1102,8 @@ def assemble_jacobian(
     A function conforming to the interface expected by SNES.setJacobian can
     be created by fixing the first four arguments:
 
-        functools.partial(
-            assemble_jacobian, u, jacobian, preconditioner, bcs
-        )
+        functools.partial(assemble_jacobian, u, jacobian, preconditioner,
+                          bcs)
 
     Args:
         u: Function tied to the solution vector within the residual and
