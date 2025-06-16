@@ -659,9 +659,9 @@ def derivative_block(
     :math:`J_{ij} = \\frac{\\partial F_i}{u_j}[\\delta u_j]` using
     `ufl.derivative` called component-wise.
 
-    If `F` is a form, the Jacobian is computed as :math:`J = \\frac{\\partial
-    F}{\\partial u}[\\delta u]`. This is identical to calling `ufl.derivative`
-    directly.
+    If `F` is a form, the Jacobian is computed as
+    :math:`J = \\frac{\\partial F}{\\partial u}[\\delta u]`. This is
+    identical to calling `ufl.derivative` directly.
     """
     if isinstance(F, ufl.Form):
         if du is None:

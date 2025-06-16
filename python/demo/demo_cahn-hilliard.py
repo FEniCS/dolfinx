@@ -265,14 +265,14 @@ F = F0 + F1
 # ```
 #
 # To solve the nonlinear system of equations,
-# {py:class}`NonlinearProblem<dolfinx.fem.petsc.NonlinearProblem>` object to
-# solve a system of nonlinear equations
+# {py:class}`NonlinearProblem<dolfinx.fem.petsc.NonlinearProblem>` object
+# to solve a system of nonlinear equations
 
 # +
-# For the factorisation of the underlying linearized problems, prefer MUMPS,
-# then superlu_dist, then default.
-# We measure convergence by looking at the norm of the increment of the solution
-# between two iterations, called `stol` in PETSc, see:
+# For the factorisation of the underlying linearized problems, prefer
+# MUMPS, then superlu_dist, then default.
+# We measure convergence by looking at the norm of the increment of the
+# solution between two iterations, called `stol` in PETSc, see:
 # [`SNES convegence tests`](https://petsc.org/release/manual/snes/#convergence-tests)
 # for further details.
 
