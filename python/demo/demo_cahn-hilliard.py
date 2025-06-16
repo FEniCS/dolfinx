@@ -141,10 +141,9 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, log, plot
 from dolfinx.fem import Function, functionspace
-from dolfinx.fem.petsc import NewtonSolverNonlinearProblem
+from dolfinx.fem.petsc import NonlinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_square
-from dolfinx.nls.petsc import NewtonSolver
 
 try:
     import pyvista as pv
@@ -266,40 +265,31 @@ F = F0 + F1
 # ```{index} single: Newton solver; (in Cahn-Hilliard demo)
 # ```
 #
-# The DOLFINx Newton solver requires a
-# {py:class}`NonlinearProblem<dolfinx.fem.NonlinearProblem>` object to
+# To solve the nonlinear system of equations,
+# {py:class}`NonlinearProblem<dolfinx.fem.petsc.NonlinearProblem>` object to
 # solve a system of nonlinear equations
 
 # +
-# Create nonlinear problem and Newton solver
-problem = NewtonSolverNonlinearProblem(F, u)
-solver = NewtonSolver(MPI.COMM_WORLD, problem)
-solver.convergence_criterion = "incremental"
-solver.rtol = np.sqrt(np.finfo(default_real_type).eps) * 1e-2
-
-# We can customize the linear solver used inside the NewtonSolver by
-# modifying the PETSc options
-ksp = solver.krylov_solver
-opts = PETSc.Options()  # type: ignore
-option_prefix = ksp.getOptionsPrefix()
-opts[f"{option_prefix}ksp_type"] = "preonly"
-opts[f"{option_prefix}pc_type"] = "lu"
-sys = PETSc.Sys()  # type: ignore
-# For factorisation prefer MUMPS, then superlu_dist, then default
+# For the factorisation of the underlying linearized problems, prefer MUMPS,
+# then superlu_dist, then default
+linear_solver = "petsc"
 use_superlu = PETSc.IntType == np.int64  # or PETSc.ScalarType == np.complex64
+sys = PETSc.Sys()  # type: ignore
 if sys.hasExternalPackage("mumps") and not use_superlu:
-    opts[f"{option_prefix}pc_factor_mat_solver_type"] = "mumps"
+    linear_solver = "mumps"
 elif sys.hasExternalPackage("superlu_dist"):
-    opts[f"{option_prefix}pc_factor_mat_solver_type"] = "superlu_dist"
-ksp.setFromOptions()
+    linear_solver = "superlu_dist"
+petsc_options = {
+    "snes_type": "newtonls",
+    "snes_linesearch_type": "none",
+    "snes_rtol": np.sqrt(np.finfo(default_real_type).eps) * 1e-2,
+    "ksp_type": "preonly",
+    "pc_type": "lu",
+    "pc_factor_mat_solver_type": linear_solver,
+}
+problem = NonlinearProblem(F, u, petsc_options=petsc_options)
 # -
 
-# The setting of `convergence_criterion` to `"incremental"` specifies
-# that the Newton solver should compute a norm of the solution increment
-# to check for convergence (the other possibility is to use
-# `"residual"`, or to provide a user-defined check). The tolerance for
-# convergence is specified by `rtol`.
-#
 # To run the solver and save the output to a VTK file for later
 # visualization, the solver is advanced in time from $t_{n}$ to
 # $t_{n+1}$ until a terminal time $T$ is reached:
@@ -341,8 +331,8 @@ c = u.sub(0)
 u0.x.array[:] = u.x.array
 while t < T:
     t += dt
-    r = solver.solve(u)
-    print(f"Step {int(t / dt)}: num iterations: {r[0]}")
+    _, converged_reason, num_iterations = problem.solve()
+    print(f"Step {int(t / dt)}: {converged_reason=} {num_iterations=}")
     u0.x.array[:] = u.x.array
     file.write_function(c, t)
 

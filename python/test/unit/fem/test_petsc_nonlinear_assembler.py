@@ -269,9 +269,7 @@ class TestNLSPETSc:
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
 
-            problem = dolfinx.fem.petsc.NonlinearProblem(
-                F, [u, p], J=J, bcs=bcs, mat_kind="mpi", vec_kind="mpi"
-            )
+            problem = dolfinx.fem.petsc.NonlinearProblem(F, [u, p], J=J, bcs=bcs, kind="mpi")
 
             petsc_options = {"snes_rtol": 1.0e-15, "snes_max_it": 10, "snes_monitor": None}
 
@@ -475,8 +473,7 @@ class TestNLSPETSc:
                 bcs=bcs,
                 P=P,
                 petsc_options=petsc_options,
-                mat_kind="mpi",
-                vec_kind="mpi",
+                kind="mpi",
             )
             x, converged_reason, _ = problem.solve()
             assert converged_reason > 0
@@ -493,9 +490,7 @@ class TestNLSPETSc:
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
 
-            problem = dolfinx.fem.petsc.NonlinearProblem(
-                F, [u, p], J=J, bcs=bcs, mat_kind="nest", vec_kind="nest", P=P
-            )
+            problem = dolfinx.fem.petsc.NonlinearProblem(F, [u, p], J=J, bcs=bcs, kind="nest", P=P)
             nested_IS = problem.solver.getJacobian()[0].getNestISs()
             problem.solver.setTolerances(rtol=1.0e-15, max_it=20)
             problem.solver.getKSP().setType("minres")

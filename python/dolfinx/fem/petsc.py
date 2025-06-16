@@ -1062,8 +1062,7 @@ class NonlinearProblem:
         bcs: typing.Optional[Sequence[DirichletBC]] = None,
         J: typing.Optional[typing.Union[ufl.form.Form, Sequence[Sequence[ufl.form.Form]]]] = None,
         P: typing.Optional[typing.Union[ufl.form.Form, Sequence[Sequence[ufl.form.Form]]]] = None,
-        mat_kind: typing.Optional[typing.Union[str, typing.Iterable[typing.Iterable[str]]]] = None,
-        vec_kind: typing.Optional[str] = None,
+        kind: typing.Optional[typing.Union[str, typing.Iterable[typing.Iterable[str]]]] = None,
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
         petsc_options: typing.Optional[dict] = None,
@@ -1084,10 +1083,8 @@ class NonlinearProblem:
             bcs: Dirichlet boundary conditions.
             J: UFL form(s) representing the Jacobian :math:`J_ij = dF_i/du_j`.
             P: UFL form(s) representing the preconditioner.
-            mat_kind: The PETSc matrix type(s) for the Jacobian and preconditioner (``MatType``).
+            kind: The PETSc matrix type(s) for the Jacobian and preconditioner (``MatType``).
                 See :func:`dolfinx.fem.petsc.create_matrix` for more information.
-            vec_kind: The PETSc vector type for the residual and solution (``VecType``).
-                See :func:`dolfinx.fem.petsc.create_vector` for more information.
             form_compiler_options: Options used in FFCx compilation of all
                 forms. Run ``ffcx --help`` at the command line to see all available
                 options.
@@ -1137,15 +1134,17 @@ class NonlinearProblem:
         bcs = [] if bcs is None else bcs
 
         # Create PETSc structures for the residual, Jacobian and solution vector
-        self._A = create_matrix(self.J, kind=mat_kind)
-        self._b = create_vector(self.F, kind=vec_kind)
-        self._x = create_vector(self.F, kind=vec_kind)
-
+        self._A = create_matrix(self.J, kind=kind)
         # Create PETSc structure for preconditioner if provided
         if self.P is not None:
-            self._P_mat = create_matrix(self.P, kind=mat_kind)
+            self._P_mat = create_matrix(self.P, kind=kind)
         else:
             self._P_mat = None
+
+        # Determine the vector kind based on the matrix type
+        kind = "nest" if self._A.getType() == PETSc.Mat.Type.NEST else kind
+        self._b = create_vector(self.F, kind=kind)
+        self._x = create_vector(self.F, kind=kind)
 
         # Create the SNES solver and attach the corresponding Jacobian and residual
         # computation functions
