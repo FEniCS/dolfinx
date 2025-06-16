@@ -676,6 +676,7 @@ for m in m_list:
         },
     )
     Esh_m = problem.solve()
+    assert isinstance(Esh_m, fem.Function)
     assert problem.solver.getConvergedReason() > 0, "Solver did not converge!"
 
     # Scattered magnetic field
