@@ -18,9 +18,6 @@
 # - Automatic linearisation
 # - Use of the class
 #   {py:class}`NonlinearProblem<dolfinx.fem.petsc.NonlinearProblem>`
-# - The built-in Newton solver
-#   ({py:class}`NewtonSolver<dolfinx.nls.petsc.NewtonSolver>`)
-# - Form compiler options
 # - Interpolation of functions
 # - Visualisation of a running simulation with
 #   [PyVista](https://pyvista.org/)
