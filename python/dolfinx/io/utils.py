@@ -1,5 +1,5 @@
-# Copyright (C) 2017-2022 Chris N. Richardson, Garth N. Wells, Michal Habera
-# and Jørgen S. Dokken
+# Copyright (C) 2017-2022 Chris N. Richardson, Garth N. Wells,
+# Michal Habera and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -135,7 +135,8 @@ class VTKFile(_cpp.io.VTKFile):
         self.write(mesh._cpp_object, t)
 
     def write_function(self, u: typing.Union[list[Function], Function], t: float = 0.0) -> None:
-        """Write a single function or a list of functions to file for a given time (default 0.0)"""
+        """Write a single function or a list of functions to file for a
+        given time (default 0.0)"""
         super().write(_extract_cpp_objects(u), t)
 
 
@@ -187,7 +188,8 @@ class XDMFFile(_cpp.io.XDMFFile):
         cells = super().read_topology_data(name, xpath)
         x = super().read_geometry_data(name, xpath)
 
-        # Get coordinate element, special handling for second order serendipity.
+        # Get coordinate element, special handling for second order
+        # serendipity.
         num_nodes_per_cell = cells.shape[1]
         if (cell_shape == CellType.quadrilateral and num_nodes_per_cell == 8) or (
             cell_shape == CellType.hexahedron and num_nodes_per_cell == 20
@@ -224,7 +226,8 @@ class XDMFFile(_cpp.io.XDMFFile):
         attribute_name: typing.Optional[str] = None,
         xpath: str = "/Xdmf/Domain",
     ) -> MeshTags:
-        """Read MeshTags with a specific name as specified in the XMDF file.
+        """Read MeshTags with a specific name as specified in the XMDF
+        file.
 
         Args:
             mesh: Mesh that the input data is defined on.
@@ -249,7 +252,8 @@ class XDMFFile(_cpp.io.XDMFFile):
 def distribute_entity_data(
     mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64], values: np.ndarray
 ) -> tuple[npt.NDArray[np.int64], np.ndarray]:
-    """Given a set of mesh entities and values, distribute them to the process that owns the entity.
+    """Given a set of mesh entities and values, distribute them to the
+    process that owns the entity.
 
     The entities are described by the global vertex indices of the mesh.
     These entity indices are using the original input ordering.
