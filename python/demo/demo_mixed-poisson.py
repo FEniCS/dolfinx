@@ -165,8 +165,8 @@ f = 10 * ufl.exp(-((x[0] - 0.5) * (x[0] - 0.5) + (x[1] - 0.5) * (x[1] - 0.5)) / 
 # -
 
 # We now declare the blocked bilinear and linear forms. We use `ufl.extract_blocks`
-# to extract the block structure of the bi-linear and linear form.
-# For the first block of the right-hand-side, we provide a form that efficiently is 0.
+# to extract the block structure of the bilinear and linear form.
+# For the first block of the right-hand side, we provide a form that efficiently is 0.
 # We do this to preserve knowledge of the test space in the block. *Note that the defined `L`
 # corresponds to $u_{0} = 0$ on $\Gamma_{D}$.*
 
