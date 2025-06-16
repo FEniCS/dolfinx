@@ -337,8 +337,11 @@ else:
 # -
 
 
-# Create a PETSc 'nested' vector that holds reference to the `sigma` and
-# `u` solution (degree-of-freedom) vectors and solve.
+# Once we have set the preconditioners for the two blocks, we can
+# solve the linear system. The `LinearProblem` class will
+# automatically assemble the linear system, apply the boundary
+# conditions and call the Krylov solver and update the solution
+# vectors `u` and `sigma`.
 
 # +
 problem.solve()
