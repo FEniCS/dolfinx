@@ -268,7 +268,12 @@ F = F0 + F1
 
 # +
 # For the factorisation of the underlying linearized problems, prefer MUMPS,
-# then superlu_dist, then default
+# then superlu_dist, then default.
+# We measure convergence by looking at the norm of the increment of the solution
+# between two iterations, called `stol` in PETSc, see:
+# [`SNES convegence tests`](https://petsc.org/release/manual/snes/#convergence-tests)
+# for further details.
+
 use_superlu = PETSc.IntType == np.int64  # or PETSc.ScalarType == np.complex64
 sys = PETSc.Sys()  # type: ignore
 if sys.hasExternalPackage("mumps") and not use_superlu:
@@ -280,10 +285,13 @@ else:
 petsc_options = {
     "snes_type": "newtonls",
     "snes_linesearch_type": "none",
-    "snes_rtol": np.sqrt(np.finfo(default_real_type).eps) * 1e-2,
+    "snes_stol": np.sqrt(np.finfo(default_real_type).eps) * 1e-2,
+    "snes_atol": 0,
+    "snes_rtol": 0,
     "ksp_type": "preonly",
     "pc_type": "lu",
     "pc_factor_mat_solver_type": linear_solver,
+    "snes_monitor": None,
 }
 problem = NonlinearProblem(F, u, petsc_options=petsc_options)
 # -
