@@ -35,7 +35,8 @@ class SparsityPattern;
 namespace petsc
 {
 /// Print error message for PETSc calls that return an error
-void error(int error_code, std::string filename, std::string petsc_function);
+void error(int error_code, const std::string& filename,
+           const std::string& petsc_function);
 
 /// Create PETsc vectors from the local data. The data is copied into
 /// the PETSc vectors and is not shared.
@@ -140,7 +141,7 @@ void set(std::string option);
 
 /// Generic function for setting PETSc option
 template <typename T>
-void set(std::string option, const T value)
+void set(std::string option, const T& value)
 {
   if (option[0] != '-')
     option = '-' + option;
@@ -177,7 +178,7 @@ public:
   Vector(const Vector& x) = delete;
 
   /// Move constructor
-  Vector(Vector&& x);
+  Vector(Vector&& x) noexcept;
 
   /// Create holder of a PETSc Vec object/pointer. The Vec x object
   /// should already be created. If inc_ref_count is true, the reference
@@ -199,7 +200,7 @@ public:
   Vector& operator=(const Vector& x) = delete;
 
   /// Move Assignment operator
-  Vector& operator=(Vector&& x);
+  Vector& operator=(Vector&& x) noexcept;
 
   /// Create a copy of the vector
   /// @note Collective
@@ -218,7 +219,7 @@ public:
   MPI_Comm comm() const;
 
   /// Sets the prefix used by PETSc when searching the options database
-  void set_options_prefix(std::string options_prefix);
+  void set_options_prefix(const std::string& options_prefix);
 
   /// Returns the prefix used by PETSc when searching the options
   /// database
@@ -247,7 +248,7 @@ public:
   Operator(const Operator& A) = delete;
 
   /// Move constructor
-  Operator(Operator&& A);
+  Operator(Operator&& A) noexcept;
 
   /// Destructor
   virtual ~Operator();
@@ -256,7 +257,7 @@ public:
   Operator& operator=(const Operator& A) = delete;
 
   /// Move assignment operator
-  Operator& operator=(Operator&& A);
+  Operator& operator=(Operator&& A) noexcept;
 
   /// Return number of rows and columns (num_rows, num_cols). PETSc
   /// returns -1 if size has not been set.
@@ -417,7 +418,7 @@ public:
   /// Assembly type
   ///   FINAL - corresponds to PETSc MAT_FINAL_ASSEMBLY
   ///   FLUSH - corresponds to PETSc MAT_FLUSH_ASSEMBLY
-  enum class AssemblyType : std::int32_t
+  enum class AssemblyType : std::int8_t
   {
     FINAL,
     FLUSH
@@ -437,7 +438,7 @@ public:
 
   /// Sets the prefix used by PETSc when searching the options
   /// database
-  void set_options_prefix(std::string options_prefix);
+  void set_options_prefix(const std::string& options_prefix);
 
   /// Returns the prefix used by PETSc when searching the options
   /// database
@@ -465,7 +466,7 @@ public:
   KrylovSolver(const KrylovSolver& solver) = delete;
 
   /// Move constructor
-  KrylovSolver(KrylovSolver&& solver);
+  KrylovSolver(KrylovSolver&& solver) noexcept;
 
   /// Destructor
   ~KrylovSolver();
@@ -474,7 +475,7 @@ public:
   KrylovSolver& operator=(const KrylovSolver&) = delete;
 
   /// Move assignment
-  KrylovSolver& operator=(KrylovSolver&& solver);
+  KrylovSolver& operator=(KrylovSolver&& solver) noexcept;
 
   /// Set operator (Mat)
   void set_operator(const Mat A);
@@ -488,7 +489,7 @@ public:
 
   /// Sets the prefix used by PETSc when searching the PETSc options
   /// database
-  void set_options_prefix(std::string options_prefix);
+  void set_options_prefix(const std::string& options_prefix);
 
   /// Returns the prefix used by PETSc when searching the PETSc options
   /// database

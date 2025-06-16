@@ -35,7 +35,7 @@ mesh::extract_topology(CellType cell_type, const fem::ElementDofLayout& layout,
   std::vector<int> local_vertices(num_vertices_per_cell);
   for (int i = 0; i < num_vertices_per_cell; ++i)
   {
-    const std::vector<int> local_index = layout.entity_dofs(0, i);
+    const std::vector<int>& local_index = layout.entity_dofs(0, i);
     assert(local_index.size() == 1);
     local_vertices[i] = local_index[0];
   }
