@@ -1,4 +1,5 @@
-// Copyright (C) 2013-2020 Johan Hake, Jan Blechta and Garth N. Wells
+// Copyright (C) 2013-2025 Johan Hake, Jan Blechta, Garth N. Wells and Paul T.
+// Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -18,6 +19,8 @@
 #include <algorithm>
 #include <array>
 #include <concepts>
+#include <cstddef>
+#include <dolfinx/common/defines.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Topology.h>
@@ -26,6 +29,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <set>
 #include <span>
 #include <stdexcept>
@@ -83,6 +87,48 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
   }
 
   return cell_local_facet_pairs;
+}
+
+/// @brief Kernel C-pointer type.
+/// @tparam T scalar type.
+/// @tparam U geometry type.
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
+using kern_c_t = void (*)(T*, const T*, const T*, const U*, const int*,
+                          const std::uint8_t*, void*);
+
+/// @brief Kernel callback type.
+/// @tparam T scalar type.
+/// @tparam U geometry type.
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
+using kern_t = std::function<void(T*, const T*, const T*, const U*, const int*,
+                                  const std::uint8_t*, void*)>;
+
+/// @brief Extract correct kernel by type from UFCx integral.
+/// @tparam T scalar type of kernel to extract.s
+/// @tparam U geometry type of kernel to extract.
+/// @param integral UFCx integral to retrieve the kernel from.
+/// @return Kernel callback.
+template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
+constexpr kern_t<T, U> extract_kernel(const ufcx_integral* integral)
+{
+  if constexpr (std::is_same_v<T, float>)
+    return integral->tabulate_tensor_float32;
+  else if constexpr (std::is_same_v<T, std::complex<float>>
+                     && has_complex_ufcx_kernels())
+  {
+    return reinterpret_cast<kern_c_t<T, U>>(
+        integral->tabulate_tensor_complex64);
+  }
+  else if constexpr (std::is_same_v<T, double>)
+    return integral->tabulate_tensor_float64;
+  else if constexpr (std::is_same_v<T, std::complex<double>>
+                     && has_complex_ufcx_kernels())
+  {
+    return reinterpret_cast<kern_c_t<T, U>>(
+        integral->tabulate_tensor_complex128);
+  }
+  else
+    throw std::runtime_error("Could not extract kernel from ufcx integral.");
 }
 } // namespace impl
 
@@ -431,9 +477,16 @@ Form<T, U> create_form_factory(
   // integral offsets. Since the UFL forms for each type of cell should be
   // the same, I think this assumption is OK.
   const int* integral_offsets = ufcx_forms[0].get().form_integral_offsets;
-  std::vector<int> num_integrals_type(3);
-  for (int i = 0; i < 3; ++i)
+  std::array<int, 4> num_integrals_type;
+  for (std::size_t i = 0; i < num_integrals_type.size(); ++i)
     num_integrals_type[i] = integral_offsets[i + 1] - integral_offsets[i];
+
+  // Create vertices, if required
+  if (num_integrals_type[vertex] > 0)
+  {
+    mesh->topology_mutable()->create_connectivity(0, tdim);
+    mesh->topology_mutable()->create_connectivity(tdim, 0);
+  }
 
   // Create facets, if required
   if (num_integrals_type[exterior_facet] > 0
@@ -446,8 +499,6 @@ Form<T, U> create_form_factory(
 
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
-  using kern_t = std::function<void(T*, const T*, const T*, const U*,
-                                    const int*, const std::uint8_t*, void*)>;
   std::map<std::tuple<IntegralType, int, int>, integral_data<T, U>> integrals;
 
   auto check_geometry_hash
@@ -490,30 +541,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        kern_t k = nullptr;
-        if constexpr (std::is_same_v<T, float>)
-          k = integral->tabulate_tensor_float32;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, std::complex<float>>)
-        {
-          k = reinterpret_cast<void (*)(T*, const T*, const T*,
-                                        const scalar_value_t<T>*, const int*,
-                                        const unsigned char*, void*)>(
-              integral->tabulate_tensor_complex64);
-        }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, double>)
-          k = integral->tabulate_tensor_float64;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, std::complex<double>>)
-        {
-          k = reinterpret_cast<void (*)(T*, const T*, const T*,
-                                        const scalar_value_t<T>*, const int*,
-                                        const unsigned char*, void*)>(
-              integral->tabulate_tensor_complex128);
-        }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-
+        impl::kern_t<T, U> k = impl::extract_kernel<T>(integral);
         if (!k)
         {
           throw std::runtime_error(
@@ -577,30 +605,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        kern_t k = nullptr;
-        if constexpr (std::is_same_v<T, float>)
-          k = integral->tabulate_tensor_float32;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, std::complex<float>>)
-        {
-          k = reinterpret_cast<void (*)(T*, const T*, const T*,
-                                        const scalar_value_t<T>*, const int*,
-                                        const unsigned char*, void*)>(
-              integral->tabulate_tensor_complex64);
-        }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, double>)
-          k = integral->tabulate_tensor_float64;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, std::complex<double>>)
-        {
-          k = reinterpret_cast<void (*)(T*, const T*, const T*,
-                                        const scalar_value_t<T>*, const int*,
-                                        const unsigned char*, void*)>(
-              integral->tabulate_tensor_complex128);
-        }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-        assert(k);
+        impl::kern_t<T, U> k = impl::extract_kernel<T>(integral);
 
         // Build list of entities to assembler over
         const std::vector bfacets = mesh::exterior_facet_indices(*topology);
@@ -685,29 +690,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        kern_t k = nullptr;
-        if constexpr (std::is_same_v<T, float>)
-          k = integral->tabulate_tensor_float32;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, std::complex<float>>)
-        {
-          k = reinterpret_cast<void (*)(T*, const T*, const T*,
-                                        const scalar_value_t<T>*, const int*,
-                                        const unsigned char*, void*)>(
-              integral->tabulate_tensor_complex64);
-        }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, double>)
-          k = integral->tabulate_tensor_float64;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-        else if constexpr (std::is_same_v<T, std::complex<double>>)
-        {
-          k = reinterpret_cast<void (*)(T*, const T*, const T*,
-                                        const scalar_value_t<T>*, const int*,
-                                        const unsigned char*, void*)>(
-              integral->tabulate_tensor_complex128);
-        }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
+        impl::kern_t<T, U> k = impl::extract_kernel<T>(integral);
         assert(k);
 
         // Build list of entities to assembler over
@@ -757,6 +740,96 @@ Form<T, U> create_form_factory(
 
         if (integral->needs_facet_permutations)
           needs_facet_permutations = true;
+      }
+    }
+  }
+
+  // Attach vertex kernels
+  {
+    for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
+    {
+      const ufcx_form& form = ufcx_forms[form_idx];
+
+      std::span<const int> ids(form.form_integral_ids
+                                   + integral_offsets[vertex],
+                               num_integrals_type[vertex]);
+      auto sd = subdomains.find(IntegralType::vertex);
+      for (int i = 0; i < num_integrals_type[vertex]; ++i)
+      {
+        const int id = ids[i];
+        ufcx_integral* integral
+            = form.form_integrals[integral_offsets[vertex] + i];
+        assert(integral);
+        check_geometry_hash(*integral, form_idx);
+
+        std::vector<int> active_coeffs;
+        for (int j = 0; j < form.num_coefficients; ++j)
+        {
+          if (integral->enabled_coefficients[j])
+            active_coeffs.push_back(j);
+        }
+
+        impl::kern_t<T, U> k = impl::extract_kernel<T>(integral);
+        assert(k);
+
+        // Build list of entities to assembler over
+        auto v_to_c = topology->connectivity(0, tdim);
+        assert(v_to_c);
+        auto c_to_v = topology->connectivity(tdim, 0);
+        assert(c_to_v);
+
+        // pack for a range of vertices a flattened list of cell index c_i and
+        // local vertex index l_i:
+        //  [c_0, l_0, ..., c_n, l_n]
+        auto get_cells_and_vertices = [v_to_c, c_to_v](auto vertices_range)
+        {
+          std::vector<std::int32_t> cell_and_vertex;
+          cell_and_vertex.reserve(2 * vertices_range.size());
+          for (std::int32_t vertex : vertices_range)
+          {
+            auto cells = v_to_c->links(vertex);
+            assert(cells.size() > 0);
+
+            // Use first cell for assembly over by default
+            // TODO: controllability?
+            std::int32_t cell = cells[0];
+            cell_and_vertex.push_back(cell);
+
+            // Find local index of vertex within cell
+            auto cell_vertices = c_to_v->links(cell);
+            auto it = std::ranges::find(cell_vertices, vertex);
+            assert(it != cell_vertices.end());
+            std::int32_t local_index = std::distance(cell_vertices.begin(), it);
+            cell_and_vertex.push_back(local_index);
+          }
+          assert(cell_and_vertex.size() == 2 * vertices_range.size());
+          return cell_and_vertex;
+        };
+
+        if (id == -1)
+        {
+          // Default vertex kernel operates on all (owned) vertices
+          std::int32_t num_vertices = topology->index_map(0)->size_local();
+          std::vector<std::int32_t> cells_and_vertices = get_cells_and_vertices(
+              std::ranges::views::iota(0, num_vertices));
+
+          integrals.insert({{IntegralType::vertex, id, form_idx},
+                            {k, cells_and_vertices, active_coeffs}});
+        }
+        else
+        {
+          // NOTE: This requires that pairs are sorted
+          auto it = std::ranges::lower_bound(sd->second, id, std::less<>{},
+                                             [](auto& a) { return a.first; });
+          if (it != sd->second.end() and it->first == id)
+          {
+            std::vector<std::int32_t> cells_and_vertices
+                = get_cells_and_vertices(it->second);
+
+            integrals.insert({{IntegralType::vertex, id, form_idx},
+                              {k, cells_and_vertices, active_coeffs}});
+          }
+        }
       }
     }
   }
