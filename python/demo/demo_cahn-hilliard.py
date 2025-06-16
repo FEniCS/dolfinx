@@ -269,13 +269,14 @@ F = F0 + F1
 # +
 # For the factorisation of the underlying linearized problems, prefer MUMPS,
 # then superlu_dist, then default
-linear_solver = "petsc"
 use_superlu = PETSc.IntType == np.int64  # or PETSc.ScalarType == np.complex64
 sys = PETSc.Sys()  # type: ignore
 if sys.hasExternalPackage("mumps") and not use_superlu:
     linear_solver = "mumps"
 elif sys.hasExternalPackage("superlu_dist"):
     linear_solver = "superlu_dist"
+else:
+    linear_solver = "petsc"
 petsc_options = {
     "snes_type": "newtonls",
     "snes_linesearch_type": "none",
