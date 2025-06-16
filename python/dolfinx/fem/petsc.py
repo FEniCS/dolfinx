@@ -1040,9 +1040,8 @@ def assemble_residual(
     A function conforming to the interface expected by SNES.setResidual can
     be created by fixing the first four arguments:
 
-        functools.partial(
-            assemble_residual, u, jacobian, preconditioner, bcs
-        )
+        functools.partial(assemble_residual, u, jacobian, preconditioner,
+                          bcs)
 
     Args:
         u: Function(s) tied to the solution vector within the residual and
