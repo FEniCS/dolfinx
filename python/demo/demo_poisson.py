@@ -43,7 +43,8 @@
 # $$
 # \begin{align}
 #   a(u, v) &:= \int_{\Omega} \nabla u \cdot \nabla v \, {\rm d} x, \\
-#   L(v)    &:= \int_{\Omega} f v \, {\rm d} x + \int_{\Gamma_{N}} g v \, {\rm d} s.
+#   L(v)    &:= \int_{\Omega} f v \, {\rm d} x + \int_{\Gamma_{N}} g v \,
+#               {\rm d} s.
 # \end{align}
 # $$
 #
@@ -158,6 +159,7 @@ L = ufl.inner(f, v) * ufl.dx + ufl.inner(g, v) * ufl.ds
 # +
 problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 uh = problem.solve()
+assert isinstance(uh, fem.Function)
 # -
 
 # The solution can be written to a {py:class}`XDMFFile

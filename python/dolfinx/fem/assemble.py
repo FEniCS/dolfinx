@@ -92,7 +92,7 @@ def pack_coefficients(
     return _pack(form)
 
 
-# -- Vector and matrix instantiation -----------------------------------------
+# -- Vector and matrix instantiation --------------------------------------
 
 
 def create_vector(L: Form) -> la.Vector:
@@ -111,7 +111,8 @@ def create_vector(L: Form) -> la.Vector:
 
 
 def create_matrix(a: Form, block_mode: typing.Optional[la.BlockMode] = None) -> la.MatrixCSR:
-    """Create a sparse matrix that is compatible with a given bilinear form.
+    """Create a sparse matrix that is compatible with a given bilinear
+    form.
 
     Args:
         a: Bilinear form.
@@ -129,7 +130,7 @@ def create_matrix(a: Form, block_mode: typing.Optional[la.BlockMode] = None) -> 
         return la.matrix_csr(sp, dtype=a.dtype)
 
 
-# -- Scalar assembly ---------------------------------------------------------
+# -- Scalar assembly ------------------------------------------------------
 
 
 def assemble_scalar(M: Form, constants: typing.Optional[np.ndarray] = None, coeffs=None):
@@ -159,7 +160,7 @@ def assemble_scalar(M: Form, constants: typing.Optional[np.ndarray] = None, coef
     return _cpp.fem.assemble_scalar(M._cpp_object, constants, coeffs)
 
 
-# -- Vector assembly ---------------------------------------------------------
+# -- Vector assembly ------------------------------------------------------
 
 
 @functools.singledispatch
@@ -234,7 +235,7 @@ def _assemble_vector_array(
     return b
 
 
-# -- Matrix assembly ---------------------------------------------------------
+# -- Matrix assembly ------------------------------------------------------
 
 
 @functools.singledispatch
@@ -321,7 +322,7 @@ def _assemble_matrix_csr(
     return A
 
 
-# -- Modifiers for Dirichlet conditions ---------------------------------------
+# -- Modifiers for Dirichlet conditions -----------------------------------
 
 
 def apply_lifting(
@@ -333,7 +334,8 @@ def apply_lifting(
     constants: typing.Optional[Iterable[np.ndarray]] = None,
     coeffs=None,
 ) -> None:
-    """Modify right-hand side vector ``b`` for lifting of Dirichlet boundary conditions.
+    """Modify right-hand side vector ``b`` for lifting of Dirichlet
+    boundary conditions.
 
     Consider the discrete algebraic system:
 
@@ -349,9 +351,12 @@ def apply_lifting(
 
     .. math::
 
-        \\begin{bmatrix} A_{0}^{(0)} & A_{0}^{(1)} & A_{1}^{(0)} & A_{1}^{(1)}\\end{bmatrix}
-        \\begin{bmatrix}u_{0}^{(0)} \\\\ u_{0}^{(1)}
-        \\\\ u_{1}^{(0)} \\\\ u_{1}^{(1)}\\end{bmatrix}
+        \\begin{bmatrix}
+            A_{0}^{(0)} & A_{0}^{(1)} & A_{1}^{(0)} & A_{1}^{(1)}
+        \\end{bmatrix}
+        \\begin{bmatrix}
+            u_{0}^{(0)} \\\\ u_{0}^{(1)} \\\\ u_{1}^{(0)} \\\\ u_{1}^{(1)}
+        \\end{bmatrix}
         = b.
 
     If :math:`u_{i}^{(1)} = \\alpha(g_{i} - x_{i})`, where :math:`g_{i}`
@@ -360,7 +365,9 @@ def apply_lifting(
 
     .. math::
 
-        \\begin{bmatrix}A_{0}^{(0)} & A_{0}^{(1)} & A_{1}^{(0)} & A_{1}^{(1)} \\end{bmatrix}
+        \\begin{bmatrix}
+            A_{0}^{(0)} & A_{0}^{(1)} & A_{1}^{(0)} & A_{1}^{(1)}
+        \\end{bmatrix}
         \\begin{bmatrix}u_{0}^{(0)} \\\\ \\alpha(g_{0} - x_{0})
         \\\\ u_{1}^{(0)} \\\\ \\alpha(g_{1} - x_{1})\\end{bmatrix}
         = b.
@@ -371,7 +378,8 @@ def apply_lifting(
 
         \\begin{bmatrix}A_{0}^{(0)} & A_{1}^{(0)}\\end{bmatrix}
         \\begin{bmatrix}u_{0}^{(0)} \\\\ u_{1}^{(0)}\\end{bmatrix}
-        = b - \\alpha A_{0}^{(1)} (g_{0} - x_{0}) - \\alpha A_{1}^{(1)} (g_{1} - x_{1}).
+        = b - \\alpha A_{0}^{(1)} (g_{0} - x_{0})
+        - \\alpha A_{1}^{(1)} (g_{1} - x_{1}).
 
     The modified  :math:`b` vector is
 
@@ -397,7 +405,10 @@ def apply_lifting(
             list-of-lists of `DirichletBC` from a list of forms ``a``
             and a flat list of `DirichletBC` objects ``bcs``::
 
-                bcs1 = fem.bcs_by_block(fem.extract_function_spaces([a], 1), bcs)
+                bcs1 = fem.bcs_by_block(
+                    fem.extract_function_spaces([a], 1),
+                    bcs
+                )
 
         x0: The array :math:`x_{i}` above. If ``None`` it is set to
             zero.
