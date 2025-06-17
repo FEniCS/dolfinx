@@ -95,7 +95,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     catch2 \
     git \
     graphviz \
-    libeigen3-dev \
     valgrind \
     wget && \
     #
