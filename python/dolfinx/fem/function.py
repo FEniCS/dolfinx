@@ -1,4 +1,5 @@
-# Copyright (C) 2009-2024 Chris N. Richardson, Garth N. Wells, Michal Habera and Jørgen S. Dokken
+# Copyright (C) 2009-2024 Chris N. Richardson, Garth N. Wells,
+# Michal Habera and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -768,7 +769,8 @@ class FunctionSpace(ufl.FunctionSpace):
         return V, dofs
 
     def tabulate_dof_coordinates(self) -> npt.NDArray[np.float64]:
-        """Tabulate the coordinates of the degrees-of-freedom in the function space.
+        """Tabulate the coordinates of the degrees-of-freedom in the
+        function space.
 
         Returns:
             Coordinates of the degrees-of-freedom.
