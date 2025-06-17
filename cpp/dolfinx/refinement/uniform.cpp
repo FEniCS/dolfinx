@@ -14,6 +14,24 @@ namespace
 {
 
 std::vector<std::int64_t>
+pyr_subdivision(const std::vector<std::int64_t>& entities)
+{
+  int cells_pyr[25] = {0,  5,  6, 13, 7,  1,  8,  5, 13, 9,  3,  10, 8,
+                       13, 12, 2, 6,  10, 13, 11, 7, 9,  11, 12, 4};
+
+  //  topo_tet
+  //      = [[edges [0], facets [0], edges [2], edges [4]],
+  //         [edges [1], facets [0], edges [6], edges [2]],
+  //         [edges [5], facets [0], edges [7], edges [6]],
+  //         [edges [3], facets [0], edges [4], edges [7]]]
+
+  std::vector<std::int64_t> topology(25);
+  for (int i = 0; i < 25; ++i)
+    topology[i] = entities[cells_pyr[i]];
+  return topology;
+}
+
+std::vector<std::int64_t>
 tet_subdivision(const std::vector<std::int64_t>& entities)
 {
   std::vector<std::int64_t> topology;
@@ -193,6 +211,8 @@ mesh::Mesh<double> refinement::uniform_refine(const mesh::Mesh<double>& mesh)
       subdiv.push_back(prism_subdivision);
     if (entity_types[3][k] == mesh::CellType::tetrahedron)
       subdiv.push_back(tet_subdivision);
+    if (entity_types[3][k] == mesh::CellType::pyramid)
+      subdiv.push_back(pyr_subdivision);
   }
 
   for (int k = 0; k < static_cast<int>(entity_types[3].size()); ++k)
@@ -209,9 +229,14 @@ mesh::Mesh<double> refinement::uniform_refine(const mesh::Mesh<double>& mesh)
         entities.push_back(new_v[1][i]);
       if (e_index.size() > 2)
       {
-        for (std::int32_t i :
-             topology->connectivity({3, k}, {2, e_index[2]})->links(c))
-          entities.push_back(new_v[2][i]);
+        auto conn = topology->connectivity({3, k}, {2, e_index[2]});
+        if (conn)
+        {
+          spdlog::debug("Get connectivity from (3,{})->(2,{})", k, e_index[2]);
+          for (std::int32_t i :
+               topology->connectivity({3, k}, {2, e_index[2]})->links(c))
+            entities.push_back(new_v[2][i]);
+        }
       }
       if (e_index.size() > 3)
         entities.push_back(new_v[3][c]);
