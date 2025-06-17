@@ -179,8 +179,14 @@ mesh::Mesh<double> uniform_refine(const mesh::Mesh<double>& mesh)
   }
 
   auto partitioner = mesh::create_cell_partitioner(mesh::GhostMode::none);
-  mesh::Mesh new_mesh = mesh::create_mesh(mesh.comm(),
-      mesh.comm(), mixed_topology, mesh.geometry().cmaps(), mesh.comm(), new_x, {new_x.size()/3, 3}, partitioner);
+
+  std::vector<std::span<const std::int64_t>> topo_span;
+  for (auto v : mixed_topology)
+    topo_span.push_back(std::span(v));
+
+  mesh::Mesh new_mesh = mesh::create_mesh(
+      mesh.comm(), mesh.comm(), topo_span, mesh.geometry().cmaps(), mesh.comm(),
+      new_x, {new_x.size() / 3, 3}, partitioner);
 
   return new_mesh;
 }
