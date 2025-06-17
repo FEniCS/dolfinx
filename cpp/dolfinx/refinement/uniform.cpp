@@ -10,6 +10,8 @@
 
 using namespace dolfinx;
 
+namespace
+{
 std::vector<std::int64_t>
 hex_subdivision(const std::vector<std::int64_t>& entities)
 {
@@ -38,6 +40,7 @@ hex_subdivision(const std::vector<std::int64_t>& entities)
   }
   return topology;
 }
+} // namespace
 
 mesh::Mesh<double> refinement::uniform_refine(const mesh::Mesh<double>& mesh)
 {
@@ -183,15 +186,8 @@ mesh::Mesh<double> refinement::uniform_refine(const mesh::Mesh<double>& mesh)
 
   auto partitioner = mesh::create_cell_partitioner(mesh::GhostMode::none);
 
-  std::vector<std::span<const std::int64_t>> topo_span;
-  for (auto v : mixed_topology)
-  {
-    std::cout << "[";
-    topo_span.push_back(std::span(v));
-    for (auto q : topo_span.back())
-      std::cout << q << " ";
-    std::cout << "]\n";
-  }
+  std::vector<std::span<const std::int64_t>> topo_span(mixed_topology.begin(),
+                                                       mixed_topology.end());
 
   mesh::Mesh new_mesh = mesh::create_mesh(
       mesh.comm(), mesh.comm(), topo_span, mesh.geometry().cmaps(), mesh.comm(),
