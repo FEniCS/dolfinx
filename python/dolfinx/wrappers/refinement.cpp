@@ -14,6 +14,7 @@
 #include <dolfinx/refinement/interval.h>
 #include <dolfinx/refinement/option.h>
 #include <dolfinx/refinement/refine.h>
+#include <dolfinx/refinement/uniform.h>
 #include <dolfinx/refinement/utils.h>
 #include <functional>
 #include <nanobind/nanobind.h>
@@ -33,6 +34,8 @@ namespace
 template <std::floating_point T>
 void export_refinement(nb::module_& m)
 {
+  m.def("uniform_refine", dolfinx::refinement::uniform_refine);
+
   m.def(
       "refine",
       [](const dolfinx::mesh::Mesh<T>& mesh,

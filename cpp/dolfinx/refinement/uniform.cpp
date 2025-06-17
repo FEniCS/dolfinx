@@ -1,9 +1,12 @@
+
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
 #include <iterator>
 #include <vector>
+
+#include "uniform.h"
 
 using namespace dolfinx;
 
@@ -36,7 +39,7 @@ hex_subdivision(const std::vector<std::int64_t>& entities)
   return topology;
 }
 
-mesh::Mesh<double> uniform_refine(const mesh::Mesh<double>& mesh)
+mesh::Mesh<double> refinement::uniform_refine(const mesh::Mesh<double>& mesh)
 {
   // Requires edges and facets to be built already
   auto topology = mesh.topology();
@@ -182,7 +185,13 @@ mesh::Mesh<double> uniform_refine(const mesh::Mesh<double>& mesh)
 
   std::vector<std::span<const std::int64_t>> topo_span;
   for (auto v : mixed_topology)
+  {
+    std::cout << "[";
     topo_span.push_back(std::span(v));
+    for (auto q : topo_span.back())
+      std::cout << q << " ";
+    std::cout << "]\n";
+  }
 
   mesh::Mesh new_mesh = mesh::create_mesh(
       mesh.comm(), mesh.comm(), topo_span, mesh.geometry().cmaps(), mesh.comm(),
