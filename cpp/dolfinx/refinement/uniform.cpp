@@ -27,6 +27,19 @@ tet_subdivision(const std::vector<std::int64_t>& entities)
 }
 
 std::vector<std::int64_t>
+prism_subdivision(const std::vector<std::int64_t>& entities)
+{
+  std::vector<std::int64_t> topology;
+  int cell_list[48]
+      = {0,  6,  7,  8,  15, 16, 6,  1,  9,  15, 10, 17, 7,  9,  2,  16,
+         17, 11, 6,  9,  7,  15, 17, 16, 15, 17, 16, 12, 14, 13, 8,  15,
+         16, 3,  12, 13, 11, 17, 16, 5,  14, 13, 10, 15, 17, 4,  12, 14};
+  for (int i = 0; i < 48; ++i)
+    topology.push_back(entities[cell_list[i]]);
+  return topology;
+}
+
+std::vector<std::int64_t>
 hex_subdivision(const std::vector<std::int64_t>& entities)
 {
   int facet_list[8][3] = {{0, 1, 2}, {0, 1, 3}, {0, 2, 4}, {0, 3, 4},
@@ -168,6 +181,20 @@ mesh::Mesh<double> refinement::uniform_refine(const mesh::Mesh<double>& mesh)
   // Create new topology...
 
   std::vector<std::vector<std::int64_t>> mixed_topology(entity_types[3].size());
+
+  std::vector<std::function<std::vector<std::int64_t>(
+      const std::vector<std::int64_t>&)>>
+      subdiv;
+  for (int k = 0; k < static_cast<int>(entity_types[3].size()); ++k)
+  {
+    if (entity_types[3][k] == mesh::CellType::hexahedron)
+      subdiv.push_back(hex_subdivision);
+    if (entity_types[3][k] == mesh::CellType::prism)
+      subdiv.push_back(prism_subdivision);
+    if (entity_types[3][k] == mesh::CellType::tetrahedron)
+      subdiv.push_back(tet_subdivision);
+  }
+
   for (int k = 0; k < static_cast<int>(entity_types[3].size()); ++k)
   {
     auto c_to_v = topology->connectivity({3, k}, {0, 0});
@@ -189,18 +216,9 @@ mesh::Mesh<double> refinement::uniform_refine(const mesh::Mesh<double>& mesh)
       if (e_index.size() > 3)
         entities.push_back(new_v[3][c]);
 
-      if (entity_types[3][k] == mesh::CellType::hexahedron)
-      {
-        auto new_cells = hex_subdivision(entities);
-        mixed_topology[k].insert(mixed_topology[k].end(), new_cells.begin(),
-                                 new_cells.end());
-      }
-      else if (entity_types[3][k] == mesh::CellType::tetrahedron)
-      {
-        auto new_cells = tet_subdivision(entities);
-        mixed_topology[k].insert(mixed_topology[k].end(), new_cells.begin(),
-                                 new_cells.end());
-      }
+      auto new_cells = subdiv[k](entities);
+      mixed_topology[k].insert(mixed_topology[k].end(), new_cells.begin(),
+                               new_cells.end());
     }
   }
 
