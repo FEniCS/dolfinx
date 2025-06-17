@@ -12,6 +12,20 @@ using namespace dolfinx;
 
 namespace
 {
+
+std::vector<std::int64_t>
+tet_subdivision(const std::vector<std::int64_t>& entities)
+{
+  std::vector<std::int64_t> topology;
+
+  int cell_list[32] = {0, 7, 8, 9, 1, 5, 6, 9, 2, 4, 6, 8, 3, 4, 5, 7,
+                       9, 4, 6, 8, 9, 4, 8, 7, 9, 4, 7, 5, 9, 4, 5, 6};
+
+  for (int i = 0; i < 32; ++i)
+    topology.push_back(entities[cell_list[i]]);
+  return topology;
+}
+
 std::vector<std::int64_t>
 hex_subdivision(const std::vector<std::int64_t>& entities)
 {
@@ -178,6 +192,12 @@ mesh::Mesh<double> refinement::uniform_refine(const mesh::Mesh<double>& mesh)
       if (entity_types[3][k] == mesh::CellType::hexahedron)
       {
         auto new_cells = hex_subdivision(entities);
+        mixed_topology[k].insert(mixed_topology[k].end(), new_cells.begin(),
+                                 new_cells.end());
+      }
+      else if (entity_types[3][k] == mesh::CellType::tetrahedron)
+      {
+        auto new_cells = tet_subdivision(entities);
         mixed_topology[k].insert(mixed_topology[k].end(), new_cells.begin(),
                                  new_cells.end());
       }
