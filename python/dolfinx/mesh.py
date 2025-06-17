@@ -190,8 +190,8 @@ class Topology:
             )
 
     def index_maps(self, dim: int) -> list[_cpp.common.IndexMap]:
-        """Get the IndexMaps that describes the parallel distribution of the mesh entities,
-           for each entity type of the dimension.
+        """Get the IndexMaps that describes the parallel distribution of
+           the mesh entities, for each entity type of the dimension.
 
         Args:
             dim: Topological dimension.
