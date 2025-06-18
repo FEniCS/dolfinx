@@ -117,7 +117,7 @@ class Timer:
 
     _cpp_object: _cpp.common.Timer
 
-    def __init__(self, name: typing.Optional[str] = None):
+    def __init__(self, name: str | None = None):
         """Create timer.
 
         Args:
