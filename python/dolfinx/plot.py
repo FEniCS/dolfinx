@@ -6,7 +6,6 @@
 """Support functions for plotting"""
 
 import functools
-import typing
 
 import numpy as np
 
@@ -31,7 +30,7 @@ _first_order_vtk = {
 
 
 @functools.singledispatch
-def vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=None):
+def vtk_mesh(msh: mesh.Mesh, dim: int | None = None, entities=None):
     """Create vtk mesh topology data for mesh entities of a given
     dimension. The vertex indices in the returned topology array are the
     indices for the associated entry in the mesh geometry.

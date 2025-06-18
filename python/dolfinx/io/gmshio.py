@@ -89,10 +89,10 @@ class MeshData(typing.NamedTuple):
     """
 
     mesh: Mesh
-    cell_tags: typing.Optional[MeshTags]
-    facet_tags: typing.Optional[MeshTags]
-    ridge_tags: typing.Optional[MeshTags]
-    peak_tags: typing.Optional[MeshTags]
+    cell_tags: MeshTags | None
+    facet_tags: MeshTags | None
+    ridge_tags: MeshTags | None
+    peak_tags: MeshTags | None
     physical_groups: dict[str, tuple[int, int]]
 
 
@@ -144,7 +144,7 @@ def cell_perm_array(cell_type: CellType, num_nodes: int) -> list[int]:
 
 
 def extract_topology_and_markers(
-    model, name: typing.Optional[str] = None
+    model, name: str | None = None
 ) -> tuple[dict[int, TopologyDict], dict[str, tuple[int, int]]]:
     """Extract all entities tagged with a physical marker in the gmsh
     model.
@@ -227,7 +227,7 @@ def extract_topology_and_markers(
     return topologies, physical_groups
 
 
-def extract_geometry(model, name: typing.Optional[str] = None) -> npt.NDArray[np.float64]:
+def extract_geometry(model, name: str | None = None) -> npt.NDArray[np.float64]:
     """Extract the mesh geometry from a Gmsh model.
 
     Returns an array of shape ``(num_nodes, 3)``, where the i-th row
@@ -266,9 +266,8 @@ def model_to_mesh(
     comm: _MPI.Comm,
     rank: int,
     gdim: int = 3,
-    partitioner: typing.Optional[
-        typing.Callable[[_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]
-    ] = None,
+    partitioner: typing.Callable[[_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]
+    | None = None,
     dtype=default_real_type,
 ) -> MeshData:
     """Create a Mesh from a Gmsh model.
@@ -374,7 +373,7 @@ def model_to_mesh(
     # Create MeshTags for all sub entities
     topology = mesh.topology
     codim_to_name = {0: "cell", 1: "facet", 2: "ridge", 3: "peak"}
-    dolfinx_meshtags: dict[str, typing.Optional[MeshTags]] = {}
+    dolfinx_meshtags: dict[str, MeshTags | None] = {}
     for codim in [0, 1, 2, 3]:
         key = f"{codim_to_name[codim]}_tags"
         if (
@@ -417,9 +416,8 @@ def read_from_msh(
     comm: _MPI.Comm,
     rank: int = 0,
     gdim: int = 3,
-    partitioner: typing.Optional[
-        typing.Callable[[_MPI.Comm, int, int, AdjacencyList], AdjacencyList_int32]
-    ] = None,
+    partitioner: typing.Callable[[_MPI.Comm, int, int, AdjacencyList], AdjacencyList_int32]
+    | None = None,
 ) -> MeshData:
     """Read a Gmsh .msh file and return a :class:`dolfinx.mesh.Mesh` and
     cell facet markers.

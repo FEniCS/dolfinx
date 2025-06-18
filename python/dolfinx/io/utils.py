@@ -223,7 +223,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         self,
         mesh: Mesh,
         name: str,
-        attribute_name: typing.Optional[str] = None,
+        attribute_name: str | None = None,
         xpath: str = "/Xdmf/Domain",
     ) -> MeshTags:
         """Read MeshTags with a specific name as specified in the XMDF
