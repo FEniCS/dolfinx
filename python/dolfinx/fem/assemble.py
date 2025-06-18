@@ -110,7 +110,7 @@ def create_vector(L: Form) -> la.Vector:
     return la.vector(dofmap.index_map, dofmap.index_map_bs, dtype=L.dtype)
 
 
-def create_matrix(a: Form, block_mode: typing.Optional[la.BlockMode] = None) -> la.MatrixCSR:
+def create_matrix(a: Form, block_mode: la.BlockMode | None = None) -> la.MatrixCSR:
     """Create a sparse matrix that is compatible with a given bilinear
     form.
 
@@ -133,7 +133,7 @@ def create_matrix(a: Form, block_mode: typing.Optional[la.BlockMode] = None) -> 
 # -- Scalar assembly ------------------------------------------------------
 
 
-def assemble_scalar(M: Form, constants: typing.Optional[np.ndarray] = None, coeffs=None):
+def assemble_scalar(M: Form, constants: np.ndarray | None = None, coeffs=None):
     """Assemble functional. The returned value is local and not
     accumulated across processes.
 
@@ -164,14 +164,12 @@ def assemble_scalar(M: Form, constants: typing.Optional[np.ndarray] = None, coef
 
 
 @functools.singledispatch
-def assemble_vector(L: typing.Any, constants: typing.Optional[np.ndarray] = None, coeffs=None):
+def assemble_vector(L: typing.Any, constants: np.ndarray | None = None, coeffs=None):
     return _assemble_vector_form(L, constants, coeffs)
 
 
 @assemble_vector.register(Form)
-def _assemble_vector_form(
-    L: Form, constants: typing.Optional[np.ndarray] = None, coeffs=None
-) -> la.Vector:
+def _assemble_vector_form(L: Form, constants: np.ndarray | None = None, coeffs=None) -> la.Vector:
     """Assemble linear form into a new Vector.
 
     Args:
@@ -205,7 +203,7 @@ def _assemble_vector_form(
 
 @assemble_vector.register(np.ndarray)
 def _assemble_vector_array(
-    b: np.ndarray, L: Form, constants: typing.Optional[np.ndarray] = None, coeffs=None
+    b: np.ndarray, L: Form, constants: np.ndarray | None = None, coeffs=None
 ):
     """Assemble linear form into an existing array.
 
@@ -241,11 +239,11 @@ def _assemble_vector_array(
 @functools.singledispatch
 def assemble_matrix(
     a: typing.Any,
-    bcs: typing.Optional[list[DirichletBC]] = None,
+    bcs: list[DirichletBC] | None = None,
     diagonal: float = 1.0,
-    constants: typing.Optional[np.ndarray] = None,
+    constants: np.ndarray | None = None,
     coeffs=None,
-    block_mode: typing.Optional[la.BlockMode] = None,
+    block_mode: la.BlockMode | None = None,
 ):
     """Assemble bilinear form into a matrix.
 
@@ -282,9 +280,9 @@ def assemble_matrix(
 def _assemble_matrix_csr(
     A: la.MatrixCSR,
     a: Form,
-    bcs: typing.Optional[list[DirichletBC]] = None,
+    bcs: list[DirichletBC] | None = None,
     diagonal: float = 1.0,
-    constants: typing.Optional[np.ndarray] = None,
+    constants: np.ndarray | None = None,
     coeffs=None,
 ) -> la.MatrixCSR:
     """Assemble bilinear form into a matrix.
@@ -329,9 +327,9 @@ def apply_lifting(
     b: np.ndarray,
     a: Iterable[Form],
     bcs: Iterable[Iterable[DirichletBC]],
-    x0: typing.Optional[Iterable[np.ndarray]] = None,
+    x0: Iterable[np.ndarray] | None = None,
     alpha: float = 1,
-    constants: typing.Optional[Iterable[np.ndarray]] = None,
+    constants: Iterable[np.ndarray] | None = None,
     coeffs=None,
 ) -> None:
     """Modify right-hand side vector ``b`` for lifting of Dirichlet
@@ -447,7 +445,7 @@ def apply_lifting(
 def set_bc(
     b: np.ndarray,
     bcs: list[DirichletBC],
-    x0: typing.Optional[np.ndarray] = None,
+    x0: np.ndarray | None = None,
     scale: float = 1,
 ) -> None:
     """Insert boundary condition values into vector.

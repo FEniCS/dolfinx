@@ -92,10 +92,10 @@ class Expression:
         self,
         e: ufl.core.expr.Expr,
         X: np.ndarray,
-        comm: typing.Optional[_MPI.Comm] = None,
-        form_compiler_options: typing.Optional[dict] = None,
-        jit_options: typing.Optional[dict] = None,
-        dtype: typing.Optional[npt.DTypeLike] = None,
+        comm: _MPI.Comm | None = None,
+        form_compiler_options: dict | None = None,
+        jit_options: dict | None = None,
+        dtype: npt.DTypeLike | None = None,
     ):
         """Create a DOLFINx Expression.
 
@@ -198,7 +198,7 @@ class Expression:
         self,
         mesh: Mesh,
         entities: np.ndarray,
-        values: typing.Optional[np.ndarray] = None,
+        values: np.ndarray | None = None,
     ) -> np.ndarray:
         """Evaluate Expression on entities.
 
@@ -275,7 +275,7 @@ class Expression:
         return self._cpp_object.value_size
 
     @property
-    def argument_space(self) -> typing.Optional[FunctionSpace]:
+    def argument_space(self) -> FunctionSpace | None:
         """Argument function space if Expression has argument."""
         return self._argument_space
 
@@ -309,9 +309,9 @@ class Function(ufl.Coefficient):
     def __init__(
         self,
         V: FunctionSpace,
-        x: typing.Optional[la.Vector] = None,
-        name: typing.Optional[str] = None,
-        dtype: typing.Optional[npt.DTypeLike] = None,
+        x: la.Vector | None = None,
+        name: str | None = None,
+        dtype: npt.DTypeLike | None = None,
     ):
         """Initialize a finite element Function.
 
@@ -429,8 +429,8 @@ class Function(ufl.Coefficient):
     def interpolate(
         self,
         u0: typing.Union[typing.Callable, Expression, Function],
-        cells0: typing.Optional[np.ndarray] = None,
-        cells1: typing.Optional[np.ndarray] = None,
+        cells0: np.ndarray | None = None,
+        cells1: np.ndarray | None = None,
     ) -> None:
         """Interpolate an expression.
 
@@ -574,8 +574,8 @@ class ElementMetaData(typing.NamedTuple):
 
     family: str
     degree: int
-    shape: typing.Optional[tuple[int, ...]] = None
-    symmetry: typing.Optional[bool] = None
+    shape: tuple[int, ...] | None = None
+    symmetry: bool | None = None
 
 
 def functionspace(

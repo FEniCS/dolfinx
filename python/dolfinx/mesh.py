@@ -264,9 +264,9 @@ class Mesh:
     _mesh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64]
     _topology: Topology
     _geometry: Geometry
-    _ufl_domain: typing.Optional[ufl.Mesh]
+    _ufl_domain: ufl.Mesh | None
 
-    def __init__(self, msh, domain: typing.Optional[ufl.Mesh]):
+    def __init__(self, msh, domain: ufl.Mesh | None):
         """Initialize mesh from a C++ mesh.
 
         Args:
@@ -493,7 +493,7 @@ def transfer_meshtag(
     meshtag: MeshTags,
     msh1: Mesh,
     parent_cell: npt.NDArray[np.int32],
-    parent_facet: typing.Optional[npt.NDArray[np.int8]] = None,
+    parent_facet: npt.NDArray[np.int8] | None = None,
 ) -> MeshTags:
     """Generate cell mesh tags on a refined mesh from the mesh tags on the
     coarse parent mesh.
@@ -527,8 +527,8 @@ def transfer_meshtag(
 
 def refine(
     msh: Mesh,
-    edges: typing.Optional[np.ndarray] = None,
-    partitioner: typing.Optional[typing.Callable] = create_cell_partitioner(GhostMode.none),
+    edges: np.ndarray | None = None,
+    partitioner: typing.Callable | None = create_cell_partitioner(GhostMode.none),
     option: RefinementOption = RefinementOption.none,
 ) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.
@@ -580,7 +580,7 @@ def create_mesh(
         basix.ufl._BasixElement,
         _CoordinateElement,
     ],
-    partitioner: typing.Optional[typing.Callable] = None,
+    partitioner: typing.Callable | None = None,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
