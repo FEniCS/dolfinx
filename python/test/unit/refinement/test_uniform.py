@@ -31,3 +31,28 @@ def test_uniform_refinement_2d(ctype):
     ncells1 = m2.topology.index_map(2).size_local
 
     assert mesh.comm.allreduce(ncells0) * 4 == mesh.comm.allreduce(ncells1)
+
+
+def test_uniform_refine_mixed_mesh(mixed_topology_mesh):
+    mesh = Mesh(mixed_topology_mesh, None)
+
+    ct = mesh.topology.entity_types[3]
+    ncells0 = {ct[j]: mesh.topology.index_maps(3)[j].size_local for j in range(4)}
+    print(ncells0)
+    mesh.topology.create_entities(1)
+    mesh.topology.create_entities(2)
+
+    m2 = Mesh(dolfinx.cpp.refinement.uniform_refine(mesh._cpp_object), None)
+    ncells1 = {ct[j]: m2.topology.index_maps(3)[j].size_local for j in range(4)}
+
+    comm = mesh.comm
+    assert comm.allreduce(ncells0[CellType.hexahedron]) * 8 == comm.allreduce(
+        ncells1[CellType.hexahedron]
+    )
+    assert comm.allreduce(ncells0[CellType.prism]) * 8 == comm.allreduce(ncells1[CellType.prism])
+    assert comm.allreduce(ncells0[CellType.pyramid]) * 5 == comm.allreduce(
+        ncells1[CellType.pyramid]
+    )
+    assert comm.allreduce(ncells0[CellType.tetrahedron]) * 8 + comm.allreduce(
+        ncells0[CellType.pyramid]
+    ) * 4 == comm.allreduce(ncells1[CellType.tetrahedron])

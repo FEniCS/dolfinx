@@ -134,22 +134,22 @@ mesh::Mesh<double> refinement::uniform_refine(const mesh::Mesh<double>& mesh)
   }
 
   // Create new topology...
-
+  const std::vector<mesh::CellType>& cell_entity_types = entity_types.back();
   std::vector<std::vector<std::int64_t>> mixed_topology(
-      entity_types.back().size());
+      cell_entity_types.size());
 
   // Find index of tets in topology list, if any
   int ktet = -1;
-  auto it = std::find(entity_types.back().begin(), entity_types.back().end(),
+  auto it = std::find(cell_entity_types.begin(), cell_entity_types.end(),
                       mesh::CellType::tetrahedron);
-  if (it != entity_types.back().end())
-    ktet = std::distance(entity_types.back().begin(), it);
+  if (it != cell_entity_types.end())
+    ktet = std::distance(cell_entity_types.begin(), it);
   // Topology for tetrahedra which arise from pyramid subdivision
   std::vector<int> pyr_to_tet_list
       = {5, 13, 7, 9, 6, 13, 11, 7, 10, 13, 12, 11, 8, 13, 9, 12};
 
   std::vector<int> refined_cell_list;
-  for (int k = 0; k < static_cast<int>(entity_types.back().size()); ++k)
+  for (int k = 0; k < static_cast<int>(cell_entity_types.size()); ++k)
   {
     // Reserve an estimate of space for the topology of each type
     mixed_topology[k].reserve(mesh.topology()->index_maps(tdim)[k]->size_local()
@@ -157,52 +157,54 @@ mesh::Mesh<double> refinement::uniform_refine(const mesh::Mesh<double>& mesh)
 
     // Select correct subdivision for celltype
     // Hex -> 8 hex, Prism -> 8 prism, Tet -> 8 tet, Pyr -> 5 pyr + 4 tet
-    if (entity_types.back()[k] == mesh::CellType::hexahedron)
+    if (cell_entity_types[k] == mesh::CellType::hexahedron)
     {
-      spdlog::info("Hex subdivision");
+      spdlog::info("Hex subdivision [{}]", k);
       refined_cell_list
           = {0, 9,  8,  20, 10, 22, 21, 26, 1, 11, 8,  20, 12, 23, 21, 26,
              2, 13, 9,  20, 14, 24, 22, 26, 3, 13, 11, 20, 15, 24, 23, 26,
              4, 16, 10, 21, 17, 25, 22, 26, 5, 16, 12, 21, 18, 25, 23, 26,
              6, 17, 14, 22, 19, 25, 24, 26, 7, 18, 15, 23, 19, 25, 24, 26};
     }
-    else if (entity_types.back()[k] == mesh::CellType::tetrahedron)
+    else if (cell_entity_types[k] == mesh::CellType::tetrahedron)
     {
-      spdlog::info("Tet subdivision");
+      spdlog::info("Tet subdivision [{}]", k);
       refined_cell_list = {0, 7, 8, 9, 1, 5, 6, 9, 2, 4, 6, 8, 3, 4, 5, 7,
                            9, 4, 6, 8, 9, 4, 8, 7, 9, 4, 7, 5, 9, 4, 5, 6};
     }
-    else if (entity_types.back()[k] == mesh::CellType::prism)
+    else if (cell_entity_types[k] == mesh::CellType::prism)
     {
-      spdlog::info("Prism subdivision");
+      spdlog::info("Prism subdivision [{}]", k);
       refined_cell_list
           = {0,  6,  7,  8,  15, 16, 6,  1,  9,  15, 10, 17, 7,  9,  2,  16,
              17, 11, 6,  9,  7,  15, 17, 16, 15, 17, 16, 12, 14, 13, 8,  15,
              16, 3,  12, 13, 11, 17, 16, 5,  14, 13, 10, 15, 17, 4,  12, 14};
     }
-    else if (entity_types.back()[k] == mesh::CellType::pyramid)
+    else if (cell_entity_types[k] == mesh::CellType::pyramid)
     {
-      spdlog::info("Pyramid subdivision");
+      spdlog::info("Pyramid subdivision [{}]", k);
       refined_cell_list = {0,  5,  6, 13, 7,  1,  8,  5, 13, 9,  3,  10, 8,
                            13, 12, 2, 6,  10, 13, 11, 7, 9,  11, 12, 4};
       if (ktet == -1)
         throw std::runtime_error("Cannot refine mesh with pyramids and no "
                                  "tetrahedra.");
     }
-    else if (entity_types.back()[k] == mesh::CellType::triangle)
+    else if (cell_entity_types[k] == mesh::CellType::triangle)
     {
-      spdlog::info("Triangle subdivision");
+      spdlog::info("Triangle subdivision [{}]", k);
       refined_cell_list = {0, 4, 5, 1, 5, 3, 2, 3, 4, 3, 4, 5};
     }
-    else if (entity_types.back()[k] == mesh::CellType::quadrilateral)
+    else if (cell_entity_types[k] == mesh::CellType::quadrilateral)
     {
-      spdlog::info("Quad subdivision");
+      spdlog::info("Quad subdivision [{}]", k);
       refined_cell_list = {0, 4, 5, 8, 1, 6, 4, 8, 2, 7, 5, 8, 3, 7, 6, 8};
     }
 
     auto c_to_v = topology->connectivity({tdim, k}, {0, 0});
     auto c_to_e = topology->connectivity({tdim, k}, {1, 0});
 
+    spdlog::debug("On {}, over {} cells", k,
+                  topology->index_maps(tdim)[k]->size_local());
     for (int c = 0; c < topology->index_maps(tdim)[k]->size_local(); ++c)
     {
       std::vector<std::int64_t> entities;
@@ -217,24 +219,23 @@ mesh::Mesh<double> refinement::uniform_refine(const mesh::Mesh<double>& mesh)
           auto conn = topology->connectivity({3, k}, {2, e_index[2]});
           if (conn)
           {
-            spdlog::debug("Get connectivity from (3,{})->(2,{})", k,
-                          e_index[2]);
             for (std::int32_t i :
                  topology->connectivity({3, k}, {2, e_index[2]})->links(c))
               entities.push_back(new_v[2][i]);
           }
         }
-        else
+        else if (cell_entity_types[k] == mesh::CellType::quadrilateral)
           entities.push_back(new_v[2][c]);
       }
 
-      if (e_index.size() > 3)
+      if (e_index.size() > 3
+          and cell_entity_types[k] == mesh::CellType::hexahedron)
         entities.push_back(new_v[3][c]);
 
       for (int i : refined_cell_list)
         mixed_topology[k].push_back(entities[i]);
 
-      if (entity_types.back()[k] == mesh::CellType::pyramid)
+      if (cell_entity_types[k] == mesh::CellType::pyramid)
       {
         for (int i : pyr_to_tet_list)
           mixed_topology[ktet].push_back(entities[i]);
@@ -242,11 +243,13 @@ mesh::Mesh<double> refinement::uniform_refine(const mesh::Mesh<double>& mesh)
     }
   }
 
+  spdlog::debug("Create partitioner");
   auto partitioner = mesh::create_cell_partitioner(mesh::GhostMode::none);
 
   std::vector<std::span<const std::int64_t>> topo_span(mixed_topology.begin(),
                                                        mixed_topology.end());
 
+  spdlog::debug("Create new mesh");
   mesh::Mesh new_mesh = mesh::create_mesh(
       mesh.comm(), mesh.comm(), topo_span, mesh.geometry().cmaps(), mesh.comm(),
       new_x, {new_x.size() / 3, 3}, partitioner);
