@@ -10,83 +10,6 @@
 
 using namespace dolfinx;
 
-namespace
-{
-
-std::vector<std::int64_t>
-pyr_subdivision(const std::vector<std::int64_t>& entities)
-{
-  int cells_pyr[25] = {0,  5,  6, 13, 7,  1,  8,  5, 13, 9,  3,  10, 8,
-                       13, 12, 2, 6,  10, 13, 11, 7, 9,  11, 12, 4};
-
-  //  topo_tet
-  //      = [[edges [0], facets [0], edges [2], edges [4]],
-  //         [edges [1], facets [0], edges [6], edges [2]],
-  //         [edges [5], facets [0], edges [7], edges [6]],
-  //         [edges [3], facets [0], edges [4], edges [7]]]
-
-  std::vector<std::int64_t> topology(25);
-  for (int i = 0; i < 25; ++i)
-    topology[i] = entities[cells_pyr[i]];
-  return topology;
-}
-
-std::vector<std::int64_t>
-tet_subdivision(const std::vector<std::int64_t>& entities)
-{
-  std::vector<std::int64_t> topology;
-
-  int cell_list[32] = {0, 7, 8, 9, 1, 5, 6, 9, 2, 4, 6, 8, 3, 4, 5, 7,
-                       9, 4, 6, 8, 9, 4, 8, 7, 9, 4, 7, 5, 9, 4, 5, 6};
-
-  for (int i = 0; i < 32; ++i)
-    topology.push_back(entities[cell_list[i]]);
-  return topology;
-}
-
-std::vector<std::int64_t>
-prism_subdivision(const std::vector<std::int64_t>& entities)
-{
-  std::vector<std::int64_t> topology;
-  int cell_list[48]
-      = {0,  6,  7,  8,  15, 16, 6,  1,  9,  15, 10, 17, 7,  9,  2,  16,
-         17, 11, 6,  9,  7,  15, 17, 16, 15, 17, 16, 12, 14, 13, 8,  15,
-         16, 3,  12, 13, 11, 17, 16, 5,  14, 13, 10, 15, 17, 4,  12, 14};
-  for (int i = 0; i < 48; ++i)
-    topology.push_back(entities[cell_list[i]]);
-  return topology;
-}
-
-std::vector<std::int64_t>
-hex_subdivision(const std::vector<std::int64_t>& entities)
-{
-  int facet_list[8][3] = {{0, 1, 2}, {0, 1, 3}, {0, 2, 4}, {0, 3, 4},
-                          {1, 2, 5}, {1, 3, 5}, {2, 4, 5}, {3, 4, 5}};
-
-  int edge_list[8][3] = {{0, 1, 2}, {0, 3, 4},  {1, 5, 6},  {3, 5, 7},
-                         {2, 8, 9}, {4, 8, 10}, {6, 9, 11}, {7, 10, 11}};
-
-  std::vector<std::int64_t> topology;
-  for (int vi = 0; vi < 8; ++vi)
-  {
-    int edge_offset = 8;
-    int facet_offset = edge_offset + 12;
-    auto ee = edge_list[vi];
-    auto ff = facet_list[vi];
-    std::array<std::int64_t, 8> new_cell = {entities[vi],
-                                            entities[ee[1] + edge_offset],
-                                            entities[ee[0] + edge_offset],
-                                            entities[ff[0] + facet_offset],
-                                            entities[ee[2] + edge_offset],
-                                            entities[ff[2] + facet_offset],
-                                            entities[ff[1] + facet_offset],
-                                            entities.back()};
-    topology.insert(topology.end(), new_cell.begin(), new_cell.end());
-  }
-  return topology;
-}
-} // namespace
-
 mesh::Mesh<double> refinement::uniform_refine(const mesh::Mesh<double>& mesh)
 {
   // Requires edges and facets to be built already
@@ -200,23 +123,52 @@ mesh::Mesh<double> refinement::uniform_refine(const mesh::Mesh<double>& mesh)
 
   std::vector<std::vector<std::int64_t>> mixed_topology(entity_types[3].size());
 
-  std::vector<std::function<std::vector<std::int64_t>(
-      const std::vector<std::int64_t>&)>>
-      subdiv;
-  for (int k = 0; k < static_cast<int>(entity_types[3].size()); ++k)
-  {
-    if (entity_types[3][k] == mesh::CellType::hexahedron)
-      subdiv.push_back(hex_subdivision);
-    if (entity_types[3][k] == mesh::CellType::prism)
-      subdiv.push_back(prism_subdivision);
-    if (entity_types[3][k] == mesh::CellType::tetrahedron)
-      subdiv.push_back(tet_subdivision);
-    if (entity_types[3][k] == mesh::CellType::pyramid)
-      subdiv.push_back(pyr_subdivision);
-  }
+  // Find index of tets in topology list, if any
+  int ktet = -1;
+  auto it = std::find(entity_types[3].begin(), entity_types[3].end(),
+                      mesh::CellType::tetrahedron);
+  if (it != entity_types[3].end())
+    ktet = std::distance(entity_types[3].begin(), it);
+  // Topology for tetrahedra which arise from pyramid subdivision
+  std::vector<int> pyr_to_tet_list
+      = {5, 13, 7, 9, 6, 13, 11, 7, 10, 13, 12, 11, 8, 13, 9, 12};
 
+  std::vector<int> refined_cell_list;
   for (int k = 0; k < static_cast<int>(entity_types[3].size()); ++k)
   {
+    // Reserve an estimate of space for the topology of each type
+    mixed_topology[k].reserve(mesh.topology()->index_maps(3)[k]->size_local()
+                              * 8 * 6);
+
+    // Select correct subdivision for celltype
+    // Hex -> 8 hex, Prism -> 8 prism, Tet -> 8 tet, Pyr -> 5 pyr + 4 tet
+    if (entity_types[3][k] == mesh::CellType::hexahedron)
+      refined_cell_list
+          = {0, 9,  8,  20, 10, 22, 21, 26, 1, 11, 8,  20, 12, 23, 21, 26,
+             2, 13, 9,  20, 14, 24, 22, 26, 3, 13, 11, 20, 15, 24, 23, 26,
+             4, 16, 10, 21, 17, 25, 22, 26, 5, 16, 12, 21, 18, 25, 23, 26,
+             6, 17, 14, 22, 19, 25, 24, 26, 7, 18, 15, 23, 19, 25, 24, 26};
+    else if (entity_types[3][k] == mesh::CellType::tetrahedron)
+    {
+      refined_cell_list = {0, 7, 8, 9, 1, 5, 6, 9, 2, 4, 6, 8, 3, 4, 5, 7,
+                           9, 4, 6, 8, 9, 4, 8, 7, 9, 4, 7, 5, 9, 4, 5, 6};
+    }
+    else if (entity_types[3][k] == mesh::CellType::prism)
+    {
+      refined_cell_list
+          = {0,  6,  7,  8,  15, 16, 6,  1,  9,  15, 10, 17, 7,  9,  2,  16,
+             17, 11, 6,  9,  7,  15, 17, 16, 15, 17, 16, 12, 14, 13, 8,  15,
+             16, 3,  12, 13, 11, 17, 16, 5,  14, 13, 10, 15, 17, 4,  12, 14};
+    }
+    else if (entity_types[3][k] == mesh::CellType::pyramid)
+    {
+      refined_cell_list = {0,  5,  6, 13, 7,  1,  8,  5, 13, 9,  3,  10, 8,
+                           13, 12, 2, 6,  10, 13, 11, 7, 9,  11, 12, 4};
+      if (ktet == -1)
+        throw std::runtime_error("Cannot refine mesh with pyramids and no "
+                                 "tetrahedra.");
+    }
+
     auto c_to_v = topology->connectivity({3, k}, {0, 0});
     auto c_to_e = topology->connectivity({3, k}, {1, 0});
 
@@ -241,9 +193,14 @@ mesh::Mesh<double> refinement::uniform_refine(const mesh::Mesh<double>& mesh)
       if (e_index.size() > 3)
         entities.push_back(new_v[3][c]);
 
-      auto new_cells = subdiv[k](entities);
-      mixed_topology[k].insert(mixed_topology[k].end(), new_cells.begin(),
-                               new_cells.end());
+      for (int i : refined_cell_list)
+        mixed_topology[k].push_back(entities[i]);
+
+      if (entity_types[3][k] == mesh::CellType::pyramid)
+      {
+        for (int i : pyr_to_tet_list)
+          mixed_topology[ktet].push_back(entities[i]);
+      }
     }
   }
 
