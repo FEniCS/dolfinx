@@ -7,7 +7,6 @@
 
 import datetime
 import functools
-import typing
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import (
