@@ -37,10 +37,7 @@ class Constant(ufl.Constant):
     ]
 
     def __init__(
-        self,
-        domain,
-        c: typing.Union[np.ndarray, typing.Sequence, np.floating, np.complexfloating],
-        name: typing.Optional[str] = None,
+        self, domain, c: typing.Union[np.ndarray, typing.Sequence, np.floating, np.complexfloating]
     ):
         """A constant with respect to a domain.
 
@@ -63,12 +60,6 @@ class Constant(ufl.Constant):
                 raise RuntimeError("Unsupported dtype")
         except AttributeError:
             raise AttributeError("Constant value must have a dtype attribute.")
-
-        # Set name
-        if name is None:
-            self.name = "c"
-        else:
-            self.name = name
 
     @property
     def value(self):
