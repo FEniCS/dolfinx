@@ -546,10 +546,11 @@ def refine(
         msh: Mesh from which to create the refined mesh.
         edges: Indices of edges to split during refinement. If ``None``,
             mesh refinement is uniform.
-        redistribute: Controls whether the refined mesh should be redistributed during creation. If
-            ``False`` (default) the refined mesh will exchange ghosts cells, but distribution of the
-            coarse mesh is maintained, otherwise the passed ``partitioner`` is used to redistribute
-            the refined mesh.
+        redistribute: Controls whether the refined mesh should be
+            redistributed during creation. If ``False`` (default) the
+            refined mesh will exchange ghosts cells, but distribution of
+            the coarse mesh is maintained, otherwise the passed
+            ``partitioner`` is used to redistribute the refined mesh.
         partitioner: Partitioner to distribute the refined mesh. If
             ``None`` no redistribution is performed, i.e. refined cells
             remain on the same process as the parent cell.
