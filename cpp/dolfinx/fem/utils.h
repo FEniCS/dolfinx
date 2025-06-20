@@ -384,7 +384,7 @@ Form<T, U> create_form_factory(
                                "provided Form coefficients.");
     }
 
-    // Check Constants
+    // Check Constants for rank and size consistency
     if (ufcx_form.num_constants != (int)constants.size())
     {
       throw std::runtime_error(
