@@ -37,8 +37,9 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
         """A Newton solver for non-linear problems.
 
         Note:
-            This class is deprecated in favour of dolfinx.fem.petsc.NonlinearProblem,
-            a high level interface to PETSc SNES.
+            This class is deprecated in favour of
+            dolfinx.fem.petsc.NonlinearProblem, a high level interface to
+            PETSc SNES.
         """
         super().__init__(comm)
 
