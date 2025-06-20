@@ -9,6 +9,7 @@ namespace dolfinx::refinement
 /// types.
 /// @param mesh Input mesh
 /// @returns Uniformly refined mesh
-mesh::Mesh<double> uniform_refine(const mesh::Mesh<double>& mesh);
+template <typename T>
+mesh::Mesh<T> uniform_refine(const mesh::Mesh<T>& mesh);
 
 } // namespace dolfinx::refinement

@@ -10,7 +10,8 @@
 
 using namespace dolfinx;
 
-mesh::Mesh<double> refinement::uniform_refine(const mesh::Mesh<double>& mesh)
+template <typename T>
+mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh)
 {
   // Requires edges (and facets for some 3D meshes) to be built already
   auto topology = mesh.topology();
@@ -91,7 +92,7 @@ mesh::Mesh<double> refinement::uniform_refine(const mesh::Mesh<double>& mesh)
   }
 
   // Copy existing vertices
-  std::vector<double> new_x(nlocal * 3);
+  std::vector<T> new_x(nlocal * 3);
   auto x_g = mesh.geometry().x();
   for (int i = 0; i < index_maps[0]->size_local(); ++i)
     for (int j = 0; j < 3; ++j)
@@ -116,14 +117,14 @@ mesh::Mesh<double> refinement::uniform_refine(const mesh::Mesh<double>& mesh)
       {
         auto vt = e_to_v->links(w);
         std::size_t nv_ent = vt.size();
-        std::array<double, 3> v = {0, 0, 0};
+        std::array<T, 3> v = {0, 0, 0};
         for (std::size_t i = 0; i < nv_ent; ++i)
         {
           for (int k = 0; k < 3; ++k)
             v[k] += x_g[3 * vertex_to_x[vt[i]] + k];
         }
         for (int k = 0; k < 3; ++k)
-          new_x[(w + w_off) * 3 + k] = v[k] / static_cast<double>(nv_ent);
+          new_x[(w + w_off) * 3 + k] = v[k] / static_cast<T>(nv_ent);
       }
     }
     common::Scatterer sc(*index_maps[j], 1);
@@ -256,3 +257,10 @@ mesh::Mesh<double> refinement::uniform_refine(const mesh::Mesh<double>& mesh)
 
   return new_mesh;
 }
+
+/// @cond Explicit instatiation for float and double
+template mesh::Mesh<double>
+refinement::uniform_refine(const mesh::Mesh<double>& mesh);
+template mesh::Mesh<float>
+refinement::uniform_refine(const mesh::Mesh<float>& mesh);
+/// @endcond
