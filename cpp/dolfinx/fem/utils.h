@@ -23,6 +23,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/utils.h>
+#include <format>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -387,21 +388,27 @@ Form<T, U> create_form_factory(
     // Check Constants for rank and size consistency
     if (ufcx_form.num_constants != (int)constants.size())
     {
-      throw std::runtime_error(
-          "Mismatch between number of expected and provided Form constants.");
+      throw std::runtime_error(std::format(
+          "Mismatch between number of expected and "
+          "provided Form Constants. Expected {} constants, but got {}.",
+          ufcx_form.num_constants, constants.size()));
     }
     for (std::size_t c = 0; c < constants.size(); ++c)
     {
       if (ufcx_form.constant_ranks[c] != (int)constants[c]->shape.size())
       {
-        throw std::runtime_error(
-            "Mismatch between expected and actual rank of Form constant.");
+        throw std::runtime_error(std::format(
+            "Mismatch between expected and actual rank of "
+            "Form Constant. Rank of Constant {} should be {}, but got rank {}.",
+            c, ufcx_form.constant_ranks[c], constants[c]->shape.size()));
       }
       if (!std::equal(constants[c]->shape.begin(), constants[c]->shape.end(),
                       ufcx_form.constant_shapes[c]))
       {
         throw std::runtime_error(
-            "Mismatch between expected and actual shape of Form constant.");
+            std::format("Mismatch between expected and actual shape of Form "
+                        "Constant for Constant {}.",
+                        c));
       }
     }
   }
