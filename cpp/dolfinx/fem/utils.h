@@ -392,7 +392,7 @@ Form<T, U> create_form_factory(
     }
     for (std::size_t c = 0; c < constants.size(); ++c)
     {
-      if (ufcx_form.constant_ranks[c] != constants[c]->shape.size())
+      if (ufcx_form.constant_ranks[c] != (int)constants[c]->shape.size())
       {
         throw std::runtime_error(
             "Mismatch between expected and actual rank of Form constant.");
