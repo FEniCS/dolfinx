@@ -164,11 +164,12 @@ x = ufl.SpatialCoordinate(msh)
 f = 10 * ufl.exp(-((x[0] - 0.5) * (x[0] - 0.5) + (x[1] - 0.5) * (x[1] - 0.5)) / 0.02)
 # -
 
-# We now declare the blocked bilinear and linear forms. We use `ufl.extract_blocks`
-# to extract the block structure of the bilinear and linear form.
-# For the first block of the right-hand side, we provide a form that efficiently is 0.
-# We do this to preserve knowledge of the test space in the block. *Note that the defined `L`
-# corresponds to $u_{0} = 0$ on $\Gamma_{D}$.*
+# We now declare the blocked bilinear and linear forms. We use
+# `ufl.extract_blocks` to extract the block structure of the bilinear
+# and linear form. For the first block of the right-hand side, we provide
+# a form that efficiently is 0. We do this to preserve knowledge of the
+# test space in the block. *Note that the defined `L` corresponds to
+# $u_{0} = 0$ on $\Gamma_{D}$.*
 
 # +
 dx = ufl.Measure("dx", msh)
@@ -236,8 +237,9 @@ sigma, u = fem.Function(V, dtype=dtype), fem.Function(W, dtype=dtype)
 # -
 
 # We now create a linear problem solver for the mixed problem.
-# As we will use different preconditions for the individual blocks of the saddle point problem,
-# we specify the matrix kind to be "nest", so that we can use # [`fieldsplit`](https://petsc.org/release/manual/ksp/#sec-block-matrices)
+# As we will use different preconditions for the individual blocks of
+# the saddle point problem, we specify the matrix kind to be "nest",
+# so that we can use # [`fieldsplit`](https://petsc.org/release/manual/ksp/#sec-block-matrices)
 # (block) type and set the 'splits' between the $\sigma$ and $u$ fields.
 
 
