@@ -267,7 +267,7 @@ problem = fem.petsc.LinearProblem(
 # We get the nest index sets for the two fields
 nested_IS = problem.A.getNestISs()
 ksp = problem.solver
-ksp.setMonitor(lambda ksp, its, rnorm: print(f"Iteration: {its}, residual: {rnorm}"))
+ksp.setMonitor(lambda ksp, its, rnorm: PETSc.Sys.Print(f"Iteration: {its:>4d}, residual: {rnorm:.3e}"))
 ksp.getPC().setFieldSplitIS(("sigma", nested_IS[0][0]), ("u", nested_IS[0][1]))
 ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
 # -
