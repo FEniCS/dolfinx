@@ -54,15 +54,13 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh)
   {
     if (topology->index_maps(dim).empty())
       throw std::runtime_error(
-          "Missing topology for dimension " + std::to_string(dim)
+          "Missing entities of dimension " + std::to_string(dim)
           + ", need to call create_entities(" + std::to_string(dim) + ")");
     index_maps.push_back(topology->index_maps(dim)[e_index[dim]]);
     new_v.push_back(std::vector<std::int64_t>(
         index_maps.back()->size_local() + index_maps.back()->num_ghosts()));
     nlocal += index_maps.back()->size_local();
   }
-
-  // std::int64_t nv_global = index_maps[0]->size_global();
 
   // Get current geometry and put into new array for vertices
   std::vector<std::int32_t> vertex_to_x(index_maps[0]->size_local()
