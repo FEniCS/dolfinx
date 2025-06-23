@@ -72,3 +72,11 @@ jobs:
 
       - name: Build (C++ test)
         run: cmake --build build-test
+
+      - name: Build (Python)
+        working-directory: python
+        run: >
+          pip install .
+          --no-build-isolation
+          --verbose
+          --config-settings=cmake.define.ENABLE_CLANG_TIDY=ON
