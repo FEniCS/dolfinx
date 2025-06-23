@@ -6,6 +6,7 @@
 
 #include "HDF5Interface.h"
 #include <algorithm>
+#include <bitset>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/io/cells.h>
@@ -216,7 +217,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
       dset_id, {local_cell_range[0], local_cell_range[1] + 1}, true);
   H5Dclose(dset_id);
 
-  // Convert VTK to dolfinx cell types
+  // Convert list of VTK types to dolfinx cell type and degree
   std::vector<std::pair<mesh::CellType, std::uint8_t>> dolfinx_types(
       types.size());
   for (std::size_t i = 0; i < types.size(); ++i)
@@ -236,11 +237,11 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
                         dolfinx_types[i].first);
     assert(it != cell_types.end());
     const std::uint8_t cell_degree = dolfinx_types[i].second;
-    std::uint8_t d = std::distance(cell_types.begin(), it)
-                     + cell_types.size() * (cell_degree - 1);
+    std::size_t d = std::distance(cell_types.begin(), it)
+                    + cell_types.size() * (cell_degree - 1);
     if (d > cell_types_bitset.size())
       throw std::runtime_error("Unsupported degree element in mesh");
-    cell_types_bitset[d] = 1;
+    cell_types_bitset.set(d);
   }
 
   // Do a global bitwise-or operation
