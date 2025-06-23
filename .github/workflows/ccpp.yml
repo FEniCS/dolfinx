@@ -147,6 +147,7 @@ jobs:
       - name: Run demos (Python, serial)
         run: |
           pip install pytest-xdist
+          pip install --upgrade pyamg
           python -m pytest -n auto -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=3))
         run: python -m pytest -m mpi --num-proc=3 python/demo/test.py
