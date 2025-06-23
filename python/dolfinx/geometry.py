@@ -1,4 +1,5 @@
-# Copyright (C) 2018-2021 Michal Habera, Garth N. Wells and Jørgen S. Dokken
+# Copyright (C) 2018-2021 Michal Habera, Garth N. Wells and
+# Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -33,7 +34,8 @@ __all__ = [
 
 
 class PointOwnershipData:
-    """Convenience class for storing data related to the ownership of points."""
+    """Convenience class for storing data related to the ownership of
+    points."""
 
     _cpp_object: typing.Union[
         _cpp.geometry.PointOwnershipData_float32, _cpp.geometry.PointOwnershipData_float64
@@ -44,7 +46,8 @@ class PointOwnershipData:
         self._cpp_object = ownership_data
 
     def src_owner(self) -> npt.NDArray[np.int32]:
-        """Ranks owning each point sent into ownership determination for current process."""
+        """Ranks owning each point sent into ownership determination for
+        current process."""
         return self._cpp_object.src_owner
 
     def dest_owner(self) -> npt.NDArray[np.int32]:
@@ -56,7 +59,8 @@ class PointOwnershipData:
         return self._cpp_object.dest_points
 
     def dest_cells(self) -> npt.NDArray[np.int32]:
-        """Cell indices (local to process) where each entry of ``dest_points`` is located."""
+        """Cell indices (local to process) where each entry of
+        ``dest_points`` is located."""
         return self._cpp_object.dest_cells
 
 
@@ -193,7 +197,8 @@ def compute_closest_entity(
         midpoint_tree: A bounding box tree with the midpoints of all
             the mesh entities. This is used to accelerate the search.
         mesh: The mesh.
-        points: The points to check for collision, ``shape=(num_points,3)``.
+        points: The points to check for collision,
+            ``shape=(num_points,3)``.
 
     Returns:
         Mesh entity index for each point in ``points``. Returns -1 for a
@@ -206,7 +211,8 @@ def compute_closest_entity(
 
 
 def create_midpoint_tree(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]) -> BoundingBoxTree:
-    """Create a bounding box tree for the midpoints of a subset of entities.
+    """Create a bounding box tree for the midpoints of a subset of
+    entities.
 
     Args:
         mesh: The mesh.
@@ -229,7 +235,8 @@ def compute_colliding_cells(
         mesh: The mesh.
         candidate_cells: Adjacency list of candidate colliding cells for
             the ith point in ``x``.
-        points: The points to check for collision ``shape=(num_points, 3)``,
+        points: The points to check for collision
+            ``shape=(num_points, 3)``,
 
     Returns:
         Adjacency list where the ith node is the list of entities that
@@ -266,7 +273,8 @@ def squared_distance(
 def compute_distance_gjk(
     p: npt.NDArray[np.floating], q: npt.NDArray[np.floating]
 ) -> npt.NDArray[np.floating]:
-    """Compute the distance between two convex bodies p and q, each defined by a set of points.
+    """Compute the distance between two convex bodies p and q, each defined
+    by a set of points.
 
     Uses the Gilbert-Johnson-Keerthi (GJK) distance algorithm.
 
