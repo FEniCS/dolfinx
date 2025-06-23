@@ -235,49 +235,19 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
     auto it = std::find(cell_types.begin(), cell_types.end(),
                         dolfinx_types[i].first);
     assert(it != cell_types.end());
-    int cell_degree = dolfinx_types[i].second;
-    int d = std::distance(cell_types.begin(), it)
-            + cell_types.size() * (cell_degree - 1);
+    const std::uint8_t cell_degree = dolfinx_types[i].second;
+    std::uint8_t d = std::distance(cell_types.begin(), it)
+                     + cell_types.size() * (cell_degree - 1);
     if (d > cell_types_bitset.size())
       throw std::runtime_error("Unsupported degree element in mesh");
     cell_types_bitset[d] = 1;
   }
 
+  // Do a global bitwise-or operation
   std::uint64_t send64 = cell_types_bitset.to_ullong();
   std::uint64_t recv64 = 0;
   MPI_Allreduce(&send64, &recv64, 1, MPI_UINT64_T, MPI_BOR, comm);
   cell_types_bitset |= recv64;
-
-  // // Share cell types with all processes to make global list of cell
-  // // types
-  // // FIXME: amount of data is small, but number of connections does not
-  // // scale
-  // int count = 2 * types_unique.size();
-  // std::vector<std::int32_t> recv_count(mpi_size);
-  // MPI_Allgather(&count, 1, MPI_INT32_T, recv_count.data(), 1, MPI_INT32_T,
-  //               comm);
-  // std::vector<std::int32_t> recv_offsets(mpi_size + 1, 0);
-  // std::partial_sum(recv_count.begin(), recv_count.end(),
-  //                  recv_offsets.begin() + 1);
-
-  // std::vector<std::array<std::uint8_t, 2>> recv_types;
-  // {
-  //   std::vector<std::uint8_t> send_types;
-  //   for (std::array<std::uint8_t, 2> t : types_unique)
-  //     send_types.insert(send_types.end(), t.begin(), t.end());
-
-  //   std::vector<std::uint8_t> recv_types_buffer(recv_offsets.back());
-  //   MPI_Allgatherv(send_types.data(), send_types.size(), MPI_UINT8_T,
-  //                  recv_types_buffer.data(), recv_count.data(),
-  //                  recv_offsets.data(), MPI_UINT8_T, comm);
-
-  //   for (std::size_t i = 0; i < recv_types_buffer.size(); i += 2)
-  //     recv_types.push_back({recv_types_buffer[i], recv_types_buffer[i + 1]});
-
-  //   std::ranges::sort(recv_types);
-  //   auto [unique_end, range_end] = std::ranges::unique(recv_types);
-  //   recv_types.erase(unique_end, range_end);
-  // }
 
   // Get a list of all the cells/degrees in the mesh globally
   std::vector<std::pair<mesh::CellType, std::uint8_t>> global_types;
@@ -348,10 +318,10 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
   std::transform(
       global_types.cbegin(), global_types.cend(),
       std::back_inserter(coordinate_elements),
-      [](auto d_cell_type)
+      [](const auto& ct)
       {
-        const mesh::CellType cell_type = d_cell_type.first;
-        const std::uint8_t cell_degree = d_cell_type.second;
+        const mesh::CellType cell_type = ct.first;
+        const std::uint8_t cell_degree = ct.second;
         basix::element::lagrange_variant variant
             = (cell_degree > 2) ? basix::element::lagrange_variant::equispaced
                                 : basix::element::lagrange_variant::unset;
