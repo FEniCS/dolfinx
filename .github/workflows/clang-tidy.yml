@@ -33,6 +33,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y clang-tidy catch2
+          pip install -r python/build-requirements.txt
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
