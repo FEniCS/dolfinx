@@ -71,7 +71,7 @@ requirements.
 .. rubric:: Required
 
 - Python
-- Python cffi (https://cffi.readthedocs.io/)
+- Python CFFI (https://cffi.readthedocs.io/)
 - FFCx, UFL and Basix Python interface.
 - mpi4py (https://mpi4py.readthedocs.io/)
 - nanobind (https://github.com/wjakob/nanobind)
