@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get update
-          apt-get install -y clang-tidy
+          apt-get install -y clang-tidy catch2
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
