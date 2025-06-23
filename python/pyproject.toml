@@ -42,7 +42,12 @@ docs = [
 lint = ["ruff>=0.2.0"]
 optional = ["numba", "pyamg"]
 petsc4py = ["petsc4py"]
-test = ["pytest", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
+test = [
+      "pytest",
+      "scipy<1.16.0", # pyamg not compatible
+      "matplotlib",
+      "fenics-dolfinx[optional]"
+]
 ci = [
       "mypy",
       "pytest-xdist",
