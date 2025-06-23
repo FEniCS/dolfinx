@@ -15,6 +15,9 @@ namespace dolfinx::refinement
 /// @param mesh Input mesh
 /// @returns Uniformly refined mesh
 template <typename T>
-mesh::Mesh<T> uniform_refine(const mesh::Mesh<T>& mesh);
+mesh::Mesh<T>
+uniform_refine(const mesh::Mesh<T>& mesh,
+               const mesh::CellPartitionFunction& partitioner
+               = mesh::create_cell_partitioner(mesh::GhostMode::none));
 
 } // namespace dolfinx::refinement

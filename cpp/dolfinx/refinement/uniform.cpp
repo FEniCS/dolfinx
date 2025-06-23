@@ -11,7 +11,9 @@
 using namespace dolfinx;
 
 template <typename T>
-mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh)
+mesh::Mesh<T>
+refinement::uniform_refine(const mesh::Mesh<T>& mesh,
+                           const mesh::CellPartitionFunction& partitioner)
 {
   // Requires edges (and facets for some 3D meshes) to be built already
   auto topology = mesh.topology();
@@ -263,13 +265,9 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh)
     }
   }
 
-  spdlog::debug("Create partitioner");
-  auto partitioner = mesh::create_cell_partitioner(mesh::GhostMode::none);
-
+  spdlog::debug("Create new mesh");
   std::vector<std::span<const std::int64_t>> topo_span(mixed_topology.begin(),
                                                        mixed_topology.end());
-
-  spdlog::debug("Create new mesh");
   mesh::Mesh new_mesh = mesh::create_mesh(
       mesh.comm(), mesh.comm(), topo_span, mesh.geometry().cmaps(), mesh.comm(),
       new_x, {new_x.size() / 3, 3}, partitioner);
@@ -279,7 +277,9 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh)
 
 /// @cond Explicit instatiation for float and double
 template mesh::Mesh<double>
-refinement::uniform_refine(const mesh::Mesh<double>& mesh);
+refinement::uniform_refine(const mesh::Mesh<double>& mesh,
+                           const mesh::CellPartitionFunction&);
 template mesh::Mesh<float>
-refinement::uniform_refine(const mesh::Mesh<float>& mesh);
+refinement::uniform_refine(const mesh::Mesh<float>& mesh,
+                           const mesh::CellPartitionFunction&);
 /// @endcond
