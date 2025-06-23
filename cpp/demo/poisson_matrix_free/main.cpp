@@ -50,10 +50,8 @@
 #include <dolfinx.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/Constant.h>
-#include <format>
 #include <memory>
 #include <petscsystypes.h>
-#include <print>
 
 using namespace dolfinx;
 
@@ -237,9 +235,9 @@ void solver(MPI_Comm comm)
   T error = fem::assemble_scalar(E);
   if (dolfinx::MPI::rank(comm) == 0)
   {
-    std::println("Number of CG iterations: {}", num_it);
-    std::println("Finite element error (L2 norm (squared)): {}",
-                 std::abs(error));
+    std::cout << "Number of CG iterations " << num_it << std::endl;
+    std::cout << "Finite element error (L2 norm (squared)) " << std::abs(error)
+              << std::endl;
   }
 }
 

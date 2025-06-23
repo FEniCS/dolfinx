@@ -29,12 +29,10 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/nls/NewtonSolver.h>
-#include <format>
 #include <petscmat.h>
 #include <petscsys.h>
 #include <petscsystypes.h>
 #include <petscvec.h>
-#include <print>
 
 using namespace dolfinx;
 using T = PetscScalar;
@@ -258,7 +256,7 @@ int main(int argc, char* argv[])
 
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
     auto [niter, success] = newton_solver.solve(_u.vec());
-    std::println("Number of Newton iterations: {}", niter);
+    std::cout << "Number of Newton iterations: " << niter << std::endl;
 
     // Compute Cauchy stress. Construct appropriate Basix element for
     // stress.

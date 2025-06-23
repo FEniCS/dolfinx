@@ -45,7 +45,7 @@ target_link_libraries(${PROJECT_NAME} dolfinx)
 
 # Set C++20 standard
 set(CMAKE_CXX_EXTENSIONS OFF)
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 
 # Do not throw error for 'multi-line comments' (these are typical in rst which
 # includes LaTeX)

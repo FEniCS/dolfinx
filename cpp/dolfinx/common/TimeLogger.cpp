@@ -8,7 +8,6 @@
 #include "MPI.h"
 #include "log.h"
 #include <iostream>
-#include <print>
 
 using namespace dolfinx;
 using namespace dolfinx::common;
@@ -44,11 +43,11 @@ void TimeLogger::list_timings(MPI_Comm comm, Table::Reduction reduction) const
   // Format and reduce to rank 0
   Table timings = this->timing_table();
   timings = timings.reduce(comm, reduction);
-  std::string str = "\n" + timings.str();
+  const std::string str = "\n" + timings.str();
 
   // Print just on rank 0
-  // if (dolfinx::MPI::rank(comm) == 0)
-  //   std::println(str);
+  if (dolfinx::MPI::rank(comm) == 0)
+    std::cout << str << std::endl;
 }
 //-----------------------------------------------------------------------------
 Table TimeLogger::timing_table() const
