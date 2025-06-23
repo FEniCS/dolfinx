@@ -62,3 +62,13 @@ jobs:
       
       - name: Install (C++ lib)
         run: cmake --install build
+
+      - name: Configure (C++ test)
+        run: >
+          cmake -G Ninja
+          -B build-test
+          -S cpp/test/
+          -DENABLE_CLANG_TIDY=ON
+
+      - name: Build (C++ test)
+        run: cmake --build build-test
