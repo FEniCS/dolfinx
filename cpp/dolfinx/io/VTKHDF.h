@@ -196,12 +196,14 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
   H5Dclose(dset_id);
 
   // Create reverse map (VTK -> DOLFINx cell type)
+  const std::array<mesh::CellType, 8> cell_types
+      = {mesh::CellType::point,         mesh::CellType::interval,
+         mesh::CellType::triangle,      mesh::CellType::tetrahedron,
+         mesh::CellType::quadrilateral, mesh::CellType::pyramid,
+         mesh::CellType::prism,         mesh::CellType::hexahedron};
   std::map<std::uint8_t, mesh::CellType> vtk_to_dolfinx;
   {
-    for (auto type : {mesh::CellType::point, mesh::CellType::interval,
-                      mesh::CellType::triangle, mesh::CellType::quadrilateral,
-                      mesh::CellType::tetrahedron, mesh::CellType::prism,
-                      mesh::CellType::pyramid, mesh::CellType::hexahedron})
+    for (auto type : cell_types)
     {
       vtk_to_dolfinx.insert(
           {cells::get_vtk_cell_type(type, mesh::cell_dim(type)), type});
@@ -231,46 +233,77 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
     types_unique.erase(unique_end, range_end);
   }
 
-  // Share cell types with all processes to make global list of cell
-  // types
-  // FIXME: amount of data is small, but number of connections does not
-  // scale
-  int count = 2 * types_unique.size();
-  std::vector<std::int32_t> recv_count(mpi_size);
-  MPI_Allgather(&count, 1, MPI_INT32_T, recv_count.data(), 1, MPI_INT32_T,
-                comm);
-  std::vector<std::int32_t> recv_offsets(mpi_size + 1, 0);
-  std::partial_sum(recv_count.begin(), recv_count.end(),
-                   recv_offsets.begin() + 1);
-
-  std::vector<std::array<std::uint8_t, 2>> recv_types;
+  std::bitset<64> cell_types_bitset = 0;
+  for (auto t : types_unique)
   {
-    std::vector<std::uint8_t> send_types;
-    for (std::array<std::uint8_t, 2> t : types_unique)
-      send_types.insert(send_types.end(), t.begin(), t.end());
+    mesh::CellType ct = vtk_to_dolfinx.at(t[0]);
+    auto it = std::find(cell_types.begin(), cell_types.end(), ct);
+    assert(it != cell_types.end());
+    assert(t[1] > 0);
+    int d = std::distance(cell_types.begin(), it)
+            + cell_types.size() * (t[1] - 1);
+    if (d > cell_types_bitset.size())
+      throw std::runtime_error("Unsupported degree element in mesh");
+    cell_types_bitset[d] = 1;
+  }
 
-    std::vector<std::uint8_t> recv_types_buffer(recv_offsets.back());
-    MPI_Allgatherv(send_types.data(), send_types.size(), MPI_UINT8_T,
-                   recv_types_buffer.data(), recv_count.data(),
-                   recv_offsets.data(), MPI_UINT8_T, comm);
+  std::uint64_t send64 = cell_types_bitset.to_ullong();
+  std::uint64_t recv64 = 0;
+  MPI_Allreduce(&send64, &recv64, 1, MPI_UINT64_T, MPI_BOR, comm);
+  cell_types_bitset |= recv64;
 
-    for (std::size_t i = 0; i < recv_types_buffer.size(); i += 2)
-      recv_types.push_back({recv_types_buffer[i], recv_types_buffer[i + 1]});
+  // // Share cell types with all processes to make global list of cell
+  // // types
+  // // FIXME: amount of data is small, but number of connections does not
+  // // scale
+  // int count = 2 * types_unique.size();
+  // std::vector<std::int32_t> recv_count(mpi_size);
+  // MPI_Allgather(&count, 1, MPI_INT32_T, recv_count.data(), 1, MPI_INT32_T,
+  //               comm);
+  // std::vector<std::int32_t> recv_offsets(mpi_size + 1, 0);
+  // std::partial_sum(recv_count.begin(), recv_count.end(),
+  //                  recv_offsets.begin() + 1);
 
-    std::ranges::sort(recv_types);
-    auto [unique_end, range_end] = std::ranges::unique(recv_types);
-    recv_types.erase(unique_end, range_end);
+  // std::vector<std::array<std::uint8_t, 2>> recv_types;
+  // {
+  //   std::vector<std::uint8_t> send_types;
+  //   for (std::array<std::uint8_t, 2> t : types_unique)
+  //     send_types.insert(send_types.end(), t.begin(), t.end());
+
+  //   std::vector<std::uint8_t> recv_types_buffer(recv_offsets.back());
+  //   MPI_Allgatherv(send_types.data(), send_types.size(), MPI_UINT8_T,
+  //                  recv_types_buffer.data(), recv_count.data(),
+  //                  recv_offsets.data(), MPI_UINT8_T, comm);
+
+  //   for (std::size_t i = 0; i < recv_types_buffer.size(); i += 2)
+  //     recv_types.push_back({recv_types_buffer[i], recv_types_buffer[i + 1]});
+
+  //   std::ranges::sort(recv_types);
+  //   auto [unique_end, range_end] = std::ranges::unique(recv_types);
+  //   recv_types.erase(unique_end, range_end);
+  // }
+
+  std::vector<std::pair<mesh::CellType, int>> recv_types;
+  for (std::size_t i = 0; i < cell_types_bitset.size(); ++i)
+  {
+    if (cell_types_bitset[i])
+    {
+      int ct = i % cell_types.size();
+      int d = i / cell_types.size() + 1;
+      spdlog::debug("Got cell type {} and degree {}", ct, d);
+      recv_types.push_back({cell_types[ct], d});
+    }
   }
 
   // Map from VTKCellType to index in list of (cell types, degree)
-  std::map<std::array<std::uint8_t, 2>, std::int32_t> type_to_index;
+  std::map<std::pair<mesh::CellType, int>, std::int32_t> type_to_index;
   std::vector<mesh::CellType> dolfinx_cell_type;
   std::vector<std::uint8_t> dolfinx_cell_degree;
-  for (std::array<std::uint8_t, 2> ct : recv_types)
+  for (auto ct : recv_types)
   {
-    mesh::CellType cell_type = vtk_to_dolfinx.at(ct[0]);
+    mesh::CellType cell_type = ct.first;
     type_to_index.insert({ct, dolfinx_cell_degree.size()});
-    dolfinx_cell_degree.push_back(ct[1]);
+    dolfinx_cell_degree.push_back(ct.second);
     dolfinx_cell_type.push_back(cell_type);
   }
 
@@ -310,8 +343,8 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
   std::vector<std::vector<std::int64_t>> cells_local(recv_types.size());
   for (std::size_t j = 0; j < types.size(); ++j)
   {
-    std::int32_t type_index = type_to_index.at({types[j], cell_degrees[j]});
-    mesh::CellType cell_type = dolfinx_cell_type[type_index];
+    mesh::CellType cell_type = vtk_to_dolfinx.at(types[j]);
+    std::int32_t type_index = type_to_index.at({cell_type, cell_degrees[j]});
     std::vector<std::uint16_t> perm
         = cells::perm_vtk(cell_type, offsets[j + 1] - offsets[j]);
     for (std::int64_t k = 0; k < offsets[j + 1] - offsets[j]; ++k)
