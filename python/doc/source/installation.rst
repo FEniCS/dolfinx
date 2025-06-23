@@ -39,7 +39,7 @@ C++
 - `Boost <https://www.boost.org>`_
 - `CMake <https://cmake.org>`_ [build dependency]
 - HDF5 (with MPI support enabled)
-- MPI supporting MPI standard version 3 or above.
+- MPI (MPI-3 or later).
 - `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_
 - `pugixml <https://pugixml.org/>`_
 - `spdlog <https://github.com/gabime/spdlog/>`_
