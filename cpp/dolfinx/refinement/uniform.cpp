@@ -175,47 +175,53 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     // flattened, hence 64 entries for hex, 32 for tet, 48 for prism, 25 for
     // pyramid. Additionally for pyramid there are 16 tetrahedron entries (see
     // above).
-    if (cell_entity_types[k] == mesh::CellType::hexahedron)
+
+    switch (cell_entity_types[k])
     {
+    case mesh::CellType::hexahedron:
       spdlog::debug("Hex subdivision [{}]", k);
       refined_cell_list
           = {0, 9,  8,  20, 10, 22, 21, 26, 1, 11, 8,  20, 12, 23, 21, 26,
              2, 13, 9,  20, 14, 24, 22, 26, 3, 13, 11, 20, 15, 24, 23, 26,
              4, 16, 10, 21, 17, 25, 22, 26, 5, 16, 12, 21, 18, 25, 23, 26,
              6, 17, 14, 22, 19, 25, 24, 26, 7, 18, 15, 23, 19, 25, 24, 26};
-    }
-    else if (cell_entity_types[k] == mesh::CellType::tetrahedron)
-    {
+      break;
+
+    case mesh::CellType::tetrahedron:
       spdlog::debug("Tet subdivision [{}]", k);
       refined_cell_list = {0, 7, 8, 9, 1, 5, 6, 9, 2, 4, 6, 8, 3, 4, 5, 7,
                            9, 4, 6, 8, 9, 4, 8, 7, 9, 4, 7, 5, 9, 4, 5, 6};
-    }
-    else if (cell_entity_types[k] == mesh::CellType::prism)
-    {
+      break;
+
+    case mesh::CellType::prism:
       spdlog::debug("Prism subdivision [{}]", k);
       refined_cell_list
           = {0,  6,  7,  8,  15, 16, 6,  1,  9,  15, 10, 17, 7,  9,  2,  16,
              17, 11, 6,  9,  7,  15, 17, 16, 15, 17, 16, 12, 14, 13, 8,  15,
              16, 3,  12, 13, 11, 17, 16, 5,  14, 13, 10, 15, 17, 4,  12, 14};
-    }
-    else if (cell_entity_types[k] == mesh::CellType::pyramid)
-    {
+      break;
+
+    case mesh::CellType::pyramid:
       spdlog::debug("Pyramid subdivision [{}]", k);
       refined_cell_list = {0,  5,  6, 13, 7,  1,  8,  5, 13, 9,  3,  10, 8,
                            13, 12, 2, 6,  10, 13, 11, 7, 9,  11, 12, 4};
       if (ktet == -1)
         throw std::runtime_error("Cannot refine mesh with pyramids and no "
                                  "tetrahedra.");
-    }
-    else if (cell_entity_types[k] == mesh::CellType::triangle)
-    {
+      break;
+
+    case mesh::CellType::triangle:
       spdlog::debug("Triangle subdivision [{}]", k);
       refined_cell_list = {0, 4, 5, 1, 5, 3, 2, 3, 4, 3, 4, 5};
-    }
-    else if (cell_entity_types[k] == mesh::CellType::quadrilateral)
-    {
+      break;
+
+    case mesh::CellType::quadrilateral:
       spdlog::debug("Quad subdivision [{}]", k);
       refined_cell_list = {0, 4, 5, 8, 1, 6, 4, 8, 2, 7, 5, 8, 3, 7, 6, 8};
+      break;
+
+    default:
+      throw std::runtime_error("Unhandled cell type");
     }
 
     auto c_to_v = topology->connectivity({tdim, k}, {0, 0});
