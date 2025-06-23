@@ -46,16 +46,16 @@ jobs:
       - name: Configure (C++ lib) 
         run: >
           cmake -G Ninja
-            -B build
-            -S cpp/
-            -DCMAKE_BUILD_TYPE=Developer
-            -DENABLE_CLANG_TIDY=ON
-            -DDOLFINX_ENABLE_ADIOS2=ON
-            -DDOLFINX_ENABLE_KAHIP=ON
-            -DDOLFINX_ENABLE_PETSC=ON
-            -DDOLFINX_ENABLE_SCOTCH=ON
-            -DDOLFINX_ENABLE_SLEPC=ON
-            -DDOLFINX_ENABLE_PARMETIS=OFF
+          -B build
+          -S cpp/
+          -DCMAKE_BUILD_TYPE=Developer
+          -DENABLE_CLANG_TIDY=ON
+          -DDOLFINX_ENABLE_ADIOS2=ON
+          -DDOLFINX_ENABLE_KAHIP=ON
+          -DDOLFINX_ENABLE_PETSC=ON
+          -DDOLFINX_ENABLE_SCOTCH=ON
+          -DDOLFINX_ENABLE_SLEPC=ON
+          -DDOLFINX_ENABLE_PARMETIS=OFF
       
       - name: Build (C++ lib)
         run: cmake --build build
