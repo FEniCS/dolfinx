@@ -13,6 +13,7 @@ namespace dolfinx::refinement
 /// into 4 similar subcells.
 /// @tparam T Scalar type of the mesh geometry
 /// @param mesh Input mesh
+/// @param partitioner Function to partition new mesh across processes.
 /// @returns Uniformly refined mesh
 template <typename T>
 mesh::Mesh<T>
