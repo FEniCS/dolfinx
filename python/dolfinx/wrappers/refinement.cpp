@@ -34,7 +34,10 @@ namespace
 template <std::floating_point T>
 void export_refinement(nb::module_& m)
 {
-  m.def("uniform_refine", &dolfinx::refinement::uniform_refine<T>);
+  m.def(
+      "uniform_refine", [](const dolfinx::mesh::Mesh<T>& mesh)
+      { return dolfinx::refinement::uniform_refine<T>(mesh); },
+      nb::arg("mesh"));
 
   m.def(
       "refine",
