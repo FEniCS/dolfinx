@@ -1033,7 +1033,7 @@ def assemble_residual(
     A function conforming to the interface expected by SNES.setResidual can be
     created by fixing the first four arguments:
 
-        functools.partial(assemble_residual, u, jacobian, preconditioner, bcs)
+        functools.partial(assemble_residual, u, residual, jacobian, bcs)
 
     Args:
         u: Function(s) tied to the solution vector within the residual and Jacobian.
@@ -1192,7 +1192,18 @@ class NonlinearProblem:
         """Class for solving nonlinear problems with SNES.
 
         Solves problems of the form :math:`F_i(u, v) = 0, i=0,...N\\ \\forall v \\in V`
-        where :math:`u=(u_0,...,u_N), v=(v_0,...,v_N)` using PETSc SNES as the non-linear solver.
+        where :math:`u=(u_0,...,u_N), v=(v_0,...,v_N)` using PETSc SNES as
+        the non-linear solver.
+
+        By default, the underlying SNES solver uses PETSc's default options. To
+        use the robust combination of LU via MUMPS with a basic linesearch,
+        pass:
+
+            petsc_options = {"ksp_type": "preonly",
+                             "pc_type": "lu",
+                             "pc_factor_mat_solver_type": "mumps",
+                             "snes_linesearch_type": "basic",
+            }
 
         Note:
             The deprecated version of this class for use with NewtonSolver has
@@ -1293,6 +1304,10 @@ class NonlinearProblem:
 
     def solve(self) -> tuple[PETSc.Vec, int, int]:  # type: ignore
         """Solve the problem and update the solution in the problem instance.
+
+        Note:
+            The user is responsible for asserting convergence e.g. `assert
+            converged_reason > 0`.
 
         Returns:
             The solution, convergence reason and number of iterations.
