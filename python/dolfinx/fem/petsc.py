@@ -108,7 +108,7 @@ def _extract_function_spaces(
     return rows, cols
 
 
-# -- Vector instantiation ----------------------------------------------------
+# -- Vector instantiation -------------------------------------------------
 
 
 def create_vector(
@@ -192,14 +192,15 @@ def create_vector(
             )
 
 
-# -- Matrix instantiation ----------------------------------------------------
+# -- Matrix instantiation -------------------------------------------------
 
 
 def create_matrix(
     a: typing.Union[Form, Iterable[Iterable[Form]]],
     kind: typing.Optional[typing.Union[str, Iterable[Iterable[str]]]] = None,
 ) -> PETSc.Mat:
-    """Create a PETSc matrix that is compatible with the (sequence) of bilinear form(s).
+    """Create a PETSc matrix that is compatible with the (sequence) of
+    bilinear form(s).
 
     Three cases are supported:
 
@@ -242,7 +243,7 @@ def create_matrix(
                 return _cpp.fem.petsc.create_matrix_nest(_a, kind)  # Array of 'kind' types
 
 
-# -- Vector assembly ---------------------------------------------------------
+# -- Vector assembly ------------------------------------------------------
 
 
 @functools.singledispatch
@@ -345,7 +346,8 @@ def _assemble_vector_vec(
 
     Args:
         b: Vector to assemble the contribution of the linear form into.
-        L: A linear form or sequence of linear forms to assemble into ``b``.
+        L: A linear form or sequence of linear forms to assemble into
+            ``b``.
         constants: Constants appearing in the form. For a single form,
             ``constants.ndim==1``. For multiple forms, the constants for
             form ``L[i]`` are  ``constants[i]``.
@@ -382,7 +384,7 @@ def _assemble_vector_vec(
     return b
 
 
-# -- Matrix assembly ---------------------------------------------------------
+# -- Matrix assembly ------------------------------------------------------
 @functools.singledispatch
 def assemble_matrix(
     a: typing.Union[Form, Iterable[Iterable[Form]]],
@@ -566,7 +568,7 @@ def assemble_matrix_mat(
     return A
 
 
-# -- Modifiers for Dirichlet conditions ---------------------------------------
+# -- Modifiers for Dirichlet conditions -----------------------------------
 
 
 def apply_lifting(
@@ -595,14 +597,16 @@ def apply_lifting(
         bcs: Boundary conditions used to modify ``b`` (see
             :func:`dolfinx.fem.apply_lifting`). Two cases are supported:
 
-            1. The boundary conditions ``bcs`` are a 'sequence-of-sequences' such
-               that ``bcs[j]`` are the Dirichlet boundary conditionns
-               associated with the forms in the ``j`` th colulmn of
-               ``a``. Helper functions exist to create a sequence-of-sequences
-               of `DirichletBC` from the 2D ``a`` and a flat Sequence of
-               `DirichletBC` objects ``bcs``::
+            1. The boundary conditions ``bcs`` are a
+               'sequence-of-sequences' such that ``bcs[j]`` are the
+               Dirichlet boundary conditionns associated with the forms in
+               the ``j`` th colulmn of ``a``. Helper functions exist to
+               create a sequence-of-sequences of `DirichletBC` from the 2D
+               ``a`` and a flat Sequence of `DirichletBC` objects ``bcs``::
 
-                   bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), bcs)
+                   bcs1 = fem.bcs_by_block(
+                    fem.extract_function_spaces(a, 1), bcs
+                   )
 
             2. ``bcs`` is a sequence of :class:`dolfinx.fem.DirichletBC`
                objects. The function deduces which `DiricletBC` objects
@@ -765,15 +769,16 @@ class LinearProblem:
         """Initialize solver for a linear variational problem.
 
         Args:
-            a: Bilinear UFL form or a sequence of sequence of bilinear forms,
-               the left hand side of the variational problem.
-            L: Linear UFL form or a sequence of linear forms, the right hand
-               side of the variational problem.
+            a: Bilinear UFL form or a sequence of sequence of bilinear
+                forms, the left hand side of the variational problem.
+            L: Linear UFL form or a sequence of linear forms, the right
+                hand side of the variational problem.
             bcs: Sequence of Dirichlet boundary conditions.
             u: Solution function. It is created if not provided.
-            P: Bilinear UFL form or a sequence of sequence of bilinear forms,
-               used as a preconditioner.
-            kind: The PETSc matrix and vector type. See :func:`create_matrix` for options.
+            P: Bilinear UFL form or a sequence of sequence of bilinear
+                forms, used as a preconditioner.
+            kind: The PETSc matrix and vector type. See
+                :func:`create_matrix` for options.
             petsc_options: Options that are passed to the linear
                 algebra backend PETSc. For available choices for the
                 'petsc_options' kwarg, see the `PETSc documentation
@@ -790,20 +795,21 @@ class LinearProblem:
                 as the integration domain, `entity_maps` must be supplied.
                 For each key (a mesh, different to the integration domain
                 mesh) a map should be provided relating the entities in the
-                integration domain mesh to the entities in the key mesh e.g.
-                for a key-value pair (msh, emap) in `entity_maps`, `emap[i]`
-                is the entity in `msh` corresponding to entity `i` in the
-                integration domain mesh.
+                integration domain mesh to the entities in the key mesh
+                e.g. for a key-value pair (msh, emap) in `entity_maps`,
+                `emap[i]` is the entity in `msh` corresponding to entity
+                `i` in the integration domain mesh.
 
         Example::
 
-            problem = LinearProblem(a, L, [bc0, bc1], petsc_options={"ksp_type": "preonly",
-                                                                     "pc_type": "lu",
-                                                                     "pc_factor_mat_solver_type":
-                                                                       "mumps"})
+            problem = LinearProblem(a, L, [bc0, bc1], petsc_options={
+                "ksp_type": "preonly",
+                "pc_type": "lu",
+                "pc_factor_mat_solver_type": "mumps"
+            })
 
-            problem = LinearProblem([[a00, a01], [None, a11]], [L0, L1], bcs=[bc0, bc1],
-                                    u=[uh0, uh1])
+            problem = LinearProblem([[a00, a01], [None, a11]], [L0, L1],
+                                    bcs=[bc0, bc1], u=[uh0, uh1])
         """
         self._a = _create_form(
             a,
@@ -840,7 +846,8 @@ class LinearProblem:
 
         if u is None:
             try:
-                # Extract function space for unknown from the right hand side of the equation.
+                # Extract function space for unknown from the right hand
+                # side of the equation.
                 self._u = _Function(L.arguments()[0].ufl_function_space())
             except AttributeError:
                 self._u = [_Function(Li.arguments()[0].ufl_function_space()) for Li in L]
@@ -1030,15 +1037,17 @@ def assemble_residual(
 ):
     """Assemble the residual into the vector `F`.
 
-    A function conforming to the interface expected by SNES.setResidual can be
-    created by fixing the first four arguments:
+    A function conforming to the interface expected by SNES.setResidual can
+    be created by fixing the first four arguments:
 
         functools.partial(assemble_residual, u, residual, jacobian, bcs)
 
     Args:
-        u: Function(s) tied to the solution vector within the residual and Jacobian.
+        u: Function(s) tied to the solution vector within the residual and
+            Jacobian.
         residual: Form of the residual. It can be a sequence of forms.
-        jacobian: Form of the Jacobian. It can be a nested sequence of forms.
+        jacobian: Form of the Jacobian. It can be a nested sequence of
+            forms.
         bcs: List of Dirichlet boundary conditions.
         _snes: The solver instance.
         x: The vector containing the point to evaluate the residual at.
@@ -1089,13 +1098,15 @@ def assemble_jacobian(
 ):
     """Assemble the Jacobian matrix and preconditioner.
 
-    A function conforming to the interface expected by SNES.setJacobian can be
-    created by fixing the first four arguments:
+    A function conforming to the interface expected by SNES.setJacobian can
+    be created by fixing the first four arguments:
 
-        functools.partial(assemble_jacobian, u, jacobian, preconditioner, bcs)
+        functools.partial(assemble_jacobian, u, jacobian, preconditioner,
+                          bcs)
 
     Args:
-        u: Function tied to the solution vector within the residual and jacobian
+        u: Function tied to the solution vector within the residual and
+            jacobian
         jacobian: Form of the Jacobian
         preconditioner: Form of the preconditioner
         bcs: List of Dirichlet boundary conditions
@@ -1104,7 +1115,8 @@ def assemble_jacobian(
         J: Matrix to assemble the Jacobian into
         P: Matrix to assemble the preconditioner into
     """
-    # Copy existing soultion into the function used in the residual and Jacobian
+    # Copy existing soultion into the function used in the residual and
+    # Jacobian
     try:
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
     except PETSc.Error:  # type: ignore
@@ -1182,8 +1194,7 @@ class NonlinearProblem:
         bcs: typing.Optional[Sequence[DirichletBC]] = None,
         J: typing.Optional[typing.Union[ufl.form.Form, Sequence[Sequence[ufl.form.Form]]]] = None,
         P: typing.Optional[typing.Union[ufl.form.Form, Sequence[Sequence[ufl.form.Form]]]] = None,
-        mat_kind: typing.Optional[typing.Union[str, typing.Iterable[typing.Iterable[str]]]] = None,
-        vec_kind: typing.Optional[str] = None,
+        kind: typing.Optional[typing.Union[str, typing.Iterable[typing.Iterable[str]]]] = None,
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
         petsc_options: typing.Optional[dict] = None,
@@ -1191,9 +1202,10 @@ class NonlinearProblem:
     ):
         """Class for solving nonlinear problems with SNES.
 
-        Solves problems of the form :math:`F_i(u, v) = 0, i=0,...N\\ \\forall v \\in V`
-        where :math:`u=(u_0,...,u_N), v=(v_0,...,v_N)` using PETSc SNES as
-        the non-linear solver.
+        Solves problems of the form
+        :math:`F_i(u, v) = 0, i=0,...N\\ \\forall v \\in V` where
+        :math:`u=(u_0,...,u_N), v=(v_0,...,v_N)` using PETSc SNES as the
+        non-linear solver.
 
         By default, the underlying SNES solver uses PETSc's default options. To
         use the robust combination of LU via MUMPS with a basic linesearch,
@@ -1205,35 +1217,38 @@ class NonlinearProblem:
                              "snes_linesearch_type": "basic",
             }
 
-        Note:
-            The deprecated version of this class for use with NewtonSolver has
-            been renamed NewtonSolverNonlinearProblem.
+        Note: The deprecated version of this class for use with
+            NewtonSolver has been renamed NewtonSolverNonlinearProblem.
 
         Args:
             F: UFL form(s) of residual :math:`F_i`.
             u: Function used to define the residual and Jacobian.
             bcs: Dirichlet boundary conditions.
-            J: UFL form(s) representing the Jacobian :math:`J_ij = dF_i/du_j`.
+            J: UFL form(s) representing the Jacobian
+                :math:`J_ij = dF_i/du_j`.
             P: UFL form(s) representing the preconditioner.
-            mat_kind: The PETSc matrix type(s) for the Jacobian and preconditioner (``MatType``).
-                See :func:`dolfinx.fem.petsc.create_matrix` for more information.
-            vec_kind: The PETSc vector type for the residual and solution (``VecType``).
-                See :func:`dolfinx.fem.petsc.create_vector` for more information.
+            kind: The PETSc matrix type(s) for the Jacobian and
+                preconditioner (``MatType``).
+                See :func:`dolfinx.fem.petsc.create_matrix` for more
+                information.
             form_compiler_options: Options used in FFCx compilation of all
-                forms. Run ``ffcx --help`` at the command line to see all available
-                options.
+                forms. Run ``ffcx --help`` at the command line to see all
+                available options.
             jit_options: Options used in CFFI JIT compilation of C code
-                generated by FFCx. See ``python/dolfinx/jit.py`` for all available
-                options. Takes priority over all other option values.
+                generated by FFCx. See ``python/dolfinx/jit.py`` for all
+                available options. Takes priority over all other option
+                values.
             petsc_options: Options to pass to the PETSc SNES object.
             entity_maps: If any trial functions, test functions, or
-                coefficients in the form are not defined over the same mesh as the
-                integration domain, ``entity_maps`` must be supplied. For each key
-                (a mesh, different to the integration domain mesh) a map should be
-                provided relating the entities in the integration domain mesh to
-                the entities in the key mesh e.g. for a key-value pair ``(msh,
-                emap)`` in ``entity_maps``, ``emap[i]`` is the entity in ``msh``
-                corresponding to entity ``i`` in the integration domain mesh.
+                coefficients in the form are not defined over the same mesh
+                as the integration domain, ``entity_maps`` must be
+                supplied. For each key (a mesh, different to the
+                integration domain mesh) a map should be provided relating
+                the entities in the integration domain mesh to the entities
+                in the key mesh e.g. for a key-value pair ``(msh, emap)``
+                in ``entity_maps``, ``emap[i]`` is the entity in ``msh``
+                corresponding to entity ``i`` in the integration domain
+                mesh.
         """
         # Compile residual and Jacobian forms
         self._F = _create_form(
@@ -1267,19 +1282,22 @@ class NonlinearProblem:
         # Set default values if not supplied
         bcs = [] if bcs is None else bcs
 
-        # Create PETSc structures for the residual, Jacobian and solution vector
-        self._A = create_matrix(self.J, kind=mat_kind)
-        self._b = create_vector(self.F, kind=vec_kind)
-        self._x = create_vector(self.F, kind=vec_kind)
-
+        # Create PETSc structures for the residual, Jacobian and solution
+        # vector
+        self._A = create_matrix(self.J, kind=kind)
         # Create PETSc structure for preconditioner if provided
         if self.P is not None:
-            self._P_mat = create_matrix(self.P, kind=mat_kind)
+            self._P_mat = create_matrix(self.P, kind=kind)
         else:
             self._P_mat = None
 
-        # Create the SNES solver and attach the corresponding Jacobian and residual
-        # computation functions
+        # Determine the vector kind based on the matrix type
+        kind = "nest" if self._A.getType() == PETSc.Mat.Type.NEST else kind
+        self._b = create_vector(self.F, kind=kind)
+        self._x = create_vector(self.F, kind=kind)
+
+        # Create the SNES solver and attach the corresponding Jacobian and
+        # residual computation functions
         self._snes = PETSc.SNES().create(comm=self.A.comm)  # type: ignore
         self.solver.setJacobian(
             partial(assemble_jacobian, u, self.J, self.P, bcs), self.A, self.P_mat
@@ -1303,7 +1321,8 @@ class NonlinearProblem:
         opts.prefixPop()
 
     def solve(self) -> tuple[PETSc.Vec, int, int]:  # type: ignore
-        """Solve the problem and update the solution in the problem instance.
+        """Solve the problem and update the solution in the problem
+        instance.
 
         Note:
             The user is responsible for asserting convergence e.g. `assert
@@ -1378,21 +1397,22 @@ class NonlinearProblem:
         return self._snes
 
 
-# -- Deprecated non-linear problem class for NewtonSolver ----------------------------
+# -- Deprecated non-linear problem class for NewtonSolver -----------------
 
 
 class NewtonSolverNonlinearProblem:
-    """Nonlinear problem class for solving the non-linear problems using NewtonSolver.
+    """Nonlinear problem class for solving the non-linear problems using
+    NewtonSolver.
 
     Note:
-        This class is deprecated in favour of NonlinearProblem, a high level
-        interface to SNES.
+        This class is deprecated in favour of NonlinearProblem, a high
+        level interface to SNES.
 
     Note:
         This class was previously called NonlinearProblem.
 
-    Solves problems of the form :math:`F(u, v) = 0 \\ \\forall v \\in V` using
-    PETSc as the linear algebra backend.
+    Solves problems of the form :math:`F(u, v) = 0 \\ \\forall v \\in V`
+    using PETSc as the linear algebra backend.
     """
 
     def __init__(
@@ -1404,7 +1424,8 @@ class NewtonSolverNonlinearProblem:
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
     ):
-        """Initialize solver for solving a non-linear problem using Newton's method`.
+        """Initialize solver for solving a non-linear problem using
+        Newton's method`.
 
         Args:
             F: The PDE residual F(u, v).
@@ -1497,7 +1518,7 @@ class NewtonSolverNonlinearProblem:
         A.assemble()
 
 
-# -- Additional free helper functions (interpolations, assignments etc.) ------
+# -- Additional free helper functions (interpolations, assignments etc.) --
 
 
 def discrete_curl(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:
