@@ -1207,9 +1207,9 @@ class NonlinearProblem:
         :math:`u=(u_0,...,u_N), v=(v_0,...,v_N)` using PETSc SNES as the
         non-linear solver.
 
-        By default, the underlying SNES solver uses PETSc's default options. To
-        use the robust combination of LU via MUMPS with a basic linesearch,
-        pass:
+        By default, the underlying SNES solver uses PETSc's default
+        options. To use the robust combination of LU via MUMPS with
+        a basic linesearch, pass:
 
             petsc_options = {"ksp_type": "preonly",
                              "pc_type": "lu",
