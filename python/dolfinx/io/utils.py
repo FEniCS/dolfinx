@@ -194,10 +194,41 @@ class XDMFFile(_cpp.io.XDMFFile):
         if (cell_shape == CellType.quadrilateral and num_nodes_per_cell == 8) or (
             cell_shape == CellType.hexahedron and num_nodes_per_cell == 20
         ):
-            el = basix.ufl.element(
+            s_el = basix.ufl.element(
                 basix.ElementFamily.serendipity,
                 cell_shape.name,
                 2,
+            )
+            # Create a custom element that is serendipity but uses points
+            # evaluations on edges
+            geometry = basix.cell.geometry(s_el.basix_element.cell_type)
+            topology = basix.cell.topology(s_el.basix_element.cell_type)
+            e_x = [
+                [np.array([p]) for p in geometry],
+                [np.array([(geometry[edge[0]] + geometry[edge[1]]) / 2]) for edge in topology[1]],
+                [np.zeros((0, 3)) for _ in s_el.basix_element.x[2]],
+                [np.zeros((0, 3)) for _ in s_el.basix_element.x[3]],
+            ]
+            e_m = [
+                [np.ones((1, 1, 1, 1)) for _ in s_el.basix_element.M[0]],
+                [np.ones((1, 1, 1, 1)) for _ in s_el.basix_element.M[1]],
+                [np.zeros((0, 1, 0, 1)) for _ in s_el.basix_element.M[2]],
+                [np.zeros((0, 1, 0, 1)) for _ in s_el.basix_element.M[3]],
+            ]
+            el = basix.ufl.custom_element(
+                s_el.basix_element.cell_type,
+                s_el.reference_value_shape,
+                s_el.basix_element.wcoeffs,
+                e_x,
+                e_m,
+                0,
+                s_el.map_type,
+                s_el.basix_element.sobolev_space,
+                s_el.discontinuous,
+                s_el.embedded_subdegree,
+                s_el.embedded_superdegree,
+                s_el.polyset_type,
+                s_el.dtype,
             )
             cmap = _cpp.fem.CoordinateElement_float64(el.basix_element._e)
             basix_el = basix.ufl.blocked_element(el, shape=(x.shape[1],))

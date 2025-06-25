@@ -396,6 +396,15 @@ std::vector<std::uint16_t> vtk_quadrilateral(int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t> vtk_hexahedron(int num_nodes)
 {
+  if (num_nodes == 20)
+  {
+    std::vector<std::uint16_t> map;
+    map.insert(map.begin(), {0, 1, 3, 2, 4, 5, 7, 6});
+    for (int e : {0, 3, 5, 1, 8, 10, 11, 9, 2, 4, 7, 6})
+      map.push_back(8 + e);
+    return map;
+  }
+
   std::uint16_t n
       = io::cells::cell_degree(mesh::CellType::hexahedron, num_nodes);
 
