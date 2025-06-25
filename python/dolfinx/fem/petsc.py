@@ -781,7 +781,7 @@ class LinearProblem:
                 :func:`create_matrix` for options.
             petsc_options: Options that are set on the underlying
                 PETSc KSP only. For available choices for the
-                'petsc_options' kwarg, see the `PETSc documentation
+                'petsc_options' kwarg, see the `PETSc KSP documentation
                 <https://petsc4py.readthedocs.io/en/stable/manual/ksp/>`_.
                 Options on other objects (matrices, vectors) should be
                 set expicitly by the user.
@@ -1291,7 +1291,7 @@ class NonlinearProblem:
                 values.
             petsc_options: Options that are set on the underlying
                 PETSc SNES object only. For available choices for the
-                'petsc_options' kwarg, see the `PETSc documentation
+                'petsc_options' kwarg, see the `PETSc SNES documentation
                 <https://petsc4py.readthedocs.io/en/stable/manual/snes>`_.
                 Options on other objects (matrices, vectors) should be
                 set explicitly by the user.
