@@ -12,8 +12,7 @@ import numpy as np
 import numpy.typing as npt
 
 import basix
-import ufl
-import ufl.finiteelement
+import basix.ufl
 from dolfinx import cpp as _cpp
 
 
@@ -330,7 +329,7 @@ class FiniteElement:
 
 def finiteelement(
     cell_type: _cpp.mesh.CellType,
-    ufl_e: ufl.finiteelement.AbstractFiniteElement,
+    ufl_e: basix.ufl.ElementBase,
     FiniteElement_dtype: np.dtype,
 ) -> FiniteElement:
     """Create a DOLFINx element from a basix.ufl element.
