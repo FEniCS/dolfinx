@@ -87,7 +87,7 @@ def locate_dofs_topological(
     try:
         return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)  # type: ignore
     except AttributeError:
-        _V = [space._cpp_object for space in V]
+        _V = [space._cpp_object for space in V]  # type: ignore
         return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
 
 

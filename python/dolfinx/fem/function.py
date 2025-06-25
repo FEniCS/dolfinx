@@ -617,9 +617,9 @@ def functionspace(
 
     # Initialize the cpp.FunctionSpace
     try:
-        cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, element._cpp_object, cpp_dofmap)
+        cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, element._cpp_object, cpp_dofmap)  # type: ignore
     except TypeError:
-        cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, element._cpp_object, cpp_dofmap)
+        cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, element._cpp_object, cpp_dofmap)  # type: ignore
 
     return FunctionSpace(mesh, ufl_e, cppV)
 
@@ -633,7 +633,7 @@ class FunctionSpace(ufl.FunctionSpace):
     def __init__(
         self,
         mesh: Mesh,
-        element: ufl.FiniteElementBase,
+        element: ufl.finiteelement.AbstractFiniteElement,
         cppV: typing.Union[_cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64],
     ):
         """Create a finite element function space.
