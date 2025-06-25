@@ -863,15 +863,15 @@ class LinearProblem:
         except AttributeError:
             comm = self.u[0].function_space.mesh.comm
 
-        self._solver = PETSc.KSP().create(comm)
-        self._solver.setOperators(self.A, self.P_mat)
+        self.solver = PETSc.KSP().create(comm)
+        self.solver.setOperators(self.A, self.P_mat)
 
         # Give PETSc objects a unique prefix
         problem_prefix = f"dolfinx_linearproblem_{id(self)}"
-        self._solver.setOptionsPrefix(problem_prefix)
-        self._A.setOptionsPrefix(f"{problem_prefix}_A")
-        self._b.setOptionsPrefix(f"{problem_prefix}_b")
-        self._x.setOptionsPrefix(f"{problem_prefix}_x")
+        self.solver.setOptionsPrefix(problem_prefix)
+        self.A.setOptionsPrefix(f"{problem_prefix}_A")
+        self.b.setOptionsPrefix(f"{problem_prefix}_b")
+        self.x.setOptionsPrefix(f"{problem_prefix}_x")
         if self.P_mat is not None:
             self.P_mat.setOptionsPrefix(f"{problem_prefix}_P_mat")
 
@@ -884,7 +884,7 @@ class LinearProblem:
         opts.prefixPop()
 
         # Set options on KSP only
-        self._solver.setFromOptions()
+        self.solver.setFromOptions()
 
     def __del__(self):
         self._solver.destroy()
