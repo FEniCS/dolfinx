@@ -21,9 +21,6 @@ jobs:
 
     name: Rocky build and test
 
-    env:
-      LD_LIBRARY_PATH: /usr/local/lib
-
     steps:
       - uses: actions/checkout@v4
 
