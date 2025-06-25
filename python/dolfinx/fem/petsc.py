@@ -901,10 +901,10 @@ class LinearProblem:
         self._A.assemble()
 
         # Assemble preconditioner
-        if self._P is not None:
-            self._P.zeroEntries()
-            assemble_matrix(self._P, self._preconditioner, bcs=self.bcs)
-            self._P.assemble()
+        if self.preconditioner is not None:
+            self._P_mat.zeroEntries()
+            assemble_matrix(self._P_mat, self._preconditioner, bcs=self.bcs)
+            self._P_mat.assemble()
 
         # Assemble rhs
         if self._b.getType() == PETSc.Vec.Type.NEST:
