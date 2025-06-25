@@ -330,7 +330,7 @@ class FiniteElement:
 
 def finiteelement(
     cell_type: _cpp.mesh.CellType,
-    ufl_e: ufl.finiteelement,
+    ufl_e: ufl.finiteelement.AbstractFiniteElement,
     FiniteElement_dtype: np.dtype,
 ) -> FiniteElement:
     """Create a DOLFINx element from a basix.ufl element.
