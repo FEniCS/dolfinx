@@ -604,7 +604,7 @@ def functionspace(
         ufl_e = element  # type: ignore
 
     # Check that element and mesh cell types match
-    if (domain := mesh.ufl_domain() is None) or ufl_e.cell != domain.ufl_cell():
+    if ((domain := mesh.ufl_domain()) is None) or ufl_e.cell != domain.ufl_cell():
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
 
     # Create DOLFINx objects
