@@ -863,7 +863,7 @@ class LinearProblem:
         except AttributeError:
             comm = self.u[0].function_space.mesh.comm
 
-        self.solver = PETSc.KSP().create(comm)
+        self._solver = PETSc.KSP().create(comm)
         self.solver.setOperators(self.A, self.P_mat)
 
         # Give PETSc objects a unique prefix
