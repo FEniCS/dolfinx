@@ -1381,7 +1381,7 @@ class NonlinearProblem:
                 opts[k] = v
 
             self.solver.setFromOptions()
-            
+
             # Tidy up global options
             for k in petsc_options.keys():
                 del opts[k]
