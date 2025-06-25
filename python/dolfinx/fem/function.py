@@ -613,10 +613,10 @@ def functionspace(
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
 
     # Create DOLFINx objects
-    element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)
+    element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)  # type: ignore
     cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, element._cpp_object)  # type: ignore
 
-    assert np.issubdtype(mesh.geometry.x.dtype, element.dtype), (
+    assert np.issubdtype(mesh.geometry.x.dtype, element.dtype), (  # type: ignore
         "Mesh and element dtype are not compatible."
     )
 
