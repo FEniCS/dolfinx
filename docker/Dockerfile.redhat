@@ -42,6 +42,11 @@ RUN dnf -y update && \
     dnf -y clean all && \
     rm -rf /var/cache
 
+# Broaden default minimal dynamic library path lookup to /usr/local/lib (PETSc
+# issue #1154) and /usr/local/lib64
+RUN echo "/usr/local/lib/" > /etc/ld.so.conf.d/usr-local-lib.conf && \
+    echo "/usr/local/lib64" > /etc/ld.so.conf.d/usr-local-lib64.conf
+
 # Build MPICH (see https://github.com/pmodels/mpich/issues/5811)
 RUN curl -L -O https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
     tar -xf mpich-${MPICH_VERSION}.tar.gz && \
@@ -80,7 +85,8 @@ RUN git clone -b v${PETSC_VERSION}  https://gitlab.com/petsc/petsc.git && \
     make install && \
     cd src/binding/petsc4py && \
     PETSC_DIR=/usr/local python3 -m pip install --no-cache-dir . && \
-    rm -rf /tmp/*
+    rm -rf /tmp/* && \
+    ldconfig
 
 ENV PETSC_DIR=/usr/local
 
