@@ -3,12 +3,12 @@
 # interface.
 #
 # docker run -ti -v docker.io/fenicsproject/test-env:current-redhat
-FROM rockylinux/rockylinux:9
+FROM rockylinux/rockylinux:10
 
 ARG BUILD_NP=4
 
 ARG HDF5_VERSION=1.14.6
-ARG PETSC_VERSION=3.23.1
+ARG PETSC_VERSION=3.23.2
 ARG MPICH_VERSION=4.2.3
 
 WORKDIR /tmp
