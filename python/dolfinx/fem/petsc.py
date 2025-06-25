@@ -769,22 +769,23 @@ class LinearProblem:
         """Initialize solver for a linear variational problem.
 
         Args:
-            a: Bilinear UFL form or a sequence of sequence of bilinear
-                forms, the left hand side of the variational problem.
-            L: Linear UFL form or a sequence of linear forms, the right
-                hand side of the variational problem.
-            bcs: Sequence of Dirichlet boundary conditions.
+            a: Bilinear UFL form or a nested sequence of bilinear
+                forms, the left-hand side of the variational problem.
+            L: Linear UFL form or a sequence of linear forms, the
+                right-hand side of the variational problem.
+            bcs: Sequence of Dirichlet boundary conditions to apply to
+                 the variational problem and the preconditioner matrix.
             u: Solution function. It is created if not provided.
             P: Bilinear UFL form or a sequence of sequence of bilinear
                 forms, used as a preconditioner.
             kind: The PETSc matrix and vector type. See
                 :func:`create_matrix` for options.
-            petsc_options: Options that are set on the underlying
-                PETSc KSP only. For available choices for the
-                'petsc_options' kwarg, see the `PETSc KSP documentation
+            petsc_options: Options set on the underlying PETSc KSP only.
+                For available choices for the 'petsc_options' kwarg,
+                see the `PETSc KSP documentation
                 <https://petsc4py.readthedocs.io/en/stable/manual/ksp/>`_.
                 Options on other objects (matrices, vectors) should be
-                set expicitly by the user.
+                set explicitly by the user.
             form_compiler_options: Options used in FFCx compilation of
                 all forms. Run ``ffcx --help`` at the commandline to see
                 all available options.
@@ -883,9 +884,9 @@ class LinearProblem:
             for k, v in petsc_options.items():
                 opts[k] = v
 
-            # Set options on KSP only
             self.solver.setFromOptions()
 
+            # Tidy up global options
             for k in petsc_options.keys():
                 del opts[k]
 
@@ -1081,9 +1082,9 @@ def assemble_residual(
     bcs: typing.Iterable[DirichletBC],
     _snes: PETSc.SNES,  # type: ignore
     x: PETSc.Vec,  # type: ignore
-    F: PETSc.Vec,  # type: ignore
+    b: PETSc.Vec,  # type: ignore
 ):
-    """Assemble the residual into the vector `F`.
+    """Assemble the residual into the vector `b`.
 
     A function conforming to the interface expected by SNES.setResidual can
     be created by fixing the first four arguments:
@@ -1096,10 +1097,10 @@ def assemble_residual(
         residual: Form of the residual. It can be a sequence of forms.
         jacobian: Form of the Jacobian. It can be a nested sequence of
             forms.
-        bcs: List of Dirichlet boundary conditions.
+        bcs: List of Dirichlet boundary conditions to lift the residual.
         _snes: The solver instance.
         x: The vector containing the point to evaluate the residual at.
-        F: Vector to assemble the residual into.
+        b: Vector to assemble the residual into.
     """
     # Update input vector before assigning
     _ghostUpdate(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
@@ -1108,30 +1109,30 @@ def assemble_residual(
     assign(x, u)
 
     # Assemble the residual
-    _zero_vector(F)
+    _zero_vector(b)
     try:
         # Single form and nest assembly
-        assemble_vector(F, residual)
+        assemble_vector(b, residual)
     except TypeError:
         # Block assembly
-        _assign_block_data(residual, F)  # type: ignore
-        assemble_vector(F, residual)  # type: ignore
+        _assign_block_data(residual, b)  # type: ignore
+        assemble_vector(b, residual)  # type: ignore
 
     # Lift vector
     try:
         # Nest and blocked lifting
         bcs1 = _bcs_by_block(_extract_spaces(jacobian, 1), bcs)  # type: ignore
         _assign_block_data(residual, x)  # type: ignore
-        apply_lifting(F, jacobian, bcs=bcs1, x0=x, alpha=-1.0)  # type: ignore
-        _ghostUpdate(F, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
+        apply_lifting(b, jacobian, bcs=bcs1, x0=x, alpha=-1.0)  # type: ignore
+        _ghostUpdate(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
         bcs0 = _bcs_by_block(_extract_spaces(residual), bcs)  # type: ignore
-        set_bc(F, bcs0, x0=x, alpha=-1.0)
+        set_bc(b, bcs0, x0=x, alpha=-1.0)
     except RuntimeError:
         # Single form lifting
-        apply_lifting(F, [jacobian], bcs=[bcs], x0=[x], alpha=-1.0)  # type: ignore
-        _ghostUpdate(F, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
-        set_bc(F, bcs, x0=x, alpha=-1.0)
-    _ghostUpdate(F, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
+        apply_lifting(b, [jacobian], bcs=[bcs], x0=[x], alpha=-1.0)  # type: ignore
+        _ghostUpdate(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
+        set_bc(b, bcs, x0=x, alpha=-1.0)
+    _ghostUpdate(b, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
 
 
 def assemble_jacobian(
@@ -1144,7 +1145,7 @@ def assemble_jacobian(
     J: PETSc.Mat,  # type: ignore
     P: PETSc.Mat,  # type: ignore
 ):
-    """Assemble the Jacobian matrix and preconditioner.
+    """Assemble the Jacobian and preconditioner matrices.
 
     A function conforming to the interface expected by SNES.setJacobian can
     be created by fixing the first four arguments:
@@ -1154,14 +1155,15 @@ def assemble_jacobian(
 
     Args:
         u: Function tied to the solution vector within the residual and
-            jacobian
-        jacobian: Form of the Jacobian
-        preconditioner: Form of the preconditioner
-        bcs: List of Dirichlet boundary conditions
-        _snes: The solver instance
-        x: The vector containing the point to evaluate at
-        J: Matrix to assemble the Jacobian into
-        P: Matrix to assemble the preconditioner into
+            jacobian.
+        jacobian: Compiled form of the Jacobian.
+        preconditioner: Compiled form of the preconditioner.
+        bcs: List of Dirichlet boundary conditions to apply to the Jacobian
+             and preconditioner matrices.
+        _snes: The solver instance.
+        x: The vector containing the point to evaluate at.
+        J: Matrix to assemble the Jacobian into.
+        P: Matrix to assemble the preconditioner into.
     """
     # Copy existing soultion into the function used in the residual and
     # Jacobian
@@ -1272,11 +1274,12 @@ class NonlinearProblem:
             NewtonSolver has been renamed NewtonSolverNonlinearProblem.
 
         Args:
-            F: UFL form(s) of residual :math:`F_i`.
-            u: Function used to define the residual and Jacobian.
+            F: UFL form(s) representing the residual :math:`F_i`.
+            u: Function(s) used to define the residual and Jacobian.
             bcs: Dirichlet boundary conditions.
             J: UFL form(s) representing the Jacobian
-                :math:`J_ij = dF_i/du_j`.
+                :math:`J_ij = dF_i/du_j`. If not passed, derived
+                automatically.
             P: UFL form(s) representing the preconditioner.
             kind: The PETSc matrix type(s) for the Jacobian and
                 preconditioner (``MatType``).
@@ -1378,7 +1381,8 @@ class NonlinearProblem:
                 opts[k] = v
 
             self.solver.setFromOptions()
-
+            
+            # Tidy up global options
             for k in petsc_options.keys():
                 del opts[k]
 
@@ -1487,7 +1491,8 @@ class NonlinearProblem:
         """Solution function.
 
         Note:
-            The Function does not share memory with the vector `x`.
+            The Function does not share memory with the solution
+            vector `x`.
         """
         return self._u
 
