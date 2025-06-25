@@ -784,7 +784,7 @@ class LinearProblem:
                 'petsc_options' kwarg, see the `PETSc documentation
                 <https://petsc4py.readthedocs.io/en/stable/manual/ksp/>`_.
                 Options on other objects (matrices, vectors) should be
-                applied by user.
+                set expicitly by the user.
             form_compiler_options: Options used in FFCx compilation of
                 all forms. Run ``ffcx --help`` at the commandline to see
                 all available options.
@@ -1229,12 +1229,12 @@ class NonlinearProblem:
 
         By default, the underlying SNES solver uses PETSc's default
         options. To use the robust combination of LU via MUMPS with
-        a basic linesearch, pass:
+        a backtracking linesearch, pass:
 
             petsc_options = {"ksp_type": "preonly",
                              "pc_type": "lu",
                              "pc_factor_mat_solver_type": "mumps",
-                             "snes_linesearch_type": "basic",
+                             "snes_linesearch_type": "bt",
             }
 
         Note: The deprecated version of this class for use with
@@ -1259,11 +1259,11 @@ class NonlinearProblem:
                 available options. Takes priority over all other option
                 values.
             petsc_options: Options that are set on the underlying
-                PETSc SNES only. For available choices for the
+                PETSc SNES object only. For available choices for the
                 'petsc_options' kwarg, see the `PETSc documentation
-                <https://petsc4py.readthedocs.io/en/stable/manual/ksp/>`_.
+                <https://petsc4py.readthedocs.io/en/stable/manual/snes>`_.
                 Options on other objects (matrices, vectors) should be
-                applied by user.
+                set explicitly by the user.
             entity_maps: If any trial functions, test functions, or
                 coefficients in the form are not defined over the same mesh
                 as the integration domain, ``entity_maps`` must be
@@ -1357,8 +1357,10 @@ class NonlinearProblem:
         instance.
 
         Note:
-            The user is responsible for asserting convergence e.g. `assert
-            converged_reason > 0`.
+            The user is responsible for asserting convergence of the SNES
+            solver e.g. `assert converged_reason > 0`. Alternatively, pass
+            `"snes_error_if_not_converged": True` and
+            `"ksp_error_if_not_converged" : True` to `petsc_options`.
 
         Returns:
             The solution, convergence reason and number of iterations.
@@ -1420,6 +1422,10 @@ class NonlinearProblem:
     @property
     def x(self) -> PETSc.Vec:
         """Solution vector.
+
+        Note:
+            This is not the same memory underlying the Function `u` passed
+            in the constructor. 
 
         Note:
             The vector has an options prefix set.
