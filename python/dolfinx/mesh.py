@@ -306,7 +306,7 @@ class Mesh:
         """
         return ufl.Cell(self.topology.cell_name())
 
-    def ufl_domain(self) -> ufl.Mesh:
+    def ufl_domain(self) -> typing.Optional[ufl.Mesh]:
         """Return the ufl domain corresponding to the mesh.
 
         Returns:
@@ -641,7 +641,7 @@ def create_mesh(
                 # e is a CoordinateElement
                 cmap = e
                 domain = None
-                dtype = cmap.dtype
+                dtype = cmap.dtype  # type: ignore
 
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")

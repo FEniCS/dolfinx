@@ -142,7 +142,7 @@ class Expression:
         # Attempt to deduce dtype
         if dtype is None:
             try:
-                dtype = e.dtype
+                dtype = e.dtype  # type: ignore
             except AttributeError:
                 dtype = default_scalar_type
 
@@ -580,7 +580,9 @@ class ElementMetaData(typing.NamedTuple):
 
 def functionspace(
     mesh: Mesh,
-    element: typing.Union[ufl.FiniteElementBase, ElementMetaData, tuple[str, int, tuple, bool]],
+    element: typing.Union[
+        ufl.finiteelement.AbstractFiniteElement, ElementMetaData, tuple[str, int, tuple, bool]
+    ],
 ) -> FunctionSpace:
     """Create a finite element function space.
 
