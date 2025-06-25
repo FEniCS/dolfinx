@@ -1425,7 +1425,7 @@ class NonlinearProblem:
 
         Note:
             This is not the same memory underlying the Function `u` passed
-            in the constructor. 
+            in the constructor.
 
         Note:
             The vector has an options prefix set.
