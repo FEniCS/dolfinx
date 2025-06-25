@@ -863,7 +863,7 @@ class LinearProblem:
         except AttributeError:
             comm = self.u[0].function_space.mesh.comm
 
-        self.solver = PETSc.KSP().create(comm)
+        self._solver = PETSc.KSP().create(comm)
         self.solver.setOperators(self.A, self.P_mat)
 
         # Give PETSc objects a unique prefix
@@ -903,7 +903,7 @@ class LinearProblem:
         # Assemble preconditioner
         if self.P_mat is not None:
             self.P_mat.zeroEntries()
-            assemble_matrix(self.P_mat, self._preconditioner, bcs=self.bcs)
+            assemble_matrix(self.P_mat, self.preconditioner, bcs=self.bcs)
             self.P_mat.assemble()
 
         # Assemble rhs
@@ -944,13 +944,18 @@ class LinearProblem:
 
     @property
     def L(self) -> typing.Union[Form, Iterable[Form]]:
-        """The compiled linear form."""
+        """The compiled linear form representing the left-hand side."""
         return self._L
 
     @property
     def a(self) -> typing.Union[Form, Iterable[Form]]:
-        """The compiled bilinear form."""
+        """The compiled bilinear form representing the right-hand side."""
         return self._a
+
+    @property
+    def preconditioner(self) -> typing.Union[Form, Iterable[Form]]:
+        """The compiled bilinear form representing the preconditioner."""
+        return self._preconditioner
 
     @property
     def A(self) -> PETSc.Mat:
@@ -968,7 +973,7 @@ class LinearProblem:
         Note:
             The matrix has an options prefix set.
         """
-        return self._A
+        return self._P_mat
 
     @property
     def b(self) -> PETSc.Vec:
