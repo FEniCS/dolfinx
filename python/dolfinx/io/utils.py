@@ -199,7 +199,8 @@ class XDMFFile(_cpp.io.XDMFFile):
                 cell_shape.name,
                 2,
             )
-            # Create a custom element that is serendipity but uses points evaluations on edges
+            # Create a custom element that is serendipity but uses points
+            # evaluations on edges
             geometry = basix.cell.geometry(s_el.basix_element.cell_type)
             topology = basix.cell.topology(s_el.basix_element.cell_type)
             e_x = [
