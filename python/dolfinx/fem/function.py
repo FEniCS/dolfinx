@@ -599,11 +599,11 @@ def functionspace(
         e = ElementMetaData(*element)  # type: ignore
         ufl_e = basix.ufl.element(
             e.family,
-            mesh.basix_cell(),
+            mesh.basix_cell(),  # type: ignore
             e.degree,
             shape=e.shape,
             symmetry=e.symmetry,
-            dtype=dtype,  # type: ignore
+            dtype=dtype,
         )
     except TypeError:
         ufl_e = element  # type: ignore
@@ -614,7 +614,7 @@ def functionspace(
 
     # Create DOLFINx objects
     element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)
-    cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, element._cpp_object)
+    cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, element._cpp_object)  # type: ignore
 
     assert np.issubdtype(mesh.geometry.x.dtype, element.dtype), (
         "Mesh and element dtype are not compatible."

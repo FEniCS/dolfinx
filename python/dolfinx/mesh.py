@@ -653,7 +653,7 @@ def create_mesh(
         comm, cells, cmap._cpp_object, x, partitioner
     )
 
-    return Mesh(msh, domain)
+    return Mesh(msh, domain)  # type: ignore
 
 
 def create_submesh(
