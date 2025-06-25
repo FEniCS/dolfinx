@@ -596,9 +596,14 @@ def functionspace(
     # Create UFL element
     dtype = mesh.geometry.x.dtype
     try:
-        e = ElementMetaData(*element)
+        e = ElementMetaData(*element)  # type: ignore
         ufl_e = basix.ufl.element(
-            e.family, mesh.basix_cell(), e.degree, shape=e.shape, symmetry=e.symmetry, dtype=dtype
+            e.family,
+            mesh.basix_cell(),
+            e.degree,
+            shape=e.shape,
+            symmetry=e.symmetry,
+            dtype=dtype,  # type: ignore
         )
     except TypeError:
         ufl_e = element  # type: ignore
