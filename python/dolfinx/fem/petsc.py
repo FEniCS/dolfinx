@@ -876,15 +876,20 @@ class LinearProblem:
             self.P_mat.setOptionsPrefix(f"{problem_prefix}_P_mat")
 
         # Set options on KSP only
-        opts = PETSc.Options()
-        opts.prefixPush(problem_prefix)
         if petsc_options is not None:
+            opts = PETSc.Options()
+            opts.prefixPush(problem_prefix)
+
             for k, v in petsc_options.items():
                 opts[k] = v
-        opts.prefixPop()
 
-        # Set options on KSP only
-        self.solver.setFromOptions()
+            # Set options on KSP only
+            self.solver.setFromOptions()
+
+            for k in petsc_options.keys():
+                del opts[k]
+
+            opts.prefixPop()
 
     def __del__(self):
         self._solver.destroy()
@@ -1254,13 +1259,16 @@ class NonlinearProblem:
         options. To use the robust combination of LU via MUMPS with
         a backtracking linesearch, pass:
 
+        Example::
+
             petsc_options = {"ksp_type": "preonly",
                              "pc_type": "lu",
                              "pc_factor_mat_solver_type": "mumps",
                              "snes_linesearch_type": "bt",
             }
 
-        Note: The deprecated version of this class for use with
+        Note:
+            The deprecated version of this class for use with
             NewtonSolver has been renamed NewtonSolverNonlinearProblem.
 
         Args:
@@ -1361,19 +1369,20 @@ class NonlinearProblem:
         self.b.setOptionsPrefix(f"{problem_prefix}_b")
         self.x.setOptionsPrefix(f"{problem_prefix}_x")
 
-        opts = PETSc.Options()  # type: ignore
-        opts.prefixPush(problem_prefix)
-
         # Set options for SNES only
         if petsc_options is not None:
+            opts = PETSc.Options()  # type: ignore
+            opts.prefixPush(problem_prefix)
+
             for k, v in petsc_options.items():
                 opts[k] = v
+
             self.solver.setFromOptions()
 
             for k in petsc_options.keys():
                 del opts[k]
 
-        opts.prefixPop()
+            opts.prefixPop()
 
     def solve(self) -> tuple[PETSc.Vec, int, int]:  # type: ignore
         """Solve the problem and update the solution in the problem
