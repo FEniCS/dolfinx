@@ -954,7 +954,7 @@ class LinearProblem:
 
     @property
     def A(self) -> PETSc.Mat:
-        """Matrix operator
+        """Left-hand side matrix.
 
         Note:
             The matrix has an options prefix set.
@@ -963,7 +963,7 @@ class LinearProblem:
 
     @property
     def P_mat(self) -> PETSc.Mat:
-        """Preconditioner matrix operator
+        """Preconditioner matrix.
 
         Note:
             The matrix has an options prefix set.
@@ -972,7 +972,7 @@ class LinearProblem:
 
     @property
     def b(self) -> PETSc.Vec:
-        """Right-hand side vector
+        """Right-hand side vector.
 
         Note:
             The vector has an options prefix set.
@@ -981,7 +981,7 @@ class LinearProblem:
 
     @property
     def solver(self) -> PETSc.KSP:
-        """Linear solver object
+        """The PETSc KSP solver.
 
         Note:
             The KSP solver has an options prefix set.
