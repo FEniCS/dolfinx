@@ -10,7 +10,6 @@
 #include <array>
 #include <concepts>
 #include <dolfinx/common/math.h>
-#include <gmpxx.h>
 #include <limits>
 #include <numeric>
 #include <span>
@@ -93,7 +92,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
 
     T d1 = (dot3(a, a) - dot3(a, b)) / smax2;
     T d2 = (dot3(a, a) - dot3(a, c)) / smax2;
-    if (d1 < 0 and d2 < 0)
+    if (d1 < 0.0 and d2 < 0.0)
     {
       spdlog::info("GJK: Point A");
       return {1, 0, 0};
@@ -101,7 +100,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
 
     T d3 = (dot3(b, b) - dot3(a, b)) / smax2;
     T d4 = (dot3(b, b) - dot3(b, c)) / smax2;
-    if (d3 < 0 and d4 < 0)
+    if (d3 < 0.0 and d4 < 0.0)
     {
       spdlog::info("GJK: Point B");
       return {0, 1, 0};
@@ -109,14 +108,14 @@ std::vector<T> nearest_simplex(std::span<const T> s)
 
     T d5 = (dot3(c, c) - dot3(a, c)) / smax2;
     T d6 = (dot3(c, c) - dot3(b, c)) / smax2;
-    if (d5 < 0 and d6 < 0)
+    if (d5 < 0.0 and d6 < 0.0)
     {
       spdlog::info("GJK: Point C");
       return {0, 0, 1};
     }
 
     T vc = d4 * d1 - d1 * d3 + d3 * d2;
-    if (vc < 0 and d1 > 0 and d3 > 0)
+    if (vc < 0.0 and d1 > 0.0 and d3 > 0.0)
     {
       spdlog::info("GJK: edge AB");
       T f1 = 1.0 / (d1 + d3);
@@ -125,7 +124,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       return {mu, lm, 0};
     }
     T vb = d1 * d5 - d5 * d2 + d2 * d6;
-    if (vb < 0 and d2 > 0 and d5 > 0)
+    if (vb < 0.0 and d2 > 0.0 and d5 > 0.0)
     {
       spdlog::info("GJK: edge AC");
       T f1 = 1 / (d2 + d5);
@@ -134,7 +133,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       return {mu, 0, lm};
     }
     T va = d3 * d6 - d6 * d4 + d4 * d5;
-    if (va < 0 and d4 > 0 and d6 > 0)
+    if (va < 0.0 and d4 > 0.0 and d6 > 0.0)
     {
       spdlog::info("GJK: edge BC");
       T f1 = 1 / (d4 + d6);
@@ -172,7 +171,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
         std::span<const T, 3> sj(s.begin() + j * 3, 3);
         if (i != j)
           d[i][j] = (sii - dot3(si, sj)) / smax2;
-        if (d[i][j] > 0)
+        if (d[i][j] > 0.0)
           out = false;
       }
       if (out)
@@ -199,7 +198,8 @@ std::vector<T> nearest_simplex(std::span<const T> s)
                 + d[j1][j0] * d[j0][j2];
       v[i][1] = d[j1][j3] * d[j0][j1] - d[j0][j1] * d[j1][j0]
                 + d[j1][j0] * d[j0][j3];
-      if (v[i][0] <= 0 and v[i][1] <= 0 and d[j0][j1] >= 0 and d[j1][j0] >= 0)
+      if (v[i][0] <= 0.0 and v[i][1] <= 0.0 and d[j0][j1] >= 0.0
+          and d[j1][j0] >= 0.0)
       {
         // On an edge
         T f1 = 1 / (d[j0][j1] + d[j1][j0]);
@@ -230,25 +230,25 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       wsum = -wsum;
     }
 
-    if (w[0] < 0 and v[2][0] > 0 and v[4][0] > 0 and v[5][0] > 0)
+    if (w[0] < 0.0 and v[2][0] > 0.0 and v[4][0] > 0.0 and v[5][0] > 0.0)
     {
       T f1 = 1 / (v[2][0] + v[4][0] + v[5][0]);
       return {v[2][0] * f1, v[4][0] * f1, v[5][0] * f1, 0.0};
     }
 
-    if (w[1] < 0 and v[1][0] > 0 and v[3][0] > 0 and v[5][1] > 0)
+    if (w[1] < 0.0 and v[1][0] > 0.0 and v[3][0] > 0.0 and v[5][1] > 0.0)
     {
       T f1 = 1 / (v[1][0] + v[3][0] + v[5][1]);
       return {v[1][0] * f1, v[3][0] * f1, 0.0, v[5][1] * f1};
     }
 
-    if (w[2] < 0 and v[0][0] > 0 and v[3][1] > 0 and v[4][1] > 0)
+    if (w[2] < 0.0 and v[0][0] > 0.0 and v[3][1] > 0 and v[4][1] > 0.0)
     {
       T f1 = 1 / (v[0][0] + v[3][1] + v[4][1]);
       return {v[0][0] * f1, 0.0, v[3][1] * f1, v[4][1] * f1};
     }
 
-    if (w[3] < 0 and v[0][1] > 0 and v[1][1] > 0 and v[2][1] > 0)
+    if (w[3] < 0.0 and v[0][1] > 0.0 and v[1][1] > 0.0 and v[2][1] > 0.0)
     {
       T f1 = 1 / (v[0][1] + v[1][1] + v[2][1]);
       return {0.0, v[0][1] * f1, v[1][1] * f1, v[2][1] * f1};
@@ -281,11 +281,27 @@ std::array<T, 3> support(std::span<const T> bd, std::array<T, 3> v)
 }
 } // namespace impl_gjk
 
-#ifdef __GNU_MP__
-using U = mpf_class;
-#else
-using U = double;
-#endif
+class mydouble
+{
+public:
+  mydouble() : val(0) {}
+  mydouble(double init) : val(init) {}
+
+  mydouble operator-(mydouble w) const { return mydouble(this->val - w.val); }
+  mydouble operator*(mydouble w) const { return mydouble(this->val * w.val); }
+  mydouble operator-() const { return mydouble(-this->val); }
+  void operator+=(mydouble w) { this->val += w.val; }
+  void operator*=(mydouble w) { this->val *= w.val; }
+  void operator/=(mydouble w) { this->val /= w.val; }
+  bool operator<(mydouble w) const { return (this->val < w.val); }
+  bool operator<(double val) const { return (this->val < val); }
+  bool operator==(const mydouble w) const { return (this->val == w.val); }
+  operator double() const { return this->val; }
+
+  double val;
+};
+
+using U = mydouble;
 
 /// @brief Compute the distance between two convex bodies p and q, each
 /// defined by a set of points.
@@ -350,35 +366,24 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
     if (vw < (eps * vnorm2) or vw < eps)
       break;
 
-    if constexpr (std::is_same_v<U, double>)
-      spdlog::info("GJK: vw={}/{}", vw, eps);
-    else
-      spdlog::info("GJK: vw={}/{}", vw.get_d(), eps.get_d());
+    spdlog::info("GJK: vw={}/{}", static_cast<double>(vw),
+                 static_cast<double>(eps));
 
     // Add new vertex to simplex
     s.insert(s.end(), w.begin(), w.end());
 
     std::stringstream qw;
     for (auto sv : s)
-    {
-      if constexpr (std::is_same_v<U, double>)
-        qw << sv << ", ";
-      else
-        qw << sv.get_d() << ", ";
-    }
-    spdlog::info("s(in) = [{}]", qw.str());
+      qw << static_cast<double>(sv) << ", ";
+    spdlog::debug("s(in) = [{}]", qw.str());
 
     // Find nearest subset of simplex
     std::vector<U> lmn = impl_gjk::nearest_simplex<U>(s);
     std::stringstream lmns;
     for (auto q : lmn)
-    {
-      if constexpr (std::is_same_v<U, double>)
-        lmns << q << " ";
-      else
-        lmns << q.get_d() << " ";
-    }
-    spdlog::info("lmn = {}", lmns.str());
+      lmns << static_cast<double>(q) << " ";
+    spdlog::debug("lmn = {}", lmns.str());
+
     v = {0.0, 0.0, 0.0};
     std::vector<U> snew;
     for (std::size_t i = 0; i < lmn.size(); ++i)
@@ -397,19 +402,12 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
 
     std::stringstream st;
     for (auto q : s)
-    {
-      if constexpr (std::is_same_v<U, double>)
-        st << q << " ";
-      else
-        st << q.get_d() << " ";
-    }
-    spdlog::info("New s = {}", st.str());
-
-    if constexpr (std::is_same_v<U, double>)
-      spdlog::info("New v = [{}, {}, {}]", v[0], v[1], v[2]);
+      st << static_cast<double>(q) << " ";
+    spdlog::debug("New s = {}", st.str());
+    spdlog::debug("New v = [{}, {}, {}]", static_cast<double>(v[0]),
+                  static_cast<double>(v[1]), static_cast<double>(v[2]));
 
     U vn = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
-    //    spdlog::info("GJK: vnorm={}", vn.get_d());
 
     // 2nd exit condition - intersecting or touching
     if (vn < eps * eps)
@@ -421,10 +419,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
     throw std::runtime_error("GJK error - max iteration limit reached");
 
   std::array<T, 3> result;
-  if constexpr (std::is_same_v<U, double>)
-    result = {v[0], v[1], v[2]};
-  else
-    result = {v[0].get_d(), v[1].get_d(), v[2].get_d()};
+  result = {v[0], v[1], v[2]};
   return result;
 }
 

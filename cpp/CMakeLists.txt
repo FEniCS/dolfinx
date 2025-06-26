@@ -237,8 +237,6 @@ set_package_properties(
 # Check for MPI
 find_package(MPI 3 REQUIRED)
 
-find_package(GMP REQUIRED)
-message(STATUS "GMP LIBRARY ${GMP_LIBRARIES}")
 # ------------------------------------------------------------------------------
 # Compiler flags
 
