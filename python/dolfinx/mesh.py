@@ -1,4 +1,5 @@
-# Copyright (C) 2017-2024 Chris N. Richardson, Garth N. Wells and Jørgen S. Dokken
+# Copyright (C) 2017-2024 Chris N. Richardson, Garth N. Wells and
+# Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -81,7 +82,8 @@ class Topology:
 
         Note:
             Topology objects should usually be constructed with the
-            :func:`dolfinx.cpp.mesh.create_topology` and not this class initializer.
+            :func:`dolfinx.cpp.mesh.create_topology` and not this class
+            initializer.
         """
         self._cpp_object = topology
 
@@ -90,7 +92,8 @@ class Topology:
         return to_string(self._cpp_object.cell_type)
 
     def connectivity(self, d0: int, d1: int) -> _cpp.graph.AdjacencyList_int32:
-        """Return connectivity from entities of dimension ``d0`` to entities of dimension ``d1``.
+        """Return connectivity from entities of dimension ``d0`` to
+        entities of dimension ``d1``.
 
         Args:
             d0: Dimension of entity one is mapping from
@@ -169,7 +172,8 @@ class Topology:
         return self._cpp_object.get_facet_permutations()
 
     def index_map(self, dim: int) -> _cpp.common.IndexMap:
-        """Get the IndexMap that describes the parallel distribution of the mesh entities.
+        """Get the IndexMap that describes the parallel distribution of the
+        mesh entities.
 
         Args:
             dim: Topological dimension.
@@ -185,8 +189,27 @@ class Topology:
                 f"Call `dolfinx.mesh.Topology.create_entities({dim}) first."
             )
 
+    def index_maps(self, dim: int) -> list[_cpp.common.IndexMap]:
+        """Get the IndexMaps that describes the parallel distribution of
+           the mesh entities, for each entity type of the dimension.
+
+        Args:
+            dim: Topological dimension.
+
+        Returns:
+            List of IndexMaps for the entities of dimension ``dim``.
+        """
+        if (imaps := self._cpp_object.index_maps(dim)) is not None:
+            return imaps
+        else:
+            raise RuntimeError(
+                f"Entities of dimension {dim} have not been computed."
+                f"Call `dolfinx.mesh.Topology.create_entities({dim}) first."
+            )
+
     def interprocess_facets(self) -> npt.NDArray[np.int32]:
-        """List of inter-process facets, if facet topology has been computed."""
+        """List of inter-process facets, if facet topology has been
+        computed."""
         return self._cpp_object.interprocess_facets()
 
     @property
@@ -233,11 +256,13 @@ class Geometry:
 
     @property
     def dofmap(self) -> npt.NDArray[np.int32]:
-        """Dofmap for the geometry, shape ``(num_cells, dofs_per_cell)``."""
+        """Dofmap for the geometry, shape
+        ``(num_cells, dofs_per_cell)``."""
         return self._cpp_object.dofmap
 
     def index_map(self) -> _IndexMap:
-        """Index map describing the layout of the geometry points (nodes)."""
+        """Index map describing the layout of the geometry points
+        (nodes)."""
         return self._cpp_object.index_map()
 
     @property
@@ -340,7 +365,8 @@ class Mesh:
 
 
 class MeshTags:
-    """Mesh tags associate data (markers) with a subset of mesh entities of a given dimension."""
+    """Mesh tags associate data (markers) with a subset of mesh entities of
+    a given dimension."""
 
     def __init__(self, meshtags):
         """Initialize tags from a C++ MeshTags object.
@@ -408,7 +434,8 @@ class MeshTags:
 def compute_incident_entities(
     topology: Topology, entities: npt.NDArray[np.int32], d0: int, d1: int
 ) -> npt.NDArray[np.int32]:
-    """Compute all entities of ``d1`` connected to ``entities`` of dimension ``d0``.
+    """Compute all entities of ``d1`` connected to ``entities`` of
+    dimension ``d0``.
 
     Args:
         topology: The topology.
@@ -486,7 +513,8 @@ def transfer_meshtag(
     parent_cell: npt.NDArray[np.int32],
     parent_facet: typing.Optional[npt.NDArray[np.int8]] = None,
 ) -> MeshTags:
-    """Generate cell mesh tags on a refined mesh from the mesh tags on the coarse parent mesh.
+    """Generate cell mesh tags on a refined mesh from the mesh tags on the
+    coarse parent mesh.
 
     Args:
         meshtag: Mesh tags on the coarse, parent mesh.
@@ -576,12 +604,14 @@ def create_mesh(
 
     Args:
         comm: MPI communicator to define the mesh on.
-        cells: Cells of the mesh. ``cells[i]`` are the 'nodes' of cell ``i``.
-        x: Mesh geometry ('node' coordinates), with shape ``(num_nodes, gdim)``.
+            cells: Cells of the mesh. ``cells[i]`` are the 'nodes' of cell
+            ``i``.
+        x: Mesh geometry ('node' coordinates), with shape
+            ``(num_nodes, gdim)``.
         e: UFL mesh. The mesh scalar type is determined by the scalar
             type of ``e``.
-        partitioner: Function that determines the parallel distribution
-            of cells across MPI ranks.
+        partitioner: Function that determines the parallel distribution of
+            cells across MPI ranks.
 
     Note:
         If required, the coordinates ``x`` will be cast to the same
@@ -1024,7 +1054,8 @@ def entities_to_geometry(
 
 
 def exterior_facet_indices(topology: Topology) -> npt.NDArray[np.int32]:
-    """Compute the indices of all exterior facets that are owned by the caller.
+    """Compute the indices of all exterior facets that are owned by the
+    caller.
 
     An exterior facet (co-dimension 1) is one that is connected globally
     to only one cell of co-dimension 0).
@@ -1059,7 +1090,8 @@ def create_geometry(
             row in the point coordinates ``x`` of each local geometry
             node. ``shape=(num_cells, num_dofs_per_cell)``.
         element: Element that describes the cell geometry map.
-        x: The point coordinates. The shape is ``(num_points, geometric_dimension).``
+        x: The point coordinates. The shape is
+            ``(num_points, geometric_dimension).``
         input_global_indices: The 'global' input index of each point,
             commonly from a mesh input file.
     """

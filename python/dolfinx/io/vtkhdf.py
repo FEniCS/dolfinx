@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Chris Richardson
+# Copyright (C) 2024-2025 Chris Richardson and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -19,18 +19,22 @@ from dolfinx.mesh import Mesh
 
 
 def read_mesh(
-    comm: _MPI.Comm, filename: typing.Union[str, Path], dtype: npt.DTypeLike = np.float64
+    comm: _MPI.Comm,
+    filename: typing.Union[str, Path],
+    dtype: npt.DTypeLike = np.float64,
+    gdim: int = 3,
 ):
     """Read a mesh from a VTKHDF format file
     Args:
-           comm: An MPI communicator.
-           filename: File to read from.
-           dtype: Scalar type of mesh geometry (need not match dtype in file)
+        comm: An MPI communicator.
+        filename: File to read from.
+        dtype: Scalar type of mesh geometry (need not match dtype in file)
+        gdim: Geometric dimension of the mesh.
     """
     if dtype == np.float64:
-        mesh_cpp = read_vtkhdf_mesh_float64(comm, filename)
+        mesh_cpp = read_vtkhdf_mesh_float64(comm, filename, gdim)
     elif dtype == np.float32:
-        mesh_cpp = read_vtkhdf_mesh_float32(comm, filename)
+        mesh_cpp = read_vtkhdf_mesh_float32(comm, filename, gdim)
 
     cell_types = mesh_cpp.topology.entity_types[-1]
     if len(cell_types) > 1:
@@ -38,12 +42,13 @@ def read_mesh(
         domain = None
     else:
         cell_degree = mesh_cpp.geometry.cmap.degree
+        variant = mesh_cpp.geometry.cmap.variant
         domain = ufl.Mesh(
             basix.ufl.element(
                 "Lagrange",
                 cell_types[0].name,
                 cell_degree,
-                basix.LagrangeVariant.unset,
+                variant,
                 shape=(mesh_cpp.geometry.dim,),
             )
         )
@@ -53,7 +58,7 @@ def read_mesh(
 def write_mesh(filename: typing.Union[str, Path], mesh: Mesh):
     """Write a mesh to file in VTKHDF format
     Args:
-           filename: File to write to.
-           mesh: Mesh.
+        filename: File to write to.
+        mesh: Mesh.
     """
     write_vtkhdf_mesh(filename, mesh._cpp_object)

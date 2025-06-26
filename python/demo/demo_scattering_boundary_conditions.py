@@ -13,7 +13,7 @@
 #     name: python3-complex
 # ---
 
-# # Electromagnetic scattering from a wire with scattering boundary conditions
+# # Electromagnetic scattering from a wire with scattering boundary conditions # noqa
 #
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
@@ -163,8 +163,8 @@ def generate_mesh_wire(
 # being hit normally by a TM-polarized electromagnetic wave.
 #
 # The formula are taken from:
-# Milton Kerker, "The Scattering of Light and Other Electromagnetic Radiation",
-# Chapter 6, Elsevier, 1969.
+# Milton Kerker, "The Scattering of Light and Other Electromagnetic
+# Radiation", Chapter 6, Elsevier, 1969.
 #
 # ## Implementation
 # First of all, let's define the parameters of the problem:
@@ -562,8 +562,8 @@ eps.x.scatter_forward()
 # & \int_{\Omega}-\nabla \cdot(\nabla\times\mathbf{E}_s \times
 # \bar{\mathbf{v}})-\nabla \times \mathbf{E}_s \cdot \nabla
 # \times\bar{\mathbf{v}}+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s
-# \cdot \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
-# \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{dx} \\
+# \cdot \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b
+# \right) \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{dx} \\
 # +&\int_{\partial \Omega}
 # (\mathbf{n} \times \nabla \times \mathbf{E}_s) \cdot \bar{\mathbf{v}}
 # +\left(j n_bk_{0}+\frac{1}{2r}\right) (\mathbf{n} \times \mathbf{E}_s
@@ -591,10 +591,11 @@ eps.x.scatter_forward()
 #
 # Cancelling $-(\nabla\times\mathbf{E}_s \times \bar{\mathbf{V}})
 # \cdot\mathbf{n}$  and $\mathbf{n} \times \nabla \times \mathbf{E}_s
-# \cdot \bar{\mathbf{V}}$ and rearrange $\left((\mathbf{n} \times \mathbf{E}_s)
-# \times \mathbf{n}\right) \cdot \bar{\mathbf{v}}$ to $ (\mathbf{E}_s \times\mathbf{n})
-# \cdot (\bar{\mathbf{v}} \times \mathbf{n})$ using the triple product rule $\mathbf{A}
-# \cdot(\mathbf{B} \times \mathbf{C})=\mathbf{B} \cdot(\mathbf{C} \times
+# \cdot \bar{\mathbf{V}}$ and rearrange $\left((\mathbf{n} \times
+# \mathbf{E}_s) \times \mathbf{n}\right) \cdot \bar{\mathbf{v}}$ to
+# $(\mathbf{E}_s \times\mathbf{n}) \cdot (\bar{\mathbf{v}} \times
+# \mathbf{n})$ using the triple product rule $\mathbf{A} \cdot(\mathbf{B}
+# \times \mathbf{C})=\mathbf{B} \cdot(\mathbf{C} \times
 # \mathbf{A})=\mathbf{C} \cdot(\mathbf{A} \times \mathbf{B})$, we get:
 #
 # $$
@@ -604,8 +605,8 @@ eps.x.scatter_forward()
 # \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
 # \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x \\
 # +&\int_{\partial \Omega}
-# \left(j n_bk_{0}+\frac{1}{2r}\right)( \mathbf{n} \times \mathbf{E}_s \times
-# \mathbf{n}) \cdot \bar{\mathbf{v}} ~\mathrm{d} s = 0.
+# \left(j n_bk_{0}+\frac{1}{2r}\right)( \mathbf{n} \times \mathbf{E}_s
+# \times \mathbf{n}) \cdot \bar{\mathbf{v}} ~\mathrm{d} s = 0.
 # \end{align}
 # $$
 #
@@ -640,6 +641,7 @@ Esh = problem.solve()
 gdim = mesh_data.mesh.geometry.dim
 V_dg = fem.functionspace(mesh_data.mesh, ("Discontinuous Lagrange", degree, (gdim,)))
 Esh_dg = fem.Function(V_dg)
+assert isinstance(Esh, fem.Function)
 Esh_dg.interpolate(Esh)
 
 with io.VTXWriter(mesh_data.mesh.comm, "Esh.bp", Esh_dg) as vtx:

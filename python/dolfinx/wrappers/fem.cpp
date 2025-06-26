@@ -51,6 +51,7 @@
 #include <utility>
 
 namespace nb = nanobind;
+namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
 namespace
 {
@@ -127,8 +128,9 @@ void declare_function_space(nb::module_& m, std::string type)
             nb::arg("elements"), "Mixed-element constructor.")
         .def(
             "__init__",
-            [](dolfinx::fem::FiniteElement<T>* self, mesh::CellType cell_type,
-               nb::ndarray<T, nb::ndim<2>, nb::numpy> points,
+            [](dolfinx::fem::FiniteElement<T>* self,
+               dolfinx::mesh::CellType cell_type,
+               nb::ndarray<T, nb::ndim<2>, nb::c_contig> points,
                std::vector<std::size_t> block_shape, bool symmetry)
             {
               std::span<T> pdata(points.data(), points.size());
@@ -159,8 +161,7 @@ void declare_function_space(nb::module_& m, std::string type)
              [](const dolfinx::fem::FiniteElement<T>& self)
              {
                auto [X, shape] = self.interpolation_points();
-               return dolfinx_wrappers::as_nbarray(std::move(X), shape.size(),
-                                                   shape.data());
+               return dolfinx_wrappers::as_nbarray(std::move(X), shape);
              })
         .def_prop_ro("interpolation_ident",
                      &dolfinx::fem::FiniteElement<T>::interpolation_ident)
@@ -481,7 +482,8 @@ void declare_objects(nb::module_& m, const std::string& type)
             std::array<std::size_t, 2> shape{value_size, x.size() / 3};
             std::vector<T> values(shape[0] * shape[1]);
             std::function<void(T*, int, int, const U*, void*)> f
-                = reinterpret_cast<void (*)(T*, int, int, const U*, void*)>(addr);
+                = reinterpret_cast<void (*)(T*, int, int, const U*, void*)>(
+                    addr);
             f(values.data(), shape[1], shape[0], x.data(), nullptr);
             dolfinx::fem::interpolate(self, std::span<const T>(values), shape,
                                       std::span(cells.data(), cells.size()));
@@ -580,8 +582,7 @@ void declare_objects(nb::module_& m, const std::string& type)
            [](const dolfinx::fem::Expression<T, U>& self)
            {
              auto [X, shape] = self.X();
-             return dolfinx_wrappers::as_nbarray(std::move(X), shape.size(),
-                                                 shape.data());
+             return dolfinx_wrappers::as_nbarray(std::move(X), shape);
            })
       .def_prop_ro("dtype", [](const dolfinx::fem::Expression<T, U>&)
                    { return dolfinx_wrappers::numpy_dtype<T>(); })
@@ -733,6 +734,7 @@ void declare_form(nb::module_& m, std::string type)
       .def_prop_ro("dtype", [](const dolfinx::fem::Form<T, U>&)
                    { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def_prop_ro("coefficients", &dolfinx::fem::Form<T, U>::coefficients)
+      .def_prop_ro("constants", &dolfinx::fem::Form<T, U>::constants)
       .def_prop_ro("rank", &dolfinx::fem::Form<T, U>::rank)
       .def_prop_ro("mesh", &dolfinx::fem::Form<T, U>::mesh)
       .def_prop_ro("function_spaces",
@@ -1255,7 +1257,7 @@ void fem(nb::module_& m)
           },
           nb::rv_policy::reference_internal);
 
-  nb::enum_<dolfinx::fem::IntegralType>(m, "IntegralType")
+  nb::enum_<dolfinx::fem::IntegralType>(m, "_IntegralType")
       .value("cell", dolfinx::fem::IntegralType::cell, "cell integral")
       .value("exterior_facet", dolfinx::fem::IntegralType::exterior_facet,
              "exterior facet integral")

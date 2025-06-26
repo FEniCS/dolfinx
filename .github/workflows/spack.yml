@@ -62,7 +62,7 @@ jobs:
           . ./spack/share/spack/setup-env.sh
           spack env create cpp-main
           spack env activate cpp-main
-          spack add fenics-dolfinx@main+adios2
+          spack add fenics-dolfinx@main+petsc+adios2
           spack install
       - name: Get DOLFINx code (to access test files)
         uses: actions/checkout@v4
@@ -73,7 +73,7 @@ jobs:
           . ./spack/share/spack/setup-env.sh
           spack env create cpp-main-test
           spack env activate cpp-main-test
-          spack add fenics-dolfinx@main+adios2 cmake py-fenics-ffcx@main
+          spack add fenics-dolfinx@main+petsc+adios2 cmake py-fenics-ffcx@main
           spack install
           cd dolfinx-main/cpp/
           cd demo/poisson
@@ -87,7 +87,7 @@ jobs:
           . ./spack/share/spack/setup-env.sh
           spack env create cpp-release
           spack env activate cpp-release
-          spack add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+adios2
+          spack add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+petsc+adios2
           spack install
       - name: Get DOLFINx release code (to access test files)
         uses: actions/checkout@v4
@@ -99,7 +99,7 @@ jobs:
           . ./spack/share/spack/setup-env.sh
           spack env create cpp-release-test
           spack env activate cpp-release-test
-          spack add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+adios2 cmake py-fenics-ffcx
+          spack add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+petsc+adios2 cmake py-fenics-ffcx
           spack install
           cd dolfinx-release/cpp/
           cd demo/poisson

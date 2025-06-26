@@ -110,8 +110,8 @@ dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, elements_cpp)
 V_cpp = _cpp.fem.FunctionSpace_float64(mesh, elements_cpp, dofmaps)
 
 # Create forms for each cell type.
-# FIXME This hack is required at the moment because UFL does not yet know about
-# mixed topology meshes.
+# FIXME This hack is required at the moment because UFL does not yet know
+# about mixed topology meshes.
 a = []
 L = []
 for i, cell_name in enumerate(["hexahedron", "prism"]):
@@ -127,8 +127,8 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
     L += [f * v * ufl.dx]
 
 # Compile the form
-# FIXME: For the time being, since UFL doesn't understand mixed topology meshes,
-# we have to call mixed_topology_form instead of form.
+# FIXME: For the time being, since UFL doesn't understand mixed topology
+# meshes, we have to call mixed_topology_form instead of form.
 a_form = mixed_topology_form(a, dtype=np.float64)
 L_form = mixed_topology_form(L, dtype=np.float64)
 

@@ -135,10 +135,8 @@ std::filesystem::path io::hdf5::get_filename(hid_t handle)
   if (length < 0)
     throw std::runtime_error("Failed to get HDF5 filename from handle.");
 
-  // Allocate memory
-  std::vector<char> name(length + 1);
-
   // Retrieve filename
+  std::vector<char> name(length + 1);
   if (H5Fget_name(handle, name.data(), length + 1) < 0)
     throw std::runtime_error("Failed to get HDF5 filename from handle.");
 
