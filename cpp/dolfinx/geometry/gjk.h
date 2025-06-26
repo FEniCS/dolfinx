@@ -171,6 +171,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
         std::span<const T, 3> sj(s.begin() + j * 3, 3);
         if (i != j)
           d[i][j] = (sii - dot3(si, sj)) / smax2;
+        spdlog::info("d[{}][{}] = {}", i, j, static_cast<double>(d[i][j]));
         if (d[i][j] > 0.0)
           out = false;
       }
@@ -181,6 +182,8 @@ std::vector<T> nearest_simplex(std::span<const T> s)
         return rv;
       }
     }
+
+    spdlog::info("Check for edges");
 
     // Check if an edge is closest
     // T vf = [&d](int i, int j, int k)
@@ -198,6 +201,8 @@ std::vector<T> nearest_simplex(std::span<const T> s)
                 + d[j1][j0] * d[j0][j2];
       v[i][1] = d[j1][j3] * d[j0][j1] - d[j0][j1] * d[j1][j0]
                 + d[j1][j0] * d[j0][j3];
+
+      spdlog::info("v[{}] = {},{}", i, (double)v[i][0], (double)v[i][1]);
       if (v[i][0] <= 0.0 and v[i][1] <= 0.0 and d[j0][j1] >= 0.0
           and d[j1][j0] >= 0.0)
       {
@@ -281,27 +286,83 @@ std::array<T, 3> support(std::span<const T> bd, std::array<T, 3> v)
 }
 } // namespace impl_gjk
 
-class mydouble
+// Arithmetic used inside GJK algorithm
+template <typename Scalar>
+class HPscalar
 {
 public:
-  mydouble() : val(0) {}
-  mydouble(double init) : val(init) {}
+  HPscalar() : h(0), l(0) {}
+  HPscalar(Scalar init) : h(init), l(0.0) {}
+  HPscalar(Scalar h0, Scalar l0) : h(h0), l(l0) {}
 
-  mydouble operator-(mydouble w) const { return mydouble(this->val - w.val); }
-  mydouble operator*(mydouble w) const { return mydouble(this->val * w.val); }
-  mydouble operator-() const { return mydouble(-this->val); }
-  void operator+=(mydouble w) { this->val += w.val; }
-  void operator*=(mydouble w) { this->val *= w.val; }
-  void operator/=(mydouble w) { this->val /= w.val; }
-  bool operator<(mydouble w) const { return (this->val < w.val); }
-  bool operator<(double val) const { return (this->val < val); }
-  bool operator==(const mydouble w) const { return (this->val == w.val); }
-  operator double() const { return this->val; }
+  inline HPscalar FastTwoSum(Scalar a, Scalar b) const
+  {
+    HPscalar res(a + b);
+    Scalar z = res.h - a;
+    res.l = b - z;
+    return res;
+  }
 
-  double val;
+  inline HPscalar TwoSum(Scalar a, Scalar b) const
+  {
+    HPscalar res(a + b);
+    Scalar a1 = res.h - b;
+    Scalar b1 = res.h - a1;
+    Scalar da = a - a1;
+    Scalar db = b - b1;
+    res.l = da + db;
+    return res;
+  }
+
+  inline HPscalar FastTwoProd(Scalar a, Scalar b) const
+  {
+    HPscalar res(a * b);
+    res.l = fma(a, b, -res.h);
+    return res;
+  }
+
+  inline HPscalar operator+(HPscalar y) const
+  {
+    HPscalar s = TwoSum(h, y.h);
+    HPscalar t = TwoSum(l, y.l);
+    Scalar c = s.l + t.h;
+    HPscalar v = FastTwoSum(s.h, c);
+    Scalar w = t.l + v.l;
+    return FastTwoSum(v.h, w);
+  }
+
+  inline HPscalar operator*(HPscalar y) const
+  {
+    HPscalar c = FastTwoProd(h, y.h);
+    Scalar tl0 = l * y.l;
+    Scalar tl1 = fma(h, y.l, tl0);
+    Scalar cl2 = fma(l, y.h, tl1);
+    Scalar cl3 = c.l + cl2;
+    return FastTwoSum(c.h, cl3);
+  }
+
+  inline HPscalar operator/(HPscalar y) const
+  {
+    Scalar th = 1 / y.h;
+    Scalar rh = 1 - y.h * th;
+    Scalar rl = -(y.l * th);
+    HPscalar e = FastTwoSum(rh, rl);
+    HPscalar delta = e * HPscalar(th);
+    HPscalar m = delta + HPscalar(th);
+    return *this * m;
+  }
+
+  HPscalar operator-() const { return HPscalar(-h, -l); }
+  void operator+=(HPscalar w) { h = h + w.h; }
+  void operator*=(HPscalar w) { h = h * w.h; }
+  void operator/=(HPscalar w) { h = h / w.h; }
+  bool operator<(HPscalar w) const { return (h + l) < (w.h + w.l); }
+  bool operator<(double val) const { return ((h + l) < val); }
+  bool operator==(const HPscalar w) const { return (h == w.h and l == w.l); }
+  operator double() const { return (h + l); }
+
+  Scalar h, l;
 };
-
-using U = mydouble;
 
 /// @brief Compute the distance between two convex bodies p and q, each
 /// defined by a set of points.
@@ -317,6 +378,8 @@ template <std::floating_point T>
 std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
                                       std::span<const T> q0)
 {
+  using U = HPscalar<double>;
+
   assert(p0.size() % 3 == 0);
   assert(q0.size() % 3 == 0);
 
