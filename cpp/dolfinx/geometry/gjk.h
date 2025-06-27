@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <array>
+#include <boost/multiprecision/cpp_bin_float.hpp>
 #include <concepts>
 #include <dolfinx/common/math.h>
 #include <limits>
@@ -286,96 +287,6 @@ std::array<T, 3> support(std::span<const T> bd, std::array<T, 3> v)
 }
 } // namespace impl_gjk
 
-// Arithmetic used inside GJK algorithm
-template <typename Scalar>
-class HPscalar
-{
-public:
-  HPscalar() : h(0), l(0) {}
-  HPscalar(Scalar init) : h(init), l(0.0) {}
-  HPscalar(Scalar h0, Scalar l0) : h(h0), l(l0) {}
-
-  inline HPscalar FastTwoSum(Scalar a, Scalar b) const
-  {
-    HPscalar res(a + b);
-    Scalar z = res.h - a;
-    res.l = b - z;
-    return res;
-  }
-
-  inline HPscalar TwoSum(Scalar a, Scalar b) const
-  {
-    HPscalar res(a + b);
-    Scalar a1 = res.h - b;
-    Scalar b1 = res.h - a1;
-    Scalar da = a - a1;
-    Scalar db = b - b1;
-    res.l = da + db;
-    return res;
-  }
-
-  inline HPscalar FastTwoProd(Scalar a, Scalar b) const
-  {
-    HPscalar res(a * b);
-    res.l = fma(a, b, -res.h);
-    return res;
-  }
-
-  inline HPscalar operator+(HPscalar y) const
-  {
-    HPscalar s = TwoSum(h, y.h);
-    HPscalar t = TwoSum(l, y.l);
-    Scalar c = s.l + t.h;
-    HPscalar v = FastTwoSum(s.h, c);
-    Scalar w = t.l + v.l;
-    return FastTwoSum(v.h, w);
-  }
-
-  inline HPscalar operator-(HPscalar y) const
-  {
-    HPscalar s = TwoSum(h, -y.h);
-    HPscalar t = TwoSum(l, -y.l);
-    Scalar c = s.l + t.h;
-    HPscalar v = FastTwoSum(s.h, c);
-    Scalar w = t.l + v.l;
-    return FastTwoSum(v.h, w);
-  }
-
-  inline HPscalar operator*(HPscalar y) const
-  {
-    HPscalar c = FastTwoProd(h, y.h);
-    Scalar tl0 = l * y.l;
-    Scalar tl1 = fma(h, y.l, tl0);
-    Scalar cl2 = fma(l, y.h, tl1);
-    Scalar cl3 = c.l + cl2;
-    return FastTwoSum(c.h, cl3);
-  }
-
-  inline HPscalar operator/(HPscalar y) const
-  {
-    Scalar th = 1 / y.h;
-    Scalar rh = 1 - y.h * th;
-    Scalar rl = -(y.l * th);
-    HPscalar e = FastTwoSum(rh, rl);
-    HPscalar delta = e * HPscalar(th);
-    HPscalar m = delta + HPscalar(th);
-    return *this * m;
-  }
-
-  HPscalar operator-() const { return HPscalar(-h, -l); }
-  void operator+=(HPscalar w) { h = h + w.h; }
-  void operator-=(HPscalar w) { h = h - w.h; }
-  void operator*=(HPscalar w) { h = h * w.h; }
-  void operator/=(HPscalar w) { h = h / w.h; }
-  bool operator<(HPscalar w) const { return (h + l) < (w.h + w.l); }
-  bool operator>(HPscalar w) const { return (h + l) > (w.h + w.l); }
-  bool operator<(double val) const { return ((h + l) < val); }
-  bool operator==(const HPscalar w) const { return (h == w.h and l == w.l); }
-  operator double() const { return (h + l); }
-
-  Scalar h, l;
-};
-
 /// @brief Compute the distance between two convex bodies p and q, each
 /// defined by a set of points.
 ///
@@ -390,8 +301,7 @@ template <std::floating_point T>
 std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
                                       std::span<const T> q0)
 {
-  // using U = HPscalar<double>;
-  using U = double;
+  using U = boost::multiprecision::cpp_bin_float_100;
 
   assert(p0.size() % 3 == 0);
   assert(q0.size() % 3 == 0);
@@ -495,7 +405,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
     throw std::runtime_error("GJK error - max iteration limit reached");
 
   std::array<T, 3> result;
-  result = {v[0], v[1], v[2]};
+  result = {static_cast<T>(v[0]), static_cast<T>(v[1]), static_cast<T>(v[2])};
   return result;
 }
 
