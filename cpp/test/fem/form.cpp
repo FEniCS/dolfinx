@@ -19,13 +19,13 @@ using namespace dolfinx;
 
 namespace
 {
-void test_form_cmap_compat(auto V)
+void test_form_cmap_compat(const auto& V)
 {
   fem::create_form<double>(*form_expr_L1, {V}, {}, {}, {}, {});
   CHECK_THROWS(fem::create_form<double>(*form_expr_L2, {V}, {}, {}, {}, {}));
 }
 
-void test_expression_cmap_compat(auto V)
+void test_expression_cmap_compat(const auto& V)
 {
   auto u = std::make_shared<fem::Function<double>>(V);
   auto mesh = u->function_space()->mesh();

@@ -11,6 +11,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/la/petsc.h>
 #include <string>
+#include <utility>
 
 using namespace dolfinx;
 
@@ -93,7 +94,7 @@ nls::petsc::NewtonSolver::~NewtonSolver()
 void nls::petsc::NewtonSolver::setF(std::function<void(const Vec, Vec)> F,
                                     Vec b)
 {
-  _fnF = F;
+  _fnF = std::move(F);
   _b = b;
   PetscObjectReference((PetscObject)_b);
 }
@@ -101,7 +102,7 @@ void nls::petsc::NewtonSolver::setF(std::function<void(const Vec, Vec)> F,
 void nls::petsc::NewtonSolver::setJ(std::function<void(const Vec, Mat)> J,
                                     Mat Jmat)
 {
-  _fnJ = J;
+  _fnJ = std::move(J);
   _matJ = Jmat;
   PetscObjectReference((PetscObject)_matJ);
 }
@@ -109,7 +110,7 @@ void nls::petsc::NewtonSolver::setJ(std::function<void(const Vec, Mat)> J,
 void nls::petsc::NewtonSolver::setP(std::function<void(const Vec, Mat)> P,
                                     Mat Pmat)
 {
-  _fnP = P;
+  _fnP = std::move(P);
   _matP = Pmat;
   PetscObjectReference((PetscObject)_matP);
 }
@@ -127,19 +128,19 @@ la::petsc::KrylovSolver& nls::petsc::NewtonSolver::get_krylov_solver()
 //-----------------------------------------------------------------------------
 void nls::petsc::NewtonSolver::set_form(std::function<void(Vec)> form)
 {
-  _system = form;
+  _system = std::move(form);
 }
 //-----------------------------------------------------------------------------
 void nls::petsc::NewtonSolver::set_convergence_check(
     std::function<std::pair<double, bool>(const NewtonSolver&, const Vec)> c)
 {
-  _converged = c;
+  _converged = std::move(c);
 }
 //-----------------------------------------------------------------------------
 void nls::petsc::NewtonSolver::set_update(
     std::function<void(const NewtonSolver& solver, const Vec, Vec)> update)
 {
-  _update_solution = update;
+  _update_solution = std::move(update);
 }
 //-----------------------------------------------------------------------------
 std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
