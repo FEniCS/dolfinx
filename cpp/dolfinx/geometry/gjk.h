@@ -292,9 +292,9 @@ std::array<T, 3> support(std::span<const T> bd, std::array<T, 3> v)
 ///
 /// Uses the Gilbert–Johnson–Keerthi (GJK) distance algorithm.
 ///
-/// @param[in] p Body 1 list of points, shape (num_points, 3). Row-major
+/// @param[in] p0 Body 1 list of points, shape (num_points, 3). Row-major
 /// storage.
-/// @param[in] q Body 2 list of points, shape (num_points, 3). Row-major
+/// @param[in] q0 Body 2 list of points, shape (num_points, 3). Row-major
 /// storage.
 /// @return shortest vector between bodies
 template <std::floating_point T>
