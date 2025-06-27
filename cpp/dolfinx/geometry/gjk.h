@@ -55,7 +55,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
   assert(s.size() % 3 == 0);
   const std::size_t s_rows = s.size() / 3;
 
-  spdlog::info("GJK: nearest_simplex({})", s_rows);
+  spdlog::debug("GJK: nearest_simplex({})", s_rows);
 
   switch (s_rows)
   {
@@ -69,17 +69,17 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     T lm = dot3(s0, s0) - dot3(s0, s1);
     if (lm < 0.0)
     {
-      spdlog::info("GJK: line point A");
+      spdlog::debug("GJK: line point A");
       return {1.0, 0.0};
     }
     T mu = dot3(s1, s1) - dot3(s1, s0);
     if (mu < 0.0)
     {
-      spdlog::info("GJK: line point B");
+      spdlog::debug("GJK: line point B");
       return {0.0, 1.0};
     }
 
-    spdlog::info("GJK line: AB");
+    spdlog::debug("GJK line: AB");
     T lmsum = lm + mu;
     lm /= lmsum;
     mu /= lmsum;
@@ -97,7 +97,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     T d2 = (dot3(a, a) - dot3(a, c)) / smax2;
     if (d1 < 0.0 and d2 < 0.0)
     {
-      spdlog::info("GJK: Point A");
+      spdlog::debug("GJK: Point A");
       return {1, 0, 0};
     }
 
@@ -105,7 +105,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     T d4 = (dot3(b, b) - dot3(b, c)) / smax2;
     if (d3 < 0.0 and d4 < 0.0)
     {
-      spdlog::info("GJK: Point B");
+      spdlog::debug("GJK: Point B");
       return {0, 1, 0};
     }
 
@@ -113,14 +113,14 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     T d6 = (dot3(c, c) - dot3(b, c)) / smax2;
     if (d5 < 0.0 and d6 < 0.0)
     {
-      spdlog::info("GJK: Point C");
+      spdlog::debug("GJK: Point C");
       return {0, 0, 1};
     }
 
     T vc = d4 * d1 - d1 * d3 + d3 * d2;
     if (vc < 0.0 and d1 > 0.0 and d3 > 0.0)
     {
-      spdlog::info("GJK: edge AB");
+      spdlog::debug("GJK: edge AB");
       T f1 = 1.0 / (d1 + d3);
       T lm = f1 * d1;
       T mu = f1 * d3;
@@ -129,7 +129,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     T vb = d1 * d5 - d5 * d2 + d2 * d6;
     if (vb < 0.0 and d2 > 0.0 and d5 > 0.0)
     {
-      spdlog::info("GJK: edge AC");
+      spdlog::debug("GJK: edge AC");
       T f1 = 1 / (d2 + d5);
       T lm = d2 * f1;
       T mu = d5 * f1;
@@ -138,14 +138,14 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     T va = d3 * d6 - d6 * d4 + d4 * d5;
     if (va < 0.0 and d4 > 0.0 and d6 > 0.0)
     {
-      spdlog::info("GJK: edge BC");
+      spdlog::debug("GJK: edge BC");
       T f1 = 1 / (d4 + d6);
       T lm = d4 * f1;
       T mu = d6 * f1;
       return {0, mu, lm};
     }
 
-    spdlog::info("GJK: triangle ABC");
+    spdlog::debug("GJK: triangle ABC");
     T f1 = 1.0 / (va + vb + vc);
     va *= f1;
     vb *= f1;
@@ -158,7 +158,6 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     // outcomes (4 vertices, 6 edges, 4 facets and the interior).
     std::vector<T> rv = {0, 0, 0, 0};
 
-    spdlog::info("d[4][4]");
     T d[4][4];
     for (int i = 0; i < 4; ++i)
     // Compute dot products at each vertex
@@ -171,7 +170,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
         std::span<const T, 3> sj(s.begin() + j * 3, 3);
         if (i != j)
           d[i][j] = (sii - dot3(si, sj)) / smax2;
-        spdlog::info("d[{}][{}] = {}", i, j, static_cast<double>(d[i][j]));
+        spdlog::debug("d[{}][{}] = {}", i, j, static_cast<double>(d[i][j]));
         if (d[i][j] > 0.0)
           out = false;
       }
@@ -186,12 +185,12 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     spdlog::debug("Check for edges");
 
     // Check if an edge is closest
-    T v[6][2] = {0};
+    T v[6][2] = {{0}};
     int edges[6][2] = {{2, 3}, {1, 3}, {1, 2}, {0, 3}, {0, 2}, {0, 1}};
     for (int i = 0; i < 6; ++i)
     {
       // Four vertices of the tetrahedron, j0 and j1 at the ends of the current
-      // edge and j2  and j3 on the opposing edge
+      // edge and j2  and j3 on the opposing edge.
       int j0 = edges[i][0];
       int j1 = edges[i][1];
       int j2 = edges[5 - i][0];
@@ -201,7 +200,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       v[i][1] = d[j1][j3] * d[j0][j1] - d[j0][j1] * d[j1][j0]
                 + d[j1][j0] * d[j0][j3];
 
-      spdlog::info("v[{}] = {},{}", i, (double)v[i][0], (double)v[i][1]);
+      spdlog::debug("v[{}] = {},{}", i, (double)v[i][0], (double)v[i][1]);
       if (v[i][0] <= 0.0 and v[i][1] <= 0.0 and d[j0][j1] >= 0.0
           and d[j1][j0] >= 0.0)
       {
@@ -259,6 +258,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       return {0.0, v[0][1] * f1, v[1][1] * f1, v[2][1] * f1};
     }
 
+    // Point lies in interior of tetrahedron with these barycentric coordinates
     return {w[3] / wsum, w[2] / wsum, w[1] / wsum, w[0] / wsum};
   }
   default:
@@ -351,8 +351,8 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
     if (vw < (eps * vnorm2) or vw < eps)
       break;
 
-    spdlog::info("GJK: vw={}/{}", static_cast<double>(vw),
-                 static_cast<double>(eps));
+    spdlog::debug("GJK: vw={}/{}", static_cast<double>(vw),
+                  static_cast<double>(eps));
 
     // Add new vertex to simplex
     s.insert(s.end(), w.begin(), w.end());
@@ -382,7 +382,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
         snew.insert(snew.end(), sc.begin(), sc.end());
       }
     }
-    spdlog::info("snew.size={}", snew.size());
+    spdlog::debug("snew.size={}", snew.size());
     s.assign(snew.data(), snew.data() + snew.size());
 
     std::stringstream st;
@@ -400,7 +400,6 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
   }
 
   if (k == maxk)
-    // spdlog::info("GJK max iteration reached");
     throw std::runtime_error("GJK error - max iteration limit reached");
 
   return {static_cast<T>(v[0]), static_cast<T>(v[1]), static_cast<T>(v[2])};
