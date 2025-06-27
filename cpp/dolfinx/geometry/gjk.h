@@ -404,9 +404,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
     // spdlog::info("GJK max iteration reached");
     throw std::runtime_error("GJK error - max iteration limit reached");
 
-  std::array<T, 3> result;
-  result = {static_cast<T>(v[0]), static_cast<T>(v[1]), static_cast<T>(v[2])};
-  return result;
+  return {static_cast<T>(v[0]), static_cast<T>(v[1]), static_cast<T>(v[2])};
 }
 
 } // namespace dolfinx::geometry
