@@ -331,6 +331,16 @@ public:
     return FastTwoSum(v.h, w);
   }
 
+  inline HPscalar operator-(HPscalar y) const
+  {
+    HPscalar s = TwoSum(h, -y.h);
+    HPscalar t = TwoSum(l, -y.l);
+    Scalar c = s.l + t.h;
+    HPscalar v = FastTwoSum(s.h, c);
+    Scalar w = t.l + v.l;
+    return FastTwoSum(v.h, w);
+  }
+
   inline HPscalar operator*(HPscalar y) const
   {
     HPscalar c = FastTwoProd(h, y.h);
@@ -354,9 +364,11 @@ public:
 
   HPscalar operator-() const { return HPscalar(-h, -l); }
   void operator+=(HPscalar w) { h = h + w.h; }
+  void operator-=(HPscalar w) { h = h - w.h; }
   void operator*=(HPscalar w) { h = h * w.h; }
   void operator/=(HPscalar w) { h = h / w.h; }
   bool operator<(HPscalar w) const { return (h + l) < (w.h + w.l); }
+  bool operator>(HPscalar w) const { return (h + l) > (w.h + w.l); }
   bool operator<(double val) const { return ((h + l) < val); }
   bool operator==(const HPscalar w) const { return (h == w.h and l == w.l); }
   operator double() const { return (h + l); }
@@ -378,7 +390,8 @@ template <std::floating_point T>
 std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
                                       std::span<const T> q0)
 {
-  using U = HPscalar<double>;
+  // using U = HPscalar<double>;
+  using U = double;
 
   assert(p0.size() % 3 == 0);
   assert(q0.size() % 3 == 0);
