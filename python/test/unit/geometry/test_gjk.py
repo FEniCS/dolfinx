@@ -128,7 +128,6 @@ def test_hex_collision_3d(delta):
         assert np.isclose(distance, actual_distance, atol=1e-15)
 
 
-# @pytest.mark.skip(reason="GJK fails to converge with Rocky 10.")
 @pytest.mark.parametrize("delta", [1e8, 1.0, 1e-6, 1e-12])
 @pytest.mark.parametrize("scale", [1000.0, 1.0, 1e-4])
 @pytest.mark.parametrize("dtype", [np.float64])
