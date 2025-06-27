@@ -61,10 +61,10 @@ std::vector<T> nearest_simplex(std::span<const T> s)
   {
   case 2:
   {
+    // Simplex is an interval. Point may lie on the interval, or off either end.
     // Compute lm = dot(s0, ds / |ds|)
     std::span<const T, 3> s0 = s.template subspan<0, 3>();
     std::span<const T, 3> s1 = s.template subspan<3, 3>();
-    std::array ds = {s1[0] - s0[0], s1[1] - s0[1], s1[2] - s0[2]};
 
     T lm = dot3(s0, s0) - dot3(s0, s1);
     if (lm < 0.0)
@@ -87,6 +87,8 @@ std::vector<T> nearest_simplex(std::span<const T> s)
   }
   case 3:
   {
+    // Simplex is a triangle. Point may lie in one of 7 regions (outside near a
+    // vertex, outside near an edge, or on the interior)
     auto a = s.template subspan<0, 3>();
     auto b = s.template subspan<3, 3>();
     auto c = s.template subspan<6, 3>();
@@ -152,11 +154,8 @@ std::vector<T> nearest_simplex(std::span<const T> s)
   }
   case 4:
   {
-    auto s0 = s.template subspan<0, 3>();
-    auto s1 = s.template subspan<3, 3>();
-    auto s2 = s.template subspan<6, 3>();
-    auto s3 = s.template subspan<9, 3>();
-
+    // Most complex case, where simplex is a tetrahedron, with 15 possible
+    // outcomes (4 vertices, 6 edges, 4 facets and the interior).
     std::vector<T> rv = {0, 0, 0, 0};
 
     spdlog::info("d[4][4]");
@@ -178,22 +177,21 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       }
       if (out)
       {
-        // Return if a corner is closest
+        // Return if a vertex is closest
         rv[i] = 1;
         return rv;
       }
     }
 
-    spdlog::info("Check for edges");
+    spdlog::debug("Check for edges");
 
     // Check if an edge is closest
-    // T vf = [&d](int i, int j, int k)
-    // { return d[j][k] * d[i][j] - d[i][j] * d[j][i] + d[j][i] * d[i][k]; };
-
     T v[6][2] = {0};
     int edges[6][2] = {{2, 3}, {1, 3}, {1, 2}, {0, 3}, {0, 2}, {0, 1}};
     for (int i = 0; i < 6; ++i)
     {
+      // Four vertices of the tetrahedron, j0 and j1 at the ends of the current
+      // edge and j2  and j3 on the opposing edge
       int j0 = edges[i][0];
       int j1 = edges[i][1];
       int j2 = edges[5 - i][0];
@@ -215,6 +213,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       }
     }
 
+    // Now check the facets of a tetrahedron
     std::array<T, 4> w;
     std::array<T, 9> M;
     std::span<const T, 9> Mspan(M.begin(), M.size());
