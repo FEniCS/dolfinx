@@ -301,7 +301,7 @@ template <std::floating_point T>
 std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
                                       std::span<const T> q0)
 {
-  using U = boost::multiprecision::cpp_bin_float_100;
+  using U = boost::multiprecision::cpp_bin_float_double_extended;
 
   assert(p0.size() % 3 == 0);
   assert(q0.size() % 3 == 0);
