@@ -144,6 +144,12 @@ jobs:
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
           python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc4py"
 
+      - name: Run mypy
+        working-directory: python
+        run: |
+          pip install mypy
+          mypy dolfinx
+
       - name: Run demos (Python, serial)
         run: |
           pip install pytest-xdist

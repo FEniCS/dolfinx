@@ -284,7 +284,11 @@ class Mesh:
     _geometry: Geometry
     _ufl_domain: typing.Optional[ufl.Mesh]
 
-    def __init__(self, msh, domain: typing.Optional[ufl.Mesh]):
+    def __init__(
+        self,
+        msh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64],
+        domain: typing.Optional[ufl.Mesh],
+    ):
         """Initialize mesh from a C++ mesh.
 
         Args:
@@ -324,7 +328,7 @@ class Mesh:
         """
         return ufl.Cell(self.topology.cell_name())
 
-    def ufl_domain(self) -> ufl.Mesh:
+    def ufl_domain(self) -> typing.Optional[ufl.Mesh]:
         """Return the ufl domain corresponding to the mesh.
 
         Returns:
@@ -659,13 +663,15 @@ def create_mesh(
                 # e is a CoordinateElement
                 cmap = e
                 domain = None
-                dtype = cmap.dtype
+                dtype = cmap.dtype  # type: ignore
 
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
-    msh = _cpp.mesh.create_mesh(comm, cells, cmap._cpp_object, x, partitioner)
+    msh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64] = _cpp.mesh.create_mesh(
+        comm, cells, cmap._cpp_object, x, partitioner
+    )
 
-    return Mesh(msh, domain)
+    return Mesh(msh, domain)  # type: ignore
 
 
 def create_submesh(
