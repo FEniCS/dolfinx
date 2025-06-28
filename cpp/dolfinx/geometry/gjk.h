@@ -77,10 +77,8 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     }
 
     spdlog::debug("GJK line: AB");
-    T lmsum = lm + mu;
-    lm /= lmsum;
-    mu /= lmsum;
-    return {mu, lm};
+    T f1 = 1 / (lm + mu);
+    return {mu * f1, lm * f1};
   }
   case 3:
   {
@@ -90,24 +88,30 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     auto b = s.template subspan<3, 3>();
     auto c = s.template subspan<6, 3>();
 
-    T d1 = (dot3(a, a) - dot3(a, b));
-    T d2 = (dot3(a, a) - dot3(a, c));
+    T aa = dot3(a, a);
+    T ab = dot3(a, b);
+    T ac = dot3(a, c);
+    T d1 = aa - ab;
+    T d2 = aa - ac;
     if (d1 < 0.0 and d2 < 0.0)
     {
       spdlog::debug("GJK: Point A");
       return {1, 0, 0};
     }
 
-    T d3 = (dot3(b, b) - dot3(a, b));
-    T d4 = (dot3(b, b) - dot3(b, c));
+    T bb = dot3(b, b);
+    T bc = dot3(b, c);
+    T d3 = bb - ab;
+    T d4 = bb - bc;
     if (d3 < 0.0 and d4 < 0.0)
     {
       spdlog::debug("GJK: Point B");
       return {0, 1, 0};
     }
 
-    T d5 = (dot3(c, c) - dot3(a, c));
-    T d6 = (dot3(c, c) - dot3(b, c));
+    T cc = dot3(c, c);
+    T d5 = cc - ac;
+    T d6 = cc - bc;
     if (d5 < 0.0 and d6 < 0.0)
     {
       spdlog::debug("GJK: Point C");
@@ -119,15 +123,15 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     {
       spdlog::debug("GJK: edge AB");
       T f1 = 1.0 / (d1 + d3);
-      T lm = f1 * d1;
-      T mu = f1 * d3;
+      T lm = d1 * f1;
+      T mu = d3 * f1;
       return {mu, lm, 0};
     }
     T vb = d1 * d5 - d5 * d2 + d2 * d6;
     if (vb < 0.0 and d2 > 0.0 and d5 > 0.0)
     {
       spdlog::debug("GJK: edge AC");
-      T f1 = 1 / (d2 + d5);
+      T f1 = 1.0 / (d2 + d5);
       T lm = d2 * f1;
       T mu = d5 * f1;
       return {mu, 0, lm};
@@ -136,7 +140,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     if (va < 0.0 and d4 > 0.0 and d6 > 0.0)
     {
       spdlog::debug("GJK: edge BC");
-      T f1 = 1 / (d4 + d6);
+      T f1 = 1.0 / (d4 + d6);
       T lm = d4 * f1;
       T mu = d6 * f1;
       return {0, mu, lm};
@@ -144,10 +148,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
 
     spdlog::debug("GJK: triangle ABC");
     T f1 = 1.0 / (va + vb + vc);
-    va *= f1;
-    vb *= f1;
-    vc *= f1;
-    return {va, vb, vc};
+    return {va * f1, vb * f1, vc * f1};
   }
   case 4:
   {
@@ -231,25 +232,25 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       wsum = -wsum;
     }
 
-    if (w[0] < 0.0) // and v[2][0] > 0.0 and v[4][0] > 0.0 and v[5][0] > 0.0)
+    if (w[0] < 0.0 and v[2][0] > 0.0 and v[4][0] > 0.0 and v[5][0] > 0.0)
     {
       T f1 = 1 / (v[2][0] + v[4][0] + v[5][0]);
       return {v[2][0] * f1, v[4][0] * f1, v[5][0] * f1, 0.0};
     }
 
-    if (w[1] < 0.0) // and v[1][0] > 0.0 and v[3][0] > 0.0 and v[5][1] > 0.0)
+    if (w[1] < 0.0 and v[1][0] > 0.0 and v[3][0] > 0.0 and v[5][1] > 0.0)
     {
       T f1 = 1 / (v[1][0] + v[3][0] + v[5][1]);
       return {v[1][0] * f1, v[3][0] * f1, 0.0, v[5][1] * f1};
     }
 
-    if (w[2] < 0.0) // and v[0][0] > 0.0 and v[3][1] > 0 and v[4][1] > 0.0)
+    if (w[2] < 0.0 and v[0][0] > 0.0 and v[3][1] > 0 and v[4][1] > 0.0)
     {
       T f1 = 1 / (v[0][0] + v[3][1] + v[4][1]);
       return {v[0][0] * f1, 0.0, v[3][1] * f1, v[4][1] * f1};
     }
 
-    if (w[3] < 0.0) // and v[0][1] > 0.0 and v[1][1] > 0.0 and v[2][1] > 0.0)
+    if (w[3] < 0.0 and v[0][1] > 0.0 and v[1][1] > 0.0 and v[2][1] > 0.0)
     {
       T f1 = 1 / (v[0][1] + v[1][1] + v[2][1]);
       return {0.0, v[0][1] * f1, v[1][1] * f1, v[2][1] * f1};
@@ -358,20 +359,11 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
     // Add new vertex to simplex
     s.insert(s.end(), w.begin(), w.end());
 
-    std::stringstream qw;
-    for (auto sv : s)
-      qw << static_cast<double>(sv) << ", ";
-    spdlog::debug("s(in) = [{}]", qw.str());
-
     // Find nearest subset of simplex
     std::vector<U> lmn = impl_gjk::nearest_simplex<U>(s);
-    std::stringstream lmns;
-    for (auto q : lmn)
-      lmns << static_cast<double>(q) << " ";
-    spdlog::debug("lmn = {}", lmns.str());
-
     v = {0.0, 0.0, 0.0};
     std::vector<U> snew;
+    snew.reserve(12); // maximum size
     for (std::size_t i = 0; i < lmn.size(); ++i)
     {
       std::span<U> sc(s.begin() + 3 * i, 3);
@@ -385,13 +377,6 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
     }
     spdlog::debug("snew.size={}", snew.size());
     s.assign(snew.data(), snew.data() + snew.size());
-
-    std::stringstream st;
-    for (auto q : s)
-      st << static_cast<double>(q) << " ";
-    spdlog::debug("New s = {}", st.str());
-    spdlog::debug("New v = [{}, {}, {}]", static_cast<double>(v[0]),
-                  static_cast<double>(v[1]), static_cast<double>(v[2]));
 
     U vn = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
 
