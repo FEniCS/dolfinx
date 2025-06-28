@@ -29,9 +29,7 @@ T det3(std::span<const T, 9> A)
   T w0 = A[3 + 1] * A[2 * 3 + 2] - A[3 + 2] * A[3 * 2 + 1];
   T w1 = A[3] * A[3 * 2 + 2] - A[3 + 2] * A[3 * 2];
   T w2 = A[3] * A[3 * 2 + 1] - A[3 + 1] * A[3 * 2];
-  T w3 = A[0] * w0 - A[1] * w1;
-  T w4 = A[2] * w2 + w3;
-  return w4;
+  return A[0] * w0 - A[1] * w1 + A[2] * w2;
 }
 
 template <typename T>
@@ -48,7 +46,6 @@ T dot3(std::span<const T, 3> a, std::span<const T, 3> b)
 template <typename T>
 std::vector<T> nearest_simplex(std::span<const T> s)
 {
-
   assert(s.size() % 3 == 0);
   const std::size_t s_rows = s.size() / 3;
 
@@ -77,7 +74,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     }
 
     spdlog::debug("GJK line: AB");
-    T f1 = 1 / (lm + mu);
+    T f1 = 1.0 / (lm + mu);
     return {mu * f1, lm * f1};
   }
   case 3:
@@ -96,7 +93,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     if (d1 < 0.0 and d2 < 0.0)
     {
       spdlog::debug("GJK: Point A");
-      return {1, 0, 0};
+      return {1.0, 0.0, 0.0};
     }
 
     T bb = dot3(b, b);
@@ -106,7 +103,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     if (d3 < 0.0 and d4 < 0.0)
     {
       spdlog::debug("GJK: Point B");
-      return {0, 1, 0};
+      return {0.0, 1.0, 0.0};
     }
 
     T cc = dot3(c, c);
@@ -115,7 +112,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     if (d5 < 0.0 and d6 < 0.0)
     {
       spdlog::debug("GJK: Point C");
-      return {0, 0, 1};
+      return {0.0, 0.0, 1.0};
     }
 
     T vc = d4 * d1 - d1 * d3 + d3 * d2;
@@ -125,7 +122,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       T f1 = 1.0 / (d1 + d3);
       T lm = d1 * f1;
       T mu = d3 * f1;
-      return {mu, lm, 0};
+      return {mu, lm, 0.0};
     }
     T vb = d1 * d5 - d5 * d2 + d2 * d6;
     if (vb < 0.0 and d2 > 0.0 and d5 > 0.0)
@@ -134,7 +131,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       T f1 = 1.0 / (d2 + d5);
       T lm = d2 * f1;
       T mu = d5 * f1;
-      return {mu, 0, lm};
+      return {mu, 0.0, lm};
     }
     T va = d3 * d6 - d6 * d4 + d4 * d5;
     if (va < 0.0 and d4 > 0.0 and d6 > 0.0)
@@ -143,7 +140,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       T f1 = 1.0 / (d4 + d6);
       T lm = d4 * f1;
       T mu = d6 * f1;
-      return {0, mu, lm};
+      return {0.0, mu, lm};
     }
 
     spdlog::debug("GJK: triangle ABC");
@@ -154,7 +151,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
   {
     // Most complex case, where simplex is a tetrahedron, with 15 possible
     // outcomes (4 vertices, 6 edges, 4 facets and the interior).
-    std::vector<T> rv = {0, 0, 0, 0};
+    std::vector<T> rv = {0.0, 0.0, 0.0, 0.0};
 
     T d[4][4];
     for (int i = 0; i < 4; ++i)
@@ -175,7 +172,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       if (out)
       {
         // Return if a vertex is closest
-        rv[i] = 1;
+        rv[i] = 1.0;
         return rv;
       }
     }
@@ -183,7 +180,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     spdlog::debug("Check for edges");
 
     // Check if an edge is closest
-    T v[6][2] = {{0}};
+    T v[6][2] = {{0.0}};
     int edges[6][2] = {{2, 3}, {1, 3}, {1, 2}, {0, 3}, {0, 2}, {0, 1}};
     for (int i = 0; i < 6; ++i)
     {
@@ -203,7 +200,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
           and d[j1][j0] >= 0.0)
       {
         // On an edge
-        T f1 = 1 / (d[j0][j1] + d[j1][j0]);
+        T f1 = 1.0 / (d[j0][j1] + d[j1][j0]);
         rv[j0] = f1 * d[j1][j0];
         rv[j1] = f1 * d[j0][j1];
         return rv;
@@ -234,25 +231,25 @@ std::vector<T> nearest_simplex(std::span<const T> s)
 
     if (w[0] < 0.0 and v[2][0] > 0.0 and v[4][0] > 0.0 and v[5][0] > 0.0)
     {
-      T f1 = 1 / (v[2][0] + v[4][0] + v[5][0]);
+      T f1 = 1.0 / (v[2][0] + v[4][0] + v[5][0]);
       return {v[2][0] * f1, v[4][0] * f1, v[5][0] * f1, 0.0};
     }
 
     if (w[1] < 0.0 and v[1][0] > 0.0 and v[3][0] > 0.0 and v[5][1] > 0.0)
     {
-      T f1 = 1 / (v[1][0] + v[3][0] + v[5][1]);
+      T f1 = 1.0 / (v[1][0] + v[3][0] + v[5][1]);
       return {v[1][0] * f1, v[3][0] * f1, 0.0, v[5][1] * f1};
     }
 
     if (w[2] < 0.0 and v[0][0] > 0.0 and v[3][1] > 0 and v[4][1] > 0.0)
     {
-      T f1 = 1 / (v[0][0] + v[3][1] + v[4][1]);
+      T f1 = 1.0 / (v[0][0] + v[3][1] + v[4][1]);
       return {v[0][0] * f1, 0.0, v[3][1] * f1, v[4][1] * f1};
     }
 
     if (w[3] < 0.0 and v[0][1] > 0.0 and v[1][1] > 0.0 and v[2][1] > 0.0)
     {
-      T f1 = 1 / (v[0][1] + v[1][1] + v[2][1]);
+      T f1 = 1.0 / (v[0][1] + v[1][1] + v[2][1]);
       return {0.0, v[0][1] * f1, v[1][1] * f1, v[2][1] * f1};
     }
 
@@ -367,7 +364,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
     for (std::size_t i = 0; i < lmn.size(); ++i)
     {
       std::span<U> sc(s.begin() + 3 * i, 3);
-      if (lmn[i] > 0)
+      if (lmn[i] > 0.0)
       {
         v[0] += lmn[i] * sc[0];
         v[1] += lmn[i] * sc[1];
