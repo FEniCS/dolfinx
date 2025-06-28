@@ -40,17 +40,14 @@ T dot3(std::span<const T, 3> a, std::span<const T, 3> b)
   return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
 
-/// @brief Find the resulting sub-simplex of the input simplex which is
-/// nearest to the origin. Also, return the shortest vector from the
-/// origin to the resulting simplex.
+/// @brief Find the barycentric coordinates in the simplex s, of the point in s
+/// which is closest to the origin.
+/// @param s Simplex described by a set of points in 3D, flattened.
+/// @return Barycentric coordinates of the point in s closest to the origin.
+/// @note s may be an interval (2 points), a triangle (3) or a tetrahedron (4).
 template <typename T>
 std::vector<T> nearest_simplex(std::span<const T> s)
 {
-
-  T smax2 = 0.0;
-  for (auto sv : s)
-    if (sv * sv > smax2)
-      smax2 = sv * sv;
 
   assert(s.size() % 3 == 0);
   const std::size_t s_rows = s.size() / 3;
@@ -61,7 +58,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
   {
   case 2:
   {
-    // Simplex is an interval. Point may lie on the interval, or off either end.
+    // Simplex is an interval. Point may lie on the interval, or on either end.
     // Compute lm = dot(s0, ds / |ds|)
     std::span<const T, 3> s0 = s.template subspan<0, 3>();
     std::span<const T, 3> s1 = s.template subspan<3, 3>();
@@ -93,24 +90,24 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     auto b = s.template subspan<3, 3>();
     auto c = s.template subspan<6, 3>();
 
-    T d1 = (dot3(a, a) - dot3(a, b)) / smax2;
-    T d2 = (dot3(a, a) - dot3(a, c)) / smax2;
+    T d1 = (dot3(a, a) - dot3(a, b));
+    T d2 = (dot3(a, a) - dot3(a, c));
     if (d1 < 0.0 and d2 < 0.0)
     {
       spdlog::debug("GJK: Point A");
       return {1, 0, 0};
     }
 
-    T d3 = (dot3(b, b) - dot3(a, b)) / smax2;
-    T d4 = (dot3(b, b) - dot3(b, c)) / smax2;
+    T d3 = (dot3(b, b) - dot3(a, b));
+    T d4 = (dot3(b, b) - dot3(b, c));
     if (d3 < 0.0 and d4 < 0.0)
     {
       spdlog::debug("GJK: Point B");
       return {0, 1, 0};
     }
 
-    T d5 = (dot3(c, c) - dot3(a, c)) / smax2;
-    T d6 = (dot3(c, c) - dot3(b, c)) / smax2;
+    T d5 = (dot3(c, c) - dot3(a, c));
+    T d6 = (dot3(c, c) - dot3(b, c));
     if (d5 < 0.0 and d6 < 0.0)
     {
       spdlog::debug("GJK: Point C");
@@ -169,7 +166,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       {
         std::span<const T, 3> sj(s.begin() + j * 3, 3);
         if (i != j)
-          d[i][j] = (sii - dot3(si, sj)) / smax2;
+          d[i][j] = (sii - dot3(si, sj));
         spdlog::debug("d[{}][{}] = {}", i, j, static_cast<double>(d[i][j]));
         if (d[i][j] > 0.0)
           out = false;
@@ -234,25 +231,25 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       wsum = -wsum;
     }
 
-    if (w[0] < 0.0 and v[2][0] > 0.0 and v[4][0] > 0.0 and v[5][0] > 0.0)
+    if (w[0] < 0.0) // and v[2][0] > 0.0 and v[4][0] > 0.0 and v[5][0] > 0.0)
     {
       T f1 = 1 / (v[2][0] + v[4][0] + v[5][0]);
       return {v[2][0] * f1, v[4][0] * f1, v[5][0] * f1, 0.0};
     }
 
-    if (w[1] < 0.0 and v[1][0] > 0.0 and v[3][0] > 0.0 and v[5][1] > 0.0)
+    if (w[1] < 0.0) // and v[1][0] > 0.0 and v[3][0] > 0.0 and v[5][1] > 0.0)
     {
       T f1 = 1 / (v[1][0] + v[3][0] + v[5][1]);
       return {v[1][0] * f1, v[3][0] * f1, 0.0, v[5][1] * f1};
     }
 
-    if (w[2] < 0.0 and v[0][0] > 0.0 and v[3][1] > 0 and v[4][1] > 0.0)
+    if (w[2] < 0.0) // and v[0][0] > 0.0 and v[3][1] > 0 and v[4][1] > 0.0)
     {
       T f1 = 1 / (v[0][0] + v[3][1] + v[4][1]);
       return {v[0][0] * f1, 0.0, v[3][1] * f1, v[4][1] * f1};
     }
 
-    if (w[3] < 0.0 and v[0][1] > 0.0 and v[1][1] > 0.0 and v[2][1] > 0.0)
+    if (w[3] < 0.0) // and v[0][1] > 0.0 and v[1][1] > 0.0 and v[2][1] > 0.0)
     {
       T f1 = 1 / (v[0][1] + v[1][1] + v[2][1]);
       return {0.0, v[0][1] * f1, v[1][1] * f1, v[2][1] * f1};
@@ -267,6 +264,9 @@ std::vector<T> nearest_simplex(std::span<const T> s)
 }
 
 /// @brief 'support' function, finds point p in bd which maximises p.v
+/// @param bd Body described by set of 3D points, flattened
+/// @param v A point in 3D
+/// @returns Point p in bd which maximises p.v
 template <typename T>
 std::array<T, 3> support(std::span<const T> bd, std::array<T, 3> v)
 {
@@ -286,7 +286,7 @@ std::array<T, 3> support(std::span<const T> bd, std::array<T, 3> v)
 }
 } // namespace impl_gjk
 
-/// @brief Compute the distance between two convex bodies p and q, each
+/// @brief Compute the distance between two convex bodies p0 and q0, each
 /// defined by a set of points.
 ///
 /// Uses the Gilbert–Johnson–Keerthi (GJK) distance algorithm.
@@ -295,6 +295,7 @@ std::array<T, 3> support(std::span<const T> bd, std::array<T, 3> v)
 /// storage.
 /// @param[in] q0 Body 2 list of points, shape (num_points, 3). Row-major
 /// storage.
+/// @tparam T Floating point type
 /// @return shortest vector between bodies
 template <std::floating_point T>
 std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
