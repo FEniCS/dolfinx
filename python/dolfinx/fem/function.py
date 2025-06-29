@@ -581,7 +581,11 @@ class ElementMetaData(typing.NamedTuple):
 def functionspace(
     mesh: Mesh,
     element: typing.Union[
-        ufl.finiteelement.AbstractFiniteElement, ElementMetaData, tuple[str, int, tuple, bool]
+        ufl.finiteelement.AbstractFiniteElement,
+        ElementMetaData,
+        tuple[str, int],
+        tuple[str, int, tuple],
+        tuple[str, int, tuple, bool],
     ],
 ) -> FunctionSpace:
     """Create a finite element function space.
