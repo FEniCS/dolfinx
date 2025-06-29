@@ -1,4 +1,5 @@
-# Copyright (C) 2022-2025 Jørgen S. Dokken, Henrik N. T. Finsberg and Paul T. Kühner
+# Copyright (C) 2022-2025 Jørgen S. Dokken, Henrik N. T. Finsberg and
+# Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -34,7 +35,8 @@ __all__ = [
 
 
 class TopologyDict(typing.TypedDict):
-    """TopologyDict is a TypedDict for storing the topology of the marked cell.
+    """TopologyDict is a TypedDict for storing the topology of the marked
+    cell.
 
     Args:
         topology: 2D array containing the topology of the marked cell.
@@ -95,7 +97,8 @@ class MeshData(typing.NamedTuple):
 
 
 def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
-    """Create a UFL mesh from a Gmsh cell identifier and geometric dimension.
+    """Create a UFL mesh from a Gmsh cell identifier and geometric
+    dimension.
 
     See https://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format.
 
@@ -126,7 +129,8 @@ def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
 
 
 def cell_perm_array(cell_type: CellType, num_nodes: int) -> list[int]:
-    """The permutation array for permuting Gmsh ordering to DOLFINx ordering.
+    """The permutation array for permuting Gmsh ordering to DOLFINx
+    ordering.
 
     Args:
         cell_type: DOLFINx cell type.
@@ -142,7 +146,8 @@ def cell_perm_array(cell_type: CellType, num_nodes: int) -> list[int]:
 def extract_topology_and_markers(
     model, name: typing.Optional[str] = None
 ) -> tuple[dict[int, TopologyDict], dict[str, tuple[int, int]]]:
-    """Extract all entities tagged with a physical marker in the gmsh model.
+    """Extract all entities tagged with a physical marker in the gmsh
+    model.
 
     Returns a nested dictionary where the first key is the gmsh MSH
     element type integer. Each element type present in the model
@@ -155,13 +160,12 @@ def extract_topology_and_markers(
             model will be used.
 
     Returns:
-        A tuple ``(topologies, physical_groups)``, where ``topologies`` is a
-        nested dictionary where each key corresponds to a gmsh cell
-        type. Each cell type found in the mesh has a 2D array containing
-        the topology of the marked cell and a list with the
-        corresponding markers. ``physical_groups`` is a dictionary where the key
-        is the physical name and the value is a tuple with the dimension
-        and tag.
+        A tuple ``(topologies, physical_groups)``, where ``topologies`` is
+        a nested dictionary where each key corresponds to a gmsh cell type.
+        Each cell type found in the mesh has a 2D array containing the
+        topology of the marked cell and a list with the corresponding
+        markers. ``physical_groups`` is a dictionary where the key is the
+        physical name and the value is a tuple with the dimension and tag.
 
     """
     if name is not None:
@@ -283,10 +287,11 @@ def model_to_mesh(
             distribution of cells across MPI ranks.
 
     Returns:
-        MeshData with mesh and tags of corresponding entities by codimension.
-        Codimension 0 is the cell tags, codimension 1 is the facet tags,
-        codimension 2 is the ridge tags and codimension 3 is the peak tags
-        as well as a lookup table from the physical groups by name to integer.
+        MeshData with mesh and tags of corresponding entities by
+        codimension. Codimension 0 is the cell tags, codimension 1 is the
+        facet tags, codimension 2 is the ridge tags and codimension 3 is
+        the peak tags as well as a lookup table from the physical groups by
+        name to integer.
 
     Note:
         For performance, this function should only be called once for
@@ -300,10 +305,10 @@ def model_to_mesh(
         x = extract_geometry(model)
         topologies, physical_groups = extract_topology_and_markers(model)
 
-        # Extract Gmsh entity (cell) id, topological dimension and number of nodes
-        # which is used to create an appropriate coordinate element, and seperate
-        # higher topological entities from lower topological entities (e.g. facets,
-        # ridges and peaks).
+        # Extract Gmsh entity (cell) id, topological dimension and number
+        # of nodes which is used to create an appropriate coordinate
+        # element, and seperate higher topological entities from lower
+        # topological entities (e.g. facets, ridges and peaks).
         num_unique_entities = len(topologies.keys())
         element_ids = np.zeros(num_unique_entities, dtype=np.int32)
         entity_tdim = np.zeros(num_unique_entities, dtype=np.int32)
@@ -325,12 +330,14 @@ def model_to_mesh(
     assert len(np.unique(entity_tdim)) == len(entity_tdim)
     perm_sort = np.argsort(entity_tdim)[::-1]
 
-    # Extract position of the highest topological entity and its topological dimension
+    # Extract position of the highest topological entity and its
+    # topological dimension
     cell_position = perm_sort[0]
     tdim = int(entity_tdim[cell_position])
 
-    # Extract entity -> node connectivity for all cells and sub-entities marked in the GMSH model
-    meshtags: dict[int, tuple[npt.NDArray[np.int32], npt.NDArray[np.int32]]] = {}
+    # Extract entity -> node connectivity for all cells and sub-entities
+    # marked in the GMSH model
+    meshtags: dict[int, tuple[npt.NDArray[np.int64], npt.NDArray[np.int32]]] = {}
     for position in perm_sort:
         codim = tdim - entity_tdim[position]
         if comm.rank == rank:
@@ -344,7 +351,8 @@ def model_to_mesh(
             entity_values = np.empty((0,), dtype=np.int32)
             meshtags[codim] = (marked_entities, entity_values)
 
-    # Create a UFL Mesh object for the GMSH element with the highest topoligcal dimension
+    # Create a UFL Mesh object for the GMSH element with the highest
+    # topoligcal dimension
     ufl_domain = ufl_mesh(element_ids[cell_position], gdim, dtype=dtype)
 
     # Get cell->node connectivity and  permute to FEniCS ordering
@@ -352,7 +360,8 @@ def model_to_mesh(
     gmsh_cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), num_nodes)
     cell_connectivity = meshtags[0][0][:, gmsh_cell_perm].copy()
 
-    # Create a distributed mesh, where mesh nodes are only destributed from the input rank
+    # Create a distributed mesh, where mesh nodes are only destributed from
+    # the input rank
     if comm.rank != rank:
         x = np.empty([0, gdim], dtype=dtype)  # No nodes on other than root rank
     mesh = create_mesh(
@@ -378,9 +387,9 @@ def model_to_mesh(
             dolfinx_meshtags[key] = None
             continue
 
-        # Distribute entity data [[e0_v0, e0_v1, ...], [e1_v0, e1_v1, ...], ...]
-        # which is made in global input indices to local indices on the
-        # owning process
+        # Distribute entity data [[e0_v0, e0_v1, ...], [e1_v0, e1_v1, ...],
+        # ...] which is made in global input indices to local indices on
+        # the owning process
         (marked_entities, entity_values) = meshtag_data
         local_entities, local_values = distribute_entity_data(
             mesh, tdim - codim, marked_entities, entity_values
@@ -412,7 +421,8 @@ def read_from_msh(
         typing.Callable[[_MPI.Comm, int, int, AdjacencyList], AdjacencyList_int32]
     ] = None,
 ) -> MeshData:
-    """Read a Gmsh .msh file and return a :class:`dolfinx.mesh.Mesh` and cell facet markers.
+    """Read a Gmsh .msh file and return a :class:`dolfinx.mesh.Mesh` and
+    cell facet markers.
 
     Note:
         This function requires the Gmsh Python module.

@@ -75,7 +75,8 @@
 #
 # The Stokes problem using Taylor-Hood elements is solved using:
 # 1. [Block preconditioner using PETSc MatNest and VecNest data
-#    structures. Each 'block' is a standalone object.](#nested-matrix-solver)
+#    structures. Each 'block' is a standalone object.]
+#    (#nested-matrix-solver)
 # 1. [Block preconditioner with the `u` and `p` fields stored block-wise
 #    in a single matrix](#monolithic-block-iterative-solver)
 # 1. [Direct solver with the `u` and `p` fields stored block-wise in a
@@ -210,7 +211,8 @@ a_p = [[a[0][0], None], [None, a_p11]]
 
 
 def nested_iterative_solver():
-    """Solve the Stokes problem using nest matrices and an iterative solver."""
+    """Solve the Stokes problem using nest matrices and an iterative
+    solver."""
 
     # Assemble nested matrix operators
     A = fem.petsc.assemble_matrix(a, bcs=bcs, kind="nest")
@@ -331,7 +333,8 @@ def nested_iterative_solver():
 
 
 def block_operators():
-    """Return block operators and block RHS vector for the Stokes problem."""
+    """Return block operators and block RHS vector for the Stokes
+    problem."""
 
     # Assembler matrix operator, preconditioner and RHS vector into
     # single objects but preserving block structure
