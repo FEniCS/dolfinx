@@ -294,13 +294,14 @@ std::array<T, 3> support(std::span<const T> bd, std::array<T, 3> v)
 /// @param[in] q0 Body 2 list of points, shape (num_points, 3). Row-major
 /// storage.
 /// @tparam T Floating point type
+/// @tparam U Floating point type used for geometry computations internally,
+/// which should be higher precision than T, to maintain accuracy.
 /// @return shortest vector between bodies
-template <std::floating_point T>
+template <std::floating_point T,
+          typename U = boost::multiprecision::cpp_bin_float_double_extended>
 std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
                                       std::span<const T> q0)
 {
-  using U = boost::multiprecision::cpp_bin_float_double_extended;
-
   assert(p0.size() % 3 == 0);
   assert(q0.size() % 3 == 0);
 
