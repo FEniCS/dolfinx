@@ -174,7 +174,13 @@ def test_cube_distance(delta, scale, dtype):
             cube1 = cubes[c1] + np.array([dx + delta, 0, 0])
             c0rot = r.apply(cube0)
             c1rot = r.apply(cube1)
-            distance = np.linalg.norm(compute_distance_gjk(c0rot, c1rot))
+            print("in types=", c0rot.dtype, c1rot.dtype)
+            assert c0rot.dtype == dtype
+            assert c1rot.dtype == dtype
+            d = compute_distance_gjk(c0rot, c1rot)
+            print("out type = ", d.dtype)
+            assert d.dtype == dtype
+            distance = np.linalg.norm(d)
             assert np.isclose(distance, delta)
 
 
