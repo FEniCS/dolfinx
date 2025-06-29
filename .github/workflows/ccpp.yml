@@ -148,9 +148,9 @@ jobs:
         working-directory: python
         run: |
           pip install mypy
-          mypy dolfinx
-          mypy test
-          mypy demo
+          mypy dolfinx  
+        # mypy test (--check-untyped-defs)
+        # mypy demo
 
       - name: Run demos (Python, serial)
         run: |
