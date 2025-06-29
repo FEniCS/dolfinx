@@ -149,6 +149,8 @@ jobs:
         run: |
           pip install mypy
           mypy dolfinx
+          mypy test
+          mypy demo
 
       - name: Run demos (Python, serial)
         run: |
