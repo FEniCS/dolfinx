@@ -9,6 +9,7 @@
 #include <basix/mdspan.hpp>
 #include <complex>
 #include <concepts>
+#include <dolfinx/common/constexpr_type.h>
 #include <type_traits>
 
 namespace dolfinx
@@ -40,5 +41,31 @@ using scalar_value_t = typename scalar_value<T>::type;
 
 /// @private mdspan/mdarray namespace
 namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
+/// @private Concept capturing both compile time defined block sizes and runtime
+/// ones.
+template <typename V>
+concept BlockSize = common::ConstexprType<int, V>;
+
+/// @private Short notation for a compile time block size.
+template <int N>
+using BS = std::integral_constant<int, N>;
+
+/// @private Retrieves the integral block size of a compile time block size.
+template <BlockSize V>
+constexpr int
+block_size(V bs,
+           typename std::enable_if_t<common::is_compile_time_v<int, V>>* = 0)
+{
+  return common::value<int, V>(bs);
+}
+
+/// @private Retrieves the integral block size of a runtime block size.
+template <BlockSize V>
+int block_size(V bs,
+               typename std::enable_if_t<common::is_runtime_v<int, V>>* = 0)
+{
+  return common::value<int, V>(bs);
+}
 
 } // namespace dolfinx
