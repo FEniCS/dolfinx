@@ -159,6 +159,7 @@ L = ufl.inner(f, v) * ufl.dx + ufl.inner(g, v) * ufl.ds
 # +
 problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 uh, convergence_reason, _ = problem.solve()
+assert isinstance(uh, fem.Function)
 assert convergence_reason > 0
 # -
 

@@ -723,6 +723,7 @@ problem = LinearProblem(
     },
 )
 Esh, convergence_reason, _ = problem.solve()
+assert isinstance(Esh, fem.Function)
 assert convergence_reason > 0
 # -
 
