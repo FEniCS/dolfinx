@@ -431,8 +431,6 @@ void assemble_interior_facets(
     std::span<T> sub_Ae0 = _Ae.subspan(2 * bs0 * dmap0_cell0.size() * num_cols);
 
     P0(_Ae, cell_info0, cells0[0], num_cols);
-    P0(sub_Ae0, cell_info0, cells0[1], num_cols);
-    P1T(_Ae, cell_info1, cells1[0], num_rows);
 
     for (int row = 0; row < num_rows; ++row)
     {
