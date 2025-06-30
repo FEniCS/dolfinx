@@ -21,7 +21,7 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType
-from dolfinx.fem.function import FunctionSpace
+from dolfinx.fem.function import Function, FunctionSpace
 
 if typing.TYPE_CHECKING:
     from mpi4py import MPI
@@ -165,7 +165,8 @@ def form_cpp_class(
 ) -> typing.Union[
     _cpp.fem.Form_float32, _cpp.fem.Form_float64, _cpp.fem.Form_complex64, _cpp.fem.Form_complex128
 ]:
-    """Return the wrapped C++ class of a variational form of a specific scalar type.
+    """Return the wrapped C++ class of a variational form of a specific
+    scalar type.
 
     Args:
         dtype: Scalar type of the required form class.
@@ -207,9 +208,9 @@ def mixed_topology_form(
     """
     Create a mixed-topology from from an array of Forms.
 
-    # FIXME: This function is a temporary hack for mixed-topology meshes. It is needed
-    # because UFL does not know about mixed-topology meshes, so we need
-    # to pass a list of forms for each cell type.
+    # FIXME: This function is a temporary hack for mixed-topology meshes.
+    # It is needed because UFL does not know about mixed-topology meshes,
+    # so we need to pass a list of forms for each cell type.
 
     Args:
         form: A list of UFL forms. Each form should be the same, just
@@ -282,10 +283,10 @@ def form(
     jit_options: typing.Optional[dict] = None,
     entity_maps: typing.Optional[typing.Iterable[_cpp.mesh.EntityMap]] = None,
 ):
-    """Create a Form or an array of Forms.
+    """Create a Form or list of Forms.
 
     Args:
-        form: A UFL form or list(s) of UFL forms.
+        form: A UFL form or iterable (list) of UFL forms.
         dtype: Scalar type to use for the compiled form.
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
@@ -388,7 +389,8 @@ def form(
         return Form(f, ufcx_form, code, module)
 
     def _zero_form(form):
-        """Compile a single 'zero' UFL form, i.e. a form with no integrals."""
+        """Compile a single 'zero' UFL form, i.e. a form with no
+        integrals."""
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
         assert len(V) > 0
         msh = V[0].mesh
@@ -533,7 +535,8 @@ def form_cpp_creator(
     _cpp.fem.Form_complex64,
     _cpp.fem.Form_complex128,
 ]:
-    """Return the wrapped C++ constructor for creating a variational form of a specific scalar type.
+    """Return the wrapped C++ constructor for creating a variational form
+    of a specific scalar type.
 
     Args:
         dtype: Scalar type of the required form class.
@@ -562,7 +565,7 @@ def create_form(
     function_spaces: list[function.FunctionSpace],
     msh: Mesh,
     subdomains: dict[IntegralType, list[tuple[int, np.ndarray]]],
-    coefficient_map: dict[ufl.Function, function.Function],
+    coefficient_map: dict[ufl.Coefficient, function.Function],
     constant_map: dict[ufl.Constant, function.Constant],
     entity_maps: list[_cpp.mesh.EntityMap] | None = None,
 ) -> Form:
@@ -631,3 +634,34 @@ def create_form(
         msh._cpp_object,
     )
     return Form(f, form.ufcx_form, form.code)
+
+
+def derivative_block(
+    F: typing.Union[ufl.Form, typing.Sequence[ufl.Form]],
+    u: typing.Union[Function, typing.Sequence[Function]],
+    du: typing.Optional[typing.Union[ufl.Argument, typing.Sequence[ufl.Argument]]] = None,
+) -> typing.Union[ufl.Form, typing.Iterable[typing.Iterable[ufl.Form]]]:
+    """Return the UFL derivative of a (list of) UFL rank one form(s).
+
+    This is commonly used to derive a block Jacobian from a block residual.
+
+    If `F_i` is a list of forms, the Jacobian is a list of lists with
+    :math:`J_{ij} = \\frac{\\partial F_i}{u_j}[\\delta u_j]` using
+    `ufl.derivative` called component-wise.
+
+    If `F` is a form, the Jacobian is computed as
+    :math:`J = \\frac{\\partial F}{\\partial u}[\\delta u]`. This is
+    identical to calling `ufl.derivative` directly.
+    """
+    if isinstance(F, ufl.Form):
+        if du is None:
+            du = ufl.TrialFunction(u.function_space)  # type: ignore
+        return ufl.derivative(F, u, du)
+    else:
+        assert [isinstance(Fi, ufl.Form) for Fi in F], "F must be a list of UFL forms"
+        assert len(F) == len(u), "Number of forms and functions must be equal"
+        if du is not None:
+            assert len(F) == len(du), "Number of forms and du must be equal"
+        else:
+            du = [ufl.TrialFunction(u_i.function_space) for u_i in u]
+        return [[ufl.derivative(Fi, u_j, du_j) for u_j, du_j in zip(u, du)] for Fi in F]

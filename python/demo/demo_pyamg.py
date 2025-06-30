@@ -58,7 +58,8 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str):
 
     Args:
         dtype: Scalar type to use.
-        solver_type: pyamg solver type, either "ruge_stuben" or "smoothed_aggregation"
+        solver_type: pyamg solver type, either "ruge_stuben" or
+            "smoothed_aggregation"
     """
 
     real_type = np.real(dtype(0)).dtype
@@ -191,7 +192,8 @@ def elasticity_problem(dtype):
     λ = E * ν / ((1.0 + ν) * (1.0 - 2.0 * ν))
 
     def σ(v):
-        """Return an expression for the stress σ given a displacement field"""
+        """Return an expression for the stress σ given a displacement
+        field"""
         return 2.0 * μ * ufl.sym(ufl.grad(v)) + λ * ufl.tr(ufl.sym(ufl.grad(v))) * ufl.Identity(
             len(v)
         )
