@@ -285,7 +285,7 @@ namespace dolfinx_wrappers
 {
 void geometry(nb::module_& m)
 {
-  declare_bbtree<float>(m, "float32");
   declare_bbtree<double>(m, "float64");
+  declare_bbtree<float>(m, "float32");
 }
 } // namespace dolfinx_wrappers
