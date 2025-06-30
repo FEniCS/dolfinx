@@ -142,7 +142,7 @@ class Expression:
         # Attempt to deduce dtype
         if dtype is None:
             try:
-                dtype = e.dtype
+                dtype = e.dtype  # type: ignore
             except AttributeError:
                 dtype = default_scalar_type
 
@@ -580,7 +580,9 @@ class ElementMetaData(typing.NamedTuple):
 
 def functionspace(
     mesh: Mesh,
-    element: typing.Union[ufl.FiniteElementBase, ElementMetaData, tuple[str, int, tuple, bool]],
+    element: typing.Union[
+        ufl.finiteelement.AbstractFiniteElement, ElementMetaData, tuple[str, int, tuple, bool]
+    ],
 ) -> FunctionSpace:
     """Create a finite element function space.
 
@@ -594,30 +596,35 @@ def functionspace(
     # Create UFL element
     dtype = mesh.geometry.x.dtype
     try:
-        e = ElementMetaData(*element)
+        e = ElementMetaData(*element)  # type: ignore
         ufl_e = basix.ufl.element(
-            e.family, mesh.basix_cell(), e.degree, shape=e.shape, symmetry=e.symmetry, dtype=dtype
+            e.family,
+            mesh.basix_cell(),  # type: ignore
+            e.degree,
+            shape=e.shape,
+            symmetry=e.symmetry,
+            dtype=dtype,
         )
     except TypeError:
         ufl_e = element  # type: ignore
 
     # Check that element and mesh cell types match
-    if ufl_e.cell != mesh.ufl_domain().ufl_cell():
+    if ((domain := mesh.ufl_domain()) is None) or ufl_e.cell != domain.ufl_cell():
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
 
     # Create DOLFINx objects
-    element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)
-    cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, element._cpp_object)
+    element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)  # type: ignore
+    cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, element._cpp_object)  # type: ignore
 
-    assert np.issubdtype(mesh.geometry.x.dtype, element.dtype), (
+    assert np.issubdtype(mesh.geometry.x.dtype, element.dtype), (  # type: ignore
         "Mesh and element dtype are not compatible."
     )
 
     # Initialize the cpp.FunctionSpace
     try:
-        cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, element._cpp_object, cpp_dofmap)
+        cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, element._cpp_object, cpp_dofmap)  # type: ignore
     except TypeError:
-        cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, element._cpp_object, cpp_dofmap)
+        cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, element._cpp_object, cpp_dofmap)  # type: ignore
 
     return FunctionSpace(mesh, ufl_e, cppV)
 
@@ -631,7 +638,7 @@ class FunctionSpace(ufl.FunctionSpace):
     def __init__(
         self,
         mesh: Mesh,
-        element: ufl.FiniteElementBase,
+        element: ufl.finiteelement.AbstractFiniteElement,
         cppV: typing.Union[_cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64],
     ):
         """Create a finite element function space.
