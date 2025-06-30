@@ -286,21 +286,11 @@ int main(int argc, char* argv[])
     // on the `submesh`, we must provide an "entity map" relating cells
     // in `submesh` to entities in `mesh`. This is simply the "inverse"
     // of `submesh_to_mesh`:
-    auto facet_imap = mesh->topology()->index_map(fdim);
-    assert(facet_imap);
-    std::size_t num_facets = mesh->topology()->index_map(fdim)->size_local()
-                             + mesh->topology()->index_map(fdim)->num_ghosts();
-    // Since not all facets in the mesh appear in the submesh, `submesh_to_mesh`
-    // is only injective. We therefore map nonexistent facets to -1 when
-    // creating the "inverse" map mesh_to_submesh
-    std::vector<std::int32_t> mesh_to_submesh(num_facets, -1);
-    for (std::size_t i = 0; i < submesh_to_mesh.size(); ++i)
-      mesh_to_submesh[submesh_to_mesh[i]] = i;
-
-    // Create the entity map to pass to `create_form`
-    std::map<std::shared_ptr<const mesh::Mesh<U>>,
-             std::span<const std::int32_t>>
-        entity_maps = {{submesh, mesh_to_submesh}};
+    std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps;
+    std::shared_ptr<const mesh::EntityMap> entity_map
+        = std::make_shared<const mesh::EntityMap>(
+            mesh->topology(), submesh->topology(), fdim, submesh_to_mesh);
+    entity_maps.push_back(entity_map);
 
     // Define variational forms and attach he required data
     fem::Form<T> a = fem::create_form<T>(*form_mixed_poisson_a, {V, V}, {}, {},
