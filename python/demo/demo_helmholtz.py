@@ -105,7 +105,8 @@ problem = LinearProblem(
     u=uh,
     petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
 )
-problem.solve()
+_, convergence_reason, _ = problem.solve()
+assert convergence_reason > 0
 
 # Save solution in XDMF format (to be viewed in ParaView, for example)
 with XDMFFile(

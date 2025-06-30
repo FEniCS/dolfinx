@@ -276,7 +276,8 @@ def poisson_error(V: fem.FunctionSpace):
 
     # Solve
     problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_rtol": 1e-12})
-    uh = problem.solve()
+    uh, convergence_reason, _ = problem.solve()
+    assert convergence_reason > 0
 
     M = (u_exact - uh) ** 2 * ufl.dx
     M = fem.form(M)
