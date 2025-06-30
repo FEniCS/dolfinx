@@ -358,6 +358,8 @@ void assemble_interior_facets(
     std::span<const std::uint32_t> cell_info1,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
 {
+  // TODO Data passed to facets0 and facets1 can be reduced
+
   if (facets.empty())
     return;
 
@@ -382,8 +384,8 @@ void assemble_interior_facets(
     // Cells in integration domain,  test function domain and trial
     // function domain
     std::array cells{facets(f, 0, 0), facets(f, 1, 0)};
-    std::array cells0{facets0(f, 0, 0), facets0(f, 1, 0)};
-    std::array cells1{facets1(f, 0, 0), facets1(f, 1, 0)};
+    const int cell0 = facets0(f, 0, 0);
+    const int cell1 = facets1(f, 1, 0);
 
     // Local facets indices
     std::array local_facet{facets(f, 0, 1), facets(f, 1, 1)};
@@ -397,11 +399,11 @@ void assemble_interior_facets(
       std::copy_n(&x(x_dofs1[i], 0), 3, std::next(cdofs1.begin(), 3 * i));
 
     // Get dof maps for cells and pack
-    std::span<const std::int32_t> dmap0_cell0 = dmap0.cell_dofs(cells0[0]);
+    std::span<const std::int32_t> dmap0_cell0 = dmap0.cell_dofs(cell0);
     dmapjoint0.resize(2 * dmap0_cell0.size());
     std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
 
-    std::span<const std::int32_t> dmap1_cell1 = dmap1.cell_dofs(cells1[1]);
+    std::span<const std::int32_t> dmap1_cell1 = dmap1.cell_dofs(cell1);
     dmapjoint1.resize(2 *  dmap1_cell1.size());
     std::ranges::copy(dmap1_cell1,
                       std::next(dmapjoint1.begin(), dmap1_cell1.size()));
@@ -430,7 +432,7 @@ void assemble_interior_facets(
     std::span<T> _Ae(Ae);
     std::span<T> sub_Ae0 = _Ae.subspan(2 * bs0 * dmap0_cell0.size() * num_cols);
 
-    P0(_Ae, cell_info0, cells0[0], num_cols);
+    P0(_Ae, cell_info0, cell0, num_cols);
 
     for (int row = 0; row < num_rows; ++row)
     {
@@ -438,7 +440,7 @@ void assemble_interior_facets(
       // the block matrix, so each row needs a separate span access
       std::span<T> sub_Ae1 = _Ae.subspan(
           row * num_cols + bs1 * dmap1_cell1.size(), bs1 * dmap1_cell1.size());
-      P1T(sub_Ae1, cell_info1, cells1[1], 1);
+      P1T(sub_Ae1, cell_info1, cell1, 1);
     }
 
     // Zero rows/columns for essential bcs
