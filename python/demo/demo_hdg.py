@@ -133,7 +133,8 @@ ds_c = ufl.Measure("ds", subdomain_data=[(cell_boundaries, cell_boundary_facets)
 dx_f = ufl.Measure("dx", domain=facet_mesh)
 
 # We write the mixed domain forms as integrals over msh.
-# We create the relation between the entities that we can pass to the form constructor
+# We create the relation between the entities that we can pass to the form
+# constructor
 entity_maps = [
     EntityMap(
         msh.topology._cpp_object,
