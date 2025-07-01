@@ -331,7 +331,7 @@ void assemble_exterior_facets(
 /// function mesh.
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
-template <dolfinx::scalar T, bool interface = false>
+template <dolfinx::scalar T, bool interface = true>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
@@ -464,11 +464,12 @@ void assemble_interior_facets(
     if constexpr (interface)
     {
       sub_Ae0 = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
-                            bs0 * dmap0_cell1.size() * num_cols);
+                            bs0 * dmap0_cell0.size() * num_cols);
     }
     else
     {
-      sub_Ae0 = _Ae.subspan(2 * bs0 * dmap0_cell0.size() * num_cols);
+      sub_Ae0 = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
+                            bs0 * dmap0_cell1.size() * num_cols);
     }
 
     P0(_Ae, cell_info0, cells0[0], num_cols);
