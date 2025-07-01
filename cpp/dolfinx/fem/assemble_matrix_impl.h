@@ -421,12 +421,22 @@ void assemble_interior_facets(
     }
     std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
 
-    std::span<const std::int32_t> dmap1_cell0 = dmap1.cell_dofs(cells1[0]);
+    std::span<const std::int32_t> dmap1_cell0;
     std::span<const std::int32_t> dmap1_cell1 = dmap1.cell_dofs(cells1[1]);
-    dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
-    std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
-    std::ranges::copy(dmap1_cell1,
-                      std::next(dmapjoint1.begin(), dmap1_cell0.size()));
+    if constexpr (interface)
+    {
+      dmapjoint1.resize(2 * dmap1_cell1.size());
+      std::ranges::copy(dmap1_cell1,
+                        std::next(dmapjoint1.begin(), dmap1_cell1.size()));
+    }
+    else
+    {
+      dmap1_cell0 = dmap1.cell_dofs(cells1[0]);
+      dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
+      std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
+      std::ranges::copy(dmap1_cell1,
+                        std::next(dmapjoint1.begin(), dmap1_cell0.size()));
+    }
 
     const int num_rows = bs0 * dmapjoint0.size();
     const int num_cols = bs1 * dmapjoint1.size();
@@ -469,8 +479,13 @@ void assemble_interior_facets(
     {
       // DOFs for dmap1 and cell1 are not stored contiguously in
       // the block matrix, so each row needs a separate span access
-      std::span<T> sub_Ae1 = _Ae.subspan(
-          row * num_cols + bs1 * dmap1_cell0.size(), bs1 * dmap1_cell1.size());
+      std::size_t size;
+      if constexpr (interface)
+        size = dmap1_cell1.size();
+      else
+        size = dmap1_cell0.size();
+      std::span<T> sub_Ae1
+          = _Ae.subspan(row * num_cols + bs1 * size, bs1 * dmap1_cell1.size());
       P1T(sub_Ae1, cell_info1, cells1[1], 1);
     }
 
