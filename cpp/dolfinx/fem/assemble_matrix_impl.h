@@ -331,7 +331,7 @@ void assemble_exterior_facets(
 /// function mesh.
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
-template <dolfinx::scalar T, bool is_interface=false>
+template <dolfinx::scalar T, bool interface = true>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
@@ -360,6 +360,15 @@ void assemble_interior_facets(
 {
   if (facets.empty())
     return;
+
+  if constexpr (interface)
+  {
+    std::cout << "Interface assembler\n";
+  }
+  else
+  {
+    std::cout << "Interior facet assembler\n";
+  }
 
   const auto [dmap0, bs0, facets0] = dofmap0;
   const auto [dmap1, bs1, facets1] = dofmap1;
@@ -398,11 +407,19 @@ void assemble_interior_facets(
 
     // Get dof maps for cells and pack
     std::span<const std::int32_t> dmap0_cell0 = dmap0.cell_dofs(cells0[0]);
-    std::span<const std::int32_t> dmap0_cell1 = dmap0.cell_dofs(cells0[1]);
-    dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
+    std::span<const std::int32_t> dmap0_cell1;
+    if constexpr (interface)
+    {
+      dmapjoint0.resize(2 * dmap0_cell0.size());
+    }
+    else
+    {
+      dmap0_cell1 = dmap0.cell_dofs(cells0[1]);
+      dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
+      std::ranges::copy(dmap0_cell1,
+                        std::next(dmapjoint0.begin(), dmap0_cell0.size()));
+    }
     std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
-    std::ranges::copy(dmap0_cell1,
-                      std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
     std::span<const std::int32_t> dmap1_cell0 = dmap1.cell_dofs(cells1[0]);
     std::span<const std::int32_t> dmap1_cell1 = dmap1.cell_dofs(cells1[1]);
@@ -433,8 +450,16 @@ void assemble_interior_facets(
     // where each block is element tensor of size (dmap0, dmap1).
 
     std::span<T> _Ae(Ae);
-    std::span<T> sub_Ae0 = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
-                                       bs0 * dmap0_cell1.size() * num_cols);
+    std::span<T> sub_Ae0;
+    if constexpr (interface)
+    {
+      sub_Ae0 = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
+                            bs0 * dmap0_cell1.size() * num_cols);
+    }
+    else
+    {
+      sub_Ae0 = _Ae.subspan(2 * bs0 * dmap0_cell0.size() * num_cols);
+    }
 
     P0(_Ae, cell_info0, cells0[0], num_cols);
     P0(sub_Ae0, cell_info0, cells0[1], num_cols);
