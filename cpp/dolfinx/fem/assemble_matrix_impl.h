@@ -702,7 +702,7 @@ void assemble_matrix(
       std::span facets0 = a.domain_arg(IntegralType::interior_facet, 0, i, 0);
       std::span facets1 = a.domain_arg(IntegralType::interior_facet, 1, i, 0);
       assert((facets.size() / 4) * 2 * cstride == coeffs.size());
-      impl::assemble_interior_facets(
+      impl::assemble_interior_facets<T, false>(
           mat_set, x_dofmap, x,
           mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
           {*dofmap0, bs0,
