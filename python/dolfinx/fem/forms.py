@@ -195,6 +195,7 @@ _ufl_to_dolfinx_domain = {
     "exterior_facet": IntegralType.exterior_facet,
     "interior_facet": IntegralType.interior_facet,
     "vertex": IntegralType.vertex,
+    "interior_facet_interface": IntegralType.interior_facet_interface
 }
 
 

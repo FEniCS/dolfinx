@@ -37,7 +37,8 @@ enum class IntegralType : std::int8_t
   cell = 0,           ///< Cell
   exterior_facet = 1, ///< Exterior facet
   interior_facet = 2, ///< Interior facet
-  vertex = 3          ///< Vertex
+  vertex = 3,         ///< Vertex
+  interior_facet_interface = 4
 };
 
 namespace impl
@@ -284,7 +285,8 @@ public:
                 entity_map);
           }
           else if (type == IntegralType::exterior_facet
-                   or type == IntegralType::interior_facet)
+                   or type == IntegralType::interior_facet
+                   or type == IntegralType::interior_facet_interface)
           {
             const mesh::Topology topology = *_mesh->topology();
             int tdim = topology.dim();
@@ -330,7 +332,8 @@ public:
                 entity_map);
           }
           else if (type == IntegralType::exterior_facet
-                   or type == IntegralType::interior_facet)
+                   or type == IntegralType::interior_facet
+                   or type == IntegralType::interior_facet_interface)
           {
             const mesh::Topology topology = *_mesh->topology();
             int tdim = topology.dim();
