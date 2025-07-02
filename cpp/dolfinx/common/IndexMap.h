@@ -272,6 +272,9 @@ public:
   /// element) and the imbalance in ghost indices (second element).
   std::array<double, 2> imbalance() const;
 
+  /// Statistics
+  void stats() const;
+
 private:
   // Range of indices (global) owned by this process
   std::array<std::int64_t, 2> _local_range;

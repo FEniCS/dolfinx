@@ -158,6 +158,8 @@ void common(nb::module_& m)
            &dolfinx::common::IndexMap::index_to_dest_ranks)
       .def("imbalance", &dolfinx::common::IndexMap::imbalance,
            "Imbalance of the current IndexMap.")
+      .def("stats", &dolfinx::common::IndexMap::stats,
+           "Statistics of the current IndexMap.")
       .def_prop_ro(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)

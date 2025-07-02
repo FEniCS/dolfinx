@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <functional>
+#include <iostream>
 #include <numeric>
 #include <span>
 #include <utility>
@@ -1301,6 +1302,69 @@ std::span<const int> IndexMap::src() const noexcept { return _src; }
 //-----------------------------------------------------------------------------
 std::span<const int> IndexMap::dest() const noexcept { return _dest; }
 //-----------------------------------------------------------------------------
+void IndexMap::stats() const
+{
+  // Local size: (all, mean, sd)
+  // Ghost size: (all, mean, sd)
+  // Number of incoming neighbors: (all, mean, sd)
+  // Number of incoming indices per neighbor: (all, mean, sd)
+  // Number of outgoing neighbors: (all, mean, sd)
+  // Number of outgoing indices per neighbour: (all, mean, sd)
+
+  std::array<std::int32_t, 4> local_sizes
+      = {static_cast<std::int32_t>(_local_range[1] - _local_range[0]),
+         static_cast<std::int32_t>(_ghosts.size()),
+         static_cast<std::int32_t>(_src.size()),
+         static_cast<std::int32_t>(_dest.size())};
+
+  // Find the maximum number of owned indices and the maximum number of ghost
+  // indices across all processes.
+  int size, rank;
+  MPI_Comm_size(_comm.comm(), &size);
+  MPI_Comm_rank(_comm.comm(), &rank);
+
+  std::vector<std::int32_t> recv_sizes;
+  if (rank == 0)
+    recv_sizes.resize(size * 4);
+  MPI_Gather(local_sizes.data(), 4, MPI_INT32_T, recv_sizes.data(), 4,
+             MPI_INT32_T, 0, _comm.comm());
+
+  // Compute mean of the values
+  std::array<double, 4> summary_mean;
+  for (std::size_t i = 0; i < recv_sizes.size(); i += 4)
+  {
+    for (std::size_t j = 0; j < 4; ++j)
+      summary_mean[j] += recv_sizes[i + j];
+  }
+  for (std::size_t j = 0; j < 4; ++j)
+    summary_mean[j] /= size;
+
+  // Compute deviation of values
+  std::array<double, 4> summary_sd;
+  for (std::size_t i = 0; i < recv_sizes.size(); i += 4)
+  {
+    for (std::size_t j = 0; j < 4; ++j)
+    {
+      std::int32_t diff = (recv_sizes[i + j] - summary_mean[j]);
+      summary_sd[j] += diff * diff;
+    }
+  }
+  for (std::size_t j = 0; j < 4; ++j)
+    summary_sd[j] = std::sqrt(summary_sd[j] / size);
+
+  if (rank == 0)
+  {
+    std::cout << std::format("Local size = {} +/- {}\n", summary_mean[0],
+                             summary_sd[0]);
+    std::cout << std::format("Ghost size = {} +/- {}\n", summary_mean[1],
+                             summary_sd[1]);
+    std::cout << std::format("src size = {} +/- {}\n", summary_mean[2],
+                             summary_sd[2]);
+    std::cout << std::format("dest size = {} +/- {}\n", summary_mean[3],
+                             summary_sd[3]);
+  }
+}
+
 std::array<double, 2> IndexMap::imbalance() const
 {
   std::array<double, 2> imbalance{-1., -1.};
