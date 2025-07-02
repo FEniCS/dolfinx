@@ -412,8 +412,7 @@ void assemble_interior_facets(
 
     dmapjoint0.resize(2 * dmap0_size);
     std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
-    std::ranges::copy(dmap0_cell1,
-                      std::next(dmapjoint0.begin(), dmap0_size));
+    std::ranges::copy(dmap0_cell1, std::next(dmapjoint0.begin(), dmap0_size));
 
     std::span<const std::int32_t> dmap1_cell0;
     std::span<const std::int32_t> dmap1_cell1;
@@ -427,8 +426,7 @@ void assemble_interior_facets(
 
     dmapjoint1.resize(2 * dmap1_size);
     std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
-    std::ranges::copy(dmap1_cell1,
-                      std::next(dmapjoint1.begin(), dmap1_size));
+    std::ranges::copy(dmap1_cell1, std::next(dmapjoint1.begin(), dmap1_size));
 
     const int num_rows = bs0 * dmapjoint0.size();
     const int num_cols = bs1 * dmapjoint1.size();
