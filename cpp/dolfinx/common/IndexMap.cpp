@@ -1329,31 +1329,67 @@ void IndexMap::stats() const
   MPI_Gather(local_sizes.data(), 4, MPI_INT32_T, recv_sizes.data(), 4,
              MPI_INT32_T, 0, _comm.comm());
 
-  // Compute mean of the values
-  std::array<double, 4> summary_mean;
-  for (std::size_t i = 0; i < recv_sizes.size(); i += 4)
-  {
-    for (std::size_t j = 0; j < 4; ++j)
-      summary_mean[j] += recv_sizes[i + j];
-  }
-  for (std::size_t j = 0; j < 4; ++j)
-    summary_mean[j] /= size;
+  // Get amount of data received (from owners into ghost region)
+  std::map<std::int32_t, std::int32_t> src_to_index;
+  for (std::size_t i = 0; i < _src.size(); ++i)
+    src_to_index.insert({_src[i], i});
+  std::vector<std::int32_t> recv_amounts(_src.size(), 0);
+  for (auto owner : _owners)
+    recv_amounts[src_to_index[owner]]++;
 
-  // Compute deviation of values
-  std::array<double, 4> summary_sd;
-  for (std::size_t i = 0; i < recv_sizes.size(); i += 4)
+  // Gather data on root process
+  std::vector<std::int32_t> recvbuf;
+  std::vector<std::int32_t> counts, offsets;
+  if (rank == 0)
   {
-    for (std::size_t j = 0; j < 4; ++j)
+    offsets.resize(size + 1);
+    counts.resize(size);
+    offsets[0] = 0;
+    for (int i = 0; i < size; ++i)
     {
-      std::int32_t diff = (recv_sizes[i + j] - summary_mean[j]);
-      summary_sd[j] += diff * diff;
+      counts[i] = recv_sizes[i * 4 + 2];
+      offsets[i + 1] = offsets[i] + counts[i];
     }
+    recvbuf.resize(offsets.back());
   }
-  for (std::size_t j = 0; j < 4; ++j)
-    summary_sd[j] = std::sqrt(summary_sd[j] / size);
+  MPI_Gatherv(recv_amounts.data(), recv_amounts.size(), MPI_INT32_T,
+              recvbuf.data(), counts.data(), offsets.data(), MPI_INT32_T, 0,
+              _comm.comm());
 
   if (rank == 0)
   {
+    // Compute mean of the values
+    std::array<double, 4> summary_mean = {0};
+    for (std::size_t i = 0; i < recv_sizes.size(); i += 4)
+    {
+      for (std::size_t j = 0; j < 4; ++j)
+        summary_mean[j] += recv_sizes[i + j];
+    }
+    for (std::size_t j = 0; j < 4; ++j)
+      summary_mean[j] /= size;
+
+    // Compute deviation of values
+    std::array<double, 4> summary_sd = {0};
+    for (std::size_t i = 0; i < recv_sizes.size(); i += 4)
+    {
+      for (std::size_t j = 0; j < 4; ++j)
+      {
+        std::int32_t diff = (recv_sizes[i + j] - summary_mean[j]);
+        summary_sd[j] += diff * diff;
+      }
+    }
+    for (std::size_t j = 0; j < 4; ++j)
+      summary_sd[j] = std::sqrt(summary_sd[j] / size);
+
+    // Message sizes on each process
+    for (int p = 0; p < size; ++p)
+    {
+      std::cout << std::format("Rank[{}]:", p);
+      for (int j = offsets[p]; j < offsets[p + 1]; ++j)
+        std::cout << recvbuf[j] << " ";
+      std::cout << "\n";
+    }
+
     std::cout << std::format("Local size = {} +/- {}\n", summary_mean[0],
                              summary_sd[0]);
     std::cout << std::format("Ghost size = {} +/- {}\n", summary_mean[1],
