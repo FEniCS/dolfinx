@@ -173,8 +173,9 @@ void declare_bbtree(nb::module_& m, std::string type)
       },
       nb::arg("mesh"), nb::arg("candidate_cells"), nb::arg("points"));
 
+  std::string gjk_name = "compute_distance_gjk_" + type;
   m.def(
-      "compute_distance_gjk",
+      gjk_name.c_str(),
       [](nb::ndarray<const T, nb::c_contig> p,
          nb::ndarray<const T, nb::c_contig> q)
       {
@@ -190,7 +191,7 @@ void declare_bbtree(nb::module_& m, std::string type)
         return nb::ndarray<T, nb::numpy>(d.data(), {d.size()}).cast();
       },
       //   nb::rv_policy::copy,
-      nb::arg("p").noconvert(), nb::arg("q").noconvert());
+      nb::arg("p"), nb::arg("q"));
 
   m.def(
       "squared_distance",
