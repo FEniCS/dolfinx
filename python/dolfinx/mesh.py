@@ -339,7 +339,7 @@ class Mesh:
         """
         return self._ufl_domain
 
-    def basix_cell(self) -> ufl.Cell:
+    def basix_cell(self) -> basix.CellType:
         """Return the Basix cell type."""
         return getattr(basix.CellType, self.topology.cell_name())
 
