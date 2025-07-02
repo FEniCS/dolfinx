@@ -299,7 +299,7 @@ endif()
 
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_VERBOSE TRUE)
-find_package(Boost 1.70 REQUIRED)
+find_package(Boost 1.70... REQUIRED)
 set_package_properties(
   Boost PROPERTIES
   TYPE REQUIRED
@@ -345,7 +345,7 @@ if(DOLFINX_BASIX_PYTHON)
   endif()
 endif()
 
-find_package(Basix 0.10 REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
+find_package(Basix 0.10...<0.11 REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 set_package_properties(
   basix PROPERTIES
   TYPE REQUIRED
@@ -376,7 +376,7 @@ set_package_properties(
 # which method UFCx was found.
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
-  find_package(ufcx 0.10 REQUIRED CONFIG)
+  find_package(ufcx 0.10...<0.11 REQUIRED CONFIG)
 else()
   # Check in MODULE mode (using FindUFCX.cmake) using Python interpreter.
   find_package(
@@ -384,7 +384,7 @@ else()
     COMPONENTS Interpreter
     REQUIRED
   )
-  find_package(UFCx 0.10 REQUIRED MODULE)
+  find_package(UFCx 0.10...<0.11 REQUIRED MODULE)
 endif()
 
 set_package_properties(
@@ -397,9 +397,9 @@ set_package_properties(
 # ------------------------------------------------------------------------------
 # Find optional packages
 if(DOLFINX_ENABLE_ADIOS2 AND _REQUIRE_ADIOS2)
-  find_package(ADIOS2 2.8.1 REQUIRED COMPONENTS CXX)
+  find_package(ADIOS2 2.8.1... REQUIRED COMPONENTS CXX)
 elseif(DOLFINX_ENABLE_ADIOS2)
-  find_package(ADIOS2 2.8.1 COMPONENTS CXX)
+  find_package(ADIOS2 2.8.1... COMPONENTS CXX)
 endif()
 if(ADIOS2_FOUND AND NOT ADIOS2_HAVE_MPI)
   message(
@@ -492,9 +492,9 @@ if(SCOTCH_FOUND)
 endif()
 
 if(DOLFINX_ENABLE_PARMETIS AND _REQUIRE_PARMETIS)
-  find_package(ParMETIS 4.0.2 REQUIRED)
+  find_package(ParMETIS 4.0.2... REQUIRED)
 elseif(DOLFINX_ENABLE_PARMETIS)
-  find_package(ParMETIS 4.0.2)
+  find_package(ParMETIS 4.0.2...)
 endif()
 
 if(DOLFINX_ENABLE_KAHIP AND _REQUIRE_KAHIP)
