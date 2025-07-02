@@ -3,7 +3,7 @@
 # interface.
 #
 # docker run -ti -v docker.io/fenicsproject/test-env:current-redhat
-FROM rockylinux/rockylinux:9
+FROM rockylinux/rockylinux:10
 
 ARG BUILD_NP=4
 
@@ -42,11 +42,16 @@ RUN dnf -y update && \
     dnf -y clean all && \
     rm -rf /var/cache
 
+# Broaden default minimal dynamic library path lookup to /usr/local/lib (PETSc
+# issue #1154) and /usr/local/lib64
+RUN echo "/usr/local/lib/" > /etc/ld.so.conf.d/usr-local-lib.conf && \
+    echo "/usr/local/lib64" > /etc/ld.so.conf.d/usr-local-lib64.conf
+
 # Build MPICH (see https://github.com/pmodels/mpich/issues/5811)
 RUN curl -L -O https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
     tar -xf mpich-${MPICH_VERSION}.tar.gz && \
     cd mpich-${MPICH_VERSION} && \
-    FCFLAGS=-fallow-argument-mismatch FFLAGS=-fallow-argument-mismatch ./configure --with-device=ch4:ofi --enable-shared --prefix=/usr/local && \
+    FCFLAGS=-fallow-argument-mismatch FFLAGS=-fallow-argument-mismatch ./configure --with-device=ch4:ofi --enable-shared --prefix=/usr/local --libdir=/usr/local/lib64 && \
     make -j${BUILD_NP} install && \
     rm -rf /tmp/*
 
@@ -54,7 +59,7 @@ RUN curl -L -O https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${M
 RUN curl -L -O https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5_${HDF5_VERSION}.tar.gz && \
     tar -xf hdf5_${HDF5_VERSION}.tar.gz && \
     cd hdf5-hdf5_${HDF5_VERSION} && \
-    ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
+    ./configure --prefix=/usr/local --libdir=/usr/local/lib64 --enable-parallel --enable-shared --enable-static=no && \
     make -j${BUILD_NP} install && \
     rm -rf /tmp/*
 
@@ -74,12 +79,14 @@ RUN git clone -b v${PETSC_VERSION}  https://gitlab.com/petsc/petsc.git && \
     --download-scalapack \
     --download-superlu_dist \
     --prefix=/usr/local \
+    --libdir=/usr/local/lib64 \
     --with-make-np=${BUILD_NP} && \
     make all && \
     make install && \
     cd src/binding/petsc4py && \
     PETSC_DIR=/usr/local python3 -m pip install --no-cache-dir . && \
-    rm -rf /tmp/*
+    rm -rf /tmp/* && \
+    ldconfig
 
 ENV PETSC_DIR=/usr/local
 
