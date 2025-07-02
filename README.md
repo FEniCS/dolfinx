@@ -26,6 +26,9 @@ Documentation can be viewed at <https://docs.fenicsproject.org>.
 
 ### From source
 
+For detailed instructions and the list of dependencies, see
+<https://docs.fenicsproject.org/dolfinx/main/python/installation>.
+
 #### C++ core
 
 To build and install the C++ core, in the `cpp/` directory, run:
@@ -46,9 +49,6 @@ the `python/` directory run:
 pip install -r build-requirements.txt
 pip install --check-build-dependencies --no-build-isolation .
 ```
-
-For detailed instructions, see
-<https://docs.fenicsproject.org/dolfinx/main/python/installation>.
 
 ### Spack
 

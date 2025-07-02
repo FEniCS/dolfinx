@@ -1,4 +1,5 @@
-# Copyright (C) 2017-2021 Chris N. Richardson, Garth N. Wells and Jørgen S. Dokken
+# Copyright (C) 2017-2021 Chris N. Richardson, Garth N. Wells and
+# Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -50,7 +51,7 @@ def locate_dofs_geometrical(
     try:
         return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)  # type: ignore
     except AttributeError:
-        _V = [space._cpp_object for space in V]
+        _V = [space._cpp_object for space in V]  # type: ignore
         return _cpp.fem.locate_dofs_geometrical(_V, marker)
 
 
@@ -86,7 +87,7 @@ def locate_dofs_topological(
     try:
         return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)  # type: ignore
     except AttributeError:
-        _V = [space._cpp_object for space in V]
+        _V = [space._cpp_object for space in V]  # type: ignore
         return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
 
 
@@ -99,8 +100,8 @@ class DirichletBC:
     ]
 
     def __init__(self, bc):
-        """Representation of Dirichlet boundary condition which is imposed on
-        a linear system.
+        """Representation of Dirichlet boundary condition which is imposed
+        on a linear system.
 
         Note:
             Dirichlet boundary conditions  should normally be
@@ -135,7 +136,8 @@ class DirichletBC:
     def set(
         self, x: npt.NDArray, x0: typing.Optional[npt.NDArray[np.int32]] = None, alpha: float = 1
     ) -> None:
-        """Set entries in an array that are constrained by Dirichlet boundary conditions.
+        """Set entries in an array that are constrained by Dirichlet
+        boundary conditions.
 
         Entries in ``x`` that are constrained by a Dirichlet boundary
         conditions are set to ``alpha * (x_bc - x0)``, where ``x_bc`` is
@@ -160,9 +162,9 @@ class DirichletBC:
         self._cpp_object.set(x, x0, alpha)
 
     def dof_indices(self) -> tuple[npt.NDArray[np.int32], int]:
-        """Access dof indices `(local indices, unrolled)`, including ghosts, to
-        which a Dirichlet condition is applied, and the index to the first
-        non-owned (ghost) index. The array of indices is sorted.
+        """Access dof indices `(local indices, unrolled)`, including
+        ghosts, to which a Dirichlet condition is applied, and the index to
+        the first non-owned (ghost) index. The array of indices is sorted.
 
         Note:
             The returned array is read-only.
@@ -223,7 +225,7 @@ def dirichletbc(
         try:
             _value = value._cpp_object  # type: ignore
         except AttributeError:
-            _value = value
+            _value = value  # type: ignore
 
     if V is not None:
         try:

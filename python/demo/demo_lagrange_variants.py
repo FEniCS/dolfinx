@@ -37,8 +37,9 @@ from dolfinx import default_real_type, fem, mesh
 # influence of interpolation point position, we create a degree 10
 # element on an interval using equally spaced points, and plot the basis
 # functions. We create this element using `basix.ufl`'s
-# `element` function. The function `element.tabulate` returns a 3-dimensional
-# array with shape (derivatives, points, (value size) * (basis functions)).
+# `element` function. The function `element.tabulate` returns a 3-
+# dimensional array with shape (derivatives, points, (value size) *
+# (basis functions)).
 # In this example, we only tabulate the 0th derivative and the value
 # size is 1, so we take the slice `[0, :, :]` to get a 2-dimensional
 # array.
@@ -158,7 +159,8 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 # Lagrange compared to the GLL variant. To quantify the error, we
 # compute the interpolation error in the $L_2$ norm,
 #
-# $$\left\|u - u_h\right\|_2 = \left(\int_0^1 (u - u_h)^2\right)^{\frac{1}{2}},$$
+# $$\left\|u - u_h\right\|_2 =
+#   \left(\int_0^1 (u - u_h)^2\right)^{\frac{1}{2}},$$
 #
 # where $u$ is the function and $u_h$ is its interpolation in the finite
 # element space. The following code uses UFL to compute the $L_2$ error
