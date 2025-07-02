@@ -10,7 +10,6 @@
 #include <array>
 #include <boost/multiprecision/cpp_bin_float.hpp>
 #include <concepts>
-#include <dolfinx/common/math.h>
 #include <limits>
 #include <numeric>
 #include <span>
@@ -23,8 +22,11 @@ namespace dolfinx::geometry
 namespace impl_gjk
 {
 
+/// @brief Determinant of 3x3 matrix A
+/// @param A 3x3 matrix
+/// @returns det(A)
 template <typename T>
-T det3(std::span<const T, 9> A)
+inline T det3(std::span<const T, 9> A)
 {
   T w0 = A[3 + 1] * A[2 * 3 + 2] - A[3 + 2] * A[3 * 2 + 1];
   T w1 = A[3] * A[3 * 2 + 2] - A[3 + 2] * A[3 * 2];
@@ -32,17 +34,21 @@ T det3(std::span<const T, 9> A)
   return A[0] * w0 - A[1] * w1 + A[2] * w2;
 }
 
-template <typename T>
-T dot3(std::span<const T, 3> a, std::span<const T, 3> b)
+/// @brief Dot product of vectors a and b
+/// @param a
+/// @param b
+/// @returns a.b
+template <typename Vec>
+inline Vec::value_type dot3(const Vec& a, const Vec& b)
 {
   return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
 
-/// @brief Find the barycentric coordinates in the simplex s, of the point in s
-/// which is closest to the origin.
-/// @param s Simplex described by a set of points in 3D, flattened.
+/// @brief Find the barycentric coordinates in the simplex `s`, of the point in
+/// `s` which is closest to the origin.
+/// @param s Simplex described by a set of points in 3D, row-major, flattened.
 /// @return Barycentric coordinates of the point in s closest to the origin.
-/// @note s may be an interval (2 points), a triangle (3) or a tetrahedron (4).
+/// @note `s` may be an interval, a triangle or a tetrahedron.
 template <typename T>
 std::vector<T> nearest_simplex(std::span<const T> s)
 {
@@ -264,7 +270,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
 /// @brief 'support' function, finds point p in bd which maximises p.v
 /// @param bd Body described by set of 3D points, flattened
 /// @param v A point in 3D
-/// @returns Point p in bd which maximises p.v
+/// @returns Point p in `bd` which maximises p.v
 template <typename T>
 std::array<T, 3> support(std::span<const T> bd, std::array<T, 3> v)
 {
@@ -284,14 +290,14 @@ std::array<T, 3> support(std::span<const T> bd, std::array<T, 3> v)
 }
 } // namespace impl_gjk
 
-/// @brief Compute the distance between two convex bodies p0 and q0, each
+/// @brief Compute the distance between two convex bodies `p0` and `q0`, each
 /// defined by a set of points.
 ///
 /// Uses the Gilbert–Johnson–Keerthi (GJK) distance algorithm.
 ///
-/// @param[in] p0 Body 1 list of points, shape (num_points, 3). Row-major
+/// @param[in] p0 Body 1 list of points, `shape=(num_points, 3)`. Row-major
 /// storage.
-/// @param[in] q0 Body 2 list of points, shape (num_points, 3). Row-major
+/// @param[in] q0 Body 2 list of points, `shape=(num_points, 3)`. Row-major
 /// storage.
 /// @tparam T Floating point type
 /// @tparam U Floating point type used for geometry computations internally,
@@ -343,11 +349,8 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
       break;
 
     // 1st exit condition (v - w).v = 0
-    const U vnorm2
-        = impl_gjk::dot3(std::span<const U, 3>(v), std::span<const U, 3>(v));
-    const U vw
-        = vnorm2
-          - impl_gjk::dot3(std::span<const U, 3>(v), std::span<const U, 3>(w));
+    const U vnorm2 = impl_gjk::dot3(v, v);
+    const U vw = vnorm2 - impl_gjk::dot3(v, w);
     if (vw < (eps * vnorm2) or vw < eps)
       break;
 
@@ -376,7 +379,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
     spdlog::debug("snew.size={}", snew.size());
     s.assign(snew.data(), snew.data() + snew.size());
 
-    U vn = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
+    U vn = impl_gjk::dot3(v, v);
 
     // 2nd exit condition - intersecting or touching
     if (vn < eps * eps)

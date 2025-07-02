@@ -186,11 +186,11 @@ void declare_bbtree(nb::module_& m, std::string type)
         using U = std::conditional<
             std::is_same_v<T, float>, double,
             boost::multiprecision::cpp_bin_float_double_extended>::type;
+
         std::array<T, 3> d
             = dolfinx::geometry::compute_distance_gjk<T, U>(_p, _q);
         return nb::ndarray<T, nb::numpy>(d.data(), {d.size()}).cast();
       },
-      //   nb::rv_policy::copy,
       nb::arg("p"), nb::arg("q"));
 
   m.def(
