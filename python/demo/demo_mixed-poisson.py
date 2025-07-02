@@ -349,8 +349,8 @@ else:
 # vectors `u` and `sigma`.
 
 # +
-_1, convergence_reason, _2 = problem.solve()
-assert convergence_reason > 0, f"Krylov solver has not converged, reason: {reason}."
+_1, converged_reason, _2 = problem.solve()
+assert converged_reason > 0, f"Krylov solver has not converged, reason: {converged_reason}."
 # -
 
 # We save the solution `u` in VTX format:
