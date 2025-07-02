@@ -34,9 +34,9 @@ inline T det3(std::span<const T, 9> A)
   return A[0] * w0 - A[1] * w1 + A[2] * w2;
 }
 
-/// @brief Dot product of vectors a and b
-/// @param a
-/// @param b
+/// @brief Dot product of vectors a and b, both size 3.
+/// @param a Vector of size 3
+/// @param b Vector of size 3
 /// @returns a.b
 template <typename Vec>
 inline Vec::value_type dot3(const Vec& a, const Vec& b)
@@ -362,25 +362,27 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
 
     // Find nearest subset of simplex
     std::vector<U> lmn = impl_gjk::nearest_simplex<U>(s);
+
+    // Recompute v and keep points with non-zero values in lmn
+    std::size_t j = 0;
     v = {0.0, 0.0, 0.0};
-    std::vector<U> snew;
-    snew.reserve(12); // maximum size
     for (std::size_t i = 0; i < lmn.size(); ++i)
     {
-      std::span<U> sc(s.begin() + 3 * i, 3);
+      std::span<const U> sc(std::next(s.begin(), 3 * i), 3);
       if (lmn[i] > 0.0)
       {
         v[0] += lmn[i] * sc[0];
         v[1] += lmn[i] * sc[1];
         v[2] += lmn[i] * sc[2];
-        snew.insert(snew.end(), sc.begin(), sc.end());
+        if (i > j)
+          std::copy(sc.begin(), sc.end(), std::next(s.begin(), 3 * j));
+        ++j;
       }
     }
-    SPDLOG_DEBUG("snew.size={}", snew.size());
-    s.assign(snew.data(), snew.data() + snew.size());
+    SPDLOG_DEBUG("new s size={}", 3 * j);
+    s.resize(3 * j);
 
-    U vn = impl_gjk::dot3(v, v);
-
+    const U vn = impl_gjk::dot3(v, v);
     // 2nd exit condition - intersecting or touching
     if (vn < eps * eps)
       break;
