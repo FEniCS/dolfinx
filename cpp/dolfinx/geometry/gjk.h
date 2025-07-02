@@ -55,7 +55,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
   assert(s.size() % 3 == 0);
   const std::size_t s_rows = s.size() / 3;
 
-  spdlog::debug("GJK: nearest_simplex({})", s_rows);
+  SPDLOG_DEBUG("GJK: nearest_simplex({})", s_rows);
 
   switch (s_rows)
   {
@@ -69,17 +69,17 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     T lm = dot3(s0, s0) - dot3(s0, s1);
     if (lm < 0.0)
     {
-      spdlog::debug("GJK: line point A");
+      SPDLOG_DEBUG("GJK: line point A");
       return {1.0, 0.0};
     }
     T mu = dot3(s1, s1) - dot3(s1, s0);
     if (mu < 0.0)
     {
-      spdlog::debug("GJK: line point B");
+      SPDLOG_DEBUG("GJK: line point B");
       return {0.0, 1.0};
     }
 
-    spdlog::debug("GJK line: AB");
+    SPDLOG_DEBUG("GJK line: AB");
     T f1 = 1.0 / (lm + mu);
     return {mu * f1, lm * f1};
   }
@@ -98,7 +98,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     T d2 = aa - ac;
     if (d1 < 0.0 and d2 < 0.0)
     {
-      spdlog::debug("GJK: Point A");
+      SPDLOG_DEBUG("GJK: Point A");
       return {1.0, 0.0, 0.0};
     }
 
@@ -108,7 +108,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     T d4 = bb - bc;
     if (d3 < 0.0 and d4 < 0.0)
     {
-      spdlog::debug("GJK: Point B");
+      SPDLOG_DEBUG("GJK: Point B");
       return {0.0, 1.0, 0.0};
     }
 
@@ -117,14 +117,14 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     T d6 = cc - bc;
     if (d5 < 0.0 and d6 < 0.0)
     {
-      spdlog::debug("GJK: Point C");
+      SPDLOG_DEBUG("GJK: Point C");
       return {0.0, 0.0, 1.0};
     }
 
     T vc = d4 * d1 - d1 * d3 + d3 * d2;
     if (vc < 0.0 and d1 > 0.0 and d3 > 0.0)
     {
-      spdlog::debug("GJK: edge AB");
+      SPDLOG_DEBUG("GJK: edge AB");
       T f1 = 1.0 / (d1 + d3);
       T lm = d1 * f1;
       T mu = d3 * f1;
@@ -133,7 +133,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     T vb = d1 * d5 - d5 * d2 + d2 * d6;
     if (vb < 0.0 and d2 > 0.0 and d5 > 0.0)
     {
-      spdlog::debug("GJK: edge AC");
+      SPDLOG_DEBUG("GJK: edge AC");
       T f1 = 1.0 / (d2 + d5);
       T lm = d2 * f1;
       T mu = d5 * f1;
@@ -142,14 +142,14 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     T va = d3 * d6 - d6 * d4 + d4 * d5;
     if (va < 0.0 and d4 > 0.0 and d6 > 0.0)
     {
-      spdlog::debug("GJK: edge BC");
+      SPDLOG_DEBUG("GJK: edge BC");
       T f1 = 1.0 / (d4 + d6);
       T lm = d4 * f1;
       T mu = d6 * f1;
       return {0.0, mu, lm};
     }
 
-    spdlog::debug("GJK: triangle ABC");
+    SPDLOG_DEBUG("GJK: triangle ABC");
     T f1 = 1.0 / (va + vb + vc);
     return {va * f1, vb * f1, vc * f1};
   }
@@ -171,7 +171,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
         std::span<const T, 3> sj(s.begin() + j * 3, 3);
         if (i != j)
           d[i][j] = (sii - dot3(si, sj));
-        spdlog::debug("d[{}][{}] = {}", i, j, static_cast<double>(d[i][j]));
+        SPDLOG_DEBUG("d[{}][{}] = {}", i, j, static_cast<double>(d[i][j]));
         if (d[i][j] > 0.0)
           out = false;
       }
@@ -183,7 +183,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       }
     }
 
-    spdlog::debug("Check for edges");
+    SPDLOG_DEBUG("Check for edges");
 
     // Check if an edge is closest
     T v[6][2] = {{0.0}};
@@ -201,7 +201,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       v[i][1] = d[j1][j3] * d[j0][j1] - d[j0][j1] * d[j1][j0]
                 + d[j1][j0] * d[j0][j3];
 
-      spdlog::debug("v[{}] = {},{}", i, (double)v[i][0], (double)v[i][1]);
+      SPDLOG_DEBUG("v[{}] = {},{}", i, (double)v[i][0], (double)v[i][1]);
       if (v[i][0] <= 0.0 and v[i][1] <= 0.0 and d[j0][j1] >= 0.0
           and d[j1][j0] >= 0.0)
       {
@@ -354,8 +354,8 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
     if (vw < (eps * vnorm2) or vw < eps)
       break;
 
-    spdlog::debug("GJK: vw={}/{}", static_cast<double>(vw),
-                  static_cast<double>(eps));
+    SPDLOG_DEBUG("GJK: vw={}/{}", static_cast<double>(vw),
+                 static_cast<double>(eps));
 
     // Add new vertex to simplex
     s.insert(s.end(), w.begin(), w.end());
@@ -376,7 +376,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
         snew.insert(snew.end(), sc.begin(), sc.end());
       }
     }
-    spdlog::debug("snew.size={}", snew.size());
+    SPDLOG_DEBUG("snew.size={}", snew.size());
     s.assign(snew.data(), snew.data() + snew.size());
 
     U vn = impl_gjk::dot3(v, v);
