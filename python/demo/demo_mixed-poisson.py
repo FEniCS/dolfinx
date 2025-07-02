@@ -258,7 +258,7 @@ problem = fem.petsc.LinearProblem(
         "pc_fieldsplit_type": "additive",
         "ksp_rtol": 1e-8,
         "ksp_gmres_restart": 100,
-        "ksp_view": ""
+        "ksp_view": "",
     },
 )
 # -
