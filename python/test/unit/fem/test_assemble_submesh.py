@@ -704,18 +704,18 @@ def test_interior_facet_codim_1(msh):
 
 def test_interior_interface():
     """
-    Test that assembling a form over an interface between two domains works. The
-    form involves a test function defined over one domain and a trial function
-    defined on another. The domains have a common interface but do not overlap.
+    This is a test for assembling a form over an interface between two domains
+    that don't overlap. The test function is defined on one domain, and the trial
+    function is defined on the other.
     """
 
     def interface_int_entities(msh, interface_facets, marker):
         """
         This helper function computes the integration entities for interior facet
         integrals (i.e. a list of (cell_0, local_facet_0, cell_1, local_facet_1))
-        over an interface. The ordering is consistent such that
-        cells for which `marker[cell] >= 0` correspond to the "+" restriction, and cells
-        for which `marker[cell] < 0` correspond to the "-" restriction.
+        over an interface. The integration entities are ordered consistently such
+        that cells for which `marker[cell] >= 0` correspond to the "+" restriction,
+        and cells for which `marker[cell] < 0` correspond to the "-" restriction.
 
         Parameters:
             msh: the mesh
@@ -784,10 +784,7 @@ def test_interior_interface():
     msh_to_sm_1[sm_1_to_msh] = np.arange(len(sm_1_to_msh))
     entity_maps = {smsh_0: msh_to_sm_0, smsh_1: msh_to_sm_1}
 
-    # Create list of integration entities (i.e. a list of facets identified by
-    # (cell_0, local_facet_0, cell_1, local_facet_1)). This is done with the
-    # above helper function to ensure cells in domain 0 correspond to a "+"
-    # restriction and cells in domain 1 correspond to a "-" restriction
+    # Create a list of integration entities
     interface_ents = interface_int_entities(msh, interface_facets, msh_to_sm_0)
 
     # Assemble the form

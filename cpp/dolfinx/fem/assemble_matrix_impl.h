@@ -309,12 +309,14 @@ void assemble_exterior_facets(
 /// execute the kernel over.
 /// @param[in] dofmap0 Test function (row) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
-/// indices.
+/// indices. Cells that don't exist in the test function domain should be
+/// marked with -1.
 /// @param[in] P0 Function that applies transformation P0.A in-place to
 /// transform test degrees-of-freedom.
 /// @param[in] dofmap1 Trial function (column) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
-/// indices.
+/// indices. Cells that don't exist in the trial function domain should be
+/// marked with -1
 /// @param[in] P1T Function that applies transformation A.P1^T in-place
 /// to transform trial degrees-of-freedom.
 /// @param[in] bc0 Marker for rows with Dirichlet boundary conditions
@@ -403,7 +405,9 @@ void assemble_interior_facets(
     std::span<const std::int32_t> dmap0_cell0;
     std::span<const std::int32_t> dmap0_cell1;
 
-    // Check which cells exists in the test function domain
+    // When integrating over interfaces between two domains, the test function
+    // might only be defined on one side, so we check which cells exist in the
+    // test function domain
     if (cells0[0] >= 0)
       dmap0_cell0 = dmap0.cell_dofs(cells0[0]);
 

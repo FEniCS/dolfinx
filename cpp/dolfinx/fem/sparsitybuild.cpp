@@ -47,6 +47,9 @@ void sparsitybuild::interior_facets(
     std::span<const std::int32_t> dofs00;
     std::span<const std::int32_t> dofs01;
 
+    // When integrating over interfaces between two domains, the test function
+    // might only be defined on one side, so we check which cells exist in the
+    // test function domain
     if (cells0[f] >= 0)
       dofs00 = dofmap0.cell_dofs(cells0[f]);
     if (cells0[f + 1] >= 0)
@@ -59,6 +62,7 @@ void sparsitybuild::interior_facets(
     std::span<const std::int32_t> dofs10;
     std::span<const std::int32_t> dofs11;
 
+    // Check which cells exist in the trial function domain
     if (cells1[f] >= 0)
       dofs10 = dofmap1.cell_dofs(cells1[f]);
     if (cells1[f + 1] >= 0)
