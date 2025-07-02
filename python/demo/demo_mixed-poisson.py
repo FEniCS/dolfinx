@@ -258,20 +258,22 @@ problem = fem.petsc.LinearProblem(
         "pc_fieldsplit_type": "additive",
         "ksp_rtol": 1e-8,
         "ksp_gmres_restart": 100,
+        "ksp_view": ""
     },
 )
 # -
 
 
 # +
-# We get the nest index sets for the two fields
+# We set the nest index sets for the preconditioner.
 nested_IS = problem.A.getNestISs()
 ksp = problem.solver
+ksp.getPC().setFieldSplitIS(("sigma", nested_IS[0][0]), ("u", nested_IS[0][1]))
+ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
+# and set a custom convergence monitor.
 ksp.setMonitor(
     lambda ksp, its, rnorm: PETSc.Sys.Print(f"Iteration: {its:>4d}, residual: {rnorm:.3e}")
 )
-ksp.getPC().setFieldSplitIS(("sigma", nested_IS[0][0]), ("u", nested_IS[0][1]))
-ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
 # -
 
 # For the $P_{11}$ block, which is the discontinuous Lagrange mass
@@ -340,21 +342,15 @@ else:
         pc_sigma.setFactorSolverType("superlu_dist")
 # -
 
-
 # Once we have set the preconditioners for the two blocks, we can
 # solve the linear system. The `LinearProblem` class will
 # automatically assemble the linear system, apply the boundary
-# conditions and call the Krylov solver and update the solution
+# conditions, call the Krylov solver and update the solution
 # vectors `u` and `sigma`.
 
 # +
-problem.solve()
-
-reason = ksp.getConvergedReason()
-assert reason > 0, f"Krylov solver has not converged {reason}."
-ksp.view()
-
-
+_1, convergence_reason, _2 = problem.solve()
+assert convergence_reason > 0, f"Krylov solver has not converged, reason: {reason}."
 # -
 
 # We save the solution `u` in VTX format:
