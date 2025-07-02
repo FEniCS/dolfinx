@@ -898,8 +898,18 @@ class LinearProblem:
         self._b.destroy()
         self._x.destroy()
 
-    def solve(self) -> typing.Union[_Function, Iterable[_Function]]:
-        """Solve the problem."""
+    def solve(self) -> tuple[typing.Union[_Function, Iterable[_Function]], int, int]:
+        """Solve the problem and update the solution in the problem
+        instance.
+
+        Note:
+            The user is responsible for asserting convergence of the KSP
+            solver e.g. `assert converged_reason > 0`. Alternatively, pass
+            `"ksp_error_if_not_converged" : True` in `petsc_options`.
+
+        Returns:
+            The solution, convergence reason and number of KSP iterations.
+        """
 
         # Assemble lhs
         self.A.zeroEntries()
@@ -946,7 +956,7 @@ class LinearProblem:
         self.solver.solve(self.b, self.x)
         dolfinx.la.petsc._ghost_update(self.x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
         dolfinx.fem.petsc.assign(self.x, self.u)
-        return self.u
+        return self.u, self.solver.getConvergedReason(), self.solver.getIterationNumber()
 
     @property
     def L(self) -> typing.Union[Form, Iterable[Form]]:
@@ -1399,7 +1409,8 @@ class NonlinearProblem:
             `"ksp_error_if_not_converged" : True` in `petsc_options`.
 
         Returns:
-            The solution, convergence reason and number of iterations.
+            The solution, convergence reason and number of SNES (outer)
+            iterations.
         """
 
         # Move current iterate into the work array.
