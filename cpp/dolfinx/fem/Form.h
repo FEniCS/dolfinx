@@ -510,7 +510,10 @@ public:
   /// corresponding entity indices but in the mesh associated with the
   /// argument function (test/trial function) space. `entities[i]` and
   /// `entities0[i]` point to the same mesh entity, but with respect to
-  /// different mesh views.
+  /// different mesh views. In some cases, such as when integrating over
+  /// the interface between two domains that do not overlap, an entity
+  /// may exist in one domain but not another. In this case, the entity
+  /// is marked with -1.
   ///
   /// @param type Integral type.
   /// @param rank Argument index, e.g. `0` for the test function space, `1`
