@@ -42,7 +42,8 @@ def assemble(mesh, space, k):
     a = fem.form(ufl.inner(c * u, v) * (dx + ds))
 
     facet_dim = mesh.topology.dim - 1
-    facets = locate_entities_boundary(mesh, facet_dim, lambda x: np.isclose(x[0], 1))
+    facets = locate_entities_boundary(
+        mesh, facet_dim, lambda x: np.isclose(x[0], 1))
     dofs = fem.locate_dofs_topological(V, facet_dim, facets)
 
     bc_func = fem.Function(V)
@@ -76,12 +77,14 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
     result as assembling over half of a 2x1 rectangle with the same
     triangulation."""
     if d == 2:
-        mesh_0 = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
+        mesh_0 = create_unit_square(
+            MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
         mesh_1 = create_rectangle(
             MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n), ghost_mode=ghost_mode
         )
     else:
-        mesh_0 = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
+        mesh_0 = create_unit_cube(
+            MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
         mesh_1 = create_box(
             MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)), (2 * n, n, n), ghost_mode=ghost_mode
         )
@@ -107,15 +110,19 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
 def test_submesh_facet_assembly(n, k, space, ghost_mode):
     """Test that assembling a form over the face of a unit cube gives
     the same result as assembling it over a unit square."""
-    cube_mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
+    cube_mesh = create_unit_cube(
+        MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
     edim = cube_mesh.topology.dim - 1
-    entities = locate_entities_boundary(cube_mesh, edim, lambda x: np.isclose(x[2], 0.0))
+    entities = locate_entities_boundary(
+        cube_mesh, edim, lambda x: np.isclose(x[2], 0.0))
     submesh = create_submesh(cube_mesh, edim, entities)[0]
 
     A_submesh, b_submesh, s_submesh = assemble(submesh, space, k)
 
-    square_mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
-    A_square_mesh, b_square_mesh, s_square_mesh = assemble(square_mesh, space, k)
+    square_mesh = create_unit_square(
+        MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
+    A_square_mesh, b_square_mesh, s_square_mesh = assemble(
+        square_mesh, space, k)
 
     assert A_submesh.squared_norm() == pytest.approx(
         A_square_mesh.squared_norm(), rel=1.0e-5, abs=1.0e-5
@@ -233,7 +240,8 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     dirichlet_facets = locate_entities_boundary(
         msh, msh.topology.dim - 1, lambda x: np.isclose(x[0], 0.0)
     )
-    dirichlet_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, dirichlet_facets)
+    dirichlet_dofs = fem.locate_dofs_topological(
+        V, msh.topology.dim - 1, dirichlet_facets)
     bc = fem.dirichletbc(u_bc, dirichlet_dofs)
 
     # Single-domain assembly over msh as a reference to check against
@@ -323,7 +331,8 @@ def test_mixed_dom_codim_1(n, k):
     dirichlet_facets = locate_entities_boundary(
         msh, msh.topology.dim - 1, lambda x: np.isclose(x[0], 0.0)
     )
-    dirichlet_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, dirichlet_facets)
+    dirichlet_dofs = fem.locate_dofs_topological(
+        V, msh.topology.dim - 1, dirichlet_facets)
     bc = fem.dirichletbc(u_bc, dirichlet_dofs)
 
     # Trial and test functions
@@ -395,7 +404,8 @@ def test_disjoint_submeshes():
     """Test assembly with multiple disjoint submeshes in same variational form"""
     N = 10
     tol = 1e-14
-    mesh = create_unit_interval(MPI.COMM_WORLD, N, ghost_mode=GhostMode.shared_facet)
+    mesh = create_unit_interval(
+        MPI.COMM_WORLD, N, ghost_mode=GhostMode.shared_facet)
     tdim = mesh.topology.dim
     dx = 1.0 / N
     center_tag = 1
@@ -416,8 +426,10 @@ def test_disjoint_submeshes():
     values[locate_entities(mesh, tdim, left)] = left_tag
     values[locate_entities(mesh, tdim, right)] = right_tag
 
-    cell_tag = meshtags(mesh, tdim, np.arange(num_cells_local, dtype=np.int32), values)
-    left_facets = compute_incident_entities(mesh.topology, cell_tag.find(left_tag), tdim, tdim - 1)
+    cell_tag = meshtags(mesh, tdim, np.arange(
+        num_cells_local, dtype=np.int32), values)
+    left_facets = compute_incident_entities(
+        mesh.topology, cell_tag.find(left_tag), tdim, tdim - 1)
     center_facets = compute_incident_entities(
         mesh.topology, cell_tag.find(center_tag), tdim, tdim - 1
     )
@@ -434,11 +446,14 @@ def test_disjoint_submeshes():
     facet_values = np.full(num_facet_local, 1, dtype=np.int32)
     facet_values[left_interface] = left_interface_tag
     facet_values[right_interface] = right_interface_tag
-    facet_tag = meshtags(mesh, tdim - 1, np.arange(num_facet_local, dtype=np.int32), facet_values)
+    facet_tag = meshtags(
+        mesh, tdim - 1, np.arange(num_facet_local, dtype=np.int32), facet_values)
 
     # Create facet integrals on each interface
-    left_mesh, left_to_parent, _, _ = create_submesh(mesh, tdim, cell_tag.find(left_tag))
-    right_mesh, right_to_parent, _, _ = create_submesh(mesh, tdim, cell_tag.find(right_tag))
+    left_mesh, left_to_parent, _, _ = create_submesh(
+        mesh, tdim, cell_tag.find(left_tag))
+    right_mesh, right_to_parent, _, _ = create_submesh(
+        mesh, tdim, cell_tag.find(right_tag))
 
     # One sided interface integral uses only "+" restriction. Sort
     # integration entities such that this is always satisfied
@@ -456,10 +471,12 @@ def test_disjoint_submeshes():
         Returns:
             Integration data for interior facets
         """
-        mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
+        mesh.topology.create_connectivity(
+            mesh.topology.dim - 1, mesh.topology.dim)
         assert facet_tag.dim == mesh.topology.dim - 1
         integration_data = compute_integration_domains(
-            fem.IntegralType.interior_facet, mesh.topology, facet_tag.find(value)
+            fem.IntegralType.interior_facet, mesh.topology, facet_tag.find(
+                value)
         )
         mapped_cell_0 = parent_to_sub_map[integration_data[0::4]]
         mapped_cell_1 = parent_to_sub_map[integration_data[2::4]]
@@ -477,8 +494,10 @@ def test_disjoint_submeshes():
     parent_to_left[left_to_parent] = np.arange(len(left_to_parent))
     parent_to_right[right_to_parent] = np.arange(len(right_to_parent))
     integral_data = [
-        compute_mapped_interior_facet_data(mesh, facet_tag, left_interface_tag, parent_to_left),
-        compute_mapped_interior_facet_data(mesh, facet_tag, right_interface_tag, parent_to_right),
+        compute_mapped_interior_facet_data(
+            mesh, facet_tag, left_interface_tag, parent_to_left),
+        compute_mapped_interior_facet_data(
+            mesh, facet_tag, right_interface_tag, parent_to_right),
     ]
 
     dS = ufl.Measure("dS", domain=mesh, subdomain_data=integral_data)
@@ -544,7 +563,8 @@ def test_disjoint_submeshes():
     # Compute value of expression at right interface
     if len(facets := facet_tag.find(right_interface_tag)) > 0:
         assert len(facets) == 1
-        right_vertex = entities_to_geometry(mesh, mesh.topology.dim - 1, facets)
+        right_vertex = entities_to_geometry(
+            mesh, mesh.topology.dim - 1, facets)
         if right_vertex[0, 0] < num_vertices_local:
             right_coord = mesh.geometry.x[right_vertex].reshape(3, -1)
             right_val = np.cos(right_coord[0, 0]) * f_right(right_coord)[0]
@@ -587,7 +607,8 @@ def test_mixed_measures():
     q = ufl.TestFunction(Q)
 
     # First, assemble a block vector using both dx_msh and dx_smsh
-    L = [fem.form(ufl.inner(2.3, v) * dx_msh), fem.form(ufl.inner(1.3, q) * dx_smsh)]
+    L = [fem.form(ufl.inner(2.3, v) * dx_msh),
+         fem.form(ufl.inner(1.3, q) * dx_smsh)]
     b0 = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
     b0.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
@@ -646,7 +667,7 @@ def test_interior_facet_codim_1(msh):
     # Mark all local and owned interior facets and "unmark" exterior facets
     facet_vector = la.vector(facet_imap, 1, dtype=np.int32)
     facet_vector.array[: facet_imap.size_local] = 1
-    facet_vector.array[facet_imap.size_local :] = 0
+    facet_vector.array[facet_imap.size_local:] = 0
     facet_vector.array[exterior_facet_indices(msh.topology)] = 0
     facet_vector.scatter_forward()
     interior_facets = np.flatnonzero(facet_vector.array)
@@ -683,7 +704,8 @@ def test_interior_facet_codim_1(msh):
     j = fem.Function(fem.functionspace(submesh, ("Lagrange", 1)))
     j.interpolate(f)
     j.x.scatter_forward()
-    J_submesh = assemble_interior_facet_formulation(ufl.avg(j) * dS_submesh, entity_maps)
+    J_submesh = assemble_interior_facet_formulation(
+        ufl.avg(j) * dS_submesh, entity_maps)
     b_submesh = assemble_interior_facet_formulation(
         ufl.inner(j, ufl.jump(v)) * dS_submesh, entity_maps
     )
@@ -691,7 +713,8 @@ def test_interior_facet_codim_1(msh):
     # Assemble reference value forms on the parent mesh using function
     # defined with UFL
     x = ufl.SpatialCoordinate(msh)
-    J_ref = assemble_interior_facet_formulation(ufl.avg(f(x)) * ufl.dS(metadata=metadata), None)
+    J_ref = assemble_interior_facet_formulation(
+        ufl.avg(f(x)) * ufl.dS(metadata=metadata), None)
     b_ref = assemble_interior_facet_formulation(
         ufl.inner(f(x), ufl.jump(v)) * ufl.dS(metadata=metadata), None
     )
@@ -740,7 +763,8 @@ def test_interior_interface():
                 else:
                     cell_plus, cell_minus = cells[1], cells[0]
 
-                local_facet_plus = np.where(c_to_f.links(cell_plus) == facet)[0][0]
+                local_facet_plus = np.where(
+                    c_to_f.links(cell_plus) == facet)[0][0]
                 local_facet_minus = np.where(
                     c_to_f.links(cell_minus) == facet)[0][0]
 
@@ -796,7 +820,8 @@ def test_interior_interface():
     f = fem.Function(V_0)
     f.interpolate(lambda x: x[0])
 
-    a = fem.form(ufl.inner(f("+") * u_0("+"), v_1("-")) * dS(1), entity_maps=entity_maps)
+    a = fem.form(ufl.inner(f("+") * u_0("+"), v_1("-"))
+                 * dS(1), entity_maps=entity_maps)
 
     A = fem.assemble_matrix(a)
     A.scatter_reverse()
@@ -817,6 +842,4 @@ def test_interior_interface():
 
     A_ref_sqrnorm = A.squared_norm()
 
-    assert(np.isclose(A_sqnorm, A_ref_sqrnorm))
-
-test_interior_interface()
+    assert (np.isclose(A_sqnorm, A_ref_sqrnorm))
