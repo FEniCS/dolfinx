@@ -373,6 +373,9 @@ void assemble_interior_facets(
 
   std::vector<T> Ae, be;
 
+  const std::size_t dmap0_size = dmap0.cell_dofs(0).size();
+  const std::size_t dmap1_size = dmap1.cell_dofs(0).size();
+
   // Temporaries for joint dofmaps
   std::vector<std::int32_t> dmapjoint0, dmapjoint1;
   assert(facets0.size() == facets.size());
@@ -397,19 +400,35 @@ void assemble_interior_facets(
       std::copy_n(&x(x_dofs1[i], 0), 3, std::next(cdofs1.begin(), 3 * i));
 
     // Get dof maps for cells and pack
-    std::span<const std::int32_t> dmap0_cell0 = dmap0.cell_dofs(cells0[0]);
-    std::span<const std::int32_t> dmap0_cell1 = dmap0.cell_dofs(cells0[1]);
-    dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
+    std::span<const std::int32_t> dmap0_cell0;
+    std::span<const std::int32_t> dmap0_cell1;
+
+    // Check which cells exists in the test function domain
+    if (cells0[0] >= 0)
+      dmap0_cell0 = dmap0.cell_dofs(cells0[0]);
+
+    if (cells0[1] >= 0)
+      dmap0_cell1 = dmap0.cell_dofs(cells0[1]);
+
+    dmapjoint0.resize(2 * dmap0_size);
     std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
     std::ranges::copy(dmap0_cell1,
-                      std::next(dmapjoint0.begin(), dmap0_cell0.size()));
+                      std::next(dmapjoint0.begin(), dmap0_size));
 
-    std::span<const std::int32_t> dmap1_cell0 = dmap1.cell_dofs(cells1[0]);
-    std::span<const std::int32_t> dmap1_cell1 = dmap1.cell_dofs(cells1[1]);
-    dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
+    std::span<const std::int32_t> dmap1_cell0;
+    std::span<const std::int32_t> dmap1_cell1;
+
+    // Check which cells exist in the trial function domain
+    if (cells1[0] >= 0)
+      dmap1_cell0 = dmap1.cell_dofs(cells1[0]);
+
+    if (cells1[1] >= 0)
+      dmap1_cell1 = dmap1.cell_dofs(cells1[1]);
+
+    dmapjoint1.resize(2 * dmap1_size);
     std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
     std::ranges::copy(dmap1_cell1,
-                      std::next(dmapjoint1.begin(), dmap1_cell0.size()));
+                      std::next(dmapjoint1.begin(), dmap1_size));
 
     const int num_rows = bs0 * dmapjoint0.size();
     const int num_cols = bs1 * dmapjoint1.size();
@@ -433,20 +452,24 @@ void assemble_interior_facets(
     // where each block is element tensor of size (dmap0, dmap1).
 
     std::span<T> _Ae(Ae);
-    std::span<T> sub_Ae0 = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
-                                       bs0 * dmap0_cell1.size() * num_cols);
+    std::span<T> sub_Ae0
+        = _Ae.subspan(bs0 * dmap0_size * num_cols, bs0 * dmap0_size * num_cols);
 
-    P0(_Ae, cell_info0, cells0[0], num_cols);
-    P0(sub_Ae0, cell_info0, cells0[1], num_cols);
-    P1T(_Ae, cell_info1, cells1[0], num_rows);
+    if (cells0[0] >= 0)
+      P0(_Ae, cell_info0, cells0[0], num_cols);
+    if (cells0[1] >= 0)
+      P0(sub_Ae0, cell_info0, cells0[1], num_cols);
+    if (cells1[0] >= 0)
+      P1T(_Ae, cell_info1, cells1[0], num_rows);
 
     for (int row = 0; row < num_rows; ++row)
     {
       // DOFs for dmap1 and cell1 are not stored contiguously in
       // the block matrix, so each row needs a separate span access
-      std::span<T> sub_Ae1 = _Ae.subspan(
-          row * num_cols + bs1 * dmap1_cell0.size(), bs1 * dmap1_cell1.size());
-      P1T(sub_Ae1, cell_info1, cells1[1], 1);
+      std::span<T> sub_Ae1
+          = _Ae.subspan(row * num_cols + bs1 * dmap1_size, bs1 * dmap1_size);
+      if (cells1[1] >= 0)
+        P1T(sub_Ae1, cell_info1, cells1[1], 1);
     }
 
     // Zero rows/columns for essential bcs
