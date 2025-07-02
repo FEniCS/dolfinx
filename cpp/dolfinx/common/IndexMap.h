@@ -273,7 +273,7 @@ public:
   std::array<double, 2> imbalance() const;
 
   /// Statistics
-  void stats() const;
+  std::string stats(int detail_level) const;
 
 private:
   // Range of indices (global) owned by this process

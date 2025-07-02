@@ -1302,14 +1302,13 @@ std::span<const int> IndexMap::src() const noexcept { return _src; }
 //-----------------------------------------------------------------------------
 std::span<const int> IndexMap::dest() const noexcept { return _dest; }
 //-----------------------------------------------------------------------------
-void IndexMap::stats() const
+std::string IndexMap::stats(int detail_level) const
 {
+  // Gather the following data on the root process
   // Local size: (all, mean, sd)
   // Ghost size: (all, mean, sd)
   // Number of incoming neighbors: (all, mean, sd)
-  // Number of incoming indices per neighbor: (all, mean, sd)
   // Number of outgoing neighbors: (all, mean, sd)
-  // Number of outgoing indices per neighbour: (all, mean, sd)
 
   std::array<std::int32_t, 4> local_sizes
       = {static_cast<std::int32_t>(_local_range[1] - _local_range[0]),
@@ -1317,8 +1316,6 @@ void IndexMap::stats() const
          static_cast<std::int32_t>(_src.size()),
          static_cast<std::int32_t>(_dest.size())};
 
-  // Find the maximum number of owned indices and the maximum number of ghost
-  // indices across all processes.
   int size, rank;
   MPI_Comm_size(_comm.comm(), &size);
   MPI_Comm_rank(_comm.comm(), &rank);
@@ -1329,7 +1326,7 @@ void IndexMap::stats() const
   MPI_Gather(local_sizes.data(), 4, MPI_INT32_T, recv_sizes.data(), 4,
              MPI_INT32_T, 0, _comm.comm());
 
-  // Get amount of data received (from owners into ghost region)
+  // Get amount of data received (from owners into ghost region) on each process
   std::map<std::int32_t, std::int32_t> src_to_index;
   for (std::size_t i = 0; i < _src.size(); ++i)
     src_to_index.insert({_src[i], i});
@@ -1356,13 +1353,17 @@ void IndexMap::stats() const
               recvbuf.data(), counts.data(), offsets.data(), MPI_INT32_T, 0,
               _comm.comm());
 
+  std::stringstream output;
+
+  // Compile data for output
   if (rank == 0)
   {
     // Compute mean of the values
-    std::array<double, 4> summary_mean = {0};
-    std::array<std::int32_t, 4> summary_max;
+    std::array<double, 5> summary_mean;
+    std::fill(summary_mean.begin(), summary_mean.end(), 0.0);
+    std::array<std::int32_t, 5> summary_max;
     std::fill(summary_max.begin(), summary_max.end(), 0);
-    std::array<std::int32_t, 4> summary_min;
+    std::array<std::int32_t, 5> summary_min;
     std::fill(summary_min.begin(), summary_min.end(),
               std::numeric_limits<std::int32_t>::max());
     for (std::size_t i = 0; i < recv_sizes.size(); i += 4)
@@ -1378,7 +1379,7 @@ void IndexMap::stats() const
       summary_mean[j] /= size;
 
     // Compute deviation of values
-    std::array<double, 4> summary_sd = {0};
+    std::array<double, 5> summary_sd = {0};
     for (std::size_t i = 0; i < recv_sizes.size(); i += 4)
     {
       for (std::size_t j = 0; j < 4; ++j)
@@ -1390,13 +1391,20 @@ void IndexMap::stats() const
     for (std::size_t j = 0; j < 4; ++j)
       summary_sd[j] = std::sqrt(summary_sd[j] / size);
 
-    // Message sizes on each process
+    // Message sizes on each process and on all processes
+    double rbmean = 0.0;
     for (int p = 0; p < size; ++p)
     {
       double mean = 0.0;
-      std::cout << std::format("Rank[{}]:", p);
+      std::int32_t mmin = std::numeric_limits<std::int32_t>::max();
+      std::int32_t mmax = 0;
       for (int j = offsets[p]; j < offsets[p + 1]; ++j)
+      {
         mean += recvbuf[j];
+        mmin = std::min(mmin, recvbuf[j]);
+        mmax = std::max(mmax, recvbuf[j]);
+      }
+      rbmean += mean;
       mean /= (offsets[p + 1] - offsets[p]);
       double sd = 0.0;
       for (int j = offsets[p]; j < offsets[p + 1]; ++j)
@@ -1406,19 +1414,36 @@ void IndexMap::stats() const
       }
       sd = std::sqrt(sd / (offsets[p + 1] - offsets[p]));
 
-      std::cout << std::format("gs={} mean/sd={} +/- {}\n",
-                               recv_sizes[p * 4 + 1], mean, sd);
+      double pct = 100.0 * (sd / mean);
+      if (detail_level > 0)
+        output << std::format("Message size rank[{}]: min/mean/max +/- sd = "
+                              "({}/{}/{}) +/- {} [{:.2f}%]\n",
+                              p, mmin, mean, mmax, sd, pct);
     }
+    rbmean /= static_cast<double>(recvbuf.size());
+    double rbsd = 0.0;
+    for (std::size_t i = 0; i < recvbuf.size(); ++i)
+    {
+      double diff = recvbuf[i] - rbmean;
+      rbsd += diff * diff;
+    }
+    summary_mean[4] = rbmean;
+    summary_sd[4] = std::sqrt(rbsd / static_cast<double>(recvbuf.size()));
+    summary_max[4] = *std::max_element(recvbuf.begin(), recvbuf.end());
+    summary_min[4] = *std::min_element(recvbuf.begin(), recvbuf.end());
 
-    std::array<std::string, 4> metric_names
-        = {"Local size", "Ghost size", "Source size", "Dest size"};
+    std::array<std::string, 5> metric_names = {
+        "Local size", "Ghost size", "Num sources", "Num dests", "Message size"};
     for (std::size_t j = 0; j < metric_names.size(); ++j)
     {
-      std::cout << std::format("{} min/mean/max +/- sd = {}/{}/{} +/- {}\n",
-                               metric_names[j], summary_min[j], summary_mean[j],
-                               summary_max[j], summary_sd[j]);
+      double pcvar = (summary_sd[j] / summary_mean[j]) * 100.0;
+      output << std::format(
+          "{} min/mean/max +/- sd = ({}/{:.2f}/{}) +/- {:.2f} [{:.2f}%]\n",
+          metric_names[j], summary_min[j], summary_mean[j], summary_max[j],
+          summary_sd[j], pcvar);
     }
   }
+  return output.str();
 }
 
 std::array<double, 2> IndexMap::imbalance() const
