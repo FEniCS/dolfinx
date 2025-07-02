@@ -1360,10 +1360,19 @@ void IndexMap::stats() const
   {
     // Compute mean of the values
     std::array<double, 4> summary_mean = {0};
+    std::array<std::int32_t, 4> summary_max;
+    std::fill(summary_max.begin(), summary_max.end(), 0);
+    std::array<std::int32_t, 4> summary_min;
+    std::fill(summary_min.begin(), summary_min.end(),
+              std::numeric_limits<std::int32_t>::max());
     for (std::size_t i = 0; i < recv_sizes.size(); i += 4)
     {
       for (std::size_t j = 0; j < 4; ++j)
+      {
+        summary_max[j] = std::max(summary_max[j], recv_sizes[i + j]);
+        summary_min[j] = std::min(summary_min[j], recv_sizes[i + j]);
         summary_mean[j] += recv_sizes[i + j];
+      }
     }
     for (std::size_t j = 0; j < 4; ++j)
       summary_mean[j] /= size;
@@ -1374,7 +1383,7 @@ void IndexMap::stats() const
     {
       for (std::size_t j = 0; j < 4; ++j)
       {
-        std::int32_t diff = (recv_sizes[i + j] - summary_mean[j]);
+        double diff = (recv_sizes[i + j] - summary_mean[j]);
         summary_sd[j] += diff * diff;
       }
     }
@@ -1384,20 +1393,31 @@ void IndexMap::stats() const
     // Message sizes on each process
     for (int p = 0; p < size; ++p)
     {
+      double mean = 0.0;
       std::cout << std::format("Rank[{}]:", p);
       for (int j = offsets[p]; j < offsets[p + 1]; ++j)
-        std::cout << recvbuf[j] << " ";
-      std::cout << "\n";
+        mean += recvbuf[j];
+      mean /= (offsets[p + 1] - offsets[p]);
+      double sd = 0.0;
+      for (int j = offsets[p]; j < offsets[p + 1]; ++j)
+      {
+        double diff = mean - recvbuf[j];
+        sd += diff * diff;
+      }
+      sd = std::sqrt(sd / (offsets[p + 1] - offsets[p]));
+
+      std::cout << std::format("gs={} mean/sd={} +/- {}\n",
+                               recv_sizes[p * 4 + 1], mean, sd);
     }
 
-    std::cout << std::format("Local size = {} +/- {}\n", summary_mean[0],
-                             summary_sd[0]);
-    std::cout << std::format("Ghost size = {} +/- {}\n", summary_mean[1],
-                             summary_sd[1]);
-    std::cout << std::format("src size = {} +/- {}\n", summary_mean[2],
-                             summary_sd[2]);
-    std::cout << std::format("dest size = {} +/- {}\n", summary_mean[3],
-                             summary_sd[3]);
+    std::array<std::string, 4> metric_names
+        = {"Local size", "Ghost size", "Source size", "Dest size"};
+    for (std::size_t j = 0; j < metric_names.size(); ++j)
+    {
+      std::cout << std::format("{} min/mean/max +/- sd = {}/{}/{} +/- {}\n",
+                               metric_names[j], summary_min[j], summary_mean[j],
+                               summary_max[j], summary_sd[j]);
+    }
   }
 }
 
