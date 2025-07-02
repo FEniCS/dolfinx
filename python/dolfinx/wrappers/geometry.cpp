@@ -173,18 +173,24 @@ void declare_bbtree(nb::module_& m, std::string type)
       },
       nb::arg("mesh"), nb::arg("candidate_cells"), nb::arg("points"));
 
+  std::string gjk_name = "compute_distance_gjk_" + type;
   m.def(
-      "compute_distance_gjk",
+      gjk_name.c_str(),
       [](nb::ndarray<const T, nb::c_contig> p,
          nb::ndarray<const T, nb::c_contig> q)
       {
         std::size_t p_s0 = p.ndim() == 1 ? 1 : p.shape(0);
         std::size_t q_s0 = q.ndim() == 1 ? 1 : q.shape(0);
         std::span<const T> _p(p.data(), 3 * p_s0), _q(q.data(), 3 * q_s0);
-        std::array<T, 3> d = dolfinx::geometry::compute_distance_gjk<T>(_p, _q);
+        // Use double when T==float, and double_extended when T==double
+        using U = std::conditional<
+            std::is_same_v<T, float>, double,
+            boost::multiprecision::cpp_bin_float_double_extended>::type;
+
+        std::array<T, 3> d
+            = dolfinx::geometry::compute_distance_gjk<T, U>(_p, _q);
         return nb::ndarray<T, nb::numpy>(d.data(), {d.size()}).cast();
       },
-      //   nb::rv_policy::copy,
       nb::arg("p"), nb::arg("q"));
 
   m.def(
