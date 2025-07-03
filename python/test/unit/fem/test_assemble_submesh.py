@@ -14,18 +14,15 @@ import pytest
 import ufl
 from dolfinx import default_scalar_type, fem, la
 from dolfinx.cpp.mesh import EntityMap
-from dolfinx.fem import compute_integration_domains
 from dolfinx.mesh import (
     CellType,
     GhostMode,
-    compute_incident_entities,
     create_box,
     create_rectangle,
     create_submesh,
     create_unit_cube,
     create_unit_interval,
     create_unit_square,
-    entities_to_geometry,
     exterior_facet_indices,
     locate_entities,
     locate_entities_boundary,
@@ -408,7 +405,8 @@ def test_mixed_dom_codim_1(n, k):
 #     values[locate_entities(mesh, tdim, right)] = right_tag
 
 #     cell_tag = meshtags(mesh, tdim, np.arange(num_cells_local, dtype=np.int32), values)
-#     left_facets = compute_incident_entities(mesh.topology, cell_tag.find(left_tag), tdim, tdim - 1)
+#     left_facets = compute_incident_entities(
+#           mesh.topology, cell_tag.find(left_tag), tdim, tdim - 1)
 #     center_facets = compute_incident_entities(
 #         mesh.topology, cell_tag.find(center_tag), tdim, tdim - 1
 #     )
