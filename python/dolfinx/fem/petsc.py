@@ -780,12 +780,12 @@ class LinearProblem:
                 forms, used as a preconditioner.
             kind: The PETSc matrix and vector type. See
                 :func:`create_matrix` for options.
-            petsc_options: Options set on the underlying PETSc KSP only.
+            petsc_options: Options set on the underlying PETSc KSP.
                 For available choices for the 'petsc_options' kwarg,
                 see the `PETSc KSP documentation
                 <https://petsc4py.readthedocs.io/en/stable/manual/ksp/>`_.
-                Options on other objects (matrices, vectors, sub-KSPs)
-                should be set explicitly by the user.
+                Options on other objects (matrices, vectors) should be set
+                explicitly by the user.
             form_compiler_options: Options used in FFCx compilation of
                 all forms. Run ``ffcx --help`` at the commandline to see
                 all available options.
@@ -893,9 +893,8 @@ class LinearProblem:
             opts.prefixPop()
 
         if self.P_mat is not None and kind == "nest":
-            # Transfer nest IS on self.P_mat to PC of outer KSP.
-            # This is a nullop if the user did not ask for fieldsplit
-            # preconditioning in petsc_options.
+            # Transfer nest IS on self.P_mat to PC of main KSP. This allows
+            # fieldsplit preconditioning to be applied, if desired.
             nest_IS = self.P_mat.getNestISs()
             fieldsplit_IS = tuple(
                 [
@@ -1321,8 +1320,8 @@ class NonlinearProblem:
                 PETSc SNES object only. For available choices for the
                 'petsc_options' kwarg, see the `PETSc SNES documentation
                 <https://petsc4py.readthedocs.io/en/stable/manual/snes>`_.
-                Options on other objects (matrices, vectors, sub-KSPs)
-                should be set explicitly by the user.
+                Options on other objects (matrices, vectors) should be set
+                explicitly by the user.
             entity_maps: If any trial functions, test functions, or
                 coefficients in the form are not defined over the same mesh
                 as the integration domain, ``entity_maps`` must be
@@ -1414,9 +1413,8 @@ class NonlinearProblem:
             opts.prefixPop()
 
         if self.P_mat is not None and kind == "nest":
-            # Transfer nest IS on self.P_mat to PC of inner KSP.
-            # This is a nullop if the user did not ask for fieldsplit
-            # preconditioning in petsc_options.
+            # Transfer nest IS on self.P_mat to PC of main KSP. This allows
+            # fieldsplit preconditioning to be applied, if desired.
             nest_IS = self.P_mat.getNestISs()
             fieldsplit_IS = tuple(
                 [
