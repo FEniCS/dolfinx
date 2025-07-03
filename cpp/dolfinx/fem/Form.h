@@ -114,17 +114,7 @@ std::vector<std::int32_t> compute_domain(
   }
   else
     throw std::runtime_error("Integral type not supported.");
-  // Check that there are no negative values in the mapped entities
-  if (!mapped_entities.empty())
-  {
-    auto min_val
-        = std::min_element(mapped_entities.begin(), mapped_entities.end());
-    if (*min_val < 0)
-    {
-      throw std::runtime_error(
-          "Mapped entities contain negative values, check entity map.");
-    }
-  }
+
   return mapped_entities;
 }
 } // namespace impl

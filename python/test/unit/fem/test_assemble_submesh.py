@@ -802,9 +802,13 @@ def test_interior_interface():
     num_cells = cell_imap.size_local + cell_imap.num_ghosts
     msh_to_sm_0 = np.full(num_cells, -1)
     msh_to_sm_0[sm_0_to_msh] = np.arange(len(sm_0_to_msh))
-    msh_to_sm_1 = np.full(num_cells, -1)
-    msh_to_sm_1[sm_1_to_msh] = np.arange(len(sm_1_to_msh))
-    entity_maps = {smsh_0: msh_to_sm_0, smsh_1: msh_to_sm_1}
+    # msh_to_sm_1 = np.full(num_cells, -1)
+    # msh_to_sm_1[sm_1_to_msh] = np.arange(len(sm_1_to_msh))
+    # entity_maps = {smsh_0: msh_to_sm_0, smsh_1: msh_to_sm_1}
+
+    sm_0_emap = EntityMap(msh.topology._cpp_object, smsh_0.topology._cpp_object, msh.topology.dim, sm_0_to_msh)
+    sm_1_emap = EntityMap(msh.topology._cpp_object, smsh_1.topology._cpp_object, msh.topology.dim, sm_1_to_msh)
+    entity_maps = [sm_0_emap, sm_1_emap]
 
     # Create a list of integration entities
     interface_ents = interface_int_entities(msh, interface_facets, msh_to_sm_0)
