@@ -49,9 +49,6 @@ public:
         = static_cast<std::size_t>(e_map->size_local() + e_map->num_ghosts());
     if (num_ents != _entities0.size())
       throw std::runtime_error("Size mismatch between entities and index map.");
-    _entities1.resize(_entities0.size());
-    std::iota(_entities1.begin(), _entities1.end(), 0);
-    assert(_entities1.size() == _entities0.size());
   }
 
   /// Copy constructor
@@ -116,8 +113,6 @@ private:
       _entities0; ///<  Entities belonging to the first mesh
 
   std::shared_ptr<const Topology> _topology1; ///< The second mesh
-  std::vector<std::int32_t>
-      _entities1; ///<  Entities belonging to the second mesh
 };
 
 } // namespace dolfinx::mesh
