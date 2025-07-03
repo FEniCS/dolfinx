@@ -34,7 +34,8 @@ public:
     requires std::is_convertible_v<std::remove_cvref_t<U>,
                                    std::vector<std::int32_t>>
   EntityMap(std::shared_ptr<const Topology> topology,
-            std::shared_ptr<const Topology> sub_topology, int dim, U&& sub_to_topo)
+            std::shared_ptr<const Topology> sub_topology, int dim,
+            U&& sub_to_topo)
       : _dim(dim), _topology(topology),
         _sub_to_topo(std::forward<U>(sub_to_topo)), _sub_topology(sub_topology)
   {
@@ -87,7 +88,8 @@ public:
       parent_to_sub.reserve(_sub_to_topo.size());
       for (std::size_t sub_idx = 0; sub_idx < _sub_to_topo.size(); ++sub_idx)
       {
-        parent_to_sub[_sub_to_topo[sub_idx]] = static_cast<std::int32_t>(sub_idx);
+        parent_to_sub[_sub_to_topo[sub_idx]]
+            = static_cast<std::int32_t>(sub_idx);
       }
 
       auto mapped = entities
@@ -107,7 +109,7 @@ public:
   std::size_t dim() const { return _dim; }
 
 private:
-  std::size_t _dim;                           ///< Dimension of the entities
+  std::size_t _dim;                          ///< Dimension of the entities
   std::shared_ptr<const Topology> _topology; ///< The first mesh
   std::vector<std::int32_t>
       _sub_to_topo; ///<  Entities belonging to the first mesh
