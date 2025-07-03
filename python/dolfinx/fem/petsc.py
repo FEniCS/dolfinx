@@ -897,6 +897,8 @@ class LinearProblem:
         self._A.destroy()
         self._b.destroy()
         self._x.destroy()
+        if self._P_mat is not None:
+            self._P_mat.destroy()
 
     def solve(self) -> tuple[typing.Union[_Function, Iterable[_Function]], int, int]:
         """Solve the problem and update the solution in the problem
