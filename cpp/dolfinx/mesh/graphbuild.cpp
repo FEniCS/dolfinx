@@ -140,31 +140,28 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
     // Build list of dest ranks and count number of items (facets) to
     // send to each dest post office (by neighbourhood rank)
+    for (auto it = dest_to_index.begin(); it != dest_to_index.end();)
     {
-      auto it = dest_to_index.begin();
-      while (it != dest_to_index.end())
-      {
-        const int neigh_rank = dest.size();
+      const int neigh_rank = dest.size();
 
-        // Store global rank
-        dest.push_back(it->front());
+      // Store global rank
+      dest.push_back(it->front());
 
-        // Find iterator to next global rank
-        auto it1
-            = std::find_if(it, dest_to_index.end(), [r = dest.back()](auto& idx)
-                           { return idx[0] != r; });
+      // Find iterator to next global rank
+      auto it1
+          = std::find_if(it, dest_to_index.end(),
+                         [r = dest.back()](auto& idx) { return idx[0] != r; });
 
-        // Store number of items for current rank
-        num_items_per_dest.push_back(std::distance(it, it1));
+      // Store number of items for current rank
+      num_items_per_dest.push_back(std::distance(it, it1));
 
-        // Set entry in map from local facet row index (position) to local
-        // destination rank
-        for (auto e = it; e != it1; ++e)
-          pos_to_neigh_rank[(*e)[1]] = neigh_rank;
+      // Set entry in map from local facet row index (position) to local
+      // destination rank
+      for (auto e = it; e != it1; ++e)
+        pos_to_neigh_rank[(*e)[1]] = neigh_rank;
 
-        // Advance iterator
-        it = it1;
-      }
+      // Advance iterator
+      it = it1;
     }
   }
 
