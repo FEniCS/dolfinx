@@ -1411,14 +1411,14 @@ class NonlinearProblem:
             opts.prefixPop()
 
         if self.P_mat is not None and kind == "nest":
-            # Transfer nest IS on self.P_mat to PC of outer SNES/KSP.
+            # Transfer nest IS on self.P_mat to PC of inner KSP.
             # This is a nullop if the user did not ask for fieldsplit
             # preconditioning in petsc_options.
             nest_IS = self.P_mat.getNestISs()
             fieldsplit_IS = tuple(
                 [(f"{u.name}_{i}", IS) for i, (u, IS) in enumerate(zip(self.u, nest_IS[0]))]
             )
-            self.solver.getPC().setFieldSplitIS(*fieldsplit_IS)
+            self.solver.getKSP().getPC().setFieldSplitIS(*fieldsplit_IS)
 
     def solve(self) -> tuple[PETSc.Vec, int, int]:  # type: ignore
         """Solve the problem and update the solution in the problem
