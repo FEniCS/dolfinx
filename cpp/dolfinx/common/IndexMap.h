@@ -255,24 +255,13 @@ public:
   /// and sorted.
   std::span<const int> dest() const noexcept;
 
-  /// @brief Returns the imbalance of the current IndexMap.
-  ///
-  /// The imbalance is a measure of load balancing across all processes,
-  /// defined as the maximum number of indices on any process divided by
-  /// the average number of indices per process. This function
-  /// calculates the imbalance separately for owned indices and ghost
-  /// indices and returns them as a std::array<double, 2>. If the total
-  /// number of owned or ghost indices is zero, the respective entry in
-  /// the array is set to -1.
-  ///
-  /// @note This is a collective operation and must be called by all
-  /// processes in the communicator associated with the IndexMap.
-  ///
-  /// @return An array containing the imbalance in owned indices (first
-  /// element) and the imbalance in ghost indices (second element).
-  std::array<double, 2> imbalance() const;
-
-  /// Statistics
+  /// @brief Statistics of the IndexMap
+  /// Returns a JSON formatted string with min,max,mean and sd for local_size,
+  /// ghost_size, the number of incoming and outgoing neighbors, and the message
+  /// size between neighbors for ghost update.
+  /// @param detail_level Set to 1 to get a more detailed per-process
+  /// message size breakdown
+  /// @return JSON formatted string
   std::string stats(int detail_level) const;
 
 private:

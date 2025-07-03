@@ -1353,7 +1353,7 @@ std::string IndexMap::stats(int detail_level) const
               recvbuf.data(), counts.data(), offsets.data(), MPI_INT32_T, 0,
               _comm.comm());
 
-  std::stringstream output;
+  std::stringstream out_json;
 
   // Compile data for output
   if (rank == 0)
@@ -1393,32 +1393,28 @@ std::string IndexMap::stats(int detail_level) const
 
     // Message sizes on each process and on all processes
     double rbmean = 0.0;
+    std::vector<std::int32_t> msg_min(size,
+                                      std::numeric_limits<std::int32_t>::max());
+    std::vector<std::int32_t> msg_max(size, 0);
+    std::vector<double> msg_mean(size, 0);
+    std::vector<double> msg_sd(size, 0);
     for (int p = 0; p < size; ++p)
     {
-      double mean = 0.0;
-      std::int32_t mmin = std::numeric_limits<std::int32_t>::max();
-      std::int32_t mmax = 0;
       for (int j = offsets[p]; j < offsets[p + 1]; ++j)
       {
-        mean += recvbuf[j];
-        mmin = std::min(mmin, recvbuf[j]);
-        mmax = std::max(mmax, recvbuf[j]);
+        msg_mean[p] += recvbuf[j];
+        msg_min[p] = std::min(msg_min[p], recvbuf[j]);
+        msg_max[p] = std::max(msg_max[p], recvbuf[j]);
       }
-      rbmean += mean;
-      mean /= (offsets[p + 1] - offsets[p]);
-      double sd = 0.0;
+      rbmean += msg_mean[p];
+      msg_mean[p] /= static_cast<double>(offsets[p + 1] - offsets[p]);
       for (int j = offsets[p]; j < offsets[p + 1]; ++j)
       {
-        double diff = mean - recvbuf[j];
-        sd += diff * diff;
+        double diff = msg_mean[p] - recvbuf[j];
+        msg_sd[p] += diff * diff;
       }
-      sd = std::sqrt(sd / (offsets[p + 1] - offsets[p]));
-
-      double pct = 100.0 * (sd / mean);
-      if (detail_level > 0)
-        output << std::format("Message size rank[{}]: min/mean/max +/- sd = "
-                              "({}/{}/{}) +/- {} [{:.2f}%]\n",
-                              p, mmin, mean, mmax, sd, pct);
+      msg_sd[p] = std::sqrt(msg_sd[p]
+                            / static_cast<double>(offsets[p + 1] - offsets[p]));
     }
     rbmean /= static_cast<double>(recvbuf.size());
     double rbsd = 0.0;
@@ -1429,52 +1425,49 @@ std::string IndexMap::stats(int detail_level) const
     }
     summary_mean[4] = rbmean;
     summary_sd[4] = std::sqrt(rbsd / static_cast<double>(recvbuf.size()));
-    summary_max[4] = *std::max_element(recvbuf.begin(), recvbuf.end());
-    summary_min[4] = *std::min_element(recvbuf.begin(), recvbuf.end());
+    summary_max[4] = *std::max_element(msg_max.begin(), msg_max.end());
+    summary_min[4] = *std::min_element(msg_min.begin(), msg_min.end());
 
-    std::array<std::string, 5> metric_names = {
-        "Local size", "Ghost size", "Num sources", "Num dests", "Message size"};
-    for (std::size_t j = 0; j < metric_names.size(); ++j)
+    std::array<std::string, 5> json_names = {
+        "local_size", "ghost_size", "num_sources", "num_dests", "message_size"};
+    out_json << "{\n";
+    out_json << std::format("  \"global_size\": {},\n", _size_global);
+    out_json << std::format("  \"mpi_size\": {},\n", size);
+    if (detail_level > 0)
     {
-      double pcvar = (summary_sd[j] / summary_mean[j]) * 100.0;
-      output << std::format(
-          "{} min/mean/max +/- sd = ({}/{:.2f}/{}) +/- {:.2f} [{:.2f}%]\n",
-          metric_names[j], summary_min[j], summary_mean[j], summary_max[j],
-          summary_sd[j], pcvar);
+      out_json << "  \"message_detail\": {\n";
+      out_json << "    \"min\": [";
+      for (int i = 0; i < size; ++i)
+        out_json << std::format("{}{}", msg_min[i],
+                                (i == size - 1) ? "" : ", ");
+      out_json << "],\n";
+      out_json << "    \"max\": [";
+      for (int i = 0; i < size; ++i)
+        out_json << std::format("{}{}", msg_max[i],
+                                (i == size - 1) ? "" : ", ");
+      out_json << "],\n";
+      out_json << "    \"mean\": [";
+      for (int i = 0; i < size; ++i)
+        out_json << std::format("{:.2f}{}", msg_mean[i],
+                                (i == size - 1) ? "" : ", ");
+      out_json << "],\n";
+      out_json << "    \"sd\": [";
+      for (int i = 0; i < size; ++i)
+        out_json << std::format("{:.2f}{}", msg_sd[i],
+                                (i == size - 1) ? "" : ", ");
+      out_json << "]\n  },\n";
     }
+    for (std::size_t j = 0; j < json_names.size(); ++j)
+    {
+      out_json << std::format(
+          "  \"{}\": {{\n    \"min\": {},\n    \"max\": {},\n  "
+          "  \"mean\": {:.2f},\n    \"sd\": {:.2f}\n  }}{}\n",
+          json_names[j], summary_min[j], summary_max[j], summary_mean[j],
+          summary_sd[j], (j == json_names.size() - 1) ? "" : ",");
+    }
+    out_json << "}\n";
   }
-  return output.str();
-}
 
-std::array<double, 2> IndexMap::imbalance() const
-{
-  std::array<double, 2> imbalance{-1., -1.};
-  std::array<std::int32_t, 2> max_count;
-  std::array<std::int32_t, 2> local_sizes
-      = {static_cast<std::int32_t>(_local_range[1] - _local_range[0]),
-         static_cast<std::int32_t>(_ghosts.size())};
-
-  // Find the maximum number of owned indices and the maximum number of ghost
-  // indices across all processes.
-  MPI_Allreduce(local_sizes.data(), max_count.data(), 2, MPI_INT32_T, MPI_MAX,
-                _comm.comm());
-
-  std::int32_t total_num_ghosts = 0;
-  MPI_Allreduce(&local_sizes[1], &total_num_ghosts, 1, MPI_INT32_T, MPI_SUM,
-                _comm.comm());
-
-  // Compute the average number of owned and ghost indices per process.
-  int comm_size = dolfinx::MPI::size(_comm.comm());
-  double avg_owned = static_cast<double>(_size_global) / comm_size;
-  double avg_ghosts = static_cast<double>(total_num_ghosts) / comm_size;
-
-  // Compute the imbalance by dividing the maximum number of indices by the
-  // corresponding average.
-  if (avg_owned > 0)
-    imbalance[0] = max_count[0] / avg_owned;
-  if (avg_ghosts > 0)
-    imbalance[1] = max_count[1] / avg_ghosts;
-
-  return imbalance;
+  return out_json.str();
 }
 //-----------------------------------------------------------------------------
