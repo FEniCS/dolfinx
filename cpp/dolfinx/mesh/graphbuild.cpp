@@ -83,34 +83,39 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
                 &request_cell_offset);
   }
 
-  // Find max_vertices_per_facet and vertex_range = [min_vertex_index,
+  // Compute max_vertices_per_facet and vertex_range = [min_vertex_index,
   // max_vertex_index] across all processes. Use first facet vertex for min/max
   // index.
   std::int32_t max_vertices_per_facet = -1;
   std::array<std::int64_t, 2> vertex_range;
   {
-    // TODO: tidy this up.
+    // Compute local quantities.
+    // Note: to allow for single reduction we store -min_vertex_index, i.e.
+    //       max (-min_vertex_index) = min (min_vertex_index).
+    max_vertices_per_facet = std::int64_t(facet_count);
 
-    std::array<std::int64_t, 3> send_buffer_r
-        = {std::int64_t(facet_count), std::numeric_limits<std::int64_t>::min(),
-           -1};
+    vertex_range[0] = std::numeric_limits<std::int64_t>::min();
+    vertex_range[1] = -1;
+
     for (std::size_t i = 0; i < facets.size(); i += facet_count)
     {
-      send_buffer_r[1] = std::max(send_buffer_r[1], -facets[i]);
-      send_buffer_r[2] = std::max(send_buffer_r[2], facets[i]);
+      vertex_range[0] = std::max(vertex_range[0], -facets[i]);
+      vertex_range[1] = std::max(vertex_range[1], facets[i]);
     }
 
-    // Compute reductions
-    std::array<std::int64_t, 3> recv_buffer_r;
-    MPI_Allreduce(send_buffer_r.data(), recv_buffer_r.data(), 3, MPI_INT64_T,
-                  MPI_MAX, comm);
-    assert(recv_buffer_r[1] != std::numeric_limits<std::int64_t>::min());
-    assert(recv_buffer_r[2] != -1);
-    max_vertices_per_facet = recv_buffer_r[0];
-    vertex_range = {-recv_buffer_r[1], recv_buffer_r[2] + 1};
+    // Exchange.
+    std::array<std::int64_t, 3> send
+        = {max_vertices_per_facet, vertex_range[0], vertex_range[1]};
+    std::array<std::int64_t, 3> recv;
+    MPI_Allreduce(send.data(), recv.data(), 3, MPI_INT64_T, MPI_MAX, comm);
+    assert(recv[1] != std::numeric_limits<std::int64_t>::min());
+    assert(recv[2] != -1);
 
-    spdlog::debug("Max. vertices per facet={}", max_vertices_per_facet);
+    // Unpack.
+    max_vertices_per_facet = recv[0];
+    vertex_range = {-recv[1], recv[2] + 1};
   }
+  spdlog::debug("Max. vertices per facet={}", max_vertices_per_facet);
   const std::int32_t buffer_shape1 = max_vertices_per_facet + 1;
 
   // Build list of dest ranks and count number of items (facets) to send
