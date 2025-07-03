@@ -9,7 +9,11 @@
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <iostream>
+#include <ranges>
 #include <span>
+#include <unordered_map>
+#include <vector>
+
 namespace dolfinx::mesh
 {
 /// @brief A map between entities of two meshes
@@ -86,6 +90,39 @@ public:
     else if (topology == _topology1)
       return std::span<const std::int32_t>(_entities1.data(),
                                            _entities1.size());
+    else
+      throw std::runtime_error("Topology not in the map.");
+  }
+
+  std::vector<std::int32_t>
+  map_entities(std::span<const std::int32_t> entities,
+               std::shared_ptr<const Topology> topology) const
+  {
+    if (topology == _topology0)
+    {
+      auto mapped
+          = entities
+            | std::views::transform([this](int i) { return _entities0[i]; });
+      return std::vector<int>(mapped.begin(), mapped.end());
+    }
+    else if (topology == _topology1)
+    {
+      std::unordered_map<std::int32_t, std::int32_t> parent_to_sub;
+      parent_to_sub.reserve(_entities0.size());
+      for (std::size_t sub_idx = 0; sub_idx < _entities0.size(); ++sub_idx)
+      {
+        parent_to_sub[_entities0[sub_idx]] = static_cast<std::int32_t>(sub_idx);
+      }
+
+      auto mapped = entities
+                    | std::views::transform(
+                        [&parent_to_sub](int parent_idx)
+                        {
+                          auto it = parent_to_sub.find(parent_idx);
+                          return (it != parent_to_sub.end()) ? it->second : -1;
+                        });
+      return std::vector<int>(mapped.begin(), mapped.end());
+    }
     else
       throw std::runtime_error("Topology not in the map.");
   }
