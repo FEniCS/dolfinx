@@ -80,20 +80,10 @@ public:
       throw std::runtime_error("Topology not in the map.");
   }
 
-  /// TODO
-  std::span<const std::int32_t>
-  get_entities(std::shared_ptr<const Topology> topology) const
-  {
-    if (topology == _topology0)
-      return std::span<const std::int32_t>(_entities0.data(),
-                                           _entities0.size());
-    else if (topology == _topology1)
-      return std::span<const std::int32_t>(_entities1.data(),
-                                           _entities1.size());
-    else
-      throw std::runtime_error("Topology not in the map.");
-  }
-
+  /// @brief TODO
+  /// @param entities
+  /// @param topology
+  /// @return
   std::vector<std::int32_t>
   map_entities(std::span<const std::int32_t> entities,
                std::shared_ptr<const Topology> topology) const
