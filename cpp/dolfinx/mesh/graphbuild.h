@@ -29,6 +29,9 @@ enum class CellType;
 /// @param[in] celltypes List of cell types.
 /// @param[in] cells Lists of cell vertices (stored as flattened lists,
 /// one for each cell type).
+/// @param[in] matched_facet_cell_count Optional number of cells a facet
+/// may have and should still be *unmatched*. All facets connected to
+/// `matched_facet_cell_count+1` (and more) cells are considered matched.
 /// @return
 /// 1. Local dual graph
 /// 2. Facets, defined by their sorted vertices, that are shared by only
@@ -66,6 +69,10 @@ build_local_dual_graph(std::span<const CellType> celltypes,
 /// @param[in] cells Collections of cells, defined by the cell vertices
 /// from which to build the dual graph, as flattened arrays for each
 /// cell type in `celltypes`.
+/// @param[in] matched_facet_cell_count Optional number of cells a facet
+/// may have and should still be *unmatched*. All facets connected to
+/// `matched_facet_cell_count+1` (and more) cells are considered matched.
+///
 /// @return The dual graph
 ///
 /// @note `cells` and `celltypes` must have the same size.
