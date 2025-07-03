@@ -257,18 +257,19 @@ public:
       for (std::size_t i = 0; i < _function_spaces.size(); ++i)
       {
         auto mesh0 = _function_spaces[i]->mesh();
-        bool mesh_found = false;
-        for (std::size_t j = 0; j < entity_maps.size(); ++j)
+
+        auto it = std::ranges::find_if(entity_maps,
+                                       [&](const auto& em)
+                                       {
+                                         assert(em);
+                                         return em->contains(mesh0->topology());
+                                       });
+
+        if (it != entity_maps.end())
         {
-          assert(entity_maps[j]);
-          if (entity_maps[j]->contains(mesh0->topology()))
-          {
-            argument_position[i] = j;
-            mesh_found = true;
-            break;
-          }
+          argument_position[i] = std::distance(entity_maps.begin(), it);
         }
-        if (mesh0 != _mesh and !mesh_found)
+        else if (mesh0 != _mesh)
         {
           throw std::runtime_error(
               "Incompatible mesh. argument entity_maps must be provided.");
