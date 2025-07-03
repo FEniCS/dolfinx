@@ -69,17 +69,6 @@ public:
     return topology == _topology0 or topology == _topology1;
   }
 
-  /// TODO
-  std::uint8_t topology_index(std::shared_ptr<const Topology> topology) const
-  {
-    if (topology == _topology0)
-      return 0;
-    else if (topology == _topology1)
-      return 1;
-    else
-      throw std::runtime_error("Topology not in the map.");
-  }
-
   /// @brief TODO
   /// @param entities
   /// @param topology
