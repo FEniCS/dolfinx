@@ -246,36 +246,6 @@ public:
     if (!_mesh)
       throw std::runtime_error("Form Mesh is null.");
 
-    // Check consistency of mesh(es) and find position of each mesh
-    // in the entity_map
-    // std::vector<std::int32_t> argument_position(_function_spaces.size(), -1);
-    std::vector<std::int32_t> coefficient_position(_coefficients.size(), -1);
-    {
-      // Integration domain mesh is passed, so check that it is (1)
-      // common for spaces and coefficients (2) or an entity_map is
-      // available
-      for (std::size_t i = 0; i < _coefficients.size(); ++i)
-      {
-        auto mesh0 = _coefficients[i]->function_space()->mesh();
-
-        auto it = std::ranges::find_if(entity_maps,
-                                       [&](const auto& em)
-                                       {
-                                         assert(em);
-                                         return em->contains(mesh0->topology());
-                                       });
-
-        if (it != entity_maps.end())
-        {
-          coefficient_position[i] = std::distance(entity_maps.begin(), it);
-        }
-        else if (mesh0 != _mesh)
-        {
-          throw std::runtime_error(
-              "Incompatible mesh. coefficient entity_maps must be provided.");
-        }
-      }
-    }
     for (std::size_t i = 0; i < _function_spaces.size(); ++i)
     {
       // Working map: [integral type, domain ID, kernel_idx]->entities
@@ -365,10 +335,21 @@ public:
         }
         else
         {
-          std::int32_t cpos = coefficient_position[c];
-          assert(cpos != -1);
-          // Create an entity map from mesh0 to the integration domain
-          auto emap = entity_maps[cpos];
+          auto it
+              = std::ranges::find_if(entity_maps,
+                                     [&](const auto& em)
+                                     {
+                                       assert(em);
+                                       return em->contains(mesh0->topology());
+                                     });
+
+          if (it == entity_maps.end())
+          {
+            throw std::runtime_error(
+                "Incompatible mesh. coefficient entity_maps must be provided.");
+          }
+
+          auto emap = *it;
           assert(emap);
 
           auto e_imap = _mesh->topology()->index_map(emap->dim());
