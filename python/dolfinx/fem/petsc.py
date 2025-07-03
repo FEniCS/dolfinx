@@ -1419,7 +1419,10 @@ class NonlinearProblem:
             # preconditioning in petsc_options.
             nest_IS = self.P_mat.getNestISs()
             fieldsplit_IS = tuple(
-                [(f"{u.name}_{i}", IS) for i, (u, IS) in enumerate(zip(self.u, nest_IS[0]))]
+                [
+                    (f"{u.name + '_' if u.name != 'f' else ''}{i}", IS)
+                    for i, (u, IS) in enumerate(zip(self.u, nest_IS[0]))
+                ]
             )
             self.solver.getKSP().getPC().setFieldSplitIS(*fieldsplit_IS)
 
