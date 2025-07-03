@@ -233,7 +233,7 @@ a_p = ufl.extract_blocks(
 # solutions:
 
 # +
-sigma, u = fem.Function(V, dtype=dtype), fem.Function(W, dtype=dtype)
+sigma, u = fem.Function(V, name="sigma", dtype=dtype), fem.Function(W, name="u", dtype=dtype)
 # -
 
 # We now create a linear problem solver for the mixed problem.
