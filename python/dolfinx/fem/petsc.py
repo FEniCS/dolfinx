@@ -784,7 +784,7 @@ class LinearProblem:
                 For available choices for the 'petsc_options' kwarg,
                 see the `PETSc KSP documentation
                 <https://petsc4py.readthedocs.io/en/stable/manual/ksp/>`_.
-                Options on other objects (matrices, vectors, fieldsplit KSPs)
+                Options on other objects (matrices, vectors, sub-KSPs)
                 should be set explicitly by the user.
             form_compiler_options: Options used in FFCx compilation of
                 all forms. Run ``ffcx --help`` at the commandline to see
@@ -898,7 +898,7 @@ class LinearProblem:
             # preconditioning in petsc_options.
             nest_IS = self.P_mat.getNestISs()
             fieldsplit_IS = tuple(
-                [(f"{u.name}_{str(i)}", IS) for i, (u, IS) in enumerate(zip(self.u, nest_IS[0]))]
+                [(f"{u.name}_{i}", IS) for i, (u, IS) in enumerate(zip(self.u, nest_IS[0]))]
             )
             self.solver.getPC().setFieldSplitIS(*fieldsplit_IS)
 
@@ -1318,8 +1318,8 @@ class NonlinearProblem:
                 PETSc SNES object only. For available choices for the
                 'petsc_options' kwarg, see the `PETSc SNES documentation
                 <https://petsc4py.readthedocs.io/en/stable/manual/snes>`_.
-                Options on other objects (matrices, vectors) should be
-                set explicitly by the user.
+                Options on other objects (matrices, vectors, sub-KSPs)
+                should be set explicitly by the user.
             entity_maps: If any trial functions, test functions, or
                 coefficients in the form are not defined over the same mesh
                 as the integration domain, ``entity_maps`` must be
@@ -1416,7 +1416,7 @@ class NonlinearProblem:
             # preconditioning in petsc_options.
             nest_IS = self.P_mat.getNestISs()
             fieldsplit_IS = tuple(
-                [(f"{u.name}_{str(i)}", IS) for i, (u, IS) in enumerate(zip(self.u, nest_IS[0]))]
+                [(f"{u.name}_{i}", IS) for i, (u, IS) in enumerate(zip(self.u, nest_IS[0]))]
             )
             self.solver.getPC().setFieldSplitIS(*fieldsplit_IS)
 
