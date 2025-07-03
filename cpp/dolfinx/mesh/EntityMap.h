@@ -86,6 +86,7 @@ public:
     {
       std::unordered_map<std::int32_t, std::int32_t> parent_to_sub;
       parent_to_sub.reserve(_sub_to_topo.size());
+      // TODO Ranges / transform?
       for (std::size_t sub_idx = 0; sub_idx < _sub_to_topo.size(); ++sub_idx)
       {
         parent_to_sub[_sub_to_topo[sub_idx]]
@@ -100,6 +101,34 @@ public:
                           return (it != parent_to_sub.end()) ? it->second : -1;
                         });
       return std::vector<std::int32_t>(mapped.begin(), mapped.end());
+    }
+    else
+      throw std::runtime_error("Topology not in the map.");
+  }
+
+  /// @brief TODO
+  /// @param topology
+  /// @return
+  std::vector<std::int32_t> map(std::shared_ptr<const Topology> topology) const
+  {
+    if (topology == _topology)
+    {
+      return _sub_to_topo;
+    }
+    else if (topology == _sub_topology)
+    {
+      auto imap = _topology->index_map(_dim);
+      assert(imap);
+      std::vector<std::int32_t> parent_to_sub(imap->size_local()
+                                              + imap->num_ghosts());
+      // TODO Ranges / transform?
+      for (std::size_t sub_idx = 0; sub_idx < _sub_to_topo.size(); ++sub_idx)
+      {
+        parent_to_sub[_sub_to_topo[sub_idx]]
+            = static_cast<std::int32_t>(sub_idx);
+      }
+
+      return parent_to_sub;
     }
     else
       throw std::runtime_error("Topology not in the map.");

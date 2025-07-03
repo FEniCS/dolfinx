@@ -275,18 +275,7 @@ public:
         }
         auto emap = *it;
         assert(emap);
-
-        auto e_imap = _mesh->topology()->index_map(emap->dim());
-        if (!e_imap)
-          throw std::runtime_error(
-              "No index map for entities, call `Topology::create_entities("
-              + std::to_string(emap->dim()) + ")");
-
-        std::vector<std::int32_t> entities(e_imap->size_local()
-                                           + e_imap->num_ghosts());
-        std::iota(entities.begin(), entities.end(), 0);
-        std::vector<std::int32_t> entity_map
-            = emap->map_entities(entities, mesh0->topology());
+        std::vector<std::int32_t> entity_map = emap->map(mesh0->topology());
 
         for (auto& [key, itg] : _integrals)
         {
@@ -349,18 +338,7 @@ public:
           }
           auto emap = *it;
           assert(emap);
-
-          auto e_imap = _mesh->topology()->index_map(emap->dim());
-          if (!e_imap)
-            throw std::runtime_error(
-                "No index map for entities, call `Topology::create_entities("
-                + std::to_string(emap->dim()) + ")");
-
-          std::vector<std::int32_t> entities(e_imap->size_local()
-                                             + e_imap->num_ghosts());
-          std::iota(entities.begin(), entities.end(), 0);
-          std::vector<std::int32_t> entity_map
-              = emap->map_entities(entities, mesh0->topology());
+          std::vector<std::int32_t> entity_map = emap->map(mesh0->topology());
 
           std::vector<std::int32_t> e;
           if (type == IntegralType::cell)
