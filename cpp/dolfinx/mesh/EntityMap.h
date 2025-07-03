@@ -79,7 +79,7 @@ public:
       auto mapped
           = entities
             | std::views::transform([this](int i) { return _entities0[i]; });
-      return std::vector<int>(mapped.begin(), mapped.end());
+      return std::vector<std::int32_t>(mapped.begin(), mapped.end());
     }
     else if (topology == _topology1)
     {
@@ -97,7 +97,7 @@ public:
                           auto it = parent_to_sub.find(parent_idx);
                           return (it != parent_to_sub.end()) ? it->second : -1;
                         });
-      return std::vector<int>(mapped.begin(), mapped.end());
+      return std::vector<std::int32_t>(mapped.begin(), mapped.end());
     }
     else
       throw std::runtime_error("Topology not in the map.");
