@@ -246,7 +246,7 @@ public:
     if (!_mesh)
       throw std::runtime_error("Form Mesh is null.");
 
-    for (std::size_t i = 0; i < _function_spaces.size(); ++i)
+    for (auto& space : _function_spaces)
     {
       // Working map: [integral type, domain ID, kernel_idx]->entities
       std::map<std::tuple<IntegralType, int, int>,
@@ -254,26 +254,25 @@ public:
                             std::span<const std::int32_t>>>
           vdata;
 
-      if (auto mesh0 = _function_spaces[i]->mesh(); mesh0 == _mesh)
+      if (auto mesh0 = space->mesh(); mesh0 == _mesh)
       {
         for (auto& [key, integral] : _integrals)
           vdata.insert({key, std::span(integral.entities)});
       }
       else
       {
+        // Find correct entity map
         auto it = std::ranges::find_if(entity_maps,
                                        [&](const auto& em)
                                        {
                                          assert(em);
                                          return em->contains(mesh0->topology());
                                        });
-
         if (it == entity_maps.end())
         {
           throw std::runtime_error(
               "Incompatible mesh. argument entity_maps must be provided.");
         }
-
         auto emap = *it;
         assert(emap);
 
@@ -335,6 +334,7 @@ public:
         }
         else
         {
+          // Find correct entity map
           auto it
               = std::ranges::find_if(entity_maps,
                                      [&](const auto& em)
@@ -342,13 +342,11 @@ public:
                                        assert(em);
                                        return em->contains(mesh0->topology());
                                      });
-
           if (it == entity_maps.end())
           {
             throw std::runtime_error(
                 "Incompatible mesh. coefficient entity_maps must be provided.");
           }
-
           auto emap = *it;
           assert(emap);
 
