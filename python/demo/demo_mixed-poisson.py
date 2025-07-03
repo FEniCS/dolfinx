@@ -265,14 +265,9 @@ problem = fem.petsc.LinearProblem(
 
 
 # +
-# We set the nest index sets for the preconditioner.
-nested_IS = problem.A.getNestISs()
 ksp = problem.solver
-ksp.getPC().setFieldSplitIS(("sigma", nested_IS[0][0]), ("u", nested_IS[0][1]))
-ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
-# and set a custom convergence monitor.
 ksp.setMonitor(
-    lambda ksp, its, rnorm: PETSc.Sys.Print(f"Iteration: {its:>4d}, residual: {rnorm:.3e}")
+    lambda _, its, rnorm: PETSc.Sys.Print(f"Iteration: {its:>4d}, residual: {rnorm:.3e}")
 )
 # -
 
@@ -289,6 +284,7 @@ ksp.setMonitor(
 # two-dimensions, just rotated by $\pi/2.
 
 # +
+ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
 pc_sigma = ksp_sigma.getPC()
 if PETSc.Sys().hasExternalPackage("hypre") and not np.issubdtype(dtype, np.complexfloating):
     pc_sigma.setType("hypre")
