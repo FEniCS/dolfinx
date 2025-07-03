@@ -894,6 +894,8 @@ class LinearProblem:
 
         if self.P_mat is not None and kind == "nest":
             # Transfer nest IS on self.P_mat to PC of outer KSP.
+            # This is a nullop if the user did not ask for fieldsplit
+            # preconditioning in petsc_options.
             nest_IS = self.P_mat.getNestISs()
             fieldsplit_IS = tuple(
                 [(f"{u.name}_{str(i)}", IS) for i, (u, IS) in enumerate(zip(self.u, nest_IS[0]))]
@@ -1410,6 +1412,8 @@ class NonlinearProblem:
 
         if self.P_mat is not None and kind == "nest":
             # Transfer nest IS on self.P_mat to PC of outer SNES/KSP.
+            # This is a nullop if the user did not ask for fieldsplit
+            # preconditioning in petsc_options.
             nest_IS = self.P_mat.getNestISs()
             fieldsplit_IS = tuple(
                 [(f"{u.name}_{str(i)}", IS) for i, (u, IS) in enumerate(zip(self.u, nest_IS[0]))]

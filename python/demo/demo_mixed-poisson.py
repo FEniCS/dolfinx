@@ -254,8 +254,8 @@ problem = fem.petsc.LinearProblem(
     bcs=bcs,
     petsc_options={
         "ksp_type": "gmres",
-        "pc_type": "fieldsplit",
-        "pc_fieldsplit_type": "additive",
+#        "pc_type": "fieldsplit",
+#        "pc_fieldsplit_type": "additive",
         "ksp_rtol": 1e-8,
         "ksp_gmres_restart": 100,
         "ksp_view": "",
