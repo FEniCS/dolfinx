@@ -16,30 +16,6 @@ namespace dolfinx::mesh
 class EntityMap
 {
 public:
-  /// @brief Constructor of a map between a set of entities belonging to
-  /// two meshes.
-  /// @tparam U
-  /// @param topology0 The first topology in the mapping relation
-  /// @param topology1
-  /// @param dim Topological dimension of the mapped entities
-  /// @param entities0 The entities belonging to the first mesh
-  /// @param entities1 The entities belonging to the second mesh
-  template <typename U>
-    requires std::is_convertible_v<std::remove_cvref_t<U>,
-                                   std::vector<std::int32_t>>
-  EntityMap(std::shared_ptr<const Topology> topology0,
-            std::shared_ptr<const Topology> topology1, int dim, U&& entities0,
-            U&& entities1)
-      : _dim(dim), _topology0(topology0),
-        _entities0(std::forward<U>(entities0)), _topology1(topology1),
-        _entities1(std::forward<U>(entities1))
-  {
-    if (_entities0.size() != _entities1.size())
-    {
-      throw std::runtime_error("Entities must have the same size.");
-    }
-  }
-
   /// @brief Constructor of a map between a set of entities belonging to two
   /// meshes.
   ///

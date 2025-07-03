@@ -599,25 +599,6 @@ void mesh(nb::module_& m)
              std::shared_ptr<const dolfinx::mesh::Topology> topology0,
              std::shared_ptr<const dolfinx::mesh::Topology> topology1, int dim,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
-                 entities0,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
-                 entities1)
-          {
-            new (self) dolfinx::mesh::EntityMap(
-                topology0, topology1, dim,
-                std::vector(entities0.data(),
-                            entities0.data() + entities0.size()),
-                std::vector(entities1.data(),
-                            entities1.data() + entities1.size()));
-          },
-          nb::arg("topology0"), nb::arg("topology1"), nb::arg("dim"),
-          nb::arg("entities0"), nb::arg("entities1"))
-      .def(
-          "__init__",
-          [](dolfinx::mesh::EntityMap* self,
-             std::shared_ptr<const dolfinx::mesh::Topology> topology0,
-             std::shared_ptr<const dolfinx::mesh::Topology> topology1, int dim,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
                  entities0)
           {
             new (self) dolfinx::mesh::EntityMap(
