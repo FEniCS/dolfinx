@@ -74,3 +74,81 @@ TEST_CASE("dual_graph_branching")
 
   CHECK_THAT(cell_data, Catch::Matchers::RangeEquals(std::array{0, 2, 3}));
 }
+
+// Parallel branching manifold graph G ('⟷': indicates the process boundary)
+//
+//          (3)
+//           |
+//           |[2]
+//           |
+//  (1)-----(0)  ⟷  (0)-----(2)-----(4)
+//      [0]              [1]     [3]
+//
+//
+// its local dual graphs
+//
+//          [1]
+//         /
+//        /
+//      [0]        ⟷  [0] --- [1]
+//
+//
+// its (global) dual G'
+//
+//          [2]
+//         /   ＼
+//        /     ＼
+//      [0] --- [1]  ⟷  [1] --- [3]
+//
+TEST_CASE("dual_graph_branching_parallel")
+{
+  auto comm = MPI_COMM_WORLD;
+
+  if (dolfinx::MPI::size(comm) != 2)
+    SKIP("Only supports two processes.");
+
+  std::vector<mesh::CellType> celltypes{mesh::CellType::interval};
+
+  std::vector<std::int64_t> cells;
+  if (dolfinx::MPI::rank(comm) == 0)
+    cells = {{0, 1, 0, 3}};
+  else
+    cells = {{0, 2, 2, 4}};
+
+  {
+    // Check local dual graphs.
+    // Note: dual graphs on both processes are equal.
+
+    auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
+        = mesh::build_local_dual_graph(celltypes, {cells});
+
+    CHECK(dual_graph.num_nodes() == 2);
+
+    CHECK(dual_graph.num_links(0) == 1);
+    CHECK_THAT(dual_graph.links(0),
+               Catch::Matchers::RangeEquals(std::array{1}));
+
+    CHECK(dual_graph.num_links(1) == 1);
+    CHECK_THAT(dual_graph.links(1),
+               Catch::Matchers::RangeEquals(std::array{0}));
+
+    // all facets unmatched
+    CHECK(unmatched_facets.size() == 2);
+  }
+
+  // auto dual_graph = mesh::build_dual_graph(
+  //     comm, celltypes, std::vector<std::span<const std::int64_t>>{cells}, 2);
+  // std::cout << dolfinx::MPI::rank(comm) << " " << dual_graph.str() <<
+  // std::endl;
+
+  // int max_links = 0;
+  // for (std::int32_t c = 0; c < dual_graph.num_nodes(); c++)
+  //   max_links = std::max(max_links, dual_graph.num_links(c));
+
+  // One process has 2 one 3.
+  // CHECK(((max_links == 2) or (max_links == 3)));
+
+  // int sum = 0;
+  // MPI_Allreduce(&max_links, &sum, 1, MPI_INT, MPI_SUM, comm);
+  // CHECK(sum == 5);
+}
