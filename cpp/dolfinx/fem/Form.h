@@ -378,19 +378,18 @@ public:
           // Create an entity map from mesh0 to the integration domain
           auto emap = entity_maps[cpos];
           assert(emap);
-          std::span<const std::int32_t> entities0
-              = emap->get_entities(mesh0->topology());
-          std::span<const std::int32_t> entities
-              = emap->get_entities(_mesh->topology());
+
           auto e_imap = _mesh->topology()->index_map(emap->dim());
           if (!e_imap)
             throw std::runtime_error(
                 "No index map for entities, call `Topology::create_entities("
-                + std::to_string(entity_maps[cpos]->dim()) + ")");
-          std::vector<std::int32_t> entity_map(
-              e_imap->size_local() + e_imap->num_ghosts(), -1);
-          for (std::size_t i = 0; i < entities0.size(); ++i)
-            entity_map[entities[i]] = entities0[i];
+                + std::to_string(emap->dim()) + ")");
+
+          std::vector<std::int32_t> entities(e_imap->size_local()
+                                             + e_imap->num_ghosts());
+          std::iota(entities.begin(), entities.end(), 0);
+          std::vector<std::int32_t> entity_map
+              = emap->map_entities(entities, mesh0->topology());
 
           std::vector<std::int32_t> e;
           if (type == IntegralType::cell)
