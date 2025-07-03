@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <mpi.h>
+#include <optional>
 #include <span>
 #include <tuple>
 #include <vector>
@@ -49,7 +50,9 @@ enum class CellType;
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
 build_local_dual_graph(std::span<const CellType> celltypes,
-                       const std::vector<std::span<const std::int64_t>>& cells);
+                       const std::vector<std::span<const std::int64_t>>& cells,
+                       std::optional<std::int32_t> matched_facet_cell_count
+                       = 1);
 
 /// @brief Build distributed mesh dual graph (cell-cell connections via
 /// facets) from minimal mesh data.
@@ -73,6 +76,7 @@ build_local_dual_graph(std::span<const CellType> celltypes,
 /// do not live on the process boundary this is not a problem.
 graph::AdjacencyList<std::int64_t>
 build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
-                 const std::vector<std::span<const std::int64_t>>& cells);
+                 const std::vector<std::span<const std::int64_t>>& cells,
+                 std::optional<std::int32_t> matched_facet_cell_count = 1);
 
 } // namespace dolfinx::mesh

@@ -12,6 +12,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <optional>
 #include <span>
 #include <utility>
 #include <vector>
@@ -353,7 +354,8 @@ std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
 mesh::build_local_dual_graph(
     std::span<const CellType> celltypes,
-    const std::vector<std::span<const std::int64_t>>& cells)
+    const std::vector<std::span<const std::int64_t>>& cells,
+    std::optional<std::int32_t> matched_facet_cell_count)
 {
   spdlog::info("Build local part of mesh dual graph (mixed)");
   common::Timer timer("Compute local part of mesh dual graph (mixed)");
@@ -495,29 +497,28 @@ mesh::build_local_dual_graph(
       auto cell_count = std::distance(it, it_next_facet);
       assert(cell_count >= 1);
       // TODO: this constant as user control?
-      if (cell_count == 1)
+      if (!matched_facet_cell_count.has_value()
+          or (cell_count <= *matched_facet_cell_count))
       {
         // Store unmatched facets and the attached cell
         unmatched_facets.insert(unmatched_facets.end(), facet.begin(),
                                 std::prev(facet.end()));
         local_cells.push_back(cell0);
       }
-      else
+
+      // Add dual graph edges (one direction only, other direction is
+      // added later). In the range [it, it_next_facet), all combinations are
+      // added.
+      for (auto facet_a_it = it; facet_a_it != it_next_facet; facet_a_it++)
       {
-        // Add dual graph edges (one direction only, other direction is
-        // added later). In the range [it, it_next_facet), all combinations are
-        // added.
-        for (auto facet_a_it = it; facet_a_it != it_next_facet; facet_a_it++)
+        std::span facet_a(facets.data() + *facet_a_it * shape1, shape1);
+        std::int32_t cell_a = facet_a.back();
+        for (auto facet_b_it = std::next(facet_a_it);
+             facet_b_it != it_next_facet; facet_b_it++)
         {
-          std::span facet_a(facets.data() + *facet_a_it * shape1, shape1);
-          std::int32_t cell_a = facet_a.back();
-          for (auto facet_b_it = std::next(facet_a_it);
-               facet_b_it != it_next_facet; facet_b_it++)
-          {
-            std::span facet_b(facets.data() + *facet_b_it * shape1, shape1);
-            std::int32_t cell_b = facet_b.back();
-            edges.push_back({cell_a, cell_b});
-          }
+          std::span facet_b(facets.data() + *facet_b_it * shape1, shape1);
+          std::int32_t cell_b = facet_b.back();
+          edges.push_back({cell_a, cell_b});
         }
       }
 
@@ -556,14 +557,15 @@ mesh::build_local_dual_graph(
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int64_t>
 mesh::build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
-                       const std::vector<std::span<const std::int64_t>>& cells)
+                       const std::vector<std::span<const std::int64_t>>& cells,
+                       std::optional<std::int32_t> matched_facet_cell_count)
 {
   spdlog::info("Building mesh dual graph");
 
   // Compute local part of dual graph (cells are graph nodes, and edges
   // are connections by facet)
-  auto [local_graph, facets, shape1, fcells]
-      = mesh::build_local_dual_graph(celltypes, cells);
+  auto [local_graph, facets, shape1, fcells] = mesh::build_local_dual_graph(
+      celltypes, cells, matched_facet_cell_count);
 
   // Extend with nonlocal edges and convert to global indices
   graph::AdjacencyList graph
