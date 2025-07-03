@@ -262,6 +262,8 @@ public:
   /// @param detail_level Set to 1 to get a more detailed per-process
   /// message size breakdown
   /// @return JSON formatted string
+  /// @note This is a collective operation but output is only on rank 0, all
+  /// other ranks return an empty string.
   std::string stats(int detail_level) const;
 
 private:
