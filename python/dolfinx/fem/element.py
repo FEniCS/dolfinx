@@ -12,8 +12,7 @@ import numpy as np
 import numpy.typing as npt
 
 import basix
-import ufl
-import ufl.finiteelement
+import basix.ufl
 from dolfinx import cpp as _cpp
 
 
@@ -330,7 +329,7 @@ class FiniteElement:
 
 def finiteelement(
     cell_type: _cpp.mesh.CellType,
-    ufl_e: ufl.finiteelement,
+    ufl_e: basix.ufl._ElementBase,
     FiniteElement_dtype: np.dtype,
 ) -> FiniteElement:
     """Create a DOLFINx element from a basix.ufl element.
@@ -350,7 +349,8 @@ def finiteelement(
 
     if ufl_e.is_mixed:
         elements = [
-            finiteelement(cell_type, e, FiniteElement_dtype)._cpp_object for e in ufl_e.sub_elements
+            finiteelement(cell_type, e, FiniteElement_dtype)._cpp_object  # type: ignore
+            for e in ufl_e.sub_elements
         ]
         return FiniteElement(CppElement(elements))
     elif ufl_e.is_quadrature:
