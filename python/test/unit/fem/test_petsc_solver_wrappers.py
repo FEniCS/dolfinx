@@ -55,7 +55,8 @@ class TestPETScSolverWrappers:
         linear_problem = dolfinx.fem.petsc.LinearProblem(
             ufl.lhs(a), ufl.rhs(a), petsc_options=petsc_options
         )
-        u_lin = linear_problem.solve()
+        u_lin, convergence_reason, _ = linear_problem.solve()
+        assert convergence_reason > 0
 
         nonlinear_problem = dolfinx.fem.petsc.NewtonSolverNonlinearProblem(F, uh)
 
@@ -153,7 +154,8 @@ class TestPETScSolverWrappers:
         problem = dolfinx.fem.petsc.LinearProblem(
             a, L, bcs=bcs, petsc_options=petsc_options, kind=kind
         )
-        wh = problem.solve()
+        wh, convergence_reason, _ = problem.solve()
+        assert convergence_reason > 0
         if kind is None:
             uh, ph = wh.split()
         else:

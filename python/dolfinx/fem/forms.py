@@ -164,7 +164,8 @@ def form_cpp_class(
 ) -> typing.Union[
     _cpp.fem.Form_float32, _cpp.fem.Form_float64, _cpp.fem.Form_complex64, _cpp.fem.Form_complex128
 ]:
-    """Return the wrapped C++ class of a variational form of a specific scalar type.
+    """Return the wrapped C++ class of a variational form of a specific
+    scalar type.
 
     Args:
         dtype: Scalar type of the required form class.
@@ -206,9 +207,9 @@ def mixed_topology_form(
     """
     Create a mixed-topology from from an array of Forms.
 
-    # FIXME: This function is a temporary hack for mixed-topology meshes. It is needed
-    # because UFL does not know about mixed-topology meshes, so we need
-    # to pass a list of forms for each cell type.
+    # FIXME: This function is a temporary hack for mixed-topology meshes.
+    # It is needed because UFL does not know about mixed-topology meshes,
+    # so we need to pass a list of forms for each cell type.
 
     Args:
         form: A list of UFL forms. Each form should be the same, just
@@ -380,7 +381,8 @@ def form(
         return Form(f, ufcx_form, code, module)
 
     def _zero_form(form):
-        """Compile a single 'zero' UFL form, i.e. a form with no integrals."""
+        """Compile a single 'zero' UFL form, i.e. a form with no
+        integrals."""
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
         assert len(V) > 0
         msh = V[0].mesh
@@ -525,7 +527,8 @@ def form_cpp_creator(
     _cpp.fem.Form_complex64,
     _cpp.fem.Form_complex128,
 ]:
-    """Return the wrapped C++ constructor for creating a variational form of a specific scalar type.
+    """Return the wrapped C++ constructor for creating a variational form
+    of a specific scalar type.
 
     Args:
         dtype: Scalar type of the required form class.
@@ -554,7 +557,7 @@ def create_form(
     function_spaces: list[function.FunctionSpace],
     msh: Mesh,
     subdomains: dict[IntegralType, list[tuple[int, np.ndarray]]],
-    coefficient_map: dict[ufl.Function, function.Function],
+    coefficient_map: dict[ufl.Coefficient, function.Function],
     constant_map: dict[ufl.Constant, function.Constant],
     entity_maps: dict[Mesh, np.typing.NDArray[np.int32]] | None = None,
 ) -> Form:
@@ -641,9 +644,9 @@ def derivative_block(
     :math:`J_{ij} = \\frac{\\partial F_i}{u_j}[\\delta u_j]` using
     `ufl.derivative` called component-wise.
 
-    If `F` is a form, the Jacobian is computed as :math:`J = \\frac{\\partial
-    F}{\\partial u}[\\delta u]`. This is identical to calling `ufl.derivative`
-    directly.
+    If `F` is a form, the Jacobian is computed as
+    :math:`J = \\frac{\\partial F}{\\partial u}[\\delta u]`. This is
+    identical to calling `ufl.derivative` directly.
     """
     if isinstance(F, ufl.Form):
         if du is None:
