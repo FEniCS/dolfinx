@@ -223,8 +223,10 @@ def nested_iterative_solver_high_level():
             "ksp_rtol": 1e-9,
             "pc_type": "fieldsplit",
             "pc_fieldsplit_type": "additive",
+            "fieldsplit_0_ksp_type": "preonly",
             "fieldsplit_0_pc_type": "gamg",
-            "fieldsplit_1_pc_type": "bjacobi",
+            "fieldsplit_1_ksp_type": "preonly",
+            "fieldsplit_1_pc_type": "jacobi",
         },
     )
 
@@ -244,6 +246,13 @@ def nested_iterative_solver_high_level():
     null_vec.normalize()
     nsp = PETSc.NullSpace().create(vectors=[null_vec])
     problem.A.setNullSpace(nsp)
+
+    A00 = problem.A.getNestSubMatrix(0, 0)
+    A00.setOption(PETSc.Mat.Option.SPD, True)
+
+    P00, P11 = problem.P_mat.getNestSubMatrix(0, 0), problem.P_mat.getNestSubMatrix(1, 1)
+    P00.setOption(PETSc.Mat.Option.SPD, True)
+    P11.setOption(PETSc.Mat.Option.SPD, True)
 
     (u_h, p_h), convergence_reason, num_its = problem.solve()
     # Because left-hand side operator is only assembled now we can
@@ -274,7 +283,6 @@ def nested_iterative_solver_high_level():
 def nested_iterative_solver_low_level():
     """Solve the Stokes problem using nest matrices and an iterative
     solver using low-level routines."""
-
     # Assemble nested matrix operators
     A = fem.petsc.assemble_matrix(a, bcs=bcs, kind="nest")
     A.assemble()
