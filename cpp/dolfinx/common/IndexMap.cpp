@@ -1456,14 +1456,27 @@ std::string IndexMap::stats(int detail_level) const
         out_json << std::format("{:.2f}{}", msg_sd[i],
                                 (i == size - 1) ? "" : ", ");
       out_json << "]\n  },\n";
+
+      for (std::size_t j = 0; j < 4; ++j)
+      {
+        out_json << std::format("  \"{}_detail\": [", json_names[j]);
+
+        for (int i = 0; i < size; ++i)
+          out_json << std::format("{}{}", recv_sizes[i * 4 + j],
+                                  (i == size - 1) ? "" : ", ");
+        out_json << std::format("]{}\n", (j == 3) ? "" : ",");
+      }
     }
-    for (std::size_t j = 0; j < json_names.size(); ++j)
+    else
     {
-      out_json << std::format(
-          "  \"{}\": {{\n    \"min\": {},\n    \"max\": {},\n  "
-          "  \"mean\": {:.2f},\n    \"sd\": {:.2f}\n  }}{}\n",
-          json_names[j], summary_min[j], summary_max[j], summary_mean[j],
-          summary_sd[j], (j == json_names.size() - 1) ? "" : ",");
+      for (std::size_t j = 0; j < json_names.size(); ++j)
+      {
+        out_json << std::format(
+            "  \"{}\": {{\n    \"min\": {},\n    \"max\": {},\n  "
+            "  \"mean\": {:.2f},\n    \"sd\": {:.2f}\n  }}{}\n",
+            json_names[j], summary_min[j], summary_max[j], summary_mean[j],
+            summary_sd[j], (j == json_names.size() - 1) ? "" : ",");
+      }
     }
     out_json << "}\n";
   }
