@@ -139,7 +139,6 @@ entity_maps = [
     EntityMap(
         msh.topology._cpp_object,
         facet_mesh.topology._cpp_object,
-        facet_mesh.topology.dim,
         facet_mesh_to_mesh,
     )
 ]

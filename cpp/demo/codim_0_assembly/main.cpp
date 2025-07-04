@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
     // provided relating entities in the integration domain to entities in
     // each mesh in the form.
     const mesh::EntityMap entity_map(mesh->topology(), submesh->topology(),
-                                     tdim, submesh_to_mesh);
+                                     submesh_to_mesh);
     std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps
         = {std::make_shared<const mesh::EntityMap>(entity_map)};
     // Next we compute the integration entities on the integration

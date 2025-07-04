@@ -250,7 +250,7 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     # Assemble a mixed-domain form using msh as integration domain.
     # We create an entity map that relates the entities in the submesh to those of the parent mesh
     entity_map = EntityMap(
-        msh.topology._cpp_object, smsh.topology._cpp_object, smsh.topology.dim, smsh_to_msh
+        msh.topology._cpp_object, smsh.topology._cpp_object, smsh_to_msh
     )
     a0 = fem.form(a_ufl(u, q, f, g, measure_msh), entity_maps=[entity_map])
     A0 = fem.assemble_matrix(a0, bcs=[bc])
@@ -353,7 +353,7 @@ def test_mixed_dom_codim_1(n, k):
 
     # We create the realation between the submesh and the parent mesh
     entity_map = EntityMap(
-        msh.topology._cpp_object, smsh.topology._cpp_object, smsh.topology.dim, smsh_to_msh
+        msh.topology._cpp_object, smsh.topology._cpp_object, smsh_to_msh
     )
 
     # Create forms and compare
@@ -610,7 +610,7 @@ def test_mixed_measures():
     q = ufl.TestFunction(Q)
 
     entity_maps = [
-        EntityMap(msh.topology._cpp_object, smsh.topology._cpp_object, tdim, smsh_to_msh)
+        EntityMap(msh.topology._cpp_object, smsh.topology._cpp_object, smsh_to_msh)
     ]
     # First, assemble a block vector using both dx_msh and dx_smsh
     L = [fem.form(ufl.inner(2.3, v) * dx_msh), fem.form(ufl.inner(1.3, q) * dx_smsh)]
@@ -676,7 +676,7 @@ def test_interior_facet_codim_1(msh):
 
     # Create inverse map
     entity_maps = [
-        EntityMap(msh.topology._cpp_object, submesh.topology._cpp_object, fdim, sub_to_parent)
+        EntityMap(msh.topology._cpp_object, submesh.topology._cpp_object, sub_to_parent)
     ]
 
     def assemble_interior_facet_formulation(formulation, entity_maps):
@@ -805,10 +805,10 @@ def test_interior_interface():
     # entity_maps = {smsh_0: msh_to_sm_0, smsh_1: msh_to_sm_1}
 
     sm_0_emap = EntityMap(
-        msh.topology._cpp_object, smsh_0.topology._cpp_object, msh.topology.dim, sm_0_to_msh
+        msh.topology._cpp_object, smsh_0.topology._cpp_object, sm_0_to_msh
     )
     sm_1_emap = EntityMap(
-        msh.topology._cpp_object, smsh_1.topology._cpp_object, msh.topology.dim, sm_1_to_msh
+        msh.topology._cpp_object, smsh_1.topology._cpp_object, sm_1_to_msh
     )
     entity_maps = [sm_0_emap, sm_1_emap]
 

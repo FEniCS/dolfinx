@@ -130,7 +130,6 @@ def test_submesh_assembly(dtype):
         entity_map = dolfinx.cpp.mesh.EntityMap(
             mesh.topology._cpp_object,
             submesh.topology._cpp_object,
-            submesh.topology.dim,
             sub_to_parent,
         )
         form = dolfinx.fem.create_form(

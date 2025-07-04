@@ -288,7 +288,7 @@ int main(int argc, char* argv[])
     std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps;
     std::shared_ptr<const mesh::EntityMap> entity_map
         = std::make_shared<const mesh::EntityMap>(
-            mesh->topology(), submesh->topology(), fdim, submesh_to_mesh);
+            mesh->topology(), submesh->topology(), submesh_to_mesh);
     entity_maps.push_back(entity_map);
 
     // Define variational forms and attach he required data

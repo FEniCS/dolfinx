@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Jørgen S. Dokken
+// Copyright (C) 2025 Jørgen S. Dokken and Joseph P. Dean
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -23,28 +23,26 @@ public:
   /// @brief Constructor of a map between a set of entities belonging to two
   /// meshes.
   ///
-  /// Entity `i` in mesh1 is assumed to map to `sub_to_topo[i]`.
-  ///
   /// @tparam U
-  /// @param topology The first topology in the mapping relation
-  /// @param sub_topology The second topology in the mapping relation
-  /// @param dim  Topological dimension of the mapped entities
+  /// @param topology A mesh topology
+  /// @param sub_topology A topology of another mesh. This must be a "sub-topology"
+  /// of `topology` i.e. every entity in `sub_topology` must also exist in `topology`.
   /// @param sub_to_topo The entities belonging to the first mesh
   template <typename U>
     requires std::is_convertible_v<std::remove_cvref_t<U>,
                                    std::vector<std::int32_t>>
   EntityMap(std::shared_ptr<const Topology> topology,
-            std::shared_ptr<const Topology> sub_topology, int dim,
+            std::shared_ptr<const Topology> sub_topology,
             U&& sub_to_topo)
-      : _dim(dim), _topology(topology),
+      : _dim(sub_topology->dim()), _topology(topology),
         _sub_to_topo(std::forward<U>(sub_to_topo)), _sub_topology(sub_topology)
   {
-    auto e_map = sub_topology->index_map(dim);
+    auto e_map = sub_topology->index_map(_dim);
     if (!e_map)
     {
       throw std::runtime_error(
           "No index map for entities, call `Topology::create_entities("
-          + std::to_string(dim) + ")");
+          + std::to_string(_dim) + ")");
     }
     std::size_t num_ents
         = static_cast<std::size_t>(e_map->size_local() + e_map->num_ghosts());
