@@ -127,7 +127,7 @@ graph::AdjacencyList<int> mesh::get_sub_entities(CellType type, int dim0,
   std::vector<std::vector<int>> subset;
   subset.reserve(connectivity.size());
   for (auto& row : connectivity)
-    subset.emplace_back(std::move(row[dim1]));
+    subset.emplace_back(row[dim1]);
   return graph::AdjacencyList<int>(subset);
 }
 //-----------------------------------------------------------------------------

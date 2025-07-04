@@ -1,0 +1,8 @@
+WarningsAsErrors: "*"
+UseColor: true
+HeaderFilterRegex: '^(?!MPI_api.h$|PETSc_api.h$).*' # Pulled in from python packages and not classified as system headers
+ExtraArgsBefore:
+  - '-Wno-unknown-warning-option'
+Checks: >
+  -*,
+  performance*

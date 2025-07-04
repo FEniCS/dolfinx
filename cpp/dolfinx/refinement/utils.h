@@ -25,7 +25,7 @@ namespace dolfinx::mesh
 template <typename T>
 class MeshTags;
 class Topology;
-enum class GhostMode;
+enum class GhostMode : std::uint8_t;
 } // namespace dolfinx::mesh
 
 namespace dolfinx::common
@@ -245,6 +245,7 @@ create_new_vertices(MPI_Comm comm,
 
   // Add received remote global vertex indices to map
   std::vector<std::int64_t> recv_global_edge;
+  recv_global_edge.reserve(received_values.size() / 2);
   assert(received_values.size() % 2 == 0);
   for (std::size_t i = 0; i < received_values.size() / 2; ++i)
     recv_global_edge.push_back(received_values[i * 2]);

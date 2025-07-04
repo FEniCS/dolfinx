@@ -25,7 +25,7 @@ namespace
 {
 /// Wrap a C++ graph partitioning function as a Python-ready function
 template <typename Functor>
-auto create_partitioner_py(Functor p_cpp)
+auto create_partitioner_py(Functor&& p_cpp)
 {
   return [p_cpp](dolfinx_wrappers::MPICommWrapper comm, int nparts,
                  const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
@@ -38,7 +38,7 @@ namespace dolfinx_wrappers
 {
 
 template <typename T>
-void declare_adjacency_list(nb::module_& m, std::string type)
+void declare_adjacency_list(nb::module_& m, const std::string& type)
 {
   std::string pyclass_name = std::string("AdjacencyList_") + type;
   nb::class_<dolfinx::graph::AdjacencyList<T>>(m, pyclass_name.c_str(),
@@ -46,7 +46,7 @@ void declare_adjacency_list(nb::module_& m, std::string type)
       .def(
           "__init__",
           [](dolfinx::graph::AdjacencyList<T>* a,
-             nb::ndarray<const T, nb::ndim<1>, nb::c_contig> adj)
+             const nb::ndarray<const T, nb::ndim<1>, nb::c_contig>& adj)
           {
             std::vector<T> data(adj.data(), adj.data() + adj.size());
             new (a) dolfinx::graph::AdjacencyList<T>(
@@ -56,7 +56,7 @@ void declare_adjacency_list(nb::module_& m, std::string type)
       .def(
           "__init__",
           [](dolfinx::graph::AdjacencyList<T>* a,
-             nb::ndarray<const T, nb::ndim<2>, nb::c_contig> adj)
+             const nb::ndarray<const T, nb::ndim<2>, nb::c_contig>& adj)
           {
             std::vector<T> data(adj.data(), adj.data() + adj.size());
             new (a) dolfinx::graph::AdjacencyList<T>(
@@ -67,8 +67,9 @@ void declare_adjacency_list(nb::module_& m, std::string type)
       .def(
           "__init__",
           [](dolfinx::graph::AdjacencyList<T>* a,
-             nb::ndarray<const T, nb::ndim<1>, nb::c_contig> array,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> displ)
+             const nb::ndarray<const T, nb::ndim<1>, nb::c_contig>& array,
+             const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>&
+                 displ)
           {
             std::vector<T> data(array.data(), array.data() + array.size());
             std::vector<std::int32_t> offsets(displ.data(),
