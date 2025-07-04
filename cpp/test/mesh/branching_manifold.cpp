@@ -19,6 +19,7 @@
 #include <dolfinx/mesh/utils.h>
 #include <iterator>
 #include <mpi.h>
+#include <optional>
 #include <ostream>
 #include <vector>
 
@@ -116,40 +117,92 @@ TEST_CASE("dual_graph_branching")
   }
 
   {
-    // matched_facet_cell_count = 3
+    // matched_facet_cell_count = 3 / std::nullopt
     // Note: all facets are now considered unmatched
-    auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
-        = mesh::build_local_dual_graph(celltypes, {cells}, 3);
 
-    CHECK(dual_graph.num_nodes() == 4);
+    for (auto matched_facet_cell_count :
+         std::array<std::optional<int>, 2>{3, std::nullopt})
+    {
 
-    CHECK(dual_graph.num_links(0) == 2);
-    CHECK_THAT(dual_graph.links(0),
-               Catch::Matchers::RangeEquals(std::array{1, 2}));
+      auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
+          = mesh::build_local_dual_graph(celltypes, {cells},
+                                         matched_facet_cell_count);
 
-    CHECK(dual_graph.num_links(1) == 3);
-    CHECK_THAT(dual_graph.links(3),
-               Catch::Matchers::RangeEquals(std::array{1}));
+      CHECK(dual_graph.num_nodes() == 4);
 
-    CHECK_THAT(dual_graph.links(1),
-               Catch::Matchers::RangeEquals(std::array{0, 2, 3}));
+      CHECK(dual_graph.num_links(0) == 2);
+      CHECK_THAT(dual_graph.links(0),
+                 Catch::Matchers::RangeEquals(std::array{1, 2}));
 
-    CHECK(dual_graph.num_links(2) == 2);
-    CHECK_THAT(dual_graph.links(2),
-               Catch::Matchers::RangeEquals(std::array{0, 1}));
+      CHECK(dual_graph.num_links(1) == 3);
+      CHECK_THAT(dual_graph.links(3),
+                 Catch::Matchers::RangeEquals(std::array{1}));
 
-    CHECK(dual_graph.num_links(3) == 1);
-    CHECK_THAT(dual_graph.links(3),
-               Catch::Matchers::RangeEquals(std::array{1}));
+      CHECK_THAT(dual_graph.links(1),
+                 Catch::Matchers::RangeEquals(std::array{0, 2, 3}));
 
-    CHECK_THAT(unmatched_facets,
-               Catch::Matchers::RangeEquals(std::array{0, 1, 2, 3, 4}));
+      CHECK(dual_graph.num_links(2) == 2);
+      CHECK_THAT(dual_graph.links(2),
+                 Catch::Matchers::RangeEquals(std::array{0, 1}));
 
-    CHECK(max_vertices_per_facet == 1);
+      CHECK(dual_graph.num_links(3) == 1);
+      CHECK_THAT(dual_graph.links(3),
+                 Catch::Matchers::RangeEquals(std::array{1}));
 
-    CHECK_THAT(cell_data,
-               Catch::Matchers::RangeEquals(std::array{0, 0, 1, 2, 3}));
+      CHECK_THAT(unmatched_facets,
+                 Catch::Matchers::RangeEquals(std::array{0, 1, 2, 3, 4}));
+
+      CHECK(max_vertices_per_facet == 1);
+
+      CHECK_THAT(cell_data,
+                 Catch::Matchers::RangeEquals(std::array{0, 0, 1, 2, 3}));
+    }
   }
+}
+
+// branching manifold graph G
+//
+//          (2)
+//     [1] /   ＼ [0]
+//        /     ＼
+//      (0) --- (1)
+//          [2]
+//
+// its dual G'
+//
+//          [2]
+//         /   ＼
+//        /     ＼
+//      [0] --- [1]
+//
+TEST_CASE("dual_graph_self_dual")
+{
+  std::vector<mesh::CellType> celltypes{mesh::CellType::interval};
+  std::vector<std::int64_t> cells{{0, 1, 1, 2, 2, 0}};
+
+  auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
+      = mesh::build_local_dual_graph(celltypes, {cells}, 2);
+
+  CHECK(max_vertices_per_facet == 1);
+  CHECK(dual_graph.num_nodes() == 3);
+
+  CHECK(dual_graph.num_links(0) == 2);
+
+  CHECK_THAT(dual_graph.links(0),
+             Catch::Matchers::RangeEquals(std::array{2, 1}));
+
+  CHECK(dual_graph.num_links(1) == 2);
+  CHECK_THAT(dual_graph.links(1),
+             Catch::Matchers::RangeEquals(std::array{0, 2}));
+
+  CHECK(dual_graph.num_links(2) == 2);
+  CHECK_THAT(dual_graph.links(2),
+             Catch::Matchers::RangeEquals(std::array{0, 1}));
+
+  CHECK_THAT(unmatched_facets,
+             Catch::Matchers::RangeEquals(std::array{0, 1, 2}));
+
+  CHECK_THAT(cell_data, Catch::Matchers::RangeEquals(std::array{0, 0, 1}));
 }
 
 // Parallel branching manifold graph G ('⟷': indicates the process boundary)
