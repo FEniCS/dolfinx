@@ -122,9 +122,9 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   std::cout << dolfinx::MPI::rank(comm) << "facet_count: " << facet_count
             << " facets: ";
-  for (int f = 0; f < facet_count; f++)
+  for (std::size_t f = 0; f < facet_count; f++)
   {
-    for (int v = 0; v < buffer_shape1; v++)
+    for (std::int32_t v = 0; v < buffer_shape1; v++)
     {
       std::cout << facets[f * buffer_shape1 + v] << ", ";
     }
