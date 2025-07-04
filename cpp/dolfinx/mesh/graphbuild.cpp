@@ -209,7 +209,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   // Wait for the MPI_Iexscan to complete (before using cell_offset)
   MPI_Wait(&request_cell_offset, MPI_STATUS_IGNORE);
-
+  std::cout << dolfinx::MPI::rank(comm) << " cell_offset: " << cell_offset
+            << std::endl;
   // Pack send buffer
   std::vector<std::int32_t> send_indx_to_pos(send_disp.back());
   std::vector<std::int64_t> send_buffer(buffer_shape1 * send_disp.back(), -1);
@@ -278,8 +279,12 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
               std::next(it1, max_vertices_per_facet));
         });
 
-    auto it = sort_order.begin();
-    while (it != sort_order.end())
+    // std::cout << dolfinx::MPI::rank(comm)<< " sort_order: ";
+    // for (auto e : sort_order)
+    //     std::cout << e << ", ";
+    // std::cout << std::endl;
+
+    for (auto it = sort_order.begin(); it != sort_order.end();)
     {
       std::size_t offset0 = (*it) * buffer_shape1;
       auto f0 = std::next(recv_buffer.data(), offset0);
