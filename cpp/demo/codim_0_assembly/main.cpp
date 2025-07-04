@@ -94,13 +94,8 @@ int main(int argc, char* argv[])
     // A mixed-domain form has functions defined over different meshes.
     // The mesh associated with the measure (dx, ds, etc.) is called the
     // integration domain. To assemble mixed-domain forms, maps must be
-    // provided taking entities in the integration domain to entities on
-    // each mesh in the form. Since one of our forms has a measure
-    // defined over `mesh` and involves a function defined over
-    // `submesh`, we must provide a map from entities in `mesh` to
-    // entities in `submesh`. This is simply the "inverse" of
-    // `submesh_to_mesh`.
-
+    // provided relating entities in the integration domain to entities in
+    // each mesh in the form.
     const mesh::EntityMap entity_map(mesh->topology(), submesh->topology(),
                                      tdim, submesh_to_mesh);
     std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps

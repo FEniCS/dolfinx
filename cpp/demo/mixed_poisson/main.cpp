@@ -284,8 +284,7 @@ int main(int argc, char* argv[])
 
     // Since we are doing a `ds(1)` integral on mesh and `u0` is defined
     // on the `submesh`, we must provide an "entity map" relating cells
-    // in `submesh` to entities in `mesh`. This is simply the "inverse"
-    // of `submesh_to_mesh`:
+    // in `submesh` to entities in `mesh`.
     std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps;
     std::shared_ptr<const mesh::EntityMap> entity_map
         = std::make_shared<const mesh::EntityMap>(
