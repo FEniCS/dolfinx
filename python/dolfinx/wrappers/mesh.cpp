@@ -606,7 +606,19 @@ void mesh(nb::module_& m)
                 std::vector(entities0.data(),
                             entities0.data() + entities0.size()));
           },
-          nb::arg("topology0"), nb::arg("topology1"), nb::arg("entities0"));
+          nb::arg("topology0"), nb::arg("topology1"), nb::arg("entities0"))
+      .def(
+          "map_entities",
+          [](const dolfinx::mesh::EntityMap& self,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
+                 entities,
+             std::shared_ptr<const dolfinx::mesh::Topology> topology)
+          {
+            std::vector<std::int32_t> mapped_entities = self.map_entities(
+                std::span(entities.data(), entities.size()), topology);
+            return as_nbarray(std::move(mapped_entities));
+          },
+          nb::arg("entities"), nb::arg("topology"));
 
   // dolfinx::mesh::Topology class
   nb::class_<dolfinx::mesh::Topology>(m, "Topology", nb::dynamic_attr(),
