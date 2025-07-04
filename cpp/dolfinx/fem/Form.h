@@ -50,13 +50,13 @@ namespace impl
 /// local cell indices. For facets this is an mdspan of shape (num_facets, 2),
 /// where the first column is the local cell index and the second column is
 /// the local facet index (relative to the cell).
-/// @param entity_map A map from an entity (local index relative to the process)
-/// to a set of local entities in another domain.
-/// @param codim The codimension of the mapped entities. If 0, the other domain
-/// consists of cells of the input domain. If 1, the other domain consists of
-/// facets of the input domain.
-/// @param c_to_f If codimension is 1, this is the map from a cell in the input
-/// domain to a facet of this domain.
+/// @param entity_map A map from integration entities (i.e. entities in
+/// `this->mesh()`) to the corresponding index of the entity in the mesh the
+/// argument or coefficient is defined over
+/// @param codim The codimension of the domain the argument or coefficient is
+/// defined over with respect to this->mesh()
+/// @param c_to_f The cell-to-facet connectivity for `this->mesh()` (required if
+/// `codim == 1`)
 /// @return entity_map[entities[i]]
 std::vector<std::int32_t> compute_domain(
     auto entities, std::span<const std::int32_t> entity_map,
@@ -71,7 +71,8 @@ std::vector<std::int32_t> compute_domain(
   mapped_entities.reserve(entities.size());
   if constexpr (entities.rank() == 1)
   {
-    // Map cells from integration mesh to argument/coefficient mesh
+    // Map cells from integration mesh (i.e. `this->mesh()`) to
+    // argument/coefficient mesh
     std::span ents(entities.data_handle(), entities.size());
     std::ranges::transform(ents, std::back_inserter(mapped_entities),
                            [&entity_map](auto e) { return entity_map[e]; });
