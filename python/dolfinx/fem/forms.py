@@ -220,9 +220,10 @@ def mixed_topology_form(
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
         entity_maps: If any trial functions, test functions, or
             coefficients in the form are not defined over the same mesh
-            as the integration domain, `entity_maps` must be supplied.
-            Each map is a relation between the a subset of entities for
-            two different mesh topologies.
+            as the integration domain (the domain associated with the
+            measure), `entity_maps` must be supplied. For each mesh in the
+            form, there should be an entity map relating entities in that
+            mesh to the integration domain mesh.
 
 
     Returns:
@@ -292,9 +293,10 @@ def form(
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
         entity_maps: If any trial functions, test functions, or
             coefficients in the form are not defined over the same mesh
-            as the integration domain, ``entity_maps`` must be supplied.
-            Each map is a relation between the a subset of entities for two
-            different mesh topologies.
+            as the integration domain (the domain associated with the
+            measure), `entity_maps` must be supplied. For each mesh in the
+            form, there should be an entity map relating entities in that
+            mesh to the integration domain mesh.
 
     Returns:
         Compiled finite element Form.

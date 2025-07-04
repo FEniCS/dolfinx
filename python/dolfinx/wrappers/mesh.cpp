@@ -125,7 +125,6 @@ void declare_meshtags(nb::module_& m, std::string type)
 template <typename T>
 void declare_mesh(nb::module_& m, std::string type)
 {
-
   std::string pyclass_geometry_name = std::string("Geometry_") + type;
   nb::class_<dolfinx::mesh::Geometry<T>>(m, pyclass_geometry_name.c_str(),
                                          "Geometry object")

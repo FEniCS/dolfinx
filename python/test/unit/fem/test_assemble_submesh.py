@@ -249,18 +249,18 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
 
     # Assemble a mixed-domain form using msh as integration domain.
     # We create an entity map that relates the entities in the submesh to those of the parent mesh
-    entity_map = EntityMap(msh.topology._cpp_object, smsh.topology._cpp_object, smsh_to_msh)
-    a0 = fem.form(a_ufl(u, q, f, g, measure_msh), entity_maps=[entity_map])
+    entity_maps = [EntityMap(msh.topology._cpp_object, smsh.topology._cpp_object, smsh_to_msh)]
+    a0 = fem.form(a_ufl(u, q, f, g, measure_msh), entity_maps=entity_maps)
     A0 = fem.assemble_matrix(a0, bcs=[bc])
     A0.scatter_reverse()
     assert np.isclose(A0.squared_norm(), A.squared_norm())
 
-    L0 = fem.form(L_ufl(q, f, g, measure_msh), entity_maps=[entity_map])
+    L0 = fem.form(L_ufl(q, f, g, measure_msh), entity_maps=entity_maps)
     b0 = fem.assemble_vector(L0)
     fem.apply_lifting(b0.array, [a0], bcs=[[bc]])
     b0.scatter_reverse(la.InsertMode.add)
     assert np.isclose(la.norm(b0), la.norm(b))
-    M0 = fem.form(M_ufl(f, g, measure_msh), entity_maps=[entity_map])
+    M0 = fem.form(M_ufl(f, g, measure_msh), entity_maps=entity_maps)
     c0 = msh.comm.allreduce(fem.assemble_scalar(M0), op=MPI.SUM)
     assert np.isclose(c0, c)
 
@@ -270,18 +270,18 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     # Create the measure (this time defined over the submesh)
     measure_smsh = create_measure(smsh, integral_type)
 
-    a1 = fem.form(a_ufl(u, q, f, g, measure_smsh), entity_maps=[entity_map])
+    a1 = fem.form(a_ufl(u, q, f, g, measure_smsh), entity_maps=entity_maps)
     A1 = fem.assemble_matrix(a1, bcs=[bc])
     A1.scatter_reverse()
     assert np.isclose(A1.squared_norm(), A.squared_norm())
 
-    L1 = fem.form(L_ufl(q, f, g, measure_smsh), entity_maps=[entity_map])
+    L1 = fem.form(L_ufl(q, f, g, measure_smsh), entity_maps=entity_maps)
     b1 = fem.assemble_vector(L1)
     fem.apply_lifting(b1.array, [a1], bcs=[[bc]])
     b1.scatter_reverse(la.InsertMode.add)
     assert np.isclose(la.norm(b1), la.norm(b))
 
-    M1 = fem.form(M_ufl(f, g, measure_smsh), entity_maps=[entity_map])
+    M1 = fem.form(M_ufl(f, g, measure_smsh), entity_maps=entity_maps)
     c1 = msh.comm.allreduce(fem.assemble_scalar(M1), op=MPI.SUM)
     assert np.isclose(c1, c)
 
@@ -349,24 +349,23 @@ def test_mixed_dom_codim_1(n, k):
     M = fem.form(M_ufl(f, f, ds))
     c = msh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
 
-    # We create the realation between the submesh and the parent mesh
-    entity_map = EntityMap(msh.topology._cpp_object, smsh.topology._cpp_object, smsh_to_msh)
+    entity_maps = [EntityMap(msh.topology._cpp_object, smsh.topology._cpp_object, smsh_to_msh)]
 
     # Create forms and compare
-    a1 = fem.form(a_ufl(u, vbar, f, g, ds), entity_maps=[entity_map])
+    a1 = fem.form(a_ufl(u, vbar, f, g, ds), entity_maps=entity_maps)
     A1 = fem.assemble_matrix(a1, bcs=[bc])
     A1.scatter_reverse()
 
     assert np.isclose(A.squared_norm(), A1.squared_norm())
 
-    L1 = fem.form(L_ufl(vbar, f, g, ds), entity_maps=[entity_map])
+    L1 = fem.form(L_ufl(vbar, f, g, ds), entity_maps=entity_maps)
     b1 = fem.assemble_vector(L1)
     fem.apply_lifting(b1.array, [a1], bcs=[[bc]])
     b1.scatter_reverse(la.InsertMode.add)
 
     assert np.isclose(la.norm(b), la.norm(b1))
 
-    M1 = fem.form(M_ufl(f, g, ds), entity_maps=[entity_map])
+    M1 = fem.form(M_ufl(f, g, ds), entity_maps=entity_maps)
     c1 = msh.comm.allreduce(fem.assemble_scalar(M1), op=MPI.SUM)
 
     assert np.isclose(c, c1)
@@ -726,13 +725,13 @@ def test_interior_interface():
         This helper function computes the integration entities for interior facet
         integrals (i.e. a list of (cell_0, local_facet_0, cell_1, local_facet_1))
         over an interface. The integration entities are ordered consistently such
-        that cells for which `marker[cell] >= 0` correspond to the "+" restriction,
-        and cells for which `marker[cell] < 0` correspond to the "-" restriction.
+        that cells for which `marker[cell] != 0` correspond to the "+" restriction,
+        and cells for which `marker[cell] == 0` correspond to the "-" restriction.
 
         Parameters:
             msh: the mesh
             interface_facets: Facet indices of interior facets on an interface
-            marker: If `marker[cell]` is **positive**, then that cell corresponds to a "+"
+            marker: If `marker[cell] != 0`, then that cell corresponds to a "+"
                 restriction. Otherwise, it corresponds to a negative restriction.
         """
         tdim = msh.topology.dim
@@ -749,10 +748,10 @@ def test_interior_interface():
             if facet < facet_imap.size_local:
                 cells = f_to_c.links(facet)
                 assert len(cells) == 2
-                if marker[cells[0]] >= 0:
-                    cell_plus, cell_minus = cells[0], cells[1]
-                else:
+                if marker[cells[0]] == 0:
                     cell_plus, cell_minus = cells[1], cells[0]
+                else:
+                    cell_plus, cell_minus = cells[0], cells[1]
 
                 local_facet_plus = np.where(c_to_f.links(cell_plus) == facet)[0][0]
                 local_facet_minus = np.where(c_to_f.links(cell_minus) == facet)[0][0]
@@ -786,22 +785,19 @@ def test_interior_interface():
     fdim = tdim - 1
     interface_facets = locate_entities(msh, fdim, lambda x: np.isclose(x[0], 0.5))
 
-    # Create entity maps for each domain. Since we integrate over msh, the
-    # maps take cells in mesh to cells in smsh_0 and smsh_1, respectively
+    # Create a marker to identify cells on the "+" side of the interface
     cell_imap = msh.topology.index_map(tdim)
     num_cells = cell_imap.size_local + cell_imap.num_ghosts
-    msh_to_sm_0 = np.full(num_cells, -1)
-    msh_to_sm_0[sm_0_to_msh] = np.arange(len(sm_0_to_msh))
-    # msh_to_sm_1 = np.full(num_cells, -1)
-    # msh_to_sm_1[sm_1_to_msh] = np.arange(len(sm_1_to_msh))
-    # entity_maps = {smsh_0: msh_to_sm_0, smsh_1: msh_to_sm_1}
+    marker = np.zeros(num_cells)
+    marker[left_cells] = 1
 
+    # Create entity maps for each domain
     sm_0_emap = EntityMap(msh.topology._cpp_object, smsh_0.topology._cpp_object, sm_0_to_msh)
     sm_1_emap = EntityMap(msh.topology._cpp_object, smsh_1.topology._cpp_object, sm_1_to_msh)
     entity_maps = [sm_0_emap, sm_1_emap]
 
     # Create a list of integration entities
-    interface_ents = interface_int_entities(msh, interface_facets, msh_to_sm_0)
+    interface_ents = interface_int_entities(msh, interface_facets, marker)
 
     # Assemble the form
     dS = ufl.Measure("dS", domain=msh, subdomain_data=[(1, interface_ents)])
