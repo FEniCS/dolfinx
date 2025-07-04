@@ -1208,58 +1208,6 @@ def assemble_jacobian(
         P.assemble()
 
 
-# -- High-level interface for SNES ---------------------------------------
-
-
-def _ghostUpdate(x: PETSc.Vec, insert_mode: PETSc.InsertMode, scatter_mode: PETSc.ScatterMode):  # type: ignore
-    """Helper function for ghost updating PETSc vectors"""
-    try:
-        for x_sub in x.getNestSubVecs():
-            x_sub.ghostUpdate(addv=insert_mode, mode=scatter_mode)
-    except PETSc.Error:  # type: ignore
-        x.ghostUpdate(addv=insert_mode, mode=scatter_mode)
-
-
-def _zero_vector(x: PETSc.Vec):  # type: ignore
-    """Helper function for zeroing out PETSc vectors"""
-    try:
-        for x_sub in x.getNestSubVecs():
-            with x_sub.localForm() as x_sub_local:
-                x_sub_local.set(0.0)
-    except PETSc.Error:  # type: ignore
-        with x.localForm() as x_local:
-            x_local.set(0.0)
-
-
-def _assign_block_data(forms: typing.Iterable[dolfinx.fem.Form], vec: PETSc.Vec):
-    """Assign block data to a PETSc vector.
-
-    Args:
-        forms: List of forms to extract block data from.
-        vec: PETSc vector to assign block data to.
-    """
-    # Early exit if the vector already has block data or is a nest vector
-    if vec.getAttr("_blocks") is not None or vec.getType() == "nest":
-        return
-
-    maps = [
-        (
-            form.function_spaces[0].dofmaps(0).index_map,
-            form.function_spaces[0].dofmaps(0).index_map_bs,
-        )
-        for form in forms  # type: ignore
-    ]
-    off_owned = tuple(
-        itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
-    )
-    off_ghost = tuple(
-        itertools.accumulate(
-            maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
-        )
-    )
-    vec.setAttr("_blocks", (off_owned, off_ghost))
-
-
 class NonlinearProblem:
     def __init__(
         self,
