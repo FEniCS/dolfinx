@@ -52,8 +52,7 @@ def par_print(comm, string):
 
 def norm_L2(comm, v, measure=ufl.dx):
     return np.sqrt(
-        comm.allreduce(fem.assemble_scalar(
-            fem.form(ufl.inner(v, v) * measure)), op=MPI.SUM)
+        comm.allreduce(fem.assemble_scalar(fem.form(ufl.inner(v, v) * measure)), op=MPI.SUM)
     )
 
 
@@ -129,8 +128,7 @@ dx_c = ufl.Measure("dx", domain=msh)
 cell_boundary_facets = compute_cell_boundary_facets(msh)
 cell_boundaries = 1  # A tag
 # Create the measure
-ds_c = ufl.Measure("ds", subdomain_data=[
-                   (cell_boundaries, cell_boundary_facets)], domain=msh)
+ds_c = ufl.Measure("ds", subdomain_data=[(cell_boundaries, cell_boundary_facets)], domain=msh)
 # Create a cell integral measure over the facet mesh
 dx_f = ufl.Measure("dx", domain=facet_mesh)
 
@@ -153,10 +151,8 @@ x = ufl.SpatialCoordinate(msh)
 c = 1.0 + 0.1 * ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])
 a = (
     ufl.inner(c * ufl.grad(u), ufl.grad(v)) * dx_c
-    - ufl.inner(c * (u - ubar), ufl.dot(ufl.grad(v), n)) *
-    ds_c(cell_boundaries)
-    - ufl.inner(ufl.dot(ufl.grad(u), n), c * (v - vbar)) *
-    ds_c(cell_boundaries)
+    - ufl.inner(c * (u - ubar), ufl.dot(ufl.grad(v), n)) * ds_c(cell_boundaries)
+    - ufl.inner(ufl.dot(ufl.grad(u), n), c * (v - vbar)) * ds_c(cell_boundaries)
     + gamma * ufl.inner(c * (u - ubar), v - vbar) * ds_c(cell_boundaries)
 )
 
@@ -180,7 +176,8 @@ msh_boundary_facets = mesh.exterior_facet_indices(msh.topology)
 
 
 facet_mesh_boundary_facets = entity_map.map_entities(
-    msh_boundary_facets, facet_mesh.topology._cpp_object)
+    msh_boundary_facets, facet_mesh.topology._cpp_object
+)
 
 # Get the dofs and apply the boundary condition
 facet_mesh.topology.create_connectivity(fdim, fdim)
