@@ -1,4 +1,5 @@
-// Copyright (C) 2017-2021 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2017-2025 Chris N. Richardson, Garth N. Wells and Jørgen S.
+// Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -12,6 +13,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
@@ -587,6 +589,35 @@ void mesh(nb::module_& m)
       nb::arg("topology"), nb::arg("dim"), nb::arg("entity_type"));
   m.def("compute_connectivity", &dolfinx::mesh::compute_connectivity,
         nb::arg("topology"), nb::arg("d0"), nb::arg("d1"));
+
+  // dolfinx::mesh::EntityMap class
+  nb::class_<dolfinx::mesh::EntityMap>(m, "EntityMap", "EntityMap object")
+      .def(
+          "__init__",
+          [](dolfinx::mesh::EntityMap* self,
+             std::shared_ptr<const dolfinx::mesh::Topology> topology0,
+             std::shared_ptr<const dolfinx::mesh::Topology> topology1,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
+                 entities0)
+          {
+            new (self) dolfinx::mesh::EntityMap(
+                topology0, topology1,
+                std::vector(entities0.data(),
+                            entities0.data() + entities0.size()));
+          },
+          nb::arg("topology0"), nb::arg("topology1"), nb::arg("entities0"))
+      .def(
+          "map_entities",
+          [](const dolfinx::mesh::EntityMap& self,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
+                 entities,
+             std::shared_ptr<const dolfinx::mesh::Topology> topology)
+          {
+            std::vector<std::int32_t> mapped_entities = self.map_entities(
+                std::span(entities.data(), entities.size()), topology);
+            return as_nbarray(std::move(mapped_entities));
+          },
+          nb::arg("entities"), nb::arg("topology"));
 
   // dolfinx::mesh::Topology class
   nb::class_<dolfinx::mesh::Topology>(m, "Topology", nb::dynamic_attr(),

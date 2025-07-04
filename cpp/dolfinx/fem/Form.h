@@ -1,4 +1,5 @@
-// Copyright (C) 2019-2025 Garth N. Wells and Chris Richardson
+// Copyright (C) 2019-2025 Garth N. Wells, Chris Richardson, Joseph P. Dean and
+// Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -14,6 +15,7 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
+#include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <map>
@@ -44,10 +46,17 @@ namespace impl
 {
 /// @brief Compute "`entity_map[entities[i]]`", with suitable handling
 /// for facets.
-/// @param entities
-/// @param entity_map
-/// @param codim
-/// @param c_to_f
+/// @param entities List of integration entities. For cells this is a list of
+/// local cell indices. For facets this is an mdspan of shape (num_facets, 2),
+/// where the first column is the local cell index and the second column is
+/// the local facet index (relative to the cell).
+/// @param entity_map A map from integration entities (i.e. entities in
+/// `this->mesh()`) to the corresponding index of the entity in the mesh the
+/// argument or coefficient is defined over
+/// @param codim The codimension of the domain the argument or coefficient is
+/// defined over with respect to this->mesh()
+/// @param c_to_f The cell-to-facet connectivity for `this->mesh()` (required if
+/// `codim == 1`)
 /// @return entity_map[entities[i]]
 std::vector<std::int32_t> compute_domain(
     auto entities, std::span<const std::int32_t> entity_map,
@@ -62,24 +71,32 @@ std::vector<std::int32_t> compute_domain(
   mapped_entities.reserve(entities.size());
   if constexpr (entities.rank() == 1)
   {
+    // Map cells from integration mesh (i.e. `this->mesh()`) to
+    // argument/coefficient mesh
     std::span ents(entities.data_handle(), entities.size());
     std::ranges::transform(ents, std::back_inserter(mapped_entities),
                            [&entity_map](auto e) { return entity_map[e]; });
   }
   else if (entities.rank() == 2)
   {
+    // Map facets from integration mesh to argument/coefficient mesh
     assert(codim.value() >= 0);
     if (codim.value() == 0)
     {
+      // Codim 0 case
       for (std::size_t i = 0; i < entities.extent(0); ++i)
       {
-        // Add cell and the local facet index
+        // Local facet index is preserved in submesh creation, so we just map
+        // the cell from the integration mesh to the argument/coefficient mesh
+        assert(static_cast<std::size_t>(entities(i, 0)) < entity_map.size());
         mapped_entities.insert(mapped_entities.end(),
                                {entity_map[entities(i, 0)], entities(i, 1)});
       }
     }
     else if (codim.value() == 1)
     {
+      // Codim 1 case
+
       // In this case, the entity maps take facets in (`_mesh`) to cells
       // in `mesh`, so we need to get the facet number from the (cell,
       // local_facet pair) first.
@@ -88,6 +105,7 @@ std::vector<std::int32_t> compute_domain(
         // Get the facet index, and add cell and the local facet index
         std::int32_t facet
             = c_to_f->get().links(entities(i, 0))[entities(i, 1)];
+        assert(static_cast<std::size_t>(facet) < entity_map.size());
         mapped_entities.insert(mapped_entities.end(),
                                {entity_map[facet], entities(i, 1)});
       }
@@ -221,39 +239,13 @@ public:
       const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
           constants,
       bool needs_facet_permutations,
-      const std::map<std::shared_ptr<const mesh::Mesh<geometry_type>>,
-                     std::span<const std::int32_t>>& entity_maps)
+      const std::vector<std::shared_ptr<const mesh::EntityMap>>& entity_maps)
       : _function_spaces(V), _integrals(std::forward<X>(integrals)),
         _mesh(mesh), _coefficients(coefficients), _constants(constants),
         _needs_facet_permutations(needs_facet_permutations)
   {
     if (!_mesh)
       throw std::runtime_error("Form Mesh is null.");
-
-    // Check consistency of mesh(es)
-    {
-      // Integration domain mesh is passed, so check that it is (1)
-      // common for spaces and coefficients (2) or an entity_map is
-      // available
-      for (auto& space : _function_spaces)
-      {
-        if (auto mesh0 = space->mesh();
-            mesh0 != _mesh and !entity_maps.contains(mesh0))
-        {
-          throw std::runtime_error(
-              "Incompatible mesh. argument entity_maps must be provided.");
-        }
-      }
-      for (auto& c : coefficients)
-      {
-        if (auto mesh0 = c->function_space()->mesh();
-            mesh0 != _mesh and !entity_maps.contains(mesh0))
-        {
-          throw std::runtime_error(
-              "Incompatible mesh. coefficient entity_maps must be provided.");
-        }
-      }
-    }
 
     for (auto& space : _function_spaces)
     {
@@ -270,9 +262,22 @@ public:
       }
       else
       {
-        auto it = entity_maps.find(mesh0);
-        assert(it != entity_maps.end());
-        std::span<const std::int32_t> entity_map = it->second;
+        // Find correct entity map
+        auto it = std::ranges::find_if(entity_maps,
+                                       [&](const auto& em)
+                                       {
+                                         assert(em);
+                                         return em->contains(mesh0->topology());
+                                       });
+        if (it == entity_maps.end())
+        {
+          throw std::runtime_error(
+              "Incompatible mesh. argument entity_maps must be provided.");
+        }
+        auto emap = *it;
+        assert(emap);
+        std::vector<std::int32_t> entity_map = emap->map(mesh0->topology());
+
         for (auto& [key, itg] : _integrals)
         {
           auto [type, id, kernel_idx] = key;
@@ -281,7 +286,7 @@ public:
           {
             e = impl::compute_domain(
                 md::mdspan(itg.entities.data(), itg.entities.size()),
-                entity_map);
+                std::span<const std::int32_t>(entity_map));
           }
           else if (type == IntegralType::exterior_facet
                    or type == IntegralType::interior_facet)
@@ -296,7 +301,7 @@ public:
                 md::mdspan<const std::int32_t,
                            md::extents<std::size_t, md::dynamic_extent, 2>>(
                     itg.entities.data(), itg.entities.size() / 2, 2),
-                entity_map, codim, *c_to_f);
+                std::span<const std::int32_t>(entity_map), codim, *c_to_f);
           }
           else
             throw std::runtime_error("Integral type not supported.");
@@ -319,15 +324,29 @@ public:
         }
         else
         {
-          auto it = entity_maps.find(mesh0);
-          assert(it != entity_maps.end());
-          std::span<const std::int32_t> entity_map = it->second;
+          // Find correct entity map
+          auto it
+              = std::ranges::find_if(entity_maps,
+                                     [&](const auto& em)
+                                     {
+                                       assert(em);
+                                       return em->contains(mesh0->topology());
+                                     });
+          if (it == entity_maps.end())
+          {
+            throw std::runtime_error(
+                "Incompatible mesh. coefficient entity_maps must be provided.");
+          }
+          auto emap = *it;
+          assert(emap);
+          std::vector<std::int32_t> entity_map = emap->map(mesh0->topology());
+
           std::vector<std::int32_t> e;
           if (type == IntegralType::cell)
           {
             e = impl::compute_domain(
                 md::mdspan(integral.entities.data(), integral.entities.size()),
-                entity_map);
+                std::span<const std::int32_t>(entity_map));
           }
           else if (type == IntegralType::exterior_facet
                    or type == IntegralType::interior_facet)
@@ -342,7 +361,7 @@ public:
                 md::mdspan<const std::int32_t,
                            md::extents<std::size_t, md::dynamic_extent, 2>>(
                     integral.entities.data(), integral.entities.size() / 2, 2),
-                entity_map, codim, *c_to_f);
+                std::span<const std::int32_t>(entity_map), codim, *c_to_f);
           }
           else
             throw std::runtime_error("Integral type not supported.");
@@ -510,7 +529,10 @@ public:
   /// corresponding entity indices but in the mesh associated with the
   /// argument function (test/trial function) space. `entities[i]` and
   /// `entities0[i]` point to the same mesh entity, but with respect to
-  /// different mesh views.
+  /// different mesh views. In some cases, such as when integrating over
+  /// the interface between two domains that do not overlap, an entity
+  /// may exist in one domain but not another. In this case, the entity
+  /// is marked with -1.
   ///
   /// @param type Integral type.
   /// @param rank Argument index, e.g. `0` for the test function space, `1`

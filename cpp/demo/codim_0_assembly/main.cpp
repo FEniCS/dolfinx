@@ -14,6 +14,7 @@
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
+#include <dolfinx/mesh/EntityMap.h>
 #include <map>
 #include <memory>
 #include <ranges>
@@ -93,20 +94,12 @@ int main(int argc, char* argv[])
     // A mixed-domain form has functions defined over different meshes.
     // The mesh associated with the measure (dx, ds, etc.) is called the
     // integration domain. To assemble mixed-domain forms, maps must be
-    // provided taking entities in the integration domain to entities on
-    // each mesh in the form. Since one of our forms has a measure
-    // defined over `mesh` and involves a function defined over
-    // `submesh`, we must provide a map from entities in `mesh` to
-    // entities in `submesh`. This is simply the "inverse" of
-    // `submesh_to_mesh`.
-    std::vector<std::int32_t> mesh_to_submesh(num_cells_local, -1);
-    for (std::size_t i = 0; i < submesh_to_mesh.size(); ++i)
-      mesh_to_submesh[submesh_to_mesh[i]] = i;
-
-    std::map<std::shared_ptr<const mesh::Mesh<U>>,
-             std::span<const std::int32_t>>
-        entity_maps = {{submesh, mesh_to_submesh}};
-
+    // provided relating entities in the integration domain to entities in
+    // each mesh in the form.
+    const mesh::EntityMap entity_map(mesh->topology(), submesh->topology(),
+                                     submesh_to_mesh);
+    std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps
+        = {std::make_shared<const mesh::EntityMap>(entity_map)};
     // Next we compute the integration entities on the integration
     // domain `mesh`
     std::vector<std::int32_t> integration_entities

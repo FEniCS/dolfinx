@@ -203,7 +203,7 @@ def mixed_topology_form(
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
-    entity_maps: typing.Optional[dict[Mesh, np.typing.NDArray[np.int32]]] = None,
+    entity_maps: typing.Optional[typing.Iterable[_cpp.mesh.EntityMap]] = None,
 ):
     """
     Create a mixed-topology from from an array of Forms.
@@ -220,13 +220,11 @@ def mixed_topology_form(
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
         entity_maps: If any trial functions, test functions, or
             coefficients in the form are not defined over the same mesh
-            as the integration domain, `entity_maps` must be supplied.
-            For each key (a mesh, different to the integration domain
-            mesh) a map should be provided relating the entities in the
-            integration domain mesh to the entities in the key mesh e.g.
-            for a key-value pair (msh, emap) in `entity_maps`, `emap[i]`
-            is the entity in `msh` corresponding to entity `i` in the
-            integration domain mesh.
+            as the integration domain (the domain associated with the
+            measure), `entity_maps` must be supplied. For each mesh in the
+            form, there should be an entity map relating entities in that
+            mesh to the integration domain mesh.
+
 
     Returns:
         Compiled finite element Form.
@@ -273,7 +271,7 @@ def mixed_topology_form(
         [],
         [],
         {},
-        {},
+        [],
         mesh,
     )
     return Form(f, ufcx_forms, codes, modules)
@@ -284,7 +282,7 @@ def form(
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
-    entity_maps: typing.Optional[dict[Mesh, np.typing.NDArray[np.int32]]] = None,
+    entity_maps: typing.Optional[typing.Iterable[_cpp.mesh.EntityMap]] = None,
 ):
     """Create a Form or list of Forms.
 
@@ -295,13 +293,10 @@ def form(
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
         entity_maps: If any trial functions, test functions, or
             coefficients in the form are not defined over the same mesh
-            as the integration domain, ``entity_maps`` must be supplied.
-            For each key (a mesh, different to the integration domain
-            mesh) a map should be provided relating the entities in the
-            integration domain mesh to the entities in the key mesh e.g.
-            for a key-value pair ``(msh, emap)`` in ``entity_maps``,
-            ``emap[i]`` is the entity in ``msh`` corresponding to entity
-            ``i`` in the integration domain mesh.
+            as the integration domain (the domain associated with the
+            measure), `entity_maps` must be supplied. For each mesh in the
+            form, there should be an entity map relating entities in that
+            mesh to the integration domain mesh.
 
     Returns:
         Compiled finite element Form.
@@ -380,9 +375,9 @@ def form(
         }
 
         if entity_maps is None:
-            _entity_maps = dict()
+            _entity_maps = []
         else:
-            _entity_maps = {msh._cpp_object: emap for (msh, emap) in entity_maps.items()}
+            _entity_maps = entity_maps
 
         f = ftype(
             [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form))],
@@ -402,9 +397,9 @@ def form(
         assert len(V) > 0
         msh = V[0].mesh
         if entity_maps is None:
-            _entity_maps = dict()
+            _entity_maps = []
         else:
-            _entity_maps = {msh._cpp_object: emap for (msh, emap) in entity_maps.items()}
+            _entity_maps = entity_maps
         f = ftype(
             spaces=V,
             integrals={},
@@ -574,7 +569,7 @@ def create_form(
     subdomains: dict[IntegralType, list[tuple[int, np.ndarray]]],
     coefficient_map: dict[ufl.Coefficient, function.Function],
     constant_map: dict[ufl.Constant, function.Constant],
-    entity_maps: dict[Mesh, np.typing.NDArray[np.int32]] | None = None,
+    entity_maps: list[_cpp.mesh.EntityMap] | None = None,
 ) -> Form:
     """
     Create a Form object from a data-independent compiled form.
@@ -595,10 +590,7 @@ def create_form(
             an array of integers, where the i-th entry is the entity in
             the key mesh.
     """
-    if entity_maps is None:
-        _entity_maps = {}
-    else:
-        _entity_maps = {m._cpp_object: emap for (m, emap) in entity_maps.items()}
+    _entity_maps = [] if entity_maps is None else entity_maps
 
     _subdomain_data = subdomains.copy()
     for _, idomain in _subdomain_data.items():
