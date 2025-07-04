@@ -12,7 +12,9 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <iostream>
 #include <optional>
+#include <ostream>
 #include <span>
 #include <utility>
 #include <vector>
@@ -118,6 +120,17 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   spdlog::debug("Max. vertices per facet={}", max_vertices_per_facet);
   const std::int32_t buffer_shape1 = max_vertices_per_facet + 1;
 
+  std::cout << dolfinx::MPI::rank(comm) << "facet_count: " << facet_count
+            << " facets: ";
+  for (int f = 0; f < facet_count; f++)
+  {
+    for (int v = 0; v < buffer_shape1; v++)
+    {
+      std::cout << facets[f * buffer_shape1 + v] << ", ";
+    }
+    std::cout << std::endl;
+  }
+
   // Build list of dest ranks and count number of items (facets) to send
   // to each dest post office (by neighbourhood rank)
   const std::size_t cell_count = cells.size();
@@ -154,6 +167,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
       // Store number of items for current rank
       num_items_per_dest.push_back(std::distance(it, it1));
+      std::cout << "Sending " << num_items_per_dest.back() << " to "
+                << neigh_rank << std::endl;
 
       // Set entry in map from local facet row index (position) to local
       // destination rank
@@ -174,6 +189,11 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
                dest.size(), src.size(),
                static_cast<double>(dest.size()) / comm_size,
                static_cast<double>(src.size()) / comm_size);
+
+  std::cout << "src: ";
+  for (auto e : src)
+    std::cout << e << ", ";
+  std::cout << std::endl;
 
   // Create neighbourhood communicator for sending data to
   // post offices
@@ -209,6 +229,11 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       ++send_offsets[neigh_dest];
     }
   }
+
+  std::cout << dolfinx::MPI::rank(comm) << " send_buffer: ";
+  for (auto e : send_buffer)
+    std::cout << e << ", ";
+  std::cout << std::endl;
 
   // Send number of send items to post offices
   std::vector<int> num_items_recv(src.size());
