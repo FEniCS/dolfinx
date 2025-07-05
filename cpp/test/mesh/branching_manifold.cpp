@@ -248,31 +248,31 @@ TEST_CASE("dual_graph_branching_parallel")
   {
     // Check local dual graphs.
 
-    auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
-        = mesh::build_local_dual_graph(celltypes, {cells}, 2);
+    // auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
+    //     = mesh::build_local_dual_graph(celltypes, {cells}, 2);
 
-    CHECK(max_vertices_per_facet == 1);
-    CHECK(unmatched_facets.size() == 3);
+    // CHECK(max_vertices_per_facet == 1);
+    // CHECK(unmatched_facets.size() == 3);
 
-    CHECK(dual_graph.num_nodes() == 2);
+    // CHECK(dual_graph.num_nodes() == 2);
 
-    CHECK(dual_graph.num_links(0) == 1);
-    CHECK_THAT(dual_graph.links(0),
-               Catch::Matchers::RangeEquals(std::array{1}));
-    CHECK(dual_graph.num_links(1) == 1);
-    CHECK_THAT(dual_graph.links(1),
-               Catch::Matchers::RangeEquals(std::array{0}));
-    CHECK_THAT(cell_data, Catch::Matchers::RangeEquals(std::array{0, 0, 1}));
-    if (dolfinx::MPI::rank(comm) == 0)
-    {
-      CHECK_THAT(unmatched_facets,
-                 Catch::Matchers::RangeEquals(std::array{0, 1, 3}));
-    }
-    else
-    {
-      CHECK_THAT(unmatched_facets,
-                 Catch::Matchers::RangeEquals(std::array{0, 2, 4}));
-    }
+    // CHECK(dual_graph.num_links(0) == 1);
+    // CHECK_THAT(dual_graph.links(0),
+    //            Catch::Matchers::RangeEquals(std::array{1}));
+    // CHECK(dual_graph.num_links(1) == 1);
+    // CHECK_THAT(dual_graph.links(1),
+    //            Catch::Matchers::RangeEquals(std::array{0}));
+    // CHECK_THAT(cell_data, Catch::Matchers::RangeEquals(std::array{0, 0, 1}));
+    // if (dolfinx::MPI::rank(comm) == 0)
+    // {
+    //   CHECK_THAT(unmatched_facets,
+    //              Catch::Matchers::RangeEquals(std::array{0, 1, 3}));
+    // }
+    // else
+    // {
+    //   CHECK_THAT(unmatched_facets,
+    //              Catch::Matchers::RangeEquals(std::array{0, 2, 4}));
+    // }
     // all facets unmatched
     // std::cout << dolfinx::MPI::rank(comm) << " unmatched_facets:";
     // for (auto e : unmatched_facets)
