@@ -550,8 +550,9 @@ def transfer_meshtag(
 def refine(
     msh: Mesh,
     edges: typing.Optional[np.ndarray] = None,
-    partitioner: typing.Optional[typing.Callable] = create_cell_partitioner(GhostMode.none),
-    option: RefinementOption = RefinementOption.none,
+    redistribute: bool = False,
+    partitioner: typing.Optional[typing.Callable] = None,
+    option: RefinementOption = RefinementOption.parent_cell,
 ) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.
 
@@ -563,17 +564,15 @@ def refine(
         mesh will **not** include ghosts cells (cells connected by facet
         to an owned cells) even if the parent mesh is ghosted.
 
-    Warning:
-        Passing ``None`` for ``partitioner``, the refined mesh will
-        **not** have ghosts cells even if the parent mesh has ghost
-        cells. The possibility to not re-partition the refined mesh and
-        include ghost cells in the refined mesh will be added in a
-        future release.
-
     Args:
         msh: Mesh from which to create the refined mesh.
         edges: Indices of edges to split during refinement. If ``None``,
             mesh refinement is uniform.
+        redistribute: Controls whether the refined mesh should be
+            redistributed during creation. If ``False`` (default) the
+            refined mesh will exchange ghosts cells, but distribution of
+            the coarse mesh is maintained, otherwise the passed
+            ``partitioner`` is used to redistribute the refined mesh.
         partitioner: Partitioner to distribute the refined mesh. If
             ``None`` no redistribution is performed, i.e. refined cells
             remain on the same process as the parent cell.
@@ -584,7 +583,7 @@ def refine(
        Refined mesh, (optional) parent cells, (optional) parent facets
     """
     mesh1, parent_cell, parent_facet = _cpp.refinement.refine(
-        msh._cpp_object, edges, partitioner, option
+        msh._cpp_object, edges, redistribute, partitioner, option
     )
     # Create new ufl domain as it will carry a reference to the C++ mesh
     # in the ufl_cargo
