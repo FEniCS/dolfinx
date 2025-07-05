@@ -80,10 +80,10 @@ TEST_CASE("dual_graph_branching")
   }
 
   {
-    // max_facet_to_cell_links = 2
+    // max_facet_to_cell_links = 3
     // Note: additioanlly facet (2) is now considered unmatched
     auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
-        = mesh::build_local_dual_graph(celltypes, {cells}, 2);
+        = mesh::build_local_dual_graph(celltypes, {cells}, 3);
 
     CHECK(dual_graph.num_nodes() == 4);
 
@@ -116,11 +116,11 @@ TEST_CASE("dual_graph_branching")
   }
 
   {
-    // max_facet_to_cell_links = 3 / std::nullopt
+    // max_facet_to_cell_links = 4 / 5 / std::nullopt
     // Note: all facets are now considered unmatched
 
     for (auto max_facet_to_cell_links :
-         std::array<std::optional<int>, 2>{3, std::nullopt})
+         std::array<std::optional<int>, 3>{4, 5, std::nullopt})
     {
 
       auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
@@ -180,7 +180,7 @@ TEST_CASE("dual_graph_self_dual")
   std::vector<std::int64_t> cells{{0, 1, 1, 2, 2, 0}};
 
   for (auto max_facet_to_cell_links :
-       std::array<std::optional<int>, 3>{2, 3, std::nullopt})
+       std::array<std::optional<int>, 3>{3, 4, std::nullopt})
   {
     auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
         = mesh::build_local_dual_graph(celltypes, {cells},
@@ -254,7 +254,7 @@ TEST_CASE("dual_graph_branching_parallel")
     // Check local dual graphs.
 
     auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
-        = mesh::build_local_dual_graph(celltypes, {cells}, 2);
+        = mesh::build_local_dual_graph(celltypes, {cells}, 3);
 
     CHECK(max_vertices_per_facet == 1);
 
@@ -287,6 +287,6 @@ TEST_CASE("dual_graph_branching_parallel")
   // Throws, but only on one process so not testable.
   //
   // CHECK_THROWS_AS(mesh::build_dual_graph(
-  //     comm, celltypes, std::vector<std::span<const std::int64_t>>{cells}, 2),
+  //     comm, celltypes, std::vector<std::span<const std::int64_t>>{cells}, 3),
   //     std::runtime_error);
 }

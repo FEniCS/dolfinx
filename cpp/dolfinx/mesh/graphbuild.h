@@ -30,9 +30,9 @@ enum class CellType;
 /// @param[in] cells Lists of cell vertices (stored as flattened lists,
 /// one for each cell type).
 /// @param[in] max_facet_to_cell_links Optional bound on number of cells a
-/// facet may share to be considered *unmatched*. All facets connected to
-/// `max_facet_to_cell_links+1` (or more) cells are considered *matched*.
-/// Defaults to `1`, which covers the setup for non branching manifold meshes.
+/// facet needs to share to be considered *matched*. All facets connected to
+/// less than `max_facet_to_cell_links` cells are considered *unmatched*.
+/// Defaults to `2`, which covers the setup for non branching manifold meshes.
 ///
 /// @return
 /// 1. Local dual graph
@@ -54,13 +54,13 @@ enum class CellType;
 /// returned dual graph.
 ///
 /// @note Facet (2) and cell (4) data will contain multiple entries for the same
-/// facet for branching meshes and settings `max_facet_to_cell_links>1` to
-/// account for all facet cell connectivies.
+/// facet for branching meshes with `max_facet_to_cell_links>2` to account for
+/// all facet cell connectivies.
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
 build_local_dual_graph(std::span<const CellType> celltypes,
                        const std::vector<std::span<const std::int64_t>>& cells,
-                       std::optional<std::int32_t> max_facet_to_cell_links = 1);
+                       std::optional<std::int32_t> max_facet_to_cell_links = 2);
 
 /// @brief Build distributed mesh dual graph (cell-cell connections via
 /// facets) from minimal mesh data.
@@ -75,9 +75,9 @@ build_local_dual_graph(std::span<const CellType> celltypes,
 /// from which to build the dual graph, as flattened arrays for each
 /// cell type in `celltypes`.
 /// @param[in] max_facet_to_cell_links Optional bound on number of cells a
-/// facet may share to be considered *unmatched*. All facets connected to
-/// `max_facet_to_cell_links+1` or more cells are considered *matched*.
-/// Defaults to `1`, which covers the setup for non branching manifold meshes.
+/// facet needs to share to be considered *matched*. All facets connected to
+/// less than `max_facet_to_cell_links` cells are considered *unmatched*.
+/// Defaults to `2`, which covers the setup for non branching manifold meshes.
 ///
 /// @return The dual graph
 ///
@@ -90,6 +90,6 @@ build_local_dual_graph(std::span<const CellType> celltypes,
 graph::AdjacencyList<std::int64_t>
 build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
                  const std::vector<std::span<const std::int64_t>>& cells,
-                 std::optional<std::int32_t> max_facet_to_cell_links = 1);
+                 std::optional<std::int32_t> max_facet_to_cell_links = 2);
 
 } // namespace dolfinx::mesh

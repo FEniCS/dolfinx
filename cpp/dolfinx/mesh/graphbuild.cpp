@@ -542,7 +542,7 @@ mesh::build_local_dual_graph(
       std::int32_t cell_count = std::distance(it, it_next_facet);
       assert(cell_count >= 1);
       if (!max_facet_to_cell_links.has_value()
-          or (cell_count <= *max_facet_to_cell_links))
+          or (cell_count < *max_facet_to_cell_links))
       {
         // Store unmatched facets and the attached cell
         for (std::int32_t i = 0; i < cell_count; i++)
