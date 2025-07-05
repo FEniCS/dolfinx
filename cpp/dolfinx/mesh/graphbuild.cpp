@@ -81,14 +81,14 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   // Postoffice setup:
   //  a) facets need to globally decide on a consistent ownership model (without
   //  communication).
-  //    - first vertex index of a facet (global indices) is used
+  //    - first (global) vertex index of a facet is used
   //    - dolfinx::MPI::index_owner deduces ownership
   //  b) every facet is send to owning PO
   //    - data for facet i: list of vertices + associated global cell idx
-  //  c) processes now check if multiple cells have been received
-  //    - if duplicates exist -> introduce edge to dual graph
-
-  // TODO: facet 0 not received from process 1.
+  //  c) check (on PO) if multiple same facets have been received
+  //    - if so, found matched facet across process boundary -> introduce edge
+  //    to dual graph
+  //    - prepare info of
 
   assert(facets.size() % local_max_vertices_per_facet == 0);
   {
@@ -101,9 +101,12 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
           std::next(facets.begin(), f * local_max_vertices_per_facet),
           std::next(facets.begin(), (f + 1) * local_max_vertices_per_facet));
       assert(std::is_sorted(facet.begin(), std::ranges::find(facet, -1)));
-      for (auto e : std::span(std::next(facets.begin(), f*local_max_vertices_per_facet), std::next(facets.begin(), (f+1)*local_max_vertices_per_facet)))
-        std::cout << e << ", ";
-      std::cout << std::endl;
+      // for (auto e : std::span(
+      //          std::next(facets.begin(), f * local_max_vertices_per_facet),
+      //          std::next(facets.begin(),
+      //                    (f + 1) * local_max_vertices_per_facet)))
+      //   std::cout << e << ", ";
+      // std::cout << std::endl;
     }
   }
 
@@ -222,7 +225,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   for (auto e : dest)
     std::cout << e << ", ";
   std::cout << std::endl;
-  // std::cout << dolfinx::MPI::rank(comm) << " num_items_per_dest: " 
+  // std::cout << dolfinx::MPI::rank(comm) << " num_items_per_dest: "
 
   // Determine source ranks
   const std::vector<int> src
@@ -596,12 +599,13 @@ mesh::build_local_dual_graph(
           or (cell_count <= *matched_facet_cell_count))
       {
         // Store unmatched facets and the attached cell
-        for (std::size_t i = 0; i < cell_count;i ++)
+        for (std::size_t i = 0; i < cell_count; i++)
         {
           unmatched_facets.insert(unmatched_facets.end(), facet.begin(),
                                   std::prev(facet.end()));
-          std::int32_t cell = facets[(facet_index + i)*shape1 + (shape1 -1)];
+          std::int32_t cell = facets[*std::next(it, i) * shape1 + (shape1 - 1)];
           local_cells.push_back(cell);
+          std::cout << "facet: " << *facet.begin()<<  "cell: " << cell << std::endl;
         }
       }
 
