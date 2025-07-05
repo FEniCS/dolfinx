@@ -88,6 +88,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   //    to dual graph
   //    - prepare info of
 
+  assert(local_max_vertices_per_facet > 0);
   assert(facets.size() % local_max_vertices_per_facet == 0);
   {
     // assert facets sorted
