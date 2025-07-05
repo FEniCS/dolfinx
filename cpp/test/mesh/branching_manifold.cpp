@@ -183,7 +183,8 @@ TEST_CASE("dual_graph_self_dual")
        std::array<std::optional<int>, 3>{2, 3, std::nullopt})
   {
     auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
-        = mesh::build_local_dual_graph(celltypes, {cells}, 2);
+        = mesh::build_local_dual_graph(celltypes, {cells},
+                                       matched_facet_cell_count);
 
     CHECK(max_vertices_per_facet == 1);
     CHECK(dual_graph.num_nodes() == 3);
