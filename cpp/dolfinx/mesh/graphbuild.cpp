@@ -208,10 +208,10 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   // Create neighbourhood communicator for sending data to
   // post offices
-  MPI_Comm neigh_comm_po;
+  MPI_Comm comm_po_post;
   MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
                                  dest.size(), dest.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neigh_comm_po);
+                                 MPI_INFO_NULL, false, &comm_po_post);
 
   // Compute send displacements
   std::vector<std::int32_t> send_disp(num_items_per_dest.size() + 1, 0);
@@ -226,18 +226,18 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   std::vector<std::int64_t> send_buffer(buffer_shape1 * send_disp.back(), -1);
   {
     std::vector<std::int32_t> send_offsets = send_disp;
-    for (std::size_t c = 0; c < facet_count; ++c)
+    for (std::size_t f = 0; f < facet_count; ++f)
     {
-      int neigh_dest = pos_to_neigh_rank[c];
+      int neigh_dest = pos_to_neigh_rank[f];
       std::size_t pos = send_offsets[neigh_dest];
-      send_indx_to_pos[pos] = c;
+      send_indx_to_pos[pos] = f;
 
       // Copy facet data into buffer
-      std::copy_n(std::next(facets.begin(), c * local_max_vertices_per_facet),
+      std::copy_n(std::next(facets.begin(), f * local_max_vertices_per_facet),
                   local_max_vertices_per_facet,
                   std::next(send_buffer.begin(), buffer_shape1 * pos));
       send_buffer[buffer_shape1 * pos + max_vertices_per_facet]
-          = cells[c] + cell_offset;
+          = cells[f] + cell_offset;
       ++send_offsets[neigh_dest];
     }
   }
@@ -247,7 +247,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   num_items_per_dest.reserve(1);
   num_items_recv.reserve(1);
   MPI_Neighbor_alltoall(num_items_per_dest.data(), 1, MPI_INT,
-                        num_items_recv.data(), 1, MPI_INT, neigh_comm_po);
+                        num_items_recv.data(), 1, MPI_INT, comm_po_post);
 
   // Prepare receive displacement and buffers
   std::vector<std::int32_t> recv_disp(num_items_recv.size() + 1, 0);
@@ -262,10 +262,10 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   MPI_Neighbor_alltoallv(send_buffer.data(), num_items_per_dest.data(),
                          send_disp.data(), compound_type, recv_buffer.data(),
                          num_items_recv.data(), recv_disp.data(), compound_type,
-                         neigh_comm_po);
+                         comm_po_post);
 
   MPI_Type_free(&compound_type);
-  MPI_Comm_free(&neigh_comm_po);
+  MPI_Comm_free(&comm_po_post);
 
   // Search for consecutive facets (-> dual graph edge between cells)
   // and pack into send buffer
@@ -325,10 +325,10 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   // Create neighbourhood communicator for sending data from post
   // offices
-  MPI_Comm neigh_comm1;
+  MPI_Comm comm_po_receive;
   MPI_Dist_graph_create_adjacent(comm, dest.size(), dest.data(), MPI_UNWEIGHTED,
                                  src.size(), src.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neigh_comm1);
+                                 MPI_INFO_NULL, false, &comm_po_receive);
 
   // Send back data
   std::vector<std::int64_t> recv_buffer1(send_disp.back());
@@ -336,8 +336,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
                          recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
                          recv_buffer1.data(), num_items_per_dest.data(),
                          send_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
-                         neigh_comm1);
-  MPI_Comm_free(&neigh_comm1);
+                         comm_po_receive);
+  MPI_Comm_free(&comm_po_receive);
 
   // --- Build new graph
 
