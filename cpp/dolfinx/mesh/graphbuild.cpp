@@ -605,7 +605,8 @@ mesh::build_local_dual_graph(
                                   std::prev(facet.end()));
           std::int32_t cell = facets[*std::next(it, i) * shape1 + (shape1 - 1)];
           local_cells.push_back(cell);
-          std::cout << "facet: " << *facet.begin()<<  "cell: " << cell << std::endl;
+          std::cout << "facet: " << *facet.begin() << "cell: " << cell
+                    << std::endl;
         }
       }
 
