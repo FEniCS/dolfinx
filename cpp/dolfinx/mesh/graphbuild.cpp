@@ -12,9 +12,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <iostream>
 #include <optional>
-#include <ostream>
 #include <span>
 #include <utility>
 #include <vector>
@@ -96,17 +94,10 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     for (std::size_t f = 0; f < facets.size() / local_max_vertices_per_facet;
          f++)
     {
-      std::cout << dolfinx::MPI::rank(comm) << " facets[" << f << "]: ";
       auto facet = std::span(
           std::next(facets.begin(), f * local_max_vertices_per_facet),
           std::next(facets.begin(), (f + 1) * local_max_vertices_per_facet));
       assert(std::is_sorted(facet.begin(), std::ranges::find(facet, -1)));
-      // for (auto e : std::span(
-      //          std::next(facets.begin(), f * local_max_vertices_per_facet),
-      //          std::next(facets.begin(),
-      //                    (f + 1) * local_max_vertices_per_facet)))
-      //   std::cout << e << ", ";
-      // std::cout << std::endl;
     }
   }
 
@@ -153,21 +144,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     vertex_range = {-recv[1], recv[2] + 1};
   }
   spdlog::debug("Max. vertices per facet={}", max_vertices_per_facet);
-  std::cout << dolfinx::MPI::rank(comm)
-            << "max_vertices_per_facet: " << max_vertices_per_facet
-            << std::endl;
   const std::int32_t buffer_shape1 = max_vertices_per_facet + 1;
-
-  std::cout << dolfinx::MPI::rank(comm)
-            << "local_max_vertices_per_facet: " << local_max_vertices_per_facet;
-  // for (std::size_t f = 0; f < local_max_vertices_per_facet; f++)
-  // {
-  //   for (std::int32_t v = 0; v < buffer_shape1; v++)
-  //   {
-  //     std::cout << facets[f * buffer_shape1 + v] << ", ";
-  //   }
-  //   std::cout << std::endl;
-  // }
 
   // Build list of dest ranks and count number of items (facets) to send
   // to each dest post office (by neighbourhood rank)
@@ -181,7 +158,6 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     std::vector<std::array<std::int32_t, 2>> dest_to_index;
     dest_to_index.reserve(facet_count);
     std::int64_t range = vertex_range[1] - vertex_range[0];
-    std::cout << dolfinx::MPI::rank(comm) << " range: " << range << std::endl;
     for (std::size_t f = 0; f < facet_count; ++f)
     {
       std::int64_t v0
@@ -207,8 +183,6 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
       // Store number of items for current rank
       num_items_per_dest.push_back(std::distance(it, it1));
-      std::cout << "Sending " << num_items_per_dest.back() << " to "
-                << neigh_rank << std::endl;
 
       // Set entry in map from local facet row index (position) to local
       // destination rank
@@ -221,11 +195,6 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   }
 
   assert(num_items_per_dest.size() == dest.size());
-  std::cout << "dest: ";
-  for (auto e : dest)
-    std::cout << e << ", ";
-  std::cout << std::endl;
-  // std::cout << dolfinx::MPI::rank(comm) << " num_items_per_dest: "
 
   // Determine source ranks
   const std::vector<int> src
@@ -236,11 +205,6 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
                dest.size(), src.size(),
                static_cast<double>(dest.size()) / comm_size,
                static_cast<double>(src.size()) / comm_size);
-
-  std::cout << "src: ";
-  for (auto e : src)
-    std::cout << e << ", ";
-  std::cout << std::endl;
 
   // Create neighbourhood communicator for sending data to
   // post offices
@@ -256,8 +220,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   // Wait for the MPI_Iexscan to complete (before using cell_offset)
   MPI_Wait(&request_cell_offset, MPI_STATUS_IGNORE);
-  std::cout << dolfinx::MPI::rank(comm) << " cell_offset: " << cell_offset
-            << std::endl;
+
   // Pack send buffer
   std::vector<std::int32_t> send_indx_to_pos(send_disp.back());
   std::vector<std::int64_t> send_buffer(buffer_shape1 * send_disp.back(), -1);
@@ -278,11 +241,6 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       ++send_offsets[neigh_dest];
     }
   }
-
-  std::cout << dolfinx::MPI::rank(comm) << " send_buffer: ";
-  for (auto e : send_buffer)
-    std::cout << e << ", ";
-  std::cout << std::endl;
 
   // Send number of send items to post offices
   std::vector<int> num_items_recv(src.size());
@@ -311,16 +269,6 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   // Search for consecutive facets (-> dual graph edge between cells)
   // and pack into send buffer
-  for (int i = 0; i < recv_buffer.size() / buffer_shape1; i++)
-  {
-    std::cout << dolfinx::MPI::rank(comm) << ": " << i << ": ";
-    for (int j = 0; j < buffer_shape1; j++)
-    {
-      std::cout << recv_buffer[i * buffer_shape1 + j] << ", ";
-    }
-    std::cout << std::endl;
-  }
-
   std::vector<std::int64_t> send_buffer1(recv_disp.back(), -1);
   {
     // Compute sort permutation for received data
@@ -336,11 +284,6 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
               it0, std::next(it0, max_vertices_per_facet), it1,
               std::next(it1, max_vertices_per_facet));
         });
-
-    // std::cout << dolfinx::MPI::rank(comm)<< " sort_order: ";
-    // for (auto e : sort_order)
-    //     std::cout << e << ", ";
-    // std::cout << std::endl;
 
     for (auto it = sort_order.begin(); it != sort_order.end();)
     {
@@ -605,8 +548,6 @@ mesh::build_local_dual_graph(
                                   std::prev(facet.end()));
           std::int32_t cell = facets[*std::next(it, i) * shape1 + (shape1 - 1)];
           local_cells.push_back(cell);
-          std::cout << "facet: " << *facet.begin() << "cell: " << cell
-                    << std::endl;
         }
       }
 
