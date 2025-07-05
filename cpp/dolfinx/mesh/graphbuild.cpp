@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2022 Garth N. Wells
+// Copyright (C) 2010-2022 Garth N. Wells and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -533,16 +533,13 @@ mesh::build_local_dual_graph(
             return std::equal(facet.begin(), std::prev(facet.end()), f1_it);
           });
 
-      // std::int32_t cell0 = facet.back();
-
-      auto cell_count = std::distance(it, it_next_facet);
+      std::int32_t cell_count = std::distance(it, it_next_facet);
       assert(cell_count >= 1);
-      // TODO: this constant as user control?
       if (!matched_facet_cell_count.has_value()
           or (cell_count <= *matched_facet_cell_count))
       {
         // Store unmatched facets and the attached cell
-        for (std::size_t i = 0; i < cell_count; i++)
+        for (std::int32_t i = 0; i < cell_count; i++)
         {
           unmatched_facets.insert(unmatched_facets.end(), facet.begin(),
                                   std::prev(facet.end()));
