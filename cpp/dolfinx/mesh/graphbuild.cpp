@@ -88,7 +88,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   //      to dual graph
   //    - prepare info of matched facet for recipients
   //  d) return info of remotely matched/unmatched facets from PO
-  //    - contruct locally the paralel aware dual graph (with ghost edges). 
+  //    - contruct locally the paralel aware dual graph (with ghost edges).
 
   assert((local_max_vertices_per_facet == 0)
          or (facets.size() % local_max_vertices_per_facet == 0));
