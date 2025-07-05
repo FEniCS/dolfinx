@@ -189,6 +189,24 @@ class Topology:
                 f"Call `dolfinx.mesh.Topology.create_entities({dim}) first."
             )
 
+    def index_maps(self, dim: int) -> list[_cpp.common.IndexMap]:
+        """Get the IndexMaps that describes the parallel distribution of
+           the mesh entities, for each entity type of the dimension.
+
+        Args:
+            dim: Topological dimension.
+
+        Returns:
+            List of IndexMaps for the entities of dimension ``dim``.
+        """
+        if (imaps := self._cpp_object.index_maps(dim)) is not None:
+            return imaps
+        else:
+            raise RuntimeError(
+                f"Entities of dimension {dim} have not been computed."
+                f"Call `dolfinx.mesh.Topology.create_entities({dim}) first."
+            )
+
     def interprocess_facets(self) -> npt.NDArray[np.int32]:
         """List of inter-process facets, if facet topology has been
         computed."""
@@ -266,7 +284,11 @@ class Mesh:
     _geometry: Geometry
     _ufl_domain: typing.Optional[ufl.Mesh]
 
-    def __init__(self, msh, domain: typing.Optional[ufl.Mesh]):
+    def __init__(
+        self,
+        msh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64],
+        domain: typing.Optional[ufl.Mesh],
+    ):
         """Initialize mesh from a C++ mesh.
 
         Args:
@@ -306,7 +328,7 @@ class Mesh:
         """
         return ufl.Cell(self.topology.cell_name())
 
-    def ufl_domain(self) -> ufl.Mesh:
+    def ufl_domain(self) -> typing.Optional[ufl.Mesh]:
         """Return the ufl domain corresponding to the mesh.
 
         Returns:
@@ -317,7 +339,7 @@ class Mesh:
         """
         return self._ufl_domain
 
-    def basix_cell(self) -> ufl.Cell:
+    def basix_cell(self) -> basix.CellType:
         """Return the Basix cell type."""
         return getattr(basix.CellType, self.topology.cell_name())
 
@@ -640,13 +662,15 @@ def create_mesh(
                 # e is a CoordinateElement
                 cmap = e
                 domain = None
-                dtype = cmap.dtype
+                dtype = cmap.dtype  # type: ignore
 
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
-    msh = _cpp.mesh.create_mesh(comm, cells, cmap._cpp_object, x, partitioner)
+    msh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64] = _cpp.mesh.create_mesh(
+        comm, cells, cmap._cpp_object, x, partitioner
+    )
 
-    return Mesh(msh, domain)
+    return Mesh(msh, domain)  # type: ignore
 
 
 def create_submesh(
