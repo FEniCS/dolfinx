@@ -80,7 +80,7 @@ TEST_CASE("dual_graph_branching")
   }
 
   {
-    // matched_facet_cell_count = 2
+    // max_facet_to_cell_links = 2
     // Note: additioanlly facet (2) is now considered unmatched
     auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
         = mesh::build_local_dual_graph(celltypes, {cells}, 2);
@@ -116,16 +116,16 @@ TEST_CASE("dual_graph_branching")
   }
 
   {
-    // matched_facet_cell_count = 3 / std::nullopt
+    // max_facet_to_cell_links = 3 / std::nullopt
     // Note: all facets are now considered unmatched
 
-    for (auto matched_facet_cell_count :
+    for (auto max_facet_to_cell_links :
          std::array<std::optional<int>, 2>{3, std::nullopt})
     {
 
       auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
           = mesh::build_local_dual_graph(celltypes, {cells},
-                                         matched_facet_cell_count);
+                                         max_facet_to_cell_links);
 
       CHECK(dual_graph.num_nodes() == 4);
 
@@ -179,12 +179,12 @@ TEST_CASE("dual_graph_self_dual")
   std::vector<mesh::CellType> celltypes{mesh::CellType::interval};
   std::vector<std::int64_t> cells{{0, 1, 1, 2, 2, 0}};
 
-  for (auto matched_facet_cell_count :
+  for (auto max_facet_to_cell_links :
        std::array<std::optional<int>, 3>{2, 3, std::nullopt})
   {
     auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
         = mesh::build_local_dual_graph(celltypes, {cells},
-                                       matched_facet_cell_count);
+                                       max_facet_to_cell_links);
 
     CHECK(max_vertices_per_facet == 1);
     CHECK(dual_graph.num_nodes() == 3);

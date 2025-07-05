@@ -402,7 +402,7 @@ std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
 mesh::build_local_dual_graph(
     std::span<const CellType> celltypes,
     const std::vector<std::span<const std::int64_t>>& cells,
-    std::optional<std::int32_t> matched_facet_cell_count)
+    std::optional<std::int32_t> max_facet_to_cell_links)
 {
   spdlog::info("Build local part of mesh dual graph (mixed)");
   common::Timer timer("Compute local part of mesh dual graph (mixed)");
@@ -541,8 +541,8 @@ mesh::build_local_dual_graph(
 
       std::int32_t cell_count = std::distance(it, it_next_facet);
       assert(cell_count >= 1);
-      if (!matched_facet_cell_count.has_value()
-          or (cell_count <= *matched_facet_cell_count))
+      if (!max_facet_to_cell_links.has_value()
+          or (cell_count <= *max_facet_to_cell_links))
       {
         // Store unmatched facets and the attached cell
         for (std::int32_t i = 0; i < cell_count; i++)
@@ -606,14 +606,14 @@ mesh::build_local_dual_graph(
 graph::AdjacencyList<std::int64_t>
 mesh::build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
                        const std::vector<std::span<const std::int64_t>>& cells,
-                       std::optional<std::int32_t> matched_facet_cell_count)
+                       std::optional<std::int32_t> max_facet_to_cell_links)
 {
   spdlog::info("Building mesh dual graph");
 
   // Compute local part of dual graph (cells are graph nodes, and edges
   // are connections by facet)
-  auto [local_graph, facets, shape1, fcells] = mesh::build_local_dual_graph(
-      celltypes, cells, matched_facet_cell_count);
+  auto [local_graph, facets, shape1, fcells]
+      = mesh::build_local_dual_graph(celltypes, cells, max_facet_to_cell_links);
 
   // Extend with nonlocal edges and convert to global indices
   graph::AdjacencyList graph

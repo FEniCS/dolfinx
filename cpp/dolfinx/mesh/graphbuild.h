@@ -29,15 +29,15 @@ enum class CellType;
 /// @param[in] celltypes List of cell types.
 /// @param[in] cells Lists of cell vertices (stored as flattened lists,
 /// one for each cell type).
-/// @param[in] matched_facet_cell_count Optional bound on number of cells a
+/// @param[in] max_facet_to_cell_links Optional bound on number of cells a
 /// facet may share to be considered *unmatched*. All facets connected to
-/// `matched_facet_cell_count+1` (or more) cells are considered *matched*.
+/// `max_facet_to_cell_links+1` (or more) cells are considered *matched*.
 /// Defaults to `1`, which covers the setup for non branching manifold meshes.
 ///
 /// @return
 /// 1. Local dual graph
 /// 2. Facets, defined by their sorted vertices, that are shared by only
-/// `matched_facet_cell_count` or less cells on this rank. The logically 2D
+/// `max_facet_to_cell_links` or less cells on this rank. The logically 2D
 /// array is flattened (row-major).
 /// 3. Facet data array (2) number of columns
 /// 4. Attached cell (local index) to each returned facet in (2).
@@ -54,14 +54,13 @@ enum class CellType;
 /// returned dual graph.
 ///
 /// @note Facet (2) and cell (4) data will contain multiple entries for the same
-/// facet for branching meshes and settings `matched_facet_cell_count>1` to
+/// facet for branching meshes and settings `max_facet_to_cell_links>1` to
 /// account for all facet cell connectivies.
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
 build_local_dual_graph(std::span<const CellType> celltypes,
                        const std::vector<std::span<const std::int64_t>>& cells,
-                       std::optional<std::int32_t> matched_facet_cell_count
-                       = 1);
+                       std::optional<std::int32_t> max_facet_to_cell_links = 1);
 
 /// @brief Build distributed mesh dual graph (cell-cell connections via
 /// facets) from minimal mesh data.
@@ -75,9 +74,9 @@ build_local_dual_graph(std::span<const CellType> celltypes,
 /// @param[in] cells Collections of cells, defined by the cell vertices
 /// from which to build the dual graph, as flattened arrays for each
 /// cell type in `celltypes`.
-/// @param[in] matched_facet_cell_count Optional bound on number of cells a
+/// @param[in] max_facet_to_cell_links Optional bound on number of cells a
 /// facet may share to be considered *unmatched*. All facets connected to
-/// `matched_facet_cell_count+1` (or more) cells are considered *matched*.
+/// `max_facet_to_cell_links+1` or more cells are considered *matched*.
 /// Defaults to `1`, which covers the setup for non branching manifold meshes.
 ///
 /// @return The dual graph
@@ -91,6 +90,6 @@ build_local_dual_graph(std::span<const CellType> celltypes,
 graph::AdjacencyList<std::int64_t>
 build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
                  const std::vector<std::span<const std::int64_t>>& cells,
-                 std::optional<std::int32_t> matched_facet_cell_count = 1);
+                 std::optional<std::int32_t> max_facet_to_cell_links = 1);
 
 } // namespace dolfinx::mesh
