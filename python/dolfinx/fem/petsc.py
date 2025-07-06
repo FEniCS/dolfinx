@@ -582,7 +582,7 @@ def apply_lifting(
     ] = None,
     coeffs=None,
 ) -> None:
-    """Modify the right-hand side PETSc vector ``b`` to account for
+    r"""Modify the right-hand side PETSc vector ``b`` to account for
     constraints (Dirichlet boundary conitions).
 
     See :func:`dolfinx.fem.apply_lifting` for a mathematical
