@@ -930,7 +930,7 @@ class LinearProblem:
                 )
                 for bc in self.bcs:
                     bc.set(self.b.array_w)
-            except RuntimeError:
+            except (AttributeError, RuntimeError):
                 bcs1 = _bcs_by_block(_extract_spaces(self.a, 1), self.bcs)  # type: ignore
                 apply_lifting(self.b, self.a, bcs=bcs1)  # type: ignore
                 dolfinx.la.petsc._ghost_update(

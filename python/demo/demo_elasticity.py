@@ -45,7 +45,9 @@ from dolfinx.fem import (
     Expression,
     Function,
     FunctionSpace,
+    bcs_by_block,
     dirichletbc,
+    extract_function_spaces,
     form,
     functionspace,
     locate_dofs_topological,
@@ -179,7 +181,8 @@ A.assemble()
 
 # +
 b = assemble_vector(L)
-apply_lifting(b, [a], bcs=[bc])
+bcs1 = bcs_by_block(extract_function_spaces([[a]], 1), [bc])
+apply_lifting(b, [a], bcs=bcs1)
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 bc.set(b.array_w)
 # -
