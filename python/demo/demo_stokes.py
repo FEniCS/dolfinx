@@ -104,7 +104,7 @@ import numpy as np
 
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import default_real_type, fem, la
+from dolfinx import default_real_type, la
 from dolfinx.fem import (
     Constant,
     Function,
