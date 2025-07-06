@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2022 Garth N. Wells and Paul T. Kühner
+// Copyright (C) 2010-2025 Garth N. Wells and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
