@@ -322,7 +322,7 @@ def nested_iterative_solver_low_level():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     # Set Dirichlet boundary condition values in the RHS vector
-    bcs0 = fem.bcs_by_block(extract_function_spaces(L), bcs)
+    bcs0 = bcs_by_block(extract_function_spaces(L), bcs)
     set_bc(b, bcs0)
 
     # Set the nullspace for pressure (since pressure is determined only
@@ -417,7 +417,7 @@ def block_operators():
     bcs1 = bcs_by_block(extract_function_spaces(a, 1), bcs)
     apply_lifting(b, a, bcs=bcs1)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs)
+    bcs0 = bcs_by_block(extract_function_spaces(L), bcs)
     set_bc(b, bcs0)
 
     # Set the nullspace for pressure (since pressure is determined only
