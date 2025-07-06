@@ -376,9 +376,9 @@ class TestNLSPETSc:
                 petsc_options=petsc_options,
             )
 
-            x, converged_reason, _ = problem.solve()
+            _, converged_reason, _ = problem.solve()
             assert converged_reason > 0
-            xnorm = x.norm()
+            xnorm = problem.x.norm()
             return xnorm
 
         norm0 = blocked_solve()
@@ -475,11 +475,11 @@ class TestNLSPETSc:
                 petsc_options=petsc_options,
                 kind="mpi",
             )
-            x, converged_reason, _ = problem.solve()
+            _, converged_reason, _ = problem.solve()
             assert converged_reason > 0
             Jnorm = problem.solver.getJacobian()[0].norm()
             Fnorm = problem.solver.getFunction()[0].norm()
-            xnorm = x.norm()
+            xnorm = problem.x.norm()
             return Jnorm, Fnorm, xnorm
 
         def nested():
@@ -500,9 +500,9 @@ class TestNLSPETSc:
                 ["u", nested_IS[0][0]], ["p", nested_IS[1][1]]
             )
 
-            x, converged_reason, _ = problem.solve()
+            _, converged_reason, _ = problem.solve()
             assert converged_reason > 0
-            xnorm = x.norm()
+            xnorm = problem.x.norm()
             Jnorm = nest_matrix_norm(problem.solver.getJacobian()[0])
             Fnorm = problem.solver.getFunction()[0].norm()
             return Jnorm, Fnorm, xnorm
@@ -557,9 +557,9 @@ class TestNLSPETSc:
                 P=P,
                 petsc_options=petsc_options,
             )
-            x, converged_reason, _ = problem.solve()
+            _, converged_reason, _ = problem.solve()
             assert converged_reason > 0
-            xnorm = x.norm()
+            xnorm = problem.x.norm()
             Jnorm = problem.solver.getJacobian()[0].norm()
             Fnorm = problem.solver.getFunction()[0].norm()
             return Jnorm, Fnorm, xnorm
