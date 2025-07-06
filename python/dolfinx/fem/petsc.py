@@ -306,13 +306,7 @@ def assemble_vector(
         An assembled vector.
     """
     b = create_vector(L, kind=kind)
-    if kind == PETSc.Vec.Type.NEST:
-        for b_sub in b.getNestSubVecs():
-            with b_sub.localForm() as b_local:
-                b_local.set(0.0)
-    else:
-        with b.localForm() as b_local:
-            b_local.set(0)
+    dolfinx.la.petsc._zero_vector(b)
     return assemble_vector(b, L, constants, coeffs)
 
 
@@ -937,13 +931,7 @@ class LinearProblem:
             self.P_mat.assemble()
 
         # Assemble rhs
-        if self.b.getType() == PETSc.Vec.Type.NEST:
-            for b_sub in self.b.getNestSubVecs():
-                with b_sub.localForm() as b_local:
-                    b_local.set(0.0)
-        else:
-            with self.b.localForm() as b_loc:
-                b_loc.set(0)
+        dolfinx.la.petsc._zero_vector(self.b)
         assemble_vector(self.b, self.L)
 
         # Apply boundary conditions to the rhs
@@ -1050,26 +1038,6 @@ class LinearProblem:
 # -- High-level interface for SNES ---------------------------------------
 
 
-def _ghostUpdate(x: PETSc.Vec, insert_mode: PETSc.InsertMode, scatter_mode: PETSc.ScatterMode):  # type: ignore
-    """Helper function for ghost updating PETSc vectors"""
-    try:
-        for x_sub in x.getNestSubVecs():
-            x_sub.ghostUpdate(addv=insert_mode, mode=scatter_mode)
-    except PETSc.Error:  # type: ignore
-        x.ghostUpdate(addv=insert_mode, mode=scatter_mode)
-
-
-def _zero_vector(x: PETSc.Vec):  # type: ignore
-    """Helper function for zeroing out PETSc vectors"""
-    try:
-        for x_sub in x.getNestSubVecs():
-            with x_sub.localForm() as x_sub_local:
-                x_sub_local.set(0.0)
-    except PETSc.Error:  # type: ignore
-        with x.localForm() as x_local:
-            x_local.set(0.0)
-
-
 def _assign_block_data(forms: typing.Iterable[dolfinx.fem.Form], vec: PETSc.Vec):
     """Assign block data to a PETSc vector.
 
@@ -1127,13 +1095,13 @@ def assemble_residual(
         b: Vector to assemble the residual into.
     """
     # Update input vector before assigning
-    _ghostUpdate(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
+    dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
 
     # Assign the input vector to the unknowns
     assign(x, u)
 
     # Assemble the residual
-    _zero_vector(b)
+    dolfinx.la.petsc._zero_vector(b)
     try:
         # Single form and nest assembly
         assemble_vector(b, residual)
@@ -1148,15 +1116,15 @@ def assemble_residual(
         bcs1 = _bcs_by_block(_extract_spaces(jacobian, 1), bcs)  # type: ignore
         _assign_block_data(residual, x)  # type: ignore
         apply_lifting(b, jacobian, bcs=bcs1, x0=x, alpha=-1.0)  # type: ignore
-        _ghostUpdate(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
+        dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
         bcs0 = _bcs_by_block(_extract_spaces(residual), bcs)  # type: ignore
         set_bc(b, bcs0, x0=x, alpha=-1.0)
     except RuntimeError:
         # Single form lifting
         apply_lifting(b, [jacobian], bcs=[bcs], x0=[x], alpha=-1.0)  # type: ignore
-        _ghostUpdate(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
+        dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
         set_bc(b, bcs, x0=x, alpha=-1.0)
-    _ghostUpdate(b, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
+    dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
 
 
 def assemble_jacobian(
@@ -1580,8 +1548,7 @@ class NewtonSolverNonlinearProblem:
             b: Vector to assemble the residual into
         """
         # Reset the residual vector
-        with b.localForm() as b_local:
-            b_local.set(0.0)
+        dolfinx.la.petsc._zero_vector(b)
         assemble_vector(b, self._L)
 
         # Apply boundary condition
