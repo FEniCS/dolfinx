@@ -1,4 +1,4 @@
-# # Electromagnetic scattering from a wire with perfectly matched layer condition
+# # Electromagnetic scattering from a wire with perfectly matched layer condition # noqa
 #
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
@@ -221,7 +221,8 @@ def generate_mesh_wire(
 # being hit normally by a TM-polarized electromagnetic wave.
 #
 # The formula are taken from:
-# Milton Kerker, "The Scattering of Light and Other Electromagnetic Radiation",
+# Milton Kerker, "The Scattering of Light and Other Electromagnetic
+# Radiation",
 # Chapter 6, Elsevier, 1969.
 #
 # ## Implementation
@@ -489,11 +490,12 @@ if have_pyvista:
 #
 # $$
 # \begin{align}
-# \text{PML}_\text{corners} \rightarrow \mathbf{r}^\prime &= (x^\prime, y^\prime) \\
+# \text{PML}_\text{corners} \rightarrow \mathbf{r}^\prime &= (x^\prime,
+#   y^\prime) \\
 # \text{PML}_\text{rectangles along x} \rightarrow
-#                                       \mathbf{r}^\prime &= (x^\prime, y) \\
+#   \mathbf{r}^\prime &= (x^\prime, y) \\
 # \text{PML}_\text{rectangles along y} \rightarrow
-#                                       \mathbf{r}^\prime &= (x, y^\prime).
+#   \mathbf{r}^\prime &= (x, y^\prime).
 # \end{align}
 # $$
 #
@@ -662,8 +664,8 @@ eps_xy, mu_xy = create_eps_mu(xy_pml, eps_bkg, 1)
 # The final weak form in the PML region is:
 #
 # $$
-# \int_{\Omega_{pml}}\left[\boldsymbol{\mu}^{-1}_{pml} \nabla \times \mathbf{E}
-# \right]\cdot \nabla \times \bar{\mathbf{v}}-k_{0}^{2}
+# \int_{\Omega_{pml}}\left[\boldsymbol{\mu}^{-1}_{pml} \nabla \times
+# \mathbf{E} \right]\cdot \nabla \times \bar{\mathbf{v}}-k_{0}^{2}
 # \left[\boldsymbol{\varepsilon}_{pml} \mathbf{E} \right]\cdot
 # \bar{\mathbf{v}}~ d x=0,
 # $$
@@ -720,8 +722,9 @@ problem = LinearProblem(
         "pc_factor_mat_solver_type": mat_factor_backend,
     },
 )
-Esh = problem.solve()
-assert problem.solver.getConvergedReason() > 0, "Solver did not converge!"
+Esh, convergence_reason, _ = problem.solve()
+assert isinstance(Esh, fem.Function)
+assert convergence_reason > 0
 # -
 
 # Let's now save the solution in a `bp`-file. In order to do so, we need
