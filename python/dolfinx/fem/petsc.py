@@ -574,7 +574,7 @@ def assemble_matrix_mat(
 def apply_lifting(
     b: PETSc.Vec,
     a: typing.Union[Iterable[Form], Iterable[Iterable[Form]]],
-    bcs: typing.Optional[typing.Union[Iterable[DirichletBC], Iterable[Iterable[DirichletBC]]]],
+    bcs: Iterable[Iterable[DirichletBC]],
     x0: typing.Optional[Iterable[PETSc.Vec]] = None,
     alpha: float = 1,
     constants: typing.Optional[
@@ -594,12 +594,28 @@ def apply_lifting(
             then ``a`` is a 1D sequence. If ``b`` is blocked or a nest,
             then ``a`` is  a 2D array of forms, with the ``a[i]`` forms
             used to modify the block/nest vector ``b[i]``.
-        bcs: Boundary conditions to apply. If ``b`` is nested or
-            blocked, ``bcs`` is a 2D array and ``bcs[i]`` are the
-            boundary conditions to apply to block/nest ``i``. Otherwise
-            ``bcs`` should be a sequence of ``DirichletBC``\s. For
-            block/nest problems, :func:`dolfinx.fem.bcs_by_block` can be
-            used to prepare the 2D array of ``DirichletBC`` objects.
+        bcs: Boundary conditions to apply, which form a 2D array.
+            If ``b`` is nested or blocked then ``bcs[i]`` are the
+            boundary conditions to apply to block/nest ``i``.
+            The function :func:`dolfinx.fem.bcs_by_block` can be
+            used to prepare the 2D array of ``DirichletBC`` objects
+            from the 2D sequence ``a``::
+
+                bcs1 = fem.bcs_by_block(
+                    fem.extract_function_spaces(a, 1),
+                    bcs
+                )
+
+            If ``b`` is not blocked or nest, then ``len(bcs)`` must be
+            equal to 1. The function :func:`dolfinx.fem.bcs_by_block`
+            can be used to prepare the 2D array of ``DirichletBC``
+            from the 1D sequence ``a``::
+
+                bcs1 = fem.bcs_by_block(
+                    fem.extract_function_spaces([a], 1),
+                    bcs
+                )
+
         x0: Vector to use in modify ``b`` (see
             :func:`dolfinx.fem.apply_lifting`). Treated as zero if
             ``None``.
