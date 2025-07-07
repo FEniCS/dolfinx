@@ -255,15 +255,37 @@ public:
   /// and sorted.
   std::span<const int> dest() const noexcept;
 
-  /// @brief Statistics of the IndexMap
-  /// Returns a JSON formatted string with min,max,mean and sd for local_size,
-  /// ghost_size, the number of incoming and outgoing neighbors, and the message
-  /// size between neighbors for ghost update.
+  /// @brief Determine destination and source ranks by type, e.g, ranks
+  /// that in a shared memory region.
+  ///
+  /// This function is used to group destination and source ranks by
+  /// 'type'. The type is defined by the MPI `split_type`. Split types
+  /// include ranks from a common shared memory region or a commin NUMA
+  /// region. Splits types are listed at See
+  /// https://docs.open-mpi.org/en/main/man-openmpi/man3/MPI_Comm_split_type.3.html#split-types.
+  ///
+  /// @note Collective.
+  ///
+  /// @param[in] split_type MPI split type, as used in
+  /// `MPI_Comm_split_type`. See
+  /// https://docs.open-mpi.org/en/main/man-openmpi/man3/MPI_Comm_split_type.3.html#split-types.
+  /// @return (0) destination rank in `split_type` and (1) source ranks
+  /// in `split_type`.
+  std::array<std::vector<int>, 2> rank_type(int split_type) const;
+
+  /// @brief Statistics of the IndexMap.
+  ///
+  /// Returns a JSON formatted string with min,max,mean and sd for
+  /// local_size, ghost_size, the number of incoming and outgoing
+  /// neighbors, and the message size between neighbors for ghost
+  /// update.
+  ///
+  /// @note This is a collective operation, but output is only on rank
+  /// 0. All other ranks return an empty string.
+  ///
   /// @param detail_level Set to 1 to get a more detailed per-process
-  /// message size breakdown
-  /// @return JSON formatted string
-  /// @note This is a collective operation but output is only on rank 0, all
-  /// other ranks return an empty string.
+  /// message size breakdown.
+  /// @return JSON formatted string.
   std::string stats(int detail_level) const;
 
 private:

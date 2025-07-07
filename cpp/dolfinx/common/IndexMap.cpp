@@ -1302,6 +1302,37 @@ std::span<const int> IndexMap::src() const noexcept { return _src; }
 //-----------------------------------------------------------------------------
 std::span<const int> IndexMap::dest() const noexcept { return _dest; }
 //-----------------------------------------------------------------------------
+std::array<std::vector<int>, 2> IndexMap::rank_type(int split_type) const
+{
+  int ierr;
+
+  MPI_Comm comm_s;
+  ierr = MPI_Comm_split_type(_comm.comm(), split_type, 0, MPI_INFO_NULL,
+                             &comm_s);
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+  int size_s = 0;
+  ierr = MPI_Comm_size(comm_s, &size_s);
+  dolfinx::MPI::check_error(comm_s, ierr);
+
+  int rank = 0;
+  ierr = MPI_Comm_rank(_comm.comm(), &rank);
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+  std::vector<int> ranks_s(size_s);
+  ierr = MPI_Allgather(&rank, 1, MPI_INT, ranks_s.data(), 1, MPI_INT, comm_s);
+  dolfinx::MPI::check_error(comm_s, ierr);
+
+  std::vector<int> split_dest, split_src;
+  std::ranges::set_intersection(_src, ranks_s, std::back_inserter(split_dest));
+  std::ranges::set_intersection(_dest, ranks_s, std::back_inserter(split_src));
+
+  ierr = MPI_Comm_free(&comm_s);
+  dolfinx::MPI::check_error(comm_s, ierr);
+
+  return {std::move(split_dest), std::move(split_src)};
+}
+//-----------------------------------------------------------------------------
 std::string IndexMap::stats(int detail_level) const
 {
   // Gather the following data on the root process
