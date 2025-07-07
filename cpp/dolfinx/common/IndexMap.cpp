@@ -1302,17 +1302,21 @@ std::span<const int> IndexMap::src() const noexcept { return _src; }
 //-----------------------------------------------------------------------------
 std::span<const int> IndexMap::dest() const noexcept { return _dest; }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t> IndexMap::src_weights() const
+std::vector<std::int32_t> IndexMap::weight_src() const
 {
-  // // Build map from src rank to postion in _src
-  // for (std::size_i = 0; i < _owners.size(); ++i)
+  std::vector<std::int32_t> weights(_src.size(), 0);
+  for (int r : _owners)
+  {
+    auto it = std::ranges::lower_bound(_src, r);
+    assert(it != _src.end() and *it == r);
+    assert(*it < (int)weights.size());
+    weights[*it] += 1;
+  }
 
-  // return _src;
-
-  return std::vector<std::int32_t>();
+  return weights;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t> IndexMap::dest_weights() const
+std::vector<std::int32_t> IndexMap::weights_dest() const
 {
   ///
   return std::vector<std::int32_t>();

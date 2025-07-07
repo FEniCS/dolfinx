@@ -257,11 +257,11 @@ public:
 
   /// @brief
   /// @return
-  std::vector<std::int32_t> src_weights() const;
+  std::vector<std::int32_t> weight_src() const;
 
   /// @brief
   /// @return
-  std::vector<std::int32_t> dest_weights() const;
+  std::vector<std::int32_t> weights_dest() const;
 
   /// @brief Destination and source ranks by type, e.g, ranks that are
   /// destination/source ranks for the caller and are in an common

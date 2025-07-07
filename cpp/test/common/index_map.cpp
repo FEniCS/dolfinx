@@ -18,7 +18,6 @@ using namespace dolfinx;
 
 namespace
 {
-
 common::IndexMap create_index_map(MPI_Comm comm, int size_local, int num_ghosts)
 {
   const int mpi_size = dolfinx::MPI::size(comm);
