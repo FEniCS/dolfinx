@@ -23,6 +23,7 @@
 #include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <utility>
+#include <variant>
 
 namespace dolfinx::refinement
 {
@@ -84,6 +85,11 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
   };
 }
 
+/// @brief Placeholder for the creation of an identity partitioner in refine.
+struct IdentityPartitionerPlaceholder
+{
+};
+
 /// @brief Refine a mesh with markers.
 ///
 /// The refined mesh can be optionally re-partitioned across processes.
@@ -116,7 +122,9 @@ std::tuple<mesh::Mesh<T>, std::optional<std::vector<std::int32_t>>,
            std::optional<std::vector<std::int8_t>>>
 refine(const mesh::Mesh<T>& mesh,
        std::optional<std::span<const std::int32_t>> edges,
-       std::optional<mesh::CellPartitionFunction> partitioner = std::nullopt,
+       std::variant<IdentityPartitionerPlaceholder, mesh::CellPartitionFunction>
+           partitioner
+       = IdentityPartitionerPlaceholder(),
        Option option = Option::parent_cell)
 {
   auto topology = mesh.topology();
@@ -129,7 +137,7 @@ refine(const mesh::Mesh<T>& mesh,
             ? interval::compute_refinement_data(mesh, edges, option)
             : plaza::compute_refinement_data(mesh, edges, option);
 
-  if (!partitioner.has_value())
+  if (std::holds_alternative<IdentityPartitionerPlaceholder>(partitioner))
   {
     if (!parent_cell)
     {
@@ -140,9 +148,12 @@ refine(const mesh::Mesh<T>& mesh,
     partitioner = create_identity_partitioner(mesh, parent_cell.value());
   }
 
+  assert(std::holds_alternative<mesh::CellPartitionFunction>(partitioner));
+
   mesh::Mesh<T> mesh1 = mesh::create_mesh(
       mesh.comm(), mesh.comm(), cell_adj.array(), mesh.geometry().cmap(),
-      mesh.comm(), new_vertex_coords, xshape, *partitioner);
+      mesh.comm(), new_vertex_coords, xshape,
+      std::get<mesh::CellPartitionFunction>(partitioner));
 
   // Report the number of refined cells
   const int D = topology->dim();

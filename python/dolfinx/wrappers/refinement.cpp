@@ -1,4 +1,5 @@
-// Copyright (C) 2018-2024 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2018-2024 Chris N. Richardson, Garth N. Wells and Paul T.
+// Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -23,10 +24,12 @@
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/tuple.h>
+#include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
 #include <optional>
 #include <span>
 #include <stdexcept>
+#include <variant>
 
 namespace nb = nanobind;
 
@@ -40,22 +43,21 @@ void export_refinement(nb::module_& m)
       { return dolfinx::refinement::uniform_refine<T>(mesh); },
       nb::arg("mesh"));
 
+  nb::class_<dolfinx::refinement::IdentityPartitionerPlaceholder>(
+      m, "IdentityPartitionerPlaceholder")
+      .def(nb::init<>());
+
   m.def(
       "refine",
       [](const dolfinx::mesh::Mesh<T>& mesh,
          std::optional<
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
              edges,
-         bool redistribute,
-         dolfinx_wrappers::part::impl::PythonCellPartitionFunction partitioner,
+         std::variant<dolfinx::refinement::IdentityPartitionerPlaceholder,
+                      dolfinx_wrappers::part::impl::PythonCellPartitionFunction>
+             partitioner,
          dolfinx::refinement::Option option)
       {
-        if (!redistribute && partitioner)
-        {
-          throw std::runtime_error("Providing a partitioner and passing "
-                                   "redistribute=False is bugprone.");
-        }
-
         std::optional<std::span<const std::int32_t>> cpp_edges(std::nullopt);
         if (edges.has_value())
         {
@@ -63,13 +65,18 @@ void export_refinement(nb::module_& m)
               std::span(edges.value().data(), edges.value().size()));
         }
 
-        std::optional<dolfinx_wrappers::part::impl::CppCellPartitionFunction>
-            cpp_partitioner(std::nullopt);
-        if (redistribute)
+        std::variant<dolfinx::refinement::IdentityPartitionerPlaceholder,
+                     dolfinx_wrappers::part::impl::CppCellPartitionFunction>
+            cpp_partitioner
+            = dolfinx::refinement::IdentityPartitionerPlaceholder();
+        if (std::holds_alternative<
+                dolfinx_wrappers::part::impl::PythonCellPartitionFunction>(
+                partitioner))
         {
           cpp_partitioner
               = dolfinx_wrappers::part::impl::create_cell_partitioner_cpp(
-                  partitioner);
+                  std::get<dolfinx_wrappers::part::impl::
+                               PythonCellPartitionFunction>(partitioner));
         }
 
         auto [mesh1, cell, facet] = dolfinx::refinement::refine(
@@ -94,8 +101,8 @@ void export_refinement(nb::module_& m)
         return std::tuple{std::move(mesh1), std::move(python_cell),
                           std::move(python_facet)};
       },
-      nb::arg("mesh"), nb::arg("edges").none(), nb::arg("redistribute"),
-      nb::arg("partitioner").none(), nb::arg("option"));
+      nb::arg("mesh"), nb::arg("edges").none(), nb::arg("partitioner"),
+      nb::arg("option"));
 }
 } // namespace
 
