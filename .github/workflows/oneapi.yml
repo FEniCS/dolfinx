@@ -56,13 +56,13 @@ jobs:
           conda list
 
       - name: Install Basix
-        run: uv pip install --no-build-isolation git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
+        run: uv pip install --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
 
       - name: Clone FFCx
         uses: actions/checkout@v4
         with:
           path: ./ffcx
-          repository: FEniCS/ffcx
+          repository: ${{ env.ffcx_repository }}
           ref: ${{ env.ffcx_ref }}
 
       - name: Install UFCx C interface
@@ -82,7 +82,7 @@ jobs:
 
       - name: Install UFL and FFCx modules
         run: |
-          uv pip install --no-build-isolation git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
+          uv pip install --no-build-isolation git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
           uv pip install --no-build-isolation ffcx/
 
       - name: Build and run DOLFINx C++ unit tests (serial and MPI)
