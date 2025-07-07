@@ -24,7 +24,6 @@ from dolfinx.common import IndexMap as _IndexMap
 from dolfinx.cpp.mesh import (
     CellType,
     DiagonalType,
-    EntityMap,
     GhostMode,
     build_dual_graph,
     cell_dim,
@@ -453,6 +452,7 @@ class EntityMap:
 
 def entity_map(topology, sub_topology, sub_to_topo):
     return _cpp.mesh.EntityMap(topology._cpp_object, sub_topology._cpp_object, sub_to_topo)
+
 
 def compute_incident_entities(
     topology: Topology, entities: npt.NDArray[np.int32], d0: int, d1: int
