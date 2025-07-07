@@ -27,7 +27,7 @@ if typing.TYPE_CHECKING:
     from mpi4py import MPI
 
     from dolfinx.fem import function
-    from dolfinx.mesh import Mesh, MeshTags
+    from dolfinx.mesh import EntityMap, Mesh, MeshTags
 
 
 class Form:
@@ -203,7 +203,7 @@ def mixed_topology_form(
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
-    entity_maps: typing.Optional[typing.Iterable[_cpp.mesh.EntityMap]] = None,
+    entity_maps: typing.Optional[typing.Iterable[EntityMap]] = None,
 ):
     """
     Create a mixed-topology from from an array of Forms.
