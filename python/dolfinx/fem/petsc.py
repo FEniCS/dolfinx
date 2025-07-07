@@ -980,8 +980,7 @@ class LinearProblem:
         """Left-hand side matrix.
 
         Note:
-            The matrix has an options prefix set, which can be retrived with
-            `A.getOptionsPrefix()`
+            The matrix has an options prefix set.
         """
         return self._A
 
