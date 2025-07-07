@@ -138,7 +138,7 @@ public:
       throw std::runtime_error("Topology not in the map.");
   }
 
-  /// @brief Get the dimension of entities this entity map maps between
+  /// @brief Get the topological dimension of entities the map is created for.
   /// @return The dimension
   std::size_t dim() const { return _dim; }
 
