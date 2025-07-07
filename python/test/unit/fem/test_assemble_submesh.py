@@ -13,7 +13,6 @@ import pytest
 
 import ufl
 from dolfinx import default_scalar_type, fem, la
-from dolfinx.cpp.mesh import EntityMap
 from dolfinx.mesh import (
     CellType,
     GhostMode,
@@ -23,6 +22,7 @@ from dolfinx.mesh import (
     create_unit_cube,
     create_unit_interval,
     create_unit_square,
+    entity_map,
     exterior_facet_indices,
     locate_entities,
     locate_entities_boundary,
@@ -249,7 +249,7 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
 
     # Assemble a mixed-domain form using msh as integration domain.
     # We create an entity map that relates the entities in the submesh to those of the parent mesh
-    entity_maps = [EntityMap(msh.topology._cpp_object, smsh.topology._cpp_object, smsh_to_msh)]
+    entity_maps = [entity_map(msh.topology, smsh.topology, smsh_to_msh)]
     a0 = fem.form(a_ufl(u, q, f, g, measure_msh), entity_maps=entity_maps)
     A0 = fem.assemble_matrix(a0, bcs=[bc])
     A0.scatter_reverse()
@@ -604,7 +604,7 @@ def test_mixed_measures():
     v = ufl.TestFunction(V)
     q = ufl.TestFunction(Q)
 
-    entity_maps = [EntityMap(msh.topology._cpp_object, smsh.topology._cpp_object, smsh_to_msh)]
+    entity_maps = [entity_map(msh.topology, smsh.topology, smsh_to_msh)]
     # First, assemble a block vector using both dx_msh and dx_smsh
     L = [fem.form(ufl.inner(2.3, v) * dx_msh), fem.form(ufl.inner(1.3, q) * dx_smsh)]
     b0 = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
@@ -668,7 +668,7 @@ def test_interior_facet_codim_1(msh):
     submesh, sub_to_parent, _, _ = create_submesh(msh, fdim, interior_facets)
 
     # Create inverse map
-    entity_maps = [EntityMap(msh.topology._cpp_object, submesh.topology._cpp_object, sub_to_parent)]
+    entity_maps = [entity_map(msh.topology, submesh.topology, sub_to_parent)]
 
     def assemble_interior_facet_formulation(formulation, entity_maps):
         F = fem.form(formulation, entity_maps=entity_maps)
@@ -792,8 +792,8 @@ def test_interior_interface():
     marker[left_cells] = 1
 
     # Create entity maps for each domain
-    sm_0_emap = EntityMap(msh.topology._cpp_object, smsh_0.topology._cpp_object, sm_0_to_msh)
-    sm_1_emap = EntityMap(msh.topology._cpp_object, smsh_1.topology._cpp_object, sm_1_to_msh)
+    sm_0_emap = entity_map(msh.topology, smsh_0.topology, sm_0_to_msh)
+    sm_1_emap = entity_map(msh.topology, smsh_1.topology, sm_1_to_msh)
     entity_maps = [sm_0_emap, sm_1_emap]
 
     # Create a list of integration entities

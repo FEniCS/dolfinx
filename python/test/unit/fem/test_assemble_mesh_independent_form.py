@@ -127,11 +127,8 @@ def test_submesh_assembly(dtype):
             dolfinx.fem.IntegralType.exterior_facet, mesh.topology, sub_to_parent
         )
         subdomains = {dolfinx.fem.IntegralType.exterior_facet: [(subdomain_id, facet_entities)]}
-        entity_map = dolfinx.cpp.mesh.EntityMap(
-            mesh.topology._cpp_object,
-            submesh.topology._cpp_object,
-            sub_to_parent,
-        )
+        entity_map = dolfinx.mesh.entity_map(mesh.topology, submesh.topology, sub_to_parent)
+
         form = dolfinx.fem.create_form(
             compiled_form, [Vh], mesh, subdomains, {w: wh}, {}, [entity_map]
         )
