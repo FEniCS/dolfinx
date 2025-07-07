@@ -1318,7 +1318,27 @@ std::vector<std::int32_t> IndexMap::weight_src() const
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> IndexMap::weights_dest() const
 {
-  ///
+  int ierr = 0;
+  std::vector<std::int32_t> w_src = this->weight_src();
+
+  // Create communicators with directed edges:
+  // (1) ghost -> owner
+  MPI_Comm comm1;
+  ierr = MPI_Dist_graph_create_adjacent(
+      _comm.comm(), _dest.size(), _dest.data(), MPI_UNWEIGHTED, _src.size(),
+      _src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+  std::vector<std::int32_t> w_dest(_dest.size() * _src.size(), 0);
+
+  ierr = MPI_Neighbor_allgather(w_src.data(), w_src.size(), MPI_INT32_T,
+                                w_dest.data(), w_dest.size(), MPI_INT32_T,
+                                comm1);
+  dolfinx::MPI::check_error(comm1, ierr);
+
+  ierr = MPI_Comm_free(&comm1);
+  dolfinx::MPI::check_error(comm1, ierr);
+
   return std::vector<std::int32_t>();
 }
 //-----------------------------------------------------------------------------

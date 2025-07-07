@@ -255,8 +255,18 @@ public:
   /// and sorted.
   std::span<const int> dest() const noexcept;
 
-  /// @brief
-  /// @return
+  /// @brief Compute the number of ghost indices owned by each rank in
+  /// IndexMap::src.
+  ///
+  /// This is a measure of the amount of data:
+  ///
+  /// 1. Sent from this rank to other ranks when performing a reverse
+  /// (owner <- ghost) scatter.
+  /// 2. Received by this rank from other ranks when performing a
+  /// forward (owner -> ghost) scatter.
+  ///
+  /// @return A weight vector, where `weight[i]` the the number of
+  /// ghost indices owned by rank IndexMap::src()`[i]`.
   std::vector<std::int32_t> weight_src() const;
 
   /// @brief
