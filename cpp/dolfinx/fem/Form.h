@@ -46,10 +46,10 @@ namespace impl
 {
 /// @brief Compute "`entity_map[entities[i]]`", with suitable handling
 /// for facets.
-/// @param entities List of mesh entity indices to integrate over. For cells this is a list of
-/// cell indices (local to the process). For facets this is an array with shape `(num_facets, 2)`,
-/// where the first column is the local cell index and the second column is
-/// the local facet index (relative to the cell).
+/// @param entities List of mesh entity indices to integrate over. For cells
+/// this is a list of cell indices (local to the process). For facets this is an
+/// array with shape `(num_facets, 2)`, where the first column is the local cell
+/// index and the second column is the local facet index (relative to the cell).
 /// @param entity_map A map from integration entities (i.e. entities in
 /// `this->mesh()`) to the corresponding index of the entity in the mesh the
 /// argument or coefficient is defined over
@@ -79,7 +79,9 @@ std::vector<std::int32_t> compute_domain(
   }
   else if (entities.rank() == 2)
   {
-    // Map facets from integration mesh to argument/coefficient mesh
+    // Map facets in `this->mesh()` (the integration mesh) to either:
+    // - facets in the argument/coefficient mesh (codimension 0), or
+    // - cells in the argument/coefficient mesh (codimension 1)
     assert(codim.value() >= 0);
     if (codim.value() == 0)
     {
