@@ -349,7 +349,7 @@ def test_mixed_dom_codim_1(n, k):
     M = fem.form(M_ufl(f, f, ds))
     c = msh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
 
-    entity_maps = [EntityMap(msh.topology._cpp_object, smsh.topology._cpp_object, smsh_to_msh)]
+    entity_maps = [entity_map(msh.topology, smsh.topology, smsh_to_msh)]
 
     # Create forms and compare
     a1 = fem.form(a_ufl(u, vbar, f, g, ds), entity_maps=entity_maps)
