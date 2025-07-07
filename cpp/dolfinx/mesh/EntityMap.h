@@ -69,7 +69,8 @@ public:
     return topology == _topology or topology == _sub_topology;
   }
 
-  /// @brief Map entities from one topology to another
+  /// @brief Map entities from one topology to another. When mapping to the
+  /// sub-topology, any entities that don't exist are marked with -1.
   /// @param entities Entities in one topology
   /// @param topology The topology to map to
   /// @return The mapped entities
@@ -79,6 +80,8 @@ public:
   {
     if (topology == _topology)
     {
+      // The map from `_sub_topology` to `_topology` is just `_sub_to_topo`, so
+      // use this to map each entity
       auto mapped
           = entities
             | std::views::transform([this](int i) { return _sub_to_topo[i]; });
@@ -86,21 +89,24 @@ public:
     }
     else if (topology == _sub_topology)
     {
-      std::unordered_map<std::int32_t, std::int32_t> parent_to_sub;
-      parent_to_sub.reserve(_sub_to_topo.size());
-      // TODO Ranges / transform?
-      for (std::size_t sub_idx = 0; sub_idx < _sub_to_topo.size(); ++sub_idx)
+      // To map from `_topology` to `_sub_topology`, we need to construct the
+      // "inverse" of `_sub_to_topo`
+      std::unordered_map<std::int32_t, std::int32_t> topo_to_sub;
+      topo_to_sub.reserve(_sub_to_topo.size());
+      for (std::size_t i = 0; i < _sub_to_topo.size(); ++i)
       {
-        parent_to_sub[_sub_to_topo[sub_idx]]
-            = static_cast<std::int32_t>(sub_idx);
+        topo_to_sub[_sub_to_topo[i]] = static_cast<std::int32_t>(i);
       }
 
+      // Map `entities` using `topo_to_sub`
       auto mapped = entities
                     | std::views::transform(
-                        [&parent_to_sub](int parent_idx)
+                        [&topo_to_sub](int i)
                         {
-                          auto it = parent_to_sub.find(parent_idx);
-                          return (it != parent_to_sub.end()) ? it->second : -1;
+                          // Map the entity if it exists. If it doesn't, mark
+                          // with -1.
+                          auto it = topo_to_sub.find(i);
+                          return (it != topo_to_sub.end()) ? it->second : -1;
                         });
       return std::vector<std::int32_t>(mapped.begin(), mapped.end());
     }
@@ -117,22 +123,23 @@ public:
   {
     if (topology == _topology)
     {
+      // The map from `_sub_topology` to `topology` is simply `_sub_to_topo`
       return _sub_to_topo;
     }
     else if (topology == _sub_topology)
     {
       auto imap = _topology->index_map(_dim);
       assert(imap);
-      std::vector<std::int32_t> parent_to_sub(imap->size_local()
-                                              + imap->num_ghosts());
-      // TODO Ranges / transform?
-      for (std::size_t sub_idx = 0; sub_idx < _sub_to_topo.size(); ++sub_idx)
+      std::vector<std::int32_t> topo_to_sub(imap->size_local()
+                                            + imap->num_ghosts());
+
+      // Create the "inverse" of `_sub_to_topo`
+      for (std::size_t i = 0; i < _sub_to_topo.size(); ++i)
       {
-        parent_to_sub[_sub_to_topo[sub_idx]]
-            = static_cast<std::int32_t>(sub_idx);
+        topo_to_sub[_sub_to_topo[i]] = static_cast<std::int32_t>(i);
       }
 
-      return parent_to_sub;
+      return topo_to_sub;
     }
     else
       throw std::runtime_error("Topology not in the map.");
