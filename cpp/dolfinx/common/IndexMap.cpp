@@ -1302,6 +1302,22 @@ std::span<const int> IndexMap::src() const noexcept { return _src; }
 //-----------------------------------------------------------------------------
 std::span<const int> IndexMap::dest() const noexcept { return _dest; }
 //-----------------------------------------------------------------------------
+std::vector<std::int32_t> IndexMap::src_weights() const
+{
+  // // Build map from src rank to postion in _src
+  // for (std::size_i = 0; i < _owners.size(); ++i)
+
+  // return _src;
+
+  return std::vector<std::int32_t>();
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int32_t> IndexMap::dest_weights() const
+{
+  ///
+  return std::vector<std::int32_t>();
+}
+//-----------------------------------------------------------------------------
 std::array<std::vector<int>, 2> IndexMap::rank_type(int split_type) const
 {
   int ierr;
@@ -1328,6 +1344,9 @@ std::array<std::vector<int>, 2> IndexMap::rank_type(int split_type) const
   std::vector<int> split_dest, split_src;
   std::ranges::set_intersection(_src, ranks_s, std::back_inserter(split_dest));
   std::ranges::set_intersection(_dest, ranks_s, std::back_inserter(split_src));
+
+  assert(std::ranges::is_sorted(split_dest));
+  assert(std::ranges::is_sorted(split_src));
 
   ierr = MPI_Comm_free(&comm_s);
   dolfinx::MPI::check_error(comm_s, ierr);

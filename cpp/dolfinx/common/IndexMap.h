@@ -255,6 +255,14 @@ public:
   /// and sorted.
   std::span<const int> dest() const noexcept;
 
+  /// @brief
+  /// @return
+  std::vector<std::int32_t> src_weights() const;
+
+  /// @brief
+  /// @return
+  std::vector<std::int32_t> dest_weights() const;
+
   /// @brief Destination and source ranks by type, e.g, ranks that are
   /// destination/source ranks for the caller and are in an common
   /// shared memory region.
