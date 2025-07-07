@@ -108,7 +108,7 @@ public:
       throw std::runtime_error("Topology not in the map.");
   }
 
-  /// @brief Get a list representing the map form entities in one topology to
+  /// @brief Get a list representing the map from entities in one topology to
   /// to the other
   /// @param topology The topology to map to
   /// @return A list whose `i`th entry is the entity index in `topology` of
