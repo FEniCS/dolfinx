@@ -43,10 +43,6 @@ void export_refinement(nb::module_& m)
       { return dolfinx::refinement::uniform_refine<T>(mesh); },
       nb::arg("mesh"));
 
-  nb::class_<dolfinx::refinement::IdentityPartitionerPlaceholder>(
-      m, "IdentityPartitionerPlaceholder")
-      .def(nb::init<>());
-
   m.def(
       "refine",
       [](const dolfinx::mesh::Mesh<T>& mesh,
@@ -113,6 +109,10 @@ void refinement(nb::module_& m)
 {
   export_refinement<float>(m);
   export_refinement<double>(m);
+
+  nb::class_<dolfinx::refinement::IdentityPartitionerPlaceholder>(
+      m, "IdentityPartitionerPlaceholder")
+      .def(nb::init<>());
 
   nb::enum_<dolfinx::refinement::Option>(m, "RefinementOption")
       .value("none", dolfinx::refinement::Option::none)
