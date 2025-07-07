@@ -18,11 +18,10 @@ import ufl
 @pytest.mark.petsc4py
 class TestPETScSolverWrappers:
     @pytest.mark.parametrize(
-        "mode", [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet],
+        "mode",
+        [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet],
     )
-    @pytest.mark.parametrize(
-        "nonlinear_solver", ["snes high level", "legacy Newton"]
-    )
+    @pytest.mark.parametrize("nonlinear_solver", ["snes high level", "legacy Newton"])
     def test_compare_solvers(self, mode, nonlinear_solver):
         """Test that the wrapper for Linear problem and NonlinearProblem give the same result"""
         from petsc4py import PETSc
@@ -82,7 +81,8 @@ class TestPETScSolverWrappers:
             nonlinear_problem_legacy = dolfinx.fem.petsc.NewtonSolverNonlinearProblem(F, uh)
 
             nonlinear_solver_legacy = dolfinx.nls.petsc.NewtonSolver(
-                msh.comm, nonlinear_problem_legacy)
+                msh.comm, nonlinear_problem_legacy
+            )
             ksp = nonlinear_solver_legacy.krylov_solver
             ksp.setType("preonly")
             ksp.getPC().setType("lu")
