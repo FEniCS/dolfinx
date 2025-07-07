@@ -21,8 +21,7 @@ class TestPETScSolverWrappers:
         "mode",
         [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet],
     )
-    @pytest.mark.parametrize("nonlinear_solver", ["snes high level", "legacy Newton"])
-    def test_compare_solvers(self, mode, nonlinear_solver):
+    def test_compare_solution_linear_vs_nonlinear_problem(self, mode):
         """Test that the wrapper for Linear problem and NonlinearProblem give the same result"""
         from petsc4py import PETSc
 
@@ -60,41 +59,53 @@ class TestPETScSolverWrappers:
         u_lin, convergence_reason, _ = linear_problem.solve()
         assert convergence_reason > 0
 
+        # Compare LinearProblem solution against the one obtained by
+        # legacy NewtonSolverNonlinearProblem
+        u_nonlin_legacy = dolfinx.fem.Function(V)
+        nonlinear_problem_legacy = dolfinx.fem.petsc.NewtonSolverNonlinearProblem(
+            ufl.replace(F, {uh: u_nonlin_legacy}), u_nonlin_legacy
+        )
+        nonlinear_solver_legacy = dolfinx.nls.petsc.NewtonSolver(msh.comm, nonlinear_problem_legacy)
+        ksp = nonlinear_solver_legacy.krylov_solver
+        ksp.setType("preonly")
+        ksp.getPC().setType("lu")
+        ksp.getPC().setFactorSolverType(factor_type)
+
         eps = 100 * np.finfo(dolfinx.default_scalar_type).eps
 
-        if nonlinear_solver == "snes high level":
-            petsc_options_nonlinear = {
-                "ksp_type": "preonly",
-                "pc_type": "lu",
-                "pc_factor_mat_solver_type": factor_type,
-                "snes_atol": eps,
-                "snes_rtol": eps,
-            }
-            nonlinear_problem = dolfinx.fem.petsc.NonlinearProblem(
-                F,
-                uh,
-                petsc_options=petsc_options_nonlinear,
-            )
-            _, converged_reason, _ = nonlinear_problem.solve()
-            assert converged_reason > 0
-        else:
-            nonlinear_problem_legacy = dolfinx.fem.petsc.NewtonSolverNonlinearProblem(F, uh)
+        nonlinear_solver_legacy.atol = eps
+        nonlinear_solver_legacy.rtol = eps
+        nonlinear_solver_legacy.solve(u_nonlin_legacy)
 
-            nonlinear_solver_legacy = dolfinx.nls.petsc.NewtonSolver(
-                msh.comm, nonlinear_problem_legacy
-            )
-            ksp = nonlinear_solver_legacy.krylov_solver
-            ksp.setType("preonly")
-            ksp.getPC().setType("lu")
-            ksp.getPC().setFactorSolverType(factor_type)
+        assert np.allclose(u_lin.x.array, u_nonlin_legacy.x.array, atol=eps, rtol=eps)
 
-            nonlinear_solver_legacy.atol = eps
-            nonlinear_solver_legacy.rtol = eps
-            nonlinear_solver_legacy.solve(uh)
-        assert np.allclose(u_lin.x.array, uh.x.array, atol=eps, rtol=eps)
+        with (
+            u_lin.x.petsc_vec.localForm() as _u_lin,
+            u_nonlin_legacy.x.petsc_vec.localForm() as _u_nonlin,
+        ):
+            assert np.allclose(_u_lin.array_r, _u_nonlin.array_r, atol=eps, rtol=eps)
 
-        with u_lin.x.petsc_vec.localForm() as _u_lin, uh.x.petsc_vec.localForm() as _uh:
-            assert np.allclose(_u_lin.array_r, _uh.array_r, atol=eps, rtol=eps)
+        # Compare LinearProblem solution against the one obtained by NonlinearProblem
+        petsc_options_nonlinear = {
+            "ksp_type": "preonly",
+            "pc_type": "lu",
+            "pc_factor_mat_solver_type": factor_type,
+            "snes_atol": eps,
+            "snes_rtol": eps,
+        }
+        u_nonlin = dolfinx.fem.Function(V)
+        nonlinear_problem = dolfinx.fem.petsc.NonlinearProblem(
+            ufl.replace(F, {uh: u_nonlin}),
+            u_nonlin,
+            petsc_options=petsc_options_nonlinear,
+        )
+        _, converged_reason, _ = nonlinear_problem.solve()
+        assert converged_reason > 0
+
+        assert np.allclose(u_lin.x.array, u_nonlin.x.array, atol=eps, rtol=eps)
+
+        with u_lin.x.petsc_vec.localForm() as _u_lin, u_nonlin.x.petsc_vec.localForm() as _u_nonlin:
+            assert np.allclose(_u_lin.array_r, _u_nonlin.array_r, atol=eps, rtol=eps)
 
     @pytest.mark.parametrize(
         "mode", [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet]

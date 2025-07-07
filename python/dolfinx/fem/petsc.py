@@ -980,7 +980,8 @@ class LinearProblem:
         """Left-hand side matrix.
 
         Note:
-            The matrix has an options prefix set.
+            The matrix has an options prefix set, which can be retrived with
+            `A.getOptionsPrefix()`
         """
         return self._A
 
@@ -1355,14 +1356,14 @@ class NonlinearProblem:
             iterations.
         """
 
-        # Move current iterate into the work array.
+        # Copy current iterate into the work array.
         assign(self.u, self.x)
 
         # Solve problem
         self.solver.solve(None, self.x)
         dolfinx.la.petsc._ghost_update(self.x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
 
-        # Move solution back to function
+        # Copy solution back to function
         assign(self.x, self.u)
 
         converged_reason = self.solver.getConvergedReason()
