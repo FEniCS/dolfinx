@@ -88,8 +88,9 @@ std::vector<std::int32_t> compute_domain(
       // Codim 0 case
       for (std::size_t i = 0; i < entities.extent(0); ++i)
       {
-        // Local facet index is preserved in submesh creation, so we just map
-        // the cell from the integration mesh to the argument/coefficient mesh
+        // Local facet index (relative to the cell) is preserved in submesh
+        // creation, so we just map the cell from the integration mesh to the
+        // argument/coefficient mesh
         assert(static_cast<std::size_t>(entities(i, 0)) < entity_map.size());
         mapped_entities.insert(mapped_entities.end(),
                                {entity_map[entities(i, 0)], entities(i, 1)});
