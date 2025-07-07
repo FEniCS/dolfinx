@@ -31,7 +31,7 @@ from dolfinx.cpp.mesh import (
     to_string,
     to_type,
 )
-from dolfinx.cpp.refinement import RefinementOption
+from dolfinx.cpp.refinement import IdentityPartitionerPlaceholder, RefinementOption
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem import coordinate_element as _coordinate_element
 from dolfinx.graph import AdjacencyList
@@ -550,8 +550,9 @@ def transfer_meshtag(
 def refine(
     msh: Mesh,
     edges: typing.Optional[np.ndarray] = None,
-    redistribute: bool = False,
-    partitioner: typing.Optional[typing.Callable] = None,
+    partitioner: typing.Union[
+        typing.Callable, IdentityPartitionerPlaceholder
+    ] = IdentityPartitionerPlaceholder(),
     option: RefinementOption = RefinementOption.parent_cell,
 ) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.
@@ -583,7 +584,7 @@ def refine(
        Refined mesh, (optional) parent cells, (optional) parent facets
     """
     mesh1, parent_cell, parent_facet = _cpp.refinement.refine(
-        msh._cpp_object, edges, redistribute, partitioner, option
+        msh._cpp_object, edges, partitioner, option
     )
     # Create new ufl domain as it will carry a reference to the C++ mesh
     # in the ufl_cargo

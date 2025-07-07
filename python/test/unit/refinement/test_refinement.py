@@ -43,12 +43,11 @@ def test_refine_create_unit_square():
 
 
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-@pytest.mark.parametrize("redistribute", [True, False])
-def test_refine_create_unit_cube(ghost_mode, redistribute):
+def test_refine_create_unit_cube(ghost_mode):
     """Refine mesh of unit cube."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=ghost_mode)
     mesh.topology.create_entities(1)
-    mesh, _, _ = refine(mesh, partitioner=create_cell_partitioner(ghost_mode), redistribute=True)
+    mesh, _, _ = refine(mesh, partitioner=create_cell_partitioner(ghost_mode))
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
 
@@ -117,12 +116,11 @@ def test_refine_from_cells():
 @pytest.mark.parametrize(
     "refine_plaza_wrapper",
     [
-        lambda msh: refine(msh, option=RefinementOption.parent_cell_and_facet, redistribute=True),
+        lambda msh: refine(msh, option=RefinementOption.parent_cell_and_facet),
         lambda msh: refine(
             msh,
             edges=np.arange(msh.topology.index_map(1).size_local),
             option=RefinementOption.parent_cell_and_facet,
-            redistribute=True,
         ),
     ],
 )
@@ -176,12 +174,11 @@ def test_refine_facet_meshtag(tdim, refine_plaza_wrapper):
 @pytest.mark.parametrize(
     "refine_plaza_wrapper",
     [
-        lambda msh: refine(msh, option=RefinementOption.parent_cell_and_facet, redistribute=True),
+        lambda msh: refine(msh, option=RefinementOption.parent_cell_and_facet),
         lambda msh: refine(
             msh,
             np.arange(msh.topology.index_map(1).size_local),
             option=RefinementOption.parent_cell_and_facet,
-            redistribute=True,
         ),
     ],
 )
@@ -233,7 +230,7 @@ def test_identity_partitioner(tdim, ghost_mode):
     owning_process[cells.size_local :] = cells.owners
 
     mesh.topology.create_entities(1)
-    [mesh_fine, parent_cells, _] = refine(mesh, redistribute=False, partitioner=None)
+    [mesh_fine, parent_cells, _] = refine(mesh)
 
     cells_fine = mesh_fine.topology.index_map(mesh.topology.dim)
     owning_process_fine = np.full(
