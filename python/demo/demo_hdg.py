@@ -41,7 +41,7 @@ import numpy as np
 
 import ufl
 from dolfinx import fem, mesh
-from dolfinx.cpp.mesh import EntityMap, cell_num_entities
+from dolfinx.cpp.mesh import cell_num_entities
 
 
 def par_print(comm, string):
@@ -135,11 +135,7 @@ dx_f = ufl.Measure("dx", domain=facet_mesh)
 # We write the mixed domain forms as integrals over msh.
 # We create the relation between the entities that we can pass to the form
 # constructor
-entity_map = EntityMap(
-    msh.topology._cpp_object,
-    facet_mesh.topology._cpp_object,
-    facet_mesh_to_mesh,
-)
+entity_map = mesh.entity_map(msh.topology, facet_mesh.topology, facet_mesh_to_mesh)
 entity_maps = [entity_map]
 
 # Define forms
