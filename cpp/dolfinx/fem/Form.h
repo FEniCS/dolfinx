@@ -46,7 +46,7 @@ namespace impl
 {
 /// @brief Compute "`entity_map[entities[i]]`", with suitable handling
 /// for facets.
-/// @param entities List of integration entities. For cells this is a list of
+/// @param entities List of mesh entity indices to integrate over. For cells this is a list of
 /// local cell indices. For facets this is an mdspan of shape (num_facets, 2),
 /// where the first column is the local cell index and the second column is
 /// the local facet index (relative to the cell).
