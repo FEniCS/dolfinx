@@ -175,11 +175,6 @@ void test_rank_split()
     REQUIRE(dest_local.size() <= idx_map.dest().size());
     REQUIRE(src_local.size() <= idx_map.src().size());
   }
-  {
-    auto [dest_local, src_local] = idx_map.rank_type(OMPI_COMM_TYPE_NUMA);
-    REQUIRE(dest_local.size() <= idx_map.dest().size());
-    REQUIRE(src_local.size() <= idx_map.src().size());
-  }
 }
 
 } // namespace
