@@ -71,7 +71,7 @@ std::vector<std::int32_t> compute_domain(
   mapped_entities.reserve(entities.size());
   if constexpr (entities.rank() == 1)
   {
-    // Map cells from integration mesh (i.e. `this->mesh()`) to
+    // Map cells in `this->mesh()` ('integration' mesh)  to
     // argument/coefficient mesh
     std::span ents(entities.data_handle(), entities.size());
     std::ranges::transform(ents, std::back_inserter(mapped_entities),
