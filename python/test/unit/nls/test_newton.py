@@ -41,8 +41,11 @@ class NonlinearPDEProblem:
         with b.localForm() as b_local:
             b_local.set(0.0)
         assemble_vector(b, self.L)
+        # b <- b + A_g . (x_bc - x0)
         apply_lifting(b, [self.a], bcs=[[self.bc]], x0=[x], alpha=-1.0)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+        # b[bc] = x0 - x_bc
         set_bc(b, [self.bc], x, -1.0)
 
     def J(self, x, A):
@@ -131,6 +134,7 @@ class TestNLS:
         problem = NonlinearPDEProblem(F, u, bc)
 
         def update(solver, dx, x):
+            """Compute x <- x - dx"""
             x.axpy(-1, dx)
 
         # Create Newton solver and solve
