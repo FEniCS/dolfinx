@@ -114,7 +114,6 @@ import ufl
 from basix.ufl import element
 from dolfinx import fem, mesh
 from dolfinx.fem.petsc import discrete_gradient, interpolation_matrix
-from dolfinx.la.petsc import create_vector_wrap
 from dolfinx.mesh import CellType, create_unit_square
 
 # Solution scalar (e.g., float32, complex128) and geometry (float32/64)
@@ -147,15 +146,15 @@ msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle, dtype=xdtype
 k = 1
 V = fem.functionspace(msh, element("RT", msh.basix_cell(), k, dtype=xdtype))
 W = fem.functionspace(msh, element("Discontinuous Lagrange", msh.basix_cell(), k - 1, dtype=xdtype))
+Q = ufl.MixedFunctionSpace(V, W)
 # -
 
 # Trial functions for $\sigma$ and $u$ are declared on the space $V$ and
 # $W$, with corresponding test functions $\tau$ and $v$:
 
 # +
-(sigma, u) = ufl.TrialFunction(V), ufl.TrialFunction(W)
-(tau, v) = ufl.TestFunction(V), ufl.TestFunction(W)
-# -
+sigma, u = ufl.TrialFunctions(Q)
+tau, v = ufl.TestFunctions(Q)
 
 # The source function is set to be $f = 10\exp(-((x_{0} - 0.5)^2 +
 # (x_{1} - 0.5)^2) / 0.02)$:
@@ -165,32 +164,23 @@ x = ufl.SpatialCoordinate(msh)
 f = 10 * ufl.exp(-((x[0] - 0.5) * (x[0] - 0.5) + (x[1] - 0.5) * (x[1] - 0.5)) / 0.02)
 # -
 
-# We now declare the blocked bilinear and linear forms. The rows of `a`
-# and `L` correspond to the $\tau$ and $v$ test functions, respectively.
-# The columns of `a` correspond to the $\sigma$ and $u$ trial functions,
-# respectively. Note that `a[1][1]` is empty, which is denoted by
-# `None`. This zero block is typical of a saddle-point problem. In the
-# `L[0]` block, the test function $\tau$ is multiplied by a zero
-# `Constant`, which is evaluated at runtime. We do this to preserve
-# knowledge of the test space in the block. *Note that the defined `L`
-# corresponds to $u_{0} = 0$ on $\Gamma_{D}$.*
+# We now declare the blocked bilinear and linear forms. We use
+# `ufl.extract_blocks` to extract the block structure of the bilinear
+# and linear form. For the first block of the right-hand side, we provide
+# a form that efficiently is 0. We do this to preserve knowledge of the
+# test space in the block. *Note that the defined `L` corresponds to
+# $u_{0} = 0$ on $\Gamma_{D}$.*
 
 # +
 dx = ufl.Measure("dx", msh)
-a = [
-    [ufl.inner(sigma, tau) * dx, ufl.inner(u, ufl.div(tau)) * dx],
-    [ufl.inner(ufl.div(sigma), v) * dx, None],
-]
+
+a = ufl.extract_blocks(
+    ufl.inner(sigma, tau) * dx + ufl.inner(u, ufl.div(tau)) * dx + ufl.inner(ufl.div(sigma), v) * dx
+)
 L = [ufl.ZeroBaseForm((tau,)), -ufl.inner(f, v) * dx]
+
 # -
 
-# We now compile the abstract/symbolic forms in `a` and `L` into
-# concrete instanced that can be assembled into matrix operators and
-# vectors, respectively.
-
-# +
-a, L = fem.form(a, dtype=dtype), fem.form(L, dtype=dtype)
-# -
 
 # In preparation for Dirichlet boundary conditions, we use the function
 # `locate_entities_boundary` to locate mesh entities (facets) with which
@@ -219,31 +209,6 @@ g.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), -np.sin(5 * x[0]))), cel
 bcs = [fem.dirichletbc(g, dofs_top), fem.dirichletbc(g, dofs_bottom)]
 # -
 
-# Assemble the matrix operator `A` into a PETSc 'nested matrix', zero
-# rows and columns associated with a Dirichlet boundary condition and
-# placing 1 on the diagonal for Dirichlet constrained
-# degrees-of-freedom:
-
-# +
-A = fem.petsc.assemble_matrix(a, bcs=bcs, kind="nest")
-A.assemble()
-# -
-
-# Assemble the RHS vector as a 'nested' vector and modify (apply
-# lifting) to account for the effect non-zero Dirichlet boundary
-# conditions. Then set Dirichlet boundary values in the RHS vector `b`:
-
-# +
-b = fem.petsc.assemble_vector(L, kind="nest")
-bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), bcs)
-fem.petsc.apply_lifting(b, a, bcs=bcs1)
-for b_sub in b.getNestSubVecs():
-    b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-
-bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs)
-fem.petsc.set_bc(b, bcs0)
-# -
-
 # Rather than solving the linear system $A x = b$, we will solve the
 # preconditioned problem $P^{-1} A x = P^{-1} b$. Commonly $P = A$, but
 # this does not lead to efficient solvers for saddle point problems.
@@ -258,40 +223,52 @@ fem.petsc.set_bc(b, bcs0)
 # and assemble it into the matrix `P`:
 
 # +
-a_p = fem.form(
-    [
-        [ufl.inner(sigma, tau) * dx + ufl.inner(ufl.div(sigma), ufl.div(tau)) * dx, None],
-        [None, ufl.inner(u, v) * dx],
-    ],
-    dtype=dtype,
+a_p = ufl.extract_blocks(
+    ufl.inner(sigma, tau) * dx + ufl.inner(ufl.div(sigma), ufl.div(tau)) * dx + ufl.inner(u, v) * dx
 )
-P = fem.petsc.assemble_matrix(a_p, bcs=bcs, kind="nest")
-P.assemble()
+
 # -
 
-# We now create a PETSc Krylov solver and set the preconditioner (`P`)
-# and operator (`A`) matrices:
+# We create finite element functions that will hold the $\sigma$ and $u$
+# solutions:
 
 # +
-ksp = PETSc.KSP().create(msh.comm)
-ksp.setOperators(A, P)
-ksp.setMonitor(lambda ksp, its, rnorm: print(f"Iteration: {its}, residual: {rnorm}"))
-ksp.setType("gmres")
-ksp.setTolerances(rtol=1e-8)
-ksp.setGMRESRestart(100)
+sigma, u = fem.Function(V, name="sigma", dtype=dtype), fem.Function(W, name="u", dtype=dtype)
 # -
 
-# To apply different solvers/preconditioners to the blocks of `P`, we
-# set the preconditioner to be a PETSc
-# [`fieldsplit`](https://petsc.org/release/manual/ksp/#sec-block-matrices)
+# We now create a linear problem solver for the mixed problem.
+# As we will use different preconditions for the individual blocks of
+# the saddle point problem, we specify the matrix kind to be "nest",
+# so that we can use # [`fieldsplit`](https://petsc.org/release/manual/ksp/#sec-block-matrices)
 # (block) type and set the 'splits' between the $\sigma$ and $u$ fields.
 
+
 # +
-ksp.getPC().setType("fieldsplit")
-ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
-nested_IS = P.getNestISs()
-ksp.getPC().setFieldSplitIS(("sigma", nested_IS[0][0]), ("u", nested_IS[0][1]))
-ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
+
+problem = fem.petsc.LinearProblem(
+    a,
+    L,
+    u=[sigma, u],
+    P=a_p,
+    kind="nest",
+    bcs=bcs,
+    petsc_options={
+        "ksp_type": "gmres",
+        "pc_type": "fieldsplit",
+        "pc_fieldsplit_type": "additive",
+        "ksp_rtol": 1e-8,
+        "ksp_gmres_restart": 100,
+        "ksp_view": "",
+    },
+)
+# -
+
+
+# +
+ksp = problem.solver
+ksp.setMonitor(
+    lambda _, its, rnorm: PETSc.Sys.Print(f"Iteration: {its:>4d}, residual: {rnorm:.3e}")
+)
 # -
 
 # For the $P_{11}$ block, which is the discontinuous Lagrange mass
@@ -307,6 +284,7 @@ ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
 # two-dimensions, just rotated by $\pi/2.
 
 # +
+ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
 pc_sigma = ksp_sigma.getPC()
 if PETSc.Sys().hasExternalPackage("hypre") and not np.issubdtype(dtype, np.complexfloating):
     pc_sigma.setType("hypre")
@@ -360,25 +338,15 @@ else:
         pc_sigma.setFactorSolverType("superlu_dist")
 # -
 
-# We create finite element functions that will hold the $\sigma$ and $u$
-# solutions:
+# Once we have set the preconditioners for the two blocks, we can
+# solve the linear system. The `LinearProblem` class will
+# automatically assemble the linear system, apply the boundary
+# conditions, call the Krylov solver and update the solution
+# vectors `u` and `sigma`.
 
 # +
-sigma, u = fem.Function(V, dtype=dtype), fem.Function(W, dtype=dtype)
-# -
-
-# Create a PETSc 'nested' vector that holds reference to the `sigma` and
-# `u` solution (degree-of-freedom) vectors and solve.
-
-# +
-x = PETSc.Vec().createNest([create_vector_wrap(sigma.x), create_vector_wrap(u.x)])
-ksp.solve(b, x)
-reason = ksp.getConvergedReason()
-assert reason > 0, f"Krylov solver has not converged {reason}."
-ksp.view()
-
-sigma.x.scatter_forward()
-u.x.scatter_forward()
+_1, converged_reason, _2 = problem.solve()
+assert converged_reason > 0, f"Krylov solver has not converged, reason: {converged_reason}."
 # -
 
 # We save the solution `u` in VTX format:

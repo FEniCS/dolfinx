@@ -133,7 +133,7 @@ def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[
         x0_nest = x0.getNestSubVecs()
         for _x0, _x1 in zip(x0_nest, x1):
             with _x0.localForm() as x:
-                _x1[:] = x.array_r[:]
+                _x1[:] = x.array_r[:]  # type: ignore
     except PETSc.Error:  # type: ignore[attr-defined]
         with x0.localForm() as _x0:
             try:
