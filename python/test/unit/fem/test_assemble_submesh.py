@@ -13,10 +13,12 @@ import pytest
 
 import ufl
 from dolfinx import default_scalar_type, fem, la
-from dolfinx.fem import compute_integration_domains
+from dolfinx.fem import IntegralType, compute_integration_domains
 from dolfinx.mesh import (
     CellType,
     GhostMode,
+    Mesh,
+    MeshTags,
     compute_incident_entities,
     create_box,
     create_rectangle,
@@ -709,47 +711,32 @@ def test_interior_interface():
     function is defined on the other.
     """
 
-    def interface_int_entities(msh, interface_facets, marker):
+    def compute_interface_data(
+        msh: Mesh, cell_tags: MeshTags, facet_indices: np.typing.NDArray[np.int32]
+    ) -> np.typing.NDArray[np.int32]:
         """
-        This helper function computes the integration entities for interior facet
-        integrals (i.e. a list of (cell_0, local_facet_0, cell_1, local_facet_1))
-        over an interface. The integration entities are ordered consistently such
-        that cells for which `marker[cell] >= 0` correspond to the "+" restriction,
-        and cells for which `marker[cell] < 0` correspond to the "-" restriction.
+        Compute integration entities for interior facet integrals over an interface (i.e.
+        a list of (cell_0, local_facet_0, cell1, local_facet_1)) with consistent ordering such
+        that `cell_tags[cell0]`<`cell_tags[cell1]`. This means that the cell with the lowest
+        cell marker is the "+" restriction".
 
-        Parameters:
-            msh: the mesh
-            interface_facets: Facet indices of interior facets on an interface
-            marker: If `marker[cell]` is **positive**, then that cell corresponds to a "+"
-                restriction. Otherwise, it corresponds to a negative restriction.
+        Args:
+            cell_tags: Mesh tags with an integer marker for all cells adjacent to facets in
+                `facet_indices`. The cells on the "+" side of the interface should have a
+                lower tag than those on the "-" side
+            facet_indices: List of facets (local to process) on the interface.
+        Returns:
+            The integration data.
         """
-        tdim = msh.topology.dim
-        fdim = tdim - 1
-        msh.topology.create_connectivity(tdim, fdim)
-        msh.topology.create_connectivity(fdim, tdim)
-        facet_imap = msh.topology.index_map(fdim)
-        c_to_f = msh.topology.connectivity(tdim, fdim)
-        f_to_c = msh.topology.connectivity(fdim, tdim)
-
-        interface_entities = []
-        for facet in interface_facets:
-            # Check if this facet is owned
-            if facet < facet_imap.size_local:
-                cells = f_to_c.links(facet)
-                assert len(cells) == 2
-                if marker[cells[0]] >= 0:
-                    cell_plus, cell_minus = cells[0], cells[1]
-                else:
-                    cell_plus, cell_minus = cells[1], cells[0]
-
-                local_facet_plus = np.where(c_to_f.links(cell_plus) == facet)[0][0]
-                local_facet_minus = np.where(c_to_f.links(cell_minus) == facet)[0][0]
-
-                interface_entities.extend(
-                    [cell_plus, local_facet_plus, cell_minus, local_facet_minus]
-                )
-
-        return interface_entities
+        idata = compute_integration_domains(
+            IntegralType.interior_facet,
+            msh.topology,
+            facet_indices,
+        )
+        ordered_idata = idata.reshape(-1, 4).copy()
+        switch = cell_tags.values[ordered_idata[:, 0]] > cell_tags.values[ordered_idata[:, 2]]
+        ordered_idata[switch, :] = ordered_idata[switch][:, [2, 3, 0, 1]]
+        return ordered_idata.flatten()
 
     n = 10  # NOTE: Test assumes that n is even
     comm = MPI.COMM_WORLD
@@ -757,11 +744,18 @@ def test_interior_interface():
 
     # Locate cells in left and right half of domain and create sub-meshes
     tdim = msh.topology.dim
-    left_cells = locate_entities(msh, tdim, lambda x: x[0] <= 0.5)
-    right_cells = locate_entities(msh, tdim, lambda x: x[0] >= 0.5)
 
-    smsh_0, sm_0_to_msh = create_submesh(msh, tdim, left_cells)[0:2]
-    smsh_1, sm_1_to_msh = create_submesh(msh, tdim, right_cells)[0:2]
+    # Create meshtags
+    left_cells_tag, right_cells_tag = 0, 1
+    cell_imap = msh.topology.index_map(tdim)
+    num_cells = cell_imap.size_local + cell_imap.num_ghosts
+    cells = np.arange(num_cells, dtype=np.int32)
+    values = np.full(num_cells, left_cells_tag, dtype=np.intc)
+    values[locate_entities(msh, tdim, lambda x: x[0] >= 0.5)] = right_cells_tag
+    ct = meshtags(msh, tdim, cells, values)
+
+    smsh_0, sm_0_to_msh = create_submesh(msh, tdim, ct.find(left_cells_tag))[0:2]
+    smsh_1, sm_1_to_msh = create_submesh(msh, tdim, ct.find(right_cells_tag))[0:2]
 
     # Define trial function on one region and the test function on the other
     V_0 = fem.functionspace(smsh_0, ("Lagrange", 1))
@@ -772,12 +766,11 @@ def test_interior_interface():
 
     # Find the facet on the interface
     fdim = tdim - 1
+    msh.topology.create_connectivity(fdim, tdim)
     interface_facets = locate_entities(msh, fdim, lambda x: np.isclose(x[0], 0.5))
 
     # Create entity maps for each domain. Since we integrate over msh, the
     # maps take cells in mesh to cells in smsh_0 and smsh_1, respectively
-    cell_imap = msh.topology.index_map(tdim)
-    num_cells = cell_imap.size_local + cell_imap.num_ghosts
     msh_to_sm_0 = np.full(num_cells, -1)
     msh_to_sm_0[sm_0_to_msh] = np.arange(len(sm_0_to_msh))
     msh_to_sm_1 = np.full(num_cells, -1)
@@ -785,7 +778,7 @@ def test_interior_interface():
     entity_maps = {smsh_0: msh_to_sm_0, smsh_1: msh_to_sm_1}
 
     # Create a list of integration entities
-    interface_ents = interface_int_entities(msh, interface_facets, msh_to_sm_0)
+    interface_ents = compute_interface_data(msh, ct, interface_facets)
 
     # Assemble the form
     dS = ufl.Measure("dS", domain=msh, subdomain_data=[(1, interface_ents)])
