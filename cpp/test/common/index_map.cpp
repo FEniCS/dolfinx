@@ -168,15 +168,19 @@ void test_rank_split()
 {
   const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
   constexpr int size_local = 100;
-
-  // Create an IndexMap
   const common::IndexMap idx_map
       = create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
 
-  auto [dest_local, src_local] = idx_map.rank_type(MPI_COMM_TYPE_SHARED);
-
-  REQUIRE(dest_local.size() <= idx_map.dest().size());
-  REQUIRE(src_local.size() <= idx_map.src().size());
+  {
+    auto [dest_local, src_local] = idx_map.rank_type(MPI_COMM_TYPE_SHARED);
+    REQUIRE(dest_local.size() <= idx_map.dest().size());
+    REQUIRE(src_local.size() <= idx_map.src().size());
+  }
+  {
+    auto [dest_local, src_local] = idx_map.rank_type(OMPI_COMM_TYPE_NUMA);
+    REQUIRE(dest_local.size() <= idx_map.dest().size());
+    REQUIRE(src_local.size() <= idx_map.src().size());
+  }
 }
 
 } // namespace

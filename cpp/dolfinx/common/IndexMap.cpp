@@ -1319,6 +1319,8 @@ std::array<std::vector<int>, 2> IndexMap::rank_type(int split_type) const
   ierr = MPI_Comm_rank(_comm.comm(), &rank);
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
+  // Note: in most cases, size_s will be much smaller than the size of
+  // _comm
   std::vector<int> ranks_s(size_s);
   ierr = MPI_Allgather(&rank, 1, MPI_INT, ranks_s.data(), 1, MPI_INT, comm_s);
   dolfinx::MPI::check_error(comm_s, ierr);

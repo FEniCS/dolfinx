@@ -255,8 +255,9 @@ public:
   /// and sorted.
   std::span<const int> dest() const noexcept;
 
-  /// @brief Determine destination and source ranks by type, e.g, ranks
-  /// that in a shared memory region.
+  /// @brief Destination and source ranks by type, e.g, ranks that are
+  /// destination/source ranks for the caller and are in an common
+  /// shared memory region.
   ///
   /// This function is used to group destination and source ranks by
   /// 'type'. The type is defined by the MPI `split_type`. Split types
@@ -264,13 +265,14 @@ public:
   /// region. Splits types are listed at See
   /// https://docs.open-mpi.org/en/main/man-openmpi/man3/MPI_Comm_split_type.3.html#split-types.
   ///
-  /// @note Collective.
+  /// @note Collective operation on comm();
   ///
-  /// @param[in] split_type MPI split type, as used in
+  /// @param[in] split_type MPI split type, as used in the function
   /// `MPI_Comm_split_type`. See
   /// https://docs.open-mpi.org/en/main/man-openmpi/man3/MPI_Comm_split_type.3.html#split-types.
-  /// @return (0) destination rank in `split_type` and (1) source ranks
-  /// in `split_type`.
+  /// @return (0) Intersection of ranks in `split_type` and in dest(),
+  /// and (1) intersection of ranks in `split_type` and in src().
+  /// Returned ranks are on the comm() communicator.
   std::array<std::vector<int>, 2> rank_type(int split_type) const;
 
   /// @brief Statistics of the IndexMap.
