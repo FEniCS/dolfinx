@@ -438,15 +438,23 @@ class MeshTags:
 
 class EntityMap:
     """
-    TODO
+    A map that relating entities in two different meshes.
     """
 
     def __init__(self, entity_map):
-        """TODO"""
+        """Initialise an entity map from a C++ EntityMap object."""
         self._cpp_object = entity_map
 
     def map_entities(self, entities, topology):
-        """TODO"""
+        """Map entities from one topology to the other
+
+        Args:
+            entities: The entities in one topology
+            topology: The topology to map to
+
+        Returns:
+            The mapped entities
+        """
         return self._cpp_object.map_entities(entities, topology._cpp_object)
 
 
