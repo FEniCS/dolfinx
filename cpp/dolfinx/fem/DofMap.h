@@ -92,7 +92,7 @@ public:
                                            std::vector<std::int32_t>>
   DofMap(E&& element, std::shared_ptr<const common::IndexMap> index_map,
          int index_map_bs, U&& dofmap, int bs)
-      : index_map(index_map), _index_map_bs(index_map_bs),
+      : index_map(std::move(index_map)), _index_map_bs(index_map_bs),
         _element_dof_layout(std::forward<E>(element)),
         _dofmap(std::forward<U>(dofmap)), _bs(bs),
         _shape1(_element_dof_layout.num_dofs()

@@ -25,6 +25,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
 
   // Collect up entity types on each dimension
   std::vector<std::vector<mesh::CellType>> entity_types;
+  entity_types.reserve(tdim + 1);
   for (int i = 0; i < tdim + 1; ++i)
     entity_types.push_back(topology->entity_types(i));
   const std::vector<mesh::CellType>& cell_entity_types = entity_types.back();

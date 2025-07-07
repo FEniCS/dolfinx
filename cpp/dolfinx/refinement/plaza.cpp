@@ -177,7 +177,7 @@ get_tetrahedra(std::span<const std::int64_t> indices,
     }
   }
 
-  return {std::move(tet_set), tet_set_size};
+  return {tet_set, tet_set_size};
 }
 //-----------------------------------------------------------------------------
 } // namespace

@@ -9,10 +9,16 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Find DOLFINx config file
 find_package(DOLFINX REQUIRED)
 
+include(FeatureSummary)
+
 # Add shared library paths so shared libs in non-system paths are found
 option(CMAKE_INSTALL_RPATH_USE_LINK_PATH
        "Add paths to linker search and installed rpath." ON
 )
+
+# clang-tidy
+option(ENABLE_CLANG_TIDY "Run clang-tidy while building" OFF)
+add_feature_info(ENABLE_CLANG_TIDY ENABLE_CLANG_TIDY "Run clang-tidy while building")
 
 add_custom_command(
   OUTPUT expr.c
@@ -90,6 +96,11 @@ target_compile_options(
   PRIVATE
   $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
 )
+
+if(ENABLE_CLANG_TIDY)
+  find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
+  set_target_properties(unittests PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../../.clang-tidy")
+endif()
 
 # Enable testing
 enable_testing()

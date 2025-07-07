@@ -7,12 +7,13 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <span>
 #include <vector>
 
 namespace dolfinx::mesh
 {
-enum class CellType;
+enum class CellType : std::int8_t;
 }
 
 namespace dolfinx::fem
