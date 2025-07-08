@@ -20,8 +20,8 @@ namespace dolfinx::mesh
 class EntityMap
 {
 public:
-  /// @brief Constructor of a map between a set of entities belonging to two
-  /// meshes.
+  /// @brief Constructor of a map from a set of entities in one mesh to a set of
+  /// entities in another
   ///
   /// @tparam U
   /// @param topology A mesh topology
