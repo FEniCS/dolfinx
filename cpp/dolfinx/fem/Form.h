@@ -266,12 +266,13 @@ public:
       else
       {
         // Find correct entity map
-        auto it = std::ranges::find_if(entity_maps,
-                                       [&](const auto& em)
-                                       {
-                                         assert(em);
-                                         return em->contains(*mesh0->topology());
-                                       });
+        auto it
+            = std::ranges::find_if(entity_maps,
+                                   [&](const auto& em)
+                                   {
+                                     assert(em);
+                                     return em->contains(*mesh0->topology());
+                                   });
         if (it == entity_maps.end())
         {
           throw std::runtime_error(
@@ -279,7 +280,7 @@ public:
         }
         auto emap = *it;
         assert(emap);
-        std::vector<std::int32_t> entity_map = emap->map(mesh0->topology());
+        std::vector<std::int32_t> entity_map = emap->map(*mesh0->topology());
 
         for (auto& [key, itg] : _integrals)
         {
@@ -342,7 +343,7 @@ public:
           }
           auto emap = *it;
           assert(emap);
-          std::vector<std::int32_t> entity_map = emap->map(mesh0->topology());
+          std::vector<std::int32_t> entity_map = emap->map(*mesh0->topology());
 
           std::vector<std::int32_t> e;
           if (type == IntegralType::cell)

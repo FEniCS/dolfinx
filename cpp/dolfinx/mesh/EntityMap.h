@@ -134,15 +134,15 @@ public:
   /// @param topology The topology to map to
   /// @return A list whose `i`th entry is the entity index in `topology` of
   /// entity `i` in the other topology if it exists, or -1 if it does not.
-  std::vector<std::int32_t> map(std::shared_ptr<const Topology> topology) const
+  std::vector<std::int32_t> map(const Topology& topology) const
   {
-    if (topology == _topology)
+    if (&topology == _topology.get())
     {
       // The map from `_sub_topology` to `topology` is simply
       // `_sub_topology_to_topology`
       return _sub_topology_to_topology;
     }
-    else if (topology == _sub_topology)
+    else if (&topology == _sub_topology.get())
     {
       auto imap = _topology->index_map(_dim);
       assert(imap);
