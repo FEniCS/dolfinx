@@ -18,13 +18,13 @@ import ufl
 @pytest.mark.petsc4py
 class TestPETScSolverWrappers:
     @pytest.mark.parametrize(
+        "comm", [MPI.COMM_WORLD, MPI.COMM_SELF], ids=lambda comm: comm.Get_name()
+    )
+    @pytest.mark.parametrize(
         "mode",
         [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet],
     )
-    @pytest.mark.parametrize(
-        "comm", [MPI.COMM_WORLD, MPI.COMM_SELF], ids=lambda comm: comm.Get_name()
-    )
-    def test_compare_solution_linear_vs_nonlinear_problem(self, mode, comm):
+    def test_compare_solution_linear_vs_nonlinear_problem(self, comm, mode):
         """Test that the wrapper for Linear problem and NonlinearProblem give the same result"""
         from petsc4py import PETSc
 
@@ -77,6 +77,7 @@ class TestPETScSolverWrappers:
         )
         u_lin, convergence_reason, _ = linear_problem.solve()
         assert convergence_reason > 0
+        print(linear_problem.petsc_options_prefix)
 
         # Compare LinearProblem solution against the one obtained by
         # legacy NewtonSolverNonlinearProblem
