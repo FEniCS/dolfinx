@@ -270,7 +270,7 @@ public:
                                        [&](const auto& em)
                                        {
                                          assert(em);
-                                         return em->contains(mesh0->topology());
+                                         return em->contains(*mesh0->topology());
                                        });
         if (it == entity_maps.end())
         {
@@ -333,7 +333,7 @@ public:
                                      [&](const auto& em)
                                      {
                                        assert(em);
-                                       return em->contains(mesh0->topology());
+                                       return em->contains(*mesh0->topology());
                                      });
           if (it == entity_maps.end())
           {

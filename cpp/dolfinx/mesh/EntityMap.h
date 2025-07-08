@@ -68,9 +68,9 @@ public:
   /// @brief Determine if the entity map contains the given topology
   /// @param topology A topology
   /// @return Returns true if the topology is present, and false otherwise.
-  bool contains(std::shared_ptr<const Topology> topology) const
+  bool contains(const Topology& topology) const
   {
-    return topology == _topology or topology == _sub_topology;
+    return &topology == _topology.get() or &topology == _sub_topology.get();
   }
 
   /// @brief Map entities from one topology to another. When mapping to the
