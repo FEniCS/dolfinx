@@ -73,7 +73,7 @@ public:
     return &topology == _topology.get() or &topology == _sub_topology.get();
   }
 
-  /// @brief Map entities indices in one topology in this `EntityMap` to indices
+  /// @brief Map entity indices in one topology in this `EntityMap` to indices
   /// in the other topology in this `EntityMap`. When mapping to entity indices
   /// in the sub-topology, any entities that don't exist are marked with -1.
   /// @param entities Entities in one of the topologies in this `EntityMap`
