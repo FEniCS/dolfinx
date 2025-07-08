@@ -50,7 +50,8 @@ void export_refinement(nb::module_& m)
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
              edges,
          std::variant<dolfinx::refinement::IdentityPartitionerPlaceholder,
-                      dolfinx_wrappers::part::impl::PythonCellPartitionFunction>
+                      std::optional<dolfinx_wrappers::part::impl::
+                                        PythonCellPartitionFunction>>
              partitioner,
          dolfinx::refinement::Option option)
       {
@@ -65,14 +66,23 @@ void export_refinement(nb::module_& m)
                      dolfinx_wrappers::part::impl::CppCellPartitionFunction>
             cpp_partitioner
             = dolfinx::refinement::IdentityPartitionerPlaceholder();
-        if (std::holds_alternative<
-                dolfinx_wrappers::part::impl::PythonCellPartitionFunction>(
+        if (std::holds_alternative<std::optional<
+                dolfinx_wrappers::part::impl::PythonCellPartitionFunction>>(
                 partitioner))
         {
-          cpp_partitioner
-              = dolfinx_wrappers::part::impl::create_cell_partitioner_cpp(
-                  std::get<dolfinx_wrappers::part::impl::
-                               PythonCellPartitionFunction>(partitioner));
+          auto optional = std::get<std::optional<
+              dolfinx_wrappers::part::impl::PythonCellPartitionFunction>>(
+              partitioner);
+          if (!optional.has_value())
+            cpp_partitioner
+                = dolfinx_wrappers::part::impl::CppCellPartitionFunction(
+                    nullptr);
+          else
+          {
+            cpp_partitioner
+                = dolfinx_wrappers::part::impl::create_cell_partitioner_cpp(
+                    optional.value());
+          }
         }
 
         auto [mesh1, cell, facet] = dolfinx::refinement::refine(
@@ -97,7 +107,7 @@ void export_refinement(nb::module_& m)
         return std::tuple{std::move(mesh1), std::move(python_cell),
                           std::move(python_facet)};
       },
-      nb::arg("mesh"), nb::arg("edges").none(), nb::arg("partitioner"),
+      nb::arg("mesh"), nb::arg("edges").none(), nb::arg("partitioner").none(),
       nb::arg("option"));
 }
 } // namespace

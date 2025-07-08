@@ -116,10 +116,11 @@ def test_refine_from_cells():
 @pytest.mark.parametrize(
     "refine_plaza_wrapper",
     [
-        lambda msh: refine(msh, option=RefinementOption.parent_cell_and_facet),
+        lambda msh: refine(msh, partitioner=None, option=RefinementOption.parent_cell_and_facet),
         lambda msh: refine(
             msh,
             edges=np.arange(msh.topology.index_map(1).size_local),
+            partitioner=None,
             option=RefinementOption.parent_cell_and_facet,
         ),
     ],
@@ -174,10 +175,11 @@ def test_refine_facet_meshtag(tdim, refine_plaza_wrapper):
 @pytest.mark.parametrize(
     "refine_plaza_wrapper",
     [
-        lambda msh: refine(msh, option=RefinementOption.parent_cell_and_facet),
+        lambda msh: refine(msh, partitioner=None, option=RefinementOption.parent_cell_and_facet),
         lambda msh: refine(
             msh,
             np.arange(msh.topology.index_map(1).size_local),
+            partitioner=None,
             option=RefinementOption.parent_cell_and_facet,
         ),
     ],
