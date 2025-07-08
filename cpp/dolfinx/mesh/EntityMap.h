@@ -85,11 +85,14 @@ public:
   {
     if (topology == _topology)
     {
-      // The map from `_sub_topology` to `_topology` is just
-      // `_sub_topology_to_topology`, so use this to map each entity
-      auto mapped = entities
-                    | std::views::transform(
-                        [this](int i) { return _sub_topology_to_topology[i]; });
+      // In this case, we want to map from cell indices in `_sub_topology` to
+      // corresponding entities in `_topology`. Hence, for each index in
+      // `entities`, we get the corresponding index in `_topology` using
+      // `_sub_topology_to_topology`
+      auto mapped
+          = entities
+            | std::views::transform([this](std::int32_t i)
+                                    { return _sub_topology_to_topology[i]; });
       return std::vector<std::int32_t>(mapped.begin(), mapped.end());
     }
     else if (topology == _sub_topology)
