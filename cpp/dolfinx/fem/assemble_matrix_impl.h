@@ -310,13 +310,13 @@ void assemble_exterior_facets(
 /// @param[in] dofmap0 Test function (row) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
 /// indices. Cells that don't exist in the test function domain should be
-/// marked with -1.
+/// marked with -1 in the cell indices list.
 /// @param[in] P0 Function that applies transformation P0.A in-place to
 /// transform test degrees-of-freedom.
 /// @param[in] dofmap1 Trial function (column) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
 /// indices. Cells that don't exist in the trial function domain should be
-/// marked with -1
+/// marked with -1 in the cell indices list.
 /// @param[in] P1T Function that applies transformation A.P1^T in-place
 /// to transform trial degrees-of-freedom.
 /// @param[in] bc0 Marker for rows with Dirichlet boundary conditions
