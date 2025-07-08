@@ -73,11 +73,12 @@ public:
     return &topology == _topology.get() or &topology == _sub_topology.get();
   }
 
-  /// @brief Map entities from one topology to another. When mapping to the
-  /// sub-topology, any entities that don't exist are marked with -1.
-  /// @param entities Entities in one topology
+  /// @brief Map entities indices in one topology in this `EntityMap` to indices
+  /// in the other topology in this `EntityMap`. When mapping to entity indices
+  /// in the sub-topology, any entities that don't exist are marked with -1.
+  /// @param entities Entities in one of the topologies in this `EntityMap`
   /// @param topology The topology to map to
-  /// @return The mapped entities
+  /// @return The mapped entity indices
   std::vector<std::int32_t>
   map_entities(std::span<const std::int32_t> entities,
                std::shared_ptr<const Topology> topology) const
