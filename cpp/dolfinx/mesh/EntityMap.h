@@ -65,7 +65,7 @@ public:
   // Destructor
   ~EntityMap() = default;
 
-  /// @brief Determine if the entity map contains the given topology
+  /// @brief Determine if this `EntityMap` contains a given topology
   /// @param topology A topology
   /// @return Returns true if the topology is present, and false otherwise.
   bool contains(const Topology& topology) const
