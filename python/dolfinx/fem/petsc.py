@@ -758,6 +758,7 @@ class LinearProblem:
         P: typing.Optional[typing.Union[ufl.Form, Iterable[Iterable[ufl.Form]]]] = None,
         kind: typing.Optional[typing.Union[str, Iterable[Iterable[str]]]] = None,
         petsc_options: typing.Optional[dict] = None,
+        petsc_options_prefix: typing.Optional[str] = None,
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
         entity_maps: typing.Optional[dict[_Mesh, npt.NDArray[np.int32]]] = None,
@@ -782,6 +783,13 @@ class LinearProblem:
                 <https://petsc4py.readthedocs.io/en/stable/manual/ksp/>`_.
                 Options on other objects (matrices, vectors) should be set
                 explicitly by the user.
+            petsc_options_prefix: Prefix to be used while setting the
+                options in `petsc_options`. If provided, the prefix
+                must be unique, and must have the same value on all
+                ranks on the communicator of the problem. If None,
+                a unique prefix will be generated automatically if
+                the communicator of the problem is MPI_COMM_WORLD,
+                otherwise an error will be raised.
             form_compiler_options: Options used in FFCx compilation of
                 all forms. Run ``ffcx --help`` at the commandline to see
                 all available options.
@@ -859,19 +867,26 @@ class LinearProblem:
         self.solver.setOperators(self.A, self.P_mat)
 
         # Give PETSc objects a unique prefix
-        problem_prefix = f"dolfinx_linearproblem_{LinearProblem._prefix_counter}_"
-        self.solver.setOptionsPrefix(problem_prefix)
-        self.A.setOptionsPrefix(f"{problem_prefix}A_")
-        self.b.setOptionsPrefix(f"{problem_prefix}b_")
-        self.x.setOptionsPrefix(f"{problem_prefix}x_")
+        if petsc_options_prefix is None and self.A.comm != PETSc.COMM_WORLD:
+            raise ValueError(
+                "Must provide a string for the petsc_options_prefix argument when"
+                "the problem is defined on a communicator different from COMM_WORLD"
+            )
+        if petsc_options_prefix is None:
+            petsc_options_prefix = f"dolfinx_linearproblem_{LinearProblem._prefix_counter}_"
+            LinearProblem._prefix_counter += 1
+        self._petsc_options_prefix = petsc_options_prefix
+        self.solver.setOptionsPrefix(self.petsc_options_prefix)
+        self.A.setOptionsPrefix(f"{self.petsc_options_prefix}A_")
+        self.b.setOptionsPrefix(f"{self.petsc_options_prefix}b_")
+        self.x.setOptionsPrefix(f"{self.petsc_options_prefix}x_")
         if self.P_mat is not None:
-            self.P_mat.setOptionsPrefix(f"{problem_prefix}P_mat_")
-        LinearProblem._prefix_counter += 1
+            self.P_mat.setOptionsPrefix(f"{self.petsc_options_prefix}P_mat_")
 
         # Set options on KSP only
         if petsc_options is not None:
             opts = PETSc.Options()
-            opts.prefixPush(problem_prefix)
+            opts.prefixPush(self.petsc_options_prefix)
 
             for k, v in petsc_options.items():
                 opts[k] = v
@@ -978,7 +993,9 @@ class LinearProblem:
         """Left-hand side matrix.
 
         Note:
-            The matrix has an options prefix set.
+            The matrix has an options prefix set, which can be retrieved
+            appending  the string "A_" to the value returned by the
+            `petsc_options_prefix` property.
         """
         return self._A
 
@@ -987,7 +1004,9 @@ class LinearProblem:
         """Preconditioner matrix.
 
         Note:
-            The matrix has an options prefix set.
+            The matrix has an options prefix set, which can be retrieved
+            appending  the string "P_mat_" to the value returned by the
+            `petsc_options_prefix` property.
         """
         return self._P_mat
 
@@ -996,7 +1015,9 @@ class LinearProblem:
         """Right-hand side vector.
 
         Note:
-            The vector has an options prefix set.
+            The vector has an options prefix set, which can be retrieved
+            appending  the string "b_" to the value returned by the
+            `petsc_options_prefix` property.
         """
         return self._b
 
@@ -1009,7 +1030,9 @@ class LinearProblem:
             Function `u`.
 
         Note:
-            The vector has an options prefix set.
+            The vector has an options prefix set, which can be retrieved
+            appending  the string "x_" to the value returned by the
+            `petsc_options_prefix` property.
         """
         return self._x
 
@@ -1018,7 +1041,8 @@ class LinearProblem:
         """The PETSc KSP solver.
 
         Note:
-            The KSP solver has an options prefix set.
+            The KSP solver has an options prefix set, which can be
+            retrieved from the `petsc_options_prefix` property.
         """
         return self._solver
 
@@ -1031,6 +1055,11 @@ class LinearProblem:
             vector `x`.
         """
         return self._u
+
+    @property
+    def petsc_options_prefix(self) -> str:
+        """PETSc options prefix associated to the KSP object."""
+        return self._petsc_options_prefix
 
 
 # -- High-level interface for SNES ---------------------------------------
@@ -1186,6 +1215,7 @@ class NonlinearProblem:
         P: typing.Optional[typing.Union[ufl.form.Form, Sequence[Sequence[ufl.form.Form]]]] = None,
         kind: typing.Optional[typing.Union[str, typing.Iterable[typing.Iterable[str]]]] = None,
         petsc_options: typing.Optional[dict] = None,
+        petsc_options_prefix: typing.Optional[str] = None,
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
         entity_maps: typing.Optional[dict[dolfinx.mesh.Mesh, npt.NDArray[np.int32]]] = None,
@@ -1231,6 +1261,13 @@ class NonlinearProblem:
                 <https://petsc4py.readthedocs.io/en/stable/manual/snes>`_.
                 Options on other objects (matrices, vectors) should be set
                 explicitly by the user.
+            petsc_options_prefix: Prefix to be used while setting the
+                options in `petsc_options`. If provided, the prefix
+                must be unique, and must have the same value on all
+                ranks on the communicator of the problem. If None,
+                a unique prefix will be generated automatically if
+                the communicator of the problem is MPI_COMM_WORLD,
+                otherwise an error will be raised.
             form_compiler_options: Options used in FFCx compilation of all
                 forms. Run ``ffcx --help`` at the command line to see all
                 available options.
@@ -1304,19 +1341,26 @@ class NonlinearProblem:
         self.solver.setFunction(partial(assemble_residual, u, self.F, self.J, bcs), self.b)
 
         # Set PETSc options prefixes
-        problem_prefix = f"dolfinx_nonlinearproblem_{NonlinearProblem._prefix_counter}_"
-        self.solver.setOptionsPrefix(problem_prefix)
-        self.A.setOptionsPrefix(f"{problem_prefix}A_")
+        if petsc_options_prefix is None and self.A.comm != PETSc.COMM_WORLD:
+            raise ValueError(
+                "Must provide a string for the petsc_options_prefix argument when"
+                "the problem is defined on a communicator different from COMM_WORLD"
+            )
+        if petsc_options_prefix is None:
+            petsc_options_prefix = f"dolfinx_nonlinearproblem_{NonlinearProblem._prefix_counter}_"
+            NonlinearProblem._prefix_counter += 1
+        self._petsc_options_prefix = petsc_options_prefix
+        self.solver.setOptionsPrefix(self.petsc_options_prefix)
+        self.A.setOptionsPrefix(f"{self.petsc_options_prefix}A_")
         if self.P_mat is not None:
-            self.P_mat.setOptionsPrefix(f"{problem_prefix}P_mat_")
-        self.b.setOptionsPrefix(f"{problem_prefix}b_")
-        self.x.setOptionsPrefix(f"{problem_prefix}x_")
-        NonlinearProblem._prefix_counter += 1
+            self.P_mat.setOptionsPrefix(f"{self.petsc_options_prefix}P_mat_")
+        self.b.setOptionsPrefix(f"{self.petsc_options_prefix}b_")
+        self.x.setOptionsPrefix(f"{self.petsc_options_prefix}x_")
 
         # Set options for SNES only
         if petsc_options is not None:
             opts = PETSc.Options()  # type: ignore
-            opts.prefixPush(problem_prefix)
+            opts.prefixPush(self.petsc_options_prefix)
 
             for k, v in petsc_options.items():
                 opts[k] = v
@@ -1397,7 +1441,9 @@ class NonlinearProblem:
         """Jacobian matrix.
 
         Note:
-            The matrix has an options prefix set.
+            The matrix has an options prefix set, which can be retrieved
+            appending  the string "A_" to the value returned by the
+            `petsc_options_prefix` property.
         """
         return self._A
 
@@ -1406,7 +1452,9 @@ class NonlinearProblem:
         """Preconditioner matrix.
 
         Note:
-            The matrix has an options prefix set.
+            The matrix has an options prefix set, which can be retrieved
+            appending  the string "P_mat_" to the value returned by the
+            `petsc_options_prefix` property.
         """
         return self._P_mat
 
@@ -1415,7 +1463,9 @@ class NonlinearProblem:
         """Residual vector.
 
         Note:
-            The vector has an options prefix set.
+            The vector has an options prefix set, which can be retrieved
+            appending  the string "b_" to the value returned by the
+            `petsc_options_prefix` property.
         """
         return self._b
 
@@ -1428,7 +1478,9 @@ class NonlinearProblem:
             solution Function `u`.
 
         Note:
-            The vector has an options prefix set.
+            The vector has an options prefix set, which can be retrieved
+            appending  the string "x_" to the value returned by the
+            `petsc_options_prefix` property.
         """
         return self._x
 
@@ -1437,7 +1489,8 @@ class NonlinearProblem:
         """The SNES solver.
 
         Note:
-            The SNES solver has an options prefix set.
+            The SNES solver has an options prefix set, which can be
+            retrieved from the `petsc_options_prefix` property.
         """
         return self._snes
 
@@ -1450,6 +1503,11 @@ class NonlinearProblem:
             vector `x`.
         """
         return self._u
+
+    @property
+    def petsc_options_prefix(self) -> str:
+        """PETSc options prefix associated to the SNES object."""
+        return self._petsc_options_prefix
 
 
 # -- Deprecated non-linear problem class for NewtonSolver -----------------

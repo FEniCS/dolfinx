@@ -21,14 +21,17 @@ class TestPETScSolverWrappers:
         "mode",
         [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet],
     )
-    def test_compare_solution_linear_vs_nonlinear_problem(self, mode):
+    @pytest.mark.parametrize(
+        "comm", [MPI.COMM_WORLD, MPI.COMM_SELF], ids=lambda comm: comm.Get_name()
+    )
+    def test_compare_solution_linear_vs_nonlinear_problem(self, mode, comm):
         """Test that the wrapper for Linear problem and NonlinearProblem give the same result"""
         from petsc4py import PETSc
 
         import dolfinx.fem.petsc
         import dolfinx.nls.petsc
 
-        msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+        msh = dolfinx.mesh.create_unit_square(comm, 12, 12, ghost_mode=mode)
         V = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
         uh = dolfinx.fem.Function(V)
         v = ufl.TestFunction(V)
@@ -53,8 +56,24 @@ class TestPETScSolverWrappers:
             "pc_type": "lu",
             "pc_factor_mat_solver_type": factor_type,
         }
+        if comm == MPI.COMM_SELF and MPI.COMM_WORLD.size > 1:
+            with pytest.raises(ValueError):
+                dolfinx.fem.petsc.LinearProblem(
+                    ufl.lhs(a),
+                    ufl.rhs(a),
+                    petsc_options=petsc_options_linear,
+                    petsc_options_prefix=None,
+                )
+            petsc_options_prefix_linear = (
+                "test_compare_solution_linear_vs_nonlinear_problem__linear"
+            )
+        else:
+            petsc_options_prefix_linear = None
         linear_problem = dolfinx.fem.petsc.LinearProblem(
-            ufl.lhs(a), ufl.rhs(a), petsc_options=petsc_options_linear
+            ufl.lhs(a),
+            ufl.rhs(a),
+            petsc_options=petsc_options_linear,
+            petsc_options_prefix=petsc_options_prefix_linear,
         )
         u_lin, convergence_reason, _ = linear_problem.solve()
         assert convergence_reason > 0
@@ -94,10 +113,24 @@ class TestPETScSolverWrappers:
             "snes_rtol": eps,
         }
         u_nonlin = dolfinx.fem.Function(V)
+        if comm == MPI.COMM_SELF and MPI.COMM_WORLD.size > 1:
+            with pytest.raises(ValueError):
+                dolfinx.fem.petsc.NonlinearProblem(
+                    ufl.replace(F, {uh: u_nonlin}),
+                    u_nonlin,
+                    petsc_options=petsc_options_nonlinear,
+                    petsc_options_prefix=None,
+                )
+            petsc_options_prefix_nonlinear = (
+                "test_compare_solution_linear_vs_nonlinear_problem__nonlinear"
+            )
+        else:
+            petsc_options_prefix_nonlinear = None
         nonlinear_problem = dolfinx.fem.petsc.NonlinearProblem(
             ufl.replace(F, {uh: u_nonlin}),
             u_nonlin,
             petsc_options=petsc_options_nonlinear,
+            petsc_options_prefix=petsc_options_prefix_nonlinear,
         )
         _, converged_reason, _ = nonlinear_problem.solve()
         assert converged_reason > 0
