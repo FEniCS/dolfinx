@@ -97,25 +97,28 @@ public:
     }
     else if (topology == _sub_topology)
     {
-      // To map from `_topology` to `_sub_topology`, we need to construct the
+      // In this case, we are mapping from entity indices in `_topology` to cell
+      // indices in `_sub_topology`. Hence, we first need to construct the
       // "inverse" of `_sub_topology_to_topology`
-      std::unordered_map<std::int32_t, std::int32_t> topo_to_sub;
-      topo_to_sub.reserve(_sub_topology_to_topology.size());
+      std::unordered_map<std::int32_t, std::int32_t> topology_to_sub_topology;
+      topology_to_sub_topology.reserve(_sub_topology_to_topology.size());
       for (std::size_t i = 0; i < _sub_topology_to_topology.size(); ++i)
       {
-        topo_to_sub[_sub_topology_to_topology[i]]
+        topology_to_sub_topology[_sub_topology_to_topology[i]]
             = static_cast<std::int32_t>(i);
       }
 
-      // Map `entities` using `topo_to_sub`
+      // Map `entities` using `topology_to_sub_topology`
       auto mapped = entities
                     | std::views::transform(
-                        [&topo_to_sub](int i)
+                        [&topology_to_sub_topology](int i)
                         {
                           // Map the entity if it exists. If it doesn't, mark
                           // with -1.
-                          auto it = topo_to_sub.find(i);
-                          return (it != topo_to_sub.end()) ? it->second : -1;
+                          auto it = topology_to_sub_topology.find(i);
+                          return (it != topology_to_sub_topology.end())
+                                     ? it->second
+                                     : -1;
                         });
       return std::vector<std::int32_t>(mapped.begin(), mapped.end());
     }
@@ -140,17 +143,17 @@ public:
     {
       auto imap = _topology->index_map(_dim);
       assert(imap);
-      std::vector<std::int32_t> topo_to_sub(imap->size_local()
-                                            + imap->num_ghosts());
+      std::vector<std::int32_t> topology_to_sub_topology(imap->size_local()
+                                                         + imap->num_ghosts());
 
       // Create the "inverse" of `_sub_topology_to_topology`
       for (std::size_t i = 0; i < _sub_topology_to_topology.size(); ++i)
       {
-        topo_to_sub[_sub_topology_to_topology[i]]
+        topology_to_sub_topology[_sub_topology_to_topology[i]]
             = static_cast<std::int32_t>(i);
       }
 
-      return topo_to_sub;
+      return topology_to_sub_topology;
     }
     else
       throw std::runtime_error("Topology not in the map.");
