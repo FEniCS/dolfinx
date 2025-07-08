@@ -442,7 +442,15 @@ class EntityMap:
     """
 
     def __init__(self, entity_map):
-        """Initialise an entity map from a C++ EntityMap object."""
+        """Initialise an entity map from a C++ `EntityMap` object.
+
+        Args:
+            entity_map: A C++ `EntityMap` object
+
+        Note:
+            `EntityMap` objects should not usually be created using this
+            initializer directly.
+        """
         self._cpp_object = entity_map
 
     def map_entities(self, entities, topology):
