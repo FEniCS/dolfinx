@@ -91,11 +91,18 @@ int main(int argc, char* argv[])
         = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
             submesh, std::make_shared<fem::FiniteElement<U>>(element)));
 
-    // A mixed-domain form has functions defined over different meshes.
-    // The mesh associated with the measure (dx, ds, etc.) is called the
-    // integration domain. To assemble mixed-domain forms, maps must be
-    // provided relating entities in the integration domain to entities in
-    // each mesh in the form.
+    // A mixed-domain form involves functions defined over multiple meshes (in
+    // this case, `mesh` and `submesh`). The mesh passed to `create_form` is
+    // called the *integration domain mesh* (here, `mesh`). To assemble a
+    // mixed-domain form, we must supply an `EntityMap` for each additional mesh
+    // involved in the form. An `EntityMap` relates entities in one mesh to
+    // entities in the integration domain mesh.
+    //
+    // To construct an `EntityMap`, we provide:
+    //   1. The original topology (`mesh->topology()`),
+    //   2. The sub-topology (`submesh->topology()`),
+    //   3. A mapping from entity indices in the sub-topology to indices in the
+    //      original topology (`submesh_to_mesh`).
     const mesh::EntityMap entity_map(mesh->topology(), submesh->topology(),
                                      submesh_to_mesh);
     std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps
