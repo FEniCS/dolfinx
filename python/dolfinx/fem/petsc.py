@@ -747,6 +747,8 @@ class LinearProblem:
     using PETSc as a linear algebra backend.
     """
 
+    _prefix_counter = 0
+
     def __init__(
         self,
         a: typing.Union[ufl.Form, Iterable[Iterable[ufl.Form]]],
@@ -853,22 +855,18 @@ class LinearProblem:
 
         self.bcs = bcs
 
-        try:
-            comm = self.u.function_space.mesh.comm
-        except AttributeError:
-            comm = self.u[0].function_space.mesh.comm
-
-        self._solver = PETSc.KSP().create(comm)
+        self._solver = PETSc.KSP().create(self.A.comm)
         self.solver.setOperators(self.A, self.P_mat)
 
         # Give PETSc objects a unique prefix
-        problem_prefix = f"dolfinx_linearproblem_{comm.bcast(id(self), root=0)}_"
+        problem_prefix = f"dolfinx_linearproblem_{self._prefix_counter}_"
         self.solver.setOptionsPrefix(problem_prefix)
         self.A.setOptionsPrefix(f"{problem_prefix}A_")
         self.b.setOptionsPrefix(f"{problem_prefix}b_")
         self.x.setOptionsPrefix(f"{problem_prefix}x_")
         if self.P_mat is not None:
             self.P_mat.setOptionsPrefix(f"{problem_prefix}P_mat_")
+        LinearProblem._prefix_counter += 1
 
         # Set options on KSP only
         if petsc_options is not None:
@@ -1177,6 +1175,8 @@ def assemble_jacobian(
 
 
 class NonlinearProblem:
+    _prefix_counter = 0
+
     def __init__(
         self,
         F: typing.Union[ufl.form.Form, Sequence[ufl.form.Form]],
@@ -1295,27 +1295,23 @@ class NonlinearProblem:
         self._b = create_vector(self.F, kind=kind)
         self._x = create_vector(self.F, kind=kind)
 
-        try:
-            comm = self.u.function_space.mesh.comm
-        except AttributeError:
-            comm = self.u[0].function_space.mesh.comm
-
         # Create the SNES solver and attach the corresponding Jacobian and
         # residual computation functions
-        self._snes = PETSc.SNES().create(comm)  # type: ignore
+        self._snes = PETSc.SNES().create(self.A.comm)  # type: ignore
         self.solver.setJacobian(
             partial(assemble_jacobian, u, self.J, self.preconditioner, bcs), self.A, self.P_mat
         )
         self.solver.setFunction(partial(assemble_residual, u, self.F, self.J, bcs), self.b)
 
         # Set PETSc options prefixes
-        problem_prefix = f"dolfinx_nonlinearproblem_{comm.bcast(id(self), root=0)}_"
+        problem_prefix = f"dolfinx_nonlinearproblem_{self._prefix_counter}_"
         self.solver.setOptionsPrefix(problem_prefix)
         self.A.setOptionsPrefix(f"{problem_prefix}A_")
         if self.P_mat is not None:
             self.P_mat.setOptionsPrefix(f"{problem_prefix}P_mat_")
         self.b.setOptionsPrefix(f"{problem_prefix}b_")
         self.x.setOptionsPrefix(f"{problem_prefix}x_")
+        NonlinearProblem._prefix_counter += 1
 
         # Set options for SNES only
         if petsc_options is not None:
