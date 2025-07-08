@@ -283,8 +283,18 @@ int main(int argc, char* argv[])
         subdomain_data{{fem::IntegralType::exterior_facet, {{1, domains}}}};
 
     // Since we are doing a `ds(1)` integral on mesh and `u0` is defined
-    // on the `submesh`, we must provide an "entity map" relating cells
-    // in `submesh` to entities in `mesh`.
+    // on the `submesh`, our form involves more than one mesh. The mesh used to
+    // define the measure and passed to `create_form` is called the integration
+    // domain mesh (here, `mesh`). To assemble our mixed domain form, we must
+    // provide an `EntityMap` for each additional mesh
+    // involved in the form. An `EntityMap` relates entities in one mesh to
+    // entities in the integration domain mesh.
+    //
+    // To construct an `EntityMap`, we provide:
+    //   1. The original topology (`mesh->topology()`),
+    //   2. The sub-topology (`submesh->topology()`),
+    //   3. A mapping from entity indices in the sub-topology to indices in the
+    //      original topology (`submesh_to_mesh`).
     std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps;
     std::shared_ptr<const mesh::EntityMap> entity_map
         = std::make_shared<const mesh::EntityMap>(
