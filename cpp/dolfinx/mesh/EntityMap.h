@@ -103,8 +103,8 @@ public:
       topology_to_sub_topology.reserve(_sub_topology_to_topology.size());
       for (std::size_t i = 0; i < _sub_topology_to_topology.size(); ++i)
       {
-        topology_to_sub_topology[_sub_topology_to_topology[i]]
-            = static_cast<std::int32_t>(i);
+        topology_to_sub_topology.insert(
+            {_sub_topology_to_topology[i], static_cast<std::int32_t>(i)});
       }
 
       // For each entity index in `entities` (which are indices in `_topology`),
