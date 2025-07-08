@@ -77,7 +77,6 @@ class TestPETScSolverWrappers:
         )
         u_lin, convergence_reason, _ = linear_problem.solve()
         assert convergence_reason > 0
-        print(linear_problem.petsc_options_prefix)
 
         # Compare LinearProblem solution against the one obtained by
         # legacy NewtonSolverNonlinearProblem
