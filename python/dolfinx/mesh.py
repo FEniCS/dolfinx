@@ -454,14 +454,18 @@ class EntityMap:
         self._cpp_object = entity_map
 
     def map_entities(self, entities, topology):
-        """Map entities from one topology to the other
+        """
+        Map entity indices in one topology in this `EntityMap` to indices
+        in the other topology in this `EntityMap`. When mapping to entity
+        indices in the sub-topology, any entities that don't exist are
+        marked with -1.
 
         Args:
-            entities: The entities in one topology
+            entities: The entities indices in one topology
             topology: The topology to map to
 
         Returns:
-            The mapped entities
+            The corresponding entity indices in `topology`
         """
         return self._cpp_object.map_entities(entities, topology._cpp_object)
 
