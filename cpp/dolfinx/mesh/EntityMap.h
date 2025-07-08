@@ -153,9 +153,8 @@ public:
       // Create the "inverse" of `_sub_topology_to_topology`
       for (std::size_t i = 0; i < _sub_topology_to_topology.size(); ++i)
       {
-        topology_to_sub_topology.insert(topology_to_sub_topology.begin()
-                                            + _sub_topology_to_topology[i],
-                                        static_cast<std::int32_t>(i));
+        topology_to_sub_topology[_sub_topology_to_topology[i]]
+            = static_cast<std::int32_t>(i);
       }
 
       return topology_to_sub_topology;
