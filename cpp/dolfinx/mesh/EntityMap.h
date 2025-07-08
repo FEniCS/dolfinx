@@ -28,15 +28,18 @@ public:
   /// @param sub_topology Topology of another mesh. This must be a
   /// "sub-topology" of `topology` i.e. every entity in `sub_topology` must also
   /// exist in `topology`.
-  /// @param sub_to_topo A list of entities in `topology`. `sub_to_topo[i]` is
-  /// the index in `topology` corresponding to cell `i` in `sub_topology`.
+  /// @param sub_topology_to_topology A list of entities in `topology`.
+  /// `sub_topology_to_topology[i]` is the index in `topology` corresponding to
+  /// cell `i` in `sub_topology`.
   template <typename U>
     requires std::is_convertible_v<std::remove_cvref_t<U>,
                                    std::vector<std::int32_t>>
   EntityMap(std::shared_ptr<const Topology> topology,
-            std::shared_ptr<const Topology> sub_topology, U&& sub_to_topo)
+            std::shared_ptr<const Topology> sub_topology,
+            U&& sub_topology_to_topology)
       : _dim(sub_topology->dim()), _topology(topology),
-        _sub_to_topo(std::forward<U>(sub_to_topo)), _sub_topology(sub_topology)
+        _sub_topology_to_topology(std::forward<U>(sub_topology_to_topology)),
+        _sub_topology(sub_topology)
   {
     auto e_map = sub_topology->index_map(_dim);
     if (!e_map)
@@ -47,9 +50,9 @@ public:
     }
     std::size_t num_ents
         = static_cast<std::size_t>(e_map->size_local() + e_map->num_ghosts());
-    if (num_ents != _sub_to_topo.size())
+    if (num_ents != _sub_topology_to_topology.size())
       throw std::runtime_error(
-          "Size mismatch between `sub_to_topo` and index map.");
+          "Size mismatch between `sub_topology_to_topology` and index map.");
   }
 
   /// Copy constructor
@@ -80,22 +83,23 @@ public:
   {
     if (topology == _topology)
     {
-      // The map from `_sub_topology` to `_topology` is just `_sub_to_topo`, so
-      // use this to map each entity
-      auto mapped
-          = entities
-            | std::views::transform([this](int i) { return _sub_to_topo[i]; });
+      // The map from `_sub_topology` to `_topology` is just
+      // `_sub_topology_to_topology`, so use this to map each entity
+      auto mapped = entities
+                    | std::views::transform(
+                        [this](int i) { return _sub_topology_to_topology[i]; });
       return std::vector<std::int32_t>(mapped.begin(), mapped.end());
     }
     else if (topology == _sub_topology)
     {
       // To map from `_topology` to `_sub_topology`, we need to construct the
-      // "inverse" of `_sub_to_topo`
+      // "inverse" of `_sub_topology_to_topology`
       std::unordered_map<std::int32_t, std::int32_t> topo_to_sub;
-      topo_to_sub.reserve(_sub_to_topo.size());
-      for (std::size_t i = 0; i < _sub_to_topo.size(); ++i)
+      topo_to_sub.reserve(_sub_topology_to_topology.size());
+      for (std::size_t i = 0; i < _sub_topology_to_topology.size(); ++i)
       {
-        topo_to_sub[_sub_to_topo[i]] = static_cast<std::int32_t>(i);
+        topo_to_sub[_sub_topology_to_topology[i]]
+            = static_cast<std::int32_t>(i);
       }
 
       // Map `entities` using `topo_to_sub`
@@ -123,8 +127,9 @@ public:
   {
     if (topology == _topology)
     {
-      // The map from `_sub_topology` to `topology` is simply `_sub_to_topo`
-      return _sub_to_topo;
+      // The map from `_sub_topology` to `topology` is simply
+      // `_sub_topology_to_topology`
+      return _sub_topology_to_topology;
     }
     else if (topology == _sub_topology)
     {
@@ -133,10 +138,11 @@ public:
       std::vector<std::int32_t> topo_to_sub(imap->size_local()
                                             + imap->num_ghosts());
 
-      // Create the "inverse" of `_sub_to_topo`
-      for (std::size_t i = 0; i < _sub_to_topo.size(); ++i)
+      // Create the "inverse" of `_sub_topology_to_topology`
+      for (std::size_t i = 0; i < _sub_topology_to_topology.size(); ++i)
       {
-        topo_to_sub[_sub_to_topo[i]] = static_cast<std::int32_t>(i);
+        topo_to_sub[_sub_topology_to_topology[i]]
+            = static_cast<std::int32_t>(i);
       }
 
       return topo_to_sub;
@@ -153,9 +159,10 @@ private:
   std::size_t _dim;                          ///< Dimension of the entities
   std::shared_ptr<const Topology> _topology; ///< A topology
   std::vector<std::int32_t>
-      _sub_to_topo; ///< A list of entities in _topology, where
-                    ///< `_sub_to_topo[i]` is the index in topology of the `i`th
-                    ///< entity in `_sub_topology`
+      _sub_topology_to_topology; ///< A list of entities in _topology, where
+                                 ///< `_sub_topology_to_topology[i]` is the
+                                 ///< index in topology of the `i`th entity in
+                                 ///< `_sub_topology`
 
   std::shared_ptr<const Topology>
       _sub_topology; ///< A second topology, consisting of a subset of entities
