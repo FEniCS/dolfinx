@@ -108,7 +108,11 @@ public:
             = static_cast<std::int32_t>(i);
       }
 
-      // Map `entities` using `topology_to_sub_topology`
+      // For each entity index in `entities` (which are indices in `_topology`),
+      // get the corresponding cell in
+      // `_sub_topology`. Since `_sub_topology` consists of a subset of entities
+      // in `_topology`, there are entities in topology that may not exist in
+      // `_sub_topology`. If this is the case, mark those entities with -1.
       auto mapped = entities
                     | std::views::transform(
                         [&topology_to_sub_topology](std::int32_t i)
