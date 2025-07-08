@@ -1321,25 +1321,27 @@ std::vector<std::int32_t> IndexMap::weights_dest() const
   int ierr = 0;
   std::vector<std::int32_t> w_src = this->weight_src();
 
-  // Create communicators with directed edges:
-  // (1) ghost -> owner
-  MPI_Comm comm1;
-  ierr = MPI_Dist_graph_create_adjacent(
-      _comm.comm(), _dest.size(), _dest.data(), MPI_UNWEIGHTED, _src.size(),
-      _src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+  std::vector<MPI_Request> requests(_dest.size() + _src.size());
+
+  std::vector<std::int32_t> w_dest(_dest.size());
+  for (std::size_t i = 0; i < _dest.size(); ++i)
+  {
+    ierr = MPI_Irecv(w_dest.data() + i, 1, MPI_INT32_T, _dest[i], MPI_ANY_TAG,
+                     _comm.comm(), &requests[i]);
+    dolfinx::MPI::check_error(_comm.comm(), ierr);
+  }
+
+  for (std::size_t i = 0; i < _src.size(); ++i)
+  {
+    ierr = MPI_Isend(w_src.data() + i, 1, MPI_INT32_T, _src[i], 0, _comm.comm(),
+                     &requests[i + _dest.size()]);
+    dolfinx::MPI::check_error(_comm.comm(), ierr);
+  }
+
+  ierr = MPI_Waitall(requests.size(), requests.data(), MPI_STATUS_IGNORE);
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
-  std::vector<std::int32_t> w_dest(_dest.size() * _src.size(), 0);
-
-  ierr = MPI_Neighbor_allgather(w_src.data(), w_src.size(), MPI_INT32_T,
-                                w_dest.data(), w_dest.size(), MPI_INT32_T,
-                                comm1);
-  dolfinx::MPI::check_error(comm1, ierr);
-
-  ierr = MPI_Comm_free(&comm1);
-  dolfinx::MPI::check_error(comm1, ierr);
-
-  return std::vector<std::int32_t>();
+  return w_dest;
 }
 //-----------------------------------------------------------------------------
 std::array<std::vector<int>, 2> IndexMap::rank_type(int split_type) const
