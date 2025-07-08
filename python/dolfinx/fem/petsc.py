@@ -994,7 +994,7 @@ class LinearProblem:
 
         Note:
             The matrix has an options prefix set, which can be retrieved
-            appending  the string "A_" to the value returned by the
+            appending  the string ``"A_"`` to the value returned by the
             `petsc_options_prefix` property.
         """
         return self._A
@@ -1005,7 +1005,7 @@ class LinearProblem:
 
         Note:
             The matrix has an options prefix set, which can be retrieved
-            appending  the string "P_mat_" to the value returned by the
+            appending  the string ``"P_mat_"`` to the value returned by the
             `petsc_options_prefix` property.
         """
         return self._P_mat
@@ -1016,7 +1016,7 @@ class LinearProblem:
 
         Note:
             The vector has an options prefix set, which can be retrieved
-            appending  the string "b_" to the value returned by the
+            appending  the string ``"b_"`` to the value returned by the
             `petsc_options_prefix` property.
         """
         return self._b
@@ -1031,7 +1031,7 @@ class LinearProblem:
 
         Note:
             The vector has an options prefix set, which can be retrieved
-            appending  the string "x_" to the value returned by the
+            appending  the string ``"x_"`` to the value returned by the
             `petsc_options_prefix` property.
         """
         return self._x
@@ -1442,7 +1442,7 @@ class NonlinearProblem:
 
         Note:
             The matrix has an options prefix set, which can be retrieved
-            appending  the string "A_" to the value returned by the
+            appending  the string ``"A_"`` to the value returned by the
             `petsc_options_prefix` property.
         """
         return self._A
@@ -1453,7 +1453,7 @@ class NonlinearProblem:
 
         Note:
             The matrix has an options prefix set, which can be retrieved
-            appending  the string "P_mat_" to the value returned by the
+            appending  the string ``"P_mat_"`` to the value returned by the
             `petsc_options_prefix` property.
         """
         return self._P_mat
@@ -1464,7 +1464,7 @@ class NonlinearProblem:
 
         Note:
             The vector has an options prefix set, which can be retrieved
-            appending  the string "b_" to the value returned by the
+            appending  the string ``"b_"`` to the value returned by the
             `petsc_options_prefix` property.
         """
         return self._b
@@ -1479,7 +1479,7 @@ class NonlinearProblem:
 
         Note:
             The vector has an options prefix set, which can be retrieved
-            appending  the string "x_" to the value returned by the
+            appending  the string ``"x_"`` to the value returned by the
             `petsc_options_prefix` property.
         """
         return self._x
