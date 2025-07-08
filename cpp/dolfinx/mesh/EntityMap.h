@@ -129,11 +129,12 @@ public:
       throw std::runtime_error("Topology not in the map.");
   }
 
-  /// @brief Get a list representing the map from entities in one topology to
-  /// to the other
+  /// @brief Get a list representing the map from entities indices in one
+  /// topology of this `EntityMap` to entity indices in the other topology.
   /// @param topology The topology to map to
   /// @return A list whose `i`th entry is the entity index in `topology` of
-  /// entity `i` in the other topology if it exists, or -1 if it does not.
+  /// entity `i` in the other topology in this `EntityMap`. If the entity does
+  /// not exist in `topology`, then it is marked with -1.
   std::vector<std::int32_t> map(const Topology& topology) const
   {
     if (&topology == _topology.get())
