@@ -780,12 +780,12 @@ class LinearProblem:
                 forms, used as a preconditioner.
             kind: The PETSc matrix and vector type. See
                 :func:`create_matrix` for options.
-            petsc_options: Options set on the underlying PETSc KSP only.
+            petsc_options: Options set on the underlying PETSc KSP.
                 For available choices for the 'petsc_options' kwarg,
                 see the `PETSc KSP documentation
                 <https://petsc4py.readthedocs.io/en/stable/manual/ksp/>`_.
-                Options on other objects (matrices, vectors) should be
-                set explicitly by the user.
+                Options on other objects (matrices, vectors) should be set
+                explicitly by the user.
             form_compiler_options: Options used in FFCx compilation of
                 all forms. Run ``ffcx --help`` at the commandline to see
                 all available options.
@@ -868,13 +868,13 @@ class LinearProblem:
         self.solver.setOperators(self.A, self.P_mat)
 
         # Give PETSc objects a unique prefix
-        problem_prefix = f"dolfinx_linearproblem_{id(self)}"
+        problem_prefix = f"dolfinx_linearproblem_{id(self)}_"
         self.solver.setOptionsPrefix(problem_prefix)
-        self.A.setOptionsPrefix(f"{problem_prefix}_A")
-        self.b.setOptionsPrefix(f"{problem_prefix}_b")
-        self.x.setOptionsPrefix(f"{problem_prefix}_x")
+        self.A.setOptionsPrefix(f"{problem_prefix}A_")
+        self.b.setOptionsPrefix(f"{problem_prefix}b_")
+        self.x.setOptionsPrefix(f"{problem_prefix}x_")
         if self.P_mat is not None:
-            self.P_mat.setOptionsPrefix(f"{problem_prefix}_P_mat")
+            self.P_mat.setOptionsPrefix(f"{problem_prefix}P_mat_")
 
         # Set options on KSP only
         if petsc_options is not None:
@@ -892,11 +892,25 @@ class LinearProblem:
 
             opts.prefixPop()
 
+        if self.P_mat is not None and kind == "nest":
+            # Transfer nest IS on self.P_mat to PC of main KSP. This allows
+            # fieldsplit preconditioning to be applied, if desired.
+            nest_IS = self.P_mat.getNestISs()
+            fieldsplit_IS = tuple(
+                [
+                    (f"{u.name + '_' if u.name != 'f' else ''}{i}", IS)
+                    for i, (u, IS) in enumerate(zip(self.u, nest_IS[0]))
+                ]
+            )
+            self.solver.getPC().setFieldSplitIS(*fieldsplit_IS)
+
     def __del__(self):
         self._solver.destroy()
         self._A.destroy()
         self._b.destroy()
         self._x.destroy()
+        if self._P_mat is not None:
+            self._P_mat.destroy()
 
     def solve(self) -> tuple[typing.Union[_Function, Iterable[_Function]], int, int]:
         """Solve the problem and update the solution in the problem
@@ -1194,58 +1208,6 @@ def assemble_jacobian(
         P.assemble()
 
 
-# -- High-level interface for SNES ---------------------------------------
-
-
-def _ghostUpdate(x: PETSc.Vec, insert_mode: PETSc.InsertMode, scatter_mode: PETSc.ScatterMode):  # type: ignore
-    """Helper function for ghost updating PETSc vectors"""
-    try:
-        for x_sub in x.getNestSubVecs():
-            x_sub.ghostUpdate(addv=insert_mode, mode=scatter_mode)
-    except PETSc.Error:  # type: ignore
-        x.ghostUpdate(addv=insert_mode, mode=scatter_mode)
-
-
-def _zero_vector(x: PETSc.Vec):  # type: ignore
-    """Helper function for zeroing out PETSc vectors"""
-    try:
-        for x_sub in x.getNestSubVecs():
-            with x_sub.localForm() as x_sub_local:
-                x_sub_local.set(0.0)
-    except PETSc.Error:  # type: ignore
-        with x.localForm() as x_local:
-            x_local.set(0.0)
-
-
-def _assign_block_data(forms: typing.Iterable[dolfinx.fem.Form], vec: PETSc.Vec):
-    """Assign block data to a PETSc vector.
-
-    Args:
-        forms: List of forms to extract block data from.
-        vec: PETSc vector to assign block data to.
-    """
-    # Early exit if the vector already has block data or is a nest vector
-    if vec.getAttr("_blocks") is not None or vec.getType() == "nest":
-        return
-
-    maps = [
-        (
-            form.function_spaces[0].dofmaps(0).index_map,
-            form.function_spaces[0].dofmaps(0).index_map_bs,
-        )
-        for form in forms  # type: ignore
-    ]
-    off_owned = tuple(
-        itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
-    )
-    off_ghost = tuple(
-        itertools.accumulate(
-            maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
-        )
-    )
-    vec.setAttr("_blocks", (off_owned, off_ghost))
-
-
 class NonlinearProblem:
     def __init__(
         self,
@@ -1306,8 +1268,8 @@ class NonlinearProblem:
                 PETSc SNES object only. For available choices for the
                 'petsc_options' kwarg, see the `PETSc SNES documentation
                 <https://petsc4py.readthedocs.io/en/stable/manual/snes>`_.
-                Options on other objects (matrices, vectors) should be
-                set explicitly by the user.
+                Options on other objects (matrices, vectors) should be set
+                explicitly by the user.
             entity_maps: If any trial functions, test functions, or
                 coefficients in the form are not defined over the same mesh
                 as the integration domain, ``entity_maps`` must be
@@ -1374,13 +1336,13 @@ class NonlinearProblem:
         self.solver.setFunction(partial(assemble_residual, u, self.F, self.J, bcs), self.b)
 
         # Set PETSc options prefixes
-        problem_prefix = f"dolfinx_nonlinearproblem_{id(self)}"
+        problem_prefix = f"dolfinx_nonlinearproblem_{id(self)}_"
         self.solver.setOptionsPrefix(problem_prefix)
-        self.A.setOptionsPrefix(f"{problem_prefix}_A")
+        self.A.setOptionsPrefix(f"{problem_prefix}A_")
         if self.P_mat is not None:
-            self.P_mat.setOptionsPrefix(f"{problem_prefix}_P_mat")
-        self.b.setOptionsPrefix(f"{problem_prefix}_b")
-        self.x.setOptionsPrefix(f"{problem_prefix}_x")
+            self.P_mat.setOptionsPrefix(f"{problem_prefix}P_mat_")
+        self.b.setOptionsPrefix(f"{problem_prefix}b_")
+        self.x.setOptionsPrefix(f"{problem_prefix}x_")
 
         # Set options for SNES only
         if petsc_options is not None:
@@ -1397,6 +1359,18 @@ class NonlinearProblem:
                 del opts[k]
 
             opts.prefixPop()
+
+        if self.P_mat is not None and kind == "nest":
+            # Transfer nest IS on self.P_mat to PC of main KSP. This allows
+            # fieldsplit preconditioning to be applied, if desired.
+            nest_IS = self.P_mat.getNestISs()
+            fieldsplit_IS = tuple(
+                [
+                    (f"{u.name + '_' if u.name != 'f' else ''}{i}", IS)
+                    for i, (u, IS) in enumerate(zip(self.u, nest_IS[0]))
+                ]
+            )
+            self.solver.getKSP().getPC().setFieldSplitIS(*fieldsplit_IS)
 
     def solve(self) -> tuple[PETSc.Vec, int, int]:  # type: ignore
         """Solve the problem and update the solution in the problem
