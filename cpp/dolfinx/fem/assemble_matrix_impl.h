@@ -402,31 +402,27 @@ void assemble_interior_facets(
       std::copy_n(&x(x_dofs1[i], 0), 3, std::next(cdofs1.begin(), 3 * i));
 
     // Get dof maps for cells and pack
-    std::span<const std::int32_t> dmap0_cell0;
-    std::span<const std::int32_t> dmap0_cell1;
-
     // When integrating over interfaces between two domains, the test function
     // might only be defined on one side, so we check which cells exist in the
     // test function domain
-    if (cells0[0] >= 0)
-      dmap0_cell0 = dmap0.cell_dofs(cells0[0]);
-
-    if (cells0[1] >= 0)
-      dmap0_cell1 = dmap0.cell_dofs(cells0[1]);
+    std::span<const std::int32_t> dmap0_cell0
+        = cells0[0] >= 0 ? dmap0.cell_dofs(cells0[0])
+                         : std::span<const std::int32_t>();
+    std::span<const std::int32_t> dmap0_cell1
+        = cells0[1] >= 0 ? dmap0.cell_dofs(cells0[1])
+                         : std::span<const std::int32_t>();
 
     dmapjoint0.resize(2 * dmap0_size);
     std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
     std::ranges::copy(dmap0_cell1, std::next(dmapjoint0.begin(), dmap0_size));
 
-    std::span<const std::int32_t> dmap1_cell0;
-    std::span<const std::int32_t> dmap1_cell1;
-
     // Check which cells exist in the trial function domain
-    if (cells1[0] >= 0)
-      dmap1_cell0 = dmap1.cell_dofs(cells1[0]);
-
-    if (cells1[1] >= 0)
-      dmap1_cell1 = dmap1.cell_dofs(cells1[1]);
+    std::span<const std::int32_t> dmap1_cell0
+        = cells1[0] >= 0 ? dmap1.cell_dofs(cells1[0])
+                         : std::span<const std::int32_t>();
+    std::span<const std::int32_t> dmap1_cell1
+        = cells1[1] >= 0 ? dmap1.cell_dofs(cells1[1])
+                         : std::span<const std::int32_t>();
 
     dmapjoint1.resize(2 * dmap1_size);
     std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
