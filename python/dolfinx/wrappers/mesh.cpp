@@ -611,7 +611,7 @@ void mesh(nb::module_& m)
           [](const dolfinx::mesh::EntityMap& self,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
                  entities,
-             std::shared_ptr<const dolfinx::mesh::Topology> topology)
+             const dolfinx::mesh::Topology& topology)
           {
             std::vector<std::int32_t> mapped_entities = self.map_entities(
                 std::span(entities.data(), entities.size()), topology);

@@ -79,11 +79,10 @@ public:
   /// @param entities Entities in one of the topologies in this `EntityMap`
   /// @param topology The topology to map to
   /// @return The mapped entity indices
-  std::vector<std::int32_t>
-  map_entities(std::span<const std::int32_t> entities,
-               std::shared_ptr<const Topology> topology) const
+  std::vector<std::int32_t> map_entities(std::span<const std::int32_t> entities,
+                                         const Topology& topology) const
   {
-    if (topology == _topology)
+    if (&topology == _topology.get())
     {
       // In this case, we want to map from cell indices in `_sub_topology` to
       // corresponding entities in `_topology`. Hence, for each index in
@@ -95,7 +94,7 @@ public:
                                     { return _sub_topology_to_topology[i]; });
       return std::vector<std::int32_t>(mapped.begin(), mapped.end());
     }
-    else if (topology == _sub_topology)
+    else if (&topology == _sub_topology.get())
     {
       // In this case, we are mapping from entity indices in `_topology` to cell
       // indices in `_sub_topology`. Hence, we first need to construct the
