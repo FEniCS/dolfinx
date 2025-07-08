@@ -853,16 +853,11 @@ class LinearProblem:
 
         self.bcs = bcs
 
-        try:
-            comm = self.u.function_space.mesh.comm
-        except AttributeError:
-            comm = self.u[0].function_space.mesh.comm
-
-        self._solver = PETSc.KSP().create(comm)
+        self._solver = PETSc.KSP().create(self.A.comm)
         self.solver.setOperators(self.A, self.P_mat)
 
         # Give PETSc objects a unique prefix
-        problem_prefix = f"dolfinx_linearproblem_{id(self)}_"
+        problem_prefix = f"dolfinx_linearproblem_{self.A.comm.bcast(id(self), root=0)}_"
         self.solver.setOptionsPrefix(problem_prefix)
         self.A.setOptionsPrefix(f"{problem_prefix}A_")
         self.b.setOptionsPrefix(f"{problem_prefix}b_")
@@ -1304,7 +1299,7 @@ class NonlinearProblem:
         self.solver.setFunction(partial(assemble_residual, u, self.F, self.J, bcs), self.b)
 
         # Set PETSc options prefixes
-        problem_prefix = f"dolfinx_nonlinearproblem_{id(self)}_"
+        problem_prefix = f"dolfinx_nonlinearproblem_{self.A.comm.bcast(id(self), root=0)}_"
         self.solver.setOptionsPrefix(problem_prefix)
         self.A.setOptionsPrefix(f"{problem_prefix}A_")
         if self.P_mat is not None:
