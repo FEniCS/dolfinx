@@ -111,7 +111,7 @@ public:
       // Map `entities` using `topology_to_sub_topology`
       auto mapped = entities
                     | std::views::transform(
-                        [&topology_to_sub_topology](int i)
+                        [&topology_to_sub_topology](std::int32_t i)
                         {
                           // Map the entity if it exists. If it doesn't, mark
                           // with -1.
