@@ -412,7 +412,7 @@ public:
     {
       assert(requests.size() == _dest.size() + _src.size());
 
-      // Start non-blocking send from this process to ghost owners.
+      // Start non-blocking send from this process to ghost owners
       for (std::size_t i = 0; i < _dest.size(); i++)
       {
         MPI_Irecv(recv_buffer.data() + _displs_local[i], _sizes_local[i],
@@ -421,7 +421,7 @@ public:
       }
 
       // Start non-blocking receive from neighbor process for which an
-      // owned index is a ghost.
+      // owned index is a ghost
       for (std::size_t i = 0; i < _src.size(); i++)
       {
         MPI_Isend(send_buffer.data() + _displs_remote[i], _sizes_remote[i],

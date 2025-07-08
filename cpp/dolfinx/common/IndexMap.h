@@ -267,7 +267,7 @@ public:
   ///
   /// @return A weight vector, where `weight[i]` the the number of
   /// ghost indices owned by rank IndexMap::src()`[i]`.
-  std::vector<std::int32_t> weight_src() const;
+  std::vector<std::int32_t> weights_src() const;
 
   /// @brief
   /// @return

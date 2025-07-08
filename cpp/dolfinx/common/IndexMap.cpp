@@ -1302,15 +1302,18 @@ std::span<const int> IndexMap::src() const noexcept { return _src; }
 //-----------------------------------------------------------------------------
 std::span<const int> IndexMap::dest() const noexcept { return _dest; }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t> IndexMap::weight_src() const
+std::vector<std::int32_t> IndexMap::weights_src() const
 {
   std::vector<std::int32_t> weights(_src.size(), 0);
   for (int r : _owners)
   {
     auto it = std::ranges::lower_bound(_src, r);
     assert(it != _src.end() and *it == r);
-    assert(*it < (int)weights.size());
-    weights[*it] += 1;
+
+    std::size_t pos = std::distance(_src.begin(), it);
+    assert(pos < weights.size());
+    // assert(*it < (int)weights.size());
+    weights[pos] += 1;
   }
 
   return weights;
@@ -1319,7 +1322,7 @@ std::vector<std::int32_t> IndexMap::weight_src() const
 std::vector<std::int32_t> IndexMap::weights_dest() const
 {
   int ierr = 0;
-  std::vector<std::int32_t> w_src = this->weight_src();
+  std::vector<std::int32_t> w_src = this->weights_src();
 
   std::vector<MPI_Request> requests(_dest.size() + _src.size());
 

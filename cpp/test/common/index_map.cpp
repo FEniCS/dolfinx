@@ -10,6 +10,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Scatterer.h>
+#include <iostream>
 #include <numeric>
 #include <set>
 #include <vector>
@@ -177,6 +178,28 @@ void test_rank_split()
   }
 }
 
+void test_rank_weights()
+{
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  constexpr int size_local = 100;
+  const common::IndexMap idx_map
+      = create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
+
+  std::vector<std::int32_t> weights_src = idx_map.weights_src();
+  std::vector<std::int32_t> weight_dest = idx_map.weights_dest();
+
+  if (mpi_size > 1)
+  {
+    REQUIRE(weights_src == std::vector<std::int32_t>(1, (mpi_size - 1) * 3));
+    REQUIRE(weight_dest == std::vector<std::int32_t>(1, (mpi_size - 1) * 3));
+  }
+  else
+  {
+    REQUIRE(weights_src.empty());
+    REQUIRE(weight_dest.empty());
+  }
+}
+
 } // namespace
 
 TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
@@ -199,4 +222,9 @@ TEST_CASE("Communication graph edges via consensus exchange",
 TEST_CASE("Split IndexMap communicator by type", "[index_map_comm_split]")
 {
   CHECK_NOTHROW(test_rank_split());
+}
+
+TEST_CASE("IndexMap edge weights", "[index_map_weights]")
+{
+  CHECK_NOTHROW(test_rank_weights());
 }
