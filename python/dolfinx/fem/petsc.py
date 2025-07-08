@@ -859,7 +859,7 @@ class LinearProblem:
         self.solver.setOperators(self.A, self.P_mat)
 
         # Give PETSc objects a unique prefix
-        problem_prefix = f"dolfinx_linearproblem_{self._prefix_counter}_"
+        problem_prefix = f"dolfinx_linearproblem_{LinearProblem._prefix_counter}_"
         self.solver.setOptionsPrefix(problem_prefix)
         self.A.setOptionsPrefix(f"{problem_prefix}A_")
         self.b.setOptionsPrefix(f"{problem_prefix}b_")
@@ -1304,7 +1304,7 @@ class NonlinearProblem:
         self.solver.setFunction(partial(assemble_residual, u, self.F, self.J, bcs), self.b)
 
         # Set PETSc options prefixes
-        problem_prefix = f"dolfinx_nonlinearproblem_{self._prefix_counter}_"
+        problem_prefix = f"dolfinx_nonlinearproblem_{NonlinearProblem._prefix_counter}_"
         self.solver.setOptionsPrefix(problem_prefix)
         self.A.setOptionsPrefix(f"{problem_prefix}A_")
         if self.P_mat is not None:
