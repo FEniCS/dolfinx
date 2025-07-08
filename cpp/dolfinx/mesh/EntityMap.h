@@ -50,8 +50,10 @@ public:
     }
     std::size_t num_ents = e_map->size_local() + e_map->num_ghosts();
     if (num_ents != _sub_topology_to_topology.size())
+    {
       throw std::runtime_error(
           "Size mismatch between `sub_topology_to_topology` and index map.");
+    }
   }
 
   /// Copy constructor
