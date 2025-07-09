@@ -1054,13 +1054,15 @@ def test_submesh_interpolation():
 
     tdim = mesh.topology.dim
     cells = locate_entities(mesh, tdim, left_locator)
-    submesh, parent_cells, _, _ = create_submesh(mesh, tdim, cells)
+    submesh, entity_map, _, _ = create_submesh(mesh, tdim, cells)
 
     u0 = Function(functionspace(mesh, ("Lagrange", 2)))
     u0.interpolate(ref_func)
 
     V1 = functionspace(submesh, ("DG", 3))
     u1 = Function(V1)
+
+    parent_cells = entity_map.map(mesh.topology)
 
     # Interpolate u0 (defined on 'full' mesh) into u0 (defined on
     # 'sub'0mesh)
