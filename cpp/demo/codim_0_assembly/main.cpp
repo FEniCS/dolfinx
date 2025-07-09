@@ -77,14 +77,10 @@ int main(int argc, char* argv[])
     mesh::MeshTags<std::int32_t> cell_marker(mesh->topology(), tdim, cells,
                                              values);
 
-    std::shared_ptr<mesh::Mesh<U>> submesh;
-    std::vector<std::int32_t> submesh_to_mesh;
-    {
-      auto [_submesh, _submesh_to_mesh, v_map, g_map]
-          = mesh::create_submesh(*mesh, tdim, cell_marker.find(2));
-      submesh = std::make_shared<mesh::Mesh<U>>(std::move(_submesh));
-      submesh_to_mesh = std::move(_submesh_to_mesh);
-    }
+    auto [_submesh, entity_map, v_map, g_map]
+        = mesh::create_submesh(*mesh, tdim, cell_marker.find(2));
+    std::shared_ptr<mesh::Mesh<U>> submesh
+        = std::make_shared<mesh::Mesh<U>>(std::move(_submesh));
 
     // We create the function space used for the trial space
     auto W
@@ -103,8 +99,6 @@ int main(int argc, char* argv[])
     //   2. The sub-topology (`submesh->topology()`),
     //   3. A mapping from entity indices in the sub-topology to indices in the
     //      original topology (`submesh_to_mesh`).
-    const mesh::EntityMap entity_map(mesh->topology(), submesh->topology(),
-                                     submesh_to_mesh);
     std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps
         = {std::make_shared<const mesh::EntityMap>(entity_map)};
     // Next we compute the integration entities on the integration

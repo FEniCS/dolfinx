@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "EntityMap.h"
 #include "Mesh.h"
 #include "Topology.h"
 #include "graphbuild.h"
@@ -1361,7 +1362,7 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
 /// @return A new mesh, and maps from the new mesh entities, vertices,
 /// and geometry to the input mesh entities, vertices, and geometry.
 template <std::floating_point T>
-std::tuple<Mesh<T>, std::vector<std::int32_t>, std::vector<std::int32_t>,
+std::tuple<Mesh<T>, EntityMap, std::vector<std::int32_t>,
            std::vector<std::int32_t>>
 create_submesh(const Mesh<T>& mesh, int dim,
                std::span<const std::int32_t> entities)
@@ -1380,10 +1381,14 @@ create_submesh(const Mesh<T>& mesh, int dim,
   auto [geometry, subx_to_x_dofmap]
       = mesh::create_subgeometry(mesh, dim, subentity_to_entity);
 
-  return {Mesh(mesh.comm(), std::make_shared<Topology>(std::move(topology)),
-               std::move(geometry)),
-          std::move(subentity_to_entity), std::move(subvertex_to_vertex),
-          std::move(subx_to_x_dofmap)};
+  Mesh<T> submesh
+      = Mesh(mesh.comm(), std::make_shared<Topology>(std::move(topology)),
+             std::move(geometry));
+  EntityMap entity_map(mesh.topology(), submesh.topology(),
+                       subentity_to_entity);
+
+  return {std::move(submesh), std::move(entity_map),
+          std::move(subvertex_to_vertex), std::move(subx_to_x_dofmap)};
 }
 
 } // namespace dolfinx::mesh
