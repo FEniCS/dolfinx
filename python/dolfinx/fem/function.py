@@ -141,10 +141,7 @@ class Expression:
 
         # Attempt to deduce dtype
         if dtype is None:
-            try:
-                dtype = e.dtype  # type: ignore
-            except AttributeError:
-                dtype = default_scalar_type
+            dtype = e.dtype if hasattr(e, "dtype") else default_scalar_type
 
         # Compile UFL expression with JIT
         if form_compiler_options is None:
@@ -599,18 +596,18 @@ def functionspace(
     """
     # Create UFL element
     dtype = mesh.geometry.x.dtype
-    try:
-        e = ElementMetaData(*element)  # type: ignore
+    if isinstance(element, ufl.finiteelement.AbstractFiniteElement):
+        ufl_e = element
+    else:
+        e = ElementMetaData(*element)
         ufl_e = basix.ufl.element(
             e.family,
-            mesh.basix_cell(),  # type: ignore
+            mesh.basix_cell(),
             e.degree,
             shape=e.shape,
             symmetry=e.symmetry,
             dtype=dtype,
         )
-    except TypeError:
-        ufl_e = element  # type: ignore
 
     # Check that element and mesh cell types match
     if ((domain := mesh.ufl_domain()) is None) or ufl_e.cell != domain.ufl_cell():
@@ -625,10 +622,10 @@ def functionspace(
     )
 
     # Initialize the cpp.FunctionSpace
-    try:
-        cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, element._cpp_object, cpp_dofmap)  # type: ignore
-    except TypeError:
+    if np.issubdtype(dtype, np.float32):
         cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, element._cpp_object, cpp_dofmap)  # type: ignore
+    else:
+        cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, element._cpp_object, cpp_dofmap)  # type: ignore
 
     return FunctionSpace(mesh, ufl_e, cppV)
 
