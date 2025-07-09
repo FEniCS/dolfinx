@@ -110,9 +110,7 @@ def test_submesh_assembly(dtype):
         facets = dolfinx.mesh.locate_entities_boundary(
             mesh, mesh.topology.dim - 1, lambda x: np.isclose(x[1], 2)
         )
-        submesh, entity_map, _, _ = dolfinx.mesh.create_submesh(
-            mesh, mesh.topology.dim - 1, facets
-        )
+        submesh, entity_map, _, _ = dolfinx.mesh.create_submesh(mesh, mesh.topology.dim - 1, facets)
 
         def g(x):
             return -3 * x[1] ** 3 + x[0]

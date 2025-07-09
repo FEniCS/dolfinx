@@ -22,7 +22,6 @@ from dolfinx.mesh import (
     create_unit_cube,
     create_unit_interval,
     create_unit_square,
-    entity_map,
     exterior_facet_indices,
     locate_entities,
     locate_entities_boundary,
