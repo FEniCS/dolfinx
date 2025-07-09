@@ -107,12 +107,15 @@ int main(int argc, char* argv[])
         subdomain_data
         = {{fem::IntegralType::cell, {{3, integration_entities}}}};
 
-    // A mixed-domain form involves functions defined over multiple meshes (in
-    // this case, `mesh` and `submesh`). The mesh passed to `create_form` is
-    // called the *integration domain mesh* (here, `mesh`). To assemble a
-    // mixed-domain form, we must supply an `EntityMap` for each additional mesh
-    // involved in the form, relating entities in that mesh to the integration
-    // domain mesh.
+    // A mixed-domain form involves functions defined over multiple meshes. The
+    // mesh passed to `create_form` is called the *integration domain mesh*. To
+    // assemble a mixed-domain form, we must supply an `EntityMap` for each
+    // additional mesh involved in the form, relating entities in that mesh to
+    // the integration domain mesh. In our case, `mesh` is the integration
+    // domain mesh, and the only other mesh in our form is `submesh`. Hence, we
+    // must provide the entity map object returned when we called
+    // `create_submesh`, which relates entities in `submesh` to entities in
+    // `mesh`.
     std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps
         = {entity_map};
 
