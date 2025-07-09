@@ -171,7 +171,7 @@ msh_boundary_facets = mesh.exterior_facet_indices(msh.topology)
 
 
 facet_mesh_boundary_facets = facet_mesh_emap.map_entities(
-    msh_boundary_facets, facet_mesh.topology._cpp_object
+    msh_boundary_facets, facet_mesh.topology
 )
 
 # Get the dofs and apply the boundary condition
