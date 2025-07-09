@@ -28,6 +28,7 @@ public:
   /// @param sub_topology Topology of another mesh. This must be a
   /// "sub-topology" of `topology` i.e. every entity in `sub_topology` must also
   /// exist in `topology`.
+  /// @param dim The dimension of the entities
   /// @param sub_topology_to_topology A list of entities in `topology`.
   /// `sub_topology_to_topology[i]` is the index in `topology` corresponding to
   /// entity `i` in `sub_topology`.
