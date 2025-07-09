@@ -566,7 +566,7 @@ def create_form(
     subdomains: dict[IntegralType, list[tuple[int, np.ndarray]]],
     coefficient_map: dict[ufl.Coefficient, function.Function],
     constant_map: dict[ufl.Constant, function.Constant],
-    entity_maps: list[EntityMap] | None = None,
+    entity_maps,  # TODO: Put type hint back. Why do docs fail with it?!
 ) -> Form:
     """
     Create a Form object from a data-independent compiled form.
@@ -582,7 +582,7 @@ def create_form(
             {py:func}`dolfinx.fem.compute_integration_domains`.
         coefficient_map: Map from UFL coefficient to function with data.
         constant_map: Map from UFL constant to constant with data.
-        entity_map: A map where each key corresponds to a mesh different
+        entity_maps: A map where each key corresponds to a mesh different
             to the integration domain ``msh``. The value of the map is
             an array of integers, where the i-th entry is the entity in
             the key mesh.
