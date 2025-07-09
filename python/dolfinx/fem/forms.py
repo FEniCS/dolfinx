@@ -282,7 +282,7 @@ def form(
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
-    entity_maps: typing.Optional[typing.Iterable[_cpp.mesh.EntityMap]] = None,
+    entity_maps: typing.Optional[typing.Iterable[EntityMap]] = None,
 ):
     """Create a Form or list of Forms.
 
@@ -377,7 +377,7 @@ def form(
         if entity_maps is None:
             _entity_maps = []
         else:
-            _entity_maps = entity_maps
+            _entity_maps = [entity_map._cpp_object for entity_map in entity_maps]
 
         f = ftype(
             [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form))],
@@ -396,17 +396,14 @@ def form(
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
         assert len(V) > 0
         msh = V[0].mesh
-        if entity_maps is None:
-            _entity_maps = []
-        else:
-            _entity_maps = entity_maps
+
         f = ftype(
             spaces=V,
             integrals={},
             coefficients=[],
             constants=[],
             need_permutation_data=False,
-            entity_maps=_entity_maps,
+            entity_maps=[],
             mesh=msh,
         )
         return Form(f)
@@ -569,7 +566,7 @@ def create_form(
     subdomains: dict[IntegralType, list[tuple[int, np.ndarray]]],
     coefficient_map: dict[ufl.Coefficient, function.Function],
     constant_map: dict[ufl.Constant, function.Constant],
-    entity_maps: list[_cpp.mesh.EntityMap] | None = None,
+    entity_maps: list[EntityMap] | None = None,
 ) -> Form:
     """
     Create a Form object from a data-independent compiled form.
@@ -590,7 +587,10 @@ def create_form(
             an array of integers, where the i-th entry is the entity in
             the key mesh.
     """
-    _entity_maps = [] if entity_maps is None else entity_maps
+    if entity_maps is None:
+        _entity_maps = []
+    else:
+        _entity_maps = [entity_map._cpp_object for entity_map in entity_maps]
 
     _subdomain_data = subdomains.copy()
     for _, idomain in _subdomain_data.items():
