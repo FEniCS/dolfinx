@@ -371,15 +371,14 @@ void declare_mesh(nb::module_& m, std::string type)
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities)
       {
-        std::tuple<dolfinx::mesh::Mesh<T>, std::vector<std::int32_t>,
+        std::tuple<dolfinx::mesh::Mesh<T>, dolfinx::mesh::EntityMap,
                    std::vector<std::int32_t>, std::vector<std::int32_t>>
             submesh = dolfinx::mesh::create_submesh(
                 mesh, dim, std::span(entities.data(), entities.size()));
-        auto _e_map = as_nbarray(std::move(std::get<1>(submesh)));
         auto _v_map = as_nbarray(std::move(std::get<2>(submesh)));
         auto _g_map = as_nbarray(std::move(std::get<3>(submesh)));
-        return std::tuple(std::move(std::get<0>(submesh)), _e_map, _v_map,
-                          _g_map);
+        return std::tuple(std::move(std::get<0>(submesh)),
+                          std::move(std::get<1>(submesh)), _v_map, _g_map);
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"));
 
