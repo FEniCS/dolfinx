@@ -105,7 +105,7 @@ facets = np.arange(num_facets, dtype=np.int32)
 # Create the sub-mesh
 # NOTE Despite all facets being present in the submesh, the entity map
 # isn't necessarily the identity in parallel
-facet_mesh, facet_mesh_to_mesh = mesh.create_submesh(msh, fdim, facets)[:2]
+facet_mesh, facet_mesh_emap = mesh.create_submesh(msh, fdim, facets)[:2]
 
 # Define function spaces
 k = 3  # Polynomial order
@@ -135,8 +135,7 @@ dx_f = ufl.Measure("dx", domain=facet_mesh)
 # We write the mixed domain forms as integrals over msh.
 # We create the relation between the entities that we can pass to the form
 # constructor
-entity_map = mesh.entity_map(msh.topology, facet_mesh.topology, facet_mesh_to_mesh)
-entity_maps = [entity_map]
+entity_maps = [facet_mesh_emap]
 
 # Define forms
 h = ufl.CellDiameter(msh)
@@ -171,7 +170,7 @@ msh_boundary_facets = mesh.exterior_facet_indices(msh.topology)
 # facet_mesh
 
 
-facet_mesh_boundary_facets = entity_map.map_entities(
+facet_mesh_boundary_facets = facet_mesh_emap.map_entities(
     msh_boundary_facets, facet_mesh.topology._cpp_object
 )
 
