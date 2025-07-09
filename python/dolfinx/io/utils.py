@@ -7,6 +7,7 @@
 """IO module for input data and post-processing file output."""
 
 import typing
+from collections.abc import Iterable
 from pathlib import Path
 
 from mpi4py import MPI as _MPI
@@ -26,7 +27,7 @@ from dolfinx.mesh import CellType, Geometry, GhostMode, Mesh, MeshTags
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
 
 
-def _extract_cpp_objects(functions: typing.Union[Mesh, Function, typing.Iterable[Function]]):
+def _extract_cpp_objects(functions: typing.Union[Function, Iterable[Function]]):
     """Extract C++ objects"""
     if not isinstance(functions, Function):
         return [getattr(u, "_cpp_object", u) for u in functions]
@@ -86,7 +87,7 @@ if _cpp.common.has_adios2:
                 dtype = output.geometry.x.dtype
             elif isinstance(output, Function):
                 dtype = output.function_space.mesh.geometry.x.dtype
-            elif isinstance(output, typing.Iterable):
+            elif isinstance(output, Iterable):
                 dtype = next(output).function_space.mesh.geometry.x.dtype  # type: ignore
             else:
                 raise RuntimeError(f"Can not write type {type(output)}.")
