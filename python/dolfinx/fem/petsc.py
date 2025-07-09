@@ -158,10 +158,7 @@ def create_vector(
         A PETSc vector with a layout that is compatible with ``L``. The
         vector is not initialised to zero.
     """
-    try:
-        dofmap = L.function_spaces[0].dofmaps(0)  # Single form case
-        return dolfinx.la.petsc.create_vector(dofmap.index_map, dofmap.index_map_bs)
-    except AttributeError:
+    if isinstance(L, Iterable):
         maps = [
             (
                 form.function_spaces[0].dofmaps(0).index_map,
@@ -190,6 +187,9 @@ def create_vector(
                 f"Vector type '{kind}' not supported."
                 "Did you mean 'nest' or 'mpi'?"
             )
+    else:
+        dofmap = L.function_spaces[0].dofmaps(0)
+        return dolfinx.la.petsc.create_vector(dofmap.index_map, dofmap.index_map_bs)
 
 
 # -- Matrix instantiation -------------------------------------------------
@@ -230,17 +230,17 @@ def create_matrix(
     Returns:
         A PETSc matrix.
     """
-    try:
-        return _cpp.fem.petsc.create_matrix(a._cpp_object, kind)  # Single form
-    except AttributeError:  # ``a`` is a nested sequence
+    if isinstance(a, collections.abc.Iterable):
         _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
         if kind == PETSc.Mat.Type.NEST:  # Create nest matrix with default types
             return _cpp.fem.petsc.create_matrix_nest(_a, None)
         else:
-            try:
-                return _cpp.fem.petsc.create_matrix_block(_a, kind)  # Single 'kind' type
-            except TypeError:
-                return _cpp.fem.petsc.create_matrix_nest(_a, kind)  # Array of 'kind' types
+            if kind is None or isinstance(kind, str):  # Single 'kind' type
+                return _cpp.fem.petsc.create_matrix_block(_a, kind)
+            else:  # Array of 'kind' types
+                return _cpp.fem.petsc.create_matrix_nest(_a, kind)
+    else:  # Single form
+        return _cpp.fem.petsc.create_matrix(a._cpp_object, kind)
 
 
 # -- Vector assembly ------------------------------------------------------
@@ -444,10 +444,7 @@ def assemble_matrix(
     Returns:
         Matrix representing the bilinear form.
     """
-    try:
-        A = _cpp.fem.petsc.create_matrix(a._cpp_object, kind)
-    except AttributeError:
-        A = create_matrix(a, kind)
+    A = create_matrix(a, kind)
     assemble_matrix(A, a, bcs, diag, constants, coeffs)
     return A
 
@@ -717,24 +714,23 @@ def set_bc(
         alpha: Scalar value used in the value that constrained entries
             are set to.
     """
-    if b.getType() == PETSc.Vec.Type.NEST:
+    if not isinstance(bcs[0], Iterable):
+        x0 = x0.array_r if x0 is not None else None
+        for bc in bcs:
+            bc.set(b.array_w, x0, alpha)
+    elif b.getType() == PETSc.Vec.Type.NEST:  # nest vector
         _b = b.getNestSubVecs()
         x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()
         for b_sub, bc, x_sub in zip(_b, bcs, x0):
             set_bc(b_sub, bc, x_sub, alpha)
-    else:
-        try:
-            offset0, _ = b.getAttr("_blocks")
-            b_array = b.getArray(readonly=False)
-            x_array = x0.getArray(readonly=True) if x0 is not None else None
-            for bcs, off0, off1 in zip(bcs, offset0, offset0[1:]):
-                x0_sub = x_array[off0:off1] if x0 is not None else None
-                for bc in bcs:
-                    bc.set(b_array[off0:off1], x0_sub, alpha)
-        except TypeError:
-            x0 = x0.array_r if x0 is not None else None
+    else:  # block vector
+        offset0, _ = b.getAttr("_blocks")
+        b_array = b.getArray(readonly=False)
+        x_array = x0.getArray(readonly=True) if x0 is not None else None
+        for bcs, off0, off1 in zip(bcs, offset0, offset0[1:]):
+            x0_sub = x_array[off0:off1] if x0 is not None else None
             for bc in bcs:
-                bc.set(b.array_w, x0, alpha)
+                bc.set(b_array[off0:off1], x0_sub, alpha)
 
 
 # -- High-level interface for KSP ---------------------------------------
@@ -854,12 +850,12 @@ class LinearProblem:
         self._x = create_vector(self.L, kind=kind)
 
         if u is None:
-            try:
-                # Extract function space for unknown from the right hand
-                # side of the equation.
-                self._u = _Function(L.arguments()[0].ufl_function_space())
-            except AttributeError:
+            # Extract function space for unknown from the right hand
+            # side of the equation.
+            if isinstance(L, Iterable):
                 self._u = [_Function(Li.arguments()[0].ufl_function_space()) for Li in L]
+            else:
+                self._u = _Function(L.arguments()[0].ufl_function_space())
         else:
             self._u = u
 
@@ -952,14 +948,7 @@ class LinearProblem:
 
         # Apply boundary conditions to the rhs
         if self.bcs is not None:
-            try:
-                apply_lifting(self.b, [self.a], bcs=[self.bcs])
-                dolfinx.la.petsc._ghost_update(
-                    self.b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE
-                )
-                for bc in self.bcs:
-                    bc.set(self.b.array_w)
-            except RuntimeError:
+            if isinstance(self.u, Iterable):  # block or nest
                 bcs1 = _bcs_by_block(_extract_spaces(self.a, 1), self.bcs)  # type: ignore
                 apply_lifting(self.b, self.a, bcs=bcs1)  # type: ignore
                 dolfinx.la.petsc._ghost_update(
@@ -967,6 +956,13 @@ class LinearProblem:
                 )
                 bcs0 = _bcs_by_block(_extract_spaces(self.L), self.bcs)  # type: ignore
                 dolfinx.fem.petsc.set_bc(self.b, bcs0)
+            else:  # single form
+                apply_lifting(self.b, [self.a], bcs=[self.bcs])
+                dolfinx.la.petsc._ghost_update(
+                    self.b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE
+                )
+                for bc in self.bcs:
+                    bc.set(self.b.array_w)
         else:
             dolfinx.la.petsc._ghost_update(self.b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
 
@@ -1138,26 +1134,26 @@ def assemble_residual(
     # Assign the input vector to the unknowns
     assign(x, u)
 
+    # Assign block data if block assembly is requested
+    if (
+        isinstance(residual, Iterable) and b.getType() != petsc4py.PETSc.Vec.Type.NEST
+    ):
+        _assign_block_data(residual, b)  # type: ignore
+        _assign_block_data(residual, x)  # type: ignore
+
     # Assemble the residual
     dolfinx.la.petsc._zero_vector(b)
-    try:
-        # Single form and nest assembly
-        assemble_vector(b, residual)
-    except TypeError:
-        # Block assembly
-        _assign_block_data(residual, b)  # type: ignore
-        assemble_vector(b, residual)  # type: ignore
+    assemble_vector(b, residual)  # type: ignore
 
     # Lift vector
-    try:
+    if isinstance(jacobian, Iterable):
         # Nest and blocked lifting
         bcs1 = _bcs_by_block(_extract_spaces(jacobian, 1), bcs)  # type: ignore
-        _assign_block_data(residual, x)  # type: ignore
         apply_lifting(b, jacobian, bcs=bcs1, x0=x, alpha=-1.0)  # type: ignore
         dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
         bcs0 = _bcs_by_block(_extract_spaces(residual), bcs)  # type: ignore
         set_bc(b, bcs0, x0=x, alpha=-1.0)
-    except RuntimeError:
+    else:
         # Single form lifting
         apply_lifting(b, [jacobian], bcs=[bcs], x0=[x], alpha=-1.0)  # type: ignore
         dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
@@ -1197,11 +1193,7 @@ def assemble_jacobian(
     """
     # Copy existing soultion into the function used in the residual and
     # Jacobian
-    try:
-        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
-    except PETSc.Error:  # type: ignore
-        for x_sub in x.getNestSubVecs():
-            x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore
+    dolfinx.la.petsc._ghost_update(x, petsc4py.PETSc.InsertMode.INSERT, petsc4py.PETSc.ScatterMode.FORWARD)
     assign(x, u)
 
     # Assemble Jacobian
