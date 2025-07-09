@@ -48,17 +48,19 @@ def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
     for i in range(submesh.topology.dim):
         submesh.topology.create_entities(i)
         submesh.topology.create_connectivity(i, 0)
+
+    submesh_to_mesh = entity_map.map(mesh.topology)
     # Some processes might not own or ghost entities
-    if len(entity_map) > 0:
+    if len(submesh_to_mesh) > 0:
         mesh.topology.create_connectivity(entity_dim, 0)
         mesh_e_to_v = mesh.topology.connectivity(entity_dim, 0)
         submesh.topology.create_connectivity(entity_dim, 0)
         submesh_e_to_v = submesh.topology.connectivity(entity_dim, 0)
-        for submesh_entity in range(len(entity_map)):
+        for submesh_entity in range(len(submesh_to_mesh)):
             submesh_entity_vertices = submesh_e_to_v.links(submesh_entity)
             # The submesh is created such that entities is the map from the
             # submesh entity to the mesh entity
-            mesh_entity = entity_map[submesh_entity]
+            mesh_entity = submesh_to_mesh[submesh_entity]
             mesh_entity_vertices = mesh_e_to_v.links(mesh_entity)
             for i in range(len(submesh_entity_vertices)):
                 assert vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i]
@@ -74,12 +76,13 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
     )
 
     # Some processes might not own or ghost entities
-    if len(entity_map) > 0:
+    submesh_to_mesh = entity_map.map(mesh.topology)
+    if len(submesh_to_mesh) > 0:
         assert mesh.geometry.dim == submesh.geometry.dim
 
         mesh.topology.create_entity_permutations()
-        e_to_g = entities_to_geometry(mesh, entity_dim, np.array(entity_map), True)
-        for submesh_entity in range(len(entity_map)):
+        e_to_g = entities_to_geometry(mesh, entity_dim, np.array(submesh_to_mesh), True)
+        for submesh_entity in range(len(submesh_to_mesh)):
             submesh_x_dofs = submesh.geometry.dofmap[submesh_entity]
             # e_to_g[i] gets the mesh x_dofs of entities[i], which should
             # correspond to the x_dofs of cell i in the submesh

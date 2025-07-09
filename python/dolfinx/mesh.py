@@ -469,6 +469,22 @@ class EntityMap:
         """
         return self._cpp_object.map_entities(entities, topology._cpp_object)
 
+    def map(self, topology):
+        """
+        Get a list representing the map from entity indices in one
+        topology of this `EntityMap` to entity indices in the other
+        topology of this `EntityMap`.
+
+        Args:
+            topology: The topology to map to
+
+        Returns:
+            A list whose `i`th entry is the entity index in `topology` of
+            entity `i` in the other topology in this `EntityMap`. If the
+            entity does not exist in `topology`, then it is marked with -1.
+        """
+        return self._cpp_object.map(topology._cpp_object)
+
 
 def entity_map(topology, sub_topology, sub_to_topo):
     return _cpp.mesh.EntityMap(topology._cpp_object, sub_topology._cpp_object, sub_to_topo)
@@ -743,7 +759,7 @@ def create_submesh(
             dtype=submsh.geometry.x.dtype,
         )
     )
-    return (Mesh(submsh, submsh_domain), entity_map, vertex_map, geom_map)
+    return (Mesh(submsh, submsh_domain), EntityMap(entity_map), vertex_map, geom_map)
 
 
 def meshtags(
