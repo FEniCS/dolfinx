@@ -486,8 +486,8 @@ class EntityMap:
         return self._cpp_object.map(topology._cpp_object)
 
 
-def entity_map(topology, sub_topology, sub_to_topo):
-    return _cpp.mesh.EntityMap(topology._cpp_object, sub_topology._cpp_object, sub_to_topo)
+def entity_map(topology, sub_topology, dim, sub_to_topo):
+    return _cpp.mesh.EntityMap(topology._cpp_object, sub_topology._cpp_object, dim, sub_to_topo)
 
 
 def compute_incident_entities(

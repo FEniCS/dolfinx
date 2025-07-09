@@ -30,14 +30,14 @@ public:
   /// exist in `topology`.
   /// @param sub_topology_to_topology A list of entities in `topology`.
   /// `sub_topology_to_topology[i]` is the index in `topology` corresponding to
-  /// cell `i` in `sub_topology`.
+  /// entity `i` in `sub_topology`.
   template <typename U>
     requires std::is_convertible_v<std::remove_cvref_t<U>,
                                    std::vector<std::int32_t>>
   EntityMap(std::shared_ptr<const Topology> topology,
-            std::shared_ptr<const Topology> sub_topology,
+            std::shared_ptr<const Topology> sub_topology, int dim,
             U&& sub_topology_to_topology)
-      : _dim(sub_topology->dim()), _topology(topology),
+      : _dim(dim), _topology(topology),
         _sub_topology_to_topology(std::forward<U>(sub_topology_to_topology)),
         _sub_topology(sub_topology)
   {
@@ -84,7 +84,7 @@ public:
   {
     if (&topology == _topology.get())
     {
-      // In this case, we want to map from cell indices in `_sub_topology` to
+      // In this case, we want to map from entity indices in `_sub_topology` to
       // corresponding entities in `_topology`. Hence, for each index in
       // `entities`, we get the corresponding index in `_topology` using
       // `_sub_topology_to_topology`
@@ -96,9 +96,9 @@ public:
     }
     else if (&topology == _sub_topology.get())
     {
-      // In this case, we are mapping from entity indices in `_topology` to cell
-      // indices in `_sub_topology`. Hence, we first need to construct the
-      // "inverse" of `_sub_topology_to_topology`
+      // In this case, we are mapping from entity indices in `_topology` to
+      // entity indices in `_sub_topology`. Hence, we first need to construct
+      // the "inverse" of `_sub_topology_to_topology`
       std::unordered_map<std::int32_t, std::int32_t> topology_to_sub_topology;
       topology_to_sub_topology.reserve(_sub_topology_to_topology.size());
       for (std::size_t i = 0; i < _sub_topology_to_topology.size(); ++i)
@@ -108,7 +108,7 @@ public:
       }
 
       // For each entity index in `entities` (which are indices in `_topology`),
-      // get the corresponding cell in
+      // get the corresponding entity in
       // `_sub_topology`. Since `_sub_topology` consists of a subset of entities
       // in `_topology`, there are entities in topology that may not exist in
       // `_sub_topology`. If this is the case, mark those entities with -1.

@@ -1384,7 +1384,7 @@ create_submesh(const Mesh<T>& mesh, int dim,
   Mesh<T> submesh
       = Mesh(mesh.comm(), std::make_shared<Topology>(std::move(topology)),
              std::move(geometry));
-  EntityMap entity_map(mesh.topology(), submesh.topology(),
+  EntityMap entity_map(mesh.topology(), submesh.topology(), dim,
                        subentity_to_entity);
 
   return {std::move(submesh), std::move(entity_map),
