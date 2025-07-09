@@ -720,6 +720,9 @@ def set_bc(
         alpha: Scalar value used in the value that constrained entries
             are set to.
     """
+    if len(bcs) == 0:
+        return
+
     if not isinstance(bcs[0], Iterable):
         x0 = x0.array_r if x0 is not None else None
         for bc in bcs:
