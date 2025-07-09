@@ -948,7 +948,9 @@ class LinearProblem:
 
         # Apply boundary conditions to the rhs
         if self.bcs is not None:
-            if isinstance(self.u, Iterable):  # block or nest
+            # Do not use isinstance(self.u, Iterable) in the following check, because
+            # isinstance(dolfinx.fem.Function, Iterable) returns True as well.
+            if isinstance(self.u, list):  # block or nest
                 bcs1 = _bcs_by_block(_extract_spaces(self.a, 1), self.bcs)  # type: ignore
                 apply_lifting(self.b, self.a, bcs=bcs1)  # type: ignore
                 dolfinx.la.petsc._ghost_update(
