@@ -96,14 +96,6 @@ int main(int argc, char* argv[])
         = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
             submesh, std::make_shared<fem::FiniteElement<U>>(element)));
 
-    // A mixed-domain form involves functions defined over multiple meshes (in
-    // this case, `mesh` and `submesh`). The mesh passed to `create_form` is
-    // called the *integration domain mesh* (here, `mesh`). To assemble a
-    // mixed-domain form, we must supply an `EntityMap` for each additional mesh
-    // involved in the form, relating entities in that mesh to the integration
-    // domain mesh.
-    std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps
-        = {entity_map};
     // Next we compute the integration entities on the integration
     // domain `mesh`
     std::vector<std::int32_t> integration_entities
@@ -114,6 +106,15 @@ int main(int argc, char* argv[])
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>
         subdomain_data
         = {{fem::IntegralType::cell, {{3, integration_entities}}}};
+
+    // A mixed-domain form involves functions defined over multiple meshes (in
+    // this case, `mesh` and `submesh`). The mesh passed to `create_form` is
+    // called the *integration domain mesh* (here, `mesh`). To assemble a
+    // mixed-domain form, we must supply an `EntityMap` for each additional mesh
+    // involved in the form, relating entities in that mesh to the integration
+    // domain mesh.
+    std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps
+        = {entity_map};
 
     // We can now create the bilinear form
     fem::Form<T> a_mixed
