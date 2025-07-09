@@ -207,18 +207,18 @@ int main(int argc, char* argv[])
 
     // We'd like to represent `u_0` using a function space defined only
     // on the facets in `dfacets`. To do so, we begin by calling
-    // `create_submesh` to get a `submesh` of those facets. It also
-    // returns a map `submesh_to_mesh` whose `i`th entry is the facet in
-    // mesh corresponding to cell `i` in submesh.
+    // `create_submesh` to get a `submesh` of those facets.  It also returns an
+    // `EntityMap` object, which relates entities in the submesh to entities in
+    // the original mesh. We will need this to assemble our mixed-domain form.
     int tdim = mesh->topology()->dim();
     int fdim = tdim - 1;
     std::shared_ptr<mesh::Mesh<U>> submesh;
-    std::vector<std::int32_t> submesh_to_mesh;
+    std::shared_ptr<mesh::EntityMap> entity_map;
     {
-      auto [_submesh, _submesh_to_mesh, v_map, g_map]
+      auto [_submesh, e_map, v_map, g_map]
           = mesh::create_submesh(*mesh, fdim, dfacets);
       submesh = std::make_shared<mesh::Mesh<U>>(std::move(_submesh));
-      submesh_to_mesh = std::move(_submesh_to_mesh);
+      entity_map = std::make_shared<mesh::EntityMap>(std::move(e_map));
     }
 
     // Create an element for `u_0`
@@ -285,21 +285,12 @@ int main(int argc, char* argv[])
     // Since we are doing a `ds(1)` integral on mesh and `u0` is defined
     // on the `submesh`, our form involves more than one mesh. The mesh used to
     // define the measure and passed to `create_form` is called the integration
-    // domain mesh (here, `mesh`). To assemble our mixed domain form, we must
+    // domain mesh (here, `mesh`). To assemble our mixed-domain form, we must
     // provide an `EntityMap` for each additional mesh
-    // involved in the form. An `EntityMap` relates entities in one mesh to
-    // entities in the integration domain mesh.
-    //
-    // To construct an `EntityMap`, we provide:
-    //   1. The original topology (`mesh->topology()`),
-    //   2. The sub-topology (`submesh->topology()`),
-    //   3. A mapping from entity indices in the sub-topology to indices in the
-    //      original topology (`submesh_to_mesh`).
-    std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps;
-    std::shared_ptr<const mesh::EntityMap> entity_map
-        = std::make_shared<const mesh::EntityMap>(
-            mesh->topology(), submesh->topology(), submesh_to_mesh);
-    entity_maps.push_back(entity_map);
+    // involved in the form. In this case, the only other mesh is `submesh`.
+    // Hence, we supply the entity map returned from `create_submesh`.
+    std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps
+        = {entity_map};
 
     // Define variational forms and attach he required data
     fem::Form<T> a = fem::create_form<T>(*form_mixed_poisson_a, {V, V}, {}, {},
