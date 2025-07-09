@@ -731,7 +731,7 @@ def create_mesh(
 
 def create_submesh(
     msh: Mesh, dim: int, entities: npt.NDArray[np.int32]
-) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray[np.int32]]:
+) -> tuple[Mesh, EntityMap, npt.NDArray[np.int32], npt.NDArray[np.int32]]:
     """Create a mesh with specified entities from another mesh.
 
     Args:
