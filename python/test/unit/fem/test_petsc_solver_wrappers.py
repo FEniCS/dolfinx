@@ -18,20 +18,17 @@ import ufl
 @pytest.mark.petsc4py
 class TestPETScSolverWrappers:
     @pytest.mark.parametrize(
-        "comm", [MPI.COMM_WORLD, MPI.COMM_SELF], ids=lambda comm: comm.Get_name()
-    )
-    @pytest.mark.parametrize(
         "mode",
         [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet],
     )
-    def test_compare_solution_linear_vs_nonlinear_problem(self, comm, mode):
+    def test_compare_solution_linear_vs_nonlinear_problem(self, mode):
         """Test that the wrapper for Linear problem and NonlinearProblem give the same result"""
         from petsc4py import PETSc
 
         import dolfinx.fem.petsc
         import dolfinx.nls.petsc
 
-        msh = dolfinx.mesh.create_unit_square(comm, 12, 12, ghost_mode=mode)
+        msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
         V = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
         uh = dolfinx.fem.Function(V)
         v = ufl.TestFunction(V)
@@ -56,26 +53,16 @@ class TestPETScSolverWrappers:
             "pc_type": "lu",
             "pc_factor_mat_solver_type": factor_type,
         }
-        if comm == MPI.COMM_SELF and MPI.COMM_WORLD.size > 1:
-            with pytest.raises(ValueError):
-                dolfinx.fem.petsc.LinearProblem(
-                    ufl.lhs(a),
-                    ufl.rhs(a),
-                    petsc_options=petsc_options_linear,
-                    petsc_options_prefix=None,
-                )
-            petsc_options_prefix_linear = (
-                "test_compare_solution_linear_vs_nonlinear_problem__linear"
-            )
-        else:
-            petsc_options_prefix_linear = None
+        petsc_options_prefix_linear = (
+            f"test_compare_solution_linear_vs_nonlinear_problem__{mode}_linear_"
+        )
         linear_problem = dolfinx.fem.petsc.LinearProblem(
             ufl.lhs(a),
             ufl.rhs(a),
-            petsc_options=petsc_options_linear,
             petsc_options_prefix=petsc_options_prefix_linear,
+            petsc_options=petsc_options_linear,
         )
-        u_lin, convergence_reason, _ = linear_problem.solve()
+        u_lin, _, convergence_reason, _ = linear_problem.solve()
         assert convergence_reason > 0
 
         # Compare LinearProblem solution against the one obtained by
@@ -112,27 +99,17 @@ class TestPETScSolverWrappers:
             "snes_atol": eps,
             "snes_rtol": eps,
         }
+        petsc_options_prefix_nonlinear = (
+            f"test_compare_solution_linear_vs_nonlinear_problem__{mode}__nonlinear_"
+        )
         u_nonlin = dolfinx.fem.Function(V)
-        if comm == MPI.COMM_SELF and MPI.COMM_WORLD.size > 1:
-            with pytest.raises(ValueError):
-                dolfinx.fem.petsc.NonlinearProblem(
-                    ufl.replace(F, {uh: u_nonlin}),
-                    u_nonlin,
-                    petsc_options=petsc_options_nonlinear,
-                    petsc_options_prefix=None,
-                )
-            petsc_options_prefix_nonlinear = (
-                "test_compare_solution_linear_vs_nonlinear_problem__nonlinear"
-            )
-        else:
-            petsc_options_prefix_nonlinear = None
         nonlinear_problem = dolfinx.fem.petsc.NonlinearProblem(
             ufl.replace(F, {uh: u_nonlin}),
             u_nonlin,
-            petsc_options=petsc_options_nonlinear,
             petsc_options_prefix=petsc_options_prefix_nonlinear,
+            petsc_options=petsc_options_nonlinear,
         )
-        _, converged_reason, _ = nonlinear_problem.solve()
+        _, _, converged_reason, _ = nonlinear_problem.solve()
         assert converged_reason > 0
 
         assert np.allclose(u_lin.x.array, u_nonlin.x.array, atol=eps, rtol=eps)
@@ -211,17 +188,24 @@ class TestPETScSolverWrappers:
                 dolfinx.fem.dirichletbc(p_bc, dofs_Q),
             ]
 
+        petsc_options_prefix = (
+            f"test_mixed_system_{kind if isinstance(kind, str) else 'nest_2d_list'}_"
+        )
         petsc_options = {
             "ksp_type": "preonly",
             "pc_type": "lu",
             "pc_factor_mat_solver_type": "mumps",
             "ksp_error_if_not_converged": True,
         }
-
         problem = dolfinx.fem.petsc.LinearProblem(
-            a, L, bcs=bcs, petsc_options=petsc_options, kind=kind
+            a,
+            L,
+            bcs=bcs,
+            kind=kind,
+            petsc_options_prefix=petsc_options_prefix,
+            petsc_options=petsc_options,
         )
-        wh, convergence_reason, _ = problem.solve()
+        wh, _, convergence_reason, _ = problem.solve()
         assert convergence_reason > 0
         if kind is None:
             uh, ph = wh.split()

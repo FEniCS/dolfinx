@@ -276,8 +276,14 @@ def poisson_error(V: fem.FunctionSpace):
 
     # Solve
     ksp_rtol = 1e2 * np.finfo(default_real_type).eps
-    problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_rtol": ksp_rtol})
-    uh, convergence_reason, num_its = problem.solve()
+    problem = LinearProblem(
+        a,
+        L,
+        bcs=[bc],
+        petsc_options_prefix="demo_tnt_elements_",
+        petsc_options={"ksp_rtol": ksp_rtol},
+    )
+    uh, _, convergence_reason, num_its = problem.solve()
     assert convergence_reason > 0, (
         f"Failed to converge, reason: {convergence_reason}, iterations: {num_its}"
     )

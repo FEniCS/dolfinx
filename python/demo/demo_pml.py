@@ -716,13 +716,14 @@ problem = LinearProblem(
     a,
     L,
     bcs=[],
+    petsc_options_prefix="demo_pml_",
     petsc_options={
         "ksp_type": "preonly",
         "pc_type": "lu",
         "pc_factor_mat_solver_type": mat_factor_backend,
     },
 )
-Esh, convergence_reason, _ = problem.solve()
+Esh, _, convergence_reason, _ = problem.solve()
 assert isinstance(Esh, fem.Function)
 assert convergence_reason > 0
 # -

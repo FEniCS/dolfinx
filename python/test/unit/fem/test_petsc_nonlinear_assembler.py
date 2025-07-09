@@ -269,13 +269,22 @@ class TestNLSPETSc:
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
 
-            problem = dolfinx.fem.petsc.NonlinearProblem(F, [u, p], J=J, bcs=bcs, kind="mpi")
+            problem = dolfinx.fem.petsc.NonlinearProblem(
+                F,
+                [u, p],
+                J=J,
+                bcs=bcs,
+                kind="mpi",
+                petsc_options_prefix="test_assembly_solve_block_nl__blocked_solve_",
+            )
 
             petsc_options = {"snes_rtol": 1.0e-15, "snes_max_it": 10, "snes_monitor": None}
 
             snes = problem.solver
             opts = PETSc.Options()
-            opts.prefixPush(snes.getOptionsPrefix())
+            assert problem.petsc_options_prefix is not None
+            assert snes.getOptionsPrefix() == problem.petsc_options_prefix
+            opts.prefixPush(problem.petsc_options_prefix)
             for k, v in petsc_options.items():
                 opts[k] = v
             opts.prefixPop()
@@ -373,12 +382,13 @@ class TestNLSPETSc:
                 U,
                 J=J,
                 bcs=bcs,
+                petsc_options_prefix="test_assembly_solve_block_nl__monolithic_solve_",
                 petsc_options=petsc_options,
             )
 
-            _, converged_reason, _ = problem.solve()
+            _, x, converged_reason, _ = problem.solve()
             assert converged_reason > 0
-            xnorm = problem.x.norm()
+            xnorm = x.norm()
             return xnorm
 
         norm0 = blocked_solve()
@@ -472,14 +482,15 @@ class TestNLSPETSc:
                 [u, p],
                 bcs=bcs,
                 P=P,
+                petsc_options_prefix="test_assembly_solve_block_nl__monolithic_solve_",
                 petsc_options=petsc_options,
                 kind="mpi",
             )
-            _, converged_reason, _ = problem.solve()
+            _, x, converged_reason, _ = problem.solve()
             assert converged_reason > 0
             Jnorm = problem.solver.getJacobian()[0].norm()
             Fnorm = problem.solver.getFunction()[0].norm()
-            xnorm = problem.x.norm()
+            xnorm = x.norm()
             return Jnorm, Fnorm, xnorm
 
         def nested():
@@ -500,9 +511,9 @@ class TestNLSPETSc:
                 ["u", nested_IS[0][0]], ["p", nested_IS[1][1]]
             )
 
-            _, converged_reason, _ = problem.solve()
+            _, x, converged_reason, _ = problem.solve()
             assert converged_reason > 0
-            xnorm = problem.x.norm()
+            xnorm = x.norm()
             Jnorm = nest_matrix_norm(problem.solver.getJacobian()[0])
             Fnorm = problem.solver.getFunction()[0].norm()
             return Jnorm, Fnorm, xnorm
@@ -555,11 +566,12 @@ class TestNLSPETSc:
                 J=J,
                 bcs=bcs,
                 P=P,
+                petsc_options_prefix="test_assembly_solve_taylor_hood_nl__monolithic_",
                 petsc_options=petsc_options,
             )
-            _, converged_reason, _ = problem.solve()
+            _, x, converged_reason, _ = problem.solve()
             assert converged_reason > 0
-            xnorm = problem.x.norm()
+            xnorm = x.norm()
             Jnorm = problem.solver.getJacobian()[0].norm()
             Fnorm = problem.solver.getFunction()[0].norm()
             return Jnorm, Fnorm, xnorm
