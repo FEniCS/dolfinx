@@ -26,6 +26,7 @@ from dolfinx.fem.function import Function, FunctionSpace
 if typing.TYPE_CHECKING:
     from mpi4py import MPI
 
+    import dolfinx
     from dolfinx.fem import function
     from dolfinx.mesh import EntityMap, Mesh, MeshTags
 
@@ -566,7 +567,7 @@ def create_form(
     subdomains: dict[IntegralType, list[tuple[int, np.ndarray]]],
     coefficient_map: dict[ufl.Coefficient, function.Function],
     constant_map: dict[ufl.Constant, function.Constant],
-    entity_maps: list[EntityMap] | None = None,
+    entity_maps: typing.Optional[typing.Iterable[dolfinx.mesh.EntityMap]] = None,
 ) -> Form:
     """
     Create a Form object from a data-independent compiled form.
