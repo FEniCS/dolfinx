@@ -124,13 +124,12 @@ def test_submesh_assembly(dtype):
         wh.interpolate(g)
 
         facet_entities = dolfinx.fem.compute_integration_domains(
-            dolfinx.fem.IntegralType.exterior_facet, mesh.topology, sub_to_parent
+            dolfinx.fem.IntegralType.exterior_facet, mesh.topology, facets
         )
         subdomains = {dolfinx.fem.IntegralType.exterior_facet: [(subdomain_id, facet_entities)]}
-        entity_map = dolfinx.mesh.entity_map(mesh.topology, submesh.topology, sub_to_parent)
 
         form = dolfinx.fem.create_form(
-            compiled_form, [Vh], mesh, subdomains, {w: wh}, {}, [entity_map]
+            compiled_form, [Vh], mesh, subdomains, {w: wh}, {}, [sub_to_parent]
         )
 
         # Compute exact solution
