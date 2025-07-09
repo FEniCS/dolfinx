@@ -1137,12 +1137,12 @@ def assemble_residual(
 
     # Assign block data if block assembly is requested
     if isinstance(residual, Iterable) and b.getType() != PETSc.Vec.Type.NEST:
-        _assign_block_data(residual, b)  # type: ignore
-        _assign_block_data(residual, x)  # type: ignore
+        _assign_block_data(residual, b)
+        _assign_block_data(residual, x)
 
     # Assemble the residual
     _zero_vector(b)
-    assemble_vector(b, residual)  # type: ignore
+    assemble_vector(b, residual)
 
     # Lift vector
     if isinstance(jacobian, Iterable):
