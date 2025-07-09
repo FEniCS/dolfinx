@@ -26,9 +26,9 @@ from dolfinx.mesh import CellType, Geometry, GhostMode, Mesh, MeshTags
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
 
 
-def _extract_cpp_objects(functions: typing.Union[Mesh, Function, tuple[Function], list[Function]]):
+def _extract_cpp_objects(functions: typing.Union[Mesh, Function, typing.Iterable[Function]]):
     """Extract C++ objects"""
-    if isinstance(functions, (list, tuple)):
+    if not isinstance(functions, Function):
         return [getattr(u, "_cpp_object", u) for u in functions]
     else:
         return [getattr(functions, "_cpp_object", functions)]
@@ -56,7 +56,7 @@ if _cpp.common.has_adios2:
             self,
             comm: _MPI.Comm,
             filename: typing.Union[str, Path],
-            output: typing.Union[Mesh, Function, list[Function], tuple[Function]],
+            output: typing.Union[Mesh, Function, typing.Iterable[Function]],
             engine: str = "BPFile",
             mesh_policy: VTXMeshPolicy = VTXMeshPolicy.update,
         ):
@@ -81,27 +81,27 @@ if _cpp.common.has_adios2:
                 have the same element type.
             """
             # Get geometry type
-            try:
-                dtype = output.geometry.x.dtype  # type: ignore
-            except AttributeError:
-                try:
-                    dtype = output.function_space.mesh.geometry.x.dtype  # type: ignore
-                except AttributeError:
-                    dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
+
+            if isinstance(output, Mesh):
+                dtype = output.geometry.x.dtype
+            elif isinstance(output, Function):
+                dtype = output.function_space.mesh.geometry.x.dtype
+            elif isinstance(output, typing.Iterable):
+                dtype = next(output).function_space.mesh.geometry.x.dtype  # type: ignore
+            else:
+                raise RuntimeError(f"Can not write type {type(output)}.")
 
             if np.issubdtype(dtype, np.float32):
                 _vtxwriter = _cpp.io.VTXWriter_float32
             elif np.issubdtype(dtype, np.float64):
                 _vtxwriter = _cpp.io.VTXWriter_float64
 
-            try:
-                # Input is a mesh
-                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
-            except (NotImplementedError, TypeError, AttributeError):
-                # Input is a single function or a list of functions
+            if isinstance(output, Mesh):
+                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)
+            else:
                 self._cpp_object = _vtxwriter(
                     comm, filename, _extract_cpp_objects(output), engine, mesh_policy
-                )  # type: ignore[arg-type]
+                )
 
         def __enter__(self):
             return self
