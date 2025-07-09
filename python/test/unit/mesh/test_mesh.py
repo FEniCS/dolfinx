@@ -50,6 +50,7 @@ def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
         submesh.topology.create_connectivity(i, 0)
 
     submesh_to_mesh = entity_map.map(mesh.topology)
+    submesh_to_mesh_vertex = vertex_map.map(mesh.topology)
     # Some processes might not own or ghost entities
     if len(submesh_to_mesh) > 0:
         mesh.topology.create_connectivity(entity_dim, 0)
@@ -63,7 +64,7 @@ def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
             mesh_entity = submesh_to_mesh[submesh_entity]
             mesh_entity_vertices = mesh_e_to_v.links(mesh_entity)
             for i in range(len(submesh_entity_vertices)):
-                assert vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i]
+                assert submesh_to_mesh_vertex[submesh_entity_vertices[i]] == mesh_entity_vertices[i]
     else:
         assert submesh.topology.index_map(entity_dim).size_local == 0
 
@@ -77,6 +78,7 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
 
     # Some processes might not own or ghost entities
     submesh_to_mesh = entity_map.map(mesh.topology)
+    submesh_to_mesh_geom = geom_map.map(mesh.topology)
     if len(submesh_to_mesh) > 0:
         assert mesh.geometry.dim == submesh.geometry.dim
 
@@ -88,7 +90,7 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
             # correspond to the x_dofs of cell i in the submesh
             mesh_x_dofs = e_to_g[submesh_entity]
             for i in range(len(submesh_x_dofs)):
-                assert mesh_x_dofs[i] == geom_map[submesh_x_dofs[i]]
+                assert mesh_x_dofs[i] == submesh_to_mesh_geom[submesh_x_dofs[i]]
                 assert np.allclose(
                     mesh.geometry.x[mesh_x_dofs[i]], submesh.geometry.x[submesh_x_dofs[i]]
                 )
