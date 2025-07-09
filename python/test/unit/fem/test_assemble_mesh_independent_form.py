@@ -110,7 +110,7 @@ def test_submesh_assembly(dtype):
         facets = dolfinx.mesh.locate_entities_boundary(
             mesh, mesh.topology.dim - 1, lambda x: np.isclose(x[1], 2)
         )
-        submesh, sub_to_parent, _, _ = dolfinx.mesh.create_submesh(
+        submesh, entity_map, _, _ = dolfinx.mesh.create_submesh(
             mesh, mesh.topology.dim - 1, facets
         )
 
@@ -129,7 +129,7 @@ def test_submesh_assembly(dtype):
         subdomains = {dolfinx.fem.IntegralType.exterior_facet: [(subdomain_id, facet_entities)]}
 
         form = dolfinx.fem.create_form(
-            compiled_form, [Vh], mesh, subdomains, {w: wh}, {}, [sub_to_parent]
+            compiled_form, [Vh], mesh, subdomains, {w: wh}, {}, [entity_map]
         )
 
         # Compute exact solution
