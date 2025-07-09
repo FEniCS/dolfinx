@@ -196,7 +196,7 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     # Create a submesh of the left half of the mesh
     tdim = msh.topology.dim
     cells = locate_entities(msh, tdim, lambda x: x[0] <= 1.0)
-    smsh, smsh_to_msh = create_submesh(msh, tdim, cells)[:2]
+    smsh, entity_map = create_submesh(msh, tdim, cells)[:2]
 
     # Define function spaces over the mesh and submesh
     V = fem.functionspace(msh, (space, k))
@@ -248,8 +248,8 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     c = msh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
 
     # Assemble a mixed-domain form using msh as integration domain.
-    # We create an entity map that relates the entities in the submesh to those of the parent mesh
-    entity_maps = [entity_map(msh.topology, smsh.topology, smsh_to_msh)]
+    # We must pass the entity map relating `smsh` cells to `msh` cells
+    entity_maps = [entity_map]
     a0 = fem.form(a_ufl(u, q, f, g, measure_msh), entity_maps=entity_maps)
     A0 = fem.assemble_matrix(a0, bcs=[bc])
     A0.scatter_reverse()
@@ -299,7 +299,7 @@ def test_mixed_dom_codim_1(n, k):
     msh.topology.create_connectivity(tdim - 1, tdim)
     boundary_facets = exterior_facet_indices(msh.topology)
 
-    smsh, smsh_to_msh = create_submesh(msh, tdim - 1, boundary_facets)[:2]
+    smsh, entity_map = create_submesh(msh, tdim - 1, boundary_facets)[:2]
 
     # Define function spaces over the mesh and submesh
     V = fem.functionspace(msh, ("Lagrange", k))
@@ -349,7 +349,7 @@ def test_mixed_dom_codim_1(n, k):
     M = fem.form(M_ufl(f, f, ds))
     c = msh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
 
-    entity_maps = [entity_map(msh.topology, smsh.topology, smsh_to_msh)]
+    entity_maps = [entity_map]
 
     # Create forms and compare
     a1 = fem.form(a_ufl(u, vbar, f, g, ds), entity_maps=entity_maps)
@@ -590,7 +590,7 @@ def test_mixed_measures():
     # Create a submesh of some cells
     tdim = msh.topology.dim
     smsh_cells = locate_entities(msh, tdim, lambda x: x[0] <= 0.5)
-    smsh, smsh_to_msh = create_submesh(msh, tdim, smsh_cells)[:2]
+    smsh, entity_map = create_submesh(msh, tdim, smsh_cells)[:2]
 
     # Create function spaces over each mesh
     V = fem.functionspace(msh, ("Lagrange", 1))
@@ -604,7 +604,7 @@ def test_mixed_measures():
     v = ufl.TestFunction(V)
     q = ufl.TestFunction(Q)
 
-    entity_maps = [entity_map(msh.topology, smsh.topology, smsh_to_msh)]
+    entity_maps = [entity_map]
     # First, assemble a block vector using both dx_msh and dx_smsh
     L = [fem.form(ufl.inner(2.3, v) * dx_msh), fem.form(ufl.inner(1.3, q) * dx_smsh)]
     b0 = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
@@ -665,10 +665,10 @@ def test_interior_facet_codim_1(msh):
     interior_facets = np.flatnonzero(facet_vector.array)
 
     # Create submesh with all owned and ghosted interior facets
-    submesh, sub_to_parent, _, _ = create_submesh(msh, fdim, interior_facets)
+    submesh, entity_map, _, _ = create_submesh(msh, fdim, interior_facets)
 
     # Create inverse map
-    entity_maps = [entity_map(msh.topology, submesh.topology, sub_to_parent)]
+    entity_maps = [entity_map]
 
     def assemble_interior_facet_formulation(formulation, entity_maps):
         F = fem.form(formulation, entity_maps=entity_maps)
@@ -771,8 +771,8 @@ def test_interior_interface():
     left_cells = locate_entities(msh, tdim, lambda x: x[0] <= 0.5)
     right_cells = locate_entities(msh, tdim, lambda x: x[0] >= 0.5)
 
-    smsh_0, sm_0_to_msh = create_submesh(msh, tdim, left_cells)[0:2]
-    smsh_1, sm_1_to_msh = create_submesh(msh, tdim, right_cells)[0:2]
+    smsh_0, sm_0_emap = create_submesh(msh, tdim, left_cells)[0:2]
+    smsh_1, sm_1_emap = create_submesh(msh, tdim, right_cells)[0:2]
 
     # Define trial function on one region and the test function on the other
     V_0 = fem.functionspace(smsh_0, ("Lagrange", 1))
@@ -792,8 +792,6 @@ def test_interior_interface():
     marker[left_cells] = 1
 
     # Create entity maps for each domain
-    sm_0_emap = entity_map(msh.topology, smsh_0.topology, sm_0_to_msh)
-    sm_1_emap = entity_map(msh.topology, smsh_1.topology, sm_1_to_msh)
     entity_maps = [sm_0_emap, sm_1_emap]
 
     # Create a list of integration entities
