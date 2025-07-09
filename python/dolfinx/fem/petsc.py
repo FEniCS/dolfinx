@@ -230,7 +230,7 @@ def create_matrix(
     Returns:
         A PETSc matrix.
     """
-    if isinstance(a, collections.abc.Iterable):
+    if isinstance(a, Iterable):
         _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
         if kind == PETSc.Mat.Type.NEST:  # Create nest matrix with default types
             return _cpp.fem.petsc.create_matrix_nest(_a, None)
@@ -1135,9 +1135,7 @@ def assemble_residual(
     assign(x, u)
 
     # Assign block data if block assembly is requested
-    if (
-        isinstance(residual, Iterable) and b.getType() != petsc4py.PETSc.Vec.Type.NEST
-    ):
+    if isinstance(residual, Iterable) and b.getType() != PETSc.Vec.Type.NEST:
         _assign_block_data(residual, b)  # type: ignore
         _assign_block_data(residual, x)  # type: ignore
 
@@ -1193,7 +1191,7 @@ def assemble_jacobian(
     """
     # Copy existing soultion into the function used in the residual and
     # Jacobian
-    dolfinx.la.petsc._ghost_update(x, petsc4py.PETSc.InsertMode.INSERT, petsc4py.PETSc.ScatterMode.FORWARD)
+    dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
     assign(x, u)
 
     # Assemble Jacobian
