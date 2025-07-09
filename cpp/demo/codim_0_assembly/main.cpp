@@ -77,10 +77,19 @@ int main(int argc, char* argv[])
     mesh::MeshTags<std::int32_t> cell_marker(mesh->topology(), tdim, cells,
                                              values);
 
-    auto [_submesh, entity_map, v_map, g_map]
-        = mesh::create_submesh(*mesh, tdim, cell_marker.find(2));
-    std::shared_ptr<mesh::Mesh<U>> submesh
-        = std::make_shared<mesh::Mesh<U>>(std::move(_submesh));
+    // We create a submesh consisting of all cells with a given tag by calling
+    // `create_submesh`. This returns a submesh (a `Mesh` object)
+    // consisting of only the the tagged cells. It also returns an `EntityMap`
+    // object, which relates entities in the submesh to entities in the original
+    // mesh. We will need this to assemble our mixed-domain form.
+    std::shared_ptr<mesh::Mesh<U>> submesh;
+    std::shared_ptr<mesh::EntityMap> entity_map;
+    {
+      auto [_submesh, _emap, v_map, g_map]
+          = mesh::create_submesh(*mesh, tdim, cell_marker.find(2));
+      submesh = std::make_shared<mesh::Mesh<U>>(std::move(_submesh));
+      entity_map = std::make_shared<mesh::EntityMap>(std::move(_emap));
+    }
 
     // We create the function space used for the trial space
     auto W
@@ -91,16 +100,10 @@ int main(int argc, char* argv[])
     // this case, `mesh` and `submesh`). The mesh passed to `create_form` is
     // called the *integration domain mesh* (here, `mesh`). To assemble a
     // mixed-domain form, we must supply an `EntityMap` for each additional mesh
-    // involved in the form. An `EntityMap` relates entities in one mesh to
-    // entities in the integration domain mesh.
-    //
-    // To construct an `EntityMap`, we provide:
-    //   1. The original topology (`mesh->topology()`),
-    //   2. The sub-topology (`submesh->topology()`),
-    //   3. A mapping from entity indices in the sub-topology to indices in the
-    //      original topology (`submesh_to_mesh`).
+    // involved in the form, relating entities in that mesh to the integration
+    // domain mesh.
     std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps
-        = {std::make_shared<const mesh::EntityMap>(entity_map)};
+        = {entity_map};
     // Next we compute the integration entities on the integration
     // domain `mesh`
     std::vector<std::int32_t> integration_entities
