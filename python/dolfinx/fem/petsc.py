@@ -763,6 +763,39 @@ class LinearProblem:
     ) -> None:
         """Initialize solver for a linear variational problem.
 
+        Solves problems of the form
+        :math:`a_{ij}(u, v) = f_i(v), i,j=0,\\ldots,N\\
+        \\forall v \\in V` where
+        :math:`u=(u_0,\\ldots,u_N), v=(v_0,\\ldots,v_N)`
+        using PETSc KSP as the inear solver.
+
+        By default, the underlying KSP solver uses PETSc's default solver
+        options (usually GMRES + ILU preconditioning). To use the robust
+        combination of LU via MUMPS:
+
+        Example::
+
+            problem = LinearProblem(a, L, [bc0, bc1],
+                petsc_options_prefix="basic_linear_problem",
+                petsc_options={
+                  "ksp_type": "preonly",
+                  "pc_type": "lu",
+                  "pc_factor_mat_solver_type": "mumps"
+            })
+
+            problem = LinearProblem([[a00, a01], [None, a11]], [L0, L1],
+                                    bcs=[bc0, bc1], u=[uh0, uh1])
+
+        If `petsc_options_prefix` is passed then every PETSc object
+        will have a unique options prefix set. We recommend discovering
+        these prefixes dynamically via the petsc4py API rather than
+        hard-coding each prefix value into the programme.
+
+        Example::
+
+            ksp_options_prefix = problem.solver.getOptionsPrefix()
+            A_options_prefix = problem.A.getOptionsPrefix()
+
         Args:
             a: Bilinear UFL form or a nested sequence of bilinear
                 forms, the left-hand side of the variational problem.
@@ -775,18 +808,17 @@ class LinearProblem:
                 forms, used as a preconditioner.
             kind: The PETSc matrix and vector type. See
                 :func:`create_matrix` for options.
-            petsc_options_prefix: Prefix to be used while setting the
-                options in `petsc_options`. The prefix must be the same
-                on all ranks, and must be unique to the problem. If the
-                user wants to manually set PETSc options outside of this
-                class then a prefix must be provided even if
-                `petsc_options` is not provided. The only acceptable case
-                of not providing a prefix is when neither `petsc_options`
-                is provided nor the use wants to manually set PETSc
-                options outside of this class.
-            petsc_options: Options set on the underlying PETSc KSP.
-                The options must be the same on all ranks. If options
-                are provided, then also `petsc_options_prefix` must
+            petsc_options_prefix: Options prefix used as root prefix
+                on all internally created PETSc objects. Typically
+                ends with `_`. Must be the same on all ranks, and is
+                usually unique within the programme.
+                It is strongly recommended to pass this argument,
+                and it must be passed if `petsc_options` is provided.
+                If `None`, then no prefix is set on any internally created
+                PETSc object.
+            petsc_options: Options set on the underlying PETSc KSP only.
+                The options must be the same on all ranks. If
+                provided, then `petsc_options_prefix` must also
                 be provided.  For available choices for the
                 `petsc_options` kwarg, see the `PETSc KSP documentation
                 <https://petsc4py.readthedocs.io/en/stable/manual/ksp/>`_.
@@ -808,17 +840,6 @@ class LinearProblem:
                 e.g. for a key-value pair (msh, emap) in `entity_maps`,
                 `emap[i]` is the entity in `msh` corresponding to entity
                 `i` in the integration domain mesh.
-
-        Example::
-
-            problem = LinearProblem(a, L, [bc0, bc1], petsc_options={
-                "ksp_type": "preonly",
-                "pc_type": "lu",
-                "pc_factor_mat_solver_type": "mumps"
-            })
-
-            problem = LinearProblem([[a00, a01], [None, a11]], [L0, L1],
-                                    bcs=[bc0, bc1], u=[uh0, uh1])
         """
         self._a = _create_form(
             a,
@@ -871,7 +892,7 @@ class LinearProblem:
         # Assess consistency of petsc_options and petsc_options_prefix
         if petsc_options is not None and petsc_options_prefix is None:
             raise ValueError(
-                "Must pass both petsc_options and petsc_options_prefix "
+                "Must pass both petsc_options and unique petsc_options_prefix "
                 "when petsc_options is provided"
             )
 
@@ -993,38 +1014,17 @@ class LinearProblem:
 
     @property
     def A(self) -> PETSc.Mat:
-        """Left-hand side matrix.
-
-        Note:
-            If the KSP object has an options prefix set, then also this
-            matrix has one. The matrix options prefix can be retrieved
-            by appending  the string ``"A_"`` to the value returned by
-            the `petsc_options_prefix` property.
-        """
+        """Left-hand side matrix."""
         return self._A
 
     @property
     def P_mat(self) -> PETSc.Mat:
-        """Preconditioner matrix.
-
-        Note:
-            If the KSP object has an options prefix set, then also this
-            matrix has one. The matrix options prefix can be retrieved
-            by appending  the string ``"P_mat_"`` to the value returned by
-            the `petsc_options_prefix` property.
-        """
+        """Preconditioner matrix."""
         return self._P_mat
 
     @property
     def b(self) -> PETSc.Vec:
-        """Right-hand side vector.
-
-        Note:
-            If the KSP object has an options prefix set, then also this
-            matrix has one. The matrix options prefix can be retrieved
-            by appending  the string ``"b_"`` to the value returned by
-            the `petsc_options_prefix` property.
-        """
+        """Right-hand side vector."""
         return self._b
 
     @property
@@ -1034,23 +1034,12 @@ class LinearProblem:
         Note:
             This vector does not share memory with the solution
             Function `u`.
-
-        Note:
-            If the KSP object has an options prefix set, then also this
-            matrix has one. The matrix options prefix can be retrieved
-            by appending  the string ``"x_"`` to the value returned by
-            the `petsc_options_prefix` property.
         """
         return self._x
 
     @property
     def solver(self) -> PETSc.KSP:
-        """The PETSc KSP solver.
-
-        Note:
-            Use the `petsc_options_prefix` property to determine if the
-            KSP solver has an options prefix set and, if so, its value.
-        """
+        """The PETSc KSP solver."""
         return self._solver
 
     @property
@@ -1062,15 +1051,6 @@ class LinearProblem:
             vector `x`.
         """
         return self._u
-
-    @property
-    def petsc_options_prefix(self) -> type.Optional[str]:
-        """
-        PETSc options prefix associated to the KSP object.
-
-        Returns None only when no PETSc options are set on the KSP object.
-        """
-        return self._petsc_options_prefix
 
 
 # -- High-level interface for SNES ---------------------------------------
@@ -1232,9 +1212,13 @@ class NonlinearProblem:
         """Class for solving nonlinear problems with SNES.
 
         Solves problems of the form
-        :math:`F_i(u, v) = 0, i=0,...N\\ \\forall v \\in V` where
-        :math:`u=(u_0,...,u_N), v=(v_0,...,v_N)` using PETSc SNES as the
-        non-linear solver.
+        :math:`F_i(u, v) = 0, i=0,\\ldots,N\\ \\forall v \\in V` where
+        :math:`u=(u_0,\\ldots,u_N), v=(v_0,\\ldots,v_N)` using PETSc
+        SNES as the non-linear solver.
+
+        Note:
+            The deprecated version of this class for use with
+            NewtonSolver has been renamed NewtonSolverNonlinearProblem.
 
         By default, the underlying SNES solver uses PETSc's default
         options. To use the robust combination of LU via MUMPS with
@@ -1242,15 +1226,22 @@ class NonlinearProblem:
 
         Example::
 
+            petsc_options_prefix = "nonlinear_problem_"
             petsc_options = {"ksp_type": "preonly",
                              "pc_type": "lu",
                              "pc_factor_mat_solver_type": "mumps",
                              "snes_linesearch_type": "bt",
             }
 
-        Note:
-            The deprecated version of this class for use with
-            NewtonSolver has been renamed NewtonSolverNonlinearProblem.
+        If `petsc_options_prefix` is passed then every PETSc object
+        will have a unique options prefix set. We recommend discovering
+        these prefixes dynamically via the petsc4py API rather than
+        hard-coding each prefix value into the programme.
+
+        Example::
+
+            snes_options_prefix = problem.solver.getOptionsPrefix()
+            jacobian_options_prefix = problem.A.getOptionsPrefix()
 
         Args:
             F: UFL form(s) representing the residual :math:`F_i`.
@@ -1264,21 +1255,19 @@ class NonlinearProblem:
                 preconditioner (``MatType``).
                 See :func:`dolfinx.fem.petsc.create_matrix` for more
                 information.
-            petsc_options_prefix: Prefix to be used while setting the
-                options in `petsc_options`. The prefix must be the same
-                on all ranks, and must be unique to the problem. If the
-                user wants to manually set PETSc options outside of this
-                class then a prefix must be provided even if
-                `petsc_options` is not provided. The only acceptable case
-                of not providing a prefix is when neither `petsc_options`
-                is provided nor the use wants to manually set PETSc
-                options outside of this class.
-            petsc_options: Options set on the underlying PETSc KSP.
-                The options must be the same on all ranks. If options
-                are provided, then also `petsc_options_prefix` must
+            petsc_options_prefix: Options prefix used as root prefix
+                on all internally created PETSc objects. Must be the
+                same on all ranks, and is usually unique within the
+                programme. It is strongly recommended to pass this
+                argument, and it must be passed if `petsc_options`
+                is provided. If `None`, then no prefix is set on any
+                internally created PETSc object.
+            petsc_options: Options set on the underlying PETSc KSP only.
+                The options must be the same on all ranks. If
+                provided, then `petsc_options_prefix` must also
                 be provided.  For available choices for the
-                `petsc_options` kwarg, see the `PETSc SNES documentation
-                <https://petsc4py.readthedocs.io/en/stable/manual/snes>`_.
+                `petsc_options` kwarg, see the `PETSc KSP documentation
+                <https://petsc4py.readthedocs.io/en/stable/manual/ksp/>`_.
                 Options on other objects (matrices, vectors) should be set
                 explicitly by the user.
             form_compiler_options: Options used in FFCx compilation of all
@@ -1451,38 +1440,17 @@ class NonlinearProblem:
 
     @property
     def A(self) -> PETSc.Mat:
-        """Jacobian matrix.
-
-        Note:
-            If the SNES object has an options prefix set, then also this
-            matrix has one. The matrix options prefix can be retrieved
-            by appending  the string ``"A_"`` to the value returned by
-            the `petsc_options_prefix` property.
-        """
+        """Jacobian matrix."""
         return self._A
 
     @property
     def P_mat(self) -> typing.Optional[PETSc.Mat]:
-        """Preconditioner matrix.
-
-        Note:
-            If the SNES object has an options prefix set, then also this
-            matrix has one. The matrix options prefix can be retrieved
-            by appending  the string ``"P_mat_"`` to the value returned by
-            the `petsc_options_prefix` property.
-        """
+        """Preconditioner matrix."""
         return self._P_mat
 
     @property
     def b(self) -> PETSc.Vec:
-        """Residual vector.
-
-        Note:
-            If the SNES object has an options prefix set, then also this
-            vector has one. The vector options prefix can be retrieved
-            by appending  the string ``"b_"`` to the value returned by
-            the `petsc_options_prefix` property.
-        """
+        """Residual vector."""
         return self._b
 
     @property
@@ -1492,23 +1460,12 @@ class NonlinearProblem:
         Note:
             The vector does not share memory with the
             solution Function `u`.
-
-        Note:
-            If the SNES object has an options prefix set, then also this
-            vector has one. The vector options prefix can be retrieved
-            by appending  the string ``"x_"`` to the value returned by
-            the `petsc_options_prefix` property.
         """
         return self._x
 
     @property
     def solver(self) -> PETSc.SNES:
-        """The SNES solver.
-
-        Note:
-            Use the `petsc_options_prefix` property to determine if the
-            SNES solver has an options prefix set and, if so, its value.
-        """
+        """The SNES solver."""
         return self._snes
 
     @property
@@ -1520,16 +1477,6 @@ class NonlinearProblem:
             vector `x`.
         """
         return self._u
-
-    @property
-    def petsc_options_prefix(self) -> str:
-        """
-        PETSc options prefix associated to the SNES object.
-
-        Returns None only when no PETSc options are set on the SNES
-        object.
-        """
-        return self._petsc_options_prefix
 
 
 # -- Deprecated non-linear problem class for NewtonSolver -----------------
