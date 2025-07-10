@@ -24,14 +24,15 @@ from scipy.sparse.linalg import spsolve
 import basix
 import dolfinx.cpp as _cpp
 import ufl
-from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner, create_mesh, locate_entities
 from dolfinx.cpp.fem import locate_dofs_topological
+from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner, create_mesh, locate_entities
 from dolfinx.fem import (
     FunctionSpace,
     assemble_matrix,
     assemble_vector,
     coordinate_element,
-    mixed_topology_form
+    dirichletbc,
+    mixed_topology_form,
 )
 from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.mesh import CellType, Mesh
@@ -42,9 +43,9 @@ if MPI.COMM_WORLD.size > 1:
 
 
 # Create a mixed-topology mesh
-nx = 2
-ny = 2
-nz = 2
+nx = 16
+ny = 16
+nz = 16
 n_cells = nx * ny * nz
 
 cells: list = [[], []]
@@ -123,7 +124,7 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     k = 12.0
     x = ufl.SpatialCoordinate(domain)
-    a += [(ufl.inner(ufl.grad(u), ufl.grad(v)) - k**2 * u * v) * ufl.dx]
+    a += [(ufl.inner(ufl.grad(u), ufl.grad(v))) * ufl.dx]
     f = ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])
     L += [f * v * ufl.dx]
 
@@ -135,18 +136,21 @@ L_form = mixed_topology_form(L, dtype=np.float64)
 
 tdim = mesh.topology.dim
 fdim = tdim - 1
-hex_facets = locate_entities(mesh, fdim, lambda x: np.isclose(x[0], 0.0), 0)
-prism_facets = locate_entities(mesh, fdim, lambda x: np.isclose(x[0], 0.0), 0)
 
+facet_type_idx = 0
+facets = locate_entities(mesh, fdim, lambda x: np.isclose(x[0], 0.0), facet_type_idx)
 mesh.topology.create_connectivity(fdim, tdim)
-hex_dofs = locate_dofs_topological(V_cpp, fdim, hex_facets)
-print(hex_dofs)
+dofs = locate_dofs_topological(V_cpp, fdim, facet_type_idx, facets)
+print(dofs)
+
+bc = dirichletbc(0.0, dofs, V_cpp)
 
 # print(mesh.topology.connectivity((fdim, 0), (tdim, 0)))
 
 # Assemble the matrix
-A = assemble_matrix(a_form)
+A = assemble_matrix(a_form, bcs=[bc])
 b = assemble_vector(L_form)
+b.array[dofs] = 0
 
 # Solve
 A_scipy = A.to_scipy()

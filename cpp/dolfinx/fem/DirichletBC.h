@@ -327,17 +327,17 @@ public:
   DirichletBC(std::shared_ptr<const Constant<T>> g, X&& dofs,
               std::shared_ptr<const FunctionSpace<U>> V)
       : _function_space(V), _g(g), _dofs0(std::forward<X>(dofs)),
-        _owned_indices0(num_owned(*V->dofmap(), _dofs0))
+        _owned_indices0(num_owned(*V->dofmaps(0), _dofs0))
   {
     assert(g);
     assert(V);
-    if (g->shape.size() != V->element()->value_shape().size())
+    if (g->shape.size() != V->elements(0)->value_shape().size())
     {
       throw std::runtime_error(
           "Rank mismatch between Constant and function space in DirichletBC");
     }
 
-    if (g->value.size() != (std::size_t)_function_space->dofmap()->bs())
+    if (g->value.size() != (std::size_t)_function_space->dofmaps(0)->bs())
     {
       throw std::runtime_error(
           "Creating a DirichletBC using a Constant is not supported when the "
@@ -345,14 +345,14 @@ public:
           "(sub-)space. Use a fem::Function to create the fem::DirichletBC.");
     }
 
-    if (!V->element()->interpolation_ident())
+    if (!V->elements(0)->interpolation_ident())
     {
       throw std::runtime_error(
           "Constant can be used only with point-evaluation elements");
     }
 
     // Unroll _dofs0 if dofmap block size > 1
-    if (const int bs = V->dofmap()->bs(); bs > 1)
+    if (const int bs = V->dofmaps(0)->bs(); bs > 1)
     {
       _owned_indices0 *= bs;
       _dofs0 = unroll_dofs(_dofs0, bs);
