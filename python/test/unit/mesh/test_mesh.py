@@ -78,7 +78,6 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
 
     # Some processes might not own or ghost entities
     submesh_to_mesh = entity_map.map(mesh.topology)
-    submesh_to_mesh_geom = geom_map.map(mesh.topology)
     if len(submesh_to_mesh) > 0:
         assert mesh.geometry.dim == submesh.geometry.dim
 
@@ -90,7 +89,7 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
             # correspond to the x_dofs of cell i in the submesh
             mesh_x_dofs = e_to_g[submesh_entity]
             for i in range(len(submesh_x_dofs)):
-                assert mesh_x_dofs[i] == submesh_to_mesh_geom[submesh_x_dofs[i]]
+                assert mesh_x_dofs[i] == geom_map[submesh_x_dofs[i]]
                 assert np.allclose(
                     mesh.geometry.x[mesh_x_dofs[i]], submesh.geometry.x[submesh_x_dofs[i]]
                 )
