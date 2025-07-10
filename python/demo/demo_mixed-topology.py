@@ -24,7 +24,8 @@ from scipy.sparse.linalg import spsolve
 import basix
 import dolfinx.cpp as _cpp
 import ufl
-from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner, create_mesh
+from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner
+from dolfinx.mesh import create_mesh
 from dolfinx.fem import (
     FunctionSpace,
     assemble_matrix,
@@ -34,6 +35,7 @@ from dolfinx.fem import (
 )
 from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.mesh import CellType, Mesh
+from dolfinx import fem
 
 if MPI.COMM_WORLD.size > 1:
     print("Not yet running in parallel")
@@ -93,9 +95,10 @@ hexahedron = coordinate_element(CellType.hexahedron, 1)
 prism = coordinate_element(CellType.prism, 1)
 
 part = create_cell_partitioner(GhostMode.none)
-mesh = create_mesh(
-    MPI.COMM_WORLD, cells_np, [hexahedron._cpp_object, prism._cpp_object], geomx, part
-)
+mesh = create_mesh(MPI.COMM_WORLD, cells_np, geomx, [hexahedron, prism], part)
+
+# V = fem.functionspace(mesh, ("Lagrange", 1))
+
 
 # Create elements and dofmaps for each cell type
 domain = ufl.Mesh(

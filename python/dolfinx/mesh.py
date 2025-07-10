@@ -287,7 +287,7 @@ class Mesh:
     def __init__(
         self,
         msh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64],
-        domain: typing.Optional[ufl.Mesh],
+        domain: typing.Optional[typing.Union[ufl.Mesh, Sequence[ufl.Mesh]]],
     ):
         """Initialize mesh from a C++ mesh.
 
@@ -305,8 +305,13 @@ class Mesh:
         self._topology = Topology(self._cpp_object.topology)
         self._geometry = Geometry(self._cpp_object.geometry)
         self._ufl_domain = domain
-        if self._ufl_domain is not None:
-            self._ufl_domain._ufl_cargo = self._cpp_object  # type: ignore
+        try:
+            for d in self._ufl_domain:
+                if d is not None:
+                    d._ufl_cargo = self._cpp_object  # type: ignore
+        except TypeError:
+            if self._ufl_domain is not None:
+                self._ufl_domain._ufl_cargo = self._cpp_object  # type: ignore
 
     @property
     def comm(self):
@@ -592,15 +597,59 @@ def refine(
     return Mesh(mesh1, ufl_domain), parent_cell, parent_facet
 
 
+def extract_cmap_and_domain(
+    e: typing.Union[
+        ufl.Mesh,
+        basix.finite_element.FiniteElement,
+        basix.ufl._BasixElement,
+        _CoordinateElement,
+    ],
+) -> tuple[typing.Any, typing.Any]:
+    try:
+        # e is a UFL domain
+        e_ufl = e.ufl_coordinate_element()
+        return _coordinate_element(e_ufl.basix_element), e
+    except AttributeError:
+        pass
+
+    try:
+        # e is a Basix 'UFL' element
+        domain = ufl.Mesh(e)
+        assert domain.geometric_dimension == gdim
+        return _coordinate_element(e.basix_element), domain
+    except (AttributeError, TypeError):
+        pass
+    try:
+        # e is a Basix element
+        # TODO: Resolve geometric dimension vs shape for manifolds
+        e_ufl = basix.ufl._BasixElement(e)  # type: ignore
+        e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,))
+        domain = ufl.Mesh(e_ufl)
+        assert domain.geometric_dimension == gdim
+        return _coordinate_element(e), domain  # type: ignore
+    except (AttributeError, TypeError):
+        pass
+    # e is a CoordinateElement
+    return e, None
+
+
 def create_mesh(
     comm: _MPI.Comm,
-    cells: npt.NDArray[np.int64],
+    cells: typing.Union[
+        npt.NDArray[np.int64],
+        typing.Sequence[npt.NDArray[np.int64]],
+    ],
     x: npt.NDArray[np.floating],
     e: typing.Union[
         ufl.Mesh,
         basix.finite_element.FiniteElement,
         basix.ufl._BasixElement,
         _CoordinateElement,
+        Sequence[
+            typing.Union[
+                basix.finite_element.FiniteElement, basix.ufl._BasixElement, _CoordinateElement
+            ]
+        ],
     ],
     partitioner: typing.Optional[typing.Callable] = None,
 ) -> Mesh:
@@ -608,7 +657,7 @@ def create_mesh(
 
     Args:
         comm: MPI communicator to define the mesh on.
-            cells: Cells of the mesh. ``cells[i]`` are the 'nodes' of cell
+        cells: Cells of the mesh. ``cells[i]`` are the 'nodes' of cell
             ``i``.
         x: Mesh geometry ('node' coordinates), with shape
             ``(num_nodes, gdim)``.
@@ -633,37 +682,34 @@ def create_mesh(
     else:
         gdim = x.shape[1]
 
-    dtype = None
     try:
-        # e is a UFL domain
-        e_ufl = e.ufl_coordinate_element()  # type: ignore
-        cmap = _coordinate_element(e_ufl.basix_element)  # type: ignore
-        domain = e
-        dtype = cmap.dtype
-        # TODO: Resolve UFL vs Basix geometric dimension issue
-        # assert domain.geometric_dimension == gdim
-    except AttributeError:
-        try:
-            # e is a Basix 'UFL' element
-            cmap = _coordinate_element(e.basix_element)  # type: ignore
-            domain = ufl.Mesh(e)
-            dtype = cmap.dtype
-            assert domain.geometric_dimension == gdim
-        except AttributeError:
-            try:
-                # e is a Basix element
-                # TODO: Resolve geometric dimension vs shape for manifolds
-                cmap = _coordinate_element(e)  # type: ignore
-                e_ufl = basix.ufl._BasixElement(e)  # type: ignore
-                e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,))
-                domain = ufl.Mesh(e_ufl)
+        # e and cells are Sequences
+        dtype = None
+        formatted_cells = []
+        cmaps = []
+        domains = []
+        for i, c in zip(e, cells):
+            cmap, domain = extract_cmap_and_domain(i)
+            if dtype is None:
                 dtype = cmap.dtype
-                assert domain.geometric_dimension == gdim
-            except (AttributeError, TypeError):
-                # e is a CoordinateElement
-                cmap = e
-                domain = None
-                dtype = cmap.dtype  # type: ignore
+            else:
+                assert dtype == cmap.dtype
+            c = np.asarray(c, dtype=np.int64, order="C")
+            formatted_cells.append(c)
+            cmaps.append(cmap._cpp_object)
+            domains.append(domain)
+
+        x = np.asarray(x, dtype=dtype, order="C")
+        msh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64] = _cpp.mesh.create_mesh(
+            comm, formatted_cells, cmaps, x, partitioner
+        )
+        return Mesh(msh, domains)
+
+    except KeyboardInterrupt:
+        pass
+
+    cmap, domain = extract_cmap_and_domain(e)
+    dtype = cmap.dtype
 
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
