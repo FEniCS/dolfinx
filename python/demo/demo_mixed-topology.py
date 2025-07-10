@@ -108,6 +108,9 @@ dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, elements_cpp)
 
 # Create C++ function space
 V_cpp = _cpp.fem.FunctionSpace_float64(mesh, elements_cpp, dofmaps)
+kappa = _cpp.fem.Function_float64(V_cpp)
+print(kappa)
+quit()
 
 # Create forms for each cell type.
 # FIXME This hack is required at the moment because UFL does not yet know

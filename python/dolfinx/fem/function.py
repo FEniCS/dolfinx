@@ -332,7 +332,8 @@ class Function(ufl.Coefficient):
             if dtype is None:
                 dtype = default_scalar_type
 
-        assert np.issubdtype(V.element.dtype, np.dtype(dtype).type(0).real.dtype), (
+        print(type(V))
+        assert np.issubdtype(V.elements(0).dtype, np.dtype(dtype).type(0).real.dtype), (
             "Incompatible FunctionSpace dtype and requested dtype."
         )
 
