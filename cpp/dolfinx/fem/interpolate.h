@@ -700,19 +700,16 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
 /// @brief Interpolate data into coefficients for an identity-mapped point
 /// evaluation element.
 /// @param [in] element Element
-/// @param [in] element_bs Element block size
 /// @param [in] symmetric Is the element symmetric
 /// @param [in] dofmap DofMap for cells
-/// @param [in] dofmap_bs DofMap block size
 /// @param [in] cells Cells to interpolate over
 /// @param [in] cell_info Cell permutation information, if required
 /// @param [in] f Input data evaluated at points
 /// @param [in] fshape Shape of input data
 /// @param [out] coeffs Output Function coefficients
 template <dolfinx::scalar T, std::floating_point U>
-void point_evaluation(const FiniteElement<U>& element, int element_bs,
-                      bool symmetric, const DofMap& dofmap, int dofmap_bs,
-                      std::span<const std::int32_t> cells,
+void point_evaluation(const FiniteElement<U>& element, bool symmetric,
+                      const DofMap& dofmap, std::span<const std::int32_t> cells,
                       std::span<const std::uint32_t> cell_info,
                       std::span<const T> f, std::array<std::size_t, 2> fshape,
                       std::span<T> coeffs)
@@ -720,7 +717,10 @@ void point_evaluation(const FiniteElement<U>& element, int element_bs,
   // Point evaluation element *and* the geometric map is the identity,
   // e.g. not Piola mapped
 
+  const int element_bs = element.block_size();
   const int num_scalar_dofs = element.space_dimension() / element_bs;
+  const int dofmap_bs = dofmap.bs();
+
   std::vector<T> _coeffs(num_scalar_dofs);
 
   auto apply_inv_transpose_dof_transformation
@@ -801,19 +801,16 @@ void point_evaluation(const FiniteElement<U>& element, int element_bs,
 /// @brief Interpolate data into coefficients for an identity-mapped but
 /// non-point evaluation element.
 /// @param [in] element Element
-/// @param [in] element_bs Element block size
 /// @param [in] symmetric Is the element symmetric
 /// @param [in] dofmap DofMap for cells
-/// @param [in] dofmap_bs DofMap block size
 /// @param [in] cells Cells to interpolate over
 /// @param [in] cell_info Cell permutation information, if required
 /// @param [in] f Input data evaluated at points
 /// @param [in] fshape Shape of input data
 /// @param [out] coeffs Output Function coefficients
 template <dolfinx::scalar T, std::floating_point U>
-void identity_mapped(const FiniteElement<U>& element, int element_bs,
-                     bool symmetric, const DofMap& dofmap, int dofmap_bs,
-                     std::span<const std::int32_t> cells,
+void identity_mapped(const FiniteElement<U>& element, bool symmetric,
+                     const DofMap& dofmap, std::span<const std::int32_t> cells,
                      std::span<const std::uint32_t> cell_info,
                      std::span<const T> f, std::array<std::size_t, 2> fshape,
                      std::span<T> coeffs)
@@ -821,7 +818,10 @@ void identity_mapped(const FiniteElement<U>& element, int element_bs,
   // Not a point evaluation, but the geometric map is the identity,
   // e.g. not Piola mapped
 
+  const int element_bs = element.block_size();
   const int num_scalar_dofs = element.space_dimension() / element_bs;
+  const int dofmap_bs = dofmap.bs();
+
   std::vector<T> _coeffs(num_scalar_dofs);
 
   if (symmetric)
@@ -879,10 +879,8 @@ void identity_mapped(const FiniteElement<U>& element, int element_bs,
 /// @brief Interpolate data into coefficients for a Piola-mapped point
 /// evaluation element.
 /// @param [in] element Element
-/// @param [in] element_bs Element block size
 /// @param [in] symmetric Is the element symmetric
 /// @param [in] dofmap DofMap for cells
-/// @param [in] dofmap_bs DofMap block size
 /// @param [in] cells Cells to interpolate over
 /// @param [in] cell_info Cell permutation information, if required
 /// @param [in] f Input data evaluated at points
@@ -890,9 +888,8 @@ void identity_mapped(const FiniteElement<U>& element, int element_bs,
 /// @param [in] mesh Mesh
 /// @param [out] coeffs Output Function coefficients
 template <dolfinx::scalar T, std::floating_point U>
-void piola_mapped(const FiniteElement<U>& element, int element_bs,
-                  bool symmetric, const DofMap& dofmap, int dofmap_bs,
-                  std::span<const std::int32_t> cells,
+void piola_mapped(const FiniteElement<U>& element, bool symmetric,
+                  const DofMap& dofmap, std::span<const std::int32_t> cells,
                   std::span<const std::uint32_t> cell_info,
                   std::span<const T> f, std::array<std::size_t, 2> fshape,
                   const mesh::Mesh<U>& mesh, std::span<T> coeffs)
@@ -900,8 +897,11 @@ void piola_mapped(const FiniteElement<U>& element, int element_bs,
 
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology()->dim();
+
+  const int element_bs = element.block_size();
   const int num_scalar_dofs = element.space_dimension() / element_bs;
   const int value_size = element.reference_value_size();
+  const int dofmap_bs = dofmap.bs();
 
   std::vector<T> _coeffs(num_scalar_dofs);
   md::mdspan<const T, md::dextents<std::size_t, 2>> _f(f.data(), fshape);
@@ -1087,7 +1087,6 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   // Get dofmap
   const auto dofmap = u.function_space()->dofmaps(index);
   assert(dofmap);
-  const int dofmap_bs = dofmap->bs();
 
   // Result will be stored to coeffs
   std::span<T> coeffs = u.x()->mutable_array();
@@ -1098,20 +1097,20 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     spdlog::debug("Interpolate: point evaluation");
     // This assumes that any element with an identity interpolation matrix
     // is a point evaluation
-    impl::point_evaluation(*element, element_bs, symmetric, *dofmap, dofmap_bs,
-                           cells, cell_info, f, fshape, coeffs);
+    impl::point_evaluation(*element, symmetric, *dofmap, cells, cell_info, f,
+                           fshape, coeffs);
   }
   else if (element->map_ident())
   {
     spdlog::debug("Interpolate: identity-mapped evaluation");
-    impl::identity_mapped(*element, element_bs, symmetric, *dofmap, dofmap_bs,
-                          cells, cell_info, f, fshape, coeffs);
+    impl::identity_mapped(*element, symmetric, *dofmap, cells, cell_info, f,
+                          fshape, coeffs);
   }
   else
   {
     spdlog::debug("Interpolate: Piola-mapped evaluation");
-    impl::piola_mapped(*element, element_bs, symmetric, *dofmap, dofmap_bs,
-                       cells, cell_info, f, fshape, *mesh, coeffs);
+    impl::piola_mapped(*element, symmetric, *dofmap, cells, cell_info, f,
+                       fshape, *mesh, coeffs);
   }
 }
 
