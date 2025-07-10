@@ -112,12 +112,18 @@ V_cpp = _cpp.fem.FunctionSpace_float64(mesh, elements_cpp, dofmaps)
 # Create C++ Function
 kappa = _cpp.fem.Function_float64(V_cpp)
 
-for i in range(2):
-    map = mesh.topology.index_maps(mesh.topology.dim)[i]
-    cells0 = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
-    x = _cpp.fem.interpolation_coords(V_cpp.elements(i), V_cpp.mesh.geometry, cells0, i)
-    print(i, x)
-quit()
+# Work in progress
+# def u0(x):
+#     return x[0, :]
+
+# # Get interpolation points for each cell type
+# for i in range(len(elements)):
+#     map = mesh.topology.index_maps(mesh.topology.dim)[i]
+#     cells0 = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
+#     x = _cpp.fem.interpolation_coords(V_cpp.elements(i),
+#                                       V_cpp.mesh.geometry, cells0)
+#     print("cell type ", i, "pts:", x)
+#     kappa.interpolate(np.asarray(u0(x), dtype=np.float64), cells0)
 
 # Create forms for each cell type.
 # FIXME This hack is required at the moment because UFL does not yet know
