@@ -1075,8 +1075,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
       or f.size() != fshape[0] * fshape[1])
     throw std::runtime_error("Interpolation data has the wrong shape/size.");
 
-  spdlog::info("Check for dof transformation");
-
+  spdlog::debug("Check for dof transformation");
   std::span<const std::uint32_t> cell_info;
   if (element->needs_dof_transformations())
   {
@@ -1084,7 +1083,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
-  spdlog::info("Interpolate: get dofmap");
+  spdlog::debug("Interpolate: get dofmap");
   // Get dofmap
   const auto dofmap = u.function_space()->dofmaps(index);
   assert(dofmap);
@@ -1096,6 +1095,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   const bool symmetric = u.function_space()->symmetric();
   if (element->map_ident() && element->interpolation_ident())
   {
+    spdlog::debug("Interpolate: point evaluation");
     // This assumes that any element with an identity interpolation matrix
     // is a point evaluation
     impl::point_evaluation(*element, element_bs, symmetric, *dofmap, dofmap_bs,
@@ -1103,11 +1103,13 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   }
   else if (element->map_ident())
   {
+    spdlog::debug("Interpolate: identity-mapped evaluation");
     impl::identity_mapped(*element, element_bs, symmetric, *dofmap, dofmap_bs,
                           cells, cell_info, f, fshape, coeffs);
   }
   else
   {
+    spdlog::debug("Interpolate: Piola-mapped evaluation");
     impl::piola_mapped(*element, element_bs, symmetric, *dofmap, dofmap_bs,
                        cells, cell_info, f, fshape, *mesh, coeffs);
   }
