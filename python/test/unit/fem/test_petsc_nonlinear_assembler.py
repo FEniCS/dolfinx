@@ -282,9 +282,7 @@ class TestNLSPETSc:
 
             snes = problem.solver
             opts = PETSc.Options()
-            assert problem.petsc_options_prefix is not None
-            assert snes.getOptionsPrefix() == problem.petsc_options_prefix
-            opts.prefixPush(problem.petsc_options_prefix)
+            opts.prefixPush(snes.getOptionsPrefix())
             for k, v in petsc_options.items():
                 opts[k] = v
             opts.prefixPop()
@@ -501,7 +499,15 @@ class TestNLSPETSc:
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
 
-            problem = dolfinx.fem.petsc.NonlinearProblem(F, [u, p], J=J, bcs=bcs, kind="nest", P=P)
+            problem = dolfinx.fem.petsc.NonlinearProblem(
+                F,
+                [u, p],
+                J=J,
+                bcs=bcs,
+                kind="nest",
+                P=P,
+                petsc_options_prefix="test_assemble_solve_nest_nl__nested_solve",
+            )
             nested_IS = problem.solver.getJacobian()[0].getNestISs()
             problem.solver.setTolerances(rtol=1.0e-15, max_it=20)
             problem.solver.getKSP().setType("minres")

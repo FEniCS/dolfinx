@@ -743,8 +743,11 @@ def set_bc(
 class LinearProblem:
     """Class for solving a linear variational problem.
 
-    Solves of the form :math:`a(u, v) = L(v) \\,  \\forall v \\in V`
-    using PETSc as a linear algebra backend.
+    Solves problems of the form
+    :math:`a_{ij}(u, v) = f_i(v), i,j=0,\\ldots,N\\
+    \\forall v \\in V` where
+    :math:`u=(u_0,\\ldots,u_N), v=(v_0,\\ldots,v_N)`
+    using PETSc KSP as the linear solver.
     """
 
     def __init__(
@@ -764,11 +767,6 @@ class LinearProblem:
     ) -> None:
         """Initialize solver for a linear variational problem.
 
-        Solves problems of the form
-        :math:`a_{ij}(u, v) = f_i(v), i,j=0,\\ldots,N\\
-        \\forall v \\in V` where
-        :math:`u=(u_0,\\ldots,u_N), v=(v_0,\\ldots,v_N)`
-        using PETSc KSP as the inear solver.
 
         By default, the underlying KSP solver uses PETSc's default solver
         options (usually GMRES + ILU preconditioning). To use the robust
@@ -888,17 +886,17 @@ class LinearProblem:
         self.solver.setOperators(self.A, self.P_mat)
 
         self._petsc_options_prefix = petsc_options_prefix
-        self.solver.setOptionsPrefix(self.petsc_options_prefix)
-        self.A.setOptionsPrefix(f"{self.petsc_options_prefix}A_")
-        self.b.setOptionsPrefix(f"{self.petsc_options_prefix}b_")
-        self.x.setOptionsPrefix(f"{self.petsc_options_prefix}x_")
+        self.solver.setOptionsPrefix(petsc_options_prefix)
+        self.A.setOptionsPrefix(f"{petsc_options_prefix}A_")
+        self.b.setOptionsPrefix(f"{petsc_options_prefix}b_")
+        self.x.setOptionsPrefix(f"{petsc_options_prefix}x_")
         if self.P_mat is not None:
-            self.P_mat.setOptionsPrefix(f"{self.petsc_options_prefix}P_mat_")
+            self.P_mat.setOptionsPrefix(f"{petsc_options_prefix}P_mat_")
 
         # Set options on KSP only
         if petsc_options is not None:
             opts = PETSc.Options()
-            opts.prefixPush(self.petsc_options_prefix)
+            opts.prefixPush(self.solver.getOptionsPrefix())
 
             for k, v in petsc_options.items():
                 opts[k] = v
@@ -1184,6 +1182,14 @@ def assemble_jacobian(
 
 
 class NonlinearProblem:
+    """Class for solving nonlinear problems with SNES.
+
+    Solves problems of the form
+    :math:`F_i(u, v) = 0, i=0,\\ldots,N\\ \\forall v \\in V` where
+    :math:`u=(u_0,\\ldots,u_N), v=(v_0,\\ldots,v_N)` using PETSc
+    SNES as the non-linear solver.
+    """
+
     def __init__(
         self,
         F: typing.Union[ufl.form.Form, Sequence[ufl.form.Form]],
@@ -1199,12 +1205,8 @@ class NonlinearProblem:
         jit_options: typing.Optional[dict] = None,
         entity_maps: typing.Optional[dict[dolfinx.mesh.Mesh, npt.NDArray[np.int32]]] = None,
     ):
-        """Class for solving nonlinear problems with SNES.
-
-        Solves problems of the form
-        :math:`F_i(u, v) = 0, i=0,\\ldots,N\\ \\forall v \\in V` where
-        :math:`u=(u_0,\\ldots,u_N), v=(v_0,\\ldots,v_N)` using PETSc
-        SNES as the non-linear solver.
+        """
+        Initialize solver for a nonlinear variational problem.
 
         Note:
             The deprecated version of this class for use with
@@ -1328,18 +1330,17 @@ class NonlinearProblem:
         )
         self.solver.setFunction(partial(assemble_residual, u, self.F, self.J, bcs), self.b)
 
-        self._petsc_options_prefix = petsc_options_prefix
-        self.solver.setOptionsPrefix(self.petsc_options_prefix)
-        self.A.setOptionsPrefix(f"{self.petsc_options_prefix}A_")
+        self.solver.setOptionsPrefix(petsc_options_prefix)
+        self.A.setOptionsPrefix(f"{petsc_options_prefix}A_")
         if self.P_mat is not None:
-            self.P_mat.setOptionsPrefix(f"{self.petsc_options_prefix}P_mat_")
-        self.b.setOptionsPrefix(f"{self.petsc_options_prefix}b_")
-        self.x.setOptionsPrefix(f"{self.petsc_options_prefix}x_")
+            self.P_mat.setOptionsPrefix(f"{petsc_options_prefix}P_mat_")
+        self.b.setOptionsPrefix(f"{petsc_options_prefix}b_")
+        self.x.setOptionsPrefix(f"{petsc_options_prefix}x_")
 
         # Set options for SNES only
         if petsc_options is not None:
             opts = PETSc.Options()  # type: ignore
-            opts.prefixPush(self.petsc_options_prefix)
+            opts.prefixPush(self.solver.getOptionsPrefix())
 
             for k, v in petsc_options.items():
                 opts[k] = v
@@ -1373,6 +1374,10 @@ class NonlinearProblem:
             solver e.g. `assert converged_reason > 0`. Alternatively, pass
             `"snes_error_if_not_converged": True` and
             `"ksp_error_if_not_converged" : True` in `petsc_options`.
+
+        Note:
+            The solution function(s) and solution vector do not share
+            memory.
 
         Returns:
             The solution function(s), the solution vector, convergence
