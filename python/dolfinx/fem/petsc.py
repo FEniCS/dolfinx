@@ -751,11 +751,12 @@ class LinearProblem:
         self,
         a: typing.Union[ufl.Form, Iterable[Iterable[ufl.Form]]],
         L: typing.Union[ufl.Form, Iterable[ufl.Form]],
+        *,
+        petsc_options_prefix: str,
         bcs: typing.Optional[Iterable[DirichletBC]] = None,
         u: typing.Optional[typing.Union[_Function, Iterable[_Function]]] = None,
         P: typing.Optional[typing.Union[ufl.Form, Iterable[Iterable[ufl.Form]]]] = None,
         kind: typing.Optional[typing.Union[str, Iterable[Iterable[str]]]] = None,
-        petsc_options_prefix: typing.Optional[str] = None,
         petsc_options: typing.Optional[dict] = None,
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
@@ -784,12 +785,13 @@ class LinearProblem:
             })
 
             problem = LinearProblem([[a00, a01], [None, a11]], [L0, L1],
-                                    bcs=[bc0, bc1], u=[uh0, uh1])
+                                    bcs=[bc0, bc1], u=[uh0, uh1],
+                                    petsc_options_prefix="nest_linear_problem")
 
-        If `petsc_options_prefix` is passed then every PETSc object
-        will have a unique options prefix set. We recommend discovering
-        these prefixes dynamically via the petsc4py API rather than
-        hard-coding each prefix value into the programme.
+        Every PETSc object created will have a unique options prefix set.
+        We recommend discovering these prefixes dynamically via the
+        petsc4py API rather than hard-coding each prefix value
+        into the programme.
 
         Example::
 
@@ -808,14 +810,10 @@ class LinearProblem:
                 forms, used as a preconditioner.
             kind: The PETSc matrix and vector type. See
                 :func:`create_matrix` for options.
-            petsc_options_prefix: Options prefix used as root prefix
-                on all internally created PETSc objects. Typically
-                ends with `_`. Must be the same on all ranks, and is
-                usually unique within the programme.
-                It is strongly recommended to pass this argument,
-                and it must be passed if `petsc_options` is provided.
-                If `None`, then no prefix is set on any internally created
-                PETSc object.
+            petsc_options_prefix: Mandatory named argument. Options prefix
+                used as root prefix on all internally created PETSc
+                objects. Typically ends with `_`. Must be the same on
+                all ranks, and is usually unique within the programme.
             petsc_options: Options set on the underlying PETSc KSP only.
                 The options must be the same on all ranks. If
                 provided, then `petsc_options_prefix` must also
@@ -889,22 +887,13 @@ class LinearProblem:
         self._solver = PETSc.KSP().create(self.A.comm)
         self.solver.setOperators(self.A, self.P_mat)
 
-        # Assess consistency of petsc_options and petsc_options_prefix
-        if petsc_options is not None and petsc_options_prefix is None:
-            raise ValueError(
-                "Must pass both petsc_options and unique petsc_options_prefix "
-                "when petsc_options is provided"
-            )
-
-        # Set PETSc options prefix to all objects
-        if petsc_options_prefix is not None:
-            self._petsc_options_prefix = petsc_options_prefix
-            self.solver.setOptionsPrefix(self.petsc_options_prefix)
-            self.A.setOptionsPrefix(f"{self.petsc_options_prefix}A_")
-            self.b.setOptionsPrefix(f"{self.petsc_options_prefix}b_")
-            self.x.setOptionsPrefix(f"{self.petsc_options_prefix}x_")
-            if self.P_mat is not None:
-                self.P_mat.setOptionsPrefix(f"{self.petsc_options_prefix}P_mat_")
+        self._petsc_options_prefix = petsc_options_prefix
+        self.solver.setOptionsPrefix(self.petsc_options_prefix)
+        self.A.setOptionsPrefix(f"{self.petsc_options_prefix}A_")
+        self.b.setOptionsPrefix(f"{self.petsc_options_prefix}b_")
+        self.x.setOptionsPrefix(f"{self.petsc_options_prefix}x_")
+        if self.P_mat is not None:
+            self.P_mat.setOptionsPrefix(f"{self.petsc_options_prefix}P_mat_")
 
         # Set options on KSP only
         if petsc_options is not None:
@@ -1199,11 +1188,12 @@ class NonlinearProblem:
         self,
         F: typing.Union[ufl.form.Form, Sequence[ufl.form.Form]],
         u: typing.Union[_Function, Sequence[_Function]],
+        *,
+        petsc_options_prefix: str,
         bcs: typing.Optional[Sequence[DirichletBC]] = None,
         J: typing.Optional[typing.Union[ufl.form.Form, Sequence[Sequence[ufl.form.Form]]]] = None,
         P: typing.Optional[typing.Union[ufl.form.Form, Sequence[Sequence[ufl.form.Form]]]] = None,
         kind: typing.Optional[typing.Union[str, typing.Iterable[typing.Iterable[str]]]] = None,
-        petsc_options_prefix: typing.Optional[str] = None,
         petsc_options: typing.Optional[dict] = None,
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
@@ -1233,10 +1223,10 @@ class NonlinearProblem:
                              "snes_linesearch_type": "bt",
             }
 
-        If `petsc_options_prefix` is passed then every PETSc object
-        will have a unique options prefix set. We recommend discovering
-        these prefixes dynamically via the petsc4py API rather than
-        hard-coding each prefix value into the programme.
+        Every PETSc object will have a unique options prefix set. We
+        recommend discovering these prefixes dynamically via the
+        petsc4py API rather than hard-coding each prefix value into
+        the programme.
 
         Example::
 
@@ -1342,22 +1332,13 @@ class NonlinearProblem:
         )
         self.solver.setFunction(partial(assemble_residual, u, self.F, self.J, bcs), self.b)
 
-        # Assess consistency of petsc_options and petsc_options_prefix
-        if petsc_options is not None and petsc_options_prefix is None:
-            raise ValueError(
-                "Must pass both petsc_options and petsc_options_prefix "
-                "when petsc_options is provided"
-            )
-
-        # Set PETSc options prefix to all objects
-        if petsc_options_prefix is not None:
-            self._petsc_options_prefix = petsc_options_prefix
-            self.solver.setOptionsPrefix(self.petsc_options_prefix)
-            self.A.setOptionsPrefix(f"{self.petsc_options_prefix}A_")
-            if self.P_mat is not None:
-                self.P_mat.setOptionsPrefix(f"{self.petsc_options_prefix}P_mat_")
-            self.b.setOptionsPrefix(f"{self.petsc_options_prefix}b_")
-            self.x.setOptionsPrefix(f"{self.petsc_options_prefix}x_")
+        self._petsc_options_prefix = petsc_options_prefix
+        self.solver.setOptionsPrefix(self.petsc_options_prefix)
+        self.A.setOptionsPrefix(f"{self.petsc_options_prefix}A_")
+        if self.P_mat is not None:
+            self.P_mat.setOptionsPrefix(f"{self.petsc_options_prefix}P_mat_")
+        self.b.setOptionsPrefix(f"{self.petsc_options_prefix}b_")
+        self.x.setOptionsPrefix(f"{self.petsc_options_prefix}x_")
 
         # Set options for SNES only
         if petsc_options is not None:
