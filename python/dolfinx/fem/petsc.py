@@ -1216,7 +1216,6 @@ class NonlinearProblem:
 
         Example::
 
-            petsc_options_prefix = "nonlinear_problem_"
             petsc_options = {"ksp_type": "preonly",
                              "pc_type": "lu",
                              "pc_factor_mat_solver_type": "mumps",
@@ -1245,13 +1244,10 @@ class NonlinearProblem:
                 preconditioner (``MatType``).
                 See :func:`dolfinx.fem.petsc.create_matrix` for more
                 information.
-            petsc_options_prefix: Options prefix used as root prefix
-                on all internally created PETSc objects. Must be the
-                same on all ranks, and is usually unique within the
-                programme. It is strongly recommended to pass this
-                argument, and it must be passed if `petsc_options`
-                is provided. If `None`, then no prefix is set on any
-                internally created PETSc object.
+            petsc_options_prefix: Options prefix used as root prefix on all
+                internally created PETSc objects. Typically ends with `_`.
+                Must be the same on all ranks, and is usually unique within
+                the programme.
             petsc_options: Options set on the underlying PETSc KSP only.
                 The options must be the same on all ranks. If
                 provided, then `petsc_options_prefix` must also
