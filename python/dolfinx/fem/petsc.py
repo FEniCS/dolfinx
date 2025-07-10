@@ -767,24 +767,28 @@ class LinearProblem:
     ) -> None:
         """Initialize solver for a linear variational problem.
 
-
-        By default, the underlying KSP solver uses PETSc's default solver
-        options (usually GMRES + ILU preconditioning). To use the robust
+        By default, the underlying KSP solver uses PETSc's default
+        options, usually GMRES + ILU preconditioning. To use the robust
         combination of LU via MUMPS:
 
         Example::
 
-            problem = LinearProblem(a, L, [bc0, bc1],
+            problem = LinearProblem(a, L, bcs=[bc0, bc1],
                 petsc_options_prefix="basic_linear_problem",
-                petsc_options={
+                petsc_options= {
                   "ksp_type": "preonly",
                   "pc_type": "lu",
                   "pc_factor_mat_solver_type": "mumps"
             })
 
+        This class supports nested problems.
+
+        Example::
+
             problem = LinearProblem([[a00, a01], [None, a11]], [L0, L1],
-                                    bcs=[bc0, bc1], u=[uh0, uh1],
-                                    petsc_options_prefix="nest_linear_problem")
+                bcs=[bc0, bc1], u=[uh0, uh1],
+                kind="nest",
+                petsc_options_prefix="nest_linear_problem")
 
         Every PETSc object created will have a unique options prefix set.
         We recommend discovering these prefixes dynamically via the
