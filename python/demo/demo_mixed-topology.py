@@ -98,10 +98,12 @@ mesh = create_mesh(
 )
 
 # Create elements and dofmaps for each cell type
-domain = ufl.Mesh([
-    basix.ufl.element("Lagrange", "hexahedron", 1, shape=(3,)),
-    basix.ufl.element("Lagrange", "prism", 1, shape=(3,)),
-])
+domain = ufl.Mesh(
+    [
+        basix.ufl.element("Lagrange", "hexahedron", 1, shape=(3,)),
+        basix.ufl.element("Lagrange", "prism", 1, shape=(3,)),
+    ]
+)
 
 elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.hexahedron, 1),
