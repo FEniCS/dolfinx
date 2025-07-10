@@ -88,7 +88,7 @@ if _cpp.common.has_adios2:
             elif isinstance(output, Function):
                 dtype = output.function_space.mesh.geometry.x.dtype
             elif isinstance(output, Iterable):
-                dtype = next(output).function_space.mesh.geometry.x.dtype  # type: ignore
+                dtype = next(iter(output)).function_space.mesh.geometry.x.dtype  # type: ignore
             else:
                 raise RuntimeError(f"Can not write type {type(output)}.")
 
