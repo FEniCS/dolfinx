@@ -773,29 +773,29 @@ void point_evaluation(const FiniteElement<U>& element, int element_bs,
       }
     }
   }
-    else
+  else
+  {
+    // Loop over cells
+    for (std::size_t c = 0; c < cells.size(); ++c)
     {
-      // Loop over cells
-      for (std::size_t c = 0; c < cells.size(); ++c)
+      const std::int32_t cell = cells[c];
+      std::span<const std::int32_t> dofs = dofmap.cell_dofs(cell);
+      for (int k = 0; k < element_bs; ++k)
       {
-        const std::int32_t cell = cells[c];
-        std::span<const std::int32_t> dofs = dofmap.cell_dofs(cell);
-        for (int k = 0; k < element_bs; ++k)
+        // num_scalar_dofs is the number of interpolation points per
+        // cell in this case (interpolation matrix is identity)
+        std::copy_n(std::next(f.begin(), k * fshape[1] + c * num_scalar_dofs),
+                    num_scalar_dofs, _coeffs.begin());
+        apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
+        for (int i = 0; i < num_scalar_dofs; ++i)
         {
-          // num_scalar_dofs is the number of interpolation points per
-          // cell in this case (interpolation matrix is identity)
-          std::copy_n(std::next(f.begin(), k * fshape[1] + c * num_scalar_dofs),
-                      num_scalar_dofs, _coeffs.begin());
-          apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
-          for (int i = 0; i < num_scalar_dofs; ++i)
-          {
-            const int dof = i * element_bs + k;
-            std::div_t pos = std::div(dof, dofmap_bs);
-            coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
-          }
+          const int dof = i * element_bs + k;
+          std::div_t pos = std::div(dof, dofmap_bs);
+          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
         }
       }
     }
+  }
 }
 
 /// @brief Interpolate data into coefficients for an identity-mapped but
