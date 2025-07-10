@@ -98,10 +98,17 @@ mesh = create_mesh(
 )
 
 # Create elements and dofmaps for each cell type
+domain = ufl.Mesh([
+    basix.ufl.element("Lagrange", "hexahedron", 1, shape=(3,)),
+    basix.ufl.element("Lagrange", "prism", 1, shape=(3,)),
+])
+
 elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.hexahedron, 1),
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
+
+
 elements_cpp = [_cpp.fem.FiniteElement_float64(e._e, None, True) for e in elements]
 # NOTE: Both dofmaps have the same IndexMap, but different cell_dofs
 dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, elements_cpp)

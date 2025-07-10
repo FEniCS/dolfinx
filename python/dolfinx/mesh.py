@@ -641,14 +641,14 @@ def create_mesh(
         domain = e
         dtype = cmap.dtype
         # TODO: Resolve UFL vs Basix geometric dimension issue
-        # assert domain.geometric_dimension() == gdim
+        # assert domain.geometric_dimension == gdim
     except AttributeError:
         try:
             # e is a Basix 'UFL' element
             cmap = _coordinate_element(e.basix_element)  # type: ignore
             domain = ufl.Mesh(e)
             dtype = cmap.dtype
-            assert domain.geometric_dimension() == gdim
+            assert domain.geometric_dimension == gdim
         except AttributeError:
             try:
                 # e is a Basix element
@@ -658,7 +658,7 @@ def create_mesh(
                 e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,))
                 domain = ufl.Mesh(e_ufl)
                 dtype = cmap.dtype
-                assert domain.geometric_dimension() == gdim
+                assert domain.geometric_dimension == gdim
             except (AttributeError, TypeError):
                 # e is a CoordinateElement
                 cmap = e
