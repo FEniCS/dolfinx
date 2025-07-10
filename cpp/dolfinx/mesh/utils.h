@@ -1362,7 +1362,7 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
 /// @return A new mesh, and maps from the new mesh entities, vertices,
 /// and geometry to the input mesh entities, vertices, and geometry.
 template <std::floating_point T>
-std::tuple<Mesh<T>, EntityMap, EntityMap, EntityMap>
+std::tuple<Mesh<T>, EntityMap, EntityMap, std::vector<std::int32_t>>
 create_submesh(const Mesh<T>& mesh, int dim,
                std::span<const std::int32_t> entities)
 {
@@ -1387,10 +1387,9 @@ create_submesh(const Mesh<T>& mesh, int dim,
                        subentity_to_entity);
   EntityMap vertex_map(mesh.topology(), submesh.topology(), 0,
                        subvertex_to_vertex);
-  EntityMap geom_map(mesh.topology(), submesh.topology(), 0, subx_to_x_dofmap);
 
   return {std::move(submesh), std::move(entity_map), std::move(vertex_map),
-          std::move(geom_map)};
+          std::move(subx_to_x_dofmap)};
 }
 
 } // namespace dolfinx::mesh
