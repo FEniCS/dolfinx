@@ -287,8 +287,9 @@ int main(int argc, char* argv[])
     // define the measure and passed to `create_form` is called the integration
     // domain mesh (here, `mesh`). To assemble our mixed-domain form, we must
     // provide an `EntityMap` for each additional mesh
-    // involved in the form. In this case, the only other mesh is `submesh`.
-    // Hence, we supply the entity map returned from `create_submesh`.
+    // in the form. In this case, the only other mesh is `submesh`.
+    // Hence, we supply the entity map returned from `create_submesh`, which
+    // relates entities in `mesh` and `submesh`.
     std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps
         = {entity_map};
 

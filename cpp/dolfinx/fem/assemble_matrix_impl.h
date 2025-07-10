@@ -453,6 +453,7 @@ void assemble_interior_facets(
     std::span<T> sub_Ae0
         = _Ae.subspan(bs0 * dmap0_size * num_cols, bs0 * dmap0_size * num_cols);
 
+    // Only apply transformation when cells exist
     if (cells0[0] >= 0)
       P0(_Ae, cell_info0, cells0[0], num_cols);
     if (cells0[1] >= 0)
@@ -460,14 +461,16 @@ void assemble_interior_facets(
     if (cells1[0] >= 0)
       P1T(_Ae, cell_info1, cells1[0], num_rows);
 
-    for (int row = 0; row < num_rows; ++row)
+    if (cells1[1] >= 0)
     {
-      // DOFs for dmap1 and cell1 are not stored contiguously in
-      // the block matrix, so each row needs a separate span access
-      std::span<T> sub_Ae1
-          = _Ae.subspan(row * num_cols + bs1 * dmap1_size, bs1 * dmap1_size);
-      if (cells1[1] >= 0)
+      for (int row = 0; row < num_rows; ++row)
+      {
+        // DOFs for dmap1 and cell1 are not stored contiguously in
+        // the block matrix, so each row needs a separate span access
+        std::span<T> sub_Ae1
+            = _Ae.subspan(row * num_cols + bs1 * dmap1_size, bs1 * dmap1_size);
         P1T(sub_Ae1, cell_info1, cells1[1], 1);
+      }
     }
 
     // Zero rows/columns for essential bcs

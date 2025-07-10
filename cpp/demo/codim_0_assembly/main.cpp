@@ -77,9 +77,8 @@ int main(int argc, char* argv[])
     mesh::MeshTags<std::int32_t> cell_marker(mesh->topology(), tdim, cells,
                                              values);
 
-    // We create a submesh consisting of all cells with a given tag by calling
-    // `create_submesh`. This returns a submesh (a `Mesh` object)
-    // consisting of only the the tagged cells. It also returns an `EntityMap`
+    // We create a submesh consisting of only cells with a given tag by calling
+    // `create_submesh`. This function also returns an `EntityMap`
     // object, which relates entities in the submesh to entities in the original
     // mesh. We will need this to assemble our mixed-domain form.
     std::shared_ptr<mesh::Mesh<U>> submesh;
