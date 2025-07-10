@@ -809,11 +809,13 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
 /// @param [in] fshape Shape of input data
 /// @param [out] coeffs Output Function coefficients
 template <dolfinx::scalar T, std::floating_point U>
-void identity_mapped(const FiniteElement<U>& element, bool symmetric,
-                     const DofMap& dofmap, std::span<const std::int32_t> cells,
-                     std::span<const std::uint32_t> cell_info,
-                     std::span<const T> f, std::array<std::size_t, 2> fshape,
-                     std::span<T> coeffs)
+void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
+                                const DofMap& dofmap,
+                                std::span<const std::int32_t> cells,
+                                std::span<const std::uint32_t> cell_info,
+                                std::span<const T> f,
+                                std::array<std::size_t, 2> fshape,
+                                std::span<T> coeffs)
 {
   // Not a point evaluation, but the geometric map is the identity,
   // e.g. not Piola mapped
@@ -888,11 +890,13 @@ void identity_mapped(const FiniteElement<U>& element, bool symmetric,
 /// @param [in] mesh Mesh
 /// @param [out] coeffs Output Function coefficients
 template <dolfinx::scalar T, std::floating_point U>
-void piola_mapped(const FiniteElement<U>& element, bool symmetric,
-                  const DofMap& dofmap, std::span<const std::int32_t> cells,
-                  std::span<const std::uint32_t> cell_info,
-                  std::span<const T> f, std::array<std::size_t, 2> fshape,
-                  const mesh::Mesh<U>& mesh, std::span<T> coeffs)
+void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
+                             const DofMap& dofmap,
+                             std::span<const std::int32_t> cells,
+                             std::span<const std::uint32_t> cell_info,
+                             std::span<const T> f,
+                             std::array<std::size_t, 2> fshape,
+                             const mesh::Mesh<U>& mesh, std::span<T> coeffs)
 {
 
   const int gdim = mesh.geometry().dim();
@@ -1103,14 +1107,14 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   else if (element->map_ident())
   {
     spdlog::debug("Interpolate: identity-mapped evaluation");
-    impl::identity_mapped(*element, symmetric, *dofmap, cells, cell_info, f,
-                          fshape, coeffs);
+    impl::identity_mapped_evaluation(*element, symmetric, *dofmap, cells,
+                                     cell_info, f, fshape, coeffs);
   }
   else
   {
     spdlog::debug("Interpolate: Piola-mapped evaluation");
-    impl::piola_mapped(*element, symmetric, *dofmap, cells, cell_info, f,
-                       fshape, *mesh, coeffs);
+    impl::piola_mapped_evaluation(*element, symmetric, *dofmap, cells,
+                                  cell_info, f, fshape, *mesh, coeffs);
   }
 }
 
