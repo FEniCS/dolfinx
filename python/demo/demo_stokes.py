@@ -218,6 +218,7 @@ def nested_iterative_solver_high_level():
         kind="nest",
         bcs=bcs,
         P=a_p,
+        petsc_options_prefix="demo_stokes__nested_iterative_solver_high_level_",
         petsc_options={
             "ksp_type": "minres",
             "ksp_rtol": 1e-9,
@@ -254,7 +255,7 @@ def nested_iterative_solver_high_level():
     P00.setOption(PETSc.Mat.Option.SPD, True)
     P11.setOption(PETSc.Mat.Option.SPD, True)
 
-    (u_h, p_h), convergence_reason, num_its = problem.solve()
+    (u_h, p_h), _, convergence_reason, num_its = problem.solve()
     # Because left-hand side operator is only assembled now we can
     # only test that the null-space is setup correctly after calling
     # solve.
