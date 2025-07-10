@@ -1250,7 +1250,8 @@ class NonlinearProblem:
                 preconditioner (``MatType``).
                 See :func:`dolfinx.fem.petsc.create_matrix` for more
                 information.
-            petsc_options_prefix: Options prefix used as root prefix on all
+            petsc_options_prefix: Mandatory named argument.
+                Options prefix used as root prefix on all
                 internally created PETSc objects. Typically ends with `_`.
                 Must be the same on all ranks, and is usually unique within
                 the programme.
