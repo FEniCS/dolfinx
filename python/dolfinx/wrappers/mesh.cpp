@@ -575,8 +575,7 @@ void mesh(nb::module_& m)
   // dolfinx::mesh::GhostMode enums
   nb::enum_<dolfinx::mesh::GhostMode>(m, "GhostMode")
       .value("none", dolfinx::mesh::GhostMode::none)
-      .value("shared_facet", dolfinx::mesh::GhostMode::shared_facet)
-      .value("shared_vertex", dolfinx::mesh::GhostMode::shared_vertex);
+      .value("shared_facet", dolfinx::mesh::GhostMode::shared_facet);
 
   // dolfinx::mesh::TopologyComputation
   m.def(
