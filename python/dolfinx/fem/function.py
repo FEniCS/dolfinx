@@ -333,7 +333,7 @@ class Function(ufl.Coefficient):
                 dtype = default_scalar_type
 
         print(type(V))
-        assert np.issubdtype(V.elements(0).dtype, np.dtype(dtype).type(0).real.dtype), (
+        assert np.issubdtype(V.element.dtype, np.dtype(dtype).type(0).real.dtype), (
             "Incompatible FunctionSpace dtype and requested dtype."
         )
 
