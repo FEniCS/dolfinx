@@ -108,8 +108,15 @@ dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, elements_cpp)
 
 # Create C++ function space
 V_cpp = _cpp.fem.FunctionSpace_float64(mesh, elements_cpp, dofmaps)
+
+# Create C++ Function
 kappa = _cpp.fem.Function_float64(V_cpp)
-print(kappa)
+
+for i in range(2):
+    map = mesh.topology.index_maps(mesh.topology.dim)[i]
+    cells0 = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
+    x = _cpp.fem.interpolation_coords(V_cpp.elements(i), V_cpp.mesh.geometry, cells0, i)
+    print(i, x)
 quit()
 
 # Create forms for each cell type.

@@ -52,12 +52,22 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
                                     const mesh::Geometry<T>& geometry,
                                     std::span<const std::int32_t> cells)
 {
+  // Find CoordinateElement appropriate to element
+  const std::vector<CoordinateElement<T>>& cmaps = geometry.cmaps();
+  mesh::CellType cell_type = element.cell_type();
+  auto it
+      = std::find_if(cmaps.begin(), cmaps.end(), [&cell_type](const auto& cm)
+                     { return cell_type == cm.cell_shape(); });
+  if (it == cmaps.end())
+    throw std::runtime_error("Cannot find CoordinateElement for FiniteElement");
+  int index = std::distance(cmaps.begin(), it);
+
   // Get geometry data and the element coordinate map
   const std::size_t gdim = geometry.dim();
-  auto x_dofmap = geometry.dofmap();
+  auto x_dofmap = geometry.dofmap(index);
   std::span<const T> x_g = geometry.x();
 
-  const CoordinateElement<T>& cmap = geometry.cmap();
+  const CoordinateElement<T>& cmap = cmaps.at(index);
   const std::size_t num_dofs_g = cmap.dim();
 
   // Get the interpolation points on the reference cells
