@@ -32,12 +32,19 @@ namespace
 /// @returns A list of (cell_index, entity_index) pairs for each input
 /// entity.
 std::vector<std::tuple<std::int32_t, int, int>>
-find_local_entity_index(const mesh::Topology& topology,
-                        int entity_type_index,
+find_local_entity_index(const mesh::Topology& topology, int entity_type_index,
                         std::span<const std::int32_t> entities, int dim)
 {
   // Initialise entity-cell connectivity
   const int tdim = topology.dim();
+
+  // FIXME TODO ADD CHECK
+  // if (!e_to_c)
+  // {
+  //   throw std::runtime_error(
+  //       "Entity-to-cell connectivity has not been computed. Missing dims "
+  //       + std::to_string(dim) + "->" + std::to_string(tdim));
+  // }
 
   std::vector<mesh::CellType> cell_types = topology.cell_types();
   const int num_cell_types = cell_types.size();
@@ -48,18 +55,13 @@ find_local_entity_index(const mesh::Topology& topology,
     // Get first attached cell
     for (int i = 0; i < num_cell_types; ++i)
     {
-      // FIXME Multiple entity types
+      // FIXME Check that one of the connectivities exists
       auto e_to_c = topology.connectivity({dim, entity_type_index}, {tdim, i});
-      if (!e_to_c)
-      {
-        throw std::runtime_error(
-            "Entity-to-cell connectivity has not been computed. Missing dims "
-            + std::to_string(dim) + "->" + std::to_string(tdim));
-      }
 
-      if (e_to_c->num_links(e) > 0)
+      if (e_to_c and e_to_c->num_links(e) > 0)
       {
-        auto c_to_e = topology.connectivity({tdim, i}, {dim, entity_type_index});
+        auto c_to_e
+            = topology.connectivity({tdim, i}, {dim, entity_type_index});
         if (!c_to_e)
         {
           throw std::runtime_error(
@@ -198,6 +200,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     const std::vector<std::shared_ptr<const DofMap>>& dofmaps, int dim,
     int entity_type_index, std::span<const std::int32_t> entities, bool remote)
 {
+  std::cout << "hello!\n";
   std::vector<mesh::CellType> cell_types = topology.cell_types();
 
   // // TODO Don't use list of shared pointer

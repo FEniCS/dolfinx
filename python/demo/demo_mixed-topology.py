@@ -137,11 +137,11 @@ L_form = mixed_topology_form(L, dtype=np.float64)
 tdim = mesh.topology.dim
 fdim = tdim - 1
 
-facet_type_idx = 0
-facets = locate_entities(mesh, fdim, lambda x: np.isclose(x[0], 0.0), facet_type_idx)
-mesh.topology.create_connectivity(fdim, tdim)
-dofs = locate_dofs_topological(V_cpp, fdim, facet_type_idx, facets)
-print(dofs)
+dofs = np.array([], dtype=np.int32)
+for facet_type_idx in range(2):
+  facets = locate_entities(mesh, fdim, lambda x: np.isclose(x[2], 0.0), facet_type_idx)
+  mesh.topology.create_connectivity(fdim, tdim)
+  dofs = np.hstack((dofs, locate_dofs_topological(V_cpp, fdim, facet_type_idx, facets)))
 
 bc = dirichletbc(0.0, dofs, V_cpp)
 
