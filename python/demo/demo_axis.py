@@ -671,13 +671,14 @@ for m in m_list:
         a,
         L,
         bcs=[],
+        petsc_options_prefix="demo_axis_",
         petsc_options={
             "ksp_type": "preonly",
             "pc_type": "lu",
             "pc_factor_mat_solver_type": mat_factor_backend,
         },
     )
-    Esh_m, converged_reason, _ = problem.solve()
+    Esh_m, _, converged_reason, _ = problem.solve()
     assert isinstance(Esh_m, fem.Function)
     assert converged_reason > 0
 
