@@ -1029,7 +1029,7 @@ void declare_real_functions(nb::module_& m)
       "FiniteElements.");
 
   m.def(
-      "locate_dofs_topological",
+      "locate_dofs_topological_sub",
       [](const std::vector<
              std::shared_ptr<const dolfinx::fem::FunctionSpace<T>>>& V,
          int dim,
@@ -1039,7 +1039,7 @@ void declare_real_functions(nb::module_& m)
         if (V.size() != 2)
           throw std::runtime_error("Expected two function spaces.");
         std::array<std::vector<std::int32_t>, 2> dofs
-            = dolfinx::fem::locate_dofs_topological(
+            = dolfinx::fem::locate_dofs_topological_sub(
                 *V[0].get()->mesh()->topology_mutable(),
                 {*V[0].get()->dofmap(), *V[1].get()->dofmap()}, dim,
                 std::span(entities.data(), entities.size()), remote);
@@ -1055,9 +1055,17 @@ void declare_real_functions(nb::module_& m)
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities,
          bool remote)
       {
+        // FIXME
+        std::vector<std::shared_ptr<const dolfinx::fem::DofMap>> dofmaps;
+        const int num_cell_types = V.mesh()->topology()->cell_types().size();
+        for (int i = 0; i < num_cell_types; ++i)
+        {
+            dofmaps.push_back(V.dofmaps(i));
+        }
+
         return dolfinx_wrappers::as_nbarray(
             dolfinx::fem::locate_dofs_topological(
-                *V.mesh()->topology_mutable(), *V.dofmap(), dim,
+                *V.mesh()->topology_mutable(), dofmaps, dim,
                 std::span(entities.data(), entities.size()), remote));
       },
       nb::arg("V"), nb::arg("dim"), nb::arg("entities"),

@@ -24,13 +24,14 @@ from scipy.sparse.linalg import spsolve
 import basix
 import dolfinx.cpp as _cpp
 import ufl
-from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner, create_mesh
+from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner, create_mesh, locate_entities
+from dolfinx.cpp.fem import locate_dofs_topological
 from dolfinx.fem import (
     FunctionSpace,
     assemble_matrix,
     assemble_vector,
     coordinate_element,
-    mixed_topology_form,
+    mixed_topology_form
 )
 from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.mesh import CellType, Mesh
@@ -41,9 +42,9 @@ if MPI.COMM_WORLD.size > 1:
 
 
 # Create a mixed-topology mesh
-nx = 16
-ny = 16
-nz = 16
+nx = 2
+ny = 2
+nz = 2
 n_cells = nx * ny * nz
 
 cells: list = [[], []]
@@ -131,6 +132,17 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
 # meshes, we have to call mixed_topology_form instead of form.
 a_form = mixed_topology_form(a, dtype=np.float64)
 L_form = mixed_topology_form(L, dtype=np.float64)
+
+tdim = mesh.topology.dim
+fdim = tdim - 1
+hex_facets = locate_entities(mesh, fdim, lambda x: np.isclose(x[0], 0.0), 0)
+prism_facets = locate_entities(mesh, fdim, lambda x: np.isclose(x[0], 0.0), 0)
+
+mesh.topology.create_connectivity(fdim, tdim)
+hex_dofs = locate_dofs_topological(V_cpp, fdim, hex_facets)
+print(hex_dofs)
+
+# print(mesh.topology.connectivity((fdim, 0), (tdim, 0)))
 
 # Assemble the matrix
 A = assemble_matrix(a_form)
