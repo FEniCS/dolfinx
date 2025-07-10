@@ -1052,6 +1052,7 @@ void declare_real_functions(nb::module_& m)
   m.def(
       "locate_dofs_topological",
       [](const dolfinx::fem::FunctionSpace<T>& V, int dim,
+         int entity_type_index,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities,
          bool remote)
       {
@@ -1060,15 +1061,15 @@ void declare_real_functions(nb::module_& m)
         const int num_cell_types = V.mesh()->topology()->cell_types().size();
         for (int i = 0; i < num_cell_types; ++i)
         {
-            dofmaps.push_back(V.dofmaps(i));
+          dofmaps.push_back(V.dofmaps(i));
         }
 
         return dolfinx_wrappers::as_nbarray(
             dolfinx::fem::locate_dofs_topological(
-                *V.mesh()->topology_mutable(), dofmaps, dim, 0,
+                *V.mesh()->topology_mutable(), dofmaps, dim, entity_type_index,
                 std::span(entities.data(), entities.size()), remote));
       },
-      nb::arg("V"), nb::arg("dim"), nb::arg("entities"),
+      nb::arg("V"), nb::arg("dim"), nb::arg("entity_type_index"), nb::arg("entities"),
       nb::arg("remote") = true);
   m.def(
       "locate_dofs_geometrical",
