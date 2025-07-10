@@ -52,11 +52,11 @@ namespace dolfinx::fem
 /// with V.
 /// @pre The topology cell->entity and entity->cell connectivity must
 /// have been computed before calling this function.
-std::vector<std::int32_t>
-locate_dofs_topological(const mesh::Topology& topology, 
-                        const std::vector<std::shared_ptr<const DofMap>>& dofmap,
-                        int dim, std::span<const std::int32_t> entities,
-                        bool remote = true);
+std::vector<std::int32_t> locate_dofs_topological(
+    const mesh::Topology& topology,
+    const std::vector<std::shared_ptr<const DofMap>>& dofmap, int dim,
+    int entity_type_index, std::span<const std::int32_t> entities,
+    bool remote = true);
 
 /// @brief Find degrees-of-freedom which belong to the provided mesh
 /// entities (topological).

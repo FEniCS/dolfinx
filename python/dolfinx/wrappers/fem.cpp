@@ -1065,7 +1065,7 @@ void declare_real_functions(nb::module_& m)
 
         return dolfinx_wrappers::as_nbarray(
             dolfinx::fem::locate_dofs_topological(
-                *V.mesh()->topology_mutable(), dofmaps, dim,
+                *V.mesh()->topology_mutable(), dofmaps, dim, 0,
                 std::span(entities.data(), entities.size()), remote));
       },
       nb::arg("V"), nb::arg("dim"), nb::arg("entities"),

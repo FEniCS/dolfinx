@@ -33,6 +33,7 @@ namespace
 /// entity.
 std::vector<std::tuple<std::int32_t, int, int>>
 find_local_entity_index(const mesh::Topology& topology,
+                        int entity_type_index,
                         std::span<const std::int32_t> entities, int dim)
 {
   // Initialise entity-cell connectivity
@@ -48,7 +49,7 @@ find_local_entity_index(const mesh::Topology& topology,
     for (int i = 0; i < num_cell_types; ++i)
     {
       // FIXME Multiple entity types
-      auto e_to_c = topology.connectivity({dim, 0}, {tdim, i});
+      auto e_to_c = topology.connectivity({dim, entity_type_index}, {tdim, i});
       if (!e_to_c)
       {
         throw std::runtime_error(
@@ -58,7 +59,7 @@ find_local_entity_index(const mesh::Topology& topology,
 
       if (e_to_c->num_links(e) > 0)
       {
-        auto c_to_e = topology.connectivity({tdim, i}, {dim, 0});
+        auto c_to_e = topology.connectivity({tdim, i}, {dim, entity_type_index});
         if (!c_to_e)
         {
           throw std::runtime_error(
@@ -195,7 +196,7 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
 std::vector<std::int32_t> fem::locate_dofs_topological(
     const mesh::Topology& topology,
     const std::vector<std::shared_ptr<const DofMap>>& dofmaps, int dim,
-    std::span<const std::int32_t> entities, bool remote)
+    int entity_type_index, std::span<const std::int32_t> entities, bool remote)
 {
   std::vector<mesh::CellType> cell_types = topology.cell_types();
 
@@ -214,7 +215,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
 
   // Get cell index and local entity index
   std::vector<std::tuple<std::int32_t, int, int>> entity_indices
-      = find_local_entity_index(topology, entities, dim);
+      = find_local_entity_index(topology, entity_type_index, entities, dim);
 
   std::vector<std::int32_t> dofs;
   // dofs.reserve(entities.size()
