@@ -1051,10 +1051,10 @@ void piola_mapped(const FiniteElement<U>& element, int element_bs,
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
-                 std::span<const std::int32_t> cells)
+                 std::span<const std::int32_t> cells, int index = 0)
 {
   // TODO: Index for mixed-topology, zero for now
-  const int index = 0;
+
   auto element = u.function_space()->elements(index);
   assert(element);
   const int element_bs = element->block_size();
@@ -1222,7 +1222,7 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
 
   // Call local interpolation operator
   fem::interpolate<T>(u, valuesT_b, {valuesT.extent(0), valuesT.extent(1)},
-                      cells);
+                      cells, 0);
 }
 
 /// @brief Interpolate from one finite element Function to another

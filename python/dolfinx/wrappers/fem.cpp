@@ -419,24 +419,28 @@ void declare_objects(nb::module_& m, const std::string& type)
           "interpolate",
           [](dolfinx::fem::Function<T, U>& self,
              nb::ndarray<const T, nb::ndim<1>, nb::c_contig> f,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells)
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
+             int index)
           {
-            dolfinx::fem::interpolate(self, std::span(f.data(), f.size()),
-                                      {1, f.size()},
-                                      std::span(cells.data(), cells.size()));
+            dolfinx::fem::interpolate(
+                self, std::span(f.data(), f.size()), {1, f.size()},
+                std::span(cells.data(), cells.size()), index);
           },
-          nb::arg("f"), nb::arg("cells"), "Interpolate an expression function")
+          nb::arg("f"), nb::arg("cells"), nb::arg("index"),
+          "Interpolate an expression function")
       .def(
           "interpolate",
           [](dolfinx::fem::Function<T, U>& self,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> f,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells)
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
+             int index)
           {
-            dolfinx::fem::interpolate(self, std::span(f.data(), f.size()),
-                                      {f.shape(0), f.shape(1)},
-                                      std::span(cells.data(), cells.size()));
+            dolfinx::fem::interpolate(
+                self, std::span(f.data(), f.size()), {f.shape(0), f.shape(1)},
+                std::span(cells.data(), cells.size()), index);
           },
-          nb::arg("f"), nb::arg("cells"), "Interpolate an expression function")
+          nb::arg("f"), nb::arg("cells"), nb::arg("index"),
+          "Interpolate an expression function")
       .def(
           "interpolate",
           [](dolfinx::fem::Function<T, U>& self,
@@ -487,7 +491,7 @@ void declare_objects(nb::module_& m, const std::string& type)
                     addr);
             f(values.data(), shape[1], shape[0], x.data(), nullptr);
             dolfinx::fem::interpolate(self, std::span<const T>(values), shape,
-                                      std::span(cells.data(), cells.size()));
+                                      std::span(cells.data(), cells.size()), 0);
           },
           nb::arg("f_ptr"), nb::arg("cells"),
           "Interpolate using a pointer to an expression with a C signature")

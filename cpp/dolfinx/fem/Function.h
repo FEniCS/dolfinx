@@ -401,7 +401,7 @@ public:
     // Interpolate values into appropriate space
     fem::interpolate(*this,
                      std::span<const value_type>(fdata1.data(), fdata1.size()),
-                     {value_size, num_cells * num_points}, cells1);
+                     {value_size, num_cells * num_points}, cells1, 0);
   }
 
   /// @brief Interpolate a Function defined on a different mesh.
