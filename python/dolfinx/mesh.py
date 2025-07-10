@@ -604,6 +604,7 @@ def extract_cmap_and_domain(
         basix.ufl._BasixElement,
         _CoordinateElement,
     ],
+    gdim: int,
 ) -> tuple[typing.Any, typing.Any]:
     try:
         # e is a UFL domain
@@ -689,7 +690,7 @@ def create_mesh(
         cmaps = []
         domains = []
         for i, c in zip(e, cells):
-            cmap, domain = extract_cmap_and_domain(i)
+            cmap, domain = extract_cmap_and_domain(i, gdim)
             if dtype is None:
                 dtype = cmap.dtype
             else:
@@ -708,7 +709,7 @@ def create_mesh(
     except KeyboardInterrupt:
         pass
 
-    cmap, domain = extract_cmap_and_domain(e)
+    cmap, domain = extract_cmap_and_domain(e, gdim)
     dtype = cmap.dtype
 
     x = np.asarray(x, dtype=dtype, order="C")
