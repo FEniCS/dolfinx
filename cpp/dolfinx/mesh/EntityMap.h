@@ -16,12 +16,12 @@
 
 namespace dolfinx::mesh
 {
-/// @brief A map between entities of two meshes
+/// @brief A map relating entities in one topology to another
 class EntityMap
 {
 public:
-  /// @brief Constructor of a map from a set of entities in one mesh to a set of
-  /// entities in another
+  /// @brief Constructor of a map from a set of entities in one topology to a
+  /// set of entities in another.
   ///
   /// @tparam U
   /// @param topology A mesh topology
