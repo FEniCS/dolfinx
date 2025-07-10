@@ -29,7 +29,7 @@ __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute
 
 def _extract_cpp_objects(functions: typing.Union[Function, Iterable[Function]]):
     """Extract C++ objects"""
-    if not isinstance(functions, Function):
+    if not isinstance(functions, (Function, _cpp.fem.Function_float32, _cpp.fem.Function_float64)):
         return [getattr(u, "_cpp_object", u) for u in functions]
     else:
         return [getattr(functions, "_cpp_object", functions)]
@@ -85,7 +85,9 @@ if _cpp.common.has_adios2:
 
             if isinstance(output, Mesh):
                 dtype = output.geometry.x.dtype
-            elif isinstance(output, Function):
+            elif isinstance(
+                output, (Function, _cpp.fem.Function_float32, _cpp.fem.Function_float64)
+            ):
                 dtype = output.function_space.mesh.geometry.x.dtype
             elif isinstance(output, Iterable):
                 dtype = next(iter(output)).function_space.mesh.geometry.x.dtype  # type: ignore
