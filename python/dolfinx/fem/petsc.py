@@ -1255,8 +1255,9 @@ class NonlinearProblem:
                 Must be the same on all ranks, and is usually unique within
                 the programme.
             petsc_options: Options set on the underlying PETSc KSP only.
-                The options must be the same on all ranks. For available choices
-                for the `petsc_options` kwarg, see the `PETSc KSP documentation
+                The options must be the same on all ranks. For available
+                choices for the `petsc_options` kwarg, see the
+                `PETSc KSP documentation
                 <https://petsc4py.readthedocs.io/en/stable/manual/ksp/>`_.
                 Options on other objects (matrices, vectors) should be set
                 explicitly by the user.
