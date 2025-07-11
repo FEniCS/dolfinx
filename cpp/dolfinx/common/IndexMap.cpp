@@ -1383,6 +1383,58 @@ std::array<std::vector<int>, 2> IndexMap::rank_type(int split_type) const
   return {std::move(split_dest), std::move(split_src)};
 }
 //-----------------------------------------------------------------------------
+void IndexMap::statistics() const
+{
+  // Graph edge weights
+  std::vector w_dest = this->weights_dest(); // TODO: this call has a cost
+  std::vector w_src = this->weights_src();
+
+  std::vector<std::int64_t> buffer;
+
+  // Number of dest(out) and src(in) edges
+  std::int64_t num_dest = _dest.size();
+  std::int64_t num_src = _src.size();
+  buffer.insert(buffer.end(), {num_dest, -num_dest, num_src, -num_src});
+
+  // Number of shared and remote memory dest(out) and src(in) edges
+  {
+    auto [local_dest, local_src] = this->rank_type(MPI_COMM_TYPE_SHARED);
+    std::int64_t num_dest_l = local_dest.size();
+    std::int64_t num_src_l = local_src.size();
+    buffer.insert(buffer.end(),
+                  {num_dest_l, -num_dest_l, num_src_l, -num_src_l});
+    buffer.insert(buffer.end(),
+                  {(num_dest - num_dest_l), -(num_dest - num_dest_l),
+                   (num_src - num_src_l), -(num_src - num_src_l)});
+  }
+
+  // Edge weight sums
+  std::int64_t w_dest_sum = std::reduce(w_dest.begin(), w_dest.end(), 0);
+  std::int64_t w_src_sum = std::reduce(w_src.begin(), w_src.end(), 0);
+  buffer.insert(buffer.end(), {w_dest_sum, -w_dest_sum, w_src_sum, -w_src_sum});
+
+  // Edge weight min/max
+  std::int64_t w_dest_min
+      = w_dest.empty() ? 0 : *std::min_element(w_dest.begin(), w_dest.end());
+  std::int64_t w_dest_max
+      = w_dest.empty() ? 0 : *std::max_element(w_dest.begin(), w_dest.end());
+  std::int64_t w_src_min
+      = w_src.empty() ? 0 : *std::min_element(w_src.begin(), w_src.end());
+  std::int64_t w_src_max
+      = w_src.empty() ? 0 : *std::max_element(w_src.begin(), w_src.end());
+  buffer.insert(buffer.end(), {w_dest_min, -w_dest_max, w_src_min, -w_src_max});
+
+  // std::int64_t w_src_num = w_src.size();
+  // buffer.insert({w_src_sum, w_src_num});
+
+  // std::vector<std::int64_t> recv(buffer.size());
+  // int ierr = 0;
+  // ierr = MPI_Allreduce(buffer.data(), recv.data(), buffer.size(),
+  // MPI_INT64_T,
+  //                      _comm.comm(), )
+}
+//-----------------------------------------------------------------------------
+
 std::string IndexMap::stats(int detail_level) const
 {
   // Gather the following data on the root process
