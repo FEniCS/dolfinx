@@ -47,8 +47,7 @@ EntityMap::map_entities(std::span<const std::int32_t> entities,
     topology_to_sub_topology.reserve(_sub_topology_to_topology.size());
     for (std::size_t i = 0; i < _sub_topology_to_topology.size(); ++i)
     {
-      topology_to_sub_topology.insert(
-          {_sub_topology_to_topology[i], static_cast<std::int32_t>(i)});
+      topology_to_sub_topology.insert({_sub_topology_to_topology[i], i});
     }
 
     // For each entity index in `entities` (which are indices in `_topology`),
@@ -90,8 +89,7 @@ std::vector<std::int32_t> EntityMap::map(const Topology& target_topology) const
     // Create the "inverse" of `_sub_topology_to_topology`
     for (std::size_t i = 0; i < _sub_topology_to_topology.size(); ++i)
     {
-      topology_to_sub_topology[_sub_topology_to_topology[i]]
-          = static_cast<std::int32_t>(i);
+      topology_to_sub_topology[_sub_topology_to_topology[i]] = i;
     }
 
     return topology_to_sub_topology;
