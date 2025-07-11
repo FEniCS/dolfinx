@@ -105,7 +105,7 @@ facets = np.arange(num_facets, dtype=np.int32)
 # Create the sub-mesh
 # NOTE Despite all facets being present in the submesh, the entity map
 # isn't necessarily the identity in parallel
-facet_mesh, facet_mesh_to_mesh = mesh.create_submesh(msh, fdim, facets)[:2]
+facet_mesh, facet_mesh_emap = mesh.create_submesh(msh, fdim, facets)[:2]
 
 # Define function spaces
 k = 3  # Polynomial order
@@ -132,12 +132,6 @@ ds_c = ufl.Measure("ds", subdomain_data=[(cell_boundaries, cell_boundary_facets)
 # Create a cell integral measure over the facet mesh
 dx_f = ufl.Measure("dx", domain=facet_mesh)
 
-# We write the mixed domain forms as integrals over msh. Hence, we must
-# provide a map from facets in msh to cells in facet_mesh. This is the
-# 'inverse' of facet_mesh_to_mesh, which we compute as follows:
-mesh_to_facet_mesh = np.full(num_facets, -1)
-mesh_to_facet_mesh[facet_mesh_to_mesh] = np.arange(len(facet_mesh_to_mesh))
-entity_maps = {facet_mesh: mesh_to_facet_mesh}
 
 # Define forms
 h = ufl.CellDiameter(msh)
@@ -159,7 +153,15 @@ f = -ufl.div(c * ufl.grad(u_e(x)))
 L = ufl.inner(f, v) * dx_c
 L += ufl.inner(fem.Constant(facet_mesh, dtype(0.0)), vbar) * dx_f
 
-# Define block structure
+# Our bilinear form involves two domains (`msh` and `facet_mesh`). The mesh
+# passed to the measure is called the "integration domain". For each
+# additional mesh in our form, we must pass an `EntityMap` object that
+# relates entities in that mesh to entities in the integration domain. In
+# this case, the only other mesh is `facet_mesh`, so we pass
+# `facet_mesh_emap`
+entity_maps = [facet_mesh_emap]
+
+# Compile forms
 a_blocked = dolfinx.fem.form(ufl.extract_blocks(a), entity_maps=entity_maps)
 L_blocked = dolfinx.fem.form(ufl.extract_blocks(L))
 
@@ -167,10 +169,9 @@ L_blocked = dolfinx.fem.form(ufl.extract_blocks(L))
 # We begin by locating the boundary facets of msh
 msh_boundary_facets = mesh.exterior_facet_indices(msh.topology)
 
-# Since the boundary condition is enforced in the facet space, we must
-# use the mesh_to_facet_mesh map to get the corresponding facets in
-# facet_mesh
-facet_mesh_boundary_facets = mesh_to_facet_mesh[msh_boundary_facets]
+# Since the boundary condition is enforced in the facet space, we need
+# to get the corresponding facets in `facet_mesh` using the entity map
+facet_mesh_boundary_facets = facet_mesh_emap.map_entities(msh_boundary_facets, facet_mesh.topology)
 
 # Get the dofs and apply the boundary condition
 facet_mesh.topology.create_connectivity(fdim, fdim)

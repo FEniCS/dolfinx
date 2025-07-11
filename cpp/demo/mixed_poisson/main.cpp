@@ -207,18 +207,18 @@ int main(int argc, char* argv[])
 
     // We'd like to represent `u_0` using a function space defined only
     // on the facets in `dfacets`. To do so, we begin by calling
-    // `create_submesh` to get a `submesh` of those facets. It also
-    // returns a map `submesh_to_mesh` whose `i`th entry is the facet in
-    // mesh corresponding to cell `i` in submesh.
+    // `create_submesh` to get a `submesh` of those facets.  It also returns an
+    // `EntityMap` object, which relates entities in the submesh to entities in
+    // the original mesh. We will need this to assemble our mixed-domain form.
     int tdim = mesh->topology()->dim();
     int fdim = tdim - 1;
     std::shared_ptr<mesh::Mesh<U>> submesh;
-    std::vector<std::int32_t> submesh_to_mesh;
+    std::shared_ptr<mesh::EntityMap> entity_map;
     {
-      auto [_submesh, _submesh_to_mesh, v_map, g_map]
+      auto [_submesh, e_map, v_map, g_map]
           = mesh::create_submesh(*mesh, fdim, dfacets);
       submesh = std::make_shared<mesh::Mesh<U>>(std::move(_submesh));
-      submesh_to_mesh = std::move(_submesh_to_mesh);
+      entity_map = std::make_shared<mesh::EntityMap>(std::move(e_map));
     }
 
     // Create an element for `u_0`
@@ -283,24 +283,15 @@ int main(int argc, char* argv[])
         subdomain_data{{fem::IntegralType::exterior_facet, {{1, domains}}}};
 
     // Since we are doing a `ds(1)` integral on mesh and `u0` is defined
-    // on the `submesh`, we must provide an "entity map" relating cells
-    // in `submesh` to entities in `mesh`. This is simply the "inverse"
-    // of `submesh_to_mesh`:
-    auto facet_imap = mesh->topology()->index_map(fdim);
-    assert(facet_imap);
-    std::size_t num_facets = mesh->topology()->index_map(fdim)->size_local()
-                             + mesh->topology()->index_map(fdim)->num_ghosts();
-    // Since not all facets in the mesh appear in the submesh, `submesh_to_mesh`
-    // is only injective. We therefore map nonexistent facets to -1 when
-    // creating the "inverse" map mesh_to_submesh
-    std::vector<std::int32_t> mesh_to_submesh(num_facets, -1);
-    for (std::size_t i = 0; i < submesh_to_mesh.size(); ++i)
-      mesh_to_submesh[submesh_to_mesh[i]] = i;
-
-    // Create the entity map to pass to `create_form`
-    std::map<std::shared_ptr<const mesh::Mesh<U>>,
-             std::span<const std::int32_t>>
-        entity_maps = {{submesh, mesh_to_submesh}};
+    // on the `submesh`, our form involves more than one mesh. The mesh used to
+    // define the measure and passed to `create_form` is called the integration
+    // domain mesh (here, `mesh`). To assemble our mixed-domain form, we must
+    // provide an `EntityMap` for each additional mesh
+    // in the form. In this case, the only other mesh is `submesh`.
+    // Hence, we supply the entity map returned from `create_submesh`, which
+    // relates entities in `mesh` and `submesh`.
+    std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps
+        = {entity_map};
 
     // Define variational forms and attach he required data
     fem::Form<T> a = fem::create_form<T>(*form_mixed_poisson_a, {V, V}, {}, {},
