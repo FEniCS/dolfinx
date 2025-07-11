@@ -13,10 +13,12 @@ import pytest
 
 import ufl
 from dolfinx import default_scalar_type, fem, la
-from dolfinx.fem import compute_integration_domains
+from dolfinx.fem import IntegralType, compute_integration_domains
 from dolfinx.mesh import (
     CellType,
     GhostMode,
+    Mesh,
+    MeshTags,
     compute_incident_entities,
     create_box,
     create_rectangle,
@@ -700,3 +702,109 @@ def test_interior_facet_codim_1(msh):
     tol = 100 * np.finfo(default_scalar_type()).eps
     assert np.isclose(J_submesh, J_ref, atol=tol)
     np.testing.assert_allclose(b_submesh.array, b_ref.array, atol=tol)
+
+
+def test_interior_interface():
+    """
+    This is a test for assembling a form over an interface between two domains
+    that don't overlap. The test function is defined on one domain, and the trial
+    function is defined on the other.
+    """
+
+    def compute_interface_data(
+        msh: Mesh, cell_tags: MeshTags, facet_indices: np.typing.NDArray[np.int32]
+    ) -> np.typing.NDArray[np.int32]:
+        """
+        Compute integration entities for interior facet integrals over an interface (i.e.
+        a list of (cell_0, local_facet_0, cell1, local_facet_1)) with consistent ordering such
+        that `cell_tags[cell0]`<`cell_tags[cell1]`. This means that the cell with the lowest
+        cell marker is the "+" restriction".
+
+        Args:
+            cell_tags: Mesh tags with an integer marker for all cells adjacent to facets in
+                `facet_indices`. The cells on the "+" side of the interface should have a
+                lower tag than those on the "-" side
+            facet_indices: List of facets (local to process) on the interface.
+        Returns:
+            The integration data.
+        """
+        idata = compute_integration_domains(
+            IntegralType.interior_facet,
+            msh.topology,
+            facet_indices,
+        )
+        ordered_idata = idata.reshape(-1, 4).copy()
+        switch = cell_tags.values[ordered_idata[:, 0]] > cell_tags.values[ordered_idata[:, 2]]
+        ordered_idata[switch, :] = ordered_idata[switch][:, [2, 3, 0, 1]]
+        return ordered_idata.flatten()
+
+    n = 10  # NOTE: Test assumes that n is even
+    comm = MPI.COMM_WORLD
+    msh = create_unit_square(comm, n, n)
+
+    # Locate cells in left and right half of domain and create sub-meshes
+    tdim = msh.topology.dim
+
+    # Create meshtags
+    left_cells_tag, right_cells_tag = 0, 1
+    cell_imap = msh.topology.index_map(tdim)
+    num_cells = cell_imap.size_local + cell_imap.num_ghosts
+    cells = np.arange(num_cells, dtype=np.int32)
+    values = np.full(num_cells, left_cells_tag, dtype=np.intc)
+    values[locate_entities(msh, tdim, lambda x: x[0] >= 0.5)] = right_cells_tag
+    ct = meshtags(msh, tdim, cells, values)
+
+    smsh_0, sm_0_to_msh = create_submesh(msh, tdim, ct.find(left_cells_tag))[0:2]
+    smsh_1, sm_1_to_msh = create_submesh(msh, tdim, ct.find(right_cells_tag))[0:2]
+
+    # Define trial function on one region and the test function on the other
+    V_0 = fem.functionspace(smsh_0, ("Lagrange", 1))
+    V_1 = fem.functionspace(smsh_1, ("Lagrange", 1))
+
+    u_0 = ufl.TestFunction(V_0)
+    v_1 = ufl.TrialFunction(V_1)
+
+    # Find the facet on the interface
+    fdim = tdim - 1
+    msh.topology.create_connectivity(fdim, tdim)
+    interface_facets = locate_entities(msh, fdim, lambda x: np.isclose(x[0], 0.5))
+
+    # Create entity maps for each domain. Since we integrate over msh, the
+    # maps take cells in mesh to cells in smsh_0 and smsh_1, respectively
+    msh_to_sm_0 = np.full(num_cells, -1)
+    msh_to_sm_0[sm_0_to_msh] = np.arange(len(sm_0_to_msh))
+    msh_to_sm_1 = np.full(num_cells, -1)
+    msh_to_sm_1[sm_1_to_msh] = np.arange(len(sm_1_to_msh))
+    entity_maps = {smsh_0: msh_to_sm_0, smsh_1: msh_to_sm_1}
+
+    # Create a list of integration entities
+    interface_ents = compute_interface_data(msh, ct, interface_facets)
+
+    # Assemble the form
+    dS = ufl.Measure("dS", domain=msh, subdomain_data=[(1, interface_ents)])
+
+    f = fem.Function(V_0)
+    f.interpolate(lambda x: x[0])
+
+    a = fem.form(ufl.inner(f("+") * u_0("+"), v_1("-")) * dS(1), entity_maps=entity_maps)
+
+    A = fem.assemble_matrix(a)
+    A.scatter_reverse()
+
+    A_sqnorm = A.squared_norm()
+
+    # Now assemble using a single domain to compare to a reference
+    V = fem.functionspace(msh, ("Lagrange", 1))
+    u = ufl.TestFunction(V)
+    v = ufl.TrialFunction(V)
+    f = fem.Function(V)
+    f.interpolate(lambda x: x[0])
+
+    a = fem.form(ufl.inner(f("+") * u("+"), v("-")) * dS(1))
+
+    A = fem.assemble_matrix(a)
+    A.scatter_reverse()
+
+    A_ref_sqrnorm = A.squared_norm()
+
+    assert np.isclose(A_sqnorm, A_ref_sqrnorm)
