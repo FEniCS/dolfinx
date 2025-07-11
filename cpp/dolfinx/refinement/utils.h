@@ -10,10 +10,10 @@
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
-#include <map>
 #include <memory>
 #include <set>
 #include <span>
@@ -42,18 +42,17 @@ std::int64_t local_to_global(std::int32_t local_index,
                              const common::IndexMap& map);
 
 /// @brief Create geometric points of new Mesh, from current Mesh and a
-/// edge_to_vertex map listing the new local points (midpoints of those
-/// edges).
+/// list of edges (with new points created at midpoints of those edges).
 ///
 /// @param mesh Current mesh.
-/// @param local_edge_to_new_vertex A map from a local edge to the new
-/// global vertex index that will be inserted at its midpoint.
+/// @param local_edge_new_vertices A list of local edges requiring new vertices
+/// to be created at their midpoints.
 /// @return (1) Array of new (flattened) mesh geometry and (2) its
 /// multi-dimensional shape.
 template <std::floating_point T>
-std::pair<std::vector<T>, std::array<std::size_t, 2>> create_new_geometry(
-    const mesh::Mesh<T>& mesh,
-    const std::map<std::int32_t, std::int64_t>& local_edge_to_new_vertex)
+std::pair<std::vector<T>, std::array<std::size_t, 2>>
+create_new_geometry(const mesh::Mesh<T>& mesh,
+                    const std::vector<std::int32_t>& local_edge_new_vertices)
 {
   // Build map from vertex -> geometry dof
   auto x_dofmap = mesh.geometry().dofmap();
@@ -84,31 +83,31 @@ std::pair<std::vector<T>, std::array<std::size_t, 2>> create_new_geometry(
   std::span<const T> x_g = mesh.geometry().x();
   const std::size_t gdim = mesh.geometry().dim();
   const std::size_t num_vertices = map_v->size_local();
-  const std::size_t num_new_vertices = local_edge_to_new_vertex.size();
+  const std::size_t num_new_vertices = local_edge_new_vertices.size();
 
   std::array<std::size_t, 2> shape = {num_vertices + num_new_vertices, gdim};
   std::vector<T> new_vertex_coords(shape[0] * shape[1]);
+
+  // Copy existing vertices
   for (std::size_t v = 0; v < num_vertices; ++v)
   {
     std::size_t pos = 3 * vertex_to_x[v];
     for (std::size_t j = 0; j < gdim; ++j)
       new_vertex_coords[gdim * v + j] = x_g[pos + j];
   }
+  spdlog::info("Copied {} existing vertices", num_vertices);
 
-  // Compute new vertices
+  // Compute new vertices on edges
   if (num_new_vertices > 0)
   {
-    std::vector<int> edges(num_new_vertices);
-    int i = 0;
-    for (auto& e : local_edge_to_new_vertex)
-      edges[i++] = e.first;
-
     // Compute midpoint of each edge (padded to 3D)
-    const std::vector<T> midpoints = mesh::compute_midpoints(mesh, 1, edges);
+    const std::vector<T> midpoints
+        = mesh::compute_midpoints(mesh, 1, local_edge_new_vertices);
     for (std::size_t i = 0; i < num_new_vertices; ++i)
       for (std::size_t j = 0; j < gdim; ++j)
         new_vertex_coords[gdim * (num_vertices + i) + j] = midpoints[3 * i + j];
   }
+  spdlog::info("Created {} new vertices", num_new_vertices);
 
   return {std::move(new_vertex_coords), shape};
 }
@@ -144,7 +143,7 @@ void update_logical_edgefunction(
 /// coordinates of the new vertices (row-major storage) and (2) the shape of the
 /// new coordinates.
 template <std::floating_point T>
-std::tuple<std::map<std::int32_t, std::int64_t>, std::vector<T>,
+std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
            std::array<std::size_t, 2>>
 create_new_vertices(MPI_Comm comm,
                     const graph::AdjacencyList<int>& shared_edges,
@@ -157,29 +156,27 @@ create_new_vertices(MPI_Comm comm,
 
   // Add new edge midpoints to list of vertices. The new vertex will be owned by
   // the process owning the edge.
-  int n = 0;
-  std::map<std::int32_t, std::int64_t> local_edge_to_new_vertex;
+  std::vector<std::int32_t> marked_edge_list;
   for (int local_i = 0; local_i < edge_index_map->size_local(); ++local_i)
   {
     if (marked_edges[local_i])
-    {
-      [[maybe_unused]] auto it = local_edge_to_new_vertex.insert({local_i, n});
-      assert(it.second);
-      ++n;
-    }
+      marked_edge_list.push_back(local_i);
   }
-
-  const std::int64_t num_local = n;
-  std::int64_t global_offset = 0;
-  MPI_Exscan(&num_local, &global_offset, 1, MPI_INT64_T, MPI_SUM, mesh.comm());
-  global_offset += mesh.topology()->index_map(0)->local_range()[1];
-  std::for_each(local_edge_to_new_vertex.begin(),
-                local_edge_to_new_vertex.end(),
-                [global_offset](auto& e) { e.second += global_offset; });
+  spdlog::info("Marked edge list has {} entries", marked_edge_list.size());
 
   // Create actual points
   auto [new_vertex_coords, xshape]
-      = impl::create_new_geometry(mesh, local_edge_to_new_vertex);
+      = impl::create_new_geometry(mesh, marked_edge_list);
+
+  const std::int64_t num_local = marked_edge_list.size();
+  std::int64_t global_offset = 0;
+  MPI_Exscan(&num_local, &global_offset, 1, MPI_INT64_T, MPI_SUM, mesh.comm());
+  global_offset += mesh.topology()->index_map(0)->local_range()[1];
+  std::vector<std::int64_t> local_edge_to_new_vertex(marked_edge_list.size());
+  std::iota(local_edge_to_new_vertex.begin(), local_edge_to_new_vertex.end(),
+            global_offset);
+
+  spdlog::info("Marked edge global offset = {}", global_offset);
 
   // If they are shared, then the new global vertex index needs to be
   // sent off-process.
@@ -191,17 +188,15 @@ create_new_vertices(MPI_Comm comm,
   const int num_neighbors = indegree;
 
   std::vector<std::vector<std::int64_t>> values_to_send(num_neighbors);
-  for (auto& local_edge : local_edge_to_new_vertex)
+  for (std::size_t i = 0; i < marked_edge_list.size(); ++i)
   {
-    const std::size_t local_i = local_edge.first;
     // shared, but locally owned : remote owned are not in list.
-
-    for (int remote_process : shared_edges.links(local_i))
+    for (int remote_process : shared_edges.links(marked_edge_list[i]))
     {
       // Send (global edge index) -> (new global vertex index) map
       values_to_send[remote_process].push_back(
-          impl::local_to_global(local_i, *edge_index_map));
-      values_to_send[remote_process].push_back(local_edge.second);
+          impl::local_to_global(marked_edge_list[i], *edge_index_map));
+      values_to_send[remote_process].push_back(local_edge_to_new_vertex[i]);
     }
   }
 
@@ -244,22 +239,42 @@ create_new_vertices(MPI_Comm comm,
   }
 
   // Add received remote global vertex indices to map
-  std::vector<std::int64_t> recv_global_edge;
-  assert(received_values.size() % 2 == 0);
-  for (std::size_t i = 0; i < received_values.size() / 2; ++i)
-    recv_global_edge.push_back(received_values[i * 2]);
-  std::vector<std::int32_t> recv_local_edge(recv_global_edge.size());
-  mesh.topology()->index_map(1)->global_to_local(recv_global_edge,
-                                                 recv_local_edge);
-  for (std::size_t i = 0; i < received_values.size() / 2; ++i)
   {
-    assert(recv_local_edge[i] != -1);
-    [[maybe_unused]] auto it = local_edge_to_new_vertex.insert(
-        {recv_local_edge[i], received_values[i * 2 + 1]});
-    assert(it.second);
+    std::vector<std::int64_t> recv_global_edge;
+    assert(received_values.size() % 2 == 0);
+    for (std::size_t i = 0; i < received_values.size() / 2; ++i)
+      recv_global_edge.push_back(received_values[i * 2]);
+    std::vector<std::int32_t> recv_local_edge(recv_global_edge.size());
+    mesh.topology()->index_map(1)->global_to_local(recv_global_edge,
+                                                   recv_local_edge);
+    for (std::size_t i = 0; i < received_values.size() / 2; ++i)
+    {
+      assert(recv_local_edge[i] != -1);
+      marked_edge_list.push_back(recv_local_edge[i]);
+      local_edge_to_new_vertex.push_back(received_values[i * 2 + 1]);
+    }
   }
 
-  return {std::move(local_edge_to_new_vertex), std::move(new_vertex_coords),
+  // Compile marked_edge_list and local_edge_to_new_vertex into an
+  // AdjacencyList
+  // Permute data into ascending order of marked_edge_list
+  std::vector<std::int32_t> perm(marked_edge_list.size());
+  std::iota(perm.begin(), perm.end(), 0);
+  std::sort(perm.begin(), perm.end(), [&marked_edge_list](int a, int b)
+            { return marked_edge_list[a] < marked_edge_list[b]; });
+  std::vector<std::int64_t> data(local_edge_to_new_vertex.size());
+  for (std::size_t i = 0; i < perm.size(); ++i)
+    data[i] = local_edge_to_new_vertex[perm[i]];
+
+  // Compute offset for marked edges
+  std::vector<std::int32_t> offset(
+      edge_index_map->size_local() + edge_index_map->num_ghosts() + 1, 0);
+  for (auto m : marked_edge_list)
+    offset[m + 1] = 1;
+  std::partial_sum(offset.begin(), offset.end(), offset.begin());
+
+  graph::AdjacencyList<std::int64_t> local_edge_to_new_vertex_adj(data, offset);
+  return {std::move(local_edge_to_new_vertex_adj), std::move(new_vertex_coords),
           xshape};
 }
 
