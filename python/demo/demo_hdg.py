@@ -132,10 +132,6 @@ ds_c = ufl.Measure("ds", subdomain_data=[(cell_boundaries, cell_boundary_facets)
 # Create a cell integral measure over the facet mesh
 dx_f = ufl.Measure("dx", domain=facet_mesh)
 
-# We write the mixed domain forms as integrals over msh.
-# We create the relation between the entities that we can pass to the form
-# constructor
-entity_maps = [facet_mesh_emap]
 
 # Define forms
 h = ufl.CellDiameter(msh)
@@ -157,7 +153,15 @@ f = -ufl.div(c * ufl.grad(u_e(x)))
 L = ufl.inner(f, v) * dx_c
 L += ufl.inner(fem.Constant(facet_mesh, dtype(0.0)), vbar) * dx_f
 
-# Define block structure
+# Our bilinear form involves two domains (`msh` and `facet_mesh`). The mesh
+# passed to the measure is called the "integration domain". For each
+# additional mesh in our form, we must pass an `EntityMap` object that
+# relates entities in that mesh to entities in the integration domain. In
+# this case, the only other mesh is `facet_mesh`, so we pass
+# `facet_mesh_emap`
+entity_maps = [facet_mesh_emap]
+
+# Compile forms
 a_blocked = dolfinx.fem.form(ufl.extract_blocks(a), entity_maps=entity_maps)
 L_blocked = dolfinx.fem.form(ufl.extract_blocks(L))
 
@@ -165,11 +169,8 @@ L_blocked = dolfinx.fem.form(ufl.extract_blocks(L))
 # We begin by locating the boundary facets of msh
 msh_boundary_facets = mesh.exterior_facet_indices(msh.topology)
 
-# Since the boundary condition is enforced in the facet space, we must
-# use the mesh_to_facet_mesh map to get the corresponding facets in
-# facet_mesh
-
-
+# Since the boundary condition is enforced in the facet space, we need
+# to get the corresponding facets in `facet_mesh` using the entity map
 facet_mesh_boundary_facets = facet_mesh_emap.map_entities(msh_boundary_facets, facet_mesh.topology)
 
 # Get the dofs and apply the boundary condition
