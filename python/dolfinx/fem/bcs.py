@@ -223,7 +223,7 @@ def dirichletbc(
         try:
             _value = value._cpp_object
         except AttributeError:
-            _value = value
+            _value = value  # type: ignore[assignment]
 
     if V is not None:
         try:
