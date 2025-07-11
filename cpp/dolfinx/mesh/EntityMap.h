@@ -102,8 +102,9 @@ public:
   /// `target_topology`, then it is marked with -1.
   std::vector<std::int32_t> map(const Topology& target_topology) const;
 
-  /// @brief Get the topological dimension of entities the map is created for.
-  /// @return The dimension
+  /// @brief Get the topological dimension of the entities related by this
+  /// `EntityMap`.
+  /// @return The topological dimension
   std::size_t dim() const;
 
 private:
