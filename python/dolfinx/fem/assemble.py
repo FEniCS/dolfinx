@@ -176,7 +176,7 @@ def assemble_vector(
     return _assemble_vector_form(L, constants, coeffs)
 
 
-@assemble_vector.register(Form)
+@assemble_vector.register
 def _assemble_vector_form(
     L: Form,
     constants: typing.Optional[npt.NDArray] = None,
@@ -213,7 +213,7 @@ def _assemble_vector_form(
     return b
 
 
-@assemble_vector.register
+@assemble_vector.register(np.ndarray)
 def _assemble_vector_array(
     b: npt.NDArray,
     L: Form,
@@ -291,7 +291,7 @@ def assemble_matrix(
     return A
 
 
-@assemble_matrix.register(la.MatrixCSR)
+@assemble_matrix.register
 def _assemble_matrix_csr(
     A: la.MatrixCSR,
     a: Form,
