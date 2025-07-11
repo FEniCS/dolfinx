@@ -24,7 +24,11 @@ from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType
 from dolfinx.fem.function import Constant, Function, FunctionSpace
-from dolfinx.mesh import Mesh, MeshTags
+
+if typing.TYPE_CHECKING:
+    # import dolfinx.mesh just when doing type checking to avoid
+    # circular import
+    from dolfinx.mesh import Mesh, MeshTags
 
 
 class Form:
@@ -137,7 +141,7 @@ def get_integration_domains(
         return []
     else:
         domains = []
-        if isinstance(subdomain, MeshTags):
+        if not isinstance(subdomain, list):
             if integral_type in (IntegralType.exterior_facet, IntegralType.interior_facet):
                 tdim = subdomain.topology.dim
                 subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)
