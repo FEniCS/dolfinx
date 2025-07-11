@@ -8,10 +8,7 @@
 #include "Topology.h"
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
-#include <iostream>
-#include <ranges>
 #include <span>
-#include <unordered_map>
 #include <vector>
 
 namespace dolfinx::mesh
@@ -29,7 +26,7 @@ public:
   /// "sub-topology" of `topology` i.e. every entity in `sub_topology` must also
   /// exist in `topology`.
   /// @param dim The dimension of the entities
-  /// @param sub_topology_to_topology A list of entities in `topology`.
+  /// @param sub_topology_to_topology A list of entities in `topology` where
   /// `sub_topology_to_topology[i]` is the index in `topology` corresponding to
   /// entity `i` in `sub_topology`.
   template <typename U>
@@ -78,9 +75,9 @@ public:
   /// If the target topology is the sub-topology, any entities that don't exist
   /// in the sub-topology are marked -1.
   ///
-  /// @note This function computes a map every call (the map is not stored and
-  /// used in subsequent calls). If you need to call this function multiple
-  /// times, use `this->map()` instead.
+  /// @note This function computes a map every call (the map is not stored). For
+  /// multiple calls, this can be expensive and `this->map()` should be used
+  /// instead.
   ///
   /// @param entities A list of entity indices in the source topology
   /// @param target_topology The target topology to map the indices to
@@ -111,9 +108,11 @@ private:
   std::size_t _dim;                          ///< Dimension of the entities
   std::shared_ptr<const Topology> _topology; ///< A topology
   std::vector<std::int32_t>
-      _sub_topology_to_topology; ///< A list of entities in _topology, where
+      _sub_topology_to_topology; ///< A list of `_dim`-dimensional entities in
+                                 ///< _topology, where
                                  ///< `_sub_topology_to_topology[i]` is the
-                                 ///< index in topology of the `i`th entity in
+                                 ///< index in `_topology` of the `i`th entity
+                                 ///< in
                                  ///< `_sub_topology`
 
   std::shared_ptr<const Topology>
