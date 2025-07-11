@@ -71,14 +71,23 @@ public:
   /// @return Returns true if the topology is present, and false otherwise.
   bool contains(const Topology& topology) const;
 
-  /// @brief Map entity indices in one topology in this `EntityMap` to indices
-  /// in the other topology in this `EntityMap`. When mapping to entity indices
-  /// in the sub-topology, any entities that don't exist are marked with -1.
-  /// @param entities Entities in one of the topologies in this `EntityMap`
-  /// @param topology The topology to map to
-  /// @return The mapped entity indices
+  /// @brief Given a list of entities in a source topology (either of the
+  /// topologies in this `EntityMap`), this function returns their corresponding
+  /// entity indices in the given target topology `topology`.
+  ///
+  /// If the target topology is the sub-topology, any entities that don't exist
+  /// in the sub-topology are marked -1.
+  ///
+  /// @note This function computes a map every call (the map is not stored and
+  /// used in subsequent calls). If you need to call this function multiple
+  /// times, use `this->map()` instead.
+  ///
+  /// @param entities A list of entity indices in the source topology
+  /// @param target_topology The target topology to map the indices to
+  /// @return The corresponding list of entities in the target topology.
+  /// Entities that don't exist in the target topology are marked -1.
   std::vector<std::int32_t> map_entities(std::span<const std::int32_t> entities,
-                                         const Topology& topology) const;
+                                         const Topology& target_topology) const;
 
   /// @brief Get a list representing the map from entities indices in one
   /// topology of this `EntityMap` to entity indices in the other topology.
