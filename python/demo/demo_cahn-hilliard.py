@@ -295,7 +295,9 @@ petsc_options = {
     "pc_factor_mat_solver_type": linear_solver,
     "snes_monitor": None,
 }
-problem = NonlinearProblem(F, u, petsc_options=petsc_options)
+problem = NonlinearProblem(
+    F, u, petsc_options_prefix="demo_cahn-hilliard_", petsc_options=petsc_options
+)
 # -
 
 # To run the solver and save the output to a VTK file for later
@@ -339,7 +341,7 @@ c = u.sub(0)
 u0.x.array[:] = u.x.array
 while t < T:
     t += dt
-    _, converged_reason, num_iterations = problem.solve()
+    _, _, converged_reason, num_iterations = problem.solve()
     print(f"Step {int(t / dt)}: {converged_reason=} {num_iterations=}")
     u0.x.array[:] = u.x.array
     file.write_function(c, t)
