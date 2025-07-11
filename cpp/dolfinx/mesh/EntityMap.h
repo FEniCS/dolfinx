@@ -16,7 +16,7 @@
 
 namespace dolfinx::mesh
 {
-/// @brief A map relating entities in one topology to another
+/// @brief A bidirectional map relating entities in one topology to another
 class EntityMap
 {
 public:
