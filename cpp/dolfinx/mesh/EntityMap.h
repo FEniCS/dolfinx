@@ -73,7 +73,7 @@ public:
 
   /// @brief Given a list of entities in a source topology (either of the
   /// topologies in this `EntityMap`), this function returns their corresponding
-  /// entity indices in the given target topology `topology`.
+  /// entity indices in the given target topology `target_topology`.
   ///
   /// If the target topology is the sub-topology, any entities that don't exist
   /// in the sub-topology are marked -1.
@@ -89,13 +89,18 @@ public:
   std::vector<std::int32_t> map_entities(std::span<const std::int32_t> entities,
                                          const Topology& target_topology) const;
 
-  /// @brief Get a list representing the map from entities indices in one
-  /// topology of this `EntityMap` to entity indices in the other topology.
-  /// @param topology The topology to map to
-  /// @return A list whose `i`th entry is the entity index in `topology` of
-  /// entity `i` in the other topology in this `EntityMap`. If the entity does
-  /// not exist in `topology`, then it is marked with -1.
-  std::vector<std::int32_t> map(const Topology& topology) const;
+  /// @brief Get a list representing the map from entities indices in a source
+  /// topology (either of the topologies in this `EntityMap`), to a given
+  /// target topology `target_topology`.
+  ///
+  /// If the target topology is the sub-topology, any entities that don't exist
+  /// in the sub-topology are marked -1.
+  ///
+  /// @param target_topology The target topology to map to
+  /// @return A list whose `i`th entry is the entity index in `target_topology`
+  /// of entity `i` in the source topology. If the entity does not exist in
+  /// `target_topology`, then it is marked with -1.
+  std::vector<std::int32_t> map(const Topology& target_topology) const;
 
   /// @brief Get the topological dimension of entities the map is created for.
   /// @return The dimension
