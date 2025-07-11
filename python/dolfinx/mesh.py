@@ -438,7 +438,7 @@ class MeshTags:
 
 class EntityMap:
     """
-    A map that relating entities in two different meshes.
+    A bidirectional map that relates entities in two different topologies.
     """
 
     def __init__(self, entity_map):
@@ -447,48 +447,62 @@ class EntityMap:
         Args:
             entity_map: A C++ `EntityMap` object
 
-        Note:
+        .. note::
             `EntityMap` objects should not usually be created using this
             initializer directly.
         """
         self._cpp_object = entity_map
 
-    def map_entities(self, entities, topology):
+    def map_entities(self, entities, target_topology):
         """
-        Map entity indices in one topology in this `EntityMap` to indices
-        in the other topology in this `EntityMap`. When mapping to entity
-        indices in the sub-topology, any entities that don't exist are
-        marked with -1.
+        Given a list of entities in a source topology (either of the
+        topologies in this `EntityMap`), this function returns their
+        corresponding entity indices in the given target topology.
+
+        If the target topology is the sub-topology, any entities that
+        don't exist in the sub-topology are marked as -1.
+
+        .. note::
+            This function computes a map every call (the map is not
+            stored). For multiple calls, this can be expensive and
+            ``self.map(target_topology)`` should be used instead.
 
         Args:
-            entities: The entities indices in one topology
-            topology: The topology to map to
+            entities: A list of entity indices in the source topology
+            target_topology: The target topology to map the indices to
 
         Returns:
-            The corresponding entity indices in `topology`
+            The corresponding list of entities in the target topology.
+            Entities that don't exist in the target topology are marked as
+            -1.
         """
-        return self._cpp_object.map_entities(entities, topology._cpp_object)
+        return self._cpp_object.map_entities(entities, target_topology._cpp_object)
 
-    def map(self, topology):
+    def map(self, target_topology):
         """
-        Get a list representing the map from entity indices in one
-        topology of this `EntityMap` to entity indices in the other
-        topology of this `EntityMap`.
+        Get a list representing the map from entity indices in a source
+        topology (either of the topologies in this `EntityMap`), to a given
+        target topology.
+
+        If the target topology is the sub-topology, any entities that don't
+        exist in the sub-topology are marked as -1.
 
         Args:
-            topology: The topology to map to
+            target_topology: The target topology to map to.
 
         Returns:
-            A list whose `i`th entry is the entity index in `topology` of
-            entity `i` in the other topology in this `EntityMap`. If the
-            entity does not exist in `topology`, then it is marked with -1.
+            A list whose `i`th entry is the entity index in
+            `target_topology` of entity `i` in the source topology. If the
+            entity does not exist in `target_topology`, then it is marked
+            with -1.
         """
-        return self._cpp_object.map(topology._cpp_object)
+        return self._cpp_object.map(target_topology._cpp_object)
 
 
 def entity_map(topology, sub_topology, dim, sub_topology_to_topology):
     """
-    Create an entity map.
+    Create a bidirectional map relating entities of dimension `dim` in
+    `topology` and `sub_topology`.
 
     Args:
         topology: A topology
@@ -496,7 +510,7 @@ def entity_map(topology, sub_topology, dim, sub_topology_to_topology):
         "sub-topology" of `topology` i.e. every entity in `sub_topology`
         must also exist in `topology`.
         dim: The dimension of the entities
-        sub_topology_to_topology: A list of entities in `topology`.
+        sub_topology_to_topology: A list of entities in `topology` wheres
         `sub_topology_to_topology[i]` is the index in `topology`
         corresponding to entity `i` in `sub_topology`.
     """
