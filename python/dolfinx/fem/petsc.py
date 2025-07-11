@@ -127,8 +127,8 @@ def create_vector(
     if isinstance(L, Sequence):
         maps = [
             (
-                form.function_spaces[0].dofmaps(0).index_map,
-                form.function_spaces[0].dofmaps(0).index_map_bs,
+                form.function_spaces[0].dofmaps(0).index_map,  # type: ignore[attr-defined]
+                form.function_spaces[0].dofmaps(0).index_map_bs,  # type: ignore[attr-defined]
             )
             for form in L
         ]
@@ -154,7 +154,7 @@ def create_vector(
                 "Did you mean 'nest' or 'mpi'?"
             )
     else:
-        dofmap = L.function_spaces[0].dofmaps(0)
+        dofmap = L.function_spaces[0].dofmaps(0)  # type: ignore[attr-defined]
         return dolfinx.la.petsc.create_vector(dofmap.index_map, dofmap.index_map_bs)
 
 
@@ -1038,8 +1038,8 @@ def _assign_block_data(forms: Sequence[Form], vec: PETSc.Vec):  # type: ignore[n
 
     maps = [
         (
-            form.function_spaces[0].dofmaps(0).index_map,
-            form.function_spaces[0].dofmaps(0).index_map_bs,
+            form.function_spaces[0].dofmaps(0).index_map,  # type: ignore[attr-defined]
+            form.function_spaces[0].dofmaps(0).index_map_bs,  # type: ignore[attr-defined]
         )
         for form in forms
     ]

@@ -280,7 +280,7 @@ def mixed_topology_form(
 
 
 def form(
-    form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
+    form: typing.Union[ufl.Form, typing.Iterable[ufl.Form], typing.Iterable[typing.Iterable[ufl.Form]]],
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
@@ -650,7 +650,7 @@ def derivative_block(
     F: typing.Union[ufl.Form, typing.Sequence[ufl.Form]],
     u: typing.Union[Function, typing.Sequence[Function]],
     du: typing.Optional[typing.Union[ufl.Argument, typing.Sequence[ufl.Argument]]] = None,
-) -> typing.Union[ufl.Form, typing.Iterable[typing.Iterable[ufl.Form]]]:
+) -> typing.Union[ufl.Form, typing.Sequence[typing.Sequence[ufl.Form]]]:
     """Return the UFL derivative of a (list of) UFL rank one form(s).
 
     This is commonly used to derive a block Jacobian from a block residual.
