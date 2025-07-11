@@ -45,14 +45,14 @@ std::int64_t local_to_global(std::int32_t local_index,
 /// list of edges (with new points created at midpoints of those edges).
 ///
 /// @param mesh Current mesh.
-/// @param local_edge_new_vertices A list of local edges requiring new vertices
+/// @param marked_edge_list A list of local edges requiring new vertices
 /// to be created at their midpoints.
 /// @return (1) Array of new (flattened) mesh geometry and (2) its
 /// multi-dimensional shape.
 template <std::floating_point T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>>
 create_new_geometry(const mesh::Mesh<T>& mesh,
-                    const std::vector<std::int32_t>& local_edge_new_vertices)
+                    const std::vector<std::int32_t>& marked_edge_list)
 {
   // Build map from vertex -> geometry dof
   auto x_dofmap = mesh.geometry().dofmap();
@@ -83,7 +83,7 @@ create_new_geometry(const mesh::Mesh<T>& mesh,
   std::span<const T> x_g = mesh.geometry().x();
   const std::size_t gdim = mesh.geometry().dim();
   const std::size_t num_vertices = map_v->size_local();
-  const std::size_t num_new_vertices = local_edge_new_vertices.size();
+  const std::size_t num_new_vertices = marked_edge_list.size();
 
   std::array<std::size_t, 2> shape = {num_vertices + num_new_vertices, gdim};
   std::vector<T> new_vertex_coords(shape[0] * shape[1]);
@@ -102,7 +102,7 @@ create_new_geometry(const mesh::Mesh<T>& mesh,
   {
     // Compute midpoint of each edge (padded to 3D)
     const std::vector<T> midpoints
-        = mesh::compute_midpoints(mesh, 1, local_edge_new_vertices);
+        = mesh::compute_midpoints(mesh, 1, marked_edge_list);
     for (std::size_t i = 0; i < num_new_vertices; ++i)
       for (std::size_t j = 0; j < gdim; ++j)
         new_vertex_coords[gdim * (num_vertices + i) + j] = midpoints[3 * i + j];
@@ -240,14 +240,14 @@ create_new_vertices(MPI_Comm comm,
 
   // Add received remote global vertex indices to map
   {
-    std::vector<std::int64_t> recv_global_edge;
     assert(received_values.size() % 2 == 0);
-    for (std::size_t i = 0; i < received_values.size() / 2; ++i)
-      recv_global_edge.push_back(received_values[i * 2]);
+    std::vector<std::int64_t> recv_global_edge(received_values.size() / 2);
+    for (std::size_t i = 0; i < recv_global_edge.size(); ++i)
+      recv_global_edge[i] = received_values[i * 2];
     std::vector<std::int32_t> recv_local_edge(recv_global_edge.size());
     mesh.topology()->index_map(1)->global_to_local(recv_global_edge,
                                                    recv_local_edge);
-    for (std::size_t i = 0; i < received_values.size() / 2; ++i)
+    for (std::size_t i = 0; i < recv_global_edge.size(); ++i)
     {
       assert(recv_local_edge[i] != -1);
       marked_edge_list.push_back(recv_local_edge[i]);
@@ -260,8 +260,8 @@ create_new_vertices(MPI_Comm comm,
   // Permute data into ascending order of marked_edge_list
   std::vector<std::int32_t> perm(marked_edge_list.size());
   std::iota(perm.begin(), perm.end(), 0);
-  std::sort(perm.begin(), perm.end(), [&marked_edge_list](int a, int b)
-            { return marked_edge_list[a] < marked_edge_list[b]; });
+  std::ranges::sort(perm, std::less{},
+                    [&marked_edge_list](int i) { return marked_edge_list[i]; });
   std::vector<std::int64_t> data(local_edge_to_new_vertex.size());
   for (std::size_t i = 0; i < perm.size(); ++i)
     data[i] = local_edge_to_new_vertex[perm[i]];
