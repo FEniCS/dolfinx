@@ -1389,6 +1389,8 @@ void IndexMap::statistics() const
   std::vector w_dest = this->weights_dest(); // TODO: this call has a cost
   std::vector w_src = this->weights_src();
 
+  auto [local_dest, local_src] = this->rank_type(MPI_COMM_TYPE_SHARED);
+
   std::vector<std::int64_t> buffer;
 
   // Number of dest(out) and src(in) edges
@@ -1398,7 +1400,6 @@ void IndexMap::statistics() const
 
   // Number of shared and remote memory dest(out) and src(in) edges
   {
-    auto [local_dest, local_src] = this->rank_type(MPI_COMM_TYPE_SHARED);
     std::int64_t num_dest_l = local_dest.size();
     std::int64_t num_src_l = local_src.size();
     buffer.insert(buffer.end(),
@@ -1408,21 +1409,71 @@ void IndexMap::statistics() const
                    (num_src - num_src_l), -(num_src - num_src_l)});
   }
 
-  // Edge weight sums
-  std::int64_t w_dest_sum = std::reduce(w_dest.begin(), w_dest.end(), 0);
-  std::int64_t w_src_sum = std::reduce(w_src.begin(), w_src.end(), 0);
-  buffer.insert(buffer.end(), {w_dest_sum, -w_dest_sum, w_src_sum, -w_src_sum});
+  {
+    // Edge weight sums
+    std::int64_t w_dest_sum = std::reduce(w_dest.begin(), w_dest.end(), 0);
+    std::int64_t w_src_sum = std::reduce(w_src.begin(), w_src.end(), 0);
+    buffer.insert(buffer.end(),
+                  {w_dest_sum, -w_dest_sum, w_src_sum, -w_src_sum});
 
-  // Edge weight min/max
-  std::int64_t w_dest_min
-      = w_dest.empty() ? 0 : *std::min_element(w_dest.begin(), w_dest.end());
-  std::int64_t w_dest_max
-      = w_dest.empty() ? 0 : *std::max_element(w_dest.begin(), w_dest.end());
-  std::int64_t w_src_min
-      = w_src.empty() ? 0 : *std::min_element(w_src.begin(), w_src.end());
-  std::int64_t w_src_max
-      = w_src.empty() ? 0 : *std::max_element(w_src.begin(), w_src.end());
-  buffer.insert(buffer.end(), {w_dest_min, -w_dest_max, w_src_min, -w_src_max});
+    // Edge weight sums (local)
+    // std::int64_t wd_sum_local
+    //     = std::accumulate(local_dest.begin(), local_dest.end(), 0,
+    //                       [&_dest](auto acc, auto local_rank)
+    //                       {
+    //                         auto it
+    //                             = std::ranges::lower_bound(_dest,
+    //                             local_rank);
+    //                         assert(it != _dest.end() and *it == _local +
+    //                         rank); std::size_t p =
+    //                         std::distance(_dest.begin(), r); return acc +
+    //                         w_dest[p];
+    //                       });
+
+    std::int64_t wd_sum_local = 0;
+    std::int64_t wd_sum_remote = 0;
+    // std::int64_t wd_sum_remote = 0;
+    for (auto r = _dest.begin(); r != _dest.end(); ++r)
+    {
+      std::size_t p = std::distance(_dest.begin(), r);
+      auto it = std::ranges::lower_bound(local_dest, *r);
+      if (it != _dest.end() and *it == *r) // Local
+      {
+        wd_sum_local += w_dest[p];
+      }
+      else // Remote
+      {
+        wd_sum_remote += w_dest[p];
+      }
+    }
+    std::cout << wd_sum_local << std::endl;
+    std::cout << wd_sum_remote << std::endl;
+
+    // for (auto r : local_dest)
+    // {
+    //   auto it = std::ranges::lower_bound(_dest, r);
+    //   assert(it != _dest.end() and *it == r);
+    //   std::size_t pos = std::distance(_dest.begin(), it);
+    //   sum += w_dest[p]
+    // }
+
+    w_dest_sum = std::reduce(w_dest.begin(), w_dest.end(), 0);
+    w_src_sum = std::reduce(w_src.begin(), w_src.end(), 0);
+    buffer.insert(buffer.end(),
+                  {w_dest_sum, -w_dest_sum, w_src_sum, -w_src_sum});
+
+    // Edge weight min/max
+    std::int64_t w_dest_min
+        = w_dest.empty() ? 0 : *std::min_element(w_dest.begin(), w_dest.end());
+    std::int64_t w_dest_max
+        = w_dest.empty() ? 0 : *std::max_element(w_dest.begin(), w_dest.end());
+    std::int64_t w_src_min
+        = w_src.empty() ? 0 : *std::min_element(w_src.begin(), w_src.end());
+    std::int64_t w_src_max
+        = w_src.empty() ? 0 : *std::max_element(w_src.begin(), w_src.end());
+    buffer.insert(buffer.end(),
+                  {w_dest_min, -w_dest_max, w_src_min, -w_src_max});
+  }
 
   // std::int64_t w_src_num = w_src.size();
   // buffer.insert({w_src_sum, w_src_num});
