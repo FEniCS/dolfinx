@@ -889,7 +889,7 @@ class LinearProblem:
         self.solver.setOperators(self.A, self.P_mat)
 
         if petsc_options_prefix == "":
-            raise ValueError("PETSc options prefix can not be empty.")
+            raise ValueError("PETSc options prefix cannot be empty.")
 
         self._petsc_options_prefix = petsc_options_prefix
         self.solver.setOptionsPrefix(petsc_options_prefix)
@@ -1337,7 +1337,7 @@ class NonlinearProblem:
         self.solver.setFunction(partial(assemble_residual, u, self.F, self.J, bcs), self.b)
 
         if petsc_options_prefix == "":
-            raise ValueError("PETSc options prefix can not be empty.")
+            raise ValueError("PETSc options prefix cannot be empty.")
 
         self.solver.setOptionsPrefix(petsc_options_prefix)
         self.A.setOptionsPrefix(f"{petsc_options_prefix}A_")
