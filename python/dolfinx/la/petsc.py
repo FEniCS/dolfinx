@@ -41,7 +41,7 @@ def _ghost_update(x: PETSc.Vec, insert_mode: PETSc.InsertMode, scatter_mode: PET
 
 def _zero_vector(x: PETSc.Vec):  # type: ignore
     """Helper function for zeroing out PETSc vectors"""
-    if x.getType() == PETSc.Vec.Type.NEST:
+    if x.getType() == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
         for x_sub in x.getNestSubVecs():
             with x_sub.localForm() as x_sub_local:
                 x_sub_local.set(0.0)
@@ -112,7 +112,7 @@ def assign(x0: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact
         x0: An array or list of arrays that will be assigned to ``x1``.
         x1: Vector to assign values to.
     """
-    if x1.getType() == PETSc.Vec.Type().NEST:
+    if x1.getType() == PETSc.Vec.Type().NEST:  # type: ignore[attr-defined]
         x1_nest = x1.getNestSubVecs()
         for _x0, _x1 in zip(x0, x1_nest):
             with _x1.localForm() as x:
@@ -142,7 +142,7 @@ def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[
         x0: Vector that will have its values assigned to ``x1``.
         x1: An array or list of arrays to assign to.
     """
-    if x0.getType() == PETSc.Vec.Type().NEST:
+    if x0.getType() == PETSc.Vec.Type().NEST:  # type: ignore[attr-defined]
         x0_nest = x0.getNestSubVecs()
         for _x0, _x1 in zip(x0_nest, x1):
             with _x0.localForm() as x:

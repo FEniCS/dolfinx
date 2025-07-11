@@ -17,8 +17,6 @@ Note:
     collective over the object's MPI communicator.
 """
 
-# mypy: ignore-errors
-
 from __future__ import annotations
 
 import contextlib
@@ -113,7 +111,7 @@ def _extract_function_spaces(
 
 def create_vector(
     L: typing.Union[Form, Iterable[Form]], kind: typing.Optional[str] = None
-) -> PETSc.Vec:
+) -> PETSc.Vec:  # type: ignore[name-defined]
     """Create a PETSc vector that is compatible with a linear form(s).
 
     Three cases are supported:
@@ -166,9 +164,9 @@ def create_vector(
             )
             for form in L
         ]
-        if kind == PETSc.Vec.Type.NEST:
+        if kind == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
             return _cpp.fem.petsc.create_vector_nest(maps)
-        elif kind == PETSc.Vec.Type.MPI:
+        elif kind == PETSc.Vec.Type.MPI:  # type: ignore[attr-defined]
             off_owned = tuple(
                 itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
             )
@@ -198,7 +196,7 @@ def create_vector(
 def create_matrix(
     a: typing.Union[Form, Iterable[Iterable[Form]]],
     kind: typing.Optional[typing.Union[str, Iterable[Iterable[str]]]] = None,
-) -> PETSc.Mat:
+) -> PETSc.Mat:  # type: ignore[name-defined]
     """Create a PETSc matrix that is compatible with the (sequence) of
     bilinear form(s).
 
@@ -232,7 +230,8 @@ def create_matrix(
     """
     if isinstance(a, Iterable):
         _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
-        if kind == PETSc.Mat.Type.NEST:  # Create nest matrix with default types
+        if kind == PETSc.Mat.Type.NEST:  # type: ignore[attr-defined]
+            # Create nest matrix with default types
             return _cpp.fem.petsc.create_matrix_nest(_a, None)
         else:
             if kind is None or isinstance(kind, str):  # Single 'kind' type
@@ -257,7 +256,7 @@ def assemble_vector(
         ]
     ] = None,
     kind: typing.Optional[str] = None,
-) -> PETSc.Vec:
+) -> PETSc.Vec:  # type: ignore[name-defined]
     """Assemble linear form(s) into a new PETSc vector.
 
     Three cases are supported:
@@ -310,9 +309,9 @@ def assemble_vector(
     return assemble_vector(b, L, constants, coeffs)
 
 
-@assemble_vector.register(PETSc.Vec)
+@assemble_vector.register(PETSc.Vec)  # type: ignore[attr-defined]
 def _assemble_vector_vec(
-    b: PETSc.Vec,
+    b: PETSc.Vec,  # type: ignore[name-defined]
     L: typing.Union[Form, Iterable[Form]],
     constants: typing.Optional[npt.NDArray, Iterable[npt.NDArray]] = None,
     coeffs: typing.Optional[
@@ -321,7 +320,7 @@ def _assemble_vector_vec(
             Iterable[dict[tuple[IntegralType, int], npt.NDArray]],
         ]
     ] = None,
-) -> PETSc.Vec:
+) -> PETSc.Vec:  # type: ignore[name-defined]
     """Assemble linear form(s) into a PETSc vector.
 
     The vector ``b`` must have been initialized with a size/layout that
@@ -352,7 +351,7 @@ def _assemble_vector_vec(
     Returns:
         Assembled vector.
     """
-    if b.getType() == PETSc.Vec.Type.NEST:
+    if b.getType() == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
         constants = [None] * len(L) if constants is None else constants
         coeffs = [None] * len(L) if coeffs is None else coeffs
         for b_sub, L_sub, const, coeff in zip(b.getNestSubVecs(), L, constants, coeffs):
@@ -366,7 +365,7 @@ def _assemble_vector_vec(
             for L_, const, coeff, off0, off1, offg0, offg1 in zip(
                 L, constants, coeffs, offset0, offset0[1:], offset1, offset1[1:]
             ):
-                bx_ = np.zeros((off1 - off0) + (offg1 - offg0), dtype=PETSc.ScalarType)
+                bx_ = np.zeros((off1 - off0) + (offg1 - offg0), dtype=PETSc.ScalarType)  # type: ignore[attr-defined]
                 _assemble_vector_array(bx_, L_, const, coeff)
                 size = off1 - off0
                 b_l.array_w[off0:off1] += bx_[:size]
@@ -450,13 +449,13 @@ def assemble_matrix(
 
 
 def _assemble_matrix_block_mat(
-    A: PETSc.Mat,
+    A: PETSc.Mat,  # type: ignore[name-defined]
     a: Iterable[Iterable[Form]],
     bcs: typing.Optional[Iterable[DirichletBC]],
     diag: float,
     constants: typing.Optional[Iterable[npt.NDArray]] = None,
     coeffs: typing.Optional[Iterable[Iterable[dict[tuple[IntegralType, int], npt.NDArray]]]] = None,
-) -> PETSc.Mat:
+) -> PETSc.Mat:  # type: ignore[name-defined]
     """Assemble bilinear forms into a blocked matrix."""
     consts = [pack_constants(forms) for forms in a] if constants is None else constants
     coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
@@ -489,7 +488,7 @@ def _assemble_matrix_block_mat(
                         )
 
     # Flush to enable switch from add to set in the matrix
-    A.assemble(PETSc.Mat.AssemblyType.FLUSH)
+    A.assemble(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[attr-defined]
 
     # Set diagonal
     for i, a_row in enumerate(a):
@@ -505,7 +504,7 @@ def _assemble_matrix_block_mat(
 
 @assemble_matrix.register
 def assemble_matrix_mat(
-    A: PETSc.Mat,
+    A: PETSc.Mat,  # type: ignore[name-defined]
     a: typing.Union[Form, Iterable[Iterable[Form]]],
     bcs: typing.Optional[Iterable[DirichletBC]] = None,
     diag: float = 1,
@@ -516,7 +515,7 @@ def assemble_matrix_mat(
             Iterable[Iterable[dict[tuple[IntegralType, int], npt.NDArray]]],
         ]
     ] = None,
-) -> PETSc.Mat:
+) -> PETSc.Mat:  # type: ignore[name-defined]
     """Assemble bilinear form into a matrix.
 
     The matrix vector ``A`` must have been initialized with a
@@ -526,7 +525,7 @@ def assemble_matrix_mat(
     The returned matrix is not finalised, i.e. ghost values are not
     accumulated.
     """
-    if A.getType() == PETSc.Mat.Type.NEST:
+    if A.getType() == PETSc.Mat.Type.NEST:  # type: ignore[attr-defined]
         constants = [pack_constants(forms) for forms in a] if constants is None else constants
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
         for i, (a_row, const_row, coeff_row) in enumerate(zip(a, constants, coeffs)):
@@ -552,8 +551,8 @@ def assemble_matrix_mat(
         _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
         _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs)
         if a.function_spaces[0] is a.function_spaces[1]:
-            A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
-            A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
+            A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[attr-defined]
+            A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[attr-defined]
             _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], _bcs, diag)
 
     return A
@@ -563,10 +562,10 @@ def assemble_matrix_mat(
 
 
 def apply_lifting(
-    b: PETSc.Vec,
+    b: PETSc.Vec,  # type: ignore[name-defined]
     a: typing.Union[Iterable[Form], Iterable[Iterable[Form]]],
     bcs: typing.Optional[typing.Union[Iterable[DirichletBC], Iterable[Iterable[DirichletBC]]]],
-    x0: typing.Optional[Iterable[PETSc.Vec]] = None,
+    x0: typing.Optional[Iterable[PETSc.Vec]] = None,  # type: ignore[name-defined]
     alpha: float = 1,
     constants: typing.Optional[
         typing.Union[Iterable[np.ndarray], Iterable[Iterable[np.ndarray]]]
@@ -624,7 +623,7 @@ def apply_lifting(
         function. Use :func:`dolfinx.fem.DirichletBC.set` to set values
         in ``b``.
     """
-    if b.getType() == PETSc.Vec.Type.NEST:
+    if b.getType() == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
         try:
             bcs = _bcs_by_block(_extract_spaces(a, 1), bcs)
         except AttributeError:
@@ -634,7 +633,7 @@ def apply_lifting(
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
         for b_sub, a_sub, const, coeff in zip(b.getNestSubVecs(), a, constants, coeffs):
             const_ = list(
-                map(lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x, const)
+                map(lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x, const)  # type: ignore
             )
             apply_lifting(b_sub, a_sub, bcs, x0, alpha, const_, coeff)
     else:
@@ -664,7 +663,7 @@ def apply_lifting(
                         const = pack_constants(a_) if constants is None else constants[i]
                         coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]
                         const_ = [
-                            np.empty(0, dtype=PETSc.ScalarType) if val is None else val
+                            np.empty(0, dtype=PETSc.ScalarType) if val is None else val  # type: ignore[attr-defined]
                             for val in const
                         ]
                         bx_ = np.concatenate((b_l[off0:off1], b_l[offg0:offg1]))
@@ -687,9 +686,9 @@ def apply_lifting(
 
 
 def set_bc(
-    b: PETSc.Vec,
+    b: PETSc.Vec,  # type: ignore[name-defined]
     bcs: typing.Union[Iterable[DirichletBC], Iterable[Iterable[DirichletBC]]],
-    x0: typing.Optional[PETSc.Vec] = None,
+    x0: typing.Optional[PETSc.Vec] = None,  # type: ignore[name-defined]
     alpha: float = 1,
 ) -> None:
     r"""Set constraint (Dirchlet boundary condition) values in an vector.
@@ -721,7 +720,7 @@ def set_bc(
         x0 = x0.array_r if x0 is not None else None
         for bc in bcs:
             bc.set(b.array_w, x0, alpha)
-    elif b.getType() == PETSc.Vec.Type.NEST:  # nest vector
+    elif b.getType() == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
         _b = b.getNestSubVecs()
         x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()
         for b_sub, bc, x_sub in zip(_b, bcs, x0):
@@ -841,14 +840,14 @@ class LinearProblem:
         """
         self._a = _create_form(
             a,
-            dtype=PETSc.ScalarType,
+            dtype=PETSc.ScalarType,  # type: ignore[attr-defined]
             form_compiler_options=form_compiler_options,
             jit_options=jit_options,
             entity_maps=entity_maps,
         )
         self._L = _create_form(
             L,
-            dtype=PETSc.ScalarType,
+            dtype=PETSc.ScalarType,  # type: ignore[attr-defined]
             form_compiler_options=form_compiler_options,
             jit_options=jit_options,
             entity_maps=entity_maps,
@@ -856,7 +855,7 @@ class LinearProblem:
         self._A = create_matrix(self._a, kind=kind)
         self._preconditioner = _create_form(
             P,
-            dtype=PETSc.ScalarType,
+            dtype=PETSc.ScalarType,  # type: ignore[attr-defined]
             form_compiler_options=form_compiler_options,
             jit_options=jit_options,
             entity_maps=entity_maps,
@@ -868,7 +867,7 @@ class LinearProblem:
         )
 
         # For nest matrices kind can be a nested list.
-        kind = "nest" if self.A.getType() == PETSc.Mat.Type.NEST else kind
+        kind = "nest" if self.A.getType() == PETSc.Mat.Type.NEST else kind  # type: ignore[attr-defined]
         self._b = create_vector(self.L, kind=kind)
         self._x = create_vector(self.L, kind=kind)
 
@@ -884,7 +883,7 @@ class LinearProblem:
 
         self.bcs = bcs
 
-        self._solver = PETSc.KSP().create(self.A.comm)
+        self._solver = PETSc.KSP().create(self.A.comm)  # type: ignore[attr-defined]
         self.solver.setOperators(self.A, self.P_mat)
 
         self._petsc_options_prefix = petsc_options_prefix
@@ -897,7 +896,7 @@ class LinearProblem:
 
         # Set options on KSP only
         if petsc_options is not None:
-            opts = PETSc.Options()
+            opts = PETSc.Options()  # type: ignore[attr-defined]
             opts.prefixPush(self.solver.getOptionsPrefix())
 
             for k, v in petsc_options.items():
@@ -931,7 +930,7 @@ class LinearProblem:
         if self._P_mat is not None:
             self._P_mat.destroy()
 
-    def solve(self) -> tuple[typing.Union[_Function, Iterable[_Function]], PETSc.Vec, int, int]:
+    def solve(self) -> tuple[typing.Union[_Function, Iterable[_Function]], PETSc.Vec, int, int]:  # type: ignore
         """Solve the problem and update the solution in the problem
         instance.
 
@@ -970,23 +969,23 @@ class LinearProblem:
                 bcs1 = _bcs_by_block(_extract_spaces(self.a, 1), self.bcs)  # type: ignore
                 apply_lifting(self.b, self.a, bcs=bcs1)  # type: ignore
                 dolfinx.la.petsc._ghost_update(
-                    self.b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE
+                    self.b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE  # type: ignore[attr-defined]
                 )
                 bcs0 = _bcs_by_block(_extract_spaces(self.L), self.bcs)  # type: ignore
                 dolfinx.fem.petsc.set_bc(self.b, bcs0)
             else:  # single form
                 apply_lifting(self.b, [self.a], bcs=[self.bcs])
                 dolfinx.la.petsc._ghost_update(
-                    self.b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE
+                    self.b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE  # type: ignore[attr-defined]
                 )
                 for bc in self.bcs:
                     bc.set(self.b.array_w)
         else:
-            dolfinx.la.petsc._ghost_update(self.b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
+            dolfinx.la.petsc._ghost_update(self.b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
 
         # Solve linear system and update ghost values in the solution
         self.solver.solve(self.b, self.x)
-        dolfinx.la.petsc._ghost_update(self.x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
+        dolfinx.la.petsc._ghost_update(self.x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
         dolfinx.fem.petsc.assign(self.x, self.u)
         return self.u, self.x, self.solver.getConvergedReason(), self.solver.getIterationNumber()
 
@@ -1006,22 +1005,22 @@ class LinearProblem:
         return self._preconditioner
 
     @property
-    def A(self) -> PETSc.Mat:
+    def A(self) -> PETSc.Mat:  # type: ignore[name-defined]
         """Left-hand side matrix."""
         return self._A
 
     @property
-    def P_mat(self) -> PETSc.Mat:
+    def P_mat(self) -> PETSc.Mat:  # type: ignore[name-defined]
         """Preconditioner matrix."""
         return self._P_mat
 
     @property
-    def b(self) -> PETSc.Vec:
+    def b(self) -> PETSc.Vec:  # type: ignore[name-defined]
         """Right-hand side vector."""
         return self._b
 
     @property
-    def x(self) -> PETSc.Vec:
+    def x(self) -> PETSc.Vec:  # type: ignore[name-defined]
         """Solution vector.
 
         Note:
@@ -1031,7 +1030,7 @@ class LinearProblem:
         return self._x
 
     @property
-    def solver(self) -> PETSc.KSP:
+    def solver(self) -> PETSc.KSP:  # type: ignore[name-defined]
         """The PETSc KSP solver."""
         return self._solver
 
@@ -1049,7 +1048,7 @@ class LinearProblem:
 # -- High-level interface for SNES ---------------------------------------
 
 
-def _assign_block_data(forms: typing.Iterable[dolfinx.fem.Form], vec: PETSc.Vec):
+def _assign_block_data(forms: typing.Iterable[Form], vec: PETSc.Vec):  # type: ignore[name-defined]
     """Assign block data to a PETSc vector.
 
     Args:
@@ -1112,7 +1111,7 @@ def assemble_residual(
     assign(x, u)
 
     # Assign block data if block assembly is requested
-    if isinstance(residual, Iterable) and b.getType() != PETSc.Vec.Type.NEST:
+    if isinstance(residual, Iterable) and b.getType() != PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
         _assign_block_data(residual, b)
         _assign_block_data(residual, x)
 
@@ -1168,7 +1167,7 @@ def assemble_jacobian(
     """
     # Copy existing soultion into the function used in the residual and
     # Jacobian
-    dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
+    dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[attr-defined]
     assign(x, u)
 
     # Assemble Jacobian
@@ -1318,7 +1317,7 @@ class NonlinearProblem:
             self._P_mat = None
 
         # Determine the vector kind based on the matrix type
-        kind = "nest" if self._A.getType() == PETSc.Mat.Type.NEST else kind
+        kind = "nest" if self._A.getType() == PETSc.Mat.Type.NEST else kind  # type: ignore[attr-defined]
         self._b = create_vector(self.F, kind=kind)
         self._x = create_vector(self.F, kind=kind)
 
@@ -1389,7 +1388,7 @@ class NonlinearProblem:
 
         # Solve problem
         self.solver.solve(None, self.x)
-        dolfinx.la.petsc._ghost_update(self.x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
+        dolfinx.la.petsc._ghost_update(self.x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
 
         # Copy solution back to function
         assign(self.x, self.u)
@@ -1421,22 +1420,22 @@ class NonlinearProblem:
         return self._preconditioner
 
     @property
-    def A(self) -> PETSc.Mat:
+    def A(self) -> PETSc.Mat:  # type: ignore[name-defined]
         """Jacobian matrix."""
         return self._A
 
     @property
-    def P_mat(self) -> typing.Optional[PETSc.Mat]:
+    def P_mat(self) -> typing.Optional[PETSc.Mat]:  # type: ignore[name-defined]
         """Preconditioner matrix."""
         return self._P_mat
 
     @property
-    def b(self) -> PETSc.Vec:
+    def b(self) -> PETSc.Vec:  # type: ignore[name-defined]
         """Residual vector."""
         return self._b
 
     @property
-    def x(self) -> PETSc.Vec:
+    def x(self) -> PETSc.Vec:  # type: ignore[name-defined]
         """Solution vector.
 
         Note:
@@ -1446,7 +1445,7 @@ class NonlinearProblem:
         return self._x
 
     @property
-    def solver(self) -> PETSc.SNES:
+    def solver(self) -> PETSc.SNES:  # type: ignore[name-defined]
         """The SNES solver."""
         return self._snes
 
@@ -1542,16 +1541,16 @@ class NewtonSolverNonlinearProblem:
         """The compiled bilinear form (the Jacobian form)."""
         return self._a
 
-    def form(self, x: PETSc.Vec) -> None:
+    def form(self, x: PETSc.Vec) -> None:  # type: ignore[name-defined]
         """This function is called before the residual or Jacobian is
         computed. This is usually used to update ghost values.
 
         Args:
            x: The vector containing the latest solution
         """
-        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore[attr-defined]
 
-    def F(self, x: PETSc.Vec, b: PETSc.Vec) -> None:
+    def F(self, x: PETSc.Vec, b: PETSc.Vec) -> None:  # type: ignore[name-defined]
         """Assemble the residual F into the vector b.
 
         Args:
@@ -1565,12 +1564,12 @@ class NewtonSolverNonlinearProblem:
         # Apply boundary condition
         if self.bcs is not None:
             apply_lifting(b, [self._a], bcs=[self.bcs], x0=[x], alpha=-1.0)
-            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[attr-defined]
             set_bc(b, self.bcs, x, -1.0)
         else:
-            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[attr-defined]
 
-    def J(self, x: PETSc.Vec, A: PETSc.Mat) -> None:
+    def J(self, x: PETSc.Vec, A: PETSc.Mat) -> None:  # type: ignore[name-defined]
         """Assemble the Jacobian matrix.
 
         Args:
@@ -1584,7 +1583,7 @@ class NewtonSolverNonlinearProblem:
 # -- Additional free helper functions (interpolations, assignments etc.) --
 
 
-def discrete_curl(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:
+def discrete_curl(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:  # type: ignore[name-defined]
     """Assemble a discrete curl operator.
 
     Args:
@@ -1597,7 +1596,7 @@ def discrete_curl(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:
     return _discrete_curl(space0._cpp_object, space1._cpp_object)
 
 
-def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:
+def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:  # type: ignore[name-defined]
     """Assemble a discrete gradient operator.
 
     The discrete gradient operator interpolates the gradient of a H1
@@ -1615,7 +1614,7 @@ def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.M
     return _discrete_gradient(space0._cpp_object, space1._cpp_object)
 
 
-def interpolation_matrix(V0: _FunctionSpace, V1: _FunctionSpace) -> PETSc.Mat:
+def interpolation_matrix(V0: _FunctionSpace, V1: _FunctionSpace) -> PETSc.Mat:  # type: ignore[name-defined]
     r"""Assemble an interpolation operator matrix for discreye
     interpolation between finite element spaces.
 
@@ -1638,7 +1637,7 @@ def interpolation_matrix(V0: _FunctionSpace, V1: _FunctionSpace) -> PETSc.Mat:
 
 
 @functools.singledispatch
-def assign(u: typing.Union[_Function, Sequence[_Function]], x: PETSc.Vec):
+def assign(u: typing.Union[_Function, Sequence[_Function]], x: PETSc.Vec):  # type: ignore[name-defined]
     """Assign :class:`Function` degrees-of-freedom to a vector.
 
     Assigns degree-of-freedom values in ``u``, which is possibly a
@@ -1651,7 +1650,7 @@ def assign(u: typing.Union[_Function, Sequence[_Function]], x: PETSc.Vec):
         u: ``Function`` (s) to assign degree-of-freedom value from.
         x: Vector to assign degree-of-freedom values in ``u`` to.
     """
-    if x.getType() == PETSc.Vec.Type().NEST:
+    if x.getType() == PETSc.Vec.Type().NEST:  # type: ignore[attr-defined]
         dolfinx.la.petsc.assign([v.x.array for v in u], x)
     else:
         if isinstance(u, Sequence):
@@ -1666,8 +1665,8 @@ def assign(u: typing.Union[_Function, Sequence[_Function]], x: PETSc.Vec):
             dolfinx.la.petsc.assign(u.x.array, x)
 
 
-@assign.register(PETSc.Vec)
-def _(x: PETSc.Vec, u: typing.Union[_Function, Sequence[_Function]]):
+@assign.register(PETSc.Vec)  # type: ignore[attr-defined]
+def _(x: PETSc.Vec, u: typing.Union[_Function, Sequence[_Function]]):  # type: ignore[name-defined]
     """Assign vector entries to :class:`Function` degrees-of-freedom.
 
     Assigns values in ``x`` to the degrees-of-freedom of ``u``, which is
@@ -1680,7 +1679,7 @@ def _(x: PETSc.Vec, u: typing.Union[_Function, Sequence[_Function]]):
         x: Vector with values to assign values from.
         u: ``Function`` (s) to assign degree-of-freedom values to.
     """
-    if x.getType() == PETSc.Vec.Type().NEST:
+    if x.getType() == PETSc.Vec.Type().NEST:  # type: ignore[attr-defined]
         dolfinx.la.petsc.assign(x, [v.x.array for v in u])
     else:
         if isinstance(u, Sequence):
