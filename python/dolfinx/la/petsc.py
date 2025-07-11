@@ -13,6 +13,7 @@ Note:
     collective over the object's MPI communicator.
 """
 
+import collections.abc
 import functools
 import typing
 
@@ -86,7 +87,10 @@ def create_vector_wrap(x: Vector) -> PETSc.Vec:  # type: ignore[name-defined]
 
 
 @functools.singledispatch
-def assign(x0: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact]]], x1: PETSc.Vec):  # type: ignore[name-defined]
+def assign(
+    x0: typing.Union[npt.NDArray[np.inexact], typing.Sequence[npt.NDArray[np.inexact]]],
+    x1: PETSc.Vec,  # type: ignore[name-defined]
+):
     """Assign ``x0`` values to a PETSc vector ``x1``.
 
     Values in ``x0``, which is possibly a stacked collection of arrays,
@@ -119,7 +123,7 @@ def assign(x0: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact
                 x.array_w[:] = _x0
     else:
         with x1.localForm() as _x:
-            if isinstance(x0, list):
+            if isinstance(x0, collections.abc.Sequence):
                 start = 0
                 for _x0 in x0:
                     end = start + _x0.shape[0]
@@ -130,7 +134,10 @@ def assign(x0: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact
 
 
 @assign.register
-def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact]]]):  # type: ignore[name-defined]
+def _(
+    x0: PETSc.Vec,  # type: ignore[name-defined]
+    x1: typing.Union[npt.NDArray[np.inexact], typing.Sequence[npt.NDArray[np.inexact]]],
+):
     """Assign PETSc vector ``x0`` values to (blocked) array(s) ``x1``.
 
     This function performs the reverse of the assignment performed by
@@ -149,7 +156,7 @@ def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[
                 _x1[:] = x.array_r[:]  # type: ignore[index]
     else:
         with x0.localForm() as _x0:
-            if isinstance(x1, list):
+            if isinstance(x1, collections.abc.Sequence):
                 start = 0
                 for _x1 in x1:
                     end = start + _x1.shape[0]
