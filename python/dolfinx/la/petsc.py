@@ -29,7 +29,7 @@ assert dolfinx.has_petsc4py
 __all__ = ["assign", "create_vector", "create_vector_wrap"]
 
 
-def _ghost_update(x: PETSc.Vec, insert_mode: PETSc.InsertMode, scatter_mode: PETSc.ScatterMode):  # type: ignore
+def _ghost_update(x: PETSc.Vec, insert_mode: PETSc.InsertMode, scatter_mode: PETSc.ScatterMode):  # type: ignore[name-defined]
     """Helper function for ghost updating PETSc vectors"""
     if x.getType() == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
         for x_sub in x.getNestSubVecs():
@@ -39,7 +39,7 @@ def _ghost_update(x: PETSc.Vec, insert_mode: PETSc.InsertMode, scatter_mode: PET
         x.ghostUpdate(addv=insert_mode, mode=scatter_mode)
 
 
-def _zero_vector(x: PETSc.Vec):  # type: ignore
+def _zero_vector(x: PETSc.Vec):  # type: ignore[name-defined]
     """Helper function for zeroing out PETSc vectors"""
     if x.getType() == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
         for x_sub in x.getNestSubVecs():
@@ -64,7 +64,7 @@ def create_vector(index_map: IndexMap, bs: int) -> PETSc.Vec:  # type: ignore[na
     """
     ghosts = index_map.ghosts.astype(PETSc.IntType)  # type: ignore[attr-defined]
     size = (index_map.size_local * bs, index_map.size_global * bs)
-    return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=index_map.comm)  # type: ignore
+    return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=index_map.comm)  # type: ignore[attr-defined]
 
 
 def create_vector_wrap(x: Vector) -> PETSc.Vec:  # type: ignore[name-defined]
@@ -86,7 +86,7 @@ def create_vector_wrap(x: Vector) -> PETSc.Vec:  # type: ignore[name-defined]
 
 
 @functools.singledispatch
-def assign(x0: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact]]], x1: PETSc.Vec):  # type: ignore
+def assign(x0: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact]]], x1: PETSc.Vec):  # type: ignore[name-defined]
     """Assign ``x0`` values to a PETSc vector ``x1``.
 
     Values in ``x0``, which is possibly a stacked collection of arrays,
@@ -129,8 +129,8 @@ def assign(x0: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact
                 _x.array_w[:] = x0
 
 
-@assign.register(PETSc.Vec)  # type: ignore[attr-defined]
-def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact]]]):  # type: ignore
+@assign.register
+def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[np.inexact]]]):  # type: ignore[name-defined]
     """Assign PETSc vector ``x0`` values to (blocked) array(s) ``x1``.
 
     This function performs the reverse of the assignment performed by
@@ -146,7 +146,7 @@ def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[
         x0_nest = x0.getNestSubVecs()
         for _x0, _x1 in zip(x0_nest, x1):
             with _x0.localForm() as x:
-                _x1[:] = x.array_r[:]  # type: ignore
+                _x1[:] = x.array_r[:]  # type: ignore[index]
     else:
         with x0.localForm() as _x0:
             if isinstance(x1, list):

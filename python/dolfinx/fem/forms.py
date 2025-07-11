@@ -87,12 +87,12 @@ class Form:
 
     @property
     def rank(self) -> int:
-        return self._cpp_object.rank  # type: ignore
+        return self._cpp_object.rank
 
     @property
     def function_spaces(self) -> list[FunctionSpace]:
         """Function spaces on which this form is defined."""
-        return self._cpp_object.function_spaces  # type: ignore
+        return self._cpp_object.function_spaces
 
     @property
     def dtype(self) -> np.dtype:
@@ -140,24 +140,24 @@ def get_integration_domains(
         return []
     else:
         domains = []
-        try:
+        if isinstance(subdomain, MeshTags):
             if integral_type in (IntegralType.exterior_facet, IntegralType.interior_facet):
-                tdim = subdomain.topology.dim  # type: ignore
-                subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)  # type: ignore
-                subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)  # type: ignore
+                tdim = subdomain.topology.dim
+                subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)
+                subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)
             # Compute integration domains only for each subdomain id in
             # the integrals. If a process has no integral entities,
             # insert an empty array.
             for id in subdomain_ids:
                 integration_entities = _cpp.fem.compute_integration_domains(
                     integral_type,
-                    subdomain._cpp_object.topology,  # type: ignore
-                    subdomain.find(id),  # type: ignore
+                    subdomain._cpp_object.topology,
+                    subdomain.find(id),
                 )
                 domains.append((id, integration_entities))
             return [(s[0], np.array(s[1])) for s in domains]
-        except AttributeError:
-            return [(s[0], np.array(s[1])) for s in sorted(subdomain)]  # type: ignore
+        else:
+            return [(s[0], np.array(s[1])) for s in sorted(subdomain)]
 
 
 def form_cpp_class(
@@ -289,7 +289,7 @@ def form(
     """Create a Form or list of Forms.
 
     Args:
-        form: A UFL form or iterable (list) of UFL forms.
+        form: A UFL form or iterable of UFL forms.
         dtype: Scalar type to use for the compiled form.
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
@@ -530,7 +530,7 @@ def compile_form(
     p_ffcx = ffcx.get_options(form_compiler_options)
     p_jit = jit.get_options(jit_options)
     ufcx_form, module, code = jit.ffcx_jit(comm, form, p_ffcx, p_jit)
-    scalar_type: npt.DTypeLike = p_ffcx["scalar_type"]  # type: ignore
+    scalar_type: npt.DTypeLike = p_ffcx["scalar_type"]  # type: ignore [assignment]
     return CompiledForm(form, ufcx_form, module, code, scalar_type)
 
 
@@ -664,11 +664,13 @@ def derivative_block(
     identical to calling `ufl.derivative` directly.
     """
     if isinstance(F, ufl.Form):
+        if not isinstance(u, Function):
+            raise ValueError("Must provide a single function when F is a UFL form")
         if du is None:
-            du = ufl.TrialFunction(u.function_space)  # type: ignore
+            du = ufl.TrialFunction(u.function_space)
         return ufl.derivative(F, u, du)
     else:
-        assert [isinstance(Fi, ufl.Form) for Fi in F], "F must be a list of UFL forms"
+        assert all([isinstance(Fi, ufl.Form) for Fi in F]), "F must be a sequence of UFL forms"
         assert len(F) == len(u), "Number of forms and functions must be equal"
         if du is not None:
             assert len(F) == len(du), "Number of forms and du must be equal"
