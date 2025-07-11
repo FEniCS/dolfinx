@@ -6,9 +6,6 @@
 
 #include "EntityMap.h"
 #include "Topology.h"
-#include <concepts>
-#include <dolfinx/common/IndexMap.h>
-#include <iostream>
 #include <ranges>
 #include <span>
 #include <unordered_map>
