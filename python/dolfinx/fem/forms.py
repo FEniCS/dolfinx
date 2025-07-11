@@ -277,7 +277,9 @@ def mixed_topology_form(
 
 
 def form(
-    form: typing.Union[ufl.Form, typing.Iterable[ufl.Form], typing.Iterable[typing.Iterable[ufl.Form]]],
+    form: typing.Union[
+        ufl.Form, typing.Iterable[ufl.Form], typing.Iterable[typing.Iterable[ufl.Form]]
+    ],
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
