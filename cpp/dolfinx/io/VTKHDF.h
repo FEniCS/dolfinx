@@ -168,6 +168,77 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
   hdf5::close_file(h5file);
 }
 
+/// @brief Write point data to VTKHDF
+/// @tparam U Scalar type
+/// @param filename File for output
+/// @param mesh Mesh
+/// @param data Point data at the locally owned vertices
+/// @note Mesh must be written to file first using `VTKHDF::write_mesh`
+template <std::floating_point U>
+void write_point_data(std::string filename, const mesh::Mesh<U>& mesh,
+                      const std::vector<U>& data)
+{
+  auto im0 = mesh.topology()->index_map(0);
+  if (data.size() != im0->size_local())
+  {
+    throw std::runtime_error(
+        "Data size mismatch with number of local vertices");
+  }
+
+  hid_t h5file = hdf5::open_file(mesh.comm(), filename, "a", true);
+  hdf5::add_group(h5file, "VTKHDF/Steps");
+  hid_t vtk_group = H5Gopen(h5file, "VTKHDF/Steps", H5P_DEFAULT);
+
+  // Create "NSteps" attribute
+  hsize_t dims = 1;
+  hid_t space_id = H5Screate_simple(1, &dims, NULL);
+  hid_t attr_id = H5Acreate(vtk_group, "NSteps", H5T_NATIVE_INT32, space_id,
+                            H5P_DEFAULT, H5P_DEFAULT);
+  std::int32_t nsteps = 1;
+  H5Awrite(attr_id, H5T_NATIVE_INT32, &nsteps);
+  H5Aclose(attr_id);
+  H5Sclose(space_id);
+  H5Gclose(vtk_group);
+
+  std::vector<std::int32_t> cell_offsets = {0};
+  hdf5::write_dataset(h5file, "/VTKHDF/Steps/CellOffsets", cell_offsets.data(),
+                      {0, cell_offsets.size()}, {cell_offsets.size()}, true,
+                      false);
+
+  std::vector<std::int32_t> conn_offsets = {0};
+  hdf5::write_dataset(h5file, "/VTKHDF/Steps/ConnectivityIdOffsets",
+                      conn_offsets.data(), {0, conn_offsets.size()},
+                      {conn_offsets.size()}, true, false);
+
+  std::vector<std::int32_t> nparts = {1};
+  hdf5::write_dataset(h5file, "/VTKHDF/Steps/NumberOfParts", nparts.data(),
+                      {0, nparts.size()}, {nparts.size()}, true, false);
+
+  std::vector<std::int32_t> part_offsets = {0};
+  hdf5::write_dataset(h5file, "/VTKHDF/Steps/PartOffsets", part_offsets.data(),
+                      {0, part_offsets.size()}, {part_offsets.size()}, true,
+                      false);
+
+  std::vector<std::int64_t> point_data_offsets = {0};
+  hdf5::write_dataset(h5file, "/VTKHDF/Steps/PointDataOffsets/u",
+                      point_data_offsets.data(), {0, point_data_offsets.size()},
+                      {point_data_offsets.size()}, true, false);
+
+  std::vector<std::int32_t> point_offsets = {0};
+  hdf5::write_dataset(h5file, "/VTKHDF/Steps/PointOffsets",
+                      point_offsets.data(), {0, point_offsets.size()},
+                      {point_offsets.size()}, true, false);
+
+  std::vector<std::int32_t> values = {0};
+  hdf5::write_dataset(h5file, "/VTKHDF/Steps/Values", values.data(),
+                      {0, values.size()}, {values.size()}, true, false);
+
+  hdf5::write_dataset(h5file, "/VTKHDF/PointData/u", data.data(),
+                      im0->local_range(), {im0->size_global()}, true, false);
+
+  hdf5::close_file(h5file);
+}
+
 /// @brief Read a mesh from a VTKHDF format file.
 ///
 /// @tparam U Scalar type of mesh
