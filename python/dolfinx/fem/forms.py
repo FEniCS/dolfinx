@@ -13,6 +13,8 @@ import typing
 from dataclasses import dataclass
 from itertools import chain
 
+from mpi4py import MPI
+
 import numpy as np
 import numpy.typing as npt
 
@@ -21,13 +23,8 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType
-from dolfinx.fem.function import Function, FunctionSpace
-
-if typing.TYPE_CHECKING:
-    from mpi4py import MPI
-
-    from dolfinx.fem import function
-    from dolfinx.mesh import Mesh, MeshTags
+from dolfinx.fem.function import Constant, Function, FunctionSpace
+from dolfinx.mesh import Mesh, MeshTags
 
 
 class Form:
@@ -444,7 +441,7 @@ def extract_function_spaces(
         typing.Iterable[typing.Iterable[Form]],
     ],
     index: int = 0,
-) -> list[typing.Union[None, function.FunctionSpace]]:
+) -> list[typing.Union[None, FunctionSpace]]:
     """Extract common function spaces from an array of forms.
 
     If ``forms`` is a list of linear form, this function returns of list
@@ -569,11 +566,11 @@ def form_cpp_creator(
 
 def create_form(
     form: CompiledForm,
-    function_spaces: list[function.FunctionSpace],
+    function_spaces: list[FunctionSpace],
     msh: Mesh,
     subdomains: dict[IntegralType, list[tuple[int, np.ndarray]]],
-    coefficient_map: dict[ufl.Coefficient, function.Function],
-    constant_map: dict[ufl.Constant, function.Constant],
+    coefficient_map: dict[ufl.Coefficient, Function],
+    constant_map: dict[ufl.Constant, Constant],
     entity_maps: dict[Mesh, np.typing.NDArray[np.int32]] | None = None,
 ) -> Form:
     """
