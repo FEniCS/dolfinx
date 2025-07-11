@@ -306,7 +306,6 @@ class TestPETScAssemblers:
         """
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
@@ -359,12 +358,12 @@ class TestPETScAssemblers:
             """Monolithic blocked"""
             A = petsc_assemble_matrix(a_block, bcs=[bc])
             A.assemble()
-            b = assemble_vector(L_block, kind=PETSc.Vec.Type.MPI)
+            b = petsc_assemble_vector(L_block, kind=PETSc.Vec.Type.MPI)
             bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a_block, 1), bcs=[bc])
-            apply_lifting(b, a_block, bcs=bcs1)
+            petsc_apply_lifting(b, a_block, bcs=bcs1)
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L_block), [bc])
-            set_bc(b, bcs0)
+            petsc_set_bc(b, bcs0)
 
             assert A.getType() != "nest"
 
@@ -450,7 +449,6 @@ class TestPETScAssemblers:
         """
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
@@ -492,12 +490,12 @@ class TestPETScAssemblers:
             """Monolithic blocked"""
             A = petsc_assemble_matrix(a_block, bcs=[bc])
             A.assemble()
-            b = assemble_vector(L_block, kind=PETSc.Vec.Type.MPI)
+            b = petsc_assemble_vector(L_block, kind=PETSc.Vec.Type.MPI)
             bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a_block, 1), bcs=[bc])
-            apply_lifting(b, a_block, bcs=bcs1)
+            petsc_apply_lifting(b, a_block, bcs=bcs1)
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L_block), [bc])
-            set_bc(b, bcs0)
+            petsc_set_bc(b, bcs0)
 
             assert A.getType() != "nest"
             return A, b
@@ -567,7 +565,6 @@ class TestPETScAssemblers:
         """
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
@@ -612,12 +609,12 @@ class TestPETScAssemblers:
             """Blocked"""
             a = [[a00, a01], [a10, a11]]
             A = petsc_assemble_matrix(a, bcs=bcs)
-            b = assemble_vector([L0, L1], kind=PETSc.Vec.Type.MPI)
+            b = petsc_assemble_vector([L0, L1], kind=PETSc.Vec.Type.MPI)
             bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), bcs=bcs)
-            apply_lifting(b, a, bcs=bcs1)
+            petsc_apply_lifting(b, a, bcs=bcs1)
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = fem.bcs_by_block(fem.extract_function_spaces([L0, L1]), bcs)
-            set_bc(b, bcs0)
+            petsc_set_bc(b, bcs0)
 
             A.assemble()
             x = A.createVecLeft()
@@ -735,7 +732,6 @@ class TestPETScAssemblers:
         """Assemble Stokes problem with Taylor-Hood elements and solve."""
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
@@ -837,12 +833,12 @@ class TestPETScAssemblers:
             P = petsc_assemble_matrix(form([[p00, p01], [p10, p11]]), bcs=[bc0, bc1])
             P.assemble()
             L, a = form([L0, L1]), form([[a00, a01], [a10, a11]])
-            b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
+            b = petsc_assemble_vector(L, kind=PETSc.Vec.Type.MPI)
             bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), [bc0, bc1])
-            apply_lifting(b, a, bcs=bcs1)
+            petsc_apply_lifting(b, a, bcs=bcs1)
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs=[bc0, bc1])
-            set_bc(b, bcs0)
+            petsc_set_bc(b, bcs0)
 
             ksp = PETSc.KSP()
             ksp.create(mesh.comm)
@@ -975,8 +971,10 @@ class TestPETScAssemblers:
     def test_symmetry_interior_facet_assembly(self, mesh):
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
+        from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
+        from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
+        from dolfinx.fem.petsc import set_bc as petsc_set_bc
 
         def bc(V):
             facetdim = mesh.topology.dim - 1
@@ -1006,12 +1004,12 @@ class TestPETScAssemblers:
         # with boundary conditions
         bcs = [bc(V0), bc(V1)]
         A = petsc_assemble_matrix(a, bcs=bcs)
-        b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
+        b = petsc_assemble_vector(L, kind=PETSc.Vec.Type.MPI)
         bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), bcs)
-        apply_lifting(b, a, bcs=bcs1)
+        petsc_apply_lifting(b, a, bcs=bcs1)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs=bcs)
-        set_bc(b, bcs0)
+        petsc_set_bc(b, bcs0)
 
         A.assemble()
         b.assemble()
@@ -1043,12 +1041,12 @@ class TestPETScAssemblers:
         # with boundary conditions
         bcs = [bc(V0), bc(V1)]
         A = petsc_assemble_matrix(a, bcs=bcs)
-        b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
+        b = petsc_assemble_vector(L, kind=PETSc.Vec.Type.MPI)
         bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), bcs=bcs)
-        apply_lifting(b, a, bcs=bcs1)
+        petsc_apply_lifting(b, a, bcs=bcs1)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs=bcs)
-        set_bc(b, bcs0)
+        petsc_set_bc(b, bcs0)
 
         A.assemble()
         b.assemble()
@@ -1191,7 +1189,8 @@ class TestPETScAssemblers:
 
     @pytest.mark.parametrize("kind", ["nest", "mpi"])
     def test_lifting_coefficients(self, kind):
-        from dolfinx.fem.petsc import apply_lifting, create_vector
+        from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
+        from dolfinx.fem.petsc import create_vector as petsc_create_vector
 
         mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
         V = functionspace(mesh, ("Lagrange", 1))
@@ -1213,20 +1212,17 @@ class TestPETScAssemblers:
         bndry_dofs = locate_dofs_topological(V, mesh.topology.dim - 1, bndry_facets)
         bcs = [dirichletbc(default_scalar_type(2.0), bndry_dofs, V)]
 
-        if kind == "mpi":
-            bcs1 = bcs_by_block(extract_function_spaces(J, 1), bcs)
-        else:
-            bcs1 = bcs
+        bcs1 = bcs_by_block(extract_function_spaces(J, 1), bcs)
 
         # Apply lifting with input coefficient
         coeffs = pack_coefficients(J)
-        b = create_vector(L, kind=kind)
-        apply_lifting(b, J, bcs=bcs1, coeffs=coeffs)
+        b = petsc_create_vector(L, kind=kind)
+        petsc_apply_lifting(b, J, bcs=bcs1, coeffs=coeffs)
         b.assemble()
 
         # Reference lifting
-        b_ref = create_vector(L, kind=kind)
-        apply_lifting(b_ref, J, bcs=bcs1)
+        b_ref = petsc_create_vector(L, kind=kind)
+        petsc_apply_lifting(b_ref, J, bcs=bcs1)
         b_ref.assemble()
 
         np.testing.assert_allclose(b.array_r, b_ref.array_r, rtol=1e-12)
@@ -1380,7 +1376,7 @@ class TestPETScAssemblers:
     def test_block_null_lifting(self):
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import assemble_vector
+        from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
 
         comm = MPI.COMM_WORLD
         msh = create_unit_square(comm, 2, 2)
@@ -1388,11 +1384,11 @@ class TestPETScAssemblers:
         W = functionspace(msh, ("Lagrange", 2))
         v, w = ufl.TestFunction(V), ufl.TestFunction(W)
         L = form([ufl.conj(v) * ufl.dx, ufl.conj(w) * ufl.dx])
-        b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
+        b = petsc_assemble_vector(L, kind=PETSc.Vec.Type.MPI)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     def test_zero_diagonal_block_no_bcs(self):
-        from dolfinx.fem.petsc import assemble_matrix
+        from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
 
         msh = create_unit_square(MPI.COMM_WORLD, 2, 2)
         V = functionspace(msh, ("Lagrange", 1))
@@ -1402,7 +1398,7 @@ class TestPETScAssemblers:
         a = form(
             [[ufl.inner(u, v) * ufl.dx, ufl.inner(p, v) * ufl.dx], [ufl.inner(u, q) * ufl.dx, None]]
         )
-        A = assemble_matrix(a, kind="mpi")
+        A = petsc_assemble_matrix(a, kind="mpi")
         A.assemble()
 
 

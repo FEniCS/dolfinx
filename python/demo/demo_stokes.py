@@ -104,17 +104,25 @@ import numpy as np
 
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import default_real_type, fem, la
+from dolfinx import default_real_type, la
 from dolfinx.fem import (
     Constant,
     Function,
+    bcs_by_block,
     dirichletbc,
     extract_function_spaces,
     form,
     functionspace,
     locate_dofs_topological,
 )
-from dolfinx.fem.petsc import LinearProblem, apply_lifting, assemble_matrix, assemble_vector, set_bc
+from dolfinx.fem.petsc import (
+    LinearProblem,
+    apply_lifting,
+    assemble_matrix,
+    assemble_vector,
+    create_vector,
+    set_bc,
+)
 from dolfinx.io import XDMFFile
 from dolfinx.la.petsc import create_vector_wrap
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
@@ -235,7 +243,7 @@ def nested_iterative_solver_high_level():
     # a vector that spans the nullspace to the solver, and any component
     # of the solution in this direction will be eliminated during the
     # solution process.
-    null_vec = fem.petsc.create_vector(L, "nest")
+    null_vec = create_vector(L, "nest")
 
     # Set velocity part to zero and the pressure part to a non-zero
     # constant
@@ -285,13 +293,13 @@ def nested_iterative_solver_low_level():
     """Solve the Stokes problem using nest matrices and an iterative
     solver using low-level routines."""
     # Assemble nested matrix operators
-    A = fem.petsc.assemble_matrix(a, bcs=bcs, kind="nest")
+    A = assemble_matrix(a, bcs=bcs, kind="nest")
     A.assemble()
 
     # Create a nested matrix P to use as the preconditioner. The
     # top-left block of P is shared with the top-left block of A. The
     # bottom-right diagonal entry is assembled from the form a_p11:
-    P11 = fem.petsc.assemble_matrix(a_p11, [])
+    P11 = assemble_matrix(a_p11, [])
     P = PETSc.Mat().createNest([[A.getNestSubMatrix(0, 0), None], [None, P11]])
     P.assemble()
 
@@ -303,23 +311,24 @@ def nested_iterative_solver_low_level():
     P11.setOption(PETSc.Mat.Option.SPD, True)
 
     # Assemble right-hand side vector
-    b = fem.petsc.assemble_vector(L, kind="nest")
+    b = assemble_vector(L, kind="nest")
 
     # Modify ('lift') the RHS for Dirichlet boundary conditions
-    fem.petsc.apply_lifting(b, a, bcs=bcs)
+    bcs1 = bcs_by_block(extract_function_spaces(a, 1), bcs)
+    apply_lifting(b, a, bcs=bcs1)
 
-    # Sum contributions for vector entries that are share across
+    # Sum contributions for vector entries that are shared across
     # parallel processes
     for b_sub in b.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     # Set Dirichlet boundary condition values in the RHS vector
-    bcs0 = fem.bcs_by_block(extract_function_spaces(L), bcs)
-    fem.petsc.set_bc(b, bcs0)
+    bcs0 = bcs_by_block(extract_function_spaces(L), bcs)
+    set_bc(b, bcs0)
 
     # Set the nullspace for pressure (since pressure is determined only
     # up to a constant)
-    null_vec = fem.petsc.create_vector(L, "nest")
+    null_vec = create_vector(L, "nest")
     null_vecs = null_vec.getNestSubVecs()
     null_vecs[0].set(0.0), null_vecs[1].set(1.0)
     null_vec.normalize()
@@ -406,9 +415,10 @@ def block_operators():
     P.assemble()
 
     b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
-    apply_lifting(b, a, bcs=bcs)
+    bcs1 = bcs_by_block(extract_function_spaces(a, 1), bcs)
+    apply_lifting(b, a, bcs=bcs1)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs)
+    bcs0 = bcs_by_block(extract_function_spaces(L), bcs)
     set_bc(b, bcs0)
 
     # Set the nullspace for pressure (since pressure is determined only
@@ -584,11 +594,12 @@ def mixed_direct():
     L = form(ufl.inner(f, v) * ufl.dx)
 
     # Assemble LHS matrix and RHS vector
-    A = fem.petsc.assemble_matrix(a, bcs=bcs)
+    A = assemble_matrix(a, bcs=bcs)
     A.assemble()
-    b = fem.petsc.assemble_vector(L)
+    b = assemble_vector(L)
 
-    fem.petsc.apply_lifting(b, [a], bcs=[bcs])
+    bcs1 = bcs_by_block(extract_function_spaces([[a]], 1), bcs)
+    apply_lifting(b, [a], bcs=bcs1)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     # Set Dirichlet boundary condition values in the RHS
