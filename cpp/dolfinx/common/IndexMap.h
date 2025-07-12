@@ -129,7 +129,8 @@ struct IndexMapStats
   //                                ///< memory rank.
   // minmax in_node_weight_local;   ///< Min/max node out weight to shared
   //                                ///< memory rank.
-  // minmax out_node_weight_remote; ///< Min/max node out weight to remote memory
+  // minmax out_node_weight_remote; ///< Min/max node out weight to remote
+  // memory
   //                                ///< rank.
   // minmax in_node_weight_remote;  ///< Min/max node in weight from
   //                                ///< remote memory rank.
@@ -142,11 +143,13 @@ struct IndexMapStats
   // std::size_t edges_mean; ///< Mean number of node out(in) edges.
 
   // // B2. Mean number of node local/remote edges
-  // std::size_t edges_local_mean;  ///< Mean number of node local out(in) edges.
-  // std::size_t edges_remote_mean; ///< Mean number of node remote out(in) edges.
+  // std::size_t edges_local_mean;  ///< Mean number of node local out(in)
+  // edges. std::size_t edges_remote_mean; ///< Mean number of node remote
+  // out(in) edges.
 
   // // B3a.
-  // std::size_t node_weight_mean; ///< Mean edge weight. This is proportional to
+  // std::size_t node_weight_mean; ///< Mean edge weight. This is proportional
+  // to
   //                               ///< the mean message size.
   // // B3b.
   // std::size_t
