@@ -21,11 +21,33 @@ try:
 
     default_scalar_type = _PETSc.ScalarType  # type: ignore
     default_real_type = _PETSc.RealType  # type: ignore
+
+    import numpy as _np
+
+    if _np.issubdtype(default_scalar_type, _np.complexfloating):
+        default_complex_type = default_scalar_type
+    elif _np.issubdtype(default_scalar_type, _np.float32):
+        default_complex_type = _np.complex64
+    elif _np.issubdtype(default_scalar_type, _np.float64):
+        default_complex_type = _np.complex128
+    else:
+        import warnings
+
+        warnings.warn(f"Unable to determine default complex type from {default_scalar_type}")
+
+        default_complex_type = None
+
+        del warnings
+
+    del _np
 except ImportError:
     import numpy as _np
 
     default_scalar_type = _np.float64
     default_real_type = _np.float64
+    default_complex_type = _np.complex128
+
+    del _np
 
 from dolfinx import common
 from dolfinx import cpp as _cpp

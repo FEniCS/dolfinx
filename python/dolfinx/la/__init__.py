@@ -96,11 +96,19 @@ class Vector:
         """
         assert dolfinx.has_petsc4py
 
-        from dolfinx.la.petsc import create_vector_wrap
+        from petsc4py import PETSc
 
-        if self._petsc_x is None:
-            self._petsc_x = create_vector_wrap(self)
-        return self._petsc_x
+        if np.can_cast(self.array.dtype, PETSc.ScalarType, casting="safe"):
+            from dolfinx.la.petsc import create_vector_wrap
+
+            if self._petsc_x is None:
+                self._petsc_x = create_vector_wrap(self)
+            return self._petsc_x
+        else:
+            raise TypeError(
+                f"Cannot create PETSc vector: Vector dtype {self.array.dtype} cannot be cast "
+                f"to {PETSc.ScalarType}"
+            )
 
     def scatter_forward(self) -> None:
         """Update ghost entries."""

@@ -15,7 +15,7 @@ import pytest
 
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import default_real_type, la
+from dolfinx import default_complex_type, default_real_type, default_scalar_type, la
 from dolfinx.fem import Function, functionspace
 from dolfinx.geometry import bb_tree, compute_colliding_cells, compute_collisions_points
 from dolfinx.mesh import create_mesh, create_unit_cube
@@ -224,3 +224,45 @@ def test_interpolation_function(mesh):
     uh = Function(Vh)
     uh.interpolate(u)
     assert np.allclose(uh.x.array, 1)
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        default_scalar_type,
+        default_real_type,
+        default_complex_type,
+    ],
+)
+def test_function_dtype(dtype):
+    """
+    Test creation of a function with non-default dtype.
+
+    The function dtype may be complex even in cases where
+    `dolfinx.default_scalar_type` is a real dtype, and
+    viceversa.
+    """
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=default_real_type)
+    V = functionspace(mesh, ("Lagrange", 1))
+
+    f = Function(V, dtype=dtype)
+    f.interpolate(lambda x: np.ones(x.shape[1]))
+
+    if np.issubdtype(dtype, np.complexfloating):
+        assert np.allclose(f.x.array.real, 1.0)
+        assert np.allclose(f.x.array.imag, 0.0)
+    else:
+        assert np.allclose(f.x.array, 1.0)
+
+    if np.issubdtype(dtype, np.complexfloating) and not np.issubdtype(
+        default_scalar_type, np.complexfloating
+    ):
+        # The Function contains complex numbers, but PETSc only supports
+        # a real dtype. Trying to get the PETSc vector corresponding
+        # to Function.x fails because the PETSc vector cannot contain
+        # complex numbers without losing the imaginary parts.
+        with pytest.raises(TypeError):
+            f.x.petsc_vec
+    else:
+        f_vec = f.x.petsc_vec
+        assert np.allclose(f_vec.array_r, 1.0)
