@@ -1492,30 +1492,30 @@ common::IndexMapStats IndexMap::statistics() const
   std::uint64_t num_nodes = dolfinx::MPI::size(_comm.comm());
   // std::uint64_t num_edges = recv_m.at(0);
 
-  // auto v = recv.begin();
+  auto v = recv.begin();
   // auto vm = recv_m.begin();
   IndexMapStats stats{
       .num_nodes = (int)num_nodes,
-      // // A1.
-      // .out_edges = {*(v++), -*(v++)},
-      // .in_edges = {*(v++), -*(v++)},
-      // // A2a.
-      // .out_edges_local = {*(v++), -*(v++)},
-      // .in_edges_local = {*(v++), -*(v++)},
-      // // A2b.
-      // .out_edges_remote = {*(v++), -*(v++)},
-      // .in_edges_remote = {*(v++), -*(v++)},
-      // // A3a.
-      // .out_node_weight = {*(v++), -*(v++)},
-      // .in_node_weight = {*(v++), -*(v++)},
-      // // A3b.
-      // .out_node_weight_local = {*(v++), -*(v++)},
-      // .in_node_weight_local = {*(v++), -*(v++)},
-      // .out_node_weight_remote = {*(v++), -*(v++)},
-      // .in_node_weight_remote = {*(v++), -*(v++)},
-      // // A4.
-      // .out_edge_weight_local = {*(v++), -*(v++)},
-      // .out_edge_weight_remote = {*(v++), -*(v++)},
+      // A1.
+      .out_edges = {*(v++), -*(v++)},
+      .in_edges = {*(v++), -*(v++)},
+      // A2a.
+      .out_edges_local = {*(v++), -*(v++)},
+      .in_edges_local = {*(v++), -*(v++)},
+      // A2b.
+      .out_edges_remote = {*(v++), -*(v++)},
+      .in_edges_remote = {*(v++), -*(v++)},
+      // A3a.
+      .out_node_weight = {*(v++), -*(v++)},
+      .in_node_weight = {*(v++), -*(v++)},
+      // A3b.
+      .out_node_weight_local = {*(v++), -*(v++)},
+      .in_node_weight_local = {*(v++), -*(v++)},
+      .out_node_weight_remote = {*(v++), -*(v++)},
+      .in_node_weight_remote = {*(v++), -*(v++)},
+      // A4.
+      .out_edge_weight_local = {*(v++), -*(v++)},
+      .out_edge_weight_remote = {*(v++), -*(v++)},
       // // B1.
       // .edges_mean = std::size_t(*(vm++) / num_nodes),
       // // B2.
@@ -1527,8 +1527,10 @@ common::IndexMapStats IndexMap::statistics() const
       // .edge_weight_local_mean = std::size_t(*(vm++) / num_edges),
       // .edge_weight_remote_mean = std::size_t(*(vm++) / num_edges),
   };
-  // if (v != recv.end())
-  //   throw std::runtime_error("Too many/too few min/max buffer values used.");
+  if (v != recv.end())
+    throw std::runtime_error("Too many/too few min/max buffer values used.");
+  // std::cout << "Size: " << recv_m.size() << std::endl;
+  // std::cout << "Pos: " << std::distance(recv_m.begin(), vm) << std::endl;
   // if (vm != recv_m.end())
   //   throw std::runtime_error("Too many/too few sum buffer values used.");
 
