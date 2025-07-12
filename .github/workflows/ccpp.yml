@@ -80,8 +80,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      # image: ubuntu:24.04
-      image: "ghcr.io/fenics/test-env:current-openmpi"
+      image: ubuntu:24.04
+      # image: "ghcr.io/fenics/test-env:current-openmpi"
 
     # needs: [lint]
     env:
@@ -93,6 +93,10 @@ jobs:
     name: Build and test
     steps:
       - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            src
 
       # - name: Install dependencies
       #   run: |
@@ -101,7 +105,7 @@ jobs:
       #        liblapack-dev libparmetis-dev libpugixml-dev libspdlog-dev mpi-default-dev \
       #        ninja-build pkg-config
 
-      - name: Load environment variables
+      - name: List
         run: ls -alh
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
