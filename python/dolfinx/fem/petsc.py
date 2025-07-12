@@ -1043,7 +1043,7 @@ def _assign_block_data(forms: typing.Iterable[dolfinx.fem.Form], vec: PETSc.Vec)
         for form in forms
     )
 
-    return dolfinx.la._assign_block_data(maps)
+    return dolfinx.la.petsc._assign_block_data(maps)
 
 
 def assemble_residual(
