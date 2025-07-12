@@ -207,9 +207,14 @@ void test_stats()
   const common::IndexMap idx_map
       = create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
   common::IndexMapStats stats = idx_map.statistics();
-  std::cout << "Num nodes: " << stats.num_nodes << std::endl;
+
+  auto summary = stats.summary();
+  if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 0)
+    std::cout << summary << std::endl;
+  // std::cout << "Num nodes: " << stats.num_nodes << std::endl;
   // std::cout << "Num out edges (min/max): " << stats.out_edges.min << ", "
   //           << stats.out_edges.max << std::endl;
+  // std::cout << idx_map.stats(0) << std::endl;
 }
 
 } // namespace

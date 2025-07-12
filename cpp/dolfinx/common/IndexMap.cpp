@@ -852,7 +852,57 @@ common::create_sub_index_map(const IndexMap& imap,
                    submap_ghost_gidxs, submap_ghost_owners),
           std::move(sub_imap_to_imap)};
 }
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+std::string IndexMapStats::summary() const
+{
+  auto format_e = [](std::string name, auto data)
+  {
+    std::stringstream out;
+    out << std::format("  \"{}\": {{\n    \"min\": {},\n    \"max\": {},\n    "
+                       "\"mean\": {},\n  }},\n",
+                       name, data.min, data.max, data.mean);
+    return out.str();
+  };
 
+  // auto format_m = [](std::string name, auto data)
+  // {
+  //   std::stringstream out;
+  //   out << std::format(
+  //       "  \"{}\": {{\n    \"min\": {},\n    \"max\": {},\n  }},\n", name,
+  //       data.min, data.max);
+  //   return out.str();
+  // };
+
+  std::stringstream out;
+
+  out << "{\n";
+  out << std::format("  \"global_size\": {},\n", this->global_size);
+  out << std::format("  \"num_nodes\": {},\n", this->num_nodes);
+  out << format_e("local_size", this->local_size);
+  //
+  out << format_e("out_edges", this->out_edges);
+  out << format_e("in_edges", this->in_edges);
+  //
+  out << format_e("out_edges_local", this->out_edges_local);
+  out << format_e("in_edges_local", this->in_edges_local);
+  out << format_e("out_edges_remote", this->out_edges_remote);
+  out << format_e("in_edges_remote", this->in_edges_remote);
+  //
+  out << format_e("out_node_weight", this->out_node_weight);
+  out << format_e("in_node_weight", this->in_node_weight);
+  //
+  out << format_e("out_node_weight_local", this->out_node_weight_local);
+  out << format_e("in_node_weight_local", this->in_node_weight_local);
+  out << format_e("out_node_weight_remote", this->out_node_weight_remote);
+  out << format_e("in_node_weight_remote", this->in_node_weight_remote);
+  //
+  out << format_e("out_edge_weight_local", this->out_edge_weight_local);
+  out << format_e("out_edge_weight_remote", this->out_edge_weight_remote);
+
+  out << "}";
+  return out.str();
+}
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size) : _comm(comm, true)
@@ -1394,31 +1444,35 @@ common::IndexMapStats IndexMap::statistics() const
   // Group ranks
   const auto [local_dest, local_src] = this->rank_type(MPI_COMM_TYPE_SHARED);
 
-  auto rank_set = [](auto& sub_ranks, bool local)
+  // Weights by group
+  auto weights = [](const auto& ranks, auto& sub_ranks, auto& weights)
   {
-    return [&sub_ranks, local](auto x)
+    std::vector<int> w_l, w_r;
+    for (std::size_t i = 0; i < ranks.size(); ++i)
     {
-      auto it = std::ranges::lower_bound(sub_ranks, x);
-      return local ? it != sub_ranks.end() and *it == x
-                   : it == sub_ranks.end() or *it != x;
-    };
+      auto it = std::ranges::lower_bound(sub_ranks, ranks[i]);
+      if (it != sub_ranks.end() and *it == ranks[i])
+        w_l.push_back(weights[i]);
+      else
+        w_r.push_back(weights[i]);
+    }
+    return std::pair(w_l, w_r);
   };
+  const auto [w_dest_l, w_dest_r] = weights(_dest, local_dest, w_dest);
+  const auto [w_src_l, w_src_r] = weights(_src, local_src, w_src);
 
-  auto w_dest_l = w_dest | std::views::filter(rank_set(local_dest, true));
-  auto w_dest_r = w_dest | std::views::filter(rank_set(local_dest, false));
-
-  auto w_src_l = w_src | std::views::filter(rank_set(local_src, true));
-  auto w_src_r = w_src | std::views::filter(rank_set(local_src, false));
-
-  // Send buffers (min/max, mean)
+  // Send buffers(min / max, mean)
   std::vector<std::int64_t> buffer;
   std::vector<std::uint64_t> buffer_m;
 
   // 1. Number of dest(out) and src(in) edges
   std::int64_t num_dest = _dest.size();
   std::int64_t num_src = _src.size();
+  buffer.insert(buffer.end(), {this->size_local(), -this->size_local()});
+  buffer_m.insert(buffer_m.end(), {(std::uint64_t)this->size_local()});
+
   buffer.insert(buffer.end(), {num_dest, -num_dest, num_src, -num_src});
-  buffer_m.insert(buffer_m.end(), {_dest.size()});
+  buffer_m.insert(buffer_m.end(), {_dest.size(), _src.size()});
 
   // 2. Number of shared and remote memory dest(out) and src(in) edges
   {
@@ -1426,12 +1480,13 @@ common::IndexMapStats IndexMap::statistics() const
     std::int64_t num_src_l = local_src.size();
     buffer.insert(buffer.end(),
                   {num_dest_l, -num_dest_l, num_src_l, -num_src_l});
+    buffer_m.insert(buffer_m.end(), {local_dest.size(), local_src.size()});
+
     buffer.insert(buffer.end(),
                   {(num_dest - num_dest_l), -(num_dest - num_dest_l),
                    (num_src - num_src_l), -(num_src - num_src_l)});
-
-    buffer_m.insert(buffer_m.end(),
-                    {local_dest.size(), _dest.size() - local_dest.size()});
+    buffer_m.insert(buffer_m.end(), {std::uint64_t(num_dest - num_dest_l),
+                                     std::uint64_t(num_src - num_src_l)});
   }
 
   {
@@ -1449,8 +1504,8 @@ common::IndexMapStats IndexMap::statistics() const
     buffer.insert(buffer.end(),
                   {w_dest_sum_l + w_dest_sum_r, -(w_dest_sum_l + w_dest_sum_r),
                    w_src_sum_l + w_src_sum_r, -(w_src_sum_l + w_src_sum_r)});
-    buffer_m.insert(buffer_m.end(),
-                    {std::uint64_t(w_dest_sum_l + w_dest_sum_r)});
+    buffer_m.insert(buffer_m.end(), {std::uint64_t(w_dest_sum_l + w_dest_sum_r),
+                                     std::uint64_t(w_src_sum_l + w_src_sum_r)});
 
     // 3b. Local/remote
     buffer.insert(buffer.end(), {w_dest_sum_l, -w_dest_sum_l,
@@ -1461,7 +1516,8 @@ common::IndexMapStats IndexMap::statistics() const
                                  //
                                  w_src_sum_r, -w_src_sum_r});
     buffer_m.insert(buffer_m.end(),
-                    {std::uint64_t(w_dest_sum_l), std::uint64_t(w_dest_sum_r)});
+                    {std::uint64_t(w_dest_sum_l), std::uint64_t(w_src_sum_l),
+                     std::uint64_t(w_dest_sum_r), std::uint64_t(w_src_sum_r)});
   }
 
   {
@@ -1476,6 +1532,11 @@ common::IndexMapStats IndexMap::statistics() const
         = w_dest_r.empty() ? 0 : *std::ranges::max_element(w_dest_r);
     buffer.insert(buffer.end(),
                   {dest_min_l, -dest_max_l, dest_min_r, -dest_max_r});
+
+    // This is duplicated from 3.
+    std::uint64_t w_dest_sum_l = std::reduce(w_dest_l.begin(), w_dest_l.end());
+    std::uint64_t w_dest_sum_r = std::reduce(w_dest_r.begin(), w_dest_r.end());
+    buffer_m.insert(buffer_m.end(), {w_dest_sum_l, w_dest_sum_r});
   }
 
   std::vector<std::int64_t> recv(buffer.size());
@@ -1490,13 +1551,12 @@ common::IndexMapStats IndexMap::statistics() const
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   std::uint64_t num_nodes = dolfinx::MPI::size(_comm.comm());
-  std::uint64_t num_edges = recv_m.at(0);
-  std::cout << "Num edges: " << num_edges << std::endl;
+  std::uint64_t num_edges = recv_m.at(1);
 
   auto v = recv.begin();
   auto vm = recv_m.begin();
 
-  auto compute_mean = [](auto x, auto count) -> std::size_t
+  auto compute_mean = [](auto x, auto count) -> std::int64_t
   {
     if (count == 0)
     {
@@ -1504,54 +1564,72 @@ common::IndexMapStats IndexMap::statistics() const
       return 0;
     }
     else
+    {
+      std::cout << "mean: " << x << ", " << count << std::endl;
       return x / count;
+    }
   };
+
+  std::cout << "nedge: " << recv_m.back() << ", " << std::endl;
+  std::cout << "back: " << num_edges << ", " << std::endl;
+
   IndexMapStats stats{
+      .global_size = this->size_global(),
+      .local_size = {*(v++), -*(v++), std::int64_t(*(vm++) / num_nodes)},
       .num_nodes = (int)num_nodes,
       // A1.
-      .out_edges = {*(v++), -*(v++)},
-      .in_edges = {*(v++), -*(v++)},
+      .out_edges = {*(v++), -*(v++), std::int64_t(*(vm++) / num_nodes)},
+      .in_edges = {*(v++), -*(v++), std::int64_t(*(vm++) / num_nodes)},
       // A2a.
-      .out_edges_local = {*(v++), -*(v++)},
-      .in_edges_local = {*(v++), -*(v++)},
+      .out_edges_local = {*(v++), -*(v++), std::int64_t(*(vm++) / num_nodes)},
+      .in_edges_local = {*(v++), -*(v++), std::int64_t(*(vm++) / num_nodes)},
       // A2b.
-      .out_edges_remote = {*(v++), -*(v++)},
-      .in_edges_remote = {*(v++), -*(v++)},
+      .out_edges_remote = {*(v++), -*(v++), std::int64_t(*(vm++) / num_nodes)},
+      .in_edges_remote = {*(v++), -*(v++), std::int64_t(*(vm++) / num_nodes)},
       // A3a.
-      .out_node_weight = {*(v++), -*(v++)},
-      .in_node_weight = {*(v++), -*(v++)},
+      .out_node_weight = {*(v++), -*(v++), std::int64_t(*(vm++) / num_nodes)},
+      .in_node_weight = {*(v++), -*(v++), std::int64_t(*(vm++) / num_nodes)},
       // A3b.
-      .out_node_weight_local = {*(v++), -*(v++)},
-      .in_node_weight_local = {*(v++), -*(v++)},
-      .out_node_weight_remote = {*(v++), -*(v++)},
-      .in_node_weight_remote = {*(v++), -*(v++)},
+      .out_node_weight_local
+      = {*(v++), -*(v++), std::int64_t(*(vm++) / num_nodes)},
+      .in_node_weight_local
+      = {*(v++), -*(v++), std::int64_t(*(vm++) / num_nodes)},
+      .out_node_weight_remote
+      = {*(v++), -*(v++), std::int64_t(*(vm++) / num_nodes)},
+      .in_node_weight_remote
+      = {*(v++), -*(v++), std::int64_t(*(vm++) / num_nodes)},
       // A4.
-      .out_edge_weight_local = {*(v++), -*(v++)},
-      .out_edge_weight_remote = {*(v++), -*(v++)},
-      // B1.
-      .edges_mean = std::size_t(*(vm++) / num_nodes),
-      // B2.
-      .edges_local_mean = std::size_t(*(vm++) / num_nodes),
-      .edges_remote_mean = std::size_t(*(vm++) / num_nodes),
-      // B3a.
-      .node_weight_mean = std::size_t(*(vm++) / num_nodes),
-      // B3b.
-      .edge_weight_local_mean = compute_mean(*(vm++), num_edges),
-      .edge_weight_remote_mean = compute_mean(*(vm++), num_edges),
-      // .edge_weight_local_mean = std::size_t(*(vm++) / num_edges),
-      // .edge_weight_remote_mean = std::size_t(*(vm++) / num_edges),
+      .out_edge_weight_local
+      = {*(v++), -*(v++), compute_mean(*(vm++), num_edges)},
+      // x .in_edge_weight_local
+      // x = {*(v++), -*(v++), compute_mean(*(vm++), num_edges)},
+      //
+      .out_edge_weight_remote
+      = {*(v++), -*(v++), compute_mean(*(vm++), num_edges)},
+      //
+      // .in_edge_weight_remote
+      // = {*(v++), -*(v++), compute_mean(*(vm++), num_edges)},
+      // // B1.
+      // .edges_mean = std::size_t(*(vm++) / num_nodes),
+      // // B2.
+      // .edges_local_mean = std::size_t(*(vm++) / num_nodes),
+      // .edges_remote_mean = std::size_t(*(vm++) / num_nodes),
+      // // B3a.
+      // .node_weight_mean = std::size_t(*(vm++) / num_nodes),
+      // // B3b.
+      // .edge_weight_local_mean = compute_mean(*(vm++), num_edges),
+      // .edge_weight_remote_mean = compute_mean(*(vm++), num_edges),
   };
   if (v != recv.end())
     throw std::runtime_error("Too many/too few min/max buffer values used.");
-  // std::cout << "Size: " << recv_m.size() << std::endl;
-  // std::cout << "Pos: " << std::distance(recv_m.begin(), vm) << std::endl;
+  std::cout << "Size: " << recv_m.size() << std::endl;
+  std::cout << "Pos: " << std::distance(recv_m.begin(), vm) << std::endl;
   if (vm != recv_m.end())
     throw std::runtime_error("Too many/too few sum buffer values used.");
 
   return stats;
 }
 //-----------------------------------------------------------------------------
-
 std::string IndexMap::stats(int detail_level) const
 {
   // Gather the following data on the root process
@@ -1604,9 +1682,8 @@ std::string IndexMap::stats(int detail_level) const
               recvbuf.data(), counts.data(), offsets.data(), MPI_INT32_T, 0,
               _comm.comm());
 
-  std::stringstream out_json;
-
   // Compile data for output
+  std::stringstream out_json;
   if (rank == 0)
   {
     // Compute mean of the values

@@ -100,6 +100,14 @@ std::pair<IndexMap, std::vector<std::int32_t>> create_sub_index_map(
 /// proportional to the MPI message size.
 struct IndexMapStats
 {
+  /// @brief Holder for minimum, maximum and mean value tuples.
+  struct minmaxmean
+  {
+    std::int64_t min;  ///< Minimum value
+    std::int64_t max;  ///< Maximum value
+    std::int64_t mean; ///< Mean value
+  };
+
   /// @brief Holder for minimum and maximum value pairs.
   struct minmax
   {
@@ -107,58 +115,44 @@ struct IndexMapStats
     std::int64_t max; ///< Maximum value
   };
 
+  std::int64_t global_size; ///< Global range.
+  minmaxmean local_size;    ///< Min/max local range.
+
   std::int64_t num_nodes; ///< Number of 'nodes' (MPI ranks).
 
   // A1. Number of node (rank) edges
-  minmax out_edges; ///< Min/max number of out edges across nodes.
-  minmax in_edges;  ///< Min/max number of in edges across nodes.
+  minmaxmean out_edges; ///< Min/max number of out edges across nodes.
+  minmaxmean in_edges;  ///< Min/max number of in edges across nodes.
 
   // A2. Node (rank) aggregate edges by dest/src type
-  minmax out_edges_local;  ///< Min/max number of out edges across nodes
-                           ///< to shared memory ranks.
-  minmax in_edges_local;   ///< Min/max number of in edges across nodes
-                           ///< from shared memory ranks.
-  minmax out_edges_remote; ///< Min/max number of out edges across nodes
-                           ///< to remote memory ranks
-  minmax in_edges_remote;  ///< Min/max number of edges across nodes
-                           ///< from remote memory ranks.
+  minmaxmean out_edges_local;  ///< Min/max number of out edges across nodes
+                               ///< to shared memory ranks.
+  minmaxmean in_edges_local;   ///< Min/max number of in edges across nodes
+                               ///< from shared memory ranks.
+  minmaxmean out_edges_remote; ///< Min/max number of out edges across nodes
+                               ///< to remote memory ranks
+  minmaxmean in_edges_remote;  ///< Min/max number of edges across nodes
+                               ///< from remote memory ranks.
 
   // A3a. Aggregate node weights
-  minmax out_node_weight; ///< Min/max out weight across nodes.
-  minmax in_node_weight;  ///< Min/max in weight across nodes.
+  minmaxmean out_node_weight; ///< Min/max out weight across nodes.
+  minmaxmean in_node_weight;  ///< Min/max in weight across nodes.
 
   // A3b. Aggregate node weights (by dest/src type)
-  minmax
+  minmaxmean
       out_node_weight_local; ///< Min/max node out weight to shared memory rank.
-  minmax
+  minmaxmean
       in_node_weight_local; ///< Min/max node out weight to shared memory rank.
-  minmax out_node_weight_remote; ///< Min/max node out weight to remote memory
-                                 ///< rank.
-  minmax in_node_weight_remote;  ///< Min/max node in weight from remote memory
-                                 ///< rank.
+  minmaxmean out_node_weight_remote; ///< Min/max node out weight to remote
+                                     ///< memory rank.
+  minmaxmean in_node_weight_remote;  ///< Min/max node in weight from remote
+                                     ///< memory rank.
 
   // A4. Edge weights
-  minmax out_edge_weight_local;  ///< Min/max local out edge weight.
-  minmax out_edge_weight_remote; ///< Min/max remote out edge weight.
+  minmaxmean out_edge_weight_local;  ///< Min/max local out edge weight.
+  minmaxmean out_edge_weight_remote; ///< Min/max remote out edge weight.
 
-  // B1. Mean number of node (rank) edges
-  std::size_t edges_mean; ///< Mean number of node out(in) edges.
-
-  // B2. Mean number of node local/remote edges
-  std::size_t edges_local_mean;  ///< Mean number of node local out(in) edges.
-  std::size_t edges_remote_mean; ///< Mean number of node remote out(in) edges.
-
-  // B3a.
-  std::size_t node_weight_mean; ///< Mean edge weight. This is proportional to
-                                ///< the mean message size.
-  // B3b.
-  std::size_t
-      edge_weight_local_mean; ///< Mean edge weight for shared memory edges.
-                              ///< This is proportional to the mean sharedmemory
-                              ///< (local) message size.
-  std::size_t
-      edge_weight_remote_mean; ///< Mean edge weight. This is proportional to
-                               ///< the mean remote memory message size.
+  std::string summary() const;
 };
 
 /// This class represents the distribution index arrays across
