@@ -189,52 +189,67 @@ void write_point_data(std::string filename, const mesh::Mesh<U>& mesh,
   hdf5::add_group(h5file, "VTKHDF/Steps");
   hid_t vtk_group = H5Gopen(h5file, "VTKHDF/Steps", H5P_DEFAULT);
 
-  // Create "NSteps" attribute
-  hsize_t dims = 1;
-  hid_t space_id = H5Screate_simple(1, &dims, NULL);
-  hid_t attr_id = H5Acreate(vtk_group, "NSteps", H5T_NATIVE_INT32, space_id,
-                            H5P_DEFAULT, H5P_DEFAULT);
+  htri_t attr_exists = H5Aexists(vtk_group, "NSteps");
+  std::int64_t point_data_offset = 0;
   std::int32_t nsteps = 1;
-  H5Awrite(attr_id, H5T_NATIVE_INT32, &nsteps);
-  H5Aclose(attr_id);
-  H5Sclose(space_id);
+
+  if (attr_exists < 0)
+    throw std::runtime_error("Error checking attribute");
+  else if (attr_exists == 0)
+  {
+    // Create "NSteps" attribute
+    hsize_t dims = 1;
+    hid_t space_id = H5Screate_simple(1, &dims, NULL);
+    hid_t attr_id = H5Acreate(vtk_group, "NSteps", H5T_NATIVE_INT32, space_id,
+                              H5P_DEFAULT, H5P_DEFAULT);
+    H5Awrite(attr_id, H5T_NATIVE_INT32, &nsteps);
+    H5Aclose(attr_id);
+    H5Sclose(space_id);
+  }
+  else
+  {
+    // Read and increment attribute
+    hid_t attr_id = H5Aopen(vtk_group, "NSteps", H5P_DEFAULT);
+    H5Aread(attr_id, H5T_NATIVE_INT32, &nsteps);
+    nsteps++;
+    H5Awrite(attr_id, H5T_NATIVE_INT32, &nsteps);
+    H5Aclose(attr_id);
+
+    std::vector<std::int64_t> data_shape
+        = hdf5::get_dataset_shape(h5file, "/VTKHDF/PointData/u");
+    assert(data_shape.size() == 1);
+    point_data_offset = data_shape[0];
+  }
   H5Gclose(vtk_group);
 
   std::vector<std::int32_t> cell_offsets = {0};
-  hdf5::write_dataset(h5file, "/VTKHDF/Steps/CellOffsets", cell_offsets.data(),
-                      {0, cell_offsets.size()}, {cell_offsets.size()}, true,
-                      false);
+  hdf5::append_array(h5file, "/VTKHDF/Steps/CellOffsets", cell_offsets);
 
   std::vector<std::int32_t> conn_offsets = {0};
-  hdf5::write_dataset(h5file, "/VTKHDF/Steps/ConnectivityIdOffsets",
-                      conn_offsets.data(), {0, conn_offsets.size()},
-                      {conn_offsets.size()}, true, false);
+  hdf5::append_array(h5file, "/VTKHDF/Steps/ConnectivityIdOffsets",
+                     conn_offsets);
 
   std::vector<std::int32_t> nparts = {1};
-  hdf5::write_dataset(h5file, "/VTKHDF/Steps/NumberOfParts", nparts.data(),
-                      {0, nparts.size()}, {nparts.size()}, true, false);
+  hdf5::append_array(h5file, "/VTKHDF/Steps/NumberOfParts", nparts);
 
   std::vector<std::int32_t> part_offsets = {0};
-  hdf5::write_dataset(h5file, "/VTKHDF/Steps/PartOffsets", part_offsets.data(),
-                      {0, part_offsets.size()}, {part_offsets.size()}, true,
-                      false);
+  hdf5::append_array(h5file, "/VTKHDF/Steps/PartOffsets", part_offsets);
 
-  std::vector<std::int64_t> point_data_offsets = {0};
-  hdf5::write_dataset(h5file, "/VTKHDF/Steps/PointDataOffsets/u",
-                      point_data_offsets.data(), {0, point_data_offsets.size()},
-                      {point_data_offsets.size()}, true, false);
+  // Needs to update to end of array
+  std::vector<std::int64_t> point_data_offsets = {point_data_offset};
+  hdf5::add_group(h5file, "/VTKHDF/Steps/PointDataOffsets");
+  hdf5::append_array(h5file, "/VTKHDF/Steps/PointDataOffsets/u",
+                     point_data_offsets);
 
   std::vector<std::int32_t> point_offsets = {0};
-  hdf5::write_dataset(h5file, "/VTKHDF/Steps/PointOffsets",
-                      point_offsets.data(), {0, point_offsets.size()},
-                      {point_offsets.size()}, true, false);
+  hdf5::append_array(h5file, "/VTKHDF/Steps/PointOffsets", point_offsets);
 
-  std::vector<std::int32_t> values = {0};
-  hdf5::write_dataset(h5file, "/VTKHDF/Steps/Values", values.data(),
-                      {0, values.size()}, {values.size()}, true, false);
+  // Time values
+  std::vector<std::int32_t> values = {nsteps};
+  hdf5::append_array(h5file, "/VTKHDF/Steps/Values", values);
 
-  hdf5::write_dataset(h5file, "/VTKHDF/PointData/u", data.data(),
-                      im0->local_range(), {im0->size_global()}, true, false);
+  hdf5::add_group(h5file, "/VTKHDF/PointData");
+  hdf5::append_array(h5file, "/VTKHDF/PointData/u", data);
 
   hdf5::close_file(h5file);
 }

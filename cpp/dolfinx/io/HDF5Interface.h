@@ -13,6 +13,7 @@
 #include <dolfinx/common/log.h>
 #include <filesystem>
 #include <hdf5.h>
+#include <iostream>
 #include <mpi.h>
 #include <numeric>
 #include <string>
@@ -112,6 +113,147 @@ bool get_mpi_atomicity(hid_t handle);
 /// @param[in] handle HDF5 file handle
 /// @param[in] dataset_path Data set path to add
 void add_group(hid_t handle, const std::string& dataset_path);
+
+/// @brief Create and append to a 1D array
+/// @param file_handle
+/// @param dataset_path
+/// @param data
+template <typename T>
+void append_array(hid_t file_handle, const std::string& dataset_path,
+                  const std::vector<T>& data)
+{
+  spdlog::debug("Append array {}", dataset_path.c_str());
+
+  // Get HDF5 data type
+  const hid_t h5type = hdf5::hdf5_type<T>();
+
+  if (has_dataset(file_handle, dataset_path))
+  {
+    spdlog::debug("Existing array");
+    // Already existing array
+    std::vector<std::int64_t> extent
+        = get_dataset_shape(file_handle, dataset_path.c_str());
+    if (extent.size() > 1)
+      throw std::runtime_error("Invalid shape array");
+    hsize_t size = extent[0];
+    spdlog::debug("Current size is {}", size);
+    hsize_t count = data.size();
+    hsize_t new_size = size + count;
+    spdlog::debug("Resize to {}", new_size);
+
+    hid_t dset_id = hdf5::open_dataset(file_handle, dataset_path.c_str());
+    H5Dset_extent(dset_id, &new_size);
+    H5Dclose(dset_id);
+
+    // Reopen (resized) dataset
+    dset_id = hdf5::open_dataset(file_handle, dataset_path.c_str());
+    assert(dset_id != H5I_INVALID_HID);
+
+    hid_t dataspace = H5Dget_space(dset_id);
+    if (dataspace == H5I_INVALID_HID)
+      throw std::runtime_error("Failed to open HDF5 data space.");
+
+    hsize_t offset = size;
+    spdlog::debug("Offset: {}, count: {}", offset, count);
+    herr_t status = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, &offset,
+                                        nullptr, &count, nullptr);
+    if (status < 0)
+      throw std::runtime_error("Failed to create HDF5 dataspace.");
+
+    // Set parallel access
+    const hid_t plist_id = H5Pcreate(H5P_DATASET_XFER);
+    bool use_mpi_io = true;
+    if (use_mpi_io)
+    {
+      if (herr_t status = H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+          status < 0)
+      {
+        throw std::runtime_error(
+            "Failed to set HDF5 data transfer property list.");
+      }
+    }
+
+    // Create a local data space
+    const hid_t memspace = H5Screate_simple(1, &count, nullptr);
+    if (memspace == H5I_INVALID_HID)
+      throw std::runtime_error("Failed to create HDF5 local data space.");
+
+    // Write local dataset
+    if (H5Dwrite(dset_id, h5type, memspace, dataspace, plist_id, data.data())
+        < 0)
+    {
+      throw std::runtime_error("Failed to write HDF5 local dataset.");
+    }
+
+    H5Sclose(memspace);
+    H5Sclose(dataspace);
+
+    H5Dclose(dset_id);
+    // Release file-access template
+    if (H5Pclose(plist_id) < 0)
+      throw std::runtime_error("Failed to release HDF5 file-access template.");
+  }
+  else
+  {
+    // Create a global 1D data space, unlimited future size
+    hsize_t dims = data.size();
+    hsize_t maxdims = H5S_UNLIMITED;
+    const hid_t filespace0 = H5Screate_simple(1, &dims, &maxdims);
+    if (filespace0 == H5I_INVALID_HID)
+      throw std::runtime_error("Failed to create HDF5 data space");
+
+    // Set chunk size
+    hsize_t chunk_size = 1024;
+    hid_t chunking_properties = H5Pcreate(H5P_DATASET_CREATE);
+    H5Pset_chunk(chunking_properties, 1, &chunk_size);
+
+    // Check that group exists and recursively create if required
+    const std::string group_name(dataset_path, 0, dataset_path.rfind('/'));
+    add_group(file_handle, group_name);
+
+    // Create global dataset (using dataset_path)
+    const hid_t dset_id
+        = H5Dcreate2(file_handle, dataset_path.c_str(), h5type, filespace0,
+                     H5P_DEFAULT, chunking_properties, H5P_DEFAULT);
+    if (dset_id == H5I_INVALID_HID)
+      throw std::runtime_error("Failed to create HDF5 global dataset.");
+
+    // Set parallel access
+    const hid_t plist_id = H5Pcreate(H5P_DATASET_XFER);
+    bool use_mpi_io = true;
+    if (use_mpi_io)
+    {
+      if (herr_t status = H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+          status < 0)
+      {
+        throw std::runtime_error(
+            "Failed to set HDF5 data transfer property list.");
+      }
+    }
+
+    // Write local dataset
+    if (H5Dwrite(dset_id, h5type, H5S_ALL, filespace0, plist_id, data.data())
+        < 0)
+    {
+      throw std::runtime_error("Failed to write HDF5 local dataset.");
+    }
+
+    if (H5Pclose(chunking_properties) < 0)
+      throw std::runtime_error("Failed to close HDF5 chunking properties.");
+
+    // Close dataset collectively
+    if (H5Dclose(dset_id) < 0)
+      throw std::runtime_error("Failed to close HDF5 dataset.");
+
+    // Close global data space
+    if (H5Sclose(filespace0) < 0)
+      throw std::runtime_error("Failed to close HDF5 global data space.");
+
+    // Release file-access template
+    if (H5Pclose(plist_id) < 0)
+      throw std::runtime_error("Failed to release HDF5 file-access template.");
+  }
+}
 
 /// Write data to existing HDF file as defined by range blocks on each
 /// process
