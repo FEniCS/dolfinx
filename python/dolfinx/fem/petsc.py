@@ -164,7 +164,7 @@ def create_vector(
         container = [container]
 
     if len(container) == 0:
-        raise RuntimeError("No container provided.")
+        raise RuntimeError("Empty sequence of functionspaces/forms provided.")
 
     V = extract_function_spaces(container) if isinstance(container[0], Form) else container
     maps = [(_V.dofmap.index_map, _V.dofmap.index_map_bs) for _V in V]
