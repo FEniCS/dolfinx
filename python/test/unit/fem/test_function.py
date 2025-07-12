@@ -234,7 +234,7 @@ def test_interpolation_function(mesh):
         default_complex_type,
     ],
 )
-def test_function_dtype(dtype):
+def test_function_dtype_creation(dtype):
     """
     Test creation of a function with non-default dtype.
 
@@ -253,6 +253,27 @@ def test_function_dtype(dtype):
         assert np.allclose(f.x.array.imag, 0.0)
     else:
         assert np.allclose(f.x.array, 1.0)
+
+@pytest.mark.petsc4py
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        default_scalar_type,
+        default_real_type,
+        default_complex_type,
+    ],
+)
+def test_function_dtype_petsc_vec(dtype):
+    """
+    Test petsc_vec property of a function with non-default dtype.
+
+    Extracting the PETSc vector may not be allowed in all cases.
+    """
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=default_real_type)
+    V = functionspace(mesh, ("Lagrange", 1))
+
+    f = Function(V, dtype=dtype)
+    f.x.array[:] = 1
 
     if np.issubdtype(dtype, np.complexfloating) and not np.issubdtype(
         default_scalar_type, np.complexfloating
