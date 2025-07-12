@@ -78,7 +78,8 @@ jobs:
           find . -type f \( -name "*.cmake" -o -name "*.cmake.in" -o -name "CMakeLists.txt" \) | xargs cmake-format --check
 
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
+    container: ubuntu:24.04
     needs: [lint]
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -148,7 +149,7 @@ jobs:
         working-directory: python
         run: |
           pip install mypy
-          mypy dolfinx  
+          mypy dolfinx
         # mypy test (--check-untyped-defs)
         # mypy demo
 
