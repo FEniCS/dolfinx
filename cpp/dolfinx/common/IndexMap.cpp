@@ -1490,12 +1490,22 @@ common::IndexMapStats IndexMap::statistics() const
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   std::uint64_t num_nodes = dolfinx::MPI::size(_comm.comm());
-  // std::uint64_t num_edges = recv_m.at(0);
+  std::uint64_t num_edges = recv_m.at(0);
+  std::cout << "Num edges: " << num_edges << std::endl;
 
   auto v = recv.begin();
   auto vm = recv_m.begin();
 
-  // auto compute_mean = [](auto x, auto count) {};
+  auto compute_mean = [](auto x, auto count) -> std::size_t
+  {
+    if (count == 0)
+    {
+      assert(x == 0);
+      return 0;
+    }
+    else
+      return x / count;
+  };
   IndexMapStats stats{
       .num_nodes = (int)num_nodes,
       // A1.
@@ -1525,7 +1535,9 @@ common::IndexMapStats IndexMap::statistics() const
       .edges_remote_mean = std::size_t(*(vm++) / num_nodes),
       // B3a.
       .node_weight_mean = std::size_t(*(vm++) / num_nodes),
-      // // B3b.
+      // B3b.
+      .edge_weight_local_mean = compute_mean(*(vm++), num_edges),
+      .edge_weight_remote_mean = compute_mean(*(vm++), num_edges),
       // .edge_weight_local_mean = std::size_t(*(vm++) / num_edges),
       // .edge_weight_remote_mean = std::size_t(*(vm++) / num_edges),
   };
@@ -1533,8 +1545,8 @@ common::IndexMapStats IndexMap::statistics() const
     throw std::runtime_error("Too many/too few min/max buffer values used.");
   // std::cout << "Size: " << recv_m.size() << std::endl;
   // std::cout << "Pos: " << std::distance(recv_m.begin(), vm) << std::endl;
-  // if (vm != recv_m.end())
-  //   throw std::runtime_error("Too many/too few sum buffer values used.");
+  if (vm != recv_m.end())
+    throw std::runtime_error("Too many/too few sum buffer values used.");
 
   return stats;
 }

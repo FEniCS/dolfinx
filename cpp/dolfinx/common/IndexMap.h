@@ -128,14 +128,14 @@ struct IndexMapStats
   minmax in_node_weight;  ///< Min/max in weight across nodes.
 
   // A3b. Aggregate node weights (by dest/src type)
-  minmax out_node_weight_local;  ///< Min/max node out weight to shared
-                                 ///< memory rank.
-  minmax in_node_weight_local;   ///< Min/max node out weight to shared
-                                 ///< memory rank.
+  minmax
+      out_node_weight_local; ///< Min/max node out weight to shared memory rank.
+  minmax
+      in_node_weight_local; ///< Min/max node out weight to shared memory rank.
   minmax out_node_weight_remote; ///< Min/max node out weight to remote memory
                                  ///< rank.
-  minmax in_node_weight_remote;  ///< Min/max node in weight from
-                                 ///< remote memory rank.
+  minmax in_node_weight_remote;  ///< Min/max node in weight from remote memory
+                                 ///< rank.
 
   // A4. Edge weights
   minmax out_edge_weight_local;  ///< Min/max local out edge weight.
@@ -151,14 +151,14 @@ struct IndexMapStats
   // B3a.
   std::size_t node_weight_mean; ///< Mean edge weight. This is proportional to
                                 ///< the mean message size.
-  // // B3b.
-  // std::size_t
-  //     edge_weight_local_mean; ///< Mean edge weight for shared memory
-  //                             ///< edges. This is proportional to the
-  //                             ///< mean shared memory (local) message size.
-  // std::size_t
-  //     edge_weight_remote_mean; ///< Mean edge weight. This is proportional to
-  //                              ///< the mean remote memory message size.
+  // B3b.
+  std::size_t
+      edge_weight_local_mean; ///< Mean edge weight for shared memory edges.
+                              ///< This is proportional to the mean sharedmemory
+                              ///< (local) message size.
+  std::size_t
+      edge_weight_remote_mean; ///< Mean edge weight. This is proportional to
+                               ///< the mean remote memory message size.
 };
 
 /// This class represents the distribution index arrays across
