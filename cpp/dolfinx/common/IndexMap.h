@@ -138,24 +138,24 @@ struct IndexMapStats
   minmax out_edge_weight_local;  ///< Min/max local out edge weight.
   minmax out_edge_weight_remote; ///< Min/max remote out edge weight.
 
-  // B1. Mean number of node (rank) edges
-  std::size_t edges_mean; ///< Mean number of node out(in) edges.
+  // // B1. Mean number of node (rank) edges
+  // std::size_t edges_mean; ///< Mean number of node out(in) edges.
 
-  // B2. Mean number of node local/remote edges
-  std::size_t edges_local_mean;  ///< Mean number of node local out(in) edges.
-  std::size_t edges_remote_mean; ///< Mean number of node remote out(in) edges.
+  // // B2. Mean number of node local/remote edges
+  // std::size_t edges_local_mean;  ///< Mean number of node local out(in) edges.
+  // std::size_t edges_remote_mean; ///< Mean number of node remote out(in) edges.
 
-  // B3a.
-  std::size_t node_weight_mean; ///< Mean edge weight. This is proportional to
-                                ///< the mean message size.
-  // B3b.
-  std::size_t
-      edge_weight_local_mean; ///< Mean edge weight for shared memory
-                              ///< edges. This is proportional to the
-                              ///< mean shared memory (local) message size.
-  std::size_t
-      edge_weight_remote_mean; ///< Mean edge weight. This is proportional to
-                               ///< the mean remote memory message size.
+  // // B3a.
+  // std::size_t node_weight_mean; ///< Mean edge weight. This is proportional to
+  //                               ///< the mean message size.
+  // // B3b.
+  // std::size_t
+  //     edge_weight_local_mean; ///< Mean edge weight for shared memory
+  //                             ///< edges. This is proportional to the
+  //                             ///< mean shared memory (local) message size.
+  // std::size_t
+  //     edge_weight_remote_mean; ///< Mean edge weight. This is proportional to
+  //                              ///< the mean remote memory message size.
 };
 
 /// This class represents the distribution index arrays across
