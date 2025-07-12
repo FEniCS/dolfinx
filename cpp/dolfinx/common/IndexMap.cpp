@@ -1493,7 +1493,9 @@ common::IndexMapStats IndexMap::statistics() const
   // std::uint64_t num_edges = recv_m.at(0);
 
   auto v = recv.begin();
-  // auto vm = recv_m.begin();
+  auto vm = recv_m.begin();
+
+  // auto compute_mean = [](auto x, auto count) {};
   IndexMapStats stats{
       .num_nodes = (int)num_nodes,
       // A1.
@@ -1516,13 +1518,13 @@ common::IndexMapStats IndexMap::statistics() const
       // A4.
       .out_edge_weight_local = {*(v++), -*(v++)},
       .out_edge_weight_remote = {*(v++), -*(v++)},
-      // // B1.
-      // .edges_mean = std::size_t(*(vm++) / num_nodes),
-      // // B2.
-      // .edges_local_mean = std::size_t(*(vm++) / num_nodes),
-      // .edges_remote_mean = std::size_t(*(vm++) / num_nodes),
-      // // B3a.
-      // .node_weight_mean = std::size_t(*(vm++) / num_nodes),
+      // B1.
+      .edges_mean = std::size_t(*(vm++) / num_nodes),
+      // B2.
+      .edges_local_mean = std::size_t(*(vm++) / num_nodes),
+      .edges_remote_mean = std::size_t(*(vm++) / num_nodes),
+      // B3a.
+      .node_weight_mean = std::size_t(*(vm++) / num_nodes),
       // // B3b.
       // .edge_weight_local_mean = std::size_t(*(vm++) / num_edges),
       // .edge_weight_remote_mean = std::size_t(*(vm++) / num_edges),
