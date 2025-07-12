@@ -126,17 +126,8 @@ def create_vector(
         return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=index_map.comm)  # type: ignore
 
     if kind is None or kind == PETSc.Vec.Type.MPI:
-        off_owned = tuple(
-            itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
-        )
-        off_ghost = tuple(
-            itertools.accumulate(
-                maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
-            )
-        )
-
         b = dolfinx.cpp.fem.petsc.create_vector_block(maps)
-        b.setAttr("_blocks", (off_owned, off_ghost))
+        _assign_block_data(maps, b)
         return b
 
     elif kind == PETSc.Vec.Type.NEST:
