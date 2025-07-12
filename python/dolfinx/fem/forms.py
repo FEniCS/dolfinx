@@ -440,7 +440,9 @@ def form(
 
 def extract_function_spaces(
     forms: typing.Union[
+        typing.Iterable[ufl.Form],
         typing.Iterable[Form],  # type: ignore [return]
+        typing.Iterable[typing.Iterable[ufl.Form]],
         typing.Iterable[typing.Iterable[Form]],
     ],
     index: int = 0,
@@ -462,6 +464,13 @@ def extract_function_spaces(
     Returns:
         List of function spaces.
     """
+
+    def _extract_function_space(form, index):
+        if isinstance(form, ufl.Form):
+            return form.arguments()[index].ufl_function_space()
+        else:
+            return form.function_spaces[index]
+
     _forms = np.array(forms)
     if _forms.ndim == 0:
         raise RuntimeError("Expected an array for forms, not a single form")
@@ -469,12 +478,15 @@ def extract_function_spaces(
         assert index == 0, "Expected index=0 for 1D array of forms"
         for form in _forms:
             if form is not None:
-                assert form.rank == 1, "Expected linear form"
-        return [form.function_spaces[0] if form is not None else None for form in forms]  # type: ignore[union-attr]
+                if isinstance(form, ufl.Form):
+                    assert len(form.arguments()) == 1, "Expected linear form"
+                else:
+                    assert form.rank == 1, "Expected linear form"
+        return [_extract_function_space(form, 0) if form is not None else None for form in forms]  # type: ignore[union-attr]
     elif _forms.ndim == 2:
         assert index == 0 or index == 1, "Expected index=0 or index=1 for 2D array of forms"
         extract_spaces = np.vectorize(
-            lambda form: form.function_spaces[index] if form is not None else None
+            lambda form: _extract_function_space(form, index) if form is not None else None
         )
         V = extract_spaces(_forms)
 
