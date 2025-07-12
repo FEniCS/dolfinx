@@ -15,6 +15,7 @@ Note:
 
 import functools
 import itertools
+import typing
 from collections.abc import Iterable
 
 from petsc4py import PETSc
