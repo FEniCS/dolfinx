@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import contextlib
 import functools
+import itertools
 import typing
 from collections.abc import Iterable, Sequence
 
@@ -119,14 +120,14 @@ def create_vector(
 
     Three cases are supported:
 
-    1. For a single linear form ``L`` or space ``V``, if ``kind`` is ``None`` or is
-       ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is
-       compatible with ``L/V`` is created.
+    1. For a single linear form ``L`` or space ``V``, if ``kind`` is
+       ``None`` or is ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which
+       is compatible with ``L/V`` is created.
 
-    2. If ``L/V`` is a sequence of linear forms/functionspaces and ``kind`` is ``None``
-       or is ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is
-       compatible with ``L`` is created. The created vector ``b`` is
-       initialized such that on each MPI process ``b = [b_0, b_1, ...,
+    2. If ``L/V`` is a sequence of linear forms/functionspaces and ``kind``
+       is ``None`` or is ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector
+       which is compatible with ``L`` is created. The created vector ``b``
+       is initialized such that on each MPI process ``b = [b_0, b_1, ...,
        b_n, b_0g, b_1g, ..., b_ng]``, where ``b_i`` are the entries
        associated with the 'owned' degrees-of-freedom for ``L[i]`` and
        ``b_ig`` are the 'unowned' (ghost) entries for ``L[i]``.
@@ -147,8 +148,8 @@ def create_vector(
            >>> b1_owned = b.array[offsets0[1]:offsets0[2]]
            >>> b1_ghost = b.array[offsets1[1]:offsets1[2]]
 
-    3. If ``L/V`` is a sequence of linear forms/functionspaces and ``kind`` is
-       ``PETSc.Vec.Type.NEST``, a PETSc nested vector (a 'nest' of
+    3. If ``L/V`` is a sequence of linear forms/functionspaces and ``kind``
+       is ``PETSc.Vec.Type.NEST``, a PETSc nested vector (a 'nest' of
        ghosted PETSc vectors) which is compatible with ``L/V`` is created.
 
     Args:
