@@ -1035,26 +1035,16 @@ def _assign_block_data(forms: typing.Iterable[dolfinx.fem.Form], vec: PETSc.Vec)
         forms: List of forms to extract block data from.
         vec: PETSc vector to assign block data to.
     """
-    # Early exit if the vector already has block data or is a nest vector
-    if vec.getAttr("_blocks") is not None or vec.getType() == "nest":
-        return
 
-    maps = [
+    maps = (
         (
             form.function_spaces[0].dofmaps(0).index_map,
             form.function_spaces[0].dofmaps(0).index_map_bs,
         )
-        for form in forms  # type: ignore
-    ]
-    off_owned = tuple(
-        itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
+        for form in forms
     )
-    off_ghost = tuple(
-        itertools.accumulate(
-            maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
-        )
-    )
-    vec.setAttr("_blocks", (off_owned, off_ghost))
+
+    return dolfinx.la._assign_block_data(maps)
 
 
 def assemble_residual(

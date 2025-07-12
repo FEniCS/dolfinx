@@ -13,6 +13,7 @@ Note:
     collective over the object's MPI communicator.
 """
 
+from collections.abc import Iterable
 import functools
 import itertools
 import typing
@@ -221,3 +222,27 @@ def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[
                     start = end
             except IndexError:
                 x1[:] = _x0.array_r[:]
+
+
+def _assign_block_data(maps: Iterable[tuple[IndexMap, int]], vec: PETSc.Vec):
+    """Assign block data to a PETSc vector.
+
+    Args:
+        maps: Iterable of tuples each containing an ``IndexMap`` and the
+        associated block size ``bs``.
+        vec: PETSc vector to assign block data to.
+    """
+    # Early exit if the vector already has block data or is a nest vector
+    if vec.getAttr("_blocks") is not None or vec.getType() == "nest":
+        return
+
+    maps = [(index_map, bs) for index_map, bs in maps]
+    off_owned = tuple(
+        itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
+    )
+    off_ghost = tuple(
+        itertools.accumulate(
+            maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
+        )
+    )
+    vec.setAttr("_blocks", (off_owned, off_ghost))
