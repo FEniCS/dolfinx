@@ -1528,9 +1528,9 @@ common::IndexMapStats IndexMap::statistics() const
       .edge_weight_remote_mean = std::size_t(*(vm++) / num_edges),
   };
   if (v != recv.end())
-    throw std::runtime_error("Missing.");
+    throw std::runtime_error("Too many/too few min/max buffer values used.");
   if (vm != recv_m.end())
-    throw std::runtime_error("XXXMissing.");
+    throw std::runtime_error("Too many/too few sum buffer values used.");
 
   return stats;
 }
