@@ -91,15 +91,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Load environment variables
-        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
-
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install catch2 cmake g++ libblas-dev libboost-dev libhdf5-mpi-dev \
              liblapack-dev libparmetis-dev libpugixml-dev libspdlog-dev mpi-default-dev \
              ninja-build pkg-config
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -108,6 +106,9 @@ jobs:
       - name: Install Python build dependencies
         run: |
           pip install --upgrade -r python/build-requirements.txt
+
+      - name: Load environment variables
+        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
