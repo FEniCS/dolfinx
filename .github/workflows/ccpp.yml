@@ -80,8 +80,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: ubuntu:24.04
-    # container: "ghcr.io/fenics/test-env:current-openmpi"
+      # image: ubuntu:24.04
+      image: "ghcr.io/fenics/test-env:current-openmpi"
 
     # needs: [lint]
     env:
