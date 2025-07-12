@@ -88,6 +88,7 @@ void declare_function_space(nb::module_& m, std::string type)
         .def("contains", &dolfinx::fem::FunctionSpace<T>::contains,
              nb::arg("V"))
         .def_prop_ro("element", &dolfinx::fem::FunctionSpace<T>::element)
+        .def("elements", &dolfinx::fem::FunctionSpace<T>::elements)
         .def_prop_ro("mesh", &dolfinx::fem::FunctionSpace<T>::mesh)
         .def_prop_ro("dofmap", &dolfinx::fem::FunctionSpace<T>::dofmap)
         .def("dofmaps", &dolfinx::fem::FunctionSpace<T>::dofmaps,
@@ -734,6 +735,7 @@ void declare_form(nb::module_& m, std::string type)
       .def_prop_ro("dtype", [](const dolfinx::fem::Form<T, U>&)
                    { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def_prop_ro("coefficients", &dolfinx::fem::Form<T, U>::coefficients)
+      .def_prop_ro("constants", &dolfinx::fem::Form<T, U>::constants)
       .def_prop_ro("rank", &dolfinx::fem::Form<T, U>::rank)
       .def_prop_ro("mesh", &dolfinx::fem::Form<T, U>::mesh)
       .def_prop_ro("function_spaces",

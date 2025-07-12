@@ -103,9 +103,11 @@ problem = LinearProblem(
     L,
     bcs=bcs,
     u=uh,
+    petsc_options_prefix="demo_helmholtz_",
     petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
 )
-problem.solve()
+_1, _2, convergence_reason, _3 = problem.solve()  # Cannot unpack typed tuple to same variable _
+assert convergence_reason > 0
 
 # Save solution in XDMF format (to be viewed in ParaView, for example)
 with XDMFFile(

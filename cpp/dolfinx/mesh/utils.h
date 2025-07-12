@@ -19,6 +19,7 @@
 #include <mpi.h>
 #include <numeric>
 #include <span>
+#include <vector>
 
 /// @file utils.h
 /// @brief Functions supporting mesh operations
@@ -36,8 +37,7 @@ enum class CellType;
 enum class GhostMode : int
 {
   none,
-  shared_facet,
-  shared_vertex
+  shared_facet
 };
 
 namespace impl
@@ -213,6 +213,165 @@ using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
 /// cell `i`.
 using CellReorderFunction = std::function<std::vector<std::int32_t>(
     const graph::AdjacencyList<std::int32_t>&)>;
+
+/// @brief Creates the default boundary vertices routine for a given reorder
+/// function.
+/// @param[in] reorder_fn A cell reorder funciton which will be applied to
+/// reorder the cells.
+/// @return Boundary vertices function which can be passed to `create_mesh`.
+/// TODO: offload to cpp?
+inline auto create_boundary_vertices_fn(const CellReorderFunction& reorder_fn)
+{
+  /// brief Function that computes the process boundary vertices of a mesh
+  /// during creation.
+  /// param[in] celltypes List of celltypes in mesh.
+  /// param[in] doflayouts List of DOF layouts in mesh.
+  /// param[in] ghost_owners List of ghost owner per cell per celltype.
+  /// param[out] cells List of cells per celltpye. Reorderd during call.
+  /// param[out] cells_v List of vertices (no higher order nodes) of cell per
+  /// celltype. Reordered during call.
+  /// param[out] original_idx Contains the permutation applied to the cells per
+  /// celltype.
+  /// return Boundary vetices (for all cell types).
+  return [&](const std::vector<CellType>& celltypes,
+             const std::vector<fem::ElementDofLayout>& doflayouts,
+             const std::vector<std::vector<int>>& ghost_owners,
+             std::vector<std::vector<std::int64_t>>& cells,
+             std::vector<std::vector<std::int64_t>>& cells_v,
+             std::vector<std::vector<std::int64_t>>& original_idx)
+             -> std::vector<std::int64_t>
+  {
+    // Build local dual graph for owned cells to (i) get list of vertices
+    // on the process boundary and (ii) apply re-ordering to cells for
+    // locality
+
+    spdlog::info("Build local dual graphs, re-order cells, and compute process "
+                 "boundary vertices.");
+
+    std::vector<std::pair<std::vector<std::int64_t>, int>> facets;
+
+    // Build lists of cells (by cell type) that excludes ghosts
+    std::vector<std::span<const std::int64_t>> cells1_v_local;
+    for (std::size_t i = 0; i < celltypes.size(); ++i)
+    {
+      int num_cell_vertices = mesh::num_cell_vertices(celltypes[i]);
+      std::size_t num_owned_cells
+          = cells_v[i].size() / num_cell_vertices - ghost_owners[i].size();
+      cells1_v_local.emplace_back(cells_v[i].data(),
+                                  num_owned_cells * num_cell_vertices);
+
+      // Build local dual graph for cell type
+      auto [graph, unmatched_facets, max_v, _facet_attached_cells]
+          = build_local_dual_graph(std::vector{celltypes[i]},
+                                   std::vector{cells1_v_local.back()});
+
+      // Store unmatched_facets for current cell type
+      facets.emplace_back(std::move(unmatched_facets), max_v);
+
+      // Compute re-ordering of graph
+      const std::vector<std::int32_t> remap = reorder_fn(graph);
+
+      // Update 'original' indices
+      const std::vector<std::int64_t>& orig_idx = original_idx[i];
+      std::vector<std::int64_t> _original_idx(orig_idx.size());
+      std::copy_n(orig_idx.rbegin(), ghost_owners[i].size(),
+                  _original_idx.rbegin());
+      {
+        for (std::size_t j = 0; j < remap.size(); ++j)
+          _original_idx[remap[j]] = orig_idx[j];
+      }
+      original_idx[i] = _original_idx;
+
+      // Reorder cells
+      impl::reorder_list(
+          std::span(cells_v[i].data(), remap.size() * num_cell_vertices),
+          remap);
+      impl::reorder_list(
+          std::span(cells[i].data(), remap.size() * doflayouts[i].num_dofs()),
+          remap);
+    }
+
+    if (facets.size() == 1) // Optimisation for single cell type
+    {
+      std::vector<std::int64_t>& vertices = facets.front().first;
+
+      // Remove duplicated vertex indices
+      std::ranges::sort(vertices);
+      auto [unique_end, range_end] = std::ranges::unique(vertices);
+      vertices.erase(unique_end, range_end);
+
+      // Remove -1 if it appears as first entity. This can happen in
+      // mixed topology meshes where '-1' is used to pad facet data when
+      // cells facets have differing numbers of vertices.
+      if (!vertices.empty() and vertices.front() == -1)
+        vertices.erase(vertices.begin());
+
+      return vertices;
+    }
+    else
+    {
+      // Pack 'unmatched' facets for all cell types into single array
+      // (facets0)
+      std::vector<std::int64_t> facets0;
+      facets0.reserve(std::accumulate(facets.begin(), facets.end(),
+                                      std::size_t(0), [](std::size_t x, auto& y)
+                                      { return x + y.first.size(); }));
+      int max_v = std::ranges::max_element(facets, [](auto& a, auto& b)
+                                           { return a.second < b.second; })
+                      ->second;
+      for (const auto& [v_data, num_v] : facets)
+      {
+        for (auto it = v_data.begin(); it != v_data.end(); it += num_v)
+        {
+          facets0.insert(facets0.end(), it, std::next(it, num_v));
+          facets0.insert(facets0.end(), max_v - num_v, -1);
+        }
+      }
+
+      // Compute row permutation
+      const std::vector<std::int32_t> perm = dolfinx::sort_by_perm(
+          std::span<const std::int64_t>(facets0), max_v);
+
+      // For facets in facets0 that appear only once, store the facet
+      // vertices
+      std::vector<std::int64_t> vertices;
+      // TODO: allocate memory for vertices
+      auto it = perm.begin();
+      while (it != perm.end())
+      {
+        // Find iterator to next facet different from f and trim any  -1
+        // padding
+        std::span _f(facets0.data() + (*it) * max_v, max_v);
+        auto end = std::find_if(_f.rbegin(), _f.rend(),
+                                [](auto a) { return a >= 0; });
+        auto f = _f.first(std::distance(end, _f.rend()));
+
+        auto it1 = std::find_if_not(
+            it, perm.end(),
+            [f, max_v, it0 = facets0.begin()](auto p) -> bool
+            {
+              return std::equal(f.begin(), f.end(), std::next(it0, p * max_v));
+            });
+
+        // If no repeated facet found, insert f vertices
+        if (std::distance(it, it1) == 1)
+          vertices.insert(vertices.end(), f.begin(), f.end());
+        else if (std::distance(it, it1) > 2)
+          throw std::runtime_error("More than two matching facets found.");
+
+        // Advance iterator
+        it = it1;
+      }
+
+      // Remove duplicate indices
+      std::ranges::sort(vertices);
+      auto [unique_end, range_end] = std::ranges::unique(vertices);
+      vertices.erase(unique_end, range_end);
+
+      return vertices;
+    }
+  };
+}
 
 /// @brief Extract topology from cell data, i.e. extract cell vertices.
 /// @param[in] cell_type Cell shape.
@@ -956,146 +1115,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                  cells1_v[i].size());
   }
 
-  // Build local dual graph for owned cells to (i) get list of vertices
-  // on the process boundary and (ii) apply re-ordering to cells for
-  // locality
-  auto boundary_v_fn = [](const std::vector<CellType>& celltypes,
-                          const std::vector<fem::ElementDofLayout>& doflayouts,
-                          const std::vector<std::vector<int>>& ghost_owners,
-                          std::vector<std::vector<std::int64_t>>& cells1,
-                          std::vector<std::vector<std::int64_t>>& cells1_v,
-                          std::vector<std::vector<std::int64_t>>& original_idx1,
-                          const CellReorderFunction& reorder_fn)
-  {
-    spdlog::info("Build local dual graphs, re-order cells, and compute process "
-                 "boundary vertices.");
-
-    std::vector<std::pair<std::vector<std::int64_t>, int>> facets;
-
-    // Build lists of cells (by cell type) that excludes ghosts
-    std::vector<std::span<const std::int64_t>> cells1_v_local;
-    for (std::size_t i = 0; i < celltypes.size(); ++i)
-    {
-      int num_cell_vertices = mesh::num_cell_vertices(celltypes[i]);
-      std::size_t num_owned_cells
-          = cells1_v[i].size() / num_cell_vertices - ghost_owners[i].size();
-      cells1_v_local.emplace_back(cells1_v[i].data(),
-                                  num_owned_cells * num_cell_vertices);
-
-      // Build local dual graph for cell type
-      auto [graph, unmatched_facets, max_v, _facet_attached_cells]
-          = build_local_dual_graph(std::vector{celltypes[i]},
-                                   std::vector{cells1_v_local.back()});
-
-      // Store unmatched_facets for current cell type
-      facets.emplace_back(std::move(unmatched_facets), max_v);
-
-      // Compute re-ordering of graph
-      const std::vector<std::int32_t> remap = reorder_fn(graph);
-
-      // Update 'original' indices
-      const std::vector<std::int64_t>& orig_idx = original_idx1[i];
-      std::vector<std::int64_t> _original_idx(orig_idx.size());
-      std::copy_n(orig_idx.rbegin(), ghost_owners[i].size(),
-                  _original_idx.rbegin());
-      {
-        for (std::size_t j = 0; j < remap.size(); ++j)
-          _original_idx[remap[j]] = orig_idx[j];
-      }
-      original_idx1[i] = _original_idx;
-
-      // Reorder cells
-      impl::reorder_list(
-          std::span(cells1_v[i].data(), remap.size() * num_cell_vertices),
-          remap);
-      impl::reorder_list(
-          std::span(cells1[i].data(), remap.size() * doflayouts[i].num_dofs()),
-          remap);
-    }
-
-    if (facets.size() == 1) // Optimisation for single cell type
-    {
-      std::vector<std::int64_t>& vertices = facets.front().first;
-
-      // Remove duplicated vertex indices
-      std::ranges::sort(vertices);
-      auto [unique_end, range_end] = std::ranges::unique(vertices);
-      vertices.erase(unique_end, range_end);
-
-      // Remove -1 if it appears as first entity. This can happen in
-      // mixed topology meshes where '-1' is used to pad facet data when
-      // cells facets have differing numbers of vertices.
-      if (!vertices.empty() and vertices.front() == -1)
-        vertices.erase(vertices.begin());
-
-      return vertices;
-    }
-    else
-    {
-      // Pack 'unmatched' facets for all cell types into single array
-      // (facets0)
-      std::vector<std::int64_t> facets0;
-      facets0.reserve(std::accumulate(facets.begin(), facets.end(),
-                                      std::size_t(0), [](std::size_t x, auto& y)
-                                      { return x + y.first.size(); }));
-      int max_v = std::ranges::max_element(facets, [](auto& a, auto& b)
-                                           { return a.second < b.second; })
-                      ->second;
-      for (const auto& [v_data, num_v] : facets)
-      {
-        for (auto it = v_data.begin(); it != v_data.end(); it += num_v)
-        {
-          facets0.insert(facets0.end(), it, std::next(it, num_v));
-          facets0.insert(facets0.end(), max_v - num_v, -1);
-        }
-      }
-
-      // Compute row permutation
-      const std::vector<std::int32_t> perm = dolfinx::sort_by_perm(
-          std::span<const std::int64_t>(facets0), max_v);
-
-      // For facets in facets0 that appear only once, store the facet
-      // vertices
-      std::vector<std::int64_t> vertices;
-      auto it = perm.begin();
-      while (it != perm.end())
-      {
-        // Find iterator to next facet different from f and trim any  -1
-        // padding
-        std::span _f(facets0.data() + (*it) * max_v, max_v);
-        auto end = std::find_if(_f.rbegin(), _f.rend(),
-                                [](auto a) { return a >= 0; });
-        auto f = _f.first(std::distance(end, _f.rend()));
-
-        auto it1 = std::find_if_not(
-            it, perm.end(),
-            [f, max_v, it0 = facets0.begin()](auto p) -> bool
-            {
-              return std::equal(f.begin(), f.end(), std::next(it0, p * max_v));
-            });
-
-        // If no repeated facet found, insert f vertices
-        if (std::distance(it, it1) == 1)
-          vertices.insert(vertices.end(), f.begin(), f.end());
-        else if (std::distance(it, it1) > 2)
-          throw std::runtime_error("More than two matching facets found.");
-
-        // Advance iterator
-        it = it1;
-      }
-
-      // Remove duplicate indices
-      std::ranges::sort(vertices);
-      auto [unique_end, range_end] = std::ranges::unique(vertices);
-      vertices.erase(unique_end, range_end);
-
-      return vertices;
-    }
-  };
-
-  const std::vector<std::int64_t> boundary_v
-      = boundary_v_fn(celltypes, doflayouts, ghost_owners, cells1, cells1_v,
-                      original_idx1, reorder_fn);
+  auto boundary_v_fn = create_boundary_vertices_fn(reorder_fn);
+  const std::vector<std::int64_t> boundary_v = boundary_v_fn(
+      celltypes, doflayouts, ghost_owners, cells1, cells1_v, original_idx1);
 
   spdlog::debug("Got {} boundary vertices", boundary_v.size());
 

@@ -31,6 +31,44 @@ assert dolfinx.has_petsc4py
 __all__ = ["assign", "create_vector", "create_vector_wrap"]
 
 
+def _ghost_update(x: PETSc.Vec, insert_mode: PETSc.InsertMode, scatter_mode: PETSc.ScatterMode):  # type: ignore
+    """Helper function for ghost updating PETSc vectors"""
+    if x.getType() == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
+        for x_sub in x.getNestSubVecs():
+            x_sub.ghostUpdate(addv=insert_mode, mode=scatter_mode)
+            x_sub.destroy()
+    else:
+        x.ghostUpdate(addv=insert_mode, mode=scatter_mode)
+
+
+def _zero_vector(x: PETSc.Vec):  # type: ignore
+    """Helper function for zeroing out PETSc vectors"""
+    if x.getType() == PETSc.Vec.Type.NEST:
+        for x_sub in x.getNestSubVecs():
+            with x_sub.localForm() as x_sub_local:
+                x_sub_local.set(0.0)
+            x_sub.destroy()
+    else:
+        with x.localForm() as x_local:
+            x_local.set(0.0)
+
+
+def create_vector(index_map: IndexMap, bs: int) -> PETSc.Vec:  # type: ignore[name-defined]
+    """Create a distributed PETSc vector.
+
+    Args:
+        index_map: Index map that describes the size and parallel layout of
+            the vector to create.
+        bs: Block size of the vector.
+
+    Returns:
+        PETSc Vec object.
+    """
+    ghosts = index_map.ghosts.astype(PETSc.IntType)  # type: ignore[attr-defined]
+    size = (index_map.size_local * bs, index_map.size_global * bs)
+    return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=index_map.comm)  # type: ignore
+
+
 def create_vector_wrap(x: Vector) -> PETSc.Vec:  # type: ignore[name-defined]
     """Wrap a distributed DOLFINx vector as a PETSc vector.
 
@@ -183,7 +221,7 @@ def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[
         x0_nest = x0.getNestSubVecs()
         for _x0, _x1 in zip(x0_nest, x1):
             with _x0.localForm() as x:
-                _x1[:] = x.array_r[:]
+                _x1[:] = x.array_r[:]  # type: ignore
     except PETSc.Error:  # type: ignore[attr-defined]
         with x0.localForm() as _x0:
             try:

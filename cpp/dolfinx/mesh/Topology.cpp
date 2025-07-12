@@ -814,8 +814,8 @@ Topology::index_maps(int dim) const
   for (std::size_t i = 0; i < _entity_types[dim].size(); ++i)
   {
     auto it = _index_maps.find({dim, int(i)});
-    assert(it != _index_maps.end());
-    maps.push_back(it->second);
+    if (it != _index_maps.end())
+      maps.push_back(it->second);
   }
   return maps;
 }

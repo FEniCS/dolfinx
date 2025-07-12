@@ -26,6 +26,9 @@ Documentation can be viewed at <https://docs.fenicsproject.org>.
 
 ### From source
 
+For detailed instructions and the list of dependencies, see
+<https://docs.fenicsproject.org/dolfinx/main/python/installation>.
+
 #### C++ core
 
 To build and install the C++ core, in the `cpp/` directory, run:
@@ -47,9 +50,6 @@ pip install -r build-requirements.txt
 pip install --check-build-dependencies --no-build-isolation .
 ```
 
-For detailed instructions, see
-<https://docs.fenicsproject.org/dolfinx/main/python/installation>.
-
 ### Spack
 
 Spack is recommended for building DOLFINx on HPC systems. To build the
@@ -61,7 +61,7 @@ git clone https://github.com/spack/spack.git
 . ./spack/share/spack/setup-env.sh
 spack env create fenicsx-env
 spack env activate fenicsx-env
-spack add fenics-dolfinx+adios2 py-fenics-dolfinx cflags="-O3" fflags="-O3"
+spack add fenics-dolfinx+petsc+adios2 py-fenics-dolfinx cflags="-O3" fflags="-O3"
 spack install
 ```
 
