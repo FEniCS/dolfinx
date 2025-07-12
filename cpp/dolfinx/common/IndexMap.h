@@ -92,8 +92,9 @@ std::pair<IndexMap, std::vector<std::int32_t>> create_sub_index_map(
 /// communication pattern. Each MPI rank is a 'node' in the
 /// communication pattern.
 ///
-/// Edges are identified as 'out' (owner->ghost) or 'in' (ghost->owner)
-/// edges.
+/// Edges are identified as 'out' (owner -> remote ghost) or 'in' (ghost
+/// <- remote owner) edges. This is the direction of the edges under a
+/// forward scatter, sending data from the owner to ghosts.
 struct IndexMapStats
 {
   /// @brief Holder for minimum and maximum value pairs.
@@ -103,19 +104,17 @@ struct IndexMapStats
     std::int64_t max; ///< Maximum value
   };
 
-  // 0.
   std::int64_t num_nodes; ///< Number of 'nodes' (MPI ranks).
 
   // A1. Number of node (rank) edges
   minmax out_edges; ///< Min/max number of out edges across nodes (ranks).
   minmax in_edges;  ///< Min/max number of in edges across nodes (ranks).
 
-  // A2a. Node (rank) aggregate edges by dest/src type
-  minmax out_edges_local; ///< Min/max number of out edges across nodes (ranks)
-                          ///< to shared memory ranks.
-  minmax in_edges_local;  ///< Min/max number of in edges across nodes (ranks)
-                          ///< from shared memory ranks.
-  // A2b.
+  // A2. Node (rank) aggregate edges by dest/src type
+  minmax out_edges_local;  ///< Min/max number of out edges across nodes (ranks)
+                           ///< to shared memory ranks.
+  minmax in_edges_local;   ///< Min/max number of in edges across nodes (ranks)
+                           ///< from shared memory ranks.
   minmax out_edges_remote; ///< Min/max number of out edges across nodes (ranks)
                            ///< to remote memory ranks
   minmax in_edges_remote;  ///< Min/max number of edges across nodes (ranks)

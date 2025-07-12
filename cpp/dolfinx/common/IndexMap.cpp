@@ -1455,7 +1455,7 @@ common::IndexMapStats IndexMap::statistics() const
     // 3b. Local/remote
     buffer.insert(buffer.end(), {w_dest_sum_l, -w_dest_sum_l,
                                  //
-                                 w_src_sum_l, -w_src_sum_r,
+                                 w_src_sum_l, -w_src_sum_l,
                                  //
                                  w_dest_sum_r, -w_dest_sum_r,
                                  //
@@ -1491,47 +1491,47 @@ common::IndexMapStats IndexMap::statistics() const
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   std::uint64_t num_nodes = dolfinx::MPI::size(_comm.comm());
-  std::uint64_t num_edges = recv_m[0];
+  // std::uint64_t num_edges = recv_m[0];
 
-  auto v = recv.begin();
-  auto vm = recv_m.begin();
+  // auto v = recv.begin();
+  // auto vm = recv_m.begin();
   IndexMapStats stats{
       .num_nodes = (int)num_nodes,
-      // A1.
-      .out_edges = {*(v++), -*(v++)},
-      .in_edges = {*(v++), -*(v++)},
-      // A2a.
-      .out_edges_local = {*(v++), -*(v++)},
-      .in_edges_local = {*(v++), -*(v++)},
-      // A2b.
-      .out_edges_remote = {*(v++), -*(v++)},
-      .in_edges_remote = {*(v++), -*(v++)},
-      // A3a.
-      .out_node_weight = {*(v++), -*(v++)},
-      .in_node_weight = {*(v++), -*(v++)},
-      // A3b.
-      .out_node_weight_local = {*(v++), -*(v++)},
-      .in_node_weight_local = {*(v++), -*(v++)},
-      .out_node_weight_remote = {*(v++), -*(v++)},
-      .in_node_weight_remote = {*(v++), -*(v++)},
-      // A4.
-      .out_edge_weight_local = {*(v++), -*(v++)},
-      .out_edge_weight_remote = {*(v++), -*(v++)},
-      // B1.
-      .edges_mean = std::size_t(*(vm++) / num_nodes),
-      // B2.
-      .edges_local_mean = std::size_t(*(vm++) / num_nodes),
-      .edges_remote_mean = std::size_t(*(vm++) / num_nodes),
-      // B3a.
-      .node_weight_mean = std::size_t(*(vm++) / num_nodes),
-      // B3b.
-      .edge_weight_local_mean = std::size_t(*(vm++) / num_edges),
-      .edge_weight_remote_mean = std::size_t(*(vm++) / num_edges),
+      // // A1.
+      // .out_edges = {*(v++), -*(v++)},
+      // .in_edges = {*(v++), -*(v++)},
+      // // A2a.
+      // .out_edges_local = {*(v++), -*(v++)},
+      // .in_edges_local = {*(v++), -*(v++)},
+      // // A2b.
+      // .out_edges_remote = {*(v++), -*(v++)},
+      // .in_edges_remote = {*(v++), -*(v++)},
+      // // A3a.
+      // .out_node_weight = {*(v++), -*(v++)},
+      // .in_node_weight = {*(v++), -*(v++)},
+      // // A3b.
+      // .out_node_weight_local = {*(v++), -*(v++)},
+      // .in_node_weight_local = {*(v++), -*(v++)},
+      // .out_node_weight_remote = {*(v++), -*(v++)},
+      // .in_node_weight_remote = {*(v++), -*(v++)},
+      // // A4.
+      // .out_edge_weight_local = {*(v++), -*(v++)},
+      // .out_edge_weight_remote = {*(v++), -*(v++)},
+      // // B1.
+      // .edges_mean = std::size_t(*(vm++) / num_nodes),
+      // // B2.
+      // .edges_local_mean = std::size_t(*(vm++) / num_nodes),
+      // .edges_remote_mean = std::size_t(*(vm++) / num_nodes),
+      // // B3a.
+      // .node_weight_mean = std::size_t(*(vm++) / num_nodes),
+      // // B3b.
+      // .edge_weight_local_mean = std::size_t(*(vm++) / num_edges),
+      // .edge_weight_remote_mean = std::size_t(*(vm++) / num_edges),
   };
-  if (v != recv.end())
-    throw std::runtime_error("Missing.");
-  if (vm != recv_m.end())
-    throw std::runtime_error("XXXMissing.");
+  // if (v != recv.end())
+  //   throw std::runtime_error("Missing.");
+  // if (vm != recv_m.end())
+  //   throw std::runtime_error("XXXMissing.");
 
   return stats;
 }
