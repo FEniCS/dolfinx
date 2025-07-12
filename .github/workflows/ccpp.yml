@@ -79,8 +79,9 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    # container: ubuntu:24.04
-    container: "ghcr.io/fenics/test-env:current-openmpi"
+    container:
+      image: ubuntu:24.04
+    # container: "ghcr.io/fenics/test-env:current-openmpi"
 
     needs: [lint]
     env:
