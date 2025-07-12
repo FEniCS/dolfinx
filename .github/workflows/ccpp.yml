@@ -83,7 +83,7 @@ jobs:
       image: ubuntu:24.04
     # container: "ghcr.io/fenics/test-env:current-openmpi"
 
-    needs: [lint]
+    # needs: [lint]
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
@@ -94,13 +94,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          apt-get -y update
-          apt-get -y install catch2 cmake g++ libblas-dev libboost-dev libhdf5-mpi-dev \
-             liblapack-dev libparmetis-dev libpugixml-dev libspdlog-dev mpi-default-dev \
-             ninja-build pkg-config
+      # - name: Install dependencies
+      #   run: |
+      #     apt-get -y update
+      #     apt-get -y install catch2 cmake g++ libblas-dev libboost-dev libhdf5-mpi-dev \
+      #        liblapack-dev libparmetis-dev libpugixml-dev libspdlog-dev mpi-default-dev \
+      #        ninja-build pkg-config
 
+      - name: Load environment variables
+        run: ls -alh
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
