@@ -95,6 +95,9 @@ std::pair<IndexMap, std::vector<std::int32_t>> create_sub_index_map(
 /// Edges are identified as 'out' (owner -> remote ghost) or 'in' (ghost
 /// <- remote owner) edges. This is the direction of the edges under a
 /// forward scatter, sending data from the owner to ghosts.
+///
+/// The edge 'weight' is the number of items sent along each edge. It is
+/// proportional to the MPI message size.
 struct IndexMapStats
 {
   /// @brief Holder for minimum and maximum value pairs.
@@ -142,11 +145,13 @@ struct IndexMapStats
   // std::size_t edges_mean; ///< Mean number of node out(in) edges.
 
   // // B2. Mean number of node local/remote edges
-  // std::size_t edges_local_mean;  ///< Mean number of node local out(in) edges.
-  // std::size_t edges_remote_mean; ///< Mean number of node remote out(in) edges.
+  // std::size_t edges_local_mean;  ///< Mean number of node local out(in)
+  // edges. std::size_t edges_remote_mean; ///< Mean number of node remote
+  // out(in) edges.
 
   // // B3a.
-  // std::size_t node_weight_mean; ///< Mean edge weight. This is proportional to
+  // std::size_t node_weight_mean; ///< Mean edge weight. This is proportional
+  // to
   //                               ///< the mean message size.
   // // B3b.
   // std::size_t
