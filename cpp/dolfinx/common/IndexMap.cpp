@@ -1384,54 +1384,43 @@ std::array<std::vector<int>, 2> IndexMap::rank_type(int split_type) const
   return {std::move(split_dest), std::move(split_src)};
 }
 //-----------------------------------------------------------------------------
-void IndexMap::statistics() const
+common::IndexMapStats IndexMap::statistics() const
 {
   // Graph edge weights
-  const std::vector w_dest = this->weights_dest(); // TODO: this call has a cost
-  const std::vector w_src = this->weights_src();
+  const std::vector<std::int32_t> w_dest
+      = this->weights_dest(); // Note: this call has a cost
+  const std::vector<std::int32_t> w_src = this->weights_src();
 
+  // Group ranks
   const auto [local_dest, local_src] = this->rank_type(MPI_COMM_TYPE_SHARED);
 
-  // auto const is_local = [&ranks = local_dest](auto x)
-  // {
-  //   auto it = std::ranges::lower_bound(ranks, x);
-  //   return it != ranks.end() and *it == x;
-  // };
-
-  // auto w_dest_l = w_dest | std::views::filter(is_local);
-  // auto w_dest_r = w_dest | std::views::drop(is_local);
-
-  auto get_local_indices = [](auto& ranks, auto& local_ranks)
+  auto rank_set = [](auto& sub_ranks, bool local)
   {
-    std::vector<int> idx_l, idx_r;
-    for (auto r = ranks.begin(); r != ranks.end(); ++r)
+    return [&sub_ranks, local](auto x)
     {
-      std::size_t p = std::distance(ranks.begin(), r);
-      if (auto it = std::ranges::lower_bound(local_ranks, *r);
-          it != ranks.end() and *it == *r) // Local
-      {
-        idx_l.push_back(p);
-      }
-      else // Remote
-        idx_r.push_back(p);
-    }
-
-    return std::array{std::move(idx_l), std::move(idx_r)};
+      auto it = std::ranges::lower_bound(sub_ranks, x);
+      return local ? it != sub_ranks.end() and *it == x
+                   : it == sub_ranks.end() or *it != x;
+    };
   };
 
-  // Get positions of local and remote ranks in _dest and _src
-  const auto [dest_idx_local, dest_idx_remote]
-      = get_local_indices(_dest, local_dest);
-  const auto [src_idx_local, src_idx_remote]
-      = get_local_indices(_src, local_src);
+  auto w_dest_l = w_dest | std::views::filter(rank_set(local_dest, true));
+  auto w_dest_r = w_dest | std::views::filter(rank_set(local_dest, false));
 
-  // Send buffer
+  auto w_src_l = w_src | std::views::filter(rank_set(local_src, true));
+  auto w_src_r = w_src | std::views::filter(rank_set(local_src, false));
+
+  // A. Min/max
+
+  // Send buffers (min/max, mean)
   std::vector<std::int64_t> buffer;
+  std::vector<std::uint64_t> buffer_m;
 
   // 1. Number of dest(out) and src(in) edges
   std::int64_t num_dest = _dest.size();
   std::int64_t num_src = _src.size();
   buffer.insert(buffer.end(), {num_dest, -num_dest, num_src, -num_src});
+  buffer_m.insert(buffer_m.end(), {_dest.size()});
 
   // 2. Number of shared and remote memory dest(out) and src(in) edges
   {
@@ -1442,86 +1431,144 @@ void IndexMap::statistics() const
     buffer.insert(buffer.end(),
                   {(num_dest - num_dest_l), -(num_dest - num_dest_l),
                    (num_src - num_src_l), -(num_src - num_src_l)});
+
+    buffer_m.insert(buffer_m.end(), {
+                                        local_dest.size(),
+                                        _dest.size() - local_dest.size(),
+                                    });
   }
 
   {
-    // // - Edge weight sums for *this
-    // std::int64_t w_dest_sum = std::reduce(w_dest.begin(), w_dest.end(), 0);
-    // std::int64_t w_src_sum = std::reduce(w_src.begin(), w_src.end(), 0);
-    // buffer.insert(buffer.end(),
-    //               {w_dest_sum, -w_dest_sum, w_src_sum, -w_src_sum});
+    // 3. Node (*this) edge weight sums (local/remote)
+    std::int64_t w_dest_sum_l
+        = std::accumulate(w_dest_l.begin(), w_dest_l.end(), 0);
+    std::int64_t w_dest_sum_r
+        = std::accumulate(w_dest_r.begin(), w_dest_r.end(), 0);
 
-    // 3. Edge weight sums (local/remote) for *this
-    std::int64_t w_dest_sum_l = std::accumulate(
-        dest_idx_local.begin(), dest_idx_local.end(), 0,
-        [&w_dest](auto acc, auto p) { return acc += w_dest[p]; });
-    std::int64_t w_dest_sum_r = std::accumulate(
-        dest_idx_remote.begin(), dest_idx_remote.end(), 0,
-        [&w_dest](auto acc, auto p) { return acc += w_dest[p]; });
-
-    std::int64_t w_src_sum_l = std::accumulate(
-        src_idx_local.begin(), src_idx_local.end(), 0,
-        [&w_src](auto acc, auto p) { return acc += w_src[p]; });
-    std::int64_t w_src_sum_r = std::accumulate(
-        src_idx_remote.begin(), src_idx_remote.end(), 0,
-        [&w_src](auto acc, auto p) { return acc += w_src[p]; });
-
-    // auto edge_weights_sum = [](auto& ranks, auto& local_ranks, auto& weights)
-    // {
-    //   std::int64_t w_sum_local = 0;
-    //   std::int64_t w_sum_remote = 0;
-    //   for (auto r = ranks.begin(); r != ranks.end(); ++r)
-    //   {
-    //     std::size_t p = std::distance(ranks.begin(), r);
-    //     auto it = std::ranges::lower_bound(local_ranks, *r);
-    //     if (it != ranks.end() and *it == *r) // Local
-    //       w_sum_local += weights[p];
-    //     else // Remote
-    //       w_sum_remote += weights[p];
-    //   }
-
-    //   return std::array{w_sum_local, w_sum_local};
-    // };
-
-    // auto [w_dest_sum_l, w_dest_sum_r]
-    //     = edge_weights_sum(_dest, local_dest, w_dest);
-    // auto [w_src_sum_l, w_src_sum_r] = edge_weights_sum(_src, local_src,
-    // w_src);
+    std::int64_t w_src_sum_l
+        = std::accumulate(w_src_l.begin(), w_src_l.end(), 0);
+    std::int64_t w_src_sum_r
+        = std::accumulate(w_src_r.begin(), w_src_r.end(), 0);
 
     assert(w_dest_sum_l + w_dest_sum_l
            == std::reduce(w_dest.begin(), w_dest.end(), 0));
     assert(w_dest_sum_l + w_dest_sum_l
            == std::reduce(w_dest.begin(), w_dest.end(), 0));
 
+    // 3a. Total
     buffer.insert(buffer.end(),
-                  {w_dest_sum_l, -w_dest_sum_l, w_dest_sum_r, -w_dest_sum_r,
-                   w_src_sum_l, -w_src_sum_l, w_src_sum_r, -w_src_sum_r});
+                  {w_dest_sum_l + w_dest_sum_r, -(w_dest_sum_l + w_dest_sum_r),
+                   w_src_sum_l + w_src_sum_r, -(w_src_sum_l + w_src_sum_r)});
+    buffer_m.insert(buffer_m.end(),
+                    {std::uint64_t(w_dest_sum_l + w_dest_sum_r)});
+
+    // 3b. Local/remote
+    buffer.insert(buffer.end(), {w_dest_sum_l, -w_dest_sum_l,
+                                 //
+                                 w_dest_sum_r, -w_dest_sum_r,
+                                 //
+                                 w_src_sum_r, -w_src_sum_r});
+    buffer_m.insert(buffer_m.end(),
+                    {std::uint64_t(w_dest_sum_l), std::uint64_t(w_dest_sum_r)});
   }
 
   {
-    // Edge weight min/max
-    std::int64_t w_dest_min
-        = w_dest.empty() ? 0 : *std::min_element(w_dest.begin(), w_dest.end());
-    std::int64_t w_dest_max
-        = w_dest.empty() ? 0 : *std::max_element(w_dest.begin(), w_dest.end());
-
-    std::int64_t w_src_min
-        = w_src.empty() ? 0 : *std::min_element(w_src.begin(), w_src.end());
-    std::int64_t w_src_max
-        = w_src.empty() ? 0 : *std::max_element(w_src.begin(), w_src.end());
-
+    // 4. Edge weight min/max
+    std::int64_t dest_min_l
+        = w_dest_l.empty() ? 0 : *std::ranges::min_element(w_dest_l);
+    std::int64_t dest_max_l
+        = w_dest_l.empty() ? 0 : *std::ranges::max_element(w_dest_l);
+    std::int64_t dest_min_r
+        = w_dest_r.empty() ? 0 : *std::ranges::min_element(w_dest_r);
+    std::int64_t dest_max_r
+        = w_dest_r.empty() ? 0 : *std::ranges::max_element(w_dest_r);
     buffer.insert(buffer.end(),
-                  {w_dest_min, -w_dest_max, w_src_min, -w_src_max});
+                  {dest_min_l, -dest_max_l, dest_min_r, -dest_max_r});
+
+    // buffer_m.insert(buffer_m.end(),
+    //                 {std::uint64_t(dest_min_l), std::uint64_t(dest_max_l),
+    //                  std::uint64_t(dest_min_r), std::uint64_t(dest_max_r)});
   }
 
-  // std::int64_t w_src_num = w_src.size();
-  // buffer.insert({w_src_sum, w_src_num});
+  std::vector<std::int64_t> recv(buffer.size());
+  int ierr = 0;
+  ierr = MPI_Allreduce(buffer.data(), recv.data(), buffer.size(), MPI_INT64_T,
+                       MPI_MIN, _comm.comm());
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
 
-  // std::vector<std::int64_t> recv(buffer.size());
-  // int ierr = 0;
-  // ierr = MPI_Allreduce(buffer.data(), recv.data(), buffer.size(),
-  // MPI_INT64_T,
-  //                      _comm.comm(), )
+  // B. Mean
+
+  // Send buffer
+  // std::vector<std::uint64_t> buffer_m;
+
+  // B1. Number of dest(out) and src(in) edges
+  // buffer_m.insert(buffer_m.end(), {_dest.size(), _src.size()});
+
+  // // B2. Number of local and remote dest(out) and src(in) edges
+  // buffer_m.insert(buffer_m.end(), {local_dest.size(), local_src.size()});
+  // buffer_m.insert(buffer_m.end(), {_dest.size() - local_dest.size(),
+  //                                  _src.size() - local_src.size()});
+
+  // B3. Node (*this) edge weight sum means (local/remote)
+  {
+    // std::int64_t w_dest_sum_l
+    //     = std::accumulate(w_dest_l.begin(), w_dest_l.end(), 0);
+    // std::int64_t w_dest_sum_r
+    //     = std::accumulate(w_dest_r.begin(), w_dest_r.end(), 0);
+
+    // std::int64_t w_src_sum_l
+    //     = std::accumulate(w_src_l.begin(), w_src_l.end(), 0);
+    // std::int64_t w_src_sum_r
+    //     = std::accumulate(w_src_r.begin(), w_src_r.end(), 0);
+  }
+
+  std::vector<std::int64_t> recv_m(buffer_m.size());
+  ierr = MPI_Allreduce(buffer_m.data(), recv_m.data(), buffer_m.size(),
+                       dolfinx::MPI::mpi_t<std::uint64_t>, MPI_SUM,
+                       _comm.comm());
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+  std::uint64_t mpi_size = dolfinx::MPI::size(_comm.comm());
+  auto v = recv.begin();
+  auto vm = recv_m.begin();
+  IndexMapStats stats{
+      .num_nodes = (int)mpi_size,
+      // A1.
+      .out_edges = {*(v++), -*(v++)},
+      .in_edges = {*(v++), -*(v++)},
+      // A2a.
+      .out_edges_local = {*(v++), -*(v++)},
+      .in_edges_local = {*(v++), -*(v++)},
+      // A2b.
+      .out_edges_remote = {*(v++), -*(v++)},
+      .in_edges_remote = {*(v++), -*(v++)},
+      // A3a.
+      .out_node_weight = {*(v++), -*(v++)},
+      .in_node_weight = {*(v++), -*(v++)},
+      // A3b.
+      .out_node_weight_local = {*(v++), -*(v++)},
+      .out_node_weight_remote = {*(v++), -*(v++)},
+      .in_node_weight_remote = {*(v++), -*(v++)},
+      // A4.
+      .out_edge_weight_local = {*(v++), -*(v++)},
+      .out_edge_weight_remote = {*(v++), -*(v++)},
+      // B1.
+      .edges_mean = std::size_t(*(vm++) / mpi_size),
+      // B2.
+      .edges_local_mean = std::size_t(*(vm++) / mpi_size),
+      .edges_remote_mean = std::size_t(*(vm++) / mpi_size),
+      // B3a.
+      .node_weight_mean = std::size_t(*(vm++) / mpi_size),
+      // B3b.
+      .edge_weight_local_mean = std::size_t(*(vm++) / mpi_size),
+      .edge_weight_remote_mean = std::size_t(*(vm++) / mpi_size),
+  };
+  if (v != recv.end())
+    throw std::runtime_error("Missing.");
+  if (vm != recv_m.end())
+    throw std::runtime_error("XXXMissing.");
+
+  return stats;
 }
 //-----------------------------------------------------------------------------
 
@@ -1549,7 +1596,8 @@ std::string IndexMap::stats(int detail_level) const
   MPI_Gather(local_sizes.data(), 4, MPI_INT32_T, recv_sizes.data(), 4,
              MPI_INT32_T, 0, _comm.comm());
 
-  // Get amount of data received (from owners into ghost region) on each process
+  // Get amount of data received (from owners into ghost region) on each
+  // process
   std::map<std::int32_t, std::int32_t> src_to_index;
   for (std::size_t i = 0; i < _src.size(); ++i)
     src_to_index.insert({_src[i], i});

@@ -84,6 +84,78 @@ std::pair<IndexMap, std::vector<std::int32_t>> create_sub_index_map(
     const IndexMap& imap, std::span<const std::int32_t> indices,
     IndexMapOrder order = IndexMapOrder::any, bool allow_owner_change = false);
 
+/// @brief Holder for statistics on an IndexMap.
+///
+/// IndexMap statistics provide an overview of the parallel
+/// communication pattern for MPI operations based on the IndexMap.
+struct IndexMapStats
+{
+private:
+  struct minmax
+  {
+    std::int64_t min; ///< Minimum
+    std::int64_t max; ///< Maximum
+  };
+
+public:
+  // 0.
+  std::int64_t num_nodes; ///< Number of nodes (MPI ranks)
+
+  // 1. Number of node (rank) edges
+  minmax out_edges; ///< Min/max number of out edges across nodes (ranks)
+  minmax in_edges;  ///< Min/max number of in edges across nodes (ranks)
+
+  // 2a. Node (rank) aggregate edges by dest/src type
+  minmax out_edges_local; ///< Min/max number of out edges across nodes (ranks)
+                          ///< to shared memory ranks
+  minmax in_edges_local;  ///< Min/max number of out edges across nodes (ranks)
+                          ///< from shared memory ranks
+  // 2b.
+  minmax out_edges_remote; ///< Min/max number of out edges across nodes (ranks)
+                           ///< to remote memory ranks
+  minmax in_edges_remote;  ///< Min/max number of edges across nodes (ranks)
+                           ///< from remote memory ranks
+
+  // 3a. Aggregate node weights
+  minmax out_node_weight; ///< Min/max out weight across nodes (ranks).
+  minmax in_node_weight;  ///< Min/max in weight across nodes (ranks).
+
+  // 3b. Aggregate node weights (by dest/src type)
+  minmax out_node_weight_local; ///< Min/max edge out weight to shared
+                                ///< memory rank.
+  // minmax in_node_weight_local; ///< Min/max edge out weight to shared
+  //                               ///< memory rank.
+  minmax out_node_weight_remote; ///< Min/max edge out weight to remote memory
+                                 ///< rank.
+  minmax in_node_weight_remote;  ///< Min/max edge in weight from
+                                 ///< remote memory rank.
+
+  // 4. Edge weights
+  minmax out_edge_weight_local;  ///< Min/max out edge weight.
+  minmax out_edge_weight_remote; ///< Min/max out edge weight.
+
+  // B1. Mean number of node (rank) edges
+  std::size_t edges_mean; ///< Mean number of node (rank) out(in) edges.
+
+  // B2. Mean number of node (rank) local/remote edges
+  std::size_t
+      edges_local_mean; ///< Mean number of node (rank) local out(in) edges.
+  std::size_t
+      edges_remote_mean; ///< Mean number of node (rank) remote out(in) edges.
+
+  // B3a.
+  std::size_t node_weight_mean; ///< Mean edge weight. This is proportional to
+                                ///< the mean message size.
+  // B3b.
+  std::size_t
+      edge_weight_local_mean; ///< Mean edge weight for shared memory
+                              ///< edges. This is proportional to the
+                              ///< mean shared memory (local) message size.
+  std::size_t
+      edge_weight_remote_mean; ///< Mean edge weight. This is proportional to
+                               ///< the mean remote memory message size.
+};
+
 /// This class represents the distribution index arrays across
 /// processes. An index array is a contiguous collection of `N+1`
 /// indices `[0, 1, . . ., N]` that are distributed across `M`
@@ -295,7 +367,7 @@ public:
   std::array<std::vector<int>, 2> rank_type(int split_type) const;
 
   /// @brief TODO
-  void statistics() const;
+  IndexMapStats statistics() const;
 
   /// @brief Statistics of the IndexMap.
   ///

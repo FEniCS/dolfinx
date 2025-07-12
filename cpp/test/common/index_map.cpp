@@ -200,6 +200,18 @@ void test_rank_weights()
   }
 }
 
+void test_stats()
+{
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  constexpr int size_local = 100;
+  const common::IndexMap idx_map
+      = create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
+  common::IndexMapStats stats = idx_map.statistics();
+  std::cout << "Num nodes: " << stats.num_nodes << std::endl;
+  std::cout << "Num out edges (min/max): " << stats.out_edges.min << ", "
+            << stats.out_edges.max << std::endl;
+}
+
 } // namespace
 
 TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
@@ -224,7 +236,8 @@ TEST_CASE("Split IndexMap communicator by type", "[index_map_comm_split]")
   CHECK_NOTHROW(test_rank_split());
 }
 
-TEST_CASE("IndexMap edge weights", "[index_map_weights]")
+TEST_CASE("IndexMap stats", "[index_map_stats]")
 {
   CHECK_NOTHROW(test_rank_weights());
+  CHECK_NOTHROW(test_stats());
 }
