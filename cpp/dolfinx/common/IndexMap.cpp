@@ -1410,8 +1410,6 @@ common::IndexMapStats IndexMap::statistics() const
   auto w_src_l = w_src | std::views::filter(rank_set(local_src, true));
   auto w_src_r = w_src | std::views::filter(rank_set(local_src, false));
 
-  // A. Min/max
-
   // Send buffers (min/max, mean)
   std::vector<std::int64_t> buffer;
   std::vector<std::uint64_t> buffer_m;
@@ -1432,28 +1430,20 @@ common::IndexMapStats IndexMap::statistics() const
                   {(num_dest - num_dest_l), -(num_dest - num_dest_l),
                    (num_src - num_src_l), -(num_src - num_src_l)});
 
-    buffer_m.insert(buffer_m.end(), {
-                                        local_dest.size(),
-                                        _dest.size() - local_dest.size(),
-                                    });
+    buffer_m.insert(buffer_m.end(),
+                    {local_dest.size(), _dest.size() - local_dest.size()});
   }
 
   {
     // 3. Node (*this) edge weight sums (local/remote)
-    std::int64_t w_dest_sum_l
-        = std::accumulate(w_dest_l.begin(), w_dest_l.end(), 0);
-    std::int64_t w_dest_sum_r
-        = std::accumulate(w_dest_r.begin(), w_dest_r.end(), 0);
-
-    std::int64_t w_src_sum_l
-        = std::accumulate(w_src_l.begin(), w_src_l.end(), 0);
-    std::int64_t w_src_sum_r
-        = std::accumulate(w_src_r.begin(), w_src_r.end(), 0);
-
-    assert(w_dest_sum_l + w_dest_sum_l
-           == std::reduce(w_dest.begin(), w_dest.end(), 0));
-    assert(w_dest_sum_l + w_dest_sum_l
-           == std::reduce(w_dest.begin(), w_dest.end(), 0));
+    std::int64_t w_dest_sum_l = std::reduce(w_dest_l.begin(), w_dest_l.end());
+    std::int64_t w_dest_sum_r = std::reduce(w_dest_r.begin(), w_dest_r.end());
+    std::int64_t w_src_sum_l = std::reduce(w_src_l.begin(), w_src_l.end());
+    std::int64_t w_src_sum_r = std::reduce(w_src_r.begin(), w_src_r.end());
+    assert(w_dest_sum_l + w_dest_sum_r
+           == std::reduce(w_dest.begin(), w_dest.end()));
+    assert(w_src_sum_l + w_src_sum_r
+           == std::reduce(w_src.begin(), w_src.end()));
 
     // 3a. Total
     buffer.insert(buffer.end(),
@@ -1464,6 +1454,8 @@ common::IndexMapStats IndexMap::statistics() const
 
     // 3b. Local/remote
     buffer.insert(buffer.end(), {w_dest_sum_l, -w_dest_sum_l,
+                                 //
+                                 w_src_sum_l, -w_src_sum_r,
                                  //
                                  w_dest_sum_r, -w_dest_sum_r,
                                  //
@@ -1484,10 +1476,6 @@ common::IndexMapStats IndexMap::statistics() const
         = w_dest_r.empty() ? 0 : *std::ranges::max_element(w_dest_r);
     buffer.insert(buffer.end(),
                   {dest_min_l, -dest_max_l, dest_min_r, -dest_max_r});
-
-    // buffer_m.insert(buffer_m.end(),
-    //                 {std::uint64_t(dest_min_l), std::uint64_t(dest_max_l),
-    //                  std::uint64_t(dest_min_r), std::uint64_t(dest_max_r)});
   }
 
   std::vector<std::int64_t> recv(buffer.size());
@@ -1496,43 +1484,19 @@ common::IndexMapStats IndexMap::statistics() const
                        MPI_MIN, _comm.comm());
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
-  // B. Mean
-
-  // Send buffer
-  // std::vector<std::uint64_t> buffer_m;
-
-  // B1. Number of dest(out) and src(in) edges
-  // buffer_m.insert(buffer_m.end(), {_dest.size(), _src.size()});
-
-  // // B2. Number of local and remote dest(out) and src(in) edges
-  // buffer_m.insert(buffer_m.end(), {local_dest.size(), local_src.size()});
-  // buffer_m.insert(buffer_m.end(), {_dest.size() - local_dest.size(),
-  //                                  _src.size() - local_src.size()});
-
-  // B3. Node (*this) edge weight sum means (local/remote)
-  {
-    // std::int64_t w_dest_sum_l
-    //     = std::accumulate(w_dest_l.begin(), w_dest_l.end(), 0);
-    // std::int64_t w_dest_sum_r
-    //     = std::accumulate(w_dest_r.begin(), w_dest_r.end(), 0);
-
-    // std::int64_t w_src_sum_l
-    //     = std::accumulate(w_src_l.begin(), w_src_l.end(), 0);
-    // std::int64_t w_src_sum_r
-    //     = std::accumulate(w_src_r.begin(), w_src_r.end(), 0);
-  }
-
   std::vector<std::int64_t> recv_m(buffer_m.size());
   ierr = MPI_Allreduce(buffer_m.data(), recv_m.data(), buffer_m.size(),
                        dolfinx::MPI::mpi_t<std::uint64_t>, MPI_SUM,
                        _comm.comm());
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
-  std::uint64_t mpi_size = dolfinx::MPI::size(_comm.comm());
+  std::uint64_t num_nodes = dolfinx::MPI::size(_comm.comm());
+  std::uint64_t num_edges = recv_m[0];
+
   auto v = recv.begin();
   auto vm = recv_m.begin();
   IndexMapStats stats{
-      .num_nodes = (int)mpi_size,
+      .num_nodes = (int)num_nodes,
       // A1.
       .out_edges = {*(v++), -*(v++)},
       .in_edges = {*(v++), -*(v++)},
@@ -1547,21 +1511,22 @@ common::IndexMapStats IndexMap::statistics() const
       .in_node_weight = {*(v++), -*(v++)},
       // A3b.
       .out_node_weight_local = {*(v++), -*(v++)},
+      .in_node_weight_local = {*(v++), -*(v++)},
       .out_node_weight_remote = {*(v++), -*(v++)},
       .in_node_weight_remote = {*(v++), -*(v++)},
       // A4.
       .out_edge_weight_local = {*(v++), -*(v++)},
       .out_edge_weight_remote = {*(v++), -*(v++)},
       // B1.
-      .edges_mean = std::size_t(*(vm++) / mpi_size),
+      .edges_mean = std::size_t(*(vm++) / num_nodes),
       // B2.
-      .edges_local_mean = std::size_t(*(vm++) / mpi_size),
-      .edges_remote_mean = std::size_t(*(vm++) / mpi_size),
+      .edges_local_mean = std::size_t(*(vm++) / num_nodes),
+      .edges_remote_mean = std::size_t(*(vm++) / num_nodes),
       // B3a.
-      .node_weight_mean = std::size_t(*(vm++) / mpi_size),
+      .node_weight_mean = std::size_t(*(vm++) / num_nodes),
       // B3b.
-      .edge_weight_local_mean = std::size_t(*(vm++) / mpi_size),
-      .edge_weight_remote_mean = std::size_t(*(vm++) / mpi_size),
+      .edge_weight_local_mean = std::size_t(*(vm++) / num_edges),
+      .edge_weight_remote_mean = std::size_t(*(vm++) / num_edges),
   };
   if (v != recv.end())
     throw std::runtime_error("Missing.");

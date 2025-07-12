@@ -84,55 +84,60 @@ std::pair<IndexMap, std::vector<std::int32_t>> create_sub_index_map(
     const IndexMap& imap, std::span<const std::int32_t> indices,
     IndexMapOrder order = IndexMapOrder::any, bool allow_owner_change = false);
 
-/// @brief Holder for statistics on an IndexMap.
+/// @brief Holder for statistics on an IndexMap parallel communication
+/// graph.
 ///
-/// IndexMap statistics provide an overview of the parallel
-/// communication pattern for MPI operations based on the IndexMap.
+/// An IndexMap describes a parallel data communication pattern.
+/// Statistics of the communication graph an overview of the
+/// communication pattern. Each MPI rank is a 'node' in the
+/// communication pattern.
+///
+/// Edges are identified as 'out' (owner->ghost) or 'in' (ghost->owner)
+/// edges.
 struct IndexMapStats
 {
-private:
+  /// @brief Holder for minimum and maximum value pairs.
   struct minmax
   {
-    std::int64_t min; ///< Minimum
-    std::int64_t max; ///< Maximum
+    std::int64_t min; ///< Minimum value
+    std::int64_t max; ///< Maximum value
   };
 
-public:
   // 0.
-  std::int64_t num_nodes; ///< Number of nodes (MPI ranks)
+  std::int64_t num_nodes; ///< Number of 'nodes' (MPI ranks).
 
-  // 1. Number of node (rank) edges
-  minmax out_edges; ///< Min/max number of out edges across nodes (ranks)
-  minmax in_edges;  ///< Min/max number of in edges across nodes (ranks)
+  // A1. Number of node (rank) edges
+  minmax out_edges; ///< Min/max number of out edges across nodes (ranks).
+  minmax in_edges;  ///< Min/max number of in edges across nodes (ranks).
 
-  // 2a. Node (rank) aggregate edges by dest/src type
+  // A2a. Node (rank) aggregate edges by dest/src type
   minmax out_edges_local; ///< Min/max number of out edges across nodes (ranks)
-                          ///< to shared memory ranks
-  minmax in_edges_local;  ///< Min/max number of out edges across nodes (ranks)
-                          ///< from shared memory ranks
-  // 2b.
+                          ///< to shared memory ranks.
+  minmax in_edges_local;  ///< Min/max number of in edges across nodes (ranks)
+                          ///< from shared memory ranks.
+  // A2b.
   minmax out_edges_remote; ///< Min/max number of out edges across nodes (ranks)
                            ///< to remote memory ranks
   minmax in_edges_remote;  ///< Min/max number of edges across nodes (ranks)
                            ///< from remote memory ranks
 
-  // 3a. Aggregate node weights
+  // A3a. Aggregate node weights
   minmax out_node_weight; ///< Min/max out weight across nodes (ranks).
   minmax in_node_weight;  ///< Min/max in weight across nodes (ranks).
 
-  // 3b. Aggregate node weights (by dest/src type)
-  minmax out_node_weight_local; ///< Min/max edge out weight to shared
-                                ///< memory rank.
-  // minmax in_node_weight_local; ///< Min/max edge out weight to shared
-  //                               ///< memory rank.
-  minmax out_node_weight_remote; ///< Min/max edge out weight to remote memory
+  // A3b. Aggregate node weights (by dest/src type)
+  minmax out_node_weight_local;  ///< Min/max node out weight to shared
+                                 ///< memory rank.
+  minmax in_node_weight_local;   ///< Min/max node out weight to shared
+                                 ///< memory rank.
+  minmax out_node_weight_remote; ///< Min/max node out weight to remote memory
                                  ///< rank.
-  minmax in_node_weight_remote;  ///< Min/max edge in weight from
+  minmax in_node_weight_remote;  ///< Min/max node in weight from
                                  ///< remote memory rank.
 
-  // 4. Edge weights
-  minmax out_edge_weight_local;  ///< Min/max out edge weight.
-  minmax out_edge_weight_remote; ///< Min/max out edge weight.
+  // A4. Edge weights
+  minmax out_edge_weight_local;  ///< Min/max local out edge weight.
+  minmax out_edge_weight_remote; ///< Min/max remote out edge weight.
 
   // B1. Mean number of node (rank) edges
   std::size_t edges_mean; ///< Mean number of node (rank) out(in) edges.
@@ -334,6 +339,7 @@ public:
   ///
   /// 1. Sent from this rank to other ranks when performing a reverse
   /// (owner <- ghost) scatter.
+  ///
   /// 2. Received by this rank from other ranks when performing a
   /// forward (owner -> ghost) scatter.
   ///
@@ -341,8 +347,19 @@ public:
   /// ghost indices owned by rank IndexMap::src()`[i]`.
   std::vector<std::int32_t> weights_src() const;
 
-  /// @brief
-  /// @return
+  /// @brief Compute the number of ghost indices owned by each rank in
+  /// IndexMap::dest.
+  ///
+  /// This is a measure of the amount of data:
+  ///
+  /// 1. Sent from this rank to other ranks when performing a forward
+  /// (owner -> ghost) scatter.
+  ///
+  /// 2. Received by this rank from other ranks when performing a
+  /// reverse forward (owner <- ghost) scatter.
+  ///
+  /// @return A weight vector, where `weight[i]` the the number of ghost
+  /// indices owned by rank IndexMap::dest()`[i]`.
   std::vector<std::int32_t> weights_dest() const;
 
   /// @brief Destination and source ranks by type, e.g, ranks that are
