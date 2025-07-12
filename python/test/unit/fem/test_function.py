@@ -254,6 +254,7 @@ def test_function_dtype_creation(dtype):
     else:
         assert np.allclose(f.x.array, 1.0)
 
+
 @pytest.mark.petsc4py
 @pytest.mark.parametrize(
     "dtype",
