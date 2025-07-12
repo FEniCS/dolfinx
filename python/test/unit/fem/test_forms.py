@@ -20,7 +20,11 @@ from dolfinx.mesh import create_unit_square
 from ufl import Measure, SpatialCoordinate, TestFunction, TrialFunction, dx, inner
 
 
-def test_extract_forms():
+@pytest.mark.parametrize(
+    "process_form, process_function_space",
+    [(form, lambda V: V._cpp_object), (lambda ufl_form: ufl_form, lambda V: V)],
+)
+def test_extract_forms(process_form, process_function_space):
     """Test extraction on unique function spaces for rows and columns of
     a block system"""
     mesh = create_unit_square(MPI.COMM_WORLD, 32, 31)
@@ -34,23 +38,29 @@ def test_extract_forms():
     v2, u2 = TestFunction(V2), TrialFunction(V2)
     v3, u3 = TestFunction(V3), TrialFunction(V3)
 
-    a = form([[inner(u0, v0) * dx, inner(u1, v1) * dx], [inner(u2, v2) * dx, inner(u3, v3) * dx]])
+    a = process_form(
+        [[inner(u0, v0) * dx, inner(u1, v1) * dx], [inner(u2, v2) * dx, inner(u3, v3) * dx]]
+    )
     with pytest.raises(AssertionError):
         extract_function_spaces(a, 0)
     with pytest.raises(AssertionError):
         extract_function_spaces(a, 1)
 
-    a = form([[inner(u0, v0) * dx, inner(u2, v1) * dx], [inner(u0, v2) * dx, inner(u2, v2) * dx]])
+    a = process_form(
+        [[inner(u0, v0) * dx, inner(u2, v1) * dx], [inner(u0, v2) * dx, inner(u2, v2) * dx]]
+    )
     with pytest.raises(AssertionError):
         extract_function_spaces(a, 0)
     Vc = extract_function_spaces(a, 1)
-    assert Vc[0] is V0._cpp_object
-    assert Vc[1] is V2._cpp_object
+    assert Vc[0] is process_function_space(V0)
+    assert Vc[1] is process_function_space(V2)
 
-    a = form([[inner(u0, v0) * dx, inner(u1, v0) * dx], [inner(u2, v1) * dx, inner(u3, v1) * dx]])
+    a = process_form(
+        [[inner(u0, v0) * dx, inner(u1, v0) * dx], [inner(u2, v1) * dx, inner(u3, v1) * dx]]
+    )
     Vr = extract_function_spaces(a, 0)
-    assert Vr[0] is V0._cpp_object
-    assert Vr[1] is V1._cpp_object
+    assert Vr[0] is process_function_space(V0)
+    assert Vr[1] is process_function_space(V1)
     with pytest.raises(AssertionError):
         extract_function_spaces(a, 1)
 
