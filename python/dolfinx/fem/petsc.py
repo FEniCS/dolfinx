@@ -23,7 +23,6 @@ from __future__ import annotations
 
 import contextlib
 import functools
-import itertools
 import typing
 from collections.abc import Iterable, Sequence
 
