@@ -1484,7 +1484,7 @@ common::IndexMapStats IndexMap::statistics() const
                        MPI_MIN, _comm.comm());
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
-  std::vector<std::int64_t> recv_m(buffer_m.size());
+  std::vector<std::uint64_t> recv_m(buffer_m.size());
   ierr = MPI_Allreduce(buffer_m.data(), recv_m.data(), buffer_m.size(),
                        dolfinx::MPI::mpi_t<std::uint64_t>, MPI_SUM,
                        _comm.comm());
