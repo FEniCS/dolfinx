@@ -43,10 +43,11 @@ lint = ["ruff>=0.2.0"]
 optional = ["numba", "pyamg"]
 petsc4py = ["petsc4py"]
 test = [
-      "pytest",
-      "scipy<1.16.0", # pyamg not compatible
       "matplotlib",
-      "fenics-dolfinx[optional]"
+      "networkz",
+      "pytest",
+      "scipy<1.16.0",             # pyamg not compatible
+      "fenics-dolfinx[optional]",
 ]
 ci = [
       "mypy",
@@ -110,7 +111,7 @@ select = [
 ignore = [
       "UP007",
       "RUF012",
-      "UP045", # Ractivate once Python 3.9 EoL
+      "UP045",  # Ractivate once Python 3.9 EoL
 ]
 allowed-confusables = ["σ"]
 

@@ -1768,3 +1768,77 @@ std::string IndexMap::stats(int detail_level) const
   return out_json.str();
 }
 //-----------------------------------------------------------------------------
+graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>
+IndexMap::graph(int root) const
+{
+  // Graph edge out(dest) weights
+  const std::vector<std::int32_t> w_dest = this->weights_dest();
+
+  // Group ranks by type
+  const auto [local_dest, local_src] = this->rank_type(MPI_COMM_TYPE_SHARED);
+
+  // Get number of edges for each node (rank)
+  int num_edges_local = _dest.size();
+  std::vector<int> num_edges_remote(dolfinx::MPI::size(_comm.comm()));
+  MPI_Gather(&num_edges_local, 1, MPI_INT, num_edges_remote.data(), 1, MPI_INT,
+             root, _comm.comm());
+
+  // Compute displacements
+  std::vector<int> disp(num_edges_remote.size() + 1, 0);
+  std::partial_sum(num_edges_remote.begin(), num_edges_remote.end(),
+                   std::next(disp.begin()));
+
+  // For each node (rank), get edge indices
+  std::vector<int> edges_remote(disp.back());
+  MPI_Gatherv(_dest.data(), _dest.size(), MPI_INT, edges_remote.data(),
+              num_edges_remote.data(), disp.data(), MPI_INT, root,
+              _comm.comm());
+
+  // For each edge, get edge weight
+  std::vector<std::int32_t> weights_remote(disp.back());
+  MPI_Gatherv(w_dest.data(), w_dest.size(), MPI_INT32_T, weights_remote.data(),
+              num_edges_remote.data(), disp.data(), MPI_INT32_T, root,
+              _comm.comm());
+
+  // For each edge, get its local/remote marker
+  std::vector<std::int8_t> markers;
+  for (auto r : _dest)
+  {
+    auto it = std::ranges::lower_bound(local_dest, r);
+    if (it != local_dest.end() and *it == r)
+      markers.push_back(1);
+    else
+      markers.push_back(0);
+  }
+  std::vector<std::int8_t> markers_remote(disp.back());
+  MPI_Gatherv(markers.data(), markers.size(), MPI_INT8_T, markers_remote.data(),
+              num_edges_remote.data(), disp.data(), MPI_INT8_T, root,
+              _comm.comm());
+
+  if (dolfinx::MPI::rank(_comm.comm()) == 0)
+  {
+    // std::cout << "num_edges_local: " << num_edges_local << std::endl;
+    // for (auto x : num_edges_remote)
+    //   std::cout << "ne: " << x << std::endl;
+    // for (auto x : disp)
+    //   std::cout << "d: " << x << std::endl;
+
+    std::vector<std::tuple<int, std::size_t, std::int8_t>> edges_data;
+    for (std::size_t i = 0; i < edges_remote.size(); ++i)
+    {
+      // std::cout << "w: " << weights_remote[i] << std::endl;
+      edges_data.emplace_back(edges_remote[i], weights_remote[i],
+                              markers_remote[i]);
+    }
+
+    std::vector<std::int32_t> offsets(disp.begin(), disp.end());
+    return graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>(
+        edges_data, offsets);
+  }
+  else
+  {
+    return graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>(
+        std::vector<std::vector<std::tuple<int, std::size_t, std::int8_t>>>());
+  }
+}
+//-----------------------------------------------------------------------------

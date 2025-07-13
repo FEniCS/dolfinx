@@ -30,6 +30,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace nb = nanobind;
@@ -196,7 +197,31 @@ void common(nb::module_& m)
                                  local);
             return dolfinx_wrappers::as_nbarray(std::move(local));
           },
-          nb::arg("global"));
+          nb::arg("global"))
+      .def(
+          "comm_graph",
+          [](const dolfinx::common::IndexMap& self, int root)
+          {
+            dolfinx::graph::AdjacencyList<
+                std::tuple<int, std::size_t, std::int8_t>>
+                g = self.graph(root);
+
+            std::vector<
+                std::tuple<int, int, std::map<std::string, std::size_t>>>
+                graph;
+            for (std::int32_t n = 0; n < g.num_nodes(); ++n)
+            {
+              for (auto [e, w, local] : g.links(n))
+              {
+                std::map<std::string, std::size_t> m{{"weight", w},
+                                                     {"local", local}};
+                graph.emplace_back(n, e, m);
+              }
+            }
+
+            return graph;
+          },
+          nb::arg("root") = 1);
 
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(

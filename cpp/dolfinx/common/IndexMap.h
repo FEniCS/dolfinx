@@ -7,8 +7,9 @@
 #pragma once
 
 #include "IndexMap.h"
+#include "MPI.h"
 #include <cstdint>
-#include <dolfinx/common/MPI.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <span>
 #include <utility>
@@ -386,6 +387,36 @@ public:
   /// @return JSON formatted string.
   std::string stats(int detail_level) const;
 
+  /// @brief Compute an directed graph that describes the parallel
+  /// communication patterns.
+  ///
+  /// The graph describes the communication pattern for a 'forward
+  /// scatter', i.e. sending owned data to ranks that ghost the data
+  /// (owner->ghost operation).
+  ///
+  /// Each node in the graph corresponds to an MPI rank. A graph edge is
+  /// a forward (owner->ghost) communication path. The edge weight is
+  /// the number 'values' communicated along the edge. Each edge also
+  /// has a marker that indicates if the edge is sending data to:
+  ///
+  /// 1. A node (rank) that shares memory with the sender (`true`), or
+  ///
+  /// 2. A remote node that does not share memory with the sender
+  ///   (`false`).
+  ///
+  /// The graph data can be visualised using a tool like
+  /// [NetworkX](https://networkx.org/),
+  ///
+  /// @note Collective.
+  ///
+  /// @param[in] MPI rank on which the build the communication graph
+  /// data.
+  /// @return Adjacency list representing the communication pattern,
+  /// where edges data is (0) the edge, (1) edge weight and (2)
+  /// local/remote memory indicator.
+  graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>
+  graph(int root = 0) const;
+
 private:
   // Range of indices (global) owned by this process
   std::array<std::int64_t, 2> _local_range;
@@ -408,4 +439,5 @@ private:
   // Set of ranks ghost owned indices
   std::vector<int> _dest;
 };
+
 } // namespace dolfinx::common
