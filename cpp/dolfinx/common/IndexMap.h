@@ -100,58 +100,49 @@ std::pair<IndexMap, std::vector<std::int32_t>> create_sub_index_map(
 /// proportional to the MPI message size.
 struct IndexMapStats
 {
-  /// @brief Holder for minimum, maximum and mean value tuples.
-  struct minmaxmean
-  {
-    std::int64_t min;  ///< Minimum value
-    std::int64_t max;  ///< Maximum value
-    std::int64_t mean; ///< Mean value
-  };
-
   /// @brief Holder for minimum and maximum value pairs.
   struct minmax
   {
-    std::int64_t min; ///< Minimum value
-    std::int64_t max; ///< Maximum value
+    std::uint64_t min; ///< Minimum value
+    std::uint64_t max; ///< Maximum value
   };
 
-  std::int64_t global_size; ///< Global range.
-  minmaxmean local_size;    ///< Min/max local range.
+  std::uint64_t num_nodes;   ///< Number of 'nodes' (MPI ranks).
+  std::uint64_t global_size; ///< Global range.
+  minmax local_size_range;   ///< Min/max local range.
 
-  std::int64_t num_nodes; ///< Number of 'nodes' (MPI ranks).
+  std::uint64_t num_edges; ///< Number of out edges. This is equal to the number
+                           ///< of in edges.
+  std::uint64_t
+      num_edges_local;      ///< Number of local (shared memory) out edges. This
+                            ///< is equal to the number of local in edges.
+  std::uint64_t weight_sum; ///< Sum of weights over all out edges.
 
-  // A1. Number of node (rank) edges
-  minmaxmean out_edges; ///< Min/max number of out edges across nodes.
-  minmaxmean in_edges;  ///< Min/max number of in edges across nodes.
+  // Number of node (rank) edges
+  minmax out_edges; ///< Min/max number of out edges across nodes.
+  minmax in_edges;  ///< Min/max number of in edges across nodes.
 
-  // A2. Node (rank) aggregate edges by dest/src type
-  minmaxmean out_edges_local;  ///< Min/max number of out edges across nodes
-                               ///< to shared memory ranks.
-  minmaxmean in_edges_local;   ///< Min/max number of in edges across nodes
-                               ///< from shared memory ranks.
-  minmaxmean out_edges_remote; ///< Min/max number of out edges across nodes
-                               ///< to remote memory ranks
-  minmaxmean in_edges_remote;  ///< Min/max number of edges across nodes
-                               ///< from remote memory ranks.
+  minmax out_edges_local;  ///< Min/max number of out edges across nodes
+                           ///< to shared memory ranks.
+  minmax in_edges_local;   ///< Min/max number of in edges across nodes
+                           ///< from shared memory ranks.
+  minmax out_edges_remote; ///< Min/max number of out edges across nodes
+                           ///< to remote memory ranks
+  minmax in_edges_remote;  ///< Min/max number of edges across nodes
+                           ///< from remote memory ranks.
 
-  // A3a. Aggregate node weights
-  minmaxmean out_node_weight; ///< Min/max out weight across nodes.
-  minmaxmean in_node_weight;  ///< Min/max in weight across nodes.
+  // Node weights
+  minmax out_weight_node; ///< Min/max out node weight across nodes.
+  minmax in_weight_node;  ///< Min/max in node weight across nodes.
 
-  // A3b. Aggregate node weights (by dest/src type)
-  minmaxmean
-      out_node_weight_local; ///< Min/max node out weight to shared memory rank.
-  minmaxmean
-      in_node_weight_local; ///< Min/max node out weight to shared memory rank.
-  minmaxmean out_node_weight_remote; ///< Min/max node out weight to remote
-                                     ///< memory rank.
-  minmaxmean in_node_weight_remote;  ///< Min/max node in weight from remote
-                                     ///< memory rank.
+  // Edge weights
+  minmax out_weight_edge_local;  ///< Min/max out node weight across nodes.
+  minmax in_weight_edge_local;   ///< Min/max in node weight across nodes.
+  minmax out_weight_edge_remote; ///< Min/max out node weight across nodes.
+  minmax in_weight_edge_remote;  ///< Min/max in node weight across nodes.
 
-  // A4. Edge weights
-  minmaxmean out_edge_weight_local;  ///< Min/max local out edge weight.
-  minmaxmean out_edge_weight_remote; ///< Min/max remote out edge weight.
-
+  /// @brief TODO
+  /// @return TODO
   std::string summary() const;
 };
 
