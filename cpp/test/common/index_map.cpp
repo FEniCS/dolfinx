@@ -214,7 +214,7 @@ void test_stats()
   // std::cout << "Num nodes: " << stats.num_nodes << std::endl;
   // std::cout << "Num out edges (min/max): " << stats.out_edges.min << ", "
   //           << stats.out_edges.max << std::endl;
-  // std::cout << idx_map.stats(0) << std::endl;
+  std::cout << idx_map.stats(1) << std::endl;
 }
 
 } // namespace

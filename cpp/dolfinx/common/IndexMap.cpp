@@ -865,22 +865,39 @@ std::string IndexMapStats::summary() const
   //   return out.str();
   // };
 
-  // auto format_m = [](std::string name, auto data)
-  // {
-  //   std::stringstream out;
-  //   out << std::format(
-  //       "  \"{}\": {{\n    \"min\": {},\n    \"max\": {},\n  }},\n", name,
-  //       data.min, data.max);
-  //   return out.str();
-  // };
+  auto format_m = [](std::string name, auto data)
+  {
+    std::stringstream out;
+    out << std::format(
+        "  \"{}\": {{\n    \"min\": {},\n    \"max\": {},\n  }},\n", name,
+        data.min, data.max);
+    return out.str();
+  };
 
   std::stringstream out;
 
-  // out << "{\n";
-  // out << std::format("  \"global_size\": {},\n", this->global_size);
-  // out << std::format("  \"num_nodes\": {},\n", this->num_nodes);
-  // out << format_e("local_size", this->local_size);
-  // //
+  out << "{\n";
+  out << std::format("  \"global_size\": {},\n", this->global_size);
+  out << std::format("  \"num_nodes\": {},\n", this->num_nodes);
+  out << format_m("local_size", this->local_size);
+  out << std::format("  \"num_edges\": {},\n", this->num_edges);
+  out << std::format("  \"num_edges_local\": {},\n", this->num_edges_local);
+  out << std::format("  \"weight_sum\": {},\n", this->weight_sum);
+  out << format_m("out_edges", this->out_edges);
+  out << format_m("in_edges", this->in_edges);
+  out << format_m("out_edges_local", this->out_edges_local);
+  out << format_m("in_edges_local", this->in_edges_local);
+  out << format_m("out_edges_remote", this->out_edges_remote);
+  out << format_m("out_edges_remote", this->out_edges_remote);
+  //
+  out << format_m("out_weight_node", this->out_weight_node);
+  out << format_m("in_edges_local", this->in_edges_local);
+  //
+  out << format_m("out_weight_edge_local", this->out_weight_edge_local);
+  out << format_m("in_weight_edge_local", this->in_weight_edge_local);
+  out << format_m("out_weight_edge_remote", this->out_weight_edge_remote);
+  out << format_m("in_weight_edge_remote", this->in_weight_edge_remote);
+
   // out << format_e("out_edges", this->out_edges);
   // out << format_e("in_edges", this->in_edges);
   // //
@@ -1422,10 +1439,9 @@ std::array<std::vector<int>, 2> IndexMap::rank_type(int split_type) const
   dolfinx::MPI::check_error(comm_s, ierr);
 
   std::vector<int> split_dest, split_src;
-  std::ranges::set_intersection(_src, ranks_s, std::back_inserter(split_dest));
-  std::ranges::set_intersection(_dest, ranks_s, std::back_inserter(split_src));
-
+  std::ranges::set_intersection(_dest, ranks_s, std::back_inserter(split_dest));
   assert(std::ranges::is_sorted(split_dest));
+  std::ranges::set_intersection(_src, ranks_s, std::back_inserter(split_src));
   assert(std::ranges::is_sorted(split_src));
 
   ierr = MPI_Comm_free(&comm_s);
@@ -1460,6 +1476,24 @@ common::IndexMapStats IndexMap::statistics() const
   };
   const auto [w_dest_l, w_dest_r] = weights(_dest, local_dest, w_dest);
   const auto [w_src_l, w_src_r] = weights(_src, local_src, w_src);
+
+  // std::cout << "Dest: " << _dest.size() << ", " << local_dest.size()
+  //           << std::endl;
+  // std::cout << "Src:  " << _src.size() << ", " << local_src.size() <<
+  // std::endl;
+
+  // std::cout << std::format("Equal d: {}\n", _dest == local_dest);
+  // std::cout << std::format("Equal s: {}\n", _src == local_src);
+
+  // if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 0)
+  // {
+  //   for (auto x : _dest)
+  //     std::cout << "x: " << x << std::endl;
+  //   for (auto x : local_dest)
+  //     std::cout << "y: " << x << std::endl;
+  // }
+  // std::cout << "Rsize0:" << ", " << w_dest_r.size() << std::endl;
+  // std::cout << "Rsize1:" << ", " << w_src_r.size() << std::endl;
 
   // Send buffers(min / max, mean)
 
@@ -1517,28 +1551,29 @@ common::IndexMapStats IndexMap::statistics() const
   auto v1 = recv1.begin();
   auto vm = recv_m.begin();
   std::uint64_t num_nodes = dolfinx::MPI::size(_comm.comm());
+  // std::cout << "Test: " << recv0[0] << "," << recv1[0] << std::endl;
   IndexMapStats stats{
       .num_nodes = num_nodes,
       .global_size = (std::uint64_t)this->size_global(),
-      .local_size_range = {*(v0++), -*(v1++)},       // 2a
-      .num_edges = *(vm++),                          // 1a
-      .num_edges_local = *(vm++),                    // 1a
-      .weight_sum = *(vm++),                         // 1b
-      .out_edges = {*(v0++), -*(v1++)},              // 2b
-      .in_edges = {*(v0++), -*(v1++)},               // 2b
-                                                     //
-      .out_edges_local = {*(v0++), -*(v1++)},        // 2c
-      .in_edges_local = {*(v0++), -*(v1++)},         // 2c
-      .out_edges_remote = {*(v0++), -*(v1++)},       // 2c
-      .in_edges_remote = {*(v0++), -*(v1++)},        // 2c
-                                                     //
-      .out_weight_node = {*(v0++), -*(v1++)},        // 2d
-      .in_weight_node = {*(v0++), -*(v1++)},         // 2d
-                                                     //
-      .out_weight_edge_local = {*(v0++), -*(v1++)},  // 2d
-      .in_weight_edge_local = {*(v0++), -*(v1++)},   // 2d
-      .out_weight_edge_remote = {*(v0++), -*(v1++)}, // 2d
-      .in_weight_edge_remote = {*(v0++), -*(v1++)}   // 2d
+      .local_size = {*(v0++), *(v1++)},             // 2a
+      .num_edges = *(vm++),                         // 1a
+      .num_edges_local = *(vm++),                   // 1a
+      .weight_sum = *(vm++),                        // 1b
+      .out_edges = {*(v0++), *(v1++)},              // 2b
+      .in_edges = {*(v0++), *(v1++)},               // 2b
+                                                    //
+      .out_edges_local = {*(v0++), *(v1++)},        // 2c
+      .in_edges_local = {*(v0++), *(v1++)},         // 2c
+      .out_edges_remote = {*(v0++), *(v1++)},       // 2c
+      .in_edges_remote = {*(v0++), *(v1++)},        // 2c
+                                                    //
+      .out_weight_node = {*(v0++), *(v1++)},        // 2d
+      .in_weight_node = {*(v0++), *(v1++)},         // 2d
+                                                    //
+      .out_weight_edge_local = {*(v0++), *(v1++)},  // 2d
+      .in_weight_edge_local = {*(v0++), *(v1++)},   // 2d
+      .out_weight_edge_remote = {*(v0++), *(v1++)}, // 2d
+      .in_weight_edge_remote = {*(v0++), *(v1++)}   // 2d
   };
 
   if (v0 != recv0.end())

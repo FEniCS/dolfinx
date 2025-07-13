@@ -109,7 +109,7 @@ struct IndexMapStats
 
   std::uint64_t num_nodes;   ///< Number of 'nodes' (MPI ranks).
   std::uint64_t global_size; ///< Global range.
-  minmax local_size_range;   ///< Min/max local range.
+  minmax local_size;         ///< Min/max local range.
 
   std::uint64_t num_edges; ///< Number of out edges. This is equal to the number
                            ///< of in edges.
