@@ -1221,6 +1221,7 @@ class TestPETScAssemblers:
         # Apply lifting with input coefficient
         coeffs = pack_coefficients(J)
         b = create_vector(L, kind=kind)
+        assert b.equal(create_vector([V, Q]))
         apply_lifting(b, J, bcs=bcs1, coeffs=coeffs)
         b.assemble()
 
