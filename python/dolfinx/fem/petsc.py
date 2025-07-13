@@ -112,6 +112,7 @@ def _extract_function_spaces(
 
 def create_vector(
     container: typing.Union[Form, _FunctionSpace, Iterable[Form], Iterable[_FunctionSpace]],
+    /,
     kind: typing.Optional[str] = None,
 ) -> PETSc.Vec:
     """Create a PETSc vector that is compatible with a linear form(s)
