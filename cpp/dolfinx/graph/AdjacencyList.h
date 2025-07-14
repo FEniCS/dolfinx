@@ -32,7 +32,7 @@ namespace dolfinx::graph
 ///
 /// @tparam T Graph edge type.
 /// @tparam NodeData_t Data type for graph node data.
-template <typename T, typename NodeData_t = int>
+template <typename T, typename NodeData_t = std::nullptr_t>
 class AdjacencyList
 {
 public:
@@ -214,7 +214,7 @@ private:
 
 /// @private Deduction
 template <typename T, typename U>
-AdjacencyList(T, U) -> AdjacencyList<typename T::value_type, int>;
+AdjacencyList(T, U) -> AdjacencyList<typename T::value_type, std::nullptr_t>;
 
 /// @private Deduction
 template <typename T, typename U, typename W>
