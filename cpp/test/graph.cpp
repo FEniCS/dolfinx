@@ -21,9 +21,9 @@ void test_adjacency_list_create()
   std::vector<std::int32_t> offsets{0, 2, 3, 5};
   graph::AdjacencyList g0(edges, offsets);
 
-  CHECK(std::ranges::equal(g0.links(0), std::initializer_list{1, 2}));
-  CHECK(std::ranges::equal(g0.links(1), std::initializer_list{0}));
-  CHECK(std::ranges::equal(g0.links(2), std::initializer_list{0, 1}));
+  CHECK(std::ranges::equal(g0.links(0), std::vector<std::int32_t>{1, 2}));
+  CHECK(std::ranges::equal(g0.links(1), std::vector<std::int32_t>{0}));
+  CHECK(std::ranges::equal(g0.links(2), std::vector<std::int32_t>{0, 1}));
 
   std::vector<std::int64_t> node_data{-1, 5, -20};
   graph::AdjacencyList g1(edges, offsets, node_data);
