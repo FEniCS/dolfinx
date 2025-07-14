@@ -173,6 +173,7 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
 /// @param filename File for output
 /// @param mesh Mesh
 /// @param data Point data at the locally owned vertices
+/// @param time Timestamp
 /// @note Mesh must be written to file first using `VTKHDF::write_mesh`
 template <std::floating_point U>
 void write_point_data(std::string filename, const mesh::Mesh<U>& mesh,
@@ -224,7 +225,7 @@ void write_point_data(std::string filename, const mesh::Mesh<U>& mesh,
 
   // Add a single value to end of a 1D dataset
   auto increment_dataset
-      = [&]<typename T>(const std::string& dset_name, const T& data)
+      = [&h5file]<typename T>(const std::string& dset_name, T data)
   {
     std::int32_t s = 0;
     if (hdf5::has_dataset(h5file, dset_name))
@@ -238,31 +239,28 @@ void write_point_data(std::string filename, const mesh::Mesh<U>& mesh,
                         true);
   };
 
-  std::int32_t cell_offsets = 0;
-  increment_dataset("/VTKHDF/Steps/CellOffsets", cell_offsets);
+  increment_dataset("/VTKHDF/Steps/CellOffsets", 0);
 
-  std::int32_t conn_offsets = 0;
-  increment_dataset("/VTKHDF/Steps/ConnectivityIdOffsets", conn_offsets);
+  increment_dataset("/VTKHDF/Steps/ConnectivityIdOffsets", 0);
 
-  std::int32_t nparts = 1;
-  increment_dataset("/VTKHDF/Steps/NumberOfParts", nparts);
+  increment_dataset("/VTKHDF/Steps/NumberOfParts", 1);
 
-  std::int32_t part_offsets = 0;
-  increment_dataset("/VTKHDF/Steps/PartOffsets", part_offsets);
+  increment_dataset("/VTKHDF/Steps/PartOffsets", 0);
 
   // Needs to update to end of array
   hdf5::add_group(h5file, "/VTKHDF/Steps/PointDataOffsets");
   increment_dataset("/VTKHDF/Steps/PointDataOffsets/u", point_data_offset);
 
-  std::int32_t point_offsets = 0;
-  increment_dataset("/VTKHDF/Steps/PointOffsets", point_offsets);
+  increment_dataset("/VTKHDF/Steps/PointOffsets", 0);
 
   // Time values
-  // FIXME: check these are increasing
+  // FIXME: check these are increasing?
   increment_dataset("/VTKHDF/Steps/Values", time);
 
   hdf5::add_group(h5file, "/VTKHDF/PointData");
 
+  // Add point data into dataset, extending each time by size_global
+  // with each process writing its own part.
   std::array<std::int64_t, 2> range = im0->local_range();
   std::vector<std::int64_t> shape0 = {im0->size_global()};
   if (hdf5::has_dataset(h5file, "/VTKHDF/PointData/u"))
