@@ -282,14 +282,6 @@ public:
         auto emap = *it;
         assert(emap);
 
-        // TODO REMOVE
-        auto e_imap = _mesh->topology()->index_map(emap->dim());
-        std::vector<std::int32_t> ents(e_imap->size_local()
-                                       + e_imap->num_ghosts());
-        std::iota(ents.begin(), ents.end(), 0);
-        std::vector<std::int32_t> entity_map
-            = emap->map_entities(ents, *mesh0->topology());
-
         for (auto& [key, itg] : _integrals)
         {
           auto [type, id, kernel_idx] = key;
