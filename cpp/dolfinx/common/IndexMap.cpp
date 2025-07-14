@@ -9,11 +9,12 @@
 #include "sort.h"
 #include <algorithm>
 #include <cstdint>
+#include <format>
 #include <functional>
-#include <iostream>
 #include <numeric>
 #include <ranges>
 #include <span>
+#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -1502,7 +1503,6 @@ common::IndexMapStats IndexMap::statistics() const
   auto v1 = recv1.begin();
   auto vm = recv_m.begin();
   std::uint64_t num_nodes = dolfinx::MPI::size(_comm.comm());
-  // std::cout << "Test: " << recv0[0] << "," << recv1[0] << std::endl;
   IndexMapStats stats{
       .num_nodes = num_nodes,
       .global_size = (std::uint64_t)this->size_global(),

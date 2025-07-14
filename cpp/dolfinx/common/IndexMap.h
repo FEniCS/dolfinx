@@ -12,6 +12,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <span>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
