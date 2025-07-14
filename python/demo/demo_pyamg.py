@@ -66,7 +66,7 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str):
     mesh = create_box(
         comm=MPI.COMM_WORLD,
         points=[(0.0, 0.0, 0.0), (3.0, 2.0, 1.0)],
-        n=[30, 20, 10],
+        n=(30, 20, 10),
         cell_type=CellType.tetrahedron,
         dtype=real_type,
     )
@@ -169,7 +169,7 @@ def elasticity_problem(dtype):
     mesh = create_box(
         comm=MPI.COMM_WORLD,
         points=[(0.0, 0.0, 0.0), (3.0, 2.0, 1.0)],
-        n=[30, 20, 10],
+        n=(30, 20, 10),
         cell_type=CellType.tetrahedron,
         dtype=dtype,
     )

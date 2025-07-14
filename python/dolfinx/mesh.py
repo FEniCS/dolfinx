@@ -862,7 +862,7 @@ def create_unit_interval(
 def create_rectangle(
     comm: _MPI.Comm,
     points: npt.ArrayLike,
-    n: npt.ArrayLike,
+    n: tuple[int, int],
     cell_type=CellType.triangle,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode=GhostMode.shared_facet,
