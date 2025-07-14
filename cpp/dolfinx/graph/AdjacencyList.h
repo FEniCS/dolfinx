@@ -47,9 +47,11 @@ public:
 
   /// @brief Construct adjacency list from arrays of edge data and
   /// offsets.
-  /// @param[in] data Adjacency array.
-  /// @param[in] offsets The index to the adjacency list in the data
-  /// array for node `i`.
+  /// @param[in] data Adjacency lost data array.
+  /// @param[in] offsets Offsets into `data` for each node, where
+  /// `offsets[i]` is the first index in `data` for node `i`. The last
+  /// index in `offsets` is the equal to the length of `data`. array for
+  /// node `i`.
   template <typename U, typename V>
     requires std::is_convertible_v<std::remove_cvref_t<U>, std::vector<T>>
                  and std::is_convertible_v<std::remove_cvref_t<V>,
@@ -63,10 +65,12 @@ public:
 
   /// @brief Construct adjacency list from arrays of edge data,
   /// offsets, and node data.
-  /// @param[in] data Adjacency array.
-  /// @param[in] offsets The index to the adjacency list in the data
-  /// array for node `i`.
-  /// @param[in] node_data Node data array.
+  /// @param[in] data Adjacency lost data array.
+  /// @param[in] offsets Offsets into `data` for each node, where
+  /// `offsets[i]` is the first index in `data` for node `i`. The last
+  /// index in `offsets` is the equal to the length of `data`.
+  /// @param[in] node_data Node data array where `node_data[i]` is the
+  /// data attached to node `i`.
   template <typename U, typename V, typename W>
     requires std::is_convertible_v<std::remove_cvref_t<U>, std::vector<T>>
                  and std::is_convertible_v<std::remove_cvref_t<V>,
@@ -86,7 +90,7 @@ public:
   /// Set all connections for all entities (T is a '2D' container, e.g.
   /// a `std::vector<<std::vector<std::size_t>>`,
   /// `std::vector<<std::set<std::size_t>>`, etc).
-  /// @param [in] data Adjacency list data, where `std::next(data, i)`
+  /// @param[in] data Adjacency list data, where `std::next(data, i)`
   /// points to the container of edges for node `i`.
   template <typename X>
   explicit AdjacencyList(const std::vector<X>& data)
@@ -124,33 +128,33 @@ public:
     return this->_array == list._array and this->_offsets == list._offsets;
   }
 
-  /// Get the number of nodes
+  /// @brief Get the number of nodes.
   /// @return The number of nodes in the adjacency list
   std::int32_t num_nodes() const { return _offsets.size() - 1; }
 
-  /// Number of connections for given node
-  /// @param [in] node Node index
-  /// @return The number of outgoing links (edges) from the node
+  /// @brief Number of connections for given node.
+  /// @param[in] node Node index.
+  /// @return The number of outgoing links (edges) from the node.
   int num_links(std::size_t node) const
   {
     assert((node + 1) < _offsets.size());
     return _offsets[node + 1] - _offsets[node];
   }
 
-  /// Get the links (edges) for given node
-  /// @param [in] node Node index
+  /// @brief Get the links (edges) for given node.
+  /// @param[in] node Node index.
   /// @return Array of outgoing links for the node. The length will be
-  /// AdjacencyList::num_links(node).
+  /// `AdjacencyList::num_links(node)`.
   std::span<T> links(std::size_t node)
   {
     return std::span<T>(_array.data() + _offsets[node],
                         _offsets[node + 1] - _offsets[node]);
   }
 
-  /// Get the links (edges) for given node (const version)
-  /// @param [in] node Node index
+  /// @brief Get the links (edges) for given node (const version).
+  /// @param[in] node Node index.
   /// @return Array of outgoing links for the node. The length will be
-  /// AdjacencyList:num_links(node).
+  /// `AdjacencyList:num_links(node)`.
   std::span<const T> links(std::size_t node) const
   {
     return std::span<const T>(_array.data() + _offsets[node],
@@ -221,8 +225,8 @@ AdjacencyList(T, U, W)
 ///
 /// A constant degree graph has the same number of edges for every node.
 ///
-/// @param [in] data Adjacency array
-/// @param [in] degree The number of (outgoing) edges for each node
+/// @param[in] data Adjacency array
+/// @param[in] degree The number of (outgoing) edges for each node
 /// @return An adjacency list
 template <typename U>
   requires requires {
