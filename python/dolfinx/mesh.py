@@ -954,7 +954,7 @@ def create_unit_square(
 def create_box(
     comm: _MPI.Comm,
     points: list[npt.ArrayLike],
-    n: list,
+    n: tuple[int, int, int],
     cell_type=CellType.tetrahedron,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode=GhostMode.shared_facet,

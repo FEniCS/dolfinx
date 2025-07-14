@@ -898,25 +898,6 @@ std::string IndexMapStats::summary() const
   out << format_m("out_weight_edge_remote", this->out_weight_edge_remote);
   out << format_m("in_weight_edge_remote", this->in_weight_edge_remote);
 
-  // out << format_e("out_edges", this->out_edges);
-  // out << format_e("in_edges", this->in_edges);
-  // //
-  // out << format_e("out_edges_local", this->out_edges_local);
-  // out << format_e("in_edges_local", this->in_edges_local);
-  // out << format_e("out_edges_remote", this->out_edges_remote);
-  // out << format_e("in_edges_remote", this->in_edges_remote);
-  // //
-  // out << format_e("out_node_weight", this->out_node_weight);
-  // out << format_e("in_node_weight", this->in_node_weight);
-  // //
-  // out << format_e("out_node_weight_local", this->out_node_weight_local);
-  // out << format_e("in_node_weight_local", this->in_node_weight_local);
-  // out << format_e("out_node_weight_remote", this->out_node_weight_remote);
-  // out << format_e("in_node_weight_remote", this->in_node_weight_remote);
-  // //
-  // out << format_e("out_edge_weight_local", this->out_edge_weight_local);
-  // out << format_e("out_edge_weight_remote", this->out_edge_weight_remote);
-
   out << "}";
   return out.str();
 }
@@ -1477,26 +1458,6 @@ common::IndexMapStats IndexMap::statistics() const
   const auto [w_dest_l, w_dest_r] = weights(_dest, local_dest, w_dest);
   const auto [w_src_l, w_src_r] = weights(_src, local_src, w_src);
 
-  // std::cout << "Dest: " << _dest.size() << ", " << local_dest.size()
-  //           << std::endl;
-  // std::cout << "Src:  " << _src.size() << ", " << local_src.size() <<
-  // std::endl;
-
-  // std::cout << std::format("Equal d: {}\n", _dest == local_dest);
-  // std::cout << std::format("Equal s: {}\n", _src == local_src);
-
-  // if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 0)
-  // {
-  //   for (auto x : _dest)
-  //     std::cout << "x: " << x << std::endl;
-  //   for (auto x : local_dest)
-  //     std::cout << "y: " << x << std::endl;
-  // }
-  // std::cout << "Rsize0:" << ", " << w_dest_r.size() << std::endl;
-  // std::cout << "Rsize1:" << ", " << w_src_r.size() << std::endl;
-
-  // Send buffers(min / max, mean)
-
   std::uint64_t num_dest = _dest.size();
   std::uint64_t num_src = _src.size();
 
@@ -1586,190 +1547,9 @@ common::IndexMapStats IndexMap::statistics() const
   return stats;
 }
 //-----------------------------------------------------------------------------
-std::string IndexMap::stats(int detail_level) const
-{
-  // Gather the following data on the root process
-  // Local size: (all, mean, sd)
-  // Ghost size: (all, mean, sd)
-  // Number of incoming neighbors: (all, mean, sd)
-  // Number of outgoing neighbors: (all, mean, sd)
-
-  std::array<std::int32_t, 4> local_sizes
-      = {static_cast<std::int32_t>(_local_range[1] - _local_range[0]),
-         static_cast<std::int32_t>(_ghosts.size()),
-         static_cast<std::int32_t>(_src.size()),
-         static_cast<std::int32_t>(_dest.size())};
-
-  int size, rank;
-  MPI_Comm_size(_comm.comm(), &size);
-  MPI_Comm_rank(_comm.comm(), &rank);
-
-  std::vector<std::int32_t> recv_sizes;
-  if (rank == 0)
-    recv_sizes.resize(size * 4);
-  MPI_Gather(local_sizes.data(), 4, MPI_INT32_T, recv_sizes.data(), 4,
-             MPI_INT32_T, 0, _comm.comm());
-
-  // Get amount of data received (from owners into ghost region) on each
-  // process
-  std::map<std::int32_t, std::int32_t> src_to_index;
-  for (std::size_t i = 0; i < _src.size(); ++i)
-    src_to_index.insert({_src[i], i});
-  std::vector<std::int32_t> recv_amounts(_src.size(), 0);
-  for (auto owner : _owners)
-    recv_amounts[src_to_index[owner]]++;
-
-  // Gather data on root process
-  std::vector<std::int32_t> recvbuf;
-  std::vector<std::int32_t> counts, offsets;
-  if (rank == 0)
-  {
-    offsets.resize(size + 1);
-    counts.resize(size);
-    offsets[0] = 0;
-    for (int i = 0; i < size; ++i)
-    {
-      counts[i] = recv_sizes[i * 4 + 2];
-      offsets[i + 1] = offsets[i] + counts[i];
-    }
-    recvbuf.resize(offsets.back());
-  }
-  MPI_Gatherv(recv_amounts.data(), recv_amounts.size(), MPI_INT32_T,
-              recvbuf.data(), counts.data(), offsets.data(), MPI_INT32_T, 0,
-              _comm.comm());
-
-  // Compile data for output
-  std::stringstream out_json;
-  if (rank == 0)
-  {
-    // Compute mean of the values
-    std::array<double, 5> summary_mean;
-    std::fill(summary_mean.begin(), summary_mean.end(), 0.0);
-    std::array<std::int32_t, 5> summary_max;
-    std::fill(summary_max.begin(), summary_max.end(), 0);
-    std::array<std::int32_t, 5> summary_min;
-    std::fill(summary_min.begin(), summary_min.end(),
-              std::numeric_limits<std::int32_t>::max());
-    for (std::size_t i = 0; i < recv_sizes.size(); i += 4)
-    {
-      for (std::size_t j = 0; j < 4; ++j)
-      {
-        summary_max[j] = std::max(summary_max[j], recv_sizes[i + j]);
-        summary_min[j] = std::min(summary_min[j], recv_sizes[i + j]);
-        summary_mean[j] += recv_sizes[i + j];
-      }
-    }
-    for (std::size_t j = 0; j < 4; ++j)
-      summary_mean[j] /= size;
-
-    // Compute deviation of values
-    std::array<double, 5> summary_sd = {0};
-    for (std::size_t i = 0; i < recv_sizes.size(); i += 4)
-    {
-      for (std::size_t j = 0; j < 4; ++j)
-      {
-        double diff = (recv_sizes[i + j] - summary_mean[j]);
-        summary_sd[j] += diff * diff;
-      }
-    }
-    for (std::size_t j = 0; j < 4; ++j)
-      summary_sd[j] = std::sqrt(summary_sd[j] / size);
-
-    // Message sizes on each process and on all processes
-    double rbmean = 0.0;
-    std::vector<std::int32_t> msg_min(size,
-                                      std::numeric_limits<std::int32_t>::max());
-    std::vector<std::int32_t> msg_max(size, 0);
-    std::vector<double> msg_mean(size, 0);
-    std::vector<double> msg_sd(size, 0);
-    for (int p = 0; p < size; ++p)
-    {
-      for (int j = offsets[p]; j < offsets[p + 1]; ++j)
-      {
-        msg_mean[p] += recvbuf[j];
-        msg_min[p] = std::min(msg_min[p], recvbuf[j]);
-        msg_max[p] = std::max(msg_max[p], recvbuf[j]);
-      }
-      rbmean += msg_mean[p];
-      msg_mean[p] /= static_cast<double>(offsets[p + 1] - offsets[p]);
-      for (int j = offsets[p]; j < offsets[p + 1]; ++j)
-      {
-        double diff = msg_mean[p] - recvbuf[j];
-        msg_sd[p] += diff * diff;
-      }
-      msg_sd[p] = std::sqrt(msg_sd[p]
-                            / static_cast<double>(offsets[p + 1] - offsets[p]));
-    }
-    rbmean /= static_cast<double>(recvbuf.size());
-    double rbsd = 0.0;
-    for (std::size_t i = 0; i < recvbuf.size(); ++i)
-    {
-      double diff = recvbuf[i] - rbmean;
-      rbsd += diff * diff;
-    }
-    summary_mean[4] = rbmean;
-    summary_sd[4] = std::sqrt(rbsd / static_cast<double>(recvbuf.size()));
-    summary_max[4] = *std::max_element(msg_max.begin(), msg_max.end());
-    summary_min[4] = *std::min_element(msg_min.begin(), msg_min.end());
-
-    std::array<std::string, 5> json_names = {
-        "local_size", "ghost_size", "num_sources", "num_dests", "message_size"};
-    out_json << "{\n";
-    out_json << std::format("  \"global_size\": {},\n", _size_global);
-    out_json << std::format("  \"mpi_size\": {},\n", size);
-    if (detail_level > 0)
-    {
-      out_json << "  \"message_detail\": {\n";
-      out_json << "    \"min\": [";
-      for (int i = 0; i < size; ++i)
-        out_json << std::format("{}{}", msg_min[i],
-                                (i == size - 1) ? "" : ", ");
-      out_json << "],\n";
-      out_json << "    \"max\": [";
-      for (int i = 0; i < size; ++i)
-        out_json << std::format("{}{}", msg_max[i],
-                                (i == size - 1) ? "" : ", ");
-      out_json << "],\n";
-      out_json << "    \"mean\": [";
-      for (int i = 0; i < size; ++i)
-        out_json << std::format("{:.2f}{}", msg_mean[i],
-                                (i == size - 1) ? "" : ", ");
-      out_json << "],\n";
-      out_json << "    \"sd\": [";
-      for (int i = 0; i < size; ++i)
-        out_json << std::format("{:.2f}{}", msg_sd[i],
-                                (i == size - 1) ? "" : ", ");
-      out_json << "]\n  },\n";
-
-      for (std::size_t j = 0; j < 4; ++j)
-      {
-        out_json << std::format("  \"{}_detail\": [", json_names[j]);
-
-        for (int i = 0; i < size; ++i)
-          out_json << std::format("{}{}", recv_sizes[i * 4 + j],
-                                  (i == size - 1) ? "" : ", ");
-        out_json << std::format("]{}\n", (j == 3) ? "" : ",");
-      }
-    }
-    else
-    {
-      for (std::size_t j = 0; j < json_names.size(); ++j)
-      {
-        out_json << std::format(
-            "  \"{}\": {{\n    \"min\": {},\n    \"max\": {},\n  "
-            "  \"mean\": {:.2f},\n    \"sd\": {:.2f}\n  }}{}\n",
-            json_names[j], summary_min[j], summary_max[j], summary_mean[j],
-            summary_sd[j], (j == json_names.size() - 1) ? "" : ",");
-      }
-    }
-    out_json << "}\n";
-  }
-
-  return out_json.str();
-}
-//-----------------------------------------------------------------------------
-graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>
-IndexMap::graph(int root) const
+std::pair<graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>,
+          std::vector<std::int32_t>>
+IndexMap::comm_graph(int root) const
 {
   // Graph edge out(dest) weights
   const std::vector<std::int32_t> w_dest = this->weights_dest();
@@ -1800,6 +1580,12 @@ IndexMap::graph(int root) const
               num_edges_remote.data(), disp.data(), MPI_INT32_T, root,
               _comm.comm());
 
+  // For node get local size
+  std::int32_t size = this->size_local();
+  std::vector<std::int32_t> sizes_remote(disp.back());
+  MPI_Gather(&size, 1, MPI_INT32_T, sizes_remote.data(), 1, MPI_INT32_T, root,
+             _comm.comm());
+
   // For each edge, get its local/remote marker
   std::vector<std::int8_t> markers;
   for (auto r : _dest)
@@ -1817,28 +1603,61 @@ IndexMap::graph(int root) const
 
   if (dolfinx::MPI::rank(_comm.comm()) == 0)
   {
-    // std::cout << "num_edges_local: " << num_edges_local << std::endl;
-    // for (auto x : num_edges_remote)
-    //   std::cout << "ne: " << x << std::endl;
-    // for (auto x : disp)
-    //   std::cout << "d: " << x << std::endl;
-
     std::vector<std::tuple<int, std::size_t, std::int8_t>> edges_data;
     for (std::size_t i = 0; i < edges_remote.size(); ++i)
     {
-      // std::cout << "w: " << weights_remote[i] << std::endl;
       edges_data.emplace_back(edges_remote[i], weights_remote[i],
                               markers_remote[i]);
     }
 
     std::vector<std::int32_t> offsets(disp.begin(), disp.end());
-    return graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>(
-        edges_data, offsets);
+    return {graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>(
+                std::move(edges_data), std::move(offsets)),
+            sizes_remote};
   }
   else
   {
-    return graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>(
-        std::vector<std::vector<std::tuple<int, std::size_t, std::int8_t>>>());
+    return {graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>(
+                std::vector<
+                    std::vector<std::tuple<int, std::size_t, std::int8_t>>>()),
+            std::vector<std::int32_t>()};
   }
+}
+//-----------------------------------------------------------------------------
+std::string IndexMap::comm_graph_tojson(
+    const graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>& g,
+    std::vector<std::int32_t>& node_weights)
+{
+  std::stringstream out;
+  out << std::format("{{\"directed\": true, \"multigraph\": true, \"graph\": "
+                     "[], \"nodes\": [");
+  for (std::int32_t n = 0; n < g.num_nodes(); ++n)
+  {
+    out << std::format("{{\"weight\": {}, \"id\": {}}}", node_weights[n], n);
+    if (n != g.num_nodes() - 1)
+      out << ", ";
+  }
+  out << "], ";
+  out << "\"adjacency\": [";
+  for (std::int32_t n = 0; n < g.num_nodes(); ++n)
+  {
+    out << "[";
+    auto links = g.links(n);
+    for (std::size_t edge = 0; edge < links.size(); ++edge)
+    {
+      auto [e, w, local] = links[edge];
+      out << std::format(
+          "{{\"local\": {}, \"weight\": {}, \"id\": {}, \"key\": 0}}", local, w,
+          e);
+      if (edge != links.size() - 1)
+        out << ", ";
+    }
+    out << "]";
+    if (n != g.num_nodes() - 1)
+      out << ", ";
+  }
+  out << "]}";
+
+  return out.str();
 }
 //-----------------------------------------------------------------------------

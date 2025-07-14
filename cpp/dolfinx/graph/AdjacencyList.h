@@ -154,7 +154,8 @@ public:
   }
 
 private:
-  // Connections for all entities stored as a contiguous array
+  // Connections (links/edges) for all entities stored as a contiguous
+  // array
   std::vector<T> _array;
 
   // Position of first connection for each entity (using local index)

@@ -157,8 +157,6 @@ void common(nb::module_& m)
                    "Range of indices owned by this map")
       .def("index_to_dest_ranks",
            &dolfinx::common::IndexMap::index_to_dest_ranks)
-      .def("stats", &dolfinx::common::IndexMap::stats,
-           "Statistics of the IndexMap.")
       .def_prop_ro(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)
@@ -199,13 +197,14 @@ void common(nb::module_& m)
           },
           nb::arg("global"))
       .def(
-          "comm_graph",
+          "comm_graph", [](const dolfinx::common::IndexMap& self, int root)
+          { return self.comm_graph(root); }, nb::arg("root") = 0,
+          "Graph representing parallel communication patterns.")
+      .def(
+          "comm_graph_data",
           [](const dolfinx::common::IndexMap& self, int root)
           {
-            dolfinx::graph::AdjacencyList<
-                std::tuple<int, std::size_t, std::int8_t>>
-                g = self.graph(root);
-
+            auto [g, node_weights] = self.comm_graph(root);
             std::vector<
                 std::tuple<int, int, std::map<std::string, std::size_t>>>
                 graph;
@@ -213,15 +212,24 @@ void common(nb::module_& m)
             {
               for (auto [e, w, local] : g.links(n))
               {
-                std::map<std::string, std::size_t> m{{"weight", w},
-                                                     {"local", local}};
+                std::map<std::string, std::size_t> m{{"local", local},
+                                                     {"weight", w}};
                 graph.emplace_back(n, e, m);
               }
             }
 
-            return graph;
+            return std::pair(graph, node_weights);
           },
-          nb::arg("root") = 1);
+          nb::arg("root") = 0,
+          "Graph representing parallel communication patterns.")
+      .def(
+          "comm_graph_tojson",
+          [](const dolfinx::common::IndexMap& self, int root)
+          {
+            auto [g, weights] = self.comm_graph(root);
+            return dolfinx::common::IndexMap::comm_graph_tojson(g, weights);
+          },
+          nb::arg("root") = 0);
 
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(

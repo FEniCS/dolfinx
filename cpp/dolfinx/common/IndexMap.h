@@ -12,6 +12,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <span>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -372,21 +373,6 @@ public:
   /// @brief TODO
   IndexMapStats statistics() const;
 
-  /// @brief Statistics of the IndexMap.
-  ///
-  /// Returns a JSON formatted string with min,max,mean and sd for
-  /// local_size, ghost_size, the number of incoming and outgoing
-  /// neighbors, and the message size between neighbors for ghost
-  /// update.
-  ///
-  /// @note This is a collective operation, but output is only on rank
-  /// 0. All other ranks return an empty string.
-  ///
-  /// @param detail_level Set to 1 to get a more detailed per-process
-  /// message size breakdown.
-  /// @return JSON formatted string.
-  std::string stats(int detail_level) const;
-
   /// @brief Compute an directed graph that describes the parallel
   /// communication patterns.
   ///
@@ -413,9 +399,26 @@ public:
   /// data.
   /// @return Adjacency list representing the communication pattern,
   /// where edges data is (0) the edge, (1) edge weight and (2)
-  /// local/remote memory indicator.
-  graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>
-  graph(int root = 0) const;
+  /// local/remote memory indicator, and node weights (number of owned
+  /// indices).
+  std::pair<graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>,
+            std::vector<std::int32_t>>
+  comm_graph(int root = 0) const;
+
+  /// @brief Build communication graph data as JSON string.
+  ///
+  /// The data string can be decoded (loaded) to create a Python object
+  /// from which a [NetworkX](https://networkx.org/) graph can be
+  /// constructed.
+  ///
+  /// See ::comm_graph for a description of the data.
+  ///
+  /// @param[in] g Communication graph.
+  /// @param[in] node_weights Node weights (local size of the IndexMap).
+  /// @return JSON string representing the communication graph.
+  static std::string comm_graph_tojson(
+      const graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>& g,
+      std::vector<std::int32_t>& node_weights);
 
 private:
   // Range of indices (global) owned by this process
