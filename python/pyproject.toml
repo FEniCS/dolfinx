@@ -44,7 +44,7 @@ optional = ["numba", "pyamg"]
 petsc4py = ["petsc4py"]
 test = [
       "matplotlib",
-      "networkz",
+      "networkx",
       "pytest",
       "scipy<1.16.0",             # pyamg not compatible
       "fenics-dolfinx[optional]",

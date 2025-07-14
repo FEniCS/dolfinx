@@ -856,15 +856,6 @@ common::create_sub_index_map(const IndexMap& imap,
 //-----------------------------------------------------------------------------
 std::string IndexMapStats::summary() const
 {
-  // auto format_e = [](std::string name, auto data)
-  // {
-  //   std::stringstream out;
-  //   out << std::format("  \"{}\": {{\n    \"min\": {},\n    \"max\": {},\n "
-  //                      "\"mean\": {},\n  }},\n",
-  //                      name, data.min, data.max, data.mean);
-  //   return out.str();
-  // };
-
   auto format_m = [](std::string name, auto data)
   {
     std::stringstream out;
@@ -1550,6 +1541,7 @@ common::IndexMapStats IndexMap::statistics() const
 graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>, std::int32_t>
 IndexMap::comm_graph(int root) const
 {
+  int ierr;
 
   // Graph edge out(dest) weights
   const std::vector<std::int32_t> w_dest = this->weights_dest();
@@ -1560,33 +1552,38 @@ IndexMap::comm_graph(int root) const
   // Get number of edges for each node (rank)
   int num_edges_local = _dest.size();
   std::vector<int> num_edges_remote(dolfinx::MPI::size(_comm.comm()));
-  MPI_Gather(&num_edges_local, 1, MPI_INT, num_edges_remote.data(), 1, MPI_INT,
-             root, _comm.comm());
+  ierr = MPI_Gather(&num_edges_local, 1, MPI_INT, num_edges_remote.data(), 1,
+                    MPI_INT, root, _comm.comm());
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   // Compute displacements
   std::vector<int> disp(num_edges_remote.size() + 1, 0);
   std::partial_sum(num_edges_remote.begin(), num_edges_remote.end(),
                    std::next(disp.begin()));
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   // For each node (rank), get edge indices
   std::vector<int> edges_remote(disp.back());
   edges_remote.reserve(1);
-  MPI_Gatherv(_dest.data(), _dest.size(), MPI_INT, edges_remote.data(),
-              num_edges_remote.data(), disp.data(), MPI_INT, root,
-              _comm.comm());
+  ierr = MPI_Gatherv(_dest.data(), _dest.size(), MPI_INT, edges_remote.data(),
+                     num_edges_remote.data(), disp.data(), MPI_INT, root,
+                     _comm.comm());
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   // For each edge, get edge weight
   std::vector<std::int32_t> weights_remote(disp.back());
   weights_remote.reserve(1);
-  MPI_Gatherv(w_dest.data(), w_dest.size(), MPI_INT32_T, weights_remote.data(),
-              num_edges_remote.data(), disp.data(), MPI_INT32_T, root,
-              _comm.comm());
+  ierr = MPI_Gatherv(w_dest.data(), w_dest.size(), MPI_INT32_T,
+                     weights_remote.data(), num_edges_remote.data(),
+                     disp.data(), MPI_INT32_T, root, _comm.comm());
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   // For node get local size
   std::int32_t size = this->size_local();
   std::vector<std::int32_t> sizes_remote(dolfinx::MPI::size(_comm.comm()));
-  MPI_Gather(&size, 1, MPI_INT32_T, sizes_remote.data(), 1, MPI_INT32_T, root,
-             _comm.comm());
+  ierr = MPI_Gather(&size, 1, MPI_INT32_T, sizes_remote.data(), 1, MPI_INT32_T,
+                    root, _comm.comm());
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   // For each edge, get its local/remote marker
   std::vector<std::int8_t> markers;
@@ -1599,9 +1596,10 @@ IndexMap::comm_graph(int root) const
       markers.push_back(0);
   }
   std::vector<std::int8_t> markers_remote(disp.back());
-  MPI_Gatherv(markers.data(), markers.size(), MPI_INT8_T, markers_remote.data(),
-              num_edges_remote.data(), disp.data(), MPI_INT8_T, root,
-              _comm.comm());
+  ierr = MPI_Gatherv(markers.data(), markers.size(), MPI_INT8_T,
+                     markers_remote.data(), num_edges_remote.data(),
+                     disp.data(), MPI_INT8_T, root, _comm.comm());
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   std::vector<std::tuple<int, std::size_t, std::int8_t>> e_data;
   for (std::size_t i = 0; i < edges_remote.size(); ++i)
