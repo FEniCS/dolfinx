@@ -7,17 +7,12 @@
 #pragma once
 
 #include <cstdint>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <mpi.h>
 #include <optional>
 #include <span>
 #include <tuple>
 #include <vector>
-
-namespace dolfinx::graph
-{
-template <typename T>
-class AdjacencyList;
-}
 
 namespace dolfinx::mesh
 {
