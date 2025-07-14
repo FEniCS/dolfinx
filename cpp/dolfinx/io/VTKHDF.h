@@ -176,7 +176,7 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
 /// @note Mesh must be written to file first using `VTKHDF::write_mesh`
 template <std::floating_point U>
 void write_point_data(std::string filename, const mesh::Mesh<U>& mesh,
-                      const std::vector<U>& data)
+                      const std::vector<U>& data, double time)
 {
   auto im0 = mesh.topology()->index_map(0);
   if (data.size() != im0->size_local())
@@ -222,34 +222,61 @@ void write_point_data(std::string filename, const mesh::Mesh<U>& mesh,
   }
   H5Gclose(vtk_group);
 
-  std::vector<std::int32_t> cell_offsets = {0};
-  hdf5::append_array(h5file, "/VTKHDF/Steps/CellOffsets", cell_offsets);
+  // Add a single value to end of a 1D dataset
+  auto increment_dataset
+      = [&]<typename T>(const std::string& dset_name, const T& data)
+  {
+    std::int32_t s = 0;
+    if (hdf5::has_dataset(h5file, dset_name))
+    {
+      std::vector<std::int64_t> shape
+          = hdf5::get_dataset_shape(h5file, dset_name);
+      assert(shape.size() == 1);
+      s = shape[0];
+    }
+    hdf5::write_dataset(h5file, dset_name, &data, {s, s + 1}, {s + 1}, true,
+                        true);
+  };
 
-  std::vector<std::int32_t> conn_offsets = {0};
-  hdf5::append_array(h5file, "/VTKHDF/Steps/ConnectivityIdOffsets",
-                     conn_offsets);
+  std::int32_t cell_offsets = 0;
+  increment_dataset("/VTKHDF/Steps/CellOffsets", cell_offsets);
 
-  std::vector<std::int32_t> nparts = {1};
-  hdf5::append_array(h5file, "/VTKHDF/Steps/NumberOfParts", nparts);
+  std::int32_t conn_offsets = 0;
+  increment_dataset("/VTKHDF/Steps/ConnectivityIdOffsets", conn_offsets);
 
-  std::vector<std::int32_t> part_offsets = {0};
-  hdf5::append_array(h5file, "/VTKHDF/Steps/PartOffsets", part_offsets);
+  std::int32_t nparts = 1;
+  increment_dataset("/VTKHDF/Steps/NumberOfParts", nparts);
+
+  std::int32_t part_offsets = 0;
+  increment_dataset("/VTKHDF/Steps/PartOffsets", part_offsets);
 
   // Needs to update to end of array
-  std::vector<std::int64_t> point_data_offsets = {point_data_offset};
   hdf5::add_group(h5file, "/VTKHDF/Steps/PointDataOffsets");
-  hdf5::append_array(h5file, "/VTKHDF/Steps/PointDataOffsets/u",
-                     point_data_offsets);
+  increment_dataset("/VTKHDF/Steps/PointDataOffsets/u", point_data_offset);
 
-  std::vector<std::int32_t> point_offsets = {0};
-  hdf5::append_array(h5file, "/VTKHDF/Steps/PointOffsets", point_offsets);
+  std::int32_t point_offsets = 0;
+  increment_dataset("/VTKHDF/Steps/PointOffsets", point_offsets);
 
   // Time values
-  std::vector<std::int32_t> values = {nsteps};
-  hdf5::append_array(h5file, "/VTKHDF/Steps/Values", values);
+  // FIXME: check these are increasing
+  increment_dataset("/VTKHDF/Steps/Values", time);
 
   hdf5::add_group(h5file, "/VTKHDF/PointData");
-  hdf5::append_array(h5file, "/VTKHDF/PointData/u", data);
+
+  std::array<std::int64_t, 2> range = im0->local_range();
+  std::vector<std::int64_t> shape0 = {im0->size_global()};
+  if (hdf5::has_dataset(h5file, "/VTKHDF/PointData/u"))
+  {
+    std::vector<std::int64_t> shape
+        = hdf5::get_dataset_shape(h5file, "/VTKHDF/PointData/u");
+    assert(shape.size() == 1);
+    std::int64_t offset = shape[0];
+    range[0] += offset;
+    range[1] += offset;
+    shape0[0] += offset;
+  }
+  hdf5::write_dataset(h5file, "/VTKHDF/PointData/u", data.data(), range, shape0,
+                      true, true);
 
   hdf5::close_file(h5file);
 }
