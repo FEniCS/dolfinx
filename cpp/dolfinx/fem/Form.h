@@ -267,6 +267,7 @@ public:
       else
       {
         // Find correct entity map
+        // TODO Check entity maps contains int domain
         auto it
             = std::ranges::find_if(entity_maps,
                                    [&](const auto& em)
@@ -282,13 +283,15 @@ public:
         auto emap = *it;
         assert(emap);
 
+        bool inverse = emap->sub_topology() == mesh0->topology();
+
         for (auto& [key, itg] : _integrals)
         {
           auto [type, id, kernel_idx] = key;
           std::vector<std::int32_t> e;
           if (type == IntegralType::cell)
           {
-            e = emap->map_entities(itg.entities, *mesh0->topology());
+            e = emap->sub_topology_to_topology(itg.entities, inverse);
           }
           else if (type == IntegralType::exterior_facet
                    or type == IntegralType::interior_facet)
@@ -311,7 +314,7 @@ public:
                 cells.push_back(itg.entities[i]);
 
               std::vector<std::int32_t> cells_mesh0
-                  = emap->map_entities(cells, *mesh0->topology());
+                  = emap->sub_topology_to_topology(cells, inverse);
 
               e = itg.entities;
               for (std::size_t i = 0; i < cells_mesh0.size(); ++i)
@@ -328,7 +331,7 @@ public:
               }
 
               std::vector<std::int32_t> cells_mesh0
-                  = emap->map_entities(facets, *mesh0->topology());
+                  = emap->sub_topology_to_topology(facets, inverse);
 
               e = itg.entities;
               for (std::size_t i = 0; i < cells_mesh0.size(); ++i)
