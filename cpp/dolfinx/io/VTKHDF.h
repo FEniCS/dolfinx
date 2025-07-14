@@ -285,27 +285,31 @@ void write_point_data(std::string filename, const mesh::Mesh<U>& mesh,
   {
     hdf5::write_dataset(h5file, "/VTKHDF/PointData/u", data.data(), range,
                         shape0, true, true);
-    hid_t dset_id = hdf5::open_dataset(h5file, "/VTKHDF/PointData/u");
-    hsize_t dims = 1;
-    hid_t space_id = H5Screate_simple(1, &dims, NULL);
-    hid_t attr_id = H5Acreate(dset_id, "NumberOfComponents", H5T_NATIVE_INT32,
-                              space_id, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(attr_id, H5T_NATIVE_INT32, &data_width);
-    H5Aclose(attr_id);
-    H5Sclose(space_id);
-    H5Dclose(dset_id);
 
-    hid_t vtk_group = H5Gopen(h5file, "VTKHDF/PointData", H5P_DEFAULT);
-    space_id = H5Screate(H5S_SCALAR);
-    hid_t atype = H5Tcopy(H5T_C_S1);
-    H5Tset_size(atype, 1);
-    H5Tset_strpad(atype, H5T_STR_NULLTERM);
-    attr_id = H5Acreate(vtk_group, "Vectors", atype, space_id, H5P_DEFAULT,
-                        H5P_DEFAULT);
-    H5Awrite(attr_id, atype, "u");
-    H5Aclose(attr_id);
-    H5Sclose(space_id);
-    H5Gclose(vtk_group);
+    if (data_width > 1)
+    {
+      hid_t dset_id = hdf5::open_dataset(h5file, "/VTKHDF/PointData/u");
+      hsize_t dims = 1;
+      hid_t space_id = H5Screate_simple(1, &dims, NULL);
+      hid_t attr_id = H5Acreate(dset_id, "NumberOfComponents", H5T_NATIVE_INT32,
+                                space_id, H5P_DEFAULT, H5P_DEFAULT);
+      H5Awrite(attr_id, H5T_NATIVE_INT32, &data_width);
+      H5Aclose(attr_id);
+      H5Sclose(space_id);
+      H5Dclose(dset_id);
+
+      hid_t vtk_group = H5Gopen(h5file, "VTKHDF/PointData", H5P_DEFAULT);
+      space_id = H5Screate(H5S_SCALAR);
+      hid_t atype = H5Tcopy(H5T_C_S1);
+      H5Tset_size(atype, 1);
+      H5Tset_strpad(atype, H5T_STR_NULLTERM);
+      attr_id = H5Acreate(vtk_group, "Vectors", atype, space_id, H5P_DEFAULT,
+                          H5P_DEFAULT);
+      H5Awrite(attr_id, atype, "u");
+      H5Aclose(attr_id);
+      H5Sclose(space_id);
+      H5Gclose(vtk_group);
+    }
   }
 
   hdf5::close_file(h5file);
