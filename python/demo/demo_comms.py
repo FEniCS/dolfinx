@@ -13,6 +13,7 @@
 
 import itertools as it
 import json
+
 from mpi4py import MPI
 
 import matplotlib.pyplot as plt
@@ -50,11 +51,7 @@ if msh.comm.rank == 0:
     print("\n")
     print("ME:\n", foo)
 
-    # foo0 = '{"directed": true, "multigraph": true, "graph": [], "nodes": [{"weight": 43190, "id": 0}, {"weight": 42361, "id": 1}, {"weight": 42564, "id": 2}], "adjacency": [[{"local": 1, "weight": 2737, "id": 1, "key": 0}], [{"local": 1, "weight": 2692, "id": 0, "key": 0}, {"local": 1, "weight": 2704, "id": 2, "key": 0}], [{"local": 1, "weight": 2617, "id": 1, "key": 0}]]}'
-    # # foo0 = '{"directed": True}'
     test1 = json.loads(foo)
-    # # test1 = json.loads('["foo", {"bar":["baz", null, 1.0, 2]}]')
-    # print(test1)
     H = nx.adjacency_graph(test1)
 
     # Attach nodes weights (local size)
