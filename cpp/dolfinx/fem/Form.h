@@ -251,6 +251,25 @@ public:
     if (!_mesh)
       throw std::runtime_error("Form Mesh is null.");
 
+    auto get_entity_map = [&](const auto& mesh0)
+    {
+      auto it = std::ranges::find_if(entity_maps,
+                                     [&](const auto& em)
+                                     {
+                                       assert(em);
+                                       return em->contains(*mesh0->topology());
+                                     });
+      if (it == entity_maps.end())
+      {
+        throw std::runtime_error(
+            "Incompatible mesh. argument entity_maps must be provided.");
+      }
+      auto emap = *it;
+      assert(emap);
+
+      return emap;
+    };
+
     for (auto& space : _function_spaces)
     {
       // Working map: [integral type, domain ID, kernel_idx]->entities
@@ -268,20 +287,7 @@ public:
       {
         // Find correct entity map
         // TODO Check entity maps contains int domain
-        auto it
-            = std::ranges::find_if(entity_maps,
-                                   [&](const auto& em)
-                                   {
-                                     assert(em);
-                                     return em->contains(*mesh0->topology());
-                                   });
-        if (it == entity_maps.end())
-        {
-          throw std::runtime_error(
-              "Incompatible mesh. argument entity_maps must be provided.");
-        }
-        auto emap = *it;
-        assert(emap);
+        auto emap = get_entity_map(mesh0);
 
         bool inverse = emap->sub_topology() == mesh0->topology();
 
@@ -304,41 +310,32 @@ public:
             auto c_to_f = topology.connectivity(tdim, tdim - 1);
             assert(c_to_f);
 
+            // TODO: This would be much neater using `std::views::stride(2)`
+            // from C++ 23
+            std::vector<std::int32_t> entities;
+            entities.reserve(itg.entities.size() / 2);
             if (codim == 0)
             {
-              // TODO: This would be much neater using `std::views::stride(2)`
-              // from C++ 23
-              std::vector<std::int32_t> cells;
-              cells.reserve(itg.entities.size() / 2);
               for (std::size_t i = 0; i < itg.entities.size(); i += 2)
-                cells.push_back(itg.entities[i]);
-
-              std::vector<std::int32_t> cells_mesh0
-                  = emap->sub_topology_to_topology(cells, inverse);
-
-              e = itg.entities;
-              for (std::size_t i = 0; i < cells_mesh0.size(); ++i)
-                e[2 * i] = cells_mesh0[i];
+                entities.push_back(itg.entities[i]);
             }
             else if (codim == 1)
             {
-              std::vector<std::int32_t> facets;
-              facets.reserve(itg.entities.size() / 2);
               for (std::size_t i = 0; i < itg.entities.size(); i += 2)
               {
-                facets.push_back(
+                entities.push_back(
                     c_to_f->links(itg.entities[i])[itg.entities[i + 1]]);
               }
-
-              std::vector<std::int32_t> cells_mesh0
-                  = emap->sub_topology_to_topology(facets, inverse);
-
-              e = itg.entities;
-              for (std::size_t i = 0; i < cells_mesh0.size(); ++i)
-                e[2 * i] = cells_mesh0[i];
             }
             else
               throw std::runtime_error("Codimension > 1 not supported.");
+
+            std::vector<std::int32_t> cells_mesh0
+                = emap->sub_topology_to_topology(entities, inverse);
+
+            e = itg.entities;
+            for (std::size_t i = 0; i < cells_mesh0.size(); ++i)
+              e[2 * i] = cells_mesh0[i];
           }
           else
             throw std::runtime_error("Integral type not supported.");
