@@ -68,33 +68,6 @@ EntityMap::map_entities(std::span<const std::int32_t> entities,
     throw std::runtime_error("Topology not in the map.");
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t> EntityMap::map(const Topology& target_topology) const
-{
-  if (&target_topology == _topology.get())
-  {
-    // The map from `_sub_topology` to `_topology` is simply
-    // `_sub_topology_to_topology`
-    return _sub_topology_to_topology;
-  }
-  else if (&target_topology == _sub_topology.get())
-  {
-    auto imap = _topology->index_map(_dim);
-    assert(imap);
-    std::vector<std::int32_t> topology_to_sub_topology(imap->size_local()
-                                                       + imap->num_ghosts());
-
-    // Create the "inverse" of `_sub_topology_to_topology`
-    for (std::size_t i = 0; i < _sub_topology_to_topology.size(); ++i)
-    {
-      topology_to_sub_topology[_sub_topology_to_topology[i]] = i;
-    }
-
-    return topology_to_sub_topology;
-  }
-  else
-    throw std::runtime_error("Topology not in the map.");
-}
-//-----------------------------------------------------------------------------
 std::size_t EntityMap::dim() const { return _dim; }
 //-----------------------------------------------------------------------------
 } // namespace dolfinx::mesh
