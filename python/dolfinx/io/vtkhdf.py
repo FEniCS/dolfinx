@@ -14,7 +14,12 @@ import numpy.typing as npt
 
 import basix
 import ufl
-from dolfinx.cpp.io import read_vtkhdf_mesh_float32, read_vtkhdf_mesh_float64, write_vtkhdf_mesh
+from dolfinx.cpp.io import (
+    read_vtkhdf_mesh_float32,
+    read_vtkhdf_mesh_float64,
+    write_vtkhdf_mesh,
+    write_vtkhdf_point_data,
+)
 from dolfinx.mesh import Mesh
 
 
@@ -62,3 +67,14 @@ def write_mesh(filename: typing.Union[str, Path], mesh: Mesh):
         mesh: Mesh.
     """
     write_vtkhdf_mesh(filename, mesh._cpp_object)
+
+
+def write_point_data(filename: typing.Union[str, Path], mesh: Mesh, data: npt.NDArray, time: float):
+    """Write data at vertices of the mesh.
+    Args:
+        filename: File to write to.
+        mesh: Mesh.
+        data: Data at the points of the mesh, local to each process.
+        time: Timestamp.
+    """
+    write_vtkhdf_point_data(filename, mesh._cpp_object, data, time)
