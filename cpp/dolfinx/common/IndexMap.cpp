@@ -1352,7 +1352,6 @@ std::vector<std::int32_t> IndexMap::weights_src() const
 
     std::size_t pos = std::distance(_src.begin(), it);
     assert(pos < weights.size());
-    // assert(*it < (int)weights.size());
     weights[pos] += 1;
   }
 
