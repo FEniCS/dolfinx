@@ -317,20 +317,29 @@ public:
               for (std::size_t i = 0; i < itg.entities.size(); i += 2)
                 cells.push_back(itg.entities[i]);
 
-              std::vector<std::int32_t> mapped_cells
+              std::vector<std::int32_t> cells_mesh0
                   = emap->map_entities(cells, *mesh0->topology());
 
               e = itg.entities;
-              for (std::size_t i = 0; i < mapped_cells.size(); ++i)
-                e[2 * i] = mapped_cells[i];
+              for (std::size_t i = 0; i < cells_mesh0.size(); ++i)
+                e[2 * i] = cells_mesh0[i];
             }
             else
             {
-              e = impl::compute_domain(
-                  md::mdspan<const std::int32_t,
-                             md::extents<std::size_t, md::dynamic_extent, 2>>(
-                      itg.entities.data(), itg.entities.size() / 2, 2),
-                  std::span<const std::int32_t>(entity_map), codim, *c_to_f);
+              std::vector<std::int32_t> facets;
+              facets.reserve(itg.entities.size() / 2);
+              for (std::size_t i = 0; i < itg.entities.size(); i += 2)
+              {
+                facets.push_back(
+                    c_to_f->links(itg.entities[i])[itg.entities[i + 1]]);
+              }
+
+              std::vector<std::int32_t> cells_mesh0
+                  = emap->map_entities(facets, *mesh0->topology());
+
+              e = itg.entities;
+              for (std::size_t i = 0; i < cells_mesh0.size(); ++i)
+                e[2 * i] = cells_mesh0[i];
             }
           }
           else
