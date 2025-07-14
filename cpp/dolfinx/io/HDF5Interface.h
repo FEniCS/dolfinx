@@ -79,6 +79,17 @@ std::filesystem::path get_filename(hid_t handle);
 /// @return True if @p dataset_path is in the file
 bool has_dataset(hid_t handle, const std::string& dataset_path);
 
+/// @brief Set an attribute on a dataset or group
+/// @param handle Dataset or group handle
+/// @param attr_name Name of attribute
+/// @param value Value to set
+void set_attribute(hid_t handle, const std::string& attr_name,
+                   const std::string& value);
+void set_attribute(hid_t handle, const std::string& attr_name,
+                   const std::vector<std::int32_t>& value);
+void set_attribute(hid_t handle, const std::string& attr_name,
+                   const std::int32_t& value);
+
 /// Open dataset
 /// @param[in] handle HDF5 file handle.
 /// @param[in] path Data set path.
