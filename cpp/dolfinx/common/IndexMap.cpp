@@ -1547,8 +1547,7 @@ common::IndexMapStats IndexMap::statistics() const
   return stats;
 }
 //-----------------------------------------------------------------------------
-std::pair<graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>,
-          std::vector<std::int32_t>>
+graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>, std::int32_t>
 IndexMap::comm_graph(int root) const
 {
   // Graph edge out(dest) weights
@@ -1611,23 +1610,25 @@ IndexMap::comm_graph(int root) const
     }
 
     std::vector<std::int32_t> offsets(disp.begin(), disp.end());
-    return {graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>(
-                std::move(edges_data), std::move(offsets)),
-            sizes_remote};
+    return graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
+                                std::int32_t>(
+        std::move(edges_data), std::move(offsets), std::move(sizes_remote));
   }
   else
   {
-    return {graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>(
-                std::vector<
-                    std::vector<std::tuple<int, std::size_t, std::int8_t>>>()),
-            std::vector<std::int32_t>()};
+    return graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
+                                std::int32_t>(
+        std::vector<std::tuple<int, std::size_t, std::int8_t>>(),
+        std::vector<std::int32_t>{0, 0}, std::vector<std::int32_t>{});
   }
 }
 //-----------------------------------------------------------------------------
 std::string IndexMap::comm_graph_tojson(
-    const graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>& g,
-    std::vector<std::int32_t>& node_weights)
+    const graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
+                               std::int32_t>& g)
 {
+  const std::vector<std::int32_t>& node_weights = g.node_data().value();
+
   std::stringstream out;
   out << std::format("{{\"directed\": true, \"multigraph\": true, \"graph\": "
                      "[], \"nodes\": [");

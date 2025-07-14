@@ -401,8 +401,7 @@ public:
   /// where edges data is (0) the edge, (1) edge weight and (2)
   /// local/remote memory indicator, and node weights (number of owned
   /// indices).
-  std::pair<graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>,
-            std::vector<std::int32_t>>
+  graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>, std::int32_t>
   comm_graph(int root = 0) const;
 
   /// @brief Build communication graph data as JSON string.
@@ -417,8 +416,8 @@ public:
   /// @param[in] node_weights Node weights (local size of the IndexMap).
   /// @return JSON string representing the communication graph.
   static std::string comm_graph_tojson(
-      const graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>>& g,
-      std::vector<std::int32_t>& node_weights);
+      const graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
+                                 std::int32_t>& g);
 
 private:
   // Range of indices (global) owned by this process

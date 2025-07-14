@@ -204,7 +204,9 @@ void common(nb::module_& m)
           "comm_graph_data",
           [](const dolfinx::common::IndexMap& self, int root)
           {
-            auto [g, node_weights] = self.comm_graph(root);
+            dolfinx::graph::AdjacencyList<
+                std::tuple<int, std::size_t, std::int8_t>, std::int32_t>
+                g = self.comm_graph(root);
             std::vector<
                 std::tuple<int, int, std::map<std::string, std::size_t>>>
                 graph;
@@ -218,16 +220,16 @@ void common(nb::module_& m)
               }
             }
 
-            return std::pair(graph, node_weights);
+            return std::pair(graph, g.node_data().value());
           },
           nb::arg("root") = 0,
-          "Graph representing parallel communication patterns.")
+          "Build a graph representing parallel communication patterns.")
       .def(
           "comm_graph_tojson",
           [](const dolfinx::common::IndexMap& self, int root)
           {
-            auto [g, weights] = self.comm_graph(root);
-            return dolfinx::common::IndexMap::comm_graph_tojson(g, weights);
+            return dolfinx::common::IndexMap::comm_graph_tojson(
+                self.comm_graph(root));
           },
           nb::arg("root") = 0);
 
