@@ -95,6 +95,13 @@ public:
 
   std::shared_ptr<const Topology> sub_topology() const;
 
+  // FIXME Span?
+  std::vector<std::int32_t>
+  sub_topology_to_topology(std::span<const std::int32_t> entities) const;
+
+  std::vector<std::int32_t>
+  topology_to_sub_topology(std::span<const std::int32_t> entities) const;
+
 private:
   std::size_t _dim;                          ///< Dimension of the entities
   std::shared_ptr<const Topology> _topology; ///< A topology
