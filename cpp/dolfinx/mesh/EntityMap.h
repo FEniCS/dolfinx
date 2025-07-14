@@ -91,6 +91,10 @@ public:
   /// @return The topological dimension
   std::size_t dim() const;
 
+  std::shared_ptr<const Topology> topology() const;
+
+  std::shared_ptr<const Topology> sub_topology() const;
+
 private:
   std::size_t _dim;                          ///< Dimension of the entities
   std::shared_ptr<const Topology> _topology; ///< A topology

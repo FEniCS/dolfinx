@@ -70,4 +70,14 @@ EntityMap::map_entities(std::span<const std::int32_t> entities,
 //-----------------------------------------------------------------------------
 std::size_t EntityMap::dim() const { return _dim; }
 //-----------------------------------------------------------------------------
+std::shared_ptr<const Topology> EntityMap::topology() const
+{
+  return _topology;
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const Topology> EntityMap::sub_topology() const
+{
+  return _sub_topology;
+}
+//-----------------------------------------------------------------------------
 } // namespace dolfinx::mesh
