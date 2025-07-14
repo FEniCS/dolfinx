@@ -21,6 +21,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <span>
 #include <tuple>
 #include <utility>
@@ -281,6 +282,7 @@ public:
         auto emap = *it;
         assert(emap);
 
+        // TODO REMOVE
         auto e_imap = _mesh->topology()->index_map(emap->dim());
         std::vector<std::int32_t> ents(e_imap->size_local()
                                        + e_imap->num_ghosts());
@@ -294,9 +296,7 @@ public:
           std::vector<std::int32_t> e;
           if (type == IntegralType::cell)
           {
-            e = impl::compute_domain(
-                md::mdspan(itg.entities.data(), itg.entities.size()),
-                std::span<const std::int32_t>(entity_map));
+            e = emap->map_entities(itg.entities, *mesh0->topology());
           }
           else if (type == IntegralType::exterior_facet
                    or type == IntegralType::interior_facet)
@@ -307,11 +307,31 @@ public:
             int codim = tdim - mesh0->topology()->dim();
             auto c_to_f = topology.connectivity(tdim, tdim - 1);
             assert(c_to_f);
-            e = impl::compute_domain(
-                md::mdspan<const std::int32_t,
-                           md::extents<std::size_t, md::dynamic_extent, 2>>(
-                    itg.entities.data(), itg.entities.size() / 2, 2),
-                std::span<const std::int32_t>(entity_map), codim, *c_to_f);
+
+            if (codim == 0)
+            {
+              // TODO: This would be much neater using `std::views::stride(2)`
+              // from C++ 23
+              std::vector<std::int32_t> cells;
+              cells.reserve(itg.entities.size() / 2);
+              for (std::size_t i = 0; i < itg.entities.size(); i += 2)
+                cells.push_back(itg.entities[i]);
+
+              std::vector<std::int32_t> mapped_cells
+                  = emap->map_entities(cells, *mesh0->topology());
+
+              e = itg.entities;
+              for (std::size_t i = 0; i < mapped_cells.size(); ++i)
+                e[2 * i] = mapped_cells[i];
+            }
+            else
+            {
+              e = impl::compute_domain(
+                  md::mdspan<const std::int32_t,
+                             md::extents<std::size_t, md::dynamic_extent, 2>>(
+                      itg.entities.data(), itg.entities.size() / 2, 2),
+                  std::span<const std::int32_t>(entity_map), codim, *c_to_f);
+            }
           }
           else
             throw std::runtime_error("Integral type not supported.");
@@ -350,6 +370,7 @@ public:
           auto emap = *it;
           assert(emap);
 
+          // TODO REMOVE
           auto e_imap = _mesh->topology()->index_map(emap->dim());
           std::vector<std::int32_t> ents(e_imap->size_local()
                                          + e_imap->num_ghosts());
