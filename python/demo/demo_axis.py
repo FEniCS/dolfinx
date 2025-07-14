@@ -671,15 +671,16 @@ for m in m_list:
         a,
         L,
         bcs=[],
+        petsc_options_prefix="demo_axis_",
         petsc_options={
             "ksp_type": "preonly",
             "pc_type": "lu",
             "pc_factor_mat_solver_type": mat_factor_backend,
         },
     )
-    Esh_m = problem.solve()
+    Esh_m, _, converged_reason, _ = problem.solve()
     assert isinstance(Esh_m, fem.Function)
-    assert problem.solver.getConvergedReason() > 0, "Solver did not converge!"
+    assert converged_reason > 0
 
     # Scattered magnetic field
     Hsh_m = -1j * curl_axis(Esh_m, m, rho) / (Z0 * k0)

@@ -46,6 +46,7 @@ endif()
 add_executable(
   unittests
   main.cpp
+  graph.cpp
   vector.cpp
   matrix.cpp
   io.cpp

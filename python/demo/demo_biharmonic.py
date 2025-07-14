@@ -228,9 +228,16 @@ L = ufl.inner(f, v) * ufl.dx
 # case we use a direct (LU) solver. The {py:func}`solve
 # <dolfinx.fem.petsc.LinearProblem.solve>` will compute a solution.
 
-problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
-uh = problem.solve()
+problem = LinearProblem(
+    a,
+    L,
+    bcs=[bc],
+    petsc_options_prefix="demo_biharmonic_",
+    petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
+)
+uh, _, convergence_reason, _ = problem.solve()
 assert isinstance(uh, fem.Function)
+assert convergence_reason > 0
 
 # The solution can be written to a  {py:class}`XDMFFile
 # <dolfinx.io.XDMFFile>` file visualization with ParaView or VisIt

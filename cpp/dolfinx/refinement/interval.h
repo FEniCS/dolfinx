@@ -155,9 +155,9 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
     {
       // Find (global) index of new midpoint vertex:
       // a --- c --- b
-      auto it = new_vertex_map.find(cell);
-      assert(it != new_vertex_map.end());
-      const std::int64_t c = it->second;
+      auto nv = new_vertex_map.links(cell);
+      assert(nv.size() == 1);
+      const std::int64_t c = nv[0];
 
       // Add new cells/edges to refined topology
       cell_topology.insert(cell_topology.end(), {a, c, c, b});

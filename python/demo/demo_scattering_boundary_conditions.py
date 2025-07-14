@@ -628,8 +628,15 @@ F = (
 # `Esh`:
 
 a, L = ufl.lhs(F), ufl.rhs(F)
-problem = LinearProblem(a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
-Esh = problem.solve()
+problem = LinearProblem(
+    a,
+    L,
+    bcs=[],
+    petsc_options_prefix="demo_scattering_boundary_conditions_",
+    petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
+)
+Esh, _, convergence_reason, _ = problem.solve()
+assert convergence_reason > 0
 
 # We save the solution as an [ADIOS2
 # bp](https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html)

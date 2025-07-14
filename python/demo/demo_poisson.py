@@ -157,9 +157,16 @@ L = ufl.inner(f, v) * ufl.dx + ufl.inner(g, v) * ufl.ds
 # <dolfinx.fem.petsc.LinearProblem.solve>` computes the solution.
 
 # +
-problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
-uh = problem.solve()
+problem = LinearProblem(
+    a,
+    L,
+    bcs=[bc],
+    petsc_options_prefix="demo_poisson_",
+    petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
+)
+uh, _, convergence_reason, _ = problem.solve()
 assert isinstance(uh, fem.Function)
+assert convergence_reason > 0
 # -
 
 # The solution can be written to a {py:class}`XDMFFile
