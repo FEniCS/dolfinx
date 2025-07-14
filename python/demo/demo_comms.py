@@ -106,12 +106,13 @@ comm_graph = V.dofmap.index_map.comm_graph()
 
 # +
 def print_stats(G):
-    print("Communication graph data (0")
+    print("Communication graph data:")
     print(f"  Num edges: {G.size()}")
     print(f"  Num local: {G.size('local')}")
     print(f"  Edges weight sum: {G.size('weight')}")
-    print(f"  Average edges per node: {G.size() / G.order()}")
-    print(f"  Average edge weight: {G.size('weight') / G.size()}")
+    if G.order() > 0:
+        print(f"  Average edges per node: {G.size() / G.order()}")
+        print(f"  Average edge weight: {G.size('weight') / G.size()}")
 
 
 # +

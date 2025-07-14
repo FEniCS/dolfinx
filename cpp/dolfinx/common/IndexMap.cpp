@@ -1550,6 +1550,7 @@ common::IndexMapStats IndexMap::statistics() const
 graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>, std::int32_t>
 IndexMap::comm_graph(int root) const
 {
+
   // Graph edge out(dest) weights
   const std::vector<std::int32_t> w_dest = this->weights_dest();
 
@@ -1569,12 +1570,14 @@ IndexMap::comm_graph(int root) const
 
   // For each node (rank), get edge indices
   std::vector<int> edges_remote(disp.back());
+  edges_remote.reserve(1);
   MPI_Gatherv(_dest.data(), _dest.size(), MPI_INT, edges_remote.data(),
               num_edges_remote.data(), disp.data(), MPI_INT, root,
               _comm.comm());
 
   // For each edge, get edge weight
   std::vector<std::int32_t> weights_remote(disp.back());
+  weights_remote.reserve(1);
   MPI_Gatherv(w_dest.data(), w_dest.size(), MPI_INT32_T, weights_remote.data(),
               num_edges_remote.data(), disp.data(), MPI_INT32_T, root,
               _comm.comm());
@@ -1582,6 +1585,7 @@ IndexMap::comm_graph(int root) const
   // For node get local size
   std::int32_t size = this->size_local();
   std::vector<std::int32_t> sizes_remote(disp.back());
+  sizes_remote.reserve(1);
   MPI_Gather(&size, 1, MPI_INT32_T, sizes_remote.data(), 1, MPI_INT32_T, root,
              _comm.comm());
 
@@ -1600,7 +1604,8 @@ IndexMap::comm_graph(int root) const
               num_edges_remote.data(), disp.data(), MPI_INT8_T, root,
               _comm.comm());
 
-  if (dolfinx::MPI::rank(_comm.comm()) == 0)
+  if (dolfinx::MPI::rank(_comm.comm()) == 0
+      and dolfinx::MPI::size(_comm.comm()) > 1)
   {
     std::vector<std::tuple<int, std::size_t, std::int8_t>> edges_data;
     for (std::size_t i = 0; i < edges_remote.size(); ++i)
