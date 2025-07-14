@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022 Garth N. Wells
+// Copyright (C) 2019-2025 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -72,12 +72,13 @@ public:
                  and std::is_convertible_v<std::remove_cvref_t<V>,
                                            std::vector<std::int32_t>>
                  and std::is_convertible_v<std::remove_cvref_t<W>,
-                                           std::vector<W>>
+                                           std::vector<NodeData_t>>
   AdjacencyList(U&& data, V&& offsets, W&& node_data)
       : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets)),
         _node_data(std::forward<W>(node_data))
   {
-    assert(node_data.size() == offsets.size() - 1);
+    assert(_node_data.has_value()
+           and _node_data->size() == _offsets.size() - 1);
     _array.reserve(_offsets.back());
     assert(_offsets.back() == (std::int32_t)_array.size());
   }
@@ -177,8 +178,8 @@ public:
   /// Return node data.
   std::optional<std::vector<NodeData_t>>& node_data() { return _node_data; }
 
-  /// Informal string representation (pretty-print)
-  /// @return String representation of the adjacency list
+  /// @brief Informal string representation (pretty-print).
+  /// @return String representation of the adjacency list.
   std::string str() const
   {
     std::stringstream s;
