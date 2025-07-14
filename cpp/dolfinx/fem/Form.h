@@ -270,8 +270,9 @@ public:
       return emap;
     };
 
-    auto compute_facet_domains =
-        [&](const auto& input, int codim, const auto& c_to_f, const auto& emap, bool inverse)
+    auto compute_facet_domains
+        = [&](const auto& input, int codim, const auto& c_to_f,
+              const auto& emap, bool inverse)
     {
       // TODO: This would be much neater using `std::views::stride(2)`
       // from C++ 23
@@ -342,7 +343,8 @@ public:
             auto c_to_f = topology.connectivity(tdim, tdim - 1);
             assert(c_to_f);
 
-            e = compute_facet_domains(itg.entities, codim, c_to_f, emap, inverse);
+            e = compute_facet_domains(itg.entities, codim, c_to_f, emap,
+                                      inverse);
           }
           else
             throw std::runtime_error("Integral type not supported.");
@@ -365,36 +367,14 @@ public:
         }
         else
         {
-          // Find correct entity map
-          auto it
-              = std::ranges::find_if(entity_maps,
-                                     [&](const auto& em)
-                                     {
-                                       assert(em);
-                                       return em->contains(*mesh0->topology());
-                                     });
-          if (it == entity_maps.end())
-          {
-            throw std::runtime_error(
-                "Incompatible mesh. coefficient entity_maps must be provided.");
-          }
-          auto emap = *it;
-          assert(emap);
+          auto emap = get_entity_map(mesh0);
 
-          // TODO REMOVE
-          auto e_imap = _mesh->topology()->index_map(emap->dim());
-          std::vector<std::int32_t> ents(e_imap->size_local()
-                                         + e_imap->num_ghosts());
-          std::iota(ents.begin(), ents.end(), 0);
-          std::vector<std::int32_t> entity_map
-              = emap->map_entities(ents, *mesh0->topology());
+          bool inverse = emap->sub_topology() == mesh0->topology();
 
           std::vector<std::int32_t> e;
           if (type == IntegralType::cell)
           {
-            e = impl::compute_domain(
-                md::mdspan(integral.entities.data(), integral.entities.size()),
-                std::span<const std::int32_t>(entity_map));
+            e = emap->sub_topology_to_topology(integral.entities, inverse);
           }
           else if (type == IntegralType::exterior_facet
                    or type == IntegralType::interior_facet)
@@ -405,11 +385,9 @@ public:
             int codim = tdim - mesh0->topology()->dim();
             auto c_to_f = topology.connectivity(tdim, tdim - 1);
             assert(c_to_f);
-            e = impl::compute_domain(
-                md::mdspan<const std::int32_t,
-                           md::extents<std::size_t, md::dynamic_extent, 2>>(
-                    integral.entities.data(), integral.entities.size() / 2, 2),
-                std::span<const std::int32_t>(entity_map), codim, *c_to_f);
+
+            e = compute_facet_domains(integral.entities, codim, c_to_f, emap,
+                                      inverse);
           }
           else
             throw std::runtime_error("Integral type not supported.");
