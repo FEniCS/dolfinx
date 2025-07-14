@@ -942,7 +942,7 @@ def create_unit_square(
     return create_rectangle(
         comm,
         [np.array([0.0, 0.0]), np.array([1.0, 1.0])],
-        [nx, ny],
+        (nx, ny),
         cell_type,
         dtype,
         ghost_mode,
