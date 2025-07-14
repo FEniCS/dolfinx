@@ -169,13 +169,15 @@ public:
   /// Offset for each node in array().
   std::vector<std::int32_t>& offsets() { return _offsets; }
 
-  /// Return node data (const version).
+  /// Return node data (if present), where `node_data()[i]` is the data
+  /// for node `i` (const version).
   const std::optional<std::vector<NodeData_t>>& node_data() const
   {
     return _node_data;
   }
 
-  /// Return node data.
+  /// Return node data (if present), where `node_data()[i]` is the data for node
+  /// `i`.
   std::optional<std::vector<NodeData_t>>& node_data() { return _node_data; }
 
   /// @brief Informal string representation (pretty-print).
@@ -202,7 +204,7 @@ private:
   // Position of first connection for each entity (using local index)
   std::vector<std::int32_t> _offsets;
 
-  // Connections for all entities stored as a contiguous array
+  // Node data, where _node_data[i] is the data associated with node `i`
   std::optional<std::vector<NodeData_t>> _node_data = std::nullopt;
 };
 
