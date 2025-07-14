@@ -270,6 +270,38 @@ public:
       return emap;
     };
 
+    auto compute_facet_domains =
+        [&](const auto& input, int codim, const auto& c_to_f, const auto& emap, bool inverse)
+    {
+      // TODO: This would be much neater using `std::views::stride(2)`
+      // from C++ 23
+      std::vector<std::int32_t> entities;
+      entities.reserve(input.size() / 2);
+      if (codim == 0)
+      {
+        for (std::size_t i = 0; i < input.size(); i += 2)
+          entities.push_back(input[i]);
+      }
+      else if (codim == 1)
+      {
+        for (std::size_t i = 0; i < input.size(); i += 2)
+        {
+          entities.push_back(c_to_f->links(input[i])[input[i + 1]]);
+        }
+      }
+      else
+        throw std::runtime_error("Codimension > 1 not supported.");
+
+      std::vector<std::int32_t> cells_mesh0
+          = emap->sub_topology_to_topology(entities, inverse);
+
+      std::vector<std::int32_t> e = input;
+      for (std::size_t i = 0; i < cells_mesh0.size(); ++i)
+        e[2 * i] = cells_mesh0[i];
+
+      return e;
+    };
+
     for (auto& space : _function_spaces)
     {
       // Working map: [integral type, domain ID, kernel_idx]->entities
@@ -310,32 +342,7 @@ public:
             auto c_to_f = topology.connectivity(tdim, tdim - 1);
             assert(c_to_f);
 
-            // TODO: This would be much neater using `std::views::stride(2)`
-            // from C++ 23
-            std::vector<std::int32_t> entities;
-            entities.reserve(itg.entities.size() / 2);
-            if (codim == 0)
-            {
-              for (std::size_t i = 0; i < itg.entities.size(); i += 2)
-                entities.push_back(itg.entities[i]);
-            }
-            else if (codim == 1)
-            {
-              for (std::size_t i = 0; i < itg.entities.size(); i += 2)
-              {
-                entities.push_back(
-                    c_to_f->links(itg.entities[i])[itg.entities[i + 1]]);
-              }
-            }
-            else
-              throw std::runtime_error("Codimension > 1 not supported.");
-
-            std::vector<std::int32_t> cells_mesh0
-                = emap->sub_topology_to_topology(entities, inverse);
-
-            e = itg.entities;
-            for (std::size_t i = 0; i < cells_mesh0.size(); ++i)
-              e[2 * i] = cells_mesh0[i];
+            e = compute_facet_domains(itg.entities, codim, c_to_f, emap, inverse);
           }
           else
             throw std::runtime_error("Integral type not supported.");
