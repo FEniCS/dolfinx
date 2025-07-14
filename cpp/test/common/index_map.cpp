@@ -216,7 +216,7 @@ void test_stats()
   // //           << stats.out_edges.max << std::endl;
   // std::cout << idx_map.stats(1) << std::endl;
 
-  auto g = idx_map.graph();
+  auto g = idx_map.comm_graph();
 }
 
 } // namespace
