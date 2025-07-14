@@ -1030,7 +1030,7 @@ def create_unit_cube(
     return create_box(
         comm,
         [np.array([0.0, 0.0, 0.0]), np.array([1.0, 1.0, 1.0])],
-        [nx, ny, nz],
+        (nx, ny, nz),
         cell_type,
         dtype,
         ghost_mode,

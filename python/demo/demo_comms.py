@@ -47,9 +47,6 @@ if msh.comm.rank == 0:
     H.add_edges_from(graph_data)
 
     foox = nx.adjacency_data(H)
-    print(foox)
-    print("\n")
-    print("ME:\n", foo)
 
     test1 = json.loads(foo)
     H = nx.adjacency_graph(test1)
