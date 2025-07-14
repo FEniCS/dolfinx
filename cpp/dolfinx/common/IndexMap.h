@@ -395,8 +395,8 @@ public:
   ///
   /// @note Collective.
   ///
-  /// @param[in] MPI rank on which the build the communication graph
-  /// data.
+  /// @param[in] root MPI rank on which the build the communication
+  /// graph data.
   /// @return Adjacency list representing the communication pattern,
   /// where edges data is (0) the edge, (1) edge weight and (2)
   /// local/remote memory indicator, and node weights (number of owned
@@ -413,7 +413,6 @@ public:
   /// See ::comm_graph for a description of the data.
   ///
   /// @param[in] g Communication graph.
-  /// @param[in] node_weights Node weights (local size of the IndexMap).
   /// @return JSON string representing the communication graph.
   static std::string comm_to_json(
       const graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
