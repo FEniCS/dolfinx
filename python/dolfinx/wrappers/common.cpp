@@ -199,14 +199,12 @@ void common(nb::module_& m)
       .def(
           "comm_graph", [](const dolfinx::common::IndexMap& self, int root)
           { return self.comm_graph(root); }, nb::arg("root") = 0,
-          "Graph representing parallel communication patterns.")
-      .def(
+          "Build a graph representing parallel communication patterns.")
+      .def_static(
           "comm_graph_data",
-          [](const dolfinx::common::IndexMap& self, int root)
+          [](dolfinx::graph::AdjacencyList<
+              std::tuple<int, std::size_t, std::int8_t>, std::int32_t>& g)
           {
-            dolfinx::graph::AdjacencyList<
-                std::tuple<int, std::size_t, std::int8_t>, std::int32_t>
-                g = self.comm_graph(root);
             std::vector<
                 std::tuple<int, int, std::map<std::string, std::size_t>>>
                 graph;
@@ -214,24 +212,20 @@ void common(nb::module_& m)
             {
               for (auto [e, w, local] : g.links(n))
               {
-                std::map<std::string, std::size_t> m{{"local", local},
-                                                     {"weight", w}};
-                graph.emplace_back(n, e, m);
+                graph.emplace_back(n, e,
+                                   std::map<std::string, std::size_t>{
+                                       {"local", local}, {"weight", w}});
               }
             }
-
             return std::pair(graph, g.node_data().value());
           },
           nb::arg("root") = 0,
           "Build a graph representing parallel communication patterns.")
-      .def(
-          "comm_graph_tojson",
-          [](const dolfinx::common::IndexMap& self, int root)
-          {
-            return dolfinx::common::IndexMap::comm_graph_tojson(
-                self.comm_graph(root));
-          },
-          nb::arg("root") = 0);
+      .def_static(
+          "comm_to_json",
+          [](dolfinx::graph::AdjacencyList<
+              std::tuple<int, std::size_t, std::int8_t>, std::int32_t>& g)
+          { return dolfinx::common::IndexMap::comm_to_json(g); });
 
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(

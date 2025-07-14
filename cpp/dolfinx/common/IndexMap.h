@@ -415,7 +415,7 @@ public:
   /// @param[in] g Communication graph.
   /// @param[in] node_weights Node weights (local size of the IndexMap).
   /// @return JSON string representing the communication graph.
-  static std::string comm_graph_tojson(
+  static std::string comm_to_json(
       const graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
                                  std::int32_t>& g);
 

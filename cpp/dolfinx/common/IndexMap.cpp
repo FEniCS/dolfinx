@@ -1619,11 +1619,11 @@ IndexMap::comm_graph(int root) const
     return graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
                                 std::int32_t>(
         std::vector<std::tuple<int, std::size_t, std::int8_t>>(),
-        std::vector<std::int32_t>{0, 0}, std::vector<std::int32_t>{});
+        std::vector<std::int32_t>{0}, std::vector<std::int32_t>{});
   }
 }
 //-----------------------------------------------------------------------------
-std::string IndexMap::comm_graph_tojson(
+std::string IndexMap::comm_to_json(
     const graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
                                std::int32_t>& g)
 {

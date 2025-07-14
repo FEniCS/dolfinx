@@ -229,13 +229,13 @@ AdjacencyList(T, U, W)
 /// @param[in] data Adjacency array
 /// @param[in] degree The number of (outgoing) edges for each node
 /// @return An adjacency list
-template <typename U>
+template <typename V = std::nullptr_t, typename U>
   requires requires {
     typename std::decay_t<U>::value_type;
     requires std::convertible_to<
         U, std::vector<typename std::decay_t<U>::value_type>>;
   }
-AdjacencyList<typename std::decay_t<U>::value_type>
+AdjacencyList<typename std::decay_t<U>::value_type, V>
 regular_adjacency_list(U&& data, int degree)
 {
   if (degree == 0 and !data.empty())
@@ -254,7 +254,7 @@ regular_adjacency_list(U&& data, int degree)
   std::vector<std::int32_t> offsets(num_nodes + 1, 0);
   for (std::size_t i = 1; i < offsets.size(); ++i)
     offsets[i] = offsets[i - 1] + degree;
-  return AdjacencyList<typename std::decay_t<U>::value_type>(
+  return AdjacencyList<typename std::decay_t<U>::value_type, V>(
       std::forward<U>(data), std::move(offsets));
 }
 
