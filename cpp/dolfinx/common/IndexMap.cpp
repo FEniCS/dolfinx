@@ -1584,8 +1584,7 @@ IndexMap::comm_graph(int root) const
 
   // For node get local size
   std::int32_t size = this->size_local();
-  std::vector<std::int32_t> sizes_remote(disp.back());
-  sizes_remote.reserve(1);
+  std::vector<std::int32_t> sizes_remote(dolfinx::MPI::size(_comm.comm()));
   MPI_Gather(&size, 1, MPI_INT32_T, sizes_remote.data(), 1, MPI_INT32_T, root,
              _comm.comm());
 
@@ -1604,28 +1603,12 @@ IndexMap::comm_graph(int root) const
               num_edges_remote.data(), disp.data(), MPI_INT8_T, root,
               _comm.comm());
 
-  if (dolfinx::MPI::rank(_comm.comm()) == 0
-      and dolfinx::MPI::size(_comm.comm()) > 1)
-  {
-    std::vector<std::tuple<int, std::size_t, std::int8_t>> edges_data;
-    for (std::size_t i = 0; i < edges_remote.size(); ++i)
-    {
-      edges_data.emplace_back(edges_remote[i], weights_remote[i],
-                              markers_remote[i]);
-    }
-
-    std::vector<std::int32_t> offsets(disp.begin(), disp.end());
-    return graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
-                                std::int32_t>(
-        std::move(edges_data), std::move(offsets), std::move(sizes_remote));
-  }
-  else
-  {
-    return graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
-                                std::int32_t>(
-        std::vector<std::tuple<int, std::size_t, std::int8_t>>(),
-        std::vector<std::int32_t>{0}, std::vector<std::int32_t>{});
-  }
+  std::vector<std::tuple<int, std::size_t, std::int8_t>> e_data;
+  for (std::size_t i = 0; i < edges_remote.size(); ++i)
+    e_data.emplace_back(edges_remote[i], weights_remote[i], markers_remote[i]);
+  return graph::AdjacencyList(std::move(e_data),
+                              std::vector(disp.begin(), disp.end()),
+                              std::move(sizes_remote));
 }
 //-----------------------------------------------------------------------------
 std::string IndexMap::comm_to_json(

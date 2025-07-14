@@ -112,6 +112,7 @@ def print_stats(G):
     print(f"  Edges weight sum: {G.size('weight')}")
     if G.order() > 0:
         print(f"  Average edges per node: {G.size() / G.order()}")
+    if G.size() > 0:
         print(f"  Average edge weight: {G.size('weight') / G.size()}")
 
 
