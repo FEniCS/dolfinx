@@ -305,6 +305,7 @@ public:
             int tdim = topology.dim();
             assert(mesh0);
             int codim = tdim - mesh0->topology()->dim();
+            assert(codim >= 0);
             auto c_to_f = topology.connectivity(tdim, tdim - 1);
             assert(c_to_f);
 
@@ -324,7 +325,7 @@ public:
               for (std::size_t i = 0; i < cells_mesh0.size(); ++i)
                 e[2 * i] = cells_mesh0[i];
             }
-            else
+            else if (codim == 1)
             {
               std::vector<std::int32_t> facets;
               facets.reserve(itg.entities.size() / 2);
@@ -341,6 +342,8 @@ public:
               for (std::size_t i = 0; i < cells_mesh0.size(); ++i)
                 e[2 * i] = cells_mesh0[i];
             }
+            else
+              throw std::runtime_error("Codimension > 1 not supported.");
           }
           else
             throw std::runtime_error("Integral type not supported.");
