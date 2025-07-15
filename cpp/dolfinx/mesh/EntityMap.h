@@ -63,24 +63,6 @@ public:
   // Destructor
   ~EntityMap() = default;
 
-  /// @brief Given a list of entities in a source topology (either of the
-  /// topologies in this `EntityMap`), this function returns their corresponding
-  /// entity indices in the given target topology `target_topology`.
-  ///
-  /// If the target topology is the sub-topology, any entities that don't exist
-  /// in the sub-topology are marked -1.
-  ///
-  /// @note This function computes a map every call (the map is not stored). For
-  /// multiple calls, this can be expensive and `this->map()` should be used
-  /// instead.
-  ///
-  /// @param entities A list of entity indices in the source topology
-  /// @param target_topology The target topology to map the indices to
-  /// @return The corresponding list of entities in the target topology.
-  /// Entities that don't exist in the target topology are marked -1.
-  std::vector<std::int32_t> map_entities(std::span<const std::int32_t> entities,
-                                         const Topology& target_topology) const;
-
   /// @brief Get the topological dimension of the entities related by this
   /// `EntityMap`.
   /// @return The topological dimension
@@ -90,6 +72,19 @@ public:
 
   std::shared_ptr<const Topology> sub_topology() const;
 
+  /// @brief If `inverse` is false, given a list of `this->dim()`-dimensional
+  /// entities in `this->sub_topology()`, this function returns the
+  /// corresponding entities in `this->topology()`. If inverse is true, this
+  /// function maps entities from `this->topology()` to `this->sub_topology()`,
+  /// where any entities that dont exist in the sub-topology are marked -1.
+  ///
+  /// @note This function computes a map every call (the map is not stored),
+  /// which can . For this can be expensive for repeated calls.
+  ///
+  /// @param entities A list of entity indices in the source topology
+  /// @param inverse The direction of the map
+  /// @return The mapped entities. Entities that don't exist in the target
+  /// topology are marked -1.
   std::vector<std::int32_t>
   sub_topology_to_topology(std::span<const std::int32_t> entities,
                            bool inverse) const;
