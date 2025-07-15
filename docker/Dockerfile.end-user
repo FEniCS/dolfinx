@@ -35,6 +35,7 @@
 #
 
 ARG PYVISTA_VERSION=0.45.2
+ARG VTK_VERSION=9.5.0
 
 # Used to set the correct PYTHONPATH for the real and complex install of
 # DOLFINx
@@ -169,15 +170,8 @@ RUN apt-get -qq update && \
 # matplotlib improves plotting quality with better color maps and
 # properly rendering colorbars.
 # trame is the preferred backend for pyvista.
-RUN dpkgArch="$(dpkg --print-architecture)"; \
-    pip install matplotlib; \
-    case "$dpkgArch" in amd64) \
-      pip install --no-cache-dir pyvista[jupyter]==${PYVISTA_VERSION} ;; \
-    esac; \
-    case "$dpkgArch" in arm64) \
-      pip install --no-cache-dir https://github.com/scientificcomputing/vtk-aarch64/releases/download/v9.4.2-py3.12/vtk-9.4.2.dev0-cp312-cp312-linux_aarch64.whl && \
-      pip install --no-cache-dir pyvista[jupyter]==${PYVISTA_VERSION} ;; \
-    esac; \
+RUN pip install matplotlib; \
+    pip install --no-cache-dir vtk==${VTK_VERSION} pyvista[jupyter]==${PYVISTA_VERSION} ; \
     pip cache purge
 
 # Jupyter Notebook kernel specification for complex build DOLFINx
