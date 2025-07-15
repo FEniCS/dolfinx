@@ -613,8 +613,9 @@ void mesh(nb::module_& m)
                  entities,
              bool inverse)
           {
-            std::vector<std::int32_t> mapped_entities = self.sub_topology_to_topology(
-                std::span(entities.data(), entities.size()), inverse);
+            std::vector<std::int32_t> mapped_entities
+                = self.sub_topology_to_topology(
+                    std::span(entities.data(), entities.size()), inverse);
             return as_nbarray(std::move(mapped_entities));
           },
           nb::arg("entities"), nb::arg("inverse"));
