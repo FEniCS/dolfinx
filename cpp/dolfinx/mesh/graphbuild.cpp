@@ -116,15 +116,15 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
                 &request_cell_offset);
   }
 
-  // Compute max_vertices_per_facet and vertex_range = [min_vertex_index,
-  // max_vertex_index] across all processes. Use first facet vertex for min/max
-  // index.
+  // Compute max_vertices_per_facet and vertex_range =
+  // [min_vertex_index, max_vertex_index] across all processes. Use
+  // first facet vertex for min/max index.
   std::int32_t max_vertices_per_facet = -1;
   std::array<std::int64_t, 2> vertex_range;
   {
     // Compute local quantities.
-    // Note: to allow for single reduction we store -min_vertex_index, i.e.
-    //       max (-min_vertex_index) = min (min_vertex_index).
+    // Note: to allow for single reduction we store -min_vertex_index,
+    // i.e. max (-min_vertex_index) = min (min_vertex_index).
     max_vertices_per_facet = std::int64_t(local_max_vertices_per_facet);
 
     vertex_range[0] = std::numeric_limits<std::int64_t>::min();
@@ -427,9 +427,9 @@ mesh::build_local_dual_graph(
 
   int tdim = mesh::cell_dim(celltypes.front());
 
-  // 1) Create indexing offset for each cell type and determine max number
-  // of vertices per facet -> size computations for later on used data
-  // structures
+  // 1) Create indexing offset for each cell type and determine max
+  //    number of vertices per facet -> size computations for later on
+  //    used data structures
 
   // TODO: cell_offsets can be removed?
   std::vector<std::int32_t> cell_offsets = {0};
