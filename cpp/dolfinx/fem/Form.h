@@ -196,7 +196,7 @@ public:
 
     // A helper function to compute the (cell, local_facet) pairs
     // in the argument/coefficient domain from the
-    // (cell, local_facet) pairs in the `this->mesh()`.
+    // (cell, local_facet) pairs in `this->mesh()`.
     auto compute_facet_domains
         = [&](const auto& int_ents_mesh, int codim, const auto& c_to_f,
               const auto& emap, bool inverse)
@@ -210,7 +210,7 @@ public:
       if (codim == 0)
       {
         // In the codim 0 case, we need to map from cells in `this->mesh()`
-        // to cells in the argument coefficient mesh, so here we extract the
+        // to cells in the argument/coefficient mesh, so here we extract the
         // cells.
         for (std::size_t i = 0; i < int_ents_mesh.size(); i += 2)
           entities.push_back(int_ents_mesh[i]);
@@ -236,8 +236,8 @@ public:
 
       // Create a list of (cell, local_facet_index) pairs in the
       // argument/coefficient domain. Since `create_submesh`preserves the local
-      // facet index (with respect to the cell), we only need to change the cell
-      // index
+      // facet index (with respect to the cell), we can use the local facet
+      // indices from the input integration entities
       std::vector<std::int32_t> e = int_ents_mesh;
       for (std::size_t i = 0; i < cells_mesh0.size(); ++i)
         e[2 * i] = cells_mesh0[i];
@@ -263,6 +263,9 @@ public:
         // Find correct entity map
         auto emap = get_entity_map(mesh0);
 
+        // Determine direction of the map. We need to map from `this->mesh()` to
+        // `mesh0`, so if `emap->sub_topology()` isn't the source topology, we
+        // need the inverse map
         bool inverse = emap->sub_topology() == mesh0->topology();
 
         for (auto& [key, itg] : _integrals)
@@ -308,8 +311,8 @@ public:
         }
         else
         {
+          // Find correct entity map and determine direction of the map
           auto emap = get_entity_map(mesh0);
-
           bool inverse = emap->sub_topology() == mesh0->topology();
 
           std::vector<std::int32_t> e;
