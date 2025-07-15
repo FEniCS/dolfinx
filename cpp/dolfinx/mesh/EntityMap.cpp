@@ -14,11 +14,6 @@
 namespace dolfinx::mesh
 {
 //-----------------------------------------------------------------------------
-bool EntityMap::contains(const Topology& topology) const
-{
-  return &topology == _topology.get() or &topology == _sub_topology.get();
-}
-//-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 EntityMap::map_entities(std::span<const std::int32_t> entities,
                         const Topology& target_topology) const
