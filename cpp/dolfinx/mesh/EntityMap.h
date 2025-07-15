@@ -39,14 +39,14 @@ public:
         _sub_topology_to_topology(std::forward<U>(sub_topology_to_topology)),
         _sub_topology(sub_topology)
   {
-    auto e_map = sub_topology->index_map(_dim);
-    if (!e_map)
+    auto e_imap = sub_topology->index_map(_dim);
+    if (!e_imap)
     {
       throw std::runtime_error(
           "No index map for entities, call `Topology::create_entities("
           + std::to_string(_dim) + ")");
     }
-    std::size_t num_ents = e_map->size_local() + e_map->num_ghosts();
+    std::size_t num_ents = e_imap->size_local() + e_imap->num_ghosts();
     if (num_ents != _sub_topology_to_topology.size())
     {
       throw std::runtime_error(
@@ -85,8 +85,9 @@ public:
   /// `this->sub_topology()`. Entities that do not exist in the sub-topology are
   /// marked as -1.
   ///
-  /// @note This function recomputes the map on every call (it is not
-  /// cached), which may be expensive if called repeatedly.
+  /// @note If `inverse` is `true`, this function recomputes the inverse map on
+  /// every call (it is not cached), which may be expensive if called
+  /// repeatedly.
   ///
   /// @param entities A list of entity indices in the source topology.
   /// @param inverse If false, maps from `this->sub_topology()` to

@@ -55,10 +55,10 @@ EntityMap::sub_topology_to_topology(std::span<const std::int32_t> entities,
     }
 
     // For each entity index in `entities` (which are indices in `_topology`),
-    // get the corresponding entity in
-    // `_sub_topology`. Since `_sub_topology` consists of a subset of entities
-    // in `_topology`, there are entities in topology that may not exist in
-    // `_sub_topology`. If this is the case, mark those entities with -1.
+    // get the corresponding entity in `_sub_topology`. Since `_sub_topology`
+    // consists of a subset of entities in `_topology`, there are entities in
+    // topology that may not exist in `_sub_topology`. If this is the case, mark
+    // those entities with -1.
     auto mapped
         = entities
           | std::views::transform(

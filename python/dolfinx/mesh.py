@@ -460,13 +460,14 @@ class EntityMap:
         If `inverse` is False, this function maps a list of
         `self.dim()`-dimensional entities from `self.sub_topology()` to the
         corresponding entities in `self.topology()`. If `inverse` is True,
-        it performs the inverse mapping: from `self.topology()` to
+        it performs the inverse mapping from `self.topology()` to
         `self.sub_topology()`. Entities that do not exist in the
         sub-topology are marked as -1.
 
         Note:
-            This function recomputes the map on every call (it is not
-            cached), which may be expensive if called repeatedly.
+            If `inverse` is `True`, this function recomputes the inverse
+            map on every call (it is not cached), which may be expensive
+            if called repeatedly.
 
         Args:
             entities:
