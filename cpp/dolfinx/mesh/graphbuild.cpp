@@ -25,7 +25,7 @@ namespace
 /// @brief Build nonlocal part of dual graph for mesh and return number
 /// of non-local edges.
 ///
-/// @note Scalable version
+/// @note Scalable version.
 ///
 /// @note graphbuild::compute_local_dual_graph should be called
 /// before this function is called.
@@ -34,7 +34,7 @@ namespace
 /// @param[in] facets Facets on this rank that are shared by only on
 /// cell on this rank, i.e. candidates for possibly residing on other
 /// processes. Each row in `facets` corresponds to a facet, and the row
-/// data has the form [v0, ..., v_{n-1}, -1, -1], where `v_i` are the
+/// data has the form `[v0, ..., v_{n-1}, -1, -1]`, where `v_i` are the
 /// sorted vertex global indices of the facets and `-1` is a padding
 /// value for the mixed topology case where facets can have differing
 /// number of vertices.
@@ -65,8 +65,9 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   //    a match) (Note: this would complicate the communication and
   //    handling of buffers)
 
+  int comm_size = dolfinx::MPI::size(comm);
+
   // Return empty data if mesh is not distributed
-  const int comm_size = dolfinx::MPI::size(comm);
   if (comm_size == 1)
   {
     // Convert graph to int64_t and return
@@ -90,24 +91,23 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   //  d) return info of remotely matched/unmatched facets from PO
   //    - contruct locally the paralel aware dual graph (with ghost edges).
 
-  assert((local_max_vertices_per_facet == 0)
-         or (facets.size() % local_max_vertices_per_facet == 0));
+  assert(local_max_vertices_per_facet == 0
+         or facets.size() % local_max_vertices_per_facet == 0);
   {
     // assert facets sorted
     if (local_max_vertices_per_facet > 0)
     {
       for (std::size_t f = 0; f < facets.size() / local_max_vertices_per_facet;
-           f++)
+           ++f)
       {
-        auto facet = std::span(
-            std::next(facets.begin(), f * local_max_vertices_per_facet),
-            std::next(facets.begin(), (f + 1) * local_max_vertices_per_facet));
+        auto facet = facets.subspan(f * local_max_vertices_per_facet,
+                                    local_max_vertices_per_facet);
         assert(std::is_sorted(facet.begin(), std::ranges::find(facet, -1)));
       }
     }
   }
 
-  // Start (nonblocking) communication for cell offset
+  // Start (non-blocking) communication for cell offset
   std::int64_t cell_offset = 0;
   MPI_Request request_cell_offset;
   {
@@ -239,11 +239,19 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       send_indx_to_pos[pos] = f;
 
       // Copy facet data into buffer
-      std::copy_n(std::next(facets.begin(), f * local_max_vertices_per_facet),
-                  local_max_vertices_per_facet,
-                  std::next(send_buffer.begin(), buffer_shape1 * pos));
-      send_buffer[buffer_shape1 * pos + max_vertices_per_facet]
-          = cells[f] + cell_offset;
+      auto fdata = facets.subspan(f * local_max_vertices_per_facet,
+                                  local_max_vertices_per_facet);
+      std::span send_buffer_f(send_buffer.begin() + buffer_shape1 * pos,
+                              max_vertices_per_facet);
+      std::ranges::copy(fdata, send_buffer_f.begin());
+      send_buffer_f.back() = cells[f] + cell_offset;
+
+      // std::copy_n(std::next(facets.begin(), f *
+      // local_max_vertices_per_facet),
+      //             local_max_vertices_per_facet,
+      //             std::next(send_buffer.begin(), buffer_shape1 * pos));
+      // send_buffer[buffer_shape1 * pos + max_vertices_per_facet]
+      //     = cells[f] + cell_offset;
       ++send_offsets[neigh_dest];
     }
   }
