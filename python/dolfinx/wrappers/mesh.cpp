@@ -617,7 +617,8 @@ void mesh(nb::module_& m)
                     std::span(entities.data(), entities.size()), inverse);
             return as_nbarray(std::move(mapped_entities));
           },
-          nb::arg("entities"), nb::arg("inverse"));
+          nb::arg("entities"), nb::arg("inverse"))
+       .def_prop_ro("dim", &dolfinx::mesh::EntityMap::dim);
 
   // dolfinx::mesh::Topology class
   nb::class_<dolfinx::mesh::Topology>(m, "Topology", nb::dynamic_attr(),

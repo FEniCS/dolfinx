@@ -483,6 +483,17 @@ class EntityMap:
         """
         return self._cpp_object.sub_topology_to_topology(entities, inverse)
 
+    @property
+    def dim(self):
+        """
+        Get the topological dimension of the entities related by this
+        EntityMap.
+
+        Returns:
+            int: The topological dimension
+        """
+        return self._cpp_object.dim
+
 
 def entity_map(topology, sub_topology, dim, sub_topology_to_topology):
     """
