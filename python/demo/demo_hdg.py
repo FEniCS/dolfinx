@@ -171,7 +171,9 @@ msh_boundary_facets = mesh.exterior_facet_indices(msh.topology)
 
 # Since the boundary condition is enforced in the facet space, we need
 # to get the corresponding facets in `facet_mesh` using the entity map
-facet_mesh_boundary_facets = facet_mesh_emap.map_entities(msh_boundary_facets, facet_mesh.topology)
+facet_mesh_boundary_facets = facet_mesh_emap.sub_topology_to_topology(
+    msh_boundary_facets, inverse=True
+)
 
 # Get the dofs and apply the boundary condition
 facet_mesh.topology.create_connectivity(fdim, fdim)

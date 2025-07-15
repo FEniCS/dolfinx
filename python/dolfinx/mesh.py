@@ -453,50 +453,34 @@ class EntityMap:
         """
         self._cpp_object = entity_map
 
-    def map_entities(self, entities, target_topology):
+    def sub_topology_to_topology(self, entities, inverse):
         """
-        Given a list of entities in a source topology (either of the
-        topologies in this `EntityMap`), this function returns their
-        corresponding entity indices in the given target topology.
+        Map entities between the sub-topology and the parent topology.
 
-        If the target topology is the sub-topology, any entities that
-        don't exist in the sub-topology are marked as -1.
+        If `inverse` is False, this function maps a list of
+        `self.dim()`-dimensional entities from `self.sub_topology()` to the
+        corresponding entities in `self.topology()`. If `inverse` is True,
+        it performs the inverse mapping: from `self.topology()` to
+        `self.sub_topology()`. Entities that do not exist in the
+        sub-topology are marked as -1.
 
-        .. note::
-            This function computes a map every call (the map is not
-            stored). For multiple calls, this can be expensive and
-            ``self.map(target_topology)`` should be used instead.
+        Note:
+            This function recomputes the map on every call (it is not
+            cached), which may be expensive if called repeatedly.
 
         Args:
-            entities: A list of entity indices in the source topology
-            target_topology: The target topology to map the indices to
+            entities:
+                A list of entity indices in the source topology.
+            inverse:
+                If False, maps from `self.sub_topology()` to
+                `self.topology()`. If True, maps from `this.topology()` to
+                `this.sub_topology()`.
 
         Returns:
-            The corresponding list of entities in the target topology.
-            Entities that don't exist in the target topology are marked as
-            -1.
+            A list of mapped entity indices. Entities that don't exist in
+            the target topology are marked as -1.
         """
-        return self._cpp_object.map_entities(entities, target_topology._cpp_object)
-
-    def map(self, target_topology):
-        """
-        Get a list representing the map from entity indices in a source
-        topology (either of the topologies in this `EntityMap`), to a given
-        target topology.
-
-        If the target topology is the sub-topology, any entities that don't
-        exist in the sub-topology are marked as -1.
-
-        Args:
-            target_topology: The target topology to map to.
-
-        Returns:
-            A list whose `i`th entry is the entity index in
-            `target_topology` of entity `i` in the source topology. If the
-            entity does not exist in `target_topology`, then it is marked
-            with -1.
-        """
-        return self._cpp_object.map(target_topology._cpp_object)
+        return self._cpp_object.sub_topology_to_topology(entities, inverse)
 
 
 def entity_map(topology, sub_topology, dim, sub_topology_to_topology):

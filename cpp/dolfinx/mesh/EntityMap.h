@@ -68,8 +68,12 @@ public:
   /// @return The topological dimension
   std::size_t dim() const;
 
+  /// @brief Get the (parent) topology
+  /// @return The topology
   std::shared_ptr<const Topology> topology() const;
 
+  /// @brief Get the sub-topology
+  /// @return The sub-topology
   std::shared_ptr<const Topology> sub_topology() const;
 
   /// @brief Map entities between the sub-topology and the parent topology.
