@@ -170,6 +170,7 @@ public:
     if (!_mesh)
       throw std::runtime_error("Form Mesh is null.");
 
+    // A helper function to find the correct entity map for a given mesh
     auto get_entity_map = [&](const auto& mesh0)
     {
       auto it = std::ranges::find_if(
@@ -193,33 +194,51 @@ public:
       return emap;
     };
 
+    // A helper function to compute the (cell, local_facet) pairs
+    // in the argument/coefficient domain from the
+    // (cell, local_facet) pairs in the `this->mesh()`.
     auto compute_facet_domains
-        = [&](const auto& input, int codim, const auto& c_to_f,
+        = [&](const auto& int_ents_mesh, int codim, const auto& c_to_f,
               const auto& emap, bool inverse)
     {
-      // TODO: This would be much neater using `std::views::stride(2)`
+      // TODO: This function would be much neater using `std::views::stride(2)`
       // from C++ 23
+
+      // Get a list of entities to map to the argument/coefficient domain
       std::vector<std::int32_t> entities;
-      entities.reserve(input.size() / 2);
+      entities.reserve(int_ents_mesh.size() / 2);
       if (codim == 0)
       {
-        for (std::size_t i = 0; i < input.size(); i += 2)
-          entities.push_back(input[i]);
+        // In the codim 0 case, we need to map from cells in `this->mesh()`
+        // to cells in the argument coefficient mesh, so here we extract the
+        // cells.
+        for (std::size_t i = 0; i < int_ents_mesh.size(); i += 2)
+          entities.push_back(int_ents_mesh[i]);
       }
       else if (codim == 1)
       {
-        for (std::size_t i = 0; i < input.size(); i += 2)
+        // In the codim 1 case, we need to map facets in `this->mesh()` to cells
+        // in the argument/coefficient mesh, so here we extract the facet index
+        // using the cell-to-facet connectivity.
+        for (std::size_t i = 0; i < int_ents_mesh.size(); i += 2)
         {
-          entities.push_back(c_to_f->links(input[i])[input[i + 1]]);
+          entities.push_back(
+              c_to_f->links(int_ents_mesh[i])[int_ents_mesh[i + 1]]);
         }
       }
       else
         throw std::runtime_error("Codimension > 1 not supported.");
 
+      // Map from entity indices in `this->mesh()` to the corresponding cell
+      // indices in the argument/coefficient mesh
       std::vector<std::int32_t> cells_mesh0
           = emap->sub_topology_to_topology(entities, inverse);
 
-      std::vector<std::int32_t> e = input;
+      // Create a list of (cell, local_facet_index) pairs in the
+      // argument/coefficient domain. Since `create_submesh`preserves the local
+      // facet index (with respect to the cell), we only need to change the cell
+      // index
+      std::vector<std::int32_t> e = int_ents_mesh;
       for (std::size_t i = 0; i < cells_mesh0.size(); ++i)
         e[2 * i] = cells_mesh0[i];
 
