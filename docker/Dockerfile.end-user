@@ -34,9 +34,6 @@
 #    echo "FROM dolfinx/dolfinx-onbuild:nightly" | docker build -f- .
 #
 
-ARG PYVISTA_VERSION=0.45.2
-ARG VTK_VERSION=9.5.0
-
 # Used to set the correct PYTHONPATH for the real and complex install of
 # DOLFINx
 ARG PYTHON_VERSION=3.12
@@ -153,8 +150,6 @@ ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
 FROM dolfinx AS lab
 LABEL description="DOLFINx Jupyter Lab"
 
-ARG PYVISTA_VERSION
-
 WORKDIR /root
 
 RUN pip install --no-cache-dir jupyter jupyterlab
@@ -170,8 +165,9 @@ RUN apt-get -qq update && \
 # matplotlib improves plotting quality with better color maps and
 # properly rendering colorbars.
 # trame is the preferred backend for pyvista.
+# vtk>=9.5.0 required as minimal version for aarch64 wheels support.
 RUN pip install matplotlib; \
-    pip install --no-cache-dir vtk==${VTK_VERSION} pyvista[jupyter]==${PYVISTA_VERSION} ; \
+    pip install --no-cache-dir vtk>=9.5.0 pyvista[jupyter] ; \
     pip cache purge
 
 # Jupyter Notebook kernel specification for complex build DOLFINx
