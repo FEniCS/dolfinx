@@ -49,7 +49,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: oneapi-test-env
-          environment-file: .github/workflows/oneapi-conda/conda-oneapi-test-env.yml
+          environment-file: .github/workflows/oneapi-conda/environment.yml
           auto-activate-base: false
       - run: |
           conda info
