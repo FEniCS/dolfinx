@@ -452,6 +452,8 @@ class EntityMap:
             initializer directly.
         """
         self._cpp_object = entity_map
+        self._topology = Topology(self._cpp_object.topology)
+        self._sub_topology = Topology(self._cpp_object.sub_topology)
 
     def sub_topology_to_topology(self, entities, inverse):
         """
@@ -494,6 +496,14 @@ class EntityMap:
         """
         return self._cpp_object.dim
 
+    @property
+    def topology(self):
+        return self._topology
+
+    @property
+    def sub_topology(self):
+        return self._sub_topology
+
 
 def entity_map(topology, sub_topology, dim, sub_topology_to_topology):
     """
@@ -506,7 +516,7 @@ def entity_map(topology, sub_topology, dim, sub_topology_to_topology):
         "sub-topology" of `topology` i.e. every entity in `sub_topology`
         must also exist in `topology`.
         dim: The dimension of the entities
-        sub_topology_to_topology: A list of entities in `topology` wheres
+        sub_topology_to_topology: A list of entities in `topology` where
         `sub_topology_to_topology[i]` is the index in `topology`
         corresponding to entity `i` in `sub_topology`.
     """
