@@ -17,8 +17,8 @@ import ufl
 from dolfinx.cpp.io import (
     read_vtkhdf_mesh_float32,
     read_vtkhdf_mesh_float64,
+    write_vtkhdf_data,
     write_vtkhdf_mesh,
-    write_vtkhdf_point_data,
 )
 from dolfinx.mesh import Mesh
 
@@ -77,4 +77,15 @@ def write_point_data(filename: typing.Union[str, Path], mesh: Mesh, data: npt.ND
         data: Data at the points of the mesh, local to each process.
         time: Timestamp.
     """
-    write_vtkhdf_point_data(filename, mesh._cpp_object, data, time)
+    write_vtkhdf_data("Point", filename, mesh._cpp_object, data, time)
+
+
+def write_cell_data(filename: typing.Union[str, Path], mesh: Mesh, data: npt.NDArray, time: float):
+    """Write data at cells of the mesh.
+    Args:
+        filename: File to write to.
+        mesh: Mesh.
+        data: Data at the cells of the mesh, local to each process.
+        time: Timestamp.
+    """
+    write_vtkhdf_data("Cell", filename, mesh._cpp_object, data, time)

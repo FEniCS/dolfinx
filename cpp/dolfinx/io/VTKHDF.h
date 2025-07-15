@@ -149,28 +149,41 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
   hdf5::close_file(h5file);
 }
 
-/// @brief Write point data to VTKHDF
+/// @brief Write Point or Cell data to VTKHDF
+/// Adds data to an existing VTKHDF file, which already contains a mesh.
 /// @tparam U Scalar type
+/// @param point_or_cell String "Point" or "Cell" determining data location
 /// @param filename File for output
 /// @param mesh Mesh
-/// @param data Point data at the locally owned vertices
+/// @param data Local point or cell centered data
 /// @param time Timestamp
-/// @note Mesh must be written to file first using `VTKHDF::write_mesh`
+/// @note Mesh must be written to file first using `VTKHDF::write_mesh`.
+/// @note Only one dataset can be written per file at present.
+/// @note Limited support for floating point types at present (no complex).
 template <std::floating_point U>
-void write_point_data(std::string filename, const mesh::Mesh<U>& mesh,
-                      const std::vector<U>& data, double time)
+void write_data(std::string point_or_cell, std::string filename,
+                const mesh::Mesh<U>& mesh, const std::vector<U>& data,
+                double time)
 {
-  auto im0 = mesh.topology()->index_map(0);
+  int dim = 0;
+  if (point_or_cell == "Point")
+    dim = 0;
+  else if (point_or_cell == "Cell")
+    dim = mesh.topology()->dim();
+  else
+    throw std::runtime_error("Selection must be Point or Cell");
+  auto index_map = mesh.topology()->index_map(dim);
 
-  int npoints = im0->size_local();
+  std::string dataset_name = "/VTKHDF/" + point_or_cell + "Data/u";
+  int npoints = index_map->size_local();
   int data_width = data.size() / npoints;
 
   if (data.size() % npoints != 0)
   {
     throw std::runtime_error(
-        "Data size mismatch with number of local vertices");
+        "Data size mismatch with number of local vertices/cells");
   }
-  spdlog::debug("Data vector size={}", data_width);
+  spdlog::debug("Data vector width={}", data_width);
 
   hid_t h5file = hdf5::open_file(mesh.comm(), filename, "a", true);
   hdf5::add_group(h5file, "VTKHDF/Steps");
@@ -194,7 +207,7 @@ void write_point_data(std::string filename, const mesh::Mesh<U>& mesh,
     H5Aclose(attr_id);
 
     std::vector<std::int64_t> data_shape
-        = hdf5::get_dataset_shape(h5file, "/VTKHDF/PointData/u");
+        = hdf5::get_dataset_shape(h5file, dataset_name);
     assert(data_shape.size() == 2);
     point_data_offset = data_shape[0];
   }
@@ -225,8 +238,9 @@ void write_point_data(std::string filename, const mesh::Mesh<U>& mesh,
   increment_dataset("/VTKHDF/Steps/PartOffsets", 0);
 
   // Needs to update to end of array
-  hdf5::add_group(h5file, "/VTKHDF/Steps/PointDataOffsets");
-  increment_dataset("/VTKHDF/Steps/PointDataOffsets/u", point_data_offset);
+  hdf5::add_group(h5file, "/VTKHDF/Steps/" + point_or_cell + "DataOffsets");
+  increment_dataset("/VTKHDF/Steps/" + point_or_cell + "DataOffsets/u",
+                    point_data_offset);
 
   increment_dataset("/VTKHDF/Steps/PointOffsets", 0);
 
@@ -234,35 +248,36 @@ void write_point_data(std::string filename, const mesh::Mesh<U>& mesh,
   // FIXME: check these are increasing?
   increment_dataset("/VTKHDF/Steps/Values", time);
 
-  hdf5::add_group(h5file, "/VTKHDF/PointData");
+  std::string group_name = "/VTKHDF/" + point_or_cell + "Data";
+  hdf5::add_group(h5file, group_name);
 
-  // Add point data into dataset, extending each time by size_global
+  // Add point/cell data into dataset, extending each time by size_global
   // with each process writing its own part.
-  std::array<std::int64_t, 2> range = im0->local_range();
-  std::vector<std::int64_t> shape0 = {im0->size_global(), data_width};
-  if (hdf5::has_dataset(h5file, "/VTKHDF/PointData/u"))
+  std::array<std::int64_t, 2> range = index_map->local_range();
+  std::vector<std::int64_t> shape0 = {index_map->size_global(), data_width};
+  if (hdf5::has_dataset(h5file, dataset_name))
   {
     std::vector<std::int64_t> shape
-        = hdf5::get_dataset_shape(h5file, "/VTKHDF/PointData/u");
+        = hdf5::get_dataset_shape(h5file, dataset_name);
     assert(shape.size() == 2);
     std::int64_t offset = shape[0];
     range[0] += offset;
     range[1] += offset;
     shape0[0] += offset;
 
-    hdf5::write_dataset(h5file, "/VTKHDF/PointData/u", data.data(), range,
-                        shape0, true, true);
+    hdf5::write_dataset(h5file, dataset_name, data.data(), range, shape0, true,
+                        true);
   }
   else
   {
-    hdf5::write_dataset(h5file, "/VTKHDF/PointData/u", data.data(), range,
-                        shape0, true, true);
+    hdf5::write_dataset(h5file, dataset_name, data.data(), range, shape0, true,
+                        true);
     if (data_width > 1)
     {
-      hid_t dset_id = hdf5::open_dataset(h5file, "/VTKHDF/PointData/u");
+      hid_t dset_id = hdf5::open_dataset(h5file, dataset_name);
       hdf5::set_attribute(dset_id, "NumberOfComponents", data_width);
       H5Dclose(dset_id);
-      hid_t vtk_group = H5Gopen(h5file, "VTKHDF/PointData", H5P_DEFAULT);
+      hid_t vtk_group = H5Gopen(h5file, group_name.c_str(), H5P_DEFAULT);
       hdf5::set_attribute(vtk_group, "Vectors", "u");
       H5Gclose(vtk_group);
     }
