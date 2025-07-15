@@ -20,6 +20,7 @@ dependencies:
   - mpi4py
   - mpich
   - nanobind
+  - networkx
   - ninja
   - numba
   - numpy
