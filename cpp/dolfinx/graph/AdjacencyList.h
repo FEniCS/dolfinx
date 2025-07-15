@@ -25,18 +25,21 @@ namespace dolfinx::graph
 /// nodes. The representation is strictly local, i.e. it is not parallel
 /// aware.
 ///
-/// The edge type is template parameter, which allows edge data to be
-/// stored, e.g. a pair with the target node index and the edge weight.
+/// The link (edge) type is template parameter, which allows link data
+/// to be stored, e.g. a pair with the target node index and the link
+/// weight.
 ///
 /// Node data can also be stored.
 ///
-/// @tparam EdgeData_t Graph edge type.
+/// @tparam LinkData_t Graph link (edge) type.
 /// @tparam NodeData_t Data type for graph node data.
-template <typename EdgeData, typename NodeData = std::nullptr_t>
+template <typename LinkData, typename NodeData = std::nullptr_t>
 class AdjacencyList
 {
 public:
-  using edge_type = EdgeData;
+  /// @brief Adjacency list link (edge) type
+  using link_type = LinkData;
+  /// @brief Adjacency list node data type
   using node_data_type = NodeData;
 
   /// @brief Construct trivial adjacency list where each of the n nodes
@@ -48,8 +51,8 @@ public:
     std::iota(_offsets.begin(), _offsets.end(), 0);
   }
 
-  /// @brief Construct adjacency list from arrays of edge data and
-  /// offsets.
+  /// @brief Construct adjacency list from arrays of link (edge) data
+  /// and offsets.
   /// @param[in] data Adjacency lost data array.
   /// @param[in] offsets Offsets into `data` for each node, where
   /// `offsets[i]` is the first index in `data` for node `i`. The last
@@ -57,7 +60,7 @@ public:
   /// node `i`.
   template <typename U, typename V>
     requires std::is_convertible_v<std::remove_cvref_t<U>,
-                                   std::vector<EdgeData>>
+                                   std::vector<LinkData>>
                  and std::is_convertible_v<std::remove_cvref_t<V>,
                                            std::vector<std::int32_t>>
   AdjacencyList(U&& data, V&& offsets)
@@ -67,7 +70,7 @@ public:
     assert(_offsets.back() == (std::int32_t)_array.size());
   }
 
-  /// @brief Construct adjacency list from arrays of edge data,
+  /// @brief Construct adjacency list from arrays of link (edge) data,
   /// offsets, and node data.
   /// @param[in] data Adjacency lost data array.
   /// @param[in] offsets Offsets into `data` for each node, where
@@ -77,7 +80,7 @@ public:
   /// data attached to node `i`.
   template <typename U, typename V, typename W>
     requires std::is_convertible_v<std::remove_cvref_t<U>,
-                                   std::vector<EdgeData>>
+                                   std::vector<LinkData>>
                  and std::is_convertible_v<std::remove_cvref_t<V>,
                                            std::vector<std::int32_t>>
                  and std::is_convertible_v<std::remove_cvref_t<W>,
@@ -96,7 +99,7 @@ public:
   /// a `std::vector<<std::vector<std::size_t>>`,
   /// `std::vector<<std::set<std::size_t>>`, etc).
   /// @param[in] data Adjacency list data, where `std::next(data, i)`
-  /// points to the container of edges for node `i`.
+  /// points to the container of links (edges) for node `i`.
   template <typename X>
   explicit AdjacencyList(const std::vector<X>& data)
   {
@@ -150,9 +153,9 @@ public:
   /// @param[in] node Node index.
   /// @return Array of outgoing links for the node. The length will be
   /// `AdjacencyList::num_links(node)`.
-  std::span<EdgeData> links(std::size_t node)
+  std::span<LinkData> links(std::size_t node)
   {
-    return std::span<EdgeData>(_array.data() + _offsets[node],
+    return std::span<LinkData>(_array.data() + _offsets[node],
                                _offsets[node + 1] - _offsets[node]);
   }
 
@@ -160,17 +163,17 @@ public:
   /// @param[in] node Node index.
   /// @return Array of outgoing links for the node. The length will be
   /// `AdjacencyList:num_links(node)`.
-  std::span<const EdgeData> links(std::size_t node) const
+  std::span<const LinkData> links(std::size_t node) const
   {
-    return std::span<const EdgeData>(_array.data() + _offsets[node],
+    return std::span<const LinkData>(_array.data() + _offsets[node],
                                      _offsets[node + 1] - _offsets[node]);
   }
 
   /// Return contiguous array of links for all nodes (const version).
-  const std::vector<EdgeData>& array() const { return _array; }
+  const std::vector<LinkData>& array() const { return _array; }
 
   /// Return contiguous array of links for all nodes.
-  std::vector<EdgeData>& array() { return _array; }
+  std::vector<LinkData>& array() { return _array; }
 
   /// Offset for each node in array() (const version).
   const std::vector<std::int32_t>& offsets() const { return _offsets; }
@@ -209,7 +212,7 @@ public:
 private:
   // Connections (links/edges) for all entities stored as a contiguous
   // array
-  std::vector<EdgeData> _array;
+  std::vector<LinkData> _array;
 
   // Position of first connection for each entity (using local index)
   std::vector<std::int32_t> _offsets;
@@ -229,11 +232,12 @@ AdjacencyList(T, U, W)
 
 /// @brief Construct a constant degree (valency) adjacency list.
 ///
-/// A constant degree graph has the same number of edges for every node.
+/// A constant degree graph has the same number of links (edges) for
+/// every node.
 ///
-/// @param[in] data Adjacency array
-/// @param[in] degree The number of (outgoing) edges for each node
-/// @return An adjacency list
+/// @param[in] data Adjacency array.
+/// @param[in] degree Number of (outgoing) links for each node.
+/// @return An adjacency list.
 template <typename V = std::nullptr_t, typename U>
   requires requires {
     typename std::decay_t<U>::value_type;
