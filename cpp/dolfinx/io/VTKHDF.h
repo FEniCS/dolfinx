@@ -158,8 +158,10 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
 /// @param data Local point or cell centered data
 /// @param time Timestamp
 /// @note Mesh must be written to file first using `VTKHDF::write_mesh`.
-/// @note Only one dataset can be written per file at present.
+/// @note Only one dataset can be written per file at present, with multiple
+/// timesteps.
 /// @note Limited support for floating point types at present (no complex).
+/// @note Mixed-topology meshes not supported at present.
 template <std::floating_point U>
 void write_data(std::string point_or_cell, std::string filename,
                 const mesh::Mesh<U>& mesh, const std::vector<U>& data,
@@ -237,7 +239,7 @@ void write_data(std::string point_or_cell, std::string filename,
 
   increment_dataset("/VTKHDF/Steps/PartOffsets", 0);
 
-  // Needs to update to end of array
+  // Add the current data size to the end of the offset array
   hdf5::add_group(h5file, "/VTKHDF/Steps/" + point_or_cell + "DataOffsets");
   increment_dataset("/VTKHDF/Steps/" + point_or_cell + "DataOffsets/u",
                     point_data_offset);
