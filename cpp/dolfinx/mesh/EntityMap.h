@@ -72,19 +72,24 @@ public:
 
   std::shared_ptr<const Topology> sub_topology() const;
 
-  /// @brief If `inverse` is false, given a list of `this->dim()`-dimensional
-  /// entities in `this->sub_topology()`, this function returns the
-  /// corresponding entities in `this->topology()`. If inverse is true, this
-  /// function maps entities from `this->topology()` to `this->sub_topology()`,
-  /// where any entities that dont exist in the sub-topology are marked -1.
+  /// @brief Map entities between the sub-topology and the parent topology.
   ///
-  /// @note This function computes a map every call (the map is not stored),
-  /// which can . For this can be expensive for repeated calls.
+  /// If `inverse` is false, this function maps a list of
+  /// `this->dim()`-dimensional entities from `this->sub_topology()` to the
+  /// corresponding entities in `this->topology()`. If `inverse` is true, it
+  /// performs the inverse mapping: from `this->topology()` to
+  /// `this->sub_topology()`. Entities that do not exist in the sub-topology are
+  /// marked as -1.
   ///
-  /// @param entities A list of entity indices in the source topology
-  /// @param inverse The direction of the map
-  /// @return The mapped entities. Entities that don't exist in the target
-  /// topology are marked -1.
+  /// @note This function recomputes the map on every call (it is not
+  /// cached), which may be expensive if called repeatedly.
+  ///
+  /// @param entities A list of entity indices in the source topology.
+  /// @param inverse If false, maps from `this->sub_topology()` to
+  /// `this->topology()`. If true, maps from `this->topology()` to
+  /// `this->sub_topology()`.
+  /// @return A list of mapped entity indices. Entities that don't exist in the
+  /// target topology are marked as -1.
   std::vector<std::int32_t>
   sub_topology_to_topology(std::span<const std::int32_t> entities,
                            bool inverse) const;
