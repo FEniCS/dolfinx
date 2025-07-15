@@ -172,12 +172,16 @@ public:
 
     auto get_entity_map = [&](const auto& mesh0)
     {
-      auto it = std::ranges::find_if(entity_maps,
-                                     [&](const auto& em)
-                                     {
-                                       assert(em);
-                                       return em->contains(*mesh0->topology());
-                                     });
+      auto it = std::ranges::find_if(
+          entity_maps,
+          [&](const auto& em)
+          {
+            assert(em);
+            return (em->topology() == mesh0->topology()
+                    and em->sub_topology() == _mesh->topology())
+                   or (em->sub_topology() == mesh0->topology()
+                       and em->topology() == _mesh->topology());
+          });
       if (it == entity_maps.end())
       {
         throw std::runtime_error(
@@ -238,7 +242,6 @@ public:
       else
       {
         // Find correct entity map
-        // TODO Check entity maps contains int domain
         auto emap = get_entity_map(mesh0);
 
         bool inverse = emap->sub_topology() == mesh0->topology();
