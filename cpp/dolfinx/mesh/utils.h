@@ -1386,7 +1386,6 @@ create_submesh(const Mesh<T>& mesh, int dim,
                        subentity_to_entity);
   EntityMap vertex_map(mesh.topology(), submesh.topology(), 0,
                        subvertex_to_vertex);
-
   return {std::move(submesh), std::move(entity_map), std::move(vertex_map),
           std::move(subx_to_x_dofmap)};
 }

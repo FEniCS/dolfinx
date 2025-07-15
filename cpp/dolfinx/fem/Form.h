@@ -178,10 +178,10 @@ public:
           [&](const auto& em)
           {
             assert(em);
-            return (em->topology() == mesh0->topology()
-                    and em->sub_topology() == _mesh->topology())
-                   or (em->sub_topology() == mesh0->topology()
-                       and em->topology() == _mesh->topology());
+            return ((em->topology() == mesh0->topology()
+                     and em->sub_topology() == _mesh->topology()))
+                   or ((em->sub_topology() == mesh0->topology()
+                        and em->topology() == _mesh->topology()));
           });
       if (it == entity_maps.end())
       {
@@ -194,32 +194,33 @@ public:
       return emap;
     };
 
-    // A helper function to compute the (cell, local_facet) pairs
-    // in the argument/coefficient domain from the
-    // (cell, local_facet) pairs in `this->mesh()`.
+    // A helper function to compute the (cell, local_facet) pairs in the
+    // argument/coefficient domain from the (cell, local_facet) pairs in
+    // `this->mesh()`.
     auto compute_facet_domains
         = [&](const auto& int_ents_mesh, int codim, const auto& c_to_f,
               const auto& emap, bool inverse)
     {
-      // TODO: This function would be much neater using `std::views::stride(2)`
-      // from C++ 23
+      // TODO: This function would be much neater using
+      // `std::views::stride(2)` from C++ 23
 
-      // Get a list of entities to map to the argument/coefficient domain
+      // Get a list of entities to map to the argument/coefficient
+      // domain
       std::vector<std::int32_t> entities;
       entities.reserve(int_ents_mesh.size() / 2);
       if (codim == 0)
       {
-        // In the codim 0 case, we need to map from cells in `this->mesh()`
-        // to cells in the argument/coefficient mesh, so here we extract the
-        // cells.
+        // In the codim 0 case, we need to map from cells in
+        // `this->mesh()` to cells in the argument/coefficient mesh, so
+        // here we extract the cells.
         for (std::size_t i = 0; i < int_ents_mesh.size(); i += 2)
           entities.push_back(int_ents_mesh[i]);
       }
       else if (codim == 1)
       {
-        // In the codim 1 case, we need to map facets in `this->mesh()` to cells
-        // in the argument/coefficient mesh, so here we extract the facet index
-        // using the cell-to-facet connectivity.
+        // In the codim 1 case, we need to map facets in `this->mesh()`
+        // to cells in the argument/coefficient mesh, so here we extract
+        // the facet index using the cell-to-facet connectivity.
         for (std::size_t i = 0; i < int_ents_mesh.size(); i += 2)
         {
           entities.push_back(
@@ -229,15 +230,15 @@ public:
       else
         throw std::runtime_error("Codimension > 1 not supported.");
 
-      // Map from entity indices in `this->mesh()` to the corresponding cell
-      // indices in the argument/coefficient mesh
+      // Map from entity indices in `this->mesh()` to the corresponding
+      // cell indices in the argument/coefficient mesh
       std::vector<std::int32_t> cells_mesh0
           = emap->sub_topology_to_topology(entities, inverse);
 
       // Create a list of (cell, local_facet_index) pairs in the
-      // argument/coefficient domain. Since `create_submesh`preserves the local
-      // facet index (with respect to the cell), we can use the local facet
-      // indices from the input integration entities
+      // argument/coefficient domain. Since `create_submesh`preserves
+      // the local facet index (with respect to the cell), we can use
+      // the local facet indices from the input integration entities
       std::vector<std::int32_t> e = int_ents_mesh;
       for (std::size_t i = 0; i < cells_mesh0.size(); ++i)
         e[2 * i] = cells_mesh0[i];
@@ -263,19 +264,16 @@ public:
         // Find correct entity map
         auto emap = get_entity_map(mesh0);
 
-        // Determine direction of the map. We need to map from `this->mesh()` to
-        // `mesh0`, so if `emap->sub_topology()` isn't the source topology, we
-        // need the inverse map
+        // Determine direction of the map. We need to map from
+        // `this->mesh()` to `mesh0`, so if `emap->sub_topology()` isn't
+        // the source topology, we need the inverse map
         bool inverse = emap->sub_topology() == mesh0->topology();
-
         for (auto& [key, itg] : _integrals)
         {
           auto [type, id, kernel_idx] = key;
           std::vector<std::int32_t> e;
           if (type == IntegralType::cell)
-          {
             e = emap->sub_topology_to_topology(itg.entities, inverse);
-          }
           else if (type == IntegralType::exterior_facet
                    or type == IntegralType::interior_facet)
           {
@@ -292,6 +290,7 @@ public:
           }
           else
             throw std::runtime_error("Integral type not supported.");
+
           vdata.insert({key, std::move(e)});
         }
       }
@@ -317,9 +316,7 @@ public:
 
           std::vector<std::int32_t> e;
           if (type == IntegralType::cell)
-          {
             e = emap->sub_topology_to_topology(integral.entities, inverse);
-          }
           else if (type == IntegralType::exterior_facet
                    or type == IntegralType::interior_facet)
           {
@@ -335,6 +332,7 @@ public:
           }
           else
             throw std::runtime_error("Integral type not supported.");
+
           _cdata.insert({{type, id, c}, std::move(e)});
         }
       }

@@ -437,8 +437,8 @@ class MeshTags:
 
 
 class EntityMap:
-    """
-    A bidirectional map that relates entities in two different topologies.
+    """A bidirectional map that relates entities in two different
+    topologies.
     """
 
     def __init__(self, entity_map):
@@ -448,6 +448,7 @@ class EntityMap:
             entity_map: A C++ `EntityMap` object
 
         .. note::
+
             `EntityMap` objects should not usually be created using this
             initializer directly.
         """
@@ -456,13 +457,12 @@ class EntityMap:
         self._sub_topology = Topology(self._cpp_object.sub_topology)
 
     def sub_topology_to_topology(self, entities, inverse):
-        """
-        Map entities between the sub-topology and the parent topology.
+        """Map entities between the sub-topology and the parent topology.
 
         If `inverse` is False, this function maps a list of
-        `self.dim()`-dimensional entities from `self.sub_topology()` to the
-        corresponding entities in `self.topology()`. If `inverse` is True,
-        it performs the inverse mapping from `self.topology()` to
+        `self.dim()`-dimensional entities from `self.sub_topology()` to
+        the corresponding entities in `self.topology()`. If `inverse` is
+        True, it performs the inverse mapping from `self.topology()` to
         `self.sub_topology()`. Entities that do not exist in the
         sub-topology are marked as -1.
 
@@ -476,19 +476,18 @@ class EntityMap:
                 A list of entity indices in the source topology.
             inverse:
                 If False, maps from `self.sub_topology()` to
-                `self.topology()`. If True, maps from `this.topology()` to
-                `this.sub_topology()`.
+                `self.topology()`. If True, maps from `this.topology()`
+                to `this.sub_topology()`.
 
         Returns:
-            A list of mapped entity indices. Entities that don't exist in
-            the target topology are marked as -1.
+            A list of mapped entity indices. Entities that don't exist
+            in the target topology are marked as -1.
         """
         return self._cpp_object.sub_topology_to_topology(entities, inverse)
 
     @property
     def dim(self):
-        """
-        Get the topological dimension of the entities related by this
+        """Get the topological dimension of the entities related by this
         EntityMap.
 
         Returns:
@@ -506,19 +505,18 @@ class EntityMap:
 
 
 def entity_map(topology, sub_topology, dim, sub_topology_to_topology):
-    """
-    Create a bidirectional map relating entities of dimension `dim` in
+    """Create a bidirectional map relating entities of dimension `dim` in
     `topology` and `sub_topology`.
 
     Args:
         topology: A topology
         sub_topology: Topology of another mesh. This must be a
-        "sub-topology" of `topology` i.e. every entity in `sub_topology`
-        must also exist in `topology`.
+            "sub-topology" of `topology` i.e. every entity in
+            `sub_topology` must also exist in `topology`.
         dim: The dimension of the entities
         sub_topology_to_topology: A list of entities in `topology` where
-        `sub_topology_to_topology[i]` is the index in `topology`
-        corresponding to entity `i` in `sub_topology`.
+            `sub_topology_to_topology[i]` is the index in `topology`
+            corresponding to entity `i` in `sub_topology`.
     """
     return _cpp.mesh.EntityMap(
         topology._cpp_object, sub_topology._cpp_object, dim, sub_topology_to_topology

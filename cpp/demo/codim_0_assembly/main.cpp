@@ -77,18 +77,19 @@ int main(int argc, char* argv[])
     mesh::MeshTags<std::int32_t> cell_marker(mesh->topology(), tdim, cells,
                                              values);
 
-    // We create a submesh consisting of only cells with a given tag by calling
-    // `create_submesh`. This function also returns an `EntityMap`
-    // object, which relates entities in the submesh to entities in the original
-    // mesh. We will need this to assemble our mixed-domain form.
-    std::shared_ptr<mesh::Mesh<U>> submesh;
-    std::shared_ptr<mesh::EntityMap> entity_map;
+    // We create a submesh consisting of only cells with a given tag by
+    // calling `create_submesh`. This function also returns an
+    // `EntityMap` object, which relates entities in the submesh to
+    // entities in the original mesh. We will need this to assemble our
+    // mixed-domain form.
+    auto submesh_data = [](auto& mesh, int tdim, auto&& subcells)
     {
-      auto [_submesh, _emap, v_map, g_map]
-          = mesh::create_submesh(*mesh, tdim, cell_marker.find(2));
-      submesh = std::make_shared<mesh::Mesh<U>>(std::move(_submesh));
-      entity_map = std::make_shared<mesh::EntityMap>(std::move(_emap));
-    }
+      auto [submesh, emap, v_map, g_map]
+          = mesh::create_submesh(mesh, tdim, subcells);
+      return std::pair(std::make_shared<mesh::Mesh<U>>(std::move(submesh)),
+                       std::make_shared<mesh::EntityMap>(std::move(emap)));
+    };
+    auto [submesh, entity_map] = submesh_data(*mesh, tdim, cell_marker.find(2));
 
     // We create the function space used for the trial space
     auto W
@@ -106,15 +107,16 @@ int main(int argc, char* argv[])
         subdomain_data
         = {{fem::IntegralType::cell, {{3, integration_entities}}}};
 
-    // A mixed-domain form involves functions defined over multiple meshes. The
-    // mesh passed to `create_form` is called the *integration domain mesh*. To
-    // assemble a mixed-domain form, we must supply an `EntityMap` for each
-    // additional mesh involved in the form, relating entities in that mesh to
-    // the integration domain mesh. In our case, `mesh` is the integration
-    // domain mesh, and the only other mesh in our form is `submesh`. Hence, we
-    // must provide the entity map object returned when we called
-    // `create_submesh`, which relates entities in `submesh` to entities in
-    // `mesh`.
+    // A mixed-domain form involves functions defined over multiple
+    // meshes. The mesh passed to `create_form` is called the
+    // *integration domain mesh*. To assemble a mixed-domain form, we
+    // must supply an `EntityMap` for each additional mesh involved in
+    // the form, relating entities in that mesh to the integration
+    // domain mesh. In our case, `mesh` is the integration domain mesh,
+    // and the only other mesh in our form is `submesh`. Hence, we must
+    // provide the entity map object returned when we called
+    // `create_submesh`, which relates entities in `submesh` to entities
+    // in `mesh`.
     std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps
         = {entity_map};
 

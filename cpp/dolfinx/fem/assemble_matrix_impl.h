@@ -509,12 +509,6 @@ void assemble_interior_facets(
   }
 }
 
-/// The matrix A must already be initialised. The matrix may be a proxy,
-/// i.e. a view into a larger matrix, and assembly is performed using
-/// local indices. Rows (bc0) and columns (bc1) with Dirichlet
-/// conditions are zeroed. Markers (bc0 and bc1) can be empty if no bcs
-/// are applied. Matrix is not finalised.
-
 /// @brief Assemble (accumulate) into a matrix.
 ///
 /// Rows (bc0) and columns (bc1) with Dirichlet conditions are zeroed.

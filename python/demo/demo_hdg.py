@@ -92,9 +92,9 @@ n = 8
 # Create the mesh
 msh = mesh.create_unit_cube(comm, n, n, n, ghost_mode=mesh.GhostMode.none)
 
-# We need to create a broken Lagrange space defined over the facets of the
-# mesh. To do so, we require a sub-mesh of the all facets. We begin by
-# creating a list of all of the facets in the mesh
+# We need to create a broken Lagrange space defined over the facets of
+# the mesh. To do so, we require a sub-mesh of the all facets. We begin
+# by creating a list of all of the facets in the mesh
 tdim = msh.topology.dim
 fdim = tdim - 1
 msh.topology.create_entities(fdim)
@@ -121,17 +121,19 @@ v, vbar = ufl.TestFunctions(W)
 # Define integration measures
 # Cell
 dx_c = ufl.Measure("dx", domain=msh)
+
 # Cell boundaries
 # We need to define an integration measure to integrate around the
-# boundary of each cell. The integration entities can be computed
-# using the following convenience function.
+# boundary of each cell. The integration entities can be computed using
+# the following convenience function.
 cell_boundary_facets = compute_cell_boundary_facets(msh)
 cell_boundaries = 1  # A tag
+
 # Create the measure
 ds_c = ufl.Measure("ds", subdomain_data=[(cell_boundaries, cell_boundary_facets)], domain=msh)
+
 # Create a cell integral measure over the facet mesh
 dx_f = ufl.Measure("dx", domain=facet_mesh)
-
 
 # Define forms
 h = ufl.CellDiameter(msh)
@@ -153,20 +155,20 @@ f = -ufl.div(c * ufl.grad(u_e(x)))
 L = ufl.inner(f, v) * dx_c
 L += ufl.inner(fem.Constant(facet_mesh, dtype(0.0)), vbar) * dx_f
 
-# Our bilinear form involves two domains (`msh` and `facet_mesh`). The mesh
-# passed to the measure is called the "integration domain". For each
-# additional mesh in our form, we must pass an `EntityMap` object that
-# relates entities in that mesh to entities in the integration domain. In
-# this case, the only other mesh is `facet_mesh`, so we pass
-# `facet_mesh_emap`
+# Our bilinear form involves two domains (`msh` and `facet_mesh`). The
+# mesh passed to the measure is called the "integration domain". For
+# each additional mesh in our form, we must pass an `EntityMap` object
+# that relates entities in that mesh to entities in the integration
+# domain. In this case, the only other mesh is `facet_mesh`, so we pass
+# `facet_mesh_emap`.
 entity_maps = [facet_mesh_emap]
 
 # Compile forms
 a_blocked = dolfinx.fem.form(ufl.extract_blocks(a), entity_maps=entity_maps)
 L_blocked = dolfinx.fem.form(ufl.extract_blocks(L))
 
-# Apply Dirichlet boundary conditions
-# We begin by locating the boundary facets of msh
+# Apply Dirichlet boundary conditions. We begin by locating the boundary
+# facets of msh.
 msh_boundary_facets = mesh.exterior_facet_indices(msh.topology)
 
 # Since the boundary condition is enforced in the facet space, we need

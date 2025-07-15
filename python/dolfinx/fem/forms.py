@@ -133,7 +133,7 @@ def get_integration_domains(
     Args:
         integral_type: The type of integral to pack integration
             entities for.
-        subdomain: A meshtag with markers or manually specified
+        subdomain: A MeshTag with markers or manually specified
             integration domains.
         subdomain_ids: List of ids to integrate over.
     """
@@ -209,9 +209,10 @@ def mixed_topology_form(
     """
     Create a mixed-topology from from an array of Forms.
 
-    # FIXME: This function is a temporary hack for mixed-topology meshes.
-    # It is needed because UFL does not know about mixed-topology meshes,
-    # so we need to pass a list of forms for each cell type.
+    # FIXME: This function is a temporary hack for mixed-topology
+    meshes. # It is needed because UFL does not know about
+    mixed-topology meshes, # so we need to pass a list of forms for each
+    cell type.
 
     Args:
         form: A list of UFL forms. Each form should be the same, just
@@ -222,10 +223,9 @@ def mixed_topology_form(
         entity_maps: If any trial functions, test functions, or
             coefficients in the form are not defined over the same mesh
             as the integration domain (the domain associated with the
-            measure), `entity_maps` must be supplied. For each mesh in the
-            form, there should be an entity map relating entities in that
-            mesh to the integration domain mesh.
-
+            measure), `entity_maps` must be supplied. For each mesh in
+            the form, there should be an entity map relating entities in
+            that mesh to the integration domain mesh.
 
     Returns:
         Compiled finite element Form.
@@ -261,8 +261,8 @@ def mixed_topology_form(
         modules.append(module)
         codes.append(code)
 
-    # In a mixed-topology mesh, each form has the same C++ function space,
-    # so we can extract it from any of them
+    # In a mixed-topology mesh, each form has the same C++ function
+    # space, so we can extract it from any of them
     V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
 
     # TODO coeffs, constants, subdomains, entity_maps
@@ -295,9 +295,9 @@ def form(
         entity_maps: If any trial functions, test functions, or
             coefficients in the form are not defined over the same mesh
             as the integration domain (the domain associated with the
-            measure), `entity_maps` must be supplied. For each mesh in the
-            form, there should be an entity map relating entities in that
-            mesh to the integration domain mesh.
+            measure), `entity_maps` must be supplied. For each mesh in
+            the form, there should be an entity map relating entities in
+            that mesh to the integration domain mesh.
 
     Returns:
         Compiled finite element Form.
@@ -576,14 +576,14 @@ def create_form(
         form: Compiled ufl form
         function_spaces: List of function spaces associated with the
             form. Should match the number of arguments in the form.
-        msh: Mesh to associate form with
+        msh: Mesh to associate form with.
         subdomains: A map from integral type to a list of pairs, where
             each pair corresponds to a subdomain id and the set of of
             integration entities to integrate over. Can be computed with
             {py:func}`dolfinx.fem.compute_integration_domains`.
         coefficient_map: Map from UFL coefficient to function with data.
-        constant_map: Map from UFL constant to constant with data.
         entity_map: A map where each key corresponds to a mesh different
+        constant_map: Map from UFL constant to constant with data.
             to the integration domain ``msh``. The value of the map is
             an array of integers, where the i-th entry is the entity in
             the key mesh.
@@ -646,15 +646,16 @@ def derivative_block(
 ) -> typing.Union[ufl.Form, typing.Iterable[typing.Iterable[ufl.Form]]]:
     """Return the UFL derivative of a (list of) UFL rank one form(s).
 
-    This is commonly used to derive a block Jacobian from a block residual.
+    This is commonly used to derive a block Jacobian from a block
+    residual.
 
     If `F_i` is a list of forms, the Jacobian is a list of lists with
     :math:`J_{ij} = \\frac{\\partial F_i}{u_j}[\\delta u_j]` using
     `ufl.derivative` called component-wise.
 
-    If `F` is a form, the Jacobian is computed as
-    :math:`J = \\frac{\\partial F}{\\partial u}[\\delta u]`. This is
-    identical to calling `ufl.derivative` directly.
+    If `F` is a form, the Jacobian is computed as :math:`J =
+    \\frac{\\partial F}{\\partial u}[\\delta u]`. This is identical to
+    calling `ufl.derivative` directly.
     """
     if isinstance(F, ufl.Form):
         if du is None:
