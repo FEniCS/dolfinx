@@ -10,7 +10,7 @@
 
 # # Parallel communication pattern analysis
 #
-# This demo is implemented in {download}`demo_comms_pattern.py`. It
+# This demo is implemented in {download}`demo_comm_pattern.py`. It
 # illustrates how build a graph that represents a parallel communication
 # pattern and how to analyse the parallel communication pattern using
 # [NetworkX](https://networkx.org/).
