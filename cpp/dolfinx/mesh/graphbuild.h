@@ -24,18 +24,21 @@ enum class CellType;
 /// @param[in] celltypes List of cell types.
 /// @param[in] cells Lists of cell vertices (stored as flattened lists,
 /// one for each cell type).
-/// @param[in] max_facet_to_cell_links Optional bound on number of cells a
-/// facet needs to share to be considered *matched*. All facets connected to
-/// less than `max_facet_to_cell_links` cells are considered *unmatched*.
-/// Defaults to `2`, which covers the setup for non branching manifold meshes.
-/// Passing `nullopt`, no upper bound, corresponds to
-/// `max_facet_to_cell_links`=∞, i.e. every facet is considered unmatched.
+/// @param[in] max_facet_to_cell_links Bound on the number of cells a
+/// facet needs to be connected to to be considered *matched*, i.e. a
+/// matched facet is not connected any cells on other processes. All
+/// facets connected to less than `max_facet_to_cell_links` cells are
+/// considered *unmatched* and parallel communication will check for
+/// further connections. Defaults to `2`, which covers non-branching
+/// manifold meshes. Passing std::nullopt (no upper bound) corresponds
+/// to `max_facet_to_cell_links`=∞, i.e. every facet is considered
+/// unmatched.
 ///
 /// @return
 /// 1. Local dual graph
 /// 2. Facets, defined by their sorted vertices, that are shared by only
-/// `max_facet_to_cell_links` or less cells on this rank. The logically 2D
-/// array is flattened (row-major).
+///   `max_facet_to_cell_links` or less cells on this rank. The logically
+///   2D array is flattened (row-major).
 /// 3. Facet data array (2) number of columns
 /// 4. Attached cell (local index) to each returned facet in (2).
 ///
@@ -50,9 +53,9 @@ enum class CellType;
 /// cells of type `1` are numbered `n..(n+m-1)` respectively, in the
 /// returned dual graph.
 ///
-/// @note Facet (2) and cell (4) data will contain multiple entries for the same
-/// facet for branching meshes with `max_facet_to_cell_links>2` to account for
-/// all facet cell connectivies.
+/// @note Facet (2) and cell (4) data will contain multiple entries for
+/// the same facet for branching meshes with `max_facet_to_cell_links>2`
+/// to account for all facet cell connectivies.
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
 build_local_dual_graph(std::span<const CellType> celltypes,
@@ -64,28 +67,32 @@ build_local_dual_graph(std::span<const CellType> celltypes,
 ///
 /// The computed dual graph is typically passed to a graph partitioner.
 ///
-/// @note Collective function
+/// @note Collective function.
 ///
 /// @param[in] comm The MPI communicator
 /// @param[in] celltypes List of cell types
 /// @param[in] cells Collections of cells, defined by the cell vertices
 /// from which to build the dual graph, as flattened arrays for each
 /// cell type in `celltypes`.
-/// @param[in] max_facet_to_cell_links Optional bound on number of cells a
-/// facet needs to share to be considered *matched*. All facets connected to
-/// less than `max_facet_to_cell_links` cells are considered *unmatched*.
-/// Defaults to `2`, which covers the setup for non branching manifold meshes.
-/// Passing `nullopt`, no upper bound, corresponds to
-/// `max_facet_to_cell_links`=∞, i.e. every facet is considered unmatched.
+/// @param[in] max_facet_to_cell_links Bound on the number of cells a
+/// facet needs to be connected to to be considered *matched*, i.e. a
+/// matched facet is not connected any cells on other processes. All
+/// facets connected to less than `max_facet_to_cell_links` cells are
+/// considered *unmatched* and parallel communication will check for
+/// further connections. Defaults to `2`, which covers non-branching
+/// manifold meshes. Passing std::nullopt (no upper bound) corresponds
+/// to `max_facet_to_cell_links`=∞, i.e. every facet is considered
+/// unmatched.
 ///
-/// @return The dual graph
+/// @return The dual graph.
 ///
 /// @note `cells` and `celltypes` must have the same size.
 ///
-/// @note The assumption in `build_local_dual_graph` on how unmatched facets are
-/// identified will not allow for T-joints (or any other higher branching)
-/// across process boundaries to be picked up by the dual graph. If the joints
-/// do not live on the process boundary this is not a problem.
+/// @note The assumption in `build_local_dual_graph` on how unmatched
+/// facets are identified will not allow for T-joints (or any other
+/// higher branching) across process boundaries to be picked up by the
+/// dual graph. If the joints do not live on the process boundary this
+/// is not a problem.
 graph::AdjacencyList<std::int64_t>
 build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
                  const std::vector<std::span<const std::int64_t>>& cells,

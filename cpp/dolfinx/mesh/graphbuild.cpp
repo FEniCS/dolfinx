@@ -107,7 +107,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     }
   }
 
-  // Start (nonblocking) communication for cell offset
+  // Start (non-blocking) communication for cell offset
   std::int64_t cell_offset = 0;
   MPI_Request request_cell_offset;
   {
@@ -438,8 +438,8 @@ mesh::build_local_dual_graph(
   int facet_count = 0;
   for (std::size_t j = 0; j < cells.size(); ++j)
   {
-    const auto& cell_type = celltypes[j];
-    const auto& _cells = cells[j];
+    CellType cell_type = celltypes[j];
+    std::span<const std::int64_t> _cells = cells[j];
 
     assert(tdim == mesh::cell_dim(cell_type));
 
@@ -461,9 +461,10 @@ mesh::build_local_dual_graph(
     }
   }
 
-  // 2) Build a list of (all) facets, defined by sorted vertices, with the
-  // connected cell index after the vertices. For v_ij the j-th vertex of the
-  // i-th facet. The last index is the cell index (non unique).
+  // 2) Build a list of (all) facets, defined by sorted vertices, with
+  //    the connected cell index after the vertices. For v_ij the j-th
+  //    vertex of the i-th facet. The last index is the cell index (non
+  //    unique).
   // facets = [v_11, v_12, v_13, -1, ..., -1, 0,
   //           v_21, v_22, v_23, -1, ..., -1, 0,
   //             ⋮     ⋮      ⋮    ⋮   ⋱    ⋮  ⋮
@@ -516,9 +517,10 @@ mesh::build_local_dual_graph(
                                                   it1, std::next(it1, shape1));
             });
 
-  // 4) Iterate over sorted list of facets. Facets shared by more than one
-  // cell lead to a graph edge to be added. Facets that are not shared
-  // are stored as these might be shared by a cell on another process.
+  // 4) Iterate over sorted list of facets. Facets shared by more than
+  //    one cell lead to a graph edge to be added. Facets that are not
+  //    shared are stored as these might be shared by a cell on another
+  //    process.
   std::vector<std::int64_t> unmatched_facets;
   std::vector<std::int32_t> local_cells;
   std::vector<std::array<std::int32_t, 2>> edges;
@@ -529,8 +531,8 @@ mesh::build_local_dual_graph(
       std::size_t facet_index = *it;
       std::span facet(facets.data() + facet_index * shape1, shape1);
 
-      // Find iterator to next facet different from f0 -> all facets in [it,
-      // it_next_facet) describe the same facet
+      // Find iterator to next facet different from f0 -> all facets in
+      // [it, it_next_facet) describe the same facet
       auto it_next_facet = std::find_if_not(
           it, perm.end(),
           [facet, &facets, shape1](auto idx) -> bool
@@ -555,8 +557,8 @@ mesh::build_local_dual_graph(
       }
 
       // Add dual graph edges (one direction only, other direction is
-      // added later). In the range [it, it_next_facet), all combinations are
-      // added.
+      // added later). In the range [it, it_next_facet), all
+      // combinations are added.
       for (auto facet_a_it = it; facet_a_it != it_next_facet; facet_a_it++)
       {
         std::span facet_a(facets.data() + *facet_a_it * shape1, shape1);
@@ -575,9 +577,10 @@ mesh::build_local_dual_graph(
     }
   }
 
-  // 5) Build adjacency list data. Prepare data structure and assemble into.
-  // Important: we have only computed one direction of the dual edges, we add
-  // both forward and backward to the final data structure.
+  // 5) Build adjacency list data. Prepare data structure and assemble
+  //    into. Important: we have only computed one direction of the dual
+  //    edges, we add both forward and backward to the final data
+  //    structure.
 
   std::vector<std::int32_t> sizes(cell_offsets.back(), 0);
   for (auto e : edges)
