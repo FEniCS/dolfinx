@@ -31,6 +31,7 @@ from mpi4py import MPI
 
 import matplotlib.pyplot as plt
 import networkx as nx
+from matplotlib.ticker import MaxNLocator
 
 from dolfinx import fem, mesh
 from dolfinx.cpp.common import IndexMap
@@ -45,7 +46,7 @@ from dolfinx.cpp.common import IndexMap
 
 
 # +
-def plot(G: nx.MultiGraph, egde_labels=False):
+def plot_graph(G: nx.MultiGraph, egde_labels=False):
     """Plot the communication graph."""
     pos = nx.circular_layout(G)
     nx.draw_networkx_nodes(G, pos, alpha=0.75)
@@ -63,9 +64,7 @@ def plot(G: nx.MultiGraph, egde_labels=False):
             G, pos, width=width, edge_color=edge_color, connectionstyle=connectstyle
         )
 
-        labels = {
-            tuple(edge): f"{attrs['weight']}" for *edge, attrs in G.edges(keys=True, data=True)
-        }
+        labels = {tuple(edge): f"{attrs['weight']}" for *edge, attrs in G.edges(data=True)}
         nx.draw_networkx_edge_labels(
             G,
             pos,
@@ -81,6 +80,37 @@ def plot(G: nx.MultiGraph, egde_labels=False):
 
 # -
 
+# The following function produces bar charts with the number of out
+# edges per rank and the sum of the out edge weights (measure of data
+# volume) per rank.
+
+
+# +
+def plot_bar(G: nx.MultiGraph):
+    """Plot bars charts with the degree (number of 'out 'edges) and the
+    outward data volume for each rank.
+    """
+
+    ranks = range(G.order())
+    num_edges = [len(nbrs) for _, nbrs in G.adj.items()]
+    weights = [sum(data["weight"] for nbr, data in nbrs.items()) for _, nbrs in G.adj.items()]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+    ax1.bar(ranks, num_edges)
+    ax1.set_xlabel("rank")
+    ax1.set_ylabel("out degree")
+    ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax1.yaxis.set_major_locator(MaxNLocator(integer=True))
+
+    ax2.bar(ranks, weights)
+    ax2.set_xlabel("rank")
+    ax2.set_ylabel("sum of edge weights")
+    ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax2.yaxis.set_major_locator(MaxNLocator(integer=True))
+
+
+# -
 
 # Create a mesh and function space. The function space will build an
 # `IndexMap` for the degree-of-freedom map. The`IndexMap` describes how
@@ -135,17 +165,21 @@ if msh.comm.rank == 0:
     graph_data, node_weights = IndexMap.comm_graph_data(comm_graph)
 
     # Create a NetworkX directed graph.
-    H = nx.MultiDiGraph()
+    H = nx.DiGraph()
     H.add_edges_from(graph_data)
 
     # Create graph with sorted nodes. This can be helpful for
     # visualisations.
-    G = nx.MultiDiGraph()
+    G = nx.DiGraph()
     G.add_nodes_from(sorted(H.nodes(data=True)))
     G.add_edges_from(H.edges(data=True))
 
     print_stats(G)
-    plot(G)
+
+    plot_bar(G)
+    plt.show()
+
+    plot_graph(G, True)
     plt.show()
 
     # Get graph data as a JSON string (useful if running from C++, in
@@ -156,7 +190,7 @@ if msh.comm.rank == 0:
 
     # Create graph with sorted nodes. This can be helpful for
     # visualisations.
-    G1 = nx.MultiDiGraph()
+    G1 = nx.DiGraph()
     G1.add_nodes_from(sorted(H1.nodes(data=True)))
     G1.add_edges_from(H1.edges(data=True))
     print_stats(G1)
