@@ -49,8 +49,16 @@ def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
         submesh.topology.create_entities(i)
         submesh.topology.create_connectivity(i, 0)
 
-    submesh_to_mesh = entity_map.map(mesh.topology)
-    submesh_to_mesh_vertex = vertex_map.map(mesh.topology)
+    num_ents = submesh_cell_imap.size_local + submesh_cell_imap.num_ghosts
+    submesh_to_mesh = entity_map.sub_topology_to_topology(
+        np.arange(num_ents, dtype=np.int32), inverse=False
+    )
+
+    submesh_vertex_imap = submesh.topology.index_map(0)
+    num_verts = submesh_vertex_imap.size_local + submesh_vertex_imap.num_ghosts
+    submesh_to_mesh_vertex = vertex_map.sub_topology_to_topology(
+        np.arange(num_verts, dtype=np.int32), inverse=False
+    )
     # Some processes might not own or ghost entities
     if len(submesh_to_mesh) > 0:
         mesh.topology.create_connectivity(entity_dim, 0)
@@ -76,8 +84,12 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
         == submesh.geometry.x.shape[0]
     )
 
+    submesh_cell_imap = submesh.topology.index_map(entity_dim)
+    num_ents = submesh_cell_imap.size_local + submesh_cell_imap.num_ghosts
+    submesh_to_mesh = entity_map.sub_topology_to_topology(
+        np.arange(num_ents, dtype=np.int32), inverse=False
+    )
     # Some processes might not own or ghost entities
-    submesh_to_mesh = entity_map.map(mesh.topology)
     if len(submesh_to_mesh) > 0:
         assert mesh.geometry.dim == submesh.geometry.dim
 
