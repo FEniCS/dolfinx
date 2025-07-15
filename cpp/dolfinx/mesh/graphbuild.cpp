@@ -239,9 +239,14 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       send_indx_to_pos[pos] = f;
 
       // Copy facet data into buffer
-      std::copy_n(std::next(facets.begin(), f * local_max_vertices_per_facet),
-                  local_max_vertices_per_facet,
-                  std::next(send_buffer.begin(), buffer_shape1 * pos));
+      auto fdata = facets.subspan(f * local_max_vertices_per_facet,
+                                  local_max_vertices_per_facet);
+      std::ranges::copy(fdata,
+                        std::next(send_buffer.begin(), buffer_shape1 * pos));
+      // std::copy_n(std::next(facets.begin(), f *
+      // local_max_vertices_per_facet),
+      //             local_max_vertices_per_facet,
+      //             std::next(send_buffer.begin(), buffer_shape1 * pos));
       send_buffer[buffer_shape1 * pos + max_vertices_per_facet]
           = cells[f] + cell_offset;
       ++send_offsets[neigh_dest];
