@@ -38,8 +38,7 @@ enum class CellType;
 enum class GhostMode : int
 {
   none,
-  shared_facet,
-  shared_vertex
+  shared_facet
 };
 
 namespace impl

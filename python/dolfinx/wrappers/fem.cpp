@@ -89,6 +89,7 @@ void declare_function_space(nb::module_& m, std::string type)
         .def("contains", &dolfinx::fem::FunctionSpace<T>::contains,
              nb::arg("V"))
         .def_prop_ro("element", &dolfinx::fem::FunctionSpace<T>::element)
+        .def("elements", &dolfinx::fem::FunctionSpace<T>::elements)
         .def_prop_ro("mesh", &dolfinx::fem::FunctionSpace<T>::mesh)
         .def_prop_ro("dofmap", &dolfinx::fem::FunctionSpace<T>::dofmap)
         .def("dofmaps", &dolfinx::fem::FunctionSpace<T>::dofmaps,
