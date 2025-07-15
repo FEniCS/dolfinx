@@ -200,17 +200,16 @@ void test_rank_weights()
   }
 }
 
-void test_stats()
+void test_comm_graphs()
 {
   const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
   constexpr int size_local = 100;
   const common::IndexMap idx_map
       = create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
-  common::IndexMapStats stats = idx_map.statistics();
 
-  auto summary = stats.summary();
+  auto g = idx_map.comm_graph();
   if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 0)
-    std::cout << summary << std::endl;
+    common::IndexMap::comm_to_json(g);
 }
 
 } // namespace
@@ -240,5 +239,5 @@ TEST_CASE("Split IndexMap communicator by type", "[index_map_comm_split]")
 TEST_CASE("IndexMap stats", "[index_map_stats]")
 {
   CHECK_NOTHROW(test_rank_weights());
-  CHECK_NOTHROW(test_stats());
+  CHECK_NOTHROW(test_comm_graphs());
 }
