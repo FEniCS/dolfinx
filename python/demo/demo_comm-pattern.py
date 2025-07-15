@@ -45,31 +45,38 @@ from dolfinx.cpp.common import IndexMap
 
 
 # +
-def plot(G: nx.MultiGraph):
+def plot(G: nx.MultiGraph, egde_labels=False):
     """Plot the communication graph."""
     pos = nx.circular_layout(G)
     nx.draw_networkx_nodes(G, pos, alpha=0.75)
     nx.draw_networkx_labels(G, pos, font_size=12)
 
-    # Curve edges to distinguish between in- and out-edges
-    connectstyle = [f"arc3,rad={r}" for r in it.accumulate([0.0] * 4)]
-
-    # Color edges by local (shared memory) or remote (remote memory)
-    # communication
     width = 0.5
     edge_color = ["g" if d["local"] == 1 else "grey" for _, _, d in G.edges(data=True)]
-    nx.draw_networkx_edges(G, pos, width=width, edge_color=edge_color, connectionstyle=connectstyle)
+    if egde_labels:
+        # Curve edges to distinguish between in- and out-edges
+        connectstyle = [f"arc3,rad={r}" for r in it.accumulate([0.15] * 4)]
 
-    # labels = {tuple(edge): f"{attrs['weight']}" for *edge, attrs in G.edges(keys=True, data=True)}
-    # nx.draw_networkx_edge_labels(
-    #     G,
-    #     pos,
-    #     labels,
-    #     connectionstyle=connectstyle,
-    #     label_pos=0.5,
-    #     font_color="k",
-    #     bbox={"alpha": 0},
-    # )
+        # Color edges by local (shared memory) or remote (remote memory)
+        # communication
+        nx.draw_networkx_edges(
+            G, pos, width=width, edge_color=edge_color, connectionstyle=connectstyle
+        )
+
+        labels = {
+            tuple(edge): f"{attrs['weight']}" for *edge, attrs in G.edges(keys=True, data=True)
+        }
+        nx.draw_networkx_edge_labels(
+            G,
+            pos,
+            labels,
+            connectionstyle=connectstyle,
+            label_pos=0.5,
+            font_color="k",
+            bbox={"alpha": 0},
+        )
+    else:
+        nx.draw_networkx_edges(G, pos, width=width, edge_color=edge_color)
 
 
 # -
