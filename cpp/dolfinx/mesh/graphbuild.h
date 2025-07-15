@@ -28,6 +28,8 @@ enum class CellType;
 /// facet needs to share to be considered *matched*. All facets connected to
 /// less than `max_facet_to_cell_links` cells are considered *unmatched*.
 /// Defaults to `2`, which covers the setup for non branching manifold meshes.
+/// Passing `nullopt`, no upper bound, corresponds to
+/// `max_facet_to_cell_links`=∞, i.e. every facet is considered unmatched.
 ///
 /// @return
 /// 1. Local dual graph
@@ -73,6 +75,8 @@ build_local_dual_graph(std::span<const CellType> celltypes,
 /// facet needs to share to be considered *matched*. All facets connected to
 /// less than `max_facet_to_cell_links` cells are considered *unmatched*.
 /// Defaults to `2`, which covers the setup for non branching manifold meshes.
+/// Passing `nullopt`, no upper bound, corresponds to
+/// `max_facet_to_cell_links`=∞, i.e. every facet is considered unmatched.
 ///
 /// @return The dual graph
 ///
