@@ -30,13 +30,16 @@ namespace dolfinx::graph
 ///
 /// Node data can also be stored.
 ///
-/// @tparam T Graph edge type.
+/// @tparam EdgeData_t Graph edge type.
 /// @tparam NodeData_t Data type for graph node data.
-template <typename T, typename NodeData_t = std::nullptr_t>
+template <typename EdgeData, typename NodeData = std::nullptr_t>
 class AdjacencyList
 {
 public:
-  /// @brief  Construct trivial adjacency list where each of the n nodes
+  using edge_type = EdgeData;
+  using node_data_type = NodeData;
+
+  /// @brief Construct trivial adjacency list where each of the n nodes
   /// is connected to itself.
   /// @param[in] n Number of nodes.
   explicit AdjacencyList(const std::int32_t n) : _array(n), _offsets(n + 1)
@@ -53,7 +56,8 @@ public:
   /// index in `offsets` is the equal to the length of `data`. array for
   /// node `i`.
   template <typename U, typename V>
-    requires std::is_convertible_v<std::remove_cvref_t<U>, std::vector<T>>
+    requires std::is_convertible_v<std::remove_cvref_t<U>,
+                                   std::vector<EdgeData>>
                  and std::is_convertible_v<std::remove_cvref_t<V>,
                                            std::vector<std::int32_t>>
   AdjacencyList(U&& data, V&& offsets)
@@ -72,11 +76,12 @@ public:
   /// @param[in] node_data Node data array where `node_data[i]` is the
   /// data attached to node `i`.
   template <typename U, typename V, typename W>
-    requires std::is_convertible_v<std::remove_cvref_t<U>, std::vector<T>>
+    requires std::is_convertible_v<std::remove_cvref_t<U>,
+                                   std::vector<EdgeData>>
                  and std::is_convertible_v<std::remove_cvref_t<V>,
                                            std::vector<std::int32_t>>
                  and std::is_convertible_v<std::remove_cvref_t<W>,
-                                           std::vector<NodeData_t>>
+                                           std::vector<NodeData>>
   AdjacencyList(U&& data, V&& offsets, W&& node_data)
       : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets)),
         _node_data(std::forward<W>(node_data))
@@ -145,27 +150,27 @@ public:
   /// @param[in] node Node index.
   /// @return Array of outgoing links for the node. The length will be
   /// `AdjacencyList::num_links(node)`.
-  std::span<T> links(std::size_t node)
+  std::span<EdgeData> links(std::size_t node)
   {
-    return std::span<T>(_array.data() + _offsets[node],
-                        _offsets[node + 1] - _offsets[node]);
+    return std::span<EdgeData>(_array.data() + _offsets[node],
+                               _offsets[node + 1] - _offsets[node]);
   }
 
   /// @brief Get the links (edges) for given node (const version).
   /// @param[in] node Node index.
   /// @return Array of outgoing links for the node. The length will be
   /// `AdjacencyList:num_links(node)`.
-  std::span<const T> links(std::size_t node) const
+  std::span<const EdgeData> links(std::size_t node) const
   {
-    return std::span<const T>(_array.data() + _offsets[node],
-                              _offsets[node + 1] - _offsets[node]);
+    return std::span<const EdgeData>(_array.data() + _offsets[node],
+                                     _offsets[node + 1] - _offsets[node]);
   }
 
   /// Return contiguous array of links for all nodes (const version).
-  const std::vector<T>& array() const { return _array; }
+  const std::vector<EdgeData>& array() const { return _array; }
 
   /// Return contiguous array of links for all nodes.
-  std::vector<T>& array() { return _array; }
+  std::vector<EdgeData>& array() { return _array; }
 
   /// Offset for each node in array() (const version).
   const std::vector<std::int32_t>& offsets() const { return _offsets; }
@@ -175,14 +180,14 @@ public:
 
   /// Return node data (if present), where `node_data()[i]` is the data
   /// for node `i` (const version).
-  const std::optional<std::vector<NodeData_t>>& node_data() const
+  const std::optional<std::vector<NodeData>>& node_data() const
   {
     return _node_data;
   }
 
   /// Return node data (if present), where `node_data()[i]` is the data for node
   /// `i`.
-  std::optional<std::vector<NodeData_t>>& node_data() { return _node_data; }
+  std::optional<std::vector<NodeData>>& node_data() { return _node_data; }
 
   /// @brief Informal string representation (pretty-print).
   /// @return String representation of the adjacency list.
@@ -204,13 +209,13 @@ public:
 private:
   // Connections (links/edges) for all entities stored as a contiguous
   // array
-  std::vector<T> _array;
+  std::vector<EdgeData> _array;
 
   // Position of first connection for each entity (using local index)
   std::vector<std::int32_t> _offsets;
 
   // Node data, where _node_data[i] is the data associated with node `i`
-  std::optional<std::vector<NodeData_t>> _node_data = std::nullopt;
+  std::optional<std::vector<NodeData>> _node_data = std::nullopt;
 };
 
 /// @private Deduction

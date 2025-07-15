@@ -10,7 +10,7 @@
 
 # # Parallel communication pattern analysis
 #
-# This demo is implemented in {download}`demo_comm_pattern.py`. It
+# This demo is implemented in {download}`demo_comm-pattern.py`. It
 # illustrates how build a graph that represents a parallel communication
 # pattern and how to analyse the parallel communication pattern using
 # [NetworkX](https://networkx.org/).
@@ -52,7 +52,7 @@ def plot(G: nx.MultiGraph):
     nx.draw_networkx_labels(G, pos, font_size=12)
 
     # Curve edges to distinguish between in- and out-edges
-    connectstyle = [f"arc3,rad={r}" for r in it.accumulate([0.25] * 4)]
+    connectstyle = [f"arc3,rad={r}" for r in it.accumulate([0.0] * 4)]
 
     # Color edges by local (shared memory) or remote (remote memory)
     # communication
@@ -60,16 +60,16 @@ def plot(G: nx.MultiGraph):
     edge_color = ["g" if d["local"] == 1 else "grey" for _, _, d in G.edges(data=True)]
     nx.draw_networkx_edges(G, pos, width=width, edge_color=edge_color, connectionstyle=connectstyle)
 
-    labels = {tuple(edge): f"{attrs['weight']}" for *edge, attrs in G.edges(keys=True, data=True)}
-    nx.draw_networkx_edge_labels(
-        G,
-        pos,
-        labels,
-        connectionstyle=connectstyle,
-        label_pos=0.5,
-        font_color="k",
-        bbox={"alpha": 0},
-    )
+    # labels = {tuple(edge): f"{attrs['weight']}" for *edge, attrs in G.edges(keys=True, data=True)}
+    # nx.draw_networkx_edge_labels(
+    #     G,
+    #     pos,
+    #     labels,
+    #     connectionstyle=connectstyle,
+    #     label_pos=0.5,
+    #     font_color="k",
+    #     bbox={"alpha": 0},
+    # )
 
 
 # -

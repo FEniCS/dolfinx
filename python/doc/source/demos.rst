@@ -94,7 +94,7 @@ Parallel communication analysis
 .. toctree::
    :maxdepth: 1
 
-   demo_comm-pattern.py
+   demos/demo_comm-pattern.py
 
 
 List of all demos
@@ -125,4 +125,4 @@ List of all demos
    demos/demo_pyamg.md
    demos/demo_hdg.md
    demos/demo_mixed-topology.md
-   demo_comm-pattern.py
+   demos/demo_comm-pattern.py
