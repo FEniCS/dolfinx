@@ -43,7 +43,7 @@ ARG PYTHON_VERSION=3.12
 # Base image for end-user images
 ARG BASEIMAGE=ghcr.io/fenics/dolfinx/dev-env:current
 
-FROM ${BASEIMAGE} as dolfinx-onbuild
+FROM ${BASEIMAGE} AS dolfinx-onbuild
 LABEL description="DOLFINx in 32-bit real and complex modes (onbuild)"
 
 ARG PYTHON_VERSION
@@ -121,11 +121,11 @@ ONBUILD WORKDIR /root
 
 ########################################
 
-FROM dolfinx-onbuild as intermediate
+FROM dolfinx-onbuild AS intermediate
 
 ########################################
 
-FROM ${BASEIMAGE} as dolfinx
+FROM ${BASEIMAGE} AS dolfinx
 LABEL description="DOLFINx in 32-bit real and complex modes"
 
 ARG PYTHON_VERSION
@@ -150,7 +150,7 @@ ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
 
 ########################################
 
-FROM dolfinx as lab
+FROM dolfinx AS lab
 LABEL description="DOLFINx Jupyter Lab"
 
 ARG PYVISTA_VERSION
