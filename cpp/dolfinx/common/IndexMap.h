@@ -87,68 +87,6 @@ std::pair<IndexMap, std::vector<std::int32_t>> create_sub_index_map(
     const IndexMap& imap, std::span<const std::int32_t> indices,
     IndexMapOrder order = IndexMapOrder::any, bool allow_owner_change = false);
 
-/// @brief Holder for statistics on an IndexMap parallel communication
-/// graph.
-///
-/// An IndexMap describes a parallel data communication pattern.
-/// Statistics of the communication graph an overview of the
-/// communication pattern. Each MPI rank is a 'node' in the
-/// communication pattern.
-///
-/// Edges are identified as 'out' (owner -> remote ghost) or 'in' (ghost
-/// <- remote owner) edges. This is the direction of the edges under a
-/// forward scatter, sending data from the owner to ghosts.
-///
-/// The edge 'weight' is the number of items sent along each edge. It is
-/// proportional to the MPI message size.
-struct IndexMapStats
-{
-  /// @brief Holder for minimum and maximum value pairs.
-  struct minmax
-  {
-    std::uint64_t min; ///< Minimum value
-    std::uint64_t max; ///< Maximum value
-  };
-
-  std::uint64_t num_nodes;   ///< Number of 'nodes' (MPI ranks).
-  std::uint64_t global_size; ///< Global range.
-  minmax local_size;         ///< Min/max local range.
-
-  std::uint64_t num_edges; ///< Number of out edges. This is equal to the number
-                           ///< of in edges.
-  std::uint64_t
-      num_edges_local;      ///< Number of local (shared memory) out edges. This
-                            ///< is equal to the number of local in edges.
-  std::uint64_t weight_sum; ///< Sum of weights over all out edges.
-
-  // Number of node (rank) edges
-  minmax out_edges; ///< Min/max number of out edges across nodes.
-  minmax in_edges;  ///< Min/max number of in edges across nodes.
-
-  minmax out_edges_local;  ///< Min/max number of out edges across nodes
-                           ///< to shared memory ranks.
-  minmax in_edges_local;   ///< Min/max number of in edges across nodes
-                           ///< from shared memory ranks.
-  minmax out_edges_remote; ///< Min/max number of out edges across nodes
-                           ///< to remote memory ranks
-  minmax in_edges_remote;  ///< Min/max number of edges across nodes
-                           ///< from remote memory ranks.
-
-  // Node weights
-  minmax out_weight_node; ///< Min/max out node weight across nodes.
-  minmax in_weight_node;  ///< Min/max in node weight across nodes.
-
-  // Edge weights
-  minmax out_weight_edge_local;  ///< Min/max out node weight across nodes.
-  minmax in_weight_edge_local;   ///< Min/max in node weight across nodes.
-  minmax out_weight_edge_remote; ///< Min/max out node weight across nodes.
-  minmax in_weight_edge_remote;  ///< Min/max in node weight across nodes.
-
-  /// @brief TODO
-  /// @return TODO
-  std::string summary() const;
-};
-
 /// This class represents the distribution index arrays across
 /// processes. An index array is a contiguous collection of `N+1`
 /// indices `[0, 1, . . ., N]` that are distributed across `M`
@@ -370,9 +308,6 @@ public:
   /// and (1) intersection of ranks in `split_type` and in src().
   /// Returned ranks are on the comm() communicator.
   std::array<std::vector<int>, 2> rank_type(int split_type) const;
-
-  /// @brief TODO
-  IndexMapStats statistics() const;
 
   /// @brief Compute an directed graph that describes the parallel
   /// communication patterns.
