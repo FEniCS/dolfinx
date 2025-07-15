@@ -245,13 +245,6 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
                               max_vertices_per_facet);
       std::ranges::copy(fdata, send_buffer_f.begin());
       send_buffer_f.back() = cells[f] + cell_offset;
-
-      // std::copy_n(std::next(facets.begin(), f *
-      // local_max_vertices_per_facet),
-      //             local_max_vertices_per_facet,
-      //             std::next(send_buffer.begin(), buffer_shape1 * pos));
-      // send_buffer[buffer_shape1 * pos + max_vertices_per_facet]
-      //     = cells[f] + cell_offset;
       ++send_offsets[neigh_dest];
     }
   }
@@ -446,8 +439,8 @@ mesh::build_local_dual_graph(
   int facet_count = 0;
   for (std::size_t j = 0; j < cells.size(); ++j)
   {
-    const auto& cell_type = celltypes[j];
-    const auto& _cells = cells[j];
+    CellType cell_type = celltypes[j];
+    std::span<const std::int64_t> _cells = cells[j];
 
     assert(tdim == mesh::cell_dim(cell_type));
 
