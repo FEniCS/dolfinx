@@ -1494,9 +1494,8 @@ std::string IndexMap::comm_to_json(
     for (std::size_t edge = 0; edge < links.size(); ++edge)
     {
       auto [e, w, local] = links[edge];
-      out << std::format(
-          "{{\"local\": {}, \"weight\": {}, \"id\": {}}}", local, w,
-          e);
+      out << std::format("{{\"local\": {}, \"weight\": {}, \"id\": {}}}", local,
+                         w, e);
       if (edge != links.size() - 1)
         out << ", ";
     }
