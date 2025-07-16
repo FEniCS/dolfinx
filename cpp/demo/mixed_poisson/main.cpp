@@ -222,15 +222,6 @@ int main(int argc, char* argv[])
     };
     auto [submesh, entity_map] = submesh_data(*mesh, fdim, dfacets);
 
-    // std::shared_ptr<mesh::Mesh<U>> submesh;
-    // std::shared_ptr<mesh::EntityMap> entity_map;
-    // {
-    //   auto [_submesh, e_map, v_map, g_map]
-    //       = mesh::create_submesh(*mesh, fdim, dfacets);
-    //   submesh = std::make_shared<mesh::Mesh<U>>(std::move(_submesh));
-    //   entity_map = std::make_shared<mesh::EntityMap>(std::move(e_map));
-    // }
-
     // Create an element for `u_0`
     basix::cell::type submesh_cell_type
         = dolfinx::mesh::cell_type_to_basix_type(
