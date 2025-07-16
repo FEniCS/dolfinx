@@ -13,9 +13,9 @@ Note:
     collective over the object's MPI communicator.
 """
 
-import collections.abc
 import functools
 import typing
+from collections.abc import Sequence
 
 from petsc4py import PETSc
 
