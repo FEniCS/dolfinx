@@ -87,9 +87,11 @@ int main(int argc, char* argv[])
       auto [submesh, emap, v_map, g_map]
           = mesh::create_submesh(mesh, tdim, subcells);
       return std::pair(std::make_shared<mesh::Mesh<U>>(std::move(submesh)),
-                       std::make_shared<mesh::EntityMap>(std::move(emap)));
+                       std::move(emap));
     };
     auto [submesh, entity_map] = submesh_data(*mesh, tdim, cell_marker.find(2));
+    // auto [submesh, emap, v_map, g_map]
+    //     = mesh::create_submesh(*mesh, tdim, cell_marker.find(2));
 
     // We create the function space used for the trial space
     auto W
@@ -117,8 +119,8 @@ int main(int argc, char* argv[])
     // provide the entity map object returned when we called
     // `create_submesh`, which relates entities in `submesh` to entities
     // in `mesh`.
-    std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps
-        = {entity_map};
+    std::vector<std::reference_wrapper<const mesh::EntityMap>> entity_maps{
+        entity_map};
 
     // We can now create the bilinear form
     fem::Form<T> a_mixed

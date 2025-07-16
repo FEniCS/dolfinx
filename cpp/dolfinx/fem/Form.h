@@ -162,7 +162,8 @@ public:
       const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
           constants,
       bool needs_facet_permutations,
-      const std::vector<std::shared_ptr<const mesh::EntityMap>>& entity_maps)
+      const std::vector<std::reference_wrapper<const mesh::EntityMap>>&
+          entity_maps)
       : _function_spaces(V), _integrals(std::forward<X>(integrals)),
         _mesh(mesh), _coefficients(coefficients), _constants(constants),
         _needs_facet_permutations(needs_facet_permutations)
@@ -171,27 +172,24 @@ public:
       throw std::runtime_error("Form Mesh is null.");
 
     // A helper function to find the correct entity map for a given mesh
-    auto get_entity_map = [&](const auto& mesh0)
+    auto get_entity_map = [&](auto& mesh0) -> const mesh::EntityMap&
     {
       auto it = std::ranges::find_if(
           entity_maps,
-          [&](const auto& em)
+          [&](const mesh::EntityMap& em)
           {
-            assert(em);
-            return ((em->topology() == mesh0->topology()
-                     and em->sub_topology() == _mesh->topology()))
-                   or ((em->sub_topology() == mesh0->topology()
-                        and em->topology() == _mesh->topology()));
+            return ((em.topology() == mesh0->topology()
+                     and em.sub_topology() == _mesh->topology()))
+                   or ((em.sub_topology() == mesh0->topology()
+                        and em.topology() == _mesh->topology()));
           });
+
       if (it == entity_maps.end())
       {
         throw std::runtime_error(
             "Incompatible mesh. argument entity_maps must be provided.");
       }
-      auto emap = *it;
-      assert(emap);
-
-      return emap;
+      return *it;
     };
 
     // A helper function to compute the (cell, local_facet) pairs in the
@@ -233,7 +231,7 @@ public:
       // Map from entity indices in `this->mesh()` to the corresponding
       // cell indices in the argument/coefficient mesh
       std::vector<std::int32_t> cells_mesh0
-          = emap->sub_topology_to_topology(entities, inverse);
+          = emap.sub_topology_to_topology(entities, inverse);
 
       // Create a list of (cell, local_facet_index) pairs in the
       // argument/coefficient domain. Since `create_submesh`preserves
@@ -262,18 +260,18 @@ public:
       else
       {
         // Find correct entity map
-        auto emap = get_entity_map(mesh0);
+        const mesh::EntityMap& emap = get_entity_map(mesh0);
 
         // Determine direction of the map. We need to map from
         // `this->mesh()` to `mesh0`, so if `emap->sub_topology()` isn't
         // the source topology, we need the inverse map
-        bool inverse = emap->sub_topology() == mesh0->topology();
+        bool inverse = emap.sub_topology() == mesh0->topology();
         for (auto& [key, itg] : _integrals)
         {
           auto [type, id, kernel_idx] = key;
           std::vector<std::int32_t> e;
           if (type == IntegralType::cell)
-            e = emap->sub_topology_to_topology(itg.entities, inverse);
+            e = emap.sub_topology_to_topology(itg.entities, inverse);
           else if (type == IntegralType::exterior_facet
                    or type == IntegralType::interior_facet)
           {
@@ -311,12 +309,12 @@ public:
         else
         {
           // Find correct entity map and determine direction of the map
-          auto emap = get_entity_map(mesh0);
-          bool inverse = emap->sub_topology() == mesh0->topology();
+          const mesh::EntityMap& emap = get_entity_map(mesh0);
+          bool inverse = emap.sub_topology() == mesh0->topology();
 
           std::vector<std::int32_t> e;
           if (type == IntegralType::cell)
-            e = emap->sub_topology_to_topology(integral.entities, inverse);
+            e = emap.sub_topology_to_topology(integral.entities, inverse);
           else if (type == IntegralType::exterior_facet
                    or type == IntegralType::interior_facet)
           {

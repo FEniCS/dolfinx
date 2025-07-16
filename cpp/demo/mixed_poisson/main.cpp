@@ -218,7 +218,7 @@ int main(int argc, char* argv[])
       auto [submesh, e_map, v_map, g_map]
           = mesh::create_submesh(mesh, tdim, dfacets);
       return std::pair(std::make_shared<mesh::Mesh<U>>(std::move(submesh)),
-                       std::make_shared<mesh::EntityMap>(std::move(e_map)));
+                       std::move(e_map));
     };
     auto [submesh, entity_map] = submesh_data(*mesh, fdim, dfacets);
 
@@ -291,8 +291,8 @@ int main(int argc, char* argv[])
     // in the form. In this case, the only other mesh is `submesh`.
     // Hence, we supply the entity map returned from `create_submesh`, which
     // relates entities in `mesh` and `submesh`.
-    std::vector<std::shared_ptr<const mesh::EntityMap>> entity_maps
-        = {entity_map};
+    std::vector<std::reference_wrapper<const mesh::EntityMap>> entity_maps{
+        entity_map};
 
     // Define variational forms and attach he required data
     fem::Form<T> a = fem::create_form<T>(*form_mixed_poisson_a, {V, V}, {}, {},

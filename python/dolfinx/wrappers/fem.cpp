@@ -29,6 +29,7 @@
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
+#include <functional>
 #include <map>
 #include <memory>
 #include <nanobind/nanobind.h>
@@ -646,8 +647,8 @@ void declare_form(nb::module_& m, std::string type)
              const std::vector<
                  std::shared_ptr<const dolfinx::fem::Constant<T>>>& constants,
              bool needs_permutation_data,
-             const std::vector<std::shared_ptr<const dolfinx::mesh::EntityMap>>&
-                 entity_maps,
+             const std::vector<std::reference_wrapper<
+                 const dolfinx::mesh::EntityMap>>& entity_maps,
              std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh)
           {
             std::map<std::tuple<dolfinx::fem::IntegralType, int, int>,
@@ -691,8 +692,8 @@ void declare_form(nb::module_& m, std::string type)
                  std::vector<std::pair<
                      std::int32_t, nb::ndarray<const std::int32_t, nb::ndim<1>,
                                                nb::c_contig>>>>& subdomains,
-             const std::vector<std::shared_ptr<const dolfinx::mesh::EntityMap>>&
-                 entity_maps,
+             const std::vector<std::reference_wrapper<
+                 const dolfinx::mesh::EntityMap>>& entity_maps,
              std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh)
           {
             std::map<dolfinx::fem::IntegralType,
@@ -816,8 +817,8 @@ void declare_form(nb::module_& m, std::string type)
              std::vector<std::pair<
                  std::int32_t, nb::ndarray<const std::int32_t, nb::c_contig>>>>&
              subdomains,
-         const std::vector<std::shared_ptr<const dolfinx::mesh::EntityMap>>&
-             entity_maps,
+         const std::vector<std::reference_wrapper<
+             const dolfinx::mesh::EntityMap>>& entity_maps,
          std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh = nullptr)
       {
         std::map<

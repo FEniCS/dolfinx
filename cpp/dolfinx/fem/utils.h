@@ -372,7 +372,8 @@ Form<T, U> create_form_factory(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
         subdomains,
-    const std::vector<std::shared_ptr<const mesh::EntityMap>>& entity_maps,
+    const std::vector<std::reference_wrapper<const mesh::EntityMap>>&
+        entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   for (const ufcx_form& ufcx_form : ufcx_forms)
@@ -805,7 +806,8 @@ Form<T, U> create_form(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
         subdomains,
-    const std::vector<std::shared_ptr<const mesh::EntityMap>>& entity_maps,
+    const std::vector<std::reference_wrapper<const mesh::EntityMap>>&
+        entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   // Place coefficients in appropriate order
@@ -864,7 +866,8 @@ Form<T, U> create_form(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
         subdomains,
-    const std::vector<std::shared_ptr<const mesh::EntityMap>>& entity_maps,
+    const std::vector<std::reference_wrapper<const mesh::EntityMap>>&
+        entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   ufcx_form* form = fptr();
