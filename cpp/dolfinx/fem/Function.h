@@ -57,7 +57,7 @@ public:
   explicit Function(std::shared_ptr<const FunctionSpace<geometry_type>> V)
       : _function_space(V),
         _x(std::make_shared<la::Vector<value_type>>(
-            V->dofmap()->index_map, V->dofmap()->index_map_bs()))
+            V->dofmaps(0)->index_map, V->dofmaps(0)->index_map_bs()))
   {
     if (!V->component().empty())
     {
