@@ -492,6 +492,38 @@ public:
     return it->second.entities;
   }
 
+  /// @brief Mesh entity indices to integrate over for a given integral
+  /// (kernel).
+  ///
+  /// These are the entities in the mesh returned by ::mesh that are
+  /// integrated over by a given integral (kernel).
+  ///
+  /// - For IntegralType::cell, returns a list of cell indices.
+  /// - For IntegralType::exterior_facet, returns a list with shape
+  /// `(num_facets, 2)`, where `[cell_index, 0]` is the cell index and
+  /// `[cell_index, 1]` is the local facet index relative to the cell.
+  /// - For IntegralType::interior_facet the shape is `(num_facets, 4)`,
+  /// where `[cell_index, 0]` is one attached cell and `[cell_index, 1]`
+  /// is the is the local facet index relative to the cell, and
+  /// `[cell_index, 2]` is the other one attached cell and `[cell_index, 1]`
+  /// is the is the local facet index relative to this cell. Storage
+  /// is row-major.
+  ///
+  /// @param[in] type Integral type.
+  /// @param[in] id Integral domain identifier.
+  /// @param[in] kernel_idx Index of the kernel with in the domain (we
+  /// may have multiple kernels for a given ID in mixed-topology
+  /// meshes).
+  /// @return Entity indices in the mesh::Mesh returned by mesh() to
+  /// integrate over.
+  auto domain_new(IntegralType type, int id, int kernel_idx) const
+  {
+    auto it = _integrals.find({type, id, kernel_idx});
+    if (it == _integrals.end())
+      throw std::runtime_error("Requested domain not found.");
+    return std::ranges::ref_view(it->second.entities);
+  }
+
   /// @brief Argument function mesh integration entity indices.
   ///
   /// Integration can be performed over cells/facets involving functions

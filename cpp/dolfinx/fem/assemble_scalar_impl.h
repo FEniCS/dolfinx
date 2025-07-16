@@ -17,18 +17,18 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <memory>
+#include <ranges>
 #include <vector>
 
 namespace dolfinx::fem::impl
 {
 /// Assemble functional over cells
-template <dolfinx::scalar T>
+template <dolfinx::scalar T, std::ranges::range R>
 T assemble_cells(mdspan2_t x_dofmap,
                  md::mdspan<const scalar_value_t<T>,
                             md::extents<std::size_t, md::dynamic_extent, 3>>
                      x,
-                 std::span<const std::int32_t> cells, FEkernel<T> auto fn,
-                 std::span<const T> constants,
+                 R&& cells, FEkernel<T> auto fn, std::span<const T> constants,
                  md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs)
 {
   T value(0);
@@ -39,12 +39,14 @@ T assemble_cells(mdspan2_t x_dofmap,
   std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
 
   // Iterate over all cells
-  for (std::size_t index = 0; index < cells.size(); ++index)
+  // for (std::size_t index = 0; index < cells.size(); ++index)
+  for (auto c = cells.begin(); c != cells.end(); ++c)
   {
-    std::int32_t c = cells[index];
+    // std::int32_t c = cells[index];
+    std::size_t index = std::distance(cells.begin(), c);
 
     // Get cell coordinates/geometry
-    auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
+    auto x_dofs = md::submdspan(x_dofmap, *c, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs.begin(), 3 * i));
@@ -170,7 +172,7 @@ T assemble_scalar(
     auto fn = M.kernel(IntegralType::cell, i, 0);
     assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    std::span<const std::int32_t> cells = M.domain(IntegralType::cell, i, 0);
+    auto cells = M.domain_new(IntegralType::cell, i, 0);
     assert(cells.size() * cstride == coeffs.size());
     value += impl::assemble_cells(
         x_dofmap, x, cells, fn, constants,
