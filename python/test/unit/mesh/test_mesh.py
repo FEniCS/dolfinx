@@ -418,26 +418,12 @@ mesh_factories = [
 ]
 
 
-# FIXME: Fix this xfail
-def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
-    """Xfail when mesh_factory on quads/hexes uses shared_vertex mode.
-    Needs implementing."""
-    if mesh_factory in [create_unit_square, create_unit_cube]:
-        if ghost_mode == GhostMode.shared_vertex:
-            pytest.xfail(
-                reason=f"Missing functionality in '{mesh_factory}' with '{ghost_mode}' mode"
-            )
-
-
-@pytest.mark.parametrize(
-    "ghost_mode", [GhostMode.none, GhostMode.shared_facet, GhostMode.shared_vertex]
-)
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("mesh_factory", mesh_factories)
 def xtest_mesh_topology_against_basix(mesh_factory, ghost_mode):
     """Test that mesh cells have topology matching to Basix reference
     cell they were created from."""
     func, args = mesh_factory
-    xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
     if not is_simplex(mesh.topology.cell_type):
         return
