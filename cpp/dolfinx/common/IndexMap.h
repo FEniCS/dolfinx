@@ -289,14 +289,14 @@ public:
   std::vector<std::int32_t> weights_dest() const;
 
   /// @brief Destination and source ranks by type, e.g, ranks that are
-  /// destination/source ranks for the caller and are in an common
+  /// destination/source ranks for the caller and are in a common
   /// shared memory region.
   ///
   /// This function is used to group destination and source ranks by
   /// 'type'. The type is defined by the MPI `split_type`. Split types
   /// include ranks from a common shared memory region
   /// (`MPI_COMM_TYPE_SHARED`) or a common NUMA region. Splits types are
-  /// listed at See
+  /// listed at
   /// https://docs.open-mpi.org/en/main/man-openmpi/man3/MPI_Comm_split_type.3.html#split-types.
   ///
   /// @note Collective operation on comm();
