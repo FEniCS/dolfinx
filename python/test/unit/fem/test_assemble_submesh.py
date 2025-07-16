@@ -713,25 +713,26 @@ def test_interior_facet_codim_1(msh):
 
 
 def test_interior_interface():
-    """
-    This is a test for assembling a form over an interface between two domains
-    that don't overlap. The test function is defined on one domain, and the trial
-    function is defined on the other.
+    """This is a test for assembling a form over an interface between
+    two domains that don't overlap. The test function is defined on one
+    domain, and the trial function is defined on the other.
     """
 
     def interface_int_entities(msh, interface_facets, marker):
-        """
-        This helper function computes the integration entities for interior facet
-        integrals (i.e. a list of (cell_0, local_facet_0, cell_1, local_facet_1))
-        over an interface. The integration entities are ordered consistently such
-        that cells for which `marker[cell] != 0` correspond to the "+" restriction,
-        and cells for which `marker[cell] == 0` correspond to the "-" restriction.
+        """This helper function computes the integration entities for
+        interior facet integrals (i.e. a list of (cell_0, local_facet_0,
+        cell_1, local_facet_1)) over an interface. The integration
+        entities are ordered consistently such that cells for which
+        `marker[cell] != 0` correspond to the "+" restriction, and cells
+        for which `marker[cell] == 0` correspond to the "-" restriction.
 
         Parameters:
             msh: the mesh
-            interface_facets: Facet indices of interior facets on an interface
-            marker: If `marker[cell] != 0`, then that cell corresponds to a "+"
-                restriction. Otherwise, it corresponds to a negative restriction.
+            interface_facets: Facet indices of interior facets on an
+                interface
+            marker: If `marker[cell] != 0`, then that cell corresponds
+                to a "+" restriction. Otherwise, it corresponds to a
+                negative restriction.
         """
         tdim = msh.topology.dim
         fdim = tdim - 1

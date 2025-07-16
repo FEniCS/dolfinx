@@ -90,8 +90,6 @@ int main(int argc, char* argv[])
                        std::move(emap));
     };
     auto [submesh, entity_map] = submesh_data(*mesh, tdim, cell_marker.find(2));
-    // auto [submesh, emap, v_map, g_map]
-    //     = mesh::create_submesh(*mesh, tdim, cell_marker.find(2));
 
     // We create the function space used for the trial space
     auto W

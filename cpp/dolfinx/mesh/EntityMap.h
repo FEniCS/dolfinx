@@ -23,12 +23,12 @@ public:
   /// dimension `dim` in `topology` and `sub_topology`.
   ///
   /// @tparam U
-  /// @param topology A mesh topology
+  /// @param topology A mesh topology.
   /// @param sub_topology Topology of another mesh. This must be a
-  /// "sub-topology" of `topology` i.e. every entity in `sub_topology`
+  /// "sub-topology" of `topology`, i.e. every entity in `sub_topology`
   /// must also exist in `topology`.
-  /// @param dim The dimension of the entities
-  /// @param sub_topology_to_topology A list of entities in `topology`
+  /// @param dim Topological dimension of the entities.
+  /// @param sub_topology_to_topology List of entities in `topology`
   /// where `sub_topology_to_topology[i]` is the index in `topology`
   /// corresponding to entity `i` in `sub_topology`.
   template <typename U>
@@ -71,8 +71,8 @@ public:
   /// @return The topological dimension.
   std::size_t dim() const;
 
-  /// @brief Get the (parent) topology
-  /// @return The topology
+  /// @brief Get the (parent) topology.
+  /// @return The parent topology.
   std::shared_ptr<const Topology> topology() const;
 
   /// @brief Get the sub-topology.
@@ -93,12 +93,12 @@ public:
   /// map on every call (it is not cached), which may be expensive if
   /// called repeatedly.
   ///
-  /// @param entities A list of entity indices in the source topology.
+  /// @param entities List of entity indices in the source topology.
   /// @param inverse If false, maps from `this->sub_topology()` to
   /// `this->topology()`. If true, maps from `this->topology()` to
   /// `this->sub_topology()`.
-  /// @return A list of mapped entity indices. Entities that don't exist
-  /// in the target topology are marked as -1.
+  /// @return A list of mapped entity indices. Entities that do not
+  /// exist in the target topology are marked as -1.
   std::vector<std::int32_t>
   sub_topology_to_topology(std::span<const std::int32_t> entities,
                            bool inverse) const;
