@@ -593,6 +593,9 @@ def create_form(
             to the integration domain ``msh``. The value of the map is
             an array of integers, where the i-th entry is the entity in
             the key mesh.
+
+    Return:
+        A Form object
     """
     if entity_maps is None:
         _entity_maps = []
