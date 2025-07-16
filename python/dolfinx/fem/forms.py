@@ -136,6 +136,12 @@ def get_integration_domains(
         subdomain: A MeshTag with markers or manually specified
             integration domains.
         subdomain_ids: List of ids to integrate over.
+
+    Returns:
+        A list of entities to integrate over. For cell integrals, this is a
+        list of cells. For exterior facet integrals, this is a list of
+        (cell, local_facet) pairs. For interior facet integrals, this is a
+        list of (cell0, local_facet0, cell1, local_facet1) tuples.
     """
     if subdomain is None:
         return []
