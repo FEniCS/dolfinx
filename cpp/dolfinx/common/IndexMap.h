@@ -296,7 +296,7 @@ public:
   /// 'type'. The type is defined by the MPI `split_type`. Split types
   /// include ranks from a common shared memory region
   /// (`MPI_COMM_TYPE_SHARED`) or a common NUMA region. Splits types are
-  /// listed at See
+  /// listed at
   /// https://docs.open-mpi.org/en/main/man-openmpi/man3/MPI_Comm_split_type.3.html#split-types.
   ///
   /// @note Collective operation on comm();
