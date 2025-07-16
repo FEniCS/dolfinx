@@ -52,11 +52,11 @@ public:
              and std::is_convertible_v<std::remove_cvref_t<V>, std::vector<T>>
   MeshTags(std::shared_ptr<const Topology> topology, int dim, const U& indices,
            V&& values)
-      : MeshTags(topology, dim, std::vector<T>(indices.begin(), indices.end()),
+      : MeshTags(topology, dim,
+                 std::vector<std::int32_t>(indices.begin(), indices.end()),
                  std::forward<V>(values))
   {
     // Do nothing
-    std::cout << "V1" << std::endl;
   }
 
   /// @brief Create a MeshTag from entities of given dimension on a
