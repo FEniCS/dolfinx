@@ -18,11 +18,14 @@ void sparsitybuild::cells(
     std::array<std::span<const std::int32_t>, 2> cells,
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps)
 {
-  assert(cells[0].size() == cells[1].size());
-  const DofMap& map0 = dofmaps[0].get();
-  const DofMap& map1 = dofmaps[1].get();
-  for (std::size_t i = 0; i < cells[0].size(); ++i)
-    pattern.insert(map0.cell_dofs(cells[0][i]), map1.cell_dofs(cells[1][i]));
+  auto [cells0, cells1] = cells;
+  assert(cells0.size() == cells1.size());
+  auto [map0, map1] = dofmaps;
+  for (std::size_t i = 0; i < cells0.size(); ++i)
+  {
+    pattern.insert(map0.get().cell_dofs(cells0[i]),
+                   map1.get().cell_dofs(cells1[i]));
+  }
 }
 //-----------------------------------------------------------------------------
 void sparsitybuild::interior_facets(
@@ -30,8 +33,7 @@ void sparsitybuild::interior_facets(
     std::array<std::span<const std::int32_t>, 2> cells,
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps)
 {
-  std::span<const std::int32_t> cells0 = cells[0];
-  std::span<const std::int32_t> cells1 = cells[1];
+  auto [cells0, cells1] = cells;
   assert(cells0.size() == cells1.size());
   const DofMap& dofmap0 = dofmaps[0];
   const DofMap& dofmap1 = dofmaps[1];
