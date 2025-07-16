@@ -136,7 +136,7 @@ def assign(
 @assign.register
 def _(
     x0: PETSc.Vec,  # type: ignore[name-defined]
-    x1: typing.Union[npt.NDArray[np.inexact], typing.Sequence[npt.NDArray[np.inexact]]],
+    x1: typing.Union[npt.NDArray[np.inexact], Sequence[npt.NDArray[np.inexact]]],
 ):
     """Assign PETSc vector ``x0`` values to (blocked) array(s) ``x1``.
 
