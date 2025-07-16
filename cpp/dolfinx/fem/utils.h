@@ -234,8 +234,8 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
         for (int id : ids)
         {
           sparsitybuild::cells(pattern,
-                               {a.domain_arg(type, 0, id, cell_type_idx),
-                                a.domain_arg(type, 1, id, cell_type_idx)},
+                               a.domain_arg(type, 0, id, cell_type_idx),
+                               a.domain_arg(type, 1, id, cell_type_idx),
                                {{dofmaps[0], dofmaps[1]}});
         }
         break;
@@ -253,8 +253,8 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
         for (int id : ids)
         {
           sparsitybuild::cells(pattern,
-                               {extract_cells(a.domain_arg(type, 0, id, 0)),
-                                extract_cells(a.domain_arg(type, 1, id, 0))},
+                               extract_cells(a.domain_arg(type, 0, id, 0)),
+                               extract_cells(a.domain_arg(type, 1, id, 0)),
                                {{dofmaps[0], dofmaps[1]}});
         }
         break;

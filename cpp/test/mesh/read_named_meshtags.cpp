@@ -16,6 +16,7 @@
 #include <dolfinx/mesh/generation.h>
 #include <dolfinx/mesh/utils.h>
 #include <numeric>
+#include <ranges>
 #include <string>
 
 using namespace dolfinx;
@@ -35,8 +36,7 @@ void test_read_named_meshtags()
                              mesh::CellType::triangle, part));
 
   const std::int32_t n_cells = mesh->topology()->index_map(2)->size_local();
-  std::vector<std::int32_t> indices(n_cells);
-  std::iota(std::begin(indices), std::end(indices), 0);
+  auto indices = std::ranges::views::iota(0, n_cells);
 
   std::vector<std::int32_t> domain_values(n_cells, domain_value);
   std::vector<std::int32_t> material_values(n_cells, material_value);
