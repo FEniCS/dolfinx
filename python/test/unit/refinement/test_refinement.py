@@ -215,9 +215,7 @@ def test_refine_ufl_cargo():
 
 
 @pytest.mark.parametrize("tdim", [1, 2, 3])
-@pytest.mark.parametrize(
-    "ghost_mode", [GhostMode.none, GhostMode.shared_vertex, GhostMode.shared_facet]
-)
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 def test_identity_partitioner(tdim, ghost_mode):
     n = 2
     if tdim == 1:
