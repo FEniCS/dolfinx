@@ -172,16 +172,17 @@ public:
       throw std::runtime_error("Form Mesh is null.");
 
     // A helper function to find the correct entity map for a given mesh
-    auto get_entity_map = [&](auto& mesh0) -> const mesh::EntityMap&
+    auto get_entity_map
+        = [mesh, &entity_maps](auto& mesh0) -> const mesh::EntityMap&
     {
       auto it = std::ranges::find_if(
           entity_maps,
-          [&](const mesh::EntityMap& em)
+          [mesh, mesh0](const mesh::EntityMap& em)
           {
             return ((em.topology() == mesh0->topology()
-                     and em.sub_topology() == _mesh->topology()))
+                     and em.sub_topology() == mesh->topology()))
                    or ((em.sub_topology() == mesh0->topology()
-                        and em.topology() == _mesh->topology()));
+                        and em.topology() == mesh->topology()));
           });
 
       if (it == entity_maps.end())
