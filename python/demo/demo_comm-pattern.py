@@ -87,7 +87,7 @@ def plot_graph(G: nx.MultiGraph, egde_labels=False):
 
 # +
 def plot_bar(G: nx.MultiGraph):
-    """Plot bars charts with the degree (number of 'out 'edges) and the
+    """Plot bars charts with the degree (number of 'out-edges') and the
     outward data volume for each rank.
     """
 
