@@ -805,6 +805,8 @@ void assemble_exterior_facets(
 /// the kernel over.
 /// @param[in] dofmap Test function (row) degree-of-freedom data holding
 /// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
+/// Cells that don't exist in the test function domain should be marked
+/// with -1 in the cell indices list.
 /// @param[in] fn Kernel function to execute over each cell.
 /// @param[in] constants The constant data
 /// @param[in] coeffs Coefficient data array, withshape (cells.size(),
@@ -847,6 +849,8 @@ void assemble_interior_facets(
                       x_dofmap.extent(1) * 3);
   std::vector<T> be;
 
+  const std::size_t dmap_size = dmap.cell_dofs(0).size();
+
   assert(facets0.size() == facets.size());
   for (std::size_t f = 0; f < facets.extent(0); ++f)
   {
@@ -866,11 +870,18 @@ void assemble_interior_facets(
       std::copy_n(&x(x_dofs1[i], 0), 3, std::next(cdofs1.begin(), 3 * i));
 
     // Get dofmaps for cells
-    std::span dmap0 = dmap.cell_dofs(cells0[0]);
-    std::span dmap1 = dmap.cell_dofs(cells0[1]);
+    // When integrating over interfaces between two domains, the test function
+    // might only be defined on one side, so we check which cells exist in the
+    // test function domain
+    std::span<const std::int32_t> dmap0 = cells0[0] >= 0
+                                              ? dmap.cell_dofs(cells0[0])
+                                              : std::span<const std::int32_t>();
+    std::span<const std::int32_t> dmap1 = cells0[1] >= 0
+                                              ? dmap.cell_dofs(cells0[1])
+                                              : std::span<const std::int32_t>();
 
     // Tabulate element vector
-    be.resize(bs * (dmap0.size() + dmap1.size()));
+    be.resize(bs * 2 * dmap_size);
     std::ranges::fill(be, 0);
     std::array perm = perms.empty()
                           ? std::array<std::uint8_t, 2>{0, 0}
@@ -882,8 +893,10 @@ void assemble_interior_facets(
     std::span<T> _be(be);
     std::span<T> sub_be = _be.subspan(bs * dmap0.size(), bs * dmap1.size());
 
-    P0(be, cell_info0, cells0[0], 1);
-    P0(sub_be, cell_info0, cells0[1], 1);
+    if (cells0[0] >= 0)
+      P0(be, cell_info0, cells0[0], 1);
+    if (cells0[1] >= 0)
+      P0(sub_be, cell_info0, cells0[1], 1);
 
     // Add element vector to global vector
     if constexpr (_bs > 0)
