@@ -299,7 +299,7 @@ public:
   /// listed at
   /// https://docs.open-mpi.org/en/main/man-openmpi/man3/MPI_Comm_split_type.3.html#split-types.
   ///
-  /// @note Collective operation on comm();
+  /// @note Collective operation on comm().
   ///
   /// @param[in] split_type MPI split type, as used in the function
   /// `MPI_Comm_split_type`. See
@@ -331,7 +331,7 @@ public:
   ///
   /// @note Collective.
   ///
-  /// @param[in] root MPI rank on which the build the communication
+  /// @param[in] root MPI rank on which to build the communication
   /// graph data.
   /// @return Adjacency list representing the communication pattern,
   /// where edges data is (0) the edge, (1) edge weight and (2)
@@ -341,7 +341,7 @@ public:
                        std::pair<std::int32_t, std::int32_t>>
   comm_graph(int root = 0) const;
 
-  /// @brief Build communication graph data as JSON string.
+  /// @brief Build communication graph data as a JSON string.
   ///
   /// The data string can be decoded (loaded) to create a Python object
   /// from which a [NetworkX](https://networkx.org/) graph can be
