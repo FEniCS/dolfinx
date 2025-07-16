@@ -336,8 +336,9 @@ public:
   /// @return Adjacency list representing the communication pattern,
   /// where edges data is (0) the edge, (1) edge weight and (2)
   /// local/remote memory indicator, and node weights (number of owned
-  /// indices).
-  graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>, std::int32_t>
+  /// indices, number of ghost indices).
+  graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
+                       std::pair<std::int32_t, std::int32_t>>
   comm_graph(int root = 0) const;
 
   /// @brief Build communication graph data as JSON string.
@@ -352,7 +353,7 @@ public:
   /// @return JSON string representing the communication graph.
   static std::string comm_to_json(
       const graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
-                                 std::int32_t>& g);
+                                 std::pair<std::int32_t, std::int32_t>>& g);
 
 private:
   // Range of indices (global) owned by this process

@@ -1382,7 +1382,8 @@ std::array<std::vector<int>, 2> IndexMap::rank_type(int split_type) const
   return {std::move(split_dest), std::move(split_src)};
 }
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>, std::int32_t>
+graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
+                     std::pair<std::int32_t, std::int32_t>>
 IndexMap::comm_graph(int root) const
 {
   int ierr;
@@ -1422,12 +1423,25 @@ IndexMap::comm_graph(int root) const
                      disp.data(), MPI_INT32_T, root, _comm.comm());
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
-  // For node get local size
-  std::int32_t size = this->size_local();
-  std::vector<std::int32_t> sizes_remote(dolfinx::MPI::size(_comm.comm()));
-  ierr = MPI_Gather(&size, 1, MPI_INT32_T, sizes_remote.data(), 1, MPI_INT32_T,
-                    root, _comm.comm());
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
+  // For node get local and ghost sizes
+  std::vector<std::pair<std::int32_t, std::int32_t>> sizes_remote;
+  {
+    std::vector<std::int32_t> sizes_local(dolfinx::MPI::size(_comm.comm()));
+    std::int32_t size = this->size_local();
+    ierr = MPI_Gather(&size, 1, MPI_INT32_T, sizes_local.data(), 1, MPI_INT32_T,
+                      root, _comm.comm());
+    dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+    std::vector<std::int32_t> sizes_ghost(dolfinx::MPI::size(_comm.comm()));
+    std::int32_t num_ghosts = this->num_ghosts();
+    ierr = MPI_Gather(&num_ghosts, 1, MPI_INT32_T, sizes_ghost.data(), 1,
+                      MPI_INT32_T, root, _comm.comm());
+    dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+    std::transform(sizes_local.begin(), sizes_local.end(), sizes_ghost.begin(),
+                   std::back_inserter(sizes_remote),
+                   [](auto x, auto y) { return std::pair(x, y); });
+  }
 
   // For each edge, get its local/remote marker
   std::vector<std::int8_t> markers;
@@ -1455,16 +1469,19 @@ IndexMap::comm_graph(int root) const
 //-----------------------------------------------------------------------------
 std::string IndexMap::comm_to_json(
     const graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
-                               std::int32_t>& g)
+                               std::pair<std::int32_t, std::int32_t>>& g)
 {
-  const std::vector<std::int32_t>& node_weights = g.node_data().value();
+  const std::vector<std::pair<std::int32_t, std::int32_t>>& node_weights
+      = g.node_data().value();
 
   std::stringstream out;
-  out << std::format("{{\"directed\": true, \"multigraph\": true, \"graph\": "
+  out << std::format("{{\"directed\": true, \"multigraph\": false, \"graph\": "
                      "[], \"nodes\": [");
   for (std::int32_t n = 0; n < g.num_nodes(); ++n)
   {
-    out << std::format("{{\"weight\": {}, \"id\": {}}}", node_weights[n], n);
+    // Note: it is helpful to order map keys alphabetically
+    out << std::format("{{\"num_ghosts\": {}, \"weight\": {},  \"id\": {}}}",
+                       node_weights[n].second, node_weights[n].first, n);
     if (n != g.num_nodes() - 1)
       out << ", ";
   }
@@ -1478,7 +1495,7 @@ std::string IndexMap::comm_to_json(
     {
       auto [e, w, local] = links[edge];
       out << std::format(
-          "{{\"local\": {}, \"weight\": {}, \"id\": {}, \"key\": 0}}", local, w,
+          "{{\"local\": {}, \"weight\": {}, \"id\": {}}}", local, w,
           e);
       if (edge != links.size() - 1)
         out << ", ";

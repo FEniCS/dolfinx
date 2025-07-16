@@ -162,11 +162,12 @@ if msh.comm.rank == 0:
     # To create a NetworkX directed graph, we get the graph data in a
     # form from which NetworkX can build a graph. Each edge will have a
     # weight and a 'local(1)/remote(0)' memory indicator.
-    graph_data, node_weights = IndexMap.comm_graph_data(comm_graph)
+    adj_data, node_data = IndexMap.comm_graph_data(comm_graph)
 
     # Create a NetworkX directed graph.
     H = nx.DiGraph()
-    H.add_edges_from(graph_data)
+    H.add_edges_from(adj_data)
+    H.add_nodes_from(node_data)
 
     # Create graph with sorted nodes. This can be helpful for
     # visualisations.
@@ -185,8 +186,7 @@ if msh.comm.rank == 0:
     # Get graph data as a JSON string (useful if running from C++, in
     # which case the JSON string can be written to file)
     data_json_str = IndexMap.comm_to_json(comm_graph)
-    data_json = json.loads(data_json_str)
-    H1 = nx.adjacency_graph(data_json)
+    H1 = nx.adjacency_graph(json.loads(data_json_str))
 
     # Create graph with sorted nodes. This can be helpful for
     # visualisations.
@@ -194,4 +194,5 @@ if msh.comm.rank == 0:
     G1.add_nodes_from(sorted(H1.nodes(data=True)))
     G1.add_edges_from(H1.edges(data=True))
     print_stats(G1)
+
 # -

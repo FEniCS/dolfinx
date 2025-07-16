@@ -28,9 +28,11 @@
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <optional>
+#include <ranges>
 #include <span>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 namespace nb = nanobind;
@@ -203,29 +205,47 @@ void common(nb::module_& m)
       .def_static(
           "comm_graph_data",
           [](dolfinx::graph::AdjacencyList<
-              std::tuple<int, std::size_t, std::int8_t>, std::int32_t>& g)
+              std::tuple<int, std::size_t, std::int8_t>,
+              std::pair<std::int32_t, std::int32_t>>& g)
           {
             std::vector<
                 std::tuple<int, int, std::map<std::string, std::size_t>>>
-                graph;
+                adj;
             for (std::int32_t n = 0; n < g.num_nodes(); ++n)
             {
               for (auto [e, w, local] : g.links(n))
               {
-                graph.emplace_back(n, e,
-                                   std::map<std::string, std::size_t>{
-                                       {"local", local}, {"weight", w}});
+                adj.emplace_back(n, e,
+                                 std::map<std::string, std::size_t>{
+                                     {"local", local}, {"weight", w}});
               }
             }
-            return std::pair(graph, g.node_data().value());
+
+            std::vector<
+                std::pair<std::int32_t, std::map<std::string, std::int32_t>>>
+                nodes;
+            std::ranges::transform(
+                g.node_data().value(), std::ranges::views::iota(0),
+                std::back_inserter(nodes),
+                [](auto data, auto n)
+                {
+                  return std::pair(n, std::map<std::string, std::int32_t>{
+                                          {"weight", data.first},
+                                          {"num_ghosts", data.second}});
+                });
+
+            return std::pair(std::move(adj), std::move(nodes));
           },
           nb::arg("root") = 0,
           "Build a graph representing parallel communication patterns.")
       .def_static(
           "comm_to_json",
           [](dolfinx::graph::AdjacencyList<
-              std::tuple<int, std::size_t, std::int8_t>, std::int32_t>& g)
-          { return dolfinx::common::IndexMap::comm_to_json(g); });
+              std::tuple<int, std::size_t, std::int8_t>,
+              std::pair<std::int32_t, std::int32_t>>& g)
+          { return dolfinx::common::IndexMap::comm_to_json(g); },
+          "Build a JSON string representation of a parallel communication "
+          "graph that can use used by build a NetworkX graph.");
 
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(
