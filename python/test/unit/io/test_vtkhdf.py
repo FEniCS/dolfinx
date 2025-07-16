@@ -170,7 +170,7 @@ def test_write_point_data(dtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
     filename = "point_data.vtkhdf"
     write_mesh(filename, mesh)
-    point_data = np.arange(mesh.topology.index_map(0).size_local)
+    point_data = np.arange(mesh.geometry.index_map().size_local)
     for j in range(3):
         write_point_data(filename, mesh, point_data, float(j))
 
@@ -184,3 +184,20 @@ def test_write_cell_data(dtype, width):
     cell_data = np.arange(mesh.topology.index_map(2).size_local * width)
     for j in range(3):
         write_cell_data(filename, mesh, cell_data, float(j))
+
+
+def test_write_mixed_topology_data(mixed_topology_mesh):
+    mesh = Mesh(mixed_topology_mesh, None)
+    filename = "mixed_point_data.vtkhdf"
+    write_mesh(filename, mesh)
+    point_data = np.arange(mesh.geometry.index_map().size_local, dtype=np.float64)
+    for j in range(10):
+        write_point_data(filename, mesh, point_data, float(j))
+        point_data *= 0.9
+
+    filename = "mixed_cell_data.vtkhdf"
+    write_mesh(filename, mesh)
+    b = sum([im.size_local for im in mesh.topology.index_maps(mesh.topology.dim)])
+    print(b)
+    cell_data = np.arange(b, dtype=np.float64)
+    write_cell_data(filename, mesh, cell_data, 0.0)

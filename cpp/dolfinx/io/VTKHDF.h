@@ -152,32 +152,42 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
 /// @brief Write Point or Cell data to VTKHDF
 /// Adds data to an existing VTKHDF file, which already contains a mesh.
 /// @tparam U Scalar type
-/// @param point_or_cell String "Point" or "Cell" determining data location
-/// @param filename File for output
-/// @param mesh Mesh
-/// @param data Local point or cell centered data
+/// @param point_or_cell String "Point" or "Cell" determining data location.
+/// @param filename File for output.
+/// @param mesh Mesh, which must be the same as the original mesh used in the
+/// file.
+/// @param data Local point or cell centered data, whose size must match the
+/// number of local points or cells. Vector data is supported, in which case,
+/// the data size must be an integral multiple of the number of local points or
+/// cells.
 /// @param time Timestamp
 /// @note Mesh must be written to file first using `VTKHDF::write_mesh`.
-/// @note Only one dataset can be written per file at present, with multiple
+/// @note Only one dataset "u" can be written per file at present, with multiple
 /// timesteps.
-/// @note Limited support for floating point types at present (no complex).
-/// @note Mixed-topology meshes not supported at present.
+/// @note Limited support for floating point types at present (no complex number
+/// support).
 template <std::floating_point U>
 void write_data(std::string point_or_cell, std::string filename,
                 const mesh::Mesh<U>& mesh, const std::vector<U>& data,
                 double time)
 {
-  int dim = 0;
+  std::vector<std::shared_ptr<const common::IndexMap>> index_maps;
   if (point_or_cell == "Point")
-    dim = 0;
+  {
+    index_maps = {mesh.geometry().index_map()};
+  }
   else if (point_or_cell == "Cell")
-    dim = mesh.topology()->dim();
+  {
+    int dim = mesh.topology()->dim();
+    index_maps = mesh.topology()->index_maps(dim);
+  }
   else
     throw std::runtime_error("Selection must be Point or Cell");
-  auto index_map = mesh.topology()->index_map(dim);
 
   std::string dataset_name = "/VTKHDF/" + point_or_cell + "Data/u";
-  int npoints = index_map->size_local();
+  int npoints
+      = std::accumulate(index_maps.begin(), index_maps.end(), 0,
+                        [](int a, auto im) { return a + im->size_local(); });
   int data_width = data.size() / npoints;
 
   if (data.size() % npoints != 0)
@@ -216,7 +226,7 @@ void write_data(std::string point_or_cell, std::string filename,
   H5Gclose(vtk_group);
 
   // Add a single value to end of a 1D dataset
-  auto increment_dataset
+  auto append_dataset
       = [&h5file]<typename T>(const std::string& dset_name, T value)
   {
     std::int32_t s = 0;
@@ -231,32 +241,37 @@ void write_data(std::string point_or_cell, std::string filename,
                         true);
   };
 
-  increment_dataset("/VTKHDF/Steps/CellOffsets", 0);
-
-  increment_dataset("/VTKHDF/Steps/ConnectivityIdOffsets", 0);
-
-  increment_dataset("/VTKHDF/Steps/NumberOfParts", 1);
-
-  increment_dataset("/VTKHDF/Steps/PartOffsets", 0);
+  // Mesh remains the same, so these values are the same for each time step
+  append_dataset("/VTKHDF/Steps/CellOffsets", 0);
+  append_dataset("/VTKHDF/Steps/ConnectivityIdOffsets", 0);
+  append_dataset("/VTKHDF/Steps/NumberOfParts", 1);
+  append_dataset("/VTKHDF/Steps/PartOffsets", 0);
+  append_dataset("/VTKHDF/Steps/PointOffsets", 0);
 
   // Add the current data size to the end of the offset array
   hdf5::add_group(h5file, "/VTKHDF/Steps/" + point_or_cell + "DataOffsets");
-  increment_dataset("/VTKHDF/Steps/" + point_or_cell + "DataOffsets/u",
-                    point_data_offset);
-
-  increment_dataset("/VTKHDF/Steps/PointOffsets", 0);
+  append_dataset("/VTKHDF/Steps/" + point_or_cell + "DataOffsets/u",
+                 point_data_offset);
 
   // Time values
   // FIXME: check these are increasing?
-  increment_dataset("/VTKHDF/Steps/Values", time);
+  append_dataset("/VTKHDF/Steps/Values", time);
 
   std::string group_name = "/VTKHDF/" + point_or_cell + "Data";
   hdf5::add_group(h5file, group_name);
 
   // Add point/cell data into dataset, extending each time by size_global
   // with each process writing its own part.
-  std::array<std::int64_t, 2> range = index_map->local_range();
-  std::vector<std::int64_t> shape0 = {index_map->size_global(), data_width};
+  std::int64_t range0 = std::accumulate(index_maps.begin(), index_maps.end(), 0,
+                                        [](int a, auto im)
+                                        { return a + im->local_range()[0]; });
+  std::array<std::int64_t, 2> range = {range0, range0 + npoints};
+
+  std::int64_t global_size = std::accumulate(
+      index_maps.begin(), index_maps.end(), 0,
+      [](std::int64_t a, auto im) { return a + im->size_global(); });
+
+  std::vector<std::int64_t> shape0 = {global_size, data_width};
   if (hdf5::has_dataset(h5file, dataset_name))
   {
     std::vector<std::int64_t> shape
