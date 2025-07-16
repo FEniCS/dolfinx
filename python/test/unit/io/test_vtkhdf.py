@@ -11,7 +11,7 @@ import pytest
 
 import dolfinx
 import ufl
-from dolfinx.io.vtkhdf import read_mesh, write_mesh
+from dolfinx.io.vtkhdf import read_mesh, write_cell_data, write_mesh, write_point_data
 from dolfinx.mesh import CellType, Mesh, create_unit_cube, create_unit_square
 
 
@@ -163,3 +163,24 @@ def test_read_write_higher_order_mesh(order):
     surface_form = dolfinx.fem.form(1 * ufl.ds(domain=mesh), dtype=mesh.geometry.x.dtype)
     surface = comm.allreduce(dolfinx.fem.assemble_scalar(surface_form), op=MPI.SUM)
     assert np.isclose(ref_surface, surface)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_write_point_data(dtype):
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
+    filename = "point_data.vtkhdf"
+    write_mesh(filename, mesh)
+    point_data = np.arange(mesh.topology.index_map(0).size_local)
+    for j in range(3):
+        write_point_data(filename, mesh, point_data, float(j))
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("width", [1, 3])
+def test_write_cell_data(dtype, width):
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
+    filename = "cell_data.vtkhdf"
+    write_mesh(filename, mesh)
+    cell_data = np.arange(mesh.topology.index_map(2).size_local * width)
+    for j in range(3):
+        write_cell_data(filename, mesh, cell_data, float(j))

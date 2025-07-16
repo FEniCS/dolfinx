@@ -223,6 +223,7 @@ void io(nb::module_& m)
   m.def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<double>)
       .def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<float>);
   m.def("write_vtkhdf_data", &dolfinx::io::VTKHDF::write_data<double>);
+  m.def("write_vtkhdf_data", &dolfinx::io::VTKHDF::write_data<float>);
   m.def("read_vtkhdf_mesh_float64",
         [](MPICommWrapper comm, std::string filename, std::size_t gdim)
         {
