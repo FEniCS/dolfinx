@@ -66,15 +66,13 @@ int main(int argc, char* argv[])
     // any other cell with 1
     auto cell_map = mesh->topology()->index_map(tdim);
     assert(cell_map);
-    std::size_t num_cells_local
-        = mesh->topology()->index_map(tdim)->size_local()
-          + mesh->topology()->index_map(tdim)->num_ghosts();
-    std::vector<std::int32_t> cells(num_cells_local);
-    std::iota(cells.begin(), cells.end(), 0);
-    std::vector<std::int32_t> values(cells.size(), 1);
+    std::int32_t num_cells = mesh->topology()->index_map(tdim)->size_local()
+                             + mesh->topology()->index_map(tdim)->num_ghosts();
+
+    std::vector<std::int32_t> values(num_cells, 1);
     std::ranges::for_each(marked_cells, [&values](auto c) { values[c] = 2; });
-    mesh::MeshTags<std::int32_t> cell_marker(mesh->topology(), tdim, cells,
-                                             values);
+    mesh::MeshTags<std::int32_t> cell_marker(
+        mesh->topology(), tdim, std::ranges::views::iota(0, num_cells), values);
 
     std::shared_ptr<mesh::Mesh<U>> submesh;
     std::vector<std::int32_t> submesh_to_mesh;
@@ -99,7 +97,7 @@ int main(int argc, char* argv[])
     // `submesh`, we must provide a map from entities in `mesh` to
     // entities in `submesh`. This is simply the "inverse" of
     // `submesh_to_mesh`.
-    std::vector<std::int32_t> mesh_to_submesh(num_cells_local, -1);
+    std::vector<std::int32_t> mesh_to_submesh(num_cells, -1);
     for (std::size_t i = 0; i < submesh_to_mesh.size(); ++i)
       mesh_to_submesh[submesh_to_mesh[i]] = i;
 

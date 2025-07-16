@@ -14,9 +14,12 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/io/cells.h>
 #include <memory>
+#include <ranges>
 #include <span>
 #include <utility>
 #include <vector>
+
+#include <iostream>
 
 namespace dolfinx::mesh
 {
@@ -32,6 +35,30 @@ template <typename T>
 class MeshTags
 {
 public:
+  /// @brief Create a MeshTag from entities of given dimension on a
+  /// mesh.
+  ///
+  /// This version supports ranges for `indices`.
+  ///
+  /// @param[in] topology Mesh topology on which the tags are associated.
+  /// @param[in] dim Topological dimension of mesh entities to tag.
+  /// @param[in] indices List of entity indices (indices local to the
+  /// process).
+  /// @param[in] values List of values for each index in indices. The
+  /// size must be equal to the size of `indices`.
+  /// @pre `indices` must be sorted and unique.
+  template <std::ranges::range U, typename V>
+    requires std::is_convertible_v<std::ranges::range_value_t<U>, std::int32_t>
+             and std::is_convertible_v<std::remove_cvref_t<V>, std::vector<T>>
+  MeshTags(std::shared_ptr<const Topology> topology, int dim, const U& indices,
+           V&& values)
+      : MeshTags(topology, dim, std::vector<T>(indices.begin(), indices.end()),
+                 std::forward<V>(values))
+  {
+    // Do nothing
+    std::cout << "V1" << std::endl;
+  }
+
   /// @brief Create a MeshTag from entities of given dimension on a
   /// mesh.
   ///
@@ -52,6 +79,7 @@ public:
       : _topology(topology), _dim(dim), _indices(std::forward<U>(indices)),
         _values(std::forward<V>(values))
   {
+    std::cout << "V2" << std::endl;
     if (_indices.size() != _values.size())
     {
       throw std::runtime_error(
