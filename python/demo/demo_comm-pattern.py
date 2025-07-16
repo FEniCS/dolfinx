@@ -113,7 +113,7 @@ def plot_bar(G: nx.MultiGraph):
 # -
 
 # Create a mesh and function space. The function space will build an
-# `IndexMap` for the degree-of-freedom map. The`IndexMap` describes how
+# `IndexMap` for the degree-of-freedom map. The `IndexMap` describes how
 # the degrees-of-freedom are distributed in parallel (across MPI ranks).
 # From information on the parallel distribution we will be able to
 # compute the communication graph.
