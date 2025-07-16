@@ -88,7 +88,7 @@ def create_vector_wrap(x: Vector) -> PETSc.Vec:  # type: ignore[name-defined]
 
 @functools.singledispatch
 def assign(
-    x0: typing.Union[npt.NDArray[np.inexact], typing.Sequence[npt.NDArray[np.inexact]]],
+    x0: typing.Union[npt.NDArray[np.inexact], Sequence[npt.NDArray[np.inexact]]],
     x1: PETSc.Vec,  # type: ignore[name-defined]
 ):
     """Assign ``x0`` values to a PETSc vector ``x1``.
@@ -123,7 +123,7 @@ def assign(
                 x.array_w[:] = _x0
     else:
         with x1.localForm() as _x:
-            if isinstance(x0, collections.abc.Sequence):
+            if isinstance(x0, Sequence):
                 start = 0
                 for _x0 in x0:
                     end = start + _x0.shape[0]
@@ -156,7 +156,7 @@ def _(
                 _x1[:] = x.array_r[:]  # type: ignore[index]
     else:
         with x0.localForm() as _x0:
-            if isinstance(x1, collections.abc.Sequence):
+            if isinstance(x1, Sequence):
                 start = 0
                 for _x1 in x1:
                     end = start + _x1.shape[0]

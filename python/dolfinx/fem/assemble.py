@@ -50,7 +50,7 @@ def pack_constants(
     def _pack(form):
         if form is None:
             return None
-        elif isinstance(form, collections.abc.Sequence):
+        elif isinstance(form, Sequence):
             return list(map(lambda sub_form: _pack(sub_form), form))
         else:
             return _pack_constants(form._cpp_object)
@@ -84,7 +84,7 @@ def pack_coefficients(
     def _pack(form):
         if form is None:
             return {}
-        elif isinstance(form, collections.abc.Sequence):
+        elif isinstance(form, Sequence):
             return list(map(lambda sub_form: _pack(sub_form), form))
         else:
             return _pack_coefficients(form._cpp_object)
