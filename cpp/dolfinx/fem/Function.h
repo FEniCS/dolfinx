@@ -165,9 +165,8 @@ public:
     int tdim = _function_space->mesh()->topology()->dim();
     auto cmap = _function_space->mesh()->topology()->index_map(tdim);
     assert(cmap);
-    std::vector<std::int32_t> cells(cmap->size_local() + cmap->num_ghosts(), 0);
-    std::iota(cells.begin(), cells.end(), 0);
-    interpolate(f, cells);
+    interpolate(f, std::ranges::views::iota(0, cmap->size_local()
+                                                   + cmap->num_ghosts()));
   }
 
   /// @brief Interpolate an expression f(x) over a set of cells.
@@ -241,8 +240,8 @@ public:
     int tdim = _function_space->mesh()->topology()->dim();
     auto cmap = _function_space->mesh()->topology()->index_map(tdim);
     assert(cmap);
-    std::vector<std::int32_t> cells(cmap->size_local() + cmap->num_ghosts(), 0);
-    std::iota(cells.begin(), cells.end(), 0);
+    auto cells
+        = std::ranges::views::iota(0, cmap->size_local() + cmap->num_ghosts());
     interpolate(u, cells, cells);
   }
 
@@ -283,9 +282,8 @@ public:
     int tdim = _function_space->mesh()->topology()->dim();
     auto cmap = _function_space->mesh()->topology()->index_map(tdim);
     assert(cmap);
-    std::vector<std::int32_t> cells(cmap->size_local() + cmap->num_ghosts(), 0);
-    std::iota(cells.begin(), cells.end(), 0);
-    interpolate(e, cells);
+    interpolate(e, std::ranges::views::iota(0, cmap->size_local()
+                                                   + cmap->num_ghosts()));
   }
 
   /// @brief Interpolate an Expression over a subset of cells.
