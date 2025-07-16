@@ -289,7 +289,7 @@ public:
   std::vector<std::int32_t> weights_dest() const;
 
   /// @brief Destination and source ranks by type, e.g, ranks that are
-  /// destination/source ranks for the caller and are in an common
+  /// destination/source ranks for the caller and are in a common
   /// shared memory region.
   ///
   /// This function is used to group destination and source ranks by
