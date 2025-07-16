@@ -16,9 +16,9 @@
 # [NetworkX](https://networkx.org/).
 #
 # The layout of a distributed array across processes (MPI ranks) is
-# described in DOLFINx by an IndexMap. It represents the range of
+# described in DOLFINx by an `IndexMap`. It represents the range of
 # locally 'owned' array indices and the indices that are ghosted on a
-# rank. The IndexMap also holds information on the ranks that the
+# rank. The `IndexMap` also holds information on the ranks that the
 # calling rank will send data to and ranks that will send data to the
 # caller.
 #
@@ -80,8 +80,8 @@ def plot_graph(G: nx.MultiGraph, egde_labels=False):
 
 # -
 
-# The following function produces bar charts with the number of out
-# edges per rank and the sum of the out edge weights (measure of data
+# The following function produces bar charts with the number of out-edges
+# per rank and the sum of the out edge weights (measure of data
 # volume) per rank.
 
 
@@ -128,10 +128,10 @@ msh = mesh.create_box(
 V = fem.functionspace(msh, ("Lagrange", 2))
 # -
 
-# An index map has the method `comm_graph` which can build a
+# An `IndexMap` has the method `comm_graph` which can build a
 # communication graph that represents data begin sent from the owning
-# rank to ranks that ghost the data. We use the degree-of-freedom map
-# IndexMap. Building the communication data is collective across MPI
+# rank to ranks that ghost the data. We use the degree-of-freedom map's
+# `IndexMap`. Building the communication data is collective across MPI
 # ranks. However, a non-empty graph is returned only on rank 0.
 
 # +
