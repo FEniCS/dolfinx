@@ -191,7 +191,7 @@ void io::hdf5::set_attribute(hid_t handle, const std::string& attr_name,
 }
 //-----------------------------------------------------------------------------
 void io::hdf5::set_attribute(hid_t handle, const std::string& attr_name,
-                             const std::int32_t& value)
+                             std::int32_t value)
 {
   htri_t attr_exists = H5Aexists(handle, attr_name.c_str());
 

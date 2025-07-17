@@ -30,10 +30,12 @@ def read_mesh(
     gdim: int = 3,
 ):
     """Read a mesh from a VTKHDF format file
+
     Args:
         comm: An MPI communicator.
         filename: File to read from.
-        dtype: Scalar type of mesh geometry (need not match dtype in file)
+        dtype: Scalar type of mesh geometry (need not match dtype in
+            file).
         gdim: Geometric dimension of the mesh.
     """
     if dtype == np.float64:
@@ -50,11 +52,7 @@ def read_mesh(
         variant = mesh_cpp.geometry.cmap.variant
         domain = ufl.Mesh(
             basix.ufl.element(
-                "Lagrange",
-                cell_types[0].name,
-                cell_degree,
-                variant,
-                shape=(mesh_cpp.geometry.dim,),
+                "Lagrange", cell_types[0].name, cell_degree, variant, shape=(mesh_cpp.geometry.dim,)
             )
         )
     return Mesh(mesh_cpp, domain)
@@ -62,6 +60,7 @@ def read_mesh(
 
 def write_mesh(filename: typing.Union[str, Path], mesh: Mesh):
     """Write a mesh to file in VTKHDF format
+
     Args:
         filename: File to write to.
         mesh: Mesh.
@@ -71,6 +70,7 @@ def write_mesh(filename: typing.Union[str, Path], mesh: Mesh):
 
 def write_point_data(filename: typing.Union[str, Path], mesh: Mesh, data: npt.NDArray, time: float):
     """Write data at vertices of the mesh.
+
     Args:
         filename: File to write to.
         mesh: Mesh.
@@ -82,6 +82,7 @@ def write_point_data(filename: typing.Union[str, Path], mesh: Mesh, data: npt.ND
 
 def write_cell_data(filename: typing.Union[str, Path], mesh: Mesh, data: npt.NDArray, time: float):
     """Write data at cells of the mesh.
+
     Args:
         filename: File to write to.
         mesh: Mesh.

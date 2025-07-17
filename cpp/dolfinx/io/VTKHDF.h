@@ -149,23 +149,27 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
   hdf5::close_file(h5file);
 }
 
-/// @brief Write Point or Cell data to VTKHDF
+/// @brief Write Point or Cell data to VTKHDF.
+///
 /// Adds data to an existing VTKHDF file, which already contains a mesh.
-/// @tparam U Scalar type
-/// @param point_or_cell String "Point" or "Cell" determining data location.
-/// @param filename File for output.
-/// @param mesh Mesh, which must be the same as the original mesh used in the
-/// file.
-/// @param data Local point or cell centered data, whose size must match the
-/// number of local points or cells. Vector data is supported, in which case,
-/// the data size must be an integral multiple of the number of local points or
-/// cells.
-/// @param time Timestamp
+///
+/// @tparam U Scalar type.
+/// @param[in] point_or_cell String "Point" or "Cell" determining data
+/// location.
+/// @param[in] filename File for output.
+/// @param[in] mesh Mesh, which must be the same as the original mesh
+/// used in the file.
+/// @param[in] data Local point or cell centered data, whose size must
+/// match the number of local points or cells. Vector data is supported,
+/// in which case, the data size must be an integral multiple of the
+/// number of local points or cells.
+/// @param[in] time Timestamp.
+///
 /// @note Mesh must be written to file first using `VTKHDF::write_mesh`.
-/// @note Only one dataset "u" can be written per file at present, with multiple
-/// timesteps.
-/// @note Limited support for floating point types at present (no complex number
-/// support).
+/// @note Only one dataset "u" can be written per file at present, with
+/// multiple timesteps.
+/// @note Limited support for floating point types at present (no
+/// complex number support).
 template <std::floating_point U>
 void write_data(std::string point_or_cell, std::string filename,
                 const mesh::Mesh<U>& mesh, const std::vector<U>& data,
@@ -173,14 +177,9 @@ void write_data(std::string point_or_cell, std::string filename,
 {
   std::vector<std::shared_ptr<const common::IndexMap>> index_maps;
   if (point_or_cell == "Point")
-  {
     index_maps = {mesh.geometry().index_map()};
-  }
   else if (point_or_cell == "Cell")
-  {
-    int dim = mesh.topology()->dim();
-    index_maps = mesh.topology()->index_maps(dim);
-  }
+    index_maps = mesh.topology()->index_maps(mesh.topology()->dim());
   else
     throw std::runtime_error("Selection must be Point or Cell");
 
@@ -189,7 +188,6 @@ void write_data(std::string point_or_cell, std::string filename,
       = std::accumulate(index_maps.begin(), index_maps.end(), 0,
                         [](int a, auto im) { return a + im->size_local(); });
   int data_width = data.size() / npoints;
-
   if (data.size() % npoints != 0)
   {
     throw std::runtime_error(
@@ -201,10 +199,8 @@ void write_data(std::string point_or_cell, std::string filename,
   hdf5::add_group(h5file, "VTKHDF/Steps");
   hid_t vtk_group = H5Gopen(h5file, "VTKHDF/Steps", H5P_DEFAULT);
 
-  htri_t attr_exists = H5Aexists(vtk_group, "NSteps");
   std::int64_t point_data_offset = 0;
-
-  if (attr_exists < 0)
+  if (htri_t attr_exists = H5Aexists(vtk_group, "NSteps"); attr_exists < 0)
     throw std::runtime_error("Error checking attribute");
   else if (attr_exists == 0)
     hdf5::set_attribute(vtk_group, "NSteps", 1);
@@ -260,8 +256,8 @@ void write_data(std::string point_or_cell, std::string filename,
   std::string group_name = "/VTKHDF/" + point_or_cell + "Data";
   hdf5::add_group(h5file, group_name);
 
-  // Add point/cell data into dataset, extending each time by size_global
-  // with each process writing its own part.
+  // Add point/cell data into dataset, extending each time by
+  // size_global with each process writing its own part.
   std::int64_t range0 = std::accumulate(index_maps.begin(), index_maps.end(), 0,
                                         [](int a, auto im)
                                         { return a + im->local_range()[0]; });
@@ -281,7 +277,6 @@ void write_data(std::string point_or_cell, std::string filename,
     range[0] += offset;
     range[1] += offset;
     shape0[0] += offset;
-
     hdf5::write_dataset(h5file, dataset_name, data.data(), range, shape0, true,
                         true);
   }

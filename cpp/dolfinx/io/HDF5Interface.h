@@ -78,16 +78,17 @@ std::filesystem::path get_filename(hid_t handle);
 /// @return True if @p dataset_path is in the file
 bool has_dataset(hid_t handle, const std::string& dataset_path);
 
-/// @brief Set an attribute on a dataset or group
-/// @param handle Dataset or group handle
-/// @param attr_name Name of attribute
-/// @param value Value to set
+/// @brief Set an attribute on a dataset or group.
+///
+/// @param[in] handle Dataset or group handle.
+/// @param[in] attr_name Name of attribute.
+/// @param[in] value Value to set.
 void set_attribute(hid_t handle, const std::string& attr_name,
                    const std::string& value);
 void set_attribute(hid_t handle, const std::string& attr_name,
                    const std::vector<std::int32_t>& value);
 void set_attribute(hid_t handle, const std::string& attr_name,
-                   const std::int32_t& value);
+                   std::int32_t value);
 
 /// Open dataset
 /// @param[in] handle HDF5 file handle.
@@ -102,7 +103,7 @@ hid_t open_dataset(hid_t handle, const std::string& path);
 std::vector<std::int64_t> get_dataset_shape(hid_t handle,
                                             const std::string& dataset_path);
 
-/// Set MPI atomicity.
+/// @brief Set MPI atomicity.
 ///
 /// See
 /// https://support.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-SetMpiAtomicity
@@ -124,17 +125,18 @@ bool get_mpi_atomicity(hid_t handle);
 /// @param[in] dataset_path Data set path to add
 void add_group(hid_t handle, const std::string& dataset_path);
 
-/// Write data to existing HDF file as defined by range blocks on each
-/// process
-/// @param[in] file_handle HDF5 file handle
-/// @param[in] dataset_path Path for the dataset in the HDF5 file
+/// @brief Write data to existing HDF file as defined by range blocks on
+/// each process.
+///
+/// @param[in] file_handle HDF5 file handle.
+/// @param[in] dataset_path Path for the dataset in the HDF5 file.
 /// @param[in] data Data to be written, flattened into 1D vector
-///   (row-major storage)
-/// @param[in] range The local range on this processor
-/// @param[in] global_size The global shape of the array
-/// @param[in] use_mpi_io True if MPI-IO should be used
-/// @param[in] use_chunking True if chunking should be used, required for
-/// extensible datasets.
+/// (row-major storage).
+/// @param[in] range Local range on this processor.
+/// @param[in] global_size Global shape of the array.
+/// @param[in] use_mpi_io `true` if MPI-IO should be used.
+/// @param[in] use_chunking `true` if chunking should be used, required
+/// for extensible datasets.
 /// @note Can be used to resize and write into an existing dataset.
 /// @note Chunking is required for extensible datasets.
 template <typename T>

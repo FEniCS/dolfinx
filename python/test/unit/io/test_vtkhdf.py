@@ -198,6 +198,5 @@ def test_write_mixed_topology_data(mixed_topology_mesh):
     filename = "mixed_cell_data.vtkhdf"
     write_mesh(filename, mesh)
     b = sum([im.size_local for im in mesh.topology.index_maps(mesh.topology.dim)])
-    print(b)
     cell_data = np.arange(b, dtype=np.float64)
     write_cell_data(filename, mesh, cell_data, 0.0)
