@@ -10,6 +10,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Scatterer.h>
+#include <dolfinx/common/utils.h>
 #include <iostream>
 #include <numeric>
 #include <set>
@@ -209,7 +210,7 @@ void test_comm_graphs()
 
   auto g = idx_map.comm_graph();
   if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 0)
-    common::IndexMap::comm_to_json(g);
+    common::comm_to_json(g);
 }
 
 } // namespace

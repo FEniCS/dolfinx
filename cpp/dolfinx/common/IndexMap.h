@@ -333,27 +333,14 @@ public:
   ///
   /// @param[in] root MPI rank on which to build the communication
   /// graph data.
-  /// @return Adjacency list representing the communication pattern,
-  /// where edges data is (0) the edge, (1) edge weight and (2)
-  /// local/remote memory indicator, and node weights (number of owned
-  /// indices, number of ghost indices).
+  /// @return Adjacency list representing the communication pattern.
+  /// Edges data is (0) the edge, (1) edge weight (`weight`) and (2)
+  /// local/remote is memory indicator (`local==1` is an edge to a
+  /// shared memory node). Node data is (number of owned indices, number
+  /// of ghost indices).
   graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
                        std::pair<std::int32_t, std::int32_t>>
   comm_graph(int root = 0) const;
-
-  /// @brief Build communication graph data as a JSON string.
-  ///
-  /// The data string can be decoded (loaded) to create a Python object
-  /// from which a [NetworkX](https://networkx.org/) graph can be
-  /// constructed.
-  ///
-  /// See ::comm_graph for a description of the data.
-  ///
-  /// @param[in] g Communication graph.
-  /// @return JSON string representing the communication graph.
-  static std::string comm_to_json(
-      const graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
-                                 std::pair<std::int32_t, std::int32_t>>& g);
 
 private:
   // Range of indices (global) owned by this process

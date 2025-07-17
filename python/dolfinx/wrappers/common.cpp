@@ -243,7 +243,7 @@ void common(nb::module_& m)
           [](dolfinx::graph::AdjacencyList<
               std::tuple<int, std::size_t, std::int8_t>,
               std::pair<std::int32_t, std::int32_t>>& g)
-          { return dolfinx::common::IndexMap::comm_to_json(g); },
+          { return dolfinx::common::comm_to_json(g); },
           "Build a JSON string representation of a parallel communication "
           "graph that can use used by build a NetworkX graph.");
 
