@@ -490,13 +490,13 @@ void _lift_bc_interior_facets(
     // test function domain
     std::span<const std::int32_t> dmap0_cell0
         = cells0[0] >= 0
-              ? std::span<const std::int32_t>(
-                    dmap0.data_handle() + cells0[0] * num_dofs0, num_dofs0)
+              ? std::span(dmap0.data_handle() + cells0[0] * num_dofs0,
+                          num_dofs0)
               : std::span<const std::int32_t>();
     std::span<const std::int32_t> dmap0_cell1
         = cells0[1] >= 0
-              ? std::span<const std::int32_t>(
-                    dmap0.data_handle() + cells0[1] * num_dofs0, num_dofs0)
+              ? std::span(dmap0.data_handle() + cells0[1] * num_dofs0,
+                          num_dofs0)
               : std::span<const std::int32_t>();
 
     dmapjoint0.resize(2 * num_dofs0);
@@ -506,13 +506,13 @@ void _lift_bc_interior_facets(
     // Check which cells exist in the trial function domain
     std::span<const std::int32_t> dmap1_cell0
         = cells1[0] >= 0
-              ? std::span<const std::int32_t>(
-                    dmap1.data_handle() + cells1[0] * num_dofs1, num_dofs1)
+              ? std::span(dmap1.data_handle() + cells1[0] * num_dofs1,
+                          num_dofs1)
               : std::span<const std::int32_t>();
     std::span<const std::int32_t> dmap1_cell1
         = cells1[1] >= 0
-              ? std::span<const std::int32_t>(
-                    dmap1.data_handle() + cells1[1] * num_dofs1, num_dofs1)
+              ? std::span(dmap1.data_handle() + cells1[1] * num_dofs1,
+                          num_dofs1)
               : std::span<const std::int32_t>();
 
     dmapjoint1.resize(2 * num_dofs1);
