@@ -434,7 +434,7 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
                                  in_edges.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
                                  false, &neighbor_comm_rev);
 
-  std::vector<int> send_offsets = {0};
+  std::vector<int> send_offsets{0};
   send_offsets.reserve(ghost_index_count.size() + 1);
   std::partial_sum(ghost_index_count.begin(), ghost_index_count.end(),
                    std::back_inserter(send_offsets));
@@ -465,7 +465,7 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
   MPI_Neighbor_alltoall(ghost_index_count.data(), 1, MPI_INT, recv_sizes.data(),
                         1, MPI_INT, neighbor_comm_fwd);
 
-  std::vector<int> recv_offsets = {0};
+  std::vector<int> recv_offsets{0};
   recv_offsets.reserve(recv_sizes.size() + 1);
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                    std::back_inserter(recv_offsets));

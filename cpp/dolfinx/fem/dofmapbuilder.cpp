@@ -169,7 +169,7 @@ build_basic_dofmaps(
   std::vector<std::pair<std::int8_t, std::int8_t>> required_dim_et;
   std::vector<std::int32_t> num_entity_dofs_et;
   std::vector<std::shared_ptr<const common::IndexMap>> topo_index_maps;
-  std::vector<std::int32_t> local_entity_offsets = {0};
+  std::vector<std::int32_t> local_entity_offsets{0};
 
   std::vector<std::vector<mesh::CellType>> entity_types(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
