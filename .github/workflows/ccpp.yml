@@ -237,6 +237,14 @@ jobs:
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
           python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_adios2; assert dolfinx.has_kahip; assert not dolfinx.has_parmetis; assert dolfinx.has_petsc; assert dolfinx.has_petsc4py; assert dolfinx.has_ptscotch; assert dolfinx.has_slepc; assert dolfinx.has_complex_ufcx_kernels"
 
+      - name: Run mypy
+        working-directory: python
+        run: |
+          pip install mypy types-cffi scipy-stubs
+          mypy -p dolfinx
+        # mypy test
+        # mypy demo
+
       - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx
