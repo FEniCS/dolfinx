@@ -928,7 +928,7 @@ void assemble_interior_facets(
           b[_bs * dmap0[i] + k] += be[_bs * i + k];
       for (std::size_t i = 0; i < dmap1.size(); ++i)
         for (int k = 0; k < _bs; ++k)
-          b[_bs * dmap1[i] + k] += be[_bs * (i + dmap0.size()) + k];
+          b[_bs * dmap1[i] + k] += be[_bs * (i + dmap_size) + k];
     }
     else
     {
@@ -937,7 +937,7 @@ void assemble_interior_facets(
           b[bs * dmap0[i] + k] += be[bs * i + k];
       for (std::size_t i = 0; i < dmap1.size(); ++i)
         for (int k = 0; k < bs; ++k)
-          b[bs * dmap1[i] + k] += be[bs * (i + dmap0.size()) + k];
+          b[bs * dmap1[i] + k] += be[bs * (i + dmap_size) + k];
     }
   }
 }
