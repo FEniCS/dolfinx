@@ -879,6 +879,9 @@ class LinearProblem:
         self._solver = PETSc.KSP().create(self.A.comm)
         self.solver.setOperators(self.A, self.P_mat)
 
+        if petsc_options_prefix == "":
+            raise ValueError("PETSc options prefix cannot be empty.")
+
         self._petsc_options_prefix = petsc_options_prefix
         self.solver.setOptionsPrefix(petsc_options_prefix)
         self.A.setOptionsPrefix(f"{petsc_options_prefix}A_")
@@ -1323,6 +1326,9 @@ class NonlinearProblem:
             partial(assemble_jacobian, u, self.J, self.preconditioner, bcs), self.A, self.P_mat
         )
         self.solver.setFunction(partial(assemble_residual, u, self.F, self.J, bcs), self.b)
+
+        if petsc_options_prefix == "":
+            raise ValueError("PETSc options prefix cannot be empty.")
 
         self.solver.setOptionsPrefix(petsc_options_prefix)
         self.A.setOptionsPrefix(f"{petsc_options_prefix}A_")
