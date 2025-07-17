@@ -146,10 +146,10 @@ jobs:
 
       - name: Run mypy
         run: |
-          pip install mypy
+          pip install mypy types-cffi scipy-stubs
           mypy -p dolfinx
-        # cd python
-        # mypy test
+          cd python
+          mypy test
         # mypy demo
 
       - name: Run demos (Python, serial)
