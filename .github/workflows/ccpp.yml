@@ -148,7 +148,7 @@ jobs:
         working-directory: python
         run: |
           pip install mypy
-          mypy dolfinx  
+          mypy -p dolfinx  
         # mypy test (--check-untyped-defs)
         # mypy demo
 
