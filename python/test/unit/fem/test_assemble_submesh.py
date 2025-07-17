@@ -800,10 +800,10 @@ def test_interior_interface():
     # Assemble the form
     dS = ufl.Measure("dS", domain=msh, subdomain_data=[(1, interface_ents)])
 
-    f = fem.Function(V_0)
-    f.interpolate(lambda x: x[0])
+    f_0 = fem.Function(V_0)
+    f_0.interpolate(lambda x: x[0])
 
-    a = fem.form(ufl.inner(f("+") * u_0("+"), v_1("-")) * dS(1), entity_maps=entity_maps)
+    a = fem.form(ufl.inner(f_0("+") * u_0("+"), v_1("-")) * dS(1), entity_maps=entity_maps)
 
     A = fem.assemble_matrix(a)
     A.scatter_reverse()
@@ -817,10 +817,10 @@ def test_interior_interface():
     f = fem.Function(V)
     f.interpolate(lambda x: x[0])
 
-    a = fem.form(ufl.inner(f("+") * u("+"), v("-")) * dS(1))
+    a_ref = fem.form(ufl.inner(f("+") * u("+"), v("-")) * dS(1))
 
-    A = fem.assemble_matrix(a)
-    A.scatter_reverse()
+    A_ref = fem.assemble_matrix(a_ref)
+    A_ref.scatter_reverse()
 
     A_ref_sqrnorm = A.squared_norm()
 
@@ -835,10 +835,10 @@ def test_interior_interface():
     bc = fem.dirichletbc(1.0, bc_dofs, V_0)
 
     # Same for a linear form
-    L = fem.form(ufl.inner(f("+"), v_1("-")) * dS(1), entity_maps=entity_maps)
+    L = fem.form(ufl.inner(f_0("+"), v_1("-")) * dS(1), entity_maps=entity_maps)
     b = fem.assemble_vector(L)
     fem.apply_lifting(b.array, [a], bcs=[[bc]])
-    # b.scatter_reverse(la.InsertMode.add)
+    b.scatter_reverse(la.InsertMode.add)
     # bc.set(b.array)
 
     bc_facets_ref = locate_entities_boundary(msh, fdim, bc_marker)
@@ -849,8 +849,8 @@ def test_interior_interface():
 
     L_ref = fem.form(ufl.inner(f("+"), v("-")) * dS(1))
     b_ref = fem.assemble_vector(L_ref)
-    fem.apply_lifting(b_ref.array, [a], bcs=[[bc_ref]])
-    # b_ref.scatter_reverse(la.InsertMode.add)
+    fem.apply_lifting(b_ref.array, [a_ref], bcs=[[bc_ref]])
+    b_ref.scatter_reverse(la.InsertMode.add)
     # bc_ref.set(b_ref.array)
 
     # print(b.array)
