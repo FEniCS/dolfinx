@@ -279,13 +279,14 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   // Search for consecutive facets (-> dual graph edge between cells)
   // and pack into send buffer
-  // TODO: currently send_buffer is a list the matched cell for every received
-  // facet or -1 if unmatched.
-  //  1) change to communicate only matched cells back to PO. -> adjacency list
-  //  - no rather for every to be matched facet send first number of matchs
-  //  (same vector size as received data)
-  // followed by communicating the list of matched facets
-  //  2) extend to multiple
+
+  // TODO:
+  // 1) change from sending back data in the format [-1, 10, 2, -1, ...] to
+  // 'adjacency list based'.
+  //      a) all_to_all the number of matched facets to send (per received
+  //      facet) b) all_to_all list of all facet matches
+  // 2) extend to multiple matched facets.
+
   std::vector<std::int64_t> send_buffer1(recv_disp.back(), -1);
   std::vector<std::vector<std::int64_t>> matched_facets(recv_disp.size());
   {
@@ -358,49 +359,54 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
                                  MPI_INFO_NULL, false, &comm_po_receive);
 
   // Send back matched cell counts
-  std::vector<std::int64_t> recv_matched_facet_counts(send_disp.back());
-  MPI_Neighbor_alltoallv(num_items_po_send.data(), num_items_recv.data(),
-                         recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
-                         recv_matched_facet_counts.data(),
-                         num_items_per_dest.data(), send_disp.data(),
-                         dolfinx::MPI::mpi_t<std::int64_t>, comm_po_receive);
+  // std::vector<std::int64_t> recv_matched_facet_counts(send_disp.back());
+  // MPI_Neighbor_alltoallv(num_items_po_send.data(), num_items_recv.data(),
+  //                        recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
+  //                        recv_matched_facet_counts.data(),
+  //                        num_items_per_dest.data(), send_disp.data(),
+  //                        dolfinx::MPI::mpi_t<std::int64_t>, comm_po_receive);
 
-  std::vector<std::int64_t> send_buffer2;
-  send_buffer2.reserve(
-      std::accumulate(num_items_po_send.begin(), num_items_po_send.end(), 0));
-  for (auto& matches : matched_facets)
-    for (auto match : matches)
-      send_buffer2.push_back(match);
+  // std::vector<int> send_count_per_process; // TODO:
+  // std::vector<int> send_displ_matched; // TODO
 
-  // Send back matched facet data
-  std::vector<int> receive_count_per_process(src.size());
-  for (int i = 0; i < num_items_per_dest.size(); i++)
-  {
-    int length = num_items_per_dest[i];
-    auto begin = std::next(
-        recv_matched_facet_counts.begin(),
-        std::accumulate(num_items_per_dest.begin(),
-                        std::next(num_items_per_dest.begin(), i), 0));
-    receive_count_per_process[i]
-        = std::accumulate(begin, std::next(begin, length), 0);
-  }
+  // std::vector<std::int64_t> send_buffer2;
+  // send_buffer2.reserve(
+  //     std::accumulate(num_items_po_send.begin(), num_items_po_send.end(),
+  //     0));
+  // for (auto& matches : matched_facets)
+  //   for (auto match : matches)
+  //     send_buffer2.push_back(match);
 
-  // Compute send displacements
-  std::vector<std::int32_t> send_disp_matched(
-      receive_count_per_process.size() + 1, 0);
-  std::partial_sum(receive_count_per_process.begin(),
-                   receive_count_per_process.end(),
-                   std::next(send_disp_matched.begin()));
+  // // Send back matched facet data
+  // std::vector<int> receive_count_per_process(src.size());
+  // for (int i = 0; i < num_items_per_dest.size(); i++)
+  // {
+  //   int length = num_items_per_dest[i];
+  //   auto begin = std::next(
+  //       recv_matched_facet_counts.begin(),
+  //       std::accumulate(num_items_per_dest.begin(),
+  //                       std::next(num_items_per_dest.begin(), i), 0));
+  //   receive_count_per_process[i]
+  //       = std::accumulate(begin, std::next(begin, length), 0);
+  // }
 
-  std::vector<std::int64_t> recv_matched_facets(std::accumulate(
-      receive_count_per_process.begin(), receive_count_per_process.end(), 0));
+  // // Compute send displacements
+  // std::vector<std::int32_t> send_disp_matched(
+  //     receive_count_per_process.size() + 1, 0);
+  // std::partial_sum(receive_count_per_process.begin(),
+  //                  receive_count_per_process.end(),
+  //                  std::next(send_disp_matched.begin()));
+
+  // std::vector<std::int64_t> recv_matched_facets(std::accumulate(
+  //     receive_count_per_process.begin(), receive_count_per_process.end(),
+  //     0));
   // TODO: one of the displacements wrong?
-  MPI_Neighbor_alltoallv(
-      send_buffer2.data(), receive_count_per_process.data(),
-      send_disp_matched.data(), dolfinx::MPI::mpi_t<std::int64_t>,
-      recv_matched_facets.data(), receive_count_per_process.data(),
-      send_disp_matched.data(), dolfinx::MPI::mpi_t<std::int64_t>,
-      comm_po_receive);
+  // MPI_Neighbor_alltoallv(
+  //     send_buffer2.data(), send_count_per_process.data(),
+  //     send_disp_matched.data(), dolfinx::MPI::mpi_t<std::int64_t>,
+  //     recv_matched_facets.data(), receive_count_per_process.data(),
+  //     send_disp_matched.data(), dolfinx::MPI::mpi_t<std::int64_t>,
+  //     comm_po_receive);
 
   // Send back data (TODO: replace)
   std::vector<std::int64_t> recv_buffer1(send_disp.back());
