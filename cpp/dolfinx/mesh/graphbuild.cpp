@@ -277,7 +277,12 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   // Search for consecutive facets (-> dual graph edge between cells)
   // and pack into send buffer
+  // TODO: currently send_buffer is a list the matched cell for every received
+  // facet or -1 if unmatched.
+  //  1) change to communicate only matched cells back to PO. -> adjacency list?
+  //  2) extend to multiple
   std::vector<std::int64_t> send_buffer1(recv_disp.back(), -1);
+  // std::vector<std::vector<std::vector<std::int64_t>>> ;
   {
     // Compute sort permutation for received data
     std::vector<int> sort_order(recv_buffer.size() / buffer_shape1);
