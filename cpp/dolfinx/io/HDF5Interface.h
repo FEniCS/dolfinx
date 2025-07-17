@@ -13,7 +13,6 @@
 #include <dolfinx/common/log.h>
 #include <filesystem>
 #include <hdf5.h>
-#include <iostream>
 #include <mpi.h>
 #include <numeric>
 #include <string>
