@@ -6,14 +6,12 @@
 
 #pragma once
 
+#include "AdjacencyList.h"
 #include <cstdint>
 #include <vector>
 
 namespace dolfinx::graph
 {
-template <typename T>
-class AdjacencyList;
-
 /// @brief Re-order a graph using the Gibbs-Poole-Stockmeyer algorithm.
 ///
 /// The algorithm is described in *An Algorithm for Reducing the
