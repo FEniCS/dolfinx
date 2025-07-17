@@ -12,6 +12,7 @@ import typing
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import (
     IndexMap,
+    comm_to_json,
     git_commit_hash,
     has_adios2,
     has_complex_ufcx_kernels,
@@ -28,6 +29,7 @@ from dolfinx.cpp.common import (
 __all__ = [
     "IndexMap",
     "Timer",
+    "comm_to_json",
     "git_commit_hash",
     "has_adios2",
     "has_complex_ufcx_kernels",

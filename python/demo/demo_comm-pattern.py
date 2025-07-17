@@ -34,7 +34,7 @@ import networkx as nx
 from matplotlib.ticker import MaxNLocator
 
 from dolfinx import fem, mesh
-from dolfinx.cpp.common import IndexMap
+from dolfinx.common import IndexMap, comm_to_json
 
 # -
 
@@ -185,7 +185,7 @@ if msh.comm.rank == 0:
 
     # Get graph data as a JSON string (useful if running from C++, in
     # which case the JSON string can be written to file)
-    data_json_str = IndexMap.comm_to_json(comm_graph)
+    data_json_str = comm_to_json(comm_graph)
     H1 = nx.adjacency_graph(json.loads(data_json_str))
 
     # Create graph with sorted nodes. This can be helpful for

@@ -237,15 +237,16 @@ void common(nb::module_& m)
             return std::pair(std::move(adj), std::move(nodes));
           },
           nb::arg("root") = 0,
-          "Build a graph representing parallel communication patterns.")
-      .def_static(
-          "comm_to_json",
-          [](dolfinx::graph::AdjacencyList<
-              std::tuple<int, std::size_t, std::int8_t>,
-              std::pair<std::int32_t, std::int32_t>>& g)
-          { return dolfinx::common::comm_to_json(g); },
-          "Build a JSON string representation of a parallel communication "
-          "graph that can use used by build a NetworkX graph.");
+          "Build a graph representing parallel communication patterns.");
+
+  m.def(
+      "comm_to_json",
+      [](dolfinx::graph::AdjacencyList<
+          std::tuple<int, std::size_t, std::int8_t>,
+          std::pair<std::int32_t, std::int32_t>>& g)
+      { return dolfinx::common::comm_to_json(g); },
+      "Build a JSON string representation of a parallel communication "
+      "graph that can use used by build a NetworkX graph.");
 
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(
