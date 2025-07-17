@@ -913,7 +913,7 @@ void assemble_interior_facets(
        local_facet.data(), perm.data(), nullptr);
 
     std::span<T> _be(be);
-    std::span<T> sub_be = _be.subspan(bs * dmap0.size(), bs * dmap1.size());
+    std::span<T> sub_be = _be.subspan(bs * dmap_size, bs * dmap_size);
 
     if (cells0[0] >= 0)
       P0(be, cell_info0, cells0[0], 1);
