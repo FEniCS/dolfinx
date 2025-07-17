@@ -549,8 +549,8 @@ void _lift_bc_interior_facets(
     if (!has_bc)
       continue;
 
-    const int num_rows = bs0 * dmapjoint0.size();
-    const int num_cols = bs1 * dmapjoint1.size();
+    const int num_rows = bs0 * 2 * num_dofs0;
+    const int num_cols = bs1 * 2 * num_dofs1;
 
     // Tabulate tensor
     Ae.resize(num_rows * num_cols);
@@ -563,8 +563,8 @@ void _lift_bc_interior_facets(
            local_facet.data(), perm.data(), nullptr);
 
     std::span<T> _Ae(Ae);
-    std::span<T> sub_Ae0 = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
-                                       bs0 * dmap0_cell1.size() * num_cols);
+    std::span<T> sub_Ae0
+        = _Ae.subspan(bs0 * num_dofs0 * num_cols, bs0 * num_dofs1 * num_cols);
 
     if (cells0[0] >= 0)
       P0(_Ae, cell_info0, cells0[0], num_cols);
@@ -580,8 +580,7 @@ void _lift_bc_interior_facets(
         // DOFs for dmap1 and cell1 are not stored contiguously in
         // the block matrix, so each row needs a separate span access
         std::span<T> sub_Ae1
-            = _Ae.subspan(row * num_cols + bs1 * dmap1_cell0.size(),
-                          bs1 * dmap1_cell1.size());
+            = _Ae.subspan(row * num_cols + bs1 * num_dofs1, bs1 * num_dofs1);
         P1T(sub_Ae1, cell_info1, cells1[1], 1);
       }
     }
@@ -607,7 +606,7 @@ void _lift_bc_interior_facets(
     }
 
     // Compute b = b - A*b for cell1
-    const int offset = bs1 * dmap1_cell0.size();
+    const int offset = bs1 * num_dofs1;
     for (std::size_t j = 0; j < dmap1_cell1.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
@@ -631,7 +630,7 @@ void _lift_bc_interior_facets(
       for (int k = 0; k < bs0; ++k)
         b[bs0 * dmap0_cell0[i] + k] += be[bs0 * i + k];
 
-    const int offset_be = bs0 * dmap0_cell0.size();
+    const int offset_be = bs0 * num_dofs0;
     for (std::size_t i = 0; i < dmap0_cell1.size(); ++i)
       for (int k = 0; k < bs0; ++k)
         b[bs0 * dmap0_cell1[i] + k] += be[offset_be + bs0 * i + k];
