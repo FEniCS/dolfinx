@@ -716,15 +716,16 @@ problem = LinearProblem(
     a,
     L,
     bcs=[],
+    petsc_options_prefix="demo_pml_",
     petsc_options={
         "ksp_type": "preonly",
         "pc_type": "lu",
         "pc_factor_mat_solver_type": mat_factor_backend,
     },
 )
-Esh = problem.solve()
+Esh, _, convergence_reason, _ = problem.solve()
 assert isinstance(Esh, fem.Function)
-assert problem.solver.getConvergedReason() > 0, "Solver did not converge!"
+assert convergence_reason > 0
 # -
 
 # Let's now save the solution in a `bp`-file. In order to do so, we need

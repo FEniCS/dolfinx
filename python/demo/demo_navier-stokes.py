@@ -348,6 +348,7 @@ stokes_problem = LinearProblem(
     u=[u_h, p_h],
     bcs=bcs,
     kind="mpi",
+    petsc_options_prefix="demo_stokes__stokes_problem_",
     petsc_options=solver_options,
 )
 
@@ -408,6 +409,7 @@ navier_stokes_problem = LinearProblem(
     u=[u_h, p_h],
     bcs=bcs,
     kind="mpi",
+    petsc_options_prefix="demo_stokes__navier_stokes_problem_",
     petsc_options=solver_options,
 )
 
