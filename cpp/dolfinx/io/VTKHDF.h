@@ -261,7 +261,7 @@ void write_data(std::string point_or_cell, std::string filename,
   std::int64_t range0 = std::accumulate(index_maps.begin(), index_maps.end(), 0,
                                         [](int a, auto im)
                                         { return a + im->local_range()[0]; });
-  std::array<std::int64_t, 2> range = {range0, range0 + npoints};
+  std::array<std::int64_t, 2> range{range0, range0 + npoints};
 
   std::int64_t global_size = std::accumulate(
       index_maps.begin(), index_maps.end(), 0,

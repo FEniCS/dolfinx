@@ -162,9 +162,11 @@ bool io::hdf5::has_dataset(hid_t handle, const std::string& dataset_path)
 void io::hdf5::set_attribute(hid_t handle, const std::string& attr_name,
                              const std::string& value)
 {
-  htri_t attr_exists = H5Aexists(handle, attr_name.c_str());
-  if (attr_exists < 0)
+  if (htri_t attr_exists = H5Aexists(handle, attr_name.c_str());
+      attr_exists < 0)
+  {
     throw std::runtime_error("Error checking attribute");
+  }
   else if (attr_exists == 0)
   {
     // create attribute
@@ -193,10 +195,11 @@ void io::hdf5::set_attribute(hid_t handle, const std::string& attr_name,
 void io::hdf5::set_attribute(hid_t handle, const std::string& attr_name,
                              std::int32_t value)
 {
-  htri_t attr_exists = H5Aexists(handle, attr_name.c_str());
-
-  if (attr_exists < 0)
+  if (htri_t attr_exists = H5Aexists(handle, attr_name.c_str());
+      attr_exists < 0)
+  {
     throw std::runtime_error("Error checking attribute");
+  }
   else if (attr_exists == 0)
   {
     // create attribute
@@ -220,10 +223,11 @@ void io::hdf5::set_attribute(hid_t handle, const std::string& attr_name,
 void io::hdf5::set_attribute(hid_t handle, const std::string& attr_name,
                              const std::vector<std::int32_t>& value)
 {
-  htri_t attr_exists = H5Aexists(handle, attr_name.c_str());
-
-  if (attr_exists < 0)
+  if (htri_t attr_exists = H5Aexists(handle, attr_name.c_str());
+      attr_exists < 0)
+  {
     throw std::runtime_error("Error checking attribute");
+  }
   else if (attr_exists == 0)
   {
     // create attribute
