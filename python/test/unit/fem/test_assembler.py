@@ -997,13 +997,15 @@ class TestPETScAssemblers:
         L0 = inner(ufl.unit_vector(0, mesh.geometry.dim), ufl.avg(v0)) * dS
         L1 = inner(ufl.unit_vector(1, mesh.geometry.dim), ufl.avg(v1)) * dS
         L = form([L0, L1])
-        # without boundary conditions
+
+        # Without boundary conditions
         A = petsc_assemble_matrix(a)
         A.assemble()
         assert isinstance(A, PETSc.Mat)
         assert A.isSymmetric(tol=1.0e-4)
         A.destroy()
-        # with boundary conditions
+
+        # With boundary conditions
         bcs = [bc(V0), bc(V1)]
         A = petsc_assemble_matrix(a, bcs=bcs)
         b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
@@ -1012,7 +1014,6 @@ class TestPETScAssemblers:
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs=bcs)
         set_bc(b, bcs0)
-
         A.assemble()
         b.assemble()
         assert isinstance(A, PETSc.Mat)
