@@ -129,7 +129,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
       = adjust_indices(*mesh.topology()->index_map(0), number_of_refined_cells);
 
   // Build the topology on the new vertices
-  const std::int32_t refined_cell_count
+  std::size_t refined_cell_count
       = mesh.topology()->index_map(1)->size_local() + number_of_refined_cells;
 
   std::vector<std::int64_t> cell_topology;
@@ -155,9 +155,9 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
     {
       // Find (global) index of new midpoint vertex:
       // a --- c --- b
-      auto it = new_vertex_map.find(cell);
-      assert(it != new_vertex_map.end());
-      const std::int64_t c = it->second;
+      auto nv = new_vertex_map.links(cell);
+      assert(nv.size() == 1);
+      const std::int64_t c = nv[0];
 
       // Add new cells/edges to refined topology
       cell_topology.insert(cell_topology.end(), {a, c, c, b});

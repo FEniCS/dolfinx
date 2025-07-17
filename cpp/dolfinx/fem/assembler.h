@@ -134,10 +134,10 @@ make_coefficients_span(const std::map<std::pair<IntegralType, int>,
 {
   using Key = typename std::remove_reference_t<decltype(coeffs)>::key_type;
   std::map<Key, std::pair<std::span<const T>, int>> c;
-  std::ranges::transform(coeffs, std::inserter(c, c.end()),
-                         [](auto& e) -> typename decltype(c)::value_type {
-                           return {e.first, {e.second.first, e.second.second}};
-                         });
+  std::ranges::transform(
+      coeffs, std::inserter(c, c.end()),
+      [](auto& e) -> typename decltype(c)::value_type
+      { return {e.first, {e.second.first, e.second.second}}; });
   return c;
 }
 
@@ -234,24 +234,83 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
                   make_coefficients_span(coefficients));
 }
 
-// FIXME: clarify how x0 is used
-// FIXME: if bcs entries are set
-
-// FIXME: need to pass an array of Vec for x0?
-// FIXME: clarify zeroing of vector
-
-/// Modify b such that:
+/// @brief Modify the right-hand side vector to account for constraints
+/// (Dirichlet boundary condition constraints). This modification is
+/// known as 'lifting'.
 ///
-///   b <- b - alpha * A_j (g_j - x0_j)
+/// Consider the discrete algebraic system
+/// \f[
+/// \begin{bmatrix}
+/// A_{0} & A_{1}
+/// \end{bmatrix}
+/// \begin{bmatrix}
+/// u_{0} \\ u_{1}
+/// \end{bmatrix}
+/// = b,
+/// \f]
+/// where \f$A_{i}\f$ is a matrix. Partitioning each vector \f$u_{i}\f$
+/// into 'unknown' (\f$u_{i}^{(0)}\f$) and prescribed
+/// (\f$u_{i}^{(1)}\f$) groups,
+/// \f[
+/// \begin{bmatrix}
+/// A_{0}^{(0)} & A_{0}^{(1)} & A_{1}^{(0)} & A_{1}^{(1)}
+/// \end{bmatrix}
+/// \begin{bmatrix}
+/// u_{0}^{(0)} \\ u_{0}^{(1)} \\ u_{1}^{(0)} \\ u_{1}^{(1)}
+/// \end{bmatrix}
+/// = b.
+/// \f]
+/// If \f$u_{i}^{(1)} = \alpha(g_{i} - x_{i})\f$, where \f$g_{i}\f$ is
+/// the Dirichlet boundary condition value, \f$x_{i}\f$ is provided and
+/// \f$\alpha\f$ is a constant, then
+/// \f[
+/// \begin{bmatrix}
+/// A_{0}^{(0)} & A_{0}^{(1)} & A_{1}^{(0)} & A_{1}^{(1)}
+/// \end{bmatrix}
+/// \begin{bmatrix}
+/// u_{0}^{(0)} \\ \alpha(g_{0} - x_{0}) \\ u_{1}^{(0)} \\ \alpha(g_{1} - x_{1})
+/// \end{bmatrix}
+/// = b.
+/// \f]
+/// Rearranging,
+/// \f[
+/// \begin{bmatrix}
+/// A_{0}^{(0)} & A_{1}^{(0)}
+/// \end{bmatrix}
+/// \begin{bmatrix}
+/// u_{0}^{(0)} \\ u_{1}^{(0)}
+/// \end{bmatrix}
+/// = b - \alpha A_{0}^{(1)} (g_{0} - x_{0}) - \alpha A_{1}^{(1)} (g_{1} -
+/// x_{1}).
+/// \f]
 ///
-/// where j is a block (nest) index. For a non-blocked problem j = 0. The
-/// boundary conditions bcs1 are on the trial spaces V_j. The forms in
-/// [a] must have the same test space as L (from which b was built), but the
-/// trial space may differ. If x0 is not supplied, then it is treated as
+/// The modified \f$b\f$ vector is
+/// \f[
+///  b \leftarrow b - \alpha A_{0}^{(1)} (g_{0} - x_{0}) - \alpha A_{1}^{(1)}
+///  (g_{1} - x_{1})
+/// \f]
+/// More generally,
+/// \f[
+///  b \leftarrow b - \alpha A_{i}^{(1)} (g_{i} - x_{i}).
+/// \f]
+///
+/// @note Ghost contributions are not accumulated (not sent to owner).
+/// Caller is responsible for reverse-scatter to update the ghosts.
+///
+/// @note Boundary condition values are *not* set in `b` by this
+/// function. Use DirichletBC::set to set values in `b`.
+///
+/// @param[in,out] b The vector to modify inplace.
+/// @param[in] a List of bilinear forms, where `a[i]` is the form that
+/// generates the matrix \f$A_{i}\f$. All forms in `a` must share the
+/// same test function space. The trial function spaces can differ.
+/// @param[in] constants Constant data appearing in the forms `a`.
+/// @param[in] coeffs Coefficient data appearing in the forms `a`.
+/// @param[in] x0 The vector \f$x_{i}\f$ above. If empty it is set to
 /// zero.
-///
-/// Ghost contributions are not accumulated (not sent to owner). Caller
-/// is responsible for calling VecGhostUpdateBegin/End.
+/// @param[in] bcs1 Boundary conditions that provide the \f$g_{i}\f$
+/// values. `bcs1[i]` is the list of boundary conditions on \f$u_{i}\f$.
+/// @param[in] alpha Scalar used in the modification of `b`.
 template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
     std::span<T> b,
@@ -270,18 +329,34 @@ void apply_lifting(
   impl::apply_lifting<T>(b, a, constants, coeffs, bcs1, x0, alpha);
 }
 
-/// Modify b such that:
+/// @brief Modify the right-hand side vector to account for constraints
+/// (Dirichlet boundary conditions constraints). This modification is
+/// known as 'lifting'.
 ///
-///   b <- b - alpha * A_j.(g_j - x0_j)
+/// See apply_lifting() for a detailed explanation of the lifting. The
+/// difference between this function and apply_lifting() is that
+/// apply_lifting() requires packed form constant and coefficient data
+/// to be passed to the function, whereas this function packs the
+/// constant and coefficient form data and then calls apply_lifting().
 ///
-/// where j is a block (nest) index. For a non-blocked problem j = 0. The
-/// boundary conditions bcs1 are on the trial spaces V_j. The forms in
-/// [a] must have the same test space as L (from which b was built), but the
-/// trial space may differ. If x0 is not supplied, then it is treated as
-/// zero.
+/// @note Ghost contributions are not accumulated (not sent to owner).
+/// Caller is responsible for reverse-scatter to update the ghosts.
 ///
-/// Ghost contributions are not accumulated (not sent to owner). Caller
-/// is responsible for calling VecGhostUpdateBegin/End.
+/// @note Boundary condition values are *not* set in `b` by this
+/// function. Use DirichletBC::set to set values in `b`.
+///
+/// @param[in,out] b The vector to modify inplace.
+/// @param[in] a List of bilinear forms, where `a[i]` is the form that
+/// generates the matrix \f$A_{i}\f$ (see apply_lifting()). All forms in
+/// `a` must share the same test function space. The trial function
+/// spaces can differ.
+/// @param[in] x0 The vector \f$x_{i}\f$ described in apply_lifting().
+/// If empty it is set to zero.
+/// @param[in] bcs1 Boundary conditions that provide the \f$g_{i}\f$
+/// values described in apply_lifting(). `bcs1[i]` is the list of
+/// boundary conditions on \f$u_{i}\f$.
+/// @param[in] alpha Scalar used in the modification of `b` (see
+/// described in apply_lifting()).
 template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
     std::span<T> b,
@@ -370,8 +445,8 @@ void assemble_matrix(
 /// @param[in] a The bilinear from to assemble.
 /// @param[in] constants Constants that appear in `a`.
 /// @param[in] coefficients Coefficients that appear in `a`.
-/// @param[in] bcs Boundary conditions to apply. For boundary condition.
-///  dofs the row and column are zeroed. The diagonal  entry is not set.
+/// @param[in] bcs Boundary conditions to apply. For boundary condition
+/// dofs the row and column are zeroed. The diagonal  entry is not set.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     auto mat_add, const Form<T, U>& a, std::span<const T> constants,

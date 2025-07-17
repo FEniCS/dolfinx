@@ -20,83 +20,6 @@ using namespace dolfinx;
 namespace
 {
 //----------------------------------------------------------------------------
-int cell_degree(mesh::CellType type, int num_nodes)
-{
-  switch (type)
-  {
-  case mesh::CellType::point:
-    return 1;
-  case mesh::CellType::interval:
-    return num_nodes - 1;
-  case mesh::CellType::triangle:
-  {
-    const int n = (std::sqrt(1 + 8 * num_nodes) - 1) / 2;
-    if (2 * num_nodes != n * (n + 1))
-    {
-      throw std::runtime_error("Unknown triangle layout. Number of nodes: "
-                               + std::to_string(num_nodes));
-    }
-    return n - 1;
-  }
-  case mesh::CellType::tetrahedron:
-  {
-    int n = 0;
-    while (n * (n + 1) * (n + 2) < 6 * num_nodes)
-      ++n;
-    if (n * (n + 1) * (n + 2) != 6 * num_nodes)
-    {
-      throw std::runtime_error("Unknown tetrahedron layout. Number of nodes: "
-                               + std::to_string(num_nodes));
-    }
-    return n - 1;
-  }
-  case mesh::CellType::quadrilateral:
-  {
-    const int n = std::sqrt(num_nodes);
-    if (num_nodes != n * n)
-    {
-      throw std::runtime_error("Unknown quadrilateral layout. Number of nodes: "
-                               + std::to_string(num_nodes));
-    }
-    return n - 1;
-  }
-  case mesh::CellType::hexahedron:
-  {
-    const int n = std::cbrt(num_nodes);
-    if (num_nodes != n * n * n)
-    {
-      throw std::runtime_error("Unknown hexahedron layout. Number of nodes: "
-                               + std::to_string(num_nodes));
-    }
-    return n - 1;
-  }
-  case mesh::CellType::prism:
-    switch (num_nodes)
-    {
-    case 6:
-      return 1;
-    case 15:
-      return 2;
-    default:
-      throw std::runtime_error("Unknown prism layout. Number of nodes: "
-                               + std::to_string(num_nodes));
-    }
-  case mesh::CellType::pyramid:
-    switch (num_nodes)
-    {
-    case 5:
-      return 1;
-    case 13:
-      return 2;
-    default:
-      throw std::runtime_error("Unknown pyramid layout. Number of nodes: "
-                               + std::to_string(num_nodes));
-    }
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
-}
-//----------------------------------------------------------------------------
 std::uint16_t vec_pop(std::vector<std::uint16_t>& v, int i)
 {
   auto pos = (i < 0) ? v.end() + i : v.begin() + i;
@@ -119,7 +42,8 @@ vtk_triangle_remainders(std::vector<std::uint16_t> remainders)
       break;
     }
 
-    int degree = cell_degree(mesh::CellType::triangle, remainders.size());
+    int degree
+        = io::cells::cell_degree(mesh::CellType::triangle, remainders.size());
 
     map.push_back(vec_pop(remainders, 0));
     map.push_back(vec_pop(remainders, degree - 1));
@@ -149,7 +73,7 @@ std::vector<std::uint16_t> vtk_triangle(int num_nodes)
   // Vertices
   map.insert(map.begin(), {0, 1, 2});
 
-  int degree = cell_degree(mesh::CellType::triangle, num_nodes);
+  int degree = io::cells::cell_degree(mesh::CellType::triangle, num_nodes);
   for (int k = 1; k < degree; ++k)
     map.push_back(3 + 2 * (degree - 1) + k - 1);
   for (int k = 1; k < degree; ++k)
@@ -184,7 +108,8 @@ vtk_tetrahedron_remainders(std::vector<std::uint16_t> remainders)
     }
 
     const int deg
-        = cell_degree(mesh::CellType::tetrahedron, remainders.size()) + 1;
+        = io::cells::cell_degree(mesh::CellType::tetrahedron, remainders.size())
+          + 1;
     map.push_back(vec_pop(remainders, 0));
     map.push_back(vec_pop(remainders, deg - 2));
     map.push_back(vec_pop(remainders, deg * (deg + 1) / 2 - 3));
@@ -330,7 +255,8 @@ vtk_tetrahedron_remainders(std::vector<std::uint16_t> remainders)
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t> vtk_tetrahedron(int num_nodes)
 {
-  const int degree = cell_degree(mesh::CellType::tetrahedron, num_nodes);
+  const int degree
+      = io::cells::cell_degree(mesh::CellType::tetrahedron, num_nodes);
 
   std::vector<std::uint16_t> map;
   map.reserve(num_nodes);
@@ -447,7 +373,8 @@ std::vector<std::uint16_t> vtk_quadrilateral(int num_nodes)
   // Vertices
   map.insert(map.begin(), {0, 1, 3, 2});
 
-  const int n = cell_degree(mesh::CellType::quadrilateral, num_nodes);
+  const int n
+      = io::cells::cell_degree(mesh::CellType::quadrilateral, num_nodes);
 
   // Edges
   const int edge_nodes = n - 1;
@@ -469,7 +396,17 @@ std::vector<std::uint16_t> vtk_quadrilateral(int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t> vtk_hexahedron(int num_nodes)
 {
-  std::uint16_t n = cell_degree(mesh::CellType::hexahedron, num_nodes);
+  if (num_nodes == 20)
+  {
+    std::vector<std::uint16_t> map;
+    map.insert(map.begin(), {0, 1, 3, 2, 4, 5, 7, 6});
+    for (int e : {0, 3, 5, 1, 8, 10, 11, 9, 2, 4, 7, 6})
+      map.push_back(8 + e);
+    return map;
+  }
+
+  std::uint16_t n
+      = io::cells::cell_degree(mesh::CellType::hexahedron, num_nodes);
 
   std::vector<std::uint16_t> map;
   map.reserve(num_nodes);
@@ -659,6 +596,83 @@ std::vector<std::uint16_t> io::cells::perm_gmsh(mesh::CellType type,
   }
 
   return cells::transpose(map);
+}
+//-----------------------------------------------------------------------------
+int io::cells::cell_degree(mesh::CellType type, int num_nodes)
+{
+  switch (type)
+  {
+  case mesh::CellType::point:
+    return 1;
+  case mesh::CellType::interval:
+    return num_nodes - 1;
+  case mesh::CellType::triangle:
+  {
+    const int n = (std::sqrt(1 + 8 * num_nodes) - 1) / 2;
+    if (2 * num_nodes != n * (n + 1))
+    {
+      throw std::runtime_error("Unknown triangle layout. Number of nodes: "
+                               + std::to_string(num_nodes));
+    }
+    return n - 1;
+  }
+  case mesh::CellType::tetrahedron:
+  {
+    int n = 0;
+    while (n * (n + 1) * (n + 2) < 6 * num_nodes)
+      ++n;
+    if (n * (n + 1) * (n + 2) != 6 * num_nodes)
+    {
+      throw std::runtime_error("Unknown tetrahedron layout. Number of nodes: "
+                               + std::to_string(num_nodes));
+    }
+    return n - 1;
+  }
+  case mesh::CellType::quadrilateral:
+  {
+    const int n = std::sqrt(num_nodes);
+    if (num_nodes != n * n)
+    {
+      throw std::runtime_error("Unknown quadrilateral layout. Number of nodes: "
+                               + std::to_string(num_nodes));
+    }
+    return n - 1;
+  }
+  case mesh::CellType::hexahedron:
+  {
+    const int n = std::cbrt(num_nodes);
+    if (num_nodes != n * n * n)
+    {
+      throw std::runtime_error("Unknown hexahedron layout. Number of nodes: "
+                               + std::to_string(num_nodes));
+    }
+    return n - 1;
+  }
+  case mesh::CellType::prism:
+    switch (num_nodes)
+    {
+    case 6:
+      return 1;
+    case 15:
+      return 2;
+    default:
+      throw std::runtime_error("Unknown prism layout. Number of nodes: "
+                               + std::to_string(num_nodes));
+    }
+  case mesh::CellType::pyramid:
+    switch (num_nodes)
+    {
+    case 5:
+      return 1;
+    case 13:
+      return 2;
+    default:
+      throw std::runtime_error("Unknown pyramid layout. Number of nodes: "
+                               + std::to_string(num_nodes));
+    }
+  default:
+    throw std::runtime_error("Unknown cell type.");
+  }
 }
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t>

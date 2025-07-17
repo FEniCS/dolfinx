@@ -18,9 +18,6 @@
 # - Automatic linearisation
 # - Use of the class
 #   {py:class}`NonlinearProblem<dolfinx.fem.petsc.NonlinearProblem>`
-# - The built-in Newton solver
-#   ({py:class}`NewtonSolver<dolfinx.nls.petsc.NewtonSolver>`)
-# - Form compiler options
 # - Interpolation of functions
 # - Visualisation of a running simulation with
 #   [PyVista](https://pyvista.org/)
@@ -62,7 +59,8 @@
 # \begin{align}
 # \frac{\partial c}{\partial t} - \nabla \cdot M \nabla\mu
 #     &= 0 \quad {\rm in} \ \Omega, \\
-# \mu -  \frac{d f}{d c} + \lambda \nabla^{2}c &= 0 \quad {\rm in} \ \Omega.
+# \mu -  \frac{d f}{d c} + \lambda \nabla^{2}c &= 0 \quad {\rm in}
+#   \ \Omega.
 # \end{align}
 # $$
 #
@@ -74,8 +72,8 @@
 # \int_{\Omega} \frac{\partial c}{\partial t} q \, {\rm d} x +
 #     \int_{\Omega} M \nabla\mu \cdot \nabla q \, {\rm d} x
 #     &= 0 \quad \forall \ q \in V,  \\
-# \int_{\Omega} \mu v \, {\rm d} x - \int_{\Omega} \frac{d f}{d c} v \, {\rm d} x
-#   - \int_{\Omega} \lambda \nabla c \cdot \nabla v \, {\rm d} x
+# \int_{\Omega} \mu v \, {\rm d} x - \int_{\Omega} \frac{d f}{d c} v \,
+#   {\rm d} x - \int_{\Omega} \lambda \nabla c \cdot \nabla v \, {\rm d} x
 #    &= 0 \quad \forall \ v \in V.
 # \end{align}
 # $$
@@ -89,15 +87,16 @@
 # $$
 # \begin{align}
 # \int_{\Omega} \frac{c_{n+1} - c_{n}}{dt} q \, {\rm d} x
-# + \int_{\Omega} M \nabla \mu_{n+\theta} \cdot \nabla q \, {\rm d} x
-#        &= 0 \quad \forall \ q \in V  \\
-# \int_{\Omega} \mu_{n+1} v  \, {\rm d} x - \int_{\Omega} \frac{d f_{n+1}}{d c} v  \, {\rm d} x
-# - \int_{\Omega} \lambda \nabla c_{n+1} \cdot \nabla v \, {\rm d} x
-#        &= 0 \quad \forall \ v \in V
+#   + \int_{\Omega} M \nabla \mu_{n+\theta} \cdot \nabla q \, {\rm d} x
+#   &= 0 \quad \forall \ q \in V  \\
+# \int_{\Omega} \mu_{n+1} v  \, {\rm d} x - \int_{\Omega}
+#   \frac{d f_{n+1}}{d c} v  \, {\rm d} x - \int_{\Omega} \lambda \nabla
+#   c_{n+1} \cdot \nabla v \, {\rm d} x &= 0 \quad \forall \ v \in V
 # \end{align}
 # $$
 #
-# where $dt = t_{n+1} - t_{n}$ and $\mu_{n+\theta} = (1-\theta) \mu_{n} + \theta \mu_{n+1}$.
+# where $dt = t_{n+1} - t_{n}$ and $\mu_{n+\theta} = (1-\theta) \mu_{n} +
+# \theta \mu_{n+1}$.
 # The task is: given $c_{n}$ and $\mu_{n}$, solve the above equation to
 # find $c_{n+1}$ and $\mu_{n+1}$.
 #
@@ -144,7 +143,6 @@ from dolfinx.fem import Function, functionspace
 from dolfinx.fem.petsc import NonlinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_square
-from dolfinx.nls.petsc import NewtonSolver
 
 try:
     import pyvista as pv
@@ -266,40 +264,42 @@ F = F0 + F1
 # ```{index} single: Newton solver; (in Cahn-Hilliard demo)
 # ```
 #
-# The DOLFINx Newton solver requires a
-# {py:class}`NonlinearProblem<dolfinx.fem.NonlinearProblem>` object to
-# solve a system of nonlinear equations
+# To solve the nonlinear system of equations,
+# {py:class}`NonlinearProblem<dolfinx.fem.petsc.NonlinearProblem>` object
+# to solve a system of nonlinear equations
 
 # +
-# Create nonlinear problem and Newton solver
-problem = NonlinearProblem(F, u)
-solver = NewtonSolver(MPI.COMM_WORLD, problem)
-solver.convergence_criterion = "incremental"
-solver.rtol = np.sqrt(np.finfo(default_real_type).eps) * 1e-2
+# For the factorisation of the underlying linearized problems, prefer
+# MUMPS, then superlu_dist, then default.
+# We measure convergence by looking at the norm of the increment of the
+# solution between two iterations, called `stol` in PETSc, see:
+# [`SNES convegence tests`](https://petsc.org/release/manual/snes/#convergence-tests)
+# for further details.
 
-# We can customize the linear solver used inside the NewtonSolver by
-# modifying the PETSc options
-ksp = solver.krylov_solver
-opts = PETSc.Options()  # type: ignore
-option_prefix = ksp.getOptionsPrefix()
-opts[f"{option_prefix}ksp_type"] = "preonly"
-opts[f"{option_prefix}pc_type"] = "lu"
-sys = PETSc.Sys()  # type: ignore
-# For factorisation prefer MUMPS, then superlu_dist, then default
 use_superlu = PETSc.IntType == np.int64  # or PETSc.ScalarType == np.complex64
+sys = PETSc.Sys()  # type: ignore
 if sys.hasExternalPackage("mumps") and not use_superlu:
-    opts[f"{option_prefix}pc_factor_mat_solver_type"] = "mumps"
+    linear_solver = "mumps"
 elif sys.hasExternalPackage("superlu_dist"):
-    opts[f"{option_prefix}pc_factor_mat_solver_type"] = "superlu_dist"
-ksp.setFromOptions()
+    linear_solver = "superlu_dist"
+else:
+    linear_solver = "petsc"
+petsc_options = {
+    "snes_type": "newtonls",
+    "snes_linesearch_type": "none",
+    "snes_stol": np.sqrt(np.finfo(default_real_type).eps) * 1e-2,
+    "snes_atol": 0,
+    "snes_rtol": 0,
+    "ksp_type": "preonly",
+    "pc_type": "lu",
+    "pc_factor_mat_solver_type": linear_solver,
+    "snes_monitor": None,
+}
+problem = NonlinearProblem(
+    F, u, petsc_options_prefix="demo_cahn-hilliard_", petsc_options=petsc_options
+)
 # -
 
-# The setting of `convergence_criterion` to `"incremental"` specifies
-# that the Newton solver should compute a norm of the solution increment
-# to check for convergence (the other possibility is to use
-# `"residual"`, or to provide a user-defined check). The tolerance for
-# convergence is specified by `rtol`.
-#
 # To run the solver and save the output to a VTK file for later
 # visualization, the solver is advanced in time from $t_{n}$ to
 # $t_{n+1}$ until a terminal time $T$ is reached:
@@ -341,8 +341,8 @@ c = u.sub(0)
 u0.x.array[:] = u.x.array
 while t < T:
     t += dt
-    r = solver.solve(u)
-    print(f"Step {int(t / dt)}: num iterations: {r[0]}")
+    _, _, converged_reason, num_iterations = problem.solve()
+    print(f"Step {int(t / dt)}: {converged_reason=} {num_iterations=}")
     u0.x.array[:] = u.x.array
     file.write_function(c, t)
 

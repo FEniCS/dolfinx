@@ -20,6 +20,13 @@ try:
 except ImportError:
     pass
 
+try:
+    import numba
+
+    from ffcx.codegeneration.utils import get_void_pointer
+except ImportError:
+    pass
+
 import numpy as np
 import pytest
 
@@ -181,6 +188,8 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
     geometry = np.zeros((3, 3), dtype=x.dtype)
     coeffs = np.zeros(1, dtype=dtype)
     constants = np.zeros(1, dtype=dtype)
+    custom_data = np.zeros(1, dtype=np.int64)
+    custom_data_ptr = get_void_pointer(custom_data)
 
     b_local = np.zeros(3, dtype=dtype)
     for cell in range(num_cells):
@@ -195,6 +204,7 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
             ffi.from_buffer(geometry),
             ffi.from_buffer(entity_local_index),
             ffi.from_buffer(perm),
+            custom_data_ptr,
         )
         for j in range(3):
             b[dofmap[cell, j]] += b_local[j]
@@ -323,6 +333,7 @@ def test_custom_mesh_loop_rank1(dtype):
 
     # Get the one and only kernel
     kernel = getattr(ufcx_form.form_integrals[0], f"tabulate_tensor_{np.dtype(dtype).name}")
+
     for i in range(2):
         b = b3.x.array
         b[:] = 0.0

@@ -250,8 +250,7 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
 /// A DirichletBC is specified by the function \f$g\f$, the function
 /// space (trial space) and degrees of freedom to which the boundary
 /// condition applies.
-template <dolfinx::scalar T,
-          std::floating_point U = dolfinx::scalar_value_t<T>>
+template <dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_t<T>>
 class DirichletBC
 {
 private:
@@ -337,7 +336,7 @@ public:
           "Rank mismatch between Constant and function space in DirichletBC");
     }
 
-    if (g->value.size() != _function_space->dofmap()->bs())
+    if (g->value.size() != (std::size_t)_function_space->dofmap()->bs())
     {
       throw std::runtime_error(
           "Creating a DirichletBC using a Constant is not supported when the "

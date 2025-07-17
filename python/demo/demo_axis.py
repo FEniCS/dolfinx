@@ -154,8 +154,8 @@ def generate_mesh_sphere_axis(
 # \cdot (\nabla \times \bar{\mathbf{v}})+\varepsilon_{r} k_{0}^{2}
 # \mathbf{E}_s \cdot \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}
 # -\varepsilon_b\right)\mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d} x\\
-# +\int_{\Omega_{pml}}\left[\boldsymbol{\mu}^{-1}_{pml} \nabla \times \mathbf{E}_s
-# \right]\cdot \nabla \times \bar{\mathbf{v}}-k_{0}^{2}
+# +\int_{\Omega_{pml}}\left[\boldsymbol{\mu}^{-1}_{pml} \nabla \times
+# \mathbf{E}_s \right]\cdot \nabla \times \bar{\mathbf{v}}-k_{0}^{2}
 # \left[\boldsymbol{\varepsilon}_{pml} \mathbf{E}_s \right]\cdot
 # \bar{\mathbf{v}}~ d x=0
 # \end{split}
@@ -172,8 +172,8 @@ def generate_mesh_sphere_axis(
 # -\varepsilon_b\right)\mathbf{E}_b \cdot
 # \bar{\mathbf{v}}~ \rho d\rho dz d \phi\\
 # +\int_{\Omega_{cs}}
-# \int_{0}^{2\pi}\left[\boldsymbol{\mu}^{-1}_{pml} \nabla \times \mathbf{E}_s
-# \right]\cdot \nabla \times \bar{\mathbf{v}}-k_{0}^{2}
+# \int_{0}^{2\pi}\left[\boldsymbol{\mu}^{-1}_{pml} \nabla \times
+# \mathbf{E}_s \right]\cdot \nabla \times \bar{\mathbf{v}}-k_{0}^{2}
 # \left[\boldsymbol{\varepsilon}_{pml} \mathbf{E}_s \right]\cdot
 # \bar{\mathbf{v}}~ \rho d\rho dz d \phi=0
 # \end{split}
@@ -184,8 +184,10 @@ def generate_mesh_sphere_axis(
 #
 # $$
 # \begin{align}
-# \mathbf{E}_s(\rho, z, \phi) &= \sum_m\mathbf{E}^{(m)}_s(\rho, z)e^{-jm\phi} \\
-# \mathbf{E}_b(\rho, z, \phi) &= \sum_m\mathbf{E}^{(m)}_b(\rho, z)e^{-jm\phi} \\
+# \mathbf{E}_s(\rho, z, \phi) &= \sum_m\mathbf{E}^{(m)}_s(\rho, z)
+#   e^{-jm\phi} \\
+# \mathbf{E}_b(\rho, z, \phi) &= \sum_m\mathbf{E}^{(m)}_b(\rho, z)
+#   e^{-jm\phi} \\
 # \bar{\mathbf{v}}(\rho, z, \phi) &=
 # \sum_m\bar{\mathbf{v}}^{(m)}(\rho, z)e^{+jm\phi}
 # \end{align}
@@ -669,14 +671,16 @@ for m in m_list:
         a,
         L,
         bcs=[],
+        petsc_options_prefix="demo_axis_",
         petsc_options={
             "ksp_type": "preonly",
             "pc_type": "lu",
             "pc_factor_mat_solver_type": mat_factor_backend,
         },
     )
-    Esh_m = problem.solve()
-    assert problem.solver.getConvergedReason() > 0, "Solver did not converge!"
+    Esh_m, _, converged_reason, _ = problem.solve()
+    assert isinstance(Esh_m, fem.Function)
+    assert converged_reason > 0
 
     # Scattered magnetic field
     Hsh_m = -1j * curl_axis(Esh_m, m, rho) / (Z0 * k0)
@@ -748,8 +752,10 @@ q_ext_fenics = q_abs_fenics + q_sca_fenics
 # m = np.sqrt(eps_au)/n_bkg
 # x = 2*np.pi*radius_sph/wl0*n_bkg
 #
-# q_sca_analyt, q_abs_analyt = scattnlay(np.array([x], dtype=np.complex128),
-#                                        np.array([m], dtype=np.complex128))[2:4]
+# q_sca_analyt, q_abs_analyt = scattnlay(
+#   np.array([x], dtype=np.complex128),
+#   np.array([m], dtype=np.complex128)
+# )[2:4]
 # ```
 #
 # The numerical values are reported here below:

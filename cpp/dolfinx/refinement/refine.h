@@ -23,6 +23,7 @@
 #include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <utility>
+#include <variant>
 
 namespace dolfinx::refinement
 {
@@ -51,32 +52,27 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
                        std::vector<std::span<const std::int64_t>> cells)
              -> graph::AdjacencyList<std::int32_t>
   {
-    auto cell_im
+    const auto parent_cell_im
         = parent_mesh.topology()->index_map(parent_mesh.topology()->dim());
+    std::int32_t parent_num_cells = parent_cell_im->size_local();
+    std::span parent_cell_owners = parent_cell_im->owners();
 
     std::int32_t num_cells
         = cells.front().size() / mesh::num_cell_vertices(cell_types.front());
     std::vector<std::int32_t> destinations(num_cells);
 
     int rank = dolfinx::MPI::rank(comm);
-    for (std::int32_t i = 0; i < destinations.size(); i++)
+    for (std::size_t i = 0; i < destinations.size(); i++)
     {
-      bool ghost_parent_cell = parent_cell[i] > cell_im->size_local();
-      if (ghost_parent_cell)
-      {
-        destinations[i]
-            = cell_im->owners()[parent_cell[i] - cell_im->size_local()];
-      }
+      bool parent_is_ghost_cell = parent_cell[i] > parent_num_cells;
+      if (parent_is_ghost_cell)
+        destinations[i] = parent_cell_owners[parent_cell[i] - parent_num_cells];
       else
-      {
         destinations[i] = rank;
-      }
     }
 
     if (comm == MPI_COMM_NULL)
-    {
       return graph::regular_adjacency_list(std::move(destinations), 1);
-    }
 
     auto dual_graph = mesh::build_dual_graph(comm, cell_types, cells);
     std::vector<std::int32_t> node_disp(MPI::size(comm) + 1, 0);
@@ -88,6 +84,11 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
     return compute_destination_ranks(comm, dual_graph, node_disp, destinations);
   };
 }
+
+/// @brief Placeholder for the creation of an identity partitioner in refine.
+struct IdentityPartitionerPlaceholder
+{
+};
 
 /// @brief Refine a mesh with markers.
 ///
@@ -121,7 +122,9 @@ std::tuple<mesh::Mesh<T>, std::optional<std::vector<std::int32_t>>,
            std::optional<std::vector<std::int8_t>>>
 refine(const mesh::Mesh<T>& mesh,
        std::optional<std::span<const std::int32_t>> edges,
-       std::optional<mesh::CellPartitionFunction> partitioner = std::nullopt,
+       std::variant<IdentityPartitionerPlaceholder, mesh::CellPartitionFunction>
+           partitioner
+       = IdentityPartitionerPlaceholder(),
        Option option = Option::parent_cell)
 {
   auto topology = mesh.topology();
@@ -134,7 +137,7 @@ refine(const mesh::Mesh<T>& mesh,
             ? interval::compute_refinement_data(mesh, edges, option)
             : plaza::compute_refinement_data(mesh, edges, option);
 
-  if (!partitioner.has_value())
+  if (std::holds_alternative<IdentityPartitionerPlaceholder>(partitioner))
   {
     if (!parent_cell)
     {
@@ -145,9 +148,12 @@ refine(const mesh::Mesh<T>& mesh,
     partitioner = create_identity_partitioner(mesh, parent_cell.value());
   }
 
+  assert(std::holds_alternative<mesh::CellPartitionFunction>(partitioner));
+
   mesh::Mesh<T> mesh1 = mesh::create_mesh(
       mesh.comm(), mesh.comm(), cell_adj.array(), mesh.geometry().cmap(),
-      mesh.comm(), new_vertex_coords, xshape, *partitioner);
+      mesh.comm(), new_vertex_coords, xshape,
+      std::get<mesh::CellPartitionFunction>(partitioner));
 
   // Report the number of refined cells
   const int D = topology->dim();

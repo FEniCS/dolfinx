@@ -309,8 +309,7 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
 /// @param[in] V1 Nédélec (first kind) element and dofmap for
 /// corresponding space to interpolate into.
 /// @param[in] mat_set A functor that sets values in a matrix
-template <dolfinx::scalar T,
-          std::floating_point U = dolfinx::scalar_value_t<T>>
+template <dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_t<T>>
 void discrete_gradient(mesh::Topology& topology,
                        std::pair<std::reference_wrapper<const FiniteElement<U>>,
                                  std::reference_wrapper<const DofMap>>
@@ -326,7 +325,6 @@ void discrete_gradient(mesh::Topology& topology,
   const DofMap& dofmap1 = V1.second.get();
 
   using cmdspan2_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
-  using mdspan2_t = md::mdspan<U, md::dextents<std::size_t, 2>>;
   using cmdspan4_t = md::mdspan<const U, md::dextents<std::size_t, 4>>;
 
   // Check elements
@@ -453,7 +451,6 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   const std::size_t dim0 = space_dim0 / bs0;
   const std::size_t value_size_ref0 = e0->reference_value_size();
   const std::size_t value_size0 = V0.element()->reference_value_size();
-  const std::size_t value_size1 = V1.element()->reference_value_size();
 
   // Get geometry data
   const CoordinateElement<U>& cmap = mesh->geometry().cmap();
@@ -463,7 +460,6 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
 
   using mdspan2_t = md::mdspan<U, md::dextents<std::size_t, 2>>;
   using cmdspan2_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
-  using cmdspan3_t = md::mdspan<const U, md::dextents<std::size_t, 3>>;
   using cmdspan4_t = md::mdspan<const U, md::dextents<std::size_t, 4>>;
   using mdspan3_t = md::mdspan<U, md::dextents<std::size_t, 3>>;
 
@@ -546,7 +542,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
     auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      for (std::size_t j = 0; j < gdim; ++j)
+      for (int j = 0; j < gdim; ++j)
         coord_dofs(i, j) = x_g[3 * x_dofs[i] + j];
     }
 

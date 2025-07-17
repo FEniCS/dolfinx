@@ -42,8 +42,7 @@ class Expression;
 ///
 /// @tparam T The function scalar type.
 /// @tparam U The mesh geometry scalar type.
-template <dolfinx::scalar T,
-          std::floating_point U = dolfinx::scalar_value_t<T>>
+template <dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_t<T>>
 class Function
 {
 public:
@@ -58,7 +57,7 @@ public:
   explicit Function(std::shared_ptr<const FunctionSpace<geometry_type>> V)
       : _function_space(V),
         _x(std::make_shared<la::Vector<value_type>>(
-            V->dofmap()->index_map, V->dofmap()->index_map_bs()))
+            V->dofmaps(0)->index_map, V->dofmaps(0)->index_map_bs()))
   {
     if (!V->component().empty())
     {
@@ -348,7 +347,7 @@ public:
     std::size_t value_size = e0.value_size();
     if (e0.argument_space())
       throw std::runtime_error("Cannot interpolate Expression with Argument.");
-    if (value_size != _function_space->element()->value_size())
+    if (value_size != (std::size_t)_function_space->element()->value_size())
     {
       throw std::runtime_error(
           "Function value size not equal to Expression value size.");
@@ -640,7 +639,7 @@ public:
     if (element->symmetric())
     {
       matrix_size = 0;
-      while (matrix_size * matrix_size < ushape[1])
+      while (matrix_size * matrix_size < (int)ushape[1])
         ++matrix_size;
     }
 

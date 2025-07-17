@@ -8,7 +8,7 @@
 import numpy as np
 import numpy.typing as npt
 
-from dolfinx.cpp.fem import IntegralType, transpose_dofmap
+from dolfinx.cpp.fem import _IntegralType as IntegralType
 from dolfinx.cpp.fem import build_sparsity_pattern as _build_sparsity_pattern
 from dolfinx.cpp.fem import compute_integration_domains as _compute_integration_domains
 from dolfinx.cpp.fem import create_interpolation_data as _create_interpolation_data
@@ -16,6 +16,7 @@ from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.cpp.fem import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem import interpolation_matrix as _interpolation_matrix
+from dolfinx.cpp.fem import transpose_dofmap
 from dolfinx.cpp.la import SparsityPattern
 from dolfinx.cpp.mesh import Topology
 from dolfinx.fem.assemble import (
@@ -25,6 +26,8 @@ from dolfinx.fem.assemble import (
     assemble_vector,
     create_matrix,
     create_vector,
+    pack_coefficients,
+    pack_constants,
     set_bc,
 )
 from dolfinx.fem.bcs import (
@@ -96,7 +99,8 @@ def create_interpolation_data(
     cells: npt.NDArray[np.int32],
     padding: float = 1e-14,
 ) -> _PointOwnershipData:
-    """Generate data needed to interpolate discrete functions across different meshes.
+    """Generate data needed to interpolate discrete functions across
+    different meshes.
 
     Args:
         V_to: Function space to interpolate into
@@ -156,7 +160,8 @@ def discrete_gradient(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCS
 
 
 def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCSR:
-    """Assemble an interpolation matrix for two function spaces on the same mesh.
+    """Assemble an interpolation matrix for two function spaces on the same
+    mesh.
 
     Args:
         space0: space to interpolate from
@@ -171,7 +176,8 @@ def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _Matri
 def compute_integration_domains(
     integral_type: IntegralType, topology: Topology, entities: np.ndarray
 ):
-    """Given an integral type and a set of entities compute integration entities.
+    """Given an integral type and a set of entities compute integration
+    entities.
 
     This function returns a list ``[(id, entities)]``. For cell
     integrals ``entities`` are the cell indices. For exterior facet
@@ -240,6 +246,8 @@ __all__ = [
     "locate_dofs_geometrical",
     "locate_dofs_topological",
     "mixed_topology_form",
+    "pack_coefficients",
+    "pack_constants",
     "set_bc",
     "transpose_dofmap",
 ]

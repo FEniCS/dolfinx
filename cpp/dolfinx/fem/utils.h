@@ -23,6 +23,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/utils.h>
+#include <format>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -383,10 +384,32 @@ Form<T, U> create_form_factory(
       throw std::runtime_error("Mismatch between number of expected and "
                                "provided Form coefficients.");
     }
+
+    // Check Constants for rank and size consistency
     if (ufcx_form.num_constants != (int)constants.size())
     {
-      throw std::runtime_error(
-          "Mismatch between number of expected and provided Form constants.");
+      throw std::runtime_error(std::format(
+          "Mismatch between number of expected and "
+          "provided Form Constants. Expected {} constants, but got {}.",
+          ufcx_form.num_constants, constants.size()));
+    }
+    for (std::size_t c = 0; c < constants.size(); ++c)
+    {
+      if (ufcx_form.constant_ranks[c] != (int)constants[c]->shape.size())
+      {
+        throw std::runtime_error(std::format(
+            "Mismatch between expected and actual rank of "
+            "Form Constant. Rank of Constant {} should be {}, but got rank {}.",
+            c, ufcx_form.constant_ranks[c], constants[c]->shape.size()));
+      }
+      if (!std::equal(constants[c]->shape.begin(), constants[c]->shape.end(),
+                      ufcx_form.constant_shapes[c]))
+      {
+        throw std::runtime_error(
+            std::format("Mismatch between expected and actual shape of Form "
+                        "Constant for Constant {}.",
+                        c));
+      }
     }
   }
 
@@ -447,7 +470,7 @@ Form<T, U> create_form_factory(
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
   using kern_t = std::function<void(T*, const T*, const T*, const U*,
-                                    const int*, const std::uint8_t*)>;
+                                    const int*, const std::uint8_t*, void*)>;
   std::map<std::tuple<IntegralType, int, int>, integral_data<T, U>> integrals;
 
   auto check_geometry_hash
@@ -496,9 +519,10 @@ Form<T, U> create_form_factory(
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, std::complex<float>>)
         {
-          k = reinterpret_cast<void (*)(
-              T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-              const unsigned char*)>(integral->tabulate_tensor_complex64);
+          k = reinterpret_cast<void (*)(T*, const T*, const T*,
+                                        const scalar_value_t<T>*, const int*,
+                                        const unsigned char*, void*)>(
+              integral->tabulate_tensor_complex64);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, double>)
@@ -506,9 +530,10 @@ Form<T, U> create_form_factory(
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, std::complex<double>>)
         {
-          k = reinterpret_cast<void (*)(
-              T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-              const unsigned char*)>(integral->tabulate_tensor_complex128);
+          k = reinterpret_cast<void (*)(T*, const T*, const T*,
+                                        const scalar_value_t<T>*, const int*,
+                                        const unsigned char*, void*)>(
+              integral->tabulate_tensor_complex128);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
 
@@ -581,9 +606,10 @@ Form<T, U> create_form_factory(
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, std::complex<float>>)
         {
-          k = reinterpret_cast<void (*)(
-              T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-              const unsigned char*)>(integral->tabulate_tensor_complex64);
+          k = reinterpret_cast<void (*)(T*, const T*, const T*,
+                                        const scalar_value_t<T>*, const int*,
+                                        const unsigned char*, void*)>(
+              integral->tabulate_tensor_complex64);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, double>)
@@ -591,9 +617,10 @@ Form<T, U> create_form_factory(
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, std::complex<double>>)
         {
-          k = reinterpret_cast<void (*)(
-              T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-              const unsigned char*)>(integral->tabulate_tensor_complex128);
+          k = reinterpret_cast<void (*)(T*, const T*, const T*,
+                                        const scalar_value_t<T>*, const int*,
+                                        const unsigned char*, void*)>(
+              integral->tabulate_tensor_complex128);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
         assert(k);
@@ -611,7 +638,7 @@ Form<T, U> create_form_factory(
           for (std::int32_t f : bfacets)
           {
             // There will only be one pair for an exterior facet integral
-            auto pair
+            std::array<std::int32_t, 2> pair
                 = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
             default_facets_ext.insert(default_facets_ext.end(), pair.begin(),
                                       pair.end());
@@ -687,9 +714,10 @@ Form<T, U> create_form_factory(
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, std::complex<float>>)
         {
-          k = reinterpret_cast<void (*)(
-              T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-              const unsigned char*)>(integral->tabulate_tensor_complex64);
+          k = reinterpret_cast<void (*)(T*, const T*, const T*,
+                                        const scalar_value_t<T>*, const int*,
+                                        const unsigned char*, void*)>(
+              integral->tabulate_tensor_complex64);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, double>)
@@ -697,9 +725,10 @@ Form<T, U> create_form_factory(
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
         else if constexpr (std::is_same_v<T, std::complex<double>>)
         {
-          k = reinterpret_cast<void (*)(
-              T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-              const unsigned char*)>(integral->tabulate_tensor_complex128);
+          k = reinterpret_cast<void (*)(T*, const T*, const T*,
+                                        const scalar_value_t<T>*, const int*,
+                                        const unsigned char*, void*)>(
+              integral->tabulate_tensor_complex128);
         }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
         assert(k);
@@ -719,7 +748,7 @@ Form<T, U> create_form_factory(
           {
             if (f_to_c->num_links(f) == 2)
             {
-              auto pairs
+              std::array<std::int32_t, 4> pairs
                   = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
               default_facets_int.insert(default_facets_int.end(), pairs.begin(),
                                         pairs.end());
@@ -918,7 +947,7 @@ Expression<T, U> create_expression(
   std::vector<std::size_t> value_shape(e.value_shape,
                                        e.value_shape + e.num_components);
   std::function<void(T*, const T*, const T*, const scalar_value_t<T>*,
-                     const int*, const std::uint8_t*)>
+                     const int*, const std::uint8_t*, void*)>
       tabulate_tensor = nullptr;
   if constexpr (std::is_same_v<T, float>)
     tabulate_tensor = e.tabulate_tensor_float32;
@@ -927,7 +956,7 @@ Expression<T, U> create_expression(
   {
     tabulate_tensor = reinterpret_cast<void (*)(
         T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-        const unsigned char*)>(e.tabulate_tensor_complex64);
+        const unsigned char*, void*)>(e.tabulate_tensor_complex64);
   }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
   else if constexpr (std::is_same_v<T, double>)
@@ -937,7 +966,7 @@ Expression<T, U> create_expression(
   {
     tabulate_tensor = reinterpret_cast<void (*)(
         T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-        const unsigned char*)>(e.tabulate_tensor_complex128);
+        const unsigned char*, void*)>(e.tabulate_tensor_complex128);
   }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
   else

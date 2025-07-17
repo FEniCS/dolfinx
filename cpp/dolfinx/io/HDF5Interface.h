@@ -20,7 +20,6 @@
 
 namespace dolfinx::io::hdf5
 {
-
 /// C++ type to HDF5 data type
 template <typename T>
 hid_t hdf5_type()
@@ -92,10 +91,13 @@ hid_t open_dataset(hid_t handle, const std::string& path);
 std::vector<std::int64_t> get_dataset_shape(hid_t handle,
                                             const std::string& dataset_path);
 
-/// Set MPI atomicity. See
+/// Set MPI atomicity.
+///
+/// See
 /// https://support.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-SetMpiAtomicity
 /// and
 /// https://www.open-mpi.org/doc/v2.0/man3/MPI_File_set_atomicity.3.php
+///
 /// Writes must be followed by an MPI_Barrier on the communicator before
 /// any subsequent reads are guaranteed to return the same data.
 void set_mpi_atomicity(hid_t handle, bool atomic);

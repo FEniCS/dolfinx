@@ -91,6 +91,19 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
                 )
 
 
+@pytest.mark.parametrize("cell_type", [_mesh.CellType.triangle, _mesh.CellType.quadrilateral])
+def test_empty_entities_to_geometry(cell_type):
+    """Test entities_to_geometry with empty entity list"""
+    mesh = _mesh.create_unit_square(MPI.COMM_WORLD, 10, 12, cell_type=cell_type)
+
+    mesh.topology.create_connectivity(0, mesh.topology.dim)
+    mesh.topology.create_entity_permutations()
+    e_to_g = entities_to_geometry(mesh, 0, np.array([], dtype=np.int32), True)
+    assert e_to_g.shape == (0, 1)
+    e_to_g = entities_to_geometry(mesh, mesh.topology.dim, np.array([], dtype=np.int32), True)
+    assert e_to_g.shape == (0, _cpp.mesh.cell_num_vertices(cell_type))
+
+
 def mesh_1d(dtype):
     """Create 1D mesh with degenerate cell"""
     mesh1d = create_unit_interval(MPI.COMM_WORLD, 4, dtype=dtype)
@@ -405,26 +418,12 @@ mesh_factories = [
 ]
 
 
-# FIXME: Fix this xfail
-def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
-    """Xfail when mesh_factory on quads/hexes uses shared_vertex mode.
-    Needs implementing."""
-    if mesh_factory in [create_unit_square, create_unit_cube]:
-        if ghost_mode == GhostMode.shared_vertex:
-            pytest.xfail(
-                reason=f"Missing functionality in '{mesh_factory}' with '{ghost_mode}' mode"
-            )
-
-
-@pytest.mark.parametrize(
-    "ghost_mode", [GhostMode.none, GhostMode.shared_facet, GhostMode.shared_vertex]
-)
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("mesh_factory", mesh_factories)
 def xtest_mesh_topology_against_basix(mesh_factory, ghost_mode):
     """Test that mesh cells have topology matching to Basix reference
     cell they were created from."""
     func, args = mesh_factory
-    xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
     if not is_simplex(mesh.topology.cell_type):
         return

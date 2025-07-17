@@ -21,7 +21,7 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType
-from dolfinx.fem.function import FunctionSpace
+from dolfinx.fem.function import Function, FunctionSpace
 
 if typing.TYPE_CHECKING:
     from mpi4py import MPI
@@ -165,7 +165,8 @@ def form_cpp_class(
 ) -> typing.Union[
     _cpp.fem.Form_float32, _cpp.fem.Form_float64, _cpp.fem.Form_complex64, _cpp.fem.Form_complex128
 ]:
-    """Return the wrapped C++ class of a variational form of a specific scalar type.
+    """Return the wrapped C++ class of a variational form of a specific
+    scalar type.
 
     Args:
         dtype: Scalar type of the required form class.
@@ -207,9 +208,9 @@ def mixed_topology_form(
     """
     Create a mixed-topology from from an array of Forms.
 
-    # FIXME: This function is a temporary hack for mixed-topology meshes. It is needed
-    # because UFL does not know about mixed-topology meshes, so we need
-    # to pass a list of forms for each cell type.
+    # FIXME: This function is a temporary hack for mixed-topology meshes.
+    # It is needed because UFL does not know about mixed-topology meshes,
+    # so we need to pass a list of forms for each cell type.
 
     Args:
         form: A list of UFL forms. Each form should be the same, just
@@ -285,10 +286,10 @@ def form(
     jit_options: typing.Optional[dict] = None,
     entity_maps: typing.Optional[dict[Mesh, np.typing.NDArray[np.int32]]] = None,
 ):
-    """Create a Form or an array of Forms.
+    """Create a Form or list of Forms.
 
     Args:
-        form: A UFL form or list(s) of UFL forms.
+        form: A UFL form or iterable (list) of UFL forms.
         dtype: Scalar type to use for the compiled form.
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
@@ -395,7 +396,8 @@ def form(
         return Form(f, ufcx_form, code, module)
 
     def _zero_form(form):
-        """Compile a single 'zero' UFL form, i.e. a form with no integrals."""
+        """Compile a single 'zero' UFL form, i.e. a form with no
+        integrals."""
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
         assert len(V) > 0
         msh = V[0].mesh
@@ -442,26 +444,35 @@ def extract_function_spaces(
         typing.Iterable[typing.Iterable[Form]],
     ],
     index: int = 0,
-) -> typing.Iterable[typing.Union[None, function.FunctionSpace]]:
+) -> list[typing.Union[None, function.FunctionSpace]]:
     """Extract common function spaces from an array of forms.
 
     If ``forms`` is a list of linear form, this function returns of list
-    of the corresponding test functions. If ``forms`` is a 2D array of
-    bilinear forms, for ``index=0`` the list common test function space
-    for each row is returned, and if ``index=1`` the common trial
-    function spaces for each column are returned.
+    of the corresponding test function spaces. If ``forms`` is a 2D
+    array of bilinear forms, for ``index=0`` the list common test
+    function spaces for each row is returned, and if ``index=1`` the
+    common trial function spaces for each column are returned.
+
+    Args:
+        forms: A list of forms or a 2D array of forms.
+        index: Index of the function space to extract. If ``index=0``,
+            the test function spaces are extracted, if ``index=1`` the
+            trial function spaces are extracted.
+
+    Returns:
+        List of function spaces.
     """
     _forms = np.array(forms)
     if _forms.ndim == 0:
         raise RuntimeError("Expected an array for forms, not a single form")
     elif _forms.ndim == 1:
-        assert index == 0
+        assert index == 0, "Expected index=0 for 1D array of forms"
         for form in _forms:
             if form is not None:
                 assert form.rank == 1, "Expected linear form"
         return [form.function_spaces[0] if form is not None else None for form in forms]  # type: ignore[union-attr]
     elif _forms.ndim == 2:
-        assert index == 0 or index == 1
+        assert index == 0 or index == 1, "Expected index=0 or index=1 for 2D array of forms"
         extract_spaces = np.vectorize(
             lambda form: form.function_spaces[index] if form is not None else None
         )
@@ -519,7 +530,8 @@ def compile_form(
     p_ffcx = ffcx.get_options(form_compiler_options)
     p_jit = jit.get_options(jit_options)
     ufcx_form, module, code = jit.ffcx_jit(comm, form, p_ffcx, p_jit)
-    return CompiledForm(form, ufcx_form, module, code, p_ffcx["scalar_type"])
+    scalar_type: npt.DTypeLike = p_ffcx["scalar_type"]  # type: ignore
+    return CompiledForm(form, ufcx_form, module, code, scalar_type)
 
 
 def form_cpp_creator(
@@ -530,7 +542,8 @@ def form_cpp_creator(
     _cpp.fem.Form_complex64,
     _cpp.fem.Form_complex128,
 ]:
-    """Return the wrapped C++ constructor for creating a variational form of a specific scalar type.
+    """Return the wrapped C++ constructor for creating a variational form
+    of a specific scalar type.
 
     Args:
         dtype: Scalar type of the required form class.
@@ -559,7 +572,7 @@ def create_form(
     function_spaces: list[function.FunctionSpace],
     msh: Mesh,
     subdomains: dict[IntegralType, list[tuple[int, np.ndarray]]],
-    coefficient_map: dict[ufl.Function, function.Function],
+    coefficient_map: dict[ufl.Coefficient, function.Function],
     constant_map: dict[ufl.Constant, function.Constant],
     entity_maps: dict[Mesh, np.typing.NDArray[np.int32]] | None = None,
 ) -> Form:
@@ -631,3 +644,34 @@ def create_form(
         msh._cpp_object,
     )
     return Form(f, form.ufcx_form, form.code)
+
+
+def derivative_block(
+    F: typing.Union[ufl.Form, typing.Sequence[ufl.Form]],
+    u: typing.Union[Function, typing.Sequence[Function]],
+    du: typing.Optional[typing.Union[ufl.Argument, typing.Sequence[ufl.Argument]]] = None,
+) -> typing.Union[ufl.Form, typing.Iterable[typing.Iterable[ufl.Form]]]:
+    """Return the UFL derivative of a (list of) UFL rank one form(s).
+
+    This is commonly used to derive a block Jacobian from a block residual.
+
+    If `F_i` is a list of forms, the Jacobian is a list of lists with
+    :math:`J_{ij} = \\frac{\\partial F_i}{u_j}[\\delta u_j]` using
+    `ufl.derivative` called component-wise.
+
+    If `F` is a form, the Jacobian is computed as
+    :math:`J = \\frac{\\partial F}{\\partial u}[\\delta u]`. This is
+    identical to calling `ufl.derivative` directly.
+    """
+    if isinstance(F, ufl.Form):
+        if du is None:
+            du = ufl.TrialFunction(u.function_space)  # type: ignore
+        return ufl.derivative(F, u, du)
+    else:
+        assert [isinstance(Fi, ufl.Form) for Fi in F], "F must be a list of UFL forms"
+        assert len(F) == len(u), "Number of forms and functions must be equal"
+        if du is not None:
+            assert len(F) == len(du), "Number of forms and du must be equal"
+        else:
+            du = [ufl.TrialFunction(u_i.function_space) for u_i in u]
+        return [[ufl.derivative(Fi, u_j, du_j) for u_j, du_j in zip(u, du)] for Fi in F]

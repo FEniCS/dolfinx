@@ -27,6 +27,7 @@ jobs:
       I_MPI_OFI_LIBRARY_INTERNAL: 0
       OMP_NUM_THREADS: 1
       OPENBLAS_NUM_THREADS: 1
+      KMP_DUPLICATE_LIB_OK: 1 # Silences error on multiple openMP installs found
 
     name: oneAPI build and test
 
@@ -48,7 +49,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: oneapi-test-env
-          environment-file: python/conda-oneapi-test-env.yml
+          environment-file: .github/workflows/oneapi-conda/environment.yml
           auto-activate-base: false
       - run: |
           conda info
