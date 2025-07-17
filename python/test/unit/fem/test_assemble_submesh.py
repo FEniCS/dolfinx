@@ -825,3 +825,37 @@ def test_interior_interface():
     A_ref_sqrnorm = A.squared_norm()
 
     assert np.isclose(A_sqnorm, A_ref_sqrnorm)
+
+    def bc_marker(x):
+        return np.isclose(x[1], 1.0) & (x[0] <= 0.5)
+
+    # Create a Dirichlet boundary condition
+    bc_facets = locate_entities_boundary(smsh_0, fdim, bc_marker)
+    bc_dofs = fem.locate_dofs_topological(V_0, fdim, bc_facets)
+    bc = fem.dirichletbc(1.0, bc_dofs, V_0)
+
+    # Same for a linear form
+    L = fem.form(ufl.inner(f("+"), v_1("-")) * dS(1), entity_maps=entity_maps)
+    b = fem.assemble_vector(L)
+    fem.apply_lifting(b.array, [a], bcs=[[bc]])
+    # b.scatter_reverse(la.InsertMode.add)
+    # bc.set(b.array)
+
+    bc_facets_ref = locate_entities_boundary(msh, fdim, bc_marker)
+    bc_dofs_ref = fem.locate_dofs_topological(V, fdim, bc_facets_ref)
+    bc_ref = fem.dirichletbc(1.0, bc_dofs_ref, V)
+
+    print(bc_dofs, bc_dofs_ref)
+
+    L_ref = fem.form(ufl.inner(f("+"), v("-")) * dS(1))
+    b_ref = fem.assemble_vector(L_ref)
+    fem.apply_lifting(b_ref.array, [a], bcs=[[bc_ref]])
+    # b_ref.scatter_reverse(la.InsertMode.add)
+    # bc_ref.set(b_ref.array)
+
+    # print(b.array)
+    # print(b_ref.array)
+
+    assert np.isclose(la.norm(b), la.norm(b_ref))
+
+test_interior_interface()
