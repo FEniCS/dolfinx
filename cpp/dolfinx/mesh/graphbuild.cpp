@@ -282,7 +282,9 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   //  1) change to communicate only matched cells back to PO. -> adjacency list?
   //  2) extend to multiple
   std::vector<std::int64_t> send_buffer1(recv_disp.back(), -1);
-  // std::vector<std::vector<std::vector<std::int64_t>>> ;
+  std::vector<std::vector<std::vector<std::int64_t>>> matched_facets(
+      src.size()); // for each sender store adj data to create adj list from.
+                   // TODO: how to determine ownership rank of a given facet?
   {
     // Compute sort permutation for received data
     std::vector<int> sort_order(recv_buffer.size() / buffer_shape1);
@@ -318,10 +320,12 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       if (std::size_t num_matches = std::distance(it, it1); num_matches == 2)
       {
         // Store the global cell index from the other rank
-        send_buffer1[*it]
-            = recv_buffer[*(it + 1) * buffer_shape1 + max_vertices_per_facet];
-        send_buffer1[*(it + 1)]
-            = recv_buffer[*it * buffer_shape1 + max_vertices_per_facet];
+        int facet = *it;
+        int next_facet = *(it + 1);
+        send_buffer1[facet]
+            = recv_buffer[next_facet * buffer_shape1 + max_vertices_per_facet];
+        send_buffer1[next_facet]
+            = recv_buffer[facet * buffer_shape1 + max_vertices_per_facet];
       }
       else if (num_matches > 2)
       {
