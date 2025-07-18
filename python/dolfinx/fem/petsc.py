@@ -10,9 +10,9 @@ to PETSc linear algebra objects and handle any PETSc-specific
 preparation.
 
 Note:
-    This following does not apply to the high-level
-    :class:`dolfinx.fem.petsc.NonLinearProblem`
-    :class:`dolfinx.fem.petsc.LinearProblem` interfaces.
+    The following does not apply to the high-level
+    :class:`dolfinx.fem.petsc.LinearProblem`
+    :class:`dolfinx.fem.petsc.NonlinearProblem` classes.
 
     Due to subtle issues in the interaction between petsc4py memory
     management and the Python garbage collector, it is recommended that
@@ -747,9 +747,9 @@ class LinearProblem:
     using PETSc KSP as the linear solver.
 
     Note:
-        This high-level class correctly handles PETSc memory management.
-        The user does not need to manually call ``.destroy()`` on
-        returned PETSc objects.
+        This high-level class automatically handles PETSc memory
+        management. The user does not need to manually call
+        ``.destroy()`` on returned PETSc objects.
     """
 
     def __init__(
@@ -1092,7 +1092,7 @@ def assemble_residual(
     x: PETSc.Vec,  # type: ignore
     b: PETSc.Vec,  # type: ignore
 ):
-    """Assemble the residual into the vector ``b``.
+    """Assemble the residual at ``x`` into the vector ``b`.
 
     A function conforming to the interface expected by ``SNES.setFunction``
     can be created by fixing the first four arguments, e.g.:
@@ -1157,9 +1157,10 @@ def assemble_jacobian(
     _snes: PETSc.SNES,  # type: ignore
     x: PETSc.Vec,  # type: ignore
     J: PETSc.Mat,  # type: ignore
-    P: PETSc.Mat,  # type: ignore
+    P_mat: PETSc.Mat,  # type: ignore
 ):
-    """Assemble the Jacobian and preconditioner matrices.
+    """Assemble the Jacobian and preconditioner matrices at ``x`` into ``J``
+    and ``P``.
 
     A function conforming to the interface expected by ``SNES.setJacobian``
     can be created by fixing the first four arguments e.g.:
@@ -1182,7 +1183,7 @@ def assemble_jacobian(
         _snes: The solver instance.
         x: The vector containing the point to evaluate at.
         J: Matrix to assemble the Jacobian into.
-        P: Matrix to assemble the preconditioner into.
+        P_mat: Matrix to assemble the preconditioner into.
     """
     # Copy existing soultion into the function used in the residual and
     # Jacobian
@@ -1198,19 +1199,14 @@ def assemble_jacobian(
     assemble_matrix(J, jacobian, bcs, diag=1.0)  # type: ignore
     J.assemble()
     if preconditioner is not None:
-        P.zeroEntries()
+        P_mat.zeroEntries()
         assemble_matrix(P, preconditioner, bcs, diag=1.0)  # type: ignore
-        P.assemble()
+        P_mat.assemble()
 
 
 class NonlinearProblem:
     """High-level class for solving nonlinear variational problems
     with PETSc SNES.
-
-    Note:
-        The deprecated version of this class for use with
-        :class:`dolfinx.nls.petsc.NewtonSolver` has been renamed
-        :class:`dolfinx.fem.petsc.NewtonSolverNonlinearProblem`.
 
     Solves problems of the form
     :math:`F_i(u, v) = 0, i=0,\\ldots,N\\ \\forall v \\in V` where
@@ -1218,9 +1214,14 @@ class NonlinearProblem:
     SNES as the non-linear solver.
 
     Note:
-        This high-level class correctly handles PETSc memory management.
-        The user does not need to manually call ``.destroy()`` on
-        returned PETSc objects.
+        The deprecated version of this class for use with
+        :class:`dolfinx.nls.petsc.NewtonSolver` has been renamed
+        :class:`dolfinx.fem.petsc.NewtonSolverNonlinearProblem`.
+
+    Note:
+        This high-level class automatically handles PETSc memory
+        management. The user does not need to manually call
+        ``.destroy()`` on returned PETSc objects.
     """
 
     def __init__(
