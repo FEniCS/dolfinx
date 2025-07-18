@@ -373,9 +373,6 @@ def test_mixed_dom_codim_1(n, k):
     assert np.isclose(c, c1)
 
 
-# TODO Test random mesh and interior facets
-
-
 def test_disjoint_submeshes():
     # FIXME Simplify this test
     """Test assembly with multiple disjoint submeshes in same variational form"""
