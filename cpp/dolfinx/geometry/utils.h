@@ -197,7 +197,7 @@ constexpr bool is_leaf(std::array<int, 2> bbox)
 template <std::floating_point T>
 constexpr bool point_in_bbox(std::span<const T, 6> b, std::span<const T, 3> x)
 {
-  constexpr T rtol = 1e-14;
+  constexpr T rtol = 0.0;
   bool in = true;
   for (std::size_t i = 0; i < 3; i++)
   {
