@@ -157,7 +157,7 @@ std::vector<T> nearest_simplex(std::span<const T> s)
   {
     // Most complex case, where simplex is a tetrahedron, with 15 possible
     // outcomes (4 vertices, 6 edges, 4 facets and the interior).
-    std::vector<T> rv = {0.0, 0.0, 0.0, 0.0};
+    std::vector<T> rv{0, 0, 0, 0};
 
     T d[4][4];
     for (int i = 0; i < 4; ++i)
