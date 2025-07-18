@@ -22,23 +22,14 @@
 #
 # The required modules are first imported:
 
-from mpi4py import MPI
-
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
 
 # +
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 
+import dolfinx
 import ufl
 from dolfinx import la
 from dolfinx.fem import (
@@ -53,6 +44,10 @@ from dolfinx.fem import (
 from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode, create_box, locate_entities_boundary
+
+if not dolfinx.has_petsc:
+    print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+    exit(0)
 
 dtype = PETSc.ScalarType
 # -

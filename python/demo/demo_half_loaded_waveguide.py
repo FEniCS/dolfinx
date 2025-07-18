@@ -40,30 +40,12 @@
 
 # +
 from mpi4py import MPI
+from petsc4py import PETSc
 
 import numpy as np
+from slepc4py import SLEPc
 
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-    if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
-        print("This solver fails with PETSc and 64-bit integers because of memory errors in MUMPS.")
-        # Note: when PETSc.IntType == np.int32, superlu_dist is used
-        # rather than MUMPS and does not trigger memory failures.
-        exit(0)
-
-    real_type = PETSc.RealType
-    scalar_type = PETSc.ScalarType
-
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
-
+import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import fem, io, plot
@@ -78,11 +60,15 @@ except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
 
-try:
-    from slepc4py import SLEPc
-except ModuleNotFoundError:
-    print("slepc4py is required for this demo")
+if not dolfinx.has_petsc:
+    print("This demo requires DOLFINx to be compiled with PETSc enabled.")
     exit(0)
+if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
+    print("This solver fails with PETSc and 64-bit integers because of memory errors in MUMPS.")
+    # Note: when PETSc.IntType == np.int32, superlu_dist is used
+    # rather than MUMPS and does not trigger memory failures.
+    exit(0)
+
 # -
 
 # ## Analytical solutions for the half-loaded waveguide
@@ -213,8 +199,8 @@ eps = fem.Function(D)
 cells_v = locate_entities(msh, msh.topology.dim, Omega_v)
 cells_d = locate_entities(msh, msh.topology.dim, Omega_d)
 
-eps.x.array[cells_d] = np.full_like(cells_d, eps_d, dtype=scalar_type)
-eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=scalar_type)
+eps.x.array[cells_d] = np.full_like(cells_d, eps_d, dtype=PETSc.ScalarType)
+eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=PETSc.ScalarType)
 # -
 
 # In order to find the weak form of our problem, the starting point are
@@ -299,8 +285,8 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=scalar_type)
 # `mixed_element`:
 
 degree = 1
-RTCE = element("RTCE", msh.basix_cell(), degree, dtype=real_type)
-Q = element("Lagrange", msh.basix_cell(), degree, dtype=real_type)
+RTCE = element("RTCE", msh.basix_cell(), degree, dtype=PETSc.RealType)
+Q = element("Lagrange", msh.basix_cell(), degree, dtype=PETSc.RealType)
 V = fem.functionspace(msh, mixed_element([RTCE, Q]))
 
 # Now we can define our weak form:
