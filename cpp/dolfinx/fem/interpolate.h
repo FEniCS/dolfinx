@@ -1058,7 +1058,6 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::span<const std::int32_t> cells, int index = 0)
 {
   // TODO: Index for mixed-topology, zero for now
-
   auto element = u.function_space()->elements(index);
   assert(element);
   const int element_bs = element->block_size();
