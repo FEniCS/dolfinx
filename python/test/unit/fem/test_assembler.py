@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2022 Garth N. Wells
+# Copyright (C) 2018-2025 Garth N. Wells, Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -42,7 +42,9 @@ from dolfinx.mesh import (
     create_unit_cube,
     create_unit_square,
     exterior_facet_indices,
+    locate_entities,
     locate_entities_boundary,
+    meshtags,
 )
 from ufl import derivative, dS, ds, dx, inner
 from ufl.geometry import SpatialCoordinate
@@ -1507,3 +1509,54 @@ def test_vector_types():
 
     assert np.linalg.norm(x0.array - x1.array) == pytest.approx(0.0)
     assert np.linalg.norm(x0.array - x2.array) == pytest.approx(0.0, abs=1e-7)
+
+
+@dtype_parametrize
+@pytest.mark.parametrize("method", ["degree", "metadata"])
+def test_mixed_quadrature(dtype, method):
+    xtype = dtype(0).real.dtype
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, dtype=xtype)
+
+    V = functionspace(mesh, ("Lagrange", 1))
+    u = Function(V, dtype=dtype)
+    u.interpolate(lambda x: x[0])
+
+    tol = 500 * np.finfo(dtype).eps
+    num_cells_local = (
+        mesh.topology.index_map(mesh.topology.dim).size_local
+        + mesh.topology.index_map(mesh.topology.dim).num_ghosts
+    )
+    values = np.full(num_cells_local, 1, dtype=np.int32)
+    left_cells = locate_entities(mesh, mesh.topology.dim, lambda x: x[0] <= 0.5 + tol)
+    values[left_cells] = 2
+    top_cells = locate_entities(mesh, mesh.topology.dim, lambda x: x[1] >= 0.5 - tol)
+    values[top_cells] = 3
+    ct = meshtags(mesh, mesh.topology.dim, np.arange(num_cells_local, dtype=np.int32), values)
+
+    dx = ufl.Measure("dx", domain=mesh, subdomain_data=ct)
+
+    if method == "degree":
+        dx_1 = dx(subdomain_id=(1,), degree=1)
+        dx_2 = dx(subdomain_id=(1, 2), degree=2)
+        dx_3 = dx(subdomain_id=(2, 3), degree=3)
+    elif method == "metadata":
+        dx_1 = dx(subdomain_id=(1,), metadata={"quadrature_degree": 1})
+        dx_2 = dx(subdomain_id=(1, 2), metadata={"quadrature_degree": 2})
+        dx_3 = dx(subdomain_id=(2, 3), metadata={"quadrature_degree": 3})
+    else:
+        raise ValueError(f"Invalid method {method}")
+    form_1 = u * dx_1
+    form_2 = u * dx_2
+    form_3 = u * dx_3
+    summed_form = form_1 + form_2 + form_3
+
+    compiled_forms = form([form_1, form_2, form_3], dtype=dtype)
+    local_contributions = 0
+    for compiled_form in compiled_forms:
+        local_contributions += assemble_scalar(compiled_form)
+    global_contribution = mesh.comm.allreduce(local_contributions, op=MPI.SUM)
+
+    compiled_form = form(summed_form, dtype=dtype)
+    local_sum = assemble_scalar(compiled_form)
+    global_sum = mesh.comm.allreduce(local_sum, op=MPI.SUM)
+    assert np.isclose(global_contribution, global_sum, rtol=tol, atol=tol)
