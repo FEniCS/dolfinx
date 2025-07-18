@@ -775,7 +775,7 @@ def test_interior_interface():
     smsh_1, sm_1_emap = create_submesh(msh, tdim, right_cells)[0:2]
 
     # Define trial function on one region and the test function on the other
-    V_0 = fem.functionspace(smsh_0, ("Lagrange", 1))
+    V_0 = fem.functionspace(smsh_0, ("Lagrange", 2))
     V_1 = fem.functionspace(smsh_1, ("Lagrange", 1))
 
     u_0 = ufl.TrialFunction(V_0)
@@ -824,14 +824,14 @@ def test_interior_interface():
     A_sqnorm = A.squared_norm()
 
     # Now assemble using a single domain to compare to a reference
-    V = fem.functionspace(msh, ("Lagrange", 1))
+    V = fem.functionspace(msh, ("Lagrange", 2))
     W = fem.functionspace(msh, ("Lagrange", 1))
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(W)
     f = fem.Function(V)
     f.interpolate(f_expr)
 
-    a_ref = fem.form(1e-16 * ufl.inner(u, v) * ufl.dx + ufl.inner(f("+") * u("+"), v("-")) * dS(1))
+    a_ref = fem.form(ufl.inner(f("+") * u("+"), v("-")) * dS(1))
 
     bc_facets_ref = locate_entities_boundary(msh, fdim, bc_marker)
     bc_dofs_ref = fem.locate_dofs_topological(V, fdim, bc_facets_ref)
@@ -863,3 +863,5 @@ def test_interior_interface():
     # fem.apply_lifting(b.array, [a], bcs=[[bc]])
     # b.scatter_reverse(la.InsertMode.add)
     # bc.set(b.array)
+
+test_interior_interface()
