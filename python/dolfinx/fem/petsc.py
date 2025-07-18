@@ -812,8 +812,11 @@ class LinearProblem:
             u: Solution function. It is created if not provided.
             P: Bilinear UFL form or a sequence of sequence of bilinear
                 forms, used as a preconditioner.
-            kind: The PETSc matrix and vector type. See
-                :func:`create_matrix` for options.
+            kind: The PETSc matrix and vector kind. Common choices
+                are ``mpi`` and ``nest``. See 
+                :func:`dolfinx.fem.petsc.create_matrix` and
+                :func:`dolfinx.fem.petsc.create_vector` for more
+                information.
             petsc_options_prefix: Mandatory named argument. Options prefix
                 used as root prefix on all internally created PETSc
                 objects. Typically ends with ``_``. Must be the same on
@@ -1272,9 +1275,10 @@ class NonlinearProblem:
                 :math:`J_{ij} = dF_i/du_j`. If not passed, derived
                 automatically.
             P: UFL form(s) representing the preconditioner.
-            kind: The PETSc matrix type(s) for the Jacobian and
-                preconditioner (``MatType``).
-                See :func:`dolfinx.fem.petsc.create_matrix` for more
+            kind: The PETSc matrix and vector kind. Common choices
+                are ``mpi`` and ``nest``. See 
+                :func:`dolfinx.fem.petsc.create_matrix` and
+                :func:`dolfinx.fem.petsc.create_vector` for more
                 information.
             petsc_options_prefix: Mandatory named argument.
                 Options prefix used as root prefix on all
