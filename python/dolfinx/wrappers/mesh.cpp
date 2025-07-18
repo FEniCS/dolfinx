@@ -603,10 +603,10 @@ void mesh(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::mesh::EntityMap* self,
-             std::shared_ptr<const dolfinx::mesh::Topology> topology,
-             std::shared_ptr<const dolfinx::mesh::Topology> sub_topology,
+             const std::shared_ptr<const dolfinx::mesh::Topology>& topology,
+             const std::shared_ptr<const dolfinx::mesh::Topology>& sub_topology,
              int dim,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
+             const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>&
                  sub_topology_to_topology)
           {
             new (self) dolfinx::mesh::EntityMap(
@@ -620,7 +620,7 @@ void mesh(nb::module_& m)
       .def(
           "sub_topology_to_topology",
           [](const dolfinx::mesh::EntityMap& self,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
+             const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>&
                  entities,
              bool inverse)
           {
