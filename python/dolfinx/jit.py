@@ -183,7 +183,7 @@ def ffcx_jit(
     -  ``$XDG_CONFIG_HOME/dolfinx/dolfinx_jit_options.json``
        (user options),
     -  default ``DOLFINX_DEFAULT_JIT_OPTIONS`` dictionary in
-       :module:``dolfinx.jit``.
+       :mod:`dolfinx.jit`.
 
     Priority ordering of options controlling FFCx from highest to
     lowest is:
