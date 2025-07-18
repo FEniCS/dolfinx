@@ -1,4 +1,5 @@
-// Copyright (C) 2018-2024 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2018-2024 Chris N. Richardson, Garth N. Wells and Paul T.
+// Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -17,15 +18,19 @@
 #include <dolfinx/refinement/uniform.h>
 #include <dolfinx/refinement/utils.h>
 #include <functional>
+#include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/tuple.h>
+#include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
 #include <optional>
 #include <span>
+#include <stdexcept>
+#include <variant>
 
 namespace nb = nanobind;
 
@@ -45,8 +50,9 @@ void export_refinement(nb::module_& m)
          std::optional<
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
              edges,
-         std::optional<
-             dolfinx_wrappers::part::impl::PythonCellPartitionFunction>
+         std::variant<dolfinx::refinement::IdentityPartitionerPlaceholder,
+                      std::optional<dolfinx_wrappers::part::impl::
+                                        PythonCellPartitionFunction>>
              partitioner,
          dolfinx::refinement::Option option)
       {
@@ -57,11 +63,29 @@ void export_refinement(nb::module_& m)
               std::span(edges.value().data(), edges.value().size()));
         }
 
-        dolfinx_wrappers::part::impl::CppCellPartitionFunction cpp_partitioner
-            = partitioner.has_value()
-                  ? dolfinx_wrappers::part::impl::create_cell_partitioner_cpp(
-                        partitioner.value())
-                  : nullptr;
+        std::variant<dolfinx::refinement::IdentityPartitionerPlaceholder,
+                     dolfinx_wrappers::part::impl::CppCellPartitionFunction>
+            cpp_partitioner
+            = dolfinx::refinement::IdentityPartitionerPlaceholder();
+        if (std::holds_alternative<std::optional<
+                dolfinx_wrappers::part::impl::PythonCellPartitionFunction>>(
+                partitioner))
+        {
+          auto optional = std::get<std::optional<
+              dolfinx_wrappers::part::impl::PythonCellPartitionFunction>>(
+              partitioner);
+          if (!optional.has_value())
+            cpp_partitioner
+                = dolfinx_wrappers::part::impl::CppCellPartitionFunction(
+                    nullptr);
+          else
+          {
+            cpp_partitioner
+                = dolfinx_wrappers::part::impl::create_cell_partitioner_cpp(
+                    optional.value());
+          }
+        }
+
         auto [mesh1, cell, facet] = dolfinx::refinement::refine(
             mesh, cpp_edges, cpp_partitioner, option);
 
@@ -97,6 +121,10 @@ void refinement(nb::module_& m)
   export_refinement<float>(m);
   export_refinement<double>(m);
 
+  nb::class_<dolfinx::refinement::IdentityPartitionerPlaceholder>(
+      m, "IdentityPartitionerPlaceholder")
+      .def(nb::init<>());
+
   nb::enum_<dolfinx::refinement::Option>(m, "RefinementOption")
       .value("none", dolfinx::refinement::Option::none)
       .value("parent_facet", dolfinx::refinement::Option::parent_facet)
@@ -106,9 +134,11 @@ void refinement(nb::module_& m)
   m.def(
       "transfer_facet_meshtag",
       [](const dolfinx::mesh::MeshTags<std::int32_t>& parent_meshtag,
-         std::shared_ptr<const dolfinx::mesh::Topology> topology1,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> parent_cell,
-         nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> parent_facet)
+         const std::shared_ptr<const dolfinx::mesh::Topology>& topology1,
+         const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>&
+             parent_cell,
+         const nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig>&
+             parent_facet)
       {
         int tdim = parent_meshtag.topology()->dim();
         if (parent_meshtag.dim() != tdim - 1)
@@ -125,8 +155,9 @@ void refinement(nb::module_& m)
   m.def(
       "transfer_cell_meshtag",
       [](const dolfinx::mesh::MeshTags<std::int32_t>& parent_meshtag,
-         std::shared_ptr<const dolfinx::mesh::Topology> topology1,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> parent_cell)
+         const std::shared_ptr<const dolfinx::mesh::Topology>& topology1,
+         const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>&
+             parent_cell)
       {
         int tdim = parent_meshtag.topology()->dim();
         if (parent_meshtag.dim() != tdim)

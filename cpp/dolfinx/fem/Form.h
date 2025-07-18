@@ -577,7 +577,7 @@ public:
   /// last entry is the size required to store all coefficients.
   std::vector<int> coefficient_offsets() const
   {
-    std::vector<int> n = {0};
+    std::vector<int> n{0};
     for (auto& c : _coefficients)
     {
       if (!c)

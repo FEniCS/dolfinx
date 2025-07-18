@@ -432,7 +432,7 @@ mesh::build_local_dual_graph(
   //    used data structures
 
   // TODO: cell_offsets can be removed?
-  std::vector<std::int32_t> cell_offsets = {0};
+  std::vector<std::int32_t> cell_offsets{0};
   cell_offsets.reserve(cells.size() + 1);
 
   int max_vertices_per_facet = 0;

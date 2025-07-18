@@ -41,7 +41,7 @@ def _ghost_update(x: PETSc.Vec, insert_mode: PETSc.InsertMode, scatter_mode: PET
 
 def _zero_vector(x: PETSc.Vec):  # type: ignore
     """Helper function for zeroing out PETSc vectors"""
-    if x.getType() == PETSc.Vec.Type.NEST:
+    if x.getType() == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
         for x_sub in x.getNestSubVecs():
             with x_sub.localForm() as x_sub_local:
                 x_sub_local.set(0.0)

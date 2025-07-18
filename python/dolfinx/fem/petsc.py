@@ -3,13 +3,17 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Assembly functions into PETSc objects for variational forms.
+"""High-level solver classes and functions for assembling PETSc objects.
 
 Functions in this module generally apply functions in :mod:`dolfinx.fem`
 to PETSc linear algebra objects and handle any PETSc-specific
 preparation.
 
 Note:
+    The following does not apply to the high-level classes
+    :class:`dolfinx.fem.petsc.LinearProblem`
+    :class:`dolfinx.fem.petsc.NonlinearProblem`.
+
     Due to subtle issues in the interaction between petsc4py memory
     management and the Python garbage collector, it is recommended that
     the PETSc method ``destroy()`` is called on returned PETSc objects
@@ -60,6 +64,7 @@ from dolfinx.mesh import Mesh as _Mesh
 
 __all__ = [
     "LinearProblem",
+    "NewtonSolverNonlinearProblem",
     "NonlinearProblem",
     "apply_lifting",
     "assemble_jacobian",
@@ -401,7 +406,7 @@ def assemble_matrix(
 
     1. If ``a`` is a single bilinear form, the form is assembled
        into PETSc matrix of type ``kind``.
-    #. If ``a`` is a :math:`m \times n` rectangular array of forms the
+    #. If ``a`` is a :math:`m \\times n` rectangular array of forms the
        forms in ``a`` are assembled into a matrix such that::
 
             A = [A_00 ... A_0n]
@@ -568,7 +573,7 @@ def assemble_matrix_mat(
 def apply_lifting(
     b: PETSc.Vec,
     a: typing.Union[Iterable[Form], Iterable[Iterable[Form]]],
-    bcs: typing.Optional[typing.Union[Iterable[DirichletBC], Iterable[Iterable[DirichletBC]]]],
+    bcs: Iterable[Iterable[DirichletBC]],
     x0: typing.Optional[Iterable[PETSc.Vec]] = None,
     alpha: float = 1,
     constants: typing.Optional[
@@ -576,7 +581,7 @@ def apply_lifting(
     ] = None,
     coeffs=None,
 ) -> None:
-    """Modify the right-hand side PETSc vector ``b`` to account for
+    r"""Modify the right-hand side PETSc vector ``b`` to account for
     constraints (Dirichlet boundary conitions).
 
     See :func:`dolfinx.fem.apply_lifting` for a mathematical
@@ -588,24 +593,27 @@ def apply_lifting(
             then ``a`` is a 1D sequence. If ``b`` is blocked or a nest,
             then ``a`` is  a 2D array of forms, with the ``a[i]`` forms
             used to modify the block/nest vector ``b[i]``.
-        bcs: Boundary conditions used to modify ``b`` (see
-            :func:`dolfinx.fem.apply_lifting`). Two cases are supported:
+        bcs: Boundary conditions to apply, which form a 2D array.
+            If ``b`` is nested or blocked then ``bcs[i]`` are the
+            boundary conditions to apply to block/nest ``i``.
+            The function :func:`dolfinx.fem.bcs_by_block` can be
+            used to prepare the 2D array of ``DirichletBC`` objects
+            from the 2D sequence ``a``::
 
-            1. The boundary conditions ``bcs`` are a
-               'sequence-of-sequences' such that ``bcs[j]`` are the
-               Dirichlet boundary conditionns associated with the forms in
-               the ``j`` th colulmn of ``a``. Helper functions exist to
-               create a sequence-of-sequences of `DirichletBC` from the 2D
-               ``a`` and a flat Sequence of `DirichletBC` objects ``bcs``::
+                bcs1 = fem.bcs_by_block(
+                    fem.extract_function_spaces(a, 1),
+                    bcs
+                )
 
-                   bcs1 = fem.bcs_by_block(
-                    fem.extract_function_spaces(a, 1), bcs
-                   )
+            If ``b`` is not blocked or nest, then ``len(bcs)`` must be
+            equal to 1. The function :func:`dolfinx.fem.bcs_by_block`
+            can be used to prepare the 2D array of ``DirichletBC``
+            from the 1D sequence ``a``::
 
-            2. ``bcs`` is a sequence of :class:`dolfinx.fem.DirichletBC`
-               objects. The function deduces which `DiricletBC` objects
-               apply to each column of ``a`` by matching the
-               :class:`dolfinx.fem.FunctionSpace`.
+                bcs1 = fem.bcs_by_block(
+                    fem.extract_function_spaces([a], 1),
+                    bcs
+                )
 
         x0: Vector to use in modify ``b`` (see
             :func:`dolfinx.fem.apply_lifting`). Treated as zero if
@@ -628,10 +636,6 @@ def apply_lifting(
         in ``b``.
     """
     if b.getType() == PETSc.Vec.Type.NEST:
-        try:
-            bcs = _bcs_by_block(_extract_spaces(a, 1), bcs)
-        except AttributeError:
-            pass
         x0 = [] if x0 is None else x0.getNestSubVecs()
         constants = [pack_constants(forms) for forms in a] if constants is None else constants
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
@@ -655,10 +659,6 @@ def apply_lifting(
                 else:
                     xlocal = None
 
-                try:
-                    bcs = _bcs_by_block(_extract_spaces(a, 1), bcs)
-                except AttributeError:
-                    pass
                 offset0, offset1 = b.getAttr("_blocks")
                 with b.localForm() as b_l:
                     for i, (a_, off0, off1, offg0, offg1) in enumerate(
@@ -676,10 +676,6 @@ def apply_lifting(
                         b_l.array_w[off0:off1] = bx_[:size]
                         b_l.array_w[offg0:offg1] = bx_[size:]
             else:
-                try:
-                    bcs = _bcs_by_block(_extract_spaces([a], 1), bcs)
-                except AttributeError:
-                    pass
                 x0 = [] if x0 is None else x0
                 x0 = [stack.enter_context(x.localForm()) for x in x0]
                 x0_r = [x.array_r for x in x0]
@@ -741,13 +737,19 @@ def set_bc(
 
 
 class LinearProblem:
-    """Class for solving a linear variational problem.
+    """High-level class for solving a linear variational problem using
+    a PETSc KSP.
 
     Solves problems of the form
     :math:`a_{ij}(u, v) = f_i(v), i,j=0,\\ldots,N\\
     \\forall v \\in V` where
     :math:`u=(u_0,\\ldots,u_N), v=(v_0,\\ldots,v_N)`
     using PETSc KSP as the linear solver.
+
+    Note:
+        This high-level class automatically handles PETSc memory
+        management. The user does not need to manually call
+        ``.destroy()`` on returned PETSc objects.
     """
 
     def __init__(
@@ -769,7 +771,7 @@ class LinearProblem:
 
         By default, the underlying KSP solver uses PETSc's default
         options, usually GMRES + ILU preconditioning. To use the robust
-        combination of LU via MUMPS:
+        combination of LU via MUMPS
 
         Example::
 
@@ -781,7 +783,7 @@ class LinearProblem:
                   "pc_factor_mat_solver_type": "mumps"
             })
 
-        This class supports nested problems.
+        This class also supports nested block-structured problems.
 
         Example::
 
@@ -810,15 +812,18 @@ class LinearProblem:
             u: Solution function. It is created if not provided.
             P: Bilinear UFL form or a sequence of sequence of bilinear
                 forms, used as a preconditioner.
-            kind: The PETSc matrix and vector type. See
-                :func:`create_matrix` for options.
+            kind: The PETSc matrix and vector kind. Common choices
+                are ``mpi`` and ``nest``. See
+                :func:`dolfinx.fem.petsc.create_matrix` and
+                :func:`dolfinx.fem.petsc.create_vector` for more
+                information.
             petsc_options_prefix: Mandatory named argument. Options prefix
                 used as root prefix on all internally created PETSc
-                objects. Typically ends with `_`. Must be the same on
+                objects. Typically ends with ``_``. Must be the same on
                 all ranks, and is usually unique within the programme.
             petsc_options: Options set on the underlying PETSc KSP only.
                 The options must be the same on all ranks. For available
-                choices for the `petsc_options` kwarg, see the `PETSc KSP
+                choices for the ``petsc_options`` kwarg, see the `PETSc KSP
                 documentation
                 <https://petsc4py.readthedocs.io/en/stable/manual/ksp/>`_.
                 Options on other objects (matrices, vectors) should be set
@@ -827,18 +832,19 @@ class LinearProblem:
                 all forms. Run ``ffcx --help`` at the commandline to see
                 all available options.
             jit_options: Options used in CFFI JIT compilation of C
-                code generated by FFCx. See `python/dolfinx/jit.py` for
+                code generated by FFCx. See ``python/dolfinx/jit.py`` for
                 all available options. Takes priority over all other
                 option values.
             entity_maps: If any trial functions, test functions, or
                 coefficients in the form are not defined over the same mesh
-                as the integration domain, `entity_maps` must be supplied.
+                as the integration domain, ``entity_maps`` must be
+                supplied.
                 For each key (a mesh, different to the integration domain
                 mesh) a map should be provided relating the entities in the
                 integration domain mesh to the entities in the key mesh
-                e.g. for a key-value pair (msh, emap) in `entity_maps`,
-                `emap[i]` is the entity in `msh` corresponding to entity
-                `i` in the integration domain mesh.
+                e.g. for a key-value pair (msh, emap) in ``entity_maps``,
+                ``emap[i]`` is the entity in ``msh`` corresponding to
+                entity ``i`` in the integration domain mesh.
         """
         self._a = _create_form(
             a,
@@ -935,18 +941,20 @@ class LinearProblem:
         if self._P_mat is not None:
             self._P_mat.destroy()
 
-    def solve(self) -> tuple[typing.Union[_Function, Iterable[_Function]], PETSc.Vec, int, int]:
-        """Solve the problem and update the solution in the problem
-        instance.
+    def solve(self) -> typing.Union[_Function, Iterable[_Function]]:
+        """Solve the problem.
+
+        This method updates the solution ``u`` function(s) stored in the
+        problem instance.
 
         Note:
             The user is responsible for asserting convergence of the KSP
-            solver e.g. `assert converged_reason > 0`. Alternatively, pass
-            `"ksp_error_if_not_converged" : True` in `petsc_options`.
+            solver e.g. ``problem.solver.getConvergedReason() > 0``.
+            Alternatively, pass ``"ksp_error_if_not_converged" : True`` in
+            ``petsc_options`` to raise a ``PETScError`` on failure.
 
         Returns:
-            The solution function(s), the solution vector, convergence
-            reason and number of KSP iterations.
+            The solution function(s).
         """
 
         # Assemble lhs
@@ -973,7 +981,7 @@ class LinearProblem:
                 )
                 for bc in self.bcs:
                     bc.set(self.b.array_w)
-            except RuntimeError:
+            except (AttributeError, RuntimeError):
                 bcs1 = _bcs_by_block(_extract_spaces(self.a, 1), self.bcs)  # type: ignore
                 apply_lifting(self.b, self.a, bcs=bcs1)  # type: ignore
                 dolfinx.la.petsc._ghost_update(
@@ -988,7 +996,7 @@ class LinearProblem:
         self.solver.solve(self.b, self.x)
         dolfinx.la.petsc._ghost_update(self.x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
         dolfinx.fem.petsc.assign(self.x, self.u)
-        return self.u, self.x, self.solver.getConvergedReason(), self.solver.getIterationNumber()
+        return self.u
 
     @property
     def L(self) -> typing.Union[Form, Iterable[Form]]:
@@ -1025,8 +1033,8 @@ class LinearProblem:
         """Solution vector.
 
         Note:
-            This vector does not share memory with the solution
-            Function `u`.
+            The vector does not share memory with the solution
+            function(s) ``u``.
         """
         return self._x
 
@@ -1040,8 +1048,8 @@ class LinearProblem:
         """Solution function(s).
 
         Note:
-            The Function(s) do not share memory with the solution
-            vector `x`.
+            The function(s) do not share memory with the solution
+            vector ``x``.
         """
         return self._u
 
@@ -1087,12 +1095,18 @@ def assemble_residual(
     x: PETSc.Vec,  # type: ignore
     b: PETSc.Vec,  # type: ignore
 ):
-    """Assemble the residual into the vector `b`.
+    """Assemble the residual at ``x`` into the vector ``b``.
 
-    A function conforming to the interface expected by SNES.setResidual can
-    be created by fixing the first four arguments:
+    A function conforming to the interface expected by ``SNES.setFunction``
+    can be created by fixing the first four arguments, e.g.:
 
-        functools.partial(assemble_residual, u, residual, jacobian, bcs)
+    Example::
+
+        snes = PETSc.SNES().create(mesh.comm)
+        assemble_residual = functools.partial(
+            dolfinx.fem.petsc.assemble_residual,
+            u, residual, jacobian, bcs)
+        snes.setFunction(assemble_residual, x, b)
 
     Args:
         u: Function(s) tied to the solution vector within the residual and
@@ -1146,15 +1160,21 @@ def assemble_jacobian(
     _snes: PETSc.SNES,  # type: ignore
     x: PETSc.Vec,  # type: ignore
     J: PETSc.Mat,  # type: ignore
-    P: PETSc.Mat,  # type: ignore
+    P_mat: PETSc.Mat,  # type: ignore
 ):
-    """Assemble the Jacobian and preconditioner matrices.
+    """Assemble the Jacobian and preconditioner matrices at ``x``
+    into ``J`` and ``P_mat``.
 
-    A function conforming to the interface expected by SNES.setJacobian can
-    be created by fixing the first four arguments:
+    A function conforming to the interface expected by ``SNES.setJacobian``
+    can be created by fixing the first four arguments e.g.:
 
-        functools.partial(assemble_jacobian, u, jacobian, preconditioner,
-                          bcs)
+    Example::
+
+        snes = PETSc.SNES().create(mesh.comm)
+        assemble_jacobian = functools.partial(
+            dolfinx.fem.petsc.assemble_jacobian,
+            u, jacobian, preconditioner, bcs)
+        snes.setJacobian(assemble_jacobian, A, P_mat)
 
     Args:
         u: Function tied to the solution vector within the residual and
@@ -1166,7 +1186,7 @@ def assemble_jacobian(
         _snes: The solver instance.
         x: The vector containing the point to evaluate at.
         J: Matrix to assemble the Jacobian into.
-        P: Matrix to assemble the preconditioner into.
+        P_mat: Matrix to assemble the preconditioner into.
     """
     # Copy existing soultion into the function used in the residual and
     # Jacobian
@@ -1182,18 +1202,29 @@ def assemble_jacobian(
     assemble_matrix(J, jacobian, bcs, diag=1.0)  # type: ignore
     J.assemble()
     if preconditioner is not None:
-        P.zeroEntries()
-        assemble_matrix(P, preconditioner, bcs, diag=1.0)  # type: ignore
-        P.assemble()
+        P_mat.zeroEntries()
+        assemble_matrix(P_mat, preconditioner, bcs, diag=1.0)  # type: ignore
+        P_mat.assemble()
 
 
 class NonlinearProblem:
-    """Class for solving nonlinear problems with SNES.
+    """High-level class for solving nonlinear variational problems
+    with PETSc SNES.
 
     Solves problems of the form
     :math:`F_i(u, v) = 0, i=0,\\ldots,N\\ \\forall v \\in V` where
     :math:`u=(u_0,\\ldots,u_N), v=(v_0,\\ldots,v_N)` using PETSc
     SNES as the non-linear solver.
+
+    Note:
+        The deprecated version of this class for use with
+        :class:`dolfinx.nls.petsc.NewtonSolver` has been renamed
+        :class:`dolfinx.fem.petsc.NewtonSolverNonlinearProblem`.
+
+    Note:
+        This high-level class automatically handles PETSc memory
+        management. The user does not need to manually call
+        ``.destroy()`` on returned PETSc objects.
     """
 
     def __init__(
@@ -1213,10 +1244,6 @@ class NonlinearProblem:
     ):
         """
         Initialize solver for a nonlinear variational problem.
-
-        Note:
-            The deprecated version of this class for use with
-            NewtonSolver has been renamed NewtonSolverNonlinearProblem.
 
         By default, the underlying SNES solver uses PETSc's default
         options. To use the robust combination of LU via MUMPS with
@@ -1245,23 +1272,24 @@ class NonlinearProblem:
             u: Function(s) used to define the residual and Jacobian.
             bcs: Dirichlet boundary conditions.
             J: UFL form(s) representing the Jacobian
-                :math:`J_ij = dF_i/du_j`. If not passed, derived
+                :math:`J_{ij} = dF_i/du_j`. If not passed, derived
                 automatically.
             P: UFL form(s) representing the preconditioner.
-            kind: The PETSc matrix type(s) for the Jacobian and
-                preconditioner (``MatType``).
-                See :func:`dolfinx.fem.petsc.create_matrix` for more
+            kind: The PETSc matrix and vector kind. Common choices
+                are ``mpi`` and ``nest``. See
+                :func:`dolfinx.fem.petsc.create_matrix` and
+                :func:`dolfinx.fem.petsc.create_vector` for more
                 information.
             petsc_options_prefix: Mandatory named argument.
                 Options prefix used as root prefix on all
                 internally created PETSc objects. Typically ends with `_`.
                 Must be the same on all ranks, and is usually unique within
                 the programme.
-            petsc_options: Options set on the underlying PETSc KSP only.
+            petsc_options: Options set on the underlying PETSc SNES only.
                 The options must be the same on all ranks. For available
-                choices for the `petsc_options` kwarg, see the
-                `PETSc KSP documentation
-                <https://petsc4py.readthedocs.io/en/stable/manual/ksp/>`_.
+                choices for ``petsc_options``, see the
+                `PETSc SNES documentation
+                <https://petsc4py.readthedocs.io/en/stable/manual/snes/>`_.
                 Options on other objects (matrices, vectors) should be set
                 explicitly by the user.
             form_compiler_options: Options used in FFCx compilation of all
@@ -1374,25 +1402,22 @@ class NonlinearProblem:
             )
             self.solver.getKSP().getPC().setFieldSplitIS(*fieldsplit_IS)
 
-    def solve(self) -> tuple[typing.Union[_Function, Iterable[_Function]], PETSc.Vec, int, int]:  # type: ignore
-        """Solve the problem and update the solution in the problem
-        instance.
+    def solve(self) -> typing.Union[_Function, Iterable[_Function]]:  # type: ignore
+        """Solve the problem.
+
+        This method updates the solution ``u`` function(s) stored in the
+        problem instance.
 
         Note:
             The user is responsible for asserting convergence of the SNES
-            solver e.g. `assert converged_reason > 0`. Alternatively, pass
-            `"snes_error_if_not_converged": True` and
-            `"ksp_error_if_not_converged" : True` in `petsc_options`.
-
-        Note:
-            The solution function(s) and solution vector do not share
-            memory.
+            solver e.g. ``assert problem.solver.getConvergedReason() > 0``.
+            Alternatively, pass ``"snes_error_if_not_converged": True`` and
+            ``"ksp_error_if_not_converged" : True`` in ``petsc_options`` to
+            raise a ``PETScError`` on failure.
 
         Returns:
-            The solution function(s), the solution vector, convergence
-            reason and number of SNES (outer) iterations.
+            The solution function(s).
         """
-
         # Copy current iterate into the work array.
         assign(self.u, self.x)
 
@@ -1403,8 +1428,7 @@ class NonlinearProblem:
         # Copy solution back to function
         assign(self.x, self.u)
 
-        converged_reason = self.solver.getConvergedReason()
-        return self.u, self.x, converged_reason, self.solver.getIterationNumber()
+        return self.u
 
     def __del__(self):
         self._snes.destroy()
@@ -1450,7 +1474,7 @@ class NonlinearProblem:
 
         Note:
             The vector does not share memory with the
-            solution Function `u`.
+            solution function(s) ``u``.
         """
         return self._x
 
@@ -1464,8 +1488,8 @@ class NonlinearProblem:
         """Solution function(s).
 
         Note:
-            The Function(s) do not share memory with the solution
-            vector `x`.
+            The function(s) do not share memory with the solution
+            vector ``x``.
         """
         return self._u
 
@@ -1474,18 +1498,20 @@ class NonlinearProblem:
 
 
 class NewtonSolverNonlinearProblem:
-    """Nonlinear problem class for solving the non-linear problems using
-    NewtonSolver.
-
-    Note:
-        This class is deprecated in favour of NonlinearProblem, a high
-        level interface to SNES.
-
-    Note:
-        This class was previously called NonlinearProblem.
+    """(Deprecated) Nonlinear problem class for solving nonlinear
+    problems using :class:`dolfinx.nls.petsc.NewtonSolver`.
 
     Solves problems of the form :math:`F(u, v) = 0 \\ \\forall v \\in V`
     using PETSc as the linear algebra backend.
+
+    Note:
+        This class is deprecated in favour of
+        :class:`dolfinx.fem.petsc.NonlinearProblem`, a high level
+        interface to SNES.
+
+    Note:
+        This class was previously called
+        ``dolfinx.fem.petsc.NonlinearProblem``.
     """
 
     def __init__(
