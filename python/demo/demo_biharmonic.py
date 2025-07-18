@@ -235,9 +235,9 @@ problem = LinearProblem(
     petsc_options_prefix="demo_biharmonic_",
     petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
 )
-uh, _, convergence_reason, _ = problem.solve()
+uh = problem.solve()
 assert isinstance(uh, fem.Function)
-assert convergence_reason > 0
+assert problem.solver.getConvergedReason() > 0
 
 # The solution can be written to a  {py:class}`XDMFFile
 # <dolfinx.io.XDMFFile>` file visualization with ParaView or VisIt

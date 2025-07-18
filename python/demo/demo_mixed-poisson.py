@@ -346,7 +346,8 @@ else:
 # vectors `u` and `sigma`.
 
 # +
-_1, _2, converged_reason, _3 = problem.solve()
+problem.solve()
+converged_reason = problem.solver.getConvergedReason()
 assert converged_reason > 0, f"Krylov solver has not converged, reason: {converged_reason}."
 # -
 

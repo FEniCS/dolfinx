@@ -283,9 +283,11 @@ def poisson_error(V: fem.FunctionSpace):
         petsc_options_prefix="demo_tnt_elements_",
         petsc_options={"ksp_rtol": ksp_rtol},
     )
-    uh, _, convergence_reason, num_its = problem.solve()
-    assert convergence_reason > 0, (
-        f"Failed to converge, reason: {convergence_reason}, iterations: {num_its}"
+    uh = problem.solve()
+    converged_reason = problem.solver.getConvergedReason()
+    num_its = problem.solver.getIterationNumber()
+    assert converged_reason > 0, (
+        f"Failed to converge, reason: {converged_reason}, iterations: {num_its}"
     )
 
     M = (u_exact - uh) ** 2 * ufl.dx
