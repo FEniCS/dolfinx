@@ -848,16 +848,19 @@ def test_interior_interface():
 
 
     # Same for a linear form
-    # L = fem.form(ufl.inner(f_0("+"), v_1("-")) * dS(1), entity_maps=entity_maps)
-    # b = fem.assemble_vector(L)
-
+    L = fem.form(ufl.inner(f_0("+"), v_1("-")) * dS(1), entity_maps=entity_maps)
+    b = fem.assemble_vector(L)
+    b.scatter_reverse(la.InsertMode.add)
 
     # Create a reference linear form
-    # L_ref = fem.form(ufl.inner(f("+"), v("-")) * dS(1))
-    # b_ref = fem.assemble_vector(L_ref)
+    L_ref = fem.form(ufl.inner(f("+"), v("-")) * dS(1))
+    b_ref = fem.assemble_vector(L_ref)
     # fem.apply_lifting(b_ref.array, [a_ref], bcs=[[bc_ref]])
+    b_ref.scatter_reverse(la.InsertMode.add)
 
-    # assert np.isclose(la.norm(b), la.norm(b_ref))
+    # if (comm.rank == 0):
+    #     print(f"rank {comm.rank}: b_norm = {la.norm(b)}, b_ref_norm = {la.norm(b_ref)}")
+    assert np.isclose(la.norm(b), la.norm(b_ref))
 
     # TODO Test apply lifting
     # fem.apply_lifting(b.array, [a], bcs=[[bc]])
