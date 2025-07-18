@@ -778,8 +778,8 @@ def test_interior_interface():
     V_0 = fem.functionspace(smsh_0, ("Lagrange", 1))
     V_1 = fem.functionspace(smsh_1, ("Lagrange", 1))
 
-    u_0 = ufl.TestFunction(V_0)
-    v_1 = ufl.TrialFunction(V_1)
+    u_0 = ufl.TrialFunction(V_0)
+    v_1 = ufl.TestFunction(V_1)
 
     # Find the facet on the interface
     fdim = tdim - 1
@@ -826,8 +826,8 @@ def test_interior_interface():
     # Now assemble using a single domain to compare to a reference
     V = fem.functionspace(msh, ("Lagrange", 1))
     W = fem.functionspace(msh, ("Lagrange", 1))
-    u = ufl.TestFunction(V)
-    v = ufl.TrialFunction(W)
+    u = ufl.TrialFunction(V)
+    v = ufl.TestFunction(W)
     f = fem.Function(V)
     f.interpolate(f_expr)
 
