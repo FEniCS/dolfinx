@@ -844,10 +844,6 @@ def test_interior_interface():
 
     assert np.isclose(A_sqnorm, A_ref_sqrnorm)
 
-
-    print(f"rank {comm.rank}: bc_dofs = {bc_dofs}, num_local = {V_0.dofmap.index_map.size_local}, num_ghosts = {V_0.dofmap.index_map.num_ghosts}")
-
-
     # Same for a linear form
     L = fem.form(ufl.inner(f_0("+"), v_1("-")) * dS(1), entity_maps=entity_maps)
     b = fem.assemble_vector(L)
