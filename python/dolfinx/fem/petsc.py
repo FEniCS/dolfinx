@@ -10,6 +10,10 @@ to PETSc linear algebra objects and handle any PETSc-specific
 preparation.
 
 Note:
+    This following does not apply to the high-level
+    :class:`dolfinx.fem.petsc.NonLinearProblem`
+    :class:`dolfinx.fem.petsc.LinearProblem` interfaces.
+
     Due to subtle issues in the interaction between petsc4py memory
     management and the Python garbage collector, it is recommended that
     the PETSc method ``destroy()`` is called on returned PETSc objects
@@ -733,13 +737,18 @@ def set_bc(
 
 
 class LinearProblem:
-    """Class for solving a linear variational problem.
+    """Class for solving a linear variational problem using a PETSc KSP.
 
     Solves problems of the form
     :math:`a_{ij}(u, v) = f_i(v), i,j=0,\\ldots,N\\
     \\forall v \\in V` where
     :math:`u=(u_0,\\ldots,u_N), v=(v_0,\\ldots,v_N)`
     using PETSc KSP as the linear solver.
+
+    Note:
+        This high-level class correctly handles PETSc memory management.
+        The user does not need to manually call ``.destroy()`` on
+        returned PETSc objects.
     """
 
     def __init__(
@@ -773,7 +782,7 @@ class LinearProblem:
                   "pc_factor_mat_solver_type": "mumps"
             })
 
-        This class also supports nested block-structued linear problems.
+        This class also supports nested block-structured problems.
 
         Example::
 
@@ -824,13 +833,14 @@ class LinearProblem:
                 option values.
             entity_maps: If any trial functions, test functions, or
                 coefficients in the form are not defined over the same mesh
-                as the integration domain, ``entity_maps`` must be supplied.
+                as the integration domain, ``entity_maps`` must be
+                supplied.
                 For each key (a mesh, different to the integration domain
                 mesh) a map should be provided relating the entities in the
                 integration domain mesh to the entities in the key mesh
                 e.g. for a key-value pair (msh, emap) in ``entity_maps``,
-                ``emap[i]`` is the entity in ``msh`` corresponding to entity
-                ``i`` in the integration domain mesh.
+                ``emap[i]`` is the entity in ``msh`` corresponding to
+                entity ``i`` in the integration domain mesh.
         """
         self._a = _create_form(
             a,
@@ -1083,15 +1093,16 @@ def assemble_residual(
 ):
     """Assemble the residual into the vector ``b``.
 
-    A function conforming to the interface expected by ``SNES.setFunction`` can
-    be created by fixing the first four arguments, e.g.:
+    A function conforming to the interface expected by ``SNES.setFunction``
+    can be created by fixing the first four arguments, e.g.:
 
     Example::
-            
+
         snes = PETSc.SNES().create(mesh.comm)
-        snes.setFunction(
-            functools.partial(assemble_residual, u, F, J, bcs), x, b
-        )
+        assemble_residual = functools.partial(
+            dolfinx.fem.petsc.assemble_residual,
+            u, residual, jacobian, bcs)
+        snes.setFunction(assemble_residual, x, b)
 
     Args:
         u: Function(s) tied to the solution vector within the residual and
@@ -1149,15 +1160,16 @@ def assemble_jacobian(
 ):
     """Assemble the Jacobian and preconditioner matrices.
 
-    A function conforming to the interface expected by SNES.setJacobian can
-    be created by fixing the first four arguments e.g.:
+    A function conforming to the interface expected by ``SNES.setJacobian``
+    can be created by fixing the first four arguments e.g.:
 
     Example::
-        
+
         snes = PETSc.SNES().create(mesh.comm)
-        snes.setJacobian(
-            functools.partial(assemble_jacobian, u, J, preconditioner, bcs), A, P_mat
-        )
+        assemble_jacobian = functools.partial(
+            dolfinx.fem.petsc.assemble_jacobian,
+            u, jacobian, preconditioner, bcs)
+        snes.setJacobian(assemble_jacobian, A, P_mat)
 
     Args:
         u: Function tied to the solution vector within the residual and
@@ -1191,18 +1203,22 @@ def assemble_jacobian(
 
 
 class NonlinearProblem:
-    """Class for solving nonlinear problems with SNES.
+    """Class for solving nonlinear variational problems with PETSc SNES.
+
+    Note:
+        The deprecated version of this class for use with
+        :class:`dolfinx.nls.petsc.NewtonSolver` has been renamed
+        :class:`dolfinx.fem.petsc.NewtonSolverNonlinearProblem`.
 
     Solves problems of the form
     :math:`F_i(u, v) = 0, i=0,\\ldots,N\\ \\forall v \\in V` where
     :math:`u=(u_0,\\ldots,u_N), v=(v_0,\\ldots,v_N)` using PETSc
     SNES as the non-linear solver.
-    
-    Note:
 
-        The deprecated version of this class for use with
-        :class:`dolfinx.nls.petsc.NewtonSolver` has been renamed
-        :class:`dolfinx.fem.petsc.NewtonSolverNonlinearProblem`.
+    Note:
+        This high-level class correctly handles PETSc memory management.
+        The user does not need to manually call ``.destroy()`` on
+        returned PETSc objects.
     """
 
     def __init__(
@@ -1222,7 +1238,6 @@ class NonlinearProblem:
     ):
         """
         Initialize solver for a nonlinear variational problem.
-
 
         By default, the underlying SNES solver uses PETSc's default
         options. To use the robust combination of LU via MUMPS with
@@ -1479,7 +1494,7 @@ class NonlinearProblem:
 class NewtonSolverNonlinearProblem:
     """Nonlinear problem class for solving the non-linear problems using
     NewtonSolver.
-    
+
     Solves problems of the form :math:`F(u, v) = 0 \\ \\forall v \\in V`
     using PETSc as the linear algebra backend.
 
