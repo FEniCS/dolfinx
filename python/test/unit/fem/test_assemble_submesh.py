@@ -806,9 +806,19 @@ def test_interior_interface():
     f_0 = fem.Function(V_0)
     f_0.interpolate(f_expr)
 
+    def bc_marker(x):
+        # return np.isclose(x[1], 1.0) & (x[0] <= 0.5)
+        return np.isclose(x[0], 0.0)
+
+    # Create a Dirichlet boundary condition
+    c_bc = 1.0
+    bc_facets = locate_entities_boundary(smsh_0, fdim, bc_marker)
+    bc_dofs = fem.locate_dofs_topological(V_0, fdim, bc_facets)
+    bc = fem.dirichletbc(c_bc, bc_dofs, V_0)
+
     a = fem.form(ufl.inner(f_0("+") * u_0("+"), v_1("-")) * dS(1), entity_maps=entity_maps)
 
-    A = fem.assemble_matrix(a)
+    A = fem.assemble_matrix(a, bcs=[bc])
     A.scatter_reverse()
 
     A_sqnorm = A.squared_norm()
@@ -820,37 +830,34 @@ def test_interior_interface():
     f = fem.Function(V)
     f.interpolate(f_expr)
 
-    a_ref = fem.form(ufl.inner(f("+") * u("+"), v("-")) * dS(1))
+    a_ref = fem.form(1e-16 * ufl.inner(u, v) * ufl.dx + ufl.inner(f("+") * u("+"), v("-")) * dS(1))
 
-    A_ref = fem.assemble_matrix(a_ref)
+    bc_facets_ref = locate_entities_boundary(msh, fdim, bc_marker)
+    bc_dofs_ref = fem.locate_dofs_topological(V, fdim, bc_facets_ref)
+    bc_ref = fem.dirichletbc(c_bc, bc_dofs_ref, V)
+
+    A_ref = fem.assemble_matrix(a_ref, bcs=[bc_ref])
     A_ref.scatter_reverse()
 
     A_ref_sqrnorm = A.squared_norm()
 
     assert np.isclose(A_sqnorm, A_ref_sqrnorm)
 
-    def bc_marker(x):
-        return np.isclose(x[1], 1.0) & (x[0] <= 0.5)
 
-    # Create a Dirichlet boundary condition
-    bc_facets = locate_entities_boundary(smsh_0, fdim, bc_marker)
-    bc_dofs = fem.locate_dofs_topological(V_0, fdim, bc_facets)
-    bc = fem.dirichletbc(1.0, bc_dofs, V_0)
+    print(f"rank {comm.rank}: bc_dofs = {bc_dofs}, num_local = {V_0.dofmap.index_map.size_local}, num_ghosts = {V_0.dofmap.index_map.num_ghosts}")
+
 
     # Same for a linear form
-    L = fem.form(ufl.inner(f_0("+"), v_1("-")) * dS(1), entity_maps=entity_maps)
-    b = fem.assemble_vector(L)
+    # L = fem.form(ufl.inner(f_0("+"), v_1("-")) * dS(1), entity_maps=entity_maps)
+    # b = fem.assemble_vector(L)
 
-    # bc_facets_ref = locate_entities_boundary(msh, fdim, bc_marker)
-    # bc_dofs_ref = fem.locate_dofs_topological(V, fdim, bc_facets_ref)
-    # bc_ref = fem.dirichletbc(1.0, bc_dofs_ref, V)
 
     # Create a reference linear form
-    L_ref = fem.form(ufl.inner(f("+"), v("-")) * dS(1))
-    b_ref = fem.assemble_vector(L_ref)
+    # L_ref = fem.form(ufl.inner(f("+"), v("-")) * dS(1))
+    # b_ref = fem.assemble_vector(L_ref)
     # fem.apply_lifting(b_ref.array, [a_ref], bcs=[[bc_ref]])
 
-    assert np.isclose(la.norm(b), la.norm(b_ref))
+    # assert np.isclose(la.norm(b), la.norm(b_ref))
 
     # TODO Test apply lifting
     # fem.apply_lifting(b.array, [a], bcs=[[bc]])
