@@ -38,8 +38,8 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
 
         Note:
             This class is deprecated in favour of
-            dolfinx.fem.petsc.NonlinearProblem, a high level interface to
-            PETSc SNES.
+            :class:`dolfinx.fem.petsc.NonlinearProblem`, a high
+            level interface to PETSc SNES.
         """
         super().__init__(comm)
 
@@ -47,7 +47,7 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
             (
                 "dolfinx.nls.petsc.NewtonSolver is deprecated. "
                 + "Use dolfinx.fem.petsc.NonlinearProblem, "
-                + "a high level interface to PETSc SNES, instead."
+                + "a high level interface to PETSc SNES."
             ),
             DeprecationWarning,
         )

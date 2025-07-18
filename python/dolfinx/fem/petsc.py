@@ -928,14 +928,16 @@ class LinearProblem:
             self._P_mat.destroy()
 
     def solve(self) -> typing.Union[_Function, Iterable[_Function]]:
-        """Solve the problem and update the solution in the problem
-        instance.
+        """Solve the problem.
+
+        This method updates the solution ``u`` functions(s) stored in the
+        problem instance.
 
         Note:
             The user is responsible for asserting convergence of the KSP
             solver e.g. ``problem.solver.getConvergedReason() > 0``.
             Alternatively, pass ``"ksp_error_if_not_converged" : True`` in
-            ``petsc_options``.
+            ``petsc_options`` to raise a ``PETScError`` on failure.
 
         Returns:
             The solution function(s).
@@ -1379,14 +1381,17 @@ class NonlinearProblem:
             self.solver.getKSP().getPC().setFieldSplitIS(*fieldsplit_IS)
 
     def solve(self) -> typing.Union[_Function, Iterable[_Function]]:  # type: ignore
-        """Solve the problem and update the solution in the problem
-        instance.
+        """Solve the problem.
+
+        This method updates the solution ``u`` functions(s) stored in the
+        problem instance.
 
         Note:
             The user is responsible for asserting convergence of the SNES
             solver e.g. ``assert problem.solver.getConvergedReason() > 0``.
             Alternatively, pass ``"snes_error_if_not_converged": True`` and
-            ``"ksp_error_if_not_converged" : True`` in ``petsc_options``.
+            ``"ksp_error_if_not_converged" : True`` in ``petsc_options`` to
+            raise a ``PETScError`` on failure.
 
         Returns:
             The solution function(s).
@@ -1474,16 +1479,18 @@ class NonlinearProblem:
 class NewtonSolverNonlinearProblem:
     """Nonlinear problem class for solving the non-linear problems using
     NewtonSolver.
-
-    Note:
-        This class is deprecated in favour of NonlinearProblem, a high
-        level interface to SNES.
-
-    Note:
-        This class was previously called NonlinearProblem.
-
+    
     Solves problems of the form :math:`F(u, v) = 0 \\ \\forall v \\in V`
     using PETSc as the linear algebra backend.
+
+    Note:
+        This class is deprecated in favour of
+        :class:`dolfinx.fem.petsc.NonlinearProblem`, a high level
+        interface to SNES.
+
+    Note:
+        This class was previously called
+        ``dolfinx.fem.petsc.NonlinearProblem``.
     """
 
     def __init__(
