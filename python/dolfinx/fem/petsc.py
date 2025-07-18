@@ -944,7 +944,7 @@ class LinearProblem:
     def solve(self) -> typing.Union[_Function, Iterable[_Function]]:
         """Solve the problem.
 
-        This method updates the solution ``u`` functions(s) stored in the
+        This method updates the solution ``u`` function(s) stored in the
         problem instance.
 
         Note:
@@ -1405,7 +1405,7 @@ class NonlinearProblem:
     def solve(self) -> typing.Union[_Function, Iterable[_Function]]:  # type: ignore
         """Solve the problem.
 
-        This method updates the solution ``u`` functions(s) stored in the
+        This method updates the solution ``u`` function(s) stored in the
         problem instance.
 
         Note:
