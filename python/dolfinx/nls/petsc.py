@@ -3,7 +3,8 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Methods for solving nonlinear equations using PETSc solvers."""
+"""(Deprecated) Methods for solving nonlinear equations using PETSc
+solvers."""
 
 from __future__ import annotations
 
