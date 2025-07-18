@@ -602,10 +602,6 @@ def apply_lifting(
         in ``b``.
     """
     if b.getType() == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
-        try:
-            bcs = _bcs_by_block(_extract_function_spaces(a, 1), bcs)  # type: ignore[arg-type]
-        except AttributeError:
-            pass
         x0 = [] if x0 is None else x0.getNestSubVecs()  # type: ignore[attr-defined]
         constants = [pack_constants(forms) for forms in a] if constants is None else constants  # type: ignore[assignment]
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs  # type: ignore[misc]
