@@ -1498,8 +1498,8 @@ class NonlinearProblem:
 
 
 class NewtonSolverNonlinearProblem:
-    """(Deprecated) Nonlinear problem class for solving the non-linear
-    problems using class:`dolfinx.nls.petsc.NewtonSolver`.
+    """(Deprecated) Nonlinear problem class for solving nonlinear
+    problems using :class:`dolfinx.nls.petsc.NewtonSolver`.
 
     Solves problems of the form :math:`F(u, v) = 0 \\ \\forall v \\in V`
     using PETSc as the linear algebra backend.
