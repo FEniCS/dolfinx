@@ -14,7 +14,12 @@ import numpy.typing as npt
 
 import basix
 import ufl
-from dolfinx.cpp.io import read_vtkhdf_mesh_float32, read_vtkhdf_mesh_float64, write_vtkhdf_mesh
+from dolfinx.cpp.io import (
+    read_vtkhdf_mesh_float32,
+    read_vtkhdf_mesh_float64,
+    write_vtkhdf_data,
+    write_vtkhdf_mesh,
+)
 from dolfinx.mesh import Mesh
 
 
@@ -25,10 +30,12 @@ def read_mesh(
     gdim: int = 3,
 ):
     """Read a mesh from a VTKHDF format file
+
     Args:
         comm: An MPI communicator.
         filename: File to read from.
-        dtype: Scalar type of mesh geometry (need not match dtype in file)
+        dtype: Scalar type of mesh geometry (need not match dtype in
+            file).
         gdim: Geometric dimension of the mesh.
     """
     if dtype == np.float64:
@@ -45,11 +52,7 @@ def read_mesh(
         variant = mesh_cpp.geometry.cmap.variant
         domain = ufl.Mesh(
             basix.ufl.element(
-                "Lagrange",
-                cell_types[0].name,
-                cell_degree,
-                variant,
-                shape=(mesh_cpp.geometry.dim,),
+                "Lagrange", cell_types[0].name, cell_degree, variant, shape=(mesh_cpp.geometry.dim,)
             )
         )
     return Mesh(mesh_cpp, domain)
@@ -57,8 +60,33 @@ def read_mesh(
 
 def write_mesh(filename: typing.Union[str, Path], mesh: Mesh):
     """Write a mesh to file in VTKHDF format
+
     Args:
         filename: File to write to.
         mesh: Mesh.
     """
     write_vtkhdf_mesh(filename, mesh._cpp_object)
+
+
+def write_point_data(filename: typing.Union[str, Path], mesh: Mesh, data: npt.NDArray, time: float):
+    """Write data at vertices of the mesh.
+
+    Args:
+        filename: File to write to.
+        mesh: Mesh.
+        data: Data at the points of the mesh, local to each process.
+        time: Timestamp.
+    """
+    write_vtkhdf_data("Point", filename, mesh._cpp_object, data, time)
+
+
+def write_cell_data(filename: typing.Union[str, Path], mesh: Mesh, data: npt.NDArray, time: float):
+    """Write data at cells of the mesh.
+
+    Args:
+        filename: File to write to.
+        mesh: Mesh.
+        data: Data at the cells of the mesh, local to each process.
+        time: Timestamp.
+    """
+    write_vtkhdf_data("Cell", filename, mesh._cpp_object, data, time)

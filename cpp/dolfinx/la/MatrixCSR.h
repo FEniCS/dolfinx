@@ -562,7 +562,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
 
     column_container_type new_cols;
     new_cols.reserve(_data.size());
-    rowptr_container_type new_row_ptr = {0};
+    rowptr_container_type new_row_ptr{0};
     new_row_ptr.reserve(_row_ptr.size() * _bs[0]);
     std::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offsets();
     for (std::size_t i = 0; i < _row_ptr.size() - 1; ++i)
@@ -679,7 +679,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
                           MPI_INT, _comm.comm());
 
     // Build send/recv displacement
-    std::vector<int> send_disp = {0};
+    std::vector<int> send_disp{0};
     std::partial_sum(send_sizes.begin(), send_sizes.end(),
                      std::back_inserter(send_disp));
     recv_disp = {0};
