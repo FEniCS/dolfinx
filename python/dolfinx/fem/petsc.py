@@ -1159,8 +1159,8 @@ def assemble_jacobian(
     J: PETSc.Mat,  # type: ignore
     P_mat: PETSc.Mat,  # type: ignore
 ):
-    """Assemble the Jacobian and preconditioner matrices at ``x`` into ``J``
-    and ``P``.
+    """Assemble the Jacobian and preconditioner matrices at ``x``
+    into ``J`` and ``P_mat``.
 
     A function conforming to the interface expected by ``SNES.setJacobian``
     can be created by fixing the first four arguments e.g.:
@@ -1200,7 +1200,7 @@ def assemble_jacobian(
     J.assemble()
     if preconditioner is not None:
         P_mat.zeroEntries()
-        assemble_matrix(P, preconditioner, bcs, diag=1.0)  # type: ignore
+        assemble_matrix(P_mat, preconditioner, bcs, diag=1.0)  # type: ignore
         P_mat.assemble()
 
 
