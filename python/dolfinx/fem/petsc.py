@@ -926,18 +926,18 @@ class LinearProblem:
         if self._P_mat is not None:
             self._P_mat.destroy()
 
-    def solve(self) -> tuple[typing.Union[_Function, Iterable[_Function]], PETSc.Vec, int, int]:
+    def solve(self) -> typing.Union[_Function, Iterable[_Function]]:
         """Solve the problem and update the solution in the problem
         instance.
 
         Note:
             The user is responsible for asserting convergence of the KSP
-            solver e.g. `assert converged_reason > 0`. Alternatively, pass
-            `"ksp_error_if_not_converged" : True` in `petsc_options`.
+            solver e.g. `problem.solver.getConvergedReason() > 0`.
+            Alternatively, pass `"ksp_error_if_not_converged" : True` in
+            `petsc_options`.
 
         Returns:
-            The solution function(s), the solution vector, convergence
-            reason and number of KSP iterations.
+            The solution function(s).
         """
 
         # Assemble lhs
@@ -979,7 +979,7 @@ class LinearProblem:
         self.solver.solve(self.b, self.x)
         dolfinx.la.petsc._ghost_update(self.x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
         dolfinx.fem.petsc.assign(self.x, self.u)
-        return self.u, self.x, self.solver.getConvergedReason(), self.solver.getIterationNumber()
+        return self.u
 
     @property
     def L(self) -> typing.Union[Form, Iterable[Form]]:
@@ -1365,14 +1365,14 @@ class NonlinearProblem:
             )
             self.solver.getKSP().getPC().setFieldSplitIS(*fieldsplit_IS)
 
-    def solve(self) -> tuple[typing.Union[_Function, Iterable[_Function]], PETSc.Vec, int, int]:  # type: ignore
+    def solve(self) -> typing.Union[_Function, Iterable[_Function]]:  # type: ignore
         """Solve the problem and update the solution in the problem
         instance.
 
         Note:
             The user is responsible for asserting convergence of the SNES
-            solver e.g. `assert converged_reason > 0`. Alternatively, pass
-            `"snes_error_if_not_converged": True` and
+            solver e.g. `assert problem.solver.getConvergedReason() > 0`.
+            Alternatively, pass `"snes_error_if_not_converged": True` and
             `"ksp_error_if_not_converged" : True` in `petsc_options`.
 
         Note:
@@ -1380,8 +1380,7 @@ class NonlinearProblem:
             memory.
 
         Returns:
-            The solution function(s), the solution vector, convergence
-            reason and number of SNES (outer) iterations.
+            The solution function(s).
         """
 
         # Copy current iterate into the work array.
@@ -1394,8 +1393,7 @@ class NonlinearProblem:
         # Copy solution back to function
         assign(self.x, self.u)
 
-        converged_reason = self.solver.getConvergedReason()
-        return self.u, self.x, converged_reason, self.solver.getIterationNumber()
+        return self.u
 
     def __del__(self):
         self._snes.destroy()
