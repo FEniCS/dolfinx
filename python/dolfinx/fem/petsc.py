@@ -813,7 +813,7 @@ class LinearProblem:
             P: Bilinear UFL form or a sequence of sequence of bilinear
                 forms, used as a preconditioner.
             kind: The PETSc matrix and vector kind. Common choices
-                are ``mpi`` and ``nest``. See 
+                are ``mpi`` and ``nest``. See
                 :func:`dolfinx.fem.petsc.create_matrix` and
                 :func:`dolfinx.fem.petsc.create_vector` for more
                 information.
@@ -1276,7 +1276,7 @@ class NonlinearProblem:
                 automatically.
             P: UFL form(s) representing the preconditioner.
             kind: The PETSc matrix and vector kind. Common choices
-                are ``mpi`` and ``nest``. See 
+                are ``mpi`` and ``nest``. See
                 :func:`dolfinx.fem.petsc.create_matrix` and
                 :func:`dolfinx.fem.petsc.create_vector` for more
                 information.
