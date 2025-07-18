@@ -635,7 +635,7 @@ problem = LinearProblem(
     petsc_options_prefix="demo_scattering_boundary_conditions_",
     petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
 )
-(Esh,) = problem.solve()
+Esh = problem.solve()
 assert problem.solver.getConvergedReason() > 0
 
 # We save the solution as an [ADIOS2
