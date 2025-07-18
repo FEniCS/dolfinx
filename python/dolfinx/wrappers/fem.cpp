@@ -969,7 +969,7 @@ void declare_cmap(nb::module_& m, std::string type)
 
               self.compute_jacobian(dphi, g, J);
               self.compute_jacobian_inverse(J, K);
-              std::array<T, 3> x0 = {0, 0, 0};
+              std::array<T, 3> x0{0, 0, 0};
               for (std::size_t i = 0; i < g.extent(1); ++i)
                 x0[i] += g(0, i);
               self.pull_back_affine(X, K, x0, _x);

@@ -47,9 +47,9 @@ template <typename T>
 mesh::Mesh<T> create_3_vertex_interval_mesh()
 {
   // creates mesh with vertices
-  std::array<T, 3> v0 = {0., 0., 0.};
-  std::array<T, 3> v1 = {.5, 1., 2.};
-  std::array<T, 3> v2 = {1., 2., 4.};
+  std::array<T, 3> v0{0., 0., 0.};
+  std::array<T, 3> v1{.5, 1., 2.};
+  std::array<T, 3> v2{1., 2., 4.};
 
   // and connectivity
   // v0 --- v1 --- v2

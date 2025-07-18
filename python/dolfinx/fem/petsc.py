@@ -568,7 +568,7 @@ def assemble_matrix_mat(
 def apply_lifting(
     b: PETSc.Vec,
     a: typing.Union[Iterable[Form], Iterable[Iterable[Form]]],
-    bcs: typing.Optional[typing.Union[Iterable[DirichletBC], Iterable[Iterable[DirichletBC]]]],
+    bcs: Iterable[Iterable[DirichletBC]],
     x0: typing.Optional[Iterable[PETSc.Vec]] = None,
     alpha: float = 1,
     constants: typing.Optional[
@@ -576,7 +576,7 @@ def apply_lifting(
     ] = None,
     coeffs=None,
 ) -> None:
-    """Modify the right-hand side PETSc vector ``b`` to account for
+    r"""Modify the right-hand side PETSc vector ``b`` to account for
     constraints (Dirichlet boundary conitions).
 
     See :func:`dolfinx.fem.apply_lifting` for a mathematical
@@ -588,24 +588,27 @@ def apply_lifting(
             then ``a`` is a 1D sequence. If ``b`` is blocked or a nest,
             then ``a`` is  a 2D array of forms, with the ``a[i]`` forms
             used to modify the block/nest vector ``b[i]``.
-        bcs: Boundary conditions used to modify ``b`` (see
-            :func:`dolfinx.fem.apply_lifting`). Two cases are supported:
+        bcs: Boundary conditions to apply, which form a 2D array.
+            If ``b`` is nested or blocked then ``bcs[i]`` are the
+            boundary conditions to apply to block/nest ``i``.
+            The function :func:`dolfinx.fem.bcs_by_block` can be
+            used to prepare the 2D array of ``DirichletBC`` objects
+            from the 2D sequence ``a``::
 
-            1. The boundary conditions ``bcs`` are a
-               'sequence-of-sequences' such that ``bcs[j]`` are the
-               Dirichlet boundary conditionns associated with the forms in
-               the ``j`` th colulmn of ``a``. Helper functions exist to
-               create a sequence-of-sequences of `DirichletBC` from the 2D
-               ``a`` and a flat Sequence of `DirichletBC` objects ``bcs``::
+                bcs1 = fem.bcs_by_block(
+                    fem.extract_function_spaces(a, 1),
+                    bcs
+                )
 
-                   bcs1 = fem.bcs_by_block(
-                    fem.extract_function_spaces(a, 1), bcs
-                   )
+            If ``b`` is not blocked or nest, then ``len(bcs)`` must be
+            equal to 1. The function :func:`dolfinx.fem.bcs_by_block`
+            can be used to prepare the 2D array of ``DirichletBC``
+            from the 1D sequence ``a``::
 
-            2. ``bcs`` is a sequence of :class:`dolfinx.fem.DirichletBC`
-               objects. The function deduces which `DiricletBC` objects
-               apply to each column of ``a`` by matching the
-               :class:`dolfinx.fem.FunctionSpace`.
+                bcs1 = fem.bcs_by_block(
+                    fem.extract_function_spaces([a], 1),
+                    bcs
+                )
 
         x0: Vector to use in modify ``b`` (see
             :func:`dolfinx.fem.apply_lifting`). Treated as zero if
@@ -628,10 +631,6 @@ def apply_lifting(
         in ``b``.
     """
     if b.getType() == PETSc.Vec.Type.NEST:
-        try:
-            bcs = _bcs_by_block(_extract_spaces(a, 1), bcs)
-        except AttributeError:
-            pass
         x0 = [] if x0 is None else x0.getNestSubVecs()
         constants = [pack_constants(forms) for forms in a] if constants is None else constants
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
@@ -655,10 +654,6 @@ def apply_lifting(
                 else:
                     xlocal = None
 
-                try:
-                    bcs = _bcs_by_block(_extract_spaces(a, 1), bcs)
-                except AttributeError:
-                    pass
                 offset0, offset1 = b.getAttr("_blocks")
                 with b.localForm() as b_l:
                     for i, (a_, off0, off1, offg0, offg1) in enumerate(
@@ -676,10 +671,6 @@ def apply_lifting(
                         b_l.array_w[off0:off1] = bx_[:size]
                         b_l.array_w[offg0:offg1] = bx_[size:]
             else:
-                try:
-                    bcs = _bcs_by_block(_extract_spaces([a], 1), bcs)
-                except AttributeError:
-                    pass
                 x0 = [] if x0 is None else x0
                 x0 = [stack.enter_context(x.localForm()) for x in x0]
                 x0_r = [x.array_r for x in x0]
@@ -973,7 +964,7 @@ class LinearProblem:
                 )
                 for bc in self.bcs:
                     bc.set(self.b.array_w)
-            except RuntimeError:
+            except (AttributeError, RuntimeError):
                 bcs1 = _bcs_by_block(_extract_spaces(self.a, 1), self.bcs)  # type: ignore
                 apply_lifting(self.b, self.a, bcs=bcs1)  # type: ignore
                 dolfinx.la.petsc._ghost_update(
