@@ -93,28 +93,21 @@
 # Import the required modules:
 
 # +
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
-
 from mpi4py import MPI
+from petsc4py import PETSc
 
 import numpy as np
 
-import dolfinx.fem.petsc
+import dolfinx
 import ufl
 from basix.ufl import element
 from dolfinx import fem, mesh
 from dolfinx.fem.petsc import discrete_gradient, interpolation_matrix
 from dolfinx.mesh import CellType, create_unit_square
+
+if not dolfinx.has_petsc:
+    print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+    exit(0)
 
 # Solution scalar (e.g., float32, complex128) and geometry (float32/64)
 # types

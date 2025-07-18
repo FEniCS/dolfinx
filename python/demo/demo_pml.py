@@ -15,27 +15,18 @@
 # First, we import the required modules
 
 # +
-import importlib.util
-
-if importlib.util.find_spec("petsc4py") is not None:
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-else:
-    print("This demo requires petsc4py.")
-    exit(0)
-
 import sys
 from functools import partial
 from typing import Union
 
 from mpi4py import MPI
+from petsc4py import PETSc
 
+import gmsh
 import numpy as np
 from scipy.special import h2vp, hankel2, jv, jvp
 
+import dolfinx
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type, default_scalar_type, fem, mesh, plot
@@ -48,11 +39,6 @@ except ImportError:
     print("This demo requires DOLFINx to be configured with adios2.")
     exit(0)
 
-try:
-    import gmsh
-except ModuleNotFoundError:
-    print("This demo requires gmsh to be installed")
-    exit(0)
 
 try:
     import pyvista
@@ -62,7 +48,10 @@ except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
 
-from petsc4py import PETSc
+
+if not dolfinx.has_petsc:
+    print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+    exit(0)
 
 # Since we want to solve time-harmonic Maxwell's equation, we require
 # that the demo is executed with DOLFINx (PETSc) complex mode.
