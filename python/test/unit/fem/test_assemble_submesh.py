@@ -825,8 +825,9 @@ def test_interior_interface():
 
     # Now assemble using a single domain to compare to a reference
     V = fem.functionspace(msh, ("Lagrange", 1))
+    W = fem.functionspace(msh, ("Lagrange", 1))
     u = ufl.TestFunction(V)
-    v = ufl.TrialFunction(V)
+    v = ufl.TrialFunction(W)
     f = fem.Function(V)
     f.interpolate(f_expr)
 
@@ -866,6 +867,3 @@ def test_interior_interface():
     # fem.apply_lifting(b.array, [a], bcs=[[bc]])
     # b.scatter_reverse(la.InsertMode.add)
     # bc.set(b.array)
-
-
-test_interior_interface()
