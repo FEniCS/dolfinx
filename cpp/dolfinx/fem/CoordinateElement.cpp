@@ -103,7 +103,7 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   std::vector<T> Xk_b(tdim);
   mdspan2_t<T> Xk(Xk_b.data(), 1, tdim);
 
-  std::array<T, 3> xk = {0, 0, 0};
+  std::array<T, 3> xk{0, 0, 0};
   std::vector<T> dX(tdim);
   std::vector<T> J_b(gdim * tdim);
   mdspan2_t<T> J(J_b.data(), gdim, tdim);

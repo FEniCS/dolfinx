@@ -38,8 +38,7 @@ enum class CellType : std::int8_t;
 enum class GhostMode : std::uint8_t
 {
   none,
-  shared_facet,
-  shared_vertex
+  shared_facet
 };
 
 namespace impl

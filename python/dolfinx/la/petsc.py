@@ -34,8 +34,21 @@ def _ghost_update(x: PETSc.Vec, insert_mode: PETSc.InsertMode, scatter_mode: PET
     if x.getType() == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
         for x_sub in x.getNestSubVecs():
             x_sub.ghostUpdate(addv=insert_mode, mode=scatter_mode)
+            x_sub.destroy()
     else:
         x.ghostUpdate(addv=insert_mode, mode=scatter_mode)
+
+
+def _zero_vector(x: PETSc.Vec):  # type: ignore
+    """Helper function for zeroing out PETSc vectors"""
+    if x.getType() == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
+        for x_sub in x.getNestSubVecs():
+            with x_sub.localForm() as x_sub_local:
+                x_sub_local.set(0.0)
+            x_sub.destroy()
+    else:
+        with x.localForm() as x_local:
+            x_local.set(0.0)
 
 
 def create_vector(index_map: IndexMap, bs: int) -> PETSc.Vec:  # type: ignore[name-defined]

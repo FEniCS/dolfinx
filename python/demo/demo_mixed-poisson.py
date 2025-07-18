@@ -252,6 +252,7 @@ problem = fem.petsc.LinearProblem(
     P=a_p,
     kind="nest",
     bcs=bcs,
+    petsc_options_prefix="demo_mixed_poisson_",
     petsc_options={
         "ksp_type": "gmres",
         "pc_type": "fieldsplit",
@@ -345,7 +346,7 @@ else:
 # vectors `u` and `sigma`.
 
 # +
-_1, converged_reason, _2 = problem.solve()
+_1, _2, converged_reason, _3 = problem.solve()
 assert converged_reason > 0, f"Krylov solver has not converged, reason: {converged_reason}."
 # -
 

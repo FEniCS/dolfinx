@@ -144,7 +144,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
   std::vector<std::int32_t> num_items_per_pos1(recv_disp0.back(), 0);
 
   std::vector<int> owner;
-  std::vector<int> disp1 = {0};
+  std::vector<int> disp1{0};
   {
     std::mt19937 rng(dolfinx::MPI::rank(comm));
     auto it = indices_list.begin();
@@ -252,7 +252,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
 
   // Build adjacency list
   std::vector<int> data;
-  std::vector<std::int32_t> graph_offsets = {0};
+  std::vector<std::int32_t> graph_offsets{0};
   {
     auto it = recv_buffer1.begin();
     while (it != recv_buffer1.end())

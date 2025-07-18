@@ -88,6 +88,7 @@ void declare_function_space(nb::module_& m, const std::string& type)
         .def("contains", &dolfinx::fem::FunctionSpace<T>::contains,
              nb::arg("V"))
         .def_prop_ro("element", &dolfinx::fem::FunctionSpace<T>::element)
+        .def("elements", &dolfinx::fem::FunctionSpace<T>::elements)
         .def_prop_ro("mesh", &dolfinx::fem::FunctionSpace<T>::mesh)
         .def_prop_ro("dofmap", &dolfinx::fem::FunctionSpace<T>::dofmap)
         .def("dofmaps", &dolfinx::fem::FunctionSpace<T>::dofmaps,
@@ -980,7 +981,7 @@ void declare_cmap(nb::module_& m, const std::string& type)
 
               self.compute_jacobian(dphi, g, J);
               self.compute_jacobian_inverse(J, K);
-              std::array<T, 3> x0 = {0, 0, 0};
+              std::array<T, 3> x0{0, 0, 0};
               for (std::size_t i = 0; i < g.extent(1); ++i)
                 x0[i] += g(0, i);
               self.pull_back_affine(X, K, x0, _x);

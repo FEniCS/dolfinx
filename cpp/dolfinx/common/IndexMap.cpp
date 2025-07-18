@@ -1022,7 +1022,7 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks(int tag) const
 
   // 1. Build adjacency list data for owned indices (index, [sharing
   //    ranks])
-  std::vector<std::int32_t> offsets = {0};
+  std::vector<std::int32_t> offsets{0};
   std::vector<int> data;
   {
     // Build list of (owner rank, index) pairs for each ghost index, and sort
