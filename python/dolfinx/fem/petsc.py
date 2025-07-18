@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Assembly functions into PETSc objects for variational forms.
+"""High-level solver classes and functions for assembling PETSc objects.
 
 Functions in this module generally apply functions in :mod:`dolfinx.fem`
 to PETSc linear algebra objects and handle any PETSc-specific
@@ -737,7 +737,8 @@ def set_bc(
 
 
 class LinearProblem:
-    """Class for solving a linear variational problem using a PETSc KSP.
+    """High-level class for solving a linear variational problem using
+    a PETSc KSP.
 
     Solves problems of the form
     :math:`a_{ij}(u, v) = f_i(v), i,j=0,\\ldots,N\\
@@ -1203,7 +1204,8 @@ def assemble_jacobian(
 
 
 class NonlinearProblem:
-    """Class for solving nonlinear variational problems with PETSc SNES.
+    """High-level class for solving nonlinear variational problems
+    with PETSc SNES.
 
     Note:
         The deprecated version of this class for use with
