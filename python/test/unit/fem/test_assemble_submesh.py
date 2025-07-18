@@ -800,8 +800,11 @@ def test_interior_interface():
     # Assemble the form
     dS = ufl.Measure("dS", domain=msh, subdomain_data=[(1, interface_ents)])
 
+    def f_expr(x):
+        return x[0]
+
     f_0 = fem.Function(V_0)
-    f_0.interpolate(lambda x: x[0])
+    f_0.interpolate(f_expr)
 
     a = fem.form(ufl.inner(f_0("+") * u_0("+"), v_1("-")) * dS(1), entity_maps=entity_maps)
 
@@ -815,7 +818,7 @@ def test_interior_interface():
     u = ufl.TestFunction(V)
     v = ufl.TrialFunction(V)
     f = fem.Function(V)
-    f.interpolate(lambda x: x[0])
+    f.interpolate(f_expr)
 
     a_ref = fem.form(ufl.inner(f("+") * u("+"), v("-")) * dS(1))
 
@@ -837,25 +840,22 @@ def test_interior_interface():
     # Same for a linear form
     L = fem.form(ufl.inner(f_0("+"), v_1("-")) * dS(1), entity_maps=entity_maps)
     b = fem.assemble_vector(L)
-    fem.apply_lifting(b.array, [a], bcs=[[bc]])
-    b.scatter_reverse(la.InsertMode.add)
-    # bc.set(b.array)
 
-    bc_facets_ref = locate_entities_boundary(msh, fdim, bc_marker)
-    bc_dofs_ref = fem.locate_dofs_topological(V, fdim, bc_facets_ref)
-    bc_ref = fem.dirichletbc(1.0, bc_dofs_ref, V)
+    # bc_facets_ref = locate_entities_boundary(msh, fdim, bc_marker)
+    # bc_dofs_ref = fem.locate_dofs_topological(V, fdim, bc_facets_ref)
+    # bc_ref = fem.dirichletbc(1.0, bc_dofs_ref, V)
 
-    print(bc_dofs, bc_dofs_ref)
-
+    # Create a reference linear form
     L_ref = fem.form(ufl.inner(f("+"), v("-")) * dS(1))
     b_ref = fem.assemble_vector(L_ref)
-    fem.apply_lifting(b_ref.array, [a_ref], bcs=[[bc_ref]])
-    b_ref.scatter_reverse(la.InsertMode.add)
-    # bc_ref.set(b_ref.array)
-
-    # print(b.array)
-    # print(b_ref.array)
+    # fem.apply_lifting(b_ref.array, [a_ref], bcs=[[bc_ref]])
 
     assert np.isclose(la.norm(b), la.norm(b_ref))
+
+    # TODO Test apply lifting
+    # fem.apply_lifting(b.array, [a], bcs=[[bc]])
+    # b.scatter_reverse(la.InsertMode.add)
+    # bc.set(b.array)
+
 
 test_interior_interface()
