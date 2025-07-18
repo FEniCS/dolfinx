@@ -10,9 +10,9 @@ to PETSc linear algebra objects and handle any PETSc-specific
 preparation.
 
 Note:
-    The following does not apply to the high-level
+    The following does not apply to the high-level classes
     :class:`dolfinx.fem.petsc.LinearProblem`
-    :class:`dolfinx.fem.petsc.NonlinearProblem` classes.
+    :class:`dolfinx.fem.petsc.NonlinearProblem`.
 
     Due to subtle issues in the interaction between petsc4py memory
     management and the Python garbage collector, it is recommended that
@@ -1095,7 +1095,7 @@ def assemble_residual(
     x: PETSc.Vec,  # type: ignore
     b: PETSc.Vec,  # type: ignore
 ):
-    """Assemble the residual at ``x`` into the vector ``b`.
+    """Assemble the residual at ``x`` into the vector ``b``.
 
     A function conforming to the interface expected by ``SNES.setFunction``
     can be created by fixing the first four arguments, e.g.:
