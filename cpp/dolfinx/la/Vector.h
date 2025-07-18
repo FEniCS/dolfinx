@@ -62,10 +62,9 @@ public:
   }
 
   /// Move constructor
-  Vector(Vector&& x)
+  Vector(Vector&& x) noexcept
       : _map(std::move(x._map)), _scatterer(std::move(x._scatterer)),
-        _bs(std::move(x._bs)),
-        _request(std::exchange(x._request, {MPI_REQUEST_NULL})),
+        _bs(x._bs), _request(std::exchange(x._request, {MPI_REQUEST_NULL})),
         _buffer_local(std::move(x._buffer_local)),
         _buffer_remote(std::move(x._buffer_remote)), _x(std::move(x._x))
   {

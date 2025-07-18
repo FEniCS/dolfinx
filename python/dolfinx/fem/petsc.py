@@ -1414,7 +1414,6 @@ class NonlinearProblem:
         Returns:
             The solution function(s).
         """
-
         # Copy current iterate into the work array.
         assign(self.u, self.x)
 

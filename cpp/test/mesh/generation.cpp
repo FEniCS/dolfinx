@@ -114,7 +114,7 @@ TEMPLATE_TEST_CASE("Interval mesh (parallel)", "[mesh][interval]", float,
     else
       SKIP("Test only supports <= 3 processes");
 
-    return graph::AdjacencyList<std::int32_t>(std::move(data));
+    return graph::AdjacencyList<std::int32_t>(data);
   };
 
   mesh::Mesh<T> mesh = mesh::create_interval<T>(
