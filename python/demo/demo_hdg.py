@@ -34,6 +34,7 @@ if not dolfinx.has_petsc:
     print("This demo requires DOLFINx to be compiled with PETSc enabled.")
     exit(0)
 
+
 def par_print(comm, string):
     if comm.rank == 0:
         print(string)

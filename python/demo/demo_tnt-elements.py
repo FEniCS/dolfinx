@@ -21,7 +21,6 @@
 # We begin this demo by importing the required modules.
 
 
-
 # +
 from mpi4py import MPI
 
