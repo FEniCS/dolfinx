@@ -11,6 +11,23 @@
 
 namespace dolfinx::graph
 {
+
+/// @todo Is it un-documented that the owning rank must come first in
+/// reach list of edges?
+///
+/// @param[in] comm The communicator
+/// @param[in] graph Graph, using global indices for graph edges
+/// @param[in] node_disp The distribution of graph nodes across MPI
+/// ranks. The global index `gidx` of local index `lidx` is `lidx +
+/// node_disp[my_rank]`.
+/// @param[in] part The destination rank for owned nodes, i.e. `dest[i]`
+/// is the destination of the node with local index `i`.
+/// @return Destination ranks for each local node.
+template <typename T>
+graph::AdjacencyList<int> compute_destination_ranks(
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& graph,
+    const std::vector<T>& node_disp, const std::vector<T>& part);
+
 namespace scotch
 {
 #ifdef HAS_PTSCOTCH

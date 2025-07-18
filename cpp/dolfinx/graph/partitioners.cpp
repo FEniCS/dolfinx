@@ -35,21 +35,8 @@ extern "C"
 
 using namespace dolfinx;
 
-namespace
-{
-/// @todo Is it un-documented that the owning rank must come first in
-/// reach list of edges?
-///
-/// @param[in] comm The communicator
-/// @param[in] graph Graph, using global indices for graph edges
-/// @param[in] node_disp The distribution of graph nodes across MPI
-/// ranks. The global index `gidx` of local index `lidx` is `lidx +
-/// node_disp[my_rank]`.
-/// @param[in] part The destination rank for owned nodes, i.e. `dest[i]`
-/// is the destination of the node with local index `i`.
-/// @return Destination ranks for each local node.
 template <typename T>
-graph::AdjacencyList<int> compute_destination_ranks(
+graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& graph,
     const std::vector<T>& node_disp, const std::vector<T>& part)
 {
@@ -203,6 +190,18 @@ graph::AdjacencyList<int> compute_destination_ranks(
 
   return g;
 }
+
+/// @cond
+template graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& graph,
+    const std::vector<int>& node_disp, const std::vector<int>& part);
+
+template graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& graph,
+    const std::vector<unsigned long long>& node_disp,
+    const std::vector<unsigned long long>& part);
+/// @endcond
+
 //-----------------------------------------------------------------------------
 #ifdef HAS_PARMETIS
 template <typename T>
@@ -305,7 +304,6 @@ std::vector<int> refine(MPI_Comm comm, const graph::AdjacencyList<T>& adj_graph)
   //-----------------------------------------------------------------------------
 }
 #endif
-} // namespace
 
 //-----------------------------------------------------------------------------
 #ifdef HAS_PTSCOTCH
@@ -588,7 +586,7 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
     {
       // FIXME: Is it implicit that the first entry is the owner?
       graph::AdjacencyList<int> dest
-          = compute_destination_ranks(pcomm, graph, node_disp, part);
+          = graph::compute_destination_ranks(pcomm, graph, node_disp, part);
       if (split_comm)
         MPI_Comm_free(&pcomm);
       return dest;
@@ -654,7 +652,7 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
     timer2.stop();
 
     if (ghosting)
-      return compute_destination_ranks(comm, graph, node_disp, part);
+      return graph::compute_destination_ranks(comm, graph, node_disp, part);
     else
     {
       return regular_adjacency_list(std::vector<int>(part.begin(), part.end()),
