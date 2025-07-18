@@ -762,7 +762,7 @@ def test_interior_interface():
 
         return interface_entities
 
-    n = 10  # NOTE: Test assumes that n is even
+    n = 2  # NOTE: Test assumes that n is even
     comm = MPI.COMM_WORLD
     msh = create_unit_square(comm, n, n)
 
@@ -807,8 +807,7 @@ def test_interior_interface():
     f_0.interpolate(f_expr)
 
     def bc_marker(x):
-        # return np.isclose(x[1], 1.0) & (x[0] <= 0.5)
-        return np.isclose(x[0], 0.0)
+        return np.isclose(x[1], 1.0) & (x[0] <= 0.5)
 
     # Create a Dirichlet boundary condition
     c_bc = 1.0
@@ -847,21 +846,13 @@ def test_interior_interface():
     # Same for a linear form
     L = fem.form(ufl.inner(f_0("+"), v_1("-")) * dS(1), entity_maps=entity_maps)
     b = fem.assemble_vector(L)
+    fem.apply_lifting(b.array, [a], bcs=[[bc]])
     b.scatter_reverse(la.InsertMode.add)
 
     # Create a reference linear form
     L_ref = fem.form(ufl.inner(f("+"), v("-")) * dS(1))
     b_ref = fem.assemble_vector(L_ref)
-    # fem.apply_lifting(b_ref.array, [a_ref], bcs=[[bc_ref]])
+    fem.apply_lifting(b_ref.array, [a_ref], bcs=[[bc_ref]])
     b_ref.scatter_reverse(la.InsertMode.add)
 
-    # if (comm.rank == 0):
-    #     print(f"rank {comm.rank}: b_norm = {la.norm(b)}, b_ref_norm = {la.norm(b_ref)}")
     assert np.isclose(la.norm(b), la.norm(b_ref))
-
-    # TODO Test apply lifting
-    # fem.apply_lifting(b.array, [a], bcs=[[bc]])
-    # b.scatter_reverse(la.InsertMode.add)
-    # bc.set(b.array)
-
-test_interior_interface()
