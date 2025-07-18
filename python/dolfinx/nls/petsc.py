@@ -34,7 +34,7 @@ __all__ = ["NewtonSolver"]
 
 class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
     def __init__(self, comm: MPI.Intracomm, problem: NewtonSolverNonlinearProblem):
-        """A Newton solver for non-linear problems.
+        """(Deprecated) A Newton solver for non-linear problems.
 
         Note:
             This class is deprecated in favour of
