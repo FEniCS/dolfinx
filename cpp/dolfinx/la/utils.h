@@ -13,7 +13,7 @@
 namespace dolfinx::la
 {
 /// Norm types
-enum class Norm
+enum class Norm : std::int8_t
 {
   l1,
   l2,

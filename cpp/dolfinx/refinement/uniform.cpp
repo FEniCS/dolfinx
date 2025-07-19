@@ -25,6 +25,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
 
   // Collect up entity types on each dimension
   std::vector<std::vector<mesh::CellType>> entity_types;
+  entity_types.reserve(tdim + 1);
   for (int i = 0; i < tdim + 1; ++i)
     entity_types.push_back(topology->entity_types(i));
   const std::vector<mesh::CellType>& cell_entity_types = entity_types.back();
@@ -36,7 +37,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
   std::vector<std::shared_ptr<const common::IndexMap>> index_maps;
 
   // Indices for vertices and edges on dim 0 and dim 1.
-  std::vector<int> e_index = {0, 0};
+  std::vector<int> e_index{0, 0};
 
   // Check for quadrilateral faces and get index, if any.
   if (auto it = std::find(entity_types[2].begin(), entity_types[2].end(),
@@ -116,7 +117,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     {
       auto vt = e_to_v->links(w);
       std::size_t nv_ent = vt.size();
-      std::array<T, 3> v = {0, 0, 0};
+      std::array<T, 3> v{0, 0, 0};
       for (std::size_t i = 0; i < nv_ent; ++i)
       {
         for (int k = 0; k < 3; ++k)

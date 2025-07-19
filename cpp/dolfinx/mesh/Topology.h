@@ -9,6 +9,7 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <memory>
 #include <optional>
@@ -22,15 +23,9 @@ namespace dolfinx::common
 class IndexMap;
 }
 
-namespace dolfinx::graph
-{
-template <typename T>
-class AdjacencyList;
-}
-
 namespace dolfinx::mesh
 {
-enum class CellType;
+enum class CellType : std::int8_t;
 
 /// @brief Topology stores the topology of a mesh, consisting of mesh
 /// entities and connectivity (incidence relations for the mesh
@@ -64,7 +59,7 @@ public:
   /// `cells`.
   Topology(
       std::vector<CellType> cell_types,
-      std::shared_ptr<const common::IndexMap> vertex_map,
+      const std::shared_ptr<const common::IndexMap>& vertex_map,
       std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
       std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
       const std::optional<std::vector<std::vector<std::int64_t>>>&
