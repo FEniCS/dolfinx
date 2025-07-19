@@ -96,9 +96,10 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install catch2 cmake g++ libblas-dev libboost-dev libglu1 libgl1-mesa-dev \
+          sudo apt-get install catch2 cmake g++ libblas-dev libboost-dev \
              libhdf5-mpi-dev liblapack-dev libparmetis-dev libpugixml-dev libspdlog-dev \
              mpi-default-dev ninja-build pkg-config
+          sudo apt-get install libglu1-mesa libgl1 libxrender1 libxcursor1 libxft2 libxinerama1
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
