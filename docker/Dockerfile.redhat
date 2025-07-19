@@ -72,14 +72,14 @@ RUN git clone --depth=1 -b v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git 
     --with-scalar-type=real \
     --with-64-bit-indices=yes \
     --with-debugging=yes \
-    --download-ptscotch \
-    --download-hypre \
-    --download-metis \
-    --download-mumps \
-    --download-scalapack \
-    --download-superlu_dist \
-    --prefix=/usr/local \
-    --libdir=/usr/local/lib64 \
+    # --download-ptscotch \
+    # --download-hypre \
+    # --download-metis \
+    # --download-mumps \
+    # --download-scalapack \
+    # --download-superlu_dist \
+    --prefix=/usr/local/petsc \
+    # --libdir=/usr/local/lib64 \
     --with-make-np=${BUILD_NP} && \
     make all && \
     make install && \
@@ -88,18 +88,22 @@ RUN git clone --depth=1 -b v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git 
     rm -rf /tmp/* && \
     ldconfig
 
+ENV PETSC_DIR=/usr/local/petsc
 # ENV PETSC_DIR=/usr/local SLEPC_DIR=/usr/local/slepc
 
 # Install SLEPc
 RUN git clone --depth=1 -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git && \
     cd slepc && \
-    ./configure --prefix=/usr/local && \
-    make && \
+    ./configure --prefix=/usr/local/slepc  && \
+    make SLEPC_DIR=/tmp/slepc PETSC_DIR=/usr/local/petsc && \
+    make SLEPC_DIR=/tmp/slepc PETSC_DIR=/usr/local/petsc install && \
     cd src/binding/slepc4py && \
     python3 -m pip install --no-cache-dir --no-build-isolation . && \
     rm -rf /tmp/*
 
+ENV SLEPC_DIR=/usr/local/slepc
+
 # RHEL pkgconfig does not look here by default. Setting this probably
 # better than forcing install into 'system path' or hacking in DOLFINx
 # pkgconfig.py code.
-ENV PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig
+# ENV PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig
