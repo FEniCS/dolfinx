@@ -7,10 +7,8 @@ FROM rockylinux/rockylinux:10
 
 ARG BUILD_NP=4
 
-ARG HDF5_VERSION=1.14.6
 ARG PETSC_VERSION=3.23.4
 ARG SLEPC_VERSION=3.23.2
-ARG MPICH_VERSION=4.3.1
 
 WORKDIR /tmp
 
@@ -26,6 +24,8 @@ RUN dnf -y update && \
     gcc \
     gcc-c++ \
     gcc-gfortran \
+    hdf5-mpich-devel \
+    mpich-devel \
     pugixml-devel \
     python3 \
     python3-devel \
