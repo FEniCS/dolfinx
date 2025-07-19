@@ -7,6 +7,7 @@
 """Tools to extract data from Gmsh models."""
 
 import typing
+from collections.abc import Callable
 from pathlib import Path
 
 from mpi4py import MPI as _MPI
@@ -267,7 +268,7 @@ def model_to_mesh(
     rank: int,
     gdim: int = 3,
     partitioner: typing.Optional[
-        typing.Callable[[_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]
+        Callable[[_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]
     ] = None,
     dtype=default_real_type,
 ) -> MeshData:
@@ -418,7 +419,7 @@ def read_from_msh(
     rank: int = 0,
     gdim: int = 3,
     partitioner: typing.Optional[
-        typing.Callable[[_MPI.Comm, int, int, AdjacencyList], AdjacencyList_int32]
+        Callable[[_MPI.Comm, int, int, AdjacencyList], AdjacencyList_int32]
     ] = None,
 ) -> MeshData:
     """Read a Gmsh .msh file and return a :class:`dolfinx.mesh.Mesh` and

@@ -10,6 +10,7 @@ from __future__ import annotations
 import collections
 import types
 import typing
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from itertools import chain
 
@@ -28,6 +29,7 @@ from dolfinx.fem.function import Constant, Function, FunctionSpace
 if typing.TYPE_CHECKING:
     # import dolfinx.mesh just when doing type checking to avoid
     # circular import
+    from dolfinx.mesh import EntityMap as _EntityMap
     from dolfinx.mesh import Mesh, MeshTags
 
 
@@ -133,9 +135,15 @@ def get_integration_domains(
     Args:
         integral_type: The type of integral to pack integration
             entities for.
-        subdomain: A meshtag with markers or manually specified
+        subdomain: A MeshTag with markers or manually specified
             integration domains.
         subdomain_ids: List of ids to integrate over.
+
+    Returns:
+        A list of entities to integrate over. For cell integrals, this is a
+        list of cells. For exterior facet integrals, this is a list of
+        (cell, local_facet) pairs. For interior facet integrals, this is a
+        list of (cell0, local_facet0, cell1, local_facet1) tuples.
     """
     if subdomain is None:
         return []
@@ -200,18 +208,19 @@ _ufl_to_dolfinx_domain = {
 
 
 def mixed_topology_form(
-    forms: typing.Iterable[ufl.Form],
+    forms: Sequence[ufl.Form],
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
-    entity_maps: typing.Optional[dict[Mesh, np.typing.NDArray[np.int32]]] = None,
+    entity_maps: typing.Optional[Sequence[_EntityMap]] = None,
 ):
     """
     Create a mixed-topology from from an array of Forms.
 
-    # FIXME: This function is a temporary hack for mixed-topology meshes.
-    # It is needed because UFL does not know about mixed-topology meshes,
-    # so we need to pass a list of forms for each cell type.
+    # FIXME: This function is a temporary hack for mixed-topology
+    meshes. # It is needed because UFL does not know about
+    mixed-topology meshes, # so we need to pass a list of forms for each
+    cell type.
 
     Args:
         form: A list of UFL forms. Each form should be the same, just
@@ -221,13 +230,10 @@ def mixed_topology_form(
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
         entity_maps: If any trial functions, test functions, or
             coefficients in the form are not defined over the same mesh
-            as the integration domain, `entity_maps` must be supplied.
-            For each key (a mesh, different to the integration domain
-            mesh) a map should be provided relating the entities in the
-            integration domain mesh to the entities in the key mesh e.g.
-            for a key-value pair (msh, emap) in `entity_maps`, `emap[i]`
-            is the entity in `msh` corresponding to entity `i` in the
-            integration domain mesh.
+            as the integration domain (the domain associated with the
+            measure), `entity_maps` must be supplied. For each mesh in
+            the form, there should be an entity map relating entities in
+            that mesh to the integration domain mesh.
 
     Returns:
         Compiled finite element Form.
@@ -263,8 +269,8 @@ def mixed_topology_form(
         modules.append(module)
         codes.append(code)
 
-    # In a mixed-topology mesh, each form has the same C++ function space,
-    # so we can extract it from any of them
+    # In a mixed-topology mesh, each form has the same C++ function
+    # space, so we can extract it from any of them
     V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
 
     # TODO coeffs, constants, subdomains, entity_maps
@@ -274,20 +280,18 @@ def mixed_topology_form(
         [],
         [],
         {},
-        {},
+        [],
         mesh,
     )
     return Form(f, ufcx_forms, codes, modules)
 
 
 def form(
-    form: typing.Union[
-        ufl.Form, typing.Iterable[ufl.Form], typing.Iterable[typing.Iterable[ufl.Form]]
-    ],
+    form: typing.Union[ufl.Form, Sequence[ufl.Form], Sequence[Sequence[ufl.Form]]],
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
-    entity_maps: typing.Optional[dict[Mesh, np.typing.NDArray[np.int32]]] = None,
+    entity_maps: typing.Optional[Sequence[_EntityMap]] = None,
 ):
     """Create a Form or list of Forms.
 
@@ -298,13 +302,10 @@ def form(
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
         entity_maps: If any trial functions, test functions, or
             coefficients in the form are not defined over the same mesh
-            as the integration domain, ``entity_maps`` must be supplied.
-            For each key (a mesh, different to the integration domain
-            mesh) a map should be provided relating the entities in the
-            integration domain mesh to the entities in the key mesh e.g.
-            for a key-value pair ``(msh, emap)`` in ``entity_maps``,
-            ``emap[i]`` is the entity in ``msh`` corresponding to entity
-            ``i`` in the integration domain mesh.
+            as the integration domain (the domain associated with the
+            measure), `entity_maps` must be supplied. For each mesh in
+            the form, there should be an entity map relating entities in
+            that mesh to the integration domain mesh.
 
     Returns:
         Compiled finite element Form.
@@ -383,9 +384,9 @@ def form(
         }
 
         if entity_maps is None:
-            _entity_maps = dict()
+            _entity_maps = []
         else:
-            _entity_maps = {msh._cpp_object: emap for (msh, emap) in entity_maps.items()}
+            _entity_maps = [entity_map._cpp_object for entity_map in entity_maps]
 
         f = ftype(
             [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form))],
@@ -404,17 +405,14 @@ def form(
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
         assert len(V) > 0
         msh = V[0].mesh
-        if entity_maps is None:
-            _entity_maps = dict()
-        else:
-            _entity_maps = {msh._cpp_object: emap for (msh, emap) in entity_maps.items()}
+
         f = ftype(
             spaces=V,
             integrals={},
             coefficients=[],
             constants=[],
             need_permutation_data=False,
-            entity_maps=_entity_maps,
+            entity_maps=[],
             mesh=msh,
         )
         return Form(f)
@@ -442,10 +440,7 @@ def form(
 
 
 def extract_function_spaces(
-    forms: typing.Union[
-        typing.Iterable[Form],  # type: ignore [return]
-        typing.Iterable[typing.Iterable[Form]],
-    ],
+    forms: typing.Union[Iterable[Form], Iterable[Iterable[Form]]],
     index: int = 0,
 ) -> list[typing.Union[None, FunctionSpace]]:
     """Extract common function spaces from an array of forms.
@@ -577,31 +572,34 @@ def create_form(
     subdomains: dict[IntegralType, list[tuple[int, np.ndarray]]],
     coefficient_map: dict[ufl.Coefficient, Function],
     constant_map: dict[ufl.Constant, Constant],
-    entity_maps: dict[Mesh, np.typing.NDArray[np.int32]] | None = None,
+    entity_maps: typing.Optional[Sequence[_EntityMap]] = None,
 ) -> Form:
-    """
-    Create a Form object from a data-independent compiled form.
+    """Create a Form object from a data-independent compiled form.
 
     Args:
-        form: Compiled ufl form
-        function_spaces: List of function spaces associated with the
+        form: Compiled ufl form function_spaces: List of function spaces
+        associated with the
             form. Should match the number of arguments in the form.
-        msh: Mesh to associate form with
-        subdomains: A map from integral type to a list of pairs, where
+        msh: Mesh to associate form with. subdomains: A map from
+        integral type to a list of pairs, where
             each pair corresponds to a subdomain id and the set of of
             integration entities to integrate over. Can be computed with
             {py:func}`dolfinx.fem.compute_integration_domains`.
         coefficient_map: Map from UFL coefficient to function with data.
         constant_map: Map from UFL constant to constant with data.
-        entity_map: A map where each key corresponds to a mesh different
             to the integration domain ``msh``. The value of the map is
             an array of integers, where the i-th entry is the entity in
             the key mesh.
+        entity_maps: Entity maps to support cases where forms involve
+            sub-meshes.
+
+    Return:
+        A Form object.
     """
     if entity_maps is None:
-        _entity_maps = {}
+        _entity_maps = []
     else:
-        _entity_maps = {m._cpp_object: emap for (m, emap) in entity_maps.items()}
+        _entity_maps = [entity_map._cpp_object for entity_map in entity_maps]
 
     _subdomain_data = subdomains.copy()
     for _, idomain in _subdomain_data.items():
@@ -650,21 +648,22 @@ def create_form(
 
 
 def derivative_block(
-    F: typing.Union[ufl.Form, typing.Sequence[ufl.Form]],
-    u: typing.Union[Function, typing.Sequence[Function]],
-    du: typing.Optional[typing.Union[ufl.Argument, typing.Sequence[ufl.Argument]]] = None,
-) -> typing.Union[ufl.Form, typing.Sequence[typing.Sequence[ufl.Form]]]:
+    F: typing.Union[ufl.Form, Sequence[ufl.Form]],
+    u: typing.Union[Function, Sequence[Function]],
+    du: typing.Optional[typing.Union[ufl.Argument, Sequence[ufl.Argument]]] = None,
+) -> typing.Union[ufl.Form, Sequence[Sequence[ufl.Form]]]:
     """Return the UFL derivative of a (list of) UFL rank one form(s).
 
-    This is commonly used to derive a block Jacobian from a block residual.
+    This is commonly used to derive a block Jacobian from a block
+    residual.
 
     If `F_i` is a list of forms, the Jacobian is a list of lists with
     :math:`J_{ij} = \\frac{\\partial F_i}{u_j}[\\delta u_j]` using
     `ufl.derivative` called component-wise.
 
-    If `F` is a form, the Jacobian is computed as
-    :math:`J = \\frac{\\partial F}{\\partial u}[\\delta u]`. This is
-    identical to calling `ufl.derivative` directly.
+    If `F` is a form, the Jacobian is computed as :math:`J =
+    \\frac{\\partial F}{\\partial u}[\\delta u]`. This is identical to
+    calling `ufl.derivative` directly.
     """
     if isinstance(F, ufl.Form):
         if not isinstance(u, Function):

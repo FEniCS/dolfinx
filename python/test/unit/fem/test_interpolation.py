@@ -1054,7 +1054,7 @@ def test_submesh_interpolation():
 
     tdim = mesh.topology.dim
     cells = locate_entities(mesh, tdim, left_locator)
-    submesh, parent_cells, _, _ = create_submesh(mesh, tdim, cells)
+    submesh, entity_map, _, _ = create_submesh(mesh, tdim, cells)
 
     u0 = Function(functionspace(mesh, ("Lagrange", 2)))
     u0.interpolate(ref_func)
@@ -1062,9 +1062,13 @@ def test_submesh_interpolation():
     V1 = functionspace(submesh, ("DG", 3))
     u1 = Function(V1)
 
+    smsh_cell_imap = submesh.topology.index_map(tdim)
+    smsh_cells = np.arange(smsh_cell_imap.size_local + smsh_cell_imap.num_ghosts)
+    parent_cells = entity_map.sub_topology_to_topology(smsh_cells, inverse=False)
+
     # Interpolate u0 (defined on 'full' mesh) into u0 (defined on
     # 'sub'0mesh)
-    u1.interpolate(u0, cells0=parent_cells, cells1=np.arange(len(parent_cells)))
+    u1.interpolate(u0, cells0=parent_cells, cells1=smsh_cells)
 
     u1_exact = Function(V1)
     u1_exact.interpolate(ref_func)
