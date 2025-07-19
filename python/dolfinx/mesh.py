@@ -33,14 +33,9 @@ from dolfinx.cpp.mesh import (
     to_type,
 )
 from dolfinx.cpp.refinement import IdentityPartitionerPlaceholder, RefinementOption
+from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem import coordinate_element as _coordinate_element
 from dolfinx.graph import AdjacencyList
-
-if typing.TYPE_CHECKING:
-    # import dolfinx.mesh just when doing type checking to avoid
-    # circular import
-    from dolfinx.fem import CoordinateElement as _CoordinateElement
-
 
 __all__ = [
     "CellType",
