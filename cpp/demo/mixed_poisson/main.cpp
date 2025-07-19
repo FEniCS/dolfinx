@@ -284,26 +284,25 @@ int main(int argc, char* argv[])
         subdomain_data{{fem::IntegralType::exterior_facet, {{1, domains}}}};
 
     // Since we are doing a `ds(1)` integral on mesh and `u0` is defined
-    // on the `submesh`, our form involves more than one mesh. The mesh used to
-    // define the measure and passed to `create_form` is called the integration
-    // domain mesh (here, `mesh`). To assemble our mixed-domain form, we must
-    // provide an `EntityMap` for each additional mesh
-    // in the form. In this case, the only other mesh is `submesh`.
-    // Hence, we supply the entity map returned from `create_submesh`, which
-    // relates entities in `mesh` and `submesh`.
-    std::vector<std::reference_wrapper<const mesh::EntityMap>> entity_maps{
-        entity_map};
+    // on the `submesh`, our form involves more than one mesh. The mesh
+    // used to define the measure and passed to `create_form` is called
+    // the integration domain mesh (here, `mesh`). To assemble our
+    // mixed-domain form, we must provide an `EntityMap` for each
+    // additional mesh in the form. In this case, the only other mesh is
+    // `submesh`. Hence, we supply the entity map returned from
+    // `create_submesh`, which relates entities in `mesh` and `submesh`.
 
     // Define variational forms and attach he required data
     fem::Form<T> a = fem::create_form<T>(*form_mixed_poisson_a, {V, V}, {}, {},
                                          subdomain_data, {});
-    // Since this form involves multiple domains (i.e. both `mesh` and `submesh`
-    // for the boundary condition), we must pass the entity maps just created.
-    // We must also tell the form which domain to integrate with respect to (in
-    // this case `mesh`)
+
+    // Since this form involves multiple domains (i.e. both `mesh` and
+    // `submesh` for the boundary condition), we must pass the entity
+    // maps just created. We must also tell the form which domain to
+    // integrate with respect to (in this case `mesh`)
     fem::Form<T> L = fem::create_form<T>(
         *form_mixed_poisson_L, {V}, {{"f", f}, {"u0", u0}}, {}, subdomain_data,
-        entity_maps, V->mesh());
+        {entity_map}, V->mesh());
 
     // Create solution finite element Function
     auto u = std::make_shared<fem::Function<T>>(V);
