@@ -150,7 +150,7 @@ std::vector<std::int32_t> locate_dofs_geometrical(const FunctionSpace<T>& V,
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 template <std::floating_point T, typename U>
 std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
-    const std::array<std::reference_wrapper<const FunctionSpace<T>>, 2>& V,
+    std::array<std::reference_wrapper<const FunctionSpace<T>>, 2> V,
     U marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,

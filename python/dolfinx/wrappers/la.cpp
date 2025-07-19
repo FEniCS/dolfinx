@@ -234,9 +234,9 @@ void la(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::la::SparsityPattern* sp, MPICommWrapper comm,
-             const std::array<std::shared_ptr<const dolfinx::common::IndexMap>,
-                              2>& maps,
-             const std::array<int, 2>& bs)
+             std::array<std::shared_ptr<const dolfinx::common::IndexMap>, 2>
+                 maps,
+             std::array<int, 2> bs)
           { new (sp) dolfinx::la::SparsityPattern(comm.get(), maps, bs); },
           nb::arg("comm"), nb::arg("maps"), nb::arg("bs"))
       .def(
@@ -249,7 +249,7 @@ void la(nb::module_& m)
                      std::reference_wrapper<const dolfinx::common::IndexMap>,
                      int>>,
                  2>& maps,
-             const std::array<std::vector<int>, 2>& bs)
+             std::array<std::vector<int>, 2> bs)
           {
             new (sp)
                 dolfinx::la::SparsityPattern(comm.get(), patterns, maps, bs);
@@ -263,10 +263,8 @@ void la(nb::module_& m)
       .def(
           "insert",
           [](dolfinx::la::SparsityPattern& self,
-             const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>&
-                 rows,
-             const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>&
-                 cols)
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cols)
           {
             self.insert(std::span(rows.data(), rows.size()),
                         std::span(cols.data(), cols.size()));
@@ -279,8 +277,7 @@ void la(nb::module_& m)
       .def(
           "insert_diagonal",
           [](dolfinx::la::SparsityPattern& self,
-             const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>&
-                 rows)
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows)
           { self.insert_diagonal(std::span(rows.data(), rows.size())); },
           nb::arg("rows"))
       .def_prop_ro(

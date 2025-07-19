@@ -48,7 +48,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                   DiagonalType diagonal, const CellReorderFunction& reorder_fn);
 
 template <std::floating_point T>
-Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<T, 2>, 2> p,
+Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                    std::array<std::int64_t, 2> n,
                    const CellPartitionFunction& partitioner,
                    const CellReorderFunction& reorder_fn);
@@ -651,7 +651,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 }
 
 template <std::floating_point T>
-Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<T, 2>, 2> p,
+Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                    std::array<std::int64_t, 2> n,
                    const CellPartitionFunction& partitioner,
                    const CellReorderFunction& reorder_fn)
