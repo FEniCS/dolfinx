@@ -29,7 +29,8 @@ from dolfinx.fem.function import Constant, Function, FunctionSpace
 if typing.TYPE_CHECKING:
     # import dolfinx.mesh just when doing type checking to avoid
     # circular import
-    from dolfinx.mesh import EntityMap, Mesh, MeshTags
+    from dolfinx.mesh import EntityMap as _EntityMap
+    from dolfinx.mesh import Mesh, MeshTags
 
 
 class Form:
@@ -211,7 +212,7 @@ def mixed_topology_form(
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
-    entity_maps: typing.Optional[Sequence[EntityMap]] = None,
+    entity_maps: typing.Optional[Sequence[_EntityMap]] = None,
 ):
     """
     Create a mixed-topology from from an array of Forms.
@@ -290,7 +291,7 @@ def form(
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
-    entity_maps: typing.Optional[Sequence[EntityMap]] = None,
+    entity_maps: typing.Optional[Sequence[_EntityMap]] = None,
 ):
     """Create a Form or list of Forms.
 
@@ -571,25 +572,26 @@ def create_form(
     subdomains: dict[IntegralType, list[tuple[int, np.ndarray]]],
     coefficient_map: dict[ufl.Coefficient, Function],
     constant_map: dict[ufl.Constant, Constant],
-    entity_maps: typing.Optional[Sequence[EntityMap]] = None,
+    entity_maps: typing.Optional[Sequence[_EntityMap]] = None,
 ) -> Form:
     """Create a Form object from a data-independent compiled form.
 
     Args:
-        form: Compiled ufl form
-        function_spaces: List of function spaces associated with the
+        form: Compiled ufl form function_spaces: List of function spaces
+        associated with the
             form. Should match the number of arguments in the form.
-        msh: Mesh to associate form with.
-        subdomains: A map from integral type to a list of pairs, where
+        msh: Mesh to associate form with. subdomains: A map from
+        integral type to a list of pairs, where
             each pair corresponds to a subdomain id and the set of of
             integration entities to integrate over. Can be computed with
             {py:func}`dolfinx.fem.compute_integration_domains`.
         coefficient_map: Map from UFL coefficient to function with data.
-        entity_map: A map where each key corresponds to a mesh different
         constant_map: Map from UFL constant to constant with data.
             to the integration domain ``msh``. The value of the map is
             an array of integers, where the i-th entry is the entity in
             the key mesh.
+        entity_maps: Entity maps to support cases where forms involve
+            sub-meshes.
 
     Return:
         A Form object.
