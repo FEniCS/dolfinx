@@ -26,4 +26,5 @@ target_sources(
           ${CMAKE_CURRENT_SOURCE_DIR}/Table.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogger.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/timing.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
 )

@@ -7,10 +7,13 @@
 #pragma once
 
 #include "IndexMap.h"
+#include "MPI.h"
 #include <cstdint>
-#include <dolfinx/common/MPI.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <span>
+#include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -255,22 +258,89 @@ public:
   /// and sorted.
   std::span<const int> dest() const noexcept;
 
-  /// @brief Returns the imbalance of the current IndexMap.
+  /// @brief Compute the number of ghost indices owned by each rank in
+  /// IndexMap::src.
   ///
-  /// The imbalance is a measure of load balancing across all processes,
-  /// defined as the maximum number of indices on any process divided by
-  /// the average number of indices per process. This function
-  /// calculates the imbalance separately for owned indices and ghost
-  /// indices and returns them as a std::array<double, 2>. If the total
-  /// number of owned or ghost indices is zero, the respective entry in
-  /// the array is set to -1.
+  /// This is a measure of the amount of data:
   ///
-  /// @note This is a collective operation and must be called by all
-  /// processes in the communicator associated with the IndexMap.
+  /// 1. Sent from this rank to other ranks when performing a reverse
+  /// (owner <- ghost) scatter.
   ///
-  /// @return An array containing the imbalance in owned indices (first
-  /// element) and the imbalance in ghost indices (second element).
-  std::array<double, 2> imbalance() const;
+  /// 2. Received by this rank from other ranks when performing a
+  /// forward (owner -> ghost) scatter.
+  ///
+  /// @return A weight vector, where `weight[i]` the the number of
+  /// ghost indices owned by rank IndexMap::src()`[i]`.
+  std::vector<std::int32_t> weights_src() const;
+
+  /// @brief Compute the number of ghost indices owned by each rank in
+  /// IndexMap::dest.
+  ///
+  /// This is a measure of the amount of data:
+  ///
+  /// 1. Sent from this rank to other ranks when performing a forward
+  /// (owner -> ghost) scatter.
+  ///
+  /// 2. Received by this rank from other ranks when performing a
+  /// reverse forward (owner <- ghost) scatter.
+  ///
+  /// @return A weight vector, where `weight[i]` the the number of ghost
+  /// indices owned by rank IndexMap::dest()`[i]`.
+  std::vector<std::int32_t> weights_dest() const;
+
+  /// @brief Destination and source ranks by type, e.g, ranks that are
+  /// destination/source ranks for the caller and are in a common
+  /// shared memory region.
+  ///
+  /// This function is used to group destination and source ranks by
+  /// 'type'. The type is defined by the MPI `split_type`. Split types
+  /// include ranks from a common shared memory region
+  /// (`MPI_COMM_TYPE_SHARED`) or a common NUMA region. Splits types are
+  /// listed at
+  /// https://docs.open-mpi.org/en/main/man-openmpi/man3/MPI_Comm_split_type.3.html#split-types.
+  ///
+  /// @note Collective operation on comm().
+  ///
+  /// @param[in] split_type MPI split type, as used in the function
+  /// `MPI_Comm_split_type`. See
+  /// https://docs.open-mpi.org/en/main/man-openmpi/man3/MPI_Comm_split_type.3.html#split-types.
+  /// @return (0) Intersection of ranks in `split_type` and in dest(),
+  /// and (1) intersection of ranks in `split_type` and in src().
+  /// Returned ranks are on the comm() communicator.
+  std::array<std::vector<int>, 2> rank_type(int split_type) const;
+
+  /// @brief Compute an directed graph that describes the parallel
+  /// communication patterns.
+  ///
+  /// The graph describes the communication pattern for a 'forward
+  /// scatter', i.e. sending owned data to ranks that ghost the data
+  /// (owner->ghost operation).
+  ///
+  /// Each node in the graph corresponds to an MPI rank. A graph edge is
+  /// a forward (owner->ghost) communication path. The edge weight is
+  /// the number 'values' communicated along the edge. Each edge also
+  /// has a marker that indicates if the edge is sending data to:
+  ///
+  /// 1. A node (rank) that shares memory with the sender (`true`), or
+  ///
+  /// 2. A remote node that does not share memory with the sender
+  ///   (`false`).
+  ///
+  /// The graph data can be visualised using a tool like
+  /// [NetworkX](https://networkx.org/),
+  ///
+  /// @note Collective.
+  ///
+  /// @param[in] root MPI rank on which to build the communication
+  /// graph data.
+  /// @return Adjacency list representing the communication pattern.
+  /// Edges data is (0) the edge, (1) edge weight (`weight`) and (2)
+  /// local/remote is memory indicator (`local==1` is an edge to a
+  /// shared memory node). Node data is (number of owned indices, number
+  /// of ghost indices).
+  graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
+                       std::pair<std::int32_t, std::int32_t>>
+  comm_graph(int root = 0) const;
 
 private:
   // Range of indices (global) owned by this process
@@ -294,4 +364,5 @@ private:
   // Set of ranks ghost owned indices
   std::vector<int> _dest;
 };
+
 } // namespace dolfinx::common

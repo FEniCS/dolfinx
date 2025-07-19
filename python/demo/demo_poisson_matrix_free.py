@@ -93,7 +93,7 @@ from dolfinx import fem, la
 dtype = dolfinx.default_scalar_type
 real_type = np.real(dtype(0.0)).dtype
 comm = MPI.COMM_WORLD
-mesh = dolfinx.mesh.create_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], [10, 10], dtype=real_type)
+mesh = dolfinx.mesh.create_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], (10, 10), dtype=real_type)
 
 # Create function space
 degree = 2

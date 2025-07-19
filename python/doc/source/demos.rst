@@ -88,6 +88,15 @@ User-defined and advanced finite elements
    demos/demo_tnt-elements.md
 
 
+Parallel communication analysis
+-------------------------------
+
+.. toctree::
+   :maxdepth: 1
+
+   demos/demo_comm-pattern.md
+
+
 List of all demos
 -----------------
 
@@ -116,3 +125,4 @@ List of all demos
    demos/demo_pyamg.md
    demos/demo_hdg.md
    demos/demo_mixed-topology.md
+   demos/demo_comm-pattern.md

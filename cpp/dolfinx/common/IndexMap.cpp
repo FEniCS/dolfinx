@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <functional>
 #include <numeric>
+#include <ranges>
 #include <span>
 #include <utility>
 #include <vector>
@@ -850,7 +851,6 @@ common::create_sub_index_map(const IndexMap& imap,
                    submap_ghost_gidxs, submap_ghost_owners),
           std::move(sub_imap_to_imap)};
 }
-
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size) : _comm(comm, true)
@@ -1302,35 +1302,167 @@ std::span<const int> IndexMap::src() const noexcept { return _src; }
 //-----------------------------------------------------------------------------
 std::span<const int> IndexMap::dest() const noexcept { return _dest; }
 //-----------------------------------------------------------------------------
-std::array<double, 2> IndexMap::imbalance() const
+std::vector<std::int32_t> IndexMap::weights_src() const
 {
-  std::array<double, 2> imbalance{-1., -1.};
-  std::array<std::int32_t, 2> max_count;
-  std::array<std::int32_t, 2> local_sizes
-      = {static_cast<std::int32_t>(_local_range[1] - _local_range[0]),
-         static_cast<std::int32_t>(_ghosts.size())};
+  std::vector<std::int32_t> weights(_src.size(), 0);
+  for (int r : _owners)
+  {
+    auto it = std::ranges::lower_bound(_src, r);
+    assert(it != _src.end() and *it == r);
 
-  // Find the maximum number of owned indices and the maximum number of ghost
-  // indices across all processes.
-  MPI_Allreduce(local_sizes.data(), max_count.data(), 2, MPI_INT32_T, MPI_MAX,
-                _comm.comm());
+    std::size_t pos = std::distance(_src.begin(), it);
+    assert(pos < weights.size());
+    weights[pos] += 1;
+  }
 
-  std::int32_t total_num_ghosts = 0;
-  MPI_Allreduce(&local_sizes[1], &total_num_ghosts, 1, MPI_INT32_T, MPI_SUM,
-                _comm.comm());
+  return weights;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int32_t> IndexMap::weights_dest() const
+{
+  int ierr = 0;
+  std::vector<std::int32_t> w_src = this->weights_src();
 
-  // Compute the average number of owned and ghost indices per process.
-  int comm_size = dolfinx::MPI::size(_comm.comm());
-  double avg_owned = static_cast<double>(_size_global) / comm_size;
-  double avg_ghosts = static_cast<double>(total_num_ghosts) / comm_size;
+  std::vector<MPI_Request> requests(_dest.size() + _src.size());
 
-  // Compute the imbalance by dividing the maximum number of indices by the
-  // corresponding average.
-  if (avg_owned > 0)
-    imbalance[0] = max_count[0] / avg_owned;
-  if (avg_ghosts > 0)
-    imbalance[1] = max_count[1] / avg_ghosts;
+  std::vector<std::int32_t> w_dest(_dest.size());
+  for (std::size_t i = 0; i < _dest.size(); ++i)
+  {
+    ierr = MPI_Irecv(w_dest.data() + i, 1, MPI_INT32_T, _dest[i], MPI_ANY_TAG,
+                     _comm.comm(), &requests[i]);
+    dolfinx::MPI::check_error(_comm.comm(), ierr);
+  }
 
-  return imbalance;
+  for (std::size_t i = 0; i < _src.size(); ++i)
+  {
+    ierr = MPI_Isend(w_src.data() + i, 1, MPI_INT32_T, _src[i], 0, _comm.comm(),
+                     &requests[i + _dest.size()]);
+    dolfinx::MPI::check_error(_comm.comm(), ierr);
+  }
+
+  ierr = MPI_Waitall(requests.size(), requests.data(), MPI_STATUS_IGNORE);
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+  return w_dest;
+}
+//-----------------------------------------------------------------------------
+std::array<std::vector<int>, 2> IndexMap::rank_type(int split_type) const
+{
+  int ierr;
+
+  MPI_Comm comm_s;
+  ierr = MPI_Comm_split_type(_comm.comm(), split_type, 0, MPI_INFO_NULL,
+                             &comm_s);
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+  int size_s = 0;
+  ierr = MPI_Comm_size(comm_s, &size_s);
+  dolfinx::MPI::check_error(comm_s, ierr);
+
+  int rank = 0;
+  ierr = MPI_Comm_rank(_comm.comm(), &rank);
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+  // Note: in most cases, size_s will be much smaller than the size of
+  // _comm
+  std::vector<int> ranks_s(size_s);
+  ierr = MPI_Allgather(&rank, 1, MPI_INT, ranks_s.data(), 1, MPI_INT, comm_s);
+  dolfinx::MPI::check_error(comm_s, ierr);
+
+  std::vector<int> split_dest, split_src;
+  std::ranges::set_intersection(_dest, ranks_s, std::back_inserter(split_dest));
+  assert(std::ranges::is_sorted(split_dest));
+  std::ranges::set_intersection(_src, ranks_s, std::back_inserter(split_src));
+  assert(std::ranges::is_sorted(split_src));
+
+  ierr = MPI_Comm_free(&comm_s);
+  dolfinx::MPI::check_error(comm_s, ierr);
+
+  return {std::move(split_dest), std::move(split_src)};
+}
+//-----------------------------------------------------------------------------
+graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
+                     std::pair<std::int32_t, std::int32_t>>
+IndexMap::comm_graph(int root) const
+{
+  int ierr;
+
+  // Graph edge out(dest) weights
+  const std::vector<std::int32_t> w_dest = this->weights_dest();
+
+  // Group ranks by type
+  const auto [local_dest, local_src] = this->rank_type(MPI_COMM_TYPE_SHARED);
+
+  // Get number of edges for each node (rank)
+  int num_edges_local = _dest.size();
+  std::vector<int> num_edges_remote(dolfinx::MPI::size(_comm.comm()));
+  ierr = MPI_Gather(&num_edges_local, 1, MPI_INT, num_edges_remote.data(), 1,
+                    MPI_INT, root, _comm.comm());
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+  // Compute displacements
+  std::vector<int> disp(num_edges_remote.size() + 1, 0);
+  std::partial_sum(num_edges_remote.begin(), num_edges_remote.end(),
+                   std::next(disp.begin()));
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+  // For each node (rank), get edge indices
+  std::vector<int> edges_remote(disp.back());
+  edges_remote.reserve(1);
+  ierr = MPI_Gatherv(_dest.data(), _dest.size(), MPI_INT, edges_remote.data(),
+                     num_edges_remote.data(), disp.data(), MPI_INT, root,
+                     _comm.comm());
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+  // For each edge, get edge weight
+  std::vector<std::int32_t> weights_remote(disp.back());
+  weights_remote.reserve(1);
+  ierr = MPI_Gatherv(w_dest.data(), w_dest.size(), MPI_INT32_T,
+                     weights_remote.data(), num_edges_remote.data(),
+                     disp.data(), MPI_INT32_T, root, _comm.comm());
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+  // For node get local and ghost sizes
+  std::vector<std::pair<std::int32_t, std::int32_t>> sizes_remote;
+  {
+    std::vector<std::int32_t> sizes_local(dolfinx::MPI::size(_comm.comm()));
+    std::int32_t size = this->size_local();
+    ierr = MPI_Gather(&size, 1, MPI_INT32_T, sizes_local.data(), 1, MPI_INT32_T,
+                      root, _comm.comm());
+    dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+    std::vector<std::int32_t> sizes_ghost(dolfinx::MPI::size(_comm.comm()));
+    std::int32_t num_ghosts = this->num_ghosts();
+    ierr = MPI_Gather(&num_ghosts, 1, MPI_INT32_T, sizes_ghost.data(), 1,
+                      MPI_INT32_T, root, _comm.comm());
+    dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+    std::transform(sizes_local.begin(), sizes_local.end(), sizes_ghost.begin(),
+                   std::back_inserter(sizes_remote),
+                   [](auto x, auto y) { return std::pair(x, y); });
+  }
+
+  // For each edge, get its local/remote marker
+  std::vector<std::int8_t> markers;
+  for (auto r : _dest)
+  {
+    auto it = std::ranges::lower_bound(local_dest, r);
+    if (it != local_dest.end() and *it == r)
+      markers.push_back(1);
+    else
+      markers.push_back(0);
+  }
+  std::vector<std::int8_t> markers_remote(disp.back());
+  ierr = MPI_Gatherv(markers.data(), markers.size(), MPI_INT8_T,
+                     markers_remote.data(), num_edges_remote.data(),
+                     disp.data(), MPI_INT8_T, root, _comm.comm());
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+  std::vector<std::tuple<int, std::size_t, std::int8_t>> e_data;
+  for (std::size_t i = 0; i < edges_remote.size(); ++i)
+    e_data.emplace_back(edges_remote[i], weights_remote[i], markers_remote[i]);
+  return graph::AdjacencyList(std::move(e_data),
+                              std::vector(disp.begin(), disp.end()),
+                              std::move(sizes_remote));
 }
 //-----------------------------------------------------------------------------
