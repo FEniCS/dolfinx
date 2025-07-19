@@ -17,6 +17,11 @@ path = pathlib.Path(__file__).resolve().parent
 demos = []
 demo_files = list(path.glob("**/*.py"))
 for f in demo_files:
+    with open(f, encoding="utf-8") as file:
+        read_data = file.read()
+        if "petsc4py" in read_data:
+            print("petsc4oy demo")
+    # continue
     demos.append((f.parent, f.name))
 
 
