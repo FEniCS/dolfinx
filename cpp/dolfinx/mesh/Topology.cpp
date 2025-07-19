@@ -740,7 +740,7 @@ build_entity_types(const std::vector<CellType>& cell_types)
 //-----------------------------------------------------------------------------
 Topology::Topology(
     std::vector<CellType> cell_types,
-    const std::shared_ptr<const common::IndexMap>& vertex_map,
+    std::shared_ptr<const common::IndexMap> vertex_map,
     std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
     std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
     const std::optional<std::vector<std::vector<std::int64_t>>>& original_index)
