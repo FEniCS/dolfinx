@@ -405,7 +405,7 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
 } // namespace impl_vtx
 
 /// Mesh reuse policy
-enum class VTXMeshPolicy
+enum class VTXMeshPolicy : std::int8_t
 {
   update, ///< Re-write the mesh to file upon every write of a fem::Function
   reuse   ///< Write the mesh to file only the first time a fem::Function is

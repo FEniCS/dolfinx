@@ -37,7 +37,7 @@ constexpr int N = 8;
   file.write_mesh(*mesh);
 }
 
-[[maybe_unused]] void test_create_box(mesh::CellPartitionFunction part)
+[[maybe_unused]] void test_create_box(const mesh::CellPartitionFunction& part)
 {
   MPI_Comm comm;
   MPI_Comm_dup(MPI_COMM_WORLD, &comm);
@@ -84,7 +84,7 @@ constexpr int N = 8;
   MPI_Comm_free(&comm);
 }
 
-void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
+void test_distributed_mesh(const mesh::CellPartitionFunction& partitioner)
 {
   using T = double;
 

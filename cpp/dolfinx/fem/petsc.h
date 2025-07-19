@@ -44,7 +44,7 @@ namespace petsc
 /// object.
 template <std::floating_point T>
 Mat create_matrix(const Form<PetscScalar, T>& a,
-                  std::optional<std::string> type = std::nullopt)
+                  const std::optional<std::string>& type = std::nullopt)
 {
   la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
   pattern.finalize();
@@ -64,7 +64,7 @@ Mat create_matrix(const Form<PetscScalar, T>& a,
 template <std::floating_point T>
 Mat create_matrix_block(
     const std::vector<std::vector<const Form<PetscScalar, T>*>>& a,
-    std::optional<std::string> type = std::nullopt)
+    const std::optional<std::string>& type = std::nullopt)
 {
   // Extract and check row/column ranges
   std::array<std::vector<std::shared_ptr<const FunctionSpace<T>>>, 2> V
@@ -404,8 +404,8 @@ void apply_lifting(
 template <std::floating_point T>
 void apply_lifting(
     Vec b,
-    std::vector<
-        std::optional<std::reference_wrapper<const Form<PetscScalar, double>>>>
+    const std::vector<
+        std::optional<std::reference_wrapper<const Form<PetscScalar, double>>>>&
         a,
     const std::vector<std::vector<
         std::reference_wrapper<const DirichletBC<PetscScalar, double>>>>& bcs1,

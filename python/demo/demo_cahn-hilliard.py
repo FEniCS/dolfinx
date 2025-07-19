@@ -339,12 +339,17 @@ if have_pyvista:
 
 c = u.sub(0)
 u0.x.array[:] = u.x.array
+step = 0
 while t < T:
     t += dt
-    _, _, converged_reason, num_iterations = problem.solve()
-    print(f"Step {int(t / dt)}: {converged_reason=} {num_iterations=}")
+    _ = problem.solve()
+    converged_reason = problem.solver.getConvergedReason()
+    assert converged_reason > 0
+    num_iterations = problem.solver.getIterationNumber()
+    print(f"Step {step}: {converged_reason=} {num_iterations=}")
     u0.x.array[:] = u.x.array
     file.write_function(c, t)
+    step += 1
 
     # Update the plot window
     if have_pyvista:

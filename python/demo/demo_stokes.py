@@ -263,12 +263,11 @@ def nested_iterative_solver_high_level():
     P00.setOption(PETSc.Mat.Option.SPD, True)
     P11.setOption(PETSc.Mat.Option.SPD, True)
 
-    (u_h, p_h), _, convergence_reason, num_its = problem.solve()
-    # Because left-hand side operator is only assembled now we can
-    # only test that the null-space is setup correctly after calling
-    # solve.
+    u_h, p_h = problem.solve()
+    assert problem.solver.getConvergedReason() > 0
+    # Because left-hand side operator is only assembled during solve
+    # we can only test the null space at this point.
     assert nsp.test(problem.A)
-    assert convergence_reason > 0
 
     # Compute norms of the solution vectors
     norm_u = la.norm(u_h.x)

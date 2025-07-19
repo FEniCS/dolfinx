@@ -25,7 +25,7 @@ namespace dolfinx::mesh
 template <typename T>
 class MeshTags;
 class Topology;
-enum class GhostMode;
+enum class GhostMode : std::uint8_t;
 } // namespace dolfinx::mesh
 
 namespace dolfinx::common
