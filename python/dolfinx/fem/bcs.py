@@ -47,9 +47,9 @@ def locate_dofs_geometrical(
         first column.
     """
     if not isinstance(V, Iterable):
-        return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)
+        return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)  # type: ignore
 
-    _V = [space._cpp_object for space in V]
+    _V = [space._cpp_object for space in V]  # type: ignore
     return _cpp.fem.locate_dofs_geometrical(_V, marker)
 
 
@@ -83,9 +83,9 @@ def locate_dofs_topological(
     """
     _entities = np.asarray(entities, dtype=np.int32)
     if not isinstance(V, Iterable):
-        return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)
+        return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)  # type: ignore
 
-    _V = [space._cpp_object for space in V]
+    _V = [space._cpp_object for space in V]  # type: ignore
     return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
 
 
@@ -219,17 +219,16 @@ def dirichletbc(
     # Unwrap value object, if required
     if isinstance(value, np.ndarray):
         _value = value
+    elif isinstance(value, (Function, Constant)):
+        _value = value._cpp_object  # type: ignore
     else:
-        try:
-            _value = value._cpp_object
-        except AttributeError:
-            _value = value  # type: ignore[assignment]
+        raise ValueError(f"Unsupported value tpye {type(value)}.")
 
     if V is not None:
-        try:
-            bc = bctype(_value, dofs, V)
-        except TypeError:
+        if isinstance(V, dolfinx.fem.FunctionSpace):
             bc = bctype(_value, dofs, V._cpp_object)
+        else:
+            bc = bctype(_value, dofs, V)
     else:
         bc = bctype(_value, dofs)
 

@@ -372,12 +372,12 @@ u_vis.interpolate(u_h)
 
 # Write initial condition to file
 t = 0.0
-try:
+if dolfinx.has_adios2:
     u_file = io.VTXWriter(msh.comm, "u.bp", u_vis)
     p_file = io.VTXWriter(msh.comm, "p.bp", p_h)
     u_file.write(t)
     p_file.write(t)
-except AttributeError:
+else:
     print("File output requires ADIOS2.")
 
 # Create function to store solution and previous time step
