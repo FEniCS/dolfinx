@@ -61,10 +61,8 @@ RUN echo "/usr/local/lib/" > /etc/ld.so.conf.d/usr-local-lib.conf && \
 #     make -j${BUILD_NP} install && \
 #     rm -rf /tmp/*
 
-ENV PETSC_DIR=/usr/local SLEPC_DIR=/usr/local/slepc
-
 # Build PETSc
-RUN git clone -b v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git && \
+RUN git clone --depth=1 -b v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git && \
     cd petsc && \
     python3 ./configure \
     --with-shared-libraries \
@@ -87,6 +85,8 @@ RUN git clone -b v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git && \
     python3 -m pip install --no-cache-dir . && \
     rm -rf /tmp/* && \
     ldconfig
+
+# ENV PETSC_DIR=/usr/local SLEPC_DIR=/usr/local/slepc
 
 # Install SLEPc
 RUN git clone --depth=1 -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git && \
