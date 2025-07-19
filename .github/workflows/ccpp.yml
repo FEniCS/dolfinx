@@ -96,7 +96,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install catch2 cmake g++ libblas-dev libboost-dev libhdf5-mpi-dev \
+          sudo apt-get install catch2 cmake g++ libblas-dev libboost-dev libglu1 libhdf5-mpi-dev \
              liblapack-dev libparmetis-dev libpugixml-dev libspdlog-dev mpi-default-dev \
              ninja-build pkg-config
       - name: Set up Python
@@ -129,7 +129,7 @@ jobs:
       - name: Build C++ unit tests
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
-          cmake --build build/test --parallel 3
+          cmake --build build/test
       - name: Run C++ unit tests (serial)
         run: |
           cd build/test
@@ -212,7 +212,7 @@ jobs:
       - name: Build C++ unit tests
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
-          cmake --build build/test --parallel 3
+          cmake --build build/test
       - name: Run C++ unit tests (serial)
         run: |
           cd build/test
@@ -224,7 +224,7 @@ jobs:
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
-          cmake --build build/demo --parallel 3
+          cmake --build build/demo
           cd build/demo
           ctest -V -R demo -R serial
           ctest --output-on-failure -V -R demo -R mpi_2
