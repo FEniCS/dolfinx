@@ -24,21 +24,19 @@ RUN dnf -y update && \
     gcc \
     gcc-c++ \
     gcc-gfortran \
-    hdf5-mpich-devel \
-    mpich-devel \
+    hdf5-openmpi-devel \
     pugixml-devel \
     python3 \
     python3-devel \
     python3-pip \
     spdlog-devel \
-    # Required for PETSc build
     diffutils \
     findutils \
     flex \
-    # Utility
     git \
     # Only in crb set
     ninja-build \
+    openblas-devel && \
     dnf -y clean all && \
     rm -rf /var/cache
 
@@ -47,21 +45,21 @@ RUN dnf -y update && \
 RUN echo "/usr/local/lib/" > /etc/ld.so.conf.d/usr-local-lib.conf && \
     echo "/usr/local/lib64" > /etc/ld.so.conf.d/usr-local-lib64.conf
 
-# Build MPICH (see https://github.com/pmodels/mpich/issues/5811)
-RUN curl -L -O https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
-    tar -xf mpich-${MPICH_VERSION}.tar.gz && \
-    cd mpich-${MPICH_VERSION} && \
-    FCFLAGS=-fallow-argument-mismatch FFLAGS=-fallow-argument-mismatch ./configure --with-device=ch4:ofi --enable-shared --prefix=/usr/local --libdir=/usr/local/lib64 && \
-    make -j${BUILD_NP} install && \
-    rm -rf /tmp/*
+# # Build MPICH (see https://github.com/pmodels/mpich/issues/5811)
+# RUN curl -L -O https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
+#     tar -xf mpich-${MPICH_VERSION}.tar.gz && \
+#     cd mpich-${MPICH_VERSION} && \
+#     FCFLAGS=-fallow-argument-mismatch FFLAGS=-fallow-argument-mismatch ./configure --with-device=ch4:ofi --enable-shared --prefix=/usr/local --libdir=/usr/local/lib64 && \
+#     make -j${BUILD_NP} install && \
+#     rm -rf /tmp/*
 
-# Build HDF5
-RUN curl -L -O https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5_${HDF5_VERSION}.tar.gz && \
-    tar -xf hdf5_${HDF5_VERSION}.tar.gz && \
-    cd hdf5-hdf5_${HDF5_VERSION} && \
-    ./configure --prefix=/usr/local --libdir=/usr/local/lib64 --enable-parallel --enable-shared --enable-static=no && \
-    make -j${BUILD_NP} install && \
-    rm -rf /tmp/*
+# # Build HDF5
+# RUN curl -L -O https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5_${HDF5_VERSION}.tar.gz && \
+#     tar -xf hdf5_${HDF5_VERSION}.tar.gz && \
+#     cd hdf5-hdf5_${HDF5_VERSION} && \
+#     ./configure --prefix=/usr/local --libdir=/usr/local/lib64 --enable-parallel --enable-shared --enable-static=no && \
+#     make -j${BUILD_NP} install && \
+#     rm -rf /tmp/*
 
 ENV PETSC_DIR=/usr/local SLEPC_DIR=/usr/local/slepc
 
