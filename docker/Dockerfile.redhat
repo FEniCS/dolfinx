@@ -9,7 +9,8 @@ ARG BUILD_NP=4
 
 ARG HDF5_VERSION=1.14.6
 ARG PETSC_VERSION=3.23.4
-ARG MPICH_VERSION=4.2.3
+ARG SLEPC_VERSION=3.23.2
+ARG MPICH_VERSION=4.3.1
 
 WORKDIR /tmp
 
@@ -63,8 +64,10 @@ RUN curl -L -O https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5_${HDF5_VE
     make -j${BUILD_NP} install && \
     rm -rf /tmp/*
 
+ENV PETSC_DIR=/usr/local SLEPC_DIR=/usr/local/slepc
+
 # Build PETSc
-RUN git clone -b v${PETSC_VERSION}  https://gitlab.com/petsc/petsc.git && \
+RUN git clone -b v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git && \
     cd petsc && \
     python3 ./configure \
     --with-shared-libraries \
@@ -84,11 +87,18 @@ RUN git clone -b v${PETSC_VERSION}  https://gitlab.com/petsc/petsc.git && \
     make all && \
     make install && \
     cd src/binding/petsc4py && \
-    PETSC_DIR=/usr/local python3 -m pip install --no-cache-dir . && \
+    python3 -m pip install --no-cache-dir . && \
     rm -rf /tmp/* && \
     ldconfig
 
-ENV PETSC_DIR=/usr/local
+# Install SLEPc
+RUN git clone --depth=1 -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git && \
+    cd slepc && \
+    ./configure && \
+    make && \
+    cd src/binding/slepc4py && \
+    python3 -m pip install --no-cache-dir --no-build-isolation . && \
+    rm -rf /tmp/*
 
 # RHEL pkgconfig does not look here by default. Setting this probably
 # better than forcing install into 'system path' or hacking in DOLFINx
