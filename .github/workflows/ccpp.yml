@@ -154,11 +154,13 @@ jobs:
 
       - name: Install gmsh and pyvista
         run: |
+          sudo apt-get install libglu1-mesa libgl1 libxrender1 libxcursor1 libxft2 libxinerama1
+          sudo apt-get install libegl1
           pip install gmsh pyvista
 
       - name: Run demos (Python, serial)
         run: |
-          pip install pytest-xdist gmsh pyvista
+          pip install pytest-xdist
           python -m pytest -n auto -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=3))
         run: python -m pytest -m mpi --num-proc=3 python/demo/test.py
