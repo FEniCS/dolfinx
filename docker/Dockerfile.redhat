@@ -24,7 +24,8 @@ RUN dnf -y update && \
     gcc \
     gcc-c++ \
     gcc-gfortran \
-    hdf5-openmpi-devel \
+    hdf5-mpich-devel \
+    mpich-devel \
     pugixml-devel \
     python3 \
     python3-devel \
@@ -34,11 +35,12 @@ RUN dnf -y update && \
     findutils \
     flex \
     git \
-    # Only in crb set
     ninja-build \
     openblas-devel && \
     dnf -y clean all && \
     rm -rf /var/cache
+
+export PATH=/usr/lib64/mpich/bin:$PATH
 
 # Broaden default minimal dynamic library path lookup to /usr/local/lib (PETSc
 # issue #1154) and /usr/local/lib64
@@ -91,7 +93,7 @@ RUN git clone --depth=1 -b v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git 
 # Install SLEPc
 RUN git clone --depth=1 -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git && \
     cd slepc && \
-    ./configure && \
+    ./configure --prefix=/usr/local && \
     make && \
     cd src/binding/slepc4py && \
     python3 -m pip install --no-cache-dir --no-build-isolation . && \
