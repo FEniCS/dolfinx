@@ -31,7 +31,7 @@ namespace
 {
 
 // InsertMode types
-enum class PyInsertMode
+enum class PyInsertMode : std::uint8_t
 {
   add,
   insert
@@ -188,6 +188,7 @@ void declare_functions(nb::module_& m)
       [](std::vector<dolfinx::la::Vector<T>*> basis)
       {
         std::vector<std::reference_wrapper<dolfinx::la::Vector<T>>> _basis;
+        _basis.reserve(basis.size());
         for (std::size_t i = 0; i < basis.size(); ++i)
           _basis.push_back(*basis[i]);
         dolfinx::la::orthonormalize(_basis);
@@ -200,6 +201,7 @@ void declare_functions(nb::module_& m)
       {
         std::vector<std::reference_wrapper<const dolfinx::la::Vector<T>>>
             _basis;
+        _basis.reserve(basis.size());
         for (std::size_t i = 0; i < basis.size(); ++i)
           _basis.push_back(*basis[i]);
         return dolfinx::la::is_orthonormal(_basis, eps);
@@ -240,8 +242,8 @@ void la(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::la::SparsityPattern* sp, MPICommWrapper comm,
-             const std::vector<std::vector<const dolfinx::la::SparsityPattern*>>
-                 patterns,
+             const std::vector<
+                 std::vector<const dolfinx::la::SparsityPattern*>>& patterns,
              const std::array<
                  std::vector<std::pair<
                      std::reference_wrapper<const dolfinx::common::IndexMap>,
@@ -261,8 +263,10 @@ void la(nb::module_& m)
       .def(
           "insert",
           [](dolfinx::la::SparsityPattern& self,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cols)
+             const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>&
+                 rows,
+             const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>&
+                 cols)
           {
             self.insert(std::span(rows.data(), rows.size()),
                         std::span(cols.data(), cols.size()));
@@ -275,7 +279,8 @@ void la(nb::module_& m)
       .def(
           "insert_diagonal",
           [](dolfinx::la::SparsityPattern& self,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows)
+             const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>&
+                 rows)
           { self.insert_diagonal(std::span(rows.data(), rows.size())); },
           nb::arg("rows"))
       .def_prop_ro(

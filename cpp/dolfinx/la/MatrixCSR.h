@@ -425,9 +425,12 @@ public:
   /// @brief Compute the product `y += Ax`.
   ///
   /// The vectors `x` and `y` must have parallel layouts that are
-  /// compatible with `A`.
+  /// compatible with `A`. In detail, `x` must have the same `IndexMap` as
+  /// the matrix columns, `A.index_map(1)` and `y` must have the same owned
+  /// indices as the matrix rows in `A.index_map(0)`. Only owned entries of `y`
+  /// are updated, so any ghost entries of `y` are not affected.
   ///
-  /// @param[in] x Vector to be apply `A` to.
+  /// @param[in] x Vector to apply `A` to.
   /// @param[in,out] y Vector to accumulate the result into.
   void mult(Vector<value_type>& x, Vector<value_type>& y);
 
@@ -561,7 +564,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
 
     column_container_type new_cols;
     new_cols.reserve(_data.size());
-    rowptr_container_type new_row_ptr = {0};
+    rowptr_container_type new_row_ptr{0};
     new_row_ptr.reserve(_row_ptr.size() * _bs[0]);
     std::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offsets();
     for (std::size_t i = 0; i < _row_ptr.size() - 1; ++i)
@@ -678,7 +681,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
                           MPI_INT, _comm.comm());
 
     // Build send/recv displacement
-    std::vector<int> send_disp = {0};
+    std::vector<int> send_disp{0};
     std::partial_sum(send_sizes.begin(), send_sizes.end(),
                      std::back_inserter(send_disp));
     recv_disp = {0};

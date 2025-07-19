@@ -130,7 +130,7 @@ xdmf_utils::get_dataset_shape(const pugi::xml_node& dataset_node)
     boost::split(dims_list, dims_str, boost::is_any_of(" "));
 
     // Cast dims to integers
-    for (auto d : dims_list)
+    for (const auto& d : dims_list)
       dims.push_back(boost::lexical_cast<std::int64_t>(d));
   }
 
