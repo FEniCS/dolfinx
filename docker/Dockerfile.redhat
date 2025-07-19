@@ -24,7 +24,7 @@ RUN dnf -y update && \
     gcc \
     gcc-c++ \
     gcc-gfortran \
-    # hdf5-mpich-devel \
+    hdf5-mpich-devel \
     mpich-devel \
     pugixml-devel \
     python3 \
@@ -39,7 +39,6 @@ RUN dnf -y update && \
     git \
     # Only in crb set
     ninja-build \
-    openblas-devel && \
     dnf -y clean all && \
     rm -rf /var/cache
 
