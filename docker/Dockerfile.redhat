@@ -40,7 +40,7 @@ RUN dnf -y update && \
     dnf -y clean all && \
     rm -rf /var/cache
 
-export PATH=/usr/lib64/mpich/bin:$PATH
+ENV PATH=/usr/lib64/mpich/bin:$PATH
 
 # Broaden default minimal dynamic library path lookup to /usr/local/lib (PETSc
 # issue #1154) and /usr/local/lib64
