@@ -97,9 +97,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install catch2 cmake g++ libblas-dev libboost-dev \
-             libhdf5-mpi-dev liblapack-dev libparmetis-dev libpugixml-dev libspdlog-dev \
-             mpi-default-dev ninja-build pkg-config
-          sudo apt-get install libglu1-mesa libgl1 libxrender1 libxcursor1 libxft2 libxinerama1
+             libhdf5-mpi-dev liblapack-dev libparmetis-dev libpugixml-dev \
+             libspdlog-dev mpi-default-dev ninja-build pkg-config
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -152,6 +151,10 @@ jobs:
           mypy -p dolfinx
         # mypy test
         # mypy demo
+
+      - name: Install gmsh and pyvista
+        run: |
+          pip install gmsh pyvista
 
       - name: Run demos (Python, serial)
         run: |
