@@ -117,13 +117,11 @@ int main(int argc, char* argv[])
     // provide the entity map object returned when we called
     // `create_submesh`, which relates entities in `submesh` to entities
     // in `mesh`.
-    std::vector<std::reference_wrapper<const mesh::EntityMap>> entity_maps{
-        entity_map};
-
+    //
     // We can now create the bilinear form
     fem::Form<T> a_mixed
         = fem::create_form<T>(*form_mixed_codim0_a_mixed, {V, W}, {}, {},
-                              subdomain_data, entity_maps, V->mesh());
+                              subdomain_data, {entity_map}, V->mesh());
 
     la::SparsityPattern sp_mixed = fem::create_sparsity_pattern(a_mixed);
     sp_mixed.finalize();
