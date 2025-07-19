@@ -25,7 +25,11 @@ from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType
 from dolfinx.fem.function import Constant, Function, FunctionSpace
-from dolfinx.mesh import EntityMap, Mesh, MeshTags
+
+if typing.TYPE_CHECKING:
+    # import dolfinx.mesh just when doing type checking to avoid
+    # circular import
+    from dolfinx.mesh import EntityMap, Mesh, MeshTags
 
 
 class Form:
