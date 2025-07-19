@@ -28,7 +28,6 @@ from petsc4py import PETSc
 
 import numpy as np
 
-import dolfinx
 import ufl
 from dolfinx.fem import (
     Function,
@@ -41,10 +40,6 @@ from dolfinx.fem import (
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import create_unit_square
-
-if not dolfinx.has_petsc:
-    print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-    exit(0)
 
 # Wavenumber
 k0 = 4 * np.pi

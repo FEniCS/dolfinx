@@ -46,10 +46,6 @@ except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
 
-if not dolfinx.has_petsc:
-    print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-    exit(0)
-
 # The time-harmonic Maxwell equation is complex-valued PDE. PETSc must
 # therefore have compiled with complex scalars.
 if not np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore

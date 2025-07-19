@@ -39,7 +39,6 @@ import gmsh
 import numpy as np
 from scipy.special import h2vp, hankel2, jv, jvp
 
-import dolfinx
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type, default_scalar_type, fem, io, plot
@@ -52,10 +51,6 @@ try:
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
-
-if not dolfinx.has_petsc:
-    print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-    exit(0)
 
 if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
     print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")

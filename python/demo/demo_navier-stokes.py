@@ -173,7 +173,6 @@ from petsc4py import PETSc
 
 import numpy as np
 
-import dolfinx
 import ufl
 from dolfinx import default_real_type, fem, io, mesh
 from dolfinx.fem.petsc import LinearProblem
@@ -182,9 +181,6 @@ if np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx real mode")
     exit(0)
 
-if not dolfinx.has_petsc:
-    print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-    exit(0)
 
 # -
 

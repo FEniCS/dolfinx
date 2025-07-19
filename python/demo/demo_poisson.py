@@ -71,14 +71,10 @@ from petsc4py.PETSc import ScalarType  # type: ignore
 
 import numpy as np
 
-import dolfinx
 import ufl
 from dolfinx import fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 
-if not dolfinx.has_petsc:
-    print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-    exit(0)
 # -
 
 # Note that it is important to first `from mpi4py import MPI` to

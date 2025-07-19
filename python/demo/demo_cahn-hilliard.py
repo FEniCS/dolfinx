@@ -125,7 +125,6 @@ from petsc4py import PETSc
 
 import numpy as np
 
-import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, log, plot
@@ -145,9 +144,6 @@ except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
 
-if not dolfinx.has_petsc:
-    print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-    exit(0)
 
 # Save all logging to file
 log.set_output_file("log.txt")

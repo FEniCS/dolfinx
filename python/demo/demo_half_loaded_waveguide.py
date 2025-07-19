@@ -45,7 +45,6 @@ from petsc4py import PETSc
 import numpy as np
 from slepc4py import SLEPc
 
-import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import fem, io, plot
@@ -60,9 +59,6 @@ except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
 
-if not dolfinx.has_petsc:
-    print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-    exit(0)
 if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
     print("This solver fails with PETSc and 64-bit integers because of memory errors in MUMPS.")
     # Note: when PETSc.IntType == np.int32, superlu_dist is used

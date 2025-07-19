@@ -30,7 +30,6 @@ import numba
 import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
 
-import dolfinx
 import ufl
 from basix.ufl import element
 from dolfinx import geometry
@@ -50,10 +49,6 @@ from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import locate_entities_boundary, meshtags
 from ffcx.codegeneration.utils import empty_void_pointer
 from ffcx.codegeneration.utils import numba_ufcx_kernel_signature as ufcx_signature
-
-if not dolfinx.has_petsc:
-    print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-    exit(0)
 
 if np.issubdtype(PETSc.RealType, np.float32):  # type: ignore
     print("float32 not yet supported for this demo.")

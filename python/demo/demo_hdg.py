@@ -30,10 +30,6 @@ from dolfinx.cpp.mesh import cell_num_entities
 from dolfinx.fem import extract_function_spaces
 from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector, set_bc
 
-if not dolfinx.has_petsc:
-    print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-    exit(0)
-
 
 def par_print(comm, string):
     if comm.rank == 0:

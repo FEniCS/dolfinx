@@ -105,10 +105,6 @@ from dolfinx import fem, mesh
 from dolfinx.fem.petsc import discrete_gradient, interpolation_matrix
 from dolfinx.mesh import CellType, create_unit_square
 
-if not dolfinx.has_petsc:
-    print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-    exit(0)
-
 # Solution scalar (e.g., float32, complex128) and geometry (float32/64)
 # types
 dtype = dolfinx.default_scalar_type

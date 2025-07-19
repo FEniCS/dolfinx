@@ -91,7 +91,6 @@ from petsc4py import PETSc
 
 import numpy as np
 
-import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, la
@@ -116,10 +115,6 @@ from dolfinx.fem.petsc import (
 from dolfinx.io import XDMFFile
 from dolfinx.la.petsc import create_vector_wrap
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
-
-if not dolfinx.has_petsc:
-    print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-    exit(0)
 
 # We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions for
 # locating geometrically subsets of the boundary, and define a function

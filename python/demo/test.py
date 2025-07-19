@@ -18,7 +18,7 @@ path = pathlib.Path(__file__).resolve().parent
 def imports_petsc4py(f):
     with open(f, encoding="utf-8") as file:
         read_data = file.read()
-        return "petsc4py" in read_data
+        return "petsc4py" in read_data or ".petsc" in read_data
 
 
 # Build list of demo programs
