@@ -152,7 +152,7 @@ jobs:
         # mypy test
         # mypy demo
 
-      - name: Install gmsh and pyvista
+      - name: Install gmsh and pyvista (and dependencies)
         run: |
           sudo apt-get install libglu1-mesa libgl1 libxrender1 libxcursor1 libxft2 libxinerama1
           sudo apt-get install libegl1
@@ -255,6 +255,11 @@ jobs:
         run: |
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
+
+      - name: Install pyvista (and dependencies)
+        run: |
+          apt-get install libegl1
+          pip install gmsh pyvista
 
       - name: Run demos (Python, serial)
         run: |
