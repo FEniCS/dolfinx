@@ -1,20 +1,20 @@
 name: clang-tidy
 
 on:
-  schedule:
-    # daily at 1am
-    - cron: "0 1 * * *"
-  pull_request:
-    branches:
-      - main
-  push:
-    branches:
-      - "**"
-    tags:
-      - "v*"
-  merge_group:
-    branches:
-      - main
+  # schedule:
+  #   # daily at 1am
+  #   - cron: "0 1 * * *"
+  # pull_request:
+  #   branches:
+  #     - main
+  # push:
+  #   branches:
+  #     - "**"
+  #   tags:
+  #     - "v*"
+  # merge_group:
+  #   branches:
+  #     - main
   workflow_dispatch:
 
 jobs:
@@ -28,7 +28,7 @@ jobs:
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install dependencies
         run: |
           apt-get update
@@ -44,7 +44,7 @@ jobs:
           pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
           pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
 
-      - name: Configure (C++ lib) 
+      - name: Configure (C++ lib)
         run: >
           cmake -G Ninja
           -B build
@@ -57,10 +57,10 @@ jobs:
           -DDOLFINX_ENABLE_SCOTCH=ON
           -DDOLFINX_ENABLE_SLEPC=ON
           -DDOLFINX_ENABLE_PARMETIS=OFF
-      
+
       - name: Build (C++ lib)
         run: cmake --build build
-      
+
       - name: Install (C++ lib)
         run: cmake --install build
 
