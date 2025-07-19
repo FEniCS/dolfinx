@@ -24,7 +24,7 @@ RUN dnf -y update && \
     gcc \
     gcc-c++ \
     gcc-gfortran \
-    hdf5-mpich-devel \
+    # hdf5-mpich-devel \
     mpich-devel \
     pugixml-devel \
     python3 \
