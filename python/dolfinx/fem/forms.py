@@ -10,6 +10,7 @@ from __future__ import annotations
 import collections
 import types
 import typing
+from collections.abc import Sequence
 from dataclasses import dataclass
 from itertools import chain
 
@@ -202,11 +203,11 @@ _ufl_to_dolfinx_domain = {
 
 
 def mixed_topology_form(
-    forms: typing.Iterable[ufl.Form],
+    forms: Sequence[ufl.Form],
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
-    entity_maps: typing.Optional[typing.Iterable[EntityMap]] = None,
+    entity_maps: typing.Optional[Sequence[EntityMap]] = None,
 ):
     """
     Create a mixed-topology from from an array of Forms.
@@ -281,13 +282,11 @@ def mixed_topology_form(
 
 
 def form(
-    form: typing.Union[
-        ufl.Form, typing.Iterable[ufl.Form], typing.Iterable[typing.Iterable[ufl.Form]]
-    ],
+    form: typing.Union[ufl.Form, Sequence[ufl.Form], Sequence[Sequence[ufl.Form]]],
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
-    entity_maps: typing.Optional[typing.Iterable[EntityMap]] = None,
+    entity_maps: typing.Optional[Sequence[EntityMap]] = None,
 ):
     """Create a Form or list of Forms.
 
@@ -436,10 +435,7 @@ def form(
 
 
 def extract_function_spaces(
-    forms: typing.Union[
-        typing.Iterable[Form],  # type: ignore [return]
-        typing.Iterable[typing.Iterable[Form]],
-    ],
+    forms: typing.Union[Sequence[Form], Sequence[[Form]]],  # type: ignore [return]
     index: int = 0,
 ) -> list[typing.Union[None, FunctionSpace]]:
     """Extract common function spaces from an array of forms.
@@ -571,10 +567,9 @@ def create_form(
     subdomains: dict[IntegralType, list[tuple[int, np.ndarray]]],
     coefficient_map: dict[ufl.Coefficient, Function],
     constant_map: dict[ufl.Constant, Constant],
-    entity_maps: typing.Optional[typing.Iterable[EntityMap]] = None,
+    entity_maps: typing.Optional[Sequence[EntityMap]] = None,
 ) -> Form:
-    """
-    Create a Form object from a data-independent compiled form.
+    """Create a Form object from a data-independent compiled form.
 
     Args:
         form: Compiled ufl form
@@ -593,7 +588,7 @@ def create_form(
             the key mesh.
 
     Return:
-        A Form object
+        A Form object.
     """
     if entity_maps is None:
         _entity_maps = []
@@ -647,10 +642,10 @@ def create_form(
 
 
 def derivative_block(
-    F: typing.Union[ufl.Form, typing.Sequence[ufl.Form]],
-    u: typing.Union[Function, typing.Sequence[Function]],
-    du: typing.Optional[typing.Union[ufl.Argument, typing.Sequence[ufl.Argument]]] = None,
-) -> typing.Union[ufl.Form, typing.Sequence[typing.Sequence[ufl.Form]]]:
+    F: typing.Union[ufl.Form, Sequence[ufl.Form]],
+    u: typing.Union[Function, Sequence[Function]],
+    du: typing.Optional[typing.Union[ufl.Argument, Sequence[ufl.Argument]]] = None,
+) -> typing.Union[ufl.Form, Sequence[Sequence[ufl.Form]]]:
     """Return the UFL derivative of a (list of) UFL rank one form(s).
 
     This is commonly used to derive a block Jacobian from a block

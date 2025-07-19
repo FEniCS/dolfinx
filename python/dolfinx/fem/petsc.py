@@ -58,7 +58,6 @@ from dolfinx.fem.forms import extract_function_spaces as _extract_function_space
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
 from dolfinx.fem.function import FunctionSpace as _FunctionSpace
-from dolfinx.mesh import Mesh as _Mesh
 from dolfinx.mesh import EntityMap as _EntityMap
 
 __all__ = [
@@ -739,7 +738,7 @@ class LinearProblem:
         petsc_options: typing.Optional[dict] = None,
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
-        entity_maps: typing.Optional[typing.Iterable[_EntityMap]] = None,
+        entity_maps: typing.Optional[Sequence[_EntityMap]] = None,
     ) -> None:
         """Initialize solver for a linear variational problem.
 
@@ -1214,7 +1213,7 @@ class NonlinearProblem:
         petsc_options: typing.Optional[dict] = None,
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
-        entity_maps: typing.Optional[typing.Iterable[_EntityMap]] = None,
+        entity_maps: typing.Optional[Sequence[_EntityMap]] = None,
     ):
         """
         Initialize solver for a nonlinear variational problem.

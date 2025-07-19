@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import typing
+from collections.abc import Callable
 
 from mpi4py import MPI as _MPI
 
@@ -555,7 +556,7 @@ def compute_midpoints(msh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
     return _cpp.mesh.compute_midpoints(msh._cpp_object, dim, entities)
 
 
-def locate_entities(msh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
+def locate_entities(msh: Mesh, dim: int, marker: Callable) -> np.ndarray:
     """Compute mesh entities satisfying a geometric marking function.
 
     Args:
@@ -572,7 +573,7 @@ def locate_entities(msh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
     return _cpp.mesh.locate_entities(msh._cpp_object, dim, marker)
 
 
-def locate_entities_boundary(msh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
+def locate_entities_boundary(msh: Mesh, dim: int, marker: Callable) -> np.ndarray:
     """Compute mesh entities that are connected to an owned boundary
     facet and satisfy a geometric marking function.
 
@@ -639,7 +640,7 @@ def refine(
     msh: Mesh,
     edges: typing.Optional[np.ndarray] = None,
     partitioner: typing.Union[
-        typing.Callable, IdentityPartitionerPlaceholder
+        Callable, IdentityPartitionerPlaceholder
     ] = IdentityPartitionerPlaceholder(),
     option: RefinementOption = RefinementOption.parent_cell,
 ) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
@@ -689,7 +690,7 @@ def create_mesh(
         basix.ufl._BasixElement,
         _CoordinateElement,
     ],
-    partitioner: typing.Optional[typing.Callable] = None,
+    partitioner: typing.Optional[Callable] = None,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
