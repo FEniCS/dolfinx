@@ -389,10 +389,10 @@ public:
   /// @return Integrals types.
   std::set<IntegralType> integral_types() const
   {
-    std::set<IntegralType> set;
-    std::ranges::for_each(_integrals, [&set](auto& x)
-                          { set.insert(std::get<0>(x.first)); });
-    return set;
+    std::vector<IntegralType> set_data;
+    std::ranges::transform(_integrals, std::back_inserter(set_data),
+                           [](auto& x) { return std::get<0>(x.first); });
+    return std::set<IntegralType>(set_data.begin(), set_data.end());
   }
 
   /// @brief Indices of coefficients that are active for a given
