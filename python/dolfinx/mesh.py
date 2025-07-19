@@ -32,7 +32,7 @@ from dolfinx.cpp.mesh import (
     to_string,
     to_type,
 )
-from dolfinx.cpp.refinement import RefinementOption
+from dolfinx.cpp.refinement import IdentityPartitionerPlaceholder, RefinementOption
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem import coordinate_element as _coordinate_element
 from dolfinx.graph import AdjacencyList
@@ -551,8 +551,10 @@ def transfer_meshtag(
 def refine(
     msh: Mesh,
     edges: typing.Optional[np.ndarray] = None,
-    partitioner: typing.Optional[typing.Callable] = create_cell_partitioner(GhostMode.none),
-    option: RefinementOption = RefinementOption.none,
+    partitioner: typing.Union[
+        typing.Callable, IdentityPartitionerPlaceholder
+    ] = IdentityPartitionerPlaceholder(),
+    option: RefinementOption = RefinementOption.parent_cell,
 ) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.
 
@@ -564,20 +566,17 @@ def refine(
         mesh will **not** include ghosts cells (cells connected by facet
         to an owned cells) even if the parent mesh is ghosted.
 
-    Warning:
-        Passing ``None`` for ``partitioner``, the refined mesh will
-        **not** have ghosts cells even if the parent mesh has ghost
-        cells. The possibility to not re-partition the refined mesh and
-        include ghost cells in the refined mesh will be added in a
-        future release.
-
     Args:
         msh: Mesh from which to create the refined mesh.
         edges: Indices of edges to split during refinement. If ``None``,
             mesh refinement is uniform.
-        partitioner: Partitioner to distribute the refined mesh. If
-            ``None`` no redistribution is performed, i.e. refined cells
-            remain on the same process as the parent cell.
+        partitioner: Partitioner to distribute the refined mesh. If a
+            ``IdentityPartitionerPlaceholder`` is passed (default) no
+            redistribution is performed, i.e. refined cells remain on the
+            same process as the parent cell, but the ghost layer is
+            updated. If a custom partitioner is passed, it will be used for
+            distributing the refined mesh. If ``None`` is passed no
+            redistribution will happen.
         option: Controls whether parent cells and/or parent facets are
             computed.
 

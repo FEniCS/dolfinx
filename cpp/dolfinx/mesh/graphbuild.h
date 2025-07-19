@@ -16,7 +16,7 @@
 
 namespace dolfinx::mesh
 {
-enum class CellType;
+enum class CellType : std::int8_t;
 
 /// @brief Compute the local part of the dual graph (cell-cell
 /// connections via facets) and facets with only one attached cell.

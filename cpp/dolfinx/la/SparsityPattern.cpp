@@ -329,7 +329,7 @@ void SparsityPattern::finalize()
                           MPI_INT, comm);
 
     // Build recv displacements
-    std::vector<int> recv_disp = {0};
+    std::vector<int> recv_disp{0};
     std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                      std::back_inserter(recv_disp));
 

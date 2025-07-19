@@ -34,7 +34,7 @@ public:
   using allocator_type = Allocator;
 
   /// Types of MPI communication pattern used by the Scatterer.
-  enum class type
+  enum class type : std::uint8_t
   {
     neighbor, // use MPI neighborhood collectives
     p2p       // use MPI Isend/Irecv for communication

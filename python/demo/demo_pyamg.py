@@ -53,7 +53,7 @@ from dolfinx.mesh import CellType, create_box, locate_entities_boundary
 
 
 # +
-def poisson_problem(dtype: npt.DTypeLike, solver_type: str):
+def poisson_problem(dtype: npt.DTypeLike, solver_type: str) -> None:
     """Solve a 3D Poisson problem using Ruge-Stuben algebraic multigrid.
 
     Args:
@@ -159,7 +159,7 @@ def nullspace_elasticty(Q: fem.FunctionSpace) -> list[np.ndarray]:
 
 
 # +
-def elasticity_problem(dtype):
+def elasticity_problem(dtype) -> None:
     """Solve a 3D linearised elasticity problem using a smoothed
     aggregation algebraic multigrid method.
 

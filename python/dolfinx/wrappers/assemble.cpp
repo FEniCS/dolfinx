@@ -212,7 +212,7 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "pack_coefficients",
       [](const dolfinx::fem::Expression<T, U>& e,
-         nb::ndarray<const std::int32_t, nb::c_contig> entities)
+         const nb::ndarray<const std::int32_t, nb::c_contig>& entities)
       {
         std::vector<int> coffsets = e.coefficient_offsets();
         const std::vector<std::shared_ptr<const dolfinx::fem::Function<T, U>>>&
@@ -222,9 +222,10 @@ void declare_assembly_functions(nb::module_& m)
         std::size_t cstride = coffsets.back();
         std::vector<std::reference_wrapper<const dolfinx::fem::Function<T, U>>>
             c;
-        std::ranges::transform(coefficients, std::back_inserter(c),
-                               [](auto c) -> const dolfinx::fem::Function<T, U>&
-                               { return *c; });
+        std::ranges::transform(
+            coefficients, std::back_inserter(c),
+            [](const auto& c) -> const dolfinx::fem::Function<T, U>&
+            { return *c; });
 
         if (entities.ndim() == 1)
         {
@@ -261,12 +262,12 @@ void declare_assembly_functions(nb::module_& m)
   // Expression
   m.def(
       "tabulate_expression",
-      [](nb::ndarray<T, nb::c_contig> values,
+      [](const nb::ndarray<T, nb::c_contig>& values,
          const dolfinx::fem::Expression<T, U>& e,
-         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
-         nb::ndarray<const T, nb::ndim<2>, nb::c_contig> coeffs,
+         const nb::ndarray<const T, nb::ndim<1>, nb::c_contig>& constants,
+         const nb::ndarray<const T, nb::ndim<2>, nb::c_contig>& coeffs,
          const dolfinx::mesh::Mesh<U>& mesh,
-         nb::ndarray<const std::int32_t, nb::c_contig> entities)
+         const nb::ndarray<const std::int32_t, nb::c_contig>& entities)
       {
         std::optional<std::pair<
             std::reference_wrapper<const dolfinx::fem::FiniteElement<U>>,
@@ -313,7 +314,7 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "assemble_scalar",
       [](const dolfinx::fem::Form<T, U>& M,
-         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
+         const nb::ndarray<const T, nb::ndim<1>, nb::c_contig>& constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<const T, nb::ndim<2>, nb::c_contig>>&
              coefficients)
@@ -328,9 +329,9 @@ void declare_assembly_functions(nb::module_& m)
   // Vector
   m.def(
       "assemble_vector",
-      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
+      [](const nb::ndarray<T, nb::ndim<1>, nb::c_contig>& b,
          const dolfinx::fem::Form<T, U>& L,
-         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
+         const nb::ndarray<const T, nb::ndim<1>, nb::c_contig>& constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<const T, nb::ndim<2>, nb::c_contig>>&
              coefficients)
@@ -347,11 +348,11 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "assemble_matrix",
       [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::Form<T, U>& a,
-         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
+         const nb::ndarray<const T, nb::ndim<1>, nb::c_contig>& constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<const T, nb::ndim<2>, nb::c_contig>>&
              coefficients,
-         std::vector<const dolfinx::fem::DirichletBC<T, U>*> bcs)
+         const std::vector<const dolfinx::fem::DirichletBC<T, U>*>& bcs)
       {
         std::vector<
             std::reference_wrapper<const dolfinx::fem::DirichletBC<T, U>>>
@@ -445,7 +446,8 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "insert_diagonal",
       [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::FunctionSpace<U>& V,
-         std::vector<const dolfinx::fem::DirichletBC<T, U>*> bcs, T diagonal)
+         const std::vector<const dolfinx::fem::DirichletBC<T, U>*>& bcs,
+         T diagonal)
       {
         std::vector<
             std::reference_wrapper<const dolfinx::fem::DirichletBC<T, U>>>
@@ -464,7 +466,7 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "insert_diagonal",
       [](dolfinx::la::MatrixCSR<T>& A,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
+         const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>& rows,
          T diagonal)
       {
         dolfinx::fem::set_diagonal(
@@ -481,7 +483,7 @@ void declare_assembly_functions(nb::module_& m)
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>)>
              fin,
          const dolfinx::fem::Form<T, U>& form,
-         std::vector<const dolfinx::fem::DirichletBC<T, U>*> bcs)
+         const std::vector<const dolfinx::fem::DirichletBC<T, U>*>& bcs)
       {
         std::vector<
             std::reference_wrapper<const dolfinx::fem::DirichletBC<T, U>>>
@@ -512,14 +514,15 @@ void declare_assembly_functions(nb::module_& m)
   // BC modifiers
   m.def(
       "apply_lifting",
-      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
-         std::vector<const dolfinx::fem::Form<T, U>*> a,
+      [](const nb::ndarray<T, nb::ndim<1>, nb::c_contig>& b,
+         const std::vector<const dolfinx::fem::Form<T, U>*>& a,
          const std::vector<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>&
              constants,
          const std::vector<
              std::map<std::pair<dolfinx::fem::IntegralType, int>,
                       nb::ndarray<const T, nb::ndim<2>, nb::c_contig>>>& coeffs,
-         std::vector<std::vector<const dolfinx::fem::DirichletBC<T, U>*>> bcs1,
+         const std::vector<std::vector<const dolfinx::fem::DirichletBC<T, U>*>>&
+             bcs1,
          const std::vector<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>& x0,
          T alpha)
       {
@@ -548,7 +551,8 @@ void declare_assembly_functions(nb::module_& m)
         }
 
         std::vector<std::span<const T>> _x0;
-        for (auto x : x0)
+        _x0.reserve(x0.size());
+        for (const auto& x : x0)
           _x0.emplace_back(x.data(), x.size());
 
         std::vector<std::span<const T>> _constants;

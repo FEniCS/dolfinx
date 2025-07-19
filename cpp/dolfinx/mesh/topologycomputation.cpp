@@ -475,7 +475,7 @@ compute_entities_by_key_matching(
   common::Timer timer("Compute entities of dim = " + std::to_string(dim));
 
   std::vector<std::vector<std::int32_t>> cell_type_entities(cell_lists.size());
-  std::vector<std::int32_t> cell_type_offsets = {0};
+  std::vector<std::int32_t> cell_type_offsets{0};
   for (std::size_t k = 0; k < cell_lists.size(); ++k)
   {
     mesh::CellType cell_type = std::get<0>(cell_lists[k]);

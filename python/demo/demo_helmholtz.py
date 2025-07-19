@@ -106,8 +106,8 @@ problem = LinearProblem(
     petsc_options_prefix="demo_helmholtz_",
     petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
 )
-_1, _2, convergence_reason, _3 = problem.solve()  # Cannot unpack typed tuple to same variable _
-assert convergence_reason > 0
+_ = problem.solve()
+assert problem.solver.getConvergedReason() > 0
 
 # Save solution in XDMF format (to be viewed in ParaView, for example)
 with XDMFFile(

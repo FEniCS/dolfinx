@@ -678,9 +678,9 @@ for m in m_list:
             "pc_factor_mat_solver_type": mat_factor_backend,
         },
     )
-    Esh_m, _, converged_reason, _ = problem.solve()
+    Esh_m = problem.solve()
     assert isinstance(Esh_m, fem.Function)
-    assert converged_reason > 0
+    assert problem.solver.getConvergedReason() > 0
 
     # Scattered magnetic field
     Hsh_m = -1j * curl_axis(Esh_m, m, rho) / (Z0 * k0)

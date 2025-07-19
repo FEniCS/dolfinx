@@ -11,16 +11,14 @@ from __future__ import annotations
 
 import numbers
 import typing
-
-import numpy.typing as npt
-
-if typing.TYPE_CHECKING:
-    from dolfinx.fem.function import Constant, Function
+from collections.abc import Iterable
 
 import numpy as np
+import numpy.typing as npt
 
 import dolfinx
 from dolfinx import cpp as _cpp
+from dolfinx.fem.function import Constant, Function
 
 
 def locate_dofs_geometrical(
@@ -48,11 +46,11 @@ def locate_dofs_geometrical(
         Returned degree-of-freedom indices are unique and ordered by the
         first column.
     """
-    try:
-        return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)  # type: ignore
-    except AttributeError:
-        _V = [space._cpp_object for space in V]  # type: ignore
-        return _cpp.fem.locate_dofs_geometrical(_V, marker)
+    if not isinstance(V, Iterable):
+        return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)
+
+    _V = [space._cpp_object for space in V]
+    return _cpp.fem.locate_dofs_geometrical(_V, marker)
 
 
 def locate_dofs_topological(
@@ -84,11 +82,11 @@ def locate_dofs_topological(
         first column.
     """
     _entities = np.asarray(entities, dtype=np.int32)
-    try:
-        return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)  # type: ignore
-    except AttributeError:
-        _V = [space._cpp_object for space in V]  # type: ignore
-        return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
+    if not isinstance(V, Iterable):
+        return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)
+
+    _V = [space._cpp_object for space in V]
+    return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
 
 
 class DirichletBC:
@@ -223,9 +221,9 @@ def dirichletbc(
         _value = value
     else:
         try:
-            _value = value._cpp_object  # type: ignore
+            _value = value._cpp_object
         except AttributeError:
-            _value = value  # type: ignore
+            _value = value  # type: ignore[assignment]
 
     if V is not None:
         try:

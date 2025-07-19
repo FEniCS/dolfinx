@@ -723,9 +723,9 @@ problem = LinearProblem(
         "pc_factor_mat_solver_type": mat_factor_backend,
     },
 )
-Esh, _, convergence_reason, _ = problem.solve()
+Esh = problem.solve()
+assert problem.solver.getConvergedReason() > 0
 assert isinstance(Esh, fem.Function)
-assert convergence_reason > 0
 # -
 
 # Let's now save the solution in a `bp`-file. In order to do so, we need
