@@ -10,7 +10,7 @@ from __future__ import annotations
 import collections
 import types
 import typing
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from itertools import chain
 
@@ -435,7 +435,7 @@ def form(
 
 
 def extract_function_spaces(
-    forms: typing.Union[Sequence[Form], Sequence[[Form]]],  # type: ignore [return]
+    forms: typing.Union[Iterable[Form], Iterable[Iterable[Form]]],
     index: int = 0,
 ) -> list[typing.Union[None, FunctionSpace]]:
     """Extract common function spaces from an array of forms.
