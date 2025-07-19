@@ -117,9 +117,9 @@ void declare_vtx_writer(nb::module_& m, const std::string& type)
         .def(
             "__init__",
             [](dolfinx::io::VTXWriter<T>* self, MPICommWrapper comm,
-               const std::filesystem::path& filename,
-               const std::shared_ptr<const dolfinx::mesh::Mesh<T>>& mesh,
-               const std::string& engine)
+               std::filesystem::path filename,
+               std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
+               std::string engine)
             {
               new (self)
                   dolfinx::io::VTXWriter<T>(comm.get(), filename, mesh, engine);
@@ -129,7 +129,7 @@ void declare_vtx_writer(nb::module_& m, const std::string& type)
         .def(
             "__init__",
             [](dolfinx::io::VTXWriter<T>* self, MPICommWrapper comm,
-               const std::filesystem::path& filename,
+               std::filesystem::path filename,
                const std::vector<std::variant<
                    std::shared_ptr<const dolfinx::fem::Function<float, T>>,
                    std::shared_ptr<const dolfinx::fem::Function<double, T>>,
@@ -159,16 +159,14 @@ void declare_data_types(nb::module_& m)
   m.def(
       "distribute_entity_data",
       [](const dolfinx::mesh::Topology& topology,
-         const nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>&
+         nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
              input_global_indices,
          std::int64_t num_nodes_g,
          const dolfinx::fem::ElementDofLayout& cmap_dof_layout,
-         const nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig>&
-             xdofmap,
+         nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> xdofmap,
          int entity_dim,
-         const nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig>&
-             entities,
-         const nb::ndarray<const T, nb::ndim<1>, nb::c_contig>& values)
+         nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> entities,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values)
       {
         assert(entities.shape(0) == values.size());
         mdspan_t<const std::int64_t, 2> entities_span(
@@ -210,8 +208,7 @@ void io(nb::module_& m)
 
   m.def(
       "extract_vtk_connectivity",
-      [](const nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig>&
-             dofmap,
+      [](nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> dofmap,
          dolfinx::mesh::CellType cell)
       {
         mdspan_t<const std::int32_t, 2> _dofmap(dofmap.data(), dofmap.shape(0),
@@ -262,8 +259,7 @@ void io(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::io::XDMFFile* x, MPICommWrapper comm,
-             const std::filesystem::path& filename,
-             const std::string& file_mode,
+             std::filesystem::path filename, const std::string& file_mode,
              dolfinx::io::XDMFFile::Encoding encoding)
           {
             new (x) dolfinx::io::XDMFFile(comm.get(), filename, file_mode,
@@ -322,7 +318,7 @@ void io(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::io::VTKFile* v, MPICommWrapper comm,
-             const std::filesystem::path& filename, const std::string& mode)
+             std::filesystem::path filename, const std::string& mode)
           { new (v) dolfinx::io::VTKFile(comm.get(), filename, mode); },
           nb::arg("comm"), nb::arg("filename"), nb::arg("mode"))
       .def("close", &dolfinx::io::VTKFile::close);

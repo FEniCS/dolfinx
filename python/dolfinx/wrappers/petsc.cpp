@@ -175,8 +175,7 @@ void petsc_la_module(nb::module_& m)
   m.def(
       "create_matrix",
       [](dolfinx_wrappers::MPICommWrapper comm,
-         const dolfinx::la::SparsityPattern& p,
-         const std::optional<std::string>& type)
+         const dolfinx::la::SparsityPattern& p, std::optional<std::string> type)
       {
         Mat A = dolfinx::la::petsc::create_matrix(comm.get(), p, type);
         PyObject* obj = PyPetscMat_New(A);
@@ -309,8 +308,7 @@ void petsc_fem_module(nb::module_& m)
   m.def(
       "assemble_matrix",
       [](Mat A, const dolfinx::fem::Form<PetscScalar, PetscReal>& a,
-         const nb::ndarray<const PetscScalar, nb::ndim<1>, nb::c_contig>&
-             constants,
+         nb::ndarray<const PetscScalar, nb::ndim<1>, nb::c_contig> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<const PetscScalar, nb::ndim<2>,
                                     nb::c_contig>>& coefficients,
@@ -350,13 +348,12 @@ void petsc_fem_module(nb::module_& m)
   m.def(
       "assemble_matrix",
       [](Mat A, const dolfinx::fem::Form<PetscScalar, PetscReal>& a,
-         const nb::ndarray<const PetscScalar, nb::ndim<1>, nb::c_contig>&
-             constants,
+         nb::ndarray<const PetscScalar, nb::ndim<1>, nb::c_contig> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<const PetscScalar, nb::ndim<2>,
                                     nb::c_contig>>& coefficients,
-         const nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig>& rows0,
-         const nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig>& rows1,
+         nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> rows0,
+         nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> rows1,
          bool unrolled)
       {
         std::function<int(std::span<const std::int32_t>,
