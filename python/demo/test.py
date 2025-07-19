@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2016 Garth N. Wells
+# Copyright (C) 2016-2025 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -11,15 +11,15 @@ import sys
 
 import pytest
 
-# Get directory of this file
-path = pathlib.Path(__file__).resolve().parent
-
 
 def imports_petsc4py(f):
     with open(f, encoding="utf-8") as file:
         read_data = file.read()
         return "petsc4py" in read_data or ".petsc" in read_data
 
+
+# Get directory of this file
+path = pathlib.Path(__file__).resolve().parent
 
 # Build list of demo programs
 demo_files = list(path.glob("**/*.py"))
@@ -30,9 +30,8 @@ else:
 
 
 @pytest.mark.serial
-@pytest.mark.parametrize("demo", demos)
-def test_demos(demo):
-    path, name = demo
+@pytest.mark.parametrize("path,name", demos)
+def test_demos(path, name):
     ret = subprocess.run([sys.executable, name], cwd=str(path), check=True)
     assert ret.returncode == 0
 
