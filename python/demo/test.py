@@ -30,8 +30,9 @@ else:
 
 
 @pytest.mark.serial
-@pytest.mark.parametrize("path,name", demos)
-def test_demos(path, name):
+@pytest.mark.parametrize("demo", demos)
+def test_demos(demo):
+    path, name = demo
     ret = subprocess.run([sys.executable, name], cwd=str(path), check=True)
     assert ret.returncode == 0
 
