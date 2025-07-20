@@ -72,8 +72,6 @@ try:
 except ImportError:
     print("VTXWriter not available, solution will not be saved.")
     has_vtx = False
-
-
 # -
 
 # ## Analytical solutions for the half-loaded waveguide
