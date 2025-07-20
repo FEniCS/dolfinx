@@ -78,7 +78,7 @@ jobs:
 
       - name: Run demos (Python, serial)
         run: |
-          python3 -m pip install pytest-xdist
+          python3 -m pip install pytest-xdist gmsh
           python3 -m pytest -n auto -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=2))
         run: python3 -m pytest -m mpi --num-proc=2 python/demo/test.py
