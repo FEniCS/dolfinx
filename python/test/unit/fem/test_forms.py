@@ -94,7 +94,7 @@ def test_incorrect_element():
         [],
         [],
         {IntegralType.cell: []},
-        {},
+        [],
         mesh._cpp_object,
     )
     dolfinx.fem.Form(f, ufcx_form, code)
@@ -106,7 +106,7 @@ def test_incorrect_element():
             [],
             [],
             {IntegralType.cell: []},
-            {},
+            [],
             mesh._cpp_object,
         )
         dolfinx.fem.Form(f, ufcx_form, code)

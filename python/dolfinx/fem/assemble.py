@@ -26,8 +26,8 @@ from dolfinx.fem.forms import Form
 
 
 def pack_constants(
-    form: typing.Union[Form, typing.Sequence[Form]],
-) -> typing.Union[npt.NDArray, typing.Sequence[npt.NDArray]]:
+    form: typing.Union[Form, Sequence[Form]],
+) -> typing.Union[npt.NDArray, Sequence[npt.NDArray]]:
     """Pack form constants for use in assembly.
 
     Pack the 'constants' that appear in forms. The packed constants can
@@ -58,7 +58,7 @@ def pack_constants(
 
 
 def pack_coefficients(
-    form: typing.Union[Form, typing.Sequence[Form]],
+    form: typing.Union[Form, Sequence[Form]],
 ) -> typing.Union[
     dict[tuple[IntegralType, int], npt.NDArray], list[dict[tuple[IntegralType, int], npt.NDArray]]
 ]:
