@@ -63,7 +63,9 @@ RUN echo "/usr/local/lib/" > /etc/ld.so.conf.d/usr-local-lib.conf && \
 #     make -j${BUILD_NP} install && \
 #     rm -rf /tmp/*
 
-# Build PETSc
+RUN python3 -m pip -v install --no-cache-dir cython mpi4py numpy patchelf pyproject setuptools wheel
+
+    # Build PETSc
 RUN git clone --depth=1 -b v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git && \
     cd petsc && \
     python3 ./configure \
@@ -72,33 +74,30 @@ RUN git clone --depth=1 -b v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git 
     --with-scalar-type=real \
     --with-64-bit-indices=yes \
     --with-debugging=yes \
-    # --download-ptscotch \
-    # --download-hypre \
-    # --download-metis \
-    # --download-mumps \
-    # --download-scalapack \
-    # --download-superlu_dist \
+    --download-ptscotch \
+    --download-hypre \
+    --download-metis \
+    --download-mumps \
+    --download-scalapack \
+    --download-superlu_dist \
     --prefix=/usr/local/petsc \
-    # --libdir=/usr/local/lib64 \
     --with-make-np=${BUILD_NP} && \
     make all && \
     make install && \
     cd src/binding/petsc4py && \
-    python3 -m pip install --no-cache-dir . && \
+    PETSC_DIR=/usr/local/petsc python3 -m pip -v install --no-cache-dir --no-build-isolation . && \
     rm -rf /tmp/* && \
-    ldconfig
 
 ENV PETSC_DIR=/usr/local/petsc
-# ENV PETSC_DIR=/usr/local SLEPC_DIR=/usr/local/slepc
 
 # Install SLEPc
 RUN git clone --depth=1 -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git && \
     cd slepc && \
     ./configure --prefix=/usr/local/slepc  && \
-    make SLEPC_DIR=/tmp/slepc PETSC_DIR=/usr/local/petsc && \
-    make SLEPC_DIR=/tmp/slepc PETSC_DIR=/usr/local/petsc install && \
+    make SLEPC_DIR=/tmp/slepc && \
+    make SLEPC_DIR=/tmp/slepc install && \
     cd src/binding/slepc4py && \
-    python3 -m pip install --no-cache-dir --no-build-isolation . && \
+    SLEPC_DIR=/usr/local/slepc python3 -m pip -v install --no-cache-dir --no-build-isolation . && \
     rm -rf /tmp/*
 
 ENV SLEPC_DIR=/usr/local/slepc
