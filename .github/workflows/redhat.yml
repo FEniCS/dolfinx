@@ -78,7 +78,7 @@ jobs:
 
       - name: Install pyvista and gmsh
         run: |
-          dnf install -y mesa-libGLU libX11
+          dnf install -y mesa-libGLU libX11 libXrender
           python3 -m pip install gmsh pyvista
 
       - name: Run demos (Python, serial)
