@@ -27,9 +27,12 @@ dependencies:
   - petsc4py
   - pkg-config
   - pugixml
+  - pyamg
   - pytest
   - pytest-xdist
   - scikit-build-core
   - scipy
+  - slepc
+  - slepc4py
   - spdlog
   - uv
