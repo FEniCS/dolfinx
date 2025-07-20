@@ -40,28 +40,12 @@ RUN dnf -y update && \
     dnf -y clean all && \
     rm -rf /var/cache
 
-ENV PATH=/usr/lib64/mpich/bin:$PATH LD_LIBRARY_PATH=/usr/lib64/mpich/lib:$LD_LIBRARY_PATH
+ENV PATH=/usr/lib64/mpich/bin:$PATH LD_LIBRARY_PATH=/usr/lib64/mpich/lib
 
 # Broaden default minimal dynamic library path lookup to /usr/local/lib (PETSc
 # issue #1154) and /usr/local/lib64
 RUN echo "/usr/local/lib/" > /etc/ld.so.conf.d/usr-local-lib.conf && \
     echo "/usr/local/lib64" > /etc/ld.so.conf.d/usr-local-lib64.conf
-
-# # Build MPICH (see https://github.com/pmodels/mpich/issues/5811)
-# RUN curl -L -O https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
-#     tar -xf mpich-${MPICH_VERSION}.tar.gz && \
-#     cd mpich-${MPICH_VERSION} && \
-#     FCFLAGS=-fallow-argument-mismatch FFLAGS=-fallow-argument-mismatch ./configure --with-device=ch4:ofi --enable-shared --prefix=/usr/local --libdir=/usr/local/lib64 && \
-#     make -j${BUILD_NP} install && \
-#     rm -rf /tmp/*
-
-# # Build HDF5
-# RUN curl -L -O https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5_${HDF5_VERSION}.tar.gz && \
-#     tar -xf hdf5_${HDF5_VERSION}.tar.gz && \
-#     cd hdf5-hdf5_${HDF5_VERSION} && \
-#     ./configure --prefix=/usr/local --libdir=/usr/local/lib64 --enable-parallel --enable-shared --enable-static=no && \
-#     make -j${BUILD_NP} install && \
-#     rm -rf /tmp/*
 
 RUN python3 -m pip -v install --no-cache-dir cython mpi4py numba numpy patchelf pyproject setuptools wheel
 
@@ -101,8 +85,3 @@ RUN git clone --depth=1 -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git 
     rm -rf /tmp/*
 
 ENV SLEPC_DIR=/usr/local/slepc
-
-# RHEL pkgconfig does not look here by default. Setting this probably
-# better than forcing install into 'system path' or hacking in DOLFINx
-# pkgconfig.py code.
-# ENV PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig
