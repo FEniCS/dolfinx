@@ -47,7 +47,7 @@ from slepc4py import SLEPc
 
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import fem, io, plot
+from dolfinx import fem, plot
 from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import CellType, create_rectangle, exterior_facet_indices, locate_entities
 
