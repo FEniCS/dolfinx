@@ -80,7 +80,6 @@ jobs:
         run: |
           dnf install -y mesa-libGLU
           python3 -m pip install gmsh pyvista
-          python3 -m pytest -n auto -m serial --durations=10 python/demo/test.py
 
       - name: Run demos (Python, serial)
         run: |
