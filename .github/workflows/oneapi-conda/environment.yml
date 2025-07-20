@@ -31,6 +31,7 @@ dependencies:
   - pytest
   - pytest-xdist
   - python-gmsh
+  - pyvista
   - scikit-build-core
   - scipy<1.16.0
   - slepc
