@@ -17,11 +17,12 @@
 # - Interfacing with [SciPy](https://scipy.org/) sparse linear algebra
 #   functionality
 
+
+# +
 import sys
 
 from mpi4py import MPI
 
-# +
 import numpy as np
 import scipy.sparse
 import scipy.sparse.linalg

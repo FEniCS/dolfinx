@@ -24,17 +24,7 @@ from mpi4py import MPI
 
 import numpy as np
 import numpy.typing as npt
-
-if MPI.COMM_WORLD.size > 1:
-    print("This demo works only in serial.")
-    exit(0)
-
-try:
-    import pyamg
-except (ImportError, AttributeError):
-    print('This demo requires pyamg, install using "pip install pyamg"')
-    exit(0)
-
+import pyamg
 
 import ufl
 from dolfinx import fem, io
@@ -49,6 +39,9 @@ from dolfinx.fem import (
 )
 from dolfinx.mesh import CellType, create_box, locate_entities_boundary
 
+if MPI.COMM_WORLD.size > 1:
+    print("This demo works only in serial.")
+    exit(0)
 # -
 
 
