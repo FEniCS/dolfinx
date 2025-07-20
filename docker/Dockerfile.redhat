@@ -86,7 +86,7 @@ RUN git clone --depth=1 -b v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git 
     make install && \
     cd src/binding/petsc4py && \
     PETSC_DIR=/usr/local/petsc python3 -m pip -v install --no-cache-dir --no-build-isolation . && \
-    rm -rf /tmp/* && \
+    rm -rf /tmp/*
 
 ENV PETSC_DIR=/usr/local/petsc
 
