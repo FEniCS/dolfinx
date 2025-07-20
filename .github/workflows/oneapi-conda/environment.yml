@@ -27,7 +27,7 @@ dependencies:
   - petsc4py
   - pkg-config
   - pugixml
-  - pyamg=
+  - pyamg
   - pytest
   - pytest-xdist
   - python-gmsh
