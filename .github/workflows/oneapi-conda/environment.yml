@@ -11,6 +11,7 @@ dependencies:
   - cffi
   - cmake
   - git
+  - gmsh
   - hdf5=*=mpi*
   - kahip
   - libblas=*=*mkl
@@ -27,11 +28,11 @@ dependencies:
   - petsc4py
   - pkg-config
   - pugixml
-  - pyamg
+  - pyamg=
   - pytest
   - pytest-xdist
   - scikit-build-core
-  - scipy
+  - scipy<1.16.0
   - slepc
   - slepc4py
   - spdlog
