@@ -27,9 +27,14 @@ dependencies:
   - petsc4py
   - pkg-config
   - pugixml
+  - pyamg
   - pytest
   - pytest-xdist
+  - python-gmsh
+  - pyvista
   - scikit-build-core
-  - scipy
+  - scipy<1.16.0
+  - slepc
+  - slepc4py
   - spdlog
   - uv
