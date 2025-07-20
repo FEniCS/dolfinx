@@ -40,7 +40,7 @@ RUN dnf -y update && \
     dnf -y clean all && \
     rm -rf /var/cache
 
-ENV PATH=/usr/lib64/mpich/bin:$PATH
+ENV PATH=/usr/lib64/mpich/bin:$PATH LD_LIBRARY_PATH=/usr/lib64/mpich/lib:$LD_LIBRARY_PATH
 
 # Broaden default minimal dynamic library path lookup to /usr/local/lib (PETSc
 # issue #1154) and /usr/local/lib64
@@ -63,7 +63,7 @@ RUN echo "/usr/local/lib/" > /etc/ld.so.conf.d/usr-local-lib.conf && \
 #     make -j${BUILD_NP} install && \
 #     rm -rf /tmp/*
 
-RUN python3 -m pip -v install --no-cache-dir cython mpi4py numpy patchelf pyproject setuptools wheel
+RUN python3 -m pip -v install --no-cache-dir cython mpi4py numba numpy patchelf pyproject setuptools wheel
 
     # Build PETSc
 RUN git clone --depth=1 -b v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git && \
