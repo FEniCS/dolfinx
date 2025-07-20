@@ -65,6 +65,15 @@ if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
     # rather than MUMPS and does not trigger memory failures.
     exit(0)
 
+try:
+    from dolfinx.io import VTXWriter
+
+    has_vtx = True
+except ImportError:
+    print("VTXWriter not available, solution will not be saved.")
+    has_vtx = False
+
+
 # -
 
 # ## Analytical solutions for the half-loaded waveguide
@@ -462,12 +471,13 @@ for i, kz in vals:
         Et_dg = fem.Function(V_dg)
         Et_dg.interpolate(eth)
 
-        # Save solutions
-        with io.VTXWriter(msh.comm, f"sols/Et_{i}.bp", Et_dg) as f:
-            f.write(0.0)
+        if has_vtx:
+            # Save solutions
+            with io.VTXWriter(msh.comm, f"sols/Et_{i}.bp", Et_dg) as f:
+                f.write(0.0)
 
-        with io.VTXWriter(msh.comm, f"sols/Ez_{i}.bp", ezh) as f:
-            f.write(0.0)
+            with io.VTXWriter(msh.comm, f"sols/Ez_{i}.bp", ezh) as f:
+                f.write(0.0)
 
         # Visualize solutions with Pyvista
         if have_pyvista:
