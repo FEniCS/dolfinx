@@ -20,21 +20,10 @@
 #
 # We begin this demo by importing the required modules.
 
-import importlib.util
-
-if importlib.util.find_spec("petsc4py") is not None:
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-else:
-    print("This demo requires petsc4py.")
-    exit(0)
-
-from mpi4py import MPI
 
 # +
+from mpi4py import MPI
+
 import matplotlib as mpl
 import matplotlib.pylab as plt
 import numpy as np
