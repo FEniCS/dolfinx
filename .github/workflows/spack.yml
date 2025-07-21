@@ -50,11 +50,11 @@ jobs:
           color: true       # Force color output (SPACK_COLOR=always)
           path: spack-src       # Where to clone Spack
 
-      - name: Build DOLFINx (C++) development version via Spack
-        shell: spack-bash {0}
-        run: |
-          spack env create cpp-main .github/workflows/spack-config/gh-actions-env.yaml
-          spack -e cpp-main install -j 4 --add fenics-dolfinx@main+petsc+adios2
+      # - name: Build DOLFINx (C++) development version via Spack
+      #   shell: spack-bash {0}
+      #   run: |
+      #     spack env create cpp-main .github/workflows/spack-config/gh-actions-env.yaml
+      #     spack -e cpp-main install -j 4 --add fenics-dolfinx@main+petsc+adios2
 
       - name: Get DOLFINx code (to access test files)
         uses: actions/checkout@v4
