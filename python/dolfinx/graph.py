@@ -73,6 +73,10 @@ class AdjacencyList:
     def links(self, node: Union[np.int32, np.int64]) -> npt.NDArray[Union[np.int32, np.int64]]:
         """Retrieve the links of a node.
 
+        Note:
+            This is available only for adjacency lists with no
+            additional link (edge) data.
+
         Args:
             Node to retrieve the connectivity of.
 
@@ -84,6 +88,10 @@ class AdjacencyList:
     @property
     def array(self) -> npt.NDArray[Union[np.int32, np.int64]]:
         """Array representation of the adjacency list.
+
+        Note:
+            This is available only for adjacency lists with no
+            additional link (edge) data.
 
         Returns:
             Flattened array representation of the adjacency list.
@@ -112,7 +120,7 @@ class AdjacencyList:
 def adjacencylist(
     data: npt.NDArray[Union[np.int32, np.int64]], offsets: Optional[npt.NDArray[np.int32]] = None
 ) -> AdjacencyList:
-    """Create an AdjacencyList for int32 or int64 datasets.
+    """Create an :class:`AdjacencyList` for `int32` or `int64` datasets.
 
     Args:
         data: The adjacency array. If the array is one-dimensional,
@@ -140,29 +148,31 @@ def comm_graph(map: _cpp.common.IndexMap, root: int = 0) -> AdjacencyList:
     """Build a parallel communication graph from an index map.
 
     The communication graph is a directed graph that represents the
-    communication pattern of a distributed array. The graph is built
-    from an index map, which describes the local and ghosted indices
-    of the array.
+    communication pattern for a distributed array, and specifically the
+    forward scatter operation where the values for owned indices are
+    sent to ghosting ranks. The graph is built from an index map, which
+    describes the local and ghosted indices of the array.
 
     Edges in the graph represent communication from the owning rank to
-    the ranks that ghost the data. The edge data holds the (0) target
-    node, (1) edge weight, and (2) an indicator for whether the
-    receiving rank shares memory with the caller (``local==1``) or is a
-    remote memory location (``local==0``). The node data holds the local
-    size (number of owned indices) and the number of ghost indices.
+    ranks that ghost the data. The edge data holds the (0) target node,
+    (1) edge weight, and (2) an indicator for whether the sending and
+    receiving ranks share memory (``local==1``) or if the ranks do not
+    share memory (``local==0``). The node data holds the local size
+    (number of owned indices) and the number of ghost indices.
 
-    The graph can be processed using :meth:`comm_graph` to build data
-    that can be used to build a `NetworkX <https://networkx.org/>`_
-    directed graph.
+    The graph can be processed using :func:`comm_graph` to build data
+    structures that can be used to build a `NetworkX
+    <https://networkx.org/>`_ directed graph.
 
     Note:
-        This function is collective across all MPI ranks. The graph is
-        returned on the `root` rank. All other ranks return an empty graph
+        This function is collective across all MPI ranks. The
+        communication graph is returned on the `root` rank. All other
+        ranks return an empty graph
 
     Args:
-        map: An index map tp build the communication graph from.
-        root: The rank that will return the graph. If the graph is empty,
-            it will be returned on all ranks.
+        map: Index map to build the communication graph from.
+        root: Rank that will return the communication graph. Other ranks
+            return an empty graph.
 
     Returns:
         An adjacency list representing the communication graph.
@@ -173,27 +183,29 @@ def comm_graph(map: _cpp.common.IndexMap, root: int = 0) -> AdjacencyList:
 def comm_graph_data(
     graph: AdjacencyList,
 ) -> tuple[list[tuple[int, int, dict[str, int]]], list[tuple[int, dict[str, int]]]]:
-    """Convert a communication graph to data for use with
+    """Build from a communication graph data structures for use with
     `NetworkX <https://networkx.org/>`_.
 
     Args:
-        graph: The communication graph to convert. Normally created by
-            calling :meth:`comm_graph`.
+        graph: Communication graph to build data from. Normally created
+            by :func:`comm_graph`.
 
     Returns:
         A tuple of two lists. The first list contains the edge data,
-        where edge is a `(nodeID_0, nodeID_1, dict)` tuple, where `dict`
-        holds edge data. The second list hold node data, where a node is
-        a `(nodeID, dict)` tuple, where `dict` holds node data.
+        where an edge is a `(nodeID_0, nodeID_1, dict)` tuple, where
+        `dict` holds edge data. The second list hold node data, where a
+        node is a `(nodeID, dict)` tuple, where `dict` holds node data.
     """
     return _cpp.graph.comm_graph_data(graph._cpp_object)
 
 
 def comm_to_json(graph: AdjacencyList) -> str:
-    """Convert a communication graph to a JSON string.
+    """Build and JSON string from a communication graph.
 
     The JSON string can be used to construct a `NetworkX
-    <https://networkx.org/>`_graph.
+    <https://networkx.org/>`_graph. This is helpful for cases where a
+    simulation is executed and the graph data is written to file as a
+    JSON string for later analysis.
 
     Args:
         graph: The communication graph to convert. Normally created by
