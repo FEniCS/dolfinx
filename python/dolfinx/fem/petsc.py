@@ -142,7 +142,7 @@ def create_vector(
     if any(_V is None for _V in V):
         raise RuntimeError("Can not create vector for extracted None block.")
 
-    maps = [(_V.dofmap.index_map, _V.dofmap.index_map_bs) for _V in V]
+    maps = [(_V.dofmap.index_map, _V.dofmap.index_map_bs) for _V in V if _V is not None]
     return dolfinx.la.petsc.create_vector(maps, kind=kind)
 
 
