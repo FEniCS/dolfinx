@@ -34,7 +34,7 @@ namespace scotch
 /// @brief PT-SCOTCH partitioning strategies.
 ///
 /// See PT-SCOTCH documentation for details.
-enum class strategy
+enum class strategy : std::uint8_t
 {
   ///< SCOTCH default strategy
   none,

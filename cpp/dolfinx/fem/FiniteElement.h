@@ -22,7 +22,7 @@
 namespace dolfinx::fem
 {
 /// DOF transformation type
-enum class doftransform
+enum class doftransform : std::uint8_t
 {
   standard = 0,          ///< Standard
   transpose = 1,         ///< Transpose
@@ -68,7 +68,7 @@ public:
   /// @param[in] symmetric Is the element a symmetric tensor? Should
   /// only set for 2nd-order tensor blocked elements.
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
-                std::optional<std::vector<std::size_t>> value_shape
+                const std::optional<std::vector<std::size_t>>& value_shape
                 = std::nullopt,
                 bool symmetric = false);
 

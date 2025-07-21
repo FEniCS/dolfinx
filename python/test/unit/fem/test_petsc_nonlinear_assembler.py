@@ -384,9 +384,9 @@ class TestNLSPETSc:
                 petsc_options=petsc_options,
             )
 
-            _, x, converged_reason, _ = problem.solve()
-            assert converged_reason > 0
-            xnorm = x.norm()
+            problem.solve()
+            assert problem.solver.getConvergedReason() > 0
+            xnorm = problem.x.norm()
             return xnorm
 
         norm0 = blocked_solve()
@@ -484,11 +484,11 @@ class TestNLSPETSc:
                 petsc_options=petsc_options,
                 kind="mpi",
             )
-            _, x, converged_reason, _ = problem.solve()
-            assert converged_reason > 0
+            problem.solve()
+            assert problem.solver.getConvergedReason() > 0
             Jnorm = problem.solver.getJacobian()[0].norm()
             Fnorm = problem.solver.getFunction()[0].norm()
-            xnorm = x.norm()
+            xnorm = problem.x.norm()
             return Jnorm, Fnorm, xnorm
 
         def nested():
@@ -517,9 +517,9 @@ class TestNLSPETSc:
                 ["u", nested_IS[0][0]], ["p", nested_IS[1][1]]
             )
 
-            _, x, converged_reason, _ = problem.solve()
-            assert converged_reason > 0
-            xnorm = x.norm()
+            problem.solve()
+            assert problem.solver.getConvergedReason() > 0
+            xnorm = problem.x.norm()
             Jnorm = nest_matrix_norm(problem.solver.getJacobian()[0])
             Fnorm = problem.solver.getFunction()[0].norm()
             return Jnorm, Fnorm, xnorm
@@ -575,9 +575,9 @@ class TestNLSPETSc:
                 petsc_options_prefix="test_assembly_solve_taylor_hood_nl__monolithic_",
                 petsc_options=petsc_options,
             )
-            _, x, converged_reason, _ = problem.solve()
-            assert converged_reason > 0
-            xnorm = x.norm()
+            problem.solve()
+            assert problem.solver.getConvergedReason() > 0
+            xnorm = problem.x.norm()
             Jnorm = problem.solver.getJacobian()[0].norm()
             Fnorm = problem.solver.getFunction()[0].norm()
             return Jnorm, Fnorm, xnorm

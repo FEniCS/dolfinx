@@ -96,9 +96,9 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install catch2 cmake g++ libblas-dev libboost-dev libhdf5-mpi-dev \
-             liblapack-dev libparmetis-dev libpugixml-dev libspdlog-dev mpi-default-dev \
-             ninja-build pkg-config
+          sudo apt-get install catch2 cmake g++ libblas-dev libboost-dev \
+             libhdf5-mpi-dev liblapack-dev libparmetis-dev libpugixml-dev \
+             libspdlog-dev mpi-default-dev ninja-build pkg-config
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -129,7 +129,7 @@ jobs:
       - name: Build C++ unit tests
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
-          cmake --build build/test --parallel 3
+          cmake --build build/test
       - name: Run C++ unit tests (serial)
         run: |
           cd build/test
@@ -147,10 +147,16 @@ jobs:
       - name: Run mypy
         working-directory: python
         run: |
-          pip install mypy
-          mypy dolfinx  
-        # mypy test (--check-untyped-defs)
+          pip install mypy types-cffi scipy-stubs
+          mypy -p dolfinx
+        # mypy test
         # mypy demo
+
+      - name: Install gmsh and pyvista (and dependencies)
+        run: |
+          sudo apt-get install libglu1-mesa libgl1 libxrender1 libxcursor1 libxft2 libxinerama1
+          sudo apt-get install libegl1
+          pip install gmsh pyvista
 
       - name: Run demos (Python, serial)
         run: |
@@ -212,7 +218,7 @@ jobs:
       - name: Build C++ unit tests
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
-          cmake --build build/test --parallel 3
+          cmake --build build/test
       - name: Run C++ unit tests (serial)
         run: |
           cd build/test
@@ -224,7 +230,7 @@ jobs:
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
-          cmake --build build/demo --parallel 3
+          cmake --build build/demo
           cd build/demo
           ctest -V -R demo -R serial
           ctest --output-on-failure -V -R demo -R mpi_2
@@ -237,10 +243,23 @@ jobs:
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
           python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_adios2; assert dolfinx.has_kahip; assert not dolfinx.has_parmetis; assert dolfinx.has_petsc; assert dolfinx.has_petsc4py; assert dolfinx.has_ptscotch; assert dolfinx.has_slepc; assert dolfinx.has_complex_ufcx_kernels"
 
+      - name: Run mypy
+        working-directory: python
+        run: |
+          pip install mypy types-cffi scipy-stubs
+          mypy -p dolfinx
+        # mypy test
+        # mypy demo
+
       - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
+
+      - name: Install pyvista (and dependencies)
+        run: |
+          apt-get install libegl1 libxrender1
+          pip install pyvista
 
       - name: Run demos (Python, serial)
         run: |

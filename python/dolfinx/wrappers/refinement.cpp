@@ -18,6 +18,7 @@
 #include <dolfinx/refinement/uniform.h>
 #include <dolfinx/refinement/utils.h>
 #include <functional>
+#include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/function.h>

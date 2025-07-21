@@ -25,7 +25,7 @@ class IndexMap;
 
 namespace dolfinx::mesh
 {
-enum class CellType;
+enum class CellType : std::int8_t;
 
 /// @brief Topology stores the topology of a mesh, consisting of mesh
 /// entities and connectivity (incidence relations for the mesh

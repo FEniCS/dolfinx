@@ -93,23 +93,12 @@
 # Import the required modules:
 
 # +
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
-
 from mpi4py import MPI
+from petsc4py import PETSc
 
 import numpy as np
 
-import dolfinx.fem.petsc
+import dolfinx
 import ufl
 from basix.ufl import element
 from dolfinx import fem, mesh
@@ -346,7 +335,8 @@ else:
 # vectors `u` and `sigma`.
 
 # +
-_1, _2, converged_reason, _3 = problem.solve()
+problem.solve()
+converged_reason = problem.solver.getConvergedReason()
 assert converged_reason > 0, f"Krylov solver has not converged, reason: {converged_reason}."
 # -
 
