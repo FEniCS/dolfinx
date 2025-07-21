@@ -26,7 +26,7 @@ from __future__ import annotations
 import contextlib
 import functools
 import typing
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 
 from petsc4py import PETSc
 
@@ -85,7 +85,7 @@ def create_vector(
     container: typing.Union[Form, _FunctionSpace, Iterable[Form], Iterable[_FunctionSpace]],
     /,
     kind: typing.Optional[str] = None,
-) -> PETSc.Vec: # type: ignore[name-defined]
+) -> PETSc.Vec:  # type: ignore[name-defined]
     """Create a PETSc vector that is compatible with a linear form(s)
     or functionspace(s).
 
@@ -137,9 +137,10 @@ def create_vector(
     if len(container) == 0:
         raise RuntimeError("Empty sequence of functionspaces/forms provided.")
 
-    V = extract_function_spaces(container) if isinstance(container[0], Form) else container
+    V = _extract_function_spaces(container) if isinstance(container[0], Form) else container
     maps = [(_V.dofmap.index_map, _V.dofmap.index_map_bs) for _V in V]
     return dolfinx.la.petsc.create_vector(maps, kind=kind)
+
 
 # -- Matrix instantiation -------------------------------------------------
 
