@@ -10,14 +10,6 @@ on:
     - cron: "0 2 * * THU"
   workflow_dispatch:
     inputs:
-      spack_repo:
-        description: "Spack repository to test"
-        default: "spack/spack"
-        type: string
-      spack_ref:
-        description: "Spack repository branch/tag to test"
-        default: "develop"
-        type: string
       dolfinx_version:
         description: "DOLFINx release branch/tag to test"
         default: "0.9.0"
@@ -37,29 +29,24 @@ jobs:
       DOLFINX_RELEASE_VERSION: "${{ github.event_name != 'workflow_dispatch' && '0.9.0' || github.event.inputs.dolfinx_version }}"
 
     steps:
-      - name: Get Spack
-        if: github.event_name != 'workflow_dispatch'
-        uses: actions/checkout@v4
-        with:
-          path: ./spack
-          repository: spack/spack
-      - name: Get Spack
-        if: github.event_name == 'workflow_dispatch'
-        uses: actions/checkout@v4
-        with:
-          path: ./spack
-          repository: ${{ github.event.inputs.spack_repo }}
-          ref: ${{ github.event.inputs.spack_ref }}
-
       - name: Install Spack requirements
         run: |
           apt-get -y update
           apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar unzip xz-utils
           apt-get install -y g++ gfortran  # compilers
 
+      - name: Set up Spack
+        uses: spack/setup-spack@main
+        with:
+          ref: develop      # Spack version (examples: develop, releases/v0.23)
+          buildcache: true  # Configure oci://ghcr.io/spack/github-actions-buildcache
+          color: true       # Force color output (SPACK_COLOR=always)
+          path: spack       # Where to clone Spack
+
+
       - name: Build DOLFINx (C++) development version via Spack
+        shell: spack-bash {0}
         run: |
-          . ./spack/share/spack/setup-env.sh
           spack env create cpp-main
           spack env activate cpp-main
           spack add fenics-dolfinx@main+petsc+adios2
@@ -69,8 +56,8 @@ jobs:
         with:
           path: ./dolfinx-main
       - name: Run a C++ test (development version)
+        shell: spack-bash {0}
         run: |
-          . ./spack/share/spack/setup-env.sh
           spack env create cpp-main-test
           spack env activate cpp-main-test
           spack add fenics-dolfinx@main+petsc+adios2 cmake py-fenics-ffcx@main
@@ -83,8 +70,8 @@ jobs:
           mpirun -np 2 ./demo_poisson
 
       - name: Build DOLFINx (C++) release version via Spack
+        shell: spack-bash {0}
         run: |
-          . ./spack/share/spack/setup-env.sh
           spack env create cpp-release
           spack env activate cpp-release
           spack add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+petsc+adios2
@@ -95,8 +82,8 @@ jobs:
           ref:  v${{ env.DOLFINX_RELEASE_VERSION }}
           path: ./dolfinx-release
       - name: Run a C++ test (release version)
+        shell: spack-bash {0}
         run: |
-          . ./spack/share/spack/setup-env.sh
           spack env create cpp-release-test
           spack env activate cpp-release-test
           spack add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+petsc+adios2 cmake py-fenics-ffcx
@@ -109,27 +96,27 @@ jobs:
           mpirun -np 2 ./demo_poisson
 
       - name: Build DOLFINx (Python, development)
+        shell: spack-bash {0}
         run: |
-          . ./spack/share/spack/setup-env.sh
           spack env create py-main
           spack env activate py-main
           spack add py-fenics-dolfinx@main
           spack install
       - name: Run DOLFINx (Python, development) test
+        shell: spack-bash {0}
         run: |
-          . ./spack/share/spack/setup-env.sh
           spack env activate py-main
           mpirun -np 2 python3 ./dolfinx-main/python/demo/demo_elasticity.py
 
       - name: Build DOLFINx (Python, release version)
+        shell: spack-bash {0}
         run: |
-          . ./spack/share/spack/setup-env.sh
           spack env create py-release
           spack env activate py-release
           spack add py-fenics-dolfinx@${DOLFINX_RELEASE_VERSION}
           spack install -j 4
       - name: Run DOLFINx (Python, release) test
+        shell: spack-bash {0}
         run: |
-          . ./spack/share/spack/setup-env.sh
           spack env activate py-release
           mpirun -np 2 python3 ./dolfinx-release/python/demo/demo_elasticity.py
