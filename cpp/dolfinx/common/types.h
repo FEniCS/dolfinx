@@ -51,9 +51,6 @@ concept BlockSize = common::ConstexprType<int, V>;
 template <int N>
 using BS = std::integral_constant<int, N>;
 
-template <typename V>
-using BS_type = common::value_type<int, V>;
-
 /// @private Retrieves the integral block size of a compile time block size.
 template <BlockSize V>
 constexpr int

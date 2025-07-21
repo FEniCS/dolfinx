@@ -60,7 +60,7 @@ void pack_impl(std::span<T> coeffs, std::int32_t cell, BlockSize auto _bs,
   std::span<const std::int32_t> dofs = dofmap.cell_dofs(cell);
   for (std::size_t i = 0; i < dofs.size(); ++i)
   {
-    BS_type<decltype(_bs)> bs = block_size(_bs);
+    int bs = block_size(_bs);
     const int pos_c = bs * i;
     const int pos_v = bs * dofs[i];
     for (int k = 0; k < bs; ++k)
