@@ -109,7 +109,7 @@ jobs:
       - name: Run a C++ test (release version)
         shell: spack-bash {0}
         run: |
-          spack env create cpp-cpp-release-test .github/workflows/spack-config/gh-actions-env.yaml
+          spack env create cpp-release-test .github/workflows/spack-config/gh-actions-env.yaml
           spack -e cpp-release-test install -j 4 --add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+petsc+adios2 cmake py-fenics-ffcx
           spack env activate cpp-release-test
           cd dolfinx-release/cpp/
@@ -123,44 +123,26 @@ jobs:
           GITHUB_USER: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          spack -e cpp-cpp-release-test buildcache push --base-image ubuntu:24.04 --update-index local-buildcache
+          spack -e cpp-release-test buildcache push --base-image ubuntu:24.04 --update-index local-buildcache
         if: ${{ !cancelled() }}
 
-      # spack env create cpp-release
-        # spack env activate cpp-release
-        # spack add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+petsc+adios2
-        # spack install
-      # - name: Get DOLFINx release code (to access test files)
-      #   uses: actions/checkout@v4
-      #   with:
-      #     ref:  v${{ env.DOLFINX_RELEASE_VERSION }}
-      #     path: ./dolfinx-release
-      # - name: Run a C++ test (release version)
-      #   shell: spack-bash {0}
-      #   run: |
-      #     spack env create cpp-release-test
-      #     spack env activate cpp-release-test
-      #     spack add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+petsc+adios2 cmake py-fenics-ffcx
-      #     spack install
-      #     cd dolfinx-release/cpp/
-      #     cd demo/poisson
-      #     cmake .
-      #     export VERBOSE=1
-      #     make -j 4
-      #     mpirun -np 2 ./demo_poisson
-
-      # - name: Build DOLFINx (Python, development)
-      #   shell: spack-bash {0}
-      #   run: |
-      #     spack env create py-main
-      #     spack env activate py-main
-      #     spack add py-fenics-dolfinx@main
-      #     spack install
-      # - name: Run DOLFINx (Python, development) test
-      #   shell: spack-bash {0}
-      #   run: |
-      #     spack env activate py-main
-      #     mpirun -np 2 python3 ./dolfinx-main/python/demo/demo_elasticity.py
+      - name: Build DOLFINx (Python, development)
+        shell: spack-bash {0}
+        run: |
+          spack env create py-main  .github/workflows/spack-config/gh-actions-env.yaml
+          spack -e py-main install -j 4 --add py-fenics-dolfinx@main
+      - name: Run DOLFINx (Python, development) test
+        shell: spack-bash {0}
+        run: |
+          spack env activate py-main
+          mpirun -np 2 python3 ./dolfinx-main/python/demo/demo_elasticity.py
+      - name: Push packages and update index
+        env:
+          GITHUB_USER: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          spack -e ph-main buildcache push --base-image ubuntu:24.04 --update-index local-buildcache
+        if: ${{ !cancelled() }}
 
       # - name: Build DOLFINx (Python, release version)
       #   shell: spack-bash {0}
