@@ -15,6 +15,11 @@ on:
         default: "0.9.0"
         type: string
 
+env:
+  GITHUB_USER: ${{ github.actor }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -39,10 +44,9 @@ jobs:
         uses: spack/setup-spack@main
         with:
           ref: develop      # Spack version (examples: develop, releases/v0.23)
-          buildcache: true  # Configure oci://ghcr.io/spack/github-actions-buildcache
+          # buildcache: true  # Configure oci://ghcr.io/spack/github-actions-buildcache
           color: true       # Force color output (SPACK_COLOR=always)
           path: spack       # Where to clone Spack
-
 
       - name: Build DOLFINx (C++) development version via Spack
         shell: spack-bash {0}
@@ -120,3 +124,10 @@ jobs:
         run: |
           spack env activate py-release
           mpirun -np 2 python3 ./dolfinx-release/python/demo/demo_elasticity.py
+
+      - name: Push packages and update index
+        env:
+          GITHUB_USER: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: spack -e . buildcache push --base-image ubuntu:24.04 --update-index local-buildcache
+        if: ${{ !cancelled() }}
