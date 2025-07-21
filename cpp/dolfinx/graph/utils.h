@@ -36,6 +36,7 @@ namespace dolfinx::graph
 ///
 /// @note Collective.
 ///
+/// @param[in] map Index map to build the graph for.
 /// @param[in] root MPI rank on which to build the communication
 /// graph data.
 /// @return Adjacency list representing the communication pattern.
