@@ -12,9 +12,7 @@ from dolfinx.mesh import GhostMode, create_interval, create_unit_cube, create_un
 from dolfinx.multigrid import inclusion_mapping
 
 
-@pytest.mark.parametrize(
-    "ghost_mode", [GhostMode.none, GhostMode.shared_facet]
-)
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 def test_1d(ghost_mode):
     mesh = create_interval(MPI.COMM_WORLD, 10, (0, 1), ghost_mode=ghost_mode)
     mesh_fine, _, _ = refine(mesh)
@@ -22,9 +20,7 @@ def test_1d(ghost_mode):
     # TODO: extend with future operations on inclusion mappings
 
 
-@pytest.mark.parametrize(
-    "ghost_mode", [GhostMode.none, GhostMode.shared_facet]
-)
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 def test_2d(ghost_mode):
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=ghost_mode)
     mesh.topology.create_entities(1)
@@ -33,9 +29,7 @@ def test_2d(ghost_mode):
     # TODO: extend with future operations on inclusion mappings
 
 
-@pytest.mark.parametrize(
-    "ghost_mode", [GhostMode.none, GhostMode.shared_facet]
-)
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 def test_3d(ghost_mode):
     mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, ghost_mode=ghost_mode)
     mesh.topology.create_entities(1)
