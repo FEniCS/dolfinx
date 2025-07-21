@@ -16,11 +16,11 @@
 # [NetworkX](https://networkx.org/).
 #
 # The layout of a distributed array across processes (MPI ranks) is
-# described in DOLFINx by an `IndexMap`. It represents the range of
+# described in DOLFINx by an {py:class}`IndexMap
+# <dolfinx.common.IndexMap>`. An `IndexMap` represents the range of
 # locally 'owned' array indices and the indices that are ghosted on a
-# rank. The `IndexMap` also holds information on the ranks that the
-# calling rank will send data to and ranks that will send data to the
-# caller.
+# rank. It also holds information on the ranks that the calling rank
+# will send data to and ranks that will send data to the caller.
 #
 
 # +
@@ -127,7 +127,7 @@ msh = mesh.create_box(
 V = fem.functionspace(msh, ("Lagrange", 2))
 # -
 
-# An `IndexMap` has the method `comm_graph` which can build a
+# The function {py:func}`comm_graph <dolfinx.graph.comm_graph>` builds a
 # communication graph that represents data begin sent from the owning
 # rank to ranks that ghost the data. We use the degree-of-freedom map's
 # `IndexMap`. Building the communication data is collective across MPI
@@ -158,9 +158,12 @@ def print_stats(G):
 
 # +
 if msh.comm.rank == 0:
-    # To create a NetworkX directed graph, we get the graph data in a
-    # form from which NetworkX can build a graph. Each edge will have a
-    # weight and a 'local(1)/remote(0)' memory indicator.
+    # To create a NetworkX directed graph, the function
+    # {py:func}`comm_graph_data <dolfinx.graph.comm_graph_data>` builds
+    # graph data in a form from which we can create a NetworkX graph.
+    # Each edge will have a weight and a 'local(1)/remote(0)' memory
+    # indicator and each node has its local size and the number of
+    # ghosts.
     adj_data, node_data = graph.comm_graph_data(comm_graph)
 
     # Create a NetworkX directed graph.

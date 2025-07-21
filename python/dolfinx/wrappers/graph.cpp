@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2017-2025 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -38,10 +38,7 @@ auto create_partitioner_py(Functor&& p_cpp)
                  bool ghosting)
   { return p_cpp(comm.get(), nparts, local_graph, ghosting); };
 }
-} // namespace
 
-namespace dolfinx_wrappers
-{
 template <typename T, typename U>
 void declare_adjacency_list(nb::module_& m, std::string type)
 {
@@ -113,7 +110,10 @@ void declare_adjacency_list(nb::module_& m, std::string type)
       .def("__repr__", &dolfinx::graph::AdjacencyList<T, U>::str)
       .def("__len__", &dolfinx::graph::AdjacencyList<T, U>::num_nodes);
 }
+} // namespace
 
+namespace dolfinx_wrappers
+{
 void graph(nb::module_& m)
 {
   declare_adjacency_list<std::int32_t, std::nullptr_t>(m, "int32");
