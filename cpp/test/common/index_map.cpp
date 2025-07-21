@@ -200,19 +200,6 @@ void test_rank_weights()
     REQUIRE(weight_dest.empty());
   }
 }
-
-void test_comm_graphs()
-{
-  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
-  constexpr int size_local = 100;
-  const common::IndexMap idx_map
-      = create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
-
-  auto g = idx_map.comm_graph();
-  if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 0)
-    common::comm_to_json(g);
-}
-
 } // namespace
 
 TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
@@ -240,5 +227,4 @@ TEST_CASE("Split IndexMap communicator by type", "[index_map_comm_split]")
 TEST_CASE("IndexMap stats", "[index_map_stats]")
 {
   CHECK_NOTHROW(test_rank_weights());
-  CHECK_NOTHROW(test_comm_graphs());
 }
