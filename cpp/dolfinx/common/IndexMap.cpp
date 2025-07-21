@@ -1309,7 +1309,6 @@ std::vector<std::int32_t> IndexMap::weights_src() const
   {
     auto it = std::ranges::lower_bound(_src, r);
     assert(it != _src.end() and *it == r);
-
     std::size_t pos = std::distance(_src.begin(), it);
     assert(pos < weights.size());
     weights[pos] += 1;
@@ -1355,13 +1354,8 @@ std::array<std::vector<int>, 2> IndexMap::rank_type(int split_type) const
                              &comm_s);
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
-  int size_s = 0;
-  ierr = MPI_Comm_size(comm_s, &size_s);
-  dolfinx::MPI::check_error(comm_s, ierr);
-
-  int rank = 0;
-  ierr = MPI_Comm_rank(_comm.comm(), &rank);
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
+  int size_s = dolfinx::MPI::size(comm_s);
+  int rank = dolfinx::MPI::rank(_comm.comm());
 
   // Note: in most cases, size_s will be much smaller than the size of
   // _comm
