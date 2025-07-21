@@ -74,7 +74,7 @@ jobs:
         run: |
           cat .github/workflows/spack-config/gh-actions-env.yaml
           spack env create cpp-main-test .github/workflows/spack-config/gh-actions-env.yaml
-          spack -e cpp-main-test install -j 4 --add "cmake fenics-dolfinx@main+petsc+adios2 py-fenics-ffcx@main"
+          spack -e cpp-main-test install -j 4 --add fenics-dolfinx@main+petsc+adios2 py-fenics-ffcx@main
           cd dolfinx-main/cpp/
           cd demo/poisson
           cmake .
