@@ -13,7 +13,7 @@ import numpy as np
 import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.graph import comm_graph, comm_graph_data, comm_to_json, partitioner
+from dolfinx.cpp.graph import partitioner
 
 # Import graph partitioners, which may or may not be available
 # (dependent on build configuration)
@@ -42,9 +42,20 @@ __all__ = [
 
 
 class AdjacencyList:
-    _cpp_object: Union[_cpp.la.AdjacencyList_int32, _cpp.la.AdjacencyList_int64]
+    _cpp_object: Union[
+        _cpp.la.AdjacencyList_int32,
+        _cpp.la.AdjacencyList_int64,
+        _cpp.graph.AdjacencyList_int_sizet_int8__int32_int32,
+    ]
 
-    def __init__(self, cpp_object: Union[_cpp.la.AdjacencyList_int32, _cpp.la.AdjacencyList_int64]):
+    def __init__(
+        self,
+        cpp_object: Union[
+            _cpp.graph.AdjacencyList_int32,
+            _cpp.graph.AdjacencyList_int64,
+            _cpp.graph.AdjacencyList_int_sizet_int8__int32_int32,
+        ],
+    ):
         """Creates a Python wrapper for the exported adjacency list class.
 
         Note:
@@ -63,7 +74,7 @@ class AdjacencyList:
         """Retrieve the links of a node.
 
         Args:
-            Node to retrieve the connectitivty of.
+            Node to retrieve the connectivity of.
 
         Returns:
             Neighbors of the node.
@@ -123,3 +134,71 @@ def adjacencylist(
 
     cpp_object = cpp_t(data, offsets) if offsets is not None else cpp_t(data)
     return AdjacencyList(cpp_object)
+
+
+def comm_graph(map: _cpp.common.IndexMap, root: int = 0) -> AdjacencyList:
+    """Build a parallel communication graph from an index map.
+
+    The communication graph is a directed graph that represents the
+    communication pattern of a distributed array. The graph is built
+    from an index map, which describes the local and ghosted indices
+    of the array.
+
+    Edges in the graph represent communication from the owning rank to
+    the ranks that ghost the data. The edge data holds the (0) target
+    node, (1) edge weight, and (2) an indicator for whether the
+    receiving rank shares memory with the caller (``local==1``) or is a
+    remote memory location (``local==0``). The node data holds the local
+    size (number of owned indices) and the number of ghost indices.
+
+    The graph can be processed using :meth:`comm_graph` to build data
+    that can be used to build a `NetworkX <https://networkx.org/>`_
+    directed graph.
+
+    Note:
+        This function is collective across all MPI ranks. The graph is
+        returned on the `root` rank. All other ranks return an empty graph
+
+    Args:
+        map: An index map tp build the communication graph from.
+        root: The rank that will return the graph. If the graph is empty,
+            it will be returned on all ranks.
+
+    Returns:
+        An adjacency list representing the communication graph.
+    """
+    return _cpp.graph.comm_graph(map)
+
+
+def comm_graph_data(
+    graph: AdjacencyList,
+) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.int32]]:
+    """Convert a communication graph to data for use with
+    `NetworkX <https://networkx.org/>`_.
+
+    Args:
+        graph: The communication graph to convert. Normally created by
+            calling :meth:`comm_graph`.
+
+    Returns:
+        A tuple of two lists. The first list contains the edge data,
+        where edge is a `(nodeID_0, nodeID_1, dict)` tuple, where `dict`
+        holds edge data. The second list hold node data, where a node is
+        a `(nodeID, dict)` tuple, where `dict` holds node data.
+    """
+    return _cpp.graph.comm_graph_data(graph)
+
+
+def comm_to_json(graph: AdjacencyList) -> str:
+    """Convert a communication graph to a JSON string.
+
+    The JSON string can be used to construct a `NetworkX <https://networkx.org/>`_graph.
+
+    Args:
+        graph: The communication graph to convert. Normally created by
+            calling :meth:`comm_graph`.
+
+    Returns:
+        A JSON string representing the communication graph.
+    """
+    return _cpp.graph.comm_to_json(graph)

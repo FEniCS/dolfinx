@@ -17,10 +17,11 @@
 #
 # The layout of a distributed array across processes (MPI ranks) is
 # described in DOLFINx by an {py:class}`IndexMap
-# <dolfinx.common.IndexMap>`. An `IndexMap` represents the range of
-# locally 'owned' array indices and the indices that are ghosted on a
-# rank. It also holds information on the ranks that the calling rank
-# will send data to and ranks that will send data to the caller.
+# <dolfinx.common.IndexMap>`. An {py:class}`IndexMap
+# <dolfinx.common.IndexMap>` represents the range of locally 'owned'
+# array indices and the indices that are ghosted on a rank. It also
+# holds information on the ranks that the calling rank will send data to
+# and ranks that will send data to the caller.
 #
 
 # +
@@ -112,10 +113,12 @@ def plot_bar(G: nx.MultiGraph):
 # -
 
 # Create a mesh and function space. The function space will build an
-# `IndexMap` for the degree-of-freedom map. The `IndexMap` describes how
-# the degrees-of-freedom are distributed in parallel (across MPI ranks).
-# From information on the parallel distribution we will be able to
-# compute the communication graph.
+# {py:class}`IndexMap <dolfinx.common.IndexMap>` for the
+# degree-of-freedom map. The {py:class}`IndexMap
+# <dolfinx.common.IndexMap>` describes how the degrees-of-freedom are
+# distributed in parallel (across MPI ranks). From information on the
+# parallel distribution we will be able to compute the communication
+# graph.
 
 # +
 msh = mesh.create_box(
@@ -152,19 +155,27 @@ def print_stats(G):
         print(f"  Average edge weight: {G.size('weight') / G.size()}")
 
 
-# +
+# -
 
-# The graph data will be processed on rank 0.
+# The graph data will be processed on rank 0. From the communication
+# graph data, edge and node data for creating a `NetworkX`` graph is build
+# using {py:fuc}`comm_graph_data <dolfinx.graph.comm_graph_data>`.
+#
+# Data for use with `NetworkX` can also be reconstructed from a JSON
+# string. The JSON string can be created using {py:func}`comm_to_json
+# <dolfinx.graph.comm_to_json>`. This is helpful for cases there a
+# simulaton is executed and the graph data is written to file for later
+# analysis.
 
 # +
 if msh.comm.rank == 0:
-    # To create a NetworkX directed graph, the function
-    # {py:func}`comm_graph_data <dolfinx.graph.comm_graph_data>` builds
-    # graph data in a form from which we can create a NetworkX graph.
-    # Each edge will have a weight and a 'local(1)/remote(0)' memory
-    # indicator and each node has its local size and the number of
-    # ghosts.
+    # To create a NetworkX directed graph we build graph data in a form
+    # from which we can create a NetworkX graph. Each edge will have a
+    # weight and a 'local(1)/remote(0)' memory indicator and each node
+    # has its local size and the number of ghosts.
     adj_data, node_data = graph.comm_graph_data(comm_graph)
+
+    print("Test:", graph.comm_graph_data(comm_graph))
 
     # Create a NetworkX directed graph.
     H = nx.DiGraph()

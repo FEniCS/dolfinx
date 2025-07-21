@@ -121,7 +121,7 @@ void graph(nb::module_& m)
   nb::class_<
       dolfinx::graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
                                     std::pair<std::int32_t, std::int32_t>>>(
-      m, "AdjacencyList_int_size_t_int8__int32_int32", "Adjacency List");
+      m, "AdjacencyList_int_sizet_int8__int32_int32", "Adjacency List");
 
   using partition_fn
       = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
