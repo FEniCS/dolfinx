@@ -43,8 +43,8 @@ __all__ = [
 
 class AdjacencyList:
     _cpp_object: Union[
-        _cpp.la.AdjacencyList_int32,
-        _cpp.la.AdjacencyList_int64,
+        _cpp.graph.AdjacencyList_int32,
+        _cpp.graph.AdjacencyList_int64,
         _cpp.graph.AdjacencyList_int_sizet_int8__int32_int32,
     ]
 
