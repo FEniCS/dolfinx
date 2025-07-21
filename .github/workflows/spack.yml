@@ -54,33 +54,45 @@ jobs:
         shell: spack-bash {0}
         run: |
           spack env create . .github/workflows/spack-config/gh-actions-env.yaml
-          spack -e . install -j 4 --add gmake
-        # spack -e . install -j 4 --add fenics-dolfinx@main+petsc+adios2
-      # - name: Get DOLFINx code (to access test files)
-      #   uses: actions/checkout@v4
-      #   with:
-      #     path: ./dolfinx-main
-      # - name: Run a C++ test (development version)
-      #   shell: spack-bash {0}
-      #   run: |
-      #     spack env create cpp-main-test
-      #     spack env activate cpp-main-test
-      #     spack add fenics-dolfinx@main+petsc+adios2 cmake py-fenics-ffcx@main
-      #     spack install
-      #     cd dolfinx-main/cpp/
-      #     cd demo/poisson
-      #     cmake .
-      #     export VERBOSE=1
-      #     make -j 4
-      #     mpirun -np 2 ./demo_poisson
+          spack -e . install -j 4 --add fenics-dolfinx@main+petsc+adios2
+
+      - name: Get DOLFINx code (to access test files)
+        uses: actions/checkout@v4
+        with:
+          path: ./dolfinx-main
+      - name: Run a C++ test (development version)
+        shell: spack-bash {0}
+        run: |
+          spack env create . .github/workflows/spack-config/gh-actions-env.yaml
+          spack -e . install -j 4 --add fenics-dolfinx@main+petsc+adios2 cmake py-fenics-ffcx@main
+          cd dolfinx-main/cpp/
+          cd demo/poisson
+          cmake .
+          export VERBOSE=1
+          make -j 4
+          mpirun -np 2 ./demo_poisson
+
+        # spack env create cpp-main-test
+        # spack env activate cpp-main-test
+        # spack add fenics-dolfinx@main+petsc+adios2 cmake py-fenics-ffcx@main
+        # spack install
+        # cd dolfinx-main/cpp/
+        # cd demo/poisson
+        # cmake .
+        # export VERBOSE=1
+        # make -j 4
+        # mpirun -np 2 ./demo_poisson
 
       # - name: Build DOLFINx (C++) release version via Spack
       #   shell: spack-bash {0}
       #   run: |
-      #     spack env create cpp-release
-      #     spack env activate cpp-release
-      #     spack add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+petsc+adios2
-      #     spack install
+      #     spack env create . .github/workflows/spack-config/gh-actions-env.yaml
+      #     spack -e . install -j 4 --add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+petsc+adios2
+
+        # spack env create cpp-release
+        # spack env activate cpp-release
+        # spack add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+petsc+adios2
+        # spack install
       # - name: Get DOLFINx release code (to access test files)
       #   uses: actions/checkout@v4
       #   with:
