@@ -82,7 +82,7 @@ __all__ = [
 
 
 def create_vector(
-    container: typing.Union[Form, _FunctionSpace, Iterable[Form], Iterable[_FunctionSpace]],
+    container: typing.Union[Form, _FunctionSpace, Sequence[Form], Sequence[_FunctionSpace]],
     /,
     kind: typing.Optional[str] = None,
 ) -> PETSc.Vec:  # type: ignore[name-defined]
