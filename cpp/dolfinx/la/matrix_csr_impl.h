@@ -229,7 +229,7 @@ void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
           std::span<const std::int32_t> indices, std::span<const T> x,
           std::span<T> y, int bs0, BS1 _bs1)
 {
-  int bs1 = block_size(_bs1);
+  auto bs1 = block_size(_bs1);
   assert(row_begin.size() == row_end.size());
   for (int k0 = 0; k0 < bs0; ++k0)
   {

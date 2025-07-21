@@ -100,8 +100,8 @@ void _lift_bc_cells(
   const auto [dmap0, _bs0, cells0] = dofmap0;
   const auto [dmap1, _bs1, cells1] = dofmap1;
 
-  int bs0 = block_size(_bs0);
-  int bs1 = block_size(_bs1);
+  auto bs0 = block_size(_bs0);
+  auto bs1 = block_size(_bs1);
 
   // Data structures used in bc application
   std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
@@ -638,7 +638,7 @@ void assemble_cells(
     return;
 
   const auto [dmap, _bs, cells0] = dofmap;
-  int bs = block_size(_bs);
+  auto bs = block_size(_bs);
 
   // Create data structures used in assembly
   std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
@@ -717,7 +717,7 @@ void assemble_exterior_facets(
     return;
 
   const auto [dmap, _bs, facets0] = dofmap;
-  int bs = block_size(_bs);
+  auto bs = block_size(_bs);
 
   // Create data structures used in assembly
   const int num_dofs = dmap.extent(1);
@@ -805,7 +805,7 @@ void assemble_interior_facets(
     return;
 
   const auto [dmap, _bs, facets0] = dofmap;
-  int bs = block_size(_bs);
+  auto bs = block_size(_bs);
 
   // Create data structures used in assembly
   using X = scalar_value_t<T>;
