@@ -40,6 +40,8 @@ jobs:
           apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar unzip xz-utils
           apt-get install -y g++ gfortran  # compilers
 
+      - uses: actions/checkout@v4
+
       - name: Set up Spack
         uses: spack/setup-spack@main
         with:
@@ -51,7 +53,7 @@ jobs:
       - name: Build DOLFINx (C++) development version via Spack
         shell: spack-bash {0}
         run: |
-          spack env create . spack-configs/gh-actions-env.yaml
+          spack env create . .github/workflows/spack-configs/gh-actions-env.yaml
           spack -e . install -j 4 -- add fenics-dolfinx@main+petsc+adios2
       # - name: Get DOLFINx code (to access test files)
       #   uses: actions/checkout@v4
