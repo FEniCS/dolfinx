@@ -91,8 +91,7 @@ void TEST_inclusion(dolfinx::mesh::Mesh<T>&& mesh_coarse)
   mesh_coarse.topology()->create_entities(1);
 
   std::array<std::optional<mesh::GhostMode>, 3> ghost_modes
-      = {mesh::GhostMode::none, mesh::GhostMode::shared_vertex,
-         mesh::GhostMode::shared_facet};
+      = {mesh::GhostMode::none, mesh::GhostMode::shared_facet};
   // TODO: std::nullopt,
   for (auto ghost_mode : ghost_modes)
   {

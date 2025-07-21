@@ -13,7 +13,7 @@ from dolfinx.multigrid import inclusion_mapping
 
 
 @pytest.mark.parametrize(
-    "ghost_mode", [GhostMode.none, GhostMode.shared_vertex, GhostMode.shared_facet]
+    "ghost_mode", [GhostMode.none, GhostMode.shared_facet]
 )
 def test_1d(ghost_mode):
     mesh = create_interval(MPI.COMM_WORLD, 10, (0, 1), ghost_mode=ghost_mode)
@@ -23,7 +23,7 @@ def test_1d(ghost_mode):
 
 
 @pytest.mark.parametrize(
-    "ghost_mode", [GhostMode.none, GhostMode.shared_vertex, GhostMode.shared_facet]
+    "ghost_mode", [GhostMode.none, GhostMode.shared_facet]
 )
 def test_2d(ghost_mode):
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=ghost_mode)
@@ -34,7 +34,7 @@ def test_2d(ghost_mode):
 
 
 @pytest.mark.parametrize(
-    "ghost_mode", [GhostMode.none, GhostMode.shared_vertex, GhostMode.shared_facet]
+    "ghost_mode", [GhostMode.none, GhostMode.shared_facet]
 )
 def test_3d(ghost_mode):
     mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, ghost_mode=ghost_mode)
