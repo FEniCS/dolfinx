@@ -40,6 +40,7 @@ jobs:
         run: |
           apt-get -y update
           apt-get -y install binutils libstdc++-14-dev git
+          apt-get install -y libglu1-mesa libgl1 libxrender1 libxcursor1 libxft2 libxinerama1 libegl1
 
       - uses: actions/checkout@v4
 
@@ -49,7 +50,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: oneapi-test-env
-          environment-file: python/conda-oneapi-test-env.yml
+          environment-file: .github/workflows/oneapi-conda/environment.yml
           auto-activate-base: false
       - run: |
           conda info

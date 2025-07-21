@@ -169,11 +169,11 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     components = {"real_", "imag_"};
   std::string t_str = boost::lexical_cast<std::string>(t);
   std::replace(t_str.begin(), t_str.end(), '.', '_');
-  for (auto component : components)
+  for (const auto& component : components)
   {
     std::string attr_name = component + u.name;
     std::string dataset_name
-        = std::string("/Function/") + attr_name + std::string("/") + t_str;
+        = "/Function/" + attr_name.append("/").append(t_str);
 
     // Add attribute node
     pugi::xml_node attr_node = xml_node.append_child("Attribute");

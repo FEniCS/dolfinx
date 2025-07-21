@@ -404,8 +404,8 @@ void apply_lifting(
 template <std::floating_point T>
 void apply_lifting(
     Vec b,
-    std::vector<
-        std::optional<std::reference_wrapper<const Form<PetscScalar, double>>>>
+    const std::vector<
+        std::optional<std::reference_wrapper<const Form<PetscScalar, double>>>>&
         a,
     const std::vector<std::vector<
         std::reference_wrapper<const DirichletBC<PetscScalar, double>>>>& bcs1,

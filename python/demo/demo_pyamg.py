@@ -24,17 +24,7 @@ from mpi4py import MPI
 
 import numpy as np
 import numpy.typing as npt
-
-if MPI.COMM_WORLD.size > 1:
-    print("This demo works only in serial.")
-    exit(0)
-
-try:
-    import pyamg
-except (ImportError, AttributeError):
-    print('This demo requires pyamg, install using "pip install pyamg"')
-    exit(0)
-
+import pyamg
 
 import ufl
 from dolfinx import fem, io
@@ -49,11 +39,14 @@ from dolfinx.fem import (
 )
 from dolfinx.mesh import CellType, create_box, locate_entities_boundary
 
+if MPI.COMM_WORLD.size > 1:
+    print("This demo works only in serial.")
+    exit(0)
 # -
 
 
 # +
-def poisson_problem(dtype: npt.DTypeLike, solver_type: str):
+def poisson_problem(dtype: npt.DTypeLike, solver_type: str) -> None:
     """Solve a 3D Poisson problem using Ruge-Stuben algebraic multigrid.
 
     Args:
@@ -159,7 +152,7 @@ def nullspace_elasticty(Q: fem.FunctionSpace) -> list[np.ndarray]:
 
 
 # +
-def elasticity_problem(dtype):
+def elasticity_problem(dtype) -> None:
     """Solve a 3D linearised elasticity problem using a smoothed
     aggregation algebraic multigrid method.
 

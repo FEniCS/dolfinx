@@ -9,6 +9,7 @@
 #include "cell_types.h"
 #include <array>
 #include <cstdint>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <tuple>
 #include <vector>
@@ -16,12 +17,6 @@
 namespace dolfinx::common
 {
 class IndexMap;
-}
-
-namespace dolfinx::graph
-{
-template <typename T>
-class AdjacencyList;
 }
 
 namespace dolfinx::mesh

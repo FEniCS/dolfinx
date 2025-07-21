@@ -25,7 +25,7 @@ namespace
 {
 /// Wrap a C++ graph partitioning function as a Python-ready function
 template <typename Functor>
-auto create_partitioner_py(Functor p_cpp)
+auto create_partitioner_py(Functor&& p_cpp)
 {
   return [p_cpp](dolfinx_wrappers::MPICommWrapper comm, int nparts,
                  const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
@@ -38,7 +38,7 @@ namespace dolfinx_wrappers
 {
 
 template <typename T>
-void declare_adjacency_list(nb::module_& m, std::string type)
+void declare_adjacency_list(nb::module_& m, const std::string& type)
 {
   std::string pyclass_name = std::string("AdjacencyList_") + type;
   nb::class_<dolfinx::graph::AdjacencyList<T>>(m, pyclass_name.c_str(),

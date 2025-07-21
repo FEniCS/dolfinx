@@ -62,8 +62,8 @@ class TestPETScSolverWrappers:
             petsc_options_prefix=petsc_options_prefix_linear,
             petsc_options=petsc_options_linear,
         )
-        u_lin, _, convergence_reason, _ = linear_problem.solve()
-        assert convergence_reason > 0
+        u_lin = linear_problem.solve()
+        assert linear_problem.solver.getConvergedReason() > 0
 
         # Compare LinearProblem solution against the one obtained by
         # legacy NewtonSolverNonlinearProblem
@@ -109,8 +109,8 @@ class TestPETScSolverWrappers:
             petsc_options_prefix=petsc_options_prefix_nonlinear,
             petsc_options=petsc_options_nonlinear,
         )
-        _, _, converged_reason, _ = nonlinear_problem.solve()
-        assert converged_reason > 0
+        nonlinear_problem.solve()
+        assert nonlinear_problem.solver.getConvergedReason() > 0
 
         assert np.allclose(u_lin.x.array, u_nonlin.x.array, atol=eps, rtol=eps)
 
@@ -205,8 +205,8 @@ class TestPETScSolverWrappers:
             petsc_options_prefix=petsc_options_prefix,
             petsc_options=petsc_options,
         )
-        wh, _, convergence_reason, _ = problem.solve()
-        assert convergence_reason > 0
+        wh = problem.solve()
+        assert problem.solver.getConvergedReason() > 0
         if kind is None:
             uh, ph = wh.split()
         else:

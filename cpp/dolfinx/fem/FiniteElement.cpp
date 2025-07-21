@@ -32,7 +32,7 @@ _build_element_list(std::vector<BasixElementData<T>> elements)
 {
   std::vector<std::shared_ptr<const FiniteElement<T>>> _e;
   std::ranges::transform(elements, std::back_inserter(_e),
-                         [](auto data)
+                         [](const auto& data)
                          {
                            auto& [e, bs, symm] = data;
                            return std::make_shared<fem::FiniteElement<T>>(e, bs,
@@ -110,7 +110,7 @@ int _compute_block_size(std::optional<std::vector<std::size_t>> value_shape,
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(
     const basix::FiniteElement<T>& element,
-    std::optional<std::vector<std::size_t>> value_shape, bool symmetric)
+    const std::optional<std::vector<std::size_t>>& value_shape, bool symmetric)
     : _value_shape(value_shape.value_or(element.value_shape())),
       _bs(_compute_block_size(value_shape, symmetric)),
       _cell_type(mesh::cell_type_from_basix_type(element.cell_type())),
@@ -161,7 +161,7 @@ FiniteElement<T>::FiniteElement(
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(std::vector<BasixElementData<T>> elements)
-    : FiniteElement(_build_element_list(elements))
+    : FiniteElement(_build_element_list(std::move(elements)))
 {
 }
 //-----------------------------------------------------------------------------
