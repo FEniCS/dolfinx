@@ -7,12 +7,11 @@
 
 #pragma once
 
+#include "TimeLogger.h"
 #include <chrono>
 #include <optional>
 #include <stdexcept>
 #include <string>
-
-#include "TimeLogger.h"
 
 namespace dolfinx::common
 {

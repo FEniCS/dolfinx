@@ -33,8 +33,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from matplotlib.ticker import MaxNLocator
 
-from dolfinx import fem, mesh
-from dolfinx.common import IndexMap, comm_to_json
+from dolfinx import fem, graph, mesh
 
 # -
 
@@ -135,7 +134,7 @@ V = fem.functionspace(msh, ("Lagrange", 2))
 # ranks. However, a non-empty graph is returned only on rank 0.
 
 # +
-comm_graph = V.dofmap.index_map.comm_graph()
+comm_graph = graph.comm_graph(V.dofmap.index_map)
 # -
 
 # A function for printing some communication graph metrics:
@@ -162,7 +161,7 @@ if msh.comm.rank == 0:
     # To create a NetworkX directed graph, we get the graph data in a
     # form from which NetworkX can build a graph. Each edge will have a
     # weight and a 'local(1)/remote(0)' memory indicator.
-    adj_data, node_data = IndexMap.comm_graph_data(comm_graph)
+    adj_data, node_data = graph.comm_graph_data(comm_graph)
 
     # Create a NetworkX directed graph.
     H = nx.DiGraph()
@@ -185,7 +184,7 @@ if msh.comm.rank == 0:
 
     # Get graph data as a JSON string (useful if running from C++, in
     # which case the JSON string can be written to file)
-    data_json_str = comm_to_json(comm_graph)
+    data_json_str = graph.comm_to_json(comm_graph)
     H1 = nx.adjacency_graph(json.loads(data_json_str))
 
     # Create graph with sorted nodes. This can be helpful for

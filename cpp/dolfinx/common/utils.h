@@ -24,6 +24,7 @@ namespace dolfinx::common
 /// Any duplicate indices and the corresponding value are removed. In
 /// the case of duplicates, the entry with the smallest value is
 /// retained.
+///
 /// @param[in] indices Array of indices.
 /// @param[in] values Array of values.
 /// @return Sorted (indices, values), with sorting based on indices.

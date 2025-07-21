@@ -13,7 +13,7 @@ import numpy as np
 import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.graph import partitioner
+from dolfinx.cpp.graph import comm_graph, comm_graph_data, comm_to_json, partitioner
 
 # Import graph partitioners, which may or may not be available
 # (dependent on build configuration)
@@ -31,7 +31,14 @@ except ImportError:
     pass
 
 
-__all__ = ["AdjacencyList", "adjacencylist", "partitioner"]
+__all__ = [
+    "AdjacencyList",
+    "adjacencylist",
+    "comm_graph",
+    "comm_graph_data",
+    "comm_to_json",
+    "partitioner",
+]
 
 
 class AdjacencyList:

@@ -309,39 +309,6 @@ public:
   /// Returned ranks are on the comm() communicator.
   std::array<std::vector<int>, 2> rank_type(int split_type) const;
 
-  /// @brief Compute an directed graph that describes the parallel
-  /// communication patterns.
-  ///
-  /// The graph describes the communication pattern for a 'forward
-  /// scatter', i.e. sending owned data to ranks that ghost the data
-  /// (owner->ghost operation).
-  ///
-  /// Each node in the graph corresponds to an MPI rank. A graph edge is
-  /// a forward (owner->ghost) communication path. The edge weight is
-  /// the number 'values' communicated along the edge. Each edge also
-  /// has a marker that indicates if the edge is sending data to:
-  ///
-  /// 1. A node (rank) that shares memory with the sender (`true`), or
-  ///
-  /// 2. A remote node that does not share memory with the sender
-  ///   (`false`).
-  ///
-  /// The graph data can be visualised using a tool like
-  /// [NetworkX](https://networkx.org/),
-  ///
-  /// @note Collective.
-  ///
-  /// @param[in] root MPI rank on which to build the communication
-  /// graph data.
-  /// @return Adjacency list representing the communication pattern.
-  /// Edges data is (0) the edge, (1) edge weight (`weight`) and (2)
-  /// local/remote is memory indicator (`local==1` is an edge to a
-  /// shared memory node). Node data is (number of owned indices, number
-  /// of ghost indices).
-  graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
-                       std::pair<std::int32_t, std::int32_t>>
-  comm_graph(int root = 0) const;
-
 private:
   // Range of indices (global) owned by this process
   std::array<std::int64_t, 2> _local_range;
