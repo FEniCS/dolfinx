@@ -203,7 +203,7 @@ def comm_to_json(graph: AdjacencyList) -> str:
     """Build and JSON string from a communication graph.
 
     The JSON string can be used to construct a `NetworkX
-    <https://networkx.org/>`_graph. This is helpful for cases where a
+    <https://networkx.org/>`_ graph. This is helpful for cases where a
     simulation is executed and the graph data is written to file as a
     JSON string for later analysis.
 
