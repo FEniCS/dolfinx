@@ -74,7 +74,7 @@ def create_vector_wrap(x: Vector) -> PETSc.Vec:  # type: ignore[name-defined]
 
 def create_vector(
     maps: typing.Sequence[tuple[IndexMap, int]], kind: typing.Optional[str] = None
-) -> PETSc.Vec:
+) -> PETSc.Vec:  # type: ignore[attr-defined]
     """Create a PETSc vector from a sequence of maps and blocksizes.
 
     Three cases are supported:
@@ -125,12 +125,12 @@ def create_vector(
         size = (index_map.size_local * bs, index_map.size_global * bs)
         return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=index_map.comm)  # type: ignore
 
-    if kind is None or kind == PETSc.Vec.Type.MPI:
+    if kind is None or kind == PETSc.Vec.Type.MPI:  # type: ignore[attr-defined]
         b = dolfinx.cpp.fem.petsc.create_vector_block(maps)
         _assign_block_data(maps, b)
         return b
 
-    elif kind == PETSc.Vec.Type.NEST:
+    elif kind == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
         return dolfinx.cpp.fem.petsc.create_vector_nest(maps)
 
     else:
@@ -215,7 +215,7 @@ def _(x0: PETSc.Vec, x1: typing.Union[npt.NDArray[np.inexact], list[npt.NDArray[
                 x1[:] = _x0.array_r[:]
 
 
-def _assign_block_data(maps: Iterable[tuple[IndexMap, int]], vec: PETSc.Vec):
+def _assign_block_data(maps: Iterable[tuple[IndexMap, int]], vec: PETSc.Vec):  # type: ignore[attr-defined]
     """Assign block data to a PETSc vector.
 
     Args:
