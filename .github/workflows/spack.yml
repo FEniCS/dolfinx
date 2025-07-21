@@ -54,8 +54,8 @@ jobs:
         shell: spack-bash {0}
         run: |
           spack env create . .github/workflows/spack-config/gh-actions-env.yaml
-          spack -e . install -j 4 -- add gmake
-          # spack -e . install -j 4 -- add fenics-dolfinx@main+petsc+adios2
+          spack -e . install -j 4 --add gmake
+        # spack -e . install -j 4 --add fenics-dolfinx@main+petsc+adios2
       # - name: Get DOLFINx code (to access test files)
       #   uses: actions/checkout@v4
       #   with:
