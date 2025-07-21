@@ -48,13 +48,14 @@ jobs:
           ref: develop      # Spack version (examples: develop, releases/v0.23)
           buildcache: true  # Configure oci://ghcr.io/spack/github-actions-buildcache
           color: true       # Force color output (SPACK_COLOR=always)
-          path: spack       # Where to clone Spack
+          path: spack-src       # Where to clone Spack
 
       - name: Build DOLFINx (C++) development version via Spack
         shell: spack-bash {0}
         run: |
-          spack env create . .github/workflows/spack-configs/gh-actions-env.yaml
-          spack -e . install -j 4 -- add fenics-dolfinx@main+petsc+adios2
+          spack env create . .github/workflows/spack-config/gh-actions-env.yaml
+          spack -e . install -j 4 -- add gmake
+          # spack -e . install -j 4 -- add fenics-dolfinx@main+petsc+adios2
       # - name: Get DOLFINx code (to access test files)
       #   uses: actions/checkout@v4
       #   with:
