@@ -53,8 +53,8 @@ jobs:
       - name: Build DOLFINx (C++) development version via Spack
         shell: spack-bash {0}
         run: |
-          spack env create . .github/workflows/spack-config/gh-actions-env.yaml
-          spack -e . install -j 4 --add fenics-dolfinx@main+petsc+adios2
+          spack env create cpp-main .github/workflows/spack-config/gh-actions-env.yaml
+          spack -e cpp-main install -j 4 --add fenics-dolfinx@main+petsc+adios2
 
       - name: Get DOLFINx code (to access test files)
         uses: actions/checkout@v4
@@ -63,8 +63,8 @@ jobs:
       - name: Run a C++ test (development version)
         shell: spack-bash {0}
         run: |
-          spack env create . .github/workflows/spack-config/gh-actions-env.yaml
-          spack -e . install -j 4 --add fenics-dolfinx@main+petsc+adios2 cmake py-fenics-ffcx@main
+          spack env create cpp-main-test .github/workflows/spack-config/gh-actions-env.yaml
+          spack -e cpp-main-test install -j 4 --add fenics-dolfinx@main+petsc+adios2 cmake py-fenics-ffcx@main
           cd dolfinx-main/cpp/
           cd demo/poisson
           cmake .
