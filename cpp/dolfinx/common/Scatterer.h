@@ -23,9 +23,9 @@ namespace dolfinx::common
 /// @brief A Scatterer supports the MPI scattering and gathering of data
 /// that is associated with a common::IndexMap.
 ///
-/// Scatter and gather operations use MPI neighbourhood collectives.
-/// The implementation is designed for sparse communication patterns,
-/// as it typical of patterns based on an IndexMap.
+/// Scatter and gather operations use MPI neighbourhood collectives. The
+/// implementation is designed for sparse communication patterns, as it
+/// typical of patterns based on an IndexMap.
 template <class Allocator = std::allocator<std::int32_t>>
 class Scatterer
 {
@@ -34,7 +34,7 @@ public:
   using allocator_type = Allocator;
 
   /// Types of MPI communication pattern used by the Scatterer.
-  enum class type
+  enum class type : std::uint8_t
   {
     neighbor, // use MPI neighborhood collectives
     p2p       // use MPI Isend/Irecv for communication
@@ -395,7 +395,7 @@ public:
     if (_sizes_local.empty() and _sizes_remote.empty())
       return;
 
-    // // Send and receive data
+    // Send and receive data
 
     switch (type)
     {
@@ -411,7 +411,8 @@ public:
     case type::p2p:
     {
       assert(requests.size() == _dest.size() + _src.size());
-      // Start non-blocking send from this process to ghost owners.
+
+      // Start non-blocking send from this process to ghost owners
       for (std::size_t i = 0; i < _dest.size(); i++)
       {
         MPI_Irecv(recv_buffer.data() + _displs_local[i], _sizes_local[i],
@@ -419,8 +420,8 @@ public:
                   &requests[i]);
       }
 
-      // Start non-blocking receive from neighbor process for which an owned
-      // index is a ghost.
+      // Start non-blocking receive from neighbor process for which an
+      // owned index is a ghost
       for (std::size_t i = 0; i < _src.size(); i++)
       {
         MPI_Isend(send_buffer.data() + _displs_remote[i], _sizes_remote[i],
@@ -440,8 +441,8 @@ public:
   /// The buffers passed to Scatterer::scatter_rev_begin must not be
   /// modified until after the function has been called.
   ///
-  /// @param[in] request The handle used when calling
-  /// Scatterer::scatter_rev_begin
+  /// @param[in] request Handle used when calling
+  /// Scatterer::scatter_rev_begin.
   void scatter_rev_end(std::span<MPI_Request> request) const
   {
     // Return early if there are no incoming or outgoing edges
@@ -568,28 +569,33 @@ public:
     return _remote_inds.size();
   }
 
-  /// Return a vector of local indices (owned) used to pack/unpack local
-  /// data. These indices are grouped by neighbor process (process for
-  /// which an index is a ghost).
+  /// @brief Return a vector of local indices (owned) used to
+  /// pack/unpack local data.
+  ///
+  /// Indices are grouped by neighbor process (process for which an
+  /// index is a ghost).
   const std::vector<std::int32_t>& local_indices() const noexcept
   {
     return _local_inds;
   }
 
-  /// Return a vector of remote indices (ghosts) used to pack/unpack ghost
-  /// data. These indices are grouped by neighbor process (ghost owners).
+  /// @brief Return a vector of remote indices (ghosts) used to
+  /// pack/unpack ghost data.
+  ///
+  /// These indices are grouped by neighbor process (ghost owners).
   const std::vector<std::int32_t>& remote_indices() const noexcept
   {
     return _remote_inds;
   }
 
   /// @brief The number values (block size) to send per index in the
-  /// common::IndexMap use to create the scatterer
+  /// common::IndexMap use to create the scatterer.
   /// @return The block size
   int bs() const noexcept { return _bs; }
 
-  /// @brief Create a vector of MPI_Requests for a given Scatterer::type
-  /// @return A vector of MPI requests
+  /// @brief Create a vector of MPI_Requests for a given
+  /// Scatterer::type.
+  /// @return Vector of MPI requests.
   std::vector<MPI_Request> create_request_vector(Scatterer::type type
                                                  = type::neighbor)
   {

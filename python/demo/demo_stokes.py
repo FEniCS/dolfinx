@@ -87,18 +87,7 @@
 # The required modules are first imported:
 
 from mpi4py import MPI
-
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
+from petsc4py import PETSc
 
 import numpy as np
 
@@ -134,7 +123,7 @@ from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 # +
 # Create mesh
 msh = create_rectangle(
-    MPI.COMM_WORLD, [np.array([0, 0]), np.array([1, 1])], [32, 32], CellType.triangle
+    MPI.COMM_WORLD, [np.array([0, 0]), np.array([1, 1])], (32, 32), CellType.triangle
 )
 
 
@@ -263,12 +252,11 @@ def nested_iterative_solver_high_level():
     P00.setOption(PETSc.Mat.Option.SPD, True)
     P11.setOption(PETSc.Mat.Option.SPD, True)
 
-    (u_h, p_h), _, convergence_reason, num_its = problem.solve()
-    # Because left-hand side operator is only assembled now we can
-    # only test that the null-space is setup correctly after calling
-    # solve.
+    u_h, p_h = problem.solve()
+    assert problem.solver.getConvergedReason() > 0
+    # Because left-hand side operator is only assembled during solve
+    # we can only test the null space at this point.
     assert nsp.test(problem.A)
-    assert convergence_reason > 0
 
     # Compute norms of the solution vectors
     norm_u = la.norm(u_h.x)

@@ -1230,6 +1230,7 @@ Topology mesh::create_topology(
   std::ranges::sort(global_to_local_vertices);
 
   std::vector<std::vector<std::int32_t>> _cells_local_idx;
+  _cells_local_idx.reserve(cells.size());
   for (std::span<const std::int64_t> c : cells)
   {
     _cells_local_idx.push_back(
@@ -1272,6 +1273,7 @@ Topology mesh::create_topology(
 
   // Set cell index map and connectivity
   std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells_c;
+  cells_c.reserve(cell_types.size());
   for (std::size_t i = 0; i < cell_types.size(); ++i)
   {
     cells_c.push_back(std::make_shared<graph::AdjacencyList<std::int32_t>>(
@@ -1445,8 +1447,9 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
                                mesh::CellType facet_type)
 {
   int tdim = topology.dim();
-  std::vector<mesh::CellType> cell_types = topology.entity_types(tdim);
-  std::vector<mesh::CellType> facet_types = topology.entity_types(tdim - 1);
+  const std::vector<mesh::CellType>& cell_types = topology.entity_types(tdim);
+  const std::vector<mesh::CellType>& facet_types
+      = topology.entity_types(tdim - 1);
 
   int facet_index = -1;
   for (std::size_t i = 0; i < facet_types.size(); ++i)
@@ -1470,7 +1473,7 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
       auto cfi = topology.connectivity({tdim, static_cast<int>(i)},
                                        {tdim - 1, facet_index});
 
-      auto local_facet = [](auto cf, std::int32_t c, std::int32_t f)
+      auto local_facet = [](const auto& cf, std::int32_t c, std::int32_t f)
       {
         auto it = std::find(cf->links(c).begin(), cf->links(c).end(), f);
         if (it == cf->links(c).end())

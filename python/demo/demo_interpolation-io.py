@@ -18,9 +18,10 @@
 # elements in discontinuous Lagrange spaces for artifact-free
 # visualisation.
 
-from mpi4py import MPI
 
 # +
+from mpi4py import MPI
+
 import numpy as np
 
 from dolfinx import default_scalar_type, plot

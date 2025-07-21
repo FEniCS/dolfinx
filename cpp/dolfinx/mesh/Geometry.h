@@ -71,8 +71,9 @@ public:
       const std::vector<fem::CoordinateElement<
           typename std::remove_reference_t<typename V::value_type>>>& elements,
       V&& x, int dim, W&& input_global_indices)
-      : _dim(dim), _dofmaps(std::forward<U>(dofmaps)), _index_map(index_map),
-        _cmaps(elements), _x(std::forward<V>(x)),
+      : _dim(dim), _dofmaps(std::forward<U>(dofmaps)),
+        _index_map(std::move(index_map)), _cmaps(elements),
+        _x(std::forward<V>(x)),
         _input_global_indices(std::forward<W>(input_global_indices))
   {
     assert(_x.size() % 3 == 0);
@@ -233,15 +234,14 @@ Geometry(std::shared_ptr<const common::IndexMap>, U&&,
 /// @return A mesh geometry.
 template <typename U>
 Geometry<typename std::remove_reference_t<typename U::value_type>>
-create_geometry(
-    const Topology& topology,
-    const std::vector<fem::CoordinateElement<
-        std::remove_reference_t<typename U::value_type>>>& elements,
-    std::span<const std::int64_t> nodes, std::span<const std::int64_t> xdofs,
-    const U& x, int dim,
-    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
-        reorder_fn
-    = nullptr)
+create_geometry(const Topology& topology,
+                const std::vector<fem::CoordinateElement<
+                    std::remove_reference_t<typename U::value_type>>>& elements,
+                std::span<const std::int64_t> nodes,
+                std::span<const std::int64_t> xdofs, const U& x, int dim,
+                const std::function<std::vector<int>(
+                    const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                = nullptr)
 {
   spdlog::info("Create Geometry (multiple)");
 
@@ -255,6 +255,7 @@ create_geometry(
     throw std::runtime_error("Mismatch between topology and geometry.");
 
   std::vector<fem::ElementDofLayout> dof_layouts;
+  dof_layouts.reserve(elements.size());
   for (const auto& el : elements)
     dof_layouts.push_back(el.create_dof_layout());
 

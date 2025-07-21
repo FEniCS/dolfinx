@@ -426,9 +426,12 @@ public:
   /// @brief Compute the product `y += Ax`.
   ///
   /// The vectors `x` and `y` must have parallel layouts that are
-  /// compatible with `A`.
+  /// compatible with `A`. In detail, `x` must have the same `IndexMap` as
+  /// the matrix columns, `A.index_map(1)` and `y` must have the same owned
+  /// indices as the matrix rows in `A.index_map(0)`. Only owned entries of `y`
+  /// are updated, so any ghost entries of `y` are not affected.
   ///
-  /// @param[in] x Vector to be apply `A` to.
+  /// @param[in] x Vector to apply `A` to.
   /// @param[in,out] y Vector to accumulate the result into.
   void mult(Vector<value_type>& x, Vector<value_type>& y);
 
