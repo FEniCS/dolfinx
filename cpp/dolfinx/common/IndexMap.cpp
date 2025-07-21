@@ -183,9 +183,9 @@ compute_submap_indices(const IndexMap& imap,
   std::ranges::for_each(indices,
                         [&is_in_submap](auto i) { is_in_submap[i] = 1; });
 
-  // --- Step 1 ---: Send ghost indices in `indices` to their owners
-  // and receive indices owned by this process that are in `indices`
-  // on other processes
+  // --- Step 1 ---: Send ghost indices in `indices` to their owners and
+  // receive indices owned by this process that are in `indices` on
+  // other processes.
   const auto [send_indices, recv_indices, ghost_buffer_pos, send_sizes,
               recv_sizes, send_disp, recv_disp]
       = communicate_ghosts_to_owners(
@@ -199,7 +199,7 @@ compute_submap_indices(const IndexMap& imap,
   // all indices in `recv_indices` will necessarily be in `indices` on
   // this process, and thus other processes must own them in the submap.
   // If ownership of received index doesn't change, then this process
-  // has the receiving rank as a destination
+  // has the receiving rank as a destination.
   std::vector<int> recv_owners(send_disp.back());
   std::vector<int> submap_dest;
   submap_dest.reserve(1);
@@ -572,7 +572,7 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   std::vector<int> send_sizes(src.size(), 0);
   std::vector<int> send_disp(src.size() + 1, 0);
   auto it = ghost_owners.begin();
-  for (std::size_t i = 0; i < src.size(); i++)
+  for (std::size_t i = 0; i < src.size(); ++i)
   {
     int owner = src[i];
     auto begin = std::find(it, ghost_owners.end(), owner);
@@ -1112,7 +1112,6 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks(int tag) const
   //    (index, [sharing ranks]). Non-owned indices are ghosted but
   //    not owned by this rank.
   {
-
     // Send data for owned indices back to ghosting ranks (this is
     // necessary to share with ghosting ranks all the ranks that also
     // ghost a ghost index)
