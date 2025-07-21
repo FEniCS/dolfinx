@@ -198,7 +198,7 @@ void declare_assembly_functions(nb::module_& m)
                   = e.second.first.empty()
                         ? 0
                         : e.second.first.size() / e.second.second;
-              return std::pair<const std::pair<dolfinx::fem::IntegralType, int>,
+              return std::pair<std::pair<dolfinx::fem::IntegralType, int>,
                                nb::ndarray<T, nb::numpy>>(
                   e.first,
                   dolfinx_wrappers::as_nbarray(
@@ -212,7 +212,7 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "pack_coefficients",
       [](const dolfinx::fem::Expression<T, U>& e,
-         const nb::ndarray<const std::int32_t, nb::c_contig>& entities)
+         nb::ndarray<const std::int32_t, nb::c_contig> entities)
       {
         std::vector<int> coffsets = e.coefficient_offsets();
         const std::vector<std::shared_ptr<const dolfinx::fem::Function<T, U>>>&
@@ -262,12 +262,12 @@ void declare_assembly_functions(nb::module_& m)
   // Expression
   m.def(
       "tabulate_expression",
-      [](const nb::ndarray<T, nb::c_contig>& values,
+      [](nb::ndarray<T, nb::c_contig> values,
          const dolfinx::fem::Expression<T, U>& e,
-         const nb::ndarray<const T, nb::ndim<1>, nb::c_contig>& constants,
-         const nb::ndarray<const T, nb::ndim<2>, nb::c_contig>& coeffs,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
+         nb::ndarray<const T, nb::ndim<2>, nb::c_contig> coeffs,
          const dolfinx::mesh::Mesh<U>& mesh,
-         const nb::ndarray<const std::int32_t, nb::c_contig>& entities)
+         nb::ndarray<const std::int32_t, nb::c_contig> entities)
       {
         std::optional<std::pair<
             std::reference_wrapper<const dolfinx::fem::FiniteElement<U>>,
@@ -314,7 +314,7 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "assemble_scalar",
       [](const dolfinx::fem::Form<T, U>& M,
-         const nb::ndarray<const T, nb::ndim<1>, nb::c_contig>& constants,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<const T, nb::ndim<2>, nb::c_contig>>&
              coefficients)
@@ -329,9 +329,9 @@ void declare_assembly_functions(nb::module_& m)
   // Vector
   m.def(
       "assemble_vector",
-      [](const nb::ndarray<T, nb::ndim<1>, nb::c_contig>& b,
+      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
          const dolfinx::fem::Form<T, U>& L,
-         const nb::ndarray<const T, nb::ndim<1>, nb::c_contig>& constants,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<const T, nb::ndim<2>, nb::c_contig>>&
              coefficients)
@@ -348,7 +348,7 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "assemble_matrix",
       [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::Form<T, U>& a,
-         const nb::ndarray<const T, nb::ndim<1>, nb::c_contig>& constants,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<const T, nb::ndim<2>, nb::c_contig>>&
              coefficients,
@@ -466,7 +466,7 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "insert_diagonal",
       [](dolfinx::la::MatrixCSR<T>& A,
-         const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>& rows,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
          T diagonal)
       {
         dolfinx::fem::set_diagonal(
@@ -514,7 +514,7 @@ void declare_assembly_functions(nb::module_& m)
   // BC modifiers
   m.def(
       "apply_lifting",
-      [](const nb::ndarray<T, nb::ndim<1>, nb::c_contig>& b,
+      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
          const std::vector<const dolfinx::fem::Form<T, U>*>& a,
          const std::vector<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>&
              constants,

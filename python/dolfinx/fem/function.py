@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import typing
+from collections.abc import Callable, Sequence
 from functools import cached_property, singledispatch
 
 import numpy as np
@@ -37,7 +38,7 @@ class Constant(ufl.Constant):
     ]
 
     def __init__(
-        self, domain, c: typing.Union[np.ndarray, typing.Sequence, np.floating, np.complexfloating]
+        self, domain, c: typing.Union[np.ndarray, Sequence, np.floating, np.complexfloating]
     ):
         """A constant with respect to a domain.
 
@@ -428,7 +429,7 @@ class Function(ufl.Coefficient):
 
     def interpolate(
         self,
-        u0: typing.Union[typing.Callable, Expression, Function],
+        u0: typing.Union[Callable, Expression, Function],
         cells0: typing.Optional[np.ndarray] = None,
         cells1: typing.Optional[np.ndarray] = None,
     ) -> None:

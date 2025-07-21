@@ -21,15 +21,15 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/chrono.h>
-#include <nanobind/stl/map.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
-#include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <optional>
 #include <span>
 #include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 namespace nb = nanobind;
@@ -53,8 +53,8 @@ void add_scatter_functions(nb::class_<dolfinx::common::Scatterer<>>& sc)
   sc.def(
       "scatter_fwd",
       [](dolfinx::common::Scatterer<>& self,
-         const nb::ndarray<const T, nb::ndim<1>, nb::c_contig>& local_data,
-         const nb::ndarray<T, nb::ndim<1>, nb::c_contig>& remote_data)
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> local_data,
+         nb::ndarray<T, nb::ndim<1>, nb::c_contig> remote_data)
       {
         self.scatter_fwd(std::span(local_data.data(), local_data.size()),
                          std::span(remote_data.data(), remote_data.size()));
@@ -64,8 +64,8 @@ void add_scatter_functions(nb::class_<dolfinx::common::Scatterer<>>& sc)
   sc.def(
       "scatter_rev",
       [](dolfinx::common::Scatterer<>& self,
-         const nb::ndarray<T, nb::ndim<1>, nb::c_contig>& local_data,
-         const nb::ndarray<const T, nb::ndim<1>, nb::c_contig>& remote_data)
+         nb::ndarray<T, nb::ndim<1>, nb::c_contig> local_data,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> remote_data)
       {
         self.scatter_rev(std::span(local_data.data(), local_data.size()),
                          std::span(remote_data.data(), remote_data.size()),
@@ -115,10 +115,8 @@ void common(nb::module_& m)
           "__init__",
           [](dolfinx::common::IndexMap* self, MPICommWrapper comm,
              std::int32_t local_size,
-             const nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>&
-                 ghosts,
-             const nb::ndarray<const int, nb::ndim<1>, nb::c_contig>&
-                 ghost_owners,
+             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> ghosts,
+             nb::ndarray<const int, nb::ndim<1>, nb::c_contig> ghost_owners,
              int tag)
           {
             new (self) dolfinx::common::IndexMap(
@@ -133,10 +131,8 @@ void common(nb::module_& m)
              std::int32_t local_size,
              std::array<nb::ndarray<const int, nb::ndim<1>, nb::c_contig>, 2>
                  dest_src,
-             const nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>&
-                 ghosts,
-             const nb::ndarray<const int, nb::ndim<1>, nb::c_contig>&
-                 ghost_owners)
+             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> ghosts,
+             nb::ndarray<const int, nb::ndim<1>, nb::c_contig> ghost_owners)
           {
             std::array<std::vector<int>, 2> ranks;
             ranks[0].assign(dest_src[0].data(),
@@ -160,8 +156,6 @@ void common(nb::module_& m)
                    "Range of indices owned by this map")
       .def("index_to_dest_ranks",
            &dolfinx::common::IndexMap::index_to_dest_ranks)
-      .def("imbalance", &dolfinx::common::IndexMap::imbalance,
-           "Imbalance of the current IndexMap.")
       .def_prop_ro(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)
@@ -183,8 +177,7 @@ void common(nb::module_& m)
       .def(
           "local_to_global",
           [](const dolfinx::common::IndexMap& self,
-             const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>&
-                 local)
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> local)
           {
             std::vector<std::int64_t> global(local.size());
             self.local_to_global(std::span(local.data(), local.size()), global);
@@ -194,8 +187,7 @@ void common(nb::module_& m)
       .def(
           "global_to_local",
           [](const dolfinx::common::IndexMap& self,
-             const nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>&
-                 global)
+             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> global)
           {
             std::vector<std::int32_t> local(global.size());
             self.global_to_local(std::span(global.data(), global.size()),
@@ -248,8 +240,7 @@ void common(nb::module_& m)
   m.def(
       "create_sub_index_map",
       [](const dolfinx::common::IndexMap& imap,
-         const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>&
-             indices,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices,
          bool allow_owner_change)
       {
         auto [map, submap_to_map] = dolfinx::common::create_sub_index_map(

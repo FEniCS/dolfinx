@@ -14,7 +14,6 @@
 #include <cassert>
 #include <complex>
 #include <cstdint>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <numeric>
 #include <set>
 #include <span>
