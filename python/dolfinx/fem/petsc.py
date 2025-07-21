@@ -137,14 +137,12 @@ def create_vector(
     if len(container) == 0:
         raise RuntimeError("Empty sequence of functionspaces/forms provided.")
 
-    V: Sequence[_FunctionSpace] = (
-        _extract_function_spaces(container) if isinstance(container[0], Form) else container
-    )
+    V = _extract_function_spaces(container) if isinstance(container[0], Form) else container
 
     if any(_V is None for _V in V):
         raise RuntimeError("Can not create vector for extracted None block.")
 
-    maps = [(_V.dofmap.index_map, _V.dofmap.index_map_bs) for _V in V if _V is not None]
+    maps = [(_V.dofmap.index_map, _V.dofmap.index_map_bs) for _V in V]  # type: ignore
     return dolfinx.la.petsc.create_vector(maps, kind=kind)
 
 
