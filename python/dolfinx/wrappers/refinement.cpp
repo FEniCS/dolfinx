@@ -134,11 +134,9 @@ void refinement(nb::module_& m)
   m.def(
       "transfer_facet_meshtag",
       [](const dolfinx::mesh::MeshTags<std::int32_t>& parent_meshtag,
-         const std::shared_ptr<const dolfinx::mesh::Topology>& topology1,
-         const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>&
-             parent_cell,
-         const nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig>&
-             parent_facet)
+         std::shared_ptr<const dolfinx::mesh::Topology> topology1,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> parent_cell,
+         nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> parent_facet)
       {
         int tdim = parent_meshtag.topology()->dim();
         if (parent_meshtag.dim() != tdim - 1)
@@ -155,9 +153,8 @@ void refinement(nb::module_& m)
   m.def(
       "transfer_cell_meshtag",
       [](const dolfinx::mesh::MeshTags<std::int32_t>& parent_meshtag,
-         const std::shared_ptr<const dolfinx::mesh::Topology>& topology1,
-         const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>&
-             parent_cell)
+         std::shared_ptr<const dolfinx::mesh::Topology> topology1,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> parent_cell)
       {
         int tdim = parent_meshtag.topology()->dim();
         if (parent_meshtag.dim() != tdim)

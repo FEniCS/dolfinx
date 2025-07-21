@@ -40,6 +40,7 @@ jobs:
         run: |
           apt-get -y update
           apt-get -y install binutils libstdc++-14-dev git
+          apt-get install -y libglu1-mesa libgl1 libxrender1 libxcursor1 libxft2 libxinerama1 libegl1
 
       - uses: actions/checkout@v4
 

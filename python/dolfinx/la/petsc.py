@@ -23,7 +23,8 @@ import numpy as np
 import numpy.typing as npt
 
 import dolfinx
-from dolfinx.la import IndexMap, Vector
+from dolfinx.common import IndexMap
+from dolfinx.la import Vector
 
 assert dolfinx.has_petsc4py
 

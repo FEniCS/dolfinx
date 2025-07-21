@@ -129,7 +129,7 @@ graph::build::distribute(MPI_Comm comm,
     assert(send_disp.back() == (std::int32_t)dest_to_index.size());
     for (std::size_t i = 0; i < dest_to_index.size(); ++i)
     {
-      const std::array<int, 3>& dest_data = dest_to_index[i];
+      std::array<int, 3> dest_data = dest_to_index[i];
       const std::size_t pos = dest_data[1];
 
       std::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);

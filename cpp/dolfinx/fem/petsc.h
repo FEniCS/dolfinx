@@ -44,7 +44,7 @@ namespace petsc
 /// object.
 template <std::floating_point T>
 Mat create_matrix(const Form<PetscScalar, T>& a,
-                  const std::optional<std::string>& type = std::nullopt)
+                  std::optional<std::string> type = std::nullopt)
 {
   la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
   pattern.finalize();
@@ -64,7 +64,7 @@ Mat create_matrix(const Form<PetscScalar, T>& a,
 template <std::floating_point T>
 Mat create_matrix_block(
     const std::vector<std::vector<const Form<PetscScalar, T>*>>& a,
-    const std::optional<std::string>& type = std::nullopt)
+    std::optional<std::string> type = std::nullopt)
 {
   // Extract and check row/column ranges
   std::array<std::vector<std::shared_ptr<const FunctionSpace<T>>>, 2> V

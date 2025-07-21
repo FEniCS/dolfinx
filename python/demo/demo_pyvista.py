@@ -22,20 +22,16 @@
 # To start, the required modules are imported and some PyVista
 # parameters set.
 
-from mpi4py import MPI
 
 # +
+from mpi4py import MPI
+
 import numpy as np
+import pyvista
 
 import dolfinx.plot as plot
 from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import CellType, compute_midpoints, create_unit_cube, create_unit_square, meshtags
-
-try:
-    import pyvista
-except ModuleNotFoundError:
-    print("pyvista is required for this demo")
-    exit(0)
 
 # If environment variable PYVISTA_OFF_SCREEN is set to true save a png
 # otherwise create interactive plot
