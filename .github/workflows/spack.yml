@@ -50,20 +50,18 @@ jobs:
           color: true       # Force color output (SPACK_COLOR=always)
           path: spack-src       # Where to clone Spack
 
-      # - name: Build DOLFINx (C++) development version via Spack
-      #   shell: spack-bash {0}
-      #   run: |
-      #     spack env create cpp-main .github/workflows/spack-config/gh-actions-env.yaml
-      #     spack -e cpp-main install -j 4 --add fenics-dolfinx@main+petsc+adios2
-
-      # - name: Push packages and update index
-      #   env:
-      #     GITHUB_USER: ${{ github.actor }}
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   run: |
-      #     spack -e cpp-main buildcache push --base-image ubuntu:24.04 --update-index local-buildcache
-      #   if: ${{ !cancelled() }}
-
+      - name: Build DOLFINx (C++) development version via Spack
+        shell: spack-bash {0}
+        run: |
+          spack env create cpp-main .github/workflows/spack-config/gh-actions-env.yaml
+          spack -e cpp-main install -j 4 --add fenics-dolfinx@main+petsc+adios2
+      - name: Push packages and update index
+        env:
+          GITHUB_USER: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          spack -e cpp-main buildcache push --base-image ubuntu:24.04 --update-index local-buildcache
+        if: ${{ !cancelled() }}
 
       - name: Get DOLFINx code (to access test files)
         uses: actions/checkout@v4
@@ -76,12 +74,12 @@ jobs:
           spack env create cpp-main-test .github/workflows/spack-config/gh-actions-env.yaml
           spack -e cpp-main-test install -j 4 --add fenics-dolfinx@main+petsc+adios2 cmake py-fenics-ffcx@main
           spack env activate cpp-main-test
-          # cd dolfinx-main/cpp/
-          # cd demo/poisson
-          # cmake .
-          # export VERBOSE=1
-          # make -j 4
-          # mpirun -np 2 ./demo_poisson
+          cd dolfinx-main/cpp/
+          cd demo/poisson
+          cmake .
+          export VERBOSE=1
+          make -j 4
+          mpirun -np 2 ./demo_poisson
 
       - name: Push packages and update index
         env:
