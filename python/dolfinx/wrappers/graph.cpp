@@ -40,7 +40,7 @@ auto create_partitioner_py(Functor&& p_cpp)
 }
 
 template <typename T, typename U>
-void declare_adjacency_list(nb::module_& m, std::string type)
+void declare_adjacency_list_init(nb::module_& m, std::string type)
 {
   std::string pyclass_name = std::string("AdjacencyList_") + type;
   nb::class_<dolfinx::graph::AdjacencyList<T, U>>(m, pyclass_name.c_str(),
@@ -110,18 +110,37 @@ void declare_adjacency_list(nb::module_& m, std::string type)
       .def("__repr__", &dolfinx::graph::AdjacencyList<T, U>::str)
       .def("__len__", &dolfinx::graph::AdjacencyList<T, U>::num_nodes);
 }
+
+template <typename T, typename U>
+void declare_adjacency_list(nb::module_& m, std::string type)
+{
+  std::string pyclass_name = std::string("AdjacencyList_") + type;
+  nb::class_<dolfinx::graph::AdjacencyList<T, U>>(m, pyclass_name.c_str(),
+                                                  "Adjacency List")
+      .def_prop_ro(
+          "offsets",
+          [](const dolfinx::graph::AdjacencyList<T, U>& self)
+          {
+            return nb::ndarray<const std::int32_t, nb::numpy>(
+                self.offsets().data(), {self.offsets().size()});
+          },
+          nb::rv_policy::reference_internal)
+      .def_prop_ro("num_nodes", &dolfinx::graph::AdjacencyList<T, U>::num_nodes)
+      .def("__eq__", &dolfinx::graph::AdjacencyList<T, U>::operator==,
+           nb::is_operator())
+      .def("__len__", &dolfinx::graph::AdjacencyList<T, U>::num_nodes);
+}
 } // namespace
 
 namespace dolfinx_wrappers
 {
 void graph(nb::module_& m)
 {
-  declare_adjacency_list<std::int32_t, std::nullptr_t>(m, "int32");
-  declare_adjacency_list<std::int64_t, std::nullptr_t>(m, "int64");
-  nb::class_<
-      dolfinx::graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
-                                    std::pair<std::int32_t, std::int32_t>>>(
-      m, "AdjacencyList_int_sizet_int8__int32_int32", "Adjacency List");
+  declare_adjacency_list_init<std::int32_t, std::nullptr_t>(m, "int32");
+  declare_adjacency_list_init<std::int64_t, std::nullptr_t>(m, "int64");
+  declare_adjacency_list<std::tuple<int, std::size_t, std::int8_t>,
+                         std::pair<std::int32_t, std::int32_t>>(
+      m, "AdjacencyList_int_sizet_int8__int32_int32");
 
   using partition_fn
       = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(

@@ -167,12 +167,12 @@ def comm_graph(map: _cpp.common.IndexMap, root: int = 0) -> AdjacencyList:
     Returns:
         An adjacency list representing the communication graph.
     """
-    return _cpp.graph.comm_graph(map)
+    return AdjacencyList(_cpp.graph.comm_graph(map))
 
 
 def comm_graph_data(
     graph: AdjacencyList,
-) -> tuple[npt.NDArray[np.int32], npt.NDArray[np.int32]]:
+) -> tuple[list[tuple[int, int, dict[str, int]]], list[tuple[int, dict[str, int]]]]:
     """Convert a communication graph to data for use with
     `NetworkX <https://networkx.org/>`_.
 
@@ -186,13 +186,14 @@ def comm_graph_data(
         holds edge data. The second list hold node data, where a node is
         a `(nodeID, dict)` tuple, where `dict` holds node data.
     """
-    return _cpp.graph.comm_graph_data(graph)
+    return _cpp.graph.comm_graph_data(graph._cpp_object)
 
 
 def comm_to_json(graph: AdjacencyList) -> str:
     """Convert a communication graph to a JSON string.
 
-    The JSON string can be used to construct a `NetworkX <https://networkx.org/>`_graph.
+    The JSON string can be used to construct a `NetworkX
+    <https://networkx.org/>`_graph.
 
     Args:
         graph: The communication graph to convert. Normally created by
@@ -201,4 +202,4 @@ def comm_to_json(graph: AdjacencyList) -> str:
     Returns:
         A JSON string representing the communication graph.
     """
-    return _cpp.graph.comm_to_json(graph)
+    return _cpp.graph.comm_to_json(graph._cpp_object)
