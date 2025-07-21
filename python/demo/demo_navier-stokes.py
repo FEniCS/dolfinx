@@ -174,7 +174,7 @@ from petsc4py import PETSc
 import numpy as np
 
 import ufl
-from dolfinx import default_real_type, fem, io, mesh
+from dolfinx import default_real_type, fem, has_adios2, io, mesh
 from dolfinx.fem.petsc import LinearProblem
 
 if np.issubdtype(PETSc.ScalarType, np.complexfloating):
@@ -351,7 +351,7 @@ u_vis.interpolate(u_h)
 
 # Write initial condition to file
 t = 0.0
-if dolfinx.has_adios2:
+if has_adios2:
     u_file = io.VTXWriter(msh.comm, "u.bp", u_vis)
     p_file = io.VTXWriter(msh.comm, "p.bp", p_h)
     u_file.write(t)
