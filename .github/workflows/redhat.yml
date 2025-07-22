@@ -57,6 +57,7 @@ jobs:
       - name: Install dependencies
         # shell: spack-bash {0}
         run: |
+          . ../spack-src/share/spack/setup-env.sh
           pwd
           ls -al
         # . spack-src/share/spack/setup-env.sh
@@ -70,7 +71,7 @@ jobs:
           GITHUB_USER: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          . spack-src/share/spack/setup-env.sh
+          . ../spack-src/share/spack/setup-env.sh
           spack -e dolfinx buildcache push --base-image ubuntu
 
 
