@@ -41,7 +41,7 @@ jobs:
       - name: Install Spack requirements
         run: |
           dnf -y install epel-release
-          dnf -y install bash file bzip2 ca-certificates git gzip patch python3 tar unzip xz zstd gcc gcc-c++ gcc-gfortran
+          dnf -y install file bzip2 ca-certificates git gzip patch python3 tar unzip xz zstd gcc gcc-c++ gcc-gfortran
 
       - name: Checkout Spack
         uses: actions/checkout@v4
@@ -87,13 +87,13 @@ jobs:
           spack -e dolfinx add python py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py py-scikit-build-core+pyproject py-setuptools py-cffi
           spack -e dolfinx install --use-buildcache=package:never,dependencies:auto
 
-      # - name: Push packages and update index
-      #   env:
-      #     GITHUB_USER: ${{ github.actor }}
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   run: |
-      #     . ../spack-src/share/spack/setup-env.sh
-      #     spack -e dolfinx buildcache push --base-image ubuntu
+      - name: Push packages and update index
+        env:
+          GITHUB_USER: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          . ../spack-src/share/spack/setup-env.sh
+          spack -e dolfinx buildcache push --base-image ubuntu
 
 
       # - name: Load environment variables
