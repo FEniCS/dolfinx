@@ -9,7 +9,7 @@
 from __future__ import annotations
 
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 from mpi4py import MPI as _MPI
 
@@ -950,7 +950,7 @@ def create_unit_interval(
 def create_rectangle(
     comm: _MPI.Comm,
     points: npt.ArrayLike,
-    n: npt.ArrayLike,
+    n: Sequence[int],
     cell_type=CellType.triangle,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode=GhostMode.shared_facet,
@@ -1030,7 +1030,7 @@ def create_unit_square(
     return create_rectangle(
         comm,
         [np.array([0.0, 0.0]), np.array([1.0, 1.0])],
-        [nx, ny],
+        (nx, ny),
         cell_type,
         dtype,
         ghost_mode,
@@ -1042,7 +1042,7 @@ def create_unit_square(
 def create_box(
     comm: _MPI.Comm,
     points: list[npt.ArrayLike],
-    n: list,
+    n: Sequence[int],
     cell_type=CellType.tetrahedron,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode=GhostMode.shared_facet,
@@ -1118,7 +1118,7 @@ def create_unit_cube(
     return create_box(
         comm,
         [np.array([0.0, 0.0, 0.0]), np.array([1.0, 1.0, 1.0])],
-        [nx, ny, nz],
+        (nx, ny, nz),
         cell_type,
         dtype,
         ghost_mode,
