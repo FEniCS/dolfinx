@@ -74,7 +74,7 @@ def create_vector_wrap(x: Vector) -> PETSc.Vec:  # type: ignore[name-defined]
 
 def create_vector(
     maps: typing.Sequence[tuple[IndexMap, int]], kind: typing.Optional[str] = None
-) -> PETSc.Vec:  # type: ignore[attr-defined]
+) -> PETSc.Vec:  # type: ignore[name-defined]
     """Create a PETSc vector from a sequence of maps and blocksizes.
 
     Three cases are supported:
@@ -221,7 +221,7 @@ def _(
                 x1[:] = _x0.array_r[:]
 
 
-def _assign_block_data(maps: Iterable[tuple[IndexMap, int]], vec: PETSc.Vec):  # type: ignore[attr-defined]
+def _assign_block_data(maps: Iterable[tuple[IndexMap, int]], vec: PETSc.Vec):  # type: ignore[name-defined]
     """Assign block data to a PETSc vector.
 
     Args:
