@@ -92,7 +92,7 @@ jobs:
         run: |
           cat .github/workflows/spack-config/gh-actions-env.yaml
           spack env create py-main .github/workflows/spack-config/gh-actions-env.yaml
-          spack -e py-main install --use-buildcache=package:never,dependencies:auto --add py-fenics-dolfinx@main %fenics-dolfinx+petsc
+          spack -e py-main install --use-buildcache=package:never,dependencies:auto --add py-fenics-dolfinx@main %fenics-dolfinx+petsc py-setuptools
       - name: Run DOLFINx (Python, development) test
         shell: spack-bash {0}
         run: |
