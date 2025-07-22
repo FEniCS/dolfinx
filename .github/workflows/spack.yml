@@ -54,7 +54,7 @@ jobs:
         shell: spack-bash {0}
         run: |
           spack env create cpp-main .github/workflows/spack-config/gh-actions-env.yaml
-          spack -e cpp-main install -j 4 --add fenics-dolfinx@main+petsc+adios2
+          spack -e cpp-main install -j 4 --add fenics-dolfinx@main+petsc
       - name: Push packages and update index
         env:
           GITHUB_USER: ${{ github.actor }}
@@ -72,7 +72,7 @@ jobs:
         run: |
           cat .github/workflows/spack-config/gh-actions-env.yaml
           spack env create cpp-main-test .github/workflows/spack-config/gh-actions-env.yaml
-          spack -e cpp-main-test install -j 4 --add fenics-dolfinx@main+petsc+adios2 cmake py-fenics-ffcx@main
+          spack -e cpp-main-test install --add fenics-dolfinx@main+petsc cmake py-fenics-ffcx@main
           spack env activate cpp-main-test
           cd dolfinx-main/cpp/
           cd demo/poisson
@@ -92,7 +92,7 @@ jobs:
         shell: spack-bash {0}
         run: |
           spack env create cpp-release .github/workflows/spack-config/gh-actions-env.yaml
-          spack -e cpp-release install -j 4 --add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+petsc+adios2
+          spack -e cpp-release install --add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+petsc+adios2
       - name: Push packages and update index
         env:
           GITHUB_USER: ${{ github.actor }}
