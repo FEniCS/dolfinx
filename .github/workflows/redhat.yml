@@ -27,6 +27,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container: rockylinux/rockylinux:10
+    defaults:
+          run:
+            shell: bash
 
     name: Rocky build and test
 
@@ -37,22 +40,22 @@ jobs:
           dnf -y install epel-release
           dnf -y install file bzip2 ca-certificates git gzip patch python3 tar unzip xz zstd gcc gcc-c++ gcc-gfortran
 
-      - name: Checkout Spack
-        uses: actions/checkout@v4
-        with:
-          repository: spack/spack
-          path: spack-src
+      # - name: Checkout Spack
+      #   uses: actions/checkout@v4
+      #   with:
+      #     repository: spack/spack
+      #     path: spack-src
 
       - name: Get DOLFINx code (to access Spack config and test files)
         uses: actions/checkout@v4
 
-        # - name: Set up Spack
-      #   uses: spack/setup-spack@main
-      #   with:
-      #     ref: develop      # Spack version (examples: develop, releases/v0.23)
-      #     buildcache: false  # Enable buildcache support
-      #     color: true       # Force color output (SPACK_COLOR=always)
-      #     path: spack-src   # Where to clone Spack
+      - name: Set up Spack
+        uses: spack/setup-spack@main
+        with:
+          ref: develop      # Spack version (examples: develop, releases/v0.23)
+          buildcache: false  # Enable buildcache support
+          color: true       # Force color output (SPACK_COLOR=always)
+          path: spack-src   # Where to clone Spack
 
       - name: Install dependencies
         # shell: spack-bash {0}
@@ -81,6 +84,7 @@ jobs:
       - name: Install FEniCS Python components
         shell: spack-bash {0}
         run: |
+          . ../spack-src/share/spack/setup-env.sh
           spack env activate dolfinx
           pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
           pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
