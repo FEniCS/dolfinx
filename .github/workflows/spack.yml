@@ -50,7 +50,7 @@ jobs:
       - name: Build DOLFINx (C++) development version via Spack
         shell: spack-bash {0}
         run: |
-          spack repo add  add --name test_pkgs https://github.com/${{ env.spack_package_repo }}.git@${{ env.spack_package_ref }} ~/test_pkgs
+          spack repo add --name test_pkgs https://github.com/${{ env.spack_package_repo }}.git@${{ env.spack_package_ref }} ~/test_pkgs
           spack env create dolfinx .github/workflows/spack-config/gh-actions-env.yaml
           spack -e dolfinx install --use-buildcache=package:never,dependencies:auto --add fenics-dolfinx@main+petsc
       - name: Run a C++ test
@@ -93,7 +93,7 @@ jobs:
       - name: Build DOLFINx
         shell: spack-bash {0}
         run: |
-          spack repo add  add --name test_pkgs https://github.com/${{ env.spack_package_repo }}.git@${{ env.spack_package_ref }} ~/test_pkgs
+          spack repo add --name test_pkgs https://github.com/${{ env.spack_package_repo }}.git@${{ env.spack_package_ref }} ~/test_pkgs
           cat .github/workflows/spack-config/gh-actions-env.yaml
           spack env create dolfinx .github/workflows/spack-config/gh-actions-env.yaml
           spack -e dolfinx install --use-buildcache=package:never,dependencies:auto --add py-fenics-dolfinx@main %fenics-dolfinx+petsc~adios2
