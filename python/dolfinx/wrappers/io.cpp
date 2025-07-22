@@ -121,9 +121,8 @@ void declare_vtx_writer(nb::module_& m, const std::string& type)
                std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
                std::string engine)
             {
-              new (self)
-                  dolfinx::io::VTXWriter<T>(comm.get(), std::move(filename),
-                                            std::move(mesh), std::move(engine));
+              new (self) dolfinx::io::VTXWriter<T>(
+                  comm.get(), filename, std::move(mesh), std::move(engine));
             },
             nb::arg("comm"), nb::arg("filename"), nb::arg("mesh"),
             nb::arg("engine"))
@@ -140,8 +139,8 @@ void declare_vtx_writer(nb::module_& m, const std::string& type)
                        std::complex<double>, T>>>>& u,
                const std::string& engine, dolfinx::io::VTXMeshPolicy policy)
             {
-              new (self) dolfinx::io::VTXWriter<T>(
-                  comm.get(), std::move(filename), u, engine, policy);
+              new (self) dolfinx::io::VTXWriter<T>(comm.get(), filename, u,
+                                                   engine, policy);
             },
             nb::arg("comm"), nb::arg("filename"), nb::arg("u"),
             nb::arg("engine") = "BPFile",
