@@ -129,7 +129,7 @@ jobs:
       - name: Build DOLFINx (Python, development)
         shell: spack-bash {0}
         run: |
-          spack env create py-main  .github/workflows/spack-config/gh-actions-env.yaml
+          spack env create py-main .github/workflows/spack-config/gh-actions-env.yaml
           spack -e py-main install -j 4 --add py-fenics-dolfinx@main
       - name: Run DOLFINx (Python, development) test
         shell: spack-bash {0}
@@ -141,7 +141,7 @@ jobs:
           GITHUB_USER: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          spack -e ph-main buildcache push --base-image ubuntu:24.04 --update-index local-buildcache
+          spack -e py-main buildcache push --base-image ubuntu:24.04 --update-index local-buildcache
         if: ${{ !cancelled() }}
 
       # - name: Build DOLFINx (Python, release version)
