@@ -49,6 +49,16 @@ jobs:
           repository: spack/spack
           path: spack-src
 
+      - name: Check
+        # shell: spack-bash {0}
+        run: |
+          pwd
+          ls -al
+          ls -al ../
+          ls -al ../../
+          ls -al ~
+          ls -al $GITHUB_WORKSPACE
+
       - name: Get DOLFINx code (to access Spack config and test files)
         uses: actions/checkout@v4
 
@@ -68,6 +78,7 @@ jobs:
           ls -al ../
           ls -al ../../
           ls -al ~
+          ls -al $GITHUB_WORKSPACE
 
          # . spack-src/share/spack/setup-env.sh
         # spack env create dolfinx .github/workflows/spack-config/gh-actions-env.yaml
