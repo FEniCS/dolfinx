@@ -26,7 +26,7 @@ from __future__ import annotations
 import contextlib
 import functools
 import typing
-from collections.abc import Sequence, Sized
+from collections.abc import Sequence
 
 from petsc4py import PETSc
 
@@ -82,7 +82,7 @@ __all__ = [
 
 
 def create_vector(
-    container: typing.Union[Form, _FunctionSpace, Sized[Form], Sized[_FunctionSpace]],
+    container: typing.Union[Form, _FunctionSpace, Sequence[Form], Sequence[_FunctionSpace]],
     /,
     kind: typing.Optional[str] = None,
 ) -> PETSc.Vec:  # type: ignore[name-defined]
@@ -133,9 +133,6 @@ def create_vector(
     """
     if isinstance(container, (Form, _FunctionSpace)):
         container = [container]
-
-    if len(container) == 0:
-        raise RuntimeError("Empty sequence of functionspaces/forms provided.")
 
     V = _extract_function_spaces(container) if isinstance(container[0], Form) else container
 
