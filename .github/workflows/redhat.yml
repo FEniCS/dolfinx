@@ -40,17 +40,24 @@ jobs:
       - name: Get DOLFINx code (to access Spack config and test files)
         uses: actions/checkout@v4
 
-      - name: Set up Spack
-        uses: spack/setup-spack@main
+      - name: Checkout Spack
+        uses: actions/checkout@v4
         with:
-          ref: develop      # Spack version (examples: develop, releases/v0.23)
-          buildcache: false  # Enable buildcache support
-          color: true       # Force color output (SPACK_COLOR=always)
-          path: spack-src   # Where to clone Spack
+          repository: spack/spack
+          path: spack-src
+
+      # - name: Set up Spack
+      #   uses: spack/setup-spack@main
+      #   with:
+      #     ref: develop      # Spack version (examples: develop, releases/v0.23)
+      #     buildcache: false  # Enable buildcache support
+      #     color: true       # Force color output (SPACK_COLOR=always)
+      #     path: spack-src   # Where to clone Spack
 
       - name: Install dependencies
-        shell: spack-bash {0}
+        # shell: spack-bash {0}
         run: |
+          . spack-src/share/spack/setup-env.sh
           spack env create dolfinx .github/workflows/spack-config/gh-actions-env.yaml
           spack -e dolfinx --add mpi petsc+mpi+shared slepc parmetis pkgconfig python hdf5+mpi boost pugixml spdlog
           spack -e dolfinx --add python py-nanonind py-numpy py-mpi4py py-petsc4py py-slepc4py py-scikit-build-core+pyproject py-setuptool py-cffi
@@ -61,6 +68,7 @@ jobs:
           GITHUB_USER: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          . spack-src/share/spack/setup-env.sh
           spack -e dolfinx buildcache push --base-image ubuntu
 
 
