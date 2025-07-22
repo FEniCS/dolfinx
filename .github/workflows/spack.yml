@@ -97,6 +97,7 @@ jobs:
         shell: spack-bash {0}
         run: |
           spack env activate py-main
+          spack load gcc
           mpirun -np 2 python3 python/demo/demo_elasticity.py
       - name: Push packages and update index
         env:
