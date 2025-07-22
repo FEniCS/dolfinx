@@ -51,8 +51,11 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         shell: spack-bash {0}
         run: |
+          spack repo update
           spack repo add --name test_pkgs https://github.com/${{ github.event.inputs.spack_package_repo }}.git ~/test_pkgs
           spack repo update --branch ${{ github.event.inputs.spack_package_ref }} test_pkgs
+          spack repo list
+          spack config get repos
       - name: Build DOLFINx
         shell: spack-bash {0}
         run: |
@@ -101,6 +104,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         shell: spack-bash {0}
         run: |
+          spack repo update
           spack repo add --name test_pkgs https://github.com/${{ github.event.inputs.spack_package_repo }}.git ~/test_pkgs
           spack repo update --branch ${{ github.event.inputs.spack_package_ref }} test_pkgs
           spack repo list
@@ -112,6 +116,7 @@ jobs:
           spack env create dolfinx .github/workflows/spack-config/gh-actions-env.yaml
           spack -e dolfinx install --use-buildcache=package:never,dependencies:auto --add py-fenics-dolfinx@main %fenics-dolfinx+petsc~adios2
           spack repo list
+          spack config get repos
       - name: Run a Python test
         shell: spack-bash {0}
         run: |
