@@ -47,7 +47,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: spack/spack
-          path: ~/spack-src
+          path: spack-src
 
       - name: Get DOLFINx code (to access Spack config and test files)
         uses: actions/checkout@v4
