@@ -594,14 +594,14 @@ void mesh(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::mesh::EntityMap* self,
-             const std::shared_ptr<const dolfinx::mesh::Topology>& topology,
-             const std::shared_ptr<const dolfinx::mesh::Topology>& sub_topology,
+             std::shared_ptr<const dolfinx::mesh::Topology> topology,
+             std::shared_ptr<const dolfinx::mesh::Topology> sub_topology,
              int dim,
              const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>&
                  sub_topology_to_topology)
           {
             new (self) dolfinx::mesh::EntityMap(
-                topology, sub_topology, dim,
+                std::move(topology), std::move(sub_topology), dim,
                 std::vector(sub_topology_to_topology.data(),
                             sub_topology_to_topology.data()
                                 + sub_topology_to_topology.size()));
