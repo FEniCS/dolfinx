@@ -57,21 +57,6 @@ jobs:
         with:
           path: dolfinx-src
 
-      - name: Check
-        # shell: spack-bash {0}
-        run: |
-          pwd
-          ls -al
-          ls -al dolfinx-src
-          ls -al $GITHUB_WORKSPACE
-      # - name: Set up Spack
-      #   uses: spack/setup-spack@main
-      #   with:
-      #     ref: develop      # Spack version (examples: develop, releases/v0.23)
-      #     buildcache: false  # Enable buildcache support
-      #     color: true       # Force color output (SPACK_COLOR=always)
-      #     path: spack-src   # Where to clone Spack
-
       - name: Install dependencies
         run: |
           . ./spack-src/share/spack/setup-env.sh
@@ -85,8 +70,8 @@ jobs:
           GITHUB_USER: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          . ../spack-src/share/spack/setup-env.sh
-          spack -e dolfinx buildcache push --base-image ubuntu:24.04 --update-index local-buildcache
+          . ./spack-src/share/spack/setup-env.sh
+          spack -e dolfinx buildcache push --base-image rockylinux/rockylinux:10 --update-index local-buildcache
         if: ${{ !cancelled() }}
 
 
