@@ -58,6 +58,8 @@ jobs:
         run: |
           spack env create dolfinx .github/workflows/spack-config/gh-actions-env.yaml
           spack -e dolfinx install --use-buildcache=package:never,dependencies:auto --add fenics-dolfinx@main+petsc
+          spack repo list
+          spack config get repos
       - name: Run a C++ test
         shell: spack-bash {0}
         run: |
