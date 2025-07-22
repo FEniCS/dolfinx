@@ -49,21 +49,28 @@ jobs:
           repository: spack/spack
           path: spack-src
 
-      - name: Check
-        # shell: spack-bash {0}
-        run: |
-          pwd
-          ls -al
-          ls -al ../
-          ls -al ../../
-          ls -al ~
-          ls -al $GITHUB_WORKSPACE
+      # - name: Check
+      #   # shell: spack-bash {0}
+      #   run: |
+      #     pwd
+      #     ls -al
+      #     # ls -al ../
+      #     # ls -al ../../
+      #     # ls -al ~
+      #     # ls -al $GITHUB_WORKSPACE
 
       - name: Get DOLFINx code (to access Spack config and test files)
         uses: actions/checkout@v4
         with:
           path: dolfinx-src
 
+      - name: Check
+        # shell: spack-bash {0}
+        run: |
+          pwd
+          ls -al
+          ls -al ../
+          ls -al $GITHUB_WORKSPACE
       # - name: Set up Spack
       #   uses: spack/setup-spack@main
       #   with:
