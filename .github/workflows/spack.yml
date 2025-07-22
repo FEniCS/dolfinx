@@ -50,13 +50,13 @@ jobs:
         shell: spack-bash {0}
         run: |
           spack env create cpp-main .github/workflows/spack-config/gh-actions-env.yaml
-          spack -e cpp-main install -j 4 --add fenics-dolfinx@main+petsc
+          spack -e cpp-main install --use-buildcache=package:never,dependencies:auto --add fenics-dolfinx@main+petsc
       - name: Run a C++ test (development version)
         shell: spack-bash {0}
         run: |
           cat .github/workflows/spack-config/gh-actions-env.yaml
           spack env create cpp-main-test .github/workflows/spack-config/gh-actions-env.yaml
-          spack -e cpp-main-test install --add fenics-dolfinx@main+petsc cmake py-fenics-ffcx@main
+          spack -e cpp-main-test install --use-buildcache=package:never,dependencies:auto --add fenics-dolfinx@main+petsc cmake py-fenics-ffcx@main
           spack env activate cpp-main-test
           cd cpp/demo/poisson
           cmake .
@@ -92,12 +92,13 @@ jobs:
         run: |
           cat .github/workflows/spack-config/gh-actions-env.yaml
           spack env create py-main .github/workflows/spack-config/gh-actions-env.yaml
-          spack -e py-main install --add py-fenics-dolfinx@main
+          spack -e py-main install --use-buildcache=package:never,dependencies:auto --add py-fenics-dolfinx@main
       - name: Run DOLFINx (Python, development) test
         shell: spack-bash {0}
         run: |
           spack env activate py-main
           spack load gcc
+          spack compiler find
           mpirun -np 2 python3 python/demo/demo_elasticity.py
       - name: Push packages and update index
         env:
