@@ -146,7 +146,8 @@ void refinement(nb::module_& m)
             std::span(parent_cell.data(), parent_cell.size()),
             std::span(parent_facet.data(), parent_facet.size()));
         return dolfinx::mesh::MeshTags<std::int32_t>(
-            topology1, tdim - 1, std::move(entities), std::move(values));
+            std::move(topology1), tdim - 1, std::move(entities),
+            std::move(values));
       },
       nb::arg("parent_meshtag"), nb::arg("refined_mesh"),
       nb::arg("parent_cell"), nb::arg("parent_facet"));
@@ -165,7 +166,7 @@ void refinement(nb::module_& m)
             parent_meshtag, *topology1,
             std::span(parent_cell.data(), parent_cell.size()));
         return dolfinx::mesh::MeshTags<std::int32_t>(
-            topology1, tdim, std::move(entities), std::move(values));
+            std::move(topology1), tdim, std::move(entities), std::move(values));
       },
       nb::arg("parent_meshtag"), nb::arg("refined_mesh"),
       nb::arg("parent_cell"));

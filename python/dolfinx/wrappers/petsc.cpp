@@ -177,7 +177,8 @@ void petsc_la_module(nb::module_& m)
       [](dolfinx_wrappers::MPICommWrapper comm,
          const dolfinx::la::SparsityPattern& p, std::optional<std::string> type)
       {
-        Mat A = dolfinx::la::petsc::create_matrix(comm.get(), p, type);
+        Mat A
+            = dolfinx::la::petsc::create_matrix(comm.get(), p, std::move(type));
         PyObject* obj = PyPetscMat_New(A);
         PetscObjectDereference((PetscObject)A);
         return nb::borrow(obj);

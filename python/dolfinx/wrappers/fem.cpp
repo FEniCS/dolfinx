@@ -87,7 +87,7 @@ auto ptr_to_ref_wrapper_vec(auto& x)
 };
 
 template <typename T>
-void declare_function_space(nb::module_& m, std::string type)
+void declare_function_space(nb::module_& m, const std::string& type)
 {
   {
     std::string pyclass_name = "FunctionSpace_" + type;
@@ -321,7 +321,7 @@ void declare_function_space(nb::module_& m, std::string type)
 
 // Declare DirichletBC objects for type T
 template <typename T>
-void declare_objects(nb::module_& m, std::string type)
+void declare_objects(nb::module_& m, const std::string& type)
 {
   using U = typename dolfinx::scalar_value_t<T>;
 
@@ -345,7 +345,8 @@ void declare_objects(nb::module_& m, std::string type)
             auto _g = std::make_shared<dolfinx::fem::Constant<T>>(
                 std::span(g.data(), g.size()), shape);
             new (bc) dolfinx::fem::DirichletBC<T, U>(
-                _g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
+                _g, std::vector(dofs.data(), dofs.data() + dofs.size()),
+                std::move(V));
           },
           nb::arg("g").noconvert(), nb::arg("dofs").noconvert(), nb::arg("V"))
       .def(
@@ -356,7 +357,9 @@ void declare_objects(nb::module_& m, std::string type)
              std::shared_ptr<const dolfinx::fem::FunctionSpace<U>> V)
           {
             new (bc) dolfinx::fem::DirichletBC<T, U>(
-                g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
+                std::move(g),
+                std::vector(dofs.data(), dofs.data() + dofs.size()),
+                std::move(V));
           },
           nb::arg("g").noconvert(), nb::arg("dofs").noconvert(), nb::arg("V"))
       .def(
@@ -366,7 +369,8 @@ void declare_objects(nb::module_& m, std::string type)
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> dofs)
           {
             new (bc) dolfinx::fem::DirichletBC<T, U>(
-                g, std::vector(dofs.data(), dofs.data() + dofs.size()));
+                std::move(g),
+                std::vector(dofs.data(), dofs.data() + dofs.size()));
           },
           nb::arg("g").noconvert(), nb::arg("dofs"))
       .def(
@@ -383,7 +387,8 @@ void declare_objects(nb::module_& m, std::string type)
                                V_g_dofs[0].data() + V_g_dofs[0].size()),
                    std::vector(V_g_dofs[1].data(),
                                V_g_dofs[1].data() + V_g_dofs[1].size())};
-            new (bc) dolfinx::fem::DirichletBC(g, std::move(dofs), V);
+            new (bc) dolfinx::fem::DirichletBC(std::move(g), std::move(dofs),
+                                               std::move(V));
           },
           nb::arg("g").noconvert(), nb::arg("dofs").noconvert(),
           nb::arg("V").noconvert())
@@ -595,7 +600,7 @@ void declare_objects(nb::module_& m, std::string type)
             new (ex) dolfinx::fem::Expression<T, U>(
                 coefficients, constants, std::span(X.data(), X.size()),
                 {X.shape(0), X.shape(1)}, tabulate_expression_ptr, value_shape,
-                argument_space);
+                std::move(argument_space));
           },
           nb::arg("coefficients"), nb::arg("constants"), nb::arg("X"),
           nb::arg("fn"), nb::arg("value_shape"), nb::arg("argument_space"))
@@ -631,8 +636,8 @@ void declare_objects(nb::module_& m, std::string type)
       {
         const ufcx_expression* p
             = reinterpret_cast<const ufcx_expression*>(expression);
-        return dolfinx::fem::create_expression<T, U>(*p, coefficients,
-                                                     constants, argument_space);
+        return dolfinx::fem::create_expression<T, U>(
+            *p, coefficients, constants, std::move(argument_space));
       },
       nb::arg("expression"), nb::arg("coefficients"), nb::arg("constants"),
       nb::arg("argument_space").none(),
@@ -640,7 +645,7 @@ void declare_objects(nb::module_& m, std::string type)
 }
 
 template <typename T>
-void declare_form(nb::module_& m, std::string type)
+void declare_form(nb::module_& m, const std::string& type)
 {
   using U = typename dolfinx::scalar_value_t<T>;
 
@@ -690,8 +695,9 @@ void declare_form(nb::module_& m, std::string type)
             }
 
             new (fp) dolfinx::fem::Form<T, U>(
-                spaces, std::move(_integrals), mesh, coefficients, constants,
-                needs_permutation_data, ptr_to_ref_wrapper_vec(entity_maps));
+                spaces, std::move(_integrals), std::move(mesh), coefficients,
+                constants, needs_permutation_data,
+                ptr_to_ref_wrapper_vec(entity_maps));
           },
           nb::arg("spaces"), nb::arg("integrals"), nb::arg("coefficients"),
           nb::arg("constants"), nb::arg("need_permutation_data"),
@@ -735,7 +741,7 @@ void declare_form(nb::module_& m, std::string type)
             new (fp)
                 dolfinx::fem::Form<T, U>(dolfinx::fem::create_form_factory<T>(
                     ps, spaces, coefficients, constants, sd,
-                    ptr_to_ref_wrapper_vec(entity_maps), mesh));
+                    ptr_to_ref_wrapper_vec(entity_maps), std::move(mesh)));
           },
           nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
           nb::arg("constants"), nb::arg("subdomains"), nb::arg("entity_maps"),
@@ -1235,8 +1241,8 @@ void fem(nb::module_& m)
              int index_map_bs,
              const dolfinx::graph::AdjacencyList<std::int32_t>& dofmap, int bs)
           {
-            new (self) dolfinx::fem::DofMap(element, index_map, index_map_bs,
-                                            dofmap.array(), bs);
+            new (self) dolfinx::fem::DofMap(element, std::move(index_map),
+                                            index_map_bs, dofmap.array(), bs);
           },
           nb::arg("element_dof_layout"), nb::arg("index_map"),
           nb::arg("index_map_bs"), nb::arg("dofmap"), nb::arg("bs"))

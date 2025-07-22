@@ -40,7 +40,7 @@ auto create_partitioner_py(Functor&& p_cpp)
 }
 
 template <typename T, typename U>
-void declare_adjacency_list_init(nb::module_& m, std::string type)
+void declare_adjacency_list_init(nb::module_& m, const std::string& type)
 {
   std::string pyclass_name = std::string("AdjacencyList_") + type;
   nb::class_<dolfinx::graph::AdjacencyList<T, U>>(m, pyclass_name.c_str(),
@@ -112,7 +112,7 @@ void declare_adjacency_list_init(nb::module_& m, std::string type)
 }
 
 template <typename T, typename U>
-void declare_adjacency_list(nb::module_& m, std::string type)
+void declare_adjacency_list(nb::module_& m, const std::string& type)
 {
   std::string pyclass_name = std::string("AdjacencyList_") + type;
   nb::class_<dolfinx::graph::AdjacencyList<T, U>>(m, pyclass_name.c_str(),
