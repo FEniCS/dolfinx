@@ -102,6 +102,7 @@ jobs:
           spack repo add --name test_pkgs https://github.com/${{ github.event.inputs.spack_package_repo }}.git ~/test_pkgs
           spack repo update --branch ${{ github.event.inputs.spack_package_ref }} test_pkgs
           spack repo list
+          spack config get repos
       - name: Build DOLFINx
         shell: spack-bash {0}
         run: |
