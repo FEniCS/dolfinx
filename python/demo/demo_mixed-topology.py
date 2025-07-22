@@ -24,16 +24,17 @@ from scipy.sparse.linalg import spsolve
 import basix
 import dolfinx.cpp as _cpp
 import ufl
-from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner, create_mesh
+from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner
+from dolfinx.mesh import create_mesh
 from dolfinx.fem import (
     FunctionSpace,
     assemble_matrix,
     assemble_vector,
-    coordinate_element,
     mixed_topology_form,
 )
 from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.mesh import CellType, Mesh
+from dolfinx import fem
 
 if MPI.COMM_WORLD.size > 1:
     print("Not yet running in parallel")
@@ -89,48 +90,32 @@ if MPI.COMM_WORLD.rank == 0:
 
 cells_np = [np.array(c) for c in cells]
 geomx = np.array(geom, dtype=np.float64)
-hexahedron = coordinate_element(CellType.hexahedron, 1)
-prism = coordinate_element(CellType.prism, 1)
 
 part = create_cell_partitioner(GhostMode.none)
 mesh = create_mesh(
-    MPI.COMM_WORLD, cells_np, [hexahedron._cpp_object, prism._cpp_object], geomx, part
+    MPI.COMM_WORLD,
+    cells_np,
+    geomx,
+    [
+        basix.ufl.element("Lagrange", "hexahedron", 1, shape=(3,)),
+        basix.ufl.element("Lagrange", "prism", 1, shape=(3,)),
+    ],
+    part,
 )
 
-# Create elements and dofmaps for each cell type
-elements = [
-    basix.create_element(basix.ElementFamily.P, basix.CellType.hexahedron, 1),
-    basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
-]
-elements_cpp = [_cpp.fem.FiniteElement_float64(e._e, None, True) for e in elements]
-# NOTE: Both dofmaps have the same IndexMap, but different cell_dofs
-dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, elements_cpp)
+V = fem.functionspace(mesh, ("Lagrange", 1))
 
-# Create C++ function space
-V_cpp = _cpp.fem.FunctionSpace_float64(mesh, elements_cpp, dofmaps)
 
-# Create forms for each cell type.
-# FIXME This hack is required at the moment because UFL does not yet know
-# about mixed topology meshes.
-a = []
-L = []
-for i, cell_name in enumerate(["hexahedron", "prism"]):
-    print(f"Creating form for {cell_name}")
-    element = basix.ufl.wrap_element(elements[i])
-    domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_name, 1, shape=(3,)))
-    V = FunctionSpace(Mesh(mesh, domain), element, V_cpp)
-    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    k = 12.0
-    x = ufl.SpatialCoordinate(domain)
-    a += [(ufl.inner(ufl.grad(u), ufl.grad(v)) - k**2 * u * v) * ufl.dx]
-    f = ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])
-    L += [f * v * ufl.dx]
+u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+k = 12.0
+x = ufl.SpatialCoordinate(domain)
+a = (ufl.inner(ufl.grad(u), ufl.grad(v)) - k**2 * u * v) * ufl.dx
+f = ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])
+L = f * v * ufl.dx
 
 # Compile the form
-# FIXME: For the time being, since UFL doesn't understand mixed topology
-# meshes, we have to call mixed_topology_form instead of form.
-a_form = mixed_topology_form(a, dtype=np.float64)
-L_form = mixed_topology_form(L, dtype=np.float64)
+a_form = form(a, dtype=np.float64)
+L_form = form(L, dtype=np.float64)
 
 # Assemble the matrix
 A = assemble_matrix(a_form)

@@ -583,6 +583,7 @@ def functionspace(
     mesh: Mesh,
     element: typing.Union[
         ufl.finiteelement.AbstractFiniteElement,
+        Sequence[ufl.finiteelement.AbstractFiniteElement],
         ElementMetaData,
         tuple[str, int],
         tuple[str, int, tuple],
@@ -600,22 +601,46 @@ def functionspace(
     """
     # Create UFL element
     dtype = mesh.geometry.x.dtype
-    try:
-        e = ElementMetaData(*element)  # type: ignore
-        ufl_e = basix.ufl.element(
-            e.family,
-            mesh.basix_cell(),  # type: ignore
-            e.degree,
-            shape=e.shape,
-            symmetry=e.symmetry,
-            dtype=dtype,
-        )
-    except TypeError:
-        ufl_e = element  # type: ignore
+    if len(mesh.topology._cpp_object.cell_types) > 1:
+        try:
+            e = ElementMetaData(*element)  # type: ignore
+            ufl_e = [
+                basix.ufl.element(
+                    e.family,
+                    getattr(basix.CellType, _cpp.mesh.to_string(cell)),
+                    e.degree,
+                    shape=e.shape,
+                    symmetry=e.symmetry,
+                    dtype=dtype,
+                )
+                for cell in mesh.topology._cpp_object.cell_types
+            ]
+        except TypeError:
+            ufl_e = element  # type: ignore
 
-    # Check that element and mesh cell types match
-    if ((domain := mesh.ufl_domain()) is None) or ufl_e.cell != domain.ufl_cell():
-        raise ValueError("Non-matching UFL cell and mesh cell shapes.")
+        # Check that element and mesh cell types match
+        for domain, element in zip(mesh.ufl_domain(), ufl_e):
+            if domain is None or element.cell != domain.ufl_cell():
+                raise ValueError("Non-matching UFL cell and mesh cell shapes.")
+    else:
+        try:
+            ufl_e = basix.ufl.element(
+                e.family,
+                mesh.basix_cell(),  # type: ignore
+                e.degree,
+                shape=e.shape,
+                symmetry=e.symmetry,
+                dtype=dtype,
+            )
+        except TypeError:
+            ufl_e = element  # type: ignore
+
+        # Check that element and mesh cell types match
+        if ((domain := mesh.ufl_domain()) is None) or ufl_e.cell != domain.ufl_cell():
+            raise ValueError("Non-matching UFL cell and mesh cell shapes.")
+
+    # TODO
+    # TODO
 
     # Create DOLFINx objects
     element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)  # type: ignore
