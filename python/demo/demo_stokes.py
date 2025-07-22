@@ -123,7 +123,7 @@ from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 # +
 # Create mesh
 msh = create_rectangle(
-    MPI.COMM_WORLD, [np.array([0, 0]), np.array([1, 1])], [32, 32], CellType.triangle
+    MPI.COMM_WORLD, [np.array([0, 0]), np.array([1, 1])], (32, 32), CellType.triangle
 )
 
 
