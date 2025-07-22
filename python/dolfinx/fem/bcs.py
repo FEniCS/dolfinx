@@ -230,15 +230,6 @@ def dirichletbc(
             bc = bctype(_value, dofs, V)
         except TypeError:
             bc = bctype(_value, dofs, V._cpp_object)
-
-    else:
-        raise ValueError(f"Unsupported value tpye {type(value)}.")
-
-    if V is not None:
-        if isinstance(V, dolfinx.fem.FunctionSpace):
-            bc = bctype(_value, dofs, V._cpp_object)
-        else:
-            bc = bctype(_value, dofs, V)
     else:
         bc = bctype(_value, dofs)
 
