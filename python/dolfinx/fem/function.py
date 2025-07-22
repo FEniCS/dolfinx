@@ -142,7 +142,7 @@ class Expression:
 
         # Attempt to deduce dtype
         if dtype is None:
-            dtype = getattr(e, "dtype",  default_scalar_type)
+            dtype = getattr(e, "dtype", default_scalar_type)
 
         # Compile UFL expression with JIT
         if form_compiler_options is None:

@@ -219,8 +219,18 @@ def dirichletbc(
     # Unwrap value object, if required
     if isinstance(value, np.ndarray):
         _value = value
-    elif isinstance(value, (Function, Constant)):
-        _value = value._cpp_object  # type: ignore
+    else:
+        try:
+            _value = value._cpp_object
+        except AttributeError:
+            _value = value  # type: ignore[assignment]
+
+    if V is not None:
+        try:
+            bc = bctype(_value, dofs, V)
+        except TypeError:
+            bc = bctype(_value, dofs, V._cpp_object)
+
     else:
         raise ValueError(f"Unsupported value tpye {type(value)}.")
 
