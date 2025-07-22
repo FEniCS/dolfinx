@@ -9,15 +9,6 @@ spack:
     all:
       require:
       - target=x86_64_v3
-    # gcc:
-    #   externals:
-    #   - spec: gcc@13.3.0 languages:='c,c++,fortran'
-    #     prefix: /usr
-    #     extra_attributes:
-    #       compilers:
-    #         c: /usr/bin/gcc
-    #         cxx: /usr/bin/g++
-    #         fortran: /usr/bin/gfortran
 
   mirrors:
     local-buildcache:
