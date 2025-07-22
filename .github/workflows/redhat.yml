@@ -69,7 +69,8 @@ jobs:
         run: |
           pwd
           ls -al
-          ls -al ../
+          ls -al dolfinx-src
+          ls -al dolfinx-src/dolfinx
           ls -al $GITHUB_WORKSPACE
       # - name: Set up Spack
       #   uses: spack/setup-spack@main
