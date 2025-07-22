@@ -7,25 +7,25 @@ on:
      - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
-    - cron: "0 2 * * THU"
+    - cron: "0 2 * * *"
   workflow_dispatch:
     inputs:
-      dolfinx_version:
-        description: "DOLFINx release branch/tag to test"
-        default: "0.9.0"
+      spack_package_repo:
+        description: "Spack package repository to test"
+        default: "spack/spack-packages"
+        type: string
+      spack_package_ref:
+        description: "Spack package repository branch/tag to test"
+        default: "develop"
         type: string
 
 env:
   GITHUB_USER: ${{ github.actor }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   OMPI_ALLOW_RUN_AS_ROOT: 1
   OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
   PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe   # Newer OpenMPI
   OMPI_MCA_rmaps_base_oversubscribe: true                 # Older OpenMPI
-
-  DOLFINX_RELEASE_VERSION: "${{ github.event_name != 'workflow_dispatch' && '0.9.0' || github.event.inputs.dolfinx_version }}"
-  DOLFINX_TAG: "${{ github.event_name != 'workflow_dispatch' && '0.9.0' || github.event.inputs.dolfinx_version }}"
 
 jobs:
 
@@ -50,6 +50,7 @@ jobs:
       - name: Build DOLFINx (C++) development version via Spack
         shell: spack-bash {0}
         run: |
+          spack repo add  add --name test_pkgs https://github.com/${{ env.spack_package_repo }}.git@${{ env.spack_package_ref }} ~/test_pkgs
           spack env create dolfinx .github/workflows/spack-config/gh-actions-env.yaml
           spack -e dolfinx install --use-buildcache=package:never,dependencies:auto --add fenics-dolfinx@main+petsc
       - name: Run a C++ test
@@ -92,6 +93,7 @@ jobs:
       - name: Build DOLFINx
         shell: spack-bash {0}
         run: |
+          spack repo add  add --name test_pkgs https://github.com/${{ env.spack_package_repo }}.git@${{ env.spack_package_ref }} ~/test_pkgs
           cat .github/workflows/spack-config/gh-actions-env.yaml
           spack env create dolfinx .github/workflows/spack-config/gh-actions-env.yaml
           spack -e dolfinx install --use-buildcache=package:never,dependencies:auto --add py-fenics-dolfinx@main %fenics-dolfinx+petsc~adios2
