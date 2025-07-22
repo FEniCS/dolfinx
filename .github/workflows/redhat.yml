@@ -44,6 +44,7 @@ jobs:
         uses: spack/setup-spack@main
         with:
           ref: develop      # Spack version (examples: develop, releases/v0.23)
+          buildcache: false  # Enable buildcache support
           color: true       # Force color output (SPACK_COLOR=always)
           path: spack-src   # Where to clone Spack
 
