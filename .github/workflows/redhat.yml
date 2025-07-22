@@ -93,7 +93,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           . ../spack-src/share/spack/setup-env.sh
-          spack -e dolfinx buildcache push --base-image ubuntu
+          spack -e dolfinx buildcache push --base-image ubuntu:24.04 --update-index local-buildcache
 
 
       # - name: Load environment variables
