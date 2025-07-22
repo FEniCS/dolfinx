@@ -51,7 +51,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         shell: spack-bash {0}
         run: |
-          spack repo add --name test_pkgs https://github.com/${{ env.spack_package_repo }}.git@${{ env.spack_package_ref }} ~/test_pkgs
+          spack repo add --name test_pkgs https://github.com/${{ github.event.inputs.spack_package_repo }}.git@${{ github.event.inputs.spack_package_ref }} ~/test_pkgs
       - name: Build DOLFINx
         shell: spack-bash {0}
         run: |
