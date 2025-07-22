@@ -23,21 +23,14 @@ env:
   PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe   # Newer OpenMPI
   OMPI_MCA_rmaps_base_oversubscribe: true                 # Older OpenMPI
 
-  PATH: /usr/bin:$PATH
-
-
 jobs:
   build:
     runs-on: ubuntu-latest
     container: rockylinux/rockylinux:10
-    defaults:
-          run:
-            shell: sh
 
     name: Rocky build and test
 
     steps:
-
       - name: Install Spack requirements
         run: |
           dnf -y install epel-release
@@ -94,6 +87,7 @@ jobs:
         run: |
           . ../spack-src/share/spack/setup-env.sh
           spack -e dolfinx buildcache push --base-image ubuntu:24.04 --update-index local-buildcache
+        if: ${{ !cancelled() }}
 
 
       # - name: Load environment variables
