@@ -58,11 +58,9 @@ jobs:
           spack env create cpp-main-test .github/workflows/spack-config/gh-actions-env.yaml
           spack -e cpp-main-test install --add fenics-dolfinx@main+petsc cmake py-fenics-ffcx@main
           spack env activate cpp-main-test
-          cd dolfinx-main/cpp/
-          cd demo/poisson
+          cd cpp/demo/poisson
           cmake .
-          export VERBOSE=1
-          make -j 4
+          make
           mpirun -np 2 ./demo_poisson
       - name: Push packages and update index
         env:
