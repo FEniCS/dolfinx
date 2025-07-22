@@ -597,36 +597,34 @@ def functionspace(
     """
     # Create UFL element
     dtype = mesh.geometry.x.dtype
-    if isinstance(element, ufl.finiteelement.AbstractFiniteElement):
-        ufl_e = element
-    else:
-        e = ElementMetaData(*element)
+    try:
+        e = ElementMetaData(*element)  # type: ignore
         ufl_e = basix.ufl.element(
             e.family,
-            mesh.basix_cell(),
+            mesh.basix_cell(),  # type: ignore
             e.degree,
             shape=e.shape,
             symmetry=e.symmetry,
             dtype=dtype,
         )
+    except TypeError:
+        ufl_e = element  # type: ignore
 
     # Check that element and mesh cell types match
     if ((domain := mesh.ufl_domain()) is None) or ufl_e.cell != domain.ufl_cell():
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
-
     # Create DOLFINx objects
     element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)  # type: ignore
     cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, element._cpp_object)  # type: ignore
-
     assert np.issubdtype(mesh.geometry.x.dtype, element.dtype), (  # type: ignore
         "Mesh and element dtype are not compatible."
     )
 
     # Initialize the cpp.FunctionSpace
-    if np.issubdtype(dtype, np.float32):
-        cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, element._cpp_object, cpp_dofmap)  # type: ignore
-    else:
+    try:
         cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, element._cpp_object, cpp_dofmap)  # type: ignore
+    except TypeError:
+        cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, element._cpp_object, cpp_dofmap)  # type: ignore
 
     return FunctionSpace(mesh, ufl_e, cppV)
 
