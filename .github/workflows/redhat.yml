@@ -77,7 +77,7 @@ jobs:
 
 
       - name: Load environment variables
-        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+        run: cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Install FEniCS Python components
         run: |
