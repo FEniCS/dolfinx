@@ -78,7 +78,8 @@ jobs:
           find . -type f \( -name "*.cmake" -o -name "*.cmake.in" -o -name "CMakeLists.txt" \) | xargs cmake-format --check
 
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
+    container: ubuntu:24.04
     needs: [lint]
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -88,6 +89,13 @@ jobs:
 
     name: Build and test
     steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install catch2 cmake g++ git libblas-dev libboost-dev \
+             libhdf5-mpi-dev liblapack-dev libparmetis-dev libpugixml-dev \
+             libspdlog-dev mpi-default-dev ninja-build pkg-config
+
       - uses: actions/checkout@v4
 
       - name: Load environment variables
@@ -95,8 +103,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install catch2 cmake g++ libblas-dev libboost-dev \
+          apt-get update
+          apt-get install catch2 cmake g++ libblas-dev libboost-dev \
              libhdf5-mpi-dev liblapack-dev libparmetis-dev libpugixml-dev \
              libspdlog-dev mpi-default-dev ninja-build pkg-config
       - name: Set up Python
@@ -125,7 +133,7 @@ jobs:
         run: |
           cmake -G Ninja -DDOLFINX_ENABLE_PETSC=false -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
           cmake --build build
-          sudo cmake --install build
+          cmake --install build
       - name: Build C++ unit tests
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
@@ -154,8 +162,8 @@ jobs:
 
       - name: Install gmsh and pyvista (and dependencies)
         run: |
-          sudo apt-get install libglu1-mesa libgl1 libxrender1 libxcursor1 libxft2 libxinerama1
-          sudo apt-get install libegl1
+          apt-get install libglu1-mesa libgl1 libxrender1 libxcursor1 libxft2 libxinerama1
+          apt-get install libegl1
           pip install gmsh pyvista
 
       - name: Run demos (Python, serial)
