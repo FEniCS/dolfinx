@@ -67,9 +67,7 @@ class PointOwnershipData:
 class BoundingBoxTree:
     """Bounding box trees used in collision detection."""
 
-    _cpp_object: typing.Union[
-        _cpp.geometry.BoundingBoxTree_float32, _cpp.geometry.BoundingBoxTree_float64
-    ]
+    _cpp_object: typing.Union[_cpp.geometry.BoundingBoxTree]
 
     def __init__(self, tree):
         """Wrap a C++ BoundingBoxTree.
@@ -136,17 +134,7 @@ def bb_tree(
     if map is None:
         raise RuntimeError(f"Mesh entities of dimension {dim} have not been created.")
 
-    dtype = mesh.geometry.x.dtype
-    if np.issubdtype(dtype, np.float32):
-        return BoundingBoxTree(
-            _cpp.geometry.BoundingBoxTree_float32(mesh._cpp_object, dim, entities, padding)
-        )
-    elif np.issubdtype(dtype, np.float64):
-        return BoundingBoxTree(
-            _cpp.geometry.BoundingBoxTree_float64(mesh._cpp_object, dim, entities, padding)
-        )
-    else:
-        raise NotImplementedError(f"Type {dtype} not supported.")
+    return BoundingBoxTree(_cpp.geometry.BoundingBoxTree(mesh._cpp_object, dim, entities, padding))
 
 
 def compute_collisions_trees(
