@@ -135,20 +135,20 @@ jobs:
           . ./spack-src/share/spack/setup-env.sh
           spack env activate dolfinx
           python -m pip install pytest-xdist
-          python -m pytest -n auto -m serial --durations=10 python/demo/test.py
+          python -m pytest -n auto -m serial --durations=10 dolfinx-src/python/demo/test.py
       - name: Run demos (Python, MPI (np=2))
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate dolfinx
-          python -m pytest -m mpi --num-proc=2 python/demo/test.py
+          python -m pytest -m mpi --num-proc=2 dolfinx-src/python/demo/test.py
 
       - name: Run Python unit tests (serial)
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate dolfinx
-           python -m pytest -n auto -m "not adios2" --durations=50 python/test/unit/
+           python -m pytest -n auto -m "not adios2" --durations=50 dolfinx-src/python/test/unit/
       - name: Run Python unit tests (MPI, np=2)
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate dolfinx
-          mpirun -np 2 python -m pytest -m "not adios2" python/test/unit/
+          mpirun -np 2 python -m pytest -m "not adios2" dolfinx-src/python/test/unit/
