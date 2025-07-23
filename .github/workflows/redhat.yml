@@ -4,15 +4,15 @@ on:
   push:
     # Uncomment the below 'push' to trigger on push
     branches:
-      - "**"
+    - "**"
   pull_request:
     branches:
-      - "main"
+    - "main"
     tags:
-      - "v*"
+    - "v*"
   merge_group:
     branches:
-      - main
+    - main
   workflow_dispatch:
 
 env:
@@ -20,8 +20,7 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   OMPI_ALLOW_RUN_AS_ROOT: 1
   OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
-  PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe   # Newer OpenMPI
-  OMPI_MCA_rmaps_base_oversubscribe: true                 # Older OpenMPI
+  PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
 jobs:
   build:
@@ -45,67 +44,50 @@ jobs:
           repository: spack/spack
           path: spack-src
 
-      - name: Get DOLFINx code (to access Spack config and test files)
+      - name: Get DOLFINx code
         uses: actions/checkout@v4
         with:
           path: dolfinx-src
 
-      - name: Create environment
+      - name: Create Spack environment
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack env create dolfinx dolfinx-src/.github/workflows/spack-config/gh-actions-rocky.yml
+          spack env create . dolfinx-src/.github/workflows/spack-config/gh-actions-rocky.yml
 
-      # - if: matrix.compiler == 'gcc'
-      #   name: Create environment (gcc)
-      #   run: |
-      #     . ./spack-src/share/spack/setup-env.sh
-      #     spack env create dolfinx dolfinx-src/.github/workflows/spack-config/gh-actions-rocky.yml
-
-      # - if: matrix.compiler == 'oneapi'
-      #   name: Create environment (oneAPI)
-      #   run: |
-      #     . ./spack-src/share/spack/setup-env.sh
-      #     spack install intel-oneapi-compilers
-      #     spack compiler find
-      #     spack compilers
-      #     spack env create dolfinx dolfinx-src/.github/workflows/spack-config/gh-actions-rocky-oneapi.yml
-
-      - name: Add dependencies
+      - name: Add dependencies to environment
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack -e dolfinx add mpi petsc+mpi+shared+mumps slepc parmetis pkgconfig python hdf5+mpi boost pugixml spdlog
-          spack -e dolfinx add python py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py py-scikit-build-core+pyproject py-setuptools py-cffi
-          spack -e dolfinx add py-pip cmake catch2 py-pytest py-pytest-xdist ninja
+          spack -e . add mpi petsc+mpi+shared+mumps slepc parmetis pkgconfig python hdf5+mpi boost pugixml spdlog
+          spack -e . add python py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py py-scikit-build-core+pyproject py-setuptools py-cffi
+          spack -e . add py-pip cmake catch2 py-pytest py-pytest-xdist ninja
 
       - if: matrix.compiler == 'oneapi'
-        name: Add oneAPI compilers
+        name: Add oneAPI compilers to environment
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack -e dolfinx add intel-oneapi-compilers
+          spack -e . add intel-oneapi-compilers
 
-      - name: Install dependencies
+      - name: Install Spack packages
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack -e dolfinx install --use-buildcache auto
+          spack -e . install --use-buildcache auto
 
-      - name: Push packages and update index
+      - name: Push packages to cache and update index
         env:
           GITHUB_USER: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack -e dolfinx buildcache push --base-image rockylinux/rockylinux:10 --update-index local-buildcache
+          spack -e . buildcache push --base-image rockylinux/rockylinux:10 --update-index local-buildcache
         if: ${{ !cancelled() }}
 
-
-      - name: Load environment variables
+      - name: Load FEniCS testing environment variables
         run: cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Install FEniCS Python components
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack env activate dolfinx
-          echo Test: $CC
+          spack env activate .
           pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
           pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
           pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
@@ -113,7 +95,7 @@ jobs:
       - name: Configure and build C++
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack env activate dolfinx
+          spack env activate .
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S dolfinx-src/cpp/
           cmake --build build
           cmake --install build
@@ -121,40 +103,43 @@ jobs:
       - name: Build C++ unit tests
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack env activate dolfinx
+          spack env activate .
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
           cmake --build build/test
       - name: Run C++ unit tests (serial)
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack env activate dolfinx
+          spack env activate .
           cd build/test
           ctest -V --output-on-failure -R unittests
       - name: Run C++ unit tests (MPI)
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack env activate dolfinx
+          spack env activate .
           cd build/test
           mpiexec -np 2 ctest -V --output-on-failure -R unittests
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack env activate dolfinx
+          spack env activate .
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S dolfinx-src/cpp/demo/
           cmake --build build/demo
           cd build/demo
           ctest -V -R demo -R serial
           ctest -V -R demo -R mpi_2
 
-      - name: gmsh and pyvista depencencies
-        run: dnf install -y mesa-libGLU libX11 libXrender mesa-libEGL libglvnd-glx libXcursor libXft libXinerama
+      - name: Install gmsh and pyvista (and via  package manager install dependencies
+        run: |
+          dnf install -y mesa-libGLU libX11 libXrender mesa-libEGL libglvnd-glx libXcursor libXft libXinerama
+          . ./spack-src/share/spack/setup-env.sh
+          spack env activate .
+          pip install gmsh pyvista
 
       - name: Build Python interface (editable install)
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack env activate dolfinx
+          spack env activate .
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Debug --config-settings=build-dir="build" -e 'dolfinx-src/python/[test]'
-          pip install gmsh pyvista
 
       - name: Set default DOLFINx JIT options
         run: |
@@ -164,22 +149,22 @@ jobs:
       - name: Run demos (Python, serial)
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack env activate dolfinx
+          spack env activate .
           python -m pip install pytest-xdist
           python -m pytest -n auto -m serial --durations=10 dolfinx-src/python/demo/test.py
       - name: Run demos (Python, MPI (np=2))
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack env activate dolfinx
+          spack env activate .
           python -m pytest -m mpi --num-proc=2 dolfinx-src/python/demo/test.py
 
       - name: Run Python unit tests (serial)
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack env activate dolfinx
+          spack env activate .
            python -m pytest -n auto -m "not adios2" --durations=50 dolfinx-src/python/test/unit/
       - name: Run Python unit tests (MPI, np=2)
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack env activate dolfinx
+          spack env activate .
           mpirun -np 2 python -m pytest -m "not adios2" dolfinx-src/python/test/unit/
