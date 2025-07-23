@@ -103,6 +103,8 @@ jobs:
           cmake --build build/test
       - name: Run C++ unit tests (serial)
         run: |
+          . ./spack-src/share/spack/setup-env.sh
+          spack env activate dolfinx
           cd build/test
           ctest -V --output-on-failure -R unittests
       - name: Run C++ unit tests (MPI)
