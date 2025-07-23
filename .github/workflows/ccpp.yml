@@ -91,8 +91,8 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          apt-get update
-          apt-get install catch2 cmake g++ git libblas-dev libboost-dev \
+          apt-get -y update
+          apt-get -y install catch2 cmake g++ git libblas-dev libboost-dev \
              libhdf5-mpi-dev liblapack-dev libparmetis-dev libpugixml-dev \
              libspdlog-dev mpi-default-dev ninja-build pkg-config
 
