@@ -5,20 +5,21 @@ spack:
       root: /opt/spack
       padded_length: 128
 
-  # packages:
-  #   all:
-  #     prefer:
-  #       - "target=x86_64_v3 %oneapi"
   packages:
-      all:
-        require:
-          - target=x86_64_v3 %oneapi
-      gcc-runtime:
-        require:
-          - target=target=x86_64_v3 %gcc
-      glibc:
-        require:
-          - target=target=x86_64_v3 %gcc
+    all:
+      prefer:
+      - "target=x86_64_v3 %oneapi@2025.2.0"
+
+  # packages:
+  #     all:
+  #       require:
+  #         - target=x86_64_v3 %oneapi
+  #     gcc-runtime:
+  #       require:
+  #         - target=target=x86_64_v3 %gcc
+  #     glibc:
+  #       require:
+  #         - target=target=x86_64_v3 %gcc
 
   mirrors:
     local-buildcache:
@@ -28,3 +29,28 @@ spack:
       access_pair:
         id_variable: GITHUB_USER
         secret_variable: GITHUB_TOKEN
+
+  # specs:
+  # - petsc+mpi+mumps+shared %oneapi
+  # - slepc %oneapi
+  # - parmetis %oneapi
+  # - pkgconfig
+  # - python
+  # - hdf5+mpi %oneapi
+  # - boost %oneapi
+  # - pugixml %oneapi
+  # - spdlog %oneapi
+  # - py-nanobind
+  # - py-numpy %oneapi
+  # - py-mpi4py %oneapi
+  # - py-petsc4py
+  # - py-slepc4py
+  # - py-scikit-build-core+pyproject
+  # - py-setuptools
+  # - py-cffi
+  # - py-pip
+  # - cmake
+  # - catch2
+  # - py-pytest
+  # - py-pytest-xdist
+  # - ninja
