@@ -343,12 +343,12 @@ assert converged_reason > 0, f"Krylov solver has not converged, reason: {converg
 # We save the solution `u` in VTX format:
 
 # +
-try:
+if dolfinx.has_adios2:
     from dolfinx.io import VTXWriter
 
     u.name = "u"
     with VTXWriter(msh.comm, "output_mixed_poisson.bp", u, "bp4") as f:
         f.write(0.0)
-except ImportError:
+else:
     print("ADIOS2 required for VTX output.")
 # -
