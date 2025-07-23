@@ -63,8 +63,8 @@ jobs:
           spack env create dolfinx dolfinx-src/.github/workflows/spack-config/gh-actions-rocky.yml
           spack -e dolfinx add mpi petsc+mpi+shared slepc parmetis pkgconfig python hdf5+mpi boost pugixml spdlog
           spack -e dolfinx add python py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py py-scikit-build-core+pyproject py-setuptools py-cffi
-          spack -e dolfinx add py-pip cmake catch2
-          spack -v -e dolfinx install --use-buildcache auto
+          spack -e dolfinx add py-pip cmake catch2 py-pytest py-pytest-xdist
+          spack -e dolfinx install --use-buildcache auto
 
       - name: Push packages and update index
         env:
@@ -90,6 +90,7 @@ jobs:
       - name: Configure and build C++
         run: |
           . ./spack-src/share/spack/setup-env.sh
+          spack env activate dolfinx
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S dolfinx-src/cpp/
           cmake --build build
           cmake --install build
@@ -97,23 +98,26 @@ jobs:
       - name: Build C++ unit tests
         run: |
           . ./spack-src/share/spack/setup-env.sh
+          spack env activate dolfinx
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
           cmake --build build/test
       - name: Run C++ unit tests (serial)
         run: |
           cd build/test
           ctest -V --output-on-failure -R unittests
-      # - name: Run C++ unit tests (MPI)
-      #   run: |
-      #     cd build/test
-      #     mpiexec -np 2 ctest -V --output-on-failure -R unittests
-      # - name: Build and run C++ regression tests (serial and MPI (np=2))
-      #   run: |
-      #     cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
-      #     cmake --build build/demo
-      #     cd build/demo
-      #     ctest -V -R demo -R serial
-      #     ctest -V -R demo -R mpi_2
+      - name: Run C++ unit tests (MPI)
+        run: |
+          cd build/test
+          mpiexec -np 2 ctest -V --output-on-failure -R unittests
+      - name: Build and run C++ regression tests (serial and MPI (np=2))
+        run: |
+          . ./spack-src/share/spack/setup-env.sh
+          spack env activate dolfinx
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S dolfinx-src/cpp/demo/
+          cmake --build build/demo
+          cd build/demo
+          ctest -V -R demo -R serial
+          ctest -V -R demo -R mpi_2
 
       # - name: Install Python dependencies
       #   run: |
