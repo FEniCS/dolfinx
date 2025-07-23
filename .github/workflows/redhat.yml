@@ -76,33 +76,33 @@ jobs:
         if: ${{ !cancelled() }}
 
 
-      # - name: Load environment variables
-      #   run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+      - name: Load environment variables
+        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
-      # - name: Install FEniCS Python components
-      #   shell: spack-bash {0}
-      #   run: |
-      #     . ../spack-src/share/spack/setup-env.sh
-      #     spack env activate dolfinx
-      #     pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
-      #     pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
-      #     pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
+      - name: Install FEniCS Python components
+        run: |
+          . ./spack-src/share/spack/setup-env.sh
+          spack env activate dolfinx
+          pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
+          pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
 
-      # - name: Configure C++
-      #   run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
-      # - name: Build and install C++ library
-      #   run: |
-      #     cmake --build build
-      #     cmake --install build
+      - name: Configure and build C++
+        run: |
+          . ./spack-src/share/spack/setup-env.sh
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S dolfinx-src/cpp/
+          cmake --build build
+          cmake --install build
 
-      # - name: Build C++ unit tests
-      #   run: |
-      #     cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
-      #     cmake --build build/test
-      # - name: Run C++ unit tests (serial)
-      #   run: |
-      #     cd build/test
-      #     ctest -V --output-on-failure -R unittests
+      - name: Build C++ unit tests
+        run: |
+          . ./spack-src/share/spack/setup-env.sh
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
+          cmake --build build/test
+      - name: Run C++ unit tests (serial)
+        run: |
+          cd build/test
+          ctest -V --output-on-failure -R unittests
       # - name: Run C++ unit tests (MPI)
       #   run: |
       #     cd build/test
