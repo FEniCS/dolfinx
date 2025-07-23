@@ -51,13 +51,13 @@ jobs:
           path: dolfinx-src
 
       - name: Create environment (gcc)
-        if: ${{ runner.os == 'gcc' }}
+        if: ${{ matrix.compiler == 'gcc' }}
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env create dolfinx dolfinx-src/.github/workflows/spack-config/gh-actions-rocky.yml
 
       - name: Create environment (oneAPI)
-        if: ${{ runner.os == 'oneapi' }}
+        if: ${{ matrix.compiler == 'oneapi' }}
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack install intel-oneapi-compilers
