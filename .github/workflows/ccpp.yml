@@ -87,6 +87,8 @@ jobs:
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe   # Newer OpenMPI
       OMPI_MCA_rmaps_base_oversubscribe: true                 # Older OpenMPI
 
+      PIP_BREAK_SYSTEM_PACKAGES: 1
+
     name: Build and test
     steps:
       - name: Install dependencies
