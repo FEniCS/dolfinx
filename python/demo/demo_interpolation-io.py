@@ -24,7 +24,7 @@ from mpi4py import MPI
 
 import numpy as np
 
-from dolfinx import default_scalar_type, plot
+from dolfinx import default_scalar_type, has_adios2, plot
 from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import CellType, create_rectangle, locate_entities
 
@@ -65,12 +65,12 @@ u0.interpolate(u)
 # the field, at $x_0 = 0.5$ the $x_0$-component should appear
 # discontinuous and the $x_1$-component should appear continuous.
 
-try:
+if has_adios2:
     from dolfinx.io import VTXWriter
 
     with VTXWriter(msh.comm, "output_nedelec.bp", u0, "bp4") as f:
         f.write(0.0)
-except ImportError:
+else:
     print("ADIOS2 required for VTX output")
 
 
