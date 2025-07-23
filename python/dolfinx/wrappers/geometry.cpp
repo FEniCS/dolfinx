@@ -29,7 +29,7 @@ namespace
 template <typename T>
 void declare_bbtree(nb::module_& m, const std::string& type)
 {
-  std::string pyclass_name = "BoundingBoxTree";
+  std::string pyclass_name = "BoundingBoxTree_" + type;
   nb::class_<dolfinx::geometry::BoundingBoxTree<T>>(m, pyclass_name.c_str())
       .def(
           "__init__",
