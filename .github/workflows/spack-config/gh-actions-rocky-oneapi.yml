@@ -5,10 +5,20 @@ spack:
       root: /opt/spack
       padded_length: 128
 
+  # packages:
+  #   all:
+  #     prefer:
+  #       - "target=x86_64_v3 %oneapi"
   packages:
-    all:
-      prefer:
-        - "target=x86_64_v3 %oneapi"
+      all:
+        require:
+          - target=x86_64_v3 %oneapi
+      gcc-runtime:
+        require:
+          - target=target=x86_64_v3 %gcc
+      glibc:
+        require:
+          - target=target=x86_64_v3 %gcc
 
   mirrors:
     local-buildcache:
