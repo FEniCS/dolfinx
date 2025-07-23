@@ -154,8 +154,8 @@ jobs:
 
       - name: Install gmsh and pyvista (and dependencies)
         run: |
-          apt-get install libglu1-mesa libgl1 libxrender1 libxcursor1 libxft2 libxinerama1
-          apt-get install libegl1
+          apt-get -y install libglu1-mesa libgl1 libxrender1 libxcursor1 libxft2 libxinerama1
+          apt-get -y install libegl1
           pip install gmsh pyvista
 
       - name: Run demos (Python, serial)
