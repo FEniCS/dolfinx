@@ -117,7 +117,7 @@ jobs:
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate dolfinx
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Debug --config-settings=build-dir="build" -e 'python/[test]'
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Debug --config-settings=build-dir="build" -e 'dolfinx-src/python/[test]'
           pip install gmsh pyvista
 
       - name: Set default DOLFINx JIT options
