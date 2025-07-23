@@ -53,7 +53,7 @@ jobs:
           spack env create dolfinx dolfinx-src/.github/workflows/spack-config/gh-actions-rocky.yml
           spack -e dolfinx add mpi petsc+mpi+shared slepc parmetis pkgconfig python hdf5+mpi boost pugixml spdlog
           spack -e dolfinx add python py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py py-scikit-build-core+pyproject py-setuptools py-cffi
-          spack -e dolfinx add py-pip cmake catch2 py-pytest py-pytest-xdist ninja py-gmsh
+          spack -e dolfinx add py-pip cmake catch2 py-pytest py-pytest-xdist ninja
           spack -e dolfinx install --use-buildcache auto
 
       - name: Push packages and update index
@@ -118,6 +118,7 @@ jobs:
           . ./spack-src/share/spack/setup-env.sh
           spack env activate dolfinx
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Debug --config-settings=build-dir="build" -e 'python/[test]'
+          pip install gmsh pyvista
 
       - name: Set default DOLFINx JIT options
         run: |
