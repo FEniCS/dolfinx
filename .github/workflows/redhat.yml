@@ -1,5 +1,4 @@
-name: Red Hat clone
-
+name: CI via Spack
 on:
   push:
     # Uncomment the below 'push' to trigger on push
@@ -44,7 +43,7 @@ jobs:
           repository: spack/spack
           path: spack-src
 
-      - name: Get DOLFINx code
+      - name: Checkout DOLFINx
         uses: actions/checkout@v4
         with:
           path: dolfinx-src
@@ -72,7 +71,7 @@ jobs:
           . ./spack-src/share/spack/setup-env.sh
           spack -e . install --use-buildcache auto
 
-      - name: Push packages to cache and update index
+      - name: Push packages to Spack cache and update index
         env:
           GITHUB_USER: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -152,7 +151,7 @@ jobs:
           spack env activate .
           python -m pip install pytest-xdist
           python -m pytest -n auto -m serial --durations=10 dolfinx-src/python/demo/test.py
-      - name: Run demos (Python, MPI (np=2))
+      - name: Run demos (Python (MPI, np=2))
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate .
@@ -162,7 +161,7 @@ jobs:
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate .
-           python -m pytest -n auto -m "not adios2" --durations=50 dolfinx-src/python/test/unit/
+          python -m pytest -n auto -m "not adios2" --durations=50 dolfinx-src/python/test/unit/
       - name: Run Python unit tests (MPI, np=2)
         run: |
           . ./spack-src/share/spack/setup-env.sh
