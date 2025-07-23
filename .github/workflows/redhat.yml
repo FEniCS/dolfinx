@@ -110,7 +110,7 @@ jobs:
       - name: Run C++ unit tests (MPI)
         run: |
           cd build/test
-          mpiexec -np 2 ctest -V --output-on-failure -R unittests
+          mpirun -np 2 ctest -V --output-on-failure -R unittests
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
           . ./spack-src/share/spack/setup-env.sh
