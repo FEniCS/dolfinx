@@ -50,27 +50,42 @@ jobs:
         with:
           path: dolfinx-src
 
-      - if: matrix.compiler == 'gcc'
-        name: Create environment (gcc)
+      - name: Create environment
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env create dolfinx dolfinx-src/.github/workflows/spack-config/gh-actions-rocky.yml
 
-      - if: matrix.compiler == 'oneapi'
-        name: Create environment (oneAPI)
-        run: |
-          . ./spack-src/share/spack/setup-env.sh
-          spack install intel-oneapi-compilers
-          spack compiler find
-          spack compilers
-          spack env create dolfinx dolfinx-src/.github/workflows/spack-config/gh-actions-rocky-oneapi.yml
+      # - if: matrix.compiler == 'gcc'
+      #   name: Create environment (gcc)
+      #   run: |
+      #     . ./spack-src/share/spack/setup-env.sh
+      #     spack env create dolfinx dolfinx-src/.github/workflows/spack-config/gh-actions-rocky.yml
 
-      - name: Install dependencies
+      # - if: matrix.compiler == 'oneapi'
+      #   name: Create environment (oneAPI)
+      #   run: |
+      #     . ./spack-src/share/spack/setup-env.sh
+      #     spack install intel-oneapi-compilers
+      #     spack compiler find
+      #     spack compilers
+      #     spack env create dolfinx dolfinx-src/.github/workflows/spack-config/gh-actions-rocky-oneapi.yml
+
+      - name: Add dependencies
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack -e dolfinx add mpi petsc+mpi+shared+mumps slepc parmetis pkgconfig python hdf5+mpi boost pugixml spdlog
           spack -e dolfinx add python py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py py-scikit-build-core+pyproject py-setuptools py-cffi
           spack -e dolfinx add py-pip cmake catch2 py-pytest py-pytest-xdist ninja
+
+      - if: matrix.compiler == 'oneapi'
+        name: Add oneAPI compilers
+        run: |
+          . ./spack-src/share/spack/setup-env.sh
+          spack -e dolfinx add intel-oneapi-compilers
+
+      - name: Install dependencies
+        run: |
+          . ./spack-src/share/spack/setup-env.sh
           spack -e dolfinx install --use-buildcache auto
 
       - name: Push packages and update index
@@ -90,6 +105,7 @@ jobs:
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate dolfinx
+          echo Test: $CC
           pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
           pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
           pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
