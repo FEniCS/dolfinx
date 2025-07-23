@@ -76,6 +76,11 @@ jobs:
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
+      - name: Install pyvista and gmsh
+        run: |
+          dnf install -y mesa-libGLU libX11 libXrender mesa-libEGL libglvnd-glx libXcursor libXft libXinerama
+          python3 -m pip install gmsh pyvista
+
       - name: Run demos (Python, serial)
         run: |
           python3 -m pip install pytest-xdist

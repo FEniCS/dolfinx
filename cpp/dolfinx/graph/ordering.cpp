@@ -95,7 +95,7 @@ create_level_structure(const graph::AdjacencyList<int>& graph, int s)
   // Current level
   int l = 0;
 
-  std::vector<int> level_offsets = {0};
+  std::vector<int> level_offsets{0};
   level_offsets.reserve(graph.offsets().size());
   std::vector<int> level_structure = {s};
   level_structure.reserve(graph.array().size());

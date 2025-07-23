@@ -286,4 +286,9 @@ def compute_distance_gjk(
         Shortest vector between the two bodies.
 
     """
-    return _cpp.geometry.compute_distance_gjk(p, q)
+    assert p.dtype == q.dtype
+    if np.issubdtype(p.dtype, np.float32):
+        return _cpp.geometry.compute_distance_gjk_float32(p, q)
+    elif np.issubdtype(p.dtype, np.float64):
+        return _cpp.geometry.compute_distance_gjk_float64(p, q)
+    raise RuntimeError("Invalid dtype in compute_distance_gjk")

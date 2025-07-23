@@ -48,20 +48,31 @@ def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
     for i in range(submesh.topology.dim):
         submesh.topology.create_entities(i)
         submesh.topology.create_connectivity(i, 0)
+
+    num_ents = submesh_cell_imap.size_local + submesh_cell_imap.num_ghosts
+    submesh_to_mesh = entity_map.sub_topology_to_topology(
+        np.arange(num_ents, dtype=np.int32), inverse=False
+    )
+
+    submesh_vertex_imap = submesh.topology.index_map(0)
+    num_verts = submesh_vertex_imap.size_local + submesh_vertex_imap.num_ghosts
+    submesh_to_mesh_vertex = vertex_map.sub_topology_to_topology(
+        np.arange(num_verts, dtype=np.int32), inverse=False
+    )
     # Some processes might not own or ghost entities
-    if len(entity_map) > 0:
+    if len(submesh_to_mesh) > 0:
         mesh.topology.create_connectivity(entity_dim, 0)
         mesh_e_to_v = mesh.topology.connectivity(entity_dim, 0)
         submesh.topology.create_connectivity(entity_dim, 0)
         submesh_e_to_v = submesh.topology.connectivity(entity_dim, 0)
-        for submesh_entity in range(len(entity_map)):
+        for submesh_entity in range(len(submesh_to_mesh)):
             submesh_entity_vertices = submesh_e_to_v.links(submesh_entity)
             # The submesh is created such that entities is the map from the
             # submesh entity to the mesh entity
-            mesh_entity = entity_map[submesh_entity]
+            mesh_entity = submesh_to_mesh[submesh_entity]
             mesh_entity_vertices = mesh_e_to_v.links(mesh_entity)
             for i in range(len(submesh_entity_vertices)):
-                assert vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i]
+                assert submesh_to_mesh_vertex[submesh_entity_vertices[i]] == mesh_entity_vertices[i]
     else:
         assert submesh.topology.index_map(entity_dim).size_local == 0
 
@@ -73,13 +84,18 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
         == submesh.geometry.x.shape[0]
     )
 
+    submesh_cell_imap = submesh.topology.index_map(entity_dim)
+    num_ents = submesh_cell_imap.size_local + submesh_cell_imap.num_ghosts
+    submesh_to_mesh = entity_map.sub_topology_to_topology(
+        np.arange(num_ents, dtype=np.int32), inverse=False
+    )
     # Some processes might not own or ghost entities
-    if len(entity_map) > 0:
+    if len(submesh_to_mesh) > 0:
         assert mesh.geometry.dim == submesh.geometry.dim
 
         mesh.topology.create_entity_permutations()
-        e_to_g = entities_to_geometry(mesh, entity_dim, np.array(entity_map), True)
-        for submesh_entity in range(len(entity_map)):
+        e_to_g = entities_to_geometry(mesh, entity_dim, np.array(submesh_to_mesh), True)
+        for submesh_entity in range(len(submesh_to_mesh)):
             submesh_x_dofs = submesh.geometry.dofmap[submesh_entity]
             # e_to_g[i] gets the mesh x_dofs of entities[i], which should
             # correspond to the x_dofs of cell i in the submesh
@@ -418,26 +434,12 @@ mesh_factories = [
 ]
 
 
-# FIXME: Fix this xfail
-def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
-    """Xfail when mesh_factory on quads/hexes uses shared_vertex mode.
-    Needs implementing."""
-    if mesh_factory in [create_unit_square, create_unit_cube]:
-        if ghost_mode == GhostMode.shared_vertex:
-            pytest.xfail(
-                reason=f"Missing functionality in '{mesh_factory}' with '{ghost_mode}' mode"
-            )
-
-
-@pytest.mark.parametrize(
-    "ghost_mode", [GhostMode.none, GhostMode.shared_facet, GhostMode.shared_vertex]
-)
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("mesh_factory", mesh_factories)
 def xtest_mesh_topology_against_basix(mesh_factory, ghost_mode):
     """Test that mesh cells have topology matching to Basix reference
     cell they were created from."""
     func, args = mesh_factory
-    xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
     if not is_simplex(mesh.topology.cell_type):
         return

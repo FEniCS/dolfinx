@@ -120,19 +120,8 @@
 # +
 import os
 
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
-
 from mpi4py import MPI
+from petsc4py import PETSc
 
 import numpy as np
 
@@ -154,6 +143,7 @@ try:
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
+
 
 # Save all logging to file
 log.set_output_file("log.txt")
@@ -295,7 +285,9 @@ petsc_options = {
     "pc_factor_mat_solver_type": linear_solver,
     "snes_monitor": None,
 }
-problem = NonlinearProblem(F, u, petsc_options=petsc_options)
+problem = NonlinearProblem(
+    F, u, petsc_options_prefix="demo_cahn-hilliard_", petsc_options=petsc_options
+)
 # -
 
 # To run the solver and save the output to a VTK file for later
@@ -337,12 +329,17 @@ if have_pyvista:
 
 c = u.sub(0)
 u0.x.array[:] = u.x.array
+step = 0
 while t < T:
     t += dt
-    _, converged_reason, num_iterations = problem.solve()
-    print(f"Step {int(t / dt)}: {converged_reason=} {num_iterations=}")
+    _ = problem.solve()
+    converged_reason = problem.solver.getConvergedReason()
+    assert converged_reason > 0
+    num_iterations = problem.solver.getIterationNumber()
+    print(f"Step {step}: {converged_reason=} {num_iterations=}")
     u0.x.array[:] = u.x.array
     file.write_function(c, t)
+    step += 1
 
     # Update the plot window
     if have_pyvista:

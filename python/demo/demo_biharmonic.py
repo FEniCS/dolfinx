@@ -111,23 +111,11 @@
 #
 # We first import the modules and functions that the program uses:
 
-import importlib.util
-
-if importlib.util.find_spec("petsc4py") is not None:
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-    from petsc4py.PETSc import ScalarType  # type: ignore
-else:
-    print("This demo requires petsc4py.")
-    exit(0)
-
-from mpi4py import MPI
 
 # +
-import dolfinx
+from mpi4py import MPI
+from petsc4py.PETSc import ScalarType  # type: ignore
+
 import ufl
 from dolfinx import fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
@@ -228,9 +216,16 @@ L = ufl.inner(f, v) * ufl.dx
 # case we use a direct (LU) solver. The {py:func}`solve
 # <dolfinx.fem.petsc.LinearProblem.solve>` will compute a solution.
 
-problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(
+    a,
+    L,
+    bcs=[bc],
+    petsc_options_prefix="demo_biharmonic_",
+    petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
+)
 uh = problem.solve()
 assert isinstance(uh, fem.Function)
+assert problem.solver.getConvergedReason() > 0
 
 # The solution can be written to a  {py:class}`XDMFFile
 # <dolfinx.io.XDMFFile>` file visualization with ParaView or VisIt

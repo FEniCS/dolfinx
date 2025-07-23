@@ -18,31 +18,13 @@ import sys
 from functools import partial
 
 from mpi4py import MPI
+from petsc4py import PETSc
 
+import gmsh
 import numpy as np
 from scipy.special import jv, jvp
 
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    # The time-harmonic Maxwell equation is complex-valued PDE. PETSc
-    # must therefore have compiled with complex scalars.
-    if not np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
-        print("Demo can only be executed when PETSc using complex scalars.")
-        exit(0)
-
-    scalar_type = PETSc.ScalarType  # type: ignore
-    real_type = PETSc.RealType  # type: ignore
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
-
+import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import fem, io, mesh, plot
@@ -57,18 +39,19 @@ except ImportError:
     has_vtx = False
 
 try:
-    import gmsh
-except ModuleNotFoundError:
-    print("This demo requires gmsh to be installed.")
-    sys.exit(0)
-
-try:
     import pyvista
 
     have_pyvista = True
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
+
+# The time-harmonic Maxwell equation is complex-valued. PETSc must
+# therefore have been compiled with complex scalars.
+if not np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
+    print("Demo can only be executed when PETSc using complex scalars.")
+    exit(0)
+
 # -
 
 
@@ -493,8 +476,8 @@ if have_pyvista:
 # will use Lagrange elements:
 
 degree = 3
-curl_el = element("N1curl", mesh_data.mesh.basix_cell(), degree, dtype=real_type)
-lagr_el = element("Lagrange", mesh_data.mesh.basix_cell(), degree, dtype=real_type)
+curl_el = element("N1curl", mesh_data.mesh.basix_cell(), degree, dtype=PETSc.RealType)
+lagr_el = element("Lagrange", mesh_data.mesh.basix_cell(), degree, dtype=PETSc.RealType)
 V = fem.functionspace(mesh_data.mesh, mixed_element([curl_el, lagr_el]))
 
 # The integration domains of our problem are the following:
@@ -628,7 +611,7 @@ dS = ufl.Measure("dS", mesh_data.mesh, subdomain_data=mesh_data.facet_tags)
 phi = np.pi / 4
 
 # Initialize phase term
-phase = fem.Constant(mesh_data.mesh, scalar_type(np.exp(1j * 0 * phi)))
+phase = fem.Constant(mesh_data.mesh, PETSc.ScalarType(np.exp(1j * 0 * phi)))
 # -
 
 # We now solve the problem:
@@ -671,6 +654,7 @@ for m in m_list:
         a,
         L,
         bcs=[],
+        petsc_options_prefix="demo_axis_",
         petsc_options={
             "ksp_type": "preonly",
             "pc_type": "lu",
@@ -679,7 +663,7 @@ for m in m_list:
     )
     Esh_m = problem.solve()
     assert isinstance(Esh_m, fem.Function)
-    assert problem.solver.getConvergedReason() > 0, "Solver did not converge!"
+    assert problem.solver.getConvergedReason() > 0
 
     # Scattered magnetic field
     Hsh_m = -1j * curl_axis(Esh_m, m, rho) / (Z0 * k0)
@@ -794,7 +778,7 @@ if MPI.COMM_WORLD.rank == 0:
 # assert err_ext < 0.01
 
 if has_vtx:
-    v_dg_el = element("DG", mesh_data.mesh.basix_cell(), degree, shape=(3,), dtype=real_type)
+    v_dg_el = element("DG", mesh_data.mesh.basix_cell(), degree, shape=(3,), dtype=PETSc.RealType)
     W = fem.functionspace(mesh_data.mesh, v_dg_el)
     Es_dg = fem.Function(W)
     Es_expr = fem.Expression(Esh, W.element.interpolation_points)

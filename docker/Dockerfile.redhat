@@ -7,9 +7,8 @@ FROM rockylinux/rockylinux:10
 
 ARG BUILD_NP=4
 
-ARG HDF5_VERSION=1.14.6
-ARG PETSC_VERSION=3.23.2
-ARG MPICH_VERSION=4.2.3
+ARG PETSC_VERSION=3.23.4
+ARG SLEPC_VERSION=3.23.2
 
 WORKDIR /tmp
 
@@ -25,46 +24,33 @@ RUN dnf -y update && \
     gcc \
     gcc-c++ \
     gcc-gfortran \
+    hdf5-mpich-devel \
+    mpich-devel \
     pugixml-devel \
     python3 \
     python3-devel \
     python3-pip \
     spdlog-devel \
-    # Required for PETSc build
     diffutils \
     findutils \
     flex \
-    # Utility
     git \
-    # Only in crb set
     ninja-build \
     openblas-devel && \
     dnf -y clean all && \
     rm -rf /var/cache
+
+ENV PATH=/usr/lib64/mpich/bin:$PATH LD_LIBRARY_PATH=/usr/lib64/mpich/lib
 
 # Broaden default minimal dynamic library path lookup to /usr/local/lib (PETSc
 # issue #1154) and /usr/local/lib64
 RUN echo "/usr/local/lib/" > /etc/ld.so.conf.d/usr-local-lib.conf && \
     echo "/usr/local/lib64" > /etc/ld.so.conf.d/usr-local-lib64.conf
 
-# Build MPICH (see https://github.com/pmodels/mpich/issues/5811)
-RUN curl -L -O https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
-    tar -xf mpich-${MPICH_VERSION}.tar.gz && \
-    cd mpich-${MPICH_VERSION} && \
-    FCFLAGS=-fallow-argument-mismatch FFLAGS=-fallow-argument-mismatch ./configure --with-device=ch4:ofi --enable-shared --prefix=/usr/local --libdir=/usr/local/lib64 && \
-    make -j${BUILD_NP} install && \
-    rm -rf /tmp/*
+RUN python3 -m pip -v install --no-cache-dir cython mpi4py numba numpy patchelf pyproject setuptools wheel
 
-# Build HDF5
-RUN curl -L -O https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5_${HDF5_VERSION}.tar.gz && \
-    tar -xf hdf5_${HDF5_VERSION}.tar.gz && \
-    cd hdf5-hdf5_${HDF5_VERSION} && \
-    ./configure --prefix=/usr/local --libdir=/usr/local/lib64 --enable-parallel --enable-shared --enable-static=no && \
-    make -j${BUILD_NP} install && \
-    rm -rf /tmp/*
-
-# Build PETSc
-RUN git clone -b v${PETSC_VERSION}  https://gitlab.com/petsc/petsc.git && \
+    # Build PETSc
+RUN git clone --depth=1 -b v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git && \
     cd petsc && \
     python3 ./configure \
     --with-shared-libraries \
@@ -78,19 +64,24 @@ RUN git clone -b v${PETSC_VERSION}  https://gitlab.com/petsc/petsc.git && \
     --download-mumps \
     --download-scalapack \
     --download-superlu_dist \
-    --prefix=/usr/local \
-    --libdir=/usr/local/lib64 \
+    --prefix=/usr/local/petsc \
     --with-make-np=${BUILD_NP} && \
     make all && \
     make install && \
     cd src/binding/petsc4py && \
-    PETSC_DIR=/usr/local python3 -m pip install --no-cache-dir . && \
-    rm -rf /tmp/* && \
-    ldconfig
+    PETSC_DIR=/usr/local/petsc python3 -m pip -v install --no-cache-dir --no-build-isolation . && \
+    rm -rf /tmp/*
 
-ENV PETSC_DIR=/usr/local
+ENV PETSC_DIR=/usr/local/petsc
 
-# RHEL pkgconfig does not look here by default. Setting this probably
-# better than forcing install into 'system path' or hacking in DOLFINx
-# pkgconfig.py code.
-ENV PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig
+# Install SLEPc
+RUN git clone --depth=1 -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git && \
+    cd slepc && \
+    ./configure --prefix=/usr/local/slepc  && \
+    make SLEPC_DIR=/tmp/slepc && \
+    make SLEPC_DIR=/tmp/slepc install && \
+    cd src/binding/slepc4py && \
+    SLEPC_DIR=/usr/local/slepc python3 -m pip -v install --no-cache-dir --no-build-isolation . && \
+    rm -rf /tmp/*
+
+ENV SLEPC_DIR=/usr/local/slepc

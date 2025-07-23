@@ -31,9 +31,10 @@ using namespace dolfinx;
 //-----------------------------------------------------------------------------
 fem::DofMap fem::create_dofmap(
     MPI_Comm comm, const ElementDofLayout& layout, mesh::Topology& topology,
-    std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv,
-    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
-        reorder_fn)
+    const std::function<void(std::span<std::int32_t>, std::uint32_t)>&
+        permute_inv,
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   // Create required mesh entities
   const int D = topology.dim();
@@ -69,9 +70,10 @@ fem::DofMap fem::create_dofmap(
 std::vector<fem::DofMap> fem::create_dofmaps(
     MPI_Comm comm, const std::vector<ElementDofLayout>& layouts,
     mesh::Topology& topology,
-    std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv,
-    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
-        reorder_fn)
+    const std::function<void(std::span<std::int32_t>, std::uint32_t)>&
+        permute_inv,
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   std::int32_t D = topology.dim();
   assert(layouts.size() == topology.entity_types(D).size());
@@ -109,6 +111,7 @@ std::vector<fem::DofMap> fem::create_dofmaps(
   }
 
   std::vector<DofMap> dms;
+  dms.reserve(dofmaps.size());
   for (std::size_t i = 0; i < dofmaps.size(); ++i)
     dms.emplace_back(layouts[i], index_map, bs, std::move(dofmaps[i]), bs);
 
