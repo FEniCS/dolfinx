@@ -31,7 +31,7 @@ jobs:
 
     strategy:
       matrix:
-        compiler: [gcc, oneapi]
+        compiler: ["gcc", "oneapi"]
 
     steps:
       - name: Install Spack requirements
@@ -50,21 +50,22 @@ jobs:
         with:
           path: dolfinx-src
 
-      - name: Create environment (gcc)
-        if: ${{ matrix.compiler == 'gcc' }}
+      - if: matrix.compiler == 'gcc'
+        name: Create environment (gcc)
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env create dolfinx dolfinx-src/.github/workflows/spack-config/gh-actions-rocky.yml
 
-      - name: Create environment (oneAPI)
-        if: ${{ matrix.compiler == 'oneapi' }}
+      - if: matrix.compiler == 'oneapi'
+        name: Create environment (oneAPI)
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack install intel-oneapi-compilers
-          spack env create dolfinx dolfinx-src/.github/workflows/spack-config/gh-actions-rocky-oneapi.yml
+          spack install intel-oneapi-compilersgh-actions-rocky-oneapi.yml
+          spack env create dolfinx dolfinx-src/.github/workflows/spack-config/
 
       - name: Install dependencies
         run: |
+          . ./spack-src/share/spack/setup-env.sh
           spack -e dolfinx add mpi petsc+mpi+shared+mumps slepc parmetis pkgconfig python hdf5+mpi boost pugixml spdlog
           spack -e dolfinx add python py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py py-scikit-build-core+pyproject py-setuptools py-cffi
           spack -e dolfinx add py-pip cmake catch2 py-pytest py-pytest-xdist ninja
