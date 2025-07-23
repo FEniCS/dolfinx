@@ -170,7 +170,7 @@ void declare_bbtree(nb::module_& m, const std::string& type)
       },
       nb::arg("mesh"), nb::arg("candidate_cells"), nb::arg("points"));
 
-  std::string gjk_name = "compute_distance_gjk_" + type;
+  std::string gjk_name = "compute_distance_gjk";
   m.def(
       gjk_name.c_str(),
       [](nb::ndarray<const T, nb::c_contig> p,
@@ -188,7 +188,7 @@ void declare_bbtree(nb::module_& m, const std::string& type)
             = dolfinx::geometry::compute_distance_gjk<T, U>(_p, _q);
         return nb::ndarray<T, nb::numpy>(d.data(), {d.size()}).cast();
       },
-      nb::arg("p"), nb::arg("q"));
+      nb::arg("p").noconvert(), nb::arg("q").noconvert());
 
   m.def(
       "squared_distance",

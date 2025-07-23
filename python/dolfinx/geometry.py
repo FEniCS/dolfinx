@@ -289,12 +289,7 @@ def compute_distance_gjk(
 
     """
     assert p.dtype == q.dtype
-    if np.issubdtype(p.dtype, np.float32):
-        return _cpp.geometry.compute_distance_gjk_float32(p, q)
-    elif np.issubdtype(p.dtype, np.float64):
-        return _cpp.geometry.compute_distance_gjk_float64(p, q)
-    raise RuntimeError("Invalid dtype in compute_distance_gjk")
-
+    return _cpp.geometry.compute_distance_gjk(p, q)
 
 def determine_point_ownership(
     mesh: Mesh,
