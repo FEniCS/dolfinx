@@ -25,10 +25,13 @@ env:
 
 jobs:
   build:
+    name: Rocky build and test
     runs-on: ubuntu-latest
     container: rockylinux/rockylinux:10
 
-    name: Rocky build and test
+    strategy:
+      matrix:
+        compiler: [gcc, oneapi]
 
     steps:
       - name: Install Spack requirements
@@ -47,10 +50,21 @@ jobs:
         with:
           path: dolfinx-src
 
-      - name: Install dependencies
+      - name: Create environment (gcc)
+        if: ${{ runner.os == 'gcc' }}
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env create dolfinx dolfinx-src/.github/workflows/spack-config/gh-actions-rocky.yml
+
+      - name: Create environment (oneAPI)
+        if: ${{ runner.os == 'oneapi' }}
+        run: |
+          . ./spack-src/share/spack/setup-env.sh
+          spack install intel-oneapi-compilers
+          spack env create dolfinx dolfinx-src/.github/workflows/spack-config/gh-actions-rocky-oneapi.yml
+
+      - name: Install dependencies
+        run: |
           spack -e dolfinx add mpi petsc+mpi+shared+mumps slepc parmetis pkgconfig python hdf5+mpi boost pugixml spdlog
           spack -e dolfinx add python py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py py-scikit-build-core+pyproject py-setuptools py-cffi
           spack -e dolfinx add py-pip cmake catch2 py-pytest py-pytest-xdist ninja
@@ -127,11 +141,6 @@ jobs:
         run: |
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
-
-      # - name: Install pyvista and gmsh
-      #   run: |
-      #     dnf install -y mesa-libGLU libX11 libXrender mesa-libEGL libglvnd-glx libXcursor libXft libXinerama
-      #     python3 -m pip install gmsh pyvista
 
       - name: Run demos (Python, serial)
         run: |
