@@ -104,11 +104,6 @@ jobs:
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
       - name: Install Python build dependencies
         run: |
           pip install --upgrade -r python/build-requirements.txt
