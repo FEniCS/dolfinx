@@ -26,7 +26,6 @@ jobs:
     name: Rocky build and test
     runs-on: ubuntu-latest
     container: rockylinux/rockylinux:10
-
     strategy:
       matrix:
         compiler: ["gcc", "oneapi"]
@@ -105,13 +104,7 @@ jobs:
           spack env activate .
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
           cmake --build build/test
-      - name: Run C++ unit tests (serial)
-        run: |
-          . ./spack-src/share/spack/setup-env.sh
-          spack env activate .
-          cd build/test
-          ctest -V --output-on-failure -R unittests
-      - name: Run C++ unit tests (MPI)
+      - name: Run C++ unit tests (serial and MPI)
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate .
@@ -127,7 +120,7 @@ jobs:
           ctest -V -R demo -R serial
           ctest -V -R demo -R mpi_2
 
-      - name: Install gmsh and pyvista (and via  package manager install dependencies
+      - name: Install gmsh and pyvista (and via  package manager install dependencies)
         run: |
           dnf install -y mesa-libGLU libX11 libXrender mesa-libEGL libglvnd-glx libXcursor libXft libXinerama
           . ./spack-src/share/spack/setup-env.sh
@@ -145,25 +138,16 @@ jobs:
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
-      - name: Run demos (Python, serial)
+      - name: Run demos (Python, serial and MPI)
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate .
-          python -m pip install pytest-xdist
           python -m pytest -n auto -m serial --durations=10 dolfinx-src/python/demo/test.py
-      - name: Run demos (Python (MPI, np=2))
-        run: |
-          . ./spack-src/share/spack/setup-env.sh
-          spack env activate .
           python -m pytest -m mpi --num-proc=2 dolfinx-src/python/demo/test.py
 
-      - name: Run Python unit tests (serial)
+      - name: Run Python unit tests (serial and MPI)
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate .
           python -m pytest -n auto -m "not adios2" --durations=50 dolfinx-src/python/test/unit/
-      - name: Run Python unit tests (MPI, np=2)
-        run: |
-          . ./spack-src/share/spack/setup-env.sh
-          spack env activate .
           mpirun -np 2 python -m pytest -m "not adios2" dolfinx-src/python/test/unit/
