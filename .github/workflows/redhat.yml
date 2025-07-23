@@ -61,6 +61,8 @@ jobs:
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack install intel-oneapi-compilers
+          spack compiler find
+          spack compilers
           spack env create dolfinx dolfinx-src/.github/workflows/spack-config/gh-actions-rocky-oneapi.yml
 
       - name: Install dependencies
