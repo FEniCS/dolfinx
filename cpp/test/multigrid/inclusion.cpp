@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Paul T. Kühner
+// Copyright (C) 2025 Paul T. Kühner
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <limits>
 #include <optional>
+#include <ranges>
 #include <vector>
 
 #include <mpi.h>
@@ -74,12 +75,14 @@ void CHECK_inclusion_map(const dolfinx::mesh::Mesh<T>& from,
     //           << global_x_to[3 * map[i]] << ", " << global_x_to[3 * map[i] +
     //           1]
     //           << ", " << global_x_to[3 * map[i] + 2] << ")" << std::endl;
-    CHECK(std::abs(from.geometry().x()[3 * i] - global_x_to[3 * map[i]])
-          < std::numeric_limits<T>::epsilon());
-    CHECK(std::abs(from.geometry().x()[3 * i + 1] - global_x_to[3 * map[i] + 1])
-          < std::numeric_limits<T>::epsilon());
-    CHECK(std::abs(from.geometry().x()[3 * i + 2] - global_x_to[3 * map[i] + 2])
-          < std::numeric_limits<T>::epsilon());
+    auto x
+        = std::array{from.geometry().x()[3 * i], from.geometry().x()[3 * i + 1],
+                     from.geometry().x()[3 * i + 2]};
+    auto global_x
+        = std::array{global_x_to[3 * map[i]], global_x_to[3 * map[i] + 1],
+                     global_x_to[3 * map[i] + 2]};
+
+    CHECK_THAT(x, Catch::Matchers::RangeEquals(global_x));
   }
 }
 
@@ -92,10 +95,10 @@ void TEST_inclusion(dolfinx::mesh::Mesh<T>&& mesh_coarse)
 
   std::array<std::variant<refinement::IdentityPartitionerPlaceholder,
                           mesh::CellPartitionFunction>,
-             1>
+             3>
       ghost_modes
-      = {// mesh::create_cell_partitioner(mesh::GhostMode::none),
-         // mesh::create_cell_partitioner(mesh::GhostMode::shared_facet),
+      = {mesh::create_cell_partitioner(mesh::GhostMode::none),
+         mesh::create_cell_partitioner(mesh::GhostMode::shared_facet),
          refinement::IdentityPartitionerPlaceholder()};
   // TODO: std::nullopt,
   for (auto ghost_mode : ghost_modes)
