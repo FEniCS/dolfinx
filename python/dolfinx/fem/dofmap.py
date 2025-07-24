@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import typing
 from collections.abc import Sequence
 
 from mpi4py.MPI import Comm
@@ -11,7 +12,9 @@ from mpi4py.MPI import Comm
 from basix.finite_element import FiniteElement
 from dolfinx.cpp.fem import DofMap as _DofMap
 from dolfinx.cpp.fem import create_dofmaps as _create_dofmaps
-from dolfinx.mesh import Topology
+
+if typing.TYPE_CHECKING:
+    from dolfinx.mesh import Topology
 
 
 class DofMap:
@@ -66,7 +69,7 @@ class DofMap:
 
 
 def create_dofmaps(
-    comm: Comm, topology: Topology, elements: Sequence[FiniteElement]
+    comm: Comm, topology: "Topology", elements: Sequence[FiniteElement]
 ) -> list[DofMap]:
     """Create a set of dofmaps on a given topology
 

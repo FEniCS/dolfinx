@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tools for assembling and manipulating finite element forms."""
 
+import typing
+
 import numpy as np
 import numpy.typing as npt
 
@@ -57,7 +59,9 @@ from dolfinx.fem.function import (
 )
 from dolfinx.geometry import PointOwnershipData as _PointOwnershipData
 from dolfinx.la import MatrixCSR as _MatrixCSR
-from dolfinx.mesh import Topology
+
+if typing.TYPE_CHECKING:
+    from dolfinx.mesh import Topology
 
 
 def create_sparsity_pattern(a: Form):
@@ -174,7 +178,7 @@ def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _Matri
 
 
 def compute_integration_domains(
-    integral_type: IntegralType, topology: Topology, entities: np.ndarray
+    integral_type: IntegralType, topology: "Topology", entities: np.ndarray
 ):
     """Given an integral type and a set of entities compute integration
     entities.
