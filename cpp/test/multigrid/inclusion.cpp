@@ -129,11 +129,13 @@ TEMPLATE_TEST_CASE("Inclusion (interval)", "[multigrid][inclusion]", double,
 //   for (auto n : {5})
 //   {
 //     TEST_inclusion(dolfinx::mesh::create_rectangle<TestType>(
-//         MPI_COMM_WORLD, {{{0, 0}, {1, 1}}}, {n, n}, mesh::CellType::triangle));
+//         MPI_COMM_WORLD, {{{0, 0}, {1, 1}}}, {n, n},
+//         mesh::CellType::triangle));
 //   }
 // }
 
-// TEMPLATE_TEST_CASE("Inclusion (tetrahedron)", "[multigrid][inclusion]", double,
+// TEMPLATE_TEST_CASE("Inclusion (tetrahedron)", "[multigrid][inclusion]",
+// double,
 //                    float)
 // {
 //   for (auto n : {5})
