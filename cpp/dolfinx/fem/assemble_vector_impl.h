@@ -78,7 +78,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// conditions applied.
 /// @param[in] x0 Vector used in the lifting.
 /// @param[in] alpha Scaling to apply.
-template <dolfinx::scalar T, BlockSize BS0, BlockSize BS1>
+template <dolfinx::scalar T, BlockSize BS0 = int, BlockSize BS1 = int>
 void _lift_bc_cells(
     std::span<T> b, mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
