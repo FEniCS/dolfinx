@@ -37,7 +37,7 @@ from dolfinx.fem.bcs import (
     locate_dofs_geometrical,
     locate_dofs_topological,
 )
-from dolfinx.fem.dofmap import DofMap
+from dolfinx.fem.dofmap import DofMap, create_dofmaps
 from dolfinx.fem.element import CoordinateElement, FiniteElement, coordinate_element, finiteelement
 from dolfinx.fem.forms import (
     Form,
@@ -231,6 +231,7 @@ __all__ = [
     "compile_form",
     "compute_integration_domains",
     "coordinate_element",
+    "create_dofmaps",
     "create_form",
     "create_interpolation_data",
     "create_matrix",

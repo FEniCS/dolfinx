@@ -4,7 +4,16 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import typing
+from collections.abc import Sequence
+
+from mpi4py.MPI import Comm
+
 from dolfinx import cpp as _cpp
+
+if typing.TYPE_CHECKING:
+    from basix.finite_element import FiniteElement
+    from dolfinx.mesh import Topology
 
 
 class DofMap:
@@ -56,3 +65,21 @@ class DofMap:
     def list(self):
         """Adjacency list with dof indices for each cell."""
         return self._cpp_object.map()
+
+
+def create_dofmaps(
+    comm: Comm, topology: "Topology", elements: Sequence["FiniteElement"]
+) -> list[DofMap]:
+    """Create a set of dofmaps on a given topology
+
+    Args:
+        comm: MPI communicator
+        topology: Mesh topology
+        elements: Sequence of coordinate elements
+
+    Returns:
+        List of new DOF maps
+    """
+    elements_cpp = [_cpp.fem.FiniteElement_float64(e._e, None, True) for e in elements]
+    cpp_dofmaps = _cpp.fem.create_dofmaps(comm, topology._cpp_object, elements_cpp)
+    return [DofMap(cpp_object) for cpp_object in cpp_dofmaps]

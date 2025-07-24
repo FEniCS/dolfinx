@@ -30,10 +30,11 @@ from dolfinx.fem import (
     assemble_matrix,
     assemble_vector,
     coordinate_element,
+    create_dofmaps,
     mixed_topology_form,
 )
 from dolfinx.io.utils import cell_perm_vtk
-from dolfinx.mesh import CellType, Mesh
+from dolfinx.mesh import CellType, Mesh, Topology
 
 if MPI.COMM_WORLD.size > 1:
     print("Not yet running in parallel")
@@ -102,12 +103,15 @@ elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.hexahedron, 1),
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
-elements_cpp = [_cpp.fem.FiniteElement_float64(e._e, None, True) for e in elements]
+
 # NOTE: Both dofmaps have the same IndexMap, but different cell_dofs
-dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, elements_cpp)
+dofmaps = create_dofmaps(mesh.comm, Topology(mesh.topology), elements)
 
 # Create C++ function space
-V_cpp = _cpp.fem.FunctionSpace_float64(mesh, elements_cpp, dofmaps)
+elements_cpp = [_cpp.fem.FiniteElement_float64(e._e, None, True) for e in elements]
+V_cpp = _cpp.fem.FunctionSpace_float64(
+    mesh, elements_cpp, [dofmap._cpp_object for dofmap in dofmaps]
+)
 
 # Create forms for each cell type.
 # FIXME This hack is required at the moment because UFL does not yet know

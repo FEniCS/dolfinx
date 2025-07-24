@@ -3,23 +3,20 @@ from mpi4py import MPI
 import numpy as np
 
 import basix
-import dolfinx.cpp as _cpp
 from dolfinx.cpp.mesh import Mesh_float64, create_geometry, create_topology
-from dolfinx.fem import coordinate_element
-from dolfinx.fem.dofmap import DofMap
+from dolfinx.fem import coordinate_element, create_dofmaps
 from dolfinx.log import LogLevel, set_log_level
-from dolfinx.mesh import CellType
+from dolfinx.mesh import CellType, Topology
 
 
 def create_element_dofmap(mesh, cell_types, degree):
-    cpp_elements = []
+    elements = []
     for cell_type in cell_types:
         ufl_e = basix.ufl.element("P", cell_type, degree, dtype=np.float64)
-        cpp_elements += [_cpp.fem.FiniteElement_float64(ufl_e.basix_element._e, None, False)]
+        elements += [ufl_e.basix_element]
 
-    cpp_dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, cpp_elements)
-
-    return (cpp_elements, cpp_dofmaps)
+    dofmaps = create_dofmaps(mesh.comm, Topology(mesh.topology), elements)
+    return (elements, dofmaps)
 
 
 def test_dofmap_mixed_topology():
@@ -68,12 +65,11 @@ def test_dofmap_mixed_topology():
     )
 
     assert len(elements) == 2
-    assert elements[0].basix_element.cell_type.name == "triangle"
-    assert elements[1].basix_element.cell_type.name == "quadrilateral"
+    assert elements[0].cell_type.name == "triangle"
+    assert elements[1].cell_type.name == "quadrilateral"
 
     assert len(dofmaps) == 2
-    q0 = DofMap(dofmaps[0])
-    q1 = DofMap(dofmaps[1])
+    q0, q1 = dofmaps
     assert q0.index_map.size_local == q1.index_map.size_local
     # Triangles
     print(q0.list)
@@ -121,10 +117,9 @@ def test_dofmap_prism_mesh():
     mesh = Mesh_float64(MPI.COMM_WORLD, topology, geom)
 
     elements, dofmaps = create_element_dofmap(mesh, [basix.CellType.prism], 2)
-    print()
     assert len(elements) == 1
     assert len(dofmaps) == 1
-    q = DofMap(dofmaps[0])
+    q = dofmaps[0]
     assert q.index_map.size_local == 18
     print(q.list)
     facet_dofs = []
