@@ -366,7 +366,7 @@ def model_to_mesh(
     if comm.rank != rank:
         x = np.empty([0, gdim], dtype=dtype)  # No nodes on other than root rank
     mesh = create_mesh(
-        comm, cell_connectivity, x[:, :gdim].astype(dtype, copy=False), ufl_domain, partitioner
+        comm, cell_connectivity, ufl_domain, x[:, :gdim].astype(dtype, copy=False), partitioner
     )
     assert tdim == mesh.topology.dim, (
         f"{mesh.topology.dim=} does not match Gmsh model dimension {tdim}"
