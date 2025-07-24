@@ -168,7 +168,7 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 3>> x(
       g.x().data(), g.x().size() / 3, 3);
   common::Timer timer("Assembler1 lambda (vector)");
-  fem::impl::assemble_cells<T, BS<1>>(
+  fem::impl::assemble_cells<T>(
       [](auto, auto, auto, auto) {}, b.mutable_array(), g.dofmap(), x, cells,
       {dofmap.map(), BS<1>(), cells}, kernel, {}, {}, {});
   b.scatter_rev(std::plus<T>());
