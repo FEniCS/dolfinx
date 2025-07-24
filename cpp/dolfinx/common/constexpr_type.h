@@ -35,17 +35,16 @@ constexpr bool is_runtime_v = std::is_same_v<T, V>;
 
 /// @private Retrieve value of a compile time constant form a ConstexprType.
 template <typename T, typename V>
-  requires ConstexprType<T, V>
-constexpr T value(V /* container */,
-                  typename std::enable_if_t<is_compile_time_v<T, V>>* = 0)
+  requires ConstexprType<T, V> && is_compile_time_v<T, V>
+constexpr T value(V /* container */)
 {
   return V::value;
 }
 
 /// @private Retrieve value of runtime variable form a ConstexprType.
 template <typename T, typename V>
-  requires ConstexprType<T, V>
-T value(V container, typename std::enable_if_t<is_runtime_v<T, V>>* = 0)
+  requires ConstexprType<T, V> && is_runtime_v<T, V>
+T value(V container)
 {
   return container;
 }
