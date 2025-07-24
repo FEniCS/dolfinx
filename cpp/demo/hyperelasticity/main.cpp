@@ -29,6 +29,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/nls/NewtonSolver.h>
+#include <numbers>
 #include <petscmat.h>
 #include <petscsys.h>
 #include <petscsystypes.h>
@@ -142,8 +143,7 @@ int main(int argc, char* argv[])
   PetscInitialize(&argc, &argv, nullptr, nullptr);
 
   // Set the logging thread name to show the process rank
-  int mpi_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+  int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
   std::string fmt = "[%Y-%m-%d %H:%M:%S.%e] [RANK " + std::to_string(mpi_rank)
                     + "] [%l] %v";
   spdlog::set_pattern(fmt);
@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
           constexpr U x2_c = 0.5;
 
           // Large angle of rotation (60 degrees)
-          constexpr U theta = 1.04719755;
+          constexpr U theta = std::numbers::pi / 3;
 
           // New coordinates
           std::vector<U> fdata(3 * x.extent(1), 0.0);

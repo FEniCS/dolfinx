@@ -21,15 +21,15 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/chrono.h>
-#include <nanobind/stl/map.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
-#include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <optional>
 #include <span>
 #include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 namespace nb = nanobind;
@@ -156,8 +156,6 @@ void common(nb::module_& m)
                    "Range of indices owned by this map")
       .def("index_to_dest_ranks",
            &dolfinx::common::IndexMap::index_to_dest_ranks)
-      .def("imbalance", &dolfinx::common::IndexMap::imbalance,
-           "Imbalance of the current IndexMap.")
       .def_prop_ro(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)

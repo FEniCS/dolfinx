@@ -173,9 +173,7 @@ d = 0.5 * h
 nx = 300
 ny = int(0.4 * nx)
 
-msh = create_rectangle(
-    MPI.COMM_WORLD, np.array([[0, 0], [w, h]]), np.array([nx, ny]), CellType.quadrilateral
-)
+msh = create_rectangle(MPI.COMM_WORLD, np.array([[0, 0], [w, h]]), (nx, ny), CellType.quadrilateral)
 msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
 # -
 

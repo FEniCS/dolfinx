@@ -9,7 +9,7 @@
 from __future__ import annotations
 
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 from mpi4py import MPI as _MPI
 
@@ -722,7 +722,7 @@ def create_mesh(
         gdim = x.shape[1]
 
     dtype = None
-    try:
+    if isinstance(e, ufl.domain.Mesh):
         # e is a UFL domain
         e_ufl = e.ufl_coordinate_element()  # type: ignore
         cmap = _coordinate_element(e_ufl.basix_element)  # type: ignore
@@ -730,28 +730,28 @@ def create_mesh(
         dtype = cmap.dtype
         # TODO: Resolve UFL vs Basix geometric dimension issue
         # assert domain.geometric_dimension() == gdim
-    except AttributeError:
-        try:
-            # e is a Basix 'UFL' element
-            cmap = _coordinate_element(e.basix_element)  # type: ignore
-            domain = ufl.Mesh(e)
-            dtype = cmap.dtype
-            assert domain.geometric_dimension() == gdim
-        except AttributeError:
-            try:
-                # e is a Basix element
-                # TODO: Resolve geometric dimension vs shape for manifolds
-                cmap = _coordinate_element(e)  # type: ignore
-                e_ufl = basix.ufl._BasixElement(e)  # type: ignore
-                e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,))
-                domain = ufl.Mesh(e_ufl)
-                dtype = cmap.dtype
-                assert domain.geometric_dimension() == gdim
-            except (AttributeError, TypeError):
-                # e is a CoordinateElement
-                cmap = e
-                domain = None
-                dtype = cmap.dtype  # type: ignore
+    elif isinstance(e, basix.finite_element.FiniteElement):
+        # e is a Basix element
+        # TODO: Resolve geometric dimension vs shape for manifolds
+        cmap = _coordinate_element(e)  # type: ignore
+        e_ufl = basix.ufl._BasixElement(e)  # type: ignore
+        e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,))
+        domain = ufl.Mesh(e_ufl)
+        dtype = cmap.dtype
+        assert domain.geometric_dimension() == gdim
+    elif isinstance(e, ufl.finiteelement.AbstractFiniteElement):
+        # e is a Basix 'UFL' element
+        cmap = _coordinate_element(e.basix_element)  # type: ignore
+        domain = ufl.Mesh(e)
+        dtype = cmap.dtype
+        assert domain.geometric_dimension() == gdim
+    elif isinstance(e, _CoordinateElement):
+        # e is a CoordinateElement
+        cmap = e
+        domain = None
+        dtype = cmap.dtype  # type: ignore
+    else:
+        raise ValueError(f"Unsupported element type {type(e)}.")
 
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
@@ -950,7 +950,7 @@ def create_unit_interval(
 def create_rectangle(
     comm: _MPI.Comm,
     points: npt.ArrayLike,
-    n: npt.ArrayLike,
+    n: Sequence[int],
     cell_type=CellType.triangle,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode=GhostMode.shared_facet,
@@ -1030,7 +1030,7 @@ def create_unit_square(
     return create_rectangle(
         comm,
         [np.array([0.0, 0.0]), np.array([1.0, 1.0])],
-        [nx, ny],
+        (nx, ny),
         cell_type,
         dtype,
         ghost_mode,
@@ -1042,7 +1042,7 @@ def create_unit_square(
 def create_box(
     comm: _MPI.Comm,
     points: list[npt.ArrayLike],
-    n: list,
+    n: Sequence[int],
     cell_type=CellType.tetrahedron,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode=GhostMode.shared_facet,
@@ -1118,7 +1118,7 @@ def create_unit_cube(
     return create_box(
         comm,
         [np.array([0.0, 0.0, 0.0]), np.array([1.0, 1.0, 1.0])],
-        [nx, ny, nz],
+        (nx, ny, nz),
         cell_type,
         dtype,
         ghost_mode,
