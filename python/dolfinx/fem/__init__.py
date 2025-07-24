@@ -5,8 +5,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tools for assembling and manipulating finite element forms."""
 
-import typing
-
 import numpy as np
 import numpy.typing as npt
 
