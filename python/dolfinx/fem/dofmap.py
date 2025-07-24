@@ -69,7 +69,7 @@ class DofMap:
 
 
 def create_dofmaps(
-    comm: Comm, topology: "Topology", elements: Sequence["FiniteElement"]
+    comm: Comm, topology: Topology, elements: Sequence[FiniteElement]
 ) -> list[DofMap]:
     """Create a set of dofmaps on a given topology
 

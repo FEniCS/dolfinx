@@ -178,7 +178,7 @@ def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _Matri
 
 
 def compute_integration_domains(
-    integral_type: IntegralType, topology: "Topology", entities: np.ndarray
+    integral_type: IntegralType, topology: Topology, entities: np.ndarray
 ):
     """Given an integral type and a set of entities compute integration
     entities.
