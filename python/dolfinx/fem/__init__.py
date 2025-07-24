@@ -59,9 +59,7 @@ from dolfinx.fem.function import (
 )
 from dolfinx.geometry import PointOwnershipData as _PointOwnershipData
 from dolfinx.la import MatrixCSR as _MatrixCSR
-
-if typing.TYPE_CHECKING:
-    from dolfinx.mesh import Topology
+from dolfinx.mesh import Topology
 
 
 def create_sparsity_pattern(a: Form):

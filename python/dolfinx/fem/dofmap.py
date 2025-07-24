@@ -4,17 +4,14 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import typing
 from collections.abc import Sequence
 
 from mpi4py.MPI import Comm
 
+from basix.finite_element import FiniteElement
 from dolfinx.cpp.fem import DofMap as _DofMap
 from dolfinx.cpp.fem import create_dofmaps as _create_dofmaps
-
-if typing.TYPE_CHECKING:
-    from basix.finite_element import FiniteElement
-    from dolfinx.mesh import Topology
+from dolfinx.mesh import Topology
 
 
 class DofMap:
