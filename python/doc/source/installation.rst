@@ -18,14 +18,6 @@ Source
 Installation of DOLFINx requires installation of the C++ core. Most
 users will also want the Python interface.
 
-An example of how to build DOLFINx and its dependencies can be found in
-our `RedHat Dockerfile
-<https://github.com/FEniCS/dolfinx/blob/main/docker/Dockerfile.redhat>`_
-and `RedHat GitHub Actions workflow
-<https://github.com/FEniCS/dolfinx/blob/main/.github/workflows/redhat.yml>`_
-for a minimal set of tested steps that can be adapted to suit most
-Unix-like systems.
-
 Dependencies
 ^^^^^^^^^^^^
 

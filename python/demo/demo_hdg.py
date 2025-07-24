@@ -208,14 +208,14 @@ u.x.scatter_forward()
 ubar.x.scatter_forward()
 
 # Write to file
-try:
+if dolfinx.has_adios2:
     from dolfinx.io import VTXWriter
 
     with VTXWriter(msh.comm, "u.bp", u, "bp4") as f:
         f.write(0.0)
     with VTXWriter(msh.comm, "ubar.bp", ubar, "bp4") as f:
         f.write(0.0)
-except ImportError:
+else:
     print("ADIOS2 required for VTX output")
 
 

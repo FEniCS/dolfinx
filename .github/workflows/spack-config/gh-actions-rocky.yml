@@ -1,0 +1,21 @@
+spack:
+  view: /opt/view
+  config:
+    install_tree:
+      root: /opt/spack
+      padded_length: 128
+
+  packages:
+    all:
+      require:
+      - target=x86_64_v3
+
+  mirrors:
+    local-buildcache:
+      url: oci://ghcr.io/fenics/spack-rocky-buildcache
+      binary: true
+      signed: false
+      access_pair:
+        id_variable: GITHUB_USER
+        secret_variable: GITHUB_TOKEN
+

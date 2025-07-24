@@ -359,10 +359,9 @@ def form(
                 # Subdomain ids can be strings, its or tuples with
                 # strings and ints
                 if integral.subdomain_id() != "everywhere":
-                    try:
+                    if isinstance(integral.subdomain_id(), tuple):
                         ids = [sid for sid in integral.subdomain_id() if sid != "everywhere"]
-                    except TypeError:
-                        # If not tuple, but single integer id
+                    else:
                         ids = [integral.subdomain_id()]
                 else:
                     ids = []
