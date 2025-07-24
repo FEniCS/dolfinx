@@ -24,6 +24,7 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <tuple>
 #include <type_traits>
 #include <vector>
 
@@ -1163,11 +1164,11 @@ void assemble_vector(
     assert(L.function_spaces().at(0));
     auto element = L.function_spaces().at(0)->elements(cell_type_idx);
     assert(element);
-    std::shared_ptr<const fem::DofMap> dofmap
-        = L.function_spaces().at(0)->dofmaps(cell_type_idx);
-    assert(dofmap);
-    auto dofs = dofmap->map();
-    const int bs = dofmap->bs();
+    assert(L.function_spaces().at(0)->dofmaps(cell_type_idx));
+    const fem::DofMap& dofmap
+        = *L.function_spaces().at(0)->dofmaps(cell_type_idx);
+    auto dofs = dofmap.map();
+    const int bs = dofmap.bs();
 
     fem::DofTransformKernel<T> auto P0
         = element->template dof_transformation_fn<T>(doftransform::standard);
@@ -1278,36 +1279,32 @@ void assemble_vector(
       assert((facets.size() / 4) * 2 * cstride == coeffs.size());
       if (bs == 1)
       {
-        impl::assemble_interior_facets<T>(
+        impl::assemble_interior_facets<T, BS<1>>(
             P0, b, x_dofmap, x,
             mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
-            std::make_tuple(
-                *dofmap, BS<1>(),
-                mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)),
+            {dofmap, BS<1>(),
+             mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
             fn, constants,
             mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
             cell_info0, perms);
       }
       else if (bs == 3)
       {
-        impl::assemble_interior_facets<T>(
+        impl::assemble_interior_facets<T, BS<3>>(
             P0, b, x_dofmap, x,
             mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
-            std::make_tuple(
-                *dofmap, BS<3>(),
-                mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)),
+            {dofmap, BS<3>(),
+             mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
             fn, constants,
             mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
             cell_info0, perms);
       }
       else
       {
-        impl::assemble_interior_facets<T>(
+        impl::assemble_interior_facets<T, int>(
             P0, b, x_dofmap, x,
             mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
-            std::make_tuple(
-                *dofmap, bs,
-                mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)),
+            {dofmap, bs, mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
             fn, constants,
             mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
             cell_info0, perms);
