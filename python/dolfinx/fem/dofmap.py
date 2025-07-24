@@ -14,7 +14,7 @@ from dolfinx.cpp.fem import DofMap as _DofMap
 from dolfinx.cpp.fem import create_dofmaps as _create_dofmaps
 
 if typing.TYPE_CHECKING:
-    from dolfinx.mesh import Topology
+    import dolfinx.mesh
 
 
 class DofMap:
@@ -69,7 +69,7 @@ class DofMap:
 
 
 def create_dofmaps(
-    comm: Comm, topology: "Topology", elements: Sequence[FiniteElement]
+    comm: Comm, topology: "dolfinx.mesh.Topology", elements: Sequence[FiniteElement]
 ) -> list[DofMap]:
     """Create a set of dofmaps on a given topology
 

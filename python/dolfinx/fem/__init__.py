@@ -61,7 +61,7 @@ from dolfinx.geometry import PointOwnershipData as _PointOwnershipData
 from dolfinx.la import MatrixCSR as _MatrixCSR
 
 if typing.TYPE_CHECKING:
-    from dolfinx.mesh import Topology
+    import dolfinx.mesh
 
 
 def create_sparsity_pattern(a: Form):
@@ -178,7 +178,7 @@ def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _Matri
 
 
 def compute_integration_domains(
-    integral_type: IntegralType, topology: "Topology", entities: np.ndarray
+    integral_type: IntegralType, topology: "dolfinx.mesh.Topology", entities: np.ndarray
 ):
     """Given an integral type and a set of entities compute integration
     entities.
