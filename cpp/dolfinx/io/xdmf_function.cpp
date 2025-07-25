@@ -167,13 +167,11 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   std::vector<std::string> components = {""};
   if constexpr (!std::is_scalar_v<T>)
     components = {"real_", "imag_"};
-  std::string t_str = boost::lexical_cast<std::string>(t);
-  std::replace(t_str.begin(), t_str.end(), '.', '_');
+
   for (const auto& component : components)
   {
     std::string attr_name = component + u.name;
-    std::string dataset_name
-        = "/Function/" + attr_name.append("/").append(t_str);
+    std::string dataset_name = "/Function/" + attr_name;
 
     // Add attribute node
     pugi::xml_node attr_node = xml_node.append_child("Attribute");
@@ -205,7 +203,11 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
       u = std::span<const T>(data_values);
 
     // -- Real case, add data item
-    xdmf_utils::add_data_item(attr_node, h5_id, dataset_name, u, offset,
+    std::string t_str = boost::lexical_cast<std::string>(t);
+    std::replace(t_str.begin(), t_str.end(), '.', '_');
+    auto data_item_name = dataset_name.append("/").append(t_str);
+
+    xdmf_utils::add_data_item(attr_node, h5_id, data_item_name, u, offset,
                               {num_values, num_components}, "", use_mpi_io);
   }
 }
