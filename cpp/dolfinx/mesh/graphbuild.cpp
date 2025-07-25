@@ -12,7 +12,10 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <mpi.h>
+#include <numeric>
 #include <optional>
+#include <ranges>
 #include <span>
 #include <utility>
 #include <vector>
@@ -89,7 +92,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   //      to dual graph
   //    - prepare info of matched facet for recipients
   //  d) return info of remotely matched/unmatched facets from PO
-  //    - contruct locally the paralel aware dual graph (with ghost edges).
+  //    - construct locally the parallel aware dual graph (with ghost edges).
 
   assert(local_max_vertices_per_facet == 0
          or facets.size() % local_max_vertices_per_facet == 0);
@@ -194,8 +197,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
       // Set entry in map from local facet row index (position) to local
       // destination rank
-      for (auto e = it; e != it1; ++e)
-        pos_to_neigh_rank[(*e)[1]] = neigh_rank;
+      for (auto& e : std::ranges::subrange(it, it1))
+        pos_to_neigh_rank[e[1]] = neigh_rank;
 
       // Advance iterator
       it = it1;
@@ -283,16 +286,14 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     // Compute sort permutation for received data
     std::vector<int> sort_order(recv_buffer.size() / buffer_shape1);
     std::iota(sort_order.begin(), sort_order.end(), 0);
-    std::ranges::sort(
-        sort_order,
-        [&recv_buffer, buffer_shape1, max_vertices_per_facet](auto f0, auto f1)
-        {
-          auto it0 = std::next(recv_buffer.begin(), f0 * buffer_shape1);
-          auto it1 = std::next(recv_buffer.begin(), f1 * buffer_shape1);
-          return std::lexicographical_compare(
-              it0, std::next(it0, max_vertices_per_facet), it1,
-              std::next(it1, max_vertices_per_facet));
-        });
+    std::ranges::sort(sort_order, std::ranges::lexicographical_compare,
+                      [&](auto f)
+                      {
+                        auto begin
+                            = std::next(recv_buffer.begin(), f * buffer_shape1);
+                        return std::ranges::subrange(
+                            begin, std::next(begin, max_vertices_per_facet));
+                      });
 
     for (auto it = sort_order.begin(); it != sort_order.end();)
     {
@@ -316,10 +317,12 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       if (std::size_t num_matches = std::distance(it, it1); num_matches == 2)
       {
         // Store the global cell index from the other rank
-        send_buffer1[*it]
-            = recv_buffer[*(it + 1) * buffer_shape1 + max_vertices_per_facet];
-        send_buffer1[*(it + 1)]
-            = recv_buffer[*it * buffer_shape1 + max_vertices_per_facet];
+        int facet = *it;
+        int next_facet = *(it + 1);
+        send_buffer1[facet]
+            = recv_buffer[next_facet * buffer_shape1 + max_vertices_per_facet];
+        send_buffer1[next_facet]
+            = recv_buffer[facet * buffer_shape1 + max_vertices_per_facet];
       }
       else if (num_matches > 2)
       {
@@ -456,7 +459,6 @@ mesh::build_local_dual_graph(
     graph::AdjacencyList<std::int32_t> cell_facets
         = mesh::get_entity_vertices(cell_type, tdim - 1);
 
-    // Determine maximum number of vertices for facet
     for (std::int32_t i = 0; i < cell_facets.num_nodes(); ++i)
     {
       max_vertices_per_facet
@@ -510,17 +512,16 @@ mesh::build_local_dual_graph(
   // 3) Sort facets by vertex key
   std::vector<std::size_t> perm(facets.size() / shape1, 0);
   std::iota(perm.begin(), perm.end(), 0);
-  // TODO: radix_sort?
-  std::sort(perm.begin(), perm.end(),
-            [&facets, shape1](auto f0, auto f1)
-            {
-              auto it0 = std::next(facets.begin(), f0 * shape1);
-              auto it1 = std::next(facets.begin(), f1 * shape1);
-              return std::lexicographical_compare(it0, std::next(it0, shape1),
-                                                  it1, std::next(it1, shape1));
-            });
+  // TODO: radix_sort? This is a heavy sort call.
+  std::ranges::sort(perm, std::ranges::lexicographical_compare,
+                    [&](auto f)
+                    {
+                      auto begin = std::next(facets.begin(), f * shape1);
+                      return std::ranges::subrange(begin,
+                                                   std::next(begin, shape1));
+                    });
 
-  // 4) Iterate over sorted list of facets. Facets shared by more than
+  // // 4) Iterate over sorted list of facets. Facets shared by more than
   //    one cell lead to a graph edge to be added. Facets that are not
   //    shared are stored as these might be shared by a cell on another
   //    process.
@@ -528,23 +529,26 @@ mesh::build_local_dual_graph(
   std::vector<std::int32_t> local_cells;
   std::vector<std::array<std::int32_t, 2>> edges;
   {
-    auto it = perm.begin();
-    while (it != perm.end())
+    for (auto it = perm.begin(); it != perm.end();)
     {
       std::size_t facet_index = *it;
       std::span facet(facets.data() + facet_index * shape1, shape1);
 
       // Find iterator to next facet different from f0 -> all facets in
       // [it, it_next_facet) describe the same facet
-      auto it_next_facet = std::find_if_not(
-          it, perm.end(),
-          [facet, &facets, shape1](auto idx) -> bool
-          {
-            auto f1_it = std::next(facets.begin(), idx * shape1);
-            return std::equal(facet.begin(), std::prev(facet.end()), f1_it);
-          });
+      // TODO: use a subrange here
+      auto matching_facets = std::ranges::subrange(
+          it, std::find_if_not(it, perm.end(),
+                               [facet, &facets, shape1](auto idx) -> bool
+                               {
+                                 auto f1_it
+                                     = std::next(facets.begin(), idx * shape1);
+                                 return std::equal(facet.begin(),
+                                                   std::prev(facet.end()),
+                                                   f1_it);
+                               }));
 
-      std::int32_t cell_count = std::distance(it, it_next_facet);
+      std::int32_t cell_count = matching_facets.size();
       assert(cell_count >= 1);
       if (!max_facet_to_cell_links.has_value()
           or (cell_count < *max_facet_to_cell_links))
@@ -562,12 +566,13 @@ mesh::build_local_dual_graph(
       // Add dual graph edges (one direction only, other direction is
       // added later). In the range [it, it_next_facet), all
       // combinations are added.
-      for (auto facet_a_it = it; facet_a_it != it_next_facet; facet_a_it++)
+      for (auto facet_a_it = it; facet_a_it != matching_facets.end();
+           facet_a_it++)
       {
         std::span facet_a(facets.data() + *facet_a_it * shape1, shape1);
         std::int32_t cell_a = facet_a.back();
         for (auto facet_b_it = std::next(facet_a_it);
-             facet_b_it != it_next_facet; facet_b_it++)
+             facet_b_it != matching_facets.end(); facet_b_it++)
         {
           std::span facet_b(facets.data() + *facet_b_it * shape1, shape1);
           std::int32_t cell_b = facet_b.back();
@@ -576,7 +581,7 @@ mesh::build_local_dual_graph(
       }
 
       // Update iterator
-      it = it_next_facet;
+      it = matching_facets.end();
     }
   }
 
@@ -585,24 +590,24 @@ mesh::build_local_dual_graph(
   //    edges, we add both forward and backward to the final data
   //    structure.
 
-  std::vector<std::int32_t> sizes(cell_offsets.back(), 0);
-  for (auto e : edges)
-  {
-    ++sizes[e[0]];
-    ++sizes[e[1]];
-  }
+  std::vector<std::int32_t> num_links(cell_offsets.back(), 0);
+  std::ranges::for_each(edges,
+                        [&num_links](auto e)
+                        {
+                          ++num_links[e[0]];
+                          ++num_links[e[1]];
+                        });
 
-  std::vector<std::int32_t> offsets(sizes.size() + 1, 0);
-  std::partial_sum(sizes.cbegin(), sizes.cend(), std::next(offsets.begin()));
+  std::vector<std::int32_t> offsets(num_links.size() + 1, 0);
+  std::partial_sum(num_links.cbegin(), num_links.cend(),
+                   std::next(offsets.begin()));
   std::vector<std::int32_t> data(offsets.back());
-  {
-    std::vector<std::int32_t> pos = offsets;
-    for (auto e : edges)
-    {
-      data[pos[e[0]]++] = e[1];
-      data[pos[e[1]]++] = e[0];
-    }
-  }
+  std::ranges::for_each(edges,
+                        [&data, pos = offsets](auto e) mutable
+                        {
+                          data[pos[e[0]]++] = e[1];
+                          data[pos[e[1]]++] = e[0];
+                        });
 
   return {graph::AdjacencyList(std::move(data), std::move(offsets)),
           std::move(unmatched_facets), max_vertices_per_facet,
