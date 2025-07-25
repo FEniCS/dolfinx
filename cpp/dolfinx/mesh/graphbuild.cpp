@@ -459,11 +459,11 @@ mesh::build_local_dual_graph(
     graph::AdjacencyList<std::int32_t> cell_facets
         = mesh::get_entity_vertices(cell_type, tdim - 1);
 
-    for (std::int32_t i = 0; i < cell_facets.num_nodes(); ++i)
-    {
-      max_vertices_per_facet
-          = std::max(max_vertices_per_facet, cell_facets.num_links(i));
-    }
+    // Determine/update maximum number of vertices for facet
+    std::ranges::for_each(
+        std::views::iota(0, cell_facets.num_nodes()),
+        [&max = max_vertices_per_facet, &cell_facets](auto node)
+        { max = std::max(max, cell_facets.num_links(node)); });
   }
 
   // 2) Build a list of (all) facets, defined by sorted vertices, with
