@@ -89,15 +89,13 @@ if _cpp.common.has_adios2:
 
             if isinstance(output, Mesh):
                 self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
-            elif isinstance(output, Function):
-                self._cpp_object = _vtxwriter(
-                    comm, filename, output._cpp_object, engine, mesh_policy
-                )
             else:
-                # Input is a list of functions
-                self._cpp_object = _vtxwriter(
-                    comm, filename, [o._cpp_object for o in output], engine, mesh_policy
+                cpp_objects = (
+                    [output._cpp_object]
+                    if isinstance(output, Function)
+                    else [o._cpp_object for o in output]
                 )
+                self._cpp_object = _vtxwriter(comm, filename, cpp_objects, engine, mesh_policy)
 
         def __enter__(self):
             return self
