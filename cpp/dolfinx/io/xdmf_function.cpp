@@ -7,6 +7,7 @@
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
+#include <algorithm>
 #include <basix/mdspan.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/IndexMap.h>
@@ -205,9 +206,9 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     // -- Real case, add data item
     std::string t_str = boost::lexical_cast<std::string>(t);
     std::replace(t_str.begin(), t_str.end(), '.', '_');
-    auto data_item_name = dataset_name.append("/").append(t_str);
+    dataset_name.append("/").append(t_str);
 
-    xdmf_utils::add_data_item(attr_node, h5_id, data_item_name, u, offset,
+    xdmf_utils::add_data_item(attr_node, h5_id, dataset_name, u, offset,
                               {num_values, num_components}, "", use_mpi_io);
   }
 }
