@@ -169,6 +169,8 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   if constexpr (!std::is_scalar_v<T>)
     components = {"real_", "imag_"};
 
+  std::string t_str = boost::lexical_cast<std::string>(t);
+  std::replace(t_str.begin(), t_str.end(), '.', '_');
   for (const auto& component : components)
   {
     std::string attr_name = component + u.name;
@@ -204,8 +206,6 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
       u = std::span<const T>(data_values);
 
     // -- Real case, add data item
-    std::string t_str = boost::lexical_cast<std::string>(t);
-    std::replace(t_str.begin(), t_str.end(), '.', '_');
     dataset_name.append("/").append(t_str);
 
     xdmf_utils::add_data_item(attr_node, h5_id, dataset_name, u, offset,
