@@ -17,7 +17,7 @@ def test_manifold_point_search():
     vertices = np.array([[0.0, 0.0, 1.0], [1.0, 1.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     cells = np.array([[0, 1, 2], [0, 1, 3]], dtype=np.int64)
     domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, vertices)
     bb = bb_tree(mesh, mesh.topology.dim)
 
     # Find cell colliding with point

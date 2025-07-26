@@ -324,7 +324,7 @@ def test_higher_order_coordinate_map(points, celltype, order):
     domain = ufl.Mesh(
         element("Lagrange", celltype.name, order, shape=(points.shape[1],), dtype=default_real_type)
     )
-    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
 
     V = functionspace(mesh, ("Lagrange", 2))
     X = V.element.interpolation_points
@@ -400,7 +400,7 @@ def test_higher_order_tetra_coordinate_map(order):
     domain = ufl.Mesh(
         element("Lagrange", celltype.name, order, shape=(3,), dtype=default_real_type)
     )
-    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
     V = functionspace(mesh, ("Lagrange", order))
     X = V.element.interpolation_points
     x_dofs = mesh.geometry.dofmap
@@ -439,7 +439,7 @@ def test_empty_rank_collapse():
         # TODO: can we improve on this interface? I.e. warp to do cpp type conversion automatically
         return dolfinx.graph.adjacencylist(dests, offsets)._cpp_object
 
-    mesh = create_mesh(MPI.COMM_WORLD, cells, nodes, c_el, partitioner=self_partitioner)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, c_el, nodes, partitioner=self_partitioner)
 
     el = element("Lagrange", "interval", 1, shape=(2,))
     V = functionspace(mesh, el)

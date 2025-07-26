@@ -48,7 +48,7 @@ class TestVTX:
         points = np.array([[0, 0, 0], [1, 0, 0], [0.5, 0, 0]], dtype=default_real_type)
         cells = np.array([[0, 1, 2]], dtype=np.int32)
         domain = ufl.Mesh(element("Lagrange", "interval", 2, shape=(1,), dtype=default_real_type))
-        mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+        mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
         with VTXWriter(mesh.comm, filename, mesh) as f:
             f.write(0.0)
 
@@ -193,7 +193,7 @@ class TestVTX:
             cells = np.empty((0, 3), dtype=np.int64)
             x = np.empty((0, 2), dtype=default_real_type)
 
-        mesh = create_mesh(comm, cells, x, domain, partitioner)
+        mesh = create_mesh(comm, cells, domain, x, partitioner)
 
         V = functionspace(mesh, ("Lagrange", 1))
         u = Function(V)

@@ -26,7 +26,7 @@ def test_div_conforming_triangle(space_type, order):
     # Create simple triangle mesh
     def perform_test(points, cells):
         domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,), dtype=default_real_type))
-        mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+        mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
         V = functionspace(mesh, (space_type, order))
         f = Function(V)
         x = f.x.array
@@ -59,7 +59,7 @@ def test_div_conforming_tetrahedron(space_type, order):
         domain = ufl.Mesh(
             element("Lagrange", "tetrahedron", 1, shape=(3,), dtype=default_real_type)
         )
-        mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+        mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
         V = functionspace(mesh, (space_type, order))
         f = Function(V)
         output = []
