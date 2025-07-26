@@ -309,33 +309,40 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       std::size_t offset0 = (*it) * buffer_shape1;
       auto f0 = std::next(recv_buffer.data(), offset0);
 
-      // Find iterator to next facet different from f0
-      auto it1 = std::find_if_not(
-          it, sort_order.end(),
-          [f0, &recv_buffer, buffer_shape1,
-           max_vertices_per_facet](auto idx) -> bool
-          {
-            std::size_t offset1 = idx * buffer_shape1;
-            auto f1 = std::next(recv_buffer.data(), offset1);
-            return std::equal(f0, std::next(f0, max_vertices_per_facet), f1);
-          });
+      // Find range of equal facets f0.
+      auto matching_facets = std::ranges::subrange(
+          it,
+          std::find_if_not(it, sort_order.end(),
+                           [f0, &recv_buffer, buffer_shape1,
+                            max_vertices_per_facet](auto idx) -> bool
+                           {
+                             std::size_t offset1 = idx * buffer_shape1;
+                             auto f1 = std::next(recv_buffer.data(), offset1);
+                             return std::equal(
+                                 f0, std::next(f0, max_vertices_per_facet), f1);
+                           }));
 
-      for (auto facet_a_it = it; facet_a_it != it1; facet_a_it++)
+      // For every matched facet pair introduce a dual graph edge (and
+      // backedge).
+      for (auto facet_a_it = matching_facets.begin();
+           facet_a_it != matching_facets.end(); facet_a_it++)
       {
-        for (auto facet_b_it = std::next(facet_a_it); facet_b_it != it1;
-             facet_b_it++)
+        for (auto facet_b_it = std::next(facet_a_it);
+             facet_b_it != matching_facets.end(); facet_b_it++)
         {
           int facet_a = *facet_a_it;
           int facet_b = *facet_b_it;
-          matched_facets[facet_a].push_back(
-              recv_buffer[facet_b * buffer_shape1 + max_vertices_per_facet]);
-          matched_facets[facet_b].push_back(
-              recv_buffer[facet_a * buffer_shape1 + max_vertices_per_facet]);
+          std::int64_t cell_a
+              = recv_buffer[facet_a * buffer_shape1 + max_vertices_per_facet];
+          std::int64_t cell_b
+              = recv_buffer[facet_b * buffer_shape1 + max_vertices_per_facet];
+
+          matched_facets[facet_a].push_back(cell_b);
+          matched_facets[facet_b].push_back(cell_a);
         }
       }
 
-      // Advance iterator and increment entity
-      it = it1;
+      it = matching_facets.end();
     }
   }
 
@@ -607,7 +614,6 @@ mesh::build_local_dual_graph(
 
       // Find iterator to next facet different from f0 -> all facets in
       // [it, it_next_facet) describe the same facet
-      // TODO: use a subrange here
       auto matching_facets = std::ranges::subrange(
           it, std::find_if_not(it, perm.end(),
                                [facet, &facets, shape1](auto idx) -> bool
