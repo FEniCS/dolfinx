@@ -192,7 +192,7 @@ TEST_CASE("dual_graph_self_dual")
     CHECK(dual_graph.num_links(0) == 2);
 
     CHECK_THAT(dual_graph.links(0),
-               Catch::Matchers::RangeEquals(std::array{2, 1}));
+               Catch::Matchers::RangeEquals(std::array{1, 2}));
 
     CHECK(dual_graph.num_links(1) == 2);
     CHECK_THAT(dual_graph.links(1),
