@@ -604,6 +604,19 @@ mesh::build_local_dual_graph(
     }
   }
 
+  for (std::size_t node = 0; node < offsets.size() - 1; node++)
+  {
+    auto links
+        = std::ranges::subrange(std::next(data.begin(), offsets[node]),
+                                std::next(data.begin(), offsets[node + 1]));
+    std::ranges::sort(links);
+    auto duplicate_links = std::ranges::unique(links);
+    data.erase(duplicate_links.begin(), duplicate_links.end());
+    for (std::size_t following_node = node + 1; following_node < offsets.size();
+         following_node++)
+      offsets[following_node] -= std::ranges::size(duplicate_links);
+  }
+
   return {graph::AdjacencyList(std::move(data), std::move(offsets)),
           std::move(unmatched_facets), max_vertices_per_facet,
           std::move(local_cells)};
