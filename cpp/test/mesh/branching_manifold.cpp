@@ -282,29 +282,29 @@ TEST_CASE("dual_graph_branching_parallel")
     }
   }
 
-  // auto dual_graph = mesh::build_dual_graph(
-  //     comm, celltypes, std::vector<std::span<const std::int64_t>>{cells}, 3);
+  auto dual_graph = mesh::build_dual_graph(
+      comm, celltypes, std::vector<std::span<const std::int64_t>>{cells}, 3);
 
-  // if (dolfinx::MPI::rank(comm) == 0)
-  // {
-  //   CHECK(dual_graph.num_nodes() == 2);
+  if (dolfinx::MPI::rank(comm) == 0)
+  {
+    CHECK(dual_graph.num_nodes() == 2);
 
-  //   CHECK(dual_graph.num_links(0) == 2);
-  //   CHECK_THAT(dual_graph.links(0),
-  //              Catch::Matchers::RangeEquals(std::array{1, 2}));
-  //   CHECK(dual_graph.num_links(1) == 2);
-  //   CHECK_THAT(dual_graph.links(1),
-  //              Catch::Matchers::RangeEquals(std::array{0, 2}));
-  // }
-  // else
-  // {
-  //   CHECK(dual_graph.num_nodes() == 2);
+    CHECK(dual_graph.num_links(0) == 2);
+    CHECK_THAT(dual_graph.links(0),
+               Catch::Matchers::RangeEquals(std::array{1, 2}));
+    CHECK(dual_graph.num_links(1) == 2);
+    CHECK_THAT(dual_graph.links(1),
+               Catch::Matchers::RangeEquals(std::array{0, 2}));
+  }
+  else
+  {
+    CHECK(dual_graph.num_nodes() == 2);
 
-  //   CHECK(dual_graph.num_links(0) == 3);
-  //   CHECK_THAT(dual_graph.links(0),
-  //              Catch::Matchers::RangeEquals(std::array{0, 1, 3}));
-  //   CHECK(dual_graph.num_links(1) == 1);
-  //   CHECK_THAT(dual_graph.links(1),
-  //              Catch::Matchers::RangeEquals(std::array{2}));
-  // }
+    CHECK(dual_graph.num_links(0) == 3);
+    CHECK_THAT(dual_graph.links(0),
+               Catch::Matchers::RangeEquals(std::array{0, 1, 3}));
+    CHECK(dual_graph.num_links(1) == 1);
+    CHECK_THAT(dual_graph.links(1),
+               Catch::Matchers::RangeEquals(std::array{2}));
+  }
 }

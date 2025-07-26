@@ -456,19 +456,18 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   }
   // local connections are possibly introduced again by remote -> remove
   // duplicates
-  // for (std::size_t node = 0; node < offsets.size() - 1; node++)
-  // {
-  //   auto links
-  //       = std::ranges::subrange(std::next(data.begin(), offsets[node]),
-  //                               std::next(data.begin(), offsets[node + 1]));
-  //   std::ranges::sort(links);
-  //   auto duplicate_links = std::ranges::unique(links);
-  //   data.erase(duplicate_links.begin(), duplicate_links.end());
-  //   for (std::size_t following_node = node + 1; following_node <
-  //   offsets.size();
-  //        following_node++)
-  //     offsets[following_node] -= std::ranges::size(duplicate_links);
-  // }
+  for (std::size_t node = 0; node < offsets.size() - 1; node++)
+  {
+    auto links
+        = std::ranges::subrange(std::next(data.begin(), offsets[node]),
+                                std::next(data.begin(), offsets[node + 1]));
+    std::ranges::sort(links);
+    auto duplicate_links = std::ranges::unique(links);
+    data.erase(duplicate_links.begin(), duplicate_links.end());
+    for (std::size_t following_node = node + 1; following_node < offsets.size();
+         following_node++)
+      offsets[following_node] -= std::ranges::size(duplicate_links);
+  }
 
   // TOOD: shink_to_fit here?
 
