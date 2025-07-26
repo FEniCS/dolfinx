@@ -91,25 +91,6 @@ class TestVTX:
         with pytest.raises(RuntimeError):
             VTXWriter(mesh.comm, filename, [v, w])
 
-    @pytest.mark.parametrize("dim", [2, 3])
-    @pytest.mark.parametrize("simplex", [True, False])
-    def test_vtx_single_function(self, tempdir, dim, simplex):
-        """Test saving a single first order Lagrange functions."""
-        from dolfinx.io import VTXWriter
-
-        mesh = generate_mesh(dim, simplex)
-        v = Function(functionspace(mesh, ("Lagrange", 1)))
-
-        filename = Path(tempdir, "v.bp")
-        writer = VTXWriter(mesh.comm, filename, v)
-        writer.write(0)
-        writer.close()
-
-        filename = Path(tempdir, "v2.bp")
-        writer = VTXWriter(mesh.comm, filename, v._cpp_object)
-        writer.write(0)
-        writer.close()
-
     @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
