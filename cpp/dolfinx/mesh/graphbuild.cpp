@@ -494,14 +494,21 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   std::vector<std::int32_t> num_edges(local_dual_graph.num_nodes(), 0);
   std::adjacent_difference(std::next(local_dual_graph.offsets().begin()),
                            local_dual_graph.offsets().end(), num_edges.begin());
-  for (std::size_t i = 0; i < recv_buffer1.size(); ++i)
+  // for (std::size_t i = 0; i < recv_buffer1.size(); ++i)
+  // {
+  //   if (recv_buffer1[i] >= 0)
+  //   {
+  //     std::size_t pos = send_indx_to_pos[i];
+  //     std::size_t cell = cells[pos];
+  //     num_edges[cell] += 1;
+  //   }
+  // }
+
+  for (std::size_t i = 0; i < recv_matched_facet_counts.size(); ++i)
   {
-    if (recv_buffer1[i] >= 0)
-    {
-      std::size_t pos = send_indx_to_pos[i];
-      std::size_t cell = cells[pos];
-      num_edges[cell] += 1;
-    }
+    std::size_t pos = send_indx_to_pos[i];
+    std::size_t cell = cells[pos];
+    num_edges[cell] += recv_matched_facet_counts[i];
   }
 
   // Compute adjacency list offsets
