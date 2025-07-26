@@ -352,81 +352,86 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
                                  MPI_INFO_NULL, false, &comm_po_receive);
 
   // Send po->recipient matched cell counts (non-blocking)
-  std::vector<int> recv_matched_facet_counts(send_disp.back());
-  MPI_Request recv_macthed_facet_counts_request;
+  std::vector<int> recv_mf_counts(send_disp.back());
+  MPI_Request recv_mf_counts_request;
   MPI_Ineighbor_alltoallv(num_items_po_send.data(), num_items_recv.data(),
-                          recv_disp.data(), MPI_INT,
-                          recv_matched_facet_counts.data(),
+                          recv_disp.data(), MPI_INT, recv_mf_counts.data(),
                           num_items_per_dest.data(), send_disp.data(), MPI_INT,
-                          comm_po_receive, &recv_macthed_facet_counts_request);
+                          comm_po_receive, &recv_mf_counts_request);
 
-  std::vector<std::int64_t> send_matched_facets;
-  send_matched_facets.reserve(
-      std::accumulate(num_items_po_send.begin(), num_items_po_send.end(), 0));
-  for (auto& matches : matched_facets)
-    for (auto match : matches)
-      send_matched_facets.push_back(match);
-
+  // Prepare send data for matched facets - unrolled matched arrays.
+  std::vector<std::int64_t> send_mf;
   std::vector<int> send_mf_sendcounts(num_items_recv.size(), 0);
-  int index = 0;
-  for (std::size_t i = 0; i < num_items_recv.size(); i++)
-  {
-    for (int j = 0; j < num_items_recv[i]; j++)
-    {
-      send_mf_sendcounts[i] += matched_facets[index + j].size();
-    }
-    index += num_items_recv[i];
-  }
-
   std::vector<std::int32_t> send_mf_displs(send_mf_sendcounts.size() + 1, 0);
-  std::partial_sum(send_mf_sendcounts.begin(), send_mf_sendcounts.end(),
-                   std::next(send_mf_displs.begin()));
-
-  std::vector<int> recv_mf_sendcounts(num_items_per_dest.size(), 0);
-  index = 0;
-  MPI_Wait(&recv_macthed_facet_counts_request, MPI_STATUS_IGNORE);
-  for (std::size_t i = 0; i < num_items_per_dest.size(); i++)
   {
-    for (int j = 0; j < num_items_per_dest[i]; j++)
+    send_mf.reserve(
+        std::accumulate(num_items_po_send.begin(), num_items_po_send.end(), 0));
+    for (auto& matches : matched_facets)
+      for (auto match : matches)
+        send_mf.push_back(match);
+
+    int index = 0;
+    for (std::size_t i = 0; i < num_items_recv.size(); i++)
     {
-      recv_mf_sendcounts[i] += recv_matched_facet_counts[index + j];
+      for (int j = 0; j < num_items_recv[i]; j++)
+        send_mf_sendcounts[i] += matched_facets[index + j].size();
+
+      index += num_items_recv[i];
     }
-    index += num_items_per_dest[i];
+
+    std::partial_sum(send_mf_sendcounts.begin(), send_mf_sendcounts.end(),
+                     std::next(send_mf_displs.begin()));
   }
 
+  // Compute matched facet receive counts and displacements.
+  std::vector<int> recv_mf_sendcounts(num_items_per_dest.size(), 0);
   std::vector<std::int32_t> recv_mf_displs(recv_mf_sendcounts.size() + 1, 0);
-  std::partial_sum(recv_mf_sendcounts.begin(), recv_mf_sendcounts.end(),
-                   std::next(recv_mf_displs.begin()));
+  MPI_Wait(&recv_mf_counts_request, MPI_STATUS_IGNORE);
+  {
+    int index = 0;
+    for (std::size_t i = 0; i < num_items_per_dest.size(); i++)
+    {
+      for (int j = 0; j < num_items_per_dest[i]; j++)
+        recv_mf_sendcounts[i] += recv_mf_counts[index + j];
 
+      index += num_items_per_dest[i];
+    }
+
+    std::partial_sum(recv_mf_sendcounts.begin(), recv_mf_sendcounts.end(),
+                     std::next(recv_mf_displs.begin()));
+  }
   // Exchange flattened list of matched facets
   std::vector<std::int64_t> recv_matched_facets(recv_mf_displs.back());
-  MPI_Neighbor_alltoallv(send_matched_facets.data(), send_mf_sendcounts.data(),
-                         send_mf_displs.data(),
-                         dolfinx::MPI::mpi_t<std::int64_t>,
-                         recv_matched_facets.data(), recv_mf_sendcounts.data(),
-                         recv_mf_displs.data(),
-                         dolfinx::MPI::mpi_t<std::int64_t>, comm_po_receive);
+  MPI_Neighbor_alltoallv(
+      send_mf.data(), send_mf_sendcounts.data(), send_mf_displs.data(),
+      dolfinx::MPI::mpi_t<std::int64_t>, recv_matched_facets.data(),
+      recv_mf_sendcounts.data(), recv_mf_displs.data(),
+      dolfinx::MPI::mpi_t<std::int64_t>, comm_po_receive);
 
   MPI_Comm_free(&comm_po_receive);
 
-  // --- Build new graph
-
-  // Count number of adjacency list edges
-  std::vector<std::int32_t> num_edges(local_dual_graph.num_nodes(), 0);
-  std::adjacent_difference(std::next(local_dual_graph.offsets().begin()),
-                           local_dual_graph.offsets().end(), num_edges.begin());
-
-  for (std::size_t i = 0; i < recv_matched_facet_counts.size(); ++i)
-  {
-    std::size_t pos = send_indx_to_pos[i];
-    std::size_t cell = cells[pos];
-    num_edges[cell] += recv_matched_facet_counts[i];
-  }
+  // --- Build global dual graph
 
   // Compute adjacency list offsets
   std::vector<std::int32_t> offsets(local_dual_graph.num_nodes() + 1, 0);
-  std::partial_sum(num_edges.cbegin(), num_edges.cend(),
-                   std::next(offsets.begin()));
+  {
+    // Count number of adjacency list edges
+    std::vector<std::int32_t> num_edges(local_dual_graph.num_nodes(), 0);
+    std::adjacent_difference(std::next(local_dual_graph.offsets().begin()),
+                             local_dual_graph.offsets().end(),
+                             num_edges.begin());
+
+    for (std::size_t i = 0; i < recv_mf_counts.size(); ++i)
+    {
+      std::size_t cell_idx = send_indx_to_pos[i];
+      std::size_t cell = cells[cell_idx];
+      num_edges[cell] += recv_mf_counts[i];
+    }
+
+    // Compute adjacency list offsets
+    std::partial_sum(num_edges.cbegin(), num_edges.cend(),
+                     std::next(offsets.begin()));
+  }
 
   // Compute adjacency list data (edges)
   std::vector<std::int64_t> data(offsets.back());
@@ -443,33 +448,31 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     }
 
     int offset = 0;
-    for (std::size_t i = 0; i < recv_matched_facet_counts.size(); i++)
+    for (std::size_t i = 0; i < recv_mf_counts.size(); i++)
     {
-      std::size_t pos = send_indx_to_pos[i];
-      std::size_t cell = cells[pos];
-      for (int j = 0; j < recv_matched_facet_counts[i]; j++)
-      {
-        data[disp[cell]++] = recv_matched_facets[offset + j];
-      }
-      offset += recv_matched_facet_counts[i];
-    }
-  }
-  // local connections are possibly introduced again by remote -> remove
-  // duplicates
-  for (std::size_t node = 0; node < offsets.size() - 1; node++)
-  {
-    auto links
-        = std::ranges::subrange(std::next(data.begin(), offsets[node]),
-                                std::next(data.begin(), offsets[node + 1]));
-    std::ranges::sort(links);
-    auto duplicate_links = std::ranges::unique(links);
-    data.erase(duplicate_links.begin(), duplicate_links.end());
-    for (std::size_t following_node = node + 1; following_node < offsets.size();
-         following_node++)
-      offsets[following_node] -= std::ranges::size(duplicate_links);
-  }
+      std::int32_t cell_idx = send_indx_to_pos[i];
+      std::int32_t cell = cells[cell_idx];
 
-  // TOOD: shink_to_fit here?
+      for (int j = 0; j < recv_mf_counts[i]; j++)
+        data[disp[cell]++] = recv_matched_facets[offset + j];
+
+      offset += recv_mf_counts[i];
+    }
+    // local connections are possibly introduced again by remote -> remove
+    // duplicates
+    for (std::size_t node = 0; node < offsets.size() - 1; node++)
+    {
+      auto links
+          = std::ranges::subrange(std::next(data.begin(), offsets[node]),
+                                  std::next(data.begin(), offsets[node + 1]));
+      std::ranges::sort(links);
+      auto duplicate_links = std::ranges::unique(links);
+      data.erase(duplicate_links.begin(), duplicate_links.end());
+      for (std::size_t i = node + 1; i < offsets.size(); i++)
+        offsets[i] -= std::ranges::size(duplicate_links);
+    }
+    // TOOD: shrink_to_fit here?
+  }
 
   return graph::AdjacencyList(std::move(data), std::move(offsets));
 }
