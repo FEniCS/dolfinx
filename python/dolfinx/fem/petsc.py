@@ -132,11 +132,11 @@ def create_vector(
         vector is not initialised to zero.
     """
     if isinstance(container, (Form, _FunctionSpace)):
-        container = [container]
+        container = [container]  # type: ignore
 
-    V = _extract_function_spaces(container) if isinstance(container[0], Form) else container
+    V = _extract_function_spaces(container) if isinstance(container[0], Form) else container  # type: ignore
 
-    if any(_V is None for _V in V):
+    if any(_V is None for _V in V):  # type: ignore
         raise RuntimeError("Can not create vector for extracted None block.")
 
     maps = [(_V.dofmap.index_map, _V.dofmap.index_map_bs) for _V in V]  # type: ignore
