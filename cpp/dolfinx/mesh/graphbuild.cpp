@@ -531,16 +531,46 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     }
 
     // Add non-local data
-    for (std::size_t i = 0; i < recv_buffer1.size(); ++i)
+    // for (std::size_t i = 0; i < recv_buffer1.size(); ++i)
+    // {
+    //   if (recv_buffer1[i] >= 0)
+    //   {
+    //     std::size_t pos = send_indx_to_pos[i];
+    //     std::size_t cell = cells[pos];
+    //     data[disp[cell]++] = recv_buffer1[i];
+    //   }
+    // }
+
+    int offset = 0;
+    for (std::size_t i = 0; i < recv_matched_facet_counts.size(); i++)
     {
-      if (recv_buffer1[i] >= 0)
+      std::size_t pos = send_indx_to_pos[i];
+      std::size_t cell = cells[pos];
+      for (std::size_t j = 0; j < recv_matched_facet_counts[i]; j++)
       {
-        std::size_t pos = send_indx_to_pos[i];
-        std::size_t cell = cells[pos];
-        data[disp[cell]++] = recv_buffer1[i];
+        data[disp[cell]++] = recv_matched_facets[offset + j];
       }
+      offset += recv_matched_facet_counts[i];
+      // auto start_idx = std::accumulate(recv_matched_facet_counts.begin(),
+      // std::next(recv_matched_facet_counts.begin(), i), 0); std::cout <<
+      // "Inserting at " << start_idx << ", "; for (auto e :
+      // std::ranges::subrange(std::next(recv_matched_facets.begin(),
+      // start_idx), std::next(recv_matched_facets.begin(), start_idx +
+      // recv_matched_facet_counts[i])))
+      //   std::cout << e << ", ";
+      // std::cout << std::endl;
+      // // data.insert(std::next(data.begin(), disp[cell]),
+      // std::next(recv_matched_facets.begin(), start_idx),
+      // std::next(recv_matched_facets.begin(), recv_matched_facet_counts[i]));
+      // std::copy(std::next(recv_matched_facets.begin(), start_idx),
+      // std::next(recv_matched_facets.begin(), start_idx +
+      // recv_matched_facet_counts[i]), std::next(data.begin(), disp[cell]));
     }
   }
+
+  for (auto d : data)
+    std::cout << d << ", ";
+  std::cout << std::endl;
 
   return graph::AdjacencyList(std::move(data), std::move(offsets));
 }
