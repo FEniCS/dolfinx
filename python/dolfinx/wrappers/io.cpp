@@ -117,19 +117,19 @@ void declare_vtx_writer(nb::module_& m, const std::string& type)
         .def(
             "__init__",
             [](dolfinx::io::VTXWriter<T>* self, MPICommWrapper comm,
-               std::filesystem::path filename,
+               const std::filesystem::path& filename,
                std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
                std::string engine)
             {
-              new (self)
-                  dolfinx::io::VTXWriter<T>(comm.get(), filename, mesh, engine);
+              new (self) dolfinx::io::VTXWriter<T>(
+                  comm.get(), filename, std::move(mesh), std::move(engine));
             },
             nb::arg("comm"), nb::arg("filename"), nb::arg("mesh"),
             nb::arg("engine"))
         .def(
             "__init__",
             [](dolfinx::io::VTXWriter<T>* self, MPICommWrapper comm,
-               std::filesystem::path filename,
+               const std::filesystem::path& filename,
                const std::vector<std::variant<
                    std::shared_ptr<const dolfinx::fem::Function<float, T>>,
                    std::shared_ptr<const dolfinx::fem::Function<double, T>>,
@@ -259,7 +259,8 @@ void io(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::io::XDMFFile* x, MPICommWrapper comm,
-             std::filesystem::path filename, const std::string& file_mode,
+             const std::filesystem::path& filename,
+             const std::string& file_mode,
              dolfinx::io::XDMFFile::Encoding encoding)
           {
             new (x) dolfinx::io::XDMFFile(comm.get(), filename, file_mode,
@@ -318,7 +319,7 @@ void io(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::io::VTKFile* v, MPICommWrapper comm,
-             std::filesystem::path filename, const std::string& mode)
+             const std::filesystem::path& filename, const std::string& mode)
           { new (v) dolfinx::io::VTKFile(comm.get(), filename, mode); },
           nb::arg("comm"), nb::arg("filename"), nb::arg("mode"))
       .def("close", &dolfinx::io::VTKFile::close);

@@ -1,20 +1,20 @@
 name: clang-tidy
 
 on:
-  # schedule:
-  #   # daily at 1am
-  #   - cron: "0 1 * * *"
-  # pull_request:
-  #   branches:
-  #     - main
-  # push:
-  #   branches:
-  #     - "**"
-  #   tags:
-  #     - "v*"
-  # merge_group:
-  #   branches:
-  #     - main
+  schedule:
+    # daily at 1am
+    - cron: "0 1 * * *"
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - "**"
+    tags:
+      - "v*"
+  merge_group:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:

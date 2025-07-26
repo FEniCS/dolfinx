@@ -18,6 +18,7 @@
 #include <numeric>
 #include <random>
 #include <set>
+#include <utility>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -757,11 +758,12 @@ Topology::Topology(
 #endif
 
   // Set data
-  _index_maps.insert({{0, 0}, vertex_map});
   _connectivity.insert(
       {{{0, 0}, {0, 0}},
        std::make_shared<graph::AdjacencyList<std::int32_t>>(
            vertex_map->size_local() + vertex_map->num_ghosts())});
+  _index_maps.insert(
+      std::make_pair(std::array<int, 2>{0, 0}, std::move(vertex_map)));
   if (tdim > 0)
   {
     for (std::size_t i = 0; i < cell_types.size(); ++i)

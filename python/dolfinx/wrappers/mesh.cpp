@@ -84,8 +84,9 @@ void declare_meshtags(nb::module_& m, const std::string& type)
                 indices.data(), indices.data() + indices.size());
             std::vector<T> values_vec(values.data(),
                                       values.data() + values.size());
-            new (self) dolfinx::mesh::MeshTags<T>(
-                topology, dim, std::move(indices_vec), std::move(values_vec));
+            new (self) dolfinx::mesh::MeshTags<T>(std::move(topology), dim,
+                                                  std::move(indices_vec),
+                                                  std::move(values_vec));
           })
       .def_prop_ro("dtype", [](const dolfinx::mesh::MeshTags<T>&)
                    { return dolfinx_wrappers::numpy_dtype<T>(); })
@@ -118,12 +119,13 @@ void declare_meshtags(nb::module_& m, const std::string& type)
            nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values)
         {
           return dolfinx::mesh::create_meshtags(
-              topology, dim, entities, std::span(values.data(), values.size()));
+              std::move(topology), dim, entities,
+              std::span(values.data(), values.size()));
         });
 }
 
 template <typename T>
-void declare_mesh(nb::module_& m, std::string type)
+void declare_mesh(nb::module_& m, const std::string& type)
 {
   std::string pyclass_geometry_name = std::string("Geometry_") + type;
   nb::class_<dolfinx::mesh::Geometry<T>>(m, pyclass_geometry_name.c_str(),
@@ -592,14 +594,14 @@ void mesh(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::mesh::EntityMap* self,
-             const std::shared_ptr<const dolfinx::mesh::Topology>& topology,
-             const std::shared_ptr<const dolfinx::mesh::Topology>& sub_topology,
+             std::shared_ptr<const dolfinx::mesh::Topology> topology,
+             std::shared_ptr<const dolfinx::mesh::Topology> sub_topology,
              int dim,
              const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>&
                  sub_topology_to_topology)
           {
             new (self) dolfinx::mesh::EntityMap(
-                topology, sub_topology, dim,
+                std::move(topology), std::move(sub_topology), dim,
                 std::vector(sub_topology_to_topology.data(),
                             sub_topology_to_topology.data()
                                 + sub_topology_to_topology.size()));
@@ -643,8 +645,9 @@ void mesh(nb::module_& m)
                                            original_index->data()
                                                + original_index->size()))
                         : V(std::nullopt);
-            new (t) dolfinx::mesh::Topology({cell_type}, vertex_map, {cell_map},
-                                            {cells}, idx);
+            new (t) dolfinx::mesh::Topology({cell_type}, std::move(vertex_map),
+                                            {std::move(cell_map)},
+                                            {std::move(cells)}, idx);
           },
           nb::arg("cell_type"), nb::arg("vertex_map"), nb::arg("cell_map"),
           nb::arg("cells"), nb::arg("original_index").none())
