@@ -97,7 +97,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   //    - adjacencylist of facet to cell connectivity is communicated.
   //    - first the number of matched facets (link count)
   //    - the unrolled matched cells (data)
-  //  e) combine local dual graph and remote edge for final parallel aware dual graph.
+  //  e) combine local dual graph and remote edges into parallel aware dual
+  //     graph.
 
   assert(local_max_vertices_per_facet == 0
          or facets.size() % local_max_vertices_per_facet == 0);
