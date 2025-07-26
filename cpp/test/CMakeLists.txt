@@ -57,6 +57,7 @@ add_executable(
   matrix.cpp
   io.cpp
   common/CIFailure.cpp
+  common/constexpr_type.cpp
   common/sub_systems_manager.cpp
   common/index_map.cpp
   common/sort.cpp
