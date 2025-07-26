@@ -86,9 +86,9 @@ jobs:
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate .
-          pip install git+https://github.com/fenics/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install git+https://github.com/fenics/${{ env.basix_repository }}.git@${{ env.basix_ref }}
-          pip install git+https://github.com/fenics/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
+          pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
+          pip install git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
       - name: Configure and build C++
         run: |
