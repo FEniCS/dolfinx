@@ -351,6 +351,15 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
                                  src.size(), src.data(), MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, false, &comm_po_receive);
 
+  // Send po->recipient matched cell counts (non-blocking)
+  std::vector<int> recv_matched_facet_counts(send_disp.back());
+  MPI_Request recv_macthed_facet_counts_request;
+  MPI_Ineighbor_alltoallv(num_items_po_send.data(), num_items_recv.data(),
+                          recv_disp.data(), MPI_INT,
+                          recv_matched_facet_counts.data(),
+                          num_items_per_dest.data(), send_disp.data(), MPI_INT,
+                          comm_po_receive, &recv_macthed_facet_counts_request);
+
   std::vector<std::int64_t> send_matched_facets;
   send_matched_facets.reserve(
       std::accumulate(num_items_po_send.begin(), num_items_po_send.end(), 0));
@@ -373,18 +382,9 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   std::partial_sum(send_mf_sendcounts.begin(), send_mf_sendcounts.end(),
                    std::next(send_mf_displs.begin()));
 
-  // Send back matched cell counts
-  // TODO: post
-  std::vector<int> recv_matched_facet_counts(send_disp.back());
-  MPI_Neighbor_alltoallv(
-      num_items_po_send.data(), num_items_recv.data(), recv_disp.data(),
-      MPI_INT, recv_matched_facet_counts.data(), num_items_per_dest.data(),
-      send_disp.data(), MPI_INT, comm_po_receive);
-
-  // TODO: send the list of matched cells (all-to-all)
-
   std::vector<int> recv_mf_sendcounts(num_items_per_dest.size(), 0);
   index = 0;
+  MPI_Wait(&recv_macthed_facet_counts_request, MPI_STATUS_IGNORE);
   for (std::size_t i = 0; i < num_items_per_dest.size(); i++)
   {
     for (int j = 0; j < num_items_per_dest[i]; j++)
