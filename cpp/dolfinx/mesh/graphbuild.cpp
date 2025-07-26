@@ -404,7 +404,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   std::vector<int> send_mf_sendcounts(num_items_recv.size(), 0);
   int index = 0;
-  for (int i = 0; i < num_items_recv.size(); i++)
+  for (std::size_t i = 0; i < num_items_recv.size(); i++)
   {
     for (int j = 0; j < num_items_recv[i]; j++)
     {
@@ -440,7 +440,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   std::vector<int> recv_mf_sendcounts(num_items_per_dest.size(), 0);
   index = 0;
-  for (int i = 0; i < num_items_per_dest.size(); i++)
+  for (std::size_t i = 0; i < num_items_per_dest.size(); i++)
   {
     for (int j = 0; j < num_items_per_dest[i]; j++)
     {
@@ -547,7 +547,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     {
       std::size_t pos = send_indx_to_pos[i];
       std::size_t cell = cells[pos];
-      for (std::size_t j = 0; j < recv_matched_facet_counts[i]; j++)
+      for (int j = 0; j < recv_matched_facet_counts[i]; j++)
       {
         data[disp[cell]++] = recv_matched_facets[offset + j];
       }
