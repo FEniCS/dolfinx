@@ -280,16 +280,9 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   MPI_Type_free(&compound_type);
   MPI_Comm_free(&comm_po_post);
 
+  // TODO: update
   // Search for consecutive facets (-> dual graph edge between cells)
   // and pack into send buffer
-
-  // TODO:
-  // 1) change from sending back data in the format [-1, 10, 2, -1, ...] to
-  // 'adjacency list based'.
-  //      a) all_to_all the number of matched facets to send (per received
-  //      facet) b) all_to_all list of all facet matches
-  // 2) extend to multiple matched facets.
-
   std::vector<std::vector<std::int64_t>> matched_facets(recv_disp.back());
   {
     // Compute sort permutation for received data
@@ -475,6 +468,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
          following_node++)
       offsets[following_node] -= std::ranges::size(duplicate_links);
   }
+
+  // TOOD: shink_to_fit here?
 
   return graph::AdjacencyList(std::move(data), std::move(offsets));
 }
