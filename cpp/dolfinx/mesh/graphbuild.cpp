@@ -412,13 +412,13 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     }
     index += num_items_recv[i];
   }
-  for (auto e : num_items_recv)
-    std::cout << e << ", ";
-  std::cout << std::endl;
+  // for (auto e : num_items_recv)
+  //   std::cout << e << ", ";
+  // std::cout << std::endl;
 
-  for (auto e : send_mf_sendcounts)
-    std::cout << e << ", ";
-  std::cout << std::endl;
+  // for (auto e : send_mf_sendcounts)
+  //   std::cout << e << ", ";
+  // std::cout << std::endl;
 
   std::vector<std::int32_t> send_mf_displs(send_mf_sendcounts.size() + 1, 0);
   std::partial_sum(send_mf_sendcounts.begin(), send_mf_sendcounts.end(),
@@ -453,9 +453,9 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   std::partial_sum(recv_mf_sendcounts.begin(), recv_mf_sendcounts.end(),
                    std::next(recv_mf_displs.begin()));
 
-  for (auto e : recv_mf_sendcounts)
-    std::cout << e << ", ";
-  std::cout << std::endl;
+  // for (auto e : recv_mf_sendcounts)
+  //   std::cout << e << ", ";
+  // std::cout << std::endl;
 
   std::vector<std::int64_t> recv_matched_facets(recv_mf_displs.back());
 
@@ -478,15 +478,16 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   // Temporary check for recv_matched_facet_counts_aligns with recv_buffer1 -
   // received facets.
-  for (int i = 0; i < recv_matched_facet_counts.size(); i++)
-  {
-    assert(i < recv_buffer1.size());
-    auto matched_count = recv_matched_facet_counts[i];
-    auto recv_index = recv_buffer1[i];
-    std::cout << "matched_count: " << matched_count << "\n"
-              << " recv_index: " << recv_index << std::endl;
-    assert((matched_count == 1 and recv_index != -1) || (matched_count == 0));
-  }
+  // for (int i = 0; i < recv_matched_facet_counts.size(); i++)
+  // {
+  //   assert(i < recv_buffer1.size());
+  //   auto matched_count = recv_matched_facet_counts[i];
+  //   auto recv_index = recv_buffer1[i];
+  //   std::cout << "matched_count: " << matched_count << "\n"
+  //             << " recv_index: " << recv_index << std::endl;
+  //   assert((matched_count == 1 and recv_index != -1) || (matched_count ==
+  //   0));
+  // }
 
   // --- Build new graph
 
@@ -568,9 +569,9 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     }
   }
 
-  for (auto d : data)
-    std::cout << d << ", ";
-  std::cout << std::endl;
+  // for (auto d : data)
+  //   std::cout << d << ", ";
+  // std::cout << std::endl;
 
   return graph::AdjacencyList(std::move(data), std::move(offsets));
 }
