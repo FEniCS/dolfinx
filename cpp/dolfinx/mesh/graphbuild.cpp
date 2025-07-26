@@ -83,17 +83,21 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   // Postoffice setup:
   //  a) facets need to globally decide on a consistent ownership model (without
-  //  communication).
+  //     communication).
   //    - first (global) vertex index of a facet is used
   //    - dolfinx::MPI::index_owner deduces ownership
-  //  b) every facet is send to owning PO
-  //    - data for facet i: list of vertices + associated global cell idx
-  //  c) check (on PO) if multiple same facets have been received
-  //    - if so, found matched facet across process boundary -> introduce edge
-  //      to dual graph
-  //    - prepare info of matched facet for recipients
-  //  d) return info of remotely matched/unmatched facets from PO
-  //    - construct locally the parallel aware dual graph (with ghost edges).
+  //  b) every unmatched facet is send to owning PO
+  //    - data for every facet: list of vertices + associated global cell idx
+  //  c) PO identifies ghost edges
+  //    - PO checks if a facet has been received from multiple processes
+  //    - If so, found matched facet across process boundary -> introduce edge
+  //      to dual graph.
+  //    - store for each received cell a list of (remote) matches.
+  //  d) PO communicates matched cells back to senders
+  //    - adjacencylist of facet to cell connectivity is communicated.
+  //    - first the number of matched facets (link count)
+  //    - the unrolled matched cells (data)
+  //  e) combine local dual graph and remote edge for final parallel aware dual graph.
 
   assert(local_max_vertices_per_facet == 0
          or facets.size() % local_max_vertices_per_facet == 0);
