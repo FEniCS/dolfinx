@@ -290,7 +290,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   //      facet) b) all_to_all list of all facet matches
   // 2) extend to multiple matched facets.
 
-  std::vector<std::int64_t> send_buffer1(recv_disp.back(), -1);
+  // std::vector<std::int64_t> send_buffer1(recv_disp.back(), -1);
   std::vector<std::vector<std::int64_t>> matched_facets(recv_disp.back());
   {
     // Compute sort permutation for received data
@@ -329,10 +329,11 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
         // Store the global cell index from the other rank
         int facet = *it;
         int next_facet = *(it + 1);
-        send_buffer1[facet]
-            = recv_buffer[next_facet * buffer_shape1 + max_vertices_per_facet];
-        send_buffer1[next_facet]
-            = recv_buffer[facet * buffer_shape1 + max_vertices_per_facet];
+        // send_buffer1[facet]
+        //     = recv_buffer[next_facet * buffer_shape1 +
+        //     max_vertices_per_facet];
+        // send_buffer1[next_facet]
+        //     = recv_buffer[facet * buffer_shape1 + max_vertices_per_facet];
         matched_facets[facet].push_back(
             recv_buffer[next_facet * buffer_shape1 + max_vertices_per_facet]);
         matched_facets[next_facet].push_back(
@@ -468,12 +469,12 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
                          dolfinx::MPI::mpi_t<std::int64_t>, comm_po_receive);
 
   // Send back data (TODO: remove once transition done)
-  std::vector<std::int64_t> recv_buffer1(send_disp.back());
-  MPI_Neighbor_alltoallv(send_buffer1.data(), num_items_recv.data(),
-                         recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
-                         recv_buffer1.data(), num_items_per_dest.data(),
-                         send_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
-                         comm_po_receive);
+  // std::vector<std::int64_t> recv_buffer1(send_disp.back());
+  // MPI_Neighbor_alltoallv(send_buffer1.data(), num_items_recv.data(),
+  //                        recv_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
+  //                        recv_buffer1.data(), num_items_per_dest.data(),
+  //                        send_disp.data(), dolfinx::MPI::mpi_t<std::int64_t>,
+  //                        comm_po_receive);
   MPI_Comm_free(&comm_po_receive);
 
   // Temporary check for recv_matched_facet_counts_aligns with recv_buffer1 -
