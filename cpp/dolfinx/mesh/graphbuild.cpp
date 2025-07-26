@@ -324,26 +324,41 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       // TODO: generalise for more than two matches and log warning
       // (maybe with an option?). Would need to send back multiple
       // values.
-      if (std::size_t num_matches = std::distance(it, it1); num_matches == 2)
+      for (auto facet_a_it = it; facet_a_it != it1; facet_a_it++)
       {
-        // Store the global cell index from the other rank
-        int facet = *it;
-        int next_facet = *(it + 1);
-        // send_buffer1[facet]
-        //     = recv_buffer[next_facet * buffer_shape1 +
-        //     max_vertices_per_facet];
-        // send_buffer1[next_facet]
-        //     = recv_buffer[facet * buffer_shape1 + max_vertices_per_facet];
-        matched_facets[facet].push_back(
-            recv_buffer[next_facet * buffer_shape1 + max_vertices_per_facet]);
-        matched_facets[next_facet].push_back(
-            recv_buffer[facet * buffer_shape1 + max_vertices_per_facet]);
+        for (auto facet_b_it = std::next(facet_a_it); facet_b_it != it1;
+             facet_b_it++)
+        {
+          int facet_a = *facet_a_it;
+          int facet_b = *facet_b_it;
+          matched_facets[facet_a].push_back(
+              recv_buffer[facet_b * buffer_shape1 + max_vertices_per_facet]);
+          matched_facets[facet_b].push_back(
+              recv_buffer[facet_a * buffer_shape1 + max_vertices_per_facet]);
+        }
       }
-      else if (num_matches > 2)
-      {
-        throw std::runtime_error(
-            "A facet is connected to more than two cells.");
-      }
+
+      // if (std::size_t num_matches = std::distance(it, it1); num_matches == 2)
+      // {
+      //   // Store the global cell index from the other rank
+      //   int facet = *it;
+      //   int next_facet = *(it + 1);
+      //   // send_buffer1[facet]
+      //   //     = recv_buffer[next_facet * buffer_shape1 +
+      //   //     max_vertices_per_facet];
+      //   // send_buffer1[next_facet]
+      //   //     = recv_buffer[facet * buffer_shape1 + max_vertices_per_facet];
+      //   matched_facets[facet].push_back(
+      //       recv_buffer[next_facet * buffer_shape1 +
+      //       max_vertices_per_facet]);
+      //   matched_facets[next_facet].push_back(
+      //       recv_buffer[facet * buffer_shape1 + max_vertices_per_facet]);
+      // }
+      // else if (num_matches > 2)
+      // {
+      //   throw std::runtime_error(
+      //       "A facet is connected to more than two cells.");
+      // }
 
       // Advance iterator and increment entity
       it = it1;
