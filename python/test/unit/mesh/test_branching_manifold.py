@@ -81,22 +81,7 @@ def test_edge_skeleton_mesh(dim, cell_type):
     skeleton_im_f = skeleton_mesh.topology.index_map(0)
 
     def on_boundary(x):
-        if dim == 2:
-            return (
-                np.isclose(x[0], 0)
-                or np.isclose(x[0], 1)
-                or np.isclose(x[1], 0)
-                or np.isclose(x[1], 1)
-            )
-        else:
-            return (
-                np.isclose(x[0], 0)
-                or np.isclose(x[0], 1)
-                or np.isclose(x[1], 0)
-                or np.isclose(x[1], 1)
-                or np.isclose(x[2], 0)
-                or np.isclose(x[2], 1)
-            )
+        return np.any(np.isclose(x[:dim], 0)) or np.any(np.isclose(x[:dim], 1))
 
     for facet in range(skeleton_im_f.size_local):
         matched = len(skeleton_f_to_c.links(facet)) == max_facet_to_cell_links
