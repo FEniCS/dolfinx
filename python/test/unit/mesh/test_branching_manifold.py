@@ -11,6 +11,7 @@ import pytest
 
 import basix
 import ufl
+from dolfinx import has_debug
 from dolfinx.cpp.mesh import create_cell_partitioner
 from dolfinx.mesh import (
     CellType,
@@ -20,8 +21,6 @@ from dolfinx.mesh import (
     create_unit_cube,
     create_unit_square,
 )
-
-from dolfinx import has_debug
 
 
 @pytest.mark.parametrize(
