@@ -12,7 +12,16 @@ import pytest
 import basix
 import ufl
 from dolfinx.cpp.mesh import create_cell_partitioner
-from dolfinx.mesh import CellType, GhostMode, create_mesh, create_unit_cube, create_unit_square
+from dolfinx.mesh import (
+    CellType,
+    GhostMode,
+    compute_midpoints,
+    create_mesh,
+    create_unit_cube,
+    create_unit_square,
+)
+
+from dolfinx import has_debug
 
 
 @pytest.mark.parametrize(
@@ -38,10 +47,7 @@ def test_edge_skeleton_mesh(dim, cell_type):
             mesh = create_unit_square(MPI.COMM_SELF, 4, 4, cell_type=cell_type)
         else:
             mesh = create_unit_cube(MPI.COMM_SELF, 2, 2, 2, cell_type=cell_type)
-        import dolfinx
 
-        with dolfinx.io.XDMFFile(MPI.COMM_SELF, "test.xdmf", "w") as ofile:
-            ofile.write_mesh(mesh)
         top = mesh.topology
         top.create_connectivity(1, 0)
         e_to_v = top.connectivity(1, 0)
@@ -86,3 +92,59 @@ def test_edge_skeleton_mesh(dim, cell_type):
     for facet in range(skeleton_im_f.size_local):
         matched = len(skeleton_f_to_c.links(facet)) == max_facet_to_cell_links
         assert matched or on_boundary(skeleton_mesh.geometry.x[facet])
+
+
+# TODO: tetrahedron
+@pytest.mark.parametrize("cell_type", [CellType.hexahedron])
+def test_facet_skeleton_mesh(cell_type):
+    comm = MPI.COMM_WORLD
+    if comm.rank == 0:
+        mesh = create_unit_cube(MPI.COMM_SELF, 3, 3, 3, cell_type=cell_type)
+
+        top = mesh.topology
+        top.create_connectivity(2, 0)
+        f_to_v = top.connectivity(2, 0)
+        new_x = mesh.geometry.x
+        cells = f_to_v.array.reshape(-1, 4)  # TODO: cell_type
+    else:
+        new_x = np.empty((0, 3), dtype=np.float64)
+        cells = np.empty((0, 4), dtype=np.int64)
+
+    element = ufl.Mesh(basix.ufl.element("Lagrange", "quadrilateral", 1, shape=(3,)))
+
+    if cell_type == CellType.hexahedron:
+        max_facet_to_cell_links = 4
+
+    skeleton_mesh = create_mesh(
+        comm,
+        cells,
+        new_x,
+        element,
+        create_cell_partitioner(GhostMode.shared_facet, max_facet_to_cell_links),
+    )
+
+    skeleton_top = skeleton_mesh.topology
+    # TODO: fix get_local_indexing
+    if comm.size > 1:
+        if has_debug:
+            with pytest.raises(SystemExit):
+                skeleton_top.create_connectivity(1, 2)
+
+        return
+
+    skeleton_top.create_connectivity(1, 2)
+    skeleton_f_to_c = skeleton_top.connectivity(1, 2)
+
+    # import febug
+    # febug.plot_entity_indices(mesh, 2).show() # .save_graphic(f"test_{comm.rank}.svg")
+
+    skeleton_im_f = skeleton_mesh.topology.index_map(1)
+
+    def on_boundary(x):
+        return np.any(np.isclose(x, 0)) or np.any(np.isclose(x, 1))
+
+    for facet in range(skeleton_im_f.size_local):
+        matched = len(skeleton_f_to_c.links(facet)) == max_facet_to_cell_links
+
+        midpoint = compute_midpoints(skeleton_mesh, 1, np.array([facet], dtype=np.int32))[0]
+        assert matched or on_boundary(midpoint)
