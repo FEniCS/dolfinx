@@ -13,19 +13,6 @@ on:
     branches:
       - main
   workflow_dispatch:
-    inputs:
-      ffcx_ref:
-        description: "FFCx branch or tag"
-        default: "main"
-        type: string
-      basix_ref:
-        description: "Basix branch or tag"
-        default: "main"
-        type: string
-      ufl_ref:
-        description: "UFL branch or tag"
-        default: "main"
-        type: string
 
 jobs:
 
@@ -108,14 +95,7 @@ jobs:
         run: |
           pip install --upgrade -r python/build-requirements.txt
 
-      - name: Install FEniCS Python components (default branches/tags)
-        if: github.event_name != 'workflow_dispatch'
-        run: |
-          pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
-          pip install git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
       - name: Install FEniCS Python components
-        if: github.event_name == 'workflow_dispatch'
         run: |
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
           pip install git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
@@ -195,14 +175,7 @@ jobs:
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
-      - name: Install FEniCS Python components (default branches/tags)
-        if: github.event_name != 'workflow_dispatch'
-        run: |
-          pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
-          pip install git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
       - name: Install FEniCS Python components
-        if: github.event_name == 'workflow_dispatch'
         run: |
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
           pip install git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
@@ -289,14 +262,7 @@ jobs:
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
-      - name: Install FEniCS Python components (default branches/tags)
-        if: github.event_name != 'workflow_dispatch'
-        run: |
-          pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
-          pip install git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
       - name: Install FEniCS Python components
-        if: github.event_name == 'workflow_dispatch'
         run: |
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
           pip install git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}

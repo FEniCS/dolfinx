@@ -580,7 +580,7 @@ def test_empty_rank_mesh(dtype):
         cells = np.empty((0, 3), dtype=np.int64)
         x = np.empty((0, 2), dtype=dtype)
 
-    mesh = _mesh.create_mesh(comm, cells, x, domain, partitioner)
+    mesh = _mesh.create_mesh(comm, cells, domain, x, partitioner)
     assert mesh.geometry.x.dtype == dtype
     topology = mesh.topology
 
@@ -712,25 +712,25 @@ def test_mesh_create_cmap(dtype):
 
     # ufl.Mesh case
     domain = ufl.Mesh(element("Lagrange", shape, degree, shape=(2,), dtype=dtype))
-    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
     assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # basix.ufl.element
     domain = element("Lagrange", shape, degree, shape=(2,), dtype=dtype)
-    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
     assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # basix.finite_element
     domain = basix.create_element(basix.ElementFamily.P, basix.CellType[shape], degree, dtype=dtype)
-    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
     assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # cpp.fem.CoordinateElement
     e = basix.create_element(basix.ElementFamily.P, basix.CellType[shape], degree, dtype=dtype)
     domain = coordinate_element(e)
-    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
     assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain() is None
