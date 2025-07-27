@@ -11,7 +11,6 @@ import pytest
 
 import basix
 import ufl
-from dolfinx import has_debug
 from dolfinx.cpp.mesh import create_cell_partitioner
 from dolfinx.mesh import (
     CellType,
@@ -123,13 +122,9 @@ def test_facet_skeleton_mesh(cell_type):
     )
 
     skeleton_top = skeleton_mesh.topology
-    # TODO: fix get_local_indexing
-    if comm.size > 1:
-        if has_debug:
-            with pytest.raises(SystemExit):
-                skeleton_top.create_connectivity(1, 2)
 
-        return
+    if comm.size > 1:
+        pytest.skip("Branching mesh c->e, e->v connectivity not yet implemented.")
 
     skeleton_top.create_connectivity(1, 2)
     skeleton_f_to_c = skeleton_top.connectivity(1, 2)
