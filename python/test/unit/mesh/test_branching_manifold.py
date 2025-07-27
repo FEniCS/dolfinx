@@ -7,6 +7,7 @@
 from mpi4py import MPI
 
 import numpy as np
+import pytest
 
 import basix
 import ufl
@@ -19,10 +20,11 @@ from dolfinx.mesh import (
 )
 
 
-def test_edge_skeleton_mesh():
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
+def test_edge_skeleton_mesh(cell_type):
     comm = MPI.COMM_WORLD
     if comm.rank == 0:
-        mesh = create_unit_square(MPI.COMM_SELF, 4, 4, cell_type=CellType.quadrilateral)
+        mesh = create_unit_square(MPI.COMM_SELF, 4, 4, cell_type=cell_type)
         top = mesh.topology
         top.create_connectivity(1, 0)
         e_to_v = top.connectivity(1, 0)
@@ -34,8 +36,16 @@ def test_edge_skeleton_mesh():
 
     element = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(2,)))
 
+    max_facet_to_cell_links = 4
+    if cell_type == CellType.triangle:
+        max_facet_to_cell_links += 2  # additinal two diagonals
+
     skeleton_mesh = create_mesh(
-        comm, cells, new_x, element, create_cell_partitioner(GhostMode.shared_facet, 4)
+        comm,
+        cells,
+        new_x,
+        element,
+        create_cell_partitioner(GhostMode.shared_facet, max_facet_to_cell_links),
     )
 
     skeleton_top = skeleton_mesh.topology
@@ -50,7 +60,7 @@ def test_edge_skeleton_mesh():
 
     for facet in range(skeleton_im_f.size_local):
         links = skeleton_f_to_c.links(facet)
-        matched = len(links) == 4
+        matched = len(links) == max_facet_to_cell_links
         x = skeleton_mesh.geometry.x[facet]
         on_boundary = (
             np.isclose(x[0], 0) or np.isclose(x[0], 1) or np.isclose(x[1], 0) or np.isclose(x[1], 1)
