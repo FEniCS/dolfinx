@@ -12,33 +12,55 @@ import pytest
 import basix
 import ufl
 from dolfinx.cpp.mesh import create_cell_partitioner
-from dolfinx.mesh import (
-    CellType,
-    GhostMode,
-    create_mesh,
-    create_unit_square,
+from dolfinx.mesh import CellType, GhostMode, create_mesh, create_unit_cube, create_unit_square
+
+
+@pytest.mark.parametrize(
+    "dim,cell_type",
+    [
+        (2, CellType.triangle),
+        (2, CellType.quadrilateral),
+        (3, CellType.hexahedron),
+        (3, CellType.tetrahedron),
+    ],
 )
+def test_edge_skeleton_mesh(dim, cell_type):
+    """Creates the edge skeleton mesh of a regular unit square/cube and checks for correct
+    connectivity information.
 
+    The edge skeleton mesh is the mesh formed by the edges of another mesh (edges -> cell). In
+    particular this is a branching mesh.
+    """
 
-@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
-def test_edge_skeleton_mesh(cell_type):
     comm = MPI.COMM_WORLD
     if comm.rank == 0:
-        mesh = create_unit_square(MPI.COMM_SELF, 4, 4, cell_type=cell_type)
+        if dim == 2:
+            mesh = create_unit_square(MPI.COMM_SELF, 4, 4, cell_type=cell_type)
+        else:
+            mesh = create_unit_cube(MPI.COMM_SELF, 2, 2, 2, cell_type=cell_type)
+        import dolfinx
+
+        with dolfinx.io.XDMFFile(MPI.COMM_SELF, "test.xdmf", "w") as ofile:
+            ofile.write_mesh(mesh)
         top = mesh.topology
         top.create_connectivity(1, 0)
         e_to_v = top.connectivity(1, 0)
-        new_x = mesh.geometry.x[:, :-1]
+        new_x = mesh.geometry.x[:, :-1] if dim == 2 else mesh.geometry.x
         cells = e_to_v.array.reshape(-1, 2)
     else:
-        new_x = np.empty((0, 2), dtype=np.float64)
-        cells = np.empty((0, 2), dtype=np.int64)
+        new_x = np.empty((0, dim), dtype=np.float64)
+        cells = np.empty((0, dim), dtype=np.int64)
 
-    element = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(2,)))
+    element = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(dim,)))
 
-    max_facet_to_cell_links = 4
-    if cell_type == CellType.triangle:
-        max_facet_to_cell_links += 2  # additinal two diagonals
+    if cell_type == CellType.quadrilateral:
+        max_facet_to_cell_links = 4
+    elif cell_type == CellType.triangle:
+        max_facet_to_cell_links = 6
+    elif cell_type == CellType.hexahedron:
+        max_facet_to_cell_links = 6
+    elif cell_type == CellType.tetrahedron:
+        max_facet_to_cell_links = 14
 
     skeleton_mesh = create_mesh(
         comm,
@@ -54,15 +76,28 @@ def test_edge_skeleton_mesh(cell_type):
 
     # debug ouput
     # import febug
-    # febug.plot_entity_indices(skeleton_mesh, 1).save_graphic(f"test_{comm.rank}.svg")
+    # febug.plot_entity_indices(skeleton_mesh, 1).show() # .save_graphic(f"test_{comm.rank}.svg")
 
     skeleton_im_f = skeleton_mesh.topology.index_map(0)
 
+    def on_boundary(x):
+        if dim == 2:
+            return (
+                np.isclose(x[0], 0)
+                or np.isclose(x[0], 1)
+                or np.isclose(x[1], 0)
+                or np.isclose(x[1], 1)
+            )
+        else:
+            return (
+                np.isclose(x[0], 0)
+                or np.isclose(x[0], 1)
+                or np.isclose(x[1], 0)
+                or np.isclose(x[1], 1)
+                or np.isclose(x[2], 0)
+                or np.isclose(x[2], 1)
+            )
+
     for facet in range(skeleton_im_f.size_local):
-        links = skeleton_f_to_c.links(facet)
-        matched = len(links) == max_facet_to_cell_links
-        x = skeleton_mesh.geometry.x[facet]
-        on_boundary = (
-            np.isclose(x[0], 0) or np.isclose(x[0], 1) or np.isclose(x[1], 0) or np.isclose(x[1], 1)
-        )
-        assert matched or on_boundary
+        matched = len(skeleton_f_to_c.links(facet)) == max_facet_to_cell_links
+        assert matched or on_boundary(skeleton_mesh.geometry.x[facet])
