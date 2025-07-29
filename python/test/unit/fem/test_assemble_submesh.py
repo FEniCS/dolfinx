@@ -760,7 +760,7 @@ def test_interior_interface():
         return np.isclose(x[1], 1.0) & (x[0] <= 0.5)
 
     # Create a Dirichlet boundary condition
-    c_bc = 1.0
+    c_bc = default_scalar_type(1.0)
     bc_facets = locate_entities_boundary(smsh_0, fdim, bc_marker)
     bc_dofs = fem.locate_dofs_topological(V_0, fdim, bc_facets)
     bc = fem.dirichletbc(c_bc, bc_dofs, V_0)
