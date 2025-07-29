@@ -6,3 +6,7 @@ ExtraArgsBefore:
 Checks: >
   -*,
   performance*
+CheckOptions:
+  # Design decision: pass nb::ndarray by value, not const ref.
+  - key: performance-unnecessary-value-param.AllowedTypes
+    value: 'nanobind::ndarray'

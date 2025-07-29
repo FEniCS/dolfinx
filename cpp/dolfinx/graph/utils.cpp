@@ -94,6 +94,7 @@ graph::comm_graph(const common::IndexMap& map, int root)
   dolfinx::MPI::check_error(comm, ierr);
 
   std::vector<std::tuple<int, std::size_t, std::int8_t>> e_data;
+  e_data.reserve(edges_remote.size());
   for (std::size_t i = 0; i < edges_remote.size(); ++i)
     e_data.emplace_back(edges_remote[i], weights_remote[i], markers_remote[i]);
   return graph::AdjacencyList(std::move(e_data),
