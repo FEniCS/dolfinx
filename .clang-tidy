@@ -1,4 +1,4 @@
-WarningsAsErrors: "" # "*" for all Werror behaviour.
+WarningsAsErrors: "" # "*" for Werror behaviour.
 UseColor: true
 HeaderFilterRegex: '^(?!MPI_api.h$|PETSc_api.h$).*' # Pulled in from python packages and not classified as system headers
 ExtraArgsBefore:
