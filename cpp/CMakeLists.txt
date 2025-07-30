@@ -179,15 +179,9 @@ set_package_properties(
 )
 
 if(DOLFINX_ENABLE_SCOTCH)
-  set(_REQUIRE_SCOTCH
-      TRUE
-      CACHE BOOL "Is SCOTCH REQUIRED?"
-  )
+  set(_REQUIRE_SCOTCH TRUE CACHE BOOL "Is SCOTCH REQUIRED?")
 else()
-  set(_REQUIRE_SCOTCH
-      FALSE
-      CACHE BOOL "Is SCOTCH REQUIRED?"
-  )
+  set(_REQUIRE_SCOTCH FALSE CACHE BOOL "Is SCOTCH REQUIRED?")
 endif()
 option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH." ON)
 set_package_properties(
@@ -200,15 +194,9 @@ set_package_properties(
 )
 
 if(DOLFINX_ENABLE_SLEPC)
-  set(_REQUIRE_SLEPC
-      TRUE
-      CACHE BOOL "Is SLEPc REQUIRED?"
-  )
+  set(_REQUIRE_SLEPC TRUE CACHE BOOL "Is SLEPc REQUIRED?")
 else()
-  set(_REQUIRE_SLEPC
-      FALSE
-      CACHE BOOL "Is SLEPc REQUIRED?"
-  )
+  set(_REQUIRE_SLEPC FALSE CACHE BOOL "Is SLEPc REQUIRED?")
 endif()
 option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc." ON)
 set_package_properties(
@@ -220,15 +208,9 @@ set_package_properties(
 )
 
 if(DOLFINX_ENABLE_KAHIP)
-  set(_REQUIRE_KAHIP
-      TRUE
-      CACHE BOOL "Is KaHIP REQUIRED?"
-  )
+  set(_REQUIRE_KAHIP TRUE CACHE BOOL "Is KaHIP REQUIRED?")
 else()
-  set(_REQUIRE_KAHIP
-      FALSE
-      CACHE BOOL "Is KaHIP REQUIRED?"
-  )
+  set(_REQUIRE_KAHIP FALSE CACHE BOOL "Is KaHIP REQUIRED?")
 endif()
 option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." ON)
 set_package_properties(
@@ -322,7 +304,6 @@ set_package_properties(
 # Basix C++ library.
 if(DOLFINX_BASIX_PYTHON)
   find_package(Python3 COMPONENTS Interpreter QUIET)
-
   if(Python3_Interpreter_FOUND)
     message(STATUS "Checking for Basix hints with ${Python3_EXECUTABLE}")
     execute_process(
@@ -340,16 +321,18 @@ if(DOLFINX_BASIX_PYTHON)
     cmake_path(SET BASIX_PY_DIR "${BASIX_PY_DIR}")
     message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
 
-    # Basix installed from manylinux wheel requires rpath set.
+    # Basix installed from manylinux wheel requires rpath set
     if(IS_DIRECTORY ${BASIX_PY_DIR}/../fenics_basix.libs)
       set(CMAKE_INSTALL_RPATH ${BASIX_PY_DIR}/../fenics_basix.libs)
     endif()
+
+    list(APPEND CMAKE_PREFIX_PATH ${BASIX_PY_DIR})
   else()
     message(STATUS "No Basix hint was found.")
   endif()
 endif()
 
-find_package(Basix 0.10 REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
+find_package(Basix 0.10 REQUIRED CONFIG)
 set_package_properties(
   basix PROPERTIES
   TYPE REQUIRED
@@ -364,7 +347,7 @@ find_package(HDF5 REQUIRED COMPONENTS C)
 if(NOT HDF5_IS_PARALLEL)
   message(
     FATAL_ERROR
-      "Found serial HDF5 build, MPI HDF5 build required, try setting HDF5_DIR or HDF5_ROOT"
+      "Found serial HDF5, MPI HDF5 build required. Try setting HDF5_DIR or HDF5_ROOT."
   )
 endif()
 
@@ -404,7 +387,7 @@ endif()
 if(ADIOS2_FOUND AND NOT ADIOS2_HAVE_MPI)
   message(
     FATAL_ERROR
-      "Found serial ADIOS2 build, MPI ADIOS2 build required, try setting ADIOS2_DIR or ADIOS2_ROOT"
+      "Found serial ADIOS2, MPI ADIOS2 build required. Try setting ADIOS2_DIR or ADIOS2_ROOT."
   )
 endif()
 
@@ -432,6 +415,7 @@ if(DOLFINX_ENABLE_PETSC)
   if(PETSC_FOUND)
     message(STATUS "Found PETSc version ${PETSC_VERSION}, prefix: ${PETSC_PREFIX}")
     set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND PETSc)
+    list(APPEND CMAKE_PREFIX_PATH ${PETSC_PREFIX})
   else()
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND PETSc)
   endif()
@@ -463,13 +447,9 @@ elseif(_REQUIRE_SLEPC AND NOT PETSC_FOUND)
   message(FATAL_ERROR "SLEPc requested, but no configured because PETSc was not found.")
 endif()
 
-if(DOLFINX_ENABLE_SCOTCH AND _REQUIRE_SCOTCH AND DEFINED PETSC_PREFIX)
-  find_package(SCOTCH REQUIRED CONFIG PATHS ${PETSC_PREFIX})
-elseif(DOLFINX_ENABLE_SCOTCH AND _REQUIRE_SCOTCH)
+if(DOLFINX_ENABLE_SCOTCH AND _REQUIRE_SCOTCH)
   find_package(SCOTCH REQUIRED CONFIG)
-elseif(DOLFINX_ENABLE_SCOTCH AND DEFINED PETSC_PREFIX)
-  find_package(SCOTCH CONFIG PATHS ${PETSC_PREFIX})
-else()
+elseif(DOLFINX_ENABLE_SCOTCH)
   find_package(SCOTCH CONFIG)
 endif()
 
@@ -488,13 +468,9 @@ if(SCOTCH_FOUND)
   )
 endif()
 
-if(DOLFINX_ENABLE_PARMETIS AND _REQUIRE_PARMETIS AND PETSC_PREFIX)
-  find_package(ParMETIS 4.0.2 REQUIRED PATHS ${PETSC_PREFIX})
-elseif(DOLFINX_ENABLE_PARMETIS AND _REQUIRE_PARMETIS)
+if(DOLFINX_ENABLE_PARMETIS AND _REQUIRE_PARMETIS)
   find_package(ParMETIS 4.0.2 REQUIRED)
-elseif(DOLFINX_ENABLE_PARMETIS AND PETSC_PREFIX)
-  find_package(ParMETIS 4.0.2 PATHS ${PETSC_PREFIX})
-else()
+elseif(DOLFINX_ENABLE_PARMETIS)
   find_package(ParMETIS 4.0.2)
 endif()
 
@@ -509,10 +485,7 @@ endif()
 feature_summary(WHAT ALL)
 
 # Check that at least one graph partitioner has been found
-if(NOT SCOTCH_FOUND
-   AND NOT PARMETIS_FOUND
-   AND NOT KAHIP_FOUND
-)
+if(NOT SCOTCH_FOUND AND NOT PARMETIS_FOUND AND NOT KAHIP_FOUND)
   message(FATAL_ERROR "No graph partitioner found. SCOTCH, ParMETIS or KaHIP is required.")
 endif()
 
