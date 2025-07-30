@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import typing
+from collections.abc import Callable, Sequence
 from functools import cached_property, singledispatch
 
 import numpy as np
@@ -37,7 +38,7 @@ class Constant(ufl.Constant):
     ]
 
     def __init__(
-        self, domain, c: typing.Union[np.ndarray, typing.Sequence, np.floating, np.complexfloating]
+        self, domain, c: typing.Union[np.ndarray, Sequence, np.floating, np.complexfloating]
     ):
         """A constant with respect to a domain.
 
@@ -141,10 +142,7 @@ class Expression:
 
         # Attempt to deduce dtype
         if dtype is None:
-            try:
-                dtype = e.dtype  # type: ignore
-            except AttributeError:
-                dtype = default_scalar_type
+            dtype = getattr(e, "dtype", default_scalar_type)
 
         # Compile UFL expression with JIT
         if form_compiler_options is None:
@@ -428,7 +426,7 @@ class Function(ufl.Coefficient):
 
     def interpolate(
         self,
-        u0: typing.Union[typing.Callable, Expression, Function],
+        u0: typing.Union[Callable, Expression, Function],
         cells0: typing.Optional[np.ndarray] = None,
         cells1: typing.Optional[np.ndarray] = None,
     ) -> None:
@@ -615,11 +613,9 @@ def functionspace(
     # Check that element and mesh cell types match
     if ((domain := mesh.ufl_domain()) is None) or ufl_e.cell != domain.ufl_cell():
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
-
     # Create DOLFINx objects
     element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)  # type: ignore
     cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, element._cpp_object)  # type: ignore
-
     assert np.issubdtype(mesh.geometry.x.dtype, element.dtype), (  # type: ignore
         "Mesh and element dtype are not compatible."
     )

@@ -20,6 +20,7 @@
 #include <concepts>
 #include <dolfinx/common/types.h>
 #include <dolfinx/la/SparsityPattern.h>
+#include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/utils.h>
@@ -309,11 +310,13 @@ ElementDofLayout create_element_dof_layout(const fem::FiniteElement<T>& element,
 /// when transformation is not required.
 /// @param[in] reorder_fn Graph reordering function called on the dofmap
 /// @return A new dof map
-DofMap create_dofmap(
-    MPI_Comm comm, const ElementDofLayout& layout, mesh::Topology& topology,
-    std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv,
-    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
-        reorder_fn);
+DofMap
+create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
+              mesh::Topology& topology,
+              const std::function<void(std::span<std::int32_t>, std::uint32_t)>&
+                  permute_inv,
+              const std::function<std::vector<int>(
+                  const graph::AdjacencyList<std::int32_t>&)>& reorder_fn);
 
 /// @brief Create a set of dofmaps on a given topology
 /// @param[in] comm MPI communicator
@@ -328,9 +331,10 @@ DofMap create_dofmap(
 std::vector<DofMap> create_dofmaps(
     MPI_Comm comm, const std::vector<ElementDofLayout>& layouts,
     mesh::Topology& topology,
-    std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv,
-    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
-        reorder_fn);
+    const std::function<void(std::span<std::int32_t>, std::uint32_t)>&
+        permute_inv,
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn);
 
 /// Get the name of each coefficient in a UFC form
 /// @param[in] ufcx_form The UFC form
@@ -370,8 +374,8 @@ Form<T, U> create_form_factory(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
         subdomains,
-    const std::map<std::shared_ptr<const mesh::Mesh<U>>,
-                   std::span<const std::int32_t>>& entity_maps,
+    const std::vector<std::reference_wrapper<const mesh::EntityMap>>&
+        entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   for (const ufcx_form& ufcx_form : ufcx_forms)
@@ -436,14 +440,6 @@ Form<T, U> create_form_factory(
     mesh = spaces.front()->mesh();
   if (!mesh)
     throw std::runtime_error("No mesh could be associated with the Form.");
-  for (auto& V : spaces)
-  {
-    if (mesh != V->mesh() and entity_maps.find(V->mesh()) == entity_maps.end())
-    {
-      throw std::runtime_error(
-          "Incompatible mesh. entity_maps must be provided.");
-    }
-  }
 
   auto topology = mesh->topology();
   assert(topology);
@@ -812,8 +808,8 @@ Form<T, U> create_form(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
         subdomains,
-    const std::map<std::shared_ptr<const mesh::Mesh<U>>,
-                   std::span<const std::int32_t>>& entity_maps,
+    const std::vector<std::reference_wrapper<const mesh::EntityMap>>&
+        entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   // Place coefficients in appropriate order
@@ -872,8 +868,8 @@ Form<T, U> create_form(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
         subdomains,
-    const std::map<std::shared_ptr<const mesh::Mesh<U>>,
-                   std::span<const std::int32_t>>& entity_maps,
+    const std::vector<std::reference_wrapper<const mesh::EntityMap>>&
+        entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   ufcx_form* form = fptr();
@@ -989,6 +985,7 @@ Expression<T, U> create_expression(
   // Place coefficients in appropriate order
   std::vector<std::shared_ptr<const Function<T, U>>> coeff_map;
   std::vector<std::string> coefficient_names;
+  coefficient_names.reserve(e.num_coefficients);
   for (int i = 0; i < e.num_coefficients; ++i)
     coefficient_names.push_back(e.coefficient_names[i]);
 
@@ -1006,6 +1003,7 @@ Expression<T, U> create_expression(
   // Place constants in appropriate order
   std::vector<std::shared_ptr<const Constant<T>>> const_map;
   std::vector<std::string> constant_names;
+  constant_names.reserve(e.num_constants);
   for (int i = 0; i < e.num_constants; ++i)
     constant_names.push_back(e.constant_names[i]);
 

@@ -22,20 +22,8 @@
 # +
 from pathlib import Path
 
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
-
-
 from mpi4py import MPI
+from petsc4py import PETSc
 
 import cffi
 import numba
@@ -197,7 +185,7 @@ formtype = form_cpp_class(PETSc.ScalarType)  # type: ignore
 cells = np.arange(msh.topology.index_map(msh.topology.dim).size_local)
 integrals = {IntegralType.cell: [(0, tabulate_A.address, cells, np.array([], dtype=np.int8))]}
 a_cond = Form(
-    formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, {}, mesh=msh._cpp_object)
+    formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, [], mesh=msh._cpp_object)
 )
 
 A_cond = assemble_matrix(a_cond, bcs=[bc])

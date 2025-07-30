@@ -7,6 +7,7 @@
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
+#include <algorithm>
 #include <basix/mdspan.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/IndexMap.h>
@@ -167,13 +168,12 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   std::vector<std::string> components = {""};
   if constexpr (!std::is_scalar_v<T>)
     components = {"real_", "imag_"};
+
   std::string t_str = boost::lexical_cast<std::string>(t);
   std::replace(t_str.begin(), t_str.end(), '.', '_');
-  for (auto component : components)
+  for (const auto& component : components)
   {
     std::string attr_name = component + u.name;
-    std::string dataset_name
-        = std::string("/Function/") + attr_name + std::string("/") + t_str;
 
     // Add attribute node
     pugi::xml_node attr_node = xml_node.append_child("Attribute");
@@ -205,7 +205,8 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
       u = std::span<const T>(data_values);
 
     // -- Real case, add data item
-    xdmf_utils::add_data_item(attr_node, h5_id, dataset_name, u, offset,
+    std::string h5_path = std::format("/Function/{}/{}", attr_name, t_str);
+    xdmf_utils::add_data_item(attr_node, h5_id, h5_path, u, offset,
                               {num_values, num_components}, "", use_mpi_io);
   }
 }
