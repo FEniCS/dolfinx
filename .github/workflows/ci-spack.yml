@@ -35,7 +35,6 @@ jobs:
         run: |
           dnf -y install epel-release
           dnf -y install file bzip2 ca-certificates git gzip patch python3 tar unzip xz zstd gcc gcc-c++ gcc-gfortran
-          dnf -y install which
 
       - name: Checkout Spack
         uses: actions/checkout@v4
@@ -95,8 +94,6 @@ jobs:
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate .
-          which cmake
-          cmake --version
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S dolfinx-src/cpp/
           cmake --build build
           cmake --install build
