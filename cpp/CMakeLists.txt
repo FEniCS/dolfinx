@@ -503,8 +503,8 @@ else()
   set(OS_LIBRARY_PATH_NAME "LD_LIBRARY_PATH")
 endif()
 
-# FIXME: not cross-platform compatible Create and install dolfinx.conf
-# file
+# FIXME: not cross-platform compatible
+# Create and install dolfinx.conf file
 configure_file(
   ${DOLFINX_SOURCE_DIR}/cmake/templates/dolfinx.conf.in
   ${CMAKE_BINARY_DIR}/dolfinx.conf @ONLY
