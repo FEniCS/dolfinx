@@ -98,9 +98,9 @@ class Form:
         return self._cpp_object.function_spaces
 
     @property
-    def dtype(self) -> np.floating:
+    def dtype(self) -> np.dtype:
         """Scalar type of this form."""
-        return np.dtype(self._cpp_object.dtype).type
+        return np.dtype(self._cpp_object.dtype)
 
     @property
     def mesh(self) -> typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64]:

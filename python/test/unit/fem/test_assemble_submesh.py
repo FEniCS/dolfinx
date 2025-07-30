@@ -762,7 +762,7 @@ def test_interior_interface():
     a = fem.form(ufl.inner(f_0("+") * u_0("+"), v_1("-")) * dS(1), entity_maps=entity_maps)
 
     # Create a Dirichlet boundary condition
-    scalar_type = a.dtype
+    scalar_type = a.dtype.type
     c_bc = scalar_type(1.0)
     bc_facets = locate_entities_boundary(smsh_0, fdim, bc_marker)
     bc_dofs = fem.locate_dofs_topological(V_0, fdim, bc_facets)
