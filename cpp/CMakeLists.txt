@@ -110,7 +110,9 @@ add_feature_info(
 
 # clang-tidy
 option(ENABLE_CLANG_TIDY "Run clang-tidy while building" OFF)
-add_feature_info(ENABLE_CLANG_TIDY ENABLE_CLANG_TIDY "Run clang-tidy while building")
+add_feature_info(
+  ENABLE_CLANG_TIDY ENABLE_CLANG_TIDY "Run clang-tidy while building"
+)
 
 # ------------------------------------------------------------------------------
 # Enable or disable optional packages
@@ -429,6 +431,7 @@ if(DOLFINX_ENABLE_PETSC)
       STATUS "Found PETSc version ${PETSC_VERSION}, prefix: ${PETSC_PREFIX}"
     )
     set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND PETSc)
+    pkg_get_variable(PETSC_PREFIX PETSC_MODULE_NAME exec_prefix)
   else()
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND PETSc)
   endif()
@@ -496,9 +499,13 @@ if(SCOTCH_FOUND)
 endif()
 
 if(DOLFINX_ENABLE_PARMETIS AND _REQUIRE_PARMETIS)
-  find_package(ParMETIS 4.0.2 REQUIRED)
+  if(PETSC_PREFIX)
+    find_package(ParMETIS 4.0.2 REQUIRED HINTS ${PETSC_PREFIX})
+  else()
+    find_package(ParMETIS 4.0.2 REQUIRED)
+  endif()
 elseif(DOLFINX_ENABLE_PARMETIS)
-  find_package(ParMETIS 4.0.2)
+  find_package(ParMETIS 4.0.2 HINTS ${PETSC_PREFIX})
 endif()
 
 if(DOLFINX_ENABLE_KAHIP AND _REQUIRE_KAHIP)
