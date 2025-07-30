@@ -45,7 +45,7 @@ endif()
 set(CMAKE_MODULE_PATH "${DOLFINX_SOURCE_DIR}/cmake/modules")
 
 # Make sure CMake uses the correct DOLFINConfig.cmake for tests and demos
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_BINARY_DIR}/dolfinx)
+# set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_BINARY_DIR}/dolfinx)
 
 # ------------------------------------------------------------------------------
 # Configurable options for how we want to build
@@ -303,7 +303,9 @@ if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
 endif()
 
-set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
+if (ENV{BOOST_USE_MULTITHREADED})
+  set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
+endif()
 set(Boost_VERBOSE TRUE)
 find_package(Boost 1.70 REQUIRED)
 set_package_properties(
@@ -416,9 +418,13 @@ endif()
 
 if(DOLFINX_ENABLE_PETSC)
   find_package(PkgConfig REQUIRED)
-  set(ENV{PKG_CONFIG_PATH}
-      "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
-  )
+  if(ENV{PETSC_DIR})
+    set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+  endif()
+  if(ENV{PETSC_DIR} AND ENV{PETSC_ARCH})
+    set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+  endif()
+
   if(_REQUIRE_PETSC)
     pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
   else()
@@ -470,21 +476,18 @@ elseif(_REQUIRE_SLEPC AND NOT PETSC_FOUND)
   )
 endif()
 
-if(DOLFINX_ENABLE_SCOTCH AND _REQUIRE_SCOTCH)
-  find_package(
-    SCOTCH REQUIRED CONFIG HINTS $ENV{PETSC_DIR}/$ENV{PETSC_ARCH}
-    $ENV{PETSC_DIR}
-  )
-elseif(DOLFINX_ENABLE_SCOTCH)
-  find_package(
-    SCOTCH CONFIG HINTS $ENV{PETSC_DIR}/$ENV{PETSC_ARCH} $ENV{PETSC_DIR}
-  )
+if(DOLFINX_ENABLE_SCOTCH AND _REQUIRE_SCOTCH AND PETSC_PREFIX)
+  find_package(SCOTCH REQUIRED CONFIG HINTS ${PETSC_PREFIX})
+elseif(DOLFINX_ENABLE_SCOTCH AND _REQUIRE_SCOTCH)
+  find_package(SCOTCH REQUIRED CONFIG HINTS)
+elseif(DOLFINX_ENABLE_SCOTCH AND PETSC_PREFIX)
+  find_package(SCOTCH CONFIG HINTS ${PETSC_PREFIX})
+else()
+  find_package(SCOTCH CONFIG)
 endif()
 
 if(TARGET SCOTCH::scotch AND NOT TARGET SCOTCH::ptscotch)
-  message(
-    STATUS "SCOTCH found, but not PT-SCOTCH (parallel). Not enabling SCOTCH."
-  )
+  message(STATUS "SCOTCH found, but not PT-SCOTCH (parallel). Not enabling SCOTCH.")
   set(SCOTCH_FOUND FALSE)
   if(_REQUIRE_SCOTCH AND NOT SCOTCH_FOUND)
     message(FATAL_ERROR "SCOTCH requested, but not found.")
@@ -498,14 +501,14 @@ if(SCOTCH_FOUND)
   )
 endif()
 
-if(DOLFINX_ENABLE_PARMETIS AND _REQUIRE_PARMETIS)
-  if(PETSC_PREFIX)
-    find_package(ParMETIS 4.0.2 REQUIRED HINTS ${PETSC_PREFIX})
-  else()
-    find_package(ParMETIS 4.0.2 REQUIRED)
-  endif()
-elseif(DOLFINX_ENABLE_PARMETIS)
+if(DOLFINX_ENABLE_PARMETIS AND _REQUIRE_PARMETIS AND PETSC_PREFIX)
+  find_package(ParMETIS 4.0.2 REQUIRED HINTS ${PETSC_PREFIX})
+elseif(DOLFINX_ENABLE_PARMETIS AND _REQUIRE_PARMETIS)
+  find_package(ParMETIS 4.0.2 REQUIRED)
+elseif(DOLFINX_ENABLE_PARMETIS AND PETSC_PREFIX)
   find_package(ParMETIS 4.0.2 HINTS ${PETSC_PREFIX})
+else()
+  find_package(ParMETIS 4.0.2)
 endif()
 
 if(DOLFINX_ENABLE_KAHIP AND _REQUIRE_KAHIP)

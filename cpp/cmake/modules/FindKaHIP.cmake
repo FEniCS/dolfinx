@@ -43,13 +43,10 @@ message(STATUS "Checking for package 'KaHIP'")
 if(MPI_CXX_FOUND)
   find_path(
     KAHIP_INCLUDE_DIRS parhip_interface.h
-    HINTS ${KAHIP_DIR}/include $ENV{KAHIP_DIR}/include
     PATH_SUFFIXES kahip
   )
-  find_library(
-    PARHIP_LIBRARY parhip_interface HINTS ${KAHIP_DIR}/lib $ENV{KAHIP_DIR}/lib
-  )
-  find_library(KAHIP_LIBRARY kahip HINTS ${KAHIP_DIR}/lib $ENV{KAHIP_DIR}/lib)
+  find_library(PARHIP_LIBRARY parhip_interface)
+  find_library(KAHIP_LIBRARY kahip)
 
   set(KAHIP_LIBRARIES ${PARHIP_LIBRARY} ${KAHIP_LIBRARY})
 

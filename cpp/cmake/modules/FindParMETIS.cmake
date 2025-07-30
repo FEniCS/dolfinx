@@ -49,7 +49,6 @@ if(MPI_CXX_FOUND)
 
   find_library(
     METIS_LIBRARY metis
-    NO_DEFAULT_PATH
     DOC "Directory where the METIS library is located."
   )
 
@@ -81,7 +80,7 @@ if(MPI_CXX_FOUND)
                                 ${MPI_CXX_INCLUDE_PATH}
     )
     set(CMAKE_REQUIRED_LIBRARIES ${PARMETIS_LIBRARIES} ${MPI_CXX_LIBRARIES})
-    set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} ${MPI_CXX_COMPILE_FLAGS})
+    set(CMAKE_REQUIRED_FLAGS ${MPI_CXX_COMPILE_FLAGS})
 
     # Check ParMETIS version
     set(PARMETIS_CONFIG_TEST_VERSION_CPP
