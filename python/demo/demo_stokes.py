@@ -79,7 +79,7 @@
 # 1. [Block preconditioner using PETSc Nest data
 #    structures using the low-level interface](#low-level-nested-matrix-solver)
 # 1. [Block preconditioner with the `u` and `p` fields stored block-wise
-#    in a single matrix](#low-level-nested-matrix-solver)
+#    in a single matrix](#monolithic-block-iterative-solver)
 # 1. [Direct solver with the `u` and `p` fields stored block-wise in a
 #    single matrix](#monolithic-block-direct-solver)
 # 1. [Direct solver with the `u` and `p` fields stored in a mixed fashion a
@@ -209,6 +209,7 @@ a_p = [[a[0][0], None], [None, a_p11]]
 # <dolfinx.fem.petsc.LinearProblem>` class which uses PETSc to solve
 # the linear problem. Details on the preconditioner setup are given in
 # {py:func}`nested_iterative_solver_low_level` below.
+
 
 def nested_iterative_solver_high_level():
     """Solve the Stokes problem using nest matrices and an iterative solver
