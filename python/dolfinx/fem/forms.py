@@ -98,7 +98,7 @@ class Form:
         return self._cpp_object.function_spaces
 
     @property
-    def dtype(self) -> np.dtype:
+    def dtype(self) -> np.floating:
         """Scalar type of this form."""
         return np.dtype(self._cpp_object.dtype).type
 
