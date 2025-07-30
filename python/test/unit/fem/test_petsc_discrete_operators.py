@@ -225,7 +225,7 @@ class TestPETScDiscreteOperators:
         domain = ufl.Mesh(
             element("Lagrange", cell_type.name, 2, shape=(3,), dtype=default_real_type)
         )
-        mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+        mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
         gdim = mesh.geometry.dim
         W = functionspace(mesh, ("DG", 1, (gdim,)))
         V = functionspace(mesh, ("NCE", 4))

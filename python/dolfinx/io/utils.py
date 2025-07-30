@@ -26,14 +26,6 @@ from dolfinx.mesh import CellType, Geometry, GhostMode, Mesh, MeshTags
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
 
 
-def _extract_cpp_objects(functions: typing.Union[Mesh, Function, tuple[Function], list[Function]]):
-    """Extract C++ objects"""
-    if isinstance(functions, (list, tuple)):
-        return [getattr(u, "_cpp_object", u) for u in functions]
-    else:
-        return [getattr(functions, "_cpp_object", functions)]
-
-
 # VTXWriter requires ADIOS2
 if _cpp.common.has_adios2:
     from dolfinx.cpp.io import VTXMeshPolicy  # F401
@@ -81,27 +73,29 @@ if _cpp.common.has_adios2:
                 have the same element type.
             """
             # Get geometry type
-            try:
-                dtype = output.geometry.x.dtype  # type: ignore
-            except AttributeError:
-                try:
-                    dtype = output.function_space.mesh.geometry.x.dtype  # type: ignore
-                except AttributeError:
-                    dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
+            if isinstance(output, Mesh):
+                dtype = output.geometry.x.dtype
+            elif isinstance(output, Function):
+                dtype = output.function_space.mesh.geometry.x.dtype
+            else:
+                dtype = output[0].function_space.mesh.geometry.x.dtype
 
             if np.issubdtype(dtype, np.float32):
                 _vtxwriter = _cpp.io.VTXWriter_float32
             elif np.issubdtype(dtype, np.float64):
                 _vtxwriter = _cpp.io.VTXWriter_float64
+            else:
+                raise RuntimeError(f"VTXWriter does not support dtype={dtype}.")
 
-            try:
-                # Input is a mesh
+            if isinstance(output, Mesh):
                 self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
-            except (NotImplementedError, TypeError, AttributeError):
-                # Input is a single function or a list of functions
-                self._cpp_object = _vtxwriter(
-                    comm, filename, _extract_cpp_objects(output), engine, mesh_policy
-                )  # type: ignore[arg-type]
+            else:
+                cpp_objects = (
+                    [output._cpp_object]
+                    if isinstance(output, Function)
+                    else [o._cpp_object for o in output]
+                )
+                self._cpp_object = _vtxwriter(comm, filename, cpp_objects, engine, mesh_policy)
 
         def __enter__(self):
             return self
@@ -137,7 +131,8 @@ class VTKFile(_cpp.io.VTKFile):
     def write_function(self, u: typing.Union[list[Function], Function], t: float = 0.0) -> None:
         """Write a single function or a list of functions to file for a
         given time (default 0.0)"""
-        super().write(_extract_cpp_objects(u), t)
+        cpp_objects = [u._cpp_object] if isinstance(u, Function) else [_u._cpp_object for _u in u]
+        super().write(cpp_objects, t)
 
 
 class XDMFFile(_cpp.io.XDMFFile):
