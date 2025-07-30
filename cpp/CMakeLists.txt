@@ -465,6 +465,7 @@ elseif(_REQUIRE_SLEPC AND NOT PETSC_FOUND)
   message(FATAL_ERROR "SLEPc requested, but no configured because PETSc was not found.")
 endif()
 
+message(STATUS "Checking for package SCOTCH: ${PETSC_PREFIX}")
 if(DOLFINX_ENABLE_SCOTCH AND _REQUIRE_SCOTCH AND PETSC_PREFIX)
   find_package(SCOTCH REQUIRED CONFIG PATHS ${PETSC_PREFIX})
 elseif(DOLFINX_ENABLE_SCOTCH AND _REQUIRE_SCOTCH)
