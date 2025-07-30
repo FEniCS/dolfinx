@@ -759,13 +759,14 @@ def test_interior_interface():
     def bc_marker(x):
         return np.isclose(x[1], 1.0) & (x[0] <= 0.5)
 
+    a = fem.form(ufl.inner(f_0("+") * u_0("+"), v_1("-")) * dS(1), entity_maps=entity_maps)
+
     # Create a Dirichlet boundary condition
-    c_bc = default_scalar_type(1.0)
+    scalar_type = a.dtype
+    c_bc = scalar_type(1.0)
     bc_facets = locate_entities_boundary(smsh_0, fdim, bc_marker)
     bc_dofs = fem.locate_dofs_topological(V_0, fdim, bc_facets)
     bc = fem.dirichletbc(c_bc, bc_dofs, V_0)
-
-    a = fem.form(ufl.inner(f_0("+") * u_0("+"), v_1("-")) * dS(1), entity_maps=entity_maps)
 
     A = fem.assemble_matrix(a, bcs=[bc])
     A.scatter_reverse()
