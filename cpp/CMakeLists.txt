@@ -303,7 +303,7 @@ if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
 endif()
 
-if (ENV{BOOST_USE_MULTITHREADED})
+if (DEFINED ENV{BOOST_USE_MULTITHREADED})
   set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 endif()
 set(Boost_VERBOSE TRUE)
@@ -321,11 +321,7 @@ set_package_properties(
 # If requested (default), ask the Python interpreter for hints on where to find
 # Basix C++ library.
 if(DOLFINX_BASIX_PYTHON)
-  find_package(
-    Python3
-    COMPONENTS Interpreter
-    QUIET
-  )
+  find_package(Python3 COMPONENTS Interpreter QUIET)
 
   if(Python3_Interpreter_FOUND)
     message(STATUS "Checking for Basix hints with ${Python3_EXECUTABLE}")
@@ -365,7 +361,6 @@ set_package_properties(
 set(HDF5_PREFER_PARALLEL TRUE)
 set(HDF5_FIND_DEBUG TRUE)
 find_package(HDF5 REQUIRED COMPONENTS C)
-
 if(NOT HDF5_IS_PARALLEL)
   message(
     FATAL_ERROR
@@ -380,18 +375,15 @@ set_package_properties(
   URL "https://www.hdfgroup.org/HDF5"
 )
 
-# Check for UFC Note: we use the case (ufcx vs UFCx) elsewhere to determine by
-# which method UFCx was found.
+# Check for UFC Note: we use the case (ufcx vs UFCx) elsewhere to
+# determine by which method UFCx was found.
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
   find_package(ufcx 0.10 REQUIRED CONFIG)
 else()
-  # Check in MODULE mode (using FindUFCX.cmake) using Python interpreter.
-  find_package(
-    Python3
-    COMPONENTS Interpreter
-    REQUIRED
-  )
+  # Check in MODULE mode (using FindUFCX.cmake) using Python
+  # interpreter.
+  find_package(Python3 COMPONENTS Interpreter REQUIRED)
   find_package(UFCx 0.10 REQUIRED MODULE)
 endif()
 
@@ -418,11 +410,11 @@ endif()
 
 if(DOLFINX_ENABLE_PETSC)
   find_package(PkgConfig REQUIRED)
-  if(ENV{PETSC_DIR})
+  if(DEFINED ENV{PETSC_DIR})
     set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
-  endif()
-  if(ENV{PETSC_DIR} AND ENV{PETSC_ARCH})
-    set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+    if(DEFINED ENV{PETSC_ARCH})
+      set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+    endif()
   endif()
 
   if(_REQUIRE_PETSC)
@@ -433,9 +425,7 @@ if(DOLFINX_ENABLE_PETSC)
 
   # Setting for FeatureSummary
   if(PETSC_FOUND)
-    message(
-      STATUS "Found PETSc version ${PETSC_VERSION}, prefix: ${PETSC_PREFIX}"
-    )
+    message(STATUS "Found PETSc version ${PETSC_VERSION}, prefix: ${PETSC_PREFIX}")
     set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND PETSc)
     pkg_get_variable(PETSC_PREFIX PETSC_MODULE_NAME exec_prefix)
   else()
@@ -445,15 +435,13 @@ endif()
 
 if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
   find_package(PkgConfig REQUIRED)
-  set(ENV{PKG_CONFIG_PATH}
-      "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
-  )
-  set(ENV{PKG_CONFIG_PATH}
-      "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
-  )
-  set(ENV{PKG_CONFIG_PATH}
-      "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}:$ENV{PETSC_DIR}:$ENV{PKG_CONFIG_PATH}"
-  )
+  if(DEFINED ENV{SLEPC_DIR})
+    set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+    if(DEFINED ENV{SLEPC_ARCH})
+      set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/$ENV{SLEPC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+    endif()
+  endif()
+
   if(_REQUIRE_SLEPC)
     pkg_search_module(SLEPC REQUIRED IMPORTED_TARGET slepc>=3.15)
   else()
@@ -462,18 +450,13 @@ if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
 
   # Setting for FeatureSummary
   if(SLEPC_FOUND)
-    message(
-      STATUS "Found SLEPc version ${SLEPC_VERSION}, prefix: ${SLEPC_PREFIX}"
-    )
+    message(STATUS "Found SLEPc version ${SLEPC_VERSION}, prefix: ${SLEPC_PREFIX}")
     set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND SLEPc)
   else()
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SLEPc)
   endif()
 elseif(_REQUIRE_SLEPC AND NOT PETSC_FOUND)
-  message(
-    FATAL_ERROR
-      "SLEPc requested, but no configured because PETSc was not found."
-  )
+  message(FATAL_ERROR "SLEPc requested, but no configured because PETSc was not found.")
 endif()
 
 if(DOLFINX_ENABLE_SCOTCH AND _REQUIRE_SCOTCH AND PETSC_PREFIX)
@@ -526,10 +509,7 @@ if(NOT SCOTCH_FOUND
    AND NOT PARMETIS_FOUND
    AND NOT KAHIP_FOUND
 )
-  message(
-    FATAL_ERROR
-      "No graph partitioner found. SCOTCH, ParMETIS or KaHIP is required."
-  )
+  message(FATAL_ERROR "No graph partitioner found. SCOTCH, ParMETIS or KaHIP is required.")
 endif()
 
 # ------------------------------------------------------------------------------
@@ -546,7 +526,8 @@ else()
   set(OS_LIBRARY_PATH_NAME "LD_LIBRARY_PATH")
 endif()
 
-# FIXME: not cross-platform compatible Create and install dolfinx.conf file
+# FIXME: not cross-platform compatible Create and install dolfinx.conf
+# file
 configure_file(
   ${DOLFINX_SOURCE_DIR}/cmake/templates/dolfinx.conf.in
   ${CMAKE_BINARY_DIR}/dolfinx.conf @ONLY
