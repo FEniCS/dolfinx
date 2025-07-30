@@ -35,6 +35,7 @@ jobs:
         run: |
           dnf -y install epel-release
           dnf -y install file bzip2 ca-certificates git gzip patch python3 tar unzip xz zstd gcc gcc-c++ gcc-gfortran
+          dnf -y install which
 
       - name: Checkout Spack
         uses: actions/checkout@v4
