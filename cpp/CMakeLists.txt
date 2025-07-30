@@ -410,7 +410,7 @@ endif()
 
 if(DOLFINX_ENABLE_PETSC)
   find_package(PkgConfig REQUIRED)
-  if(NOT DEFINED ENV{PETSC_DIR})
+  if(NOT DEFINED ENV{PKG_CONFIG_PATH})
     set(ENV{PKG_CONFIG_PATH})
   endif()
   if(DEFINED ENV{PETSC_DIR})
