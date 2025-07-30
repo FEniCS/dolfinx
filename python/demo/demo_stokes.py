@@ -54,7 +54,7 @@
 # $$
 # \begin{align}
 #   a((u, p), (v, q)) &:= \int_{\Omega} \nabla u \cdot \nabla v -
-#            \nabla \cdot v \ p + \nabla \cdot u \ q \, {\rm d} x,
+#            \nabla \cdot v \ p + \nabla \cdot u \ q \, {\rm d} x,\\
 #   L((v, q)) &:= \int_{\Omega} f \cdot v \, {\rm d} x + \int_{\partial
 #            \Omega_N} g \cdot v \, {\rm d} s.
 # \end{align}
@@ -75,7 +75,8 @@
 #
 # The Stokes problem using Taylor-Hood elements is solved using:
 # 1. [Block preconditioner using PETSc Nest data structures using
-#    {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>`](#high-level-nested-matrix-solver)
+#    {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>`
+#    ](#high-level-nested-matrix-solver)
 # 1. [Block preconditioner using PETSc Nest data structures using
 #    PETSc directly](#low-level-nested-matrix-solver)
 # 1. [Block preconditioner with the `u` and `p` fields stored block-wise
