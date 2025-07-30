@@ -75,9 +75,9 @@
 #
 # The Stokes problem using Taylor-Hood elements is solved using:
 # 1. [Block preconditioner using PETSc Nest data structures using
-#    the high-level interface](#high-level-nested-matrix-solver)
+#    {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>`](#high-level-nested-matrix-solver)
 # 1. [Block preconditioner using PETSc Nest data structures using
-#    the low-level interface](#low-level-nested-matrix-solver)
+#    PETSc directly](#low-level-nested-matrix-solver)
 # 1. [Block preconditioner with the `u` and `p` fields stored block-wise
 #    in a single matrix](#monolithic-block-iterative-solver)
 # 1. [Direct solver with the `u` and `p` fields stored block-wise in a
