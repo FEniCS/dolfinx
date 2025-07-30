@@ -103,12 +103,12 @@ jobs:
 
       - name: Configure and install C++
         run: |
-          cmake -G Ninja -DDOLFINX_ENABLE_PETSC=false -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DDOLFINX_ENABLE_PETSC=false -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
           cmake --build build
           sudo cmake --install build
       - name: Build C++ unit tests
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
           cmake --build build/test
       - name: Run C++ unit tests (serial)
         run: |
@@ -183,13 +183,13 @@ jobs:
 
       - name: Configure, build and install C++ library
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_ADIOS2=true -DDOLFINX_ENABLE_KAHIP=true -DDOLFINX_ENABLE_PARMETIS=false -DDOLFINX_ENABLE_PETSC=true -DDOLFINX_ENABLE_SCOTCH=true -DDOLFINX_ENABLE_SLEPC=true -B build -S cpp/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_ADIOS2=true -DDOLFINX_ENABLE_KAHIP=true -DDOLFINX_ENABLE_PARMETIS=false -DDOLFINX_ENABLE_PETSC=true -DDOLFINX_ENABLE_SCOTCH=true -DDOLFINX_ENABLE_SLEPC=true -B build -S cpp/
           cmake --build build
           cmake --install build
 
       - name: Build C++ unit tests
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
           cmake --build build/test
       - name: Run C++ unit tests (serial)
         run: |
@@ -201,7 +201,7 @@ jobs:
           mpirun -n 3 ctest -V --output-on-failure -R unittests
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
           cmake --build build/demo
           cd build/demo
           ctest -V -R demo -R serial
@@ -270,7 +270,7 @@ jobs:
 
       - name: Configure C++
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
           cmake --build build
           cmake --install build
 
