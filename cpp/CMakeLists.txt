@@ -442,6 +442,7 @@ if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
       set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/$ENV{SLEPC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
     endif()
   endif()
+  message("*** pkg search: $ENV{PKG_CONFIG_PATH}")
 
   if(_REQUIRE_SLEPC)
     pkg_search_module(SLEPC REQUIRED IMPORTED_TARGET slepc>=3.15)
