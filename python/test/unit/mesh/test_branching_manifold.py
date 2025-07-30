@@ -69,8 +69,8 @@ def test_edge_skeleton_mesh(dim, cell_type):
     skeleton_mesh = create_mesh(
         comm,
         cells,
-        new_x,
         element,
+        new_x,
         create_cell_partitioner(GhostMode.shared_facet, max_facet_to_cell_links),
     )
 
@@ -116,8 +116,8 @@ def test_facet_skeleton_mesh(cell_type):
     skeleton_mesh = create_mesh(
         comm,
         cells,
-        new_x,
         element,
+        new_x,
         create_cell_partitioner(GhostMode.shared_facet, max_facet_to_cell_links),
     )
 
