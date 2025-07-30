@@ -95,6 +95,7 @@ jobs:
           . ./spack-src/share/spack/setup-env.sh
           spack env activate .
           which cmake
+          cmake --version
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S dolfinx-src/cpp/
           cmake --build build
           cmake --install build
