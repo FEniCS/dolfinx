@@ -130,7 +130,10 @@ public:
   /// trial function spaces.
   /// @param[in] integrals Integrals in the form, where
   /// `integrals[IntegralType, i, kernel index]` returns the `i`th integral
-  // (`integral_data`) of type `IntegralType` with kernel index `kernel index`.
+  /// (`integral_data`) of type `IntegralType` with kernel index `kernel index`.
+  /// The `i`-index refers to the position of a kernel when flattened by
+  /// sorted subdomain ids, sorted by subdomain ids. The subdomain ids can contain
+  /// duplicate entries referring to different kernels over the same subdomain.
   /// @param[in] coefficients Coefficients in the form.
   /// @param[in] constants Constants in the form.
   /// @param[in] mesh Mesh of the domain to integrate over (the
@@ -368,6 +371,9 @@ public:
   }
 
   /// @brief Get the kernel function for an integral.
+  ///
+  ///
+  ///
   /// @param[in] type Integral type.
   /// @param[in] id Integral subdomain ID.
   /// @param[in] kernel_idx Index of the kernel (we may have multiple
@@ -419,18 +425,25 @@ public:
   /// @brief Get number of integrals (kernels) for a given integral type and
   /// kernel index.
   ///
+  /// For a form containing two integrals of `integral_a` and `integral_b`
+  /// with subdomain-ids `(1, 4)` and `(3, 4, 5)` respectively, the integrals
+  /// are stored as a flattened list, sorted by sudomain-ids 
+  /// ```cpp
+  /// auto form_integrals = {integral_a, integral_b, integral_a, integral_b, integral_b};
+  /// auto form_integral_ids = {1, 3, 4, 4, 5}.
+  /// ```
   /// @param[in] type Integral type.
   /// @param[in] kernel_idx Index of the kernel (we may have multiple
   /// kernels for a integral type in mixed-topology meshes).
   int num_integrals(IntegralType type, int kernel_idx) const
   {
-    int count = 0;
-    for (auto& [key, integral] : _integrals)
-    {
-      auto [t, id, k_idx] = key;
-      if (t == type and k_idx == kernel_idx)
-        count++;
-    }
+   
+    int count = std::count_if(_integrals.begin(), _integrals.end(),
+                     [type, kernel_idx](auto& x)
+                     {
+                       auto [t, id, k_idx] = x.first;
+                       return t == type and k_idx == kernel_idx;
+                     });
     return count;
   }
 
@@ -452,7 +465,14 @@ public:
   /// is row-major.
   ///
   /// @param[in] type Integral type.
-  /// @param[in] idx Integral identifier.
+  /// @param[in] idx Integral index in flattened list of integral kernels.
+  /// For a form containing two integrals of `integral_a` and `integral_b`
+  /// with subdomain-ids `(1, 4)` and `(3, 4, 5)` respectively, the integrals
+  /// are stored as a flattened list, sorted by sudomain-ids 
+  /// ```cpp
+  /// auto form_integrals = {integral_a, integral_b, integral_a, integral_b, integral_b};
+  /// auto form_integral_ids = {1, 3, 4, 4, 5}.
+  /// ```
   /// @param[in] kernel_idx Index of the kernel with in the domain (we
   /// may have multiple kernels for a given ID in mixed-topology
   /// meshes).
@@ -493,7 +513,7 @@ public:
   /// @param[in] type Integral type.
   /// @param[in] rank Argument index, e.g. `0` for the test function space, `1`
   /// for the trial function space.
-  /// @param[in] idx Integral identifier.
+  /// @param[in] idx Integral identifier. 
   /// @param[in] kernel_idx Kernel index (cell type).
   /// @return Entity indices in the argument function space mesh that is
   /// integrated over.
