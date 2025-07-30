@@ -45,10 +45,10 @@ endif()
 # General configuration
 
 # Set location of our FindFoo.cmake modules
-set(CMAKE_MODULE_PATH "${DOLFINX_SOURCE_DIR}/cmake/modules")
+set(CMAKE_MODULE_PATH ${DOLFINX_SOURCE_DIR}/cmake/modules)
 
 # Make sure CMake uses the correct DOLFINConfig.cmake for tests and demos
-# set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_BINARY_DIR}/dolfinx)
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR}/dolfinx)
 
 # ------------------------------------------------------------------------------
 # Configurable options for how we want to build
@@ -121,15 +121,9 @@ add_feature_info(
 # Enable or disable optional packages
 
 if(DOLFINX_ENABLE_ADIOS2)
-  set(_REQUIRE_ADIOS2
-      TRUE
-      CACHE BOOL "Is ADIOS2 REQUIRED?"
-  )
+  set(_REQUIRE_ADIOS2 TRUE CACHE BOOL "Is ADIOS2 REQUIRED?")
 else()
-  set(_REQUIRE_ADIOS2
-      FALSE
-      CACHE BOOL "Is ADIOS2 REQUIRED?"
-  )
+  set(_REQUIRE_ADIOS2 FALSE CACHE BOOL "Is ADIOS2 REQUIRED?")
 endif()
 option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2." ON)
 set_package_properties(
@@ -141,15 +135,9 @@ set_package_properties(
 )
 
 if(DOLFINX_ENABLE_PETSC)
-  set(_REQUIRE_PETSC
-      TRUE
-      CACHE BOOL "Is PETSc REQUIRED?"
-  )
+  set(_REQUIRE_PETSC TRUE CACHE BOOL "Is PETSc REQUIRED?")
 else()
-  set(_REQUIRE_PETSC
-      FALSE
-      CACHE BOOL "Is PETSc REQUIRED?"
-  )
+  set(_REQUIRE_PETSC FALSE CACHE BOOL "Is PETSc REQUIRED?")
 endif()
 
 option(DOLFINX_ENABLE_PETSC "Compile with support for PETSc." ON)
@@ -162,15 +150,9 @@ set_package_properties(
 )
 
 if(DOLFINX_ENABLE_PARMETIS)
-  set(_REQUIRE_PARMETIS
-      TRUE
-      CACHE BOOL "Is Parmetis REQUIRED?"
-  )
+  set(_REQUIRE_PARMETIS TRUE CACHE BOOL "Is Parmetis REQUIRED?")
 else()
-  set(_REQUIRE_PARMETIS
-      FALSE
-      CACHE BOOL "Is Parmetis REQUIRED?"
-  )
+  set(_REQUIRE_PARMETIS FALSE CACHE BOOL "Is Parmetis REQUIRED?")
 endif()
 option(DOLFINX_ENABLE_PARMETIS "Compile with support for ParMETIS." ON)
 set_package_properties(
@@ -300,11 +282,11 @@ set_package_properties(
   URL "http://www.boost.org"
 )
 
-# Basix C++ files can be installed as a standalone C++ library, or in the Basix
-# Python module tree.
+# Basix C++ files can be installed as a standalone C++ library, or in
+# the Basix Python module tree.
 
-# If requested (default), ask the Python interpreter for hints on where to find
-# Basix C++ library.
+# If requested (default), ask the Python interpreter for hints on where
+# to find Basix C++ library.
 if(DOLFINX_BASIX_PYTHON)
   find_package(Python3 COMPONENTS Interpreter QUIET)
   if(Python3_Interpreter_FOUND)
@@ -361,14 +343,15 @@ set_package_properties(
   URL "https://www.hdfgroup.org/HDF5"
 )
 
-# Check for UFC Note: we use the case (ufcx vs UFCx) elsewhere to
-# determine by which method UFCx was found.
+# Check for UFC
+# Note: we use the case (ufcx vs UFCx) elsewhere to determine by which
+# method UFCx was found.
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
   find_package(ufcx 0.10 REQUIRED CONFIG)
 else()
   # Check in MODULE mode (using FindUFCX.cmake) using Python
-  # interpreter.
+  # interpreter
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
   find_package(UFCx 0.10 REQUIRED MODULE)
 endif()
