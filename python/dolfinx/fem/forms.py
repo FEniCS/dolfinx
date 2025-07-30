@@ -100,7 +100,7 @@ class Form:
     @property
     def dtype(self) -> np.dtype:
         """Scalar type of this form."""
-        return np.dtype(self._cpp_object.dtype)
+        return np.dtype(self._cpp_object.dtype).type
 
     @property
     def mesh(self) -> typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64]:
