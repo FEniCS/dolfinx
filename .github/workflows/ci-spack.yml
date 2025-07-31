@@ -222,8 +222,6 @@ jobs:
         shell: spack-bash {0}
         run: |
           spack env activate .
-          which nvcc
-          export CXX=/usr/local/cuda/bin/nvcc
           pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
           pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
           pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
