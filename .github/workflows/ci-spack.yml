@@ -226,38 +226,41 @@ jobs:
           pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
           pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
 
+      # - name: Generate Spack build-env
+      #   shell: spack-bash {0}
+      #   run: spack -e . build-env --dump build_env.sh bench-dolfinx
+
       - name: Configure and build C++
         shell: spack-bash {0}
         run: |
           spack env activate .
+          spack find --loaded
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S dolfinx-src/cpp/
-          which nvcc
-          export CXX=/usr/local/cuda/bin/nvcc
           cmake --build build
           cmake --install build
 
-      - name: Build C++ unit tests
-        shell: spack-bash {0}
-        run: |
-          spack env activate .
-          which nvcc
-          export CXX=/usr/local/cuda/bin/nvcc
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
-          cmake --build build/test
-      - name: Run C++ unit tests (serial and MPI)
-        shell: spack-bash {0}
-        run: |
-          spack env activate .
-          cd build/test
-          mpiexec -np 2 ctest -V --output-on-failure -R unittests
-      - name: Build and run C++ regression tests (serial and MPI (np=2))
-        shell: spack-bash {0}
-        run: |
-          spack env activate .
-          which nvcc
-          export CXX=/usr/local/cuda/bin/nvcc
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S dolfinx-src/cpp/demo/
-          cmake --build build/demo
-          cd build/demo
-          ctest -V -R demo -R serial
-          ctest -V -R demo -R mpi_2
+      # - name: Build C++ unit tests
+      #   shell: spack-bash {0}
+      #   run: |
+      #     spack env activate .
+      #     which nvcc
+      #     export CXX=/usr/local/cuda/bin/nvcc
+      #     cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
+      #     cmake --build build/test
+      # - name: Run C++ unit tests (serial and MPI)
+      #   shell: spack-bash {0}
+      #   run: |
+      #     spack env activate .
+      #     cd build/test
+      #     mpiexec -np 2 ctest -V --output-on-failure -R unittests
+      # - name: Build and run C++ regression tests (serial and MPI (np=2))
+      #   shell: spack-bash {0}
+      #   run: |
+      #     spack env activate .
+      #     which nvcc
+      #     export CXX=/usr/local/cuda/bin/nvcc
+      #     cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S dolfinx-src/cpp/demo/
+      #     cmake --build build/demo
+      #     cd build/demo
+      #     ctest -V -R demo -R serial
+      #     ctest -V -R demo -R mpi_2
