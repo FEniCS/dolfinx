@@ -154,7 +154,7 @@ jobs:
 
 
   build-nvcc:
-    name: CUDA/nvcc Rocky build and test
+    name: CUDA/NVCC build and test
     runs-on: ubuntu-latest
     container: ubuntu:24.04
 
@@ -168,9 +168,9 @@ jobs:
       - name: Install CUDA
         run: |
           wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb
-          sudo dpkg -i cuda-keyring_1.1-1_all.deb
-          sudo apt-get update
-          sudo apt-get -y install cuda-compiler-12-9
+          dpkg -i cuda-keyring_1.1-1_all.deb
+          apt-get update
+          apt-get -y install cuda-compiler-12-9
 
       - name: Checkout Spack
         uses: actions/checkout@v4
