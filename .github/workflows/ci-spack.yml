@@ -200,7 +200,9 @@ jobs:
 
       - name: Install Spack packages
         shell: spack-bash {0}
-        run: spack -e . install --use-buildcache auto
+        run: |
+          spack -e . install --use-buildcache auto
+          spack compilers
 
       - name: Push packages to Spack cache and update index
         shell: spack-bash {0}
