@@ -156,7 +156,7 @@ jobs:
   build-nvcc:
     name: CUDA/nvcc Rocky build and test
     runs-on: ubuntu-latest
-    container: ubunti:24.04
+    container: ubuntu:24.04
 
     steps:
       - name: Install Spack requirements
