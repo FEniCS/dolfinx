@@ -14,6 +14,7 @@
 #include <limits>
 #include <numeric>
 #include <span>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -22,16 +23,6 @@ namespace dolfinx::geometry
 
 namespace impl_gjk
 {
-
-/// @brief Dot product of vectors a and b, both size 3.
-/// @param a Vector of size 3
-/// @param b Vector of size 3
-/// @returns a.b
-template <typename Vec>
-inline Vec::value_type dot3(const Vec& a, const Vec& b)
-{
-  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-}
 
 /// @brief Find the barycentric coordinates in the simplex `s`, of the point in
 /// `s` which is closest to the origin.
@@ -45,6 +36,20 @@ std::vector<T> nearest_simplex(std::span<const T> s)
   const std::size_t s_rows = s.size() / 3;
 
   SPDLOG_DEBUG("GJK: nearest_simplex({})", s_rows);
+
+  auto dot3 = [](auto a, auto b)
+  {
+    if constexpr (std::is_floating_point_v<typename decltype(a)::value_type>)
+    {
+    return std::inner_product(a.begin(), a.end(), b.end(),
+                              decltype(a)::value_type(0));
+    }
+    else{
+      assert (a.size() == 3);
+      assert (b.size() == 3);
+      return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+    }                       
+  };
 
   switch (s_rows)
   {
@@ -338,8 +343,9 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
       break;
 
     // 1st exit condition (v - w).v = 0
-    const U vnorm2 = impl_gjk::dot3(v, v);
-    const U vw = vnorm2 - impl_gjk::dot3(v, w);
+    const U vnorm2 = std::inner_product(v.begin(), v.end(), v.begin(), U(0));
+    const U vw
+        = vnorm2 - std::inner_product(v.begin(), v.end(), w.begin(), U(0));
     if (vw < (eps * vnorm2) or vw < eps)
       break;
 
@@ -371,7 +377,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
     SPDLOG_DEBUG("new s size={}", 3 * j);
     s.resize(3 * j);
 
-    const U vn = impl_gjk::dot3(v, v);
+    const U vn = std::inner_product(v.begin(), v.end(), v.begin(), 0);
     // 2nd exit condition - intersecting or touching
     if (vn < eps * eps)
       break;
