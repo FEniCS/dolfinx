@@ -47,10 +47,16 @@ jobs:
         with:
           path: dolfinx-src
 
+      - name: Add cache
+        run: |
+          spack mirror add --unsigned --type binary --oci-username-variable GITHUB_USER \
+            --oci-password-variable GITHUB_TOKEN local-buildcache \
+            oci://ghcr.io/ukri-bench/spack-rocky-buildcache
+
       - name: Create Spack environment
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack env create . dolfinx-src/.github/workflows/spack-config/gh-actions-rocky.yml
+          spack env create .
 
       - name: Add dependencies to environment
         run: |
@@ -153,114 +159,3 @@ jobs:
           mpirun -np 2 python -m pytest -m "not adios2" dolfinx-src/python/test/unit/
 
 
-  build-nvcc:
-    name: CUDA/NVCC build and test
-    runs-on: ubuntu-24.04
-    # container: ubuntu:24.04
-
-    steps:
-      - name: Install Spack requirements
-        run: |
-          sudo apt-get -y update
-          sudo apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar unzip wget xz-utils
-          sudo apt-get install -y g++ gfortran  # compilers
-
-      - name: Install CUDA
-        run: |
-          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb
-          sudo dpkg -i cuda-keyring_1.1-1_all.deb
-          sudo apt-get update
-          sudo apt-get -y install cuda-compiler-12-9
-
-      - name: Set up Spack
-        uses: spack/setup-spack@v2
-        with:
-          ref: develop    # Spack version (examples: develop, releases/v0.23)
-          color: true     # Force color output (SPACK_COLOR=always)
-          path: spack-src # Where to clone Spack      # - name: Get Spack
-
-      - name: Checkout DOLFINx
-        uses: actions/checkout@v4
-        with:
-          path: dolfinx-src
-
-      - name: Create Spack environment
-        shell: spack-bash {0}
-        run: |
-          spack env create . dolfinx-src/.github/workflows/spack-config/gh-actions-rocky.yml
-      # - name: Create Spack environment
-      #   shell: spack-bash {0}
-      #   run: spack env create .
-
-      - name: Add dependencies to environment
-        shell: spack-bash {0}
-        run: |
-          spack -e . add mpi petsc+mpi+shared+mumps slepc parmetis pkgconfig python hdf5+mpi boost pugixml spdlog
-          spack -e . add python py-nanobind py-numpy py-scikit-build-core+pyproject py-setuptools py-cffi
-          spack -e . add py-pip cmake catch2 py-pytest py-pytest-xdist ninja
-
-      - name: Install Spack packages
-        shell: spack-bash {0}
-        run: |
-          spack -e . install --use-buildcache auto
-          spack compilers
-
-      - name: Push packages to Spack cache and update index
-        shell: spack-bash {0}
-        env:
-          GITHUB_USER: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          spack -e . buildcache push --base-image ubuntu:24.04 --only dependencies \
-            --with-build-dependencies --update-index local-buildcache
-        if: ${{ !cancelled() }}
-
-      - name: Load FEniCS testing environment variables
-        run: cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
-
-      - name: Install FEniCS Python components
-        shell: spack-bash {0}
-        run: |
-          spack env activate .
-          pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
-          pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
-          pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
-
-      # - name: Generate Spack build-env
-      #   shell: spack-bash {0}
-      #   run: spack -e . build-env --dump build_env.sh bench-dolfinx
-
-      - name: Configure and build C++
-        shell: spack-bash {0}
-        run: |
-          spack env activate .
-          spack find --loaded
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S dolfinx-src/cpp/
-          cmake --build build
-          cmake --install build
-
-      # - name: Build C++ unit tests
-      #   shell: spack-bash {0}
-      #   run: |
-      #     spack env activate .
-      #     which nvcc
-      #     export CXX=/usr/local/cuda/bin/nvcc
-      #     cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
-      #     cmake --build build/test
-      # - name: Run C++ unit tests (serial and MPI)
-      #   shell: spack-bash {0}
-      #   run: |
-      #     spack env activate .
-      #     cd build/test
-      #     mpiexec -np 2 ctest -V --output-on-failure -R unittests
-      # - name: Build and run C++ regression tests (serial and MPI (np=2))
-      #   shell: spack-bash {0}
-      #   run: |
-      #     spack env activate .
-      #     which nvcc
-      #     export CXX=/usr/local/cuda/bin/nvcc
-      #     cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S dolfinx-src/cpp/demo/
-      #     cmake --build build/demo
-      #     cd build/demo
-      #     ctest -V -R demo -R serial
-      #     ctest -V -R demo -R mpi_2
