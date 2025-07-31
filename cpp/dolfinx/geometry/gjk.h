@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "dolfinx/common/math.h"
 #include <algorithm>
 #include <array>
 #include <boost/multiprecision/cpp_bin_float.hpp>
@@ -21,18 +22,6 @@ namespace dolfinx::geometry
 
 namespace impl_gjk
 {
-
-/// @brief Determinant of 3x3 matrix A
-/// @param A 3x3 matrix
-/// @returns det(A)
-template <typename T>
-inline T det3(std::span<const T, 9> A)
-{
-  T w0 = A[3 + 1] * A[2 * 3 + 2] - A[3 + 2] * A[3 * 2 + 1];
-  T w1 = A[3] * A[3 * 2 + 2] - A[3 + 2] * A[3 * 2];
-  T w2 = A[3] * A[3 * 2 + 1] - A[3 + 1] * A[3 * 2];
-  return A[0] * w0 - A[1] * w1 + A[2] * w2;
-}
 
 /// @brief Dot product of vectors a and b, both size 3.
 /// @param a Vector of size 3
@@ -218,13 +207,13 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     std::array<T, 9> M;
     std::span<const T, 9> Mspan(M.begin(), M.size());
     std::copy(s.begin(), s.begin() + 9, M.begin());
-    w[0] = -det3(Mspan);
+    w[0] -= math::det(Mspan.data(), std::array<std::size_t, 2>{3, 3});
     std::copy(s.begin() + 9, s.begin() + 12, M.begin() + 6);
-    w[1] = det3(Mspan);
+    w[1] = math::det(Mspan.data(), std::array<std::size_t, 2>{3, 3});
     std::copy(s.begin() + 6, s.begin() + 9, M.begin() + 3);
-    w[2] = -det3(Mspan);
+    w[2] = -math::det(Mspan.data(), std::array<std::size_t, 2>{3, 3});
     std::copy(s.begin() + 3, s.begin() + 6, M.begin() + 0);
-    w[3] = det3(Mspan);
+    w[3] = math::det(Mspan.data(), std::array<std::size_t, 2>{3, 3});
     T wsum = w[0] + w[1] + w[2] + w[3];
     if (wsum < 0.0)
     {
