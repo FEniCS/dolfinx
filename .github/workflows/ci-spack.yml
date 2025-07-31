@@ -155,8 +155,8 @@ jobs:
 
   build-nvcc:
     name: CUDA/NVCC build and test
-    runs-on: ubuntu-latest
-    container: ubuntu:24.04
+    runs-on: ubuntu-24.04
+    # container: ubuntu:24.04
 
     steps:
       - name: Install Spack requirements
