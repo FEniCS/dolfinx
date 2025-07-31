@@ -151,3 +151,110 @@ jobs:
           spack env activate .
           python -m pytest -n auto -m "not adios2" --durations=50 dolfinx-src/python/test/unit/
           mpirun -np 2 python -m pytest -m "not adios2" dolfinx-src/python/test/unit/
+
+
+  build-nvcc:
+    name: CUDA/nvcc Rocky build and test
+    runs-on: ubuntu-latest
+    container: ubunti:24.04
+
+    steps:
+      - name: Install Spack requirements
+        run: |
+          apt-get -y update
+          apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar unzip wget xz-utils
+          apt-get install -y g++ gfortran  # compilers
+
+      - name: Install CUDA
+        run: |
+          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb
+          sudo dpkg -i cuda-keyring_1.1-1_all.deb
+          sudo apt-get update
+          sudo apt-get -y install cuda-compiler-12-9
+
+      - name: Checkout Spack
+        uses: actions/checkout@v4
+        with:
+          repository: spack/spack
+          path: spack-src
+
+      - name: Checkout DOLFINx
+        uses: actions/checkout@v4
+        with:
+          path: dolfinx-src
+
+      # - name: Create Spack environment
+      #   run: |
+      #     . ./spack-src/share/spack/setup-env.sh
+      #     spack env create . dolfinx-src/.github/workflows/spack-config/gh-actions-rocky.yml
+      - name: Create Spack environment
+        shell: spack-bash {0}
+        run: spack env create .
+
+      - name: Add dependencies to environment
+        shell: spack-bash {0}
+        run: |
+          spack -e . add mpi petsc+mpi+shared+mumps slepc parmetis pkgconfig python hdf5+mpi boost pugixml spdlog
+          spack -e . add python py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py py-scikit-build-core+pyproject py-setuptools py-cffi
+          spack -e . add py-pip cmake catch2 py-pytest py-pytest-xdist ninja
+
+      - name: Install Spack packages
+        shell: spack-bash {0}
+        run: spack -e . install --use-buildcache auto
+
+      - name: Push packages to Spack cache and update index
+        shell: spack-bash {0}
+        env:
+          GITHUB_USER: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: spack -e . buildcache push --base-image rockylinux/rockylinux:10 --update-index local-buildcache
+        if: ${{ !cancelled() }}
+
+      - name: Load FEniCS testing environment variables
+        run: cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+
+      - name: Install FEniCS Python components
+        shell: spack-bash {0}
+        run: |
+          spack env activate .
+          which nvcc
+          export CXX=nvcc
+          pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
+          pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
+
+      - name: Configure and build C++
+        shell: spack-bash {0}
+        run: |
+          spack env activate .
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S dolfinx-src/cpp/
+          which nvcc
+          export CXX=nvcc
+          cmake --build build
+          cmake --install build
+
+      - name: Build C++ unit tests
+        shell: spack-bash {0}
+        run: |
+          spack env activate .
+          which nvcc
+          export CXX=nvcc
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
+          cmake --build build/test
+      - name: Run C++ unit tests (serial and MPI)
+        shell: spack-bash {0}
+        run: |
+          spack env activate .
+          cd build/test
+          mpiexec -np 2 ctest -V --output-on-failure -R unittests
+      - name: Build and run C++ regression tests (serial and MPI (np=2))
+        shell: spack-bash {0}
+        run: |
+          spack env activate .
+          which nvcc
+          export CXX=nvcc
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S dolfinx-src/cpp/demo/
+          cmake --build build/demo
+          cd build/demo
+          ctest -V -R demo -R serial
+          ctest -V -R demo -R mpi_2
