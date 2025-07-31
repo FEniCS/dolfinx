@@ -172,11 +172,12 @@ jobs:
           sudo apt-get update
           sudo apt-get -y install cuda-compiler-12-9
 
-      - name: Checkout Spack
-        uses: actions/checkout@v4
+      - name: Set up Spack
+        uses: spack/setup-spack@v2
         with:
-          repository: spack/spack
-          path: spack-src
+          ref: develop    # Spack version (examples: develop, releases/v0.23)
+          color: true     # Force color output (SPACK_COLOR=always)
+          path: spack-src # Where to clone Spack      # - name: Get Spack
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v4
