@@ -36,9 +36,18 @@ template <typename T>
 T difference_of_products(T a, T b, T c, T d) noexcept
 {
   T w = b * c;
-  T err = std::fma(-b, c, w);
-  T diff = std::fma(a, d, -w);
-  return diff + err;
+  if constexpr (std::is_floating_point_v<T>)
+  {
+    T err = std::fma(-b, c, w);
+    T diff = std::fma(a, d, -w);
+    return diff + err;
+  }
+  else
+  {
+    T err = -b * c + w;
+    T diff = a * d - w;
+    return diff + err;
+  }
 }
 
 /// Compute the determinant of a small matrix (1x1, 2x2, or 3x3)
@@ -69,13 +78,15 @@ auto det(const T* A, std::array<std::size_t, 2> shape)
     T w1 = difference_of_products(A[3], A[3 + 2], A[3 * 2], A[3 * 2 + 2]);
     T w2 = difference_of_products(A[3], A[3 + 1], A[3 * 2], A[3 * 2 + 1]);
     T w3 = difference_of_products(A[0], A[1], w1, w0);
-    T w4 = std::fma(A[2], w2, w3);
-    return w4;
+    if constexpr (std::is_floating_point_v<T>)
+      return std::fma(A[2], w2, w3);
+    else
+      return A[2] * w2 + w3;
   }
   default:
     throw std::runtime_error("math::det is not implemented for "
-                             + std::to_string(A[0]) + "x" + std::to_string(A[1])
-                             + " matrices.");
+                             + std::to_string(shape[0]) + "x"
+                             + std::to_string(shape[1]) + " matrices.");
   }
 }
 
