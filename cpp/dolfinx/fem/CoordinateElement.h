@@ -19,6 +19,7 @@
 #include <limits>
 #include <memory>
 #include <span>
+#include <type_traits>
 
 namespace basix
 {
@@ -132,7 +133,7 @@ public:
   template <typename U, typename V, typename W>
   static void compute_jacobian(const U& dphi, const V& cell_geometry, W&& J)
   {
-    math::dot(cell_geometry, dphi, J, true);
+    math::dot(cell_geometry, dphi, J, std::integral_constant<bool, true>());
   }
 
   /// @brief Compute the inverse of the Jacobian.

@@ -177,14 +177,15 @@ void inv(U A, V B)
 /// @param[in, out] C Filled to be C += A * B
 /// @param[in] transpose Computes C += A^T * B^T if false, otherwise
 /// computed C += A^T * B^T
-template <typename U, typename V, typename P>
-void dot(U A, V B, P C, bool transpose = false)
+template <typename U, typename V, typename P,
+          typename T = std::integral_constant<bool, false>>
+void dot(U A, V B, P C, T /* transpose */ = T())
 {
   static_assert(U::rank() == 2, "Must be rank 2");
   static_assert(V::rank() == 2, "Must be rank 2");
   static_assert(P::rank() == 2, "Must be rank 2");
 
-  if (transpose)
+  if constexpr (T())
   {
     assert(A.extent(0) == B.extent(1));
     for (std::size_t i = 0; i < A.extent(1); i++)
