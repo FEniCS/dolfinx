@@ -175,6 +175,9 @@ jobs:
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
+      - name: Install Python build dependencies
+        run: pip install -r python/build-requirements.txt
+
       - name: Install FEniCS Python components
         run: |
           pip install --no-build-isolation git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
@@ -206,9 +209,6 @@ jobs:
           cd build/demo
           ctest -V -R demo -R serial
           ctest --output-on-failure -V -R demo -R mpi_2
-
-      - name: Install Python build dependencies
-        run: pip install -r python/build-requirements.txt
 
       - name: Build Python interface
         run: |
