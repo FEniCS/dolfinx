@@ -1,10 +1,20 @@
-# Copyright (C) 2018 Michal Habera
+# Copyright (C) 2018-2025 Michal Habera and Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfinx import cpp as _cpp
+import typing
+from collections.abc import Sequence
+
+from mpi4py.MPI import Comm
+
+from basix.finite_element import FiniteElement
+from dolfinx.cpp.fem import DofMap as _DofMap
+from dolfinx.cpp.fem import create_dofmaps as _create_dofmaps
+
+if typing.TYPE_CHECKING:
+    import dolfinx.mesh
 
 
 class DofMap:
@@ -14,9 +24,9 @@ class DofMap:
     dof map based on a FiniteElement on a specific mesh.
     """
 
-    _cpp_object: _cpp.fem.DofMap
+    _cpp_object: _DofMap
 
-    def __init__(self, dofmap: _cpp.fem.DofMap):
+    def __init__(self, dofmap: _DofMap):
         self._cpp_object = dofmap
 
     def cell_dofs(self, cell_index: int):
@@ -56,3 +66,21 @@ class DofMap:
     def list(self):
         """Adjacency list with dof indices for each cell."""
         return self._cpp_object.map()
+
+
+def create_dofmaps(
+    comm: Comm, topology: "dolfinx.mesh.Topology", elements: Sequence[FiniteElement]
+) -> list[DofMap]:
+    """Create a set of dofmaps on a given topology
+
+    Args:
+        comm: MPI communicator
+        topology: Mesh topology
+        elements: Sequence of coordinate elements
+
+    Returns:
+        List of new DOF maps
+    """
+    elements_cpp = [e._cpp_object for e in elements]
+    cpp_dofmaps = _create_dofmaps(comm, topology._cpp_object, elements_cpp)
+    return [DofMap(cpp_object) for cpp_object in cpp_dofmaps]
