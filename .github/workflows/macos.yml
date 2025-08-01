@@ -79,13 +79,13 @@ jobs:
 
       - name: Build and install DOLFINx C++ library
         run: |
-          cmake -G Ninja -B build -S cpp/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -B build -S cpp/
           cmake --build build
           sudo cmake --install build
 
       - name: Build C++ unit tests
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
           cmake --build build/test
 
       - name: Run C++ unit tests (serial)

@@ -1,10 +1,10 @@
 # DOLFINx
 
 [![DOLFINx CI](https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml)
-[![Actions Docker images](https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml)
 [![Actions Spack build](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml)
 [![Actions Conda install](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml)
 [![Actions macOS/Homebrew install](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml)
+[![Actions Docker images](https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml)
 [![Actions Windows/vcpkg install](https://github.com/FEniCS/dolfinx/actions/workflows/windows.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/windows.yml)
 
 DOLFINx is the computational environment of
@@ -26,7 +26,7 @@ Documentation can be viewed at <https://docs.fenicsproject.org>.
 
 ### From source
 
-For detailed instructions and the list of dependencies, see
+For detailed instructions and a list of dependencies, see
 <https://docs.fenicsproject.org/dolfinx/main/python/installation>.
 
 #### C++ core
@@ -52,9 +52,9 @@ pip install --check-build-dependencies --no-build-isolation .
 
 ### Spack
 
-Spack is recommended for building DOLFINx on HPC systems. To build the
-most recent release using [Spack](https://spack.readthedocs.io/)
-(assuming a bash-compatible shell):
+To build the most recent release using
+[Spack](https://spack.readthedocs.io/) (assuming a bash-compatible
+shell):
 
 ```shell
 git clone https://github.com/spack/spack.git
@@ -65,10 +65,9 @@ spack add fenics-dolfinx+petsc+adios2 py-fenics-dolfinx cflags="-O3" fflags="-O3
 spack install
 ```
 
-See the Spack [documentation](https://spack.readthedocs.io/) for
-comprehensive instructions.
+Spack is the recommended approach for HPC systems.
 
-### Binary
+### Binary packages
 
 **Recommendations**
 
@@ -94,10 +93,9 @@ conda install -c conda-forge fenics-dolfinx mpich pyvista # Linux and macOS
 conda install -c conda-forge fenics-dolfinx pyvista pyamg # Windows
 ```
 
-*Windows only*: Windows conda packages are currently in beta testing. PETSc and
-petsc4py are not available on Windows; as an alternative we recommend using
-`pyamg` following `python/demo/demo_pyamg.py`. Because FEniCS uses just-in-time
-compilation it necessary to install [Microsoft Visual
+*Windows only*: Windows conda packages are currently in beta testing.
+PETSc and petsc4py are not available on Windows. Because FEniCS uses
+just-in-time compilation it necessary to install [Microsoft Visual
 Studio](https://visualstudio.microsoft.com/downloads/).
 
 conda is distributed with [Anaconda](https://www.anaconda.com/) and
