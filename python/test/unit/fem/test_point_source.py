@@ -44,7 +44,7 @@ def test_point_source_rank_0(cell_type, ghost_mode, dtype):
             comm, 4, 4, 4, cell_type=cell_type, dtype=rdtype, ghost_mode=ghost_mode
         )
 
-    def check(form, coordinate_range, weighted=False):
+    def check_vertex_integral_against_sum(form, coordinate_range, weighted=False):
         a, b = coordinate_range
         weights = np.arange(a, b, dtype=rdtype) if weighted else np.ones(b - a, dtype=rdtype)
 
@@ -60,7 +60,7 @@ def test_point_source_rank_0(cell_type, ghost_mode, dtype):
     x = ufl.SpatialCoordinate(msh)
 
     # Full domain
-    check(fem.form(x[0] * ufl.dP, dtype=dtype), (0, num_vertices))
+    check_vertex_integral_against_sum(fem.form(x[0] * ufl.dP, dtype=dtype), (0, num_vertices))
 
     # Split domain into first half of vertices (1) and second half of vertices (2)
     vertices = np.arange(0, msh.topology.index_map(0).size_local, dtype=np.int32)
@@ -69,18 +69,30 @@ def test_point_source_rank_0(cell_type, ghost_mode, dtype):
     meshtags = mesh.meshtags(msh, 0, vertices, tags)
     dP = ufl.Measure("dP", domain=msh, subdomain_data=meshtags)
 
-    check(fem.form(x[0] * dP(1), dtype=dtype), (0, num_vertices // 2))
-    check(fem.form(x[0] * dP(2), dtype=dtype), (num_vertices // 2, num_vertices))
-    check(fem.form(x[0] * (dP(1) + dP(2)), dtype=dtype), (0, num_vertices))
+    check_vertex_integral_against_sum(fem.form(x[0] * dP(1), dtype=dtype), (0, num_vertices // 2))
+    check_vertex_integral_against_sum(
+        fem.form(x[0] * dP(2), dtype=dtype), (num_vertices // 2, num_vertices)
+    )
+    check_vertex_integral_against_sum(
+        fem.form(x[0] * (dP(1) + dP(2)), dtype=dtype), (0, num_vertices)
+    )
 
     V = fem.functionspace(msh, ("P", 1))
     u = fem.Function(V, dtype=dtype)
     u.x.array[:] = np.arange(0, u.x.array.size, dtype=dtype)
 
-    check(fem.form(u * x[0] * ufl.dP, dtype=dtype), (0, num_vertices), weighted=True)
-    check(fem.form(u * x[0] * dP(1), dtype=dtype), (0, num_vertices // 2), weighted=True)
-    check(fem.form(u * x[0] * dP(2), dtype=dtype), (num_vertices // 2, num_vertices), weighted=True)
-    check(fem.form(u * x[0] * (dP(1) + dP(2)), dtype=dtype), (0, num_vertices), weighted=True)
+    check_vertex_integral_against_sum(
+        fem.form(u * x[0] * ufl.dP, dtype=dtype), (0, num_vertices), weighted=True
+    )
+    check_vertex_integral_against_sum(
+        fem.form(u * x[0] * dP(1), dtype=dtype), (0, num_vertices // 2), weighted=True
+    )
+    check_vertex_integral_against_sum(
+        fem.form(u * x[0] * dP(2), dtype=dtype), (num_vertices // 2, num_vertices), weighted=True
+    )
+    check_vertex_integral_against_sum(
+        fem.form(u * x[0] * (dP(1) + dP(2)), dtype=dtype), (0, num_vertices), weighted=True
+    )
 
 
 @pytest.mark.parametrize(
@@ -116,7 +128,7 @@ def test_point_source_rank_1(cell_type, ghost_mode, dtype):
 
     num_vertices = msh.topology.index_map(0).size_local
 
-    def check(form, coordinate_range, weighted=False):
+    def check_vertex_integral_against_sum(form, coordinate_range, weighted=False):
         a, b = coordinate_range
         weights = np.arange(a, b, dtype=rdtype) if weighted else np.ones(b - a, dtype=rdtype)
         expected_value_l = np.zeros(num_vertices, dtype=rdtype)
@@ -133,7 +145,7 @@ def test_point_source_rank_1(cell_type, ghost_mode, dtype):
     v = ufl.conj(ufl.TestFunction(V))
 
     # Full domain
-    check(fem.form(x[0] * v * ufl.dP, dtype=dtype), (0, num_vertices))
+    check_vertex_integral_against_sum(fem.form(x[0] * v * ufl.dP, dtype=dtype), (0, num_vertices))
 
     # Split domain into first half of vertices (1) and second half of vertices (2)
     vertices = np.arange(0, msh.topology.index_map(0).size_local, dtype=np.int32)
@@ -142,19 +154,31 @@ def test_point_source_rank_1(cell_type, ghost_mode, dtype):
     meshtags = mesh.meshtags(msh, 0, vertices, tags)
     dP = ufl.Measure("dP", domain=msh, subdomain_data=meshtags)
 
-    check(fem.form(x[0] * v * dP(1), dtype=dtype), (0, num_vertices // 2))
-    check(fem.form(x[0] * v * dP(2), dtype=dtype), (num_vertices // 2, num_vertices))
-    check(fem.form(x[0] * v * (dP(1) + dP(2)), dtype=dtype), (0, num_vertices))
+    check_vertex_integral_against_sum(
+        fem.form(x[0] * v * dP(1), dtype=dtype), (0, num_vertices // 2)
+    )
+    check_vertex_integral_against_sum(
+        fem.form(x[0] * v * dP(2), dtype=dtype), (num_vertices // 2, num_vertices)
+    )
+    check_vertex_integral_against_sum(
+        fem.form(x[0] * v * (dP(1) + dP(2)), dtype=dtype), (0, num_vertices)
+    )
 
     V = fem.functionspace(msh, ("P", 1))
     u = fem.Function(V, dtype=dtype)
     u.x.array[:] = np.arange(u.x.array.size)
 
-    check(fem.form(u * x[0] * v * ufl.dP, dtype=dtype), (0, num_vertices), weighted=True)
-    check(fem.form(u * x[0] * v * dP(1), dtype=dtype), (0, num_vertices // 2), weighted=True)
-    check(
+    check_vertex_integral_against_sum(
+        fem.form(u * x[0] * v * ufl.dP, dtype=dtype), (0, num_vertices), weighted=True
+    )
+    check_vertex_integral_against_sum(
+        fem.form(u * x[0] * v * dP(1), dtype=dtype), (0, num_vertices // 2), weighted=True
+    )
+    check_vertex_integral_against_sum(
         fem.form(u * x[0] * v * dP(2), dtype=dtype),
         (num_vertices // 2, num_vertices),
         weighted=True,
     )
-    check(fem.form(u * x[0] * v * (dP(1) + dP(2)), dtype=dtype), (0, num_vertices), weighted=True)
+    check_vertex_integral_against_sum(
+        fem.form(u * x[0] * v * (dP(1) + dP(2)), dtype=dtype), (0, num_vertices), weighted=True
+    )
