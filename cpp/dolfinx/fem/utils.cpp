@@ -243,9 +243,6 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     }
     break;
   }
-    // C++ 23
-    // default:
-    //   std::unreachable();
   }
 
   return entity_data;
