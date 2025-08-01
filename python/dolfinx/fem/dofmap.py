@@ -81,6 +81,6 @@ def create_dofmaps(
     Returns:
         List of new DOF maps
     """
-    elements_cpp = [e._e for e in elements]
+    elements_cpp = [e._cpp_object for e in elements]
     cpp_dofmaps = _create_dofmaps(comm, topology._cpp_object, elements_cpp)
     return [DofMap(cpp_object) for cpp_object in cpp_dofmaps]
