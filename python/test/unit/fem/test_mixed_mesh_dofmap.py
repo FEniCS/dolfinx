@@ -5,16 +5,15 @@ import numpy as np
 import basix
 from dolfinx.cpp.mesh import Mesh_float64, create_geometry, create_topology
 from dolfinx.fem import coordinate_element, create_dofmaps
+from dolfinx.fem.element import finiteelement
 from dolfinx.log import LogLevel, set_log_level
 from dolfinx.mesh import CellType, Topology
 
 
 def create_element_dofmap(mesh, cell_types, degree):
-    elements = []
-    for cell_type in cell_types:
-        ufl_e = basix.ufl.element("P", cell_type, degree, dtype=np.float64)
-        elements += [ufl_e.basix_element]
-
+    elements = [
+        finiteelement(ct, basix.ufl.element("P", ct, degree), np.float64) for ct in cell_types
+    ]
     dofmaps = create_dofmaps(mesh.comm, Topology(mesh.topology), elements)
     return (elements, dofmaps)
 
@@ -65,8 +64,8 @@ def test_dofmap_mixed_topology():
     )
 
     assert len(elements) == 2
-    assert elements[0].cell_type.name == "triangle"
-    assert elements[1].cell_type.name == "quadrilateral"
+    assert elements[0].basix_element.cell_type.name == "triangle"
+    assert elements[1].basix_element.cell_type.name == "quadrilateral"
 
     assert len(dofmaps) == 2
     q0, q1 = dofmaps
