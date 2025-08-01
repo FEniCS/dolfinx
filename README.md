@@ -5,7 +5,6 @@
 [![Actions Conda install](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml)
 [![Actions macOS/Homebrew install](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml)
 [![Actions Docker images](https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml)
-[![Actions Windows/vcpkg install](https://github.com/FEniCS/dolfinx/actions/workflows/windows.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/windows.yml)
 
 DOLFINx is the computational environment of
 [FEniCSx](https://fenicsproject.org) and implements the FEniCS Problem
