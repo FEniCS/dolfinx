@@ -219,6 +219,9 @@ jobs:
           ctest -V -R demo -R serial
           ctest --output-on-failure -V -R demo -R mpi_2
 
+      - name: Numpy version
+        run: python -c "import numpy; print(numpy.__version__)"
+
       - name: Build Python interface
         run: |
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
@@ -235,6 +238,9 @@ jobs:
         # mypy test
         # mypy demo
 
+      - name: Numpy version
+        run: python -c "import numpy; print(numpy.__version__)"
+
       - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx
@@ -245,9 +251,13 @@ jobs:
           apt-get install libegl1 libxrender1
           pip install pyvista
 
+      - name: Numpy version
+        run: python -c "import numpy; print(numpy.__version__)"
+
       - name: Run demos (Python, serial)
         run: |
           pip install pytest-xdist
+          python -c "import numpy; print(numpy.__version__)"
           python -m pytest -n auto -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=3))
         run: python -m pytest -m mpi --num-proc=3 python/demo/test.py
