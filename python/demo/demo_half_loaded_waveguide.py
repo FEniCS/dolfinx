@@ -187,7 +187,7 @@ eps_d = 2.45
 
 D = fem.functionspace(msh, ("DQ", 0))
 eps = fem.Function(D)
-eps.interpolate(lambda x: np.less_equal(x[1], d) * eps_d + np.greater_equal(x[1], d) * eps_v)
+eps.interpolate(lambda x: np.less(x[1], d) * eps_d + np.greater_equal(x[1], d) * eps_v)
 # -
 
 # In order to find the weak form of our problem, the starting point are
