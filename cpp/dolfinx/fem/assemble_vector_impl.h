@@ -681,7 +681,6 @@ void assemble_cells(
   // Create data structures used in assembly
   std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
   std::vector<T> be(bs * dmap.extent(1));
-  std::span<T> _be(be);
 
   // Iterate over active cells
   for (std::size_t index = 0; index < cells.size(); ++index)
@@ -699,7 +698,7 @@ void assemble_cells(
     std::ranges::fill(be, 0);
     kernel(be.data(), &coeffs(index, 0), constants.data(), cdofs.data(),
            nullptr, nullptr, nullptr);
-    P0(_be, cell_info0, c0, 1);
+    P0(be, cell_info0, c0, 1);
 
     // Scatter cell vector to 'global' vector array
     auto dofs = md::submdspan(dmap, c0, md::full_extent);
@@ -770,7 +769,7 @@ void assemble_exterior_facets(
   const int num_dofs = dmap.extent(1);
   std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
   std::vector<T> be(bs * num_dofs);
-  std::span<T> _be(be);
+
   assert(facets0.size() == facets.size());
   for (std::size_t f = 0; f < facets.extent(0); ++f)
   {
@@ -793,7 +792,7 @@ void assemble_exterior_facets(
     fn(be.data(), &coeffs(f, 0), constants.data(), cdofs.data(), &local_facet,
        &perm, nullptr);
 
-    P0(_be, cell_info0, cell0, 1);
+    P0(be, cell_info0, cell0, 1);
 
     // Add element vector to global vector
     auto dofs = md::submdspan(dmap, cell0, md::full_extent);
@@ -993,7 +992,6 @@ void assemble_vertices(
   // Create data structures used in assembly
   std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
   std::vector<T> be(bs * dmap.extent(1));
-  std::span<T> _be(be);
 
   // Iterate over active cells
   for (std::size_t index = 0; index < vertices.extent(0); ++index)
@@ -1012,7 +1010,7 @@ void assemble_vertices(
     std::ranges::fill(be, 0);
     kernel(be.data(), &coeffs(index, 0), constants.data(), cdofs.data(),
            &local_index, nullptr, nullptr);
-    P0(_be, cell_info0, c0, 1);
+    P0(be, cell_info0, c0, 1);
 
     // Scatter cell vector to 'global' vector array
     auto dofs = md::submdspan(dmap, c0, md::full_extent);
