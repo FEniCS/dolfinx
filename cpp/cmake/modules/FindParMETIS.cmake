@@ -37,43 +37,25 @@
 #=============================================================================
 
 if(MPI_CXX_FOUND)
-  find_path(
-    PARMETIS_INCLUDE_DIRS parmetis.h
-    HINTS ${PARMETIS_ROOT}/include $ENV{PARMETIS_ROOT}/include
-          ${PETSC_INCLUDE_DIRS}
-    DOC "Directory where the ParMETIS header files are located"
+  find_library(
+    PARMETIS_LIBRARY parmetis
+    DOC "Directory where the ParMETIS library is located."
   )
 
-  find_library(
-    PARMETIS_LIBRARY parmetis
-    HINTS ${PARMETIS_ROOT}/lib $ENV{PARMETIS_ROOT}/lib ${PETSC_LIBRARY_DIRS}
-    NO_DEFAULT_PATH
-    DOC "Directory where the ParMETIS library is located"
-  )
-  find_library(
-    PARMETIS_LIBRARY parmetis
-    DOC "Directory where the ParMETIS library is located"
+  find_path(
+    PARMETIS_INCLUDE_DIRS parmetis.h
+    DOC "Directory where the ParMETIS header files are located."
   )
 
   find_library(
     METIS_LIBRARY metis
-    HINTS ${PARMETIS_ROOT}/lib $ENV{PARMETIS_ROOT}/lib ${PETSC_LIBRARY_DIRS}
-    NO_DEFAULT_PATH
-    DOC "Directory where the METIS library is located"
-  )
-  find_library(
-    METIS_LIBRARY metis DOC "Directory where the METIS library is located"
+    DOC "Directory where the METIS library is located."
   )
 
   # Newer METIS and ParMETIS build against separate GKLib
   find_library(
     GKLIB_LIBRARY gklib
-    HINTS ${PARMETIS_ROOT}/lib $ENV{PARMETIS_ROOT}/lib ${PETSC_LIBRARY_DIRS}
-    NO_DEFAULT_PATH
-    DOC "Directory where the gklib library is located"
-  )
-  find_library(
-    GKLIB_LIBRARY gklib DOC "Directory where the GKLib library is located"
+    DOC "Directory where the gklib library is located."
   )
 
   set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARY})
@@ -98,7 +80,7 @@ if(MPI_CXX_FOUND)
                                 ${MPI_CXX_INCLUDE_PATH}
     )
     set(CMAKE_REQUIRED_LIBRARIES ${PARMETIS_LIBRARIES} ${MPI_CXX_LIBRARIES})
-    set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} ${MPI_CXX_COMPILE_FLAGS})
+    set(CMAKE_REQUIRED_FLAGS ${MPI_CXX_COMPILE_FLAGS})
 
     # Check ParMETIS version
     set(PARMETIS_CONFIG_TEST_VERSION_CPP
