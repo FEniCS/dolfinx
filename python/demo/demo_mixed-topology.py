@@ -26,12 +26,12 @@ import dolfinx.cpp as _cpp
 import ufl
 from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner, create_mesh
 from dolfinx.fem import (
+    FiniteElement,
     FunctionSpace,
     assemble_matrix,
     assemble_vector,
     coordinate_element,
     create_dofmaps,
-    finiteelement,
     mixed_topology_form,
 )
 from dolfinx.io.utils import cell_perm_vtk
@@ -104,17 +104,20 @@ ufl_elements = [
     basix.ufl.element("Lagrange", "hexahedron", 1),
     basix.ufl.element("Lagrange", "prism", 1),
 ]
-elements = [
-    finiteelement(CellType.hexahedron, ufl_elements[0], np.float64),
-    finiteelement(CellType.prism, ufl_elements[1], np.float64),
+basix_elements = [
+    basix.create_element(basix.ElementFamily.P, basix.CellType.hexahedron, 1),
+    basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
+]
+dolfinx_elments = [
+    FiniteElement(_cpp.fem.FiniteElement_float64(e._e, None, True)) for e in basix_elements
 ]
 
 # NOTE: Both dofmaps have the same IndexMap, but different cell_dofs
-dofmaps = create_dofmaps(mesh.comm, Topology(mesh.topology), elements)
+dofmaps = create_dofmaps(mesh.comm, Topology(mesh.topology), dolfinx_elments)
 
 # Create C++ function space
 V_cpp = _cpp.fem.FunctionSpace_float64(
-    mesh, [e._cpp_object for e in elements], [dofmap._cpp_object for dofmap in dofmaps]
+    mesh, [e._cpp_object for e in dolfinx_elments], [dofmap._cpp_object for dofmap in dofmaps]
 )
 
 # Create forms for each cell type.
