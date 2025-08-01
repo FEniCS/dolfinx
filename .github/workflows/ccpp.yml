@@ -93,13 +93,13 @@ jobs:
 
       - name: Install Python build dependencies
         run: |
-          pip install --upgrade -r python/build-requirements.txt
+          pip -v install --upgrade -r python/build-requirements.txt
 
       - name: Install FEniCS Python components
         run: |
-          pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
-          pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
-          pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
+          pip install --no-build-isolation git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
+          pip install --no-build-isolation git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
+          pip install --no-build-isolation git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Configure and install C++
         run: |
