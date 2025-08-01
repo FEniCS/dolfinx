@@ -31,10 +31,9 @@ from dolfinx.fem import (
     assemble_vector,
     coordinate_element,
     create_dofmaps,
-    mixed_topology_form,
     finiteelement,
+    mixed_topology_form,
 )
-from dolfinx.mesh import CellType
 from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.mesh import CellType, Mesh, Topology
 
