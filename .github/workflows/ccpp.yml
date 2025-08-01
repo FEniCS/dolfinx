@@ -215,14 +215,15 @@ jobs:
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
           python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_adios2; assert dolfinx.has_kahip; assert not dolfinx.has_parmetis; assert dolfinx.has_petsc; assert dolfinx.has_petsc4py; assert dolfinx.has_ptscotch; assert dolfinx.has_slepc; assert dolfinx.has_complex_ufcx_kernels"
 
-      - name: Run mypy
+      - name: Run mypy  # Use a virtual environment upgrades to NumPy that are incompatible with numba
         working-directory: python
         run: |
-          pip install mypy types-cffi
+          python -m venv mypy-env
+          . ./mypy-env/bin/activate
+          pip install mypy types-cffi scipy-stubs
           mypy -p dolfinx
         # mypy test
         # mypy demo
-        # pip install mypy types-cffi scipy-stubs
 
       - name: Numpy version
         run: python -c "import numpy; print(numpy.__version__)"
