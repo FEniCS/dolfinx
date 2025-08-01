@@ -32,7 +32,9 @@ from dolfinx.fem import (
     coordinate_element,
     create_dofmaps,
     mixed_topology_form,
+    finiteelement,
 )
+from dolfinx.mesh import CellType
 from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.mesh import CellType, Mesh, Topology
 
@@ -99,18 +101,21 @@ mesh = create_mesh(
 )
 
 # Create elements and dofmaps for each cell type
+ufl_elements = [
+    basix.ufl.element("Lagrange", "hexahedron", 1),
+    basix.ufl.element("Lagrange", "prism", 1),
+]
 elements = [
-    basix.create_element(basix.ElementFamily.P, basix.CellType.hexahedron, 1),
-    basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
+    finiteelement(CellType.hexahedron, ufl_elements[0], np.float64),
+    finiteelement(CellType.prism, ufl_elements[1], np.float64),
 ]
 
 # NOTE: Both dofmaps have the same IndexMap, but different cell_dofs
 dofmaps = create_dofmaps(mesh.comm, Topology(mesh.topology), elements)
 
 # Create C++ function space
-elements_cpp = [_cpp.fem.FiniteElement_float64(e._e, None, True) for e in elements]
 V_cpp = _cpp.fem.FunctionSpace_float64(
-    mesh, elements_cpp, [dofmap._cpp_object for dofmap in dofmaps]
+    mesh, [e._cpp_object for e in elements], [dofmap._cpp_object for dofmap in dofmaps]
 )
 
 # Create forms for each cell type.
@@ -119,10 +124,8 @@ V_cpp = _cpp.fem.FunctionSpace_float64(
 a = []
 L = []
 for i, cell_name in enumerate(["hexahedron", "prism"]):
-    print(f"Creating form for {cell_name}")
-    element = basix.ufl.wrap_element(elements[i])
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_name, 1, shape=(3,)))
-    V = FunctionSpace(Mesh(mesh, domain), element, V_cpp)
+    V = FunctionSpace(Mesh(mesh, domain), ufl_elements[i], V_cpp)
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     k = 12.0
     x = ufl.SpatialCoordinate(domain)
