@@ -154,6 +154,12 @@ def get_integration_domains(
                 tdim = subdomain.topology.dim
                 subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)
                 subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)
+
+            if integral_type is IntegralType.vertex:
+                tdim = subdomain.topology.dim
+                subdomain._cpp_object.topology.create_connectivity(0, tdim)
+                subdomain._cpp_object.topology.create_connectivity(tdim, 0)
+
             # Compute integration domains only for each subdomain id in
             # the integrals. If a process has no integral entities,
             # insert an empty array.
