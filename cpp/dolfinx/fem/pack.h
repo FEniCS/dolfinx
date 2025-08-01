@@ -351,7 +351,7 @@ void pack_coefficients(const Form<T, U>& form,
               = impl::get_cell_orientation_info(*coefficients[coeff]);
           impl::pack_coefficient_entity(
               std::span(c), cstride, *coefficients[coeff], cell_info,
-              std::submdspan(vertices, md::full_extent, 0), offsets[coeff]);
+              md::submdspan(vertices, md::full_extent, 0), offsets[coeff]);
         }
         break;
       }
