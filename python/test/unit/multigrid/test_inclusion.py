@@ -36,6 +36,7 @@ def check_inclusion_map(
 
 
 @pytest.mark.parametrize("gdim", [1, 2, 3])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("ghost_mode_coarse", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize(
     "partitioner_fine",
@@ -45,14 +46,14 @@ def check_inclusion_map(
         IdentityPartitionerPlaceholder(),
     ],
 )
-def test_inclusion_map(gdim, ghost_mode_coarse, partitioner_fine):
+def test_inclusion_map(gdim, dtype, ghost_mode_coarse, partitioner_fine):
     comm = MPI.COMM_WORLD
     if gdim == 1:
-        mesh = create_unit_interval(comm, 10, ghost_mode=ghost_mode_coarse)
+        mesh = create_unit_interval(comm, 10, ghost_mode=ghost_mode_coarse, dtype=dtype)
     elif gdim == 2:
-        mesh = create_unit_square(comm, 5, 5, ghost_mode=ghost_mode_coarse)
+        mesh = create_unit_square(comm, 5, 5, ghost_mode=ghost_mode_coarse, dtype=dtype)
     else:
-        mesh = create_unit_cube(comm, 5, 5, 5, ghost_mode=ghost_mode_coarse)
+        mesh = create_unit_cube(comm, 5, 5, 5, ghost_mode=ghost_mode_coarse, dtype=dtype)
 
     mesh.topology.create_entities(1)
     mesh_fine, _, _ = refine(mesh, partitioner=partitioner_fine)
