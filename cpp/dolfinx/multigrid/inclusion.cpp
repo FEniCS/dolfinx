@@ -65,6 +65,7 @@ inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
   return map;
 }
 
+/// @cond
 template std::vector<std::int32_t>
 inclusion_mapping<float>(const dolfinx::mesh::Mesh<float>& mesh_from,
                          const dolfinx::mesh::Mesh<float>& mesh_to);
@@ -72,5 +73,6 @@ inclusion_mapping<float>(const dolfinx::mesh::Mesh<float>& mesh_from,
 template std::vector<std::int32_t>
 inclusion_mapping<double>(const dolfinx::mesh::Mesh<double>& mesh_from,
                           const dolfinx::mesh::Mesh<double>& mesh_to);
+/// @endcond
 
 } // namespace dolfinx::multigrid

@@ -31,7 +31,6 @@ namespace dolfinx::multigrid
 /// `IdentityPartitionerPlaceholder()` option, the returned `map` is guaranteed
 /// to match all vertices for all locally owned vertices (not for the ghost
 /// vertices).
-///
 template <std::floating_point T>
 std::vector<std::int32_t>
 inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
