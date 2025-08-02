@@ -23,41 +23,6 @@
 namespace dolfinx::multigrid
 {
 
-/**
- * @brief Gathers a global vector from combination of local data.
- * @note Performs an all-to-all communication.
- *
- * @param local local data
- * @param global_size number of global data entries
- * @param comm MPI communicator
- * @return std::vector<T> on communicator gathered global data.
- */
-template <std::floating_point T>
-std::vector<T> gather_global(std::span<const T> local, std::int64_t global_size,
-                             MPI_Comm comm)
-{
-  // 1) exchange local sizes
-  std::vector<std::int32_t> local_sizes(dolfinx::MPI::size(comm));
-  {
-    std::array<std::int32_t, 1> tmp{local.size()};
-    MPI_Allgather(&tmp, 1, MPI_INT32_T, local_sizes.data(), 1, MPI_INT32_T,
-                  comm);
-  }
-
-  // 2) compute displacement vector
-  std::vector<std::int32_t> displacements(local_sizes.size() + 1, 0);
-  std::partial_sum(local_sizes.begin(), local_sizes.end(),
-                   displacements.begin() + 1);
-
-  // 3) Allgather global vector
-  std::vector<T> global(global_size);
-  MPI_Allgatherv(local.data(), local.size(), dolfinx::MPI::mpi_t<T>,
-                 global.data(), local_sizes.data(), displacements.data(),
-                 dolfinx::MPI::mpi_t<T>, comm);
-
-  return global;
-}
-
 template <std::floating_point T>
 std::vector<std::int32_t>
 inclusion_mapping_local(const dolfinx::mesh::Mesh<T>& mesh_from,

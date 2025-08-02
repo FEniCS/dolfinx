@@ -31,25 +31,6 @@
 using namespace dolfinx;
 using namespace Catch::Matchers;
 
-TEMPLATE_TEST_CASE("Gather global", "[multigrid]", double, float)
-{
-  using T = TestType;
-  MPI_Comm comm = MPI_COMM_WORLD;
-  auto comm_size = dolfinx::MPI::size(comm);
-  auto rank = dolfinx::MPI::rank(comm);
-  std::vector<T> local{static_cast<T>(rank), static_cast<T>(rank + 1)};
-
-  std::vector<T> global = multigrid::gather_global<T>(
-      std::span(local.data(), local.size()), comm_size * 2, comm);
-
-  CHECK(global.size() == static_cast<std::size_t>(2 * comm_size));
-  for (int i = 0; i < comm_size; i++)
-  {
-    CHECK(global[2 * i] == Catch::Approx(i));
-    CHECK(global[2 * i + 1] == Catch::Approx(i + 1));
-  }
-}
-
 template <std::floating_point T>
 void TEST_inclusion_local(dolfinx::mesh::Mesh<T>&& mesh_coarse)
 {
