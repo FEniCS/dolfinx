@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Paul T. Kühner
+// Copyright (C) 2025 Paul T. Kühner
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //

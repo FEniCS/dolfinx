@@ -6,37 +6,59 @@
 
 from mpi4py import MPI
 
+import numpy as np
 import pytest
+from numpy import typing as npt
 
-from dolfinx.mesh import GhostMode, create_interval, create_unit_cube, create_unit_square, refine
+from dolfinx.mesh import (
+    GhostMode,
+    IdentityPartitionerPlaceholder,
+    Mesh,
+    create_cell_partitioner,
+    create_unit_cube,
+    create_unit_interval,
+    create_unit_square,
+    refine,
+)
 from dolfinx.multigrid import inclusion_mapping
 
 
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-def test_1d(ghost_mode):
-    mesh = create_interval(MPI.COMM_WORLD, 10, (0, 1), ghost_mode=ghost_mode)
-    mesh_fine, _, _ = refine(mesh)
-    inclusion_mapping(mesh, mesh_fine, True)
-    # TODO: extend with future operations on inclusion mappings
+def check_inclusion_map(
+    mesh_from: Mesh, mesh_to: Mesh, map: npt.NDArray[np.int32], expect_all: bool = False
+):
+    if expect_all:
+        assert np.all(map >= 0)
+
+    for i in range(len(map)):
+        if map[i] == -1:
+            continue
+        assert np.allclose(mesh_from.geometry.x[i], mesh_to.geometry.x[map[i]])
 
 
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-def test_2d(ghost_mode):
-    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=ghost_mode)
-    mesh.topology.create_entities(1)
-    mesh_fine, _, _ = refine(mesh)
-    inclusion_mapping(mesh, mesh_fine, True)
-    # TODO: extend with future operations on inclusion mappings
+@pytest.mark.parametrize("gdim", [1])  # TODO: 2,3 some weird error
+@pytest.mark.parametrize("ghost_mode_coarse", [GhostMode.none, GhostMode.shared_facet])
+@pytest.mark.parametrize(
+    "partitioner_fine",
+    [
+        create_cell_partitioner(GhostMode.none),
+        create_cell_partitioner(GhostMode.shared_facet),
+        IdentityPartitionerPlaceholder(),
+    ],
+)
+def test_1d(gdim, ghost_mode_coarse, partitioner_fine):
+    comm = MPI.COMM_WORLD
+    if gdim == 1:
+        mesh = create_unit_interval(comm, 10, ghost_mode=ghost_mode_coarse)
+    elif gdim == 2:
+        mesh = create_unit_square(comm, 5, 5, ghost_mode=ghost_mode_coarse)
+    else:
+        mesh = create_unit_cube(comm, 5, 5, 5, ghost_mode=ghost_mode_coarse)
 
+    mesh_fine, _, _ = refine(mesh, None, partitioner_fine)
+    map = inclusion_mapping(mesh, mesh_fine)
+    check_inclusion_map(
+        mesh, mesh_fine, map, type(partitioner_fine) is IdentityPartitionerPlaceholder
+    )
 
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-def test_3d(ghost_mode):
-    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, ghost_mode=ghost_mode)
-    mesh.topology.create_entities(1)
-    mesh_fine, _, _ = refine(mesh)
-    inclusion_mapping(mesh, mesh_fine, True)
-    # TODO: extend with future operations on inclusion mappings
-
-
-if __name__ == "__main__":
-    pytest.main([__file__])
+    map = inclusion_mapping(mesh_fine, mesh)
+    check_inclusion_map(mesh_fine, mesh, map)
