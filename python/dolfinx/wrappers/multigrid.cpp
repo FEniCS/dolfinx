@@ -22,17 +22,15 @@ namespace dolfinx_wrappers
 template <std::floating_point T>
 void declare_inlcusion_mapping(nb::module_& m, const std::string& type)
 {
-  
-  m.def(
-      ("inclusion_mapping_" + type).c_str(),
-      [](const dolfinx::mesh::Mesh<T>& mesh_from,
-         const dolfinx::mesh::Mesh<T>& mesh_to)
-      {
-        return dolfinx_wrappers::as_nbarray(
-            dolfinx::multigrid::inclusion_mapping<T>(mesh_from, mesh_to));
-      },
-      nb::arg("mesh_from"), nb::arg("mesh_to"),
-      "Computes inclusion mapping between two meshes");
+  m.def(("inclusion_mapping_" + type).c_str(),
+        [](const dolfinx::mesh::Mesh<T>& mesh_from,
+           const dolfinx::mesh::Mesh<T>& mesh_to)
+        {
+          return dolfinx_wrappers::as_nbarray(
+              dolfinx::multigrid::inclusion_mapping<T>(mesh_from, mesh_to));
+        },
+        nb::arg("mesh_from"), nb::arg("mesh_to"),
+        "Computes inclusion mapping between two meshes");
 }
 
 void multigrid(nb::module_& m)
