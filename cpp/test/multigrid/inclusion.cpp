@@ -73,7 +73,9 @@ void TEST_inclusion_local(dolfinx::mesh::Mesh<T>&& mesh_coarse)
 
     const common::IndexMap& im_from = *mesh_coarse.topology()->index_map(0);
     const common::IndexMap& im_to = *mesh_fine.topology()->index_map(0);
-    CHECK(inclusion_map.size() == im_from.size_local() + im_from.num_ghosts());
+    CHECK(inclusion_map.size()
+          == static_cast<std::size_t>(im_from.size_local()
+                                      + im_from.num_ghosts()));
     for (std::size_t i = 0; i < inclusion_map.size(); i++)
     {
       if (inclusion_map[i] == -1)
