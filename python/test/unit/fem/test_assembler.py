@@ -274,7 +274,7 @@ class TestPETScAssemblers:
                 dtype=default_real_type,
             )
         )
-        mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+        mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
         assert mesh.geometry.dim == 2
         assert mesh.topology.dim == 1
 
@@ -1306,7 +1306,7 @@ class TestPETScAssemblers:
             cells = np.empty((0, 3), dtype=np.int64)
             x = np.empty((0, 2), dtype=default_real_type)
 
-        mesh = create_mesh(comm, cells, x, domain, partitioner)
+        mesh = create_mesh(comm, cells, domain, x, partitioner)
 
         V = functionspace(mesh, ("Lagrange", 2))
         u, v = ufl.TrialFunction(V), ufl.TestFunction(V)

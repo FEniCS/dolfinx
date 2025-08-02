@@ -37,6 +37,7 @@ target_include_directories(
 
 # ------------------------------------------------------------------------------
 # Configure the common/version.h file
+
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/common/version.h.in common/version.h @ONLY
 )
@@ -301,6 +302,7 @@ list(REMOVE_DUPLICATES PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES)
 list(REMOVE_DUPLICATES PKGCONFIG_DOLFINX_LIBS)
 
 # Convert include dirs to -I<incdir> form
+set(PKG_INCLUDES)
 foreach(_inc_dir ${PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES})
   set(PKG_INCLUDES "-I${_inc_dir} ${PKG_INCLUDES}")
 endforeach()
@@ -351,11 +353,6 @@ endforeach()
 separate_arguments(PKG_LINKFLAGS)
 list(REMOVE_DUPLICATES PKG_LINKFLAGS)
 string(REPLACE ";" " " PKG_LINKFLAGS "${PKG_LINKFLAGS}")
-
-# Add additional link flags
-foreach(_linkflag ${DOLFINX_LINK_FLAGS})
-  set(PKG_LINKFLAGS "${PKG_LINKFLAGS} ${_linkflag}")
-endforeach()
 
 # Boost include dir (used as pkg-config variable)
 get_target_property(

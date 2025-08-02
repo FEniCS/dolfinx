@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.21)
 
 project(dolfinx-tests LANGUAGES C CXX)
 set(CMAKE_C_STANDARD 17) # For FFCx generated .c files.
@@ -12,9 +12,7 @@ find_package(DOLFINX REQUIRED)
 include(FeatureSummary)
 
 # Add shared library paths so shared libs in non-system paths are found
-option(CMAKE_INSTALL_RPATH_USE_LINK_PATH
-       "Add paths to linker search and installed rpath." ON
-)
+option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
 
 # clang-tidy
 option(ENABLE_CLANG_TIDY "Run clang-tidy while building" OFF)
@@ -81,9 +79,7 @@ if(WIN32)
   target_link_libraries(unittests PRIVATE bcrypt)
 endif()
 
-target_include_directories(
-  unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-)
+target_include_directories(unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
 
 # Add some strict compiler checks only on C++ part (Developer).
 include(CheckCXXCompilerFlag)
