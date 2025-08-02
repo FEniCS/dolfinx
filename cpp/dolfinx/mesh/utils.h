@@ -20,6 +20,7 @@
 #include <functional>
 #include <mpi.h>
 #include <numeric>
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -947,10 +948,10 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 /// cells on this rank by applying the default graph partitioner to the
 /// dual graph of the mesh.
 /// @return Function that computes the destination ranks for each cell.
-CellPartitionFunction create_cell_partitioner(mesh::GhostMode ghost_mode
-                                              = mesh::GhostMode::none,
-                                              const graph::partition_fn& partfn
-                                              = &graph::partition_graph);
+CellPartitionFunction create_cell_partitioner(
+    mesh::GhostMode ghost_mode = mesh::GhostMode::none,
+    const graph::partition_fn& partfn = &graph::partition_graph,
+    std::optional<std::int32_t> max_facet_to_cell_links = 2);
 
 /// @brief Compute incident entities.
 /// @param[in] topology The topology.

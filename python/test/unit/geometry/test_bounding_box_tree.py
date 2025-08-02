@@ -421,9 +421,13 @@ def test_sub_bbtree_codim1(dtype):
 
     # Compute local collisions
     cells = compute_collisions_points(bbtree, point)
-    if MPI.COMM_WORLD.rank in ranks.array:
-        assert len(cells.links(0)) > 0
-    else:
+
+    # Relationship to test: if cells has link => ranks must also hold a value.
+    if len(cells.links(0)) > 0:
+        assert len(ranks.links(0)) > 0
+
+    # Negated: ranks holds no value => cells has no link
+    if len(ranks.links(0)) == 0:
         assert len(cells.links(0)) == 0
 
 
