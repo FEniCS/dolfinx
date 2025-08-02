@@ -11,6 +11,7 @@
 #include <limits>
 #include <optional>
 #include <ranges>
+#include <variant>
 #include <vector>
 
 #include <mpi.h>
@@ -30,6 +31,35 @@
 
 using namespace dolfinx;
 using namespace Catch::Matchers;
+
+template <std::floating_point T>
+void CHECK_inclusion_map(const mesh::Mesh<T>& mesh_coarse,
+                         const mesh::Mesh<T>& mesh_fine,
+                         const std::vector<std::int32_t>& map)
+{
+  const common::IndexMap& im_from = *mesh_coarse.topology()->index_map(0);
+  const common::IndexMap& im_to = *mesh_fine.topology()->index_map(0);
+  CHECK(
+      map.size()
+      == static_cast<std::size_t>(im_from.size_local() + im_from.num_ghosts()));
+  for (std::size_t i = 0; i < map.size(); i++)
+  {
+    if (map[i] == -1)
+      continue;
+
+    CHECK(0 <= map[i]);
+    CHECK(map[i] <= im_to.size_local() + im_to.num_ghosts());
+
+    auto x = std::array{mesh_coarse.geometry().x()[3 * i],
+                        mesh_coarse.geometry().x()[3 * i + 1],
+                        mesh_coarse.geometry().x()[3 * i + 2]};
+    auto global_x = std::array{mesh_fine.geometry().x()[3 * map[i]],
+                               mesh_fine.geometry().x()[3 * map[i] + 1],
+                               mesh_fine.geometry().x()[3 * map[i] + 2]};
+
+    CHECK_THAT(x, Catch::Matchers::RangeEquals(global_x));
+  }
+}
 
 template <std::floating_point T>
 void TEST_inclusion_local(dolfinx::mesh::Mesh<T>&& mesh_coarse)
@@ -52,29 +82,11 @@ void TEST_inclusion_local(dolfinx::mesh::Mesh<T>&& mesh_coarse)
     std::vector<std::int32_t> inclusion_map
         = multigrid::inclusion_mapping_local(mesh_coarse, mesh_fine);
 
-    const common::IndexMap& im_from = *mesh_coarse.topology()->index_map(0);
-    const common::IndexMap& im_to = *mesh_fine.topology()->index_map(0);
-    CHECK(inclusion_map.size()
-          == static_cast<std::size_t>(im_from.size_local()
-                                      + im_from.num_ghosts()));
-    for (std::size_t i = 0; i < inclusion_map.size(); i++)
-    {
-      if (inclusion_map[i] == -1)
-        continue;
+    if (std::holds_alternative<refinement::IdentityPartitionerPlaceholder>(
+            ghost_mode))
+      CHECK(std::ranges::all_of(inclusion_map, [](auto e) { return e >= 0; }));
 
-      CHECK(0 <= inclusion_map[i]);
-      CHECK(inclusion_map[i] <= im_to.size_local() + im_to.num_ghosts());
-
-      auto x = std::array{mesh_coarse.geometry().x()[3 * i],
-                          mesh_coarse.geometry().x()[3 * i + 1],
-                          mesh_coarse.geometry().x()[3 * i + 2]};
-      auto global_x
-          = std::array{mesh_fine.geometry().x()[3 * inclusion_map[i]],
-                       mesh_fine.geometry().x()[3 * inclusion_map[i] + 1],
-                       mesh_fine.geometry().x()[3 * inclusion_map[i] + 2]};
-
-      CHECK_THAT(x, Catch::Matchers::RangeEquals(global_x));
-    }
+    CHECK_inclusion_map(mesh_coarse, mesh_fine, inclusion_map);
   }
 }
 
