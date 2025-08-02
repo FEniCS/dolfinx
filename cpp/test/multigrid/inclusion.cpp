@@ -8,9 +8,7 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <optional>
-#include <ranges>
 #include <variant>
 #include <vector>
 
@@ -62,7 +60,7 @@ void CHECK_inclusion_map(const mesh::Mesh<T>& mesh_coarse,
 }
 
 template <std::floating_point T>
-void TEST_inclusion_local(dolfinx::mesh::Mesh<T>&& mesh_coarse)
+void TEST_inclusion(dolfinx::mesh::Mesh<T>&& mesh_coarse)
 {
   mesh_coarse.topology()->create_entities(1);
 
@@ -73,14 +71,14 @@ void TEST_inclusion_local(dolfinx::mesh::Mesh<T>&& mesh_coarse)
       = {mesh::create_cell_partitioner(mesh::GhostMode::none),
          mesh::create_cell_partitioner(mesh::GhostMode::shared_facet),
          refinement::IdentityPartitionerPlaceholder()};
-  for (auto ghost_mode : ghost_modes)
+  for (const auto& ghost_mode : ghost_modes)
   {
     auto [mesh_fine, parent_cell, parent_facet]
         = refinement::refine(mesh_coarse, std::nullopt, ghost_mode);
     mesh_fine.topology()->create_connectivity(1, 0);
     mesh_fine.topology()->create_connectivity(0, 1);
     std::vector<std::int32_t> inclusion_map
-        = multigrid::inclusion_mapping_local(mesh_coarse, mesh_fine);
+        = multigrid::inclusion_mapping(mesh_coarse, mesh_fine);
 
     if (std::holds_alternative<refinement::IdentityPartitionerPlaceholder>(
             ghost_mode))
@@ -90,25 +88,24 @@ void TEST_inclusion_local(dolfinx::mesh::Mesh<T>&& mesh_coarse)
   }
 }
 
-TEMPLATE_TEST_CASE("Inclusion local (interval)", "[multigrid][inclusion]",
+TEMPLATE_TEST_CASE("Inclusion (interval)", "[multigrid][inclusion]",
                    double, float)
 {
-  TEST_inclusion_local(
+  TEST_inclusion(
       dolfinx::mesh::create_interval<TestType>(MPI_COMM_WORLD, 10, {0.0, 1.0}));
 }
 
-TEMPLATE_TEST_CASE("Inclusion local (triangle)", "[multigrid][inclusion]",
+TEMPLATE_TEST_CASE("Inclusion (triangle)", "[multigrid][inclusion]",
                    double, float)
 {
-  TEST_inclusion_local(dolfinx::mesh::create_rectangle<TestType>(
+  TEST_inclusion(dolfinx::mesh::create_rectangle<TestType>(
       MPI_COMM_WORLD, {{{0, 0}, {1, 1}}}, {5, 5}, mesh::CellType::triangle));
 }
 
-TEMPLATE_TEST_CASE("Inclusion local (tetrahedron)", "[multigrid][inclusion]",
+TEMPLATE_TEST_CASE("Inclusion (tetrahedron)", "[multigrid][inclusion]",
                    double, float)
 {
-
-  TEST_inclusion_local(dolfinx::mesh::create_box<TestType>(
+  TEST_inclusion(dolfinx::mesh::create_box<TestType>(
       MPI_COMM_WORLD, {{{0, 0, 0}, {1, 1, 1}}}, {5, 5, 5},
       mesh::CellType::tetrahedron));
 }

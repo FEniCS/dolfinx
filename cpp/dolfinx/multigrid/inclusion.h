@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Paul T. Kühner
+// Copyright (C) 2024-2025 Paul T. Kühner
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -10,8 +10,6 @@
 #include <concepts>
 #include <cstdint>
 #include <iterator>
-#include <numeric>
-#include <stdexcept>
 #include <vector>
 
 #include <mpi.h>
@@ -25,8 +23,8 @@ namespace dolfinx::multigrid
 
 template <std::floating_point T>
 std::vector<std::int32_t>
-inclusion_mapping_local(const dolfinx::mesh::Mesh<T>& mesh_from,
-                        const dolfinx::mesh::Mesh<T>& mesh_to)
+inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
+                  const dolfinx::mesh::Mesh<T>& mesh_to)
 {
   {
     // Check comms equal
