@@ -26,8 +26,8 @@ from dolfinx.multigrid import inclusion_mapping
 def check_inclusion_map(
     mesh_from: Mesh, mesh_to: Mesh, map: npt.NDArray[np.int32], expect_all: bool = False
 ):
-    # if expect_all:
-    #     assert np.all(map >= 0)
+    if expect_all:
+        assert np.all(map[: mesh_from.topology.index_map(0).size_local] >= 0)
 
     for i in range(len(map)):
         if map[i] == -1:

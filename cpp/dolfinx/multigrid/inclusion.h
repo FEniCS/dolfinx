@@ -35,7 +35,8 @@ namespace dolfinx::multigrid
  *
  * @note Invoking `inclusion_map` on a `(mesh_coarse, mesh_fine)` tuple, where
  * `mesh_fine` is produced by refinement with `IdentityPartitionerPlaceholder()`
- * option, the returned `map` is guaranteed to match all vertices.
+ * option, the returned `map` is guaranteed to match all vertices for all
+ * locally owned vertices (not for the ghost vertices).
  */
 template <std::floating_point T>
 std::vector<std::int32_t>
