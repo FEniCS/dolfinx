@@ -88,22 +88,22 @@ void TEST_inclusion(dolfinx::mesh::Mesh<T>&& mesh_coarse)
   }
 }
 
-TEMPLATE_TEST_CASE("Inclusion (interval)", "[multigrid][inclusion]",
-                   double, float)
+TEMPLATE_TEST_CASE("Inclusion (interval)", "[multigrid][inclusion]", double,
+                   float)
 {
   TEST_inclusion(
       dolfinx::mesh::create_interval<TestType>(MPI_COMM_WORLD, 10, {0.0, 1.0}));
 }
 
-TEMPLATE_TEST_CASE("Inclusion (triangle)", "[multigrid][inclusion]",
-                   double, float)
+TEMPLATE_TEST_CASE("Inclusion (triangle)", "[multigrid][inclusion]", double,
+                   float)
 {
   TEST_inclusion(dolfinx::mesh::create_rectangle<TestType>(
       MPI_COMM_WORLD, {{{0, 0}, {1, 1}}}, {5, 5}, mesh::CellType::triangle));
 }
 
-TEMPLATE_TEST_CASE("Inclusion (tetrahedron)", "[multigrid][inclusion]",
-                   double, float)
+TEMPLATE_TEST_CASE("Inclusion (tetrahedron)", "[multigrid][inclusion]", double,
+                   float)
 {
   TEST_inclusion(dolfinx::mesh::create_box<TestType>(
       MPI_COMM_WORLD, {{{0, 0, 0}, {1, 1, 1}}}, {5, 5, 5},
