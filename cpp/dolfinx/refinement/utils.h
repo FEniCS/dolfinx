@@ -25,7 +25,7 @@ namespace dolfinx::mesh
 template <typename T>
 class MeshTags;
 class Topology;
-enum class GhostMode;
+enum class GhostMode : std::uint8_t;
 } // namespace dolfinx::mesh
 
 namespace dolfinx::common
@@ -224,10 +224,10 @@ create_new_vertices(MPI_Comm comm,
                           MPI_INT, comm);
 
     // Build displacements
-    std::vector<int> send_disp = {0};
+    std::vector<int> send_disp{0};
     std::partial_sum(send_sizes.begin(), send_sizes.end(),
                      std::back_inserter(send_disp));
-    std::vector<int> recv_disp = {0};
+    std::vector<int> recv_disp{0};
     std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                      std::back_inserter(recv_disp));
 

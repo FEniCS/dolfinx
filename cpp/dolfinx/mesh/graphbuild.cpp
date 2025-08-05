@@ -93,6 +93,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   assert(local_max_vertices_per_facet == 0
          or facets.size() % local_max_vertices_per_facet == 0);
+#ifndef NDEBUG
   {
     // assert facets sorted
     if (local_max_vertices_per_facet > 0)
@@ -106,6 +107,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       }
     }
   }
+#endif
 
   // Start (non-blocking) communication for cell offset
   std::int64_t cell_offset = 0;
@@ -432,7 +434,7 @@ mesh::build_local_dual_graph(
   //    used data structures
 
   // TODO: cell_offsets can be removed?
-  std::vector<std::int32_t> cell_offsets = {0};
+  std::vector<std::int32_t> cell_offsets{0};
   cell_offsets.reserve(cells.size() + 1);
 
   int max_vertices_per_facet = 0;

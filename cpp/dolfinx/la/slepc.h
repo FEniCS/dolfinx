@@ -33,7 +33,7 @@ public:
   SLEPcEigenSolver(const SLEPcEigenSolver&) = delete;
 
   /// Move constructor
-  SLEPcEigenSolver(SLEPcEigenSolver&& solver);
+  SLEPcEigenSolver(SLEPcEigenSolver&& solver) noexcept;
 
   /// Destructor
   ~SLEPcEigenSolver();
@@ -42,7 +42,7 @@ public:
   SLEPcEigenSolver& operator=(const SLEPcEigenSolver&) = delete;
 
   /// Move assignment
-  SLEPcEigenSolver& operator=(SLEPcEigenSolver&& solver);
+  SLEPcEigenSolver& operator=(SLEPcEigenSolver&& solver) noexcept;
 
   /// Set operators (B may be nullptr for regular eigenvalues
   /// problems)
@@ -70,7 +70,7 @@ public:
 
   /// Sets the prefix used by PETSc when searching the PETSc options
   /// database
-  void set_options_prefix(std::string options_prefix);
+  void set_options_prefix(const std::string& options_prefix);
 
   /// Returns the prefix used by PETSc when searching the PETSc options
   /// database

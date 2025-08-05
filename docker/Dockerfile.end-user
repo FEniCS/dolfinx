@@ -45,8 +45,8 @@ LABEL description="DOLFINx in 32-bit real and complex modes (onbuild)"
 
 ARG PYTHON_VERSION
 
-ADD dolfinx/docker/dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
-ADD dolfinx/docker/dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
+COPY dolfinx/docker/dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
+COPY dolfinx/docker/dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
 RUN chmod +x /usr/local/bin/dolfinx-*-mode
 
 ONBUILD WORKDIR /src
@@ -55,15 +55,15 @@ ONBUILD WORKDIR /src
 # Docker. There is some trickery in the intermediate and DOLFINx
 # containers that can be used to remove this source if needed, see
 # below.
-ONBUILD ADD basix/ /src/basix/
-ONBUILD ADD ufl/ /src/ufl/
-ONBUILD ADD ffcx/ /src/ffcx/
-ONBUILD ADD dolfinx/ /src/dolfinx/
+ONBUILD COPY basix/ /src/basix/
+ONBUILD COPY ufl/ /src/ufl/
+ONBUILD COPY ffcx/ /src/ffcx/
+ONBUILD COPY dolfinx/ /src/dolfinx/
 
 # These files are empty by default, i.e. they do nothing.
 # The user can set them at build time if they wish.
-ONBUILD ADD dolfinx/docker/dolfinx_jit_options.json /root/.config/dolfinx/dolfinx_jit_options.json
-ONBUILD ADD dolfinx/docker/ffcx_options.json /root/.config/ffcx/ffcx_options.json
+ONBUILD COPY dolfinx/docker/dolfinx_jit_options.json /root/.config/dolfinx/dolfinx_jit_options.json
+ONBUILD COPY dolfinx/docker/ffcx_options.json /root/.config/ffcx/ffcx_options.json
 
 # CMake build type for DOLFINx C++ build. See CMake documentation.
 ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="Release"
@@ -171,7 +171,7 @@ RUN pip install matplotlib; \
     pip cache purge
 
 # Jupyter Notebook kernel specification for complex build DOLFINx
-ADD dolfinx/docker/complex-kernel.json /usr/local/share/jupyter/kernels/python3-complex/kernel.json
+COPY dolfinx/docker/complex-kernel.json /usr/local/share/jupyter/kernels/python3-complex/kernel.json
 
 EXPOSE 8888/tcp
 ENV SHELL /bin/bash

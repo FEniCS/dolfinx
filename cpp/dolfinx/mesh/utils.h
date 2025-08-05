@@ -6,12 +6,14 @@
 
 #pragma once
 
+#include "EntityMap.h"
 #include "Mesh.h"
 #include "Topology.h"
 #include "graphbuild.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
 #include <concepts>
+#include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
@@ -31,10 +33,10 @@ class ElementDofLayout;
 
 namespace dolfinx::mesh
 {
-enum class CellType;
+enum class CellType : std::int8_t;
 
 /// Enum for different partitioning ghost modes
-enum class GhostMode : int
+enum class GhostMode : std::uint8_t
 {
   none,
   shared_facet
@@ -1016,10 +1018,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   assert(cells.size() == elements.size());
   std::vector<CellType> celltypes;
   std::ranges::transform(elements, std::back_inserter(celltypes),
-                         [](auto e) { return e.cell_shape(); });
+                         [](const auto& e) { return e.cell_shape(); });
   std::vector<fem::ElementDofLayout> doflayouts;
   std::ranges::transform(elements, std::back_inserter(doflayouts),
-                         [](auto e) { return e.create_dof_layout(); });
+                         [](const auto& e) { return e.create_dof_layout(); });
 
   // Note: `extract_topology` extracts topology data, i.e. just the
   // vertices. For P1 geometry this should just be the identity
@@ -1360,8 +1362,7 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
 /// @return A new mesh, and maps from the new mesh entities, vertices,
 /// and geometry to the input mesh entities, vertices, and geometry.
 template <std::floating_point T>
-std::tuple<Mesh<T>, std::vector<std::int32_t>, std::vector<std::int32_t>,
-           std::vector<std::int32_t>>
+std::tuple<Mesh<T>, EntityMap, EntityMap, std::vector<std::int32_t>>
 create_submesh(const Mesh<T>& mesh, int dim,
                std::span<const std::int32_t> entities)
 {
@@ -1379,9 +1380,14 @@ create_submesh(const Mesh<T>& mesh, int dim,
   auto [geometry, subx_to_x_dofmap]
       = mesh::create_subgeometry(mesh, dim, subentity_to_entity);
 
-  return {Mesh(mesh.comm(), std::make_shared<Topology>(std::move(topology)),
-               std::move(geometry)),
-          std::move(subentity_to_entity), std::move(subvertex_to_vertex),
+  Mesh<T> submesh
+      = Mesh(mesh.comm(), std::make_shared<Topology>(std::move(topology)),
+             std::move(geometry));
+  EntityMap entity_map(mesh.topology(), submesh.topology(), dim,
+                       subentity_to_entity);
+  EntityMap vertex_map(mesh.topology(), submesh.topology(), 0,
+                       subvertex_to_vertex);
+  return {std::move(submesh), std::move(entity_map), std::move(vertex_map),
           std::move(subx_to_x_dofmap)};
 }
 
