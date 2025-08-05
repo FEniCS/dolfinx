@@ -49,7 +49,7 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import fem, plot
 from dolfinx.fem.petsc import assemble_matrix
-from dolfinx.mesh import CellType, create_rectangle, exterior_facet_indices
+from dolfinx.mesh import CellType, create_rectangle, exterior_facet_indices, locate_entities
 
 try:
     import pyvista
@@ -187,7 +187,11 @@ eps_d = 2.45
 
 D = fem.functionspace(msh, ("DQ", 0))
 eps = fem.Function(D)
-eps.interpolate(lambda x: np.less(x[1], d) * eps_d + np.greater_equal(x[1], d) * eps_v)
+
+cells_d = locate_entities(msh, msh.topology.dim, lambda x: x[1] <= d)
+
+eps.x.array[:] = eps_v
+eps.x.array[cells_d] = eps_d
 # -
 
 # In order to find the weak form of our problem, the starting point are
