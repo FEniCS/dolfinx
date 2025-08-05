@@ -18,7 +18,7 @@ jobs:
 
   windows-build:
     name: Windows vcpkg build
-    runs-on: windows-latest
+    runs-on: windows-2025
     env:
       VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
 
