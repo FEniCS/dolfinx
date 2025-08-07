@@ -286,7 +286,11 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   // Search for consecutive facets (-> dual graph edge between cells)
   // and pack into send buffer
-  std::vector<std::vector<std::int64_t>> dual_edges(recv_disp.back());
+  // std::vector<std::vector<std::int64_t>> dual_edges(recv_disp.back());
+  std::vector<int> send_dual_edges_count(recv_disp.back());
+  std::vector<std::int32_t> send_dual_edges_displs(
+      send_dual_edges_count.size() + 1, 0);
+  std::vector<std::int64_t> send_dual_edges;
   {
     // Compute sort permutation for received data
     std::vector<int> sort_order(recv_buffer.size() / buffer_shape1);
@@ -300,6 +304,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
               begin, std::next(begin, max_vertices_per_facet));
         });
 
+    // Iterate matching facets to compute count/offset information of dual edges
     for (auto it = sort_order.begin(); it != sort_order.end();)
     {
       std::size_t offset0 = (*it) * buffer_shape1;
@@ -320,6 +325,76 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
       // For every matched facet pair introduce a dual graph edge (and
       // backedge).
+
+      // for (auto facet_a_it = matching_facets.begin();
+      //      facet_a_it != matching_facets.end(); facet_a_it++)
+      // {
+      //   for (auto facet_b_it = std::next(facet_a_it);
+      //        facet_b_it != matching_facets.end(); facet_b_it++)
+      //   {
+      //     int facet_a = *facet_a_it;
+      //     int facet_b = *facet_b_it;
+      //     // Extract cell information from last column
+      //     std::int64_t cell_a
+      //         = recv_buffer[facet_a * buffer_shape1 +
+      //         max_vertices_per_facet];
+      //     std::int64_t cell_b
+      //         = recv_buffer[facet_b * buffer_shape1 +
+      //         max_vertices_per_facet];
+
+      //     dual_edges[facet_a].push_back(cell_b);
+      //     dual_edges[facet_b].push_back(cell_a);
+      //   }
+      // }
+
+      for (auto facet_a_it = matching_facets.begin();
+           facet_a_it != matching_facets.end(); facet_a_it++)
+      {
+        for (auto facet_b_it = std::next(facet_a_it);
+             facet_b_it != matching_facets.end(); facet_b_it++)
+        {
+          int facet_a = *facet_a_it;
+          int facet_b = *facet_b_it;
+          // Extract cell information from last column
+          std::int64_t cell_a
+              = recv_buffer[facet_a * buffer_shape1 + max_vertices_per_facet];
+          std::int64_t cell_b
+              = recv_buffer[facet_b * buffer_shape1 + max_vertices_per_facet];
+          send_dual_edges_count[facet_a]++;
+          send_dual_edges_count[facet_b]++;
+        }
+      }
+
+      it = matching_facets.end();
+    }
+
+    std::partial_sum(send_dual_edges_count.begin(), send_dual_edges_count.end(),
+                     std::next(send_dual_edges_displs.begin()));
+
+    auto send_dual_edges_size = std::accumulate(send_dual_edges_count.begin(),
+                                                send_dual_edges_count.end(), 0);
+    send_dual_edges.resize(send_dual_edges_size);
+
+    // Iterate matching facets to store dual edge connectivity
+    auto offset = send_dual_edges_displs;
+    for (auto it = sort_order.begin(); it != sort_order.end();)
+    {
+      std::size_t offset0 = (*it) * buffer_shape1;
+      auto f0 = std::next(recv_buffer.data(), offset0);
+
+      // Find range of equal facets f0.
+      auto matching_facets = std::ranges::subrange(
+          it,
+          std::find_if_not(it, sort_order.end(),
+                           [f0, &recv_buffer, buffer_shape1,
+                            max_vertices_per_facet](auto idx) -> bool
+                           {
+                             std::size_t offset1 = idx * buffer_shape1;
+                             auto f1 = std::next(recv_buffer.data(), offset1);
+                             return std::equal(
+                                 f0, std::next(f0, max_vertices_per_facet), f1);
+                           }));
+
       for (auto facet_a_it = matching_facets.begin();
            facet_a_it != matching_facets.end(); facet_a_it++)
       {
@@ -334,8 +409,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
           std::int64_t cell_b
               = recv_buffer[facet_b * buffer_shape1 + max_vertices_per_facet];
 
-          dual_edges[facet_a].push_back(cell_b);
-          dual_edges[facet_b].push_back(cell_a);
+          send_dual_edges[offset[facet_a]++] = cell_b;
+          send_dual_edges[offset[facet_b]++] = cell_a;
         }
       }
 
@@ -343,10 +418,10 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     }
   }
 
-  std::vector<int> num_dual_edges_send;
-  num_dual_edges_send.reserve(dual_edges.size());
-  std::ranges::for_each(dual_edges, [&](const auto& matches)
-                        { num_dual_edges_send.push_back(matches.size()); });
+  // std::vector<int> num_dual_edges_send;
+  // num_dual_edges_send.reserve(dual_edges.size());
+  // std::ranges::for_each(dual_edges, [&](const auto& matches)
+  //                       { num_dual_edges_send.push_back(matches.size()); });
 
   // Create neighbourhood communicator for sending data from post
   // offices
@@ -358,36 +433,37 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   // Send po->recipient matched cell counts (non-blocking)
   std::vector<int> recv_dual_edges_count(send_disp.back());
   MPI_Request recv_dual_edge_counts_request;
-  MPI_Ineighbor_alltoallv(num_dual_edges_send.data(), num_items_recv.data(),
+  MPI_Ineighbor_alltoallv(send_dual_edges_count.data(), num_items_recv.data(),
                           recv_disp.data(), MPI_INT,
                           recv_dual_edges_count.data(),
                           num_items_per_dest.data(), send_disp.data(), MPI_INT,
                           comm_po_receive, &recv_dual_edge_counts_request);
 
   // Prepare send data for matched facets - unrolled matched arrays.
-  std::vector<std::int64_t> send_dual_edges;
-  std::vector<int> send_dual_edges_count(num_items_recv.size(), 0);
-  std::vector<std::int32_t> send_dual_edges_displs(
-      send_dual_edges_count.size() + 1, 0);
-  {
-    send_dual_edges.reserve(std::accumulate(num_dual_edges_send.begin(),
-                                            num_dual_edges_send.end(), 0));
-    for (auto& matches : dual_edges)
-      for (auto match : matches)
-        send_dual_edges.push_back(match);
+  // std::vector<std::int64_t> send_dual_edges;
+  // std::vector<int> send_dual_edges_count(num_items_recv.size(), 0);
+  // std::vector<std::int32_t> send_dual_edges_displs(
+  //     send_dual_edges_count.size() + 1, 0);
+  // {
+  //   send_dual_edges.reserve(std::accumulate(num_dual_edges_send.begin(),
+  //                                           num_dual_edges_send.end(), 0));
+  //   for (auto& matches : dual_edges)
+  //     for (auto match : matches)
+  //       send_dual_edges.push_back(match);
 
-    int index = 0;
-    for (std::size_t i = 0; i < num_items_recv.size(); i++)
-    {
-      for (int j = 0; j < num_items_recv[i]; j++)
-        send_dual_edges_count[i] += dual_edges[index + j].size();
+  //   int index = 0;
+  //   for (std::size_t i = 0; i < num_items_recv.size(); i++)
+  //   {
+  //     for (int j = 0; j < num_items_recv[i]; j++)
+  //       send_dual_edges_count[i] += dual_edges[index + j].size();
 
-      index += num_items_recv[i];
-    }
+  //     index += num_items_recv[i];
+  //   }
 
-    std::partial_sum(send_dual_edges_count.begin(), send_dual_edges_count.end(),
-                     std::next(send_dual_edges_displs.begin()));
-  }
+  //   std::partial_sum(send_dual_edges_count.begin(),
+  //   send_dual_edges_count.end(),
+  //                    std::next(send_dual_edges_displs.begin()));
+  // }
 
   // Compute matched facet receive counts and displacements.
   std::vector<int> recv_dual_edges_counts(num_items_per_dest.size(), 0);
