@@ -27,7 +27,7 @@ using kern_t = std::function<void(T*, const T*, const T*, const U*, const int*,
                                   const std::uint8_t*, void*)>;
 
 /// @brief Extract correct kernel by type from UFCx integral.
-/// @tparam T scalar type of kernel to extract.s
+/// @tparam T scalar type of kernel to extract.
 /// @tparam U geometry type of kernel to extract.
 /// @param integral UFCx integral to retrieve the kernel from.
 /// @return Kernel callback.
