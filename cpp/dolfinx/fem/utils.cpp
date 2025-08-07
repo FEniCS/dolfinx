@@ -146,6 +146,8 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     dim = tdim;
     break;
   case IntegralType::exterior_facet:
+    dim = tdim - 1;
+    break;
   case IntegralType::interior_facet:
     dim = tdim - 1;
     break;
