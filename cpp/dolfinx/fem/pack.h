@@ -331,17 +331,6 @@ void pack_coefficients(const Form<T, U>& form,
           auto mesh = coefficients[coeff]->function_space()->mesh();
           assert(mesh);
 
-          // Other integrals in the form might have coefficients defined
-          // over entities of codim > 0, which don't make sense for vertex
-          // integrals, so don't pack them.
-          if (int codim
-              = form.mesh()->topology()->dim() - mesh->topology()->dim();
-              codim > 0)
-          {
-            throw std::runtime_error("Should not be packing coefficients with "
-                                     "codim>0 in a vertex integral");
-          }
-
           std::span<const std::int32_t> vertices_b
               = form.domain_coeff(IntegralType::vertex, id, coeff);
           md::mdspan<const std::int32_t,
