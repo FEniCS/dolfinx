@@ -80,7 +80,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
         local_dual_graph.offsets());
   }
 
-  // Postoffice setup:
+  // Postoffice (PO) setup:
   //  a) facets need to globally decide on a consistent ownership model (without
   //     communication).
   //    - first (global) vertex index of a facet is used
