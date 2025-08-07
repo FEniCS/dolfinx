@@ -324,7 +324,7 @@ void pack_coefficients(const Form<T, U>& form,
       }
       case IntegralType::vertex:
       {
-        // Iterate over coefficients that are active in cell integrals
+        // Iterate over coefficients that are active in vertex integrals
         for (int coeff : form.active_coeffs(IntegralType::vertex, id))
         {
           // Get coefficient mesh
