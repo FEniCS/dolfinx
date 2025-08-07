@@ -801,18 +801,18 @@ Form<T, U> create_form_factory(
           integrals.insert({{IntegralType::vertex, id, form_idx},
                             {k, cells_and_vertices, active_coeffs}});
         }
-        else
+        else if (sd != subdomains.end())
         {
           // NOTE: This requires that pairs are sorted
           auto it = std::ranges::lower_bound(sd->second, id, std::less<>{},
                                              [](auto& a) { return a.first; });
           if (it != sd->second.end() and it->first == id)
           {
-            std::vector<std::int32_t> cells_and_vertices
-                = get_cells_and_vertices(it->second);
-
             integrals.insert({{IntegralType::vertex, id, form_idx},
-                              {k, cells_and_vertices, active_coeffs}});
+                              {k,
+                               std::vector<std::int32_t>(it->second.begin(),
+                                                         it->second.end()),
+                               active_coeffs}});
           }
         }
       }
