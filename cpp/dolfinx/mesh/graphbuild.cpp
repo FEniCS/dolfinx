@@ -304,41 +304,56 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
               begin, std::next(begin, max_vertices_per_facet));
         });
 
-    // Iterate matching facets to compute count/offset information of dual edges
-    for (auto it = sort_order.begin(); it != sort_order.end();)
+    auto for_each_matched_pair = [buffer_shape1, max_vertices_per_facet,
+                                  &sort_order, &recv_buffer](auto&& lambda)
     {
-      std::size_t offset0 = (*it) * buffer_shape1;
-      auto f0 = std::next(recv_buffer.data(), offset0);
-
-      // Find range of equal facets f0.
-      auto matching_facets = std::ranges::subrange(
-          it,
-          std::find_if_not(it, sort_order.end(),
-                           [f0, &recv_buffer, buffer_shape1,
-                            max_vertices_per_facet](auto idx) -> bool
-                           {
-                             std::size_t offset1 = idx * buffer_shape1;
-                             auto f1 = std::next(recv_buffer.data(), offset1);
-                             return std::equal(
-                                 f0, std::next(f0, max_vertices_per_facet), f1);
-                           }));
-
-      for (auto facet_a_it = matching_facets.begin();
-           facet_a_it != matching_facets.end(); facet_a_it++)
+      for (auto it = sort_order.begin(); it != sort_order.end();)
       {
-        for (auto facet_b_it = std::next(facet_a_it);
-             facet_b_it != matching_facets.end(); facet_b_it++)
-        {
-          int facet_a = *facet_a_it;
-          int facet_b = *facet_b_it;
+        std::size_t offset0 = (*it) * buffer_shape1;
+        auto f0 = std::next(recv_buffer.data(), offset0);
 
+        // Find range of equal facets f0.
+        auto matching_facets = std::ranges::subrange(
+            it, std::find_if_not(
+                    it, sort_order.end(),
+                    [f0, &recv_buffer, buffer_shape1,
+                     max_vertices_per_facet](auto idx) -> bool
+                    {
+                      std::size_t offset1 = idx * buffer_shape1;
+                      auto f1 = std::next(recv_buffer.data(), offset1);
+                      return std::equal(
+                          f0, std::next(f0, max_vertices_per_facet), f1);
+                    }));
+
+        for (auto facet_a_it = matching_facets.begin();
+             facet_a_it != matching_facets.end(); facet_a_it++)
+        {
+          for (auto facet_b_it = std::next(facet_a_it);
+               facet_b_it != matching_facets.end(); facet_b_it++)
+          {
+            int facet_a = *facet_a_it;
+            int facet_b = *facet_b_it;
+
+            std::int64_t cell_a
+                = recv_buffer[facet_a * buffer_shape1 + max_vertices_per_facet];
+            std::int64_t cell_b
+                = recv_buffer[facet_b * buffer_shape1 + max_vertices_per_facet];
+
+            lambda(facet_a, cell_a, facet_b, cell_b);
+          }
+        }
+        it = matching_facets.end();
+      }
+    };
+
+    // Iterate matching facets to compute count/offset information of dual edges
+    for_each_matched_pair(
+        [&num_dual_edges_send](int facet_a, std::int64_t cell_a, int facet_b,
+                               std::int64_t cell_b)
+        {
           num_dual_edges_send[facet_a]++;
           num_dual_edges_send[facet_b]++;
-        }
-      }
-
-      it = matching_facets.end();
-    }
+        });
 
     std::partial_sum(num_dual_edges_send.begin(), num_dual_edges_send.end(),
                      std::next(send_dual_edges_displs.begin()));
@@ -349,45 +364,13 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
     // Iterate matching facets to store dual edge connectivity
     auto offset = send_dual_edges_displs;
-    for (auto it = sort_order.begin(); it != sort_order.end();)
-    {
-      std::size_t offset0 = (*it) * buffer_shape1;
-      auto f0 = std::next(recv_buffer.data(), offset0);
-
-      // Find range of equal facets f0.
-      auto matching_facets = std::ranges::subrange(
-          it,
-          std::find_if_not(it, sort_order.end(),
-                           [f0, &recv_buffer, buffer_shape1,
-                            max_vertices_per_facet](auto idx) -> bool
-                           {
-                             std::size_t offset1 = idx * buffer_shape1;
-                             auto f1 = std::next(recv_buffer.data(), offset1);
-                             return std::equal(
-                                 f0, std::next(f0, max_vertices_per_facet), f1);
-                           }));
-
-      for (auto facet_a_it = matching_facets.begin();
-           facet_a_it != matching_facets.end(); facet_a_it++)
-      {
-        for (auto facet_b_it = std::next(facet_a_it);
-             facet_b_it != matching_facets.end(); facet_b_it++)
+    for_each_matched_pair(
+        [&send_dual_edges, &offset](int facet_a, std::int64_t cell_a,
+                                    int facet_b, std::int64_t cell_b)
         {
-          int facet_a = *facet_a_it;
-          int facet_b = *facet_b_it;
-          // Extract cell information from last column
-          std::int64_t cell_a
-              = recv_buffer[facet_a * buffer_shape1 + max_vertices_per_facet];
-          std::int64_t cell_b
-              = recv_buffer[facet_b * buffer_shape1 + max_vertices_per_facet];
-
           send_dual_edges[offset[facet_a]++] = cell_b;
           send_dual_edges[offset[facet_b]++] = cell_a;
-        }
-      }
-
-      it = matching_facets.end();
-    }
+        });
   }
 
   // Create neighbourhood communicator for sending data from post
