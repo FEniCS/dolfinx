@@ -287,9 +287,9 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   // Search for consecutive facets (-> dual graph edge between cells)
   // and pack into send buffer
   // std::vector<std::vector<std::int64_t>> dual_edges(recv_disp.back());
-  std::vector<int> send_dual_edges_count(recv_disp.back());
+  std::vector<int> num_dual_edges_send(recv_disp.back());
   std::vector<std::int32_t> send_dual_edges_displs(
-      send_dual_edges_count.size() + 1, 0);
+      num_dual_edges_send.size() + 1, 0);
   std::vector<std::int64_t> send_dual_edges;
   {
     // Compute sort permutation for received data
@@ -362,19 +362,19 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
           // std::int64_t cell_b
           //     = recv_buffer[facet_b * buffer_shape1 +
           //     max_vertices_per_facet];
-          send_dual_edges_count[facet_a]++;
-          send_dual_edges_count[facet_b]++;
+          num_dual_edges_send[facet_a]++;
+          num_dual_edges_send[facet_b]++;
         }
       }
 
       it = matching_facets.end();
     }
 
-    std::partial_sum(send_dual_edges_count.begin(), send_dual_edges_count.end(),
+    std::partial_sum(num_dual_edges_send.begin(), num_dual_edges_send.end(),
                      std::next(send_dual_edges_displs.begin()));
 
-    auto send_dual_edges_size = std::accumulate(send_dual_edges_count.begin(),
-                                                send_dual_edges_count.end(), 0);
+    auto send_dual_edges_size = std::accumulate(num_dual_edges_send.begin(),
+                                                num_dual_edges_send.end(), 0);
     send_dual_edges.resize(send_dual_edges_size);
 
     // Iterate matching facets to store dual edge connectivity
@@ -435,7 +435,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   // Send po->recipient matched cell counts (non-blocking)
   std::vector<int> recv_dual_edges_count(send_disp.back());
   MPI_Request recv_dual_edge_counts_request;
-  MPI_Ineighbor_alltoallv(send_dual_edges_count.data(), num_items_recv.data(),
+  MPI_Ineighbor_alltoallv(num_dual_edges_send.data(), num_items_recv.data(),
                           recv_disp.data(), MPI_INT,
                           recv_dual_edges_count.data(),
                           num_items_per_dest.data(), send_disp.data(), MPI_INT,
@@ -443,29 +443,30 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   // Prepare send data for matched facets - unrolled matched arrays.
   // std::vector<std::int64_t> send_dual_edges;
-  // std::vector<int> send_dual_edges_count(num_items_recv.size(), 0);
-  // std::vector<std::int32_t> send_dual_edges_displs(
-  //     send_dual_edges_count.size() + 1, 0);
-  // {
-  //   send_dual_edges.reserve(std::accumulate(num_dual_edges_send.begin(),
-  //                                           num_dual_edges_send.end(), 0));
-  //   for (auto& matches : dual_edges)
-  //     for (auto match : matches)
-  //       send_dual_edges.push_back(match);
+  std::vector<int> send_dual_edges_count(num_items_recv.size(), 0);
+  std::vector<std::int32_t> send_dual_edges_displs2(
+      send_dual_edges_count.size() + 1, 0);
+  {
+    //   send_dual_edges.reserve(std::accumulate(num_dual_edges_send.begin(),
+    //                                           num_dual_edges_send.end(), 0));
+    //   for (auto& matches : dual_edges)
+    //     for (auto match : matches)
+    //       send_dual_edges.push_back(match);
 
-  //   int index = 0;
-  //   for (std::size_t i = 0; i < num_items_recv.size(); i++)
-  //   {
-  //     for (int j = 0; j < num_items_recv[i]; j++)
-  //       send_dual_edges_count[i] += dual_edges[index + j].size();
+    int index = 0;
+    for (std::size_t i = 0; i < num_items_recv.size(); i++)
+    {
+      for (int j = 0; j < num_items_recv[i]; j++)
+      {
+        // send_dual_edges_count[i] += send_dual_edges[index + j].size();
+        send_dual_edges_count[i] += num_dual_edges_send[index + j];
+      }
+      index += num_items_recv[i];
+    }
 
-  //     index += num_items_recv[i];
-  //   }
-
-  //   std::partial_sum(send_dual_edges_count.begin(),
-  //   send_dual_edges_count.end(),
-  //                    std::next(send_dual_edges_displs.begin()));
-  // }
+    std::partial_sum(send_dual_edges_count.begin(), send_dual_edges_count.end(),
+                     std::next(send_dual_edges_displs2.begin()));
+  }
 
   // Compute matched facet receive counts and displacements.
   std::vector<int> recv_dual_edges_counts(num_items_per_dest.size(), 0);
@@ -489,7 +490,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   // Exchange flattened list of matched facets
   std::vector<std::int64_t> recv_dual_edges(recv_dual_edges_displs.back());
   MPI_Neighbor_alltoallv(send_dual_edges.data(), send_dual_edges_count.data(),
-                         send_dual_edges_displs.data(),
+                         send_dual_edges_displs2.data(),
                          dolfinx::MPI::mpi_t<std::int64_t>,
                          recv_dual_edges.data(), recv_dual_edges_counts.data(),
                          recv_dual_edges_displs.data(),
