@@ -196,7 +196,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
           "Topology vertex-to-cell connectivity has not been computed.");
     }
 
-    auto c_to_v = topology.connectivity(tdim, tdim - 1);
+    auto c_to_v = topology.connectivity(tdim, 0);
     if (!c_to_v)
     {
       throw std::runtime_error(
