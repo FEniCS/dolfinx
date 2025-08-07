@@ -348,8 +348,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
     // Iterate matching facets to compute count/offset information of dual edges
     for_each_matched_pair(
-        [&dedge_send_count](int facet_a, std::int64_t cell_a, int facet_b,
-                            std::int64_t cell_b)
+        [&dedge_send_count](int facet_a, std::int64_t /* cell_a */, int facet_b,
+                            std::int64_t /* cell_b */)
         {
           dedge_send_count[facet_a]++;
           dedge_send_count[facet_b]++;
