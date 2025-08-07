@@ -291,14 +291,14 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     // Compute sort permutation for received data
     std::vector<int> sort_order(recv_buffer.size() / buffer_shape1);
     std::iota(sort_order.begin(), sort_order.end(), 0);
-    std::ranges::sort(sort_order, std::ranges::lexicographical_compare,
-                      [&](auto f)
-                      {
-                        auto begin
-                            = std::next(recv_buffer.begin(), f * buffer_shape1);
-                        return std::ranges::subrange(
-                            begin, std::next(begin, max_vertices_per_facet));
-                      });
+    std::ranges::sort(
+        sort_order, std::ranges::lexicographical_compare,
+        [max_vertices_per_facet, buffer_shape1, &recv_buffer](auto f)
+        {
+          auto begin = std::next(recv_buffer.begin(), f * buffer_shape1);
+          return std::ranges::subrange(
+              begin, std::next(begin, max_vertices_per_facet));
+        });
 
     for (auto it = sort_order.begin(); it != sort_order.end();)
     {
