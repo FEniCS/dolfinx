@@ -22,6 +22,7 @@ from dolfinx.geometry import (
 )
 from dolfinx.mesh import (
     CellType,
+    compute_incident_entities,
     create_box,
     create_unit_cube,
     create_unit_interval,
@@ -408,8 +409,8 @@ def test_sub_bbtree_codim1(dtype):
     fdim = tdim - 1
 
     top_facets = locate_entities_boundary(mesh, fdim, lambda x: np.isclose(x[2], 1))
-    f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
-    cells = np.array([f_to_c.links(f)[0] for f in top_facets], dtype=np.int32)
+    mesh.topology.create_connectivity(tdim - 1, tdim)
+    cells = compute_incident_entities(mesh.topology, top_facets, fdim, tdim)
     bbtree = bb_tree(mesh, tdim, cells)
 
     # Compute a BBtree for all processes
