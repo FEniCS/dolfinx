@@ -165,7 +165,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     entities = entities.first(std::distance(entities.begin(), it1));
   }
 
-  auto cell_connectivity = [tdim, &topology]()
+  auto get_cell_facet_connectivity = [tdim, &topology]()
       -> std::pair<std::shared_ptr<const graph::AdjacencyList<int>>,
                    std::shared_ptr<const graph::AdjacencyList<int>>>
   {
@@ -196,7 +196,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   }
   case IntegralType::exterior_facet:
   {
-    auto [f_to_c, c_to_f] = cell_connectivity();
+    auto [f_to_c, c_to_f] = get_cell_facet_connectivity();
     // Create list of tagged boundary facets
     const std::vector bfacets = mesh::exterior_facet_indices(topology);
     std::vector<std::int32_t> facets;
@@ -212,7 +212,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   }
   case IntegralType::interior_facet:
   {
-    auto [f_to_c, c_to_f] = cell_connectivity();
+    auto [f_to_c, c_to_f] = get_cell_facet_connectivity();
 
     // Create indicator for interprocess facets
     assert(topology.index_map(tdim - 1));
