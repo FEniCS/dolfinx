@@ -450,6 +450,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
                              [cell_offset](auto x) { return x + cell_offset; });
     }
 
+    // Add non-local data
     int offset = 0;
     for (std::size_t i = 0; i < recv_mf_counts.size(); i++)
     {
