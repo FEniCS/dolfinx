@@ -284,7 +284,6 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   MPI_Type_free(&compound_type);
   MPI_Comm_free(&comm_po_post);
 
-  // TODO: update
   // Search for consecutive facets (-> dual graph edge between cells)
   // and pack into send buffer
   std::vector<std::vector<std::int64_t>> matched_facets(recv_disp.back());
