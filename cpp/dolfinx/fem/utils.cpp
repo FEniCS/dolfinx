@@ -185,11 +185,30 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     return {f_to_c, c_to_f};
   };
 
+  auto get_cell_vertex_connectivity = [tdim, &topology]()
+      -> std::pair<std::shared_ptr<const graph::AdjacencyList<int>>,
+                   std::shared_ptr<const graph::AdjacencyList<int>>>
+  {
+    auto v_to_c = topology.connectivity(0, tdim);
+    if (!v_to_c)
+    {
+      throw std::runtime_error(
+          "Topology vertex-to-cell connectivity has not been computed.");
+    }
+
+    auto c_to_v = topology.connectivity(tdim, tdim - 1);
+    if (!c_to_v)
+    {
+      throw std::runtime_error(
+          "Topology cell-to-vertex connectivity has not been computed.");
+    }
+    return {v_to_c, c_to_v};
+  };
+
   std::vector<std::int32_t> entity_data;
   switch (integral_type)
   {
   case IntegralType::cell:
-  case IntegralType::vertex:
   {
     entity_data.insert(entity_data.begin(), entities.begin(), entities.end());
     break;
@@ -242,6 +261,26 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
       }
     }
     break;
+  }
+  case IntegralType::vertex:
+  {
+    auto [v_to_c, c_to_v] = get_cell_vertex_connectivity();
+    for (auto vertex : entities)
+    {
+      auto cells = v_to_c->links(vertex);
+      assert(cells.size() > 0);
+
+      // Use first cell for assembly over by default
+      std::int32_t cell = cells[0];
+      entity_data.push_back(cell);
+
+      // Find local index of vertex within cell
+      auto cell_vertices = c_to_v->links(cell);
+      auto it = std::ranges::find(cell_vertices, vertex);
+      assert(it != cell_vertices.end());
+      std::int32_t local_index = std::distance(cell_vertices.begin(), it);
+      entity_data.push_back(local_index);
+    }
   }
   }
 

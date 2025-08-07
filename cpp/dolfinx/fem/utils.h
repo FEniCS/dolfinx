@@ -775,7 +775,6 @@ Form<T, U> create_form_factory(
             assert(cells.size() > 0);
 
             // Use first cell for assembly over by default
-            // TODO: controllability?
             std::int32_t cell = cells[0];
             cell_and_vertex.push_back(cell);
 
