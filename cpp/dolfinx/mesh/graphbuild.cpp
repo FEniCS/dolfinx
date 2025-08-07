@@ -356,10 +356,10 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
           int facet_a = *facet_a_it;
           int facet_b = *facet_b_it;
           // Extract cell information from last column
-          std::int64_t cell_a
-              = recv_buffer[facet_a * buffer_shape1 + max_vertices_per_facet];
-          std::int64_t cell_b
-              = recv_buffer[facet_b * buffer_shape1 + max_vertices_per_facet];
+          // std::int64_t cell_a
+          //     = recv_buffer[facet_a * buffer_shape1 + max_vertices_per_facet];
+          // std::int64_t cell_b
+          //     = recv_buffer[facet_b * buffer_shape1 + max_vertices_per_facet];
           send_dual_edges_count[facet_a]++;
           send_dual_edges_count[facet_b]++;
         }
