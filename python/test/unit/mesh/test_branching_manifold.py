@@ -78,10 +78,6 @@ def test_edge_skeleton_mesh(dim, cell_type):
     skeleton_top.create_connectivity(0, 1)
     skeleton_f_to_c = skeleton_top.connectivity(0, 1)
 
-    # debug ouput
-    # import febug
-    # febug.plot_entity_indices(skeleton_mesh, 1).show() # .save_graphic(f"test_{comm.rank}.svg")
-
     skeleton_im_f = skeleton_mesh.topology.index_map(0)
 
     def on_boundary(x):
@@ -128,9 +124,6 @@ def test_facet_skeleton_mesh(cell_type):
 
     skeleton_top.create_connectivity(1, 2)
     skeleton_f_to_c = skeleton_top.connectivity(1, 2)
-
-    # import febug
-    # febug.plot_entity_indices(mesh, 2).show() # .save_graphic(f"test_{comm.rank}.svg")
 
     skeleton_im_f = skeleton_mesh.topology.index_map(1)
 
