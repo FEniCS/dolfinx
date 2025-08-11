@@ -897,7 +897,7 @@ class LinearProblem:
             opts.prefixPop()
 
         if kind == "nest":
-            # Transfer nest IS on self.A_mat to PC of main KSP. This allows
+            # Transfer nest IS on self.A to PC of main KSP. This allows
             # fieldsplit preconditioning to be applied, if desired.
             nest_IS = self.A.getNestISs()
             fieldsplit_IS = tuple(
