@@ -139,7 +139,7 @@ def create_vector(
         ]
         if kind == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
             return _cpp.fem.petsc.create_vector_nest(maps)
-        elif kind == PETSc.Vec.Type.MPI:  # type: ignore[attr-defined]
+        elif kind == PETSc.Vec.Type.MPI or kind is None:  # type: ignore[attr-defined]
             off_owned = tuple(
                 itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
             )
