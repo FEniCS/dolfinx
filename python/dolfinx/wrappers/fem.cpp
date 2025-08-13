@@ -103,7 +103,16 @@ void declare_function_space(nb::module_& m, std::string type)
                      std::shared_ptr<const dolfinx::fem::FiniteElement<T>>>,
                  std::vector<std::shared_ptr<const dolfinx::fem::DofMap>>>(),
              nb::arg("mesh"), nb::arg("elements"), nb::arg("dofmaps"))
-        .def("collapse", &dolfinx::fem::FunctionSpace<T>::collapse)
+        .def("collapse",
+             [](const dolfinx::fem::FunctionSpace<T>& self)
+                 -> std::pair<dolfinx::fem::FunctionSpace<T>,
+                              nanobind::ndarray<std::int32_t, nanobind::numpy>>
+             {
+               auto [collapsed_fs, dofs] = self.collapse();
+               return {std::move(collapsed_fs),
+                       dolfinx_wrappers::as_nbarray(std::move(dofs),
+                                                    {dofs.size()})};
+             })
         .def("component", &dolfinx::fem::FunctionSpace<T>::component)
         .def("contains", &dolfinx::fem::FunctionSpace<T>::contains,
              nb::arg("V"))
