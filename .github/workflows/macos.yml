@@ -37,10 +37,8 @@ jobs:
           python-version: "3.12"
 
       - name: Install Homebrew dependencies
-        # open-mpi with 5.0.8 causes stalling/failing pipelines.
-        # using mpich as work around for now - removal of hdf5-mpi required
         run: |
-          brew install adios2 boost catch2 cmake make ninja mpich pkgconf pugixml spdlog # FEniCS
+          brew install adios2 boost catch2 cmake make ninja open-mpi pkgconf pugixml spdlog # FEniCS
           brew install bison flex gfortran scalapack scotch # PETSc
 
       - name: Install Python dependencies (petsc4py)
