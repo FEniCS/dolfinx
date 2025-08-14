@@ -108,7 +108,7 @@ void declare_function_space(nb::module_& m, std::string type)
                  -> std::pair<dolfinx::fem::FunctionSpace<T>,
                               nanobind::ndarray<std::int32_t, nanobind::numpy>>
              {
-               auto [collapsed_fs, dofs] = self.collapse();
+               auto&& [collapsed_fs, dofs] = self.collapse();
                return {std::move(collapsed_fs),
                        dolfinx_wrappers::as_nbarray(std::move(dofs),
                                                     {dofs.size()})};
