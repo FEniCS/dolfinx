@@ -217,6 +217,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   // Create neighbourhood communicator for sending data to
   // post offices
   MPI_Comm comm_po_post;
+  spdlog::info("Rank {} before owner->PO create.", dolfinx::MPI::rank(comm));
   MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
                                  dest.size(), dest.data(), MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, false, &comm_po_post);
@@ -334,6 +335,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
   // Create neighbourhood communicator for sending data from post
   // offices
+  spdlog::info("Rank {} before PO->owner create.", dolfinx::MPI::rank(comm));
   MPI_Comm comm_po_receive;
   MPI_Dist_graph_create_adjacent(comm, dest.size(), dest.data(), MPI_UNWEIGHTED,
                                  src.size(), src.data(), MPI_UNWEIGHTED,
@@ -394,6 +396,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       }
     }
   }
+  MPI_Barrier(comm);
 
   return graph::AdjacencyList(std::move(data), std::move(offsets));
 }
