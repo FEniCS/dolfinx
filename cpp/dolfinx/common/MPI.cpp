@@ -87,6 +87,7 @@ void dolfinx::MPI::check_error(MPI_Comm comm, int code)
     error_string.resize(len);
     std::cerr << error_string << '\n';
     MPI_Abort(comm, code);
+    MPI_Abort(MPI_COMM_WORLD, code);
     std::abort();
   }
 }
