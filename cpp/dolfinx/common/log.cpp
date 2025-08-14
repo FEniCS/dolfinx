@@ -12,7 +12,7 @@
 void dolfinx::init_logging(int argc, char* argv[])
 {
   // Initialise to level::warn, can be overridden later
-  spdlog::set_level(spdlog::level::warn);
+  spdlog::set_level(spdlog::level::info);
   spdlog::cfg::load_argv_levels(argc, argv);
 }
 //-----------------------------------------------------------------------------
