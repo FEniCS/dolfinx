@@ -517,9 +517,9 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   }
 
   MPI_Comm comm;
-  int ierr = MPI_Dist_graph_create_adjacent(mesh.comm(), ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, ranks.size(), ranks.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  int ierr = MPI_Dist_graph_create_adjacent(
+      mesh.comm(), ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
+      ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
   dolfinx::MPI::check_error(mesh.comm(), ierr);
 
   // Communicate any shared edges

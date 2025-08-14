@@ -72,7 +72,7 @@ public:
     ierr = MPI_Dist_graph_create_adjacent(
         map.comm(), _dest.size(), _dest.data(), MPI_UNWEIGHTED, _src.size(),
         _src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
-      dolfinx::MPI::check_error(map.comm(), ierr);
+    dolfinx::MPI::check_error(map.comm(), ierr);
     _comm1 = dolfinx::MPI::Comm(comm1, false);
 
     // Build permutation array that sorts ghost indices by owning rank
