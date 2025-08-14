@@ -187,6 +187,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
   bool barrier_active = false;
   while (!comm_complete)
   {
+    std::cout << dolfinx::MPI::rank(comm) << " hanging in NBX" << std::endl;
     // Check for message
     int request_pending;
     MPI_Status status;
