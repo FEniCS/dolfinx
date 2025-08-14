@@ -163,6 +163,7 @@ std::vector<int>
 dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
                                       int tag)
 {
+  // std::cout << dolfinx::MPI::rank(comm) << " starting NBX" << std::endl;
   spdlog::info(
       "Computing communication graph edges (using NBX algorithm). Number "
       "of input edges: {}",
@@ -187,7 +188,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
   bool barrier_active = false;
   while (!comm_complete)
   {
-    std::cout << dolfinx::MPI::rank(comm) << " hanging in NBX" << std::endl;
+    // std::cout << dolfinx::MPI::rank(comm) << " hanging in NBX" << std::endl;
     // Check for message
     int request_pending;
     MPI_Status status;
@@ -232,6 +233,8 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
     }
   }
 
+
+  // std::cout << dolfinx::MPI::rank(comm) << " stopping NBX" << std::endl;
   spdlog::info("Finished graph edge discovery using NBX algorithm. Number "
                "of discovered edges {}",
                static_cast<int>(other_ranks.size()));
