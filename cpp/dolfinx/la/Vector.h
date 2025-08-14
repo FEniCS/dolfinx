@@ -249,10 +249,10 @@ auto inner_product(const V& a, const V& b)
   return result;
 }
 
-/// Compute the squared L2 norm of vector
+/// Compute the squared L2 norm of (real-valued) vector
 /// @note Collective MPI operation
 template <class V>
-auto squared_norm(const V& a)
+scalar_value_t<typename V::value_type> squared_norm(const V& a)
 {
   using T = typename V::value_type;
   T result = inner_product(a, a);
@@ -264,7 +264,7 @@ auto squared_norm(const V& a)
 /// @param x A vector
 /// @param type Norm type
 template <class V>
-auto norm(const V& x, Norm type = Norm::l2)
+scalar_value_t<typename V::value_type> norm(const V& x, Norm type = Norm::l2)
 {
   using T = typename V::value_type;
   switch (type)

@@ -15,6 +15,7 @@
 #include <span>
 #include <utility>
 #include <vector>
+#include <iostream>
 
 using namespace dolfinx;
 using namespace dolfinx::common;
@@ -1053,10 +1054,12 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks(int tag) const
 
     // Create ghost -> owner comm
     MPI_Comm comm0;
+    std::cout << "alive" << dolfinx::MPI::rank(_comm.comm()) << std::endl;
     int ierr = MPI_Dist_graph_create_adjacent(
         _comm.comm(), dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(),
         src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
     dolfinx::MPI::check_error(_comm.comm(), ierr);
+    std::cout << "alive after" << dolfinx::MPI::rank(_comm.comm()) << std::endl;
 
     // Exchange number of indices to send/receive from each rank
     std::vector<int> recv_sizes(dest.size(), 0);

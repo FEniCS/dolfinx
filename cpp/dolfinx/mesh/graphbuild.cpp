@@ -397,7 +397,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       }
     }
   }
-  MPI_Barrier(comm);
+  // MPI_Barrier(comm);
 
   return graph::AdjacencyList(std::move(data), std::move(offsets));
 }
