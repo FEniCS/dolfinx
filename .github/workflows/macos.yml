@@ -38,9 +38,9 @@ jobs:
 
       - name: Install Homebrew dependencies
         # open-mpi with 5.0.8 causes stalling/failing pipelines.
-        # using mpich as work around for now
+        # using mpich as work around for now - removal of hdf5-mpi required
         run: |
-          brew install adios2 boost catch2 cmake hdf5-mpi make ninja mpich pkgconf pugixml spdlog # FEniCS
+          brew install adios2 boost catch2 cmake make ninja mpich pkgconf pugixml spdlog # FEniCS
           brew install bison flex gfortran scalapack scotch # PETSc
 
       - name: Install Python dependencies (petsc4py)
@@ -81,13 +81,13 @@ jobs:
 
       - name: Build and install DOLFINx C++ library
         run: |
-          cmake -Werror=dev --warn-uninitialized -G Ninja -B build -S cpp/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Debug -B build -S cpp/
           cmake --build build
           sudo cmake --install build
 
       - name: Build C++ unit tests
         run: |
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Debug -B build/test/ -S cpp/test/
           cmake --build build/test
 
       - name: Run C++ unit tests (serial)
@@ -102,7 +102,7 @@ jobs:
       - name: Build and install DOLFINx Python interface
         run: |
           python -m pip install -r python/build-requirements.txt
-          python -m pip install --check-build-dependencies --no-build-isolation 'python/[test]'
+          python -m pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
 
       - name: Basic test
         run: |
