@@ -96,10 +96,10 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
 
   // Create neighborhood communicator for vertex creation
   MPI_Comm neighbor_comm;
-  MPI_Dist_graph_create_adjacent(
+  int ierr = MPI_Dist_graph_create_adjacent(
       mesh.comm(), ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
       ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm);
-
+  dolfinx::MPI::check_error(mesh.comm(), ierr);
   // Communicate ghost cells that might have been marked. This is not
   // necessary for a uniform refinement.
   if (cells)

@@ -317,10 +317,10 @@ void SparsityPattern::finalize()
   {
     MPI_Comm comm;
     std::span dest0 = _index_maps[0]->dest();
-    MPI_Dist_graph_create_adjacent(
+    int ierr = MPI_Dist_graph_create_adjacent(
         _index_maps[0]->comm(), dest0.size(), dest0.data(), MPI_UNWEIGHTED,
         src0.size(), src0.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
-
+    dolfinx::MPI::check_error(_index_maps[0]->comm(), ierr);
     std::vector<int> recv_sizes(dest0.size());
     send_sizes.reserve(1);
     recv_sizes.reserve(1);

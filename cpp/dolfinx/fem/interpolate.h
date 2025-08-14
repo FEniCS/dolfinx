@@ -192,9 +192,10 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
 
   // Create neighborhood communicator
   MPI_Comm reverse_comm;
-  MPI_Dist_graph_create_adjacent(
+  int ierr = MPI_Dist_graph_create_adjacent(
       comm, in_ranks.size(), in_ranks.data(), MPI_UNWEIGHTED, out_ranks.size(),
       out_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &reverse_comm);
+    dolfinx::MPI::check_error(comm, ierr);
 
   std::vector<std::int32_t> comm_to_output;
   std::vector<std::int32_t> recv_sizes(in_ranks.size());

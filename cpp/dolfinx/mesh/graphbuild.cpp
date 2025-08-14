@@ -218,10 +218,10 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   // post offices
   MPI_Comm comm_po_post;
   spdlog::info("Rank {} before owner->PO create.", dolfinx::MPI::rank(comm));
-  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
-                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &comm_po_post);
-
+  int ierr = MPI_Dist_graph_create_adjacent(
+      comm, src.size(), src.data(), MPI_UNWEIGHTED, dest.size(), dest.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm_po_post);
+  dolfinx::MPI::check_error(comm, ierr);
   // Compute send displacements
   std::vector<std::int32_t> send_disp(num_items_per_dest.size() + 1, 0);
   std::partial_sum(num_items_per_dest.begin(), num_items_per_dest.end(),
@@ -337,9 +337,10 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   // offices
   spdlog::info("Rank {} before PO->owner create.", dolfinx::MPI::rank(comm));
   MPI_Comm comm_po_receive;
-  MPI_Dist_graph_create_adjacent(comm, dest.size(), dest.data(), MPI_UNWEIGHTED,
-                                 src.size(), src.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &comm_po_receive);
+  ierr = MPI_Dist_graph_create_adjacent(
+      comm, dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(), src.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm_po_receive);
+  dolfinx::MPI::check_error(comm, ierr);
 
   // Send back data
   std::vector<std::int64_t> recv_buffer1(send_disp.back());

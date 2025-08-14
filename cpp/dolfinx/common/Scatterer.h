@@ -62,15 +62,17 @@ public:
     // (0) owner -> ghost,
     // (1) ghost -> owner
     MPI_Comm comm0;
-    MPI_Dist_graph_create_adjacent(
+    int ierr = MPI_Dist_graph_create_adjacent(
         map.comm(), _src.size(), _src.data(), MPI_UNWEIGHTED, _dest.size(),
         _dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+    dolfinx::MPI::check_error(map.comm(), ierr);
     _comm0 = dolfinx::MPI::Comm(comm0, false);
 
     MPI_Comm comm1;
-    MPI_Dist_graph_create_adjacent(
+    ierr = MPI_Dist_graph_create_adjacent(
         map.comm(), _dest.size(), _dest.data(), MPI_UNWEIGHTED, _src.size(),
         _src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+      dolfinx::MPI::check_error(map.comm(), ierr);
     _comm1 = dolfinx::MPI::Comm(comm1, false);
 
     // Build permutation array that sorts ghost indices by owning rank

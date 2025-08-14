@@ -610,10 +610,11 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
 
   // Create neighbourhood communicator (owner <- ghost)
   MPI_Comm comm;
-  MPI_Dist_graph_create_adjacent(_index_maps[0]->comm(), dest_ranks.size(),
-                                 dest_ranks.data(), MPI_UNWEIGHTED,
-                                 src_ranks.size(), src_ranks.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  int ierr = MPI_Dist_graph_create_adjacent(
+      _index_maps[0]->comm(), dest_ranks.size(), dest_ranks.data(),
+      MPI_UNWEIGHTED, src_ranks.size(), src_ranks.data(), MPI_UNWEIGHTED,
+      MPI_INFO_NULL, false, &comm);
+  dolfinx::MPI::check_error(_index_maps[0]->comm(), ierr);
   _comm = dolfinx::MPI::Comm(comm, false);
 
   // Build map from ghost row index position to owning (neighborhood)

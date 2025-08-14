@@ -271,9 +271,10 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
       std::ranges::set_union(src, dest, std::back_inserter(ranks));
       auto [unique_end, range_end] = std::ranges::unique(ranks);
       ranks.erase(unique_end, range_end);
-      MPI_Dist_graph_create_adjacent(
+      int ierr = MPI_Dist_graph_create_adjacent(
           map->comm(), ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
           ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+        dolfinx::MPI::check_error(map->comm(), ierr);
     }
 
     std::vector<std::int32_t> dofs_remote;
@@ -394,10 +395,11 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
       std::ranges::set_union(src, dest, std::back_inserter(ranks));
       auto [unique_end, range_end] = std::ranges::unique(ranks);
       ranks.erase(unique_end, range_end);
-      MPI_Dist_graph_create_adjacent(map0->comm(), ranks.size(), ranks.data(),
+      int ierr =MPI_Dist_graph_create_adjacent(map0->comm(), ranks.size(), ranks.data(),
                                      MPI_UNWEIGHTED, ranks.size(), ranks.data(),
                                      MPI_UNWEIGHTED, MPI_INFO_NULL, false,
                                      &comm);
+                                     dolfinx::MPI::check_error(map0->comm(), ierr);
     }
 
     std::vector<std::int32_t> dofs_remote = get_remote_dofs(

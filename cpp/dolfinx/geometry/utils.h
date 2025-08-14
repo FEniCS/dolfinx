@@ -716,9 +716,10 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
 
   // Create neighborhood communicator in forward direction
   MPI_Comm forward_comm;
-  MPI_Dist_graph_create_adjacent(
+  int ierr = MPI_Dist_graph_create_adjacent(
       comm, in_ranks.size(), in_ranks.data(), MPI_UNWEIGHTED, out_ranks.size(),
       out_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &forward_comm);
+  dolfinx::MPI::check_error(comm, ierr);
 
   // Compute map from global mpi rank to neighbor rank, "collisions"
   // uses global rank
@@ -807,9 +808,10 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
   // Create neighborhood communicator in the reverse direction: send
   // back col to requesting processes
   MPI_Comm reverse_comm;
-  MPI_Dist_graph_create_adjacent(
+  ierr = MPI_Dist_graph_create_adjacent(
       comm, out_ranks.size(), out_ranks.data(), MPI_UNWEIGHTED, in_ranks.size(),
       in_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &reverse_comm);
+  dolfinx::MPI::check_error(comm, ierr);
 
   // Reuse sizes and offsets from first communication set
   // but divide by three

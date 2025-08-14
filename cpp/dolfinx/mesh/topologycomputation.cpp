@@ -136,9 +136,10 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   ranks.erase(unique_end, range_end);
 
   MPI_Comm neighbor_comm;
-  MPI_Dist_graph_create_adjacent(
+  int ierr = MPI_Dist_graph_create_adjacent(
       comm, ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
       ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm);
+  dolfinx::MPI::check_error(comm, ierr);
 
   std::vector<std::vector<std::int64_t>> send_entities(ranks.size());
   std::vector<std::vector<std::int32_t>> send_index(ranks.size());

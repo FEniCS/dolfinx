@@ -105,9 +105,10 @@ graph::build::distribute(MPI_Comm comm,
 
   // Create neighbourhood communicator
   MPI_Comm neigh_comm;
-  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
-                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neigh_comm);
+  int ierr = MPI_Dist_graph_create_adjacent(
+      comm, src.size(), src.data(), MPI_UNWEIGHTED, dest.size(), dest.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neigh_comm);
+  dolfinx::MPI::check_error(comm, ierr);
 
   // Send number of nodes to receivers
   std::vector<int> num_items_recv(src.size());
@@ -289,9 +290,10 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
 
   // Create neighbourhood communicator
   MPI_Comm neigh_comm;
-  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
-                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neigh_comm);
+  int ierr = MPI_Dist_graph_create_adjacent(
+      comm, src.size(), src.data(), MPI_UNWEIGHTED, dest.size(), dest.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neigh_comm);
+  dolfinx::MPI::check_error(comm, ierr);
 
   // Send number of nodes to receivers
   std::vector<int> num_items_recv(src.size());
@@ -425,14 +427,16 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
   MPI_Comm neighbor_comm_fwd, neighbor_comm_rev;
 
   std::vector<int> in_edges = MPI::compute_graph_edges_pcx(comm, neighbors);
-  MPI_Dist_graph_create_adjacent(comm, in_edges.size(), in_edges.data(),
-                                 MPI_UNWEIGHTED, neighbors.size(),
-                                 neighbors.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neighbor_comm_fwd);
-  MPI_Dist_graph_create_adjacent(comm, neighbors.size(), neighbors.data(),
-                                 MPI_UNWEIGHTED, in_edges.size(),
-                                 in_edges.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-                                 false, &neighbor_comm_rev);
+  int ierr = MPI_Dist_graph_create_adjacent(
+      comm, in_edges.size(), in_edges.data(), MPI_UNWEIGHTED, neighbors.size(),
+      neighbors.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false,
+      &neighbor_comm_fwd);
+  dolfinx::MPI::check_error(comm, ierr);
+  ierr = MPI_Dist_graph_create_adjacent(
+      comm, neighbors.size(), neighbors.data(), MPI_UNWEIGHTED, in_edges.size(),
+      in_edges.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false,
+      &neighbor_comm_rev);
+  dolfinx::MPI::check_error(comm, ierr);
 
   std::vector<int> send_offsets{0};
   send_offsets.reserve(ghost_index_count.size() + 1);

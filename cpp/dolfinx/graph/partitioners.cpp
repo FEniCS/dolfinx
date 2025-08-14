@@ -112,9 +112,10 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
 
   // Create neighbourhood communicator
   MPI_Comm neigh_comm;
-  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
-                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neigh_comm);
+  int ierr = MPI_Dist_graph_create_adjacent(
+      comm, src.size(), src.data(), MPI_UNWEIGHTED, dest.size(), dest.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neigh_comm);
+  dolfinx::MPI::check_error(comm, ierr);
 
   // Determine receives sizes
   std::vector<int> recv_sizes(dest.size());

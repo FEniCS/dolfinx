@@ -114,9 +114,10 @@ refinement::adjust_indices(const common::IndexMap& map, std::int32_t n)
   std::span dest = map.dest();
 
   MPI_Comm comm;
-  MPI_Dist_graph_create_adjacent(map.comm(), src.size(), src.data(),
-                                 MPI_UNWEIGHTED, dest.size(), dest.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  int ierr = MPI_Dist_graph_create_adjacent(
+      map.comm(), src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
+      dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  dolfinx::MPI::check_error(map.comm(), ierr);
 
   // Communicate offset to neighbors
   std::vector<std::int64_t> offsets(src.size(), 0);

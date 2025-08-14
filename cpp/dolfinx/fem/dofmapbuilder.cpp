@@ -529,9 +529,10 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
     std::span src = map->src();
     std::span dest = map->dest();
-    MPI_Dist_graph_create_adjacent(
+    int ierr = MPI_Dist_graph_create_adjacent(
         map->comm(), src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
         dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm[d]);
+    dolfinx::MPI::check_error(map->comm(), ierr);
 
     // Number and values to send and receive
     const int num_indices = global[d].size();

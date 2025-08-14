@@ -94,9 +94,10 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
 
   // Create neighbourhood communicator for sending data to post offices
   MPI_Comm neigh_comm0;
-  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
-                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neigh_comm0);
+  int ierr = MPI_Dist_graph_create_adjacent(
+      comm, src.size(), src.data(), MPI_UNWEIGHTED, dest.size(), dest.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neigh_comm0);
+  dolfinx::MPI::check_error(comm, ierr);
 
   // Compute send displacements
   std::vector<std::int32_t> send_disp0(num_items_per_dest0.size() + 1, 0);
@@ -226,9 +227,10 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
 
   // Send back
   MPI_Comm neigh_comm1;
-  MPI_Dist_graph_create_adjacent(comm, dest.size(), dest.data(), MPI_UNWEIGHTED,
-                                 src.size(), src.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neigh_comm1);
+  ierr = MPI_Dist_graph_create_adjacent(
+      comm, dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(), src.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neigh_comm1);
+  dolfinx::MPI::check_error(comm, ierr);
 
   // Send number of values to receive
   std::vector<int> num_items_recv1(dest.size());
@@ -432,10 +434,10 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
   std::vector<std::int64_t> recv_data;
   {
     MPI_Comm comm0;
-    MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
-                                   dest.size(), dest.data(), MPI_UNWEIGHTED,
-                                   MPI_INFO_NULL, false, &comm0);
-
+    int ierr = MPI_Dist_graph_create_adjacent(
+        comm, src.size(), src.data(), MPI_UNWEIGHTED, dest.size(), dest.data(),
+        MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+    dolfinx::MPI::check_error(comm, ierr);
     // Prepare send sizes and send displacements
     std::vector<int> send_sizes;
     send_sizes.reserve(dest.size());
@@ -518,10 +520,10 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
   MPI_Comm comm;
   std::span src = map0.src();
   std::span dest = map0.dest();
-  MPI_Dist_graph_create_adjacent(map0.comm(), src.size(), src.data(),
-                                 MPI_UNWEIGHTED, dest.size(), dest.data(),
-                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
-
+  int ierr = MPI_Dist_graph_create_adjacent(
+      map0.comm(), src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
+      dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  dolfinx::MPI::check_error(map0.comm(), ierr);
   // --
 
   // For each rank, list of owned vertices that are ghosted by other
@@ -530,9 +532,10 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
   {
     // -- Send cell ghost indices to owner
     MPI_Comm comm1;
-    MPI_Dist_graph_create_adjacent(
+    int ierr = MPI_Dist_graph_create_adjacent(
         map0.comm(), dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(),
         src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+    dolfinx::MPI::check_error(map0.comm(), ierr);
 
     // Build list of (owner rank, index) pairs for each ghost index, and
     // sort
