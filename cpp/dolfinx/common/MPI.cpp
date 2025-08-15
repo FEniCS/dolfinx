@@ -117,10 +117,10 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
   dolfinx::MPI::check_error(comm, err);
 
   std::vector<MPI_Request> send_requests(edges.size());
-  std::vector<std::byte> send_buffer(edges.size());
+  std::vector<char> send_buffer(edges.size());
   for (std::size_t e = 0; e < edges.size(); ++e)
   {
-    int err = MPI_Isend(send_buffer.data() + e, 1, MPI_BYTE, edges[e],
+    int err = MPI_Isend(send_buffer.data() + e, 1, MPI_CHAR, edges[e],
                         static_cast<int>(tag::consensus_pcx), comm,
                         &send_requests[e]);
     dolfinx::MPI::check_error(comm, err);
@@ -142,8 +142,8 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
     {
       // Receive message and store rank
       int other_rank = status.MPI_SOURCE;
-      std::byte buffer_recv;
-      int err = MPI_Recv(&buffer_recv, 1, MPI_BYTE, other_rank,
+      char buffer_recv;
+      int err = MPI_Recv(&buffer_recv, 1, MPI_CHAR, other_rank,
                          static_cast<int>(tag::consensus_pcx), comm,
                          MPI_STATUS_IGNORE);
       dolfinx::MPI::check_error(comm, err);
@@ -171,10 +171,11 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
 
   // Start non-blocking synchronised send
   std::vector<MPI_Request> send_requests(edges.size());
-  std::vector<std::byte> send_buffer(edges.size());
+  // std::vector<std::byte> send_buffer(edges.size());
+  std::vector<char> send_buffer(edges.size());
   for (std::size_t e = 0; e < edges.size(); ++e)
   {
-    int err = MPI_Issend(send_buffer.data() + e, 1, MPI_BYTE, edges[e], tag,
+    int err = MPI_Issend(send_buffer.data() + e, 1, MPI_CHAR, edges[e], tag,
                          comm, &send_requests[e]);
     dolfinx::MPI::check_error(comm, err);
   }
@@ -200,8 +201,9 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
     {
       // Receive it
       int other_rank = status.MPI_SOURCE;
-      std::byte buffer_recv;
-      int err = MPI_Recv(&buffer_recv, 1, MPI_BYTE, other_rank, tag, comm,
+      // std::byte buffer_recv;
+      char buffer_recv;
+      int err = MPI_Recv(&buffer_recv, 1, MPI_CHAR, other_rank, tag, comm,
                          MPI_STATUS_IGNORE);
       dolfinx::MPI::check_error(comm, err);
       other_ranks.push_back(other_rank);

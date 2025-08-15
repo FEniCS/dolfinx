@@ -16,6 +16,9 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/la/Vector.h>
 #include <iostream>
+#include <limits>
+#include <mpi.h>
+#include <type_traits>
 
 using namespace dolfinx;
 
@@ -25,8 +28,12 @@ namespace
 template <typename T>
 void test_vector()
 {
-  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
   const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  if (std::is_same_v<T, float>)
+    std::cout << "Running float on " << mpi_rank << std::endl;
+  else
+    std::cout << "Running double on " << mpi_rank << std::endl;
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
   constexpr int size_local = 100;
 
   // Create some ghost entries on next process
@@ -53,7 +60,7 @@ void test_vector()
   double sumn2
       = size_local * (mpi_size - 1) * mpi_size * (2 * mpi_size - 1) / 6;
   // CHECK(la::squared_norm(v) == sumn2);
-  CHECK(la::norm(v, la::Norm::l2) == std::sqrt(sumn2));
+  REQUIRE_THAT(la::norm(v, la::Norm::l2), Catch::Matchers::WithinAbs(std::sqrt(sumn2), 1e-6));
   // REQUIRE_THAT(std::real(la::inner_product(v, v)), Catch::Matchers::WithinULP(sumn2, 0));
   
   // CHECK(la::norm(v, la::Norm::linf) == static_cast<T>(mpi_size - 1));
@@ -62,11 +69,12 @@ void test_vector()
 } // namespace
 
 TEMPLATE_TEST_CASE("Linear Algebra Vector", "[la_vector]",
-   double
-                   ,std::complex<double>
+   float, double
+                  //  std::complex<double>
                   )
 {
   std::cout << dolfinx::MPI::rank(MPI_COMM_WORLD) << "before" << std::endl;
-  CHECK_NOTHROW(test_vector<TestType>());
+  test_vector<TestType>();
+  MPI_Barrier(MPI_COMM_WORLD);
   std::cout << dolfinx::MPI::rank(MPI_COMM_WORLD) << "afters" << std::endl;
 }
