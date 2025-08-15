@@ -864,7 +864,7 @@ class LinearProblem:
         else:
             self._u = u
 
-        self.bcs = bcs if bcs is not None else []
+        self.bcs = [] if bcs is None else bcs
 
         self._solver = PETSc.KSP().create(self.A.comm)  # type: ignore[attr-defined]
         self.solver.setOperators(self.A, self.P_mat)
