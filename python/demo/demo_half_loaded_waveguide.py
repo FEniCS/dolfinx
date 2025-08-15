@@ -185,23 +185,13 @@ msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
 eps_v = 1
 eps_d = 2.45
 
-
-def Omega_d(x):
-    return x[1] <= d
-
-
-def Omega_v(x):
-    return x[1] >= d
-
-
 D = fem.functionspace(msh, ("DQ", 0))
 eps = fem.Function(D)
 
-cells_v = locate_entities(msh, msh.topology.dim, Omega_v)
-cells_d = locate_entities(msh, msh.topology.dim, Omega_d)
+cells_d = locate_entities(msh, msh.topology.dim, lambda x: x[1] <= d)
 
-eps.x.array[cells_d] = np.full_like(cells_d, eps_d, dtype=PETSc.ScalarType)
-eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=PETSc.ScalarType)
+eps.x.array[:] = eps_v
+eps.x.array[cells_d] = eps_d
 # -
 
 # In order to find the weak form of our problem, the starting point are
