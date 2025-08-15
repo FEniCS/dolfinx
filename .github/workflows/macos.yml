@@ -50,7 +50,7 @@ jobs:
         run: |
           export PATH="$(brew --prefix gfortran)/bin:$(brew --prefix bison)/bin:$PATH"
           export PATH="$(brew --prefix make)/libexec/gnubin:$PATH"
-          git clone -b release https://gitlab.com/petsc/petsc.git petsc
+          git clone --depth 1 --branch release https://gitlab.com/petsc/petsc.git petsc
           cd petsc
           python ./configure \
             --with-64-bit-indices=no \
