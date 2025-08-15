@@ -14,9 +14,13 @@ int main(int argc, char* argv[])
   // Configure test session
   auto session = Catch::Session();
 
-  // Default order is for Catch version >= 3.9.0 changed to rnadom
+  // Default order is for Catch version >= 3.9.0 changed to random.
+  // MPI testing requires same order of execution across processes.
   session.configData().runOrder = Catch::TestRunOrder::Declared;
+
+  // Run test session.
   int result = session.run(argc, argv);
+
   MPI_Finalize();
   return result;
 }
