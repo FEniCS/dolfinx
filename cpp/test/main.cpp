@@ -10,7 +10,13 @@ int main(int argc, char* argv[])
   // Parallel tests require MPI initialization before any tests run and
   // termination only after all tests complete.
   MPI_Init(&argc, &argv);
-  int result = Catch::Session().run(argc, argv);
+
+  // Configure test session
+  auto session = Catch::Session();
+
+  // Default order is for Catch version >= 3.9.0 changed to rnadom
+  session.configData().runOrder = Catch::TestRunOrder::Declared;
+  int result = session.run(argc, argv);
   MPI_Finalize();
   return result;
 }
