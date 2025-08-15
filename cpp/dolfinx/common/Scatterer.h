@@ -26,12 +26,12 @@ namespace dolfinx::common
 /// Scatter and gather operations use MPI neighbourhood collectives. The
 /// implementation is designed for sparse communication patterns, as it
 /// typical of patterns based on an IndexMap.
-template <class Allocator = std::allocator<std::int32_t>>
+template <class Container = std::vector<std::int32_t>>
 class Scatterer
 {
 public:
-  /// The allocator type
-  using allocator_type = Allocator;
+  /// The container type
+  using container_type = Container;
 
   /// Types of MPI communication pattern used by the Scatterer.
   enum class type : std::uint8_t
@@ -41,13 +41,13 @@ public:
   };
 
   /// @brief Create a scatterer.
+  ///
   /// @param[in] map The index map that describes the parallel layout of
   /// data.
   /// @param[in] bs The block size of data associated with each index in
   /// `map` that will be scattered/gathered.
-  /// @param[in] alloc The memory allocator for indices.
-  Scatterer(const IndexMap& map, int bs, const Allocator& alloc = Allocator())
-      : _bs(bs), _remote_inds(0, alloc), _local_inds(0, alloc),
+  Scatterer(const IndexMap& map, int bs)
+      : _bs(bs), _remote_inds(0), _local_inds(0),
         _src(map.src().begin(), map.src().end()),
         _dest(map.dest().begin(), map.dest().end())
   {
@@ -155,16 +155,14 @@ public:
 
     // Expand local indices using block size and convert it from
     // global to local numbering
-    _local_inds = std::vector<std::int32_t, allocator_type>(
-        recv_buffer.size() * _bs, alloc);
+    _local_inds = container_type(recv_buffer.size() * _bs);
     std::int64_t offset = range[0] * _bs;
     for (std::size_t i = 0; i < recv_buffer.size(); i++)
       for (int j = 0; j < _bs; j++)
         _local_inds[i * _bs + j] = (recv_buffer[i] * _bs + j) - offset;
 
     // Expand remote indices using block size
-    _remote_inds
-        = std::vector<std::int32_t, allocator_type>(perm.size() * _bs, alloc);
+    _remote_inds = container_type(perm.size() * _bs);
     for (std::size_t i = 0; i < perm.size(); i++)
       for (int j = 0; j < _bs; j++)
         _remote_inds[i * _bs + j] = perm[i] * _bs + j;
@@ -633,7 +631,7 @@ private:
   dolfinx::MPI::Comm _comm1{MPI_COMM_NULL};
 
   // Permutation indices used to pack and unpack ghost data (remote)
-  std::vector<std::int32_t, allocator_type> _remote_inds;
+  container_type _remote_inds;
 
   // Number of remote indices (ghosts) for each neighbor process
   std::vector<int> _sizes_remote;
@@ -644,7 +642,7 @@ private:
   // Permutation indices used to pack and unpack local shared data
   // (owned indices that are shared with other processes). Indices are
   // grouped by neighbor process.
-  std::vector<std::int32_t, allocator_type> _local_inds;
+  container_type _local_inds;
 
   // Number of local shared indices per neighbor process
   std::vector<int> _sizes_local;

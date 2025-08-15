@@ -76,11 +76,14 @@ public:
   /// Move Assignment operator
   Vector& operator=(Vector&& x) = default;
 
-  /// Set all entries (including ghosts)
+  /// @brief Set all entries (including ghosts).
+  ///
   /// @param[in] v The value to set all entries to (on calling rank)
   void set(value_type v) { std::ranges::fill(_x, v); }
 
-  /// Begin scatter of local data from owner to ghosts on other ranks
+  /// @brief Begin scatter of local data from owner to ghosts on other
+  /// ranks.
+  ///
   /// @note Collective MPI operation
   void scatter_fwd_begin()
   {
@@ -118,7 +121,8 @@ public:
            [](auto /*a*/, auto b) { return b; });
   }
 
-  /// Scatter local data to ghost positions on other ranks
+  /// @brief Scatter local data to ghost positions on other ranks.
+  ///
   /// @note Collective MPI operation
   void scatter_fwd()
   {
@@ -146,9 +150,12 @@ public:
                                   _request);
   }
 
-  /// End scatter of ghost data to owner. This process may receive data
-  /// from more than one process, and the received data can be summed or
-  /// inserted into the local portion of the vector.
+  /// @brief End scatter of ghost data to owner.
+  ///
+  /// This process may receive data from more than one process, and the
+  /// received data can be summed or inserted into the local portion of
+  /// the vector.
+  ///
   /// @param op The operation to perform when adding/setting received
   /// values (add or insert)
   /// @note Collective MPI operation
@@ -158,7 +165,6 @@ public:
     const std::int32_t local_size = _bs * _map->size_local();
     std::span<value_type> x_local(_x.data(), local_size);
     _scatterer->scatter_rev_end(_request);
-
     auto unpack = [](auto&& in, auto&& idx, auto&& out, auto op)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
@@ -167,9 +173,12 @@ public:
     unpack(_buffer_local, _scatterer->local_indices(), x_local, op);
   }
 
-  /// Scatter ghost data to owner. This process may receive data from
-  /// more than one process, and the received data can be summed or
-  /// inserted into the local portion of the vector.
+  /// @brief Scatter ghost data to owner.
+  ///
+  /// This process may receive data from more than one process, and the
+  /// received data can be summed or inserted into the local portion of
+  /// the vector.
+  ///
   /// @param op IndexMap operation (add or insert)
   /// @note Collective MPI operation
   template <class BinaryOperation>
@@ -214,12 +223,16 @@ private:
   container_type _x;
 };
 
-/// Compute the inner product of two vectors. The two vectors must have
-/// the same parallel layout
+/// @brief Compute the inner product of two vectors.
+///
+/// Computes `a^{H} b` (`a^{T} b` if `a` and `b` are real). The two
+/// vectors must have the same parallel layout.
+///
 /// @note Collective MPI operation
-/// @param a A vector
-/// @param b A vector
-/// @return Returns `a^{H} b` (`a^{T} b` if `a` and `b` are real)
+///
+/// @param a Vector `a`.
+/// @param b Vector `b`.
+/// @return Inner product between `a` and `b`.
 template <class V>
 auto inner_product(const V& a, const V& b)
 {
@@ -249,7 +262,7 @@ auto inner_product(const V& a, const V& b)
   return result;
 }
 
-/// Compute the squared L2 norm of vector
+/// @brief Compute the squared L2 norm of vector.
 /// @note Collective MPI operation
 template <class V>
 auto squared_norm(const V& a)
@@ -259,7 +272,7 @@ auto squared_norm(const V& a)
   return std::real(result);
 }
 
-/// Compute the norm of the vector
+/// @brief Compute the norm of the vector.
 /// @note Collective MPI operation
 /// @param x A vector
 /// @param type Norm type
@@ -301,11 +314,12 @@ auto norm(const V& x, Norm type = Norm::l2)
   }
 }
 
-/// Orthonormalize a set of vectors
+/// @brief Orthonormalize a set of vectors.
+///
+/// @tparam V dolfinx::la::Vector
 /// @param[in,out] basis The set of vectors to orthonormalise. The
 /// vectors must have identical parallel layouts. The vectors are
 /// modified in-place.
-/// @tparam V dolfinx::la::Vector
 template <class V>
 void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
 {

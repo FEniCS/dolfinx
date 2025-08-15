@@ -479,7 +479,7 @@ public:
   std::array<int, 2> block_size() const { return _bs; }
 
 private:
-  // Maps for the distribution of the ows and columns
+  // Maps for the distribution of the rows and columns
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
 
   // Block mode (compact or expanded)
