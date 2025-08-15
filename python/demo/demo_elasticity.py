@@ -22,21 +22,11 @@
 #
 # The required modules are first imported:
 
-from mpi4py import MPI
-
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
 
 # +
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 
 import ufl
@@ -110,7 +100,7 @@ def build_nullspace(V: FunctionSpace):
 msh = create_box(
     MPI.COMM_WORLD,
     [np.array([0.0, 0.0, 0.0]), np.array([2.0, 1.0, 1.0])],
-    [16, 16, 16],
+    (16, 16, 16),
     CellType.tetrahedron,
     ghost_mode=GhostMode.shared_facet,
 )

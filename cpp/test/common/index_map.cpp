@@ -10,6 +10,8 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Scatterer.h>
+#include <dolfinx/common/utils.h>
+#include <iostream>
 #include <numeric>
 #include <set>
 #include <vector>
@@ -18,14 +20,12 @@ using namespace dolfinx;
 
 namespace
 {
-void test_scatter_fwd(int n)
+common::IndexMap create_index_map(MPI_Comm comm, int size_local, int num_ghosts)
 {
-  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
-  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
-  const int size_local = 100;
+  const int mpi_size = dolfinx::MPI::size(comm);
+  const int mpi_rank = dolfinx::MPI::rank(comm);
 
   // Create some ghost entries on next process
-  int num_ghosts = (mpi_size - 1) * 3;
   std::vector<std::int64_t> ghosts(num_ghosts);
   for (int i = 0; i < num_ghosts; ++i)
     ghosts[i] = (mpi_rank + 1) % mpi_size * size_local + i;
@@ -33,8 +33,20 @@ void test_scatter_fwd(int n)
   std::vector<int> global_ghost_owner(ghosts.size(), (mpi_rank + 1) % mpi_size);
 
   // Create an IndexMap
-  const common::IndexMap idx_map(MPI_COMM_WORLD, size_local, ghosts,
-                                 global_ghost_owner);
+  return common::IndexMap(MPI_COMM_WORLD, size_local, ghosts,
+                          global_ghost_owner);
+}
+
+void test_scatter_fwd(int n)
+{
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  constexpr int size_local = 100;
+
+  // Create an IndexMap
+  const common::IndexMap idx_map
+      = create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
+  std::int32_t num_ghosts = idx_map.num_ghosts();
   common::Scatterer sct(idx_map, n);
 
   // Create some data to scatter
@@ -68,20 +80,13 @@ void test_scatter_rev()
   auto n = GENERATE(1, 5, 10);
 
   const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
-  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
-  const int size_local = 100;
-
-  // Create some ghost entries on next process
-  const int num_ghosts = (mpi_size - 1) * 3;
-  std::vector<std::int64_t> ghosts(num_ghosts);
-  for (int i = 0; i < num_ghosts; ++i)
-    ghosts[i] = (mpi_rank + 1) % mpi_size * size_local + i;
-
-  std::vector<int> global_ghost_owner(ghosts.size(), (mpi_rank + 1) % mpi_size);
+  constexpr int size_local = 100;
 
   // Create an IndexMap
-  const common::IndexMap idx_map(MPI_COMM_WORLD, size_local, ghosts,
-                                 global_ghost_owner);
+  const common::IndexMap idx_map
+      = create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
+  std::int32_t num_ghosts = idx_map.num_ghosts();
+
   common::Scatterer sct(idx_map, n);
 
   // Create some data, setting ghost values
@@ -159,6 +164,42 @@ void test_consensus_exchange()
 
   CHECK(dest_ranks0 == dest_ranks1);
 }
+
+void test_rank_split()
+{
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  constexpr int size_local = 100;
+  const common::IndexMap idx_map
+      = create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
+
+  {
+    auto [dest_local, src_local] = idx_map.rank_type(MPI_COMM_TYPE_SHARED);
+    REQUIRE(dest_local.size() <= idx_map.dest().size());
+    REQUIRE(src_local.size() <= idx_map.src().size());
+  }
+}
+
+void test_rank_weights()
+{
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  constexpr int size_local = 100;
+  const common::IndexMap idx_map
+      = create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
+
+  std::vector<std::int32_t> weights_src = idx_map.weights_src();
+  std::vector<std::int32_t> weight_dest = idx_map.weights_dest();
+
+  if (mpi_size > 1)
+  {
+    REQUIRE(weights_src == std::vector<std::int32_t>(1, (mpi_size - 1) * 3));
+    REQUIRE(weight_dest == std::vector<std::int32_t>(1, (mpi_size - 1) * 3));
+  }
+  else
+  {
+    REQUIRE(weights_src.empty());
+    REQUIRE(weight_dest.empty());
+  }
+}
 } // namespace
 
 TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
@@ -176,4 +217,14 @@ TEST_CASE("Communication graph edges via consensus exchange",
           "[consensus_exchange]")
 {
   CHECK_NOTHROW(test_consensus_exchange());
+}
+
+TEST_CASE("Split IndexMap communicator by type", "[index_map_comm_split]")
+{
+  CHECK_NOTHROW(test_rank_split());
+}
+
+TEST_CASE("IndexMap stats", "[index_map_stats]")
+{
+  CHECK_NOTHROW(test_rank_weights());
 }

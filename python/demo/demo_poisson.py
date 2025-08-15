@@ -65,22 +65,10 @@
 #
 # The modules that will be used are imported:
 
-import importlib.util
-
-if importlib.util.find_spec("petsc4py") is not None:
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-    from petsc4py.PETSc import ScalarType  # type: ignore
-else:
-    print("This demo requires petsc4py.")
-    exit(0)
-
-from mpi4py import MPI
-
 # +
+from mpi4py import MPI
+from petsc4py.PETSc import ScalarType  # type: ignore
+
 import numpy as np
 
 import ufl
@@ -153,20 +141,19 @@ L = ufl.inner(f, v) * ufl.dx + ufl.inner(g, v) * ufl.ds
 # A {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>` object is
 # created that brings together the variational problem, the Dirichlet
 # boundary condition, and which specifies the linear solver. In this
-# case an LU solver is used. The {py:func}`solve
+# case an LU solver is used, and we ask that PETSc throws an error
+# if the solver does not converge. The {py:func}`solve
 # <dolfinx.fem.petsc.LinearProblem.solve>` computes the solution.
-
 # +
 problem = LinearProblem(
     a,
     L,
     bcs=[bc],
     petsc_options_prefix="demo_poisson_",
-    petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
+    petsc_options={"ksp_type": "preonly", "pc_type": "lu", "ksp_error_if_not_converged": True},
 )
-uh, _, convergence_reason, _ = problem.solve()
+uh = problem.solve()
 assert isinstance(uh, fem.Function)
-assert convergence_reason > 0
 # -
 
 # The solution can be written to a {py:class}`XDMFFile

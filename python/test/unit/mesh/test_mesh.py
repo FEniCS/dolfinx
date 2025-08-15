@@ -48,20 +48,31 @@ def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
     for i in range(submesh.topology.dim):
         submesh.topology.create_entities(i)
         submesh.topology.create_connectivity(i, 0)
+
+    num_ents = submesh_cell_imap.size_local + submesh_cell_imap.num_ghosts
+    submesh_to_mesh = entity_map.sub_topology_to_topology(
+        np.arange(num_ents, dtype=np.int32), inverse=False
+    )
+
+    submesh_vertex_imap = submesh.topology.index_map(0)
+    num_verts = submesh_vertex_imap.size_local + submesh_vertex_imap.num_ghosts
+    submesh_to_mesh_vertex = vertex_map.sub_topology_to_topology(
+        np.arange(num_verts, dtype=np.int32), inverse=False
+    )
     # Some processes might not own or ghost entities
-    if len(entity_map) > 0:
+    if len(submesh_to_mesh) > 0:
         mesh.topology.create_connectivity(entity_dim, 0)
         mesh_e_to_v = mesh.topology.connectivity(entity_dim, 0)
         submesh.topology.create_connectivity(entity_dim, 0)
         submesh_e_to_v = submesh.topology.connectivity(entity_dim, 0)
-        for submesh_entity in range(len(entity_map)):
+        for submesh_entity in range(len(submesh_to_mesh)):
             submesh_entity_vertices = submesh_e_to_v.links(submesh_entity)
             # The submesh is created such that entities is the map from the
             # submesh entity to the mesh entity
-            mesh_entity = entity_map[submesh_entity]
+            mesh_entity = submesh_to_mesh[submesh_entity]
             mesh_entity_vertices = mesh_e_to_v.links(mesh_entity)
             for i in range(len(submesh_entity_vertices)):
-                assert vertex_map[submesh_entity_vertices[i]] == mesh_entity_vertices[i]
+                assert submesh_to_mesh_vertex[submesh_entity_vertices[i]] == mesh_entity_vertices[i]
     else:
         assert submesh.topology.index_map(entity_dim).size_local == 0
 
@@ -73,13 +84,18 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
         == submesh.geometry.x.shape[0]
     )
 
+    submesh_cell_imap = submesh.topology.index_map(entity_dim)
+    num_ents = submesh_cell_imap.size_local + submesh_cell_imap.num_ghosts
+    submesh_to_mesh = entity_map.sub_topology_to_topology(
+        np.arange(num_ents, dtype=np.int32), inverse=False
+    )
     # Some processes might not own or ghost entities
-    if len(entity_map) > 0:
+    if len(submesh_to_mesh) > 0:
         assert mesh.geometry.dim == submesh.geometry.dim
 
         mesh.topology.create_entity_permutations()
-        e_to_g = entities_to_geometry(mesh, entity_dim, np.array(entity_map), True)
-        for submesh_entity in range(len(entity_map)):
+        e_to_g = entities_to_geometry(mesh, entity_dim, np.array(submesh_to_mesh), True)
+        for submesh_entity in range(len(submesh_to_mesh)):
             submesh_x_dofs = submesh.geometry.dofmap[submesh_entity]
             # e_to_g[i] gets the mesh x_dofs of entities[i], which should
             # correspond to the x_dofs of cell i in the submesh
@@ -564,7 +580,7 @@ def test_empty_rank_mesh(dtype):
         cells = np.empty((0, 3), dtype=np.int64)
         x = np.empty((0, 2), dtype=dtype)
 
-    mesh = _mesh.create_mesh(comm, cells, x, domain, partitioner)
+    mesh = _mesh.create_mesh(comm, cells, domain, x, partitioner)
     assert mesh.geometry.x.dtype == dtype
     topology = mesh.topology
 
@@ -696,25 +712,25 @@ def test_mesh_create_cmap(dtype):
 
     # ufl.Mesh case
     domain = ufl.Mesh(element("Lagrange", shape, degree, shape=(2,), dtype=dtype))
-    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
     assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # basix.ufl.element
     domain = element("Lagrange", shape, degree, shape=(2,), dtype=dtype)
-    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
     assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # basix.finite_element
     domain = basix.create_element(basix.ElementFamily.P, basix.CellType[shape], degree, dtype=dtype)
-    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
     assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # cpp.fem.CoordinateElement
     e = basix.create_element(basix.ElementFamily.P, basix.CellType[shape], degree, dtype=dtype)
     domain = coordinate_element(e)
-    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
     assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain() is None

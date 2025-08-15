@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(dolfinx_nanobind LANGUAGES CXX C)
+project(dolfinx_nanobind LANGUAGES CXX)
 
 if(WIN32)
   # Windows requires all symbols to be manually exported. This flag exports all
@@ -13,6 +13,14 @@ find_package(
   COMPONENTS Interpreter Development
   REQUIRED
 )
+
+# Options
+include(FeatureSummary)
+
+option(ENABLE_CLANG_TIDY "Run clang-tidy while building" OFF)
+add_feature_info(ENABLE_CLANG_TIDY ENABLE_CLANG_TIDY "Run clang-tidy while building")
+
+feature_summary(WHAT ALL)
 
 # Detect the installed nanobind package and import it into CMake
 execute_process(
@@ -67,6 +75,11 @@ endif()
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 target_compile_definitions(cpp PRIVATE cxx_std_20)
+
+if(ENABLE_CLANG_TIDY)
+  find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
+  set_target_properties(cpp PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../.clang-tidy")
+endif()
 
 # Add DOLFINx libraries
 target_link_libraries(cpp PRIVATE dolfinx)

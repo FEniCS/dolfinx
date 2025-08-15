@@ -190,7 +190,7 @@ def test_collision_2nd_order_triangle(dtype):
     )
     cells = np.array([[0, 1, 2, 3, 4, 5]])
     domain = ufl.Mesh(element("Lagrange", "triangle", 2, shape=(2,), dtype=dtype))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
 
     # Sample points along an interior line of the domain. The last point
     # is outside the simplex made by the vertices.
