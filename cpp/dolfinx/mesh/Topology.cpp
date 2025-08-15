@@ -817,6 +817,12 @@ Topology::index_maps(int dim) const
     if (it != _index_maps.end())
       maps.push_back(it->second);
   }
+  if (maps.empty())
+  {
+    throw std::runtime_error(std::format(
+        "Missing IndexMap in Topology. Maybe you need to create_entities({}).",
+        dim));
+  }
   return maps;
 }
 //-----------------------------------------------------------------------------
@@ -826,12 +832,6 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
     throw std::runtime_error(
         "Multiple index maps of this dimension. Call index_maps instead.");
   auto im = index_maps(dim);
-  if (im.empty())
-  {
-    throw std::runtime_error(std::format(
-        "Missing IndexMap in Topology. Maybe you need to create_entities({}).",
-        dim));
-  }
   return im.at(0);
 }
 //-----------------------------------------------------------------------------
