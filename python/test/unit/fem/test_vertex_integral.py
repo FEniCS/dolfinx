@@ -27,7 +27,7 @@ from dolfinx import fem, mesh
 )
 @pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_point_source_rank_0(cell_type, ghost_mode, dtype):
+def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
     comm = MPI.COMM_WORLD
     rdtype = np.real(dtype(0)).dtype
 
@@ -109,7 +109,7 @@ def test_point_source_rank_0(cell_type, ghost_mode, dtype):
 )
 @pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_point_source_rank_1(cell_type, ghost_mode, dtype):
+def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
     comm = MPI.COMM_WORLD
     rdtype = np.real(dtype(0)).dtype
 
