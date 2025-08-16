@@ -90,36 +90,36 @@ public:
   /// @note Collective MPI operation
   void scatter_fwd_begin()
   {
-    const std::int32_t local_size = _bs * _map->size_local();
-    std::span<const value_type> x_local(_x.data(), local_size);
-
-    auto pack = [](auto&& in, auto&& idx, auto&& out)
+    auto pack = [](const value_type* in, auto&& idx, value_type* out)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[i] = in[idx[i]];
     };
-    pack(x_local, _scatterer->local_indices(), _buffer_local);
-    _scatterer->scatter_fwd_begin(std::span<const value_type>(_buffer_local),
-                                  std::span<value_type>(_buffer_remote),
+
+    const std::int32_t local_size = _bs * _map->size_local();
+    std::span<const value_type> x_local(_x.data(), local_size);
+    pack(x_local.data(), _scatterer->local_indices(), _buffer_local.data());
+    _scatterer->scatter_fwd_begin(_buffer_local.data(), _buffer_remote.data(),
                                   std::span<MPI_Request>(_request));
   }
 
-  /// End scatter of local data from owner to ghosts on other ranks
-  /// @note Collective MPI operation
+  /// @brief End scatter of local data from owner to ghosts on other
+  /// ranks.
+  ///
+  /// @note Collective MPI operation.
   void scatter_fwd_end()
   {
-    _scatterer->scatter_fwd_end(_request);
-
-    auto unpack = [](auto&& in, auto&& idx, value_type* out, auto op)
+    auto unpack = [](const value_type* in, auto&& idx, value_type* out, auto op)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = op(out[idx[i]], in[i]);
     };
 
+    _scatterer->scatter_fwd_end(_request);
     std::int32_t local_size = _bs * _map->size_local();
     // std::int32_t num_ghosts = _bs * _map->num_ghosts();
-    unpack(_buffer_remote, _scatterer->remote_indices(), _x.data() + local_size,
-           [](auto /*a*/, auto b) { return b; });
+    unpack(_buffer_remote.data(), _scatterer->remote_indices(),
+           _x.data() + local_size, [](auto /*a*/, auto b) { return b; });
   }
 
   /// @brief Scatter local data to ghost positions on other ranks.
@@ -135,19 +135,17 @@ public:
   /// @note Collective MPI operation
   void scatter_rev_begin()
   {
-    const std::int32_t local_size = _bs * _map->size_local();
-    const std::int32_t num_ghosts = _bs * _map->num_ghosts();
-    std::span<value_type> x_remote(_x.data() + local_size, num_ghosts);
-
-    auto pack = [](auto&& in, auto&& idx, auto&& out)
+    auto pack = [](value_type* in, auto&& idx, value_type* out)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[i] = in[idx[i]];
     };
-    pack(x_remote, _scatterer->remote_indices(), _buffer_remote);
 
-    _scatterer->scatter_rev_begin(std::span<const value_type>(_buffer_remote),
-                                  std::span<value_type>(_buffer_local),
+    const std::int32_t local_size = _bs * _map->size_local();
+    const std::int32_t num_ghosts = _bs * _map->num_ghosts();
+    std::span<value_type> x_remote(_x.data() + local_size, num_ghosts);
+    pack(x_remote.data(), _scatterer->remote_indices(), _buffer_remote.data());
+    _scatterer->scatter_rev_begin(_buffer_remote.data(), _buffer_local.data(),
                                   _request);
   }
 
@@ -163,14 +161,15 @@ public:
   template <class BinaryOperation>
   void scatter_rev_end(BinaryOperation op)
   {
-    const std::int32_t local_size = _bs * _map->size_local();
-    std::span<value_type> x_local(_x.data(), local_size);
-    _scatterer->scatter_rev_end(_request);
     auto unpack = [](auto&& in, auto&& idx, auto&& out, auto op)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = op(out[idx[i]], in[i]);
     };
+
+    const std::int32_t local_size = _bs * _map->size_local();
+    std::span<value_type> x_local(_x.data(), local_size);
+    _scatterer->scatter_rev_end(_request);
     unpack(_buffer_local, _scatterer->local_indices(), x_local, op);
   }
 

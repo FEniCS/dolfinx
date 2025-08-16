@@ -174,12 +174,18 @@ public:
     }
   }
 
+  // Done
   /// @brief Start a non-blocking send of owned data to ranks that ghost
   /// the data.
   ///
   /// The communication is completed by calling
   /// Scatterer::scatter_fwd_end. The send and receive buffer should not
   /// be changed until after Scatterer::scatter_fwd_end has been called.
+  ///
+  /// @note The pointer `send_buffer` and `recv_buffer` should be
+  /// pointers to the data on the target device. E.g., if the send and
+  /// received buffers are allocated on a GPU, the `send_buffer` and
+  /// `recv_buffer` should be device pointers.
   ///
   /// @param[in] send_buffer Local data associated with each owned local
   /// index to be sent to process where the data is ghosted. It must not
@@ -192,22 +198,13 @@ public:
   /// @param[in] requests MPI request handle for tracking the status of
   /// the non-blocking communication.
   /// @param[in] type Type of MPI communication pattern used by the
-  /// Scatterer, either Scatterer::type::neighbor or
-  /// Scatterer::type::p2p.
+  /// Scatterer, either ScattererType::neighbor or ScattererType::p2p.
   // template <typename T>
-  // void scatter_fwd_begin(std::span<const T> send_buffer,
-  //                        std::span<T> recv_buffer,
-  //                        std::span<MPI_Request> requests,
-  //                        ScattererType type = ScattererType::neighbor) const
-  template <typename U, typename V>
-  void scatter_fwd_begin(const U& send_buffer, V&& recv_buffer,
+  template <typename T>
+  void scatter_fwd_begin(const T* send_buffer, T* recv_buffer,
                          std::span<MPI_Request> requests,
                          ScattererType type = ScattererType::neighbor) const
   {
-    using T = std::remove_const_t<typename U::value_type>;
-    static_assert(
-        std::is_same_v<T, typename std::remove_cvref_t<V>::value_type>);
-
     // Return early if there are no incoming or outgoing edges
     if (_sizes_local.empty() and _sizes_remote.empty())
       return;
@@ -217,9 +214,9 @@ public:
     case ScattererType::neighbor:
     {
       assert(requests.size() == std::size_t(1));
-      MPI_Ineighbor_alltoallv(send_buffer.data(), _sizes_local.data(),
+      MPI_Ineighbor_alltoallv(send_buffer, _sizes_local.data(),
                               _displs_local.data(), dolfinx::MPI::mpi_t<T>,
-                              recv_buffer.data(), _sizes_remote.data(),
+                              recv_buffer, _sizes_remote.data(),
                               _displs_remote.data(), dolfinx::MPI::mpi_t<T>,
                               _comm0.comm(), requests.data());
       break;
@@ -229,14 +226,14 @@ public:
       assert(requests.size() == _dest.size() + _src.size());
       for (std::size_t i = 0; i < _src.size(); i++)
       {
-        MPI_Irecv(recv_buffer.data() + _displs_remote[i], _sizes_remote[i],
+        MPI_Irecv(recv_buffer + _displs_remote[i], _sizes_remote[i],
                   dolfinx::MPI::mpi_t<T>, _src[i], MPI_ANY_TAG, _comm0.comm(),
                   &requests[i]);
       }
 
       for (std::size_t i = 0; i < _dest.size(); i++)
       {
-        MPI_Isend(send_buffer.data() + _displs_local[i], _sizes_local[i],
+        MPI_Isend(send_buffer + _displs_local[i], _sizes_local[i],
                   dolfinx::MPI::mpi_t<T>, _dest[i], 0, _comm0.comm(),
                   &requests[i + _src.size()]);
       }
@@ -265,6 +262,7 @@ public:
     MPI_Waitall(requests.size(), requests.data(), MPI_STATUS_IGNORE);
   }
 
+  // Done, need to update docs
   /// @brief Scatter data associated with owned indices to ghosting
   /// ranks.
   ///
@@ -286,18 +284,13 @@ public:
   /// @param[in] type Type of MPI communication pattern used by the
   /// Scatterer, either ScattererType::neighbor or ScattererType::p2p.
   template <typename T, typename F>
-    requires std::is_invocable_v<F, std::span<const T>,
-                                 std::span<const std::int32_t>, T*>
-  void scatter_fwd_begin(std::span<const T> local_data,
-                         std::span<T> local_buffer, std::span<T> remote_buffer,
+    requires std::is_invocable_v<F, const T*, const container_type&, T*>
+  void scatter_fwd_begin(const T* local_data, T* local_buffer, T* remote_buffer,
                          F pack_fn, std::span<MPI_Request> requests,
                          ScattererType type = ScattererType::neighbor) const
   {
-    assert(local_buffer.size() == _local_inds.size());
-    assert(remote_buffer.size() == _remote_inds.size());
-    pack_fn(local_data, _local_inds, local_buffer.data());
-    scatter_fwd_begin(std::span<const T>(local_buffer), remote_buffer, requests,
-                      type);
+    pack_fn(local_data, _local_inds, local_buffer);
+    scatter_fwd_begin(local_buffer, remote_buffer, requests, type);
   }
 
   /// @brief Complete a non-blocking send from the local owner to
@@ -309,38 +302,38 @@ public:
   ///
   /// @param[in] remote_buffer Working buffer, same used in
   /// Scatterer::scatter_fwd_begin.
-  /// @param[out] remote_data Received data associated with the ghost
-  /// indices. The order follows the order of the ghost indices in the
-  /// IndexMap used to create the scatterer. The size equal to the
-  /// number of ghosts in the index map multiplied by the block size.
-  /// The data for each index is blocked.
+  /// @param[in, out] remote_data Data associated with the ghost
+  /// indices, which is updated with the received data. The order
+  /// follows the order of the ghost indices in the IndexMap used to
+  /// create the scatterer. The size equal to the number of ghosts in
+  /// the index map multiplied by the block size. The data for each
+  /// index is blocked.
   /// @param[in] unpack_fn Function to unpack the received buffer into
   /// `remote_data`. It is passed as an argument to support
   /// GPU/device-aware MPI.
   /// @param[in] requests MPI request handle for tracking the status of
   /// the send.
-  template <typename U, typename V, typename F>
-    requires std::is_invocable_v<
-                 F,
-                 std::span<const std::remove_const_t<typename U::value_type>>,
-                 std::span<const std::int32_t>,
-                 std::remove_const_t<typename U::value_type>*,
-                 std::function<std::remove_const_t<typename U::value_type>(
-                     std::remove_const_t<typename U::value_type>,
-                     std::remove_const_t<typename U::value_type>)>>
-             && std::is_same_v<std::remove_const_t<typename U::value_type>,
-                               typename std::remove_cvref_t<V>::value_type>
-  void scatter_fwd_end(const U& remote_buffer, V&& remote_data, F unpack_fn,
+  template <typename T, typename F>
+  // requires std::is_invocable_v<
+  //              F,
+  //              std::span<const std::remove_const_t<typename U::value_type>>,
+  //              std::span<const std::int32_t>,
+  //              std::remove_const_t<typename U::value_type>*,
+  //              std::function<std::remove_const_t<typename U::value_type>(
+  //                  std::remove_const_t<typename U::value_type>,
+  //                  std::remove_const_t<typename U::value_type>)>>
+  void scatter_fwd_end(const T* remote_buffer, T* remote_data, F unpack_fn,
                        std::span<MPI_Request> requests) const
   {
-    using T = std::remove_const_t<typename U::value_type>;
-    assert(remote_buffer.size() == _remote_inds.size());
-    assert(remote_data.size() == _remote_inds.size());
+    // using T = std::remove_const_t<typename U::value_type>;
+    // assert(remote_buffer.size() == _remote_inds.size());
+    // assert(remote_data.size() == _remote_inds.size());
     scatter_fwd_end(std::span(requests));
-    unpack_fn(remote_buffer, _remote_inds, remote_data.data(),
+    unpack_fn(remote_buffer, _remote_inds, remote_data,
               [](T /*a*/, T b) { return b; });
   }
 
+  // TODO: Can this be generalised for GPUs?
   /// @brief Scatter data associated with owned indices to ghosting
   /// ranks.
   ///
@@ -356,25 +349,25 @@ public:
   void scatter_fwd(std::span<const T> local_data,
                    std::span<T> remote_data) const
   {
-    std::vector<MPI_Request> requests(1, MPI_REQUEST_NULL);
-    std::vector<T> local_buffer(local_buffer_size(), 0);
-    std::vector<T> remote_buffer(remote_buffer_size(), 0);
-    auto pack_fn = [](auto&& in, auto&& idx, T* out)
+    auto pack_fn = [](const T* in, auto&& idx, T* out)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[i] = in[idx[i]];
     };
-    scatter_fwd_begin(local_data, std::span<T>(local_buffer),
-                      std::span<T>(remote_buffer), pack_fn,
-                      std::span<MPI_Request>(requests));
 
-    auto unpack_fn = [](auto&& in, auto&& idx, T* out, auto op)
+    auto unpack_fn = [](const T* in, auto&& idx, T* out, auto op)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = op(out[idx[i]], in[i]);
     };
 
-    scatter_fwd_end(std::span<const T>(remote_buffer), remote_data, unpack_fn,
+    std::vector<MPI_Request> requests(1, MPI_REQUEST_NULL);
+    std::vector<T> local_buffer(this->local_buffer_size(), 0);
+    std::vector<T> remote_buffer(this->remote_buffer_size(), 0);
+    scatter_fwd_begin(local_data.data(), local_buffer.data(),
+                      remote_buffer.data(), pack_fn,
+                      std::span<MPI_Request>(requests));
+    scatter_fwd_end(remote_buffer.data(), remote_data.data(), unpack_fn,
                     std::span<MPI_Request>(requests));
   }
 
@@ -406,8 +399,7 @@ public:
   /// @param[in] type Type of MPI communication pattern used by the
   /// Scatterer, either ScattererType::neighbor or ScattererType::p2p.
   template <typename T>
-  void scatter_rev_begin(std::span<const T> send_buffer,
-                         std::span<T> recv_buffer,
+  void scatter_rev_begin(const T* send_buffer, T* recv_buffer,
                          std::span<MPI_Request> requests,
                          ScattererType type = ScattererType::neighbor) const
   {
@@ -422,10 +414,10 @@ public:
     case ScattererType::neighbor:
     {
       assert(requests.size() == 1);
-      MPI_Ineighbor_alltoallv(
-          send_buffer.data(), _sizes_remote.data(), _displs_remote.data(),
-          MPI::mpi_t<T>, recv_buffer.data(), _sizes_local.data(),
-          _displs_local.data(), MPI::mpi_t<T>, _comm1.comm(), &requests[0]);
+      MPI_Ineighbor_alltoallv(send_buffer, _sizes_remote.data(),
+                              _displs_remote.data(), MPI::mpi_t<T>, recv_buffer,
+                              _sizes_local.data(), _displs_local.data(),
+                              MPI::mpi_t<T>, _comm1.comm(), &requests[0]);
       break;
     }
     case ScattererType::p2p:
@@ -435,7 +427,7 @@ public:
       // Start non-blocking send from this process to ghost owners
       for (std::size_t i = 0; i < _dest.size(); i++)
       {
-        MPI_Irecv(recv_buffer.data() + _displs_local[i], _sizes_local[i],
+        MPI_Irecv(recv_buffer + _displs_local[i], _sizes_local[i],
                   dolfinx::MPI::mpi_t<T>, _dest[i], MPI_ANY_TAG, _comm0.comm(),
                   &requests[i]);
       }
@@ -444,7 +436,7 @@ public:
       // owned index is a ghost
       for (std::size_t i = 0; i < _src.size(); i++)
       {
-        MPI_Isend(send_buffer.data() + _displs_remote[i], _sizes_remote[i],
+        MPI_Isend(send_buffer + _displs_remote[i], _sizes_remote[i],
                   dolfinx::MPI::mpi_t<T>, _src[i], 0, _comm0.comm(),
                   &requests[i + _dest.size()]);
       }
@@ -497,18 +489,17 @@ public:
   /// @param[in] type Type of MPI communication pattern used by the
   /// scatterer.
   template <typename T, typename F>
-    requires std::is_invocable_v<F, std::span<const T>,
-                                 std::span<const std::int32_t>, std::span<T>>
-  void scatter_rev_begin(std::span<const T> remote_data,
-                         std::span<T> remote_buffer, std::span<T> local_buffer,
-                         F pack_fn, std::span<MPI_Request> request,
+  // requires std::is_invocable_v<F, std::span<const T>,
+  //                              std::span<const std::int32_t>, std::span<T>>
+  void scatter_rev_begin(const T* remote_data, T* remote_buffer,
+                         T* local_buffer, F pack_fn,
+                         std::span<MPI_Request> request,
                          ScattererType type = ScattererType::neighbor) const
   {
-    assert(local_buffer.size() == _local_inds.size());
-    assert(remote_buffer.size() == _remote_inds.size());
+    // assert(local_buffer.size() == _local_inds.size());
+    // assert(remote_buffer.size() == _remote_inds.size());
     pack_fn(remote_data, _remote_inds, remote_buffer);
-    scatter_rev_begin(std::span<const T>(remote_buffer), local_buffer, request,
-                      type);
+    scatter_rev_begin(remote_buffer, local_buffer, request, type);
   }
 
   /// @brief End the reverse scatter communication, and unpack the
@@ -532,46 +523,48 @@ public:
   /// @param[in] request Handle used when calling
   /// Scatterer::scatter_rev_begin.
   template <typename T, typename F, typename BinaryOp>
-    requires std::is_invocable_v<F, std::span<const T>,
-                                 std::span<const std::int32_t>, std::span<T>,
-                                 BinaryOp>
-             and std::is_invocable_r_v<T, BinaryOp, T, T>
-  void scatter_rev_end(std::span<const T> local_buffer, std::span<T> local_data,
-                       F unpack_fn, BinaryOp op, std::span<MPI_Request> request)
+  // requires std::is_invocable_v<F, std::span<const T>,
+  //                              std::span<const std::int32_t>, std::span<T>,
+  //                              BinaryOp>
+  //          and std::is_invocable_r_v<T, BinaryOp, T, T>
+  void scatter_rev_end(const T* local_buffer, T* local_data, F unpack_fn,
+                       BinaryOp op, std::span<MPI_Request> request)
   {
-    assert(local_buffer.size() == _local_inds.size());
-    if (!_local_inds.empty())
-    {
-      assert(*std::ranges::max_element(_local_inds)
-             < std::int32_t(local_data.size()));
-    }
+    // assert(local_buffer.size() == _local_inds.size());
+    // if (!_local_inds.empty())
+    // {
+    //   assert(*std::ranges::max_element(_local_inds)
+    //          < std::int32_t(local_data.size()));
+    // }
     scatter_rev_end(request);
     unpack_fn(local_buffer, _local_inds, local_data, op);
   }
 
+  // TODO: can this be generalised for GPUs?
   /// @brief Scatter data associated with ghost indices to ranks that
   /// own the indices.
   template <typename T, typename BinaryOp>
   void scatter_rev(std::span<T> local_data, std::span<const T> remote_data,
                    BinaryOp op)
   {
-    std::vector<T> local_buffer(local_buffer_size(), 0);
-    std::vector<T> remote_buffer(remote_buffer_size(), 0);
-    auto pack_fn = [](auto&& in, auto&& idx, auto&& out)
+    auto pack_fn = [](const T* in, auto&& idx, T* out)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[i] = in[idx[i]];
     };
-    auto unpack_fn = [](auto&& in, auto&& idx, auto&& out, auto op)
+    auto unpack_fn = [](const T* in, auto&& idx, T* out, auto op)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = op(out[idx[i]], in[i]);
     };
+
+    std::vector<T> local_buffer(this->local_buffer_size(), 0);
+    std::vector<T> remote_buffer(this->remote_buffer_size(), 0);
     std::vector<MPI_Request> request(1, MPI_REQUEST_NULL);
-    scatter_rev_begin(remote_data, std::span<T>(remote_buffer),
-                      std::span<T>(local_buffer), pack_fn,
+    scatter_rev_begin(remote_data.data(), remote_buffer.data(),
+                      local_buffer.data(), pack_fn,
                       std::span<MPI_Request>(request));
-    scatter_rev_end(std::span<const T>(local_buffer), local_data, unpack_fn, op,
+    scatter_rev_end(local_buffer.data(), local_data.data(), unpack_fn, op,
                     std::span<MPI_Request>(request));
   }
 
