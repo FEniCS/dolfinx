@@ -11,6 +11,7 @@ if(NOT Catch2_FOUND)
   FetchContent_MakeAvailable(Catch2)
 endif()
 
+include(Catch)
 
 # FFCx compile: expr.py -> expr.c
 add_custom_command(
@@ -78,5 +79,9 @@ if(ENABLE_CLANG_TIDY)
   set_target_properties(unittests PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../../.clang-tidy")
 endif()
 
-# Test target
-add_test(unittests unittests)
+# Nice for debugging tests one at a time - but extremely slow due to process spawning/tear down
+# catch_discover_tests(unittests)
+
+foreach(np IN LISTS TEST_PROCESSES)
+  add_test(NAME unittests_np_${np} COMMAND mpiexec -np ${np} unittests)
+endforeach()
