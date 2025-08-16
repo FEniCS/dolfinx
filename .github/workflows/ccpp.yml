@@ -197,13 +197,11 @@ jobs:
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
           cmake --build build/test
       - name: Run C++ unit tests (serial)
-        run: |
-          cd build/test
-          ctest -V --output-on-failure -R unittests
+        working-directory: cpp/build
+        run: ctest -V --output-on-failure
       - name: Run C++ unit tests (MPI)
-        run: |
-          cd build/test
-          mpirun -n 3 ctest -V --output-on-failure -R unittests
+        working-directory: cpp/build
+        run: mpirun -n 3 ctest -V --output-on-failure
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
