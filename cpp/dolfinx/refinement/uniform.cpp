@@ -144,9 +144,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
               local_range[0] + entity_offsets[j]);
 
     common::Scatterer sc(*index_maps[j], 1);
-    sc.scatter_fwd(std::span<const std::int64_t>(new_v[j]),
-                   std::span(std::next(new_v[j].begin(), num_entities),
-                             index_maps[j]->num_ghosts()));
+    sc.scatter_fwd(new_v[j].data(), new_v[j].data() + num_entities);
   }
 
   // Create new topology

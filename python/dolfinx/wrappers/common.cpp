@@ -56,8 +56,8 @@ void add_scatter_functions(nb::class_<dolfinx::common::Scatterer<>>& sc)
          nb::ndarray<const T, nb::ndim<1>, nb::c_contig> local_data,
          nb::ndarray<T, nb::ndim<1>, nb::c_contig> remote_data)
       {
-        self.scatter_fwd(std::span(local_data.data(), local_data.size()),
-                         std::span(remote_data.data(), remote_data.size()));
+        // TODO: add size check
+        self.scatter_fwd(local_data.data(), remote_data.data());
       },
       nb::arg("local_data"), nb::arg("remote_data"));
 
@@ -67,9 +67,8 @@ void add_scatter_functions(nb::class_<dolfinx::common::Scatterer<>>& sc)
          nb::ndarray<T, nb::ndim<1>, nb::c_contig> local_data,
          nb::ndarray<const T, nb::ndim<1>, nb::c_contig> remote_data)
       {
-        self.scatter_rev(std::span(local_data.data(), local_data.size()),
-                         std::span(remote_data.data(), remote_data.size()),
-                         std::plus<T>());
+        // TODO: add size checks
+        self.scatter_rev(local_data.data(), remote_data.data(), std::plus<T>());
       },
       nb::arg("local_data"), nb::arg("remote_data"));
 }
