@@ -23,21 +23,22 @@
 namespace dolfinx::la
 {
 
-/// Distributed vector
+/// @brief Distributed vector.
 ///
 /// @tparam T Scalar type
 /// @tparam Container data container type
-template <typename T, typename Container = std::vector<T>>
+template <typename T, typename Container = std::vector<T>,
+          typename ScatterContainer = std::vector<std::int32_t>>
 class Vector
 {
   static_assert(std::is_same_v<typename Container::value_type, T>);
 
 public:
-  /// Scalar type
-  using value_type = T;
-
   /// Container type
   using container_type = Container;
+
+  /// Scalar type
+  using value_type = container_type::value_type;
 
   static_assert(std::is_same_v<value_type, typename container_type::value_type>,
                 "Scalar type and container value type must be the same.");
@@ -46,7 +47,9 @@ public:
   /// @param map IndexMap for parallel distribution of the data
   /// @param bs Block size
   Vector(std::shared_ptr<const common::IndexMap> map, int bs)
-      : _map(map), _scatterer(std::make_shared<common::Scatterer<>>(*_map, bs)),
+      : _map(map),
+        _scatterer(
+            std::make_shared<common::Scatterer<ScatterContainer>>(*_map, bs)),
         _bs(bs), _buffer_local(_scatterer->local_buffer_size()),
         _buffer_remote(_scatterer->remote_buffer_size()),
         _x(bs * (map->size_local() + map->num_ghosts()))
@@ -96,7 +99,6 @@ public:
         out[i] = in[idx[i]];
     };
     pack(x_local, _scatterer->local_indices(), _buffer_local);
-
     _scatterer->scatter_fwd_begin(std::span<const value_type>(_buffer_local),
                                   std::span<value_type>(_buffer_remote),
                                   std::span<MPI_Request>(_request));
@@ -106,18 +108,17 @@ public:
   /// @note Collective MPI operation
   void scatter_fwd_end()
   {
-    const std::int32_t local_size = _bs * _map->size_local();
-    const std::int32_t num_ghosts = _bs * _map->num_ghosts();
-    std::span<value_type> x_remote(_x.data() + local_size, num_ghosts);
-    _scatterer->scatter_fwd_end(std::span<MPI_Request>(_request));
+    _scatterer->scatter_fwd_end(_request);
 
-    auto unpack = [](auto&& in, auto&& idx, auto&& out, auto op)
+    auto unpack = [](auto&& in, auto&& idx, value_type* out, auto op)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = op(out[idx[i]], in[i]);
     };
 
-    unpack(_buffer_remote, _scatterer->remote_indices(), x_remote,
+    std::int32_t local_size = _bs * _map->size_local();
+    // std::int32_t num_ghosts = _bs * _map->num_ghosts();
+    unpack(_buffer_remote, _scatterer->remote_indices(), _x.data() + local_size,
            [](auto /*a*/, auto b) { return b; });
   }
 
@@ -208,7 +209,7 @@ private:
   std::shared_ptr<const common::IndexMap> _map;
 
   // Scatter for managing MPI communication
-  std::shared_ptr<const common::Scatterer<>> _scatterer;
+  std::shared_ptr<const common::Scatterer<ScatterContainer>> _scatterer;
 
   // Block size
   int _bs;
