@@ -117,7 +117,6 @@ public:
 
     _scatterer->scatter_fwd_end(_request);
     std::int32_t local_size = _bs * _map->size_local();
-    // std::int32_t num_ghosts = _bs * _map->num_ghosts();
     unpack(_buffer_remote.data(), _scatterer->remote_indices(),
            _x.data() + local_size, [](auto /*a*/, auto b) { return b; });
   }
@@ -179,8 +178,9 @@ public:
   /// received data can be summed or inserted into the local portion of
   /// the vector.
   ///
-  /// @param op IndexMap operation (add or insert)
   /// @note Collective MPI operation
+  ///
+  /// @param op IndexMap operation (add or insert)
   template <class BinaryOperation>
   void scatter_rev(BinaryOperation op)
   {
@@ -263,7 +263,8 @@ auto inner_product(const V& a, const V& b)
 }
 
 /// @brief Compute the squared L2 norm of vector.
-/// @note Collective MPI operation
+///
+/// @note Collective MPI operation.
 template <class V>
 auto squared_norm(const V& a)
 {
@@ -273,9 +274,11 @@ auto squared_norm(const V& a)
 }
 
 /// @brief Compute the norm of the vector.
-/// @note Collective MPI operation
-/// @param x A vector
-/// @param type Norm type
+///
+/// @note Collective MPI operation.
+///
+/// @param x Vector to compute the norm of.
+/// @param type Norm type.
 template <class V>
 auto norm(const V& x, Norm type = Norm::l2)
 {
