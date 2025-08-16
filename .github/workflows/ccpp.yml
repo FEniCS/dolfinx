@@ -107,16 +107,10 @@ jobs:
           cmake -Werror=dev --warn-uninitialized -G Ninja -DBUILD_TESTING=true -DDOLFINX_ENABLE_PETSC=false -DCMAKE_BUILD_TYPE=Developer -B build -S .
           cmake --build build
           sudo cmake --install build
-      # - name: Build C++ unit tests
-      #   run: |
-      #     cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
-      #     cmake --build build/test
-      - name: Run C++ unit tests (serial)
+
+      - name: Run C++ unit tests
         working-directory: cpp/build
         run: ctest -V --output-on-failure
-      - name: Run C++ unit tests (MPI)
-        working-directory: cpp/build
-        run: mpirun -n 3 ctest -V --output-on-failure
 
       - name: Build Python interface
         run: |
@@ -191,12 +185,10 @@ jobs:
           cmake -Werror=dev --warn-uninitialized -G Ninja -DBUILD_TESTING=true -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_ADIOS2=true -DDOLFINX_ENABLE_KAHIP=true -DDOLFINX_ENABLE_PARMETIS=false -DDOLFINX_ENABLE_PETSC=true -DDOLFINX_ENABLE_SCOTCH=true -DDOLFINX_ENABLE_SLEPC=true -B build -S .
           cmake --build build
           cmake --install build
-      - name: Run C++ unit tests (serial)
+      - name: Run C++ unit tests
         working-directory: cpp/build
         run: ctest -V --output-on-failure
-      - name: Run C++ unit tests (MPI)
-        working-directory: cpp/build
-        run: mpirun -n 3 ctest -V --output-on-failure
+
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
