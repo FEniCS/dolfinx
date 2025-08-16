@@ -68,7 +68,7 @@ target_include_directories(unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_B
 target_compile_options(
   unittests
   PRIVATE
-  $<$<CONFIG:Developer>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+  $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
 )
 
 # TODO: should not be set in test and dolfinx but in cpp once.
