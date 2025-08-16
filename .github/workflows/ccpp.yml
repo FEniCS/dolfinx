@@ -103,21 +103,19 @@ jobs:
 
       - name: Configure and install C++
         run: |
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DDOLFINX_ENABLE_PETSC=false -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DBUILD_TESTING -DDOLFINX_ENABLE_PETSC=false -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
           cmake --build build
           sudo cmake --install build
-      - name: Build C++ unit tests
-        run: |
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
-          cmake --build build/test
+      # - name: Build C++ unit tests
+      #   run: |
+      #     cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+      #     cmake --build build/test
       - name: Run C++ unit tests (serial)
-        run: |
-          cd build/test
-          ctest -V --output-on-failure -R unittests
+        working-directory: cpp/build
+        run: ctest -V --output-on-failure
       - name: Run C++ unit tests (MPI)
-        run: |
-          cd build/test
-          mpirun -n 3 ctest -V --output-on-failure -R unittests
+        working-directory: cpp/build
+        run: mpirun -n 3 ctest -V --output-on-failure
 
       - name: Build Python interface
         run: |
@@ -194,7 +192,7 @@ jobs:
 
       - name: Build C++ unit tests
         run: |
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DBUILD_TESTING=true -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
           cmake --build build/test
       - name: Run C++ unit tests (serial)
         working-directory: cpp/build
