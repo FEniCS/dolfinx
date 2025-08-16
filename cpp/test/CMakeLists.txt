@@ -65,7 +65,7 @@ target_include_directories(unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_B
 # makes version.h accessible
 target_include_directories(unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../>)
 
-target_compile_options(unittests PRIVATE LANGUAGES C CXX)
+# target_compile_options(unittests PRIVATE LANGUAGES C CXX)
 target_compile_options(
   unittests
   PRIVATE
