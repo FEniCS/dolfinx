@@ -765,12 +765,16 @@ void mesh(nb::module_& m)
 
   m.def(
       "create_cell_partitioner",
-      [](dolfinx::mesh::GhostMode mode)
+      [](dolfinx::mesh::GhostMode mode,
+         std::optional<std::int32_t> max_facet_to_cell_links)
           -> part::impl::PythonCellPartitionFunction
       {
         return part::impl::create_cell_partitioner_py(
-            dolfinx::mesh::create_cell_partitioner(mode));
+            dolfinx::mesh::create_cell_partitioner(
+                mode, &dolfinx::graph::partition_graph,
+                max_facet_to_cell_links));
       },
+      nb::arg("mode"), nb::arg("max_facet_to_cell_links") = 2,
       "Create default cell partitioner.");
   m.def(
       "create_cell_partitioner",
