@@ -62,11 +62,10 @@ void test_scatter_fwd(int n)
                           { return i == val * ((mpi_rank + 1) % mpi_size); }));
 
   std::vector<MPI_Request> requests
-      = sct.create_request_vector(decltype(sct)::type::p2p);
-
+      = sct.create_request_vector(common::ScattererType::p2p);
   std::ranges::fill(data_ghost, 0);
-  sct.scatter_fwd_begin<std::int64_t>(data_local, data_ghost, requests,
-                                      decltype(sct)::type::p2p);
+  sct.scatter_fwd_begin(data_local.data(), data_ghost.data(), requests,
+                        common::ScattererType::p2p);
   sct.scatter_fwd_end(requests);
 
   CHECK(
@@ -124,12 +123,11 @@ void test_scatter_rev()
       out[idx[i]] = op(out[idx[i]], in[i]);
   };
 
-  sct.scatter_rev_begin<std::int64_t>(data_ghost, remote_buffer, local_buffer,
-                                      pack_fn, requests,
-                                      decltype(sct)::type::p2p);
-  //
-  sct.scatter_rev_end<std::int64_t>(local_buffer, data_local, unpack_fn,
-                                    std::plus<std::int64_t>(), requests);
+  sct.scatter_rev_begin(data_ghost.data(), remote_buffer.data(),
+                        local_buffer.data(), pack_fn, requests,
+                        common::ScattererType::p2p);
+  sct.scatter_rev_end(local_buffer.data(), data_local.data(), unpack_fn,
+                      std::plus<std::int64_t>(), requests);
 
   sum = std::reduce(data_local.begin(), data_local.end(), 0);
   CHECK(sum == 2 * n * value * num_ghosts);
