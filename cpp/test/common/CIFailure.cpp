@@ -7,8 +7,7 @@
 // Unit tests for Distributed Meshes
 
 #include <catch2/catch_test_macros.hpp>
-#include <dolfinx/common/MPI.h>
-
+#include <dolfinx.h>
 using namespace dolfinx;
 
 namespace
