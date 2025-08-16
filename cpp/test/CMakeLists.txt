@@ -65,12 +65,11 @@ target_include_directories(unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_B
 # makes version.h accessible
 target_include_directories(unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../>)
 
-# target_compile_options(unittests PRIVATE LANGUAGES C CXX)
+set_target_properties(unittests PROPERTIES CXX_STANDARD 20)
 target_compile_options(
   unittests
   PRIVATE
   $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
-  $<$<CONFIG:Developer>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
 )
 
 # TODO: should not be set in test and dolfinx but in cpp once.
