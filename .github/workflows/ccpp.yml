@@ -101,23 +101,26 @@ jobs:
           pip install --no-build-isolation git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
           pip install --no-build-isolation git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
 
-      - name: Configure and install C++
+      - name: Configure (C++)
+        working-directory: cpp
+        run: >
+          cmake -B build -S .
+          -Werror=dev
+          --warn-uninitialized
+          -G Ninja
+          -DCMAKE_BUILD_TYPE=Developer 
+          -DBUILD_TESTING=true
+          -DDOLFINX_ENABLE_PETSC=false
+
+      - name: Build and install (C++)
+        working-directory: cpp/build
         run: |
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DDOLFINX_ENABLE_PETSC=false -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
-          cmake --build build
-          sudo cmake --install build
-      - name: Build C++ unit tests
-        run: |
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
-          cmake --build build/test
-      - name: Run C++ unit tests (serial)
-        run: |
-          cd build/test
-          ctest -V --output-on-failure -R unittests
-      - name: Run C++ unit tests (MPI)
-        run: |
-          cd build/test
-          mpirun -n 3 ctest -V --output-on-failure -R unittests
+          cmake --build .
+          sudo cmake --install .
+
+      - name: Run tests (C++)
+        working-directory: cpp/build
+        run: ctest -V --output-on-failure -R unittests
 
       - name: Build Python interface
         run: |
@@ -186,24 +189,30 @@ jobs:
           pip install --no-build-isolation git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
           pip install --no-build-isolation git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
 
-      - name: Configure, build and install C++ library
-        run: |
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_ADIOS2=true -DDOLFINX_ENABLE_KAHIP=true -DDOLFINX_ENABLE_PARMETIS=false -DDOLFINX_ENABLE_PETSC=true -DDOLFINX_ENABLE_SCOTCH=true -DDOLFINX_ENABLE_SLEPC=true -B build -S cpp/
-          cmake --build build
-          cmake --install build
+      - name: Configure (C++)
+        working-directory: cpp
+        run: >
+          cmake -B build -S .
+          -Werror=dev
+          --warn-uninitialized
+          -G Ninja
+          -DCMAKE_BUILD_TYPE=Developer
+          -DBUILD_TESTING=true
+          -DDOLFINX_ENABLE_ADIOS2=true
+          -DDOLFINX_ENABLE_KAHIP=true
+          -DDOLFINX_ENABLE_PETSC=true
+          -DDOLFINX_ENABLE_SCOTCH=true
+          -DDOLFINX_ENABLE_SLEPC=true 
+          -DDOLFINX_ENABLE_PARMETIS=false
 
-      - name: Build C++ unit tests
-        run: |
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
-          cmake --build build/test
-      - name: Run C++ unit tests (serial)
-        run: |
-          cd build/test
-          ctest -V --output-on-failure -R unittests
-      - name: Run C++ unit tests (MPI)
-        run: |
-          cd build/test
-          mpirun -n 3 ctest -V --output-on-failure -R unittests
+      - name: Build and install (C++)
+        working-directory: cpp/build
+        run: cmake --build . --target install
+
+      - name: Run tests (C++)
+        working-directory: cpp/build
+        run: ctest -V --output-on-failure -R unittests
+
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/

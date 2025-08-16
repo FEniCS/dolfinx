@@ -480,6 +480,15 @@ endif()
 add_subdirectory(dolfinx)
 
 # ------------------------------------------------------------------------------
+# Unit testing
+option(BUILD_TESTING "Build DOLFINx unit tests." OFF)
+set(TEST_PROCESSES "1;3" CACHE STRING "List of process counts to run tests with.")
+include(CTest)
+if (BUILD_TESTING)
+  add_subdirectory(test)
+endif()
+
+# ------------------------------------------------------------------------------
 # Generate and install helper file dolfinx.conf
 
 # FIXME: Can CMake provide the library path name variable?
