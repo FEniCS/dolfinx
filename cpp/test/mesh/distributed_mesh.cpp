@@ -9,11 +9,11 @@
 #include <algorithm>
 #include <basix/finite-element.h>
 #include <catch2/catch_test_macros.hpp>
-#include <dolfinx.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/partitioners.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/dolfinx_mesh.h>
 #include <dolfinx/mesh/graphbuild.h>
 #include <memory>
 
