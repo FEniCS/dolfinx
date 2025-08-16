@@ -825,7 +825,14 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
   if (_entity_types[dim].size() > 1)
     throw std::runtime_error(
         "Multiple index maps of this dimension. Call index_maps instead.");
-  return this->index_maps(dim).at(0);
+  auto im = index_maps(dim);
+  if (im.empty())
+  {
+    throw std::runtime_error(std::format(
+        "Missing IndexMap in Topology. Maybe you need to create_entities({}).",
+        dim));
+  }
+  return im.at(0);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
