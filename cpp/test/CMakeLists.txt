@@ -21,7 +21,7 @@ add_custom_command(
   COMMENT "Compile expr.py using FFCx"
 )
 
-# FFCx compile: poisson.py -> expr.c
+# FFCx compile: poisson.py -> poisson.c
 add_custom_command(
   OUTPUT poisson.c
   COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.py
@@ -62,11 +62,13 @@ if(WIN32)
 endif()
 
 target_include_directories(unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
+# makes version.h accessible
+target_include_directories(unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../>)
 
 target_compile_options(
   unittests
   PRIVATE
-  $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+  $<$<CONFIG:Developer>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
 )
 
 # TODO: should not be set in test and dolfinx but in cpp once.
