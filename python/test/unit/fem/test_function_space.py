@@ -170,8 +170,12 @@ def test_collapse(W, V):
         Function(W.sub(1))
 
     Ws = [W.sub(i).collapse() for i in range(W.num_sub_spaces)]
-    for Wi, _ in Ws:
+    for Wi, dofs in Ws:
         assert np.allclose(Wi.dofmap.index_map.ghosts, W.dofmap.index_map.ghosts)
+
+        # Number of collapsed dofs in W numbering must agree with the number of dofs
+        # of the collapsed space
+        assert Wi.dofmap.index_map.size_local + Wi.dofmap.index_map.num_ghosts == dofs.size
 
     msh = W.mesh
     cell_imap = msh.topology.index_map(msh.topology.dim)
