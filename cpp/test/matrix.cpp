@@ -11,12 +11,11 @@
 #include <basix/mdspan.hpp>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <dolfinx.h>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/fem/dolfinx_fem.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
-#include <dolfinx/mesh/dolfinx_mesh.h>
 #include <mpi.h>
 #include <span>
 
