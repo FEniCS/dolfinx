@@ -97,8 +97,6 @@ public:
         out[i] = in[idx[i]];
     };
 
-    // const std::int32_t local_size = _bs * _map->size_local();
-    // std::span<const value_type> x_local(_x.data(), local_size);
     pack(_x.data(), _scatterer->local_indices(), _buffer_local.data());
     _scatterer->scatter_fwd_begin(_buffer_local.data(), _buffer_remote.data(),
                                   std::span<MPI_Request>(_request));
@@ -236,10 +234,8 @@ auto inner_product(const V& a, const V& b)
   const std::int32_t local_size = a.bs() * a.index_map()->size_local();
   if (local_size != b.bs() * b.index_map()->size_local())
     throw std::runtime_error("Incompatible vector sizes");
-  // std::span<const T> x_a = a.array().subspan(0, local_size);
-  // std::span<const T> x_b = b.array().subspan(0, local_size);
 
-  const T local = std::transform_reduce(
+    const T local = std::transform_reduce(
       a.array().begin(), std::next(a.array().begin(), local_size),
       b.array().begin(), static_cast<T>(0), std::plus{},
       [](T a, T b) -> T

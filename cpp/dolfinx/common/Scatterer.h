@@ -574,14 +574,27 @@ public:
   ///
   /// This function is suitable for CPU and GPU scatters.
   ///
-  /// @tparam T Type of data being scattered.
-  /// @tparam BufferContainer
+  /// @tparam T Value type of data to scatter.
+  /// @tparam BufferContainer Container type used internally to create
+  /// buffers. Usually `std::vector<T>` for a CPU, and a different
+  /// container type for GPUs with data on the device. Example type for
+  /// a GPU is `thrust::device_vector<T>`.
   /// @tparam BinaryOp
   /// @tparam GetBufferPtr
-  /// @param local_data
-  /// @param remote_data
-  /// @param get_ptr
-  /// @param op
+  ///
+  /// @param[in] local_data All data associated with owned indices. Size
+  /// is `size_local()` from the IndexMap used to create the scatterer,
+  /// multiplied by the block size. The data for each index is blocked
+  /// @param[out] remote_data Data associated with the ghost
+  /// indices. The order follows the order of the ghost indices in the
+  /// IndexMap used to create the scatterer. The size equal to the
+  /// number of ghosts in the index map multiplied by the block size.
+  /// The data for each index is blocked.
+  /// @param get_ptr Function that returns a pointer to the buffer data.
+  /// If the buffers are allocated on a device/GPU, the function should
+  /// return the device pointer.
+  /// @param[in] op Reduction operation when accumulating received
+  /// values. To add the received values use `std::plus<T>()`.
   template <typename T, typename BufferContainer, typename BinaryOp,
             typename GetBufferPtr>
   void scatter_rev(T* local_data, const T* remote_data, GetBufferPtr get_ptr,
@@ -611,13 +624,21 @@ public:
   /// @brief Scatter data associated with ghost indices to ranks that
   /// own the indices.
   ///
-  /// This function is suitable for CPU scatters.
+  /// This function is suitable for **CPU** scatters.
   ///
-  /// @tparam T
+  /// @tparam T Value type of data to scatter.
   /// @tparam BinaryOp
-  /// @param local_data
-  /// @param remote_data
-  /// @param op
+  ///
+  /// @param[in] local_data All data associated with owned indices. Size
+  /// is `size_local()` from the IndexMap used to create the scatterer,
+  /// multiplied by the block size. The data for each index is blocked
+  /// @param[out] remote_data All data associated with the ghost
+  /// indices. The order follows the order of the ghost indices in the
+  /// IndexMap used to create the scatterer. The size equal to the
+  /// number of ghosts in the index map multiplied by the block size.
+  /// The data for each index is blocked.
+  /// @param[in] op Reduction operation when accumulating received
+  /// values. To add the received values use `std::plus<T>()`.
   template <typename T, typename BinaryOp>
   void scatter_rev(T* local_data, const T* remote_data, BinaryOp op)
   {
@@ -625,14 +646,14 @@ public:
         local_data, remote_data, [](auto&& x) { return x.data(); }, op);
   }
 
-  /// @brief Size of buffer for local data (owned data that is shared)
-  /// used in forward and reverse scatters.
+  /// @brief Size of buffer for packed local data (owned data that is
+  /// shared) used in forward and reverse scatters.
   ///
   /// @return Required buffer size.
   std::size_t local_buffer_size() const noexcept { return _local_inds.size(); }
 
-  /// @brief Buffer size for ghost (data shared by owned by another
-  /// process) data used in forward and reverse scatters.
+  /// @brief Buffer size for packed ghost (data shared by owned by
+  /// another process) data used in forward and reverse scatters.
   ///
   /// @return Required buffer size.
   std::size_t remote_buffer_size() const noexcept

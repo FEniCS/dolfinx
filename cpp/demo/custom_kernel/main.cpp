@@ -275,7 +275,7 @@ int main(int argc, char* argv[])
 {
   MPI_Init(&argc, &argv);
   dolfinx::init_logging(argc, argv);
-  // assemble<float>(MPI_COMM_WORLD);
+  assemble<float>(MPI_COMM_WORLD);
   assemble<double>(MPI_COMM_WORLD);
   MPI_Finalize();
   return 0;
