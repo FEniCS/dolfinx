@@ -1,23 +1,32 @@
-# Copyright (C) 2016-2016 Garth N. Wells
+# Copyright (C) 2016-2025 Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import importlib.util
 import pathlib
 import subprocess
 import sys
 
 import pytest
 
+
+def imports_petsc4py(f):
+    with open(f, encoding="utf-8") as file:
+        read_data = file.read()
+        return "petsc4py" in read_data or ".petsc" in read_data
+
+
 # Get directory of this file
 path = pathlib.Path(__file__).resolve().parent
 
 # Build list of demo programs
-demos = []
 demo_files = list(path.glob("**/*.py"))
-for f in demo_files:
-    demos.append((f.parent, f.name))
+if importlib.util.find_spec("petsc4py") is not None:
+    demos = [(f.parent, f.name) for f in demo_files]
+else:
+    demos = [(f.parent, f.name) for f in demo_files if not imports_petsc4py(f)]
 
 
 @pytest.mark.serial

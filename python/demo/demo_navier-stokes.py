@@ -166,43 +166,22 @@
 #
 # We begin by importing the required modules and functions
 
-import importlib.util
-
-if importlib.util.find_spec("petsc4py") is not None:
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-else:
-    print("This demo requires petsc4py.")
-    exit(0)
-
-from mpi4py import MPI
 
 # +
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 
 import ufl
-from dolfinx import default_real_type, fem, io, mesh
-
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
-
+from dolfinx import default_real_type, fem, has_adios2, io, mesh
 from dolfinx.fem.petsc import LinearProblem
 
 if np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx real mode")
     exit(0)
+
+
 # -
 
 # We also define some helper functions that will be used later
@@ -372,12 +351,12 @@ u_vis.interpolate(u_h)
 
 # Write initial condition to file
 t = 0.0
-try:
+if has_adios2:
     u_file = io.VTXWriter(msh.comm, "u.bp", u_vis)
     p_file = io.VTXWriter(msh.comm, "p.bp", p_h)
     u_file.write(t)
     p_file.write(t)
-except AttributeError:
+else:
     print("File output requires ADIOS2.")
 
 # Create function to store solution and previous time step

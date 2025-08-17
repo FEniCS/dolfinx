@@ -9,6 +9,9 @@ Check that all CIs on `main` are running green.
 Check that the `main` documentation looks reasonable at
 https://docs.fenicsproject.org.
 
+As of 18/07/2025 the Windows CI is broken and consequently only @minrk
+can test the Windows build via the Condaforge CI.
+
 The release proceeds in a bottom up manner (UFL, Basix, FFCx, DOLFINx). pypa
 packages cannot be deleted and should be made a number of days after the
 creation of git tags so that errors can be fixed. GitHub releases can have their
@@ -59,6 +62,8 @@ UFL still runs on the year-based release scheme.
 
 2. Update version numbers in `pyproject.toml`, `python/pyproject.toml`,
    `CMakeLists.txt` and `cpp/CMakeLists.txt`.
+
+3. Update the Basix nanobind type stubs following `basix/python/README/md`.
 
 4. In `pyproject.toml` update the `fenics-ufl` optional dependency version. On
    `main` this is often pointing at the git repo, it needs to be changed to a
@@ -140,7 +145,6 @@ UFL with FEniCSx: https://github.com/FEniCS/ufl/actions/workflows/fenicsx-tests.
 FFCx with DOLFINx: https://github.com/FEniCS/ffcx/actions/workflows/dolfinx-tests.yml
 
 Full stack: https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml
-
 
 ## Tagging
 

@@ -29,7 +29,7 @@ void log(nb::module_& m)
 
   m.def(
       "set_output_file",
-      [](std::string filename)
+      [](const std::string& filename)
       {
         try
         {
@@ -38,14 +38,14 @@ void log(nb::module_& m)
         }
         catch (const spdlog::spdlog_ex& ex)
         {
-          std::cout << "Log init failed: " << ex.what() << std::endl;
+          std::cout << "Log init failed: " << ex.what() << "\n";
         }
       },
       nb::arg("filename"));
 
   m.def(
       "set_thread_name",
-      [](std::string thread_name)
+      [](const std::string& thread_name)
       {
         std::string fmt
             = "[%Y-%m-%d %H:%M:%S.%e] [" + thread_name + "] [%l] %v";
@@ -59,7 +59,7 @@ void log(nb::module_& m)
   m.def("get_log_level", []() { return spdlog::get_level(); });
   m.def(
       "log",
-      [](spdlog::level::level_enum level, std::string s)
+      [](spdlog::level::level_enum level, const std::string& s)
       {
         switch (level)
         {

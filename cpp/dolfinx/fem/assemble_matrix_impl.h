@@ -309,12 +309,14 @@ void assemble_exterior_facets(
 /// execute the kernel over.
 /// @param[in] dofmap0 Test function (row) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
-/// indices.
+/// indices. Cells that don't exist in the test function domain should be
+/// marked with -1 in the cell indices list.
 /// @param[in] P0 Function that applies transformation P0.A in-place to
 /// transform test degrees-of-freedom.
 /// @param[in] dofmap1 Trial function (column) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
-/// indices.
+/// indices. Cells that don't exist in the trial function domain should be
+/// marked with -1 in the cell indices list.
 /// @param[in] P1T Function that applies transformation A.P1^T in-place
 /// to transform trial degrees-of-freedom.
 /// @param[in] bc0 Marker for rows with Dirichlet boundary conditions
@@ -373,6 +375,9 @@ void assemble_interior_facets(
 
   std::vector<T> Ae, be;
 
+  const std::size_t dmap0_size = dmap0.cell_dofs(0).size();
+  const std::size_t dmap1_size = dmap1.cell_dofs(0).size();
+
   // Temporaries for joint dofmaps
   std::vector<std::int32_t> dmapjoint0, dmapjoint1;
   assert(facets0.size() == facets.size());
@@ -397,19 +402,31 @@ void assemble_interior_facets(
       std::copy_n(&x(x_dofs1[i], 0), 3, std::next(cdofs1.begin(), 3 * i));
 
     // Get dof maps for cells and pack
-    std::span<const std::int32_t> dmap0_cell0 = dmap0.cell_dofs(cells0[0]);
-    std::span<const std::int32_t> dmap0_cell1 = dmap0.cell_dofs(cells0[1]);
-    dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
-    std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
-    std::ranges::copy(dmap0_cell1,
-                      std::next(dmapjoint0.begin(), dmap0_cell0.size()));
+    // When integrating over interfaces between two domains, the test function
+    // might only be defined on one side, so we check which cells exist in the
+    // test function domain
+    std::span<const std::int32_t> dmap0_cell0
+        = cells0[0] >= 0 ? dmap0.cell_dofs(cells0[0])
+                         : std::span<const std::int32_t>();
+    std::span<const std::int32_t> dmap0_cell1
+        = cells0[1] >= 0 ? dmap0.cell_dofs(cells0[1])
+                         : std::span<const std::int32_t>();
 
-    std::span<const std::int32_t> dmap1_cell0 = dmap1.cell_dofs(cells1[0]);
-    std::span<const std::int32_t> dmap1_cell1 = dmap1.cell_dofs(cells1[1]);
-    dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
+    dmapjoint0.resize(2 * dmap0_size);
+    std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
+    std::ranges::copy(dmap0_cell1, std::next(dmapjoint0.begin(), dmap0_size));
+
+    // Check which cells exist in the trial function domain
+    std::span<const std::int32_t> dmap1_cell0
+        = cells1[0] >= 0 ? dmap1.cell_dofs(cells1[0])
+                         : std::span<const std::int32_t>();
+    std::span<const std::int32_t> dmap1_cell1
+        = cells1[1] >= 0 ? dmap1.cell_dofs(cells1[1])
+                         : std::span<const std::int32_t>();
+
+    dmapjoint1.resize(2 * dmap1_size);
     std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
-    std::ranges::copy(dmap1_cell1,
-                      std::next(dmapjoint1.begin(), dmap1_cell0.size()));
+    std::ranges::copy(dmap1_cell1, std::next(dmapjoint1.begin(), dmap1_size));
 
     const int num_rows = bs0 * dmapjoint0.size();
     const int num_cols = bs1 * dmapjoint1.size();
@@ -433,20 +450,27 @@ void assemble_interior_facets(
     // where each block is element tensor of size (dmap0, dmap1).
 
     std::span<T> _Ae(Ae);
-    std::span<T> sub_Ae0 = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
-                                       bs0 * dmap0_cell1.size() * num_cols);
+    std::span<T> sub_Ae0
+        = _Ae.subspan(bs0 * dmap0_size * num_cols, bs0 * dmap0_size * num_cols);
 
-    P0(_Ae, cell_info0, cells0[0], num_cols);
-    P0(sub_Ae0, cell_info0, cells0[1], num_cols);
-    P1T(_Ae, cell_info1, cells1[0], num_rows);
+    // Only apply transformation when cells exist
+    if (cells0[0] >= 0)
+      P0(_Ae, cell_info0, cells0[0], num_cols);
+    if (cells0[1] >= 0)
+      P0(sub_Ae0, cell_info0, cells0[1], num_cols);
+    if (cells1[0] >= 0)
+      P1T(_Ae, cell_info1, cells1[0], num_rows);
 
-    for (int row = 0; row < num_rows; ++row)
+    if (cells1[1] >= 0)
     {
-      // DOFs for dmap1 and cell1 are not stored contiguously in
-      // the block matrix, so each row needs a separate span access
-      std::span<T> sub_Ae1 = _Ae.subspan(
-          row * num_cols + bs1 * dmap1_cell0.size(), bs1 * dmap1_cell1.size());
-      P1T(sub_Ae1, cell_info1, cells1[1], 1);
+      for (int row = 0; row < num_rows; ++row)
+      {
+        // DOFs for dmap1 and cell1 are not stored contiguously in
+        // the block matrix, so each row needs a separate span access
+        std::span<T> sub_Ae1
+            = _Ae.subspan(row * num_cols + bs1 * dmap1_size, bs1 * dmap1_size);
+        P1T(sub_Ae1, cell_info1, cells1[1], 1);
+      }
     }
 
     // Zero rows/columns for essential bcs
@@ -484,12 +508,6 @@ void assemble_interior_facets(
     mat_set(dmapjoint0, dmapjoint1, Ae);
   }
 }
-
-/// The matrix A must already be initialised. The matrix may be a proxy,
-/// i.e. a view into a larger matrix, and assembly is performed using
-/// local indices. Rows (bc0) and columns (bc1) with Dirichlet
-/// conditions are zeroed. Markers (bc0 and bc1) can be empty if no bcs
-/// are applied. Matrix is not finalised.
 
 /// @brief Assemble (accumulate) into a matrix.
 ///

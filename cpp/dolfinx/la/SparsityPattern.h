@@ -30,10 +30,9 @@ public:
   /// @param[in] maps Index maps describing the [0] row and [1] column
   /// index ranges (up to a block size).
   /// @param[in] bs Block sizes for the [0] row and [1] column maps.
-  SparsityPattern(
-      MPI_Comm comm,
-      const std::array<std::shared_ptr<const common::IndexMap>, 2>& maps,
-      const std::array<int, 2>& bs);
+  SparsityPattern(MPI_Comm comm,
+                  std::array<std::shared_ptr<const common::IndexMap>, 2> maps,
+                  std::array<int, 2> bs);
 
   /// Create a new sparsity pattern by concatenating sub-patterns, e.g.
   /// pattern =[ pattern00 ][ pattern 01]

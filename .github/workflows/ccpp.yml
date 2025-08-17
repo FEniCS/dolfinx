@@ -13,19 +13,6 @@ on:
     branches:
       - main
   workflow_dispatch:
-    inputs:
-      ffcx_ref:
-        description: "FFCx branch or tag"
-        default: "main"
-        type: string
-      basix_ref:
-        description: "Basix branch or tag"
-        default: "main"
-        type: string
-      ufl_ref:
-        description: "UFL branch or tag"
-        default: "main"
-        type: string
 
 jobs:
 
@@ -96,9 +83,9 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install catch2 cmake g++ libblas-dev libboost-dev libhdf5-mpi-dev \
-             liblapack-dev libparmetis-dev libpugixml-dev libspdlog-dev mpi-default-dev \
-             ninja-build pkg-config
+          sudo apt-get install catch2 cmake g++ libblas-dev libboost-dev \
+             libhdf5-mpi-dev liblapack-dev libparmetis-dev libpugixml-dev \
+             libspdlog-dev mpi-default-dev ninja-build pkg-config
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -106,30 +93,23 @@ jobs:
 
       - name: Install Python build dependencies
         run: |
-          pip install --upgrade -r python/build-requirements.txt
+          pip -v install --upgrade -r python/build-requirements.txt
 
-      - name: Install FEniCS Python components (default branches/tags)
-        if: github.event_name != 'workflow_dispatch'
-        run: |
-          pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
-          pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
-          pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
       - name: Install FEniCS Python components
-        if: github.event_name == 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
-          pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
+          pip install --no-build-isolation git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
+          pip install --no-build-isolation git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
+          pip install --no-build-isolation git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Configure and install C++
         run: |
-          cmake -G Ninja -DDOLFINX_ENABLE_PETSC=false -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DDOLFINX_ENABLE_PETSC=false -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
           cmake --build build
           sudo cmake --install build
       - name: Build C++ unit tests
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
-          cmake --build build/test --parallel 3
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake --build build/test
       - name: Run C++ unit tests (serial)
         run: |
           cd build/test
@@ -144,13 +124,21 @@ jobs:
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
           python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc4py"
 
-      - name: Run mypy
+      - name: Run mypy  # Use a venv to avoid NumPy upgrades that are incompatible with numba
         working-directory: python
         run: |
+          python -m venv mypy-env
+          . ./mypy-env/bin/activate
           pip install mypy types-cffi scipy-stubs
           mypy -p dolfinx
         # mypy test
         # mypy demo
+
+      - name: Install gmsh and pyvista (and dependencies)
+        run: |
+          sudo apt-get install libglu1-mesa libgl1 libxrender1 libxcursor1 libxft2 libxinerama1
+          sudo apt-get install libegl1
+          pip install gmsh pyvista
 
       - name: Run demos (Python, serial)
         run: |
@@ -189,30 +177,25 @@ jobs:
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
-      - name: Install FEniCS Python components (default branches/tags)
-        if: github.event_name != 'workflow_dispatch'
-        run: |
-          pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
-          pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
+      - name: Install Python build dependencies
+        run: pip install -r python/build-requirements.txt
 
       - name: Install FEniCS Python components
-        if: github.event_name == 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
-          pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
+          pip install --no-build-isolation git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
+          pip install --no-build-isolation git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
+          pip install --no-build-isolation git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Configure, build and install C++ library
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_ADIOS2=true -DDOLFINX_ENABLE_KAHIP=true -DDOLFINX_ENABLE_PARMETIS=false -DDOLFINX_ENABLE_PETSC=true -DDOLFINX_ENABLE_SCOTCH=true -DDOLFINX_ENABLE_SLEPC=true -B build -S cpp/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_ADIOS2=true -DDOLFINX_ENABLE_KAHIP=true -DDOLFINX_ENABLE_PARMETIS=false -DDOLFINX_ENABLE_PETSC=true -DDOLFINX_ENABLE_SCOTCH=true -DDOLFINX_ENABLE_SLEPC=true -B build -S cpp/
           cmake --build build
           cmake --install build
 
       - name: Build C++ unit tests
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
-          cmake --build build/test --parallel 3
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake --build build/test
       - name: Run C++ unit tests (serial)
         run: |
           cd build/test
@@ -223,32 +206,39 @@ jobs:
           mpirun -n 3 ctest -V --output-on-failure -R unittests
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
-          cmake --build build/demo --parallel 3
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
+          cmake --build build/demo
           cd build/demo
           ctest -V -R demo -R serial
           ctest --output-on-failure -V -R demo -R mpi_2
-
-      - name: Install Python build dependencies
-        run: pip install -r python/build-requirements.txt
 
       - name: Build Python interface
         run: |
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
           python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_adios2; assert dolfinx.has_kahip; assert not dolfinx.has_parmetis; assert dolfinx.has_petsc; assert dolfinx.has_petsc4py; assert dolfinx.has_ptscotch; assert dolfinx.has_slepc; assert dolfinx.has_complex_ufcx_kernels"
 
-      - name: Run mypy
+      - name: Run mypy  # Use a venv to avoid NumPy upgrades that are incompatible with numba
         working-directory: python
         run: |
+          python -m venv mypy-env
+          . ./mypy-env/bin/activate
           pip install mypy types-cffi scipy-stubs
           mypy -p dolfinx
         # mypy test
         # mypy demo
 
+      - name: Numpy version
+        run: python -c "import numpy; print(numpy.__version__)"
+
       - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
+
+      - name: Install pyvista (and dependencies)
+        run: |
+          apt-get install libegl1 libxrender1
+          pip install pyvista
 
       - name: Run demos (Python, serial)
         run: |
@@ -279,28 +269,21 @@ jobs:
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
-      - name: Install FEniCS Python components (default branches/tags)
-        if: github.event_name != 'workflow_dispatch'
-        run: |
-          pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
-          pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
       - name: Install FEniCS Python components
-        if: github.event_name == 'workflow_dispatch'
         run: |
-          pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
-          pip install git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
-          pip install git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
+          pip install -r python/build-requirements.txt
+          pip install --no-build-isolation git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
+          pip install --no-build-isolation git+https://github.com/FEniCS/basix.git@${{ env.basix_ref }}
+          pip install --no-build-isolation git+https://github.com/FEniCS/ffcx.git@${{ env.ffcx_ref }}
 
       - name: Configure C++
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
           cmake --build build
           cmake --install build
 
       - name: Build Python interface
         run: |
-          pip install -r python/build-requirements.txt
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[docs]'
 
       - name: Build C++ interface documentation

@@ -54,7 +54,7 @@
 # $$
 # \begin{align}
 #   a((u, p), (v, q)) &:= \int_{\Omega} \nabla u \cdot \nabla v -
-#            \nabla \cdot v \ p + \nabla \cdot u \ q \, {\rm d} x,
+#            \nabla \cdot v \ p + \nabla \cdot u \ q \, {\rm d} x,\\
 #   L((v, q)) &:= \int_{\Omega} f \cdot v \, {\rm d} x + \int_{\partial
 #            \Omega_N} g \cdot v \, {\rm d} s.
 # \end{align}
@@ -74,31 +74,23 @@
 # ## Implementation
 #
 # The Stokes problem using Taylor-Hood elements is solved using:
-# 1. [Block preconditioner using PETSc MatNest and VecNest data
-#    structures. Each 'block' is a standalone object.]
-#    (#nested-matrix-solver)
+# 1. [Block preconditioner using PETSc Nest data structures using
+#    {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>`
+#    ](#high-level-nested-matrix-solver)
+# 1. [Block preconditioner using PETSc Nest data structures using
+#    PETSc directly](#low-level-nested-matrix-solver)
 # 1. [Block preconditioner with the `u` and `p` fields stored block-wise
 #    in a single matrix](#monolithic-block-iterative-solver)
 # 1. [Direct solver with the `u` and `p` fields stored block-wise in a
 #    single matrix](#monolithic-block-direct-solver)
-# 1. [Direct solver with the `u` and `p` fields stored block-wise in a
+# 1. [Direct solver with the `u` and `p` fields stored in a mixed fashion a
 #    single matrix](#non-blocked-direct-solver)
 #
 # The required modules are first imported:
 
+# +
 from mpi4py import MPI
-
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
+from petsc4py import PETSc
 
 import numpy as np
 
@@ -127,6 +119,8 @@ from dolfinx.io import XDMFFile
 from dolfinx.la.petsc import create_vector_wrap
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 
+# -
+
 # We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions for
 # locating geometrically subsets of the boundary, and define a function
 # for the  velocity on the lid:
@@ -134,7 +128,7 @@ from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 # +
 # Create mesh
 msh = create_rectangle(
-    MPI.COMM_WORLD, [np.array([0, 0]), np.array([1, 1])], [32, 32], CellType.triangle
+    MPI.COMM_WORLD, [np.array([0, 0]), np.array([1, 1])], (32, 32), CellType.triangle
 )
 
 
@@ -215,8 +209,9 @@ a_p = [[a[0][0], None], [None, a_p11]]
 # We first use the high-level {py:class}`LinearProblem
 # <dolfinx.fem.petsc.LinearProblem>` class which uses PETSc to solve
 # the linear problem. Details on the preconditioner setup are given in
-# {py:function}`nested_iterative_solver_low_level` below.
-#
+# {py:func}`nested_iterative_solver_low_level` below.
+
+
 def nested_iterative_solver_high_level():
     """Solve the Stokes problem using nest matrices and an iterative solver
     using high-level functionality."""
@@ -263,12 +258,11 @@ def nested_iterative_solver_high_level():
     P00.setOption(PETSc.Mat.Option.SPD, True)
     P11.setOption(PETSc.Mat.Option.SPD, True)
 
-    (u_h, p_h), _, convergence_reason, num_its = problem.solve()
-    # Because left-hand side operator is only assembled now we can
-    # only test that the null-space is setup correctly after calling
-    # solve.
+    u_h, p_h = problem.solve()
+    assert problem.solver.getConvergedReason() > 0
+    # Because left-hand side operator is only assembled during solve
+    # we can only test the null space at this point.
     assert nsp.test(problem.A)
-    assert convergence_reason > 0
 
     # Compute norms of the solution vectors
     norm_u = la.norm(u_h.x)
@@ -648,23 +642,28 @@ def mixed_direct():
 
 
 # Solve using LinearProblem class
+
 norm_u_0, norm_p_0 = nested_iterative_solver_high_level()
 
 # Solve using PETSc MatNest
+
 norm_u_1, norm_p_1 = nested_iterative_solver_low_level()
 np.testing.assert_allclose(norm_u_1, norm_u_0, rtol=1e-4)
 np.testing.assert_allclose(norm_u_1, norm_u_0, rtol=1e-4)
 
 # Solve using PETSc block matrices and an iterative solver
+
 norm_u_2, norm_p_2 = block_iterative_solver()
 np.testing.assert_allclose(norm_u_2, norm_u_0, rtol=1e-4)
 np.testing.assert_allclose(norm_u_2, norm_u_0, rtol=1e-4)
 
 # Solve using PETSc block matrices and an LU solver
+
 norm_u_3, norm_p_3 = block_direct_solver()
 np.testing.assert_allclose(norm_u_3, norm_u_0, rtol=1e-4)
 np.testing.assert_allclose(norm_p_3, norm_p_0, rtol=1e-4)
 
 # Solve using a non-blocked matrix and an LU solver
+
 norm_u_4, norm_p_4 = mixed_direct()
 np.testing.assert_allclose(norm_u_4, norm_u_0, rtol=1e-4)
