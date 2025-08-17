@@ -5,12 +5,14 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "SparsityPattern.h"
+
 #include <algorithm>
+#include <map>
+
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
-#include <dolfinx/common/log.h>
-#include <map>
 
 using namespace dolfinx;
 using namespace dolfinx::la;

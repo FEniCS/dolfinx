@@ -41,17 +41,20 @@
 //
 // ## C++ program
 
-#include "poisson.h"
 #include <algorithm>
-#include <basix/finite-element.h>
 #include <cmath>
 #include <complex>
 #include <concepts>
 #include <dolfinx.h>
-#include <dolfinx/common/types.h>
-#include <dolfinx/fem/Constant.h>
 #include <memory>
 #include <petscsystypes.h>
+
+#include <dolfinx/common/types.h>
+#include <dolfinx/fem/Constant.h>
+
+#include <basix/finite-element.h>
+
+#include "poisson.h"
 
 using namespace dolfinx;
 

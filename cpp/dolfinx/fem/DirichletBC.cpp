@@ -5,18 +5,21 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "DirichletBC.h"
-#include "DofMap.h"
-#include "FiniteElement.h"
+
 #include <algorithm>
 #include <array>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/sort.h>
-#include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <map>
 #include <numeric>
 #include <utility>
+
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/sort.h>
+#include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Topology.h>
+
+#include "DofMap.h"
+#include "FiniteElement.h"
 
 using namespace dolfinx;
 using namespace dolfinx::fem;

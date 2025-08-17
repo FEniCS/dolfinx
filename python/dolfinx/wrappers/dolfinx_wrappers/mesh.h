@@ -4,10 +4,12 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "MPICommWrapper.h"
 #include <dolfinx/mesh/cell_types.h>
+
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/vector.h>
+
+#include "MPICommWrapper.h"
 
 namespace nb = nanobind;
 

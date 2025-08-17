@@ -5,19 +5,22 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Topology.h"
-#include "cell_types.h"
-#include "permutationcomputation.h"
-#include "topologycomputation.h"
-#include "utils.h"
+
 #include <algorithm>
+#include <numeric>
+#include <random>
+#include <set>
+
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
-#include <numeric>
-#include <random>
-#include <set>
+
+#include "cell_types.h"
+#include "permutationcomputation.h"
+#include "topologycomputation.h"
+#include "utils.h"
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;

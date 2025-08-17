@@ -5,17 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "topologycomputation.h"
-#include "Topology.h"
-#include "cell_types.h"
+
 #include <algorithm>
-#include <boost/unordered_map.hpp>
 #include <cstdint>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/common/Timer.h>
-#include <dolfinx/common/log.h>
-#include <dolfinx/common/sort.h>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <mpi.h>
 #include <numeric>
@@ -25,6 +17,18 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/common/sort.h>
+#include <dolfinx/common/Timer.h>
+#include <dolfinx/graph/AdjacencyList.h>
+
+#include <boost/unordered_map.hpp>
+
+#include "cell_types.h"
+#include "Topology.h"
 
 using namespace dolfinx;
 
@@ -539,9 +543,10 @@ compute_entities_by_key_matching(
 
         std::vector<std::size_t> perm(global_vertices.size());
         std::iota(perm.begin(), perm.end(), 0);
-        std::ranges::sort(
-            perm, [&global_vertices](std::size_t i0, std::size_t i1)
-            { return global_vertices[i0] < global_vertices[i1]; });
+        std::ranges::sort(perm,
+                          [&global_vertices](std::size_t i0, std::size_t i1) {
+                            return global_vertices[i0] < global_vertices[i1];
+                          });
         // For quadrilaterals, the vertex opposite the lowest vertex should
         // be last
         if (entity_type == mesh::CellType::quadrilateral)

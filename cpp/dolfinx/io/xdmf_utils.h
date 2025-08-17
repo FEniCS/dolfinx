@@ -6,14 +6,7 @@
 
 #pragma once
 
-#include "HDF5Interface.h"
 #include <array>
-#include <basix/mdspan.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/common/types.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <filesystem>
 #include <numeric>
 #include <pugixml.hpp>
@@ -21,6 +14,16 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/common/types.h>
+#include <dolfinx/mesh/cell_types.h>
+
+#include <basix/mdspan.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
+
+#include "HDF5Interface.h"
 
 namespace dolfinx
 {

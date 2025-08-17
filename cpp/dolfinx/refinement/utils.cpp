@@ -5,22 +5,24 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
+
 #include <algorithm>
+#include <map>
+#include <memory>
+#include <mpi.h>
+#include <vector>
+
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Geometry.h>
+#include <dolfinx/mesh/graphbuild.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/graphbuild.h>
 #include <dolfinx/mesh/topologycomputation.h>
 #include <dolfinx/mesh/utils.h>
-#include <map>
-#include <memory>
-#include <mpi.h>
-#include <vector>
 
 using namespace dolfinx;
 

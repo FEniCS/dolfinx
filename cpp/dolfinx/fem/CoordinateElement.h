@@ -6,19 +6,22 @@
 
 #pragma once
 
-#include "ElementDofLayout.h"
 #include <algorithm>
 #include <array>
-#include <basix/element-families.h>
-#include <basix/mdspan.hpp>
 #include <cmath>
 #include <concepts>
 #include <cstdint>
-#include <dolfinx/common/math.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <limits>
 #include <memory>
 #include <span>
+
+#include <dolfinx/common/math.h>
+#include <dolfinx/mesh/cell_types.h>
+
+#include <basix/element-families.h>
+#include <basix/mdspan.hpp>
+
+#include "ElementDofLayout.h"
 
 namespace basix
 {

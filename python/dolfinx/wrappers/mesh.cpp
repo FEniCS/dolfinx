@@ -6,24 +6,28 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "dolfinx_wrappers/mesh.h"
-#include "dolfinx_wrappers/MPICommWrapper.h"
+
+#include <memory>
+#include <span>
+
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
+#include "dolfinx_wrappers/MPICommWrapper.h"
 #include "dolfinx_wrappers/numpy_dtype.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/EntityMap.h>
+#include <dolfinx/mesh/generation.h>
 #include <dolfinx/mesh/Geometry.h>
+#include <dolfinx/mesh/graphbuild.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/cell_types.h>
-#include <dolfinx/mesh/generation.h>
-#include <dolfinx/mesh/graphbuild.h>
 #include <dolfinx/mesh/topologycomputation.h>
 #include <dolfinx/mesh/utils.h>
-#include <memory>
+
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
@@ -34,7 +38,6 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
-#include <span>
 
 namespace nb = nanobind;
 
@@ -54,8 +57,7 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
       std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
       std::ranges::transform(
           cells, std::back_inserter(cells_nb),
-          [](auto c)
-          {
+          [](auto c) {
             return nb::ndarray<const std::int64_t, nb::numpy>(c.data(),
                                                               {c.size()});
           });
@@ -308,8 +310,7 @@ void declare_mesh(nb::module_& m, std::string type)
               std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
               std::ranges::transform(
                   cells, std::back_inserter(cells_nb),
-                  [](auto c)
-                  {
+                  [](auto c) {
                     return nb::ndarray<const std::int64_t, nb::numpy>(
                         c.data(), {c.size()});
                   });
@@ -344,8 +345,7 @@ void declare_mesh(nb::module_& m, std::string type)
             std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
             std::ranges::transform(
                 cells, std::back_inserter(cells_nb),
-                [](auto c)
-                {
+                [](auto c) {
                   return nb::ndarray<const std::int64_t, nb::numpy>(c.data(),
                                                                     {c.size()});
                 });

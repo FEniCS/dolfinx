@@ -11,12 +11,13 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
-#include <dolfinx/mesh/utils.h>
 #include <mpi.h>
 #include <optional>
 #include <span>
 #include <string>
 #include <vector>
+
+#include <dolfinx/mesh/utils.h>
 
 namespace dolfinx::geometry
 {
@@ -429,8 +430,7 @@ private:
       for (std::size_t k = 0; k < 3; ++k)
         s << _bbox_coordinates[6 * i + j * 3 + k] << " ";
       if (j == 0)
-        s << "]->"
-          << "[";
+        s << "]->" << "[";
     }
     s << "]\n";
 

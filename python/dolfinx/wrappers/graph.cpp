@@ -4,14 +4,18 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "dolfinx_wrappers/caster_mpi.h"
 #include <array>
+#include <ranges>
+#include <vector>
+
+#include "dolfinx_wrappers/caster_mpi.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/graph/partitioners.h>
 #include <dolfinx/graph/utils.h>
+
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/operators.h>
@@ -22,8 +26,6 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
-#include <ranges>
-#include <vector>
 
 namespace nb = nanobind;
 

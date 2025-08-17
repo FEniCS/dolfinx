@@ -8,11 +8,7 @@
 
 #ifdef HAS_PETSC
 
-#include "Form.h"
-#include "assembler.h"
-#include "utils.h"
 #include <concepts>
-#include <dolfinx/la/petsc.h>
 #include <functional>
 #include <map>
 #include <memory>
@@ -22,6 +18,12 @@
 #include <span>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/la/petsc.h>
+
+#include "assembler.h"
+#include "Form.h"
+#include "utils.h"
 
 namespace dolfinx::common
 {

@@ -5,10 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <algorithm>
-#include <dolfinx/fem/Form.h>
 #include <map>
-#include <nanobind/ndarray.h>
 #include <span>
+
+#include <dolfinx/fem/Form.h>
+
+#include <nanobind/ndarray.h>
 
 namespace dolfinx_wrappers
 {

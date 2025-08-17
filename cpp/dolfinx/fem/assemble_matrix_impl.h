@@ -6,21 +6,23 @@
 
 #pragma once
 
-#include "DofMap.h"
-#include "Form.h"
-#include "FunctionSpace.h"
-#include "traits.h"
-#include "utils.h"
 #include <algorithm>
-#include <dolfinx/la/utils.h>
-#include <dolfinx/mesh/Geometry.h>
-#include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/Topology.h>
 #include <functional>
 #include <iterator>
 #include <span>
 #include <tuple>
 #include <vector>
+
+#include <dolfinx/la/utils.h>
+#include <dolfinx/mesh/Geometry.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Topology.h>
+
+#include "DofMap.h"
+#include "Form.h"
+#include "FunctionSpace.h"
+#include "traits.h"
+#include "utils.h"
 
 namespace dolfinx::fem::impl
 {

@@ -4,16 +4,18 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "expr.h"
-#include <basix/finite-element.h>
-#include <catch2/catch_test_macros.hpp>
+#include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/Expression.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/utils.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
+#include <dolfinx/mesh/Mesh.h>
+
+#include <basix/finite-element.h>
+#include <catch2/catch_test_macros.hpp>
+
+#include "expr.h"
 
 using namespace dolfinx;
 

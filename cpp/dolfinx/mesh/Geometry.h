@@ -6,24 +6,27 @@
 
 #pragma once
 
-#include "Topology.h"
 #include <algorithm>
-#include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdint>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/common/sort.h>
-#include <dolfinx/fem/CoordinateElement.h>
-#include <dolfinx/fem/ElementDofLayout.h>
-#include <dolfinx/fem/dofmapbuilder.h>
-#include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/partition.h>
 #include <functional>
 #include <memory>
 #include <span>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/common/sort.h>
+#include <dolfinx/fem/CoordinateElement.h>
+#include <dolfinx/fem/dofmapbuilder.h>
+#include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/partition.h>
+
+#include <basix/mdspan.hpp>
+
+#include "Topology.h"
 
 namespace dolfinx::mesh
 {
@@ -204,8 +207,8 @@ template <typename U, typename V, typename W>
 Geometry(std::shared_ptr<const common::IndexMap>, U&&,
          const std::vector<fem::CoordinateElement<
              typename std::remove_reference_t<typename V::value_type>>>&,
-         V&&, int, W&&)
-    -> Geometry<typename std::remove_cvref_t<typename V::value_type>>;
+         V&&, int,
+         W&&) -> Geometry<typename std::remove_cvref_t<typename V::value_type>>;
 /// @endcond
 
 /// @brief Build Geometry from input data.

@@ -9,9 +9,6 @@
 
 #ifdef HAS_PETSC
 
-#include "Vector.h"
-#include "utils.h"
-#include <boost/lexical_cast.hpp>
 #include <functional>
 #include <optional>
 #include <petscksp.h>
@@ -21,6 +18,11 @@
 #include <span>
 #include <string>
 #include <vector>
+
+#include <boost/lexical_cast.hpp>
+
+#include "utils.h"
+#include "Vector.h"
 
 namespace dolfinx::common
 {

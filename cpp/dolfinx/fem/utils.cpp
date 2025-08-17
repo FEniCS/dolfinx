@@ -5,25 +5,28 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
-#include "Constant.h"
-#include "DofMap.h"
-#include "FiniteElement.h"
-#include "Form.h"
-#include "Function.h"
-#include "FunctionSpace.h"
-#include "dofmapbuilder.h"
+
 #include <algorithm>
 #include <array>
+#include <memory>
+#include <string>
+#include <ufcx.h>
+
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/Timer.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/topologycomputation.h>
-#include <memory>
-#include <string>
-#include <ufcx.h>
+
+#include "Constant.h"
+#include "DofMap.h"
+#include "dofmapbuilder.h"
+#include "FiniteElement.h"
+#include "Form.h"
+#include "Function.h"
+#include "FunctionSpace.h"
 
 using namespace dolfinx;
 

@@ -5,11 +5,16 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "VTKFile.h"
-#include "cells.h"
-#include "vtk_utils.h"
-#include "xdmf_utils.h"
+
 #include <algorithm>
 #include <concepts>
+#include <filesystem>
+#include <iterator>
+#include <pugixml.hpp>
+#include <span>
+#include <sstream>
+#include <string>
+
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/DofMap.h>
@@ -19,12 +24,10 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
-#include <filesystem>
-#include <iterator>
-#include <pugixml.hpp>
-#include <span>
-#include <sstream>
-#include <string>
+
+#include "cells.h"
+#include "vtk_utils.h"
+#include "xdmf_utils.h"
 
 using namespace dolfinx;
 

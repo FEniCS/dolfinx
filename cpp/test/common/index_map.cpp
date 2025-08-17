@@ -5,16 +5,18 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <algorithm>
-#include <catch2/catch_test_macros.hpp>
-#include <catch2/generators/catch_generators.hpp>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/common/Scatterer.h>
-#include <dolfinx/common/utils.h>
 #include <iostream>
 #include <numeric>
 #include <set>
 #include <vector>
+
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/common/Scatterer.h>
+#include <dolfinx/common/utils.h>
+
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 
 using namespace dolfinx;
 

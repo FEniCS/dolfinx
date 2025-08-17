@@ -8,13 +8,14 @@
 
 #include <algorithm>
 #include <array>
-#include <boost/multiprecision/cpp_bin_float.hpp>
 #include <concepts>
 #include <limits>
 #include <numeric>
 #include <span>
 #include <utility>
 #include <vector>
+
+#include <boost/multiprecision/cpp_bin_float.hpp>
 
 namespace dolfinx::geometry
 {

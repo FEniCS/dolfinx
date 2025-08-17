@@ -7,11 +7,7 @@
 #include <algorithm>
 #include <array>
 #include <bitset>
-#include <catch2/catch_template_test_macros.hpp>
-#include <catch2/catch_test_macros.hpp>
-#include <catch2/generators/catch_generators.hpp>
 #include <cstdint>
-#include <dolfinx/common/sort.h>
 #include <functional>
 #include <iostream>
 #include <limits>
@@ -19,6 +15,12 @@
 #include <random>
 #include <type_traits>
 #include <vector>
+
+#include <dolfinx/common/sort.h>
+
+#include <catch2/catch_template_test_macros.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 
 TEMPLATE_TEST_CASE("Test radix sort", "[vector][template]", std::int16_t,
                    std::int32_t, std::int64_t, std::uint16_t, std::uint32_t,

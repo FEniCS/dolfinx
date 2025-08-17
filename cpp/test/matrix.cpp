@@ -6,18 +6,21 @@
 //
 // Unit tests for Distributed la::MatrixCSR
 
-#include "poisson.h"
 #include <algorithm>
-#include <basix/mdspan.hpp>
-#include <catch2/catch_approx.hpp>
-#include <catch2/catch_test_macros.hpp>
 #include <dolfinx.h>
+#include <mpi.h>
+#include <span>
+
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
-#include <mpi.h>
-#include <span>
+
+#include <basix/mdspan.hpp>
+#include <catch2/catch_approx.hpp>
+#include <catch2/catch_test_macros.hpp>
+
+#include "poisson.h"
 
 using namespace dolfinx;
 

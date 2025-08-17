@@ -1,12 +1,13 @@
 
+#include "uniform.h"
+
+#include <iterator>
+#include <vector>
+
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
-#include <iterator>
-#include <vector>
-
-#include "uniform.h"
 
 using namespace dolfinx;
 

@@ -7,9 +7,11 @@
 #ifdef HAS_PETSC
 
 #include "petsc.h"
-#include <dolfinx/common/IndexMap.h>
+
 #include <functional>
 #include <petscistypes.h>
+
+#include <dolfinx/common/IndexMap.h>
 
 using namespace dolfinx;
 

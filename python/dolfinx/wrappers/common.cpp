@@ -4,19 +4,27 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "dolfinx_wrappers/MPICommWrapper.h"
+#include <complex>
+#include <memory>
+#include <optional>
+#include <span>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
+
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
-#include <complex>
+#include "dolfinx_wrappers/MPICommWrapper.h"
+#include <dolfinx/common/defines.h>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
-#include <dolfinx/common/defines.h>
-#include <dolfinx/common/log.h>
 #include <dolfinx/common/timing.h>
 #include <dolfinx/common/utils.h>
-#include <memory>
+
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
@@ -25,12 +33,6 @@
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
-#include <optional>
-#include <span>
-#include <string>
-#include <tuple>
-#include <utility>
-#include <vector>
 
 namespace nb = nanobind;
 

@@ -6,24 +6,9 @@
 
 #pragma once
 
-#include "Constant.h"
-#include "CoordinateElement.h"
-#include "DofMap.h"
-#include "ElementDofLayout.h"
-#include "Expression.h"
-#include "Form.h"
-#include "Function.h"
-#include "FunctionSpace.h"
-#include "sparsitybuild.h"
 #include <algorithm>
 #include <array>
 #include <concepts>
-#include <dolfinx/common/types.h>
-#include <dolfinx/la/SparsityPattern.h>
-#include <dolfinx/mesh/EntityMap.h>
-#include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/cell_types.h>
-#include <dolfinx/mesh/utils.h>
 #include <format>
 #include <functional>
 #include <memory>
@@ -37,6 +22,23 @@
 #include <ufcx.h>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/common/types.h>
+#include <dolfinx/la/SparsityPattern.h>
+#include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/EntityMap.h>
+#include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/utils.h>
+
+#include "Constant.h"
+#include "CoordinateElement.h"
+#include "DofMap.h"
+#include "ElementDofLayout.h"
+#include "Expression.h"
+#include "Form.h"
+#include "Function.h"
+#include "FunctionSpace.h"
+#include "sparsitybuild.h"
 
 /// @file utils.h
 /// @brief Functions supporting finite element method operations

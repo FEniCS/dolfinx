@@ -5,9 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "sparsitybuild.h"
-#include "DofMap.h"
+
 #include <algorithm>
+
 #include <dolfinx/la/SparsityPattern.h>
+
+#include "DofMap.h"
 
 using namespace dolfinx;
 using namespace dolfinx::fem;

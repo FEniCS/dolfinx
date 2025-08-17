@@ -6,15 +6,17 @@
 
 #pragma once
 
-#include "IndexMap.h"
-#include "MPI.h"
 #include <cstdint>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <span>
 #include <tuple>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/graph/AdjacencyList.h>
+
+#include "IndexMap.h"
+#include "MPI.h"
 
 namespace dolfinx::common
 {

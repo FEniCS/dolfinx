@@ -8,9 +8,10 @@
 
 #include <concepts>
 #include <initializer_list>
+#include <utility>
+
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
-#include <utility>
 
 namespace nb = nanobind;
 

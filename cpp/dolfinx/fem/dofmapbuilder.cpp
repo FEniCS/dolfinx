@@ -5,22 +5,25 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "dofmapbuilder.h"
-#include "ElementDofLayout.h"
+
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/common/Timer.h>
-#include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <iterator>
 #include <memory>
 #include <numeric>
 #include <random>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/common/Timer.h>
+#include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/Topology.h>
+
+#include "ElementDofLayout.h"
 
 using namespace dolfinx;
 

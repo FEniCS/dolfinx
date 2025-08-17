@@ -6,13 +6,14 @@
 
 #pragma once
 
-#include "cells.h"
-#include "vtk_utils.h"
 #include <algorithm>
 #include <array>
-#include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdint>
+#include <span>
+#include <tuple>
+#include <vector>
+
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
@@ -20,9 +21,11 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
-#include <span>
-#include <tuple>
-#include <vector>
+
+#include <basix/mdspan.hpp>
+
+#include "cells.h"
+#include "vtk_utils.h"
 
 namespace dolfinx
 {

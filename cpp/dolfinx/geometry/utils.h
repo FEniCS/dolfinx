@@ -6,19 +6,21 @@
 
 #pragma once
 
-#include "BoundingBoxTree.h"
-#include "gjk.h"
 #include <algorithm>
 #include <array>
 #include <concepts>
 #include <cstdint>
 #include <deque>
-#include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <map>
 #include <numeric>
 #include <span>
 #include <vector>
+
+#include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/mesh/Mesh.h>
+
+#include "BoundingBoxTree.h"
+#include "gjk.h"
 
 namespace dolfinx::geometry
 {

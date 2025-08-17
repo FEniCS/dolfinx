@@ -4,27 +4,32 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "dolfinx_wrappers/array.h"
-#include "dolfinx_wrappers/pycoeff.h"
 #include <array>
-#include <basix/mdspan.hpp>
 #include <complex>
 #include <cstdint>
+#include <functional>
+#include <memory>
+#include <span>
+#include <string>
+#include <utility>
+
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/pycoeff.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/DirichletBC.h>
+#include <dolfinx/fem/discreteoperators.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/fem/assembler.h>
-#include <dolfinx/fem/discreteoperators.h>
 #include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <functional>
-#include <memory>
+
+#include <basix/mdspan.hpp>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/operators.h>
@@ -37,9 +42,6 @@
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
-#include <span>
-#include <string>
-#include <utility>
 
 namespace nb = nanobind;
 namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
@@ -249,8 +251,7 @@ void declare_assembly_functions(nb::module_& m)
       "Pack coefficients for a Expression.");
   m.def(
       "pack_constants",
-      [](const dolfinx::fem::Form<T, U>& form)
-      {
+      [](const dolfinx::fem::Form<T, U>& form) {
         return dolfinx_wrappers::as_nbarray(dolfinx::fem::pack_constants(form));
       },
       nb::arg("form"), "Pack constants for a Form.");

@@ -6,19 +6,21 @@
 
 #pragma once
 
-#include "utils.h"
 #include <algorithm>
 #include <cmath>
 #include <complex>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/Scatterer.h>
-#include <dolfinx/common/types.h>
 #include <limits>
 #include <memory>
 #include <numeric>
 #include <span>
 #include <type_traits>
 #include <vector>
+
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/Scatterer.h>
+#include <dolfinx/common/types.h>
+
+#include "utils.h"
 
 namespace dolfinx::la
 {

@@ -6,22 +6,24 @@
 
 // # Interpolation and IO
 
-#include <basix/finite-element.h>
 #include <cmath>
 #include <concepts>
+#include <filesystem>
+#include <mpi.h>
+#include <numbers>
+
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/io/VTKFile.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/generation.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
-#include <filesystem>
-#include <mpi.h>
-#include <numbers>
+
+#include <basix/finite-element.h>
 
 using namespace dolfinx;
 

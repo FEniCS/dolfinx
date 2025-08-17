@@ -6,21 +6,24 @@
 
 #pragma once
 
-#include "CoordinateElement.h"
-#include "DofMap.h"
-#include "FiniteElement.h"
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <map>
+#include <memory>
+#include <vector>
+
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
-#include <map>
-#include <memory>
-#include <vector>
+
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+
+#include "CoordinateElement.h"
+#include "DofMap.h"
+#include "FiniteElement.h"
 
 namespace dolfinx::fem
 {

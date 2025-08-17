@@ -6,10 +6,8 @@
 
 #pragma once
 
-#include "xdmf_utils.h"
 #include <array>
 #include <cstdint>
-#include <dolfinx/mesh/MeshTags.h>
 #include <hdf5.h>
 #include <mpi.h>
 #include <pugixml.hpp>
@@ -18,6 +16,10 @@
 #include <utility>
 #include <variant>
 #include <vector>
+
+#include <dolfinx/mesh/MeshTags.h>
+
+#include "xdmf_utils.h"
 
 namespace pugi
 {

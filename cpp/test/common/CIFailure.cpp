@@ -6,8 +6,9 @@
 //
 // Unit tests for Distributed Meshes
 
-#include <catch2/catch_test_macros.hpp>
 #include <dolfinx.h>
+
+#include <catch2/catch_test_macros.hpp>
 
 using namespace dolfinx;
 

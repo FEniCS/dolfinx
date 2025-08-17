@@ -10,9 +10,9 @@ namespace dolfinx::common
 
 // DOLFINx common
 
+#include <dolfinx/common/defines.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>
-#include <dolfinx/common/defines.h>
 #include <dolfinx/common/timing.h>
 #include <dolfinx/common/version.h>

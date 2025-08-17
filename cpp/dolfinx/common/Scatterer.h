@@ -6,9 +6,6 @@
 
 #pragma once
 
-#include "IndexMap.h"
-#include "MPI.h"
-#include "sort.h"
 #include <algorithm>
 #include <functional>
 #include <memory>
@@ -17,6 +14,10 @@
 #include <span>
 #include <type_traits>
 #include <vector>
+
+#include "IndexMap.h"
+#include "MPI.h"
+#include "sort.h"
 
 namespace dolfinx::common
 {
@@ -143,8 +144,7 @@ public:
 
     // Scale sizes and displacements by block size
     {
-      auto rescale = [](auto& x, int bs)
-      {
+      auto rescale = [](auto& x, int bs) {
         std::ranges::transform(x, x.begin(), [bs](auto e) { return e *= bs; });
       };
       rescale(_sizes_local, bs);

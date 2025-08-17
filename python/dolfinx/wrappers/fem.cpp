@@ -4,23 +4,34 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <array>
+#include <cstdint>
+#include <functional>
+#include <map>
+#include <memory>
+#include <ranges>
+#include <span>
+#include <string>
+#include <tuple>
+#include <type_traits>
+#include <ufcx.h>
+#include <utility>
+
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
 #include "dolfinx_wrappers/numpy_dtype.h"
-#include <array>
-#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/DofMap.h>
+#include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/Expression.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
-#include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/fem/interpolate.h>
 #include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/fem/utils.h>
@@ -29,9 +40,7 @@
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
-#include <functional>
-#include <map>
-#include <memory>
+
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
@@ -46,13 +55,6 @@
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
-#include <ranges>
-#include <span>
-#include <string>
-#include <tuple>
-#include <type_traits>
-#include <ufcx.h>
-#include <utility>
 
 namespace nb = nanobind;
 namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
@@ -141,8 +143,7 @@ void declare_function_space(nb::module_& m, std::string type)
             [](dolfinx::fem::FiniteElement<T>* self,
                basix::FiniteElement<T>& element,
                const std::optional<std::vector<std::size_t>>& block_shape,
-               bool symmetric)
-            {
+               bool symmetric) {
               new (self) dolfinx::fem::FiniteElement<T>(element, block_shape,
                                                         symmetric);
             },

@@ -7,12 +7,13 @@
 #pragma once
 
 #include <concepts>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/common/types.h>
 #include <filesystem>
 #include <functional>
 #include <memory>
 #include <string>
+
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/common/types.h>
 
 namespace pugi
 {

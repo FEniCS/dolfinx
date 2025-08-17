@@ -6,22 +6,25 @@
 
 #pragma once
 
-#include "EntityMap.h"
-#include "Mesh.h"
-#include "Topology.h"
-#include "graphbuild.h"
 #include <algorithm>
-#include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdint>
-#include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/ordering.h>
-#include <dolfinx/graph/partition.h>
 #include <functional>
 #include <mpi.h>
 #include <numeric>
 #include <span>
 #include <vector>
+
+#include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/ordering.h>
+#include <dolfinx/graph/partition.h>
+
+#include <basix/mdspan.hpp>
+
+#include "EntityMap.h"
+#include "graphbuild.h"
+#include "Mesh.h"
+#include "Topology.h"
 
 /// @file utils.h
 /// @brief Functions supporting mesh operations
@@ -350,8 +353,7 @@ inline auto create_boundary_vertices_fn(const CellReorderFunction& reorder_fn)
 
         auto it1 = std::find_if_not(
             it, perm.end(),
-            [f, max_v, it0 = facets0.begin()](auto p) -> bool
-            {
+            [f, max_v, it0 = facets0.begin()](auto p) -> bool {
               return std::equal(f.begin(), f.end(), std::next(it0, p * max_v));
             });
 

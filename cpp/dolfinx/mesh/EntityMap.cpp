@@ -5,11 +5,13 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "EntityMap.h"
-#include "Topology.h"
+
 #include <ranges>
 #include <span>
 #include <unordered_map>
 #include <vector>
+
+#include "Topology.h"
 
 namespace dolfinx::mesh
 {

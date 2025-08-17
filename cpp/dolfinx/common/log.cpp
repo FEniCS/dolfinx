@@ -5,8 +5,10 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "log.h"
-#include <spdlog/cfg/argv.h>
+
 #include <vector>
+
+#include <spdlog/cfg/argv.h>
 
 //-----------------------------------------------------------------------------
 void dolfinx::init_logging(int argc, char* argv[])

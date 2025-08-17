@@ -9,20 +9,22 @@
 // This demo shows various methods to define custom cell kernels in C++
 // and have them assembled into DOLFINx linear algebra data structures.
 
-#include <basix/finite-element.h>
-#include <basix/mdspan.hpp>
-#include <basix/quadrature.h>
 #include <cmath>
 #include <concepts>
 #include <dolfinx.h>
-#include <dolfinx/la/MatrixCSR.h>
-#include <dolfinx/la/SparsityPattern.h>
 #include <functional>
 #include <map>
 #include <stdint.h>
 #include <tuple>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/la/MatrixCSR.h>
+#include <dolfinx/la/SparsityPattern.h>
+
+#include <basix/finite-element.h>
+#include <basix/mdspan.hpp>
+#include <basix/quadrature.h>
 
 using namespace dolfinx;
 template <typename T, std::size_t ndim>

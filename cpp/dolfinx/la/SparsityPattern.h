@@ -6,11 +6,12 @@
 
 #pragma once
 
-#include <dolfinx/common/MPI.h>
 #include <memory>
 #include <span>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/common/MPI.h>
 
 namespace dolfinx::common
 {

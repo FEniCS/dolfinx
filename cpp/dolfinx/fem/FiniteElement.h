@@ -6,18 +6,21 @@
 
 #pragma once
 
-#include "traits.h"
 #include <array>
-#include <basix/finite-element.h>
 #include <concepts>
 #include <cstdint>
-#include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <span>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/mesh/cell_types.h>
+
+#include <basix/finite-element.h>
+
+#include "traits.h"
 
 namespace dolfinx::fem
 {

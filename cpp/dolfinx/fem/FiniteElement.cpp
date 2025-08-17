@@ -5,16 +5,19 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FiniteElement.h"
+
 #include <algorithm>
 #include <array>
-#include <basix/finite-element.h>
-#include <basix/interpolation.h>
-#include <basix/polyset.h>
-#include <dolfinx/common/log.h>
 #include <functional>
 #include <numeric>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/common/log.h>
+
+#include <basix/finite-element.h>
+#include <basix/interpolation.h>
+#include <basix/polyset.h>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;

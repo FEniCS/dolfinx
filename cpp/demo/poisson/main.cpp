@@ -79,18 +79,21 @@
 // Poisson equation.  For convenience we also include the DOLFINx
 // namespace.
 
-#include "poisson.h"
-#include <basix/finite-element.h>
 #include <cmath>
 #include <dolfinx.h>
-#include <dolfinx/fem/Constant.h>
-#include <dolfinx/fem/petsc.h>
-#include <dolfinx/la/petsc.h>
 #include <petscmat.h>
 #include <petscsys.h>
 #include <petscsystypes.h>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/fem/Constant.h>
+#include <dolfinx/fem/petsc.h>
+#include <dolfinx/la/petsc.h>
+
+#include <basix/finite-element.h>
+
+#include "poisson.h"
 
 using namespace dolfinx;
 using T = PetscScalar;

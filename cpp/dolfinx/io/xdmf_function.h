@@ -8,9 +8,10 @@
 
 #include <complex>
 #include <concepts>
-#include <dolfinx/common/types.h>
 #include <hdf5.h>
 #include <mpi.h>
+
+#include <dolfinx/common/types.h>
 
 namespace pugi
 {

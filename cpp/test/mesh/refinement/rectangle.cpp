@@ -6,23 +6,22 @@
 
 #include <cstddef>
 #include <limits>
+#include <mpi.h>
 #include <optional>
 
-#include <mpi.h>
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/mesh/generation.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/utils.h>
+#include <dolfinx/refinement/interval.h>
+#include <dolfinx/refinement/refine.h>
 
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
-
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/generation.h>
-#include <dolfinx/mesh/utils.h>
-#include <dolfinx/refinement/interval.h>
-#include <dolfinx/refinement/refine.h>
 
 using namespace dolfinx;
 using namespace Catch::Matchers;

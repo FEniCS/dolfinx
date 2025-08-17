@@ -7,11 +7,13 @@
 #ifdef HAS_ADIOS2
 
 #include "ADIOS2Writers.h"
-#include "cells.h"
+
 #include <pugixml.hpp>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "cells.h"
 
 using namespace dolfinx;
 using namespace dolfinx::io;

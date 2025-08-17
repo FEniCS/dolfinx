@@ -6,9 +6,6 @@
 
 #pragma once
 
-#include "Timer.h"
-#include "log.h"
-#include "types.h"
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -21,6 +18,10 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+
+#include "log.h"
+#include "Timer.h"
+#include "types.h"
 
 #define MPICH_IGNORE_CXX_SEEK 1
 #include <mpi.h>

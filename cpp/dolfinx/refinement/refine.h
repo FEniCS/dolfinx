@@ -6,24 +6,27 @@
 
 #pragma once
 
-#include "dolfinx/common/MPI.h"
-#include "dolfinx/graph/AdjacencyList.h"
-#include "dolfinx/graph/partitioners.h"
-#include "dolfinx/mesh/Mesh.h"
-#include "dolfinx/mesh/Topology.h"
-#include "dolfinx/mesh/cell_types.h"
-#include "dolfinx/mesh/graphbuild.h"
-#include "dolfinx/mesh/utils.h"
-#include "interval.h"
-#include "plaza.h"
 #include <algorithm>
 #include <concepts>
 #include <mpi.h>
 #include <optional>
-#include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <utility>
 #include <variant>
+
+#include "dolfinx/common/MPI.h"
+#include "dolfinx/graph/AdjacencyList.h"
+#include "dolfinx/graph/partitioners.h"
+#include "dolfinx/mesh/cell_types.h"
+#include "dolfinx/mesh/graphbuild.h"
+#include "dolfinx/mesh/Mesh.h"
+#include "dolfinx/mesh/Topology.h"
+#include "dolfinx/mesh/utils.h"
+
+#include <spdlog/spdlog.h>
+
+#include "interval.h"
+#include "plaza.h"
 
 namespace dolfinx::refinement
 {

@@ -5,7 +5,11 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "plaza.h"
-#include "utils.h"
+
+#include <limits>
+#include <numeric>
+#include <vector>
+
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -14,9 +18,8 @@
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/utils.h>
-#include <limits>
-#include <numeric>
-#include <vector>
+
+#include "utils.h"
 
 using namespace dolfinx;
 using namespace dolfinx::refinement;

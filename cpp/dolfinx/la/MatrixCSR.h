@@ -6,18 +6,20 @@
 
 #pragma once
 
-#include "SparsityPattern.h"
-#include "Vector.h"
-#include "matrix_csr_impl.h"
 #include <algorithm>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <mpi.h>
 #include <numeric>
 #include <span>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/graph/AdjacencyList.h>
+
+#include "matrix_csr_impl.h"
+#include "SparsityPattern.h"
+#include "Vector.h"
 
 namespace dolfinx::la
 {

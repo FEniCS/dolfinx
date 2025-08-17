@@ -6,9 +6,10 @@
 
 #pragma once
 
-#include "AdjacencyList.h"
 #include <cstdint>
 #include <vector>
+
+#include "AdjacencyList.h"
 
 namespace dolfinx::graph
 {

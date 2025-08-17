@@ -5,11 +5,13 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
+
 #include <algorithm>
-#include <dolfinx/common/MPI.h>
 #include <format>
 #include <sstream>
 #include <vector>
+
+#include <dolfinx/common/MPI.h>
 
 using namespace dolfinx;
 

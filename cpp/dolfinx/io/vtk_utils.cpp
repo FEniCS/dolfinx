@@ -5,7 +5,10 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "vtk_utils.h"
-#include "cells.h"
+
+#include <span>
+#include <tuple>
+
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
@@ -13,8 +16,8 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
-#include <span>
-#include <tuple>
+
+#include "cells.h"
 
 using namespace dolfinx;
 

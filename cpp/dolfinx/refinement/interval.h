@@ -6,10 +6,6 @@
 
 #pragma once
 
-#include "dolfinx/mesh/Mesh.h"
-#include "dolfinx/mesh/cell_types.h"
-#include "dolfinx/mesh/utils.h"
-#include "dolfinx/refinement/plaza.h"
 #include <algorithm>
 #include <concepts>
 #include <cstddef>
@@ -19,7 +15,11 @@
 #include <stdexcept>
 #include <vector>
 
+#include "dolfinx/mesh/cell_types.h"
+#include "dolfinx/mesh/Mesh.h"
+#include "dolfinx/mesh/utils.h"
 #include "dolfinx/refinement/option.h"
+#include "dolfinx/refinement/plaza.h"
 #include "dolfinx/refinement/utils.h"
 
 namespace dolfinx::refinement::interval

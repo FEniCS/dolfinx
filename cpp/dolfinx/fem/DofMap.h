@@ -9,19 +9,22 @@
 
 #pragma once
 
-#include "ElementDofLayout.h"
-#include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdlib>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/ordering.h>
 #include <functional>
 #include <memory>
 #include <mpi.h>
 #include <span>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/ordering.h>
+
+#include <basix/mdspan.hpp>
+
+#include "ElementDofLayout.h"
 
 namespace dolfinx::common
 {

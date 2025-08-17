@@ -6,16 +6,16 @@
 
 #pragma once
 
-#include "AdjacencyList.h"
 #include <algorithm>
 #include <cstdint>
 #include <functional>
+#include <iostream>
 #include <mpi.h>
 #include <span>
 #include <utility>
 #include <vector>
 
-#include <iostream>
+#include "AdjacencyList.h"
 
 namespace dolfinx::graph
 {

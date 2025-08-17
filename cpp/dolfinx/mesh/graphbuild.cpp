@@ -5,17 +5,20 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "graphbuild.h"
-#include "cell_types.h"
+
 #include <algorithm>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/common/Timer.h>
-#include <dolfinx/common/log.h>
-#include <dolfinx/common/sort.h>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <optional>
 #include <span>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/common/log.h>
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/common/sort.h>
+#include <dolfinx/common/Timer.h>
+#include <dolfinx/graph/AdjacencyList.h>
+
+#include "cell_types.h"
 
 using namespace dolfinx;
 

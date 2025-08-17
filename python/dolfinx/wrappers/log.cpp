@@ -4,14 +4,15 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <memory>
+#include <string>
+
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <memory>
+
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
 #include <spdlog/sinks/basic_file_sink.h>
-
-#include <string>
 
 namespace nb = nanobind;
 

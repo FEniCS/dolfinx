@@ -7,14 +7,16 @@
 #pragma once
 
 #include <array>
-#include <basix/mdspan.hpp>
-#include <dolfinx/common/types.h>
-#include <dolfinx/fem/ElementDofLayout.h>
-#include <dolfinx/mesh/Topology.h>
 #include <mpi.h>
 #include <span>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/common/types.h>
+#include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/mesh/Topology.h>
+
+#include <basix/mdspan.hpp>
 
 namespace dolfinx
 {
@@ -244,8 +246,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
     std::vector<std::pair<int, std::int64_t>> dest_to_index;
     std::ranges::transform(
         indices, std::back_inserter(dest_to_index),
-        [size, num_nodes](auto n)
-        {
+        [size, num_nodes](auto n) {
           return std::pair(dolfinx::MPI::index_owner(size, n, num_nodes), n);
         });
     std::ranges::sort(dest_to_index);

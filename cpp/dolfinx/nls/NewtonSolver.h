@@ -8,13 +8,14 @@
 
 #ifdef HAS_PETSC
 
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/la/petsc.h>
 #include <functional>
 #include <memory>
 #include <petscmat.h>
 #include <petscvec.h>
 #include <utility>
+
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/la/petsc.h>
 
 namespace dolfinx
 {

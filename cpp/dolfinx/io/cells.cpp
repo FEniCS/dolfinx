@@ -5,15 +5,17 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "cells.h"
+
 #include <algorithm>
 #include <array>
 #include <cstdint>
-#include <dolfinx/common/log.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <numeric>
 #include <span>
 #include <stdexcept>
 #include <vector>
+
+#include <dolfinx/common/log.h>
+#include <dolfinx/mesh/cell_types.h>
 
 using namespace dolfinx;
 

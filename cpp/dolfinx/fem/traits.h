@@ -5,12 +5,14 @@
 
 #pragma once
 
-#include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdint>
-#include <dolfinx/common/types.h>
 #include <span>
 #include <type_traits>
+
+#include <dolfinx/common/types.h>
+
+#include <basix/mdspan.hpp>
 
 namespace dolfinx::fem
 {

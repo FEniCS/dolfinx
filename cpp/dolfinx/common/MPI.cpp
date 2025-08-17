@@ -5,8 +5,10 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "MPI.h"
-#include <dolfinx/common/log.h>
+
 #include <iostream>
+
+#include <dolfinx/common/log.h>
 
 //-----------------------------------------------------------------------------
 dolfinx::MPI::Comm::Comm(MPI_Comm comm, bool duplicate)

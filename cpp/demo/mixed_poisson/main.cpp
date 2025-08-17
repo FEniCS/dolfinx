@@ -91,15 +91,8 @@
 // ````
 //
 
-#include "mixed_poisson.h"
-#include <basix/cell.h>
-#include <basix/finite-element.h>
-#include <basix/mdspan.hpp>
 #include <cmath>
 #include <dolfinx.h>
-#include <dolfinx/fem/Constant.h>
-#include <dolfinx/fem/petsc.h>
-#include <dolfinx/la/petsc.h>
 #include <map>
 #include <memory>
 #include <petscmat.h>
@@ -109,6 +102,16 @@
 #include <span>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/fem/Constant.h>
+#include <dolfinx/fem/petsc.h>
+#include <dolfinx/la/petsc.h>
+
+#include <basix/cell.h>
+#include <basix/finite-element.h>
+#include <basix/mdspan.hpp>
+
+#include "mixed_poisson.h"
 
 using namespace dolfinx;
 using T = PetscScalar;

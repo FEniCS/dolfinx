@@ -14,26 +14,29 @@
 
 // ## C++ program
 
-#include "hyperelasticity.h"
 #include <algorithm>
-#include <basix/finite-element.h>
 #include <climits>
 #include <cmath>
 #include <dolfinx.h>
-#include <dolfinx/common/log.h>
-#include <dolfinx/fem/assembler.h>
-#include <dolfinx/fem/petsc.h>
-#include <dolfinx/io/XDMFFile.h>
-#include <dolfinx/la/Vector.h>
-#include <dolfinx/la/petsc.h>
-#include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/cell_types.h>
-#include <dolfinx/nls/NewtonSolver.h>
 #include <numbers>
 #include <petscmat.h>
 #include <petscsys.h>
 #include <petscsystypes.h>
 #include <petscvec.h>
+
+#include <dolfinx/common/log.h>
+#include <dolfinx/fem/assembler.h>
+#include <dolfinx/fem/petsc.h>
+#include <dolfinx/io/XDMFFile.h>
+#include <dolfinx/la/petsc.h>
+#include <dolfinx/la/Vector.h>
+#include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/nls/NewtonSolver.h>
+
+#include <basix/finite-element.h>
+
+#include "hyperelasticity.h"
 
 using namespace dolfinx;
 using T = PetscScalar;

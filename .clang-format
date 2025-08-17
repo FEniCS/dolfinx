@@ -48,14 +48,31 @@ DerivePointerAlignment: false
 DisableFormat:   false
 ExperimentalAutoDetectBinPacking: false
 ForEachMacros:   [ foreach, Q_FOREACH, BOOST_FOREACH ]
-IncludeCategories:
-  - Regex:           '^"(llvm|llvm-c|clang|clang-c)/'
-    Priority:        2
-  - Regex:           '^(<|"(gtest|isl|json)/)'
-    Priority:        3
-  - Regex:           '.*'
-    Priority:        1
+
+IncludeBlocks:   Regroup
+SortIncludes:    CaseInsensitive
 IncludeIsMainRegex: '$'
+
+# Simplified include groups:
+# 1) Std (C & C++): headers without a slash, e.g., <vector>, <stdint.h>
+# 2) Project/public prefixes
+# 3) Third-party & platform with subpaths: <fmt/format.h>, <sys/epoll.h>, "absl/..."
+# 4) Local same-dir headers: "foo.h"
+# 5) Fallback
+
+IncludeCategories:
+  - Regex: '^<[^/]+>$'
+    Priority: 1
+  - Regex: '^(<|")(your_project|project_name|myext|dolfinx(_wrappers)?|fenicsx?)/'
+    Priority: 2
+  - Regex: '^((<|")[^/"]+/.+(>|"))$'
+    Priority: 3
+  - Regex: '^"[^/]+"$'
+    Priority: 4
+  - Regex: '.*'
+    Priority: 5
+# -------------------------------------------
+
 IndentCaseLabels: false
 IndentWidth:     2
 IndentWrappedFunctionNames: false
@@ -77,7 +94,6 @@ PenaltyExcessCharacter: 1000000
 PenaltyReturnTypeOnItsOwnLine: 60
 PointerAlignment: Left
 ReflowComments:  true
-SortIncludes:    true
 SpaceAfterCStyleCast: false
 SpaceAfterTemplateKeyword: true
 SpaceBeforeAssignmentOperators: true

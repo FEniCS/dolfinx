@@ -4,16 +4,18 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "HDF5Interface.h"
 #include <algorithm>
 #include <concepts>
+#include <map>
+#include <vector>
+
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/utils.h>
-#include <map>
-#include <vector>
+
+#include "HDF5Interface.h"
 
 namespace dolfinx::io::VTKHDF
 {

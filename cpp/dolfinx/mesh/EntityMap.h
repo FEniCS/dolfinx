@@ -6,11 +6,13 @@
 
 #pragma once
 
-#include "Topology.h"
 #include <concepts>
-#include <dolfinx/common/IndexMap.h>
 #include <span>
 #include <vector>
+
+#include <dolfinx/common/IndexMap.h>
+
+#include "Topology.h"
 
 namespace dolfinx::mesh
 {

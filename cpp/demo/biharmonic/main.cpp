@@ -127,17 +127,20 @@
 // Biharmonic equation, which are defined in the UFL form file. For
 // convenience we also include the DOLFINx namespace.
 
-#include "biharmonic.h"
-#include <basix/finite-element.h>
 #include <cmath>
 #include <dolfinx.h>
-#include <dolfinx/common/types.h>
-#include <dolfinx/fem/Constant.h>
-#include <dolfinx/fem/petsc.h>
 #include <memory>
 #include <numbers>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/common/types.h>
+#include <dolfinx/fem/Constant.h>
+#include <dolfinx/fem/petsc.h>
+
+#include <basix/finite-element.h>
+
+#include "biharmonic.h"
 
 using namespace dolfinx;
 using T = PetscScalar;

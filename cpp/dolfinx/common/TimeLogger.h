@@ -6,13 +6,14 @@
 
 #pragma once
 
-#include "Table.h"
-#include "timing.h"
 #include <chrono>
 #include <map>
 #include <mpi.h>
 #include <string>
 #include <utility>
+
+#include "Table.h"
+#include "timing.h"
 
 namespace dolfinx::common
 {

@@ -7,15 +7,17 @@
 #ifdef HAS_ADIOS2
 
 #include <algorithm>
-#include <catch2/catch_test_macros.hpp>
 #include <concepts>
+#include <mpi.h>
+
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/io/ADIOS2Writers.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
-#include <mpi.h>
+#include <dolfinx/mesh/Mesh.h>
+
+#include <catch2/catch_test_macros.hpp>
 
 using namespace dolfinx;
 

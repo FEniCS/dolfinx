@@ -5,13 +5,16 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "ordering.h"
-#include "AdjacencyList.h"
+
 #include <algorithm>
 #include <cstdint>
-#include <dolfinx/common/Timer.h>
-#include <dolfinx/common/log.h>
 #include <limits>
 #include <span>
+
+#include <dolfinx/common/log.h>
+#include <dolfinx/common/Timer.h>
+
+#include "AdjacencyList.h"
 
 using namespace dolfinx;
 

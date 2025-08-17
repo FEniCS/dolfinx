@@ -6,11 +6,13 @@
 
 // # Interpolation different meshes
 
-#include <basix/e-lagrange.h>
+#include <memory>
+
 #include <dolfinx/fem/dolfinx_fem.h>
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/mesh/generation.h>
-#include <memory>
+
+#include <basix/e-lagrange.h>
 
 using namespace dolfinx;
 using T = double;

@@ -6,18 +6,20 @@
 
 #pragma once
 
-#include "Constant.h"
-#include "Function.h"
 #include <algorithm>
 #include <array>
 #include <concepts>
-#include <dolfinx/common/types.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <memory>
 #include <span>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/common/types.h>
+#include <dolfinx/mesh/Mesh.h>
+
+#include "Constant.h"
+#include "Function.h"
 
 namespace dolfinx::fem
 {

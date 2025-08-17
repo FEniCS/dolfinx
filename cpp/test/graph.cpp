@@ -7,10 +7,12 @@
 #ifdef HAS_ADIOS2
 
 #include <algorithm>
-#include <catch2/catch_test_macros.hpp>
+#include <vector>
+
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/utils.h>
-#include <vector>
+
+#include <catch2/catch_test_macros.hpp>
 
 using namespace dolfinx;
 

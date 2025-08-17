@@ -5,12 +5,14 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Table.h"
-#include "MPI.h"
+
 #include <array>
 #include <functional>
 #include <iostream>
 #include <map>
 #include <variant>
+
+#include "MPI.h"
 
 namespace
 {

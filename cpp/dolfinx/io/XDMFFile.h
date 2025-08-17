@@ -6,16 +6,18 @@
 
 #pragma once
 
-#include "HDF5Interface.h"
 #include <concepts>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <filesystem>
 #include <memory>
 #include <optional>
 #include <string>
 #include <utility>
 #include <variant>
+
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/mesh/cell_types.h>
+
+#include "HDF5Interface.h"
 
 namespace pugi
 {

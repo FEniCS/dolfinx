@@ -6,18 +6,21 @@
 
 #pragma once
 
-#include "Expression.h"
-#include "FunctionSpace.h"
-#include "traits.h"
-#include "utils.h"
 #include <algorithm>
-#include <basix/mdspan.hpp>
+#include <memory>
+#include <vector>
+
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
-#include <memory>
-#include <vector>
+
+#include <basix/mdspan.hpp>
+
+#include "Expression.h"
+#include "FunctionSpace.h"
+#include "traits.h"
+#include "utils.h"
 
 namespace dolfinx::fem::impl
 {

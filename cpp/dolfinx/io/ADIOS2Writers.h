@@ -8,19 +8,11 @@
 
 #ifdef HAS_ADIOS2
 
-#include "vtk_utils.h"
 #include <adios2.h>
 #include <algorithm>
-#include <basix/mdspan.hpp>
 #include <cassert>
 #include <complex>
 #include <concepts>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/FiniteElement.h>
-#include <dolfinx/fem/Function.h>
-#include <dolfinx/mesh/Geometry.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <filesystem>
 #include <memory>
 #include <mpi.h>
@@ -28,6 +20,17 @@
 #include <type_traits>
 #include <variant>
 #include <vector>
+
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/fem/DofMap.h>
+#include <dolfinx/fem/FiniteElement.h>
+#include <dolfinx/fem/Function.h>
+#include <dolfinx/mesh/Geometry.h>
+#include <dolfinx/mesh/Mesh.h>
+
+#include <basix/mdspan.hpp>
+
+#include "vtk_utils.h"
 
 /// @file ADIOS2Writers.h
 /// @brief ADIOS2-based output writers

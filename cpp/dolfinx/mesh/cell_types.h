@@ -7,12 +7,14 @@
 #pragma once
 
 #include <array>
-#include <basix/cell.h>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
+
+#include <dolfinx/graph/AdjacencyList.h>
+
+#include <basix/cell.h>
 
 namespace dolfinx::mesh
 {

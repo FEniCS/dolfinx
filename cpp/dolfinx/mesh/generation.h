@@ -6,21 +6,23 @@
 
 #pragma once
 
-#include "Mesh.h"
-#include "cell_types.h"
-#include "utils.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
-#include <dolfinx/graph/ordering.h>
 #include <limits>
 #include <mpi.h>
 #include <stdexcept>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/graph/ordering.h>
+
+#include "cell_types.h"
+#include "Mesh.h"
+#include "utils.h"
 
 namespace dolfinx::mesh
 {

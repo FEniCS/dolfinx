@@ -6,13 +6,15 @@
 
 #pragma once
 
-#include "cell_types.h"
 #include <array>
 #include <cstdint>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <tuple>
 #include <vector>
+
+#include <dolfinx/graph/AdjacencyList.h>
+
+#include "cell_types.h"
 
 namespace dolfinx::common
 {

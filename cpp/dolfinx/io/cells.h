@@ -8,9 +8,10 @@
 
 #include <array>
 #include <cstdint>
-#include <dolfinx/mesh/cell_types.h>
 #include <span>
 #include <vector>
+
+#include <dolfinx/mesh/cell_types.h>
 
 /// @brief Functions for the re-ordering of input mesh topology to the
 /// DOLFINx ordering, and transpose orderings for file output.

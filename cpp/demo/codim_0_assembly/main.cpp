@@ -6,20 +6,23 @@
 // * Assemble a mixed formulation with function spaces defined on the sub mesh
 // and parent mesh
 
-#include "mixed_codim0.h"
-#include <basix/finite-element.h>
 #include <cmath>
 #include <dolfinx.h>
-#include <dolfinx/fem/Constant.h>
-#include <dolfinx/fem/petsc.h>
-#include <dolfinx/la/MatrixCSR.h>
-#include <dolfinx/la/SparsityPattern.h>
-#include <dolfinx/mesh/EntityMap.h>
 #include <map>
 #include <memory>
 #include <ranges>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/fem/Constant.h>
+#include <dolfinx/fem/petsc.h>
+#include <dolfinx/la/MatrixCSR.h>
+#include <dolfinx/la/SparsityPattern.h>
+#include <dolfinx/mesh/EntityMap.h>
+
+#include <basix/finite-element.h>
+
+#include "mixed_codim0.h"
 
 using namespace dolfinx;
 using T = PetscScalar;

@@ -6,17 +6,19 @@
 //
 // Unit tests for reading meshtags by name
 
-#include <catch2/catch_template_test_macros.hpp>
-#include <catch2/catch_test_macros.hpp>
+#include <numeric>
+#include <string>
+
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/la/Vector.h>
-#include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/generation.h>
+#include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/utils.h>
-#include <numeric>
-#include <string>
+
+#include <catch2/catch_template_test_macros.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 using namespace dolfinx;
 

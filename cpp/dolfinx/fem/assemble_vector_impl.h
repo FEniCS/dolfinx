@@ -6,24 +6,27 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <optional>
+#include <span>
+#include <vector>
+
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/mesh/Geometry.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Topology.h>
+
+#include <basix/mdspan.hpp>
+
 #include "Constant.h"
 #include "DirichletBC.h"
 #include "DofMap.h"
 #include "Form.h"
 #include "traits.h"
 #include "utils.h"
-#include <algorithm>
-#include <basix/mdspan.hpp>
-#include <cstdint>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/mesh/Geometry.h>
-#include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/Topology.h>
-#include <functional>
-#include <memory>
-#include <optional>
-#include <span>
-#include <vector>
 
 namespace dolfinx::fem
 {

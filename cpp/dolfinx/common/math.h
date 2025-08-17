@@ -6,13 +6,15 @@
 
 #pragma once
 
-#include "types.h"
 #include <algorithm>
 #include <array>
-#include <basix/mdspan.hpp>
 #include <cmath>
 #include <string>
 #include <type_traits>
+
+#include <basix/mdspan.hpp>
+
+#include "types.h"
 
 namespace dolfinx::math
 {

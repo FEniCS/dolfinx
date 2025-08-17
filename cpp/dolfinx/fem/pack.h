@@ -6,6 +6,17 @@
 
 #pragma once
 
+#include <array>
+#include <concepts>
+#include <span>
+#include <stdexcept>
+#include <type_traits>
+#include <vector>
+
+#include <dolfinx/mesh/Topology.h>
+
+#include <basix/mdspan.hpp>
+
 #include "Constant.h"
 #include "DofMap.h"
 #include "FiniteElement.h"
@@ -13,14 +24,6 @@
 #include "Function.h"
 #include "FunctionSpace.h"
 #include "traits.h"
-#include <array>
-#include <basix/mdspan.hpp>
-#include <concepts>
-#include <dolfinx/mesh/Topology.h>
-#include <span>
-#include <stdexcept>
-#include <type_traits>
-#include <vector>
 
 /// @file pack.h
 /// @brief Functions supporting the packing of coefficient data.

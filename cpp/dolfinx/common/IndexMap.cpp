@@ -6,7 +6,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "IndexMap.h"
-#include "sort.h"
+
 #include <algorithm>
 #include <cstdint>
 #include <functional>
@@ -15,6 +15,8 @@
 #include <span>
 #include <utility>
 #include <vector>
+
+#include "sort.h"
 
 using namespace dolfinx;
 using namespace dolfinx::common;

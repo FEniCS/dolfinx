@@ -8,17 +8,20 @@
 #ifdef HAS_PETSC
 
 #include "petsc.h"
-#include "SparsityPattern.h"
-#include "Vector.h"
-#include "utils.h"
+
 #include <algorithm>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/common/Timer.h>
-#include <dolfinx/common/log.h>
 #include <iostream>
 #include <sstream>
 #include <utility>
+
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/common/Timer.h>
+
+#include "SparsityPattern.h"
+#include "utils.h"
+#include "Vector.h"
 
 using namespace dolfinx;
 using namespace dolfinx::la;

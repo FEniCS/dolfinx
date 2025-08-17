@@ -7,22 +7,25 @@
 
 #pragma once
 
-#include "CoordinateElement.h"
-#include "DofMap.h"
-#include "FiniteElement.h"
-#include "FunctionSpace.h"
 #include <algorithm>
-#include <basix/mdspan.hpp>
 #include <concepts>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/types.h>
-#include <dolfinx/geometry/utils.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <numeric>
 #include <ranges>
 #include <span>
 #include <vector>
+
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/types.h>
+#include <dolfinx/geometry/utils.h>
+#include <dolfinx/mesh/Mesh.h>
+
+#include <basix/mdspan.hpp>
+
+#include "CoordinateElement.h"
+#include "DofMap.h"
+#include "FiniteElement.h"
+#include "FunctionSpace.h"
 
 namespace dolfinx::fem
 {

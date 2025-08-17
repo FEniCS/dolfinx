@@ -7,9 +7,10 @@
 
 #pragma once
 
-#include "dolfinx/common/types.h"
 #include <span>
 #include <vector>
+
+#include "dolfinx/common/types.h"
 
 namespace dolfinx::fem
 {

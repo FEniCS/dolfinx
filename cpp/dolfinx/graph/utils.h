@@ -6,11 +6,13 @@
 
 #pragma once
 
-#include "AdjacencyList.h"
-#include <dolfinx/common/IndexMap.h>
 #include <string>
 #include <tuple>
 #include <utility>
+
+#include <dolfinx/common/IndexMap.h>
+
+#include "AdjacencyList.h"
 
 namespace dolfinx::graph
 {

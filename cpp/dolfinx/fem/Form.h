@@ -7,16 +7,9 @@
 
 #pragma once
 
-#include "FunctionSpace.h"
-#include "traits.h"
 #include <algorithm>
-#include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdint>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/types.h>
-#include <dolfinx/mesh/EntityMap.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <map>
 #include <memory>
@@ -26,6 +19,16 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/types.h>
+#include <dolfinx/mesh/EntityMap.h>
+#include <dolfinx/mesh/Mesh.h>
+
+#include <basix/mdspan.hpp>
+
+#include "FunctionSpace.h"
+#include "traits.h"
 
 namespace dolfinx::fem
 {

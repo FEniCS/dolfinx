@@ -6,23 +6,26 @@
 
 #pragma once
 
-#include "Function.h"
-#include "FunctionSpace.h"
-#include "assemble_expression_impl.h"
-#include "assemble_matrix_impl.h"
-#include "assemble_scalar_impl.h"
-#include "assemble_vector_impl.h"
-#include "pack.h"
-#include "traits.h"
-#include "utils.h"
 #include <algorithm>
-#include <basix/mdspan.hpp>
 #include <cstdint>
-#include <dolfinx/common/types.h>
 #include <memory>
 #include <optional>
 #include <span>
 #include <vector>
+
+#include <dolfinx/common/types.h>
+
+#include <basix/mdspan.hpp>
+
+#include "assemble_expression_impl.h"
+#include "assemble_matrix_impl.h"
+#include "assemble_scalar_impl.h"
+#include "assemble_vector_impl.h"
+#include "Function.h"
+#include "FunctionSpace.h"
+#include "pack.h"
+#include "traits.h"
+#include "utils.h"
 
 /// @file assembler.h
 /// @brief Functions supporting assembly of finite element fem::Form and
@@ -134,10 +137,10 @@ make_coefficients_span(const std::map<std::pair<IntegralType, int>,
 {
   using Key = typename std::remove_reference_t<decltype(coeffs)>::key_type;
   std::map<Key, std::pair<std::span<const T>, int>> c;
-  std::ranges::transform(
-      coeffs, std::inserter(c, c.end()),
-      [](auto& e) -> typename decltype(c)::value_type
-      { return {e.first, {e.second.first, e.second.second}}; });
+  std::ranges::transform(coeffs, std::inserter(c, c.end()),
+                         [](auto& e) -> typename decltype(c)::value_type {
+                           return {e.first, {e.second.first, e.second.second}};
+                         });
   return c;
 }
 

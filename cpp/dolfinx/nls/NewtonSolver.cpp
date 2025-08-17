@@ -7,11 +7,13 @@
 #ifdef HAS_PETSC
 
 #include "NewtonSolver.h"
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/common/log.h>
-#include <dolfinx/la/petsc.h>
+
 #include <string>
 #include <utility>
+
+#include <dolfinx/common/log.h>
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/la/petsc.h>
 
 using namespace dolfinx;
 

@@ -6,20 +6,8 @@
 
 #pragma once
 
-#include "DofMap.h"
-#include "FiniteElement.h"
-#include "FunctionSpace.h"
-#include "assembler.h"
-#include "interpolate.h"
 #include <algorithm>
-#include <basix/mdspan.hpp>
 #include <concepts>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/types.h>
-#include <dolfinx/la/Vector.h>
-#include <dolfinx/mesh/Geometry.h>
-#include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/Topology.h>
 #include <functional>
 #include <memory>
 #include <numeric>
@@ -27,6 +15,21 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/types.h>
+#include <dolfinx/la/Vector.h>
+#include <dolfinx/mesh/Geometry.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Topology.h>
+
+#include <basix/mdspan.hpp>
+
+#include "assembler.h"
+#include "DofMap.h"
+#include "FiniteElement.h"
+#include "FunctionSpace.h"
+#include "interpolate.h"
 
 namespace dolfinx::fem
 {

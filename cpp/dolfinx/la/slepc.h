@@ -8,12 +8,13 @@
 
 #ifdef HAS_SLEPC
 
-#include "dolfinx/common/MPI.h"
 #include <memory>
 #include <petscmat.h>
 #include <petscvec.h>
 #include <slepceps.h>
 #include <string>
+
+#include "dolfinx/common/MPI.h"
 
 namespace dolfinx::la
 {

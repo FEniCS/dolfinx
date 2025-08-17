@@ -5,11 +5,10 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "XDMFFile.h"
-#include "cells.h"
-#include "xdmf_function.h"
-#include "xdmf_mesh.h"
-#include "xdmf_utils.h"
-#include <boost/lexical_cast.hpp>
+
+#include <filesystem>
+#include <pugixml.hpp>
+
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -18,8 +17,13 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/utils.h>
-#include <filesystem>
-#include <pugixml.hpp>
+
+#include <boost/lexical_cast.hpp>
+
+#include "cells.h"
+#include "xdmf_function.h"
+#include "xdmf_mesh.h"
+#include "xdmf_utils.h"
 
 using namespace dolfinx;
 using namespace dolfinx::io;

@@ -6,17 +6,19 @@
 
 #pragma once
 
-#include "Topology.h"
 #include <algorithm>
+#include <memory>
+#include <span>
+#include <utility>
+#include <vector>
+
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/io/cells.h>
-#include <memory>
-#include <span>
-#include <utility>
-#include <vector>
+
+#include "Topology.h"
 
 namespace dolfinx::mesh
 {

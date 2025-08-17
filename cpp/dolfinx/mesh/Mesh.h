@@ -6,10 +6,12 @@
 
 #pragma once
 
-#include "Geometry.h"
 #include <concepts>
-#include <dolfinx/common/MPI.h>
 #include <string>
+
+#include <dolfinx/common/MPI.h>
+
+#include "Geometry.h"
 
 namespace dolfinx::mesh
 {
@@ -108,8 +110,8 @@ private:
 /// @cond
 /// Template type deduction
 template <typename V>
-Mesh(MPI_Comm, std::shared_ptr<Topology>, V)
-    -> Mesh<typename std::remove_cvref_t<typename V::value_type>>;
+Mesh(MPI_Comm, std::shared_ptr<Topology>,
+     V) -> Mesh<typename std::remove_cvref_t<typename V::value_type>>;
 /// @endcond
 
 } // namespace dolfinx::mesh

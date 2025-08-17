@@ -4,24 +4,28 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <filesystem>
+#include <memory>
+#include <span>
+#include <vector>
+
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
-#include <basix/mdspan.hpp>
 #include <dolfinx/common/defines.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/ADIOS2Writers.h>
-#include <dolfinx/io/VTKFile.h>
-#include <dolfinx/io/VTKHDF.h>
-#include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/io/utils.h>
 #include <dolfinx/io/vtk_utils.h>
+#include <dolfinx/io/VTKFile.h>
+#include <dolfinx/io/VTKHDF.h>
 #include <dolfinx/io/xdmf_utils.h>
+#include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
-#include <filesystem>
-#include <memory>
+
+#include <basix/mdspan.hpp>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/complex.h>
@@ -32,8 +36,6 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
-#include <span>
-#include <vector>
 
 namespace nb = nanobind;
 namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
@@ -119,8 +121,7 @@ void declare_vtx_writer(nb::module_& m, const std::string& type)
             [](dolfinx::io::VTXWriter<T>* self, MPICommWrapper comm,
                std::filesystem::path filename,
                std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
-               std::string engine)
-            {
+               std::string engine) {
               new (self)
                   dolfinx::io::VTXWriter<T>(comm.get(), filename, mesh, engine);
             },
@@ -226,14 +227,12 @@ void io(nb::module_& m)
   m.def("write_vtkhdf_data", &dolfinx::io::VTKHDF::write_data<double>);
   m.def("write_vtkhdf_data", &dolfinx::io::VTKHDF::write_data<float>);
   m.def("read_vtkhdf_mesh_float64",
-        [](MPICommWrapper comm, const std::string& filename, std::size_t gdim)
-        {
+        [](MPICommWrapper comm, const std::string& filename, std::size_t gdim) {
           return dolfinx::io::VTKHDF::read_mesh<double>(comm.get(), filename,
                                                         gdim);
         });
   m.def("read_vtkhdf_mesh_float32",
-        [](MPICommWrapper comm, const std::string& filename, std::size_t gdim)
-        {
+        [](MPICommWrapper comm, const std::string& filename, std::size_t gdim) {
           return dolfinx::io::VTKHDF::read_mesh<float>(comm.get(), filename,
                                                        gdim);
         });
@@ -260,8 +259,7 @@ void io(nb::module_& m)
           "__init__",
           [](dolfinx::io::XDMFFile* x, MPICommWrapper comm,
              std::filesystem::path filename, const std::string& file_mode,
-             dolfinx::io::XDMFFile::Encoding encoding)
-          {
+             dolfinx::io::XDMFFile::Encoding encoding) {
             new (x) dolfinx::io::XDMFFile(comm.get(), filename, file_mode,
                                           encoding);
           },

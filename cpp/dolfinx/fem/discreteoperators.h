@@ -6,19 +6,21 @@
 
 #pragma once
 
-#include "DofMap.h"
-#include "FiniteElement.h"
-#include "FunctionSpace.h"
 #include <algorithm>
 #include <array>
 #include <concepts>
+#include <memory>
+#include <span>
+#include <vector>
+
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/math.h>
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <memory>
-#include <span>
-#include <vector>
+
+#include "DofMap.h"
+#include "FiniteElement.h"
+#include "FunctionSpace.h"
 
 namespace dolfinx::fem
 {

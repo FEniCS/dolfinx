@@ -4,14 +4,13 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <catch2/catch_test_macros.hpp>
-
-#include <basix/finite-element.h>
-
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/utils.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
+#include <dolfinx/mesh/Mesh.h>
+
+#include <basix/finite-element.h>
+#include <catch2/catch_test_macros.hpp>
 
 using namespace dolfinx;
 

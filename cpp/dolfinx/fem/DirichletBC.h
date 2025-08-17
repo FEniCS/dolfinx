@@ -7,14 +7,9 @@
 
 #pragma once
 
-#include "Constant.h"
-#include "DofMap.h"
-#include "Function.h"
-#include "FunctionSpace.h"
 #include <algorithm>
 #include <array>
 #include <concepts>
-#include <dolfinx/common/types.h>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -23,6 +18,15 @@
 #include <utility>
 #include <variant>
 #include <vector>
+
+#include <dolfinx/common/types.h>
+
+#include <fmt/format.h>
+
+#include "Constant.h"
+#include "DofMap.h"
+#include "Function.h"
+#include "FunctionSpace.h"
 
 namespace dolfinx::fem
 {

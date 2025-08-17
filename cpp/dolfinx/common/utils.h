@@ -6,15 +6,18 @@
 
 #pragma once
 
-#include "MPI.h"
 #include <algorithm>
-#include <boost/functional/hash.hpp>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <mpi.h>
 #include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
+
+#include <dolfinx/graph/AdjacencyList.h>
+
+#include <boost/functional/hash.hpp>
+
+#include "MPI.h"
 
 /// Generic tools
 namespace dolfinx::common

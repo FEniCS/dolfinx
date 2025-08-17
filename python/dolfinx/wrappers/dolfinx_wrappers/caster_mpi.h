@@ -6,9 +6,10 @@
 
 #pragma once
 
-#include "MPICommWrapper.h"
 #include <mpi4py/mpi4py.h>
 #include <nanobind/nanobind.h>
+
+#include "MPICommWrapper.h"
 
 namespace nanobind::detail
 {

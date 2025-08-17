@@ -4,17 +4,20 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <complex>
+#include <cstdint>
+#include <memory>
+#include <span>
+
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
 #include "dolfinx_wrappers/numpy_dtype.h"
-#include <complex>
-#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
-#include <dolfinx/la/Vector.h>
 #include <dolfinx/la/utils.h>
-#include <memory>
+#include <dolfinx/la/Vector.h>
+
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
@@ -22,7 +25,6 @@
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/vector.h>
-#include <span>
 
 namespace nb = nanobind;
 using namespace nb::literals;
@@ -249,8 +251,7 @@ void la(nb::module_& m)
                      std::reference_wrapper<const dolfinx::common::IndexMap>,
                      int>>,
                  2>& maps,
-             std::array<std::vector<int>, 2> bs)
-          {
+             std::array<std::vector<int>, 2> bs) {
             new (sp)
                 dolfinx::la::SparsityPattern(comm.get(), patterns, maps, bs);
           },

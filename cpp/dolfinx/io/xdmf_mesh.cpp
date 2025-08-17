@@ -5,15 +5,18 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "xdmf_mesh.h"
-#include "cells.h"
-#include "xdmf_utils.h"
+
+#include <pugixml.hpp>
+#include <vector>
+
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
-#include <pugixml.hpp>
-#include <vector>
+
+#include "cells.h"
+#include "xdmf_utils.h"
 
 using namespace dolfinx;
 using namespace dolfinx::io;

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "timing.h"
+
 #include "Table.h"
 #include "TimeLogger.h"
 #include "Timer.h"

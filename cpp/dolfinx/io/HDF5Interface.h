@@ -10,13 +10,14 @@
 #include <cassert>
 #include <chrono>
 #include <cstdint>
-#include <dolfinx/common/log.h>
 #include <filesystem>
 #include <hdf5.h>
 #include <mpi.h>
 #include <numeric>
 #include <string>
 #include <vector>
+
+#include <dolfinx/common/log.h>
 
 namespace dolfinx::io::hdf5
 {

@@ -9,16 +9,17 @@
 #include <array>
 #include <concepts>
 #include <cstdint>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/common/log.h>
-#include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/utils.h>
 #include <memory>
 #include <set>
 #include <span>
 #include <tuple>
 #include <vector>
+
+#include <dolfinx/common/log.h>
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/utils.h>
 
 namespace dolfinx::mesh
 {

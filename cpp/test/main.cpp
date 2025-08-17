@@ -1,7 +1,9 @@
+#include <mpi.h>
+
+#include <dolfinx/common/log.h>
+
 #include <catch2/catch_session.hpp>
 #include <catch2/catch_test_macros.hpp>
-#include <dolfinx/common/log.h>
-#include <mpi.h>
 
 int main(int argc, char* argv[])
 {

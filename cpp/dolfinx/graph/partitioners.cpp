@@ -5,15 +5,17 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "partitioners.h"
+
 #include <algorithm>
 #include <cstdint>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/common/Timer.h>
-#include <dolfinx/common/log.h>
 #include <map>
 #include <numeric>
 #include <set>
 #include <vector>
+
+#include <dolfinx/common/log.h>
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/common/Timer.h>
 
 #ifdef HAS_PTSCOTCH
 extern "C"
