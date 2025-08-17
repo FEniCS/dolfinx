@@ -56,7 +56,16 @@ void add_scatter_functions(nb::class_<dolfinx::common::Scatterer<>>& sc)
          nb::ndarray<const T, nb::ndim<1>, nb::c_contig> local_data,
          nb::ndarray<T, nb::ndim<1>, nb::c_contig> remote_data)
       {
-        // TODO: add size check
+        if (local_data.size() < self.local_buffer_size())
+        {
+          throw std::runtime_error(
+              "Local data buffer too small in forward scatter.");
+        }
+        if (remote_data.size() < self.remote_buffer_size())
+        {
+          throw std::runtime_error(
+              "Ghost data buffer too small in forward scatter.");
+        }
         self.scatter_fwd(local_data.data(), remote_data.data());
       },
       nb::arg("local_data"), nb::arg("remote_data"));
@@ -67,7 +76,16 @@ void add_scatter_functions(nb::class_<dolfinx::common::Scatterer<>>& sc)
          nb::ndarray<T, nb::ndim<1>, nb::c_contig> local_data,
          nb::ndarray<const T, nb::ndim<1>, nb::c_contig> remote_data)
       {
-        // TODO: add size checks
+        if (local_data.size() < self.local_buffer_size())
+        {
+          throw std::runtime_error(
+              "Local data buffer too small in reverse scatter.");
+        }
+        if (remote_data.size() < self.remote_buffer_size())
+        {
+          throw std::runtime_error(
+              "Ghost data buffer too small in reverse scatter.");
+        }
         self.scatter_rev(local_data.data(), remote_data.data(), std::plus<T>());
       },
       nb::arg("local_data"), nb::arg("remote_data"));
