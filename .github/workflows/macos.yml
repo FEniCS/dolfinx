@@ -84,6 +84,7 @@ jobs:
           -Werror=dev
           --warn-uninitialized
           -G Ninja 
+          -DBUILD_TESTING=true
 
       - name: Build and install (C++)
         working-directory: cpp/build
