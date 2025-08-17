@@ -88,7 +88,7 @@ public:
       // Assemble b and update ghosts
       std::span b(_b.mutable_array());
       std::ranges::fill(b, 0);
-      fem::assemble_vector<T>(b, _l);
+      fem::assemble_vector(b, _l);
       VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
       VecGhostUpdateEnd(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
 

@@ -61,7 +61,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// @param cell_info1 Cell permutation information for the trial
 /// function mesh.
 template <dolfinx::scalar T>
-void assemble_cells(
+void assemble_cells_matrix(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
@@ -605,10 +605,11 @@ void assemble_matrix(
       std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, cell_type_idx);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
       assert(cells.size() * cstride == coeffs.size());
-      impl::assemble_cells(mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0},
-                           P0, {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
-                           md::mdspan(coeffs.data(), cells.size(), cstride),
-                           constants, cell_info0, cell_info1);
+      impl::assemble_cells_matrix(
+          mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0}, P0,
+          {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
+          md::mdspan(coeffs.data(), cells.size(), cstride), constants,
+          cell_info0, cell_info1);
     }
 
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;

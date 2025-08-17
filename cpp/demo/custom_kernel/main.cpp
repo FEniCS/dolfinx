@@ -141,7 +141,7 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   common::Timer timer("Assembler1 lambda (matrix)");
   md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 3>> x(
       g.x().data(), g.x().size() / 3, 3);
-  fem::impl::assemble_cells<T>(
+  fem::impl::assemble_cells_matrix<T>(
       A.mat_add_values(), g.dofmap(), x, cells, {dofmap.map(), 1, cells}, ident,
       {dofmap.map(), 1, cells}, ident, {}, {}, kernel, {}, {}, {}, {});
   A.scatter_rev();
@@ -167,9 +167,9 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 3>> x(
       g.x().data(), g.x().size() / 3, 3);
   common::Timer timer("Assembler1 lambda (vector)");
-  fem::impl::assemble_cells<T, 1>([](auto, auto, auto, auto) {},
-                                  b.mutable_array(), g.dofmap(), x, cells,
-                                  {dofmap.map(), 1, cells}, kernel, {}, {}, {});
+  fem::impl::assemble_cells<1>([](auto, auto, auto, auto) {}, b.mutable_array(),
+                               g.dofmap(), x, cells, {dofmap.map(), 1, cells},
+                               kernel, {}, {}, {});
   b.scatter_rev(std::plus<T>());
   return la::squared_norm(b);
 }
@@ -275,7 +275,7 @@ int main(int argc, char* argv[])
 {
   MPI_Init(&argc, &argv);
   dolfinx::init_logging(argc, argv);
-  assemble<float>(MPI_COMM_WORLD);
+  // assemble<float>(MPI_COMM_WORLD);
   assemble<double>(MPI_COMM_WORLD);
   MPI_Finalize();
   return 0;

@@ -332,7 +332,7 @@ int main(int argc, char* argv[])
 
     // Modify unconstrained dofs on RHS to account for Dirichlet BC dofs
     // (constrained dofs), and perform parallel update on the vector.
-    fem::apply_lifting<T, U>(b.mutable_array(), {a}, {{bc}}, {}, T(1));
+    fem::apply_lifting(b.mutable_array(), {a}, {{bc}}, {}, T(1));
     b.scatter_rev(std::plus<T>());
 
     // Set value for constrained dofs

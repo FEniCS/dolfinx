@@ -62,7 +62,7 @@ void test_scatter_fwd(int n)
                           { return i == val * ((mpi_rank + 1) % mpi_size); }));
 
   std::vector<MPI_Request> requests
-      = sct.create_request_vector(common::ScattererType::p2p);
+      = sct.create_requests(common::ScattererType::p2p);
   std::ranges::fill(data_ghost, 0);
   sct.scatter_fwd_begin(data_local.data(), data_ghost.data(), requests,
                         common::ScattererType::p2p);

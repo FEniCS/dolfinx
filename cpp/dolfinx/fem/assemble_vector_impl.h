@@ -76,22 +76,34 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// conditions applied.
 /// @param[in] x0 Vector used in the lifting.
 /// @param[in] alpha Scaling to apply.
-template <dolfinx::scalar T, int _bs0 = -1, int _bs1 = -1>
+template <int _bs0 = -1, int _bs1 = -1, typename V>
 void _lift_bc_cells(
-    std::span<T> b, mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_t<T>,
-               md::extents<std::size_t, md::dynamic_extent, 3>>
+    V&& b, mdspan2_t x_dofmap,
+    md::mdspan<
+        const scalar_value_t<typename std::remove_cvref_t<V>::value_type>,
+        md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
-    FEkernel<T> auto kernel, std::span<const std::int32_t> cells,
+    FEkernel<typename std::remove_cvref_t<V>::value_type> auto kernel,
+    std::span<const std::int32_t> cells,
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
-    fem::DofTransformKernel<T> auto P0,
+    fem::DofTransformKernel<typename std::remove_cvref_t<V>::value_type> auto
+        P0,
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
-    fem::DofTransformKernel<T> auto P1T, std::span<const T> constants,
-    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+    fem::DofTransformKernel<typename std::remove_cvref_t<V>::value_type> auto
+        P1T,
+    std::span<const typename std::remove_cvref_t<V>::value_type> constants,
+    md::mdspan<const typename std::remove_cvref_t<V>::value_type,
+               md::dextents<std::size_t, 2>>
+        coeffs,
     std::span<const std::uint32_t> cell_info0,
-    std::span<const std::uint32_t> cell_info1, std::span<const T> bc_values1,
-    std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T alpha)
+    std::span<const std::uint32_t> cell_info1,
+    std::span<const typename std::remove_cvref_t<V>::value_type> bc_values1,
+    std::span<const std::int8_t> bc_markers1,
+    std::span<const typename std::remove_cvref_t<V>::value_type> x0,
+    typename std::remove_cvref_t<V>::value_type alpha)
 {
+  using T = typename std::remove_cvref_t<V>::value_type;
+
   if (cells.empty())
     return;
 
@@ -260,13 +272,14 @@ void _lift_bc_cells(
 /// local_facet_idx)` is the permutation value for the facet attached to
 /// the cell `cell_idx` with local index `local_facet_idx` relative to
 /// the cell. Empty if facet permutations are not required.
-template <dolfinx::scalar T>
+template <typename V>
 void _lift_bc_exterior_facets(
-    std::span<T> b, mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_t<T>,
-               md::extents<std::size_t, md::dynamic_extent, 3>>
+    V&& b, mdspan2_t x_dofmap,
+    md::mdspan<
+        const scalar_value_t<typename std::remove_cvref_t<V>::value_type>,
+        md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
-    FEkernel<T> auto kernel,
+    FEkernel<typename std::remove_cvref_t<V>::value_type> auto kernel,
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2>>
         facets,
@@ -274,18 +287,27 @@ void _lift_bc_exterior_facets(
                md::mdspan<const std::int32_t,
                           md::extents<std::size_t, md::dynamic_extent, 2>>>
         dofmap0,
-    fem::DofTransformKernel<T> auto P0,
+    fem::DofTransformKernel<typename std::remove_cvref_t<V>::value_type> auto
+        P0,
     std::tuple<mdspan2_t, int,
                md::mdspan<const std::int32_t,
                           md::extents<std::size_t, md::dynamic_extent, 2>>>
         dofmap1,
-    fem::DofTransformKernel<T> auto P1T, std::span<const T> constants,
-    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+    fem::DofTransformKernel<typename std::remove_cvref_t<V>::value_type> auto
+        P1T,
+    std::span<const typename std::remove_cvref_t<V>::value_type> constants,
+    md::mdspan<const typename std::remove_cvref_t<V>::value_type,
+               md::dextents<std::size_t, 2>>
+        coeffs,
     std::span<const std::uint32_t> cell_info0,
-    std::span<const std::uint32_t> cell_info1, std::span<const T> bc_values1,
-    std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T alpha,
+    std::span<const std::uint32_t> cell_info1,
+    std::span<const typename std::remove_cvref_t<V>::value_type> bc_values1,
+    std::span<const std::int8_t> bc_markers1,
+    std::span<const typename std::remove_cvref_t<V>::value_type> x0,
+    typename std::remove_cvref_t<V>::value_type alpha,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
 {
+  using T = typename std::remove_cvref_t<V>::value_type;
   if (facets.empty())
     return;
 
@@ -416,13 +438,14 @@ void _lift_bc_exterior_facets(
 /// local_facet_idx)` is the permutation value for the facet attached to
 /// the cell `cell_idx` with local index `local_facet_idx` relative to
 /// the cell. Empty if facet permutations are not required.
-template <dolfinx::scalar T>
+template <typename V>
 void _lift_bc_interior_facets(
-    std::span<T> b, mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_t<T>,
-               md::extents<std::size_t, md::dynamic_extent, 3>>
+    V&& b, mdspan2_t x_dofmap,
+    md::mdspan<
+        const scalar_value_t<typename std::remove_cvref_t<V>::value_type>,
+        md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
-    FEkernel<T> auto kernel,
+    FEkernel<typename std::remove_cvref_t<V>::value_type> auto kernel,
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2, 2>>
         facets,
@@ -430,20 +453,28 @@ void _lift_bc_interior_facets(
                md::mdspan<const std::int32_t,
                           md::extents<std::size_t, md::dynamic_extent, 2, 2>>>
         dofmap0,
-    fem::DofTransformKernel<T> auto P0,
+    fem::DofTransformKernel<typename std::remove_cvref_t<V>::value_type> auto
+        P0,
     std::tuple<mdspan2_t, int,
                md::mdspan<const std::int32_t,
                           md::extents<std::size_t, md::dynamic_extent, 2, 2>>>
         dofmap1,
-    fem::DofTransformKernel<T> auto P1T, std::span<const T> constants,
-    md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
-                                    md::dynamic_extent>>
+    fem::DofTransformKernel<typename std::remove_cvref_t<V>::value_type> auto
+        P1T,
+    std::span<const typename std::remove_cvref_t<V>::value_type> constants,
+    md::mdspan<
+        const typename std::remove_cvref_t<V>::value_type,
+        md::extents<std::size_t, md::dynamic_extent, 2, md::dynamic_extent>>
         coeffs,
     std::span<const std::uint32_t> cell_info0,
-    std::span<const std::uint32_t> cell_info1, std::span<const T> bc_values1,
-    std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T alpha,
+    std::span<const std::uint32_t> cell_info1,
+    std::span<const typename std::remove_cvref_t<V>::value_type> bc_values1,
+    std::span<const std::int8_t> bc_markers1,
+    std::span<const typename std::remove_cvref_t<V>::value_type> x0,
+    typename std::remove_cvref_t<V>::value_type alpha,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
 {
+  using T = typename std::remove_cvref_t<V>::value_type;
   if (facets.empty())
     return;
 
@@ -660,18 +691,26 @@ void _lift_bc_interior_facets(
 /// coefficient for cell `i`.
 /// @param[in] cell_info0 Cell permutation information for the test
 /// function mesh.
-template <dolfinx::scalar T, int _bs = -1>
+template <int _bs = -1, typename V>
 void assemble_cells(
-    fem::DofTransformKernel<T> auto P0, std::span<T> b, mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_t<T>,
-               md::extents<std::size_t, md::dynamic_extent, 3>>
+    fem::DofTransformKernel<typename std::remove_cvref_t<V>::value_type> auto
+        P0,
+    V&& b, mdspan2_t x_dofmap,
+    md::mdspan<
+        const scalar_value_t<typename std::remove_cvref_t<V>::value_type>,
+        md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
     std::span<const std::int32_t> cells,
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap,
-    FEkernel<T> auto kernel, std::span<const T> constants,
-    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+    FEkernel<typename std::remove_cvref_t<V>::value_type> auto kernel,
+    std::span<const typename std::remove_cvref_t<V>::value_type> constants,
+    md::mdspan<const typename std::remove_cvref_t<V>::value_type,
+               md::dextents<std::size_t, 2>>
+        coeffs,
     std::span<const std::uint32_t> cell_info0)
 {
+  using T = typename std::remove_cvref_t<V>::value_type;
+
   if (cells.empty())
     return;
 
@@ -742,11 +781,14 @@ void assemble_cells(
 /// function mesh.
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
-template <dolfinx::scalar T, int _bs = -1>
+template <int _bs = -1, typename V>
 void assemble_exterior_facets(
-    fem::DofTransformKernel<T> auto P0, std::span<T> b, mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_t<T>,
-               md::extents<std::size_t, md::dynamic_extent, 3>>
+    fem::DofTransformKernel<typename std::remove_cvref_t<V>::value_type> auto
+        P0,
+    V&& b, mdspan2_t x_dofmap,
+    md::mdspan<
+        const scalar_value_t<typename std::remove_cvref_t<V>::value_type>,
+        md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2>>
@@ -755,11 +797,16 @@ void assemble_exterior_facets(
                md::mdspan<const std::int32_t,
                           std::extents<std::size_t, md::dynamic_extent, 2>>>
         dofmap,
-    FEkernel<T> auto fn, std::span<const T> constants,
-    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+    FEkernel<typename std::remove_cvref_t<V>::value_type> auto fn,
+    std::span<const typename std::remove_cvref_t<V>::value_type> constants,
+    md::mdspan<const typename std::remove_cvref_t<V>::value_type,
+               md::dextents<std::size_t, 2>>
+        coeffs,
     std::span<const std::uint32_t> cell_info0,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
 {
+  using T = typename std::remove_cvref_t<V>::value_type;
+
   if (facets.empty())
     return;
 
@@ -837,11 +884,14 @@ void assemble_exterior_facets(
 /// function mesh.
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
-template <dolfinx::scalar T, int _bs = -1>
+template <int _bs = -1, typename V>
 void assemble_interior_facets(
-    fem::DofTransformKernel<T> auto P0, std::span<T> b, mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_t<T>,
-               md::extents<std::size_t, md::dynamic_extent, 3>>
+    fem::DofTransformKernel<typename std::remove_cvref_t<V>::value_type> auto
+        P0,
+    V&& b, mdspan2_t x_dofmap,
+    md::mdspan<
+        const scalar_value_t<typename std::remove_cvref_t<V>::value_type>,
+        md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2, 2>>
@@ -850,13 +900,18 @@ void assemble_interior_facets(
                md::mdspan<const std::int32_t,
                           std::extents<std::size_t, md::dynamic_extent, 2, 2>>>
         dofmap,
-    FEkernel<T> auto fn, std::span<const T> constants,
-    md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
-                                    md::dynamic_extent>>
+    FEkernel<typename std::remove_cvref_t<V>::value_type> auto fn,
+    std::span<const typename std::remove_cvref_t<V>::value_type> constants,
+    md::mdspan<
+        const typename std::remove_cvref_t<V>::value_type,
+        md::extents<std::size_t, md::dynamic_extent, 2, md::dynamic_extent>>
         coeffs,
     std::span<const std::uint32_t> cell_info0,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
 {
+  using T = typename std::remove_cvref_t<V>::value_type;
+  using X = scalar_value_t<T>;
+
   if (facets.empty())
     return;
 
@@ -864,7 +919,6 @@ void assemble_interior_facets(
   assert(_bs < 0 or _bs == bs);
 
   // Create data structures used in assembly
-  using X = scalar_value_t<T>;
   std::vector<X> cdofs(2 * x_dofmap.extent(1) * 3);
   std::span<X> cdofs0(cdofs.data(), x_dofmap.extent(1) * 3);
   std::span<X> cdofs1(cdofs.data() + x_dofmap.extent(1) * 3,
@@ -958,18 +1012,26 @@ void assemble_interior_facets(
 /// @param[in] x0 The array used in the lifting, typically a 'current
 /// solution' in a Newton method
 /// @param[in] alpha Scaling to apply
-template <dolfinx::scalar T, std::floating_point U>
-void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
-             md::mdspan<const scalar_value_t<T>,
-                        md::extents<std::size_t, md::dynamic_extent, 3>>
-                 x,
-             std::span<const T> constants,
-             const std::map<std::pair<IntegralType, int>,
-                            std::pair<std::span<const T>, int>>& coefficients,
-             std::span<const T> bc_values1,
-             std::span<const std::int8_t> bc_markers1, std::span<const T> x0,
-             T alpha)
+template <typename V, std::floating_point U>
+void lift_bc(
+    V&& b, const Form<typename std::remove_cvref_t<V>::value_type, U>& a,
+    mdspan2_t x_dofmap,
+    md::mdspan<
+        const scalar_value_t<typename std::remove_cvref_t<V>::value_type>,
+        md::extents<std::size_t, md::dynamic_extent, 3>>
+        x,
+    std::span<const typename std::remove_cvref_t<V>::value_type> constants,
+    const std::map<
+        std::pair<IntegralType, int>,
+        std::pair<std::span<const typename std::remove_cvref_t<V>::value_type>,
+                  int>>& coefficients,
+    std::span<const typename std::remove_cvref_t<V>::value_type> bc_values1,
+    std::span<const std::int8_t> bc_markers1,
+    std::span<const typename std::remove_cvref_t<V>::value_type> x0,
+    typename std::remove_cvref_t<V>::value_type alpha)
 {
+  using T = typename std::remove_cvref_t<V>::value_type;
+
   // Integration domain mesh
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
@@ -1023,17 +1085,17 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
     auto coeffs = md::mdspan(_coeffs.data(), cells.size(), cstride);
     if (bs0 == 1 and bs1 == 1)
     {
-      _lift_bc_cells<T, 1, 1>(
-          b, x_dofmap, x, kernel, cells, {dofmap0, bs0, cells0}, P0,
-          {dofmap1, bs1, cells1}, P1T, constants, coeffs, cell_info0,
-          cell_info1, bc_values1, bc_markers1, x0, alpha);
+      _lift_bc_cells<1, 1>(b, x_dofmap, x, kernel, cells,
+                           {dofmap0, bs0, cells0}, P0, {dofmap1, bs1, cells1},
+                           P1T, constants, coeffs, cell_info0, cell_info1,
+                           bc_values1, bc_markers1, x0, alpha);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
-      _lift_bc_cells<T, 3, 3>(
-          b, x_dofmap, x, kernel, cells, {dofmap0, bs0, cells0}, P0,
-          {dofmap1, bs1, cells1}, P1T, constants, coeffs, cell_info0,
-          cell_info1, bc_values1, bc_markers1, x0, alpha);
+      _lift_bc_cells<3, 3>(b, x_dofmap, x, kernel, cells,
+                           {dofmap0, bs0, cells0}, P0, {dofmap1, bs1, cells1},
+                           P1T, constants, coeffs, cell_info0, cell_info1,
+                           bc_values1, bc_markers1, x0, alpha);
     }
     else
     {
@@ -1127,17 +1189,28 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
 /// `a[2]`/ `x0[2]` block.
 /// @param[in] x0 Arrays used in the lifting.
 /// @param[in] alpha Scaling to apply.
-template <dolfinx::scalar T, std::floating_point U>
+template <typename V, std::floating_point U>
 void apply_lifting(
-    std::span<T> b,
-    std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>> a,
-    const std::vector<std::span<const T>>& constants,
-    const std::vector<std::map<std::pair<IntegralType, int>,
-                               std::pair<std::span<const T>, int>>>& coeffs,
+    V&& b,
+    std::vector<std::optional<std::reference_wrapper<
+        const Form<typename std::remove_cvref_t<V>::value_type, U>>>>
+        a,
     const std::vector<
-        std::vector<std::reference_wrapper<const DirichletBC<T, U>>>>& bcs1,
-    const std::vector<std::span<const T>>& x0, T alpha)
+        std::span<const typename std::remove_cvref_t<V>::value_type>>&
+        constants,
+    const std::vector<std::map<
+        std::pair<IntegralType, int>,
+        std::pair<std::span<const typename std::remove_cvref_t<V>::value_type>,
+                  int>>>& coeffs,
+    const std::vector<std::vector<std::reference_wrapper<
+        const DirichletBC<typename std::remove_cvref_t<V>::value_type, U>>>>&
+        bcs1,
+    const std::vector<
+        std::span<const typename std::remove_cvref_t<V>::value_type>>& x0,
+    typename std::remove_cvref_t<V>::value_type alpha)
 {
+  using T = typename std::remove_cvref_t<V>::value_type;
+
   if (!x0.empty() and x0.size() != a.size())
   {
     throw std::runtime_error(
@@ -1183,13 +1256,13 @@ void apply_lifting(
 
       if (!x0.empty())
       {
-        lift_bc<T>(b, a[j]->get(), x_dofmap, x, constants[j], coeffs[j],
-                   bc_values1, bc_markers1, x0[j], alpha);
+        lift_bc(b, a[j]->get(), x_dofmap, x, constants[j], coeffs[j],
+                bc_values1, bc_markers1, x0[j], alpha);
       }
       else
       {
-        lift_bc<T>(b, a[j]->get(), x_dofmap, x, constants[j], coeffs[j],
-                   bc_values1, bc_markers1, std::span<const T>(), alpha);
+        lift_bc(b, a[j]->get(), x_dofmap, x, constants[j], coeffs[j],
+                bc_values1, bc_markers1, std::span<const T>(), alpha);
       }
     }
   }
@@ -1202,16 +1275,21 @@ void apply_lifting(
 /// @param[in] x Mesh coordinates.
 /// @param[in] constants Packed constants that appear in `L`.
 /// @param[in] coefficients Packed coefficients that appear in `L`.
-template <dolfinx::scalar T, std::floating_point U>
+template <typename V, std::floating_point U>
 void assemble_vector(
-    std::span<T> b, const Form<T, U>& L,
-    md::mdspan<const scalar_value_t<T>,
-               md::extents<std::size_t, md::dynamic_extent, 3>>
+    V&& b, const Form<typename std::remove_cvref_t<V>::value_type, U>& L,
+    md::mdspan<
+        const scalar_value_t<typename std::remove_cvref_t<V>::value_type>,
+        md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
-    std::span<const T> constants,
-    const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::span<const T>, int>>& coefficients)
+    std::span<const typename std::remove_cvref_t<V>::value_type> constants,
+    const std::map<
+        std::pair<IntegralType, int>,
+        std::pair<std::span<const typename std::remove_cvref_t<V>::value_type>,
+                  int>>& coefficients)
 {
+  using T = typename std::remove_cvref_t<V>::value_type;
+
   // Integration domain mesh
   std::shared_ptr<const mesh::Mesh<U>> mesh = L.mesh();
   assert(mesh);
@@ -1256,13 +1334,13 @@ void assemble_vector(
       assert(cells.size() * cstride == coeffs.size());
       if (bs == 1)
       {
-        impl::assemble_cells<T, 1>(
+        impl::assemble_cells<1>(
             P0, b, x_dofmap, x, cells, {dofs, bs, cells0}, fn, constants,
             md::mdspan(coeffs.data(), cells.size(), cstride), cell_info0);
       }
       else if (bs == 3)
       {
-        impl::assemble_cells<T, 3>(
+        impl::assemble_cells<3>(
             P0, b, x_dofmap, x, cells, {dofs, bs, cells0}, fn, constants,
             md::mdspan(coeffs.data(), cells.size(), cstride), cell_info0);
       }
@@ -1304,14 +1382,14 @@ void assemble_vector(
       assert((facets.size() / 2) * cstride == coeffs.size());
       if (bs == 1)
       {
-        impl::assemble_exterior_facets<T, 1>(
+        impl::assemble_exterior_facets<1>(
             P0, b, x_dofmap, x, facets, {dofs, bs, facets1}, fn, constants,
             md::mdspan(coeffs.data(), facets.extent(0), cstride), cell_info0,
             perms);
       }
       else if (bs == 3)
       {
-        impl::assemble_exterior_facets<T, 3>(
+        impl::assemble_exterior_facets<3>(
             P0, b, x_dofmap, x, facets, {dofs, bs, facets1}, fn, constants,
             md::mdspan(coeffs.data(), facets.size() / 2, cstride), cell_info0,
             perms);
@@ -1343,7 +1421,7 @@ void assemble_vector(
       assert((facets.size() / 4) * 2 * cstride == coeffs.size());
       if (bs == 1)
       {
-        impl::assemble_interior_facets<T, 1>(
+        impl::assemble_interior_facets<1>(
             P0, b, x_dofmap, x,
             mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
             {*dofmap, bs,
@@ -1354,7 +1432,7 @@ void assemble_vector(
       }
       else if (bs == 3)
       {
-        impl::assemble_interior_facets<T, 3>(
+        impl::assemble_interior_facets<3>(
             P0, b, x_dofmap, x,
             mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
             {*dofmap, bs,
@@ -1384,12 +1462,16 @@ void assemble_vector(
 /// @param[in] L Linear forms to assemble into b.
 /// @param[in] constants Packed constants that appear in `L`.
 /// @param[in] coefficients Packed coefficients that appear in `L.`
-template <dolfinx::scalar T, std::floating_point U>
+template <typename V, std::floating_point U>
 void assemble_vector(
-    std::span<T> b, const Form<T, U>& L, std::span<const T> constants,
-    const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::span<const T>, int>>& coefficients)
+    V&& b, const Form<typename std::remove_cvref_t<V>::value_type, U>& L,
+    std::span<const typename std::remove_cvref_t<V>::value_type> constants,
+    const std::map<
+        std::pair<IntegralType, int>,
+        std::pair<std::span<const typename std::remove_cvref_t<V>::value_type>,
+                  int>>& coefficients)
 {
+  using T = typename std::remove_cvref_t<V>::value_type;
   using mdspanx3_t
       = md::mdspan<const scalar_value_t<T>,
                    md::extents<std::size_t, md::dynamic_extent, 3>>;
@@ -1399,14 +1481,14 @@ void assemble_vector(
   auto x = mesh->geometry().x();
   if constexpr (std::is_same_v<U, scalar_value_t<T>>)
   {
-    assemble_vector(b, L, mdspanx3_t(x.data(), x.size() / 3, 3), constants,
-                    coefficients);
+    impl::assemble_vector(b, L, mdspanx3_t(x.data(), x.size() / 3, 3),
+                          constants, coefficients);
   }
   else
   {
     std::vector<scalar_value_t<T>> _x(x.begin(), x.end());
-    assemble_vector(b, L, mdspanx3_t(_x.data(), _x.size() / 3, 3), constants,
-                    coefficients);
+    impl::assemble_vector(b, L, mdspanx3_t(_x.data(), _x.size() / 3, 3),
+                          constants, coefficients);
   }
 }
 } // namespace dolfinx::fem::impl

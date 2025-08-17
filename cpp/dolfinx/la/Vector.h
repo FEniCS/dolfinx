@@ -22,7 +22,6 @@
 
 namespace dolfinx::la
 {
-
 /// @brief Distributed vector.
 ///
 /// @tparam T Scalar type
@@ -43,33 +42,35 @@ public:
   static_assert(std::is_same_v<value_type, typename container_type::value_type>,
                 "Scalar type and container value type must be the same.");
 
-  /// Create a distributed vector
-  /// @param map IndexMap for parallel distribution of the data
-  /// @param bs Block size
+  /// @brief Create a distributed vector.
+  ///
+  /// @param map Index map that describes the parallel distribution of
+  /// the data.
+  /// @param bs Number of entries per index (block size).
   Vector(std::shared_ptr<const common::IndexMap> map, int bs)
-      : _map(map),
+      : _map(map), _bs(bs), _x(bs * (map->size_local() + map->num_ghosts())),
         _scatterer(
             std::make_shared<common::Scatterer<ScatterContainer>>(*_map, bs)),
-        _bs(bs), _buffer_local(_scatterer->local_buffer_size()),
-        _buffer_remote(_scatterer->remote_buffer_size()),
-        _x(bs * (map->size_local() + map->num_ghosts()))
+        _buffer_local(_scatterer->local_buffer_size()),
+        _buffer_remote(_scatterer->remote_buffer_size())
   {
   }
 
   /// Copy constructor
   Vector(const Vector& x)
-      : _map(x._map), _scatterer(x._scatterer), _bs(x._bs),
+      : _map(x._map), _bs(x._bs), _x(x._x), _scatterer(x._scatterer),
         _request(1, MPI_REQUEST_NULL), _buffer_local(x._buffer_local),
-        _buffer_remote(x._buffer_remote), _x(x._x)
+        _buffer_remote(x._buffer_remote)
   {
   }
 
   /// Move constructor
   Vector(Vector&& x) noexcept
-      : _map(std::move(x._map)), _scatterer(std::move(x._scatterer)),
-        _bs(x._bs), _request(std::exchange(x._request, {MPI_REQUEST_NULL})),
+      : _map(std::move(x._map)), _bs(x._bs), _x(std::move(x._x)),
+        _scatterer(std::move(x._scatterer)),
+        _request(std::exchange(x._request, {MPI_REQUEST_NULL})),
         _buffer_local(std::move(x._buffer_local)),
-        _buffer_remote(std::move(x._buffer_remote)), _x(std::move(x._x))
+        _buffer_remote(std::move(x._buffer_remote))
   {
   }
 
@@ -81,7 +82,7 @@ public:
 
   /// @brief Set all entries (including ghosts).
   ///
-  /// @param[in] v The value to set all entries to (on calling rank)
+  /// @param[in] v Value to set all entries to (on calling rank).
   void set(value_type v) { std::ranges::fill(_x, v); }
 
   /// @brief Begin scatter of local data from owner to ghosts on other
@@ -96,9 +97,9 @@ public:
         out[i] = in[idx[i]];
     };
 
-    const std::int32_t local_size = _bs * _map->size_local();
-    std::span<const value_type> x_local(_x.data(), local_size);
-    pack(x_local.data(), _scatterer->local_indices(), _buffer_local.data());
+    // const std::int32_t local_size = _bs * _map->size_local();
+    // std::span<const value_type> x_local(_x.data(), local_size);
+    pack(_x.data(), _scatterer->local_indices(), _buffer_local.data());
     _scatterer->scatter_fwd_begin(_buffer_local.data(), _buffer_remote.data(),
                                   std::span<MPI_Request>(_request));
   }
@@ -109,7 +110,8 @@ public:
   /// @note Collective MPI operation.
   void scatter_fwd_end()
   {
-    auto unpack = [](const value_type* in, auto&& idx, value_type* out, auto op)
+    auto unpack = [](const value_type* in, const ScatterContainer& idx,
+                     value_type* out, auto op)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = op(out[idx[i]], in[i]);
@@ -134,16 +136,15 @@ public:
   /// @note Collective MPI operation
   void scatter_rev_begin()
   {
-    auto pack = [](value_type* in, auto&& idx, value_type* out)
+    auto pack = [](value_type* in, const ScatterContainer& idx, value_type* out)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[i] = in[idx[i]];
     };
 
-    const std::int32_t local_size = _bs * _map->size_local();
-    const std::int32_t num_ghosts = _bs * _map->num_ghosts();
-    std::span<value_type> x_remote(_x.data() + local_size, num_ghosts);
-    pack(x_remote.data(), _scatterer->remote_indices(), _buffer_remote.data());
+    std::int32_t local_size = _bs * _map->size_local();
+    pack(_x.data() + local_size, _scatterer->remote_indices(),
+         _buffer_remote.data());
     _scatterer->scatter_rev_begin(_buffer_remote.data(), _buffer_local.data(),
                                   _request);
   }
@@ -166,10 +167,8 @@ public:
         out[idx[i]] = op(out[idx[i]], in[i]);
     };
 
-    const std::int32_t local_size = _bs * _map->size_local();
-    std::span<value_type> x_local(_x.data(), local_size);
     _scatterer->scatter_rev_end(_request);
-    unpack(_buffer_local, _scatterer->local_indices(), x_local, op);
+    unpack(_buffer_local, _scatterer->local_indices(), _x.data(), op);
   }
 
   /// @brief Scatter ghost data to owner.
@@ -195,32 +194,29 @@ public:
   constexpr int bs() const { return _bs; }
 
   /// Get local part of the vector (const version)
-  std::span<const value_type> array() const
-  {
-    return std::span<const value_type>(_x);
-  }
+  const container_type& array() const { return _x; }
 
   /// Get local part of the vector
-  std::span<value_type> mutable_array() { return std::span(_x); }
+  container_type& mutable_array() { return _x; }
 
 private:
   // Map describing the data layout
   std::shared_ptr<const common::IndexMap> _map;
 
-  // Scatter for managing MPI communication
-  std::shared_ptr<const common::Scatterer<ScatterContainer>> _scatterer;
-
   // Block size
   int _bs;
+
+  // Vector data
+  container_type _x;
+
+  // Scatter for managing MPI communication
+  std::shared_ptr<const common::Scatterer<ScatterContainer>> _scatterer;
 
   // MPI request handle
   std::vector<MPI_Request> _request = {MPI_REQUEST_NULL};
 
   // Buffers for ghost scatters
   container_type _buffer_local, _buffer_remote;
-
-  // Vector data
-  container_type _x;
 };
 
 /// @brief Compute the inner product of two vectors.
@@ -240,11 +236,12 @@ auto inner_product(const V& a, const V& b)
   const std::int32_t local_size = a.bs() * a.index_map()->size_local();
   if (local_size != b.bs() * b.index_map()->size_local())
     throw std::runtime_error("Incompatible vector sizes");
-  std::span<const T> x_a = a.array().subspan(0, local_size);
-  std::span<const T> x_b = b.array().subspan(0, local_size);
+  // std::span<const T> x_a = a.array().subspan(0, local_size);
+  // std::span<const T> x_b = b.array().subspan(0, local_size);
 
   const T local = std::transform_reduce(
-      x_a.begin(), x_a.end(), x_b.begin(), static_cast<T>(0), std::plus{},
+      a.array().begin(), std::next(a.array().begin(), local_size),
+      b.array().begin(), static_cast<T>(0), std::plus{},
       [](T a, T b) -> T
       {
         if constexpr (std::is_same<T, std::complex<double>>::value
@@ -288,11 +285,10 @@ auto norm(const V& x, Norm type = Norm::l2)
   case Norm::l1:
   {
     std::int32_t size_local = x.bs() * x.index_map()->size_local();
-    std::span<const T> data = x.array().subspan(0, size_local);
     using U = typename dolfinx::scalar_value_t<T>;
-    U local_l1
-        = std::accumulate(data.begin(), data.end(), U(0),
-                          [](auto norm, auto x) { return norm + std::abs(x); });
+    U local_l1 = std::accumulate(
+        x.array().begin(), std::next(x.array().begin(), size_local), U(0),
+        [](auto norm, auto x) { return norm + std::abs(x); });
     U l1(0);
     MPI_Allreduce(&local_l1, &l1, 1, MPI::mpi_t<U>, MPI_SUM,
                   x.index_map()->comm());
@@ -303,9 +299,9 @@ auto norm(const V& x, Norm type = Norm::l2)
   case Norm::linf:
   {
     std::int32_t size_local = x.bs() * x.index_map()->size_local();
-    std::span<const T> data = x.array().subspan(0, size_local);
-    auto max_pos = std::ranges::max_element(
-        data, [](T a, T b) { return std::norm(a) < std::norm(b); });
+    auto max_pos = std::max_element(
+        x.array().begin(), std::next(x.array().begin(), size_local),
+        [](T a, T b) { return std::norm(a) < std::norm(b); });
     auto local_linf = std::abs(*max_pos);
     decltype(local_linf) linf = 0;
     MPI_Allreduce(&local_linf, &linf, 1, MPI::mpi_t<decltype(linf)>, MPI_MAX,

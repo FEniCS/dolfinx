@@ -626,31 +626,78 @@ public:
   }
 
   /// @brief Size of buffer for local data (owned data that is shared)
-  /// used in forward and reverse communication.
+  /// used in forward and reverse scatters.
   ///
   /// @return Required buffer size.
-  std::int32_t local_buffer_size() const noexcept { return _local_inds.size(); }
+  std::size_t local_buffer_size() const noexcept { return _local_inds.size(); }
 
-  /// @brief Buffer size for remote data (ghosts) used in forward and
-  /// reverse communication.
+  /// @brief Buffer size for ghost (data shared by owned by another
+  /// process) data used in forward and reverse scatters.
   ///
   /// @return Required buffer size.
-  std::int32_t remote_buffer_size() const noexcept
+  std::size_t remote_buffer_size() const noexcept
   {
     return _remote_inds.size();
   }
 
-  /// @brief Return a vector of local indices (owned) used to
-  /// pack/unpack local data.
+  /// @brief Array of indices for packing/unpacking owned data to/from a
+  /// send/receive buffer.
+  ///
+  /// For a forward scatter, the indices are used to copy required
+  /// entries in the owned array into the appropriate position in a send
+  /// buffer. For a reverse scatter, indices are used for assigning
+  /// (accumulating) the receive buffer values into correct position in
+  /// the owned array.
+  ///
+  /// For a forward scatter, if `x` is the owned part of an array and
+  /// `buffer` is the send buffer, `buffer` is packed such that
+  ///
+  ///     auto& idx = scatterer.local_indices()
+  ///     std::vector<T> buffer(idx.size())
+  ///     for (std::size_t i = 0; i < idx.size(); ++i)
+  ///         buffer[i] = x[idx[i]];
+  ///
+  /// For a reverse scatter, if `buffer` is the received buffer, then
+  /// `x` is updated by
+  ///
+  ///     auto& idx = scatterer.local_indices()
+  ///     std::vector<T> buffer(idx.size())
+  ///     for (std::size_t i = 0; i < idx.size(); ++i)
+  ///         x[idx[i]] = op(buffer[i], x[idx[i]]);
+  ///
+  /// where `op` is a binary operation, e.g. `x[idx[i]] = buffer[i]` or
+  /// `x[idx[i]] += buffer[i]`.
   ///
   /// Indices are grouped by neighbor process (process for which an
-  /// index is a ghost).
+  /// index is a ghost) blocks.
   const container_type& local_indices() const noexcept { return _local_inds; }
 
-  /// @brief Return a vector of remote indices (ghosts) used to
-  /// pack/unpack ghost data.
+  /// @brief Array of indices for packing/unpacking ghost data to/from a
+  /// send/receive buffer.
   ///
-  /// These indices are grouped by neighbor process (ghost owners).
+  /// For a forward scatter, the indices are to copy required entries in
+  /// the owned array into the appropriate position in a send buffer.
+  /// For a reverse scatter, indices are used for assigning
+  /// (accumulating) the receive buffer values into correct position in
+  /// the owned array.
+  ///
+  /// For a forward scatter, if `xg` is the ghost part of an array and
+  /// `buffer` is the receive buffer, `xg` is updated that
+  ///
+  ///     auto& idx = scatterer.remote_indices()
+  ///     std::vector<T> buffer(idx.size())
+  ///     for (std::size_t i = 0; i < idx.size(); ++i)
+  ///         xg[idx[i]] = buffer[i];
+  ///
+  /// For a reverse scatter, if `buffer` is the send buffer, then
+  /// `x` is updated by
+  ///
+  ///     auto& idx = scatterer.local_indices()
+  ///     std::vector<T> buffer(idx.size())
+  ///     for (std::size_t i = 0; i < idx.size(); ++i)
+  ///         buffer[i] = xg[idx[i]];
+  ///
+  /// The indices are grouped by neighbor process (ghost owners) blocks.
   const container_type& remote_indices() const noexcept { return _remote_inds; }
 
   /// @brief Number values (block size) to send per index in the
@@ -661,23 +708,22 @@ public:
 
   /// @brief Create a vector of MPI_Requests for a given
   /// Scatterer::type.
+  ///
   /// @return Vector of MPI requests.
-  std::vector<MPI_Request> create_request_vector(ScattererType type
-                                                 = ScattererType::neighbor)
+  std::vector<MPI_Request> create_requests(ScattererType type
+                                           = ScattererType::neighbor)
   {
-    std::vector<MPI_Request> requests;
     switch (type)
     {
     case ScattererType::neighbor:
-      requests = {MPI_REQUEST_NULL};
+      return {MPI_REQUEST_NULL};
       break;
     case ScattererType::p2p:
-      requests.resize(_dest.size() + _src.size(), MPI_REQUEST_NULL);
-      break;
+      return std::vector<MPI_Request>(_dest.size() + _src.size(),
+                                      MPI_REQUEST_NULL);
     default:
       throw std::runtime_error("ScattererType not recognized");
     }
-    return requests;
   }
 
 private:
