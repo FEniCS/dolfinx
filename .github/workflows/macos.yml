@@ -96,7 +96,7 @@ jobs:
       - name: Run C++ unit tests (MPI)
         run: |
           cd build/test
-          mpiexec -np 3 ctest -V --output-on-failure -R unittests 
+          mpiexec -np 3 ctest -V --output-on-failure -R unittests
 
       - name: Build and install DOLFINx Python interface
         run: |
