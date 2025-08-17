@@ -235,7 +235,7 @@ auto inner_product(const V& a, const V& b)
   if (local_size != b.bs() * b.index_map()->size_local())
     throw std::runtime_error("Incompatible vector sizes");
 
-    const T local = std::transform_reduce(
+  const T local = std::transform_reduce(
       a.array().begin(), std::next(a.array().begin(), local_size),
       b.array().begin(), static_cast<T>(0), std::plus{},
       [](T a, T b) -> T
