@@ -212,14 +212,13 @@ T assemble_scalar(const Form<T, U>& M)
 /// @param[in] constants The constants that appear in `L`.
 /// @param[in] coefficients The coefficients that appear in `L`.
 // template <dolfinx::scalar T, std::floating_point U>
-template <typename V, std::floating_point U>
+template <typename V, std::floating_point U,
+          dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
+  requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
 void assemble_vector(
-    V&& b, const Form<typename std::remove_cvref_t<V>::value_type, U>& L,
-    std::span<const typename std::remove_cvref_t<V>::value_type> constants,
-    const std::map<
-        std::pair<IntegralType, int>,
-        std::pair<std::span<const typename std::remove_cvref_t<V>::value_type>,
-                  int>>& coefficients)
+    V&& b, const Form<T, U>& L, std::span<const T> constants,
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<std::span<const T>, int>>& coefficients)
 {
   impl::assemble_vector(b, L, constants, coefficients);
 }
@@ -230,11 +229,11 @@ void assemble_vector(
 /// @param[in] L Linear forms to assemble into b.
 // template <dolfinx::scalar T, std::floating_point U>
 // void assemble_vector(std::span<T> b, const Form<T, U>& L)
-template <typename V, std::floating_point U>
-void assemble_vector(
-    V&& b, const Form<typename std::remove_cvref_t<V>::value_type, U>& L)
+template <typename V, std::floating_point U,
+          dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
+  requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
+void assemble_vector(V&& b, const Form<T, U>& L)
 {
-  using T = std::remove_cvref_t<V>::value_type;
   auto coefficients = allocate_coefficient_storage(L);
   pack_coefficients(L, coefficients);
   const std::vector<T> constants = pack_constants(L);
@@ -321,25 +320,18 @@ void assemble_vector(
 /// @param[in] alpha Scalar used in the modification of `b`.
 template <typename V,
           std::floating_point U
-          = scalar_value_t<typename std::remove_cvref_t<V>::value_type>>
+          = scalar_value_t<typename std::remove_cvref_t<V>::value_type>,
+          dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
+  requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
 void apply_lifting(
     V&& b,
-    std::vector<std::optional<std::reference_wrapper<
-        const Form<typename std::remove_cvref_t<V>::value_type, U>>>>
-        a,
+    std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>> a,
+    const std::vector<std::span<const T>>& constants,
+    const std::vector<std::map<std::pair<IntegralType, int>,
+                               std::pair<std::span<const T>, int>>>& coeffs,
     const std::vector<
-        std::span<const typename std::remove_cvref_t<V>::value_type>>&
-        constants,
-    const std::vector<std::map<
-        std::pair<IntegralType, int>,
-        std::pair<std::span<const typename std::remove_cvref_t<V>::value_type>,
-                  int>>>& coeffs,
-    const std::vector<std::vector<std::reference_wrapper<
-        const DirichletBC<typename std::remove_cvref_t<V>::value_type, U>>>>&
-        bcs1,
-    const std::vector<
-        std::span<const typename std::remove_cvref_t<V>::value_type>>& x0,
-    typename std::remove_cvref_t<V>::value_type alpha)
+        std::vector<std::reference_wrapper<const DirichletBC<T, U>>>>& bcs1,
+    const std::vector<std::span<const T>>& x0, T alpha)
 {
   // If all forms are null, there is nothing to do
   if (std::ranges::all_of(a, [](auto ai) { return !ai; }))
@@ -378,20 +370,16 @@ void apply_lifting(
 /// described in apply_lifting()).
 template <typename V,
           std::floating_point U
-          = scalar_value_t<typename std::remove_cvref_t<V>::value_type>>
+          = scalar_value_t<typename std::remove_cvref_t<V>::value_type>,
+          dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
+  requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
 void apply_lifting(
     V&& b,
-    std::vector<std::optional<std::reference_wrapper<
-        const Form<typename std::remove_cvref_t<V>::value_type, U>>>>
-        a,
-    const std::vector<std::vector<std::reference_wrapper<
-        const DirichletBC<typename std::remove_cvref_t<V>::value_type, U>>>>&
-        bcs1,
+    std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>> a,
     const std::vector<
-        std::span<const typename std::remove_cvref_t<V>::value_type>>& x0,
-    typename std::remove_cvref_t<V>::value_type alpha)
+        std::vector<std::reference_wrapper<const DirichletBC<T, U>>>>& bcs1,
+    const std::vector<std::span<const T>>& x0, T alpha)
 {
-  using T = typename std::remove_cvref_t<V>::value_type;
   std::vector<
       std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>>
       coeffs;
