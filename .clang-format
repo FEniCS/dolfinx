@@ -63,7 +63,7 @@ IncludeIsMainRegex: '$'
 IncludeCategories:
   - Regex: '^<[^/]+>$'
     Priority: 1
-  - Regex: '^(<|")(your_project|project_name|myext|dolfinx(_wrappers)?|fenicsx?)/'
+  - Regex: '^(<|")(dolfinx|dolfinx_wrappers)/'
     Priority: 2
   - Regex: '^((<|")[^/"]+/.+(>|"))$'
     Priority: 3
