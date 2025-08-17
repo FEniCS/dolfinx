@@ -88,7 +88,6 @@ void assemble_cells_matrix(
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
-  std::span<T> _Ae(Ae);
   std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
 
   // Iterate over active cells
@@ -113,8 +112,8 @@ void assemble_cells_matrix(
            nullptr, nullptr);
 
     // Compute A = P_0 \tilde{A} P_1^T (dof transformation)
-    P0(_Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
-    P1T(_Ae, cell_info1, cell1, ndim0); // A =  B P1_T
+    P0(Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
+    P1T(Ae, cell_info1, cell1, ndim0); // A =  B P1_T
 
     // Zero rows/columns for essential bcs
     std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
@@ -229,7 +228,6 @@ void assemble_exterior_facets(
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
-  std::span<T> _Ae(Ae);
   assert(facets0.size() == facets.size());
   assert(facets1.size() == facets.size());
   for (std::size_t f = 0; f < facets.extent(0); ++f)
@@ -254,9 +252,8 @@ void assemble_exterior_facets(
     std::ranges::fill(Ae, 0);
     kernel(Ae.data(), &coeffs(f, 0), constants.data(), cdofs.data(),
            &local_facet, &perm, nullptr);
-
-    P0(_Ae, cell_info0, cell0, ndim1);
-    P1T(_Ae, cell_info1, cell1, ndim0);
+    P0(Ae, cell_info0, cell0, ndim1);
+    P1T(Ae, cell_info1, cell1, ndim0);
 
     // Zero rows/columns for essential bcs
     std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
@@ -444,26 +441,27 @@ void assemble_interior_facets(
     //
     // where each block is element tensor of size (dmap0, dmap1).
 
-    std::span<T> _Ae(Ae);
-    std::span<T> sub_Ae0
-        = _Ae.subspan(bs0 * dmap0_size * num_cols, bs0 * dmap0_size * num_cols);
-
     // Only apply transformation when cells exist
     if (cells0[0] >= 0)
-      P0(_Ae, cell_info0, cells0[0], num_cols);
+      P0(Ae, cell_info0, cells0[0], num_cols);
     if (cells0[1] >= 0)
+    {
+      std::span sub_Ae0(Ae.data() + bs0 * dmap0_size * num_cols,
+                        bs0 * dmap0_size * num_cols);
+
       P0(sub_Ae0, cell_info0, cells0[1], num_cols);
+    }
     if (cells1[0] >= 0)
-      P1T(_Ae, cell_info1, cells1[0], num_rows);
+      P1T(Ae, cell_info1, cells1[0], num_rows);
 
     if (cells1[1] >= 0)
     {
       for (int row = 0; row < num_rows; ++row)
       {
-        // DOFs for dmap1 and cell1 are not stored contiguously in
-        // the block matrix, so each row needs a separate span access
-        std::span<T> sub_Ae1
-            = _Ae.subspan(row * num_cols + bs1 * dmap1_size, bs1 * dmap1_size);
+        // DOFs for dmap1 and cell1 are not stored contiguously in the
+        // block matrix, so each row needs a separate span access
+        std::span sub_Ae1(Ae.data() + row * num_cols + bs1 * dmap1_size,
+                          bs1 * dmap1_size);
         P1T(sub_Ae1, cell_info1, cells1[1], 1);
       }
     }

@@ -561,16 +561,16 @@ void _lift_bc_interior_facets(
     kernel(Ae.data(), &coeffs(f, 0, 0), constants.data(), cdofs.data(),
            local_facet.data(), perm.data(), nullptr);
 
-    std::span<T> _Ae(Ae);
-    std::span<T> sub_Ae0
-        = _Ae.subspan(bs0 * num_dofs0 * num_cols, bs0 * num_dofs1 * num_cols);
-
     if (cells0[0] >= 0)
-      P0(_Ae, cell_info0, cells0[0], num_cols);
+      P0(Ae, cell_info0, cells0[0], num_cols);
     if (cells0[1] >= 0)
+    {
+      std::span sub_Ae0(Ae.data() + bs0 * num_dofs0 * num_cols,
+                        bs0 * num_dofs1 * num_cols);
       P0(sub_Ae0, cell_info0, cells0[1], num_cols);
+    }
     if (cells1[0] >= 0)
-      P1T(_Ae, cell_info1, cells1[0], num_rows);
+      P1T(Ae, cell_info1, cells1[0], num_rows);
 
     if (cells1[1] >= 0)
     {
@@ -578,8 +578,8 @@ void _lift_bc_interior_facets(
       {
         // DOFs for dmap1 and cell1 are not stored contiguously in
         // the block matrix, so each row needs a separate span access
-        std::span<T> sub_Ae1
-            = _Ae.subspan(row * num_cols + bs1 * num_dofs1, bs1 * num_dofs1);
+        std::span sub_Ae1(Ae.data() + row * num_cols + bs1 * num_dofs1,
+                          bs1 * num_dofs1);
         P1T(sub_Ae1, cell_info1, cells1[1], 1);
       }
     }
@@ -911,11 +911,13 @@ void assemble_interior_facets(
     kernel(be.data(), &coeffs(f, 0, 0), constants.data(), cdofs.data(),
            local_facet.data(), perm.data(), nullptr);
 
-    std::span sub_be(be.data() + bs * dmap_size, bs * dmap_size);
     if (cells0[0] >= 0)
       P0(be, cell_info0, cells0[0], 1);
     if (cells0[1] >= 0)
+    {
+      std::span sub_be(be.data() + bs * dmap_size, bs * dmap_size);
       P0(sub_be, cell_info0, cells0[1], 1);
+    }
 
     // Add element vector to global vector
     if constexpr (_bs > 0)
