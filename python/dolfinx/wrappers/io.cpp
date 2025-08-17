@@ -121,7 +121,8 @@ void declare_vtx_writer(nb::module_& m, const std::string& type)
             [](dolfinx::io::VTXWriter<T>* self, MPICommWrapper comm,
                std::filesystem::path filename,
                std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
-               std::string engine) {
+               std::string engine)
+            {
               new (self)
                   dolfinx::io::VTXWriter<T>(comm.get(), filename, mesh, engine);
             },
@@ -227,12 +228,14 @@ void io(nb::module_& m)
   m.def("write_vtkhdf_data", &dolfinx::io::VTKHDF::write_data<double>);
   m.def("write_vtkhdf_data", &dolfinx::io::VTKHDF::write_data<float>);
   m.def("read_vtkhdf_mesh_float64",
-        [](MPICommWrapper comm, const std::string& filename, std::size_t gdim) {
+        [](MPICommWrapper comm, const std::string& filename, std::size_t gdim)
+        {
           return dolfinx::io::VTKHDF::read_mesh<double>(comm.get(), filename,
                                                         gdim);
         });
   m.def("read_vtkhdf_mesh_float32",
-        [](MPICommWrapper comm, const std::string& filename, std::size_t gdim) {
+        [](MPICommWrapper comm, const std::string& filename, std::size_t gdim)
+        {
           return dolfinx::io::VTKHDF::read_mesh<float>(comm.get(), filename,
                                                        gdim);
         });
@@ -259,7 +262,8 @@ void io(nb::module_& m)
           "__init__",
           [](dolfinx::io::XDMFFile* x, MPICommWrapper comm,
              std::filesystem::path filename, const std::string& file_mode,
-             dolfinx::io::XDMFFile::Encoding encoding) {
+             dolfinx::io::XDMFFile::Encoding encoding)
+          {
             new (x) dolfinx::io::XDMFFile(comm.get(), filename, file_mode,
                                           encoding);
           },

@@ -143,7 +143,8 @@ void declare_function_space(nb::module_& m, std::string type)
             [](dolfinx::fem::FiniteElement<T>* self,
                basix::FiniteElement<T>& element,
                const std::optional<std::vector<std::size_t>>& block_shape,
-               bool symmetric) {
+               bool symmetric)
+            {
               new (self) dolfinx::fem::FiniteElement<T>(element, block_shape,
                                                         symmetric);
             },

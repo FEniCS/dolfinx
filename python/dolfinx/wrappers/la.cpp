@@ -251,7 +251,8 @@ void la(nb::module_& m)
                      std::reference_wrapper<const dolfinx::common::IndexMap>,
                      int>>,
                  2>& maps,
-             std::array<std::vector<int>, 2> bs) {
+             std::array<std::vector<int>, 2> bs)
+          {
             new (sp)
                 dolfinx::la::SparsityPattern(comm.get(), patterns, maps, bs);
           },

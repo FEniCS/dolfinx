@@ -57,7 +57,8 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
       std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
       std::ranges::transform(
           cells, std::back_inserter(cells_nb),
-          [](auto c) {
+          [](auto c)
+          {
             return nb::ndarray<const std::int64_t, nb::numpy>(c.data(),
                                                               {c.size()});
           });
@@ -310,7 +311,8 @@ void declare_mesh(nb::module_& m, std::string type)
               std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
               std::ranges::transform(
                   cells, std::back_inserter(cells_nb),
-                  [](auto c) {
+                  [](auto c)
+                  {
                     return nb::ndarray<const std::int64_t, nb::numpy>(
                         c.data(), {c.size()});
                   });
@@ -345,7 +347,8 @@ void declare_mesh(nb::module_& m, std::string type)
             std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
             std::ranges::transform(
                 cells, std::back_inserter(cells_nb),
-                [](auto c) {
+                [](auto c)
+                {
                   return nb::ndarray<const std::int64_t, nb::numpy>(c.data(),
                                                                     {c.size()});
                 });

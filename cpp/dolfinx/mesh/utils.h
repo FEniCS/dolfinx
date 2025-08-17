@@ -353,7 +353,8 @@ inline auto create_boundary_vertices_fn(const CellReorderFunction& reorder_fn)
 
         auto it1 = std::find_if_not(
             it, perm.end(),
-            [f, max_v, it0 = facets0.begin()](auto p) -> bool {
+            [f, max_v, it0 = facets0.begin()](auto p) -> bool
+            {
               return std::equal(f.begin(), f.end(), std::next(it0, p * max_v));
             });
 
