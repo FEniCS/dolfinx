@@ -373,13 +373,15 @@ void assemble_interior_facets(
   std::span<X> cdofs1(cdofs.data() + x_dofmap.extent(1) * 3,
                       x_dofmap.extent(1) * 3);
 
-  std::vector<T> Ae, be;
-
   const std::size_t dmap0_size = dmap0.cell_dofs(0).size();
   const std::size_t dmap1_size = dmap1.cell_dofs(0).size();
+  const int num_rows = bs0 * dmap0_size;
+  const int num_cols = bs1 * dmap1_size;
 
   // Temporaries for joint dofmaps
-  std::vector<std::int32_t> dmapjoint0, dmapjoint1;
+  std::vector<T> Ae(num_rows * num_cols), be(num_rows);
+  std::vector<std::int32_t> dmapjoint0(2 * dmap0_size);
+  std::vector<std::int32_t> dmapjoint1(2 * dmap1_size);
   assert(facets0.size() == facets.size());
   assert(facets1.size() == facets.size());
   for (std::size_t f = 0; f < facets.extent(0); ++f)
@@ -412,7 +414,6 @@ void assemble_interior_facets(
         = cells0[1] >= 0 ? dmap0.cell_dofs(cells0[1])
                          : std::span<const std::int32_t>();
 
-    dmapjoint0.resize(2 * dmap0_size);
     std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
     std::ranges::copy(dmap0_cell1, std::next(dmapjoint0.begin(), dmap0_size));
 
@@ -424,17 +425,11 @@ void assemble_interior_facets(
         = cells1[1] >= 0 ? dmap1.cell_dofs(cells1[1])
                          : std::span<const std::int32_t>();
 
-    dmapjoint1.resize(2 * dmap1_size);
     std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
     std::ranges::copy(dmap1_cell1, std::next(dmapjoint1.begin(), dmap1_size));
 
-    const int num_rows = bs0 * dmapjoint0.size();
-    const int num_cols = bs1 * dmapjoint1.size();
-
     // Tabulate tensor
-    Ae.resize(num_rows * num_cols);
     std::ranges::fill(Ae, 0);
-
     std::array perm = perms.empty()
                           ? std::array<std::uint8_t, 2>{0, 0}
                           : std::array{perms(cells[0], local_facet[0]),

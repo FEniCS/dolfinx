@@ -102,9 +102,12 @@ void _lift_bc_cells(
   assert(_bs0 < 0 or _bs0 == bs0);
   assert(_bs1 < 0 or _bs1 == bs1);
 
+  const int num_rows = bs0 * dmap0.extent(1);
+  const int num_cols = bs1 * dmap1.extent(1);
+
   // Data structures used in bc application
   std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
-  std::vector<T> Ae, be;
+  std::vector<T> Ae(num_rows * num_cols), be(num_rows);
   assert(cells0.size() == cells.size());
   assert(cells1.size() == cells.size());
   for (std::size_t index = 0; index < cells.size(); ++index)
@@ -159,10 +162,6 @@ void _lift_bc_cells(
     // Size data structure for assembly
     auto dofs0 = md::submdspan(dmap0, c0, md::full_extent);
 
-    const int num_rows = bs0 * dofs0.size();
-    const int num_cols = bs1 * dofs1.size();
-
-    Ae.resize(num_rows * num_cols);
     std::ranges::fill(Ae, 0);
     kernel(Ae.data(), &coeffs(index, 0), constants.data(), cdofs.data(),
            nullptr, nullptr, nullptr);
@@ -170,7 +169,6 @@ void _lift_bc_cells(
     P1T(Ae, cell_info1, c1, num_rows);
 
     // Size data structure for assembly
-    be.resize(num_rows);
     std::ranges::fill(be, 0);
     for (std::size_t j = 0; j < dofs1.size(); ++j)
     {
@@ -345,8 +343,6 @@ void _lift_bc_exterior_facets(
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_facet);
-
-    Ae.resize(num_rows * num_cols);
     std::ranges::fill(Ae, 0);
     kernel(Ae.data(), &coeffs(index, 0), constants.data(), cdofs.data(),
            &local_facet, &perm, nullptr);
@@ -354,7 +350,6 @@ void _lift_bc_exterior_facets(
     P1T(Ae, cell_info1, cell1, num_rows);
 
     // Size data structure for assembly
-    be.resize(num_rows);
     std::ranges::fill(be, 0);
     for (std::size_t j = 0; j < dofs1.size(); ++j)
     {
@@ -456,19 +451,23 @@ void _lift_bc_interior_facets(
   const auto [dmap0, bs0, facets0] = dofmap0;
   const auto [dmap1, bs1, facets1] = dofmap1;
 
+  const int num_dofs0 = dmap0.extent(1);
+  const int num_dofs1 = dmap1.extent(1);
+  const int num_rows = bs0 * 2 * num_dofs0;
+  const int num_cols = bs1 * 2 * num_dofs1;
+
   // Data structures used in assembly
   using X = scalar_value_t<T>;
   std::vector<X> cdofs(2 * x_dofmap.extent(1) * 3);
   std::span<X> cdofs0(cdofs.data(), x_dofmap.extent(1) * 3);
   std::span<X> cdofs1(cdofs.data() + x_dofmap.extent(1) * 3,
                       x_dofmap.extent(1) * 3);
-  std::vector<T> Ae, be;
+  std::vector<T> Ae(num_rows * num_cols), be(num_rows);
 
   // Temporaries for joint dofmaps
-  std::vector<std::int32_t> dmapjoint0, dmapjoint1;
+  std::vector<std::int32_t> dmapjoint0(2 * num_dofs0);
+  std::vector<std::int32_t> dmapjoint1(2 * num_dofs1);
 
-  const int num_dofs0 = dmap0.extent(1);
-  const int num_dofs1 = dmap1.extent(1);
   assert(facets0.size() == facets.size());
   assert(facets1.size() == facets.size());
   for (std::size_t f = 0; f < facets.extent(0); ++f)
@@ -494,18 +493,17 @@ void _lift_bc_interior_facets(
     // When integrating over interfaces between two domains, the test function
     // might only be defined on one side, so we check which cells exist in the
     // test function domain
-    std::span<const std::int32_t> dmap0_cell0
+    std::span dmap0_cell0
         = cells0[0] >= 0
               ? std::span(dmap0.data_handle() + cells0[0] * num_dofs0,
                           num_dofs0)
               : std::span<const std::int32_t>();
-    std::span<const std::int32_t> dmap0_cell1
+    std::span dmap0_cell1
         = cells0[1] >= 0
               ? std::span(dmap0.data_handle() + cells0[1] * num_dofs0,
                           num_dofs0)
               : std::span<const std::int32_t>();
 
-    dmapjoint0.resize(2 * num_dofs0);
     std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
     std::ranges::copy(dmap0_cell1, std::next(dmapjoint0.begin(), num_dofs0));
 
@@ -521,7 +519,6 @@ void _lift_bc_interior_facets(
                           num_dofs1)
               : std::span<const std::int32_t>();
 
-    dmapjoint1.resize(2 * num_dofs1);
     std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
     std::ranges::copy(dmap1_cell1, std::next(dmapjoint1.begin(), num_dofs1));
 
@@ -555,11 +552,7 @@ void _lift_bc_interior_facets(
     if (!has_bc)
       continue;
 
-    const int num_rows = bs0 * 2 * num_dofs0;
-    const int num_cols = bs1 * 2 * num_dofs1;
-
     // Tabulate tensor
-    Ae.resize(num_rows * num_cols);
     std::ranges::fill(Ae, 0);
     std::array perm = perms.empty()
                           ? std::array<std::uint8_t, 2>{0, 0}
@@ -591,7 +584,6 @@ void _lift_bc_interior_facets(
       }
     }
 
-    be.resize(num_rows);
     std::ranges::fill(be, 0);
 
     // Compute b = b - A*b for cell0
@@ -880,9 +872,9 @@ void assemble_interior_facets(
   std::span<X> cdofs0(cdofs.data(), x_dofmap.extent(1) * 3);
   std::span<X> cdofs1(cdofs.data() + x_dofmap.extent(1) * 3,
                       x_dofmap.extent(1) * 3);
-  std::vector<T> be;
 
   const std::size_t dmap_size = dmap.cell_dofs(0).size();
+  std::vector<T> be(bs * 2 * dmap_size);
 
   assert(facets0.size() == facets.size());
   for (std::size_t f = 0; f < facets.extent(0); ++f)
@@ -911,7 +903,6 @@ void assemble_interior_facets(
                                      : std::span<const std::int32_t>();
 
     // Tabulate element vector
-    be.resize(bs * 2 * dmap_size);
     std::ranges::fill(be, 0);
     std::array perm = perms.empty()
                           ? std::array<std::uint8_t, 2>{0, 0}

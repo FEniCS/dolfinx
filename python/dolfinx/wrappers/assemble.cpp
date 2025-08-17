@@ -319,7 +319,7 @@ void declare_assembly_functions(nb::module_& m)
                         nb::ndarray<const T, nb::ndim<2>, nb::c_contig>>&
              coefficients)
       {
-        return dolfinx::fem::assemble_scalar<T>(
+        return dolfinx::fem::assemble_scalar(
             M, std::span(constants.data(), constants.size()),
             dolfinx_wrappers::py_to_cpp_coeffs(coefficients));
       },
