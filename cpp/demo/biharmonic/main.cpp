@@ -208,62 +208,65 @@ int main(int argc, char* argv[])
     //  definition of the Dirichlet boundary condition then looks as
     //  follows:
 
-    //  Define boundary condition
-    auto facets = mesh::exterior_facet_indices(*mesh->topology());
-    const auto bdofs = fem::locate_dofs_topological(
-        *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
-    fem::DirichletBC<T> bc(0.0, bdofs, V);
+  //  Define boundary condition
+  auto facets = mesh::exterior_facet_indices(*mesh->topology());
+  const auto bdofs = fem::locate_dofs_topological(
+      *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
+  fem::DirichletBC<T> bc(0.0, bdofs, V);
 
-    //  Now, we have specified the variational forms and can consider
-    //  the solution of the variational problem. First, we need to
-    //  define a {cpp:class}`Function` `u` to store the solution. (Upon
-    //  initialization, it is simply set to the zero function.) Next, we
-    //  can call the `solve` function with the arguments `a == L`, `u`
-    //  and `bc` as follows:
+  //  Now, we have specified the variational forms and can consider
+  //  the solution of the variational problem. First, we need to
+  //  define a {cpp:class}`Function` `u` to store the solution. (Upon
+  //  initialization, it is simply set to the zero function.) Next, we
+  //  can call the `solve` function with the arguments `a == L`, `u`
+  //  and `bc` as follows:
 
-    //  Compute solution
-    fem::Function<T> u(V);
-    auto A = la::petsc::Matrix(fem::petsc::create_matrix(a), false);
-    la::Vector<T> b(L.function_spaces()[0]->dofmap()->index_map,
-                    L.function_spaces()[0]->dofmap()->index_map_bs());
+  //  Compute solution
+  fem::Function<T> u(V);
+  auto A = la::petsc::Matrix(fem::petsc::create_matrix(a), false);
+  la::Vector<T> b(L.function_spaces()[0]->dofmap()->index_map,
+                  L.function_spaces()[0]->dofmap()->index_map_bs());
 
-    MatZeroEntries(A.mat());
-    fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A.mat(), ADD_VALUES),
-                         a, {bc});
-    MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
-    MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
-    fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
-                         {bc});
-    MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
+  MatZeroEntries(A.mat());
+  fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A.mat(), ADD_VALUES),
+                       a, {bc});
+    /*
+  MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
+  MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
+  fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
+                       {bc});
+  MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
-    b.set(0.0);
-    fem::assemble_vector(b.mutable_array(), L);
-    fem::apply_lifting(b.mutable_array(), {a}, {{bc}}, {}, T(1.0));
-    b.scatter_rev(std::plus<T>());
-    bc.set(b.mutable_array(), std::nullopt);
+  b.set(0.0);
+  fem::assemble_vector(b.mutable_array(), L);
+  fem::apply_lifting(b.mutable_array(), {a}, {{bc}}, {}, T(1.0));
+  b.scatter_rev(std::plus<T>());
+  bc.set(b.mutable_array(), std::nullopt);
 
-    la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
-    la::petsc::options::set("ksp_type", "preonly");
-    la::petsc::options::set("pc_type", "lu");
-    lu.set_from_options();
+  la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
+  la::petsc::options::set("ksp_type", "preonly");
+  la::petsc::options::set("pc_type", "lu");
+  lu.set_from_options();
 
-    lu.set_operator(A.mat());
-    la::petsc::Vector _u(la::petsc::create_vector_wrap(*u.x()), false);
-    la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
-    lu.solve(_u.vec(), _b.vec());
+  lu.set_operator(A.mat());
+  la::petsc::Vector _u(la::petsc::create_vector_wrap(*u.x()), false);
+  la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
+  lu.solve(_u.vec(), _b.vec());
 
-    //  Update ghost values before output
-    u.x()->scatter_fwd();
+  //  Update ghost values before output
+  u.x()->scatter_fwd();
 
-    // The function `u` will be modified during the call to solve. A
-    // {cpp:class}`Function` can be saved to a file. Here, we output the
-    // solution to a `VTK` file (specified using the suffix `.pvd`) for
-    // visualisation in an external program such as Paraview.
+  // The function `u` will be modified during the call to solve. A
+  // {cpp:class}`Function` can be saved to a file. Here, we output the
+  // solution to a `VTK` file (specified using the suffix `.pvd`) for
+  // visualisation in an external program such as Paraview.
 
-    //  Save solution in VTK format
-    io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
-    file.write<T>({u}, 0.0);
+  //  Save solution in VTK format
+  io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
+  file.write<T>({u}, 0.0);
+
+  */
   }
 
   PetscFinalize();

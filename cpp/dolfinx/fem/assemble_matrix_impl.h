@@ -372,8 +372,8 @@ void assemble_interior_facets(
 
   const std::size_t dmap0_size = dmap0.cell_dofs(0).size();
   const std::size_t dmap1_size = dmap1.cell_dofs(0).size();
-  const int num_rows = bs0 * dmap0_size;
-  const int num_cols = bs1 * dmap1_size;
+  const int num_rows = bs0 * 2 * dmap0_size;
+  const int num_cols = bs1 * 2 * dmap1_size;
 
   // Temporaries for joint dofmaps
   std::vector<T> Ae(num_rows * num_cols), be(num_rows);
