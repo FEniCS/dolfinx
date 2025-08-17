@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
   // Configure test session
   auto session = Catch::Session();
 
-  // Default order is for Catch version >= 3.9.0 changed to random.
+  // Default order for Catch version >= 3.9.0 changed to random.
   // MPI testing requires same order of execution across processes.
   session.configData().runOrder = Catch::TestRunOrder::Declared;
 
