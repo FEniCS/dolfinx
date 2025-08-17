@@ -176,53 +176,53 @@ A.assemble()
 b = assemble_vector(L_blocked, kind=PETSc.Vec.Type.MPI)
 bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a_blocked, 1), [bc])
 apply_lifting(b, a_blocked, bcs=bcs1)
-# b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-# bcs0 = fem.bcs_by_block(extract_function_spaces(L_blocked), [bc])
-# set_bc(b, bcs0)
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+bcs0 = fem.bcs_by_block(extract_function_spaces(L_blocked), [bc])
+set_bc(b, bcs0)
 
-# # Setup the solver
-# ksp = PETSc.KSP().create(msh.comm)
-# ksp.setOperators(A)
-# ksp.setType("preonly")
-# ksp.getPC().setType("lu")
-# ksp.getPC().setFactorSolverType("superlu_dist")
+# Setup the solver
+ksp = PETSc.KSP().create(msh.comm)
+ksp.setOperators(A)
+ksp.setType("preonly")
+ksp.getPC().setType("lu")
+ksp.getPC().setFactorSolverType("superlu_dist")
 
-# # Compute solution
-# x = A.createVecRight()
-# try:
-#     ksp.solve(b, x)
-# except PETSc.Error as e:  # type: ignore
-#     if e.ierr == 92:
-#         print("The required PETSc solver/preconditioner is not available. Exiting.")
-#         print(e)
-#         exit(0)
-#     else:
-#         raise e
+# Compute solution
+x = A.createVecRight()
+try:
+    ksp.solve(b, x)
+except PETSc.Error as e:  # type: ignore
+    if e.ierr == 92:
+        print("The required PETSc solver/preconditioner is not available. Exiting.")
+        print(e)
+        exit(0)
+    else:
+        raise e
 
-# # Create functions for the solution and update values
-# u, ubar = fem.Function(V), fem.Function(Vbar)
-# offset = V.dofmap.index_map.size_local * V.dofmap.index_map_bs
-# u.x.array[:offset] = x.array_r[:offset]
-# ubar.x.array[: (len(x.array_r) - offset)] = x.array_r[offset:]
-# u.x.scatter_forward()
-# ubar.x.scatter_forward()
+# Create functions for the solution and update values
+u, ubar = fem.Function(V), fem.Function(Vbar)
+offset = V.dofmap.index_map.size_local * V.dofmap.index_map_bs
+u.x.array[:offset] = x.array_r[:offset]
+ubar.x.array[: (len(x.array_r) - offset)] = x.array_r[offset:]
+u.x.scatter_forward()
+ubar.x.scatter_forward()
 
-# # Write to file
-# if dolfinx.has_adios2:
-#     from dolfinx.io import VTXWriter
+# Write to file
+if dolfinx.has_adios2:
+    from dolfinx.io import VTXWriter
 
-#     with VTXWriter(msh.comm, "u.bp", u, "bp4") as f:
-#         f.write(0.0)
-#     with VTXWriter(msh.comm, "ubar.bp", ubar, "bp4") as f:
-#         f.write(0.0)
-# else:
-#     print("ADIOS2 required for VTX output")
+    with VTXWriter(msh.comm, "u.bp", u, "bp4") as f:
+        f.write(0.0)
+    with VTXWriter(msh.comm, "ubar.bp", ubar, "bp4") as f:
+        f.write(0.0)
+else:
+    print("ADIOS2 required for VTX output")
 
 
-# # Compute errors
-# x = ufl.SpatialCoordinate(msh)
-# e_u = norm_L2(msh.comm, u - u_e(x))
-# x_bar = ufl.SpatialCoordinate(facet_mesh)
-# e_ubar = norm_L2(msh.comm, ubar - u_e(x_bar))
-# par_print(comm, f"e_u = {e_u}")
-# par_print(comm, f"e_ubar = {e_ubar}")
+# Compute errors
+x = ufl.SpatialCoordinate(msh)
+e_u = norm_L2(msh.comm, u - u_e(x))
+x_bar = ufl.SpatialCoordinate(facet_mesh)
+e_ubar = norm_L2(msh.comm, ubar - u_e(x_bar))
+par_print(comm, f"e_u = {e_u}")
+par_print(comm, f"e_ubar = {e_ubar}")

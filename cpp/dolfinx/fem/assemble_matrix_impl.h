@@ -370,8 +370,8 @@ void assemble_interior_facets(
   std::span<X> cdofs1(cdofs.data() + x_dofmap.extent(1) * 3,
                       x_dofmap.extent(1) * 3);
 
-  const std::size_t dmap0_size = dmap0.cell_dofs(0).size();
-  const std::size_t dmap1_size = dmap1.cell_dofs(0).size();
+  const std::size_t dmap0_size = dmap0.map().extent(1);
+  const std::size_t dmap1_size = dmap1.map().extent(1);
   const int num_rows = bs0 * 2 * dmap0_size;
   const int num_cols = bs1 * 2 * dmap1_size;
 

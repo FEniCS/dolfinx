@@ -873,7 +873,7 @@ void assemble_interior_facets(
   std::span<X> cdofs1(cdofs.data() + x_dofmap.extent(1) * 3,
                       x_dofmap.extent(1) * 3);
 
-  const std::size_t dmap_size = dmap.cell_dofs(0).size();
+  const std::size_t dmap_size = dmap.map().extent(1);
   std::vector<T> be(bs * 2 * dmap_size);
 
   assert(facets0.size() == facets.size());
