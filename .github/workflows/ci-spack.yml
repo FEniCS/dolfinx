@@ -100,6 +100,7 @@ jobs:
       - name: Run tests (C++)
         run: |
           . ./spack-src/share/spack/setup-env.sh
+          spack env activate .
           cd build
           ctest -V --output-on-failure -R unittests
 
