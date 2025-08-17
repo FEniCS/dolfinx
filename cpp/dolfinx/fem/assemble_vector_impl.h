@@ -294,9 +294,12 @@ void _lift_bc_exterior_facets(
   const auto [dmap0, bs0, facets0] = dofmap0;
   const auto [dmap1, bs1, facets1] = dofmap1;
 
+  const int num_rows = bs0 * dmap0.extent(1);
+  const int num_cols = bs1 * dmap1.extent(1);
+
   // Data structures used in bc application
   std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
-  std::vector<T> Ae, be;
+  std::vector<T> Ae(num_rows * num_cols), be(num_rows);
   assert(facets0.size() == facets.size());
   assert(facets1.size() == facets.size());
   for (std::size_t index = 0; index < facets.extent(0); ++index)
@@ -337,9 +340,6 @@ void _lift_bc_exterior_facets(
 
     // Size data structure for assembly
     auto dofs0 = md::submdspan(dmap0, cell0, md::full_extent);
-
-    const int num_rows = bs0 * dofs0.size();
-    const int num_cols = bs1 * dofs1.size();
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_facet);
