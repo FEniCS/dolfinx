@@ -95,21 +95,14 @@ jobs:
           . ./spack-src/share/spack/setup-env.sh
           spack env activate .
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S dolfinx-src/cpp/
-          cmake --build build
-          cmake --install build
+          cmake --build build --target install
 
-      - name: Build C++ unit tests
+      - name: Run tests (C++)
+        working-directory: cpp/build
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack env activate .
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
-          cmake --build build/test
-      - name: Run C++ unit tests (serial and MPI)
-        run: |
-          . ./spack-src/share/spack/setup-env.sh
-          spack env activate .
-          cd build/test
-          mpiexec -np 2 ctest -V --output-on-failure -R unittests
+          ctest -V --output-on-failure -R unittests
+
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
           . ./spack-src/share/spack/setup-env.sh
