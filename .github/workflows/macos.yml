@@ -80,7 +80,7 @@ jobs:
       - name: Configure (C++)
         working-directory: cpp
         run: >
-          cmake -B build -S cpp/
+          cmake -B build -S .
           -Werror=dev
           --warn-uninitialized
           -G Ninja 
