@@ -703,14 +703,11 @@ void mesh(nb::module_& m)
             const std::vector<std::vector<std::int64_t>>& indices
                 = self.original_cell_index;
             std::vector<nb::ndarray<const std::int64_t, nb::numpy>> idx_nb;
-            idx_nb.reserve(indices.size());
-            std::ranges::for_each(
-                indices,
-                [&idx_nb](const std::vector<std::int64_t>& idx)
-                {
-                  idx_nb.push_back(nb::ndarray<const std::int64_t, nb::numpy>(
-                      idx.data(), {idx.size()}));
-                });
+            for (auto& oci : indices)
+            {
+              idx_nb.push_back(nb::ndarray<const std::int64_t, nb::numpy>(
+                  oci.data(), {oci.size()}));
+            }
             return idx_nb;
           })
       .def("connectivity",
