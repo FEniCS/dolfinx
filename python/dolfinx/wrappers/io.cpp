@@ -83,7 +83,7 @@ void vtk_real_fn(auto&& m)
       "write",
       [](dolfinx::io::VTKFile& self, const dolfinx::mesh::Mesh<T>& mesh,
          double t) { self.write(mesh, t); },
-      nb::arg("mesh"), nb::arg("t") = 0;
+      nb::arg("mesh"), nb::arg("t") = 0);
 }
 
 template <typename T, typename U>
@@ -99,7 +99,7 @@ void vtk_scalar_fn(auto&& m)
         std::vector<std::reference_wrapper<const dolfinx::fem::Function<T, U>>>
             u;
         u.reserve(u_ptr.size());
-        for (const auto& q : u_ptr)
+        for (auto& q : u_ptr)
           u.push_back(*q);
 
         self.write(u, t);

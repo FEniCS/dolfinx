@@ -84,7 +84,8 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
       entity_dofs[k] = dof_layout.entity_dofs(0, k).front();
 
     // Iterate over cells of this type
-    const auto im = topology->index_maps(tdim)[j];
+    auto im = topology->index_maps(tdim)[j];
+    assert(im);
     for (std::int32_t c = 0; c < im->size_local() + im->num_ghosts(); ++c)
     {
       auto vertices = c_to_v->links(c);
@@ -100,7 +101,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
 
   // Copy existing vertices
   std::vector<T> new_x(nlocal * 3);
-  auto x_g = mesh.geometry().x();
+  std::span x_g = mesh.geometry().x();
   for (int i = 0; i < index_maps[0]->size_local(); ++i)
     for (int j = 0; j < 3; ++j)
       new_x[i * 3 + j] = x_g[vertex_to_x[i] * 3 + j];

@@ -224,8 +224,7 @@ void declare_assembly_functions(nb::module_& m)
             c;
         std::ranges::transform(
             coefficients, std::back_inserter(c),
-            [](const auto& c) -> const dolfinx::fem::Function<T, U>&
-            { return *c; });
+            [](auto& c) -> const dolfinx::fem::Function<T, U>& { return *c; });
 
         if (entities.ndim() == 1)
         {
@@ -552,7 +551,7 @@ void declare_assembly_functions(nb::module_& m)
 
         std::vector<std::span<const T>> _x0;
         _x0.reserve(x0.size());
-        for (const auto& x : x0)
+        for (auto& x : x0)
           _x0.emplace_back(x.data(), x.size());
 
         std::vector<std::span<const T>> _constants;

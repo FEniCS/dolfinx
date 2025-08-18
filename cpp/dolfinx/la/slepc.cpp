@@ -141,7 +141,7 @@ void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc, Vec r,
                                      Vec c, int i) const
 {
   assert(_eps);
-  const auto ii = static_cast<PetscInt>(i);
+  PetscInt ii = static_cast<PetscInt>(i);
 
   // Get number of computed eigenvectors/values
   PetscInt num_computed_eigenvalues;
