@@ -83,7 +83,7 @@ void vtk_real_fn(auto&& m)
       "write",
       [](dolfinx::io::VTKFile& self, const dolfinx::mesh::Mesh<T>& mesh,
          double t) { self.write(mesh, t); },
-      nb::arg("mesh"), nb::arg("t") = 0.0);
+      nb::arg("mesh"), nb::arg("t") = 0;
 }
 
 template <typename T, typename U>
@@ -104,7 +104,7 @@ void vtk_scalar_fn(auto&& m)
 
         self.write(u, t);
       },
-      nb::arg("u"), nb::arg("t") = 0.0);
+      nb::arg("u"), nb::arg("t") = 0);
 }
 
 #ifdef HAS_ADIOS2

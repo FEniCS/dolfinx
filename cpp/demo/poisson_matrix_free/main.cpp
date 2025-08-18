@@ -201,7 +201,7 @@ void solver(MPI_Comm comm)
   auto action = [&M, &ui, &bc, &coeff, &constants](auto& x, auto& y)
   {
     // Zero y
-    y.set(0.0);
+    y.set(0);
 
     // Update coefficient ui (just copy data from x to ui)
     std::ranges::copy(x.array(), ui->x()->mutable_array().begin());

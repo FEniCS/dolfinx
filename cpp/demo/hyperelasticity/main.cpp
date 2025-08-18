@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
           constexpr U theta = std::numbers::pi / 3;
 
           // New coordinates
-          std::vector<U> fdata(3 * x.extent(1), 0.0);
+          std::vector<U> fdata(3 * x.extent(1), 0);
           md::mdspan<U, md::extents<std::size_t, 3, md::dynamic_extent>> f(
               fdata.data(), 3, x.extent(1));
           for (std::size_t p = 0; p < x.extent(1); ++p)
@@ -282,12 +282,12 @@ int main(int argc, char* argv[])
 
     // Save solution in VTK format
     io::VTKFile file_u(mesh->comm(), "u.pvd", "w");
-    file_u.write<T>({*u}, 0.0);
+    file_u.write<T>({*u}, 0);
 
     // Save Cauchy stress in XDMF format
     io::XDMFFile file_sigma(mesh->comm(), "sigma.xdmf", "w");
     file_sigma.write_mesh(*mesh);
-    file_sigma.write_function(sigma, 0.0);
+    file_sigma.write_function(sigma, 0);
   }
 
   PetscFinalize();
