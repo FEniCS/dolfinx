@@ -41,23 +41,27 @@ std::string to_string(CellType type);
 /// @return The cell type
 CellType to_type(const std::string& cell);
 
-/// Return type of cell for entity of dimension d at given entity index.
+/// @brief Return type of cell for entity of dimension d at given entity
+/// index.
 CellType cell_entity_type(CellType type, int d, int index);
 
-/// Return facet type of cell
-/// For simplex and hypercube cell types, this is independent of the facet
-/// index, but for prism and pyramid, it can be triangle or quadrilateral.
-/// @param[in] type The cell type
-/// @param[in] index The facet index
-/// @return The type of facet for this cell at this index
+/// @brief Return facet type of cell.
+///
+/// For simplex and hypercube cell types, this is independent of the
+/// facet index, but for prism and pyramid, it can be triangle or
+/// quadrilateral.
+///
+/// @param[in] type Cell type.
+/// @param[in] index Facet index.
+/// @return Type of facet for this cell at this index.
 CellType cell_facet_type(CellType type, int index);
 
-/// Return list of entities, where entities(e, k) is the local vertex
-/// index for the kth vertex of entity e of dimension dim
+/// @brief List of entities, where entity `(e, k)` is the local vertex
+/// index for the `k`th vertex of entity `e` of dimension `dim`.
 graph::AdjacencyList<int> get_entity_vertices(CellType type, int dim);
 
-/// Get entities of dimension dim1 and that make up entities of dimension
-/// dim0
+/// @brief Get entities of dimension `dim1` and that make up entities of
+/// dimension `dim0`.
 graph::AdjacencyList<int> get_sub_entities(CellType type, int dim0, int dim1);
 
 /// Return topological dimension of cell type
