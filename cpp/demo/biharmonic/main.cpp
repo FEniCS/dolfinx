@@ -237,7 +237,7 @@ int main(int argc, char* argv[])
     MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
-    b.set(0);
+    std::ranges::fill(b.array(), 0);
     fem::assemble_vector(b.mutable_array(), L);
     fem::apply_lifting(b.mutable_array(), {a}, {{bc}}, {}, T(1));
     b.scatter_rev(std::plus<T>());

@@ -327,7 +327,7 @@ int main(int argc, char* argv[])
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
     // Assemble the linear form `L` into RHS vector
-    b.set(0);
+    std::ranges::fill(b.array(), 0);
     fem::assemble_vector(b.mutable_array(), L);
 
     // Modify unconstrained dofs on RHS to account for Dirichlet BC dofs
