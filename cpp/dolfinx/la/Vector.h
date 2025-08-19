@@ -89,36 +89,68 @@ public:
   /// ranks.
   ///
   /// @note Collective MPI operation
+  template <typename U, typename GetPtr>
+  void scatter_fwd_begin(U pack, GetPtr get_ptr)
+  {
+    pack(get_ptr(_x), _scatterer->local_indices(), get_ptr(_buffer_local));
+    _scatterer->scatter_fwd_begin(get_ptr(_buffer_local),
+                                  get_ptr(_buffer_remote),
+                                  std::span<MPI_Request>(_request));
+  }
+
+  /// @brief Begin scatter of local data from owner to ghosts on other
+  /// ranks.
+  ///
+  /// @note Collective MPI operation
   void scatter_fwd_begin()
   {
-    auto pack = [](const value_type* in, auto&& idx, value_type* out)
+    auto pack
+        = [](const value_type* in, const ScatterContainer& idx, value_type* out)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[i] = in[idx[i]];
     };
-
-    pack(_x.data(), _scatterer->local_indices(), _buffer_local.data());
-    _scatterer->scatter_fwd_begin(_buffer_local.data(), _buffer_remote.data(),
-                                  std::span<MPI_Request>(_request));
+    scatter_fwd_begin(pack, [](auto&& x) { return x.data(); });
   }
 
   /// @brief End scatter of local data from owner to ghosts on other
   /// ranks.
   ///
   /// @note Collective MPI operation.
-  void scatter_fwd_end()
+  template <typename U, typename GetPtr>
+  void scatter_fwd_end(U unpack, GetPtr get_ptr)
   {
-    auto unpack = [](const value_type* in, const ScatterContainer& idx,
-                     value_type* out, auto op)
-    {
-      for (std::size_t i = 0; i < idx.size(); ++i)
-        out[idx[i]] = op(out[idx[i]], in[i]);
-    };
-
     _scatterer->scatter_fwd_end(_request);
     std::int32_t local_size = _bs * _map->size_local();
-    unpack(_buffer_remote.data(), _scatterer->remote_indices(),
-           _x.data() + local_size, [](auto /*a*/, auto b) { return b; });
+    unpack(get_ptr(_buffer_remote), _scatterer->remote_indices(),
+           get_ptr(_x) + local_size);
+  }
+
+  /// @brief End scatter of local data from owner to ghosts on other
+  /// ranks.
+  ///
+  /// @note Collective MPI operation.
+  // template <typename BinaryOp>
+  // void scatter_fwd_end(BinaryOp op)
+  void scatter_fwd_end()
+  {
+    auto unpack
+        = [](const value_type* in, const ScatterContainer& idx, value_type* out)
+    {
+      for (std::size_t i = 0; i < idx.size(); ++i)
+        out[idx[i]] = in[i];
+    };
+    scatter_fwd_end(unpack, [](auto&& x) { return x.data(); });
+  }
+
+  /// @brief Scatter local data to ghost positions on other ranks.
+  ///
+  /// @note Collective MPI operation
+  template <typename U, typename V, typename W>
+  void scatter_fwd(U pack, V unpack, W get_ptr)
+  {
+    this->scatter_fwd_begin(pack, get_ptr);
+    this->scatter_fwd_end(unpack, get_ptr);
   }
 
   /// @brief Scatter local data to ghost positions on other ranks.
@@ -159,14 +191,14 @@ public:
   template <class BinaryOperation>
   void scatter_rev_end(BinaryOperation op)
   {
-    auto unpack = [](auto&& in, auto&& idx, auto&& out, auto op)
+    auto unpack = [op](auto&& in, auto&& idx, auto&& out)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = op(out[idx[i]], in[i]);
     };
 
     _scatterer->scatter_rev_end(_request);
-    unpack(_buffer_local, _scatterer->local_indices(), _x.data(), op);
+    unpack(_buffer_local, _scatterer->local_indices(), _x.data());
   }
 
   /// @brief Scatter ghost data to owner.
