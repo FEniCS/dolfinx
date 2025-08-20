@@ -471,10 +471,24 @@ std::vector<std::uint16_t> gmsh_hexahedron(int num_nodes)
   switch (num_nodes)
   {
   case 8:
+  // 2 <-> 3
+  // 6 <-> 7
     return {0, 1, 3, 2, 4, 5, 7, 6};
   case 27:
+  // 2 <-> 3 
+  // 6 <-> 7
+  // 14 <-> 15
     return {0,  1,  3,  2,  4,  5,  7,  6,  8,  9,  10, 11, 12, 13,
             15, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26};
+  case 64:
+  {
+    std::vector<std::uint16_t> data {};
+    // {0,  1,  3,  2,  4,  5,  7,  6,  8,  9,  10, 11, 12, 13,
+    //         15, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26};
+    for (int i = data.size(); data.size()<64; i++)
+      data.push_back(i);
+    return data;
+    }
   default:
     throw std::runtime_error("Higher order Gmsh hexahedron not supported");
   }
