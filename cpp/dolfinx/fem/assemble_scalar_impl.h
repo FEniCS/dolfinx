@@ -253,7 +253,7 @@ T assemble_scalar(
         = coefficients.at({IntegralType::interior_facet, i});
     std::span facets = M.domain(IntegralType::interior_facet, i, 0);
 
-    constexpr std::uint8_t shape1 = 4;
+    constexpr std::size_t shape1 = 4;
     assert((facets.size() / shape1) * 2 * cstride == coeffs.size());
     value += impl::assemble_interior_facets(
         x_dofmap, x,
@@ -278,7 +278,7 @@ T assemble_scalar(
         = M.domain(IntegralType::vertex, i, 0);
     assert(vertices.size() * cstride == coeffs.size());
 
-    constexpr std::uint8_t shape1 = 2;
+    constexpr std::size_t shape1 = 2;
     value += impl::assemble_vertices(
         x_dofmap, x,
         md::mdspan<const std::int32_t,
