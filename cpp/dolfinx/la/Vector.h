@@ -22,12 +22,13 @@
 
 namespace dolfinx::la
 {
-// /// @brief Vector scatter pack/unpack function concept.
-// template <class U, class Container, class ScatterContainer>
-// concept VectorPackKernel = std::is_invocable_v<
-//     U, std::span<const decltype(std::declval<Container>().data())>,
-//     const ScatterContainer&,
-//     std::span<decltype(std::declval<Container>().data())>>;
+/// @brief Vector scatter pack/unpack function concept.
+template <class U, class Container, class ScatterContainer>
+concept VectorPackKernel
+    = std::is_invocable_v<U, typename Container::const_iterator,
+                          typename Container::const_iterator,
+                          const ScatterContainer&, typename Container::iterator,
+                          typename Container::iterator>;
 
 // /// @brief Access to pointer function concept.
 // template <class GetPtr, class U>
@@ -167,7 +168,7 @@ public:
   /// @param get_ptr Function that for a ::Container returns the pointer
   /// to the underlying data.
   template <typename U, typename GetPtr>
-  // requires VectorPackKernel<U, container_type, ScatterContainer>
+    requires VectorPackKernel<U, container_type, ScatterContainer>
   //  && GetPtrConcept<GetPtr, container_type>
   void scatter_fwd_begin(U pack, GetPtr get_ptr)
   {
@@ -201,10 +202,10 @@ public:
   ///
   /// @note Collective MPI operation.
   ///
-  /// @param pack Function to unpack the receive buffer into the ghost
+  /// @param unpack Function to unpack the receive buffer into the ghost
   /// entries.
   template <typename U>
-  // requires VectorPackKernel<U, container_type, ScatterContainer>
+    requires VectorPackKernel<U, container_type, ScatterContainer>
   void scatter_fwd_end(U unpack)
   {
     _scatterer->scatter_end(_request);
