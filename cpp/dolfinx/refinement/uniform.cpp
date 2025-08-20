@@ -162,9 +162,6 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
       for (std::size_t i = 0; i < idx.size(); ++i)
         ghosts[idx[i]] = recv_buffer[i];
     }
-
-    //                 local_data         remote_data
-    // sc.scatter_fwd(new_v[j].data(), new_v[j].data() + num_entities);
   }
 
   // Create new topology

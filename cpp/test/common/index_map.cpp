@@ -37,7 +37,6 @@ common::IndexMap create_index_map(MPI_Comm comm, int size_local, int num_ghosts)
                           global_ghost_owner);
 }
 
-/*
 void test_scatter_fwd(int n)
 {
   const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
@@ -56,24 +55,52 @@ void test_scatter_fwd(int n)
   std::vector<std::int64_t> data_ghost(n * num_ghosts, -1);
 
   // Scatter values to ghost and check value is correctly received
-  sct.scatter_fwd<std::int64_t>(data_local.data(), data_ghost.data());
-  CHECK((int)data_ghost.size() == n * num_ghosts);
-  CHECK(
-      std::ranges::all_of(data_ghost, [=](auto i)
-                          { return i == val * ((mpi_rank + 1) % mpi_size); }));
+  {
+    std::vector<std::int64_t> send_buffer(sct.local_buffer_size());
+    {
+      auto& idx = sct.local_indices();
+      for (std::size_t i = 0; i < idx.size(); ++i)
+        send_buffer[i] = data_local[idx[i]];
+    }
+    std::vector<std::int64_t> recv_buffer(sct.remote_buffer_size());
+    std::vector<MPI_Request> requests(1, MPI_REQUEST_NULL);
+    sct.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), requests);
+    sct.scatter_end(requests);
+    {
+      auto& idx = sct.remote_indices();
+      for (std::size_t i = 0; i < idx.size(); ++i)
+        data_ghost[idx[i]] = recv_buffer[i];
+    }
+    CHECK((int)data_ghost.size() == n * num_ghosts);
+    CHECK(std::ranges::all_of(
+        data_ghost,
+        [=](auto i) { return i == val * ((mpi_rank + 1) % mpi_size); }));
+  }
 
-  std::vector<MPI_Request> requests
-      = sct.create_requests(common::ScattererType::p2p);
-  std::ranges::fill(data_ghost, 0);
-  sct.scatter_fwd_begin(data_local.data(), data_ghost.data(), requests,
-                        common::ScattererType::p2p);
-  sct.scatter_fwd_end(requests);
-
-  CHECK(
-      std::ranges::all_of(data_ghost, [=](auto i)
-                          { return i == val * ((mpi_rank + 1) % mpi_size); }));
+  {
+    std::vector<MPI_Request> requests
+        = sct.create_requests(common::ScattererType::p2p);
+    std::ranges::fill(data_ghost, 0);
+    std::vector<std::int64_t> send_buffer(sct.local_buffer_size());
+    {
+      auto& idx = sct.local_indices();
+      for (std::size_t i = 0; i < idx.size(); ++i)
+        send_buffer[i] = data_local[idx[i]];
+    }
+    std::vector<std::int64_t> recv_buffer(sct.remote_buffer_size());
+    sct.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), requests,
+                          common::ScattererType::p2p);
+    sct.scatter_end(requests);
+    {
+      auto& idx = sct.remote_indices();
+      for (std::size_t i = 0; i < idx.size(); ++i)
+        data_ghost[idx[i]] = recv_buffer[i];
+    }
+    CHECK(std::ranges::all_of(
+        data_ghost,
+        [=](auto i) { return i == val * ((mpi_rank + 1) % mpi_size); }));
+  }
 }
-                          */
 
 /*
 void test_scatter_rev()
@@ -216,11 +243,11 @@ void test_rank_weights()
 }
 } // namespace
 
-// TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
-// {
-//   auto n = GENERATE(1, 5, 10);
-//   CHECK_NOTHROW(test_scatter_fwd(n));
-// }
+TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
+{
+  auto n = GENERATE(1, 5, 10);
+  CHECK_NOTHROW(test_scatter_fwd(n));
+}
 
 // TEST_CASE("Scatter reverse using IndexMap", "[index_map_scatter_rev]")
 // {

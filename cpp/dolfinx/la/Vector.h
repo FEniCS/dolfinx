@@ -39,8 +39,8 @@ private:
   {
     return [](const auto& in, const ScatterContainer& idx, auto&& out)
     {
-      for (std::size_t i = 0; i < idx.size(); ++i)
-        out[i] = in[idx[i]];
+      std::transform(idx.begin(), idx.end(), out.begin(),
+                     [&in](auto i) { return in[i]; });
     };
   }
 
