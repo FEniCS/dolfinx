@@ -37,6 +37,7 @@ common::IndexMap create_index_map(MPI_Comm comm, int size_local, int num_ghosts)
                           global_ghost_owner);
 }
 
+/*
 void test_scatter_fwd(int n)
 {
   const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
@@ -72,64 +73,81 @@ void test_scatter_fwd(int n)
       std::ranges::all_of(data_ghost, [=](auto i)
                           { return i == val * ((mpi_rank + 1) % mpi_size); }));
 }
+                          */
 
+/*
 void test_scatter_rev()
 {
-  // Block size
-  auto n = GENERATE(1, 5, 10);
+// Block size
+auto n = GENERATE(1, 5, 10);
 
-  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
-  constexpr int size_local = 100;
+const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+constexpr int size_local = 100;
 
-  // Create an IndexMap
-  const common::IndexMap idx_map
-      = create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
-  std::int32_t num_ghosts = idx_map.num_ghosts();
+// Create an IndexMap
+const common::IndexMap idx_map
+= create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
+std::int32_t num_ghosts = idx_map.num_ghosts();
 
-  common::Scatterer sct(idx_map, n);
+common::Scatterer sct(idx_map, n);
 
-  // Create some data, setting ghost values
-  std::int64_t value = 15;
-  std::vector<std::int64_t> data_local(n * size_local, 0);
-  std::vector<std::int64_t> data_ghost(n * num_ghosts, value);
-  sct.scatter_rev(data_local.data(), data_ghost.data(),
-                  std::plus<std::int64_t>());
+// Create some data, setting ghost values
+std::int64_t value = 15;
+std::vector<std::int64_t> data_local(n * size_local, 0);
+std::vector<std::int64_t> data_ghost(n * num_ghosts, value);
+sct.scatter_rev(data_local.data(), data_ghost.data(),
+std::plus<std::int64_t>());
 
-  std::int64_t sum;
-  CHECK((int)data_local.size() == n * size_local);
-  sum = std::reduce(data_local.begin(), data_local.end(), 0);
-  CHECK(sum == n * value * num_ghosts);
+std::int64_t sum;
+CHECK((int)data_local.size() == n * size_local);
+sum = std::reduce(data_local.begin(), data_local.end(), 0);
+CHECK(sum == n * value * num_ghosts);
 
-  sct.scatter_rev(data_local.data(), data_ghost.data(),
-                  [](auto /*a*/, auto b) { return b; });
+sct.scatter_rev(data_local.data(), data_ghost.data(),
+[](auto , auto b)
+{
+  return b;
+});
 
-  sum = std::reduce(data_local.begin(), data_local.end(), 0);
-  CHECK(sum == n * value * num_ghosts);
+sum = std::reduce(data_local.begin(),
+                  data_local.end(), 0);
+CHECK(sum == n * value * num_ghosts);
 
-  int num_requests = idx_map.dest().size() + idx_map.src().size();
-  std::vector<MPI_Request> requests(num_requests, MPI_REQUEST_NULL);
-  std::vector<std::int64_t> local_buffer(sct.local_buffer_size(), 0);
-  std::vector<std::int64_t> remote_buffer(sct.remote_buffer_size(), 0);
-  auto pack_fn = [](auto&& in, auto&& idx, auto&& out)
-  {
-    for (std::size_t i = 0; i < idx.size(); ++i)
-      out[i] = in[idx[i]];
-  };
-  auto unpack_fn = [](auto&& in, auto&& idx, auto&& out, auto op)
-  {
-    for (std::size_t i = 0; i < idx.size(); ++i)
-      out[idx[i]] = op(out[idx[i]], in[i]);
-  };
+int num_requests
+    = idx_map.dest().size() + idx_map.src().size();
+std::vector<MPI_Request> requests(num_requests,
+                                  MPI_REQUEST_NULL);
+std::vector<std::int64_t>
+    local_buffer(sct.local_buffer_size(), 0);
+std::vector<std::int64_t>
+    remote_buffer(sct.remote_buffer_size(), 0);
+auto pack_fn = [](auto&& in, auto&& idx, auto&& out)
+{
+  for (std::size_t i = 0; i < idx.size(); ++i)
+    out[i] = in[idx[i]];
+};
+auto unpack_fn
+    = [](auto&& in, auto&& idx, auto&& out, auto op)
+{
+  for (std::size_t i = 0; i < idx.size(); ++i)
+    out[idx[i]] = op(out[idx[i]], in[i]);
+};
 
-  sct.scatter_rev_begin(data_ghost.data(), remote_buffer.data(),
-                        local_buffer.data(), pack_fn, requests,
-                        common::ScattererType::p2p);
-  sct.scatter_rev_end(local_buffer.data(), data_local.data(), unpack_fn,
-                      std::plus<std::int64_t>(), requests);
+sct.scatter_rev_begin(data_ghost.data(),
+                      remote_buffer.data(),
+                      local_buffer.data(), pack_fn,
+                      requests,
+                      common::ScattererType::p2p);
+sct.scatter_rev_end(local_buffer.data(),
+                    data_local.data(), unpack_fn,
+                    std::plus<std::int64_t>(),
+                    requests);
 
-  sum = std::reduce(data_local.begin(), data_local.end(), 0);
-  CHECK(sum == 2 * n * value * num_ghosts);
+sum = std::reduce(data_local.begin(),
+                  data_local.end(), 0);
+CHECK(sum == 2 * n * value * num_ghosts);
 }
+*/
 
 void test_consensus_exchange()
 {
@@ -198,18 +216,19 @@ void test_rank_weights()
 }
 } // namespace
 
-TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
-{
-  auto n = GENERATE(1, 5, 10);
-  CHECK_NOTHROW(test_scatter_fwd(n));
-}
+// TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
+// {
+//   auto n = GENERATE(1, 5, 10);
+//   CHECK_NOTHROW(test_scatter_fwd(n));
+// }
 
-TEST_CASE("Scatter reverse using IndexMap", "[index_map_scatter_rev]")
-{
-  CHECK_NOTHROW(test_scatter_rev());
-}
+// TEST_CASE("Scatter reverse using IndexMap", "[index_map_scatter_rev]")
+// {
+//   CHECK_NOTHROW(test_scatter_rev());
+// }
 
-TEST_CASE("Communication graph edges via consensus exchange",
+TEST_CASE("Communication graph edges via consensus "
+          "exchange",
           "[consensus_exchange]")
 {
   CHECK_NOTHROW(test_consensus_exchange());

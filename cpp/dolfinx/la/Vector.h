@@ -153,7 +153,7 @@ public:
   template <typename U>
   void scatter_fwd_end(U unpack)
   {
-    _scatterer->scatter_fwd_end(_request);
+    _scatterer->scatter_end(_request);
     std::size_t local_size = _bs * _map->size_local();
     std::size_t ghost_size = _bs * _map->num_ghosts();
     unpack(std::span(_buffer_remote.data(), _buffer_remote.size()),
@@ -218,7 +218,7 @@ public:
   template <typename U>
   void scatter_rev_end(U unpack)
   {
-    _scatterer->scatter_rev_end(_request);
+    _scatterer->scatter_end(_request);
     unpack(std::span(_buffer_local.data(), _buffer_local.size()),
            _scatterer->local_indices(), std::span(_x.data(), _x.size()));
   }
