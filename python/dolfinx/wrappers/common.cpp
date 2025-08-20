@@ -66,7 +66,27 @@ void add_scatter_functions(nb::class_<dolfinx::common::Scatterer<>>& sc)
           throw std::runtime_error(
               "Ghost data buffer too small in forward scatter.");
         }
-        self.scatter_fwd(local_data.data(), remote_data.data());
+
+        // self.scatter_fwd(local_data.data(), remote_data.data());
+
+        std::vector<T> send_buffer(self.local_buffer_size());
+        {
+          auto _local_data = local_data.view();
+          auto& idx = self.local_indices();
+          for (std::size_t i = 0; i < idx.size(); ++i)
+            send_buffer[i] = _local_data(idx[i]);
+        }
+        std::vector<T> recv_buffer(self.remote_buffer_size());
+        std::vector<MPI_Request> requests(1, MPI_REQUEST_NULL);
+        self.scatter_fwd_begin<T>(send_buffer.data(), recv_buffer.data(),
+                                  std::span(requests));
+        self.scatter_fwd_end(std::span(requests));
+        {
+          auto _remote_data = remote_data.view();
+          auto& idx = self.remote_indices();
+          for (std::size_t i = 0; i < idx.size(); ++i)
+            _remote_data(idx[i]) = recv_buffer[i];
+        }
       },
       nb::arg("local_data"), nb::arg("remote_data"));
 
@@ -86,7 +106,28 @@ void add_scatter_functions(nb::class_<dolfinx::common::Scatterer<>>& sc)
           throw std::runtime_error(
               "Ghost data buffer too small in reverse scatter.");
         }
-        self.scatter_rev(local_data.data(), remote_data.data(), std::plus<T>());
+
+        std::vector<T> send_buffer(self.remote_buffer_size());
+        {
+          auto _remote_data = remote_data.view();
+          auto& idx = self.remote_indices();
+          for (std::size_t i = 0; i < idx.size(); ++i)
+            send_buffer[i] = _remote_data(idx[i]);
+        }
+        std::vector<T> recv_buffer(self.local_buffer_size());
+        std::vector<MPI_Request> requests(1, MPI_REQUEST_NULL);
+        self.scatter_rev_begin<T>(send_buffer.data(), recv_buffer.data(),
+                                  std::span(requests));
+        self.scatter_rev_end(std::span(requests));
+        {
+          auto _local_data = local_data.view();
+          auto& idx = self.local_indices();
+          for (std::size_t i = 0; i < idx.size(); ++i)
+            _local_data(idx[i]) += recv_buffer[i];
+        }
+
+        // self.scatter_rev(local_data.data(), remote_data.data(),
+        // std::plus<T>());
       },
       nb::arg("local_data"), nb::arg("remote_data"));
 }

@@ -20,6 +20,8 @@
 #include <type_traits>
 #include <vector>
 
+#include <iostream>
+
 namespace dolfinx::la
 {
 /// @brief Distributed vector.
@@ -35,8 +37,7 @@ class Vector
 private:
   auto get_pack()
   {
-    return
-        [](const value_type* in, const ScatterContainer& idx, value_type* out)
+    return [](const auto& in, const ScatterContainer& idx, auto&& out)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[i] = in[idx[i]];
@@ -45,7 +46,7 @@ private:
 
   auto get_unpack()
   {
-    return [](const T* in, const ScatterContainer& idx, T* out)
+    return [](const auto& in, const ScatterContainer& idx, auto&& out)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = in[i];
@@ -53,9 +54,9 @@ private:
   }
 
   template <typename BinaryOp>
-  auto get_unpack(BinaryOp op)
+  auto get_unpack_op(BinaryOp op)
   {
-    return [op](const T* in, const ScatterContainer& idx, T* out)
+    return [op](const auto& in, const ScatterContainer& idx, auto&& out)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = op(out[idx[i]], in[i]);
@@ -78,23 +79,12 @@ public:
   /// the data.
   /// @param bs Number of entries per index (block size).
   /// @param get_ptr
-  Vector(std::shared_ptr<const common::IndexMap> map, int bs, auto get_ptr)
+  Vector(std::shared_ptr<const common::IndexMap> map, int bs)
       : _map(map), _bs(bs), _x(bs * (map->size_local() + map->num_ghosts())),
         _scatterer(
             std::make_shared<common::Scatterer<ScatterContainer>>(*_map, bs)),
         _buffer_local(_scatterer->local_buffer_size()),
-        _buffer_remote(_scatterer->remote_buffer_size()),
-        _get_ptr_const(get_ptr), _get_ptr(get_ptr)
-  {
-  }
-
-  /// @brief Create a distributed vector.
-  ///
-  /// @param map Index map that describes the parallel distribution of
-  /// the data.
-  /// @param bs Number of entries per index (block size).
-  Vector(std::shared_ptr<const common::IndexMap> map, int bs)
-      : Vector(map, bs, [](auto&& x) { return std::data(x); })
+        _buffer_remote(_scatterer->remote_buffer_size())
   {
   }
 
@@ -139,21 +129,23 @@ public:
   /// ranks.
   ///
   /// @note Collective MPI operation
-  template <typename U>
-  void scatter_fwd_begin(U pack)
+  template <typename U, typename GetPtr>
+  void scatter_fwd_begin(U pack, GetPtr get_ptr)
   {
-    pack(_get_ptr_const(_x), _scatterer->local_indices(),
-         _get_ptr(_buffer_local));
-    _scatterer->scatter_fwd_begin(_get_ptr_const(_buffer_local),
-                                  _get_ptr(_buffer_remote),
-                                  std::span<MPI_Request>(_request));
+    pack(std::span(_x.data(), _x.size()), _scatterer->local_indices(),
+         std::span(_buffer_local.data(), _buffer_local.size()));
+    _scatterer->scatter_fwd_begin(get_ptr(_buffer_local),
+                                  get_ptr(_buffer_remote), std::span(_request));
   }
 
   /// @brief Begin scatter of local data from owner to ghosts on other
   /// ranks.
   ///
   /// @note Collective MPI operation
-  void scatter_fwd_begin() { scatter_fwd_begin(get_pack()); }
+  void scatter_fwd_begin()
+  {
+    scatter_fwd_begin(get_pack(), [](auto&& x) { return x.data(); });
+  }
 
   /// @brief End scatter of local data from owner to ghosts on other
   /// ranks.
@@ -164,8 +156,10 @@ public:
   {
     _scatterer->scatter_fwd_end(_request);
     std::size_t local_size = _bs * _map->size_local();
-    unpack(_get_ptr_const(_buffer_remote), _scatterer->remote_indices(),
-           _get_ptr(_x) + local_size);
+    std::size_t ghost_size = _bs * _map->num_ghosts();
+    unpack(std::span(_buffer_remote.data(), _buffer_remote.size()),
+           _scatterer->remote_indices(),
+           std::span(_x.data() + local_size, ghost_size));
   }
 
   /// @brief End scatter of local data from owner to ghosts on other
@@ -174,7 +168,7 @@ public:
   /// @note Collective MPI operation.
   // template <typename BinaryOp>
   // void scatter_fwd_end(BinaryOp op)
-  void scatter_fwd_end() { scatter_fwd_end(get_unpack()); }
+  void scatter_fwd_end() { this->scatter_fwd_end(get_unpack()); }
 
   /// @brief Scatter local data to ghost positions on other ranks.
   ///
@@ -197,13 +191,22 @@ public:
 
   /// Start scatter of  ghost data to owner
   /// @note Collective MPI operation
-  void scatter_rev_begin()
+  template <typename U, typename GetPtr>
+  void scatter_rev_begin(U pack, GetPtr get_ptr)
   {
     std::int32_t local_size = _bs * _map->size_local();
-    get_pack()(_x.data() + local_size, _scatterer->remote_indices(),
-               _buffer_remote.data());
-    _scatterer->scatter_rev_begin(_buffer_remote.data(), _buffer_local.data(),
-                                  _request);
+    pack(std::span(_x.begin() + local_size, _x.end()),
+         _scatterer->remote_indices(),
+         std::span(_buffer_remote.data(), _buffer_remote.size()));
+    _scatterer->scatter_rev_begin(get_ptr(_buffer_remote),
+                                  get_ptr(_buffer_local), _request);
+  }
+
+  /// Start scatter of  ghost data to owner
+  /// @note Collective MPI operation
+  void scatter_rev_begin()
+  {
+    scatter_rev_begin(get_pack(), [](auto&& x) { return x.data(); });
   }
 
   /// @brief End scatter of ghost data to owner.
@@ -215,13 +218,29 @@ public:
   /// @param op The operation to perform when adding/setting received
   /// values (add or insert)
   /// @note Collective MPI operation
-  template <class BinaryOperation>
-  void scatter_rev_end(BinaryOperation op)
+  template <typename U>
+  void scatter_rev_end(U unpack)
   {
     _scatterer->scatter_rev_end(_request);
-    get_unpack(op)(_get_ptr_const(_buffer_local), _scatterer->local_indices(),
-                   _get_ptr(_x));
+    unpack(std::span(_buffer_local.data(), _buffer_local.size()),
+           _scatterer->local_indices(), std::span(_x.data(), _x.size()));
   }
+
+  /// @brief End scatter of ghost data to owner.
+  ///
+  /// This process may receive data from more than one process, and the
+  /// received data can be summed or inserted into the local portion of
+  /// the vector.
+  ///
+  /// @param op The operation to perform when adding/setting received
+  /// values (add or insert)
+  /// @note Collective MPI operation
+  // template <typename BinaryOperation>
+  // void scatter_rev_end(BinaryOperation op)
+  // {
+  //   auto unpack = get_unpack_op(op);
+  //   scatter_rev_end(unpack);
+  // }
 
   /// @brief Scatter ghost data to owner.
   ///
@@ -236,7 +255,7 @@ public:
   void scatter_rev(BinaryOperation op)
   {
     this->scatter_rev_begin();
-    this->scatter_rev_end(op);
+    this->scatter_rev_end(get_unpack_op(op));
   }
 
   /// Get IndexMap
@@ -272,10 +291,6 @@ private:
 
   // Buffers for ghost scatters
   container_type _buffer_local, _buffer_remote;
-
-  // Get ptr
-  std::function<const T*(const container_type&)> _get_ptr_const;
-  std::function<T*(container_type&)> _get_ptr;
 };
 
 /// @brief Compute the inner product of two vectors.

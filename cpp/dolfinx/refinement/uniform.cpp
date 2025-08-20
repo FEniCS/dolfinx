@@ -144,8 +144,28 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     std::iota(new_v[j].begin(), std::next(new_v[j].begin(), num_entities),
               local_range[0] + entity_offsets[j]);
 
-    common::Scatterer sc(*index_maps[j], 1);
-    sc.scatter_fwd(new_v[j].data(), new_v[j].data() + num_entities);
+    common::Scatterer<std::vector<std::int64_t>> sc(*index_maps[j], 1);
+    std::vector<std::int64_t> send_buffer(sc.local_buffer_size());
+    {
+      auto& idx = sc.local_indices();
+      for (std::size_t i = 0; i < idx.size(); ++i)
+        send_buffer[i] = new_v[j][idx[i]];
+    }
+    std::vector<std::int64_t> recv_buffer(sc.remote_buffer_size());
+    std::vector<MPI_Request> requests(1, MPI_REQUEST_NULL);
+    sc.scatter_fwd_begin<std::int64_t>(send_buffer.data(), recv_buffer.data(),
+                                       std::span<MPI_Request>(requests));
+    sc.scatter_fwd_end(std::span<MPI_Request>(requests));
+    {
+      std::span ghosts(std::next(new_v[j].begin(), num_entities),
+                       new_v[j].end());
+      auto& idx = sc.remote_indices();
+      for (std::size_t i = 0; i < idx.size(); ++i)
+        ghosts[idx[i]] = recv_buffer[i];
+    }
+
+    //                 local_data         remote_data
+    // sc.scatter_fwd(new_v[j].data(), new_v[j].data() + num_entities);
   }
 
   // Create new topology

@@ -302,15 +302,15 @@ public:
   /// the send.
   /// @param[in] type Type of MPI communication pattern used by the
   /// Scatterer, either ScattererType::neighbor or ScattererType::p2p.
-  template <typename T, typename F>
-    requires std::is_invocable_v<F, const T*, const container_type&, T*>
-  void scatter_fwd_begin(const T* local_data, T* local_buffer, T* remote_buffer,
-                         F pack_fn, std::span<MPI_Request> requests,
-                         ScattererType type = ScattererType::neighbor) const
-  {
-    pack_fn(local_data, _local_inds, local_buffer);
-    scatter_fwd_begin(local_buffer, remote_buffer, requests, type);
-  }
+  // template <typename T, typename F>
+  //   requires std::is_invocable_v<F, const T*, const container_type&, T*>
+  // void scatter_fwd_begin(const T* local_data, T* local_buffer, T* remote_buffer,
+  //                        F pack_fn, std::span<MPI_Request> requests,
+  //                        ScattererType type = ScattererType::neighbor) const
+  // {
+  //   pack_fn(local_data, _local_inds, local_buffer);
+  //   scatter_fwd_begin(local_buffer, remote_buffer, requests, type);
+  // }
 
   /// @brief Complete a non-blocking send from the local owner to
   /// process ranks that have the index as a ghost, and unpack received
@@ -332,16 +332,16 @@ public:
   /// GPU/device-aware MPI.
   /// @param[in] requests MPI request handle for tracking the status of
   /// the send.
-  template <typename T, typename F>
-    requires std::is_invocable_v<F, const T*, const container_type&, T*,
-                                 std::function<std::remove_const_t<T>(T, T)>>
-  void scatter_fwd_end(const T* remote_buffer, T* remote_data, F unpack_fn,
-                       std::span<MPI_Request> requests) const
-  {
-    scatter_fwd_end(std::span(requests));
-    unpack_fn(remote_buffer, _remote_inds, remote_data,
-              [](T /*a*/, T b) { return b; });
-  }
+  // template <typename T, typename F>
+  //   requires std::is_invocable_v<F, const T*, const container_type&, T*,
+  //                                std::function<std::remove_const_t<T>(T, T)>>
+  // void scatter_fwd_end(const T* remote_buffer, T* remote_data, F unpack_fn,
+  //                      std::span<MPI_Request> requests) const
+  // {
+  //   scatter_fwd_end(std::span(requests));
+  //   unpack_fn(remote_buffer, _remote_inds, remote_data,
+  //             [](T /*a*/, T b) { return b; });
+  // }
 
   /// @brief Scatter data associated with owned indices to ghosting
   /// ranks.
@@ -363,31 +363,31 @@ public:
   /// @param get_ptr Function that returns a pointer to the buffer data.
   /// If the buffers are allocated on a device/GPU, the function should
   /// return the device pointer.
-  template <typename T, typename BufferContainer, typename GetPtr>
-    requires std::is_same_v<T, typename BufferContainer::value_type>
-             and std::is_invocable_r_v<T*, GetPtr, BufferContainer&&>
-  void scatter_fwd(const T* local_data, T* remote_data, GetPtr get_ptr) const
-  {
-    auto pack_fn = [](const T* in, auto&& idx, T* out)
-    {
-      for (std::size_t i = 0; i < idx.size(); ++i)
-        out[i] = in[idx[i]];
-    };
+  // template <typename T, typename BufferContainer, typename GetPtr>
+  //   requires std::is_same_v<T, typename BufferContainer::value_type>
+  //            and std::is_invocable_r_v<T*, GetPtr, BufferContainer&&>
+  // void scatter_fwd(const T* local_data, T* remote_data, GetPtr get_ptr) const
+  // {
+  //   auto pack_fn = [](const T* in, auto&& idx, T* out)
+  //   {
+  //     for (std::size_t i = 0; i < idx.size(); ++i)
+  //       out[i] = in[idx[i]];
+  //   };
 
-    auto unpack_fn = [](const T* in, auto&& idx, T* out, auto op)
-    {
-      for (std::size_t i = 0; i < idx.size(); ++i)
-        out[idx[i]] = op(out[idx[i]], in[i]);
-    };
+  //   auto unpack_fn = [](const T* in, auto&& idx, T* out, auto op)
+  //   {
+  //     for (std::size_t i = 0; i < idx.size(); ++i)
+  //       out[idx[i]] = op(out[idx[i]], in[i]);
+  //   };
 
-    std::vector<MPI_Request> requests(1, MPI_REQUEST_NULL);
-    BufferContainer local_buffer(this->local_buffer_size(), 0);
-    BufferContainer remote_buffer(this->remote_buffer_size(), 0);
-    scatter_fwd_begin(local_data, get_ptr(local_buffer), get_ptr(remote_buffer),
-                      pack_fn, std::span<MPI_Request>(requests));
-    scatter_fwd_end(get_ptr(remote_buffer), remote_data, unpack_fn,
-                    std::span<MPI_Request>(requests));
-  }
+  //   std::vector<MPI_Request> requests(1, MPI_REQUEST_NULL);
+  //   BufferContainer local_buffer(this->local_buffer_size(), 0);
+  //   BufferContainer remote_buffer(this->remote_buffer_size(), 0);
+  //   scatter_fwd_begin(local_data, get_ptr(local_buffer), get_ptr(remote_buffer),
+  //                     pack_fn, std::span<MPI_Request>(requests));
+  //   scatter_fwd_end(get_ptr(remote_buffer), remote_data, unpack_fn,
+  //                   std::span<MPI_Request>(requests));
+  // }
 
   /// @brief Scatter data associated with owned indices to ghosting
   /// ranks.
@@ -403,12 +403,12 @@ public:
   /// IndexMap used to create the scatterer. The size equal to the
   /// number of ghosts in the index map multiplied by the block size.
   /// The data for each index is blocked.
-  template <typename T>
-  void scatter_fwd(const T* local_data, T* remote_data) const
-  {
-    scatter_fwd<T, std::vector<T>>(local_data, remote_data,
-                                   [](auto&& x) { return x.data(); });
-  }
+  // template <typename T>
+  // void scatter_fwd(const T* local_data, T* remote_data) const
+  // {
+  //   scatter_fwd<T, std::vector<T>>(local_data, remote_data,
+  //                                  [](auto&& x) { return x.data(); });
+  // }
 
   /// @brief Start a non-blocking send of ghost data to ranks that own
   /// the data.
@@ -527,16 +527,16 @@ public:
   /// non-blocking communication.
   /// @param[in] type Type of MPI communication pattern used by the
   /// scatterer.
-  template <typename T, typename F>
-    requires std::is_invocable_v<F, const T*, const container_type&, T*>
-  void scatter_rev_begin(const T* remote_data, T* remote_buffer,
-                         T* local_buffer, F pack_fn,
-                         std::span<MPI_Request> request,
-                         ScattererType type = ScattererType::neighbor) const
-  {
-    pack_fn(remote_data, _remote_inds, remote_buffer);
-    scatter_rev_begin(remote_buffer, local_buffer, request, type);
-  }
+  // template <typename T, typename F>
+  //   requires std::is_invocable_v<F, const T*, const container_type&, T*>
+  // void scatter_rev_begin(const T* remote_data, T* remote_buffer,
+  //                        T* local_buffer, F pack_fn,
+  //                        std::span<MPI_Request> request,
+  //                        ScattererType type = ScattererType::neighbor) const
+  // {
+  //   pack_fn(remote_data, _remote_inds, remote_buffer);
+  //   scatter_rev_begin(remote_buffer, local_buffer, request, type);
+  // }
 
   /// @brief End the reverse scatter communication, and unpack the
   /// received local buffer into local data.
@@ -595,31 +595,29 @@ public:
   /// return the device pointer.
   /// @param[in] op Reduction operation when accumulating received
   /// values. To add the received values use `std::plus<T>()`.
-  template <typename T, typename BufferContainer, typename BinaryOp,
-            typename GetBufferPtr>
-  void scatter_rev(T* local_data, const T* remote_data, GetBufferPtr get_ptr,
-                   BinaryOp op)
-  {
-    auto pack_fn = [](const T* in, auto&& idx, T* out)
-    {
-      for (std::size_t i = 0; i < idx.size(); ++i)
-        out[i] = in[idx[i]];
-    };
-    auto unpack_fn = [](const T* in, auto&& idx, T* out, auto op)
-    {
-      for (std::size_t i = 0; i < idx.size(); ++i)
-        out[idx[i]] = op(out[idx[i]], in[i]);
-    };
+  // template <typename T, typename BufferContainer, typename BinaryOp>
+  // void scatter_rev(T* local_data, const T* remote_data, BinaryOp op)
+  // {
+  //   auto pack_fn = [](const T* in, auto&& idx, T* out)
+  //   {
+  //     for (std::size_t i = 0; i < idx.size(); ++i)
+  //       out[i] = in[idx[i]];
+  //   };
+  //   auto unpack_fn = [](const T* in, auto&& idx, T* out, auto op)
+  //   {
+  //     for (std::size_t i = 0; i < idx.size(); ++i)
+  //       out[idx[i]] = op(out[idx[i]], in[i]);
+  //   };
 
-    BufferContainer local_buffer(this->local_buffer_size(), 0);
-    BufferContainer remote_buffer(this->remote_buffer_size(), 0);
-    std::vector<MPI_Request> request(1, MPI_REQUEST_NULL);
-    scatter_rev_begin(remote_data, get_ptr(remote_buffer),
-                      get_ptr(local_buffer), pack_fn,
-                      std::span<MPI_Request>(request));
-    scatter_rev_end(get_ptr(local_buffer), local_data, unpack_fn, op,
-                    std::span<MPI_Request>(request));
-  }
+  //   BufferContainer local_buffer(this->local_buffer_size(), 0);
+  //   BufferContainer remote_buffer(this->remote_buffer_size(), 0);
+  //   std::vector<MPI_Request> request(1, MPI_REQUEST_NULL);
+  //   scatter_rev_begin(remote_data, get_ptr(remote_buffer),
+  //                     _get_ptr(local_buffer), pack_fn,
+  //                     std::span<MPI_Request>(request));
+  //   scatter_rev_end(_get_ptr(local_buffer), local_data, unpack_fn, op,
+  //                   std::span<MPI_Request>(request));
+  // }
 
   /// @brief Scatter data associated with ghost indices to ranks that
   /// own the indices.
@@ -639,12 +637,12 @@ public:
   /// The data for each index is blocked.
   /// @param[in] op Reduction operation when accumulating received
   /// values. To add the received values use `std::plus<T>()`.
-  template <typename T, typename BinaryOp>
-  void scatter_rev(T* local_data, const T* remote_data, BinaryOp op)
-  {
-    scatter_rev<T, std::vector<T>>(
-        local_data, remote_data, [](auto&& x) { return x.data(); }, op);
-  }
+  // template <typename T, typename BinaryOp>
+  // void scatter_rev(T* local_data, const T* remote_data, BinaryOp op)
+  // {
+  //   scatter_rev<T, std::vector<T>>(
+  //       local_data, remote_data, [](auto&& x) { return x.data(); }, op);
+  // }
 
   /// @brief Size of buffer for packed local data (owned data that is
   /// shared) used in forward and reverse scatters.

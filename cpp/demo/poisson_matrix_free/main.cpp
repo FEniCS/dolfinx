@@ -90,42 +90,42 @@ int cg(auto& x, auto& b, auto action, int kmax = 50, double rtol = 1e-8)
 
   // Compute initial residual r0 = b - Ax0
   action(x, y);
-  axpy(r, T(-1), y, b);
+  // axpy(r, T(-1), y, b);
 
-  // Create p work vector
-  la::Vector p(r);
+  // // Create p work vector
+  // la::Vector p(r);
 
-  // Iterations of CG
-  auto rnorm0 = la::squared_norm(r);
-  auto rtol2 = rtol * rtol;
-  auto rnorm = rnorm0;
+  // // Iterations of CG
+  // auto rnorm0 = la::squared_norm(r);
+  // auto rtol2 = rtol * rtol;
+  // auto rnorm = rnorm0;
   int k = 0;
   while (k < kmax)
   {
     ++k;
 
-    // Compute y = A p
-    action(p, y);
+    // // Compute y = A p
+    // action(p, y);
 
-    // Compute alpha = r.r/p.y
-    T alpha = rnorm / la::inner_product(p, y);
+    // // Compute alpha = r.r/p.y
+    // T alpha = rnorm / la::inner_product(p, y);
 
-    // Update x (x <- x + alpha*p)
-    axpy(x, alpha, p, x);
+    // // Update x (x <- x + alpha*p)
+    // axpy(x, alpha, p, x);
 
-    // Update r (r <- r - alpha*y)
-    axpy(r, -alpha, y, r);
+    // // Update r (r <- r - alpha*y)
+    // axpy(r, -alpha, y, r);
 
-    // Update residual norm
-    auto rnorm_new = la::squared_norm(r);
-    T beta = rnorm_new / rnorm;
-    rnorm = rnorm_new;
+    // // Update residual norm
+    // auto rnorm_new = la::squared_norm(r);
+    // T beta = rnorm_new / rnorm;
+    // rnorm = rnorm_new;
 
-    if (rnorm / rnorm0 < rtol2)
-      break;
+    // if (rnorm / rnorm0 < rtol2)
+    //   break;
 
-    // Update p (p <- beta * p + r)
-    axpy(p, beta, p, r);
+    // // Update p (p <- beta * p + r)
+    // axpy(p, beta, p, r);
   }
 
   return k;
@@ -215,30 +215,35 @@ void solver(MPI_Comm comm)
     bc->set(y.mutable_array(), std::nullopt, T(0));
 
     // Accumulate ghost values
+    std::cout << "*** Scatter rev" << std::endl;
     y.scatter_rev(std::plus<T>());
+    std::cout << "*** Post scatter rev" << std::endl;
 
-    // Update ghost values
-    y.scatter_fwd();
+    //   // Update ghost values
+    //   y.scatter_fwd();
   };
 
   // Compute solution using the CG method
   auto u = std::make_shared<fem::Function<T>>(V);
   int num_it = linalg::cg(*u->x(), b, action, 200, 1e-6);
 
-  // Set BC values in the solution vectors
-  bc->set(u->x()->mutable_array(), std::nullopt, T(1));
+  /*
 
-  // Compute L2 error (squared) of the solution vector e = (u - u_d, u
-  // - u_d)*dx
-  fem::Form<T> E = fem::create_form<T, U>(
-      *form_poisson_E, {}, {{"uexact", u_D}, {"usol", u}}, {}, {}, {}, mesh);
-  T error = fem::assemble_scalar(E);
-  if (dolfinx::MPI::rank(comm) == 0)
-  {
-    std::cout << "Number of CG iterations " << num_it << std::endl;
-    std::cout << "Finite element error (L2 norm (squared)) " << std::abs(error)
-              << std::endl;
-  }
+  // Set BC values in the solution vectors
+bc->set(u->x()->mutable_array(), std::nullopt, T(1));
+
+// Compute L2 error (squared) of the solution vector e = (u - u_d, u
+// - u_d)*dx
+fem::Form<T> E = fem::create_form<T, U>(
+  *form_poisson_E, {}, {{"uexact", u_D}, {"usol", u}}, {}, {}, {}, mesh);
+T error = fem::assemble_scalar(E);
+if (dolfinx::MPI::rank(comm) == 0)
+{
+std::cout << "Number of CG iterations " << num_it << std::endl;
+std::cout << "Finite element error (L2 norm (squared)) " << std::abs(error)
+          << std::endl;
+}
+          */
 }
 
 /// Main program
