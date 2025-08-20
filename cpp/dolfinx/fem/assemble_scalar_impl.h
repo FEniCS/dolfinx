@@ -272,15 +272,16 @@ T assemble_scalar(
 
     auto& [coeffs, cstride] = coefficients.at({IntegralType::vertex, i});
 
-    std::span<const std::int32_t> data = M.domain(IntegralType::vertex, i, 0);
-    assert(data.size() * cstride == coeffs.size());
+    std::span<const std::int32_t> vertices
+        = M.domain(IntegralType::vertex, i, 0);
+    assert(vertices.size() * cstride == coeffs.size());
 
     value += impl::assemble_vertices(
         x_dofmap, x,
         md::mdspan<const std::int32_t,
                    md::extents<std::size_t, md::dynamic_extent, 2>>(
-            data.data(), data.size() / 2, 2),
-        fn, constants, md::mdspan(coeffs.data(), data.size() / 2, cstride));
+            vertices.data(), vertices.size() / 2, 2),
+        fn, constants, md::mdspan(coeffs.data(), vertices.size() / 2, cstride));
   }
 
   return value;
