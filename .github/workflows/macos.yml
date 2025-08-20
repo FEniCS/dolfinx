@@ -50,7 +50,7 @@ jobs:
         run: |
           export PATH="$(brew --prefix gfortran)/bin:$(brew --prefix bison)/bin:$PATH"
           export PATH="$(brew --prefix make)/libexec/gnubin:$PATH"
-          git clone -b release https://gitlab.com/petsc/petsc.git petsc
+          git clone --depth 1 --branch release https://gitlab.com/petsc/petsc.git petsc
           cd petsc
           python ./configure \
             --with-64-bit-indices=no \
@@ -79,19 +79,20 @@ jobs:
 
       - name: Build and install DOLFINx C++ library
         run: |
-          cmake -G Ninja -B build -S cpp/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -B build -S cpp/
           cmake --build build
           sudo cmake --install build
 
       - name: Build C++ unit tests
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
           cmake --build build/test
 
       - name: Run C++ unit tests (serial)
         run: |
           cd build/test
           mpiexec -np 1 ctest -V --output-on-failure -R unittests
+
       - name: Run C++ unit tests (MPI)
         run: |
           cd build/test

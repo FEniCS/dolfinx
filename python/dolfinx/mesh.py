@@ -183,13 +183,7 @@ class Topology:
         Returns:
             Index map for the entities of dimension ``dim``.
         """
-        if (imap := self._cpp_object.index_map(dim)) is not None:
-            return imap
-        else:
-            raise RuntimeError(
-                f"Entities of dimension {dim} has not been computed."
-                f"Call `dolfinx.mesh.Topology.create_entities({dim}) first."
-            )
+        return self._cpp_object.index_map(dim)
 
     def index_maps(self, dim: int) -> list[_cpp.common.IndexMap]:
         """Get the IndexMaps that describes the parallel distribution of
@@ -200,14 +194,9 @@ class Topology:
 
         Returns:
             List of IndexMaps for the entities of dimension ``dim``.
+            May be empty if not yet computed.
         """
-        if (imaps := self._cpp_object.index_maps(dim)) is not None:
-            return imaps
-        else:
-            raise RuntimeError(
-                f"Entities of dimension {dim} have not been computed."
-                f"Call `dolfinx.mesh.Topology.create_entities({dim}) first."
-            )
+        return self._cpp_object.index_maps(dim)
 
     def interprocess_facets(self) -> npt.NDArray[np.int32]:
         """List of inter-process facets, if facet topology has been
@@ -683,21 +672,21 @@ def refine(
 def create_mesh(
     comm: _MPI.Comm,
     cells: npt.NDArray[np.int64],
-    x: npt.NDArray[np.floating],
     e: typing.Union[
         ufl.Mesh,
         basix.finite_element.FiniteElement,
         basix.ufl._BasixElement,
         _CoordinateElement,
     ],
+    x: npt.NDArray[np.floating],
     partitioner: typing.Optional[Callable] = None,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
     Args:
         comm: MPI communicator to define the mesh on.
-            cells: Cells of the mesh. ``cells[i]`` are the 'nodes' of cell
-            ``i``.
+        cells: Cells of the mesh. ``cells[i]`` are the 'nodes' of
+            cell ``i``.
         x: Mesh geometry ('node' coordinates), with shape
             ``(num_nodes, gdim)``.
         e: UFL mesh. The mesh scalar type is determined by the scalar

@@ -306,6 +306,9 @@ def model_to_mesh(
         x = extract_geometry(model)
         topologies, physical_groups = extract_topology_and_markers(model)
 
+        if len(physical_groups) == 0:
+            raise RuntimeError("No 'physical groups' in gmsh mesh. Cannot continue.")
+
         # Extract Gmsh entity (cell) id, topological dimension and number
         # of nodes which is used to create an appropriate coordinate
         # element, and seperate higher topological entities from lower
@@ -366,7 +369,7 @@ def model_to_mesh(
     if comm.rank != rank:
         x = np.empty([0, gdim], dtype=dtype)  # No nodes on other than root rank
     mesh = create_mesh(
-        comm, cell_connectivity, x[:, :gdim].astype(dtype, copy=False), ufl_domain, partitioner
+        comm, cell_connectivity, ufl_domain, x[:, :gdim].astype(dtype, copy=False), partitioner
     )
     assert tdim == mesh.topology.dim, (
         f"{mesh.topology.dim=} does not match Gmsh model dimension {tdim}"

@@ -844,7 +844,7 @@ class LinearProblem:
         else:
             self._u = u
 
-        self.bcs = bcs
+        self.bcs = [] if bcs is None else bcs
 
         self._solver = PETSc.KSP().create(self.A.comm)  # type: ignore[attr-defined]
         self.solver.setOperators(self.A, self.P_mat)
@@ -876,10 +876,10 @@ class LinearProblem:
 
             opts.prefixPop()
 
-        if self.P_mat is not None and kind == "nest":
-            # Transfer nest IS on self.P_mat to PC of main KSP. This allows
+        if kind == "nest":
+            # Transfer nest IS on self.A to PC of main KSP. This allows
             # fieldsplit preconditioning to be applied, if desired.
-            nest_IS = self.P_mat.getNestISs()
+            nest_IS = self.A.getNestISs()
             fieldsplit_IS = tuple(
                 [
                     (f"{u.name + '_' if u.name != 'f' else ''}{i}", IS)
