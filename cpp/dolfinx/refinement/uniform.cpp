@@ -144,7 +144,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     std::iota(new_v[j].begin(), std::next(new_v[j].begin(), num_entities),
               local_range[0] + entity_offsets[j]);
 
-    common::Scatterer<std::vector<std::int64_t>> sc(*index_maps[j], 1);
+    common::Scatterer sc(*index_maps[j], 1);
     std::vector<std::int64_t> send_buffer(sc.local_buffer_size());
     {
       auto& idx = sc.local_indices();

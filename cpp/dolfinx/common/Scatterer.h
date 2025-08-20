@@ -153,14 +153,21 @@ public:
 
     {
       // Scale sizes and displacements by block size
-      auto rescale = [](auto& x, int bs)
+      // auto rescale = [](auto& x, int bs)
+      // {
+      //   std::ranges::transform(x, x.begin(), [bs](auto e) { return e *= bs;
+      //   });
+      // };
+      // rescale(_sizes_local, bs);
+      // rescale(_displs_local, bs);
+      // rescale(_sizes_remote, bs);
+      // rescale(_displs_remote, bs);
+      for (auto& x : {std::ref(_sizes_local), std::ref(_displs_local),
+                      std::ref(_sizes_remote), std::ref(_displs_remote)})
       {
-        std::ranges::transform(x, x.begin(), [bs](auto e) { return e *= bs; });
-      };
-      rescale(_sizes_local, bs);
-      rescale(_displs_local, bs);
-      rescale(_sizes_remote, bs);
-      rescale(_displs_remote, bs);
+        std::ranges::transform(x.get(), x.get().begin(),
+                               [bs](auto e) { return e *= bs; });
+      }
     }
 
     {
@@ -329,7 +336,6 @@ public:
     {
     case ScattererType::neighbor:
     {
-      assert(requests.size() == 1);
       MPI_Ineighbor_alltoallv(send_buffer, _sizes_remote.data(),
                               _displs_remote.data(), MPI::mpi_t<T>, recv_buffer,
                               _sizes_local.data(), _displs_local.data(),
@@ -338,7 +344,6 @@ public:
     }
     case ScattererType::p2p:
     {
-      assert(requests.size() == _dest.size() + _src.size());
 
       // Start non-blocking send from this process to ghost owners
       for (std::size_t i = 0; i < _dest.size(); i++)

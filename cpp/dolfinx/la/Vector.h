@@ -223,22 +223,6 @@ public:
            _scatterer->local_indices(), std::span(_x.data(), _x.size()));
   }
 
-  // / @brief End scatter of ghost data to owner.
-  // /
-  // / This process may receive data from more than one process, and the
-  // / received data can be summed or inserted into the local portion of
-  // / the vector.
-  // /
-  // / @param op The operation to perform when adding/setting received
-  // / values (add or insert)
-  // / @note Collective MPI operation
-  // template <typename BinaryOperation>
-  // void scatter_rev_end(BinaryOperation op)
-  // {
-  //   auto unpack = get_unpack_op(op);
-  //   scatter_rev_end(unpack);
-  // }
-
   /// @brief Scatter ghost data to owner.
   ///
   /// This process may receive data from more than one process, and the
