@@ -285,7 +285,7 @@ T assemble_scalar(
                    md::extents<std::size_t, md::dynamic_extent, 2>>(
             vertices.data(), vertices.size() / shape1, shape1),
         fn, constants,
-        md::mdspan(coeffs.data(), vertices.size() / cstride, cstride));
+        md::mdspan(coeffs.data(), vertices.size() / shape1, cstride));
   }
 
   return value;
