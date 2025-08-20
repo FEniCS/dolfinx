@@ -281,30 +281,31 @@ public:
     MPI_Waitall(requests.size(), requests.data(), MPI_STATUS_IGNORE);
   }
 
-  /// @brief Scatter data associated with owned indices to ghosting
-  /// ranks.
-  ///
-  /// @note This function is for advanced usage, and in particular when
-  /// using GPU/device-aware MPI.
-  ///
-  /// @param[in] local_data All data associated with owned indices.
-  /// Length is `size_local()` from the IndexMap used to create the
-  /// scatterer, multiplied by the block size. The data for each index
-  /// is blocked.
-  /// @param[in] local_buffer Working buffer. Minimum required size is
-  /// given by Scatterer::local_buffer_size.
-  /// @param[out] remote_buffer Working buffer. The required size is
-  /// given by Scatterer::remote_buffer_size.
-  /// @param[in] pack_fn Function to pack data from `local_data` into
-  /// the send buffer. It is passed as an argument to support
-  /// GPU/device-aware MPI.
-  /// @param[in] requests MPI request handle for tracking the status of
-  /// the send.
-  /// @param[in] type Type of MPI communication pattern used by the
-  /// Scatterer, either ScattererType::neighbor or ScattererType::p2p.
+  // / @brief Scatter data associated with owned indices to ghosting
+  // / ranks.
+  // /
+  // / @note This function is for advanced usage, and in particular when
+  // / using GPU/device-aware MPI.
+  // /
+  // / @param[in] local_data All data associated with owned indices.
+  // / Length is `size_local()` from the IndexMap used to create the
+  // / scatterer, multiplied by the block size. The data for each index
+  // / is blocked.
+  // / @param[in] local_buffer Working buffer. Minimum required size is
+  // / given by Scatterer::local_buffer_size.
+  // / @param[out] remote_buffer Working buffer. The required size is
+  // / given by Scatterer::remote_buffer_size.
+  // / @param[in] pack_fn Function to pack data from `local_data` into
+  // / the send buffer. It is passed as an argument to support
+  // / GPU/device-aware MPI.
+  // / @param[in] requests MPI request handle for tracking the status of
+  // / the send.
+  // / @param[in] type Type of MPI communication pattern used by the
+  // / Scatterer, either ScattererType::neighbor or ScattererType::p2p.
   // template <typename T, typename F>
   //   requires std::is_invocable_v<F, const T*, const container_type&, T*>
-  // void scatter_fwd_begin(const T* local_data, T* local_buffer, T* remote_buffer,
+  // void scatter_fwd_begin(const T* local_data, T* local_buffer, T*
+  // remote_buffer,
   //                        F pack_fn, std::span<MPI_Request> requests,
   //                        ScattererType type = ScattererType::neighbor) const
   // {
@@ -312,26 +313,26 @@ public:
   //   scatter_fwd_begin(local_buffer, remote_buffer, requests, type);
   // }
 
-  /// @brief Complete a non-blocking send from the local owner to
-  /// process ranks that have the index as a ghost, and unpack received
-  /// buffer into remote data.
-  ///
-  /// This function completes the communication started by
-  /// Scatterer::scatter_fwd_begin.
-  ///
-  /// @param[in] remote_buffer Working buffer, same used in
-  /// Scatterer::scatter_fwd_begin.
-  /// @param[in, out] remote_data Data associated with the ghost
-  /// indices, which is updated with the received data. The order
-  /// follows the order of the ghost indices in the IndexMap used to
-  /// create the scatterer. The size equal to the number of ghosts in
-  /// the index map multiplied by the block size. The data for each
-  /// index is blocked.
-  /// @param[in] unpack_fn Function to unpack the received buffer into
-  /// `remote_data`. It is passed as an argument to support
-  /// GPU/device-aware MPI.
-  /// @param[in] requests MPI request handle for tracking the status of
-  /// the send.
+  // / @brief Complete a non-blocking send from the local owner to
+  // / process ranks that have the index as a ghost, and unpack received
+  // / buffer into remote data.
+  // /
+  // / This function completes the communication started by
+  // / Scatterer::scatter_fwd_begin.
+  // /
+  // / @param[in] remote_buffer Working buffer, same used in
+  // / Scatterer::scatter_fwd_begin.
+  // / @param[in, out] remote_data Data associated with the ghost
+  // / indices, which is updated with the received data. The order
+  // / follows the order of the ghost indices in the IndexMap used to
+  // / create the scatterer. The size equal to the number of ghosts in
+  // / the index map multiplied by the block size. The data for each
+  // / index is blocked.
+  // / @param[in] unpack_fn Function to unpack the received buffer into
+  // / `remote_data`. It is passed as an argument to support
+  // / GPU/device-aware MPI.
+  // / @param[in] requests MPI request handle for tracking the status of
+  // / the send.
   // template <typename T, typename F>
   //   requires std::is_invocable_v<F, const T*, const container_type&, T*,
   //                                std::function<std::remove_const_t<T>(T, T)>>
@@ -343,26 +344,26 @@ public:
   //             [](T /*a*/, T b) { return b; });
   // }
 
-  /// @brief Scatter data associated with owned indices to ghosting
-  /// ranks.
-  ///
-  /// @tparam T Value type of data to scatter.
-  /// @tparam BufferContainer Container type used internally to create
-  /// buffers. Usually `std::vector<T>` for a CPU, and a different
-  /// container type for GPUs with data on the device. Example type for
-  /// a GPU is `thrust::device_vector<T>`.
-  /// @tparam GetPtr
-  /// @param[in] local_data All data associated with owned indices. Size
-  /// is `size_local()` from the IndexMap used to create the scatterer,
-  /// multiplied by the block size. The data for each index is blocked
-  /// @param[out] remote_data Received data associated with the ghost
-  /// indices. The order follows the order of the ghost indices in the
-  /// IndexMap used to create the scatterer. The size equal to the
-  /// number of ghosts in the index map multiplied by the block size.
-  /// The data for each index is blocked.
-  /// @param get_ptr Function that returns a pointer to the buffer data.
-  /// If the buffers are allocated on a device/GPU, the function should
-  /// return the device pointer.
+  // / @brief Scatter data associated with owned indices to ghosting
+  // / ranks.
+  // /
+  // / @tparam T Value type of data to scatter.
+  // / @tparam BufferContainer Container type used internally to create
+  // / buffers. Usually `std::vector<T>` for a CPU, and a different
+  // / container type for GPUs with data on the device. Example type for
+  // / a GPU is `thrust::device_vector<T>`.
+  // / @tparam GetPtr
+  // / @param[in] local_data All data associated with owned indices. Size
+  // / is `size_local()` from the IndexMap used to create the scatterer,
+  // / multiplied by the block size. The data for each index is blocked
+  // / @param[out] remote_data Received data associated with the ghost
+  // / indices. The order follows the order of the ghost indices in the
+  // / IndexMap used to create the scatterer. The size equal to the
+  // / number of ghosts in the index map multiplied by the block size.
+  // / The data for each index is blocked.
+  // / @param get_ptr Function that returns a pointer to the buffer data.
+  // / If the buffers are allocated on a device/GPU, the function should
+  // / return the device pointer.
   // template <typename T, typename BufferContainer, typename GetPtr>
   //   requires std::is_same_v<T, typename BufferContainer::value_type>
   //            and std::is_invocable_r_v<T*, GetPtr, BufferContainer&&>
@@ -383,26 +384,27 @@ public:
   //   std::vector<MPI_Request> requests(1, MPI_REQUEST_NULL);
   //   BufferContainer local_buffer(this->local_buffer_size(), 0);
   //   BufferContainer remote_buffer(this->remote_buffer_size(), 0);
-  //   scatter_fwd_begin(local_data, get_ptr(local_buffer), get_ptr(remote_buffer),
+  //   scatter_fwd_begin(local_data, get_ptr(local_buffer),
+  //   get_ptr(remote_buffer),
   //                     pack_fn, std::span<MPI_Request>(requests));
   //   scatter_fwd_end(get_ptr(remote_buffer), remote_data, unpack_fn,
   //                   std::span<MPI_Request>(requests));
   // }
 
-  /// @brief Scatter data associated with owned indices to ghosting
-  /// ranks.
-  ///
-  /// This version uses `std::vector<T>` for storage buffers, which is
-  /// suitable for CPU communication. For GPU communication, use ...
-  ///
-  /// @param[in] local_data All data associated with owned indices. Size
-  /// is `size_local()` from the IndexMap used to create the scatterer,
-  /// multiplied by the block size. The data for each index is blocked
-  /// @param[out] remote_data Received data associated with the ghost
-  /// indices. The order follows the order of the ghost indices in the
-  /// IndexMap used to create the scatterer. The size equal to the
-  /// number of ghosts in the index map multiplied by the block size.
-  /// The data for each index is blocked.
+  // / @brief Scatter data associated with owned indices to ghosting
+  // / ranks.
+  // /
+  // / This version uses `std::vector<T>` for storage buffers, which is
+  // / suitable for CPU communication. For GPU communication, use ...
+  // /
+  // / @param[in] local_data All data associated with owned indices. Size
+  // / is `size_local()` from the IndexMap used to create the scatterer,
+  // / multiplied by the block size. The data for each index is blocked
+  // / @param[out] remote_data Received data associated with the ghost
+  // / indices. The order follows the order of the ghost indices in the
+  // / IndexMap used to create the scatterer. The size equal to the
+  // / number of ghosts in the index map multiplied by the block size.
+  // / The data for each index is blocked.
   // template <typename T>
   // void scatter_fwd(const T* local_data, T* remote_data) const
   // {
@@ -504,29 +506,29 @@ public:
     MPI_Waitall(request.size(), request.data(), MPI_STATUS_IGNORE);
   }
 
-  /// @brief Scatter data associated with ghost indices to owning ranks.
-  ///
-  /// @note This function is intended for advanced usage, and in
-  /// particular when using GPU/device-aware MPI.
-  ///
-  /// @tparam T Data type to send.
-  /// @tparam F Pack function.
-  /// @param[in] remote_data Received data associated with the ghost
-  /// indices. The order follows the order of the ghost indices in the
-  /// IndexMap used to create the scatterer. The size equal to the
-  /// number of ghosts in the index map multiplied by the block size.
-  /// The data for each index is blocked.
-  /// @param[out] remote_buffer Working buffer. The requires size is
-  /// given by Scatterer::remote_buffer_size.
-  /// @param[out] local_buffer Working buffer. The requires size is
-  /// given by Scatterer::local_buffer_size.
-  /// @param[in] pack_fn Function to pack data from `local_data` into
-  /// the send buffer. It is passed as an argument to support
-  /// GPU/device-aware MPI.
-  /// @param request MPI request handles for tracking the status of the
-  /// non-blocking communication.
-  /// @param[in] type Type of MPI communication pattern used by the
-  /// scatterer.
+  // / @brief Scatter data associated with ghost indices to owning ranks.
+  // /
+  // / @note This function is intended for advanced usage, and in
+  // / particular when using GPU/device-aware MPI.
+  // /
+  // / @tparam T Data type to send.
+  // / @tparam F Pack function.
+  // / @param[in] remote_data Received data associated with the ghost
+  // / indices. The order follows the order of the ghost indices in the
+  // / IndexMap used to create the scatterer. The size equal to the
+  // / number of ghosts in the index map multiplied by the block size.
+  // / The data for each index is blocked.
+  // / @param[out] remote_buffer Working buffer. The requires size is
+  // / given by Scatterer::remote_buffer_size.
+  // / @param[out] local_buffer Working buffer. The requires size is
+  // / given by Scatterer::local_buffer_size.
+  // / @param[in] pack_fn Function to pack data from `local_data` into
+  // / the send buffer. It is passed as an argument to support
+  // / GPU/device-aware MPI.
+  // / @param request MPI request handles for tracking the status of the
+  // / non-blocking communication.
+  // / @param[in] type Type of MPI communication pattern used by the
+  // / scatterer.
   // template <typename T, typename F>
   //   requires std::is_invocable_v<F, const T*, const container_type&, T*>
   // void scatter_rev_begin(const T* remote_data, T* remote_buffer,
@@ -569,32 +571,32 @@ public:
     unpack_fn(local_buffer, _local_inds, local_data, op);
   }
 
-  /// @brief Scatter data associated with ghost indices to ranks that
-  /// own the indices.
-  ///
-  /// This function is suitable for CPU and GPU scatters.
-  ///
-  /// @tparam T Value type of data to scatter.
-  /// @tparam BufferContainer Container type used internally to create
-  /// buffers. Usually `std::vector<T>` for a CPU, and a different
-  /// container type for GPUs with data on the device. Example type for
-  /// a GPU is `thrust::device_vector<T>`.
-  /// @tparam BinaryOp
-  /// @tparam GetBufferPtr
-  ///
-  /// @param[in] local_data All data associated with owned indices. Size
-  /// is `size_local()` from the IndexMap used to create the scatterer,
-  /// multiplied by the block size. The data for each index is blocked
-  /// @param[out] remote_data Data associated with the ghost
-  /// indices. The order follows the order of the ghost indices in the
-  /// IndexMap used to create the scatterer. The size equal to the
-  /// number of ghosts in the index map multiplied by the block size.
-  /// The data for each index is blocked.
-  /// @param get_ptr Function that returns a pointer to the buffer data.
-  /// If the buffers are allocated on a device/GPU, the function should
-  /// return the device pointer.
-  /// @param[in] op Reduction operation when accumulating received
-  /// values. To add the received values use `std::plus<T>()`.
+  // / @brief Scatter data associated with ghost indices to ranks that
+  // / own the indices.
+  // /
+  // / This function is suitable for CPU and GPU scatters.
+  // /
+  // / @tparam T Value type of data to scatter.
+  // / @tparam BufferContainer Container type used internally to create
+  // / buffers. Usually `std::vector<T>` for a CPU, and a different
+  // / container type for GPUs with data on the device. Example type for
+  // / a GPU is `thrust::device_vector<T>`.
+  // / @tparam BinaryOp
+  // / @tparam GetBufferPtr
+  // /
+  // / @param[in] local_data All data associated with owned indices. Size
+  // / is `size_local()` from the IndexMap used to create the scatterer,
+  // / multiplied by the block size. The data for each index is blocked
+  // / @param[out] remote_data Data associated with the ghost
+  // / indices. The order follows the order of the ghost indices in the
+  // / IndexMap used to create the scatterer. The size equal to the
+  // / number of ghosts in the index map multiplied by the block size.
+  // / The data for each index is blocked.
+  // / @param get_ptr Function that returns a pointer to the buffer data.
+  // / If the buffers are allocated on a device/GPU, the function should
+  // / return the device pointer.
+  // / @param[in] op Reduction operation when accumulating received
+  // / values. To add the received values use `std::plus<T>()`.
   // template <typename T, typename BufferContainer, typename BinaryOp>
   // void scatter_rev(T* local_data, const T* remote_data, BinaryOp op)
   // {
@@ -619,24 +621,24 @@ public:
   //                   std::span<MPI_Request>(request));
   // }
 
-  /// @brief Scatter data associated with ghost indices to ranks that
-  /// own the indices.
-  ///
-  /// This function is suitable for **CPU** scatters.
-  ///
-  /// @tparam T Value type of data to scatter.
-  /// @tparam BinaryOp
-  ///
-  /// @param[in] local_data All data associated with owned indices. Size
-  /// is `size_local()` from the IndexMap used to create the scatterer,
-  /// multiplied by the block size. The data for each index is blocked
-  /// @param[out] remote_data All data associated with the ghost
-  /// indices. The order follows the order of the ghost indices in the
-  /// IndexMap used to create the scatterer. The size equal to the
-  /// number of ghosts in the index map multiplied by the block size.
-  /// The data for each index is blocked.
-  /// @param[in] op Reduction operation when accumulating received
-  /// values. To add the received values use `std::plus<T>()`.
+  // / @brief Scatter data associated with ghost indices to ranks that
+  // / own the indices.
+  // /
+  // / This function is suitable for **CPU** scatters.
+  // /
+  // / @tparam T Value type of data to scatter.
+  // / @tparam BinaryOp
+  // /
+  // / @param[in] local_data All data associated with owned indices. Size
+  // / is `size_local()` from the IndexMap used to create the scatterer,
+  // / multiplied by the block size. The data for each index is blocked
+  // / @param[out] remote_data All data associated with the ghost
+  // / indices. The order follows the order of the ghost indices in the
+  // / IndexMap used to create the scatterer. The size equal to the
+  // / number of ghosts in the index map multiplied by the block size.
+  // / The data for each index is blocked.
+  // / @param[in] op Reduction operation when accumulating received
+  // / values. To add the received values use `std::plus<T>()`.
   // template <typename T, typename BinaryOp>
   // void scatter_rev(T* local_data, const T* remote_data, BinaryOp op)
   // {

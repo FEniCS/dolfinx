@@ -78,7 +78,6 @@ public:
   /// @param map Index map that describes the parallel distribution of
   /// the data.
   /// @param bs Number of entries per index (block size).
-  /// @param get_ptr
   Vector(std::shared_ptr<const common::IndexMap> map, int bs)
       : _map(map), _bs(bs), _x(bs * (map->size_local() + map->num_ghosts())),
         _scatterer(
@@ -215,8 +214,6 @@ public:
   /// received data can be summed or inserted into the local portion of
   /// the vector.
   ///
-  /// @param op The operation to perform when adding/setting received
-  /// values (add or insert)
   /// @note Collective MPI operation
   template <typename U>
   void scatter_rev_end(U unpack)
@@ -226,15 +223,15 @@ public:
            _scatterer->local_indices(), std::span(_x.data(), _x.size()));
   }
 
-  /// @brief End scatter of ghost data to owner.
-  ///
-  /// This process may receive data from more than one process, and the
-  /// received data can be summed or inserted into the local portion of
-  /// the vector.
-  ///
-  /// @param op The operation to perform when adding/setting received
-  /// values (add or insert)
-  /// @note Collective MPI operation
+  // / @brief End scatter of ghost data to owner.
+  // /
+  // / This process may receive data from more than one process, and the
+  // / received data can be summed or inserted into the local portion of
+  // / the vector.
+  // /
+  // / @param op The operation to perform when adding/setting received
+  // / values (add or insert)
+  // / @note Collective MPI operation
   // template <typename BinaryOperation>
   // void scatter_rev_end(BinaryOperation op)
   // {
