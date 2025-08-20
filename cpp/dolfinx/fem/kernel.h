@@ -16,8 +16,8 @@ namespace dolfinx::fem::impl
 /// @tparam T scalar type.
 /// @tparam U geometry type.
 template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
-using kern_c_t = void (*)(T*, const T*, const T*, const U*, const int*,
-                          const std::uint8_t*, void*);
+using kernelptr_t = void (*)(T*, const T*, const T*, const U*, const int*,
+                             const std::uint8_t*, void*);
 
 /// @brief Kernel callback type.
 /// @tparam T scalar type.
@@ -41,13 +41,13 @@ constexpr kern_t<T, U> extract_kernel(const ufcx_integral* integral)
   else if constexpr (std::is_same_v<T, std::complex<float>>
                      && has_complex_ufcx_kernels())
   {
-    return reinterpret_cast<kern_c_t<T, U>>(
+    return reinterpret_cast<kernelptr_t<T, U>>(
         integral->tabulate_tensor_complex64);
   }
   else if constexpr (std::is_same_v<T, std::complex<double>>
                      && has_complex_ufcx_kernels())
   {
-    return reinterpret_cast<kern_c_t<T, U>>(
+    return reinterpret_cast<kernelptr_t<T, U>>(
         integral->tabulate_tensor_complex128);
   }
   else
