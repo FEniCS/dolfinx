@@ -1,5 +1,4 @@
 nanobind>=2.5.0
-setuptools-scm<=8.3.0
 scikit-build-core[pyproject]>=0.10
 mpi4py
 setuptools
