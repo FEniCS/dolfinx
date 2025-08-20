@@ -955,7 +955,7 @@ void assemble_interior_facets(
 /// @param[in] x_dofmap Dofmap for the mesh geometry.
 /// @param[in] x Mesh geometry (coordinates).
 /// @param[in] vertices Vertex indices `(vertices.size(), 2)` - first entry
-/// holds the cell index over which the vertex is to evaluated, and the second
+/// holds the index of the cell adjacent to the vertex, and the second
 /// stores the local index of the vertex within the cell.
 /// @param[in] dofmap Test function (row) degree-of-freedom data holding
 /// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
