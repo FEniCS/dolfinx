@@ -223,10 +223,10 @@ int main(int argc, char* argv[])
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
     std::ranges::fill(b.array(), 0);
-    fem::assemble_vector(b.mutable_array(), L);
-    fem::apply_lifting(b.mutable_array(), {a}, {{bc}}, {}, T(1));
+    fem::assemble_vector(b.array(), L);
+    fem::apply_lifting(b.array(), {a}, {{bc}}, {}, T(1));
     b.scatter_rev(std::plus<T>());
-    bc.set(b.mutable_array(), std::nullopt);
+    bc.set(b.array(), std::nullopt);
 
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
     la::petsc::options::set("ksp_type", "preonly");

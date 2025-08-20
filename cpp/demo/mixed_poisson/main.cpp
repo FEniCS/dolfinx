@@ -328,15 +328,15 @@ int main(int argc, char* argv[])
 
     // Assemble the linear form `L` into RHS vector
     std::ranges::fill(b.array(), 0);
-    fem::assemble_vector(b.mutable_array(), L);
+    fem::assemble_vector(b.array(), L);
 
     // Modify unconstrained dofs on RHS to account for Dirichlet BC dofs
     // (constrained dofs), and perform parallel update on the vector.
-    fem::apply_lifting(b.mutable_array(), {a}, {{bc}}, {}, T(1));
+    fem::apply_lifting(b.array(), {a}, {{bc}}, {}, T(1));
     b.scatter_rev(std::plus<T>());
 
     // Set value for constrained dofs
-    bc.set(b.mutable_array(), std::nullopt);
+    bc.set(b.array(), std::nullopt);
 
     // Create PETSc linear solver
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);

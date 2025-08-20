@@ -86,7 +86,7 @@ public:
     return [&](const Vec x, Vec)
     {
       // Assemble b and update ghosts
-      std::span b(_b.mutable_array());
+      std::span b(_b.array());
       std::ranges::fill(b, 0);
       fem::assemble_vector(b, _l);
       VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);

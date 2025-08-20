@@ -64,7 +64,7 @@ namespace linalg
 /// @param[in] y
 void axpy(auto&& r, auto alpha, auto&& x, auto&& y)
 {
-  std::ranges::transform(x.array(), y.array(), r.mutable_array().begin(),
+  std::ranges::transform(x.array(), y.array(), r.array().begin(),
                          [alpha](auto x, auto y) { return alpha * x + y; });
 }
 
@@ -178,18 +178,18 @@ void solver(MPI_Comm comm)
 
   // Assemble RHS vector
   la::Vector<T> b(V->dofmap()->index_map, V->dofmap()->index_map_bs());
-  fem::assemble_vector(b.mutable_array(), L);
+  fem::assemble_vector(b.array(), L);
 
   // Apply lifting to account for Dirichlet boundary condition
   // b <- b - A * x_bc
-  bc->set(ui->x()->mutable_array(), std::nullopt, T(-1));
-  fem::assemble_vector(b.mutable_array(), M);
+  bc->set(ui->x()->array(), std::nullopt, T(-1));
+  fem::assemble_vector(b.array(), M);
 
   // Communicate ghost values
   b.scatter_rev(std::plus<T>());
 
   // Set BC dofs to zero (effectively zeroes columns of A)
-  bc->set(b.mutable_array(), std::nullopt, T(0));
+  bc->set(b.array(), std::nullopt, T(0));
 
   b.scatter_fwd();
 
@@ -204,15 +204,15 @@ void solver(MPI_Comm comm)
     std::ranges::fill(y.array(), 0);
 
     // Update coefficient ui (just copy data from x to ui)
-    std::ranges::copy(x.array(), ui->x()->mutable_array().begin());
+    std::ranges::copy(x.array(), ui->x()->array().begin());
 
     // Compute action of A on x
     fem::pack_coefficients(M, coeff);
-    fem::assemble_vector(y.mutable_array(), M, std::span<const T>(constants),
+    fem::assemble_vector(y.array(), M, std::span<const T>(constants),
                          fem::make_coefficients_span(coeff));
 
     // Set BC dofs to zero (effectively zeroes rows of A)
-    bc->set(y.mutable_array(), std::nullopt, T(0));
+    bc->set(y.array(), std::nullopt, T(0));
 
     // Accumulate ghost values
     std::cout << "*** Scatter rev" << std::endl;
@@ -230,7 +230,7 @@ void solver(MPI_Comm comm)
   /*
 
   // Set BC values in the solution vectors
-bc->set(u->x()->mutable_array(), std::nullopt, T(1));
+bc->set(u->x()->array(), std::nullopt, T(1));
 
 // Compute L2 error (squared) of the solution vector e = (u - u_d, u
 // - u_d)*dx

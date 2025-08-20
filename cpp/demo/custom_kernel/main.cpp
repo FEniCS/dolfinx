@@ -111,7 +111,7 @@ double assemble_vector0(std::shared_ptr<const fem::FunctionSpace<T>> V,
   auto dofmap = V->dofmap();
   la::Vector<T> b(dofmap->index_map, 1);
   common::Timer timer("Assembler0 std::function (vector)");
-  fem::assemble_vector(b.mutable_array(), L);
+  fem::assemble_vector(b.array(), L);
   b.scatter_rev(std::plus<T>());
   return la::squared_norm(b);
 }
@@ -167,7 +167,7 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 3>> x(
       g.x().data(), g.x().size() / 3, 3);
   common::Timer timer("Assembler1 lambda (vector)");
-  fem::impl::assemble_cells<1>([](auto, auto, auto, auto) {}, b.mutable_array(),
+  fem::impl::assemble_cells<1>([](auto, auto, auto, auto) {}, b.array(),
                                g.dofmap(), x, cells, {dofmap.map(), 1, cells},
                                kernel, {}, {}, {});
   b.scatter_rev(std::plus<T>());

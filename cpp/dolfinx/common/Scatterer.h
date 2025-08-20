@@ -37,11 +37,11 @@ enum class ScattererType : std::uint8_t
 /// selectable. implementation is designed for sparse communication
 /// patterns, as it typical of patterns based on an IndexMap.
 ///
-/// @tparam Container Container type for storing local and remote
+/// @tparam Container Container type for storing 'local' and 'remote'
 /// indices. On CPUs this is normally `std::vector<std::int32_t>`. For
 /// GPUs the container should store the indices on the device.
 template <class Container = std::vector<std::int32_t>>
-// requires std::is_integral_v<typename Container::value_type>
+  requires std::is_integral_v<typename Container::value_type>
 class Scatterer
 {
 public:
