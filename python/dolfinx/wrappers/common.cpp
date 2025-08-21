@@ -114,7 +114,7 @@ void add_scatter_functions(nb::class_<dolfinx::common::Scatterer<>>& sc)
           for (std::size_t i = 0; i < idx.size(); ++i)
             send_buffer[i] = _remote_data(idx[i]);
         }
-        std::vector<T> recv_buffer(self.local_buffer_size());
+        std::vector<T> recv_buffer(self.local_indices().size());
         std::vector<MPI_Request> requests(1, MPI_REQUEST_NULL);
         self.scatter_rev_begin<T>(send_buffer.data(), recv_buffer.data(),
                                   std::span(requests));
