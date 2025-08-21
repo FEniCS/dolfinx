@@ -215,12 +215,10 @@ void solver(MPI_Comm comm)
     bc->set(y.array(), std::nullopt, T(0));
 
     // Accumulate ghost values
-    std::cout << "*** Scatter rev" << std::endl;
     y.scatter_rev(std::plus<T>());
-    std::cout << "*** Post scatter rev" << std::endl;
 
-    //   // Update ghost values
-    //   y.scatter_fwd();
+    // Update ghost values
+    y.scatter_fwd();
   };
 
   // Compute solution using the CG method
