@@ -1006,13 +1006,13 @@ void assemble_vertices(
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
       std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs.begin(), 3 * i));
 
-    // Tabulate vector for cell
+    // Tabulate vector for vertex
     std::ranges::fill(be, 0);
     kernel(be.data(), &coeffs(index, 0), constants.data(), cdofs.data(),
            &local_index, nullptr, nullptr);
     P0(be, cell_info0, c0, 1);
 
-    // Scatter cell vector to 'global' vector array
+    // Scatter vertex vector to 'global' vector array
     auto dofs = md::submdspan(dmap, c0, md::full_extent);
     if constexpr (_bs > 0)
     {
