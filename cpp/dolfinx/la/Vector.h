@@ -261,7 +261,7 @@ public:
   /// @note Collective MPI operation
   template <typename U, typename GetPtr>
     requires VectorPackKernel<U, container_type, ScatterContainer>
-            //  && GetPtrConcept<GetPtr, container_type>
+  //  && GetPtrConcept<GetPtr, container_type>
   void scatter_rev_begin(U pack, GetPtr get_ptr)
   {
     std::int32_t local_size = _bs * _map->size_local();
