@@ -15,6 +15,7 @@
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
+#include <format>
 #include <numeric>
 #include <random>
 #include <set>
