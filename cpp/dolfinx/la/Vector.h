@@ -133,30 +133,15 @@ public:
   {
   }
 
-  // TODO: update
   /// Copy constructor
-  Vector(const Vector& x)
-      : _map(x._map), _bs(x._bs), _x(x._x), _scatterer(x._scatterer),
-        _request(MPI_REQUEST_NULL), _buffer_local(x._buffer_local),
-        _buffer_remote(x._buffer_remote)
-  {
-  }
+  Vector(const Vector& x) = default;
 
-  // TODO: update
   /// Move constructor
-  Vector(Vector&& x) noexcept
-      : _map(std::move(x._map)), _bs(x._bs), _x(std::move(x._x)),
-        _scatterer(std::move(x._scatterer)),
-        _request(std::exchange(x._request, MPI_REQUEST_NULL)),
-        _buffer_local(std::move(x._buffer_local)),
-        _buffer_remote(std::move(x._buffer_remote))
-  {
-  }
+  Vector(Vector&& x) = default;
 
   // Assignment operator (disabled)
   Vector& operator=(const Vector& x) = delete;
 
-  // TODO: update
   /// Move assignment operator
   Vector& operator=(Vector&& x) = default;
 

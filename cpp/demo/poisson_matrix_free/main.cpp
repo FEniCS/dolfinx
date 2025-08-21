@@ -95,7 +95,7 @@ int cg(auto& x, auto& b, auto action, int kmax = 50, double rtol = 1e-8)
   // Create p work vector
   la::Vector p(r);
 
-  // // Iterations of CG
+  // Iterations of CG
   auto rnorm0 = la::squared_norm(r);
   auto rtol2 = rtol * rtol;
   auto rnorm = rnorm0;
