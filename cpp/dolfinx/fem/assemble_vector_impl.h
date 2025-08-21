@@ -993,7 +993,7 @@ void assemble_vertices(
   std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
   std::vector<T> be(bs * dmap.extent(1));
 
-  // Iterate over active cells
+  // Iterate over active vertices
   for (std::size_t index = 0; index < vertices.extent(0); ++index)
   {
     // Integration domain cell, local index, and test function cell
