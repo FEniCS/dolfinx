@@ -63,9 +63,9 @@ void test_scatter_fwd(int n)
         send_buffer[i] = data_local[idx[i]];
     }
     std::vector<std::int64_t> recv_buffer(sct.remote_indices().size());
-    std::vector<MPI_Request> requests(1, MPI_REQUEST_NULL);
-    sct.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), requests);
-    sct.scatter_end(requests);
+    MPI_Request request = MPI_REQUEST_NULL;
+    sct.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), request);
+    sct.scatter_end(request);
     {
       auto& idx = sct.remote_indices();
       for (std::size_t i = 0; i < idx.size(); ++i)
@@ -78,8 +78,7 @@ void test_scatter_fwd(int n)
   }
 
   {
-    std::vector<MPI_Request> requests
-        = sct.create_requests(common::ScattererType::p2p);
+    std::vector<MPI_Request> requests(sct.num_p2p_requests(), MPI_REQUEST_NULL);
     std::ranges::fill(data_ghost, 0);
     std::vector<std::int64_t> send_buffer(sct.local_indices().size());
     {
@@ -88,8 +87,7 @@ void test_scatter_fwd(int n)
         send_buffer[i] = data_local[idx[i]];
     }
     std::vector<std::int64_t> recv_buffer(sct.remote_indices().size());
-    sct.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), requests,
-                          common::ScattererType::p2p);
+    sct.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), requests);
     sct.scatter_end(requests);
     {
       auto& idx = sct.remote_indices();
@@ -156,8 +154,7 @@ void test_scatter_rev()
     std::vector<std::int64_t> send_buffer(sct.local_indices().size(), 0);
     pack_fn(data_ghost, sct.remote_indices(), send_buffer);
     std::vector<std::int64_t> recv_buffer(sct.remote_indices().size(), 0);
-    sct.scatter_rev_begin(send_buffer.data(), recv_buffer.data(), requests,
-                          common::ScattererType::p2p);
+    sct.scatter_rev_begin(send_buffer.data(), recv_buffer.data(), requests);
     sct.scatter_end(requests);
     unpack_fn(recv_buffer, sct.local_indices(), data_local, std::plus<>{});
 

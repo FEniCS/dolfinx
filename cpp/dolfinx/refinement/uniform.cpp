@@ -152,9 +152,9 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
         send_buffer[i] = new_v[j][idx[i]];
     }
     std::vector<std::int64_t> recv_buffer(sc.remote_indices().size());
-    std::vector<MPI_Request> requests(1, MPI_REQUEST_NULL);
-    sc.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), requests);
-    sc.scatter_end(requests);
+    MPI_Request request = MPI_REQUEST_NULL;
+    sc.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), request);
+    sc.scatter_end(request);
     {
       std::span ghosts(std::next(new_v[j].begin(), num_entities),
                        new_v[j].end());

@@ -122,7 +122,7 @@ public:
   /// Copy constructor
   Vector(const Vector& x)
       : _map(x._map), _bs(x._bs), _x(x._x), _scatterer(x._scatterer),
-        _request(1, MPI_REQUEST_NULL), _buffer_local(x._buffer_local),
+        _request(MPI_REQUEST_NULL), _buffer_local(x._buffer_local),
         _buffer_remote(x._buffer_remote)
   {
   }
@@ -132,7 +132,7 @@ public:
   Vector(Vector&& x) noexcept
       : _map(std::move(x._map)), _bs(x._bs), _x(std::move(x._x)),
         _scatterer(std::move(x._scatterer)),
-        _request(std::exchange(x._request, {MPI_REQUEST_NULL})),
+        _request(std::exchange(x._request, MPI_REQUEST_NULL)),
         _buffer_local(std::move(x._buffer_local)),
         _buffer_remote(std::move(x._buffer_remote))
   {
@@ -345,7 +345,7 @@ private:
   std::shared_ptr<const common::Scatterer<ScatterContainer>> _scatterer;
 
   // MPI request handle
-  std::vector<MPI_Request> _request = {MPI_REQUEST_NULL};
+  MPI_Request _request = MPI_REQUEST_NULL;
 
   // Buffers for ghost scatters
   container_type _buffer_local, _buffer_remote;
