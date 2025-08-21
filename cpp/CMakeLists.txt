@@ -482,7 +482,7 @@ add_subdirectory(dolfinx)
 # ------------------------------------------------------------------------------
 # Unit testing
 option(BUILD_TESTING "Build DOLFINx unit tests." OFF)
-set(TEST_PROCESSES "1;3" CACHE STRING "List of process counts to run tests with.")
+set(DOLFINX_TEST_MPI_PROCESSES "1;3" CACHE STRING "List of process counts to run tests with.")
 include(CTest)
 if (BUILD_TESTING)
   add_subdirectory(test)

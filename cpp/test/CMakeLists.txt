@@ -98,6 +98,6 @@ endif()
 # Nice for debugging tests one at a time - but extremely slow due to process
 # spawning/tear down: catch_discover_tests(unittests)
 
-foreach(np IN LISTS TEST_PROCESSES)
+foreach(np IN LISTS DOLFINX_TEST_MPI_PROCESSES)
   add_test(NAME unittests_np_${np} COMMAND mpiexec -np ${np} ./unittests)
 endforeach()
