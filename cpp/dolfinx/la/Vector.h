@@ -25,15 +25,15 @@ namespace dolfinx::la
 /// @brief Vector scatter pack/unpack function concept.
 template <class U, class Container, class ScatterContainer>
 concept VectorPackKernel
-    = std::is_invocable_v<U, typename Container::const_iterator,
+    = std::is_invocable_v<U, typename ScatterContainer::const_iterator,
+                          typename ScatterContainer::const_iterator,
                           typename Container::const_iterator,
-                          const ScatterContainer&, typename Container::iterator,
                           typename Container::iterator>;
 
-// /// @brief Access to pointer function concept.
-// template <class GetPtr, class U>
-// concept GetPtrConcept
-//     = std::is_invocable_r_v<decltype(std::declval<U>().data()), GetPtr, U>;
+/// @brief Access to pointer function concept.
+template <class GetPtr, class U>
+concept GetPtrConcept
+    = std::is_invocable_r_v<decltype(std::declval<U>().data()), GetPtr, U>;
 
 /// @brief Distributed vector.
 ///
@@ -50,35 +50,46 @@ private:
   using scatterer_container = ScatterContainer;
   auto get_pack()
   {
-    return [](const auto in_first, const auto /*in_last*/,
-              const ScatterContainer& idx, auto out_first, auto /*out_last*/)
+    return [](typename ScatterContainer::const_iterator idx_first,
+              typename ScatterContainer::const_iterator idx_last,
+              const auto in_first, auto out_first)
     {
-      std::transform(idx.begin(), idx.end(), out_first,
+      // out[i] = in[idx[i]]
+      std::transform(idx_first, idx_last, out_first,
                      [in_first](auto p) { return *std::next(in_first, p); });
     };
   }
 
   auto get_unpack()
   {
-    return [](const auto in_first, const auto /*in_last*/,
-              const ScatterContainer& idx, auto out_first, auto /*out_last*/)
+    return [](typename ScatterContainer::const_iterator idx_first,
+              typename ScatterContainer::const_iterator idx_last,
+              const auto in_first, auto out_first)
     {
-      for (std::size_t i = 0; i < idx.size(); ++i)
-        *std::next(out_first, idx[i]) = *std::next(in_first, i);
+      // out[idx[i]] = in[i]
+      for (typename ScatterContainer::const_iterator idx = idx_first;
+           idx != idx_last; ++idx)
+      {
+        std::size_t d = std::distance(idx_first, idx);
+        *std::next(out_first, *idx) = *std::next(in_first, d);
+      }
     };
   }
 
   template <typename BinaryOp>
   auto get_unpack_op(BinaryOp op)
   {
-    return [op](const auto in_first, const auto /*in_last*/,
-                const ScatterContainer& idx, auto out_first, auto /*out_last*/)
+    return [op](typename ScatterContainer::const_iterator idx_first,
+                typename ScatterContainer::const_iterator idx_last,
+                const auto in_first, auto out_first)
     {
-      for (std::size_t i = 0; i < idx.size(); ++i)
+      // out[idx[i]] = op(out[idx[i]], in[i])
+      for (typename ScatterContainer::const_iterator idx = idx_first;
+           idx != idx_last; ++idx)
       {
-        auto& _out = *std::next(out_first, idx[i]);
-        _out = op(_out, *std::next(in_first, i));
-        // out[idx[i]] = op(out[idx[i]], in[i]);
+        std::size_t d = std::distance(idx_first, idx);
+        auto& out = *std::next(out_first, *idx);
+        out = op(out, *std::next(in_first, d));
       }
     };
   }
@@ -169,12 +180,11 @@ public:
   /// to the underlying data.
   template <typename U, typename GetPtr>
     requires VectorPackKernel<U, container_type, ScatterContainer>
-  //  && GetPtrConcept<GetPtr, container_type>
+             && GetPtrConcept<GetPtr, container_type>
   void scatter_fwd_begin(U pack, GetPtr get_ptr)
   {
-    pack(_x.begin(), std::next(_x.begin(), _bs * _map->size_local()),
-         _scatterer->local_indices(), _buffer_local.begin(),
-         _buffer_local.end());
+    pack(_scatterer->local_indices().begin(), _scatterer->local_indices().end(),
+         _x.begin(), _buffer_local.begin());
     _scatterer->scatter_fwd_begin(get_ptr(_buffer_local),
                                   get_ptr(_buffer_remote), _request);
   }
@@ -209,9 +219,9 @@ public:
   void scatter_fwd_end(U unpack)
   {
     _scatterer->scatter_end(_request);
-    unpack(_buffer_remote.begin(), _buffer_remote.end(),
-           _scatterer->remote_indices(),
-           std::next(_x.begin(), _bs * _map->size_local()), _x.end());
+    unpack(_scatterer->remote_indices().begin(),
+           _scatterer->remote_indices().end(), _buffer_remote.begin(),
+           std::next(_x.begin(), _bs * _map->size_local()));
   }
 
   /// @brief End scatter of local data from owner to ghosts on other
@@ -232,8 +242,8 @@ public:
   ///
   /// @note Collective MPI operation
   template <typename U, typename V, typename GetPr>
-  // requires VectorPackKernel<U, container_type, ScatterContainer>
-  //          && VectorPackKernel<V, container_type, ScatterContainer>
+    requires VectorPackKernel<U, container_type, ScatterContainer>
+             && VectorPackKernel<V, container_type, ScatterContainer>
   void scatter_fwd(U pack, V unpack, GetPr get_ptr)
   {
     this->scatter_fwd_begin(pack, get_ptr);
@@ -252,13 +262,14 @@ public:
   /// Start scatter of  ghost data to owner
   /// @note Collective MPI operation
   template <typename U, typename GetPtr>
-  // requires VectorPackKernel<U, container_type, ScatterContainer>
+    requires VectorPackKernel<U, container_type, ScatterContainer>
+             && GetPtrConcept<GetPtr, container_type>
   void scatter_rev_begin(U pack, GetPtr get_ptr)
   {
     std::int32_t local_size = _bs * _map->size_local();
-    pack(std::next(_x.begin(), local_size), _x.end(),
-         _scatterer->remote_indices(), _buffer_remote.begin(),
-         _buffer_remote.end());
+    pack(_scatterer->remote_indices().begin(),
+         _scatterer->remote_indices().end(), std::next(_x.begin(), local_size),
+         _buffer_remote.begin());
     _scatterer->scatter_rev_begin(get_ptr(_buffer_remote),
                                   get_ptr(_buffer_local), _request);
   }
@@ -279,13 +290,13 @@ public:
   ///
   /// @note Collective MPI operation
   template <typename U>
-  // requires VectorPackKernel<U, container_type, ScatterContainer>
+    requires VectorPackKernel<U, container_type, ScatterContainer>
   void scatter_rev_end(U unpack)
   {
     _scatterer->scatter_end(_request);
-    unpack(_buffer_local.begin(), _buffer_local.end(),
-           _scatterer->local_indices(), _x.begin(),
-           std::next(_x.begin(), _bs * _map->size_local()));
+    unpack(_scatterer->local_indices().begin(),
+           _scatterer->local_indices().end(), _buffer_local.begin(),
+           _x.begin());
   }
 
   /// @brief Scatter ghost data to owner.
@@ -301,9 +312,7 @@ public:
   void scatter_rev(BinaryOperation op)
   {
     this->scatter_rev_begin();
-    auto foo = get_unpack_op(op);
-    this->scatter_rev_end(foo);
-    // this->scatter_rev_end(get_unpack_op(op));
+    this->scatter_rev_end(get_unpack_op(op));
   }
 
   /// Get IndexMap
