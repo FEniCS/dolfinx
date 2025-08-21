@@ -113,8 +113,8 @@ public:
       : _map(map), _bs(bs), _x(bs * (map->size_local() + map->num_ghosts())),
         _scatterer(
             std::make_shared<common::Scatterer<ScatterContainer>>(*_map, bs)),
-        _buffer_local(_scatterer->local_buffer_size()),
-        _buffer_remote(_scatterer->remote_buffer_size())
+        _buffer_local(_scatterer->local_indices().size()),
+        _buffer_remote(_scatterer->remote_indices().size())
   {
   }
 
@@ -467,7 +467,7 @@ void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
 
       // basis_i <- basis_i - dot_ij  basis_j
       auto dot_ij = inner_product(bi, bj);
-      std::ranges::transform(bj.array(), bi.array(), bi.mutable_array().begin(),
+      std::ranges::transform(bj.array(), bi.array(), bi.array().begin(),
                              [dot_ij](auto xj, auto xi)
                              { return xi - dot_ij * xj; });
     }
@@ -479,7 +479,7 @@ void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
       throw std::runtime_error(
           "Linear dependency detected. Cannot orthogonalize.");
     }
-    std::ranges::transform(bi.array(), bi.mutable_array().begin(),
+    std::ranges::transform(bi.array(), bi.array().begin(),
                            [norm](auto x) { return x / norm; });
   }
 }

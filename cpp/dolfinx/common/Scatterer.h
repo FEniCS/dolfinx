@@ -48,12 +48,13 @@ public:
   /// Container type used to store local and remote indices.
   using container_type = Container;
 
-  /// @brief Create a scatterer.
+  /// @brief Create a scatterer for data with a layout described by an
+  /// IndexMap, and with a block size.
   ///
   /// @param[in] map Index map that describes the parallel layout of
   /// data.
-  /// @param[in] bs Block size of data associated with each index in
-  /// `map` that will be scattered/gathered.
+  /// @param[in] bs Number of values associated with each `map` index
+  /// (block size).
   Scatterer(const IndexMap& map, int bs)
       : _src(map.src().begin(), map.src().end()),
         _dest(map.dest().begin(), map.dest().end()),
@@ -386,35 +387,36 @@ public:
     MPI_Waitall(requests.size(), requests.data(), MPI_STATUS_IGNORE);
   }
 
-  /// @brief Size of buffer for packed local data (owned data that is
-  /// shared) used in forward and reverse scatters.
-  ///
-  /// @return Required buffer size.
-  std::size_t local_buffer_size() const noexcept { return _local_inds.size(); }
+  // /// @brief Size of buffer for packed local data (owned data that is
+  // /// shared) used in forward and reverse scatters.
+  // ///
+  // /// @return Required buffer size.
+  // std::size_t local_buffer_size() const noexcept { return _local_inds.size(); }
 
-  /// @brief Buffer size for packed ghost (data shared by owned by
-  /// another process) data used in forward and reverse scatters.
-  ///
-  /// @return Required buffer size.
-  std::size_t remote_buffer_size() const noexcept
-  {
-    return _remote_inds.size();
-  }
+  // /// @brief Buffer size for packed ghost (data shared by owned by
+  // /// another process) data used in forward and reverse scatters.
+  // ///
+  // /// @return Required buffer size.
+  // std::size_t remote_buffer_size() const noexcept
+  // {
+  //   return _remote_inds.size();
+  // }
 
   /// @brief Array of indices for packing/unpacking owned data to/from a
   /// send/receive buffer.
   ///
   /// For a forward scatter, the indices are used to copy required
-  /// entries in the owned array into the appropriate position in a send
-  /// buffer. For a reverse scatter, indices are used for assigning
-  /// (accumulating) the receive buffer values into correct position in
-  /// the owned array.
+  /// entries in the owned part of the data array into the appropriate
+  /// position in a send buffer. For a reverse scatter, indices are used
+  /// for assigning (accumulating) the receive buffer values into
+  /// correct position in the owned part of the data array.
   ///
   /// For a forward scatter, if `x` is the owned part of an array and
-  /// `send_buffer` is the send buffer, `buffer` is packed such that
+  /// `send_buffer` is the send buffer, `send_buffer` is packed such
+  /// that:
   ///
   ///     auto& idx = scatterer.local_indices()
-  ///     std::vector<T> buffer(idx.size())
+  ///     std::vector<T> send_buffer(idx.size())
   ///     for (std::size_t i = 0; i < idx.size(); ++i)
   ///         send_buffer[i] = x[idx[i]];
   ///
@@ -422,15 +424,14 @@ public:
   /// then `x` is updated by
   ///
   ///     auto& idx = scatterer.local_indices()
-  ///     std::vector<T> buffer(idx.size())
+  ///     std::vector<T> recv_buffer(idx.size())
   ///     for (std::size_t i = 0; i < idx.size(); ++i)
   ///         x[idx[i]] = op(recv_buffer[i], x[idx[i]]);
   ///
   /// where `op` is a binary operation, e.g. `x[idx[i]] = buffer[i]` or
   /// `x[idx[i]] += buffer[i]`.
   ///
-  /// Indices are grouped by neighbor process (process for which an
-  /// index is a ghost) blocks.
+  /// @return Indices container
   const container_type& local_indices() const noexcept { return _local_inds; }
 
   /// @brief Array of indices for packing/unpacking ghost data to/from a
@@ -442,19 +443,19 @@ public:
   /// (accumulating) the receive buffer values into correct position in
   /// the owned array.
   ///
-  /// For a forward scatter, if `xg` is the ghost part of an array and
-  /// `recv_buffer` is the receive buffer, `xg` is updated that
+  /// For a forward scatter, if `xg` is the ghost part of the data array
+  /// and `recv_buffer` is the receive buffer, `xg` is updated that
   ///
   ///     auto& idx = scatterer.remote_indices()
-  ///     std::vector<T> buffer(idx.size())
+  ///     std::vector<T> recv_buffer(idx.size())
   ///     for (std::size_t i = 0; i < idx.size(); ++i)
   ///         xg[idx[i]] = recv_buffer[i];
   ///
   /// For a reverse scatter, if `send_buffer` is the send buffer, then
-  /// `x` is updated by
+  /// `send_buffer` is packaged such that:
   ///
   ///     auto& idx = scatterer.local_indices()
-  ///     std::vector<T> buffer(idx.size())
+  ///     std::vector<T> send_buffer(idx.size())
   ///     for (std::size_t i = 0; i < idx.size(); ++i)
   ///         send_buffer[i] = xg[idx[i]];
   ///

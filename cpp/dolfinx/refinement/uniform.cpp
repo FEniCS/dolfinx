@@ -145,13 +145,13 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
               local_range[0] + entity_offsets[j]);
 
     common::Scatterer sc(*index_maps[j], 1);
-    std::vector<std::int64_t> send_buffer(sc.local_buffer_size());
+    std::vector<std::int64_t> send_buffer(sc.local_indices().size());
     {
       auto& idx = sc.local_indices();
       for (std::size_t i = 0; i < idx.size(); ++i)
         send_buffer[i] = new_v[j][idx[i]];
     }
-    std::vector<std::int64_t> recv_buffer(sc.remote_buffer_size());
+    std::vector<std::int64_t> recv_buffer(sc.remote_indices().size());
     std::vector<MPI_Request> requests(1, MPI_REQUEST_NULL);
     sc.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), requests);
     sc.scatter_end(requests);
