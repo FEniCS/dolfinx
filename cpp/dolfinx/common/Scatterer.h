@@ -361,7 +361,7 @@ public:
     }
   }
 
-  /// @brief Complete a non-blocking MPI peer-to-peer send.
+  /// @brief Complete non-blocking MPI point-to-point sends.
   ///
   /// This function completes the communication started by
   /// ::scatter_fwd_begin or ::scatter_rev_begin.
@@ -450,7 +450,7 @@ public:
   /// @return Indices container.
   const container_type& remote_indices() const noexcept { return _remote_inds; }
 
-  /// @brief Number of required `MPI_Request`s for peer-to-peer
+  /// @brief Number of required `MPI_Request`s for point-to-point
   /// communication.
   ///
   /// @return Numer of required MPI request handles.
