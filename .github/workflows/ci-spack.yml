@@ -90,19 +90,12 @@ jobs:
           pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
           pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
 
-      - name: Configure and build C++
+      - name: Configure, build and test C++
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate .
           cmake -Werror=dev --warn-uninitialized -G Ninja -DBUILD_TESTING=true -DCMAKE_BUILD_TYPE=Developer -B build -S dolfinx-src/cpp/
-          cmake --build build --target install
-
-      - name: Run tests (C++)
-        run: |
-          . ./spack-src/share/spack/setup-env.sh
-          spack env activate .
-          cd build
-          ctest -V --output-on-failure -R unittests
+          cmake --build build --target test --target install
 
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
