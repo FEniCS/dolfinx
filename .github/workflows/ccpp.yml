@@ -108,8 +108,7 @@ jobs:
           -Werror=dev
           --warn-uninitialized
           -G Ninja
-          -DCMAKE_BUILD_TYPE=Developer 
-          -DBUILD_TESTING=true
+          -DCMAKE_BUILD_TYPE=Developer
           -DDOLFINX_ENABLE_PETSC=false
 
       - name: Build and install (C++)
