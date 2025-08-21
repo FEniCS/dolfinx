@@ -120,7 +120,7 @@ jobs:
 
       - name: Run tests (C++)
         working-directory: cpp/build
-        run: ctest -V --output-on-failure -R unittests
+        run: cmake --build . --target test
 
       - name: Build Python interface
         run: |
