@@ -235,14 +235,19 @@ T assemble_scalar(
         = coefficients.at({IntegralType::exterior_facet, i});
 
     std::span facets = M.domain(IntegralType::exterior_facet, i, 0);
+
+    constexpr std::size_t num_adjacent_cells = 1;
+    // Two values per each adj. cell (cell index and local facet index).
+    constexpr std::size_t shape1 = 2 * num_adjacent_cells;
+
     assert((facets.size() / 2) * cstride == coeffs.size());
     value += impl::assemble_exterior_facets(
         x_dofmap, x,
         md::mdspan<const std::int32_t,
                    md::extents<std::size_t, md::dynamic_extent, 2>>(
-            facets.data(), facets.size() / 2, 2),
-        fn, constants, md::mdspan(coeffs.data(), facets.size() / 2, cstride),
-        perms);
+            facets.data(), facets.size() / shape1, 2),
+        fn, constants,
+        md::mdspan(coeffs.data(), facets.size() / shape1, cstride), perms);
   }
 
   for (int i : M.integral_ids(IntegralType::interior_facet))
@@ -253,7 +258,10 @@ T assemble_scalar(
         = coefficients.at({IntegralType::interior_facet, i});
     std::span facets = M.domain(IntegralType::interior_facet, i, 0);
 
-    constexpr std::size_t shape1 = 4;
+    constexpr std::size_t num_adjacent_cells = 2;
+    // Two values per each adj. cell (cell index and local facet index).
+    constexpr std::size_t shape1 = 2 * num_adjacent_cells;
+
     assert((facets.size() / shape1) * 2 * cstride == coeffs.size());
     value += impl::assemble_interior_facets(
         x_dofmap, x,
@@ -278,7 +286,10 @@ T assemble_scalar(
         = M.domain(IntegralType::vertex, i, 0);
     assert(vertices.size() * cstride == coeffs.size());
 
-    constexpr std::size_t shape1 = 2;
+    constexpr std::size_t num_adjacent_cells = 1;
+    // Two values per adj. cell (cell index and local vertex index).
+    constexpr std::size_t shape1 = 2 * num_adjacent_cells;
+
     value += impl::assemble_vertices(
         x_dofmap, x,
         md::mdspan<const std::int32_t,
