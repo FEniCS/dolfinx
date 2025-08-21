@@ -391,7 +391,8 @@ public:
   // /// shared) used in forward and reverse scatters.
   // ///
   // /// @return Required buffer size.
-  // std::size_t local_buffer_size() const noexcept { return _local_inds.size(); }
+  // std::size_t local_buffer_size() const noexcept { return _local_inds.size();
+  // }
 
   // /// @brief Buffer size for packed ghost (data shared by owned by
   // /// another process) data used in forward and reverse scatters.
