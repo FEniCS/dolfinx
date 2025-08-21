@@ -67,8 +67,6 @@ void add_scatter_functions(nb::class_<dolfinx::common::Scatterer<>>& sc)
               "Ghost data buffer too small in forward scatter.");
         }
 
-        // self.scatter_fwd(local_data.data(), remote_data.data());
-
         std::vector<T> send_buffer(self.local_indices().size());
         {
           auto _local_data = local_data.view();
