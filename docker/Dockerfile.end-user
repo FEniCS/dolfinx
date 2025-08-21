@@ -72,7 +72,7 @@ ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="Release"
 # does not install necessary packages, hence install build and optional
 # dependencies manually here.
 ONBUILD RUN pip install --no-cache-dir -r dolfinx/python/build-requirements.txt && \
-            pip install --no-cache-dir pyamg pytest scipy matplotlib numba # test + optional set
+            pip install --no-cache-dir git+https://git@github.com/pyamg/pyamg pytest scipy matplotlib numba # test + optional set
 
 # The dolfinx-onbuild container expects to have folders basix/ ufl/
 # ffcx/ and dolfinx/ mounted/shared at /src.
