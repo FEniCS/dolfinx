@@ -114,19 +114,16 @@ void add_scatter_functions(nb::class_<dolfinx::common::Scatterer<>>& sc)
             send_buffer[i] = _remote_data(idx[i]);
         }
         std::vector<T> recv_buffer(self.local_indices().size());
-        std::vector<MPI_Request> requests(1, MPI_REQUEST_NULL);
+        MPI_Request request = MPI_REQUEST_NULL;
         self.scatter_rev_begin<T>(send_buffer.data(), recv_buffer.data(),
-                                  std::span(requests));
-        self.scatter_end(std::span(requests));
+                                  request);
+        self.scatter_end(request);
         {
           auto _local_data = local_data.view();
           auto& idx = self.local_indices();
           for (std::size_t i = 0; i < idx.size(); ++i)
             _local_data(idx[i]) += recv_buffer[i];
         }
-
-        // self.scatter_rev(local_data.data(), remote_data.data(),
-        // std::plus<T>());
       },
       nb::arg("local_data"), nb::arg("remote_data"));
 }
