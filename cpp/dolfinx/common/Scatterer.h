@@ -21,17 +21,22 @@
 
 namespace dolfinx::common
 {
-/// @brief A Scatterer supports the MPI scattering and gathering of data
-/// that is associated with a common::IndexMap.
+/// @brief A Scatterer supports the scattering and gathering of
+/// distributed data that is associated with a common::IndexMap, using
+/// MPI.
 ///
-/// Scatter and gather operations use (i) MPI neighbourhood collective
-/// or (ii) non-blocking point-to-point communication modes. The mode is
-/// selectable. implementation is designed for sparse communication
+/// Scatter and gather operations can use:
+/// 1. MPI neighbourhood collectives (recommended), or
+/// 2. Non-blocking point-to-point communication modes.
+///
+/// The implementation is designed for sparse communication
 /// patterns, as it typical of patterns based on an IndexMap.
 ///
-/// @tparam Container Container type for storing 'local' and 'remote'
-/// indices. On CPUs this is normally `std::vector<std::int32_t>`. For
-/// GPUs the container should store the indices on the device.
+/// @tparam Container Container type for storing the 'local' and
+/// 'remote' indices. On CPUs this is normally
+/// `std::vector<std::int32_t>`. For GPUs the container should store the
+/// indices on the device, e.g. using
+/// `thrust::device_vector<std::int32_t>`.
 template <class Container = std::vector<std::int32_t>>
   requires std::is_integral_v<typename Container::value_type>
 class Scatterer
@@ -154,15 +159,6 @@ public:
 
     {
       // Scale sizes and displacements by block size
-      // auto rescale = [](auto& x, int bs)
-      // {
-      //   std::ranges::transform(x, x.begin(), [bs](auto e) { return e *= bs;
-      //   });
-      // };
-      // rescale(_sizes_local, bs);
-      // rescale(_displs_local, bs);
-      // rescale(_sizes_remote, bs);
-      // rescale(_displs_remote, bs);
       for (auto& x : {std::ref(_sizes_local), std::ref(_displs_local),
                       std::ref(_sizes_remote), std::ref(_displs_remote)})
       {
@@ -194,34 +190,30 @@ public:
   }
 
   /// @brief Start a non-blocking send of owned data to ranks that ghost
-  /// the data.
+  /// the data using *MPI neighbourhood collective communication*
+  /// (recommended).
   ///
-  /// The communication is completed by calling
-  /// Scatterer::scatter_fwd_end. The send and receive buffer should not
-  /// be changed until after Scatterer::scatter_fwd_end has been called.
-  ///
+  /// The communication is completed by calling Scatterer::scatter_end.
   /// See ::local_indices for instructions on packing `send_buffer` and
-  /// ::remote_indices  for instructions on packing `recv_buffer`.
+  /// ::remote_indices for instructions on unpacking `recv_buffer`.
   ///
-  /// @note The pointers `send_buffer` and `recv_buffer` should be
-  /// pointers to the data on the target device. E.g., if the send and
+  /// @note The send and receive buffers must **not** to be changed or
+  /// accessed until after a call to Scatterer::scatter_end.
+  ///
+  /// @note The pointers `send_buffer` and `recv_buffer` must be
+  /// pointers to the data on the *target device*. E.g., if the send and
   /// receive buffers are allocated on a GPU, the `send_buffer` and
   /// `recv_buffer` should be device pointers.
   ///
   /// @param[in] send_buffer Packed local data associated with each
-  /// owned local index to be sent to process where the data is ghosted.
-  /// It must not be changed until after a call to
-  /// Scatterer::scatter_end. The order of the data in the buffer is
-  /// given by Scatterer::local_indices.
-  /// @param[in,out] recv_buffer Buffer for storing received data. The
-  /// position of ghost entries in the buffer is given by
-  /// Scatterer::remote_indices. The buffer must not be changed until
-  /// after the matching call to Scatterer::scatter_end.
+  /// owned local index to be sent to processes where the data is
+  /// ghosted. See Scatterer::local_indices for the order of the buffer
+  /// and how to pack.
+  /// @param[in,out] recv_buffer Buffer for storing received data. See
+  /// Scatterer::remote_indices for the order of the buffer and how to unpack.
   /// @param[in] request MPI request handle for tracking the status of
-  /// the non-blocking communication. For ScattererType::neighbor
-  /// communication it should have size 1. For ScattererType::p2p
-  /// communication it should have size IndexMap::dest::size +
-  /// IndexMap::src::size.
+  /// the non-blocking communication. The same request handle should be
+  /// passed to Scatterer::scatter_end to complete the communication.
   template <typename T>
   void scatter_fwd_begin(const T* send_buffer, T* recv_buffer,
                          MPI_Request& request) const
@@ -238,34 +230,18 @@ public:
   }
 
   /// @brief Start a non-blocking send of owned data to ranks that ghost
-  /// the data.
+  /// the data using *point-to-point MPI communication*.
   ///
-  /// The communication is completed by calling
-  /// Scatterer::scatter_fwd_end. The send and receive buffer should not
-  /// be changed until after Scatterer::scatter_fwd_end has been called.
+  /// See ::scatter_fwd_begin for a detailed explanation of usage,
+  /// including on the send and receive buffer packing and unpacking
   ///
-  /// See ::local_indices for instructions on packing `send_buffer` and
-  /// ::remote_indices  for instructions on packing `recv_buffer`.
+  /// @note Use of the neighbourhood version of ::scatter_fwd_begin is
+  /// recommended over this version.
   ///
-  /// @note The pointers `send_buffer` and `recv_buffer` should be
-  /// pointers to the data on the target device. E.g., if the send and
-  /// receive buffers are allocated on a GPU, the `send_buffer` and
-  /// `recv_buffer` should be device pointers.
-  ///
-  /// @param[in] send_buffer Packed local data associated with each
-  /// owned local index to be sent to process where the data is ghosted.
-  /// It must not be changed until after a call to
-  /// Scatterer::scatter_end. The order of the data in the buffer is
-  /// given by Scatterer::local_indices.
-  /// @param[in,out] recv_buffer Buffer for storing received data. The
-  /// position of ghost entries in the buffer is given by
-  /// Scatterer::remote_indices. The buffer must not be changed until
-  /// after the matching call to Scatterer::scatter_end.
-  /// @param[in] requests MPI request handle for tracking the status of
-  /// the non-blocking communication. For ScattererType::neighbor
-  /// communication it should have size 1. For ScattererType::p2p
-  /// communication it should have size IndexMap::dest::size +
-  /// IndexMap::src::size.
+  /// @param[in] send_buffer Send buffer.
+  /// @param[in,out] recv_buffer Receive buffer.
+  /// @param[in] requests List of MPI request handles. The length of the
+  /// list must be ::num_p2p_requests()
   template <typename T>
   void scatter_fwd_begin(const T* send_buffer, T* recv_buffer,
                          std::span<MPI_Request> requests) const
@@ -298,38 +274,31 @@ public:
   }
 
   /// @brief Start a non-blocking send of ghost data to ranks that own
-  /// the data.
+  /// the data using *MPI neighbourhood collective communication*
+  /// (recommended).
   ///
   /// The communication is completed by calling Scatterer::scatter_end.
-  /// The send and receive buffers must not be changed until after
-  /// Scatterer::scatter_end has been called.
-  ///
   /// See ::remote_indices for instructions on packing `send_buffer` and
-  /// ::local_indices for instructions on packing `recv_buffer`.
+  /// ::local_indices  for instructions on unpacking `recv_buffer`.
   ///
-  /// @note The pointers `send_buffer` and `recv_buffer` should be
-  /// pointers to the data on the target device. E.g., if the send and
+  /// @note The send and receive buffers must **not** to be changed or
+  /// accessed until after a call to Scatterer::scatter_end.
+  ///
+  /// @note The pointers `send_buffer` and `recv_buffer` must be
+  /// pointers to the data on the *target device*. E.g., if the send and
   /// receive buffers are allocated on a GPU, the `send_buffer` and
   /// `recv_buffer` should be device pointers.
   ///
   /// @param[in] send_buffer Data associated with each ghost index. This
-  /// data is sent to process that owns the index. It must not be
-  /// changed until after a call to Scatterer::scatter_end.
-  /// @param[in,out] recv_buffer Buffer used for the received data. The
-  /// position of owned indices in the buffer is given by
-  /// Scatterer::local_indices. Scatterer::local_displacements()[i] is
-  /// the location of the first entry in `recv_buffer` received from
-  /// neighbourhood rank i. The number of entries received from
-  /// neighbourhood rank i is Scatterer::local_displacements()[i + 1] -
-  /// Scatterer::local_displacements()[i]. `recv_buffer[j]` is the data
-  /// associated with the index Scatterer::local_indices()[j] in the
-  /// index map.
-  ///
-  /// The buffer must not be accessed or changed until after a call to
-  /// Scatterer::scatter_fwd_end.
-  ///
-  /// @param[in] request MPI request handle for tracking the status of the
-  /// non-blocking communication.
+  /// data is sent to process that owns the index. See
+  /// Scatterer::remote_indices for the order of the buffer and how to
+  /// pack.
+  /// @param[in,out] recv_buffer Buffer for storing received data. See
+  /// Scatterer::local_indices for the order of the buffer and how to
+  /// unpack.
+  /// @param[in] request MPI request handle for tracking the status of
+  /// the non-blocking communication. The same request handle should be
+  /// passed to Scatterer::scatter_end to complete the communication.
   template <typename T>
   void scatter_rev_begin(const T* send_buffer, T* recv_buffer,
                          MPI_Request& request) const
@@ -346,38 +315,18 @@ public:
   }
 
   /// @brief Start a non-blocking send of ghost data to ranks that own
-  /// the data.
+  /// the data using *point-to-point MPI communication*.
   ///
-  /// The communication is completed by calling Scatterer::scatter_end.
-  /// The send and receive buffers must not be changed until after
-  /// Scatterer::scatter_end has been called.
+  /// See ::scatter_rev_begin for a detailed explanation of usage,
+  /// including on the send and receive buffer packing and unpacking
   ///
-  /// See ::remote_indices for instructions on packing `send_buffer` and
-  /// ::local_indices for instructions on packing `recv_buffer`.
+  /// @note Use of the neighbourhood version of ::scatter_rev_begin is
+  /// recommended over this version
   ///
-  /// @note The pointers `send_buffer` and `recv_buffer` should be
-  /// pointers to the data on the target device. E.g., if the send and
-  /// receive buffers are allocated on a GPU, the `send_buffer` and
-  /// `recv_buffer` should be device pointers.
-  ///
-  /// @param[in] send_buffer Data associated with each ghost index. This
-  /// data is sent to process that owns the index. It must not be
-  /// changed until after a call to Scatterer::scatter_end.
-  /// @param[in,out] recv_buffer Buffer used for the received data. The
-  /// position of owned indices in the buffer is given by
-  /// Scatterer::local_indices. Scatterer::local_displacements()[i] is
-  /// the location of the first entry in `recv_buffer` received from
-  /// neighbourhood rank i. The number of entries received from
-  /// neighbourhood rank i is Scatterer::local_displacements()[i + 1] -
-  /// Scatterer::local_displacements()[i]. `recv_buffer[j]` is the data
-  /// associated with the index Scatterer::local_indices()[j] in the
-  /// index map.
-  ///
-  /// The buffer must not be accessed or changed until after a call to
-  /// Scatterer::scatter_fwd_end.
-  ///
-  /// @param[in] requests MPI request handle for tracking the status of the
-  /// non-blocking communication.
+  /// @param[in] send_buffer Send buffer.
+  /// @param[in,out] recv_buffer Receive buffer.
+  /// @param[in] requests List of MPI request handles. The length of the
+  /// list must be ::num_p2p_requests()
   template <typename T>
   void scatter_rev_begin(const T* send_buffer, T* recv_buffer,
                          std::span<MPI_Request> requests) const
@@ -412,32 +361,13 @@ public:
     }
   }
 
-  /// @brief Complete a non-blocking send from the local owner to
-  /// process ranks that have the index as a ghost.
+  /// @brief Complete a non-blocking MPI peer-to-peer send.
   ///
   /// This function completes the communication started by
-  /// ::scatter_fwd_begin or ::scatter_fwd_end.
-  ///
-  /// @param[in] request MPI request handle for tracking the status of
-  /// the send.
-  void scatter_end(MPI_Request& request) const
-  {
-    // Return early if there are no incoming or outgoing edges
-    if (_sizes_local.empty() and _sizes_remote.empty())
-      return;
-
-    // Wait for communication to complete
-    MPI_Waitall(1, &request, MPI_STATUS_IGNORE);
-  }
-
-  /// @brief Complete a non-blocking send from the local owner to
-  /// process ranks that have the index as a ghost.
-  ///
-  /// This function completes the communication started by
-  /// ::scatter_fwd_begin or ::scatter_fwd_end.
+  /// ::scatter_fwd_begin or ::scatter_rev_begin.
   ///
   /// @param[in] requests MPI request handles for tracking the status of
-  /// the send.
+  /// sends.
   void scatter_end(std::span<MPI_Request> requests) const
   {
     // Return early if there are no incoming or outgoing edges
@@ -448,21 +378,17 @@ public:
     MPI_Waitall(requests.size(), requests.data(), MPI_STATUS_IGNORE);
   }
 
-  // /// @brief Size of buffer for packed local data (owned data that is
-  // /// shared) used in forward and reverse scatters.
-  // ///
-  // /// @return Required buffer size.
-  // std::size_t local_buffer_size() const noexcept { return _local_inds.size();
-  // }
-
-  // /// @brief Buffer size for packed ghost (data shared by owned by
-  // /// another process) data used in forward and reverse scatters.
-  // ///
-  // /// @return Required buffer size.
-  // std::size_t remote_buffer_size() const noexcept
-  // {
-  //   return _remote_inds.size();
-  // }
+  /// @brief Complete a non-blocking MPI neighbourhood collective send.
+  ///
+  /// This function completes the communication started by
+  /// ::scatter_fwd_begin or ::scatter_rev_begin.
+  ///
+  /// @param[in] request MPI request handle for tracking the status of
+  /// the send.
+  void scatter_end(MPI_Request& request) const
+  {
+    scatter_end(std::span<MPI_Request>(&request, 1));
+  }
 
   /// @brief Array of indices for packing/unpacking owned data to/from a
   /// send/receive buffer.
@@ -493,7 +419,7 @@ public:
   /// where `op` is a binary operation, e.g. `x[idx[i]] = buffer[i]` or
   /// `x[idx[i]] += buffer[i]`.
   ///
-  /// @return Indices container
+  /// @return Indices container.
   const container_type& local_indices() const noexcept { return _local_inds; }
 
   /// @brief Array of indices for packing/unpacking ghost data to/from a
@@ -502,7 +428,7 @@ public:
   /// For a forward scatter, the indices are to copy required entries in
   /// the owned array into the appropriate position in a send buffer.
   /// For a reverse scatter, indices are used for assigning
-  /// (accumulating) the receive buffer values into correct position in
+  /// (accumulating) the receive buffer values to correct position in
   /// the owned array.
   ///
   /// For a forward scatter, if `xg` is the ghost part of the data array
@@ -521,13 +447,13 @@ public:
   ///     for (std::size_t i = 0; i < idx.size(); ++i)
   ///         send_buffer[i] = xg[idx[i]];
   ///
-  /// The indices are grouped by neighbor process (ghost owners) blocks.
+  /// @return Indices container.
   const container_type& remote_indices() const noexcept { return _remote_inds; }
 
-  /// @brief Create a vector of MPI_Requests for a given
-  /// ::ScattererType.
+  /// @brief Number of required `MPI_Request`s for peer-to-peer
+  /// communication.
   ///
-  /// @return Vector of MPI requests.
+  /// @return Numer of required MPI request handles.
   std::size_t num_p2p_requests() { return _dest.size() + _src.size(); }
 
 private:

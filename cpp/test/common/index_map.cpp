@@ -131,13 +131,13 @@ void test_scatter_rev()
   std::vector<std::int64_t> data_local(n * size_local, 0);
   std::vector<std::int64_t> data_ghost(n * num_ghosts, value);
   {
-    std::vector<MPI_Request> requests(1, MPI_REQUEST_NULL);
+    MPI_Request request = MPI_REQUEST_NULL;
     std::vector<std::int64_t> remote_buffer(sct.remote_indices().size(), 0);
     std::vector<std::int64_t> send_buffer(sct.local_indices().size(), 0);
     pack_fn(data_ghost, sct.remote_indices(), send_buffer);
     std::vector<std::int64_t> recv_buffer(sct.remote_indices().size(), 0);
-    sct.scatter_rev_begin(send_buffer.data(), recv_buffer.data(), requests);
-    sct.scatter_end(requests);
+    sct.scatter_rev_begin(send_buffer.data(), recv_buffer.data(), request);
+    sct.scatter_end(request);
     unpack_fn(recv_buffer, sct.local_indices(), data_local, std::plus<>{});
 
     std::int64_t sum;

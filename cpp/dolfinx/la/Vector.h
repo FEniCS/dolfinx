@@ -35,11 +35,14 @@ concept VectorPackKernel
 // concept GetPtrConcept
 //     = std::is_invocable_r_v<decltype(std::declval<U>().data()), GetPtr, U>;
 
-/// @brief Distributed vector.
+/// @brief A vector that can be distributed across processes.
 ///
-/// @tparam T Scalar Type
-/// @tparam Container Data container type.
-/// @tparam ScatterContainer
+/// @tparam T Scalar type of the vector.
+/// @tparam Container Data container type. This is typically
+/// `std::vector<T>` on CPUs, and `thrust::device_vector<T>` on GPUs.
+/// @tparam ScatterContainer Storage container type for the scatterer
+/// indices. This is typically `std::vector<std::int32_t>` on CPUs, and
+/// `thrust::device_vector<std::int32_t>` on GPUs.
 template <typename T, typename Container = std::vector<T>,
           typename ScatterContainer = std::vector<std::int32_t>>
 class Vector
@@ -106,9 +109,9 @@ public:
 
   /// @brief Create a distributed vector.
   ///
-  /// @param map Index map that describes the parallel distribution of
+  /// @param map Index map that describes the parallel layout of
   /// the data.
-  /// @param bs Number of entries per index (block size).
+  /// @param bs Number of entries per index map 'index' (block size).
   Vector(std::shared_ptr<const common::IndexMap> map, int bs)
       : _map(map), _bs(bs), _x(bs * (map->size_local() + map->num_ghosts())),
         _scatterer(
@@ -155,17 +158,8 @@ public:
     std::ranges::fill(_x, v);
   }
 
-  /// @brief Begin scatter of local data from owner to ghosts on other
-  /// ranks.
-  ///
-  /// The user provides the function to pack to the send buffer.
-  /// Typically usage would be a specialised function to pack data that
-  /// resides on a GPU.
-  ///
-  /// @note Collective MPI operation
-
-  /// @brief Begin scatter of local data from owner to ghosts on other
-  /// ranks.
+  /// @brief Begin scatter (send) of local data that is ghosted on other
+  /// processes.
   ///
   /// The user provides the function to pack to the send buffer.
   /// Typically usage would be a specialised function to pack data that
@@ -173,14 +167,13 @@ public:
   ///
   /// @note Collective MPI operation
   ///
-  /// @tparam U Pack function type
+  /// @tparam U Pack function type.
   /// @tparam GetPtr
-  /// @param pack Function to pack owned data into a send buffer.
+  /// @param pack Function that packs owned data into a send buffer.
   /// @param get_ptr Function that for a ::Container returns the pointer
   /// to the underlying data.
   template <typename U, typename GetPtr>
     requires VectorPackKernel<U, container_type, ScatterContainer>
-  //          && GetPtrConcept<GetPtr, container_type>
   void scatter_fwd_begin(U pack, GetPtr get_ptr)
   {
     pack(_scatterer->local_indices().begin(), _scatterer->local_indices().end(),
@@ -189,24 +182,25 @@ public:
                                   get_ptr(_buffer_remote), _request);
   }
 
-  /// @brief Begin scatter of local data from owner to ghosts on other
-  /// ranks.
+  /// @brief Begin scatter (send) of local data that is ghosted on other
+  /// processes (simplified CPU version).
   ///
   /// Suitable for scatter operations on a CPU with `std::vector`
   /// storage. The send buffer is packed internally by a function that
   /// is suitable for use on a CPU.
   ///
-  /// @note Collective MPI operation
+  /// @note Collective MPI operation.
   void scatter_fwd_begin()
   {
     scatter_fwd_begin(get_pack(), [](auto&& x) { return x.data(); });
   }
 
-  /// @brief End scatter of data from owner to ghosts on other ranks.
+  /// @brief End scatter (send) of local data values that are ghosted on
+  /// other processes.
   ///
   /// The user provides the function to unpack the receive buffer.
-  /// Typically usage would be a specialised function to unpack data that
-  /// resides on a GPU.
+  /// Typically usage would be a specialised function to unpack data
+  /// that resides on a GPU.
   ///
   /// @note Collective MPI operation.
   ///
@@ -222,33 +216,22 @@ public:
            std::next(_x.begin(), _bs * _map->size_local()));
   }
 
-  /// @brief End scatter of local data from owner to ghosts on other
-  /// ranks.
+  /// @brief End scatter (send) of local data values that are ghosted on
+  /// other processes.
   ///
   /// Suitable for scatter operations on a CPU with `std::vector`
-  /// storage. The send buffer is unpacked internally by a function that
-  /// is suitable for use on a CPU.
+  /// storage. The receive buffer is unpacked internally by a function
+  /// that is suitable for use on a CPU.
   ///
   /// @note Collective MPI operation.
   void scatter_fwd_end() { this->scatter_fwd_end(get_unpack()); }
 
-  /// @brief Scatter local data to ghost positions on other ranks.
+  /// @brief Scatter (send) of local data values that are ghosted on
+  /// other processes and update ghost entry values
   ///
   /// Suitable for scatter operations on a CPU with `std::vector`
-  /// storage. The send buffer is unpacked internally by a function that
-  /// is suitable for use on a CPU.
-  ///
-  /// @note Collective MPI operation
-  template <typename U, typename V, typename GetPr>
-    requires VectorPackKernel<U, container_type, ScatterContainer>
-             && VectorPackKernel<V, container_type, ScatterContainer>
-  void scatter_fwd(U pack, V unpack, GetPr get_ptr)
-  {
-    this->scatter_fwd_begin(pack, get_ptr);
-    this->scatter_fwd_end(unpack);
-  }
-
-  /// @brief Scatter local data to ghost positions on other ranks.
+  /// storage. The send buffer is packed and the receive buffer unpacked
+  /// by a function that is suitable for use on a CPU.
   ///
   /// @note Collective MPI operation
   void scatter_fwd()
@@ -257,11 +240,21 @@ public:
     this->scatter_fwd_end(get_unpack());
   }
 
-  /// Start scatter of  ghost data to owner
+  /// @brief Start scatter (send) of ghost entry data to the owning
+  /// process of an index.
+  ///
+  /// The user provides the function to pack to the send buffer.
+  /// Typically usage would be a specialised function to pack data that
+  /// resides on a GPU.
+  ///
   /// @note Collective MPI operation
+  /// @tparam U Pack function type.
+  /// @tparam GetPtr
+  /// @param pack Function that packs ghost data into a send buffer.
+  /// @param get_ptr Function that for a ::Container returns the pointer
+  /// to the underlying data.
   template <typename U, typename GetPtr>
     requires VectorPackKernel<U, container_type, ScatterContainer>
-  //  && GetPtrConcept<GetPtr, container_type>
   void scatter_rev_begin(U pack, GetPtr get_ptr)
   {
     std::int32_t local_size = _bs * _map->size_local();
@@ -272,7 +265,12 @@ public:
                                   get_ptr(_buffer_local), _request);
   }
 
-  /// @brief Start scatter of  ghost data to owner.
+  /// @brief Start scatter (send) of ghost entry data to the owning
+  /// process of an index.
+  ///
+  /// Suitable for scatter operations on a CPU with `std::vector`
+  /// storage. The send buffer is packed internally by a function that
+  /// is suitable for use on a CPU.
   ///
   /// @note Collective MPI operation
   void scatter_rev_begin()
@@ -280,11 +278,11 @@ public:
     scatter_rev_begin(get_pack(), [](auto&& x) { return x.data(); });
   }
 
-  /// @brief End scatter of ghost data to owner.
+  /// @brief End scatter of ghost data to owner and update owned entries
   ///
-  /// This process may receive data from more than one process, and the
-  /// received data can be summed or inserted into the local portion of
-  /// the vector.
+  /// For an owned entry, data from more than one process may be
+  /// received. The received data can be summed or inserted into the
+  /// owning entry.
   ///
   /// @note Collective MPI operation
   template <typename U>
@@ -297,15 +295,16 @@ public:
            _x.begin());
   }
 
-  /// @brief Scatter ghost data to owner.
+  /// @brief Scatter (send) of ghost data values to the owning process and
+  /// assign/accumulate into the owned data entries.
   ///
-  /// This process may receive data from more than one process, and the
-  /// received data can be summed or inserted into the local portion of
-  /// the vector.
+  /// For an owned entry, data from more than one process may be
+  /// received. The received data can be summed or inserted into the
+  /// owning entry.
   ///
   /// @note Collective MPI operation
   ///
-  /// @param op IndexMap operation (add or insert)
+  /// @param op IndexMap operation (add or insert).
   template <class BinaryOperation>
   void scatter_rev(BinaryOperation op)
   {
@@ -319,10 +318,12 @@ public:
   /// Get block size
   constexpr int bs() const { return _bs; }
 
-  /// Get local part of the vector
+  /// Get the process-local part of the vector. Owned entries appear
+  /// first, followed by ghosted entries.
   container_type& array() { return _x; }
 
-  /// Get local part of the vector (const version)
+  /// Get the process-local part of the vector. Owned entries appear
+  /// first, followed by ghosted entries (const version).
   const container_type& array() const { return _x; }
 
   /// Get local part of the vector
