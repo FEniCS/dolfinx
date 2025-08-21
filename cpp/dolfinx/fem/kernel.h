@@ -23,7 +23,7 @@ using kernelptr_t = void (*)(T*, const T*, const T*, const U*, const int*,
 /// @tparam T scalar type.
 /// @tparam U geometry type.
 template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
-using kern_t = std::function<void(T*, const T*, const T*, const U*, const int*,
+using kernel_t = std::function<void(T*, const T*, const T*, const U*, const int*,
                                   const std::uint8_t*, void*)>;
 
 /// @brief Extract correct kernel by type from UFCx integral.
@@ -32,7 +32,7 @@ using kern_t = std::function<void(T*, const T*, const T*, const U*, const int*,
 /// @param integral UFCx integral to retrieve the kernel from.
 /// @return Kernel callback.
 template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
-constexpr kern_t<T, U> extract_kernel(const ufcx_integral* integral)
+constexpr kernel_t<T, U> extract_kernel(const ufcx_integral* integral)
 {
   if constexpr (std::is_same_v<T, float>)
     return integral->tabulate_tensor_float32;
