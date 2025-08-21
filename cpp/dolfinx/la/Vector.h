@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Garth N. Wells
+// Copyright (C) 2020-2025 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -22,18 +22,19 @@
 
 namespace dolfinx::la
 {
-/// @brief Vector scatter pack/unpack function concept.
-template <class U, class Container, class ScatterContainer>
-concept VectorPackKernel
-    = std::is_invocable_v<U, typename ScatterContainer::const_iterator,
-                          typename ScatterContainer::const_iterator,
-                          typename Container::const_iterator,
-                          typename Container::iterator>;
+/// @brief la::Vector scatter pack/unpack function concept.
+template <class F, class Container, class ScatterContainer>
+concept VectorPackKernel = requires(F f, ScatterContainer idx, Container x) {
+  f(idx.cbegin(), idx.cend(), x.cbegin(), x.begin());
+};
 
-// /// @brief Access to pointer function concept.
-// template <class GetPtr, class U>
-// concept GetPtrConcept
-//     = std::is_invocable_r_v<decltype(std::declval<U>().data()), GetPtr, U>;
+/// @brief Access to pointer function concept.
+template <class GetPtr, class U, class T>
+concept GetPtrConcept = requires(GetPtr f, U x) {
+  { f(x) } -> std::same_as<T*>;
+} and requires(GetPtr f, const U x) {
+  { f(x) } -> std::same_as<const T*>;
+};
 
 /// @brief A vector that can be distributed across processes.
 ///
@@ -50,7 +51,9 @@ class Vector
   static_assert(std::is_same_v<typename Container::value_type, T>);
 
 private:
-  using scatterer_container = ScatterContainer;
+  /// @brief Return a 'pack' function for packing a send buffer.
+  ///
+  /// Typically used for forward and reverse scatter operations.
   auto get_pack()
   {
     return [](typename ScatterContainer::const_iterator idx_first,
@@ -63,6 +66,10 @@ private:
     };
   }
 
+  /// @brief Return an 'unpack' function for unpacking a receive buffer. Assigns
+  /// received values to entries.
+  ///
+  /// Typically used to unpack into ghost entries.
   auto get_unpack()
   {
     return [](typename ScatterContainer::const_iterator idx_first,
@@ -79,6 +86,11 @@ private:
     };
   }
 
+  /// @brief Return an 'unpack' function for unpacking a receive buffer.
+  /// Applied a binary operation an then assigns to entries.
+  ///
+  /// Typically used to unpack into owned entries. Commonly more than
+  /// one value per entry is received.
   template <typename BinaryOp>
   auto get_unpack_op(BinaryOp op)
   {
@@ -145,14 +157,14 @@ public:
   Vector& operator=(const Vector& x) = delete;
 
   // TODO: update
-  /// Move Assignment operator
+  /// Move assignment operator
   Vector& operator=(Vector&& x) = default;
 
-  //
+  /// @deprecated Use `std::ranges::fill(u.array(), v)` instead.
   /// @brief Set all entries (including ghosts).
   ///
   /// @param[in] v Value to set all entries to (on calling rank).
-  [[deprecated("Use free-function set_value() instead.")]] void
+  [[deprecated("Use std::ranges::fill(u.array(), v) instead.")]] void
   set(value_type v)
   {
     std::ranges::fill(_x, v);
@@ -170,10 +182,11 @@ public:
   /// @tparam U Pack function type.
   /// @tparam GetPtr
   /// @param pack Function that packs owned data into a send buffer.
-  /// @param get_ptr Function that for a ::Container returns the pointer
-  /// to the underlying data.
+  /// @param get_ptr Function that for a `Container` type returns the
+  /// pointer to the underlying data.
   template <typename U, typename GetPtr>
     requires VectorPackKernel<U, container_type, ScatterContainer>
+             and GetPtrConcept<GetPtr, Container, T>
   void scatter_fwd_begin(U pack, GetPtr get_ptr)
   {
     pack(_scatterer->local_indices().begin(), _scatterer->local_indices().end(),
@@ -191,6 +204,9 @@ public:
   ///
   /// @note Collective MPI operation.
   void scatter_fwd_begin()
+    requires requires(Container c) {
+      { c.data() } -> std::same_as<T*>;
+    }
   {
     scatter_fwd_begin(get_pack(), [](auto&& x) { return x.data(); });
   }
@@ -217,17 +233,24 @@ public:
   }
 
   /// @brief End scatter (send) of local data values that are ghosted on
-  /// other processes.
+  /// other processes (simplified CPU version).
   ///
   /// Suitable for scatter operations on a CPU with `std::vector`
   /// storage. The receive buffer is unpacked internally by a function
   /// that is suitable for use on a CPU.
   ///
   /// @note Collective MPI operation.
-  void scatter_fwd_end() { this->scatter_fwd_end(get_unpack()); }
+  void scatter_fwd_end()
+    requires requires(Container c) {
+      { c.data() } -> std::same_as<T*>;
+    }
+  {
+    this->scatter_fwd_end(get_unpack());
+  }
 
   /// @brief Scatter (send) of local data values that are ghosted on
-  /// other processes and update ghost entry values
+  /// other processes and update ghost entry values (simplified CPU
+  /// version).
   ///
   /// Suitable for scatter operations on a CPU with `std::vector`
   /// storage. The send buffer is packed and the receive buffer unpacked
@@ -235,6 +258,9 @@ public:
   ///
   /// @note Collective MPI operation
   void scatter_fwd()
+    requires requires(Container c) {
+      { c.data() } -> std::same_as<T*>;
+    }
   {
     this->scatter_fwd_begin(get_pack(), [](auto&& x) { return x.data(); });
     this->scatter_fwd_end(get_unpack());
@@ -251,10 +277,11 @@ public:
   /// @tparam U Pack function type.
   /// @tparam GetPtr
   /// @param pack Function that packs ghost data into a send buffer.
-  /// @param get_ptr Function that for a ::Container returns the pointer
-  /// to the underlying data.
+  /// @param get_ptr Function that for a `Container` type returns the
+  /// pointer to the underlying data.
   template <typename U, typename GetPtr>
     requires VectorPackKernel<U, container_type, ScatterContainer>
+             and GetPtrConcept<GetPtr, Container, T>
   void scatter_rev_begin(U pack, GetPtr get_ptr)
   {
     std::int32_t local_size = _bs * _map->size_local();
@@ -266,7 +293,7 @@ public:
   }
 
   /// @brief Start scatter (send) of ghost entry data to the owning
-  /// process of an index.
+  /// process of an index (simplified CPU version).
   ///
   /// Suitable for scatter operations on a CPU with `std::vector`
   /// storage. The send buffer is packed internally by a function that
@@ -274,6 +301,9 @@ public:
   ///
   /// @note Collective MPI operation
   void scatter_rev_begin()
+    requires requires(Container c) {
+      { c.data() } -> std::same_as<T*>;
+    }
   {
     scatter_rev_begin(get_pack(), [](auto&& x) { return x.data(); });
   }
@@ -282,7 +312,7 @@ public:
   ///
   /// For an owned entry, data from more than one process may be
   /// received. The received data can be summed or inserted into the
-  /// owning entry.
+  /// owning entry by the `unpack` function.
   ///
   /// @note Collective MPI operation
   template <typename U>
@@ -295,17 +325,21 @@ public:
            _x.begin());
   }
 
-  /// @brief Scatter (send) of ghost data values to the owning process and
-  /// assign/accumulate into the owned data entries.
+  /// @brief Scatter (send) of ghost data values to the owning process
+  /// and assign/accumulate into the owned data entries (simplified CPU
+  /// version).
   ///
   /// For an owned entry, data from more than one process may be
   /// received. The received data can be summed or inserted into the
-  /// owning entry.
+  /// owning entry. The this is controlled by the `op` function.
   ///
   /// @note Collective MPI operation
   ///
   /// @param op IndexMap operation (add or insert).
   template <class BinaryOperation>
+    requires requires(Container c) {
+      { c.data() } -> std::same_as<T*>;
+    }
   void scatter_rev(BinaryOperation op)
   {
     this->scatter_rev_begin();
@@ -318,15 +352,18 @@ public:
   /// Get block size
   constexpr int bs() const { return _bs; }
 
-  /// Get the process-local part of the vector. Owned entries appear
-  /// first, followed by ghosted entries.
+  /// @brief Get the process-local part of the vector.
+  ///
+  /// Owned entries appear first, followed by ghosted entries.
   container_type& array() { return _x; }
 
-  /// Get the process-local part of the vector. Owned entries appear
-  /// first, followed by ghosted entries (const version).
+  /// @brief Get the process-local part of the vector (const version).
+  ///
+  /// Owned entries appear first, followed by ghosted entries.
   const container_type& array() const { return _x; }
 
-  /// Get local part of the vector
+  /// @deprecated Use ::array instead.
+  /// @brief Get local part of the vector
   [[deprecated("Use array() instead.")]] container_type& mutable_array()
   {
     return _x;

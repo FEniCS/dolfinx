@@ -1,4 +1,4 @@
-// Copyright (C) 2022 Igor Baratta and Garth N. Wells
+// Copyright (C) 2022-2025 Igor Baratta and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
