@@ -30,10 +30,10 @@ concept VectorPackKernel
                           typename Container::const_iterator,
                           typename Container::iterator>;
 
-/// @brief Access to pointer function concept.
-template <class GetPtr, class U>
-concept GetPtrConcept
-    = std::is_invocable_r_v<decltype(std::declval<U>().data()), GetPtr, U>;
+// /// @brief Access to pointer function concept.
+// template <class GetPtr, class U>
+// concept GetPtrConcept
+//     = std::is_invocable_r_v<decltype(std::declval<U>().data()), GetPtr, U>;
 
 /// @brief Distributed vector.
 ///
