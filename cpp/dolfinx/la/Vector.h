@@ -180,7 +180,7 @@ public:
   /// to the underlying data.
   template <typename U, typename GetPtr>
     requires VectorPackKernel<U, container_type, ScatterContainer>
-             && GetPtrConcept<GetPtr, container_type>
+  //          && GetPtrConcept<GetPtr, container_type>
   void scatter_fwd_begin(U pack, GetPtr get_ptr)
   {
     pack(_scatterer->local_indices().begin(), _scatterer->local_indices().end(),
@@ -188,8 +188,6 @@ public:
     _scatterer->scatter_fwd_begin(get_ptr(_buffer_local),
                                   get_ptr(_buffer_remote), _request);
   }
-
-  // std::invoke_result_t<decltype(&C<int>::Get), C<int>>
 
   /// @brief Begin scatter of local data from owner to ghosts on other
   /// ranks.
@@ -263,7 +261,7 @@ public:
   /// @note Collective MPI operation
   template <typename U, typename GetPtr>
     requires VectorPackKernel<U, container_type, ScatterContainer>
-             && GetPtrConcept<GetPtr, container_type>
+  //  && GetPtrConcept<GetPtr, container_type>
   void scatter_rev_begin(U pack, GetPtr get_ptr)
   {
     std::int32_t local_size = _bs * _map->size_local();
