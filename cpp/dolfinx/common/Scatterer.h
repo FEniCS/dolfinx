@@ -30,7 +30,7 @@ namespace dolfinx::common
 /// 2. Non-blocking point-to-point communication modes.
 ///
 /// The implementation is designed for sparse communication
-/// patterns, as it typical of patterns based on an IndexMap.
+/// patterns, as is typical of patterns based on an IndexMap.
 ///
 /// @tparam Container Container type for storing the 'local' and
 /// 'remote' indices. On CPUs this is normally
