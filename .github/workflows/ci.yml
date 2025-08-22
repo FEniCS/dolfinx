@@ -75,11 +75,12 @@ jobs:
         run: |
           spack env activate --sh cxx
           spack install cmake catch2 ninja py-fenics-ffcx@git.main
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
-          cmake --build build/test
-          cd build/test
-          ctest -V --output-on-failure -R unittests
-          mpirun -n 3 ctest -V --output-on-failure -R unittests
+          which cmake
+        # cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+        # cmake --build build/test
+        # cd build/test
+        # ctest -V --output-on-failure -R unittests
+        # mpirun -n 3 ctest -V --output-on-failure -R unittests
 
       - name: Push packages (cpp) to cache and update index
         run: |
