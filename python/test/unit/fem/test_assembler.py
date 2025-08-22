@@ -1556,9 +1556,7 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
     x = ufl.SpatialCoordinate(msh)
 
     # Full domain
-    check_vertex_integral_against_sum(
-        fem.form(x[0] * ufl.dP, dtype=dtype), np.arange(0, num_vertices)
-    )
+    check_vertex_integral_against_sum(x[0] * ufl.dP, np.arange(num_vertices))
 
     # Split domain into left half of vertices (1) and right half of vertices (2)
     vertices_1 = mesh.locate_entities(msh, 0, lambda x: x[0] <= 0.5)
@@ -1568,21 +1566,19 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
 
     tags = np.full(num_vertices, 1)
     tags[vertices_2] = 2
-    vertices = np.arange(0, vertex_map.size_local, dtype=np.int32)
+    vertices = np.arange(0, num_vertices, dtype=np.int32)
     meshtags = mesh.meshtags(msh, 0, vertices, tags)
 
     dP = ufl.Measure("dP", domain=msh, subdomain_data=meshtags)
 
+    # Combinations of sub domains
     check_vertex_integral_against_sum(x[0] * dP(1), vertices_1)
     check_vertex_integral_against_sum(x[0] * dP(2), vertices_2)
     check_vertex_integral_against_sum(x[0] * (dP(1) + dP(2)), np.arange(num_vertices))
 
     V = fem.functionspace(msh, ("P", 1))
     u = fem.Function(V, dtype=dtype)
-    u.x.array[:] = np.arange(0, u.x.array.size, dtype=dtype)
-    u.x.array[:] = vertex_map.local_to_global(
-        np.arange(vertex_map.size_local + vertex_map.num_ghosts)
-    )
+    u.x.array[:] = vertex_map.local_to_global(np.arange(num_vertices + vertex_map.num_ghosts))
 
     check_vertex_integral_against_sum(u * x[0] * ufl.dP, np.arange(num_vertices), True)
     check_vertex_integral_against_sum(u * x[0] * dP(1), vertices_1, True)
