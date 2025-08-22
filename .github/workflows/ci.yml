@@ -43,6 +43,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          path: dolfinx-src
 
       - name: Add Spack to $PATH
         run: echo "PATH=/opt/spack/bin:$PATH" >> $GITHUB_ENV
@@ -54,7 +56,7 @@ jobs:
           spack env create cxx
 
       - name: Point Spack to DOLFINx source code
-        run: spack develop --path . --no-clone fenics-dolfinx@main
+        run: spack -e cxx develop --no-clone --path dolfinx-src fenics-dolfinx@main
 
       - name: Build DOLFINx
         run: |
@@ -69,7 +71,7 @@ jobs:
       - name: Build and run unit tests
         run: |
           spack env activate --sh cxx
-          spack install cmake catch2 ninja
+          spack install cmake catch2 ninja fenics-ffcx@git.main
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
           cmake --build build/test
           cd build/test
