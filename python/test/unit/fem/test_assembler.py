@@ -1624,7 +1624,7 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
         weights = np.arange(a, b, dtype=rdtype) if weighted else np.ones(b - a, dtype=rdtype)
         expected_value_l = np.zeros(num_vertices, dtype=rdtype)
         expected_value_l[a:b] = msh.geometry.x[a:b, 0] * weights
-        value_l = fem.assemble_vector(form)
+        value_l = fem.assemble_vector(fem.form(form, dtype=dtype))
         equal_l = np.allclose(
             expected_value_l, np.real(value_l.array[:num_vertices]), atol=1e3 * np.finfo(rdtype).eps
         )
@@ -1636,7 +1636,7 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
     v = ufl.conj(ufl.TestFunction(V))
 
     # Full domain
-    check_vertex_integral_against_sum(fem.form(x[0] * v * ufl.dP, dtype=dtype), (0, num_vertices))
+    check_vertex_integral_against_sum(x[0] * v * ufl.dP, (0, num_vertices))
 
     # Split domain into first half of vertices (1) and second half of vertices (2)
     vertices = np.arange(0, msh.topology.index_map(0).size_local, dtype=np.int32)
@@ -1645,31 +1645,15 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
     meshtags = mesh.meshtags(msh, 0, vertices, tags)
     dP = ufl.Measure("dP", domain=msh, subdomain_data=meshtags)
 
-    check_vertex_integral_against_sum(
-        fem.form(x[0] * v * dP(1), dtype=dtype), (0, num_vertices // 2)
-    )
-    check_vertex_integral_against_sum(
-        fem.form(x[0] * v * dP(2), dtype=dtype), (num_vertices // 2, num_vertices)
-    )
-    check_vertex_integral_against_sum(
-        fem.form(x[0] * v * (dP(1) + dP(2)), dtype=dtype), (0, num_vertices)
-    )
+    check_vertex_integral_against_sum(x[0] * v * dP(1), (0, num_vertices // 2))
+    check_vertex_integral_against_sum(x[0] * v * dP(2), (num_vertices // 2, num_vertices))
+    check_vertex_integral_against_sum(x[0] * v * (dP(1) + dP(2)), (0, num_vertices))
 
     V = fem.functionspace(msh, ("P", 1))
     u = fem.Function(V, dtype=dtype)
     u.x.array[:] = np.arange(u.x.array.size)
 
-    check_vertex_integral_against_sum(
-        fem.form(u * x[0] * v * ufl.dP, dtype=dtype), (0, num_vertices), weighted=True
-    )
-    check_vertex_integral_against_sum(
-        fem.form(u * x[0] * v * dP(1), dtype=dtype), (0, num_vertices // 2), weighted=True
-    )
-    check_vertex_integral_against_sum(
-        fem.form(u * x[0] * v * dP(2), dtype=dtype),
-        (num_vertices // 2, num_vertices),
-        weighted=True,
-    )
-    check_vertex_integral_against_sum(
-        fem.form(u * x[0] * v * (dP(1) + dP(2)), dtype=dtype), (0, num_vertices), weighted=True
-    )
+    check_vertex_integral_against_sum(u * x[0] * v * ufl.dP, (0, num_vertices), True)
+    check_vertex_integral_against_sum(u * x[0] * v * dP(1), (0, num_vertices // 2), True)
+    check_vertex_integral_against_sum(u * x[0] * v * dP(2), (num_vertices // 2, num_vertices), True)
+    check_vertex_integral_against_sum(u * x[0] * v * (dP(1) + dP(2)), (0, num_vertices), True)
