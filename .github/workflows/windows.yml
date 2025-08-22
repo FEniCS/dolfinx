@@ -65,7 +65,7 @@ jobs:
 
       - name: Install UFL
         working-directory: ufl
-        run: pip install . 
+        run: pip install .
 
       - name: Checkout Basix
         uses: actions/checkout@v4
