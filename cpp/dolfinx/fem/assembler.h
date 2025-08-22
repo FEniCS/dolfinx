@@ -211,9 +211,12 @@ T assemble_scalar(const Form<T, U>& M)
 /// @param[in] L The linear forms to assemble into b.
 /// @param[in] constants The constants that appear in `L`.
 /// @param[in] coefficients The coefficients that appear in `L`.
-template <dolfinx::scalar T, std::floating_point U>
+// template <dolfinx::scalar T, std::floating_point U>
+template <typename V, std::floating_point U,
+          dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
+  requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
 void assemble_vector(
-    std::span<T> b, const Form<T, U>& L, std::span<const T> constants,
+    V&& b, const Form<T, U>& L, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
@@ -224,8 +227,12 @@ void assemble_vector(
 /// @param[in,out] b Vector to be assembled. It will not be zeroed
 /// before assembly.
 /// @param[in] L Linear forms to assemble into b.
-template <dolfinx::scalar T, std::floating_point U>
-void assemble_vector(std::span<T> b, const Form<T, U>& L)
+// template <dolfinx::scalar T, std::floating_point U>
+// void assemble_vector(std::span<T> b, const Form<T, U>& L)
+template <typename V, std::floating_point U,
+          dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
+  requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
+void assemble_vector(V&& b, const Form<T, U>& L)
 {
   auto coefficients = allocate_coefficient_storage(L);
   pack_coefficients(L, coefficients);
@@ -311,9 +318,13 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 /// @param[in] bcs1 Boundary conditions that provide the \f$g_{i}\f$
 /// values. `bcs1[i]` is the list of boundary conditions on \f$u_{i}\f$.
 /// @param[in] alpha Scalar used in the modification of `b`.
-template <dolfinx::scalar T, std::floating_point U>
+template <typename V,
+          std::floating_point U
+          = scalar_value_t<typename std::remove_cvref_t<V>::value_type>,
+          dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
+  requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
 void apply_lifting(
-    std::span<T> b,
+    V&& b,
     std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>> a,
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
@@ -326,7 +337,7 @@ void apply_lifting(
   if (std::ranges::all_of(a, [](auto ai) { return !ai; }))
     return;
 
-  impl::apply_lifting<T>(b, a, constants, coeffs, bcs1, x0, alpha);
+  impl::apply_lifting(b, a, constants, coeffs, bcs1, x0, alpha);
 }
 
 /// @brief Modify the right-hand side vector to account for constraints
@@ -357,9 +368,13 @@ void apply_lifting(
 /// boundary conditions on \f$u_{i}\f$.
 /// @param[in] alpha Scalar used in the modification of `b` (see
 /// described in apply_lifting()).
-template <dolfinx::scalar T, std::floating_point U>
+template <typename V,
+          std::floating_point U
+          = scalar_value_t<typename std::remove_cvref_t<V>::value_type>,
+          dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
+  requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
 void apply_lifting(
-    std::span<T> b,
+    V&& b,
     std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>> a,
     const std::vector<
         std::vector<std::reference_wrapper<const DirichletBC<T, U>>>>& bcs1,

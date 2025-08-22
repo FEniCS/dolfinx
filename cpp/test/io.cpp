@@ -49,7 +49,7 @@ void test_vtx_reuse_mesh()
                           io::VTXMeshPolicy::reuse);
   writer.write(0);
 
-  std::ranges::fill(u->x()->mutable_array(), 1);
+  std::ranges::fill(u->x()->array(), 1);
 
   writer.write(1);
 }
