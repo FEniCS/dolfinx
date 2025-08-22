@@ -40,12 +40,12 @@ void test_vector()
       MPI_COMM_WORLD, size_local, ghosts, global_ghost_owner);
 
   la::Vector<T> v(index_map, 1);
-  std::ranges::fill(v.mutable_array(), 1.0);
+  std::ranges::fill(v.array(), 1.0);
 
   double norm2 = la::squared_norm(v);
   CHECK(norm2 == mpi_size * size_local);
 
-  std::ranges::fill(v.mutable_array(), mpi_rank);
+  std::ranges::fill(v.array(), mpi_rank);
 
   double sumn2
       = size_local * (mpi_size - 1) * mpi_size * (2 * mpi_size - 1) / 6;

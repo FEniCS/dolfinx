@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
     //  {cpp:class}`DirichletBC` takes two arguments: the value of the
     //  boundary condition, and the part of the boundary on which the
     //  condition applies. In our example, the value of the boundary
-    //  condition (0.0) can represented using a {cpp:class}`Function`,
+    //  condition (0) can represented using a {cpp:class}`Function`,
     //  and the Dirichlet boundary is defined by the indices of degrees
     //  of freedom to which the boundary condition applies. The
     //  definition of the Dirichlet boundary condition then looks as
@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
     auto facets = mesh::exterior_facet_indices(*mesh->topology());
     const auto bdofs = fem::locate_dofs_topological(
         *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
-    fem::DirichletBC<T> bc(0.0, bdofs, V);
+    fem::DirichletBC<T> bc(0, bdofs, V);
 
     //  Now, we have specified the variational forms and can consider
     //  the solution of the variational problem. First, we need to
@@ -237,11 +237,11 @@ int main(int argc, char* argv[])
     MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
-    b.set(0.0);
-    fem::assemble_vector(b.mutable_array(), L);
-    fem::apply_lifting<T, U>(b.mutable_array(), {a}, {{bc}}, {}, T(1.0));
+    std::ranges::fill(b.array(), 0);
+    fem::assemble_vector(b.array(), L);
+    fem::apply_lifting(b.array(), {a}, {{bc}}, {}, T(1));
     b.scatter_rev(std::plus<T>());
-    bc.set(b.mutable_array(), std::nullopt);
+    bc.set(b.array(), std::nullopt);
 
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
     la::petsc::options::set("ksp_type", "preonly");
@@ -263,7 +263,7 @@ int main(int argc, char* argv[])
 
     //  Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
-    file.write<T>({u}, 0.0);
+    file.write<T>({u}, 0);
   }
 
   PetscFinalize();
