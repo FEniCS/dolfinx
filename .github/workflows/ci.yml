@@ -56,7 +56,10 @@ jobs:
           spack env create cxx
 
       - name: Point Spack to DOLFINx source code
-        run: spack -e cxx develop --no-clone --path dolfinx-src fenics-dolfinx@main
+        run: |
+          pwd
+          ls -alh
+          spack -e cxx develop --no-clone --path dolfinx-src fenics-dolfinx@main
 
       - name: Build DOLFINx
         run: |
