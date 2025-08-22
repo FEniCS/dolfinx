@@ -40,10 +40,16 @@ jobs:
     #       ]
 
     steps:
+
+      - name: Check PATH
+        run: |
+          echo $PATH
+
       - uses: actions/checkout@v5
 
       - name: Add cache and create environment
         run: |
+          echo $PATH
           spack mirror add --unsigned --type binary --oci-username-variable GITHUB_USER --oci-password-variable GITHUB_TOKEN local-buildcache oci://ghcr.io/fenics/spack-buildcache
           spack env create . spack.yml
 
