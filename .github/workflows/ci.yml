@@ -51,7 +51,7 @@ jobs:
         run: |
           echo $PATH
           spack mirror add --unsigned --type binary --oci-username-variable GITHUB_USER --oci-password-variable GITHUB_TOKEN local-buildcache oci://ghcr.io/fenics/spack-buildcache
-          spack env create . cpp
+          spack env create cpp
 
       - name: Point Spack to DOLFINx source code
         run: spack -e cpp develop --path . --no-clone fenics-dolfinx@main
