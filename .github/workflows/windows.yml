@@ -147,11 +147,10 @@ jobs:
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
 
       - name: Run tests (C++)
-        working-directory: cpp/build
+        working-directory: dolfinx/cpp/build-dir
         run: cmake --build . --target test
 
-      - name: Install build dependencies
-        working-directory: dolfinx
+      - name: Install Python build dependencies
         run: |
           pip -v install --no-binary mpi4py -r "mpi4py<4"
 
