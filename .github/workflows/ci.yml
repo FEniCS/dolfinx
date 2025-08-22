@@ -51,24 +51,24 @@ jobs:
         run: |
           echo $PATH
           spack mirror add --unsigned --type binary --oci-username-variable GITHUB_USER --oci-password-variable GITHUB_TOKEN local-buildcache oci://ghcr.io/fenics/spack-buildcache
-          spack env create cpp
+          spack env create cxx
 
       - name: Point Spack to DOLFINx source code
-        run: spack -e cpp develop --path . --no-clone fenics-dolfinx@main
+        run: spack -e cxx develop --path . --no-clone fenics-dolfinx@main
 
       - name: Build DOLFINx
         run: |
-          spack -e cpp add fenics-dolfinx@main +petsc +slepc partitioners=parmetis \
+          spack -e cxx add fenics-dolfinx@main +petsc +slepc partitioners=parmetis \
             %petsc +mpi +hypre +mumps +superlu-dist \
             %openmpi %fenics-basix@git.main=main %fenics-ufcx@git.main=main
 
       - name: Build C++ library
         run: |
-          spack -e cpp install -j 4 --use-buildcache auto
+          spack -e cxx install -j 4 --use-buildcache auto
 
       - name: Build and run unit tests
         run: |
-          spack env activate --sh  cpp
+          spack env activate --sh  cxx
           spack install cmake catch2 ninja
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
           cmake --build build/test
@@ -78,6 +78,6 @@ jobs:
 
       - name: Push packages (cpp) to cache and update index
         run: |
-          spack -e cpp buildcache push --only dependencies --with-build-dependencies \
+          spack -e cxx buildcache push --only dependencies --with-build-dependencies \
             --base-image spack/ubuntu-noble --update-index local-buildcache
         if: ${{ !cancelled() }}
