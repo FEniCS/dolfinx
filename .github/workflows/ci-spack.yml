@@ -2,8 +2,8 @@ name: CI via Spack
 on:
   push:
     # Uncomment the below 'push' to trigger on push
-    branches:
-    - "**"
+    # branches:
+    # - "**"
   pull_request:
     branches:
     - "main"
