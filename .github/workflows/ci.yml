@@ -15,9 +15,9 @@ on:
   #   - cron: "0 2 * * THU"
   workflow_dispatch:
 
-# env:
-#   GITHUB_USER: ${{ github.actor }}
-#   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+env:
+  GITHUB_USER: ${{ github.actor }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   build:
