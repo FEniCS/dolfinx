@@ -42,14 +42,10 @@ jobs:
     #       ]
 
     steps:
-
-      - name: Extend PATH
-        run: echo "PATH=/opt/spack/bin:$PATH" >> $GITHUB_ENV
-      - name: Check PATH
-        run: |
-          echo $PATH
-
       - uses: actions/checkout@v5
+
+      - name: Add Spack to $PATH
+        run: echo "PATH=/opt/spack/bin:$PATH" >> $GITHUB_ENV
 
       - name: Add cache and create environment
         run: |
