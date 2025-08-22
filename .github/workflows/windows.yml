@@ -147,8 +147,8 @@ jobs:
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
 
       - name: Run tests (C++)
-        working-directory: dolfinx/build-dir
-        run: cmake --build . --config Release --target test
+        working-directory: dolfinx
+        run: cmake --build build_dir --config Release --target test
 
       - name: Install Python build dependencies
         run: |
