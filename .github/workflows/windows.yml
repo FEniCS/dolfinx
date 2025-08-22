@@ -19,16 +19,28 @@ jobs:
   windows-build:
     name: Windows vcpkg build
     runs-on: windows-2025
+    permissions:
+      packages: write
     env:
-      VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+      USERNAME: FEniCS
+      VCPKG_EXE: C:/vcpkg/vcpkg/vcpkg
+      FEED_URL: https://nuget.pkg.github.com/FEniCS/index.json
+      VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/FEniCS/index.json,readwrite"
 
     steps:
-      - name: Export GitHub Actions cache environment variables
-        uses: actions/github-script@v7
-        with:
-          script: |
-            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
-            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+      - name: Add NuGet sources
+        shell: pwsh
+        run: |
+          .$(${{ env.VCPKG_EXE }} fetch nuget) `
+            sources add `
+            -Source "${{ env.FEED_URL }}" `
+            -StorePasswordInClearText `
+            -Name GitHubPackages `
+            -UserName "${{ env.USERNAME }}" `
+            -Password "${{ secrets.GITHUB_TOKEN }}"
+          .$(${{ env.VCPKG_EXE }} fetch nuget) `
+            setapikey "${{ secrets.GITHUB_TOKEN }}" `
+            -Source "${{ env.FEED_URL }}"
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v4
