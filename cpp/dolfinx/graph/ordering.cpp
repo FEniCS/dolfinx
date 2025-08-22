@@ -7,6 +7,7 @@
 #include "ordering.h"
 #include "AdjacencyList.h"
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
