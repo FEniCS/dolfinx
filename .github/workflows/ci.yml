@@ -65,12 +65,12 @@ jobs:
 
       - name: Build C++ library
         run: |
-          spack -e . install -U -j 4 --use-buildcache auto
+          spack -e . install -j 4 --use-buildcache auto
 
       - name: Build and run unit tests
         run: |
           . /opt/spack/share/spack/setup-env.sh
-          spack env activate .
+          spack env activate  --sh  .
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
           cmake --build build/test
           cd build/test
