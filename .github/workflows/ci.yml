@@ -5,11 +5,11 @@ on:
   push:
     branches:
       - "**"
-  pull_request:
-    branches: [ "main" ]
-  merge_group:
-    branches:
-      - main
+  # pull_request:
+  #   branches: [ "main" ]
+  # merge_group:
+  #   branches:
+  #     - main
   # schedule:
   #   # '*' is a special character in YAML, so string must be quoted
   #   - cron: "0 2 * * THU"
@@ -21,9 +21,11 @@ on:
 
 jobs:
   build:
-    runs-on: spack/ubuntu-noble
-    # permissions:
-    #   packages: write
+    name: Build and test
+    runs-on: ubuntu-latest
+    container: spack/ubuntu-noble
+    permissions:
+      packages: write
 
     # env:
     #   dolfinx_ref: main
@@ -37,38 +39,37 @@ jobs:
     #         { device: cuda, spack_opt: "++cuda cuda_arch=75 ^openmpi", cmake_opt: -DCUDA_ARCH=75 },
     #       ]
 
-    name: Build and test
     steps:
       - uses: actions/checkout@v5
 
-      # - name: Add cache and create environment
-      #   run: |
-      #     spack mirror add --unsigned --type binary --oci-username-variable GITHUB_USER --oci-password-variable GITHUB_TOKEN local-buildcache oci://ghcr.io/fenics/spack-buildcache
-      #     spack env create . spack.yml
+      - name: Add cache and create environment
+        run: |
+          spack mirror add --unsigned --type binary --oci-username-variable GITHUB_USER --oci-password-variable GITHUB_TOKEN local-buildcache oci://ghcr.io/fenics/spack-buildcache
+          spack env create . spack.yml
 
-      # - name: Point Spack to DOLFINx source code
-      #   run: spack -e . develop --path . --no-clone bench-dolfinx@main
+      - name: Point Spack to DOLFINx source code
+        run: spack -e . develop --path . --no-clone bench-dolfinx@main
 
-      # - name: Build DOLFINx
-      #   run: |
-      #     spack -e . add fenics-dolfinx@main +petsc +slepc +partitioners=parmetis \
-      #       %petsc +mpi +hypre +mumps +superlu-dist \
-      #       %openmpi %fenics-basix@git.main %fenics-ufx@git.main catch2 cmake
+      - name: Build DOLFINx
+        run: |
+          spack -e . add fenics-dolfinx@main +petsc +slepc +partitioners=parmetis \
+            %petsc +mpi +hypre +mumps +superlu-dist \
+            %openmpi %fenics-basix@git.main %fenics-ufx@git.main catch2 cmake
 
-      # - name: Build C++ library
-      #   run: |
-      #     spack -e . install -U -j 4 --use-buildcache auto
+      - name: Build C++ library
+        run: |
+          spack -e . install -U -j 4 --use-buildcache auto
 
-      # - name: Build and run unit tests
-      #   run: |
-      #     cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
-      #     cmake --build build/test
-      #     cd build/test
-      #     ctest -V --output-on-failure -R unittests
-      #     mpirun -n 3 ctest -V --output-on-failure -R unittests
+      - name: Build and run unit tests
+        run: |
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake --build build/test
+          cd build/test
+          ctest -V --output-on-failure -R unittests
+          mpirun -n 3 ctest -V --output-on-failure -R unittests
 
-      # - name: Push packages to cache and update index
-      #   run: |
-      #     spack -e . buildcache push --only dependencies --with-build-dependencies \
-      #       --base-image spack/ubuntu-noble --update-index local-buildcache
-      #   if: ${{ !cancelled() }}
+      - name: Push packages to cache and update index
+        run: |
+          spack -e . buildcache push --only dependencies --with-build-dependencies \
+            --base-image spack/ubuntu-noble --update-index local-buildcache
+        if: ${{ !cancelled() }}
