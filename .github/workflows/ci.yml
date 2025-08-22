@@ -59,7 +59,7 @@ jobs:
         run: |
           pwd
           ls -alh
-          spack -e cxx develop --no-clone --path dolfinx-src fenics-dolfinx@main
+          spack -e cxx develop --no-clone --path ./dolfinx-src fenics-dolfinx@main
 
       - name: Build DOLFINx
         run: |
