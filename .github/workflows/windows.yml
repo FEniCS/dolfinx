@@ -140,7 +140,7 @@ jobs:
 
       - name: Run tests (C++)
         working-directory: dolfinx-src/cpp
-        run: cmake --build build-dir --config Release --target test
+        run: cmake --build build-dir --config Release --target RUN_TESTS
 
       - name: Install Python build dependencies
         run: |
