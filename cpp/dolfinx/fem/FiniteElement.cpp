@@ -32,7 +32,7 @@ _build_element_list(std::vector<BasixElementData<T>> elements)
 {
   std::vector<std::shared_ptr<const FiniteElement<T>>> _e;
   std::ranges::transform(elements, std::back_inserter(_e),
-                         [](const auto& data)
+                         [](auto& data)
                          {
                            auto& [e, bs, symm] = data;
                            return std::make_shared<fem::FiniteElement<T>>(e, bs,

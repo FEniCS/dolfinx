@@ -256,7 +256,7 @@ create_geometry(const Topology& topology,
 
   std::vector<fem::ElementDofLayout> dof_layouts;
   dof_layouts.reserve(elements.size());
-  for (const auto& el : elements)
+  for (auto& el : elements)
     dof_layouts.push_back(el.create_dof_layout());
 
   spdlog::info("Got {} dof layouts", dof_layouts.size());

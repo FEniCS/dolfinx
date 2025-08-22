@@ -105,7 +105,7 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   // Get keys, values into containers for int doubles
   std::string keys;
   std::vector<double> values;
-  for (const auto& it : _values)
+  for (auto& it : _values)
   {
     if (const auto* const pval = std::get_if<double>(&it.second))
     {
@@ -181,7 +181,7 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
 
   // Construct table to return
   Table table_all(new_title);
-  for (const auto& it : _values)
+  for (auto& it : _values)
   {
     if (std::holds_alternative<int>(it.second))
       table_all.set(it.first.first, it.first.second, it.second);
