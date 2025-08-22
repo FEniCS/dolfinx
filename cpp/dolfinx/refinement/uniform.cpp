@@ -84,7 +84,8 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
       entity_dofs[k] = dof_layout.entity_dofs(0, k).front();
 
     // Iterate over cells of this type
-    const auto im = topology->index_maps(tdim)[j];
+    auto im = topology->index_maps(tdim)[j];
+    assert(im);
     for (std::int32_t c = 0; c < im->size_local() + im->num_ghosts(); ++c)
     {
       auto vertices = c_to_v->links(c);
@@ -100,7 +101,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
 
   // Copy existing vertices
   std::vector<T> new_x(nlocal * 3);
-  auto x_g = mesh.geometry().x();
+  std::span x_g = mesh.geometry().x();
   for (int i = 0; i < index_maps[0]->size_local(); ++i)
     for (int j = 0; j < 3; ++j)
       new_x[i * 3 + j] = x_g[vertex_to_x[i] * 3 + j];
@@ -144,9 +145,23 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
               local_range[0] + entity_offsets[j]);
 
     common::Scatterer sc(*index_maps[j], 1);
-    sc.scatter_fwd(std::span<const std::int64_t>(new_v[j]),
-                   std::span(std::next(new_v[j].begin(), num_entities),
-                             index_maps[j]->num_ghosts()));
+    std::vector<std::int64_t> send_buffer(sc.local_indices().size());
+    {
+      auto& idx = sc.local_indices();
+      for (std::size_t i = 0; i < idx.size(); ++i)
+        send_buffer[i] = new_v[j][idx[i]];
+    }
+    std::vector<std::int64_t> recv_buffer(sc.remote_indices().size());
+    MPI_Request request = MPI_REQUEST_NULL;
+    sc.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), request);
+    sc.scatter_end(request);
+    {
+      std::span ghosts(std::next(new_v[j].begin(), num_entities),
+                       new_v[j].end());
+      auto& idx = sc.remote_indices();
+      for (std::size_t i = 0; i < idx.size(); ++i)
+        ghosts[idx[i]] = recv_buffer[i];
+    }
   }
 
   // Create new topology

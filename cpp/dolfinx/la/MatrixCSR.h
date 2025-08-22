@@ -479,7 +479,7 @@ public:
   std::array<int, 2> block_size() const { return _bs; }
 
 private:
-  // Maps for the distribution of the ows and columns
+  // Maps for the distribution of the rows and columns
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
 
   // Block mode (compact or expanded)
@@ -782,7 +782,7 @@ void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
   std::span<const Scalar> Avalues(values().data(), Arow_ptr[nrowslocal]);
 
   std::span<const Scalar> _x = x.array();
-  std::span<Scalar> _y = y.mutable_array();
+  std::span<Scalar> _y = y.array();
 
   std::span<const std::int64_t> Arow_begin(Arow_ptr.data(), nrowslocal);
   std::span<const std::int64_t> Arow_end(Arow_ptr.data() + 1, nrowslocal);
