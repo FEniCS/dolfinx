@@ -139,7 +139,7 @@ jobs:
 
       - name: Install Python build dependencies
         run: |
-          pip -v install --no-binary mpi4py -r "mpi4py<4"
+          pip -v install --no-binary mpi4py mpi4py
 
       - name: Install DOLFINx (Python)
         working-directory: dolfinx-src/python
