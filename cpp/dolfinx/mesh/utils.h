@@ -1019,10 +1019,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   assert(cells.size() == elements.size());
   std::vector<CellType> celltypes;
   std::ranges::transform(elements, std::back_inserter(celltypes),
-                         [](const auto& e) { return e.cell_shape(); });
+                         [](auto& e) { return e.cell_shape(); });
   std::vector<fem::ElementDofLayout> doflayouts;
   std::ranges::transform(elements, std::back_inserter(doflayouts),
-                         [](const auto& e) { return e.create_dof_layout(); });
+                         [](auto& e) { return e.create_dof_layout(); });
 
   // Note: `extract_topology` extracts topology data, i.e. just the
   // vertices. For P1 geometry this should just be the identity

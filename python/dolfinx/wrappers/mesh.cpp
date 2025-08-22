@@ -295,7 +295,7 @@ void declare_mesh(nb::module_& m, std::string type)
 
           std::vector<std::span<const std::int64_t>> cells;
           std::ranges::transform(
-              cells_nb, std::back_inserter(cells), [](const auto& c)
+              cells_nb, std::back_inserter(cells), [](auto& c)
               { return std::span<const std::int64_t>(c.data(), c.size()); });
 
           if (p)
