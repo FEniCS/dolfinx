@@ -64,7 +64,7 @@ jobs:
         run: |
           spack -e . add fenics-dolfinx@main +petsc +slepc partitioners=parmetis \
             %petsc +mpi +hypre +mumps +superlu-dist \
-            %openmpi %fenics-basix@git.main %fenics-ufx@git.main \
+            %openmpi %fenics-basix@git.main=main %fenics-ufcx@git.main=main \
             catch2 cmake
 
       - name: Build C++ library
