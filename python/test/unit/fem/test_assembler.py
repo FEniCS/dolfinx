@@ -1540,54 +1540,63 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
             comm, 4, 4, 4, cell_type=cell_type, dtype=rdtype, ghost_mode=ghost_mode
         )
 
-    def check_vertex_integral_against_sum(form, coordinate_range, weighted=False):
-        a, b = coordinate_range
-        weights = np.arange(a, b, dtype=rdtype) if weighted else np.ones(b - a, dtype=rdtype)
+    vertex_map = msh.topology.index_map(0)
 
-        expected_value_l = np.sum(msh.geometry.x[a:b, 0] * weights)
+    def check_vertex_integral_against_sum(form, vertices, weighted=False):
+        weights = vertex_map.local_to_global(vertices) if weighted else np.ones_like(vertices)
+        expected_value_l = np.sum(msh.geometry.x[vertices, 0] * weights)
         value_l = fem.assemble_scalar(form)
-        assert expected_value_l == pytest.approx(value_l, abs=1e4 * np.finfo(rdtype).eps)
+        assert expected_value_l == pytest.approx(value_l, abs=5e4 * np.finfo(rdtype).eps)
 
         expected_value = comm.allreduce(expected_value_l)
         value = comm.allreduce(value_l)
         assert expected_value == pytest.approx(value, abs=5e4 * np.finfo(rdtype).eps)
 
-    num_vertices = msh.topology.index_map(0).size_local
+    num_vertices = vertex_map.size_local
     x = ufl.SpatialCoordinate(msh)
 
     # Full domain
-    check_vertex_integral_against_sum(fem.form(x[0] * ufl.dP, dtype=dtype), (0, num_vertices))
+    check_vertex_integral_against_sum(
+        fem.form(x[0] * ufl.dP, dtype=dtype), np.arange(0, num_vertices)
+    )
 
-    # Split domain into first half of vertices (1) and second half of vertices (2)
-    vertices = np.arange(0, msh.topology.index_map(0).size_local, dtype=np.int32)
-    tags = np.full_like(vertices, 1)
-    tags[tags.size // 2 :] = 2
+    # Split domain into left half of vertices (1) and right half of vertices (2)
+    vertices_1 = mesh.locate_entities(msh, 0, lambda x: x[0] <= 0.5)
+    vertices_1 = vertices_1[vertices_1 < num_vertices]
+    vertices_2 = mesh.locate_entities(msh, 0, lambda x: x[0] > 0.5)
+    vertices_2 = vertices_2[vertices_2 < num_vertices]
+
+    tags = np.full(num_vertices, 1)
+    tags[vertices_2] = 2
+    vertices = np.arange(0, vertex_map.size_local, dtype=np.int32)
     meshtags = mesh.meshtags(msh, 0, vertices, tags)
+
     dP = ufl.Measure("dP", domain=msh, subdomain_data=meshtags)
 
-    check_vertex_integral_against_sum(fem.form(x[0] * dP(1), dtype=dtype), (0, num_vertices // 2))
+    check_vertex_integral_against_sum(fem.form(x[0] * dP(1), dtype=dtype), vertices_1)
+    check_vertex_integral_against_sum(fem.form(x[0] * dP(2), dtype=dtype), vertices_2)
     check_vertex_integral_against_sum(
-        fem.form(x[0] * dP(2), dtype=dtype), (num_vertices // 2, num_vertices)
-    )
-    check_vertex_integral_against_sum(
-        fem.form(x[0] * (dP(1) + dP(2)), dtype=dtype), (0, num_vertices)
+        fem.form(x[0] * (dP(1) + dP(2)), dtype=dtype), np.arange(num_vertices)
     )
 
     V = fem.functionspace(msh, ("P", 1))
     u = fem.Function(V, dtype=dtype)
     u.x.array[:] = np.arange(0, u.x.array.size, dtype=dtype)
+    u.x.array[:] = vertex_map.local_to_global(
+        np.arange(vertex_map.size_local + vertex_map.num_ghosts)
+    )
 
     check_vertex_integral_against_sum(
-        fem.form(u * x[0] * ufl.dP, dtype=dtype), (0, num_vertices), weighted=True
+        fem.form(u * x[0] * ufl.dP, dtype=dtype), np.arange(num_vertices), weighted=True
     )
     check_vertex_integral_against_sum(
-        fem.form(u * x[0] * dP(1), dtype=dtype), (0, num_vertices // 2), weighted=True
+        fem.form(u * x[0] * dP(1), dtype=dtype), vertices_1, weighted=True
     )
     check_vertex_integral_against_sum(
-        fem.form(u * x[0] * dP(2), dtype=dtype), (num_vertices // 2, num_vertices), weighted=True
+        fem.form(u * x[0] * dP(2), dtype=dtype), vertices_2, weighted=True
     )
     check_vertex_integral_against_sum(
-        fem.form(u * x[0] * (dP(1) + dP(2)), dtype=dtype), (0, num_vertices), weighted=True
+        fem.form(u * x[0] * (dP(1) + dP(2)), dtype=dtype), np.arange(num_vertices), weighted=True
     )
 
 
