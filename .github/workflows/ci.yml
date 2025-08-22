@@ -27,6 +27,8 @@ jobs:
     permissions:
       packages: write
 
+    env:
+      PATH: /opt/spack/bin:$PATH
     # env:
     #   dolfinx_ref: main
     #   # bench_dolfinx_ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
