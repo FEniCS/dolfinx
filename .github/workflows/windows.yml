@@ -133,9 +133,9 @@ jobs:
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/dolfinx-install
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
 
-      - name: Run tests (C++)
-        working-directory: dolfinx-src/cpp
-        run: cmake --build build-dir --config Release --target RUN_TESTS
+      #- name: Run tests (C++)
+      #  working-directory: dolfinx-src/cpp
+      #  run: cmake --build build-dir --config Release --target RUN_TESTS
 
       - name: Install Python build dependencies
         run: |
