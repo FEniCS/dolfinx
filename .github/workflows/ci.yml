@@ -69,8 +69,8 @@ jobs:
 
       - name: Build and run unit tests
         run: |
-          . /opt/spack/share/spack/setup-env.sh
           spack env activate  --sh  .
+          spack install cmake catch2
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
           cmake --build build/test
           cd build/test
