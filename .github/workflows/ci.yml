@@ -27,8 +27,8 @@ jobs:
     permissions:
       packages: write
 
-    env:
-      PATH: /opt/spack/bin:${{ env.PATH }}
+    # env:
+    #   PATH: /opt/spack/bin:${{ env.PATH }}
     # env:
     #   dolfinx_ref: main
     #   # bench_dolfinx_ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
@@ -43,6 +43,8 @@ jobs:
 
     steps:
 
+      - name: Extend PATH
+        run: echo "PATH=/opt/spack/bin:$PATH" >> $GITHUB_ENV
       - name: Check PATH
         run: |
           echo $PATH
