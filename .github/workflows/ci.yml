@@ -54,7 +54,7 @@ jobs:
           spack env create cxx
 
       - name: Point Spack to DOLFINx source code
-        run: spack -e cxx develop --path . --no-clone fenics-dolfinx@main
+        run: spack develop --path . --no-clone fenics-dolfinx@main
 
       - name: Build DOLFINx
         run: |
@@ -68,7 +68,7 @@ jobs:
 
       - name: Build and run unit tests
         run: |
-          spack env activate --sh  cxx
+          spack env activate --sh cxx
           spack install cmake catch2 ninja
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
           cmake --build build/test
