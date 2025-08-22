@@ -1,0 +1,71 @@
+name: Testing
+
+on:
+  # Uncomment the below 'push' to trigger on push
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches: [ "main" ]
+  merge_group:
+    branches:
+      - main
+  # schedule:
+  #   # '*' is a special character in YAML, so string must be quoted
+  #   - cron: "0 2 * * THU"
+  workflow_dispatch:
+
+env:
+  GITHUB_USER: ${{ github.actor }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build:
+    runs-on: spack/ubuntu-noble
+    permissions:
+      packages: write
+
+    # env:
+    #   dolfinx_ref: main
+    #   # bench_dolfinx_ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+    # strategy:
+    #   matrix:
+    #     backend:
+    #       [
+    #         { device: cpu,  spack_opt: "~cuda~rocm", cmake_opt: "" },
+    #         { device: rocm, spack_opt: "++rocm amdgpu_target=gfx90a ^openmpi+rocm amdgpu_target=gfx90a", cmake_opt: -DHIP_ARCH=gfx90a },
+    #         { device: cuda, spack_opt: "++cuda cuda_arch=75 ^openmpi", cmake_opt: -DCUDA_ARCH=75 },
+    #       ]
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Add cache and create environment
+        run: |
+          spack mirror add --unsigned --type binary --oci-username-variable GITHUB_USER --oci-password-variable GITHUB_TOKEN local-buildcache oci://ghcr.io/fenics/spack-buildcache
+          spack env create . spack.yml
+
+      - name: Point Spack to DOLFINx source code
+        run: spack -e . develop --path . --no-clone bench-dolfinx@main
+
+      - name: Build DOLFINx
+        run: |
+          spack -e . add fenics-dolfinx@main ^openmpi ^fenics-basix@git.main ^fenics-ufx@git.main catch2 cmake
+
+      - name: Build C++ library
+        run: |
+          spack -e . install -U -j 4 --use-buildcache auto
+
+      - name: Build and run unit tests
+        run: |
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake --build build/test
+          cd build/test
+          ctest -V --output-on-failure -R unittests
+          mpirun -n 3 ctest -V --output-on-failure -R unittests
+
+      - name: Push packages to cache and update index
+        run: |
+          spack -e . buildcache push --only dependencies --with-build-dependencies \
+            --base-image spack/ubuntu-noble --update-index local-buildcache
+        if: ${{ !cancelled() }}
