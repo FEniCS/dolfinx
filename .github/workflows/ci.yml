@@ -58,7 +58,7 @@ jobs:
           spack env create .
 
       - name: Point Spack to DOLFINx source code
-        run: spack -e . develop --path . --no-clone bench-dolfinx@main
+        run: spack -e . develop --path . --no-clone fenics-dolfinx@main
 
       - name: Build DOLFINx
         run: |
