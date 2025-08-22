@@ -45,11 +45,11 @@ jobs:
       - name: Checkout DOLFINx
         uses: actions/checkout@v4
         with:
-          path: dolfinx
+          path: dolfinx-src
 
       - name: Load environment variables
         run: |
-          cat dolfinx/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+          cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -120,16 +120,8 @@ jobs:
         run: |
           pip install .
 
-      - name: Checkout DOLFINx
-        uses: actions/checkout@v4
-        with:
-          path: dolfinx
-
-      - name: Load environment variables
-        run: cat dolfinx/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
-
       - name: Insert add_dll_directory calls into DOLFINx
-        working-directory: dolfinx/python/dolfinx
+        working-directory: dolfinx-src/python/dolfinx
         run: |
           (Get-Content __init__.py).Replace('# WINDOWSDLL', 'import os; os.add_dll_directory("${{ github.workspace }}/dolfinx-install/bin"); os.add_dll_directory("C:/Program Files (x86)/Intel/oneAPI/mpi/2021.12/opt/mpi/libfabric/bin")') | Set-Content __init__.py
           Get-Content __init__.py
@@ -139,7 +131,7 @@ jobs:
           mpi: "intelmpi"
 
       - name: Install DOLFINx (C++)
-        working-directory: dolfinx/cpp
+        working-directory: dolfinx-src/cpp
         run: |
           cmake -DBUILD_TESTING=ON -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR="$env:GITHUB_WORKSPACE/basix-install/lib/cmake/basix" -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR="$env:GITHUB_WORKSPACE/ufcx-install/share/ufcx/cmake" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS=".vcpkg-overlay" -B build-dir -S .
           cmake --build build-dir --config Release
@@ -147,7 +139,7 @@ jobs:
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
 
       - name: Run tests (C++)
-        working-directory: dolfinx/cpp
+        working-directory: dolfinx-src/cpp
         run: cmake --build build_dir --config Release --target test
 
       - name: Install Python build dependencies
@@ -155,25 +147,25 @@ jobs:
           pip -v install --no-binary mpi4py -r "mpi4py<4"
 
       - name: Install DOLFINx (Python)
-        working-directory: dolfinx/python
+        working-directory: dolfinx-src/python
         run: |
           pip -v install --check-build-dependencies --no-build-isolation .[test] --config-settings=cmake.args=-DBasix_DIR="$env:GITHUB_WORKSPACE/basix-install/lib/cmake/basix" --config-settings=cmake.args=-Dufcx_DIR="$env:GITHUB_WORKSPACE/ufcx-install/share/ufcx/cmake" --config-settings=cmake.args=-DDOLFINX_DIR="$env:GITHUB_WORKSPACE/dolfinx-install/lib/cmake/dolfinx" --config-settings=cmake.args=-DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
 
       - name: Run units tests (Python, serial)
-        working-directory: dolfinx
+        working-directory: dolfinx-src
         run: |
           pip install pytest-xdist
           python -m pytest -n auto -m "not petsc4py and not adios2" python/test/unit
       - name: Run units tests (Python, MPI, np=3)
-        working-directory: dolfinx
+        working-directory: dolfinx-src
         run: |
           mpiexec -n 3 python -m pytest -m "not petsc4py and not adios2" python/test/unit
 
       - name: Run Python demos (serial)
-        working-directory: dolfinx/python/demo
+        working-directory: dolfinx-src/python/demo
         run: |
           python3 -m pytest -n auto -m serial --durations=10 test.py
       - name: Run Python demos (MPI, np=3)
-        working-directory: dolfinx/python/demo
+        working-directory: dolfinx-src/python/demo
         run: |
           python3 -m pytest -m mpi --num-proc=3 test.py
