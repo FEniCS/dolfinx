@@ -53,7 +53,8 @@ class Vector
 private:
   /// @brief Return a 'pack' function for packing a send buffer.
   ///
-  /// Typically used for forward and reverse scatter operations.
+  /// Typically used for forward and reverse scatter operations on a
+  /// CPU.
   auto get_pack()
   {
     return [](typename ScatterContainer::const_iterator idx_first,
@@ -69,7 +70,7 @@ private:
   /// @brief Return an 'unpack' function for unpacking a receive buffer. Assigns
   /// received values to entries.
   ///
-  /// Typically used to unpack into ghost entries.
+  /// Typically used to unpack into ghost entries on a CPU.
   auto get_unpack()
   {
     return [](typename ScatterContainer::const_iterator idx_first,
@@ -89,8 +90,8 @@ private:
   /// @brief Return an 'unpack' function for unpacking a receive buffer.
   /// Applied a binary operation an then assigns to entries.
   ///
-  /// Typically used to unpack into owned entries. Commonly more than
-  /// one value per entry is received.
+  /// Typically used to unpack into owned entries on a CPU. Commonly
+  /// more than one value per entry is received.
   template <typename BinaryOp>
   auto get_unpack_op(BinaryOp op)
   {
