@@ -46,7 +46,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: dolfinx
-      
+
       - name: Load environment variables
         run: |
           cat dolfinx/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -55,7 +55,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      
+
       - name: Checkout UFL
         uses: actions/checkout@v4
         with:
@@ -141,25 +141,14 @@ jobs:
       - name: Install DOLFINx (C++)
         working-directory: dolfinx
         run: |
-          cmake -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR="$env:GITHUB_WORKSPACE/basix-install/lib/cmake/basix" -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR="$env:GITHUB_WORKSPACE/ufcx-install/share/ufcx/cmake" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS="cpp/.vcpkg-overlay" -B build-dir -S cpp
+          cmake -DBUILD_TESTING=ON -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR="$env:GITHUB_WORKSPACE/basix-install/lib/cmake/basix" -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR="$env:GITHUB_WORKSPACE/ufcx-install/share/ufcx/cmake" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS="cpp/.vcpkg-overlay" -B build-dir -S cpp
           cmake --build build-dir --config Release
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/dolfinx-install
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
 
-      - name: Build unit tests (C++)
-        working-directory: dolfinx
-        run: |
-          cmake -DBasix_DIR=D:/a/dolfinx/basix-install/share/basix -Dufcx_DIR="$env:GITHUB_WORKSPACE/ufcx-install/share/ufcx/cmake" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -B build/test/ -S cpp/test/
-          cmake --build build/test --config Release --parallel 3
-
-      - name: Run unit tests (C++, MPI, np=1)
-        working-directory: dolfinx/build/test
-        run: |
-          mpiexec -n 1 ctest -V --output-on-failure -R unittests
-      - name: Run C++ tests (C++, MPI, np=3)
-        working-directory: dolfinx/build/test
-        run: |
-          mpiexec -n 3 ctest -V --output-on-failure -R unittests
+      - name: Run tests (C++)
+        working-directory: cpp/build
+        run: cmake --build . --target test
 
       - name: Install build dependencies
         working-directory: dolfinx
