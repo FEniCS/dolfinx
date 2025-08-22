@@ -70,7 +70,7 @@ jobs:
       - name: Build and run unit tests
         run: |
           spack env activate  --sh  .
-          spack install cmake catch2
+          spack install cmake catch2 ninja
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
           cmake --build build/test
           cd build/test
