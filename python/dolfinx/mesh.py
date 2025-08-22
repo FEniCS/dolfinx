@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import typing
+from collections.abc import Callable, Sequence
 
 from mpi4py import MPI as _MPI
 
@@ -31,13 +32,14 @@ from dolfinx.cpp.mesh import (
     to_string,
     to_type,
 )
-from dolfinx.cpp.refinement import RefinementOption
+from dolfinx.cpp.refinement import IdentityPartitionerPlaceholder, RefinementOption
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem import coordinate_element as _coordinate_element
 from dolfinx.graph import AdjacencyList
 
 __all__ = [
     "CellType",
+    "EntityMap",
     "Geometry",
     "GhostMode",
     "Mesh",
@@ -181,13 +183,7 @@ class Topology:
         Returns:
             Index map for the entities of dimension ``dim``.
         """
-        if (imap := self._cpp_object.index_map(dim)) is not None:
-            return imap
-        else:
-            raise RuntimeError(
-                f"Entities of dimension {dim} has not been computed."
-                f"Call `dolfinx.mesh.Topology.create_entities({dim}) first."
-            )
+        return self._cpp_object.index_map(dim)
 
     def index_maps(self, dim: int) -> list[_cpp.common.IndexMap]:
         """Get the IndexMaps that describes the parallel distribution of
@@ -198,14 +194,9 @@ class Topology:
 
         Returns:
             List of IndexMaps for the entities of dimension ``dim``.
+            May be empty if not yet computed.
         """
-        if (imaps := self._cpp_object.index_maps(dim)) is not None:
-            return imaps
-        else:
-            raise RuntimeError(
-                f"Entities of dimension {dim} have not been computed."
-                f"Call `dolfinx.mesh.Topology.create_entities({dim}) first."
-            )
+        return self._cpp_object.index_maps(dim)
 
     def interprocess_facets(self) -> npt.NDArray[np.int32]:
         """List of inter-process facets, if facet topology has been
@@ -435,6 +426,93 @@ class MeshTags:
         return self._cpp_object.find(value)
 
 
+class EntityMap:
+    """A bidirectional map that relates entities in two different
+    topologies.
+    """
+
+    def __init__(self, entity_map):
+        """Initialise an entity map from a C++ `EntityMap` object.
+
+        Args:
+            entity_map: A C++ `EntityMap` object
+
+        .. note::
+
+            `EntityMap` objects should not usually be created using this
+            initializer directly.
+        """
+        self._cpp_object = entity_map
+        self._topology = Topology(self._cpp_object.topology)
+        self._sub_topology = Topology(self._cpp_object.sub_topology)
+
+    def sub_topology_to_topology(self, entities, inverse):
+        """Map entities between the sub-topology and the parent topology.
+
+        If `inverse` is False, this function maps a list of
+        `self.dim()`-dimensional entities from `self.sub_topology()` to
+        the corresponding entities in `self.topology()`. If `inverse` is
+        True, it performs the inverse mapping from `self.topology()` to
+        `self.sub_topology()`. Entities that do not exist in the
+        sub-topology are marked as -1.
+
+        Note:
+            If `inverse` is `True`, this function recomputes the inverse
+            map on every call (it is not cached), which may be expensive
+            if called repeatedly.
+
+        Args:
+            entities:
+                A list of entity indices in the source topology.
+            inverse:
+                If False, maps from `self.sub_topology()` to
+                `self.topology()`. If True, maps from `this.topology()`
+                to `this.sub_topology()`.
+
+        Returns:
+            A list of mapped entity indices. Entities that don't exist
+            in the target topology are marked as -1.
+        """
+        return self._cpp_object.sub_topology_to_topology(entities, inverse)
+
+    @property
+    def dim(self):
+        """Get the topological dimension of the entities related by this
+        EntityMap.
+
+        Returns:
+            int: The topological dimension
+        """
+        return self._cpp_object.dim
+
+    @property
+    def topology(self):
+        return self._topology
+
+    @property
+    def sub_topology(self):
+        return self._sub_topology
+
+
+def entity_map(topology, sub_topology, dim, sub_topology_to_topology):
+    """Create a bidirectional map relating entities of dimension `dim` in
+    `topology` and `sub_topology`.
+
+    Args:
+        topology: A topology
+        sub_topology: Topology of another mesh. This must be a
+            "sub-topology" of `topology` i.e. every entity in
+            `sub_topology` must also exist in `topology`.
+        dim: The dimension of the entities
+        sub_topology_to_topology: A list of entities in `topology` where
+            `sub_topology_to_topology[i]` is the index in `topology`
+            corresponding to entity `i` in `sub_topology`.
+    """
+    return _cpp.mesh.EntityMap(
+        topology._cpp_object, sub_topology._cpp_object, dim, sub_topology_to_topology
+    )
+
+
 def compute_incident_entities(
     topology: Topology, entities: npt.NDArray[np.int32], d0: int, d1: int
 ) -> npt.NDArray[np.int32]:
@@ -467,7 +545,7 @@ def compute_midpoints(msh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
     return _cpp.mesh.compute_midpoints(msh._cpp_object, dim, entities)
 
 
-def locate_entities(msh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
+def locate_entities(msh: Mesh, dim: int, marker: Callable) -> np.ndarray:
     """Compute mesh entities satisfying a geometric marking function.
 
     Args:
@@ -484,7 +562,7 @@ def locate_entities(msh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
     return _cpp.mesh.locate_entities(msh._cpp_object, dim, marker)
 
 
-def locate_entities_boundary(msh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
+def locate_entities_boundary(msh: Mesh, dim: int, marker: Callable) -> np.ndarray:
     """Compute mesh entities that are connected to an owned boundary
     facet and satisfy a geometric marking function.
 
@@ -550,8 +628,10 @@ def transfer_meshtag(
 def refine(
     msh: Mesh,
     edges: typing.Optional[np.ndarray] = None,
-    partitioner: typing.Optional[typing.Callable] = create_cell_partitioner(GhostMode.none),
-    option: RefinementOption = RefinementOption.none,
+    partitioner: typing.Union[
+        Callable, IdentityPartitionerPlaceholder
+    ] = IdentityPartitionerPlaceholder(),
+    option: RefinementOption = RefinementOption.parent_cell,
 ) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.
 
@@ -563,20 +643,17 @@ def refine(
         mesh will **not** include ghosts cells (cells connected by facet
         to an owned cells) even if the parent mesh is ghosted.
 
-    Warning:
-        Passing ``None`` for ``partitioner``, the refined mesh will
-        **not** have ghosts cells even if the parent mesh has ghost
-        cells. The possibility to not re-partition the refined mesh and
-        include ghost cells in the refined mesh will be added in a
-        future release.
-
     Args:
         msh: Mesh from which to create the refined mesh.
         edges: Indices of edges to split during refinement. If ``None``,
             mesh refinement is uniform.
-        partitioner: Partitioner to distribute the refined mesh. If
-            ``None`` no redistribution is performed, i.e. refined cells
-            remain on the same process as the parent cell.
+        partitioner: Partitioner to distribute the refined mesh. If a
+            ``IdentityPartitionerPlaceholder`` is passed (default) no
+            redistribution is performed, i.e. refined cells remain on the
+            same process as the parent cell, but the ghost layer is
+            updated. If a custom partitioner is passed, it will be used for
+            distributing the refined mesh. If ``None`` is passed no
+            redistribution will happen.
         option: Controls whether parent cells and/or parent facets are
             computed.
 
@@ -595,21 +672,21 @@ def refine(
 def create_mesh(
     comm: _MPI.Comm,
     cells: npt.NDArray[np.int64],
-    x: npt.NDArray[np.floating],
     e: typing.Union[
         ufl.Mesh,
         basix.finite_element.FiniteElement,
         basix.ufl._BasixElement,
         _CoordinateElement,
     ],
-    partitioner: typing.Optional[typing.Callable] = None,
+    x: npt.NDArray[np.floating],
+    partitioner: typing.Optional[Callable] = None,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
     Args:
         comm: MPI communicator to define the mesh on.
-            cells: Cells of the mesh. ``cells[i]`` are the 'nodes' of cell
-            ``i``.
+        cells: Cells of the mesh. ``cells[i]`` are the 'nodes' of
+            cell ``i``.
         x: Mesh geometry ('node' coordinates), with shape
             ``(num_nodes, gdim)``.
         e: UFL mesh. The mesh scalar type is determined by the scalar
@@ -634,7 +711,7 @@ def create_mesh(
         gdim = x.shape[1]
 
     dtype = None
-    try:
+    if isinstance(e, ufl.domain.Mesh):
         # e is a UFL domain
         e_ufl = e.ufl_coordinate_element()  # type: ignore
         cmap = _coordinate_element(e_ufl.basix_element)  # type: ignore
@@ -642,28 +719,28 @@ def create_mesh(
         dtype = cmap.dtype
         # TODO: Resolve UFL vs Basix geometric dimension issue
         # assert domain.geometric_dimension() == gdim
-    except AttributeError:
-        try:
-            # e is a Basix 'UFL' element
-            cmap = _coordinate_element(e.basix_element)  # type: ignore
-            domain = ufl.Mesh(e)
-            dtype = cmap.dtype
-            assert domain.geometric_dimension() == gdim
-        except AttributeError:
-            try:
-                # e is a Basix element
-                # TODO: Resolve geometric dimension vs shape for manifolds
-                cmap = _coordinate_element(e)  # type: ignore
-                e_ufl = basix.ufl._BasixElement(e)  # type: ignore
-                e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,))
-                domain = ufl.Mesh(e_ufl)
-                dtype = cmap.dtype
-                assert domain.geometric_dimension() == gdim
-            except (AttributeError, TypeError):
-                # e is a CoordinateElement
-                cmap = e
-                domain = None
-                dtype = cmap.dtype  # type: ignore
+    elif isinstance(e, basix.finite_element.FiniteElement):
+        # e is a Basix element
+        # TODO: Resolve geometric dimension vs shape for manifolds
+        cmap = _coordinate_element(e)  # type: ignore
+        e_ufl = basix.ufl._BasixElement(e)  # type: ignore
+        e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,))
+        domain = ufl.Mesh(e_ufl)
+        dtype = cmap.dtype
+        assert domain.geometric_dimension() == gdim
+    elif isinstance(e, ufl.finiteelement.AbstractFiniteElement):
+        # e is a Basix 'UFL' element
+        cmap = _coordinate_element(e.basix_element)  # type: ignore
+        domain = ufl.Mesh(e)
+        dtype = cmap.dtype
+        assert domain.geometric_dimension() == gdim
+    elif isinstance(e, _CoordinateElement):
+        # e is a CoordinateElement
+        cmap = e
+        domain = None
+        dtype = cmap.dtype  # type: ignore
+    else:
+        raise ValueError(f"Unsupported element type {type(e)}.")
 
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
@@ -676,7 +753,7 @@ def create_mesh(
 
 def create_submesh(
     msh: Mesh, dim: int, entities: npt.NDArray[np.int32]
-) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray[np.int32]]:
+) -> tuple[Mesh, EntityMap, EntityMap, npt.NDArray[np.int32]]:
     """Create a mesh with specified entities from another mesh.
 
     Args:
@@ -704,7 +781,7 @@ def create_submesh(
             dtype=submsh.geometry.x.dtype,
         )
     )
-    return (Mesh(submsh, submsh_domain), entity_map, vertex_map, geom_map)
+    return (Mesh(submsh, submsh_domain), EntityMap(entity_map), EntityMap(vertex_map), geom_map)
 
 
 def meshtags(
@@ -862,7 +939,7 @@ def create_unit_interval(
 def create_rectangle(
     comm: _MPI.Comm,
     points: npt.ArrayLike,
-    n: npt.ArrayLike,
+    n: Sequence[int],
     cell_type=CellType.triangle,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode=GhostMode.shared_facet,
@@ -942,7 +1019,7 @@ def create_unit_square(
     return create_rectangle(
         comm,
         [np.array([0.0, 0.0]), np.array([1.0, 1.0])],
-        [nx, ny],
+        (nx, ny),
         cell_type,
         dtype,
         ghost_mode,
@@ -954,7 +1031,7 @@ def create_unit_square(
 def create_box(
     comm: _MPI.Comm,
     points: list[npt.ArrayLike],
-    n: list,
+    n: Sequence[int],
     cell_type=CellType.tetrahedron,
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode=GhostMode.shared_facet,
@@ -1030,7 +1107,7 @@ def create_unit_cube(
     return create_box(
         comm,
         [np.array([0.0, 0.0, 0.0]), np.array([1.0, 1.0, 1.0])],
-        [nx, ny, nz],
+        (nx, ny, nz),
         cell_type,
         dtype,
         ghost_mode,

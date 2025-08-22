@@ -128,7 +128,6 @@ def test_hex_collision_3d(delta):
         assert np.isclose(distance, actual_distance, atol=1e-15)
 
 
-@pytest.mark.skip(reason="GJK fails to converge with Rocky 10.")
 @pytest.mark.parametrize("delta", [1e8, 1.0, 1e-6, 1e-12])
 @pytest.mark.parametrize("scale", [1000.0, 1.0, 1e-4])
 @pytest.mark.parametrize("dtype", [np.float64])
@@ -175,7 +174,11 @@ def test_cube_distance(delta, scale, dtype):
             cube1 = cubes[c1] + np.array([dx + delta, 0, 0])
             c0rot = r.apply(cube0)
             c1rot = r.apply(cube1)
-            distance = np.linalg.norm(compute_distance_gjk(c0rot, c1rot))
+            assert c0rot.dtype == dtype
+            assert c1rot.dtype == dtype
+            d = compute_distance_gjk(c0rot, c1rot)
+            assert d.dtype == dtype
+            distance = np.linalg.norm(d)
             assert np.isclose(distance, delta)
 
 
@@ -187,7 +190,7 @@ def test_collision_2nd_order_triangle(dtype):
     )
     cells = np.array([[0, 1, 2, 3, 4, 5]])
     domain = ufl.Mesh(element("Lagrange", "triangle", 2, shape=(2,), dtype=dtype))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
 
     # Sample points along an interior line of the domain. The last point
     # is outside the simplex made by the vertices.

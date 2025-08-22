@@ -1,35 +1,3 @@
-cmake_minimum_required(VERSION 3.16)
-
-project(dolfinx-tests LANGUAGES C CXX)
-set(CMAKE_C_STANDARD 17) # For FFCx generated .c files.
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-# Find DOLFINx config file
-find_package(DOLFINX REQUIRED)
-
-# Add shared library paths so shared libs in non-system paths are found
-option(CMAKE_INSTALL_RPATH_USE_LINK_PATH
-       "Add paths to linker search and installed rpath." ON
-)
-
-add_custom_command(
-  OUTPUT expr.c
-  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/fem/expr.py
-  VERBATIM
-  DEPENDS fem/expr.py
-  COMMENT "Compile expr.py using FFCx"
-)
-
-add_custom_command(
-  OUTPUT poisson.c
-  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.py
-  VERBATIM
-  DEPENDS poisson.py
-  COMMENT "Compile poisson.py using FFCx"
-)
-
 find_package(Catch2 3)
 
 if(NOT Catch2_FOUND)
@@ -43,9 +11,30 @@ if(NOT Catch2_FOUND)
   FetchContent_MakeAvailable(Catch2)
 endif()
 
+include(Catch)
+
+# FFCx compile: expr.py -> expr.c
+add_custom_command(
+  OUTPUT expr.c
+  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/fem/expr.py
+  VERBATIM
+  DEPENDS fem/expr.py
+  COMMENT "Compile expr.py using FFCx"
+)
+
+# FFCx compile: poisson.py -> poisson.c
+add_custom_command(
+  OUTPUT poisson.c
+  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.py
+  VERBATIM
+  DEPENDS poisson.py
+  COMMENT "Compile poisson.py using FFCx"
+)
+
 add_executable(
   unittests
   main.cpp
+  graph.cpp
   vector.cpp
   matrix.cpp
   io.cpp
@@ -76,23 +65,39 @@ endif()
 target_include_directories(
   unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
+# makes version.h accessible
+target_include_directories(
+  unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../>
+)
 
-# Add some strict compiler checks only on C++ part (Developer).
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
-
-if(HAVE_PEDANTIC)
-  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
-endif()
+set_target_properties(
+  unittests
+  PROPERTIES CMAKE_C_STANDARD 17
+             CMAKE_CXX_STANDARD 20
+             CMAKE_CXX_STANDARD_REQUIRED ON
+             CMAKE_CXX_EXTENSIONS OFF
+)
 
 target_compile_options(
   unittests
   PRIVATE
-  $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
 )
 
-# Enable testing
-enable_testing()
+# TODO: should not be set in test and dolfinx but in cpp once.
+if(ENABLE_CLANG_TIDY)
+  find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
+  set_target_properties(
+    unittests
+    PROPERTIES
+      CXX_CLANG_TIDY
+      "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../../.clang-tidy"
+  )
+endif()
 
-# Test target
-add_test(unittests unittests)
+# Nice for debugging tests one at a time - but extremely slow due to process
+# spawning/tear down: catch_discover_tests(unittests)
+
+foreach(np IN LISTS DOLFINX_TEST_MPI_PROCESSES)
+  add_test(NAME unittests_np_${np} COMMAND mpiexec -np ${np} ./unittests)
+endforeach()

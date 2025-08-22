@@ -50,7 +50,7 @@ jobs:
         run: |
           export PATH="$(brew --prefix gfortran)/bin:$(brew --prefix bison)/bin:$PATH"
           export PATH="$(brew --prefix make)/libexec/gnubin:$PATH"
-          git clone -b release https://gitlab.com/petsc/petsc.git petsc
+          git clone --depth 1 --branch release https://gitlab.com/petsc/petsc.git petsc
           cd petsc
           python ./configure \
             --with-64-bit-indices=no \
@@ -77,25 +77,24 @@ jobs:
           python -m pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
           python -m pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
 
-      - name: Build and install DOLFINx C++ library
-        run: |
-          cmake -G Ninja -B build -S cpp/
-          cmake --build build
-          sudo cmake --install build
+      - name: Configure (C++)
+        working-directory: cpp
+        run: >
+          cmake -B build -S .
+          -Werror=dev
+          --warn-uninitialized
+          -G Ninja 
+          -DBUILD_TESTING=true
 
-      - name: Build C++ unit tests
+      - name: Build and install (C++)
+        working-directory: cpp/build
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
-          cmake --build build/test
+          cmake --build .
+          sudo cmake --install .
 
-      - name: Run C++ unit tests (serial)
-        run: |
-          cd build/test
-          mpiexec -np 1 ctest -V --output-on-failure -R unittests
-      - name: Run C++ unit tests (MPI)
-        run: |
-          cd build/test
-          mpiexec -np 3 ctest -V --output-on-failure -R unittests
+      - name: Run tests (C++)
+        working-directory: cpp/build
+        run: ctest -V --output-on-failure -R unittests
 
       - name: Build and install DOLFINx Python interface
         run: |

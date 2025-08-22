@@ -21,24 +21,13 @@
 # the real part of the plane wave (a sin function which also solves the
 # homogeneous Helmholtz equation).
 
-from mpi4py import MPI
-
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
 
 # +
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 
-import dolfinx
 import ufl
 from dolfinx.fem import (
     Function,
@@ -103,10 +92,11 @@ problem = LinearProblem(
     L,
     bcs=bcs,
     u=uh,
+    petsc_options_prefix="demo_helmholtz_",
     petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
 )
-_1, convergence_reason, _2 = problem.solve()  # Cannot unpack typed tuple to same variable _
-assert convergence_reason > 0
+_ = problem.solve()
+assert problem.solver.getConvergedReason() > 0
 
 # Save solution in XDMF format (to be viewed in ParaView, for example)
 with XDMFFile(

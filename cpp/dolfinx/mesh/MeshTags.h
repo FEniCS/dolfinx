@@ -49,8 +49,8 @@ public:
                                            std::vector<T>>
   MeshTags(std::shared_ptr<const Topology> topology, int dim, U&& indices,
            V&& values)
-      : _topology(topology), _dim(dim), _indices(std::forward<U>(indices)),
-        _values(std::forward<V>(values))
+      : _topology(std::move(topology)), _dim(dim),
+        _indices(std::forward<U>(indices)), _values(std::forward<V>(values))
   {
     if (_indices.size() != _values.size())
     {

@@ -7,6 +7,7 @@
 """Tools to extract data from Gmsh models."""
 
 import typing
+from collections.abc import Callable
 from pathlib import Path
 
 from mpi4py import MPI as _MPI
@@ -19,7 +20,7 @@ import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
-from dolfinx.cpp.graph import AdjacencyList_int32
+from dolfinx.cpp.graph import AdjacencyList_int32 as _AdjacencyList_int32
 from dolfinx.graph import AdjacencyList, adjacencylist
 from dolfinx.io.utils import distribute_entity_data
 from dolfinx.mesh import CellType, Mesh, MeshTags, create_mesh, meshtags_from_entities
@@ -267,7 +268,7 @@ def model_to_mesh(
     rank: int,
     gdim: int = 3,
     partitioner: typing.Optional[
-        typing.Callable[[_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]
+        Callable[[_MPI.Comm, int, int, _AdjacencyList_int32], _AdjacencyList_int32]
     ] = None,
     dtype=default_real_type,
 ) -> MeshData:
@@ -304,6 +305,9 @@ def model_to_mesh(
         # Get mesh geometry and mesh topology for each element
         x = extract_geometry(model)
         topologies, physical_groups = extract_topology_and_markers(model)
+
+        if len(physical_groups) == 0:
+            raise RuntimeError("No 'physical groups' in gmsh mesh. Cannot continue.")
 
         # Extract Gmsh entity (cell) id, topological dimension and number
         # of nodes which is used to create an appropriate coordinate
@@ -365,7 +369,7 @@ def model_to_mesh(
     if comm.rank != rank:
         x = np.empty([0, gdim], dtype=dtype)  # No nodes on other than root rank
     mesh = create_mesh(
-        comm, cell_connectivity, x[:, :gdim].astype(dtype, copy=False), ufl_domain, partitioner
+        comm, cell_connectivity, ufl_domain, x[:, :gdim].astype(dtype, copy=False), partitioner
     )
     assert tdim == mesh.topology.dim, (
         f"{mesh.topology.dim=} does not match Gmsh model dimension {tdim}"
@@ -418,7 +422,7 @@ def read_from_msh(
     rank: int = 0,
     gdim: int = 3,
     partitioner: typing.Optional[
-        typing.Callable[[_MPI.Comm, int, int, AdjacencyList], AdjacencyList_int32]
+        Callable[[_MPI.Comm, int, int, AdjacencyList], _AdjacencyList_int32]
     ] = None,
 ) -> MeshData:
     """Read a Gmsh .msh file and return a :class:`dolfinx.mesh.Mesh` and
