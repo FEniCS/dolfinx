@@ -1545,7 +1545,7 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
     def check_vertex_integral_against_sum(form, vertices, weighted=False):
         weights = vertex_map.local_to_global(vertices) if weighted else np.ones_like(vertices)
         expected_value_l = np.sum(msh.geometry.x[vertices, 0] * weights)
-        value_l = fem.assemble_scalar(form)
+        value_l = fem.assemble_scalar(fem.form(form, dtype=dtype))
         assert expected_value_l == pytest.approx(value_l, abs=5e4 * np.finfo(rdtype).eps)
 
         expected_value = comm.allreduce(expected_value_l)
@@ -1573,11 +1573,9 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
 
     dP = ufl.Measure("dP", domain=msh, subdomain_data=meshtags)
 
-    check_vertex_integral_against_sum(fem.form(x[0] * dP(1), dtype=dtype), vertices_1)
-    check_vertex_integral_against_sum(fem.form(x[0] * dP(2), dtype=dtype), vertices_2)
-    check_vertex_integral_against_sum(
-        fem.form(x[0] * (dP(1) + dP(2)), dtype=dtype), np.arange(num_vertices)
-    )
+    check_vertex_integral_against_sum(x[0] * dP(1), vertices_1)
+    check_vertex_integral_against_sum(x[0] * dP(2), vertices_2)
+    check_vertex_integral_against_sum(x[0] * (dP(1) + dP(2)), np.arange(num_vertices))
 
     V = fem.functionspace(msh, ("P", 1))
     u = fem.Function(V, dtype=dtype)
@@ -1586,18 +1584,10 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
         np.arange(vertex_map.size_local + vertex_map.num_ghosts)
     )
 
-    check_vertex_integral_against_sum(
-        fem.form(u * x[0] * ufl.dP, dtype=dtype), np.arange(num_vertices), weighted=True
-    )
-    check_vertex_integral_against_sum(
-        fem.form(u * x[0] * dP(1), dtype=dtype), vertices_1, weighted=True
-    )
-    check_vertex_integral_against_sum(
-        fem.form(u * x[0] * dP(2), dtype=dtype), vertices_2, weighted=True
-    )
-    check_vertex_integral_against_sum(
-        fem.form(u * x[0] * (dP(1) + dP(2)), dtype=dtype), np.arange(num_vertices), weighted=True
-    )
+    check_vertex_integral_against_sum(u * x[0] * ufl.dP, np.arange(num_vertices), True)
+    check_vertex_integral_against_sum(u * x[0] * dP(1), vertices_1, True)
+    check_vertex_integral_against_sum(u * x[0] * dP(2), vertices_2, True)
+    check_vertex_integral_against_sum(u * x[0] * (dP(1) + dP(2)), np.arange(num_vertices), True)
 
 
 @pytest.mark.parametrize(
