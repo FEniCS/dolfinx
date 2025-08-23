@@ -64,7 +64,7 @@ jobs:
           spack env create tmp-cache
           spack -e tmp-cache install -j 3 -p 2 --use-buildcache auto --add cmake catch2 ninja
           spack -e tmp-cache install -j 4 --use-buildcache auto --add doxygen
-          spack -e tmp-cache install -p 4 --use-buildcache auto --add py-pytest py-pytest-xdist py-numba py-matplotlib
+          spack -e tmp-cache install -j 4 --use-buildcache auto --add py-pytest py-pytest-xdist py-numba py-matplotlib
           spack -e tmp-cache buildcache push --base-image spack/ubuntu-noble --update-index local-buildcache
 
       - name: Build DOLFINx library (C++)
