@@ -69,10 +69,10 @@ file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/mpi-wrapper.cmake"
 )
 
 # Handle copyright
-file(
-  COPY "${SDK_SOURCE_DIR}/licensing/latest/licensing/latest/license.htm"
-  DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}"
-)
-file(WRITE "${CURRENT_PACKAGES_DIR}/share/${PORT}/copyright"
-     "See the licence.htm file in this directory."
-)
+#file(
+#  COPY "${SDK_SOURCE_DIR}/licensing/latest/licensing/latest/license.htm"
+#  DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}"
+#)
+#file(WRITE "${CURRENT_PACKAGES_DIR}/share/${PORT}/copyright"
+#     "See the licence.htm file in this directory."
+#)
