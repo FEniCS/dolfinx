@@ -59,7 +59,7 @@ jobs:
           spack repo update --branch develop builtin
           spack mirror add --unsigned --type binary --oci-username-variable GITHUB_USER --oci-password-variable GITHUB_TOKEN local-buildcache oci://ghcr.io/fenics/spack-buildcache
 
-      - name: Caching
+      - name: Install dependencies and cache
         run: |
           spack env create tmp-cache
           spack -e tmp-cache install -j 3 -p 2 --use-buildcache auto --add cmake catch2 ninja

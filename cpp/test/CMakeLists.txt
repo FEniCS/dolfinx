@@ -1,5 +1,6 @@
-find_package(Catch2 3)
+cmake_minimum_required(VERSION 3.21)
 
+find_package(Catch2 3)
 if(NOT Catch2_FOUND)
   message(STATUS "Catch2 not found. Downloading.")
   include(FetchContent)
@@ -78,6 +79,7 @@ set_target_properties(
              CMAKE_CXX_EXTENSIONS OFF
 )
 
+list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic;-g;-O2)
 target_compile_options(
   unittests
   PRIVATE
