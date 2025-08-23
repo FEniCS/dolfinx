@@ -118,10 +118,10 @@ jobs:
           cmake --build .
           sudo cmake --install .
 
-      - name: Run tests (C++, serial)
+      - name: Run tests via target (C++, serial)
         working-directory: cpp/build
         run: mpirun -np 1 cmake --build . --target test
-      - name: Run tests (C++, MPI, np=3)
+      - name: Run tests via target (C++, MPI, np=3)
         working-directory: cpp/build
         run: mpirun -np 3 cmake --build . --target test
 
