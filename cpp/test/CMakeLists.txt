@@ -99,5 +99,5 @@ endif()
 # spawning/tear down: catch_discover_tests(unittests)
 
 foreach(np IN LISTS DOLFINX_TEST_MPI_PROCESSES)
-  add_test(NAME unittests_np_${np} COMMAND mpiexec -np ${np} ./unittests)
+  add_test(NAME unittests_np_${np} COMMAND mpiexec -np ${np} $<TARGET_FILE:unittests>)
 endforeach()

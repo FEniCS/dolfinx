@@ -88,7 +88,7 @@ jobs:
           cmake --install build-dir --config Release --prefix "D:/a/dolfinx/basix-install"
           echo "D:/a/dolfinx/basix-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
 
-      - name: Install build dependencies (workaround)
+      - name: Install Basix Python build dependencies
         run: |
           python -m pip install scikit-build-core[pyproject] setuptools wheel nanobind
       - name: Install Basix (Python)
@@ -136,9 +136,10 @@ jobs:
       - name: Run tests (C++)
         working-directory: dolfinx-src/cpp/build-dir
         run: |
+          ls
           ctest -V --output-on-failure -C Release -R unittests
 
-      - name: Install Python build dependencies
+      - name: Install DOLFINx Python build dependencies
         working-directory: dolfinx-src/python
         run: |
           pip -v install --no-binary mpi4py -r build-requirements.txt
