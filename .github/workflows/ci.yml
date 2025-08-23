@@ -80,7 +80,7 @@ jobs:
         run: |
           . /opt/spack/share/spack/setup-env.sh
           spack env activate cxx
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/test/
           cmake --build build/test
           cd build/test
           ctest -V --output-on-failure -R unittests
