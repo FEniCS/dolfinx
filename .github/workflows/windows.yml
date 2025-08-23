@@ -152,7 +152,7 @@ jobs:
         working-directory: dolfinx-src
         run: |
           pip install pytest-xdist
-          mpiexec -n 1 python -m pytest -n auto -m "not petsc4py and not adios2" python/test/unit
+          python -m pytest -n auto -m "not petsc4py and not adios2" python/test/unit
       - name: Run tests (Python, MPI, np=3)
         working-directory: dolfinx-src
         run: |
