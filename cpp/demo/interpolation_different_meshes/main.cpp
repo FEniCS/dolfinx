@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
 
     auto fun = [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
     {
-      std::vector<T> fdata(3 * x.extent(1), 0.0);
+      std::vector<T> fdata(3 * x.extent(1), 0);
       using dextent = md::dextents<std::size_t, 2>;
       md::mdspan<double, dextent> f(fdata.data(), 3, x.extent(1));
       for (std::size_t i = 0; i < x.extent(1); ++i)
@@ -84,9 +84,9 @@ int main(int argc, char* argv[])
 
 #ifdef HAS_ADIOS2
     io::VTXWriter<double> write_tet(mesh_tet->comm(), "u_tet.bp", {u_tet});
-    write_tet.write(0.0);
+    write_tet.write(0);
     io::VTXWriter<double> write_hex(mesh_hex->comm(), "u_hex.bp", {u_hex});
-    write_hex.write(0.0);
+    write_hex.write(0);
 #endif
   }
   MPI_Finalize();

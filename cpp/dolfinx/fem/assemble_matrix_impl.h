@@ -61,7 +61,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// @param cell_info1 Cell permutation information for the trial
 /// function mesh.
 template <dolfinx::scalar T>
-void assemble_cells(
+void assemble_cells_matrix(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
@@ -88,7 +88,6 @@ void assemble_cells(
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
-  std::span<T> _Ae(Ae);
   std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
 
   // Iterate over active cells
@@ -113,8 +112,8 @@ void assemble_cells(
            nullptr, nullptr);
 
     // Compute A = P_0 \tilde{A} P_1^T (dof transformation)
-    P0(_Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
-    P1T(_Ae, cell_info1, cell1, ndim0); // A =  B P1_T
+    P0(Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
+    P1T(Ae, cell_info1, cell1, ndim0); // A =  B P1_T
 
     // Zero rows/columns for essential bcs
     std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
@@ -229,7 +228,6 @@ void assemble_exterior_facets(
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
-  std::span<T> _Ae(Ae);
   assert(facets0.size() == facets.size());
   assert(facets1.size() == facets.size());
   for (std::size_t f = 0; f < facets.extent(0); ++f)
@@ -254,9 +252,8 @@ void assemble_exterior_facets(
     std::ranges::fill(Ae, 0);
     kernel(Ae.data(), &coeffs(f, 0), constants.data(), cdofs.data(),
            &local_facet, &perm, nullptr);
-
-    P0(_Ae, cell_info0, cell0, ndim1);
-    P1T(_Ae, cell_info1, cell1, ndim0);
+    P0(Ae, cell_info0, cell0, ndim1);
+    P1T(Ae, cell_info1, cell1, ndim0);
 
     // Zero rows/columns for essential bcs
     std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
@@ -373,13 +370,15 @@ void assemble_interior_facets(
   std::span<X> cdofs1(cdofs.data() + x_dofmap.extent(1) * 3,
                       x_dofmap.extent(1) * 3);
 
-  std::vector<T> Ae, be;
-
-  const std::size_t dmap0_size = dmap0.cell_dofs(0).size();
-  const std::size_t dmap1_size = dmap1.cell_dofs(0).size();
+  const std::size_t dmap0_size = dmap0.map().extent(1);
+  const std::size_t dmap1_size = dmap1.map().extent(1);
+  const int num_rows = bs0 * 2 * dmap0_size;
+  const int num_cols = bs1 * 2 * dmap1_size;
 
   // Temporaries for joint dofmaps
-  std::vector<std::int32_t> dmapjoint0, dmapjoint1;
+  std::vector<T> Ae(num_rows * num_cols), be(num_rows);
+  std::vector<std::int32_t> dmapjoint0(2 * dmap0_size);
+  std::vector<std::int32_t> dmapjoint1(2 * dmap1_size);
   assert(facets0.size() == facets.size());
   assert(facets1.size() == facets.size());
   for (std::size_t f = 0; f < facets.extent(0); ++f)
@@ -412,7 +411,6 @@ void assemble_interior_facets(
         = cells0[1] >= 0 ? dmap0.cell_dofs(cells0[1])
                          : std::span<const std::int32_t>();
 
-    dmapjoint0.resize(2 * dmap0_size);
     std::ranges::copy(dmap0_cell0, dmapjoint0.begin());
     std::ranges::copy(dmap0_cell1, std::next(dmapjoint0.begin(), dmap0_size));
 
@@ -424,17 +422,11 @@ void assemble_interior_facets(
         = cells1[1] >= 0 ? dmap1.cell_dofs(cells1[1])
                          : std::span<const std::int32_t>();
 
-    dmapjoint1.resize(2 * dmap1_size);
     std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
     std::ranges::copy(dmap1_cell1, std::next(dmapjoint1.begin(), dmap1_size));
 
-    const int num_rows = bs0 * dmapjoint0.size();
-    const int num_cols = bs1 * dmapjoint1.size();
-
     // Tabulate tensor
-    Ae.resize(num_rows * num_cols);
     std::ranges::fill(Ae, 0);
-
     std::array perm = perms.empty()
                           ? std::array<std::uint8_t, 2>{0, 0}
                           : std::array{perms(cells[0], local_facet[0]),
@@ -449,26 +441,27 @@ void assemble_interior_facets(
     //
     // where each block is element tensor of size (dmap0, dmap1).
 
-    std::span<T> _Ae(Ae);
-    std::span<T> sub_Ae0
-        = _Ae.subspan(bs0 * dmap0_size * num_cols, bs0 * dmap0_size * num_cols);
-
     // Only apply transformation when cells exist
     if (cells0[0] >= 0)
-      P0(_Ae, cell_info0, cells0[0], num_cols);
+      P0(Ae, cell_info0, cells0[0], num_cols);
     if (cells0[1] >= 0)
+    {
+      std::span sub_Ae0(Ae.data() + bs0 * dmap0_size * num_cols,
+                        bs0 * dmap0_size * num_cols);
+
       P0(sub_Ae0, cell_info0, cells0[1], num_cols);
+    }
     if (cells1[0] >= 0)
-      P1T(_Ae, cell_info1, cells1[0], num_rows);
+      P1T(Ae, cell_info1, cells1[0], num_rows);
 
     if (cells1[1] >= 0)
     {
       for (int row = 0; row < num_rows; ++row)
       {
-        // DOFs for dmap1 and cell1 are not stored contiguously in
-        // the block matrix, so each row needs a separate span access
-        std::span<T> sub_Ae1
-            = _Ae.subspan(row * num_cols + bs1 * dmap1_size, bs1 * dmap1_size);
+        // DOFs for dmap1 and cell1 are not stored contiguously in the
+        // block matrix, so each row needs a separate span access
+        std::span sub_Ae1(Ae.data() + row * num_cols + bs1 * dmap1_size,
+                          bs1 * dmap1_size);
         P1T(sub_Ae1, cell_info1, cells1[1], 1);
       }
     }
@@ -605,10 +598,11 @@ void assemble_matrix(
       std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, cell_type_idx);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
       assert(cells.size() * cstride == coeffs.size());
-      impl::assemble_cells(mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0},
-                           P0, {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
-                           md::mdspan(coeffs.data(), cells.size(), cstride),
-                           constants, cell_info0, cell_info1);
+      impl::assemble_cells_matrix(
+          mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0}, P0,
+          {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
+          md::mdspan(coeffs.data(), cells.size(), cstride), constants,
+          cell_info0, cell_info1);
     }
 
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
