@@ -64,23 +64,17 @@ jobs:
           spack -e tmp-cache install -j 4 --use-buildcache auto --add cmake catch2 ninja
           spack -e tmp-cache buildcache push --base-image spack/ubuntu-noble --update-index local-buildcache
 
-      - name: Point Spack to DOLFINx source code
+      - name: Build DOLFINx library (C++)
         run: |
           spack env create cxx
           spack -e cxx develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
-
-      - name: Build DOLFINx
-        run: |
           spack -e cxx add fenics-dolfinx@main +petsc +slepc partitioners=parmetis \
             %petsc +mpi +hypre +mumps +superlu-dist \
             %openmpi %fenics-basix@git.main=main %fenics-ufcx@git.main=main
           spack -e cxx add cmake catch2 ninja py-fenics-ffcx@git.main=main
-
-      - name: Build C++ library
-        run: |
           spack -e cxx install -j 4 --use-buildcache auto
 
-      - name: Build and run unit tests
+      - name: Build and run unit tests (C++)
         run: |
           . /opt/spack/share/spack/setup-env.sh
           spack env activate cxx
@@ -90,8 +84,25 @@ jobs:
           ctest -V --output-on-failure -R unittests
           mpirun -n 3 ctest -V --output-on-failure -R unittests
 
-      - name: Push packages (cpp) to cache and update index
+      - name: Build DOLFINx library (Python)
+        run: |
+          spack env create py
+          spack -e py develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src py-fenics-dolfinx@main
+          spack -e py add py-fenics-dolfinx@main +petsc4py +slepc4py \
+            %py-fenics-basix@git.main=main %py-fenics-ffcx@git.main=main %py-fenics-ufl@git.main=main
+          spack -e py add py-pytest py-pytest-xdist py-numba
+          spack -e py install -j 4 --use-buildcache auto
+
+      - name: Run unit tests (Python)
+        run: |
+          . /opt/spack/share/spack/setup-env.sh
+          spack env activate py
+          python -m pytest -n=auto --durations=50 dolfinx-src/python/test/unit/
+
+      - name: Push packages to cache and update index
         run: |
           spack -e cxx buildcache push --only dependencies --with-build-dependencies \
+            --base-image spack/ubuntu-noble --update-index local-buildcache
+          spack -e py buildcache push --only dependencies --with-build-dependencies \
             --base-image spack/ubuntu-noble --update-index local-buildcache
         if: ${{ !cancelled() }}
