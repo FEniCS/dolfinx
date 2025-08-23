@@ -136,7 +136,7 @@ jobs:
       - name: Run tests (C++)
         working-directory: dolfinx-src/cpp/build-dir
         run: |
-          ctest -V --output-on-failure -R unittests
+          ctest -V --output-on-failure -C Release -R unittests
 
       - name: Install Python build dependencies
         working-directory: dolfinx-src/python
