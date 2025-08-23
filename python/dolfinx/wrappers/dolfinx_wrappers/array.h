@@ -52,7 +52,7 @@ template <typename V>
   requires std::movable<V>
 auto as_nbarray(V&& x, std::initializer_list<std::size_t> shape)
 {
-  return as_nbarray(std::forward<V>(x), shape.size(), shape.data());
+  return as_nbarray(std::forward<V>(x), shape.size(), shape.begin());
 }
 
 /// @brief Create a multi-dimensional `nb::ndarray` that shares data
