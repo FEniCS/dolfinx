@@ -74,9 +74,9 @@ jobs:
       - name: Build and run unit tests
         run: |
           spack env activate --sh cxx
-          spack -v install cmake catch2 ninja py-fenics-ffcx@git.main=main
+          spack -v -d install cmake catch2 ninja py-fenics-ffcx@git.main=main
           which cmake
-        # cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
         # cmake --build build/test
         # cd build/test
         # ctest -V --output-on-failure -R unittests
