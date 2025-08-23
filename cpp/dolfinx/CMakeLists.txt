@@ -168,9 +168,6 @@ install(
 )
 
 if(INSTALL_RUNTIME_DEPENDENCIES AND WIN32)
-  set(_VCPKG_BIN_DIR       "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin")
-  set(_VCPKG_DEBUG_BIN_DIR "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/bin")
-  
   install(
     RUNTIME_DEPENDENCY_SET
     dependencies
@@ -182,8 +179,7 @@ if(INSTALL_RUNTIME_DEPENDENCIES AND WIN32)
     [[.*(\\|/)system32(\\|/).*\.dll]]
     DIRECTORIES
     $<TARGET_FILE_DIR:Basix::basix>
-    ${_VCPKG_BIN_DIR}
-    ${_VCPKG_DEBUG_BIN_DIR}
+    $<TARGET_FILE_DIR:hdf5::hdf5>
   )
 endif()
 
