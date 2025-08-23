@@ -77,8 +77,9 @@ jobs:
           spack -e cxx install -j 4 --use-buildcache auto
 
       - name: Build and run unit tests
+        shell: bash
         run: |
-          spack env activate --sh cxx
+          spack env activate cxx
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
           cmake --build build/test
           cd build/test
