@@ -96,7 +96,7 @@ def test_discrete_curl_map_raises(elements):
         np.float32,
         pytest.param(
             np.complex64,
-            marks=pytest.marks.xfail(
+            marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
                 raises=NotImplementedError,
                 reason="missing _Complex",
@@ -105,7 +105,7 @@ def test_discrete_curl_map_raises(elements):
         np.float64,
         pytest.param(
             np.complex128,
-            marks=pytest.marks.xfail(
+            marks=pytest.mark.xfail(
                 sys.platform.startswith("win32"),
                 raises=NotImplementedError,
                 reason="missing _Complex",
