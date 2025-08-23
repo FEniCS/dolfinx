@@ -110,7 +110,7 @@ target_link_libraries(dolfinx PUBLIC MPI::MPI_CXX)
 target_link_libraries(dolfinx PUBLIC spdlog::spdlog)
 
 # HDF5
-target_link_libraries(dolfinx PUBLIC hdf5::hdf5-shared)
+target_link_libraries(dolfinx PUBLIC hdf5::hdf5)
 
 # ------------------------------------------------------------------------------
 # Optional packages
