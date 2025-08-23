@@ -95,8 +95,8 @@ if(ENABLE_CLANG_TIDY)
   )
 endif()
 
-# Nice for debugging tests one at a time - but extremely slow due to process
-# spawning/tear down: catch_discover_tests(unittests)
+# Uncommenting line allows for debugging individual tests, but slow. 
+#catch_discover_tests(unittests)
 
 foreach(np IN LISTS DOLFINX_TEST_MPI_PROCESSES)
   add_test(NAME unittests_np_${np} COMMAND mpiexec -np ${np} $<TARGET_FILE:unittests>)
