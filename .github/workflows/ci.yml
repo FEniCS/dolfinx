@@ -103,6 +103,7 @@ jobs:
           spack -e py develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src py-fenics-dolfinx@main
           spack -e py add py-fenics-dolfinx@main +petsc4py +slepc4py \
             %py-fenics-basix@git.main=main %py-fenics-ffcx@git.main=main %py-fenics-ufl@git.main=main
+          spack -e py add py-setuptools
           spack -v -e py install -j 4 --use-buildcache auto
         # spack -e py add doxygen
         # spack -e py add py-pytest py-pytest-xdist py-numba py-matplotlib
