@@ -67,7 +67,7 @@ jobs:
       - name: Build C++ library
         run: |
           spack -e cxx install -j 4 --use-buildcache auto
-          spack -e cxx --add cmake catch2 ninja py-fenics-ffcx@git.main=main install
+          spack -e cxx install --add cmake catch2 ninja py-fenics-ffcx@git.main=main
 
       - name: Build and run unit tests
         run: |
