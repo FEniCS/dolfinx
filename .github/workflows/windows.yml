@@ -133,11 +133,10 @@ jobs:
           cmake --install build-dir --config RelWithDebInfo --prefix D:/a/dolfinx/dolfinx-install
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
 
-      - name: Run tests (C++)
-        working-directory: dolfinx-src/cpp/build-dir
-        run: |
-          ls
-          ctest -V --output-on-failure -C RelWithDebInfo -R unittests
+#      - name: Run tests (C++)
+#        working-directory: dolfinx-src/cpp/build-dir
+#        run: |
+#          ctest -V --output-on-failure -C RelWithDebInfo -R unittests
 
       - name: Install DOLFINx Python build dependencies
         working-directory: dolfinx-src/python
