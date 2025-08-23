@@ -138,13 +138,14 @@ jobs:
       #  run: cmake --build build-dir --config Release --target RUN_TESTS
 
       - name: Install Python build dependencies
+        working-directory: dolfinx-src/python
         run: |
-          pip -v install --no-binary mpi4py mpi4py
+          pip -v install --no-binary mpi4py -r build-requirements.txt
 
       - name: Install DOLFINx (Python)
         working-directory: dolfinx-src/python
         run: |
-          pip -v install --check-build-dependencies --no-build-isolation .[test] --config-settings=cmake.args=-DBasix_DIR="D:/dolfinx/basix-install/lib/cmake/basix" --config-settings=cmake.args=-Dufcx_DIR="D:/dolfinx/ufcx-install/share/ufcx/cmake" --config-settings=cmake.args=-DDOLFINX_DIR="D:/dolfinx/dolfinx-install/lib/cmake/dolfinx" --config-settings=cmake.args=-DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS="../cpp/.vcpkg-overlay"
+          pip -v install --check-build-dependencies --no-build-isolation .[test] --config-settings=cmake.args=-DBasix_DIR="D:/dolfinx/basix-install/lib/cmake/basix" --config-settings=cmake.args=-Dufcx_DIR="D:/dolfinx/ufcx-install/share/ufcx/cmake" --config-settings=cmake.args=-DDOLFINX_DIR="D:/dolfinx/dolfinx-install/lib/cmake/dolfinx" --config-settings=cmake.args=-DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" --config-settings=cmake.args=-DVCPKG_OVERLAY_PORTS="../cpp/.vcpkg-overlay"
 
       - name: Run units tests (Python, serial)
         working-directory: dolfinx-src
