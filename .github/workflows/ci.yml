@@ -65,18 +65,18 @@ jobs:
           spack mirror add --unsigned --type binary --oci-username-variable GITHUB_USER --oci-password-variable GITHUB_TOKEN local-buildcache oci://ghcr.io/fenics/spack-buildcache
         # spack repo update --branch develop builtin
 
-      - name: Install dependencies and cache
-        run: |
-          spack env create tmp-cache
-          spack -v -e tmp-cache install -j 4 --use-buildcache auto --add \
-            catch2 cmake ninja \
-            doxygen \
-            py-gmsh py-matplotlib py-numba py-pytest py-pytest-xdist py-pyvista
-          spack info py-fenics-dolfinx
-      - name: Install dependencies and cache
-        run: |
-          spack -e tmp-cache buildcache push --base-image spack/ubuntu-noble --update-index local-buildcache
-        if: ${{ !cancelled() }}
+      # - name: Install dependencies and cache
+      #   run: |
+      #     spack env create tmp-cache
+      #     spack -v -e tmp-cache install -j 4 --use-buildcache auto --add \
+      #       catch2 cmake ninja \
+      #       doxygen \
+      #       py-gmsh py-matplotlib py-numba py-pytest py-pytest-xdist py-pyvista
+      #     spack info py-fenics-dolfinx
+      # - name: Install dependencies and cache
+      #   run: |
+      #     spack -e tmp-cache buildcache push --base-image spack/ubuntu-noble --update-index local-buildcache
+      #   if: ${{ !cancelled() }}
 
       - name: Build DOLFINx library (C++)
         run: |
