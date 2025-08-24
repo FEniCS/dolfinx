@@ -112,7 +112,6 @@ jobs:
 
       - name: Build DOLFINx library (Python)
         run: |
-          spack repo set --destination $GITHUB_WORKSPACE/spack-packages/ testing
           spack info py-fenics-dolfinx
           spack env create py
           spack -e py develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
