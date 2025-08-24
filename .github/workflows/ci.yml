@@ -57,8 +57,7 @@ jobs:
           path: dolfinx-src
 
       - name: Add Spack to $PATH
-        run: |
-          echo "PATH=/opt/spack/bin:$PATH" >> $GITHUB_ENV
+        run: echo "PATH=/opt/spack/bin:$PATH" >> $GITHUB_ENV
 
       - name: Add cache and create environment
         run: |
