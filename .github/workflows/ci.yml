@@ -50,6 +50,7 @@ jobs:
         with:
           repository: garth-wells/spack-packages
           # ref: py-dolfinx-c-compiler
+          fetch-depth: 0
           path: spack-packages
 
       - uses: actions/checkout@v5
@@ -57,7 +58,9 @@ jobs:
           path: dolfinx-src
 
       - name: Add Spack to $PATH
-        run: echo "PATH=/opt/spack/bin:$PATH" >> $GITHUB_ENV
+        run: |
+          env
+          echo "PATH=/opt/spack/bin:$PATH" >> $GITHUB_ENV
 
       - name: Add cache and create environment
         run: |
