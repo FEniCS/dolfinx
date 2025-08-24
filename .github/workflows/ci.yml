@@ -59,11 +59,10 @@ jobs:
       - name: Add Spack to $PATH
         run: |
           echo "PATH=/opt/spack/bin:$PATH" >> $GITHUB_ENV
-          spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
 
       - name: Add cache and create environment
         run: |
-          echo $PATH
+          spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
           spack repo update --branch develop builtin
           spack mirror add --unsigned --type binary --oci-username-variable GITHUB_USER --oci-password-variable GITHUB_TOKEN local-buildcache oci://ghcr.io/fenics/spack-buildcache
 
