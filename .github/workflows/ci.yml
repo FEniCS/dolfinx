@@ -131,8 +131,10 @@ jobs:
 
       - name: Push packages to cache and update index
         run: |
-          spack -e py buildcache push --only dependencies --with-build-dependencies \
+          spack -e py buildcache push \
             --base-image spack/ubuntu-noble --update-index local-buildcache
+        # spack -e py buildcache push --only dependencies --with-build-dependencies \
+        #   --base-image spack/ubuntu-noble --update-index local-buildcache
         # spack -e cxx buildcache push --only dependencies --with-build-dependencies \
         #   --base-image spack/ubuntu-noble --update-index local-buildcache
         if: ${{ !cancelled() }}
