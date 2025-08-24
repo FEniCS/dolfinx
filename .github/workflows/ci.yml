@@ -118,7 +118,7 @@ jobs:
             %py-fenics-basix@git.main=main %py-fenics-ffcx@git.main=main %py-fenics-ufl@git.main=main \
             ^fenics-dolfinx@main +petsc +slepc partitioners=parmetis \
             ^petsc +mpi +hypre +mumps +superlu-dist \
-            ^openmpi ^fenics-basix@git.main=main ^fenics-ufcx@git.main=main
+            ^openmpi ^fenics-basix@git.main=main ^fenics-ufcx@git.main=main \
             py-pytest py-pytest-xdist py-numba py-matplotlib
           spack -e py add py-setuptools
           spack -v -e py install -j 4 --use-buildcache auto
