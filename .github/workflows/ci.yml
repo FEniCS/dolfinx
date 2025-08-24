@@ -86,11 +86,12 @@ jobs:
 
       - name: Add cache and create environment
         run: |
-          . ./spack-src/share/spack/setup-env.sh
+          . /opt/spack/share/spack/setup-env.sh
           spack compiler find
           spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
         # spack repo update --branch py-dolfinx-c-compiler builtin
         # spack mirror add --unsigned --type binary --oci-username-variable GITHUB_USER --oci-password-variable GITHUB_TOKEN local-buildcache oci://ghcr.io/fenics/spack-buildcache
+      # . ./spack-src/share/spack/setup-env.sh
 
       # # - name: Install dependencies and cache
       # #   run: |
@@ -138,12 +139,13 @@ jobs:
 
       - name: Build DOLFINx library (Python)
         run: |
-          . ./spack-src/share/spack/setup-env.sh
+          . /opt/spack/share/spack/setup-env.sh
           spack config get repos
           spack info py-fenics-dolfinx
           spack env create py
           spack -e py add py-fenics-dolfinx@main
           spack -e py concretize -f
+          # . ./spack-src/share/spack/setup-env.sh
       # spack -e py develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
       # spack -e py develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src py-fenics-dolfinx@main
         # spack -v -e py install -j 4
