@@ -62,7 +62,7 @@ jobs:
       - name: Add cache and create environment
         run: |
           spack compiler find
-          spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
+        # spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
         # spack mirror add --unsigned --type binary --oci-username-variable GITHUB_USER --oci-password-variable GITHUB_TOKEN local-buildcache oci://ghcr.io/fenics/spack-buildcache
         # spack repo update --branch develop builtin
 
