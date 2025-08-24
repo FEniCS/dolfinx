@@ -61,6 +61,7 @@ jobs:
 
       - name: Add cache and create environment
         run: |
+          spack compiler find
           spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
           spack mirror add --unsigned --type binary --oci-username-variable GITHUB_USER --oci-password-variable GITHUB_TOKEN local-buildcache oci://ghcr.io/fenics/spack-buildcache
         # spack repo update --branch develop builtin
@@ -121,7 +122,8 @@ jobs:
             ^openmpi ^fenics-basix@git.main=main ^fenics-ufcx@git.main=main \
             py-pytest py-pytest-xdist py-numba py-matplotlib
           spack -e py add py-setuptools
-          spack -v -e py install -j 4 --use-buildcache auto
+          spack -v -e py install -U -j 4 --no-cache
+        # --use-buildcache auto
 
       - name: Run unit tests (Python)
         run: |
@@ -132,7 +134,7 @@ jobs:
       - name: Push packages to cache and update index
         run: |
           spack -e py buildcache push \
-            --base-image spack/ubuntu-noble --update-index local-buildcache
+            --base-image spack/ubuntu-noble --update-index local-buildcache --include-build-deps
         # spack -e py buildcache push --only dependencies --with-build-dependencies \
         #   --base-image spack/ubuntu-noble --update-index local-buildcache
         # spack -e cxx buildcache push --only dependencies --with-build-dependencies \
