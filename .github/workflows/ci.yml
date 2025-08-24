@@ -48,10 +48,18 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
+          repository: garth-wells/spack-packages
+          ref: py-dolfinx-c-compiler
+          path: spack-packages
+
+      - uses: actions/checkout@v5
+        with:
           path: dolfinx-src
 
       - name: Add Spack to $PATH
-        run: echo "PATH=/opt/spack/bin:$PATH" >> $GITHUB_ENV
+        run: |
+          echo "PATH=/opt/spack/bin:$PATH" >> $GITHUB_ENV
+          spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
 
       - name: Add cache and create environment
         run: |
