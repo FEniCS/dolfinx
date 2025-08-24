@@ -76,7 +76,7 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
           spack mirror add --unsigned --type binary --oci-username-variable GITHUB_USER --oci-password-variable GITHUB_TOKEN \
-            local-buildcache oci://ghcr.io/fenics/spack-buildcache
+            local-buildcache oci://ghcr.io/fenics/spack-dolfinx-ci-buildcache
           spack compiler find
 
       # # - name: Install dependencies and cache
@@ -157,7 +157,7 @@ jobs:
       - name: Push packages to cache and update index
         run: |
           spack -e py buildcache push \
-            --base-image spack/ubuntu-noble --update-index local-buildcache --include-build-deps
+            --base-image ubuntu:24.04 --update-index local-buildcache --include-build-deps
         # spack -e py buildcache push --only dependencies --with-build-dependencies \
         #   --base-image spack/ubuntu-noble --update-index local-buildcache
         # spack -e cxx buildcache push --only dependencies --with-build-dependencies \
