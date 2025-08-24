@@ -27,12 +27,10 @@ jobs:
   build:
     name: Build and test
     runs-on: ubuntu-latest
-    # container: spack/ubuntu-noble:latest
-    container: ubuntu:24.04
+    container: spack/ubuntu-noble:latest
+    # container: ubuntu:24.04
     permissions:
       packages: write
-
-
 
     # env:
     #   PATH: /opt/spack/bin:${{ env.PATH }}
@@ -49,13 +47,13 @@ jobs:
     #       ]
 
     steps:
-      - name: Install Spack requirements
-        run: |
-          apt-get -y update
-          apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar unzip xz-utils
-          apt-get install -y g++ gfortran  # compilers
-      - name: Get DOLFINx code (to access Spack config and test files)
-        uses: actions/checkout@v4
+      # - name: Install Spack requirements
+      #   run: |
+      #     apt-get -y update
+      #     apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar unzip xz-utils
+      #     apt-get install -y g++ gfortran  # compilers
+      # - name: Get DOLFINx code (to access Spack config and test files)
+      #   uses: actions/checkout@v4
       # - name: Set up Spack
       #   uses: spack/setup-spack@main
       #   with:
@@ -63,12 +61,12 @@ jobs:
       #     color: true       # Force color output (SPACK_COLOR=always)
       #     path: spack-src   # Where to clone Spack
 
-      - uses: actions/checkout@v5
-        with:
-          repository: spack/spack
-          # ref: develop
-          # fetch-depth: 0
-          path: spack-src
+      # - uses: actions/checkout@v5
+      #   with:
+      #     repository: spack/spack
+      #     # ref: develop
+      #     # fetch-depth: 0
+      #     path: spack-src
 
       - uses: actions/checkout@v5
         with:
@@ -91,7 +89,7 @@ jobs:
           . ./spack-src/share/spack/setup-env.sh
           spack compiler find
           spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
-          # spack repo update --branch py-dolfinx-c-compiler builtin
+        # spack repo update --branch py-dolfinx-c-compiler builtin
         # spack mirror add --unsigned --type binary --oci-username-variable GITHUB_USER --oci-password-variable GITHUB_TOKEN local-buildcache oci://ghcr.io/fenics/spack-buildcache
 
       # # - name: Install dependencies and cache
