@@ -27,8 +27,8 @@ jobs:
   build:
     name: Build and test
     runs-on: ubuntu-latest
-    container: spack/ubuntu-noble:latest
-    # container: ubuntu:24.04
+    # container: spack/ubuntu-noble:latest
+    container: ubuntu:24.04
     permissions:
       packages: write
 
@@ -47,51 +47,35 @@ jobs:
     #       ]
 
     steps:
-      # - name: Install Spack requirements
-      #   run: |
-      #     apt-get -y update
-      #     apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar unzip xz-utils
-      #     apt-get install -y g++ gfortran  # compilers
-      # - name: Get DOLFINx code (to access Spack config and test files)
-      #   uses: actions/checkout@v4
-      # - name: Set up Spack
-      #   uses: spack/setup-spack@main
-      #   with:
-      #     ref: develop      # Spack version (examples: develop, releases/v0.23)
-      #     color: true       # Force color output (SPACK_COLOR=always)
-      #     path: spack-src   # Where to clone Spack
+      - name: Install Spack requirements
+        run: |
+          apt-get -y update
+          apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar unzip xz-utils
+          apt-get install -y g++ gfortran  # compilers
 
-      # - uses: actions/checkout@v5
-      #   with:
-      #     repository: spack/spack
-      #     # ref: develop
-      #     # fetch-depth: 0
-      #     path: spack-src
+      - name: Get DOLFINx code
+        uses: actions/checkout@v5
+        with:
+          path: dolfinx-src
+      - name: Get Spack
+        uses: actions/checkout@v5
+        with:
+          repository: spack/spack
+          # ref: develop
+          path: spack-src
 
-      - uses: actions/checkout@v5
+      - name: Get Spack packages
+        uses: actions/checkout@v5
         with:
           repository: garth-wells/spack-packages
           ref: py-dolfinx-c-compiler
-          # fetch-depth: 0
           path: spack-packages
-
-      # - uses: actions/checkout@v5
-      #   with:
-      #     path: dolfinx-src
-
-      # - name: Add Spack to $PATH
-      #   run: |
-      #     env
-      #     echo "PATH=/opt/spack/bin:$PATH" >> $GITHUB_ENV
 
       - name: Add cache and create environment
         run: |
-          . /opt/spack/share/spack/setup-env.sh
-          spack compiler find
+          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
-        # spack repo update --branch py-dolfinx-c-compiler builtin
-        # spack mirror add --unsigned --type binary --oci-username-variable GITHUB_USER --oci-password-variable GITHUB_TOKEN local-buildcache oci://ghcr.io/fenics/spack-buildcache
-      # . ./spack-src/share/spack/setup-env.sh
+          spack compiler find
 
       # # - name: Install dependencies and cache
       # #   run: |
@@ -139,16 +123,14 @@ jobs:
 
       - name: Build DOLFINx library (Python)
         run: |
-          . /opt/spack/share/spack/setup-env.sh
+          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack config get repos
           spack info py-fenics-dolfinx
           spack env create py
+          spack -e py develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
+          spack -e py develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src py-fenics-dolfinx@main
           spack -e py add py-fenics-dolfinx@main
-          spack -e py concretize -f
-          # . ./spack-src/share/spack/setup-env.sh
-      # spack -e py develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
-      # spack -e py develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src py-fenics-dolfinx@main
-        # spack -v -e py install -j 4
+          spack -v -e py install -j 4
         # spack -e py add py-setuptools
         # --use-buildcache auto
         #  +petsc4py +slepc4py \
