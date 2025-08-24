@@ -482,7 +482,6 @@ add_subdirectory(dolfinx)
 # ------------------------------------------------------------------------------
 # Unit testing
 option(BUILD_TESTING "Build DOLFINx unit tests and create test target." OFF)
-include(CTest)
 if (BUILD_TESTING)
   add_subdirectory(test)
 endif()

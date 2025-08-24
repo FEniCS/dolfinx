@@ -1,3 +1,5 @@
+include(CTest)
+
 find_package(Catch2 3)
 
 if(NOT Catch2_FOUND)
