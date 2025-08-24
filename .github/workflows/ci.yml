@@ -69,7 +69,7 @@ jobs:
       - name: Install dependencies and cache
         run: |
           spack env create tmp-cache
-          spack v -e tmp-cache install -j 4 --use-buildcache auto --add \
+          spack -v -e tmp-cache install -j 4 --use-buildcache auto --add \
             catch2 cmake ninja \
             doxygen \
             py-gmsh py-matplotlib py-numba py-pytest py-pytest-xdist py-pyvista
