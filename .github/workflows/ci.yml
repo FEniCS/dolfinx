@@ -120,7 +120,7 @@ jobs:
           spack -e py develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
           spack -e py develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src py-fenics-dolfinx@main
           spack -e py add py-fenics-dolfinx@main
-          spack -v -e py install -U -j 4
+          spack -v -e py install -j 4
         # spack -e py add py-setuptools
         # --use-buildcache auto
         #  +petsc4py +slepc4py \
