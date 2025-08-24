@@ -121,8 +121,8 @@ jobs:
             ^petsc +mpi +hypre +mumps +superlu-dist \
             ^openmpi ^fenics-basix@git.main=main ^fenics-ufcx@git.main=main \
             py-pytest py-pytest-xdist py-numba py-matplotlib
-          spack -e py add py-setuptools
           spack -v -e py install -U -j 4 --no-cache
+        # spack -e py add py-setuptools
         # --use-buildcache auto
 
       - name: Run unit tests (Python)
