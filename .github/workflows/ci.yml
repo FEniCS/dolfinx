@@ -114,17 +114,18 @@ jobs:
         run: |
           spack info py-fenics-dolfinx
           spack env create py
-          spack develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
-          spack develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src py-fenics-dolfinx@main
+          spack -e py develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
+          spack -e py develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src py-fenics-dolfinx@main
           spack -e py add py-fenics-dolfinx@main +petsc4py +slepc4py \
             %py-fenics-basix@git.main=main %py-fenics-ffcx@git.main=main %py-fenics-ufl@git.main=main \
-            ^fenics-dolfinx@main +petsc +slepc partitioners=parmetis \
-            ^petsc +mpi +hypre +mumps +superlu-dist \
-            ^openmpi ^fenics-basix@git.main=main ^fenics-ufcx@git.main=main \
-            py-pytest py-pytest-xdist py-numba py-matplotlib
+            %fenics-dolfinx@main +petsc +slepc partitioners=parmetis \
+            ^petsc +mpi +hypre +mumps +superlu-dist
           spack -v -e py install -U -j 4
         # spack -e py add py-setuptools
         # --use-buildcache auto
+        # \
+        # ^openmpi ^fenics-basix@git.main=main ^fenics-ufcx@git.main=main \
+        # py-pytest py-pytest-xdist py-numba py-matplotlib
 
       - name: Run unit tests (Python)
         run: |
@@ -132,12 +133,12 @@ jobs:
           spack env activate py
           python -m pytest -n=auto --durations=50 dolfinx-src/python/test/unit/
 
-      - name: Push packages to cache and update index
-        run: |
-          spack -e py buildcache push \
-            --base-image spack/ubuntu-noble --update-index local-buildcache --include-build-deps
-        # spack -e py buildcache push --only dependencies --with-build-dependencies \
-        #   --base-image spack/ubuntu-noble --update-index local-buildcache
-        # spack -e cxx buildcache push --only dependencies --with-build-dependencies \
-        #   --base-image spack/ubuntu-noble --update-index local-buildcache
-        if: ${{ !cancelled() }}
+      # - name: Push packages to cache and update index
+      #   run: |
+      #     spack -e py buildcache push \
+      #       --base-image spack/ubuntu-noble --update-index local-buildcache --include-build-deps
+      #   # spack -e py buildcache push --only dependencies --with-build-dependencies \
+      #   #   --base-image spack/ubuntu-noble --update-index local-buildcache
+      #   # spack -e cxx buildcache push --only dependencies --with-build-dependencies \
+      #   #   --base-image spack/ubuntu-noble --update-index local-buildcache
+      #   if: ${{ !cancelled() }}
