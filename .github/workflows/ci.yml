@@ -114,6 +114,7 @@ jobs:
         run: |
           spack info py-fenics-dolfinx
           spack env create py
+          spack -e py develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
           spack -e py develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src py-fenics-dolfinx@main
           spack -e py add py-fenics-dolfinx@main +petsc4py +slepc4py \
             %py-fenics-basix@git.main=main %py-fenics-ffcx@git.main=main %py-fenics-ufl@git.main=main \
