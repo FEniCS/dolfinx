@@ -22,7 +22,6 @@ env:
   OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
   PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
-
 jobs:
   build:
     name: Build and test
@@ -83,6 +82,8 @@ jobs:
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack env create cxx
+          spack -e cxx mirror ls
+          spack -e cxx buildcache list --allarch
           spack -e cxx develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
           spack -e cxx add fenics-dolfinx@main +petsc +slepc partitioners=parmetis \
             %petsc +mpi +hypre +mumps +superlu-dist \
@@ -134,8 +135,9 @@ jobs:
             %py-fenics-ufl@git.main=main \
             ^openmpi ^fenics-ufcx@git.main=main \
             ^petsc +mpi +hypre +mumps +superlu-dist \
-            py-pytest py-pytest-xdist py-matplotlib py-numba py-gmsh %gmsh~fltk py-scipy
-          spack -v -e py install -j 4
+          spack -e py add py-pytest py-pytest-xdist py-matplotlib \
+            py-numba py-gmsh %gmsh~fltk py-scipy
+          spack -v -e py install -j 4 --use-buildcache auto
 
       - name: Run unit tests (Python)
         run: |
