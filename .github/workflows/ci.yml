@@ -30,20 +30,6 @@ jobs:
     permissions:
       packages: write
 
-    # env:
-    #   PATH: /opt/spack/bin:${{ env.PATH }}
-    # env:
-    #   dolfinx_ref: main
-    #   # bench_dolfinx_ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
-    # strategy:
-    #   matrix:
-    #     backend:
-    #       [
-    #         { device: cpu,  spack_opt: "~cuda~rocm", cmake_opt: "" },
-    #         { device: rocm, spack_opt: "++rocm amdgpu_target=gfx90a ^openmpi+rocm amdgpu_target=gfx90a", cmake_opt: -DHIP_ARCH=gfx90a },
-    #         { device: cuda, spack_opt: "++cuda cuda_arch=75 ^openmpi", cmake_opt: -DCUDA_ARCH=75 },
-    #       ]
-
     steps:
       - name: Install Spack requirements
         run: |
@@ -73,6 +59,7 @@ jobs:
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
+          spack mirror add --unsigned --type binary --oci-username-variable GITHUB_USER --oci-password-variable GITHUB_TOKEN local-buildcache oci://ghcr.io/fenics/dolfinx-spack-buildcache
 
       - name: Build DOLFINx library (C++)
         run: |
