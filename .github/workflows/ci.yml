@@ -71,11 +71,12 @@ jobs:
           ref: py-dolfinx-c-compiler
           path: spack-packages
 
-      - name: Add cache and
+      - name: Add repo and build cache
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
-
+          spack mirror add --unsigned --type binary --oci-username-variable GITHUB_USER --oci-password-variable GITHUB_TOKEN \
+            local-buildcache oci://ghcr.io/fenics/spack-dolfinx-ci-buildcache
       # - name: Install dependencies and cache
       #   run: |
       #     spack env create tmp-cache
