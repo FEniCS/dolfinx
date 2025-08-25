@@ -26,7 +26,6 @@ jobs:
   build:
     name: Build and test
     runs-on: ubuntu-latest
-    # container: spack/ubuntu-noble:latest
     container: ubuntu:24.04
     permissions:
       packages: write
