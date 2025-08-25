@@ -68,10 +68,10 @@ jobs:
           spack -e cxx add fenics-dolfinx@main +petsc +slepc partitioners=parmetis \
             %petsc +mpi +hypre +mumps +superlu-dist \
             %openmpi %fenics-basix@git.main=main %fenics-ufcx@git.main=main \
-            ^cmake~ncurses
-          spack -e cxx add catch2 ninja \
+            %cmake~ncurses
+          spack -e cxx add catch2 %cmake~ncurses ninja \
             py-fenics-ffcx@git.main=main %py-fenics-basix@git.main=main %py-fenics-ufl@git.main=main
-          spack -e cxx install -j 3 -p 2 --use-buildcache auto
+          spack -e cxx install --fresh -j 3 -p 2 --use-buildcache auto
 
       - name: Push C++ packages to cache
         run: |
