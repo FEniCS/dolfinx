@@ -67,8 +67,9 @@ jobs:
           spack -e cxx develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
           spack -e cxx add fenics-dolfinx@main +petsc +slepc partitioners=parmetis \
             %petsc +mpi +hypre +mumps +superlu-dist \
-            %openmpi %fenics-basix@git.main=main %fenics-ufcx@git.main=main
-          spack -e cxx add catch2 cmake ninja \
+            %openmpi %fenics-basix@git.main=main %fenics-ufcx@git.main=main \
+            ^cmake~ncureses
+          spack -e cxx add catch2 ninja \
             py-fenics-ffcx@git.main=main %py-fenics-basix@git.main=main %py-fenics-ufl@git.main=main
           spack -e cxx install -j 3 -p 2 --use-buildcache auto
 
@@ -76,7 +77,7 @@ jobs:
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack -e cxx buildcache push --base-image ubuntu:24.04 --only dependencies --with-build-dependencies --update-index local-buildcache
-          spack -e cxx buildcache push --base-image ubuntu:24.04 --update-index local-buildcache catch2 cmake ninja
+          spack -e cxx buildcache push --base-image ubuntu:24.04 --update-index local-buildcache catch2 ninja
         if: ${{ !cancelled() }}
 
       # - name: Build and run unit tests (C++)
@@ -93,6 +94,7 @@ jobs:
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack env activate cxx
+          spack load cmake
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S dolfinx-src/cpp/demo/
           cmake --build build/demo
           cd build/demo
