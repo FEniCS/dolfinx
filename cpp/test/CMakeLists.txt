@@ -62,10 +62,11 @@ if(WIN32)
   target_link_libraries(unittests PRIVATE bcrypt)
 endif()
 
+# Required to find FFCx generated headers.
 target_include_directories(
   unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
-# makes version.h accessible
+# Required to find version.h
 target_include_directories(
   unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../>
 )
@@ -84,7 +85,6 @@ target_compile_options(
     $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
 )
 
-# TODO: should not be set in test and dolfinx but in cpp once.
 if(ENABLE_CLANG_TIDY)
   find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
   set_target_properties(
@@ -95,9 +95,7 @@ if(ENABLE_CLANG_TIDY)
   )
 endif()
 
-# Nice for debugging tests one at a time - but extremely slow due to process
-# spawning/tear down: catch_discover_tests(unittests)
+# Uncommenting line allows for debugging individual tests, but slow. 
+#catch_discover_tests(unittests)
 
-foreach(np IN LISTS DOLFINX_TEST_MPI_PROCESSES)
-  add_test(NAME unittests_np_${np} COMMAND mpiexec -np ${np} ./unittests)
-endforeach()
+add_test(NAME unittests COMMAND $<TARGET_FILE:unittests>)
