@@ -68,7 +68,7 @@ jobs:
           spack -e cxx add fenics-dolfinx@main +petsc +slepc partitioners=parmetis \
             %petsc +mpi +hypre +mumps +superlu-dist \
             %openmpi %fenics-basix@git.main=main %fenics-ufcx@git.main=main \
-            ^cmake~ncureses
+            ^cmake~ncurses
           spack -e cxx add catch2 ninja \
             py-fenics-ffcx@git.main=main %py-fenics-basix@git.main=main %py-fenics-ufl@git.main=main
           spack -e cxx install -j 3 -p 2 --use-buildcache auto
@@ -114,7 +114,7 @@ jobs:
             %py-fenics-basix@git.main=main  \
             %py-fenics-ffcx@git.main=main \
             %py-fenics-ufl@git.main=main \
-            ^openmpi ^fenics-ufcx@git.main=main \
+            ^openmpi ^cmake~ncurses ^fenics-ufcx@git.main=main \
             ^petsc +mpi +hypre +mumps +superlu-dist
           spack -e py add py-pytest py-pytest-xdist py-matplotlib \
             py-numba py-gmsh %gmsh~fltk py-scipy
