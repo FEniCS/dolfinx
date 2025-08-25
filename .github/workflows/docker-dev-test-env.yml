@@ -39,7 +39,7 @@ jobs:
           echo "DOCKERFILE=${USER_INPUT:-docker/Dockerfile.test-env}" >> $GITHUB_ENV
 
       - name: Checkout DOLFINx
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set root repository (docker.io/fenicsproject)
         if: ${{ matrix.variant == 'test-env' }}
