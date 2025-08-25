@@ -62,6 +62,7 @@ nanobind_add_module(
   dolfinx/wrappers/petsc.cpp
   dolfinx/wrappers/refinement.cpp
 )
+target_compile_definitions(cpp PRIVATE MPI4PY_LIMITED_API=1)
 
 # Add strict compiler flags
 include(CheckCXXCompilerFlag)
