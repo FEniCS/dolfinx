@@ -1,13 +1,18 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(dolfinx-tests LANGUAGES C CXX)
-set(CMAKE_C_STANDARD 17) # For FFCx generated .c files.
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Find DOLFINx config file
-find_package(DOLFINX REQUIRED)
+# Find DOLFINx config file, if needed
+if(NOT TARGET dolfinx)
+  find_package(DOLFINX REQUIRED)
+endif()
+  set(CMAKE_C_STANDARD 17) # For FFCx generated .c files.
+  set(CMAKE_CXX_STANDARD 20)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+
+  find_package(DOLFINX REQUIRED)
+endif()
 
 find_package(Catch2 3)
 if(NOT Catch2_FOUND)
@@ -106,7 +111,7 @@ if(ENABLE_CLANG_TIDY)
   )
 endif()
 
-# Uncommenting line allows for debugging individual tests, but slow. 
+# Uncommenting line allows for debugging individual tests, but slow.
 #catch_discover_tests(unittests)
 
 add_test(NAME unittests COMMAND $<TARGET_FILE:unittests>)
