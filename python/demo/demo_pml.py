@@ -440,6 +440,7 @@ partitioner = dolfinx.cpp.mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.sh
 mesh_data = gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
 assert mesh_data.cell_tags is not None, "Cell tags are missing"
 assert mesh_data.facet_tags is not None, "Facet tags are missing"
+assert all(pg.dim == 2 for _, pg in mesh_data.physical_groups.items()), "Wrong phsyical group dim."
 
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()
