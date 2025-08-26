@@ -63,6 +63,7 @@ jobs:
       - name: Build DOLFINx library (C++)
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
+          spack info fenics-dolfinx
           spack env create cxx dolfinx-src/.github/workflows/spack-config/gh-actions-env-test.yml
           spack -e cxx develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
           spack -e cxx add fenics-dolfinx@main build_type=Developer +petsc +slepc partitioners=parmetis \
@@ -111,11 +112,11 @@ jobs:
           spack -e py add \
             py-fenics-dolfinx@main +petsc4py +slepc4py \
             %fenics-dolfinx@main build_type=Developer +petsc +slepc partitioners=parmetis \
-            %fenics-basix@git.main=main  \
-            %py-fenics-basix@git.main=main  \
-            %py-fenics-ffcx@git.main=main \
-            %py-fenics-ufl@git.main=main \
-            ^fenics-ufcx@git.main=main \
+            %fenics-basix@git.main  \
+            %py-fenics-basix@git.main  \
+            %py-fenics-ffcx@git.main \
+            %py-fenics-ufl@git.main \
+            ^fenics-ufcx@git.main \
             ^openmpi ^cmake~ncurses \
             ^petsc +mpi +hypre +mumps +superlu-dist \
             ^adios2~fortran~libcatalyst
