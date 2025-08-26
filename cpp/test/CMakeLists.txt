@@ -1,3 +1,12 @@
+cmake_minimum_required(VERSION 3.21)
+
+project(tests)
+
+if (PROJECT_IS_TOP_LEVEL)
+  include(Ctest) # enables testing
+  find_package(dolfinx)
+endif()
+
 find_package(Catch2 3)
 
 if(NOT Catch2_FOUND)
