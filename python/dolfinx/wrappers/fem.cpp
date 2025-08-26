@@ -757,7 +757,7 @@ void declare_form(nb::module_& m, std::string type)
       .def_prop_ro("mesh", &dolfinx::fem::Form<T, U>::mesh)
       .def_prop_ro("function_spaces",
                    &dolfinx::fem::Form<T, U>::function_spaces)
-      .def_prop_ro("num_integrals", &dolfinx::fem::Form<T, U>::num_integrals)
+      .def("num_integrals", &dolfinx::fem::Form<T, U>::num_integrals)
       .def_prop_ro("integral_types", &dolfinx::fem::Form<T, U>::integral_types)
       .def_prop_ro("needs_facet_permutations",
                    &dolfinx::fem::Form<T, U>::needs_facet_permutations)
