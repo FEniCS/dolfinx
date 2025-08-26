@@ -1,10 +1,18 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(tests)
+project(dolfinx-tests LANGUAGES C CXX)
 
 if (PROJECT_IS_TOP_LEVEL)
   include(CTest) # enables testing
   find_package(dolfinx)
+
+  set(CMAKE_C_STANDARD 17) # For FFCx generated .c files.
+  set(CMAKE_CXX_STANDARD 20)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+
+  # Add shared library paths so shared libs in non-system paths are founds
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
 endif()
 
 find_package(Catch2 3)
