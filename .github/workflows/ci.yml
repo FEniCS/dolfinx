@@ -71,7 +71,7 @@ jobs:
             %adios2~fortran~libcatalyst
           spack -e cxx add catch2 cmake~ncurses ninja \
             py-fenics-ffcx@git.main=main %py-fenics-basix@git.main=main %py-fenics-ufl@git.main=main
-          spack -e cxx install --fresh -j 4 -p 2 --use-buildcache auto
+          spack -e cxx install -j 4 -p 2 --use-buildcache auto
 
       - name: Push C++ packages to cache
         run: |
@@ -121,7 +121,7 @@ jobs:
             ^adios2~fortran~libcatalyst
           spack -e py add py-pytest py-pytest-xdist py-matplotlib \
             py-numba py-gmsh %gmsh~fltk py-scipy
-          spack -v -e py install --fresh -j 4 -p 2 --use-buildcache auto
+          spack -v -e py install -j 4 -p 2 --use-buildcache auto
 
       - name: Run unit tests (Python)
         run: |
