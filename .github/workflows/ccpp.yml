@@ -201,7 +201,6 @@ jobs:
           --warn-uninitialized
           -G Ninja
           -DCMAKE_BUILD_TYPE=Developer
-          -DBUILD_TESTING=true
           -DDOLFINX_ENABLE_ADIOS2=true
           -DDOLFINX_ENABLE_KAHIP=true
           -DDOLFINX_ENABLE_PETSC=true
@@ -213,11 +212,17 @@ jobs:
         working-directory: cpp/build
         run: cmake --build . --target install
 
+      - name: Build tests (C++, standalone)
+        working-directory: cpp/test
+        run: |
+          cmake -B build -S .
+          cmake --build build
+
       - name: Run tests (C++, serial)
-        working-directory: cpp/build
+        working-directory: cpp/test/build
         run: mpiexec -np 1 ctest -V --output-on-failure -R unittests
       - name: Run tests (C++, MPI, np=3)
-        working-directory: cpp/build
+        working-directory: cpp/test/build
         run: mpiexec -np 3 ctest -V --output-on-failure -R unittests
 
       - name: Build and run C++ regression tests (serial and MPI (np=2))
