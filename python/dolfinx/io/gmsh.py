@@ -75,6 +75,18 @@ _gmsh_to_cells = {
 }
 
 
+class PhysicalGroup(typing.NamedTuple):
+    """Physical group info.
+
+    Args:
+        dim: dimension of the physical group
+        tag: tag of the physical group
+    """
+
+    dim: int
+    tag: int
+
+
 class MeshData(typing.NamedTuple):
     """Data for representing a mesh and associated tags.
 
@@ -94,7 +106,7 @@ class MeshData(typing.NamedTuple):
     facet_tags: typing.Optional[MeshTags]
     ridge_tags: typing.Optional[MeshTags]
     peak_tags: typing.Optional[MeshTags]
-    physical_groups: dict[str, tuple[int, int]]
+    physical_groups: dict[str, PhysicalGroup]
 
 
 def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
@@ -178,7 +190,7 @@ def extract_topology_and_markers(
     topologies: dict[int, TopologyDict] = {}
     # Create a dictionary with the physical groups where the key is the
     # physical name and the value is a tuple with the dimension and tag
-    physical_groups: dict[str, tuple[int, int]] = {}
+    physical_groups: dict[str, PhysicalGroup] = {}
     for dim, tag in phys_grps:
         # Get the entities of dimension `dim`, dim=0 -> Points, dim=1 -
         # >Lines, dim=2 -> Triangles/Quadrilaterals, etc.
@@ -223,7 +235,7 @@ def extract_topology_and_markers(
             else:
                 topologies[entity_type] = {"topology": topology, "cell_data": marker}
 
-        physical_groups[model.getPhysicalName(dim, tag)] = (dim, tag)
+        physical_groups[model.getPhysicalName(dim, tag)] = PhysicalGroup(dim, tag)
 
     return topologies, physical_groups
 
