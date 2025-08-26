@@ -139,10 +139,10 @@ jobs:
           ls
           mpiexec -n 1 ./unittests "~[la_matrix]"
 
-#      - name: Run tests, skip la_matrix, geometry_compat, create_box (C++, MPI, np=3)
-#        working-directory: dolfinx-src/cpp/build-dir/test/Release
-#        run: |
-#          mpiexec -n 3 ./unittests "~[la_matrix]~[geometry_compat]~[create_box]"
+      - name: Run tests, skip la_matrix, geometry_compat, create_box (C++, MPI, np=3)
+        working-directory: dolfinx-src/cpp/build-dir/test/Release
+        run: |
+          mpiexec -n 3 ./unittests "~[la_matrix]"
 
       - name: Install DOLFINx Python build dependencies
         working-directory: dolfinx-src/python

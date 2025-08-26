@@ -54,7 +54,7 @@ add_executable(
   ${CMAKE_CURRENT_BINARY_DIR}/expr.c
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )
-target_link_libraries(unittests PRIVATE Catch2::Catch2WithMain dolfinx)
+target_link_libraries(unittests PRIVATE Catch2::Catch2 dolfinx)
 
 # UUID requires bcrypt to be linked on Windows, broken in vcpkg.
 # https://github.com/microsoft/vcpkg/issues/4481
