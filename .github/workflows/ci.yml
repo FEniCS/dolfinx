@@ -66,7 +66,7 @@ jobs:
           spack info fenics-dolfinx
           spack env create cxx dolfinx-src/.github/workflows/spack-config/gh-actions-env-test.yml
           spack -e cxx develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
-          spack -e cxx add fenics-dolfinx@main build_type=Developer +petsc +slepc partitioners=parmetis \
+          spack -e cxx add fenics-dolfinx@main generator=ninja build_type=Developer +petsc +slepc partitioners=parmetis \
             %petsc +mpi +hypre +mumps +superlu-dist \
             %openmpi %fenics-basix@git.main=main %fenics-ufcx@git.main=main \
             %adios2~fortran~libcatalyst
