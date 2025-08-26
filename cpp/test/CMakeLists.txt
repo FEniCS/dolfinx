@@ -4,7 +4,7 @@ project(dolfinx-tests LANGUAGES C CXX)
 
 if (PROJECT_IS_TOP_LEVEL)
   include(CTest) # enables testing
-  find_package(dolfinx)
+  find_package(DOLFINX REQUIRED)
 
   set(CMAKE_C_STANDARD 17) # For FFCx generated .c files.
   set(CMAKE_CXX_STANDARD 20)
