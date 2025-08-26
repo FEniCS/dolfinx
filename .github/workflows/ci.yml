@@ -45,7 +45,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: spack/spack
-          # ref: develop
+          ref: develop
           path: spack-src
 
       - name: Get Spack packages
@@ -68,8 +68,8 @@ jobs:
           spack -e cxx add fenics-dolfinx@main +petsc +slepc partitioners=parmetis \
             %petsc +mpi +hypre +mumps +superlu-dist \
             %openmpi %fenics-basix@git.main=main %fenics-ufcx@git.main=main \
-            %cmake~ncurses
-          spack -e cxx add catch2 %cmake~ncurses ninja \
+            %adios2~fortran~libcatalyst
+          spack -e cxx add catch2 cmake~ncurses ninja \
             py-fenics-ffcx@git.main=main %py-fenics-basix@git.main=main %py-fenics-ufl@git.main=main
           spack -e cxx install --fresh -j 3 -p 2 --use-buildcache auto
 
@@ -115,10 +115,11 @@ jobs:
             %py-fenics-ffcx@git.main=main \
             %py-fenics-ufl@git.main=main \
             ^openmpi ^cmake~ncurses ^fenics-ufcx@git.main=main \
-            ^petsc +mpi +hypre +mumps +superlu-dist
+            ^petsc +mpi +hypre +mumps +superlu-dist \
+            ^adios2~fortran~libcatalyst
           spack -e py add py-pytest py-pytest-xdist py-matplotlib \
             py-numba py-gmsh %gmsh~fltk py-scipy
-          spack -v -e py install -j 4 --use-buildcache auto
+          spack -v -e py install --fresh -j 3 -p 2 --use-buildcache auto
 
       - name: Run unit tests (Python)
         run: |
