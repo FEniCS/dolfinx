@@ -12,7 +12,6 @@ import types
 import typing
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from itertools import chain
 
 from mpi4py import MPI
 
@@ -352,29 +351,15 @@ def form(
         ]
         constants = [c._cpp_object for c in form.constants()]
 
-        # Make map from integral_type to subdomain id
+        # Extract subdomain ids from ufcx_form
         subdomain_ids = {type: [] for type in sd.get(domain).keys()}
-        for integral in form.integrals():
-            if integral.subdomain_data() is not None:
-                # Subdomain ids can be strings, its or tuples with
-                # strings and ints
-                if integral.subdomain_id() != "everywhere":
-                    if isinstance(integral.subdomain_id(), tuple):
-                        ids = [sid for sid in integral.subdomain_id() if sid != "everywhere"]
-                    else:
-                        ids = [integral.subdomain_id()]
-                else:
-                    ids = []
-                subdomain_ids[integral.integral_type()].append(ids)
+        integral_offsets = [ufcx_form.form_integral_offsets[i] for i in range(4)]
+        for i in range(3):
+            integral_type = IntegralType(i)
+            for j in range(integral_offsets[i], integral_offsets[i + 1]):
+                subdomain_ids[integral_type.name].append(ufcx_form.form_integral_ids[j])
 
-        # Chain and sort subdomain ids
-        for itg_type, marker_ids in subdomain_ids.items():
-            flattened_ids = list(chain.from_iterable(marker_ids))
-            flattened_ids.sort()
-            subdomain_ids[itg_type] = flattened_ids
-
-        # Subdomain markers (possibly empty list for some integral
-        # types)
+        # Subdomain markers (possibly empty list for some integral types)
         subdomains = {
             _ufl_to_dolfinx_domain[key]: get_integration_domains(
                 _ufl_to_dolfinx_domain[key], subdomain_data[0], subdomain_ids[key]

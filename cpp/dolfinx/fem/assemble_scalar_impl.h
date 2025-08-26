@@ -165,7 +165,7 @@ T assemble_scalar(
   assert(mesh);
 
   T value = 0;
-  for (int i : M.integral_ids(IntegralType::cell))
+  for (int i = 0; i < M.num_integrals(IntegralType::cell, 0); ++i)
   {
     auto fn = M.kernel(IntegralType::cell, i, 0);
     assert(fn);
@@ -190,7 +190,7 @@ T assemble_scalar(
                        num_facets_per_cell);
   }
 
-  for (int i : M.integral_ids(IntegralType::exterior_facet))
+  for (int i = 0; i < M.num_integrals(IntegralType::exterior_facet, 0); ++i)
   {
     auto fn = M.kernel(IntegralType::exterior_facet, i, 0);
     assert(fn);
@@ -208,7 +208,7 @@ T assemble_scalar(
         perms);
   }
 
-  for (int i : M.integral_ids(IntegralType::interior_facet))
+  for (int i = 0; i < M.num_integrals(IntegralType::interior_facet, 0); ++i)
   {
     auto fn = M.kernel(IntegralType::interior_facet, i, 0);
     assert(fn);
