@@ -4,8 +4,6 @@ project(dolfinx-tests LANGUAGES C CXX)
 
 # Find DOLFINx config file, if needed
 if(NOT TARGET dolfinx)
-  find_package(DOLFINX REQUIRED)
-endif()
   set(CMAKE_C_STANDARD 17) # For FFCx generated .c files.
   set(CMAKE_CXX_STANDARD 20)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
