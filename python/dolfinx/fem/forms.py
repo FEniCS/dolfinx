@@ -116,8 +116,8 @@ class Form:
 
         Args:
             integral_type: The type of integral to count.
-            kernel_index: In the case of mixed topology, we have a kernel per cell type.
-                For single-cell type meshes, this is always zero.
+            kernel_index: In the case of mixed topology, we have a kernel per
+                cell type. For single-cell type meshes, this is always zero.
         """
         return self._cpp_object.num_integrals(integral_type, kernel_index)
 
