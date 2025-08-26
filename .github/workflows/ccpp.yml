@@ -206,7 +206,7 @@ jobs:
           -DDOLFINX_ENABLE_KAHIP=true
           -DDOLFINX_ENABLE_PETSC=true
           -DDOLFINX_ENABLE_SCOTCH=true
-          -DDOLFINX_ENABLE_SLEPC=true 
+          -DDOLFINX_ENABLE_SLEPC=true
           -DDOLFINX_ENABLE_PARMETIS=false
 
       - name: Build and install (C++)
@@ -300,7 +300,7 @@ jobs:
 
       - name: Build Python interface
         run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[docs]'
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[docs]'
 
       - name: Build C++ interface documentation
         run: |
