@@ -1102,7 +1102,7 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
       = element1->template dof_transformation_right_fn<T>(
           doftransform::transpose);
 
-  for (int i : a.integral_ids(IntegralType::cell))
+  for (int i = 0; i < a.num_integrals(IntegralType::cell, 0); ++i)
   {
     auto kernel = a.kernel(IntegralType::cell, i, 0);
     assert(kernel);
@@ -1147,7 +1147,7 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
                        num_facets_per_cell);
   }
 
-  for (int i : a.integral_ids(IntegralType::exterior_facet))
+  for (int i = 0; i < a.num_integrals(IntegralType::exterior_facet, 0); ++i)
   {
     auto kernel = a.kernel(IntegralType::exterior_facet, i, 0);
     assert(kernel);
@@ -1171,7 +1171,7 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
         cell_info1, bc_values1, bc_markers1, x0, alpha, perms);
   }
 
-  for (int i : a.integral_ids(IntegralType::interior_facet))
+  for (int i = 0; i < a.num_integrals(IntegralType::interior_facet, 0); ++i)
   {
     auto kernel = a.kernel(IntegralType::interior_facet, i, 0);
     assert(kernel);
@@ -1342,7 +1342,7 @@ void assemble_vector(
       cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
     }
 
-    for (int i : L.integral_ids(IntegralType::cell))
+    for (int i = 0; i < L.num_integrals(IntegralType::cell, 0); ++i)
     {
       auto fn = L.kernel(IntegralType::cell, i, cell_type_idx);
       assert(fn);
@@ -1387,7 +1387,7 @@ void assemble_vector(
         = md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>;
 
-    for (int i : L.integral_ids(IntegralType::exterior_facet))
+    for (int i = 0; i < L.num_integrals(IntegralType::exterior_facet, 0); ++i)
     {
       auto fn = L.kernel(IntegralType::exterior_facet, i, 0);
       assert(fn);
@@ -1421,7 +1421,7 @@ void assemble_vector(
       }
     }
 
-    for (int i : L.integral_ids(IntegralType::interior_facet))
+    for (int i = 0; i < L.num_integrals(IntegralType::interior_facet, 0); ++i)
     {
       using mdspanx22_t
           = md::mdspan<const std::int32_t,
