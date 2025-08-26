@@ -75,10 +75,13 @@ endif()
 target_include_directories(
   unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
-# Required to find version.h
-target_include_directories(
-  unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../>
-)
+
+if (NOT PROJECT_IS_TOP_LEVEL)
+  # Required to find version.h
+  target_include_directories(
+    unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../>
+  )
+endif()
 
 set_target_properties(
   unittests
