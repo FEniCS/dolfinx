@@ -22,7 +22,8 @@ from mpi4py import MPI
 
 import gmsh  # type: ignore
 
-from dolfinx.io import XDMFFile, gmsh
+from dolfinx.io import XDMFFile
+from dolfinx.io import gmsh as gmshio
 
 # -
 
@@ -166,7 +167,7 @@ def create_mesh(comm: MPI.Comm, model: gmsh.model, name: str, filename: str, mod
         filename: XDMF filename.
         mode: XDMF file mode. "w" (write) or "a" (append).
     """
-    mesh_data = gmsh.model_to_mesh(model, comm, rank=0)
+    mesh_data = gmshio.model_to_mesh(model, comm, rank=0)
     mesh_data.mesh.name = name
     if mesh_data.cell_tags is not None:
         mesh_data.cell_tags.name = f"{name}_cells"
