@@ -112,11 +112,11 @@ jobs:
           spack -e py add \
             py-fenics-dolfinx@main +petsc4py +slepc4py \
             %fenics-dolfinx@main build_type=Developer +petsc +slepc partitioners=parmetis \
-            %fenics-basix@git.main  \
-            %py-fenics-basix@git.main  \
-            %py-fenics-ffcx@git.main \
-            %py-fenics-ufl@git.main \
-            ^fenics-ufcx@git.main \
+            %fenics-basix@git.main=main  \
+            %py-fenics-basix@git.main=main  \
+            %py-fenics-ffcx@git.main=main \
+            %py-fenics-ufl@git.main=main \
+            ^fenics-ufcx@git.main=main \
             ^openmpi ^cmake~ncurses \
             ^petsc +mpi +hypre +mumps +superlu-dist \
             ^adios2~fortran~libcatalyst
