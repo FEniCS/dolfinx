@@ -215,7 +215,7 @@ jobs:
       - name: Build tests (C++, standalone)
         working-directory: cpp/test
         run: |
-          source /usr/local/lib/dolfinx/dolfinx.conf
+          . /usr/local/lib/dolfinx/dolfinx.conf
           cmake -B build -S .
           cmake --build build .
 
