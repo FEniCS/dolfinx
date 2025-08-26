@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-# Copyright (C) 2018-2025 Garth N. Wells and Paul T. Kühner
-=======
-# Copyright (C) 2018-2025 Garth N. Wells, Jørgen S. Dokken
->>>>>>> main
+# Copyright (C) 2018-2025 Garth N. Wells, Jørgen S. Dokken and Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -1513,6 +1509,7 @@ def test_vector_types():
 
     assert np.linalg.norm(x0.array - x1.array) == pytest.approx(0.0)
     assert np.linalg.norm(x0.array - x2.array) == pytest.approx(0.0, abs=1e-7)
+
 
 @dtype_parametrize
 @pytest.mark.parametrize("method", ["degree", "metadata"])
