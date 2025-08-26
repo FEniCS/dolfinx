@@ -5,6 +5,10 @@ spack:
       root: /opt/spack
       padded_length: 128
 
+  concretizer:
+      unify: true
+      reuse: false
+
   packages:
     all:
       require:
