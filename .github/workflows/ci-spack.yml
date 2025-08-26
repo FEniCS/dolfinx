@@ -37,13 +37,13 @@ jobs:
           dnf -y install file bzip2 ca-certificates git gzip patch python3 tar unzip xz zstd gcc gcc-c++ gcc-gfortran
 
       - name: Checkout Spack
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: spack/spack
           path: spack-src
 
       - name: Checkout DOLFINx
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: dolfinx-src
 
