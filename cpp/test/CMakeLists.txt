@@ -11,8 +11,6 @@ if (PROJECT_IS_TOP_LEVEL)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
   set(CMAKE_CXX_EXTENSIONS OFF)
 
-  # Add shared library paths so shared libs in non-system paths are founds
-  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
 endif()
 
 find_package(Catch2 3)
