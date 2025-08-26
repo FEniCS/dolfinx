@@ -217,7 +217,7 @@ jobs:
         run: |
           . /usr/local/lib/dolfinx/dolfinx.conf
           cmake -B build -S .
-          cmake --build .
+          cmake --build build
 
       - name: Run tests (C++, serial)
         working-directory: cpp/test/build
