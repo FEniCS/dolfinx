@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.21)
 project(tests)
 
 if (PROJECT_IS_TOP_LEVEL)
-  include(Ctest) # enables testing
+  include(CTest) # enables testing
   find_package(dolfinx)
 endif()
 
