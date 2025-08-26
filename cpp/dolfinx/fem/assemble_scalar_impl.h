@@ -275,7 +275,7 @@ T assemble_scalar(
         perms);
   }
 
-  for (int i : M.integral_ids(IntegralType::vertex))
+  for (int i = 0; i < M.num_integrals(IntegralType::vertex, 0); ++i)
   {
     auto fn = M.kernel(IntegralType::vertex, i, 0);
     assert(fn);

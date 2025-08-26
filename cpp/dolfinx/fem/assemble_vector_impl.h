@@ -1472,7 +1472,7 @@ void assemble_vector(
       }
     }
 
-    for (int i : L.integral_ids(IntegralType::vertex))
+    for (int i = 0; i < L.num_integrals(IntegralType::vertex, 0); ++i)
     {
       auto fn = L.kernel(IntegralType::vertex, i, 0);
       assert(fn);

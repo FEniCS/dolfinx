@@ -797,7 +797,7 @@ Form<T, U> create_form_factory(
           std::vector<std::int32_t> cells_and_vertices = get_cells_and_vertices(
               std::ranges::views::iota(0, num_vertices));
 
-          integrals.insert({{IntegralType::vertex, id, form_idx},
+          integrals.insert({{IntegralType::vertex, i, form_idx},
                             {k, cells_and_vertices, active_coeffs}});
         }
         else if (sd != subdomains.end())
@@ -807,7 +807,7 @@ Form<T, U> create_form_factory(
                                              [](auto& a) { return a.first; });
           if (it != sd->second.end() and it->first == id)
           {
-            integrals.insert({{IntegralType::vertex, id, form_idx},
+            integrals.insert({{IntegralType::vertex, i, form_idx},
                               {k,
                                std::vector<std::int32_t>(it->second.begin(),
                                                          it->second.end()),
