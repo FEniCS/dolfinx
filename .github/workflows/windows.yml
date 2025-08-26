@@ -134,12 +134,12 @@ jobs:
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
 
       - name: Run tests, skip la_matrix (C++, serial)
-        working-directory: dolfinx-src/cpp/build-dir/Release/test
+        working-directory: dolfinx-src/cpp/build-dir/test
         run: |
           mpirun -n 1 ./unittests "~[la_matrix]"
 
       - name: Run tests, skip la_matrix (C++, MPI, np=3)
-        working-directory: dolfinx-src/cpp/build-dir/Release/test
+        working-directory: dolfinx-src/cpp/build-dir/test
         run: |
           mpirun -n 3 ./unittests "~[la_matrix]"
 
