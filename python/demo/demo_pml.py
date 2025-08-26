@@ -31,7 +31,7 @@ import ufl
 from basix.ufl import element
 from dolfinx import default_real_type, default_scalar_type, fem, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
-from dolfinx.io import gmshio
+from dolfinx.io import gmsh
 
 try:
     from dolfinx.io import VTXWriter
@@ -437,7 +437,7 @@ if MPI.COMM_WORLD.rank == 0:
 model = MPI.COMM_WORLD.bcast(model, root=0)
 partitioner = dolfinx.cpp.mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.shared_facet)
 
-mesh_data = gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
+mesh_data = gmsh.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
 assert mesh_data.cell_tags is not None, "Cell tags are missing"
 assert mesh_data.facet_tags is not None, "Facet tags are missing"
 
