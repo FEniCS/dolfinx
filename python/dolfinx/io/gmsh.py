@@ -158,7 +158,7 @@ def cell_perm_array(cell_type: CellType, num_nodes: int) -> list[int]:
 
 def extract_topology_and_markers(
     model, name: typing.Optional[str] = None
-) -> tuple[dict[int, TopologyDict], dict[str, tuple[int, int]]]:
+) -> tuple[dict[int, TopologyDict], dict[str, PhysicalGroup]]:
     """Extract all entities tagged with a physical marker in the gmsh
     model.
 
