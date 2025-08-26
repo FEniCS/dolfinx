@@ -136,6 +136,7 @@ jobs:
       - name: Run tests, skip la_matrix (C++, serial)
         working-directory: dolfinx-src/cpp/build-dir/test
         run: |
+          ls
           mpirun -n 1 ./unittests "~[la_matrix]"
 
       - name: Run tests, skip la_matrix (C++, MPI, np=3)
