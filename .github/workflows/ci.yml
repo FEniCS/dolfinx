@@ -72,6 +72,7 @@ jobs:
             %fenics-basix@git.main=main %fenics-ufcx@git.main=main \
             %py-fenics-ffcx@git.main=main \
             ^py-fenics-basix@git.main=main ^py-fenics-ufl@git.main=main
+          spack -e cxx concretize -j 4 --test root
           spack -e cxx install -p 2 --test root --use-buildcache auto
 
       - name: Push C++ packages to cache
