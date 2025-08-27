@@ -140,6 +140,7 @@ jobs:
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack env activate py
+          spack load py-pytest py-pytest-xdist py-scipy
           python -m pytest -n=auto --durations=50 dolfinx-src/python/test/unit/
           mpirun -np 3 python -m pytest --durations=50 dolfinx-src/python/test/unit/
 
