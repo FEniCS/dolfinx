@@ -36,7 +36,7 @@ jobs:
           apt-get -y update
           apt-get install -y bzip2 curl file git gzip make patch python3-minimal \
             tar unzip xz-utils g++ gcc gfortran
-          apt-get install -y libllvm-15-dev
+          apt-get install -y llvm-15-dev
 
       - name: Get DOLFINx code
         uses: actions/checkout@v5
