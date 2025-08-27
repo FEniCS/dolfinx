@@ -772,7 +772,6 @@ void assemble_exterior_facets(
   const int num_dofs = dmap.extent(1);
   std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
   std::vector<T> be(bs * num_dofs);
-
   assert(facets0.size() == facets.size());
   for (std::size_t f = 0; f < facets.extent(0); ++f)
   {
@@ -794,7 +793,6 @@ void assemble_exterior_facets(
     std::ranges::fill(be, 0);
     kernel(be.data(), &coeffs(f, 0), constants.data(), cdofs.data(),
            &local_facet, &perm, nullptr);
-
     P0(be, cell_info0, cell0, 1);
 
     // Add element vector to global vector
