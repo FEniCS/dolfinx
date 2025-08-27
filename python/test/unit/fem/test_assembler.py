@@ -1577,9 +1577,10 @@ def vertex_to_dof_map(V):
     num_vertices = mesh.topology.index_map(0).size_local + mesh.topology.index_map(0).num_ghosts
 
     c_to_v = mesh.topology.connectivity(mesh.topology.dim, 0)
-    assert (c_to_v.offsets[1:] - c_to_v.offsets[:-1] == c_to_v.offsets[1]).all(), (
-        "Single cell type supported"
-    )
+    assert (
+        c_to_v.num_nodes == 0
+        or (c_to_v.offsets[1:] - c_to_v.offsets[:-1] == c_to_v.offsets[1]).all()
+    ), "Single cell type supported"
 
     vertex_to_dof_map = np.empty(num_vertices, dtype=np.int32)
     vertex_to_dof_map[c_to_v.array] = V.dofmap.list[:, dof_layout2].reshape(-1)
@@ -1678,7 +1679,7 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
     v_to_c = msh.topology.connectivity(0, cell_dim)
     c_to_v = msh.topology.connectivity(cell_dim, 0)
 
-    cell_vertex_pairs = []
+    cell_vertex_pairs = np.array([], dtype=np.int32)
     for v in range(num_vertices):
         c = v_to_c.links(v)[0]
         v_l = np.where(c_to_v.links(c) == v)[0]
@@ -1799,7 +1800,7 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
     v_to_c = msh.topology.connectivity(0, cell_dim)
     c_to_v = msh.topology.connectivity(cell_dim, 0)
 
-    cell_vertex_pairs = []
+    cell_vertex_pairs = np.array([], dtype=np.int32)
     for v in range(num_vertices):
         c = v_to_c.links(v)[0]
         v_l = np.where(c_to_v.links(c) == v)[0]
