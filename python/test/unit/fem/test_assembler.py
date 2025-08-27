@@ -1674,15 +1674,29 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
 
     msh.topology.create_entities(1)
     msh.topology.create_connectivity(cell_dim - 1, cell_dim)
-    cell_count = msh.topology.index_map(cell_dim).size_local
-    vertex_entities = np.hstack([np.arange(cell_count), np.zeros(cell_count)])
 
+    v_to_c = msh.topology.connectivity(0, cell_dim)
+    c_to_v = msh.topology.connectivity(cell_dim, 0)
+
+    cell_vertex_pairs = []
+    for v in range(num_vertices):
+        c = v_to_c.links(v)[0]
+        v_l = np.where(c_to_v.links(c) == v)[0]
+        cell_vertex_pairs = np.append(cell_vertex_pairs, [c, *v_l])
+
+    # a) With subdomain_data
+    check_vertex_integral_against_sum(
+        x[0] * ufl.dP(domain=msh, subdomain_data=[(1, cell_vertex_pairs)], subdomain_id=1),
+        np.arange(num_vertices),
+    )
+
+    # b) With create_form
     fem.compute_integration_domains(
         fem.IntegralType.exterior_facet,
         msh.topology,
         np.arange(msh.topology.index_map(0).size_local),
     )
-    subdomains = {fem.IntegralType.exterior_facet: [(0, vertex_entities)]}
+    subdomains = {fem.IntegralType.exterior_facet: [(0, cell_vertex_pairs)]}
 
     compiled_form = fem.compile_form(
         comm, x[0] * ufl.dP, form_compiler_options={"scalar_type": dtype}
@@ -1784,15 +1798,30 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
 
     msh.topology.create_entities(1)
     msh.topology.create_connectivity(cell_dim - 1, cell_dim)
-    cell_count = msh.topology.index_map(cell_dim).size_local
-    vertex_entities = np.hstack([np.arange(cell_count), np.zeros(cell_count)])
 
+    v_to_c = msh.topology.connectivity(0, cell_dim)
+    c_to_v = msh.topology.connectivity(cell_dim, 0)
+
+    cell_vertex_pairs = []
+    for v in range(num_vertices):
+        c = v_to_c.links(v)[0]
+        v_l = np.where(c_to_v.links(c) == v)[0]
+        cell_vertex_pairs = np.append(cell_vertex_pairs, [c, *v_l])
+
+    # a) With subdomain_data
+    v = ufl.conj(ufl.TestFunction(V))
+    check_vertex_integral_against_sum(
+        x[0] * v * ufl.dP(domain=msh, subdomain_data=[(1, cell_vertex_pairs)], subdomain_id=1),
+        np.arange(num_vertices),
+    )
+
+    # b) With create_form
     fem.compute_integration_domains(
         fem.IntegralType.exterior_facet,
         msh.topology,
         np.arange(msh.topology.index_map(0).size_local),
     )
-    subdomains = {fem.IntegralType.exterior_facet: [(0, vertex_entities)]}
+    subdomains = {fem.IntegralType.exterior_facet: [(0, cell_vertex_pairs)]}
 
     compiled_form = fem.compile_form(
         comm, x[0] * v * ufl.dP, form_compiler_options={"scalar_type": dtype}
