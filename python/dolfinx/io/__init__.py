@@ -7,7 +7,7 @@
 
 from dolfinx.common import has_adios2
 from dolfinx.io import gmsh as gmsh
-from dolfinx.io import gmsh as gmshio  # legacy compatability.
+from dolfinx.io import gmsh as gmshio  # legacy compatibility.
 from dolfinx.io import vtkhdf
 from dolfinx.io.utils import VTKFile, XDMFFile, distribute_entity_data
 
