@@ -1,3 +1,12 @@
+cmake_minimum_required(VERSION 3.21)
+
+project(dolfinx-tests LANGUAGES C CXX)
+
+if (PROJECT_IS_TOP_LEVEL)
+  include(CTest) # enables testing
+  find_package(DOLFINX REQUIRED)
+endif()
+
 find_package(Catch2 3)
 
 if(NOT Catch2_FOUND)
@@ -66,14 +75,17 @@ endif()
 target_include_directories(
   unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
-# Required to find version.h
-target_include_directories(
-  unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../>
-)
+
+if (NOT PROJECT_IS_TOP_LEVEL)
+  # Required to find version.h
+  target_include_directories(
+    unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../>
+  )
+endif()
 
 set_target_properties(
   unittests
-  PROPERTIES CMAKE_C_STANDARD 17
+  PROPERTIES CMAKE_C_STANDARD 17 # For FFCx generated .c files.
              CMAKE_CXX_STANDARD 20
              CMAKE_CXX_STANDARD_REQUIRED ON
              CMAKE_CXX_EXTENSIONS OFF
