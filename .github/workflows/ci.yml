@@ -91,12 +91,11 @@ jobs:
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack env activate cxx
-          spack load cmake
-          cmake -Werror=dev --warn-uninitialized -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
-          cmake --build build/test
+          spack -e cxx test-env fenics-dolfinx cmake -Werror=dev --warn-uninitialized -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
+          spack -e cxx test-env cmake --build build/test
           cd build/test
-          ctest -V --output-on-failure -R unittests
-          mpirun -n 3 ctest -V --output-on-failure -R unittests
+          spack -e cxx test-env ctest -V --output-on-failure -R unittests
+          spack -e cxx test-env mpirun -n 3 ctest -V --output-on-failure -R unittests
 
       - name: Build and run demos (C++)
         run: |
