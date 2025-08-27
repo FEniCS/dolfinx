@@ -69,6 +69,7 @@ jobs:
           spack -e cxx develop fenics-basix
           spack -e cxx develop py-fenics-basix
           spack -e cxx develop py-fenics-ffcx
+          spack -e cxx develop py-fenics-ufcx
           spack -e cxx develop py-fenics-ufl
         # spack -e cxx develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
 
