@@ -129,7 +129,8 @@ jobs:
             %fenics-dolfinx@main build_type=Developer +petsc +slepc partitioners=parmetis \
             ^openmpi \
             ^petsc +mpi +hypre +mumps +superlu-dist \
-            ^adios2~fortran~libcatalyst
+            ^adios2~fortran~libcatalyst\
+            %gmsh~fltk
           spack -e py concretize -j 4 --test root
           spack -e py install -j 4 -p 2 --use-buildcache auto
 
