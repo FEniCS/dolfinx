@@ -34,8 +34,8 @@ jobs:
       - name: Install Spack requirements
         run: |
           apt-get -y update
-          apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar unzip xz-utils
-          apt-get install -y g++ gfortran  # compilers
+          apt-get install -y bzip2 curl file git gzip make patch python3-minimal \
+            tar unzip xz-utils g++ gcc gfortran
 
       - name: Get DOLFINx code
         uses: actions/checkout@v5
@@ -92,6 +92,7 @@ jobs:
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack env activate cxx
+          spack load cmake
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
           cmake --build build/test
           cd build/test
