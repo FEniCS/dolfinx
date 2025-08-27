@@ -14,6 +14,7 @@ import pytest
 import scipy.sparse
 
 import basix
+import dolfinx.cpp
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import cpp as _cpp
@@ -1562,6 +1563,29 @@ def test_mixed_quadrature(dtype, method):
     assert np.isclose(global_contribution, global_sum, rtol=tol, atol=tol)
 
 
+def vertex_to_dof_map(V):
+    """Create a map from the vertices of the mesh to the corresponding degree of freedom."""
+    mesh = V.mesh
+    num_vertices_per_cell = dolfinx.cpp.mesh.cell_num_entities(mesh.topology.cell_type, 0)
+
+    dof_layout2 = np.empty((num_vertices_per_cell,), dtype=np.int32)
+    for i in range(num_vertices_per_cell):
+        var = V.dofmap.dof_layout.entity_dofs(0, i)
+        assert len(var) == 1
+        dof_layout2[i] = var[0]
+
+    num_vertices = mesh.topology.index_map(0).size_local + mesh.topology.index_map(0).num_ghosts
+
+    c_to_v = mesh.topology.connectivity(mesh.topology.dim, 0)
+    assert (c_to_v.offsets[1:] - c_to_v.offsets[:-1] == c_to_v.offsets[1]).all(), (
+        "Single cell type supported"
+    )
+
+    vertex_to_dof_map = np.empty(num_vertices, dtype=np.int32)
+    vertex_to_dof_map[c_to_v.array] = V.dofmap.list[:, dof_layout2].reshape(-1)
+    return vertex_to_dof_map
+
+
 @pytest.mark.parametrize(
     "cell_type",
     [
@@ -1635,7 +1659,9 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
 
     V = fem.functionspace(msh, ("P", 1))
     u = fem.Function(V, dtype=dtype)
-    u.x.array[:] = vertex_map.local_to_global(np.arange(num_vertices + vertex_map.num_ghosts))
+    vertex_to_dof = vertex_to_dof_map(V)
+    vertices = np.arange(num_vertices + vertex_map.num_ghosts)
+    u.x.array[vertex_to_dof[vertices]] = vertex_map.local_to_global(vertices)
 
     check_vertex_integral_against_sum(u * x[0] * ufl.dP, np.arange(num_vertices), True)
     check_vertex_integral_against_sum(u * x[0] * dP(1), vertices_1, True)
@@ -1743,6 +1769,9 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
     V = fem.functionspace(msh, ("P", 1))
     u = fem.Function(V, dtype=dtype)
     u.x.array[:] = vertex_map.local_to_global(np.arange(num_vertices + vertex_map.num_ghosts))
+    vertex_to_dof = vertex_to_dof_map(V)
+    vertices = np.arange(num_vertices + vertex_map.num_ghosts)
+    u.x.array[vertex_to_dof[vertices]] = vertex_map.local_to_global(vertices)
 
     check_vertex_integral_against_sum(u * x[0] * v * ufl.dP, np.arange(num_vertices), True)
     check_vertex_integral_against_sum(u * x[0] * v * dP(1), vertices_1, True)
