@@ -32,7 +32,7 @@ using namespace dolfinx::la;
   } while (0)
 
 //-----------------------------------------------------------------------------
-void la::petsc::error(int error_code, const std::string& filename,
+void la::petsc::error(PetscErrorCode error_code, const std::string& filename,
                       const std::string& petsc_function)
 {
   // Fetch PETSc error description
@@ -42,7 +42,7 @@ void la::petsc::error(int error_code, const std::string& filename,
   // Log detailed error info
   spdlog::info("PETSc error in '{}', '{}'", filename.c_str(),
                petsc_function.c_str());
-  spdlog::info("PETSc error code '{}' '{}'", error_code, desc);
+  spdlog::info("PETSc error code '{}' '{}'", (int)error_code, desc);
   throw std::runtime_error("Failed to successfully call PETSc function '"
                            + petsc_function + "'. PETSc error code is: "
                            + std ::to_string(error_code) + ", "
