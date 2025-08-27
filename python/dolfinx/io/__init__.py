@@ -6,8 +6,9 @@
 """Tools for file input/output (IO)."""
 
 from dolfinx.common import has_adios2
-from dolfinx.io import gmsh, vtkhdf
-from dolfinx.io import gmshio as gmshio  # legacy compatability.
+from dolfinx.io import gmsh as gmsh
+from dolfinx.io import gmsh as gmshio  # legacy compatability.
+from dolfinx.io import vtkhdf
 from dolfinx.io.utils import VTKFile, XDMFFile, distribute_entity_data
 
 __all__ = ["VTKFile", "XDMFFile", "distribute_entity_data", "gmsh", "gmshio", "vtkhdf"]
