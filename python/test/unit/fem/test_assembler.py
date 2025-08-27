@@ -1592,6 +1592,8 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
         msh = mesh.create_unit_cube(
             comm, 4, 4, 4, cell_type=cell_type, dtype=rdtype, ghost_mode=ghost_mode
         )
+    else:
+        raise RuntimeError("Bad dimension")
 
     vertex_map = msh.topology.index_map(0)
 
@@ -1669,6 +1671,8 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
         msh = mesh.create_unit_cube(
             comm, 4, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
         )
+    else:
+        raise RuntimeError("Bad dimension")
 
     vertex_map = msh.topology.index_map(0)
     num_vertices = vertex_map.size_local
