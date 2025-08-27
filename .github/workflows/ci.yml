@@ -133,7 +133,7 @@ jobs:
             ^petsc +mpi +hypre +mumps +superlu-dist \
             ^adios2~fortran~libcatalyst
           spack -e py add py-gmsh %gmsh~fltk py-matplotlib py-numba py-pyamg \
-            py-pytest py-pytest-xdist py-scipy
+            py-pytest py-pytest-xdist py-scipy py-pyvista
           spack -v -e py install --fresh -j 4 -p 2 --use-buildcache=auto
 
       - name: Run Python demos
