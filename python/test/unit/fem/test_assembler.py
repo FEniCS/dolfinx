@@ -1598,6 +1598,8 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
     vertex_map = msh.topology.index_map(0)
 
     def check_vertex_integral_against_sum(form, vertices, weighted=False):
+        """Weighting assumes the vertex integral to be weighted by a P1 function, each vertex value
+        corresponding to its global index."""
         weights = vertex_map.local_to_global(vertices) if weighted else np.ones_like(vertices)
         expected_value_l = np.sum(msh.geometry.x[vertices, 0] * weights)
         value_l = fem.assemble_scalar(fem.form(form, dtype=dtype))
@@ -1678,6 +1680,8 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
     num_vertices = vertex_map.size_local
 
     def check_vertex_integral_against_sum(form, vertices, weighted=False):
+        """Weighting assumes the vertex integral to be weighted by a P1 function, each vertex value
+        corresponding to its global index."""
         weights = vertex_map.local_to_global(vertices) if weighted else np.ones_like(vertices)
         expected_value_l = np.zeros(num_vertices, dtype=rdtype)
         expected_value_l[vertices] = msh.geometry.x[vertices, 0] * weights
