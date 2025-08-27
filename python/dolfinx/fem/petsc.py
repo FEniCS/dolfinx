@@ -513,13 +513,16 @@ def _(
         A.assemble(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[attr-defined]
 
         # Set diagonal
-        for i, a_row in enumerate(a):
-            for j, a_sub in enumerate(a_row):
-                if a_sub is not None:
-                    Asub = A.getLocalSubMatrix(is0[i], is1[j])
-                    if a_sub.function_spaces[0] is a_sub.function_spaces[1]:
-                        _cpp.fem.petsc.insert_diagonal(Asub, a_sub.function_spaces[0], _bcs, diag)
-                    A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
+        if len(_bcs):
+            for i, a_row in enumerate(a):
+                for j, a_sub in enumerate(a_row):
+                    if a_sub is not None:
+                        if a_sub.function_spaces[0] is a_sub.function_spaces[1]:
+                            Asub = A.getLocalSubMatrix(is0[i], is1[j])
+                            _cpp.fem.petsc.insert_diagonal(
+                                Asub, a_sub.function_spaces[0], _bcs, diag
+                            )
+                            A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
     else:  # Non-blocked
         constants = pack_constants(a) if constants is None else constants  # type: ignore[assignment]
         coeffs = pack_coefficients(a) if coeffs is None else coeffs  # type: ignore[assignment]
@@ -528,7 +531,8 @@ def _(
         if a.function_spaces[0] is a.function_spaces[1]:
             A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[attr-defined]
             A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[attr-defined]
-            _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], _bcs, diag)
+            if len(_bcs):
+                _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], _bcs, diag)
 
     return A
 
@@ -849,6 +853,8 @@ class LinearProblem:
 
         # For nest matrices kind can be a nested list.
         kind = "nest" if self.A.getType() == PETSc.Mat.Type.NEST else kind  # type: ignore[attr-defined]
+        if kind == "is":
+            kind = "mpi"
         assert kind is None or isinstance(kind, str)
         self._b = create_vector(self.L, kind=kind)
         self._x = create_vector(self.L, kind=kind)
@@ -1326,6 +1332,8 @@ class NonlinearProblem:
 
         # Determine the vector kind based on the matrix type
         kind = "nest" if self._A.getType() == PETSc.Mat.Type.NEST else kind  # type: ignore[attr-defined]
+        if kind == "is":
+            kind = "mpi"
         assert kind is None or isinstance(kind, str)
         self._b = create_vector(self.F, kind=kind)
         self._x = create_vector(self.F, kind=kind)

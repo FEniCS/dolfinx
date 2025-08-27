@@ -120,7 +120,9 @@ void scatter_local_vectors(
 /// Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
 Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
-                  std::optional<std::string> type = std::nullopt);
+                  std::optional<std::string> type = std::nullopt,
+                  std::optional<ISLocalToGlobalMapping> rlgmap = std::nullopt,
+                  std::optional<ISLocalToGlobalMapping> clgmap = std::nullopt);
 
 /// Create PETSc MatNullSpace. Caller is responsible for destruction
 /// returned object.

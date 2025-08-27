@@ -393,9 +393,12 @@ void petsc_fem_module(nb::module_& m)
           _bcs.push_back(*bc);
         }
 
+        PetscBool flg;
+        PetscObjectTypeCompare((PetscObject)A, MATIS, &flg);
+
         dolfinx::fem::set_diagonal(
             dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES), V, _bcs,
-            diagonal);
+            diagonal, flg ? true : false);
       },
       nb::arg("A"), nb::arg("V"), nb::arg("bcs"), nb::arg("diagonal"));
 
