@@ -134,7 +134,7 @@ jobs:
           ^adios2~fortran~libcatalyst
           spack -e py add py-gmsh %gmsh~fltk
           spack -e py concretize -j 4 --test root
-          spack -v -e py install -j 4 -p 2 --test root --use-buildcache auto
+          spack -d -v -e py install -j 4 -p 2 --test root --use-buildcache auto
 
       - name: Run Python unit tests
         run: |
