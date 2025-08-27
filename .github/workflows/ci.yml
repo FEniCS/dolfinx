@@ -68,11 +68,10 @@ jobs:
           spack -e cxx develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
           spack -e cxx add fenics-dolfinx@main generator=ninja build_type=Developer +petsc +slepc partitioners=parmetis \
             %petsc +mpi +hypre +mumps +superlu-dist \
-            %openmpi %fenics-basix@git.main=main %fenics-ufcx@git.main=main \
-            %adios2~fortran~libcatalyst
-          spack -e cxx add catch2 cmake~ncurses ninja \
-            py-fenics-ffcx@git.main=main %py-fenics-basix@git.main=main %py-fenics-ufl@git.main=main
-          spack -e cxx install -p 2 --use-buildcache auto
+            %openmpi %adios2~fortran~libcatalyst %cmake~ncurses \
+            %fenics-basix@git.main=main %fenics-ufcx@git.main=main \
+            %py-fenics-ffcx@git.main=main %py-fenics-basix@git.main=main %py-fenics-ufl@git.main=main
+          spack -e cxx install -p 2 --test root --use-buildcache auto
 
       - name: Push C++ packages to cache
         run: |
