@@ -36,6 +36,7 @@ jobs:
           apt-get -y update
           apt-get install -y bzip2 curl file git gzip make patch python3-minimal \
             tar unzip xz-utils g++ gcc gfortran
+          apt-get install -y libllvm-15-dev
 
       - name: Get DOLFINx code
         uses: actions/checkout@v5
@@ -115,10 +116,10 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack info py-fenics-dolfinx
           spack env create py dolfinx-src/.github/workflows/spack-config/gh-actions-env-test.yml
-          spack -e py develop fenics-dolfinx
+          spack -e py develop --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx
           spack -e py develop fenics-basix
           spack -e py develop fenics-ufcx
-          spack -e py develop py-fenics-dolfinx
+          spack -e py develop --path $GITHUB_WORKSPACE/dolfinx-src py-fenics-dolfinx
           spack -e py develop py-fenics-basix
           spack -e py develop py-fenics-ffcx
           spack -e py develop py-fenics-ufl

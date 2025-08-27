@@ -16,7 +16,7 @@ spack:
     llvm:
       externals:
       - spec: llvm@15.0.7
-        prefix: /usr
+        prefix: /usr/lib/llvm-15/
       buildable: False
     vtk:
       externals:
