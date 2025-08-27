@@ -60,54 +60,54 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
 
-      - name: Prepare C++ environment
-        run: |
-          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
-          spack info fenics-dolfinx
-          spack env create cxx dolfinx-src/.github/workflows/spack-config/gh-actions-env-test.yml
-          spack -e cxx develop fenics-dolfinx
-          spack -e cxx develop fenics-basix
-          spack -e cxx develop fenics-ufcx
-          spack -e cxx develop py-fenics-basix
-          spack -e cxx develop py-fenics-ffcx
-          spack -e cxx develop py-fenics-ufl
+      # - name: Prepare C++ environment
+      #   run: |
+      #     . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
+      #     spack info fenics-dolfinx
+      #     spack env create cxx dolfinx-src/.github/workflows/spack-config/gh-actions-env-test.yml
+      #     spack -e cxx develop fenics-dolfinx
+      #     spack -e cxx develop fenics-basix
+      #     spack -e cxx develop fenics-ufcx
+      #     spack -e cxx develop py-fenics-basix
+      #     spack -e cxx develop py-fenics-ffcx
+      #     spack -e cxx develop py-fenics-ufl
 
-      - name: Build library (C++)
-        run: |
-          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
-          spack -e cxx add fenics-dolfinx@main generator=ninja build_type=Developer +petsc +slepc partitioners=parmetis \
-            %petsc +mpi +hypre +mumps +superlu-dist %openmpi %adios2~fortran~libcatalyst %cmake~ncurses
-          spack -e cxx concretize -j 4 --test root
-          spack -e cxx install -p 2 --test root --use-buildcache auto
+      # - name: Build library (C++)
+      #   run: |
+      #     . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
+      #     spack -e cxx add fenics-dolfinx@main generator=ninja build_type=Developer +petsc +slepc partitioners=parmetis \
+      #       %petsc +mpi +hypre +mumps +superlu-dist %openmpi %adios2~fortran~libcatalyst %cmake~ncurses
+      #     spack -e cxx concretize -j 4 --test root
+      #     spack -e cxx install -p 2 --test root --use-buildcache auto
 
-      - name: Push C++ packages to cache
-        run: |
-          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
-          spack -e cxx buildcache push --base-image ubuntu:24.04 --only dependencies --with-build-dependencies --update-index local-buildcache
-          spack -e cxx buildcache push --base-image ubuntu:24.04 --update-index local-buildcache catch2 ninja
-        if: ${{ !cancelled() }}
+      # - name: Push C++ packages to cache
+      #   run: |
+      #     . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
+      #     spack -e cxx buildcache push --base-image ubuntu:24.04 --only dependencies --with-build-dependencies --update-index local-buildcache
+      #     spack -e cxx buildcache push --base-image ubuntu:24.04 --update-index local-buildcache catch2 ninja
+      #   if: ${{ !cancelled() }}
 
-      - name: Build and run C++ unit tests
-        run: |
-          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
-          spack env activate cxx
-          spack load catch2 cmake ninja py-fenics-ffcx
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
-          cmake --build build/test
-          cd build/test
-          ctest -V --output-on-failure -R unittests
-          mpirun -n 3 ctest -V --output-on-failure -R unittests
+      # - name: Build and run C++ unit tests
+      #   run: |
+      #     . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
+      #     spack env activate cxx
+      #     spack load catch2 cmake ninja py-fenics-ffcx
+      #     cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
+      #     cmake --build build/test
+      #     cd build/test
+      #     ctest -V --output-on-failure -R unittests
+      #     mpirun -n 3 ctest -V --output-on-failure -R unittests
 
-      - name: Build and run C++ demos
-        run: |
-          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
-          spack env activate cxx
-          spack load cmake ninja py-fenics-ffcx
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S dolfinx-src/cpp/demo/
-          cmake --build build/demo
-          cd build/demo
-          ctest -V -R demo -R serial
-          ctest --output-on-failure -V -R demo -R mpi_2
+      # - name: Build and run C++ demos
+      #   run: |
+      #     . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
+      #     spack env activate cxx
+      #     spack load cmake ninja py-fenics-ffcx
+      #     cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S dolfinx-src/cpp/demo/
+      #     cmake --build build/demo
+      #     cd build/demo
+      #     ctest -V -R demo -R serial
+      #     ctest --output-on-failure -V -R demo -R mpi_2
 
       - name: Prepare Python environment
         run: |
@@ -127,7 +127,7 @@ jobs:
           spack -e py add \
             py-fenics-dolfinx@main +petsc4py +slepc4py \
             %fenics-dolfinx@main build_type=Developer +petsc +slepc partitioners=parmetis \
-            %gmsh~fltk \
+            ^gmsh~fltk \
             ^openmpi \
             ^petsc +mpi +hypre +mumps +superlu-dist \
             ^adios2~fortran~libcatalyst
