@@ -1642,6 +1642,30 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
     check_vertex_integral_against_sum(u * x[0] * dP(2), vertices_2, True)
     check_vertex_integral_against_sum(u * x[0] * (dP(1) + dP(2)), np.arange(num_vertices), True)
 
+    # Check custom packing
+    if cell_type is mesh.CellType.prism:
+        return
+
+    msh.topology.create_entities(1)
+    msh.topology.create_connectivity(cell_dim - 1, cell_dim)
+    cell_count = msh.topology.index_map(cell_dim).size_local
+    vertex_entities = np.hstack([np.arange(cell_count), np.zeros(cell_count)])
+
+    fem.compute_integration_domains(
+        fem.IntegralType.exterior_facet,
+        msh.topology,
+        np.arange(msh.topology.index_map(0).size_local),
+    )
+    subdomains = {fem.IntegralType.exterior_facet: [(0, vertex_entities)]}
+
+    compiled_form = fem.compile_form(
+        comm, x[0] * ufl.dP, form_compiler_options={"scalar_type": dtype}
+    )
+    form = fem.create_form(compiled_form, [], msh, subdomains, {}, {}, [])
+    expected_value_l = np.sum(msh.geometry.x[vertices, 0])
+    value_l = fem.assemble_scalar(form)
+    assert expected_value_l == pytest.approx(value_l, abs=5e4 * np.finfo(rdtype).eps)
+
 
 @pytest.mark.parametrize(
     "cell_type",
@@ -1724,3 +1748,31 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
     check_vertex_integral_against_sum(u * x[0] * v * dP(1), vertices_1, True)
     check_vertex_integral_against_sum(u * x[0] * v * dP(2), vertices_2, True)
     check_vertex_integral_against_sum(u * x[0] * v * (dP(1) + dP(2)), np.arange(num_vertices), True)
+
+    # Check custom packing
+    if cell_type is mesh.CellType.prism:
+        return
+
+    msh.topology.create_entities(1)
+    msh.topology.create_connectivity(cell_dim - 1, cell_dim)
+    cell_count = msh.topology.index_map(cell_dim).size_local
+    vertex_entities = np.hstack([np.arange(cell_count), np.zeros(cell_count)])
+
+    fem.compute_integration_domains(
+        fem.IntegralType.exterior_facet,
+        msh.topology,
+        np.arange(msh.topology.index_map(0).size_local),
+    )
+    subdomains = {fem.IntegralType.exterior_facet: [(0, vertex_entities)]}
+
+    compiled_form = fem.compile_form(
+        comm, x[0] * v * ufl.dP, form_compiler_options={"scalar_type": dtype}
+    )
+    form = fem.create_form(compiled_form, [V], msh, subdomains, {}, {}, [])
+    expected_value_l = np.sum(msh.geometry.x[vertices, 0])
+    expected_value_l = np.zeros(num_vertices, dtype=rdtype)
+    expected_value_l[vertices] = msh.geometry.x[vertices, 0]
+    value_l = fem.assemble_vector(form)
+    assert expected_value_l == pytest.approx(
+        value_l.array[: expected_value_l.size], abs=5e4 * np.finfo(rdtype).eps
+    )
