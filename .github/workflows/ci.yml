@@ -69,7 +69,7 @@ jobs:
           spack -e cxx develop fenics-basix@main
           spack -e cxx develop py-fenics-basix@main
           spack -e cxx develop py-fenics-ffcx@main
-          spack -e cxx develop py-fenics-uflx@main
+          spack -e cxx develop py-fenics-ufl@main
 
       - name: Build DOLFINx library (C++)
         run: |
