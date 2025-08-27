@@ -134,7 +134,7 @@ jobs:
             ^adios2~fortran~libcatalyst
           spack -e py add py-gmsh %gmsh~fltk py-matplotlib py-numba py-pyamg \
             py-pytest py-pytest-xdist py-scipy
-          spack -v -e py install -j 4 -p 2 --use-buildcache=auto
+          spack -v -e py install --fresh -j 4 -p 2 --use-buildcache=auto
 
       - name: Run Python unit tests
         run: |
