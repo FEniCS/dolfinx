@@ -140,7 +140,7 @@ jobs:
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack env activate py
-          python -m pytest -n auto -m serial --durations=10 python/demo/test.py
+          python -m pytest -m serial --durations=10 python/demo/test.py
           python -m pytest -m mpi --num-proc=3 python/demo/test.py
 
       - name: Run Python unit tests
