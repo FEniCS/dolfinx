@@ -118,6 +118,7 @@ jobs:
           spack -e py develop fenics-dolfinx
           spack -e py develop fenics-basix
           spack -e py develop fenics-ufcx
+          spack -e py develop py-fenics-dolfinx
           spack -e py develop py-fenics-basix
           spack -e py develop py-fenics-ffcx
           spack -e py develop py-fenics-ufl
@@ -125,13 +126,12 @@ jobs:
       - name: Build library (Python)
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
-          spack -e py add \
-            py-fenics-dolfinx@main +petsc4py +slepc4py \
-            %fenics-dolfinx@main build_type=Developer +petsc +slepc partitioners=parmetis \
-            ^gmsh~fltk \
-            ^openmpi \
-            ^petsc +mpi +hypre +mumps +superlu-dist \
-            ^adios2~fortran~libcatalyst
+          spack -e py add py-fenics-dolfinx@main +petsc4py +slepc4py \
+          %fenics-dolfinx@main build_type=Developer +petsc +slepc partitioners=parmetis \
+          ^openmpi \
+          ^petsc +mpi +hypre +mumps +superlu-dist \
+          ^adios2~fortran~libcatalyst
+          spack -e py add gmsh~fltk
           spack -e py concretize -j 4 --test root
           spack -e py install -j 4 -p 2 --use-buildcache auto
 
