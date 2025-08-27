@@ -70,7 +70,7 @@ jobs:
             %petsc +mpi +hypre +mumps +superlu-dist \
             %openmpi %adios2~fortran~libcatalyst %cmake~ncurses \
             %fenics-basix@git.main=main %fenics-ufcx@git.main=main \
-            %py-fenics-ffcx@git.main=main %py-fenics-basix@git.main=main %py-fenics-ufl@git.main=main
+            %py-fenics-ffcx@git.main=main
           spack -e cxx install -p 2 --test root --use-buildcache auto
 
       - name: Push C++ packages to cache
