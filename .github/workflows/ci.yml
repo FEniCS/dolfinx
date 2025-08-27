@@ -127,7 +127,7 @@ jobs:
           spack -e py add \
             py-fenics-dolfinx@main +petsc4py +slepc4py \
             %fenics-dolfinx@main build_type=Developer +petsc +slepc partitioners=parmetis \
-            %gmsh~fltk
+            %gmsh~fltk \
             ^openmpi \
             ^petsc +mpi +hypre +mumps +superlu-dist \
             ^adios2~fortran~libcatalyst\
