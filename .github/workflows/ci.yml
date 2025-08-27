@@ -95,7 +95,7 @@ jobs:
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
           cmake --build build/test
           cd build/test
-          test-env ctest -V --output-on-failure -R unittests
+          ctest -V --output-on-failure -R unittests
           mpirun -n 3 ctest -V --output-on-failure -R unittests
 
       - name: Build and run C++ demos
