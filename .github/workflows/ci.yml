@@ -109,6 +109,7 @@ jobs:
       #     ctest -V -R demo -R serial
       #     ctest --output-on-failure -V -R demo -R mpi_2
 
+
       - name: Prepare Python environment
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
