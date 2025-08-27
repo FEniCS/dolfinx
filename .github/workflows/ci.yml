@@ -73,6 +73,7 @@ jobs:
 
       - name: Build DOLFINx library (C++)
         run: |
+          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack -e cxx add fenics-dolfinx@main generator=ninja build_type=Developer +petsc +slepc partitioners=parmetis \
             %petsc +mpi +hypre +mumps +superlu-dist \
             %openmpi %adios2~fortran~libcatalyst %cmake~ncurses
