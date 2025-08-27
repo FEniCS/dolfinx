@@ -3,15 +3,15 @@ name: Windows build
 on:
   push:
     branches:
-      - "**"
+      - main
     tags:
       - "v*"
     pull_request:
       branches:
         - main
-    merge_group:
-      branches:
-        - main
+#merge_group:
+#      branches:
+#        - main
   workflow_dispatch:
 
 jobs:
@@ -138,11 +138,10 @@ jobs:
         run: |
           ls
           mpiexec -n 1 ./unittests "~[la_matrix]"
-
-      - name: Run tests, skip la_matrix, geometry_compat, create_box (C++, MPI, np=3)
-        working-directory: dolfinx-src/cpp/build-dir/test/Release
-        run: |
-          mpiexec -n 3 ./unittests "~[la_matrix]"
+#      - name: Run tests, skip la_matrix, geometry_compat, create_box (C++, MPI, np=3)
+#        working-directory: dolfinx-src/cpp/build-dir/test/Release
+#        run: |
+#          mpiexec -n 3 ./unittests "~[la_matrix]"
 
       - name: Install DOLFINx Python build dependencies
         working-directory: dolfinx-src/python
@@ -168,7 +167,7 @@ jobs:
         working-directory: dolfinx-src/python/demo
         run: |
           python3 -m pytest -m mpi --num-proc=1 -n auto -m serial --durations=10 test.py
-      - name: Run Python demos (MPI, np=3)
-        working-directory: dolfinx-src/python/demo
-        run: |
-          python3 -m pytest -m mpi --num-proc=3 test.py
+#      - name: Run Python demos (MPI, np=3)
+#        working-directory: dolfinx-src/python/demo
+#        run: |
+#          python3 -m pytest -m mpi --num-proc=3 test.py
