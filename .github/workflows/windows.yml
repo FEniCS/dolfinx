@@ -39,7 +39,7 @@ jobs:
         run: pip install git+https://github.com/FEniCS/ufl.git@${{ env.ufl_ref }}
 
       - name: Checkout Basix
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: "fenics/basix"
           path: basix
@@ -72,7 +72,7 @@ jobs:
           cd ../
 
       - name: Checkout FFCx
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: "fenics/ffcx"
           path: ffcx
@@ -91,7 +91,7 @@ jobs:
           pip install .
 
       - name: Checkout DOLFINx
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: dolfinx
 

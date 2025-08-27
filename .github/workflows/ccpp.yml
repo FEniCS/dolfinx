@@ -21,7 +21,7 @@ jobs:
     name: Lint
     steps:
       - name: Checkout DOLFINx
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -75,7 +75,7 @@ jobs:
 
     name: Build and test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -127,7 +127,7 @@ jobs:
 
       - name: Build Python interface
         run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[test]'
           python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc4py"
 
       - name: Run mypy  # Use a venv to avoid NumPy upgrades that are incompatible with numba
@@ -179,7 +179,7 @@ jobs:
 
     name: Build and test (${{ matrix.petsc_arch }}, ${{ matrix.docker_image }})
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -201,23 +201,28 @@ jobs:
           --warn-uninitialized
           -G Ninja
           -DCMAKE_BUILD_TYPE=Developer
-          -DBUILD_TESTING=true
           -DDOLFINX_ENABLE_ADIOS2=true
           -DDOLFINX_ENABLE_KAHIP=true
           -DDOLFINX_ENABLE_PETSC=true
           -DDOLFINX_ENABLE_SCOTCH=true
-          -DDOLFINX_ENABLE_SLEPC=true 
+          -DDOLFINX_ENABLE_SLEPC=true
           -DDOLFINX_ENABLE_PARMETIS=false
 
       - name: Build and install (C++)
         working-directory: cpp/build
         run: cmake --build . --target install
 
+      - name: Build tests (C++, standalone)
+        working-directory: cpp/test
+        run: |
+          cmake -B build -S .
+          cmake --build build
+
       - name: Run tests (C++, serial)
-        working-directory: cpp/build
+        working-directory: cpp/test/build
         run: mpiexec -np 1 ctest -V --output-on-failure -R unittests
       - name: Run tests (C++, MPI, np=3)
-        working-directory: cpp/build
+        working-directory: cpp/test/build
         run: mpiexec -np 3 ctest -V --output-on-failure -R unittests
 
       - name: Build and run C++ regression tests (serial and MPI (np=2))
@@ -230,7 +235,7 @@ jobs:
 
       - name: Build Python interface
         run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[test]'
           python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_adios2; assert dolfinx.has_kahip; assert not dolfinx.has_parmetis; assert dolfinx.has_petsc; assert dolfinx.has_petsc4py; assert dolfinx.has_ptscotch; assert dolfinx.has_slepc; assert dolfinx.has_complex_ufcx_kernels"
 
       - name: Run mypy  # Use a venv to avoid NumPy upgrades that are incompatible with numba
@@ -280,7 +285,7 @@ jobs:
 
     name: Build and publish docs
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -300,7 +305,7 @@ jobs:
 
       - name: Build Python interface
         run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[docs]'
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[docs]'
 
       - name: Build C++ interface documentation
         run: |
@@ -335,7 +340,7 @@ jobs:
 
       - name: Checkout FEniCS/docs
         if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: "FEniCS/docs"
           path: "docs"
