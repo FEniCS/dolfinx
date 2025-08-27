@@ -800,7 +800,7 @@ Form<T, U> create_form_factory(
           for (std::int32_t vertex : vertices_range)
           {
             std::array<std::int32_t, 2> pair = impl::get_cell_vertex_pairs<1>(
-                vertex, v_to_c->links(vertex), *v_to_c);
+                vertex, v_to_c->links(vertex), *c_to_v);
 
             cell_and_vertex.insert(cell_and_vertex.end(), pair.begin(),
                                    pair.end());

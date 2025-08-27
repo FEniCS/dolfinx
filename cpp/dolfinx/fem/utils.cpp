@@ -268,7 +268,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     for (auto vertex : entities)
     {
       std::array<std::int32_t, 2> pair = impl::get_cell_vertex_pairs<1>(
-          vertex, v_to_c->links(vertex), *v_to_c);
+          vertex, v_to_c->links(vertex), *c_to_v);
 
       entity_data.insert(entity_data.end(), pair.begin(), pair.end());
     }
