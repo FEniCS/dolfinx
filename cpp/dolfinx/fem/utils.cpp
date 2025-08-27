@@ -267,19 +267,10 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     auto [v_to_c, c_to_v] = get_cell_vertex_connectivity();
     for (auto vertex : entities)
     {
-      auto cells = v_to_c->links(vertex);
-      assert(cells.size() > 0);
+      std::array<std::int32_t, 2> pair = impl::get_cell_vertex_pairs<1>(
+          vertex, v_to_c->links(vertex), *v_to_c);
 
-      // Use first cell for assembly over by default
-      std::int32_t cell = cells[0];
-      entity_data.push_back(cell);
-
-      // Find local index of vertex within cell
-      auto cell_vertices = c_to_v->links(cell);
-      auto it = std::ranges::find(cell_vertices, vertex);
-      assert(it != cell_vertices.end());
-      std::int32_t local_index = std::distance(cell_vertices.begin(), it);
-      entity_data.push_back(local_index);
+      entity_data.insert(entity_data.end(), pair.begin(), pair.end());
     }
   }
   }

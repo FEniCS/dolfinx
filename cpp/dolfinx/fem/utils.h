@@ -92,6 +92,33 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
   return cell_local_facet_pairs;
 }
 
+/// Helper function to get an array of of (cell, local_vertex) pairs
+/// corresponding to a given vertex index.
+/// @param[in] v vertex index
+/// @param[in] cells List of cells incident to the vertex
+/// @param[in] c_to_f Cell to facet connectivity
+/// @return Vector of (cell, local_vertex) pairs
+template <int num_cells>
+std::array<std::int32_t, 2 * num_cells>
+get_cell_vertex_pairs(std::int32_t v, std::span<const std::int32_t> cells,
+                      const graph::AdjacencyList<std::int32_t>& c_to_v)
+{
+  static_assert(num_cells == 1); // Patch assembly not supported.
+
+  assert(cells.size() > 0);
+
+  // Use first cell for assembly over by default
+  std::int32_t cell = cells[0];
+
+  // Find local index of vertex within cell
+  auto cell_vertices = c_to_v.links(cell);
+  auto it = std::ranges::find(cell_vertices, v);
+  assert(it != cell_vertices.end());
+  std::int32_t local_index = std::distance(cell_vertices.begin(), it);
+
+  return {cell, local_index};
+}
+
 } // namespace impl
 
 /// @brief Given an integral type and a set of entities, computes and
@@ -772,19 +799,11 @@ Form<T, U> create_form_factory(
           cell_and_vertex.reserve(2 * vertices_range.size());
           for (std::int32_t vertex : vertices_range)
           {
-            auto cells = v_to_c->links(vertex);
-            assert(cells.size() > 0);
+            std::array<std::int32_t, 2> pair = impl::get_cell_vertex_pairs<1>(
+                vertex, v_to_c->links(vertex), *v_to_c);
 
-            // Use first cell for assembly over by default
-            std::int32_t cell = cells[0];
-            cell_and_vertex.push_back(cell);
-
-            // Find local index of vertex within cell
-            auto cell_vertices = c_to_v->links(cell);
-            auto it = std::ranges::find(cell_vertices, vertex);
-            assert(it != cell_vertices.end());
-            std::int32_t local_index = std::distance(cell_vertices.begin(), it);
-            cell_and_vertex.push_back(local_index);
+            cell_and_vertex.insert(cell_and_vertex.end(), pair.begin(),
+                                   pair.end());
           }
           assert(cell_and_vertex.size() == 2 * vertices_range.size());
           return cell_and_vertex;
