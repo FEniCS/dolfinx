@@ -128,19 +128,18 @@ jobs:
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack -e py add py-fenics-dolfinx@main +petsc4py +slepc4py \
-          %fenics-dolfinx@main build_type=Developer +petsc +slepc partitioners=parmetis \
-          ^openmpi \
-          ^petsc +mpi +hypre +mumps +superlu-dist \
-          ^adios2~fortran~libcatalyst
-          spack -e py add py-gmsh %gmsh~fltk
-          spack -v -e py install -j 4 -p 2 --test=root --use-buildcache=auto
+            %fenics-dolfinx@main build_type=Developer +petsc +slepc partitioners=parmetis \
+            ^openmpi \
+            ^petsc +mpi +hypre +mumps +superlu-dist \
+            ^adios2~fortran~libcatalyst
+          spack -e py add py-gmsh %gmsh~fltk py-matplotlib py-numba py-pyamg \
+            py-pytest py-pytest-xdist py-scipy
+          spack -v -e py install -j 4 -p 2 --use-buildcache=auto
 
-        # spack -e py concretize -j 4 --test root
       - name: Run Python unit tests
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack env activate py
-          spack load py-pytest py-pytest-xdist py-scipy
           python -m pytest -n=auto --durations=50 dolfinx-src/python/test/unit/
           mpirun -np 3 python -m pytest --durations=50 dolfinx-src/python/test/unit/
 
