@@ -60,7 +60,7 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
 
-      - name: Prepare DOLFINx env (C++)
+      - name: Prepare C++ environment
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack info fenics-dolfinx
@@ -72,7 +72,7 @@ jobs:
           spack -e cxx develop py-fenics-ffcx
           spack -e cxx develop py-fenics-ufl
 
-      - name: Build DOLFINx library (C++)
+      - name: Build library (C++)
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack -e cxx add fenics-dolfinx@main generator=ninja build_type=Developer +petsc +slepc partitioners=parmetis \
@@ -87,28 +87,29 @@ jobs:
           spack -e cxx buildcache push --base-image ubuntu:24.04 --update-index local-buildcache catch2 ninja
         if: ${{ !cancelled() }}
 
-      - name: Build and run unit tests (C++)
+      - name: Build and run C++ unit tests
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack env activate cxx
-          spack -e cxx test-env fenics-dolfinx cmake -Werror=dev --warn-uninitialized -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
-          spack -e cxx test-env cmake --build build/test
+          spack load catch2 cmake py-fenics-ffcx
+          cmake -Werror=dev --warn-uninitialized -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
+          cmake --build build/test
           cd build/test
-          spack -e cxx test-env ctest -V --output-on-failure -R unittests
-          spack -e cxx test-env mpirun -n 3 ctest -V --output-on-failure -R unittests
+          test-env ctest -V --output-on-failure -R unittests
+          mpirun -n 3 ctest -V --output-on-failure -R unittests
 
-      - name: Build and run demos (C++)
+      - name: Build and run C++ demos
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack env activate cxx
-          spack load cmake
+          spack load cmake py-fenics-ffcx
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S dolfinx-src/cpp/demo/
           cmake --build build/demo
           cd build/demo
           ctest -V -R demo -R serial
           ctest --output-on-failure -V -R demo -R mpi_2
 
-      - name: Prepare DOLFINx env (Python)
+      - name: Prepare Python environment
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack info py-fenics-dolfinx
@@ -120,7 +121,7 @@ jobs:
           spack -e py develop py-fenics-ffcx
           spack -e py develop py-fenics-ufl
 
-      - name: Build DOLFINx library (Python)
+      - name: Build library (Python)
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack -e py add \
@@ -132,7 +133,7 @@ jobs:
           spack -e py concretize -j 4 --test root
           spack -e py install -j 4 -p 2 --use-buildcache auto
 
-      - name: Run unit tests (Python)
+      - name: Run Python unit tests
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack env activate py
