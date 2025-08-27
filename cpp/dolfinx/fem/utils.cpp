@@ -199,11 +199,9 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     }
 
     auto c_to_v = topology.connectivity(tdim, 0);
-    if (!c_to_v)
-    {
-      throw std::runtime_error(
-          "Topology cell-to-vertex connectivity has not been computed.");
-    }
+    // Any mesh already has c->v connectivity.
+    assert(c_to_v);
+
     return {v_to_c, c_to_v};
   };
 
