@@ -77,7 +77,7 @@ jobs:
           spack -e cxx add fenics-dolfinx@main generator=ninja build_type=Developer +petsc +slepc partitioners=parmetis \
             %petsc +mpi +hypre +mumps +superlu-dist \
             %openmpi %adios2~fortran~libcatalyst %cmake~ncurses
-          spack -e cxx concretize -j --test root --use-buildcache auto
+          spack -e cxx concretize -j --test root
           spack -e cxx install -p 2 --test root --use-buildcache auto
 
       - name: Push C++ packages to cache
