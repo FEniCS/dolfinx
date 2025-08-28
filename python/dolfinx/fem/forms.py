@@ -111,6 +111,16 @@ class Form:
         """Integral types in the form."""
         return self._cpp_object.integral_types
 
+    def num_integrals(self, integral_type: IntegralType, kernel_index: int) -> int:
+        """Number of integrals of a given type for a specific cell type.
+
+        Args:
+            integral_type: The type of integral to count.
+            kernel_index: In the case of mixed topology, we have a kernel
+                per cell type. For single-cell type meshes, this is zero.
+        """
+        return self._cpp_object.num_integrals(integral_type, kernel_index)
+
 
 def get_integration_domains(
     integral_type: IntegralType,
