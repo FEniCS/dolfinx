@@ -236,14 +236,12 @@ endif()
 
 # Debug flags
 check_cxx_compiler_flag(-g HAVE_DEBUG)
-
 if(HAVE_DEBUG)
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -g)
 endif()
 
 # Optimisation
 check_cxx_compiler_flag(-O2 HAVE_O2_OPTIMISATION)
-
 if(HAVE_O2_OPTIMISATION)
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -O2)
 endif()
@@ -328,8 +326,7 @@ set_package_properties(
 # Check for HDF5
 set(HDF5_PREFER_PARALLEL TRUE)
 set(HDF5_FIND_DEBUG TRUE)
-# find_package(HDF5 REQUIRED COMPONENTS C CONFIG)
-find_package (HDF5 COMPONENTS C MODULE REQUIRED)
+find_package(HDF5 REQUIRED COMPONENTS C)
 if(NOT HDF5_IS_PARALLEL)
   message(
     FATAL_ERROR
