@@ -18,11 +18,11 @@ spack:
       - spec: llvm@15.0.7
         prefix: /usr/lib/llvm-15/
       buildable: False
-    vtk:
-      externals:
-      - spec: vtk@9.1.0
-        prefix: /usr
-      buildable: False
+    # vtk:
+    #   externals:
+    #   - spec: vtk@9.1.0
+    #     prefix: /usr
+    #   buildable: False
 
   mirrors:
     local-buildcache:
