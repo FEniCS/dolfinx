@@ -26,6 +26,9 @@ from dolfinx.io.utils import distribute_entity_data
 from dolfinx.mesh import CellType, Mesh, MeshTags, create_mesh, meshtags_from_entities
 
 __all__ = [
+    "MeshData",
+    "PhysicalGroup",
+    "TopologyDict",
     "cell_perm_array",
     "extract_geometry",
     "extract_topology_and_markers",
