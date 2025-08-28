@@ -131,8 +131,8 @@ jobs:
             %fenics-dolfinx@main build_type=Developer +petsc +slepc partitioners=parmetis \
             ^openmpi ^adios2~fortran~libcatalyst \
             ^petsc +mpi +hypre +mumps +superlu-dist
-          spack -e py add py-gmsh ^gmsh~fltk+external py-matplotlib py-numba py-pyamg \
-            py-pytest py-pytest-xdist py-scipy py-pyvista
+          spack -e py add py-gmsh ^gmsh~fltk+external py-matplotlib py-networkx \
+            py-numba py-pyamg@5.3.0 py-pytest py-pytest-xdist py-scipy py-pyvista
           spack -e py concretize -j 4
           spack -e py install -j 4 -p 2 --use-buildcache=auto
 
