@@ -167,42 +167,28 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     entities = entities.first(std::distance(entities.begin(), it1));
   }
 
-  auto get_cell_facet_connectivity = [tdim, &topology]()
+  auto get_connectivities = [tdim, &topology](int entity_dim)
       -> std::pair<std::shared_ptr<const graph::AdjacencyList<int>>,
                    std::shared_ptr<const graph::AdjacencyList<int>>>
   {
-    auto f_to_c = topology.connectivity(tdim - 1, tdim);
-    if (!f_to_c)
+    auto e_to_c = topology.connectivity(entity_dim, tdim);
+    if (!e_to_c)
     {
       throw std::runtime_error(
-          "Topology facet-to-cell connectivity has not been computed.");
+          std::format("Topology entity-to-cell connectivity has not been "
+                      "computed for entity dim {}.",
+                      entity_dim));
     }
 
-    auto c_to_f = topology.connectivity(tdim, tdim - 1);
-    if (!c_to_f)
+    auto e_to_f = topology.connectivity(tdim, entity_dim);
+    if (!e_to_f)
     {
       throw std::runtime_error(
-          "Topology cell-to-facet connectivity has not been computed.");
+          std::format("Topology cell-to-entity connectivity has not been "
+                      "computed for entity dim {}.",
+                      entity_dim));
     }
-    return {f_to_c, c_to_f};
-  };
-
-  auto get_cell_vertex_connectivity = [tdim, &topology]()
-      -> std::pair<std::shared_ptr<const graph::AdjacencyList<int>>,
-                   std::shared_ptr<const graph::AdjacencyList<int>>>
-  {
-    auto v_to_c = topology.connectivity(0, tdim);
-    if (!v_to_c)
-    {
-      throw std::runtime_error(
-          "Topology vertex-to-cell connectivity has not been computed.");
-    }
-
-    auto c_to_v = topology.connectivity(tdim, 0);
-    // Any mesh already has c->v connectivity.
-    assert(c_to_v);
-
-    return {v_to_c, c_to_v};
+    return {e_to_c, e_to_f};
   };
 
   std::vector<std::int32_t> entity_data;
@@ -215,7 +201,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   }
   case IntegralType::exterior_facet:
   {
-    auto [f_to_c, c_to_f] = get_cell_facet_connectivity();
+    auto [f_to_c, c_to_f] = get_connectivities(tdim-1);
     // Create list of tagged boundary facets
     const std::vector bfacets = mesh::exterior_facet_indices(topology);
     std::vector<std::int32_t> facets;
@@ -231,7 +217,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   }
   case IntegralType::interior_facet:
   {
-    auto [f_to_c, c_to_f] = get_cell_facet_connectivity();
+    auto [f_to_c, c_to_f] = get_connectivities(tdim-1);
 
     // Create indicator for interprocess facets
     assert(topology.index_map(tdim - 1));
@@ -264,7 +250,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   }
   case IntegralType::vertex:
   {
-    auto [v_to_c, c_to_v] = get_cell_vertex_connectivity();
+    auto [v_to_c, c_to_v] = get_connectivities(0);
     for (auto vertex : entities)
     {
       std::array<std::int32_t, 2> pair = impl::get_cell_vertex_pairs<1>(
