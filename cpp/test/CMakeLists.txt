@@ -11,6 +11,8 @@ if (PROJECT_IS_TOP_LEVEL)
   set(CMAKE_CXX_EXTENSIONS OFF)
 
   find_package(DOLFINX REQUIRED)
+
+  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic;-g;-O2)
 endif()
 
 find_package(Catch2 3 REQUIRED)
@@ -84,12 +86,13 @@ set_target_properties(
              CMAKE_CXX_EXTENSIONS OFF
 )
 
-list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic;-g;-O2)
-target_compile_options(
-  unittests
-  PRIVATE
-    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
-)
+if (DEFINED DOLFINX_CXX_DEVELOPER_FLAGS)
+  target_compile_options(
+    unittests
+    PRIVATE
+      $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+  )
+endif()
 
 if(ENABLE_CLANG_TIDY)
   find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
