@@ -188,9 +188,9 @@ public:
   /// @brief Copy-convert to different container types.
   /// @note "update" data for reverse scatter is not copied.
   template <typename Mat>
-    requires requires(Mat A) {
-      // TODO, see examples in la::Vector
-    }
+    // requires requires(Mat A) {
+    //   //TODO, see examples in la::Vector
+    // }
   explicit MatrixCSR(const Mat& A)
       : _index_maps(A.index_maps()), _block_mode(A.block_mode()),
         _bs(A.block_size()), _data(A.values()), _cols(A.cols()),
