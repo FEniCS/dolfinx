@@ -469,7 +469,8 @@ public:
   /// columns that may exist in the owned rows.
   ///
   /// @return Row (0) and column (1) index maps
-  std::array<std::shared_ptr<const common::IndexMap>, 2>& index_maps() const
+  const std::array<std::shared_ptr<const common::IndexMap>, 2>&
+  index_maps() const
   {
     return _index_maps;
   }
