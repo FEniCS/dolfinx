@@ -201,7 +201,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   }
   case IntegralType::exterior_facet:
   {
-    auto [f_to_c, c_to_f] = get_connectivities(tdim-1);
+    auto [f_to_c, c_to_f] = get_connectivities(tdim - 1);
     // Create list of tagged boundary facets
     const std::vector bfacets = mesh::exterior_facet_indices(topology);
     std::vector<std::int32_t> facets;
@@ -217,7 +217,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   }
   case IntegralType::interior_facet:
   {
-    auto [f_to_c, c_to_f] = get_connectivities(tdim-1);
+    auto [f_to_c, c_to_f] = get_connectivities(tdim - 1);
 
     // Create indicator for interprocess facets
     assert(topology.index_map(tdim - 1));

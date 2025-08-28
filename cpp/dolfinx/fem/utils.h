@@ -94,6 +94,7 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
 
 /// Helper function to get an array of of (cell, local_vertex) pairs
 /// corresponding to a given vertex index.
+/// @note If the vertex is connected to multiple cells, the first one is picked.
 /// @param[in] v vertex index
 /// @param[in] cells List of cells incident to the vertex
 /// @param[in] c_to_v Cell to vertex connectivity
