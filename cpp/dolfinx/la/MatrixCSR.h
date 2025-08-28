@@ -42,7 +42,7 @@ enum class BlockMode : int
 /// code.
 ///
 /// @tparam Scalar Scalar type of matrix entries
-/// @tparam Container Container type fir storing matrix entries
+/// @tparam Container Container type for storing matrix entries
 /// @tparam ColContainer Column index container type
 /// @tparam RowPtrContainer Row pointer container type
 template <typename Scalar, typename Container = std::vector<Scalar>,
@@ -198,16 +198,6 @@ public:
         _comm(A.comm())
   {
   }
-
-  // /// @brief Copy to another container type
-  // /// @note "update" data for reverse scatter is not copied.
-  // template <typename AltT, typename AltU, typename AltV, typename AltW>
-  // MatrixCSR(MatrixCSR<AltT, AltU, AltV, AltW>& A)
-  //     : _index_maps(A._index_maps), _block_mode(A._block_mode), _bs(A._bs),
-  //       _data(A._data), _cols(A._cols), _row_ptr(A._row_ptr),
-  //       _off_diagonal_offset(A._off_diagonal_offset), _comm(A._comm)
-  // {
-  // }
 
   /// @brief Set all non-zero local entries to a value including entries
   /// in ghost rows.
@@ -522,7 +512,7 @@ public:
   /// @return Block sizes for rows (0) and columns (1).
   std::array<int, 2> block_size() const { return _bs; }
 
-  /// @brief Get 'block mode;.
+  /// @brief Get 'block mode'.
   /// @return block sizes for rows and columns
   BlockMode block_mode() const { return _block_mode; }
 
