@@ -10,9 +10,6 @@ on:
   # merge_group:
   #   branches:
   #     - main
-  # schedule:
-  #   # '*' is a special character in YAML, so string must be quoted
-  #   - cron: "0 2 * * THU"
   workflow_dispatch:
 
 env:
@@ -48,7 +45,6 @@ jobs:
           repository: spack/spack
           ref: develop
           path: spack-src
-
       - name: Get Spack packages
         uses: actions/checkout@v5
         with:
@@ -66,7 +62,7 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack info fenics-dolfinx
           spack env create cxx dolfinx-src/.github/workflows/spack-config/gh-actions-env-test.yml
-          spack -e cxx develop fenics-dolfinx
+          spack -e cxx develop --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx
           spack -e cxx develop fenics-basix
           spack -e cxx develop fenics-ufcx
           spack -e cxx develop py-fenics-basix
@@ -141,7 +137,7 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack env activate py
           spack load gcc
-          python -m pytest -m serial --durations=10 dolfinx-src/python/demo/test.py
+          python -m pytest -n=auto -m serial --durations=10 dolfinx-src/python/demo/test.py
           python -m pytest -m mpi --num-proc=3 dolfinx-src/python/demo/test.py
 
       - name: Run Python unit tests
