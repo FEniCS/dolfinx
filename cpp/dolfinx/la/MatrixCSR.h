@@ -50,6 +50,10 @@ template <class Scalar, class Container = std::vector<Scalar>,
           class RowPtrContainer = std::vector<std::int64_t>>
 class MatrixCSR
 {
+  // Allow access for copy construction to different container types
+  template <class AltT, class AltU, class AltV, class AltW>
+  friend class MatrixCSR;
+
   static_assert(std::is_same_v<typename Container::value_type, Scalar>);
 
 public:
@@ -180,6 +184,17 @@ public:
   /// Move constructor
   /// @todo Check handling of MPI_Request
   MatrixCSR(MatrixCSR&& A) = default;
+
+  /// @brief Copy to another container type
+  /// @note "update" data for reverse scatter is not copied.
+  template <typename AltT, typename AltU, typename AltV, typename AltW>
+  MatrixCSR(MatrixCSR<AltT, AltU, AltV, AltW>& A)
+      : _index_maps(A._index_maps), _block_mode(A._block_mode), _bs(A._bs),
+        _data(A._data), _cols(A._cols), _row_ptr(A._row_ptr),
+        _off_diagonal_offset(A._off_diagonal_offset), _comm(A._comm),
+
+  {
+  }
 
   /// @brief Set all non-zero local entries to a value including entries
   /// in ghost rows.
@@ -478,7 +493,7 @@ public:
   /// @return block sizes for rows and columns
   std::array<int, 2> block_size() const { return _bs; }
 
-private:
+protected:
   // Maps for the distribution of the rows and columns
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
 
