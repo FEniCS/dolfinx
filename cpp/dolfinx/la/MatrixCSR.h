@@ -191,8 +191,7 @@ public:
   MatrixCSR(MatrixCSR<AltT, AltU, AltV, AltW>& A)
       : _index_maps(A._index_maps), _block_mode(A._block_mode), _bs(A._bs),
         _data(A._data), _cols(A._cols), _row_ptr(A._row_ptr),
-        _off_diagonal_offset(A._off_diagonal_offset), _comm(A._comm),
-
+        _off_diagonal_offset(A._off_diagonal_offset), _comm(A._comm)
   {
   }
 
