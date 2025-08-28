@@ -875,6 +875,12 @@ class LinearProblem:
         self._solver = PETSc.KSP().create(self.A.comm)  # type: ignore[attr-defined]
         self.solver.setOperators(self.A, self.P_mat)
 
+        # Attach problem information
+        dm = self.solver.getDM()
+        dm.setCreateMatrix(partial(_dm_create_matrix, self.A))
+        dm.setCreateFieldDecomposition(partial(_dm_create_field_decomposition, u, self.L))
+        self.solver.getPC().setDM(dm)
+
         if petsc_options_prefix == "":
             raise ValueError("PETSc options prefix cannot be empty.")
 
@@ -1346,6 +1352,12 @@ class NonlinearProblem:
         )
         self.solver.setFunction(partial(assemble_residual, u, self.F, self.J, bcs), self.b)
 
+        # Attach problem information
+        dm = self.solver.getDM()
+        dm.setCreateMatrix(partial(_dm_create_matrix, self.A))
+        dm.setCreateFieldDecomposition(partial(_dm_create_field_decomposition, u, self.F))
+        self.solver.getKSP().setDM(dm)
+
         if petsc_options_prefix == "":
             raise ValueError("PETSc options prefix cannot be empty.")
 
@@ -1710,3 +1722,55 @@ def _(x: PETSc.Vec, u: typing.Union[_Function, Sequence[_Function]]):  # type: i
             dolfinx.la.petsc.assign(x, data0 + data1)
         else:
             dolfinx.la.petsc.assign(x, u.x.array)
+
+
+# -- DMShell (default) helper functions --
+
+
+def _dm_create_field_decomposition(
+    u: typing.Union[Sequence[_Function], _Function],
+    form: typing.Union[Form, Sequence[Form]],
+    _dm: PETSc.DM,  # type: ignore[name-defined]
+):
+    """Return index sets of the fields and their associated names.
+
+    Args:
+        u: Function tied to the solution vector.
+        form: Form of the residual or of the right-hand side.
+            It can be a sequence of forms.
+        _dm: The DM instance.
+
+    Returns:
+        names: field names.
+        ises: list of index sets in global numbering.
+        dms: list of subDMs. This function returns `None`.
+    """
+
+    if not isinstance(form, Sequence):
+        form = [form]
+    spaces = _extract_function_spaces(form)
+    ises = _cpp.la.petsc.create_global_index_sets(
+        [(V.dofmaps(0).index_map, V.dofmaps(0).index_map_bs) for V in spaces]  # type: ignore[union-attr]
+    )
+    if isinstance(u, Sequence):
+        names = [f"{v.name + '_' if v.name != 'f' else ''}{i}" for i, v in enumerate(u)]
+    else:
+        names = [f"dolfinx_field_{i}" for i in range(len(form))]
+    return names, ises, None
+
+
+def _dm_create_matrix(
+    J: PETSc.Mat,  # type: ignore[name-defined]
+    _dm: PETSc.DM,  # type: ignore[name-defined]
+):
+    """Return a clone of the matrix.
+
+    Args:
+        _dm: The DM instance.
+        J: Matrix to assemble the Jacobian into.
+
+    Returns:
+        A PETSc matrix.
+    """
+
+    return J.duplicate()

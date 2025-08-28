@@ -147,6 +147,52 @@ std::vector<IS> la::petsc::create_index_sets(
   return is;
 }
 //-----------------------------------------------------------------------------
+std::vector<IS> la::petsc::create_global_index_sets(
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
+{
+  std::vector<IS> is;
+
+  std::int64_t offset = 0;
+  std::int64_t merged_local_size = 0;
+  MPI_Comm comm = MPI_COMM_NULL;
+
+  for (auto& map : maps)
+  {
+    if (comm == MPI_COMM_NULL)
+    {
+      comm = map.first.get().comm();
+    }
+    int result;
+    MPI_Comm_compare(comm, map.first.get().comm(), &result);
+    if (result != MPI_IDENT && result != MPI_CONGRUENT)
+    {
+      throw std::runtime_error("Not supported on the different communicators.");
+    }
+    int bs = map.second;
+    std::int32_t size = map.first.get().size_local();
+    merged_local_size += size * bs;
+  }
+  if (comm == MPI_COMM_NULL)
+    return is;
+
+  int ierr = MPI_Exscan(&merged_local_size, &offset, 1, MPI_INT64_T,
+                        MPI_SUM, comm);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  for (auto& map : maps)
+  {
+    int bs = map.second;
+    std::int32_t size = map.first.get().size_local();
+    IS _is;
+    ISCreateStride(map.first.get().comm(), bs * size, offset, 1, &_is);
+    is.push_back(_is);
+    offset += bs * size;
+  }
+
+  return is;
+}
+//-----------------------------------------------------------------------------
 std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
     const Vec x,
     const std::vector<
