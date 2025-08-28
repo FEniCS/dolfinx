@@ -166,7 +166,7 @@ jobs:
       - name: Run Python demos (serial)
         working-directory: dolfinx-src/python/demo
         run: |
-          python3 -m pytest -m mpi --num-proc=1 -n auto -m serial --durations=10 test.py
+          python3 -m pytest -n auto -m serial --durations=10 test.py
 #      - name: Run Python demos (MPI, np=3)
 #        working-directory: dolfinx-src/python/demo
 #        run: |
