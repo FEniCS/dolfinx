@@ -62,12 +62,12 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack info fenics-dolfinx
           spack env create cxx dolfinx-src/.github/workflows/spack-config/gh-actions-env-test.yml
-          spack -e cxx develop --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx
-          spack -e cxx develop fenics-basix
-          spack -e cxx develop fenics-ufcx
-          spack -e cxx develop py-fenics-basix
-          spack -e cxx develop py-fenics-ffcx
-          spack -e cxx develop py-fenics-ufl
+          spack -e cxx develop --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
+          spack -e cxx develop fenics-basix@git.main=main
+          spack -e cxx develop fenics-ufcx@git.main=main
+          spack -e cxx develop py-fenics-basix@git.main=main
+          spack -e cxx develop py-fenics-ffcx@git.main=main
+          spack -e cxx develop py-fenics-ufl@git.main=main
 
       - name: Build library (C++)
         run: |
@@ -112,13 +112,13 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack info py-fenics-dolfinx
           spack env create py dolfinx-src/.github/workflows/spack-config/gh-actions-env-test.yml
-          spack -e py develop --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx
-          spack -e py develop fenics-basix
-          spack -e py develop fenics-ufcx
-          spack -e py develop --path $GITHUB_WORKSPACE/dolfinx-src py-fenics-dolfinx
-          spack -e py develop py-fenics-basix
-          spack -e py develop py-fenics-ffcx
-          spack -e py develop py-fenics-ufl
+          spack -e py develop --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
+          spack -e py develop fenics-basix@git.main=main
+          spack -e py develop fenics-ufcx@git.main=main
+          spack -e py develop --path $GITHUB_WORKSPACE/dolfinx-src py-fenics-dolfinx@main
+          spack -e py develop py-fenics-basix@git.main=main
+          spack -e py develop py-fenics-ffcx@git.main=main
+          spack -e py develop py-fenics-ufl@git.main=main
 
       - name: Build library (Python)
         run: |
