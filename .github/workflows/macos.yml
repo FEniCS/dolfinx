@@ -48,38 +48,38 @@ jobs:
           python -m pip install mpi4py numpy
           python -m pip install cython setuptools wheel
 
-      - name: Cache PETSc
-        id: cache-petsc
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ env.PETSC_VERSION }}
-            ~/Library/Caches/pip
-          key: ${{ runner.os }}-petsc-${{ env.PETSC_VERSION }}
+      # - name: Cache PETSc
+      #   id: cache-petsc
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: |
+      #       ${{ env.PETSC_VERSION }}
+      #       ~/Library/Caches/pip
+      #     key: ${{ runner.os }}-petsc-${{ env.PETSC_VERSION }}
 
-      - name: Install minimal PETSc and petsc4py
-        if: steps.cache-petsc.outputs.cache-hit != 'true'
-        run: |
-          export PATH="$(brew --prefix gfortran)/bin:$(brew --prefix bison)/bin:$PATH"
-          export PATH="$(brew --prefix make)/libexec/gnubin:$PATH"
-          git clone --depth 1 --branch v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git petsc
-          cd petsc
-          python ./configure \
-            --with-64-bit-indices=no \
-            --with-debugging=no \
-            --with-fortran-bindings=no \
-            --with-scalar-type=real \
-            --with-shared-libraries \
-            --with-scalar-type=real
-            # --with-ptscotch-dir=$(brew --prefix scotch) \
-            # --with-scalapack-dir=$(brew --prefix scalapack) \
-            # --download-metis \
-            # --download-parmetis \
-            # --download-mumps \
-            # --download-mumps-avoid-mpi-in-place
-          make all
-          cd src/binding/petsc4py
-          arch -arm64 python -m pip -v install --no-build-isolation .
+      # - name: Install minimal PETSc and petsc4py
+      #   if: steps.cache-petsc.outputs.cache-hit != 'true'
+      #   run: |
+      #     export PATH="$(brew --prefix gfortran)/bin:$(brew --prefix bison)/bin:$PATH"
+      #     export PATH="$(brew --prefix make)/libexec/gnubin:$PATH"
+      #     git clone --depth 1 --branch v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git petsc
+      #     cd petsc
+      #     python ./configure \
+      #       --with-64-bit-indices=no \
+      #       --with-debugging=no \
+      #       --with-fortran-bindings=no \
+      #       --with-scalar-type=real \
+      #       --with-shared-libraries \
+      #       --with-scalar-type=real
+      #       # --with-ptscotch-dir=$(brew --prefix scotch) \
+      #       # --with-scalapack-dir=$(brew --prefix scalapack) \
+      #       # --download-metis \
+      #       # --download-parmetis \
+      #       # --download-mumps \
+      #       # --download-mumps-avoid-mpi-in-place
+      #     make all
+      #     cd src/binding/petsc4py
+      #     arch -arm64 python -m pip -v install --no-build-isolation .
 
 
       - name: Install FEniCSx dependencies
@@ -91,6 +91,9 @@ jobs:
       - name: Testing
         run: |
           ls -alh ~/Library/Caches/pip
+          pip cache dir
+          pip cache list
+          pip cache list setuptools
 
       # - name: Configure (C++)
       #   working-directory: cpp
