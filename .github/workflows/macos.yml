@@ -49,7 +49,7 @@ jobs:
           pip install cython setuptools wheel
           pip install mpi4py numpy
 
-      - name: Cache PETSc an petsc4py
+      - name: Cache PETSc and petsc4py
         id: cache-petsc
         uses: actions/cache@v4
         with:
