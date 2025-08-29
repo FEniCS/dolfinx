@@ -117,5 +117,7 @@ jobs:
       - name: Run tests (Python)
         run: |
           pip install pytest-xdist
+          mkdir -p ~/.config/dolfinx
+          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
           mpiexec -np 1 python -m pytest -n=auto --durations=50 python/test/unit/
           mpiexec -np 3 python -m pytest python/test/unit/
