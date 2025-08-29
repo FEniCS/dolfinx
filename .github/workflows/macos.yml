@@ -61,9 +61,8 @@ jobs:
         run: |
           export PATH="$(brew --prefix gfortran)/bin:$(brew --prefix bison)/bin:$PATH"
           export PATH="$(brew --prefix make)/libexec/gnubin:$PATH"
-          export PETSC_DIR=$HOME/local/petsc
-          git clone --depth 1 --branch release https://gitlab.com/petsc/petsc.git ${PETSC_DIR}
-          cd ${PETSC_DIR}
+          git clone --depth 1 --branch release https://gitlab.com/petsc/petsc.git petsc
+          cd petsc
           python ./configure \
             PETSC_ARCH=linux-gnu-real64-32 \
             --with-64-bit-indices=no \
@@ -75,18 +74,16 @@ jobs:
             --with-ptscotch-dir=$(brew --prefix scotch) \
             --with-scalapack-dir=$(brew --prefix scalapack) \
             --download-metis \
-            --download-metis-commit \
             --download-parmetis \
-            --download-parmetis-commit \
             --download-mumps \
             --download-mumps-avoid-mpi-in-place
-          make PETSC_ARCH=linux-gnu-real64-32 all
+          make all
           cd src/binding/petsc4py
-          PETSC_ARCH=linux-gnu-real64-32 arch -arm64 python -m pip -v install --no-build-isolation --no-cache-dir .
+          arch -arm64 python -m pip -v install --no-build-isolation --no-cache-dir .
 
       - name: Testing
         run: |
-          ls -alh  ~/Library/Caches/pip
+          ls -alh ~/Library/Caches/pip
 
       - name: Install FEniCSx dependencies
         run: |
