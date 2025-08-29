@@ -114,7 +114,7 @@ jobs:
         run: |
           cat .github/workflows/spack-config/gh-actions-env.yml
           spack env create dolfinx .github/workflows/spack-config/gh-actions-env.yml
-          spack -e dolfinx install-j4 -p2 --use-buildcache=package:never,dependencies:auto --add py-fenics-dolfinx@main %fenics-dolfinx+petsc~adios2
+          spack -e dolfinx install -j4 -p2 --use-buildcache=package:never,dependencies:auto --add py-fenics-dolfinx@main %fenics-dolfinx+petsc~adios2
           spack repo list
           spack config get repos
       - name: Run a Python test
