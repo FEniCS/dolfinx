@@ -35,6 +35,7 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v5
+        id: cp3
         with:
           python-version: "3.12"
 
@@ -48,14 +49,14 @@ jobs:
           pip install cython setuptools wheel
           pip install mpi4py numpy
 
-      # - name: Cache PETSc
-      #   id: cache-petsc
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: |
-      #       ${{ env.PETSC_VERSION }}
-      #       ~/Library/Caches/pip
-      #     key: ${{ runner.os }}-petsc-${{ env.PETSC_VERSION }}
+      - name: Cache PETSc
+        id: cache-petsc
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.PETSC_VERSION }}
+            ~/Library/Python/
+          key: ${{ runner.os }}-petsc-${{ env.PETSC_VERSION }}-${{ steps.cp3.outputs.python-version }}
 
       - name: Install minimal PETSc and petsc4py
         if: steps.cache-petsc.outputs.cache-hit != 'true'
