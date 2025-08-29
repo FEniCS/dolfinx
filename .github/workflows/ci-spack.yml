@@ -23,9 +23,9 @@ env:
 
 jobs:
   build:
-    name: Rocky build and test
+    name: Alma build and test
     runs-on: ubuntu-latest
-    container: rockylinux/rockylinux:10
+    container: ghcr.io/almalinux/almalinux:10
     strategy:
       matrix:
         compiler: ["gcc", "oneapi"]
@@ -33,8 +33,8 @@ jobs:
     steps:
       - name: Install Spack requirements
         run: |
-          dnf -y install epel-release
-          dnf -y install file bzip2 ca-certificates git gzip patch python3 tar unzip xz zstd gcc gcc-c++ gcc-gfortran
+          dnf -y install file bzip2 ca-certificates git gzip patch python3 tar \
+            unzip xz zstd gcc gcc-c++ gcc-gfortran
 
       - name: Checkout Spack
         uses: actions/checkout@v5
