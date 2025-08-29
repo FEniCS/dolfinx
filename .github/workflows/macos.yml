@@ -82,21 +82,11 @@ jobs:
           cd src/binding/petsc4py
           arch -arm64 pip -v install --user --no-build-isolation .
 
-
       - name: Install FEniCSx dependencies
         run: |
           pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
           pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
           pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
-
-      - name: Testing
-        run: |
-          ls -alh ~/Library/Caches/pip
-          pip cache dir
-          pip cache list
-          pip cache list setuptools
-          python -c "import petsc4py; print(petsc4py.__path__)"
-          python -c "import ffcx; print(ffcx.__path__)"
 
       - name: Configure (C++)
         working-directory: cpp
