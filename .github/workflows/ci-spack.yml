@@ -50,8 +50,6 @@ jobs:
       - name: Create Spack environment
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack mirror add --unsigned --type binary --oci-username-variable GITHUB_USER --oci-password-variable GITHUB_TOKEN \
-            old-local-buildcache oci://ghcr.io/fenics/spack-rocky-buildcache
           spack env create . dolfinx-src/.github/workflows/spack-config/gh-actions-rh.yml
 
       - name: Add dependencies to environment
