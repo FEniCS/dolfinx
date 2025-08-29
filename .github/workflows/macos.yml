@@ -23,7 +23,7 @@ jobs:
     env:
       PETSC_ARCH: arch-darwin-c-opt
       PETSC_DIR: ${{ github.workspace }}/petsc
-      PETSC_VERSION: 3.23.5
+      PETSC_VERSION: 3.23.6
 
     steps:
       - uses: actions/checkout@v5
@@ -49,7 +49,7 @@ jobs:
           pip install cython setuptools wheel
           pip install mpi4py numpy
 
-      - name: Cache PETSc
+      - name: Cache PETSc an petsc4py
         id: cache-petsc
         uses: actions/cache@v4
         with:
@@ -72,12 +72,12 @@ jobs:
             --with-scalar-type=real \
             --with-shared-libraries \
             --with-scalar-type=real
-            # --with-ptscotch-dir=$(brew --prefix scotch) \
-            # --with-scalapack-dir=$(brew --prefix scalapack) \
-            # --download-metis \
-            # --download-parmetis \
-            # --download-mumps \
-            # --download-mumps-avoid-mpi-in-place
+            --with-ptscotch-dir=$(brew --prefix scotch) \
+            --with-scalapack-dir=$(brew --prefix scalapack) \
+            --download-metis \
+            --download-parmetis \
+            --download-mumps \
+            --download-mumps-avoid-mpi-in-place
           make all
           cd src/binding/petsc4py
           arch -arm64 pip -v install --user --no-build-isolation .
@@ -98,42 +98,42 @@ jobs:
           python -c "import petsc4py; print(petsc4py.__path__)"
           python -c "import ffcx; print(ffcx.__path__)"
 
-      # - name: Configure (C++)
-      #   working-directory: cpp
-      #   run: >
-      #     cmake -B build -S .
-      #     -Werror=dev
-      #     --warn-uninitialized
-      #     -G Ninja
-      #     -DBUILD_TESTING=true
+      - name: Configure (C++)
+        working-directory: cpp
+        run: >
+          cmake -B build -S .
+          -Werror=dev
+          --warn-uninitialized
+          -G Ninja
+          -DBUILD_TESTING=true
 
-      # - name: Build and install (C++)
-      #   working-directory: cpp/build
-      #   run: |
-      #     cmake --build .
-      #     sudo cmake --install .
+      - name: Build and install (C++)
+        working-directory: cpp/build
+        run: |
+          cmake --build .
+          sudo cmake --install .
 
-      # - name: Run tests (C++, serial)
-      #   working-directory: cpp/build
-      #   run: mpiexec -np 1 ctest -V --output-on-failure -R unittests
-      # - name: Run tests (C++, MPI, np=3)
-      #   working-directory: cpp/build
-      #   run: mpiexec -np 3 ctest -V --output-on-failure -R unittests
+      - name: Run tests (C++, serial)
+        working-directory: cpp/build
+        run: mpiexec -np 1 ctest -V --output-on-failure -R unittests
+      - name: Run tests (C++, MPI, np=3)
+        working-directory: cpp/build
+        run: mpiexec -np 3 ctest -V --output-on-failure -R unittests
 
-      # - name: Build and install DOLFINx Python interface
-      #   run: |
-      #     python -m pip install -r python/build-requirements.txt
-      #     python -m pip install --check-build-dependencies --no-build-isolation 'python/[test]'
+      - name: Build and install DOLFINx Python interface
+        run: |
+          python -m pip install -r python/build-requirements.txt
+          python -m pip install --check-build-dependencies --no-build-isolation 'python/[test]'
 
-      # - name: Basic test
-      #   run: |
-      #     mpiexec -np 1 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
-      #     mpiexec -np 2 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+      - name: Basic test
+        run: |
+          mpiexec -np 1 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+          mpiexec -np 2 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
 
-      # - name: Run tests (Python, serial)
-      #   run: |
-      #     python -m pip install pytest-xdist
-      #     mpiexec -np 1 python3 -m pytest -n=auto --durations=50 python/test/unit/
-      # - name: Run tests (Python, MPI, np=3)
-      #   run: |
-      #     mpiexec -np 3 python3 -m pytest python/test/unit/
+      - name: Run tests (Python, serial)
+        run: |
+          python -m pip install pytest-xdist
+          mpiexec -np 1 python3 -m pytest -n=auto --durations=50 python/test/unit/
+      - name: Run tests (Python, MPI, np=3)
+        run: |
+          mpiexec -np 3 python3 -m pytest python/test/unit/
