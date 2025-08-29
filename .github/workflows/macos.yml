@@ -79,7 +79,7 @@ jobs:
             # --download-mumps-avoid-mpi-in-place
           make all
           cd src/binding/petsc4py
-          arch -arm64 pip -v install --no-build-isolation .
+          arch -arm64 pip -v install --user --no-build-isolation .
 
 
       - name: Install FEniCSx dependencies
@@ -94,6 +94,8 @@ jobs:
           pip cache dir
           pip cache list
           pip cache list setuptools
+          python -c "import petsc4py; print(petsc4py.__path__)"
+          python -c "import ffcx; print(ffcx.__path__)"
 
       # - name: Configure (C++)
       #   working-directory: cpp
