@@ -23,7 +23,7 @@ env:
 
 jobs:
   build:
-    name: Alma build and test
+    name: AlmaLinux build and test
     runs-on: ubuntu-latest
     container: ghcr.io/almalinux/almalinux:10
     strategy:
@@ -68,7 +68,7 @@ jobs:
       - name: Install Spack packages
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack -e . install --use-buildcache auto
+          spack -e . install -j4 -p2 --use-buildcache auto
 
       - name: Push packages to Spack cache and update index
         env:
