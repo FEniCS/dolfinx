@@ -71,7 +71,7 @@ jobs:
             --with-fortran-bindings=no \
             --with-scalar-type=real \
             --with-shared-libraries \
-            --with-scalar-type=real
+            --with-scalar-type=real \
             --with-ptscotch-dir=$(brew --prefix scotch) \
             --with-scalapack-dir=$(brew --prefix scalapack) \
             --download-metis \
