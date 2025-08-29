@@ -64,7 +64,6 @@ jobs:
           git clone --depth 1 --branch release https://gitlab.com/petsc/petsc.git petsc
           cd petsc
           python ./configure \
-            PETSC_ARCH=linux-gnu-real64-32 \
             --with-64-bit-indices=no \
             --with-debugging=no \
             --with-fortran-bindings=no \
