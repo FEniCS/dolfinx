@@ -54,7 +54,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ${{ env.PETSC_VERSION }}
+            ${{ env.PETSC_DIR }}
             ~/Library/Python/
           key: ${{ runner.os }}-petsc-${{ env.PETSC_VERSION }}-${{ steps.cp3.outputs.python-version }}
 
@@ -65,7 +65,7 @@ jobs:
           export PATH="$(brew --prefix make)/libexec/gnubin:$PATH"
           git clone --depth 1 --branch v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git petsc
           cd petsc
-          python ./configure \
+          ./configure \
             --with-64-bit-indices=no \
             --with-debugging=no \
             --with-fortran-bindings=no \
@@ -108,12 +108,11 @@ jobs:
           cmake --build .
           sudo cmake --install .
 
-      - name: Run tests (C++, serial)
+      - name: Run tests (C++)
         working-directory: cpp/build
-        run: mpiexec -np 1 ctest -V --output-on-failure -R unittests
-      - name: Run tests (C++, MPI, np=3)
-        working-directory: cpp/build
-        run: mpiexec -np 3 ctest -V --output-on-failure -R unittests
+        run: |
+          mpiexec -np 1 ctest -V --output-on-failure -R unittests
+          mpiexec -np 3 ctest -V --output-on-failure -R unittests
 
       - name: Build and install DOLFINx Python interface
         run: |
@@ -125,9 +124,8 @@ jobs:
           mpiexec -np 1 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
           mpiexec -np 2 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
 
-      - name: Run tests (Python, serial)
+      - name: Run tests (Python)
         run: |
           pip install pytest-xdist
           mpiexec -np 1 python -m pytest -n=auto --durations=50 python/test/unit/
-      - name: Run tests (Python, MPI, np=3)
-        run: mpiexec -np 3 python -m pytest python/test/unit/
+          mpiexec -np 3 python -m pytest python/test/unit/
