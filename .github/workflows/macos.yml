@@ -100,12 +100,7 @@ jobs:
 
       - name: Configure (C++)
         working-directory: cpp
-        run: >
-          cmake -B build -S .
-          -Werror=dev
-          --warn-uninitialized
-          -G Ninja
-          -DBUILD_TESTING=true
+        run: cmake -B build -S . -Werror=dev --warn-uninitialized -G Ninja -DBUILD_TESTING=true
 
       - name: Build and install (C++)
         working-directory: cpp/build
@@ -122,8 +117,8 @@ jobs:
 
       - name: Build and install DOLFINx Python interface
         run: |
-          python -m pip install -r python/build-requirements.txt
-          python -m pip install --check-build-dependencies --no-build-isolation 'python/[test]'
+          pip install -r python/build-requirements.txt
+          pip install --check-build-dependencies --no-build-isolation 'python/[test]'
 
       - name: Basic test
         run: |
@@ -132,8 +127,7 @@ jobs:
 
       - name: Run tests (Python, serial)
         run: |
-          python -m pip install pytest-xdist
-          mpiexec -np 1 python3 -m pytest -n=auto --durations=50 python/test/unit/
+          pip install pytest-xdist
+          mpiexec -np 1 python -m pytest -n=auto --durations=50 python/test/unit/
       - name: Run tests (Python, MPI, np=3)
-        run: |
-          mpiexec -np 3 python3 -m pytest python/test/unit/
+        run: mpiexec -np 3 python -m pytest python/test/unit/
