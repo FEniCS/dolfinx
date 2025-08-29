@@ -38,7 +38,7 @@ jobs:
 
       - name: Install Homebrew dependencies
         run: |
-          brew install adios2 boost catch2 cmake hdf5-mpi make ninja open-mpi pkgconf pugixml spdlog # FEniCS
+          brew install adios2 boost catch2 hdf5-mpi make ninja open-mpi pkgconf pugixml spdlog # FEniCS
           brew install bison flex gfortran scalapack scotch # PETSc
 
       - name: Install Python dependencies (petsc4py)
@@ -83,7 +83,7 @@ jobs:
           cmake -B build -S .
           -Werror=dev
           --warn-uninitialized
-          -G Ninja 
+          -G Ninja
           -DBUILD_TESTING=true
 
       - name: Build and install (C++)
