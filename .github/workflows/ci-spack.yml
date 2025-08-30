@@ -1,4 +1,4 @@
-name: CI via Spack
+name: "CI (RHEL clone: gcc, oneAPI)"
 on:
   push:
     # Uncomment the below 'push' to trigger on push
