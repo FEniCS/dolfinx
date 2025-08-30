@@ -1,4 +1,4 @@
-name: DOLFINx tests via Spack (experimental)
+name: CI (via Spack, experimental)
 
 on:
   # Uncomment the below 'push' to trigger on push

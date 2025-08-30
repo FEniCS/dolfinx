@@ -1,4 +1,4 @@
-name: DOLFINx CI
+name: CI
 
 on:
   # push:
